@@ -3,33 +3,9 @@
   "speciesLabel": "Bacterium Scopulum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-06T11:31:00.668Z",
+  "generatedAt": "2026-09-04T19:18:10.603Z",
   "sampleCount": 7,
   "numerics": {
-    "body.id": {
-      "min": 1545874,
-      "max": 10945672,
-      "mean": 6741498,
-      "count": 7,
-      "mode": 3779805,
-      "modeCount": 1
-    },
-    "body.id64": {
-      "min": 216176503459662180,
-      "max": 1261010764836185600,
-      "mean": 483835944440271170,
-      "count": 7,
-      "mode": 288237643639104960,
-      "modeCount": 1
-    },
-    "body.bodyId": {
-      "min": 6,
-      "max": 35,
-      "mean": 13.428571428571429,
-      "count": 7,
-      "mode": 6,
-      "modeCount": 2
-    },
     "body.distanceToArrival": {
       "min": 1188,
       "max": 32762,
@@ -352,32 +328,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Alrai Sector ON-T b3-3 7": 1,
-      "Ceti Sector CQ-Y d108 4": 1,
-      "Crucis Sector FH-M a7-3 4": 1,
-      "Crucis Sector FH-M a7-3 8": 1,
-      "Kholo B 4": 1,
-      "LHS 6386 A 6": 1,
-      "LTT 16016 ABC 4 c": 1
-    },
-    "body.discovery.commander": {
-      "Polaras": 1,
-      "Genaro Deige": 1,
-      "MIH'RAEL-MEN [UGC]": 2,
-      "ADEMARIUM": 1,
-      "Abish": 1,
-      "Palmyra": 1
-    },
-    "body.discovery.date": {
-      "2017-07-10 14:30:44": 1,
-      "2017-03-11 18:09:59": 1,
-      "2017-05-01 06:23:24": 1,
-      "2017-05-01 06:28:34": 1,
-      "2018-01-03 22:49:08": 1,
-      "2018-01-08 17:21:16": 1,
-      "2017-01-26 22:33:45": 1
-    },
     "body.type": {
       "Planet": 7
     },
@@ -402,14 +352,25 @@
     "body.rotationalPeriodTidallyLocked": {
       "false": 7
     },
-    "body.updateTime": {
-      "2026-04-06 10:33:44": 1,
-      "2026-04-05 20:35:03": 1,
-      "2026-03-25 14:44:32": 1,
-      "2026-03-25 14:44:40": 1,
-      "2026-03-26 19:21:06": 1,
-      "2026-05-01 09:28:02": 1,
-      "2026-05-03 08:23:55": 1
+    "exo.host_star_spectral_primary": {
+      "M8": 1,
+      "M5": 1,
+      "L7": 2,
+      "L6": 1,
+      "M4": 1,
+      "M3": 1
+    },
+    "exo.host_star_source": {
+      "parents": 6,
+      "designation": 1
+    },
+    "exo.system_primary_spectral": {
+      "M8": 1,
+      "M5": 1,
+      "L7": 2,
+      "M2": 1,
+      "M4": 1,
+      "M3": 1
     }
   },
   "materials": {},
@@ -441,9 +402,6 @@
     }
   },
   "summaryLines": [
-    "body.id: typical (modal) 3779805.000000 (1/7 samples); range 1545874 … 10945672",
-    "body.id64: typical (modal) 288237643639104960.000000 (1/7 samples); range 216176503459662180 … 1261010764836185600",
-    "body.bodyId: typical (modal) 6.000000 (2/7 samples); range 6 … 35",
     "body.distanceToArrival: typical (modal) 3279.000000 (1/7 samples); range 1188 … 32762",
     "body.gravity: typical (modal) 0.481007 (1/7 samples); range 0.2301560021764158 … 0.5575151767873764",
     "body.earthMasses: typical (modal) 0.424849 (1/7 samples); range 0.074065 … 0.621313",

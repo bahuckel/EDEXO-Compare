@@ -3,7 +3,7 @@
   "speciesLabel": "Recepta Conditivus",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-14T19:37:18.247Z",
+  "generatedAt": "2026-09-04T19:18:13.028Z",
   "sampleCount": 25,
   "numerics": {
     "body.distanceToArrival": {
@@ -392,33 +392,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "5 Iota Delphini 1 a": 1,
-      "Arietis Sector ZE-A d75 6 h": 1,
-      "HIP 109699 A 1 d": 1,
-      "HIP 25141 5 a": 1,
-      "HIP 32871 10 g": 1,
-      "HIP 5099 A 2 h": 1,
-      "Jarnae A 2": 1,
-      "LHS 274 B 4": 1,
-      "Nisgayo A 3": 1,
-      "Nyeajaae YP-C c1-1 4 c": 1,
-      "Pheia Auscs PT-G d11-32 3 e": 1,
-      "Phraa Prao RY-P d6-720 A 3 a": 1,
-      "Col 285 Sector AW-U c3-4 8 d": 1,
-      "Piegua 6 e": 1,
-      "Sques CA-P d6-246 B 7 a": 1,
-      "Synuefai LD-H d11-24 10 a": 1,
-      "Synuefai RK-C d14-30 1 c": 1,
-      "Tirfing 8 e": 1,
-      "Eoch Flyuae IN-J d9-522 8 b": 1,
-      "Eol Prou PX-T d3-291 ABC 4 i": 1,
-      "Eos Chruia FC-M d7-1843 AB 1 g": 1,
-      "Eos Chruia TZ-G d10-720 3 e": 1,
-      "Eta Cephei 3 e": 1,
-      "Flyiedge PJ-P d6-72 11 e": 1,
-      "HIP 106436 AB 3 d": 1
-    },
     "body.type": {
       "Planet": 25
     },
@@ -459,12 +432,12 @@
       "A6": 2,
       "F9": 1,
       "G1": 1,
-      "F2": 5,
-      "G7": 1,
+      "F2": 4,
+      "Y5": 1,
       "L5": 1,
       "L7": 1,
       "M9": 1,
-      "G5": 1,
+      "Y4": 2,
       "A5": 1,
       "K3": 1,
       "F5": 2,
@@ -472,7 +445,32 @@
       "G0": 2,
       "G": 1,
       "G2": 1,
+      "Y3": 1,
+      "K4": 1
+    },
+    "exo.host_star_source": {
+      "parents": 22,
+      "designation": 3
+    },
+    "exo.system_primary_spectral": {
+      "A6": 2,
+      "F9": 1,
+      "G1": 1,
+      "F2": 5,
+      "G7": 1,
+      "L5": 1,
+      "M4": 1,
+      "M9": 1,
+      "G5": 1,
+      "A5": 1,
+      "K3": 1,
+      "F5": 2,
+      "A7": 1,
+      "Y3": 1,
+      "G": 1,
+      "G2": 1,
       "F6": 1,
+      "G0": 1,
       "K4": 1
     }
   },

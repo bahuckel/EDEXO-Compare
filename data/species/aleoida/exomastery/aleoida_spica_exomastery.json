@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida Spica",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-09T11:45:55.863Z",
+  "generatedAt": "2026-09-04T19:18:09.745Z",
   "sampleCount": 11,
   "numerics": {
     "body.distanceToArrival": {
@@ -336,19 +336,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Bauloe SX-T d3-784 AB 2 b": 1,
-      "Eorld Blao DV-X d1-75 6 c": 1,
-      "Squecs CD-I d10-32 3 c": 1,
-      "Eorld Blao HA-Q d5-10 A 3 d": 1,
-      "Eorld Blao NR-P b8-6 A 1 a": 1,
-      "Eorm Chroa CM-K b22-23 B 2": 1,
-      "Pheia Auscs MG-Y d1090 A 4 a": 1,
-      "Pheia Auscs PS-U d2-3098 AB 1 b": 1,
-      "Pheia Auscs QH-A c15-101 A 3 a": 1,
-      "Phua Auwsy BU-Q c18-134 AB 1 b": 1,
-      "Phua Auwsy XQ-D d12-318 12 k": 1
-    },
     "body.type": {
       "Planet": 11
     },
@@ -379,6 +366,22 @@
       "F1": 1,
       "M5": 1,
       "L8": 1,
+      "F8": 1,
+      "K5": 1,
+      "K1": 1,
+      "Y2": 1
+    },
+    "exo.host_star_source": {
+      "designation": 3,
+      "parents": 8
+    },
+    "exo.system_primary_spectral": {
+      "A6": 1,
+      "A8": 2,
+      "Neutron Star": 1,
+      "F1": 1,
+      "M5": 1,
+      "M0": 1,
       "F8": 1,
       "K5": 1,
       "K1": 1,

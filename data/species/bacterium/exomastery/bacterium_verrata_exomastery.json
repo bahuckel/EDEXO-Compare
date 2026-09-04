@@ -3,39 +3,15 @@
   "speciesLabel": "Bacterium Verrata",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-06T11:31:00.692Z",
+  "generatedAt": "2026-09-04T19:18:10.649Z",
   "sampleCount": 13,
   "numerics": {
-    "body.id": {
-      "min": 640854,
-      "max": 37273392,
-      "mean": 10609486.461538462,
-      "count": 13,
-      "mode": 5353728,
-      "modeCount": 1
-    },
-    "body.id64": {
-      "min": 180145644873222530,
-      "max": 3422738991454079500,
-      "mean": 1105812519596595100,
-      "count": 13,
-      "mode": 900742879389830000,
-      "modeCount": 1
-    },
-    "body.bodyId": {
-      "min": 5,
-      "max": 95,
-      "mean": 30.692307692307693,
-      "count": 13,
-      "mode": 33,
-      "modeCount": 3
-    },
     "body.distanceToArrival": {
       "min": 738,
-      "max": 234890,
-      "mean": 30035.76923076923,
+      "max": 234901,
+      "mean": 30036.615384615383,
       "count": 13,
-      "mode": 234890,
+      "mode": 234901,
       "modeCount": 1
     },
     "body.gravity": {
@@ -384,49 +360,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Alrai Sector EB-O a6-1 B 3": 1,
-      "Alrai Sector IM-V b2-1 C 7": 1,
-      "Ra 14": 1,
-      "Ross 1051 5 a": 1,
-      "Scori 5": 1,
-      "HIP 68830 AB 2 a": 1,
-      "Jeljendii E 5": 1,
-      "LHS 2522 3 e": 1,
-      "LHS 2522 4 a": 1,
-      "LHS 4003 2 c": 1,
-      "LP 547-159 9 a": 1,
-      "LP 547-159 9 b": 1,
-      "Pleiades Sector CG-X c1-14 B 6": 1
-    },
-    "body.discovery.commander": {
-      "GORGOS": 1,
-      "Egy Grismann": 1,
-      "Redfoxxx": 1,
-      "Cometborne": 1,
-      "leanpremixed": 1,
-      "Westiriad": 1,
-      "darkside j": 1,
-      "Salayyer": 1,
-      "Genaro Deige": 1,
-      "Bako": 1,
-      "Ortem Ed Der": 2,
-      "Yves le technicien": 1
-    },
-    "body.discovery.date": {
-      "2017-08-15 12:57:19": 1,
-      "2017-04-17 09:40:29": 1,
-      "2017-09-26 19:54:37": 1,
-      "2017-10-02 19:35:47": 1,
-      "2017-12-21 11:41:55": 1,
-      "2020-02-08 16:22:33": 1,
-      "2018-07-17 04:06:41": 1,
-      "2016-12-01 16:15:47": 1,
-      "2017-04-09 14:08:54": 1,
-      "2017-01-03 16:25:32": 1,
-      "2018-01-26 23:46:49": 2,
-      "2019-03-20 21:27:05": 1
-    },
     "body.type": {
       "Planet": 13
     },
@@ -456,19 +389,34 @@
       "false": 10,
       "true": 3
     },
-    "body.updateTime": {
-      "2026-05-01 17:02:47": 1,
-      "2026-05-05 00:18:29": 1,
-      "2026-05-04 15:22:33": 1,
-      "2026-04-18 21:06:09": 1,
-      "2026-05-02 16:36:59": 1,
-      "2026-04-25 14:21:25": 1,
-      "2026-03-12 20:20:27": 1,
-      "2026-05-02 20:13:31": 1,
-      "2026-05-03 20:11:03": 1,
-      "2026-05-05 03:05:56": 1,
-      "2026-05-02 14:48:41": 2,
-      "2025-09-19 22:21:04": 1
+    "exo.host_star_spectral_primary": {
+      "L9": 2,
+      "L1": 1,
+      "G7": 1,
+      "M4": 1,
+      "M1": 1,
+      "F8": 1,
+      "Y4": 1,
+      "White Dwarf (DA) Star": 1,
+      "M2": 1,
+      "M3": 2,
+      "M8": 1
+    },
+    "exo.host_star_source": {
+      "parents": 12,
+      "designation": 1
+    },
+    "exo.system_primary_spectral": {
+      "L0": 1,
+      "M6": 2,
+      "G7": 1,
+      "M4": 1,
+      "M1": 1,
+      "F8": 1,
+      "White Dwarf (DA) Star": 2,
+      "M2": 1,
+      "M3": 2,
+      "G8": 1
     }
   },
   "materials": {},
@@ -500,10 +448,7 @@
     }
   },
   "summaryLines": [
-    "body.id: typical (modal) 5353728.000000 (1/13 samples); range 640854 … 37273392",
-    "body.id64: typical (modal) 900742879389830016.000000 (1/13 samples); range 180145644873222530 … 3422738991454079500",
-    "body.bodyId: typical (modal) 33.000000 (3/13 samples); range 5 … 95",
-    "body.distanceToArrival: typical (modal) 234890.000000 (1/13 samples); range 738 … 234890",
+    "body.distanceToArrival: typical (modal) 234901.000000 (1/13 samples); range 738 … 234901",
     "body.gravity: typical (modal) 0.526597 (1/13 samples); range 0.04711155744536764 … 0.5661355081236785",
     "body.earthMasses: typical (modal) 0.535669 (1/13 samples); range 0.000191 … 0.637035",
     "body.radius: typical (modal) 6432.705500 (1/13 samples); range 406.1041875 … 6765.5945",

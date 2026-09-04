@@ -3,7 +3,7 @@
   "speciesLabel": "Tubus Rosarium",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-06T06:19:37.751Z",
+  "generatedAt": "2026-09-04T19:18:13.579Z",
   "sampleCount": 8,
   "numerics": {
     "body.distanceToArrival": {
@@ -320,16 +320,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "HR 7294 4 c": 1,
-      "Alpheus AB 2 e": 1,
-      "BD-10 5238 1 c": 1,
-      "Tau-1 Hydrae B 1 a": 1,
-      "Kurui Gubi 7 a": 1,
-      "37 Geminorum 8 d": 1,
-      "Ralu 1 b": 1,
-      "Chambo 1 d": 1
-    },
     "body.type": {
       "Planet": 8
     },
@@ -351,6 +341,26 @@
     },
     "body.terraformingState": {
       "Not terraformable": 4
+    },
+    "exo.host_star_spectral_primary": {
+      "G": 1,
+      "G2": 2,
+      "F6": 1,
+      "K9": 1,
+      "G9": 2,
+      "K6": 1
+    },
+    "exo.host_star_source": {
+      "parents": 7,
+      "designation": 1
+    },
+    "exo.system_primary_spectral": {
+      "G": 1,
+      "G2": 2,
+      "F6": 1,
+      "F7": 1,
+      "G9": 2,
+      "K6": 1
     }
   },
   "materials": {},

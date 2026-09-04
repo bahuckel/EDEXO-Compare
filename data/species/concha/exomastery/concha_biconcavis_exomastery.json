@@ -3,7 +3,7 @@
   "speciesLabel": "Concha Biconcavis",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-14T02:09:57.652Z",
+  "generatedAt": "2026-09-04T19:18:11.319Z",
   "sampleCount": 7,
   "numerics": {
     "body.distanceToArrival": {
@@ -320,15 +320,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Aulis 5 d": 1,
-      "Aulis 5 e": 1,
-      "Eoch Flyuae JM-W f1-575 1 j": 1,
-      "HIP 6913 AB 6 c": 1,
-      "HIP 6913 AB 6 d": 1,
-      "HIP 6913 AB 6 e": 1,
-      "Wi ABC 2 c": 1
-    },
     "body.type": {
       "Planet": 7
     },
@@ -352,6 +343,13 @@
       "Not terraformable": 1
     },
     "exo.host_star_spectral_primary": {
+      "Y4": 6,
+      "T4": 1
+    },
+    "exo.host_star_source": {
+      "parents": 7
+    },
+    "exo.system_primary_spectral": {
       "K1": 2,
       "Black Hole": 1,
       "G4": 3,

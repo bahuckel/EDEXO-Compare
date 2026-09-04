@@ -70,3 +70,6 @@ Thumbs.db
 /icon edexo.png
 # Reminder note for the code-signing certificate. Never belongs in the repo.
 sign.txt
+
+# Feeder corpus: 250+ MB of raw EDSM sample packs. A build input, never shipped.
+feeder-data/

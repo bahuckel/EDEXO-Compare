@@ -3,33 +3,9 @@
   "speciesLabel": "Bacterium Nebulus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-06T11:31:00.664Z",
+  "generatedAt": "2026-09-04T19:18:10.594Z",
   "sampleCount": 12,
   "numerics": {
-    "body.id": {
-      "min": 549076,
-      "max": 20512943,
-      "mean": 4221672.333333333,
-      "count": 12,
-      "mode": 3693169,
-      "modeCount": 1
-    },
-    "body.id64": {
-      "min": 36034164117752640,
-      "max": 1549247739668276700,
-      "mean": 363310689845254000,
-      "count": 12,
-      "mode": 252242130603232130,
-      "modeCount": 1
-    },
-    "body.bodyId": {
-      "min": 1,
-      "max": 43,
-      "mean": 10.083333333333334,
-      "count": 12,
-      "mode": 1,
-      "modeCount": 2
-    },
     "body.distanceToArrival": {
       "min": 480,
       "max": 332606,
@@ -368,47 +344,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Alrai Sector BP-R a4-2 6": 1,
-      "Crucis Sector OI-T a3-1 1": 1,
-      "WISE J0521+1025 1": 1,
-      "Wolf 1325 B 6": 1,
-      "Myropolic A 9": 1,
-      "Piscium Sector QT-Q a5-1 6": 1,
-      "Puppis Sector TO-R b4-4 C 9": 1,
-      "Puppis Sector YP-P a5-2 2": 1,
-      "Puppis Sector YP-P a5-2 3": 1,
-      "Scorpii Sector ZU-Y b4 6": 1,
-      "Tascheter Sector CG-O a6-1 4": 1,
-      "Tascheter Sector ZF-O a6-1 6": 1
-    },
-    "body.discovery.commander": {
-      "Carbucketty": 1,
-      "pilot in red shirt": 1,
-      "GaveL Kuaya": 1,
-      "MIH'RAEL-MEN [UGC]": 1,
-      "Numerlor": 1,
-      "Surbiton": 1,
-      "Teura": 1,
-      "Rehc": 2,
-      "mIRCon the Ethereal": 1,
-      "hedge_": 1,
-      "Toland Velus": 1
-    },
-    "body.discovery.date": {
-      "2017-05-08 22:46:44": 1,
-      "2018-05-29 22:32:11": 1,
-      "2017-01-16 20:28:17": 1,
-      "2017-04-23 06:07:35": 1,
-      "2018-12-16 19:16:55": 1,
-      "2017-07-23 22:59:44": 1,
-      "2017-04-30 17:50:15": 1,
-      "2017-03-02 02:12:50": 1,
-      "2017-03-02 02:13:13": 1,
-      "2017-05-27 20:41:11": 1,
-      "2017-05-29 01:11:03": 1,
-      "2018-04-30 22:51:52": 1
-    },
     "body.type": {
       "Planet": 12
     },
@@ -433,18 +368,34 @@
       "false": 10,
       "true": 2
     },
-    "body.updateTime": {
-      "2026-05-04 06:39:34": 1,
-      "2026-04-28 23:11:40": 1,
-      "2026-05-01 11:10:20": 1,
-      "2026-05-02 16:32:18": 1,
-      "2026-05-06 02:05:31": 1,
-      "2026-05-02 16:26:17": 1,
-      "2026-04-27 15:06:42": 1,
-      "2026-05-04 03:47:45": 2,
-      "2026-05-05 18:55:03": 1,
-      "2026-05-05 21:52:56": 1,
-      "2026-04-30 01:20:11": 1
+    "exo.host_star_spectral_primary": {
+      "L9": 1,
+      "Y5": 1,
+      "T": 1,
+      "L6": 1,
+      "L5": 1,
+      "T3": 1,
+      "L8": 1,
+      "T2": 2,
+      "M8": 1,
+      "T1": 1,
+      "Y0": 1
+    },
+    "exo.host_star_source": {
+      "parents": 12
+    },
+    "exo.system_primary_spectral": {
+      "L9": 1,
+      "Y5": 1,
+      "T": 1,
+      "M9": 1,
+      "L5": 1,
+      "T3": 1,
+      "M7": 1,
+      "T2": 2,
+      "M8": 1,
+      "T1": 1,
+      "Y0": 1
     }
   },
   "materials": {},
@@ -476,9 +427,6 @@
     }
   },
   "summaryLines": [
-    "body.id: typical (modal) 3693169.000000 (1/12 samples); range 549076 … 20512943",
-    "body.id64: typical (modal) 252242130603232128.000000 (1/12 samples); range 36034164117752640 … 1549247739668276700",
-    "body.bodyId: typical (modal) 1.000000 (2/12 samples); range 1 … 43",
     "body.distanceToArrival: typical (modal) 867.000000 (1/12 samples); range 480 … 332606",
     "body.gravity: typical (modal) 0.500916 (1/12 samples); range 0.49634229762268417 … 0.5045150136649623",
     "body.earthMasses: typical (modal) 0.467817 (1/12 samples); range 0.460032 … 0.477961",

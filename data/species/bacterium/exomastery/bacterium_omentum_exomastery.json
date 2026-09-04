@@ -3,33 +3,9 @@
   "speciesLabel": "Bacterium Omentum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-06T11:31:00.666Z",
+  "generatedAt": "2026-09-04T19:18:10.599Z",
   "sampleCount": 14,
   "numerics": {
-    "body.id": {
-      "min": 994059,
-      "max": 232203789,
-      "mean": 38659246.071428575,
-      "count": 14,
-      "mode": 4762923,
-      "modeCount": 1
-    },
-    "body.id64": {
-      "min": 36069347415706424,
-      "max": 1945560408270064400,
-      "mean": 579047885059674200,
-      "count": 14,
-      "mode": 108091754934061940,
-      "modeCount": 1
-    },
-    "body.bodyId": {
-      "min": 1,
-      "max": 54,
-      "mean": 16.071428571428573,
-      "count": 14,
-      "mode": 3,
-      "modeCount": 2
-    },
     "body.distanceToArrival": {
       "min": 382,
       "max": 25328,
@@ -408,49 +384,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Alrai Sector UI-T a3-0 2": 1,
-      "Ceti Sector CQ-Y d108 5": 1,
-      "Synuefai XR-W b21-1 A 7 a": 1,
-      "Synuefai XR-W b21-1 A 8 b": 1,
-      "Tascheter Sector CR-M a7-2 1": 1,
-      "Tascheter Sector CR-M a7-2 2": 1,
-      "Col 285 Sector PQ-N a36-2 4": 1,
-      "Crucis Sector JS-T b3-8 A 6": 1,
-      "HIP 12102 2 a": 1,
-      "LB 3303 B 4 a": 1,
-      "LHS 154a B 2": 1,
-      "LHS 154a B 3": 1,
-      "NLTT 46621 AB 1 a": 1,
-      "Puppis Sector WJ-R a4-1 2": 1
-    },
-    "body.discovery.commander": {
-      "Hal Miller": 1,
-      "Genaro Deige": 1,
-      "Sir-Wintermute": 2,
-      "Zeedious": 3,
-      "Spartibartfast": 1,
-      "Paul King": 1,
-      "Lucius-Darcia": 1,
-      "Callisto69": 1,
-      "Tamara McNamarra": 2,
-      "Zulu Romeo": 1
-    },
-    "body.discovery.date": {
-      "2016-12-13 11:51:10": 1,
-      "2017-03-11 18:09:40": 1,
-      "2020-08-20 15:46:09": 1,
-      "2020-08-20 15:46:49": 1,
-      "2017-04-15 13:50:17": 1,
-      "2017-04-15 13:55:49": 1,
-      "2017-05-03 02:11:52": 1,
-      "2017-10-18 06:25:25": 1,
-      "2017-09-10 09:17:38": 1,
-      "2018-05-07 19:48:30": 1,
-      "2017-10-09 19:51:32": 2,
-      "2018-03-07 13:01:35": 1,
-      "2016-10-29 23:10:00": 1
-    },
     "body.type": {
       "Planet": 14
     },
@@ -480,20 +413,33 @@
       "false": 10,
       "true": 4
     },
-    "body.updateTime": {
-      "2026-04-10 21:53:31": 1,
-      "2026-04-05 20:35:03": 1,
-      "2025-07-24 17:20:00": 1,
-      "2025-07-25 06:27:11": 1,
-      "2026-05-03 05:38:09": 1,
-      "2026-05-03 05:37:55": 1,
-      "2026-04-30 13:47:45": 1,
-      "2026-05-02 17:14:37": 1,
-      "2026-05-04 15:45:46": 1,
-      "2026-04-23 05:44:03": 1,
-      "2026-05-02 01:17:30": 2,
-      "2026-05-06 01:17:02": 1,
-      "2026-05-05 20:52:18": 1
+    "exo.host_star_spectral_primary": {
+      "L6": 1,
+      "M5": 1,
+      "M3": 3,
+      "T7": 2,
+      "Y6": 2,
+      "M9": 1,
+      "T2": 2,
+      "White Dwarf (DQ) Star": 1,
+      "L5": 1
+    },
+    "exo.host_star_source": {
+      "parents": 13,
+      "designation": 1
+    },
+    "exo.system_primary_spectral": {
+      "L6": 1,
+      "M5": 1,
+      "M3": 2,
+      "T7": 2,
+      "Y6": 1,
+      "M9": 1,
+      "G": 1,
+      "T4": 1,
+      "M6": 2,
+      "White Dwarf (DQ) Star": 1,
+      "L5": 1
     }
   },
   "materials": {},
@@ -525,9 +471,6 @@
     }
   },
   "summaryLines": [
-    "body.id: typical (modal) 4762923.000000 (1/14 samples); range 994059 … 232203789",
-    "body.id64: typical (modal) 108091754934061936.000000 (1/14 samples); range 36069347415706424 … 1945560408270064400",
-    "body.bodyId: typical (modal) 3.000000 (2/14 samples); range 1 … 54",
     "body.distanceToArrival: typical (modal) 1403.000000 (1/14 samples); range 382 … 25328",
     "body.gravity: typical (modal) 0.405524 (1/14 samples); range 0.03051743188243206 … 0.5047995325871065",
     "body.earthMasses: typical (modal) 0.269584 (1/14 samples); range 0.000202 … 0.482156",

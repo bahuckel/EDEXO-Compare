@@ -3,33 +3,9 @@
   "speciesLabel": "Fonticulua Segmentatus",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-06T06:49:58.024Z",
+  "generatedAt": "2026-09-04T19:18:11.802Z",
   "sampleCount": 1,
   "numerics": {
-    "body.id": {
-      "min": 728870,
-      "max": 728870,
-      "mean": 728870,
-      "count": 1,
-      "mode": 728870,
-      "modeCount": 1
-    },
-    "body.id64": {
-      "min": 180153452679341500,
-      "max": 180153452679341500,
-      "mean": 180153452679341500,
-      "count": 1,
-      "mode": 180153452679341500,
-      "modeCount": 1
-    },
-    "body.bodyId": {
-      "min": 5,
-      "max": 5,
-      "mean": 5,
-      "count": 1,
-      "mode": 5,
-      "modeCount": 1
-    },
     "body.distanceToArrival": {
       "min": 1148,
       "max": 1148,
@@ -256,15 +232,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Merti 4 a": 1
-    },
-    "body.discovery.commander": {
-      "OverloadRJ45": 1
-    },
-    "body.discovery.date": {
-      "2017-10-09 01:54:44": 1
-    },
     "body.type": {
       "Planet": 1
     },
@@ -286,8 +253,14 @@
     "body.rotationalPeriodTidallyLocked": {
       "true": 1
     },
-    "body.updateTime": {
-      "2026-05-04 08:20:50": 1
+    "exo.host_star_spectral_primary": {
+      "M1": 1
+    },
+    "exo.host_star_source": {
+      "parents": 1
+    },
+    "exo.system_primary_spectral": {
+      "M1": 1
     }
   },
   "materials": {},
@@ -319,9 +292,6 @@
     }
   },
   "summaryLines": [
-    "body.id: typical (modal) 728870.000000 (1/1 samples); range 728870 … 728870",
-    "body.id64: typical (modal) 180153452679341504.000000 (1/1 samples); range 180153452679341500 … 180153452679341500",
-    "body.bodyId: typical (modal) 5.000000 (1/1 samples); range 5 … 5",
     "body.distanceToArrival: typical (modal) 1148.000000 (1/1 samples); range 1148 … 1148",
     "body.gravity: typical (modal) 0.272264 (1/1 samples); range 0.2722638160599134 … 0.2722638160599134",
     "body.earthMasses: typical (modal) 0.126656 (1/1 samples); range 0.126656 … 0.126656",

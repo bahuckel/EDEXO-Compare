@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa Collum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-14T12:12:34.357Z",
+  "generatedAt": "2026-09-04T19:18:12.254Z",
   "sampleCount": 36,
   "numerics": {
     "body.distanceToArrival": {
@@ -344,44 +344,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Blatrimpe 14 e": 1,
-      "Bleia Eohn SU-V d3-53 4 c": 1,
-      "Flyiedgiae ES-A d1-174 A 4 e": 1,
-      "HIP 101774 4 f": 1,
-      "HIP 14621 ABC 2 a": 1,
-      "HIP 25141 5 a": 1,
-      "HIP 27823 AB 3 f": 1,
-      "HIP 32871 10 g": 1,
-      "HR 305 ABC 3 j": 1,
-      "HR 8276 6 a": 1,
-      "Hyades Sector ZU-Y d93 10 f": 1,
-      "Nyeajaae YP-C c1-1 4 c": 1,
-      "Blua Eaec GC-L d8-258 3 f": 1,
-      "Nyeajoa PZ-S c19-14 2 f": 1,
-      "Phua Auwsy TD-K d8-279 11 f": 1,
-      "Pleiades Sector GW-W c1-15 15 e": 1,
-      "Pru Aescs NI-K d8-124 10 e": 1,
-      "Pru Euq DA-A d101 A 6 c": 1,
-      "Prua Phoe AK-I d9-9 12 i": 1,
-      "Prua Phoe WP-N d7-173 AB 11 f": 1,
-      "Pyraleau KM-T d4-76 AB 3 f": 1,
-      "Saktsak AB 2 f": 1,
-      "Sques CA-P d6-68 A 6 f": 1,
-      "Boeph HG-N d7-42 1 f": 1,
-      "Swoiwns PK-M d8-18 1 e": 1,
-      "Synuefe KU-M d8-66 9 f": 1,
-      "Tirfing 8 e": 1,
-      "Traikoa LC-M d7-94 6 c": 1,
-      "Traikoa LC-M d7-94 6 f": 1,
-      "Wredguia ES-G b38-2 AB 6": 1,
-      "Diabingo 3 e": 1,
-      "Domoirene A 12 f": 1,
-      "Dryio Flyuae JH-C c33 4 c": 1,
-      "Eol Prou PX-T d3-291 ABC 4 i": 1,
-      "Eos Chruia ZA-O d6-2900 AB 1 i": 1,
-      "Flyiedge PJ-P d6-72 11 e": 1
-    },
     "body.type": {
       "Planet": 36
     },
@@ -406,6 +368,32 @@
       "Not terraformable": 30
     },
     "exo.host_star_spectral_primary": {
+      "G8": 1,
+      "F8": 1,
+      "F1": 1,
+      "Y4": 6,
+      "F3": 3,
+      "F2": 1,
+      "Y2": 4,
+      "Y5": 2,
+      "F": 1,
+      "Y3": 4,
+      "G6": 1,
+      "G7": 1,
+      "F6": 1,
+      "G4": 1,
+      "G3": 2,
+      "G": 1,
+      "Y6": 2,
+      "M0": 1,
+      "F7": 1,
+      "G9": 1
+    },
+    "exo.host_star_source": {
+      "parents": 32,
+      "designation": 4
+    },
+    "exo.system_primary_spectral": {
       "G8": 1,
       "F8": 1,
       "F1": 3,

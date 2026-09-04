@@ -3,33 +3,9 @@
   "speciesLabel": "Fonticulua Upupam",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-06T06:49:58.027Z",
+  "generatedAt": "2026-09-04T19:18:11.805Z",
   "sampleCount": 12,
   "numerics": {
-    "body.id": {
-      "min": 105254,
-      "max": 22096161,
-      "mean": 3649671.4166666665,
-      "count": 12,
-      "mode": 3431904,
-      "modeCount": 1
-    },
-    "body.id64": {
-      "min": 72071458863523260,
-      "max": 2522015904884067000,
-      "mean": 843683849977956500,
-      "count": 12,
-      "mode": 72071458863523260,
-      "modeCount": 1
-    },
-    "body.bodyId": {
-      "min": 2,
-      "max": 70,
-      "mean": 23.416666666666668,
-      "count": 12,
-      "mode": 19,
-      "modeCount": 2
-    },
     "body.distanceToArrival": {
       "min": 291,
       "max": 66042,
@@ -368,47 +344,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Alrai Sector LH-V b2-6 2": 1,
-      "Huangais B 8": 1,
-      "Puppis Sector EL-Y c17 B 3": 1,
-      "Sharru Sector FW-W c1-19 B 3": 1,
-      "Khelma BC 1": 1,
-      "Ekuru B 4": 1,
-      "Ju Shou Yax C 4": 1,
-      "mu cassiopeia C 6": 1,
-      "HR 5996 8 e": 1,
-      "Alrai Sector CL-X b1-5 5": 1,
-      "Baudu AB 8 e": 1,
-      "Crucis Sector FB-X b1-8 4": 1
-    },
-    "body.discovery.commander": {
-      "Jesse Wilson": 1,
-      "Cometborne": 1,
-      "Asard": 2,
-      "Farin Cross": 1,
-      "Harrit": 1,
-      "Salayyer": 1,
-      "Rehc": 1,
-      "Zak Starfall": 1,
-      "El Fenrir Cercano": 1,
-      "scrountch": 1,
-      "Asid": 1
-    },
-    "body.discovery.date": {
-      "2017-05-31 22:09:56": 1,
-      "2017-09-27 18:18:03": 1,
-      "2017-02-18 14:12:03": 1,
-      "2017-03-15 06:02:17": 1,
-      "2016-12-21 01:58:39": 1,
-      "2017-03-04 21:13:57": 1,
-      "2017-03-17 19:22:29": 1,
-      "2017-03-12 20:34:45": 1,
-      "2018-09-19 19:17:52": 1,
-      "2017-05-01 19:41:39": 1,
-      "2017-05-28 16:09:41": 1,
-      "2016-11-17 22:31:24": 1
-    },
     "body.type": {
       "Planet": 12
     },
@@ -431,19 +366,32 @@
       "false": 10,
       "true": 2
     },
-    "body.updateTime": {
-      "2026-05-05 15:32:41": 1,
-      "2026-05-03 18:27:44": 1,
-      "2026-05-05 17:01:10": 1,
-      "2026-04-29 15:01:38": 1,
-      "2026-03-14 04:10:37": 1,
-      "2026-05-01 00:48:23": 1,
-      "2026-05-03 08:43:04": 1,
-      "2026-05-01 03:04:15": 1,
-      "2026-03-17 10:50:43": 1,
-      "2026-04-13 20:41:36": 1,
-      "2026-04-26 19:05:17": 1,
-      "2026-05-05 13:56:38": 1
+    "exo.host_star_spectral_primary": {
+      "M9": 1,
+      "L5": 1,
+      "M6": 1,
+      "M7": 1,
+      "M2": 3,
+      "L4": 1,
+      "M8": 1,
+      "L6": 1,
+      "G": 1,
+      "M3": 1
+    },
+    "exo.host_star_source": {
+      "parents": 10,
+      "designation": 2
+    },
+    "exo.system_primary_spectral": {
+      "M9": 1,
+      "M3": 2,
+      "G9": 1,
+      "M0": 1,
+      "K4": 1,
+      "M7": 1,
+      "M2": 3,
+      "M8": 1,
+      "G": 1
     }
   },
   "materials": {},
@@ -475,9 +423,6 @@
     }
   },
   "summaryLines": [
-    "body.id: typical (modal) 3431904.000000 (1/12 samples); range 105254 … 22096161",
-    "body.id64: typical (modal) 72071458863523264.000000 (1/12 samples); range 72071458863523260 … 2522015904884067000",
-    "body.bodyId: typical (modal) 19.000000 (2/12 samples); range 2 … 70",
     "body.distanceToArrival: typical (modal) 291.000000 (1/12 samples); range 291 … 66042",
     "body.gravity: typical (modal) 0.239345 (1/12 samples); range 0.23387390583133405 … 0.2683724450080936",
     "body.earthMasses: typical (modal) 0.063087 (1/12 samples); range 0.059128 … 0.108346",

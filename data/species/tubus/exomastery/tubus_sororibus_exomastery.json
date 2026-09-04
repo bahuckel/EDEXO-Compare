@@ -3,7 +3,7 @@
   "speciesLabel": "Tubus Sororibus",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-06T06:19:37.752Z",
+  "generatedAt": "2026-09-04T19:18:13.581Z",
   "sampleCount": 2,
   "numerics": {
     "body.distanceToArrival": {
@@ -272,10 +272,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Tewikwithat A 3": 1,
-      "Tewikwithat B 1": 1
-    },
     "body.type": {
       "Planet": 2
     },
@@ -296,6 +292,16 @@
     },
     "body.rotationalPeriodTidallyLocked": {
       "false": 2
+    },
+    "exo.host_star_spectral_primary": {
+      "M4": 1,
+      "L2": 1
+    },
+    "exo.host_star_source": {
+      "parents": 2
+    },
+    "exo.system_primary_spectral": {
+      "M4": 2
     }
   },
   "materials": {},

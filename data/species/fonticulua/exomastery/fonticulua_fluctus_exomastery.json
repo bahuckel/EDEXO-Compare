@@ -3,33 +3,9 @@
   "speciesLabel": "Fonticulua Fluctus",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-06T06:49:58.015Z",
+  "generatedAt": "2026-09-04T19:18:11.793Z",
   "sampleCount": 1,
   "numerics": {
-    "body.id": {
-      "min": 8467267,
-      "max": 8467267,
-      "mean": 8467267,
-      "count": 1,
-      "mode": 8467267,
-      "modeCount": 1
-    },
-    "body.id64": {
-      "min": 468386027854177700,
-      "max": 468386027854177700,
-      "mean": 468386027854177700,
-      "count": 1,
-      "mode": 468386027854177700,
-      "modeCount": 1
-    },
-    "body.bodyId": {
-      "min": 13,
-      "max": 13,
-      "mean": 13,
-      "count": 1,
-      "mode": 13,
-      "modeCount": 1
-    },
     "body.distanceToArrival": {
       "min": 286,
       "max": 286,
@@ -256,15 +232,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Sesuang A 6": 1
-    },
-    "body.discovery.commander": {
-      "Dr Zappa": 1
-    },
-    "body.discovery.date": {
-      "2017-10-09 17:11:34": 1
-    },
     "body.type": {
       "Planet": 1
     },
@@ -283,8 +250,14 @@
     "body.rotationalPeriodTidallyLocked": {
       "true": 1
     },
-    "body.updateTime": {
-      "2026-05-05 21:32:27": 1
+    "exo.host_star_spectral_primary": {
+      "M0": 1
+    },
+    "exo.host_star_source": {
+      "parents": 1
+    },
+    "exo.system_primary_spectral": {
+      "M0": 1
     }
   },
   "materials": {},
@@ -316,9 +289,6 @@
     }
   },
   "summaryLines": [
-    "body.id: typical (modal) 8467267.000000 (1/1 samples); range 8467267 … 8467267",
-    "body.id64: typical (modal) 468386027854177728.000000 (1/1 samples); range 468386027854177700 … 468386027854177700",
-    "body.bodyId: typical (modal) 13.000000 (1/1 samples); range 13 … 13",
     "body.distanceToArrival: typical (modal) 286.000000 (1/1 samples); range 286 … 286",
     "body.gravity: typical (modal) 0.270367 (1/1 samples); range 0.2703672337261073 … 0.2703672337261073",
     "body.earthMasses: typical (modal) 0.088518 (1/1 samples); range 0.088518 … 0.088518",

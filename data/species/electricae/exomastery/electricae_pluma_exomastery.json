@@ -3,7 +3,7 @@
   "speciesLabel": "Electricae Pluma",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-05-08T16:14:15.461Z",
+  "generatedAt": "2026-09-04T19:18:11.720Z",
   "sampleCount": 31,
   "numerics": {
     "body.distanceToArrival": {
@@ -376,39 +376,6 @@
     }
   },
   "categorical": {
-    "body.name": {
-      "Bauloe BR-T d4-162 1 f": 1,
-      "Eok Blao ED-Q d6-351 BC 3 c": 1,
-      "LHS 2661 5 i": 1,
-      "LHS 3163 6 c": 1,
-      "LHS 3589 4 e": 1,
-      "LHS 3589 4 g": 1,
-      "LHS 3589 4 h": 1,
-      "LHS 3589 4 i": 1,
-      "LHS 3589 4 j": 1,
-      "LHS 378 6 g": 1,
-      "LP 790-29 4 c": 1,
-      "LP 790-29 5 c": 1,
-      "Eorm Chruia RO-Z d13-5200 AB 7 a": 1,
-      "LP 790-29 5 d": 1,
-      "LTT 7421 A 8 c": 1,
-      "LTT 7421 A 8 f": 1,
-      "NLTT 55164 4 a": 1,
-      "Pheia Auscs GE-E d13-386 A 1 c": 1,
-      "Pheia Auscs MI-S d4-870 4 b": 1,
-      "Phipue MT-I d9-518 9 e": 1,
-      "Stuemeou UD-T e3-3111 6 e": 1,
-      "Systimbea BA-A g2051 3 e": 1,
-      "Systimbuia GX-T d3-2317 4 i": 1,
-      "Hypio Prao AR-B d14-525 2 g": 1,
-      "V886 Centauri 7 e": 1,
-      "LAWD 96 1 e": 1,
-      "LAWD 96 1 g": 1,
-      "LHS 2522 4 a": 1,
-      "LHS 2661 3 e": 1,
-      "LHS 2661 5 g": 1,
-      "LHS 2661 5 h": 1
-    },
     "body.type": {
       "Planet": 31
     },
@@ -449,6 +416,21 @@
       "White Dwarf (DC) Star": 1,
       "White Dwarf (DQ) Star": 3,
       "Neutron Star": 4,
+      "White Dwarf (D) Star": 1,
+      "White Dwarf (DBZ) Star": 1,
+      "Y5": 1,
+      "Black Hole": 1,
+      "A9": 1
+    },
+    "exo.host_star_source": {
+      "parents": 29,
+      "designation": 2
+    },
+    "exo.system_primary_spectral": {
+      "White Dwarf (DA) Star": 17,
+      "Neutron Star": 5,
+      "White Dwarf (DC) Star": 1,
+      "White Dwarf (DQ) Star": 3,
       "White Dwarf (D) Star": 1,
       "White Dwarf (DBZ) Star": 1,
       "A8": 1,
