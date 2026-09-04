@@ -33,6 +33,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "probe": "tsx scripts/accuracy-probe.ts",
+    "fixture": "tsx scripts/gen-match-fixture.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "typecheck:server": "tsc --noEmit -p tsconfig.server.json",
