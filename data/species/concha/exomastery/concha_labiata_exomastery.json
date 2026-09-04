@@ -3,7 +3,7 @@
   "speciesLabel": "Concha labiata",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.747Z",
+  "generatedAt": "2026-09-04T19:52:57.964Z",
   "sampleCount": 1200,
   "numerics": {
     "body.distanceToArrival": {
@@ -552,5 +552,38 @@
     "body.materials.Polonium: typical (modal) 0.500000 (27/102 samples); range 0.39 … 0.54",
     "body.materials.Yttrium: typical (modal) 1.140000 (39/203 samples); range 1.07 … 1.26"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 1199,
+      "surfaceTemperatureK": {
+        "n": 1199,
+        "min": 150,
+        "p1": 150,
+        "p50": 163,
+        "p99": 189,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 1199,
+        "min": 0.0029223687046632126,
+        "p1": 0.0035494426646928198,
+        "p50": 0.010017962674562052,
+        "p99": 0.08389850111028868,
+        "max": 0.09756087312114484
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 182,
+        "p1": 182,
+        "p50": 182,
+        "p99": 182,
+        "max": 182
+      },
+      "surfacePressureAtm": null
+    }
+  },
   "sourceSpeciesLabel": "Concha Labiata"
 }

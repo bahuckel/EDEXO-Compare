@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus pellebantus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.349Z",
+  "generatedAt": "2026-09-04T19:52:59.549Z",
   "sampleCount": 276,
   "numerics": {
     "body.distanceToArrival": {
@@ -548,5 +548,26 @@
     "body.materials.Zirconium: typical (modal) 2.290000 (5/51 samples); range 2.18 … 2.76",
     "body.materials.Technetium: typical (modal) 0.690000 (5/36 samples); range 0.66 … 0.85"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 276,
+      "surfaceTemperatureK": {
+        "n": 276,
+        "min": 191,
+        "p1": 191,
+        "p50": 192,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 276,
+        "min": 0.058286093056994816,
+        "p1": 0.05898839400937578,
+        "p50": 0.08090802722921293,
+        "p99": 0.09782447994078461,
+        "max": 0.09852098368615839
+      }
+    }
+  },
   "sourceSpeciesLabel": "Osseus Pellebantus"
 }

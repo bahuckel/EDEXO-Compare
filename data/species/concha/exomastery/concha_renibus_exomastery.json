@@ -3,7 +3,7 @@
   "speciesLabel": "Concha renibus",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.943Z",
+  "generatedAt": "2026-09-04T19:52:58.173Z",
   "sampleCount": 1189,
   "numerics": {
     "body.distanceToArrival": {
@@ -646,5 +646,83 @@
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100",
     "body.atmosphereComposition.Nitrogen: typical (modal) 7.290000 (1/1 samples); range 7.29 … 7.29"
   ],
+  "atmosphereBands": {
+    "Thin Water": {
+      "n": 712,
+      "surfaceTemperatureK": {
+        "n": 712,
+        "min": 395,
+        "p1": 400,
+        "p50": 424,
+        "p99": 449,
+        "max": 451
+      },
+      "surfacePressureAtm": {
+        "n": 712,
+        "min": 0.056047815662472245,
+        "p1": 0.05899983904268443,
+        "p50": 0.08196187622995313,
+        "p99": 0.09813762567974339,
+        "max": 0.09858412171724648
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 470,
+      "surfaceTemperatureK": {
+        "n": 470,
+        "min": 180,
+        "p1": 180,
+        "p50": 186,
+        "p99": 195,
+        "max": 467
+      },
+      "surfacePressureAtm": {
+        "n": 470,
+        "min": 0.025685340626696276,
+        "p1": 0.02986381615593388,
+        "p50": 0.06671494302491981,
+        "p99": 0.09681609301751788,
+        "max": 0.09831150343942759
+      }
+    },
+    "Thin Methane": {
+      "n": 6,
+      "surfaceTemperatureK": {
+        "n": 6,
+        "min": 79,
+        "p1": 79,
+        "p50": 89,
+        "p99": 92,
+        "max": 92
+      },
+      "surfacePressureAtm": {
+        "n": 6,
+        "min": 0.01336905990624229,
+        "p1": 0.01336905990624229,
+        "p50": 0.016720148699728595,
+        "p99": 0.028206905472489514,
+        "max": 0.028206905472489514
+      }
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 176,
+        "p1": 176,
+        "p50": 176,
+        "p99": 176,
+        "max": 176
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.012927191275598321,
+        "p1": 0.012927191275598321,
+        "p50": 0.012927191275598321,
+        "p99": 0.012927191275598321,
+        "max": 0.012927191275598321
+      }
+    }
+  },
   "sourceSpeciesLabel": "Concha Renibus"
 }

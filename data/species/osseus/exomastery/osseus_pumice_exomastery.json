@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus pumice",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.364Z",
+  "generatedAt": "2026-09-04T19:52:59.569Z",
   "sampleCount": 99,
   "numerics": {
     "body.distanceToArrival": {
@@ -539,5 +539,64 @@
     "body.materials.Arsenic: typical (modal) 1.720000 (2/16 samples); range 1.67 … 2.85",
     "body.atmosphereComposition.Nitrogen: typical (modal) 100.000000 (8/11 samples); range 0.11 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Methane": {
+      "n": 47,
+      "surfaceTemperatureK": {
+        "n": 47,
+        "min": 68,
+        "p1": 68,
+        "p50": 88,
+        "p99": 102,
+        "max": 102
+      },
+      "surfacePressureAtm": {
+        "n": 47,
+        "min": 0.0010856171033802123,
+        "p1": 0.0010856171033802123,
+        "p50": 0.02312174238341969,
+        "p99": 0.08807238657784357,
+        "max": 0.08807238657784357
+      }
+    },
+    "Thin Argon": {
+      "n": 44,
+      "surfaceTemperatureK": {
+        "n": 44,
+        "min": 54,
+        "p1": 54,
+        "p50": 87,
+        "p99": 124,
+        "max": 124
+      },
+      "surfacePressureAtm": {
+        "n": 44,
+        "min": 0.0009963691882556131,
+        "p1": 0.0009963691882556131,
+        "p50": 0.006235962970639033,
+        "p99": 0.02455022466321244,
+        "max": 0.02455022466321244
+      }
+    },
+    "Thin Nitrogen": {
+      "n": 8,
+      "surfaceTemperatureK": {
+        "n": 8,
+        "min": 47,
+        "p1": 47,
+        "p50": 48,
+        "p99": 49,
+        "max": 49
+      },
+      "surfacePressureAtm": {
+        "n": 8,
+        "min": 0.0010001368566493955,
+        "p1": 0.0010001368566493955,
+        "p50": 0.0032504447865778436,
+        "p99": 0.007194132701702443,
+        "max": 0.007194132701702443
+      }
+    }
+  },
   "sourceSpeciesLabel": "Osseus Pumice"
 }

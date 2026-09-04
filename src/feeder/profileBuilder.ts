@@ -1,4 +1,5 @@
 import type { EdsmBody } from "./edsm.js";
+import { buildAtmosphereBands, type AtmosphereBands } from "./atmosphereBands.js";
 import {
   extractAtmospherePercents,
   extractMaterialPercents,
@@ -62,6 +63,15 @@ export interface ExomasteryProfileV1 {
   solidComposition: Record<string, NumericRange>;
   /** Human summary for “most / least likely” preview */
   summaryLines?: string[];
+  /**
+   * Temperature and pressure percentiles per atmosphere type.
+   *
+   * The rollups above are one band over every body the species has ever been seen on, which fails
+   * open: Osseus discus reads 80–641 K because fourteen methane bodies sit under a population of
+   * 626 water ones at 402–449 K. Per-atmosphere cells are the same measurement taken where the
+   * question is actually asked. See `atmosphereBands.ts`.
+   */
+  atmosphereBands?: AtmosphereBands;
 }
 
 function roundBucketKey(v: number): string {
@@ -196,6 +206,21 @@ export function buildProfileFromPlanetContexts(
     }
   }
 
+  /**
+   * Read from the same bodies as everything else, but grouped by atmosphere rather than pooled.
+   * EDSM reports pressure in atmospheres already, which is the unit the app compares against.
+   */
+  const atmosphereBands = buildAtmosphereBands(
+    bodies.map((b) => {
+      const o = b as unknown as Record<string, unknown>;
+      return {
+        atmosphereType: typeof o.atmosphereType === "string" ? o.atmosphereType : null,
+        surfaceTemperatureK: typeof o.surfaceTemperature === "number" ? o.surfaceTemperature : null,
+        surfacePressureAtm: typeof o.surfacePressure === "number" ? o.surfacePressure : null,
+      };
+    }),
+  );
+
   const summaryLines: string[] = [];
   const numDone = finalizeNums(numerics);
   for (const [k, r] of Object.entries(numDone).slice(0, 80)) {
@@ -217,6 +242,7 @@ export function buildProfileFromPlanetContexts(
     atmosphereComposition: finalizeMat(atmoAcc),
     solidComposition: finalizeMat(solidAcc),
     summaryLines,
+    atmosphereBands,
   };
 }
 

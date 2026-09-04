@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Roseum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.536Z",
+  "generatedAt": "2026-09-04T19:52:59.740Z",
   "sampleCount": 46,
   "numerics": {
     "body.distanceToArrival": {
@@ -559,5 +559,45 @@
     "body.rings[1].innerRadius: typical (modal) 31475.000000 (1/1 samples); range 31475 … 31475",
     "body.rings[1].outerRadius: typical (modal) 67211.000000 (1/1 samples); range 67211 … 67211"
   ],
+  "atmosphereBands": {
+    "No atmosphere": {
+      "n": 45,
+      "surfaceTemperatureK": {
+        "n": 45,
+        "min": 201,
+        "p1": 201,
+        "p50": 240,
+        "p99": 475,
+        "max": 475
+      },
+      "surfacePressureAtm": {
+        "n": 40,
+        "min": 0,
+        "p1": 0,
+        "p50": 0,
+        "p99": 0,
+        "max": 0
+      }
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 174,
+        "p1": 174,
+        "p50": 174,
+        "p99": 174,
+        "max": 174
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.003289531685171478,
+        "p1": 0.003289531685171478,
+        "p50": 0.003289531685171478,
+        "p99": 0.003289531685171478,
+        "max": 0.003289531685171478
+      }
+    }
+  },
   "sourceSpeciesLabel": "Roseum Brain Tree"
 }

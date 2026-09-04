@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock caputus",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.295Z",
+  "generatedAt": "2026-09-04T19:53:00.527Z",
   "sampleCount": 569,
   "numerics": {
     "body.distanceToArrival": {
@@ -585,5 +585,45 @@
     "body.materials.Technetium: typical (modal) 0.680000 (10/62 samples); range 0.66 … 0.85",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 568,
+      "surfaceTemperatureK": {
+        "n": 568,
+        "min": 181,
+        "p1": 181,
+        "p50": 184,
+        "p99": 189,
+        "max": 189
+      },
+      "surfacePressureAtm": {
+        "n": 568,
+        "min": 0.02919435641746854,
+        "p1": 0.031461600592153964,
+        "p50": 0.05806174631137429,
+        "p99": 0.09646400043424624,
+        "max": 0.09830064150012337
+      }
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 158,
+        "p1": 158,
+        "p50": 158,
+        "p99": 158,
+        "max": 158
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0012157880088823094,
+        "p1": 0.0012157880088823094,
+        "p50": 0.0012157880088823094,
+        "p99": 0.0012157880088823094,
+        "max": 0.0012157880088823094
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tussock Caputus"
 }

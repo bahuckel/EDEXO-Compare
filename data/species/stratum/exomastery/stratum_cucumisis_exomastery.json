@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum cucumisis",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.576Z",
+  "generatedAt": "2026-09-04T19:52:59.773Z",
   "sampleCount": 180,
   "numerics": {
     "body.distanceToArrival": {
@@ -536,5 +536,76 @@
     "body.atmosphereComposition.Oxygen: typical (modal) 87.540000 (1/1 samples); range 87.54 … 87.54",
     "body.materials.Polonium: typical (modal) 0.490000 (2/14 samples); range 0.48 … 0.56"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 122,
+      "surfaceTemperatureK": {
+        "n": 122,
+        "min": 191,
+        "p1": 191,
+        "p50": 192,
+        "p99": 224,
+        "max": 250
+      },
+      "surfacePressureAtm": {
+        "n": 122,
+        "min": 0.008903088763878608,
+        "p1": 0.016592847411793732,
+        "p50": 0.08059980164816186,
+        "p99": 0.09734331628916852,
+        "max": 0.09769526430792005
+      }
+    },
+    "Thin Sulphur dioxide": {
+      "n": 56,
+      "surfaceTemperatureK": {
+        "n": 56,
+        "min": 192,
+        "p1": 192,
+        "p50": 214,
+        "p99": 340,
+        "max": 357
+      },
+      "surfacePressureAtm": {
+        "n": 56,
+        "min": 0.0011010996693807055,
+        "p1": 0.0011283002911423637,
+        "p50": 0.0026601560720453986,
+        "p99": 0.06092152995805576,
+        "max": 0.09196002574882804
+      }
+    },
+    "Thin Carbon dioxide-rich": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 244,
+        "p1": 244,
+        "p50": 244,
+        "p99": 244,
+        "max": 244
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.03688216097705403,
+        "p1": 0.03688216097705403,
+        "p50": 0.03688216097705403,
+        "p99": 0.03688216097705403,
+        "max": 0.03688216097705403
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 74,
+        "p1": 74,
+        "p50": 74,
+        "p99": 74,
+        "max": 74
+      },
+      "surfacePressureAtm": null
+    }
+  },
   "sourceSpeciesLabel": "Stratum Cucumisis"
 }

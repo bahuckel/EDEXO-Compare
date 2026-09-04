@@ -3,7 +3,7 @@
   "speciesLabel": "Clypeus margaritus",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.444Z",
+  "generatedAt": "2026-09-04T19:52:57.698Z",
   "sampleCount": 224,
   "numerics": {
     "body.distanceToArrival": {
@@ -547,5 +547,45 @@
     "body.materials.Selenium: typical (modal) 2.510000 (6/38 samples); range 2.41 … 2.75",
     "body.materials.Polonium: typical (modal) 0.640000 (5/15 samples); range 0.59 … 0.67"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 128,
+      "surfaceTemperatureK": {
+        "n": 128,
+        "min": 190,
+        "p1": 190,
+        "p50": 192,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 128,
+        "min": 0.05524528513200099,
+        "p1": 0.05816918987416729,
+        "p50": 0.08263930652849742,
+        "p99": 0.09842852709597828,
+        "max": 0.09868193699481864
+      }
+    },
+    "Thin Water": {
+      "n": 96,
+      "surfaceTemperatureK": {
+        "n": 96,
+        "min": 395,
+        "p1": 397,
+        "p50": 425,
+        "p99": 449,
+        "max": 449
+      },
+      "surfacePressureAtm": {
+        "n": 96,
+        "min": 0.05825026889711325,
+        "p1": 0.05869449038243276,
+        "p50": 0.08121108207253885,
+        "p99": 0.0969105061041204,
+        "max": 0.09767473553417223
+      }
+    }
+  },
   "sourceSpeciesLabel": "Clypeus Margaritus"
 }

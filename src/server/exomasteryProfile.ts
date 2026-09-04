@@ -29,6 +29,12 @@ import {
   stellarSubclassStepDistance,
   yerkesLuminosityStepDistance,
 } from "../shared/stellarProximity.js";
+import {
+  cellIsUsable,
+  type AtmosphereBandCell,
+  type AtmosphereBands,
+  type PercentileBand,
+} from "../feeder/atmosphereBands.js";
 import { exomasteryHabitatTierWeight } from "./exomasteryHabitatTiers.js";
 import { shouldOmitExomasterySciencePath } from "./exomasteryPathHygiene.js";
 import { getSpeciesDataDir } from "./paths.js";
@@ -74,6 +80,13 @@ export interface ExomasteryProfileV1 {
    * `exo.host_star_spectral_primary` with single-letter / `TTS` tokens (feeder should aggregate from `starSummaries`).
    */
   categorical?: Record<string, Record<string, number>>;
+  /**
+   * Temperature and pressure percentiles per atmosphere type, written by the feeder.
+   *
+   * Absent on profiles built before the bands existed; every scoring path falls back to the pooled
+   * rollups when a cell is missing or too thin to describe a range.
+   */
+  atmosphereBands?: AtmosphereBands;
 }
 
 const profileCache = new Map<string, ExomasteryProfileV1 | null | undefined>();
@@ -352,6 +365,26 @@ function similarityToRollup(v: number, r: ExomasteryNumericRollup): number {
   const span = Math.max(r.max - r.min, Math.abs(mode) * 0.02, 1e-9);
   const d = Math.abs(v - mode);
   return Math.max(0, Math.min(1, 1 - d / span));
+}
+
+/**
+ * The same shape as {@link similarityToRollup} with both of its estimators replaced.
+ *
+ * `mode` is the densest 0.1 K bucket over every body of the species — Tussock virgam's holds 4 of
+ * 579 samples — and `max − min` is one outlier wide: Osseus discus reads 80–641 K because fourteen
+ * methane bodies sit under 626 water ones. A span that wide makes every temperature look close to
+ * the centre, so the term stops discriminating and the candidate survives on a parameter that should
+ * have ruled it out.
+ *
+ * p50 and p1–p99 of the cell for *this body's atmosphere* are the same two quantities measured
+ * where the question is actually asked.
+ */
+function similarityToBand(v: number, band: PercentileBand): number {
+  const centre = band.p50;
+  const halfWidth = Math.max((band.p99 - band.p1) / 2, Math.abs(centre) * 0.02, 1e-9);
+  const d = Math.abs(v - centre);
+  // Full credit at the centre, zero two half-widths out — so a body inside p1–p99 always scores > 0.
+  return Math.max(0, Math.min(1, 1 - d / (2 * halfWidth)));
 }
 
 /** Crust / atmosphere / solid %: ≤1 percentage point from modal → full credit; then distance-scaled. */
@@ -898,6 +931,41 @@ function valueForCategoricalPath(
   return null;
 }
 
+/**
+ * The band cell for this body's atmosphere.
+ *
+ * Matched through the same normalisation the categorical scorer uses, because the two sides spell it
+ * differently: EDSM writes "Thin Carbon dioxide" and the journal writes "CarbonDioxide". Null when
+ * the profile predates the bands, the body has no atmosphere reading, or the cell is too thin to
+ * describe a range — every one of which falls back to the pooled rollup rather than to nothing.
+ */
+function bandCellForScan(
+  profile: ExomasteryProfileV1,
+  scan: PlanetScan,
+  rec: ExplorationScanRecord | null | undefined,
+): AtmosphereBandCell | null {
+  const bands = profile.atmosphereBands;
+  if (!bands) return null;
+  const atmo = normalizeAtmosphereType(scan, rec);
+  if (!atmo) return null;
+  const want = exomasteryAtmosphereTypeCompareKey(atmo);
+  if (!want) return null;
+  for (const [key, cell] of Object.entries(bands)) {
+    if (exomasteryAtmosphereTypeCompareKey(key) !== want) continue;
+    return cellIsUsable(cell) ? cell : null;
+  }
+  return null;
+}
+
+/** Which band a numeric path should be scored against, when one is available. */
+function bandForNumericPath(path: string, cell: AtmosphereBandCell | null): PercentileBand | null {
+  if (!cell) return null;
+  const low = path.toLowerCase();
+  if (low.includes("surfacetemperature") || low.includes("surfacetemp")) return cell.surfaceTemperatureK;
+  if (low.includes("surfacepressure")) return cell.surfacePressureAtm;
+  return null;
+}
+
 function collectWeightedHabitatScores(
   profile: ExomasteryProfileV1,
   scan: PlanetScan,
@@ -919,13 +987,18 @@ function collectWeightedHabitatScores(
     out.push({ score, importance: importance * exomasteryHabitatTierWeight(path) });
   };
 
+  const bandCell = bandCellForScan(profile, scan, rec);
+
   for (const [path, r] of Object.entries(profile.numerics)) {
     if (shouldOmitExomasterySciencePath(path)) continue;
     const tail = exomasteryPathTailLower(path);
     if (materialKeysLower.has(tail) || atmoKeysLower.has(tail) || solidKeysLower.has(tail)) continue;
     const v = valueForNumericPath(path, scan, rec);
     if (v == null) continue;
-    push(path, similarityToRollup(v, r), rollupImportance(r));
+    // Temperature and pressure are scored against the cell for this body's atmosphere when there is
+    // one; everything else, and every thin cell, still uses the pooled rollup.
+    const band = bandForNumericPath(path, bandCell);
+    push(path, band ? similarityToBand(v, band) : similarityToRollup(v, r), rollupImportance(r));
   }
   for (const [el, r] of Object.entries(profile.materials)) {
     const { v, known } = crustMaterialValue(scan, rec, el);

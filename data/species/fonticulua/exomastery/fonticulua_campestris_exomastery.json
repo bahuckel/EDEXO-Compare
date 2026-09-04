@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua campestris",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.031Z",
+  "generatedAt": "2026-09-04T19:52:58.260Z",
   "sampleCount": 321,
   "numerics": {
     "body.distanceToArrival": {
@@ -578,5 +578,26 @@
     "body.rings[0].innerRadius: typical (modal) 6743.700000 (1/1 samples); range 6743.7 … 6743.7",
     "body.rings[0].outerRadius: typical (modal) 17585.000000 (1/1 samples); range 17585 … 17585"
   ],
+  "atmosphereBands": {
+    "Thin Argon": {
+      "n": 321,
+      "surfaceTemperatureK": {
+        "n": 321,
+        "min": 50,
+        "p1": 50,
+        "p50": 56,
+        "p99": 113,
+        "max": 124
+      },
+      "surfacePressureAtm": {
+        "n": 321,
+        "min": 0.0009915921638292623,
+        "p1": 0.0010033705304712559,
+        "p50": 0.0030619911769059955,
+        "p99": 0.04237349744880335,
+        "max": 0.08007628415494696
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fonticulua Campestris"
 }

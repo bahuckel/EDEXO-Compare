@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola nitris",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.867Z",
+  "generatedAt": "2026-09-04T19:52:59.038Z",
   "sampleCount": 20,
   "numerics": {
     "body.distanceToArrival": {
@@ -484,5 +484,45 @@
     "body.materials.Technetium: typical (modal) 0.440000 (1/1 samples); range 0.44 … 0.44",
     "body.materials.Ruthenium: typical (modal) 0.750000 (2/3 samples); range 0.75 … 0.76"
   ],
+  "atmosphereBands": {
+    "Thin Argon": {
+      "n": 10,
+      "surfaceTemperatureK": {
+        "n": 10,
+        "min": 54,
+        "p1": 54,
+        "p50": 65,
+        "p99": 89,
+        "max": 89
+      },
+      "surfacePressureAtm": {
+        "n": 10,
+        "min": 0.0010710775425610659,
+        "p1": 0.0010710775425610659,
+        "p50": 0.0034205887589439923,
+        "p99": 0.010050000335553911,
+        "max": 0.010050000335553911
+      }
+    },
+    "Thin Methane": {
+      "n": 10,
+      "surfaceTemperatureK": {
+        "n": 10,
+        "min": 85,
+        "p1": 85,
+        "p50": 94,
+        "p99": 103,
+        "max": 103
+      },
+      "surfacePressureAtm": {
+        "n": 10,
+        "min": 0.04252261538613373,
+        "p1": 0.04252261538613373,
+        "p50": 0.06139127748334566,
+        "p99": 0.0909544627485813,
+        "max": 0.0909544627485813
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fumerola Nitris"
 }

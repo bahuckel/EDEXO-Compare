@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida laminiae",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:37.757Z",
+  "generatedAt": "2026-09-04T19:52:55.953Z",
   "sampleCount": 212,
   "numerics": {
     "body.distanceToArrival": {
@@ -560,5 +560,45 @@
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (1/1 samples); range 0.99 … 0.99",
     "body.materials.Technetium: typical (modal) 0.690000 (6/32 samples); range 0.67 … 0.76"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 211,
+      "surfaceTemperatureK": {
+        "n": 211,
+        "min": 152,
+        "p1": 152,
+        "p50": 169,
+        "p99": 175,
+        "max": 175
+      },
+      "surfacePressureAtm": {
+        "n": 211,
+        "min": 0.0009884602121885025,
+        "p1": 0.0009994774932149026,
+        "p50": 0.0015367875252899088,
+        "p99": 0.007573078341968912,
+        "max": 0.012115048122378484
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 183,
+        "p1": 183,
+        "p50": 183,
+        "p99": 183,
+        "max": 183
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.047923292741179374,
+        "p1": 0.047923292741179374,
+        "p50": 0.047923292741179374,
+        "p99": 0.047923292741179374,
+        "max": 0.047923292741179374
+      }
+    }
+  },
   "sourceSpeciesLabel": "Aleoida Laminiae"
 }

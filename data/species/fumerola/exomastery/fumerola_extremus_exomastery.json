@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola extremus",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.862Z",
+  "generatedAt": "2026-09-04T19:52:59.031Z",
   "sampleCount": 43,
   "numerics": {
     "body.distanceToArrival": {
@@ -520,5 +520,64 @@
     "body.atmosphereComposition.Argon: typical (modal) 0.940000 (1/1 samples); range 0.94 … 0.94",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (5/5 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Methane": {
+      "n": 37,
+      "surfaceTemperatureK": {
+        "n": 37,
+        "min": 79,
+        "p1": 79,
+        "p50": 92,
+        "p99": 107,
+        "max": 107
+      },
+      "surfacePressureAtm": {
+        "n": 37,
+        "min": 0.01336905990624229,
+        "p1": 0.01336905990624229,
+        "p50": 0.03001279193683691,
+        "p99": 0.0920229132000987,
+        "max": 0.0920229132000987
+      }
+    },
+    "Thin Ammonia": {
+      "n": 5,
+      "surfaceTemperatureK": {
+        "n": 5,
+        "min": 168,
+        "p1": 168,
+        "p50": 175,
+        "p99": 176,
+        "max": 176
+      },
+      "surfacePressureAtm": {
+        "n": 5,
+        "min": 0.003901267495682211,
+        "p1": 0.003901267495682211,
+        "p50": 0.011366969444855662,
+        "p99": 0.012927191275598321,
+        "max": 0.012927191275598321
+      }
+    },
+    "Hot thin Carbon dioxide": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 641,
+        "p1": 641,
+        "p50": 641,
+        "p99": 641,
+        "max": 641
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.058982114907475944,
+        "p1": 0.058982114907475944,
+        "p50": 0.058982114907475944,
+        "p99": 0.058982114907475944,
+        "max": 0.058982114907475944
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fumerola Extremus"
 }

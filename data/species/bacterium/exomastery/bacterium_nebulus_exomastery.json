@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium nebulus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:38.724Z",
+  "generatedAt": "2026-09-04T19:52:56.970Z",
   "sampleCount": 12,
   "numerics": {
     "body.distanceToArrival": {
@@ -470,5 +470,26 @@
     "body.materials.Mercury: typical (modal) 0.720000 (1/1 samples); range 0.72 … 0.72",
     "body.materials.Ruthenium: typical (modal) 0.980000 (1/2 samples); range 0.98 … 1.01"
   ],
+  "atmosphereBands": {
+    "Thin Helium": {
+      "n": 12,
+      "surfaceTemperatureK": {
+        "n": 12,
+        "min": 20,
+        "p1": 20,
+        "p50": 20,
+        "p99": 20,
+        "max": 20
+      },
+      "surfacePressureAtm": {
+        "n": 12,
+        "min": 0.06898810005428077,
+        "p1": 0.06898810005428077,
+        "p50": 0.0880977150456452,
+        "p99": 0.09744647097952133,
+        "max": 0.09744647097952133
+      }
+    }
+  },
   "sourceSpeciesLabel": "Bacterium Nebulus"
 }

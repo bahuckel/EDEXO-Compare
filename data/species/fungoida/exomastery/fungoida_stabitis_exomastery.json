@@ -3,7 +3,7 @@
   "speciesLabel": "Fungoida stabitis",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.159Z",
+  "generatedAt": "2026-09-04T19:52:59.299Z",
   "sampleCount": 945,
   "numerics": {
     "body.distanceToArrival": {
@@ -636,5 +636,83 @@
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (2/2 samples); range 100 … 100",
     "body.atmosphereComposition.Nitrogen: typical (modal) 7.290000 (1/1 samples); range 7.29 … 7.29"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 600,
+      "surfaceTemperatureK": {
+        "n": 600,
+        "min": 180,
+        "p1": 180,
+        "p50": 185,
+        "p99": 195,
+        "max": 467
+      },
+      "surfacePressureAtm": {
+        "n": 600,
+        "min": 0.027166089356032565,
+        "p1": 0.029465909706390327,
+        "p50": 0.06336626611398964,
+        "p99": 0.09746937067850975,
+        "max": 0.09852098368615839
+      }
+    },
+    "Thin Water": {
+      "n": 336,
+      "surfaceTemperatureK": {
+        "n": 336,
+        "min": 395,
+        "p1": 399,
+        "p50": 424,
+        "p99": 449,
+        "max": 450
+      },
+      "surfacePressureAtm": {
+        "n": 336,
+        "min": 0.056047815662472245,
+        "p1": 0.05825026889711325,
+        "p50": 0.0809259730471256,
+        "p99": 0.09814604922773254,
+        "max": 0.09851082531458179
+      }
+    },
+    "Thin Methane": {
+      "n": 7,
+      "surfaceTemperatureK": {
+        "n": 7,
+        "min": 79,
+        "p1": 79,
+        "p50": 88,
+        "p99": 91,
+        "max": 91
+      },
+      "surfacePressureAtm": {
+        "n": 7,
+        "min": 0.013638737409326425,
+        "p1": 0.013638737409326425,
+        "p50": 0.016990165941278064,
+        "p99": 0.03205628209227732,
+        "max": 0.03205628209227732
+      }
+    },
+    "Thin Ammonia": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 158,
+        "p1": 158,
+        "p50": 176,
+        "p99": 176,
+        "max": 176
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.0012157880088823094,
+        "p1": 0.0012157880088823094,
+        "p50": 0.012927191275598321,
+        "p99": 0.012927191275598321,
+        "max": 0.012927191275598321
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fungoida Stabitis"
 }

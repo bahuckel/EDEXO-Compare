@@ -3,7 +3,7 @@
   "speciesLabel": "Electricae pluma",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.956Z",
+  "generatedAt": "2026-09-04T19:52:58.185Z",
   "sampleCount": 31,
   "numerics": {
     "body.distanceToArrival": {
@@ -514,5 +514,45 @@
     "body.rings[0].outerRadius: typical (modal) 16816.000000 (1/1 samples); range 16816 … 16816",
     "body.materials.Yttrium: typical (modal) 0.680000 (1/2 samples); range 0.68 … 0.72"
   ],
+  "atmosphereBands": {
+    "Thin Argon": {
+      "n": 30,
+      "surfaceTemperatureK": {
+        "n": 30,
+        "min": 52,
+        "p1": 52,
+        "p50": 87,
+        "p99": 127,
+        "max": 127
+      },
+      "surfacePressureAtm": {
+        "n": 30,
+        "min": 0.0010246064939550949,
+        "p1": 0.0010246064939550949,
+        "p50": 0.009386942590673575,
+        "p99": 0.07956329127066371,
+        "max": 0.07956329127066371
+      }
+    },
+    "Thin Argon-rich": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 81,
+        "p1": 81,
+        "p50": 81,
+        "p99": 81,
+        "max": 81
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.02392508973106341,
+        "p1": 0.02392508973106341,
+        "p50": 0.02392508973106341,
+        "p99": 0.02392508973106341,
+        "max": 0.02392508973106341
+      }
+    }
+  },
   "sourceSpeciesLabel": "Electricae Pluma"
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida arcus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:37.450Z",
+  "generatedAt": "2026-09-04T19:52:55.674Z",
   "sampleCount": 223,
   "numerics": {
     "body.distanceToArrival": {
@@ -525,5 +525,26 @@
     "body.materials.Technetium: typical (modal) 0.680000 (8/35 samples); range 0.66 … 0.82",
     "body.materials.Polonium: typical (modal) 0.490000 (7/19 samples); range 0.48 … 0.53"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 223,
+      "surfaceTemperatureK": {
+        "n": 223,
+        "min": 175,
+        "p1": 175,
+        "p50": 177,
+        "p99": 179,
+        "max": 179
+      },
+      "surfacePressureAtm": {
+        "n": 223,
+        "min": 0.018143128931655563,
+        "p1": 0.018383832430298546,
+        "p50": 0.03488399796693807,
+        "p99": 0.09435312191463115,
+        "max": 0.09806675803602269
+      }
+    }
+  },
   "sourceSpeciesLabel": "Aleoida Arcus"
 }

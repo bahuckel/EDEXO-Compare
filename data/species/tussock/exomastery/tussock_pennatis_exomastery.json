@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock pennatis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.653Z",
+  "generatedAt": "2026-09-04T19:53:00.823Z",
   "sampleCount": 96,
   "numerics": {
     "body.distanceToArrival": {
@@ -535,5 +535,26 @@
     "body.materials.Yttrium: typical (modal) 1.170000 (4/20 samples); range 1.1 … 1.34",
     "body.materials.Polonium: typical (modal) 0.510000 (2/8 samples); range 0.48 … 0.62"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 96,
+      "surfaceTemperatureK": {
+        "n": 96,
+        "min": 150,
+        "p1": 159,
+        "p50": 181,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 96,
+        "min": 0.005867608793486307,
+        "p1": 0.0070401060449050085,
+        "p50": 0.045813662334073524,
+        "p99": 0.09565960978040958,
+        "max": 0.09696305206020232
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tussock Pennatis"
 }

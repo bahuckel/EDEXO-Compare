@@ -3,7 +3,7 @@
   "speciesLabel": "Sinuous Tubers Roseum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.540Z",
+  "generatedAt": "2026-09-04T19:52:59.743Z",
   "sampleCount": 3,
   "numerics": {
     "body.distanceToArrival": {
@@ -446,5 +446,26 @@
     "body.materials.Niobium: typical (modal) 1.550000 (1/1 samples); range 1.55 … 1.55",
     "body.materials.Yttrium: typical (modal) 1.360000 (1/1 samples); range 1.36 … 1.36"
   ],
+  "atmosphereBands": {
+    "No atmosphere": {
+      "n": 3,
+      "surfaceTemperatureK": {
+        "n": 3,
+        "min": 435,
+        "p1": 435,
+        "p50": 442,
+        "p99": 491,
+        "max": 491
+      },
+      "surfacePressureAtm": {
+        "n": 3,
+        "min": 0,
+        "p1": 0,
+        "p50": 0,
+        "p99": 0,
+        "max": 0
+      }
+    }
+  },
   "sourceSpeciesLabel": "Roseum Sinuous Tubers"
 }

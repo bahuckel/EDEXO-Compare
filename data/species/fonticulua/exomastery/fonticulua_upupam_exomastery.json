@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua upupam",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.060Z",
+  "generatedAt": "2026-09-04T19:52:58.284Z",
   "sampleCount": 12,
   "numerics": {
     "body.distanceToArrival": {
@@ -466,5 +466,26 @@
     "body.materials.Tungsten: typical (modal) 0.880000 (1/3 samples); range 0.66 … 0.88",
     "body.materials.Yttrium: typical (modal) 0.950000 (1/2 samples); range 0.91 … 0.95"
   ],
+  "atmosphereBands": {
+    "Thin Argon-rich": {
+      "n": 12,
+      "surfaceTemperatureK": {
+        "n": 12,
+        "min": 65,
+        "p1": 65,
+        "p50": 77,
+        "p99": 104,
+        "max": 104
+      },
+      "surfacePressureAtm": {
+        "n": 12,
+        "min": 0.04935005705403405,
+        "p1": 0.04935005705403405,
+        "p50": 0.06474863333826796,
+        "p99": 0.08463068445102392,
+        "max": 0.08463068445102392
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fonticulua Upupam"
 }

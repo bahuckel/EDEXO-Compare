@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus fractus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.316Z",
+  "generatedAt": "2026-09-04T19:52:59.508Z",
   "sampleCount": 562,
   "numerics": {
     "body.distanceToArrival": {
@@ -571,5 +571,45 @@
     "body.materials.Technetium: typical (modal) 0.690000 (10/56 samples); range 0.66 … 0.82",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 561,
+      "surfaceTemperatureK": {
+        "n": 561,
+        "min": 180,
+        "p1": 180,
+        "p50": 183,
+        "p99": 189,
+        "max": 189
+      },
+      "surfacePressureAtm": {
+        "n": 561,
+        "min": 0.025685340626696276,
+        "p1": 0.02815363667406859,
+        "p50": 0.056240762052800396,
+        "p99": 0.09681609301751788,
+        "max": 0.09830064150012337
+      }
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 158,
+        "p1": 158,
+        "p50": 158,
+        "p99": 158,
+        "max": 158
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0012157880088823094,
+        "p1": 0.0012157880088823094,
+        "p50": 0.0012157880088823094,
+        "p99": 0.0012157880088823094,
+        "max": 0.0012157880088823094
+      }
+    }
+  },
   "sourceSpeciesLabel": "Osseus Fractus"
 }

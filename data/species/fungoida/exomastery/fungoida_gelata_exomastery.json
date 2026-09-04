@@ -3,7 +3,7 @@
   "speciesLabel": "Fungoida gelata",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.917Z",
+  "generatedAt": "2026-09-04T19:52:59.103Z",
   "sampleCount": 342,
   "numerics": {
     "body.distanceToArrival": {
@@ -578,5 +578,83 @@
     "body.atmosphereComposition.Methane: typical (modal) 100.000000 (6/6 samples); range 100 … 100",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Water": {
+      "n": 189,
+      "surfaceTemperatureK": {
+        "n": 189,
+        "min": 394,
+        "p1": 401,
+        "p50": 424,
+        "p99": 450,
+        "max": 451
+      },
+      "surfacePressureAtm": {
+        "n": 189,
+        "min": 0.05789754502837404,
+        "p1": 0.060308201490254135,
+        "p50": 0.08367535428571429,
+        "p99": 0.09791211757216876,
+        "max": 0.09858412171724648
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 146,
+      "surfaceTemperatureK": {
+        "n": 146,
+        "min": 180,
+        "p1": 180,
+        "p50": 185,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 146,
+        "min": 0.025685340626696276,
+        "p1": 0.030256677157660995,
+        "p50": 0.062073705048112514,
+        "p99": 0.09652534580804342,
+        "max": 0.09681678695287442
+      }
+    },
+    "Thin Methane": {
+      "n": 6,
+      "surfaceTemperatureK": {
+        "n": 6,
+        "min": 82,
+        "p1": 82,
+        "p50": 89,
+        "p99": 97,
+        "max": 97
+      },
+      "surfacePressureAtm": {
+        "n": 6,
+        "min": 0.01336905990624229,
+        "p1": 0.01336905990624229,
+        "p50": 0.03001279193683691,
+        "p99": 0.07273789765605725,
+        "max": 0.07273789765605725
+      }
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 168,
+        "p1": 168,
+        "p50": 168,
+        "p99": 168,
+        "max": 168
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.003901267495682211,
+        "p1": 0.003901267495682211,
+        "p50": 0.003901267495682211,
+        "p99": 0.003901267495682211,
+        "max": 0.003901267495682211
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fungoida Gelata"
 }

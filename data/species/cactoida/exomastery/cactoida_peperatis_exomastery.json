@@ -3,7 +3,7 @@
   "speciesLabel": "Cactoida peperatis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.165Z",
+  "generatedAt": "2026-09-04T19:52:57.437Z",
   "sampleCount": 72,
   "numerics": {
     "body.distanceToArrival": {
@@ -497,5 +497,26 @@
     "body.materials.Molybdenum: typical (modal) 1.250000 (4/23 samples); range 1.2 … 1.39",
     "body.materials.Antimony: typical (modal) 1.200000 (3/12 samples); range 1.05 … 1.34"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 72,
+      "surfaceTemperatureK": {
+        "n": 72,
+        "min": 161,
+        "p1": 161,
+        "p50": 167,
+        "p99": 174,
+        "max": 174
+      },
+      "surfacePressureAtm": {
+        "n": 72,
+        "min": 0.001017935238095238,
+        "p1": 0.0010801780705650137,
+        "p50": 0.0018917312805329387,
+        "p99": 0.005604513387614114,
+        "max": 0.010242231107821367
+      }
+    }
+  },
   "sourceSpeciesLabel": "Cactoida Peperatis"
 }

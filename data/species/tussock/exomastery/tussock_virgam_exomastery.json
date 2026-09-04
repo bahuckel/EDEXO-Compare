@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock virgam",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.988Z",
+  "generatedAt": "2026-09-04T19:53:01.138Z",
   "sampleCount": 579,
   "numerics": {
     "body.distanceToArrival": {
@@ -557,5 +557,26 @@
     "body.materials.Yttrium: typical (modal) 1.140000 (13/93 samples); range 1.1 … 1.46",
     "body.materials.Polonium: typical (modal) 0.510000 (13/52 samples); range 0.47 … 0.67"
   ],
+  "atmosphereBands": {
+    "Thin Water": {
+      "n": 579,
+      "surfaceTemperatureK": {
+        "n": 579,
+        "min": 394,
+        "p1": 400,
+        "p50": 424,
+        "p99": 448,
+        "max": 449
+      },
+      "surfacePressureAtm": {
+        "n": 579,
+        "min": 0.056047815662472245,
+        "p1": 0.060308201490254135,
+        "p50": 0.0817738210905502,
+        "p99": 0.09804334752528991,
+        "max": 0.09851082531458179
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tussock Virgam"
 }

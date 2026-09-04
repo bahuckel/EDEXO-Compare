@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa metallicum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.779Z",
+  "generatedAt": "2026-09-04T19:52:58.912Z",
   "sampleCount": 501,
   "numerics": {
     "body.distanceToArrival": {
@@ -558,5 +558,64 @@
     "body.materials.Technetium: typical (modal) 0.810000 (16/68 samples); range 0.75 … 0.9",
     "body.atmosphereComposition.Water: typical (modal) 100.000000 (3/3 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 269,
+      "surfaceTemperatureK": {
+        "n": 269,
+        "min": 150,
+        "p1": 160,
+        "p50": 185,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 269,
+        "min": 0.005010071324944486,
+        "p1": 0.0084023758006415,
+        "p50": 0.06381758111028868,
+        "p99": 0.0975809970984456,
+        "max": 0.09868193699481864
+      }
+    },
+    "Thin Ammonia": {
+      "n": 229,
+      "surfaceTemperatureK": {
+        "n": 229,
+        "min": 154,
+        "p1": 155,
+        "p50": 167,
+        "p99": 174,
+        "max": 174
+      },
+      "surfacePressureAtm": {
+        "n": 229,
+        "min": 0.0009984576757957068,
+        "p1": 0.0010146878657784357,
+        "p50": 0.0019101297804095733,
+        "p99": 0.003318131922033062,
+        "max": 0.003349840986923267
+      }
+    },
+    "Thin Water": {
+      "n": 3,
+      "surfaceTemperatureK": {
+        "n": 3,
+        "min": 395,
+        "p1": 395,
+        "p50": 397,
+        "p99": 399,
+        "max": 399
+      },
+      "surfacePressureAtm": {
+        "n": 3,
+        "min": 0.05869449038243276,
+        "p1": 0.05869449038243276,
+        "p50": 0.06248406369602763,
+        "p99": 0.06269562572908957,
+        "max": 0.06269562572908957
+      }
+    }
+  },
   "sourceSpeciesLabel": "Frutexa Metallicum"
 }

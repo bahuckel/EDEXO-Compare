@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum limaxus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.696Z",
+  "generatedAt": "2026-09-04T19:52:59.884Z",
   "sampleCount": 102,
   "numerics": {
     "body.distanceToArrival": {
@@ -496,5 +496,45 @@
     "body.materials.Zirconium: typical (modal) 2.280000 (2/14 samples); range 2.2 … 2.45",
     "body.materials.Technetium: typical (modal) 0.700000 (4/13 samples); range 0.66 … 0.71"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 100,
+      "surfaceTemperatureK": {
+        "n": 100,
+        "min": 165,
+        "p1": 165,
+        "p50": 173,
+        "p99": 187,
+        "max": 188
+      },
+      "surfacePressureAtm": {
+        "n": 100,
+        "min": 0.006072523079200592,
+        "p1": 0.006434746321243524,
+        "p50": 0.027430117828768814,
+        "p99": 0.09319504841845547,
+        "max": 0.09681678695287442
+      }
+    },
+    "Thin Sulphur dioxide": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 167,
+        "p1": 167,
+        "p50": 187,
+        "p99": 187,
+        "max": 187
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.0014814750357759685,
+        "p1": 0.0014814750357759685,
+        "p50": 0.0018998900863557858,
+        "p99": 0.0018998900863557858,
+        "max": 0.0018998900863557858
+      }
+    }
+  },
   "sourceSpeciesLabel": "Stratum Limaxus"
 }

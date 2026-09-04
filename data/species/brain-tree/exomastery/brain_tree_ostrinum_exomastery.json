@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Ostrinum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.492Z",
+  "generatedAt": "2026-09-04T19:52:59.697Z",
   "sampleCount": 11,
   "numerics": {
     "body.distanceToArrival": {
@@ -439,5 +439,26 @@
     "body.materials.Yttrium: typical (modal) 1.380000 (1/4 samples); range 1.27 … 1.95",
     "body.materials.Tungsten: typical (modal) 1.270000 (1/4 samples); range 1.17 … 1.28"
   ],
+  "atmosphereBands": {
+    "No atmosphere": {
+      "n": 11,
+      "surfaceTemperatureK": {
+        "n": 11,
+        "min": 403,
+        "p1": 403,
+        "p50": 786,
+        "p99": 1049,
+        "max": 1049
+      },
+      "surfacePressureAtm": {
+        "n": 8,
+        "min": 0,
+        "p1": 0,
+        "p50": 0,
+        "p99": 0,
+        "max": 0
+      }
+    }
+  },
   "sourceSpeciesLabel": "Ostrinum Brain Tree"
 }

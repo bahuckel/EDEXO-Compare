@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa collum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.550Z",
+  "generatedAt": "2026-09-04T19:52:58.726Z",
   "sampleCount": 36,
   "numerics": {
     "body.distanceToArrival": {
@@ -488,5 +488,26 @@
     "body.materials.Polonium: typical (modal) 0.500000 (2/3 samples); range 0.5 … 0.52",
     "body.materials.Arsenic: typical (modal) 2.620000 (1/7 samples); range 2.5 … 2.69"
   ],
+  "atmosphereBands": {
+    "Thin Sulphur dioxide": {
+      "n": 36,
+      "surfaceTemperatureK": {
+        "n": 36,
+        "min": 132,
+        "p1": 132,
+        "p50": 133,
+        "p99": 167,
+        "max": 167
+      },
+      "surfacePressureAtm": {
+        "n": 36,
+        "min": 0.0009990892573402419,
+        "p1": 0.0009990892573402419,
+        "p50": 0.001111943005181347,
+        "p99": 0.004199389222797927,
+        "max": 0.004199389222797927
+      }
+    }
+  },
   "sourceSpeciesLabel": "Frutexa Collum"
 }

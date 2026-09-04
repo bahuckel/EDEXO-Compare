@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum laminamus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.680Z",
+  "generatedAt": "2026-09-04T19:52:59.866Z",
   "sampleCount": 144,
   "numerics": {
     "body.distanceToArrival": {
@@ -514,5 +514,26 @@
     "body.materials.Polonium: typical (modal) 0.510000 (4/15 samples); range 0.48 … 0.54",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 23.090000 (2/5 samples); range 1.58 … 23.09"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 144,
+      "surfaceTemperatureK": {
+        "n": 144,
+        "min": 165,
+        "p1": 165,
+        "p50": 169,
+        "p99": 175,
+        "max": 176
+      },
+      "surfacePressureAtm": {
+        "n": 144,
+        "min": 0.00100976325684678,
+        "p1": 0.0010102493757710338,
+        "p50": 0.0017757498741672833,
+        "p99": 0.011025668916851715,
+        "max": 0.012927191275598321
+      }
+    }
+  },
   "sourceSpeciesLabel": "Stratum Laminamus"
 }

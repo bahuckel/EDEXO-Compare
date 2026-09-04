@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Viride",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.992Z",
+  "generatedAt": "2026-09-04T19:53:01.144Z",
   "sampleCount": 3,
   "numerics": {
     "body.distanceToArrival": {
@@ -377,5 +377,26 @@
     "body.materials.Zirconium: typical (modal) 1.860000 (1/1 samples); range 1.86 … 1.86",
     "body.materials.Mercury: typical (modal) 0.700000 (1/1 samples); range 0.7 … 0.7"
   ],
+  "atmosphereBands": {
+    "No atmosphere": {
+      "n": 3,
+      "surfaceTemperatureK": {
+        "n": 3,
+        "min": 106,
+        "p1": 106,
+        "p50": 107,
+        "p99": 107,
+        "max": 107
+      },
+      "surfacePressureAtm": {
+        "n": 3,
+        "min": 0,
+        "p1": 0,
+        "p50": 0,
+        "p99": 0,
+        "max": 0
+      }
+    }
+  },
   "sourceSpeciesLabel": "Viride Brain Tree"
 }

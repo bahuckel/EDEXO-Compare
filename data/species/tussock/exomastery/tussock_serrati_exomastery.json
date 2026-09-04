@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock serrati",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.789Z",
+  "generatedAt": "2026-09-04T19:53:00.940Z",
   "sampleCount": 310,
   "numerics": {
     "body.distanceToArrival": {
@@ -552,5 +552,26 @@
     "body.materials.Tellurium: typical (modal) 1.380000 (8/75 samples); range 1.17 … 1.55",
     "body.materials.Yttrium: typical (modal) 1.140000 (10/55 samples); range 1.1 … 1.37"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 310,
+      "surfaceTemperatureK": {
+        "n": 310,
+        "min": 171,
+        "p1": 171,
+        "p50": 172,
+        "p99": 173,
+        "max": 173
+      },
+      "surfacePressureAtm": {
+        "n": 310,
+        "min": 0.011560080878361707,
+        "p1": 0.01181213905748828,
+        "p50": 0.025828574606464344,
+        "p99": 0.06225687858869973,
+        "max": 0.07032963140389835
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tussock Serrati"
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Fungoida bullarum",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.873Z",
+  "generatedAt": "2026-09-04T19:52:59.046Z",
   "sampleCount": 29,
   "numerics": {
     "body.distanceToArrival": {
@@ -498,5 +498,38 @@
     "body.materials.Zirconium: typical (modal) 2.120000 (1/7 samples); range 1.88 … 2.27",
     "body.materials.Polonium: typical (modal) 0.430000 (1/1 samples); range 0.43 … 0.43"
   ],
+  "atmosphereBands": {
+    "Thin Argon": {
+      "n": 28,
+      "surfaceTemperatureK": {
+        "n": 28,
+        "min": 55,
+        "p1": 55,
+        "p50": 87,
+        "p99": 119,
+        "max": 119
+      },
+      "surfacePressureAtm": {
+        "n": 28,
+        "min": 0.0009963691882556131,
+        "p1": 0.0009963691882556131,
+        "p50": 0.009794654418948926,
+        "p99": 0.02455022466321244,
+        "max": 0.02455022466321244
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 160,
+        "p1": 160,
+        "p50": 160,
+        "p99": 160,
+        "max": 160
+      },
+      "surfacePressureAtm": null
+    }
+  },
   "sourceSpeciesLabel": "Fungoida Bullarum"
 }

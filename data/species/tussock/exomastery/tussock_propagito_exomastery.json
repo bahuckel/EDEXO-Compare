@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock propagito",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.738Z",
+  "generatedAt": "2026-09-04T19:53:00.886Z",
   "sampleCount": 392,
   "numerics": {
     "body.distanceToArrival": {
@@ -536,5 +536,26 @@
     "body.materials.Polonium: typical (modal) 0.500000 (8/30 samples); range 0.48 … 0.64",
     "body.materials.Molybdenum: typical (modal) 1.280000 (17/128 samples); range 1.16 … 1.55"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 392,
+      "surfaceTemperatureK": {
+        "n": 392,
+        "min": 147,
+        "p1": 153,
+        "p50": 171,
+        "p99": 193,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 392,
+        "min": 0.0036899214113002713,
+        "p1": 0.003973790752528991,
+        "p50": 0.02183897344189489,
+        "p99": 0.09681678695287442,
+        "max": 0.09842852709597828
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tussock Propagito"
 }

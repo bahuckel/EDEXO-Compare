@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa sponsae",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.835Z",
+  "generatedAt": "2026-09-04T19:52:58.989Z",
   "sampleCount": 418,
   "numerics": {
     "body.distanceToArrival": {
@@ -516,5 +516,26 @@
     "body.materials.Yttrium: typical (modal) 1.140000 (12/60 samples); range 1.1 … 1.25",
     "body.materials.Antimony: typical (modal) 1.130000 (11/88 samples); range 1.07 … 1.27"
   ],
+  "atmosphereBands": {
+    "Thin Water": {
+      "n": 418,
+      "surfaceTemperatureK": {
+        "n": 418,
+        "min": 398,
+        "p1": 400,
+        "p50": 424,
+        "p99": 449,
+        "max": 451
+      },
+      "surfacePressureAtm": {
+        "n": 418,
+        "min": 0.058080058366642,
+        "p1": 0.06301656373056995,
+        "p50": 0.0826897706982482,
+        "p99": 0.09804334752528991,
+        "max": 0.09851082531458179
+      }
+    }
+  },
   "sourceSpeciesLabel": "Frutexa Sponsae"
 }

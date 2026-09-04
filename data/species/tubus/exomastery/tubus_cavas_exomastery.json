@@ -3,7 +3,7 @@
   "speciesLabel": "Tubus cavas",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.114Z",
+  "generatedAt": "2026-09-04T19:53:00.360Z",
   "sampleCount": 152,
   "numerics": {
     "body.distanceToArrival": {
@@ -517,5 +517,26 @@
     "body.materials.Technetium: typical (modal) 0.700000 (3/18 samples); range 0.66 … 0.77",
     "body.materials.Polonium: typical (modal) 0.490000 (5/14 samples); range 0.48 … 0.53"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 152,
+      "surfaceTemperatureK": {
+        "n": 152,
+        "min": 160,
+        "p1": 160,
+        "p50": 168,
+        "p99": 182,
+        "max": 193
+      },
+      "surfacePressureAtm": {
+        "n": 152,
+        "min": 0.003951672321736985,
+        "p1": 0.005009984890204787,
+        "p50": 0.01646957476437207,
+        "p99": 0.040144429084628674,
+        "max": 0.08439877675795708
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tubus Cavas"
 }

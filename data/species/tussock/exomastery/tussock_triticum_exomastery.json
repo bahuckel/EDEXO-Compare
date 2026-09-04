@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock triticum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.846Z",
+  "generatedAt": "2026-09-04T19:53:01.005Z",
   "sampleCount": 303,
   "numerics": {
     "body.distanceToArrival": {
@@ -569,5 +569,26 @@
     "body.materials.Tellurium: typical (modal) 1.430000 (6/55 samples); range 1.14 … 1.54",
     "body.materials.Technetium: typical (modal) 0.790000 (4/40 samples); range 0.66 … 0.86"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 303,
+      "surfaceTemperatureK": {
+        "n": 303,
+        "min": 191,
+        "p1": 191,
+        "p50": 192,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 303,
+        "min": 0.05843663258820627,
+        "p1": 0.05900788671107821,
+        "p50": 0.08072948471749322,
+        "p99": 0.09782447994078461,
+        "max": 0.09868193699481864
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tussock Triticum"
 }

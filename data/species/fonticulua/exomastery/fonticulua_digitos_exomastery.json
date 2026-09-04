@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua digitos",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.042Z",
+  "generatedAt": "2026-09-04T19:52:58.270Z",
   "sampleCount": 62,
   "numerics": {
     "body.distanceToArrival": {
@@ -483,5 +483,26 @@
     "body.materials.Tellurium: typical (modal) 0.910000 (4/13 samples); range 0.89 … 0.93",
     "body.materials.Polonium: typical (modal) 0.320000 (4/6 samples); range 0.31 … 0.32"
   ],
+  "atmosphereBands": {
+    "Thin Methane": {
+      "n": 62,
+      "surfaceTemperatureK": {
+        "n": 62,
+        "min": 85,
+        "p1": 87,
+        "p50": 94,
+        "p99": 104,
+        "max": 107
+      },
+      "surfacePressureAtm": {
+        "n": 62,
+        "min": 0.03584322424870466,
+        "p1": 0.03628260268443129,
+        "p50": 0.06139879506538366,
+        "p99": 0.09585451748334568,
+        "max": 0.09831079987169997
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fonticulua Digitos"
 }

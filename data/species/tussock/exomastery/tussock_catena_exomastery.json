@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock catena",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.327Z",
+  "generatedAt": "2026-09-04T19:53:00.551Z",
   "sampleCount": 188,
   "numerics": {
     "body.distanceToArrival": {
@@ -519,5 +519,26 @@
     "body.materials.Selenium: typical (modal) 2.980000 (7/44 samples); range 2.5 … 3.2",
     "body.materials.Tellurium: typical (modal) 1.460000 (10/44 samples); range 1.14 … 1.57"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 188,
+      "surfaceTemperatureK": {
+        "n": 188,
+        "min": 154,
+        "p1": 154,
+        "p50": 166,
+        "p99": 174,
+        "max": 175
+      },
+      "surfacePressureAtm": {
+        "n": 188,
+        "min": 0.0009992293116210214,
+        "p1": 0.001002260962250185,
+        "p50": 0.001761390130767333,
+        "p99": 0.009719524411547003,
+        "max": 0.012115048122378484
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tussock Catena"
 }

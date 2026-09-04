@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium scopulum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:38.733Z",
+  "generatedAt": "2026-09-04T19:52:56.979Z",
   "sampleCount": 7,
   "numerics": {
     "body.distanceToArrival": {
@@ -443,5 +443,64 @@
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (1/1 samples); range 100 … 100",
     "body.materials.Ruthenium: typical (modal) 0.760000 (1/1 samples); range 0.76 … 0.76"
   ],
+  "atmosphereBands": {
+    "Thin Neon": {
+      "n": 4,
+      "surfaceTemperatureK": {
+        "n": 4,
+        "min": 20,
+        "p1": 20,
+        "p50": 41,
+        "p99": 49,
+        "max": 49
+      },
+      "surfacePressureAtm": {
+        "n": 4,
+        "min": 0.001462518302491981,
+        "p1": 0.001462518302491981,
+        "p50": 0.0019399101998519614,
+        "p99": 0.002597458978534419,
+        "max": 0.002597458978534419
+      }
+    },
+    "Thin Neon-rich": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 22,
+        "p1": 22,
+        "p50": 32,
+        "p99": 32,
+        "max": 32
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.00695075467061436,
+        "p1": 0.00695075467061436,
+        "p50": 0.07619390728842833,
+        "p99": 0.07619390728842833,
+        "max": 0.07619390728842833
+      }
+    },
+    "Thin Argon": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 89,
+        "p1": 89,
+        "p50": 89,
+        "p99": 89,
+        "max": 89
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.014161894685418208,
+        "p1": 0.014161894685418208,
+        "p50": 0.014161894685418208,
+        "p99": 0.014161894685418208,
+        "max": 0.014161894685418208
+      }
+    }
+  },
   "sourceSpeciesLabel": "Bacterium Scopulum"
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Tubus sororibus",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.138Z",
+  "generatedAt": "2026-09-04T19:53:00.387Z",
   "sampleCount": 2,
   "numerics": {
     "body.distanceToArrival": {
@@ -367,5 +367,26 @@
     "body.materials.Molybdenum: typical (modal) 1.430000 (1/1 samples); range 1.43 … 1.43",
     "body.materials.Antimony: typical (modal) 0.970000 (1/1 samples); range 0.97 … 0.97"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 163,
+        "p1": 163,
+        "p50": 164,
+        "p99": 164,
+        "max": 164
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.013112012899087096,
+        "p1": 0.013112012899087096,
+        "p50": 0.013875486957809031,
+        "p99": 0.013875486957809031,
+        "max": 0.013875486957809031
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tubus Sororibus"
 }

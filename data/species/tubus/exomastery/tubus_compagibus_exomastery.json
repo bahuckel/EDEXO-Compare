@@ -3,7 +3,7 @@
   "speciesLabel": "Tubus compagibus",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.133Z",
+  "generatedAt": "2026-09-04T19:53:00.380Z",
   "sampleCount": 113,
   "numerics": {
     "body.distanceToArrival": {
@@ -520,5 +520,26 @@
     "body.materials.Molybdenum: typical (modal) 1.240000 (7/41 samples); range 1.2 … 1.41",
     "body.materials.Technetium: typical (modal) 0.730000 (3/15 samples); range 0.66 … 0.77"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 113,
+      "surfaceTemperatureK": {
+        "n": 113,
+        "min": 150,
+        "p1": 160,
+        "p50": 166,
+        "p99": 177,
+        "max": 186
+      },
+      "surfacePressureAtm": {
+        "n": 113,
+        "min": 0.0038317054922279797,
+        "p1": 0.004171158539353565,
+        "p50": 0.016778042496915863,
+        "p99": 0.049376171004194426,
+        "max": 0.09573999005181348
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tubus Compagibus"
 }

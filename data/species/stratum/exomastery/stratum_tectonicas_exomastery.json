@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum tectonicas",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.074Z",
+  "generatedAt": "2026-09-04T19:53:00.331Z",
   "sampleCount": 1280,
   "numerics": {
     "body.distanceToArrival": {
@@ -606,5 +606,121 @@
     "body.atmosphereComposition.Oxygen: typical (modal) 99.880000 (1/10 samples); range 84.61 … 99.88",
     "body.atmosphereComposition.Argon: typical (modal) 1.080000 (1/2 samples); range 0.57 … 1.08"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 514,
+      "surfaceTemperatureK": {
+        "n": 514,
+        "min": 165,
+        "p1": 166,
+        "p50": 186,
+        "p99": 328,
+        "max": 369
+      },
+      "surfacePressureAtm": {
+        "n": 514,
+        "min": 0.001263162013323464,
+        "p1": 0.0045945332050333085,
+        "p50": 0.05670614841352085,
+        "p99": 0.09782447994078461,
+        "max": 0.09868193699481864
+      }
+    },
+    "Thin Ammonia": {
+      "n": 351,
+      "surfaceTemperatureK": {
+        "n": 351,
+        "min": 165,
+        "p1": 165,
+        "p50": 169,
+        "p99": 174,
+        "max": 175
+      },
+      "surfacePressureAtm": {
+        "n": 351,
+        "min": 0.000992620932642487,
+        "p1": 0.0010146878657784357,
+        "p50": 0.002445508087836171,
+        "p99": 0.007858186765358993,
+        "max": 0.008100702797927462
+      }
+    },
+    "Thin Sulphur dioxide": {
+      "n": 322,
+      "surfaceTemperatureK": {
+        "n": 322,
+        "min": 165,
+        "p1": 165,
+        "p50": 195,
+        "p99": 400,
+        "max": 424
+      },
+      "surfacePressureAtm": {
+        "n": 322,
+        "min": 0.00099792059215396,
+        "p1": 0.0010446825067850975,
+        "p50": 0.0021136583074265977,
+        "p99": 0.07872185727115717,
+        "max": 0.08960599208487541
+      }
+    },
+    "Thin Water": {
+      "n": 82,
+      "surfaceTemperatureK": {
+        "n": 82,
+        "min": 395,
+        "p1": 397,
+        "p50": 424,
+        "p99": 448,
+        "max": 449
+      },
+      "surfacePressureAtm": {
+        "n": 82,
+        "min": 0.05825026889711325,
+        "p1": 0.05869449038243276,
+        "p50": 0.08063948579323958,
+        "p99": 0.0962043837157661,
+        "max": 0.0969105061041204
+      }
+    },
+    "Thin Carbon dioxide-rich": {
+      "n": 7,
+      "surfaceTemperatureK": {
+        "n": 7,
+        "min": 182,
+        "p1": 182,
+        "p50": 233,
+        "p99": 245,
+        "max": 245
+      },
+      "surfacePressureAtm": {
+        "n": 7,
+        "min": 0.010571599881569207,
+        "p1": 0.010571599881569207,
+        "p50": 0.06253279784850728,
+        "p99": 0.08848403188749075,
+        "max": 0.08848403188749075
+      }
+    },
+    "Thin Oxygen": {
+      "n": 4,
+      "surfaceTemperatureK": {
+        "n": 4,
+        "min": 171,
+        "p1": 171,
+        "p50": 183,
+        "p99": 244,
+        "max": 244
+      },
+      "surfacePressureAtm": {
+        "n": 4,
+        "min": 0.056071100883296324,
+        "p1": 0.056071100883296324,
+        "p50": 0.08262824220083888,
+        "p99": 0.09622013207994078,
+        "max": 0.09622013207994078
+      }
+    }
+  },
   "sourceSpeciesLabel": "Stratum Tectonicas"
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Cactoida vermis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.303Z",
+  "generatedAt": "2026-09-04T19:52:57.556Z",
   "sampleCount": 546,
   "numerics": {
     "body.distanceToArrival": {
@@ -577,5 +577,45 @@
     "body.materials.Polonium: typical (modal) 0.510000 (12/53 samples); range 0.47 … 0.67",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Water": {
+      "n": 545,
+      "surfaceTemperatureK": {
+        "n": 545,
+        "min": 394,
+        "p1": 399,
+        "p50": 423,
+        "p99": 448,
+        "max": 449
+      },
+      "surfacePressureAtm": {
+        "n": 545,
+        "min": 0.05789098641993585,
+        "p1": 0.05957264005921539,
+        "p50": 0.08163132440167777,
+        "p99": 0.09804334752528991,
+        "max": 0.09858412171724648
+      }
+    },
+    "Thin Sulphur dioxide": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 165,
+        "p1": 165,
+        "p50": 165,
+        "p99": 165,
+        "max": 165
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0012552631334813717,
+        "p1": 0.0012552631334813717,
+        "p50": 0.0012552631334813717,
+        "p99": 0.0012552631334813717,
+        "max": 0.0012552631334813717
+      }
+    }
+  },
   "sourceSpeciesLabel": "Cactoida Vermis"
 }

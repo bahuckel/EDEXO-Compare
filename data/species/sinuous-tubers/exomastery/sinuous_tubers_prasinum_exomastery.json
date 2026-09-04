@@ -3,7 +3,7 @@
   "speciesLabel": "Sinuous Tubers Prasinum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.505Z",
+  "generatedAt": "2026-09-04T19:52:59.711Z",
   "sampleCount": 34,
   "numerics": {
     "body.distanceToArrival": {
@@ -600,5 +600,64 @@
     "body.materials.Arsenic: typical (modal) 2.320000 (1/1 samples); range 2.32 … 2.32",
     "body.atmosphereComposition.Nitrogen: typical (modal) 85.850000 (1/1 samples); range 85.85 … 85.85"
   ],
+  "atmosphereBands": {
+    "No atmosphere": {
+      "n": 28,
+      "surfaceTemperatureK": {
+        "n": 28,
+        "min": 208,
+        "p1": 208,
+        "p50": 445,
+        "p99": 496,
+        "max": 496
+      },
+      "surfacePressureAtm": {
+        "n": 28,
+        "min": 0,
+        "p1": 0,
+        "p50": 0,
+        "p99": 0,
+        "max": 0
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 5,
+      "surfaceTemperatureK": {
+        "n": 5,
+        "min": 250,
+        "p1": 250,
+        "p50": 252,
+        "p99": 254,
+        "max": 254
+      },
+      "surfacePressureAtm": {
+        "n": 5,
+        "min": 0.006150590249198125,
+        "p1": 0.006150590249198125,
+        "p50": 0.007176626617320503,
+        "p99": 0.00742506756476684,
+        "max": 0.00742506756476684
+      }
+    },
+    "Thin Carbon dioxide-rich": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 256,
+        "p1": 256,
+        "p50": 256,
+        "p99": 256,
+        "max": 256
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.05130898409079694,
+        "p1": 0.05130898409079694,
+        "p50": 0.05130898409079694,
+        "p99": 0.05130898409079694,
+        "max": 0.05130898409079694
+      }
+    }
+  },
   "sourceSpeciesLabel": "Prasinum Sinuous Tubers"
 }

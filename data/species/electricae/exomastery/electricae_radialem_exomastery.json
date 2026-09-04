@@ -3,7 +3,7 @@
   "speciesLabel": "Electricae radialem",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.977Z",
+  "generatedAt": "2026-09-04T19:52:58.214Z",
   "sampleCount": 58,
   "numerics": {
     "body.distanceToArrival": {
@@ -563,5 +563,64 @@
     "body.rings[0].innerRadius: typical (modal) 6380.800000 (1/2 samples); range 6380.8 … 7454.3",
     "body.rings[0].outerRadius: typical (modal) 16501.000000 (1/2 samples); range 16501 … 17403"
   ],
+  "atmosphereBands": {
+    "Thin Argon": {
+      "n": 53,
+      "surfaceTemperatureK": {
+        "n": 53,
+        "min": 51,
+        "p1": 52,
+        "p50": 80,
+        "p99": 127,
+        "max": 133
+      },
+      "surfacePressureAtm": {
+        "n": 53,
+        "min": 0.0010088144485566248,
+        "p1": 0.0010263361954108068,
+        "p50": 0.011037068176659264,
+        "p99": 0.027264352795460155,
+        "max": 0.028254902334073528
+      }
+    },
+    "Thin Argon-rich": {
+      "n": 3,
+      "surfaceTemperatureK": {
+        "n": 3,
+        "min": 76,
+        "p1": 76,
+        "p50": 82,
+        "p99": 84,
+        "max": 84
+      },
+      "surfacePressureAtm": {
+        "n": 3,
+        "min": 0.024735771537132988,
+        "p1": 0.024735771537132988,
+        "p50": 0.031020839111769057,
+        "p99": 0.07434665004687885,
+        "max": 0.07434665004687885
+      }
+    },
+    "Thin Neon-rich": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 63,
+        "p1": 63,
+        "p50": 64,
+        "p99": 64,
+        "max": 64
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.0026636401776461882,
+        "p1": 0.0026636401776461882,
+        "p50": 0.0032847392252652358,
+        "p99": 0.0032847392252652358,
+        "max": 0.0032847392252652358
+      }
+    }
+  },
   "sourceSpeciesLabel": "Electricae Radialem"
 }

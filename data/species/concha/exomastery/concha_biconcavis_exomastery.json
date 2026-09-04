@@ -3,7 +3,7 @@
   "speciesLabel": "Concha biconcavis",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.536Z",
+  "generatedAt": "2026-09-04T19:52:57.766Z",
   "sampleCount": 7,
   "numerics": {
     "body.distanceToArrival": {
@@ -425,5 +425,26 @@
     "body.materials.Tellurium: typical (modal) 1.420000 (1/1 samples); range 1.42 … 1.42",
     "body.materials.Mercury: typical (modal) 0.830000 (1/2 samples); range 0.83 … 0.84"
   ],
+  "atmosphereBands": {
+    "Thin Nitrogen": {
+      "n": 7,
+      "surfaceTemperatureK": {
+        "n": 7,
+        "min": 47,
+        "p1": 47,
+        "p50": 48,
+        "p99": 49,
+        "max": 49
+      },
+      "surfacePressureAtm": {
+        "n": 7,
+        "min": 0.0010001368566493955,
+        "p1": 0.0010001368566493955,
+        "p50": 0.0021724550505798175,
+        "p99": 0.0042969024031581544,
+        "max": 0.0042969024031581544
+      }
+    }
+  },
   "sourceSpeciesLabel": "Concha Biconcavis"
 }

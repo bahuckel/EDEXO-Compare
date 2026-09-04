@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus spiralis",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.488Z",
+  "generatedAt": "2026-09-04T19:52:59.692Z",
   "sampleCount": 822,
   "numerics": {
     "body.distanceToArrival": {
@@ -588,5 +588,57 @@
     "body.materials.Tungsten: typical (modal) 1.050000 (25/239 samples); range 0.95 … 1.33",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.530000 (1/1 samples); range 0.53 … 0.53"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 820,
+      "surfaceTemperatureK": {
+        "n": 820,
+        "min": 160,
+        "p1": 160,
+        "p50": 167,
+        "p99": 174,
+        "max": 175
+      },
+      "surfacePressureAtm": {
+        "n": 820,
+        "min": 0.0009903335109795214,
+        "p1": 0.0010087616679003207,
+        "p50": 0.0017632168171724646,
+        "p99": 0.007187034364668147,
+        "max": 0.011025668916851715
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 191,
+        "p1": 191,
+        "p50": 191,
+        "p99": 191,
+        "max": 191
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.06940081517887985,
+        "p1": 0.06940081517887985,
+        "p50": 0.06940081517887985,
+        "p99": 0.06940081517887985,
+        "max": 0.06940081517887985
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 224,
+        "p1": 224,
+        "p50": 224,
+        "p99": 224,
+        "max": 224
+      },
+      "surfacePressureAtm": null
+    }
+  },
   "sourceSpeciesLabel": "Osseus Spiralis"
 }

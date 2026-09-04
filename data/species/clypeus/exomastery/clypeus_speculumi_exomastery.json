@@ -3,7 +3,7 @@
   "speciesLabel": "Clypeus speculumi",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.504Z",
+  "generatedAt": "2026-09-04T19:52:57.739Z",
   "sampleCount": 298,
   "numerics": {
     "body.distanceToArrival": {
@@ -555,5 +555,45 @@
     "body.materials.Antimony: typical (modal) 1.160000 (12/65 samples); range 1.08 … 1.28",
     "body.materials.Zirconium: typical (modal) 2.290000 (5/49 samples); range 2.19 … 2.44"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 165,
+      "surfaceTemperatureK": {
+        "n": 165,
+        "min": 190,
+        "p1": 190,
+        "p50": 192,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 165,
+        "min": 0.054627291902294595,
+        "p1": 0.058286093056994816,
+        "p50": 0.07841346302491982,
+        "p99": 0.09734331628916852,
+        "max": 0.09774084204293115
+      }
+    },
+    "Thin Water": {
+      "n": 133,
+      "surfaceTemperatureK": {
+        "n": 133,
+        "min": 398,
+        "p1": 399,
+        "p50": 423,
+        "p99": 449,
+        "max": 451
+      },
+      "surfacePressureAtm": {
+        "n": 133,
+        "min": 0.05789098641993585,
+        "p1": 0.05789754502837404,
+        "p50": 0.0801286903626943,
+        "p99": 0.09718791443375278,
+        "max": 0.09858412171724648
+      }
+    }
+  },
   "sourceSpeciesLabel": "Clypeus Speculumi"
 }

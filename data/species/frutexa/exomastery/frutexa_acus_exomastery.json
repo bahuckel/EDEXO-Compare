@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa acus",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.540Z",
+  "generatedAt": "2026-09-04T19:52:58.718Z",
   "sampleCount": 3106,
   "numerics": {
     "body.distanceToArrival": {
@@ -576,5 +576,57 @@
     "body.materials.Antimony: typical (modal) 1.160000 (86/611 samples); range 1.1 … 1.29",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 3104,
+      "surfaceTemperatureK": {
+        "n": 3104,
+        "min": 146,
+        "p1": 150,
+        "p50": 168,
+        "p99": 194,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 3104,
+        "min": 0.0030990345324451024,
+        "p1": 0.0037637993979768077,
+        "p50": 0.019590735257833704,
+        "p99": 0.09347744918825561,
+        "max": 0.09852098368615839
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 182,
+        "p1": 182,
+        "p50": 182,
+        "p99": 182,
+        "max": 182
+      },
+      "surfacePressureAtm": null
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 158,
+        "p1": 158,
+        "p50": 158,
+        "p99": 158,
+        "max": 158
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0012157880088823094,
+        "p1": 0.0012157880088823094,
+        "p50": 0.0012157880088823094,
+        "p99": 0.0012157880088823094,
+        "max": 0.0012157880088823094
+      }
+    }
+  },
   "sourceSpeciesLabel": "Frutexa Acus"
 }

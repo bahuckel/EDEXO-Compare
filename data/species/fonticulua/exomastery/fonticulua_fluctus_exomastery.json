@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua fluctus",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.045Z",
+  "generatedAt": "2026-09-04T19:52:58.272Z",
   "sampleCount": 1,
   "numerics": {
     "body.distanceToArrival": {
@@ -318,5 +318,26 @@
     "body.materials.Ruthenium: typical (modal) 0.950000 (1/1 samples); range 0.95 … 0.95",
     "body.materials.Tungsten: typical (modal) 0.850000 (1/1 samples); range 0.85 … 0.85"
   ],
+  "atmosphereBands": {
+    "Thin Oxygen": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 153,
+        "p1": 153,
+        "p50": 153,
+        "p99": 153,
+        "max": 153
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.052486410530471254,
+        "p1": 0.052486410530471254,
+        "p50": 0.052486410530471254,
+        "p99": 0.052486410530471254,
+        "max": 0.052486410530471254
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fonticulua Fluctus"
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Cactoida cortexum",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.004Z",
+  "generatedAt": "2026-09-04T19:52:57.321Z",
   "sampleCount": 836,
   "numerics": {
     "body.distanceToArrival": {
@@ -593,5 +593,45 @@
     "body.materials.Tellurium: typical (modal) 1.390000 (13/166 samples); range 1.13 … 1.61",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 835,
+      "surfaceTemperatureK": {
+        "n": 835,
+        "min": 180,
+        "p1": 180,
+        "p50": 186,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 835,
+        "min": 0.027166089356032565,
+        "p1": 0.02919435641746854,
+        "p50": 0.06579795251912164,
+        "p99": 0.09773924215149273,
+        "max": 0.09868193699481864
+      }
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 158,
+        "p1": 158,
+        "p50": 158,
+        "p99": 158,
+        "max": 158
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0012157880088823094,
+        "p1": 0.0012157880088823094,
+        "p50": 0.0012157880088823094,
+        "p99": 0.0012157880088823094,
+        "max": 0.0012157880088823094
+      }
+    }
+  },
   "sourceSpeciesLabel": "Cactoida Cortexum"
 }

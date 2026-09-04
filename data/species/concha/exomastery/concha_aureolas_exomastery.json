@@ -3,7 +3,7 @@
   "speciesLabel": "Concha aureolas",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.533Z",
+  "generatedAt": "2026-09-04T19:52:57.764Z",
   "sampleCount": 158,
   "numerics": {
     "body.distanceToArrival": {
@@ -529,5 +529,26 @@
     "body.materials.Selenium: typical (modal) 2.990000 (4/40 samples); range 2.88 … 3.36",
     "body.materials.Polonium: typical (modal) 0.500000 (5/15 samples); range 0.42 … 0.55"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 158,
+      "surfaceTemperatureK": {
+        "n": 158,
+        "min": 152,
+        "p1": 152,
+        "p50": 167,
+        "p99": 175,
+        "max": 176
+      },
+      "surfacePressureAtm": {
+        "n": 158,
+        "min": 0.0009876185541574142,
+        "p1": 0.0009988864150012335,
+        "p50": 0.001430852454971626,
+        "p99": 0.011025668916851715,
+        "max": 0.012591290402171232
+      }
+    }
+  },
   "sourceSpeciesLabel": "Concha Aureolas"
 }

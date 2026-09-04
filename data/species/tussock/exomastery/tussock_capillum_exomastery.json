@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock capillum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.204Z",
+  "generatedAt": "2026-09-04T19:53:00.456Z",
   "sampleCount": 42,
   "numerics": {
     "body.distanceToArrival": {
@@ -516,5 +516,57 @@
     "body.materials.Zirconium: typical (modal) 2.110000 (2/12 samples); range 1.88 … 2.37",
     "body.materials.Technetium: typical (modal) 0.660000 (2/5 samples); range 0.63 … 0.71"
   ],
+  "atmosphereBands": {
+    "Thin Argon": {
+      "n": 28,
+      "surfaceTemperatureK": {
+        "n": 28,
+        "min": 80,
+        "p1": 80,
+        "p50": 99,
+        "p99": 124,
+        "max": 124
+      },
+      "surfacePressureAtm": {
+        "n": 28,
+        "min": 0.0009963691882556131,
+        "p1": 0.0009963691882556131,
+        "p50": 0.003928883454231433,
+        "p99": 0.019381092376017765,
+        "max": 0.019381092376017765
+      }
+    },
+    "Thin Methane": {
+      "n": 13,
+      "surfaceTemperatureK": {
+        "n": 13,
+        "min": 80,
+        "p1": 80,
+        "p50": 90,
+        "p99": 99,
+        "max": 99
+      },
+      "surfacePressureAtm": {
+        "n": 13,
+        "min": 0.002143744732297064,
+        "p1": 0.002143744732297064,
+        "p50": 0.020057532376017765,
+        "p99": 0.06753813726128793,
+        "max": 0.06753813726128793
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 160,
+        "p1": 160,
+        "p50": 160,
+        "p99": 160,
+        "max": 160
+      },
+      "surfacePressureAtm": null
+    }
+  },
   "sourceSpeciesLabel": "Tussock Capillum"
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Tubus rosarium",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.136Z",
+  "generatedAt": "2026-09-04T19:53:00.384Z",
   "sampleCount": 8,
   "numerics": {
     "body.distanceToArrival": {
@@ -432,5 +432,26 @@
     "body.materials.Zirconium: typical (modal) 2.240000 (1/1 samples); range 2.24 … 2.24",
     "body.materials.Polonium: typical (modal) 0.500000 (1/1 samples); range 0.5 … 0.5"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 8,
+      "surfaceTemperatureK": {
+        "n": 8,
+        "min": 167,
+        "p1": 167,
+        "p50": 170,
+        "p99": 173,
+        "max": 173
+      },
+      "surfacePressureAtm": {
+        "n": 8,
+        "min": 0.0010163399358499876,
+        "p1": 0.0010163399358499876,
+        "p50": 0.0012012478460399704,
+        "p99": 0.008846526809770541,
+        "max": 0.008846526809770541
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tubus Rosarium"
 }

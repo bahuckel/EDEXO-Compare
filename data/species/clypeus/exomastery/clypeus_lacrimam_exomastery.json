@@ -3,7 +3,7 @@
   "speciesLabel": "Clypeus lacrimam",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:39.395Z",
+  "generatedAt": "2026-09-04T19:52:57.666Z",
   "sampleCount": 641,
   "numerics": {
     "body.distanceToArrival": {
@@ -593,5 +593,64 @@
     "body.materials.Ruthenium: typical (modal) 1.210000 (21/128 samples); range 1.13 … 1.34",
     "body.atmosphereComposition.Nitrogen: typical (modal) 7.290000 (1/1 samples); range 7.29 … 7.29"
   ],
+  "atmosphereBands": {
+    "Thin Water": {
+      "n": 484,
+      "surfaceTemperatureK": {
+        "n": 484,
+        "min": 394,
+        "p1": 401,
+        "p50": 424,
+        "p99": 448,
+        "max": 451
+      },
+      "surfacePressureAtm": {
+        "n": 484,
+        "min": 0.056047815662472245,
+        "p1": 0.060308201490254135,
+        "p50": 0.0825492015988157,
+        "p99": 0.09804334752528991,
+        "max": 0.09851082531458179
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 156,
+      "surfaceTemperatureK": {
+        "n": 156,
+        "min": 190,
+        "p1": 190,
+        "p50": 192,
+        "p99": 195,
+        "max": 467
+      },
+      "surfacePressureAtm": {
+        "n": 156,
+        "min": 0.04812007984209228,
+        "p1": 0.057310099195657535,
+        "p50": 0.07959282668640513,
+        "p99": 0.09668813995558845,
+        "max": 0.09852098368615839
+      }
+    },
+    "Hot thin Carbon dioxide": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 698,
+        "p1": 698,
+        "p50": 698,
+        "p99": 698,
+        "max": 698
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.006917646602516654,
+        "p1": 0.006917646602516654,
+        "p50": 0.006917646602516654,
+        "p99": 0.006917646602516654,
+        "max": 0.006917646602516654
+      }
+    }
+  },
   "sourceSpeciesLabel": "Clypeus Lacrimam"
 }

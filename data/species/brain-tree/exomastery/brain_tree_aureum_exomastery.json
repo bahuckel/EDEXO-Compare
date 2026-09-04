@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Aureum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:37.771Z",
+  "generatedAt": "2026-09-04T19:52:55.965Z",
   "sampleCount": 2,
   "numerics": {
     "body.distanceToArrival": {
@@ -420,5 +420,26 @@
     "body.materials.Niobium: typical (modal) 1.550000 (1/1 samples); range 1.55 … 1.55",
     "body.materials.Tellurium: typical (modal) 1.230000 (1/1 samples); range 1.23 … 1.23"
   ],
+  "atmosphereBands": {
+    "No atmosphere": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 469,
+        "p1": 469,
+        "p50": 475,
+        "p99": 475,
+        "max": 475
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0,
+        "p1": 0,
+        "p50": 0,
+        "p99": 0,
+        "max": 0
+      }
+    }
+  },
   "sourceSpeciesLabel": "Aureum Brain Tree"
 }

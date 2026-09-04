@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola aquatis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.845Z",
+  "generatedAt": "2026-09-04T19:52:59.007Z",
   "sampleCount": 34,
   "numerics": {
     "body.distanceToArrival": {
@@ -542,5 +542,102 @@
     "body.atmosphereComposition.Water: typical (modal) 100.000000 (4/4 samples); range 100 … 100",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Argon": {
+      "n": 25,
+      "surfaceTemperatureK": {
+        "n": 25,
+        "min": 61,
+        "p1": 61,
+        "p50": 84,
+        "p99": 112,
+        "max": 112
+      },
+      "surfacePressureAtm": {
+        "n": 25,
+        "min": 0.0018303563878608437,
+        "p1": 0.0018303563878608437,
+        "p50": 0.010889295928941525,
+        "p99": 0.08006817866271897,
+        "max": 0.08006817866271897
+      }
+    },
+    "Thin Water": {
+      "n": 4,
+      "surfaceTemperatureK": {
+        "n": 4,
+        "min": 420,
+        "p1": 420,
+        "p50": 424,
+        "p99": 436,
+        "max": 436
+      },
+      "surfacePressureAtm": {
+        "n": 4,
+        "min": 0.07574509333333333,
+        "p1": 0.07574509333333333,
+        "p50": 0.08360000501357019,
+        "p99": 0.08901035883543056,
+        "max": 0.08901035883543056
+      }
+    },
+    "Thin Sulphur dioxide": {
+      "n": 3,
+      "surfaceTemperatureK": {
+        "n": 3,
+        "min": 164,
+        "p1": 164,
+        "p50": 198,
+        "p99": 261,
+        "max": 261
+      },
+      "surfacePressureAtm": {
+        "n": 3,
+        "min": 0.001556862264988897,
+        "p1": 0.001556862264988897,
+        "p50": 0.004022761944238835,
+        "p99": 0.008600124283246977,
+        "max": 0.008600124283246977
+      }
+    },
+    "Thin Nitrogen": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 65,
+        "p1": 65,
+        "p50": 65,
+        "p99": 65,
+        "max": 65
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.009887986262028128,
+        "p1": 0.009887986262028128,
+        "p50": 0.009887986262028128,
+        "p99": 0.009887986262028128,
+        "max": 0.009887986262028128
+      }
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 174,
+        "p1": 174,
+        "p50": 174,
+        "p99": 174,
+        "max": 174
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.007155912913890944,
+        "p1": 0.007155912913890944,
+        "p50": 0.007155912913890944,
+        "p99": 0.007155912913890944,
+        "max": 0.007155912913890944
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fumerola Aquatis"
 }

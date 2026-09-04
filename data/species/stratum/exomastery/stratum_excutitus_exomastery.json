@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum excutitus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.658Z",
+  "generatedAt": "2026-09-04T19:52:59.845Z",
   "sampleCount": 623,
   "numerics": {
     "body.distanceToArrival": {
@@ -544,5 +544,45 @@
     "body.materials.Tungsten: typical (modal) 1.080000 (37/206 samples); range 0.94 … 1.16",
     "body.materials.Technetium: typical (modal) 0.710000 (15/69 samples); range 0.66 … 0.77"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 605,
+      "surfaceTemperatureK": {
+        "n": 605,
+        "min": 165,
+        "p1": 165,
+        "p50": 176,
+        "p99": 189,
+        "max": 189
+      },
+      "surfacePressureAtm": {
+        "n": 605,
+        "min": 0.0061972582778189,
+        "p1": 0.007257200848754009,
+        "p50": 0.03562852988897113,
+        "p99": 0.09524950653836664,
+        "max": 0.09836648778682458
+      }
+    },
+    "Thin Sulphur dioxide": {
+      "n": 18,
+      "surfaceTemperatureK": {
+        "n": 18,
+        "min": 166,
+        "p1": 166,
+        "p50": 178,
+        "p99": 187,
+        "max": 187
+      },
+      "surfacePressureAtm": {
+        "n": 18,
+        "min": 0.00149892118430792,
+        "p1": 0.00149892118430792,
+        "p50": 0.002144176639526277,
+        "p99": 0.009197701978781149,
+        "max": 0.009197701978781149
+      }
+    }
+  },
   "sourceSpeciesLabel": "Stratum Excutitus"
 }

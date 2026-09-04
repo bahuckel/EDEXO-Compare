@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium aurasus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:38.533Z",
+  "generatedAt": "2026-09-04T19:52:56.798Z",
   "sampleCount": 2797,
   "numerics": {
     "body.distanceToArrival": {
@@ -615,5 +615,57 @@
     "body.materials.Polonium: typical (modal) 0.510000 (56/226 samples); range 0.39 … 0.66",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 2794,
+      "surfaceTemperatureK": {
+        "n": 2794,
+        "min": 146,
+        "p1": 150,
+        "p50": 171,
+        "p99": 204,
+        "max": 352
+      },
+      "surfacePressureAtm": {
+        "n": 2794,
+        "min": 0.0029223687046632126,
+        "p1": 0.0038518071848013817,
+        "p50": 0.023506285852454973,
+        "p99": 0.09534344737231681,
+        "max": 0.09852098368615839
+      }
+    },
+    "No atmosphere": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 182,
+        "p1": 182,
+        "p50": 224,
+        "p99": 224,
+        "max": 224
+      },
+      "surfacePressureAtm": null
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 158,
+        "p1": 158,
+        "p50": 158,
+        "p99": 158,
+        "max": 158
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0012157880088823094,
+        "p1": 0.0012157880088823094,
+        "p50": 0.0012157880088823094,
+        "p99": 0.0012157880088823094,
+        "max": 0.0012157880088823094
+      }
+    }
+  },
   "sourceSpeciesLabel": "Bacterium Aurasus"
 }

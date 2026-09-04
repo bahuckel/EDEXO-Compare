@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa fera",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.570Z",
+  "generatedAt": "2026-09-04T19:52:58.740Z",
   "sampleCount": 60,
   "numerics": {
     "body.distanceToArrival": {
@@ -504,5 +504,26 @@
     "body.materials.Technetium: typical (modal) 0.660000 (2/6 samples); range 0.66 … 0.73",
     "body.materials.Antimony: typical (modal) 1.200000 (2/10 samples); range 1.12 … 1.3"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 60,
+      "surfaceTemperatureK": {
+        "n": 60,
+        "min": 150,
+        "p1": 156,
+        "p50": 182,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 60,
+        "min": 0.004282807244016778,
+        "p1": 0.005867608793486307,
+        "p50": 0.044892373323464095,
+        "p99": 0.08593257502097211,
+        "max": 0.09565960978040958
+      }
+    }
+  },
   "sourceSpeciesLabel": "Frutexa Fera"
 }

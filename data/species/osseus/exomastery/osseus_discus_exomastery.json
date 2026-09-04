@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus discus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.247Z",
+  "generatedAt": "2026-09-04T19:52:59.431Z",
   "sampleCount": 645,
   "numerics": {
     "body.distanceToArrival": {
@@ -647,5 +647,102 @@
     "body.atmosphereComposition.Nitrogen: typical (modal) 7.290000 (1/1 samples); range 7.29 … 7.29",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (3/3 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Water": {
+      "n": 626,
+      "surfaceTemperatureK": {
+        "n": 626,
+        "min": 397,
+        "p1": 402,
+        "p50": 424,
+        "p99": 449,
+        "max": 451
+      },
+      "surfacePressureAtm": {
+        "n": 626,
+        "min": 0.056047815662472245,
+        "p1": 0.061196177024426354,
+        "p50": 0.08253743369356033,
+        "p99": 0.09803061582037997,
+        "max": 0.09858412171724648
+      }
+    },
+    "Thin Methane": {
+      "n": 14,
+      "surfaceTemperatureK": {
+        "n": 14,
+        "min": 80,
+        "p1": 80,
+        "p50": 95,
+        "p99": 107,
+        "max": 107
+      },
+      "surfacePressureAtm": {
+        "n": 14,
+        "min": 0.015481408211201579,
+        "p1": 0.015481408211201579,
+        "p50": 0.03234762444608932,
+        "p99": 0.0920229132000987,
+        "max": 0.0920229132000987
+      }
+    },
+    "Thin Ammonia": {
+      "n": 3,
+      "surfaceTemperatureK": {
+        "n": 3,
+        "min": 168,
+        "p1": 168,
+        "p50": 175,
+        "p99": 176,
+        "max": 176
+      },
+      "surfacePressureAtm": {
+        "n": 3,
+        "min": 0.003901267495682211,
+        "p1": 0.003901267495682211,
+        "p50": 0.011366969444855662,
+        "p99": 0.012591290402171232,
+        "max": 0.012591290402171232
+      }
+    },
+    "Hot thin Carbon dioxide": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 641,
+        "p1": 641,
+        "p50": 641,
+        "p99": 641,
+        "max": 641
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.058982114907475944,
+        "p1": 0.058982114907475944,
+        "p50": 0.058982114907475944,
+        "p99": 0.058982114907475944,
+        "max": 0.058982114907475944
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 467,
+        "p1": 467,
+        "p50": 467,
+        "p99": 467,
+        "max": 467
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.04812007984209228,
+        "p1": 0.04812007984209228,
+        "p50": 0.04812007984209228,
+        "p99": 0.04812007984209228,
+        "max": 0.04812007984209228
+      }
+    }
+  },
   "sourceSpeciesLabel": "Osseus Discus"
 }

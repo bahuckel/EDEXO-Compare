@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock cultro",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.452Z",
+  "generatedAt": "2026-09-04T19:53:00.658Z",
   "sampleCount": 909,
   "numerics": {
     "body.distanceToArrival": {
@@ -592,5 +592,57 @@
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.530000 (1/2 samples); range 0.53 … 0.99",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (1/1 samples); range 99.01 … 99.01"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 907,
+      "surfaceTemperatureK": {
+        "n": 907,
+        "min": 152,
+        "p1": 152,
+        "p50": 166,
+        "p99": 174,
+        "max": 175
+      },
+      "surfacePressureAtm": {
+        "n": 907,
+        "min": 0.0009903335109795214,
+        "p1": 0.001009509884036516,
+        "p50": 0.001704210135701949,
+        "p99": 0.006688604381939305,
+        "max": 0.011025668916851715
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 224,
+        "p1": 224,
+        "p50": 224,
+        "p99": 224,
+        "max": 224
+      },
+      "surfacePressureAtm": null
+    },
+    "Thin Carbon dioxide": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 183,
+        "p1": 183,
+        "p50": 183,
+        "p99": 183,
+        "max": 183
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.047923292741179374,
+        "p1": 0.047923292741179374,
+        "p50": 0.047923292741179374,
+        "p99": 0.047923292741179374,
+        "max": 0.047923292741179374
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tussock Cultro"
 }

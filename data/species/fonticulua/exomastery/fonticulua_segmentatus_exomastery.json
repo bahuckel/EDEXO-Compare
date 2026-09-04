@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua segmentatus",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.056Z",
+  "generatedAt": "2026-09-04T19:52:58.281Z",
   "sampleCount": 1,
   "numerics": {
     "body.distanceToArrival": {
@@ -321,5 +321,26 @@
     "body.materials.Molybdenum: typical (modal) 0.760000 (1/1 samples); range 0.76 … 0.76",
     "body.materials.Antimony: typical (modal) 0.650000 (1/1 samples); range 0.65 … 0.65"
   ],
+  "atmosphereBands": {
+    "Thin Neon-rich": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 64,
+        "p1": 64,
+        "p50": 64,
+        "p99": 64,
+        "max": 64
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0028502408981001728,
+        "p1": 0.0028502408981001728,
+        "p50": 0.0028502408981001728,
+        "p99": 0.0028502408981001728,
+        "max": 0.0028502408981001728
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fonticulua Segmentatus"
 }

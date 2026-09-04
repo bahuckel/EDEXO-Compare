@@ -10,6 +10,7 @@
  *   npm run feeder -- import <file.csv>       the one manual step: import, then run what it touched
  *   npm run feeder -- run [species...]        hydrate + analyse + install (default: everything)
  *   npm run feeder -- rebuild [species...]    rebuild from packs already on disk, no EDSM calls
+ *   npm run feeder -- edges                   candidate game thresholds, for review only
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -38,6 +39,12 @@ import {
 } from "../src/feeder/pipeline.js";
 import { describeInstall, findSpeciesEntryForLabel } from "../src/feeder/install.js";
 import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
+import {
+  proposeEdgesForProfile,
+  SNAP_MIN_SAMPLES,
+  SNAP_TOLERANCE,
+  summariseProposals,
+} from "../src/feeder/edgeSnapping.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
@@ -210,6 +217,56 @@ async function cmdRebuild(): Promise<void> {
   }
 }
 
+/**
+ * Band edges that sit on a round number, with the evidence behind each one.
+ *
+ * Reports only. A wrong hard edge turns a ranking error into a recall loss, and a recall loss is
+ * invisible to the commander — they simply never fly there. Nothing snaps until a proposal has
+ * survived the probe on both scenario rows.
+ */
+async function cmdEdges(): Promise<void> {
+  const db = loadSpeciesDatabaseFromTree(root);
+  const all = [];
+  for (const entry of db.species) {
+    const prof = loadExomasteryProfile(root, entry);
+    if (!prof?.atmosphereBands) continue;
+    all.push(...proposeEdgesForProfile(entry.displayName, prof.atmosphereBands));
+  }
+
+  console.log(
+    `\ncandidate edges: cells with n >= ${SNAP_MIN_SAMPLES} whose observed extreme is within ` +
+      `${SNAP_TOLERANCE * 100}% of a round value\n`,
+  );
+  if (all.length === 0) {
+    console.log("  none");
+    return;
+  }
+
+  const groups = summariseProposals(all);
+  console.log("  agreed value          param  edge  cells  species  bodies  exact");
+  for (const g of groups) {
+    const label =
+      g.parameter === "surfaceTemperatureK" ? `${g.proposed} K` : `${g.proposed.toExponential(0)} atm`;
+    console.log(
+      `  ${label.padEnd(20)}  ${g.parameter === "surfaceTemperatureK" ? "temp " : "press"}  ${g.edge.padEnd(4)}  ` +
+        `${String(g.cells).padStart(5)}  ${String(g.species).padStart(7)}  ${String(g.bodies).padStart(6)}  ${String(g.exact).padStart(5)}`,
+    );
+  }
+
+  console.log("\n  supporting cells (top 20 by sample count):");
+  for (const p of [...all].sort((a, b) => b.n - a.n).slice(0, 20)) {
+    const shown =
+      p.parameter === "surfaceTemperatureK"
+        ? `${p.observed.toFixed(1)} K -> ${p.proposed} K`
+        : `${p.observed.toExponential(3)} -> ${p.proposed.toExponential(0)} atm`;
+    console.log(
+      `    ${p.speciesLabel.padEnd(24)} ${p.atmosphere.padEnd(24)} ${p.edge.padEnd(3)} ${shown.padEnd(26)} ` +
+        `n=${String(p.n).padStart(5)}  off by ${(p.deviation * 100).toFixed(2)}%`,
+    );
+  }
+  console.log("");
+}
+
 function finish(report: RunReport): void {
   console.log(formatRunReport(report));
   const bad =
@@ -230,8 +287,13 @@ switch (command) {
   case "rebuild":
     await cmdRebuild();
     break;
+  case "edges":
+    await cmdEdges();
+    break;
   default:
     console.error(`Unknown command: ${command}\n`);
-    console.error("  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...]");
+    console.error(
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | edges",
+    );
     process.exit(1);
 }

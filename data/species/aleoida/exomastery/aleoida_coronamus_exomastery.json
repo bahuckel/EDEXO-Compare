@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida coronamus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:37.580Z",
+  "generatedAt": "2026-09-04T19:52:55.794Z",
   "sampleCount": 300,
   "numerics": {
     "body.distanceToArrival": {
@@ -547,5 +547,26 @@
     "body.materials.Selenium: typical (modal) 3.010000 (7/77 samples); range 2.47 … 3.27",
     "body.materials.Tellurium: typical (modal) 1.430000 (10/61 samples); range 1.16 … 1.61"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 300,
+      "surfaceTemperatureK": {
+        "n": 300,
+        "min": 180,
+        "p1": 180,
+        "p50": 183,
+        "p99": 189,
+        "max": 189
+      },
+      "surfacePressureAtm": {
+        "n": 300,
+        "min": 0.027166089356032565,
+        "p1": 0.027695319723661484,
+        "p50": 0.056118914611398965,
+        "p99": 0.09681609301751788,
+        "max": 0.09830064150012337
+      }
+    }
+  },
   "sourceSpeciesLabel": "Aleoida Coronamus"
 }

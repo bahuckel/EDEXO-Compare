@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium cerbrus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:38.690Z",
+  "generatedAt": "2026-09-04T19:52:56.932Z",
   "sampleCount": 461,
   "numerics": {
     "body.distanceToArrival": {
@@ -607,5 +607,64 @@
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 34.540000 (1/9 samples); range 27.92 … 45.05",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Sulphur dioxide": {
+      "n": 282,
+      "surfaceTemperatureK": {
+        "n": 282,
+        "min": 132,
+        "p1": 132,
+        "p50": 193,
+        "p99": 371,
+        "max": 434
+      },
+      "surfacePressureAtm": {
+        "n": 282,
+        "min": 0.00099792059215396,
+        "p1": 0.0010120408191463114,
+        "p50": 0.002009843424623736,
+        "p99": 0.08058817350111029,
+        "max": 0.09521481001727115
+      }
+    },
+    "Thin Water": {
+      "n": 178,
+      "surfaceTemperatureK": {
+        "n": 178,
+        "min": 395,
+        "p1": 400,
+        "p50": 422,
+        "p99": 448,
+        "max": 450
+      },
+      "surfacePressureAtm": {
+        "n": 178,
+        "min": 0.056047815662472245,
+        "p1": 0.05825026889711325,
+        "p50": 0.08203938440661239,
+        "p99": 0.0980015574932149,
+        "max": 0.09826205126079447
+      }
+    },
+    "Thin Ammonia": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 174,
+        "p1": 174,
+        "p50": 174,
+        "p99": 174,
+        "max": 174
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.003289531685171478,
+        "p1": 0.003289531685171478,
+        "p50": 0.003289531685171478,
+        "p99": 0.003289531685171478,
+        "max": 0.003289531685171478
+      }
+    }
+  },
   "sourceSpeciesLabel": "Bacterium Cerbrus"
 }

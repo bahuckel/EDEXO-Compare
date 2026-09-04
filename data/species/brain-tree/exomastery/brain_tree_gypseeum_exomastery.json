@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Gypseeum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.163Z",
+  "generatedAt": "2026-09-04T19:52:59.302Z",
   "sampleCount": 5,
   "numerics": {
     "body.distanceToArrival": {
@@ -411,5 +411,26 @@
     "body.materials.Zinc: typical (modal) 5.210000 (1/1 samples); range 5.21 … 5.21",
     "body.materials.Antimony: typical (modal) 1.170000 (1/1 samples); range 1.17 … 1.17"
   ],
+  "atmosphereBands": {
+    "No atmosphere": {
+      "n": 5,
+      "surfaceTemperatureK": {
+        "n": 5,
+        "min": 216,
+        "p1": 216,
+        "p50": 226,
+        "p99": 294,
+        "max": 294
+      },
+      "surfacePressureAtm": {
+        "n": 5,
+        "min": 0,
+        "p1": 0,
+        "p50": 0,
+        "p99": 0,
+        "max": 0
+      }
+    }
+  },
   "sourceSpeciesLabel": "Gypseeum Brain Tree"
 }

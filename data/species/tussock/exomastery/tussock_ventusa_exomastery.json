@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock ventusa",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.898Z",
+  "generatedAt": "2026-09-04T19:53:01.055Z",
   "sampleCount": 318,
   "numerics": {
     "body.distanceToArrival": {
@@ -533,5 +533,26 @@
     "body.materials.Technetium: typical (modal) 0.670000 (7/38 samples); range 0.66 … 0.76",
     "body.materials.Polonium: typical (modal) 0.510000 (9/22 samples); range 0.41 … 0.53"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 318,
+      "surfaceTemperatureK": {
+        "n": 318,
+        "min": 155,
+        "p1": 155,
+        "p50": 157,
+        "p99": 159,
+        "max": 159
+      },
+      "surfacePressureAtm": {
+        "n": 318,
+        "min": 0.0029223687046632126,
+        "p1": 0.003467414300518135,
+        "p50": 0.008067403168023686,
+        "p99": 0.018382232538860104,
+        "max": 0.02048024080927708
+      }
+    }
+  },
   "sourceSpeciesLabel": "Tussock Ventusa"
 }

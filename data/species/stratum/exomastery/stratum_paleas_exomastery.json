@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum paleas",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.892Z",
+  "generatedAt": "2026-09-04T19:53:00.111Z",
   "sampleCount": 1335,
   "numerics": {
     "body.distanceToArrival": {
@@ -586,5 +586,95 @@
     "body.materials.Polonium: typical (modal) 0.500000 (32/124 samples); range 0.42 … 0.55",
     "body.atmosphereComposition.Oxygen: typical (modal) 91.370000 (1/2 samples); range 91.37 … 97.26"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 850,
+      "surfaceTemperatureK": {
+        "n": 850,
+        "min": 165,
+        "p1": 165,
+        "p50": 177,
+        "p99": 200,
+        "max": 352
+      },
+      "surfacePressureAtm": {
+        "n": 850,
+        "min": 0.005890403089069825,
+        "p1": 0.007441794779175919,
+        "p50": 0.03943711640759931,
+        "p99": 0.09590013377744881,
+        "max": 0.09852098368615839
+      }
+    },
+    "Thin Water": {
+      "n": 276,
+      "surfaceTemperatureK": {
+        "n": 276,
+        "min": 394,
+        "p1": 402,
+        "p50": 424,
+        "p99": 447,
+        "max": 449
+      },
+      "surfacePressureAtm": {
+        "n": 276,
+        "min": 0.056047815662472245,
+        "p1": 0.05957264005921539,
+        "p50": 0.08211922495928942,
+        "p99": 0.09814604922773254,
+        "max": 0.09851082531458179
+      }
+    },
+    "Thin Ammonia": {
+      "n": 206,
+      "surfaceTemperatureK": {
+        "n": 206,
+        "min": 158,
+        "p1": 165,
+        "p50": 170,
+        "p99": 175,
+        "max": 175
+      },
+      "surfacePressureAtm": {
+        "n": 206,
+        "min": 0.00099652014803849,
+        "p1": 0.0010087616679003207,
+        "p50": 0.001954300528003948,
+        "p99": 0.008811250204786578,
+        "max": 0.012115048122378484
+      }
+    },
+    "Thin Carbon dioxide-rich": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 222,
+        "p1": 222,
+        "p50": 231,
+        "p99": 231,
+        "max": 231
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.06574379221317543,
+        "p1": 0.06574379221317543,
+        "p50": 0.0831212315716753,
+        "p99": 0.0831212315716753,
+        "max": 0.0831212315716753
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 224,
+        "p1": 224,
+        "p50": 224,
+        "p99": 224,
+        "max": 224
+      },
+      "surfacePressureAtm": null
+    }
+  },
   "sourceSpeciesLabel": "Stratum Paleas"
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida gravis",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:37.683Z",
+  "generatedAt": "2026-09-04T19:52:55.887Z",
   "sampleCount": 232,
   "numerics": {
     "body.distanceToArrival": {
@@ -552,5 +552,26 @@
     "body.materials.Selenium: typical (modal) 3.070000 (5/48 samples); range 2.38 … 3.29",
     "body.materials.Tellurium: typical (modal) 1.460000 (5/35 samples); range 1.14 … 1.61"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 232,
+      "surfaceTemperatureK": {
+        "n": 232,
+        "min": 190,
+        "p1": 190,
+        "p50": 192,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 232,
+        "min": 0.054627291902294595,
+        "p1": 0.05816918987416729,
+        "p50": 0.07925751372316803,
+        "p99": 0.09774084204293115,
+        "max": 0.09831150343942759
+      }
+    }
+  },
   "sourceSpeciesLabel": "Aleoida Gravis"
 }

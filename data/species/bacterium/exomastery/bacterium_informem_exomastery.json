@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium informem",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:38.719Z",
+  "generatedAt": "2026-09-04T19:52:56.965Z",
   "sampleCount": 116,
   "numerics": {
     "body.distanceToArrival": {
@@ -585,5 +585,26 @@
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 25.670000 (1/1 samples); range 25.67 … 25.67",
     "body.atmosphereComposition.Neon: typical (modal) 0.100000 (2/3 samples); range 0.09 … 0.1"
   ],
+  "atmosphereBands": {
+    "Thin Nitrogen": {
+      "n": 116,
+      "surfaceTemperatureK": {
+        "n": 116,
+        "min": 47,
+        "p1": 48,
+        "p50": 74,
+        "p99": 142,
+        "max": 148
+      },
+      "surfacePressureAtm": {
+        "n": 116,
+        "min": 0.0010001368566493955,
+        "p1": 0.001117436328645448,
+        "p50": 0.008928796111522329,
+        "p99": 0.0675230298149519,
+        "max": 0.06890177318529485
+      }
+    }
+  },
   "sourceSpeciesLabel": "Bacterium Informem"
 }

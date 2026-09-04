@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium alcyoneum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:38.019Z",
+  "generatedAt": "2026-09-04T19:52:56.272Z",
   "sampleCount": 853,
   "numerics": {
     "body.distanceToArrival": {
@@ -603,5 +603,57 @@
     "body.materials.Polonium: typical (modal) 0.510000 (12/75 samples); range 0.42 … 0.67",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 100.000000 (1/2 samples); range 99.01 … 100"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 850,
+      "surfaceTemperatureK": {
+        "n": 850,
+        "min": 152,
+        "p1": 153,
+        "p50": 167,
+        "p99": 174,
+        "max": 175
+      },
+      "surfacePressureAtm": {
+        "n": 850,
+        "min": 0.0009876185541574142,
+        "p1": 0.0010087616679003207,
+        "p50": 0.0017904508758943994,
+        "p99": 0.007858186765358993,
+        "max": 0.010355517660991858
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 179,
+        "p1": 179,
+        "p50": 183,
+        "p99": 183,
+        "max": 183
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.02910306601529731,
+        "p1": 0.02910306601529731,
+        "p50": 0.047923292741179374,
+        "p99": 0.047923292741179374,
+        "max": 0.047923292741179374
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 224,
+        "p1": 224,
+        "p50": 224,
+        "p99": 224,
+        "max": 224
+      },
+      "surfacePressureAtm": null
+    }
+  },
   "sourceSpeciesLabel": "Bacterium Alcyoneum"
 }

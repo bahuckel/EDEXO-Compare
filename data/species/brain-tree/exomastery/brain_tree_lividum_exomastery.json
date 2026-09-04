@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Lividum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.165Z",
+  "generatedAt": "2026-09-04T19:52:59.304Z",
   "sampleCount": 2,
   "numerics": {
     "body.distanceToArrival": {
@@ -361,5 +361,26 @@
     "body.materials.Tin: typical (modal) 1.310000 (1/1 samples); range 1.31 … 1.31",
     "body.materials.Yttrium: typical (modal) 1.260000 (1/1 samples); range 1.26 … 1.26"
   ],
+  "atmosphereBands": {
+    "No atmosphere": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 380,
+        "p1": 380,
+        "p50": 489,
+        "p99": 489,
+        "max": 489
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0,
+        "p1": 0,
+        "p50": 0,
+        "p99": 0,
+        "max": 0
+      }
+    }
+  },
   "sourceSpeciesLabel": "Lividum Brain Tree"
 }

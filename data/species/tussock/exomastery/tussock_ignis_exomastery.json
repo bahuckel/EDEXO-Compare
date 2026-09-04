@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock ignis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:42.587Z",
+  "generatedAt": "2026-09-04T19:53:00.779Z",
   "sampleCount": 969,
   "numerics": {
     "body.distanceToArrival": {
@@ -570,5 +570,38 @@
     "body.materials.Technetium: typical (modal) 0.700000 (21/133 samples); range 0.64 … 0.76",
     "body.materials.Ruthenium: typical (modal) 1.180000 (19/161 samples); range 1.06 … 1.46"
   ],
+  "atmosphereBands": {
+    "Thin Carbon dioxide": {
+      "n": 968,
+      "surfaceTemperatureK": {
+        "n": 968,
+        "min": 161,
+        "p1": 161,
+        "p50": 165,
+        "p99": 169,
+        "max": 169
+      },
+      "surfacePressureAtm": {
+        "n": 968,
+        "min": 0.0031049317345176416,
+        "p1": 0.004115824821120158,
+        "p50": 0.014108531922033062,
+        "p99": 0.04116891616086849,
+        "max": 0.048350074404145085
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 224,
+        "p1": 224,
+        "p50": 224,
+        "p99": 224,
+        "max": 224
+      },
+      "surfacePressureAtm": null
+    }
+  },
   "sourceSpeciesLabel": "Tussock Ignis"
 }

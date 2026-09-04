@@ -3,7 +3,7 @@
   "speciesLabel": "Recepta deltahedronix",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.520Z",
+  "generatedAt": "2026-09-04T19:52:59.724Z",
   "sampleCount": 37,
   "numerics": {
     "body.distanceToArrival": {
@@ -504,5 +504,45 @@
     "body.materials.Arsenic: typical (modal) 2.520000 (2/7 samples); range 2.44 … 2.62",
     "body.materials.Technetium: typical (modal) 0.780000 (1/3 samples); range 0.71 … 0.78"
   ],
+  "atmosphereBands": {
+    "Thin Sulphur dioxide": {
+      "n": 28,
+      "surfaceTemperatureK": {
+        "n": 28,
+        "min": 132,
+        "p1": 132,
+        "p50": 133,
+        "p99": 198,
+        "max": 198
+      },
+      "surfacePressureAtm": {
+        "n": 28,
+        "min": 0.0010091632963237108,
+        "p1": 0.0010091632963237108,
+        "p50": 0.001190863064396743,
+        "p99": 0.05734118149518875,
+        "max": 0.05734118149518875
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 9,
+      "surfaceTemperatureK": {
+        "n": 9,
+        "min": 163,
+        "p1": 163,
+        "p50": 181,
+        "p99": 194,
+        "max": 194
+      },
+      "surfacePressureAtm": {
+        "n": 9,
+        "min": 0.009531499985196151,
+        "p1": 0.009531499985196151,
+        "p50": 0.049376171004194426,
+        "p99": 0.09389614945965952,
+        "max": 0.09389614945965952
+      }
+    }
+  },
   "sourceSpeciesLabel": "Recepta Deltahedronix"
 }

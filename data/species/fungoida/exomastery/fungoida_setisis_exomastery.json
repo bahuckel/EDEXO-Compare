@@ -3,7 +3,7 @@
   "speciesLabel": "Fungoida setisis",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.006Z",
+  "generatedAt": "2026-09-04T19:52:59.185Z",
   "sampleCount": 617,
   "numerics": {
     "body.distanceToArrival": {
@@ -614,5 +614,76 @@
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 100.000000 (1/2 samples); range 99.01 … 100",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (1/1 samples); range 0.99 … 0.99"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 602,
+      "surfaceTemperatureK": {
+        "n": 602,
+        "min": 152,
+        "p1": 153,
+        "p50": 165,
+        "p99": 174,
+        "max": 175
+      },
+      "surfacePressureAtm": {
+        "n": 602,
+        "min": 0.0009876185541574142,
+        "p1": 0.00100976325684678,
+        "p50": 0.0016613861435973354,
+        "p99": 0.005567077887984209,
+        "max": 0.008846526809770541
+      }
+    },
+    "Thin Methane": {
+      "n": 12,
+      "surfaceTemperatureK": {
+        "n": 12,
+        "min": 68,
+        "p1": 68,
+        "p50": 76,
+        "p99": 99,
+        "max": 99
+      },
+      "surfacePressureAtm": {
+        "n": 12,
+        "min": 0.0010856171033802123,
+        "p1": 0.0010856171033802123,
+        "p50": 0.0027614994226498888,
+        "p99": 0.06863953976807304,
+        "max": 0.06863953976807304
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 179,
+        "p1": 179,
+        "p50": 183,
+        "p99": 183,
+        "max": 183
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.02910306601529731,
+        "p1": 0.02910306601529731,
+        "p50": 0.047923292741179374,
+        "p99": 0.047923292741179374,
+        "max": 0.047923292741179374
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 224,
+        "p1": 224,
+        "p50": 224,
+        "p99": 224,
+        "max": 224
+      },
+      "surfacePressureAtm": null
+    }
+  },
   "sourceSpeciesLabel": "Fungoida Setisis"
 }

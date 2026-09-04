@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola carbosis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.850Z",
+  "generatedAt": "2026-09-04T19:52:59.016Z",
   "sampleCount": 20,
   "numerics": {
     "body.distanceToArrival": {
@@ -500,5 +500,83 @@
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 100.000000 (2/3 samples); range 0.06 … 100",
     "body.atmosphereComposition.Oxygen: typical (modal) 99.940000 (1/1 samples); range 99.94 … 99.94"
   ],
+  "atmosphereBands": {
+    "Thin Methane": {
+      "n": 9,
+      "surfaceTemperatureK": {
+        "n": 9,
+        "min": 88,
+        "p1": 88,
+        "p50": 99,
+        "p99": 107,
+        "max": 107
+      },
+      "surfacePressureAtm": {
+        "n": 9,
+        "min": 0.04223007070318283,
+        "p1": 0.04223007070318283,
+        "p50": 0.08117361946212683,
+        "p99": 0.09413019677276092,
+        "max": 0.09413019677276092
+      }
+    },
+    "Thin Argon": {
+      "n": 8,
+      "surfaceTemperatureK": {
+        "n": 8,
+        "min": 75,
+        "p1": 75,
+        "p50": 89,
+        "p99": 103,
+        "max": 103
+      },
+      "surfacePressureAtm": {
+        "n": 8,
+        "min": 0.002164152884283247,
+        "p1": 0.002164152884283247,
+        "p50": 0.009355751867752282,
+        "p99": 0.09111812430298544,
+        "max": 0.09111812430298544
+      }
+    },
+    "Thin Sulphur dioxide": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 181,
+        "p1": 181,
+        "p50": 182,
+        "p99": 182,
+        "max": 182
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.04571123531211448,
+        "p1": 0.04571123531211448,
+        "p50": 0.05734118149518875,
+        "p99": 0.05734118149518875,
+        "max": 0.05734118149518875
+      }
+    },
+    "Thin Oxygen": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 167,
+        "p1": 167,
+        "p50": 167,
+        "p99": 167,
+        "max": 167
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.043534737004687886,
+        "p1": 0.043534737004687886,
+        "p50": 0.043534737004687886,
+        "p99": 0.043534737004687886,
+        "max": 0.043534737004687886
+      }
+    }
+  },
   "sourceSpeciesLabel": "Fumerola Carbosis"
 }

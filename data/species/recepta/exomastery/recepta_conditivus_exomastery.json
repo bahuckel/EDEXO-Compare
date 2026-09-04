@@ -3,7 +3,7 @@
   "speciesLabel": "Recepta conditivus",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:41.512Z",
+  "generatedAt": "2026-09-04T19:52:59.718Z",
   "sampleCount": 25,
   "numerics": {
     "body.distanceToArrival": {
@@ -552,5 +552,64 @@
     "body.atmosphereComposition.Ammonia: typical (modal) 33.950000 (1/1 samples); range 33.95 … 33.95",
     "body.atmosphereComposition.Oxygen: typical (modal) 82.520000 (1/1 samples); range 82.52 … 82.52"
   ],
+  "atmosphereBands": {
+    "Thin Sulphur dioxide": {
+      "n": 21,
+      "surfaceTemperatureK": {
+        "n": 21,
+        "min": 132,
+        "p1": 132,
+        "p50": 164,
+        "p99": 271,
+        "max": 271
+      },
+      "surfacePressureAtm": {
+        "n": 21,
+        "min": 0.0010198147841105354,
+        "p1": 0.0010198147841105354,
+        "p50": 0.0035981198914384407,
+        "p99": 0.08911856379965458,
+        "max": 0.08911856379965458
+      }
+    },
+    "Thin Carbon dioxide": {
+      "n": 3,
+      "surfaceTemperatureK": {
+        "n": 3,
+        "min": 158,
+        "p1": 158,
+        "p50": 175,
+        "p99": 176,
+        "max": 176
+      },
+      "surfacePressureAtm": {
+        "n": 3,
+        "min": 0.006852480394769307,
+        "p1": 0.006852480394769307,
+        "p50": 0.05345520004934616,
+        "p99": 0.06719268520108561,
+        "max": 0.06719268520108561
+      }
+    },
+    "Thin Oxygen": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 156,
+        "p1": 156,
+        "p50": 156,
+        "p99": 156,
+        "max": 156
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0363732858919319,
+        "p1": 0.0363732858919319,
+        "p50": 0.0363732858919319,
+        "p99": 0.0363732858919319,
+        "max": 0.0363732858919319
+      }
+    }
+  },
   "sourceSpeciesLabel": "Recepta Conditivus"
 }

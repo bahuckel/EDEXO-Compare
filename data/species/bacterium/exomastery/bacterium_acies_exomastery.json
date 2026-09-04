@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium acies",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:37.816Z",
+  "generatedAt": "2026-09-04T19:52:56.007Z",
   "sampleCount": 132,
   "numerics": {
     "body.distanceToArrival": {
@@ -561,5 +561,26 @@
     "body.rings[0].innerRadius: typical (modal) 10186.000000 (1/1 samples); range 10186 … 10186",
     "body.rings[0].outerRadius: typical (modal) 22396.000000 (1/1 samples); range 22396 … 22396"
   ],
+  "atmosphereBands": {
+    "Thin Neon": {
+      "n": 132,
+      "surfaceTemperatureK": {
+        "n": 132,
+        "min": 20,
+        "p1": 20,
+        "p50": 28,
+        "p99": 56,
+        "max": 56
+      },
+      "surfacePressureAtm": {
+        "n": 132,
+        "min": 0.0010186790920305945,
+        "p1": 0.001020045724154947,
+        "p50": 0.001783999792746114,
+        "p99": 0.0029356560868492474,
+        "max": 0.003270257350111029
+      }
+    }
+  },
   "sourceSpeciesLabel": "Bacterium Acies"
 }

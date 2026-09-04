@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa flammasis",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:40.706Z",
+  "generatedAt": "2026-09-04T19:52:58.840Z",
   "sampleCount": 147,
   "numerics": {
     "body.distanceToArrival": {
@@ -502,5 +502,26 @@
     "body.materials.Zirconium: typical (modal) 2.280000 (4/28 samples); range 2.2 … 2.62",
     "body.materials.Ruthenium: typical (modal) 1.170000 (5/26 samples); range 1.13 … 1.3"
   ],
+  "atmosphereBands": {
+    "Thin Ammonia": {
+      "n": 147,
+      "surfaceTemperatureK": {
+        "n": 147,
+        "min": 154,
+        "p1": 154,
+        "p50": 165,
+        "p99": 175,
+        "max": 175
+      },
+      "surfacePressureAtm": {
+        "n": 147,
+        "min": 0.0009992293116210214,
+        "p1": 0.0010011144337527759,
+        "p50": 0.0016410651862817666,
+        "p99": 0.010242231107821367,
+        "max": 0.012115048122378484
+      }
+    }
+  },
   "sourceSpeciesLabel": "Frutexa Flammasis"
 }

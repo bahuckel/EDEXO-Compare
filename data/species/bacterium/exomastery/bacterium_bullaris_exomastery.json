@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium bullaris",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:38.592Z",
+  "generatedAt": "2026-09-04T19:52:56.835Z",
   "sampleCount": 180,
   "numerics": {
     "body.distanceToArrival": {
@@ -518,5 +518,26 @@
     "body.atmosphereComposition.Nitrogen: typical (modal) 3.330000 (1/3 samples); range 1.83 … 3.71",
     "body.materials.Ruthenium: typical (modal) 0.760000 (9/31 samples); range 0.74 … 1.2"
   ],
+  "atmosphereBands": {
+    "Thin Methane": {
+      "n": 180,
+      "surfaceTemperatureK": {
+        "n": 180,
+        "min": 68,
+        "p1": 68,
+        "p50": 93,
+        "p99": 106,
+        "max": 107
+      },
+      "surfacePressureAtm": {
+        "n": 180,
+        "min": 0.0010856171033802123,
+        "p1": 0.001204362102146558,
+        "p50": 0.05700085680730323,
+        "p99": 0.09745300548729337,
+        "max": 0.0984937661880089
+      }
+    }
+  },
   "sourceSpeciesLabel": "Bacterium Bullaris"
 }

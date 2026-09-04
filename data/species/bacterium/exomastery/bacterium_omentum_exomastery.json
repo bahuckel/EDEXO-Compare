@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium omentum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:31:38.729Z",
+  "generatedAt": "2026-09-04T19:52:56.976Z",
   "sampleCount": 14,
   "numerics": {
     "body.distanceToArrival": {
@@ -519,5 +519,121 @@
     "body.atmosphereComposition.Methane: typical (modal) 100.000000 (1/1 samples); range 100 … 100",
     "body.materials.Technetium: typical (modal) 0.570000 (1/1 samples); range 0.57 … 0.57"
   ],
+  "atmosphereBands": {
+    "Thin Neon": {
+      "n": 6,
+      "surfaceTemperatureK": {
+        "n": 6,
+        "min": 20,
+        "p1": 20,
+        "p50": 27,
+        "p99": 41,
+        "max": 41
+      },
+      "surfacePressureAtm": {
+        "n": 6,
+        "min": 0.0011557119763138416,
+        "p1": 0.0011557119763138416,
+        "p50": 0.002002621909696521,
+        "p99": 0.004586528605970886,
+        "max": 0.004586528605970886
+      }
+    },
+    "Thin Neon-rich": {
+      "n": 3,
+      "surfaceTemperatureK": {
+        "n": 3,
+        "min": 20,
+        "p1": 20,
+        "p50": 24,
+        "p99": 86,
+        "max": 86
+      },
+      "surfacePressureAtm": {
+        "n": 3,
+        "min": 0.00562253028374044,
+        "p1": 0.00562253028374044,
+        "p50": 0.025254192982975574,
+        "p99": 0.056565295001233654,
+        "max": 0.056565295001233654
+      }
+    },
+    "Thin Argon": {
+      "n": 2,
+      "surfaceTemperatureK": {
+        "n": 2,
+        "min": 56,
+        "p1": 56,
+        "p50": 65,
+        "p99": 65,
+        "max": 65
+      },
+      "surfacePressureAtm": {
+        "n": 2,
+        "min": 0.0012142752331606218,
+        "p1": 0.0012142752331606218,
+        "p50": 0.003998172889217863,
+        "p99": 0.003998172889217863,
+        "max": 0.003998172889217863
+      }
+    },
+    "Thin Water-rich": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 195,
+        "p1": 195,
+        "p50": 195,
+        "p99": 195,
+        "max": 195
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0921601572168764,
+        "p1": 0.0921601572168764,
+        "p50": 0.0921601572168764,
+        "p99": 0.0921601572168764,
+        "max": 0.0921601572168764
+      }
+    },
+    "Thin Methane": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 85,
+        "p1": 85,
+        "p50": 85,
+        "p99": 85,
+        "max": 85
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.044250174448556626,
+        "p1": 0.044250174448556626,
+        "p50": 0.044250174448556626,
+        "p99": 0.044250174448556626,
+        "max": 0.044250174448556626
+      }
+    },
+    "No atmosphere": {
+      "n": 1,
+      "surfaceTemperatureK": {
+        "n": 1,
+        "min": 31,
+        "p1": 31,
+        "p50": 31,
+        "p99": 31,
+        "max": 31
+      },
+      "surfacePressureAtm": {
+        "n": 1,
+        "min": 0.0009588367036762891,
+        "p1": 0.0009588367036762891,
+        "p50": 0.0009588367036762891,
+        "p99": 0.0009588367036762891,
+        "max": 0.0009588367036762891
+      }
+    }
+  },
   "sourceSpeciesLabel": "Bacterium Omentum"
 }
