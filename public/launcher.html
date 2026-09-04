@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ED Exo Compare — Launcher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ed-orange: #ff5c1a;
+        --ed-orange-glow: rgba(255, 92, 26, 0.5);
+        --ed-orange-dim: rgba(255, 92, 26, 0.35);
+        --ed-blue: #56b9ff;
+        --ed-blue-deep: #1e8ad6;
+        --ed-blue-glow: rgba(86, 185, 255, 0.45);
+        --ed-blue-panel: rgba(86, 185, 255, 0.08);
+        --ed-bg: #050507;
+        --ed-panel: #0e0e12;
+        --ed-text: #e8e6e3;
+        --ed-ok: #34d399;
+        --ed-bad: #f87171;
+        /* Pointy-top honeycomb tile (R=16): three hex centers per period, no overlap */
+        --hex-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 55.42562584220407 56'%3E%3Cg fill='none' stroke='%23ff5c1a' stroke-opacity='0.22' stroke-width='0.85'%3E%3Cpath d='M13.856406460551017 0L27.712812921102035 8L27.712812921102035 24L13.856406460551017 32L0 24L0 8Z'/%3E%3Cpath d='M41.56821838165305 0L55.42462484220407 8L55.42462484220407 24L41.56821838165305 32L27.712812921102035 24L27.712812921102035 8Z'/%3E%3Cpath d='M27.712812921102035 24L41.56821838165305 32L41.56821838165305 48L27.712812921102035 56L13.856406460551017 48L13.856406460551017 32Z'/%3E%3C/g%3E%3C/svg%3E");
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(ellipse 120% 85% at 50% -18%, rgba(255, 92, 26, 0.14), transparent 58%),
+          radial-gradient(ellipse 90% 60% at 100% 20%, rgba(86, 185, 255, 0.06), transparent 50%),
+          var(--hex-pattern) center top / 55.425626px 56px repeat,
+          var(--ed-bg);
+        color: var(--ed-text);
+        font-family: "Rajdhani", system-ui, sans-serif;
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .frame {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 28px 22px 36px;
+      }
+      .hex-border {
+        position: relative;
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        background: linear-gradient(145deg, var(--ed-orange-dim), transparent 40%);
+        padding: 2px;
+        margin-bottom: 22px;
+      }
+      .hex-inner {
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        background: linear-gradient(165deg, rgba(255, 92, 26, 0.05), transparent 42%), var(--ed-panel);
+        padding: 20px 18px;
+        text-align: left;
+      }
+      .hero-brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        justify-content: flex-start;
+      }
+      .logo-hex-ring {
+        flex-shrink: 0;
+        width: 92px;
+        height: 92px;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 40% 35%, rgba(255, 92, 26, 0.2), transparent 62%);
+        clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+        border: none;
+      }
+      .logo-hex-ring .logo {
+        width: 64px;
+        height: 64px;
+        margin: 0;
+        filter: drop-shadow(0 0 14px rgba(255, 92, 26, 0.55))
+          drop-shadow(0 0 28px rgba(86, 185, 255, 0.15));
+      }
+      .hero-titles {
+        min-width: 0;
+      }
+      .logo {
+        width: 72px;
+        height: 72px;
+        object-fit: contain;
+      }
+      h1 {
+        font-family: "Orbitron", sans-serif;
+        font-weight: 700;
+        font-size: clamp(1.05rem, 3.5vw, 1.45rem);
+        letter-spacing: 0.14em;
+        color: var(--ed-orange);
+        margin: 0 0 4px;
+        line-height: 1.2;
+      }
+      .sub {
+        font-size: clamp(0.85rem, 2.4vw, 0.96rem);
+        font-weight: 600;
+        color: rgba(232, 230, 227, 0.78);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      #splash {
+        text-align: center;
+        padding: 48px 12px;
+      }
+      .splash-pct {
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: var(--ed-orange);
+        margin: 8px 0 14px;
+        font-variant-numeric: tabular-nums;
+      }
+      .splash-msg {
+        font-size: 0.92rem;
+        font-weight: 500;
+        line-height: 1.4;
+        margin: 0 0 16px;
+        opacity: 0.88;
+      }
+      .boot-bar {
+        max-width: 280px;
+        margin: 0 auto;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 92, 26, 0.12);
+        border: 1px solid var(--ed-orange-dim);
+        overflow: hidden;
+      }
+      .boot-bar-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #ff8a4a, var(--ed-orange));
+        box-shadow: 0 0 12px rgba(255, 92, 26, 0.35);
+        transition: width 0.35s ease-out;
+      }
+      .ring {
+        width: 44px;
+        height: 44px;
+        border: 3px solid var(--ed-orange-dim);
+        border-top-color: var(--ed-orange);
+        border-radius: 50%;
+        margin: 0 auto 16px;
+        animation: spin 0.85s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #main {
+        display: none;
+      }
+      #main.ready {
+        display: block;
+      }
+      .launcher-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 6px;
+      }
+      .status-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 18px 0 20px;
+        padding: 14px 16px;
+        background: rgba(14, 14, 18, 0.92);
+        border: 1px solid var(--ed-orange-dim);
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+      }
+      .lamp {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        box-shadow: 0 0 14px currentColor;
+      }
+      .lamp.ok {
+        color: var(--ed-ok);
+        background: var(--ed-ok);
+      }
+      .lamp.bad {
+        color: var(--ed-bad);
+        background: var(--ed-bad);
+      }
+      .status-text {
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+      .status-detail {
+        font-size: 0.82rem;
+        opacity: 0.65;
+        margin-top: 4px;
+        word-break: break-all;
+      }
+      .btn {
+        display: block;
+        width: 100%;
+        margin: 0;
+        padding: 14px 18px;
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.8rem;
+        letter-spacing: 0.09em;
+        text-transform: none;
+        font-weight: 700;
+        color: #08080a;
+        background: linear-gradient(180deg, #ff964d, var(--ed-orange));
+        border: 1px solid rgba(255, 140, 70, 0.55);
+        cursor: pointer;
+        clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+        text-decoration: none;
+        text-align: left;
+        transition: transform 0.12s ease, filter 0.15s, box-shadow 0.15s;
+        box-shadow: 0 0 0 1px rgba(255, 92, 26, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2),
+          0 8px 24px rgba(0, 0, 0, 0.45);
+      }
+      .btn:hover {
+        filter: brightness(1.06);
+        transform: translateY(-1px);
+      }
+      .btn:active {
+        transform: translateY(0);
+      }
+      .btn .btn-lines {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: flex-start;
+      }
+      .btn .btn-lines strong {
+        font-size: 0.88rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .btn .btn-lines span.subline {
+        font-family: "Rajdhani", system-ui, sans-serif;
+        font-weight: 600;
+        font-size: 0.92rem;
+        letter-spacing: 0.03em;
+        color: rgba(8, 8, 10, 0.72);
+        text-transform: none;
+      }
+      .btn.secondary {
+        background: linear-gradient(165deg, rgba(255, 92, 26, 0.12), transparent 55%);
+        color: rgba(254, 224, 200, 0.98);
+        border: 1px solid var(--ed-orange-dim);
+        clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+        box-shadow: inset 0 0 22px rgba(255, 92, 26, 0.06),
+          0 6px 18px rgba(0, 0, 0, 0.35);
+      }
+      .btn.secondary .btn-lines span.subline {
+        color: rgba(232, 230, 227, 0.58);
+      }
+      .links-section h2 {
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        color: rgba(254, 240, 230, 0.94);
+        margin: 24px 0 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--ed-orange-dim);
+        clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 100%, 0 100%);
+      }
+      .link-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .link-list > li.url-row {
+        list-style: none;
+        margin: 8px 0;
+        padding: 0;
+        background: rgba(255, 92, 26, 0.06);
+        border-left: 3px solid var(--ed-orange);
+        font-size: 0.92rem;
+        word-break: break-all;
+        display: flex;
+        align-items: stretch;
+        overflow: hidden;
+      }
+      .link-subh {
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.58rem;
+        letter-spacing: 0.16em;
+        color: rgba(255, 92, 26, 0.88);
+        margin: 18px 0 8px;
+        text-transform: uppercase;
+      }
+      .url-toggle {
+        flex: 0 0 44px;
+        min-width: 44px;
+        border: none;
+        cursor: pointer;
+        background: rgba(52, 211, 153, 0.16);
+        color: var(--ed-ok);
+        font-size: 1rem;
+        line-height: 1;
+        padding: 0;
+        transition: background 0.15s, color 0.15s;
+      }
+      .url-toggle:hover {
+        background: rgba(52, 211, 153, 0.3);
+      }
+      .url-toggle[aria-pressed="false"] {
+        background: rgba(120, 120, 130, 0.28);
+        color: rgba(232, 230, 227, 0.4);
+      }
+      .url-row-inner {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        min-width: 0;
+      }
+      .url-row--off .url-row-inner {
+        opacity: 0.48;
+      }
+      .url-row--off a {
+        pointer-events: none;
+        text-decoration: line-through;
+        color: rgba(125, 219, 254, 0.45);
+      }
+      .link-list a {
+        color: #7ddbfe;
+        text-decoration: none;
+      }
+      .link-list a:hover {
+        text-decoration: underline;
+      }
+      .btn-exomastery {
+        background: linear-gradient(180deg, #7cc4ff, var(--ed-blue-deep));
+        color: #061018;
+        border-color: rgba(86, 185, 255, 0.55);
+        box-shadow: 0 0 0 1px rgba(86, 185, 255, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.22),
+          0 8px 28px rgba(30, 120, 200, 0.22);
+      }
+      .btn-exomastery .btn-lines span.subline {
+        color: rgba(6, 16, 24, 0.75);
+      }
+      .btn-exomastery:hover {
+        filter: brightness(1.05);
+      }
+      .btn-exomastery:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+      .btn-exomastery .btn-lines:has(> strong:only-child) {
+        justify-content: center;
+        min-height: 2.2em;
+      }
+      .btn-exomastery .btn-lines:has(> strong:only-child) strong {
+        margin: auto 0;
+      }
+      .msg-launcher {
+        font-size: 0.82rem;
+        margin-top: 10px;
+        min-height: 1.2em;
+        font-weight: 500;
+      }
+      .msg-launcher.ok {
+        color: var(--ed-ok);
+      }
+      .msg-launcher.err {
+        color: var(--ed-bad);
+      }
+      .modal-bg {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        padding: 16px;
+      }
+      .modal-bg.on {
+        display: flex;
+      }
+      .modal {
+        width: 100%;
+        max-width: 440px;
+        background: var(--ed-panel);
+        border: 1px solid var(--ed-orange-dim);
+        padding: 20px;
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+      }
+      .modal h3 {
+        font-family: "Orbitron", sans-serif;
+        margin: 0 0 12px;
+        color: var(--ed-orange);
+        font-size: 0.85rem;
+        letter-spacing: 0.12em;
+      }
+      .modal input {
+        width: 100%;
+        padding: 10px 12px;
+        background: #060608;
+        border: 1px solid var(--ed-orange-dim);
+        color: #e8e6e3;
+        font-family: inherit;
+        margin-bottom: 12px;
+      }
+      .modal .row {
+        display: flex;
+        gap: 10px;
+      }
+      .modal .row .btn {
+        margin: 0;
+        flex: 1;
+        text-align: center;
+      }
+      .modal .btn .btn-lines {
+        align-items: center;
+        text-align: center;
+        width: 100%;
+      }
+      .hint {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: rgba(232, 230, 227, 0.62);
+        margin-top: 10px;
+        line-height: 1.48;
+      }
+      .overlay-menu-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 14px 0 16px;
+      }
+      .overlay-menu-grid .btn {
+        margin: 0;
+      }
+      .overlay-pick-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+      }
+      .overlay-check {
+        flex: 0 0 1rem;
+        font-weight: 800;
+        color: var(--ed-ok);
+        font-size: 0.95rem;
+        text-align: center;
+        min-width: 1rem;
+      }
+      .btn.overlay-btn--on {
+        border-color: rgba(52, 211, 153, 0.5);
+        box-shadow:
+          0 0 0 1px rgba(52, 211, 153, 0.15),
+          inset 0 0 14px rgba(52, 211, 153, 0.08);
+      }
+      .err-msg {
+        color: var(--ed-bad);
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+      }
+
+      .modal--network {
+        max-width: min(480px, 100vw - 32px);
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+      }
+
+      .net-section {
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(255, 92, 26, 0.2);
+      }
+
+      .net-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 8px;
+      }
+
+      .net-section-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .net-toggle-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(254, 240, 230, 0.95);
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .net-toggle-label input[type="checkbox"] {
+        width: 1.05rem;
+        height: 1.05rem;
+        accent-color: var(--ed-orange);
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .net-eye {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 36px;
+        padding: 0;
+        border: 1px solid var(--ed-orange-dim);
+        border-radius: 8px;
+        background: rgba(255, 92, 26, 0.1);
+        color: rgba(232, 230, 227, 0.9);
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          color 0.15s;
+      }
+
+      .net-eye:hover {
+        background: rgba(255, 92, 26, 0.2);
+        border-color: rgba(255, 140, 70, 0.55);
+        color: var(--ed-orange);
+      }
+
+      .net-eye:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      .net-eye.net-eye--off {
+        color: rgba(232, 230, 227, 0.45);
+      }
+
+      .net-eye .eye-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .net-eye .eye-icon--slashed {
+        display: none;
+      }
+
+      .net-eye.net-eye--off .eye-icon--open {
+        display: none;
+      }
+
+      .net-eye.net-eye--off .eye-icon--slashed {
+        display: flex;
+      }
+
+      .net-placeholder {
+        list-style: none;
+        margin: 8px 0;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.04);
+        border-left: 3px solid rgba(120, 120, 130, 0.6);
+        font-size: 0.88rem;
+        line-height: 1.4;
+        color: rgba(232, 230, 227, 0.65);
+      }
+
+      .net-placeholder.dim {
+        opacity: 0.85;
+      }
+
+      .net-public-hint {
+        margin: 0 0 8px;
+      }
+
+      .net-lan-warning {
+        margin: 0 0 8px;
+        padding: 8px 10px;
+        border-left: 3px solid #ff6a1a;
+        border-radius: 4px;
+        background: rgba(255, 106, 26, 0.08);
+        color: #ffcfae;
+      }
+
+      .net-lan-warning strong {
+        color: #ff8f4d;
+      }
+
+      .modal-network-head h3 {
+        margin-bottom: 6px;
+      }
+
+      .modal-network-head .hint {
+        margin-top: 0;
+        margin-bottom: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div class="hex-border">
+        <div class="hex-inner">
+          <div class="hero-brand">
+            <div class="logo-hex-ring" aria-hidden="true">
+              <img class="logo" src="/edexo-icon-124.webp" alt="" width="72" height="72" onerror="this.style.display='none'" />
+            </div>
+            <div class="hero-titles">
+              <h1>ED EXO COMPARE</h1>
+              <div class="sub">Launcher</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="splash">
+        <div class="ring"></div>
+        <div class="splash-pct" id="splashPct">—</div>
+        <div class="boot-bar" aria-hidden="true"><div class="boot-bar-fill" id="splashBar"></div></div>
+        <div class="splash-msg" id="splashMsg">Initialising journal service…</div>
+      </div>
+
+      <div id="main">
+        <div class="status-row" id="statusRow">
+          <div class="lamp bad" id="statusLamp"></div>
+          <div>
+            <div class="status-text" id="statusTitle">Connecting…</div>
+            <div class="status-detail" id="statusDetail"></div>
+          </div>
+        </div>
+
+        <div class="launcher-actions">
+          <a class="btn" id="btnMainUi" href="/">
+            <span class="btn-lines">
+              <strong>Open exobiology UI</strong>
+              <span class="subline">This device — same origin as this launcher</span>
+            </span>
+          </a>
+          <button type="button" class="btn secondary" id="btnOptions">
+            <span class="btn-lines">
+              <strong>Journal folder</strong>
+              <span class="subline">Set path to folder with Journal.*.log</span>
+            </span>
+          </button>
+          <button type="button" class="btn btn-exomastery" id="btnExomasteryRefresh">
+            <span class="btn-lines">
+              <strong>Refresh exomastery</strong>
+              <span class="subline">Re-read exomastery data.</span>
+            </span>
+          </button>
+          <button type="button" class="btn btn-exomastery" id="btnOverlayMenu">
+            <span class="btn-lines">
+              <strong>Overlay</strong>
+              <span class="subline">Transparent HUD — up to 3 stacked (distance, FSS, candidates, data value)</span>
+            </span>
+          </button>
+          <button type="button" class="btn secondary" id="btnNetworkSettings">
+            <span class="btn-lines">
+              <strong>Network settings</strong>
+              <span class="subline">This computer, LAN, and public URLs — visibility &amp; toggles</span>
+            </span>
+          </button>
+        </div>
+        <div class="msg-launcher" id="launcherActionMsg" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="modal-bg" id="networkSettingsModal">
+      <div class="modal modal--network">
+        <div class="modal-network-head">
+          <h3>Network settings</h3>
+          <p class="hint">
+            Enable each group with the checkbox. Use the <strong>lamp</strong> on each row to dim links. For <strong>LAN</strong> and
+            <strong>Public</strong>, use the eye to show or hide addresses (hidden still keeps your last-known public URL on this
+            device until you fetch again).
+          </p>
+        </div>
+
+        <div class="net-section" id="networkSectionLocal">
+          <div class="net-section-toolbar">
+            <label class="net-toggle-label">
+              <input type="checkbox" id="toggleSectionLocal" checked />
+              This computer
+            </label>
+          </div>
+          <ul class="link-list" id="modalLocalUrlList"></ul>
+        </div>
+
+        <div class="net-section" id="networkSectionLan">
+          <div class="net-section-toolbar">
+            <label class="net-toggle-label">
+              <input type="checkbox" id="toggleSectionLan" checked />
+              LAN
+            </label>
+            <button
+              type="button"
+              class="net-eye"
+              id="eyeLan"
+              title="Show or hide LAN addresses"
+              aria-label="Toggle LAN address visibility"
+            >
+              <span class="eye-icon eye-icon--open" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    fill="currentColor"
+                    d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"
+                  />
+                </svg>
+              </span>
+              <span class="eye-icon eye-icon--slashed" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    fill="currentColor"
+                    d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-3.89-6-7-11-7-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10 1 12c1.73 3.89 6 7 11 7 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.3-.08.61-.08.65 0 2.48 2.02 4.5 4.5 4.5.04 0 .35-.03.65-.08l1.55 1.55c-.86.45-1.83.7-2.9.7-3.04 0-5.5-2.46-5.5-5.5 0-1.07.25-2.04.7-2.9zM11.84 9.02l3.15 3.15.02-.17c0-2.48-2.02-4.5-4.5-4.5l-.17.02z"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <p class="hint net-lan-warning" id="lanWarning" hidden></p>
+          <ul class="link-list" id="modalLanUrlList"></ul>
+        </div>
+
+        <div class="net-section" id="networkSectionPublic">
+          <div class="net-section-toolbar">
+            <label class="net-toggle-label">
+              <input type="checkbox" id="toggleSectionPublic" checked />
+              Public internet
+            </label>
+            <button
+              type="button"
+              class="net-eye"
+              id="eyePublic"
+              title="Show or hide public (WAN) address"
+              aria-label="Toggle public address visibility"
+            >
+              <span class="eye-icon eye-icon--open" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    fill="currentColor"
+                    d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"
+                  />
+                </svg>
+              </span>
+              <span class="eye-icon eye-icon--slashed" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    fill="currentColor"
+                    d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-3.89-6-7-11-7-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10 1 12c1.73 3.89 6 7 11 7 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.3-.08.61-.08.65 0 2.48 2.02 4.5 4.5 4.5.04 0 .35-.03.65-.08l1.55 1.55c-.86.45-1.83.7-2.9.7-3.04 0-5.5-2.46-5.5-5.5 0-1.07.25-2.04.7-2.9zM11.84 9.02l3.15 3.15.02-.17c0-2.48-2.02-4.5-4.5-4.5l-.17.02z"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <p class="hint net-public-hint">Router may need port forwarding for this app’s port.</p>
+          <ul class="link-list" id="modalPublicUrlList"></ul>
+        </div>
+
+        <div class="msg-launcher" id="networkSettingsMsg" aria-live="polite"></div>
+        <button type="button" class="btn secondary" id="networkSettingsClose">Close</button>
+      </div>
+    </div>
+
+    <div class="modal-bg" id="overlayPickModal">
+      <div class="modal modal--compact">
+        <h3>Overlays</h3>
+        <p class="hint" style="margin-top: 0">
+          Click-through HUD windows — up to three at once, stacked top-to-bottom in open order. Tap the same row again
+          to close that HUD. Checkmark shows an active overlay.
+        </p>
+        <div class="overlay-menu-grid" role="group" aria-label="Overlay types">
+          <button type="button" class="btn" id="ovExoDistance" data-overlay-path="/distance-overlay.html">
+            <span class="overlay-pick-row">
+              <span class="overlay-check" aria-hidden="true"></span>
+              <span class="btn-lines">
+                <strong>Exo-distance</strong>
+                <span class="subline">Distance to on-foot organic scans</span>
+              </span>
+            </span>
+          </button>
+          <button type="button" class="btn" id="ovFssScan" data-overlay-path="/fss-scan-overlay.html">
+            <span class="overlay-pick-row">
+              <span class="overlay-check" aria-hidden="true"></span>
+              <span class="btn-lines">
+                <strong>FSS scan</strong>
+                <span class="subline">Bodies found vs total (D‑Scan)</span>
+              </span>
+            </span>
+          </button>
+          <button type="button" class="btn" id="ovExoCandidates" data-overlay-path="/exo-candidates-overlay.html">
+            <span class="overlay-pick-row">
+              <span class="overlay-check" aria-hidden="true"></span>
+              <span class="btn-lines">
+                <strong>Exo-candidates</strong>
+                <span class="subline">Genus · species · DSS exo-signals</span>
+              </span>
+            </span>
+          </button>
+          <button type="button" class="btn" id="ovDataValue" data-overlay-path="/data-value-overlay.html">
+            <span class="overlay-pick-row">
+              <span class="overlay-check" aria-hidden="true"></span>
+              <span class="btn-lines">
+                <strong>Data value</strong>
+                <span class="subline">Unsold exobiology + optional scan UC (matches header)</span>
+              </span>
+            </span>
+          </button>
+        </div>
+        <button type="button" class="btn secondary" id="overlayPickClose">Close</button>
+      </div>
+    </div>
+
+    <div class="modal-bg" id="modal">
+      <div class="modal">
+        <h3>Elite Dangerous journal folder</h3>
+        <p class="hint">Usually: Saved Games → Frontier Developments → Elite Dangerous</p>
+        <input type="text" id="journalInput" placeholder="Full path to folder containing Journal.*.log" autocomplete="off" />
+        <div class="err-msg" id="optErr" style="display: none"></div>
+        <div class="row">
+          <button type="button" class="btn secondary" id="modalCancel">Cancel</button>
+          <button type="button" class="btn" id="modalSave">Save &amp; rescan</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const splash = document.getElementById("splash");
+        const main = document.getElementById("main");
+        const lamp = document.getElementById("statusLamp");
+        const statusTitle = document.getElementById("statusTitle");
+        const statusDetail = document.getElementById("statusDetail");
+        const modalLocalUrlList = document.getElementById("modalLocalUrlList");
+        const modalLanUrlList = document.getElementById("modalLanUrlList");
+        const modalPublicUrlList = document.getElementById("modalPublicUrlList");
+        const networkSettingsModal = document.getElementById("networkSettingsModal");
+        const networkSettingsClose = document.getElementById("networkSettingsClose");
+        const networkSettingsMsg = document.getElementById("networkSettingsMsg");
+        const btnNetworkSettings = document.getElementById("btnNetworkSettings");
+        const toggleSectionLocal = document.getElementById("toggleSectionLocal");
+        const toggleSectionLan = document.getElementById("toggleSectionLan");
+        const toggleSectionPublic = document.getElementById("toggleSectionPublic");
+        const eyeLan = document.getElementById("eyeLan");
+        const eyePublic = document.getElementById("eyePublic");
+        const btnExomasteryRefresh = document.getElementById("btnExomasteryRefresh");
+        const btnOverlayMenu = document.getElementById("btnOverlayMenu");
+        const overlayPickModal = document.getElementById("overlayPickModal");
+        const overlayPickClose = document.getElementById("overlayPickClose");
+        const ovExoDistance = document.getElementById("ovExoDistance");
+        const ovFssScan = document.getElementById("ovFssScan");
+        const ovExoCandidates = document.getElementById("ovExoCandidates");
+        const ovDataValue = document.getElementById("ovDataValue");
+        const launcherActionMsg = document.getElementById("launcherActionMsg");
+        const btnMainUi = document.getElementById("btnMainUi");
+        const btnOptions = document.getElementById("btnOptions");
+        const modal = document.getElementById("modal");
+        const journalInput = document.getElementById("journalInput");
+        const modalCancel = document.getElementById("modalCancel");
+        const modalSave = document.getElementById("modalSave");
+        const optErr = document.getElementById("optErr");
+        const splashPct = document.getElementById("splashPct");
+        const splashBar = document.getElementById("splashBar");
+        const splashMsg = document.getElementById("splashMsg");
+
+        let ws;
+        let wsOk = false;
+        let pollDelayMs = 2500;
+        var wsReconnectTimer = null;
+
+        function connectWs() {
+          if (wsReconnectTimer) {
+            clearTimeout(wsReconnectTimer);
+            wsReconnectTimer = null;
+          }
+          try {
+            if (ws) {
+              ws.onopen = ws.onclose = ws.onerror = ws.onmessage = null;
+              try {
+                ws.close();
+              } catch (e) {}
+            }
+          } catch (e) {}
+          const proto = location.protocol === "https:" ? "wss:" : "ws:";
+          try {
+            ws = new WebSocket(proto + "//" + location.host + "/ws");
+            ws.onopen = function () {
+              wsOk = true;
+            };
+            ws.onmessage = function (ev) {
+              try {
+                var msg = JSON.parse(ev.data);
+                if (msg && msg.type === "state" && msg.payload) applyLauncherSnapshotData(msg.payload);
+              } catch (e) {}
+            };
+            ws.onclose = function () {
+              wsOk = false;
+              wsReconnectTimer = setTimeout(connectWs, 1300);
+            };
+            ws.onerror = function () {
+              wsOk = false;
+            };
+          } catch (e) {
+            wsOk = false;
+            wsReconnectTimer = setTimeout(connectWs, 2000);
+          }
+        }
+
+        var LS_URL_ON = "edexo.launcher.urlOn";
+        var LS_PUBLIC_URL = "edexo.launcher.publicUrl";
+        var LS_SEC_LOCAL = "edexo.launcher.sec.local";
+        var LS_SEC_LAN = "edexo.launcher.sec.lan";
+        var LS_SEC_PUBLIC = "edexo.launcher.sec.public";
+        var LS_REVEAL_LAN = "edexo.launcher.reveal.lan";
+        var LS_REVEAL_PUBLIC = "edexo.launcher.reveal.public";
+        var lastPort = 7111;
+        var lastConnectData = null;
+
+        function readBoolLs(key, defVal) {
+          try {
+            var v = localStorage.getItem(key);
+            if (v === null) return defVal;
+            return v !== "0" && v !== "false";
+          } catch (e) {
+            return defVal;
+          }
+        }
+
+        function writeBoolLs(key, val) {
+          try {
+            localStorage.setItem(key, val ? "1" : "0");
+          } catch (e) {}
+        }
+
+        function getSectionLocal() {
+          return readBoolLs(LS_SEC_LOCAL, true);
+        }
+        function getSectionLan() {
+          return readBoolLs(LS_SEC_LAN, true);
+        }
+        function getSectionPublic() {
+          return readBoolLs(LS_SEC_PUBLIC, true);
+        }
+        function getRevealLan() {
+          return readBoolLs(LS_REVEAL_LAN, true);
+        }
+        function getRevealPublic() {
+          return readBoolLs(LS_REVEAL_PUBLIC, false);
+        }
+
+        function syncNetworkModalControls() {
+          if (toggleSectionLocal) toggleSectionLocal.checked = getSectionLocal();
+          if (toggleSectionLan) toggleSectionLan.checked = getSectionLan();
+          if (toggleSectionPublic) toggleSectionPublic.checked = getSectionPublic();
+          var rl = getRevealLan();
+          var rp = getRevealPublic();
+          if (eyeLan) {
+            var lanOn = getSectionLan();
+            eyeLan.disabled = !lanOn;
+            eyeLan.setAttribute("aria-pressed", rl ? "true" : "false");
+            eyeLan.classList.toggle("net-eye--off", !rl);
+          }
+          if (eyePublic) {
+            var pubOn = getSectionPublic();
+            eyePublic.disabled = !pubOn;
+            eyePublic.setAttribute("aria-pressed", rp ? "true" : "false");
+            eyePublic.classList.toggle("net-eye--off", !rp);
+          }
+        }
+
+        function makePlaceholderRow(text) {
+          var li = document.createElement("li");
+          li.className = "net-placeholder dim";
+          li.textContent = text;
+          return li;
+        }
+
+        function publicUrlMatchesPort(savedPub, port) {
+          if (!savedPub) return false;
+          try {
+            return Number(new URL(savedPub).port || 0) === port || savedPub.indexOf(":" + port + "/") >= 0;
+          } catch (e2) {
+            return false;
+          }
+        }
+
+        function clearNetworkMsg() {
+          if (networkSettingsMsg) {
+            networkSettingsMsg.className = "msg-launcher";
+            networkSettingsMsg.textContent = "";
+          }
+        }
+
+        function fetchPublicIpAndSave() {
+          return fetch("https://api.ipify.org?format=json", { cache: "no-store" })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (j) {
+              var ip = j && j.ip;
+              if (!ip) throw new Error("No IP in response");
+              var u = "http://" + ip + ":" + lastPort + "/";
+              localStorage.setItem(LS_PUBLIC_URL, u);
+              return u;
+            });
+        }
+
+        function apiUrl(pathname) {
+          var proto = window.location.protocol || "";
+          if (proto === "http:" || proto === "https:") return pathname;
+          return "http://127.0.0.1:" + (lastPort || 7111) + pathname;
+        }
+
+        function readUrlOn() {
+          try {
+            var j = JSON.parse(localStorage.getItem(LS_URL_ON) || "{}");
+            return j && typeof j === "object" ? j : {};
+          } catch (e) {
+            return {};
+          }
+        }
+        function writeUrlOn(map) {
+          localStorage.setItem(LS_URL_ON, JSON.stringify(map));
+        }
+        function isUrlEnabled(url) {
+          return readUrlOn()[url] !== false;
+        }
+        function setUrlEnabled(url, on) {
+          var m = readUrlOn();
+          m[url] = on;
+          writeUrlOn(m);
+        }
+
+        function makeUrlRow(url, tag) {
+          var on = isUrlEnabled(url);
+          var li = document.createElement("li");
+          li.className = "url-row" + (on ? "" : " url-row--off");
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "url-toggle";
+          btn.setAttribute("aria-pressed", on ? "true" : "false");
+          btn.setAttribute("aria-label", "Enable or dim this address");
+          btn.textContent = on ? "●" : "○";
+          var inner = document.createElement("div");
+          inner.className = "url-row-inner";
+          var a = document.createElement("a");
+          a.href = url;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = tag ? tag + " · " + url : url;
+          inner.appendChild(a);
+          li.appendChild(btn);
+          li.appendChild(inner);
+          btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            var next = !isUrlEnabled(url);
+            setUrlEnabled(url, next);
+            li.classList.toggle("url-row--off", !next);
+            btn.setAttribute("aria-pressed", next ? "true" : "false");
+            btn.textContent = next ? "●" : "○";
+          });
+          return li;
+        }
+
+        var lanWarning = document.getElementById("lanWarning");
+
+        function renderLanWarning(data) {
+          if (!lanWarning) return;
+          if (!data || data.mode !== "server") {
+            lanWarning.hidden = true;
+            return;
+          }
+          lanWarning.hidden = false;
+          lanWarning.innerHTML = data.lanKeyRequired
+            ? "<strong>Anyone on this network</strong> who has the link below can read your journal data and " +
+              "change settings, including resetting exobiology progress. The link carries a one-time " +
+              "<strong>access key</strong>: open it once on each device and that device stays paired. " +
+              "Treat it like a password — this PC never needs it."
+            : "<strong>Anyone on this network</strong> can reach this app with no access key. " +
+              "Start it with <strong>--local</strong> to bind to this PC only.";
+        }
+
+        function renderConnectUrls(data) {
+          lastConnectData = data;
+          lastPort = typeof data.port === "number" && data.port > 0 ? data.port : 7111;
+          var localUrl = "http://127.0.0.1:" + lastPort + "/";
+          if (!modalLocalUrlList || !modalLanUrlList || !modalPublicUrlList) return;
+
+          modalLocalUrlList.innerHTML = "";
+          if (getSectionLocal()) {
+            modalLocalUrlList.appendChild(makeUrlRow(localUrl, "This PC"));
+          } else {
+            modalLocalUrlList.appendChild(
+              makePlaceholderRow("This computer is turned off — check “This computer” above to show localhost links."),
+            );
+          }
+
+          renderLanWarning(data);
+
+          modalLanUrlList.innerHTML = "";
+          if (!getSectionLan()) {
+            modalLanUrlList.appendChild(
+              makePlaceholderRow("LAN is turned off — check “LAN” above to show Wi‑Fi / network links."),
+            );
+          } else if (!getRevealLan()) {
+            modalLanUrlList.appendChild(
+              makePlaceholderRow("LAN addresses are hidden — click the eye icon to show them."),
+            );
+          } else if (!data.lanUrls || !data.lanUrls.length) {
+            var note = document.createElement("li");
+            note.style.cssText =
+              "margin:8px 0;padding:10px 12px;background:rgba(255,255,255,0.04);border-left:3px solid #444;font-size:0.88rem;opacity:0.72;list-style:none";
+            note.textContent =
+              data.mode === "client"
+                ? "Client build — only this PC; install the server / portable build for Wi‑Fi links."
+                : "No separate LAN IPv4 found (VPN off? single interface). This PC link still works.";
+            modalLanUrlList.appendChild(note);
+          } else {
+            data.lanUrls.forEach(function (u) {
+              modalLanUrlList.appendChild(makeUrlRow(u, "LAN"));
+            });
+          }
+
+          modalPublicUrlList.innerHTML = "";
+          if (!getSectionPublic()) {
+            modalPublicUrlList.appendChild(
+              makePlaceholderRow("Public internet is turned off — check “Public internet” above to configure WAN links."),
+            );
+          } else if (!getRevealPublic()) {
+            modalPublicUrlList.appendChild(
+              makePlaceholderRow("Public (WAN) address is hidden — click the eye icon to show or fetch it."),
+            );
+          } else {
+            var savedPub2 = localStorage.getItem(LS_PUBLIC_URL) || "";
+            if (savedPub2 && publicUrlMatchesPort(savedPub2, lastPort)) {
+              modalPublicUrlList.appendChild(makeUrlRow(savedPub2, "Public"));
+            } else if (savedPub2) {
+              modalPublicUrlList.appendChild(
+                makePlaceholderRow(
+                  "Stored public URL is for a different port than this server — use the eye to hide, then show again to refresh.",
+                ),
+              );
+            } else {
+              modalPublicUrlList.appendChild(
+                makePlaceholderRow("Click the eye icon to fetch and show your public (WAN) address."),
+              );
+            }
+          }
+
+          syncNetworkModalControls();
+        }
+
+        function applyLauncherSnapshotData(data) {
+          if (data.journalBoot) {
+            splash.style.display = "block";
+            main.classList.remove("ready");
+            if (splashPct && splashBar && splashMsg) {
+              const b = data.journalBoot;
+              const p = Math.max(0, Math.min(100, Number(b.percent) || 0));
+              splashPct.textContent = p + "%";
+              splashBar.style.width = p + "%";
+              splashMsg.textContent = typeof b.message === "string" ? b.message : "Loading…";
+            }
+            pollDelayMs = 400;
+            return;
+          }
+
+          pollDelayMs = 2500;
+          splash.style.display = "none";
+          main.classList.add("ready");
+
+          const dirOk = data.journalDirConfiguredOk === true;
+          const hasJournal = data.journalFileCount > 0;
+          const good = dirOk && wsOk;
+
+          lamp.className = "lamp " + (good ? "ok" : "bad");
+          if (!dirOk) {
+            statusTitle.textContent = "Journal folder missing or unreadable";
+            statusDetail.textContent = data.journalDir || "";
+          } else if (!wsOk) {
+            statusTitle.textContent = "Server up — live link not active";
+            statusDetail.textContent = "WebSocket not connected; try refresh.";
+          } else if (!hasJournal) {
+            statusTitle.textContent = "All systems nominal — waiting for journal logs";
+            statusDetail.textContent = (data.journalDir || "") + " — 0 files merged (launch Elite or check path).";
+            lamp.className = "lamp ok";
+          } else {
+            statusTitle.textContent = "All systems nominal";
+            statusDetail.textContent =
+              (data.journalFileCount || 0) + " journal file(s) · " + (data.lastJournalEventIso || "no events yet");
+          }
+
+          renderConnectUrls(data);
+          btnMainUi.href = location.origin + "/";
+          journalInput.value = data.journalDir || "";
+        }
+
+        async function poll() {
+          try {
+            // /api/status is the launcher-sized payload: no snapshot rebuild (~186 ms, ~630 KB)
+            // every 2.5 s just to render the lamp and the journal folder.
+            const r = await fetch(apiUrl("/api/status"), { cache: "no-store" });
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            const data = await r.json();
+            applyLauncherSnapshotData(data);
+          } catch (e) {
+            pollDelayMs = 2500;
+            splash.style.display = "none";
+            main.classList.add("ready");
+            lamp.className = "lamp bad";
+            statusTitle.textContent = "Cannot reach ED Exo Compare service";
+            statusDetail.textContent = String(e && e.message ? e.message : e);
+            if (modalLocalUrlList) modalLocalUrlList.innerHTML = "";
+            if (modalLanUrlList) modalLanUrlList.innerHTML = "";
+            if (modalPublicUrlList) modalPublicUrlList.innerHTML = "";
+          }
+        }
+
+        function loopPoll() {
+          void poll().then(function () {
+            setTimeout(loopPoll, pollDelayMs);
+          });
+        }
+
+        btnOptions.addEventListener("click", function () {
+          optErr.style.display = "none";
+          modal.classList.add("on");
+        });
+        modalCancel.addEventListener("click", function () {
+          modal.classList.remove("on");
+        });
+        modal.addEventListener("click", function (e) {
+          if (e.target === modal) modal.classList.remove("on");
+        });
+        modalSave.addEventListener("click", async function () {
+          optErr.style.display = "none";
+          const dir = journalInput.value.trim();
+          if (!dir) {
+            optErr.textContent = "Enter a folder path.";
+            optErr.style.display = "block";
+            return;
+          }
+          try {
+            const r = await fetch(apiUrl("/api/settings/journal-directory"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ journalDir: dir }),
+            });
+            const j = await r.json().catch(function () {
+              return {};
+            });
+            if (!r.ok) {
+              optErr.textContent = j.error || r.statusText;
+              optErr.style.display = "block";
+              return;
+            }
+            modal.classList.remove("on");
+            await poll();
+          } catch (e) {
+            optErr.textContent = String(e);
+            optErr.style.display = "block";
+          }
+        });
+
+        function openNetworkSettingsModal() {
+          if (!networkSettingsModal) return;
+          clearNetworkMsg();
+          networkSettingsModal.classList.add("on");
+          syncNetworkModalControls();
+          if (lastConnectData) renderConnectUrls(lastConnectData);
+        }
+
+        function closeNetworkSettingsModal() {
+          if (networkSettingsModal) networkSettingsModal.classList.remove("on");
+        }
+
+        if (btnNetworkSettings && networkSettingsModal) {
+          btnNetworkSettings.addEventListener("click", function () {
+            openNetworkSettingsModal();
+          });
+        }
+        if (networkSettingsClose && networkSettingsModal) {
+          networkSettingsClose.addEventListener("click", closeNetworkSettingsModal);
+        }
+        if (networkSettingsModal) {
+          networkSettingsModal.addEventListener("click", function (e) {
+            if (e.target === networkSettingsModal) closeNetworkSettingsModal();
+          });
+        }
+
+        if (toggleSectionLocal) {
+          toggleSectionLocal.addEventListener("change", function () {
+            writeBoolLs(LS_SEC_LOCAL, toggleSectionLocal.checked);
+            if (lastConnectData) renderConnectUrls(lastConnectData);
+          });
+        }
+        if (toggleSectionLan) {
+          toggleSectionLan.addEventListener("change", function () {
+            writeBoolLs(LS_SEC_LAN, toggleSectionLan.checked);
+            if (lastConnectData) renderConnectUrls(lastConnectData);
+          });
+        }
+        if (toggleSectionPublic) {
+          toggleSectionPublic.addEventListener("change", function () {
+            writeBoolLs(LS_SEC_PUBLIC, toggleSectionPublic.checked);
+            if (lastConnectData) renderConnectUrls(lastConnectData);
+          });
+        }
+
+        if (eyeLan) {
+          eyeLan.addEventListener("click", function () {
+            if (!getSectionLan()) return;
+            var next = !getRevealLan();
+            writeBoolLs(LS_REVEAL_LAN, next);
+            clearNetworkMsg();
+            if (lastConnectData) renderConnectUrls(lastConnectData);
+          });
+        }
+
+        if (eyePublic) {
+          eyePublic.addEventListener("click", function () {
+            if (!getSectionPublic()) return;
+            if (getRevealPublic()) {
+              writeBoolLs(LS_REVEAL_PUBLIC, false);
+              clearNetworkMsg();
+              if (lastConnectData) renderConnectUrls(lastConnectData);
+              return;
+            }
+            writeBoolLs(LS_REVEAL_PUBLIC, true);
+            syncNetworkModalControls();
+            clearNetworkMsg();
+            var savedPub = localStorage.getItem(LS_PUBLIC_URL) || "";
+            if (savedPub && publicUrlMatchesPort(savedPub, lastPort)) {
+              if (lastConnectData) renderConnectUrls(lastConnectData);
+              return;
+            }
+            if (lastConnectData) renderConnectUrls(lastConnectData);
+            eyePublic.disabled = true;
+            fetchPublicIpAndSave()
+              .then(function () {
+                if (lastConnectData) renderConnectUrls(lastConnectData);
+              })
+              .catch(function () {
+                writeBoolLs(LS_REVEAL_PUBLIC, false);
+                if (networkSettingsMsg) {
+                  networkSettingsMsg.className = "msg-launcher err";
+                  networkSettingsMsg.textContent =
+                    "Could not look up public IP (offline, firewall, or API blocked).";
+                }
+                syncNetworkModalControls();
+                if (lastConnectData) renderConnectUrls(lastConnectData);
+              })
+              .finally(function () {
+                if (eyePublic) eyePublic.disabled = !getSectionPublic();
+                syncNetworkModalControls();
+              });
+          });
+        }
+
+        btnExomasteryRefresh.addEventListener("click", function () {
+          launcherActionMsg.className = "msg-launcher";
+          launcherActionMsg.textContent = "";
+          btnExomasteryRefresh.disabled = true;
+          fetch(apiUrl("/api/exomastery/reload"), { method: "POST" })
+            .then(function (r) {
+              return r.json().then(function (j) {
+                return { r: r, j: j };
+              });
+            })
+            .then(function (x) {
+              if (!x.r.ok) throw new Error((x.j && x.j.error) || x.r.statusText);
+              launcherActionMsg.className = "msg-launcher ok";
+              var j = x.j || {};
+              var sd = j.speciesDataDir ? String(j.speciesDataDir) : "";
+              launcherActionMsg.textContent =
+                "Exomastery cache cleared; species tree re-read from disk — linked UI refreshes over WebSocket." +
+                (sd
+                  ? " Species / exomastery folder: " + sd
+                  : "");
+            })
+            .catch(function (e) {
+              launcherActionMsg.className = "msg-launcher err";
+              launcherActionMsg.textContent = String(e && e.message ? e.message : e);
+            })
+            .then(function () {
+              btnExomasteryRefresh.disabled = false;
+            });
+        });
+
+        function webOriginBase() {
+          var proto = window.location.protocol || "";
+          if (proto === "http:" || proto === "https:") return window.location.origin;
+          return "http://127.0.0.1:" + (lastPort || 7111);
+        }
+
+        async function refreshOverlayMenuChecks() {
+          var ee = window.edexoElectron;
+          var paths = [];
+          try {
+            if (ee && typeof ee.getHudOverlayState === "function") {
+              var st = await ee.getHudOverlayState();
+              paths = (st && st.paths) || [];
+            }
+          } catch (e) {
+            paths = [];
+          }
+          document.querySelectorAll("[data-overlay-path]").forEach(function (btn) {
+            var p = btn.getAttribute("data-overlay-path");
+            if (!p) return;
+            var on = paths.indexOf(p) >= 0;
+            btn.classList.toggle("overlay-btn--on", on);
+            var mark = btn.querySelector(".overlay-check");
+            if (mark) mark.textContent = on ? "✓" : "";
+          });
+        }
+
+        async function toggleHudOverlayPath(pathname, width, height) {
+          launcherActionMsg.className = "msg-launcher";
+          launcherActionMsg.textContent = "";
+          var ee = window.edexoElectron;
+          if (ee && typeof ee.toggleHudOverlay === "function") {
+            var rOv = await ee.toggleHudOverlay({ pathname: pathname, width: width, height: height });
+            if (rOv && rOv.error) throw new Error(rOv.error);
+            await refreshOverlayMenuChecks();
+            return;
+          }
+          var base = webOriginBase();
+          var name = "edexoHud" + String(pathname).replace(/[^\w-]+/g, "_");
+          window.open(
+            base + pathname,
+            name,
+            "noopener,noreferrer,width=" + width + ",height=" + height,
+          );
+        }
+
+        async function pickOverlay(pathname, width, height) {
+          overlayPickModal.classList.remove("on");
+          try {
+            await toggleHudOverlayPath(pathname, width, height);
+          } catch (eOv) {
+            launcherActionMsg.className = "msg-launcher err";
+            launcherActionMsg.textContent = String(eOv && eOv.message ? eOv.message : eOv);
+          }
+        }
+
+        if (btnOverlayMenu && overlayPickModal) {
+          btnOverlayMenu.addEventListener("click", function () {
+            overlayPickModal.classList.add("on");
+            void refreshOverlayMenuChecks();
+          });
+        }
+        if (overlayPickClose && overlayPickModal) {
+          overlayPickClose.addEventListener("click", function () {
+            overlayPickModal.classList.remove("on");
+          });
+        }
+        if (overlayPickModal) {
+          overlayPickModal.addEventListener("click", function (e) {
+            if (e.target === overlayPickModal) overlayPickModal.classList.remove("on");
+          });
+        }
+        if (ovExoDistance) {
+          ovExoDistance.addEventListener("click", function () {
+            void pickOverlay("/distance-overlay.html", 404, 274);
+          });
+        }
+        if (ovFssScan) {
+          ovFssScan.addEventListener("click", function () {
+            void pickOverlay("/fss-scan-overlay.html", 340, 212);
+          });
+        }
+        if (ovExoCandidates) {
+          ovExoCandidates.addEventListener("click", function () {
+            void pickOverlay("/exo-candidates-overlay.html", 392, 480);
+          });
+        }
+        if (ovDataValue) {
+          ovDataValue.addEventListener("click", function () {
+            void pickOverlay("/data-value-overlay.html", 360, 268);
+          });
+        }
+
+        connectWs();
+        loopPoll();
+      })();
+    </script>
+  </body>
+</html>

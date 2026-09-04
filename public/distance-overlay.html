@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exo-distance Tracker</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent !important;
+        overflow: hidden;
+        font-family: Segoe UI, system-ui, sans-serif;
+      }
+      .shell {
+        min-width: 16rem;
+        max-width: 22rem;
+        transition:
+          opacity 0.35s ease,
+          transform 0.35s ease;
+      }
+      .shell.shell--off {
+        opacity: 0;
+        transform: scale(0.96);
+        pointer-events: none;
+      }
+      .card {
+        margin: 0;
+        padding: 0.55rem 0.85rem 0.65rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        line-height: 1.38;
+        letter-spacing: 0.03em;
+        color: rgba(232, 244, 255, 0.96);
+        background: linear-gradient(165deg, rgba(42, 88, 180, 0.72), rgba(18, 40, 95, 0.78));
+        border: 1px solid rgba(120, 190, 255, 0.45);
+        border-radius: 10px;
+        box-shadow:
+          0 8px 28px rgba(0, 20, 60, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      }
+      .card.card--ok {
+        background: linear-gradient(165deg, rgba(28, 120, 72, 0.78), rgba(12, 58, 40, 0.85));
+        border-color: rgba(120, 255, 170, 0.45);
+        animation: pulseGlow 1.1s ease-in-out infinite alternate;
+      }
+      @keyframes pulseGlow {
+        from {
+          box-shadow:
+            0 8px 26px rgba(0, 40, 20, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            0 0 0 0 rgba(100, 255, 160, 0);
+        }
+        to {
+          box-shadow:
+            0 10px 36px rgba(0, 50, 30, 0.55),
+            inset 0 1px 0 rgba(255, 255, 255, 0.14),
+            0 0 22px 2px rgba(80, 255, 140, 0.2);
+        }
+      }
+      .title {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.88;
+        margin-bottom: 0.38rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        padding-bottom: 0.28rem;
+      }
+      .species {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.98);
+        margin-bottom: 0.35rem;
+        text-shadow: 0 0 14px rgba(100, 180, 255, 0.35);
+      }
+      .card.card--ok .species {
+        text-shadow: 0 0 16px rgba(140, 255, 190, 0.35);
+      }
+      .row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: 0.28rem;
+      }
+      .row .lbl {
+        flex-shrink: 0;
+        opacity: 0.78;
+        font-size: 0.74rem;
+      }
+      .row .val {
+        text-align: right;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+      }
+      .row.row--muted .val,
+      .row.row--muted .lbl {
+        color: rgba(200, 210, 225, 0.55);
+      }
+      .pill {
+        display: inline-block;
+        margin-left: 0.25rem;
+        padding: 0 0.35rem;
+        border-radius: 999px;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        vertical-align: middle;
+      }
+      .pill.ok {
+        background: rgba(80, 220, 140, 0.25);
+        color: rgba(170, 255, 205, 0.95);
+      }
+      .pill.bad {
+        background: rgba(255, 120, 100, 0.2);
+        color: rgba(255, 200, 190, 0.9);
+      }
+      .subnote {
+        font-size: 0.65rem;
+        font-weight: 500;
+        opacity: 0.58;
+        margin-top: 0.35rem;
+        line-height: 1.3;
+      }
+      .cele {
+        margin-top: 0.35rem;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: rgba(220, 255, 235, 0.88);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell" id="shell">
+      <div class="card" id="card" role="status" aria-live="polite">
+        <div class="title">Exo-distance Tracker</div>
+        <div class="species" id="species">—</div>
+        <div class="row" id="rowMin">
+          <span class="lbl">Min gap (genus)</span>
+          <span class="val" id="minGap">—</span>
+        </div>
+        <div class="row" id="row1">
+          <span class="lbl">1st Scan</span>
+          <span class="val" id="d1">—</span>
+        </div>
+        <div class="row" id="row2wrap">
+          <span class="lbl">2nd Scan</span>
+          <span class="val"><span id="d2">—</span><span id="pill2"></span></span>
+        </div>
+        <div class="row" id="rowSpan">
+          <span class="lbl">Sample spacing</span>
+          <span class="val"><span id="span12">—</span><span id="pillSpan"></span></span>
+        </div>
+        <div class="row" id="row3">
+          <span class="lbl">3rd Scan</span>
+          <span class="val" id="pay">—</span>
+        </div>
+        <div class="subnote" id="footNote"></div>
+        <div class="cele" id="celebrate" style="display: none"></div>
+      </div>
+    </div>
+
+    <script>
+      var lastPort = 7111;
+      function api(p) {
+        var proto = location.protocol || "";
+        if (proto === "http:" || proto === "https:") return p;
+        return "http://127.0.0.1:" + lastPort + p;
+      }
+
+      function fmtCr(n) {
+        if (n == null || !isFinite(n)) return "—";
+        return n.toLocaleString() + " CR";
+      }
+
+      function fmtM(n) {
+        if (n == null || !isFinite(n)) return "—";
+        return Math.round(n) + " m";
+      }
+
+      function pillEl(ok) {
+        if (ok === true)
+          return ' <span class="pill ok" aria-hidden="true">OK</span>';
+        if (ok === false)
+          return ' <span class="pill bad" aria-hidden="true">LOW</span>';
+        return "";
+      }
+
+      function render(d) {
+        var shell = document.getElementById("shell");
+        var card = document.getElementById("card");
+        shell.classList.remove("shell--off");
+        var eo = d.exoOrganicOverlay;
+        if (d.journalBoot || !eo || eo.visible !== true) {
+          card.classList.remove("card--ok");
+          document.getElementById("species").textContent = "—";
+          document.getElementById("minGap").textContent = "—";
+          document.getElementById("row1").className = "row row--muted";
+          document.getElementById("d1").textContent = "—";
+          document.getElementById("row2wrap").className = "row row--muted";
+          document.getElementById("d2").textContent = "—";
+          document.getElementById("pill2").innerHTML = "";
+          document.getElementById("span12").textContent = "—";
+          document.getElementById("pillSpan").innerHTML = "";
+          document.getElementById("rowSpan").style.display = "none";
+          document.getElementById("pay").innerHTML = "<span class='row--muted'>—</span>";
+          document.getElementById("footNote").textContent =
+            "HUD is always visible. Data appears when you are in an active organic sample session from the journal.";
+          document.getElementById("celebrate").style.display = "none";
+          return;
+        }
+
+        if (eo.phase === "celebrate") {
+          card.classList.add("card--ok");
+        } else {
+          card.classList.remove("card--ok");
+        }
+
+        document.getElementById("species").textContent =
+          eo.speciesDisplay || "—";
+        document.getElementById("minGap").textContent =
+          eo.minSampleDistanceM > 0 ? eo.minSampleDistanceM + " m" : "—";
+
+        document.getElementById("row1").className =
+          "row" + (eo.distToFirstM == null && eo.phase === "tracking" ? " row--muted" : "");
+
+        document.getElementById("d1").textContent = fmtM(eo.distToFirstM);
+
+        document.getElementById("row2wrap").className =
+          "row" +
+          (eo.sampleCount < 2 || (eo.phase === "tracking" && eo.distToSecondM == null)
+            ? " row--muted"
+            : "");
+        document.getElementById("d2").textContent =
+          eo.sampleCount >= 2 ? fmtM(eo.distToSecondM) : "—";
+
+        document.getElementById("pill2").innerHTML =
+          eo.sampleCount === 1 ? pillEl(eo.separationMeetsMin) : "";
+
+        document.getElementById("span12").textContent =
+          eo.sampleCount >= 2 ? fmtM(eo.spacingBetweenSamplesM) : "—";
+        document.getElementById("pillSpan").innerHTML =
+          eo.sampleCount >= 2 ? pillEl(eo.spacingMeetsMin) : "";
+
+        document.getElementById("rowSpan").style.display =
+          eo.sampleCount >= 2 ? "" : "none";
+
+        var payEl = document.getElementById("pay");
+        var foot = document.getElementById("footNote");
+        var cele = document.getElementById("celebrate");
+        cele.style.display = "none";
+
+        if (eo.phase === "celebrate") {
+          payEl.innerHTML =
+            eo.finalCredits != null
+              ? fmtCr(eo.finalCredits) +
+                (eo.analyseWasLogged === true
+                  ? " <span style='opacity:0.7'>(logged)</span>"
+                  : " <span style='opacity:0.85'>(new codex 5×)</span>")
+              : fmtCr(null);
+          foot.textContent =
+            eo.analyseWasLogged === true
+              ? eo.footfallMult === 5
+                ? "Includes first-footfall 5× on this body."
+                : "No first-footfall 5× on this body."
+              : eo.footfallMult === 5
+                ? "5× new-codex payout (first footfall does not stack another ×5)."
+                : "5× new-codex payout.";
+          cele.style.display = "block";
+          cele.textContent =
+            "Complete — hiding in " +
+            (eo.celebrationRemainSec || 0) +
+            "s…";
+        } else if (eo.sampleCount >= 2) {
+          var a = eo.payLoggedCodex;
+          var b = eo.payNewCodex;
+          if (a != null && b != null) {
+            payEl.innerHTML =
+              "<span class='row--muted' style='opacity:0.82'>Est. " +
+              fmtCr(b).replace(" CR", "") +
+              " CR <span style='opacity:0.65'>new</span> · " +
+              fmtCr(a).replace(" CR", "") +
+              " CR <span style='opacity:0.65'>logged</span></span>";
+          } else payEl.textContent = "—";
+          foot.textContent =
+            "Estimates: new codex = 5× list; logged codex = list × footfall (×1 or ×5). These are not multiplied together.";
+        } else {
+          payEl.innerHTML = "<span class='row--muted'>—</span>";
+          foot.textContent =
+            eo.sampleCount === 1
+              ? "Need ≥ " +
+                (eo.minSampleDistanceM || "?") +
+                " m from first sample before second."
+              : "";
+        }
+      }
+
+      async function tick() {
+        try {
+          var r = await fetch(api("/api/state"), { cache: "no-store" });
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          var d = await r.json();
+          if (typeof d.port === "number" && d.port > 0) lastPort = d.port;
+          render(d);
+        } catch (e) {
+          document.getElementById("shell").classList.remove("shell--off");
+        }
+      }
+
+      tick();
+      setInterval(tick, 320);
+
+      try {
+        var proto = location.protocol === "https:" ? "wss:" : "ws:";
+        var host =
+          typeof location.host === "string" && location.host
+            ? location.host
+            : "127.0.0.1:7111";
+        var ws = new WebSocket(proto + "//" + host + "/ws");
+        ws.onmessage = function (ev) {
+          try {
+            var msg = JSON.parse(String(ev.data));
+            if (msg.type === "state" && msg.payload) {
+              if (
+                typeof msg.payload.port === "number" &&
+                msg.payload.port > 0
+              ) {
+                lastPort = msg.payload.port;
+              }
+              render(msg.payload);
+            }
+          } catch (_) {}
+        };
+      } catch (_) {}
+    </script>
+  </body>
+</html>

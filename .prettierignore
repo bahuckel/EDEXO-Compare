@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+data/
+docs/
+.edexo-cache/
+package-lock.json
+public/launcher.html
+*.png
+*.jpg

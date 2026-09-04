@@ -1,0 +1,11 @@
+Key extraction notes (clean and important)
+Atmosphere = main selector
+→ This genus is very cleanly split by atmosphere type (Ammonia / CO₂ / Water)
+Temperature only matters for CO₂ species
+→ cortexum and pullulanta require 180–195 K, others don’t
+Hard constraints (global):
+Thin atmosphere required
+Max gravity: 0.27g
+Only Rocky / High Metal Content planets
+Color system is simple (nice break from Anemone 😄):
+Entire genus uses star-type-based coloring only

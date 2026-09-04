@@ -1,0 +1,13 @@
+# Normalize to LF in the repo; Git checks out CRLF on Windows where the tool needs it.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.exe binary
+*.pfx binary
+*.lnk binary

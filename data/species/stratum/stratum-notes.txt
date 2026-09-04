@@ -1,0 +1,11 @@
+Stratum is the most rule-complex genus so far, with 3-layer filtering:
+Atmosphere
+Temperature bracket
+Planet type
+Unlike earlier genera, temperature is not optional — it actively determines species identity inside the same atmosphere group.
+Many species overlap in atmosphere but are separated purely by thermal banding (165–190K vs 190K+).
+Stratum tectonicas is a hard biome lock to High Metal Content worlds, making it the only fully isolated species in the genus.
+The organism behaves like a surface photosynthetic crust system, meaning what you see is only a biological interface layer.
+It is extremely common because it occupies low-competition ecological niches (flat rocky + thin atmosphere worlds).
+Colony spread is extremely wide, but individual organisms are low-profile and often visually subtle, leading to under-detection by explorers.
+This genus is effectively a baseline xenobiology system in Elite Dangerous, meaning it appears across many galactic regions and acts as a reference genus for others.

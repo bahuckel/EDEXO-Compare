@@ -1,0 +1,13 @@
+Key extraction notes (clean but important)
+Very clean logic (one of the simplest so far):
+Atmosphere → species (1:1 mapping)
+Strict biome restriction:
+ONLY Icy / Rocky Ice planets (hard filter)
+Universal constraints:
+Thin atmosphere required
+Max gravity 0.27g
+Sample distance 500m
+No temperature, volcanism, or system rules
+This makes it ideal for simple deterministic filtering
+Color system = fully unified
+Entire genus uses star-based colors only

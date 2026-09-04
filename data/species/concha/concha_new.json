@@ -1,0 +1,196 @@
+{
+  "formatVersion": 1,
+  "genus": "Concha",
+  "meta": {
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "general": {
+      "description": "Highly specialised extremophiles with protective shell-like structures that open and close depending on environmental conditions. Their inorganic-coated shells help regulate internal stability, exposing the organism only when conditions are suitable.",
+      "min_sample_distance_m": 150,
+      "planet_requirements": {
+        "planet_types": [
+          "Rocky",
+          "High Metal Content"
+        ],
+        "atmospheres": [
+          "Ammonia (thin)",
+          "Nitrogen (thin)",
+          "Water (thin)",
+          "Carbon dioxide (thin)",
+          "Carbon dioxide rich (thin)"
+        ],
+        "max_gravity": 0.27
+      }
+    },
+    "summary": "Highly specialised extremophiles with protective shell-like structures that open and close depending on environmental conditions. Their inorganic-coated shells help regulate internal stability, exposing the organism only when conditions are suitable.",
+    "minSampleDistanceM": 150,
+    "genusWideRequirements": {
+      "planet_types": [
+        "Rocky",
+        "High Metal Content"
+      ],
+      "atmospheres": [
+        "Ammonia (thin)",
+        "Nitrogen (thin)",
+        "Water (thin)",
+        "Carbon dioxide (thin)",
+        "Carbon dioxide rich (thin)"
+      ],
+      "max_gravity": 0.27
+    }
+  },
+  "species": [
+    {
+      "id": "concha_concha_aureolas",
+      "displayName": "Concha aureolas",
+      "description": "Rounded rock-like organism that splits open to extend long stalks with looped tips.",
+      "conditions": {
+        "atmosphere": "Ammonia (thin)",
+        "max_gravity": 0.27,
+        "temperature_K": null,
+        "atmospherePressureCategory": "thin"
+      },
+      "color_rules": {
+        "type": "star_based",
+        "mapping": {
+          "O": null,
+          "B": null,
+          "A": "Teal",
+          "F": "Grey",
+          "G": "Turquoise",
+          "K": "Red",
+          "M": null,
+          "L": "Orange",
+          "T": null,
+          "TTS": null,
+          "Y": null,
+          "W": null,
+          "D": null,
+          "N": "Emerald"
+        }
+      }
+    },
+    {
+      "id": "concha_concha_biconcavis",
+      "displayName": "Concha biconcavis",
+      "description": "Ridged egg-like structure that splits to reveal a stalk with donut-shaped chemical exchange pods.",
+      "conditions": {
+        "atmosphere": "Nitrogen (thin)",
+        "max_gravity": 0.27,
+        "temperature_K": null,
+        "atmospherePressureCategory": "thin"
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Antinomy": "Peach",
+          "Polonium": null,
+          "Ruthenium": "Orange",
+          "Technetium": null,
+          "Tellurium": null,
+          "Yttrium": null
+        }
+      }
+    },
+    {
+      "id": "concha_concha_labiata",
+      "displayName": "Concha labiata",
+      "description": "Carbon dioxide species with a lip-like opening that splits to reveal vertical spiky growth.",
+      "conditions": {
+        "atmosphere": [
+          "Carbon dioxide (thin)",
+          "Carbon dioxide rich (thin)"
+        ],
+        "max_gravity": 0.27,
+        "temperature_K": {
+          "max": 190
+        },
+        "atmospherePressureCategory": "thin"
+      },
+      "color_rules": {
+        "type": "star_based",
+        "mapping": {
+          "O": null,
+          "B": null,
+          "A": "Teal",
+          "F": "Grey",
+          "G": "Turquoise",
+          "K": "Red",
+          "M": null,
+          "L": "Orange",
+          "T": null,
+          "TTS": null,
+          "Y": null,
+          "W": null,
+          "D": null,
+          "N": "Emerald"
+        }
+      }
+    },
+    {
+      "id": "concha_concha_renibus",
+      "displayName": "Concha renibus",
+      "description": "Heat-dependent species that grows a central stalk with luminous fronds for metabolism.",
+      "conditions": {
+        "atmosphere": [
+          "Carbon dioxide (thin)",
+          "Water (thin)",
+          "Water-rich (thin)"
+        ],
+        "max_gravity": 0.27,
+        "temperature_K": {
+          "min": 180,
+          "max": 195,
+          "applies_to": "Carbon dioxide only"
+        },
+        "atmospherePressureCategory": "thin"
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Cadmium": "Red",
+          "Mercury": "Mulberry",
+          "Molybdenum": "Peach",
+          "Niobium": "Blue",
+          "Tungsten": "White",
+          "Tin": "Aquamarine"
+        }
+      }
+    }
+  ],
+  "distributionReference": {
+    "atmosphere_based": {
+      "Ammonia": [
+        "Concha aureolas"
+      ],
+      "Nitrogen": [
+        "Concha biconcavis"
+      ],
+      "Carbon dioxide": [
+        {
+          "species": "Concha labiata",
+          "temperature_K": "<190"
+        },
+        {
+          "species": "Concha renibus",
+          "temperature_K": "180-195"
+        }
+      ],
+      "Water": [
+        "Concha renibus"
+      ]
+    }
+  },
+  "authorNotes": {
+    "species_count": 4,
+    "temperature_constraints": "Only applies to Carbon dioxide species (labiata <190K, renibus 180–195K)",
+    "gravity_constraints": "Max 0.27g (applies to all species)",
+    "special_rules": [
+      "Atmosphere is the PRIMARY selector for species",
+      "Temperature filtering ONLY applies to Carbon dioxide cases",
+      "Concha renibus is the ONLY species that spans multiple atmospheres (CO2 + Water)",
+      "Water-based spawn for renibus has NO temperature restriction explicitly defined",
+      "Color system differs per species (star-based vs material-based)",
+      "No volcanism or system-level dependencies required (simpler than Bacterium/Brain Trees)"
+    ]
+  }
+}

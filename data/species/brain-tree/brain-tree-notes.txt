@@ -1,0 +1,12 @@
+Key extraction notes (this one has hidden complexity)
+Volcanism is mandatory → this is a hard filter (unlike many other genera)
+System-level dependency matters a LOT:
+Most species require:
+Earth-like world OR
+gas giant with water-based life
+Temperature is a primary selector:
+This genus is heavily temperature-gated per species (don’t skip this in logic)
+Planet type further refines spawn:
+Same temp range ≠ same species → planet type decides final result
+Unique behavior:
+Spawns in large clustered fields, not isolated instances

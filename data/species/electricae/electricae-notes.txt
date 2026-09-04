@@ -1,0 +1,14 @@
+Key extraction notes (this one is really interesting)
+Unique biome restriction
+ONLY found on icy worlds (hard requirement)
+Atmosphere is very strict
+Only noble gases (He / Ne / Ar) → no other atmospheres allowed
+Species split is NOT atmosphere-based
+Both species share identical base conditions → split comes from:
+⭐ star type (pluma)
+🌌 nebula proximity (radialem)
+Two rare mechanics introduced here:
+Star dependency (pluma) → similar to Amphora but more specific
+Nebula dependency (radialem) → almost unique across all genera
+Temperature is implicit
+No numbers given → but MUST be extremely cold due to icy environment

@@ -1,0 +1,9 @@
+Things that are good to know
+Osseus is one of the most visually deceptive genera in Elite Dangerous — it often looks like natural rock until scanned.
+Detection is heavily influenced by terrain contrast, not just DSS heatmap zones.
+The genus is strongly ridge- and outcrop-dependent, meaning flat terrain searches are usually inefficient.
+The extremely large 800m sample distance creates sparse, widely spaced spawn clusters.
+CO₂ variants introduce strict cold-range dependency (180–195K), making them biome-sensitive despite being “rock-like”.
+Osseus pumice is the only variant that meaningfully bridges high metal content + multiple atmosphere types, making it the most adaptable species.
+Functionally, Osseus behaves closer to a bio-mineral hybrid system than traditional flora — it is partially geological in appearance and growth logic.
+Many explorers misidentify Osseus as terrain until very close range due to its low visual signature profile.

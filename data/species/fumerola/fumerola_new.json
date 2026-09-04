@@ -1,0 +1,206 @@
+{
+  "formatVersion": 1,
+  "genus": "Fumerola",
+  "meta": {
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "general": {
+      "description": "Chemosynthetic and thermosynthetic extremophile organisms that grow on fumaroles and volcanic vents. They derive energy from geothermal activity and often incorporate mineral deposits from vent ejecta, giving them semi-inorganic appearances.",
+      "min_sample_distance_m": 100,
+      "planet_requirements": {
+        "planet_types": [
+          "Icy",
+          "Rocky",
+          "Rocky Ice",
+          "High Metal Content"
+        ],
+        "max_gravity": 0.27,
+        "required_geological_feature": "Fumaroles",
+        "atmosphere_note": "Any thin atmosphere is acceptable; matcher uses surface pressure (thin) only — not AtmosphereType."
+      },
+      "environmental_context": [
+        "Found directly on fumaroles and gas vent structures",
+        "Often appear in clusters on flat volcanic terrain",
+        "Require active geothermal heat sources to sustain metabolism"
+      ]
+    },
+    "summary": "Chemosynthetic and thermosynthetic extremophile organisms that grow on fumaroles and volcanic vents. They derive energy from geothermal activity and often incorporate mineral deposits from vent ejecta, giving them semi-inorganic appearances.",
+    "minSampleDistanceM": 100,
+    "genusWideRequirements": {
+      "planet_types": [
+        "Icy",
+        "Rocky",
+        "Rocky Ice",
+        "High Metal Content"
+      ],
+      "max_gravity": 0.27,
+      "required_geological_feature": "Fumaroles"
+    },
+    "environmental_context": [
+      "Found directly on fumaroles and gas vent structures",
+      "Often appear in clusters on flat volcanic terrain",
+      "Require active geothermal heat sources to sustain metabolism"
+    ],
+    "color_variants": {
+      "rule": "Color depends on rare planetary materials (NOT star type in canon behavior, but can be normalized if needed)",
+      "mapping": {
+        "Cadmium": "Green",
+        "Mercury": "Yellow",
+        "Molybdenum": "Cyan",
+        "Niobium": "Gold",
+        "Tungsten": "Cobalt",
+        "Tin": "Orange",
+        "Iron": "White",
+        "Silicates": "Lime",
+        "Carbon compounds": "Teal"
+      }
+    }
+  },
+  "species": [
+    {
+      "id": "fumerola_fumerola_aquatis",
+      "displayName": "Fumerola aquatis",
+      "description": "Water-volcanism adapted variant forming dark clustered folds that trap geothermal heat.",
+      "conditions": {
+        "volcanism": [
+          "water"
+        ],
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "max_gravity": 0.27,
+        "volcanismActiveRequired": true,
+        "atmospherePressureCategory": "thin",
+        "geologicalSignalIncludes": [
+          "geological",
+          "$saa_signaltype_geological"
+        ],
+        "matchContextNotes": [
+          "Codex: spawns on fumarole / vent sites. Species split by water-class volcanism (journal substring: water).",
+          "Thin atmosphere = pressure gate only; composition can be e.g. sulphur dioxide.",
+          "Variant colour follows planetary rare materials (genus meta), not star class."
+        ]
+      }
+    },
+    {
+      "id": "fumerola_fumerola_carbosis",
+      "displayName": "Fumerola carbosis",
+      "description": "Thin tubular structures adapted to carbon and methane volcanic emissions.",
+      "conditions": {
+        "volcanism": [
+          "carbon",
+          "methane"
+        ],
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "max_gravity": 0.27,
+        "volcanismActiveRequired": true,
+        "atmospherePressureCategory": "thin",
+        "geologicalSignalIncludes": [
+          "geological",
+          "$saa_signaltype_geological"
+        ],
+        "matchContextNotes": [
+          "Codex: carbon dioxide / methane class volcanism — journal text usually contains carbon or methane.",
+          "Variant colour follows planetary rare materials (genus meta), not star class."
+        ]
+      }
+    },
+    {
+      "id": "fumerola_fumerola_extremus",
+      "displayName": "Fumerola extremus",
+      "description": "Highly adaptive variant found on silicate, iron, and rocky volcanism zones. Exhibits strong environmental plasticity.",
+      "conditions": {
+        "volcanism": [
+          "silicate",
+          "iron",
+          "rock",
+          "rocky"
+        ],
+        "planet_types": [
+          "Rocky",
+          "High Metal Content"
+        ],
+        "max_gravity": 0.27,
+        "volcanismActiveRequired": true,
+        "atmospherePressureCategory": "thin",
+        "geologicalSignalIncludes": [
+          "geological",
+          "$saa_signaltype_geological"
+        ],
+        "matchContextNotes": [
+          "Codex: silicate / iron / rocky volcanism wording in journal.",
+          "Variant colour follows planetary rare materials (genus meta), not star class."
+        ]
+      }
+    },
+    {
+      "id": "fumerola_fumerola_nitris",
+      "displayName": "Fumerola nitris",
+      "description": "Ovoid nitrogen-based variant with dotted surface markings, optimized for nitrogen/ammonia vents.",
+      "conditions": {
+        "volcanism": [
+          "nitrogen",
+          "ammonia"
+        ],
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "max_gravity": 0.27,
+        "volcanismActiveRequired": true,
+        "atmospherePressureCategory": "thin",
+        "geologicalSignalIncludes": [
+          "geological",
+          "$saa_signaltype_geological"
+        ],
+        "matchContextNotes": [
+          "Codex: nitrogen or ammonia class volcanism in journal text.",
+          "Variant colour follows planetary rare materials (genus meta), not star class."
+        ]
+      }
+    }
+  ],
+  "distributionReference": {
+    "volcanism_based": {
+      "water": [
+        "Fumerola aquatis"
+      ],
+      "carbon": [
+        "Fumerola carbosis"
+      ],
+      "methane": [
+        "Fumerola carbosis"
+      ],
+      "silicate": [
+        "Fumerola extremus"
+      ],
+      "iron": [
+        "Fumerola extremus"
+      ],
+      "rocky": [
+        "Fumerola extremus"
+      ],
+      "nitrogen": [
+        "Fumerola nitris"
+      ],
+      "ammonia": [
+        "Fumerola nitris"
+      ]
+    }
+  },
+  "authorNotes": {
+    "species_count": 4,
+    "gravity_constraints": "Max 0.27g applies to all species",
+    "special_rules": [
+      "Thin atmosphere via pressure (atmospherePressureCategory) — not a specific AtmosphereType",
+      "Fumarole geological signal is mandatory spawn condition in matcher when body has DSS/FSS hints",
+      "Volcanism type is the primary species driver (substring on journal Volcanism)",
+      "Color is determined by local rare materials, not star class",
+      "Minimum sample distance is 100m due to dense clustering",
+      "All species are strongly dependent on active geothermal activity"
+    ]
+  }
+}

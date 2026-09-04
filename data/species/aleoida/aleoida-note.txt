@@ -1,0 +1,5 @@
+Notes (important for your tool/automation)
+Temperature constraints only apply to CO₂ species (arcus, coronamus, gravis).
+Ammonia species have no temperature restriction listed (don’t assume one).
+Gravity cap (0.27g) is universal across all species.
+Planet type restriction is implicitly required via atmosphere type (only rocky / high metal).

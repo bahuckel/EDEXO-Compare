@@ -1,0 +1,9 @@
+Things that are good to know
+Fungoida is fundamentally a subsurface organism, meaning what you see on the surface is only the reproductive “tip” of a much larger underground structure.
+Unlike Frutexa, it is terrain-driven rather than pure atmosphere-driven — elevation is a major hidden requirement.
+The DSS “blue zones” can be misleading because spawn depends heavily on micro-terrain (cliffs, ridges, plateaus) rather than general biome coverage.
+CO₂-based species introduce a strict thermal band (180–195K), making them one of the more constrained exobiology groups.
+Although classified as flora, Fungoida behaves closer to a fungal colony network system, similar to distributed biological infrastructure.
+It often overlaps spatially with Frutexa, but they occupy different ecological layers (Frutexa = surface shrubs, Fungoida = subsurface fungal network).
+Perceived rarity is frequently caused not by absence, but by spawn geometry (tiny valid terrain pockets inside large invalid regions).
+This genus is one of the most terrain-sensitive detection systems in Elite exobiology, making it heavily dependent on exploration technique rather than raw presence.

@@ -1,0 +1,12 @@
+Key extraction notes (this one is IMPORTANT)
+This is the most complex genus so far:
+Multi-layer logic: atmosphere → volcanism → color system
+Universal rule:
+Must have thin atmosphere (no exceptions)
+Volcanism is critical (don’t miss this in filtering):
+Some species will NOT spawn without it (omentum, scopulum, verrata, tela)
+Two different color systems exist:
+Material-based (most species)
+Star-based (rare cases like cerbrus, alcyoneum)
+There’s even a hidden edge case:
+Bacterium tela → can spawn in any atmosphere BUT requires volcanism

@@ -1,0 +1,105 @@
+{
+  "genus": "Electricae",
+  "general": {
+    "description": "Superconductive extremophile organisms found on extremely cold icy worlds, typically near frozen lakes. Most of the organism exists beneath the surface ice, extending into subsurface melt layers, while visible tips connect to the atmosphere to create electrical potential differences, producing bioluminescence.",
+    "min_sample_distance_m": 1000,
+    "planet_requirements": {
+      "planet_types": ["Icy"],
+      "atmospheres": [
+        "Helium (thin)",
+        "Neon (thin)",
+        "Argon (thin)"
+      ],
+      "max_gravity": 0.27,
+      "temperature_K": "Extremely low (implicit, ice worlds only)"
+    },
+    "environmental_context": [
+      "Typically found near frozen lakes or ice fissures",
+      "Often located where ice is thin or fractured"
+    ]
+  },
+  "species": {
+    "Electricae pluma": {
+      "description": "Species with four connected loop structures extending above the ice, covered in luminous fronds. Strongly associated with high-energy stellar environments.",
+      "conditions": {
+        "atmosphere": [
+          "Helium (thin)",
+          "Neon (thin)",
+          "Argon (thin)"
+        ],
+        "planet_types": ["Icy"],
+        "max_gravity": 0.27,
+        "parent_star": {
+          "required_types": ["A (luminosity class V or higher)", "Neutron star"],
+          "possible_types_unconfirmed": ["O", "B", "White dwarf", "Black hole"]
+        }
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Antinomy": "Cobalt",
+          "Polonium": "Cyan",
+          "Ruthenium": "Blue",
+          "Technetium": "Magenta",
+          "Tellurium": "Red",
+          "Yttrium": "Mulberry"
+        }
+      }
+    },
+    "Electricae radialem": {
+      "description": "Species forming radial bioluminescent stalks spreading outward in all directions, likely influenced by nearby nebular environments.",
+      "conditions": {
+        "atmosphere": [
+          "Helium (thin)",
+          "Neon (thin)",
+          "Argon (thin)"
+        ],
+        "planet_types": ["Icy"],
+        "max_gravity": 0.27,
+        "location_requirement": "Near nebulae"
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Antinomy": "Cyan",
+          "Polonium": "Cobalt",
+          "Ruthenium": "Blue",
+          "Technetium": "Aquamarine",
+          "Tellurium": "Magenta",
+          "Yttrium": "Green"
+        }
+      }
+    }
+  },
+  "species_distribution_rules": {
+    "core_requirements": [
+      "Icy planet",
+      "Thin noble gas atmosphere (Helium, Neon, Argon)",
+      "Maximum gravity 0.27g"
+    ],
+    "species_specific_rules": [
+      {
+        "species": "Electricae pluma",
+        "requires": "Specific star types (A-class V+ or Neutron; others unconfirmed)"
+      },
+      {
+        "species": "Electricae radialem",
+        "requires": "Proximity to nebula"
+      }
+    ]
+  },
+  "notes": {
+    "species_count": 2,
+    "temperature_constraints": "Implicitly extremely low (ice-world exclusive, no explicit numeric range)",
+    "gravity_constraints": "Max 0.27g (applies to all species)",
+    "special_rules": [
+      "STRICT biome requirement: only icy planets (unlike most genera)",
+      "Atmosphere must be noble gas based (Helium, Neon, Argon only)",
+      "Species split is NOT atmosphere-based (both share same atmospheres)",
+      "Electricae pluma depends on star type (rare pattern)",
+      "Electricae radialem depends on nebula proximity (very unique condition)",
+      "Color system is fully material-based for both species",
+      "Largest minimum sample distance so far (1000m)"
+    ]
+  }
+}

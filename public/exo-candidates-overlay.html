@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exo candidates</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent !important;
+        overflow: hidden;
+        font-family: Segoe UI, system-ui, sans-serif;
+      }
+      .shell {
+        min-width: 17rem;
+        max-width: 24rem;
+      }
+      .shell.shell--off {
+        opacity: 0.35;
+      }
+      .card {
+        margin: 0;
+        padding: 0.5rem 0.75rem 0.58rem;
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: rgba(232, 244, 255, 0.96);
+        background: linear-gradient(165deg, rgba(42, 88, 180, 0.78), rgba(18, 40, 95, 0.82));
+        border: 1px solid rgba(120, 190, 255, 0.45);
+        border-radius: 10px;
+        box-shadow: 0 8px 28px rgba(0, 20, 60, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+      .title {
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.9;
+        margin-bottom: 0.38rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        padding-bottom: 0.25rem;
+      }
+      .row2 {
+        font-size: 0.72rem;
+        margin-bottom: 0.4rem;
+        opacity: 0.92;
+        line-height: 1.35;
+      }
+      .row2 strong {
+        font-variant-numeric: tabular-nums;
+      }
+      .list {
+        max-height: 14.5rem;
+        overflow-y: auto;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .list li {
+        padding: 0.26rem 0.1rem 0.26rem 0.05rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.72rem;
+        line-height: 1.38;
+        user-select: none;
+        cursor: default;
+      }
+      .list li:last-child {
+        border-bottom: none;
+      }
+      .list li.dash-line {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        white-space: normal;
+        word-break: break-word;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell" id="shell">
+      <div class="card" role="status" aria-live="polite">
+        <div class="title">Exo-Candidates</div>
+        <div class="row2" id="row2">Waiting for journal…</div>
+        <ul class="list" id="candList"></ul>
+      </div>
+    </div>
+    <script>
+      var lastPort = 7111;
+      var lastSnap = null;
+
+      function api(p) {
+        var proto = location.protocol || "";
+        if (proto === "http:" || proto === "https:") return p;
+        return "http://127.0.0.1:" + lastPort + p;
+      }
+
+      function speciesOnly(entry) {
+        var g = (entry.genus || "").trim();
+        var d = (entry.displayName || "").trim();
+        if (!g) return d || "—";
+        var pref = g + " ";
+        if (
+          d.length >= pref.length &&
+          d.substring(0, pref.length).toLowerCase() === pref.toLowerCase()
+        ) {
+          var rest = d.substring(pref.length).trim();
+          return rest || d;
+        }
+        return d || "—";
+      }
+
+      function resolveBodyComputed(d) {
+        var fk = d.exoOverlayFocusBodyKey;
+        if (!fk) return null;
+        var bodies = d.bodies || [];
+        for (var i = 0; i < bodies.length; i++) {
+          var st = bodies[i].state || {};
+          if (st.key === fk) return bodies[i];
+        }
+        if (d.exoOverlayFocusBody && (d.exoOverlayFocusBody.state || {}).key === fk) {
+          return d.exoOverlayFocusBody;
+        }
+        return null;
+      }
+
+      function renderList(matches, bioZero) {
+        var ul = document.getElementById("candList");
+        ul.innerHTML = "";
+        if (bioZero) {
+          return;
+        }
+        (matches || []).forEach(function (m) {
+          var li = document.createElement("li");
+          li.className = "dash-line";
+          var e = m.entry || {};
+          var g = ((e.genus || "").trim() || "—") + " " + speciesOnly(e);
+          var cr =
+            m.priceCredits != null && Number.isFinite(m.priceCredits)
+              ? "Typical " + m.priceCredits.toLocaleString() + " CR"
+              : "Typical —";
+          li.textContent = "\u2014 " + g.trim() + " · " + cr;
+          li.title = g.trim();
+          ul.appendChild(li);
+        });
+        if (!matches || !matches.length) {
+          var li0 = document.createElement("li");
+          li0.textContent = "No candidate species";
+          ul.appendChild(li0);
+        }
+      }
+
+      function fullRender(d) {
+        lastSnap = d;
+        var row2 = document.getElementById("row2");
+        document.getElementById("shell").classList.remove("shell--off");
+
+        if (d.journalBoot) {
+          row2.textContent = "Journal loading…";
+          renderList([], false);
+          return;
+        }
+
+        var bc = resolveBodyComputed(d);
+        if (!bc) {
+          row2.textContent = "Body: — — Bio-Signals: — — DSS: —";
+          renderList([], false);
+          var liM = document.createElement("li");
+          liM.textContent = "Select a body in the app or land to sync focus.";
+          var ul = document.getElementById("candList");
+          ul.innerHTML = "";
+          ul.appendChild(liM);
+          return;
+        }
+
+        var st = bc.state || {};
+        var label = (bc.tabLabel || st.bodyName || st.key || "").trim() || "—";
+        var sig = st.biologicalSignals;
+        var bioZero = sig === 0;
+        var yDisp = sig == null ? "—" : String(sig);
+        var matches = bc.matches || [];
+        var xCount = bioZero ? 0 : matches.length;
+        var xStr = String(xCount);
+
+        var dssYes = st.dssComplete === true;
+        var dssLab = dssYes ? "Yes" : "No";
+
+        row2.innerHTML =
+          'Body: <strong>' +
+          label +
+          '</strong> — Bio-Signals: <strong>' +
+          xStr +
+          "/" +
+          yDisp +
+          '</strong> — DSS: <strong>' +
+          dssLab +
+          "</strong>";
+
+        renderList(matches, bioZero);
+      }
+
+      function tick() {
+        fetch(api("/api/state"), { cache: "no-store" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            if (typeof d.port === "number" && d.port > 0) lastPort = d.port;
+            fullRender(d);
+          })
+          .catch(function () {});
+      }
+      tick();
+      setInterval(tick, 640);
+
+      try {
+        var proto = location.protocol === "https:" ? "wss:" : "ws:";
+        var host =
+          typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
+        var ws = new WebSocket(proto + "//" + host + "/ws");
+        ws.onmessage = function (ev) {
+          try {
+            var msg = JSON.parse(String(ev.data));
+            if (msg.type === "state" && msg.payload) {
+              if (typeof msg.payload.port === "number" && msg.payload.port > 0)
+                lastPort = msg.payload.port;
+              fullRender(msg.payload);
+            }
+          } catch (_) {}
+        };
+      } catch (_) {}
+    </script>
+  </body>
+</html>

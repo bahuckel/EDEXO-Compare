@@ -1,0 +1,13 @@
+Cursor, we wont include a .json here. not needed.
+Only these notes.
+Conditions of occurrence
+Planets types: planets with no atmosphere
+Parent star: type A, F, G, K, M or S.
+Temperature: from 0 to 273 K
+One of the following types of planets must be present in the system :
+Earth-Like World
+Ammoniac
+Gas Giant with water based life
+Gas Giant with ammonia based life
+Water Giant
+They are located only on planets at least 12 000 Ls from the nearest star.

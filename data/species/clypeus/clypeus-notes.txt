@@ -1,0 +1,13 @@
+Key extraction notes (this one is deceptively simple)
+All species share almost identical conditions
+→ Atmosphere, gravity, and temperature are global rules
+ONLY real differentiator = orbital distance
+Clypeus speculumi requires ≥ 2500 LS (~5 AU)
+No atmosphere split like other genera
+All 3 species spawn in both CO₂ and Water atmospheres
+Hard constraints:
+Thin atmosphere required
+Temp >190K
+Max gravity 0.27g
+Color system = clean
+Fully star-type based, no species variation

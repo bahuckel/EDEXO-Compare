@@ -1,0 +1,196 @@
+{
+  "formatVersion": 1,
+  "genus": "Fonticulua",
+  "meta": {
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "general": {
+      "description": "Photosynthetic colony organisms found on icy worlds. They melt surrounding ice, absorb liquid through cellular pores, and refreeze it into protective translucent exoskeletons. Colonies reproduce via fragmentation when structural pieces break off and form new growths.",
+      "min_sample_distance_m": 500,
+      "planet_requirements": {
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "atmosphere": "Thin atmosphere (required for all species)",
+        "max_gravity": 0.28
+      },
+      "environmental_context": [
+        "Commonly found on flat terrain near craters or rocky surfaces"
+      ]
+    },
+    "summary": "Photosynthetic colony organisms found on icy worlds. They melt surrounding ice, absorb liquid through cellular pores, and refreeze it into protective translucent exoskeletons. Colonies reproduce via fragmentation when structural pieces break off and form new growths.",
+    "minSampleDistanceM": 500,
+    "genusWideRequirements": {
+      "planet_types": [
+        "Icy",
+        "Rocky Ice"
+      ],
+      "atmosphere": "Thin atmosphere (required for all species)",
+      "max_gravity": 0.28
+    },
+    "environmental_context": [
+      "Commonly found on flat terrain near craters or rocky surfaces"
+    ],
+    "color_variants": {
+      "rule": "Color depends on parent star type (applies to all species)",
+      "mapping": {
+        "O": "Grey",
+        "B": "Lime",
+        "A": "Green",
+        "F": "Yellow",
+        "G": "Teal",
+        "K": "Emerald",
+        "M": "Amethyst",
+        "L": "Mauve",
+        "T": "Orange",
+        "TTS": "Red",
+        "Y": "Ocher",
+        "W": "Indigo",
+        "D": "Turquoise",
+        "N": "Sage",
+        "Ae/Be": "Maroon"
+      }
+    }
+  },
+  "species": [
+    {
+      "id": "fonticulua_fonticulua_campestris",
+      "displayName": "Fonticulua campestris",
+      "description": "Tall species with large leaf-like structures for sunlight absorption.",
+      "conditions": {
+        "atmosphere": [
+          "Argon"
+        ],
+        "max_gravity": 0.28,
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "temperature_K": null,
+        "atmospherePressureCategory": "thin"
+      }
+    },
+    {
+      "id": "fonticulua_fonticulua_digitos",
+      "displayName": "Fonticulua digitos",
+      "description": "Cluster of cylindrical tube structures emerging from ice.",
+      "conditions": {
+        "atmosphere": [
+          "Methane",
+          "Methane-rich"
+        ],
+        "max_gravity": 0.28,
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "temperature_K": null,
+        "atmospherePressureCategory": "thin"
+      }
+    },
+    {
+      "id": "fonticulua_fonticulua_fluctus",
+      "displayName": "Fonticulua fluctus",
+      "description": "Wave-shaped structures that orient toward sunlight.",
+      "conditions": {
+        "atmosphere": [
+          "Oxygen"
+        ],
+        "max_gravity": 0.28,
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "temperature_K": null,
+        "atmospherePressureCategory": "thin"
+      }
+    },
+    {
+      "id": "fonticulua_fonticulua_lapida",
+      "displayName": "Fonticulua lapida",
+      "description": "Nitrogen-based species with gem-like pods along its stalk.",
+      "conditions": {
+        "atmosphere": [
+          "Nitrogen"
+        ],
+        "max_gravity": 0.28,
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "temperature_K": null,
+        "atmospherePressureCategory": "thin"
+      }
+    },
+    {
+      "id": "fonticulua_fonticulua_segmentatus",
+      "displayName": "Fonticulua segmentatus",
+      "description": "Neon-based species forming pyramid-like segmented structures.",
+      "conditions": {
+        "atmosphere": [
+          "Neon",
+          "Neon-rich"
+        ],
+        "max_gravity": 0.28,
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "temperature_K": null,
+        "atmospherePressureCategory": "thin"
+      }
+    },
+    {
+      "id": "fonticulua_fonticulua_upupam",
+      "displayName": "Fonticulua upupam",
+      "description": "Argon-rich variant with hoop-shaped structures for reflecting light.",
+      "conditions": {
+        "atmosphere": [
+          "Argon-rich"
+        ],
+        "max_gravity": 0.28,
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "temperature_K": null,
+        "atmospherePressureCategory": "thin"
+      }
+    }
+  ],
+  "distributionReference": {
+    "atmosphere_based": {
+      "Argon": [
+        "Fonticulua campestris"
+      ],
+      "Argon-rich": [
+        "Fonticulua upupam"
+      ],
+      "Methane": [
+        "Fonticulua digitos"
+      ],
+      "Neon": [
+        "Fonticulua segmentatus"
+      ],
+      "Nitrogen": [
+        "Fonticulua lapida"
+      ],
+      "Oxygen": [
+        "Fonticulua fluctus"
+      ]
+    }
+  },
+  "authorNotes": {
+    "species_count": 6,
+    "temperature_constraints": null,
+    "gravity_constraints": "Max 0.28g (applies to all species)",
+    "special_rules": [
+      "ALL species require thin atmosphere (hard requirement)",
+      "STRICT biome: only Icy or Rocky Ice planets",
+      "Atmosphere type is the ONLY species differentiator",
+      "No volcanism, temperature, or system-level dependencies",
+      "Color is entirely star-type based (uniform across genus)",
+      "High sample distance requirement (500m)"
+    ]
+  }
+}

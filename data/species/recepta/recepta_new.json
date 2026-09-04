@@ -1,0 +1,155 @@
+{
+  "formatVersion": 1,
+  "genus": "Recepta",
+  "meta": {
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "general": {
+      "description": "Highly advanced extremophile organisms that construct semi-enclosed protective bio-spheres. They regulate internal chemistry, temperature, and atmosphere by building a translucent shell around a central organism. Growth is slow and layered, resulting in very old and complex structures.",
+      "min_sample_distance_m": 150,
+      "planet_requirements": {
+        "planet_types": [
+          "Icy",
+          "Rocky Ice",
+          "Rocky",
+          "High Metal Content"
+        ],
+        "atmosphere": "Thin atmosphere (required for all species)",
+        "max_gravity": 0.27,
+        "required_atmosphere_type": "Sulphur Dioxide"
+      },
+      "environmental_context": [
+        "Often found in isolated patches across flat terrain",
+        "Prefer regions with sulfur dioxide atmospheric dominance",
+        "Appear as semi-encapsulated spherical or lattice structures",
+        "Growth involves continuous shell melting and reformation cycles"
+      ]
+    },
+    "summary": "Highly advanced extremophile organisms that construct semi-enclosed protective bio-spheres. They regulate internal chemistry, temperature, and atmosphere by building a translucent shell around a central organism. Growth is slow and layered, resulting in very old and complex structures.",
+    "minSampleDistanceM": 150,
+    "genusWideRequirements": {
+      "planet_types": [
+        "Icy",
+        "Rocky Ice",
+        "Rocky",
+        "High Metal Content"
+      ],
+      "atmosphere": "Thin atmosphere (required for all species)",
+      "max_gravity": 0.27,
+      "required_atmosphere_type": "Sulphur Dioxide"
+    },
+    "environmental_context": [
+      "Often found in isolated patches across flat terrain",
+      "Prefer regions with sulfur dioxide atmospheric dominance",
+      "Appear as semi-encapsulated spherical or lattice structures",
+      "Growth involves continuous shell melting and reformation cycles"
+    ],
+    "color_variants": {
+      "rule": "Color depends on rare planetary materials (NOT star type in canon behavior)",
+      "mapping": {
+        "Antimony": "Lime",
+        "Polonium": "White",
+        "Ruthenium": "Cyan",
+        "Technetium": "Aquamarine",
+        "Tellurium": "Green",
+        "Yttrium": "Yellow",
+        "Cadmium": "Red",
+        "Mercury": "Gold",
+        "Molybdenum": "Orange",
+        "Niobium": "Mulberry",
+        "Tungsten": "Red",
+        "Tin": "Teal"
+      }
+    }
+  },
+  "species": [
+    {
+      "id": "recepta_recepta_conditivus",
+      "displayName": "Recepta conditivus",
+      "description": "Sphere-encased organism suspended in a fluid-filled protective membrane with active chemical regulation.",
+      "conditions": {
+        "atmosphere": [
+          "Sulphur Dioxide"
+        ],
+        "planet_types": [
+          "Icy",
+          "Rocky Ice"
+        ],
+        "max_gravity": 0.27,
+        "atmospherePressureCategory": "thin"
+      }
+    },
+    {
+      "id": "recepta_recepta_deltahedronix",
+      "displayName": "Recepta deltahedronix",
+      "description": "Deltahedron lattice structure forming an external thermal capture framework around a central organism.",
+      "conditions": {
+        "atmosphere": [
+          "Sulphur Dioxide"
+        ],
+        "planet_types": [
+          "Rocky",
+          "High Metal Content",
+		  "Icy"
+        ],
+        "max_gravity": 0.27,
+        "atmospherePressureCategory": "thin"
+      }
+    },
+    {
+      "id": "recepta_recepta_umbrux",
+      "displayName": "Recepta umbrux",
+      "description": "Membrane-stabilized lattice organism adapted for low-light photosynthesis through semi-transparent shielding layers.",
+      "conditions": {
+        "atmosphere": [
+          "Sulphur Dioxide"
+        ],
+        "planet_types": [
+          "Icy",
+          "Rocky Ice",
+		  "Rocky body"
+        ],
+        "max_gravity": 0.27,
+        "atmospherePressureCategory": "thin"
+      }
+    }
+  ],
+  "distributionReference": {
+    "atmosphere_based": {
+      "Sulphur Dioxide": [
+        "Recepta conditivus",
+        "Recepta deltahedronix",
+        "Recepta umbrux"
+      ]
+    },
+    "planet_type_filters": {
+      "Icy": [
+        "Recepta conditivus",
+        "Recepta umbrux",
+		"Recepta deltahedronix"
+      ],
+      "Rocky Ice": [
+        "Recepta conditivus",
+        "Recepta umbrux"
+      ],
+      "Rocky": [
+        "Recepta deltahedronix"
+      ],
+      "High Metal Content": [
+        "Recepta deltahedronix"
+      ]
+    }
+  },
+  "authorNotes": {
+    "species_count": 3,
+    "gravity_constraints": "Max 0.27g applies to all species",
+    "special_rules": [
+      "ALL species require thin atmosphere with Sulphur Dioxide dominance",
+      "Shell growth involves continuous melt–reform biological cycling",
+      "Minimum sample distance is 150m due to clustered distribution",
+      "Species selection depends on BOTH atmosphere and planet type",
+      "Structures often appear semi-geological due to mineral integration",
+      "Recepta colonies are highly localized and sparse across surfaces",
+      "Each species represents a different structural adaptation strategy"
+    ]
+  }
+}

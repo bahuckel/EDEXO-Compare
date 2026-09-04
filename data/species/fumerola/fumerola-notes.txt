@@ -1,0 +1,9 @@
+Things that are good to know
+Fumerola is geology-driven first, not atmosphere-driven like Frutexa or Fonticulua.
+The required trigger is the fumarole POI itself, not just planet type.
+Volcanism type is the primary species selector, making this genus more environmental-event based than biome-based.
+Unlike your previous genera, color is NOT star-based here — it depends on local mineral composition, making it a separate visual system.
+Species are tightly bound to specific geothermal chemistry types (water, carbon, silicate, nitrogen).
+This genus introduces a more “hazard interaction” model — players can actually be harmed by vent activity (important behavioral distinction).
+Distribution is cluster-dense (100m spacing), meaning it behaves more like localized colonies rather than sparse field biology.
+Fumerola represents a hybrid between biological + mineral deposition systems, which is why it visually appears semi-inorganic.

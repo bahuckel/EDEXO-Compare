@@ -1,0 +1,13 @@
+Tubus is one of the most physically constrained genera in Elite Dangerous, requiring both:
+extremely low gravity (≤ 0.15g)
+tight temperature band (160–190K)
+Unlike most flora, Tubus behaves like a biological engineering structure, not just an organism.
+The internal “chimney system” suggests a self-regulating atmospheric circulation mechanism, making it closer to a living tower than a plant.
+Species differences are mainly defined by:
+atmosphere type (CO₂ vs Ammonia)
+structural segmentation style
+Tubus sororibus is the only High Metal Content–exclusive species, making it the most geologically constrained.
+The genus strongly prefers flat terrain, meaning mountainous regions are usually poor spawn candidates.
+Growth rings (in some species) imply long-lived organisms with measurable evolutionary age layers, which is rare among Elite flora.
+Because of its height and structure, Tubus is often visually detectable from orbit-level approach compared to other genera.
+Despite its size, it remains low density in distribution, which is why sample distance is unusually high (800m).

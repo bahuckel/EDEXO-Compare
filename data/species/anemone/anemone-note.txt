@@ -1,0 +1,12 @@
+Key extraction notes (important for your dataset)
+This genus behaves differently:
+It’s NOT multiple species like Aleoida → it’s one species with variants.
+The variant system is the most complex so far:
+Depends on 3 variables simultaneously:
+star class
+luminosity class
+planet type
+Temperature & gravity are NOT defined:
+Only described as “wide tolerance” → keep as null, don’t infer
+Rare but important edge case:
+Can appear on thin atmospheres (Sulfur Dioxide confirmed) → don’t filter these out

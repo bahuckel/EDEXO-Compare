@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data value</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent !important;
+        overflow: hidden;
+        font-family: Segoe UI, system-ui, sans-serif;
+      }
+      .shell {
+        min-width: 15rem;
+        max-width: 20rem;
+      }
+      .card {
+        margin: 0;
+        padding: 0.52rem 0.72rem 0.56rem;
+        font-size: 0.76rem;
+        font-weight: 600;
+        line-height: 1.38;
+        color: rgba(232, 244, 255, 0.96);
+        background: linear-gradient(165deg, rgba(42, 88, 180, 0.78), rgba(18, 40, 95, 0.82));
+        border: 1px solid rgba(120, 190, 255, 0.45);
+        border-radius: 10px;
+        box-shadow: 0 8px 28px rgba(0, 20, 60, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+      .title {
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.9;
+        margin-bottom: 0.35rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        padding-bottom: 0.24rem;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin-top: 0.22rem;
+        font-size: 0.72rem;
+      }
+      .row .k {
+        opacity: 0.78;
+        font-weight: 600;
+      }
+      .row .v {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        font-weight: 700;
+      }
+      .row.row--total {
+        margin-top: 0.38rem;
+        padding-top: 0.32rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.14);
+        font-size: 0.8rem;
+      }
+      .row.row--total .v {
+        color: rgba(255, 220, 160, 0.98);
+      }
+      .sub {
+        margin-top: 0.35rem;
+        font-size: 0.65rem;
+        opacity: 0.72;
+        line-height: 1.35;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="card" role="status" aria-live="polite">
+        <div class="title">Data value</div>
+        <div id="mainBlock">
+          <div class="row"><span class="k">Organic (unsold)</span> <span class="v" id="vOrg">—</span></div>
+          <div class="row"><span class="k">Exploration scans</span> <span class="v" id="vScan">—</span></div>
+          <div class="row row--total"><span class="k">Total</span> <span class="v" id="vTot">—</span></div>
+          <p class="sub" id="subHint">Loading…</p>
+        </div>
+      </div>
+    </div>
+    <script>
+      var lastPort = 7111;
+
+      function api(p) {
+        var proto = location.protocol || "";
+        if (proto === "http:" || proto === "https:") return p;
+        return "http://127.0.0.1:" + lastPort + p;
+      }
+
+      function fmt(n) {
+        if (n == null || !Number.isFinite(Number(n))) return "—";
+        return Number(n).toLocaleString() + " CR";
+      }
+
+      function tick() {
+        fetch(api("/api/state"), { cache: "no-store" })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (d) {
+            if (typeof d.port === "number" && d.port > 0) lastPort = d.port;
+            var org = d.organicDataValueCredits ?? 0;
+            var scanOn = d.includeExplorationScanDataInDataValue === true;
+            var scanCr = d.explorationScanDataValueCredits ?? 0;
+            var tot = org + (scanOn ? scanCr : 0);
+            document.getElementById("vOrg").textContent = fmt(org);
+            document.getElementById("vScan").textContent = scanOn ? fmt(scanCr) : "— (off)";
+            document.getElementById("vTot").textContent = fmt(tot);
+            var pend = d.organicPendingSampleCount > 0 ? " · " + d.organicPendingSampleCount + " pending sample(s)" : "";
+            document.getElementById("subHint").textContent =
+              (scanOn
+                ? "Total = organic + merged FSS/DSS scan estimate (same ⊕ toggle as main UI)."
+                : "Total = organic only. Enable ⊕ scan data in main UI to add exploration CR to total.") + pend;
+          })
+          .catch(function () {});
+      }
+      tick();
+      setInterval(tick, 920);
+
+      try {
+        var proto = location.protocol === "https:" ? "wss:" : "ws:";
+        var host =
+          typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
+        var ws = new WebSocket(proto + "//" + host + "/ws");
+        ws.onmessage = function (ev) {
+          try {
+            var msg = JSON.parse(String(ev.data));
+            if (msg.type === "state" && msg.payload) {
+              if (typeof msg.payload.port === "number" && msg.payload.port > 0)
+                lastPort = msg.payload.port;
+              tick();
+            }
+          } catch (_) {}
+        };
+      } catch (_) {}
+    </script>
+  </body>
+</html>

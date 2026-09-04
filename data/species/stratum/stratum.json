@@ -1,0 +1,167 @@
+{
+  "genus": "Stratum",
+  "general": {
+    "description": "Low-lying photosynthetic organisms that form tightly bonded colonies on rocky and metallic surfaces. The organism partially embeds into subsurface rock layers for protection, exposing only photosynthetic proto-leaves. Their evolution is primitive but highly successful, making them one of the most common xenobiological genera.",
+    "min_sample_distance_m": 500,
+    "planet_requirements": {
+      "planet_types": ["Rocky", "High Metal Content"],
+      "atmosphere": "Thin atmosphere (required for all species)",
+      "max_gravity": null,
+      "min_temperature_K": 165
+    },
+    "environmental_context": [
+      "Found on rocky and high metal content planets",
+      "Often forms wide flat colonies across terrain surfaces",
+      "Frequently embedded partially into rock substrate",
+      "Highly dependent on mineral composition of surrounding terrain"
+    ]
+  },
+  "color_variants": {
+    "rule": "Color is determined by a combination of parent star type and local mineral composition (hybrid system unique to this genus)",
+    "mapping": {
+      "O": null,
+      "B": null,
+      "A": null,
+      "F": "Emerald",
+      "G": null,
+      "K": "Lime",
+      "M": "Green",
+      "L": "Turquoise",
+      "T": "Grey",
+      "TTS": "Amethyst",
+      "Y": "Indigo",
+      "W": "Red",
+      "D": "Mauve",
+      "N": null
+    }
+  },
+  "species": {
+    "Stratum araneamus": {
+      "description": "Octopoid-like structure with semi-translucent domes and exposed photosynthetic tentacle-like extensions.",
+      "conditions": {
+        "atmosphere": ["Sulphur Dioxide"],
+        "planet_types": ["Rocky"],
+        "temperature_K": [165, 999]
+      }
+    },
+    "Stratum cucumisis": {
+      "description": "Elongated ovoid formations connected across terrain, forming linear biological chains.",
+      "conditions": {
+        "atmosphere": ["Sulphur Dioxide", "Carbon Dioxide"],
+        "planet_types": ["Rocky"],
+        "temperature_K": [190, 999]
+      }
+    },
+    "Stratum excutitus": {
+      "description": "Concentric ring-patterned organism with mottled proto-leaf structures in darker hues.",
+      "conditions": {
+        "atmosphere": ["Sulphur Dioxide", "Carbon Dioxide"],
+        "planet_types": ["Rocky"],
+        "temperature_K": [165, 190]
+      }
+    },
+    "Stratum frigus": {
+      "description": "Broad interconnected ridge structures optimized for low-temperature environments.",
+      "conditions": {
+        "atmosphere": ["Sulphur Dioxide", "Carbon Dioxide"],
+        "planet_types": ["Rocky"],
+        "temperature_K": [190, 999]
+      }
+    },
+    "Stratum laminamus": {
+      "description": "Layered plateau-like organism forming overlapping mineral-rich sheets.",
+      "conditions": {
+        "atmosphere": ["Ammonia"],
+        "planet_types": ["Rocky"],
+        "temperature_K": [165, 999]
+      }
+    },
+    "Stratum limaxus": {
+      "description": "Separated ovoid surface projections linked to a larger subterranean organism.",
+      "conditions": {
+        "atmosphere": ["Sulphur Dioxide", "Carbon Dioxide"],
+        "planet_types": ["Rocky"],
+        "temperature_K": [165, 190]
+      }
+    },
+    "Stratum paleas": {
+      "description": "Vine-like overlapping growths with irregular banded coloration patterns.",
+      "conditions": {
+        "atmosphere": ["Ammonia", "Water", "Carbon Dioxide"],
+        "planet_types": ["Rocky"],
+        "temperature_K": [165, 999]
+      }
+    },
+    "Stratum tectonicas": {
+      "description": "Thick rock-like biological structure covered in irregular photosynthetic lattice cells.",
+      "conditions": {
+        "atmosphere": ["Oxygen", "Ammonia", "Water", "Carbon Dioxide", "Sulphur Dioxide"],
+        "planet_types": ["High Metal Content"],
+        "temperature_K": [165, 999]
+      }
+    }
+  },
+  "species_distribution_rules": {
+    "planet_atmosphere_matrix": {
+      "Sulphur Dioxide": [
+        "Stratum araneamus",
+        "Stratum excutitus",
+        "Stratum limaxus",
+        "Stratum frigus",
+        "Stratum cucumisis"
+      ],
+      "Carbon Dioxide": [
+        "Stratum excutitus",
+        "Stratum limaxus",
+        "Stratum frigus",
+        "Stratum cucumisis",
+        "Stratum paleas"
+      ],
+      "Ammonia": [
+        "Stratum laminamus",
+        "Stratum paleas"
+      ],
+      "Water": [
+        "Stratum paleas"
+      ]
+    },
+    "planet_type_filters": {
+      "Rocky": [
+        "Stratum araneamus",
+        "Stratum cucumisis",
+        "Stratum excutitus",
+        "Stratum frigus",
+        "Stratum laminamus",
+        "Stratum limaxus",
+        "Stratum paleas"
+      ],
+      "High Metal Content": [
+        "Stratum tectonicas"
+      ]
+    },
+    "temperature_brackets": {
+      "165-190K": [
+        "Stratum excutitus",
+        "Stratum limaxus"
+      ],
+      "190K+": [
+        "Stratum frigus",
+        "Stratum cucumisis"
+      ]
+    }
+  },
+  "notes": {
+    "species_count": 8,
+    "gravity_constraints": "None explicitly defined, but implicitly constrained by planetary generation rules",
+    "special_rules": [
+      "Minimum sample distance is 500m due to wide colony spread",
+      "All species require thin atmosphere conditions",
+      "Temperature is a primary species differentiator within CO2/SO2 systems",
+      "Stratum tectonicas is the only High Metal Content exclusive species",
+      "Color is partially star-based but also influenced by mineral composition",
+      "Colony structures are surface expressions of partially embedded organisms",
+      "Species identification depends heavily on temperature bracket + atmosphere combination",
+      "Stratum is one of the most mechanically segmented genera in Elite exobiology"
+    ]
+  }
+}

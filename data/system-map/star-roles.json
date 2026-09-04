@@ -1,0 +1,13 @@
+{
+  "comment": "Journal StarType is usually the spectral letter (e.g. M, F). Prefix match on first character unless entry is full string.",
+  "fuelPrefixes": ["O", "B", "A", "F", "G", "K", "M"],
+  "neutronExact": ["N"],
+  "blackHoleExact": ["H"],
+  "whiteDwarfPrefix": "D",
+  "description": {
+    "fuel": "Scoopable main-sequence (KGBFOAM-style O–M).",
+    "neutron_boost": "Neutron star — large FSD supercharge in jet cone.",
+    "wd_boost": "White dwarf (D…) — smaller FSD supercharge; jet cone is tight.",
+    "useless": "Not fuel-scoopable as a star and not a common boost target in routing."
+  }
+}

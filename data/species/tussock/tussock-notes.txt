@@ -1,0 +1,8 @@
+Tussock is one of the most widespread and high-density genera in Elite Dangerous, often acting as a “baseline bio layer” across many planets.
+It is atmosphere-first, but heavily refined by temperature bands inside CO₂ environments, making it more complex than it appears.
+Many species are visually similar, meaning explorers often rely on DSS heatmaps rather than direct observation.
+Tussock often creates the impression of “empty planets with only bacteria”, because it blends into terrain extremely well.
+The genus is heavily flat-terrain biased, but can extend into gentle slopes and mountain bases.
+CO₂ species show a full temperature ladder system (145K → 195K), making it one of the most structured thermal progressions in your dataset so far.
+Some species (like capillum) are infamous for low visibility + high density, making them easy to overlook even on populated biological worlds.
+Despite being “common,” Tussock is one of the most mechanically important genera for exobiology farming loops due to predictable distribution.

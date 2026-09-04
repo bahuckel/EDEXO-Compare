@@ -1,0 +1,9 @@
+Things that are good to know
+Recepta is one of the most structurally complex genera, because it actively builds and maintains a protective “bio-shell” rather than just growing externally.
+The genus is strictly sulfur dioxide–locked, making atmosphere filtering non-negotiable.
+Unlike earlier genera, Recepta is strongly dual-filtered (atmosphere + planet type), so it behaves like a conditional branching system.
+Growth is age-dependent and layered, meaning larger specimens are effectively “older evolutionary states.”
+The internal organism is rarely visible directly; most of what players see is engineered protective architecture, not raw biology.
+Distribution is naturally clustered and sparse, which makes full planetary coverage inefficient compared to ridge/biome targeting species like Fungoida.
+Recepta behaves almost like a self-contained micro-ecosystem, regulating internal chemistry independently from external conditions.
+Visually, it is one of the most geometrically artificial-looking biological forms, often mistaken for geological formations.

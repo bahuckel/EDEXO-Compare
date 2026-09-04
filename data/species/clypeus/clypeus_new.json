@@ -1,0 +1,159 @@
+{
+  "formatVersion": 1,
+  "genus": "Clypeus",
+  "meta": {
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "general": {
+      "description": "Extremophile organisms that form hardened shield-like structures to protect against stellar radiation. These shields are synthesized from surrounding inorganic material and help condense and channel trace atmospheric liquids, enabling survival in extremely arid environments.",
+      "min_sample_distance_m": 150,
+      "planet_requirements": {
+        "planet_types": [
+          "Rocky",
+          "High Metal Content"
+        ],
+        "atmospheres": [
+          "Carbon dioxide (thin)",
+          "Water (thin)"
+        ],
+        "max_gravity": 0.27,
+        "temperature_K": {
+          "min": 190,
+          "max": null
+        }
+      }
+    },
+    "summary": "Extremophile organisms that form hardened shield-like structures to protect against stellar radiation. These shields are synthesized from surrounding inorganic material and help condense and channel trace atmospheric liquids, enabling survival in extremely arid environments.",
+    "minSampleDistanceM": 150,
+    "genusWideRequirements": {
+      "planet_types": [
+        "Rocky",
+        "High Metal Content"
+      ],
+      "atmospheres": [
+        "Carbon dioxide (thin)",
+        "Water (thin)"
+      ],
+      "max_gravity": 0.27,
+      "temperature_K": {
+        "min": 190,
+        "max": null
+      }
+    },
+    "color_variants": {
+      "rule": "Color depends on parent star type (applies to all species)",
+      "mapping": {
+        "O": null,
+        "B": null,
+        "A": "Orange",
+        "F": "Mauve",
+        "G": "Amethyst",
+        "K": "Grey",
+        "M": "Turquoise",
+        "L": "Teal",
+        "T": null,
+        "TTS": null,
+        "Y": null,
+        "W": null,
+        "D": null,
+        "N": "Yellow"
+      }
+    }
+  },
+  "species": [
+    {
+      "id": "clypeus_clypeus_lacrimam",
+      "displayName": "Clypeus lacrimam",
+      "description": "Species with a broad tear-shaped shield that protects against extreme sunlight and channels water droplets into the soil.",
+      "conditions": {
+        "atmosphere": [
+          "Carbon dioxide (thin)",
+          "Water (thin)"
+        ],
+        "max_gravity": 0.27,
+        "temperature_K": {
+          "min": 190,
+          "max": null
+        },
+        "distance_from_star": null,
+        "atmospherePressureCategory": "thin"
+      }
+    },
+    {
+      "id": "clypeus_clypeus_margaritus",
+      "displayName": "Clypeus margaritus",
+      "description": "Produces a curved, pearl-like shield housing up to three central organisms on a bed of leaves.",
+      "conditions": {
+        "atmosphere": [
+          "Carbon dioxide (thin)",
+          "Water (thin)"
+        ],
+        "max_gravity": 0.27,
+        "temperature_K": {
+          "min": 190,
+          "max": null
+        },
+        "distance_from_star": null,
+        "atmospherePressureCategory": "thin"
+      }
+    },
+    {
+      "id": "clypeus_clypeus_speculumi",
+      "displayName": "Clypeus speculumi",
+      "description": "Angular shield with a reflective outer surface protecting spiky organisms; adapted for distant orbital positions.",
+      "conditions": {
+        "atmosphere": [
+          "Carbon dioxide (thin)",
+          "Water (thin)"
+        ],
+        "max_gravity": 0.27,
+        "temperature_K": {
+          "min": 190,
+          "max": null
+        },
+        "distance_from_star": {
+          "min_ls": 2500,
+          "approx_AU": 5
+        },
+        "atmospherePressureCategory": "thin"
+      }
+    }
+  ],
+  "distributionReference": {
+    "core_requirements": [
+      "Thin atmosphere (Carbon dioxide OR Water)",
+      "Rocky or High Metal Content planets only",
+      "Maximum gravity 0.27g",
+      "Temperature must be above 190K"
+    ],
+    "species_specific_rules": [
+      {
+        "species": "Clypeus speculumi",
+        "extra_requirement": "Must be located at least 2500 LS (~5 AU) from parent star"
+      }
+    ],
+    "atmosphere_split": {
+      "Carbon dioxide": [
+        "Clypeus lacrimam",
+        "Clypeus margaritus",
+        "Clypeus speculumi"
+      ],
+      "Water": [
+        "Clypeus lacrimam",
+        "Clypeus margaritus",
+        "Clypeus speculumi"
+      ]
+    }
+  },
+  "authorNotes": {
+    "species_count": 3,
+    "temperature_constraints": "All species require temperature above 190K (global rule)",
+    "gravity_constraints": "Max 0.27g (applies to all species)",
+    "special_rules": [
+      "No atmosphere-based species split (all species share same atmospheres)",
+      "Distance from star is the ONLY species-specific differentiator (speculumi)",
+      "Color is fully determined by parent star type",
+      "One of the simplest genera structurally (uniform conditions across species)",
+      "Planet type restriction is implicit via atmosphere (Rocky / High Metal Content only)"
+    ]
+  }
+}

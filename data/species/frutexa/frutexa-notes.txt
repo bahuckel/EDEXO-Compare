@@ -1,0 +1,10 @@
+Things that are good to know
+Frutexa is atmosphere-driven, meaning filtering starts with atmosphere first, not species selection.
+Temperature is a secondary constraint, only relevant for CO₂-based species.
+Only Frutexa metallicum can appear on High Metal Content worlds.
+All species share a strict 0.27g gravity cap, regardless of variation.
+The genus uses a hybrid logic model:
+deterministic mapping (atmosphere → candidates)
+conditional filters (temperature + planet type)
+Color is completely decoupled from species identity and depends only on parent star type, ensuring visual consistency across all variants.
+Rocky worlds act as the baseline environment, even when extra planet types are allowed.

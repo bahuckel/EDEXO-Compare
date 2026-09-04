@@ -1,0 +1,15 @@
+Key extraction notes (important nuances here)
+Atmosphere is the main split (very clean mapping):
+Ammonia → aureolas
+Nitrogen → biconcavis
+CO₂ → labiata + renibus
+Water → renibus only
+Temperature logic is subtle (easy to mess up):
+labiata → ONLY <190K
+renibus → 180–195K BUT ONLY for CO₂
+renibus (water) → NO temp restriction listed
+Mixed color systems (important for your engine):
+Star-based → aureolas, labiata
+Material-based → biconcavis, renibus
+Edge-case standout:
+Concha renibus = multi-atmosphere species (rare pattern)

@@ -1,0 +1,488 @@
+{
+  "formatVersion": 1,
+  "speciesLabel": "Bacterium Scopulum",
+  "genus": "Bacterium",
+  "source": "exomastery_feeder",
+  "generatedAt": "2026-05-06T11:31:00.668Z",
+  "sampleCount": 7,
+  "numerics": {
+    "body.id": {
+      "min": 1545874,
+      "max": 10945672,
+      "mean": 6741498,
+      "count": 7,
+      "mode": 3779805,
+      "modeCount": 1
+    },
+    "body.id64": {
+      "min": 216176503459662180,
+      "max": 1261010764836185600,
+      "mean": 483835944440271170,
+      "count": 7,
+      "mode": 288237643639104960,
+      "modeCount": 1
+    },
+    "body.bodyId": {
+      "min": 6,
+      "max": 35,
+      "mean": 13.428571428571429,
+      "count": 7,
+      "mode": 6,
+      "modeCount": 2
+    },
+    "body.distanceToArrival": {
+      "min": 1188,
+      "max": 32762,
+      "mean": 6551.285714285715,
+      "count": 7,
+      "mode": 3279,
+      "modeCount": 1
+    },
+    "body.gravity": {
+      "min": 0.2301560021764158,
+      "max": 0.5575151767873764,
+      "mean": 0.4166589360213005,
+      "count": 7,
+      "mode": 0.4810073909564462,
+      "modeCount": 1
+    },
+    "body.earthMasses": {
+      "min": 0.074065,
+      "max": 0.621313,
+      "mean": 0.3232125714285714,
+      "count": 7,
+      "mode": 0.424849,
+      "modeCount": 1
+    },
+    "body.radius": {
+      "min": 3618.09425,
+      "max": 6733.043,
+      "mean": 5332.081107142857,
+      "count": 7,
+      "mode": 5994.127,
+      "modeCount": 1
+    },
+    "body.surfaceTemperature": {
+      "min": 20,
+      "max": 89,
+      "mean": 39,
+      "count": 7,
+      "mode": 20,
+      "modeCount": 2
+    },
+    "body.surfacePressure": {
+      "min": 0.001462518302491981,
+      "max": 0.07619390728842833,
+      "mean": 0.015028308815339607,
+      "count": 7,
+      "mode": 0.00695075467061436,
+      "modeCount": 1
+    },
+    "body.atmosphereComposition.Helium": {
+      "min": 61.48,
+      "max": 95.29,
+      "mean": 78.385,
+      "count": 2,
+      "mode": 61.48,
+      "modeCount": 1
+    },
+    "body.atmosphereComposition.Neon": {
+      "min": 4.71,
+      "max": 100,
+      "mean": 73.87166666666666,
+      "count": 6,
+      "mode": 100,
+      "modeCount": 4
+    },
+    "body.solidComposition.Ice": {
+      "min": 67.11,
+      "max": 82.42,
+      "mean": 70.29285714285714,
+      "count": 7,
+      "mode": 68.59,
+      "modeCount": 1
+    },
+    "body.solidComposition.Rock": {
+      "min": 15.98,
+      "max": 21.94,
+      "mean": 20.514285714285712,
+      "count": 7,
+      "mode": 21.13,
+      "modeCount": 2
+    },
+    "body.solidComposition.Metal": {
+      "min": 1.61,
+      "max": 10.95,
+      "mean": 9.192857142857145,
+      "count": 7,
+      "mode": 10.28,
+      "modeCount": 1
+    },
+    "body.orbitalPeriod": {
+      "min": 3.247253251851852,
+      "max": 22924.298213587965,
+      "mean": 5749.983928930173,
+      "count": 7,
+      "mode": 12108.174463113426,
+      "modeCount": 1
+    },
+    "body.semiMajorAxis": {
+      "min": 0.003730551232784091,
+      "max": 7.553423246447316,
+      "mean": 2.531426930981626,
+      "count": 7,
+      "mode": 6.568393743730872,
+      "modeCount": 1
+    },
+    "body.orbitalEccentricity": {
+      "min": 0.000308,
+      "max": 0.172312,
+      "mean": 0.06307071428571429,
+      "count": 7,
+      "mode": 0.000551,
+      "modeCount": 1
+    },
+    "body.orbitalInclination": {
+      "min": -5.646188,
+      "max": 8.209125,
+      "mean": -0.12645885714285723,
+      "count": 7,
+      "mode": -0.93682,
+      "modeCount": 1
+    },
+    "body.argOfPeriapsis": {
+      "min": 108.004835,
+      "max": 345.008838,
+      "mean": 232.53403871428574,
+      "count": 7,
+      "mode": 108.004835,
+      "modeCount": 1
+    },
+    "body.rotationalPeriod": {
+      "min": 0.4406812771527778,
+      "max": 3.171979634409722,
+      "mean": 1.284874640583664,
+      "count": 7,
+      "mode": 1.2337868839583332,
+      "modeCount": 1
+    },
+    "body.axialTilt": {
+      "min": -0.332504,
+      "max": 3.002549,
+      "mean": 0.36287857142857144,
+      "count": 7,
+      "mode": -0.101046,
+      "modeCount": 1
+    },
+    "body.materials.Sulphur": {
+      "min": 22.09,
+      "max": 26.97,
+      "mean": 23.37857142857143,
+      "count": 7,
+      "mode": 23.2,
+      "modeCount": 1
+    },
+    "body.materials.Carbon": {
+      "min": 18.57,
+      "max": 22.68,
+      "mean": 19.658571428571427,
+      "count": 7,
+      "mode": 19.51,
+      "modeCount": 1
+    },
+    "body.materials.Iron": {
+      "min": 12.27,
+      "max": 16.34,
+      "mean": 15.298571428571426,
+      "count": 7,
+      "mode": 15.32,
+      "modeCount": 2
+    },
+    "body.materials.Phosphorus": {
+      "min": 11.89,
+      "max": 14.52,
+      "mean": 12.587142857142856,
+      "count": 7,
+      "mode": 12.49,
+      "modeCount": 1
+    },
+    "body.materials.Nickel": {
+      "min": 9.28,
+      "max": 12.36,
+      "mean": 11.571428571428571,
+      "count": 7,
+      "mode": 11.59,
+      "modeCount": 2
+    },
+    "body.materials.Manganese": {
+      "min": 5.07,
+      "max": 6.58,
+      "mean": 6.077500000000001,
+      "count": 4,
+      "mode": 6.33,
+      "modeCount": 2
+    },
+    "body.materials.Vanadium": {
+      "min": 3.01,
+      "max": 3.92,
+      "mean": 3.69,
+      "count": 4,
+      "mode": 3.92,
+      "modeCount": 2
+    },
+    "body.materials.Selenium": {
+      "min": 3.61,
+      "max": 4.22,
+      "mean": 3.7874999999999996,
+      "count": 4,
+      "mode": 3.63,
+      "modeCount": 1
+    },
+    "body.materials.Niobium": {
+      "min": 1.05,
+      "max": 1.09,
+      "mean": 1.08,
+      "count": 4,
+      "mode": 1.09,
+      "modeCount": 3
+    },
+    "body.materials.Tungsten": {
+      "min": 0.67,
+      "max": 0.88,
+      "mean": 0.81,
+      "count": 3,
+      "mode": 0.88,
+      "modeCount": 2
+    },
+    "body.materials.Antimony": {
+      "min": 0.7,
+      "max": 0.71,
+      "mean": 0.705,
+      "count": 2,
+      "mode": 0.71,
+      "modeCount": 1
+    },
+    "body.materials.Chromium": {
+      "min": 6.89,
+      "max": 7.35,
+      "mean": 7.096000000000001,
+      "count": 5,
+      "mode": 6.89,
+      "modeCount": 2
+    },
+    "body.materials.Zinc": {
+      "min": 4.16,
+      "max": 4.34,
+      "mean": 4.22,
+      "count": 3,
+      "mode": 4.16,
+      "modeCount": 2
+    },
+    "body.materials.Cadmium": {
+      "min": 1.19,
+      "max": 1.19,
+      "mean": 1.19,
+      "count": 2,
+      "mode": 1.19,
+      "modeCount": 2
+    },
+    "body.materials.Yttrium": {
+      "min": 0.92,
+      "max": 0.92,
+      "mean": 0.92,
+      "count": 2,
+      "mode": 0.92,
+      "modeCount": 2
+    },
+    "body.materials.Technetium": {
+      "min": 0.57,
+      "max": 0.58,
+      "mean": 0.575,
+      "count": 2,
+      "mode": 0.57,
+      "modeCount": 1
+    },
+    "body.materials.Tin": {
+      "min": 0.99,
+      "max": 1.06,
+      "mean": 1.025,
+      "count": 2,
+      "mode": 0.99,
+      "modeCount": 1
+    },
+    "body.materials.Arsenic": {
+      "min": 1.53,
+      "max": 1.53,
+      "mean": 1.53,
+      "count": 1,
+      "mode": 1.53,
+      "modeCount": 1
+    },
+    "body.materials.Molybdenum": {
+      "min": 1.07,
+      "max": 1.07,
+      "mean": 1.07,
+      "count": 1,
+      "mode": 1.07,
+      "modeCount": 1
+    },
+    "body.materials.Mercury": {
+      "min": 0.54,
+      "max": 0.7,
+      "mean": 0.62,
+      "count": 2,
+      "mode": 0.7,
+      "modeCount": 1
+    },
+    "body.atmosphereComposition.Argon": {
+      "min": 100,
+      "max": 100,
+      "mean": 100,
+      "count": 1,
+      "mode": 100,
+      "modeCount": 1
+    },
+    "body.materials.Ruthenium": {
+      "min": 0.76,
+      "max": 0.76,
+      "mean": 0.76,
+      "count": 1,
+      "mode": 0.76,
+      "modeCount": 1
+    }
+  },
+  "categorical": {
+    "body.name": {
+      "Alrai Sector ON-T b3-3 7": 1,
+      "Ceti Sector CQ-Y d108 4": 1,
+      "Crucis Sector FH-M a7-3 4": 1,
+      "Crucis Sector FH-M a7-3 8": 1,
+      "Kholo B 4": 1,
+      "LHS 6386 A 6": 1,
+      "LTT 16016 ABC 4 c": 1
+    },
+    "body.discovery.commander": {
+      "Polaras": 1,
+      "Genaro Deige": 1,
+      "MIH'RAEL-MEN [UGC]": 2,
+      "ADEMARIUM": 1,
+      "Abish": 1,
+      "Palmyra": 1
+    },
+    "body.discovery.date": {
+      "2017-07-10 14:30:44": 1,
+      "2017-03-11 18:09:59": 1,
+      "2017-05-01 06:23:24": 1,
+      "2017-05-01 06:28:34": 1,
+      "2018-01-03 22:49:08": 1,
+      "2018-01-08 17:21:16": 1,
+      "2017-01-26 22:33:45": 1
+    },
+    "body.type": {
+      "Planet": 7
+    },
+    "body.subType": {
+      "Icy body": 7
+    },
+    "body.isLandable": {
+      "true": 7
+    },
+    "body.volcanismType": {
+      "Minor Methane Magma": 5,
+      "Minor Carbon Dioxide Geysers": 2
+    },
+    "body.atmosphereType": {
+      "Thin Neon-rich": 2,
+      "Thin Neon": 4,
+      "Thin Argon": 1
+    },
+    "body.terraformingState": {
+      "Not terraformable": 4
+    },
+    "body.rotationalPeriodTidallyLocked": {
+      "false": 7
+    },
+    "body.updateTime": {
+      "2026-04-06 10:33:44": 1,
+      "2026-04-05 20:35:03": 1,
+      "2026-03-25 14:44:32": 1,
+      "2026-03-25 14:44:40": 1,
+      "2026-03-26 19:21:06": 1,
+      "2026-05-01 09:28:02": 1,
+      "2026-05-03 08:23:55": 1
+    }
+  },
+  "materials": {},
+  "atmosphereComposition": {},
+  "solidComposition": {
+    "ice": {
+      "min": 67.11,
+      "max": 82.42,
+      "mean": 70.29285714285714,
+      "count": 7,
+      "mode": 68.59,
+      "modeCount": 1
+    },
+    "rock": {
+      "min": 15.98,
+      "max": 21.94,
+      "mean": 20.514285714285712,
+      "count": 7,
+      "mode": 21.13,
+      "modeCount": 2
+    },
+    "metal": {
+      "min": 1.61,
+      "max": 10.95,
+      "mean": 9.192857142857145,
+      "count": 7,
+      "mode": 10.28,
+      "modeCount": 1
+    }
+  },
+  "summaryLines": [
+    "body.id: typical (modal) 3779805.000000 (1/7 samples); range 1545874 … 10945672",
+    "body.id64: typical (modal) 288237643639104960.000000 (1/7 samples); range 216176503459662180 … 1261010764836185600",
+    "body.bodyId: typical (modal) 6.000000 (2/7 samples); range 6 … 35",
+    "body.distanceToArrival: typical (modal) 3279.000000 (1/7 samples); range 1188 … 32762",
+    "body.gravity: typical (modal) 0.481007 (1/7 samples); range 0.2301560021764158 … 0.5575151767873764",
+    "body.earthMasses: typical (modal) 0.424849 (1/7 samples); range 0.074065 … 0.621313",
+    "body.radius: typical (modal) 5994.127000 (1/7 samples); range 3618.09425 … 6733.043",
+    "body.surfaceTemperature: typical (modal) 20.000000 (2/7 samples); range 20 … 89",
+    "body.surfacePressure: typical (modal) 0.006951 (1/7 samples); range 0.001462518302491981 … 0.07619390728842833",
+    "body.atmosphereComposition.Helium: typical (modal) 61.480000 (1/2 samples); range 61.48 … 95.29",
+    "body.atmosphereComposition.Neon: typical (modal) 100.000000 (4/6 samples); range 4.71 … 100",
+    "body.solidComposition.Ice: typical (modal) 68.590000 (1/7 samples); range 67.11 … 82.42",
+    "body.solidComposition.Rock: typical (modal) 21.130000 (2/7 samples); range 15.98 … 21.94",
+    "body.solidComposition.Metal: typical (modal) 10.280000 (1/7 samples); range 1.61 … 10.95",
+    "body.orbitalPeriod: typical (modal) 12108.174463 (1/7 samples); range 3.247253251851852 … 22924.298213587965",
+    "body.semiMajorAxis: typical (modal) 6.568394 (1/7 samples); range 0.003730551232784091 … 7.553423246447316",
+    "body.orbitalEccentricity: typical (modal) 0.000551 (1/7 samples); range 0.000308 … 0.172312",
+    "body.orbitalInclination: typical (modal) -0.936820 (1/7 samples); range -5.646188 … 8.209125",
+    "body.argOfPeriapsis: typical (modal) 108.004835 (1/7 samples); range 108.004835 … 345.008838",
+    "body.rotationalPeriod: typical (modal) 1.233787 (1/7 samples); range 0.4406812771527778 … 3.171979634409722",
+    "body.axialTilt: typical (modal) -0.101046 (1/7 samples); range -0.332504 … 3.002549",
+    "body.materials.Sulphur: typical (modal) 23.200000 (1/7 samples); range 22.09 … 26.97",
+    "body.materials.Carbon: typical (modal) 19.510000 (1/7 samples); range 18.57 … 22.68",
+    "body.materials.Iron: typical (modal) 15.320000 (2/7 samples); range 12.27 … 16.34",
+    "body.materials.Phosphorus: typical (modal) 12.490000 (1/7 samples); range 11.89 … 14.52",
+    "body.materials.Nickel: typical (modal) 11.590000 (2/7 samples); range 9.28 … 12.36",
+    "body.materials.Manganese: typical (modal) 6.330000 (2/4 samples); range 5.07 … 6.58",
+    "body.materials.Vanadium: typical (modal) 3.920000 (2/4 samples); range 3.01 … 3.92",
+    "body.materials.Selenium: typical (modal) 3.630000 (1/4 samples); range 3.61 … 4.22",
+    "body.materials.Niobium: typical (modal) 1.090000 (3/4 samples); range 1.05 … 1.09",
+    "body.materials.Tungsten: typical (modal) 0.880000 (2/3 samples); range 0.67 … 0.88",
+    "body.materials.Antimony: typical (modal) 0.710000 (1/2 samples); range 0.7 … 0.71",
+    "body.materials.Chromium: typical (modal) 6.890000 (2/5 samples); range 6.89 … 7.35",
+    "body.materials.Zinc: typical (modal) 4.160000 (2/3 samples); range 4.16 … 4.34",
+    "body.materials.Cadmium: typical (modal) 1.190000 (2/2 samples); range 1.19 … 1.19",
+    "body.materials.Yttrium: typical (modal) 0.920000 (2/2 samples); range 0.92 … 0.92",
+    "body.materials.Technetium: typical (modal) 0.570000 (1/2 samples); range 0.57 … 0.58",
+    "body.materials.Tin: typical (modal) 0.990000 (1/2 samples); range 0.99 … 1.06",
+    "body.materials.Arsenic: typical (modal) 1.530000 (1/1 samples); range 1.53 … 1.53",
+    "body.materials.Molybdenum: typical (modal) 1.070000 (1/1 samples); range 1.07 … 1.07",
+    "body.materials.Mercury: typical (modal) 0.700000 (1/2 samples); range 0.54 … 0.7",
+    "body.atmosphereComposition.Argon: typical (modal) 100.000000 (1/1 samples); range 100 … 100",
+    "body.materials.Ruthenium: typical (modal) 0.760000 (1/1 samples); range 0.76 … 0.76"
+  ]
+}

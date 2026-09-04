@@ -1,0 +1,271 @@
+{
+  "genus": "Bacterium",
+  "general": {
+    "description": "Unicellular extremophiles capable of surviving across extreme temperatures, chemical environments, and atmospheres. They derive energy from photosynthetic, chemosynthetic, or thermosynthetic processes and often coexist with other lifeforms.",
+    "min_sample_distance_m": 500,
+    "planet_requirements": {
+      "atmosphere": "Thin atmosphere (required for all species)"
+    }
+  },
+  "species": {
+    "Bacterium acies": {
+      "description": "Neon-atmosphere bacteria forming bright looping whirls.",
+      "conditions": {
+        "atmosphere": ["Neon", "Neon-rich"],
+        "volcanism": null
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Antinomy": "Cyan",
+          "Polonium": "Magenta",
+          "Ruthenium": "Cobalt",
+          "Technetium": "Lime",
+          "Tellurium": "White",
+          "Yttrium": "Aquamarine"
+        }
+      }
+    },
+    "Bacterium alcyoneum": {
+      "description": "Sunlight-dependent ammonia bacteria forming maze-like colonies.",
+      "conditions": {
+        "atmosphere": ["Ammonia"],
+        "volcanism": null
+      },
+      "color_rules": {
+        "type": "star_based",
+        "mapping": "Parent star type determines color"
+      }
+    },
+    "Bacterium bullaris": {
+      "description": "Methane-based bacteria forming linked bubble-like structures.",
+      "conditions": {
+        "atmosphere": ["Methane", "Methane-rich"],
+        "volcanism": null
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Antinomy": "Cobalt",
+          "Polonium": "Yellow",
+          "Ruthenium": "Aquamarine",
+          "Technetium": "Gold",
+          "Tellurium": "Lime",
+          "Yttrium": "Red"
+        }
+      }
+    },
+    "Bacterium cerbrus": {
+      "description": "Water/sulfur dioxide bacteria forming brain-like clusters.",
+      "conditions": {
+        "atmosphere": ["Water", "Water-rich", "Sulfur Dioxide"],
+        "volcanism": null
+      },
+      "color_rules": {
+        "type": "star_based",
+        "mapping": {
+          "O": "Turquoise",
+          "B": "Grey",
+          "A": "Yellow",
+          "F": "Lime",
+          "G": "Emerald",
+          "K": "Green",
+          "M": "Teal",
+          "L": "Sage",
+          "T": "Red",
+          "TTS": "Maroon",
+          "W": "Amethyst",
+          "D": "Ocher",
+          "N": "Indigo"
+        }
+      }
+    },
+    "Bacterium informem": {
+      "description": "Nitrogen-based shapeless bacterial spread.",
+      "conditions": {
+        "atmosphere": ["Nitrogen"],
+        "volcanism": null
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Antinomy": "Red",
+          "Polonium": "Lime",
+          "Ruthenium": "Gold",
+          "Technetium": "Aquamarine",
+          "Tellurium": "Yellow",
+          "Yttrium": "Cobalt"
+        }
+      }
+    },
+    "Bacterium nebulus": {
+      "description": "Helium-based bacteria forming radial patterns.",
+      "conditions": {
+        "atmosphere": ["Helium"],
+        "volcanism": null
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Antinomy": "Magenta",
+          "Polonium": "Gold",
+          "Ruthenium": "Orange",
+          "Tellurium": "Green",
+          "Yttrium": "Cobalt"
+        }
+      }
+    },
+    "Bacterium omentum": {
+      "description": "Thermosynthetic bacteria linked to nitrogen/ammonia volcanism.",
+      "conditions": {
+        "atmosphere": ["Neon", "Neon-rich"],
+        "volcanism": ["Nitrogen", "Ammonia"]
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Cadmium": "Lime",
+          "Mercury": "White",
+          "Molybdenum": "Aquamarine",
+          "Niobium": "Peach",
+          "Tungsten": "Blue",
+          "Tin": "Red"
+        }
+      }
+    },
+    "Bacterium scopulum": {
+      "description": "Carbon-volcanism bacteria forming ridged patterns.",
+      "conditions": {
+        "atmosphere": ["Neon", "Neon-rich"],
+        "volcanism": ["Carbon", "Methane"]
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Cadmium": "White",
+          "Mercury": "Peach",
+          "Molybdenum": "Lime",
+          "Niobium": "Red",
+          "Tungsten": "Aquamarine",
+          "Tin": "Mulberry"
+        }
+      }
+    },
+    "Bacterium tela": {
+      "description": "Web-like bacteria linked to multiple volcanism types.",
+      "conditions": {
+        "atmosphere": "Any thin atmosphere",
+        "volcanism": ["Helium", "Iron", "Silicate", "Ammonia", "Water"]
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Cadmium": "Gold",
+          "Mercury": "Orange",
+          "Molybdenum": "Yellow",
+          "Niobium": "Magenta",
+          "Tungsten": "Green",
+          "Tin": "Cobalt"
+        }
+      }
+    },
+    "Bacterium verrata": {
+      "description": "Volcanic bacteria associated with water-based activity.",
+      "conditions": {
+        "atmosphere": ["Neon", "Neon-rich"],
+        "volcanism": ["Water"]
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Cadmium": "Peach",
+          "Mercury": "Red",
+          "Molybdenum": "White",
+          "Niobium": "Mulberry",
+          "Tungsten": "Lime",
+          "Tin": "Blue"
+        }
+      }
+    },
+    "Bacterium vesicula": {
+      "description": "Argon-based bacteria forming tight loop clusters.",
+      "conditions": {
+        "atmosphere": ["Argon", "Argon-rich"],
+        "volcanism": null
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Antinomy": "Cyan",
+          "Polonium": "Orange",
+          "Ruthenium": "Mulberry",
+          "Technetium": "Gold",
+          "Tellurium": "Red",
+          "Yttrium": "Lime"
+        }
+      }
+    },
+    "Bacterium volu": {
+      "description": "Oxygen-based bacteria forming swirling surface patterns.",
+      "conditions": {
+        "atmosphere": ["Oxygen"],
+        "volcanism": null
+      },
+      "color_rules": {
+        "type": "material_based",
+        "mapping": {
+          "Antinomy": "Red",
+          "Polonium": "Aquamarine",
+          "Ruthenium": "Cobalt",
+          "Tellurium": "Cyan",
+          "Yttrium": "Gold"
+        }
+      }
+    }
+  },
+  "species_distribution_rules": {
+    "atmosphere_based": {
+      "Helium": ["Bacterium nebulus"],
+      "Neon": ["Bacterium acies", "Bacterium omentum", "Bacterium scopulum", "Bacterium verrata"],
+      "Methane": ["Bacterium bullaris"],
+      "Argon": ["Bacterium vesicula"],
+      "Nitrogen": ["Bacterium informem"],
+      "Oxygen": ["Bacterium volu"],
+      "Ammonia": ["Bacterium alcyoneum"],
+      "Carbon dioxide": ["Bacterium aurasus"],
+      "Water": ["Bacterium cerbrus"],
+      "Sulfur Dioxide": ["Bacterium cerbrus"],
+      "Any": ["Bacterium tela"]
+    },
+    "volcanism_dependencies": [
+      {
+        "species": "Bacterium omentum",
+        "requires": ["Nitrogen", "Ammonia volcanism"]
+      },
+      {
+        "species": "Bacterium scopulum",
+        "requires": ["Carbon", "Methane volcanism"]
+      },
+      {
+        "species": "Bacterium verrata",
+        "requires": ["Water volcanism"]
+      },
+      {
+        "species": "Bacterium tela",
+        "requires": ["Helium", "Iron", "Silicate", "Ammonia volcanism", "Water volcanism"]
+      }
+    ]
+  },
+  "notes": {
+    "species_count": 12,
+    "temperature_constraints": null,
+    "gravity_constraints": null,
+    "special_rules": [
+      "ALL species require a thin atmosphere (hard requirement)",
+      "Atmosphere type is the PRIMARY filter for species selection",
+      "Some species require BOTH atmosphere AND volcanism (critical edge case)",
+      "Color variation is either material-based OR star-based depending on species",
+      "Largest and most complex genus so far (multi-layer condition system)"
+    ]
+  }
+}

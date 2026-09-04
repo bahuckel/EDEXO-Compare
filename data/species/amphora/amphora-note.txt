@@ -1,0 +1,6 @@
+Key extraction notes (important for your dataset consistency)
+No temperature or gravity limits are defined → explicitly set to null (don’t infer).
+This genus has only ONE species (unlike Aleoida).
+The system-level requirement is critical (many people miss this):
+→ one of several specific planet types must exist somewhere in the system, not necessarily the same body.
+Atmosphere is implicitly none (airless planets only).

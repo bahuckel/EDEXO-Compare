@@ -1,0 +1,77 @@
+{
+  "formatVersion": 1,
+  "genus": "Amphora",
+  "meta": {
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "general": {
+      "description": "Organic tubular structures resembling ancient amphora containers from Earth's Neolithic period.",
+      "min_sample_distance_m": 100,
+      "planet_requirements": {
+        "planet_types": [
+          "Airless",
+          "Metal Rich"
+        ],
+        "atmosphere": "None",
+        "parent_star": "A",
+        "system_requirements": [
+          "Earth-Like World",
+          "Ammoniac World",
+          "Gas Giant with water-based life",
+          "Gas Giant with ammonia-based life",
+          "Water Giant"
+        ]
+      }
+    },
+    "summary": "Organic tubular structures resembling ancient amphora containers from Earth's Neolithic period.",
+    "minSampleDistanceM": 100,
+    "genusWideRequirements": {
+      "planet_types": [
+        "Airless",
+        "Metal Rich"
+      ],
+      "atmosphere": "None",
+      "parent_star": "A",
+      "system_requirements": [
+        "Earth-Like World",
+        "Ammoniac World",
+        "Gas Giant with water-based life",
+        "Gas Giant with ammonia-based life",
+        "Water Giant"
+      ]
+    }
+  },
+  "species": [
+    {
+      "id": "amphora_amphora_plant",
+      "displayName": "Amphora plant",
+      "description": "Single known species of the Amphora genus; greenish tubular fungal growths forming amphora-like shapes.",
+      "conditions": {
+        "atmosphere": "None",
+        "planet_types": [
+          "Airless",
+          "Metal Rich"
+        ],
+        "parent_star": "A",
+        "system_requirements": [
+          "Earth-Like World",
+          "Ammoniac World",
+          "Gas Giant with water-based life",
+          "Gas Giant with ammonia-based life",
+          "Water Giant"
+        ],
+        "min_sample_distance_m": 100,
+        "atmospherePressureCategory": "thin"
+      }
+    }
+  ],
+  "authorNotes": {
+    "species_count": 1,
+    "temperature_constraints": null,
+    "gravity_constraints": null,
+    "special_rules": [
+      "Requires specific stellar type (A-class star)",
+      "Requires specific system body presence (at least one listed type)",
+      "Only found on airless metal-rich planets"
+    ]
+  }
+}
