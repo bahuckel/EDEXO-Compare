@@ -83,7 +83,14 @@ export function findGenusNotesFile(genusDirPath: string, folderBaseName: string)
   return null;
 }
 
-/** `*_new.json` preferred when present, else `<folder>.json` (case-insensitive). */
+/**
+ * `*_new.json` preferred when present, else `<folder>.json` (case-insensitive).
+ *
+ * `_new.json` is now the only shipped form and the source of truth: the 19 legacy `<genus>.json`
+ * files were generated from it by hand-maintained tooling that nobody runs any more, so they were a
+ * second copy that could only drift. The fallback stays because a commander can drop their own genus
+ * JSON in through the data overlay, and theirs may use the older name.
+ */
 export function findGenusJsonPath(genusDirPath: string, folderBaseName: string): string | null {
   const wantNew = `${folderBaseName.toLowerCase()}_new.json`;
   const wantMain = `${folderBaseName.toLowerCase()}.json`;
