@@ -24,7 +24,6 @@ export const MIN_SAMPLES_TO_DEMOTE_ON_HABITAT = 20;
  */
 export function markExomasteryZeroHabitatMatches(matches: SpeciesMatch[]): SpeciesMatch[] {
   return matches.map((m) => {
-    if (m.dssNearestTemperatureMatch || m.dssPhysicalSlackMatch) return m;
     if (!m.exomasteryProfilePresent || m.exomasteryHabitatQuality !== 0) return m;
     const n = m.exomasteryProfileSampleCount;
     if (typeof n !== "number" || n < MIN_SAMPLES_TO_DEMOTE_ON_HABITAT) return m;

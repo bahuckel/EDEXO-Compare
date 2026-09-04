@@ -6,7 +6,6 @@ import type {
   GenusHint,
   OrganicGenusLock,
   SpeciesEntry,
-  DssPhysicalSlackRatios,
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import {
@@ -486,13 +485,6 @@ export class GameStateStore {
   /** When true, header “Data value” includes estimated FSS/DSS UC value from merged scans (see Options). */
   includeExplorationScanDataInDataValue = false;
 
-  /**
-   * Options: extra slack on DSS / lone-genus physical fallbacks (0–50%). See {@link getDssPhysicalSlackRatios}.
-   */
-  dssSlackTemperaturePercent = 0;
-  dssSlackPressurePercent = 0;
-  dssSlackGravityPercent = 0;
-
   /** Consumed once in `buildSnapshot` so the client can select that bio body tab. */
   private pendingUiAutoSelectBodyKey: string | null = null;
 
@@ -608,26 +600,6 @@ export class GameStateStore {
       if (r.systemAddress !== systemAddress) continue;
       this.edsmExplorationByKey.set(bodyKey(systemAddress, r.bodyId), r);
     }
-  }
-
-  getDssPhysicalSlackRatios(): DssPhysicalSlackRatios {
-    const clampPct = (n: number) => Math.max(0, Math.min(50, Math.round(Number(n))));
-    return {
-      temperature: clampPct(this.dssSlackTemperaturePercent) / 100,
-      pressure: clampPct(this.dssSlackPressurePercent) / 100,
-      gravity: clampPct(this.dssSlackGravityPercent) / 100,
-    };
-  }
-
-  setDssPhysicalSlackPercents(
-    temperaturePercent: number,
-    pressurePercent: number,
-    gravityPercent: number,
-  ): void {
-    const clamp = (n: number) => Math.max(0, Math.min(50, Math.round(Number(n))));
-    this.dssSlackTemperaturePercent = clamp(temperaturePercent);
-    this.dssSlackPressurePercent = clamp(pressurePercent);
-    this.dssSlackGravityPercent = clamp(gravityPercent);
   }
 
   setFootTravelOdometerEnabled(value: boolean): void {
@@ -1509,7 +1481,6 @@ export class GameStateStore {
                 lock,
                 ts,
                 includeBacterium: this.includeBacteriumInSearch,
-                dssPhysicalSlack: this.getDssPhysicalSlackRatios(),
                 confirmationSource: scanType === "Analyse" ? "analyse" : "sample",
               });
             } catch {

@@ -560,16 +560,6 @@ export interface SpeciesMatch {
    * Set only when {@link unlikely}.
    */
   unlikelyReasons?: MatchReason[];
-  /**
-   * True when DSS genus hints narrowed the DB set and this row was chosen as the nearest codex species
-   * by temperature vs the estimator band; other codex gates were not required to pass.
-   */
-  dssNearestTemperatureMatch?: boolean;
-  /**
-   * True when DSS genus hints applied and this row matched after 5% slack on temperature (estimator band),
-   * surface pressure, and/or surface gravity codex ranges toward the journal.
-   */
-  dssPhysicalSlackMatch?: boolean;
   /** Exobiology line complete on this body (two Sample + one Analyse in journal, per codex key). */
   organicAnalysisComplete?: boolean;
   /** Suggested from `data/foot_scanned.json` when DSS/signals imply genera the DB did not return under strict gates. */
@@ -695,12 +685,6 @@ export interface EstimatedSurfaceTempBand {
 }
 
 /** Ratios 0…0.5 from user sliders 0…50% — DSS / lone-genus physical gate slack. */
-export interface DssPhysicalSlackRatios {
-  temperature: number;
-  pressure: number;
-  gravity: number;
-}
-
 /**
  * The signal-count rule.
  *
@@ -753,10 +737,12 @@ export interface BodyComputed {
    * Populated when {@link state.scan} exists; null when there is no usable body scan.
    */
   speciesMatchContext: SpeciesMatchContext | null;
-  /** True when strict matching found nothing and results are closest temp/pressure distance only. */
+  /**
+   * True when a candidate is listed on the strength of an on-foot `ScanOrganic` rather than the
+   * gates. The four distance-guessing fallbacks that used to set this were removed once they
+   * measured zero firings across 13,713 bodies.
+   */
   approximateMatchingUsed: boolean;
-  /** True when candidates are DSS-genus rows chosen by nearest codex temperature only (see {@link SpeciesMatch.dssNearestTemperatureMatch}). */
-  dssNearestTemperatureFallback?: boolean;
   /** Total CR band if you sell one sample per bio slot from current candidates (updates with DSS / on-foot / Include Bacterium). */
   exoPayoutRange: ExoPayoutRangeDTO | null;
   /**
@@ -971,9 +957,6 @@ export interface AppSnapshot {
    * DSS fallback: extra slack (0–50%) on physical gates — temperature estimator band, codex pressure, codex gravity.
    * 0 = strict codex matching for those fallbacks. See Options.
    */
-  dssSlackTemperaturePercent: number;
-  dssSlackPressurePercent: number;
-  dssSlackGravityPercent: number;
   /**
    * When true, “Data value” adds approximate UC exploration data (FSS/DSS) from merged journal scans.
    * Not first-discoverer bonuses; see Options.

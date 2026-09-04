@@ -85,24 +85,19 @@ describe("markExomasteryZeroHabitatMatches", () => {
     expect(below[0]!.exomasteryHabitatUnlikely).toBeUndefined();
   });
 
-  it("never demotes a DSS temperature or physical slack fallback match", () => {
+  it("demotes a well-sampled zero-quality match with nothing to exempt it", () => {
+    // The DSS temperature and physical-slack exemptions used to live here. Both fallbacks were
+    // removed once they measured zero firings across 13,713 bodies, so a row that reaches this
+    // function on a well-sampled profile with zero habitat quality has no special case left.
     const out = markExomasteryZeroHabitatMatches([
       match({
-        id: "near_temp",
+        id: "zero_quality",
         exomasteryProfilePresent: true,
         exomasteryHabitatQuality: 0,
         exomasteryProfileSampleCount: 900,
-        dssNearestTemperatureMatch: true,
-      }),
-      match({
-        id: "slack",
-        exomasteryProfilePresent: true,
-        exomasteryHabitatQuality: 0,
-        exomasteryProfileSampleCount: 900,
-        dssPhysicalSlackMatch: true,
       }),
     ]);
-    expect(out.every((m) => m.exomasteryHabitatUnlikely === undefined)).toBe(true);
+    expect(out[0]!.exomasteryHabitatUnlikely).toBe(true);
   });
 
   it("leaves a match with no profile and a match with unknown sample count alone", () => {

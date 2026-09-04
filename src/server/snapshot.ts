@@ -670,7 +670,6 @@ function computeBodyCacheSignature(
     ctx: buildSpeciesMatchContext(b, store),
     tab: bodyTabLabel(b, store),
     bacterium: store.includeBacteriumInSearch,
-    slack: store.getDssPhysicalSlackRatios(),
     firstFootfall: store.firstFootfallBodies.has(b.key),
     wasFootfalled: store.bodyDetailedFootfallState.get(b.key) ?? null,
     organic: organicProgressSignature(store, b.key),
@@ -732,7 +731,6 @@ function computeBodyUncached(
       estimatedSurfaceTempK: null,
       speciesMatchContext: speciesMatchCtx,
       approximateMatchingUsed: false,
-      dssNearestTemperatureFallback: false,
       exoPayoutRange: null,
       exoDataAlerts,
       dssGenusOrphanHints,
@@ -747,11 +745,9 @@ function computeBodyUncached(
     genusFilterActive: gfa,
     estimatedSurfaceTempK,
     approximateMatchingUsed,
-    dssNearestTemperatureFallback = false,
   } = matchDatabaseToScan(db, mergedScan, b.genusHints, b.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
     matchContext: speciesMatchCtx,
-    dssPhysicalSlack: store.getDssPhysicalSlackRatios(),
   });
   const scanForExo = mergedScan;
   const bodyScanDetail = buildBodyScanExomasteryDetail(mergedScan, explorationRec);
@@ -807,13 +803,11 @@ function computeBodyUncached(
     matches = attachOtherMatchDetailCardsToMatches(matches, scanForExo, explorationRec, root, journalHost);
   }
   let note = ambiguityForBody(b);
-  if (dssNearestTemperatureFallback && matches.length > 0) {
+  if (approximateMatchingUsed && matches.length > 0) {
+    // The only remaining source of approximate rows is an on-foot ScanOrganic naming a species the
+    // gates rejected — evidence from the commander's own boots, not a distance guess.
     const extra =
-      "DSS lists this genus — candidates used nearest-by-physics rules: 5% slack on temperature / pressure / gravity where needed, or nearest-by-temperature-only when that is all that applies; other gates may have been skipped. Marked (!) on cards — verify in-game.";
-    note = note ? `${note} ${extra}` : extra;
-  } else if (approximateMatchingUsed && matches.length > 0) {
-    const extra =
-      "Strict temperature/pressure gates matched nothing — showing the closest database row(s) by distance to your scan (approximate only).";
+      "Includes at least one species confirmed by an on-foot scan that the codex gates would have excluded.";
     note = note ? `${note} ${extra}` : extra;
   }
 
@@ -859,7 +853,6 @@ function computeBodyUncached(
     estimatedSurfaceTempK,
     speciesMatchContext: speciesMatchCtx,
     approximateMatchingUsed,
-    dssNearestTemperatureFallback,
     exoPayoutRange,
     exoDataAlerts,
     dssGenusOrphanHints,
@@ -1060,9 +1053,6 @@ export function buildSnapshot(
     organicPendingLines,
     fssAllBodiesFoundNoBio,
     includeBacteriumInSearch: store.includeBacteriumInSearch,
-    dssSlackTemperaturePercent: store.dssSlackTemperaturePercent,
-    dssSlackPressurePercent: store.dssSlackPressurePercent,
-    dssSlackGravityPercent: store.dssSlackGravityPercent,
     includeExplorationScanDataInDataValue: store.includeExplorationScanDataInDataValue,
     explorationScanDataValueCredits,
     explorationFssScanCount: exploreBreakdown.fssScanCount,

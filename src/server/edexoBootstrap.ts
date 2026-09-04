@@ -264,9 +264,6 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             exoMapTierPlusMinCr: store.exoMapTierPlusMinCr,
             exoMapTierPlusPlusMinCr: store.exoMapTierPlusPlusMinCr,
             footTravelOdometerEnabled: store.footTravelOdometerEnabled,
-            dssSlackTemperaturePercent: store.dssSlackTemperaturePercent,
-            dssSlackPressurePercent: store.dssSlackPressurePercent,
-            dssSlackGravityPercent: store.dssSlackGravityPercent,
             journalHistoryPreset: store.journalHistoryPreset,
           },
           null,
@@ -285,9 +282,6 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     exoMapTierPlusMinCr?: number;
     exoMapTierPlusPlusMinCr?: number;
     footTravelOdometerEnabled?: boolean;
-    dssSlackTemperaturePercent?: number;
-    dssSlackPressurePercent?: number;
-    dssSlackGravityPercent?: number;
     journalHistoryPreset?: string;
   };
 
@@ -304,23 +298,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     if (typeof j.footTravelOdometerEnabled === "boolean") {
       store.setFootTravelOdometerEnabled(j.footTravelOdometerEnabled);
     }
-    if (
-      typeof j.dssSlackTemperaturePercent === "number" ||
-      typeof j.dssSlackPressurePercent === "number" ||
-      typeof j.dssSlackGravityPercent === "number"
-    ) {
-      store.setDssPhysicalSlackPercents(
-        typeof j.dssSlackTemperaturePercent === "number"
-          ? j.dssSlackTemperaturePercent
-          : store.dssSlackTemperaturePercent,
-        typeof j.dssSlackPressurePercent === "number"
-          ? j.dssSlackPressurePercent
-          : store.dssSlackPressurePercent,
-        typeof j.dssSlackGravityPercent === "number"
-          ? j.dssSlackGravityPercent
-          : store.dssSlackGravityPercent,
-      );
-    }
+    // dssSlack* keys from older preference files are ignored: the mechanism they tuned is gone.
     if (typeof j.journalHistoryPreset === "string") {
       store.setJournalHistoryPreset(parseJournalHistoryPreset(j.journalHistoryPreset));
     }
@@ -749,10 +727,6 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
     setExoMapTierThresholds: (plus, pp) => {
       store.setExoMapTierThresholds(plus, pp);
-      persistUserPreferences();
-    },
-    setDssPhysicalSlackPercents: (t, p, g) => {
-      store.setDssPhysicalSlackPercents(t, p, g);
       persistUserPreferences();
     },
     reloadExomastery: () => {

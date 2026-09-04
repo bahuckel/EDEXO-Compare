@@ -546,51 +546,6 @@ body::before {
   margin-top: 0.25rem;
 }
 
-.options-modal .options-slack-block {
-  margin: 1.25rem 0 1.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--accent-a22);
-}
-
-.options-modal .options-slack-expand-trigger {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.55rem 0.65rem;
-  margin: 0 0 0.5rem;
-  font-size: var(--fs-lg);
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-  border: 1px solid var(--accent-dim);
-  border-radius: var(--radius-sm);
-  background: var(--accent-a10);
-  color: var(--text);
-}
-
-.options-modal .options-slack-expand-trigger:hover {
-  background: rgba(255, 122, 36, 0.16);
-}
-
-.options-modal .options-slack-expand-panel {
-  padding: 0.25rem 0 0.25rem 0.35rem;
-}
-
-.options-modal .options-slack-intro {
-  line-height: 1.45;
-  margin: 0 0 0.75rem;
-}
-
-.options-modal .options-slack-strong-warn {
-  line-height: 1.45;
-  margin: 0 0 0.85rem;
-  padding: 0.5rem 0.6rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(251, 191, 36, 0.5);
-  background: rgba(251, 191, 36, 0.08);
-  color: var(--warn-soft);
-}
-
 .options-modal .options-full-toggle {
   display: block;
   width: 100%;
@@ -2896,12 +2851,6 @@ button.data-value-pill.data-value-pill--clickable:active {
   text-align: center;
 }
 
-.species-dss-temp-nearest-warn {
-  color: #fbbf24;
-  font-weight: 600;
-  text-shadow: 0 0 8px rgba(251, 191, 36, 0.45);
-}
-
 .species-identity-neon--complete {
   border-top-color: rgba(95, 216, 138, 0.55);
   background: linear-gradient(180deg, rgba(95, 216, 138, 0.14) 0%, rgba(8, 10, 12, 0.98) 100%);
@@ -2925,11 +2874,6 @@ button.data-value-pill.data-value-pill--clickable:active {
   text-shadow:
     0 0 14px rgba(95, 216, 138, 0.7),
     0 0 28px rgba(95, 216, 138, 0.4);
-}
-
-.species-identity-neon--complete .species-dss-temp-nearest-warn {
-  color: var(--warn-soft);
-  text-shadow: 0 0 10px rgba(253, 230, 138, 0.5);
 }
 
 .species-identity-neon--complete .species-identity-value-amount {

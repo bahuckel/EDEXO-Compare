@@ -513,7 +513,6 @@ function maxExoHeuristicPair(
   const run = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
     matchContext: buildSpeciesMatchContext(exo, store),
-    dssPhysicalSlack: store.getDssPhysicalSlackRatios(),
   });
   const mult: 1 | 5 = store.firstFootfallBodies.has(bk) ? 5 : 1;
   const vals: number[] = [];
@@ -542,7 +541,6 @@ function buildExoPayoutRangeForRecord(
   const { matches } = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
     matchContext: buildSpeciesMatchContext(exo, store),
-    dssPhysicalSlack: store.getDssPhysicalSlackRatios(),
   });
   const { count: slots, source: slotSource } = resolveOrganicSlotCount(exo);
   if (slots <= 0 || slotSource === "none") return null;
@@ -598,7 +596,6 @@ function exoMatchSummaries(
   const { matches } = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
     matchContext: buildSpeciesMatchContext(exo, store),
-    dssPhysicalSlack: store.getDssPhysicalSlackRatios(),
   });
   return shownSpeciesMatches(matches)
     .slice(0, 48)

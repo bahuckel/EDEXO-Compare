@@ -9,7 +9,6 @@ import type {
   MatchReason,
   EstimatedSurfaceTempBand,
   OrganicGenusLock,
-  DssPhysicalSlackRatios,
 } from "../shared/types.js";
 import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "../shared/journalPhysics.js";
 import {
@@ -32,8 +31,6 @@ import { isBacteriumSpeciesEntry } from "../shared/speciesBacterium.js";
 export { isBacteriumSpeciesEntry };
 const OPEN_LO = -1e15;
 const OPEN_HI = 1e15;
-const PRESSURE_WEIGHT = 250;
-const CLOSEST_MATCH_CAP = 8;
 
 function injectOrganicLockConfirmedSpecies(
   matches: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
@@ -173,317 +170,6 @@ function speciesPressureBand(c: SpeciesCriterion): { lo: number; hi: number } | 
   return { lo: sp.min ?? OPEN_LO, hi: sp.max ?? OPEN_HI };
 }
 
-const GRAVITY_WEIGHT = 80;
-
-function planetBandWidthForSlack(planet: PlanetTemperatureBand): number {
-  const span = planet.maxK - planet.minK;
-  if (span >= 1) return span;
-  const mid = (planet.minK + planet.maxK) / 2;
-  return Math.max(1, Math.abs(mid) * 0.05);
-}
-
-/**
- * Extend the planet band by `ratio × width` only on the edge facing a non-overlapping species interval
- * (avoids inflating the hot end when the species is colder than the band, helping atmosphere-linked caps).
- */
-function expandPlanetTempBandTowardSpecies(
-  planet: PlanetTemperatureBand,
-  species: { lo: number; hi: number },
-  ratio: number,
-): PlanetTemperatureBand | null {
-  if (tempBandsOverlap(planet, species)) return null;
-  const w = planetBandWidthForSlack(planet);
-  const slack = w * ratio;
-  if (species.hi < planet.minK) {
-    return { minK: planet.minK - slack, maxK: planet.maxK };
-  }
-  if (species.lo > planet.maxK) {
-    return { minK: planet.minK, maxK: planet.maxK + slack };
-  }
-  return {
-    minK: planet.minK - slack,
-    maxK: planet.maxK + slack,
-  };
-}
-
-/**
- * When DSS hints narrow to one or more genera but strict gates fail, pick the codex row with smallest
- * temperature separation to the planet band within each `genusDataDir` (ignores other gates).
- */
-function buildDssGenusNearestTemperatureMatches(
-  narrowed: SpeciesEntry[],
-  planetTempBand: PlanetTemperatureBand,
-): Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[] {
-  const byGenus = new Map<string, SpeciesEntry[]>();
-  for (const e of narrowed) {
-    const g = e.genusDataDir;
-    const list = byGenus.get(g) ?? [];
-    list.push(e);
-    byGenus.set(g, list);
-  }
-
-  const out: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[] = [];
-
-  for (const group of byGenus.values()) {
-    let best: { entry: SpeciesEntry; tempSep: number; band: { lo: number; hi: number } } | null = null;
-    for (const entry of group) {
-      const band = speciesTempBand(entry.criteria);
-      if (!band) continue;
-      const sep = tempSeparation(planetTempBand, band);
-      if (
-        !best ||
-        sep < best.tempSep - 1e-9 ||
-        (Math.abs(sep - best.tempSep) <= 1e-9 && entry.id.localeCompare(best.entry.id) < 0)
-      ) {
-        best = { entry, tempSep: sep, band };
-      }
-    }
-    if (!best) continue;
-
-    const spLo = best.band.lo === OPEN_LO ? "…" : `${best.band.lo.toFixed(0)}`;
-    const spHi = best.band.hi === OPEN_HI ? "…" : `${best.band.hi.toFixed(0)}`;
-    const detail =
-      best.tempSep === 0
-        ? `DSS narrowed this genus — codex temperature band overlaps the estimator ${planetTempBand.minK.toFixed(0)}–${planetTempBand.maxK.toFixed(0)} K band (${spLo}–${spHi} K for this row). Other codex gates were not re-checked; verify in-game.`
-        : `DSS narrowed this genus — nearest codex row by temperature: estimator ${planetTempBand.minK.toFixed(0)}–${planetTempBand.maxK.toFixed(0)} K vs species ${spLo}–${spHi} K (gap ${best.tempSep.toFixed(1)} K). Other codex gates were not checked; verify in-game.`;
-
-    out.push({
-      entry: best.entry,
-      reasons: [{ field: "Match mode", detail }],
-      approximateMatch: true,
-      dssNearestTemperatureMatch: true,
-    });
-  }
-
-  out.sort(
-    (a, b) =>
-      a.entry.genusDataDir.localeCompare(b.entry.genusDataDir) || a.entry.id.localeCompare(b.entry.id),
-  );
-  return out;
-}
-
-function valueInOpenCriterionBand(v: number, lo: number, hi: number): boolean {
-  if (lo !== OPEN_LO && v < lo) return false;
-  if (hi !== OPEN_HI && v > hi) return false;
-  return true;
-}
-
-/**
- * Widen a codex min/max interval toward journal value `p` by `ratio × span` on the failing side.
- * Returns null if already inside or if the open end cannot be extended (e.g. p above an open max).
- */
-function widenCriterionMinMaxToward(
-  crit: { min?: number; max?: number },
-  p: number,
-  ratio: number,
-): { min?: number; max?: number } | null {
-  const lo = crit.min ?? OPEN_LO;
-  const hi = crit.max ?? OPEN_HI;
-  const finiteLo = lo === OPEN_LO ? -Infinity : lo;
-  const finiteHi = hi === OPEN_HI ? Infinity : hi;
-  if (p >= finiteLo && p <= finiteHi) return null;
-
-  let span: number;
-  if (Number.isFinite(finiteHi - finiteLo) && finiteHi - finiteLo > 0) span = finiteHi - finiteLo;
-  else span = Math.max(Math.abs(p) * 0.02, 1e-6);
-  const slack = span * ratio;
-
-  if (p < finiteLo) {
-    if (crit.min === undefined) return null;
-    return { min: crit.min! - slack, max: crit.max };
-  }
-  if (crit.max === undefined) return null;
-  return { min: crit.min, max: crit.max! + slack };
-}
-
-function matchScoreTempPressureGravity(
-  scan: PlanetScan,
-  planetBand: PlanetTemperatureBand | null,
-  c: SpeciesCriterion,
-): { score: number; tempSep: number; pressSep: number; gravSep: number } {
-  const base = matchScoreTempPressure(scan, planetBand, c);
-  let gravSep = 0;
-  const gRaw = scan.SurfaceGravity;
-  if (c.surfaceGravity && gRaw !== undefined && !Number.isNaN(gRaw)) {
-    const g = journalSurfaceGravityToG(gRaw);
-    const lo = c.surfaceGravity.min ?? OPEN_LO;
-    const hi = c.surfaceGravity.max ?? OPEN_HI;
-    if (lo !== OPEN_LO && g < lo) gravSep = lo - g;
-    else if (hi !== OPEN_HI && g > hi) gravSep = g - hi;
-  }
-  return { ...base, gravSep, score: base.score + GRAVITY_WEIGHT * gravSep };
-}
-
-function tryDssGenusEntryWithPhysicalSlack(
-  entry: SpeciesEntry,
-  scan: PlanetScan,
-  planetTempBand: PlanetTemperatureBand | null,
-  est: { tMin: number; tMax: number; tMid: number } | null,
-  matchContext: SpeciesMatchContext | null,
-  slack: DssPhysicalSlackRatios,
-): Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits"> | null {
-  const c = entry.criteria;
-  let planet = planetTempBand;
-  let tempSlack = false;
-  const sb = speciesTempBand(c);
-
-  if (speciesNeedsTemperatureGate(c)) {
-    if (!planet || !sb) return null;
-    if (!tempBandsOverlap(planet, sb)) {
-      if (slack.temperature <= 0) return null;
-      const exp = expandPlanetTempBandTowardSpecies(planet, sb, slack.temperature);
-      if (!exp || !tempBandsOverlap(exp, sb)) return null;
-      planet = exp;
-      tempSlack = true;
-    }
-  }
-
-  let pressureSlack = false;
-  let newPressure = c.surfacePressure;
-  const pbPre = speciesPressureBand(c);
-  const surfP = scan.SurfacePressure;
-  if (pbPre && surfP != null && !Number.isNaN(surfP)) {
-    if (!valueInOpenCriterionBand(surfP, pbPre.lo, pbPre.hi)) {
-      if (slack.pressure <= 0) return null;
-      const w = widenCriterionMinMaxToward(c.surfacePressure!, surfP, slack.pressure);
-      if (!w) return null;
-      newPressure = { ...c.surfacePressure, ...w };
-      const pbPost = speciesPressureBand({ ...c, surfacePressure: newPressure });
-      if (!pbPost || !valueInOpenCriterionBand(surfP, pbPost.lo, pbPost.hi)) return null;
-      pressureSlack = true;
-    }
-  }
-
-  let gravitySlack = false;
-  let newGravity = c.surfaceGravity;
-  const gRaw = scan.SurfaceGravity;
-  if (c.surfaceGravity && gRaw !== undefined && !Number.isNaN(gRaw)) {
-    const g = journalSurfaceGravityToG(gRaw);
-    const gLo = c.surfaceGravity.min ?? OPEN_LO;
-    const gHi = c.surfaceGravity.max ?? OPEN_HI;
-    if (!valueInOpenCriterionBand(g, gLo, gHi)) {
-      if (slack.gravity <= 0) return null;
-      const w = widenCriterionMinMaxToward(c.surfaceGravity, g, slack.gravity);
-      if (!w) return null;
-      newGravity = { ...c.surfaceGravity, ...w };
-      const gPostLo = newGravity.min ?? OPEN_LO;
-      const gPostHi = newGravity.max ?? OPEN_HI;
-      if (!valueInOpenCriterionBand(g, gPostLo, gPostHi)) return null;
-      gravitySlack = true;
-    }
-  }
-
-  if (!tempSlack && !pressureSlack && !gravitySlack) return null;
-
-  const relaxedEntry: SpeciesEntry = {
-    ...entry,
-    criteria: {
-      ...entry.criteria,
-      surfacePressure: newPressure,
-      surfaceGravity: newGravity,
-    },
-  };
-
-  const full = speciesMatchesCriteria(relaxedEntry, scan, planet, est, matchContext);
-  if (!full.ok) return null;
-
-  const slackParts: string[] = [];
-  if (tempSlack) slackParts.push(`temperature estimator ±${(slack.temperature * 100).toFixed(0)}%`);
-  if (pressureSlack) slackParts.push(`pressure codex range ±${(slack.pressure * 100).toFixed(0)}%`);
-  if (gravitySlack) slackParts.push(`gravity codex range ±${(slack.gravity * 100).toFixed(0)}%`);
-
-  const slackDetail = `DSS genus — codex gates satisfied using physical slack toward the scan (${slackParts.join(", ")}). Estimator / journal conversion is approximate; verify in-game.`;
-
-  return {
-    entry,
-    reasons: [
-      ...full.reasons.filter((r) => r.field !== "Match mode"),
-      { field: "Match mode", detail: slackDetail },
-    ],
-    approximateMatch: true,
-    dssPhysicalSlackMatch: true,
-  };
-}
-
-function buildDssGenusSlackPhysicalMatches(
-  narrowed: SpeciesEntry[],
-  scan: PlanetScan,
-  planetTempBand: PlanetTemperatureBand | null,
-  est: { tMin: number; tMax: number; tMid: number } | null,
-  matchContext: SpeciesMatchContext | null,
-  slack: DssPhysicalSlackRatios,
-): Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[] {
-  if (slack.temperature <= 0 && slack.pressure <= 0 && slack.gravity <= 0) return [];
-  const byGenus = new Map<string, SpeciesEntry[]>();
-  for (const e of narrowed) {
-    const list = byGenus.get(e.genusDataDir) ?? [];
-    list.push(e);
-    byGenus.set(e.genusDataDir, list);
-  }
-
-  const out: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[] = [];
-
-  for (const group of byGenus.values()) {
-    let best: {
-      m: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">;
-      score: number;
-    } | null = null;
-
-    for (const entry of group) {
-      const m = tryDssGenusEntryWithPhysicalSlack(entry, scan, planetTempBand, est, matchContext, slack);
-      if (!m) continue;
-      const { score } = matchScoreTempPressureGravity(scan, planetTempBand, entry.criteria);
-      if (
-        !best ||
-        score < best.score - 1e-9 ||
-        (Math.abs(score - best.score) <= 1e-9 && m.entry.id.localeCompare(best.m.entry.id) < 0)
-      ) {
-        best = { m, score };
-      }
-    }
-    if (best) out.push(best.m);
-  }
-
-  out.sort(
-    (a, b) =>
-      a.entry.genusDataDir.localeCompare(b.entry.genusDataDir) || a.entry.id.localeCompare(b.entry.id),
-  );
-  return out;
-}
-
-function tryLoneGenusSpeciesSlackTemperatureMatch(
-  entry: SpeciesEntry,
-  scan: PlanetScan,
-  planetTempBand: PlanetTemperatureBand,
-  est: { tMin: number; tMax: number; tMid: number } | null,
-  matchContext: SpeciesMatchContext | null,
-  tempSlackRatio: number,
-): Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits"> | null {
-  const c = entry.criteria;
-  if (!speciesNeedsTemperatureGate(c)) return null;
-  const spBand = speciesTempBand(c)!;
-  if (tempBandsOverlap(planetTempBand, spBand)) return null;
-
-  if (tempSlackRatio <= 0) return null;
-
-  const expanded = expandPlanetTempBandTowardSpecies(planetTempBand, spBand, tempSlackRatio);
-  if (!expanded || !tempBandsOverlap(expanded, spBand)) return null;
-
-  const full = speciesMatchesCriteria(entry, scan, expanded, est, matchContext);
-  if (!full.ok) return null;
-
-  const spLo = spBand.lo === OPEN_LO ? "…" : `${spBand.lo.toFixed(0)}`;
-  const spHi = spBand.hi === OPEN_HI ? "…" : `${spBand.hi.toFixed(0)}`;
-  const cautionDetail = `Caution: body band ${planetTempBand.minK.toFixed(0)}–${planetTempBand.maxK.toFixed(0)} K (estimator) does not overlap species ${spLo}–${spHi} K. Only DSS row for this genus — included with ${(tempSlackRatio * 100).toFixed(0)}% slack toward species (${expanded.minK.toFixed(0)}–${expanded.maxK.toFixed(0)} K). Surface model is approximate; verify in-game.`;
-
-  const reasonsWithoutSurf = full.reasons.filter((r) => r.field !== "SurfaceTemperature");
-  return {
-    entry,
-    reasons: [...reasonsWithoutSurf, { field: "SurfaceTemperature", detail: cautionDetail }],
-    approximateMatch: true,
-  };
-}
-
 /** Planet band vs species band: overlap ⇒ inhabitable somewhere on the body. */
 function tempBandsOverlap(planet: PlanetTemperatureBand, species: { lo: number; hi: number }): boolean {
   return planet.minK <= species.hi && species.lo <= planet.maxK;
@@ -517,39 +203,6 @@ function resolvePlanetTemperatureBand(
   }
   if (est) return { minK: est.tMin, maxK: est.tMax };
   return null;
-}
-
-function tempSeparation(planet: PlanetTemperatureBand, species: { lo: number; hi: number }): number {
-  if (tempBandsOverlap(planet, species)) return 0;
-  if (planet.maxK < species.lo) return species.lo - planet.maxK;
-  return planet.minK - species.hi;
-}
-
-function pressureSeparation(p: number, species: { lo: number; hi: number }): number {
-  if (p >= species.lo && p <= species.hi) return 0;
-  if (p < species.lo) return species.lo - p;
-  return p - species.hi;
-}
-
-function matchScoreTempPressure(
-  scan: PlanetScan,
-  planetBand: PlanetTemperatureBand | null,
-  c: SpeciesCriterion,
-): { score: number; tempSep: number; pressSep: number } {
-  let tempSep = 0;
-  const st = speciesTempBand(c);
-  if (st) {
-    if (planetBand) tempSep = tempSeparation(planetBand, st);
-    else tempSep = 1e6;
-  }
-
-  let pressSep = 0;
-  const pb = speciesPressureBand(c);
-  const surfP = scan.SurfacePressure;
-  if (pb && surfP != null && !Number.isNaN(surfP)) pressSep = pressureSeparation(surfP, pb);
-  else if (pb && (surfP === undefined || surfP === null)) pressSep = 1e3;
-
-  return { score: tempSep + PRESSURE_WEIGHT * pressSep, tempSep, pressSep };
 }
 
 /**
@@ -1003,8 +656,6 @@ export interface MatchDatabaseRun {
   dssGenusNarrowing: boolean;
   estimatedSurfaceTempK: EstimatedSurfaceTempBand | null;
   approximateMatchingUsed: boolean;
-  /** True when matches are DSS-genus rows chosen by nearest codex temperature only; see {@link SpeciesMatch.dssNearestTemperatureMatch}. */
-  dssNearestTemperatureFallback?: boolean;
 }
 
 export function matchDatabaseToScan(
@@ -1015,16 +666,10 @@ export function matchDatabaseToScan(
   options?: {
     includeBacterium?: boolean;
     matchContext?: SpeciesMatchContext | null;
-    dssPhysicalSlack?: DssPhysicalSlackRatios;
   },
 ): MatchDatabaseRun {
   const includeBacterium = options?.includeBacterium === true;
   const matchContext = options?.matchContext ?? null;
-  const dssPhysicalSlack: DssPhysicalSlackRatios = options?.dssPhysicalSlack ?? {
-    temperature: 0,
-    pressure: 0,
-    gravity: 0,
-  };
   const species = includeBacterium ? db.species : db.species.filter((e) => !isBacteriumSpeciesEntry(e));
 
   let narrowed = filterByGenusHints(species, genusHints);
@@ -1104,152 +749,25 @@ export function matchDatabaseToScan(
     };
   }
 
-  if (genusFilterActive && narrowed.length > 0) {
-    const dssSlack = buildDssGenusSlackPhysicalMatches(
-      narrowed,
-      scan,
-      planetTempBand,
-      est,
-      matchContext,
-      dssPhysicalSlack,
-    );
-    if (dssSlack.length > 0) {
-      const { matches, injected } = injectOrganicLockConfirmedSpecies(dssSlack, organicGenusLocks, db);
-      return {
-        matches,
-        genusFilterActive,
-        dssGenusNarrowing,
-        estimatedSurfaceTempK,
-        approximateMatchingUsed: true,
-        dssNearestTemperatureFallback: true,
-      };
-    }
-  }
-
-  if (genusFilterActive && planetTempBand && narrowed.length > 0) {
-    const dssNearest = buildDssGenusNearestTemperatureMatches(narrowed, planetTempBand);
-    if (dssNearest.length > 0) {
-      const { matches, injected } = injectOrganicLockConfirmedSpecies(dssNearest, organicGenusLocks, db);
-      return {
-        matches,
-        genusFilterActive,
-        dssGenusNarrowing,
-        estimatedSurfaceTempK,
-        approximateMatchingUsed: true,
-        dssNearestTemperatureFallback: true,
-      };
-    }
-  }
-
-  const genusCounts = new Map<string, number>();
-  for (const e of narrowed) {
-    genusCounts.set(e.genusDataDir, (genusCounts.get(e.genusDataDir) ?? 0) + 1);
-  }
-
-  const slackCaution: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[] = [];
-  if (planetTempBand) {
-    for (const entry of narrowed) {
-      if (genusCounts.get(entry.genusDataDir) !== 1) continue;
-      const m = tryLoneGenusSpeciesSlackTemperatureMatch(
-        entry,
-        scan,
-        planetTempBand,
-        est,
-        matchContext,
-        dssPhysicalSlack.temperature,
-      );
-      if (m) slackCaution.push(m);
-    }
-  }
-
-  if (slackCaution.length > 0) {
-    const { matches, injected } = injectOrganicLockConfirmedSpecies(slackCaution, organicGenusLocks, db);
-    return {
-      matches,
-      genusFilterActive,
-      dssGenusNarrowing,
-      estimatedSurfaceTempK,
-      approximateMatchingUsed: true,
-    };
-  }
-
-  // Detailed scan but no strict matches: closest by temperature/pressure distance.
-  const candidates: { entry: SpeciesEntry; reasons: MatchReason[]; score: number }[] = [];
-  for (const entry of narrowed) {
-    const ex = speciesMatchesExcludingTempPressure(entry, scan, matchContext);
-    if (!ex.ok) continue;
-    const { score, tempSep, pressSep } = matchScoreTempPressure(scan, planetTempBand, entry.criteria);
-    const band = speciesTempBand(entry.criteria);
-    const needsTemp = speciesNeedsTemperatureGate(entry.criteria);
-    const needsPress =
-      !!entry.criteria.surfacePressure &&
-      (entry.criteria.surfacePressure.min !== undefined || entry.criteria.surfacePressure.max !== undefined);
-
-    if (!needsTemp && !needsPress) continue;
-
-    const approxReasons: MatchReason[] = [
-      ...ex.reasons.filter((r) => r.field !== "Source"),
-      {
-        field: "Match mode",
-        detail:
-          "No strict temperature/pressure match — showing closest database row(s) by distance to your scan (approximate only).",
-      },
-    ];
-
-    if (needsTemp && planetTempBand && band) {
-      approxReasons.push({
-        field: "SurfaceTemperature",
-        detail: `Approximate: estimated band ${planetTempBand.minK}–${planetTempBand.maxK} K vs species ${band.lo === OPEN_LO ? "…" : band.lo.toFixed(0)}–${band.hi === OPEN_HI ? "…" : band.hi.toFixed(0)} K (gap ${tempSep.toFixed(1)} K)`,
-      });
-    } else if (needsTemp && !planetTempBand) {
-      approxReasons.push({
-        field: "SurfaceTemperature",
-        detail: "Approximate: could not build planet temperature band — score uses pressure only.",
-      });
-    }
-
-    if (needsPress && scan.SurfacePressure != null && speciesPressureBand(entry.criteria)) {
-      const pb = speciesPressureBand(entry.criteria)!;
-      approxReasons.push({
-        field: "SurfacePressure",
-        detail: `Approximate: journal ${scan.SurfacePressure.toFixed(2)} atm vs species ${pb.lo === OPEN_LO ? "…" : pb.lo}–${pb.hi === OPEN_HI ? "…" : pb.hi} atm (gap ${pressSep.toFixed(3)} × weighted in score)`,
-      });
-    }
-
-    if (entry.dataSourceRelPath) {
-      approxReasons.push({ field: "Source", detail: entry.dataSourceRelPath });
-    }
-
-    candidates.push({ entry, reasons: approxReasons, score });
-  }
-
-  if (candidates.length === 0) {
-    const { matches, injected } = injectOrganicLockConfirmedSpecies([], organicGenusLocks, db);
-    return {
-      matches,
-      genusFilterActive,
-      dssGenusNarrowing,
-      estimatedSurfaceTempK,
-      approximateMatchingUsed: injected,
-    };
-  }
-
-  candidates.sort((a, b) => a.score - b.score);
-  const best = candidates[0]!.score;
-  const picked = candidates.filter((c) => c.score <= best + 1e-9).slice(0, CLOSEST_MATCH_CAP);
-
-  const pickedMatches: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[] = picked.map((c) => ({
-    entry: c.entry,
-    reasons: c.reasons,
-    approximateMatch: true,
-  }));
-  const { matches: withLocks } = injectOrganicLockConfirmedSpecies(pickedMatches, organicGenusLocks, db);
-
+  /**
+   * Nothing matched, not even softly.
+   *
+   * There used to be four fallbacks here — DSS physical slack, nearest-by-temperature, a lone-genus
+   * temperature stretch, and a closest-by-distance list capped at 8 — all of them compensation for a
+   * strict path that returned nothing too often. Measured across 13,713 scanned bodies at every
+   * slack setting, every one of them now fires **zero times**: once planet class and atmosphere
+   * demote instead of excluding, something almost always lands in the unlikely tier, and exactly one
+   * body in the whole corpus comes back empty.
+   *
+   * Guessing was the right answer to an empty list. It is the wrong answer to a list that is empty
+   * because the body genuinely contradicts every species we know.
+   */
+  const { matches } = injectOrganicLockConfirmedSpecies([], organicGenusLocks, db);
   return {
-    matches: withLocks,
+    matches,
     genusFilterActive,
     dssGenusNarrowing,
     estimatedSurfaceTempK,
-    approximateMatchingUsed: true,
+    approximateMatchingUsed: matches.length > 0,
   };
 }

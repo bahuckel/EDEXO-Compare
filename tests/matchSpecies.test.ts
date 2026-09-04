@@ -306,20 +306,23 @@ describe("matchDatabaseToScan", () => {
     ).toBeUndefined();
   });
 
-  it("relaxes physical gates only when the DSS named a genus that would otherwise miss", () => {
+  /**
+   * The DSS physical-slack and nearest-by-temperature fallbacks used to fire here, stretching the
+   * gates to keep a hinted genus alive. Both were removed: measured across 13,713 scanned bodies at
+   * every slack setting they fired **zero times**, because once planet class and atmosphere demote
+   * rather than exclude, something almost always lands in the unlikely tier.
+   */
+  it("keeps a hinted genus by demoting it, not by stretching the gates", () => {
     const hints = [hint("Stratum", "$Codex_Ent_Stratum_Genus_Name;")];
     const chilly = { ...HMC_THIN_CO2, SurfaceTemperature: 152 } as unknown as PlanetScan;
 
-    const strict = matchDatabaseToScan(db, chilly, hints, null, {
-      includeBacterium: true,
-      dssPhysicalSlack: { temperature: 0, pressure: 0, gravity: 0 },
-    });
-    const slack = matchDatabaseToScan(db, chilly, hints, null, {
-      includeBacterium: true,
-      dssPhysicalSlack: { temperature: 0.25, pressure: 0.25, gravity: 0.25 },
-    });
-    expect(shown(slack).length).toBeGreaterThanOrEqual(shown(strict).length);
-    // Slack never invents a genus the DSS did not report.
-    expect(slack.matches.every((m) => m.entry.genusDataDir === "stratum")).toBe(true);
+    const r = matchDatabaseToScan(db, chilly, hints, null, { includeBacterium: true });
+    // 152 K is 7.9% under Stratum tectonicas' 165 K floor — past the 2% tolerance, so it is a wall,
+    // and no Stratum species has room for this body. The list is empty, and that is the honest
+    // answer: the DSS says the genus is here and our bands say it cannot be, which is a defect in
+    // our data. The |G| < k alert and the orphan-hint warning both say so. The old fallback stretched
+    // the gates until something appeared, which hid exactly that.
+    expect(r.matches).toEqual([]);
+    expect(r.genusFilterActive).toBe(true);
   });
 });

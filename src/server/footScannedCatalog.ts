@@ -19,7 +19,6 @@ import type {
   SpeciesEntry,
   SpeciesMatch,
   SpeciesMatchContext,
-  DssPhysicalSlackRatios,
 } from "../shared/types.js";
 import type { PriceIndex } from "./priceList.js";
 import {
@@ -549,7 +548,6 @@ export function recordFootScanned(
     ts: string;
     includeBacterium: boolean;
     /** When set, foot-catalog probable species uses same DSS slack as live matching. */
-    dssPhysicalSlack?: DssPhysicalSlackRatios;
     confirmationSource: FootCatalogConfirmation;
   },
 ): void {
@@ -594,7 +592,6 @@ export function recordFootScanned(
 
   const probableRun = matchDatabaseToScan(db, scan, [genusHint], null, {
     includeBacterium: meta.includeBacterium,
-    dssPhysicalSlack: meta.dssPhysicalSlack ?? { temperature: 0, pressure: 0, gravity: 0 },
   });
   const probable = shownSpeciesMatches(probableRun.matches);
   const topProb = probable.find((m) => !m.approximateMatch) ?? probable[0] ?? probableRun.matches[0] ?? null;

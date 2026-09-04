@@ -108,12 +108,6 @@ export function createHttpServer(opts: {
   setFootTravelOdometer?: (value: boolean) => void;
   /** POST /api/settings/exo-map-tiers — JSON { plusMinCr: number, plusPlusMinCr: number } */
   setExoMapTierThresholds?: (plusMinCr: number, plusPlusMinCr: number) => void;
-  /** POST /api/settings/dss-physical-slack — JSON { temperaturePercent, pressurePercent, gravityPercent } each 0…50 */
-  setDssPhysicalSlackPercents?: (
-    temperaturePercent: number,
-    pressurePercent: number,
-    gravityPercent: number,
-  ) => void;
   /** POST /api/exobiology/reset with confirm: true */
   resetExobiology?: () => void;
   /** POST /api/system/hydrate-from-edsm — JSON { systemAddress: number, systemName: string } (known systems only). */
@@ -647,27 +641,6 @@ export function createHttpServer(opts: {
     // windows follow along. Skip it when nothing changed — this fires on every tab click.
     const changed = opts.setUiSelectedBodyKey(raw);
     if (changed !== false) opts.scheduleBroadcast?.();
-    res.json({ ok: true });
-  });
-
-  app.post("/api/settings/dss-physical-slack", (req, res) => {
-    if (typeof opts.setDssPhysicalSlackPercents !== "function") {
-      res.status(501).json({ ok: false, error: "Not available" });
-      return;
-    }
-    const t = req.body?.temperaturePercent;
-    const p = req.body?.pressurePercent;
-    const g = req.body?.gravityPercent;
-    if (typeof t !== "number" || typeof p !== "number" || typeof g !== "number") {
-      res.status(400).json({
-        ok: false,
-        error:
-          'JSON body must include numeric "temperaturePercent", "pressurePercent", and "gravityPercent" (each 0–50).',
-      });
-      return;
-    }
-    opts.setDssPhysicalSlackPercents(t, p, g);
-    opts.scheduleBroadcast?.();
     res.json({ ok: true });
   });
 

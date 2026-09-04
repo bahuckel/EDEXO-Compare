@@ -558,9 +558,6 @@ const SpeciesCard = memo(function SpeciesCard({
   const morphColorRaw = useMemo(() => candidateMorphColorShortLabel(e, hostStarType), [e, hostStarType]);
   const morphColorDisplay =
     morphColorRaw === "(unknown)" ? morphColorRaw : titleCaseSpeciesWords(morphColorRaw);
-  const dssPhysicalCautionTitle =
-    "DSS-assisted candidate: may use 5% slack on temperature / pressure / gravity vs the journal, or nearest-by-temperature-only. Confirm species in-game.";
-  const showDssPhysicalCaution = m.dssNearestTemperatureMatch === true || m.dssPhysicalSlackMatch === true;
   const identityNote = useMemo(() => {
     const notesPart = (e.notes ?? "").trim();
     const descPart = (e.description ?? "").trim();
@@ -749,12 +746,6 @@ const SpeciesCard = memo(function SpeciesCard({
           {" "}
           - {morphColorDisplay}
         </span>
-        {showDssPhysicalCaution ? (
-          <span className="species-dss-temp-nearest-warn" title={dssPhysicalCautionTitle}>
-            {" "}
-            (!)
-          </span>
-        ) : null}
         {m.unlikely ? (
           <span className="species-demoted-badge" title={demotedBy.map((r) => r.detail).join("\n\n")}>
             {" "}
@@ -1673,13 +1664,9 @@ const BodyPane = memo(function BodyPane({
             </button>
           </div>
         </div>
-        {body.dssNearestTemperatureFallback ? (
+        {body.approximateMatchingUsed ? (
           <p className="candidate-species-subhint dim tiny candidate-species-subhint--below-bar">
-            DSS genus — nearest physics / 5% slack or temperature-only; marked (!) before value.
-          </p>
-        ) : body.approximateMatchingUsed ? (
-          <p className="candidate-species-subhint dim tiny candidate-species-subhint--below-bar">
-            Closest database rows by temp/pressure — strict gates failed.
+            Includes a species confirmed on foot that the codex gates would have excluded.
           </p>
         ) : null}
         {body.matches.length === 0 ? (
@@ -2095,13 +2082,7 @@ function MapOptionsModal({
   const toast = useToast();
   const [optPlus, setOptPlus] = useState(plusMinCr);
   const [optPlusPlus, setOptPlusPlus] = useState(plusPlusMinCr);
-  const [dssSlackSectionOpen, setDssSlackSectionOpen] = useState(false);
-  const [dssSlackTemp, setDssSlackTemp] = useState(0);
-  const [dssSlackPress, setDssSlackPress] = useState(0);
-  const [dssSlackGrav, setDssSlackGrav] = useState(0);
   const saveTimerRef = useRef<number | null>(null);
-  const dssSlackSaveTimerRef = useRef<number | null>(null);
-  const pendingDssSlackRef = useRef<{ t: number; p: number; g: number } | null>(null);
   const pendingTiersRef = useRef<{ p: number; pp: number } | null>(null);
   const tail = snap.journalPath ? snap.journalPath.split(/[/\\]/).pop() : "none";
 
@@ -2126,56 +2107,21 @@ function MapOptionsModal({
     [toast],
   );
 
-  const persistDssPhysicalSlack = useCallback(
-    (t: number, p: number, g: number) => {
-      void (async () => {
-        try {
-          const r = await fetch("/api/settings/dss-physical-slack", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              temperaturePercent: t,
-              pressurePercent: p,
-              gravityPercent: g,
-            }),
-          });
-          const j = (await r.json().catch(() => null)) as { error?: string } | null;
-          if (!r.ok) throw new Error(j?.error || r.statusText);
-        } catch (e) {
-          toast.error(e instanceof Error ? e.message : "Could not save DSS slack options.");
-        }
-      })();
-    },
-    [toast],
-  );
-
   useEffect(() => {
     return () => {
       if (saveTimerRef.current != null) {
         window.clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
       }
-      if (dssSlackSaveTimerRef.current != null) {
-        window.clearTimeout(dssSlackSaveTimerRef.current);
-        dssSlackSaveTimerRef.current = null;
-      }
       const pending = pendingTiersRef.current;
       if (pending) persistExoMapTiers(pending.p, pending.pp);
-      const dss = pendingDssSlackRef.current;
-      if (dss) persistDssPhysicalSlack(dss.t, dss.p, dss.g);
     };
-  }, [persistExoMapTiers, persistDssPhysicalSlack]);
+  }, [persistExoMapTiers]);
 
   useEffect(() => {
     setOptPlus(Math.min(plusMinCr, EXO_MAP_PLUS_SLIDER_MAX));
     setOptPlusPlus(plusPlusMinCr);
   }, [plusMinCr, plusPlusMinCr]);
-
-  useEffect(() => {
-    setDssSlackTemp(Math.max(0, Math.min(50, Math.round(snap.dssSlackTemperaturePercent ?? 0))));
-    setDssSlackPress(Math.max(0, Math.min(50, Math.round(snap.dssSlackPressurePercent ?? 0))));
-    setDssSlackGrav(Math.max(0, Math.min(50, Math.round(snap.dssSlackGravityPercent ?? 0))));
-  }, [snap.dssSlackTemperaturePercent, snap.dssSlackPressurePercent, snap.dssSlackGravityPercent]);
 
   const serverJournalHistoryPreset: JournalHistoryPreset = snap.journalHistoryPreset ?? "all";
   const [limitJournalHistory, setLimitJournalHistory] = useState(serverJournalHistoryPreset !== "all");
@@ -2224,22 +2170,10 @@ function MapOptionsModal({
     }, 320);
   };
 
-  const queueDssSlackSave = (t: number, p: number, g: number) => {
-    pendingDssSlackRef.current = { t, p, g };
-    if (dssSlackSaveTimerRef.current != null) window.clearTimeout(dssSlackSaveTimerRef.current);
-    dssSlackSaveTimerRef.current = window.setTimeout(() => {
-      dssSlackSaveTimerRef.current = null;
-      const cur = pendingDssSlackRef.current;
-      if (cur) persistDssPhysicalSlack(cur.t, cur.p, cur.g);
-    }, 320);
-  };
-
   const plusPlusSliderMin = Math.min(
     EXO_MAP_CR_MAX,
     Math.ceil((optPlus + 1) / EXO_MAP_CR_STEP) * EXO_MAP_CR_STEP,
   );
-
-  const dssSlackMaxPct = Math.max(dssSlackTemp, dssSlackPress, dssSlackGrav);
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -2378,85 +2312,6 @@ function MapOptionsModal({
               {Math.max(plusPlusSliderMin, optPlusPlus).toLocaleString()} CR (min{" "}
               {plusPlusSliderMin.toLocaleString()} CR)
             </div>
-          </div>
-
-          <div className="options-slack-block">
-            <button
-              type="button"
-              className="options-slack-expand-trigger"
-              onClick={() => setDssSlackSectionOpen((v) => !v)}
-              aria-expanded={dssSlackSectionOpen}
-            >
-              DSS physical gate slack (0–50%) {dssSlackSectionOpen ? "▲" : "▼"}
-            </button>
-            {dssSlackSectionOpen ? (
-              <div className="options-slack-expand-panel">
-                <p className="dim tiny options-slack-intro">
-                  If a lot of landable worlds refuse normal codex matching (temperature bands from the
-                  estimator, journal pressure, or gravity), raise these only as much as you need. Leave
-                  everything at <strong>0%</strong> for standard matching—no extra relaxation on those
-                  physical fallbacks.
-                </p>
-                {dssSlackMaxPct > 5 ? (
-                  <p className="options-slack-strong-warn tiny" role="status">
-                    Above <strong>5%</strong> the app will bend temperature, pressure, and gravity gates more
-                    aggressively; you may get candidate species that are unlikely on that body. Treat extra
-                    matches as leads to check in the codex or in-game, not as proof.
-                  </p>
-                ) : null}
-                <div className="options-tier-field">
-                  <label htmlFor="dss-slack-temp">Temperature slack (%)</label>
-                  <input
-                    id="dss-slack-temp"
-                    type="range"
-                    min={0}
-                    max={50}
-                    step={1}
-                    value={dssSlackTemp}
-                    onChange={(ev) => {
-                      const t = Number(ev.target.value);
-                      setDssSlackTemp(t);
-                      queueDssSlackSave(t, dssSlackPress, dssSlackGrav);
-                    }}
-                  />
-                  <div className="options-tier-value">{dssSlackTemp}%</div>
-                </div>
-                <div className="options-tier-field">
-                  <label htmlFor="dss-slack-press">Pressure slack (%)</label>
-                  <input
-                    id="dss-slack-press"
-                    type="range"
-                    min={0}
-                    max={50}
-                    step={1}
-                    value={dssSlackPress}
-                    onChange={(ev) => {
-                      const p = Number(ev.target.value);
-                      setDssSlackPress(p);
-                      queueDssSlackSave(dssSlackTemp, p, dssSlackGrav);
-                    }}
-                  />
-                  <div className="options-tier-value">{dssSlackPress}%</div>
-                </div>
-                <div className="options-tier-field">
-                  <label htmlFor="dss-slack-grav">Gravity slack (%)</label>
-                  <input
-                    id="dss-slack-grav"
-                    type="range"
-                    min={0}
-                    max={50}
-                    step={1}
-                    value={dssSlackGrav}
-                    onChange={(ev) => {
-                      const g = Number(ev.target.value);
-                      setDssSlackGrav(g);
-                      queueDssSlackSave(dssSlackTemp, dssSlackPress, g);
-                    }}
-                  />
-                  <div className="options-tier-value">{dssSlackGrav}%</div>
-                </div>
-              </div>
-            ) : null}
           </div>
 
           <button type="button" className="btn-top-danger options-reset-exo" onClick={onResetExobiology}>
