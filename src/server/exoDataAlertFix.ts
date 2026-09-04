@@ -3,7 +3,11 @@ import { dirname, join, relative } from "node:path";
 import type { ExoDataAlertDTO, SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
 import { getExoDataFixWriteRoots, getSpeciesDataDir } from "./paths.js";
 import { resolveExomasteryProfileJsonPath } from "./exomasteryProfile.js";
-import { expandVolcanismCriterionFragments, extractVolcanismMaterialPhrases, volcanismMaterialToCodexToken } from "../shared/volcanismMatch.js";
+import {
+  expandVolcanismCriterionFragments,
+  extractVolcanismMaterialPhrases,
+  volcanismMaterialToCodexToken,
+} from "../shared/volcanismMatch.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
 
 const FIX_SCHEMA = "edexo.fix_stub.v1" as const;
@@ -131,7 +135,10 @@ function inferParentStarIncludesAppend(entry: SpeciesEntry, journalStarType: str
   return append.length ? append : undefined;
 }
 
-function inferJournalCriteriaPatch(entry: SpeciesEntry, alert: ExoDataAlertDTO): FixStubCriteriaPatchV1 | undefined {
+function inferJournalCriteriaPatch(
+  entry: SpeciesEntry,
+  alert: ExoDataAlertDTO,
+): FixStubCriteriaPatchV1 | undefined {
   let volcanismIncludesAppend: string[] | undefined;
   const volJournal = alert.journalFixHints?.volcanism?.trim();
   if (volJournal) {
@@ -169,7 +176,10 @@ function inferJournalCriteriaPatch(entry: SpeciesEntry, alert: ExoDataAlertDTO):
 /**
  * Merge {@link FixStubFileV1} criteriaPatch entries into loaded species rows (same process as the server uses after editing fixes_*.json).
  */
-export function applyCodexCriteriaPatchesFromFixesJson(codexJsonAbsPath: string, entries: SpeciesEntry[]): void {
+export function applyCodexCriteriaPatchesFromFixesJson(
+  codexJsonAbsPath: string,
+  entries: SpeciesEntry[],
+): void {
   const leaf = codexJsonAbsPath.split(/[/\\]/).pop() ?? "";
   const fixPath = join(dirname(codexJsonAbsPath), fixesBasenameFor(leaf));
   if (!existsSync(fixPath)) return;
@@ -223,7 +233,8 @@ export function writeExoDataAlertFixFiles(
 
   const roots = getExoDataFixWriteRoots();
   const writtenAt = new Date().toISOString();
-  const criteriaPatch = alert.detectionSource === "journal" ? inferJournalCriteriaPatch(entry, alert) : undefined;
+  const criteriaPatch =
+    alert.detectionSource === "journal" ? inferJournalCriteriaPatch(entry, alert) : undefined;
   const stubEntry: FixStubFileV1["entries"][0] = {
     writtenAt,
     alertId: alert.id,

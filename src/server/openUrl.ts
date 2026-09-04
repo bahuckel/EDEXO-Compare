@@ -41,7 +41,13 @@ export function openLauncherShell(url: string): void {
       "Application",
       "msedge.exe",
     ),
-    path.join(process.env.ProgramFiles || "C:\\Program Files", "Microsoft", "Edge", "Application", "msedge.exe"),
+    path.join(
+      process.env.ProgramFiles || "C:\\Program Files",
+      "Microsoft",
+      "Edge",
+      "Application",
+      "msedge.exe",
+    ),
   ];
   const chrome = path.join(home, "Google", "Chrome", "Application", "chrome.exe");
 

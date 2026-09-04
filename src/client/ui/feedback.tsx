@@ -95,15 +95,12 @@ export function UiFeedbackProvider({ children }: { children: ReactNode }) {
 
   const api = useMemo<FeedbackApi>(() => ({ push, confirm }), [push, confirm]);
 
-  const answerConfirm = useCallback(
-    (ok: boolean) => {
-      setConfirmState((state) => {
-        state?.resolve(ok);
-        return null;
-      });
-    },
-    [],
-  );
+  const answerConfirm = useCallback((ok: boolean) => {
+    setConfirmState((state) => {
+      state?.resolve(ok);
+      return null;
+    });
+  }, []);
 
   return (
     <FeedbackContext.Provider value={api}>
@@ -141,13 +138,7 @@ function ToastStack({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id
   );
 }
 
-function ConfirmDialog({
-  request,
-  onAnswer,
-}: {
-  request: ConfirmRequest;
-  onAnswer: (ok: boolean) => void;
-}) {
+function ConfirmDialog({ request, onAnswer }: { request: ConfirmRequest; onAnswer: (ok: boolean) => void }) {
   const cancel = useCallback(() => onAnswer(false), [onAnswer]);
   const dialogRef = useModal<HTMLDivElement>(true, cancel);
 

@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -16,17 +12,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": [
-        "src/shared/*"
-      ]
+      "@shared/*": ["src/shared/*"]
     },
-    "types": [
-      "vite/client",
-      "node"
-    ]
+    "types": ["vite/client", "node"]
   },
-  "include": [
-    "src/client",
-    "src/shared"
-  ]
+  "include": ["src/client", "src/shared"]
 }

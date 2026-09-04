@@ -123,7 +123,8 @@ export function ingestExoOrganicJournalLine(
 
   const bk = organicBodyKey(sa, bodyId);
   const bodyNameNormEarly = normOrganicToken(
-    (typeof line.BodyName === "string" && line.BodyName.trim() ? line.BodyName.trim() : `Body ${bodyId}`) || `body ${bodyId}`,
+    (typeof line.BodyName === "string" && line.BodyName.trim() ? line.BodyName.trim() : `Body ${bodyId}`) ||
+      `body ${bodyId}`,
   );
 
   const tCross = store.exoOrganicTracker;
@@ -259,7 +260,7 @@ export function buildExoOrganicOverlayDto(
   const minG = Math.max(0, Math.round(t.minSampleDistanceM));
 
   const avgR = (a: ExoOrganicAnchors): number =>
-    typeof a?.planetRadiusM === "number" && a.planetRadiusM > 0 ? a.planetRadiusM : fix?.planetRadiusM ?? 0;
+    typeof a?.planetRadiusM === "number" && a.planetRadiusM > 0 ? a.planetRadiusM : (fix?.planetRadiusM ?? 0);
 
   let distFirstM: number | null = null;
   let distSecondM: number | null = null;
@@ -296,8 +297,7 @@ export function buildExoOrganicOverlayDto(
     }
   }
 
-  const spacingMeetsMin =
-    spacingBetweenSamplesM != null && minG > 0 ? spacingBetweenSamplesM >= minG : null;
+  const spacingMeetsMin = spacingBetweenSamplesM != null && minG > 0 ? spacingBetweenSamplesM >= minG : null;
 
   const separationForSecondSampleM = anchors.length === 1 ? distFirstM : null;
   const separationMeetsMin =
@@ -329,10 +329,7 @@ export function buildExoOrganicOverlayDto(
   let analyseWasLogged: boolean | null = null;
   if (t.phase === "celebrate") {
     analyseWasLogged = t.analyseWasLogged === true;
-    finalCredits =
-      baseCredits != null
-        ? Math.round(baseCredits * (analyseWasLogged ? ff : 5))
-        : null;
+    finalCredits = baseCredits != null ? Math.round(baseCredits * (analyseWasLogged ? ff : 5)) : null;
   }
 
   const celebrationRemainSec =
@@ -346,8 +343,7 @@ export function buildExoOrganicOverlayDto(
     minSampleDistanceM: minG,
     distToFirstM: distFirstM != null ? Math.round(distFirstM) : null,
     distToSecondM: distSecondM != null ? Math.round(distSecondM) : null,
-    spacingBetweenSamplesM:
-      spacingBetweenSamplesM != null ? Math.round(spacingBetweenSamplesM) : null,
+    spacingBetweenSamplesM: spacingBetweenSamplesM != null ? Math.round(spacingBetweenSamplesM) : null,
     spacingMeetsMin,
     separationForSecondSampleM:
       separationForSecondSampleM != null ? Math.round(separationForSecondSampleM) : null,

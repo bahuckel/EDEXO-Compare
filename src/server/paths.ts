@@ -219,10 +219,7 @@ function electronPackagedResourcesRoot(): string | null {
     const v = process.versions as { electron?: string };
     const resPath = process.resourcesPath;
     if (v?.electron && resPath) {
-      if (
-        existsSync(join(resPath, "web", "index.html")) &&
-        existsSync(join(resPath, "edexo", "app.cjs"))
-      ) {
+      if (existsSync(join(resPath, "web", "index.html")) && existsSync(join(resPath, "edexo", "app.cjs"))) {
         return resPath;
       }
     }

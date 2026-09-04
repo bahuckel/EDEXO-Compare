@@ -11,7 +11,10 @@ export function formatFullSpectralNotation(
   /** Game uses "F", "Ae", neutron classes, brown dwarfs L/T/Y … */
   const letterMatch = /^([OBAFGKMNLTTYWD])[A-Z]?/i.exec(raw);
   const letter = letterMatch?.[1]?.toUpperCase() ?? "";
-  const lum = (luminosity ?? "").trim().toUpperCase().replace(/[^IVLX0-9]+/g, "");
+  const lum = (luminosity ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^IVLX0-9]+/g, "");
   const sub =
     subclass != null && Number.isFinite(subclass)
       ? Math.min(99, Math.max(0, Math.round(subclass as number)))
@@ -21,7 +24,7 @@ export function formatFullSpectralNotation(
   const core = letter + (sub != null ? String(sub) : "");
   const lumClean = lum ? lum.replace(/[^\dIVLX]/g, "") : "";
   if (lumClean) {
-    const s = (core || letter) ? `${core || letter} ${lumClean}`.trim() : lumClean;
+    const s = core || letter ? `${core || letter} ${lumClean}`.trim() : lumClean;
     return s.length ? s : null;
   }
   return core.length ? core : null;

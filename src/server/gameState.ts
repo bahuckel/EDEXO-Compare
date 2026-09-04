@@ -151,18 +151,17 @@ function biologicalCount(signals: ReturnType<typeof asSignals>): number | null {
     const ty = (s.Type ?? "").trim();
     const locLo = loc.toLowerCase();
     const tyLo = ty.toLowerCase();
-    if (
-      locLo === "biological" ||
-      tyLo.includes("biological") ||
-      tyLo.includes("signaltype_biological")
-    ) {
+    if (locLo === "biological" || tyLo.includes("biological") || tyLo.includes("signaltype_biological")) {
       return typeof s.Count === "number" ? s.Count : null;
     }
   }
   return null;
 }
 
-function mergeScannerSignalHints(existing: string[] | null | undefined, lineSignals: unknown): string[] | null {
+function mergeScannerSignalHints(
+  existing: string[] | null | undefined,
+  lineSignals: unknown,
+): string[] | null {
   const raw = asSignals(lineSignals);
   const set = new Set<string>();
   for (const x of existing ?? []) {
@@ -175,7 +174,7 @@ function mergeScannerSignalHints(existing: string[] | null | undefined, lineSign
     if (ty) set.add(ty);
     if (loc) set.add(loc);
   }
-  return set.size ? [...set] : existing ?? null;
+  return set.size ? [...set] : (existing ?? null);
 }
 
 function asGenuses(raw: unknown): GenusHint[] | null {
@@ -270,7 +269,11 @@ function organicLockGenusKey(lock: OrganicGenusLock): string {
 }
 
 /** All moons of the same planet as `sourceBodyId` (excludes self), using merged `Scan` parents and/or orbit map. */
-function siblingMoonBodyIdsUnified(store: GameStateStore, systemAddress: number, sourceBodyId: number): number[] {
+function siblingMoonBodyIdsUnified(
+  store: GameStateStore,
+  systemAddress: number,
+  sourceBodyId: number,
+): number[] {
   const sk = bodyKey(systemAddress, sourceBodyId);
   const sourceRec = store.explorationScans.get(sk);
   const parentFromRec = sourceRec ? directParentPlanetId(sourceRec.parents) : null;
@@ -616,7 +619,11 @@ export class GameStateStore {
     };
   }
 
-  setDssPhysicalSlackPercents(temperaturePercent: number, pressurePercent: number, gravityPercent: number): void {
+  setDssPhysicalSlackPercents(
+    temperaturePercent: number,
+    pressurePercent: number,
+    gravityPercent: number,
+  ): void {
     const clamp = (n: number) => Math.max(0, Math.min(50, Math.round(Number(n))));
     this.dssSlackTemperaturePercent = clamp(temperaturePercent);
     this.dssSlackPressurePercent = clamp(pressurePercent);
@@ -849,8 +856,7 @@ export class GameStateStore {
       systemAddress,
       bodyId: syntheticId,
       bodyName: prev?.bodyName?.trim() ? prev.bodyName : `Bary ⊥${nullIdRaw}`,
-      starSystem:
-        pickStr(line.StarSystem) ?? prev?.starSystem ?? (this.currentSystem ?? "").trim() ?? "",
+      starSystem: pickStr(line.StarSystem) ?? prev?.starSystem ?? (this.currentSystem ?? "").trim() ?? "",
       updatedAt: ts,
       isBarycentreJournal: true,
       journalBarycentreNullId: nullIdRaw,
@@ -905,8 +911,7 @@ export class GameStateStore {
       systemAddress,
       bodyId,
       bodyName: bodyName.trim(),
-      starSystem:
-        pickStr(line.StarSystem) ?? prev?.starSystem ?? (this.currentSystem ?? "").trim() ?? "",
+      starSystem: pickStr(line.StarSystem) ?? prev?.starSystem ?? (this.currentSystem ?? "").trim() ?? "",
       updatedAt: ts,
     };
 
@@ -985,7 +990,10 @@ export class GameStateStore {
     if (line.Composition !== undefined) {
       const incoming = line.Composition;
       const ik = incoming && typeof incoming === "object" ? Object.keys(incoming as object).length : 0;
-      const pk = prev?.composition && typeof prev.composition === "object" ? Object.keys(prev.composition as object).length : 0;
+      const pk =
+        prev?.composition && typeof prev.composition === "object"
+          ? Object.keys(prev.composition as object).length
+          : 0;
       if (ik === 0 && pk > 0) {
         /* Same pattern as materials: do not replace rich composition with an empty object. */
       } else {
@@ -1001,8 +1009,7 @@ export class GameStateStore {
     if (moonOf != null) this.orbitParentPlanetByBody.set(k, moonOf);
     else this.orbitParentPlanetByBody.delete(k);
 
-    const inCurrentSystem =
-      this.currentSystemAddress !== null && systemAddress === this.currentSystemAddress;
+    const inCurrentSystem = this.currentSystemAddress !== null && systemAddress === this.currentSystemAddress;
     if (moonOf != null && inCurrentSystem) {
       ensureBody(
         this.bodies,
@@ -1094,533 +1101,496 @@ export class GameStateStore {
     this.lastEventIso = ts;
 
     try {
-    if (event === "LoadGame") {
-      const cmd = line.Commander as string | undefined;
-      if (typeof cmd === "string" && cmd.trim()) this.commanderName = cmd.trim();
-      const fc = (line as Record<string, unknown>).FuelCapacity;
-      if (typeof fc === "number" && Number.isFinite(fc) && fc > 0) {
-        this.loadoutFuelMainCapacityT = fc;
-      }
-      return;
-    }
-
-    if (event === "Loadout") {
-      const mjr = (line as Record<string, unknown>).MaxJumpRange;
-      if (typeof mjr === "number" && Number.isFinite(mjr) && mjr > 0) {
-        this.loadoutMaxJumpRangeLy = mjr;
-      }
-      const fc = (line as Record<string, unknown>).FuelCapacity;
-      if (fc && typeof fc === "object") {
-        const o = fc as Record<string, unknown>;
-        const main = o.Main;
-        const res = o.Reserve;
-        if (typeof main === "number" && Number.isFinite(main) && main > 0) {
-          this.loadoutFuelMainCapacityT = main;
+      if (event === "LoadGame") {
+        const cmd = line.Commander as string | undefined;
+        if (typeof cmd === "string" && cmd.trim()) this.commanderName = cmd.trim();
+        const fc = (line as Record<string, unknown>).FuelCapacity;
+        if (typeof fc === "number" && Number.isFinite(fc) && fc > 0) {
+          this.loadoutFuelMainCapacityT = fc;
         }
-        if (typeof res === "number" && Number.isFinite(res) && res >= 0) {
-          this.loadoutFuelReserveCapacityT = res;
-        }
-      }
-      return;
-    }
-
-    if (event === "FSDJump") {
-      const fu = (line as Record<string, unknown>).FuelUsed;
-      const jd = (line as Record<string, unknown>).JumpDist;
-      if (
-        typeof fu === "number" &&
-        Number.isFinite(fu) &&
-        fu > 0 &&
-        typeof jd === "number" &&
-        Number.isFinite(jd) &&
-        jd > 0
-      ) {
-        this.lastFsdJumpFuelUsedT = fu;
-        this.lastFsdJumpDistLy = jd;
-      }
-    }
-
-    if (event === "FSDJump" || event === "CarrierJump") {
-      const sys = line.StarSystem as string;
-      const addr = line.SystemAddress as number;
-      if (sys && typeof addr === "number") {
-        const wd = (line as Record<string, unknown>).WasDiscovered;
-        if (typeof wd === "boolean") {
-          this.fsdJumpWasDiscoveredBySystem.set(addr, wd);
-        }
-        this.viewingSystemAddress = null;
-        this.resetSystem(sys, addr);
-      }
-      return;
-    }
-
-    if (event === "FSDTarget") {
-      const rj = (line as Record<string, unknown>).RemainingJumpsInRoute;
-      if (typeof rj === "number" && Number.isFinite(rj)) {
-        this.remainingJumpsInRoute = Math.max(0, Math.floor(rj));
-      }
-      return;
-    }
-
-    if (event === "Location") {
-      const sys = line.StarSystem as string;
-      const addr = line.SystemAddress as number;
-      if (sys && typeof addr === "number") this.setLocation(sys, addr);
-      return;
-    }
-
-    if (event === "FSSDiscoveryScan") {
-      const addr = line.SystemAddress as number;
-      const sysRaw = line.SystemName as string | undefined;
-      const bodyCountRaw = line.BodyCount as number | undefined;
-      const progressRaw = line.Progress as number | undefined;
-      if (typeof addr !== "number" || typeof bodyCountRaw !== "number" || !Number.isFinite(bodyCountRaw)) return;
-      const bodyCount = Math.max(0, Math.floor(bodyCountRaw));
-      if (bodyCount <= 0) return;
-      let progress = typeof progressRaw === "number" && Number.isFinite(progressRaw) ? progressRaw : 0;
-      progress = Math.max(0, Math.min(1, progress));
-      const sysTrim = typeof sysRaw === "string" && sysRaw.trim() ? sysRaw.trim() : "";
-      this.fssDiscoveryScanBySystem.set(addr, {
-        systemName: sysTrim,
-        bodyCount,
-        progress,
-      });
-      if (sysTrim) this.rememberVisitedSystem(sysTrim, addr);
-      return;
-    }
-
-    if (event === "FSSAllBodiesFound") {
-      const addr = line.SystemAddress as number;
-      const sysNm = line.SystemName as string | undefined;
-      const sysStar = line.StarSystem as string | undefined;
-      const sysRaw = (typeof sysNm === "string" && sysNm.trim() ? sysNm : sysStar) as string | undefined;
-      const cntRaw = (line as Record<string, unknown>).Count;
-      if (typeof addr === "number") {
-        this.fssAllBodiesCompleteSystems.add(addr);
-        if (typeof cntRaw === "number" && Number.isFinite(cntRaw)) {
-          const n = Math.max(0, Math.floor(cntRaw));
-          if (n > 0) this.fssAllBodiesFoundCountBySystem.set(addr, n);
-        }
-        if (sysRaw?.trim()) this.rememberVisitedSystem(sysRaw.trim(), addr);
-      }
-      return;
-    }
-
-    if (event === "FSSBodySignals") {
-      const systemAddress = line.SystemAddress as number;
-      const bodyId = line.BodyID as number;
-      if (typeof systemAddress !== "number" || typeof bodyId !== "number") return;
-
-      const bk = bodyKey(systemAddress, bodyId);
-      this.fssBodySignalsBodyKeys.add(bk);
-
-      const inCurrent =
-        this.currentSystemAddress !== null && systemAddress === this.currentSystemAddress;
-      if (!inCurrent) return;
-
-      const bodyNameRaw = line.BodyName as string | undefined;
-      const bodyName = bodyNameRaw?.trim() ? bodyNameRaw.trim() : `Body ${bodyId}`;
-      const hints = asGenuses((line as Record<string, unknown>).Genuses);
-      const sigArr = asSignals(line.Signals);
-      const n = biologicalCount(sigArr);
-      if (n === null && !hints && sigArr.length === 0) return;
-
-      const b = ensureBody(
-        this.bodies,
-        systemAddress,
-        bodyId,
-        bodyName,
-        this.currentSystem ?? "",
-        ts,
-      );
-      if (n !== null) b.biologicalSignals = n;
-      if (hints) b.genusHints = mergeGenusHints(b.genusHints, hints);
-      const mergedHints = mergeScannerSignalHints(b.signalHints ?? null, line.Signals);
-      if (mergedHints) b.signalHints = mergedHints;
-      this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "fss_signals");
-      return;
-    }
-
-    if (event === "SAASignalsFound") {
-      const systemAddress = line.SystemAddress as number;
-      const bodyId = line.BodyID as number;
-      const bodyName = line.BodyName as string;
-      if (
-        this.currentSystemAddress === null ||
-        systemAddress !== this.currentSystemAddress ||
-        typeof bodyId !== "number" ||
-        !bodyName
-      )
         return;
+      }
 
-      const hints = asGenuses(line.Genuses);
-      const sigArr = asSignals(line.Signals);
-      const n = biologicalCount(sigArr);
-      if (n === null && !hints && sigArr.length === 0) return;
+      if (event === "Loadout") {
+        const mjr = (line as Record<string, unknown>).MaxJumpRange;
+        if (typeof mjr === "number" && Number.isFinite(mjr) && mjr > 0) {
+          this.loadoutMaxJumpRangeLy = mjr;
+        }
+        const fc = (line as Record<string, unknown>).FuelCapacity;
+        if (fc && typeof fc === "object") {
+          const o = fc as Record<string, unknown>;
+          const main = o.Main;
+          const res = o.Reserve;
+          if (typeof main === "number" && Number.isFinite(main) && main > 0) {
+            this.loadoutFuelMainCapacityT = main;
+          }
+          if (typeof res === "number" && Number.isFinite(res) && res >= 0) {
+            this.loadoutFuelReserveCapacityT = res;
+          }
+        }
+        return;
+      }
 
-      const b = ensureBody(
-        this.bodies,
-        systemAddress,
-        bodyId,
-        bodyName,
-        this.currentSystem ?? "",
-        ts,
-      );
-      if (n !== null) b.biologicalSignals = n;
-      if (hints) b.genusHints = hints;
-      const mergedHints = mergeScannerSignalHints(b.signalHints ?? null, line.Signals);
-      if (mergedHints) b.signalHints = mergedHints;
-      this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "saas_signals");
-      return;
-    }
+      if (event === "FSDJump") {
+        const fu = (line as Record<string, unknown>).FuelUsed;
+        const jd = (line as Record<string, unknown>).JumpDist;
+        if (
+          typeof fu === "number" &&
+          Number.isFinite(fu) &&
+          fu > 0 &&
+          typeof jd === "number" &&
+          Number.isFinite(jd) &&
+          jd > 0
+        ) {
+          this.lastFsdJumpFuelUsedT = fu;
+          this.lastFsdJumpDistLy = jd;
+        }
+      }
 
-    if (event === "SAAScanComplete") {
-      const systemAddress = line.SystemAddress as number;
-      const bodyId = line.BodyID as number;
-      if (typeof systemAddress !== "number" || typeof bodyId !== "number") return;
+      if (event === "FSDJump" || event === "CarrierJump") {
+        const sys = line.StarSystem as string;
+        const addr = line.SystemAddress as number;
+        if (sys && typeof addr === "number") {
+          const wd = (line as Record<string, unknown>).WasDiscovered;
+          if (typeof wd === "boolean") {
+            this.fsdJumpWasDiscoveredBySystem.set(addr, wd);
+          }
+          this.viewingSystemAddress = null;
+          this.resetSystem(sys, addr);
+        }
+        return;
+      }
 
-      const bk = bodyKey(systemAddress, bodyId);
-      this.dssMappedBodyKeys.add(bk);
-      const recForMapper = this.explorationScans.get(bk);
-      this.dssFirstMapperEligibleByBodyKey.set(bk, recForMapper ? recForMapper.wasMapped !== true : false);
-      const probes = line.ProbesUsed as number | undefined;
-      const effTarget = line.EfficiencyTarget as number | undefined;
-      const efficient =
-        typeof probes === "number" &&
-        typeof effTarget === "number" &&
-        effTarget > 0 &&
-        probes > 0 &&
-        probes <= effTarget;
-      this.dssMappingEfficientByBodyKey.set(bk, efficient);
+      if (event === "FSDTarget") {
+        const rj = (line as Record<string, unknown>).RemainingJumpsInRoute;
+        if (typeof rj === "number" && Number.isFinite(rj)) {
+          this.remainingJumpsInRoute = Math.max(0, Math.floor(rj));
+        }
+        return;
+      }
 
-      const inCurrent =
-        this.currentSystemAddress !== null && systemAddress === this.currentSystemAddress;
-      if (inCurrent) {
+      if (event === "Location") {
+        const sys = line.StarSystem as string;
+        const addr = line.SystemAddress as number;
+        if (sys && typeof addr === "number") this.setLocation(sys, addr);
+        return;
+      }
+
+      if (event === "FSSDiscoveryScan") {
+        const addr = line.SystemAddress as number;
+        const sysRaw = line.SystemName as string | undefined;
+        const bodyCountRaw = line.BodyCount as number | undefined;
+        const progressRaw = line.Progress as number | undefined;
+        if (typeof addr !== "number" || typeof bodyCountRaw !== "number" || !Number.isFinite(bodyCountRaw))
+          return;
+        const bodyCount = Math.max(0, Math.floor(bodyCountRaw));
+        if (bodyCount <= 0) return;
+        let progress = typeof progressRaw === "number" && Number.isFinite(progressRaw) ? progressRaw : 0;
+        progress = Math.max(0, Math.min(1, progress));
+        const sysTrim = typeof sysRaw === "string" && sysRaw.trim() ? sysRaw.trim() : "";
+        this.fssDiscoveryScanBySystem.set(addr, {
+          systemName: sysTrim,
+          bodyCount,
+          progress,
+        });
+        if (sysTrim) this.rememberVisitedSystem(sysTrim, addr);
+        return;
+      }
+
+      if (event === "FSSAllBodiesFound") {
+        const addr = line.SystemAddress as number;
+        const sysNm = line.SystemName as string | undefined;
+        const sysStar = line.StarSystem as string | undefined;
+        const sysRaw = (typeof sysNm === "string" && sysNm.trim() ? sysNm : sysStar) as string | undefined;
+        const cntRaw = (line as Record<string, unknown>).Count;
+        if (typeof addr === "number") {
+          this.fssAllBodiesCompleteSystems.add(addr);
+          if (typeof cntRaw === "number" && Number.isFinite(cntRaw)) {
+            const n = Math.max(0, Math.floor(cntRaw));
+            if (n > 0) this.fssAllBodiesFoundCountBySystem.set(addr, n);
+          }
+          if (sysRaw?.trim()) this.rememberVisitedSystem(sysRaw.trim(), addr);
+        }
+        return;
+      }
+
+      if (event === "FSSBodySignals") {
+        const systemAddress = line.SystemAddress as number;
+        const bodyId = line.BodyID as number;
+        if (typeof systemAddress !== "number" || typeof bodyId !== "number") return;
+
+        const bk = bodyKey(systemAddress, bodyId);
+        this.fssBodySignalsBodyKeys.add(bk);
+
+        const inCurrent = this.currentSystemAddress !== null && systemAddress === this.currentSystemAddress;
+        if (!inCurrent) return;
+
         const bodyNameRaw = line.BodyName as string | undefined;
         const bodyName = bodyNameRaw?.trim() ? bodyNameRaw.trim() : `Body ${bodyId}`;
+        const hints = asGenuses((line as Record<string, unknown>).Genuses);
+        const sigArr = asSignals(line.Signals);
+        const n = biologicalCount(sigArr);
+        if (n === null && !hints && sigArr.length === 0) return;
+
+        const b = ensureBody(this.bodies, systemAddress, bodyId, bodyName, this.currentSystem ?? "", ts);
+        if (n !== null) b.biologicalSignals = n;
+        if (hints) b.genusHints = mergeGenusHints(b.genusHints, hints);
+        const mergedHints = mergeScannerSignalHints(b.signalHints ?? null, line.Signals);
+        if (mergedHints) b.signalHints = mergedHints;
+        this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "fss_signals");
+        return;
+      }
+
+      if (event === "SAASignalsFound") {
+        const systemAddress = line.SystemAddress as number;
+        const bodyId = line.BodyID as number;
+        const bodyName = line.BodyName as string;
+        if (
+          this.currentSystemAddress === null ||
+          systemAddress !== this.currentSystemAddress ||
+          typeof bodyId !== "number" ||
+          !bodyName
+        )
+          return;
+
+        const hints = asGenuses(line.Genuses);
+        const sigArr = asSignals(line.Signals);
+        const n = biologicalCount(sigArr);
+        if (n === null && !hints && sigArr.length === 0) return;
+
+        const b = ensureBody(this.bodies, systemAddress, bodyId, bodyName, this.currentSystem ?? "", ts);
+        if (n !== null) b.biologicalSignals = n;
+        if (hints) b.genusHints = hints;
+        const mergedHints = mergeScannerSignalHints(b.signalHints ?? null, line.Signals);
+        if (mergedHints) b.signalHints = mergedHints;
+        this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "saas_signals");
+        return;
+      }
+
+      if (event === "SAAScanComplete") {
+        const systemAddress = line.SystemAddress as number;
+        const bodyId = line.BodyID as number;
+        if (typeof systemAddress !== "number" || typeof bodyId !== "number") return;
+
+        const bk = bodyKey(systemAddress, bodyId);
+        this.dssMappedBodyKeys.add(bk);
+        const recForMapper = this.explorationScans.get(bk);
+        this.dssFirstMapperEligibleByBodyKey.set(bk, recForMapper ? recForMapper.wasMapped !== true : false);
+        const probes = line.ProbesUsed as number | undefined;
+        const effTarget = line.EfficiencyTarget as number | undefined;
+        const efficient =
+          typeof probes === "number" &&
+          typeof effTarget === "number" &&
+          effTarget > 0 &&
+          probes > 0 &&
+          probes <= effTarget;
+        this.dssMappingEfficientByBodyKey.set(bk, efficient);
+
+        const inCurrent = this.currentSystemAddress !== null && systemAddress === this.currentSystemAddress;
+        if (inCurrent) {
+          const bodyNameRaw = line.BodyName as string | undefined;
+          const bodyName = bodyNameRaw?.trim() ? bodyNameRaw.trim() : `Body ${bodyId}`;
+          const b = ensureBody(this.bodies, systemAddress, bodyId, bodyName, this.currentSystem ?? "", ts);
+          b.dssComplete = true;
+          this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "dss_complete");
+        }
+        this.requestUiAutoSelectBody(systemAddress, bodyId);
+        return;
+      }
+
+      if (event === "Touchdown") {
+        const playerControlled = line.PlayerControlled === true;
+        const taxi = line.Taxi === true;
+        const onPlanet = line.OnPlanet === true;
+        const onStation = line.OnStation === true;
+        const systemAddress = line.SystemAddress as number | undefined;
+        const bodyId = line.BodyID as number | undefined;
+        const bodyStr = line.Body;
+        const starSystem = line.StarSystem;
+        if (
+          playerControlled &&
+          !taxi &&
+          onPlanet &&
+          !onStation &&
+          typeof systemAddress === "number" &&
+          typeof bodyId === "number"
+        ) {
+          const starFromLine = typeof starSystem === "string" && starSystem.trim() ? starSystem.trim() : null;
+          const star =
+            starFromLine ??
+            this.visitedSystems.get(systemAddress)?.trim() ??
+            this.currentSystem?.trim() ??
+            "";
+          const nameFromJournal = typeof bodyStr === "string" && bodyStr.trim() ? bodyStr.trim() : null;
+          const nm = nameFromJournal ?? `Body ${bodyId}`;
+          ensureBody(this.bodies, systemAddress, bodyId, nm, star, ts);
+          this.overlayTouchdownBodyKey = bodyKey(systemAddress, bodyId);
+          this.requestUiAutoSelectBody(systemAddress, bodyId);
+        }
+        return;
+      }
+
+      if (event === "ScanBaryCentre") {
+        this.mergeBarycentreJournalLine(line, ts);
+        const starSystemBary = line.StarSystem as string | undefined;
+        const addrBary = line.SystemAddress as number | undefined;
+        if (typeof starSystemBary === "string" && starSystemBary.trim() && typeof addrBary === "number") {
+          this.rememberVisitedSystem(starSystemBary.trim(), addrBary);
+        }
+        return;
+      }
+
+      if (event === "Scan") {
+        const systemAddress = line.SystemAddress as number;
+        const bodyId = line.BodyID as number;
+        const bodyName = line.BodyName as string;
+        if (
+          typeof systemAddress === "number" &&
+          typeof bodyId === "number" &&
+          typeof bodyName === "string" &&
+          bodyName.trim()
+        ) {
+          this.mergeExplorationScan(line, ts);
+          const starSystemMerge = line.StarSystem as string | undefined;
+          if (typeof starSystemMerge === "string" && starSystemMerge.trim()) {
+            this.rememberVisitedSystem(starSystemMerge.trim(), systemAddress);
+          }
+        }
+
+        const scanType = line.ScanType as string | undefined;
+        if (scanType !== "Detailed") return;
+
+        if (
+          typeof systemAddress !== "number" ||
+          typeof bodyId !== "number" ||
+          typeof bodyName !== "string" ||
+          !bodyName.trim()
+        )
+          return;
+
+        const starSystem = line.StarSystem as string;
+
+        const wfRaw = line.WasFootfalled;
+        if (typeof wfRaw === "boolean") {
+          this.bodyDetailedFootfallState.set(bodyKey(systemAddress, bodyId), wfRaw);
+        }
+
+        if (this.currentSystemAddress === null || systemAddress !== this.currentSystemAddress) return;
+
+        const scan: PlanetScan = {
+          BodyName: bodyName,
+          BodyID: bodyId,
+          StarSystem: starSystem,
+          SystemAddress: systemAddress,
+          PlanetClass: line.PlanetClass as string | undefined,
+          Atmosphere: line.Atmosphere as string | undefined,
+          AtmosphereType: line.AtmosphereType as string | undefined,
+          SurfaceGravity: line.SurfaceGravity as number | undefined,
+          SurfaceTemperature: line.SurfaceTemperature as number | undefined,
+          SurfacePressure: line.SurfacePressure as number | undefined,
+          SemiMajorAxis: line.SemiMajorAxis as number | undefined,
+          TidalLock: line.TidalLock as boolean | undefined,
+          Volcanism: line.Volcanism as string | undefined,
+          Landable: line.Landable as boolean | undefined,
+          TerraformState: line.TerraformState as string | undefined,
+          WasFootfalled: typeof wfRaw === "boolean" ? wfRaw : undefined,
+          materials: line.Materials as PlanetScan["materials"],
+          atmosphereComposition: line.AtmosphereComposition as PlanetScan["atmosphereComposition"],
+          composition: line.Composition as PlanetScan["composition"],
+          radius: line.Radius as number | undefined,
+          MassEM: line.MassEM as number | undefined,
+          RotationPeriod: (line as Record<string, unknown>).RotationPeriod as number | undefined,
+          AxialTilt: (line as Record<string, unknown>).AxialTilt as number | undefined,
+          OrbitalPeriod: (line as Record<string, unknown>).OrbitalPeriod as number | undefined,
+          Eccentricity: (line as Record<string, unknown>).Eccentricity as number | undefined,
+          OrbitalInclination: (line as Record<string, unknown>).OrbitalInclination as number | undefined,
+          Periapsis: (line as Record<string, unknown>).Periapsis as number | undefined,
+          AscendingNode: (line as Record<string, unknown>).AscendingNode as number | undefined,
+          MeanAnomaly: (line as Record<string, unknown>).MeanAnomaly as number | undefined,
+        };
+
         const b = ensureBody(
           this.bodies,
           systemAddress,
           bodyId,
           bodyName,
-          this.currentSystem ?? "",
+          starSystem ?? this.currentSystem ?? "",
           ts,
         );
-        b.dssComplete = true;
-        this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "dss_complete");
-      }
-      this.requestUiAutoSelectBody(systemAddress, bodyId);
-      return;
-    }
-
-    if (event === "Touchdown") {
-      const playerControlled = line.PlayerControlled === true;
-      const taxi = line.Taxi === true;
-      const onPlanet = line.OnPlanet === true;
-      const onStation = line.OnStation === true;
-      const systemAddress = line.SystemAddress as number | undefined;
-      const bodyId = line.BodyID as number | undefined;
-      const bodyStr = line.Body;
-      const starSystem = line.StarSystem;
-      if (
-        playerControlled &&
-        !taxi &&
-        onPlanet &&
-        !onStation &&
-        typeof systemAddress === "number" &&
-        typeof bodyId === "number"
-      ) {
-        const starFromLine = typeof starSystem === "string" && starSystem.trim() ? starSystem.trim() : null;
-        const star =
-          starFromLine ??
-          this.visitedSystems.get(systemAddress)?.trim() ??
-          this.currentSystem?.trim() ??
-          "";
-        const nameFromJournal = typeof bodyStr === "string" && bodyStr.trim() ? bodyStr.trim() : null;
-        const nm = nameFromJournal ?? `Body ${bodyId}`;
-        ensureBody(this.bodies, systemAddress, bodyId, nm, star, ts);
-        this.overlayTouchdownBodyKey = bodyKey(systemAddress, bodyId);
-        this.requestUiAutoSelectBody(systemAddress, bodyId);
-      }
-      return;
-    }
-
-    if (event === "ScanBaryCentre") {
-      this.mergeBarycentreJournalLine(line, ts);
-      const starSystemBary = line.StarSystem as string | undefined;
-      const addrBary = line.SystemAddress as number | undefined;
-      if (typeof starSystemBary === "string" && starSystemBary.trim() && typeof addrBary === "number") {
-        this.rememberVisitedSystem(starSystemBary.trim(), addrBary);
-      }
-      return;
-    }
-
-    if (event === "Scan") {
-      const systemAddress = line.SystemAddress as number;
-      const bodyId = line.BodyID as number;
-      const bodyName = line.BodyName as string;
-      if (
-        typeof systemAddress === "number" &&
-        typeof bodyId === "number" &&
-        typeof bodyName === "string" &&
-        bodyName.trim()
-      ) {
-        this.mergeExplorationScan(line, ts);
-        const starSystemMerge = line.StarSystem as string | undefined;
-        if (typeof starSystemMerge === "string" && starSystemMerge.trim()) {
-          this.rememberVisitedSystem(starSystemMerge.trim(), systemAddress);
+        b.scan = scan;
+        if (typeof starSystem === "string" && starSystem.trim()) {
+          this.rememberVisitedSystem(starSystem.trim(), systemAddress);
         }
-      }
-
-      const scanType = line.ScanType as string | undefined;
-      if (scanType !== "Detailed") return;
-
-      if (
-        typeof systemAddress !== "number" ||
-        typeof bodyId !== "number" ||
-        typeof bodyName !== "string" ||
-        !bodyName.trim()
-      )
+        this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "detailed_scan");
         return;
-
-      const starSystem = line.StarSystem as string;
-
-      const wfRaw = line.WasFootfalled;
-      if (typeof wfRaw === "boolean") {
-        this.bodyDetailedFootfallState.set(bodyKey(systemAddress, bodyId), wfRaw);
       }
 
-      if (
-        this.currentSystemAddress === null ||
-        systemAddress !== this.currentSystemAddress
-      )
-        return;
+      if (event === "ScanOrganic") {
+        const systemAddress = line.SystemAddress as number;
+        const bodyId = line.Body as number;
+        const variant = (line.Variant_Localised as string | undefined)?.trim() ?? "";
+        const genusLoc = (line.Genus_Localised as string | undefined)?.trim() ?? "";
+        const genusSym = (line.Genus as string | undefined)?.trim() ?? "";
+        const speciesLoc = (line.Species_Localised as string | undefined)?.trim() ?? "";
+        const speciesSym = (line.Species as string | undefined)?.trim() ?? "";
+        if (typeof bodyId !== "number" || typeof systemAddress !== "number" || (!variant && !speciesLoc))
+          return;
 
-      const scan: PlanetScan = {
-        BodyName: bodyName,
-        BodyID: bodyId,
-        StarSystem: starSystem,
-        SystemAddress: systemAddress,
-        PlanetClass: line.PlanetClass as string | undefined,
-        Atmosphere: line.Atmosphere as string | undefined,
-        AtmosphereType: line.AtmosphereType as string | undefined,
-        SurfaceGravity: line.SurfaceGravity as number | undefined,
-        SurfaceTemperature: line.SurfaceTemperature as number | undefined,
-        SurfacePressure: line.SurfacePressure as number | undefined,
-        SemiMajorAxis: line.SemiMajorAxis as number | undefined,
-        TidalLock: line.TidalLock as boolean | undefined,
-        Volcanism: line.Volcanism as string | undefined,
-        Landable: line.Landable as boolean | undefined,
-        TerraformState: line.TerraformState as string | undefined,
-        WasFootfalled: typeof wfRaw === "boolean" ? wfRaw : undefined,
-        materials: line.Materials as PlanetScan["materials"],
-        atmosphereComposition: line.AtmosphereComposition as PlanetScan["atmosphereComposition"],
-        composition: line.Composition as PlanetScan["composition"],
-        radius: line.Radius as number | undefined,
-        MassEM: line.MassEM as number | undefined,
-        RotationPeriod: (line as Record<string, unknown>).RotationPeriod as number | undefined,
-        AxialTilt: (line as Record<string, unknown>).AxialTilt as number | undefined,
-        OrbitalPeriod: (line as Record<string, unknown>).OrbitalPeriod as number | undefined,
-        Eccentricity: (line as Record<string, unknown>).Eccentricity as number | undefined,
-        OrbitalInclination: (line as Record<string, unknown>).OrbitalInclination as number | undefined,
-        Periapsis: (line as Record<string, unknown>).Periapsis as number | undefined,
-        AscendingNode: (line as Record<string, unknown>).AscendingNode as number | undefined,
-        MeanAnomaly: (line as Record<string, unknown>).MeanAnomaly as number | undefined,
-      };
-
-      const b = ensureBody(
-        this.bodies,
-        systemAddress,
-        bodyId,
-        bodyName,
-        starSystem ?? this.currentSystem ?? "",
-        ts,
-      );
-      b.scan = scan;
-      if (typeof starSystem === "string" && starSystem.trim()) {
-        this.rememberVisitedSystem(starSystem.trim(), systemAddress);
-      }
-      this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "detailed_scan");
-      return;
-    }
-
-    if (event === "ScanOrganic") {
-      const systemAddress = line.SystemAddress as number;
-      const bodyId = line.Body as number;
-      const variant = (line.Variant_Localised as string | undefined)?.trim() ?? "";
-      const genusLoc = (line.Genus_Localised as string | undefined)?.trim() ?? "";
-      const genusSym = (line.Genus as string | undefined)?.trim() ?? "";
-      const speciesLoc = (line.Species_Localised as string | undefined)?.trim() ?? "";
-      const speciesSym = (line.Species as string | undefined)?.trim() ?? "";
-      if (typeof bodyId !== "number" || typeof systemAddress !== "number" || (!variant && !speciesLoc)) return;
-
-      const bk = bodyKey(systemAddress, bodyId);
-      if (this.exoOrganicTracker && this.exoOrganicTracker.bodyKey !== bk) {
-        wipeOrganicSampleSession(this, getProjectRoot());
-      }
-      if (!this.exoOrganicTracker && this.footSessionBodyKey && this.footSessionBodyKey !== bk) {
-        wipeOrganicSampleSession(this, getProjectRoot());
-      }
-
-      const lock: OrganicGenusLock = {
-        genusLocalised: genusLoc,
-        genusSymbol: genusSym,
-        speciesLocalised: speciesLoc,
-        speciesSymbol: speciesSym,
-        variantLocalised: variant,
-      };
-
-      const speciesKey = speciesKeyFromOrganicJournal(line);
-      const fullKey = `${bk}::${speciesKey}`;
-
-      if (journalLineCarriesPlanetMetrics(line)) {
-        const lineBodyName =
-          typeof line.BodyName === "string" && line.BodyName.trim()
-            ? line.BodyName.trim()
-            : this.findRecentJournalBodyName(systemAddress, bodyId) ??
-              this.explorationScans.get(bk)?.bodyName ??
-              `Body ${bodyId}`;
-        this.mergeExplorationScan({ ...line, BodyID: bodyId, BodyName: lineBodyName } as JournalLine, ts);
-      }
-
-      const prevProg = this.organicAnalyseByKey.get(fullKey) ?? { count: 0, label: "" };
-
-      const nextCountRaw = nextOrganicProgressCount(prevProg.count, line);
-      if (nextCountRaw !== null) {
-        const label = displayLabelFromOrganicLine(line);
-        const nextCount = Math.max(prevProg.count, nextCountRaw);
-        const nextLabel = label || prevProg.label;
-        this.organicAnalyseByKey.set(fullKey, { count: nextCount, label: nextLabel });
-        if (nextCount >= 3 && !this.pendingOrganicSales.some((p) => p.fullKey === fullKey)) {
-          this.pendingOrganicSales.push({
-            fullKey,
-            bodyKey: bk,
-            speciesKey,
-            label: nextLabel,
-          });
+        const bk = bodyKey(systemAddress, bodyId);
+        if (this.exoOrganicTracker && this.exoOrganicTracker.bodyKey !== bk) {
+          wipeOrganicSampleSession(this, getProjectRoot());
         }
-      }
+        if (!this.exoOrganicTracker && this.footSessionBodyKey && this.footSessionBodyKey !== bk) {
+          wipeOrganicSampleSession(this, getProjectRoot());
+        }
 
-      const scanType = (line.ScanType as string | undefined)?.trim();
-      if (
-        (scanType === "Analyse" || scanType === "Sample") &&
-        (genusLoc || genusSym)
-      ) {
-        const rec = this.explorationScans.get(bk);
-        const exo = this.bodies.get(bk);
-        const baseScan = exo?.scan ?? (rec ? planetScanFromExplorationRecord(rec) : null);
-        if (baseScan?.PlanetClass?.trim()) {
-          const fromPriorJournal = this.findRecentJournalBodyName(systemAddress, bodyId);
+        const lock: OrganicGenusLock = {
+          genusLocalised: genusLoc,
+          genusSymbol: genusSym,
+          speciesLocalised: speciesLoc,
+          speciesSymbol: speciesSym,
+          variantLocalised: variant,
+        };
+
+        const speciesKey = speciesKeyFromOrganicJournal(line);
+        const fullKey = `${bk}::${speciesKey}`;
+
+        if (journalLineCarriesPlanetMetrics(line)) {
           const lineBodyName =
-            typeof line.BodyName === "string" && line.BodyName.trim() ? line.BodyName.trim() : "";
-          const bodyName =
-            fromPriorJournal ?? lineBodyName ?? rec?.bodyName ?? `Body ${bodyId}`;
-          const starSystem =
-            (line.StarSystem as string | undefined)?.trim() ||
-            this.findRecentJournalStarSystem(systemAddress) ||
-            rec?.starSystem ||
-            this.visitedSystems.get(systemAddress) ||
-            "";
-          try {
-            recordFootScanned(getProjectRoot(), {
-              systemAddress,
-              bodyId,
-              bodyName,
-              starSystem,
-              scan: baseScan,
-              lock,
-              ts,
-              includeBacterium: this.includeBacteriumInSearch,
-              dssPhysicalSlack: this.getDssPhysicalSlackRatios(),
-              confirmationSource: scanType === "Analyse" ? "analyse" : "sample",
+            typeof line.BodyName === "string" && line.BodyName.trim()
+              ? line.BodyName.trim()
+              : (this.findRecentJournalBodyName(systemAddress, bodyId) ??
+                this.explorationScans.get(bk)?.bodyName ??
+                `Body ${bodyId}`);
+          this.mergeExplorationScan({ ...line, BodyID: bodyId, BodyName: lineBodyName } as JournalLine, ts);
+        }
+
+        const prevProg = this.organicAnalyseByKey.get(fullKey) ?? { count: 0, label: "" };
+
+        const nextCountRaw = nextOrganicProgressCount(prevProg.count, line);
+        if (nextCountRaw !== null) {
+          const label = displayLabelFromOrganicLine(line);
+          const nextCount = Math.max(prevProg.count, nextCountRaw);
+          const nextLabel = label || prevProg.label;
+          this.organicAnalyseByKey.set(fullKey, { count: nextCount, label: nextLabel });
+          if (nextCount >= 3 && !this.pendingOrganicSales.some((p) => p.fullKey === fullKey)) {
+            this.pendingOrganicSales.push({
+              fullKey,
+              bodyKey: bk,
+              speciesKey,
+              label: nextLabel,
             });
-          } catch {
-            /* non-fatal: catalog file may be read-only */
           }
         }
-      }
 
-      const nameHint = (line.BodyName as string) || `Body ${bodyId}`;
-      const recForStar = this.explorationScans.get(bk);
-      const starSystem =
-        (line.StarSystem as string | undefined)?.trim() ||
-        this.findRecentJournalStarSystem(systemAddress) ||
-        recForStar?.starSystem ||
-        this.visitedSystems.get(systemAddress) ||
-        this.currentSystem ||
-        "";
-
-      const b = ensureBody(
-        this.bodies,
-        systemAddress,
-        bodyId,
-        nameHint,
-        starSystem,
-        ts,
-      );
-
-      if (genusLoc || genusSym) {
-        b.organicGenusLocks.push(lock);
-      }
-
-      if (variant && !b.confirmedVariants.includes(variant)) b.confirmedVariants.push(variant);
-      this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "organic");
-      return;
-    }
-
-    if (event === "Embark" || event === "Embarked") {
-      return;
-    }
-
-    if (event === "Disembark" || event === "Disembarked") {
-      const onPlanet = line.OnPlanet === true;
-      const onStation = line.OnStation === true;
-      const bodyId = line.BodyID as number | undefined;
-      const systemAddress = line.SystemAddress as number | undefined;
-      if (onPlanet && !onStation && typeof bodyId === "number" && typeof systemAddress === "number") {
-        const bk = bodyKey(systemAddress, bodyId);
-        const detailedSaidUnfootfalled = this.bodyDetailedFootfallState.get(bk) === false;
-        const journalFirstFootfall =
-          line.firstfootfall === true || line.FirstFootfall === true;
-        if (detailedSaidUnfootfalled || journalFirstFootfall) {
-          this.firstFootfallBodies.add(bk);
+        const scanType = (line.ScanType as string | undefined)?.trim();
+        if ((scanType === "Analyse" || scanType === "Sample") && (genusLoc || genusSym)) {
+          const rec = this.explorationScans.get(bk);
+          const exo = this.bodies.get(bk);
+          const baseScan = exo?.scan ?? (rec ? planetScanFromExplorationRecord(rec) : null);
+          if (baseScan?.PlanetClass?.trim()) {
+            const fromPriorJournal = this.findRecentJournalBodyName(systemAddress, bodyId);
+            const lineBodyName =
+              typeof line.BodyName === "string" && line.BodyName.trim() ? line.BodyName.trim() : "";
+            const bodyName = fromPriorJournal ?? lineBodyName ?? rec?.bodyName ?? `Body ${bodyId}`;
+            const starSystem =
+              (line.StarSystem as string | undefined)?.trim() ||
+              this.findRecentJournalStarSystem(systemAddress) ||
+              rec?.starSystem ||
+              this.visitedSystems.get(systemAddress) ||
+              "";
+            try {
+              recordFootScanned(getProjectRoot(), {
+                systemAddress,
+                bodyId,
+                bodyName,
+                starSystem,
+                scan: baseScan,
+                lock,
+                ts,
+                includeBacterium: this.includeBacteriumInSearch,
+                dssPhysicalSlack: this.getDssPhysicalSlackRatios(),
+                confirmationSource: scanType === "Analyse" ? "analyse" : "sample",
+              });
+            } catch {
+              /* non-fatal: catalog file may be read-only */
+            }
+          }
         }
-      }
-      return;
-    }
 
-    if (event === "Died") {
-      this.organicAnalyseByKey.clear();
-      this.pendingOrganicSales = [];
-      this.exoOrganicLastFix = null;
-      wipeOrganicSampleSession(this, getProjectRoot());
-      return;
-    }
+        const nameHint = (line.BodyName as string) || `Body ${bodyId}`;
+        const recForStar = this.explorationScans.get(bk);
+        const starSystem =
+          (line.StarSystem as string | undefined)?.trim() ||
+          this.findRecentJournalStarSystem(systemAddress) ||
+          recForStar?.starSystem ||
+          this.visitedSystems.get(systemAddress) ||
+          this.currentSystem ||
+          "";
 
-    if (event === "SellOrganicData") {
-      const bios = line.BioData;
-      if (!Array.isArray(bios)) return;
-      for (const raw of bios) {
-        if (!raw || typeof raw !== "object") continue;
-        const sk = speciesKeyFromSellBio(raw as Record<string, unknown>);
-        const idx = this.pendingOrganicSales.findIndex((p) => p.speciesKey === sk);
-        if (idx >= 0) {
-          const [removed] = this.pendingOrganicSales.splice(idx, 1);
-          if (removed) this.organicAnalyseByKey.delete(removed.fullKey);
+        const b = ensureBody(this.bodies, systemAddress, bodyId, nameHint, starSystem, ts);
+
+        if (genusLoc || genusSym) {
+          b.organicGenusLocks.push(lock);
         }
+
+        if (variant && !b.confirmedVariants.includes(variant)) b.confirmedVariants.push(variant);
+        this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "organic");
+        return;
       }
-      return;
-    }
 
-    if (event === "SellExplorationData") {
-      this.clearExplorationForSoldSystems((line as Record<string, unknown>).Systems);
-      return;
-    }
+      if (event === "Embark" || event === "Embarked") {
+        return;
+      }
 
-    if (event === "MultiSellExplorationData") {
-      this.clearExplorationForSoldSystemsMulti((line as Record<string, unknown>).Discovered);
-      return;
-    }
+      if (event === "Disembark" || event === "Disembarked") {
+        const onPlanet = line.OnPlanet === true;
+        const onStation = line.OnStation === true;
+        const bodyId = line.BodyID as number | undefined;
+        const systemAddress = line.SystemAddress as number | undefined;
+        if (onPlanet && !onStation && typeof bodyId === "number" && typeof systemAddress === "number") {
+          const bk = bodyKey(systemAddress, bodyId);
+          const detailedSaidUnfootfalled = this.bodyDetailedFootfallState.get(bk) === false;
+          const journalFirstFootfall = line.firstfootfall === true || line.FirstFootfall === true;
+          if (detailedSaidUnfootfalled || journalFirstFootfall) {
+            this.firstFootfallBodies.add(bk);
+          }
+        }
+        return;
+      }
+
+      if (event === "Died") {
+        this.organicAnalyseByKey.clear();
+        this.pendingOrganicSales = [];
+        this.exoOrganicLastFix = null;
+        wipeOrganicSampleSession(this, getProjectRoot());
+        return;
+      }
+
+      if (event === "SellOrganicData") {
+        const bios = line.BioData;
+        if (!Array.isArray(bios)) return;
+        for (const raw of bios) {
+          if (!raw || typeof raw !== "object") continue;
+          const sk = speciesKeyFromSellBio(raw as Record<string, unknown>);
+          const idx = this.pendingOrganicSales.findIndex((p) => p.speciesKey === sk);
+          if (idx >= 0) {
+            const [removed] = this.pendingOrganicSales.splice(idx, 1);
+            if (removed) this.organicAnalyseByKey.delete(removed.fullKey);
+          }
+        }
+        return;
+      }
+
+      if (event === "SellExplorationData") {
+        this.clearExplorationForSoldSystems((line as Record<string, unknown>).Systems);
+        return;
+      }
+
+      if (event === "MultiSellExplorationData") {
+        this.clearExplorationForSoldSystemsMulti((line as Record<string, unknown>).Discovered);
+        return;
+      }
     } finally {
       this.appendFootJournalContext(line);
     }
@@ -1735,8 +1705,7 @@ export class GameStateStore {
         sibRec?.bodyName?.trim() ||
         this.bodies.get(bodyKey(systemAddress, bid))?.bodyName?.trim() ||
         `Body ${bid}`;
-      const sibStar =
-        sibRec?.starSystem?.trim() || sourceRec?.starSystem?.trim() || this.currentSystem || "";
+      const sibStar = sibRec?.starSystem?.trim() || sourceRec?.starSystem?.trim() || this.currentSystem || "";
       const b = ensureBody(this.bodies, systemAddress, bid, sibName, sibStar, ts);
 
       if (mode === "fss_signals") {
@@ -1798,7 +1767,7 @@ export class GameStateStore {
   resolveExoOverlayFocusBodyKey(): string | null {
     const posted = this.uiSelectedBodyKey;
     const td = this.overlayTouchdownBodyKey;
-    const pick = this.footTravelOdometerTracking && td ? td : posted ?? td;
+    const pick = this.footTravelOdometerTracking && td ? td : (posted ?? td);
     if (!pick) return null;
     const focus = this.viewingSystemAddress ?? this.currentSystemAddress;
     if (focus === null) return null;
@@ -1931,17 +1900,14 @@ export class GameStateStore {
       this.remainingJumpsInRoute = null;
     }
     const lmj = data.loadoutMaxJumpRangeLy;
-    this.loadoutMaxJumpRangeLy =
-      typeof lmj === "number" && Number.isFinite(lmj) && lmj > 0 ? lmj : null;
+    this.loadoutMaxJumpRangeLy = typeof lmj === "number" && Number.isFinite(lmj) && lmj > 0 ? lmj : null;
     const lfm = data.loadoutFuelMainCapacityT;
-    this.loadoutFuelMainCapacityT =
-      typeof lfm === "number" && Number.isFinite(lfm) && lfm > 0 ? lfm : null;
+    this.loadoutFuelMainCapacityT = typeof lfm === "number" && Number.isFinite(lfm) && lfm > 0 ? lfm : null;
     const lfr = data.loadoutFuelReserveCapacityT;
     this.loadoutFuelReserveCapacityT =
       typeof lfr === "number" && Number.isFinite(lfr) && lfr >= 0 ? lfr : null;
     const lff = data.lastFsdJumpFuelUsedT;
-    this.lastFsdJumpFuelUsedT =
-      typeof lff === "number" && Number.isFinite(lff) && lff > 0 ? lff : null;
+    this.lastFsdJumpFuelUsedT = typeof lff === "number" && Number.isFinite(lff) && lff > 0 ? lff : null;
     const ljd = data.lastFsdJumpDistLy;
     this.lastFsdJumpDistLy = typeof ljd === "number" && Number.isFinite(ljd) && ljd > 0 ? ljd : null;
   }

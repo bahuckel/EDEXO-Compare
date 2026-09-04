@@ -59,7 +59,10 @@ export function parseScanOrganicLineFootFix(line: JournalLine): FootTravelFix | 
 }
 
 /** Prefer live `Status.json` parse; fall back to coordinates on the journal line. */
-export function resolveFootFixForOrganicLine(statusFix: FootTravelFix | null, line: JournalLine): FootTravelFix | null {
+export function resolveFootFixForOrganicLine(
+  statusFix: FootTravelFix | null,
+  line: JournalLine,
+): FootTravelFix | null {
   if (
     statusFix &&
     statusFix.planetRadiusM > 0 &&

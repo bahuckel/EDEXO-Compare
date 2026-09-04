@@ -155,8 +155,7 @@ function edsmGravityFromBody(body: Record<string, unknown>): number | undefined 
 }
 
 export type FetchEdsmBodiesResult =
-  | { ok: true; records: ExplorationScanRecord[] }
-  | { ok: false; error: string };
+  { ok: true; records: ExplorationScanRecord[] } | { ok: false; error: string };
 
 export async function fetchEdsmBodiesAsExplorationRecords(
   systemName: string,
@@ -209,8 +208,7 @@ export async function fetchEdsmBodiesAsExplorationRecords(
 }
 
 export type SearchEdsmSystemsResult =
-  | { ok: true; systems: { systemAddress: number; starSystem: string }[] }
-  | { ok: false; error: string };
+  { ok: true; systems: { systemAddress: number; starSystem: string }[] } | { ok: false; error: string };
 
 /**
  * Prefix search against EDSM’s public systems API (`id64` matches in-game `SystemAddress`).

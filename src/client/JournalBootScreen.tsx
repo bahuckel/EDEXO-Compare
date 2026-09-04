@@ -1,15 +1,8 @@
 import type { JournalBootProgressDTO } from "@shared/types";
 
-export function JournalBootScreen({
-  boot,
-  connected,
-}: {
-  boot: JournalBootProgressDTO;
-  connected: boolean;
-}) {
+export function JournalBootScreen({ boot, connected }: { boot: JournalBootProgressDTO; connected: boolean }) {
   const pct = Math.max(0, Math.min(100, boot.percent));
-  const detail =
-    boot.filesTotal > 0 ? `${boot.filesDone} / ${boot.filesTotal} journal logs` : null;
+  const detail = boot.filesTotal > 0 ? `${boot.filesDone} / ${boot.filesTotal} journal logs` : null;
 
   return (
     <div className="journal-boot">

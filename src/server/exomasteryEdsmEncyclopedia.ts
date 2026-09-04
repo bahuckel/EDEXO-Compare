@@ -48,8 +48,7 @@ import { journalStarPrimarySpectralLetter } from "../shared/genusStarColorSoft.j
 
 const AU_METERS = 149_597_870_700;
 
-const SKIP_HEADER_RE =
-  /^(body_?id|system_?address|systemaddress|edsm_?id|^id$|market_?id|sqlite)/i;
+const SKIP_HEADER_RE = /^(body_?id|system_?address|systemaddress|edsm_?id|^id$|market_?id|sqlite)/i;
 
 function shouldSkipColumn(key: string): boolean {
   const k = key.trim().toLowerCase().replace(/\s+/g, "_");
@@ -193,7 +192,10 @@ function extractEdsmRowsFromJson(parsed: unknown): Record<string, string>[] | nu
   return null;
 }
 
-function enrichRowsWithFeederStarSummaries(rows: Record<string, string>[], rootMeta: Record<string, unknown>): void {
+function enrichRowsWithFeederStarSummaries(
+  rows: Record<string, string>[],
+  rootMeta: Record<string, unknown>,
+): void {
   const raw = rootMeta.starSummaries;
   if (!Array.isArray(raw) || raw.length === 0) return;
   const summaries: FeederStarSummary[] = [];
@@ -214,20 +216,9 @@ function enrichRowsWithFeederStarSummaries(rows: Record<string, string>[], rootM
   }
   if (!summaries.length) return;
   for (const row of rows) {
-    const body =
-      row["BodyName"] ||
-      row["Body"] ||
-      row["Planet"] ||
-      row["bodyName"] ||
-      row["Body Name"] ||
-      "";
+    const body = row["BodyName"] || row["Body"] || row["Planet"] || row["bodyName"] || row["Body Name"] || "";
     const sys =
-      row["StarSystem"] ||
-      row["Star system"] ||
-      row["System"] ||
-      row["system"] ||
-      row["SystemName"] ||
-      "";
+      row["StarSystem"] || row["Star system"] || row["System"] || row["system"] || row["SystemName"] || "";
     if (!body.trim()) continue;
     const hit = resolveFeederHostSummaryForBody(body, sys.trim(), summaries);
     if (!hit) continue;
@@ -239,7 +230,10 @@ function enrichRowsWithFeederStarSummaries(rows: Record<string, string>[], rootM
   }
 }
 
-function finalizeLoadedEdsmRows(parsedRoot: unknown, rows: Record<string, string>[] | null): Record<string, string>[] | null {
+function finalizeLoadedEdsmRows(
+  parsedRoot: unknown,
+  rows: Record<string, string>[] | null,
+): Record<string, string>[] | null {
   if (!rows?.length) return rows;
   if (parsedRoot && typeof parsedRoot === "object" && !Array.isArray(parsedRoot)) {
     enrichRowsWithFeederStarSummaries(rows, parsedRoot as Record<string, unknown>);
@@ -283,7 +277,10 @@ function tryReadCsvFile(csvPath: string): Record<string, string>[] | null {
 }
 
 /** Any `*_edsm.csv` in the genus folder or `exomastery/` whose name matches this species slugs. */
-function tryReadEdsmCsvFromGenusDirs(genusDirs: string[], candidates: Set<string>): Record<string, string>[] | null {
+function tryReadEdsmCsvFromGenusDirs(
+  genusDirs: string[],
+  candidates: Set<string>,
+): Record<string, string>[] | null {
   for (const genusDir of genusDirs) {
     let files: string[];
     try {
@@ -523,7 +520,10 @@ function encyclopediaRollupDisplay(path: string, raw: number): { displayNumber: 
 
 const EXO_SECTION_ORDER = ["Atmosphere", "Crust & surface", "Orbit & location", "Miscellaneous"] as const;
 
-function buildOrderedSections(fields: EncyclopediaExomasteryFieldDTO[], sectionFor: (f: EncyclopediaExomasteryFieldDTO) => string): EncyclopediaExomasterySectionDTO[] {
+function buildOrderedSections(
+  fields: EncyclopediaExomasteryFieldDTO[],
+  sectionFor: (f: EncyclopediaExomasteryFieldDTO) => string,
+): EncyclopediaExomasterySectionDTO[] {
   const buckets = new Map<string, EncyclopediaExomasteryFieldDTO[]>();
   for (const f of fields) {
     const t = sectionFor(f);
@@ -574,7 +574,8 @@ function profilePathSection(path: string): string {
   ) {
     return "Orbit & location";
   }
-  if (low.includes("pressure") || (low.includes("atmosphere") && !low.includes("composition"))) return "Atmosphere";
+  if (low.includes("pressure") || (low.includes("atmosphere") && !low.includes("composition")))
+    return "Atmosphere";
   if (
     low.includes("solidcomposition") ||
     low.includes("solid_composition") ||
@@ -599,10 +600,19 @@ function edsmColumnSection(key: string): string {
   if (shouldSkipColumn(key)) return "Miscellaneous";
   if (isAtmosphereTypeColumn(key) || isPressureColumn(key)) return "Atmosphere";
   if (n.includes("atmosphere") && (n.includes("composition") || n.includes("%"))) return "Atmosphere";
-  if (n.includes("material") || (n.includes("composition") && !n.includes("atmosphere"))) return "Crust & surface";
-  if (isGravityColumn(key) || isRadiusColumn(key) || n.includes("volcan") || n.includes("terraform") || n.includes("landable")) return "Crust & surface";
+  if (n.includes("material") || (n.includes("composition") && !n.includes("atmosphere")))
+    return "Crust & surface";
+  if (
+    isGravityColumn(key) ||
+    isRadiusColumn(key) ||
+    n.includes("volcan") ||
+    n.includes("terraform") ||
+    n.includes("landable")
+  )
+    return "Crust & surface";
   if (n.includes("temp") && !n.includes("star")) return "Crust & surface";
-  if (isSemiMajorAxisColumn(key) || isDistanceLsColumn(key) || n.includes("orbital")) return "Orbit & location";
+  if (isSemiMajorAxisColumn(key) || isDistanceLsColumn(key) || n.includes("orbital"))
+    return "Orbit & location";
   if (
     n.includes("(sample file)") ||
     (n.includes("host") && (n.includes("spectral") || n.includes("class")))
@@ -612,7 +622,7 @@ function edsmColumnSection(key: string): string {
   if (
     n.includes("star system") ||
     n === "starsystem" ||
-    n.includes("system") && (n.includes("name") || n.endsWith("system")) ||
+    (n.includes("system") && (n.includes("name") || n.endsWith("system"))) ||
     (n.includes("body") && n.includes("name"))
   ) {
     return "Orbit & location";
@@ -684,7 +694,11 @@ function buildProfileNumericField(
   };
 }
 
-function buildProfileCategoricalField(path: string, counts: Record<string, number>, id: string): EncyclopediaExomasteryFieldDTO {
+function buildProfileCategoricalField(
+  path: string,
+  counts: Record<string, number>,
+  id: string,
+): EncyclopediaExomasteryFieldDTO {
   const entries = Object.entries(counts).filter(([, c]) => c > 0);
   const total = entries.reduce((s, [, c]) => s + c, 0);
   let modeLabel = "";
@@ -817,7 +831,11 @@ export function buildEncyclopediaExomasteryFromProfile(
 
   const obsVal = (displayPath: string): number | null => {
     if (!fieldCtx?.focusScan) return null;
-    const o = exomasteryObservationForProfilePath(displayPath, fieldCtx.focusScan, fieldCtx.focusRec ?? undefined);
+    const o = exomasteryObservationForProfilePath(
+      displayPath,
+      fieldCtx.focusScan,
+      fieldCtx.focusRec ?? undefined,
+    );
     return o.known ? o.value : null;
   };
 
@@ -949,19 +967,8 @@ export function buildEncyclopediaExomasteryPlanetsPayload(
 
   const planets: EncyclopediaExomasteryPlanetDTO[] = rawRows.map((row, index) => {
     const sys =
-      row["StarSystem"] ||
-      row["Star system"] ||
-      row["System"] ||
-      row["system"] ||
-      row["SystemName"] ||
-      "";
-    const body =
-      row["BodyName"] ||
-      row["Body"] ||
-      row["Planet"] ||
-      row["bodyName"] ||
-      row["Body Name"] ||
-      "";
+      row["StarSystem"] || row["Star system"] || row["System"] || row["system"] || row["SystemName"] || "";
+    const body = row["BodyName"] || row["Body"] || row["Planet"] || row["bodyName"] || row["Body Name"] || "";
     const title =
       sys.trim() && body.trim()
         ? `${sys.trim()} · ${body.trim()}`
@@ -986,7 +993,8 @@ export function buildEncyclopediaExomasteryPlanetsPayload(
         const p = parseNumericCell(key, rawVal);
         const mean = st.mean;
         typicalDisplay = Number.isFinite(mean) ? formatDisplayValue(key, String(mean)) : "—";
-        modeDisplay = p != null && Number.isFinite(p) ? formatDisplayValue(key, rawVal) : rawVal.trim() || "—";
+        modeDisplay =
+          p != null && Number.isFinite(p) ? formatDisplayValue(key, rawVal) : rawVal.trim() || "—";
         if (p != null && Number.isFinite(p) && Number.isFinite(mean)) {
           const den = Math.max(Math.abs(mean), 1e-9);
           deviation = (Math.abs(p - mean) / den) * 100;
@@ -999,7 +1007,13 @@ export function buildEncyclopediaExomasteryPlanetsPayload(
         deviationDisplay = `${Math.round(deviation * 10) / 10}%`;
         distribution =
           st.sampleN > 0
-            ? edsmNumericFieldDistribution(key, st.min, st.max, mean, p != null && Number.isFinite(p) ? p : null)
+            ? edsmNumericFieldDistribution(
+                key,
+                st.min,
+                st.max,
+                mean,
+                p != null && Number.isFinite(p) ? p : null,
+              )
             : undefined;
       } else {
         distribution = undefined;

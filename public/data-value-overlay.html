@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -14,7 +14,10 @@
         padding: 0;
         background: transparent !important;
         overflow: hidden;
-        font-family: Segoe UI, system-ui, sans-serif;
+        font-family:
+          Segoe UI,
+          system-ui,
+          sans-serif;
       }
       .shell {
         min-width: 15rem;
@@ -30,7 +33,9 @@
         background: linear-gradient(165deg, rgba(42, 88, 180, 0.78), rgba(18, 40, 95, 0.82));
         border: 1px solid rgba(120, 190, 255, 0.45);
         border-radius: 10px;
-        box-shadow: 0 8px 28px rgba(0, 20, 60, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        box-shadow:
+          0 8px 28px rgba(0, 20, 60, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
       }
       .title {
         font-size: 0.66rem;
@@ -116,11 +121,15 @@
             document.getElementById("vOrg").textContent = fmt(org);
             document.getElementById("vScan").textContent = scanOn ? fmt(scanCr) : "— (off)";
             document.getElementById("vTot").textContent = fmt(tot);
-            var pend = d.organicPendingSampleCount > 0 ? " · " + d.organicPendingSampleCount + " pending sample(s)" : "";
+            var pend =
+              d.organicPendingSampleCount > 0
+                ? " · " + d.organicPendingSampleCount + " pending sample(s)"
+                : "";
             document.getElementById("subHint").textContent =
               (scanOn
                 ? "Total = organic + merged FSS/DSS scan estimate (same ⊕ toggle as main UI)."
-                : "Total = organic only. Enable ⊕ scan data in main UI to add exploration CR to total.") + pend;
+                : "Total = organic only. Enable ⊕ scan data in main UI to add exploration CR to total.") +
+              pend;
           })
           .catch(function () {});
       }
@@ -129,15 +138,13 @@
 
       try {
         var proto = location.protocol === "https:" ? "wss:" : "ws:";
-        var host =
-          typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
+        var host = typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
         var ws = new WebSocket(proto + "//" + host + "/ws");
         ws.onmessage = function (ev) {
           try {
             var msg = JSON.parse(String(ev.data));
             if (msg.type === "state" && msg.payload) {
-              if (typeof msg.payload.port === "number" && msg.payload.port > 0)
-                lastPort = msg.payload.port;
+              if (typeof msg.payload.port === "number" && msg.payload.port > 0) lastPort = msg.payload.port;
               tick();
             }
           } catch (_) {}

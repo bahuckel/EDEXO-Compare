@@ -25,7 +25,13 @@ import {
 import { createHttpServer, getLanIPv4s } from "./httpServer.js";
 import { lanUrlWithKey, loadOrCreateLanKey } from "./lanAuth.js";
 import { buildEncyclopediaExomasteryPlanetsPayload } from "./exomasteryEdsmEncyclopedia.js";
-import { buildEncyclopediaPayload, buildSnapshot, findSpeciesEntryForEncyclopedia, getCachedSpeciesDatabase, loadSpeciesDatabase } from "./snapshot.js";
+import {
+  buildEncyclopediaPayload,
+  buildSnapshot,
+  findSpeciesEntryForEncyclopedia,
+  getCachedSpeciesDatabase,
+  loadSpeciesDatabase,
+} from "./snapshot.js";
 import { writeExoDataAlertFixFiles } from "./exoDataAlertFix.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
@@ -55,12 +61,7 @@ import { fetchEdsmBodiesAsExplorationRecords, searchEdsmSystemsByName } from "./
 
 const DEFAULT_JOURNAL =
   process.platform === "win32"
-    ? path.join(
-        process.env.USERPROFILE || "",
-        "Saved Games",
-        "Frontier Developments",
-        "Elite Dangerous",
-      )
+    ? path.join(process.env.USERPROFILE || "", "Saved Games", "Frontier Developments", "Elite Dangerous")
     : path.join(process.env.HOME || "", ".local/share/Frontier Developments/Elite Dangerous");
 
 const PATHS_FILE = "edexo-compare-paths.json";
@@ -171,8 +172,7 @@ export function parseCli(argv: string[]): CliOptions {
     bindHost: parseHost(argv),
     port: parsePort(argv),
     shouldOpenMainUI: argv.includes("--open"),
-    quietConsole:
-      process.env.EDEXO_ELECTRON === "1" || argv.includes("--quiet") || argv.includes("--gui"),
+    quietConsole: process.env.EDEXO_ELECTRON === "1" || argv.includes("--quiet") || argv.includes("--gui"),
     useShellLauncher: process.env.EDEXO_USE_SHELL_LAUNCHER === "1" || argv.includes("--shell-launcher"),
   };
 }
@@ -243,10 +243,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     try {
       const raw = readFileSync(path.join(journalDir, "Status.json"), "utf8");
       const fuel = parseStatusJsonFuel(raw);
-      store.applyLiveShipFuel(
-        fuel != null ? fuel.fuelMain : null,
-        fuel != null ? fuel.fuelReserve : null,
-      );
+      store.applyLiveShipFuel(fuel != null ? fuel.fuelMain : null, fuel != null ? fuel.fuelReserve : null);
     } catch {
       store.applyLiveShipFuel(null, null);
     }
@@ -480,13 +477,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           statusRaw = null;
         }
         const footFix = statusRaw ? parseStatusJsonFootFix(statusRaw) : null;
-        ingestExoOrganicJournalLine(
-          store,
-          line,
-          footFix,
-          projectRoot,
-          getCachedSpeciesDatabase(),
-        );
+        ingestExoOrganicJournalLine(store, line, footFix, projectRoot, getCachedSpeciesDatabase());
         push();
       } catch (e) {
         console.error("Journal live line failed (skipped line):", e);
@@ -590,13 +581,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       refreshLiveHudFromJournalDir();
       pushFlush();
       if (cacheResult.steps.length > 0 || cacheResult.loadedFromLegacy) {
-        saveJournalMergeCache(
-          journalDirNorm,
-          manifest,
-          store,
-          projectRoot,
-          store.journalHistoryPreset,
-        );
+        saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
       }
       if (!quietConsole) {
         const s = cacheResult.steps.length;
@@ -739,7 +724,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     }
   }
 
-  const { server, broadcast: broadcastFn, listening } = createHttpServer({
+  const {
+    server,
+    broadcast: broadcastFn,
+    listening,
+  } = createHttpServer({
     port,
     bindHost,
     lanKey,
@@ -915,9 +904,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       pushFlush();
 
       if (!quietConsole) {
-        console.info(
-          `Merged ${journalFilesMerged} journal log file(s) (oldest → newest), tailing latest.`,
-        );
+        console.info(`Merged ${journalFilesMerged} journal log file(s) (oldest → newest), tailing latest.`);
       }
     } catch (e) {
       if (!listeningSettled) {

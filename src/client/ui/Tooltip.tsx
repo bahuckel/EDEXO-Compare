@@ -58,9 +58,12 @@ export function Tooltip({
     setPos(null);
   }, []);
 
-  useEffect(() => () => {
-    if (timer.current != null) window.clearTimeout(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current != null) window.clearTimeout(timer.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!open) return;

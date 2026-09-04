@@ -4,7 +4,12 @@ import { bodyScanValueCredits, starScanValueCredits } from "./explorationValue.j
 import { explorationRecordIsStellar } from "./explorationStellar.js";
 
 /** DSS first-mapper multiplier: use value frozen at `SAAScanComplete` when present (see `dssFirstMapperEligibleByBodyKey`). */
-export function firstMapperForDssPayout(store: GameStateStore, bodyKey: string, r: ExplorationScanRecord, mapped: boolean): boolean {
+export function firstMapperForDssPayout(
+  store: GameStateStore,
+  bodyKey: string,
+  r: ExplorationScanRecord,
+  mapped: boolean,
+): boolean {
   if (!mapped) return false;
   const frozen = store.dssFirstMapperEligibleByBodyKey.get(bodyKey);
   if (frozen !== undefined) return frozen;

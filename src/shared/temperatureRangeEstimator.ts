@@ -1,12 +1,7 @@
 // Elite Dangerous planet surface temperature band (heuristic; journal snapshot + body context).
 // Adapted from user-provided estimator; matching uses tMin / tMax vs species bands.
 
-export type BodyClass =
-  | "icy"
-  | "rocky_cold"
-  | "rocky_standard"
-  | "rocky_thin_atmo"
-  | "high_metal_hot";
+export type BodyClass = "icy" | "rocky_cold" | "rocky_standard" | "rocky_thin_atmo" | "high_metal_hot";
 
 export interface PlanetInput {
   surfaceTemperature?: number; // journal snapshot (K)

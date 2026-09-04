@@ -17,13 +17,7 @@ function deviationToTier(pct: number): EncyclopediaExomasteryFieldTier {
   return "red";
 }
 
-const STELLAR_STEP_TIER: EncyclopediaExomasteryFieldTier[] = [
-  "blue",
-  "green",
-  "yellow",
-  "orange",
-  "red",
-];
+const STELLAR_STEP_TIER: EncyclopediaExomasteryFieldTier[] = ["blue", "green", "yellow", "orange", "red"];
 
 function hostStarProximityRow(s: ExomasteryStatDetailDTO): boolean {
   if (s.kind !== "categorical") return false;
@@ -114,8 +108,7 @@ function habitatDeltaCaption(s: ExomasteryStatDetailDTO): string {
 function formatCrustHeaderSuffix(g: ExomasteryCompositionGroupDTO): string | null {
   const { summary } = g;
   const parts: string[] = [];
-  if (summary.overallMatchPercent != null)
-    parts.push(`Match vs profile ${summary.overallMatchPercent}%`);
+  if (summary.overallMatchPercent != null) parts.push(`Match vs profile ${summary.overallMatchPercent}%`);
   if (summary.best && summary.worst) {
     parts.push(`best ${summary.best.label} (${summary.best.matchPercent}%)`);
     parts.push(`worst ${summary.worst.label} (${summary.worst.matchPercent}%)`);
@@ -127,8 +120,7 @@ function profileNumericSectionKey(s: ExomasteryStatDetailDTO): "body" | "orbit" 
   const path = (s.chartPath ?? "").toLowerCase();
   const lab = (s.label ?? "").toLowerCase();
   const hay = `${path} ${lab}`;
-  if (/\bsystemaddress\b|(^|[^\w])id64|system address|(^|\s)body\s*id\b|\bbodyid\b/i.test(hay))
-    return "misc";
+  if (/\bsystemaddress\b|(^|[^\w])id64|system address|(^|\s)body\s*id\b|\bbodyid\b/i.test(hay)) return "misc";
   if (
     /\bearth\s*mass|mass\s*em|\bmass\b.*\bem\b|\bearth\s*masses\b/.test(hay) ||
     (/gravity/.test(hay) && !/star/.test(hay)) ||
@@ -204,8 +196,7 @@ export function NeonDuplexHabitatRow({
   const legendLo = hostMk ? "Cohort mode" : "Typical (mode)";
   const legendHi = hostMk ? "Journal host" : "This body";
   const typicalRaw = (s.typicalDisplay ?? "").trim();
-  const typicalCell =
-    typicalRaw && typicalRaw !== "—" ? typicalRaw : "N/A (no feeder / cohort value)";
+  const typicalCell = typicalRaw && typicalRaw !== "—" ? typicalRaw : "N/A (no feeder / cohort value)";
   const bodyCell = s.isMissing ? "N/A (not in merged scan)" : s.currentDisplay;
   const dist = s.distribution;
   const canOpen = !!dist && typeof onToggleTypicalDist === "function";
@@ -350,17 +341,15 @@ export function ExomasteryHabitatDetailInner({
     }
     const bodyTraitCategoricalInner = categorical.filter(profileBodyTraitCategorical);
     const categoricalNonBodyTrait = categorical.filter((s) => !profileBodyTraitCategorical(s));
-    const hostStarCompareDuplexInner = categoricalNonBodyTrait
-      .filter(hostStarProximityRow)
-      .sort((a, b) => {
-        const axRank = (x: ExomasteryStatDetailDTO["stellarProximityAxis"]): number =>
-          x === "spectral" ? 0 : x === "subclass" ? 1 : x === "luminosity" ? 2 : 9;
-        const da = axRank(a.stellarProximityAxis);
-        const db = axRank(b.stellarProximityAxis);
-        return da !== db
-          ? da - db
-          : (a.chartPath ?? "").localeCompare(b.chartPath ?? "") || a.label.localeCompare(b.label);
-      });
+    const hostStarCompareDuplexInner = categoricalNonBodyTrait.filter(hostStarProximityRow).sort((a, b) => {
+      const axRank = (x: ExomasteryStatDetailDTO["stellarProximityAxis"]): number =>
+        x === "spectral" ? 0 : x === "subclass" ? 1 : x === "luminosity" ? 2 : 9;
+      const da = axRank(a.stellarProximityAxis);
+      const db = axRank(b.stellarProximityAxis);
+      return da !== db
+        ? da - db
+        : (a.chartPath ?? "").localeCompare(b.chartPath ?? "") || a.label.localeCompare(b.label);
+    });
     const categoryCategoricalInner = categoricalNonBodyTrait.filter((s) => !hostStarProximityRow(s));
     const compositionGroups = detail.compositionGroups ?? [];
     const crustG =
@@ -418,9 +407,7 @@ export function ExomasteryHabitatDetailInner({
         s={row}
         distExpanded={distOpenId === row.id}
         onToggleTypicalDist={
-          row.distribution != null
-            ? () => setDistOpenId((id) => (id === row.id ? null : row.id))
-            : undefined
+          row.distribution != null ? () => setDistOpenId((id) => (id === row.id ? null : row.id)) : undefined
         }
       />
     );
@@ -429,8 +416,7 @@ export function ExomasteryHabitatDetailInner({
     <>
       {showComparisonBodyLine && variant !== "journal" ? (
         <p className="exomastery-habitat-body-line dim tiny">
-          Body:{" "}
-          <strong className="exomastery-habitat-body-strong">{comparisonBodySummary || "—"}</strong>
+          Body: <strong className="exomastery-habitat-body-strong">{comparisonBodySummary || "—"}</strong>
         </p>
       ) : null}
 
@@ -442,138 +428,138 @@ export function ExomasteryHabitatDetailInner({
 
       <div className="encyclopedia-exomastery-scroll">
         <section className="encyclopedia-exomastery-planet">
-            {hasClimate ? (
-              <>
-                <h4 className="exomastery-detail-section-title">Climate &amp; gravity</h4>
-                {atmosphereClimateStats.length ? (
+          {hasClimate ? (
+            <>
+              <h4 className="exomastery-detail-section-title">Climate &amp; gravity</h4>
+              {atmosphereClimateStats.length ? (
+                <div className="exo-neon-duplex-fields">
+                  {atmosphereClimateStats.map((s) => (
+                    <HabitatOrJournalRow key={s.id} s={s} />
+                  ))}
+                </div>
+              ) : null}
+              {(variant === "profile" ? atmoGasRows.length > 0 : atmoGasRows.length > 0) ? (
+                <>
+                  <h5 className="exomastery-subsection-title">Atmosphere composition (gases)</h5>
+                  {variant === "profile" && atmoGasSummary ? (
+                    <CompositionSummaryLine g={atmoGasSummary} />
+                  ) : null}
                   <div className="exo-neon-duplex-fields">
-                    {atmosphereClimateStats.map((s) => (
+                    {atmoGasRows.map((s) => (
                       <HabitatOrJournalRow key={s.id} s={s} />
                     ))}
                   </div>
-                ) : null}
-                {(variant === "profile" ? atmoGasRows.length > 0 : atmoGasRows.length > 0) ? (
-                  <>
-                    <h5 className="exomastery-subsection-title">Atmosphere composition (gases)</h5>
-                    {variant === "profile" && atmoGasSummary ? <CompositionSummaryLine g={atmoGasSummary} /> : null}
-                    <div className="exo-neon-duplex-fields">
-                      {atmoGasRows.map((s) => (
-                        <HabitatOrJournalRow key={s.id} s={s} />
-                      ))}
-                    </div>
-                  </>
-                ) : null}
-              </>
-            ) : null}
+                </>
+              ) : null}
+            </>
+          ) : null}
 
-            {crustBlocksResolved.map((g) => {
-              const suf = variant === "profile" ? formatCrustHeaderSuffix(g) : null;
-              return (
-                <div key={g.id}>
-                  <h4 className="exomastery-detail-section-title exomastery-detail-section-title--crust">
-                    {g.title}
-                    {suf ? (
-                      <span className="exomastery-crust-summary-inline tiny dim"> — {suf}</span>
-                    ) : null}
-                  </h4>
-                  <div className="exo-neon-duplex-fields">
-                    {g.rows.map((s) => (
-                      <HabitatOrJournalRow key={s.id} s={s} />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
-            {bodyTraitsCombined.length > 0 ? (
-              <>
-                <h4 className="exomastery-detail-section-title">Body traits</h4>
+          {crustBlocksResolved.map((g) => {
+            const suf = variant === "profile" ? formatCrustHeaderSuffix(g) : null;
+            return (
+              <div key={g.id}>
+                <h4 className="exomastery-detail-section-title exomastery-detail-section-title--crust">
+                  {g.title}
+                  {suf ? <span className="exomastery-crust-summary-inline tiny dim"> — {suf}</span> : null}
+                </h4>
                 <div className="exo-neon-duplex-fields">
-                  {bodyTraitsCombined.map((s) => (
+                  {g.rows.map((s) => (
                     <HabitatOrJournalRow key={s.id} s={s} />
                   ))}
                 </div>
-              </>
-            ) : null}
+              </div>
+            );
+          })}
 
-            {traitNumerics.length > 0 ? (
-              <>
-                <h4 className="exomastery-detail-section-title">Surface traits</h4>
-                <div className="exo-neon-duplex-fields">
-                  {traitNumerics.map((s) => (
-                    <HabitatOrJournalRow key={s.id} s={s} />
-                  ))}
-                </div>
-              </>
-            ) : null}
+          {bodyTraitsCombined.length > 0 ? (
+            <>
+              <h4 className="exomastery-detail-section-title">Body traits</h4>
+              <div className="exo-neon-duplex-fields">
+                {bodyTraitsCombined.map((s) => (
+                  <HabitatOrJournalRow key={s.id} s={s} />
+                ))}
+              </div>
+            </>
+          ) : null}
 
-            {orbitNumerics.length > 0 ? (
-              <>
-                <h4 className="exomastery-detail-section-title">Orbit &amp; rotation</h4>
-                <div className="exo-neon-duplex-fields">
-                  {orbitNumerics.map((s) => (
-                    <HabitatOrJournalRow key={s.id} s={s} />
-                  ))}
-                </div>
-              </>
-            ) : null}
+          {traitNumerics.length > 0 ? (
+            <>
+              <h4 className="exomastery-detail-section-title">Surface traits</h4>
+              <div className="exo-neon-duplex-fields">
+                {traitNumerics.map((s) => (
+                  <HabitatOrJournalRow key={s.id} s={s} />
+                ))}
+              </div>
+            </>
+          ) : null}
 
-            {miscNumerics.length > 0 ? (
-              <>
-                <h4 className="exomastery-detail-section-title">Misc</h4>
-                <div className="exo-neon-duplex-fields">
-                  {miscNumerics.map((s) => (
-                    <HabitatOrJournalRow key={s.id} s={s} />
-                  ))}
-                </div>
-              </>
-            ) : null}
+          {orbitNumerics.length > 0 ? (
+            <>
+              <h4 className="exomastery-detail-section-title">Orbit &amp; rotation</h4>
+              <div className="exo-neon-duplex-fields">
+                {orbitNumerics.map((s) => (
+                  <HabitatOrJournalRow key={s.id} s={s} />
+                ))}
+              </div>
+            </>
+          ) : null}
 
-            {hostStarCompareDuplex.length > 0 ? (
-              <>
-                <h4 className="exomastery-detail-section-title">Host star — EDSM cohort vs journal</h4>
-                <p className="exomastery-habitat-body-line dim tiny habitat-host-mk-legend">
-                  Duplex tint: match = blue; +1 green; +2 yellow; +3 orange; +4 or more red (Harvard order, subclass
-                  digit, Yerkes class).
-                </p>
-                <div className="exo-neon-duplex-fields exo-neon-duplex-fields--host-mk">
-                  {hostStarCompareDuplex.map((s) => (
-                    <NeonDuplexHabitatRow
-                      key={s.id}
-                      s={s}
-                      distExpanded={distOpenId === s.id}
-                      onToggleTypicalDist={
-                        s.distribution != null
-                          ? () => setDistOpenId((id) => (id === s.id ? null : s.id))
-                          : undefined
-                      }
-                    />
-                  ))}
-                </div>
-              </>
-            ) : null}
+          {miscNumerics.length > 0 ? (
+            <>
+              <h4 className="exomastery-detail-section-title">Misc</h4>
+              <div className="exo-neon-duplex-fields">
+                {miscNumerics.map((s) => (
+                  <HabitatOrJournalRow key={s.id} s={s} />
+                ))}
+              </div>
+            </>
+          ) : null}
 
-            {categoryCategorical.length > 0 ? (
-              <>
-                <h4 className="exomastery-detail-section-title">Categories</h4>
-                <div className="exo-neon-duplex-fields">
-                  {categoryCategorical.map((s) => (
-                    <NeonDuplexHabitatRow
-                      key={s.id}
-                      s={s}
-                      distExpanded={distOpenId === s.id}
-                      onToggleTypicalDist={
-                        s.distribution != null
-                          ? () => setDistOpenId((id) => (id === s.id ? null : s.id))
-                          : undefined
-                      }
-                    />
-                  ))}
-                </div>
-              </>
-            ) : null}
-          </section>
-        </div>
+          {hostStarCompareDuplex.length > 0 ? (
+            <>
+              <h4 className="exomastery-detail-section-title">Host star — EDSM cohort vs journal</h4>
+              <p className="exomastery-habitat-body-line dim tiny habitat-host-mk-legend">
+                Duplex tint: match = blue; +1 green; +2 yellow; +3 orange; +4 or more red (Harvard order,
+                subclass digit, Yerkes class).
+              </p>
+              <div className="exo-neon-duplex-fields exo-neon-duplex-fields--host-mk">
+                {hostStarCompareDuplex.map((s) => (
+                  <NeonDuplexHabitatRow
+                    key={s.id}
+                    s={s}
+                    distExpanded={distOpenId === s.id}
+                    onToggleTypicalDist={
+                      s.distribution != null
+                        ? () => setDistOpenId((id) => (id === s.id ? null : s.id))
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {categoryCategorical.length > 0 ? (
+            <>
+              <h4 className="exomastery-detail-section-title">Categories</h4>
+              <div className="exo-neon-duplex-fields">
+                {categoryCategorical.map((s) => (
+                  <NeonDuplexHabitatRow
+                    key={s.id}
+                    s={s}
+                    distExpanded={distOpenId === s.id}
+                    onToggleTypicalDist={
+                      s.distribution != null
+                        ? () => setDistOpenId((id) => (id === s.id ? null : s.id))
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+        </section>
+      </div>
     </>
   );
 }

@@ -120,12 +120,12 @@ export function readGenusMinSampleDistanceM(jsonPath: string): number | null {
   }
   if (!j || typeof j !== "object") return null;
   const root = j as Record<string, unknown>;
-  const meta =
-    root.meta && typeof root.meta === "object" ? (root.meta as Record<string, unknown>) : null;
+  const meta = root.meta && typeof root.meta === "object" ? (root.meta as Record<string, unknown>) : null;
   if (meta) {
     const ms = meta.minSampleDistanceM;
     if (typeof ms === "number" && Number.isFinite(ms) && ms > 0) return Math.round(ms);
-    const gen = meta.general && typeof meta.general === "object" ? (meta.general as Record<string, unknown>) : null;
+    const gen =
+      meta.general && typeof meta.general === "object" ? (meta.general as Record<string, unknown>) : null;
     const m2 = gen?.min_sample_distance_m;
     if (typeof m2 === "number" && Number.isFinite(m2) && m2 > 0) return Math.round(m2);
   }
@@ -199,10 +199,7 @@ function normalizeAtmosphereToJournal(labels: string[]): string[] {
       continue;
     }
     const stripped = stripAtmosphereQualifier(s);
-    const tryKeys = [
-      s.toLowerCase().replace(/\s+/g, " "),
-      stripped.toLowerCase().replace(/\s+/g, " "),
-    ];
+    const tryKeys = [s.toLowerCase().replace(/\s+/g, " "), stripped.toLowerCase().replace(/\s+/g, " ")];
     let mapped = false;
     for (const k of tryKeys) {
       if (ATMOSPHERE_PHRASE_TO_JOURNAL[k]) {
@@ -210,7 +207,11 @@ function normalizeAtmosphereToJournal(labels: string[]): string[] {
         mapped = true;
         break;
       }
-      const beforeDash = k.split(/\s*-\s*/)[0]?.trim().toLowerCase() ?? "";
+      const beforeDash =
+        k
+          .split(/\s*-\s*/)[0]
+          ?.trim()
+          .toLowerCase() ?? "";
       if (beforeDash && beforeDash !== k && ATMOSPHERE_PHRASE_TO_JOURNAL[beforeDash]) {
         out.push(ATMOSPHERE_PHRASE_TO_JOURNAL[beforeDash]!);
         mapped = true;
@@ -248,7 +249,10 @@ function toStringArray(v: unknown): string[] | undefined {
     return out.length ? out : undefined;
   }
   if (typeof v === "string" && v.trim()) {
-    const parts = v.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
+    const parts = v
+      .split(/[,;|]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     return parts.length ? parts : [v.trim()];
   }
   return undefined;
@@ -368,10 +372,22 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
       };
     } else {
       const tMin = toNumber(
-        firstDefined(src, ["minTemperature", "tempMin", "temperatureMin", "surfaceTemperatureMinK", "minTempK"]),
+        firstDefined(src, [
+          "minTemperature",
+          "tempMin",
+          "temperatureMin",
+          "surfaceTemperatureMinK",
+          "minTempK",
+        ]),
       );
       const tMax = toNumber(
-        firstDefined(src, ["maxTemperature", "tempMax", "temperatureMax", "surfaceTemperatureMaxK", "maxTempK"]),
+        firstDefined(src, [
+          "maxTemperature",
+          "tempMax",
+          "temperatureMax",
+          "surfaceTemperatureMaxK",
+          "maxTempK",
+        ]),
       );
       const t = mergeRange(undefined, tMin, tMax);
       if (t) c.surfaceTemperatureK = t;
@@ -418,7 +434,13 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
     };
   }
 
-  const apc = pickString(src, "atmospherePressureCategory", "pressureCategory", "atmosphere_pressure", "atmospherePressure");
+  const apc = pickString(
+    src,
+    "atmospherePressureCategory",
+    "pressureCategory",
+    "atmosphere_pressure",
+    "atmospherePressure",
+  );
   if (apc) {
     const lo = apc.trim().toLowerCase();
     if (lo === "thin" || lo === "thick") c.atmospherePressureCategory = lo;
@@ -460,7 +482,9 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
     c.volcanismActiveRequired = true;
   }
 
-  const mnotes = toStringArray(firstDefined(src, ["matchContextNotes", "habitatConditionNotes", "conditionNotes", "codexNotes"]));
+  const mnotes = toStringArray(
+    firstDefined(src, ["matchContextNotes", "habitatConditionNotes", "conditionNotes", "codexNotes"]),
+  );
   if (mnotes?.length) c.matchContextNotes = mnotes.map((s) => s.trim()).filter(Boolean);
 
   return c;
@@ -481,7 +505,9 @@ function collectColorVariantNullSpectralKeys(metaRec: Record<string, unknown> | 
 }
 
 /** Stellar spectral keys (`TTS` or single-letter) whose mapping value is not JSON `null` — for soft UI hints. */
-function collectColorVariantPreferredStellarSpectralKeys(metaRec: Record<string, unknown> | null): string[] | undefined {
+function collectColorVariantPreferredStellarSpectralKeys(
+  metaRec: Record<string, unknown> | null,
+): string[] | undefined {
   if (!metaRec) return undefined;
   const cv = asRecord(metaRec.color_variants);
   const mapping = asRecord(cv?.mapping);
@@ -507,9 +533,7 @@ function readMinSampleDistanceFromMetaRecord(meta: Record<string, unknown> | nul
   return undefined;
 }
 
-function collectGenusColorVariantRich(
-  meta: Record<string, unknown> | null,
-): {
+function collectGenusColorVariantRich(meta: Record<string, unknown> | null): {
   rule?: string;
   stellarMap?: Record<string, string>;
   materialDriven?: boolean;
@@ -559,7 +583,10 @@ function buildCriteriaForRow(row: Record<string, unknown>): SpeciesCriterion {
 
 function slugId(genus: string, displayName: string, explicitId?: string): string {
   if (explicitId?.trim()) return explicitId.trim();
-  const g = genus.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  const g = genus
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_");
   const n = displayName
     .trim()
     .toLowerCase()
@@ -588,9 +615,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
   }
 
   const genusFromFile =
-    (asRecord(parsed)?.genus as string) ||
-    (asRecord(parsed)?.Genus as string) ||
-    folderBaseName;
+    (asRecord(parsed)?.genus as string) || (asRecord(parsed)?.Genus as string) || folderBaseName;
 
   const rows = extractSpeciesRows(parsed);
   const out: SpeciesEntry[] = [];
@@ -602,8 +627,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
   const genusMinSampleDistanceM = readMinSampleDistanceFromMetaRecord(meta);
   const colorRich = collectGenusColorVariantRich(meta);
   const general = asRecord(rootRecord?.general) ?? asRecord(meta?.general);
-  const planetReq =
-    asRecord(general?.planet_requirements) ?? asRecord(meta?.genusWideRequirements) ?? null;
+  const planetReq = asRecord(general?.planet_requirements) ?? asRecord(meta?.genusWideRequirements) ?? null;
   const pr = planetReq ?? {};
   let genusPlanetTypes = toStringArray(pr.planet_types);
   if (!genusPlanetTypes?.length) genusPlanetTypes = toStringArray(pr.planet_types_hint);
@@ -613,14 +637,33 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
 
   rows.forEach((row, idx) => {
     const r = row;
-    const displayName = pickString(r, "displayName", "DisplayName", "name", "Name", "species", "Species", "speciesName", "Species_Localised", "localisedName", "LocalisedName");
+    const displayName = pickString(
+      r,
+      "displayName",
+      "DisplayName",
+      "name",
+      "Name",
+      "species",
+      "Species",
+      "speciesName",
+      "Species_Localised",
+      "localisedName",
+      "LocalisedName",
+    );
     if (!displayName) return;
 
-    const description =
-      pickString(r, "description", "Description", "desc", "summary", "Summary") ??
-      "";
+    const description = pickString(r, "description", "Description", "desc", "summary", "Summary") ?? "";
 
-    const photoFile = pickString(r, "photoFile", "photo", "Photo", "image", "Image", "codexImage", "codex_image");
+    const photoFile = pickString(
+      r,
+      "photoFile",
+      "photo",
+      "Photo",
+      "image",
+      "Image",
+      "codexImage",
+      "codex_image",
+    );
 
     const notes = pickString(r, "notes", "Notes", "remark", "tip");
 
@@ -654,9 +697,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
       notes: notes ?? undefined,
       dataSourceRelPath: rel,
       ...(genusStarColorNullSpectralClasses?.length ? { genusStarColorNullSpectralClasses } : {}),
-      ...(genusStarColorPreferredSpectralClasses?.length
-        ? { genusStarColorPreferredSpectralClasses }
-        : {}),
+      ...(genusStarColorPreferredSpectralClasses?.length ? { genusStarColorPreferredSpectralClasses } : {}),
       ...(genusMinSampleDistanceM != null ? { genusMinSampleDistanceM } : {}),
       ...(colorRich?.rule ? { genusColorVariantRule: colorRich.rule } : {}),
       ...(colorRich?.stellarMap && Object.keys(colorRich.stellarMap).length
@@ -721,7 +762,16 @@ function extractSpeciesRows(parsed: unknown): Record<string, unknown>[] {
     }
   }
 
-  const arrays = ["entries", "Entries", "variants", "Variants", "data", "Data", "organisms", "Organisms"] as const;
+  const arrays = [
+    "entries",
+    "Entries",
+    "variants",
+    "Variants",
+    "data",
+    "Data",
+    "organisms",
+    "Organisms",
+  ] as const;
   for (const key of arrays) {
     const a = root[key];
     if (Array.isArray(a)) {

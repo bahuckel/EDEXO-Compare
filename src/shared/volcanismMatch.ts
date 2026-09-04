@@ -62,7 +62,10 @@ export function expandVolcanismCriterionFragments(frags: string[]): string[] {
   return [...new Set(out)];
 }
 
-export function volcanismJournalMatchesFragments(journalVolcanism: string | undefined, frags: string[]): boolean {
+export function volcanismJournalMatchesFragments(
+  journalVolcanism: string | undefined,
+  frags: string[],
+): boolean {
   if (frags.some((f) => (f ?? "").trim().toUpperCase() === "ALL")) {
     const vol = (journalVolcanism ?? "").trim().toLowerCase();
     if (!vol || vol.includes("no volcanism")) return false;

@@ -76,7 +76,9 @@ function inRange(v: number, min?: number, max?: number): boolean {
   return true;
 }
 
-function planetTemperatureBandFromSnapshot(est: EstimatedSurfaceTempBand | null): PlanetTemperatureBand | null {
+function planetTemperatureBandFromSnapshot(
+  est: EstimatedSurfaceTempBand | null,
+): PlanetTemperatureBand | null {
   if (!est) return null;
   return { minK: est.minK, maxK: est.maxK };
 }
@@ -114,7 +116,7 @@ function linkedTempCapApplies(scan: PlanetScan | null, c: SpeciesCriterion): boo
     const allowed = linkedAtmo!;
     return atmospheresMatchSpeciesList(scan, allowed);
   }
-  return !!(c.atmosphereTypeAnyOf?.length);
+  return !!c.atmosphereTypeAnyOf?.length;
 }
 
 /** Mirrors matcher: UI cards vs selected BODY planet. */
@@ -141,7 +143,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       ? [`Types: ${c.planetClassAnyOf!.join(", ")}`]
       : bac
         ? ["Any"]
-        : ['Matcher rejects non-bacterium rows missing planetClassAnyOf — malformed JSON.'];
+        : ["Matcher rejects non-bacterium rows missing planetClassAnyOf — malformed JSON."];
 
     let tier: EncyclopediaSpawnTier = "neutral";
     let caption = "Codex criterion";
@@ -164,7 +166,9 @@ export function buildEncyclopediaSpawnConditionCards(args: {
 
   /* Atmosphere types (+ brain-tree genus airless) — encyclopedia skips for bacterium (still matched server-side). */
   if (!bac && c.atmosphereTypeAnyOf?.length) {
-    const lines = [`Allowed: ${c.atmosphereTypeAnyOf.map((a) => (!a?.trim() ? "(no atmosphere)" : a)).join(", ")}`];
+    const lines = [
+      `Allowed: ${c.atmosphereTypeAnyOf.map((a) => (!a?.trim() ? "(no atmosphere)" : a)).join(", ")}`,
+    ];
     let tier: EncyclopediaSpawnTier;
     let caption: string;
     if (!scan) {
@@ -232,7 +236,8 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       const expanded = expandVolcanismCriterionFragments(c.volcanismIncludes!);
       lines.push(`Journal volcanism must include one of: ${expanded.join(" / ")}`);
     }
-    if (explicitVolcano && !volcanoFragments) lines.push("volcanismActiveRequired — volcanism field must exist.");
+    if (explicitVolcano && !volcanoFragments)
+      lines.push("volcanismActiveRequired — volcanism field must exist.");
     let tier: EncyclopediaSpawnTier = "yellow";
     let caption = "No body scan";
 
@@ -295,8 +300,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
         midK != null
           ? `Band ${planetBand.minK}–${planetBand.maxK} K overlaps (mid ~${Math.round(midK)} K)`
           : `Band ${planetBand.minK}–${planetBand.maxK} K overlaps species gate`;
-      if (surf != null && Number.isFinite(surf))
-        caption = `${caption} · journal ${surf.toFixed(1)} K`;
+      if (surf != null && Number.isFinite(surf)) caption = `${caption} · journal ${surf.toFixed(1)} K`;
     }
 
     out.push({ id: "surface-temperature", label: "Surface temperature", lines, caption, tier });
@@ -428,7 +432,10 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   }
 
   /* Orbit distance gate */
-  if (c.orbitDistanceFromParentStarLs?.min !== undefined || c.orbitDistanceFromParentStarLs?.max !== undefined) {
+  if (
+    c.orbitDistanceFromParentStarLs?.min !== undefined ||
+    c.orbitDistanceFromParentStarLs?.max !== undefined
+  ) {
     const orb = c.orbitDistanceFromParentStarLs!;
     const lines = [`Orbit (${orb.min ?? "—"} … ${orb.max ?? "—"} LS from host)`];
     const v = ctx?.orbitDistanceFromParentStarLs ?? null;
@@ -514,10 +521,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
         caption = "Could not parse spectral key from journal star type";
       }
 
-      const lines = [
-        `Colour-table excludes: ${nulls.join(", ")}`,
-        `Host string: ${host}`,
-      ];
+      const lines = [`Colour-table excludes: ${nulls.join(", ")}`, `Host string: ${host}`];
       out.push({ id: "supported-star-types", label: "Supported star types", lines, caption, tier });
     }
   }

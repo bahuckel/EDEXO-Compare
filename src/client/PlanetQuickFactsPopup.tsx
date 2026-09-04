@@ -19,7 +19,6 @@ function roleLabel(role: SystemMapBodyDetailDTO["starRole"]): string {
   return "Not used for fuel scooping or common supercharge routes";
 }
 
-
 function DetailHeaderChips({ detail }: { detail: SystemMapBodyDetailDTO }) {
   const chips: ReactNode[] = [];
   const starLike = detail.isStar === true || detail.journalStellar === true;
@@ -32,7 +31,11 @@ function DetailHeaderChips({ detail }: { detail: SystemMapBodyDetailDTO }) {
   } else if (starLike) {
     if (detail.fullSpectralNotation) {
       chips.push(
-        <span key="mk" className="body-detail-chip body-detail-chip--star" title="Harvard/Yerkes style from Scan fields">
+        <span
+          key="mk"
+          className="body-detail-chip body-detail-chip--star"
+          title="Harvard/Yerkes style from Scan fields"
+        >
           {detail.fullSpectralNotation}
         </span>,
       );
@@ -52,7 +55,11 @@ function DetailHeaderChips({ detail }: { detail: SystemMapBodyDetailDTO }) {
       );
     } else {
       chips.push(
-        <span key="nscoop" className="body-detail-chip body-detail-chip--scoop-no" title="Not a main-sequence fuel-scoop target (KGBFOAM-style routing).">
+        <span
+          key="nscoop"
+          className="body-detail-chip body-detail-chip--scoop-no"
+          title="Not a main-sequence fuel-scoop target (KGBFOAM-style routing)."
+        >
           SCOOP−
         </span>,
       );
@@ -103,13 +110,12 @@ function DetailHeaderChips({ detail }: { detail: SystemMapBodyDetailDTO }) {
   return <div className="body-detail-chip-row">{chips}</div>;
 }
 
-
 function BaryDetailCard({ detail }: { detail: SystemMapBodyDetailDTO }) {
   return (
     <DetailCard title="Mutual barycentre">
       <p className="body-detail-lead dim">
-        Journal <code className="body-detail-code">ScanBaryCentre</code> — center of mass for bodies that co-orbit. Not
-        landable; shown for orbital reference only.
+        Journal <code className="body-detail-code">ScanBaryCentre</code> — center of mass for bodies that
+        co-orbit. Not landable; shown for orbital reference only.
       </p>
       <KvList>
         {detail.baryJournalNullId != null ? (
@@ -117,22 +123,33 @@ function BaryDetailCard({ detail }: { detail: SystemMapBodyDetailDTO }) {
             label="Journal BodyID"
             value={
               <>
-                {detail.baryJournalNullId}{" "}
-                <span className="dim tiny">(internal, not a ship body id)</span>
+                {detail.baryJournalNullId} <span className="dim tiny">(internal, not a ship body id)</span>
               </>
             }
           />
         ) : null}
-        <KvRow label="Semi-major axis" value={detail.semiMajorAxis != null ? `${detail.semiMajorAxis.toExponential(5)} m` : null} />
+        <KvRow
+          label="Semi-major axis"
+          value={detail.semiMajorAxis != null ? `${detail.semiMajorAxis.toExponential(5)} m` : null}
+        />
         <KvRow label="Eccentricity" value={detail.baryEccentricity} />
-        <KvRow label="Orbital inclination" value={detail.baryOrbitalInclination != null ? `${detail.baryOrbitalInclination}°` : null} />
+        <KvRow
+          label="Orbital inclination"
+          value={detail.baryOrbitalInclination != null ? `${detail.baryOrbitalInclination}°` : null}
+        />
         <KvRow label="Periapsis" value={detail.baryPeriapsis != null ? `${detail.baryPeriapsis}°` : null} />
         <KvRow
           label="Orbital period"
           value={detail.baryOrbitalPeriod != null ? `${detail.baryOrbitalPeriod.toExponential(4)} s` : null}
         />
-        <KvRow label="Ascending node" value={detail.baryAscendingNode != null ? `${detail.baryAscendingNode}°` : null} />
-        <KvRow label="Mean anomaly" value={detail.baryMeanAnomaly != null ? `${detail.baryMeanAnomaly}°` : null} />
+        <KvRow
+          label="Ascending node"
+          value={detail.baryAscendingNode != null ? `${detail.baryAscendingNode}°` : null}
+        />
+        <KvRow
+          label="Mean anomaly"
+          value={detail.baryMeanAnomaly != null ? `${detail.baryMeanAnomaly}°` : null}
+        />
       </KvList>
     </DetailCard>
   );
@@ -182,8 +199,8 @@ function WorldDetailBody({
       {detail.isInferredPlaceholder ? (
         <DetailCard title="Placeholder">
           <p className="body-detail-lead body-detail-inferred-note">
-            Inferred from Elite designation (sibling / moon letter). Not in merged journal yet — will fill in after you
-            discover this body.
+            Inferred from Elite designation (sibling / moon letter). Not in merged journal yet — will fill in
+            after you discover this body.
           </p>
         </DetailCard>
       ) : null}
@@ -213,13 +230,25 @@ function WorldDetailBody({
               />
             ) : null}
             {!detail.isStar && detail.journalStellar !== true && detail.planetClass ? (
-              <KvRow label="Body type" value={detail.planetClass} hint="Journal PlanetClass from merged Scan row." />
+              <KvRow
+                label="Body type"
+                value={detail.planetClass}
+                hint="Journal PlanetClass from merged Scan row."
+              />
             ) : null}
             {!detail.isStar && detail.journalStellar !== true && detail.terraformState ? (
-              <KvRow label="Terraform" value={detail.terraformState} hint="Journal TerraformState when present." />
+              <KvRow
+                label="Terraform"
+                value={detail.terraformState}
+                hint="Journal TerraformState when present."
+              />
             ) : null}
             {!detail.isStar && detail.journalStellar !== true && detail.landable != null ? (
-              <KvRow label="Landable" value={detail.landable ? "Yes" : "No"} hint="Journal Landable flag from detailed scan." />
+              <KvRow
+                label="Landable"
+                value={detail.landable ? "Yes" : "No"}
+                hint="Journal Landable flag from detailed scan."
+              />
             ) : null}
           </KvList>
         </DetailCard>
@@ -252,8 +281,15 @@ function WorldDetailBody({
       {hasPhysical ? (
         <DetailCard title="Physical">
           <KvList>
-            <KvRow label="Mass" value={detail.massEM != null ? `${detail.massEM.toFixed(4)} M⊕` : null} hint="Journal mass in Earth masses when present." />
-            <KvRow label="Stellar mass" value={detail.stellarMass != null ? `${detail.stellarMass.toFixed(4)} M☉` : null} />
+            <KvRow
+              label="Mass"
+              value={detail.massEM != null ? `${detail.massEM.toFixed(4)} M⊕` : null}
+              hint="Journal mass in Earth masses when present."
+            />
+            <KvRow
+              label="Stellar mass"
+              value={detail.stellarMass != null ? `${detail.stellarMass.toFixed(4)} M☉` : null}
+            />
             <KvRow
               label="Surface gravity"
               value={gravLine}
@@ -272,7 +308,11 @@ function WorldDetailBody({
                 </button>
               </div>
             ) : null}
-            <KvRow label="Atmosphere type" value={detail.atmosphereType} hint="Journal AtmosphereType when set." />
+            <KvRow
+              label="Atmosphere type"
+              value={detail.atmosphereType}
+              hint="Journal AtmosphereType when set."
+            />
             <KvRow label="Atmosphere" value={detail.atmosphere} hint="Journal Atmosphere summary string." />
             <KvRow label="Volcanism" value={detail.volcanism} />
             <KvRow label="Tidal lock" value={detail.tidalLock === true ? "Yes" : null} />
@@ -290,8 +330,12 @@ function WorldDetailBody({
           title="Single best price-list match × footfall multiplier — not the full slot-sum band (needs bio signals and priced candidates)."
         >
           <span className="body-detail-callout-label">Top single-species heuristic</span>
-          <span className="body-detail-callout-value">{detail.maxExoHeuristicCredits.toLocaleString()} CR</span>
-          <p className="body-detail-callout-note dim tiny">Map tier hint — full range needs bio signals + list prices on candidates.</p>
+          <span className="body-detail-callout-value">
+            {detail.maxExoHeuristicCredits.toLocaleString()} CR
+          </span>
+          <p className="body-detail-callout-note dim tiny">
+            Map tier hint — full range needs bio signals + list prices on candidates.
+          </p>
         </div>
       ) : null}
 
@@ -303,11 +347,15 @@ function WorldDetailBody({
               title="FSS discovery value from journal scan state (first discover bonus on second line when applicable)."
             >
               <div className="body-detail-mini-card-label">FSS · discovery</div>
-              <div className="body-detail-mini-card-value">{detail.fssCredits != null ? `${detail.fssCredits.toLocaleString()} CR` : "—"}</div>
+              <div className="body-detail-mini-card-value">
+                {detail.fssCredits != null ? `${detail.fssCredits.toLocaleString()} CR` : "—"}
+              </div>
               {detail.fssFirstDiscoverBonus != null && detail.fssFirstDiscoverBonus > 0 ? (
                 <p className="dim tiny body-detail-mini-card-meta">
                   + first discovery {detail.fssFirstDiscoverBonus.toLocaleString()} CR → total{" "}
-                  {detail.fssFirstDiscoverCredits != null ? `${detail.fssFirstDiscoverCredits.toLocaleString()} CR` : "—"}
+                  {detail.fssFirstDiscoverCredits != null
+                    ? `${detail.fssFirstDiscoverCredits.toLocaleString()} CR`
+                    : "—"}
                 </p>
               ) : null}
             </div>
@@ -316,7 +364,9 @@ function WorldDetailBody({
               title="DSS mapped payout when complete; uplift and projections use the same heuristics as the system map totals."
             >
               <div className="body-detail-mini-card-label">DSS · mapped</div>
-              <div className="body-detail-mini-card-value">{detail.dssCredits != null ? `${detail.dssCredits.toLocaleString()} CR` : "—"}</div>
+              <div className="body-detail-mini-card-value">
+                {detail.dssCredits != null ? `${detail.dssCredits.toLocaleString()} CR` : "—"}
+              </div>
               {detail.dssVersusFssUpliftCredits != null && detail.dssVersusFssUpliftCredits > 0 ? (
                 <p className="dim tiny body-detail-mini-card-meta">
                   Uplift vs FSS: +{detail.dssVersusFssUpliftCredits.toLocaleString()} CR
@@ -328,12 +378,16 @@ function WorldDetailBody({
                 </p>
               ) : null}
               {detail.dssProbeEfficientApplied === true ? (
-                <p className="dim tiny body-detail-mini-card-meta">Efficient probes: ×1.25 tail on mapped est.</p>
+                <p className="dim tiny body-detail-mini-card-meta">
+                  Efficient probes: ×1.25 tail on mapped est.
+                </p>
               ) : null}
               {detail.dssFirstDiscoverBonus != null && detail.dssFirstDiscoverBonus > 0 ? (
                 <p className="dim tiny body-detail-mini-card-meta">
                   + first disc. &amp; map {detail.dssFirstDiscoverBonus.toLocaleString()} CR → total{" "}
-                  {detail.dssFirstDiscoverCredits != null ? `${detail.dssFirstDiscoverCredits.toLocaleString()} CR` : "—"}
+                  {detail.dssFirstDiscoverCredits != null
+                    ? `${detail.dssFirstDiscoverCredits.toLocaleString()} CR`
+                    : "—"}
                 </p>
               ) : null}
             </div>
@@ -396,7 +450,11 @@ function DetailBody({
         </div>
       </header>
 
-      {detail.isMutualBarycentre ? <BaryDetailCard detail={detail} /> : <WorldDetailBody detail={detail} onGoToBioBody={onGoToBioBody} />}
+      {detail.isMutualBarycentre ? (
+        <BaryDetailCard detail={detail} />
+      ) : (
+        <WorldDetailBody detail={detail} onGoToBioBody={onGoToBioBody} />
+      )}
     </div>
   );
 }
@@ -479,12 +537,14 @@ export function PlanetQuickFactsPopup({
         <div className="body-detail-stack">
           <header className="body-detail-header">
             <h4 className="body-detail-title">{fallbackTitle}</h4>
-            {fallbackSubtitle ? <p className="dim tiny planet-quick-fallback-sub">{fallbackSubtitle}</p> : null}
+            {fallbackSubtitle ? (
+              <p className="dim tiny planet-quick-fallback-sub">{fallbackSubtitle}</p>
+            ) : null}
           </header>
           <DetailCard title="No journal detail yet">
             <p className="body-detail-lead dim">
-              After you FSS/DSS this body, reopen the map (or open it from the exo list) — class, atmosphere, climate
-              estimates, terraform flags, and biology matches will line up with the main tab.
+              After you FSS/DSS this body, reopen the map (or open it from the exo list) — class, atmosphere,
+              climate estimates, terraform flags, and biology matches will line up with the main tab.
             </p>
             <KvList>
               <KvRow label="Map body id" value={String(bodyId)} />

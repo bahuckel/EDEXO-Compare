@@ -27,7 +27,10 @@ import { resolveSpeciesPhoto } from "./speciesPhotos.js";
 import { loadSpeciesDatabaseFromTree } from "./speciesTreeLoader.js";
 import { loadPriceList, lookupPrice, type PriceIndex } from "./priceList.js";
 import { speciesEntryMatchesOrganicLabel } from "./organicTracking.js";
-import { estimateExplorationJournalDataCredits, explorationDataValueBreakdown } from "./explorationDataEstimate.js";
+import {
+  estimateExplorationJournalDataCredits,
+  explorationDataValueBreakdown,
+} from "./explorationDataEstimate.js";
 import {
   buildPrimaryStarsHeader,
   buildSystemMapSnapshot,
@@ -276,8 +279,7 @@ function buildDScanBodiesSnapshot(
 
   if (total <= 0) return null;
 
-  const systemName =
-    disc?.systemName.trim() || nameFallback?.trim() || `System ${focusAddr}`;
+  const systemName = disc?.systemName.trim() || nameFallback?.trim() || `System ${focusAddr}`;
   const complete = store.fssAllBodiesCompleteSystems.has(focusAddr);
   if (complete) {
     return { systemName, found: total, total, complete: true };
@@ -294,8 +296,7 @@ function buildLiveShipFuelRangeDTO(
 ): LiveShipFuelRangeDTO | null {
   const main = store.liveStatusFuelMainT;
   const res = store.liveStatusFuelReserveT;
-  const hasLiveStatusFuel =
-    (main != null && Number.isFinite(main)) || (res != null && Number.isFinite(res));
+  const hasLiveStatusFuel = (main != null && Number.isFinite(main)) || (res != null && Number.isFinite(res));
   const fuelMain = main != null && Number.isFinite(main) ? Math.max(0, main) : 0;
   const fuelRes = res != null && Number.isFinite(res) ? Math.max(0, res) : 0;
   const fuelTotalTForNav = hasLiveStatusFuel ? fuelMain + fuelRes : null;
@@ -331,7 +332,7 @@ function buildLiveShipFuelRangeDTO(
     estFuelPerMaxJump > 1e-6 &&
     !(navRoute?.onPlot && typeof navRoute.routeJumpsRemaining === "number")
   ) {
-    estJumps = Math.max(0, Math.floor((Math.max(0, fuelTotal - safetyT)) / estFuelPerMaxJump));
+    estJumps = Math.max(0, Math.floor(Math.max(0, fuelTotal - safetyT) / estFuelPerMaxJump));
   }
 
   return {
@@ -440,7 +441,10 @@ function notableTagForRecord(rec: ExplorationScanRecord): string | null {
   return abbr ? `${abbr} - Terraformable` : "Terraformable";
 }
 
-function buildNotableBodiesForFocusedSystem(store: GameStateStore, focusedSystemName: string | null): NotableBodyInfo[] {
+function buildNotableBodiesForFocusedSystem(
+  store: GameStateStore,
+  focusedSystemName: string | null,
+): NotableBodyInfo[] {
   const focusAddr = store.viewingSystemAddress ?? store.currentSystemAddress;
   if (focusAddr == null) return [];
 
@@ -457,7 +461,11 @@ function buildNotableBodiesForFocusedSystem(store: GameStateStore, focusedSystem
     if (!tag) continue;
     const bk = scanBodyKey(rec.systemAddress, rec.bodyId);
     const fullName = rec.bodyName?.trim() || `Body ${rec.bodyId}`;
-    const bodyLabelShort = shortNotableBodyLabel(fullName, [rec.starSystem, focusedSystemName, store.currentSystem]);
+    const bodyLabelShort = shortNotableBodyLabel(fullName, [
+      rec.starSystem,
+      focusedSystemName,
+      store.currentSystem,
+    ]);
     out.push({
       bodyName: fullName,
       bodyLabelShort,
@@ -503,8 +511,7 @@ export function buildEncyclopediaPayload(): EncyclopediaSpeciesRowDTO[] {
     const exomasteryProfile = loadExomasteryProfile(root, entry);
     const exomasteryProfileFilePresent = exomasteryProfile != null;
     const profileMaxN = exomasteryProfile ? maxExomasteryProfileSampleCount(exomasteryProfile) : 0;
-    const exomasteryEncyclopediaAvailable =
-      exomasteryProfileFilePresent || exomasteryEdsmSampleCount >= 1;
+    const exomasteryEncyclopediaAvailable = exomasteryProfileFilePresent || exomasteryEdsmSampleCount >= 1;
     const exomasteryDataInsufficient =
       exomasteryEncyclopediaAvailable &&
       ((exomasteryProfileFilePresent && profileMaxN === 1) ||
@@ -527,15 +534,16 @@ export function buildEncyclopediaPayload(): EncyclopediaSpeciesRowDTO[] {
 }
 
 /** Resolve a species row for Encyclopedia HTTP APIs (validated genus folder name). */
-export function findSpeciesEntryForEncyclopedia(genusDataDir: string, speciesEntryId: string): SpeciesEntry | null {
+export function findSpeciesEntryForEncyclopedia(
+  genusDataDir: string,
+  speciesEntryId: string,
+): SpeciesEntry | null {
   if (!genusDataDir || genusDataDir.includes("..") || /[/\\]/.test(genusDataDir)) return null;
   if (!speciesEntryId) return null;
   if (!cachedDb.species.length) {
     cachedDb = loadSpeciesDatabaseFromTree(getProjectRoot());
   }
-  return (
-    cachedDb.species.find((e) => e.genusDataDir === genusDataDir && e.id === speciesEntryId) ?? null
-  );
+  return cachedDb.species.find((e) => e.genusDataDir === genusDataDir && e.id === speciesEntryId) ?? null;
 }
 
 function resolveStarForBodyTab(b: BodyExoState, store: GameStateStore): string {
@@ -625,7 +633,12 @@ function computeBodyCacheSignature(
   });
 }
 
-function computeBody(b: BodyExoState, db: SpeciesDatabase, prices: PriceIndex, store: GameStateStore): BodyComputed {
+function computeBody(
+  b: BodyExoState,
+  db: SpeciesDatabase,
+  prices: PriceIndex,
+  store: GameStateStore,
+): BodyComputed {
   const root = getProjectRoot();
   const explorationRec = store.explorationScans.get(scanBodyKey(b.systemAddress, b.bodyId)) ?? null;
   const signature = computeBodyCacheSignature(b, store, explorationRec, root);
@@ -801,7 +814,10 @@ function computeBodyUncached(
 }
 
 /** Unsold exobiology (3× Analyse in journal): list ×5 on first-footfall bodies (else ×1) — same multiplier as map tier/heuristic when footfall applies. */
-function organicDataValuation(store: GameStateStore, prices: PriceIndex): {
+function organicDataValuation(
+  store: GameStateStore,
+  prices: PriceIndex,
+): {
   credits: number;
   pendingSamples: number;
 } {
@@ -861,10 +877,8 @@ export function buildSnapshot(
 ): AppSnapshot {
   const bootLoading = journalBoot != null;
   const db = cachedDb;
-  const { credits: organicDataValueCredits, pendingSamples: organicPendingSampleCount } = organicDataValuation(
-    store,
-    cachedPrices,
-  );
+  const { credits: organicDataValueCredits, pendingSamples: organicPendingSampleCount } =
+    organicDataValuation(store, cachedPrices);
   const explorationScanDataValueCredits = estimateExplorationJournalDataCredits(store);
   const exploreBreakdown = explorationDataValueBreakdown(store);
   const organicPendingLines = bootLoading ? [] : buildOrganicPendingLines(store, db, cachedPrices);
@@ -907,7 +921,9 @@ export function buildSnapshot(
       : perfTime("snap.systemMap", () =>
           buildSystemMapSnapshot(store, focusAddr, db, cachedStarRoles!, cachedPrices),
         );
-  const dScanBodies = bootLoading ? null : buildDScanBodiesSnapshot(store, focusAddr, dScanNameFallback, systemMap);
+  const dScanBodies = bootLoading
+    ? null
+    : buildDScanBodiesSnapshot(store, focusAddr, dScanNameFallback, systemMap);
 
   const recsForPrimary =
     !bootLoading && focusAddr != null
@@ -922,7 +938,9 @@ export function buildSnapshot(
         })()
       : [];
   const primaryStarsHeader =
-    !bootLoading && recsForPrimary.length > 0 ? buildPrimaryStarsHeader(recsForPrimary, cachedStarRoles) : null;
+    !bootLoading && recsForPrimary.length > 0
+      ? buildPrimaryStarsHeader(recsForPrimary, cachedStarRoles)
+      : null;
 
   const edsmMapSupplementForViewingSystem =
     !bootLoading &&
@@ -947,15 +965,18 @@ export function buildSnapshot(
   let exoOverlayFocusBody: BodyComputed | null = null;
   if (!bootLoading && exoOverlayFocusBodyKey && focusAddr != null) {
     const raw = store.bodies.get(exoOverlayFocusBodyKey);
-    if (raw && raw.systemAddress === focusAddr && !bodies.some((b) => b.state.key === exoOverlayFocusBodyKey)) {
+    if (
+      raw &&
+      raw.systemAddress === focusAddr &&
+      !bodies.some((b) => b.state.key === exoOverlayFocusBodyKey)
+    ) {
       exoOverlayFocusBody = computeBody(raw, db, cachedPrices, store);
     }
   }
 
   let journalDirConfiguredOk = false;
   try {
-    journalDirConfiguredOk =
-      existsSync(journalDir) && statSync(journalDir).isDirectory();
+    journalDirConfiguredOk = existsSync(journalDir) && statSync(journalDir).isDirectory();
   } catch {
     journalDirConfiguredOk = false;
   }

@@ -77,12 +77,7 @@ function EncyclopediaSpeciesConditions({
         estimatedSurfaceTempK: spawnCompare?.estimatedSurfaceTempK ?? null,
         speciesMatchContext: spawnCompare?.speciesMatchContext ?? null,
       }),
-    [
-      entry,
-      spawnCompare?.scan,
-      spawnCompare?.estimatedSurfaceTempK,
-      spawnCompare?.speciesMatchContext,
-    ],
+    [entry, spawnCompare?.scan, spawnCompare?.estimatedSurfaceTempK, spawnCompare?.speciesMatchContext],
   );
 
   return (
@@ -224,8 +219,8 @@ function ExomasteryPlanetsBody({ data }: { data: EncyclopediaExomasteryPlanetsRe
             ) : (
               "—"
             )}
-            . Shown for every species with a feeder JSON, even when this species is not among candidates on that
-            planet.
+            . Shown for every species with a feeder JSON, even when this species is not among candidates on
+            that planet.
           </p>
           {fb.detail ? (
             <div className="encyclopedia-focus-body-duplex-wrap">
@@ -243,13 +238,13 @@ function ExomasteryPlanetsBody({ data }: { data: EncyclopediaExomasteryPlanetsRe
         {isProfile ? (
           <>
             Each card: field name, then <strong>Typical</strong> (μ), <strong>Mode</strong>, and{" "}
-            <strong>Deviation</strong> (mode vs mean). Click <strong>Mode</strong> for chart: feeder min–max and mode
-            only; dashed line = this BODY when in range. Hover card for sample counts.
+            <strong>Deviation</strong> (mode vs mean). Click <strong>Mode</strong> for chart: feeder min–max
+            and mode only; dashed line = this BODY when in range. Hover card for sample counts.
           </>
         ) : (
           <>
-            Each card: profile field vs feeder sample dispersion. Click <strong>Mode</strong> for cohort min–max chart
-            when numeric. Full tooltip on hover.
+            Each card: profile field vs feeder sample dispersion. Click <strong>Mode</strong> for cohort
+            min–max chart when numeric. Full tooltip on hover.
           </>
         )}
       </p>
@@ -275,7 +270,10 @@ function ExomasteryPlanetsBody({ data }: { data: EncyclopediaExomasteryPlanetsRe
                       const dev = f.deviationDisplay ?? `${f.deviationPercent.toFixed(1)}%`;
                       const cellKey = `${p.index}:${f.id}`;
                       return (
-                        <div key={f.id} className="exo-neon-duplex-stack encyclopedia-exomastery-stat-card-wrap">
+                        <div
+                          key={f.id}
+                          className="exo-neon-duplex-stack encyclopedia-exomastery-stat-card-wrap"
+                        >
                           <div
                             className={`exo-neon-duplex exo-neon-duplex--tier-${f.tier} encyclopedia-exomastery-stat-card`}
                             title={f.contextNote}
@@ -335,11 +333,7 @@ function FoundSpeciesPopup({
   onClose: () => void;
 }) {
   return (
-    <div
-      className="modal-backdrop encyclopedia-found-backdrop"
-      role="presentation"
-      onClick={onClose}
-    >
+    <div className="modal-backdrop encyclopedia-found-backdrop" role="presentation" onClick={onClose}>
       <div
         className="modal-panel encyclopedia-found-panel"
         role="dialog"
@@ -384,9 +378,7 @@ function FoundSpeciesPopup({
                     </div>
                     <div>
                       <dt>Temperature</dt>
-                      <dd
-                        title="Band from catalog heuristics; J: journal Kelvin when recorded. Same formatting as the body tab (Kelvin display here)."
-                      >
+                      <dd title="Band from catalog heuristics; J: journal Kelvin when recorded. Same formatting as the body tab (Kelvin display here).">
                         {formatTemperaturePillLine(
                           f.surfaceTemperatureK != null ? f.surfaceTemperatureK : null,
                           { minK: f.tempBandMinK, maxK: f.tempBandMaxK, midK: f.tempMidK },
@@ -432,7 +424,9 @@ export function EncyclopediaModal({
 }) {
   const [rows, setRows] = useState<EncyclopediaSpeciesRowDTO[] | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
-  const [filters, setFilters] = useState<EncyclopediaFiltersState>(() => defaultEncyclopediaFilters(ENC_FILTERS_ALL));
+  const [filters, setFilters] = useState<EncyclopediaFiltersState>(() =>
+    defaultEncyclopediaFilters(ENC_FILTERS_ALL),
+  );
   const [foundFor, setFoundFor] = useState<SpeciesEntry | null>(null);
   const [photoZoom, setPhotoZoom] = useState<{ url: string; note: string | null } | null>(null);
   /** Inline exomastery planetary cards inside the encyclopedia list (not a nested modal). */
@@ -474,9 +468,7 @@ export function EncyclopediaModal({
       void fetch(url)
         .then(async (r) => {
           const j = (await r.json().catch(() => null)) as
-            | EncyclopediaExomasteryPlanetsResponseDTO
-            | { error?: string }
-            | null;
+            EncyclopediaExomasteryPlanetsResponseDTO | { error?: string } | null;
           const entryId = entry.id;
           setInlineExo((prev) => {
             if (!prev || prev.speciesEntryId !== entryId) return prev;
@@ -488,7 +480,12 @@ export function EncyclopediaModal({
               return { ...prev, loading: false, err: msg, data: null };
             }
             if (j && typeof j === "object" && "planets" in j && Array.isArray(j.planets)) {
-              return { ...prev, loading: false, err: null, data: j as EncyclopediaExomasteryPlanetsResponseDTO };
+              return {
+                ...prev,
+                loading: false,
+                err: null,
+                data: j as EncyclopediaExomasteryPlanetsResponseDTO,
+              };
             }
             return { ...prev, loading: false, err: "Invalid response", data: null };
           });
@@ -523,9 +520,7 @@ export function EncyclopediaModal({
     void fetch(url)
       .then(async (r) => {
         const j = (await r.json().catch(() => null)) as
-          | EncyclopediaExomasteryPlanetsResponseDTO
-          | { error?: string }
-          | null;
+          EncyclopediaExomasteryPlanetsResponseDTO | { error?: string } | null;
         setInlineExo((prev) => {
           if (!prev || prev.speciesEntryId !== entryId) return prev;
           if (!r.ok) {
@@ -536,7 +531,12 @@ export function EncyclopediaModal({
             return { ...prev, loading: false, err: msg, data: null };
           }
           if (j && typeof j === "object" && "planets" in j && Array.isArray(j.planets)) {
-            return { ...prev, loading: false, err: null, data: j as EncyclopediaExomasteryPlanetsResponseDTO };
+            return {
+              ...prev,
+              loading: false,
+              err: null,
+              data: j as EncyclopediaExomasteryPlanetsResponseDTO,
+            };
           }
           return { ...prev, loading: false, err: "Invalid response", data: null };
         });
@@ -604,7 +604,10 @@ export function EncyclopediaModal({
   useEffect(() => {
     void fetch("/api/species-encyclopedia")
       .then(async (r) => {
-        const j = (await r.json().catch(() => null)) as { species?: EncyclopediaSpeciesRowDTO[]; error?: string } | null;
+        const j = (await r.json().catch(() => null)) as {
+          species?: EncyclopediaSpeciesRowDTO[];
+          error?: string;
+        } | null;
         if (!r.ok) throw new Error(j?.error || r.statusText);
         if (!j?.species) throw new Error("Invalid response");
         setRows(j.species);
@@ -625,10 +628,7 @@ export function EncyclopediaModal({
 
   const dialogRef = useModal<HTMLDivElement>(true, closeTopLayer);
 
-  const facets = useMemo(
-    () => (rows?.length ? buildEncyclopediaFacetOptions(rows) : null),
-    [rows],
-  );
+  const facets = useMemo(() => (rows?.length ? buildEncyclopediaFacetOptions(rows) : null), [rows]);
 
   /**
    * Foot-catalog hit count per species, computed once per (rows, catalog) instead of scanning the
@@ -682,7 +682,6 @@ export function EncyclopediaModal({
     return () => window.clearTimeout(id);
   }, [rows]);
 
-
   /**
    * One species row. Extracted so the browse list (grouped by genus) and the search list (ranked,
    * flat) render exactly the same card instead of two copies drifting apart.
@@ -696,132 +695,133 @@ export function EncyclopediaModal({
     exomasteryEncyclopediaAvailable = false,
     exomasteryDataInsufficient = false,
   }: EncyclopediaSpeciesRowDTO) => {
-  const exoEnabled = exomasteryEncyclopediaAvailable;
-  const foundN = footHitCounts.get(entry.id) ?? 0;
-  const exoExpanded = inlineExo?.speciesEntryId === entry.id && !exoClosing;
-  const hasExoDrawer = inlineExo?.speciesEntryId === entry.id;
-  return (
-    <article key={entry.id} className="encyclopedia-species-card encyclopedia-species-card--row">
-      {exoEnabled && exomasteryDataInsufficient ? (
-        <Tooltip className="ency-low-sample-anchor" text="Low sample — exomastery has only one recorded body for this species, so its habitat figures are indicative, not typical.">
-          <span className="encyclopedia-exomastery-insufficient">
-            <svg
-              width="11"
-              height="11"
-              viewBox="0 0 16 16"
-              aria-hidden
-              focusable="false"
-              className="ency-low-sample-icon"
-            >
-              <path
-                d="M8 1.8 15 14.2H1Z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-              <path d="M8 6v3.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="8" cy="11.7" r="0.85" fill="currentColor" />
-            </svg>
-            Low sample
-          </span>
-        </Tooltip>
-      ) : null}
-      <div className="encyclopedia-species-card-main">
-      <button
-        type="button"
-        className="encyclopedia-thumb-btn"
-        onClick={() => setPhotoZoom({ url: photoUrl, note: photoNote })}
-        aria-label={`Enlarge photo for ${entry.displayName}`}
-        title="Click for full-size illustration"
-      >
-        <EncyclopediaThumb photoUrl={photoUrl} displayName={entry.displayName} />
-      </button>
-      <div className="encyclopedia-species-col">
-        <div className="encyclopedia-species-head">
-          <h4 className="encyclopedia-species-title">{entry.displayName}</h4>
-          <span className="encyclopedia-species-genus dim tiny">{entry.genus || entry.genusDataDir}</span>
-        </div>
-        {photoNote ? <p className="encyclopedia-photo-note dim tiny">{photoNote}</p> : null}
-        {entry.description ? <p className="encyclopedia-desc">{entry.description}</p> : null}
-        <div className="encyclopedia-criteria">
-          <span className="encyclopedia-criteria-label">Conditions</span>
-          <EncyclopediaSpeciesConditions entry={entry} spawnCompare={spawnCompare} />
-        </div>
-        <div className="encyclopedia-species-actions">
+    const exoEnabled = exomasteryEncyclopediaAvailable;
+    const foundN = footHitCounts.get(entry.id) ?? 0;
+    const exoExpanded = inlineExo?.speciesEntryId === entry.id && !exoClosing;
+    const hasExoDrawer = inlineExo?.speciesEntryId === entry.id;
+    return (
+      <article key={entry.id} className="encyclopedia-species-card encyclopedia-species-card--row">
+        {exoEnabled && exomasteryDataInsufficient ? (
+          <Tooltip
+            className="ency-low-sample-anchor"
+            text="Low sample — exomastery has only one recorded body for this species, so its habitat figures are indicative, not typical."
+          >
+            <span className="encyclopedia-exomastery-insufficient">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 16 16"
+                aria-hidden
+                focusable="false"
+                className="ency-low-sample-icon"
+              >
+                <path
+                  d="M8 1.8 15 14.2H1Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+                <path d="M8 6v3.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="8" cy="11.7" r="0.85" fill="currentColor" />
+              </svg>
+              Low sample
+            </span>
+          </Tooltip>
+        ) : null}
+        <div className="encyclopedia-species-card-main">
           <button
             type="button"
-            className="btn-ency-found"
-            title="Show matching rows from your foot catalog for this species"
-            onClick={() => setFoundFor(entry)}
+            className="encyclopedia-thumb-btn"
+            onClick={() => setPhotoZoom({ url: photoUrl, note: photoNote })}
+            aria-label={`Enlarge photo for ${entry.displayName}`}
+            title="Click for full-size illustration"
           >
-            Found ({foundN})
+            <EncyclopediaThumb photoUrl={photoUrl} displayName={entry.displayName} />
           </button>
-          {exoEnabled ? (
-            <button
-              type="button"
-              className="btn-ency-exomastery"
-              title={
-                exoExpanded
-                  ? "Hide exomastery data for this species"
-                  : exomasteryProfileFilePresent
-                    ? "Show Exomastery profile (mode vs mean) from feeder JSON"
-                    : "Show EDSM / per-body exomastery rows for this species"
-              }
-              onClick={() => toggleInlineExomastery(entry)}
-            >
-              {exoExpanded
-                ? `Hide exomastery (${exomasteryFeederBodyCount})`
-                : `Exomastery (${exomasteryFeederBodyCount})`}
-            </button>
-          ) : null}
-        </div>
-      </div>
-      </div>
-      {hasExoDrawer ? (
-        <div
-          data-exo-drawer={entry.id}
-          className={`encyclopedia-exomastery-drawer ${exoDrawerReveal && !exoClosing ? "encyclopedia-exomastery-drawer--open" : ""}`}
-        >
-          <div className="encyclopedia-exomastery-drawer-inner">
-            <div className="encyclopedia-exomastery-inline-head">
-              <div className="encyclopedia-exomastery-inline-head-text">
-                <strong className="encyclopedia-exomastery-inline-title">
-                  {inlineExo?.data?.source === "profile"
-                    ? "Exomastery profile"
-                    : "Exomastery sample bodies"}
-                </strong>
-                {inlineExo?.data ? (
-                  <span className="dim tiny encyclopedia-exomastery-inline-sub">
-                    {inlineExo.data.source === "profile"
-                      ? inlineExo.data.sampleCount > 0
-                        ? `n ≤ ${inlineExo.data.sampleCount} (feeder counts)`
-                        : "feeder rollups"
-                      : `n = ${inlineExo.data.sampleCount}`}
-                  </span>
-                ) : null}
-              </div>
-              {inlineExo?.speciesEntryId === entry.id && !exoClosing ? (
+          <div className="encyclopedia-species-col">
+            <div className="encyclopedia-species-head">
+              <h4 className="encyclopedia-species-title">{entry.displayName}</h4>
+              <span className="encyclopedia-species-genus dim tiny">{entry.genus || entry.genusDataDir}</span>
+            </div>
+            {photoNote ? <p className="encyclopedia-photo-note dim tiny">{photoNote}</p> : null}
+            {entry.description ? <p className="encyclopedia-desc">{entry.description}</p> : null}
+            <div className="encyclopedia-criteria">
+              <span className="encyclopedia-criteria-label">Conditions</span>
+              <EncyclopediaSpeciesConditions entry={entry} spawnCompare={spawnCompare} />
+            </div>
+            <div className="encyclopedia-species-actions">
+              <button
+                type="button"
+                className="btn-ency-found"
+                title="Show matching rows from your foot catalog for this species"
+                onClick={() => setFoundFor(entry)}
+              >
+                Found ({foundN})
+              </button>
+              {exoEnabled ? (
                 <button
                   type="button"
-                  className="encyclopedia-exomastery-refetch"
-                  disabled={!!inlineExo.loading}
-                  title="Clear cached feeder JSON for this species and reload from disk."
-                  onClick={() => refetchInlineExomastery()}
+                  className="btn-ency-exomastery"
+                  title={
+                    exoExpanded
+                      ? "Hide exomastery data for this species"
+                      : exomasteryProfileFilePresent
+                        ? "Show Exomastery profile (mode vs mean) from feeder JSON"
+                        : "Show EDSM / per-body exomastery rows for this species"
+                  }
+                  onClick={() => toggleInlineExomastery(entry)}
                 >
-                  Force re-fetch
+                  {exoExpanded
+                    ? `Hide exomastery (${exomasteryFeederBodyCount})`
+                    : `Exomastery (${exomasteryFeederBodyCount})`}
                 </button>
               ) : null}
             </div>
-            {inlineExo?.loading ? <p className="dim">Loading planetary data…</p> : null}
-            {inlineExo?.err ? <p className="warn">{inlineExo.err}</p> : null}
-            {inlineExo?.data && !inlineExo.loading ? (
-              <ExomasteryPlanetsBody data={inlineExo.data} />
-            ) : null}
           </div>
         </div>
-      ) : null}
-    </article>
+        {hasExoDrawer ? (
+          <div
+            data-exo-drawer={entry.id}
+            className={`encyclopedia-exomastery-drawer ${exoDrawerReveal && !exoClosing ? "encyclopedia-exomastery-drawer--open" : ""}`}
+          >
+            <div className="encyclopedia-exomastery-drawer-inner">
+              <div className="encyclopedia-exomastery-inline-head">
+                <div className="encyclopedia-exomastery-inline-head-text">
+                  <strong className="encyclopedia-exomastery-inline-title">
+                    {inlineExo?.data?.source === "profile"
+                      ? "Exomastery profile"
+                      : "Exomastery sample bodies"}
+                  </strong>
+                  {inlineExo?.data ? (
+                    <span className="dim tiny encyclopedia-exomastery-inline-sub">
+                      {inlineExo.data.source === "profile"
+                        ? inlineExo.data.sampleCount > 0
+                          ? `n ≤ ${inlineExo.data.sampleCount} (feeder counts)`
+                          : "feeder rollups"
+                        : `n = ${inlineExo.data.sampleCount}`}
+                    </span>
+                  ) : null}
+                </div>
+                {inlineExo?.speciesEntryId === entry.id && !exoClosing ? (
+                  <button
+                    type="button"
+                    className="encyclopedia-exomastery-refetch"
+                    disabled={!!inlineExo.loading}
+                    title="Clear cached feeder JSON for this species and reload from disk."
+                    onClick={() => refetchInlineExomastery()}
+                  >
+                    Force re-fetch
+                  </button>
+                ) : null}
+              </div>
+              {inlineExo?.loading ? <p className="dim">Loading planetary data…</p> : null}
+              {inlineExo?.err ? <p className="warn">{inlineExo.err}</p> : null}
+              {inlineExo?.data && !inlineExo.loading ? <ExomasteryPlanetsBody data={inlineExo.data} /> : null}
+            </div>
+          </div>
+        ) : null}
+      </article>
     );
   };
 
@@ -920,66 +920,63 @@ export function EncyclopediaModal({
                   </>
                 ) : null}
               </div>
-          {spawnCompare ? (
-            <p className="encyclopedia-spawn-compare-line dim tiny">
-              Spawn card colors mirror strict matcher vs <strong>BODY: {spawnCompare.bodyTabLabel ?? "—"}</strong>
-              {spawnCompare.scan?.PlanetClass ? (
-                <>
-                  {" "}
-                  (<span className="ency-spawn-scan-class">{spawnCompare.scan.PlanetClass}</span>)
-                </>
-              ) : spawnCompare.scan ? (
-                <> (detailed scan — some fields incomplete)</>
-              ) : (
-                <> — no merged journal Scan on this bio tab row yet</>
-              )}
-              . Blue = criterion satisfied for that planet; yellow = uncertain/missing telemetry; red = gate fail; pale =
-              informational.
-            </p>
-          ) : (
-            <p className="encyclopedia-spawn-compare-line dim tiny">
-              Open Encyclopedia while a BODY: bio tab exists to compare codex gates vs selected planet. Without that
-              context cards stay neutral/warning-only where scan data is absent.
-            </p>
-          )}
-          {loadErr ? <p className="warn">{loadErr}</p> : null}
-          {!rows && !loadErr ? (
-            <div className="encyclopedia-scroll">
-              <SkeletonRows rows={6} />
-            </div>
-          ) : null}
-          {rows ? (
-            <div className="encyclopedia-scroll">
-              {filtered.length === 0 ? (
-                <p className="encyclopedia-empty-filtered">
-                  No species match these filters. Use <strong>Clear all</strong> or relax planet class,
-                  atmosphere, or other criteria.
+              {spawnCompare ? (
+                <p className="encyclopedia-spawn-compare-line dim tiny">
+                  Spawn card colors mirror strict matcher vs{" "}
+                  <strong>BODY: {spawnCompare.bodyTabLabel ?? "—"}</strong>
+                  {spawnCompare.scan?.PlanetClass ? (
+                    <>
+                      {" "}
+                      (<span className="ency-spawn-scan-class">{spawnCompare.scan.PlanetClass}</span>)
+                    </>
+                  ) : spawnCompare.scan ? (
+                    <> (detailed scan — some fields incomplete)</>
+                  ) : (
+                    <> — no merged journal Scan on this bio tab row yet</>
+                  )}
+                  . Blue = criterion satisfied for that planet; yellow = uncertain/missing telemetry; red =
+                  gate fail; pale = informational.
                 </p>
-              ) : searching ? (
-                filtered.map(renderSpeciesRow)
               ) : (
-                genusSections.map((sec) => (
-                  <section key={sec.genus} className="ency-genus-section">
-                    <h4 className="ency-genus-head">
-                      <span className="ency-genus-name">{sec.genus}</span>
-                      <span className="ency-genus-count">{sec.rows.length}</span>
-                    </h4>
-                    {sec.rows.map(renderSpeciesRow)}
-                  </section>
-                ))
+                <p className="encyclopedia-spawn-compare-line dim tiny">
+                  Open Encyclopedia while a BODY: bio tab exists to compare codex gates vs selected planet.
+                  Without that context cards stay neutral/warning-only where scan data is absent.
+                </p>
               )}
-            </div>
-          ) : null}
+              {loadErr ? <p className="warn">{loadErr}</p> : null}
+              {!rows && !loadErr ? (
+                <div className="encyclopedia-scroll">
+                  <SkeletonRows rows={6} />
+                </div>
+              ) : null}
+              {rows ? (
+                <div className="encyclopedia-scroll">
+                  {filtered.length === 0 ? (
+                    <p className="encyclopedia-empty-filtered">
+                      No species match these filters. Use <strong>Clear all</strong> or relax planet class,
+                      atmosphere, or other criteria.
+                    </p>
+                  ) : searching ? (
+                    filtered.map(renderSpeciesRow)
+                  ) : (
+                    genusSections.map((sec) => (
+                      <section key={sec.genus} className="ency-genus-section">
+                        <h4 className="ency-genus-head">
+                          <span className="ency-genus-name">{sec.genus}</span>
+                          <span className="ency-genus-count">{sec.rows.length}</span>
+                        </h4>
+                        {sec.rows.map(renderSpeciesRow)}
+                      </section>
+                    ))
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
       </div>
       {photoZoom ? (
-        <div
-          className="photo-lightbox-backdrop"
-          role="presentation"
-          onClick={() => setPhotoZoom(null)}
-        >
+        <div className="photo-lightbox-backdrop" role="presentation" onClick={() => setPhotoZoom(null)}>
           <button
             type="button"
             className="photo-lightbox-close"

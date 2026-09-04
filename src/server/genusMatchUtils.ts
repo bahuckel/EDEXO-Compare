@@ -1,7 +1,10 @@
 import type { GenusHint, SpeciesEntry } from "../shared/types.js";
 
 function genusFold(s: string): string {
-  return s.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 
 function genusVariantKeys(s: string): string[] {

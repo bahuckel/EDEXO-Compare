@@ -6,7 +6,15 @@ import type { ReactNode } from "react";
  * They live apart so that <ExoPayoutRangePanel> — which renders inline in the body pane — does not
  * drag the whole quick-facts popup into the initial bundle.
  */
-export function DetailCard({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+export function DetailCard({
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <section className={className ? `body-detail-card ${className}` : "body-detail-card"}>
       <h5 className="body-detail-card-title">{title}</h5>

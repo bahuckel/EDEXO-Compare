@@ -43,10 +43,10 @@ function FilterSelect({
   const rootRef = useRef<HTMLDivElement>(null);
   const open = openId === instanceId;
 
-  const curLabel = useMemo(() => options.find((o) => o.value === value)?.label ?? options[0]?.label ?? "—", [
-    options,
-    value,
-  ]);
+  const curLabel = useMemo(
+    () => options.find((o) => o.value === value)?.label ?? options[0]?.label ?? "—",
+    [options, value],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -280,10 +280,11 @@ export function EncyclopediaFilterBar({
       <details className="encyclopedia-filters__help">
         <summary className="encyclopedia-filters__help-summary">How these filters work</summary>
         <p className="encyclopedia-filters__note dim tiny">
-          Filters use spawn criteria from each species JSON (same fields as matching); multiple filters combine with
-          AND. Atmosphere “Vacuum” matches rows that allow airless worlds. “No planet-class list” finds
-          atmosphere-only gates (e.g. many bacterium rows). Host star class uses codex star-type fragments (substring
-          match, like the matcher) plus spectral letters from the feeder colour map when listed on the row.
+          Filters use spawn criteria from each species JSON (same fields as matching); multiple filters
+          combine with AND. Atmosphere “Vacuum” matches rows that allow airless worlds. “No planet-class list”
+          finds atmosphere-only gates (e.g. many bacterium rows). Host star class uses codex star-type
+          fragments (substring match, like the matcher) plus spectral letters from the feeder colour map when
+          listed on the row.
         </p>
       </details>
     </div>

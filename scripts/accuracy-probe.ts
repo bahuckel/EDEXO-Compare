@@ -68,7 +68,8 @@ if (!existsSync(payloadPath)) {
   process.exit(1);
 }
 const raw = readFileSync(payloadPath);
-const doc = raw[0] === 0x1f && raw[1] === 0x8b ? v8.deserialize(gunzipSync(raw)) : JSON.parse(raw.toString("utf8"));
+const doc =
+  raw[0] === 0x1f && raw[1] === 0x8b ? v8.deserialize(gunzipSync(raw)) : JSON.parse(raw.toString("utf8"));
 const payload = decodeJournalMergeCache(doc);
 if (!payload) {
   console.error("Cache is not in the current encoding; delete it and let the app rebuild.");

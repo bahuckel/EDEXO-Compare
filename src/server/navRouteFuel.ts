@@ -113,8 +113,7 @@ function furthestReachableScoopIndex(params: {
 }): number | null {
   const { idx, lastScoopIdx, scoop, legLy, budget, estFuelForLeg, maxJumpLy } = params;
   let best: number | null = null;
-  const legOkRange = (d: number) =>
-    maxJumpLy == null || !(maxJumpLy > 0) || d <= maxJumpLy + RANGE_EPS_LY;
+  const legOkRange = (d: number) => maxJumpLy == null || !(maxJumpLy > 0) || d <= maxJumpLy + RANGE_EPS_LY;
 
   for (let k = idx; k <= lastScoopIdx; k++) {
     if (!scoop[k]) continue;
@@ -166,12 +165,14 @@ function computeRouteRefuelAlert(params: {
     }
   }
 
-  const scoopOnlyHereInHorizon = scoop[idx] && (() => {
-    for (let j = idx + 1; j <= horizonEnd; j++) {
-      if (scoop[j]) return false;
-    }
-    return true;
-  })();
+  const scoopOnlyHereInHorizon =
+    scoop[idx] &&
+    (() => {
+      for (let j = idx + 1; j <= horizonEnd; j++) {
+        if (scoop[j]) return false;
+      }
+      return true;
+    })();
 
   /** No KGBFOAM-class stars in the next leg of the route — long “fuel desert”. */
   if (!scoopInHorizon) return "red";
@@ -229,9 +230,7 @@ export function analyzeNavRouteFuel(opts: {
   const routeTotalLy = legLy.reduce((s, d) => s + d, 0);
 
   let idx =
-    currentSystemAddress != null
-      ? route.findIndex((w) => w.systemAddress === currentSystemAddress)
-      : -1;
+    currentSystemAddress != null ? route.findIndex((w) => w.systemAddress === currentSystemAddress) : -1;
   if (idx < 0) {
     const nn = normalizedSystemName(currentSystemName ?? null);
     if (nn) {
@@ -258,11 +257,9 @@ export function analyzeNavRouteFuel(opts: {
   }
 
   const remainingLegs = legLy.slice(idx);
-  const routeRemainingLy =
-    remainingLegs.length === 0 ? 0 : remainingLegs.reduce((s, d) => s + d, 0);
+  const routeRemainingLy = remainingLegs.length === 0 ? 0 : remainingLegs.reduce((s, d) => s + d, 0);
   const routeJumpsRemaining = Math.max(0, route.length - 1 - idx);
-  const maxRemainingLegLy =
-    remainingLegs.length === 0 ? null : Math.max(...remainingLegs);
+  const maxRemainingLegLy = remainingLegs.length === 0 ? null : Math.max(...remainingLegs);
 
   let anyRemainingLegOverMaxRange = false;
   if (loadoutMaxJumpLy != null && loadoutMaxJumpLy > 0 && maxRemainingLegLy != null) {

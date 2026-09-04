@@ -37,8 +37,7 @@ type JournalMergeMetaFile = {
 
 /** Incremental replay after hydrating a payload (newest log tail and/or brand-new log files). */
 export type JournalCacheReplayStep =
-  | { kind: "tail"; path: string; startByte: number }
-  | { kind: "full"; path: string };
+  { kind: "tail"; path: string; startByte: number } | { kind: "full"; path: string };
 
 export type JournalCacheLoadResult =
   | { hit: false }
@@ -51,8 +50,7 @@ export type JournalCacheLoadResult =
     };
 
 type PrepareFromDirResult =
-  | { hit: false }
-  | { hit: true; payload: JournalMergeCachePayload; steps: JournalCacheReplayStep[] };
+  { hit: false } | { hit: true; payload: JournalMergeCachePayload; steps: JournalCacheReplayStep[] };
 
 function journalMergeMetaPathInDir(cacheDir: string): string {
   return path.join(cacheDir, "journal-merge.meta.json");
@@ -219,7 +217,8 @@ function tryPrepareJournalCacheLoadFromDir(
       if (path.normalize(doc.journalDir ?? "") !== path.normalize(journalDirNorm)) {
         return { hit: false };
       }
-      const docPreset = (doc as { journalHistoryPreset?: JournalHistoryPreset }).journalHistoryPreset ?? "all";
+      const docPreset =
+        (doc as { journalHistoryPreset?: JournalHistoryPreset }).journalHistoryPreset ?? "all";
       if (docPreset !== journalHistoryPreset) return { hit: false };
       const steps = buildReplaySteps(doc.files, manifest, orderedFullPaths);
       if (steps === null) return { hit: false };
@@ -256,7 +255,13 @@ export function tryPrepareJournalCacheLoad(
   }
 
   const legacyDir = projectLocalJournalMergeCacheDir(projectRoot);
-  const b = tryPrepareJournalCacheLoadFromDir(legacyDir, journalDirNorm, orderedFullPaths, manifest, journalHistoryPreset);
+  const b = tryPrepareJournalCacheLoadFromDir(
+    legacyDir,
+    journalDirNorm,
+    orderedFullPaths,
+    manifest,
+    journalHistoryPreset,
+  );
   if (b.hit) {
     return { hit: true, payload: b.payload, steps: b.steps, loadedFromLegacy: true };
   }

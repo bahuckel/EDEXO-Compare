@@ -13,7 +13,22 @@ export function normalizeStellarMappingKey(key: string): string {
   return k.charAt(0).toUpperCase();
 }
 
-const STELLAR_DISPLAY_ORDER = ["O", "B", "A", "F", "G", "K", "M", "L", "T", "TTS", "Y", "W", "D", "N"] as const;
+const STELLAR_DISPLAY_ORDER = [
+  "O",
+  "B",
+  "A",
+  "F",
+  "G",
+  "K",
+  "M",
+  "L",
+  "T",
+  "TTS",
+  "Y",
+  "W",
+  "D",
+  "N",
+] as const;
 
 /** Harvard-style-ish order for UI lists (unknown keys sort last). */
 export function sortStellarSpectralKeysForDisplay(keys: string[]): string[] {

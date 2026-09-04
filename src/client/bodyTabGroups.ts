@@ -98,7 +98,13 @@ export function groupTabBodiesIntoHostCards(
     return [...arr].sort((a, b) => {
       if (a.state.bodyId === root) return -1;
       if (b.state.bodyId === root) return 1;
-      return compareNameDesignation(a.state.bodyName, a.state.bodyId, b.state.bodyName, b.state.bodyId, starSys);
+      return compareNameDesignation(
+        a.state.bodyName,
+        a.state.bodyId,
+        b.state.bodyName,
+        b.state.bodyId,
+        starSys,
+      );
     });
   };
 

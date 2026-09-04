@@ -4,23 +4,7 @@
  */
 
 /** Hot → cool (Main sequence + brown dwarfs); exotics anchored for finite distances. */
-const HARVARD_ORDER = [
-  "O",
-  "W",
-  "B",
-  "A",
-  "F",
-  "G",
-  "K",
-  "M",
-  "TTS",
-  "L",
-  "T",
-  "Y",
-  "N",
-  "D",
-  "H",
-] as const;
+const HARVARD_ORDER = ["O", "W", "B", "A", "F", "G", "K", "M", "TTS", "L", "T", "Y", "N", "D", "H"] as const;
 
 const HARVARD_INDEX = new Map<string, number>();
 for (let i = 0; i < HARVARD_ORDER.length; i++) {
@@ -116,11 +100,12 @@ export function proximityTierFromSteps(steps: number | null): number | null {
 }
 
 /** Parse loose MK-ish labels: "G2V", "F (IV)", "M5", "Ae". */
-export function parseLooseSpectralMk(
-  raw: string | null | undefined,
-): { spectralSlot: string | null; subclass: number | null; luminosity: string | null } {
-  if (!raw?.trim())
-    return { spectralSlot: null, subclass: null, luminosity: null };
+export function parseLooseSpectralMk(raw: string | null | undefined): {
+  spectralSlot: string | null;
+  subclass: number | null;
+  luminosity: string | null;
+} {
+  if (!raw?.trim()) return { spectralSlot: null, subclass: null, luminosity: null };
   const s = raw.trim();
   const slot = harvardSpectralSlot(s);
   let subclass: number | null = null;

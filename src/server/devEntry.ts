@@ -2,7 +2,13 @@ import path from "node:path";
 import { writeFileSync } from "node:fs";
 import { startEdexo, parseCli, startEdexoFromElectronMode } from "./edexoBootstrap.js";
 
-export { startEdexo, parseCli, startEdexoFromElectronMode, logFatal, assertResourceLayout } from "./edexoBootstrap.js";
+export {
+  startEdexo,
+  parseCli,
+  startEdexoFromElectronMode,
+  logFatal,
+  assertResourceLayout,
+} from "./edexoBootstrap.js";
 
 /** Electron main `require()`s this bundle; it must not also run the CLI auto-boot or we bind HTTP twice and exit. */
 function shouldRunCliAutoStart(): boolean {

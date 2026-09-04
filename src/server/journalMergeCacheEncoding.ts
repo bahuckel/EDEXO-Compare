@@ -145,7 +145,8 @@ function decodeBody(key: string, raw: Record<string, unknown>): BodyExoState {
       raw[field] = Array.isArray(def) ? [] : def;
     }
   }
-  if (raw.scan && typeof raw.scan === "object") raw.scan = decodeScan(raw.scan as Record<string, unknown>, raw);
+  if (raw.scan && typeof raw.scan === "object")
+    raw.scan = decodeScan(raw.scan as Record<string, unknown>, raw);
   if (typeof raw.updatedAt === "number") raw.updatedAt = decodeIso(raw.updatedAt);
   return raw as unknown as BodyExoState;
 }

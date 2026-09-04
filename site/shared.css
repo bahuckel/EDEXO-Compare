@@ -27,13 +27,24 @@ body {
   min-height: 100vh;
   color: var(--text);
   background-color: var(--bg);
-  background-image: radial-gradient(ellipse 120% 80% at 50% -15%, rgba(255, 122, 36, 0.06), transparent 55%),
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -15%, rgba(255, 122, 36, 0.06), transparent 55%),
     radial-gradient(ellipse 90% 50% at 100% 10%, var(--blue-glow), transparent 45%), var(--hex-grid);
-  background-size: auto, auto, 55.425626px 56px;
-  background-position: 0 0, 0 0, center top;
+  background-size:
+    auto,
+    auto,
+    55.425626px 56px;
+  background-position:
+    0 0,
+    0 0,
+    center top;
   background-repeat: no-repeat, no-repeat, repeat;
   background-attachment: fixed, fixed, fixed;
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }

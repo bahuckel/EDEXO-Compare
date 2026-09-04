@@ -21,7 +21,11 @@ function speciesMatchesOrganicLabels(entry: SpeciesEntry, lock: OrganicGenusLock
   return false;
 }
 
-function resolveLockToSpeciesId(lock: OrganicGenusLock, genusDataDir: string, db: SpeciesDatabase): string | null {
+function resolveLockToSpeciesId(
+  lock: OrganicGenusLock,
+  genusDataDir: string,
+  db: SpeciesDatabase,
+): string | null {
   const cands = db.species.filter((s) => s.genusDataDir === genusDataDir);
   const hits = cands.filter((e) => speciesMatchesOrganicLabels(e, lock));
   if (hits.length === 1) return hits[0]!.id;

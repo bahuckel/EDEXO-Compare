@@ -50,7 +50,8 @@ function buildSpeciesArray(speciesBlock, genusLabel) {
     if (raw.conditions !== undefined) out.conditions = deepClone(raw.conditions);
     if (raw.criteria !== undefined) out.criteria = deepClone(raw.criteria);
     for (const [k, v] of Object.entries(raw)) {
-      if (["id", "displayName", "name", "species", "description", "conditions", "criteria"].includes(k)) continue;
+      if (["id", "displayName", "name", "species", "description", "conditions", "criteria"].includes(k))
+        continue;
       out[k] = deepClone(v);
     }
     return out;

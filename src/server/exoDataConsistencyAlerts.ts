@@ -12,7 +12,11 @@ import type {
 import type { PlanetTemperatureBand } from "./matchSpecies.js";
 import { speciesMatchesCriteria } from "./matchSpecies.js";
 import { estimatedTemperatureRangeForScan } from "./planetTemperature.js";
-import { loadExomasteryProfile, hasExomasteryProfileFile, type ExomasteryProfileV1 } from "./exomasteryProfile.js";
+import {
+  loadExomasteryProfile,
+  hasExomasteryProfileFile,
+  type ExomasteryProfileV1,
+} from "./exomasteryProfile.js";
 import { getProjectRoot } from "./paths.js";
 import { volcanismJournalMatchesFragments } from "../shared/volcanismMatch.js";
 import { dssHintsMissingCandidateGenera, resolveSpeciesEntryFromOrganicLock } from "./footScannedCatalog.js";
@@ -20,11 +24,7 @@ import { dssHintsMissingCandidateGenera, resolveSpeciesEntryFromOrganicLock } fr
 const PROFILE_VOLCANISM_MISMATCH_FRAC = 0.2;
 
 function lockHasOrganicSpeciesIdentity(lock: OrganicGenusLock): boolean {
-  return !!(
-    lock.speciesLocalised?.trim() ||
-    lock.speciesSymbol?.trim() ||
-    lock.variantLocalised?.trim()
-  );
+  return !!(lock.speciesLocalised?.trim() || lock.speciesSymbol?.trim() || lock.variantLocalised?.trim());
 }
 
 function speciesCodexConstrainsVolcanism(c: SpeciesEntry["criteria"]): boolean {

@@ -75,7 +75,8 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   if (parentStarType) ctx.parentStarType = parentStarType;
   if (parentStarSubclass !== undefined) ctx.parentStarSubclass = parentStarSubclass;
   if (parentStarLuminosity) ctx.parentStarLuminosity = parentStarLuminosity;
-  if (orbitDistanceFromParentStarLs !== undefined) ctx.orbitDistanceFromParentStarLs = orbitDistanceFromParentStarLs;
+  if (orbitDistanceFromParentStarLs !== undefined)
+    ctx.orbitDistanceFromParentStarLs = orbitDistanceFromParentStarLs;
   if (signalHints?.length) ctx.signalHints = signalHints;
   const rawP = scan?.SurfacePressure ?? rec?.surfacePressure;
   if (rawP != null && Number.isFinite(rawP)) ctx.surfacePressureAtm = journalPressureToAtm(rawP);

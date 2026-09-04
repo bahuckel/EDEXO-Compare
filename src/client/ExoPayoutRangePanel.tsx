@@ -1,7 +1,11 @@
 import type { ExoPayoutRangeDTO } from "@shared/types";
 import { KvRow } from "./bodyDetailKv";
 
-function footfallMeta(pr: ExoPayoutRangeDTO): { text: string; tone: "yours" | "open" | "other"; hint: string } {
+function footfallMeta(pr: ExoPayoutRangeDTO): {
+  text: string;
+  tone: "yours" | "open" | "other";
+  hint: string;
+} {
   if (pr.commanderFirstFootfall) {
     return {
       text: "FOOTFALL — YOUR BONUS",
@@ -58,7 +62,9 @@ export function ExoPayoutRangePanel({
   const candidateShortfall = pr.pricedCandidateCount < pr.slotCount;
   const candidateShortfallHint =
     "Candidates are fewer than bio signals for this body — try turning on Include Bacterium (Candidate species header), or narrow with DSS / on-foot confirmation.";
-  const candidatesPillTitle = candidateShortfall ? `${candidateHint} ${candidateShortfallHint}` : candidateHint;
+  const candidatesPillTitle = candidateShortfall
+    ? `${candidateHint} ${candidateShortfallHint}`
+    : candidateHint;
   const listBandHint =
     "Low / high band uses k = min(bio slots, priced candidates): sum the k cheapest vs k priciest distinct list prices (strict keys).";
   const ffBandHint =
@@ -67,9 +73,7 @@ export function ExoPayoutRangePanel({
   const ff = footfallMeta(pr);
 
   const wrapClass =
-    variant === "main"
-      ? "exo-payout-range-main"
-      : "body-detail-callout body-detail-callout--exo-range";
+    variant === "main" ? "exo-payout-range-main" : "body-detail-callout body-detail-callout--exo-range";
 
   const listPriceBody =
     minListSum === maxListSum
@@ -95,7 +99,10 @@ export function ExoPayoutRangePanel({
         <>
           <span className="body-detail-callout-label">Organic Sell Range (estimate)</span>
           <span className="body-detail-callout-value">{popupPrimaryCr}</span>
-          <span className="body-detail-callout-value dim tiny" style={{ display: "block", marginTop: "0.35rem" }}>
+          <span
+            className="body-detail-callout-value dim tiny"
+            style={{ display: "block", marginTop: "0.35rem" }}
+          >
             {secondaryTitle}: {popupSecondaryCr}
           </span>
         </>
@@ -111,8 +118,8 @@ export function ExoPayoutRangePanel({
                   </>
                 ) : (
                   <>
-                    {primaryMin.toLocaleString()} <span className="exo-payout-range-sep">–</span> {primaryMax.toLocaleString()}{" "}
-                    <span className="exo-payout-range-cr">CR</span>
+                    {primaryMin.toLocaleString()} <span className="exo-payout-range-sep">–</span>{" "}
+                    {primaryMax.toLocaleString()} <span className="exo-payout-range-cr">CR</span>
                   </>
                 )}
               </span>
@@ -126,15 +133,18 @@ export function ExoPayoutRangePanel({
                   </>
                 ) : (
                   <>
-                    {secondaryMin.toLocaleString()} <span className="exo-payout-range-sep">–</span> {secondaryMax.toLocaleString()}{" "}
-                    <span className="exo-payout-range-cr">CR</span>
+                    {secondaryMin.toLocaleString()} <span className="exo-payout-range-sep">–</span>{" "}
+                    {secondaryMax.toLocaleString()} <span className="exo-payout-range-cr">CR</span>
                   </>
                 )}
               </span>
             </span>
           </div>
           <div className="exo-payout-pills-grid">
-            <span className="exo-pill exo-pill--grid exo-pill--price" title={`${listBandHint} ${candidateHint}`}>
+            <span
+              className="exo-pill exo-pill--grid exo-pill--price"
+              title={`${listBandHint} ${candidateHint}`}
+            >
               <span className="exo-pill-tag">CANDIDATES PRICE</span>
               <span className="exo-pill-body">Price: {listPriceBody}</span>
             </span>
@@ -151,7 +161,11 @@ export function ExoPayoutRangePanel({
               <span className="exo-pill-body">
                 {pr.pricedCandidateCount}
                 {candidateShortfall ? (
-                  <span className="exo-pill-warn" title={candidateShortfallHint} aria-label="Fewer candidates than bio signals">
+                  <span
+                    className="exo-pill-warn"
+                    title={candidateShortfallHint}
+                    aria-label="Fewer candidates than bio signals"
+                  >
                     {" "}
                     (!)
                   </span>
@@ -182,7 +196,11 @@ export function ExoPayoutRangePanel({
               <>
                 {String(pr.pricedCandidateCount)}
                 {candidateShortfall ? (
-                  <span className="exo-pill-warn" title={candidateShortfallHint} aria-label="Fewer candidates than bio signals">
+                  <span
+                    className="exo-pill-warn"
+                    title={candidateShortfallHint}
+                    aria-label="Fewer candidates than bio signals"
+                  >
                     {" "}
                     (!)
                   </span>
@@ -207,8 +225,9 @@ export function ExoPayoutRangePanel({
       ) : null}
       {variant === "popup" ? (
         <p className="dim tiny body-detail-callout-note">
-          Band = k cheapest vs k priciest distinct price-list matches (strict keys). Detail view lists list/sell (×1) and
-          footfall (×5) per species. Narrows after DSS / on-foot confirmation; respects <strong>Include Bacterium</strong>.
+          Band = k cheapest vs k priciest distinct price-list matches (strict keys). Detail view lists
+          list/sell (×1) and footfall (×5) per species. Narrows after DSS / on-foot confirmation; respects{" "}
+          <strong>Include Bacterium</strong>.
         </p>
       ) : null}
     </div>

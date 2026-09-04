@@ -46,10 +46,7 @@ async function derive(src, out, width, quality = 74) {
     skipped += 1;
     return;
   }
-  await sharp(src)
-    .resize({ width, withoutEnlargement: true })
-    .webp({ quality, effort: 5 })
-    .toFile(out);
+  await sharp(src).resize({ width, withoutEnlargement: true }).webp({ quality, effort: 5 }).toFile(out);
   bytesIn += statSync(src).size;
   bytesOut += statSync(out).size;
   made += 1;
@@ -108,5 +105,7 @@ await uiArt();
 
 console.log(
   `[images] wrote ${made} derivative(s), skipped ${skipped} up-to-date` +
-    (made > 0 ? ` — ${fmt(bytesIn)} of sources → ${fmt(bytesOut)} (${Math.round((1 - bytesOut / bytesIn) * 100)}% smaller)` : ""),
+    (made > 0
+      ? ` — ${fmt(bytesIn)} of sources → ${fmt(bytesOut)} (${Math.round((1 - bytesOut / bytesIn) * 100)}% smaller)`
+      : ""),
 );

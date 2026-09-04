@@ -190,7 +190,8 @@ export function explorationRecordIsStellar(r: ExplorationScanRecord): boolean {
     if (planetClassIndicatesStellar(pc)) return true;
     if (planetClassIndicatesNonStellarWorld(pc)) return false;
     if (!pc) {
-      if (typeof r.stellarMass === "number" && Number.isFinite(r.stellarMass) && r.stellarMass > 0) return true;
+      if (typeof r.stellarMass === "number" && Number.isFinite(r.stellarMass) && r.stellarMass > 0)
+        return true;
       if (starTypeIndicatesSpecialStellar(st)) return true;
       if (spectralTypeLooksLikeOrdinaryStar(st)) return true;
       return false;

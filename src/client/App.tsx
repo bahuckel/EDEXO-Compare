@@ -2,12 +2,7 @@ import { useLastStateAt, useLiveSnapshot } from "./useLiveSnapshot";
 import { useConfirm, useToast } from "./ui/feedback";
 import { useModal } from "./ui/useModal";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
-import {
-  IconChevronDown,
-  IconEncyclopedia,
-  IconExobiology,
-  IconOptions,
-} from "./ui/icons";
+import { IconChevronDown, IconEncyclopedia, IconExobiology, IconOptions } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { SkeletonPanel } from "./ui/Skeleton";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
@@ -19,9 +14,7 @@ import { speciesPhotoVariant } from "./speciesPhotoVariant";
  * the system map (plus its 40 KB geometry module, which nothing else imports), the encyclopedia
  * (plus its filter bar and exomastery panels), the habitat match modal, and the quick-facts popup.
  */
-const SystemMapModal = lazy(() =>
-  import("./SystemMapModal").then((m) => ({ default: m.SystemMapModal })),
-);
+const SystemMapModal = lazy(() => import("./SystemMapModal").then((m) => ({ default: m.SystemMapModal })));
 const EncyclopediaModal = lazy(() =>
   import("./EncyclopediaModal").then((m) => ({ default: m.EncyclopediaModal })),
 );
@@ -109,10 +102,7 @@ import {
   titleCaseSpeciesWords,
   uniqueOnFootScanLines,
 } from "./speciesMatchHelpers";
-import {
-  buildBodyOrbitGroups,
-  groupTabBodiesIntoHostCards,
-} from "./bodyTabGroups";
+import { buildBodyOrbitGroups, groupTabBodiesIntoHostCards } from "./bodyTabGroups";
 import { useStableBioTabOrder } from "./useStableBioTabOrder";
 import { BodyTabStrip, type TabSection } from "./BodyTabStrip";
 import { BodyJumpPalette, bodyJumpItems } from "./BodyJumpPalette";
@@ -142,17 +132,14 @@ function FootScanMatchCard({ payload }: { payload: FootScanMatchPayload }) {
               ^
             </span>
             <span>
-              {more.length} other catalog bod{more.length === 1 ? "y" : "ies"}{" "}
-              (same planet class, atmosphere; T/P within ±10%)
+              {more.length} other catalog bod{more.length === 1 ? "y" : "ies"} (same planet class, atmosphere;
+              T/P within ±10%)
             </span>
           </button>
           {expanded ? (
             <div className="foot-scan-match-more-list">
               {more.map((h) => (
-                <FootScanHitBlock
-                  key={`${h.bodyName}-${h.recordedAt}-${h.starSystem}`}
-                  hit={h}
-                />
+                <FootScanHitBlock key={`${h.bodyName}-${h.recordedAt}-${h.starSystem}`} hit={h} />
               ))}
             </div>
           ) : null}
@@ -162,22 +149,14 @@ function FootScanMatchCard({ payload }: { payload: FootScanMatchPayload }) {
   );
 }
 
-function FootScanHitBlock({
-  hit,
-}: {
-  hit: FootScanMatchPayload["hits"][number];
-}) {
-  const src =
-    hit.confirmationSource === "analyse"
-      ? "FOOT CATALOG — Analyse"
-      : "FOOT CATALOG — Sample";
+function FootScanHitBlock({ hit }: { hit: FootScanMatchPayload["hits"][number] }) {
+  const src = hit.confirmationSource === "analyse" ? "FOOT CATALOG — Analyse" : "FOOT CATALOG — Sample";
   return (
     <div className="foot-scan-hit-block">
       <div className="foot-scan-hit-header">
         <span className="foot-scan-body-name">{hit.bodyName}</span>
         <span className="foot-scan-hit-meta dim tiny">
-          {hit.starSystem || "—"} ·{" "}
-          {hit.recordedAt.slice(0, 19).replace("T", " ")}
+          {hit.starSystem || "—"} · {hit.recordedAt.slice(0, 19).replace("T", " ")}
         </span>
         <span className="foot-scan-hit-source">{src}</span>
       </div>
@@ -196,21 +175,16 @@ function FootScanHitBlock({
               <div className="foot-scan-section-pair">
                 <div className="foot-scan-section-col">
                   <span className="foot-scan-section-tag">This body</span>
-                  <span className="foot-scan-section-val">
-                    {row.currentDisplay}
-                  </span>
+                  <span className="foot-scan-section-val">{row.currentDisplay}</span>
                 </div>
                 <div className="foot-scan-section-col">
                   <span className="foot-scan-section-tag">Catalog</span>
-                  <span className="foot-scan-section-val">
-                    {row.catalogDisplay}
-                  </span>
+                  <span className="foot-scan-section-val">{row.catalogDisplay}</span>
                 </div>
               </div>
               {!row.matches && row.speciesCriteriaIncludes ? (
                 <p className="foot-scan-section-note tiny foot-scan-section-note--warn">
-                  Mismatch on a field listed in <code>data/species/…</code>{" "}
-                  criteria — verify manually.
+                  Mismatch on a field listed in <code>data/species/…</code> criteria — verify manually.
                 </p>
               ) : null}
             </div>
@@ -222,19 +196,7 @@ function FootScanHitBlock({
 }
 
 /** Spectral classes for codex morph colours — O→M “main sequence” order for the mini rail. */
-const MORPH_SPECTRAL_ORDER = [
-  "O",
-  "B",
-  "A",
-  "F",
-  "G",
-  "K",
-  "M",
-  "TTS",
-  "L",
-  "Y",
-  "T",
-] as const;
+const MORPH_SPECTRAL_ORDER = ["O", "B", "A", "F", "G", "K", "M", "TTS", "L", "Y", "T"] as const;
 
 function sortMorphSpectralKeys(listCsv: string): string[] {
   const keys = [
@@ -246,14 +208,10 @@ function sortMorphSpectralKeys(listCsv: string): string[] {
     ),
   ];
   const rank = (k: string) => {
-    const i = MORPH_SPECTRAL_ORDER.indexOf(
-      k as (typeof MORPH_SPECTRAL_ORDER)[number],
-    );
+    const i = MORPH_SPECTRAL_ORDER.indexOf(k as (typeof MORPH_SPECTRAL_ORDER)[number]);
     if (i >= 0) return i;
     const one = k.length
-      ? MORPH_SPECTRAL_ORDER.indexOf(
-          k.charAt(0) as (typeof MORPH_SPECTRAL_ORDER)[number],
-        )
+      ? MORPH_SPECTRAL_ORDER.indexOf(k.charAt(0) as (typeof MORPH_SPECTRAL_ORDER)[number])
       : -1;
     if (one >= 0) return one + 0.15;
     return 40 + (k.charCodeAt(0) % 40);
@@ -276,8 +234,7 @@ function morphSpectralChipHeatClass(chip: string): string {
   if (c === "O" || c === "B") return "species-spectral-chip--oob";
   if (c === "A" || c === "F") return "species-spectral-chip--af";
   if (c === "G" || c === "K") return "species-spectral-chip--gk";
-  if (c === "M" || c === "L" || c === "T" || c === "Y")
-    return "species-spectral-chip--cool";
+  if (c === "M" || c === "L" || c === "T" || c === "Y") return "species-spectral-chip--cool";
   return "species-spectral-chip--x";
 }
 
@@ -305,10 +262,7 @@ function SpeciesStarColourSoftBadge({
     >
       <span className="visually-hidden">{title}</span>
       <div className="species-spectral-fit-row">
-        <div
-          className="species-spectral-host-pin"
-          aria-label="Primary host class"
-        >
+        <div className="species-spectral-host-pin" aria-label="Primary host class">
           <span className="species-spectral-host-pin-ic" aria-hidden>
             ◉
           </span>
@@ -319,17 +273,12 @@ function SpeciesStarColourSoftBadge({
         </div>
         <div className="species-spectral-rail-wrap">
           <div className="species-spectral-rail-glow" aria-hidden />
-          <div
-            className="species-spectral-rail"
-            aria-label="Spectral classes with codex morph entries"
-          >
+          <div className="species-spectral-rail" aria-label="Spectral classes with codex morph entries">
             {chips.map((k) => (
               <span
                 key={k}
                 className={`species-spectral-chip ${morphSpectralChipHeatClass(k)}${
-                  hostHitsMorphSpectralChip(host, k)
-                    ? " species-spectral-chip--host-here"
-                    : ""
+                  hostHitsMorphSpectralChip(host, k) ? " species-spectral-chip--host-here" : ""
                 }`}
               >
                 {k}
@@ -343,11 +292,7 @@ function SpeciesStarColourSoftBadge({
 }
 
 /** Habitat fit (cross-genus) + deck match + optional same-genus rank — equal-width columns for available metrics only. */
-function SpeciesExomasterySimilarityContent({
-  m,
-}: {
-  m: BodyComputed["matches"][0];
-}) {
+function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["matches"][0] }) {
   const hq = m.exomasteryHabitatQuality;
   const deck = m.exomasterySimilarityPercent;
   const gr = m.exomasteryGenusRelativePercent;
@@ -395,10 +340,7 @@ function SpeciesExomasterySimilarityContent({
 
   if (cols.length === 0) {
     return (
-      <div
-        className="species-similarity-index-empty dim"
-        style={{ fontSize: "0.72rem" }}
-      >
+      <div className="species-similarity-index-empty dim" style={{ fontSize: "0.72rem" }}>
         No indexed metrics for this match.
       </div>
     );
@@ -424,11 +366,7 @@ function SpeciesExomasterySimilarityContent({
       ) : null}
       <div className="species-similarity-index-cols">
         {cols.map((c) => (
-          <div
-            key={c.key}
-            className="species-similarity-index-col"
-            title={c.help}
-          >
+          <div key={c.key} className="species-similarity-index-col" title={c.help}>
             <div className="species-similarity-index-label">
               {c.shortLabel}{" "}
               <span className="species-similarity-index-pct">
@@ -452,11 +390,7 @@ function SpeciesExomasterySimilarityContent({
   );
 }
 
-function OtherMatchDetailCardsGrid({
-  cards,
-}: {
-  cards: OtherMatchDetailCardDTO[];
-}) {
+function OtherMatchDetailCardsGrid({ cards }: { cards: OtherMatchDetailCardDTO[] }) {
   return (
     <div className="species-other-match-cards-grid species-other-match-cards-grid--in-shell species-other-match-cards-grid--balanced">
       {cards.map((c) => {
@@ -467,19 +401,13 @@ function OtherMatchDetailCardsGrid({
             className={`species-other-match-mini exo-neon-duplex--tier-${tier}`}
             title={c.tooltip}
           >
-            <span className="species-other-match-mini-title">
-              {c.shortTitle}
-            </span>
+            <span className="species-other-match-mini-title">{c.shortTitle}</span>
             <div className="species-other-match-mini-line">
-              <span className="species-other-match-mini-legend">
-                {c.topLegend}
-              </span>
+              <span className="species-other-match-mini-legend">{c.topLegend}</span>
               <span>{c.topValue || "—"}</span>
             </div>
             <div className="species-other-match-mini-line">
-              <span className="species-other-match-mini-legend">
-                {c.bottomLegend}
-              </span>
+              <span className="species-other-match-mini-legend">{c.bottomLegend}</span>
               <span>{c.bottomValue || "—"}</span>
             </div>
           </div>
@@ -510,19 +438,11 @@ const SpeciesCard = memo(function SpeciesCard({
    * (~600 KB average, up to 2.8 MB); the lightbox below still opens the full-size file.
    */
   const src = speciesPhotoVariant(m.photoUrl, "card");
-  const [tempUnit, setTempUnit] = useState<TempUnit>(() =>
-    readTempUnitFromLs(),
-  );
+  const [tempUnit, setTempUnit] = useState<TempUnit>(() => readTempUnitFromLs());
   const quadCells = useMemo(() => {
     const base = primaryMatchQuad(m, scan, estimatedSurfaceTempK, tempUnit);
-    const exo =
-      m.exomasteryProfilePresent &&
-      exomasteryDetailHasContent(m.exomasteryDetail);
-    return base.map((c) =>
-      exo && c.key !== "SurfaceTemperature"
-        ? { ...c, openExomasteryModal: true }
-        : c,
-    );
+    const exo = m.exomasteryProfilePresent && exomasteryDetailHasContent(m.exomasteryDetail);
+    return base.map((c) => (exo && c.key !== "SurfaceTemperature" ? { ...c, openExomasteryModal: true } : c));
   }, [m, scan, estimatedSurfaceTempK, tempUnit]);
   const extras = useMemo(() => speciesMatchExtraReasons(m), [m]);
   const otherDetailCards = useMemo((): OtherMatchDetailCardDTO[] => {
@@ -542,8 +462,7 @@ const SpeciesCard = memo(function SpeciesCard({
       highlight: "neutral",
     }));
     return [...xs, ...fromReasons].sort(
-      (a, b) =>
-        a.priority - b.priority || a.shortTitle.localeCompare(b.shortTitle),
+      (a, b) => a.priority - b.priority || a.shortTitle.localeCompare(b.shortTitle),
     );
   }, [m.otherMatchDetailCards, extras]);
 
@@ -589,42 +508,27 @@ const SpeciesCard = memo(function SpeciesCard({
   const { genusShow, epithet } = speciesCaptionParts(e.genus, e.displayName);
   const genusDisplay = genusShow ? titleCaseSpeciesWords(genusShow) : "";
   const epithetDisplay = titleCaseSpeciesWords(epithet);
-  const morphColorRaw = useMemo(
-    () => candidateMorphColorShortLabel(e, hostStarType),
-    [e, hostStarType],
-  );
+  const morphColorRaw = useMemo(() => candidateMorphColorShortLabel(e, hostStarType), [e, hostStarType]);
   const morphColorDisplay =
-    morphColorRaw === "(unknown)"
-      ? morphColorRaw
-      : titleCaseSpeciesWords(morphColorRaw);
+    morphColorRaw === "(unknown)" ? morphColorRaw : titleCaseSpeciesWords(morphColorRaw);
   const dssPhysicalCautionTitle =
     "DSS-assisted candidate: may use 5% slack on temperature / pressure / gravity vs the journal, or nearest-by-temperature-only. Confirm species in-game.";
-  const showDssPhysicalCaution =
-    m.dssNearestTemperatureMatch === true || m.dssPhysicalSlackMatch === true;
+  const showDssPhysicalCaution = m.dssNearestTemperatureMatch === true || m.dssPhysicalSlackMatch === true;
   const identityNote = useMemo(() => {
     const notesPart = (e.notes ?? "").trim();
     const descPart = (e.description ?? "").trim();
     const minD = e.genusMinSampleDistanceM;
-    const distPrefix =
-      minD != null && minD > 0
-        ? `Distance between scans: ${minD.toLocaleString()} m`
-        : "";
-    const descBlock =
-      distPrefix && descPart
-        ? `${distPrefix} — ${descPart}`
-        : distPrefix || descPart;
+    const distPrefix = minD != null && minD > 0 ? `Distance between scans: ${minD.toLocaleString()} m` : "";
+    const descBlock = distPrefix && descPart ? `${distPrefix} — ${descPart}` : distPrefix || descPart;
     return [notesPart, descBlock].filter(Boolean).join("\n\n");
   }, [e.notes, e.description, e.genusMinSampleDistanceM]);
-  const showFootfallBadge =
-    m.learnedFromFootScan === true || m.footScanMatch != null;
+  const showFootfallBadge = m.learnedFromFootScan === true || m.footScanMatch != null;
 
   const thumbBtn = (
     <button
       type="button"
       className={
-        compact
-          ? "species-thumb-btn species-thumb-btn--compact"
-          : "species-thumb-btn species-thumb-btn--hero"
+        compact ? "species-thumb-btn species-thumb-btn--compact" : "species-thumb-btn species-thumb-btn--hero"
       }
       onClick={() => setPhotoLightbox(true)}
       aria-label="Enlarge species photo"
@@ -632,11 +536,7 @@ const SpeciesCard = memo(function SpeciesCard({
       <img
         src={src}
         alt=""
-        className={
-          compact
-            ? "species-img species-img--compact"
-            : "species-img species-img--hero"
-        }
+        className={compact ? "species-img species-img--compact" : "species-img species-img--hero"}
         onError={(ev) => {
           const el = ev.target as HTMLImageElement;
           el.style.display = "none";
@@ -645,10 +545,7 @@ const SpeciesCard = memo(function SpeciesCard({
             (ph as HTMLElement).style.display = "flex";
         }}
       />
-      <div
-        className="species-img-ph species-img-ph-fallback"
-        style={{ display: "none" }}
-      >
+      <div className="species-img-ph species-img-ph-fallback" style={{ display: "none" }}>
         Image failed to load
       </div>
     </button>
@@ -727,11 +624,7 @@ const SpeciesCard = memo(function SpeciesCard({
           );
         }
         return (
-          <div
-            key={cell.key}
-            className="species-quad-cell"
-            style={cell.pillStyle}
-          >
+          <div key={cell.key} className="species-quad-cell" style={cell.pillStyle}>
             {inner}
           </div>
         );
@@ -757,11 +650,7 @@ const SpeciesCard = memo(function SpeciesCard({
           </span>
         </button>
       ) : null}
-      <SpeciesStarColourSoftBadge
-        entry={e}
-        hostStarType={hostStarType}
-        compactLayout={compact}
-      />
+      <SpeciesStarColourSoftBadge entry={e} hostStarType={hostStarType} compactLayout={compact} />
     </div>
   );
 
@@ -807,9 +696,7 @@ const SpeciesCard = memo(function SpeciesCard({
             <span className="species-identity-sep"> · </span>
             <span className="species-identity-value-label">Value:</span>{" "}
             {m.priceCredits != null ? (
-              <span className="species-identity-value-amount">
-                {m.priceCredits.toLocaleString()} CR
-              </span>
+              <span className="species-identity-value-amount">{m.priceCredits.toLocaleString()} CR</span>
             ) : (
               <span className="dim">—</span>
             )}
@@ -817,9 +704,7 @@ const SpeciesCard = memo(function SpeciesCard({
         )}
       </div>
       {identityNote ? (
-        <div className="species-identity-sub species-identity-sub--note">
-          {identityNote}
-        </div>
+        <div className="species-identity-sub species-identity-sub--note">{identityNote}</div>
       ) : null}
 
       {m.exomasteryProfilePresent ? (
@@ -845,18 +730,14 @@ const SpeciesCard = memo(function SpeciesCard({
           className="species-similarity-index species-similarity-index--codex-hint"
           title={EXO_CODEX_VS_EXO_PROFILE_HELP}
         >
-          <p className="species-similarity-index-codex-hint-text">
-            {EXO_CODEX_VS_EXO_PROFILE_HELP}
-          </p>
+          <p className="species-similarity-index-codex-hint-text">{EXO_CODEX_VS_EXO_PROFILE_HELP}</p>
         </div>
       )}
     </div>
   );
 
   return (
-    <article
-      className={`species-card${compact ? " species-card--compact" : ""}`}
-    >
+    <article className={`species-card${compact ? " species-card--compact" : ""}`}>
       <div
         className={`species-card-inner${compact ? " species-card-inner--compact" : " species-card-inner--stacked"}`}
       >
@@ -866,9 +747,7 @@ const SpeciesCard = memo(function SpeciesCard({
               {thumbBtn}
               {compactPayout}
               {m.photoNote ? (
-                <p className="species-photo-note species-photo-note--compact-thumb">
-                  {m.photoNote}
-                </p>
+                <p className="species-photo-note species-photo-note--compact-thumb">{m.photoNote}</p>
               ) : null}
             </div>
             <div className="species-card-compact-detail">
@@ -882,9 +761,7 @@ const SpeciesCard = memo(function SpeciesCard({
             {identityNeon}
             {quadGrid}
             {m.photoNote ? (
-              <p className="species-photo-note species-photo-note--hero">
-                {m.photoNote}
-              </p>
+              <p className="species-photo-note species-photo-note--hero">{m.photoNote}</p>
             ) : null}
           </div>
         )}
@@ -911,9 +788,7 @@ const SpeciesCard = memo(function SpeciesCard({
             </p>
           ) : null}
 
-          {m.learnedFromFootScan && m.footScanMatch ? (
-            <FootScanMatchCard payload={m.footScanMatch} />
-          ) : null}
+          {m.learnedFromFootScan && m.footScanMatch ? <FootScanMatchCard payload={m.footScanMatch} /> : null}
 
           {otherMatchBlock && !compact ? (
             <div className="species-other-match-shell species-other-match-shell--drawer">
@@ -930,9 +805,7 @@ const SpeciesCard = memo(function SpeciesCard({
                   >
                     ›
                   </span>
-                  <span className="species-other-match-shell-title">
-                    Other matching details
-                  </span>
+                  <span className="species-other-match-shell-title">Other matching details</span>
                 </button>
                 {showFootfallBadge ? (
                   <span
@@ -957,9 +830,7 @@ const SpeciesCard = memo(function SpeciesCard({
         </div>
       </div>
 
-      {exoDetailOpen &&
-      exomasteryDetailHasContent(m.exomasteryDetail) &&
-      m.exomasteryDetail ? (
+      {exoDetailOpen && exomasteryDetailHasContent(m.exomasteryDetail) && m.exomasteryDetail ? (
         <Suspense fallback={null}>
           <ExomasteryHabitatMatchModal
             variant="profile"
@@ -976,11 +847,7 @@ const SpeciesCard = memo(function SpeciesCard({
 
       {otherMatchModalOpen && compact && otherMatchBlock
         ? createPortal(
-            <div
-              className="modal-backdrop"
-              role="presentation"
-              onClick={() => setOtherMatchModalOpen(false)}
-            >
+            <div className="modal-backdrop" role="presentation" onClick={() => setOtherMatchModalOpen(false)}>
               <div
                 className="modal-panel other-matching-details-modal"
                 role="dialog"
@@ -989,10 +856,7 @@ const SpeciesCard = memo(function SpeciesCard({
                 onClick={(ev) => ev.stopPropagation()}
               >
                 <div className="modal-head">
-                  <h3
-                    id={`other-match-${e.id}`}
-                    className="other-matching-details-modal-title"
-                  >
+                  <h3 id={`other-match-${e.id}`} className="other-matching-details-modal-title">
                     Other matching details — {e.displayName}
                   </h3>
                   <button
@@ -1038,10 +902,7 @@ const SpeciesCard = memo(function SpeciesCard({
                 onClick={(ev) => ev.stopPropagation()}
               />
               {m.photoNote ? (
-                <p
-                  className="photo-lightbox-cap"
-                  onClick={(ev) => ev.stopPropagation()}
-                >
+                <p className="photo-lightbox-cap" onClick={(ev) => ev.stopPropagation()}>
                   {m.photoNote}
                 </p>
               ) : null}
@@ -1079,15 +940,9 @@ function ExoPayoutRangeDetailModal({
       : "DSS genus list length (fallback when signal count is not present yet).";
 
   const minListTot = pr.minTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
-  const minFfTot = pr.minTotalSpecies.reduce(
-    (s, r) => s + r.listCredits * 5,
-    0,
-  );
+  const minFfTot = pr.minTotalSpecies.reduce((s, r) => s + r.listCredits * 5, 0);
   const maxListTot = pr.maxTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
-  const maxFfTot = pr.maxTotalSpecies.reduce(
-    (s, r) => s + r.listCredits * 5,
-    0,
-  );
+  const maxFfTot = pr.maxTotalSpecies.reduce((s, r) => s + r.listCredits * 5, 0);
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -1101,15 +956,8 @@ function ExoPayoutRangeDetailModal({
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="modal-head">
-          <h3 id="exo-payout-detail-title">
-            Organic Sell Range: {bodyTabLabel}
-          </h3>
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <h3 id="exo-payout-detail-title">Organic Sell Range: {bodyTabLabel}</h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
@@ -1121,25 +969,21 @@ function ExoPayoutRangeDetailModal({
                 <strong>Slots ({pr.slotCount})</strong> — {slotSrcLabel}
               </li>
               <li>
-                <strong>Candidates ({pr.pricedCandidateCount} priced)</strong> —
-                species that pass the same matching rules as &quot;Candidate
-                species&quot; below for this body (scan gates, DSS genus filter,
-                on-foot locks, and <strong>Include Bacterium</strong>{" "}
+                <strong>Candidates ({pr.pricedCandidateCount} priced)</strong> — species that pass the same
+                matching rules as &quot;Candidate species&quot; below for this body (scan gates, DSS genus
+                filter, on-foot locks, and <strong>Include Bacterium</strong>{" "}
                 {includeBacteriumInSearch ? "ON" : "OFF"}).
               </li>
               <li>
-                <strong>List price</strong> — each row uses{" "}
-                <code>data/price-list.json</code> with a <em>strict</em> key
-                match on species display name / id (no substring fallback),
-                identical to the map exobiology heuristic.
+                <strong>List price</strong> — each row uses <code>data/price-list.json</code> with a{" "}
+                <em>strict</em> key match on species display name / id (no substring fallback), identical to
+                the map exobiology heuristic.
               </li>
               <li>
-                <strong>Columns</strong> — <strong>List / sell (×1)</strong> is
-                the row from <code>data/price-list.json</code> (strict key match
-                — same as standard organic payout without the first-footfall
-                bonus). <strong>Footfall (×5)</strong> is five times that value:
-                the total payout when your commander qualifies for
-                first-footfall organics on this body.
+                <strong>Columns</strong> — <strong>List / sell (×1)</strong> is the row from{" "}
+                <code>data/price-list.json</code> (strict key match — same as standard organic payout without
+                the first-footfall bonus). <strong>Footfall (×5)</strong> is five times that value: the total
+                payout when your commander qualifies for first-footfall organics on this body.
               </li>
               <li>
                 <strong>Multiplier ×{pr.mult}</strong> —{" "}
@@ -1153,10 +997,9 @@ function ExoPayoutRangeDetailModal({
                     : "Latest detailed scan reports the body was not yet footfalled."}
               </li>
               <li>
-                <strong>k = min(slots, {pr.pricedCandidateCount})</strong>— we
-                sum the <strong>k cheapest</strong> distinct priced species for
-                the low total, and the <strong>k priciest</strong> for the high
-                total.
+                <strong>k = min(slots, {pr.pricedCandidateCount})</strong>— we sum the{" "}
+                <strong>k cheapest</strong> distinct priced species for the low total, and the{" "}
+                <strong>k priciest</strong> for the high total.
                 {pr.incomplete
                   ? " There are fewer priced matches than bio slots, so both totals only include the species shown."
                   : ""}
@@ -1167,26 +1010,22 @@ function ExoPayoutRangeDetailModal({
           <section className="exo-payout-detail-section">
             <h4>Worst-paying set (k cheapest)</h4>
             <p className="dim tiny" style={{ marginTop: "-0.25rem" }}>
-              List / standard sell (×1) total {minListTot.toLocaleString()} CR ·
-              Footfall (×5) total {minFfTot.toLocaleString()} CR
+              List / standard sell (×1) total {minListTot.toLocaleString()} CR · Footfall (×5) total{" "}
+              {minFfTot.toLocaleString()} CR
             </p>
             <table className="exo-payout-detail-table">
               <thead>
                 <tr>
                   <th>Species</th>
                   <th className="exo-payout-detail-num">List / sell (×1)</th>
-                  <th className="exo-payout-detail-num exo-payout-detail-footfall-col">
-                    Footfall (×5)
-                  </th>
+                  <th className="exo-payout-detail-num exo-payout-detail-footfall-col">Footfall (×5)</th>
                 </tr>
               </thead>
               <tbody>
                 {pr.minTotalSpecies.map((row) => (
                   <tr key={`min-${row.id}`}>
                     <td>{row.displayName}</td>
-                    <td className="exo-payout-detail-num">
-                      {row.listCredits.toLocaleString()}
-                    </td>
+                    <td className="exo-payout-detail-num">{row.listCredits.toLocaleString()}</td>
                     <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
                       {(row.listCredits * 5).toLocaleString()}
                     </td>
@@ -1210,26 +1049,22 @@ function ExoPayoutRangeDetailModal({
           <section className="exo-payout-detail-section">
             <h4>Best-paying set (k priciest)</h4>
             <p className="dim tiny" style={{ marginTop: "-0.25rem" }}>
-              List / standard sell (×1) total {maxListTot.toLocaleString()} CR ·
-              Footfall (×5) total {maxFfTot.toLocaleString()} CR
+              List / standard sell (×1) total {maxListTot.toLocaleString()} CR · Footfall (×5) total{" "}
+              {maxFfTot.toLocaleString()} CR
             </p>
             <table className="exo-payout-detail-table">
               <thead>
                 <tr>
                   <th>Species</th>
                   <th className="exo-payout-detail-num">List / sell (×1)</th>
-                  <th className="exo-payout-detail-num exo-payout-detail-footfall-col">
-                    Footfall (×5)
-                  </th>
+                  <th className="exo-payout-detail-num exo-payout-detail-footfall-col">Footfall (×5)</th>
                 </tr>
               </thead>
               <tbody>
                 {pr.maxTotalSpecies.map((row) => (
                   <tr key={`max-${row.id}`}>
                     <td>{row.displayName}</td>
-                    <td className="exo-payout-detail-num">
-                      {row.listCredits.toLocaleString()}
-                    </td>
+                    <td className="exo-payout-detail-num">{row.listCredits.toLocaleString()}</td>
                     <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
                       {(row.listCredits * 5).toLocaleString()}
                     </td>
@@ -1319,18 +1154,12 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
         if (!r.ok) throw new Error(t.trim() || r.statusText);
         setNotesText(t);
       })
-      .catch((err) =>
-        setNotesErr(err instanceof Error ? err.message : String(err)),
-      )
+      .catch((err) => setNotesErr(err instanceof Error ? err.message : String(err)))
       .finally(() => setNotesLoading(false));
   };
 
   return (
-    <section
-      ref={shellRef}
-      className="genus-card-shell"
-      aria-labelledby={headId}
-    >
+    <section ref={shellRef} className="genus-card-shell" aria-labelledby={headId}>
       <div className="genus-card-header-row">
         <button
           type="button"
@@ -1340,10 +1169,7 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
           aria-controls={`${headId}-panel`}
           title="Collapse or expand species in this genus"
         >
-          <span
-            className={`genus-card-chevron${open ? " genus-card-chevron--open" : ""}`}
-            aria-hidden
-          >
+          <span className={`genus-card-chevron${open ? " genus-card-chevron--open" : ""}`} aria-hidden>
             ^
           </span>
           <h2 className="genus-card-title" id={headId}>
@@ -1381,17 +1207,8 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
       </div>
 
       {notesOpen ? (
-        <div
-          className="modal-backdrop"
-          role="presentation"
-          onClick={() => setNotesOpen(false)}
-        >
-          <div
-            className="modal-panel"
-            role="dialog"
-            aria-modal="true"
-            onClick={(ev) => ev.stopPropagation()}
-          >
+        <div className="modal-backdrop" role="presentation" onClick={() => setNotesOpen(false)}>
+          <div className="modal-panel" role="dialog" aria-modal="true" onClick={(ev) => ev.stopPropagation()}>
             <div className="modal-head">
               <h3>{genusTitle} — notes</h3>
               <button
@@ -1406,9 +1223,7 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
             <div className="modal-body">
               {notesLoading ? <p className="dim">Loading…</p> : null}
               {notesErr ? <p className="warn">{notesErr}</p> : null}
-              {notesText != null && !notesLoading ? (
-                <pre className="notes-pre">{notesText}</pre>
-              ) : null}
+              {notesText != null && !notesLoading ? <pre className="notes-pre">{notesText}</pre> : null}
             </div>
           </div>
         </div>
@@ -1423,9 +1238,7 @@ function candidateSpeciesDenomFromFss(state: BodyComputed["state"]): number {
 }
 
 function genusHintIsDssOrphan(g: GenusHint, orphans: GenusHint[]): boolean {
-  return orphans.some(
-    (o) => o.Genus === g.Genus && o.Genus_Localised === g.Genus_Localised,
-  );
+  return orphans.some((o) => o.Genus === g.Genus && o.Genus_Localised === g.Genus_Localised);
 }
 
 const BodyPane = memo(function BodyPane({
@@ -1452,51 +1265,35 @@ const BodyPane = memo(function BodyPane({
   const [compactCandidateView, setCompactCandidateView] = useState(() =>
     readLsBool(EDEXO_COMPACT_CANDIDATE_VIEW_LS, true),
   );
-  const [tempUnit, setTempUnit] = useState<TempUnit>(() =>
-    readTempUnitFromLs(),
-  );
-  const [pressUnit, setPressUnit] = useState<PressDisplay>(() =>
-    readPressUnitFromLs(),
-  );
+  const [tempUnit, setTempUnit] = useState<TempUnit>(() => readTempUnitFromLs());
+  const [pressUnit, setPressUnit] = useState<PressDisplay>(() => readPressUnitFromLs());
   const [bodySummaryCopied, setBodySummaryCopied] = useState(false);
   const s = body.state;
   const sc = body.mergedScan?.PlanetClass?.trim()
     ? body.mergedScan
     : ((s.scan as PlanetScan | null | undefined) ?? null);
   const canOpenJournalScanModal =
-    body.bodyScanDetail != null &&
-    exomasteryDetailHasContent(body.bodyScanDetail);
+    body.bodyScanDetail != null && exomasteryDetailHasContent(body.bodyScanDetail);
 
   const planetType = sc?.PlanetClass?.trim() || "—";
   const atmoRaw = (sc?.AtmosphereType || sc?.Atmosphere || "").trim();
-  const atmosphereDisplay =
-    !atmoRaw || atmoRaw.toLowerCase() === "none" ? "No Atmosphere" : atmoRaw;
+  const atmosphereDisplay = !atmoRaw || atmoRaw.toLowerCase() === "none" ? "No Atmosphere" : atmoRaw;
 
   const { gEarth, label: gravLabel } = gravityFromScan(sc ?? {});
 
   const tempK =
-    sc?.SurfaceTemperature != null && !Number.isNaN(sc.SurfaceTemperature)
-      ? sc.SurfaceTemperature
-      : NaN;
+    sc?.SurfaceTemperature != null && !Number.isNaN(sc.SurfaceTemperature) ? sc.SurfaceTemperature : NaN;
   const est = body.estimatedSurfaceTempK;
-  const tempLine = formatTemperaturePillLine(
-    Number.isFinite(tempK) ? tempK : null,
-    est,
-    tempUnit,
-  );
+  const tempLine = formatTemperaturePillLine(Number.isFinite(tempK) ? tempK : null, est, tempUnit);
   const tempStyleK = Number.isFinite(tempK) ? tempK : (est?.midK ?? NaN);
 
   const surfPressRaw =
-    sc?.SurfacePressure != null && !Number.isNaN(sc.SurfacePressure)
-      ? sc.SurfacePressure
-      : null;
+    sc?.SurfacePressure != null && !Number.isNaN(sc.SurfacePressure) ? sc.SurfacePressure : null;
   const pressLabel = formatPressurePill(surfPressRaw, pressUnit);
-  const pressAtmForStyle =
-    surfPressRaw != null ? journalPressureToAtm(surfPressRaw) : NaN;
+  const pressAtmForStyle = surfPressRaw != null ? journalPressureToAtm(surfPressRaw) : NaN;
 
   const arrivalLs =
-    sc?.distanceFromArrivalLs != null &&
-    Number.isFinite(sc.distanceFromArrivalLs)
+    sc?.distanceFromArrivalLs != null && Number.isFinite(sc.distanceFromArrivalLs)
       ? sc.distanceFromArrivalLs
       : null;
   const fromArrivalDisplay =
@@ -1504,25 +1301,11 @@ const BodyPane = memo(function BodyPane({
       ? `${arrivalLs === 0 ? "0" : arrivalLs.toLocaleString(undefined, { maximumFractionDigits: 2 })} Ls`
       : "—";
 
-  const landShort =
-    sc == null
-      ? "No detailed scan"
-      : sc.Landable === true
-        ? "Landable"
-        : "Not landable";
+  const landShort = sc == null ? "No detailed scan" : sc.Landable === true ? "Landable" : "Not landable";
 
   const bodySummaryOneLine = useMemo(() => {
-    const parts = [
-      body.tabLabel,
-      planetType,
-      atmosphereDisplay,
-      landShort,
-      gravLabel,
-      tempLine,
-      pressLabel,
-    ];
-    if (fromArrivalDisplay !== "—")
-      parts.push(`${fromArrivalDisplay} from arrival`);
+    const parts = [body.tabLabel, planetType, atmosphereDisplay, landShort, gravLabel, tempLine, pressLabel];
+    if (fromArrivalDisplay !== "—") parts.push(`${fromArrivalDisplay} from arrival`);
     return parts.join(" · ");
   }, [
     body.tabLabel,
@@ -1556,9 +1339,7 @@ const BodyPane = memo(function BodyPane({
         ? onFootFallback.join(", ")
         : "No footfall species confirmation";
   const comparisonBodySummary =
-    [body.tabLabel, s.starSystem]
-      .filter((x) => (x ?? "").trim().length > 0)
-      .join(" · ") || "—";
+    [body.tabLabel, s.starSystem].filter((x) => (x ?? "").trim().length > 0).join(" · ") || "—";
 
   useEffect(() => {
     writeLsBool(EDEXO_EXO_RANGE_COLLAPSED_LS, exoRangeCollapsed);
@@ -1577,9 +1358,7 @@ const BodyPane = memo(function BodyPane({
   }, [compactCandidateView]);
 
   return (
-    <div
-      className={`body-pane${compactCandidateView ? " body-pane--compact-candidates" : ""}`}
-    >
+    <div className={`body-pane${compactCandidateView ? " body-pane--compact-candidates" : ""}`}>
       <div className="panel planetary-info-card">
         <div className="planetary-info-title-row">
           <h3 className="planetary-info-title">Planetary Body Information:</h3>
@@ -1596,9 +1375,7 @@ const BodyPane = memo(function BodyPane({
         <div className="planetary-info-row">
           <div
             className="info-pill info-pill--static"
-            style={
-              planetType !== "—" ? planetClassPillStyle(planetType) : undefined
-            }
+            style={planetType !== "—" ? planetClassPillStyle(planetType) : undefined}
           >
             <span className="info-pill-label" style={pillLabelStyle}>
               Type:
@@ -1623,11 +1400,7 @@ const BodyPane = memo(function BodyPane({
                   : " info-pill--land-no"
             }`}
           >
-            {sc == null
-              ? "No detailed scan"
-              : sc.Landable === true
-                ? "Landable"
-                : "Not landable"}
+            {sc == null ? "No detailed scan" : sc.Landable === true ? "Landable" : "Not landable"}
           </div>
         </div>
 
@@ -1644,14 +1417,8 @@ const BodyPane = memo(function BodyPane({
           <button
             type="button"
             className="info-pill info-pill--click"
-            style={
-              Number.isFinite(tempStyleK)
-                ? tempHeatStyle(tempStyleK)
-                : undefined
-            }
-            onClick={() =>
-              setTempUnit((u) => (u === "K" ? "C" : u === "C" ? "F" : "K"))
-            }
+            style={Number.isFinite(tempStyleK) ? tempHeatStyle(tempStyleK) : undefined}
+            onClick={() => setTempUnit((u) => (u === "K" ? "C" : u === "C" ? "F" : "K"))}
             title="Cycles Kelvin → Celsius → Fahrenheit (display only; matching still uses journal Kelvin)"
           >
             <span className="info-pill-label" style={pillLabelStyle}>
@@ -1662,11 +1429,7 @@ const BodyPane = memo(function BodyPane({
           <button
             type="button"
             className="info-pill info-pill--click"
-            style={
-              Number.isFinite(pressAtmForStyle)
-                ? pressHeatStyle(pressAtmForStyle)
-                : undefined
-            }
+            style={Number.isFinite(pressAtmForStyle) ? pressHeatStyle(pressAtmForStyle) : undefined}
             onClick={() => setPressUnit((u) => (u === "atm" ? "pa" : "atm"))}
             title="Toggle display: standard atmospheres vs raw journal pascals (values below ~40 journal units are treated as atm already)"
           >
@@ -1752,14 +1515,11 @@ const BodyPane = memo(function BodyPane({
                 : "No ScanOrganic confirmation merged for this body yet."
             }
           >
-            <span className="info-pill-label">On-Foot Scan:</span>{" "}
-            {onFootPillBody}
+            <span className="info-pill-label">On-Foot Scan:</span> {onFootPillBody}
           </div>
         </div>
 
-        {body.ambiguityNote ? (
-          <p className="warn tiny">{body.ambiguityNote}</p>
-        ) : null}
+        {body.ambiguityNote ? <p className="warn tiny">{body.ambiguityNote}</p> : null}
       </div>
 
       {body.exoPayoutRange ? (
@@ -1773,9 +1533,7 @@ const BodyPane = memo(function BodyPane({
               onClick={() => setExoRangeCollapsed((v) => !v)}
               aria-expanded={!exoRangeCollapsed}
             >
-              <span
-                className={`exo-payout-chevron${exoRangeCollapsed ? "" : " exo-payout-chevron--open"}`}
-              >
+              <span className={`exo-payout-chevron${exoRangeCollapsed ? "" : " exo-payout-chevron--open"}`}>
                 ^
               </span>
               <span>Organic Sell Range:</span>
@@ -1789,10 +1547,7 @@ const BodyPane = memo(function BodyPane({
                   className="exo-payout-range-panel exo-payout-range-panel--clickable exo-payout-inner-click"
                   onClick={() => setExoPayoutDetailOpen(true)}
                 >
-                  <ExoPayoutRangePanel
-                    pr={body.exoPayoutRange}
-                    variant="main"
-                  />
+                  <ExoPayoutRangePanel pr={body.exoPayoutRange} variant="main" />
                 </button>
               </div>
             </div>
@@ -1811,8 +1566,7 @@ const BodyPane = memo(function BodyPane({
       <div className="panel panel--candidate-species">
         <div className="candidate-species-head candidate-species-head--bar">
           <h3 className="candidate-species-title">
-            CANDIDATE SPECIES ({body.matches.length}/
-            {candidateSpeciesDenomFromFss(s)})
+            CANDIDATE SPECIES ({body.matches.length}/{candidateSpeciesDenomFromFss(s)})
           </h3>
           <div className="candidate-species-toggles">
             <button
@@ -1844,8 +1598,8 @@ const BodyPane = memo(function BodyPane({
         ) : null}
         {body.matches.length === 0 ? (
           <p className="dim">
-            No matches — adjust per-species rows in your genus JSON under
-            data/species/, or get journal scan fields that satisfy those gates.
+            No matches — adjust per-species rows in your genus JSON under data/species/, or get journal scan
+            fields that satisfy those gates.
           </p>
         ) : (
           <div className="species-list">
@@ -1904,14 +1658,7 @@ function StarSystemMapIcon({ className }: { className?: string }) {
           <stop offset="100%" stopColor="#cf5a24" />
         </radialGradient>
       </defs>
-      <circle
-        cx="36"
-        cy="36"
-        r="31"
-        stroke="rgba(255,148,92,0.35)"
-        strokeWidth={1.2}
-        opacity={0.95}
-      />
+      <circle cx="36" cy="36" r="31" stroke="rgba(255,148,92,0.35)" strokeWidth={1.2} opacity={0.95} />
       <circle
         cx="36"
         cy="36"
@@ -1930,46 +1677,17 @@ function StarSystemMapIcon({ className }: { className?: string }) {
         strokeDasharray="1 9"
         opacity={0.85}
       />
-      <circle
-        cx="24"
-        cy="26"
-        r={3.2}
-        fill="rgba(200,226,255,0.9)"
-        opacity={0.85}
-      />
-      <circle
-        cx="48"
-        cy="30"
-        r={2.6}
-        fill="rgba(163,238,218,0.85)"
-        opacity={0.8}
-      />
-      <circle
-        cx="44"
-        cy="52"
-        r={2.25}
-        fill="rgba(205,216,238,0.75)"
-        opacity={0.82}
-      />
-      <circle
-        cx="28"
-        cy="48"
-        r={2.05}
-        fill="rgba(247,237,228,0.55)"
-        opacity={0.82}
-      />
+      <circle cx="24" cy="26" r={3.2} fill="rgba(200,226,255,0.9)" opacity={0.85} />
+      <circle cx="48" cy="30" r={2.6} fill="rgba(163,238,218,0.85)" opacity={0.8} />
+      <circle cx="44" cy="52" r={2.25} fill="rgba(205,216,238,0.75)" opacity={0.82} />
+      <circle cx="28" cy="48" r={2.05} fill="rgba(247,237,228,0.55)" opacity={0.82} />
       <circle cx="36" cy="36" r={11} fill={`url(#${gradId})`} opacity={0.98} />
     </svg>
   );
 }
 
 function InlineSpinner({ className }: { className?: string }) {
-  return (
-    <span
-      className={`inline-spinner${className ? ` ${className}` : ""}`}
-      aria-hidden
-    />
-  );
+  return <span className={`inline-spinner${className ? ` ${className}` : ""}`} aria-hidden />;
 }
 
 function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
@@ -1999,8 +1717,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
     if (!open) return;
     const onDoc = (ev: MouseEvent) => {
       const el = wrapRef.current;
-      if (el && ev.target instanceof Node && !el.contains(ev.target))
-        setOpen(false);
+      if (el && ev.target instanceof Node && !el.contains(ev.target)) setOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -2010,11 +1727,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
   const filtered =
     q === ""
       ? systems
-      : systems.filter(
-          (s) =>
-            s.starSystem.toLowerCase().includes(q) ||
-            String(s.systemAddress).includes(q),
-        );
+      : systems.filter((s) => s.starSystem.toLowerCase().includes(q) || String(s.systemAddress).includes(q));
 
   const runEdsmGalaxySearch = async () => {
     const q = query.trim();
@@ -2023,9 +1736,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
     setEdsmErr(null);
     setEdsmSearchAttempted(true);
     try {
-      const r = await fetch(
-        `/api/system/edsm-search?q=${encodeURIComponent(q)}`,
-      );
+      const r = await fetch(`/api/system/edsm-search?q=${encodeURIComponent(q)}`);
       const j = (await r.json().catch(() => null)) as {
         systems?: JournalSystemInfo[];
         error?: string;
@@ -2033,9 +1744,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
       if (!r.ok) throw new Error(j?.error || r.statusText);
       setEdsmHits(j?.systems ?? []);
     } catch (e) {
-      setEdsmErr(
-        e instanceof Error ? e.message : "Galaxy search (EDSM) failed.",
-      );
+      setEdsmErr(e instanceof Error ? e.message : "Galaxy search (EDSM) failed.");
       setEdsmHits([]);
     } finally {
       setEdsmBusy(false);
@@ -2046,9 +1755,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
     const addr = snap.viewingSystemAddress ?? snap.currentSystemAddress;
     if (addr == null || journalLoading) return;
     const name =
-      (snap.viewingSystemAddress != null
-        ? snap.viewingSystemName?.trim()
-        : snap.currentSystem?.trim()) ||
+      (snap.viewingSystemAddress != null ? snap.viewingSystemName?.trim() : snap.currentSystem?.trim()) ||
       snap.primaryStarsHeader?.systemName?.trim() ||
       snap.currentSystem?.trim() ||
       systems.find((s) => s.systemAddress === addr)?.starSystem?.trim() ||
@@ -2074,9 +1781,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
         toast.error(j?.error || r.statusText);
       }
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "Could not load bodies from EDSM.",
-      );
+      toast.error(e instanceof Error ? e.message : "Could not load bodies from EDSM.");
     } finally {
       setMapHydrateBusy(false);
     }
@@ -2105,9 +1810,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
         } | null;
         if (!r.ok) throw new Error(j?.error || r.statusText);
       } catch (e) {
-        toast.error(
-          e instanceof Error ? e.message : "Could not change system view.",
-        );
+        toast.error(e instanceof Error ? e.message : "Could not change system view.");
       }
     })();
     setQuery("");
@@ -2120,11 +1823,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
         type="search"
         className="journal-system-search-input"
         autoComplete="off"
-        placeholder={
-          journalLoading
-            ? "Loading journals…"
-            : "Search journal or galaxy (EDSM)…"
-        }
+        placeholder={journalLoading ? "Loading journals…" : "Search journal or galaxy (EDSM)…"}
         value={query}
         disabled={journalLoading}
         onChange={(e) => {
@@ -2139,8 +1838,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
         aria-expanded={open}
         aria-controls="journal-system-search-results"
       />
-      {(snap.viewingSystemAddress != null || snap.currentSystemAddress != null) &&
-      !journalLoading ? (
+      {(snap.viewingSystemAddress != null || snap.currentSystemAddress != null) && !journalLoading ? (
         <div className="journal-system-view-actions">
           {snap.viewingSystemAddress != null ? (
             <button
@@ -2184,16 +1882,10 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
                     className="journal-system-search-row"
                     role="option"
                     onMouseDown={(e) => e.preventDefault()}
-                    onClick={() =>
-                      applyView(s.systemAddress, { starSystem: s.starSystem })
-                    }
+                    onClick={() => applyView(s.systemAddress, { starSystem: s.starSystem })}
                   >
-                    <span className="journal-system-search-name">
-                      {s.starSystem}
-                    </span>
-                    <span className="journal-system-search-addr dim tab">
-                      {s.systemAddress}
-                    </span>
+                    <span className="journal-system-search-name">{s.starSystem}</span>
+                    <span className="journal-system-search-addr dim tab">{s.systemAddress}</span>
                   </button>
                 </li>
               ))
@@ -2223,16 +1915,9 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
                   )}
                 </button>
               </li>
-              {!edsmBusy && edsmErr ? (
-                <li className="journal-system-search-empty">{edsmErr}</li>
-              ) : null}
-              {!edsmBusy &&
-              !edsmErr &&
-              edsmSearchAttempted &&
-              edsmHits.length === 0 ? (
-                <li className="journal-system-search-empty dim">
-                  No EDSM matches for “{query.trim()}”.
-                </li>
+              {!edsmBusy && edsmErr ? <li className="journal-system-search-empty">{edsmErr}</li> : null}
+              {!edsmBusy && !edsmErr && edsmSearchAttempted && edsmHits.length === 0 ? (
+                <li className="journal-system-search-empty dim">No EDSM matches for “{query.trim()}”.</li>
               ) : null}
               {!edsmBusy &&
                 edsmHits.map((s) => (
@@ -2242,19 +1927,11 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
                       className="journal-system-search-row journal-system-search-row--edsm"
                       role="option"
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() =>
-                        applyView(s.systemAddress, { starSystem: s.starSystem })
-                      }
+                      onClick={() => applyView(s.systemAddress, { starSystem: s.starSystem })}
                     >
-                      <span className="journal-system-search-name">
-                        {s.starSystem}
-                      </span>
-                      <span className="journal-system-search-addr dim tab">
-                        {s.systemAddress}
-                      </span>
-                      <span className="journal-system-search-edsm-badge dim">
-                        EDSM
-                      </span>
+                      <span className="journal-system-search-name">{s.starSystem}</span>
+                      <span className="journal-system-search-addr dim tab">{s.systemAddress}</span>
+                      <span className="journal-system-search-edsm-badge dim">EDSM</span>
                     </button>
                   </li>
                 ))}
@@ -2297,51 +1974,51 @@ function MapOptionsModal({
   const dssSlackSaveTimerRef = useRef<number | null>(null);
   const pendingDssSlackRef = useRef<{ t: number; p: number; g: number } | null>(null);
   const pendingTiersRef = useRef<{ p: number; pp: number } | null>(null);
-  const tail = snap.journalPath
-    ? snap.journalPath.split(/[/\\]/).pop()
-    : "none";
+  const tail = snap.journalPath ? snap.journalPath.split(/[/\\]/).pop() : "none";
 
-  const persistExoMapTiers = useCallback((p: number, pp: number) => {
-    void (async () => {
-      try {
-        const r = await fetch("/api/settings/exo-map-tiers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plusMinCr: p, plusPlusMinCr: pp }),
-        });
-        const j = (await r.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        if (!r.ok) throw new Error(j?.error || r.statusText);
-      } catch (e) {
-        toast.error(
-          e instanceof Error ? e.message : "Could not save options.",
-        );
-      }
-    })();
-  }, [toast]);
+  const persistExoMapTiers = useCallback(
+    (p: number, pp: number) => {
+      void (async () => {
+        try {
+          const r = await fetch("/api/settings/exo-map-tiers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plusMinCr: p, plusPlusMinCr: pp }),
+          });
+          const j = (await r.json().catch(() => null)) as {
+            error?: string;
+          } | null;
+          if (!r.ok) throw new Error(j?.error || r.statusText);
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Could not save options.");
+        }
+      })();
+    },
+    [toast],
+  );
 
-  const persistDssPhysicalSlack = useCallback((t: number, p: number, g: number) => {
-    void (async () => {
-      try {
-        const r = await fetch("/api/settings/dss-physical-slack", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            temperaturePercent: t,
-            pressurePercent: p,
-            gravityPercent: g,
-          }),
-        });
-        const j = (await r.json().catch(() => null)) as { error?: string } | null;
-        if (!r.ok) throw new Error(j?.error || r.statusText);
-      } catch (e) {
-        toast.error(
-          e instanceof Error ? e.message : "Could not save DSS slack options.",
-        );
-      }
-    })();
-  }, [toast]);
+  const persistDssPhysicalSlack = useCallback(
+    (t: number, p: number, g: number) => {
+      void (async () => {
+        try {
+          const r = await fetch("/api/settings/dss-physical-slack", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              temperaturePercent: t,
+              pressurePercent: p,
+              gravityPercent: g,
+            }),
+          });
+          const j = (await r.json().catch(() => null)) as { error?: string } | null;
+          if (!r.ok) throw new Error(j?.error || r.statusText);
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Could not save DSS slack options.");
+        }
+      })();
+    },
+    [toast],
+  );
 
   useEffect(() => {
     return () => {
@@ -2366,25 +2043,16 @@ function MapOptionsModal({
   }, [plusMinCr, plusPlusMinCr]);
 
   useEffect(() => {
-    setDssSlackTemp(
-      Math.max(0, Math.min(50, Math.round(snap.dssSlackTemperaturePercent ?? 0))),
-    );
-    setDssSlackPress(
-      Math.max(0, Math.min(50, Math.round(snap.dssSlackPressurePercent ?? 0))),
-    );
-    setDssSlackGrav(
-      Math.max(0, Math.min(50, Math.round(snap.dssSlackGravityPercent ?? 0))),
-    );
+    setDssSlackTemp(Math.max(0, Math.min(50, Math.round(snap.dssSlackTemperaturePercent ?? 0))));
+    setDssSlackPress(Math.max(0, Math.min(50, Math.round(snap.dssSlackPressurePercent ?? 0))));
+    setDssSlackGrav(Math.max(0, Math.min(50, Math.round(snap.dssSlackGravityPercent ?? 0))));
   }, [snap.dssSlackTemperaturePercent, snap.dssSlackPressurePercent, snap.dssSlackGravityPercent]);
 
-  const serverJournalHistoryPreset: JournalHistoryPreset =
-    snap.journalHistoryPreset ?? "all";
-  const [limitJournalHistory, setLimitJournalHistory] = useState(
-    serverJournalHistoryPreset !== "all",
+  const serverJournalHistoryPreset: JournalHistoryPreset = snap.journalHistoryPreset ?? "all";
+  const [limitJournalHistory, setLimitJournalHistory] = useState(serverJournalHistoryPreset !== "all");
+  const [journalWindowPreset, setJournalWindowPreset] = useState<Exclude<JournalHistoryPreset, "all">>(
+    serverJournalHistoryPreset !== "all" ? serverJournalHistoryPreset : "1m",
   );
-  const [journalWindowPreset, setJournalWindowPreset] = useState<
-    Exclude<JournalHistoryPreset, "all">
-  >(serverJournalHistoryPreset !== "all" ? serverJournalHistoryPreset : "1m");
 
   useEffect(() => {
     const p = snap.journalHistoryPreset ?? "all";
@@ -2392,21 +2060,22 @@ function MapOptionsModal({
     if (p !== "all") setJournalWindowPreset(p);
   }, [snap.journalHistoryPreset]);
 
-  const persistJournalHistory = useCallback(async (preset: JournalHistoryPreset) => {
-    try {
-      const r = await fetch("/api/settings/journal-history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ preset }),
-      });
-      const j = (await r.json().catch(() => null)) as { error?: string } | null;
-      if (!r.ok) throw new Error(j?.error || r.statusText);
-    } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "Could not save journal history option.",
-      );
-    }
-  }, [toast]);
+  const persistJournalHistory = useCallback(
+    async (preset: JournalHistoryPreset) => {
+      try {
+        const r = await fetch("/api/settings/journal-history", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ preset }),
+        });
+        const j = (await r.json().catch(() => null)) as { error?: string } | null;
+        if (!r.ok) throw new Error(j?.error || r.statusText);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Could not save journal history option.");
+      }
+    },
+    [toast],
+  );
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
@@ -2428,8 +2097,7 @@ function MapOptionsModal({
 
   const queueDssSlackSave = (t: number, p: number, g: number) => {
     pendingDssSlackRef.current = { t, p, g };
-    if (dssSlackSaveTimerRef.current != null)
-      window.clearTimeout(dssSlackSaveTimerRef.current);
+    if (dssSlackSaveTimerRef.current != null) window.clearTimeout(dssSlackSaveTimerRef.current);
     dssSlackSaveTimerRef.current = window.setTimeout(() => {
       dssSlackSaveTimerRef.current = null;
       const cur = pendingDssSlackRef.current;
@@ -2457,12 +2125,7 @@ function MapOptionsModal({
       >
         <div className="modal-head">
           <h3 id="options-modal-title">Options</h3>
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
@@ -2470,39 +2133,29 @@ function MapOptionsModal({
           <section className="options-meta-block">
             {snap.lastJournalEventIso ? (
               <p className="options-last-event dim">
-                <span className="options-last-event-label">Last event:</span>{" "}
-                {snap.lastJournalEventIso}
+                <span className="options-last-event-label">Last event:</span> {snap.lastJournalEventIso}
               </p>
             ) : null}
             <p className="options-journal-line dim">
               Journal: <code>{tail}</code>
               {snap.journalFileCount > 0 ? (
-                <span className="tab">
-                  {" "}
-                  · merged {snap.journalFileCount} log file(s)
-                </span>
+                <span className="tab"> · merged {snap.journalFileCount} log file(s)</span>
               ) : null}
             </p>
-            <p className="options-journal-line dim">
-              Species DB: {snap.speciesCount}
-            </p>
+            <p className="options-journal-line dim">Species DB: {snap.speciesCount}</p>
             {snap.mode === "server" && snap.lanUrls.length > 0 ? (
-              <p className="options-journal-line dim">
-                Phone: {snap.lanUrls.join(" · ")}
-              </p>
+              <p className="options-journal-line dim">Phone: {snap.lanUrls.join(" · ")}</p>
             ) : (
-              <p className="options-journal-line dim">
-                LAN server: use npm run start:server
-              </p>
+              <p className="options-journal-line dim">LAN server: use npm run start:server</p>
             )}
           </section>
 
           <section className="options-journal-history options-meta-block">
             <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-              <strong>Journal history</strong> — by default the app merges{" "}
-              <strong>every</strong> <code>Journal.*.log</code> in your Elite folder (all journal logs).
-              Check the box below to use only a rolling time window (the cutoff uses real time and
-              advances while the app runs; changing this triggers a full journal resync).
+              <strong>Journal history</strong> — by default the app merges <strong>every</strong>{" "}
+              <code>Journal.*.log</code> in your Elite folder (all journal logs). Check the box below to use
+              only a rolling time window (the cutoff uses real time and advances while the app runs; changing
+              this triggers a full journal resync).
             </p>
             <label className="options-journal-history-row">
               <input
@@ -2539,16 +2192,13 @@ function MapOptionsModal({
           </section>
 
           <p className="dim" style={{ marginBottom: "1rem", lineHeight: 1.45 }}>
-            <strong>Minimum CR for single +</strong> is the lowest per-species
-            sell value (CR) that must be met before the system map shows a{" "}
-            <strong>+</strong> on that planet for exobiology.
+            <strong>Minimum CR for single +</strong> is the lowest per-species sell value (CR) that must be
+            met before the system map shows a <strong>+</strong> on that planet for exobiology.
           </p>
           <p className="dim" style={{ marginBottom: "1rem", lineHeight: 1.45 }}>
-            <strong>Minimum CR for ++ (always above +)</strong> does the same
-            but with a higher threshold: when it is met, the map shows{" "}
-            <strong>++</strong> instead of <strong>+</strong>, so you can spot
-            the more valuable exobiology finds quickly. The ++ threshold must
-            stay above the + threshold.
+            <strong>Minimum CR for ++ (always above +)</strong> does the same but with a higher threshold:
+            when it is met, the map shows <strong>++</strong> instead of <strong>+</strong>, so you can spot
+            the more valuable exobiology finds quickly. The ++ threshold must stay above the + threshold.
           </p>
           <div className="options-tier-field">
             <label htmlFor="exo-tier-plus">Minimum CR for single +</label>
@@ -2576,9 +2226,7 @@ function MapOptionsModal({
             </div>
           </div>
           <div className="options-tier-field">
-            <label htmlFor="exo-tier-plusplus">
-              Minimum CR for ++ (always above +)
-            </label>
+            <label htmlFor="exo-tier-plusplus">Minimum CR for ++ (always above +)</label>
             <input
               id="exo-tier-plusplus"
               type="range"
@@ -2596,8 +2244,8 @@ function MapOptionsModal({
               }}
             />
             <div className="options-tier-value">
-              {Math.max(plusPlusSliderMin, optPlusPlus).toLocaleString()} CR
-              (min {plusPlusSliderMin.toLocaleString()} CR)
+              {Math.max(plusPlusSliderMin, optPlusPlus).toLocaleString()} CR (min{" "}
+              {plusPlusSliderMin.toLocaleString()} CR)
             </div>
           </div>
 
@@ -2614,15 +2262,15 @@ function MapOptionsModal({
               <div className="options-slack-expand-panel">
                 <p className="dim tiny options-slack-intro">
                   If a lot of landable worlds refuse normal codex matching (temperature bands from the
-                  estimator, journal pressure, or gravity), raise these only as much as you need.
-                  Leave everything at <strong>0%</strong> for standard matching—no extra relaxation on
-                  those physical fallbacks.
+                  estimator, journal pressure, or gravity), raise these only as much as you need. Leave
+                  everything at <strong>0%</strong> for standard matching—no extra relaxation on those
+                  physical fallbacks.
                 </p>
                 {dssSlackMaxPct > 5 ? (
                   <p className="options-slack-strong-warn tiny" role="status">
-                    Above <strong>5%</strong> the app will bend temperature, pressure, and gravity
-                    gates more aggressively; you may get candidate species that are unlikely on that
-                    body. Treat extra matches as leads to check in the codex or in-game, not as proof.
+                    Above <strong>5%</strong> the app will bend temperature, pressure, and gravity gates more
+                    aggressively; you may get candidate species that are unlikely on that body. Treat extra
+                    matches as leads to check in the codex or in-game, not as proof.
                   </p>
                 ) : null}
                 <div className="options-tier-field">
@@ -2680,11 +2328,7 @@ function MapOptionsModal({
             ) : null}
           </div>
 
-          <button
-            type="button"
-            className="btn-top-danger options-reset-exo"
-            onClick={onResetExobiology}
-          >
+          <button type="button" className="btn-top-danger options-reset-exo" onClick={onResetExobiology}>
             Reset exobiology…
           </button>
         </div>
@@ -2722,10 +2366,7 @@ function routeNavCardTitle(snap: AppSnapshot): string {
           parts.push(
             `Fuel: estimated sufficient to finish the route (Status.json tank vs per-leg use ~∝ jump distance², calibrated from your last FSDJump FuelUsed and JumpDist).`,
           );
-        } else if (
-          nav.fuelCanFinishPlottedRoute === false &&
-          nav.fuelJumpsReachableOnPlottedRoute != null
-        ) {
+        } else if (nav.fuelCanFinishPlottedRoute === false && nav.fuelJumpsReachableOnPlottedRoute != null) {
           parts.push(
             `Fuel: may run short — about ${nav.fuelJumpsReachableOnPlottedRoute} of ${nav.routeJumpsRemaining ?? "?"} upcoming jump(s) before the tank is dry (same model; refuel to refresh).`,
           );
@@ -2752,9 +2393,7 @@ function routeNavCardTitle(snap: AppSnapshot): string {
   }
 
   if (snap.remainingJumpsInRoute != null) {
-    parts.push(
-      `Journal FSDTarget: ${snap.remainingJumpsInRoute} jump(s) remaining in route (game tally).`,
-    );
+    parts.push(`Journal FSDTarget: ${snap.remainingJumpsInRoute} jump(s) remaining in route (game tally).`);
   }
 
   if (fr?.hasLiveStatusFuel) {
@@ -2763,22 +2402,13 @@ function routeNavCardTitle(snap: AppSnapshot): string {
     );
   }
 
-  if (
-    fr &&
-    !nav?.onPlot &&
-    fr.estJumpsRemaining != null &&
-    fr.calibration === "fsd_sample"
-  ) {
+  if (fr && !nav?.onPlot && fr.estJumpsRemaining != null && fr.calibration === "fsd_sample") {
     parts.push(
       `Without NavRoute context: ~${fr.estJumpsRemaining} max-range jump(s) (linear scale from last jump to Loadout max range — less accurate than route legs).`,
     );
   }
 
-  if (
-    nav?.onPlot &&
-    nav.routeJumpsRemaining != null &&
-    nav.routeJumpsRemaining > 0
-  ) {
+  if (nav?.onPlot && nav.routeJumpsRemaining != null && nav.routeJumpsRemaining > 0) {
     if (nav.jumpsToLastScoopableOnRoute != null) {
       parts.push(
         `Furthest main-sequence scoop reachable on current tank (NavRoute leg distances, FSDJump fuel × (leg/sample)², max jump per leg): ${nav.jumpsToLastScoopableOnRoute} jump(s) ahead.`,
@@ -2810,11 +2440,7 @@ function routeJumpFuelBarModel(snap: AppSnapshot): {
 } {
   const fr = snap.liveShipFuelRange;
   const nav = fr?.navRoute;
-  if (
-    !nav?.onPlot ||
-    nav.routeJumpsRemaining == null ||
-    nav.routeJumpsRemaining <= 0
-  ) {
+  if (!nav?.onPlot || nav.routeJumpsRemaining == null || nav.routeJumpsRemaining <= 0) {
     return { showBar: false, bluePct: 100, redPct: 0, indeterminate: false };
   }
   const jRem = nav.routeJumpsRemaining;
@@ -2847,11 +2473,7 @@ function routeLastScoopBarModel(snap: AppSnapshot): {
   indeterminate: boolean;
 } {
   const nav = snap.liveShipFuelRange?.navRoute;
-  if (
-    !nav?.onPlot ||
-    nav.routeJumpsRemaining == null ||
-    nav.routeJumpsRemaining <= 0
-  ) {
+  if (!nav?.onPlot || nav.routeJumpsRemaining == null || nav.routeJumpsRemaining <= 0) {
     return { showBar: false, bluePct: 100, redPct: 0, indeterminate: false };
   }
   const jRem = nav.routeJumpsRemaining;
@@ -2877,15 +2499,10 @@ function routeHeaderBarModel(
   redPct: number;
   indeterminate: boolean;
 } {
-  return mode === "distance"
-    ? routeJumpFuelBarModel(snap)
-    : routeLastScoopBarModel(snap);
+  return mode === "distance" ? routeJumpFuelBarModel(snap) : routeLastScoopBarModel(snap);
 }
 
-function routeJumpFuelBarAria(
-  snap: AppSnapshot,
-  model: ReturnType<typeof routeJumpFuelBarModel>,
-): string {
+function routeJumpFuelBarAria(snap: AppSnapshot, model: ReturnType<typeof routeJumpFuelBarModel>): string {
   const nav = snap.liveShipFuelRange?.navRoute;
   if (!model.showBar || !nav?.onPlot || nav.routeJumpsRemaining == null) {
     return "Route summary";
@@ -2901,10 +2518,7 @@ function routeJumpFuelBarAria(
   return `About ${Math.round(jF)} of ${jRem} jumps ahead on current tank (estimated); the rest exceeds plotted fuel (hover bar for details).`;
 }
 
-function routeLastScoopBarAria(
-  snap: AppSnapshot,
-  model: ReturnType<typeof routeLastScoopBarModel>,
-): string {
+function routeLastScoopBarAria(snap: AppSnapshot, model: ReturnType<typeof routeLastScoopBarModel>): string {
   const nav = snap.liveShipFuelRange?.navRoute;
   if (!model.showBar || !nav?.onPlot || nav.routeJumpsRemaining == null) {
     return "Route — refuel window on plot";
@@ -3002,11 +2616,7 @@ function readExoAlertDismissals(): Set<string> {
     const raw = localStorage.getItem(EXO_DATA_ALERT_DISMISS_LS);
     if (!raw) return new Set();
     const arr = JSON.parse(raw) as unknown;
-    return new Set(
-      Array.isArray(arr)
-        ? arr.filter((x): x is string => typeof x === "string")
-        : [],
-    );
+    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
   } catch {
     return new Set();
   }
@@ -3035,11 +2645,7 @@ function readExoAlertAckIds(): Set<string> {
     const raw = localStorage.getItem(EXO_ALERT_ACK_IDS_LS);
     if (!raw) return new Set();
     const arr = JSON.parse(raw) as unknown;
-    return new Set(
-      Array.isArray(arr)
-        ? arr.filter((x): x is string => typeof x === "string")
-        : [],
-    );
+    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
   } catch {
     return new Set();
   }
@@ -3054,19 +2660,12 @@ function writeExoAlertAckIds(ids: Set<string>) {
 }
 
 /** Re-show alerts for selected sources (clears client dismissals + ack for those ids). */
-function applyExoDataScanSourceClear(
-  detectJournal: boolean,
-  detectFeeder: boolean,
-): void {
+function applyExoDataScanSourceClear(detectJournal: boolean, detectFeeder: boolean): void {
   if (!detectJournal && !detectFeeder) return;
   const dismiss = readExoAlertDismissals();
   const ack = readExoAlertAckIds();
   const shouldDrop = (id: string): boolean => {
-    if (
-      detectJournal &&
-      (id.startsWith("err-codex-") || id.startsWith("err-hidden-"))
-    )
-      return true;
+    if (detectJournal && (id.startsWith("err-codex-") || id.startsWith("err-hidden-"))) return true;
     if (detectFeeder && id.startsWith("warn-feeder-")) return true;
     return false;
   };
@@ -3098,9 +2697,7 @@ type ExoDataAlertWithBody = ExoDataAlertDTO & {
   bodyKey: string;
 };
 
-function collectExoDataAlertsFromSnapshot(
-  snap: AppSnapshot,
-): ExoDataAlertWithBody[] {
+function collectExoDataAlertsFromSnapshot(snap: AppSnapshot): ExoDataAlertWithBody[] {
   const byId = new Map<string, ExoDataAlertWithBody>();
   const ingest = (bc: BodyComputed) => {
     const bodyTabLabel = bc.tabLabel || bc.state.bodyName || bc.state.key;
@@ -3119,12 +2716,8 @@ function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
   const toast = useToast();
   const wrapRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [detectJournal, setDetectJournal] = useState(() =>
-    readLsBool(EXO_ALERT_DETECT_JOURNAL_LS, true),
-  );
-  const [detectFeeder, setDetectFeeder] = useState(() =>
-    readLsBool(EXO_ALERT_DETECT_FEEDER_LS, true),
-  );
+  const [detectJournal, setDetectJournal] = useState(() => readLsBool(EXO_ALERT_DETECT_JOURNAL_LS, true));
+  const [detectFeeder, setDetectFeeder] = useState(() => readLsBool(EXO_ALERT_DETECT_FEEDER_LS, true));
   const [dismissed, setDismissed] = useState(() => readExoAlertDismissals());
   const [ackEpoch, setAckEpoch] = useState(0);
   const [scanBusy, setScanBusy] = useState(false);
@@ -3137,10 +2730,7 @@ function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
   }, [snap]);
 
   const filteredBySource = useMemo(
-    () =>
-      collected.filter((a) =>
-        a.detectionSource === "exomastery" ? detectFeeder : detectJournal,
-      ),
+    () => collected.filter((a) => (a.detectionSource === "exomastery" ? detectFeeder : detectJournal)),
     [collected, detectJournal, detectFeeder],
   );
 
@@ -3164,8 +2754,7 @@ function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
     if (!open) return;
     const onDoc = (ev: MouseEvent) => {
       const el = wrapRef.current;
-      if (el && ev.target instanceof Node && !el.contains(ev.target))
-        setOpen(false);
+      if (el && ev.target instanceof Node && !el.contains(ev.target)) setOpen(false);
     };
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") setOpen(false);
@@ -3183,10 +2772,7 @@ function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
       const next = new Set(prev);
       next.add(id);
       try {
-        localStorage.setItem(
-          EXO_DATA_ALERT_DISMISS_LS,
-          JSON.stringify([...next]),
-        );
+        localStorage.setItem(EXO_DATA_ALERT_DISMISS_LS, JSON.stringify([...next]));
       } catch {
         /* ignore quota */
       }
@@ -3220,49 +2806,50 @@ function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
     }
   }, [detectJournal, detectFeeder, snap.journalBoot, toast]);
 
-  const fix = useCallback(async (a: ExoDataAlertDTO) => {
-    const fallbackClipboard = async () => {
-      const text = (a.fixClipboard ?? `${a.title}\n${a.detail}`).trim();
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch {
-        window.prompt("Copy fix hints (clipboard unavailable):", text);
+  const fix = useCallback(
+    async (a: ExoDataAlertDTO) => {
+      const fallbackClipboard = async () => {
+        const text = (a.fixClipboard ?? `${a.title}\n${a.detail}`).trim();
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          window.prompt("Copy fix hints (clipboard unavailable):", text);
+        }
+      };
+      if (a.speciesEntryId && a.genusDataDir) {
+        try {
+          const r = await fetch("/api/exo-data-alerts/fix", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ alert: a }),
+          });
+          const j = (await r.json().catch(() => null)) as {
+            ok?: boolean;
+            written?: { root: string; relativePath: string }[];
+            error?: string;
+            notifyTarget?: "native" | "browser";
+          } | null;
+          if (!r.ok || !j?.ok) throw new Error(j?.error || r.statusText);
+          if (j.notifyTarget === "native") return;
+          const lines = (j.written ?? []).map((w) => `${w.relativePath}\n  (${w.root})`).join("\n\n");
+          toast.success(
+            lines
+              ? `Fix stub written next to ${(j.written ?? []).length} source file(s); originals are untouched.`
+              : "Fix stub written.",
+          );
+          return;
+        } catch (e) {
+          toast.error(
+            e instanceof Error
+              ? `${e.message}\n\nCopying hints to clipboard instead.`
+              : "Fix failed; copying hints.",
+          );
+        }
       }
-    };
-    if (a.speciesEntryId && a.genusDataDir) {
-      try {
-        const r = await fetch("/api/exo-data-alerts/fix", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ alert: a }),
-        });
-        const j = (await r.json().catch(() => null)) as {
-          ok?: boolean;
-          written?: { root: string; relativePath: string }[];
-          error?: string;
-          notifyTarget?: "native" | "browser";
-        } | null;
-        if (!r.ok || !j?.ok) throw new Error(j?.error || r.statusText);
-        if (j.notifyTarget === "native") return;
-        const lines = (j.written ?? [])
-          .map((w) => `${w.relativePath}\n  (${w.root})`)
-          .join("\n\n");
-        toast.success(
-          lines
-            ? `Fix stub written next to ${(j.written ?? []).length} source file(s); originals are untouched.`
-            : "Fix stub written.",
-        );
-        return;
-      } catch (e) {
-        toast.error(
-          e instanceof Error
-            ? `${e.message}\n\nCopying hints to clipboard instead.`
-            : "Fix failed; copying hints.",
-        );
-      }
-    }
-    await fallbackClipboard();
-  }, [toast]);
+      await fallbackClipboard();
+    },
+    [toast],
+  );
 
   const triggerClass = `exo-data-alerts-trigger btn-top-neutral${
     topSeverity === "error"
@@ -3278,23 +2865,15 @@ function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
   } else if (!detectJournal && !detectFeeder) {
     panelBody = (
       <p className="dim tiny">
-        Turn on <strong>Journal</strong> and/or <strong>Exo-Feeder</strong> to
-        scan for mismatches.
+        Turn on <strong>Journal</strong> and/or <strong>Exo-Feeder</strong> to scan for mismatches.
       </p>
     );
   } else if (visible.length > 0) {
     panelBody = (
       <div className="exo-data-alerts exo-data-alerts--in-popover" role="list">
         {visible.map((a) => (
-          <div
-            key={a.id}
-            className={`exo-data-alert exo-data-alert--${a.severity}`}
-            role="listitem"
-          >
-            <span
-              className={`exo-data-alert__icon exo-data-alert__icon--${a.severity}`}
-              aria-hidden
-            >
+          <div key={a.id} className={`exo-data-alert exo-data-alert--${a.severity}`} role="listitem">
+            <span className={`exo-data-alert__icon exo-data-alert__icon--${a.severity}`} aria-hidden>
               {a.severity === "error" ? "!" : "⚠"}
             </span>
             <div className="exo-data-alert__text">
@@ -3328,14 +2907,11 @@ function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
   } else if (collected.length > 0) {
     panelBody = (
       <p className="dim tiny">
-        No alerts for enabled sources — turn on Journal or Exo-Feeder to see
-        hidden items.
+        No alerts for enabled sources — turn on Journal or Exo-Feeder to see hidden items.
       </p>
     );
   } else {
-    panelBody = (
-      <p className="dim tiny">No mismatches detected for loaded bodies.</p>
-    );
+    panelBody = <p className="dim tiny">No mismatches detected for loaded bodies.</p>;
   }
 
   return (
@@ -3364,36 +2940,20 @@ function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
           ✉
         </span>
         {topSeverity === "error" ? (
-          <span
-            className="exo-data-alerts-trigger__glyph exo-data-alerts-trigger__glyph--error"
-            aria-hidden
-          >
+          <span className="exo-data-alerts-trigger__glyph exo-data-alerts-trigger__glyph--error" aria-hidden>
             !
           </span>
         ) : topSeverity === "warning" ? (
-          <span
-            className="exo-data-alerts-trigger__glyph exo-data-alerts-trigger__glyph--warn"
-            aria-hidden
-          >
+          <span className="exo-data-alerts-trigger__glyph exo-data-alerts-trigger__glyph--warn" aria-hidden>
             ⚠
           </span>
         ) : null}
-        {visible.length > 0 ? (
-          <span className="exo-data-alerts-trigger__badge">
-            {visible.length}
-          </span>
-        ) : null}
+        {visible.length > 0 ? <span className="exo-data-alerts-trigger__badge">{visible.length}</span> : null}
       </button>
       {open ? (
-        <div
-          className="exo-data-alerts-popover"
-          role="dialog"
-          aria-label="Codex consistency alerts"
-        >
+        <div className="exo-data-alerts-popover" role="dialog" aria-label="Codex consistency alerts">
           <div className="exo-data-alerts-popover__detect">
-            <span className="exo-data-alerts-popover__detect-label">
-              Detect from:
-            </span>
+            <span className="exo-data-alerts-popover__detect-label">Detect from:</span>
             <button
               type="button"
               className={`btn-top-toggle exo-data-alerts-source-toggle${detectJournal ? " btn-top-toggle--on" : ""}`}
@@ -3421,11 +2981,7 @@ function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
             <button
               type="button"
               className="exo-data-alerts-scan-btn"
-              disabled={
-                scanBusy ||
-                (!detectJournal && !detectFeeder) ||
-                snap.journalBoot != null
-              }
+              disabled={scanBusy || (!detectJournal && !detectFeeder) || snap.journalBoot != null}
               title={
                 "Re-check: clears dismissals for the selected sources so those alerts show again. " +
                 "With Exo-Feeder on, reloads species/exomastery data from disk after journal-side refresh (journal first, then feeder reload)."
@@ -3520,8 +3076,7 @@ const HeaderBar = memo(function HeaderBar({
   const toast = useToast();
   const scanDataOn = snap.includeExplorationScanDataInDataValue === true;
   const explorationCr = snap.explorationScanDataValueCredits ?? 0;
-  const totalDataCr =
-    snap.organicDataValueCredits + (scanDataOn ? explorationCr : 0);
+  const totalDataCr = snap.organicDataValueCredits + (scanDataOn ? explorationCr : 0);
   /** A journal event that moves these numbers should be visible where the user is looking. */
   const dataValueFlash = useValueFlash(totalDataCr);
   const pendingSamplesFlash = useValueFlash(snap.organicPendingSampleCount);
@@ -3533,23 +3088,22 @@ const HeaderBar = memo(function HeaderBar({
   const dataValueHelp = (
     <>
       <p>
-        Typical UC value for unsold exobiology in your journal: each completed species on a body
-        (two <code>ScanOrganic</code> Sample lines plus one Analyse, or any Analyse that completes
-        the set), priced from <code>price-list.json</code>.
+        Typical UC value for unsold exobiology in your journal: each completed species on a body (two{" "}
+        <code>ScanOrganic</code> Sample lines plus one Analyse, or any Analyse that completes the set), priced
+        from <code>price-list.json</code>.
       </p>
       <p>
-        On a first-footfall body the game pays <strong>5×</strong> the listed value (1× normal plus
-        a 4× first-footfall bonus, shown separately in-game). That qualifies when a detailed
-        <code> Scan</code> listed <code>WasFootfalled: false</code> for the body and you later
-        disembarked on it (OnPlanet, not OnStation), or the journal set <code>firstfootfall</code>
+        On a first-footfall body the game pays <strong>5×</strong> the listed value (1× normal plus a 4×
+        first-footfall bonus, shown separately in-game). That qualifies when a detailed
+        <code> Scan</code> listed <code>WasFootfalled: false</code> for the body and you later disembarked on
+        it (OnPlanet, not OnStation), or the journal set <code>firstfootfall</code>
         on Disembark.
       </p>
       <p>Selling organic data — or dying — clears unsold samples in the journal replay.</p>
       {scanDataOn ? (
         <p>
-          This total also includes an approximate UC value for merged FSS/DSS exploration scans from
-          the journal, using <code>Scan</code> <code>WasDiscovered</code> / <code>WasMapped</code>{" "}
-          where present.
+          This total also includes an approximate UC value for merged FSS/DSS exploration scans from the
+          journal, using <code>Scan</code> <code>WasDiscovered</code> / <code>WasMapped</code> where present.
         </p>
       ) : null}
       <p className="dim">Click the value itself for a per-sample breakdown.</p>
@@ -3564,11 +3118,10 @@ const HeaderBar = memo(function HeaderBar({
     x: number;
     y: number;
   } | null>(null);
-  const [routeHeaderMetricMode, setRouteHeaderMetricMode] =
-    useState<RouteHeaderMetricMode>(() => readRouteHeaderMetricMode());
-  const [trayOpen, setTrayOpen] = useState(() =>
-    readLsBool(EDEXO_HEADER_TRAY_LS, true),
+  const [routeHeaderMetricMode, setRouteHeaderMetricMode] = useState<RouteHeaderMetricMode>(() =>
+    readRouteHeaderMetricMode(),
   );
+  const [trayOpen, setTrayOpen] = useState(() => readLsBool(EDEXO_HEADER_TRAY_LS, true));
 
   useEffect(() => {
     writeRouteHeaderMetricMode(routeHeaderMetricMode);
@@ -3582,8 +3135,7 @@ const HeaderBar = memo(function HeaderBar({
     const nav = snap.liveShipFuelRange?.navRoute;
     if (!nav?.onPlot) return "";
     if (nav.routeRefuelAlert === "red") return " header-route--refuel-red";
-    if (nav.routeRefuelAlert === "yellow")
-      return " header-route--refuel-yellow";
+    if (nav.routeRefuelAlert === "yellow") return " header-route--refuel-yellow";
     return "";
   })();
 
@@ -3609,9 +3161,7 @@ const HeaderBar = memo(function HeaderBar({
         } | null;
         if (!r.ok) throw new Error(j?.error || r.statusText);
       } catch (e) {
-        toast.error(
-          e instanceof Error ? e.message : "Could not update setting.",
-        );
+        toast.error(e instanceof Error ? e.message : "Could not update setting.");
       }
     })();
   };
@@ -3660,13 +3210,7 @@ const HeaderBar = memo(function HeaderBar({
   return (
     <header className="top">
       <div className="appbar">
-        <img
-          src="/edexo-icon-124.webp"
-          alt=""
-          className="appbar-mark"
-          width={24}
-          height={24}
-        />
+        <img src="/edexo-icon-124.webp" alt="" className="appbar-mark" width={24} height={24} />
         <span className="appbar-wordmark logo">ED EXO COMPARE</span>
 
         {snap.primaryStarsHeader ? (
@@ -3678,13 +3222,9 @@ const HeaderBar = memo(function HeaderBar({
               title="Open system map (orbital view from merged journal)"
             >
               <StarSystemMapIcon className="appbar-system-icon" />
-              <span className="appbar-system-name">
-                {snap.primaryStarsHeader.systemName}
-              </span>
+              <span className="appbar-system-name">{snap.primaryStarsHeader.systemName}</span>
             </button>
-            <CopySystemNameButton
-              systemName={snap.primaryStarsHeader.systemName}
-            />
+            <CopySystemNameButton systemName={snap.primaryStarsHeader.systemName} />
           </div>
         ) : null}
 
@@ -3702,9 +3242,7 @@ const HeaderBar = memo(function HeaderBar({
               : "No live connection to the journal service. Check that it is still running."
           }
         >
-          <span
-            className={`appbar-dot${connected ? " appbar-dot--ok" : " appbar-dot--err"}`}
-          >
+          <span className={`appbar-dot${connected ? " appbar-dot--ok" : " appbar-dot--err"}`}>
             <span className="top-live-dot" aria-hidden />
             <span className="appbar-dot-text">
               {connected ? "Live" : "Error"}
@@ -3798,25 +3336,14 @@ const HeaderBar = memo(function HeaderBar({
                 <span
                   key={`${st.shortLabel}-${st.starRole}-${i}`}
                   className={`brand-star-chip ${primaryStarChipClass(st.starRole)}`}
-                  title={
-                    primaryStarRoleTooltip(st.starRole) +
-                    (st.shortLabel ? ` · ${st.shortLabel}` : "")
-                  }
+                  title={primaryStarRoleTooltip(st.starRole) + (st.shortLabel ? ` · ${st.shortLabel}` : "")}
                 >
                   <span className="brand-star-chip-letter">{st.letter ?? "★"}</span>
-                  <span className="brand-star-chip-role">
-                    {" "}
-                    ({primaryStarRoleTag(st.starRole)})
-                  </span>
+                  <span className="brand-star-chip-role"> ({primaryStarRoleTag(st.starRole)})</span>
                   {st.fullSpectralNotation ? (
-                    <span className="brand-star-chip-spectral">
-                      {" "}
-                      {st.fullSpectralNotation}
-                    </span>
+                    <span className="brand-star-chip-spectral"> {st.fullSpectralNotation}</span>
                   ) : null}
-                  {st.shortLabel ? (
-                    <span className="brand-star-chip-name"> · {st.shortLabel}</span>
-                  ) : null}
+                  {st.shortLabel ? <span className="brand-star-chip-name"> · {st.shortLabel}</span> : null}
                 </span>
               ))}
             </div>
@@ -3854,198 +3381,159 @@ const HeaderBar = memo(function HeaderBar({
 
       {trayOpen ? (
         <div className="header-data-value-row header-tray" id="header-tray">
-        <button
-          type="button"
-          className={`header-scan-data-plus${scanDataOn ? " header-scan-data-plus--on" : ""}`}
-          onClick={toggleExplorationScanData}
-          title="Add planetary scans to data value"
-          aria-pressed={scanDataOn}
-        >
-          ⊕
-        </button>
-        <button
-          type="button"
-          className="data-value-pill data-value-pill--clickable"
-          title="Unsold exobiology value — click for a per-sample breakdown"
-          onClick={() => setDataBreakdownOpen(true)}
-        >
-          <span className="data-value-label header-metric-card-label">
-            Data value
-          </span>
-          <span
-            className={`data-value-amount header-metric-card-value ${dataValueFlash}`.trim()}
+          <button
+            type="button"
+            className={`header-scan-data-plus${scanDataOn ? " header-scan-data-plus--on" : ""}`}
+            onClick={toggleExplorationScanData}
+            title="Add planetary scans to data value"
+            aria-pressed={scanDataOn}
           >
-            {totalDataCr.toLocaleString()} CR
-          </span>
-          {snap.organicPendingSampleCount > 0 ? (
-            <span
-              className={`data-value-meta dim ${pendingSamplesFlash}`.trim()}
-              title="Completed samples not yet sold"
-            >
-              ({snap.organicPendingSampleCount})
+            ⊕
+          </button>
+          <button
+            type="button"
+            className="data-value-pill data-value-pill--clickable"
+            title="Unsold exobiology value — click for a per-sample breakdown"
+            onClick={() => setDataBreakdownOpen(true)}
+          >
+            <span className="data-value-label header-metric-card-label">Data value</span>
+            <span className={`data-value-amount header-metric-card-value ${dataValueFlash}`.trim()}>
+              {totalDataCr.toLocaleString()} CR
             </span>
-          ) : null}
-        </button>
-        <InfoPopover title="How “Data value” is calculated" label="How data value is calculated">
-          {dataValueHelp}
-        </InfoPopover>
-        <div className="header-dscan-cluster">
-          <div className="header-dscan-pill">
-            {snap.dScanBodies ? (
-              <DScanBodiesBadge
-                d={snap.dScanBodies}
-                className="d-scan-card--header-row"
-                headerMetrics
-              />
-            ) : (
-              <button
-                type="button"
-                className="d-scan-card d-scan-card--placeholder d-scan-card--header-row"
-                title="No FSS honk line in merged journal for this system yet — if you already mapped everything, totals still come from Scan rows and the system map. Use “Load bodies from EDSM” next to the search when browsing a system, or widen journal history / re-honk in game if counts stay empty."
+            {snap.organicPendingSampleCount > 0 ? (
+              <span
+                className={`data-value-meta dim ${pendingSamplesFlash}`.trim()}
+                title="Completed samples not yet sold"
               >
-                <span className="d-scan-card__label header-metric-card-label">
-                  D-Scan
-                </span>
-                <span className="d-scan-card__placeholder-text header-metric-card-value">
-                  No body tally yet (honk, Scan data, or map)
-                </span>
-              </button>
-            )}
-          </div>
-          {snap.focusedSystemUndiscoveredFromLastFsdJump ? (
-            <div
-              className="d-scan-card d-scan-card--complete d-scan-card--header-row header-route-mini"
-              title="Journal FSDJump/CarrierJump reported WasDiscovered: false — first discovery of this system."
-            >
-              <span className="d-scan-card__label header-metric-card-label">
-                FIRST
+                ({snap.organicPendingSampleCount})
               </span>
+            ) : null}
+          </button>
+          <InfoPopover title="How “Data value” is calculated" label="How data value is calculated">
+            {dataValueHelp}
+          </InfoPopover>
+          <div className="header-dscan-cluster">
+            <div className="header-dscan-pill">
+              {snap.dScanBodies ? (
+                <DScanBodiesBadge d={snap.dScanBodies} className="d-scan-card--header-row" headerMetrics />
+              ) : (
+                <button
+                  type="button"
+                  className="d-scan-card d-scan-card--placeholder d-scan-card--header-row"
+                  title="No FSS honk line in merged journal for this system yet — if you already mapped everything, totals still come from Scan rows and the system map. Use “Load bodies from EDSM” next to the search when browsing a system, or widen journal history / re-honk in game if counts stay empty."
+                >
+                  <span className="d-scan-card__label header-metric-card-label">D-Scan</span>
+                  <span className="d-scan-card__placeholder-text header-metric-card-value">
+                    No body tally yet (honk, Scan data, or map)
+                  </span>
+                </button>
+              )}
             </div>
-          ) : null}
-          {snap.remainingJumpsInRoute != null || snap.liveShipFuelRange != null
-            ? (() => {
-                const fr = snap.liveShipFuelRange;
-                const nav = fr?.navRoute;
-                const jumpsShown =
-                  nav?.onPlot && nav.routeJumpsRemaining != null
-                    ? nav.routeJumpsRemaining
-                    : snap.remainingJumpsInRoute;
-                const barModel = routeHeaderBarModel(
-                  snap,
-                  routeHeaderMetricMode,
-                );
-                const barTitle = `${routeNavCardTitle(snap)}\n\n${routeHeaderToggleTitleHint(routeHeaderMetricMode)}`;
-                const barAria = routeHeaderBarAria(
-                  snap,
-                  routeHeaderMetricMode,
-                  barModel,
-                );
-                const sep = <span className="dim"> · </span>;
-                const compactLine: ReactNode[] = [];
-                if (nav) {
-                  if (jumpsShown != null) {
+            {snap.focusedSystemUndiscoveredFromLastFsdJump ? (
+              <div
+                className="d-scan-card d-scan-card--complete d-scan-card--header-row header-route-mini"
+                title="Journal FSDJump/CarrierJump reported WasDiscovered: false — first discovery of this system."
+              >
+                <span className="d-scan-card__label header-metric-card-label">FIRST</span>
+              </div>
+            ) : null}
+            {snap.remainingJumpsInRoute != null || snap.liveShipFuelRange != null
+              ? (() => {
+                  const fr = snap.liveShipFuelRange;
+                  const nav = fr?.navRoute;
+                  const jumpsShown =
+                    nav?.onPlot && nav.routeJumpsRemaining != null
+                      ? nav.routeJumpsRemaining
+                      : snap.remainingJumpsInRoute;
+                  const barModel = routeHeaderBarModel(snap, routeHeaderMetricMode);
+                  const barTitle = `${routeNavCardTitle(snap)}\n\n${routeHeaderToggleTitleHint(routeHeaderMetricMode)}`;
+                  const barAria = routeHeaderBarAria(snap, routeHeaderMetricMode, barModel);
+                  const sep = <span className="dim"> · </span>;
+                  const compactLine: ReactNode[] = [];
+                  if (nav) {
+                    if (jumpsShown != null) {
+                      compactLine.push(
+                        <span key="j" className="header-route-num">
+                          {jumpsShown}
+                        </span>,
+                        sep,
+                      );
+                    }
+                    if (routeHeaderMetricMode === "refuel" && nav.onPlot) {
+                      const jl = nav.jumpsToLastScoopableOnRoute;
+                      compactLine.push(
+                        <span key="refuel" className="header-route-refuel-metric">
+                          {jl != null ? `Refuel in ${jl}` : "No scoop ahead"}
+                        </span>,
+                      );
+                    } else {
+                      compactLine.push(
+                        <span key="ly">
+                          {nav.onPlot && nav.routeRemainingLy != null
+                            ? `${nav.routeRemainingLy.toFixed(0)} ly left`
+                            : `${nav.routeTotalLy.toFixed(0)} ly`}
+                        </span>,
+                      );
+                    }
+                  } else if (jumpsShown != null) {
+                    compactLine.push(<span key="jonly">{jumpsShown}</span>);
+                  }
+                  if (fr && !nav?.onPlot && fr.estJumpsRemaining != null && fr.hasLiveStatusFuel) {
+                    if (compactLine.length) compactLine.push(sep);
                     compactLine.push(
-                      <span key="j" className="header-route-num">
-                        {jumpsShown}
+                      <span key="est" className="dim">
+                        ~{fr.estJumpsRemaining} max
                       </span>,
-                      sep,
                     );
                   }
-                  if (routeHeaderMetricMode === "refuel" && nav.onPlot) {
-                    const jl = nav.jumpsToLastScoopableOnRoute;
+                  if (nav && !nav.onPlot) {
+                    if (compactLine.length) compactLine.push(sep);
                     compactLine.push(
-                      <span key="refuel" className="header-route-refuel-metric">
-                        {jl != null ? `Refuel in ${jl}` : "No scoop ahead"}
-                      </span>,
-                    );
-                  } else {
-                    compactLine.push(
-                      <span key="ly">
-                        {nav.onPlot && nav.routeRemainingLy != null
-                          ? `${nav.routeRemainingLy.toFixed(0)} ly left`
-                          : `${nav.routeTotalLy.toFixed(0)} ly`}
+                      <span key="off" className="dim">
+                        off plot
                       </span>,
                     );
                   }
-                } else if (jumpsShown != null) {
-                  compactLine.push(<span key="jonly">{jumpsShown}</span>);
-                }
-                if (
-                  fr &&
-                  !nav?.onPlot &&
-                  fr.estJumpsRemaining != null &&
-                  fr.hasLiveStatusFuel
-                ) {
-                  if (compactLine.length) compactLine.push(sep);
-                  compactLine.push(
-                    <span key="est" className="dim">
-                      ~{fr.estJumpsRemaining} max
-                    </span>,
-                  );
-                }
-                if (nav && !nav.onPlot) {
-                  if (compactLine.length) compactLine.push(sep);
-                  compactLine.push(
-                    <span key="off" className="dim">
-                      off plot
-                    </span>,
-                  );
-                }
-                const lineContent =
-                  compactLine.length > 0 ? (
-                    compactLine
-                  ) : (
-                    <span className="dim">—</span>
-                  );
-                const barBg = barModel.indeterminate
-                  ? undefined
-                  : `linear-gradient(to right, rgba(90, 170, 255, 0.95) 0%, rgba(90, 170, 255, 0.95) ${barModel.bluePct}%, rgba(220, 70, 70, 0.92) ${barModel.bluePct}%, rgba(220, 70, 70, 0.92) 100%)`;
-                return (
-                  <div
-                    className={`d-scan-card d-scan-card--route d-scan-card--header-row header-route-mini header-route-mini--stacked${routeCardRefuelClass}`}
-                  >
-                    <button
-                      type="button"
-                      className="header-route-compact header-route-compact--toggle"
-                      title={barTitle}
-                      aria-label={barAria}
-                      onClick={() =>
-                        setRouteHeaderMetricMode((m) =>
-                          m === "distance" ? "refuel" : "distance",
-                        )
-                      }
+                  const lineContent = compactLine.length > 0 ? compactLine : <span className="dim">—</span>;
+                  const barBg = barModel.indeterminate
+                    ? undefined
+                    : `linear-gradient(to right, rgba(90, 170, 255, 0.95) 0%, rgba(90, 170, 255, 0.95) ${barModel.bluePct}%, rgba(220, 70, 70, 0.92) ${barModel.bluePct}%, rgba(220, 70, 70, 0.92) 100%)`;
+                  return (
+                    <div
+                      className={`d-scan-card d-scan-card--route d-scan-card--header-row header-route-mini header-route-mini--stacked${routeCardRefuelClass}`}
                     >
-                      <span className="header-route-line header-route-line--compact">
-                        <span className="header-metric-card-label">Route:</span>{" "}
-                        <span className="header-metric-card-value">
-                          {lineContent}
+                      <button
+                        type="button"
+                        className="header-route-compact header-route-compact--toggle"
+                        title={barTitle}
+                        aria-label={barAria}
+                        onClick={() =>
+                          setRouteHeaderMetricMode((m) => (m === "distance" ? "refuel" : "distance"))
+                        }
+                      >
+                        <span className="header-route-line header-route-line--compact">
+                          <span className="header-metric-card-label">Route:</span>{" "}
+                          <span className="header-metric-card-value">{lineContent}</span>
                         </span>
-                      </span>
-                      {barModel.showBar ? (
-                        <div
-                          className={`header-route-bar-track${barModel.indeterminate ? " header-route-bar-track--unknown" : ""}`}
-                          style={
-                            barModel.indeterminate
-                              ? undefined
-                              : { background: barBg }
-                          }
-                        />
-                      ) : null}
-                    </button>
-                  </div>
-                );
-              })()
-            : null}
-        </div>
+                        {barModel.showBar ? (
+                          <div
+                            className={`header-route-bar-track${barModel.indeterminate ? " header-route-bar-track--unknown" : ""}`}
+                            style={barModel.indeterminate ? undefined : { background: barBg }}
+                          />
+                        ) : null}
+                      </button>
+                    </div>
+                  );
+                })()
+              : null}
+          </div>
         </div>
       ) : null}
 
       {snap.viewingSystemAddress != null &&
       snap.currentSystemAddress != null &&
       snap.viewingSystemAddress !== snap.currentSystemAddress ? (
-        <p className="sub-live dim header-commander-away">
-          Commander: {snap.currentSystem ?? "—"}
-        </p>
+        <p className="sub-live dim header-commander-away">Commander: {snap.currentSystem ?? "—"}</p>
       ) : null}
 
       {encyclopediaOpen ? (
@@ -4087,11 +3575,7 @@ const HeaderBar = memo(function HeaderBar({
       {notableQuick ? (
         <Suspense fallback={null}>
           <PlanetQuickFactsPopup
-            detail={
-              snap.systemMap?.detailsByBodyId[
-                String(notableQuick.notable.bodyId)
-              ] ?? null
-            }
+            detail={snap.systemMap?.detailsByBodyId[String(notableQuick.notable.bodyId)] ?? null}
             fallbackTitle={notableQuick.notable.bodyName}
             fallbackSubtitle={`${notableQuick.notable.tag}${notableQuick.notable.dssMapped ? " · DSS mapped" : " · FSS / scan only"}`}
             bodyId={notableQuick.notable.bodyId}
@@ -4143,20 +3627,14 @@ function MyExobiologyModal({
       >
         <div className="modal-head">
           <h3 id="my-exo-title">My exobiology</h3>
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
         <div className="modal-body modal-body--my-exo">
           <p className="my-exo-intro dim">
-            From merged journals: <code>ScanOrganic</code> Sample or Analyse +
-            detailed <code>Scan</code>. Stored in{" "}
-            <code>data/foot_scanned.json</code>.
+            From merged journals: <code>ScanOrganic</code> Sample or Analyse + detailed <code>Scan</code>.
+            Stored in <code>data/foot_scanned.json</code>.
           </p>
           {entries.length === 0 ? (
             <p className="dim">No foot-catalog entries yet.</p>
@@ -4192,21 +3670,14 @@ function MyExobiologyModal({
                               stroke="currentColor"
                               strokeWidth="1.35"
                             />
-                            <path
-                              d="M8 1.5v13M1.5 8h13"
-                              stroke="currentColor"
-                              strokeWidth="1.15"
-                            />
+                            <path d="M8 1.5v13M1.5 8h13" stroke="currentColor" strokeWidth="1.15" />
                             <circle cx="8" cy="8" r="1.4" fill="currentColor" />
                           </svg>
                         </button>
                       ) : null}
                       <span className="my-exo-body">{e.bodyName}</span>
                     </div>
-                    <time
-                      className="my-exo-card-time tab"
-                      dateTime={e.recordedAt}
-                    >
+                    <time className="my-exo-card-time tab" dateTime={e.recordedAt}>
                       {e.recordedAt.slice(0, 19).replace("T", " ")}
                     </time>
                   </div>
@@ -4220,15 +3691,10 @@ function MyExobiologyModal({
                       <dt>Species</dt>
                       <dd>
                         {e.variantLocalised ||
-                          [e.genusLocalised, e.speciesLocalised]
-                            .filter(Boolean)
-                            .join(" ") ||
+                          [e.genusLocalised, e.speciesLocalised].filter(Boolean).join(" ") ||
                           "—"}
                         {e.dbProbableDisagreed ? (
-                          <span
-                            className="dim tiny tab"
-                            title="Top strict DB guess at record time differed"
-                          >
+                          <span className="dim tiny tab" title="Top strict DB guess at record time differed">
                             {" "}
                             (DB note)
                           </span>
@@ -4237,11 +3703,7 @@ function MyExobiologyModal({
                     </div>
                     <div className="my-exo-card-fact">
                       <dt>From</dt>
-                      <dd>
-                        {e.confirmationSource === "sample"
-                          ? "Sample"
-                          : "Analyse"}
-                      </dd>
+                      <dd>{e.confirmationSource === "sample" ? "Sample" : "Analyse"}</dd>
                     </div>
                     <div className="my-exo-card-fact">
                       <dt>Planet</dt>
@@ -4254,8 +3716,7 @@ function MyExobiologyModal({
                     <div className="my-exo-card-fact my-exo-card-fact--wide">
                       <dt>Temperature (K)</dt>
                       <dd className="tab">
-                        {e.tempBandMinK.toFixed(0)} ·{" "}
-                        {e.tempBandMaxK.toFixed(0)}
+                        {e.tempBandMinK.toFixed(0)} · {e.tempBandMaxK.toFixed(0)}
                       </dd>
                     </div>
                   </dl>
@@ -4299,43 +3760,26 @@ function DataValueBreakdownModal({
       >
         <div className="modal-head">
           <h3>Unsold data value</h3>
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
         <div className="modal-body modal-body--data-value">
           {includeExplorationScanDataInDataValue ? (
-            <div
-              className="data-value-exploration-block card-neon"
-              style={{ marginBottom: "1rem" }}
-            >
+            <div className="data-value-exploration-block card-neon" style={{ marginBottom: "1rem" }}>
               <p className="small-caps dim" style={{ marginTop: 0 }}>
                 Exploration (journal events)
               </p>
               <p style={{ margin: "0.35rem 0" }}>
-                <strong>FSS scans</strong> — journal{" "}
-                <code>event: FSSBodySignals</code> —{" "}
+                <strong>FSS scans</strong> — journal <code>event: FSSBodySignals</code> —{" "}
                 <strong>{explorationFssScanCount}</strong> bodies · Value:{" "}
-                <strong>
-                  {explorationFssValueCredits.toLocaleString()} CR
-                </strong>{" "}
-                <span className="dim tiny">
-                  (FSS-only est. where merged Scan exists)
-                </span>
+                <strong>{explorationFssValueCredits.toLocaleString()} CR</strong>{" "}
+                <span className="dim tiny">(FSS-only est. where merged Scan exists)</span>
               </p>
               <p style={{ margin: "0.35rem 0" }}>
-                <strong>DSS scans</strong> — journal{" "}
-                <code>event: SAAScanComplete</code> —{" "}
-                <strong>{explorationDssScanCount}</strong> planetary bodies ·
-                Value:{" "}
-                <strong>
-                  {explorationDssValueCredits.toLocaleString()} CR
-                </strong>{" "}
+                <strong>DSS scans</strong> — journal <code>event: SAAScanComplete</code> —{" "}
+                <strong>{explorationDssScanCount}</strong> planetary bodies · Value:{" "}
+                <strong>{explorationDssValueCredits.toLocaleString()} CR</strong>{" "}
                 <span className="dim tiny">(full mapped est.)</span>
               </p>
             </div>
@@ -4349,23 +3793,14 @@ function DataValueBreakdownModal({
           ) : (
             <ul className="data-value-breakdown-list">
               {lines.map((line, i) => (
-                <li
-                  key={`${line.bodyKey}-${i}`}
-                  className="data-value-breakdown-row"
-                >
-                  <img
-                    src={line.photoUrl}
-                    alt=""
-                    className="data-value-breakdown-thumb"
-                  />
+                <li key={`${line.bodyKey}-${i}`} className="data-value-breakdown-row">
+                  <img src={line.photoUrl} alt="" className="data-value-breakdown-thumb" />
                   <div className="data-value-breakdown-main">
                     <div className="data-value-breakdown-planet">
                       <strong>{line.bodyName}</strong>
                       <span className="dim"> · {line.starSystem}</span>
                     </div>
-                    <div className="data-value-breakdown-species">
-                      {line.speciesLabel}
-                    </div>
+                    <div className="data-value-breakdown-species">{line.speciesLabel}</div>
                     <div className="data-value-breakdown-value-row">
                       {line.baseCredits != null ? (
                         <>
@@ -4382,16 +3817,13 @@ function DataValueBreakdownModal({
                           ) : null}
                         </>
                       ) : (
-                        <span className="dim">
-                          No price in price list — not counted in total
-                        </span>
+                        <span className="dim">No price in price list — not counted in total</span>
                       )}
                     </div>
                     {line.baseCredits != null && line.firstFootfall ? (
                       <div className="data-value-footfall-detail dim">
                         {line.baseCredits.toLocaleString()} CR base +{" "}
-                        {(line.baseCredits * 4).toLocaleString()} CR
-                        first-footfall bonus ={" "}
+                        {(line.baseCredits * 4).toLocaleString()} CR first-footfall bonus ={" "}
                         {line.valueCredits.toLocaleString()} CR
                       </div>
                     ) : null}
@@ -4407,9 +3839,7 @@ function DataValueBreakdownModal({
 }
 
 function marketingSiteOrigin(): string {
-  return import.meta.env.DEV
-    ? "http://127.0.0.1:8082"
-    : "https://edexo.bahuckel.com";
+  return import.meta.env.DEV ? "http://127.0.0.1:8082" : "https://edexo.bahuckel.com";
 }
 
 /** Shown while a lazily-loaded modal chunk is fetched; the chunks are small and local. */
@@ -4454,18 +3884,10 @@ function BioEmptyState({ snap }: { snap: AppSnapshot }) {
       </div>
       <div className="brand-hero brand-hero--idle">
         <div className="brand-top-row">
-          <img
-            src="/edexo-icon-124.webp"
-            alt=""
-            className="brand-app-icon"
-            width={62}
-            height={62}
-          />
+          <img src="/edexo-icon-124.webp" alt="" className="brand-app-icon" width={62} height={62} />
           <div className="brand-title-bordered">
             <div className="logo brand-lockup-title">ED EXO COMPARE</div>
-            <div className="brand-byline-muted brand-lockup-byline">
-              by CMDR {BRAND_AUTHOR}
-            </div>
+            <div className="brand-byline-muted brand-lockup-byline">by CMDR {BRAND_AUTHOR}</div>
           </div>
         </div>
         <div className="brand-tip-wrap">
@@ -4481,33 +3903,20 @@ function AppLegalFooter() {
   return (
     <footer className="app-legal-footer">
       <p className="app-legal-footer-note dim">
-        ED Exo Compare is owned and operated by Bahuckel™. Independent fan
-        software using local Elite Dangerous journal data — not affiliated with
-        Frontier Developments. <em>Elite Dangerous</em> and related marks belong
-        to Frontier; all rights reserved by their owners.
+        ED Exo Compare is owned and operated by Bahuckel™. Independent fan software using local Elite
+        Dangerous journal data — not affiliated with Frontier Developments. <em>Elite Dangerous</em> and
+        related marks belong to Frontier; all rights reserved by their owners.
       </p>
       <div className="app-legal-footer-links">
-        <a
-          href={`${origin}/privacy.html`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href={`${origin}/privacy.html`} target="_blank" rel="noopener noreferrer">
           Privacy Policy
         </a>
         <span className="app-legal-footer-sep dim">·</span>
-        <a
-          href={`${origin}/terms.html`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href={`${origin}/terms.html`} target="_blank" rel="noopener noreferrer">
           Terms of Service
         </a>
         <span className="app-legal-footer-sep dim">·</span>
-        <a
-          href="https://edexo.bahuckel.com"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://edexo.bahuckel.com" target="_blank" rel="noopener noreferrer">
           edexo.bahuckel.com
         </a>
       </div>
@@ -4519,8 +3928,7 @@ export function App() {
   const toast = useToast();
   const { snapshot, connected } = useLiveSnapshot();
   const rawBodies = snapshot?.bodies ?? [];
-  const systemFocusKey =
-    snapshot?.viewingSystemAddress ?? snapshot?.currentSystemAddress ?? null;
+  const systemFocusKey = snapshot?.viewingSystemAddress ?? snapshot?.currentSystemAddress ?? null;
   const orderedBodies = useStableBioTabOrder(rawBodies, systemFocusKey);
   const bodyGroups = useMemo(
     () => buildBodyOrbitGroups(orderedBodies, snapshot?.systemMap),
@@ -4587,7 +3995,6 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-
   useEffect(() => {
     const key = selectedBodyKey;
     const t = window.setTimeout(() => {
@@ -4606,10 +4013,7 @@ export function App() {
     setSelectedBodyKey(key);
   }, [snapshot?.uiAutoSelectBodyKey]);
 
-  const selected =
-    orderedBodies.find((b) => b.state.key === selectedBodyKey) ??
-    orderedBodies[0] ??
-    null;
+  const selected = orderedBodies.find((b) => b.state.key === selectedBodyKey) ?? orderedBodies[0] ?? null;
 
   /** Memoized: a fresh object literal here would defeat <HeaderBar>'s memo on every render. */
   const encyclopediaSpawnCompare: EncyclopediaSpawnCompare | null = useMemo(
@@ -4642,9 +4046,7 @@ export function App() {
         } | null;
         if (!r.ok) throw new Error(j?.error || r.statusText);
       } catch (e) {
-        toast.error(
-          e instanceof Error ? e.message : "Could not update setting.",
-        );
+        toast.error(e instanceof Error ? e.message : "Could not update setting.");
       }
     })();
   }, [snapshot, toast]);
@@ -4678,9 +4080,7 @@ export function App() {
           const j = (await r.json().catch(() => null)) as { error?: string } | null;
           if (!r.ok) throw new Error(j?.error || r.statusText);
         } catch (err) {
-          toast.error(
-            err instanceof Error ? err.message : "Could not switch system view.",
-          );
+          toast.error(err instanceof Error ? err.message : "Could not switch system view.");
         }
       })();
       focusBodyKey(`${e.systemAddress}:${e.bodyId}`);
@@ -4730,9 +4130,7 @@ export function App() {
           {selected ? (
             <BodyPane
               body={selected}
-              includeBacteriumInSearch={
-                snapshot.includeBacteriumInSearch === true
-              }
+              includeBacteriumInSearch={snapshot.includeBacteriumInSearch === true}
               onToggleIncludeBacterium={toggleIncludeBacteriumInSearch}
             />
           ) : null}
@@ -4748,11 +4146,7 @@ export function App() {
       ) : null}
       {systemMapOpen ? (
         <Suspense fallback={null}>
-          <SystemMapModal
-            snap={snapshot}
-            onClose={closeSystemMap}
-            onGoToBioBody={goToBioBodyFromMap}
-          />
+          <SystemMapModal snap={snapshot} onClose={closeSystemMap} onGoToBioBody={goToBioBodyFromMap} />
         </Suspense>
       ) : null}
       <AppLegalFooter />

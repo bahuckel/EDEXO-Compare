@@ -85,15 +85,13 @@ function runBuilder(label) {
   const defaultSelfPfx = join(process.cwd(), "build", "self-signed-codesign.pfx");
   const hasPwd = Boolean(
     process.env.BAHUCKEL_CODESIGN_PASSWORD ||
-      process.env.CSC_KEY_PASSWORD ||
-      process.env.EDEXO_SELFSIGN_PASSWORD,
+    process.env.CSC_KEY_PASSWORD ||
+    process.env.EDEXO_SELFSIGN_PASSWORD,
   );
   const wantsSign = Boolean(
     process.env.EDEXO_WIN_CODESIGN === "1" &&
-      hasPwd &&
-      (process.env.BAHUCKEL_CODESIGN_PFX ||
-        process.env.CSC_LINK ||
-        existsSync(defaultSelfPfx)),
+    hasPwd &&
+    (process.env.BAHUCKEL_CODESIGN_PFX || process.env.CSC_LINK || existsSync(defaultSelfPfx)),
   );
   if (wantsSign) {
     const selfMsg = existsSync(defaultSelfPfx) ? " (PFX path includes dev self-signed if present)" : "";
@@ -117,10 +115,9 @@ function runBuilder(label) {
       ...process.env,
       NODE_NO_WARNINGS: "1",
       /** Avoid Windows store auto-pick when no PFX is configured (prevents hangs); explicit PFX in electron-builder.cjs still signs. */
-      CSC_IDENTITY_AUTO_DISCOVERY: wantsSign ? process.env.CSC_IDENTITY_AUTO_DISCOVERY ?? "false" : "false",
+      CSC_IDENTITY_AUTO_DISCOVERY: wantsSign ? (process.env.CSC_IDENTITY_AUTO_DISCOVERY ?? "false") : "false",
       /** After rcedit, before signtool; electron-builder afterPack runs too early for this race. */
-      EDEXO_PRE_SIGN_DELAY_MS:
-        process.env.EDEXO_PRE_SIGN_DELAY_MS ?? (wantsSign ? "5000" : ""),
+      EDEXO_PRE_SIGN_DELAY_MS: process.env.EDEXO_PRE_SIGN_DELAY_MS ?? (wantsSign ? "5000" : ""),
       ELECTRON_BUILDER_COMPRESSION_LEVEL: compressionLevel,
     },
   });

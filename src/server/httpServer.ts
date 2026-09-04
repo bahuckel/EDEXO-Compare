@@ -101,7 +101,11 @@ export function createHttpServer(opts: {
   /** POST /api/settings/exo-map-tiers — JSON { plusMinCr: number, plusPlusMinCr: number } */
   setExoMapTierThresholds?: (plusMinCr: number, plusPlusMinCr: number) => void;
   /** POST /api/settings/dss-physical-slack — JSON { temperaturePercent, pressurePercent, gravityPercent } each 0…50 */
-  setDssPhysicalSlackPercents?: (temperaturePercent: number, pressurePercent: number, gravityPercent: number) => void;
+  setDssPhysicalSlackPercents?: (
+    temperaturePercent: number,
+    pressurePercent: number,
+    gravityPercent: number,
+  ) => void;
   /** POST /api/exobiology/reset with confirm: true */
   resetExobiology?: () => void;
   /** POST /api/system/hydrate-from-edsm — JSON { systemAddress: number, systemName: string } (known systems only). */
@@ -113,8 +117,7 @@ export function createHttpServer(opts: {
   searchEdsmSystems?: (
     query: string,
   ) => Promise<
-    | { ok: true; systems: { systemAddress: number; starSystem: string }[] }
-    | { ok: false; error: string }
+    { ok: true; systems: { systemAddress: number; starSystem: string }[] } | { ok: false; error: string }
   >;
   /** POST /api/ui/view-system — JSON { systemAddress: number | null, starSystem?: string } */
   setViewingSystem?: (systemAddress: number | null) => void;
@@ -139,9 +142,7 @@ export function createHttpServer(opts: {
   /** Clear in-memory exomastery JSON cache only (used by encyclopedia `?force=1`). */
   clearExomasteryProfileCache?: () => void;
   /** POST /api/exo-data-alerts/fix — write fixes_*.json stubs next to codex / feeder JSON. */
-  writeExoDataAlertFix?: (
-    alert: ExoDataAlertDTO,
-  ) => {
+  writeExoDataAlertFix?: (alert: ExoDataAlertDTO) => {
     ok: boolean;
     written?: { root: string; relativePath: string; absolutePath: string }[];
     error?: string;
@@ -361,8 +362,7 @@ export function createHttpServer(opts: {
             : code === 1
               ? "Good"
               : "Unknown";
-      const healthy =
-        code === 1 || /^good$/i.test(statusText) || /^good$/i.test(String(j.message ?? ""));
+      const healthy = code === 1 || /^good$/i.test(statusText) || /^good$/i.test(String(j.message ?? ""));
       res.json({
         ok: true as const,
         healthy,
@@ -382,8 +382,7 @@ export function createHttpServer(opts: {
         return;
       }
       const j = (await r.json()) as { message?: string; status?: number; type?: string };
-      const statusText =
-        typeof j.message === "string" && j.message.trim() ? j.message.trim() : "Unknown";
+      const statusText = typeof j.message === "string" && j.message.trim() ? j.message.trim() : "Unknown";
       const healthy = Number(j.status) === 1 && String(j.type).toLowerCase() === "success";
       res.json({
         ok: true as const,
@@ -423,8 +422,7 @@ export function createHttpServer(opts: {
       (typeof fq === "string" && fq.toLowerCase() === "true") ||
       (Array.isArray(fq) && fq.some((x) => x === "1" || String(x).toLowerCase() === "true"));
     const rawFocus = req.query?.focusBodyKey;
-    const focusBodyKey =
-      typeof rawFocus === "string" && rawFocus.trim().length > 0 ? rawFocus.trim() : null;
+    const focusBodyKey = typeof rawFocus === "string" && rawFocus.trim().length > 0 ? rawFocus.trim() : null;
     if (force && typeof opts.clearExomasteryProfileCache === "function") {
       opts.clearExomasteryProfileCache();
     }
@@ -656,7 +654,12 @@ export function createHttpServer(opts: {
     }
     const plus = req.body?.plusMinCr;
     const pp = req.body?.plusPlusMinCr;
-    if (typeof plus !== "number" || typeof pp !== "number" || !Number.isFinite(plus) || !Number.isFinite(pp)) {
+    if (
+      typeof plus !== "number" ||
+      typeof pp !== "number" ||
+      !Number.isFinite(plus) ||
+      !Number.isFinite(pp)
+    ) {
       res.status(400).json({
         ok: false,
         error: 'JSON body must include finite numbers "plusMinCr" and "plusPlusMinCr" (CR).',
@@ -684,14 +687,14 @@ export function createHttpServer(opts: {
     try {
       const out = opts.writeExoDataAlertFix(alert);
       const lines =
-        out.ok && out.written?.length ?
-          [
-            "Wrote or updated fixes_*.json next to the codex (original JSON unchanged).",
-            "Species data was reloaded — criteriaPatch entries (e.g. volcanism) apply immediately.",
-            "",
-            ...out.written.map((w) => `${w.relativePath}\n  (${w.root})`),
-          ].join("\n")
-        : "";
+        out.ok && out.written?.length
+          ? [
+              "Wrote or updated fixes_*.json next to the codex (original JSON unchanged).",
+              "Species data was reloaded — criteriaPatch entries (e.g. volcanism) apply immediately.",
+              "",
+              ...out.written.map((w) => `${w.relativePath}\n  (${w.root})`),
+            ].join("\n")
+          : "";
       let notifyTarget: "native" | "browser" = "browser";
       if (out.ok && lines && opts.showFixStubNativeDialog?.(lines)) notifyTarget = "native";
       res.json({ ...out, notifyTarget });
@@ -708,7 +711,8 @@ export function createHttpServer(opts: {
     if (req.body?.confirm !== true) {
       res.status(400).json({
         ok: false,
-        error: 'Send JSON { "confirm": true } to clear organic progress, pending data value, and footfall flags in this session.',
+        error:
+          'Send JSON { "confirm": true } to clear organic progress, pending data value, and footfall flags in this session.',
       });
       return;
     }

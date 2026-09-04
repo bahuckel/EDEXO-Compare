@@ -39,7 +39,10 @@ export function normalizeScanAtmosphereForMatch(scan: PlanetScan): string {
   if (!t) return "";
   const lo = t.toLowerCase().replace(/_/g, " ");
   if (lo === "none" || lo.includes("no atmosphere")) return "";
-  t = t.replace(/^thin\s+/i, "").replace(/^thick\s+/i, "").trim();
+  t = t
+    .replace(/^thin\s+/i, "")
+    .replace(/^thick\s+/i, "")
+    .trim();
   return t;
 }
 
@@ -48,7 +51,10 @@ export function normalizeScanAtmosphereForMatch(scan: PlanetScan): string {
  * (e.g. NitrogenRich, nitrogen-rich, Neon → neon; Nitrogen → nitrogen).
  */
 export function atmosphereCompositionKey(token: string): string {
-  let t = token.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+  let t = token
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
   if (t.endsWith("rich")) t = t.slice(0, -4);
   return t;
 }

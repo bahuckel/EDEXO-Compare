@@ -48,7 +48,13 @@ export function shouldOmitDataColumnKey(key: string): boolean {
   if (shouldOmitExomasterySciencePath(k)) return true;
   if (/ring/.test(norm)) return true;
   if (/systemaddress|id64|bodyid|parentbodyid|marketid|edsystemsaddress/.test(compact)) return true;
-  if (norm === "body name" || norm === "body" || norm === "star system" || norm === "system" || norm === "system name")
+  if (
+    norm === "body name" ||
+    norm === "body" ||
+    norm === "star system" ||
+    norm === "system" ||
+    norm === "system name"
+  )
     return true;
   if (/commander|\bcmdr\b/.test(norm)) return true;
   if (/landable/.test(compact)) return true;

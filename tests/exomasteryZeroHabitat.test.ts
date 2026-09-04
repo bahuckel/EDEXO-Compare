@@ -21,8 +21,18 @@ function match(over: Partial<SpeciesMatch> & { id: string }): SpeciesMatch {
 describe("markExomasteryZeroHabitatMatches", () => {
   it("keeps every candidate — nothing is ever removed", () => {
     const input = [
-      match({ id: "a", exomasteryProfilePresent: true, exomasteryHabitatQuality: 0, exomasteryProfileSampleCount: 900 }),
-      match({ id: "b", exomasteryProfilePresent: true, exomasteryHabitatQuality: 62, exomasteryProfileSampleCount: 900 }),
+      match({
+        id: "a",
+        exomasteryProfilePresent: true,
+        exomasteryHabitatQuality: 0,
+        exomasteryProfileSampleCount: 900,
+      }),
+      match({
+        id: "b",
+        exomasteryProfilePresent: true,
+        exomasteryHabitatQuality: 62,
+        exomasteryProfileSampleCount: 900,
+      }),
       match({ id: "c" }),
     ];
     const out = markExomasteryZeroHabitatMatches(input);

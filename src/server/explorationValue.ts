@@ -19,7 +19,10 @@ export function starClassK(starType: string | undefined): number {
   return 1200;
 }
 
-export function planetClassK(planetClass: string | undefined, terraformable: boolean): { k: number; kt: number; tm: number } {
+export function planetClassK(
+  planetClass: string | undefined,
+  terraformable: boolean,
+): { k: number; kt: number; tm: number } {
   const pc = planetClass ?? "";
   let base = 300;
   let terraform = 0;
@@ -64,7 +67,11 @@ export function planetClassK(planetClass: string | undefined, terraformable: boo
   return { k: base, kt: terraform, tm: mult };
 }
 
-export function starScanValueCredits(stellarMass: number, starType: string | undefined, firstDiscoverer: boolean): {
+export function starScanValueCredits(
+  stellarMass: number,
+  starType: string | undefined,
+  firstDiscoverer: boolean,
+): {
   value: number;
   honkThird: number;
 } {

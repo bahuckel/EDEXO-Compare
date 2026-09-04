@@ -109,7 +109,12 @@ export function uniqueOnFootScanLines(locks: OrganicGenusLock[]): string[] {
 }
 
 export function safeGenusHeadId(groupKey: string): string {
-  return groupKey.replace(/[^a-zA-Z0-9_-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "genus";
+  return (
+    groupKey
+      .replace(/[^a-zA-Z0-9_-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "") || "genus"
+  );
 }
 
 export function titleCaseFromSlug(slug: string): string {
@@ -133,7 +138,10 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export function speciesCaptionParts(genus: string, displayName: string): { genusShow: string; epithet: string } {
+export function speciesCaptionParts(
+  genus: string,
+  displayName: string,
+): { genusShow: string; epithet: string } {
   const g = genus.trim();
   const d = displayName.trim();
   if (!g) return { genusShow: "", epithet: d };
@@ -280,7 +288,9 @@ export function primaryMatchQuad(
   const rawP = scan?.SurfacePressure;
   const pressAtm = rawP != null && Number.isFinite(rawP) ? journalPressureToAtm(rawP) : null;
   const pressDisp =
-    pressAtm != null && Number.isFinite(pressAtm) ? `${pressAtm.toFixed(3)} atm` : d("SurfacePressure") || "—";
+    pressAtm != null && Number.isFinite(pressAtm)
+      ? `${pressAtm.toFixed(3)} atm`
+      : d("SurfacePressure") || "—";
   const pressStyle =
     pressAtm != null && Number.isFinite(pressAtm)
       ? pressHeatStyle(pressAtm)

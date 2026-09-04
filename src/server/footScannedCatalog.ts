@@ -88,7 +88,9 @@ export function planetScanFromExplorationRecord(r: ExplorationScanRecord): Plane
       ? (r.atmosphereComposition as PlanetScan["atmosphereComposition"])
       : undefined;
   const composition =
-    r.composition && typeof r.composition === "object" ? (r.composition as PlanetScan["composition"]) : undefined;
+    r.composition && typeof r.composition === "object"
+      ? (r.composition as PlanetScan["composition"])
+      : undefined;
   return {
     BodyName: r.bodyName,
     BodyID: r.bodyId,
@@ -180,7 +182,10 @@ export function mergeScanForExomastery(
 }
 
 function genusFold(s: string): string {
-  return s.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 
 function normOrganicLabel(s: string): string {
@@ -203,7 +208,11 @@ function speciesMatchesOrganicLabels(entry: SpeciesEntry, lock: OrganicGenusLock
   return false;
 }
 
-function resolveLockToSpeciesId(lock: OrganicGenusLock, genusDataDir: string, db: SpeciesDatabase): string | null {
+function resolveLockToSpeciesId(
+  lock: OrganicGenusLock,
+  genusDataDir: string,
+  db: SpeciesDatabase,
+): string | null {
   const cands = db.species.filter((s) => s.genusDataDir === genusDataDir);
   const hits = cands.filter((e) => speciesMatchesOrganicLabels(e, lock));
   if (hits.length === 1) return hits[0]!.id;
@@ -222,7 +231,10 @@ function resolveSpeciesIdFromLock(lock: OrganicGenusLock, db: SpeciesDatabase): 
   return resolveLockToSpeciesId(lock, dir, db);
 }
 
-export function resolveSpeciesEntryFromOrganicLock(lock: OrganicGenusLock, db: SpeciesDatabase): SpeciesEntry | null {
+export function resolveSpeciesEntryFromOrganicLock(
+  lock: OrganicGenusLock,
+  db: SpeciesDatabase,
+): SpeciesEntry | null {
   const id = resolveSpeciesIdFromLock(lock, db);
   if (!id) return null;
   return db.species.find((s) => s.id === id) ?? null;
@@ -340,11 +352,14 @@ type FootScanAspect = "planetClass" | "atmosphere" | "temperature" | "pressure" 
 function criterionSpecifiesAspect(c: SpeciesCriterion, aspect: FootScanAspect): boolean {
   switch (aspect) {
     case "planetClass":
-      return !!(c.planetClassAnyOf?.length);
+      return !!c.planetClassAnyOf?.length;
     case "atmosphere":
-      return !!(c.atmosphereTypeAnyOf?.length);
+      return !!c.atmosphereTypeAnyOf?.length;
     case "temperature":
-      return !!(c.surfaceTemperatureK && (c.surfaceTemperatureK.min != null || c.surfaceTemperatureK.max != null));
+      return !!(
+        c.surfaceTemperatureK &&
+        (c.surfaceTemperatureK.min != null || c.surfaceTemperatureK.max != null)
+      );
     case "pressure":
       return !!(c.surfacePressure && (c.surfacePressure.min != null || c.surfacePressure.max != null));
     case "gravity":
@@ -391,7 +406,8 @@ function footCompareTempMid(scan: PlanetScan, row: FootScannedEntry): boolean {
   const est = estimatedTemperatureRangeForScan(scan);
   let curMid: number | null = null;
   if (est) curMid = est.tMid;
-  else if (scan.SurfaceTemperature != null && Number.isFinite(scan.SurfaceTemperature)) curMid = scan.SurfaceTemperature;
+  else if (scan.SurfaceTemperature != null && Number.isFinite(scan.SurfaceTemperature))
+    curMid = scan.SurfaceTemperature;
   if (curMid == null) return false;
   return withinRelative(curMid, row.tempMidK, REL_TOLERANCE);
 }
@@ -410,7 +426,11 @@ function footCompareGravity(scan: PlanetScan, row: FootScannedEntry): boolean {
   return withinRelative(gScan, gRow, REL_TOLERANCE);
 }
 
-function buildFootScanFieldRows(scan: PlanetScan, row: FootScannedEntry, criteria: SpeciesCriterion): FootScanFieldRow[] {
+function buildFootScanFieldRows(
+  scan: PlanetScan,
+  row: FootScannedEntry,
+  criteria: SpeciesCriterion,
+): FootScanFieldRow[] {
   return [
     {
       key: "planetClass",
@@ -497,7 +517,10 @@ function dedupeFootRowsById(rows: FootScannedEntry[]): FootScannedEntry[] {
 }
 
 /** Deduped foot-catalog rows attributed to this species id (journal-resolved at record time). */
-export function footCatalogEntriesForSpecies(catalog: FootScannedFile, speciesEntryId: string): FootScannedEntry[] {
+export function footCatalogEntriesForSpecies(
+  catalog: FootScannedFile,
+  speciesEntryId: string,
+): FootScannedEntry[] {
   return dedupeFootRowsById(catalog.entries.filter((e) => e.speciesEntryId === speciesEntryId));
 }
 
@@ -573,8 +596,7 @@ export function recordFootScanned(
     includeBacterium: meta.includeBacterium,
     dssPhysicalSlack: meta.dssPhysicalSlack ?? { temperature: 0, pressure: 0, gravity: 0 },
   });
-  const topProb =
-    probableRun.matches.find((m) => !m.approximateMatch) ?? probableRun.matches[0] ?? null;
+  const topProb = probableRun.matches.find((m) => !m.approximateMatch) ?? probableRun.matches[0] ?? null;
   const dbProbableSpeciesId = topProb ? topProb.entry.id : null;
   const dbProbableDisagreed =
     !!speciesEntryId && !!dbProbableSpeciesId && speciesEntryId !== dbProbableSpeciesId;
@@ -655,7 +677,10 @@ function hintedGeneraMissingFromMatches(hints: GenusHint[], matches: SpeciesMatc
 }
 
 /** DSS genus hints with no candidate row in that genus (for UI markers). */
-export function dssHintsMissingCandidateGenera(hints: GenusHint[] | null | undefined, matches: SpeciesMatch[]): GenusHint[] {
+export function dssHintsMissingCandidateGenera(
+  hints: GenusHint[] | null | undefined,
+  matches: SpeciesMatch[],
+): GenusHint[] {
   if (!hints?.length) return [];
   return hintedGeneraMissingFromMatches(hints, matches);
 }
@@ -803,7 +828,12 @@ export function augmentMatchesWithFootCatalog(
     const profile = loadExomasteryProfile(projectRoot, entry);
     const hq =
       profile && mergedScan
-        ? exomasteryHabitatQualityPercent(profile, mergedScan, explorationRec ?? undefined, journalHost ?? null)
+        ? exomasteryHabitatQualityPercent(
+            profile,
+            mergedScan,
+            explorationRec ?? undefined,
+            journalHost ?? null,
+          )
         : null;
 
     out.push({

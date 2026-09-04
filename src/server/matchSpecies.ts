@@ -20,7 +20,11 @@ import {
 import { atmosphereBucketForEstimator, estimatedTemperatureRangeForScan } from "./planetTemperature.js";
 import { dssHintsIncludeBacterium } from "../shared/genusHints.js";
 import { filterByGenusHints } from "./genusMatchUtils.js";
-import { applyOrganicGenusLocks, organicScanConfirmsNonBacteriumGenus, collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
+import {
+  applyOrganicGenusLocks,
+  organicScanConfirmsNonBacteriumGenus,
+  collectResolvedOrganicLockSpeciesIds,
+} from "./organicLocks.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
 import { volcanismJournalMatchesFragments } from "../shared/volcanismMatch.js";
 import { isBacteriumSpeciesEntry } from "../shared/speciesBacterium.js";
@@ -185,9 +189,9 @@ function buildDssGenusNearestTemperatureMatches(
     const spLo = best.band.lo === OPEN_LO ? "…" : `${best.band.lo.toFixed(0)}`;
     const spHi = best.band.hi === OPEN_HI ? "…" : `${best.band.hi.toFixed(0)}`;
     const detail =
-      best.tempSep === 0 ?
-        `DSS narrowed this genus — codex temperature band overlaps the estimator ${planetTempBand.minK.toFixed(0)}–${planetTempBand.maxK.toFixed(0)} K band (${spLo}–${spHi} K for this row). Other codex gates were not re-checked; verify in-game.`
-      : `DSS narrowed this genus — nearest codex row by temperature: estimator ${planetTempBand.minK.toFixed(0)}–${planetTempBand.maxK.toFixed(0)} K vs species ${spLo}–${spHi} K (gap ${best.tempSep.toFixed(1)} K). Other codex gates were not checked; verify in-game.`;
+      best.tempSep === 0
+        ? `DSS narrowed this genus — codex temperature band overlaps the estimator ${planetTempBand.minK.toFixed(0)}–${planetTempBand.maxK.toFixed(0)} K band (${spLo}–${spHi} K for this row). Other codex gates were not re-checked; verify in-game.`
+        : `DSS narrowed this genus — nearest codex row by temperature: estimator ${planetTempBand.minK.toFixed(0)}–${planetTempBand.maxK.toFixed(0)} K vs species ${spLo}–${spHi} K (gap ${best.tempSep.toFixed(1)} K). Other codex gates were not checked; verify in-game.`;
 
     out.push({
       entry: best.entry,
@@ -197,7 +201,10 @@ function buildDssGenusNearestTemperatureMatches(
     });
   }
 
-  out.sort((a, b) => a.entry.genusDataDir.localeCompare(b.entry.genusDataDir) || a.entry.id.localeCompare(b.entry.id));
+  out.sort(
+    (a, b) =>
+      a.entry.genusDataDir.localeCompare(b.entry.genusDataDir) || a.entry.id.localeCompare(b.entry.id),
+  );
   return out;
 }
 
@@ -335,7 +342,10 @@ function tryDssGenusEntryWithPhysicalSlack(
 
   return {
     entry,
-    reasons: [...full.reasons.filter((r) => r.field !== "Match mode"), { field: "Match mode", detail: slackDetail }],
+    reasons: [
+      ...full.reasons.filter((r) => r.field !== "Match mode"),
+      { field: "Match mode", detail: slackDetail },
+    ],
     approximateMatch: true,
     dssPhysicalSlackMatch: true,
   };
@@ -366,14 +376,7 @@ function buildDssGenusSlackPhysicalMatches(
     } | null = null;
 
     for (const entry of group) {
-      const m = tryDssGenusEntryWithPhysicalSlack(
-        entry,
-        scan,
-        planetTempBand,
-        est,
-        matchContext,
-        slack,
-      );
+      const m = tryDssGenusEntryWithPhysicalSlack(entry, scan, planetTempBand, est, matchContext, slack);
       if (!m) continue;
       const { score } = matchScoreTempPressureGravity(scan, planetTempBand, entry.criteria);
       if (
@@ -387,7 +390,10 @@ function buildDssGenusSlackPhysicalMatches(
     if (best) out.push(best.m);
   }
 
-  out.sort((a, b) => a.entry.genusDataDir.localeCompare(b.entry.genusDataDir) || a.entry.id.localeCompare(b.entry.id));
+  out.sort(
+    (a, b) =>
+      a.entry.genusDataDir.localeCompare(b.entry.genusDataDir) || a.entry.id.localeCompare(b.entry.id),
+  );
   return out;
 }
 
@@ -406,11 +412,7 @@ function tryLoneGenusSpeciesSlackTemperatureMatch(
 
   if (tempSlackRatio <= 0) return null;
 
-  const expanded = expandPlanetTempBandTowardSpecies(
-    planetTempBand,
-    spBand,
-    tempSlackRatio,
-  );
+  const expanded = expandPlanetTempBandTowardSpecies(planetTempBand, spBand, tempSlackRatio);
   if (!expanded || !tempBandsOverlap(expanded, spBand)) return null;
 
   const full = speciesMatchesCriteria(entry, scan, expanded, est, matchContext);
@@ -529,10 +531,7 @@ export function speciesMatchesExcludingTempPressure(
   const atmoNorm = normalizeScanAtmosphereForMatch(scan);
   if (c.atmosphereTypeAnyOf?.length) {
     const allowed = c.atmosphereTypeAnyOf;
-    if (
-      atmosphereAllowlistMeansAnyThinCompositionOnly(allowed) &&
-      c.atmospherePressureCategory === "thin"
-    ) {
+    if (atmosphereAllowlistMeansAnyThinCompositionOnly(allowed) && c.atmospherePressureCategory === "thin") {
       if (!atmoNorm) {
         failures.push({
           field: "AtmosphereType",
@@ -619,7 +618,10 @@ export function speciesMatchesExcludingTempPressure(
   const criteriaVolcanoFragments = !!(c.volcanismIncludes && c.volcanismIncludes.length > 0);
   const explicitVolcanoRequired = c.volcanismActiveRequired === true;
 
-  if ((genusNeedsVolcano || criteriaVolcanoFragments || explicitVolcanoRequired) && !journalReportsAnyVolcanism(scan)) {
+  if (
+    (genusNeedsVolcano || criteriaVolcanoFragments || explicitVolcanoRequired) &&
+    !journalReportsAnyVolcanism(scan)
+  ) {
     failures.push({
       field: "Volcanism",
       detail: genusNeedsVolcano
@@ -799,9 +801,8 @@ export function speciesMatchesCriteria(
   const linkedMax = c.whenAtmosphereLinkedMaxTempK;
   const linkedAtmo = c.whenAtmosphereLinkedAtmosphereAnyOf;
   if (linkedMax !== undefined) {
-    const applies =
-      linkedAtmo?.length ?
-        (() => {
+    const applies = linkedAtmo?.length
+      ? (() => {
           const atmoNorm = normalizeScanAtmosphereForMatch(scan);
           const scanKey = atmosphereCompositionKey(atmoNorm);
           const vacuumAllowed = linkedAtmo.some((a) => !(a ?? "").trim());
@@ -813,7 +814,7 @@ export function speciesMatchesCriteria(
             return atmosphereCompositionKey(a) === scanKey;
           });
         })()
-      : !!(c.atmosphereTypeAnyOf?.length);
+      : !!c.atmosphereTypeAnyOf?.length;
 
     if (applies) {
       if (!planetTempBand) {
@@ -1025,8 +1026,7 @@ export function matchDatabaseToScan(
     const needsTemp = speciesNeedsTemperatureGate(entry.criteria);
     const needsPress =
       !!entry.criteria.surfacePressure &&
-      (entry.criteria.surfacePressure.min !== undefined ||
-        entry.criteria.surfacePressure.max !== undefined);
+      (entry.criteria.surfacePressure.min !== undefined || entry.criteria.surfacePressure.max !== undefined);
 
     if (!needsTemp && !needsPress) continue;
 

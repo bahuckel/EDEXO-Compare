@@ -75,8 +75,7 @@ function collectFilenameStems(entry: SpeciesEntry): string[] {
     push(`${dirU}_${sLo}`);
     push(`${dirU}-${sLo}`);
     push(`${dir}_${sLo}`);
-    if (speciesCompact.length > 2)
-      push(`${dirU}_${speciesCompact}`);
+    if (speciesCompact.length > 2) push(`${dirU}_${speciesCompact}`);
     if (dirCompact.length > 2 && speciesCompact.length > 2) push(`${dirCompact}_${speciesCompact}`);
     if (dirCompact.length > 2 && speciesCompact.length > 2) push(`${dirCompact}${speciesCompact}`);
   }
@@ -101,14 +100,15 @@ function candidateFilenames(entry: SpeciesEntry): string[] {
   return out;
 }
 
-function bestFuzzyPhoto(
-  files: string[],
-  entry: SpeciesEntry,
-): { name: string; note: string } | null {
+function bestFuzzyPhoto(files: string[], entry: SpeciesEntry): { name: string; note: string } | null {
   const target = normStem(entry.displayName.replace(/\s*\([^)]*\)\s*/g, "").trim());
   const targetSpecies =
-    normStem(entry.displayName.replace(/\s*\([^)]*\)\s*/g, "").replace(new RegExp(`^${escapeRe(entry.genus.trim())}`, "i"), "").trim()) ||
-    target;
+    normStem(
+      entry.displayName
+        .replace(/\s*\([^)]*\)\s*/g, "")
+        .replace(new RegExp(`^${escapeRe(entry.genus.trim())}`, "i"), "")
+        .trim(),
+    ) || target;
 
   let best: { name: string; score: number } | null = null;
   for (const f of files) {
@@ -117,10 +117,12 @@ function bestFuzzyPhoto(
     let score = 0;
     if (n === target || n === targetSpecies) score = 1000;
     else if (target.length > 4 && (n.includes(target) || target.includes(n))) score = 500;
-    else if (targetSpecies.length > 4 && (n.includes(targetSpecies) || targetSpecies.includes(n))) score = 400;
+    else if (targetSpecies.length > 4 && (n.includes(targetSpecies) || targetSpecies.includes(n)))
+      score = 400;
     else {
       const dirP = normStem(entry.genusDataDir);
-      if (dirP.length > 3 && n.startsWith(dirP) && targetSpecies.length > 3 && n.includes(targetSpecies)) score = 350;
+      if (dirP.length > 3 && n.startsWith(dirP) && targetSpecies.length > 3 && n.includes(targetSpecies))
+        score = 350;
     }
     if (score > 0 && (!best || score > best.score)) best = { name: f, score };
   }

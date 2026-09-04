@@ -16,11 +16,7 @@ import type {
 import { shortBodyLabel } from "../shared/systemMapLabels.js";
 import { formatFullSpectralNotation, spectralDiscGlyph } from "../shared/spectralNotation.js";
 import type { GameStateStore } from "./gameState.js";
-import {
-  bodyScanValueCredits,
-  referenceFssAt1EarthMass,
-  starScanValueCredits,
-} from "./explorationValue.js";
+import { bodyScanValueCredits, referenceFssAt1EarthMass, starScanValueCredits } from "./explorationValue.js";
 import { matchDatabaseToScan } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
 import { estimatedTemperatureRangeForScan } from "./planetTemperature.js";
@@ -47,10 +43,7 @@ import {
   parseShortDesignation,
 } from "../shared/eliteDesignation.js";
 import { explorationRecordHasPlanetSlotDesignation } from "../shared/planetSlotDesignation.js";
-import {
-  explorationRecordIsBeltClusterLike,
-  explorationRecordIsStellar,
-} from "./explorationStellar.js";
+import { explorationRecordIsBeltClusterLike, explorationRecordIsStellar } from "./explorationStellar.js";
 
 const isBeltClusterRecord = explorationRecordIsBeltClusterLike;
 
@@ -566,7 +559,11 @@ function buildExoPayoutRangeForRecord(
   );
 }
 
-function scanForMatch(store: GameStateStore, r: ExplorationScanRecord, exo: BodyExoState | undefined): PlanetScan | null {
+function scanForMatch(
+  store: GameStateStore,
+  r: ExplorationScanRecord,
+  exo: BodyExoState | undefined,
+): PlanetScan | null {
   if (exo?.scan) return exo.scan;
   if (!r.planetClass && !r.atmosphereType && !r.atmosphere) return null;
   return {
@@ -622,7 +619,8 @@ export function buildPrimaryStarsHeader(
       "Star";
     const glyph = letter ?? "★";
     if (shortLabel === glyph) shortLabel = "";
-    else if (letter && shortLabel.length <= 2 && shortLabel.toUpperCase() === letter.toUpperCase()) shortLabel = "";
+    else if (letter && shortLabel.length <= 2 && shortLabel.toUpperCase() === letter.toUpperCase())
+      shortLabel = "";
     else if (!letter && (shortLabel === "★" || shortLabel === "Star")) shortLabel = "";
     return {
       letter,
@@ -856,8 +854,7 @@ export function buildSystemMapSnapshot(
       valuePlus,
       hasExobiology: hasExo,
       bioBodyKey: hasExo ? bk : null,
-      estimatedSurfaceTempK:
-        est != null ? { minK: est.tMin, maxK: est.tMax, midK: est.tMid } : null,
+      estimatedSurfaceTempK: est != null ? { minK: est.tMin, maxK: est.tMax, midK: est.tMid } : null,
       exoMatchSummaries: exoMatchSummaries(store, db, r),
       maxExoHeuristicCredits: maxExo.displayMax,
       exoValueTier: exoTier,
@@ -871,9 +868,7 @@ export function buildSystemMapSnapshot(
   const starsOrderedByBodyId = recs
     .filter((r) => isStarOnSystemMap(r, starSystemName))
     .sort((a, b) => a.bodyId - b.bodyId);
-  const starLetterMap = new Map(
-    starsOrderedByBodyId.map((s, i) => [s.bodyId, String.fromCharCode(65 + i)]),
-  );
+  const starLetterMap = new Map(starsOrderedByBodyId.map((s, i) => [s.bodyId, String.fromCharCode(65 + i)]));
   const parentToChildren = parentToChildrenFromOrbitChild(orbitChild);
   const graphIds = allIdsInOrbitGraph(recs, orbitChild);
   const rootIds = rootBodyIdsFromOrbitGraph(graphIds, orbitChild);

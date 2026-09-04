@@ -45,7 +45,11 @@ export function organicSampleSessionPath(projectRoot: string): string {
   return join(projectRoot, "data", "organic_sample_session.json");
 }
 
-function resolveMinSampleDistanceMForGenus(projectRoot: string, db: SpeciesDatabase, genusLocalised: string): number {
+function resolveMinSampleDistanceMForGenus(
+  projectRoot: string,
+  db: SpeciesDatabase,
+  genusLocalised: string,
+): number {
   const g = genusLocalised.trim().toLowerCase();
   if (!g) return 0;
   for (const e of db.species) {
@@ -61,7 +65,10 @@ function resolveMinSampleDistanceMForGenus(projectRoot: string, db: SpeciesDatab
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 let persistPending: { host: OrganicSampleSessionHost; projectRoot: string } | null = null;
 
-export function schedulePersistOrganicSampleSession(host: OrganicSampleSessionHost, projectRoot: string): void {
+export function schedulePersistOrganicSampleSession(
+  host: OrganicSampleSessionHost,
+  projectRoot: string,
+): void {
   persistPending = { host, projectRoot };
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = setTimeout(() => {
@@ -171,7 +178,9 @@ export function loadOrganicSampleSessionFromDisk(
   const genusLocalised = typeof p.genusLocalised === "string" ? p.genusLocalised : "";
   const minDb = resolveMinSampleDistanceMForGenus(projectRoot, db, genusLocalised);
   const minSampleDistanceM =
-    typeof p.minSampleDistanceM === "number" && Number.isFinite(p.minSampleDistanceM) ? p.minSampleDistanceM : 0;
+    typeof p.minSampleDistanceM === "number" && Number.isFinite(p.minSampleDistanceM)
+      ? p.minSampleDistanceM
+      : 0;
   const minSampleDistanceMResolved = minDb > 0 ? minDb : minSampleDistanceM;
 
   const anchors: ExoOrganicTrackerInternal["anchors"] = [];
@@ -221,9 +230,13 @@ export function loadOrganicSampleSessionFromDisk(
       ? Math.max(0, p.footTravelDistanceMeters)
       : 0;
   host.footTravelPrevLat =
-    typeof p.footTravelPrevLat === "number" && Number.isFinite(p.footTravelPrevLat) ? p.footTravelPrevLat : null;
+    typeof p.footTravelPrevLat === "number" && Number.isFinite(p.footTravelPrevLat)
+      ? p.footTravelPrevLat
+      : null;
   host.footTravelPrevLon =
-    typeof p.footTravelPrevLon === "number" && Number.isFinite(p.footTravelPrevLon) ? p.footTravelPrevLon : null;
+    typeof p.footTravelPrevLon === "number" && Number.isFinite(p.footTravelPrevLon)
+      ? p.footTravelPrevLon
+      : null;
   host.footTravelLastPlanetRadiusM =
     typeof p.footTravelLastPlanetRadiusM === "number" && Number.isFinite(p.footTravelLastPlanetRadiusM)
       ? p.footTravelLastPlanetRadiusM

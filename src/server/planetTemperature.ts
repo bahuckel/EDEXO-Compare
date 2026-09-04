@@ -19,10 +19,7 @@ function hasMeaningfulVolcanism(scan: PlanetScan): boolean {
   return !v.includes("no volcanism") && v !== "none";
 }
 
-export {
-  normalizeScanAtmosphereForMatch,
-  atmosphereCompositionKey,
-} from "../shared/scanAtmosphereMatch.js";
+export { normalizeScanAtmosphereForMatch, atmosphereCompositionKey } from "../shared/scanAtmosphereMatch.js";
 
 export function atmosphereBucketForEstimator(scan: PlanetScan): "none" | "thin" | "thick" {
   const t = (scan.AtmosphereType ?? "").trim().toLowerCase();

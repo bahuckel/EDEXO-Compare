@@ -101,7 +101,11 @@
   --fs-4xl: 32px;
   /* Match launcher honeycomb math; stroke uses UI accent */
   --hex-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 55.42562584220407 56'%3E%3Cg fill='none' stroke='%23ff7a24' stroke-opacity='0.14' stroke-width='0.85'%3E%3Cpath d='M13.856406460551017 0L27.712812921102035 8L27.712812921102035 24L13.856406460551017 32L0 24L0 8Z'/%3E%3Cpath d='M41.56821838165305 0L55.42462484220407 8L55.42462484220407 24L41.56821838165305 32L27.712812921102035 24L27.712812921102035 8Z'/%3E%3Cpath d='M27.712812921102035 24L41.56821838165305 32L41.56821838165305 48L27.712812921102035 56L13.856406460551017 48L13.856406460551017 32Z'/%3E%3C/g%3E%3C/svg%3E");
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 * {
@@ -131,14 +135,14 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-color: var(--bg);
-  background-image: radial-gradient(
-      ellipse 120% 80% at 50% -15%,
-      var(--accent-a06),
-      transparent 55%
-    ),
-    var(--hex-grid);
-  background-size: auto, 55.425626px 56px;
-  background-position: 0 0, center top;
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -15%, var(--accent-a06), transparent 55%), var(--hex-grid);
+  background-size:
+    auto,
+    55.425626px 56px;
+  background-position:
+    0 0,
+    center top;
   background-repeat: no-repeat, repeat;
 }
 
@@ -230,16 +234,15 @@ body::before {
   pointer-events: none;
   background-color: #0c0a08;
   background-image:
-    linear-gradient(
-      165deg,
-      rgba(12, 7, 4, 0.88) 0%,
-      rgba(16, 9, 5, 0.5) 38%,
-      rgba(12, 7, 4, 0.85) 100%
-    ),
+    linear-gradient(165deg, rgba(12, 7, 4, 0.88) 0%, rgba(16, 9, 5, 0.5) 38%, rgba(12, 7, 4, 0.85) 100%),
     url("../../vista.webp");
   /* Full width inside the card; height follows aspect ratio — top/bottom crop when taller */
-  background-size: 100% 100%, 100% auto;
-  background-position: center, center center;
+  background-size:
+    100% 100%,
+    100% auto;
+  background-position:
+    center,
+    center center;
   background-repeat: no-repeat;
 }
 
@@ -349,7 +352,9 @@ body::before {
   background: rgba(14, 12, 10, 0.94);
   color: var(--text);
   cursor: pointer;
-  box-shadow: 0 0 12px var(--accent-glow), inset 0 1px 0 rgba(255, 200, 120, 0.12);
+  box-shadow:
+    0 0 12px var(--accent-glow),
+    inset 0 1px 0 rgba(255, 200, 120, 0.12);
 }
 
 .btn-top-neutral:hover {
@@ -381,12 +386,16 @@ body::before {
 
 .exo-data-alerts-trigger--warn {
   border-color: rgba(210, 175, 48, 0.75);
-  box-shadow: 0 0 14px rgba(230, 190, 60, 0.22), inset 0 1px 0 rgba(255, 220, 120, 0.1);
+  box-shadow:
+    0 0 14px rgba(230, 190, 60, 0.22),
+    inset 0 1px 0 rgba(255, 220, 120, 0.1);
 }
 
 .exo-data-alerts-trigger--error {
   border-color: rgba(220, 72, 72, 0.85);
-  box-shadow: 0 0 14px rgba(220, 60, 60, 0.3), inset 0 1px 0 rgba(255, 160, 140, 0.08);
+  box-shadow:
+    0 0 14px rgba(220, 60, 60, 0.3),
+    inset 0 1px 0 rgba(255, 160, 140, 0.08);
   animation: exo-data-alert-pulse-error 1.15s ease-in-out infinite;
 }
 
@@ -606,7 +615,9 @@ body::before {
   border-radius: var(--radius-sm);
   border: 1px solid var(--accent-bright);
   background: linear-gradient(180deg, rgba(255, 122, 36, 0.14) 0%, rgba(20, 18, 16, 0.95) 100%);
-  box-shadow: 0 0 14px var(--accent-glow), inset 0 1px 0 rgba(255, 200, 120, 0.18);
+  box-shadow:
+    0 0 14px var(--accent-glow),
+    inset 0 1px 0 rgba(255, 200, 120, 0.18);
   font-size: var(--fs-md);
   color: var(--text);
   cursor: help;
@@ -1986,7 +1997,9 @@ button.data-value-pill.data-value-pill--clickable:active {
   border: var(--border);
   border-radius: var(--radius-lg);
   background: linear-gradient(165deg, #12121a 0%, var(--surface-3) 48%, #08080d 100%);
-  box-shadow: var(--glow), inset 0 1px 0 var(--accent-a12);
+  box-shadow:
+    var(--glow),
+    inset 0 1px 0 var(--accent-a12);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -2115,7 +2128,9 @@ button.data-value-pill.data-value-pill--clickable:active {
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--accent-bright);
-  text-shadow: 0 0 20px var(--accent-glow), 0 0 40px var(--accent-a15);
+  text-shadow:
+    0 0 20px var(--accent-glow),
+    0 0 40px var(--accent-a15);
   border-bottom: 1px solid var(--accent-dim);
   background: var(--accent-a06);
   flex-shrink: 0;
@@ -2321,7 +2336,9 @@ button.data-value-pill.data-value-pill--clickable:active {
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .species-similarity-index--static {
@@ -3096,7 +3113,12 @@ button.data-value-pill.data-value-pill--clickable:active {
   margin: 0;
   padding: 0.45rem 0.65rem 0.55rem;
   border-top: 1px solid rgba(255, 122, 36, 0.28);
-  background: linear-gradient(90deg, rgba(12, 14, 22, 0.98) 0%, rgba(8, 8, 12, 0.96) 45%, var(--surface-scrim) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(12, 14, 22, 0.98) 0%,
+    rgba(8, 8, 12, 0.96) 45%,
+    var(--surface-scrim) 100%
+  );
   box-shadow: inset 0 1px 0 rgba(255, 180, 100, 0.06);
   min-width: 0;
   width: 100%;
@@ -3244,7 +3266,12 @@ button.data-value-pill.data-value-pill--clickable:active {
 
 .species-spectral-chip--af {
   border-color: rgba(255, 230, 160, 0.4);
-  background: linear-gradient(180deg, rgba(120, 90, 40, 0.45), rgba(88, 64, 28, 0.35), rgba(24, 20, 14, 0.94));
+  background: linear-gradient(
+    180deg,
+    rgba(120, 90, 40, 0.45),
+    rgba(88, 64, 28, 0.35),
+    rgba(24, 20, 14, 0.94)
+  );
   color: #ffecc8;
 }
 
@@ -3404,47 +3431,27 @@ button.data-value-pill.data-value-pill--clickable:active {
 
 .exo-neon-duplex--tier-blue {
   border-color: rgba(100, 200, 220, 0.45);
-  background: linear-gradient(
-    165deg,
-    rgba(28, 56, 78, 0.55) 0%,
-    var(--surface-scrim) 65%
-  );
+  background: linear-gradient(165deg, rgba(28, 56, 78, 0.55) 0%, var(--surface-scrim) 65%);
 }
 
 .exo-neon-duplex--tier-green {
   border-color: rgba(110, 200, 130, 0.45);
-  background: linear-gradient(
-    165deg,
-    rgba(24, 58, 38, 0.5) 0%,
-    var(--surface-scrim) 65%
-  );
+  background: linear-gradient(165deg, rgba(24, 58, 38, 0.5) 0%, var(--surface-scrim) 65%);
 }
 
 .exo-neon-duplex--tier-yellow {
   border-color: rgba(220, 200, 80, 0.45);
-  background: linear-gradient(
-    165deg,
-    rgba(58, 52, 22, 0.48) 0%,
-    var(--surface-scrim) 65%
-  );
+  background: linear-gradient(165deg, rgba(58, 52, 22, 0.48) 0%, var(--surface-scrim) 65%);
 }
 
 .exo-neon-duplex--tier-orange {
   border-color: rgba(230, 150, 60, 0.5);
-  background: linear-gradient(
-    165deg,
-    rgba(58, 38, 18, 0.5) 0%,
-    var(--surface-scrim) 65%
-  );
+  background: linear-gradient(165deg, rgba(58, 38, 18, 0.5) 0%, var(--surface-scrim) 65%);
 }
 
 .exo-neon-duplex--tier-red {
   border-color: rgba(230, 90, 90, 0.52);
-  background: linear-gradient(
-    165deg,
-    rgba(58, 22, 22, 0.52) 0%,
-    var(--surface-scrim) 65%
-  );
+  background: linear-gradient(165deg, rgba(58, 22, 22, 0.52) 0%, var(--surface-scrim) 65%);
 }
 
 .exo-neon-duplex--tier-neutral {
@@ -3622,7 +3629,9 @@ button.exo-duplex-typical-mode-hit:disabled {
   overflow: hidden;
   border: var(--border);
   background: linear-gradient(165deg, #12121a 0%, var(--surface-3) 48%, #08080d 100%);
-  box-shadow: var(--glow), inset 0 3px 0 rgba(255, 122, 36, 0.18);
+  box-shadow:
+    var(--glow),
+    inset 0 3px 0 rgba(255, 122, 36, 0.18);
 }
 
 .species-other-match-shell-toggle {
@@ -4044,7 +4053,9 @@ button.exo-duplex-typical-mode-hit:disabled {
   border: 1px solid var(--accent-dim);
   border-radius: var(--radius-sm);
   background: rgba(8, 8, 12, 0.92);
-  box-shadow: inset 0 0 0 1px var(--accent-a06), 0 1px 8px var(--shadow-a35);
+  box-shadow:
+    inset 0 0 0 1px var(--accent-a06),
+    0 1px 8px var(--shadow-a35);
 }
 
 .species-fact-row {
@@ -4557,30 +4568,40 @@ button.exo-duplex-typical-mode-hit:disabled {
   border: 1.5px solid rgba(255, 122, 36, 0.92);
   background: rgba(255, 122, 36, 0.09);
   color: var(--text);
-  box-shadow: 0 0 14px var(--accent-dim), inset 0 0 10px var(--accent-a06);
+  box-shadow:
+    0 0 14px var(--accent-dim),
+    inset 0 0 10px var(--accent-a06);
   text-align: left;
   line-height: 1.25;
 }
 
 .system-map-notable-pill:hover {
   border-color: #ffa64d;
-  box-shadow: 0 0 18px rgba(255, 122, 36, 0.55), inset 0 0 12px var(--accent-a08);
+  box-shadow:
+    0 0 18px rgba(255, 122, 36, 0.55),
+    inset 0 0 12px var(--accent-a08);
 }
 
 .system-map-notable-pill--fss {
   border-color: rgba(255, 154, 77, 0.95);
-  box-shadow: 0 0 16px var(--accent-a45), inset 0 0 10px rgba(255, 122, 36, 0.07);
+  box-shadow:
+    0 0 16px var(--accent-a45),
+    inset 0 0 10px rgba(255, 122, 36, 0.07);
 }
 
 .system-map-notable-pill--dss {
   border: 1.5px solid rgba(74, 222, 128, 0.92);
   background: rgba(74, 222, 128, 0.09);
-  box-shadow: 0 0 16px rgba(74, 222, 128, 0.42), inset 0 0 10px rgba(74, 222, 128, 0.08);
+  box-shadow:
+    0 0 16px rgba(74, 222, 128, 0.42),
+    inset 0 0 10px rgba(74, 222, 128, 0.08);
 }
 
 .system-map-notable-pill--dss:hover {
   border-color: var(--ok-bright);
-  box-shadow: 0 0 18px rgba(74, 222, 128, 0.55), inset 0 0 12px rgba(74, 222, 128, 0.1);
+  box-shadow:
+    0 0 18px rgba(74, 222, 128, 0.55),
+    inset 0 0 12px rgba(74, 222, 128, 0.1);
 }
 
 .system-map-notable-tf-star {
@@ -5378,7 +5399,9 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   font-weight: 800;
   letter-spacing: 0.02em;
   border: 2px solid var(--accent-bright);
-  box-shadow: 0 0 12px var(--accent-glow), inset 0 0 8px var(--accent-a08);
+  box-shadow:
+    0 0 12px var(--accent-glow),
+    inset 0 0 8px var(--accent-a08);
 }
 
 .system-map-orbit--plain {
@@ -5389,7 +5412,9 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .system-map-orbit--exo {
   color: #8cffb1;
   border-color: #4ade80;
-  box-shadow: 0 0 14px rgba(74, 222, 128, 0.45), inset 0 0 8px rgba(74, 222, 128, 0.12);
+  box-shadow:
+    0 0 14px rgba(74, 222, 128, 0.45),
+    inset 0 0 8px rgba(74, 222, 128, 0.12);
 }
 
 .system-map-node--plus .system-map-orbit::after {
@@ -7998,7 +8023,6 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   padding: var(--s-8);
 }
 
-
 /* ==========================================================================
    v0.11.0 — information architecture
    ==========================================================================
@@ -8550,7 +8574,6 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .brand-hero--idle {
   margin-top: 0.2rem;
 }
-
 
 /* ==========================================================================
    v0.12.0 — encyclopedia + species cards

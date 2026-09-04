@@ -125,7 +125,11 @@ export function exomasterySpeciesLabelMatchesEntry(
   return profileSpeciesLabelMatchesEntry(speciesLabel, entry, basenameNoExt);
 }
 
-function profileSpeciesLabelMatchesEntry(speciesLabel: string | undefined, entry: SpeciesEntry, basenameNoExt: string): boolean {
+function profileSpeciesLabelMatchesEntry(
+  speciesLabel: string | undefined,
+  entry: SpeciesEntry,
+  basenameNoExt: string,
+): boolean {
   const fromJson = typeof speciesLabel === "string" ? speciesLabel.trim() : "";
   if (fromJson) {
     const n = speciesSlug(fromJson);
@@ -228,7 +232,9 @@ export function resolveExomasteryProfileJsonPath(projectRoot: string, entry: Spe
     } catch {
       files = [];
     }
-    const jsonFiles = files.filter((f) => f.toLowerCase().endsWith(".json")).sort((a, b) => a.localeCompare(b));
+    const jsonFiles = files
+      .filter((f) => f.toLowerCase().endsWith(".json"))
+      .sort((a, b) => a.localeCompare(b));
     for (const f of jsonFiles) {
       const p = join(sub, f);
       try {
@@ -481,7 +487,7 @@ function rollupImportance(r: ExomasteryNumericRollup): number {
 }
 
 export function formatPathLabel(path: string): string {
-  const tail = path.includes(".") ? path.split(".").pop() ?? path : path;
+  const tail = path.includes(".") ? (path.split(".").pop() ?? path) : path;
   return tail
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/_/g, " ")
@@ -489,18 +495,24 @@ export function formatPathLabel(path: string): string {
 }
 
 export function exomasteryPathTailLower(path: string): string {
-  return (path.includes(".") ? path.split(".").pop() ?? path : path).toLowerCase().trim();
+  return (path.includes(".") ? (path.split(".").pop() ?? path) : path).toLowerCase().trim();
 }
 
 /**
  * Convert a feeder rollup value to display units (atm, g, AU, …) for the given EDSM-style path.
  */
-export function exomasteryRollupValueDisplay(path: string, raw: number): { displayNumber: number; suffix: string } {
+export function exomasteryRollupValueDisplay(
+  path: string,
+  raw: number,
+): { displayNumber: number; suffix: string } {
   if (!Number.isFinite(raw)) return { displayNumber: raw, suffix: "" };
   const low = path.toLowerCase();
   if (
     low.includes("surfacepressure") ||
-    (low.includes("pressure") && !low.includes("composition") && !low.includes("percent") && !low.includes("%"))
+    (low.includes("pressure") &&
+      !low.includes("composition") &&
+      !low.includes("percent") &&
+      !low.includes("%"))
   ) {
     return { displayNumber: journalPressureToAtm(raw), suffix: " atm" };
   }
@@ -664,7 +676,10 @@ function valueForNumericPath(
 }
 
 /** Journal / DSS atmosphere summary; "No atmosphere" when explicitly airless (supports categorical + composition). */
-function normalizeAtmosphereType(scan: PlanetScan, rec: ExplorationScanRecord | null | undefined): string | null {
+function normalizeAtmosphereType(
+  scan: PlanetScan,
+  rec: ExplorationScanRecord | null | undefined,
+): string | null {
   const raw = (scan.AtmosphereType ?? rec?.atmosphereType ?? "").trim();
   const atm = (scan.Atmosphere ?? rec?.atmosphere ?? "").trim();
   const t = raw || atm;
@@ -678,7 +693,11 @@ function isNoAtmosphereScan(scan: PlanetScan, rec: ExplorationScanRecord | null 
   return normalizeAtmosphereType(scan, rec) === "No atmosphere";
 }
 
-function compositionChevron(current: number, mode: number, isMissing: boolean): "up" | "down" | "dash" | "none" {
+function compositionChevron(
+  current: number,
+  mode: number,
+  isMissing: boolean,
+): "up" | "down" | "dash" | "none" {
   if (isMissing || !Number.isFinite(current) || !Number.isFinite(mode)) return "none";
   const d = Math.abs(current - mode);
   if (d <= 1) return "dash";
@@ -786,7 +805,10 @@ function collectJournalMaterialElementNames(
 }
 
 /** Atmosphere constituent names present in merged journal with a numeric percent. */
-function collectJournalAtmosphereGasNames(scan: PlanetScan, rec: ExplorationScanRecord | null | undefined): string[] {
+function collectJournalAtmosphereGasNames(
+  scan: PlanetScan,
+  rec: ExplorationScanRecord | null | undefined,
+): string[] {
   const raw = journalAtmosphereCompositionArray(scan, rec);
   if (!raw) return [];
   const names: string[] = [];
@@ -810,7 +832,6 @@ function collectJournalSolidKeys(scan: PlanetScan, rec: ExplorationScanRecord | 
     return typeof v === "number" && Number.isFinite(v);
   });
 }
-
 
 function solidValue(
   scan: PlanetScan,
@@ -1024,7 +1045,9 @@ export function buildExomasteryVarietyHints(profile: ExomasteryProfileV1): Exoma
   }));
 }
 
-function summarizeCompositionMatch(items: { label: string; score: number }[]): ExomasteryCompositionSummaryDTO {
+function summarizeCompositionMatch(
+  items: { label: string; score: number }[],
+): ExomasteryCompositionSummaryDTO {
   if (items.length === 0) {
     return { overallMatchPercent: null, best: null, worst: null };
   }
@@ -1048,7 +1071,10 @@ function inferHostSpectralCohortMode(profile: ExomasteryProfileV1): string | nul
   return null;
 }
 
-function statsHaveMkAxis(stats: ExomasteryStatDetailDTO[], axis: NonNullable<ReturnType<typeof classifyHostMkPath>>): boolean {
+function statsHaveMkAxis(
+  stats: ExomasteryStatDetailDTO[],
+  axis: NonNullable<ReturnType<typeof classifyHostMkPath>>,
+): boolean {
   return stats.some((s) => s.kind === "categorical" && classifyHostMkPath(s.chartPath ?? "") === axis);
 }
 
@@ -1258,7 +1284,8 @@ export function buildExomasteryDetail(
     const v = valueForNumericPath(path, scan, rec);
     const mode = r.mode ?? r.mean;
     const missing = v == null || !Number.isFinite(v);
-    const relDisp = !missing && Number.isFinite(mode) ? relativePercentDisplay(v!, mode) : { pct: null, huge: false };
+    const relDisp =
+      !missing && Number.isFinite(mode) ? relativePercentDisplay(v!, mode) : { pct: null, huge: false };
     const curForDist = missing ? null : v!;
     const distribution = buildNumericDistributionDto(path, r, curForDist);
     const stat: ExomasteryStatDetailDTO = {
@@ -1293,8 +1320,7 @@ export function buildExomasteryDetail(
     const mode = rollup.mode ?? rollup.mean;
     const missing = !cur.known;
     const curN = cur.known ? (cur.v ?? 0) : NaN;
-    const dpp =
-      cur.known && Number.isFinite(mode) ? Math.round(Math.abs(curN - mode) * 10) / 10 : null;
+    const dpp = cur.known && Number.isFinite(mode) ? Math.round(Math.abs(curN - mode) * 10) / 10 : null;
     let relVsTyp: number | null = null;
     let diffHuge = false;
     if (cur.known && Number.isFinite(mode) && Math.abs(mode) > 1e-6) {
@@ -1414,10 +1440,7 @@ export function buildExomasteryDetail(
       chartPath: `solid:journal-extra:${key.toLowerCase()}`,
       label: key,
       typicalDisplay: "—",
-      currentDisplay:
-        cur.v != null && Number.isFinite(cur.v)
-          ? `${formatExomasteryNum(cur.v)}%`
-          : "—",
+      currentDisplay: cur.v != null && Number.isFinite(cur.v) ? `${formatExomasteryNum(cur.v)}%` : "—",
       isMissing: false,
       diffPoints: null,
       diffRelativePercent: null,
@@ -1535,13 +1558,23 @@ export function buildBodyScanExomasteryDetail(
 
   const temp = scan.SurfaceTemperature ?? rec?.surfaceTemperature;
   atmosphereClimateStats.push(
-    row("journal.climate.surface_temperature", "Surface temperature", temp != null ? `${temp.toFixed(2)} K` : "—", temp == null),
+    row(
+      "journal.climate.surface_temperature",
+      "Surface temperature",
+      temp != null ? `${temp.toFixed(2)} K` : "—",
+      temp == null,
+    ),
   );
 
   const press = scan.SurfacePressure ?? rec?.surfacePressure;
   const atm = press != null ? journalPressureToAtm(press) : null;
   atmosphereClimateStats.push(
-    row("journal.climate.surface_pressure", "Surface pressure", atm != null ? `${atm.toFixed(6)} atm` : "—", atm == null),
+    row(
+      "journal.climate.surface_pressure",
+      "Surface pressure",
+      atm != null ? `${atm.toFixed(6)} atm` : "—",
+      atm == null,
+    ),
   );
 
   const rawGas = journalAtmosphereCompositionArray(scan, rec);
@@ -1553,7 +1586,14 @@ export function buildBodyScanExomasteryDetail(
       const pct = journalPercentNumber(o.Percent ?? o.percent);
       if (!name || pct == null) continue;
       atmosphereClimateStats.push({
-        ...row(`journal.climate.gas.${name.toLowerCase()}`, name, `${formatExomasteryNum(pct)}%`, false, "atmosphere", true),
+        ...row(
+          `journal.climate.gas.${name.toLowerCase()}`,
+          name,
+          `${formatExomasteryNum(pct)}%`,
+          false,
+          "atmosphere",
+          true,
+        ),
       });
     }
   }
@@ -1561,24 +1601,44 @@ export function buildBodyScanExomasteryDetail(
   const bodyTraitStats: ExomasteryStatDetailDTO[] = [];
   const rawG = scan.SurfaceGravity ?? rec?.surfaceGravity;
   const gEarth = rawG != null && Number.isFinite(rawG) ? journalSurfaceGravityToG(rawG) : null;
-  bodyTraitStats.push(row("journal.body.surface_gravity", "Gravity", gEarth != null ? `${gEarth.toFixed(3)} Earth g` : "—", gEarth == null));
+  bodyTraitStats.push(
+    row(
+      "journal.body.surface_gravity",
+      "Gravity",
+      gEarth != null ? `${gEarth.toFixed(3)} Earth g` : "—",
+      gEarth == null,
+    ),
+  );
 
   const mass = scan.MassEM ?? rec?.massEM;
   bodyTraitStats.push(
-    row("journal.body.mass_em", "Earth masses", mass != null && Number.isFinite(mass) ? formatExomasteryNum(mass) : "—", mass == null || !Number.isFinite(mass)),
+    row(
+      "journal.body.mass_em",
+      "Earth masses",
+      mass != null && Number.isFinite(mass) ? formatExomasteryNum(mass) : "—",
+      mass == null || !Number.isFinite(mass),
+    ),
   );
 
   const pClass = scan.PlanetClass ?? rec?.planetClass;
-  bodyTraitStats.push(row("journal.body.planet_class", "Planet class", (pClass ?? "—").trim() || "—", !pClass?.trim()));
+  bodyTraitStats.push(
+    row("journal.body.planet_class", "Planet class", (pClass ?? "—").trim() || "—", !pClass?.trim()),
+  );
 
   const atTyp = scan.AtmosphereType ?? rec?.atmosphereType ?? scan.Atmosphere ?? rec?.atmosphere;
-  bodyTraitStats.push(row("journal.body.atmosphere_type", "Atmosphere type", (atTyp ?? "—").trim() || "—", !atTyp?.trim()));
+  bodyTraitStats.push(
+    row("journal.body.atmosphere_type", "Atmosphere type", (atTyp ?? "—").trim() || "—", !atTyp?.trim()),
+  );
 
   const volc = scan.Volcanism ?? rec?.volcanism;
-  bodyTraitStats.push(row("journal.body.volcanism", "Volcanism type", (volc ?? "—").trim() || "—", !volc?.trim()));
+  bodyTraitStats.push(
+    row("journal.body.volcanism", "Volcanism type", (volc ?? "—").trim() || "—", !volc?.trim()),
+  );
 
   const bodyType = rec?.bodyType;
-  bodyTraitStats.push(row("journal.body.body_type", "Type", (bodyType ?? "—").trim() || "—", !bodyType?.trim()));
+  bodyTraitStats.push(
+    row("journal.body.body_type", "Type", (bodyType ?? "—").trim() || "—", !bodyType?.trim()),
+  );
 
   const subCls = rec?.subclass;
   bodyTraitStats.push(
@@ -1591,7 +1651,9 @@ export function buildBodyScanExomasteryDetail(
   );
 
   const terra = scan.TerraformState ?? rec?.terraformState;
-  bodyTraitStats.push(row("journal.body.terraform", "Terraform state", (terra ?? "—").trim() || "—", !terra?.trim()));
+  bodyTraitStats.push(
+    row("journal.body.terraform", "Terraform state", (terra ?? "—").trim() || "—", !terra?.trim()),
+  );
 
   const rad = scan.radius ?? rec?.radius;
   bodyTraitStats.push(
@@ -1606,7 +1668,12 @@ export function buildBodyScanExomasteryDetail(
   const surfaceTraitStats: ExomasteryStatDetailDTO[] = [];
   const tidal = scan.TidalLock ?? rec?.tidalLock;
   surfaceTraitStats.push(
-    row("journal.surface.tidal_lock", "Tidal lock", tidal === true ? "Yes" : tidal === false ? "No" : "—", tidal == null),
+    row(
+      "journal.surface.tidal_lock",
+      "Tidal lock",
+      tidal === true ? "Yes" : tidal === false ? "No" : "—",
+      tidal == null,
+    ),
   );
   const foot = scan.WasFootfalled;
   if (foot !== undefined) {
@@ -1636,23 +1703,48 @@ export function buildBodyScanExomasteryDetail(
   );
   const ecc = scan.Eccentricity ?? rec?.eccentricity;
   orbitTraitStats.push(
-    row("journal.orbit.eccentricity", "Eccentricity", ecc != null && Number.isFinite(ecc) ? formatExomasteryNum(ecc) : "—", ecc == null || !Number.isFinite(ecc)),
+    row(
+      "journal.orbit.eccentricity",
+      "Eccentricity",
+      ecc != null && Number.isFinite(ecc) ? formatExomasteryNum(ecc) : "—",
+      ecc == null || !Number.isFinite(ecc),
+    ),
   );
   const inc = scan.OrbitalInclination ?? rec?.orbitalInclination;
   orbitTraitStats.push(
-    row("journal.orbit.inclination", "Orbital inclination", inc != null && Number.isFinite(inc) ? `${formatExomasteryNum(inc)} rad` : "—", inc == null || !Number.isFinite(inc)),
+    row(
+      "journal.orbit.inclination",
+      "Orbital inclination",
+      inc != null && Number.isFinite(inc) ? `${formatExomasteryNum(inc)} rad` : "—",
+      inc == null || !Number.isFinite(inc),
+    ),
   );
   const peri = scan.Periapsis ?? rec?.periapsis;
   orbitTraitStats.push(
-    row("journal.orbit.periapsis", "Periapsis", peri != null && Number.isFinite(peri) ? `${formatExomasteryNum(peri)} rad` : "—", peri == null || !Number.isFinite(peri)),
+    row(
+      "journal.orbit.periapsis",
+      "Periapsis",
+      peri != null && Number.isFinite(peri) ? `${formatExomasteryNum(peri)} rad` : "—",
+      peri == null || !Number.isFinite(peri),
+    ),
   );
   const an = scan.AscendingNode ?? rec?.ascendingNode;
   orbitTraitStats.push(
-    row("journal.orbit.ascending_node", "Ascending node", an != null && Number.isFinite(an) ? `${formatExomasteryNum(an)} rad` : "—", an == null || !Number.isFinite(an)),
+    row(
+      "journal.orbit.ascending_node",
+      "Ascending node",
+      an != null && Number.isFinite(an) ? `${formatExomasteryNum(an)} rad` : "—",
+      an == null || !Number.isFinite(an),
+    ),
   );
   const ma = scan.MeanAnomaly ?? rec?.meanAnomaly;
   orbitTraitStats.push(
-    row("journal.orbit.mean_anomaly", "Mean anomaly", ma != null && Number.isFinite(ma) ? `${formatExomasteryNum(ma)} rad` : "—", ma == null || !Number.isFinite(ma)),
+    row(
+      "journal.orbit.mean_anomaly",
+      "Mean anomaly",
+      ma != null && Number.isFinite(ma) ? `${formatExomasteryNum(ma)} rad` : "—",
+      ma == null || !Number.isFinite(ma),
+    ),
   );
   const rp = scan.RotationPeriod ?? rec?.rotationPeriod;
   orbitTraitStats.push(
@@ -1665,7 +1757,12 @@ export function buildBodyScanExomasteryDetail(
   );
   const ax = scan.AxialTilt ?? rec?.axialTilt;
   orbitTraitStats.push(
-    row("journal.orbit.axial_tilt", "Axial tilt", ax != null && Number.isFinite(ax) ? `${formatExomasteryNum(ax)} rad` : "—", ax == null || !Number.isFinite(ax)),
+    row(
+      "journal.orbit.axial_tilt",
+      "Axial tilt",
+      ax != null && Number.isFinite(ax) ? `${formatExomasteryNum(ax)} rad` : "—",
+      ax == null || !Number.isFinite(ax),
+    ),
   );
   const distLs = rec?.distanceFromArrivalLs;
   orbitTraitStats.push(
@@ -1693,7 +1790,14 @@ export function buildBodyScanExomasteryDetail(
     const cur = crustMaterialValue(scan, rec, name);
     if (!cur.known) continue;
     matRows.push({
-      ...row(`journal.crust.material.${name.toLowerCase()}`, name, `${formatExomasteryNum(cur.v ?? 0)}%`, false, "material", true),
+      ...row(
+        `journal.crust.material.${name.toLowerCase()}`,
+        name,
+        `${formatExomasteryNum(cur.v ?? 0)}%`,
+        false,
+        "material",
+        true,
+      ),
     });
   }
   matRows.sort((a, b) => a.label.localeCompare(b.label));
@@ -1707,14 +1811,25 @@ export function buildBodyScanExomasteryDetail(
       if (v == null) continue;
       const disp = journalSolidPercentFromRaw(key, v);
       solidJRows.push({
-        ...row(`journal.crust.solid.${key.toLowerCase()}`, key, `${formatExomasteryNum(disp)}%`, false, "solid", true),
+        ...row(
+          `journal.crust.solid.${key.toLowerCase()}`,
+          key,
+          `${formatExomasteryNum(disp)}%`,
+          false,
+          "solid",
+          true,
+        ),
       });
     }
   }
   solidJRows.sort((a, b) => a.label.localeCompare(b.label));
 
   const crustCombined = [...solidJRows, ...matRows];
-  const emptySummary: ExomasteryCompositionSummaryDTO = { overallMatchPercent: null, best: null, worst: null };
+  const emptySummary: ExomasteryCompositionSummaryDTO = {
+    overallMatchPercent: null,
+    best: null,
+    worst: null,
+  };
   const compositionGroups: ExomasteryCompositionGroupDTO[] =
     crustCombined.length > 0
       ? [{ id: "crust", title: "Crust & surface", summary: emptySummary, rows: crustCombined }]
@@ -1951,8 +2066,7 @@ export function buildOtherMatchDetailCards(
   const materialKeysLower = new Set(Object.keys(profile.materials).map((k) => k.toLowerCase()));
   const atmoKeysLower = new Set(Object.keys(profile.atmosphereComposition).map((k) => k.toLowerCase()));
   const solidKeysLower = new Set(Object.keys(profile.solidComposition ?? {}).map((k) => k.toLowerCase()));
-  const hasSim =
-    similarityPercent != null && Number.isFinite(similarityPercent) && similarityPercent >= 0;
+  const hasSim = similarityPercent != null && Number.isFinite(similarityPercent) && similarityPercent >= 0;
 
   for (const [path, r] of Object.entries(profile.numerics)) {
     if (shouldOmitExomasterySciencePath(path)) continue;

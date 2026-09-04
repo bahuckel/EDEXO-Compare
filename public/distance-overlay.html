@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -14,7 +14,10 @@
         padding: 0;
         background: transparent !important;
         overflow: hidden;
-        font-family: Segoe UI, system-ui, sans-serif;
+        font-family:
+          Segoe UI,
+          system-ui,
+          sans-serif;
       }
       .shell {
         min-width: 16rem;
@@ -185,10 +188,8 @@
       }
 
       function pillEl(ok) {
-        if (ok === true)
-          return ' <span class="pill ok" aria-hidden="true">OK</span>';
-        if (ok === false)
-          return ' <span class="pill bad" aria-hidden="true">LOW</span>';
+        if (ok === true) return ' <span class="pill ok" aria-hidden="true">OK</span>';
+        if (ok === false) return ' <span class="pill bad" aria-hidden="true">LOW</span>';
         return "";
       }
 
@@ -222,8 +223,7 @@
           card.classList.remove("card--ok");
         }
 
-        document.getElementById("species").textContent =
-          eo.speciesDisplay || "—";
+        document.getElementById("species").textContent = eo.speciesDisplay || "—";
         document.getElementById("minGap").textContent =
           eo.minSampleDistanceM > 0 ? eo.minSampleDistanceM + " m" : "—";
 
@@ -234,22 +234,17 @@
 
         document.getElementById("row2wrap").className =
           "row" +
-          (eo.sampleCount < 2 || (eo.phase === "tracking" && eo.distToSecondM == null)
-            ? " row--muted"
-            : "");
-        document.getElementById("d2").textContent =
-          eo.sampleCount >= 2 ? fmtM(eo.distToSecondM) : "—";
+          (eo.sampleCount < 2 || (eo.phase === "tracking" && eo.distToSecondM == null) ? " row--muted" : "");
+        document.getElementById("d2").textContent = eo.sampleCount >= 2 ? fmtM(eo.distToSecondM) : "—";
 
         document.getElementById("pill2").innerHTML =
           eo.sampleCount === 1 ? pillEl(eo.separationMeetsMin) : "";
 
         document.getElementById("span12").textContent =
           eo.sampleCount >= 2 ? fmtM(eo.spacingBetweenSamplesM) : "—";
-        document.getElementById("pillSpan").innerHTML =
-          eo.sampleCount >= 2 ? pillEl(eo.spacingMeetsMin) : "";
+        document.getElementById("pillSpan").innerHTML = eo.sampleCount >= 2 ? pillEl(eo.spacingMeetsMin) : "";
 
-        document.getElementById("rowSpan").style.display =
-          eo.sampleCount >= 2 ? "" : "none";
+        document.getElementById("rowSpan").style.display = eo.sampleCount >= 2 ? "" : "none";
 
         var payEl = document.getElementById("pay");
         var foot = document.getElementById("footNote");
@@ -273,10 +268,7 @@
                 ? "5× new-codex payout (first footfall does not stack another ×5)."
                 : "5× new-codex payout.";
           cele.style.display = "block";
-          cele.textContent =
-            "Complete — hiding in " +
-            (eo.celebrationRemainSec || 0) +
-            "s…";
+          cele.textContent = "Complete — hiding in " + (eo.celebrationRemainSec || 0) + "s…";
         } else if (eo.sampleCount >= 2) {
           var a = eo.payLoggedCodex;
           var b = eo.payNewCodex;
@@ -294,9 +286,7 @@
           payEl.innerHTML = "<span class='row--muted'>—</span>";
           foot.textContent =
             eo.sampleCount === 1
-              ? "Need ≥ " +
-                (eo.minSampleDistanceM || "?") +
-                " m from first sample before second."
+              ? "Need ≥ " + (eo.minSampleDistanceM || "?") + " m from first sample before second."
               : "";
         }
       }
@@ -318,19 +308,13 @@
 
       try {
         var proto = location.protocol === "https:" ? "wss:" : "ws:";
-        var host =
-          typeof location.host === "string" && location.host
-            ? location.host
-            : "127.0.0.1:7111";
+        var host = typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
         var ws = new WebSocket(proto + "//" + host + "/ws");
         ws.onmessage = function (ev) {
           try {
             var msg = JSON.parse(String(ev.data));
             if (msg.type === "state" && msg.payload) {
-              if (
-                typeof msg.payload.port === "number" &&
-                msg.payload.port > 0
-              ) {
+              if (typeof msg.payload.port === "number" && msg.payload.port > 0) {
                 lastPort = msg.payload.port;
               }
               render(msg.payload);

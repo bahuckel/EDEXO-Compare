@@ -1,13 +1,4 @@
-export const JOURNAL_HISTORY_PRESETS = [
-  "all",
-  "1m",
-  "6m",
-  "1y",
-  "2y",
-  "3y",
-  "4y",
-  "5y",
-] as const;
+export const JOURNAL_HISTORY_PRESETS = ["all", "1m", "6m", "1y", "2y", "3y", "4y", "5y"] as const;
 
 export type JournalHistoryPreset = (typeof JOURNAL_HISTORY_PRESETS)[number];
 

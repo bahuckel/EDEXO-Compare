@@ -227,7 +227,9 @@ function estimatePlanetMoonDepthBelow(planetNode: SystemMapNodeDTO): number {
  * All moons under this planet hub (skipping undrawn moon–moon ✕ nodes), with a layout parent id for edges:
  * direct moon/planet parent, or the hub planet when hoisted from under a world-only barycentre.
  */
-function flattenMoonsWithOrbitParent(planet: SystemMapNodeDTO): { node: SystemMapNodeDTO; orbitParentId: number }[] {
+function flattenMoonsWithOrbitParent(
+  planet: SystemMapNodeDTO,
+): { node: SystemMapNodeDTO; orbitParentId: number }[] {
   const rows: { node: SystemMapNodeDTO; orbitParentId: number }[] = [];
   /** `attachId` is the layout parent for orbit lines: planet id when hoisting from a moon–moon bary, else direct parent. */
   function walk(parent: SystemMapNodeDTO, attachId: number) {
@@ -261,8 +263,8 @@ function adjacentStellarBaryLowerStarIndex(
   starsOrdered: SystemMapNodeDTO[],
   starSystemName: string,
 ): number | null {
-  const starChildren = b
-    .children.filter((c) => c.isStar)
+  const starChildren = b.children
+    .filter((c) => c.isStar)
     .sort((a, b2) => compareStarsVertical(a, b2, starSystemName));
   if (starChildren.length !== 2) return null;
   const i0 = starsOrdered.findIndex((s) => s.bodyId === starChildren[0]!.bodyId);
@@ -274,14 +276,8 @@ function adjacentStellarBaryLowerStarIndex(
   return lo;
 }
 
-function layoutItemFromNode(
-  n: SystemMapNodeDTO,
-  cx: number,
-  cy: number,
-  radius: number,
-): LayoutItem {
-  const terraformable =
-    !n.isStar && !n.isBarycentre && !n.isInferredPlaceholder && n.mapLabel.includes("*");
+function layoutItemFromNode(n: SystemMapNodeDTO, cx: number, cy: number, radius: number): LayoutItem {
+  const terraformable = !n.isStar && !n.isBarycentre && !n.isInferredPlaceholder && n.mapLabel.includes("*");
   const displayBodyName = terraformable ? `*${n.bodyName}` : n.bodyName;
   return {
     bodyId: n.bodyId,
@@ -309,7 +305,15 @@ function effectiveLayoutRadius(it: LayoutItem): number {
   return Math.max(it.r, 2);
 }
 
-function layoutDiscsOverlap(ax: number, ay: number, ar: number, bx: number, by: number, br: number, pad: number): boolean {
+function layoutDiscsOverlap(
+  ax: number,
+  ay: number,
+  ar: number,
+  bx: number,
+  by: number,
+  br: number,
+  pad: number,
+): boolean {
   const tr = ar + br + pad;
   const dx = ax - bx;
   const dy = ay - by;
@@ -334,7 +338,11 @@ function resolveWorldBaryCyAvoidingItems(cx: number, baseCy: number, items: Layo
   return baseCy + MOON_V;
 }
 
-function baryAnchorBetweenTwoDiscs(a: LayoutItem, b: LayoutItem, anchorToStarColumn: boolean): { cx: number; cy: number } {
+function baryAnchorBetweenTwoDiscs(
+  a: LayoutItem,
+  b: LayoutItem,
+  anchorToStarColumn: boolean,
+): { cx: number; cy: number } {
   const gap = BARY_RIM_GAP;
   const shift = anchorToStarColumn ? STELLAR_BARY_SHIFT_X : 0;
   const dx = b.cx - a.cx;
@@ -359,7 +367,11 @@ function baryAnchorBetweenTwoDiscs(a: LayoutItem, b: LayoutItem, anchorToStarCol
   return { cx: a.cx + ux * d + shift, cy: a.cy + uy * d };
 }
 
-function pushVerticalMoonBracket(planetItem: LayoutItem, moonItems: LayoutItem[], bracketSegments: LayoutSegment[]): void {
+function pushVerticalMoonBracket(
+  planetItem: LayoutItem,
+  moonItems: LayoutItem[],
+  bracketSegments: LayoutSegment[],
+): void {
   if (moonItems.length < 2) return;
   const xStem = planetItem.cx - planetItem.r - 12;
   const yTop = moonItems[0]!.cy - moonItems[0]!.r;
@@ -484,7 +496,15 @@ function visibleStraightSegments(
   const blocked: [number, number][] = [];
   for (const o of obstacles) {
     if (o === a || o === b) continue;
-    const hit = segmentInsideCircleT(p1x, p1y, p2x, p2y, o.cx, o.cy, effectiveLayoutRadius(o) + LINE_OCCLUSION_PAD);
+    const hit = segmentInsideCircleT(
+      p1x,
+      p1y,
+      p2x,
+      p2y,
+      o.cx,
+      o.cy,
+      effectiveLayoutRadius(o) + LINE_OCCLUSION_PAD,
+    );
     if (hit) blocked.push(hit);
   }
   const vx = p2x - p1x;
@@ -584,11 +604,7 @@ function stackDepthUnderBaryParent(
   for (const h of direct) {
     const w = hubToWorlds.get(h.bodyId) ?? [];
     const chunk =
-      VERTICAL_STACK_GAP +
-      R_BARY +
-      estimateHubMoonDepthBelow(w) +
-      MAP_NAME_UNDER +
-      MAP_LABEL_EXTRA_PAD;
+      VERTICAL_STACK_GAP + R_BARY + estimateHubMoonDepthBelow(w) + MAP_NAME_UNDER + MAP_LABEL_EXTRA_PAD;
     acc += chunk + stackDepthUnderBaryParent(h.bodyId, inferredLetterHubs, multiLetterToBaryId, hubToWorlds);
   }
   return acc;
@@ -617,8 +633,14 @@ function buildLetterStarMap(sortedStars: SystemMapNodeDTO[]): Map<string, number
   return m;
 }
 
-function stellarBaryLetterKey(bary: SystemMapNodeDTO, starSystemName: string, starById: Map<number, SystemMapNodeDTO>): string {
-  const stars = bary.children.filter((c) => c.isStar).sort((a, b) => compareStarsVertical(a, b, starSystemName));
+function stellarBaryLetterKey(
+  bary: SystemMapNodeDTO,
+  starSystemName: string,
+  starById: Map<number, SystemMapNodeDTO>,
+): string {
+  const stars = bary.children
+    .filter((c) => c.isStar)
+    .sort((a, b) => compareStarsVertical(a, b, starSystemName));
   return stars
     .map((s) => starColumnLetterRank(s, starSystemName))
     .join("")
@@ -658,7 +680,8 @@ function layoutHubPlanetRow(params: {
   bracketSegments: LayoutSegment[];
   starColumnCx: number;
 }): number {
-  const { hubItem, worlds, mutualBaries, starSystemName, items, edges, bracketSegments, starColumnCx } = params;
+  const { hubItem, worlds, mutualBaries, starSystemName, items, edges, bracketSegments, starColumnCx } =
+    params;
   const cy = hubItem.cy;
   const sorted = [...new Map(worlds.map((w) => [w.bodyId, w])).values()].sort((a, b) =>
     compareWorldDesignation(a, b, starSystemName),
@@ -692,9 +715,7 @@ function layoutHubPlanetRow(params: {
     const inner = flattenWorldsUnderWorldBary(b);
     if (inner.length < 2) continue;
     if (!worldOnlyBaryHasOrbitMoons(b)) continue;
-    const idx = inner
-      .map((w) => sorted.findIndex((x) => x.bodyId === w.bodyId))
-      .filter((j) => j >= 0);
+    const idx = inner.map((w) => sorted.findIndex((x) => x.bodyId === w.bodyId)).filter((j) => j >= 0);
     if (idx.length < 2) continue;
     const iLo = Math.min(...idx);
     const iHi = Math.max(...idx);
@@ -818,7 +839,10 @@ export function computeSystemMapLayout(roots: SystemMapNodeDTO[], starSystemName
   const starById = new Map(stars.map((s) => [s.bodyId, s]));
   const letterToStarId = buildLetterStarMap(stars);
   const primaryStarId =
-    stars.find((s) => s.isArrivalBody)?.bodyId ?? (stars.length === 1 ? stars[0]?.bodyId ?? null : null) ?? stars[0]?.bodyId ?? null;
+    stars.find((s) => s.isArrivalBody)?.bodyId ??
+    (stars.length === 1 ? (stars[0]?.bodyId ?? null) : null) ??
+    stars[0]?.bodyId ??
+    null;
 
   const multiLetterToBaryId = new Map<string, number>();
   for (const b of journalStellarLayout) {
@@ -1021,9 +1045,7 @@ export function computeSystemMapLayout(roots: SystemMapNodeDTO[], starSystemName
         } else {
           const hostWorlds = hubToWorlds.get(h.hostStarId) ?? [];
           const dHost =
-            hostWorlds.length > 0
-              ? estimateHubMoonDepthBelow(hostWorlds)
-              : starIt.r + MOON_STACK_GAP * 0.82;
+            hostWorlds.length > 0 ? estimateHubMoonDepthBelow(hostWorlds) : starIt.r + MOON_STACK_GAP * 0.82;
           inferY = starIt.cy + dHost + VERTICAL_STACK_GAP + R_BARY;
         }
       }
@@ -1034,9 +1056,7 @@ export function computeSystemMapLayout(roots: SystemMapNodeDTO[], starSystemName
       } else {
         const hostWorlds = hubToWorlds.get(h.hostStarId) ?? [];
         const dHost =
-          hostWorlds.length > 0
-            ? estimateHubMoonDepthBelow(hostWorlds)
-            : starIt.r + MOON_STACK_GAP * 0.82;
+          hostWorlds.length > 0 ? estimateHubMoonDepthBelow(hostWorlds) : starIt.r + MOON_STACK_GAP * 0.82;
         inferY = starIt.cy + dHost + VERTICAL_STACK_GAP + R_BARY;
       }
     }

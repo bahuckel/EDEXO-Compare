@@ -140,12 +140,8 @@ export const SystemMapModal = memo(function SystemMapModal({
     snap.viewingSystemName?.trim() ||
     (snap.viewingSystemAddress != null ? `System ${snap.viewingSystemAddress}` : "");
   const mapHeading = systemTitleName.length > 0 ? `System map - ${systemTitleName}` : "System map";
-  const layout = useMemo(
-    () => (map ? computeSystemMapLayout(map.tree, map.starSystem ?? "") : null),
-    [map],
-  );
-  const layoutKey =
-    layout != null ? `${layout.minX},${layout.minY},${layout.width},${layout.height}` : "";
+  const layout = useMemo(() => (map ? computeSystemMapLayout(map.tree, map.starSystem ?? "") : null), [map]);
+  const layoutKey = layout != null ? `${layout.minX},${layout.minY},${layout.width},${layout.height}` : "";
   const [mapZoom, setMapZoom] = useState(1);
   const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
   const mapWheelRef = useRef<HTMLDivElement | null>(null);
@@ -292,7 +288,9 @@ export const SystemMapModal = memo(function SystemMapModal({
           </div>
           <div>
             <div className="dim small-caps">Current value</div>
-            <div className="system-map-total-val">{map.journalExplorationSaleCreditsFocused.toLocaleString()} CR</div>
+            <div className="system-map-total-val">
+              {map.journalExplorationSaleCreditsFocused.toLocaleString()} CR
+            </div>
           </div>
         </div>
         {snap.dScanBodies ? (
@@ -324,7 +322,9 @@ export const SystemMapModal = memo(function SystemMapModal({
                   }}
                 >
                   <span className="system-map-notable-body">
-                    {notableBodyIsTerraformable(n) ? <span className="system-map-notable-tf-star">*</span> : null}
+                    {notableBodyIsTerraformable(n) ? (
+                      <span className="system-map-notable-tf-star">*</span>
+                    ) : null}
                     {n.bodyLabelShort}
                   </span>
                   <span className="system-map-notable-tag"> - {n.tag}</span>
@@ -466,11 +466,7 @@ export const SystemMapModal = memo(function SystemMapModal({
               const nameDy = it.r + (it.isBarycentre ? 17 : 13);
               const det = map?.detailsByBodyId[String(it.bodyId)];
               const atmoRing =
-                det &&
-                !it.isStar &&
-                it.journalStellar !== true &&
-                !it.isBarycentre &&
-                !it.isPlaceholder
+                det && !it.isStar && it.journalStellar !== true && !it.isBarycentre && !it.isPlaceholder
                   ? atmosphereRingColor(det.atmosphereType || det.atmosphere)
                   : null;
               const starRays = it.isStar || it.journalStellar === true;
@@ -569,7 +565,9 @@ export const SystemMapModal = memo(function SystemMapModal({
         {popup ? (
           <PlanetQuickFactsPopup
             detail={detail}
-            fallbackTitle={clickedMapItem?.displayBodyName ?? clickedMapItem?.bodyName ?? `Body ${popup.bodyId}`}
+            fallbackTitle={
+              clickedMapItem?.displayBodyName ?? clickedMapItem?.bodyName ?? `Body ${popup.bodyId}`
+            }
             bodyId={popup.bodyId}
             onClose={closePopup}
             onGoToBioBody={onGoToBioBody}

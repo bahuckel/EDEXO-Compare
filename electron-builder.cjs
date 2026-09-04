@@ -22,9 +22,7 @@ const pfxPassword =
 /** Opt-in so `npm run dist:win` stays fast; use `npm run dist:win:signed` or set EDEXO_WIN_CODESIGN=1. */
 const winCodesign = process.env.EDEXO_WIN_CODESIGN === "1";
 
-const usePfx = Boolean(
-  winCodesign && pfx && existsSync(pfx) && pfxPassword.length > 0,
-);
+const usePfx = Boolean(winCodesign && pfx && existsSync(pfx) && pfxPassword.length > 0);
 const isSelfSignedDevPfx = usePfx && path.resolve(pfx) === defaultSelfPfxPath;
 
 if (winCodesign && !usePfx) {
@@ -58,8 +56,7 @@ if (usePfx) {
     process.env.EDEXO_SELFSIGN_NO_TIMESTAMP === "1" ||
     process.env.EDEXO_SELFSIGN_WITH_TIMESTAMP === "0";
   if (!skipTs) {
-    signtoolOptions.timeStampServer =
-      process.env.BAHUCKEL_TIMESTAMP_URL || "http://timestamp.digicert.com";
+    signtoolOptions.timeStampServer = process.env.BAHUCKEL_TIMESTAMP_URL || "http://timestamp.digicert.com";
   }
   win.signtoolOptions = signtoolOptions;
 }

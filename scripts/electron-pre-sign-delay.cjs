@@ -6,12 +6,7 @@
  */
 module.exports = async function electronPreSignDelay(configuration, packager) {
   const raw = process.env.EDEXO_PRE_SIGN_DELAY_MS;
-  if (
-    process.platform === "win32" &&
-    raw !== "0" &&
-    raw !== "" &&
-    raw != null
-  ) {
+  if (process.platform === "win32" && raw !== "0" && raw !== "" && raw != null) {
     const ms = parseInt(raw, 10);
     if (Number.isFinite(ms) && ms > 0) {
       console.info(`[electron-builder] Pre-sign delay ${ms}ms (EDEXO_PRE_SIGN_DELAY_MS; set 0 to skip)`);

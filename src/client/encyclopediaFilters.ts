@@ -93,10 +93,7 @@ function entryMatchesHostStarFilter(entry: SpeciesEntry, selected: string): bool
  * only ever say yes or no, so "bacacies" found nothing and an exact name sorted no better than a
  * partial one. Ranked, it decides the order of the list instead of just its contents.
  */
-export function entryMatchesEncyclopediaFacets(
-  entry: SpeciesEntry,
-  f: EncyclopediaFiltersState,
-): boolean {
+export function entryMatchesEncyclopediaFacets(entry: SpeciesEntry, f: EncyclopediaFiltersState): boolean {
   const c = crit(entry);
 
   if (f.genusKey !== ENC_FILTERS_ALL) {
@@ -152,16 +149,10 @@ export function entryMatchesEncyclopediaFacets(
 
 /** Fields the search box looks at, best (lowest) rank wins. */
 export function encyclopediaSearchRank(entry: SpeciesEntry, query: string): number | null {
-  return fuzzyRankAny(
-    [entry.displayName, entry.genus, entry.genusDataDir, entry.notes],
-    query,
-  );
+  return fuzzyRankAny([entry.displayName, entry.genus, entry.genusDataDir, entry.notes], query);
 }
 
-export function entryMatchesEncyclopediaFilters(
-  entry: SpeciesEntry,
-  f: EncyclopediaFiltersState,
-): boolean {
+export function entryMatchesEncyclopediaFilters(entry: SpeciesEntry, f: EncyclopediaFiltersState): boolean {
   if (!entryMatchesEncyclopediaFacets(entry, f)) return false;
   return encyclopediaSearchRank(entry, f.search) != null;
 }
@@ -208,8 +199,7 @@ export function buildEncyclopediaFacetOptions(rows: EncyclopediaSpeciesRowDTO[])
     for (const k of entry.genusStarColorPreferredSpectralClasses ?? []) {
       const letter = (k ?? "").trim().toUpperCase();
       if (!letter) continue;
-      const label =
-        letter === "TTS" ? "T Tauri (TTS) — colour map" : `Spectral ${letter} — colour map`;
+      const label = letter === "TTS" ? "T Tauri (TTS) — colour map" : `Spectral ${letter} — colour map`;
       if (!starOptMap.has(letter)) starOptMap.set(letter, label);
     }
     for (const g of c.geologicalSignalIncludes ?? []) {
@@ -287,9 +277,7 @@ export type EncyclopediaFilterChip = {
  * One chip per active filter, so the list can say *which* filters are on rather than how many.
  * "3 filters active" tells you that you are being filtered, not what to undo.
  */
-export function activeEncyclopediaFilterChips(
-  f: EncyclopediaFiltersState,
-): EncyclopediaFilterChip[] {
+export function activeEncyclopediaFilterChips(f: EncyclopediaFiltersState): EncyclopediaFilterChip[] {
   const out: EncyclopediaFilterChip[] = [];
   if (f.genusKey !== ENC_FILTERS_ALL) out.push({ key: "genusKey", label: "Genus", value: f.genusKey });
   if (f.planetClass !== ENC_FILTERS_ALL) {
@@ -311,7 +299,8 @@ export function activeEncyclopediaFilterChips(
   if (f.pressureCat !== ENC_FILTERS_ALL) {
     out.push({ key: "pressureCat", label: "Pressure", value: f.pressureCat === "thin" ? "Thin" : "Thick" });
   }
-  if (f.geoSignal !== ENC_FILTERS_ALL) out.push({ key: "geoSignal", label: "Geological signal", value: f.geoSignal });
+  if (f.geoSignal !== ENC_FILTERS_ALL)
+    out.push({ key: "geoSignal", label: "Geological signal", value: f.geoSignal });
   if (f.search.trim()) out.push({ key: "search", label: "Search", value: f.search.trim() });
   return out;
 }

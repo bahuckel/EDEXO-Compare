@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -14,7 +14,10 @@
         padding: 0;
         background: transparent !important;
         overflow: hidden;
-        font-family: Segoe UI, system-ui, sans-serif;
+        font-family:
+          Segoe UI,
+          system-ui,
+          sans-serif;
       }
       .shell {
         min-width: 17rem;
@@ -32,7 +35,9 @@
         background: linear-gradient(165deg, rgba(42, 88, 180, 0.78), rgba(18, 40, 95, 0.82));
         border: 1px solid rgba(120, 190, 255, 0.45);
         border-radius: 10px;
-        box-shadow: 0 8px 28px rgba(0, 20, 60, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        box-shadow:
+          0 8px 28px rgba(0, 20, 60, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
       }
       .title {
         font-size: 0.66rem;
@@ -102,10 +107,7 @@
         var d = (entry.displayName || "").trim();
         if (!g) return d || "—";
         var pref = g + " ";
-        if (
-          d.length >= pref.length &&
-          d.substring(0, pref.length).toLowerCase() === pref.toLowerCase()
-        ) {
+        if (d.length >= pref.length && d.substring(0, pref.length).toLowerCase() === pref.toLowerCase()) {
           var rest = d.substring(pref.length).trim();
           return rest || d;
         }
@@ -188,13 +190,13 @@
         var dssLab = dssYes ? "Yes" : "No";
 
         row2.innerHTML =
-          'Body: <strong>' +
+          "Body: <strong>" +
           label +
-          '</strong> — Bio-Signals: <strong>' +
+          "</strong> — Bio-Signals: <strong>" +
           xStr +
           "/" +
           yDisp +
-          '</strong> — DSS: <strong>' +
+          "</strong> — DSS: <strong>" +
           dssLab +
           "</strong>";
 
@@ -217,15 +219,13 @@
 
       try {
         var proto = location.protocol === "https:" ? "wss:" : "ws:";
-        var host =
-          typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
+        var host = typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
         var ws = new WebSocket(proto + "//" + host + "/ws");
         ws.onmessage = function (ev) {
           try {
             var msg = JSON.parse(String(ev.data));
             if (msg.type === "state" && msg.payload) {
-              if (typeof msg.payload.port === "number" && msg.payload.port > 0)
-                lastPort = msg.payload.port;
+              if (typeof msg.payload.port === "number" && msg.payload.port > 0) lastPort = msg.payload.port;
               fullRender(msg.payload);
             }
           } catch (_) {}

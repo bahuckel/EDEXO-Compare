@@ -20,11 +20,7 @@ const defaultSelfPfxPath = resolve(__dirname, "..", "build", "self-signed-codesi
 
 function resolvePfxAndPassword() {
   const explicit = process.env.BAHUCKEL_CODESIGN_PFX || process.env.CSC_LINK || "";
-  const pfx = explicit
-    ? resolve(explicit)
-    : existsSync(defaultSelfPfxPath)
-      ? defaultSelfPfxPath
-      : "";
+  const pfx = explicit ? resolve(explicit) : existsSync(defaultSelfPfxPath) ? defaultSelfPfxPath : "";
   const password =
     process.env.BAHUCKEL_CODESIGN_PASSWORD ||
     process.env.CSC_KEY_PASSWORD ||

@@ -289,9 +289,7 @@ function registerFootOverlayIpc(iconForChild) {
   ipcMain.handle("edexo:open-hud-overlay", async (_evt, opts) => {
     const o = opts && typeof opts === "object" ? opts : {};
     const pathname =
-      typeof o.pathname === "string" && o.pathname.trim()
-        ? o.pathname.trim()
-        : "/distance-overlay.html";
+      typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : "/distance-overlay.html";
     const pathNorm = pathname.startsWith("/") ? pathname : `/${pathname}`;
     const w = Number(o.width);
     const h = Number(o.height);
@@ -303,9 +301,7 @@ function registerFootOverlayIpc(iconForChild) {
   ipcMain.handle("edexo:toggle-hud-overlay", async (_evt, opts) => {
     const o = opts && typeof opts === "object" ? opts : {};
     const pathname =
-      typeof o.pathname === "string" && o.pathname.trim()
-        ? o.pathname.trim()
-        : "/distance-overlay.html";
+      typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : "/distance-overlay.html";
     const pathNorm = pathname.startsWith("/") ? pathname : `/${pathname}`;
     const w = Number(o.width);
     const h = Number(o.height);
@@ -411,7 +407,8 @@ app.whenReady().then(() => {
     try {
       let msg = e instanceof Error ? e.message : String(e);
       if (/EADDRINUSE|already in use/i.test(msg)) {
-        msg += "\n\nPort 7111 is in use — often EDExoCompare-*-CLI.exe or a second Electron build. Close that copy or set PORT in the environment.";
+        msg +=
+          "\n\nPort 7111 is in use — often EDExoCompare-*-CLI.exe or a second Electron build. Close that copy or set PORT in the environment.";
       }
       dialog.showErrorBox("ED Exo Compare — startup failed", msg);
     } catch {
