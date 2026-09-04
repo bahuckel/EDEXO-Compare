@@ -40,6 +40,7 @@ import type {
   FootScanMatchPayload,
   GenusHint,
   JournalSystemInfo,
+  MatchReason,
   NotableBodyInfo,
   OrganicPendingLineItem,
   OtherMatchDetailCardDTO,
@@ -459,6 +460,9 @@ function OtherMatchDetailCardsGrid({ cards }: { cards: OtherMatchDetailCardDTO[]
   );
 }
 
+/** Stable empty list, so a card with nothing demoting it does not churn a new array each render. */
+const EMPTY_REASONS: MatchReason[] = [];
+
 const SpeciesCard = memo(function SpeciesCard({
   m,
   scan,
@@ -565,6 +569,14 @@ const SpeciesCard = memo(function SpeciesCard({
     return [notesPart, descBlock].filter(Boolean).join("\n\n");
   }, [e.notes, e.description, e.genusMinSampleDistanceM]);
   const showFootfallBadge = m.learnedFromFootScan === true || m.footScanMatch != null;
+  /**
+   * A demoted candidate has to say what demoted it. A low-probability row with no reason attached is
+   * just noise the reader has to take on trust; with the term named, they can judge it themselves —
+   * "codex lists Rocky body, this is High metal content" is a claim about our data, not about the
+   * planet.
+   */
+  const demotedBy = m.unlikelyReasons ?? EMPTY_REASONS;
+  const demotedFields = [...new Set(demotedBy.map((r) => labelForReasonField(r.field)))];
 
   const thumbBtn = (
     <button
@@ -742,6 +754,12 @@ const SpeciesCard = memo(function SpeciesCard({
             (!)
           </span>
         ) : null}
+        {m.unlikely ? (
+          <span className="species-demoted-badge" title={demotedBy.map((r) => r.detail).join("\n\n")}>
+            {" "}
+            unlikely · {demotedFields.join(", ")}
+          </span>
+        ) : null}
         {compact ? null : (
           <>
             <span className="species-identity-sep"> · </span>
@@ -756,6 +774,11 @@ const SpeciesCard = memo(function SpeciesCard({
       </div>
       {identityNote ? (
         <div className="species-identity-sub species-identity-sub--note">{identityNote}</div>
+      ) : null}
+      {m.unlikely && demotedBy.length > 0 ? (
+        <div className="species-identity-sub species-identity-sub--demoted">
+          {demotedBy.map((r) => r.detail).join(" ")}
+        </div>
       ) : null}
 
       {m.exomasteryProfilePresent ? (
@@ -1307,6 +1330,12 @@ const BodyPane = memo(function BodyPane({
   );
   const [journalScanModalOpen, setJournalScanModalOpen] = useState(false);
   /**
+   * The unlikely tier stays closed until asked for. Nothing is deleted from the candidate list any
+   * more — planet class and atmosphere are weighted terms, not walls — so the default view is kept
+   * short by hiding the demoted rows rather than by refusing to compute them.
+   */
+  const [showUnlikely, setShowUnlikely] = useState(false);
+  /**
    * Compact is the default now.
    *
    * On a body with 30 candidates the hero layout renders 11,481 DOM elements and 22,288 px of
@@ -1391,6 +1420,10 @@ const BodyPane = memo(function BodyPane({
         : "No footfall species confirmation";
   const comparisonBodySummary =
     [body.tabLabel, s.starSystem].filter((x) => (x ?? "").trim().length > 0).join(" · ") || "—";
+
+  // Demoted candidates are computed like any other; they are only hidden from the default view.
+  const likelyMatches = body.matches.filter((m) => !m.unlikely);
+  const unlikelyMatches = body.matches.filter((m) => m.unlikely);
 
   useEffect(() => {
     writeLsBool(EDEXO_EXO_RANGE_COLLAPSED_LS, exoRangeCollapsed);
@@ -1618,7 +1651,7 @@ const BodyPane = memo(function BodyPane({
       <div className="panel panel--candidate-species">
         <div className="candidate-species-head candidate-species-head--bar">
           <h3 className="candidate-species-title">
-            CANDIDATE SPECIES ({body.matches.length}/{candidateSpeciesDenomFromFss(s)})
+            CANDIDATE SPECIES ({likelyMatches.length}/{candidateSpeciesDenomFromFss(s)})
           </h3>
           <div className="candidate-species-toggles">
             <button
@@ -1654,19 +1687,62 @@ const BodyPane = memo(function BodyPane({
             fields that satisfy those gates.
           </p>
         ) : (
-          <div className="species-list">
-            {groupedSortedMatches(body.matches).map((group) => (
-              <GenusMatchGroup
-                key={group.groupKey}
-                group={group}
-                scan={sc}
-                estimatedSurfaceTempK={body.estimatedSurfaceTempK}
-                comparisonBodySummary={comparisonBodySummary}
-                hostStarType={body.speciesMatchContext?.parentStarType}
-                compactCandidateView={compactCandidateView}
-              />
-            ))}
-          </div>
+          <>
+            {likelyMatches.length === 0 ? (
+              <p className="dim tiny">
+                Nothing clears every criterion on this body — the {unlikelyMatches.length} candidate(s) below
+                each disagree on one term.
+              </p>
+            ) : (
+              <div className="species-list">
+                {groupedSortedMatches(likelyMatches).map((group) => (
+                  <GenusMatchGroup
+                    key={group.groupKey}
+                    group={group}
+                    scan={sc}
+                    estimatedSurfaceTempK={body.estimatedSurfaceTempK}
+                    comparisonBodySummary={comparisonBodySummary}
+                    hostStarType={body.speciesMatchContext?.parentStarType}
+                    compactCandidateView={compactCandidateView}
+                  />
+                ))}
+              </div>
+            )}
+            {unlikelyMatches.length > 0 ? (
+              <div className="candidate-species-unlikely">
+                <button
+                  type="button"
+                  className={`candidate-species-unlikely-toggle${showUnlikely ? " candidate-species-unlikely-toggle--on" : ""}`}
+                  onClick={() => setShowUnlikely((v) => !v)}
+                  title="Species that disagree with this body on one criterion — planet class, atmosphere, or a value just outside its band. Low probability, not impossible."
+                >
+                  {showUnlikely ? "▾" : "▸"} {showUnlikely ? "Hide" : "Show"} unlikely (
+                  {unlikelyMatches.length})
+                </button>
+                {showUnlikely ? (
+                  <>
+                    <p className="candidate-species-unlikely-note dim tiny">
+                      Each of these disagrees on one criterion, shown on the card. Codex lists are not walls:
+                      the planet-class list alone rejects 4.1% of the bodies where a species was really found.
+                    </p>
+                    <div className="species-list species-list--unlikely">
+                      {groupedSortedMatches(unlikelyMatches).map((group) => (
+                        <GenusMatchGroup
+                          key={`unlikely-${group.groupKey}`}
+                          group={group}
+                          scan={sc}
+                          estimatedSurfaceTempK={body.estimatedSurfaceTempK}
+                          comparisonBodySummary={comparisonBodySummary}
+                          hostStarType={body.speciesMatchContext?.parentStarType}
+                          compactCandidateView={compactCandidateView}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+          </>
         )}
       </div>
 

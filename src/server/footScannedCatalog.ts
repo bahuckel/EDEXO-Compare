@@ -31,7 +31,7 @@ import {
   resolveExomasteryExportBasename,
 } from "./exomasteryProfile.js";
 import { estimatedTemperatureRangeForScan, normalizeScanAtmosphereForMatch } from "./planetTemperature.js";
-import { matchDatabaseToScan, speciesMatchesCriteria } from "./matchSpecies.js";
+import { matchDatabaseToScan, shownSpeciesMatches, speciesMatchesCriteria } from "./matchSpecies.js";
 import { loadSpeciesDatabaseFromTree } from "./speciesTreeLoader.js";
 import { filterByGenusHints } from "./genusMatchUtils.js";
 import { resolveSpeciesPhoto } from "./speciesPhotos.js";
@@ -596,7 +596,8 @@ export function recordFootScanned(
     includeBacterium: meta.includeBacterium,
     dssPhysicalSlack: meta.dssPhysicalSlack ?? { temperature: 0, pressure: 0, gravity: 0 },
   });
-  const topProb = probableRun.matches.find((m) => !m.approximateMatch) ?? probableRun.matches[0] ?? null;
+  const probable = shownSpeciesMatches(probableRun.matches);
+  const topProb = probable.find((m) => !m.approximateMatch) ?? probable[0] ?? probableRun.matches[0] ?? null;
   const dbProbableSpeciesId = topProb ? topProb.entry.id : null;
   const dbProbableDisagreed =
     !!speciesEntryId && !!dbProbableSpeciesId && speciesEntryId !== dbProbableSpeciesId;
@@ -687,8 +688,11 @@ export function dssHintsMissingCandidateGenera(
 
 type FootGenusMode = { kind: "none" } | { kind: "hints"; genera: Set<string> } | { kind: "signal_surplus" };
 
-function footGenusMode(body: BodyExoState, matches: SpeciesMatch[]): FootGenusMode {
+function footGenusMode(body: BodyExoState, allMatches: SpeciesMatch[]): FootGenusMode {
   if (!body.genusHints?.length || !body.scan?.PlanetClass) return { kind: "none" };
+  // A genus that only appears in the demoted tier is still missing from what the commander is shown,
+  // so the foot catalog should still be asked to cover it.
+  const matches = shownSpeciesMatches(allMatches);
   const missing = hintedGeneraMissingFromMatches(body.genusHints, matches);
   const missingSet = new Set<string>();
   for (const h of missing) {

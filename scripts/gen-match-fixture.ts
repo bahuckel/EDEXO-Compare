@@ -121,7 +121,16 @@ const fixture = {
       scan: trimScan(c.scan),
       confirmedSpecies: c.truth,
       // FSS-only, the scenario the app exists for.
-      candidates: matches.map((m) => m.entry.id).sort(),
+      candidates: matches
+        .filter((m) => !m.unlikely)
+        .map((m) => m.entry.id)
+        .sort(),
+      // The demoted tier, pinned separately: a change that moves a species between the two tiers is
+      // exactly the kind of change this fixture exists to make visible.
+      unlikely: matches
+        .filter((m) => m.unlikely)
+        .map((m) => m.entry.id)
+        .sort(),
     };
   }),
 };
@@ -132,7 +141,8 @@ const outPath = path.join(outDir, "match-golden.json");
 writeFileSync(outPath, `${JSON.stringify(fixture, null, 2)}\n`, "utf8");
 
 const total = fixture.cases.reduce((s, c) => s + c.candidates.length, 0);
+const totalUnlikely = fixture.cases.reduce((s, c) => s + c.unlikely.length, 0);
 console.log(`wrote ${outPath}`);
 console.log(
-  `  ${fixture.cases.length} bodies, ${total} candidate rows, atmospheres: ${[...byAtmo.keys()].join(", ")}`,
+  `  ${fixture.cases.length} bodies, ${total} shown + ${totalUnlikely} unlikely candidate rows, atmospheres: ${[...byAtmo.keys()].join(", ")}`,
 );

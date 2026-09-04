@@ -17,7 +17,7 @@ import { shortBodyLabel } from "../shared/systemMapLabels.js";
 import { formatFullSpectralNotation, spectralDiscGlyph } from "../shared/spectralNotation.js";
 import type { GameStateStore } from "./gameState.js";
 import { bodyScanValueCredits, referenceFssAt1EarthMass, starScanValueCredits } from "./explorationValue.js";
-import { matchDatabaseToScan } from "./matchSpecies.js";
+import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
 import { estimatedTemperatureRangeForScan } from "./planetTemperature.js";
 import { lookupPrice, lookupPriceStrict, type PriceIndex } from "./priceList.js";
@@ -517,7 +517,8 @@ function maxExoHeuristicPair(
   });
   const mult: 1 | 5 = store.firstFootfallBodies.has(bk) ? 5 : 1;
   const vals: number[] = [];
-  for (const m of run.matches) {
+  // Value tiers colour the map. A demoted candidate must not make a body look rich.
+  for (const m of shownSpeciesMatches(run.matches)) {
     const p = lookupPriceStrict(prices, m.entry.displayName, m.entry.id);
     if (p != null) vals.push(p * mult);
   }
@@ -549,7 +550,7 @@ function buildExoPayoutRangeForRecord(
   const wf = store.bodyDetailedFootfallState.get(bk);
   const journalWasFootfalled = wf === undefined ? null : wf === true;
   return computeExoPayoutRangeFromMatches(
-    matches,
+    shownSpeciesMatches(matches),
     prices,
     slots,
     slotSource,
@@ -599,7 +600,9 @@ function exoMatchSummaries(
     matchContext: buildSpeciesMatchContext(exo, store),
     dssPhysicalSlack: store.getDssPhysicalSlackRatios(),
   });
-  return matches.slice(0, 48).map((m) => ({ displayName: m.entry.displayName, id: m.entry.id }));
+  return shownSpeciesMatches(matches)
+    .slice(0, 48)
+    .map((m) => ({ displayName: m.entry.displayName, id: m.entry.id }));
 }
 
 export function buildPrimaryStarsHeader(

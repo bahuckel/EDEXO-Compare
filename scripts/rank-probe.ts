@@ -26,7 +26,7 @@ import v8 from "node:v8";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
-import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
+import { matchDatabaseToScan, shownSpeciesMatches } from "../src/server/matchSpecies.js";
 import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
 import { resolveJournalMergeCacheRoot } from "../src/server/paths.js";
@@ -62,7 +62,11 @@ const worst: { rank: number; of: number; id: string; body: string }[] = [];
 for (const b of bodies) {
   const truth = collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db);
   if (!truth.length || !b.scan?.PlanetClass?.trim()) continue;
-  const matches = matchDatabaseToScan(db, b.scan, null, null, { includeBacterium: true }).matches;
+  // The shown tier only. The demoted rows are collapsed behind "show unlikely (N)", so where they
+  // land is a question for step 6's ranking, not for this measurement of the default panel.
+  const matches = shownSpeciesMatches(
+    matchDatabaseToScan(db, b.scan, null, null, { includeBacterium: true }).matches,
+  );
   if (matches.length < 2) continue;
 
   // Only candidates with a feeder profile can be scored; a body where nothing scores has no ranking

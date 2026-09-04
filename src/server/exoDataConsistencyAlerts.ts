@@ -110,7 +110,12 @@ export function computeExoDataAlertsForBody(input: {
 }): { alerts: ExoDataAlertDTO[]; dssGenusOrphanHints: GenusHint[] } {
   const { body, mergedScan, matches, speciesMatchCtx, db } = input;
   const alerts: ExoDataAlertDTO[] = [];
-  const dssGenusOrphanHints = dssHintsMissingCandidateGenera(body.genusHints, matches);
+  // A DSS genus that appears only in the demoted tier is still absent from the default panel, so it
+  // is still an orphan hint as far as the reader is concerned.
+  const dssGenusOrphanHints = dssHintsMissingCandidateGenera(
+    body.genusHints,
+    matches.filter((m) => !m.unlikely),
+  );
 
   if (!mergedScan?.PlanetClass?.trim()) {
     return { alerts, dssGenusOrphanHints };
@@ -125,11 +130,24 @@ export function computeExoDataAlertsForBody(input: {
    */
   const signalCount = body.biologicalSignals;
   if (signalCount != null && Number.isFinite(signalCount) && signalCount > 0) {
-    const predictedGenera = new Set(
-      matches.filter((m) => !m.entry.predictionUnsupported).map((m) => m.entry.genusDataDir),
-    );
+    const predictable = matches.filter((m) => !m.entry.predictionUnsupported);
+    const predictedGenera = new Set(predictable.filter((m) => !m.unlikely).map((m) => m.entry.genusDataDir));
     if (predictedGenera.size > 0 && predictedGenera.size < signalCount) {
       const short = signalCount - predictedGenera.size;
+      /**
+       * The demoted tier usually holds the answer. Measured across the journal cache the shortfall
+       * fires on 10 of 1,091 scored bodies with the shown tier alone and on **0** once the unlikely
+       * tier is counted — which is the cleanest available proof that these defects were the walls
+       * and not missing data. Saying so turns the alert into an instruction.
+       */
+      const inUnlikely = new Set(
+        predictable
+          .filter((m) => m.unlikely && !predictedGenera.has(m.entry.genusDataDir))
+          .map((m) => m.entry.genusDataDir),
+      );
+      const hint = inUnlikely.size
+        ? ` ${inUnlikely.size} further genus/genera (${[...inUnlikely].sort().join(", ")}) are listed under "show unlikely" — open it, the answer is probably there.`
+        : "";
       alerts.push({
         id: `signal-count-short:${body.key}`,
         severity: "warning",
@@ -139,7 +157,8 @@ export function computeExoDataAlertsForBody(input: {
           `The journal reports ${signalCount} biological signal(s) on this body, and the game places one genus ` +
           `per signal, but only ${predictedGenera.size} candidate genus/genera pass the current gates ` +
           `(${[...predictedGenera].sort().join(", ")}). At least ${short} genus that is really here is being ` +
-          `excluded — a gate is too narrow. Worth recording; nothing on this body needs to be visited to know it.`,
+          `excluded — a gate is too narrow. Worth recording; nothing on this body needs to be visited to know it.` +
+          hint,
       });
     }
   }
@@ -160,7 +179,9 @@ export function computeExoDataAlertsForBody(input: {
           })()
         : null;
 
-  const matchIds = new Set(matches.map((m) => m.entry.id));
+  const shownMatches = matches.filter((m) => !m.unlikely);
+  const matchIds = new Set(shownMatches.map((m) => m.entry.id));
+  const demotedIds = new Set(matches.filter((m) => m.unlikely).map((m) => m.entry.id));
   const root = getProjectRoot();
   const seenErr = new Set<string>();
   const seenWarn = new Set<string>();
@@ -180,21 +201,32 @@ export function computeExoDataAlertsForBody(input: {
           detailLines.length === 1
             ? `Journal organic scan does not match ${entry.genusDataDir}_new.json gates: ${mc.reasons[0]!.detail}`
             : `Journal organic scan does not match ${entry.genusDataDir}_new.json gates:\n${detailLines.join("\n")}`;
+        /**
+         * The commander stood on this body and scanned this species, so the disagreement is with our
+         * data, never with the planet. When every failing term is a weighted one the candidate was
+         * still listed — demoted, not lost — which is a narrower complaint than "not a candidate",
+         * and the named term is a direct instruction about which codex list is too narrow.
+         */
+        const demoted = mc.softOnly === true;
         alerts.push({
           id,
-          severity: "error",
+          severity: demoted ? "warning" : "error",
           detectionSource: "journal",
           speciesEntryId: entry.id,
           genusDataDir: entry.genusDataDir,
-          title: `Live scan vs codex — ${entry.displayName}`,
-          detail,
+          title: demoted
+            ? `Confirmed here, listed only as unlikely — ${entry.displayName}`
+            : `Live scan vs codex — ${entry.displayName}`,
+          detail: demoted
+            ? `${detail}\n\nYou sampled this species on this body, so the codex list above is wrong about it — that is the line to widen.`
+            : detail,
           fixClipboard: fixClipboardForEntry(entry, detail),
           journalFixHints: journalFixHintsForOrganicMismatch(mc, mergedScan, speciesMatchCtx ?? null),
         });
       }
       continue;
     }
-    if (!matchIds.has(entry.id)) {
+    if (!matchIds.has(entry.id) && !demotedIds.has(entry.id)) {
       const id = `err-hidden-${body.key}-${entry.id}`;
       if (!seenErr.has(id)) {
         seenErr.add(id);
@@ -216,8 +248,10 @@ export function computeExoDataAlertsForBody(input: {
     }
   }
 
+  // Feeder data-quality warnings are per candidate; running them over the demoted tier as well would
+  // put fifty of them on a body the commander has not even decided to visit.
   const profileByEntry = new Map<string, ExomasteryProfileV1>();
-  for (const m of matches) {
+  for (const m of shownMatches) {
     const e = m.entry;
     if (!hasExomasteryProfileFile(root, e)) continue;
     if (profileByEntry.has(e.id)) continue;
@@ -225,7 +259,7 @@ export function computeExoDataAlertsForBody(input: {
     if (prof) profileByEntry.set(e.id, prof);
   }
 
-  for (const m of matches) {
+  for (const m of shownMatches) {
     const entry = m.entry;
     const prof = profileByEntry.get(entry.id);
     if (!prof) continue;

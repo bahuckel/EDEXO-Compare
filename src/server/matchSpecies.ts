@@ -96,6 +96,60 @@ function inRange(v: number, min?: number, max?: number): boolean {
   return true;
 }
 
+/**
+ * The owner's rule, in his words: "if it matches the ranges even within 2% it matches them. And is
+ * thrown as a possibility, with a low chance."
+ *
+ * A value this close to the edge of a codex band sits inside the uncertainty of the band itself -
+ * the codex numbers are rounded, and our surface temperature is often an estimate rather than a
+ * measurement. Treating that as proof of absence throws away finds for a difference we cannot
+ * actually resolve.
+ */
+export const NUMERIC_GATE_TOLERANCE = 0.02;
+
+/**
+ * `in` - inside the band. `near` - outside, but by no more than {@link NUMERIC_GATE_TOLERANCE} of
+ * the edge it missed, so the candidate is demoted rather than dropped. `out` - beyond that.
+ */
+function rangeFit(v: number, min?: number, max?: number): "in" | "near" | "out" {
+  if (inRange(v, min, max)) return "in";
+  const edge = min !== undefined && v < min ? min : max!;
+  const slack = Math.abs(edge) * NUMERIC_GATE_TOLERANCE;
+  return Math.abs(v - edge) <= slack ? "near" : "out";
+}
+
+/** Species band widened by the tolerance, for the band-vs-band temperature test. */
+function tempBandsOverlapWithinTolerance(
+  planet: PlanetTemperatureBand,
+  species: { lo: number; hi: number },
+): boolean {
+  const lo = species.lo === OPEN_LO ? OPEN_LO : species.lo - Math.abs(species.lo) * NUMERIC_GATE_TOLERANCE;
+  const hi = species.hi === OPEN_HI ? OPEN_HI : species.hi + Math.abs(species.hi) * NUMERIC_GATE_TOLERANCE;
+  return planet.minK <= hi && lo <= planet.maxK;
+}
+
+/** Suffix appended to every demoted failure, so the card says what the tier means. */
+const DEMOTED_NOTE = "Listed as a low-probability find rather than excluded.";
+
+/**
+ * The result of testing one species against one body.
+ *
+ * `ok` keeps its original meaning - every criterion passed. What is new is that a failure is no
+ * longer automatically a rejection: see {@link softOnly}.
+ */
+export interface CriteriaMatchResult {
+  ok: boolean;
+  /** Failures when `!ok`, the criteria that passed when `ok`. */
+  reasons: MatchReason[];
+  /**
+   * Every failure is a weighted term rather than a wall, so the candidate belongs in the unlikely
+   * tier instead of being removed. Only meaningful when `!ok`.
+   */
+  softOnly?: boolean;
+  /** What did pass, kept so a demoted candidate can still show what fits. Only set when `!ok`. */
+  passed?: MatchReason[];
+}
+
 export interface PlanetTemperatureBand {
   minK: number;
   maxK: number;
@@ -487,7 +541,7 @@ export function speciesMatchesExcludingTempPressure(
   entry: SpeciesEntry,
   scan: PlanetScan,
   matchContext?: SpeciesMatchContext | null,
-): { ok: boolean; reasons: MatchReason[] } {
+): CriteriaMatchResult {
   const failures: MatchReason[] = [];
   const reasons: MatchReason[] = [];
   const c = entry.criteria;
@@ -515,9 +569,16 @@ export function speciesMatchesExcludingTempPressure(
     !codexListMeansAll(c.planetClassAnyOf) &&
     !c.planetClassAnyOf.includes(scan.PlanetClass)
   ) {
+    /**
+     * Not a wall. Measured against the feeder's observed habitats this list rejected 4.14% of the
+     * bodies where the species was actually found (1,046 of 25,289), and the pattern is systematic:
+     * High metal content body is missing from the allowed list of almost every Tussock, Osseus and
+     * Fungoida species, which is 8-32% of where those species really grow.
+     */
     failures.push({
       field: "PlanetClass",
-      detail: `Needs one of: ${c.planetClassAnyOf.join(", ")} — journal has “${scan.PlanetClass}”.`,
+      soft: true,
+      detail: `Codex lists ${c.planetClassAnyOf.join(", ")}; journal has “${scan.PlanetClass}”. ${DEMOTED_NOTE}`,
     });
   } else if (scan.PlanetClass) {
     reasons.push({
@@ -547,11 +608,14 @@ export function speciesMatchesExcludingTempPressure(
         }
         if (!thinOk) {
           const p = ctx?.surfacePressureAtm;
+          // A pressure a couple of percent over the thin cutoff is the cutoff's own rounding.
+          const near =
+            p != null && Number.isFinite(p) && rangeFit(p, undefined, THIN_ATMOSPHERE_MAX_ATM) === "near";
           const detail =
             p != null && Number.isFinite(p)
-              ? `Any thin atmosphere: ${p.toFixed(3)} atm exceeds thin cutoff (${THIN_ATMOSPHERE_MAX_ATM} atm after journal conversion).`
+              ? `Any thin atmosphere: ${p.toFixed(3)} atm exceeds thin cutoff (${THIN_ATMOSPHERE_MAX_ATM} atm after journal conversion).${near ? ` Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`
               : `Any thin atmosphere: need DSS surface pressure ≤ ${THIN_ATMOSPHERE_MAX_ATM} atm, or AtmosphereType containing “Thin …”.`;
-          failures.push({ field: "AtmosphereType", detail });
+          failures.push({ field: "AtmosphereType", detail, ...(near ? { soft: true } : {}) });
         } else {
           reasons.push({
             field: "AtmosphereType",
@@ -588,9 +652,16 @@ export function speciesMatchesExcludingTempPressure(
             }));
         if (!matches) {
           const allowedStr = allowed.map((a) => (a === "" ? "(no atmosphere)" : a)).join(", ");
+          /**
+           * Not a wall either. This list rejects only 0.33% of observed habitats (103 of 30,803), so
+           * it is a far better list than the planet-class one - but Stratum tectonicas, the
+           * highest-payout species in the game, grows in its canonical thin CO2 just 40.2% of the
+           * time. A wall here hides the best find in exobiology on a body it really lives on.
+           */
           failures.push({
             field: "AtmosphereType",
-            detail: `Need one of: ${allowedStr}; got ${atmoNorm === "" ? "(none)" : atmoNorm}`,
+            soft: true,
+            detail: `Codex lists ${allowedStr}; got ${atmoNorm === "" ? "(none)" : atmoNorm}. ${DEMOTED_NOTE}`,
           });
         } else {
           reasons.push({ field: "AtmosphereType", detail: atmoNorm === "" ? "(none / vacuum)" : atmoNorm });
@@ -649,10 +720,12 @@ export function speciesMatchesExcludingTempPressure(
   const gRaw = scan.SurfaceGravity;
   if (c.surfaceGravity && gRaw !== undefined) {
     const g = journalSurfaceGravityToG(gRaw);
-    if (!inRange(g, c.surfaceGravity.min, c.surfaceGravity.max)) {
+    const fit = rangeFit(g, c.surfaceGravity.min, c.surfaceGravity.max);
+    if (fit !== "in") {
       failures.push({
         field: "SurfaceGravity",
-        detail: `${g.toFixed(3)} g (journal ${gRaw.toFixed(2)} m/s²) outside ${c.surfaceGravity.min ?? "−∞"}…${c.surfaceGravity.max ?? "∞"}`,
+        ...(fit === "near" ? { soft: true } : {}),
+        detail: `${g.toFixed(3)} g (journal ${gRaw.toFixed(2)} m/s²) outside ${c.surfaceGravity.min ?? "−∞"}…${c.surfaceGravity.max ?? "∞"}${fit === "near" ? `, by under ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
       });
     } else {
       reasons.push({
@@ -693,10 +766,12 @@ export function speciesMatchesExcludingTempPressure(
   const orb = c.orbitDistanceFromParentStarLs;
   if (orb && (orb.min !== undefined || orb.max !== undefined) && ctx?.orbitDistanceFromParentStarLs != null) {
     const v = ctx.orbitDistanceFromParentStarLs;
-    if (!inRange(v, orb.min, orb.max)) {
+    const fit = rangeFit(v, orb.min, orb.max);
+    if (fit !== "in") {
       failures.push({
         field: "Orbit",
-        detail: `Orbit ${v.toFixed(0)} LS from host star — species expects ${orb.min ?? "−∞"}…${orb.max ?? "∞"} LS (semi-major axis → LS).`,
+        ...(fit === "near" ? { soft: true } : {}),
+        detail: `Orbit ${v.toFixed(0)} LS from host star — species expects ${orb.min ?? "−∞"}…${orb.max ?? "∞"} LS (semi-major axis → LS).${fit === "near" ? ` Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
       });
     } else {
       reasons.push({ field: "Orbit", detail: `${v.toFixed(0)} LS from host` });
@@ -707,14 +782,18 @@ export function speciesMatchesExcludingTempPressure(
   if (cat && ctx?.surfacePressureAtm != null && Number.isFinite(ctx.surfacePressureAtm)) {
     const p = ctx.surfacePressureAtm;
     if (cat === "thin" && p > THIN_ATMOSPHERE_MAX_ATM) {
+      const near = rangeFit(p, undefined, THIN_ATMOSPHERE_MAX_ATM) === "near";
       failures.push({
         field: "SurfacePressure",
-        detail: `Thin atmosphere gate: ${p.toFixed(3)} atm > ${THIN_ATMOSPHERE_MAX_ATM} atm (after journal → atm conversion).`,
+        ...(near ? { soft: true } : {}),
+        detail: `Thin atmosphere gate: ${p.toFixed(3)} atm > ${THIN_ATMOSPHERE_MAX_ATM} atm (after journal → atm conversion).${near ? ` ${DEMOTED_NOTE}` : ""}`,
       });
     } else if (cat === "thick" && p <= THIN_ATMOSPHERE_MAX_ATM) {
+      const near = rangeFit(p, THIN_ATMOSPHERE_MAX_ATM, undefined) === "near";
       failures.push({
         field: "SurfacePressure",
-        detail: `Thick atmosphere gate: ${p.toFixed(3)} atm ≤ ${THIN_ATMOSPHERE_MAX_ATM} atm.`,
+        ...(near ? { soft: true } : {}),
+        detail: `Thick atmosphere gate: ${p.toFixed(3)} atm ≤ ${THIN_ATMOSPHERE_MAX_ATM} atm.${near ? ` ${DEMOTED_NOTE}` : ""}`,
       });
     } else {
       reasons.push({ field: "SurfacePressure", detail: `${cat} (${p.toFixed(3)} atm)` });
@@ -739,7 +818,12 @@ export function speciesMatchesExcludingTempPressure(
   }
 
   if (failures.length > 0) {
-    return { ok: false, reasons: failures };
+    return {
+      ok: false,
+      reasons: failures,
+      softOnly: failures.every((f) => f.soft === true),
+      passed: reasons,
+    };
   }
 
   if (entry.dataSourceRelPath) {
@@ -764,9 +848,10 @@ export function speciesMatchesCriteria(
   planetTempBand: PlanetTemperatureBand | null,
   estimatedRange: { tMin: number; tMax: number; tMid: number } | null,
   matchContext?: SpeciesMatchContext | null,
-): { ok: boolean; reasons: SpeciesMatch["reasons"] } {
+): CriteriaMatchResult {
   const base = speciesMatchesExcludingTempPressure(entry, scan, matchContext);
   const failures: MatchReason[] = base.ok ? [] : [...base.reasons];
+  const basePassed = base.ok ? base.reasons : (base.passed ?? []);
   const extraOkReasons: MatchReason[] = [];
   const c = entry.criteria;
 
@@ -779,10 +864,17 @@ export function speciesMatchesCriteria(
           "This species defines a temperature range — need SurfaceTemperature (or a mappable PlanetClass) to estimate the surface band.",
       });
     } else if (!tempBandsOverlap(planetTempBand, band)) {
+      // Our surface temperature is frequently an estimate, not a measurement; a 2% gap is inside the
+      // estimator's own error, never mind the codex rounding.
+      const near = tempBandsOverlapWithinTolerance(planetTempBand, band);
       const estNote = estimatedRange
         ? `Estimated surface band ${planetTempBand.minK}–${planetTempBand.maxK} K (mid ~${estimatedRange.tMid} K) does not overlap species ${band.lo === OPEN_LO ? "≤" : ""}${band.lo === OPEN_LO ? band.hi : band.lo}${band.lo !== OPEN_LO && band.hi !== OPEN_HI ? "–" : ""}${band.hi === OPEN_HI ? "" : band.hi} K.`
         : `Journal / planet band ${planetTempBand.minK}–${planetTempBand.maxK} K does not overlap species range.`;
-      failures.push({ field: "SurfaceTemperature", detail: estNote });
+      failures.push({
+        field: "SurfaceTemperature",
+        ...(near ? { soft: true } : {}),
+        detail: near ? `${estNote} Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : estNote,
+      });
     } else {
       const surf = scan.SurfaceTemperature;
       const bandTxt =
@@ -824,9 +916,11 @@ export function speciesMatchesCriteria(
             "Atmosphere-linked temperature cap needs SurfaceTemperature (or a mappable PlanetClass) to estimate the surface band.",
         });
       } else if (planetTempBand.maxK > linkedMax) {
+        const near = rangeFit(planetTempBand.maxK, undefined, linkedMax) === "near";
         failures.push({
           field: "SurfaceTemperature",
-          detail: `With matching atmosphere, codex caps the mean band at ≤ ${linkedMax} K (estimated band max ${planetTempBand.maxK.toFixed(0)} K).`,
+          ...(near ? { soft: true } : {}),
+          detail: `With matching atmosphere, codex caps the mean band at ≤ ${linkedMax} K (estimated band max ${planetTempBand.maxK.toFixed(0)} K).${near ? ` Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
         });
       } else {
         const atNote = linkedAtmo?.length ? ` (${linkedAtmo.join(" / ")})` : "";
@@ -845,10 +939,12 @@ export function speciesMatchesCriteria(
         field: "SurfacePressure",
         detail: "This species defines a pressure range — need SurfacePressure from the detailed scan.",
       });
-    } else if (!inRange(p, c.surfacePressure.min, c.surfacePressure.max)) {
+    } else if (rangeFit(p, c.surfacePressure.min, c.surfacePressure.max) !== "in") {
+      const near = rangeFit(p, c.surfacePressure.min, c.surfacePressure.max) === "near";
       failures.push({
         field: "SurfacePressure",
-        detail: `${p.toFixed(2)} atm outside allowed ${c.surfacePressure.min ?? "−∞"}…${c.surfacePressure.max ?? "∞"}`,
+        ...(near ? { soft: true } : {}),
+        detail: `${p.toFixed(2)} atm outside allowed ${c.surfacePressure.min ?? "−∞"}…${c.surfacePressure.max ?? "∞"}${near ? `, by under ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
       });
     } else {
       extraOkReasons.push({ field: "SurfacePressure", detail: `${p.toFixed(2)} atm` });
@@ -856,10 +952,27 @@ export function speciesMatchesCriteria(
   }
 
   if (failures.length > 0) {
-    return { ok: false, reasons: failures };
+    return {
+      ok: false,
+      reasons: failures,
+      softOnly: failures.every((f) => f.soft === true),
+      passed: [...basePassed, ...extraOkReasons],
+    };
   }
 
   return { ok: true, reasons: [...base.reasons, ...extraOkReasons] };
+}
+
+/**
+ * The tier the app shows by default.
+ *
+ * Since planet class and atmosphere stopped being walls, `matches` carries demoted rows too. Any
+ * calculation that stands in for "what is on this body" — payout ranges, map value tiers, whether
+ * the foot catalog needs to fill a gap — has to use this, or a 19 M Stratum listed at low
+ * probability starts setting the expected value of every planet it disagrees with.
+ */
+export function shownSpeciesMatches<T extends { unlikely?: boolean }>(matches: T[]): T[] {
+  return matches.filter((m) => !m.unlikely);
 }
 
 export interface MatchDatabaseRun {
@@ -931,18 +1044,40 @@ export function matchDatabaseToScan(
   const planetTempBand = resolvePlanetTemperatureBand(scan, est);
 
   const strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[] = [];
+  /**
+   * Candidates whose only failures are weighted terms rather than walls. They are listed, tagged
+   * with what demoted them, and collapsed behind "show unlikely (N)" in the UI - never deleted.
+   * See {@link MatchReason.soft}: the planet-class list alone rejected 4.14% of the bodies where
+   * the species was actually observed.
+   */
+  const unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[] = [];
   for (const entry of narrowed) {
-    const { ok, reasons } = speciesMatchesCriteria(entry, scan, planetTempBand, est, matchContext);
-    if (ok) strict.push({ entry, reasons });
+    const r = speciesMatchesCriteria(entry, scan, planetTempBand, est, matchContext);
+    if (r.ok) {
+      strict.push({ entry, reasons: r.reasons });
+    } else if (r.softOnly) {
+      unlikely.push({
+        entry,
+        reasons: [...(r.passed ?? []), ...r.reasons],
+        unlikely: true,
+        unlikelyReasons: r.reasons,
+      });
+    }
   }
 
-  if (strict.length > 0) {
-    const { matches, injected } = injectOrganicLockConfirmedSpecies(strict, organicGenusLocks, db);
+  if (strict.length > 0 || unlikely.length > 0) {
+    const { matches, injected } = injectOrganicLockConfirmedSpecies(
+      [...strict, ...unlikely],
+      organicGenusLocks,
+      db,
+    );
     return {
       matches,
       genusFilterActive,
       dssGenusNarrowing,
       estimatedSurfaceTempK,
+      // A demoted row is a real candidate with a named reason, not a distance guess, so it does not
+      // put the whole panel into "approximate" mode.
       approximateMatchingUsed: injected,
     };
   }

@@ -16,6 +16,11 @@ function match(genusDir: string, genus: string, unsupported = false): SpeciesMat
   } as unknown as SpeciesMatch;
 }
 
+/** A candidate demoted behind "show unlikely (N)" — listed, but not part of the default panel. */
+function demoted(genusDir: string, genus: string): SpeciesMatch {
+  return { ...match(genusDir, genus), unlikely: true } as unknown as SpeciesMatch;
+}
+
 function body(signals: number | null): BodyExoState {
   return { biologicalSignals: signals } as unknown as BodyExoState;
 }
@@ -74,6 +79,22 @@ describe("genusCertaintyForBody", () => {
     ]);
     expect(c?.status).toBe("underCovered");
     expect(c?.candidateGenera).toBe(1);
+  });
+
+  it("does not let the unlikely tier manufacture certainty", () => {
+    // Two signals, one shown candidate and one demoted. The commander is looking at one genus, so
+    // the honest verdict is that a genus is missing — not that both are confirmed.
+    const c = genusCertaintyForBodyForTests(body(2), [
+      match("bacterium", "Bacterium"),
+      demoted("stratum", "Stratum"),
+    ]);
+    expect(c?.status).toBe("underCovered");
+    expect(c?.candidateGenera).toBe(1);
+    expect(c?.genera).toEqual(["Bacterium"]);
+  });
+
+  it("returns null when every candidate is demoted", () => {
+    expect(genusCertaintyForBodyForTests(body(1), [demoted("bacterium", "Bacterium")])).toBeNull();
   });
 
   it("returns null when the body has no signal count or no candidates", () => {

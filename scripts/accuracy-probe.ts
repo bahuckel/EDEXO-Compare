@@ -113,9 +113,16 @@ function genusOf(id: string): string | null {
 const pct = (sorted: number[], p: number): number =>
   sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))]! : 0;
 
-interface ScenarioResult {
-  name: string;
-  truthBodies: number;
+/**
+ * One tier of the candidate list.
+ *
+ * Since the no-walls change a body carries two lists: the **shown** tier, which is what the panel
+ * renders by default, and the **unlikely** tier behind "show unlikely (N)" — candidates whose only
+ * failing criteria are weighted terms rather than walls. Both have to be reported or the numbers
+ * lie in opposite directions: shown-only understates recall, everything-together overstates
+ * ambiguity by counting rows the commander never sees unless they ask.
+ */
+interface TierStats {
   hit: number;
   miss: number;
   valueHit: number;
@@ -132,10 +139,8 @@ interface ScenarioResult {
   missExamples: string[];
 }
 
-function runScenario(name: string, useHints: boolean): ScenarioResult {
-  const r: ScenarioResult = {
-    name,
-    truthBodies: 0,
+function emptyTier(): TierStats {
+  return {
     hit: 0,
     miss: 0,
     valueHit: 0,
@@ -151,6 +156,69 @@ function runScenario(name: string, useHints: boolean): ScenarioResult {
     genusMissByGenus: new Map(),
     missExamples: [],
   };
+}
+
+interface ScenarioResult {
+  name: string;
+  truthBodies: number;
+  shown: TierStats;
+  all: TierStats;
+  /** Truth species absent from the shown tier but present in the unlikely one. */
+  rescued: number;
+}
+
+function accumulate(
+  t: TierStats,
+  b: BodyExoState,
+  matches: { entry: SpeciesEntry; predictionUnsupported?: unknown }[],
+  truth: string[],
+): void {
+  const ids = new Set(matches.map((m) => m.entry.id));
+  const genera = new Set(matches.map((m) => m.entry.genusDataDir));
+  t.candCounts.push(ids.size);
+  // Species whose spawn depends on system contents or nebula proximity are listed but not
+  // predicted, so counting them as choices the commander has to weigh overstates the ambiguity.
+  t.candCountsPredictable.push(matches.filter((m) => !m.entry.predictionUnsupported).length);
+  t.genusCounts.push(genera.size);
+
+  for (const id of truth) {
+    const value = payoutOf(id);
+    if (ids.has(id)) {
+      t.hit++;
+      t.valueHit += value;
+    } else {
+      t.miss++;
+      t.valueMiss += value;
+      if (t.missExamples.length < 10) {
+        t.missExamples.push(
+          `${id} on ${b.bodyName} (${b.scan!.PlanetClass}, ${Math.round(b.scan!.SurfaceTemperature ?? 0)} K, ` +
+            `${b.scan!.AtmosphereType ?? "-"}) — ${ids.size} candidates`,
+        );
+      }
+    }
+  }
+
+  const truthGenera = new Set(truth.map(genusOf).filter((g): g is string => Boolean(g)));
+  for (const g of truthGenera) {
+    if (genera.has(g)) t.genusHit++;
+    else {
+      t.genusMiss++;
+      t.genusMissByGenus.set(g, (t.genusMissByGenus.get(g) ?? 0) + 1);
+    }
+  }
+
+  // Complete-label subset: distinct truth genera == the FSS signal count, so nothing is unobserved
+  // on this body and every candidate outside the truth set is provably a false positive.
+  const sig = b.biologicalSignals ?? null;
+  if (sig != null && sig > 0 && truthGenera.size === sig) {
+    t.completeBodies++;
+    t.completeTruth += truth.length;
+    t.completeCand += matches.length;
+  }
+}
+
+function runScenario(name: string, useHints: boolean): ScenarioResult {
+  const r: ScenarioResult = { name, truthBodies: 0, shown: emptyTier(), all: emptyTier(), rescued: 0 };
 
   for (const b of bodies) {
     const truth = collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db);
@@ -158,86 +226,65 @@ function runScenario(name: string, useHints: boolean): ScenarioResult {
     r.truthBodies++;
 
     const hints = useHints ? (b.genusHints ?? null) : null;
-    const matches = matchDatabaseToScan(db, b.scan, hints, null, { includeBacterium: true }).matches;
-    const ids = new Set(matches.map((m) => m.entry.id));
-    const genera = new Set(matches.map((m) => m.entry.genusDataDir));
-    r.candCounts.push(ids.size);
-    // Species whose spawn depends on system contents or nebula proximity are listed but not
-    // predicted, so counting them as choices the commander has to weigh overstates the ambiguity.
-    r.candCountsPredictable.push(matches.filter((m) => !m.entry.predictionUnsupported).length);
-    r.genusCounts.push(genera.size);
+    const all = matchDatabaseToScan(db, b.scan, hints, null, { includeBacterium: true }).matches;
+    const shown = all.filter((m) => !m.unlikely);
 
-    for (const t of truth) {
-      const value = payoutOf(t);
-      if (ids.has(t)) {
-        r.hit++;
-        r.valueHit += value;
-      } else {
-        r.miss++;
-        r.valueMiss += value;
-        if (r.missExamples.length < 10) {
-          r.missExamples.push(
-            `${t} on ${b.bodyName} (${b.scan.PlanetClass}, ${Math.round(b.scan.SurfaceTemperature ?? 0)} K, ` +
-              `${b.scan.AtmosphereType ?? "-"}) — ${ids.size} candidates`,
-          );
-        }
-      }
-    }
+    accumulate(r.shown, b, shown, truth);
+    accumulate(r.all, b, all, truth);
 
-    const truthGenera = new Set(truth.map(genusOf).filter((g): g is string => Boolean(g)));
-    for (const g of truthGenera) {
-      if (genera.has(g)) r.genusHit++;
-      else {
-        r.genusMiss++;
-        r.genusMissByGenus.set(g, (r.genusMissByGenus.get(g) ?? 0) + 1);
-      }
-    }
-
-    // Complete-label subset: distinct truth genera == the FSS signal count, so nothing is unobserved
-    // on this body and every candidate outside the truth set is provably a false positive.
-    const sig = b.biologicalSignals ?? null;
-    if (sig != null && sig > 0 && truthGenera.size === sig) {
-      r.completeBodies++;
-      r.completeTruth += truth.length;
-      r.completeCand += matches.length;
+    const shownIds = new Set(shown.map((m) => m.entry.id));
+    const allIds = new Set(all.map((m) => m.entry.id));
+    for (const id of truth) {
+      if (!shownIds.has(id) && allIds.has(id)) r.rescued++;
     }
   }
   return r;
 }
 
-function report(r: ScenarioResult): void {
-  const cand = [...r.candCounts].sort((a, b) => a - b);
-  const gen = [...r.genusCounts].sort((a, b) => a - b);
+function reportTier(label: string, t: TierStats, extra: string): void {
+  const cand = [...t.candCounts].sort((a, b) => a - b);
+  const gen = [...t.genusCounts].sort((a, b) => a - b);
   const mean = (a: number[]) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
-  const recall = (r.hit / (r.hit + r.miss)) * 100;
-  const vRecall = (r.valueHit / (r.valueHit + r.valueMiss)) * 100;
-  const gRecall = (r.genusHit / (r.genusHit + r.genusMiss)) * 100;
-  const precision = r.completeCand ? (r.completeTruth / r.completeCand) * 100 : 0;
+  const recall = (t.hit / (t.hit + t.miss)) * 100;
+  const vRecall = (t.valueHit / (t.valueHit + t.valueMiss)) * 100;
+  const gRecall = (t.genusHit / (t.genusHit + t.genusMiss)) * 100;
+  const precision = t.completeCand ? (t.completeTruth / t.completeCand) * 100 : 0;
+  const predictable = [...t.candCountsPredictable].sort((a, b) => a - b);
 
-  console.log(`\n── ${r.name} ${"─".repeat(Math.max(0, 54 - r.name.length))}`);
-  console.log(`  species recall   ${recall.toFixed(1)}%   (${r.hit} found, ${r.miss} missed)`);
+  console.log(`  ${label}${extra}`);
+  console.log(`    species recall   ${recall.toFixed(1)}%   (${t.hit} found, ${t.miss} missed)`);
   console.log(
-    `  value-weighted   ${vRecall.toFixed(1)}%   (${(r.valueMiss / 1e6).toFixed(1)} M credits missed)`,
+    `    value-weighted   ${vRecall.toFixed(1)}%   (${(t.valueMiss / 1e6).toFixed(1)} M credits missed)`,
   );
-  console.log(`  genus recall     ${gRecall.toFixed(1)}%   (${r.genusHit} found, ${r.genusMiss} missed)`);
-  const predictable = [...r.candCountsPredictable].sort((a, b) => a - b);
+  console.log(`    genus recall     ${gRecall.toFixed(1)}%   (${t.genusHit} found, ${t.genusMiss} missed)`);
   console.log(
-    `  ambiguity        mean ${mean(cand).toFixed(2)}  p50 ${pct(cand, 50)}  p90 ${pct(cand, 90)}  max ${cand[cand.length - 1] ?? 0}   (genera: mean ${mean(gen).toFixed(2)})`,
-  );
-  console.log(
-    `    ...predicted   mean ${mean(predictable).toFixed(2)}  p50 ${pct(predictable, 50)}  p90 ${pct(predictable, 90)}  max ${predictable[predictable.length - 1] ?? 0}   excluding species marked "not predicted"`,
+    `    ambiguity        mean ${mean(cand).toFixed(2)}  p50 ${pct(cand, 50)}  p90 ${pct(cand, 90)}  max ${cand[cand.length - 1] ?? 0}   (genera: mean ${mean(gen).toFixed(2)})`,
   );
   console.log(
-    `  precision        ${precision.toFixed(1)}%   on ${r.completeBodies} complete-label bodies (${r.completeTruth} species / ${r.completeCand} candidates)`,
+    `      ...predicted   mean ${mean(predictable).toFixed(2)}  p50 ${pct(predictable, 50)}  p90 ${pct(predictable, 90)}  max ${predictable[predictable.length - 1] ?? 0}`,
   );
-  if (r.genusMissByGenus.size) {
+  console.log(
+    `    precision        ${precision.toFixed(1)}%   on ${t.completeBodies} complete-label bodies (${t.completeTruth} species / ${t.completeCand} candidates)`,
+  );
+  if (t.genusMissByGenus.size) {
     console.log(
-      `  genus misses     ${[...r.genusMissByGenus.entries()]
+      `    genus misses     ${[...t.genusMissByGenus.entries()]
         .sort((a, b) => b[1] - a[1])
         .map(([g, n]) => `${g} ${n}`)
         .join(", ")}`,
     );
   }
+}
+
+function report(r: ScenarioResult): void {
+  console.log(`\n── ${r.name} ${"─".repeat(Math.max(0, 54 - r.name.length))}`);
+  reportTier("SHOWN — the default panel", r.shown, "");
+  console.log("");
+  reportTier(
+    "+ unlikely tier — one click away",
+    r.all,
+    `   (${r.rescued} truth species rescued from the walls)`,
+  );
 }
 
 /**
@@ -247,7 +294,7 @@ function report(r: ScenarioResult): void {
  * genus set the same size as the signal count *is* that answer — every listed genus is present. A
  * longer list is not, however correct it may be, because the commander still has to go and look.
  */
-function reportDecidability(): void {
+function reportDecidability(shownOnly: boolean): void {
   let withSignals = 0;
   let scored = 0;
   let noCandidates = 0;
@@ -265,7 +312,10 @@ function reportDecidability(): void {
     if (sig == null || sig <= 0) continue;
     withSignals++;
 
-    const matches = matchDatabaseToScan(db, b.scan, null, null, { includeBacterium: true }).matches;
+    const everything = matchDatabaseToScan(db, b.scan, null, null, { includeBacterium: true }).matches;
+    // The default panel is the shown tier. Running this over everything as well is what proves the
+    // |G| < k defects were the walls: the count goes to zero once the demoted rows are counted.
+    const matches = shownOnly ? everything.filter((m) => !m.unlikely) : everything;
     // Same rule the app ships (`genusCertaintyForBody`): species we never claimed to predict cannot
     // satisfy the signal count, or the verdict would rest on a certainty nobody earned.
     const genera = new Set(
@@ -294,7 +344,9 @@ function reportDecidability(): void {
   }
 
   const sorted = overCounts.sort((a, b) => a - b);
-  console.log(`\n── decidability (FSS-only, every body with bio signals) ─`);
+  console.log(
+    `\n── decidability (FSS-only, ${shownOnly ? "SHOWN tier — the default panel" : "including the unlikely tier"}) ─`,
+  );
   console.log(`  corpus           ${withSignals} bodies with signals, of which ${landed} landed on`);
   console.log(`  scored           ${scored}   (${noCandidates} offered no predictable candidate at all)`);
   console.log(
@@ -316,11 +368,14 @@ function reportDecidability(): void {
 const postDss = runScenario("post-DSS  (genus hints supplied — after the trip)", true);
 const fssOnly = runScenario("FSS-only  (hints withheld — the app's actual job)", false);
 
-console.log(`\nground truth: ${fssOnly.truthBodies} bodies, ${fssOnly.hit + fssOnly.miss} confirmed species`);
+console.log(
+  `\nground truth: ${fssOnly.truthBodies} bodies, ${fssOnly.all.hit + fssOnly.all.miss} confirmed species`,
+);
 report(fssOnly);
 report(postDss);
-reportDecidability();
+reportDecidability(true);
+reportDecidability(false);
 
-console.log(`\nFSS-only misses:`);
-for (const e of fssOnly.missExamples) console.log(`  ${e}`);
+console.log(`\nFSS-only misses (still missing with the unlikely tier included):`);
+for (const e of fssOnly.all.missExamples) console.log(`  ${e}`);
 console.log();

@@ -21,7 +21,7 @@ import type {
 import { getProjectRoot } from "./paths.js";
 import { perfTime } from "./perf.js";
 import type { GameStateStore } from "./gameState.js";
-import { matchDatabaseToScan } from "./matchSpecies.js";
+import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
 import { journalHostObservationFromSpeciesContext } from "./journalHostObservation.js";
 import { resolveSpeciesPhoto } from "./speciesPhotos.js";
@@ -584,7 +584,9 @@ function bodyTabLabel(b: BodyExoState, store: GameStateStore): string {
  * gates is wrong; measured across the journal cache that fires on 15 of 1,096 bodies.
  *
  * Species marked `predictionUnsupported` are excluded from the count: they were never predicted, so
- * letting them satisfy the signal count would manufacture a certainty nobody earned.
+ * letting them satisfy the signal count would manufacture a certainty nobody earned. Candidates in
+ * the unlikely tier are excluded for the same reason — a verdict has to be about the list the
+ * commander is actually shown, or "certain" means nothing.
  */
 export function genusCertaintyForBodyForTests(
   b: BodyExoState,
@@ -599,7 +601,7 @@ function genusCertaintyForBody(b: BodyExoState, matches: SpeciesMatch[]): GenusC
 
   const byDir = new Map<string, string>();
   for (const m of matches) {
-    if (m.entry.predictionUnsupported) continue;
+    if (m.entry.predictionUnsupported || m.unlikely) continue;
     const dir = m.entry.genusDataDir;
     if (!dir || byDir.has(dir)) continue;
     byDir.set(dir, m.entry.genus?.trim() || dir);
@@ -822,7 +824,8 @@ function computeBodyUncached(
   const exoPayoutRange =
     slots > 0 && bodyHasExoMarkers(b) && slotSource !== "none"
       ? computeExoPayoutRangeFromMatches(
-          matches,
+          // Payout is about what is likely here, not about everything listed.
+          shownSpeciesMatches(matches),
           prices,
           slots,
           slotSource,

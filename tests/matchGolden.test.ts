@@ -12,7 +12,10 @@ interface GoldenCase {
   bodyName: string;
   scan: Record<string, unknown>;
   confirmedSpecies: string[];
+  /** The default panel. */
   candidates: string[];
+  /** Behind "show unlikely (N)" — every failing criterion was a weighted term, not a wall. */
+  unlikely: string[];
 }
 
 const fixture = JSON.parse(
@@ -46,21 +49,50 @@ describe("golden candidate lists", () => {
     const matches = matchDatabaseToScan(db, c.scan as unknown as PlanetScan, null, null, {
       includeBacterium: true,
     }).matches;
-    expect(matches.map((m) => m.entry.id).sort()).toEqual(c.candidates);
+    // Both tiers are pinned. A species sliding from the shown list into the unlikely one is a
+    // regression the reader would never notice in the app, so it has to fail here.
+    expect(
+      matches
+        .filter((m) => !m.unlikely)
+        .map((m) => m.entry.id)
+        .sort(),
+      "shown tier",
+    ).toEqual(c.candidates);
+    expect(
+      matches
+        .filter((m) => m.unlikely)
+        .map((m) => m.entry.id)
+        .sort(),
+      "unlikely tier",
+    ).toEqual(c.unlikely);
   });
 
   it("still offers the species the commander actually found, where it did when generated", () => {
-    // Pins recall on the fixture: any species that was being found must keep being found. This is
-    // the assertion that catches a gate change quietly costing a real find.
+    // Pins recall on the fixture: any species that was being found must keep being found, and in the
+    // tier it was found in. This is the assertion that catches a gate change quietly costing a real
+    // find — or quietly demoting one out of the default view.
     for (const c of fixture.cases) {
-      const wasFound = c.confirmedSpecies.filter((s) => c.candidates.includes(s));
+      const wasShown = c.confirmedSpecies.filter((s) => c.candidates.includes(s));
       const matches = matchDatabaseToScan(db, c.scan as unknown as PlanetScan, null, null, {
         includeBacterium: true,
       }).matches;
-      const ids = new Set(matches.map((m) => m.entry.id));
-      for (const s of wasFound) {
-        expect(ids.has(s), `${c.bodyName}: lost ${s}`).toBe(true);
+      const shown = new Set(matches.filter((m) => !m.unlikely).map((m) => m.entry.id));
+      for (const s of wasShown) {
+        expect(shown.has(s), `${c.bodyName}: lost ${s} from the default panel`).toBe(true);
       }
     }
+  });
+
+  it("keeps the two tiers disjoint and the demoted one populated", () => {
+    // Every one of these 20 bodies now carries a demoted list - 724 rows against 104 shown. That is
+    // the size of what the walls were deleting, and it is why the tier has to stay collapsed by
+    // default. No species may appear in both tiers.
+    let unlikelyRows = 0;
+    for (const c of fixture.cases) {
+      unlikelyRows += c.unlikely.length;
+      const both = c.candidates.filter((s) => c.unlikely.includes(s));
+      expect(both, `${c.bodyName}: listed in both tiers`).toEqual([]);
+    }
+    expect(unlikelyRows).toBeGreaterThan(0);
   });
 });

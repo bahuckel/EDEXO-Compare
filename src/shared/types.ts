@@ -324,6 +324,18 @@ export interface EncyclopediaExomasteryPlanetsResponseDTO {
 export interface MatchReason {
   field: string;
   detail: string;
+  /**
+   * On a *failure* reason: this criterion is a weighted term, not a wall. The candidate is demoted
+   * to the unlikely tier rather than removed.
+   *
+   * Measured against the feeder's observed habitats, the planet-class gate alone rejected 4.14 % of
+   * the bodies where the species was actually found (1,046 of 25,289), concentrated in Tussock,
+   * Osseus and Fungoida — High metal content body is missing from the allowed list of almost every
+   * one of them. Nothing about that 4.14 % is recoverable by tuning the list; the list itself is the
+   * wrong shape. Absent data is still a wall: "no planet class in the scan" is not a disagreement
+   * about habitat, it is a missing measurement.
+   */
+  soft?: boolean;
 }
 
 /** How a foot-catalog row was recorded from the journal. */
@@ -490,6 +502,20 @@ export interface SpeciesMatch {
   priceCredits: number | null;
   /** True when strict temp/pressure gates failed and this row was kept as a closest-distance guess. */
   approximateMatch?: boolean;
+  /**
+   * Listed, but below the display threshold: every criterion this row failed is a weighted term
+   * rather than a wall, so it is collapsed behind "show unlikely (N)" instead of being deleted.
+   *
+   * A body that contradicts the species on one axis is a low-probability find, not an impossible
+   * one. Stratum tectonicas — the highest-payout species in the game — grows in its canonical
+   * atmosphere less than half the time.
+   */
+  unlikely?: boolean;
+  /**
+   * The terms that demoted it, so the card can say *why* rather than showing a bare percentage.
+   * Set only when {@link unlikely}.
+   */
+  unlikelyReasons?: MatchReason[];
   /**
    * True when DSS genus hints narrowed the DB set and this row was chosen as the nearest codex species
    * by temperature vs the estimator band; other codex gates were not required to pass.

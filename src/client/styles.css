@@ -8973,3 +8973,71 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   background: rgba(120, 135, 170, 0.09);
   color: rgba(200, 210, 230, 0.85);
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * The unlikely tier.
+ *
+ * Codex lists are no longer walls: a species that disagrees with the body on planet class or
+ * atmosphere, or misses a numeric band by under 2%, is demoted here instead of being deleted. The
+ * default panel stays exactly as short as it was; this is what the reader opens when the shown list
+ * does not account for every biological signal.
+ * ---------------------------------------------------------------------------------------------- */
+.candidate-species-unlikely {
+  margin-top: 0.5rem;
+  border-top: 1px dashed rgba(150, 160, 190, 0.22);
+  padding-top: 0.45rem;
+}
+
+.candidate-species-unlikely-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.16rem 0.5rem;
+  border: 1px solid rgba(150, 160, 190, 0.3);
+  border-radius: 4px;
+  background: rgba(120, 135, 170, 0.08);
+  color: rgba(190, 200, 220, 0.82);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.candidate-species-unlikely-toggle:hover {
+  border-color: rgba(150, 160, 190, 0.5);
+  color: rgba(215, 225, 240, 0.95);
+}
+
+.candidate-species-unlikely-toggle--on {
+  background: rgba(120, 135, 170, 0.16);
+  color: rgba(215, 225, 240, 0.95);
+}
+
+.candidate-species-unlikely-note {
+  margin: 0.35rem 0 0.15rem;
+  max-width: 68ch;
+}
+
+/* Demoted rows read as secondary without becoming unreadable — they are still real candidates. */
+.species-list--unlikely {
+  opacity: 0.86;
+}
+
+.species-demoted-badge {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0.02rem 0.3rem;
+  border: 1px solid rgba(255, 170, 90, 0.34);
+  border-radius: 3px;
+  background: rgba(255, 150, 60, 0.09);
+  color: rgba(255, 196, 140, 0.92);
+  font-size: 0.6rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  cursor: help;
+}
+
+.species-identity-sub--demoted {
+  color: rgba(255, 196, 140, 0.78);
+}

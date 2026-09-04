@@ -114,6 +114,22 @@ describe("recordExoOutliersForBody", () => {
     expect(readFileSync(logPath, "utf8").trim().split("\n")).toHaveLength(1);
   });
 
+  it("records a species offered only in the unlikely tier, and says so", () => {
+    // The no-walls change turns most "absent" misses into demoted ones. The commander still would
+    // not have seen it without opening the collapsed list, so it is still a miss — a smaller one.
+    const body = bodyWith("Stratum tectonicas");
+    const demoted = { ...matchFor("stratum_stratum_tectonicas"), unlikely: true } as SpeciesMatch;
+    const n = recordExoOutliersForBody({ body, matches: [demoted], db });
+    expect(n).toBe(1);
+
+    const rec = JSON.parse(readFileSync(logPath, "utf8").trim());
+    expect(rec.speciesId).toBe("stratum_stratum_tectonicas");
+    expect(rec.severity).toBe("unlikelyOnly");
+    // The candidate list recorded is the one the commander was actually shown.
+    expect(rec.candidates).toEqual([]);
+    expect(rec.candidateCount).toBe(0);
+  });
+
   it("ignores bodies with no scan or no confirmed species", () => {
     expect(
       recordExoOutliersForBody({ body: bodyWith("Stratum tectonicas", { scan: null }), matches: [], db }),
