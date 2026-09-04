@@ -59,3 +59,14 @@ Thumbs.db
 # published — the repository is going public and these are working documents.
 # ---------------------------------------------------------------------------
 /docs/archive/
+
+# ---------------------------------------------------------------------------
+# Superseded / unused local files — kept on disk, not part of the project
+# ---------------------------------------------------------------------------
+# An older copy of the Electron entry point. The real one is electron/main.cjs,
+# which is what package.json "main" and electron-builder both point at.
+/main.cjs
+# Stray icon source. The build uses build/icon.ico and public/edexo-icon.png.
+/icon edexo.png
+# Reminder note for the code-signing certificate. Never belongs in the repo.
+sign.txt
