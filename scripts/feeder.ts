@@ -12,6 +12,7 @@
  *   npm run feeder -- rebuild [species...]    rebuild from packs already on disk, no EDSM calls
  *   npm run feeder -- edges                   candidate game thresholds, for review only
  *   npm run feeder -- cooccurrence            rebuild the genus co-occurrence table on its own
+ *   npm run feeder -- coords                  fetch galactic coordinates for the corpus systems
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -46,6 +47,7 @@ import {
   formatCooccurrenceReport,
   writeCooccurrenceTable,
 } from "../src/feeder/cooccurrence.js";
+import { EDSM_COORDS_BATCH, fetchEdsmSystemCoords, withEdsmGate } from "../src/feeder/edsm.js";
 import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
 import {
   proposeEdgesForProfile,
@@ -88,6 +90,10 @@ async function cmdStatus(): Promise<void> {
     `store             ${stats.uniqueSystems} systems · ${stats.uniquePlanets} planets · ${stats.uniqueSightings} sightings`,
   );
   console.log(`index             ${labels.length} species · ${ctx.cumulativeCsvRows} cumulative CSV lines`);
+  console.log(
+    `coordinates       ${stats.systemsWithCoords} of ${stats.uniqueSystems} systems` +
+      `${stats.systemsWithCoords < stats.uniqueSystems ? "   (`npm run feeder -- coords` fetches the rest)" : ""}`,
+  );
 
   const withSamples = new Set(await speciesWithSamples());
   const notHydrated = labels.filter((l) => !withSamples.has(speciesFileSlug(l)));
@@ -244,6 +250,45 @@ function refreshCooccurrence(ctx: FeederContext): void {
   console.log(formatCooccurrenceReport(r, path.relative(root, written)));
 }
 
+/**
+ * Galactic coordinates for the systems in the corpus.
+ *
+ * The bodies endpoint the corpus was built from returns none — 31,990 sample packs carry
+ * `coords: null` — so this is a second pass over the batch systems endpoint, 50 systems a call
+ * behind the same one-per-second gate. Resumable: it only asks for what is still missing.
+ */
+async function cmdCoords(): Promise<void> {
+  requireCorpus();
+  const ctx = await openFeeder();
+  const missing = ctx.store.systemsMissingCoords();
+  const have = ctx.store.getStats().systemsWithCoords;
+  console.log(`
+coordinates: ${have} known, ${missing.length} to fetch (${EDSM_COORDS_BATCH} per call)`);
+
+  let written = 0;
+  let unknown = 0;
+  for (let i = 0; i < missing.length; i += EDSM_COORDS_BATCH) {
+    const batch = missing.slice(i, i + EDSM_COORDS_BATCH);
+    let rows;
+    try {
+      rows = await withEdsmGate(() => fetchEdsmSystemCoords(batch));
+    } catch (e) {
+      console.error(`  stopped at ${i}/${missing.length}: ${String(e instanceof Error ? e.message : e)}`);
+      break;
+    }
+    written += ctx.store.setSystemCoords(rows);
+    unknown += batch.length - rows.length;
+    if ((i / EDSM_COORDS_BATCH) % 10 === 0) {
+      console.log(`  ${Math.min(i + batch.length, missing.length)}/${missing.length}`);
+    }
+  }
+
+  console.log(`
+stored ${written} systems; ${unknown} names EDSM did not recognise`);
+  recordStatusSnapshot(ctx, "coords");
+  console.log("");
+}
+
 async function cmdCooccurrence(): Promise<void> {
   requireCorpus();
   const ctx = await openFeeder();
@@ -328,10 +373,13 @@ switch (command) {
   case "cooccurrence":
     await cmdCooccurrence();
     break;
+  case "coords":
+    await cmdCoords();
+    break;
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | edges | cooccurrence",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | edges | cooccurrence | coords",
     );
     process.exit(1);
 }

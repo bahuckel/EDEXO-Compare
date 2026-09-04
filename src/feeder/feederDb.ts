@@ -4,7 +4,7 @@ import initSqlJs, { type Database, type SqlValue } from "sql.js";
 import { genusFromLandmark, occurrenceKey, type SpeciesIndexEntry, type SpanshExoRow } from "./csvImport.js";
 import { PROJECT_ROOT } from "./paths.js";
 
-const SCHEMA_VER = 1;
+const SCHEMA_VER = 2;
 const META_CUMULATIVE = "cumulative_csv_rows";
 const META_SCHEMA = "schema_ver";
 
@@ -90,6 +90,24 @@ function migrateSchema(db: Database): void {
   `);
   db.run(`DROP TABLE IF EXISTS aedc_edsm_jobs;`);
 
+  /**
+   * Galactic coordinates, added in schema 2 for the region work.
+   *
+   * The bodies endpoint the corpus was built from does not return them — all 31,990 sample packs
+   * carry `coords: null` — so they arrive later, from the batch systems endpoint, and a system
+   * without them is normal rather than an error.
+   */
+  const systemCols = new Set(
+    queryAll<SqlValue[]>(db, "PRAGMA table_info(systems)", []).map((r) => String(r[1])),
+  );
+  if (!systemCols.has("x")) db.run("ALTER TABLE systems ADD COLUMN x REAL");
+  if (!systemCols.has("y")) db.run("ALTER TABLE systems ADD COLUMN y REAL");
+  if (!systemCols.has("z")) db.run("ALTER TABLE systems ADD COLUMN z REAL");
+  runExec(db, "INSERT INTO meta (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v", [
+    META_SCHEMA,
+    String(SCHEMA_VER),
+  ]);
+
   const row = queryOne<[string]>(db, "SELECT v FROM meta WHERE k = ?", [META_SCHEMA]);
   if (!row) {
     runExec(db, "INSERT OR IGNORE INTO meta (k, v) VALUES (?, ?)", [META_SCHEMA, String(SCHEMA_VER)]);
@@ -103,6 +121,8 @@ export type FeederStoreStats = {
   uniqueSightings: number;
   speciesLabels: number;
   cumulativeCsvRowsImported: number;
+  /** Systems whose galactic coordinates are known — the region work needs them and they arrive late. */
+  systemsWithCoords: number;
 };
 
 export class FeederStore {
@@ -163,12 +183,18 @@ export class FeederStore {
     const uniquePlanets = Number(rPl?.[0] ?? 0);
     const uniqueSightings = Number(rSi?.[0] ?? 0);
     const speciesLabels = Number(rSp?.[0] ?? 0);
+    const rCoords = queryOne<SqlValue[]>(
+      this.db,
+      "SELECT COUNT(*) AS c FROM systems WHERE x IS NOT NULL AND y IS NOT NULL AND z IS NOT NULL",
+      [],
+    );
     return {
       uniqueSystems,
       uniquePlanets,
       uniqueSightings,
       speciesLabels,
       cumulativeCsvRowsImported: this.getCumulativeCsvRows(),
+      systemsWithCoords: Number(rCoords?.[0] ?? 0),
     };
   }
 
@@ -379,6 +405,46 @@ export class FeederStore {
       [pid, speciesNorm, genus, speciesLabel.trim()],
     );
     return this.db.getRowsModified() > 0;
+  }
+
+  /** Systems with no coordinates yet, display names, for the batch fetch. */
+  systemsMissingCoords(): string[] {
+    return queryAll<[string]>(
+      this.db,
+      "SELECT display_name FROM systems WHERE x IS NULL OR y IS NULL OR z IS NULL ORDER BY id",
+      [],
+    ).map((r) => r[0]!);
+  }
+
+  /** Store coordinates for systems already in the corpus. Unknown names are ignored, not inserted. */
+  setSystemCoords(rows: { name: string; x: number; y: number; z: number }[]): number {
+    if (rows.length === 0) return 0;
+    let written = 0;
+    this.transaction(() => {
+      for (const r of rows) {
+        runExec(this.db, "UPDATE systems SET x = ?, y = ?, z = ? WHERE norm_name = ?", [
+          r.x,
+          r.y,
+          r.z,
+          normSystem(r.name),
+        ]);
+        written += this.db.getRowsModified();
+      }
+    });
+    return written;
+  }
+
+  /** Every system that has coordinates: id → position. */
+  systemCoords(): Map<number, { x: number; y: number; z: number }> {
+    const out = new Map<number, { x: number; y: number; z: number }>();
+    for (const [id, x, y, z] of queryAll<[number, number, number, number]>(
+      this.db,
+      "SELECT id, x, y, z FROM systems WHERE x IS NOT NULL AND y IS NOT NULL AND z IS NOT NULL",
+      [],
+    )) {
+      out.set(id, { x, y, z });
+    }
+    return out;
   }
 
   rebuildSpeciesIndex(): Record<string, SpeciesIndexEntry> {

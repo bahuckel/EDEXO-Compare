@@ -1,6 +1,8 @@
 import { formatFullSpectralNotation } from "./spectralNotation.js";
 
 const EDSM_BODIES = "https://www.edsm.net/api-system-v1/bodies";
+/** Batch endpoint: many `systemName[]` per request, and it carries the coordinates the bodies one omits. */
+const EDSM_SYSTEMS = "https://www.edsm.net/api-v1/systems";
 
 const EDSM_MIN_GAP_MS = 1100;
 let edsmGateChain: Promise<void> = Promise.resolve();
@@ -204,4 +206,66 @@ export function extractPlanetContext(systemJson: unknown, bodyName: string): Rec
     targetBodyName: bodyName,
     targetBody: body ?? null,
   };
+}
+
+export interface EdsmSystemCoords {
+  name: string;
+  x: number;
+  y: number;
+  z: number;
+}
+
+/**
+ * Galactic coordinates for a batch of systems.
+ *
+ * The bodies endpoint is asked for `showCoordinates` and does not return them, which is why 31,990
+ * sample packs on disk carry `coords: null` and a region prior needs a second pass. This endpoint
+ * does return them, and it takes many systems per request — 2,993 systems cost about sixty calls
+ * rather than three thousand.
+ *
+ * Names that EDSM does not know are simply absent from the result; the caller decides what that
+ * means. Batches are capped at 50 because the request is a GET and the names go in the query string.
+ */
+export const EDSM_COORDS_BATCH = 50;
+
+export async function fetchEdsmSystemCoords(names: string[]): Promise<EdsmSystemCoords[]> {
+  const wanted = names.map((n) => n.trim()).filter(Boolean);
+  if (wanted.length === 0) return [];
+  const u = new URL(EDSM_SYSTEMS);
+  for (const n of wanted.slice(0, EDSM_COORDS_BATCH)) u.searchParams.append("systemName[]", n);
+  u.searchParams.set("showCoordinates", "1");
+
+  const res = await fetch(u.toString(), {
+    headers: { Accept: "application/json", "User-Agent": EDSM_UA },
+  });
+  if (res.status === 429) {
+    throw new EdsmRateLimitExhaustedError("EDSM returned HTTP 429 for a coordinate batch.", wanted[0]!);
+  }
+  if (!res.ok) throw new Error(`EDSM HTTP ${res.status} for a coordinate batch of ${wanted.length}`);
+
+  return parseEdsmSystemCoords(await res.json());
+}
+
+/**
+ * Coordinates out of an EDSM systems payload.
+ *
+ * Separate from the fetch so it can be tested without a network call, and because EDSM answers a
+ * batch with only the systems it knows: a name it has never heard of is simply absent, which is a
+ * fact about EDSM rather than an error.
+ */
+export function parseEdsmSystemCoords(parsed: unknown): EdsmSystemCoords[] {
+  if (!Array.isArray(parsed)) return [];
+  const out: EdsmSystemCoords[] = [];
+  for (const row of parsed) {
+    if (!row || typeof row !== "object") continue;
+    const r = row as { name?: unknown; coords?: { x?: unknown; y?: unknown; z?: unknown } };
+    const name = typeof r.name === "string" ? r.name.trim() : "";
+    const x = r.coords?.x;
+    const y = r.coords?.y;
+    const z = r.coords?.z;
+    if (!name || typeof x !== "number" || typeof y !== "number" || typeof z !== "number") continue;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
+    out.push({ name, x, y, z });
+  }
+  return out;
 }
