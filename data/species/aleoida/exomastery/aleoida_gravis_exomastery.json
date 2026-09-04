@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida gravis",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:55.887Z",
+  "generatedAt": "2026-09-04T20:22:35.296Z",
   "sampleCount": 232,
   "numerics": {
     "body.distanceToArrival": {
@@ -573,5 +573,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Aleoida Gravis"
+  "sourceSpeciesLabel": "Aleoida Gravis",
+  "parameterImportance": {
+    "body.subType": 0.027,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": 0.015,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.045,
+    "exo.system_primary_spectral": 0.065
+  }
 }

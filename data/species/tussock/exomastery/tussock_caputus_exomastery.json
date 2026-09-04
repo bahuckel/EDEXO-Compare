@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock caputus",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.527Z",
+  "generatedAt": "2026-09-04T20:22:39.767Z",
   "sampleCount": 569,
   "numerics": {
     "body.distanceToArrival": {
@@ -625,5 +625,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Tussock Caputus"
+  "sourceSpeciesLabel": "Tussock Caputus",
+  "parameterImportance": {
+    "body.subType": 0.086,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.534,
+    "body.rotationalPeriodTidallyLocked": 0.007,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.047,
+    "exo.system_primary_spectral": 0.053
+  }
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock ignis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.779Z",
+  "generatedAt": "2026-09-04T20:22:40.073Z",
   "sampleCount": 969,
   "numerics": {
     "body.distanceToArrival": {
@@ -603,5 +603,15 @@
       "surfacePressureAtm": null
     }
   },
-  "sourceSpeciesLabel": "Tussock Ignis"
+  "sourceSpeciesLabel": "Tussock Ignis",
+  "parameterImportance": {
+    "body.subType": 0.324,
+    "body.isLandable": -0.025,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.536,
+    "body.rotationalPeriodTidallyLocked": -0.001,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.211,
+    "exo.system_primary_spectral": 0.142
+  }
 }

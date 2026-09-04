@@ -3,7 +3,7 @@
   "speciesLabel": "Clypeus lacrimam",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:57.666Z",
+  "generatedAt": "2026-09-04T20:22:36.962Z",
   "sampleCount": 641,
   "numerics": {
     "body.distanceToArrival": {
@@ -652,5 +652,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Clypeus Lacrimam"
+  "sourceSpeciesLabel": "Clypeus Lacrimam",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.025,
+    "body.atmosphereType": 0.307,
+    "body.rotationalPeriodTidallyLocked": -0.022,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.016,
+    "exo.system_primary_spectral": -0.009
+  }
 }

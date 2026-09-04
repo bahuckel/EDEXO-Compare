@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock capillum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.456Z",
+  "generatedAt": "2026-09-04T20:22:39.690Z",
   "sampleCount": 42,
   "numerics": {
     "body.distanceToArrival": {
@@ -568,5 +568,15 @@
       "surfacePressureAtm": null
     }
   },
-  "sourceSpeciesLabel": "Tussock Capillum"
+  "sourceSpeciesLabel": "Tussock Capillum",
+  "parameterImportance": {
+    "body.subType": 0.009,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.159,
+    "body.atmosphereType": 0.238,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": 0.149,
+    "exo.host_star_spectral_primary": -0.06,
+    "exo.system_primary_spectral": 0.023
+  }
 }

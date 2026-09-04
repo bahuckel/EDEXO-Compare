@@ -3,7 +3,7 @@
   "speciesLabel": "Fungoida gelata",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:59.103Z",
+  "generatedAt": "2026-09-04T20:22:38.343Z",
   "sampleCount": 342,
   "numerics": {
     "body.distanceToArrival": {
@@ -656,5 +656,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Fungoida Gelata"
+  "sourceSpeciesLabel": "Fungoida Gelata",
+  "parameterImportance": {
+    "body.subType": 0.37,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.004,
+    "body.atmosphereType": 0.214,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": -0.021,
+    "exo.host_star_spectral_primary": -0.006,
+    "exo.system_primary_spectral": -0.038
+  }
 }

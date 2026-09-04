@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock pennatis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.823Z",
+  "generatedAt": "2026-09-04T20:22:40.120Z",
   "sampleCount": 96,
   "numerics": {
     "body.distanceToArrival": {
@@ -556,5 +556,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Tussock Pennatis"
+  "sourceSpeciesLabel": "Tussock Pennatis",
+  "parameterImportance": {
+    "body.subType": 0.115,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.539,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": -0.022,
+    "exo.host_star_spectral_primary": 0.016,
+    "exo.system_primary_spectral": 0.023
+  }
 }

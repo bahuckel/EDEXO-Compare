@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa acus",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:58.718Z",
+  "generatedAt": "2026-09-04T20:22:38.000Z",
   "sampleCount": 3106,
   "numerics": {
     "body.distanceToArrival": {
@@ -628,5 +628,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Frutexa Acus"
+  "sourceSpeciesLabel": "Frutexa Acus",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": -0.009,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.537,
+    "body.rotationalPeriodTidallyLocked": -0.003,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.288,
+    "exo.system_primary_spectral": 0.227
+  }
 }

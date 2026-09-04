@@ -3,7 +3,7 @@
   "speciesLabel": "Fungoida bullarum",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:59.046Z",
+  "generatedAt": "2026-09-04T20:22:38.292Z",
   "sampleCount": 29,
   "numerics": {
     "body.distanceToArrival": {
@@ -531,5 +531,15 @@
       "surfacePressureAtm": null
     }
   },
-  "sourceSpeciesLabel": "Fungoida Bullarum"
+  "sourceSpeciesLabel": "Fungoida Bullarum",
+  "parameterImportance": {
+    "body.subType": 0.312,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.477,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": 0.399,
+    "exo.host_star_spectral_primary": 0.075,
+    "exo.system_primary_spectral": 0.068
+  }
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Electricae radialem",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:58.214Z",
+  "generatedAt": "2026-09-04T20:22:37.501Z",
   "sampleCount": 58,
   "numerics": {
     "body.distanceToArrival": {
@@ -622,5 +622,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Electricae Radialem"
+  "sourceSpeciesLabel": "Electricae Radialem",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.009,
+    "body.atmosphereType": 0.477,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": 0.009,
+    "exo.host_star_spectral_primary": 0.139,
+    "exo.system_primary_spectral": 0.029
+  }
 }

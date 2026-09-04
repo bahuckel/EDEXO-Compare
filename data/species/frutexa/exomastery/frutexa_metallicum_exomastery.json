@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa metallicum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:58.912Z",
+  "generatedAt": "2026-09-04T20:22:38.194Z",
   "sampleCount": 501,
   "numerics": {
     "body.distanceToArrival": {
@@ -617,5 +617,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Frutexa Metallicum"
+  "sourceSpeciesLabel": "Frutexa Metallicum",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.238,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": 0.174,
+    "exo.host_star_spectral_primary": 0.294,
+    "exo.system_primary_spectral": 0.124
+  }
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum limaxus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:59.884Z",
+  "generatedAt": "2026-09-04T20:22:39.181Z",
   "sampleCount": 102,
   "numerics": {
     "body.distanceToArrival": {
@@ -536,5 +536,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Stratum Limaxus"
+  "sourceSpeciesLabel": "Stratum Limaxus",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.499,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": -0.019,
+    "exo.host_star_spectral_primary": 0.337,
+    "exo.system_primary_spectral": 0.415
+  }
 }

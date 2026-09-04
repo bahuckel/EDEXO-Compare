@@ -3,7 +3,7 @@
   "speciesLabel": "Tubus cavas",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.360Z",
+  "generatedAt": "2026-09-04T20:22:39.576Z",
   "sampleCount": 152,
   "numerics": {
     "body.distanceToArrival": {
@@ -538,5 +538,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Tubus Cavas"
+  "sourceSpeciesLabel": "Tubus Cavas",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": -0.118,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.539,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": 0.003,
+    "exo.host_star_spectral_primary": 0.191,
+    "exo.system_primary_spectral": 0.213
+  }
 }

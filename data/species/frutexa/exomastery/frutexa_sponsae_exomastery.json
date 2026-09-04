@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa sponsae",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:58.989Z",
+  "generatedAt": "2026-09-04T20:22:38.252Z",
   "sampleCount": 418,
   "numerics": {
     "body.distanceToArrival": {
@@ -537,5 +537,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Frutexa Sponsae"
+  "sourceSpeciesLabel": "Frutexa Sponsae",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.028,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": -0.02,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.21,
+    "exo.system_primary_spectral": 0.076
+  }
 }

@@ -31,7 +31,14 @@ import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
 import { resolveJournalMergeCacheRoot } from "../src/server/paths.js";
 import { exomasteryHabitatQualityPercent, loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
-import type { BodyExoState } from "../src/shared/types.js";
+import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
+import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
+import type {
+  BodyExoState,
+  ExplorationScanRecord,
+  JournalHostStarObservation,
+  SpeciesMatchContext,
+} from "../src/shared/types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = loadSpeciesDatabaseFromTree(root);
@@ -51,6 +58,36 @@ if (!payload) {
 }
 const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
 
+/**
+ * Host-star observation per body, rebuilt from the merged exploration scans.
+ *
+ * The app passes this into the habitat scorer and this probe did not, which made the probe blind to
+ * every host-star term — the parameter where measured determinism finds its sharpest signals
+ * (Bacterium volu and Fumerola extremus both key entirely on star type). Ranking measured without it
+ * cannot see the effect of weighting it.
+ */
+const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
+for (const [, r] of payload.explorationScans) {
+  const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
+  byId.set(r.bodyId, r);
+  scansBySystem.set(r.systemAddress, byId);
+}
+
+function hostStarFor(b: BodyExoState): JournalHostStarObservation | null {
+  const byId = scansBySystem.get(b.systemAddress);
+  const rec = byId?.get(b.bodyId);
+  if (!byId || !rec) return null;
+  const starId = resolveHostStarBodyId(rec, byId);
+  if (starId == null) return null;
+  const star = byId.get(starId);
+  if (!star?.starType?.trim()) return null;
+  return journalHostObservationFromSpeciesContext({
+    parentStarType: star.starType,
+    parentStarSubclass: star.subclass,
+    parentStarLuminosity: star.luminosity,
+  } as unknown as SpeciesMatchContext);
+}
+
 let ranked = 0;
 let rankSum = 0;
 let top1 = 0;
@@ -69,12 +106,13 @@ for (const b of bodies) {
   );
   if (matches.length < 2) continue;
 
+  const host = hostStarFor(b);
   // Only candidates with a feeder profile can be scored; a body where nothing scores has no ranking
   // to measure, and counting it would flatter whichever weighting is in place.
   const scored = matches
     .map((m) => {
       const prof = loadExomasteryProfile(root, m.entry);
-      const q = prof ? exomasteryHabitatQualityPercent(prof, b.scan!, null) : null;
+      const q = prof ? exomasteryHabitatQualityPercent(prof, b.scan!, null, host) : null;
       return { id: m.entry.id, q: q ?? -1 };
     })
     .filter((x) => x.q >= 0);

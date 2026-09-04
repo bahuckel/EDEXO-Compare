@@ -38,6 +38,7 @@ import {
   type RunReport,
 } from "../src/feeder/pipeline.js";
 import { describeInstall, findSpeciesEntryForLabel } from "../src/feeder/install.js";
+import { applyParameterImportance, formatImportanceReport } from "../src/feeder/applyImportance.js";
 import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
 import {
   proposeEdgesForProfile,
@@ -174,6 +175,8 @@ async function cmdRun(): Promise<void> {
   console.log(`\nrunning ${labels.length} species from ${feederDataDir()}\n`);
   const report = await runPipeline(ctx, db, labels, { allowDowngrade, onProgress: log });
   recordStatusSnapshot(ctx, "run");
+  // Importance is relative to every other species, so it is measured after the installs land.
+  console.log(formatImportanceReport(applyParameterImportance(loadSpeciesDatabaseFromTree(root))));
   finish(report);
 }
 
@@ -213,6 +216,7 @@ async function cmdRebuild(): Promise<void> {
   }
   if (!dryRun) {
     recordStatusSnapshot(ctx, "rebuild");
+    console.log(formatImportanceReport(applyParameterImportance(loadSpeciesDatabaseFromTree(root))));
     finish(report);
   }
 }

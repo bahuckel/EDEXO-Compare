@@ -3,7 +3,7 @@
   "speciesLabel": "Recepta umbrux",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:59.732Z",
+  "generatedAt": "2026-09-04T20:22:38.996Z",
   "sampleCount": 42,
   "numerics": {
     "body.distanceToArrival": {
@@ -591,5 +591,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Recepta Umbrux"
+  "sourceSpeciesLabel": "Recepta Umbrux",
+  "parameterImportance": {
+    "body.subType": -0.241,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.278,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": -0.015,
+    "exo.host_star_spectral_primary": -0.048,
+    "exo.system_primary_spectral": -0.034
+  }
 }

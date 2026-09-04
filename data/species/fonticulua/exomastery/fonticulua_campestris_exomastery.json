@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua campestris",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:58.260Z",
+  "generatedAt": "2026-09-04T20:22:37.545Z",
   "sampleCount": 321,
   "numerics": {
     "body.distanceToArrival": {
@@ -599,5 +599,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Fonticulua Campestris"
+  "sourceSpeciesLabel": "Fonticulua Campestris",
+  "parameterImportance": {
+    "body.subType": 0.306,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.103,
+    "body.atmosphereType": 0.539,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": 0.042,
+    "exo.host_star_spectral_primary": 0.207,
+    "exo.system_primary_spectral": 0.164
+  }
 }

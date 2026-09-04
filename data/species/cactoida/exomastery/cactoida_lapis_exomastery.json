@@ -3,7 +3,7 @@
   "speciesLabel": "Cactoida lapis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:57.421Z",
+  "generatedAt": "2026-09-04T20:22:36.712Z",
   "sampleCount": 663,
   "numerics": {
     "body.distanceToArrival": {
@@ -612,5 +612,15 @@
       "surfacePressureAtm": null
     }
   },
-  "sourceSpeciesLabel": "Cactoida Lapis"
+  "sourceSpeciesLabel": "Cactoida Lapis",
+  "parameterImportance": {
+    "body.subType": 0.066,
+    "body.isLandable": -0.02,
+    "body.volcanismType": 0.042,
+    "body.atmosphereType": 0.535,
+    "body.rotationalPeriodTidallyLocked": -0.016,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.059,
+    "exo.system_primary_spectral": 0.09
+  }
 }

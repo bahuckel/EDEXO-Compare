@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum tectonicas",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.331Z",
+  "generatedAt": "2026-09-04T20:22:39.547Z",
   "sampleCount": 1280,
   "numerics": {
     "body.distanceToArrival": {
@@ -722,5 +722,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Stratum Tectonicas"
+  "sourceSpeciesLabel": "Stratum Tectonicas",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.031,
+    "body.atmosphereType": 0.013,
+    "body.terraformingState": -0.33,
+    "body.rotationalPeriodTidallyLocked": 0.093,
+    "exo.host_star_spectral_primary": 0.171,
+    "exo.system_primary_spectral": 0.129
+  }
 }

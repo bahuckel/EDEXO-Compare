@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum paleas",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.111Z",
+  "generatedAt": "2026-09-04T20:22:39.358Z",
   "sampleCount": 1335,
   "numerics": {
     "body.distanceToArrival": {
@@ -676,5 +676,15 @@
       "surfacePressureAtm": null
     }
   },
-  "sourceSpeciesLabel": "Stratum Paleas"
+  "sourceSpeciesLabel": "Stratum Paleas",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": -0.008,
+    "body.volcanismType": 0.042,
+    "body.atmosphereType": 0.161,
+    "body.rotationalPeriodTidallyLocked": -0.008,
+    "body.terraformingState": 0.013,
+    "exo.host_star_spectral_primary": 0.306,
+    "exo.system_primary_spectral": 0.308
+  }
 }

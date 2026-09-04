@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock serrati",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.940Z",
+  "generatedAt": "2026-09-04T20:22:40.220Z",
   "sampleCount": 310,
   "numerics": {
     "body.distanceToArrival": {
@@ -573,5 +573,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Tussock Serrati"
+  "sourceSpeciesLabel": "Tussock Serrati",
+  "parameterImportance": {
+    "body.subType": 0.236,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": 0.02,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.165,
+    "exo.system_primary_spectral": 0.136
+  }
 }

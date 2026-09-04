@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock albata",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.449Z",
+  "generatedAt": "2026-09-04T20:22:39.674Z",
   "sampleCount": 459,
   "numerics": {
     "body.distanceToArrival": {
@@ -592,5 +592,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Tussock Albata"
+  "sourceSpeciesLabel": "Tussock Albata",
+  "parameterImportance": {
+    "body.subType": 0.177,
+    "body.isLandable": -0.035,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": 0.018,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.1,
+    "exo.system_primary_spectral": 0.122
+  }
 }

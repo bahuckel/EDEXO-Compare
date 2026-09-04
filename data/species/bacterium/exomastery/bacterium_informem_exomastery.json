@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium informem",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:56.965Z",
+  "generatedAt": "2026-09-04T20:22:36.274Z",
   "sampleCount": 116,
   "numerics": {
     "body.distanceToArrival": {
@@ -606,5 +606,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Bacterium Informem"
+  "sourceSpeciesLabel": "Bacterium Informem",
+  "parameterImportance": {
+    "body.subType": -0.091,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": 0.26,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.098,
+    "exo.system_primary_spectral": 0.06
+  }
 }

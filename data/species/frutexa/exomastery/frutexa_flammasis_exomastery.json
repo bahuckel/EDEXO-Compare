@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa flammasis",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:58.840Z",
+  "generatedAt": "2026-09-04T20:22:38.126Z",
   "sampleCount": 147,
   "numerics": {
     "body.distanceToArrival": {
@@ -523,5 +523,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Frutexa Flammasis"
+  "sourceSpeciesLabel": "Frutexa Flammasis",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": -0.158,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.539,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": -0.021,
+    "exo.host_star_spectral_primary": 0.22,
+    "exo.system_primary_spectral": 0.255
+  }
 }

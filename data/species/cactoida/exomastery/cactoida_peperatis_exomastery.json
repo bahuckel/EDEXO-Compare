@@ -3,7 +3,7 @@
   "speciesLabel": "Cactoida peperatis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:57.437Z",
+  "generatedAt": "2026-09-04T20:22:36.729Z",
   "sampleCount": 72,
   "numerics": {
     "body.distanceToArrival": {
@@ -518,5 +518,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Cactoida Peperatis"
+  "sourceSpeciesLabel": "Cactoida Peperatis",
+  "parameterImportance": {
+    "body.subType": 0.207,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.539,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": -0.02,
+    "exo.host_star_spectral_primary": 0.137,
+    "exo.system_primary_spectral": 0.144
+  }
 }

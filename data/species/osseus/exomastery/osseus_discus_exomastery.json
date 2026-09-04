@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus discus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:59.431Z",
+  "generatedAt": "2026-09-04T20:22:38.694Z",
   "sampleCount": 645,
   "numerics": {
     "body.distanceToArrival": {
@@ -744,5 +744,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Osseus Discus"
+  "sourceSpeciesLabel": "Osseus Discus",
+  "parameterImportance": {
+    "body.subType": 0.224,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.034,
+    "body.atmosphereType": 0.475,
+    "body.rotationalPeriodTidallyLocked": -0.018,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": -0.056,
+    "exo.system_primary_spectral": -0.138
+  }
 }

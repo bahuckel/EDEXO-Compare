@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua digitos",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:58.270Z",
+  "generatedAt": "2026-09-04T20:22:37.555Z",
   "sampleCount": 62,
   "numerics": {
     "body.distanceToArrival": {
@@ -504,5 +504,14 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Fonticulua Digitos"
+  "sourceSpeciesLabel": "Fonticulua Digitos",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.015,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": 0.005,
+    "exo.host_star_spectral_primary": 0.387,
+    "exo.system_primary_spectral": 0.243
+  }
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium acies",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:56.007Z",
+  "generatedAt": "2026-09-04T20:22:35.405Z",
   "sampleCount": 132,
   "numerics": {
     "body.distanceToArrival": {
@@ -582,5 +582,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Bacterium Acies"
+  "sourceSpeciesLabel": "Bacterium Acies",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.006,
+    "body.atmosphereType": 0.539,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": 0.711,
+    "exo.host_star_spectral_primary": 0.177,
+    "exo.system_primary_spectral": 0.099
+  }
 }

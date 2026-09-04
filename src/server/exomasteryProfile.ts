@@ -87,6 +87,20 @@ export interface ExomasteryProfileV1 {
    * rollups when a cell is missing or too thin to describe a range.
    */
   atmosphereBands?: AtmosphereBands;
+  /**
+   * Per-parameter determinism against the pooled background, written by `feeder run` / `rebuild`.
+   *
+   * 1 means every observation of this species shares one value for the parameter; 0 means it is
+   * spread exactly like the galaxy; negative means it is spread *wider*, so the parameter provably
+   * does not constrain it.
+   *
+   * **Measured, published, and not yet consumed by the scorer** — see `parameterImportance.ts`. The
+   * ordering it produces is right (atmosphere type 0.443, planet class 0.238, tidal lock 0.037,
+   * volcanism −0.008 across 76 species) but the six categorical terms it reweights sit among 47
+   * numeric ones still using the old estimator, and wiring it in alone measured slightly *worse*
+   * ranking. It becomes usable when the numeric side is measured on the same scale.
+   */
+  parameterImportance?: Record<string, number>;
 }
 
 const profileCache = new Map<string, ExomasteryProfileV1 | null | undefined>();

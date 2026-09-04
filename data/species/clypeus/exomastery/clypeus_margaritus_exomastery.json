@@ -3,7 +3,7 @@
   "speciesLabel": "Clypeus margaritus",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:57.698Z",
+  "generatedAt": "2026-09-04T20:22:37.002Z",
   "sampleCount": 224,
   "numerics": {
     "body.distanceToArrival": {
@@ -587,5 +587,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Clypeus Margaritus"
+  "sourceSpeciesLabel": "Clypeus Margaritus",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.255,
+    "body.rotationalPeriodTidallyLocked": 0.133,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.181,
+    "exo.system_primary_spectral": 0.102
+  }
 }

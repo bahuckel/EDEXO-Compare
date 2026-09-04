@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium volu",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:57.167Z",
+  "generatedAt": "2026-09-04T20:22:36.446Z",
   "sampleCount": 23,
   "numerics": {
     "body.distanceToArrival": {
@@ -553,5 +553,14 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Bacterium Volu"
+  "sourceSpeciesLabel": "Bacterium Volu",
+  "parameterImportance": {
+    "body.subType": -0.064,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.031,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": 0.312,
+    "exo.host_star_spectral_primary": 0.198,
+    "exo.system_primary_spectral": -0.033
+  }
 }

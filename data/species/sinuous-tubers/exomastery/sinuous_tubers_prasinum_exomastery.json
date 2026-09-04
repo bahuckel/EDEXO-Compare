@@ -3,7 +3,7 @@
   "speciesLabel": "Sinuous Tubers Prasinum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:59.711Z",
+  "generatedAt": "2026-09-04T20:22:38.968Z",
   "sampleCount": 34,
   "numerics": {
     "body.distanceToArrival": {
@@ -659,5 +659,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Prasinum Sinuous Tubers"
+  "sourceSpeciesLabel": "Prasinum Sinuous Tubers",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.226,
+    "body.atmosphereType": 0.345,
+    "body.terraformingState": -0.627,
+    "body.rotationalPeriodTidallyLocked": 0.144,
+    "exo.host_star_spectral_primary": 0.001,
+    "exo.system_primary_spectral": -0.005
+  }
 }

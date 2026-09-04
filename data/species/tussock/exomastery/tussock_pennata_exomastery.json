@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock pennata",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:53:00.800Z",
+  "generatedAt": "2026-09-04T20:22:40.099Z",
   "sampleCount": 157,
   "numerics": {
     "body.distanceToArrival": {
@@ -531,5 +531,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Tussock Pennata"
+  "sourceSpeciesLabel": "Tussock Pennata",
+  "parameterImportance": {
+    "body.subType": 0.381,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": -0.013,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.28,
+    "exo.system_primary_spectral": 0.189
+  }
 }

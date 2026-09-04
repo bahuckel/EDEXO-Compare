@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua lapida",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:58.279Z",
+  "generatedAt": "2026-09-04T20:22:37.565Z",
   "sampleCount": 41,
   "numerics": {
     "body.distanceToArrival": {
@@ -546,5 +546,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Fonticulua Lapida"
+  "sourceSpeciesLabel": "Fonticulua Lapida",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.003,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": 0.139,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.283,
+    "exo.system_primary_spectral": 0.217
+  }
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus fractus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:59.508Z",
+  "generatedAt": "2026-09-04T20:22:38.767Z",
   "sampleCount": 562,
   "numerics": {
     "body.distanceToArrival": {
@@ -611,5 +611,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Osseus Fractus"
+  "sourceSpeciesLabel": "Osseus Fractus",
+  "parameterImportance": {
+    "body.subType": 0.232,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.534,
+    "body.rotationalPeriodTidallyLocked": 0.02,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.136,
+    "exo.system_primary_spectral": 0.121
+  }
 }

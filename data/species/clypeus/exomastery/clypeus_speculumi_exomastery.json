@@ -3,7 +3,7 @@
   "speciesLabel": "Clypeus speculumi",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:57.739Z",
+  "generatedAt": "2026-09-04T20:22:37.049Z",
   "sampleCount": 298,
   "numerics": {
     "body.distanceToArrival": {
@@ -595,5 +595,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Clypeus Speculumi"
+  "sourceSpeciesLabel": "Clypeus Speculumi",
+  "parameterImportance": {
+    "body.subType": 0.405,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.253,
+    "body.rotationalPeriodTidallyLocked": 0.008,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.086,
+    "exo.system_primary_spectral": -0.04
+  }
 }

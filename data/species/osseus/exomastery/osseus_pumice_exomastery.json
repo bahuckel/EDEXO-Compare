@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus pumice",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:59.569Z",
+  "generatedAt": "2026-09-04T20:22:38.817Z",
   "sampleCount": 99,
   "numerics": {
     "body.distanceToArrival": {
@@ -598,5 +598,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Osseus Pumice"
+  "sourceSpeciesLabel": "Osseus Pumice",
+  "parameterImportance": {
+    "body.subType": -0.022,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.254,
+    "body.atmosphereType": 0.157,
+    "body.terraformingState": 0.045,
+    "body.rotationalPeriodTidallyLocked": 0.093,
+    "exo.host_star_spectral_primary": 0.051,
+    "exo.system_primary_spectral": -0.021
+  }
 }

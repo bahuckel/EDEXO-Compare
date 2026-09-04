@@ -3,7 +3,7 @@
   "speciesLabel": "Fungoida stabitis",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:59.299Z",
+  "generatedAt": "2026-09-04T20:22:38.608Z",
   "sampleCount": 945,
   "numerics": {
     "body.distanceToArrival": {
@@ -714,5 +714,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Fungoida Stabitis"
+  "sourceSpeciesLabel": "Fungoida Stabitis",
+  "parameterImportance": {
+    "body.subType": 0.213,
+    "body.isLandable": 0.022,
+    "body.volcanismType": 0.026,
+    "body.atmosphereType": 0.245,
+    "body.rotationalPeriodTidallyLocked": 0.007,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.014,
+    "exo.system_primary_spectral": -0.001
+  }
 }

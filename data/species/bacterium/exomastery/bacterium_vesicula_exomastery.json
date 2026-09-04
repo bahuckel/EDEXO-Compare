@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium vesicula",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:57.156Z",
+  "generatedAt": "2026-09-04T20:22:36.435Z",
   "sampleCount": 516,
   "numerics": {
     "body.distanceToArrival": {
@@ -679,5 +679,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Bacterium Vesicula"
+  "sourceSpeciesLabel": "Bacterium Vesicula",
+  "parameterImportance": {
+    "body.subType": 0.214,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.018,
+    "body.atmosphereType": 0.533,
+    "body.rotationalPeriodTidallyLocked": 0.114,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.108,
+    "exo.system_primary_spectral": 0.083
+  }
 }

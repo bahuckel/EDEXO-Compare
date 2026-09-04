@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida laminiae",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:55.953Z",
+  "generatedAt": "2026-09-04T20:22:35.359Z",
   "sampleCount": 212,
   "numerics": {
     "body.distanceToArrival": {
@@ -600,5 +600,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Aleoida Laminiae"
+  "sourceSpeciesLabel": "Aleoida Laminiae",
+  "parameterImportance": {
+    "body.subType": 0.157,
+    "body.isLandable": 0.022,
+    "body.atmosphereType": 0.527,
+    "body.rotationalPeriodTidallyLocked": -0.001,
+    "body.volcanismType": 0.047,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.136,
+    "exo.system_primary_spectral": 0.154
+  }
 }

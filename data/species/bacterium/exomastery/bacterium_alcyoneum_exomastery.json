@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium alcyoneum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:56.272Z",
+  "generatedAt": "2026-09-04T20:22:35.608Z",
   "sampleCount": 853,
   "numerics": {
     "body.distanceToArrival": {
@@ -655,5 +655,15 @@
       "surfacePressureAtm": null
     }
   },
-  "sourceSpeciesLabel": "Bacterium Alcyoneum"
+  "sourceSpeciesLabel": "Bacterium Alcyoneum",
+  "parameterImportance": {
+    "body.subType": 0.008,
+    "body.isLandable": 0.009,
+    "body.volcanismType": 0.047,
+    "body.atmosphereType": 0.529,
+    "body.rotationalPeriodTidallyLocked": 0.019,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": -0.017,
+    "exo.system_primary_spectral": 0.018
+  }
 }

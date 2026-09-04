@@ -3,7 +3,7 @@
   "speciesLabel": "Concha aureolas",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:52:57.764Z",
+  "generatedAt": "2026-09-04T20:22:37.077Z",
   "sampleCount": 158,
   "numerics": {
     "body.distanceToArrival": {
@@ -550,5 +550,15 @@
       }
     }
   },
-  "sourceSpeciesLabel": "Concha Aureolas"
+  "sourceSpeciesLabel": "Concha Aureolas",
+  "parameterImportance": {
+    "body.subType": 0.381,
+    "body.isLandable": 0.022,
+    "body.volcanismType": -0.003,
+    "body.atmosphereType": 0.539,
+    "body.rotationalPeriodTidallyLocked": -0.018,
+    "body.terraformingState": 0.045,
+    "exo.host_star_spectral_primary": 0.218,
+    "exo.system_primary_spectral": 0.11
+  }
 }
