@@ -11,6 +11,7 @@
  *   npm run feeder -- run [species...]        hydrate + analyse + install (default: everything)
  *   npm run feeder -- rebuild [species...]    rebuild from packs already on disk, no EDSM calls
  *   npm run feeder -- edges                   candidate game thresholds, for review only
+ *   npm run feeder -- cooccurrence            rebuild the genus co-occurrence table on its own
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -35,10 +36,16 @@ import {
   recordStatusSnapshot,
   runPipeline,
   speciesWithSamples,
+  type FeederContext,
   type RunReport,
 } from "../src/feeder/pipeline.js";
 import { describeInstall, findSpeciesEntryForLabel } from "../src/feeder/install.js";
 import { applyParameterImportance, formatImportanceReport } from "../src/feeder/applyImportance.js";
+import {
+  buildCooccurrenceTable,
+  formatCooccurrenceReport,
+  writeCooccurrenceTable,
+} from "../src/feeder/cooccurrence.js";
 import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
 import {
   proposeEdgesForProfile,
@@ -156,6 +163,7 @@ async function cmdImport(): Promise<void> {
   if (r.newSpeciesLabels.length) console.log(`  new: ${r.newSpeciesLabels.join(", ")}`);
 
   recordStatusSnapshot(ctx, "import");
+  refreshCooccurrence(ctx);
 
   if (r.touchedSpecies.length === 0) {
     console.log("\nNothing gained occurrences — no rebuild needed.");
@@ -175,6 +183,7 @@ async function cmdRun(): Promise<void> {
   console.log(`\nrunning ${labels.length} species from ${feederDataDir()}\n`);
   const report = await runPipeline(ctx, db, labels, { allowDowngrade, onProgress: log });
   recordStatusSnapshot(ctx, "run");
+  refreshCooccurrence(ctx);
   // Importance is relative to every other species, so it is measured after the installs land.
   console.log(formatImportanceReport(await applyParameterImportance(loadSpeciesDatabaseFromTree(root))));
   finish(report);
@@ -216,9 +225,31 @@ async function cmdRebuild(): Promise<void> {
   }
   if (!dryRun) {
     recordStatusSnapshot(ctx, "rebuild");
+    refreshCooccurrence(ctx);
     console.log(formatImportanceReport(await applyParameterImportance(loadSpeciesDatabaseFromTree(root))));
     finish(report);
   }
+}
+
+/**
+ * Which genera turn up together, written where the matcher reads it.
+ *
+ * A GROUP BY over the sightings already in the store, so it costs nothing and is rerun after every
+ * command that can change them. The file is small — 27 genera and 102 observed pairs — and it ships
+ * with `data/`.
+ */
+function refreshCooccurrence(ctx: FeederContext): void {
+  const r = buildCooccurrenceTable(ctx.store.db, loadSpeciesDatabaseFromTree(root));
+  const written = writeCooccurrenceTable(r.table);
+  console.log(formatCooccurrenceReport(r, path.relative(root, written)));
+}
+
+async function cmdCooccurrence(): Promise<void> {
+  requireCorpus();
+  const ctx = await openFeeder();
+  refreshCooccurrence(ctx);
+  recordStatusSnapshot(ctx, "cooccurrence");
+  console.log("");
 }
 
 /**
@@ -294,10 +325,13 @@ switch (command) {
   case "edges":
     await cmdEdges();
     break;
+  case "cooccurrence":
+    await cmdCooccurrence();
+    break;
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | edges",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | edges | cooccurrence",
     );
     process.exit(1);
 }

@@ -1,3 +1,4 @@
+import type { GenusLikelihood } from "./genusCooccurrence.js";
 import type { JournalHistoryPreset } from "./journalHistoryPreset.js";
 
 export type { JournalHistoryPreset };
@@ -730,6 +731,16 @@ export interface BodyComputed {
    * "these three, guaranteed".
    */
   genusCertainty: GenusCertaintyDTO | null;
+  /**
+   * Candidate genera in likelihood order, most likely first — ordering only.
+   *
+   * The `probability` each row carries is honest arithmetic over the co-occurrence corpus, and it is
+   * **not calibrated**: measured against 51 landed bodies its reliability curve is non-monotonic and
+   * its Brier score is worse than assuming every candidate equally likely. So it orders the list and
+   * nothing renders it as a number (acceptance rule 3). Null when there is no signal count, no
+   * co-occurrence table, or fewer candidates than signals.
+   */
+  genusLikelihoods: GenusLikelihood[] | null;
   /** Estimated viable surface temperature band from scan heuristics; null if planet class could not be mapped. */
   estimatedSurfaceTempK: EstimatedSurfaceTempBand | null;
   /**

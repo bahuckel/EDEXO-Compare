@@ -74,6 +74,9 @@ import {
   explorationRecordIsStellar,
 } from "./explorationStellar.js";
 import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
+import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
+import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
+import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
 import { recordExoOutliersForBody } from "./exoOutlierLog.js";
@@ -619,6 +622,43 @@ function genusCertaintyForBody(b: BodyExoState, matches: SpeciesMatch[]): GenusC
   return { status, signalCount, candidateGenera, genera };
 }
 
+/**
+ * Candidate genera in likelihood order, when there is a signal count to solve against.
+ *
+ * The list the matcher produces is unordered at genus level — alphabetical, which is to say
+ * arbitrary. This orders it by how the corpus says the candidates are distributed, subject to the
+ * constraint that exactly `signalCount` of them are present. Ordering only: the probabilities are
+ * not calibrated and nothing renders them.
+ *
+ * Genera already confirmed on foot are passed in as known, so the solver conditions on them instead
+ * of ranking them.
+ */
+function genusLikelihoodsForBody(
+  b: BodyExoState,
+  matches: SpeciesMatch[],
+  db: SpeciesDatabase,
+  root: string,
+): GenusLikelihood[] | null {
+  const signalCount = b.biologicalSignals;
+  if (signalCount == null || !Number.isFinite(signalCount) || signalCount <= 0) return null;
+  const table = loadGenusCooccurrenceTable(root);
+  if (!table) return null;
+
+  const candidates = [
+    ...new Set(
+      matches.filter((m) => !m.unlikely && !m.entry.predictionUnsupported).map((m) => m.entry.genusDataDir),
+    ),
+  ].filter(Boolean);
+  if (candidates.length === 0) return null;
+
+  const confirmedIds = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
+  const known = [
+    ...new Set(db.species.filter((e) => confirmedIds.has(e.id)).map((e) => e.genusDataDir)),
+  ].filter((g) => candidates.includes(g));
+
+  return genusLikelihoods(table, candidates, signalCount, known)?.likelihoods ?? null;
+}
+
 function ambiguityForBody(b: BodyExoState): string | null {
   const sig = b.biologicalSignals;
   const genusN = b.genusHints?.length ?? 0;
@@ -724,6 +764,7 @@ function computeBodyUncached(
       matches: [],
       genusFilterActive,
       genusCertainty: null,
+      genusLikelihoods: null,
       ambiguityNote:
         b.biologicalSignals || genusFilterActive
           ? "Awaiting a detailed surface scan in the journal for this body — landable planet stats are required for matching."
@@ -850,6 +891,7 @@ function computeBodyUncached(
     genusFilterActive: gfa,
     ambiguityNote: note,
     genusCertainty: genusCertaintyForBody(b, matches),
+    genusLikelihoods: genusLikelihoodsForBody(b, matches, db, root),
     estimatedSurfaceTempK,
     speciesMatchContext: speciesMatchCtx,
     approximateMatchingUsed,

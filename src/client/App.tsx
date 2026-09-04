@@ -302,7 +302,13 @@ function SpeciesStarColourSoftBadge({
  * present — the answer is settled from orbit, which is the whole reason the app exists. When there
  * are fewer, one of our gates is wrong.
  */
-function GenusCertaintyLine({ c }: { c: NonNullable<BodyComputed["genusCertainty"]> }) {
+function GenusCertaintyLine({
+  c,
+  ordered,
+}: {
+  c: NonNullable<BodyComputed["genusCertainty"]>;
+  ordered: boolean;
+}) {
   if (c.status === "certain") {
     return (
       <p
@@ -329,9 +335,10 @@ function GenusCertaintyLine({ c }: { c: NonNullable<BodyComputed["genusCertainty
   return (
     <p
       className="genus-certainty genus-certainty--ambiguous"
-      title="More candidate genera than signals: the game placed this many genera, but we cannot yet say which of the candidates they are."
+      title="More candidate genera than signals: the game placed this many genera, but we cannot yet say which of the candidates they are. The order is how often each genus turns up across 10,299 bodies carrying biology, not how well it fits this one."
     >
-      {c.signalCount} of these {c.candidateGenera} genera are present.
+      {c.signalCount} of these {c.candidateGenera} genera are present
+      {ordered ? ", listed likeliest first" : ""}.
     </p>
   );
 }
@@ -1416,6 +1423,9 @@ const BodyPane = memo(function BodyPane({
   // Demoted candidates are computed like any other; they are only hidden from the default view.
   const likelyMatches = body.matches.filter((m) => !m.unlikely);
   const unlikelyMatches = body.matches.filter((m) => m.unlikely);
+  // Genus order from the co-occurrence solver, most likely first. Ordering only — the probabilities
+  // behind it are not calibrated, so nothing here renders a number.
+  const genusOrder = body.genusLikelihoods?.map((l) => l.genus) ?? null;
 
   useEffect(() => {
     writeLsBool(EDEXO_EXO_RANGE_COLLAPSED_LS, exoRangeCollapsed);
@@ -1595,7 +1605,9 @@ const BodyPane = memo(function BodyPane({
           </div>
         </div>
 
-        {body.genusCertainty ? <GenusCertaintyLine c={body.genusCertainty} /> : null}
+        {body.genusCertainty ? (
+          <GenusCertaintyLine c={body.genusCertainty} ordered={(body.genusLikelihoods?.length ?? 0) > 1} />
+        ) : null}
         {body.ambiguityNote ? <p className="warn tiny">{body.ambiguityNote}</p> : null}
       </div>
 
@@ -1683,7 +1695,7 @@ const BodyPane = memo(function BodyPane({
               </p>
             ) : (
               <div className="species-list">
-                {groupedSortedMatches(likelyMatches).map((group) => (
+                {groupedSortedMatches(likelyMatches, genusOrder).map((group) => (
                   <GenusMatchGroup
                     key={group.groupKey}
                     group={group}
@@ -1714,7 +1726,7 @@ const BodyPane = memo(function BodyPane({
                       the planet-class list alone rejects 4.1% of the bodies where a species was really found.
                     </p>
                     <div className="species-list species-list--unlikely">
-                      {groupedSortedMatches(unlikelyMatches).map((group) => (
+                      {groupedSortedMatches(unlikelyMatches, genusOrder).map((group) => (
                         <GenusMatchGroup
                           key={`unlikely-${group.groupKey}`}
                           group={group}

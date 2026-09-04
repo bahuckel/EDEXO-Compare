@@ -150,7 +150,14 @@ export function speciesCaptionParts(
   return { genusShow: g, epithet: d };
 }
 
-export function groupedSortedMatches(matches: BodyComputed["matches"]) {
+/**
+ * Candidates grouped by genus.
+ *
+ * `genusOrder` is the server's likelihood ranking — `genusDataDir` keys, most likely first. Genera it
+ * does not name keep the alphabetical order they have always had, after the ranked ones, so a body
+ * with no signal count or no co-occurrence table looks exactly as it did before.
+ */
+export function groupedSortedMatches(matches: BodyComputed["matches"], genusOrder?: string[] | null) {
   const map = new Map<string, { title: string; items: BodyComputed["matches"] }>();
   for (const m of matches) {
     const rawGenus = m.entry.genus?.trim();
@@ -178,9 +185,19 @@ export function groupedSortedMatches(matches: BodyComputed["matches"]) {
       return pb - pa;
     });
   }
+  const rank = new Map((genusOrder ?? []).map((g, i) => [g, i]));
+  const rankOf = (items: BodyComputed["matches"]) => {
+    const dir = items[0]?.entry.genusDataDir;
+    const r = dir ? rank.get(dir) : undefined;
+    return r ?? Number.POSITIVE_INFINITY;
+  };
   return [...map.entries()]
     .map(([groupKey, g]) => ({ groupKey, title: g.title, items: g.items }))
-    .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+    .sort(
+      (a, b) =>
+        rankOf(a.items) - rankOf(b.items) ||
+        a.title.localeCompare(b.title, undefined, { sensitivity: "base" }),
+    );
 }
 
 const REASON_FIELD_LABELS: Record<string, string> = {
