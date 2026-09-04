@@ -38,6 +38,7 @@
     "rank-probe": "tsx scripts/rank-probe.ts",
     "cooc-probe": "tsx scripts/cooccurrence-probe.ts",
     "region-probe": "tsx scripts/region-probe.ts",
+    "negatives-probe": "tsx scripts/negatives-probe.ts",
     "fixture": "tsx scripts/gen-match-fixture.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
