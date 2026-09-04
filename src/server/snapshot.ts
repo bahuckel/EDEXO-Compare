@@ -76,6 +76,7 @@ import {
 import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
+import { recordExoOutliersForBody } from "./exoOutlierLog.js";
 
 let cachedStarRoles: ReturnType<typeof loadStarRolesConfig> | null = null;
 
@@ -830,6 +831,10 @@ function computeBodyUncached(
           mult === 5,
         )
       : null;
+
+  // Evidence for the next gate fix: a species the commander confirmed here that we never offered.
+  // Writes once per (body, species) and never throws.
+  recordExoOutliersForBody({ body: b, matches, db });
 
   const { alerts: exoDataAlerts, dssGenusOrphanHints } = computeExoDataAlertsForBody({
     body: b,

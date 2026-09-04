@@ -42,6 +42,15 @@ export function resolveLanKeyPath(): string {
 }
 
 /**
+ * Species the commander found that the app failed to offer (see exoOutlierLog.ts). Its own file
+ * beside the user settings: append-only evidence that must survive a cache rebuild, since a cache is
+ * regenerated routinely and this is the only record of what the predictor got wrong.
+ */
+export function resolveExoOutlierLogPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "edexo-outliers.jsonl");
+}
+
+/**
  * Writable journal merge cache (fast launcher / boot). Same tree as user settings — survives
  * `npm run build`, Electron `resources/` replacement, and unpackaged installs.
  */
