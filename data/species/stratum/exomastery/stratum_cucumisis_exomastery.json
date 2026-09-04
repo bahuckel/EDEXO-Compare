@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Stratum Cucumisis",
+  "speciesLabel": "Stratum cucumisis",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.070Z",
+  "generatedAt": "2026-09-04T19:31:41.576Z",
   "sampleCount": 180,
   "numerics": {
     "body.distanceToArrival": {
@@ -535,5 +535,6 @@
     "body.materials.Antimony: typical (modal) 1.230000 (6/42 samples); range 1.07 … 1.24",
     "body.atmosphereComposition.Oxygen: typical (modal) 87.540000 (1/1 samples); range 87.54 … 87.54",
     "body.materials.Polonium: typical (modal) 0.490000 (2/14 samples); range 0.48 … 0.56"
-  ]
+  ],
+  "sourceSpeciesLabel": "Stratum Cucumisis"
 }

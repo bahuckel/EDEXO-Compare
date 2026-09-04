@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Fungoida Setisis",
+  "speciesLabel": "Fungoida setisis",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.585Z",
+  "generatedAt": "2026-09-04T19:31:41.006Z",
   "sampleCount": 617,
   "numerics": {
     "body.distanceToArrival": {
@@ -613,5 +613,6 @@
     "body.atmosphereComposition.Methane: typical (modal) 100.000000 (12/12 samples); range 100 … 100",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 100.000000 (1/2 samples); range 99.01 … 100",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (1/1 samples); range 0.99 … 0.99"
-  ]
+  ],
+  "sourceSpeciesLabel": "Fungoida Setisis"
 }

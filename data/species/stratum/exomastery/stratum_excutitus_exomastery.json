@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Stratum Excutitus",
+  "speciesLabel": "Stratum excutitus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.142Z",
+  "generatedAt": "2026-09-04T19:31:41.658Z",
   "sampleCount": 623,
   "numerics": {
     "body.distanceToArrival": {
@@ -543,5 +543,6 @@
     "body.materials.Antimony: typical (modal) 1.190000 (17/125 samples); range 1.1 … 1.28",
     "body.materials.Tungsten: typical (modal) 1.080000 (37/206 samples); range 0.94 … 1.16",
     "body.materials.Technetium: typical (modal) 0.710000 (15/69 samples); range 0.66 … 0.77"
-  ]
+  ],
+  "sourceSpeciesLabel": "Stratum Excutitus"
 }

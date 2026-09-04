@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Cactoida Lapis",
+  "speciesLabel": "Cactoida lapis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:10.964Z",
+  "generatedAt": "2026-09-04T19:31:39.141Z",
   "sampleCount": 663,
   "numerics": {
     "body.distanceToArrival": {
@@ -578,5 +578,6 @@
     "body.materials.Arsenic: typical (modal) 2.610000 (9/146 samples); range 2.04 … 2.72",
     "body.materials.Zirconium: typical (modal) 2.280000 (13/125 samples); range 2.2 … 2.93",
     "body.materials.Technetium: typical (modal) 0.680000 (13/79 samples); range 0.63 … 0.9"
-  ]
+  ],
+  "sourceSpeciesLabel": "Cactoida Lapis"
 }

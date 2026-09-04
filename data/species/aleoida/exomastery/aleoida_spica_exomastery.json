@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Aleoida Spica",
+  "speciesLabel": "Aleoida spica",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:09.745Z",
+  "generatedAt": "2026-09-04T19:31:37.766Z",
   "sampleCount": 11,
   "numerics": {
     "body.distanceToArrival": {
@@ -458,5 +458,6 @@
     "body.materials.Selenium: typical (modal) 2.870000 (1/1 samples); range 2.87 … 2.87",
     "body.materials.Mercury: typical (modal) 0.840000 (1/1 samples); range 0.84 … 0.84",
     "body.materials.Technetium: typical (modal) 0.690000 (1/1 samples); range 0.69 … 0.69"
-  ]
+  ],
+  "sourceSpeciesLabel": "Aleoida Spica"
 }

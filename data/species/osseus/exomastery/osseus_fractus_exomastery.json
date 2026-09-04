@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Osseus Fractus",
+  "speciesLabel": "Osseus fractus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.878Z",
+  "generatedAt": "2026-09-04T19:31:41.316Z",
   "sampleCount": 562,
   "numerics": {
     "body.distanceToArrival": {
@@ -570,5 +570,6 @@
     "body.materials.Antimony: typical (modal) 1.160000 (15/109 samples); range 0.92 … 1.28",
     "body.materials.Technetium: typical (modal) 0.690000 (10/56 samples); range 0.66 … 0.82",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
-  ]
+  ],
+  "sourceSpeciesLabel": "Osseus Fractus"
 }

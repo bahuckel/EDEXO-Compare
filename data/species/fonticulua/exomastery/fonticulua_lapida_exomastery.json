@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Fonticulua Lapida",
+  "speciesLabel": "Fonticulua lapida",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:11.799Z",
+  "generatedAt": "2026-09-04T19:31:40.053Z",
   "sampleCount": 41,
   "numerics": {
     "body.distanceToArrival": {
@@ -524,5 +524,6 @@
     "body.materials.Selenium: typical (modal) 4.240000 (1/12 samples); range 3.75 … 4.32",
     "body.materials.Technetium: typical (modal) 0.580000 (2/7 samples); range 0.44 … 0.61",
     "body.materials.Polonium: typical (modal) 0.460000 (1/2 samples); range 0.33 … 0.46"
-  ]
+  ],
+  "sourceSpeciesLabel": "Fonticulua Lapida"
 }

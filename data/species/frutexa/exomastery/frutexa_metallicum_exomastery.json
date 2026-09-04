@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Frutexa Metallicum",
+  "speciesLabel": "Frutexa metallicum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.457Z",
+  "generatedAt": "2026-09-04T19:31:40.779Z",
   "sampleCount": 501,
   "numerics": {
     "body.distanceToArrival": {
@@ -557,5 +557,6 @@
     "body.materials.Arsenic: typical (modal) 2.110000 (7/81 samples); range 2.03 … 2.38",
     "body.materials.Technetium: typical (modal) 0.810000 (16/68 samples); range 0.75 … 0.9",
     "body.atmosphereComposition.Water: typical (modal) 100.000000 (3/3 samples); range 100 … 100"
-  ]
+  ],
+  "sourceSpeciesLabel": "Frutexa Metallicum"
 }

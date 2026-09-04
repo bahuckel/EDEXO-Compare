@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Pennata",
+  "speciesLabel": "Tussock pennata",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:14.006Z",
+  "generatedAt": "2026-09-04T19:31:42.627Z",
   "sampleCount": 157,
   "numerics": {
     "body.distanceToArrival": {
@@ -509,5 +509,6 @@
     "body.materials.Yttrium: typical (modal) 1.130000 (6/36 samples); range 1.1 … 1.24",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (13/13 samples); range 0.99 … 0.99",
     "body.materials.Technetium: typical (modal) 0.660000 (5/17 samples); range 0.65 … 0.75"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Pennata"
 }

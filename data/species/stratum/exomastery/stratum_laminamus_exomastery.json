@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Stratum Laminamus",
+  "speciesLabel": "Stratum laminamus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.161Z",
+  "generatedAt": "2026-09-04T19:31:41.680Z",
   "sampleCount": 144,
   "numerics": {
     "body.distanceToArrival": {
@@ -513,5 +513,6 @@
     "body.materials.Selenium: typical (modal) 2.970000 (4/29 samples); range 2.89 … 3.19",
     "body.materials.Polonium: typical (modal) 0.510000 (4/15 samples); range 0.48 … 0.54",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 23.090000 (2/5 samples); range 1.58 … 23.09"
-  ]
+  ],
+  "sourceSpeciesLabel": "Stratum Laminamus"
 }

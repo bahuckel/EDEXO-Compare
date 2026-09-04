@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Frutexa Acus",
+  "speciesLabel": "Frutexa acus",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.244Z",
+  "generatedAt": "2026-09-04T19:31:40.540Z",
   "sampleCount": 3106,
   "numerics": {
     "body.distanceToArrival": {
@@ -575,5 +575,6 @@
     "body.materials.Arsenic: typical (modal) 2.530000 (61/645 samples); range 2.33 … 2.85",
     "body.materials.Antimony: typical (modal) 1.160000 (86/611 samples); range 1.1 … 1.29",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
-  ]
+  ],
+  "sourceSpeciesLabel": "Frutexa Acus"
 }

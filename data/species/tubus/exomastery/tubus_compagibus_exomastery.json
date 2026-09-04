@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tubus Compagibus",
+  "speciesLabel": "Tubus compagibus",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.576Z",
+  "generatedAt": "2026-09-04T19:31:42.133Z",
   "sampleCount": 113,
   "numerics": {
     "body.distanceToArrival": {
@@ -519,5 +519,6 @@
     "body.materials.Tellurium: typical (modal) 1.460000 (2/17 samples); range 1.35 … 1.5",
     "body.materials.Molybdenum: typical (modal) 1.240000 (7/41 samples); range 1.2 … 1.41",
     "body.materials.Technetium: typical (modal) 0.730000 (3/15 samples); range 0.66 … 0.77"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tubus Compagibus"
 }

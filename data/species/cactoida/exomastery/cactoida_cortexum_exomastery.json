@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Cactoida Cortexum",
+  "speciesLabel": "Cactoida cortexum",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:10.865Z",
+  "generatedAt": "2026-09-04T19:31:39.004Z",
   "sampleCount": 836,
   "numerics": {
     "body.distanceToArrival": {
@@ -592,5 +592,6 @@
     "body.materials.Ruthenium: typical (modal) 1.180000 (19/169 samples); range 1.13 … 1.52",
     "body.materials.Tellurium: typical (modal) 1.390000 (13/166 samples); range 1.13 … 1.61",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
-  ]
+  ],
+  "sourceSpeciesLabel": "Cactoida Cortexum"
 }

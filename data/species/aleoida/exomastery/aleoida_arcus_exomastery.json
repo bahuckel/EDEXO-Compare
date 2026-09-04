@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Aleoida Arcus",
+  "speciesLabel": "Aleoida arcus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:09.501Z",
+  "generatedAt": "2026-09-04T19:31:37.450Z",
   "sampleCount": 223,
   "numerics": {
     "body.distanceToArrival": {
@@ -524,5 +524,6 @@
     "body.materials.Zirconium: typical (modal) 2.290000 (3/30 samples); range 2.2 … 2.67",
     "body.materials.Technetium: typical (modal) 0.680000 (8/35 samples); range 0.66 … 0.82",
     "body.materials.Polonium: typical (modal) 0.490000 (7/19 samples); range 0.48 … 0.53"
-  ]
+  ],
+  "sourceSpeciesLabel": "Aleoida Arcus"
 }

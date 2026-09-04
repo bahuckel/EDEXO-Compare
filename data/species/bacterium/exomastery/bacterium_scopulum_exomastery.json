@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Bacterium Scopulum",
+  "speciesLabel": "Bacterium scopulum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:10.603Z",
+  "generatedAt": "2026-09-04T19:31:38.733Z",
   "sampleCount": 7,
   "numerics": {
     "body.distanceToArrival": {
@@ -442,5 +442,6 @@
     "body.materials.Mercury: typical (modal) 0.700000 (1/2 samples); range 0.54 … 0.7",
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (1/1 samples); range 100 … 100",
     "body.materials.Ruthenium: typical (modal) 0.760000 (1/1 samples); range 0.76 … 0.76"
-  ]
+  ],
+  "sourceSpeciesLabel": "Bacterium Scopulum"
 }

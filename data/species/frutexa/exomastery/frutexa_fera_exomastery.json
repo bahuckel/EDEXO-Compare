@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Frutexa Fera",
+  "speciesLabel": "Frutexa fera",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.271Z",
+  "generatedAt": "2026-09-04T19:31:40.570Z",
   "sampleCount": 60,
   "numerics": {
     "body.distanceToArrival": {
@@ -503,5 +503,6 @@
     "body.materials.Ruthenium: typical (modal) 1.170000 (3/11 samples); range 1.16 … 1.27",
     "body.materials.Technetium: typical (modal) 0.660000 (2/6 samples); range 0.66 … 0.73",
     "body.materials.Antimony: typical (modal) 1.200000 (2/10 samples); range 1.12 … 1.3"
-  ]
+  ],
+  "sourceSpeciesLabel": "Frutexa Fera"
 }

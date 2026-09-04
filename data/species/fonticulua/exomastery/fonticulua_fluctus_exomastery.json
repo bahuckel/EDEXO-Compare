@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Fonticulua Fluctus",
+  "speciesLabel": "Fonticulua fluctus",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:11.793Z",
+  "generatedAt": "2026-09-04T19:31:40.045Z",
   "sampleCount": 1,
   "numerics": {
     "body.distanceToArrival": {
@@ -317,5 +317,6 @@
     "body.materials.Molybdenum: typical (modal) 1.010000 (1/1 samples); range 1.01 … 1.01",
     "body.materials.Ruthenium: typical (modal) 0.950000 (1/1 samples); range 0.95 … 0.95",
     "body.materials.Tungsten: typical (modal) 0.850000 (1/1 samples); range 0.85 … 0.85"
-  ]
+  ],
+  "sourceSpeciesLabel": "Fonticulua Fluctus"
 }

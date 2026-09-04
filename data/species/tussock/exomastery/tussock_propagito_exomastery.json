@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Propagito",
+  "speciesLabel": "Tussock propagito",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:14.078Z",
+  "generatedAt": "2026-09-04T19:31:42.738Z",
   "sampleCount": 392,
   "numerics": {
     "body.distanceToArrival": {
@@ -423,8 +423,8 @@
       "Y0": 2
     },
     "exo.host_star_source": {
-      "parents": 312,
-      "designation": 79
+      "parents": 306,
+      "designation": 85
     },
     "exo.system_primary_spectral": {
       "Neutron Star": 10,
@@ -455,7 +455,7 @@
       "K9": 3,
       "F6": 10,
       "G8": 2,
-      "G5": 9,
+      "G5": 3,
       "K5": 2,
       "G4": 5,
       "G1": 7,
@@ -535,5 +535,6 @@
     "body.materials.Ruthenium: typical (modal) 1.170000 (10/75 samples); range 1.1 … 1.46",
     "body.materials.Polonium: typical (modal) 0.500000 (8/30 samples); range 0.48 … 0.64",
     "body.materials.Molybdenum: typical (modal) 1.280000 (17/128 samples); range 1.16 … 1.55"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Propagito"
 }

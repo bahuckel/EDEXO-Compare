@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Fungoida Stabitis",
+  "speciesLabel": "Fungoida stabitis",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.704Z",
+  "generatedAt": "2026-09-04T19:31:41.159Z",
   "sampleCount": 945,
   "numerics": {
     "body.distanceToArrival": {
@@ -635,5 +635,6 @@
     "body.atmosphereComposition.Methane: typical (modal) 100.000000 (7/7 samples); range 100 … 100",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (2/2 samples); range 100 … 100",
     "body.atmosphereComposition.Nitrogen: typical (modal) 7.290000 (1/1 samples); range 7.29 … 7.29"
-  ]
+  ],
+  "sourceSpeciesLabel": "Fungoida Stabitis"
 }

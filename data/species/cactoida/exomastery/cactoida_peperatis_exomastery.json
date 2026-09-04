@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Cactoida Peperatis",
+  "speciesLabel": "Cactoida peperatis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:10.979Z",
+  "generatedAt": "2026-09-04T19:31:39.165Z",
   "sampleCount": 72,
   "numerics": {
     "body.distanceToArrival": {
@@ -496,5 +496,6 @@
     "body.materials.Selenium: typical (modal) 2.980000 (4/18 samples); range 2.64 … 3.09",
     "body.materials.Molybdenum: typical (modal) 1.250000 (4/23 samples); range 1.2 … 1.39",
     "body.materials.Antimony: typical (modal) 1.200000 (3/12 samples); range 1.05 … 1.34"
-  ]
+  ],
+  "sourceSpeciesLabel": "Cactoida Peperatis"
 }

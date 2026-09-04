@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Aleoida Laminiae",
+  "speciesLabel": "Aleoida laminiae",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:09.735Z",
+  "generatedAt": "2026-09-04T19:31:37.757Z",
   "sampleCount": 212,
   "numerics": {
     "body.distanceToArrival": {
@@ -559,5 +559,6 @@
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (1/1 samples); range 99.01 … 99.01",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (1/1 samples); range 0.99 … 0.99",
     "body.materials.Technetium: typical (modal) 0.690000 (6/32 samples); range 0.67 … 0.76"
-  ]
+  ],
+  "sourceSpeciesLabel": "Aleoida Laminiae"
 }

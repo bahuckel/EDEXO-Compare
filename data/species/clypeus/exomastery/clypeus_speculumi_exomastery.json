@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Clypeus Speculumi",
+  "speciesLabel": "Clypeus speculumi",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:11.286Z",
+  "generatedAt": "2026-09-04T19:31:39.504Z",
   "sampleCount": 298,
   "numerics": {
     "body.distanceToArrival": {
@@ -554,5 +554,6 @@
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (66/72 samples); range 0.99 … 1.77",
     "body.materials.Antimony: typical (modal) 1.160000 (12/65 samples); range 1.08 … 1.28",
     "body.materials.Zirconium: typical (modal) 2.290000 (5/49 samples); range 2.19 … 2.44"
-  ]
+  ],
+  "sourceSpeciesLabel": "Clypeus Speculumi"
 }

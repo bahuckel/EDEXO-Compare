@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Osseus Pumice",
+  "speciesLabel": "Osseus pumice",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.925Z",
+  "generatedAt": "2026-09-04T19:31:41.364Z",
   "sampleCount": 99,
   "numerics": {
     "body.distanceToArrival": {
@@ -538,5 +538,6 @@
     "body.materials.Cadmium: typical (modal) 1.410000 (4/35 samples); range 1.29 … 1.61",
     "body.materials.Arsenic: typical (modal) 1.720000 (2/16 samples); range 1.67 … 2.85",
     "body.atmosphereComposition.Nitrogen: typical (modal) 100.000000 (8/11 samples); range 0.11 … 100"
-  ]
+  ],
+  "sourceSpeciesLabel": "Osseus Pumice"
 }

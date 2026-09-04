@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Osseus Spiralis",
+  "speciesLabel": "Osseus spiralis",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.020Z",
+  "generatedAt": "2026-09-04T19:31:41.488Z",
   "sampleCount": 822,
   "numerics": {
     "body.distanceToArrival": {
@@ -587,5 +587,6 @@
     "body.materials.Arsenic: typical (modal) 2.530000 (15/170 samples); range 2.04 … 2.72",
     "body.materials.Tungsten: typical (modal) 1.050000 (25/239 samples); range 0.95 … 1.33",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.530000 (1/1 samples); range 0.53 … 0.53"
-  ]
+  ],
+  "sourceSpeciesLabel": "Osseus Spiralis"
 }

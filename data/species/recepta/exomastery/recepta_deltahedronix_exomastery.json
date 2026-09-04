@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Recepta Deltahedronix",
+  "speciesLabel": "Recepta deltahedronix",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.035Z",
+  "generatedAt": "2026-09-04T19:31:41.520Z",
   "sampleCount": 37,
   "numerics": {
     "body.distanceToArrival": {
@@ -503,5 +503,6 @@
     "body.materials.Polonium: typical (modal) 0.500000 (3/5 samples); range 0.49 … 0.52",
     "body.materials.Arsenic: typical (modal) 2.520000 (2/7 samples); range 2.44 … 2.62",
     "body.materials.Technetium: typical (modal) 0.780000 (1/3 samples); range 0.71 … 0.78"
-  ]
+  ],
+  "sourceSpeciesLabel": "Recepta Deltahedronix"
 }

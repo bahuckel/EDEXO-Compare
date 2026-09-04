@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Clypeus Margaritus",
+  "speciesLabel": "Clypeus margaritus",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:11.225Z",
+  "generatedAt": "2026-09-04T19:31:39.444Z",
   "sampleCount": 224,
   "numerics": {
     "body.distanceToArrival": {
@@ -546,5 +546,6 @@
     "body.materials.Antimony: typical (modal) 0.940000 (10/40 samples); range 0.92 … 1.09",
     "body.materials.Selenium: typical (modal) 2.510000 (6/38 samples); range 2.41 … 2.75",
     "body.materials.Polonium: typical (modal) 0.640000 (5/15 samples); range 0.59 … 0.67"
-  ]
+  ],
+  "sourceSpeciesLabel": "Clypeus Margaritus"
 }

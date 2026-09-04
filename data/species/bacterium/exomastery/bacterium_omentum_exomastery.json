@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Bacterium Omentum",
+  "speciesLabel": "Bacterium omentum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:10.599Z",
+  "generatedAt": "2026-09-04T19:31:38.729Z",
   "sampleCount": 14,
   "numerics": {
     "body.distanceToArrival": {
@@ -518,5 +518,6 @@
     "body.materials.Ruthenium: typical (modal) 0.730000 (1/1 samples); range 0.73 … 0.73",
     "body.atmosphereComposition.Methane: typical (modal) 100.000000 (1/1 samples); range 100 … 100",
     "body.materials.Technetium: typical (modal) 0.570000 (1/1 samples); range 0.57 … 0.57"
-  ]
+  ],
+  "sourceSpeciesLabel": "Bacterium Omentum"
 }

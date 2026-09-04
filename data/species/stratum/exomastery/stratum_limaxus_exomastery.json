@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Stratum Limaxus",
+  "speciesLabel": "Stratum limaxus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.175Z",
+  "generatedAt": "2026-09-04T19:31:41.696Z",
   "sampleCount": 102,
   "numerics": {
     "body.distanceToArrival": {
@@ -495,5 +495,6 @@
     "body.materials.Tin: typical (modal) 1.140000 (5/34 samples); range 0.95 … 1.26",
     "body.materials.Zirconium: typical (modal) 2.280000 (2/14 samples); range 2.2 … 2.45",
     "body.materials.Technetium: typical (modal) 0.700000 (4/13 samples); range 0.66 … 0.71"
-  ]
+  ],
+  "sourceSpeciesLabel": "Stratum Limaxus"
 }

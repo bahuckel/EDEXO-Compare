@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Frutexa Flabellum",
+  "speciesLabel": "Frutexa flabellum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.354Z",
+  "generatedAt": "2026-09-04T19:31:40.685Z",
   "sampleCount": 633,
   "numerics": {
     "body.distanceToArrival": {
@@ -536,5 +536,6 @@
     "body.materials.Polonium: typical (modal) 0.510000 (11/49 samples); range 0.42 … 0.55",
     "body.materials.Technetium: typical (modal) 0.680000 (21/73 samples); range 0.63 … 0.75",
     "body.materials.Mercury: typical (modal) 0.860000 (27/159 samples); range 0.78 … 0.92"
-  ]
+  ],
+  "sourceSpeciesLabel": "Frutexa Flabellum"
 }

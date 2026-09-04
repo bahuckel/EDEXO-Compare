@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Concha Renibus",
+  "speciesLabel": "Concha renibus",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:11.709Z",
+  "generatedAt": "2026-09-04T19:31:39.943Z",
   "sampleCount": 1189,
   "numerics": {
     "body.distanceToArrival": {
@@ -645,5 +645,6 @@
     "body.atmosphereComposition.Methane: typical (modal) 100.000000 (6/6 samples); range 100 … 100",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100",
     "body.atmosphereComposition.Nitrogen: typical (modal) 7.290000 (1/1 samples); range 7.29 … 7.29"
-  ]
+  ],
+  "sourceSpeciesLabel": "Concha Renibus"
 }

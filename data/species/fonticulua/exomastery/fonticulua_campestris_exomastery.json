@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Fonticulua Campestris",
+  "speciesLabel": "Fonticulua campestris",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:11.782Z",
+  "generatedAt": "2026-09-04T19:31:40.031Z",
   "sampleCount": 321,
   "numerics": {
     "body.distanceToArrival": {
@@ -577,5 +577,6 @@
     "body.rings[0].mass: typical (modal) 693.020000 (1/1 samples); range 693.02 … 693.02",
     "body.rings[0].innerRadius: typical (modal) 6743.700000 (1/1 samples); range 6743.7 … 6743.7",
     "body.rings[0].outerRadius: typical (modal) 17585.000000 (1/1 samples); range 17585 … 17585"
-  ]
+  ],
+  "sourceSpeciesLabel": "Fonticulua Campestris"
 }

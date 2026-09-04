@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Bacterium Alcyoneum",
+  "speciesLabel": "Bacterium alcyoneum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:09.963Z",
+  "generatedAt": "2026-09-04T19:31:38.019Z",
   "sampleCount": 853,
   "numerics": {
     "body.distanceToArrival": {
@@ -602,5 +602,6 @@
     "body.materials.Arsenic: typical (modal) 2.540000 (11/169 samples); range 2.02 … 2.72",
     "body.materials.Polonium: typical (modal) 0.510000 (12/75 samples); range 0.42 … 0.67",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 100.000000 (1/2 samples); range 99.01 … 100"
-  ]
+  ],
+  "sourceSpeciesLabel": "Bacterium Alcyoneum"
 }

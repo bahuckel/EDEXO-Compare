@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Bacterium Cerbrus",
+  "speciesLabel": "Bacterium cerbrus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:10.557Z",
+  "generatedAt": "2026-09-04T19:31:38.690Z",
   "sampleCount": 461,
   "numerics": {
     "body.distanceToArrival": {
@@ -606,5 +606,6 @@
     "body.materials.Technetium: typical (modal) 0.810000 (9/58 samples); range 0.66 … 0.87",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 34.540000 (1/9 samples); range 27.92 … 45.05",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
-  ]
+  ],
+  "sourceSpeciesLabel": "Bacterium Cerbrus"
 }

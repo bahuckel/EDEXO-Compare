@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tubus Sororibus",
+  "speciesLabel": "Tubus sororibus",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.581Z",
+  "generatedAt": "2026-09-04T19:31:42.138Z",
   "sampleCount": 2,
   "numerics": {
     "body.distanceToArrival": {
@@ -366,5 +366,6 @@
     "body.materials.Cadmium: typical (modal) 1.700000 (1/1 samples); range 1.7 … 1.7",
     "body.materials.Molybdenum: typical (modal) 1.430000 (1/1 samples); range 1.43 … 1.43",
     "body.materials.Antimony: typical (modal) 0.970000 (1/1 samples); range 0.97 … 0.97"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tubus Sororibus"
 }

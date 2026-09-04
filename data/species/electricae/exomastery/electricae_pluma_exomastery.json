@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Electricae Pluma",
+  "speciesLabel": "Electricae pluma",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:11.720Z",
+  "generatedAt": "2026-09-04T19:31:39.956Z",
   "sampleCount": 31,
   "numerics": {
     "body.distanceToArrival": {
@@ -513,5 +513,6 @@
     "body.rings[0].innerRadius: typical (modal) 7827.100000 (1/1 samples); range 7827.1 … 7827.1",
     "body.rings[0].outerRadius: typical (modal) 16816.000000 (1/1 samples); range 16816 … 16816",
     "body.materials.Yttrium: typical (modal) 0.680000 (1/2 samples); range 0.68 … 0.72"
-  ]
+  ],
+  "sourceSpeciesLabel": "Electricae Pluma"
 }

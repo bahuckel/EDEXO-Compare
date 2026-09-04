@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Stratum Tectonicas",
+  "speciesLabel": "Stratum tectonicas",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.560Z",
+  "generatedAt": "2026-09-04T19:31:42.074Z",
   "sampleCount": 1280,
   "numerics": {
     "body.distanceToArrival": {
@@ -605,5 +605,6 @@
     "body.atmosphereComposition.Water: typical (modal) 100.000000 (82/82 samples); range 100 … 100",
     "body.atmosphereComposition.Oxygen: typical (modal) 99.880000 (1/10 samples); range 84.61 … 99.88",
     "body.atmosphereComposition.Argon: typical (modal) 1.080000 (1/2 samples); range 0.57 … 1.08"
-  ]
+  ],
+  "sourceSpeciesLabel": "Stratum Tectonicas"
 }

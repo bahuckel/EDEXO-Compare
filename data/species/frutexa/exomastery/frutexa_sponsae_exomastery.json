@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Frutexa Sponsae",
+  "speciesLabel": "Frutexa sponsae",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.513Z",
+  "generatedAt": "2026-09-04T19:31:40.835Z",
   "sampleCount": 418,
   "numerics": {
     "body.distanceToArrival": {
@@ -515,5 +515,6 @@
     "body.materials.Tellurium: typical (modal) 1.470000 (11/83 samples); range 1.36 … 1.56",
     "body.materials.Yttrium: typical (modal) 1.140000 (12/60 samples); range 1.1 … 1.25",
     "body.materials.Antimony: typical (modal) 1.130000 (11/88 samples); range 1.07 … 1.27"
-  ]
+  ],
+  "sourceSpeciesLabel": "Frutexa Sponsae"
 }

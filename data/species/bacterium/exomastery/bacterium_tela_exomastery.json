@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Bacterium Tela",
+  "speciesLabel": "Bacterium tela",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:10.643Z",
+  "generatedAt": "2026-09-04T19:31:38.771Z",
   "sampleCount": 216,
   "numerics": {
     "body.distanceToArrival": {
@@ -668,5 +668,6 @@
     "body.atmosphereComposition.Nitrogen: typical (modal) 7.290000 (1/3 samples); range 7.29 … 100",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (3/3 samples); range 100 … 100",
     "body.atmosphereComposition.Helium: typical (modal) 5.820000 (1/3 samples); range 5.82 … 85.15"
-  ]
+  ],
+  "sourceSpeciesLabel": "Bacterium Tela"
 }

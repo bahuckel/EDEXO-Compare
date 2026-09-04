@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Frutexa Flammasis",
+  "speciesLabel": "Frutexa flammasis",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.373Z",
+  "generatedAt": "2026-09-04T19:31:40.706Z",
   "sampleCount": 147,
   "numerics": {
     "body.distanceToArrival": {
@@ -501,5 +501,6 @@
     "body.materials.Selenium: typical (modal) 3.070000 (4/36 samples); range 2.88 … 3.2",
     "body.materials.Zirconium: typical (modal) 2.280000 (4/28 samples); range 2.2 … 2.62",
     "body.materials.Ruthenium: typical (modal) 1.170000 (5/26 samples); range 1.13 … 1.3"
-  ]
+  ],
+  "sourceSpeciesLabel": "Frutexa Flammasis"
 }

@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Fonticulua Digitos",
+  "speciesLabel": "Fonticulua digitos",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:11.791Z",
+  "generatedAt": "2026-09-04T19:31:40.042Z",
   "sampleCount": 62,
   "numerics": {
     "body.distanceToArrival": {
@@ -482,5 +482,6 @@
     "body.materials.Ruthenium: typical (modal) 0.760000 (3/11 samples); range 0.74 … 0.79",
     "body.materials.Tellurium: typical (modal) 0.910000 (4/13 samples); range 0.89 … 0.93",
     "body.materials.Polonium: typical (modal) 0.320000 (4/6 samples); range 0.31 … 0.32"
-  ]
+  ],
+  "sourceSpeciesLabel": "Fonticulua Digitos"
 }

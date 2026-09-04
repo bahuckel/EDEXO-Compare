@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Capillum",
+  "speciesLabel": "Tussock capillum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.646Z",
+  "generatedAt": "2026-09-04T19:31:42.204Z",
   "sampleCount": 42,
   "numerics": {
     "body.distanceToArrival": {
@@ -515,5 +515,6 @@
     "body.materials.Tellurium: typical (modal) 0.960000 (2/11 samples); range 0.95 … 1.65",
     "body.materials.Zirconium: typical (modal) 2.110000 (2/12 samples); range 1.88 … 2.37",
     "body.materials.Technetium: typical (modal) 0.660000 (2/5 samples); range 0.63 … 0.71"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Capillum"
 }

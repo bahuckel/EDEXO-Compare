@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Caputus",
+  "speciesLabel": "Tussock caputus",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.715Z",
+  "generatedAt": "2026-09-04T19:31:42.295Z",
   "sampleCount": 569,
   "numerics": {
     "body.distanceToArrival": {
@@ -584,5 +584,6 @@
     "body.materials.Tellurium: typical (modal) 1.450000 (11/114 samples); range 1.13 … 1.57",
     "body.materials.Technetium: typical (modal) 0.680000 (10/62 samples); range 0.66 … 0.85",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1/1 samples); range 100 … 100"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Caputus"
 }

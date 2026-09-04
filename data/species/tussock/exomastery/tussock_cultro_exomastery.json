@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Cultro",
+  "speciesLabel": "Tussock cultro",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.861Z",
+  "generatedAt": "2026-09-04T19:31:42.452Z",
   "sampleCount": 909,
   "numerics": {
     "body.distanceToArrival": {
@@ -591,5 +591,6 @@
     "body.materials.Technetium: typical (modal) 0.690000 (16/114 samples); range 0.63 … 0.9",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.530000 (1/2 samples); range 0.53 … 0.99",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (1/1 samples); range 99.01 … 99.01"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Cultro"
 }

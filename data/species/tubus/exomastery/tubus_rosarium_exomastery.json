@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tubus Rosarium",
+  "speciesLabel": "Tubus rosarium",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.579Z",
+  "generatedAt": "2026-09-04T19:31:42.136Z",
   "sampleCount": 8,
   "numerics": {
     "body.distanceToArrival": {
@@ -431,5 +431,6 @@
     "body.materials.Ruthenium: typical (modal) 1.140000 (1/1 samples); range 1.14 … 1.14",
     "body.materials.Zirconium: typical (modal) 2.240000 (1/1 samples); range 2.24 … 2.24",
     "body.materials.Polonium: typical (modal) 0.500000 (1/1 samples); range 0.5 … 0.5"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tubus Rosarium"
 }

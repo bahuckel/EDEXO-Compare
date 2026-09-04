@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Concha Labiata",
+  "speciesLabel": "Concha labiata",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:11.528Z",
+  "generatedAt": "2026-09-04T19:31:39.747Z",
   "sampleCount": 1200,
   "numerics": {
     "body.distanceToArrival": {
@@ -427,8 +427,8 @@
       "L9": 2
     },
     "exo.host_star_source": {
-      "parents": 958,
-      "designation": 241
+      "parents": 956,
+      "designation": 243
     },
     "exo.system_primary_spectral": {
       "F": 37,
@@ -442,7 +442,7 @@
       "G7": 21,
       "F9": 60,
       "F7": 36,
-      "G5": 40,
+      "G5": 38,
       "G1": 21,
       "K0": 13,
       "F8": 58,
@@ -551,5 +551,6 @@
     "body.materials.Molybdenum: typical (modal) 1.210000 (56/414 samples); range 1.11 … 1.44",
     "body.materials.Polonium: typical (modal) 0.500000 (27/102 samples); range 0.39 … 0.54",
     "body.materials.Yttrium: typical (modal) 1.140000 (39/203 samples); range 1.07 … 1.26"
-  ]
+  ],
+  "sourceSpeciesLabel": "Concha Labiata"
 }

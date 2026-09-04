@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Bacterium Acies",
+  "speciesLabel": "Bacterium acies",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:09.784Z",
+  "generatedAt": "2026-09-04T19:31:37.816Z",
   "sampleCount": 132,
   "numerics": {
     "body.distanceToArrival": {
@@ -560,5 +560,6 @@
     "body.rings[0].mass: typical (modal) 40109000.000000 (1/1 samples); range 40109000 … 40109000",
     "body.rings[0].innerRadius: typical (modal) 10186.000000 (1/1 samples); range 10186 … 10186",
     "body.rings[0].outerRadius: typical (modal) 22396.000000 (1/1 samples); range 22396 … 22396"
-  ]
+  ],
+  "sourceSpeciesLabel": "Bacterium Acies"
 }

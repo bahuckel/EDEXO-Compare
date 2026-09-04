@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Aleoida Coronamus",
+  "speciesLabel": "Aleoida coronamus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:09.602Z",
+  "generatedAt": "2026-09-04T19:31:37.580Z",
   "sampleCount": 300,
   "numerics": {
     "body.distanceToArrival": {
@@ -546,5 +546,6 @@
     "body.materials.Polonium: typical (modal) 0.500000 (7/23 samples); range 0.48 … 0.65",
     "body.materials.Selenium: typical (modal) 3.010000 (7/77 samples); range 2.47 … 3.27",
     "body.materials.Tellurium: typical (modal) 1.430000 (10/61 samples); range 1.16 … 1.61"
-  ]
+  ],
+  "sourceSpeciesLabel": "Aleoida Coronamus"
 }

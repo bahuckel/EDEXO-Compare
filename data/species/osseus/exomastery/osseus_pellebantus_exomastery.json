@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Osseus Pellebantus",
+  "speciesLabel": "Osseus pellebantus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.911Z",
+  "generatedAt": "2026-09-04T19:31:41.349Z",
   "sampleCount": 276,
   "numerics": {
     "body.distanceToArrival": {
@@ -547,5 +547,6 @@
     "body.materials.Ruthenium: typical (modal) 1.180000 (7/57 samples); range 1.13 … 1.45",
     "body.materials.Zirconium: typical (modal) 2.290000 (5/51 samples); range 2.18 … 2.76",
     "body.materials.Technetium: typical (modal) 0.690000 (5/36 samples); range 0.66 … 0.85"
-  ]
+  ],
+  "sourceSpeciesLabel": "Osseus Pellebantus"
 }

@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Frutexa Collum",
+  "speciesLabel": "Frutexa collum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.254Z",
+  "generatedAt": "2026-09-04T19:31:40.550Z",
   "sampleCount": 36,
   "numerics": {
     "body.distanceToArrival": {
@@ -487,5 +487,6 @@
     "body.materials.Technetium: typical (modal) 0.690000 (1/2 samples); range 0.69 … 0.71",
     "body.materials.Polonium: typical (modal) 0.500000 (2/3 samples); range 0.5 … 0.52",
     "body.materials.Arsenic: typical (modal) 2.620000 (1/7 samples); range 2.5 … 2.69"
-  ]
+  ],
+  "sourceSpeciesLabel": "Frutexa Collum"
 }

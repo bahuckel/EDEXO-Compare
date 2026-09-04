@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Ignis",
+  "speciesLabel": "Tussock ignis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.985Z",
+  "generatedAt": "2026-09-04T19:31:42.587Z",
   "sampleCount": 969,
   "numerics": {
     "body.distanceToArrival": {
@@ -569,5 +569,6 @@
     "body.materials.Polonium: typical (modal) 0.510000 (24/86 samples); range 0.48 … 0.61",
     "body.materials.Technetium: typical (modal) 0.700000 (21/133 samples); range 0.64 … 0.76",
     "body.materials.Ruthenium: typical (modal) 1.180000 (19/161 samples); range 1.06 … 1.46"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Ignis"
 }

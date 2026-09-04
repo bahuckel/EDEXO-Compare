@@ -120,6 +120,29 @@ export function resolveInstallPath(entry: SpeciesEntry): string {
   return join(dir, `${speciesSlug(entry.displayName)}_exomastery.json`);
 }
 
+/**
+ * Name the profile the way its consumer names the species.
+ *
+ * The feeder labels come from Spansh landmark subtypes, and for the colour-variant genera those
+ * disagree with the app in both word order and genus: "Aureum Brain Tree" carries `genus: "Aureum"`,
+ * because the builder takes the genus to be the first word of the landmark. The app's loader
+ * identifies a profile by its `speciesLabel`, so a file with the Spansh spelling gets written,
+ * verified as present — and then never read.
+ *
+ * A profile describes a species, and the name in it should be the name the thing reading it uses.
+ * The original label is kept as `sourceSpeciesLabel` so the provenance is not lost.
+ */
+function stampAppIdentity(profile: ExomasteryProfileV1, entry: SpeciesEntry): ExomasteryProfileV1 {
+  if (profile.speciesLabel === entry.displayName && profile.genus === entry.genus) return profile;
+  const stamped: ExomasteryProfileV1 & { sourceSpeciesLabel?: string } = {
+    ...profile,
+    speciesLabel: entry.displayName,
+    genus: entry.genus,
+  };
+  if (profile.speciesLabel !== entry.displayName) stamped.sourceSpeciesLabel = profile.speciesLabel;
+  return stamped;
+}
+
 export function installProfile(
   db: SpeciesDatabase,
   profile: ExomasteryProfileV1,
@@ -147,7 +170,7 @@ export function installProfile(
   }
 
   mkdirSync(join(speciesDataDir(), entry.genusDataDir, "exomastery"), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(profile, null, 2)}\n`, "utf8");
+  writeFileSync(path, `${JSON.stringify(stampAppIdentity(profile, entry), null, 2)}\n`, "utf8");
 
   // The loader has its own rules about which file in the folder belongs to which species. If it
   // cannot find what we just wrote, the build "succeeded" and changed nothing the app will read.

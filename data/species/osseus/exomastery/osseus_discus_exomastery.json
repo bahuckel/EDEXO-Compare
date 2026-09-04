@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Osseus Discus",
+  "speciesLabel": "Osseus discus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:12.815Z",
+  "generatedAt": "2026-09-04T19:31:41.247Z",
   "sampleCount": 645,
   "numerics": {
     "body.distanceToArrival": {
@@ -646,5 +646,6 @@
     "body.atmosphereComposition.Argon: typical (modal) 0.940000 (1/1 samples); range 0.94 … 0.94",
     "body.atmosphereComposition.Nitrogen: typical (modal) 7.290000 (1/1 samples); range 7.29 … 7.29",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (3/3 samples); range 100 … 100"
-  ]
+  ],
+  "sourceSpeciesLabel": "Osseus Discus"
 }

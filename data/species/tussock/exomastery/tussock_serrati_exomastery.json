@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Serrati",
+  "speciesLabel": "Tussock serrati",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:14.119Z",
+  "generatedAt": "2026-09-04T19:31:42.789Z",
   "sampleCount": 310,
   "numerics": {
     "body.distanceToArrival": {
@@ -551,5 +551,6 @@
     "body.materials.Polonium: typical (modal) 0.510000 (8/22 samples); range 0.48 … 0.6",
     "body.materials.Tellurium: typical (modal) 1.380000 (8/75 samples); range 1.17 … 1.55",
     "body.materials.Yttrium: typical (modal) 1.140000 (10/55 samples); range 1.1 … 1.37"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Serrati"
 }

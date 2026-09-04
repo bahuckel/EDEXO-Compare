@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Catena",
+  "speciesLabel": "Tussock catena",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.737Z",
+  "generatedAt": "2026-09-04T19:31:42.327Z",
   "sampleCount": 188,
   "numerics": {
     "body.distanceToArrival": {
@@ -518,5 +518,6 @@
     "body.materials.Polonium: typical (modal) 0.480000 (6/17 samples); range 0.48 … 0.59",
     "body.materials.Selenium: typical (modal) 2.980000 (7/44 samples); range 2.5 … 3.2",
     "body.materials.Tellurium: typical (modal) 1.460000 (10/44 samples); range 1.14 … 1.57"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Catena"
 }

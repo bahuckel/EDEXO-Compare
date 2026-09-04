@@ -53,7 +53,7 @@ function profile(speciesLabel: string, samples: number) {
 beforeEach(() => {
   sandbox = mkdtempSync(path.join(tmpdir(), "edexo-feeder-"));
   // Copy the genus JSON only: the installer needs species rows, not the 1.1 MB of profiles.
-  for (const genus of ["stratum", "bacterium"]) {
+  for (const genus of ["stratum", "bacterium", "brain-tree"]) {
     const dst = path.join(sandbox, "data", "species", genus);
     mkdirSync(dst, { recursive: true });
     const src = path.join(repoRoot, "data", "species", genus, `${genus}_new.json`);
@@ -106,8 +106,25 @@ describe("installProfile", () => {
     expect(r.outcome.previousSamples).toBeNull();
     expect(existsSync(r.outcome.path)).toBe(true);
     expect(r.outcome.path).toContain(path.join("stratum", "exomastery"));
+    // Stamped with the app's own name for the species, not Spansh's. The loader identifies a
+    // profile by its speciesLabel, so the file has to be named the way the reader names it.
     const written = JSON.parse(readFileSync(r.outcome.path, "utf8"));
-    expect(written.speciesLabel).toBe("Stratum Tectonicas");
+    expect(written.speciesLabel).toBe("Stratum tectonicas");
+    expect(written.sourceSpeciesLabel).toBe("Stratum Tectonicas");
+  });
+
+  it("rewrites the Spansh word order and genus so the loader can read the file", () => {
+    // "Aureum Brain Tree" also carries genus "Aureum", because the builder takes the genus to be
+    // the first word of the landmark. Written as-is, all eight Brain Tree profiles are files the
+    // app never opens - which is what the post-write check caught.
+    const r = installProfile(db, profile("Aureum Brain Tree", 2));
+    expect(r.outcome.kind).toBe("installed");
+    if (r.outcome.kind !== "installed") return;
+    const written = JSON.parse(readFileSync(r.outcome.path, "utf8"));
+    expect(written.speciesLabel).toBe("Brain Tree Aureum");
+    // "Brain Trees" is what the app calls the genus; the point is that it is the app's string.
+    expect(written.genus).toBe("Brain Trees");
+    expect(written.sourceSpeciesLabel).toBe("Aureum Brain Tree");
   });
 
   it("refuses a profile built from fewer samples than the one in place", () => {

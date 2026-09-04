@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Aleoida Gravis",
+  "speciesLabel": "Aleoida gravis",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:09.671Z",
+  "generatedAt": "2026-09-04T19:31:37.683Z",
   "sampleCount": 232,
   "numerics": {
     "body.distanceToArrival": {
@@ -551,5 +551,6 @@
     "body.materials.Ruthenium: typical (modal) 1.170000 (4/46 samples); range 1.14 … 1.5",
     "body.materials.Selenium: typical (modal) 3.070000 (5/48 samples); range 2.38 … 3.29",
     "body.materials.Tellurium: typical (modal) 1.460000 (5/35 samples); range 1.14 … 1.61"
-  ]
+  ],
+  "sourceSpeciesLabel": "Aleoida Gravis"
 }

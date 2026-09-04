@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Albata",
+  "speciesLabel": "Tussock albata",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:13.639Z",
+  "generatedAt": "2026-09-04T19:31:42.193Z",
   "sampleCount": 459,
   "numerics": {
     "body.distanceToArrival": {
@@ -570,5 +570,6 @@
     "body.materials.Ruthenium: typical (modal) 1.210000 (14/86 samples); range 1.14 … 1.47",
     "body.materials.Zirconium: typical (modal) 2.290000 (8/93 samples); range 2.2 … 2.85",
     "body.materials.Polonium: typical (modal) 0.500000 (8/36 samples); range 0.48 … 0.66"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Albata"
 }

@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "speciesLabel": "Tussock Triticum",
+  "speciesLabel": "Tussock triticum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T19:18:14.168Z",
+  "generatedAt": "2026-09-04T19:31:42.846Z",
   "sampleCount": 303,
   "numerics": {
     "body.distanceToArrival": {
@@ -568,5 +568,6 @@
     "body.materials.Polonium: typical (modal) 0.480000 (4/23 samples); range 0.48 … 0.67",
     "body.materials.Tellurium: typical (modal) 1.430000 (6/55 samples); range 1.14 … 1.54",
     "body.materials.Technetium: typical (modal) 0.790000 (4/40 samples); range 0.66 … 0.86"
-  ]
+  ],
+  "sourceSpeciesLabel": "Tussock Triticum"
 }
