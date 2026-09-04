@@ -193,6 +193,21 @@ export interface SpeciesEntry {
   /** e.g. `data/species/Stratum/stratum.json` for debugging. */
   dataSourceRelPath?: string;
   /**
+   * Set when the species' spawn depends on something a body scan cannot answer — the presence of
+   * other body types in the system, or proximity to a nebula. The candidate is still listed (nothing
+   * is ever removed, see the no-walls rule), but it is marked so the reader knows the app is not
+   * claiming to have predicted it, and so ambiguity can be reported with and without it.
+   *
+   * Star-type requirements are deliberately *not* included: the parent star is resolvable from the
+   * journal, so those are a wiring job rather than an unknowable.
+   */
+  predictionUnsupported?: {
+    /** Short reason, shown to the reader. */
+    reason: string;
+    /** The condition key that made it unpredictable, for debugging. */
+    sourceKey: string;
+  };
+  /**
    * From genus `meta.color_variants.mapping`: spectral keys (e.g. `O`, `A`) whose value is JSON `null`
    * — codex assigns no colour for that host star class, so the matcher rejects the body when host `StarType` resolves to that key.
    */

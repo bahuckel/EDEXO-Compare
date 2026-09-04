@@ -675,6 +675,15 @@ const SpeciesCard = memo(function SpeciesCard({
           </>
         ) : null}
         <span className="species-identity-epithet">{epithetDisplay}</span>
+        {m.entry.predictionUnsupported ? (
+          <span
+            className="species-not-predicted"
+            title={`${m.entry.predictionUnsupported.reason}. A body scan cannot answer that, so this species is listed as possible rather than predicted — nothing here says it is likely to be present.`}
+          >
+            {" "}
+            not predicted
+          </span>
+        ) : null}
         <span
           className={
             morphColorRaw === "(unknown)"

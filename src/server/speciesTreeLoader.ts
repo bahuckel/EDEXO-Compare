@@ -575,6 +575,38 @@ function firstDefined(obj: Record<string, unknown>, keys: string[]): unknown {
   return undefined;
 }
 
+/**
+ * Conditions that no body scan can satisfy or refute.
+ *
+ * Brain Trees need particular other bodies present in the system; Electricae radialem needs a nebula
+ * nearby; the Amphora plant needs a specific mix of system bodies. None of that is in a `Scan`, so
+ * listing them as ordinary candidates implies a prediction that was never made — and inflates
+ * ambiguity on every body they can technically sit on.
+ *
+ * Star-type conditions are excluded on purpose. `speciesMatchContext` already resolves the body's
+ * parent star, so those species are predictable as soon as the gate is wired up; calling them
+ * unpredictable would be wrong and would hide work that is worth doing.
+ */
+const PREDICTION_UNSUPPORTED_KEYS: { key: string; reason: string }[] = [
+  { key: "requires_system_bodies", reason: "Depends on other bodies present in the system" },
+  { key: "system_requirements", reason: "Depends on other bodies present in the system" },
+  { key: "location_requirement", reason: "Depends on galactic location, such as nebula proximity" },
+];
+
+function detectPredictionUnsupported(
+  row: Record<string, unknown>,
+): { reason: string; sourceKey: string } | undefined {
+  const nested = asRecord(row.criteria ?? row.Criteria ?? row.conditions ?? row.Conditions);
+  for (const { key, reason } of PREDICTION_UNSUPPORTED_KEYS) {
+    const v = nested?.[key] ?? row[key];
+    if (v === undefined || v === null) continue;
+    // `requires_system_bodies: false` is a row saying the requirement does *not* apply.
+    if (v === false) continue;
+    return { reason, sourceKey: key };
+  }
+  return undefined;
+}
+
 function buildCriteriaForRow(row: Record<string, unknown>): SpeciesCriterion {
   const nested = asRecord(row.criteria ?? row.Criteria ?? row.conditions ?? row.Conditions);
   const merged: Record<string, unknown> = { ...row, ...(nested ?? {}) };
@@ -669,6 +701,8 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
 
     const id = slugId(genusFromFile, displayName, pickString(r, "id", "ID", "key", "Key"));
 
+    const predictionUnsupported = detectPredictionUnsupported(r);
+
     let criteria = buildCriteriaForRow(r);
     if (!criteria.planetClassAnyOf?.length && genusPlanetTypes?.length) {
       criteria = {
@@ -696,6 +730,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
       criteria,
       notes: notes ?? undefined,
       dataSourceRelPath: rel,
+      ...(predictionUnsupported ? { predictionUnsupported } : {}),
       ...(genusStarColorNullSpectralClasses?.length ? { genusStarColorNullSpectralClasses } : {}),
       ...(genusStarColorPreferredSpectralClasses?.length ? { genusStarColorPreferredSpectralClasses } : {}),
       ...(genusMinSampleDistanceM != null ? { genusMinSampleDistanceM } : {}),

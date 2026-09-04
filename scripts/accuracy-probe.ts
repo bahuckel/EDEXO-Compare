@@ -123,6 +123,7 @@ interface ScenarioResult {
   genusHit: number;
   genusMiss: number;
   candCounts: number[];
+  candCountsPredictable: number[];
   genusCounts: number[];
   completeBodies: number;
   completeTruth: number;
@@ -142,6 +143,7 @@ function runScenario(name: string, useHints: boolean): ScenarioResult {
     genusHit: 0,
     genusMiss: 0,
     candCounts: [],
+    candCountsPredictable: [],
     genusCounts: [],
     completeBodies: 0,
     completeTruth: 0,
@@ -160,6 +162,9 @@ function runScenario(name: string, useHints: boolean): ScenarioResult {
     const ids = new Set(matches.map((m) => m.entry.id));
     const genera = new Set(matches.map((m) => m.entry.genusDataDir));
     r.candCounts.push(ids.size);
+    // Species whose spawn depends on system contents or nebula proximity are listed but not
+    // predicted, so counting them as choices the commander has to weigh overstates the ambiguity.
+    r.candCountsPredictable.push(matches.filter((m) => !m.entry.predictionUnsupported).length);
     r.genusCounts.push(genera.size);
 
     for (const t of truth) {
@@ -215,8 +220,12 @@ function report(r: ScenarioResult): void {
     `  value-weighted   ${vRecall.toFixed(1)}%   (${(r.valueMiss / 1e6).toFixed(1)} M credits missed)`,
   );
   console.log(`  genus recall     ${gRecall.toFixed(1)}%   (${r.genusHit} found, ${r.genusMiss} missed)`);
+  const predictable = [...r.candCountsPredictable].sort((a, b) => a - b);
   console.log(
     `  ambiguity        mean ${mean(cand).toFixed(2)}  p50 ${pct(cand, 50)}  p90 ${pct(cand, 90)}  max ${cand[cand.length - 1] ?? 0}   (genera: mean ${mean(gen).toFixed(2)})`,
+  );
+  console.log(
+    `    ...predicted   mean ${mean(predictable).toFixed(2)}  p50 ${pct(predictable, 50)}  p90 ${pct(predictable, 90)}  max ${predictable[predictable.length - 1] ?? 0}   excluding species marked "not predicted"`,
   );
   console.log(
     `  precision        ${precision.toFixed(1)}%   on ${r.completeBodies} complete-label bodies (${r.completeTruth} species / ${r.completeCand} candidates)`,
