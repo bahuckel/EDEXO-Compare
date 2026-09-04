@@ -4,6 +4,16 @@
  */
 
 const NOISE = [
+  /**
+   * Axial tilt varies essentially at random between bodies and has no bearing on where a species
+   * grows, but the scorer was treating it as evidence: across the 76 shipped profiles it carried a
+   * mean concentration of 0.382, comparable to real habitat terms. A parameter that differs on every
+   * body cannot distinguish one species from another.
+   *
+   * Only the *comparison* is dropped. `buildBodyScanExomasteryDetail` builds the body's own orbital
+   * readout directly and still reports the tilt as a fact about the planet.
+   */
+  /\baxial[_ -]?tilt\b/i,
   /\brings?\b/i,
   /\bsystemaddress\b/i,
   /\bsystem_address\b/i,
