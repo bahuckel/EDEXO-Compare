@@ -61,13 +61,16 @@ const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
 /**
  * Host-star observation per body, rebuilt from the merged exploration scans.
  *
+ * Sold systems included, since the physics survives the sale (`soldExplorationScans`). Without them
+ * a host star resolved on 196 of 13,713 bodies and every star term was measured against nothing.
+ *
  * The app passes this into the habitat scorer and this probe did not, which made the probe blind to
  * every host-star term — the parameter where measured determinism finds its sharpest signals
  * (Bacterium volu and Fumerola extremus both key entirely on star type). Ranking measured without it
  * cannot see the effect of weighting it.
  */
 const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
-for (const [, r] of payload.explorationScans) {
+for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explorationScans]) {
   const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
   byId.set(r.bodyId, r);
   scansBySystem.set(r.systemAddress, byId);
@@ -146,3 +149,7 @@ console.log("\nburied deepest:");
 for (const w of worst.slice(0, 8)) {
   console.log(`  ${String(w.rank).padStart(2)}/${w.of}  ${w.id} on ${w.body}`);
 }
+
+console.log(
+  `host star resolved on ${bodies.filter((b) => hostStarFor(b) != null).length} of ${bodies.length} bodies`,
+);

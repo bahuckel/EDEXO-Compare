@@ -79,6 +79,11 @@ export type JournalMergeCachePayload = {
   visitedSystems: [number, string][];
   bodies: [string, BodyExoState][];
   explorationScans: [string, ExplorationScanRecord][];
+  /**
+   * Physics-only archive of scans whose system was sold. Optional so a cache written before this
+   * existed still loads — it simply has none, until the next rebuild recovers them from the logs.
+   */
+  soldExplorationScans?: [string, ExplorationScanRecord][];
   fssBodySignalsBodyKeys: string[];
   dssMappedBodyKeys: string[];
   dssFirstMapperEligibleByBodyKey: [string, boolean][];
@@ -356,6 +361,22 @@ export class GameStateStore {
   readonly explorationScans = new Map<string, ExplorationScanRecord>();
 
   /**
+   * Scan rows kept for their physics after the commander sold the system's cartographic data.
+   *
+   * Selling clears {@link explorationScans} for that system, because everything the app says about
+   * payouts, first discovery and first mapping has to go with it. That was right for value and
+   * wrong for everything else: the same record carries surface gravity, materials, solid
+   * composition and — through the system's star rows — the body's host star. The commander sells
+   * almost everything, so 13,713 scanned bodies had shrunk to 676 usable scan rows across 75
+   * systems, and the matcher was scoring history with the star and composition terms permanently
+   * blank.
+   *
+   * Nothing that computes credits, eligibility or map state may read this map. It is physics only:
+   * what the body is, never what it is worth. {@link physicsExplorationScan} is the one accessor.
+   */
+  readonly soldExplorationScans = new Map<string, ExplorationScanRecord>();
+
+  /**
    * Bumped on every write to {@link explorationScans}. Consumers cache per-system indexes and
    * per-body computations keyed on this — records are replaced rather than mutated, so map size
    * alone is not a safe signature.
@@ -567,6 +588,17 @@ export class GameStateStore {
     return false;
   }
 
+  /**
+   * The scan row to read a body's *physics* from — live if we still hold it, else the sold archive.
+   *
+   * Value, eligibility and map state must keep reading {@link explorationScans} directly: a sold
+   * system has no payout left and no first-discovery bonus, and nothing here changes that. This is
+   * for the matcher and the habitat scorer, which want to know what the body is.
+   */
+  physicsExplorationScan(key: string): ExplorationScanRecord | null {
+    return this.explorationScans.get(key) ?? this.soldExplorationScans.get(key) ?? null;
+  }
+
   hasEdsmExplorationForSystem(systemAddress: number): boolean {
     const p = `${systemAddress}:`;
     for (const k of this.edsmExplorationByKey.keys()) {
@@ -720,6 +752,7 @@ export class GameStateStore {
   resetAll(): void {
     this.bodies.clear();
     this.explorationScans.clear();
+    this.soldExplorationScans.clear();
     this.explorationScansRevision += 1;
     this.edsmExplorationByKey.clear();
     this.commanderName = null;
@@ -976,6 +1009,8 @@ export class GameStateStore {
     this.explorationScans.set(k, rec);
     this.explorationScansRevision += 1;
     this.edsmExplorationByKey.delete(k);
+    // Scanned again after the sale: the live row is the better copy of the same physics.
+    this.soldExplorationScans.delete(k);
 
     const moonOf = directParentPlanetId(rec.parents);
     if (moonOf != null) this.orbitParentPlanetByBody.set(k, moonOf);
@@ -1583,8 +1618,10 @@ export class GameStateStore {
   /** Drop merged exploration / DSS state for a system after cartographic sale (journal replay order). */
   private clearExplorationDataForSystem(systemAddress: number): void {
     const prefix = `${systemAddress}:`;
-    for (const k of [...this.explorationScans.keys()]) {
+    for (const [k, rec] of [...this.explorationScans.entries()]) {
       if (k.startsWith(prefix)) {
+        // The value is sold; the physics is not. See soldExplorationScans.
+        this.soldExplorationScans.set(k, rec);
         this.explorationScans.delete(k);
         this.explorationScansRevision += 1;
       }
@@ -1798,6 +1835,7 @@ export class GameStateStore {
       visitedSystems: [...this.visitedSystems.entries()],
       bodies: [...this.bodies.entries()],
       explorationScans: [...this.explorationScans.entries()],
+      soldExplorationScans: [...this.soldExplorationScans.entries()],
       fssBodySignalsBodyKeys: [...this.fssBodySignalsBodyKeys],
       dssMappedBodyKeys: [...this.dssMappedBodyKeys],
       dssFirstMapperEligibleByBodyKey: [...this.dssFirstMapperEligibleByBodyKey.entries()],
@@ -1844,6 +1882,7 @@ export class GameStateStore {
     for (const [addr, name] of data.visitedSystems) this.visitedSystems.set(addr, name);
     for (const [k, v] of data.bodies) this.bodies.set(k, v);
     for (const [k, v] of data.explorationScans) this.explorationScans.set(k, v);
+    for (const [k, v] of data.soldExplorationScans ?? []) this.soldExplorationScans.set(k, v);
     this.explorationScansRevision += 1;
     for (const k of data.fssBodySignalsBodyKeys) this.fssBodySignalsBodyKeys.add(k);
     for (const k of data.dssMappedBodyKeys) this.dssMappedBodyKeys.add(k);

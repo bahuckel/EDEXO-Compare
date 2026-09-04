@@ -725,7 +725,8 @@ function computeBody(
   store: GameStateStore,
 ): BodyComputed {
   const root = getProjectRoot();
-  const explorationRec = store.explorationScans.get(scanBodyKey(b.systemAddress, b.bodyId)) ?? null;
+  // Physics, not value: a sold system keeps its gravity, materials, composition and host star.
+  const explorationRec = store.physicsExplorationScan(scanBodyKey(b.systemAddress, b.bodyId));
   const signature = computeBodyCacheSignature(b, store, explorationRec, root);
   const cached = computeBodyCache.get(b.key);
   if (cached && cached.signature === signature) return cached.value;
@@ -744,7 +745,8 @@ function computeBodyUncached(
 ): BodyComputed {
   const genusFilterActive = !!(b.genusHints && b.genusHints.length > 0);
   const root = getProjectRoot();
-  const explorationRec = store.explorationScans.get(scanBodyKey(b.systemAddress, b.bodyId)) ?? null;
+  // Physics, not value: a sold system keeps its gravity, materials, composition and host star.
+  const explorationRec = store.physicsExplorationScan(scanBodyKey(b.systemAddress, b.bodyId));
   const mergedScan = mergeScanForExomastery(b.scan, explorationRec);
 
   if (!mergedScan?.PlanetClass?.trim()) {
@@ -789,6 +791,7 @@ function computeBodyUncached(
   } = matchDatabaseToScan(db, mergedScan, b.genusHints, b.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
     matchContext: speciesMatchCtx,
+    biologicalSignals: b.biologicalSignals,
   });
   const scanForExo = mergedScan;
   const bodyScanDetail = buildBodyScanExomasteryDetail(mergedScan, explorationRec);

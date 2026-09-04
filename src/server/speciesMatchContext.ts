@@ -13,6 +13,10 @@ function bodyKey(systemAddress: number, bodyId: number): string {
  * Building it walks the *entire* `explorationScans` map — over 100k records after a long play
  * history — and it ran once per body, on every snapshot build. Records are replaced rather than
  * mutated on update, so the revision counter is the signature; map size alone would go stale.
+ *
+ * Sold systems are included: this index exists to find a body's host star and its physical fields,
+ * and selling the data does not move the star. The sold archive only grows on a sale, so the
+ * revision counter still covers it.
  */
 let cachedScanIndex: { signature: string; byId: Map<number, ExplorationScanRecord> } | null = null;
 
@@ -23,6 +27,9 @@ export function systemExplorationScanIndex(
   const signature = `${systemAddress}:${store.explorationScansRevision}`;
   if (cachedScanIndex && cachedScanIndex.signature === signature) return cachedScanIndex.byId;
   const byId = new Map<number, ExplorationScanRecord>();
+  for (const [, r] of store.soldExplorationScans) {
+    if (r.systemAddress === systemAddress) byId.set(r.bodyId, r);
+  }
   for (const [, r] of store.explorationScans) {
     if (r.systemAddress === systemAddress) byId.set(r.bodyId, r);
   }
@@ -33,7 +40,7 @@ export function systemExplorationScanIndex(
 /** Build optional matching context from merged exploration scans + scanner signal hints on the body. */
 export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStore): SpeciesMatchContext {
   const sk = bodyKey(exo.systemAddress, exo.bodyId);
-  const rec = store.explorationScans.get(sk);
+  const rec = store.physicsExplorationScan(sk);
   const scan = exo.scan;
 
   const byId = systemExplorationScanIndex(store, exo.systemAddress);

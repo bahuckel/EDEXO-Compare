@@ -25,8 +25,13 @@
 import type { BodyExoState, PlanetScan } from "../shared/types.js";
 import type { JournalMergeCachePayload } from "./gameState.js";
 
-/** Bumped when the encoding changes; a mismatch makes the loader rebuild from the journals. */
-export const JOURNAL_MERGE_CACHE_ENCODING = 2;
+/**
+ * Bumped when the encoding changes; a mismatch makes the loader rebuild from the journals.
+ *
+ * 3 adds `soldExplorationScans`. The bump is the point: a cache written by an older build dropped
+ * those rows on the way in, and only a rebuild from the logs can bring the physics back.
+ */
+export const JOURNAL_MERGE_CACHE_ENCODING = 3;
 
 /** `2023-10-04T01:51:41Z` — the only shape the store writes; anything else is left as a string. */
 const ISO_SECONDS_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
