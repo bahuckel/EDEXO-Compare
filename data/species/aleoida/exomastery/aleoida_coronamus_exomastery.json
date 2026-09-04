@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida coronamus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:19.978Z",
+  "generatedAt": "2026-09-04T21:14:34.628Z",
   "sampleCount": 300,
   "numerics": {
     "body.distanceToArrival": {
@@ -576,8 +576,8 @@
     "body.atmosphereType": 0.539,
     "body.rotationalPeriodTidallyLocked": -0.016,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.147,
-    "exo.system_primary_spectral": 0.153,
+    "exo.host_star_spectral_primary": 0.142,
+    "exo.system_primary_spectral": 0.149,
     "body.distanceToArrival": 0.059,
     "body.gravity": 0.23,
     "body.earthMasses": 0.221,

@@ -17,6 +17,7 @@ import type {
 import { journalPressureToAtm, journalSurfaceGravityToG } from "../shared/journalPhysics.js";
 import { journalStarPrimarySpectralLetter } from "../shared/genusStarColorSoft.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
+import { hostStarClassKey, hostStarClassSimilarity } from "../shared/hostStarClass.js";
 import {
   classifyHostMkPath,
   computeMkAxisStepDistance,
@@ -495,6 +496,13 @@ function categoricalSimilarity(scanVal: string, profileMode: string, path?: stri
         return 0.35;
       }
     }
+    // Journal letters against EDSM labels: `F` against `F6`, `D` against `White Dwarf (DA) Star`.
+    // Both sides are reduced to a class key first, because the fallback below is a substring test
+    // and a single letter is a substring of almost any label.
+    const classA = hostStarClassKey(scanVal);
+    const classB = hostStarClassKey(profileMode);
+    if (classA && classB) return hostStarClassSimilarity(classA, classB);
+
     const ka = spectralKeysFromJournalStarType(scanVal.trim());
     const kb = spectralKeysFromJournalStarType(profileMode.trim());
     if (ka.length && kb.length) {
@@ -1043,6 +1051,14 @@ function collectWeightedHabitatScores(
     if (!modeVal) continue;
     const scanVal = valueForCategoricalPath(path, scan, rec, journalHost);
     if (!scanVal) continue;
+    /**
+     * Compared against the mode, not against the whole distribution.
+     *
+     * Expected similarity across every observed value is the more obvious model and it measured
+     * worse: top-1 ranking fell from 108 of 405 species to 91, and putting a floor under the tail
+     * (10 %, 20 %) recovered only half of that. Averaging over the tail flattens a sharp match into
+     * a middling one, and ranking is a comparison between candidates — it needs the sharpness.
+     */
     push(path, categoricalSimilarity(scanVal, modeVal, path), categoricalImportance(counts));
   }
   return out;

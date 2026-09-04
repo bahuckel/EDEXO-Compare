@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus pellebantus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.650Z",
+  "generatedAt": "2026-09-04T21:14:38.349Z",
   "sampleCount": 276,
   "numerics": {
     "body.distanceToArrival": {
@@ -577,8 +577,8 @@
     "body.atmosphereType": 0.539,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": 0.037,
-    "exo.host_star_spectral_primary": 0.164,
-    "exo.system_primary_spectral": 0.152,
+    "exo.host_star_spectral_primary": 0.159,
+    "exo.system_primary_spectral": 0.148,
     "body.distanceToArrival": 0.046,
     "body.gravity": 0.408,
     "body.earthMasses": 0.473,

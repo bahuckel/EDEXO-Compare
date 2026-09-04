@@ -3,7 +3,7 @@
   "speciesLabel": "Cactoida cortexum",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:21.397Z",
+  "generatedAt": "2026-09-04T21:14:36.141Z",
   "sampleCount": 836,
   "numerics": {
     "body.distanceToArrival": {
@@ -641,8 +641,8 @@
     "body.atmosphereType": 0.535,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": 0.018,
-    "exo.host_star_spectral_primary": 0.103,
-    "exo.system_primary_spectral": 0.09,
+    "exo.host_star_spectral_primary": 0.1,
+    "exo.system_primary_spectral": 0.088,
     "body.distanceToArrival": 0.061,
     "body.gravity": 0.217,
     "body.earthMasses": 0.243,

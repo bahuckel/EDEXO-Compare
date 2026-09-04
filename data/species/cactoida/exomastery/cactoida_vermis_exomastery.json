@@ -3,7 +3,7 @@
   "speciesLabel": "Cactoida vermis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:21.676Z",
+  "generatedAt": "2026-09-04T21:14:36.424Z",
   "sampleCount": 546,
   "numerics": {
     "body.distanceToArrival": {
@@ -625,8 +625,8 @@
     "body.atmosphereType": 0.534,
     "body.rotationalPeriodTidallyLocked": -0.022,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.045,
-    "exo.system_primary_spectral": -0.074,
+    "exo.host_star_spectral_primary": 0.044,
+    "exo.system_primary_spectral": -0.071,
     "body.distanceToArrival": 0.188,
     "body.gravity": 0.591,
     "body.earthMasses": 0.694,

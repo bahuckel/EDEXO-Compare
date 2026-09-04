@@ -3,7 +3,7 @@
   "speciesLabel": "Recepta deltahedronix",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.801Z",
+  "generatedAt": "2026-09-04T21:14:38.498Z",
   "sampleCount": 37,
   "numerics": {
     "body.distanceToArrival": {
@@ -552,8 +552,8 @@
     "body.atmosphereType": 0.308,
     "body.rotationalPeriodTidallyLocked": 0.069,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.052,
-    "exo.system_primary_spectral": 0.055,
+    "exo.host_star_spectral_primary": 0.05,
+    "exo.system_primary_spectral": 0.054,
     "body.distanceToArrival": 0.068,
     "body.gravity": 0.358,
     "body.earthMasses": 0.546,

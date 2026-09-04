@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola aquatis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.147Z",
+  "generatedAt": "2026-09-04T21:14:37.859Z",
   "sampleCount": 34,
   "numerics": {
     "body.distanceToArrival": {
@@ -647,7 +647,7 @@
     "body.atmosphereType": 0.164,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.019,
-    "exo.host_star_spectral_primary": 0.117,
+    "exo.host_star_spectral_primary": 0.113,
     "exo.system_primary_spectral": 0.009,
     "body.distanceToArrival": 0.194,
     "body.gravity": 0.351,

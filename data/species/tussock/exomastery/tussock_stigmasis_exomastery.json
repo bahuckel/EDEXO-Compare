@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock stigmasis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:25.134Z",
+  "generatedAt": "2026-09-04T21:14:39.681Z",
   "sampleCount": 43,
   "numerics": {
     "body.distanceToArrival": {
@@ -527,8 +527,8 @@
     "body.atmosphereType": 0.539,
     "body.rotationalPeriodTidallyLocked": 0.094,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.144,
-    "exo.system_primary_spectral": 0.151,
+    "exo.host_star_spectral_primary": 0.14,
+    "exo.system_primary_spectral": 0.147,
     "body.distanceToArrival": 0.099,
     "body.gravity": 0.7,
     "body.earthMasses": 0.904,

@@ -25,6 +25,11 @@ import {
   collectResolvedOrganicLockSpeciesIds,
 } from "./organicLocks.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
+import {
+  hostStarVerdict,
+  speciesHostStarObservations,
+  type HostStarVerdict,
+} from "./speciesHostStarObservations.js";
 import { volcanismJournalMatchesFragments } from "../shared/volcanismMatch.js";
 import { isBacteriumSpeciesEntry } from "../shared/speciesBacterium.js";
 
@@ -406,13 +411,33 @@ export function speciesMatchesExcludingTempPressure(
     }
   }
 
+  /**
+   * Host star, measured against the corpus rather than against the codex.
+   *
+   * Computed once for all three star rules below: the codex fragment list, the genus colour table
+   * and the observation term itself. See {@link hostStarVerdict}.
+   */
+  const starVerdict = ctx?.parentStarType?.trim()
+    ? hostStarVerdict(entry, ctx.parentStarType)
+    : ({ kind: "unknown" } as HostStarVerdict);
+
   const starFrags = c.parentStarTypeIncludesAnyOf;
   if (starFrags?.length && ctx?.parentStarType?.trim()) {
     const host = ctx.parentStarType.toLowerCase();
     const okStar = starFrags.some((f) => host.includes((f ?? "").trim().toLowerCase()));
-    if (!okStar) {
+    if (!okStar && starVerdict.kind === "observed") {
+      // The corpus has watched this species grow under this star. A codex list that disagrees is a
+      // gap in the community record, not a reason to demote the row.
+      reasons.push({
+        field: "StarType",
+        detail: `${ctx.parentStarType} — outside the codex list, but ${starVerdict.observations} of ${starVerdict.total} observed bodies have this host class.`,
+      });
+    } else if (!okStar) {
+      // Soft: the codex star list is a claim about where a species has been *recorded*, and §6 took
+      // every such claim out of the wall business. It demotes the row; it does not delete it.
       failures.push({
         field: "StarType",
+        soft: true,
         detail: `Host star type “${ctx.parentStarType}” — need codex fragment: ${starFrags.join(" / ")}.`,
       });
     } else {
@@ -425,13 +450,42 @@ export function speciesMatchesExcludingTempPressure(
     const specKeys = spectralKeysFromJournalStarType(ctx.parentStarType);
     if (specKeys.length) {
       const excluded = specKeys.some((k) => starColorNulls.some((n) => n.toUpperCase() === k.toUpperCase()));
-      if (excluded) {
+      if (excluded && starVerdict.kind === "observed") {
+        // Stratum araneamus has no A-type colour variant in the genus table and 48 % of its observed
+        // bodies orbit an A-type star. The missing artwork is ours; the species is really there.
+        reasons.push({
+          field: "StarType",
+          detail: `${ctx.parentStarType} — no colour variant in our genus table, but ${starVerdict.observations} of ${starVerdict.total} observed bodies have this host class.`,
+        });
+      } else if (excluded) {
+        // Also soft. A missing colour variant is a gap in the genus table, not evidence that the
+        // species cannot grow there — and it is the app's own data saying so.
         failures.push({
           field: "StarType",
+          soft: true,
           detail: `Genus colour table has no variant for host class ${specKeys.join("/")} — “${ctx.parentStarType}”.`,
         });
       }
     }
+  }
+
+  /**
+   * The observation term: never seen under this kind of star, on a species where the star decides.
+   *
+   * Soft, so the row lands in the unlikely tier rather than vanishing — the corpus holds tens of
+   * bodies for these species, and tens of bodies cannot prove a negative about the galaxy.
+   */
+  if (starVerdict.kind === "never" && ctx?.parentStarType?.trim()) {
+    failures.push({
+      field: "StarType",
+      soft: true,
+      detail: `Host star ${ctx.parentStarType}: none of the ${starVerdict.total} observed bodies for this species have that host class (seen on ${starVerdict.classes.join("/")}). ${DEMOTED_NOTE}`,
+    });
+  } else if (starVerdict.kind === "observed" && starVerdict.share >= 0.1) {
+    reasons.push({
+      field: "StarType",
+      detail: `${ctx?.parentStarType} — ${Math.round(starVerdict.share * 100)}% of ${starVerdict.total} observed bodies have this host class.`,
+    });
   }
 
   const orb = c.orbitDistanceFromParentStarLs;
@@ -439,9 +493,11 @@ export function speciesMatchesExcludingTempPressure(
     const v = ctx.orbitDistanceFromParentStarLs;
     const fit = rangeFit(v, orb.min, orb.max);
     if (fit !== "in") {
+      // Soft either way: the codex orbit range is one more claim about where a species has been
+      // seen, and a body outside it is a candidate to rank low rather than one to hide (§6).
       failures.push({
         field: "Orbit",
-        ...(fit === "near" ? { soft: true } : {}),
+        soft: true,
         detail: `Orbit ${v.toFixed(0)} LS from host star — species expects ${orb.min ?? "−∞"}…${orb.max ?? "∞"} LS (semi-major axis → LS).${fit === "near" ? ` Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
       });
     } else {
@@ -658,6 +714,54 @@ export interface MatchDatabaseRun {
   approximateMatchingUsed: boolean;
 }
 
+type PendingMatch = Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">;
+
+/**
+ * Never let a demotion contradict the game's own signal count.
+ *
+ * The observation term demotes a species that has never been seen under this kind of star, and on a
+ * handful of bodies that took the shown list below the number of genera the game reports — which is
+ * impossible, and shows up in the probe as a provable data defect. The count is not a preference:
+ * `k` genera are down there whatever our corpus has seen.
+ *
+ * So demotions are handed back, weakest evidence first, until the shown list can satisfy the count
+ * again. Only rows demoted *solely* by the host-star observation term are eligible: a candidate that
+ * also disagrees on temperature or planet class was not demoted by this and must not be rescued by
+ * it. Restoring by ascending determinism means the species whose host star matters least gives way
+ * first, which is the same ordering the demotion itself was decided on.
+ */
+function restoreDemotionsBelowSignalCount(
+  strict: PendingMatch[],
+  unlikely: PendingMatch[],
+  signalCount: number | null,
+): void {
+  if (signalCount == null || !Number.isFinite(signalCount) || signalCount <= 0) return;
+
+  const generaOf = (rows: PendingMatch[]) =>
+    new Set(rows.filter((m) => !m.entry.predictionUnsupported).map((m) => m.entry.genusDataDir));
+  if (generaOf(strict).size >= signalCount) return;
+
+  const eligible = unlikely
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => (m.unlikelyReasons ?? []).every((r) => r.field === "StarType"))
+    .sort((a, b) => hostStarDeterminism(a.m.entry) - hostStarDeterminism(b.m.entry));
+
+  const restored = new Set<number>();
+  for (const { m, i } of eligible) {
+    if (generaOf(strict).size >= signalCount) break;
+    strict.push({ entry: m.entry, reasons: m.reasons });
+    restored.add(i);
+  }
+  if (restored.size === 0) return;
+  const keep = unlikely.filter((_, i) => !restored.has(i));
+  unlikely.length = 0;
+  unlikely.push(...keep);
+}
+
+function hostStarDeterminism(entry: SpeciesEntry): number {
+  return speciesHostStarObservations(entry)?.determinism ?? 0;
+}
+
 export function matchDatabaseToScan(
   db: SpeciesDatabase,
   scan: PlanetScan,
@@ -666,6 +770,15 @@ export function matchDatabaseToScan(
   options?: {
     includeBacterium?: boolean;
     matchContext?: SpeciesMatchContext | null;
+    /**
+     * `FSSBodySignals` biological count for this body, when the game has reported one.
+     *
+     * The game places one genus per signal, so the count is a hard fact about the body and the
+     * candidate list has to be able to satisfy it. Supplied here so a demotion can be undone when it
+     * would leave fewer candidate genera than the game says are present — see
+     * {@link restoreDemotionsBelowSignalCount}.
+     */
+    biologicalSignals?: number | null;
   },
 ): MatchDatabaseRun {
   const includeBacterium = options?.includeBacterium === true;
@@ -731,6 +844,8 @@ export function matchDatabaseToScan(
       });
     }
   }
+
+  restoreDemotionsBelowSignalCount(strict, unlikely, options?.biologicalSignals ?? null);
 
   if (strict.length > 0 || unlikely.length > 0) {
     const { matches, injected } = injectOrganicLockConfirmedSpecies(

@@ -27,6 +27,8 @@
  * main factors, confirmed rather than assumed — and tidal lock falls to the bottom.
  */
 
+import { hostStarClassKey } from "../shared/hostStarClass.js";
+
 export type CategoricalCounts = Record<string, number>;
 /** path → value → count. The shape `ExomasteryProfileV1.categorical` already ships in. */
 export type CategoricalTable = Record<string, CategoricalCounts>;
@@ -48,12 +50,9 @@ export function bucketCategoricalValue(path: string, value: string): string {
   if (!v) return "";
 
   if (low.includes("host_star") || low.includes("spectral") || low.includes("startype")) {
-    const t = v.toUpperCase();
-    if (t.startsWith("N")) return "N"; // neutron
-    if (t.startsWith("D")) return "D"; // white dwarf
-    if (/^(TTS|T TAURI)/.test(t)) return "TTS";
-    const first = t.charAt(0);
-    return "OBAFGKMLTY".includes(first) ? first : "other";
+    // EDSM spells the exotic hosts out — "White Dwarf (DA) Star", "Black Hole" — and reading the
+    // first letter put every white dwarf in "other" and every black hole among the B-type stars.
+    return hostStarClassKey(v) ?? "other";
   }
 
   if (low.includes("atmosphere") && !low.includes("composition")) {

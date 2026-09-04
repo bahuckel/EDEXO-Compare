@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock catena",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:24.704Z",
+  "generatedAt": "2026-09-04T21:14:39.266Z",
   "sampleCount": 188,
   "numerics": {
     "body.distanceToArrival": {
@@ -548,8 +548,8 @@
     "body.atmosphereType": 0.539,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.02,
-    "exo.host_star_spectral_primary": 0.094,
-    "exo.system_primary_spectral": 0.164,
+    "exo.host_star_spectral_primary": 0.091,
+    "exo.system_primary_spectral": 0.159,
     "body.distanceToArrival": 0.038,
     "body.gravity": 0.19,
     "body.earthMasses": 0.197,

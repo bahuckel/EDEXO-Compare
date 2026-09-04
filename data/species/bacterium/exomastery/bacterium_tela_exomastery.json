@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium tela",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:21.143Z",
+  "generatedAt": "2026-09-04T21:14:35.847Z",
   "sampleCount": 216,
   "numerics": {
     "body.distanceToArrival": {
@@ -869,8 +869,8 @@
     "body.atmosphereType": 0.105,
     "body.rotationalPeriodTidallyLocked": -0.002,
     "body.terraformingState": -0.109,
-    "exo.host_star_spectral_primary": -0.029,
-    "exo.system_primary_spectral": -0.09,
+    "exo.host_star_spectral_primary": -0.028,
+    "exo.system_primary_spectral": -0.087,
     "body.distanceToArrival": 0.17,
     "body.gravity": 0.348,
     "body.earthMasses": 0.473,

@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock capillum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:24.606Z",
+  "generatedAt": "2026-09-04T21:14:39.166Z",
   "sampleCount": 42,
   "numerics": {
     "body.distanceToArrival": {
@@ -576,7 +576,7 @@
     "body.atmosphereType": 0.238,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": 0.149,
-    "exo.host_star_spectral_primary": -0.06,
+    "exo.host_star_spectral_primary": -0.058,
     "exo.system_primary_spectral": 0.023,
     "body.distanceToArrival": 0.136,
     "body.gravity": 0.437,

@@ -3,7 +3,7 @@
   "speciesLabel": "Concha renibus",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:22.316Z",
+  "generatedAt": "2026-09-04T21:14:37.056Z",
   "sampleCount": 1189,
   "numerics": {
     "body.distanceToArrival": {
@@ -732,8 +732,8 @@
     "body.atmosphereType": 0.245,
     "body.rotationalPeriodTidallyLocked": -0.019,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": -0.07,
-    "exo.system_primary_spectral": -0.093,
+    "exo.host_star_spectral_primary": -0.068,
+    "exo.system_primary_spectral": -0.089,
     "body.distanceToArrival": 0.029,
     "body.gravity": 0.191,
     "body.earthMasses": 0.245,

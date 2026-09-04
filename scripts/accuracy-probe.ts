@@ -48,7 +48,14 @@ import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
 import { resolveJournalMergeCacheRoot } from "../src/server/paths.js";
 import { loadPriceList, lookupPrice } from "../src/server/priceList.js";
-import type { BodyExoState, SpeciesEntry } from "../src/shared/types.js";
+import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
+import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
+import type {
+  BodyExoState,
+  ExplorationScanRecord,
+  SpeciesEntry,
+  SpeciesMatchContext,
+} from "../src/shared/types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = loadSpeciesDatabaseFromTree(root);
@@ -98,6 +105,43 @@ if (!payload) {
 }
 
 const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
+
+/**
+ * Host star per body, from the merged scans — including the systems whose data has been sold, whose
+ * physics the store now keeps (`soldExplorationScans`). Without those a host star resolved on 196 of
+ * 13,713 bodies and every star term in the matcher was measured against nothing.
+ *
+ * The app builds this context for every body it matches. The probe did not, so anything the matcher
+ * reads from it — host star, orbit distance from the star — was measured as permanently absent.
+ */
+const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
+for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explorationScans]) {
+  const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
+  byId.set(r.bodyId, r);
+  scansBySystem.set(r.systemAddress, byId);
+}
+
+function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
+  const byId = scansBySystem.get(b.systemAddress);
+  const rec = byId?.get(b.bodyId);
+  if (!byId || !rec) return undefined;
+  const ctx: SpeciesMatchContext = {};
+  const starId = resolveHostStarBodyId(rec, byId);
+  const star = starId == null ? null : byId.get(starId);
+  if (star?.starType?.trim()) {
+    ctx.parentStarType = star.starType;
+    if (typeof star.subclass === "number" && Number.isFinite(star.subclass))
+      ctx.parentStarSubclass = star.subclass;
+    if (star.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity;
+  }
+  return Object.keys(ctx).length ? ctx : undefined;
+}
+
+/** The host-star observation the habitat scorer reads, for the same body. */
+function hostFor(b: BodyExoState) {
+  const ctx = matchContextFor(b);
+  return ctx ? journalHostObservationFromSpeciesContext(ctx) : null;
+}
 
 /** Payout for a species, used to weight recall. Unknown prices weigh 1 so they neither dominate nor vanish. */
 function payoutOf(id: string): number {
@@ -226,7 +270,11 @@ function runScenario(name: string, useHints: boolean): ScenarioResult {
     r.truthBodies++;
 
     const hints = useHints ? (b.genusHints ?? null) : null;
-    const all = matchDatabaseToScan(db, b.scan, hints, null, { includeBacterium: true }).matches;
+    const all = matchDatabaseToScan(db, b.scan, hints, null, {
+      includeBacterium: true,
+      matchContext: matchContextFor(b),
+      biologicalSignals: b.biologicalSignals,
+    }).matches;
     const shown = all.filter((m) => !m.unlikely);
 
     accumulate(r.shown, b, shown, truth);
@@ -312,7 +360,11 @@ function reportDecidability(shownOnly: boolean): void {
     if (sig == null || sig <= 0) continue;
     withSignals++;
 
-    const everything = matchDatabaseToScan(db, b.scan, null, null, { includeBacterium: true }).matches;
+    const everything = matchDatabaseToScan(db, b.scan, null, null, {
+      includeBacterium: true,
+      matchContext: matchContextFor(b),
+      biologicalSignals: b.biologicalSignals,
+    }).matches;
     // The default panel is the shown tier. Running this over everything as well is what proves the
     // |G| < k defects were the walls: the count goes to zero once the demoted rows are counted.
     const matches = shownOnly ? everything.filter((m) => !m.unlikely) : everything;

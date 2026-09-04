@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola carbosis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.152Z",
+  "generatedAt": "2026-09-04T21:14:37.866Z",
   "sampleCount": 20,
   "numerics": {
     "body.distanceToArrival": {
@@ -585,8 +585,8 @@
     "body.volcanismType": -0.252,
     "body.atmosphereType": 0.078,
     "body.rotationalPeriodTidallyLocked": -0.015,
-    "exo.host_star_spectral_primary": 0.127,
-    "exo.system_primary_spectral": 0.031,
+    "exo.host_star_spectral_primary": 0.123,
+    "exo.system_primary_spectral": 0.03,
     "body.distanceToArrival": 0.275,
     "body.gravity": 0.496,
     "body.earthMasses": 0.568,

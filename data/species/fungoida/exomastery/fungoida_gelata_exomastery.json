@@ -3,7 +3,7 @@
   "speciesLabel": "Fungoida gelata",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.220Z",
+  "generatedAt": "2026-09-04T21:14:37.942Z",
   "sampleCount": 342,
   "numerics": {
     "body.distanceToArrival": {
@@ -665,7 +665,7 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.021,
     "exo.host_star_spectral_primary": -0.006,
-    "exo.system_primary_spectral": -0.038,
+    "exo.system_primary_spectral": -0.036,
     "body.distanceToArrival": 0.019,
     "body.gravity": 0.212,
     "body.earthMasses": 0.201,

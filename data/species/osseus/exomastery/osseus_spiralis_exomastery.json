@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus spiralis",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.766Z",
+  "generatedAt": "2026-09-04T21:14:38.467Z",
   "sampleCount": 822,
   "numerics": {
     "body.distanceToArrival": {
@@ -648,8 +648,8 @@
     "body.atmosphereType": 0.532,
     "body.rotationalPeriodTidallyLocked": -0.017,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.116,
-    "exo.system_primary_spectral": 0.114,
+    "exo.host_star_spectral_primary": 0.112,
+    "exo.system_primary_spectral": 0.111,
     "body.distanceToArrival": 0.018,
     "body.gravity": 0.17,
     "body.earthMasses": 0.167,

@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium cerbrus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:21.038Z",
+  "generatedAt": "2026-09-04T21:14:35.744Z",
   "sampleCount": 461,
   "numerics": {
     "body.distanceToArrival": {
@@ -674,8 +674,8 @@
     "body.atmosphereType": 0.255,
     "body.rotationalPeriodTidallyLocked": 0.024,
     "body.terraformingState": -0.384,
-    "exo.host_star_spectral_primary": -0.021,
-    "exo.system_primary_spectral": -0.01,
+    "exo.host_star_spectral_primary": -0.02,
+    "exo.system_primary_spectral": -0.009,
     "body.distanceToArrival": 0.116,
     "body.gravity": 0.535,
     "body.earthMasses": 0.587,

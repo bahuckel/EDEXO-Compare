@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa fera",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:22.889Z",
+  "generatedAt": "2026-09-04T21:14:37.581Z",
   "sampleCount": 60,
   "numerics": {
     "body.distanceToArrival": {
@@ -533,8 +533,8 @@
     "body.atmosphereType": 0.539,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.009,
-    "exo.host_star_spectral_primary": 0.207,
-    "exo.system_primary_spectral": 0.188,
+    "exo.host_star_spectral_primary": 0.2,
+    "exo.system_primary_spectral": 0.183,
     "body.distanceToArrival": 0.074,
     "body.gravity": 0.152,
     "body.earthMasses": 0.155,

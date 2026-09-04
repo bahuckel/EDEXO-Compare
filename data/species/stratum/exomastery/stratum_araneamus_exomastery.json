@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum araneamus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.836Z",
+  "generatedAt": "2026-09-04T21:14:38.529Z",
   "sampleCount": 21,
   "numerics": {
     "body.distanceToArrival": {
@@ -496,8 +496,8 @@
     "body.atmosphereType": 0.539,
     "body.terraformingState": -0.231,
     "body.rotationalPeriodTidallyLocked": -0.02,
-    "exo.host_star_spectral_primary": 0.35,
-    "exo.system_primary_spectral": 0.382,
+    "exo.host_star_spectral_primary": 0.339,
+    "exo.system_primary_spectral": 0.37,
     "body.distanceToArrival": 0.16,
     "body.gravity": 1,
     "body.earthMasses": 1,

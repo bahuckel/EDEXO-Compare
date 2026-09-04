@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Roseum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.820Z",
+  "generatedAt": "2026-09-04T21:14:38.514Z",
   "sampleCount": 46,
   "numerics": {
     "body.distanceToArrival": {
@@ -607,8 +607,8 @@
     "body.atmosphereType": 0.496,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.02,
-    "exo.host_star_spectral_primary": 0.039,
-    "exo.system_primary_spectral": 0.139,
+    "exo.host_star_spectral_primary": 0.038,
+    "exo.system_primary_spectral": 0.135,
     "body.distanceToArrival": 0.221,
     "body.gravity": 0.125,
     "body.earthMasses": 0.106,

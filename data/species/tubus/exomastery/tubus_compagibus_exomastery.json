@@ -3,7 +3,7 @@
   "speciesLabel": "Tubus compagibus",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:24.509Z",
+  "generatedAt": "2026-09-04T21:14:39.080Z",
   "sampleCount": 113,
   "numerics": {
     "body.distanceToArrival": {
@@ -549,8 +549,8 @@
     "body.atmosphereType": 0.539,
     "body.rotationalPeriodTidallyLocked": 0.02,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.183,
-    "exo.system_primary_spectral": 0.105,
+    "exo.host_star_spectral_primary": 0.178,
+    "exo.system_primary_spectral": 0.102,
     "body.distanceToArrival": 0.054,
     "body.gravity": 0.423,
     "body.earthMasses": 0.413,

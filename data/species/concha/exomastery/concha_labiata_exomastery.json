@@ -3,7 +3,7 @@
   "speciesLabel": "Concha labiata",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:22.156Z",
+  "generatedAt": "2026-09-04T21:14:36.881Z",
   "sampleCount": 1200,
   "numerics": {
     "body.distanceToArrival": {
@@ -593,8 +593,8 @@
     "body.atmosphereType": 0.537,
     "body.rotationalPeriodTidallyLocked": -0.017,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.288,
-    "exo.system_primary_spectral": 0.183,
+    "exo.host_star_spectral_primary": 0.279,
+    "exo.system_primary_spectral": 0.178,
     "body.distanceToArrival": 0.046,
     "body.gravity": 0.285,
     "body.earthMasses": 0.294,

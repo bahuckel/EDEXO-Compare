@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa collum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:22.874Z",
+  "generatedAt": "2026-09-04T21:14:37.564Z",
   "sampleCount": 36,
   "numerics": {
     "body.distanceToArrival": {
@@ -517,8 +517,8 @@
     "body.atmosphereType": 0.539,
     "body.rotationalPeriodTidallyLocked": 0.06,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.275,
-    "exo.system_primary_spectral": 0.302,
+    "exo.host_star_spectral_primary": 0.267,
+    "exo.system_primary_spectral": 0.294,
     "body.distanceToArrival": 0.213,
     "body.gravity": 0.565,
     "body.earthMasses": 0.782,

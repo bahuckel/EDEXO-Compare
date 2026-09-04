@@ -3,7 +3,7 @@
   "speciesLabel": "Cactoida peperatis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:21.547Z",
+  "generatedAt": "2026-09-04T21:14:36.264Z",
   "sampleCount": 72,
   "numerics": {
     "body.distanceToArrival": {
@@ -526,8 +526,8 @@
     "body.atmosphereType": 0.539,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.02,
-    "exo.host_star_spectral_primary": 0.137,
-    "exo.system_primary_spectral": 0.144,
+    "exo.host_star_spectral_primary": 0.133,
+    "exo.system_primary_spectral": 0.141,
     "body.distanceToArrival": 0.061,
     "body.gravity": 0.156,
     "body.earthMasses": 0.163,

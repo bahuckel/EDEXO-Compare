@@ -3,7 +3,7 @@
   "speciesLabel": "Recepta conditivus",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.793Z",
+  "generatedAt": "2026-09-04T21:14:38.492Z",
   "sampleCount": 25,
   "numerics": {
     "body.distanceToArrival": {
@@ -620,7 +620,7 @@
     "body.rotationalPeriodTidallyLocked": 0.036,
     "body.terraformingState": 0.045,
     "exo.host_star_spectral_primary": 0,
-    "exo.system_primary_spectral": -0.05,
+    "exo.system_primary_spectral": -0.047,
     "body.distanceToArrival": 0.068,
     "body.gravity": 0.433,
     "body.earthMasses": 0.807,

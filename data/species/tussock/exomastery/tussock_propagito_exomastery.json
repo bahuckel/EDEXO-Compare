@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock propagito",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:25.083Z",
+  "generatedAt": "2026-09-04T21:14:39.634Z",
   "sampleCount": 392,
   "numerics": {
     "body.distanceToArrival": {
@@ -565,8 +565,8 @@
     "body.atmosphereType": 0.539,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.02,
-    "exo.host_star_spectral_primary": 0.157,
-    "exo.system_primary_spectral": 0.186,
+    "exo.host_star_spectral_primary": 0.153,
+    "exo.system_primary_spectral": 0.18,
     "body.distanceToArrival": 0.061,
     "body.gravity": 0.109,
     "body.earthMasses": 0.124,

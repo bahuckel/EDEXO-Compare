@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa flabellum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:22.976Z",
+  "generatedAt": "2026-09-04T21:14:37.681Z",
   "sampleCount": 633,
   "numerics": {
     "body.distanceToArrival": {
@@ -578,8 +578,8 @@
     "body.atmosphereType": 0.534,
     "body.rotationalPeriodTidallyLocked": -0.021,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.234,
-    "exo.system_primary_spectral": 0.238,
+    "exo.host_star_spectral_primary": 0.227,
+    "exo.system_primary_spectral": 0.231,
     "body.distanceToArrival": 0.051,
     "body.gravity": 0.187,
     "body.earthMasses": 0.168,

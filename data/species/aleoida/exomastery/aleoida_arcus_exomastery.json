@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida arcus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:19.857Z",
+  "generatedAt": "2026-09-04T21:14:34.520Z",
   "sampleCount": 223,
   "numerics": {
     "body.distanceToArrival": {
@@ -554,8 +554,8 @@
     "body.atmosphereType": 0.539,
     "body.rotationalPeriodTidallyLocked": -0.004,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.244,
-    "exo.system_primary_spectral": 0.258,
+    "exo.host_star_spectral_primary": 0.237,
+    "exo.system_primary_spectral": 0.251,
     "body.distanceToArrival": 0.067,
     "body.gravity": 0.295,
     "body.earthMasses": 0.255,

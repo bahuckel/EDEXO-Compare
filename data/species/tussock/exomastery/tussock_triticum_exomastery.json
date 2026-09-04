@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock triticum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:25.188Z",
+  "generatedAt": "2026-09-04T21:14:39.721Z",
   "sampleCount": 303,
   "numerics": {
     "body.distanceToArrival": {
@@ -598,8 +598,8 @@
     "body.atmosphereType": 0.539,
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": 0.039,
-    "exo.host_star_spectral_primary": 0.039,
-    "exo.system_primary_spectral": 0.065,
+    "exo.host_star_spectral_primary": 0.038,
+    "exo.system_primary_spectral": 0.063,
     "body.distanceToArrival": 0.017,
     "body.gravity": 0.392,
     "body.earthMasses": 0.473,

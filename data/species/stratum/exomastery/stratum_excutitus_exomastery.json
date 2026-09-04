@@ -3,7 +3,7 @@
   "speciesLabel": "Stratum excutitus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:23.960Z",
+  "generatedAt": "2026-09-04T21:14:38.634Z",
   "sampleCount": 623,
   "numerics": {
     "body.distanceToArrival": {
@@ -592,8 +592,8 @@
     "body.atmosphereType": 0.485,
     "body.rotationalPeriodTidallyLocked": 0.005,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.322,
-    "exo.system_primary_spectral": 0.331,
+    "exo.host_star_spectral_primary": 0.312,
+    "exo.system_primary_spectral": 0.321,
     "body.distanceToArrival": 0.061,
     "body.gravity": 0.138,
     "body.earthMasses": 0.122,

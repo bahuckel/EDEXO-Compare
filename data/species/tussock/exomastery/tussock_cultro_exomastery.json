@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock cultro",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:29:24.838Z",
+  "generatedAt": "2026-09-04T21:14:39.366Z",
   "sampleCount": 909,
   "numerics": {
     "body.distanceToArrival": {
@@ -652,8 +652,8 @@
     "body.atmosphereType": 0.532,
     "body.rotationalPeriodTidallyLocked": -0.005,
     "body.terraformingState": 0.045,
-    "exo.host_star_spectral_primary": 0.018,
-    "exo.system_primary_spectral": 0.052,
+    "exo.host_star_spectral_primary": 0.017,
+    "exo.system_primary_spectral": 0.051,
     "body.distanceToArrival": 0.006,
     "body.gravity": 0.177,
     "body.earthMasses": 0.185,
