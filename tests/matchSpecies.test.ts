@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { estimatedTemperatureRangeForScan } from "../src/server/planetTemperature.js";
 import { matchDatabaseToScan, speciesMatchesExcludingTempPressure } from "../src/server/matchSpecies.js";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import type { GenusHint, PlanetScan, SpeciesDatabase } from "../src/shared/types.js";
@@ -93,28 +94,48 @@ function shown(r: { matches: { entry: { id: string; genusDataDir: string }; unli
 }
 
 describe("matchDatabaseToScan", () => {
+  /**
+   * This body reads **163.1 K** and Stratum tectonicas' codex floor is 165 K — 1.2 % below it, so it
+   * is demoted rather than shown. Under the estimator it was a confident match, because the
+   * estimated band around 163 K reached past 165 and the thermometer was ignored.
+   */
   it("predicts the right species on a thin-CO₂ high metal content body", () => {
     const r = matchDatabaseToScan(db, HMC_THIN_CO2, null, null, { includeBacterium: true });
-    const ids = shown(r)
-      .map((m) => m.entry.id)
-      .sort();
-    expect(ids).toEqual(["bacterium_bacterium_aurasus", "stratum_stratum_tectonicas"]);
+    expect(shown(r).map((m) => m.entry.id)).toEqual(["bacterium_bacterium_aurasus"]);
     expect(r.approximateMatchingUsed).toBe(false);
     expect(r.genusFilterActive).toBe(false);
+
+    const tect = r.matches.find((m) => m.entry.id === "stratum_stratum_tectonicas");
+    expect(tect?.unlikely).toBe(true);
+    expect(tect!.unlikelyReasons!.map((x) => x.field)).toContain("SurfaceTemperature");
+    expect(tect!.unlikelyReasons![0]!.detail).toContain("163.1 K");
   });
 
   it("drops bacterium rows unless the setting asks for them", () => {
     const without = matchDatabaseToScan(db, HMC_THIN_CO2, null, null, { includeBacterium: false });
-    expect(shown(without).map((m) => m.entry.id)).toEqual(["stratum_stratum_tectonicas"]);
+    // Bacterium aurasus was the only shown row here, so switching it off leaves the default panel
+    // empty and Stratum tectonicas demoted on temperature.
+    expect(shown(without)).toEqual([]);
+    expect(without.matches.some((m) => m.entry.id === "stratum_stratum_tectonicas")).toBe(true);
     // The demoted tier is genus-filtered the same way; bacterium must not sneak back in through it.
     expect(without.matches.some((m) => m.entry.genusDataDir === "bacterium")).toBe(false);
   });
 
+  /**
+   * Volcanism is still a wall, so only the two genera that require it can be shown here. Brain trees
+   * then fall out on their own terms: this body reads 198.7 K, and the ones with a temperature range
+   * start at 200 K or 300 K. Under the estimator its 140–273 K band covered both, so brain trees
+   * were listed as confident matches on a body 1.3 K too cold for the nearest of them.
+   */
   it("only offers volcanism-gated genera on a volcanic airless body", () => {
     const r = matchDatabaseToScan(db, ROCKY_AIRLESS_VOLCANIC, null, null, { includeBacterium: true });
     expect(shown(r).length).toBeGreaterThan(0);
     const genera = new Set(shown(r).map((m) => m.entry.genusDataDir));
-    expect([...genera].sort()).toEqual(["brain-tree", "fumerola"]);
+    expect([...genera].sort()).toEqual(["fumerola"]);
+
+    const gypseeum = r.matches.find((m) => m.entry.displayName === "Brain Tree Gypseeum");
+    expect(gypseeum?.unlikely).toBe(true);
+    expect(gypseeum!.unlikelyReasons![0]!.detail).toContain("200–300 K");
   });
 
   /**
@@ -173,6 +194,39 @@ describe("matchDatabaseToScan", () => {
     const far = at(1.2);
     expect(far.ok).toBe(false);
     expect(far.softOnly, "20% over is still a wall").toBe(false);
+  });
+
+  /**
+   * The estimator produced a band a mean 137 K wide, and the journal's own reading fell outside it
+   * on 28.8% of 13,271 scanned bodies — yet the matcher preferred the estimate whenever it existed.
+   * On this body the estimator says 119–233 K, which overlaps Stratum tectonicas' 165 K floor; the
+   * thermometer says 150 K, which does not.
+   */
+  it("matches on the journal's temperature, not on the estimator's band around it", () => {
+    const chilly = { ...HMC_THIN_CO2, SurfaceTemperature: 150 } as unknown as PlanetScan;
+    const est = estimatedTemperatureRangeForScan(chilly)!;
+    expect(est.tMin).toBeLessThan(165);
+    expect(est.tMax).toBeGreaterThan(165); // the estimated band would have let it through
+
+    const r = matchDatabaseToScan(db, chilly, null, null, { includeBacterium: true });
+    expect(r.matches.some((m) => m.entry.id === "stratum_stratum_tectonicas")).toBe(false);
+
+    // And it still matches where the thermometer agrees with the codex.
+    const warm = { ...HMC_THIN_CO2, SurfaceTemperature: 198.68 } as unknown as PlanetScan;
+    expect(
+      shown(matchDatabaseToScan(db, warm, null, null, { includeBacterium: true })).some(
+        (m) => m.entry.id === "stratum_stratum_tectonicas",
+      ),
+    ).toBe(true);
+  });
+
+  it("falls back to the estimator only when the journal has no temperature at all", () => {
+    // The estimator is not deleted — it is the only band available before a detailed scan, and it
+    // still feeds the displayed `estimatedSurfaceTempK`.
+    const noReading = { ...HMC_THIN_CO2, SurfaceTemperature: undefined } as unknown as PlanetScan;
+    const r = matchDatabaseToScan(db, noReading, null, null, { includeBacterium: true });
+    expect(r.estimatedSurfaceTempK).not.toBeNull();
+    expect(r.matches.length).toBeGreaterThan(0);
   });
 
   it("gives every match at least one stated reason", () => {

@@ -489,15 +489,33 @@ function tempBandsOverlap(planet: PlanetTemperatureBand, species: { lo: number; 
   return planet.minK <= species.hi && species.lo <= planet.maxK;
 }
 
+/**
+ * The body's temperature for matching: the journal's reading when there is one.
+ *
+ * The estimator used to win this contest whenever it produced anything, and it produced a band a
+ * mean **137 K** wide (p90 291 K). Worse, measured across 13,271 scanned bodies, the journal's own
+ * `SurfaceTemperature` falls **outside** that estimated band on **28.8 %** of them — so the matcher
+ * was discarding a measurement in favour of a guess that disagreed with it more than a quarter of
+ * the time.
+ *
+ * It was compensation for bands that were too narrow to trust, and the compensation cost more than
+ * the problem: dropping it cuts mean ambiguity from 11.16 to 7.51 and p90 from 33 to 16, and raises
+ * decidability from 31.4 % to 34.6 %. It is not free — 10 confirmed species and 85.9 M credits move
+ * out of the default list, 4 of them into the unlikely tier rather than out of the app — and the
+ * owner took that trade explicitly.
+ *
+ * The estimator is still computed and still shown: `estimatedSurfaceTempK` rides the snapshot for
+ * display, and it is the only band available on a body the commander has not scanned in detail.
+ */
 function resolvePlanetTemperatureBand(
   scan: PlanetScan,
   est: { tMin: number; tMax: number } | null,
 ): PlanetTemperatureBand | null {
-  if (est) return { minK: est.tMin, maxK: est.tMax };
   if (scan.SurfaceTemperature != null && !Number.isNaN(scan.SurfaceTemperature)) {
     const t = scan.SurfaceTemperature;
     return { minK: t, maxK: t };
   }
+  if (est) return { minK: est.tMin, maxK: est.tMax };
   return null;
 }
 
@@ -867,9 +885,13 @@ export function speciesMatchesCriteria(
       // Our surface temperature is frequently an estimate, not a measurement; a 2% gap is inside the
       // estimator's own error, never mind the codex rounding.
       const near = tempBandsOverlapWithinTolerance(planetTempBand, band);
-      const estNote = estimatedRange
-        ? `Estimated surface band ${planetTempBand.minK}–${planetTempBand.maxK} K (mid ~${estimatedRange.tMid} K) does not overlap species ${band.lo === OPEN_LO ? "≤" : ""}${band.lo === OPEN_LO ? band.hi : band.lo}${band.lo !== OPEN_LO && band.hi !== OPEN_HI ? "–" : ""}${band.hi === OPEN_HI ? "" : band.hi} K.`
-        : `Journal / planet band ${planetTempBand.minK}–${planetTempBand.maxK} K does not overlap species range.`;
+      const speciesRange = `${band.lo === OPEN_LO ? "≤" : ""}${band.lo === OPEN_LO ? band.hi : band.lo}${band.lo !== OPEN_LO && band.hi !== OPEN_HI ? "–" : ""}${band.hi === OPEN_HI ? "" : band.hi} K`;
+      const measured = scan.SurfaceTemperature != null && !Number.isNaN(scan.SurfaceTemperature);
+      const estNote = measured
+        ? `Journal reads ${planetTempBand.minK.toFixed(1)} K; species range is ${speciesRange}.`
+        : estimatedRange
+          ? `No journal temperature — estimated band ${planetTempBand.minK}–${planetTempBand.maxK} K (mid ~${estimatedRange.tMid} K) does not overlap species ${speciesRange}.`
+          : `Planet band ${planetTempBand.minK}–${planetTempBand.maxK} K does not overlap species range.`;
       failures.push({
         field: "SurfaceTemperature",
         ...(near ? { soft: true } : {}),
@@ -878,9 +900,9 @@ export function speciesMatchesCriteria(
     } else {
       const surf = scan.SurfaceTemperature;
       const bandTxt =
-        estimatedRange != null
-          ? `Band ${planetTempBand.minK}–${planetTempBand.maxK} K (journal ${surf != null ? `${surf.toFixed(1)} K` : "n/a"}, heuristic mid ~${estimatedRange.tMid} K) overlaps species gate`
-          : `Band ${planetTempBand.minK}–${planetTempBand.maxK} K overlaps species gate`;
+        surf != null && !Number.isNaN(surf)
+          ? `${surf.toFixed(1)} K (journal) is inside the species range`
+          : `Estimated band ${planetTempBand.minK}–${planetTempBand.maxK} K overlaps the species range (no journal reading)`;
       extraOkReasons.push({ field: "SurfaceTemperature", detail: bandTxt });
     }
   } else if (scan.SurfaceTemperature != null) {
