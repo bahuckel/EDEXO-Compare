@@ -1719,14 +1719,21 @@ export class GameStateStore {
         }
       } else if (mode === "saas_signals") {
         if (sourceBody.biologicalSignals != null) b.biologicalSignals = sourceBody.biologicalSignals;
-        if (sourceBody.genusHints?.length) b.genusHints = [...sourceBody.genusHints];
+        // Merge, never replace: the sibling's own DSS result is at least as authoritative as this
+        // one's, and overwriting it deleted genera the commander went on to scan there. See the
+        // `fss_signals` branch above, which has always merged.
+        if (sourceBody.genusHints?.length) {
+          b.genusHints = mergeGenusHints(b.genusHints, sourceBody.genusHints);
+        }
         if (sourceBody.signalHints?.length) {
           const set = new Set<string>([...(b.signalHints ?? []), ...sourceBody.signalHints]);
           b.signalHints = set.size ? [...set] : b.signalHints;
         }
       } else if (mode === "dss_complete") {
         b.dssComplete = true;
-        if (sourceBody.genusHints?.length) b.genusHints = [...sourceBody.genusHints];
+        if (sourceBody.genusHints?.length) {
+          b.genusHints = mergeGenusHints(b.genusHints, sourceBody.genusHints);
+        }
         if (sourceBody.biologicalSignals != null) b.biologicalSignals = sourceBody.biologicalSignals;
       } else if (mode === "detailed_scan") {
         const srcScan = sourceBody.scan;
