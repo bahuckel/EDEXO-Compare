@@ -29,6 +29,7 @@ import {
   stellarSubclassStepDistance,
   yerkesLuminosityStepDistance,
 } from "../shared/stellarProximity.js";
+import { exomasteryHabitatTierWeight } from "./exomasteryHabitatTiers.js";
 import { shouldOmitExomasterySciencePath } from "./exomasteryPathHygiene.js";
 import { getSpeciesDataDir } from "./paths.js";
 
@@ -907,28 +908,37 @@ function collectWeightedHabitatScores(
   const atmoKeysLower = new Set(Object.keys(profile.atmosphereComposition).map((k) => k.toLowerCase()));
   const solidKeysLower = new Set(Object.keys(profile.solidComposition ?? {}).map((k) => k.toLowerCase()));
 
+  /**
+   * Measured importance scaled by the parameter's tier. Sample concentration says how *consistent* a
+   * parameter is across the feeder sample, not how much it decides where a species grows; the tier
+   * supplies the part concentration cannot know. See {@link exomasteryHabitatTierWeight}.
+   */
+  const push = (path: string, score: number, importance: number) => {
+    out.push({ score, importance: importance * exomasteryHabitatTierWeight(path) });
+  };
+
   for (const [path, r] of Object.entries(profile.numerics)) {
     if (shouldOmitExomasterySciencePath(path)) continue;
     const tail = exomasteryPathTailLower(path);
     if (materialKeysLower.has(tail) || atmoKeysLower.has(tail) || solidKeysLower.has(tail)) continue;
     const v = valueForNumericPath(path, scan, rec);
     if (v == null) continue;
-    out.push({ score: similarityToRollup(v, r), importance: rollupImportance(r) });
+    push(path, similarityToRollup(v, r), rollupImportance(r));
   }
   for (const [el, r] of Object.entries(profile.materials)) {
     const { v, known } = crustMaterialValue(scan, rec, el);
     if (!known) continue;
-    out.push({ score: similarityToRollupComposition(v ?? 0, r), importance: rollupImportance(r) });
+    push(`materials.${el}`, similarityToRollupComposition(v ?? 0, r), rollupImportance(r));
   }
   for (const [el, r] of Object.entries(profile.atmosphereComposition)) {
     const { v, known } = atmoGasValue(scan, rec, el);
     if (!known) continue;
-    out.push({ score: similarityToRollupComposition(v ?? 0, r), importance: rollupImportance(r) });
+    push(`atmosphereComposition.${el}`, similarityToRollupComposition(v ?? 0, r), rollupImportance(r));
   }
   for (const [el, r] of Object.entries(profile.solidComposition ?? {})) {
     const { v, known } = solidValue(scan, rec, el);
     if (!known) continue;
-    out.push({ score: similarityToRollupComposition(v ?? 0, r), importance: rollupImportance(r) });
+    push(`solidComposition.${el}`, similarityToRollupComposition(v ?? 0, r), rollupImportance(r));
   }
   for (const [path, counts] of Object.entries(profile.categorical ?? {})) {
     if (shouldOmitExomasterySciencePath(path)) continue;
@@ -936,10 +946,7 @@ function collectWeightedHabitatScores(
     if (!modeVal) continue;
     const scanVal = valueForCategoricalPath(path, scan, rec, journalHost);
     if (!scanVal) continue;
-    out.push({
-      score: categoricalSimilarity(scanVal, modeVal, path),
-      importance: categoricalImportance(counts),
-    });
+    push(path, categoricalSimilarity(scanVal, modeVal, path), categoricalImportance(counts));
   }
   return out;
 }
@@ -1011,7 +1018,15 @@ export function exomasterySimilarityPercent(
 
 /** Top dimensions with the strongest central tendency in the feeder sample (for spawn-variation hints). */
 export function buildExomasteryVarietyHints(profile: ExomasteryProfileV1): ExomasteryVarietyItemDTO[] {
-  const rows: { label: string; concentration: number }[] = [];
+  const rows: { label: string; concentration: number; rank: number }[] = [];
+  /**
+   * Ranked by tier-weighted concentration, displayed with the true one. A tightly clustered orbital
+   * period is a real fact about the sample and stays in the list, but it must not head a panel the
+   * commander reads as "what this species cares about" - the same demotion the scorer applies.
+   */
+  const addRow = (path: string, label: string, concentration: number) => {
+    rows.push({ label, concentration, rank: concentration * exomasteryHabitatTierWeight(path) });
+  };
 
   for (const [path, counts] of Object.entries(profile.categorical ?? {})) {
     if (shouldOmitExomasterySciencePath(path)) continue;
@@ -1019,7 +1034,7 @@ export function buildExomasteryVarietyHints(profile: ExomasteryProfileV1): Exoma
     if (vals.length === 0) continue;
     const total = vals.reduce((a, b) => a + b, 0);
     const mx = Math.max(...vals);
-    rows.push({ label: formatPathLabel(path), concentration: (mx / total) * 100 });
+    addRow(path, formatPathLabel(path), (mx / total) * 100);
   }
 
   const addNumericTightness = (labelPrefix: string, map: Record<string, ExomasteryNumericRollup>) => {
@@ -1029,7 +1044,7 @@ export function buildExomasteryVarietyHints(profile: ExomasteryProfileV1): Exoma
       const mode = r.mode ?? r.mean;
       const span = (r.max - r.min) / (Math.abs(mode) + 1e-9);
       const tight = 1 / (1 + span / 8);
-      rows.push({ label: `${labelPrefix} · ${k}`, concentration: tight * 100 });
+      addRow(pathKey, `${labelPrefix} · ${k}`, tight * 100);
     }
   };
   addNumericTightness("Stat", profile.numerics);
@@ -1037,7 +1052,7 @@ export function buildExomasteryVarietyHints(profile: ExomasteryProfileV1): Exoma
   addNumericTightness("Atmosphere", profile.atmosphereComposition);
   addNumericTightness("Solid", profile.solidComposition ?? {});
 
-  rows.sort((a, b) => b.concentration - a.concentration);
+  rows.sort((a, b) => b.rank - a.rank || b.concentration - a.concentration);
   return rows.map((r, i) => ({
     id: `exo-var-${i}-${r.label.replace(/[^a-z0-9]+/gi, "-").slice(0, 48)}`,
     label: r.label,
@@ -2004,8 +2019,17 @@ const OTHER_MATCH_TIER_UNIT: Record<1 | 2 | 3 | 4, number> = {
   4: 0.18,
 };
 
+/**
+ * Orbital geometry, recognised by chip title rather than by feeder path. Same demotion the habitat
+ * scorer applies through its `background` tier; checked before anything else so a loose keyword
+ * cannot promote an orbital chip back into tier 1.
+ */
+const ORBITAL_GEOMETRY_CHIP =
+  /(semi[- ]?major|orbital period|rotation(al)? period|tidal|eccentric|inclination|periapsis|ascending node|mean anomaly)/i;
+
 function otherMatchCardTierFromTitle(shortTitle: string): 1 | 2 | 3 | 4 {
   const t = shortTitle.trim();
+  if (ORBITAL_GEOMETRY_CHIP.test(t)) return 4;
   if (t.startsWith("Host ·")) return 1;
   if (t.startsWith("Solid ·")) return 2;
   if (t.startsWith("Crust ·")) return 3;
@@ -2017,11 +2041,6 @@ function otherMatchCardTierFromTitle(shortTitle: string): 1 | 2 | 3 | 4 {
     low.includes("gravity") ||
     low.includes("temperature") ||
     low.includes("pressure") ||
-    low.includes("semi-major") ||
-    low.includes("semi major") ||
-    low.includes("orbital period") ||
-    low.includes("rotation period") ||
-    low.includes("tidal") ||
     low.includes("terraform") ||
     low.includes("landable") ||
     low.includes("volcan") ||

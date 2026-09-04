@@ -34,6 +34,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "probe": "tsx scripts/accuracy-probe.ts",
+    "rank-probe": "tsx scripts/rank-probe.ts",
     "fixture": "tsx scripts/gen-match-fixture.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
