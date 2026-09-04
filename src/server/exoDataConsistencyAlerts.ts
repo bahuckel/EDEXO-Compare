@@ -116,6 +116,34 @@ export function computeExoDataAlertsForBody(input: {
     return { alerts, dssGenusOrphanHints };
   }
 
+  /**
+   * The game places one genus per biological signal and never the same genus twice, so offering
+   * fewer candidate genera than the body reports signals is not uncertainty — it is proof that a
+   * gate is excluding a genus that is really there. It needs no landing to detect, which makes it
+   * the cheapest data defect in the project to find: measured across the journal cache it fires on
+   * 15 of 1,096 bodies.
+   */
+  const signalCount = body.biologicalSignals;
+  if (signalCount != null && Number.isFinite(signalCount) && signalCount > 0) {
+    const predictedGenera = new Set(
+      matches.filter((m) => !m.entry.predictionUnsupported).map((m) => m.entry.genusDataDir),
+    );
+    if (predictedGenera.size > 0 && predictedGenera.size < signalCount) {
+      const short = signalCount - predictedGenera.size;
+      alerts.push({
+        id: `signal-count-short:${body.key}`,
+        severity: "warning",
+        detectionSource: "journal",
+        title: `${short} genus${short === 1 ? "" : "es"} missing from the candidate list`,
+        detail:
+          `The journal reports ${signalCount} biological signal(s) on this body, and the game places one genus ` +
+          `per signal, but only ${predictedGenera.size} candidate genus/genera pass the current gates ` +
+          `(${[...predictedGenera].sort().join(", ")}). At least ${short} genus that is really here is being ` +
+          `excluded — a gate is too narrow. Worth recording; nothing on this body needs to be visited to know it.`,
+      });
+    }
+  }
+
   const est = estimatedTemperatureRangeForScan(mergedScan);
   const planetBand: PlanetTemperatureBand | null = est
     ? { minK: est.tMin, maxK: est.tMax }

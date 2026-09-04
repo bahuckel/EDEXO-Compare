@@ -2,6 +2,7 @@ import { existsSync, statSync } from "node:fs";
 import type {
   AppSnapshot,
   BodyComputed,
+  GenusCertaintyDTO,
   BodyExoState,
   DScanBodiesDTO,
   EncyclopediaSpeciesRowDTO,
@@ -573,6 +574,48 @@ function bodyTabLabel(b: BodyExoState, store: GameStateStore): string {
   return shortBodyLabel(full, star);
 }
 
+/**
+ * Compare candidate genera with the biological signal count the game already told us.
+ *
+ * One genus per signal, no genus twice, so an equal count means every candidate genus is present —
+ * a decision the commander can act on without flying there, which is the whole point of the app.
+ * Fewer candidates than signals cannot happen in the game and is therefore proof that one of our
+ * gates is wrong; measured across the journal cache that fires on 15 of 1,096 bodies.
+ *
+ * Species marked `predictionUnsupported` are excluded from the count: they were never predicted, so
+ * letting them satisfy the signal count would manufacture a certainty nobody earned.
+ */
+export function genusCertaintyForBodyForTests(
+  b: BodyExoState,
+  matches: SpeciesMatch[],
+): GenusCertaintyDTO | null {
+  return genusCertaintyForBody(b, matches);
+}
+
+function genusCertaintyForBody(b: BodyExoState, matches: SpeciesMatch[]): GenusCertaintyDTO | null {
+  const signalCount = b.biologicalSignals;
+  if (signalCount == null || !Number.isFinite(signalCount) || signalCount <= 0) return null;
+
+  const byDir = new Map<string, string>();
+  for (const m of matches) {
+    if (m.entry.predictionUnsupported) continue;
+    const dir = m.entry.genusDataDir;
+    if (!dir || byDir.has(dir)) continue;
+    byDir.set(dir, m.entry.genus?.trim() || dir);
+  }
+  const genera = [...byDir.values()].sort((x, y) => x.localeCompare(y));
+  const candidateGenera = genera.length;
+  if (candidateGenera === 0) return null;
+
+  const status =
+    candidateGenera === signalCount
+      ? "certain"
+      : candidateGenera < signalCount
+        ? "underCovered"
+        : "ambiguous";
+  return { status, signalCount, candidateGenera, genera };
+}
+
 function ambiguityForBody(b: BodyExoState): string | null {
   const sig = b.biologicalSignals;
   const genusN = b.genusHints?.length ?? 0;
@@ -678,6 +721,7 @@ function computeBodyUncached(
       tabLabel: bodyTabLabel(b, store),
       matches: [],
       genusFilterActive,
+      genusCertainty: null,
       ambiguityNote:
         b.biologicalSignals || genusFilterActive
           ? "Awaiting a detailed surface scan in the journal for this body — landable planet stats are required for matching."
@@ -803,6 +847,7 @@ function computeBodyUncached(
     matches,
     genusFilterActive: gfa,
     ambiguityNote: note,
+    genusCertainty: genusCertaintyForBody(b, matches),
     estimatedSurfaceTempK,
     speciesMatchContext: speciesMatchCtx,
     approximateMatchingUsed,

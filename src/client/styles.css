@@ -8944,3 +8944,32 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   vertical-align: middle;
   cursor: help;
 }
+
+/* Signal-count verdict: candidate genera vs the count the game reports. */
+.genus-certainty {
+  margin: 0.2rem 0 0.35rem;
+  padding: 0.22rem 0.45rem;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  cursor: help;
+}
+
+.genus-certainty--certain {
+  border-left-color: rgba(120, 230, 160, 0.7);
+  background: rgba(80, 200, 130, 0.1);
+  color: rgba(190, 245, 210, 0.94);
+}
+
+.genus-certainty--short {
+  border-left-color: rgba(255, 170, 90, 0.7);
+  background: rgba(255, 150, 60, 0.09);
+  color: rgba(255, 205, 155, 0.92);
+}
+
+.genus-certainty--ambiguous {
+  border-left-color: rgba(150, 165, 200, 0.5);
+  background: rgba(120, 135, 170, 0.09);
+  color: rgba(200, 210, 230, 0.85);
+}

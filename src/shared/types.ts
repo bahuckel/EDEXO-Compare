@@ -631,6 +631,29 @@ export interface DssPhysicalSlackRatios {
   gravity: number;
 }
 
+/**
+ * The signal-count rule.
+ *
+ * The game reports how many biological signals a body carries in `FSSBodySignals`, before the
+ * commander travels anywhere, and it places **one genus per signal — never the same genus twice**.
+ * So comparing the number of candidate genera with the signal count turns a list into a verdict:
+ *
+ * - `certain`   — as many candidate genera as signals, so every one of them is present. No trip
+ *                 needed to know what is there.
+ * - `ambiguous` — more candidates than signals: `k` of these genera are present, not all.
+ * - `underCovered` — fewer candidates than signals, which is impossible in the game and therefore a
+ *                 defect in our data: a gate is excluding a genus that is really there.
+ */
+export interface GenusCertaintyDTO {
+  status: "certain" | "ambiguous" | "underCovered";
+  /** Biological signals the game reports for this body. */
+  signalCount: number;
+  /** Distinct candidate genera the matcher offered. */
+  candidateGenera: number;
+  /** Display names of the candidate genera, sorted. */
+  genera: string[];
+}
+
 export interface BodyComputed {
   state: BodyExoState;
   /**
@@ -647,6 +670,12 @@ export interface BodyComputed {
   genusFilterActive: boolean;
   /** Message when signals < candidate genera etc. */
   ambiguityNote: string | null;
+  /**
+   * Candidate genera vs the FSS signal count. Null when the body has no signal count or no usable
+   * scan. See {@link GenusCertaintyDTO} — this is the difference between "one of these twelve" and
+   * "these three, guaranteed".
+   */
+  genusCertainty: GenusCertaintyDTO | null;
   /** Estimated viable surface temperature band from scan heuristics; null if planet class could not be mapped. */
   estimatedSurfaceTempK: EstimatedSurfaceTempBand | null;
   /**

@@ -249,6 +249,8 @@ function report(r: ScenarioResult): void {
  */
 function reportDecidability(): void {
   let withSignals = 0;
+  let scored = 0;
+  let noCandidates = 0;
   let landed = 0;
   let decidable = 0;
   let missingGate = 0;
@@ -264,7 +266,16 @@ function reportDecidability(): void {
     withSignals++;
 
     const matches = matchDatabaseToScan(db, b.scan, null, null, { includeBacterium: true }).matches;
-    const genera = new Set(matches.map((m) => m.entry.genusDataDir));
+    // Same rule the app ships (`genusCertaintyForBody`): species we never claimed to predict cannot
+    // satisfy the signal count, or the verdict would rest on a certainty nobody earned.
+    const genera = new Set(
+      matches.filter((m) => !m.entry.predictionUnsupported).map((m) => m.entry.genusDataDir),
+    );
+    if (genera.size === 0) {
+      noCandidates++;
+      continue;
+    }
+    scored++;
 
     if (genera.size < sig) missingGate++;
     else if (genera.size === sig) decidable++;
@@ -285,14 +296,15 @@ function reportDecidability(): void {
   const sorted = overCounts.sort((a, b) => a - b);
   console.log(`\n── decidability (FSS-only, every body with bio signals) ─`);
   console.log(`  corpus           ${withSignals} bodies with signals, of which ${landed} landed on`);
+  console.log(`  scored           ${scored}   (${noCandidates} offered no predictable candidate at all)`);
   console.log(
-    `  DECIDABLE        ${decidable} (${((decidable / withSignals) * 100).toFixed(1)}%)   candidate genera == signal count`,
+    `  DECIDABLE        ${decidable} (${((decidable / scored) * 100).toFixed(1)}%)   candidate genera == signal count`,
   );
   console.log(
-    `  ambiguous        ${ambiguous} (${((ambiguous / withSignals) * 100).toFixed(1)}%)   mean ${sorted.length ? (sorted.reduce((s, x) => s + x, 0) / sorted.length).toFixed(2) : "0"} genera for k signals`,
+    `  ambiguous        ${ambiguous} (${((ambiguous / scored) * 100).toFixed(1)}%)   mean ${sorted.length ? (sorted.reduce((s, x) => s + x, 0) / sorted.length).toFixed(2) : "0"} genera for k signals`,
   );
   console.log(
-    `  missing gate     ${missingGate} (${((missingGate / withSignals) * 100).toFixed(1)}%)   fewer candidates than the game reports — provable data defect`,
+    `  missing gate     ${missingGate} (${((missingGate / scored) * 100).toFixed(1)}%)   fewer candidates than the game reports — provable data defect`,
   );
   if (decidableTruth) {
     console.log(

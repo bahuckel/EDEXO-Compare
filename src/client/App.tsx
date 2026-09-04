@@ -292,6 +292,48 @@ function SpeciesStarColourSoftBadge({
 }
 
 /** Habitat fit (cross-genus) + deck match + optional same-genus rank — equal-width columns for available metrics only. */
+/**
+ * The signal-count verdict.
+ *
+ * The game reports how many biological signals a body has before the commander goes anywhere, and it
+ * places one genus per signal. When the candidate genera match that count, every one of them is
+ * present — the answer is settled from orbit, which is the whole reason the app exists. When there
+ * are fewer, one of our gates is wrong.
+ */
+function GenusCertaintyLine({ c }: { c: NonNullable<BodyComputed["genusCertainty"]> }) {
+  if (c.status === "certain") {
+    return (
+      <p
+        className="genus-certainty genus-certainty--certain"
+        title="The game places one genus per biological signal and never repeats a genus on a body. The candidate genera match the signal count exactly, so every genus listed is present — no surface scan needed to know that."
+      >
+        All {c.signalCount} {c.signalCount === 1 ? "genus is" : "genera are"} identified:{" "}
+        <strong>{c.genera.join(", ")}</strong> — confirmed from the signal count alone.
+      </p>
+    );
+  }
+  if (c.status === "underCovered") {
+    const short = c.signalCount - c.candidateGenera;
+    return (
+      <p
+        className="genus-certainty genus-certainty--short"
+        title="Fewer candidate genera than the game reports signals. That cannot happen in-game, so a gate in our data is excluding a genus that is really here."
+      >
+        {c.signalCount} signals but only {c.candidateGenera} candidate{" "}
+        {c.candidateGenera === 1 ? "genus" : "genera"} — at least {short} is missing from our data.
+      </p>
+    );
+  }
+  return (
+    <p
+      className="genus-certainty genus-certainty--ambiguous"
+      title="More candidate genera than signals: the game placed this many genera, but we cannot yet say which of the candidates they are."
+    >
+      {c.signalCount} of these {c.candidateGenera} genera are present.
+    </p>
+  );
+}
+
 function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["matches"][0] }) {
   const hq = m.exomasteryHabitatQuality;
   const deck = m.exomasterySimilarityPercent;
@@ -1528,6 +1570,7 @@ const BodyPane = memo(function BodyPane({
           </div>
         </div>
 
+        {body.genusCertainty ? <GenusCertaintyLine c={body.genusCertainty} /> : null}
         {body.ambiguityNote ? <p className="warn tiny">{body.ambiguityNote}</p> : null}
       </div>
 
