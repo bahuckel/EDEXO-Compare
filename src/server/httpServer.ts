@@ -11,6 +11,7 @@ import type {
   AppStatusDTO,
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
+  FeederStatusDTO,
   ExoDataAlertDTO,
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
@@ -93,6 +94,13 @@ export function createHttpServer(opts: {
   getStatus: () => AppStatusDTO;
   /** GET /api/species-encyclopedia — species rows including exomastery flags */
   getEncyclopedia?: () => EncyclopediaSpeciesRowDTO[];
+  /**
+   * GET /api/feeder/status — feeder corpus vs installed profiles.
+   *
+   * Absent on a build with no feeder corpus, which is every normal install; the panel hides itself
+   * rather than showing empty numbers.
+   */
+  getFeederStatus?: () => FeederStatusDTO;
   /** POST /api/settings/include-bacterium */
   setIncludeBacterium?: (value: boolean) => void;
   setIncludeExplorationScanData?: (value: boolean) => void;
@@ -406,6 +414,22 @@ export function createHttpServer(opts: {
       });
     } catch {
       res.status(500).json({ error: "Could not load species database." });
+    }
+  });
+
+  /**
+   * Whether the data the app ranks with is the data the corpus holds. Before the feeder merge the
+   * answer was no on 72 of 79 profiles and nothing in the app said so.
+   */
+  app.get("/api/feeder/status", (_req, res) => {
+    if (typeof opts.getFeederStatus !== "function") {
+      res.status(501).json({ error: "Not available" });
+      return;
+    }
+    try {
+      res.json(opts.getFeederStatus());
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
     }
   });
 

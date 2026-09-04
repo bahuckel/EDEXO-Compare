@@ -33,6 +33,7 @@ import {
   loadSpeciesDatabase,
 } from "./snapshot.js";
 import { writeExoDataAlertFixFiles } from "./exoDataAlertFix.js";
+import { buildFeederStatus } from "./feederStatus.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
 import { clearFootScannedCatalogCache } from "./footScannedCatalog.js";
@@ -815,6 +816,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
     scheduleBroadcast: push,
     getEncyclopedia: buildEncyclopediaPayload,
+    getFeederStatus: () => buildFeederStatus(projectRoot, getCachedSpeciesDatabase()),
     getEncyclopediaExomastery: (genusDir, speciesEntryId, focusBodyKey) => {
       const entry = findSpeciesEntryForEncyclopedia(genusDir, speciesEntryId);
       if (!entry) return null;

@@ -107,6 +107,7 @@ import { buildBodyOrbitGroups, groupTabBodiesIntoHostCards } from "./bodyTabGrou
 import { useStableBioTabOrder } from "./useStableBioTabOrder";
 import { BodyTabStrip, type TabSection } from "./BodyTabStrip";
 import { BodyJumpPalette, bodyJumpItems } from "./BodyJumpPalette";
+import { FeederStatusPanel } from "./FeederStatusPanel";
 
 function FootScanMatchCard({ payload }: { payload: FootScanMatchPayload }) {
   const [expanded, setExpanded] = useState(false);
@@ -2277,6 +2278,8 @@ function MapOptionsModal({
               <p className="options-journal-line dim">LAN server: use npm run start:server</p>
             )}
           </section>
+
+          <FeederStatusPanel />
 
           <section className="options-journal-history options-meta-block">
             <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>

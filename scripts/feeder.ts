@@ -31,6 +31,7 @@ import {
   formatRunReport,
   importCsv,
   openFeeder,
+  recordStatusSnapshot,
   runPipeline,
   speciesWithSamples,
   type RunReport,
@@ -116,6 +117,9 @@ async function cmdStatus(): Promise<void> {
     for (const s of stale.slice(0, 12)) console.log(s);
     if (stale.length > 12) console.log(`  … and ${stale.length - 12} more`);
   }
+  // Every command leaves the snapshot behind, so the app's Options panel is never older than the
+  // last time the feeder was touched.
+  recordStatusSnapshot(ctx, "status");
   console.log("");
 }
 
@@ -143,6 +147,8 @@ async function cmdImport(): Promise<void> {
   console.log(`  species to refresh  ${r.touchedSpecies.length}`);
   if (r.newSpeciesLabels.length) console.log(`  new: ${r.newSpeciesLabels.join(", ")}`);
 
+  recordStatusSnapshot(ctx, "import");
+
   if (r.touchedSpecies.length === 0) {
     console.log("\nNothing gained occurrences — no rebuild needed.");
     return;
@@ -160,6 +166,7 @@ async function cmdRun(): Promise<void> {
   const labels = positional.length ? positional : Object.keys(ctx.speciesIndex).sort();
   console.log(`\nrunning ${labels.length} species from ${feederDataDir()}\n`);
   const report = await runPipeline(ctx, db, labels, { allowDowngrade, onProgress: log });
+  recordStatusSnapshot(ctx, "run");
   finish(report);
 }
 
@@ -197,7 +204,10 @@ async function cmdRebuild(): Promise<void> {
       console.log(`  error      ${label.padEnd(26)} ${String(e instanceof Error ? e.message : e)}`);
     }
   }
-  if (!dryRun) finish(report);
+  if (!dryRun) {
+    recordStatusSnapshot(ctx, "rebuild");
+    finish(report);
+  }
 }
 
 function finish(report: RunReport): void {

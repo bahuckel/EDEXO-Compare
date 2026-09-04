@@ -9041,3 +9041,43 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .species-identity-sub--demoted {
   color: rgba(255, 196, 140, 0.78);
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * Feeder status, in Options.
+ *
+ * Only rendered where a feeder corpus exists, so this is a maintainer's view rather than part of the
+ * normal UI. It answers one question: is the data the app ranks with the data the corpus holds?
+ * ---------------------------------------------------------------------------------------------- */
+.options-feeder-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.85rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+}
+
+.options-feeder-grid dt {
+  color: rgba(190, 200, 220, 0.72);
+  white-space: nowrap;
+}
+
+.options-feeder-grid dd {
+  margin: 0;
+}
+
+.options-feeder-behind {
+  border-left: 2px solid rgba(255, 170, 90, 0.34);
+  padding-left: 0.6rem;
+  margin: 0.5rem 0 0;
+}
+
+.options-feeder-list {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.options-feeder-species {
+  color: rgba(215, 225, 240, 0.92);
+}

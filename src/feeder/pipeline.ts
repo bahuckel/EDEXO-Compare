@@ -39,6 +39,7 @@ import {
   rawPlanetsDir,
   rawSystemsDir,
 } from "./paths.js";
+import { writeFeederStatusSnapshot } from "./statusSnapshot.js";
 
 export interface FeederContext {
   store: FeederStore;
@@ -84,6 +85,30 @@ async function saveIndexMirror(ctx: FeederContext): Promise<void> {
     ),
     "utf8",
   );
+}
+
+/**
+ * Leave the app a readable summary of the corpus.
+ *
+ * The counts below live in a WASM SQLite database; the app's server has no business loading one for
+ * a maintainer tool whose corpus never ships. Writing them out after each command is what lets the
+ * Options panel show corpus state without that dependency. See `statusSnapshot.ts`.
+ */
+export function recordStatusSnapshot(ctx: FeederContext, lastCommand: string): void {
+  const s = ctx.store.getStats();
+  const occurrencesBySpecies: Record<string, number> = {};
+  for (const [label, e] of Object.entries(ctx.speciesIndex)) {
+    occurrencesBySpecies[label] = e.occurrences.length;
+  }
+  writeFeederStatusSnapshot({
+    lastCommand,
+    uniqueSystems: s.uniqueSystems,
+    uniquePlanets: s.uniquePlanets,
+    uniqueSightings: s.uniqueSightings,
+    corpusSpecies: Object.keys(ctx.speciesIndex).length,
+    cumulativeCsvRows: ctx.cumulativeCsvRows,
+    occurrencesBySpecies,
+  });
 }
 
 export interface ImportResult {

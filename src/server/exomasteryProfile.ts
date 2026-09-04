@@ -280,7 +280,9 @@ export function feederProfileBodyCount(profile: ExomasteryProfileV1): number {
 
 /** Optional profile JSON: `species/<genus>/exomastery/*.json` first, then legacy `*_exomastery*.json` in genus root. */
 export function loadExomasteryProfile(projectRoot: string, entry: SpeciesEntry): ExomasteryProfileV1 | null {
-  const cacheKey = `${entry.genusDataDir}::${entry.id}`;
+  // Keyed by root as well as species: the app only ever has one project root, but the feeder status
+  // builder takes one as a parameter, and a cache that ignores it would answer for the wrong tree.
+  const cacheKey = `${projectRoot}::${entry.genusDataDir}::${entry.id}`;
   if (profileCache.has(cacheKey)) {
     const c = profileCache.get(cacheKey);
     return c === undefined ? null : c;

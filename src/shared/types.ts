@@ -321,6 +321,50 @@ export interface EncyclopediaExomasteryPlanetsResponseDTO {
   focusBody?: EncyclopediaExomasteryFocusBodyDTO | null;
 }
 
+/**
+ * Feeder state for the Options panel.
+ *
+ * The feeder is a maintainer tool: its 250 MB corpus of raw EDSM sample packs never ships, so on a
+ * normal install `available` is false and the panel is not rendered at all. Where it is present, the
+ * panel answers one question — is the data the app ranks with the data the corpus actually holds?
+ */
+export interface FeederStatusDTO {
+  /** False when there is no corpus on this machine; the panel hides itself. */
+  available: boolean;
+  corpusDir: string | null;
+  /**
+   * Counts that need the feeder's SQLite store, taken from the snapshot its CLI writes rather than
+   * by opening the store here — that would pull a WASM SQLite build into the shipped server.
+   * Null until the feeder has run once on this machine.
+   */
+  snapshot: {
+    writtenAtIso: string;
+    lastCommand: string;
+    uniqueSystems: number;
+    uniquePlanets: number;
+    uniqueSightings: number;
+    corpusSpecies: number;
+    cumulativeCsvRows: number;
+  } | null;
+  /** Species with sample packs on disk — what a rebuild would read. Computed live. */
+  hydratedSpecies: number;
+  speciesRows: number;
+  speciesRowsWithProfile: number;
+  /** Total size of the installed profiles, so the shipped-data cost is visible. */
+  profileBytes: number;
+  /**
+   * Profiles built from fewer bodies than the corpus already holds — the actionable list, truncated
+   * for display. {@link behindCount} and {@link behindOccurrences} are the real totals, because a
+   * truncated list that reports its own length understates the problem it exists to show.
+   */
+  behind: { species: string; profileSamples: number; corpusOccurrences: number }[];
+  behindCount: number;
+  /** Observed bodies the corpus holds that no installed profile has been built from. */
+  behindOccurrences: number;
+  /** Corpus species with no row in the app's species tree, listed rather than guessed at. */
+  unmatchedCorpusLabels: string[];
+}
+
 export interface MatchReason {
   field: string;
   detail: string;
