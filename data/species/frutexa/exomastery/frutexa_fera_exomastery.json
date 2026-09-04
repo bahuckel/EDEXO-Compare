@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa fera",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.025Z",
+  "generatedAt": "2026-09-04T20:29:22.889Z",
   "sampleCount": 60,
   "numerics": {
     "body.distanceToArrival": {
@@ -534,6 +534,33 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.009,
     "exo.host_star_spectral_primary": 0.207,
-    "exo.system_primary_spectral": 0.188
+    "exo.system_primary_spectral": 0.188,
+    "body.distanceToArrival": 0.074,
+    "body.gravity": 0.152,
+    "body.earthMasses": 0.155,
+    "body.radius": 0.13,
+    "body.surfaceTemperature": 0.161,
+    "body.surfacePressure": 0.216,
+    "body.solidComposition.Rock": 0.133,
+    "body.solidComposition.Metal": 0.066,
+    "body.orbitalPeriod": 0.056,
+    "body.semiMajorAxis": 0.087,
+    "body.orbitalEccentricity": 0.026,
+    "body.orbitalInclination": 0.016,
+    "body.argOfPeriapsis": 0.013,
+    "body.rotationalPeriod": 0.06,
+    "body.materials.Iron": 0.072,
+    "body.materials.Sulphur": 0.078,
+    "body.materials.Carbon": 0.076,
+    "body.materials.Nickel": 0.072,
+    "body.materials.Phosphorus": 0.078,
+    "body.materials.Chromium": 0.137,
+    "body.materials.Manganese": 0.09,
+    "body.materials.Selenium": 0.246,
+    "body.materials.Cadmium": 0.149,
+    "body.materials.Zinc": 0.077,
+    "body.materials.Molybdenum": 0.085,
+    "body.materials.Tin": 0.155,
+    "body.materials.Germanium": 0.191
   }
 }

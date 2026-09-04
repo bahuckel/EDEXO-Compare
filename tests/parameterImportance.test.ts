@@ -6,7 +6,11 @@ import {
   determinismVsBackground,
   entropy,
   MIN_SAMPLES_FOR_IMPORTANCE,
+  binIndex,
+  numericDeterminism,
+  NUMERIC_BIN_COUNT,
   poolBackground,
+  quantileBins,
   type CategoricalTable,
 } from "../src/feeder/parameterImportance.js";
 
@@ -133,5 +137,59 @@ describe("poolBackground and buildParameterImportance", () => {
 
   it("bucketCounts drops empty values rather than making a bucket for them", () => {
     expect(bucketCounts("body.subType", { "": 5, Icy: 3, Rocky: 0 })).toEqual({ Icy: 3 });
+  });
+});
+
+/**
+ * Numerics have to land on the same scale as the categoricals or neither is usable: reweighting six
+ * categorical terms among forty-seven numeric ones on a different scale shrinks them rather than
+ * reordering anything, which is exactly what it measured.
+ *
+ * Quantile bins are what makes the two comparable. They make the background uniform by construction,
+ * so both measures reduce to "how much of the available uncertainty does knowing the species remove".
+ */
+describe("numeric determinism", () => {
+  const background = Array.from({ length: 1000 }, (_, i) => i);
+  const edges = quantileBins(background);
+
+  it("cuts the background into equal-population bins", () => {
+    expect(edges).toHaveLength(NUMERIC_BIN_COUNT - 1);
+    expect(edges[0]).toBeGreaterThan(0);
+    expect(edges[edges.length - 1]).toBeLessThan(999);
+    // Sorted and strictly increasing, or a value could fall into two bins.
+    expect([...edges].sort((a, b) => a - b)).toEqual(edges);
+  });
+
+  it("refuses to bin a background that is mostly one value", () => {
+    // Ties collapse the edges, and a parameter with no spread cannot distinguish anything.
+    expect(quantileBins(Array.from({ length: 1000 }, () => 42))).toEqual([]);
+    expect(quantileBins([1, 2, 3])).toEqual([]);
+  });
+
+  it("scores a species confined to one part of the range near 1", () => {
+    const tight = Array.from({ length: 200 }, () => 505);
+    expect(numericDeterminism(tight, edges)!).toBeGreaterThan(0.9);
+  });
+
+  it("scores a species spread across the whole range near 0", () => {
+    const spread = Array.from({ length: 1000 }, (_, i) => i);
+    expect(Math.abs(numericDeterminism(spread, edges)!)).toBeLessThan(0.05);
+  });
+
+  it("declines to score a thin sample or an unbinnable parameter", () => {
+    expect(numericDeterminism([500, 501, 502], edges)).toBeNull();
+    expect(
+      numericDeterminism(
+        Array.from({ length: 200 }, () => 5),
+        [],
+      ),
+    ).toBeNull();
+  });
+
+  it("puts binIndex on the right side of every edge", () => {
+    expect(binIndex([10, 20, 30], 5)).toBe(0);
+    expect(binIndex([10, 20, 30], 10)).toBe(0);
+    expect(binIndex([10, 20, 30], 11)).toBe(1);
+    expect(binIndex([10, 20, 30], 999)).toBe(3);
   });
 });

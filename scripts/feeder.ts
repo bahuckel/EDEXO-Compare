@@ -176,7 +176,7 @@ async function cmdRun(): Promise<void> {
   const report = await runPipeline(ctx, db, labels, { allowDowngrade, onProgress: log });
   recordStatusSnapshot(ctx, "run");
   // Importance is relative to every other species, so it is measured after the installs land.
-  console.log(formatImportanceReport(applyParameterImportance(loadSpeciesDatabaseFromTree(root))));
+  console.log(formatImportanceReport(await applyParameterImportance(loadSpeciesDatabaseFromTree(root))));
   finish(report);
 }
 
@@ -216,7 +216,7 @@ async function cmdRebuild(): Promise<void> {
   }
   if (!dryRun) {
     recordStatusSnapshot(ctx, "rebuild");
-    console.log(formatImportanceReport(applyParameterImportance(loadSpeciesDatabaseFromTree(root))));
+    console.log(formatImportanceReport(await applyParameterImportance(loadSpeciesDatabaseFromTree(root))));
     finish(report);
   }
 }

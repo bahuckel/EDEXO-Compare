@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Roseum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:39.005Z",
+  "generatedAt": "2026-09-04T20:29:23.820Z",
   "sampleCount": 46,
   "numerics": {
     "body.distanceToArrival": {
@@ -608,6 +608,30 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.02,
     "exo.host_star_spectral_primary": 0.039,
-    "exo.system_primary_spectral": 0.139
+    "exo.system_primary_spectral": 0.139,
+    "body.distanceToArrival": 0.221,
+    "body.gravity": 0.125,
+    "body.earthMasses": 0.106,
+    "body.radius": 0.099,
+    "body.surfaceTemperature": 0.827,
+    "body.surfacePressure": 0.95,
+    "body.solidComposition.Rock": 0.046,
+    "body.solidComposition.Metal": 0.027,
+    "body.orbitalPeriod": 0.806,
+    "body.semiMajorAxis": 0.341,
+    "body.orbitalEccentricity": 0.121,
+    "body.orbitalInclination": 0.087,
+    "body.argOfPeriapsis": 0.096,
+    "body.rotationalPeriod": 0.592,
+    "body.materials.Iron": 0.095,
+    "body.materials.Sulphur": 0.061,
+    "body.materials.Carbon": 0.061,
+    "body.materials.Nickel": 0.095,
+    "body.materials.Phosphorus": 0.061,
+    "body.materials.Chromium": 0.054,
+    "body.materials.Molybdenum": 0.119,
+    "body.materials.Manganese": 0.15,
+    "body.materials.Germanium": 0.197,
+    "body.materials.Niobium": 0.126
   }
 }

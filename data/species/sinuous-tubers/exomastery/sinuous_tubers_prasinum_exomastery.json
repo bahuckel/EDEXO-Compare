@@ -3,7 +3,7 @@
   "speciesLabel": "Sinuous Tubers Prasinum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.968Z",
+  "generatedAt": "2026-09-04T20:29:23.787Z",
   "sampleCount": 34,
   "numerics": {
     "body.distanceToArrival": {
@@ -668,6 +668,27 @@
     "body.terraformingState": -0.627,
     "body.rotationalPeriodTidallyLocked": 0.144,
     "exo.host_star_spectral_primary": 0.001,
-    "exo.system_primary_spectral": -0.005
+    "exo.system_primary_spectral": -0.005,
+    "body.distanceToArrival": 0.436,
+    "body.gravity": 0.604,
+    "body.earthMasses": 0.52,
+    "body.radius": 0.478,
+    "body.surfaceTemperature": 0.699,
+    "body.surfacePressure": 0.731,
+    "body.solidComposition.Rock": 0.627,
+    "body.solidComposition.Metal": 0.699,
+    "body.orbitalPeriod": 0.372,
+    "body.semiMajorAxis": 0.317,
+    "body.orbitalEccentricity": 0.288,
+    "body.orbitalInclination": 0.067,
+    "body.argOfPeriapsis": 0.043,
+    "body.rotationalPeriod": 0.247,
+    "body.materials.Iron": 0.706,
+    "body.materials.Nickel": 0.706,
+    "body.materials.Sulphur": 0.798,
+    "body.materials.Carbon": 0.798,
+    "body.materials.Chromium": 0.702,
+    "body.materials.Manganese": 0.702,
+    "body.materials.Phosphorus": 0.798
   }
 }

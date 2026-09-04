@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola extremus",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.279Z",
+  "generatedAt": "2026-09-04T20:29:23.161Z",
   "sampleCount": 43,
   "numerics": {
     "body.distanceToArrival": {
@@ -588,6 +588,28 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.018,
     "exo.host_star_spectral_primary": 0.216,
-    "exo.system_primary_spectral": 0.086
+    "exo.system_primary_spectral": 0.086,
+    "body.distanceToArrival": 0.066,
+    "body.gravity": 0.343,
+    "body.earthMasses": 0.363,
+    "body.radius": 0.368,
+    "body.surfaceTemperature": 0.772,
+    "body.surfacePressure": 0.284,
+    "body.solidComposition.Rock": 0.322,
+    "body.solidComposition.Metal": 0.261,
+    "body.orbitalPeriod": 1,
+    "body.semiMajorAxis": 0.602,
+    "body.orbitalEccentricity": 0.514,
+    "body.orbitalInclination": 0.271,
+    "body.argOfPeriapsis": 0.094,
+    "body.rotationalPeriod": 0.635,
+    "body.materials.Iron": 0.126,
+    "body.materials.Sulphur": 0.125,
+    "body.materials.Carbon": 0.125,
+    "body.materials.Nickel": 0.126,
+    "body.materials.Phosphorus": 0.125,
+    "body.materials.Manganese": 0.26,
+    "body.materials.Chromium": 0.173,
+    "body.materials.Germanium": 0.222
   }
 }

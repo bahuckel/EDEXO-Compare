@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua digitos",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:37.555Z",
+  "generatedAt": "2026-09-04T20:29:22.402Z",
   "sampleCount": 62,
   "numerics": {
     "body.distanceToArrival": {
@@ -512,6 +512,33 @@
     "body.atmosphereType": 0.539,
     "body.rotationalPeriodTidallyLocked": 0.005,
     "exo.host_star_spectral_primary": 0.387,
-    "exo.system_primary_spectral": 0.243
+    "exo.system_primary_spectral": 0.243,
+    "body.distanceToArrival": 0.042,
+    "body.gravity": 1,
+    "body.earthMasses": 0.567,
+    "body.radius": 0.689,
+    "body.surfaceTemperature": 1,
+    "body.surfacePressure": 0.334,
+    "body.solidComposition.Rock": 1,
+    "body.solidComposition.Metal": 1,
+    "body.orbitalPeriod": 0.079,
+    "body.semiMajorAxis": 0.231,
+    "body.orbitalEccentricity": 0.041,
+    "body.orbitalInclination": 0.066,
+    "body.argOfPeriapsis": 0.04,
+    "body.rotationalPeriod": 0.094,
+    "body.materials.Sulphur": 1,
+    "body.materials.Carbon": 1,
+    "body.materials.Phosphorus": 1,
+    "body.materials.Iron": 1,
+    "body.materials.Nickel": 1,
+    "body.materials.Manganese": 1,
+    "body.materials.Germanium": 1,
+    "body.materials.Vanadium": 1,
+    "body.materials.Cadmium": 1,
+    "body.materials.Molybdenum": 1,
+    "body.materials.Chromium": 1,
+    "body.materials.Niobium": 1,
+    "body.materials.Selenium": 1
   }
 }

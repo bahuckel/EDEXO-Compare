@@ -3,7 +3,7 @@
   "speciesLabel": "Electricae pluma",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:37.484Z",
+  "generatedAt": "2026-09-04T20:29:22.329Z",
   "sampleCount": 31,
   "numerics": {
     "body.distanceToArrival": {
@@ -563,6 +563,25 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": 0.04,
     "exo.host_star_spectral_primary": 0.355,
-    "exo.system_primary_spectral": 0.297
+    "exo.system_primary_spectral": 0.297,
+    "body.distanceToArrival": 0.149,
+    "body.gravity": 0.246,
+    "body.earthMasses": 0.538,
+    "body.radius": 0.563,
+    "body.surfaceTemperature": 1,
+    "body.surfacePressure": 0.235,
+    "body.solidComposition.Rock": 1,
+    "body.solidComposition.Metal": 1,
+    "body.orbitalPeriod": 0.067,
+    "body.semiMajorAxis": 0.161,
+    "body.orbitalEccentricity": 0.098,
+    "body.orbitalInclination": 0.131,
+    "body.argOfPeriapsis": 0.073,
+    "body.rotationalPeriod": 0.099,
+    "body.materials.Sulphur": 1,
+    "body.materials.Carbon": 1,
+    "body.materials.Phosphorus": 1,
+    "body.materials.Iron": 1,
+    "body.materials.Nickel": 1
   }
 }

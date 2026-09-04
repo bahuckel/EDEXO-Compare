@@ -3,7 +3,7 @@
   "speciesLabel": "Fungoida bullarum",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.292Z",
+  "generatedAt": "2026-09-04T20:29:23.174Z",
   "sampleCount": 29,
   "numerics": {
     "body.distanceToArrival": {
@@ -540,6 +540,25 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": 0.399,
     "exo.host_star_spectral_primary": 0.075,
-    "exo.system_primary_spectral": 0.068
+    "exo.system_primary_spectral": 0.068,
+    "body.distanceToArrival": 0.16,
+    "body.gravity": 0.66,
+    "body.earthMasses": 0.806,
+    "body.radius": 0.806,
+    "body.surfaceTemperature": 0.935,
+    "body.surfacePressure": 0.38,
+    "body.solidComposition.Rock": 0.87,
+    "body.solidComposition.Metal": 0.8,
+    "body.orbitalPeriod": 0.495,
+    "body.semiMajorAxis": 0.487,
+    "body.orbitalEccentricity": 0.116,
+    "body.orbitalInclination": 0.071,
+    "body.argOfPeriapsis": 0.055,
+    "body.rotationalPeriod": 0.382,
+    "body.materials.Sulphur": 0.935,
+    "body.materials.Iron": 0.763,
+    "body.materials.Carbon": 0.935,
+    "body.materials.Nickel": 0.763,
+    "body.materials.Phosphorus": 0.935
   }
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Electricae radialem",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:37.501Z",
+  "generatedAt": "2026-09-04T20:29:22.348Z",
   "sampleCount": 58,
   "numerics": {
     "body.distanceToArrival": {
@@ -631,6 +631,33 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": 0.009,
     "exo.host_star_spectral_primary": 0.139,
-    "exo.system_primary_spectral": 0.029
+    "exo.system_primary_spectral": 0.029,
+    "body.distanceToArrival": 0.101,
+    "body.gravity": 0.263,
+    "body.earthMasses": 0.62,
+    "body.radius": 0.601,
+    "body.surfaceTemperature": 1,
+    "body.surfacePressure": 0.283,
+    "body.solidComposition.Rock": 1,
+    "body.solidComposition.Metal": 0.705,
+    "body.orbitalPeriod": 0.362,
+    "body.semiMajorAxis": 0.189,
+    "body.orbitalEccentricity": 0.1,
+    "body.orbitalInclination": 0.089,
+    "body.argOfPeriapsis": 0.037,
+    "body.rotationalPeriod": 0.156,
+    "body.materials.Sulphur": 1,
+    "body.materials.Carbon": 1,
+    "body.materials.Iron": 0.962,
+    "body.materials.Phosphorus": 1,
+    "body.materials.Nickel": 0.962,
+    "body.materials.Chromium": 1,
+    "body.materials.Zinc": 1,
+    "body.materials.Niobium": 0.925,
+    "body.materials.Germanium": 1,
+    "body.materials.Cadmium": 1,
+    "body.materials.Selenium": 1,
+    "body.materials.Manganese": 1,
+    "body.materials.Molybdenum": 1
   }
 }

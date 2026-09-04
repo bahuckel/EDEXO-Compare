@@ -168,3 +168,60 @@ export function buildParameterImportance(
   }
   return Object.keys(out).length ? out : undefined;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Numeric parameters
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Bins for a numeric parameter, taken as quantiles of the pooled background.
+ *
+ * Fixed-width bins would measure the shape of the galaxy rather than the shape of the species: half
+ * of them would be empty for a parameter like surface pressure that spans four orders of magnitude.
+ * Quantile bins make the background *uniform by construction*, which does two useful things — the
+ * measure below reduces to `1 − H(species)/log(k)`, and it lands numerics on exactly the same scale
+ * as the categorical measure, which is what lets the two be compared at all.
+ */
+export type NumericBins = number[];
+
+export const NUMERIC_BIN_COUNT = 10;
+
+export function quantileBins(values: number[], k = NUMERIC_BIN_COUNT): NumericBins {
+  const clean = values.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+  if (clean.length < k) return [];
+  const edges: number[] = [];
+  for (let i = 1; i < k; i++) {
+    const idx = Math.min(clean.length - 1, Math.floor((i / k) * clean.length));
+    edges.push(clean[idx]!);
+  }
+  // Ties collapse bins; a parameter whose background is mostly one value cannot be measured this way.
+  const distinct = [...new Set(edges)];
+  return distinct.length === edges.length ? edges : [];
+}
+
+export function binIndex(edges: NumericBins, v: number): number {
+  let i = 0;
+  while (i < edges.length && v > edges[i]!) i++;
+  return i;
+}
+
+/**
+ * Determinism for a numeric parameter, on the same scale as {@link determinismVsBackground}.
+ *
+ * Because the bins are background quantiles the background is uniform, so this is exactly "how much
+ * of the available uncertainty does knowing the species remove". Null when the corpus could not
+ * produce usable bins, or the species has too few readings for its spread to mean anything.
+ */
+export function numericDeterminism(values: number[], edges: NumericBins): number | null {
+  if (edges.length === 0) return null;
+  const clean = values.filter((v) => Number.isFinite(v));
+  if (clean.length < MIN_SAMPLES_FOR_IMPORTANCE) return null;
+  const counts: CategoricalCounts = {};
+  for (const v of clean) {
+    const b = String(binIndex(edges, v));
+    counts[b] = (counts[b] ?? 0) + 1;
+  }
+  const maxEntropy = Math.log(edges.length + 1);
+  const d = (maxEntropy - entropy(counts)) / maxEntropy;
+  return Math.max(-1, Math.min(1, d));
+}

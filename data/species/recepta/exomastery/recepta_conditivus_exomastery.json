@@ -3,7 +3,7 @@
   "speciesLabel": "Recepta conditivus",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.977Z",
+  "generatedAt": "2026-09-04T20:29:23.793Z",
   "sampleCount": 25,
   "numerics": {
     "body.distanceToArrival": {
@@ -620,6 +620,25 @@
     "body.rotationalPeriodTidallyLocked": 0.036,
     "body.terraformingState": 0.045,
     "exo.host_star_spectral_primary": 0,
-    "exo.system_primary_spectral": -0.05
+    "exo.system_primary_spectral": -0.05,
+    "body.distanceToArrival": 0.068,
+    "body.gravity": 0.433,
+    "body.earthMasses": 0.807,
+    "body.radius": 0.807,
+    "body.surfaceTemperature": 0.344,
+    "body.surfacePressure": 0.156,
+    "body.solidComposition.Rock": 0.359,
+    "body.solidComposition.Metal": 0.298,
+    "body.orbitalPeriod": 0.25,
+    "body.semiMajorAxis": 0.223,
+    "body.orbitalInclination": 0.205,
+    "body.argOfPeriapsis": 0.12,
+    "body.rotationalPeriod": 0.213,
+    "body.materials.Sulphur": 0.412,
+    "body.materials.Carbon": 0.412,
+    "body.materials.Phosphorus": 0.456,
+    "body.materials.Iron": 0.349,
+    "body.materials.Nickel": 0.349,
+    "body.orbitalEccentricity": 0.297
   }
 }

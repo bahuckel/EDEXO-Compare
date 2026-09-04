@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock stigmasis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:40.229Z",
+  "generatedAt": "2026-09-04T20:29:25.134Z",
   "sampleCount": 43,
   "numerics": {
     "body.distanceToArrival": {
@@ -528,6 +528,29 @@
     "body.rotationalPeriodTidallyLocked": 0.094,
     "body.terraformingState": 0.045,
     "exo.host_star_spectral_primary": 0.144,
-    "exo.system_primary_spectral": 0.151
+    "exo.system_primary_spectral": 0.151,
+    "body.distanceToArrival": 0.099,
+    "body.gravity": 0.7,
+    "body.earthMasses": 0.904,
+    "body.radius": 0.904,
+    "body.surfaceTemperature": 0.904,
+    "body.surfacePressure": 0.904,
+    "body.solidComposition.Rock": 0.058,
+    "body.solidComposition.Metal": 0.035,
+    "body.orbitalPeriod": 0.148,
+    "body.semiMajorAxis": 0.213,
+    "body.orbitalEccentricity": 0.111,
+    "body.orbitalInclination": 0.058,
+    "body.argOfPeriapsis": 0.048,
+    "body.rotationalPeriod": 0.16,
+    "body.materials.Iron": 0.12,
+    "body.materials.Sulphur": 0.069,
+    "body.materials.Carbon": 0.069,
+    "body.materials.Nickel": 0.12,
+    "body.materials.Phosphorus": 0.082,
+    "body.materials.Chromium": 0.113,
+    "body.materials.Vanadium": 0.17,
+    "body.materials.Manganese": 0.249,
+    "body.materials.Cadmium": 0.32
   }
 }

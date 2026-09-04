@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola nitris",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.285Z",
+  "generatedAt": "2026-09-04T20:29:23.168Z",
   "sampleCount": 20,
   "numerics": {
     "body.distanceToArrival": {
@@ -530,6 +530,25 @@
     "body.isLandable": 0.022,
     "body.volcanismType": -0.039,
     "body.atmosphereType": 0.25,
-    "body.rotationalPeriodTidallyLocked": -0.015
+    "body.rotationalPeriodTidallyLocked": -0.015,
+    "body.distanceToArrival": 0.143,
+    "body.gravity": 0.505,
+    "body.earthMasses": 0.36,
+    "body.radius": 0.399,
+    "body.surfaceTemperature": 1,
+    "body.surfacePressure": 0.132,
+    "body.solidComposition.Rock": 1,
+    "body.solidComposition.Metal": 1,
+    "body.orbitalPeriod": 0.775,
+    "body.semiMajorAxis": 0.381,
+    "body.orbitalEccentricity": 0.094,
+    "body.orbitalInclination": 0.209,
+    "body.argOfPeriapsis": 0.041,
+    "body.rotationalPeriod": 0.692,
+    "body.materials.Sulphur": 1,
+    "body.materials.Carbon": 1,
+    "body.materials.Phosphorus": 1,
+    "body.materials.Iron": 1,
+    "body.materials.Nickel": 1
   }
 }

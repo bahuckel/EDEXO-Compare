@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium volu",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:36.446Z",
+  "generatedAt": "2026-09-04T20:29:21.265Z",
   "sampleCount": 23,
   "numerics": {
     "body.distanceToArrival": {
@@ -561,6 +561,24 @@
     "body.atmosphereType": 0.539,
     "body.rotationalPeriodTidallyLocked": 0.312,
     "exo.host_star_spectral_primary": 0.198,
-    "exo.system_primary_spectral": -0.033
+    "exo.system_primary_spectral": -0.033,
+    "body.distanceToArrival": 0.394,
+    "body.gravity": 1,
+    "body.earthMasses": 1,
+    "body.radius": 1,
+    "body.surfaceTemperature": 0.213,
+    "body.surfacePressure": 0.288,
+    "body.solidComposition.Rock": 0.922,
+    "body.solidComposition.Metal": 0.709,
+    "body.orbitalPeriod": 0.277,
+    "body.semiMajorAxis": 0.388,
+    "body.orbitalInclination": 0.261,
+    "body.argOfPeriapsis": 0.159,
+    "body.rotationalPeriod": 0.414,
+    "body.materials.Sulphur": 0.721,
+    "body.materials.Carbon": 0.721,
+    "body.materials.Iron": 0.721,
+    "body.materials.Phosphorus": 0.721,
+    "body.materials.Nickel": 0.721
   }
 }

@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua lapida",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:37.565Z",
+  "generatedAt": "2026-09-04T20:29:22.411Z",
   "sampleCount": 41,
   "numerics": {
     "body.distanceToArrival": {
@@ -555,6 +555,28 @@
     "body.rotationalPeriodTidallyLocked": 0.139,
     "body.terraformingState": 0.045,
     "exo.host_star_spectral_primary": 0.283,
-    "exo.system_primary_spectral": 0.217
+    "exo.system_primary_spectral": 0.217,
+    "body.distanceToArrival": 0.153,
+    "body.gravity": 0.621,
+    "body.earthMasses": 1,
+    "body.radius": 1,
+    "body.surfaceTemperature": 1,
+    "body.surfacePressure": 0.204,
+    "body.solidComposition.Rock": 1,
+    "body.solidComposition.Metal": 0.737,
+    "body.orbitalPeriod": 0.24,
+    "body.semiMajorAxis": 0.11,
+    "body.orbitalInclination": 0.193,
+    "body.argOfPeriapsis": 0.038,
+    "body.rotationalPeriod": 0.16,
+    "body.materials.Sulphur": 1,
+    "body.materials.Carbon": 1,
+    "body.materials.Phosphorus": 1,
+    "body.materials.Iron": 1,
+    "body.materials.Nickel": 1,
+    "body.materials.Germanium": 1,
+    "body.materials.Vanadium": 1,
+    "body.materials.Chromium": 1,
+    "body.orbitalEccentricity": 0.091
   }
 }

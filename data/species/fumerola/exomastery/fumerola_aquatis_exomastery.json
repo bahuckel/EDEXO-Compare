@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola aquatis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.263Z",
+  "generatedAt": "2026-09-04T20:29:23.147Z",
   "sampleCount": 34,
   "numerics": {
     "body.distanceToArrival": {
@@ -648,6 +648,26 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.019,
     "exo.host_star_spectral_primary": 0.117,
-    "exo.system_primary_spectral": 0.009
+    "exo.system_primary_spectral": 0.009,
+    "body.distanceToArrival": 0.194,
+    "body.gravity": 0.351,
+    "body.earthMasses": 0.776,
+    "body.radius": 0.776,
+    "body.surfaceTemperature": 0.639,
+    "body.surfacePressure": 0.215,
+    "body.solidComposition.Rock": 0.751,
+    "body.solidComposition.Metal": 0.696,
+    "body.orbitalPeriod": 1,
+    "body.semiMajorAxis": 0.413,
+    "body.orbitalEccentricity": 0.055,
+    "body.orbitalInclination": 0.125,
+    "body.argOfPeriapsis": 0.038,
+    "body.rotationalPeriod": 0.553,
+    "body.materials.Sulphur": 0.772,
+    "body.materials.Carbon": 0.772,
+    "body.materials.Phosphorus": 0.772,
+    "body.materials.Iron": 0.772,
+    "body.materials.Nickel": 0.772,
+    "body.materials.Manganese": 0.84
   }
 }

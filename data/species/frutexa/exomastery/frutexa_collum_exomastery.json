@@ -3,7 +3,7 @@
   "speciesLabel": "Frutexa collum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.009Z",
+  "generatedAt": "2026-09-04T20:29:22.874Z",
   "sampleCount": 36,
   "numerics": {
     "body.distanceToArrival": {
@@ -518,6 +518,26 @@
     "body.rotationalPeriodTidallyLocked": 0.06,
     "body.terraformingState": 0.045,
     "exo.host_star_spectral_primary": 0.275,
-    "exo.system_primary_spectral": 0.302
+    "exo.system_primary_spectral": 0.302,
+    "body.distanceToArrival": 0.213,
+    "body.gravity": 0.565,
+    "body.earthMasses": 0.782,
+    "body.radius": 0.782,
+    "body.surfaceTemperature": 0.89,
+    "body.surfacePressure": 0.945,
+    "body.solidComposition.Rock": 0.085,
+    "body.solidComposition.Metal": 0.099,
+    "body.orbitalPeriod": 0.136,
+    "body.semiMajorAxis": 0.186,
+    "body.orbitalEccentricity": 0.089,
+    "body.orbitalInclination": 0.065,
+    "body.argOfPeriapsis": 0.056,
+    "body.rotationalPeriod": 0.164,
+    "body.materials.Iron": 0.141,
+    "body.materials.Sulphur": 0.083,
+    "body.materials.Carbon": 0.083,
+    "body.materials.Nickel": 0.141,
+    "body.materials.Phosphorus": 0.102,
+    "body.materials.Chromium": 0.126
   }
 }

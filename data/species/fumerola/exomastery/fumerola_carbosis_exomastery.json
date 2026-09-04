@@ -3,7 +3,7 @@
   "speciesLabel": "Fumerola carbosis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.269Z",
+  "generatedAt": "2026-09-04T20:29:23.152Z",
   "sampleCount": 20,
   "numerics": {
     "body.distanceToArrival": {
@@ -586,6 +586,25 @@
     "body.atmosphereType": 0.078,
     "body.rotationalPeriodTidallyLocked": -0.015,
     "exo.host_star_spectral_primary": 0.127,
-    "exo.system_primary_spectral": 0.031
+    "exo.system_primary_spectral": 0.031,
+    "body.distanceToArrival": 0.275,
+    "body.gravity": 0.496,
+    "body.earthMasses": 0.568,
+    "body.radius": 0.567,
+    "body.surfaceTemperature": 0.775,
+    "body.surfacePressure": 0.156,
+    "body.solidComposition.Rock": 1,
+    "body.solidComposition.Metal": 0.914,
+    "body.orbitalPeriod": 0.708,
+    "body.semiMajorAxis": 0.551,
+    "body.orbitalEccentricity": 0.151,
+    "body.orbitalInclination": 0.247,
+    "body.argOfPeriapsis": 0.102,
+    "body.rotationalPeriod": 0.568,
+    "body.materials.Sulphur": 1,
+    "body.materials.Carbon": 1,
+    "body.materials.Phosphorus": 1,
+    "body.materials.Iron": 1,
+    "body.materials.Nickel": 1
   }
 }

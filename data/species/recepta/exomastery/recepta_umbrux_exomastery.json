@@ -3,7 +3,7 @@
   "speciesLabel": "Recepta umbrux",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:38.996Z",
+  "generatedAt": "2026-09-04T20:29:23.813Z",
   "sampleCount": 42,
   "numerics": {
     "body.distanceToArrival": {
@@ -600,6 +600,29 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": -0.015,
     "exo.host_star_spectral_primary": -0.048,
-    "exo.system_primary_spectral": -0.034
+    "exo.system_primary_spectral": -0.034,
+    "body.distanceToArrival": 0.11,
+    "body.gravity": 0.349,
+    "body.earthMasses": 0.623,
+    "body.radius": 0.623,
+    "body.surfaceTemperature": 0.262,
+    "body.surfacePressure": 0.179,
+    "body.solidComposition.Rock": 0.203,
+    "body.solidComposition.Metal": 0.208,
+    "body.orbitalPeriod": 0.247,
+    "body.semiMajorAxis": 0.233,
+    "body.orbitalEccentricity": 0.216,
+    "body.orbitalInclination": 0.167,
+    "body.argOfPeriapsis": 0.035,
+    "body.rotationalPeriod": 0.231,
+    "body.materials.Sulphur": 0.283,
+    "body.materials.Carbon": 0.283,
+    "body.materials.Phosphorus": 0.283,
+    "body.materials.Iron": 0.258,
+    "body.materials.Nickel": 0.258,
+    "body.materials.Chromium": 0.195,
+    "body.materials.Manganese": 0.301,
+    "body.materials.Vanadium": 0.391,
+    "body.materials.Cadmium": 0.194
   }
 }

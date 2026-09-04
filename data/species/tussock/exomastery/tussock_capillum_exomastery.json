@@ -3,7 +3,7 @@
   "speciesLabel": "Tussock capillum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-04T20:22:39.690Z",
+  "generatedAt": "2026-09-04T20:29:24.606Z",
   "sampleCount": 42,
   "numerics": {
     "body.distanceToArrival": {
@@ -577,6 +577,28 @@
     "body.terraformingState": 0.045,
     "body.rotationalPeriodTidallyLocked": 0.149,
     "exo.host_star_spectral_primary": -0.06,
-    "exo.system_primary_spectral": 0.023
+    "exo.system_primary_spectral": 0.023,
+    "body.distanceToArrival": 0.136,
+    "body.gravity": 0.437,
+    "body.earthMasses": 0.518,
+    "body.radius": 0.518,
+    "body.surfaceTemperature": 0.951,
+    "body.surfacePressure": 0.216,
+    "body.solidComposition.Rock": 0.512,
+    "body.solidComposition.Metal": 0.49,
+    "body.orbitalPeriod": 0.325,
+    "body.semiMajorAxis": 0.279,
+    "body.orbitalEccentricity": 0.128,
+    "body.orbitalInclination": 0.082,
+    "body.argOfPeriapsis": 0.024,
+    "body.rotationalPeriod": 0.218,
+    "body.materials.Sulphur": 0.496,
+    "body.materials.Iron": 0.523,
+    "body.materials.Carbon": 0.496,
+    "body.materials.Nickel": 0.523,
+    "body.materials.Phosphorus": 0.496,
+    "body.materials.Chromium": 0.691,
+    "body.materials.Manganese": 0.53,
+    "body.materials.Niobium": 0.467
   }
 }

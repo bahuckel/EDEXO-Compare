@@ -94,11 +94,19 @@ export interface ExomasteryProfileV1 {
    * spread exactly like the galaxy; negative means it is spread *wider*, so the parameter provably
    * does not constrain it.
    *
-   * **Measured, published, and not yet consumed by the scorer** — see `parameterImportance.ts`. The
-   * ordering it produces is right (atmosphere type 0.443, planet class 0.238, tidal lock 0.037,
-   * volcanism −0.008 across 76 species) but the six categorical terms it reweights sit among 47
-   * numeric ones still using the old estimator, and wiring it in alone measured slightly *worse*
-   * ranking. It becomes usable when the numeric side is measured on the same scale.
+   * **Measured, published, and not consumed by the scorer** — see `parameterImportance.ts`. All 53
+   * parameters are now measured on one scale and the ordering is right: surface temperature 0.575,
+   * atmosphere type 0.443, radius 0.406, mass 0.404, pressure 0.375, gravity 0.361 at the top —
+   * four of the owner's five main factors, unprompted — and argument of periapsis at 0.022, where
+   * the estimator it replaces scored it 0.802.
+   *
+   * Feeding it into this scorer still measures worse ranking (top-1 106 → 81 of 405), and the reason
+   * is a distinction worth stating: determinism is how much a parameter constrains **a species**,
+   * while ranking needs how much it separates **the candidates on this body**. After gating on
+   * temperature and atmosphere, the parameters with the highest determinism have the least variance
+   * left among the survivors, so raising their weight flattens the score rather than sharpening it.
+   * The quantity ranking wants is the mutual information between a parameter and species identity,
+   * which is a different measurement and belongs to the ranking model itself.
    */
   parameterImportance?: Record<string, number>;
 }
