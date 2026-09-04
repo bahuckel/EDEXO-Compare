@@ -110,12 +110,15 @@ for (const b of bodies) {
   if (matches.length < 2) continue;
 
   const host = hostStarFor(b);
+  const rec = scansBySystem.get(b.systemAddress)?.get(b.bodyId) ?? null;
   // Only candidates with a feeder profile can be scored; a body where nothing scores has no ranking
   // to measure, and counting it would flatter whichever weighting is in place.
   const scored = matches
     .map((m) => {
       const prof = loadExomasteryProfile(root, m.entry);
-      const q = prof ? exomasteryHabitatQualityPercent(prof, b.scan!, null, host) : null;
+      // The app scores against the `Scan` merged with the body's exploration record — materials,
+      // solid composition, the orbit fields. Passing null here measured a scorer the app does not run.
+      const q = prof ? exomasteryHabitatQualityPercent(prof, b.scan!, rec, host) : null;
       return { id: m.entry.id, q: q ?? -1 };
     })
     .filter((x) => x.q >= 0);
