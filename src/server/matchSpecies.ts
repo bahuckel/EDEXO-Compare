@@ -26,6 +26,7 @@ import {
 } from "./organicLocks.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
 import { observedOnPlanetClass } from "./speciesPlanetClassObservations.js";
+import { observedAtTemperature } from "./speciesTemperatureObservations.js";
 import {
   hostStarVerdict,
   speciesHostStarObservations,
@@ -615,11 +616,24 @@ export function speciesMatchesCriteria(
         : estimatedRange
           ? `No journal temperature — estimated band ${planetTempBand.minK}–${planetTempBand.maxK} K (mid ~${estimatedRange.tMid} K) does not overlap species ${speciesRange}.`
           : `Planet band ${planetTempBand.minK}–${planetTempBand.maxK} K does not overlap species range.`;
-      failures.push({
-        field: "SurfaceTemperature",
-        ...(near ? { soft: true } : {}),
-        detail: near ? `${estNote} Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : estNote,
-      });
+      /**
+       * Observation overrules the codex band, as it does for the host star (§27) and the planet
+       * class (§40). Fungoida stabitis is the case: codex 180–195 K, found nine times above 424 K,
+       * and the corpus holds 945 bodies for it spanning 79–467 K.
+       */
+      const observedHere = observedAtTemperature(entry, scan.SurfaceTemperature);
+      if (observedHere) {
+        extraOkReasons.push({
+          field: "SurfaceTemperature",
+          detail: `${scan.SurfaceTemperature!.toFixed(1)} K — outside the codex ${speciesRange}, but ${observedHere.observations} of ${observedHere.total} observed bodies sit between ${observedHere.binLowK.toFixed(0)} and ${observedHere.binHighK.toFixed(0)} K.`,
+        });
+      } else {
+        failures.push({
+          field: "SurfaceTemperature",
+          ...(near ? { soft: true } : {}),
+          detail: near ? `${estNote} Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : estNote,
+        });
+      }
     } else {
       const surf = scan.SurfaceTemperature;
       const bandTxt =
