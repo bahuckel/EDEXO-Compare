@@ -88,3 +88,46 @@ export function buildSpeciesHistograms(
   }
   return out;
 }
+
+/**
+ * Bins for the chart, over the species' own range rather than the galaxy's.
+ *
+ * The model's histogram uses globally shared quantile edges so two species can be compared, and that
+ * is exactly wrong for drawing one: a species living between 50 K and 124 K sits inside a single
+ * global bin, and the chart becomes one featureless block — the summary B7 was raised to replace,
+ * redrawn as a bar. Equal-width bins across the species' own min…max show where inside its range it
+ * actually sits, which is the review tool the owner asked for.
+ */
+export const DISPLAY_BINS = 16;
+
+export interface DisplayHistogram {
+  min: number;
+  max: number;
+  /** {@link DISPLAY_BINS} equal-width counts across `min`…`max`. */
+  counts: number[];
+}
+
+export function displayHistogramOf(values: number[], bins = DISPLAY_BINS): DisplayHistogram | null {
+  const clean = values.filter((v) => Number.isFinite(v));
+  if (clean.length < MIN_SAMPLES_FOR_HISTOGRAM) return null;
+  const min = Math.min(...clean);
+  const max = Math.max(...clean);
+  // One observation, or many identical ones: there is a value but no distribution to draw.
+  if (!(max > min)) return null;
+  const counts = new Array<number>(bins).fill(0);
+  const span = max - min;
+  for (const v of clean) {
+    const i = Math.min(bins - 1, Math.floor(((v - min) / span) * bins));
+    counts[i]! += 1;
+  }
+  return { min, max, counts };
+}
+
+export function buildDisplayHistograms(samples: Map<string, number[]>): Record<string, DisplayHistogram> {
+  const out: Record<string, DisplayHistogram> = {};
+  for (const [path, values] of samples) {
+    const h = displayHistogramOf(values);
+    if (h) out[path] = h;
+  }
+  return out;
+}

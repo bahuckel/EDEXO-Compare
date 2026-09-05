@@ -6,6 +6,38 @@ function nearlyEqual(a: number, b: number): boolean {
   return Math.abs(a - b) <= 1e-9 * s;
 }
 
+/**
+ * The measured distribution, when the profile has one (B7).
+ *
+ * The bell curve below is a drawing: a Gaussian placed on the mode and stretched to min…max, which
+ * is exactly the summary B7 asked to replace, because it cannot show that a species lives at two
+ * separate temperatures. These bars are counts the feeder actually observed.
+ *
+ * Bins are the globally shared quantile edges, so they are equal-population and unequal *width*.
+ * Height is count ÷ width for that reason — plotting raw counts would make a wide bin look tall for
+ * being wide, which is the same class of lie the bell curve was.
+ */
+function histogramBars(
+  bins: { x0: number; x1: number; count: number }[],
+  toX: (v: number) => number,
+  baseY: number,
+  topY: number,
+): { x: number; w: number; y: number; h: number }[] {
+  const density = bins.map((b) => {
+    const width = b.x1 - b.x0;
+    return width > 0 ? b.count / width : 0;
+  });
+  const peak = Math.max(...density, 0);
+  if (!(peak > 0)) return [];
+  const plotH = baseY - topY;
+  return bins.map((b, i) => {
+    const x = toX(b.x0);
+    const w = Math.max(toX(b.x1) - x, 0.6);
+    const h = (density[i]! / peak) * plotH;
+    return { x, w, y: baseY - h, h };
+  });
+}
+
 export function ExomasteryDistributionPanel({
   label,
   distribution: d,
@@ -36,6 +68,7 @@ export function ExomasteryDistributionPanel({
         w,
         h,
         degenerate: true,
+        bars: [] as { x: number; w: number; y: number; h: number }[],
         lineD,
         fillD: null as string | null,
         modeX: centerX,
@@ -51,6 +84,7 @@ export function ExomasteryDistributionPanel({
 
     const span = max - min;
     const toX = (v: number) => pad.l + ((v - min) / span) * plotW;
+    const bars = d.bins?.length ? histogramBars(d.bins, toX, baseY, pad.t) : [];
     const modeX = toX(mode);
     const currentX = current != null && Number.isFinite(current) ? toX(current) : null;
     const sigma = Math.max(span * 0.17, 1e-9);
@@ -77,6 +111,7 @@ export function ExomasteryDistributionPanel({
       w,
       h,
       degenerate: false,
+      bars,
       lineD,
       fillD,
       modeX,
@@ -133,8 +168,16 @@ export function ExomasteryDistributionPanel({
             />
           </>
         )}
-        {chart.fillD ? <path d={chart.fillD} className="exo-dist-fill" /> : null}
-        <path d={chart.lineD} className="exo-dist-line" fill="none" />
+        {chart.bars.length > 0 ? (
+          chart.bars.map((b, i) => (
+            <rect key={i} x={b.x} y={b.y} width={b.w} height={b.h} className="exo-dist-bar" />
+          ))
+        ) : (
+          <>
+            {chart.fillD ? <path d={chart.fillD} className="exo-dist-fill" /> : null}
+            <path d={chart.lineD} className="exo-dist-line" fill="none" />
+          </>
+        )}
         <circle cx={chart.modeX} cy={chart.modeY} r={3.2} className="exo-dist-mode-dot" />
         {chart.currentX != null ? (
           <line

@@ -38,6 +38,8 @@ import {
 } from "../feeder/atmosphereBands.js";
 import { exomasteryHabitatTierWeight } from "./exomasteryHabitatTiers.js";
 import type { SpeciesHistograms } from "../shared/likelihoodBins.js";
+import { loadHistogramEdges } from "./likelihoodData.js";
+import { getProjectRoot } from "./paths.js";
 import { shouldOmitExomasterySciencePath } from "./exomasteryPathHygiene.js";
 import { getSpeciesDataDir } from "./paths.js";
 
@@ -97,6 +99,13 @@ export interface ExomasteryProfileV1 {
    * (`speciesLikelihood.ts`); absent on profiles built before it existed.
    */
   histograms?: SpeciesHistograms;
+  /**
+   * Chart bins over this species' own range, written by the same feeder pass (B7).
+   *
+   * Separate from {@link histograms} because the two answer different questions: the model needs one
+   * ruler for every species, and a picture of one species needs the resolution its own range allows.
+   */
+  displayHistograms?: Record<string, { min: number; max: number; counts: number[] }>;
   /**
    * Per-parameter determinism against the pooled background, written by `feeder run` / `rebuild`.
    *
@@ -1311,10 +1320,33 @@ function buildSupplementalHostMkRows(
   return out;
 }
 
+/**
+ * Bins for one parameter's chart: this species' own range first, the shared ruler as a fallback.
+ *
+ * The shared edges are quantiles of the whole corpus, so a species living inside one of them draws a
+ * single featureless block — measured, and useless. The display histogram is the same observations
+ * cut across the species' own min…max.
+ */
+function histogramForChart(
+  profile: ExomasteryProfileV1,
+  path: string,
+): { counts: number[]; edges: number[] } | null {
+  const own = profile.displayHistograms?.[path];
+  if (own && own.counts.length > 1 && own.max > own.min) {
+    const step = (own.max - own.min) / own.counts.length;
+    const edges = Array.from({ length: own.counts.length - 1 }, (_, i) => own.min + step * (i + 1));
+    return { counts: own.counts, edges };
+  }
+  const shared = loadHistogramEdges(getProjectRoot())?.edges[path];
+  const counts = profile.histograms?.[path];
+  return shared && counts && counts.length === shared.length + 1 ? { counts, edges: shared } : null;
+}
+
 export function buildNumericDistributionDto(
   displayPath: string,
   rollup: ExomasteryNumericRollup,
   current: number | null,
+  histogram?: { counts: number[]; edges: number[] } | null,
 ): ExomasteryStatDistributionDTO | null {
   const mode = rollup.mode ?? rollup.mean;
   if (!Number.isFinite(rollup.min) || !Number.isFinite(rollup.max) || !Number.isFinite(mode)) return null;
@@ -1328,7 +1360,34 @@ export function buildNumericDistributionDto(
     displayPath,
     minLabel: formatExomasteryValueForPath(displayPath, lo),
     maxLabel: formatExomasteryValueForPath(displayPath, hi),
+    ...(histogram ? { bins: distributionBins(histogram, lo, hi) } : {}),
   };
+}
+
+/**
+ * Histogram bins clipped to what this species has actually been seen at (B7).
+ *
+ * The shipped edges are quantiles of the whole corpus, so the outermost bins are unbounded — a
+ * species sitting in the top one would otherwise be drawn running off to infinity. Clipping to the
+ * profile's own min and max keeps the picture about the species while the counts stay the measured
+ * ones. Empty bins are kept: a gap in the middle *is* the finding.
+ */
+function distributionBins(
+  histogram: { counts: number[]; edges: number[] },
+  lo: number,
+  hi: number,
+): { x0: number; x1: number; count: number }[] {
+  const { counts, edges } = histogram;
+  const out: { x0: number; x1: number; count: number }[] = [];
+  for (let i = 0; i < counts.length; i++) {
+    const rawLo = i === 0 ? Number.NEGATIVE_INFINITY : edges[i - 1]!;
+    const rawHi = i >= edges.length ? Number.POSITIVE_INFINITY : edges[i]!;
+    const x0 = Math.max(lo, rawLo);
+    const x1 = Math.min(hi, rawHi);
+    if (!(x1 > x0)) continue;
+    out.push({ x0, x1, count: counts[i] ?? 0 });
+  }
+  return out;
 }
 
 function compositionChartKeyToDistributionPath(chartKey: string): string {
@@ -1428,7 +1487,7 @@ export function buildExomasteryDetail(
     const relDisp =
       !missing && Number.isFinite(mode) ? relativePercentDisplay(v!, mode) : { pct: null, huge: false };
     const curForDist = missing ? null : v!;
-    const distribution = buildNumericDistributionDto(path, r, curForDist);
+    const distribution = buildNumericDistributionDto(path, r, curForDist, histogramForChart(profile, path));
     const stat: ExomasteryStatDetailDTO = {
       id: nid(),
       kind: "numeric",

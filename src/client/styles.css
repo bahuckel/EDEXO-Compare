@@ -9188,3 +9188,10 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   border-radius: 999px;
   white-space: nowrap;
 }
+
+/* Measured distribution bars (B7) — counts the feeder observed, not a curve drawn over a mode. */
+.exo-dist-bar {
+  fill: var(--accent-a45);
+  stroke: var(--accent-a22);
+  stroke-width: 0.5;
+}

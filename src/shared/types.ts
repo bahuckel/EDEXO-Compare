@@ -267,6 +267,18 @@ export interface ExomasteryStatDistributionDTO {
   max: number;
   mode: number;
   current: number | null;
+  /**
+   * The observed distribution, when the profile carries a histogram for this parameter (B7).
+   *
+   * Present: the chart draws what was actually counted, and a species that lives at two separate
+   * temperatures looks like two humps. Absent: the chart falls back to a bell curve around the mode,
+   * which is a drawing rather than a measurement — the exact summary B7 was raised to replace.
+   *
+   * Bins come from the globally shared edges, so they are equal-population across the corpus and
+   * therefore **unequal width**. The chart plots count ÷ width for that reason; anything else would
+   * make a wide bin look tall for being wide.
+   */
+  bins?: { x0: number; x1: number; count: number }[];
   /** Server path used for unit formatting (e.g. body.materials.Fe, EDSM column key). */
   displayPath: string;
   minLabel: string;

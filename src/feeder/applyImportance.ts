@@ -22,7 +22,7 @@ import {
   type ParameterImportance,
 } from "./parameterImportance.js";
 import { PROJECT_ROOT, rawPlanetsDir } from "./paths.js";
-import { buildGlobalEdges, buildSpeciesHistograms } from "./histograms.js";
+import { buildDisplayHistograms, buildGlobalEdges, buildSpeciesHistograms } from "./histograms.js";
 import { HISTOGRAM_BINS, type HistogramEdgesFile } from "../shared/likelihoodBins.js";
 import { loadPlanetContextsFromDir } from "./planetContexts.js";
 import { flattenForStats, speciesFileSlug } from "./flatten.js";
@@ -149,7 +149,10 @@ export async function applyParameterImportance(db: SpeciesDatabase): Promise<Imp
       const d = numericDeterminism(vals, edges);
       if (d != null) importance[p] = Math.round(d * 1000) / 1000;
     }
-    const histograms = buildSpeciesHistograms(numericSamples.get(path) ?? new Map(), edges);
+    const samplesForSpecies = numericSamples.get(path) ?? new Map<string, number[]>();
+    const histograms = buildSpeciesHistograms(samplesForSpecies, edges);
+    // The chart's own bins, over this species' range — see buildDisplayHistograms.
+    const displayHistograms = buildDisplayHistograms(samplesForSpecies);
     const hasHistograms = Object.keys(histograms).length > 0;
     const hasImportance = Object.keys(importance).length > 0;
     // Read and rewrite the file directly: the app's loader normalises the profile on the way in
@@ -173,6 +176,11 @@ export async function applyParameterImportance(db: SpeciesDatabase): Promise<Imp
       histogrammed++;
     } else {
       delete raw.histograms;
+    }
+    if (Object.keys(displayHistograms).length > 0) {
+      raw.displayHistograms = displayHistograms;
+    } else {
+      delete raw.displayHistograms;
     }
     writeFileSync(path, `${JSON.stringify(raw, null, 2)}\n`, "utf8");
   }
