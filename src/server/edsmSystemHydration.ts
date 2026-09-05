@@ -2,6 +2,38 @@ import type { ExplorationScanRecord } from "../shared/types.js";
 
 const EDSM_BODIES_URL = "https://www.edsm.net/api-system-v1/bodies";
 const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
+
+/**
+ * Name the client properly (§20.2).
+ *
+ * It used to say `edexo-compare/journal-fallback` and `edexo-compare/edsm-search` — two names for
+ * one app, neither of which tells EDSM who is calling or lets them reach anyone about it. Automatic
+ * traffic makes that worse than untidy: a volunteer service seeing a rise in requests should be able
+ * to find out whose they are.
+ */
+export const EDSM_USER_AGENT = "ED-Exo-Compare/1.0.0 (+https://github.com/bahuckel/EDEXO-Compare)";
+
+/**
+ * The commander's own EDSM identity, when auto-fetch is configured.
+ *
+ * These endpoints are public and ignore it (§20.1); it is sent so automated traffic is attributable
+ * to the account that asked for it rather than to an anonymous client. It goes only to
+ * `https://www.edsm.net`, over TLS, and is never logged — which is also why it is a query parameter
+ * only on the request and never part of any error message this module returns.
+ */
+export interface EdsmRequestIdentity {
+  commanderName: string;
+  apiKey: string;
+}
+
+function withIdentity(url: string, identity?: EdsmRequestIdentity | null): string {
+  if (!identity?.apiKey || !identity.commanderName) return url;
+  const q = new URLSearchParams({
+    commanderName: identity.commanderName,
+    apiKey: identity.apiKey,
+  });
+  return `${url}&${q.toString()}`;
+}
 const AU_TO_M = 149597870700;
 const DAY_TO_SEC = 86400;
 
@@ -160,14 +192,15 @@ export type FetchEdsmBodiesResult =
 export async function fetchEdsmBodiesAsExplorationRecords(
   systemName: string,
   systemAddress: number,
+  identity?: EdsmRequestIdentity | null,
 ): Promise<FetchEdsmBodiesResult> {
   const q = systemName.trim();
   if (!q) return { ok: false, error: "System name is required." };
-  const url = `${EDSM_BODIES_URL}?systemName=${encodeURIComponent(q)}&showId=1`;
+  const url = withIdentity(`${EDSM_BODIES_URL}?systemName=${encodeURIComponent(q)}&showId=1`, identity);
   let res: Response;
   try {
     res = await fetch(url, {
-      headers: { Accept: "application/json", "User-Agent": "edexo-compare/journal-fallback" },
+      headers: { Accept: "application/json", "User-Agent": EDSM_USER_AGENT },
       signal: AbortSignal.timeout(22_000),
     });
   } catch (e) {
@@ -223,7 +256,7 @@ export async function searchEdsmSystemsByName(
   let res: Response;
   try {
     res = await fetch(url, {
-      headers: { Accept: "application/json", "User-Agent": "edexo-compare/edsm-search" },
+      headers: { Accept: "application/json", "User-Agent": EDSM_USER_AGENT },
       signal: AbortSignal.timeout(22_000),
     });
   } catch (e) {

@@ -24,6 +24,13 @@ import {
 } from "./journalWatcher.js";
 import { createHttpServer, getLanIPv4s } from "./httpServer.js";
 import { describeUserDataMigration, migrateLegacyUserData } from "./userDataMigration.js";
+import {
+  edsmCredentialsStatus,
+  forgetEdsmCredentials,
+  readEdsmCredentials,
+  saveEdsmCredentials,
+} from "./edsmCredentials.js";
+import { EdsmAutoFetcher } from "./edsmAutoFetch.js";
 import { lanUrlWithKey, loadOrCreateLanKey } from "./lanAuth.js";
 import { buildEncyclopediaExomasteryPlanetsPayload } from "./exomasteryEdsmEncyclopedia.js";
 import {
@@ -269,6 +276,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             exoMapTierPlusPlusMinCr: store.exoMapTierPlusPlusMinCr,
             footTravelOdometerEnabled: store.footTravelOdometerEnabled,
             journalHistoryPreset: store.journalHistoryPreset,
+            // The toggle only. The EDSM key lives in its own file (edsmCredentials.ts) precisely so
+            // it never lands in a settings JSON that gets pasted into bug reports.
+            edsmAutoFetchEnabled: store.edsmAutoFetchEnabled,
           },
           null,
           2,
@@ -287,6 +297,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     exoMapTierPlusPlusMinCr?: number;
     footTravelOdometerEnabled?: boolean;
     journalHistoryPreset?: string;
+    edsmAutoFetchEnabled?: boolean;
   };
 
   function applyPersistedUserPrefs(j: PersistedUserPrefs): void {
@@ -305,6 +316,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     // dssSlack* keys from older preference files are ignored: the mechanism they tuned is gone.
     if (typeof j.journalHistoryPreset === "string") {
       store.setJournalHistoryPreset(parseJournalHistoryPreset(j.journalHistoryPreset));
+    }
+    // Restored only alongside a stored key: a settings file carried to a machine without one must
+    // not switch outbound traffic back on by itself.
+    if (j.edsmAutoFetchEnabled === true && readEdsmCredentials()) {
+      store.setEdsmAutoFetchEnabled(true);
     }
   }
 
@@ -448,10 +464,45 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     return { minFileStartUtcMs: journalHistoryCutoffUtcMs(store.journalHistoryPreset) };
   }
 
+  /**
+   * Auto-hydration on jump (§50). Enabled only when the toggle is on **and** the commander has
+   * stored their own EDSM key — the key is the consent, the toggle is the switch.
+   */
+  const edsmAutoFetcher = new EdsmAutoFetcher({
+    isEnabled: () => store.edsmAutoFetchEnabled && readEdsmCredentials() !== null,
+    needsHydration: (systemAddress) =>
+      store.isKnownJournalSystem(systemAddress) &&
+      !store.hasMappableJournalExplorationForSystem(systemAddress),
+    hydrate: async (systemAddress, systemName) => {
+      const edsm = await fetchEdsmBodiesAsExplorationRecords(
+        systemName,
+        systemAddress,
+        readEdsmCredentials(),
+      );
+      if (!edsm.ok) return { ok: false, error: edsm.error };
+      store.replaceEdsmExplorationForSystem(systemAddress, edsm.records);
+      push();
+      return { ok: true };
+    },
+  });
+
+  /** `FSDJump` and `CarrierJump` are arrivals; `Location` covers a game started in a fresh system. */
+  function maybeAutoFetchOnArrival(line: JournalLine): void {
+    const event = line.event;
+    if (event !== "FSDJump" && event !== "CarrierJump" && event !== "Location") return;
+    const systemName = typeof line.StarSystem === "string" ? line.StarSystem : "";
+    const systemAddress = typeof line.SystemAddress === "number" ? line.SystemAddress : NaN;
+    if (!systemName || !Number.isFinite(systemAddress)) return;
+    edsmAutoFetcher.onArrivedInSystem(systemAddress, systemName);
+  }
+
   function createLiveJournalLine(): (line: JournalLine) => void {
     return (line: JournalLine) => {
       try {
         store.apply(line);
+        // Live lines only. The historical replay calls store.apply directly, which is what keeps a
+        // first run from asking EDSM about every system the commander has ever visited.
+        maybeAutoFetchOnArrival(line);
         store.applyLiveNavRoute(readLiveNavRouteWaypoints());
         let statusRaw: string | null = null;
         try {
@@ -787,9 +838,33 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           error: "Journal already has mappable scan data for this system — no EDSM supplement needed.",
         };
       }
-      const edsm = await fetchEdsmBodiesAsExplorationRecords(systemName, systemAddress);
+      const edsm = await fetchEdsmBodiesAsExplorationRecords(
+        systemName,
+        systemAddress,
+        readEdsmCredentials(),
+      );
       if (!edsm.ok) return { ok: false, error: edsm.error };
       store.replaceEdsmExplorationForSystem(systemAddress, edsm.records);
+      return { ok: true };
+    },
+    getEdsmCredentialsStatus: () => edsmCredentialsStatus(),
+    setEdsmCredentials: (commanderName, apiKey) => {
+      const r = saveEdsmCredentials(commanderName, apiKey);
+      if (r.ok) persistUserPreferences();
+      return r;
+    },
+    forgetEdsmCredentials: () => {
+      forgetEdsmCredentials();
+      // No key, no consent: the toggle goes down with it rather than sitting on waiting for one.
+      store.setEdsmAutoFetchEnabled(false);
+      persistUserPreferences();
+    },
+    setEdsmAutoFetchEnabled: (enabled) => {
+      if (enabled && !readEdsmCredentials()) {
+        return { ok: false, error: "Store your EDSM commander name and API key first." };
+      }
+      store.setEdsmAutoFetchEnabled(enabled);
+      persistUserPreferences();
       return { ok: true };
     },
     scheduleBroadcast: push,

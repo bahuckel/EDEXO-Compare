@@ -84,6 +84,7 @@ import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurre
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
 import { exoOutlierTally, recordExoOutliersForBody } from "./exoOutlierLog.js";
+import { edsmCredentialsStatus } from "./edsmCredentials.js";
 
 let cachedStarRoles: ReturnType<typeof loadStarRolesConfig> | null = null;
 
@@ -1166,6 +1167,10 @@ export function buildSnapshot(
     organicPendingLines,
     fssAllBodiesFoundNoBio,
     includeBacteriumInSearch: store.includeBacteriumInSearch,
+    edsmAutoFetch: {
+      enabled: store.edsmAutoFetchEnabled,
+      ...edsmCredentialsStatus(),
+    },
     includeExplorationScanDataInDataValue: store.includeExplorationScanDataInDataValue,
     explorationScanDataValueCredits,
     explorationFssScanCount: exploreBreakdown.fssScanCount,

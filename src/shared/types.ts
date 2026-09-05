@@ -1011,6 +1011,19 @@ export interface AppSnapshot {
   /** When true, Bacterium genus is included in planet↔species matching. */
   includeBacteriumInSearch: boolean;
   /**
+   * EDSM auto-fetch on jump (§50): the toggle, plus enough about the stored credentials for the
+   * Options panel to tell the commander what state they are in.
+   *
+   * `keyHint` is the key's last four characters and nothing else — enough to recognise, useless to
+   * anyone who reads it. The key itself never leaves the server.
+   */
+  edsmAutoFetch: {
+    enabled: boolean;
+    commanderName: string | null;
+    hasKey: boolean;
+    keyHint: string | null;
+  };
+  /**
    * DSS fallback: extra slack (0–50%) on physical gates — temperature estimator band, codex pressure, codex gravity.
    * 0 = strict codex matching for those fallbacks. See Options.
    */

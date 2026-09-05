@@ -528,6 +528,15 @@ export class GameStateStore {
   includeBacteriumInSearch = false;
 
   /**
+   * Look the destination system up on EDSM as soon as the commander jumps into it (§50).
+   *
+   * **Default off, and it stays off until the commander stores their own EDSM key**, because turning
+   * it on sends the name of every system they enter to a third party. That is not a preference like
+   * a temperature unit; it is a standing consent to outbound traffic, so it is opt-in twice over.
+   */
+  edsmAutoFetchEnabled = false;
+
+  /**
    * How much journal history to merge: all logs in the folder, or a rolling window from “now”.
    * Separately persisted in user settings JSON (not part of the journal merge payload).
    */
@@ -597,6 +606,10 @@ export class GameStateStore {
 
   setIncludeBacteriumInSearch(value: boolean): void {
     this.includeBacteriumInSearch = value;
+  }
+
+  setEdsmAutoFetchEnabled(value: boolean): void {
+    this.edsmAutoFetchEnabled = value;
   }
 
   setJournalHistoryPreset(value: JournalHistoryPreset): void {

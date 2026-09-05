@@ -118,6 +118,13 @@ a:hover {
   color: var(--accent-bright);
 }
 
+/* Named third parties in the privacy policy sit under h2 sections, so they need a rung below it. */
+.site-main h3 {
+  font-size: 0.95rem;
+  margin: 1rem 0 0.4rem;
+  color: var(--text);
+}
+
 .site-main p,
 .site-main li {
   color: var(--muted);

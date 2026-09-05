@@ -9195,3 +9195,63 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   stroke: var(--accent-a22);
   stroke-width: 0.5;
 }
+
+/*
+ * EDSM auto-fetch, in Options (§50).
+ *
+ * The privacy line gets a left rule and its own colour so it does not read as one more paragraph of
+ * settings prose. A control that starts sending your position to a third party should look different
+ * from a control that changes a temperature unit.
+ */
+.options-modal .options-edsm-privacy {
+  border-left: 3px solid var(--ed-orange, #ff5c1a);
+  padding-left: 0.75rem;
+  color: var(--fg, inherit);
+}
+
+.options-modal .options-edsm-stored {
+  margin-bottom: 0.65rem;
+}
+
+.options-modal .options-edsm-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 22rem);
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.options-modal .options-edsm-fields label {
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.options-modal .options-edsm-fields input {
+  width: 100%;
+  min-width: 0;
+}
+
+.options-modal .options-edsm-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.options-modal .options-edsm-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+
+.options-modal .options-edsm-toggle input[disabled] + span {
+  color: var(--muted);
+}
+
+@media (max-width: 620px) {
+  .options-modal .options-edsm-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

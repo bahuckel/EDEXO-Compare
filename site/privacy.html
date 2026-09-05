@@ -24,7 +24,7 @@
 
       <main class="site-main">
         <h1 class="legal-hed">Privacy Policy</h1>
-        <p class="legal-updated">Last updated: 6 May 2026</p>
+        <p class="legal-updated">Last updated: 5 September 2026</p>
 
         <div class="legal-box">
           <p>
@@ -55,14 +55,57 @@
 
         <h2>Network and third parties</h2>
         <p>
-          Some builds or features may contact servers (for example optional third-party APIs, update checks,
-          or launcher connectivity). When you use those features, information needed for the request may leave
-          your device subject to standard networking; review each feature&rsquo;s description in the app and
-          the third party&rsquo;s policy where applicable.
+          The app contacts two third parties, and only these two. Both are named here rather than covered by
+          a general clause, because you should be able to read what leaves your machine without running it.
+        </p>
+
+        <h3>EDSM (Elite Dangerous Star Map) &mdash; <a href="https://www.edsm.net/" rel="noreferrer noopener">edsm.net</a></h3>
+        <p>
+          EDSM is a community database of star systems. The app asks it about systems, using these public
+          endpoints: <code>api-system-v1/bodies</code> and <code>api-v1/systems</code> (system and body data),
+          and <code>api-status-v1/elite-server</code> (game server status). What is sent is
+          <strong>a system name</strong>, and nothing else about you or your game.
         </p>
         <p>
-          This policy may be updated if new online features are added. If you use only fully offline paths,
-          journal processing can remain local to your machine.
+          There are two ways this happens:
+        </p>
+        <ul>
+          <li>
+            <strong>When you ask.</strong> Loading a system&rsquo;s map or searching for a system by name sends
+            that one request, when you click.
+          </li>
+          <li>
+            <strong>Automatically on jump</strong>, if you switch on <em>EDSM auto-fetch</em> in Options. It is
+            <strong>off by default</strong>, and it stays off until you enter your own EDSM API key. When it is
+            on, the name of each system you enter is sent to EDSM as you arrive, at most once per system, so
+            the app can show you what is there before you finish travelling.
+          </li>
+        </ul>
+        <p>
+          Auto-fetch requires you to be a registered EDSM user and to supply your own API key from
+          <a href="https://www.edsm.net/en/settings/api" rel="noreferrer noopener">edsm.net/en/settings/api</a>.
+          Your EDSM commander name and key are sent with those automatic requests, so the traffic is
+          attributable to your account rather than to an anonymous client. The key is stored on your own
+          machine, in its own file next to your app settings; it is never included in the settings file, never
+          sent anywhere except edsm.net over HTTPS, and you can delete it from Options at any time, which also
+          switches auto-fetch off. Your use of EDSM is subject to
+          <a href="https://www.edsm.net/en/legal/privacy" rel="noreferrer noopener">EDSM&rsquo;s own privacy policy</a>.
+        </p>
+
+        <h3>ipify &mdash; <a href="https://www.ipify.org/" rel="noreferrer noopener">api.ipify.org</a></h3>
+        <p>
+          When you click the eye icon beside <em>Public internet</em> in the launcher&rsquo;s network settings,
+          the app asks ipify what your public IP address is, so it can show you the address a phone or tablet
+          outside your home network would use. This happens only on that click &mdash; never automatically. The
+          address is stored on your device so the launcher can show it again, and the <em>Forget</em> button in
+          the same panel deletes it.
+        </p>
+
+        <h3>Nothing else</h3>
+        <p>
+          There are no analytics, no telemetry, no crash reporting and no update checks. Your journal files,
+          your scans, your discoveries and your commander name are processed on your machine and are not
+          uploaded anywhere. This policy will be updated if that ever changes.
         </p>
 
         <h2>Cookies and marketing</h2>

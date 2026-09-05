@@ -48,6 +48,17 @@ export function resolveLanKeyPath(): string {
 }
 
 /**
+ * The commander's own EDSM account credentials (see edsmCredentials.ts).
+ *
+ * Its own file, next to the user settings and for the same reason the LAN key has one: a secret does
+ * not belong in a settings JSON that gets pasted into bug reports. Deleting just this file turns the
+ * auto-fetch off and leaves every other preference alone.
+ */
+export function resolveEdsmCredentialsPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "edexo-compare-edsm-key.json");
+}
+
+/**
  * Species the commander found that the app failed to offer (see exoOutlierLog.ts). Its own file
  * beside the user settings: append-only evidence that must survive a cache rebuild, since a cache is
  * regenerated routinely and this is the only record of what the predictor got wrong.

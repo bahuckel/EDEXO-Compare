@@ -2252,6 +2252,157 @@ const EXO_MAP_CR_STEP = 50_000;
 /** Leave room so ++ can always be at least one step above + within the 20M cap. */
 const EXO_MAP_PLUS_SLIDER_MAX = EXO_MAP_CR_MAX - EXO_MAP_CR_STEP;
 
+/**
+ * EDSM auto-fetch, in Options.
+ *
+ * Two gates, deliberately. The **key** is the consent — going to edsm.net and fetching your own is a
+ * decision, where a checkbox is a reflex — and the **toggle** is the switch. Neither alone starts
+ * traffic, and clearing the key takes the toggle down with it.
+ *
+ * The panel says what leaves the machine, in those words, above the control that starts it. The key
+ * is write-only from here: the server sends back the commander name and the last four characters,
+ * which is enough to recognise and useless to anyone reading over a shoulder.
+ */
+function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) {
+  const [commanderName, setCommanderName] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  async function post(path: string, body: unknown, method = "POST"): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const r = await fetch(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: method === "DELETE" ? undefined : JSON.stringify(body),
+      });
+      return (await r.json()) as { ok: boolean; error?: string };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "Request failed." };
+    }
+  }
+
+  return (
+    <section className="options-edsm options-meta-block">
+      <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
+        <strong>EDSM auto-fetch</strong> — when you jump into a system the app has no scans for, look it
+        up on EDSM while you travel, so the system can be triaged before you arrive.
+      </p>
+      <p className="options-edsm-privacy dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
+        This sends <strong>the name of every system you enter</strong> to edsm.net, a third party, and
+        your EDSM commander name and API key with it. Nothing else leaves your machine. It is off until
+        you turn it on.
+      </p>
+      <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
+        It needs your own EDSM account: register at{" "}
+        <a href="https://www.edsm.net/" target="_blank" rel="noreferrer noopener">
+          edsm.net
+        </a>{" "}
+        and copy your API key from{" "}
+        <a href="https://www.edsm.net/en/settings/api" target="_blank" rel="noreferrer noopener">
+          edsm.net/en/settings/api
+        </a>
+        . The key is stored on this machine only, in its own file beside your settings — never in the
+        settings file itself, and never in the repository.
+      </p>
+
+      {state.hasKey ? (
+        <p className="options-edsm-stored dim">
+          Stored: <strong>{state.commanderName}</strong> · key ending <code>{state.keyHint}</code>
+        </p>
+      ) : null}
+
+      <div className="options-edsm-fields">
+        <label htmlFor="edsm-cmdr">EDSM commander name</label>
+        <input
+          id="edsm-cmdr"
+          type="text"
+          autoComplete="off"
+          value={commanderName}
+          placeholder={state.commanderName ?? "CMDR name on EDSM"}
+          onChange={(ev) => setCommanderName(ev.target.value)}
+        />
+        <label htmlFor="edsm-key">EDSM API key</label>
+        <input
+          id="edsm-key"
+          type="password"
+          autoComplete="off"
+          spellCheck={false}
+          value={apiKey}
+          placeholder={state.hasKey ? "•••• stored" : "from edsm.net/en/settings/api"}
+          onChange={(ev) => setApiKey(ev.target.value)}
+        />
+      </div>
+
+      <div className="options-edsm-actions">
+        <button
+          type="button"
+          className="btn secondary"
+          disabled={busy || !commanderName.trim() || !apiKey.trim()}
+          onClick={() => {
+            setBusy(true);
+            setMsg(null);
+            void post("/api/settings/edsm-credentials", { commanderName, apiKey })
+              .then((r) => {
+                setMsg(
+                  r.ok
+                    ? { kind: "ok", text: "Key stored on this machine." }
+                    : { kind: "err", text: r.error ?? "Could not store the key." },
+                );
+                // Never keep the secret in component state once the server has it.
+                if (r.ok) setApiKey("");
+              })
+              .finally(() => setBusy(false));
+          }}
+        >
+          Save key
+        </button>
+        <button
+          type="button"
+          className="btn secondary"
+          disabled={busy || !state.hasKey}
+          onClick={() => {
+            setBusy(true);
+            setMsg(null);
+            void post("/api/settings/edsm-credentials", null, "DELETE")
+              .then(() => {
+                setApiKey("");
+                setMsg({ kind: "ok", text: "Key deleted. Auto-fetch is off." });
+              })
+              .finally(() => setBusy(false));
+          }}
+        >
+          Forget key
+        </button>
+      </div>
+
+      <label className="options-edsm-toggle">
+        <input
+          type="checkbox"
+          checked={state.enabled}
+          disabled={busy || !state.hasKey}
+          onChange={(ev) => {
+            const enabled = ev.target.checked;
+            setBusy(true);
+            setMsg(null);
+            void post("/api/settings/edsm-auto-fetch", { enabled })
+              .then((r) => {
+                if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Could not change the setting." });
+              })
+              .finally(() => setBusy(false));
+          }}
+        />
+        <span>
+          Look up systems on EDSM automatically when I jump
+          {state.hasKey ? "" : " (store your API key first)"}
+        </span>
+      </label>
+
+      {msg ? <p className={msg.kind === "ok" ? "msg ok" : "msg err"}>{msg.text}</p> : null}
+    </section>
+  );
+}
+
 function MapOptionsModal({
   snap,
   plusMinCr,
@@ -2401,6 +2552,8 @@ function MapOptionsModal({
           </section>
 
           <ExoMissLogPanel outliers={snap.exoOutliers} />
+
+          <EdsmAutoFetchPanel state={snap.edsmAutoFetch} />
 
           <FeederStatusPanel />
 

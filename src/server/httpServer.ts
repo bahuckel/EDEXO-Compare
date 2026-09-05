@@ -20,6 +20,7 @@ import { getProjectRoot, getSpeciesDataDir, getWebRoot } from "./paths.js";
 import { findGenusPhotosFolder, findGenusNotesFile } from "./speciesTreeLoader.js";
 import { perfBytes, perfCount, perfTime } from "./perf.js";
 import { createLanAuthGuard, requestIsAuthorized } from "./lanAuth.js";
+import { EDSM_USER_AGENT } from "./edsmSystemHydration.js";
 
 export function getLanIPv4s(port: number): string[] {
   const nets = os.networkInterfaces();
@@ -115,6 +116,14 @@ export function createHttpServer(opts: {
     systemAddress: number,
     systemName: string,
   ) => Promise<{ ok: boolean; error?: string }>;
+  /** GET /api/settings/edsm-credentials — commander name + whether a key is stored. Never the key. */
+  getEdsmCredentialsStatus?: () => { commanderName: string | null; hasKey: boolean; keyHint: string | null };
+  /** POST /api/settings/edsm-credentials — JSON { commanderName, apiKey }. */
+  setEdsmCredentials?: (commanderName: string, apiKey: string) => { ok: boolean; error?: string };
+  /** DELETE /api/settings/edsm-credentials — also switches auto-fetch off. */
+  forgetEdsmCredentials?: () => void;
+  /** POST /api/settings/edsm-auto-fetch — JSON { enabled }. Refused without stored credentials. */
+  setEdsmAutoFetchEnabled?: (enabled: boolean) => { ok: boolean; error?: string };
   /** GET /api/system/edsm-search?q= — galaxy name prefix via EDSM (returns id64 as systemAddress). */
   searchEdsmSystems?: (
     query: string,
@@ -338,7 +347,7 @@ export function createHttpServer(opts: {
     try {
       return await fetch(url, {
         signal: ac.signal,
-        headers: { Accept: "application/json" },
+        headers: { Accept: "application/json", "User-Agent": EDSM_USER_AGENT },
       });
     } finally {
       clearTimeout(t);
@@ -566,6 +575,56 @@ export function createHttpServer(opts: {
         error: e instanceof Error ? e.message : String(e),
       });
     }
+  });
+
+  app.get("/api/settings/edsm-credentials", (_req, res) => {
+    if (typeof opts.getEdsmCredentialsStatus !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    res.json({ ok: true, ...opts.getEdsmCredentialsStatus() });
+  });
+
+  app.post("/api/settings/edsm-credentials", (req, res) => {
+    if (typeof opts.setEdsmCredentials !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const commanderName = req.body?.commanderName;
+    const apiKey = req.body?.apiKey;
+    if (typeof commanderName !== "string" || typeof apiKey !== "string") {
+      res.status(400).json({ ok: false, error: "commanderName and apiKey are required." });
+      return;
+    }
+    const r = opts.setEdsmCredentials(commanderName, apiKey);
+    // The key is never echoed back, not even on success — the status shape carries a four-character
+    // hint and nothing more.
+    res.status(r.ok ? 200 : 400).json(r);
+  });
+
+  app.delete("/api/settings/edsm-credentials", (_req, res) => {
+    if (typeof opts.forgetEdsmCredentials !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    opts.forgetEdsmCredentials();
+    opts.scheduleBroadcast?.();
+    res.json({ ok: true });
+  });
+
+  app.post("/api/settings/edsm-auto-fetch", (req, res) => {
+    if (typeof opts.setEdsmAutoFetchEnabled !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const enabled = req.body?.enabled;
+    if (typeof enabled !== "boolean") {
+      res.status(400).json({ ok: false, error: "enabled must be a boolean." });
+      return;
+    }
+    const r = opts.setEdsmAutoFetchEnabled(enabled);
+    if (r.ok) opts.scheduleBroadcast?.();
+    res.status(r.ok ? 200 : 400).json(r);
   });
 
   app.post("/api/system/hydrate-from-edsm", async (req, res) => {
