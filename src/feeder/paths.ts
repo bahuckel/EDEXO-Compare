@@ -19,33 +19,24 @@
  * is a corpus at all before offering to do anything with it.
  */
 import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
 import { getProjectRoot } from "../server/paths.js";
 
 /**
- * The repository root, resolved in a way the esbuild bundle survives.
+ * The repository root.
  *
- * `import.meta.url` is the obvious answer and it is a trap here: `scripts/bundle.mjs` emits CJS, and
- * esbuild replaces `import.meta` with an empty object in that format. `fileURLToPath(undefined)`
- * then throws *"The 'path' argument must be of type string or an instance of URL"* at import time —
- * so the packaged app refused to start at all, from the moment the Options status panel pulled this
- * module into the server bundle. `openUrl.ts` carries a comment warning about exactly this hazard
- * for a third-party package; this file walked into it anyway.
+ * `import.meta.url` is the obvious way for a module to find its own directory, and it is a trap
+ * here: `scripts/bundle.mjs` emits CJS, esbuild replaces `import.meta` with an empty object in that
+ * format (and warns about it), and `fileURLToPath(undefined)` throws *"The 'path' argument must be
+ * of type string or an instance of URL"* at import time. The Options status panel imports this
+ * module through `server/feederStatus.ts`, so the packaged app refused to start at all —
+ * `openUrl.ts` carries a comment warning about exactly this hazard in a third-party package.
  *
- * Under ESM (tsx, vitest) the meta URL is used as before, so the feeder CLI and the tests keep the
- * repository root they had. In the bundle it falls through to the app's own resolver, which already
- * knows about the Electron, portable, pkg and dev layouts.
+ * The app's own resolver already answers the question in every shape this code runs in: Electron,
+ * portable exe, pkg, the CJS bundle, `tsx` for the feeder CLI, and vitest. Use it, and keep
+ * `import.meta` out of anything the bundler will see.
  */
-function resolveProjectRoot(): string {
-  const metaUrl = (import.meta as unknown as { url?: string } | undefined)?.url;
-  if (typeof metaUrl === "string" && metaUrl) {
-    return resolve(dirname(fileURLToPath(metaUrl)), "..", "..");
-  }
-  return getProjectRoot();
-}
-
-export const PROJECT_ROOT = resolveProjectRoot();
+export const PROJECT_ROOT = getProjectRoot();
 
 /** Candidate corpus locations, most specific first. */
 function candidateDataDirs(): string[] {
