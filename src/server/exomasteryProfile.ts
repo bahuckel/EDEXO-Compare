@@ -37,6 +37,7 @@ import {
   type PercentileBand,
 } from "../feeder/atmosphereBands.js";
 import { exomasteryHabitatTierWeight } from "./exomasteryHabitatTiers.js";
+import type { SpeciesHistograms } from "../shared/likelihoodBins.js";
 import { shouldOmitExomasterySciencePath } from "./exomasteryPathHygiene.js";
 import { getSpeciesDataDir } from "./paths.js";
 
@@ -88,6 +89,14 @@ export interface ExomasteryProfileV1 {
    * rollups when a cell is missing or too thin to describe a range.
    */
   atmosphereBands?: AtmosphereBands;
+  /**
+   * Per-parameter histograms on the globally shared bin edges, written by `feeder run` / `rebuild`.
+   *
+   * The rollups above say where a species sits on average; these say how often it sits *here*, which
+   * is the difference between a similarity score and a likelihood. Read by the ranking model
+   * (`speciesLikelihood.ts`); absent on profiles built before it existed.
+   */
+  histograms?: SpeciesHistograms;
   /**
    * Per-parameter determinism against the pooled background, written by `feeder run` / `rebuild`.
    *
@@ -149,7 +158,9 @@ function profileLooksUsable(j: Record<string, unknown>): boolean {
     nonempty(j.materials) ||
     nonempty(j.atmosphereComposition) ||
     nonempty(j.solidComposition) ||
-    nonempty(j.categorical)
+    nonempty(j.categorical) ||
+    // A profile carrying only histograms is still one the ranking model can use.
+    nonempty(j.histograms)
   );
 }
 
@@ -652,7 +663,8 @@ function relativePercentDisplay(v: number, mode: number): { pct: number | null; 
 }
 
 /** Map EDSM-style profile paths to values from journal scan / exploration record (SI + AU as stored in profile). */
-function valueForNumericPath(
+/** Exported for the ranking model, which reads the same paths out of the same scan. */
+export function valueForNumericPath(
   path: string,
   scan: PlanetScan,
   rec: ExplorationScanRecord | null | undefined,
@@ -914,7 +926,8 @@ function solidValue(
 }
 
 /** String fields from scan/rec for profile categorical paths (EDSM/journal wording). */
-function valueForCategoricalPath(
+/** Exported for the ranking model, which reads the same paths out of the same scan. */
+export function valueForCategoricalPath(
   path: string,
   scan: PlanetScan,
   rec: ExplorationScanRecord | null | undefined,

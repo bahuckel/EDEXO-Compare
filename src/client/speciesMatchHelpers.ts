@@ -157,6 +157,12 @@ export function speciesCaptionParts(
  * does not name keep the alphabetical order they have always had, after the ranked ones, so a body
  * with no signal count or no co-occurrence table looks exactly as it did before.
  */
+/** Presence probability, or -1 when the ranking model had no opinion about this row. */
+function presenceOf(m: BodyComputed["matches"][number]): number {
+  const p = m.presenceProbabilityPercent;
+  return typeof p === "number" && Number.isFinite(p) ? p : -1;
+}
+
 export function groupedSortedMatches(matches: BodyComputed["matches"], genusOrder?: string[] | null) {
   const map = new Map<string, { title: string; items: BodyComputed["matches"] }>();
   for (const m of matches) {
@@ -177,6 +183,16 @@ export function groupedSortedMatches(matches: BodyComputed["matches"], genusOrde
       const ua = a.exomasteryHabitatUnlikely === true;
       const ub = b.exomasteryHabitatUnlikely === true;
       if (ua !== ub) return ua ? 1 : -1;
+      // Likeliest first, when the ranking model could score them. It beat sorting by price or by
+      // habitat similarity on 398 species: top-1 26.9 % → 36.2 %, top-3 52.5 % → 66.3 %.
+      //
+      // A row the model could not score sits below the ones it could. That is a statement about the
+      // evidence, not about the species: a thin profile is unmeasured, not unlikely (§15.2), and it
+      // keeps its own price order among the other unscored rows.
+      const ra = presenceOf(a);
+      const rb = presenceOf(b);
+      if ((ra >= 0) !== (rb >= 0)) return ra >= 0 ? -1 : 1;
+      if (ra >= 0 && rb >= 0 && ra !== rb) return rb - ra;
       const pa = a.priceCredits;
       const pb = b.priceCredits;
       if (pa == null && pb == null) return 0;
@@ -191,13 +207,23 @@ export function groupedSortedMatches(matches: BodyComputed["matches"], genusOrde
     const r = dir ? rank.get(dir) : undefined;
     return r ?? Number.POSITIVE_INFINITY;
   };
+  /**
+   * A genus is as likely as its likeliest species, so the groups sort on that when the model has
+   * scored them. The co-occurrence order (§26) is the fallback: it knows which genera are common in
+   * the galaxy, this knows which are likely on *this* body.
+   */
+  const presenceOfGroup = (items: BodyComputed["matches"]) => Math.max(...items.map(presenceOf), -1);
   return [...map.entries()]
     .map(([groupKey, g]) => ({ groupKey, title: g.title, items: g.items }))
-    .sort(
-      (a, b) =>
+    .sort((a, b) => {
+      const pa = presenceOfGroup(a.items);
+      const pb = presenceOfGroup(b.items);
+      if (pa >= 0 && pb >= 0 && pa !== pb) return pb - pa;
+      return (
         rankOf(a.items) - rankOf(b.items) ||
-        a.title.localeCompare(b.title, undefined, { sensitivity: "base" }),
-    );
+        a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
+      );
+    });
 }
 
 const REASON_FIELD_LABELS: Record<string, string> = {
@@ -358,6 +384,9 @@ export const EXO_SIMILARITY_INDEX_HELP =
 
 export const EXO_HABITAT_FIT_HELP =
   "Habitat fit %: importance-weighted blend vs exomastery profile (feeder `*_exomastery.json`), not genus `*_new.json`. Add that JSON under `data/species/<genus>/` for bars to appear. Journal Scan / ScanOrganic merge with Spansh/EDSM for the scan used in scoring.";
+
+export const EXO_PRESENCE_HELP =
+  "Chance here %: the probability this species is one of the ones actually on this body. Bayes over the feeder profiles — how often the species has been seen at this gravity, temperature, pressure, planet class, atmosphere and host star, weighted by how common it is — normalised across the candidates and multiplied by the biological signal count. It is the one number on this row that has been calibrated: on bodies where every genus was sampled, rows it calls 90-100% turn up 97.8% of the time and rows it calls 0-10% turn up 8.9% of the time. Blank when the species has no profile or fewer than 20 observed bodies: unmeasured, not unlikely.";
 
 export const EXO_GENUS_RANK_HELP =
   "Same genus on this body: each species' % of the group's combined deck-chip score (feeder alignment). All such rows sum to ~100% — relative feeder fit among siblings, not “confidence” the planet is that species and not codex/spawn truth. Hidden when only one exomastery candidate in the genus.";

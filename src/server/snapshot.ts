@@ -76,6 +76,8 @@ import {
 import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
+import { rankSpeciesOnBody } from "./speciesLikelihood.js";
+import type { JournalHostStarObservation } from "../shared/types.js";
 import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
@@ -659,6 +661,40 @@ function genusLikelihoodsForBody(
   return genusLikelihoods(table, candidates, signalCount, known)?.likelihoods ?? null;
 }
 
+/**
+ * The ranking model's answer, written onto the matches.
+ *
+ * `rankSpeciesOnBody` normalises across the candidates, which answers "which one species is this".
+ * The game places one genus per biological signal, so a candidate's chance of being *present* is
+ * that share times the count — the same constraint step 7 applies at genus level, and the reason the
+ * number calibrates. Without a signal count the share is left as it is, which under-reads on a
+ * multi-signal body and is the honest thing to do when the game has not said how many are down there.
+ *
+ * Only the shown tier is ranked. A demoted row disagreed with a gate, and normalising it alongside
+ * the others would hand it a share of a probability the panel does not offer it.
+ */
+function attachPresenceProbability(
+  matches: SpeciesMatch[],
+  b: BodyExoState,
+  scan: PlanetScan | null,
+  rec: ExplorationScanRecord | null,
+  journalHost: JournalHostStarObservation | null,
+  root: string,
+): void {
+  if (!scan) return;
+  const shown = matches.filter((m) => !m.unlikely);
+  if (shown.length === 0) return;
+  const { ranked } = rankSpeciesOnBody(shown, scan, rec, journalHost, { root });
+  if (ranked.length === 0) return;
+
+  const signals = b.biologicalSignals;
+  const scale = signals != null && Number.isFinite(signals) && signals > 0 ? signals : 1;
+  for (const r of ranked) {
+    const p = Math.max(0, Math.min(1, r.probability * scale));
+    r.match.presenceProbabilityPercent = Math.round(p * 1000) / 10;
+  }
+}
+
 function ambiguityForBody(b: BodyExoState): string | null {
   const sig = b.biologicalSignals;
   const genusN = b.genusHints?.length ?? 0;
@@ -841,6 +877,7 @@ function computeBodyUncached(
     );
     matches = markExomasteryZeroHabitatMatches(matches);
   }
+  attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root);
   attachOtherMatchCardScores(matches, scanForExo, explorationRec, root, journalHost);
   applyExomasteryGenusCompetitivePercent(matches);
   if (matches.length > 0 && scanForExo) {

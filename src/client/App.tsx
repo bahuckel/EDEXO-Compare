@@ -96,6 +96,7 @@ import {
 import {
   EXO_SIMILARITY_INDEX_HELP,
   EXO_HABITAT_FIT_HELP,
+  EXO_PRESENCE_HELP,
   EXO_GENUS_RANK_HELP,
   EXO_CODEX_VS_EXO_PROFILE_HELP,
   exomasteryDetailHasContent,
@@ -372,6 +373,24 @@ function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["matches"][
     barExtraStyle?: CSSProperties;
   };
   const cols: SimCol[] = [];
+  /**
+   * The one number here that has been checked against reality.
+   *
+   * Habitat fit, deck match and the genus rank all say how close this body is to the species' own
+   * average, on scales nothing has calibrated. This says how often the species turns out to be here
+   * — measured, on complete-label bodies: the 90-100 % bin comes in at 97.8 %, the 0-10 % bin at
+   * 8.9 %. So it leads, and the rest keep their places behind it.
+   */
+  const presence = m.presenceProbabilityPercent;
+  if (presence != null && Number.isFinite(presence))
+    cols.push({
+      key: "presence",
+      shortLabel: "Chance here",
+      help: EXO_PRESENCE_HELP,
+      pct: Math.max(0, Math.min(100, presence)),
+      barOpacity: 1,
+      barExtraStyle: { filter: "hue-rotate(-35deg)" },
+    });
   if (hasHq)
     cols.push({
       key: "hq",

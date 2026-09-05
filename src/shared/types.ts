@@ -586,6 +586,19 @@ export interface SpeciesMatch {
    */
   exomasteryGenusRelativePercent?: number | null;
   /**
+   * Chance this species is one of the ones actually on this body, 0-100.
+   *
+   * The Bayes posterior over the body's candidates (`speciesLikelihood.ts`), multiplied by the
+   * biological signal count because the game places that many genera and the posterior answers
+   * "which one species is it". Unlike every other percentage on this row it has been calibrated: on
+   * complete-label bodies the 90-100 bin comes in at 97.8 % observed and the 0-10 bin at 8.9 %, mean
+   * squared gap 0.0045 (`npm run rank-probe --model`).
+   *
+   * Null when the model has no opinion — no profile, fewer than 20 observed bodies, or nothing about
+   * this body it can measure. Null is "unmeasured", never "unlikely".
+   */
+  presenceProbabilityPercent?: number | null;
+  /**
    * Distinct feeder bodies behind {@link exomasteryHabitatQuality}. Null when no profile.
    * Small counts mean the habitat signal is weak, not that the habitat is wrong.
    */

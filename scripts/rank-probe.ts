@@ -31,6 +31,7 @@ import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
 import { resolveJournalMergeCacheRoot } from "../src/server/paths.js";
 import { exomasteryHabitatQualityPercent, loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
+import { rankSpeciesOnBody, TERM_DAMPING } from "../src/server/speciesLikelihood.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
 import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
 import type {
@@ -92,6 +93,28 @@ function hostStarFor(b: BodyExoState): JournalHostStarObservation | null {
 }
 
 let ranked = 0;
+/**
+ * `--model` ranks by the Bayes posterior instead of the habitat similarity, and `--damping=<x>`
+ * sweeps the exponent on the likelihood terms. Both orderings are measured on exactly the same
+ * bodies and the same candidate lists, so the only difference is the score they sort by.
+ */
+const USE_MODEL = process.argv.includes("--model");
+const NO_PRIOR = process.argv.includes("--no-prior");
+const DAMPING = Number(
+  (process.argv.find((a) => a.startsWith("--damping=")) ?? `--damping=${TERM_DAMPING}`).split("=")[1],
+);
+
+/**
+ * Reliability of the posterior, for acceptance rule 3.
+ *
+ * Ordering is one claim and a percentage is a bigger one: a candidate the model calls 70 % has to be
+ * right about seven times in ten or the number is decoration. Measured only on bodies whose truth is
+ * complete — as many distinct truth genera as the game reports signals — because on a body where the
+ * commander sampled one of three genera, a candidate outside that one is not a wrong answer.
+ */
+const CALIB_BINS = 10;
+const calibration = Array.from({ length: CALIB_BINS }, () => ({ n: 0, hit: 0, predicted: 0 }));
+
 let rankSum = 0;
 let top1 = 0;
 let top3 = 0;
@@ -113,18 +136,52 @@ for (const b of bodies) {
   const rec = scansBySystem.get(b.systemAddress)?.get(b.bodyId) ?? null;
   // Only candidates with a feeder profile can be scored; a body where nothing scores has no ranking
   // to measure, and counting it would flatter whichever weighting is in place.
+  /**
+   * Both orderings, over the candidates both can score.
+   *
+   * The model declines on a profile under 20 bodies and the similarity does not, so scoring each on
+   * whatever it can reach would compare them on different corpora — the model would look better for
+   * having been asked fewer questions. Same rows, same species, one difference.
+   */
+  const posterior = new Map(
+    rankSpeciesOnBody(matches, b.scan, rec, host, { root, damping: DAMPING, noPrior: NO_PRIOR }).ranked.map(
+      (r) => [r.match.entry.id, r.probability],
+    ),
+  );
   const scored = matches
     .map((m) => {
       const prof = loadExomasteryProfile(root, m.entry);
       // The app scores against the `Scan` merged with the body's exploration record — materials,
-      // solid composition, the orbit fields. Passing null here measured a scorer the app does not run.
+      // solid composition, the orbit fields. Passing null measured a scorer the app does not run.
       const q = prof ? exomasteryHabitatQualityPercent(prof, b.scan!, rec, host) : null;
-      return { id: m.entry.id, q: q ?? -1 };
+      return { id: m.entry.id, q: q ?? -1, p: posterior.get(m.entry.id) ?? -1 };
     })
-    .filter((x) => x.q >= 0);
+    .filter((x) => x.q >= 0 && x.p >= 0)
+    .sort((x, y) => (USE_MODEL ? y.p - x.p : y.q - x.q));
   if (scored.length < 2) continue;
   scoredRows += scored.length;
-  scored.sort((x, y) => y.q - x.q);
+
+  const truthComplete =
+    b.biologicalSignals != null &&
+    b.biologicalSignals > 0 &&
+    new Set(truth.map((id) => db.species.find((e) => e.id === id)?.genusDataDir).filter(Boolean)).size ===
+      b.biologicalSignals;
+  if (truthComplete) {
+    for (const row of scored) {
+      /**
+       * The posterior answers "which species is this", and the body has `k` of them. A candidate's
+       * chance of being *one of* the truth set is that share times the number of signals — the same
+       * constraint step 7's solver applies at genus level, and without it the number reads about
+       * three times too low because the mean body carries three genera.
+       */
+      const scale = USE_MODEL ? (b.biologicalSignals ?? 1) : 1;
+      const p = Math.max(0, Math.min(1, USE_MODEL ? row.p * scale : row.q / 100));
+      const bin = calibration[Math.min(CALIB_BINS - 1, Math.floor(p * CALIB_BINS))]!;
+      bin.n++;
+      bin.predicted += p;
+      if (truth.includes(row.id)) bin.hit++;
+    }
+  }
 
   for (const t of truth) {
     const i = scored.findIndex((x) => x.id === t);
@@ -142,10 +199,32 @@ if (ranked === 0) {
   process.exit(1);
 }
 
-console.log(`\nranked species     ${ranked}   over ${scoredRows} scored candidate rows`);
+console.log(
+  `\nordering           ${USE_MODEL ? `Bayes posterior (damping ${DAMPING}${NO_PRIOR ? ", no prior" : ""})` : "habitat similarity"}`,
+);
+console.log(`ranked species     ${ranked}   over ${scoredRows} scored candidate rows`);
 console.log(`mean rank          ${(rankSum / ranked).toFixed(3)}`);
 console.log(`top-1              ${top1} (${((top1 / ranked) * 100).toFixed(1)}%)`);
 console.log(`top-3              ${top3} (${((top3 / ranked) * 100).toFixed(1)}%)`);
+
+const calibrated = calibration.filter((c) => c.n > 0);
+if (calibrated.length) {
+  console.log(`\nreliability on complete-label bodies (predicted vs observed)`);
+  for (const [i, c] of calibration.entries()) {
+    if (c.n === 0) continue;
+    const lo = ((i / CALIB_BINS) * 100).toFixed(0);
+    const hi = (((i + 1) / CALIB_BINS) * 100).toFixed(0);
+    console.log(
+      `  ${`${lo}-${hi} %`.padEnd(10)} ${String(c.n).padStart(5)} rows   mean predicted ${((c.predicted / c.n) * 100).toFixed(1).padStart(5)} %   observed ${((c.hit / c.n) * 100).toFixed(1).padStart(5)} %${c.n < 20 ? "   (thin)" : ""}`,
+    );
+  }
+  const brier = calibration.reduce(
+    (sum, c) => sum + c.n * (c.predicted / Math.max(1, c.n) - c.hit / Math.max(1, c.n)) ** 2,
+    0,
+  );
+  const rows = calibration.reduce((n, c) => n + c.n, 0);
+  console.log(`  mean squared gap between the two columns: ${(brier / Math.max(1, rows)).toFixed(4)}`);
+}
 
 worst.sort((a, b) => b.rank - a.rank);
 console.log("\nburied deepest:");
