@@ -20,12 +20,18 @@ import { dirname, join } from "node:path";
 import type { Database, SqlValue } from "sql.js";
 import type { SpeciesDatabase } from "../shared/types.js";
 import type { GenusCooccurrenceTable } from "../shared/genusCooccurrence.js";
+import type { SpeciesPrevalenceFile } from "../shared/speciesPrior.js";
 import { findSpeciesEntryForLabel } from "./install.js";
 import { PROJECT_ROOT } from "./paths.js";
 
 /** Where the app loads it from. Ships with `data/`, like the price list. */
 export function cooccurrenceTablePath(projectRoot: string = PROJECT_ROOT): string {
   return join(projectRoot, "data", "exomastery", "genus-cooccurrence.json");
+}
+
+/** Where the ranking model reads its prior from. Same GROUP BY, one level down from the genus. */
+export function speciesPrevalencePath(projectRoot: string = PROJECT_ROOT): string {
+  return join(projectRoot, "data", "exomastery", "species-prevalence.json");
 }
 
 function queryAll<T extends SqlValue[]>(db: Database, sql: string): T[] {
@@ -38,6 +44,8 @@ function queryAll<T extends SqlValue[]>(db: Database, sql: string): T[] {
 
 export interface CooccurrenceBuildReport {
   table: GenusCooccurrenceTable;
+  /** Bodies per species id — the ranking model's prior, counted on the same pass. */
+  prevalence: SpeciesPrevalenceFile;
   /** Sightings whose species label resolved to a row in `data/species/**`. */
   mappedSightings: number;
   /** Sightings dropped because no row matched — one entry per distinct label in the table. */
@@ -52,7 +60,9 @@ export function buildCooccurrenceTable(db: Database, speciesDb: SpeciesDatabase)
   const rows = queryAll<[number, string]>(db, "SELECT planet_id, species_label FROM sightings");
 
   const genusOfLabel = new Map<string, string | null>();
+  const speciesIdOfLabel = new Map<string, string | null>();
   const labelOfGenus = new Map<string, string>();
+  const bodiesPerSpecies = new Map<string, Set<number>>();
   const unmapped = new Set<string>();
   let mappedSightings = 0;
   let unmappedSightings = 0;
@@ -62,6 +72,7 @@ export function buildCooccurrenceTable(db: Database, speciesDb: SpeciesDatabase)
     if (!genusOfLabel.has(label)) {
       const entry = findSpeciesEntryForLabel(speciesDb, label);
       genusOfLabel.set(label, entry?.genusDataDir ?? null);
+      speciesIdOfLabel.set(label, entry?.id ?? null);
       if (entry?.genusDataDir)
         labelOfGenus.set(entry.genusDataDir, entry.genus?.trim() || entry.genusDataDir);
     }
@@ -72,6 +83,12 @@ export function buildCooccurrenceTable(db: Database, speciesDb: SpeciesDatabase)
       continue;
     }
     mappedSightings++;
+    const speciesId = speciesIdOfLabel.get(label);
+    if (speciesId) {
+      const bodies = bodiesPerSpecies.get(speciesId) ?? new Set<number>();
+      bodies.add(planetId);
+      bodiesPerSpecies.set(speciesId, bodies);
+    }
     const set = byPlanet.get(planetId) ?? new Set<string>();
     set.add(genus);
     byPlanet.set(planetId, set);
@@ -82,6 +99,16 @@ export function buildCooccurrenceTable(db: Database, speciesDb: SpeciesDatabase)
 
   return {
     table,
+    prevalence: {
+      formatVersion: 1,
+      builtAt: table.builtAt,
+      bodies: byPlanet.size,
+      species: Object.fromEntries(
+        [...bodiesPerSpecies.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([id, bodies]) => [id, bodies.size] as const),
+      ),
+    },
     mappedSightings,
     unmappedSightings,
     bodies: byPlanet.size,
@@ -140,6 +167,13 @@ export function writeCooccurrenceTable(table: GenusCooccurrenceTable, projectRoo
   return path;
 }
 
+export function writeSpeciesPrevalence(prevalence: SpeciesPrevalenceFile, projectRoot?: string): string {
+  const path = speciesPrevalencePath(projectRoot);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(prevalence, null, 2)}\n`, "utf8");
+  return path;
+}
+
 export function formatCooccurrenceReport(r: CooccurrenceBuildReport, path: string): string {
   const t = r.table;
   const generaCount = Object.keys(t.genera).length;
@@ -150,6 +184,7 @@ export function formatCooccurrenceReport(r: CooccurrenceBuildReport, path: strin
     `  bodies           ${r.bodies}   (${r.multiGenusBodies} carry more than one genus)`,
     `  sightings        ${r.mappedSightings} mapped, ${r.unmappedSightings} dropped with no species row`,
     `  genera           ${generaCount}`,
+    `  species prior    ${Object.keys(r.prevalence.species).length} species over ${r.prevalence.bodies} bodies`,
     `  pairs observed   ${Object.keys(t.pairs).length} of ${possible} possible`,
   ];
   if (t.unmappedLabels.length) {

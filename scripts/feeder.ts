@@ -46,6 +46,7 @@ import {
   buildCooccurrenceTable,
   formatCooccurrenceReport,
   writeCooccurrenceTable,
+  writeSpeciesPrevalence,
 } from "../src/feeder/cooccurrence.js";
 import { EDSM_COORDS_BATCH, fetchEdsmSystemCoords, withEdsmGate } from "../src/feeder/edsm.js";
 import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
@@ -247,6 +248,7 @@ async function cmdRebuild(): Promise<void> {
 function refreshCooccurrence(ctx: FeederContext): void {
   const r = buildCooccurrenceTable(ctx.store.db, loadSpeciesDatabaseFromTree(root));
   const written = writeCooccurrenceTable(r.table);
+  writeSpeciesPrevalence(r.prevalence);
   console.log(formatCooccurrenceReport(r, path.relative(root, written)));
 }
 

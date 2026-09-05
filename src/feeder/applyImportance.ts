@@ -8,8 +8,8 @@
  *
  * Idempotent, and it never changes an observation — only the derived weights.
  */
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type { SpeciesDatabase } from "../shared/types.js";
 import { loadExomasteryProfile, resolveExomasteryProfileJsonPath } from "../server/exomasteryProfile.js";
 import {
@@ -22,6 +22,8 @@ import {
   type ParameterImportance,
 } from "./parameterImportance.js";
 import { PROJECT_ROOT, rawPlanetsDir } from "./paths.js";
+import { buildGlobalEdges, buildSpeciesHistograms } from "./histograms.js";
+import { HISTOGRAM_BINS, type HistogramEdgesFile } from "../shared/likelihoodBins.js";
 import { loadPlanetContextsFromDir } from "./planetContexts.js";
 import { flattenForStats, speciesFileSlug } from "./flatten.js";
 import { shouldOmitExomasterySciencePath } from "../server/exomasteryPathHygiene.js";
@@ -38,6 +40,10 @@ const PROVENANCE_PATHS = new Set(["exo.host_star_source"]);
 export interface ImportanceReport {
   profiles: number;
   scored: number;
+  /** Profiles that gained histograms, and the parameters the corpus could cut edges for. */
+  histogrammed: number;
+  histogramPaths: number;
+  histogramEdgesPath: string;
   /** Mean determinism per parameter across every species that had enough samples to score. */
   meanByPath: { path: string; mean: number; species: number }[];
 }
@@ -112,6 +118,26 @@ export async function applyParameterImportance(db: SpeciesDatabase): Promise<Imp
   }
   const numericBins = new Map<string, NumericBins>();
   for (const [p, vals] of pooledNumerics) numericBins.set(p, quantileBins(vals));
+
+  /**
+   * The ranking model's input, built in the same pass.
+   *
+   * Determinism and histograms both need every species' samples pooled on one ruler, and walking
+   * 31,990 sample packs twice to compute two views of the same numbers would be silly. Edges are
+   * written once, beside the co-occurrence table; the counts ride in each profile.
+   */
+  const edges = buildGlobalEdges(pooledNumerics);
+  const edgesFile: HistogramEdgesFile = {
+    formatVersion: 1,
+    builtAt: new Date().toISOString(),
+    bins: HISTOGRAM_BINS,
+    samples: [...pooledNumerics.values()].reduce((n, v) => Math.max(n, v.length), 0),
+    edges,
+  };
+  const edgesPath = join(PROJECT_ROOT, "data", "exomastery", "histogram-edges.json");
+  mkdirSync(dirname(edgesPath), { recursive: true });
+  writeFileSync(edgesPath, `${JSON.stringify(edgesFile, null, 2)}\n`, "utf8");
+  let histogrammed = 0;
   const byPath = new Map<string, number[]>();
   let scored = 0;
 
@@ -123,6 +149,8 @@ export async function applyParameterImportance(db: SpeciesDatabase): Promise<Imp
       const d = numericDeterminism(vals, edges);
       if (d != null) importance[p] = Math.round(d * 1000) / 1000;
     }
+    const histograms = buildSpeciesHistograms(numericSamples.get(path) ?? new Map(), edges);
+    const hasHistograms = Object.keys(histograms).length > 0;
     const hasImportance = Object.keys(importance).length > 0;
     // Read and rewrite the file directly: the app's loader normalises the profile on the way in
     // (hoisting composition rollups), and writing that back would rewrite observations as a side
@@ -140,6 +168,12 @@ export async function applyParameterImportance(db: SpeciesDatabase): Promise<Imp
     } else {
       delete raw.parameterImportance;
     }
+    if (hasHistograms) {
+      raw.histograms = histograms;
+      histogrammed++;
+    } else {
+      delete raw.histograms;
+    }
     writeFileSync(path, `${JSON.stringify(raw, null, 2)}\n`, "utf8");
   }
 
@@ -147,13 +181,21 @@ export async function applyParameterImportance(db: SpeciesDatabase): Promise<Imp
     .map(([path, ds]) => ({ path, mean: ds.reduce((s, x) => s + x, 0) / ds.length, species: ds.length }))
     .sort((a, b) => b.mean - a.mean);
 
-  return { profiles: loaded.length, scored, meanByPath };
+  return {
+    profiles: loaded.length,
+    scored,
+    meanByPath,
+    histogrammed,
+    histogramPaths: Object.keys(edges).length,
+    histogramEdgesPath: edgesPath,
+  };
 }
 
 export function formatImportanceReport(r: ImportanceReport): string {
   const lines = [
     "",
     `measured parameter importance on ${r.scored} of ${r.profiles} profiles`,
+    `histograms on ${r.histogrammed} profiles over ${r.histogramPaths} parameters (${HISTOGRAM_BINS} bins, shared edges)`,
     "  determinism vs the pooled background — 1 = decides everything, 0 = spread like the galaxy,",
     "  negative = spread wider than the galaxy, so this parameter does not constrain the species",
     "",
