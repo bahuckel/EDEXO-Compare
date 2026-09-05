@@ -25,6 +25,7 @@ import {
   collectResolvedOrganicLockSpeciesIds,
 } from "./organicLocks.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
+import { observedOnPlanetClass } from "./speciesPlanetClassObservations.js";
 import {
   hostStarVerdict,
   speciesHostStarObservations,
@@ -246,16 +247,29 @@ export function speciesMatchesExcludingTempPressure(
     !c.planetClassAnyOf.includes(scan.PlanetClass)
   ) {
     /**
-     * Not a wall. Measured against the feeder's observed habitats this list rejected 4.14% of the
-     * bodies where the species was actually found (1,046 of 25,289), and the pattern is systematic:
-     * High metal content body is missing from the allowed list of almost every Tussock, Osseus and
-     * Fungoida species, which is 8-32% of where those species really grow.
+     * Not a wall, and since the miss log spoke, not even a demotion when the corpus disagrees.
+     *
+     * Measured against the feeder's observed habitats this list rejected 4.14% of the bodies where
+     * the species was actually found (1,046 of 25,289), and the pattern is systematic: High metal
+     * content body is missing from the allowed list of almost every Tussock, Osseus and Fungoida
+     * species, which is 3-32% of where those species really grow. §6 made it soft. The miss log then
+     * recorded 15 real finds sitting in the demoted tier for exactly this reason — Tussock capillum
+     * on a Rocky ice body five times, a class holding 67% of that species' observed bodies — so
+     * observation now overrules the row outright, as it does for the host star (§27).
      */
-    failures.push({
-      field: "PlanetClass",
-      soft: true,
-      detail: `Codex lists ${c.planetClassAnyOf.join(", ")}; journal has “${scan.PlanetClass}”. ${DEMOTED_NOTE}`,
-    });
+    const observedHere = observedOnPlanetClass(entry, scan.PlanetClass);
+    if (observedHere) {
+      reasons.push({
+        field: "PlanetClass",
+        detail: `${scan.PlanetClass} — outside the codex list, but ${observedHere.observations} of ${observedHere.total} observed bodies (${Math.round(observedHere.share * 100)}%) are this class.`,
+      });
+    } else {
+      failures.push({
+        field: "PlanetClass",
+        soft: true,
+        detail: `Codex lists ${c.planetClassAnyOf.join(", ")}; journal has “${scan.PlanetClass}”. ${DEMOTED_NOTE}`,
+      });
+    }
   } else if (scan.PlanetClass) {
     reasons.push({
       field: "PlanetClass",
