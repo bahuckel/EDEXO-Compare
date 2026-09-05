@@ -9039,3 +9039,95 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .options-feeder-species {
   color: rgba(215, 225, 240, 0.92);
 }
+
+/* ── System triage ("Worth the trip?") ─────────────────────────────────────
+   A table rather than cards: the whole point is comparing six bodies down one
+   column, and cards make the eye travel sideways for every comparison. */
+.modal-panel.system-triage-modal {
+  width: min(920px, 94vw);
+  max-height: 88vh;
+  overflow: auto;
+}
+
+.system-triage-intro {
+  margin: 0 0 0.6rem;
+}
+
+.system-triage-sorts {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.system-triage-sort {
+  padding: 0.22rem 0.6rem;
+  font-size: var(--fs-2xs);
+  color: var(--muted);
+  background: var(--shadow-a45);
+  border: 1px solid var(--accent-a22);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.system-triage-sort.on {
+  color: var(--fg);
+  border-color: var(--accent);
+  background: var(--accent-a12);
+}
+
+.system-triage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+}
+
+.system-triage-table th,
+.system-triage-table td {
+  padding: 0.34rem 0.5rem;
+  border-bottom: 1px solid var(--accent-a15);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.system-triage-table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.system-triage-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.system-triage-table tbody tr:first-child td {
+  color: var(--fg);
+  background: var(--accent-a12);
+}
+
+.system-triage-row--clickable {
+  cursor: pointer;
+}
+
+.system-triage-row--clickable:hover td {
+  background: var(--accent-a15);
+}
+
+.system-triage-tag {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid var(--accent-a22);
+  border-radius: 999px;
+}
+
+.system-triage-note {
+  margin: 0.7rem 0 0;
+  line-height: 1.45;
+}

@@ -30,6 +30,18 @@ export function IconExobiology({ className }: { className?: string }) {
   );
 }
 
+/** Ranked bars — the system triage list, tallest first. */
+export function IconTriage({ className }: { className?: string }) {
+  return (
+    <svg {...BASE} className={className}>
+      <path d="M2.6 13.4h10.8" />
+      <path d="M4.4 13.4V4.2" />
+      <path d="M8 13.4V7" />
+      <path d="M11.6 13.4v-3.2" />
+    </svg>
+  );
+}
+
 /** Open book — the species encyclopedia. */
 export function IconEncyclopedia({ className }: { className?: string }) {
   return (

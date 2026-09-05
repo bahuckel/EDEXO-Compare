@@ -2,7 +2,7 @@ import { useLastStateAt, useLiveSnapshot } from "./useLiveSnapshot";
 import { useConfirm, useToast } from "./ui/feedback";
 import { useModal } from "./ui/useModal";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
-import { IconChevronDown, IconEncyclopedia, IconExobiology, IconOptions } from "./ui/icons";
+import { IconChevronDown, IconEncyclopedia, IconExobiology, IconOptions, IconTriage } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { SkeletonPanel } from "./ui/Skeleton";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
@@ -45,6 +45,9 @@ const EncyclopediaModal = lazy(() =>
 );
 const ExomasteryHabitatMatchModal = lazy(() =>
   import("./exomasteryHabitatMatchModal").then((m) => ({ default: m.ExomasteryHabitatMatchModal })),
+);
+const SystemTriageModal = lazy(() =>
+  import("./SystemTriageModal").then((m) => ({ default: m.SystemTriageModal })),
 );
 const PlanetQuickFactsPopup = lazy(() =>
   import("./PlanetQuickFactsPopup").then((m) => ({ default: m.PlanetQuickFactsPopup })),
@@ -3139,6 +3142,7 @@ const HeaderBar = memo(function HeaderBar({
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [myExoOpen, setMyExoOpen] = useState(false);
   const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
+  const [triageOpen, setTriageOpen] = useState(false);
   const [notableQuick, setNotableQuick] = useState<{
     notable: NotableBodyInfo;
     x: number;
@@ -3304,6 +3308,16 @@ const HeaderBar = memo(function HeaderBar({
               aria-label="My exobiology"
             >
               <IconExobiology />
+            </button>
+          </Tooltip>
+          <Tooltip text="Worth the trip? — every body in this system ranked by what sampling it is expected to pay.">
+            <button
+              type="button"
+              className="appbar-icon-btn"
+              onClick={() => setTriageOpen(true)}
+              aria-label="System triage"
+            >
+              <IconTriage />
             </button>
           </Tooltip>
           <Tooltip text="Encyclopedia — every species, its requirements, and what you have found.">
@@ -3562,6 +3576,23 @@ const HeaderBar = memo(function HeaderBar({
         <p className="sub-live dim header-commander-away">Commander: {snap.currentSystem ?? "—"}</p>
       ) : null}
 
+      {triageOpen ? (
+        <Suspense fallback={<ModalLoading />}>
+          <SystemTriageModal
+            bodies={snap.bodies ?? []}
+            systemName={snap.viewingSystemName ?? snap.currentSystem}
+            onClose={() => setTriageOpen(false)}
+            onSelectBody={
+              onGoToBioBody
+                ? (key) => {
+                    onGoToBioBody(key);
+                    setTriageOpen(false);
+                  }
+                : undefined
+            }
+          />
+        </Suspense>
+      ) : null}
       {encyclopediaOpen ? (
         <Suspense fallback={<ModalLoading />}>
           <EncyclopediaModal
