@@ -4128,10 +4128,15 @@ function AppLegalFooter() {
   );
 }
 
+/** One empty list for every render that has no snapshot yet, so its identity holds still. */
+const NO_BODIES: BodyComputed[] = [];
+
 export function App() {
   const toast = useToast();
   const { snapshot, connected } = useLiveSnapshot();
-  const rawBodies = snapshot?.bodies ?? [];
+  // Shared constant, not a literal: `?? []` mints a new array every render, and anything downstream
+  // keyed on its identity treats "still nothing" as "something changed" (§49).
+  const rawBodies = snapshot?.bodies ?? NO_BODIES;
   const systemFocusKey = snapshot?.viewingSystemAddress ?? snapshot?.currentSystemAddress ?? null;
   const orderedBodies = useStableBioTabOrder(rawBodies, systemFocusKey);
   const bodyGroups = useMemo(
