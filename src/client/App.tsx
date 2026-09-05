@@ -1240,6 +1240,57 @@ function ExoPayoutRangeDetailModal({
   );
 }
 
+/**
+ * Which species, given the genus — B3.
+ *
+ * The question changes the moment `SAASignalsFound` arrives: the game names the genera, so "is
+ * Bacterium here" is settled and only "which Bacterium" is left. This is that answer, and it is the
+ * body's posterior normalised inside the genus rather than across it.
+ *
+ * Measured on 447 rows where the commander sampled the genus, so exactly one candidate in each group
+ * was right: rows called 90-100 % came in at 95.9 %, 70-80 % at 75.0 %, 0-10 % at 8.7 %, mean squared
+ * gap 0.0026. Tighter than the across-the-body number, which makes sense — it answers a smaller
+ * question.
+ *
+ * Nothing is shown for a single-species genus: "100 % of one" is not information.
+ */
+function GenusSpeciesOdds({ items, confirmed }: { items: BodyComputed["matches"]; confirmed: boolean }) {
+  const scored = items
+    .filter((m) => !m.unlikely)
+    .map((m) => ({ name: m.entry.displayName, share: m.genusSharePercent }))
+    .filter(
+      (x): x is { name: string; share: number } => typeof x.share === "number" && Number.isFinite(x.share),
+    )
+    .sort((a, b) => b.share - a.share);
+  if (scored.length < 2) return null;
+
+  const shortName = (full: string) => {
+    const parts = full.trim().split(/\s+/);
+    return parts.length > 1 ? parts.slice(1).join(" ") : full;
+  };
+
+  return (
+    <p
+      className={`genus-species-odds${confirmed ? " genus-species-odds--confirmed" : ""}`}
+      title={
+        confirmed
+          ? "The DSS has named this genus, so it is on the body. These are the odds on which species it is — the ranking model's posterior, normalised inside the genus."
+          : "If this genus is on the body, these are the odds on which of its species it is. Before a DSS the genus itself is not certain; see the chance on each card for that."
+      }
+    >
+      <span className="genus-species-odds-lead">
+        {confirmed ? "DSS confirmed — which species:" : "If this genus is here:"}
+      </span>{" "}
+      {scored.map((x, i) => (
+        <span key={x.name} className="genus-species-odds-item">
+          {i > 0 ? " · " : ""}
+          {shortName(x.name)} <strong>{Math.round(x.share)}%</strong>
+        </span>
+      ))}
+    </p>
+  );
+}
+
 const GenusMatchGroup = memo(function GenusMatchGroup({
   group,
   scan,
@@ -1247,6 +1298,7 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
   comparisonBodySummary,
   hostStarType,
   compactCandidateView,
+  genusConfirmed,
 }: {
   group: { groupKey: string; title: string; items: BodyComputed["matches"] };
   scan: PlanetScan | null;
@@ -1254,6 +1306,8 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
   comparisonBodySummary: string;
   hostStarType?: string;
   compactCandidateView?: boolean;
+  /** DSS has named this genus, so it is here and only the species is open (B3). */
+  genusConfirmed?: boolean;
 }) {
   const [open, setOpen] = useState(true);
   const [notesOpen, setNotesOpen] = useState(false);
@@ -1335,6 +1389,7 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
           Notes
         </button>
       </div>
+      <GenusSpeciesOdds items={group.items} confirmed={genusConfirmed === true} />
       <div
         id={`${headId}-panel`}
         className={`genus-card-collapse-grid${open ? "" : " genus-card-collapse-grid--collapsed"}`}
@@ -1781,6 +1836,7 @@ const BodyPane = memo(function BodyPane({
                     comparisonBodySummary={comparisonBodySummary}
                     hostStarType={body.speciesMatchContext?.parentStarType}
                     compactCandidateView={compactCandidateView}
+                    genusConfirmed={body.genusFilterActive}
                   />
                 ))}
               </div>

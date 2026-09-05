@@ -118,6 +118,16 @@ const DAMPING = Number(
 const CALIB_BINS = 10;
 const calibration = Array.from({ length: CALIB_BINS }, () => ({ n: 0, hit: 0, predicted: 0 }));
 
+/**
+ * B3's number, measured on its own terms.
+ *
+ * After a DSS the genus is known and only the species is open, so the claim is "of the Bacterium
+ * candidates, this one is 62 % likely to be the Bacterium down there". Truth for that is the genus
+ * the commander actually sampled: within that genus exactly one candidate is right, because the game
+ * places one species per genus per body.
+ */
+const genusCalibration = Array.from({ length: CALIB_BINS }, () => ({ n: 0, hit: 0, predicted: 0 }));
+
 let rankSum = 0;
 let top1 = 0;
 let top3 = 0;
@@ -190,6 +200,23 @@ for (const b of bodies) {
   }
 
   for (const t of truth) {
+    const truthGenus = db.species.find((e) => e.id === t)?.genusDataDir;
+    if (truthGenus) {
+      const sameGenus = scored.filter(
+        (x) => db.species.find((e) => e.id === x.id)?.genusDataDir === truthGenus,
+      );
+      const total = sameGenus.reduce((sum, x) => sum + x.p, 0);
+      if (sameGenus.length > 1 && total > 0) {
+        for (const row of sameGenus) {
+          const share = row.p / total;
+          const bin = genusCalibration[Math.min(CALIB_BINS - 1, Math.floor(share * CALIB_BINS))]!;
+          bin.n++;
+          bin.predicted += share;
+          if (row.id === t) bin.hit++;
+        }
+      }
+    }
+
     const i = scored.findIndex((x) => x.id === t);
     if (i < 0) continue; // missed entirely: that is the accuracy probe's business, not this one
     ranked++;
@@ -212,6 +239,26 @@ console.log(`ranked species     ${ranked}   over ${scoredRows} scored candidate 
 console.log(`mean rank          ${(rankSum / ranked).toFixed(3)}`);
 console.log(`top-1              ${top1} (${((top1 / ranked) * 100).toFixed(1)}%)`);
 console.log(`top-3              ${top3} (${((top3 / ranked) * 100).toFixed(1)}%)`);
+
+if (USE_MODEL) {
+  const rows = genusCalibration.reduce((n, c) => n + c.n, 0);
+  if (rows > 0) {
+    console.log(`\nwithin a known genus: which species is it (B3)`);
+    for (const [i, c] of genusCalibration.entries()) {
+      if (c.n === 0) continue;
+      const lo = ((i / CALIB_BINS) * 100).toFixed(0);
+      const hi = (((i + 1) / CALIB_BINS) * 100).toFixed(0);
+      console.log(
+        `  ${`${lo}-${hi} %`.padEnd(10)} ${String(c.n).padStart(5)} rows   mean predicted ${((c.predicted / c.n) * 100).toFixed(1).padStart(5)} %   observed ${((c.hit / c.n) * 100).toFixed(1).padStart(5)} %${c.n < 20 ? "   (thin)" : ""}`,
+      );
+    }
+    const gap = genusCalibration.reduce(
+      (sum, c) => sum + c.n * (c.predicted / Math.max(1, c.n) - c.hit / Math.max(1, c.n)) ** 2,
+      0,
+    );
+    console.log(`  mean squared gap between the two columns: ${(gap / rows).toFixed(4)}`);
+  }
+}
 
 const calibrated = calibration.filter((c) => c.n > 0);
 if (calibrated.length) {

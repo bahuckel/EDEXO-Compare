@@ -599,6 +599,17 @@ export interface SpeciesMatch {
    */
   presenceProbabilityPercent?: number | null;
   /**
+   * Share of its own genus this species holds, 0-100 — P(this species | this genus is here).
+   *
+   * The question changes after a DSS: `SAASignalsFound` names the genera, so "is Bacterium here" is
+   * answered and only "which Bacterium" is left. This is that answer, and it is the same posterior
+   * as {@link presenceProbabilityPercent} normalised inside the genus instead of across the body.
+   *
+   * Meaningful whenever the genus is actually present; before a DSS that is itself uncertain, which
+   * is why both numbers exist. Null when the model could not score the row.
+   */
+  genusSharePercent?: number | null;
+  /**
    * Distinct feeder bodies behind {@link exomasteryHabitatQuality}. Null when no profile.
    * Small counts mean the habitat signal is weak, not that the habitat is wrong.
    */

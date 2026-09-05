@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  genusShares,
   onSiteMinutes,
   triageRow,
   triageSystem,
@@ -121,5 +122,39 @@ describe("triageSystem", () => {
     const far = body({ bodyKey: "far", distanceLs: 40_000 });
     const close = body({ bodyKey: "close", distanceLs: 300 });
     expect(triageSystem([far, close]).map((r) => r.bodyKey)).toEqual(["close", "far"]);
+  });
+});
+
+/**
+ * B3: after a DSS the genus is known, so the open question is which species of it — the same
+ * posterior, normalised inside the genus rather than across the body.
+ */
+describe("genusShares", () => {
+  it("normalises inside each genus, not across the body", () => {
+    const rows = [
+      { genus: "bacterium", probability: 0.3 },
+      { genus: "bacterium", probability: 0.1 },
+      { genus: "stratum", probability: 0.2 },
+    ];
+    const shares = genusShares(rows);
+    expect(shares.get(rows[0]!)).toBeCloseTo(0.75, 6);
+    expect(shares.get(rows[1]!)).toBeCloseTo(0.25, 6);
+    // The only Stratum candidate takes all of its genus, whatever it scored on the body.
+    expect(shares.get(rows[2]!)).toBeCloseTo(1, 6);
+  });
+
+  /** No evidence is not evidence of a tie. */
+  it("gives null to a genus whose rows all scored zero", () => {
+    const rows = [
+      { genus: "ghost", probability: 0 },
+      { genus: "ghost", probability: 0 },
+    ];
+    const shares = genusShares(rows);
+    expect(shares.get(rows[0]!)).toBeNull();
+    expect(shares.get(rows[1]!)).toBeNull();
+  });
+
+  it("says nothing about an empty list", () => {
+    expect(genusShares([]).size).toBe(0);
   });
 });

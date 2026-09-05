@@ -77,6 +77,7 @@ import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
 import { rankSpeciesOnBody } from "./speciesLikelihood.js";
+import { genusShares } from "../shared/systemTriage.js";
 import type { JournalHostStarObservation } from "../shared/types.js";
 import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
@@ -692,6 +693,20 @@ function attachPresenceProbability(
   for (const r of ranked) {
     const p = Math.max(0, Math.min(1, r.probability * scale));
     r.match.presenceProbabilityPercent = Math.round(p * 1000) / 10;
+  }
+
+  /**
+   * The same posterior, normalised inside each genus instead of across the body (B3).
+   *
+   * After a DSS the game has named the genera, so "is Bacterium here" is settled and the only open
+   * question is which Bacterium. That is this number, and it is worth computing before the DSS too —
+   * it is what the answer becomes the moment the genus is confirmed.
+   */
+  const rows = ranked.map((r) => ({ genus: r.match.entry.genusDataDir, probability: r.probability, r }));
+  const shares = genusShares(rows);
+  for (const row of rows) {
+    const share = shares.get(row);
+    row.r.match.genusSharePercent = share == null ? null : Math.round(share * 1000) / 10;
   }
 }
 

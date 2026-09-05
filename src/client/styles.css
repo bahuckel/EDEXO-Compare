@@ -9143,3 +9143,34 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .species-thin-sample--rare {
   color: var(--accent);
 }
+
+/* Which species, given the genus (B3). Sits under the genus header, above the cards. */
+.genus-species-odds {
+  margin: 0 0 0.4rem;
+  padding: 0.25rem 0.5rem;
+  font-size: var(--fs-2xs);
+  line-height: 1.4;
+  color: var(--muted);
+  background: var(--shadow-a45);
+  border-left: 2px solid var(--accent-a22);
+  border-radius: 3px;
+}
+
+.genus-species-odds--confirmed {
+  border-left-color: var(--accent);
+}
+
+.genus-species-odds-lead {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 9px;
+}
+
+.genus-species-odds--confirmed .genus-species-odds-lead {
+  color: var(--accent);
+}
+
+.genus-species-odds strong {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
