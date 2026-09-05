@@ -322,9 +322,14 @@ function registerFootOverlayIpc(iconForChild) {
 
 async function start() {
   try {
+    // Electron's userData is %APPDATA%\edexo-compare on Windows, while the dev server, the CLI and
+    // every probe use %LOCALAPPDATA%\ED Exo Compare. Forcing this one made the packaged app keep a
+    // second copy of everything — including the miss log the predictor is measured against, and a
+    // 7.6 MB journal cache in a roaming profile. So: hand the old directory over to be migrated,
+    // and let the server pick the single location the same way every other entry point does.
     const ud = app.getPath("userData");
     fs.mkdirSync(ud, { recursive: true });
-    process.env.EDEXO_USER_DATA_DIR = ud;
+    process.env.EDEXO_LEGACY_USER_DATA_DIR = ud;
   } catch (e) {
     console.error("[edexo-compare] Could not create Electron userData dir:", e);
   }

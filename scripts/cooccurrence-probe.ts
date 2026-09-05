@@ -32,7 +32,7 @@ import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding
 import { loadGenusCooccurrenceTable } from "../src/server/genusCooccurrenceTable.js";
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
-import { resolveJournalMergeCacheRoot } from "../src/server/paths.js";
+import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { computeExoPayoutRangeFromMatches } from "../src/server/exoPayoutRange.js";
 import { loadPriceList, lookupPriceStrict } from "../src/server/priceList.js";
@@ -53,21 +53,7 @@ if (!table) {
   process.exit(1);
 }
 
-const payloadPath = path.join(resolveJournalMergeCacheRoot(), "journal-merge.payload.v8gz");
-if (!existsSync(payloadPath)) {
-  console.error(`No journal merge cache at ${payloadPath}. Run the app once to build it.`);
-  process.exit(1);
-}
-const rawCache = readFileSync(payloadPath);
-const doc =
-  rawCache[0] === 0x1f && rawCache[1] === 0x8b
-    ? v8.deserialize(gunzipSync(rawCache))
-    : JSON.parse(rawCache.toString("utf8"));
-const payload = decodeJournalMergeCache(doc);
-if (!payload) {
-  console.error("Cache is not in the current encoding; delete it and let the app rebuild.");
-  process.exit(1);
-}
+const payload = loadJournalMergeCacheForTool();
 const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
 
 interface Case {

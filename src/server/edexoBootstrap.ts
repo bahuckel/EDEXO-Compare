@@ -23,6 +23,7 @@ import {
   type JournalWatcherHandle,
 } from "./journalWatcher.js";
 import { createHttpServer, getLanIPv4s } from "./httpServer.js";
+import { describeUserDataMigration, migrateLegacyUserData } from "./userDataMigration.js";
 import { lanUrlWithKey, loadOrCreateLanKey } from "./lanAuth.js";
 import { buildEncyclopediaExomasteryPlanetsPayload } from "./exomasteryEdsmEncyclopedia.js";
 import {
@@ -221,6 +222,9 @@ export type EdexoRuntime = {
 export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   assertResourceLayout();
   startPerfReporter();
+
+  // Before anything reads user data: fold in whatever the old Electron directory still holds (§47).
+  for (const line of describeUserDataMigration(migrateLegacyUserData())) console.log(line);
 
   const projectRoot = getProjectRoot();
 

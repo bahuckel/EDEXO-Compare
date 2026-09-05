@@ -36,7 +36,7 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
-import { resolveJournalMergeCacheRoot } from "../src/server/paths.js";
+import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import {
   binIndex,
@@ -50,21 +50,7 @@ import type { BodyExoState, PlanetScan } from "../src/shared/types.js";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = loadSpeciesDatabaseFromTree(root);
 
-const payloadPath = path.join(resolveJournalMergeCacheRoot(), "journal-merge.payload.v8gz");
-if (!existsSync(payloadPath)) {
-  console.error(`No journal merge cache at ${payloadPath}. Run the app once to build it.`);
-  process.exit(1);
-}
-const rawCache = readFileSync(payloadPath);
-const doc =
-  rawCache[0] === 0x1f && rawCache[1] === 0x8b
-    ? v8.deserialize(gunzipSync(rawCache))
-    : JSON.parse(rawCache.toString("utf8"));
-const payload = decodeJournalMergeCache(doc);
-if (!payload) {
-  console.error("Cache is not in the current encoding; delete it and let the app rebuild.");
-  process.exit(1);
-}
+const payload = loadJournalMergeCacheForTool();
 const allBodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
 
 /**

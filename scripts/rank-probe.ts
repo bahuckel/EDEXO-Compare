@@ -29,7 +29,7 @@ import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js"
 import { matchDatabaseToScan, shownSpeciesMatches } from "../src/server/matchSpecies.js";
 import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
-import { resolveJournalMergeCacheRoot } from "../src/server/paths.js";
+import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import { exomasteryHabitatQualityPercent, loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
 import { rankSpeciesOnBody, TERM_DAMPING } from "../src/server/speciesLikelihood.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
@@ -44,19 +44,7 @@ import type {
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = loadSpeciesDatabaseFromTree(root);
 
-const payloadPath = path.join(resolveJournalMergeCacheRoot(), "journal-merge.payload.v8gz");
-if (!existsSync(payloadPath)) {
-  console.error(`No journal merge cache at ${payloadPath}. Run the app once to build it.`);
-  process.exit(1);
-}
-const raw = readFileSync(payloadPath);
-const doc =
-  raw[0] === 0x1f && raw[1] === 0x8b ? v8.deserialize(gunzipSync(raw)) : JSON.parse(raw.toString("utf8"));
-const payload = decodeJournalMergeCache(doc);
-if (!payload) {
-  console.error("Cache is not in the current encoding; delete it and let the app rebuild.");
-  process.exit(1);
-}
+const payload = loadJournalMergeCacheForTool();
 const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
 
 /**

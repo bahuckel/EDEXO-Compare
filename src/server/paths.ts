@@ -7,8 +7,14 @@ export const USER_SETTINGS_FILENAME = "edexo-compare-user-settings.json";
 
 /**
  * Writable JSON for user preferences (bacterium, map +/++ CR, exploration scan in data value).
- * - Electron: set `EDEXO_USER_DATA_DIR` from `app.getPath("userData")` in `electron/main.cjs`.
- * - Else: OS app data dir under the user profile (survives reinstalls / new builds).
+ *
+ * **One location for every entry point** — packaged Electron, dev server, CLI and probes alike.
+ * Electron used to force this to `app.getPath("userData")`, which gave the packaged app its own
+ * copy of the settings, the LAN key, the miss log and a 7.6 MB journal cache (§47). It now hands
+ * that directory over as `EDEXO_LEGACY_USER_DATA_DIR` for {@link migrateLegacyUserData} instead.
+ *
+ * `EDEXO_USER_DATA_DIR` remains an explicit override for portable installs and tests; nothing sets
+ * it automatically.
  */
 export function resolveUserSettingsJsonPath(): string {
   const forced = process.env.EDEXO_USER_DATA_DIR?.trim();
