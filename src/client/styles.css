@@ -9255,3 +9255,171 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/*
+ * Second screen (§51) — read across a desk, not leaned into.
+ *
+ * Its own block rather than a variant of the app's: everything here is sized for a phone propped
+ * against a monitor or a tablet at arm's length, so the type scale is absolute rather than inherited
+ * from a layout tuned for a screen 50 cm away. `clamp` lets one page serve a 5-inch phone and a
+ * spare 24-inch monitor without a breakpoint for each.
+ */
+.second-screen {
+  min-height: 100vh;
+  padding: clamp(0.6rem, 2vw, 1.2rem);
+  background: #060608;
+  color: #f0ede8;
+  font-family: "Orbitron", system-ui, sans-serif;
+}
+
+.second-screen .ss-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.15rem 0.75rem;
+  align-items: baseline;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 122, 36, 0.35);
+}
+
+.second-screen .ss-system {
+  font-size: clamp(1.1rem, 3.2vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.second-screen .ss-verdict {
+  grid-column: 1;
+  font-size: clamp(0.95rem, 2.6vw, 1.35rem);
+  color: #ffa64d;
+}
+
+.second-screen .ss-verdict--none,
+.second-screen .ss-verdict--low {
+  color: #7a756e;
+}
+
+/* The connection state is the one thing that must be readable without being looked for: a stale
+   screen and a live one are otherwise identical, and a stale one is worse than no screen. */
+.second-screen .ss-link {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  font-size: clamp(0.62rem, 1.5vw, 0.78rem);
+  letter-spacing: 0.12em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+}
+
+.second-screen .ss-link--on {
+  color: #6ede8a;
+}
+
+.second-screen .ss-link--off {
+  color: #ff6b6b;
+}
+
+.second-screen .ss-sorts {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0.6rem 0;
+  flex-wrap: wrap;
+}
+
+.second-screen .ss-sort {
+  flex: 1 1 auto;
+  min-height: 2.4rem;
+  padding: 0.35rem 0.7rem;
+  font-family: inherit;
+  font-size: clamp(0.7rem, 1.9vw, 0.9rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b8b3ac;
+  background: rgba(255, 122, 36, 0.08);
+  border: 1px solid rgba(255, 122, 36, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.second-screen .ss-sort--on {
+  color: #060608;
+  background: #ff7a24;
+  border-color: #ff7a24;
+}
+
+.second-screen .ss-empty {
+  margin-top: 2rem;
+  text-align: center;
+  color: #7a756e;
+  font-size: clamp(0.9rem, 2.4vw, 1.1rem);
+}
+
+.second-screen .ss-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.second-screen .ss-row {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid rgba(255, 122, 36, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* §4.3's certainty: every genus the game reports is accounted for, so the list is the answer and
+   not a shortlist. Worth a colour on a screen that is read at a glance. */
+.second-screen .ss-row--certain {
+  border-left-color: #6ede8a;
+}
+
+.second-screen .ss-row-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.second-screen .ss-body {
+  font-size: clamp(1rem, 2.8vw, 1.4rem);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.second-screen .ss-value {
+  font-size: clamp(1rem, 2.8vw, 1.4rem);
+  font-weight: 700;
+  color: #ffa64d;
+  flex-shrink: 0;
+}
+
+.second-screen .ss-row-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.85rem;
+  margin-top: 0.15rem;
+  font-size: clamp(0.72rem, 1.9vw, 0.92rem);
+  color: #7a756e;
+}
+
+.second-screen .ss-row-best {
+  margin-top: 0.15rem;
+  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  color: #b8b3ac;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.second-screen .ss-coverage {
+  color: #7a756e;
+}

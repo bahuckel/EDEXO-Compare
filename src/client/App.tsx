@@ -2263,6 +2263,22 @@ const EXO_MAP_PLUS_SLIDER_MAX = EXO_MAP_CR_MAX - EXO_MAP_CR_STEP;
  * is write-only from here: the server sends back the commander name and the last four characters,
  * which is enough to recognise and useless to anyone reading over a shoulder.
  */
+/**
+ * The bookmarkable second-screen address for a LAN URL that already carries the access key.
+ *
+ * Built with `URL` rather than string concatenation because these URLs already have a `?k=` on them,
+ * and "does this one need ? or &" is exactly the question that produces a broken link on a phone.
+ */
+function secondScreenUrl(lanUrl: string): string {
+  try {
+    const u = new URL(lanUrl);
+    u.searchParams.set("screen", "triage");
+    return u.toString();
+  } catch {
+    return lanUrl;
+  }
+}
+
 function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) {
   const [commanderName, setCommanderName] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -2545,7 +2561,18 @@ function MapOptionsModal({
             </p>
             <p className="options-journal-line dim">Species DB: {snap.speciesCount}</p>
             {snap.mode === "server" && snap.lanUrls.length > 0 ? (
-              <p className="options-journal-line dim">Phone: {snap.lanUrls.join(" · ")}</p>
+              <>
+                <p className="options-journal-line dim">Phone: {snap.lanUrls.join(" · ")}</p>
+                {/*
+                  The second screen is the same server on the same key — one query parameter apart
+                  (§51). Shown as a whole URL because the point is that it can be bookmarked on a
+                  phone once and never typed again.
+                */}
+                <p className="options-journal-line dim">
+                  Second screen (read-only triage):{" "}
+                  {snap.lanUrls.map((u) => secondScreenUrl(u)).join(" · ")}
+                </p>
+              </>
             ) : (
               <p className="options-journal-line dim">LAN server: use npm run start:server</p>
             )}
