@@ -11,6 +11,7 @@ import type {
   OrganicGenusLock,
 } from "../shared/types.js";
 import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "../shared/journalPhysics.js";
+import { observedAtGravity } from "./speciesGravityObservations.js";
 import {
   normalizeScanAtmosphereForMatch,
   atmosphereCompositionKey,
@@ -439,7 +440,19 @@ export function speciesMatchesExcludingTempPressure(
   if (c.surfaceGravity && gRaw !== undefined) {
     const g = journalSurfaceGravityToG(gRaw);
     const fit = rangeFit(g, c.surfaceGravity.min, c.surfaceGravity.max);
-    if (fit !== "in") {
+    /**
+     * Observation overrules the codex band, the fifth field to get it (§43). Unlike the four before
+     * it this gate was never fatal — outside by under {@link NUMERIC_GATE_TOLERANCE} already only
+     * demoted — so the rescue moves a row out from behind "show unlikely", and only for a gravity
+     * the corpus has actually clustered observations at.
+     */
+    const observedHere = fit === "in" ? null : observedAtGravity(entry, g);
+    if (observedHere) {
+      reasons.push({
+        field: "SurfaceGravity",
+        detail: `${g.toFixed(3)} g — outside ${c.surfaceGravity.min ?? "−∞"}…${c.surfaceGravity.max ?? "∞"}, but ${observedHere.observations} of ${observedHere.total} observed bodies for this species are between ${observedHere.binLowG.toFixed(3)} and ${observedHere.binHighG.toFixed(3)} g.`,
+      });
+    } else if (fit !== "in") {
       failures.push({
         field: "SurfaceGravity",
         ...(fit === "near" ? { soft: true } : {}),
