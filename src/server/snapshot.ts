@@ -78,6 +78,7 @@ import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
 import { rankSpeciesOnBody } from "./speciesLikelihood.js";
 import { genusShares } from "../shared/systemTriage.js";
+import { codexHasSpecies } from "../shared/codexLog.js";
 import type { JournalHostStarObservation } from "../shared/types.js";
 import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
@@ -710,6 +711,20 @@ function attachPresenceProbability(
   }
 }
 
+/**
+ * Mark the candidates this commander has never logged in the codex (B4).
+ *
+ * Silent until the journals have been merged by a build that collects `CodexEntry` — with an empty
+ * set the honest answer is "we do not know", and badging every candidate as new would be the loudest
+ * possible way to be wrong.
+ */
+function attachCodexNovelty(matches: SpeciesMatch[], store: GameStateStore): void {
+  if (store.codexLoggedSpecies.size === 0) return;
+  for (const m of matches) {
+    m.notInCodex = !codexHasSpecies(store.codexLoggedSpecies, m.entry.displayName);
+  }
+}
+
 function ambiguityForBody(b: BodyExoState): string | null {
   const sig = b.biologicalSignals;
   const genusN = b.genusHints?.length ?? 0;
@@ -893,6 +908,7 @@ function computeBodyUncached(
     matches = markExomasteryZeroHabitatMatches(matches);
   }
   attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root);
+  attachCodexNovelty(matches, store);
   attachOtherMatchCardScores(matches, scanForExo, explorationRec, root, journalHost);
   applyExomasteryGenusCompetitivePercent(matches);
   if (matches.length > 0 && scanForExo) {

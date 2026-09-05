@@ -9174,3 +9174,17 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   color: var(--fg);
   font-variant-numeric: tabular-nums;
 }
+
+/* Codex novelty (B4): a species this commander has never logged. An invitation, not a warning. */
+.species-codex-new {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  color: #0b0b10;
+  background: var(--accent);
+  border-radius: 999px;
+  white-space: nowrap;
+}

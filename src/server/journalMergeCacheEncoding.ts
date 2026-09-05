@@ -30,8 +30,13 @@ import type { JournalMergeCachePayload } from "./gameState.js";
  *
  * 3 adds `soldExplorationScans`. The bump is the point: a cache written by an older build dropped
  * those rows on the way in, and only a rebuild from the logs can bring the physics back.
+ *
+ * 4 adds `codexLoggedSpecies`, for the same reason — `CodexEntry` lines were read and discarded by
+ * every build before this one, so the set can only be filled by replaying the journals. A stale cache
+ * would leave the codex badge silent rather than wrong, but silent is indistinguishable from "you
+ * have logged everything", which is a lie by omission on a screen built for codex hunters.
  */
-export const JOURNAL_MERGE_CACHE_ENCODING = 3;
+export const JOURNAL_MERGE_CACHE_ENCODING = 4;
 
 /** `2023-10-04T01:51:41Z` — the only shape the store writes; anything else is left as a string. */
 const ISO_SECONDS_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;

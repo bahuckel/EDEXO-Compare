@@ -32,6 +32,7 @@ import {
   normStatusBodyName,
 } from "./organicSampleSessionFile.js";
 import type { NavRouteWaypointDTO } from "./navRouteFuel.js";
+import { codexSpeciesFromLine } from "../shared/codexLog.js";
 function bodyKey(systemAddress: number, bodyId: number): string {
   return `${systemAddress}:${bodyId}`;
 }
@@ -94,6 +95,11 @@ export type JournalMergeCachePayload = {
   organicAnalyseByKey: [string, OrganicAnalyseProgress][];
   bodyDetailedFootfallState: [string, boolean][];
   firstFootfallBodies: string[];
+  /**
+   * Codex keys for species this commander has logged (B4). Optional so a cache written before this
+   * existed still loads — it simply has none until the next rebuild from the logs.
+   */
+  codexLoggedSpecies?: string[];
   pendingOrganicSales: PendingOrganicSample[];
   fssAllBodiesCompleteSystems: number[];
   fssDiscoveryScanBySystem: [number, { systemName: string; bodyCount: number; progress: number }][];
@@ -424,6 +430,16 @@ export class GameStateStore {
   readonly bodyDetailedFootfallState = new Map<string, boolean>();
   /** Bodies where this commander gets first-footfall organic payout (1× + 4× bonus = 5× list in valuation). */
   readonly firstFootfallBodies = new Set<string>();
+
+  /**
+   * Species this commander has a codex page for, by `codexSpeciesKey` (B4).
+   *
+   * Collected from every `CodexEntry` in the merged journals, colour variant stripped: the variant is
+   * a fact about the host star, and the same species is amethyst in one system and emerald in the
+   * next. What the app does with it is the opposite of a warning — a species *missing* from here is
+   * the one a codex hunter wants to fly to.
+   */
+  readonly codexLoggedSpecies = new Set<string>();
   /** Completed samples (3× Analyse) not removed by SellOrganicData / Died — FIFO for sales without body on BioData. */
   pendingOrganicSales: PendingOrganicSample[] = [];
 
@@ -737,6 +753,7 @@ export class GameStateStore {
     this.organicAnalyseByKey.clear();
     this.pendingOrganicSales = [];
     this.firstFootfallBodies.clear();
+    this.codexLoggedSpecies.clear();
     this.bodyDetailedFootfallState.clear();
     this.exoOrganicTracker = null;
     this.exoOrganicLastFix = null;
@@ -764,6 +781,7 @@ export class GameStateStore {
     this.organicAnalyseByKey.clear();
     this.bodyDetailedFootfallState.clear();
     this.firstFootfallBodies.clear();
+    this.codexLoggedSpecies.clear();
     this.pendingOrganicSales = [];
     this.fssAllBodiesCompleteSystems.clear();
     this.fssAllBodiesFoundCountBySystem.clear();
@@ -1180,6 +1198,12 @@ export class GameStateStore {
         const sys = line.StarSystem as string;
         const addr = line.SystemAddress as number;
         if (sys && typeof addr === "number") this.setLocation(sys, addr);
+        return;
+      }
+
+      if (event === "CodexEntry") {
+        const species = codexSpeciesFromLine(line as Parameters<typeof codexSpeciesFromLine>[0]);
+        if (species) this.codexLoggedSpecies.add(species);
         return;
       }
 
@@ -1846,6 +1870,7 @@ export class GameStateStore {
       organicAnalyseByKey: [...this.organicAnalyseByKey.entries()],
       bodyDetailedFootfallState: [...this.bodyDetailedFootfallState.entries()],
       firstFootfallBodies: [...this.firstFootfallBodies],
+      codexLoggedSpecies: [...this.codexLoggedSpecies],
       pendingOrganicSales: this.pendingOrganicSales.map((p) => ({ ...p })),
       fssAllBodiesCompleteSystems: [...this.fssAllBodiesCompleteSystems],
       fssDiscoveryScanBySystem: [...this.fssDiscoveryScanBySystem.entries()],
@@ -1894,6 +1919,7 @@ export class GameStateStore {
     for (const [k, v] of data.organicAnalyseByKey) this.organicAnalyseByKey.set(k, v);
     for (const [k, v] of data.bodyDetailedFootfallState) this.bodyDetailedFootfallState.set(k, v);
     for (const k of data.firstFootfallBodies) this.firstFootfallBodies.add(k);
+    for (const k of data.codexLoggedSpecies ?? []) this.codexLoggedSpecies.add(k);
     this.pendingOrganicSales = data.pendingOrganicSales.map((p) => ({ ...p }));
     for (const addr of data.fssAllBodiesCompleteSystems) this.fssAllBodiesCompleteSystems.add(addr);
     for (const [addr, row] of data.fssDiscoveryScanBySystem) {

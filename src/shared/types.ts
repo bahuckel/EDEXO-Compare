@@ -610,6 +610,15 @@ export interface SpeciesMatch {
    */
   genusSharePercent?: number | null;
   /**
+   * True when this commander has no codex page for this species (B4).
+   *
+   * From `CodexEntry` across the merged journals, colour variant ignored. For a codex hunter this is
+   * the reason to fly somewhere, so it reads as an invitation rather than a warning. Absent — rather
+   * than false — when the journals have not been re-merged since the app started collecting them, so
+   * "no badge" never silently means "already logged".
+   */
+  notInCodex?: boolean;
+  /**
    * Distinct feeder bodies behind {@link exomasteryHabitatQuality}. Null when no profile.
    * Small counts mean the habitat signal is weak, not that the habitat is wrong.
    */

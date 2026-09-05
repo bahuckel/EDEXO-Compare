@@ -811,6 +811,15 @@ const SpeciesCard = memo(function SpeciesCard({
           </>
         ) : null}
         <span className="species-identity-epithet">{epithetDisplay}</span>
+        {m.notInCodex ? (
+          <span
+            className="species-codex-new"
+            title="No codex entry for this species in your journals — you have never logged one. The first sample of a species is worth more than the ones after it, and this is the page that is still blank."
+            aria-label="Not yet in your codex"
+          >
+            new to you
+          </span>
+        ) : null}
         {m.entry.predictionUnsupported ? (
           <span
             className="species-not-predicted"
