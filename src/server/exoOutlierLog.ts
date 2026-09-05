@@ -62,6 +62,21 @@ export interface ExoOutlierRecord {
  */
 let seen: Set<string> | null = null;
 
+/**
+ * How many of each kind have been recorded, for the count B6 asked to surface.
+ *
+ * Counted from the file once and incremented on every append, because a log the commander never sees
+ * is evidence nobody reads.
+ */
+export interface ExoOutlierTally {
+  total: number;
+  absent: number;
+  unlikelyOnly: number;
+  rankedLow: number;
+}
+
+let tally: ExoOutlierTally | null = null;
+
 function outlierKey(bodyKey: string, speciesId: string): string {
   return `${bodyKey}|${speciesId}`;
 }
@@ -69,6 +84,7 @@ function outlierKey(bodyKey: string, speciesId: string): string {
 function loadSeen(): Set<string> {
   if (seen) return seen;
   const set = new Set<string>();
+  const counts: ExoOutlierTally = { total: 0, absent: 0, unlikelyOnly: 0, rankedLow: 0 };
   const p = resolveExoOutlierLogPath();
   if (existsSync(p)) {
     try {
@@ -77,7 +93,12 @@ function loadSeen(): Set<string> {
         if (!t) continue;
         try {
           const rec = JSON.parse(t) as Partial<ExoOutlierRecord>;
-          if (rec.bodyKey && rec.speciesId) set.add(outlierKey(rec.bodyKey, rec.speciesId));
+          if (!rec.bodyKey || !rec.speciesId) continue;
+          set.add(outlierKey(rec.bodyKey, rec.speciesId));
+          counts.total++;
+          if (rec.severity === "absent") counts.absent++;
+          else if (rec.severity === "unlikelyOnly") counts.unlikelyOnly++;
+          else if (rec.severity === "rankedLow") counts.rankedLow++;
         } catch {
           /* a truncated final line is not worth failing over */
         }
@@ -87,7 +108,14 @@ function loadSeen(): Set<string> {
     }
   }
   seen = set;
+  tally = counts;
   return set;
+}
+
+/** What the log holds, for the Options panel. Reads the file once per run, then counts in memory. */
+export function exoOutlierTally(): ExoOutlierTally {
+  loadSeen();
+  return { ...(tally ?? { total: 0, absent: 0, unlikelyOnly: 0, rankedLow: 0 }) };
 }
 
 /** Which criterion rejected this species on this body, asked of the matcher rather than guessed. */
@@ -126,10 +154,30 @@ export function recordExoOutliersForBody(input: {
   const truth = collectResolvedOrganicLockSpeciesIds(body.organicGenusLocks, db);
   if (!truth.length) return 0;
 
-  const shown = new Set(matches.filter((m) => !m.unlikely).map((m) => m.entry.id));
+  const shownMatches = matches.filter((m) => !m.unlikely);
+  const shown = new Set(shownMatches.map((m) => m.entry.id));
   const demoted = new Set(matches.filter((m) => m.unlikely).map((m) => m.entry.id));
-  // Anything the commander would not have seen without opening the unlikely list is worth a record.
-  const missing = truth.filter((id) => !shown.has(id));
+
+  /**
+   * Where the ranking put each shown candidate.
+   *
+   * The comment on `severity` predicted this case and it has arrived: since the ranking model landed
+   * a species is rarely excluded outright — it is offered and sorted below the ones the commander
+   * reads. The game names `k` genera, so a truth species outside the top `k` is one the panel's own
+   * headline would not have named, and that is a miss with a rank rather than an absence.
+   */
+  const byRank = [...shownMatches].sort(
+    (a, b) => (b.presenceProbabilityPercent ?? -1) - (a.presenceProbabilityPercent ?? -1),
+  );
+  const rankOf = new Map(byRank.map((m, i) => [m.entry.id, i + 1]));
+  const k = body.biologicalSignals ?? 0;
+  const rankedLow = (id: string): boolean => {
+    if (!shown.has(id) || k <= 0) return false;
+    const r = rankOf.get(id);
+    return r != null && r > k;
+  };
+
+  const missing = truth.filter((id) => !shown.has(id) || rankedLow(id));
   if (!missing.length) return 0;
 
   const set = loadSeen();
@@ -147,8 +195,8 @@ export function recordExoOutliersForBody(input: {
       starSystem: body.starSystem ?? "",
       speciesId: id,
       speciesName: entry.displayName,
-      severity: demoted.has(id) ? "unlikelyOnly" : "absent",
-      rank: null,
+      severity: shown.has(id) ? "rankedLow" : demoted.has(id) ? "unlikelyOnly" : "absent",
+      rank: rankOf.get(id) ?? null,
       blockedBy: blocked.field,
       blockedDetail: blocked.detail,
       scan: {
@@ -164,6 +212,10 @@ export function recordExoOutliersForBody(input: {
       biologicalSignals: body.biologicalSignals ?? null,
     };
     set.add(key);
+    if (tally) {
+      tally.total++;
+      tally[rec.severity]++;
+    }
     lines.push(JSON.stringify(rec));
   }
   if (!lines.length) return 0;
@@ -179,4 +231,5 @@ export function recordExoOutliersForBody(input: {
 /** Test seam: forget what has been written so a fresh file can be exercised. */
 export function resetExoOutlierLogCacheForTests(): void {
   seen = null;
+  tally = null;
 }

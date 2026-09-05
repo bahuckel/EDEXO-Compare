@@ -496,6 +496,39 @@ function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["matches"][
 const THIN_SAMPLE_BELOW = 50;
 const RARE_SAMPLE_BELOW = 10;
 
+/**
+ * The miss log, in the Options panel (B6).
+ *
+ * The accuracy probe can only re-measure the bodies already in the journal, and it will only ever
+ * describe the past. This grows every time the app is wrong about a body the commander actually
+ * landed on, wherever they are flying — the one feedback channel that does not go stale as the
+ * harness is tuned against.
+ *
+ * A count rather than a list: the records carry body parameters and the whole candidate list, which
+ * belongs in a file to diff, not in a modal. Silent at zero, because "no misses recorded" on a fresh
+ * install reads as a claim about accuracy that nothing has earned.
+ */
+function ExoMissLogPanel({ outliers }: { outliers: AppSnapshot["exoOutliers"] }) {
+  if (!outliers || outliers.total <= 0) return null;
+  const parts = [
+    outliers.absent > 0 ? `${outliers.absent} not listed at all` : null,
+    outliers.unlikelyOnly > 0 ? `${outliers.unlikelyOnly} only behind “show unlikely”` : null,
+    outliers.rankedLow > 0 ? `${outliers.rankedLow} listed but ranked too low` : null,
+  ].filter(Boolean);
+
+  return (
+    <section className="options-meta-block">
+      <p className="dim" style={{ lineHeight: 1.45 }}>
+        <strong>Misses recorded</strong> — {outliers.total} {outliers.total === 1 ? "species" : "species"} you
+        found where this app did not point at {outliers.total === 1 ? "it" : "them"}
+        {parts.length ? `: ${parts.join(", ")}` : ""}. Each one is written to{" "}
+        <code>edexo-outliers.jsonl</code> beside your settings, with the body&apos;s parameters and the
+        candidate list at the time — evidence for the next gate fix, and it never leaves this machine.
+      </p>
+    </section>
+  );
+}
+
 function ThinSampleNote({ sampleN, unlikely }: { sampleN: number | null | undefined; unlikely: boolean }) {
   if (unlikely) return null;
   if (sampleN == null || !Number.isFinite(sampleN) || sampleN <= 0) return null;
@@ -2366,6 +2399,8 @@ function MapOptionsModal({
               <p className="options-journal-line dim">LAN server: use npm run start:server</p>
             )}
           </section>
+
+          <ExoMissLogPanel outliers={snap.exoOutliers} />
 
           <FeederStatusPanel />
 

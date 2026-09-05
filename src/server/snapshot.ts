@@ -83,7 +83,7 @@ import type { JournalHostStarObservation } from "../shared/types.js";
 import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
-import { recordExoOutliersForBody } from "./exoOutlierLog.js";
+import { exoOutlierTally, recordExoOutliersForBody } from "./exoOutlierLog.js";
 
 let cachedStarRoles: ReturnType<typeof loadStarRolesConfig> | null = null;
 
@@ -1170,6 +1170,7 @@ export function buildSnapshot(
     explorationScanDataValueCredits,
     explorationFssScanCount: exploreBreakdown.fssScanCount,
     onSiteTiming: timingFromSamples(store.landingMinutesSamples, store.samplingMinutesSamples),
+    exoOutliers: exoOutlierTally(),
     explorationFssValueCredits: exploreBreakdown.fssValueCredits,
     explorationDssScanCount: exploreBreakdown.dssScanCount,
     explorationDssValueCredits: exploreBreakdown.dssValueCredits,

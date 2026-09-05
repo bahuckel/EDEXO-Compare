@@ -1031,6 +1031,14 @@ export interface AppSnapshot {
    * until there are ten of each leg, where the screen falls back to the shipped medians and says so.
    */
   onSiteTiming: TriageTiming | null;
+  /**
+   * The miss log's running count (B6) — species the commander found where the app did not offer them.
+   *
+   * `absent` was not in the list at all, `unlikelyOnly` was behind "show unlikely (N)", and
+   * `rankedLow` is the case the ranking model created: offered, but sorted below the genera the panel
+   * names. Zero of everything is the honest reading of a fresh install, not a claim of accuracy.
+   */
+  exoOutliers: { total: number; absent: number; unlikelyOnly: number; rankedLow: number };
   /** Sum of FSS-only estimates for those bodies with merged scan data (belts skipped). */
   explorationFssValueCredits: number;
   /** Planetary bodies with `SAAScanComplete` (stars & belts excluded). */

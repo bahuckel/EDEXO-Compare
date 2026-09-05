@@ -17,7 +17,7 @@ vi.mock("../src/server/paths.js", async () => {
   return { ...actual, resolveExoOutlierLogPath: () => logPath };
 });
 
-const { recordExoOutliersForBody, resetExoOutlierLogCacheForTests } =
+const { exoOutlierTally, recordExoOutliersForBody, resetExoOutlierLogCacheForTests } =
   await import("../src/server/exoOutlierLog.js");
 const { loadSpeciesDatabaseFromTree } = await import("../src/server/speciesTreeLoader.js");
 
@@ -48,9 +48,9 @@ function bodyWith(lockSpecies: string, extra: Partial<BodyExoState> = {}): BodyE
   } as unknown as BodyExoState;
 }
 
-function matchFor(id: string): SpeciesMatch {
+function matchFor(id: string, presenceProbabilityPercent?: number): SpeciesMatch {
   const entry = db.species.find((e) => e.id === id)!;
-  return { entry, reasons: [] } as unknown as SpeciesMatch;
+  return { entry, reasons: [], presenceProbabilityPercent } as unknown as SpeciesMatch;
 }
 
 beforeEach(async () => {
@@ -142,5 +142,79 @@ describe("recordExoOutliersForBody", () => {
       }),
     ).toBe(0);
     expect(existsSync(logPath)).toBe(false);
+  });
+});
+
+/**
+ * The case the ranking model created, predicted in this module's own comment before the model
+ * existed: since nothing is strictly excluded any more, the failure that matters is a species
+ * offered and sorted below the ones the panel names. The game names `k` genera, so outside the top
+ * `k` is outside what the commander reads.
+ */
+describe("rankedLow", () => {
+  it("records a confirmed species that was listed but ranked below the signal count", () => {
+    const body = bodyWith("Stratum tectonicas"); // two biological signals
+    const n = recordExoOutliersForBody({
+      body,
+      matches: [
+        matchFor("bacterium_bacterium_aurasus", 90),
+        matchFor("bacterium_bacterium_cerbrus", 70),
+        matchFor("stratum_stratum_tectonicas", 5),
+      ],
+      db,
+    });
+    expect(n).toBe(1);
+
+    const rec = JSON.parse(readFileSync(logPath, "utf8").trim());
+    expect(rec.speciesId).toBe("stratum_stratum_tectonicas");
+    expect(rec.severity).toBe("rankedLow");
+    expect(rec.rank).toBe(3);
+  });
+
+  it("says nothing when the species is inside the top k", () => {
+    const body = bodyWith("Stratum tectonicas");
+    const n = recordExoOutliersForBody({
+      body,
+      matches: [
+        matchFor("bacterium_bacterium_aurasus", 90),
+        matchFor("stratum_stratum_tectonicas", 70),
+        matchFor("bacterium_bacterium_cerbrus", 5),
+      ],
+      db,
+    });
+    expect(n).toBe(0);
+  });
+
+  /** No signal count is no verdict: the app never claimed how many genera were down there. */
+  it("does not judge the ranking on a body with no signal count", () => {
+    const body = bodyWith("Stratum tectonicas", { biologicalSignals: null });
+    const n = recordExoOutliersForBody({
+      body,
+      matches: [
+        matchFor("bacterium_bacterium_aurasus", 90),
+        matchFor("bacterium_bacterium_cerbrus", 70),
+        matchFor("stratum_stratum_tectonicas", 5),
+      ],
+      db,
+    });
+    expect(n).toBe(0);
+  });
+});
+
+describe("exoOutlierTally", () => {
+  it("counts nothing before anything is recorded", () => {
+    expect(exoOutlierTally()).toEqual({ total: 0, absent: 0, unlikelyOnly: 0, rankedLow: 0 });
+  });
+
+  it("counts what has been written, and survives a restart by re-reading the file", () => {
+    recordExoOutliersForBody({
+      body: bodyWith("Stratum tectonicas"),
+      matches: [matchFor("bacterium_bacterium_aurasus")],
+      db,
+    });
+    expect(exoOutlierTally()).toMatchObject({ total: 1, absent: 1 });
+
+    resetExoOutlierLogCacheForTests();
+    expect(exoOutlierTally()).toMatchObject({ total: 1, absent: 1, rankedLow: 0 });
   });
 });
