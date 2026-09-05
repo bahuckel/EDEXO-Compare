@@ -35,8 +35,12 @@ import type { JournalMergeCachePayload } from "./gameState.js";
  * every build before this one, so the set can only be filled by replaying the journals. A stale cache
  * would leave the codex badge silent rather than wrong, but silent is indistinguishable from "you
  * have logged everything", which is a lie by omission on a screen built for codex hunters.
+ *
+ * 5 adds the landing and sampling leg times the triage screen measures per commander (B5). Same
+ * shape of reason: the legs are timed from journal events nothing used to read, so only a replay can
+ * fill them, and without them the screen quotes a stranger's medians.
  */
-export const JOURNAL_MERGE_CACHE_ENCODING = 4;
+export const JOURNAL_MERGE_CACHE_ENCODING = 5;
 
 /** `2023-10-04T01:51:41Z` — the only shape the store writes; anything else is left as a string. */
 const ISO_SECONDS_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;

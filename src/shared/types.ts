@@ -1,4 +1,5 @@
 import type { GenusLikelihood } from "./genusCooccurrence.js";
+import type { TriageTiming } from "./systemTriage.js";
 import type { JournalHistoryPreset } from "./journalHistoryPreset.js";
 
 export type { JournalHistoryPreset };
@@ -1010,6 +1011,14 @@ export interface AppSnapshot {
   explorationScanDataValueCredits: number;
   /** Unique bodies with journal `FSSBodySignals` (any system in merged logs). */
   explorationFssScanCount: number;
+  /**
+   * This commander's own median minutes per landing and per sampling run (B5).
+   *
+   * Measured from the merged journals rather than configured: time is the one quantity on the triage
+   * screen that varies between commanders, and the app already reads the events that state it. Null
+   * until there are ten of each leg, where the screen falls back to the shipped medians and says so.
+   */
+  onSiteTiming: TriageTiming | null;
   /** Sum of FSS-only estimates for those bodies with merged scan data (belts skipped). */
   explorationFssValueCredits: number;
   /** Planetary bodies with `SAAScanComplete` (stars & belts excluded). */

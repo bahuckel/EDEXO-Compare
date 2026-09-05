@@ -19,6 +19,7 @@ import {
   SAMPLING_MINUTES_PER_GENUS,
   type TriageBodyInput,
   type TriageSort,
+  type TriageTiming,
 } from "@shared/systemTriage";
 
 function creditsShort(n: number): string {
@@ -60,14 +61,29 @@ export function triageInputsFromBodies(bodies: BodyComputed[]): TriageBodyInput[
     });
 }
 
+/** Remembered between openings: which order the commander thinks in is a preference, not a setting. */
+const SORT_STORAGE_KEY = "edexo.triage.sort";
+
+function storedSort(): TriageSort {
+  try {
+    const v = window.localStorage.getItem(SORT_STORAGE_KEY);
+    if (v === "value" || v === "perMinute" || v === "distance") return v;
+  } catch {
+    /* private window, or storage disabled */
+  }
+  return "value";
+}
+
 export function SystemTriageModal({
   bodies,
   systemName,
+  timing,
   onClose,
   onSelectBody,
 }: {
   bodies: BodyComputed[];
   systemName: string | null;
+  timing?: TriageTiming | null;
   onClose: () => void;
   onSelectBody?: (bodyKey: string) => void;
 }) {
@@ -80,8 +96,19 @@ export function SystemTriageModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const [sort, setSort] = useState<TriageSort>("value");
-  const rows = useMemo(() => triageSystem(triageInputsFromBodies(bodies), sort), [bodies, sort]);
+  const [sort, setSortState] = useState<TriageSort>(storedSort);
+  const setSort = (next: TriageSort) => {
+    setSortState(next);
+    try {
+      window.localStorage.setItem(SORT_STORAGE_KEY, next);
+    } catch {
+      /* nothing to do: the sort still applies for this session */
+    }
+  };
+  const rows = useMemo(
+    () => triageSystem(triageInputsFromBodies(bodies), sort, timing),
+    [bodies, sort, timing],
+  );
   const total = rows.reduce((s, r) => s + r.expectedCredits, 0);
 
   return (
@@ -186,11 +213,13 @@ export function SystemTriageModal({
 
         <p className="dim tiny system-triage-note">
           Expected value sums each candidate&apos;s calibrated chance of being present times its list price,
-          with the first-footfall multiplier where it applies. On-site minutes are measured from this
-          commander&apos;s journals: {LANDING_MINUTES} minutes to land and {SAMPLING_MINUTES_PER_GENUS} per
-          genus sampled. Supercruise is not included — timing it against distance in the journals measures the
-          time spent honking and deciding as much as flying, so distance is shown raw instead of converted
-          into minutes it cannot support.
+          with the first-footfall multiplier where it applies. On-site minutes come from{" "}
+          {timing
+            ? `your own journals — ${timing.landingMinutes.toFixed(1)} min to land (median of ${timing.landings}) and ${timing.samplingMinutesPerGenus.toFixed(1)} per genus sampled (median of ${timing.runs})`
+            : `a reference commander's journals — ${LANDING_MINUTES} min to land and ${SAMPLING_MINUTES_PER_GENUS} per genus sampled — until you have ten of each leg of your own`}
+          . Supercruise is not included — timing it against distance in the journals measures the time spent
+          honking and deciding as much as flying, so distance is shown raw instead of converted into minutes
+          it cannot support.
         </p>
       </div>
     </div>

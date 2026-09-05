@@ -100,6 +100,9 @@ export type JournalMergeCachePayload = {
    * existed still loads — it simply has none until the next rebuild from the logs.
    */
   codexLoggedSpecies?: string[];
+  /** Minutes per approach-and-landing and per sampling run, for the triage screen's own timing (B5). */
+  landingMinutesSamples?: number[];
+  samplingMinutesSamples?: number[];
   pendingOrganicSales: PendingOrganicSample[];
   fssAllBodiesCompleteSystems: number[];
   fssDiscoveryScanBySystem: [number, { systemName: string; bodyCount: number; progress: number }][];
@@ -440,6 +443,24 @@ export class GameStateStore {
    * the one a codex hunter wants to fly to.
    */
   readonly codexLoggedSpecies = new Set<string>();
+
+  /**
+   * How long this commander's own trips actually take, in minutes (B5).
+   *
+   * The triage screen ships with medians measured from one commander's 244 journals — 1.2 minutes to
+   * land, 2.5 to sample a genus — and those are *this* commander's habits, not a constant of the
+   * game. Somebody who flies an Anaconda and takes their time is not somebody in a Mandalay who does
+   * not. B5 asked for knobs; the app can measure instead, from the journals it already reads, and a
+   * measured number beats one the user has to guess at.
+   *
+   * Collected on replay: `SupercruiseExit` to `Touchdown` on the same body, and the first
+   * `ScanOrganic` sample of a species to its `Analyse`.
+   */
+  readonly landingMinutesSamples: number[] = [];
+  readonly samplingMinutesSamples: number[] = [];
+  /** Open legs, cleared as they complete. Not persisted: a half-finished trip is not a measurement. */
+  private scExitAt: { at: number; body: string } | null = null;
+  private organicRunStartedAt = new Map<string, number>();
   /** Completed samples (3× Analyse) not removed by SellOrganicData / Died — FIFO for sales without body on BioData. */
   pendingOrganicSales: PendingOrganicSample[] = [];
 
@@ -754,6 +775,10 @@ export class GameStateStore {
     this.pendingOrganicSales = [];
     this.firstFootfallBodies.clear();
     this.codexLoggedSpecies.clear();
+    this.landingMinutesSamples.length = 0;
+    this.samplingMinutesSamples.length = 0;
+    this.scExitAt = null;
+    this.organicRunStartedAt.clear();
     this.bodyDetailedFootfallState.clear();
     this.exoOrganicTracker = null;
     this.exoOrganicLastFix = null;
@@ -782,6 +807,10 @@ export class GameStateStore {
     this.bodyDetailedFootfallState.clear();
     this.firstFootfallBodies.clear();
     this.codexLoggedSpecies.clear();
+    this.landingMinutesSamples.length = 0;
+    this.samplingMinutesSamples.length = 0;
+    this.scExitAt = null;
+    this.organicRunStartedAt.clear();
     this.pendingOrganicSales = [];
     this.fssAllBodiesCompleteSystems.clear();
     this.fssAllBodiesFoundCountBySystem.clear();
@@ -1201,6 +1230,13 @@ export class GameStateStore {
         return;
       }
 
+      if (event === "SupercruiseExit") {
+        const body = typeof line.Body === "string" ? line.Body.trim() : "";
+        const at = Date.parse(ts);
+        if (body && Number.isFinite(at)) this.scExitAt = { at, body };
+        return;
+      }
+
       if (event === "CodexEntry") {
         const species = codexSpeciesFromLine(line as Parameters<typeof codexSpeciesFromLine>[0]);
         if (species) this.codexLoggedSpecies.add(species);
@@ -1330,6 +1366,16 @@ export class GameStateStore {
       }
 
       if (event === "Touchdown") {
+        // How long the last approach took, when this is the body we dropped at.
+        const tdBody = typeof line.Body === "string" ? line.Body.trim() : "";
+        const tdAt = Date.parse(ts);
+        if (this.scExitAt && tdBody && tdBody === this.scExitAt.body && Number.isFinite(tdAt)) {
+          const minutes = (tdAt - this.scExitAt.at) / 60_000;
+          // Over half an hour is a commander who went to make tea, not an approach.
+          if (minutes > 0 && minutes < 30) this.landingMinutesSamples.push(minutes);
+        }
+        this.scExitAt = null;
+
         const playerControlled = line.PlayerControlled === true;
         const taxi = line.Taxi === true;
         const onPlanet = line.OnPlanet === true;
@@ -1485,6 +1531,27 @@ export class GameStateStore {
 
         const speciesKey = speciesKeyFromOrganicJournal(line);
         const fullKey = `${bk}::${speciesKey}`;
+
+        /**
+         * The sampling run: first sample of a species on a body to the analyse that completes it.
+         *
+         * Keyed per species per body, because a commander taking two genera on one landing runs two
+         * of these and they interleave.
+         */
+        const runScanType = typeof line.ScanType === "string" ? line.ScanType : "";
+        const organicAt = Date.parse(ts);
+        if (Number.isFinite(organicAt)) {
+          if (runScanType === "Log" || runScanType === "Sample") {
+            if (!this.organicRunStartedAt.has(fullKey)) this.organicRunStartedAt.set(fullKey, organicAt);
+          } else if (runScanType === "Analyse") {
+            const startedAt = this.organicRunStartedAt.get(fullKey);
+            if (startedAt != null) {
+              const minutes = (organicAt - startedAt) / 60_000;
+              if (minutes > 0 && minutes < 90) this.samplingMinutesSamples.push(minutes);
+            }
+            this.organicRunStartedAt.delete(fullKey);
+          }
+        }
 
         if (journalLineCarriesPlanetMetrics(line)) {
           const lineBodyName =
@@ -1871,6 +1938,8 @@ export class GameStateStore {
       bodyDetailedFootfallState: [...this.bodyDetailedFootfallState.entries()],
       firstFootfallBodies: [...this.firstFootfallBodies],
       codexLoggedSpecies: [...this.codexLoggedSpecies],
+      landingMinutesSamples: [...this.landingMinutesSamples],
+      samplingMinutesSamples: [...this.samplingMinutesSamples],
       pendingOrganicSales: this.pendingOrganicSales.map((p) => ({ ...p })),
       fssAllBodiesCompleteSystems: [...this.fssAllBodiesCompleteSystems],
       fssDiscoveryScanBySystem: [...this.fssDiscoveryScanBySystem.entries()],
@@ -1920,6 +1989,8 @@ export class GameStateStore {
     for (const [k, v] of data.bodyDetailedFootfallState) this.bodyDetailedFootfallState.set(k, v);
     for (const k of data.firstFootfallBodies) this.firstFootfallBodies.add(k);
     for (const k of data.codexLoggedSpecies ?? []) this.codexLoggedSpecies.add(k);
+    this.landingMinutesSamples.push(...(data.landingMinutesSamples ?? []));
+    this.samplingMinutesSamples.push(...(data.samplingMinutesSamples ?? []));
     this.pendingOrganicSales = data.pendingOrganicSales.map((p) => ({ ...p }));
     for (const addr of data.fssAllBodiesCompleteSystems) this.fssAllBodiesCompleteSystems.add(addr);
     for (const [addr, row] of data.fssDiscoveryScanBySystem) {

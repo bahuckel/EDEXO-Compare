@@ -77,7 +77,7 @@ import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
 import { rankSpeciesOnBody } from "./speciesLikelihood.js";
-import { genusShares } from "../shared/systemTriage.js";
+import { genusShares, timingFromSamples } from "../shared/systemTriage.js";
 import { codexHasSpecies } from "../shared/codexLog.js";
 import type { JournalHostStarObservation } from "../shared/types.js";
 import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
@@ -1169,6 +1169,7 @@ export function buildSnapshot(
     includeExplorationScanDataInDataValue: store.includeExplorationScanDataInDataValue,
     explorationScanDataValueCredits,
     explorationFssScanCount: exploreBreakdown.fssScanCount,
+    onSiteTiming: timingFromSamples(store.landingMinutesSamples, store.samplingMinutesSamples),
     explorationFssValueCredits: exploreBreakdown.fssValueCredits,
     explorationDssScanCount: exploreBreakdown.dssScanCount,
     explorationDssValueCredits: exploreBreakdown.dssValueCredits,

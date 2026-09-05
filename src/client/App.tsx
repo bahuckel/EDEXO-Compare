@@ -3692,6 +3692,7 @@ const HeaderBar = memo(function HeaderBar({
           <SystemTriageModal
             bodies={snap.bodies ?? []}
             systemName={snap.viewingSystemName ?? snap.currentSystem}
+            timing={snap.onSiteTiming}
             onClose={() => setTriageOpen(false)}
             onSelectBody={
               onGoToBioBody

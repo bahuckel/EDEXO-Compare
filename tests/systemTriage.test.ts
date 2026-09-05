@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   genusShares,
+  MIN_TIMING_SAMPLES,
   onSiteMinutes,
+  timingFromSamples,
   triageRow,
   triageSystem,
   LANDING_MINUTES,
@@ -156,5 +158,42 @@ describe("genusShares", () => {
 
   it("says nothing about an empty list", () => {
     expect(genusShares([]).size).toBe(0);
+  });
+});
+
+/**
+ * B5 asked for configurable thresholds. The one quantity that genuinely varies between commanders is
+ * time, and the app can measure it from the journals rather than ask — so the "setting" is a
+ * measurement with a fallback, not a slider.
+ */
+describe("timingFromSamples", () => {
+  const enough = (v: number) => Array.from({ length: MIN_TIMING_SAMPLES }, () => v);
+
+  it("takes the median of each leg once there are enough of both", () => {
+    const t = timingFromSamples([...enough(1), 9], enough(3))!;
+    expect(t.landingMinutes).toBe(1);
+    expect(t.samplingMinutesPerGenus).toBe(3);
+    expect(t.landings).toBe(MIN_TIMING_SAMPLES + 1);
+    expect(t.runs).toBe(MIN_TIMING_SAMPLES);
+  });
+
+  /** All or nothing: a screen mixing your landing time with a stranger's sampling time is worse. */
+  it("declines when either leg is too thin", () => {
+    expect(timingFromSamples(enough(1), [3, 3])).toBeNull();
+    expect(timingFromSamples([1], enough(3))).toBeNull();
+    expect(timingFromSamples([], [])).toBeNull();
+  });
+
+  it("ignores legs that are not real durations", () => {
+    const t = timingFromSamples([...enough(2), 0, -5, Number.NaN], enough(4))!;
+    expect(t.landings).toBe(MIN_TIMING_SAMPLES);
+    expect(t.landingMinutes).toBe(2);
+  });
+
+  it("is what the on-site estimate uses when it exists", () => {
+    const t = timingFromSamples(enough(2), enough(4))!;
+    expect(onSiteMinutes(3, t)).toBeCloseTo(2 + 3 * 4, 6);
+    // Without it the shipped medians stand, so the screen still works on a fresh install.
+    expect(onSiteMinutes(3, null)).toBeCloseTo(LANDING_MINUTES + 3 * SAMPLING_MINUTES_PER_GENUS, 6);
   });
 });

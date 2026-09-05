@@ -40,6 +40,53 @@ export const SAMPLING_MINUTES_PER_GENUS = 2.5;
  */
 export const ON_SITE_ONLY = true;
 
+/**
+ * This commander's own timing, measured from their journals (B5).
+ *
+ * B5 asked for configurable thresholds. The one number on this screen that genuinely varies between
+ * commanders is time — somebody who flies an Anaconda and takes their time is not somebody in a
+ * Mandalay who does not — and the app can measure it instead of asking. The constants above are the
+ * fallback for a commander with too little history to measure, not a default anyone has to override.
+ */
+export interface TriageTiming {
+  landingMinutes: number;
+  samplingMinutesPerGenus: number;
+  /** Legs behind each median, so the UI can say whose numbers these are. */
+  landings: number;
+  runs: number;
+}
+
+/**
+ * Legs needed before a commander's own median replaces the shipped one.
+ *
+ * Ten is enough for a median to be a median rather than an anecdote, and low enough that a commander
+ * two evenings into exobiology is already being measured rather than assumed.
+ */
+export const MIN_TIMING_SAMPLES = 10;
+
+function median(xs: number[]): number {
+  const s = [...xs].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)] ?? 0;
+}
+
+/**
+ * Medians from the raw legs, or null when there are too few of either to be worth believing.
+ *
+ * All-or-nothing on purpose: a screen that mixes this commander's landing time with a stranger's
+ * sampling time is harder to reason about than one that says plainly whose numbers it is using.
+ */
+export function timingFromSamples(landing: number[], sampling: number[]): TriageTiming | null {
+  const l = landing.filter((x) => Number.isFinite(x) && x > 0);
+  const s = sampling.filter((x) => Number.isFinite(x) && x > 0);
+  if (l.length < MIN_TIMING_SAMPLES || s.length < MIN_TIMING_SAMPLES) return null;
+  return {
+    landingMinutes: median(l),
+    samplingMinutesPerGenus: median(s),
+    landings: l.length,
+    runs: s.length,
+  };
+}
+
 export interface TriageCandidate {
   speciesId: string;
   displayName: string;
@@ -82,9 +129,11 @@ export interface TriageRow extends TriageBodyInput {
  * Without a signal count the body still costs a landing and at least one run, which is the floor
  * rather than a guess at how many genera are waiting.
  */
-export function onSiteMinutes(signalCount: number | null): number {
+export function onSiteMinutes(signalCount: number | null, timing?: TriageTiming | null): number {
   const k = signalCount != null && Number.isFinite(signalCount) && signalCount > 0 ? signalCount : 1;
-  return LANDING_MINUTES + k * SAMPLING_MINUTES_PER_GENUS;
+  const landing = timing?.landingMinutes ?? LANDING_MINUTES;
+  const sampling = timing?.samplingMinutesPerGenus ?? SAMPLING_MINUTES_PER_GENUS;
+  return landing + k * sampling;
 }
 
 /**
@@ -93,7 +142,7 @@ export function onSiteMinutes(signalCount: number | null): number {
  * `coverage` is the honest caveat: a body whose candidates are mostly unscored has an expected value
  * built from the few that were, and the row says so rather than quietly reading low.
  */
-export function triageRow(body: TriageBodyInput): TriageRow {
+export function triageRow(body: TriageBodyInput, timing?: TriageTiming | null): TriageRow {
   let expected = 0;
   let scoredWeight = 0;
   let totalWeight = 0;
@@ -108,7 +157,7 @@ export function triageRow(body: TriageBodyInput): TriageRow {
     if (!best || (best.probability ?? -1) < c.probability) best = c;
   }
 
-  const minutes = onSiteMinutes(body.signalCount);
+  const minutes = onSiteMinutes(body.signalCount, timing);
   return {
     ...body,
     expectedCredits: Math.round(expected),
@@ -127,8 +176,12 @@ export type TriageSort = "value" | "perMinute" | "distance";
  * Ties break on distance, because between two bodies worth the same the near one is the answer, and
  * a body with no distance reading sorts last rather than first — an unknown is not a zero.
  */
-export function triageSystem(bodies: TriageBodyInput[], sort: TriageSort = "value"): TriageRow[] {
-  const rows = bodies.map(triageRow);
+export function triageSystem(
+  bodies: TriageBodyInput[],
+  sort: TriageSort = "value",
+  timing?: TriageTiming | null,
+): TriageRow[] {
+  const rows = bodies.map((b) => triageRow(b, timing));
   const distance = (r: TriageRow) => (r.distanceLs == null ? Number.POSITIVE_INFINITY : r.distanceLs);
   return rows.sort((a, b) => {
     if (sort === "distance") return distance(a) - distance(b) || b.expectedCredits - a.expectedCredits;
