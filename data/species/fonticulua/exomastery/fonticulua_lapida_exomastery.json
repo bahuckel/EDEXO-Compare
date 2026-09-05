@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua lapida",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T10:54:20.349Z",
+  "generatedAt": "2026-09-05T12:41:35.732Z",
   "sampleCount": 41,
   "numerics": {
     "body.distanceToArrival": {
@@ -904,6 +904,24 @@
       0,
       0
     ],
+    "body.materials.Zinc": [
+      19,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
     "body.materials.Germanium": [
       20,
       0,
@@ -958,6 +976,24 @@
       0,
       0
     ],
+    "body.materials.Zirconium": [
+      11,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
     "body.orbitalEccentricity": [
       4,
       0,
@@ -975,6 +1011,60 @@
       1,
       0,
       3
+    ],
+    "body.materials.Manganese": [
+      11,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Arsenic": [
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Selenium": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      11
     ]
   }
 }

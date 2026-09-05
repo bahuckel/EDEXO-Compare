@@ -3,7 +3,7 @@
   "speciesLabel": "Osseus pumice",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T10:54:24.063Z",
+  "generatedAt": "2026-09-05T12:41:37.535Z",
   "sampleCount": 99,
   "numerics": {
     "body.distanceToArrival": {
@@ -1109,6 +1109,24 @@
       7,
       9,
       0
+    ],
+    "body.materials.Arsenic": [
+      10,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      2
     ]
   }
 }

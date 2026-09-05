@@ -3,7 +3,7 @@
   "speciesLabel": "Cactoida peperatis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T10:54:17.865Z",
+  "generatedAt": "2026-09-05T12:41:34.663Z",
   "sampleCount": 72,
   "numerics": {
     "body.distanceToArrival": {
@@ -973,6 +973,42 @@
       2,
       0
     ],
+    "body.materials.Arsenic": [
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      3,
+      2,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "body.materials.Zirconium": [
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      2,
+      1,
+      2,
+      1,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
     "body.materials.Germanium": [
       0,
       1,
@@ -990,6 +1026,24 @@
       2,
       0,
       3
+    ],
+    "body.materials.Selenium": [
+      0,
+      1,
+      2,
+      0,
+      1,
+      4,
+      1,
+      1,
+      2,
+      2,
+      1,
+      3,
+      0,
+      0,
+      0,
+      0
     ]
   }
 }

@@ -26,8 +26,16 @@ import {
  */
 export const MIN_SAMPLES_FOR_EDGES = 200;
 
-/** Observations a species needs on a parameter before its histogram is worth writing. */
-export const MIN_SAMPLES_FOR_HISTOGRAM = 20;
+/**
+ * Observations a species needs on a parameter before its histogram is written.
+ *
+ * One. A histogram of a single body is a spike, and on its own it would claim the species grows at
+ * exactly that gravity and nowhere else — which is why the model used to decline below twenty. The
+ * codex envelope (§16.1) supplies the width instead, in proportion to how thin the profile is, so
+ * the spike becomes "near the one point we have, inside the range the codex allows". Withholding the
+ * observation entirely would throw away the only thing known about a rare species.
+ */
+export const MIN_SAMPLES_FOR_HISTOGRAM = 1;
 
 /**
  * Interior edges at equal-population quantiles of the pooled values.

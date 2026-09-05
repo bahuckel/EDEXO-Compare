@@ -3,7 +3,7 @@
   "speciesLabel": "Fonticulua digitos",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T10:54:20.326Z",
+  "generatedAt": "2026-09-05T12:41:35.719Z",
   "sampleCount": 62,
   "numerics": {
     "body.distanceToArrival": {
@@ -973,6 +973,60 @@
       0,
       0,
       28
+    ],
+    "body.materials.Arsenic": [
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Zinc": [
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Zirconium": [
+      17,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
     ]
   }
 }

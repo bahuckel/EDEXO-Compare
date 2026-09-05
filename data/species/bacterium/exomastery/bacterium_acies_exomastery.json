@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium acies",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T10:54:13.925Z",
+  "generatedAt": "2026-09-05T12:41:32.921Z",
   "sampleCount": 132,
   "numerics": {
     "body.distanceToArrival": {
@@ -1079,6 +1079,24 @@
     ],
     "body.materials.Zirconium": [
       27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Arsenic": [
+      18,
       0,
       0,
       0,

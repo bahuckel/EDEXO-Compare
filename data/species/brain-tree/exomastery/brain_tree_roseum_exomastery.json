@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Roseum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T10:54:24.523Z",
+  "generatedAt": "2026-09-05T12:41:37.811Z",
   "sampleCount": 46,
   "numerics": {
     "body.distanceToArrival": {
@@ -995,6 +995,42 @@
       0,
       4
     ],
+    "body.materials.Arsenic": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      2,
+      0,
+      0,
+      1,
+      1,
+      2,
+      2,
+      2,
+      0
+    ],
+    "body.materials.Zirconium": [
+      1,
+      0,
+      2,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      2,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1
+    ],
     "body.materials.Manganese": [
       3,
       3,
@@ -1013,6 +1049,42 @@
       1,
       4
     ],
+    "body.materials.Zinc": [
+      1,
+      1,
+      1,
+      0,
+      2,
+      2,
+      0,
+      1,
+      0,
+      0,
+      0,
+      3,
+      1,
+      1,
+      3,
+      1
+    ],
+    "body.materials.Vanadium": [
+      1,
+      0,
+      2,
+      3,
+      0,
+      1,
+      0,
+      0,
+      4,
+      0,
+      0,
+      3,
+      1,
+      0,
+      2,
+      1
+    ],
     "body.materials.Germanium": [
       0,
       3,
@@ -1030,6 +1102,24 @@
       2,
       1,
       5
+    ],
+    "body.materials.Selenium": [
+      2,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      2,
+      2,
+      3,
+      0,
+      2,
+      0,
+      0
     ]
   }
 }

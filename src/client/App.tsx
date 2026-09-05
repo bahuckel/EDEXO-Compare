@@ -446,6 +446,7 @@ function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["matches"][
           Unlikely habitat{sampleN != null ? ` · 0 of ${sampleN} observed bodies resemble this one` : ""}
         </div>
       ) : null}
+      <ThinSampleNote sampleN={sampleN} unlikely={unlikely} />
       <div className="species-similarity-index-cols">
         {cols.map((c) => (
           <div key={c.key} className="species-similarity-index-col" title={c.help}>
@@ -468,6 +469,51 @@ function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["matches"][
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * What a percentage rests on, when it rests on very little.
+ *
+ * §15.2, in the owner's framing: a low sample count is rarity, not unreliability. Fonticulua fluctus
+ * has been recorded on one body — that is the best estimate of where it grows, and for a codex hunter
+ * it is the opposite of a warning. Under ten bodies the note says so plainly and adds what §16.1
+ * asked the app to state — that the body clears the species' codex requirements, which is true of
+ * every row the panel shows and is why a one-body species is listed at all:
+ *
+ *   "Found Fonticulua fluctus, low sample size (1), but planet matches species parameters."
+ *
+ * Between ten and fifty it says only that the numbers rest on a thin sample. It does **not** claim
+ * the codex range is doing work inside the score: §16.1's envelope was built, measured and removed —
+ * blending the codex range into the likelihood moved the ranking by nothing (mean rank 3.284 →
+ * 3.291, top-1 and top-3 identical), because Laplace smoothing over sixteen shared bins already
+ * gives a one-body species a spread rather than a spike.
+ *
+ * Only on rows the panel is actually showing. A demoted row disagreed with a gate, so telling the
+ * reader it clears its requirements there would be false.
+ */
+const THIN_SAMPLE_BELOW = 50;
+const RARE_SAMPLE_BELOW = 10;
+
+function ThinSampleNote({ sampleN, unlikely }: { sampleN: number | null | undefined; unlikely: boolean }) {
+  if (unlikely) return null;
+  if (sampleN == null || !Number.isFinite(sampleN) || sampleN <= 0) return null;
+  if (sampleN >= THIN_SAMPLE_BELOW) return null;
+
+  const rare = sampleN < RARE_SAMPLE_BELOW;
+  const bodies = `${sampleN} ${sampleN === 1 ? "body" : "bodies"}`;
+  return (
+    <div
+      className={`species-thin-sample${rare ? " species-thin-sample--rare" : ""}`}
+      title={
+        `Every percentage on this row comes from a profile built on ${bodies}. ` +
+        "That is what the feeder corpus holds for this species — a rare find, not a doubtful one. " +
+        "The body still clears this species' codex requirements, which is why it is listed here at all."
+      }
+    >
+      {rare ? "Rarely found — " : ""}seen on {bodies}
+      {rare ? ", and this body clears its codex requirements" : " — these percentages rest on a thin sample"}
     </div>
   );
 }

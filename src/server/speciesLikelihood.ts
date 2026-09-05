@@ -71,8 +71,16 @@ export const TERM_DAMPING = 0.15;
 /** Laplace smoothing, in pseudo-observations per bin. */
 export const BIN_SMOOTHING = 0.5;
 
-/** Observations a profile needs before its histograms are believed at all. */
-export const MIN_PROFILE_SAMPLES = 20;
+/**
+ * Observations a profile needs before it is scored at all.
+ *
+ * One, now that the codex envelope exists. A single observation used to imply infinite precision —
+ * all the probability in one bin and near zero everywhere else — so the model declined below 20
+ * rather than publish that. §16.1's envelope supplies the width the observation cannot, in
+ * proportion to how thin it is, and a rare species can be ranked instead of skipped. §15.2: a low
+ * sample count is rarity, not unreliability.
+ */
+export const MIN_PROFILE_SAMPLES = 1;
 
 export interface SpeciesLikelihood {
   /** Log posterior up to the constant `log P(body)`; comparable across candidates on one body. */
@@ -106,6 +114,8 @@ export function speciesLogScore(
     paths?: Set<string>;
     /** Probe seam: drop the corpus prior, to measure what the likelihood is worth on its own. */
     noPrior?: boolean;
+    /** Probe seam: sweep the floor below which a profile is not scored at all. */
+    minSamples?: number;
   },
 ): SpeciesLikelihood | null {
   const root = opts?.root ?? getProjectRoot();
@@ -116,7 +126,7 @@ export function speciesLogScore(
   const edgesFile: HistogramEdgesFile | null = loadHistogramEdges(root);
   const prevalence: SpeciesPrevalenceFile | null = loadSpeciesPrevalence(root);
   const sampleCount = profile.sampleCount ?? 0;
-  if (sampleCount < MIN_PROFILE_SAMPLES) return null;
+  if (sampleCount < (opts?.minSamples ?? MIN_PROFILE_SAMPLES)) return null;
 
   let logLik = 0;
   let terms = 0;
@@ -185,7 +195,13 @@ export function rankSpeciesOnBody<T extends { entry: SpeciesEntry }>(
   scan: PlanetScan,
   rec: ExplorationScanRecord | null | undefined,
   journalHost: JournalHostStarObservation | null | undefined,
-  opts?: { root?: string; damping?: number; paths?: Set<string>; noPrior?: boolean },
+  opts?: {
+    root?: string;
+    damping?: number;
+    paths?: Set<string>;
+    noPrior?: boolean;
+    minSamples?: number;
+  },
 ): { ranked: RankedSpecies<T>[]; unscored: T[] } {
   const ranked: RankedSpecies<T>[] = [];
   const unscored: T[] = [];

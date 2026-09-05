@@ -3,7 +3,7 @@
   "speciesLabel": "Bacterium informem",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T10:54:16.580Z",
+  "generatedAt": "2026-09-05T12:41:34.099Z",
   "sampleCount": 116,
   "numerics": {
     "body.distanceToArrival": {
@@ -1063,6 +1063,24 @@
       0,
       1,
       3
+    ],
+    "body.materials.Arsenic": [
+      15,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "body.materials.Zirconium": [
       22,

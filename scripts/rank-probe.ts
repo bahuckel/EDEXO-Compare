@@ -100,6 +100,9 @@ let ranked = 0;
  */
 const USE_MODEL = process.argv.includes("--model");
 const NO_PRIOR = process.argv.includes("--no-prior");
+const MIN_SAMPLES = Number(
+  (process.argv.find((a) => a.startsWith("--min-samples=")) ?? "--min-samples=1").split("=")[1],
+);
 const DAMPING = Number(
   (process.argv.find((a) => a.startsWith("--damping=")) ?? `--damping=${TERM_DAMPING}`).split("=")[1],
 );
@@ -144,9 +147,12 @@ for (const b of bodies) {
    * having been asked fewer questions. Same rows, same species, one difference.
    */
   const posterior = new Map(
-    rankSpeciesOnBody(matches, b.scan, rec, host, { root, damping: DAMPING, noPrior: NO_PRIOR }).ranked.map(
-      (r) => [r.match.entry.id, r.probability],
-    ),
+    rankSpeciesOnBody(matches, b.scan, rec, host, {
+      root,
+      damping: DAMPING,
+      noPrior: NO_PRIOR,
+      minSamples: MIN_SAMPLES,
+    }).ranked.map((r) => [r.match.entry.id, r.probability]),
   );
   const scored = matches
     .map((m) => {
@@ -200,7 +206,7 @@ if (ranked === 0) {
 }
 
 console.log(
-  `\nordering           ${USE_MODEL ? `Bayes posterior (damping ${DAMPING}${NO_PRIOR ? ", no prior" : ""})` : "habitat similarity"}`,
+  `\nordering           ${USE_MODEL ? `Bayes posterior (damping ${DAMPING}${NO_PRIOR ? ", no prior" : ""}, min ${MIN_SAMPLES})` : "habitat similarity"}`,
 );
 console.log(`ranked species     ${ranked}   over ${scoredRows} scored candidate rows`);
 console.log(`mean rank          ${(rankSum / ranked).toFixed(3)}`);

@@ -9131,3 +9131,15 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   margin: 0.7rem 0 0;
   line-height: 1.45;
 }
+
+/* A percentage built on very few bodies says so, in the row it belongs to (§15.2, §16.1). */
+.species-thin-sample {
+  margin: 0 0 0.3rem;
+  font-size: var(--fs-2xs);
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.species-thin-sample--rare {
+  color: var(--accent);
+}
