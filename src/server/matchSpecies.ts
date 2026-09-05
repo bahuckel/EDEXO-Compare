@@ -12,6 +12,7 @@ import type {
 } from "../shared/types.js";
 import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "../shared/journalPhysics.js";
 import { observedAtGravity } from "./speciesGravityObservations.js";
+import { observedUnderAtmosphere } from "./speciesAtmosphereObservations.js";
 import {
   normalizeScanAtmosphereForMatch,
   atmosphereCompositionKey,
@@ -350,12 +351,25 @@ export function speciesMatchesExcludingTempPressure(
            * it is a far better list than the planet-class one - but Stratum tectonicas, the
            * highest-payout species in the game, grows in its canonical thin CO2 just 40.2% of the
            * time. A wall here hides the best find in exobiology on a body it really lives on.
+           *
+           * Nor even a demotion when the corpus has watched this species grow under the atmosphere
+           * anyway (§44) — the last of the six fields to get the §27 treatment, and the most
+           * cautious of them, because 0.33 % is a good list. The floor there rules out a mislabel
+           * rather than weighing a distribution.
            */
-          failures.push({
-            field: "AtmosphereType",
-            soft: true,
-            detail: `Codex lists ${allowedStr}; got ${atmoNorm === "" ? "(none)" : atmoNorm}. ${DEMOTED_NOTE}`,
-          });
+          const observedHere = observedUnderAtmosphere(entry, atmoNorm);
+          if (observedHere) {
+            reasons.push({
+              field: "AtmosphereType",
+              detail: `${atmoNorm} — outside the codex list, but ${observedHere.observations} of ${observedHere.total} observed bodies for this species are ${observedHere.label}.`,
+            });
+          } else {
+            failures.push({
+              field: "AtmosphereType",
+              soft: true,
+              detail: `Codex lists ${allowedStr}; got ${atmoNorm === "" ? "(none)" : atmoNorm}. ${DEMOTED_NOTE}`,
+            });
+          }
         } else {
           reasons.push({ field: "AtmosphereType", detail: atmoNorm === "" ? "(none / vacuum)" : atmoNorm });
         }
