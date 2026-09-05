@@ -46,6 +46,10 @@ export const NO_ATMOSPHERE = "";
  *
  * Five is the clearest cliff of any of the six sweeps: the same recall, eighteen more candidates on
  * the labelled bodies and 2.6 points of precision gone. That is what a floor is for.
+ *
+ * **Re-swept after the §45 hydration pass grew the corpus by 34 %** and none of the six floors
+ * moved: every upward step cost recall and bought nothing on ambiguity. The one exception proves
+ * the shape — doubling the planet-class floor to 40 buys 0.12 candidates for **nine species**.
  */
 export const MIN_ATMOSPHERE_OBSERVATIONS = 10;
 

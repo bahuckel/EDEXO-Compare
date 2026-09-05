@@ -15,7 +15,7 @@
  * fit in one uninterrupted run. A resumed run keeps the samples already on disk and continues from
  * the occurrence index it stopped at.
  */
-import { mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import type { SpeciesDatabase } from "../shared/types.js";
@@ -226,12 +226,54 @@ async function seenSystemsFromSamples(outDir: string, upTo: number): Promise<Map
   return seen;
 }
 
+/**
+ * Is this occurrence's system already on disk?
+ *
+ * The slug is a pure function of the system name, so this is a single `stat`-shaped read rather
+ * than a directory listing — and it is what stops a fresh run re-asking EDSM for 2,738 systems it
+ * already has.
+ */
+async function cachedSystemFileFor(systemName: string): Promise<string | undefined> {
+  const file = `${systemFileSlug(systemName)}.json`;
+  try {
+    await access(join(rawSystemsDir(), file));
+    return file;
+  } catch {
+    return undefined;
+  }
+}
+
+/** An occurrence already hydrated on a previous run: counted, not refetched and not rewritten. */
+async function readSamplePack(
+  outDir: string,
+  index: number,
+): Promise<{ systemName?: string; systemCacheFile?: string; hasTargetBody: boolean } | null> {
+  try {
+    const pack = JSON.parse(await readFile(join(outDir, `sample_${index}.json`), "utf8")) as {
+      systemName?: string;
+      systemCacheFile?: string;
+      context?: { targetBody?: unknown };
+    };
+    return {
+      systemName: pack.systemName,
+      systemCacheFile: pack.systemCacheFile,
+      hasTargetBody: Boolean(pack.context?.targetBody),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export interface HydrateResult {
   speciesLabel: string;
   occurrences: number;
   fetched: number;
   /** Occurrences whose body could not be found in the EDSM response. */
   unmatched: number;
+  /** Occurrences already on disk from an earlier run, counted without any work. */
+  reused: number;
+  /** Systems actually requested from EDSM this run — the only number that costs anyone anything. */
+  fetchedFromEdsm: number;
   /** True when EDSM rate limiting stopped the run — the checkpoint holds the resume point. */
   halted: boolean;
 }
@@ -239,8 +281,18 @@ export interface HydrateResult {
 /**
  * Fetch every occurrence of one species from EDSM into `raw/planets/<slug>/sample_N.json`.
  *
- * Resumable: a run that stopped at occurrence 900 of 3,000 restarts there rather than re-fetching
- * 900 systems, which matters because EDSM's rate limit makes a full pass take hours.
+ * Resumable three ways over, because EDSM's rate limit makes a full pass take hours and the corpus
+ * has now outlived several of them:
+ *
+ * 1. **The checkpoint** — a run that stopped at occurrence 900 of 3,000 restarts there.
+ * 2. **The sample pack** — an occurrence already on disk is counted and skipped, not rewritten.
+ * 3. **The system cache** — `raw/systems/` is consulted by name before any request goes out.
+ *
+ * Only the first of those existed at first, and it was the weakest: checkpoints are cleared on a
+ * clean finish, so the next run started at zero with an empty seen-map and asked EDSM again for
+ * every system it already had on disk. With 2,738 of 2,993 systems cached that was **~55 minutes of
+ * requests to be told what the machine already knew** — and it is the reason §45's hydration pass
+ * looked like an hours-long job rather than a minutes-long one.
  */
 export async function hydrateSpecies(
   ctx: FeederContext,
@@ -261,15 +313,37 @@ export async function hydrateSpecies(
     occurrences: occ.length,
     fetched: 0,
     unmatched: 0,
+    reused: 0,
+    fetchedFromEdsm: 0,
     halted: false,
   };
+
+  /** Checkpoint every this many occurrences; a resume redoes at most that many cached ones. */
+  const CHECKPOINT_EVERY = 50;
+  let sinceCheckpoint = 0;
 
   for (let i = start; i < occ.length; i++) {
     const o = occ[i]!;
     try {
-      let cacheFile = seen.get(o.systemName);
+      const existing = await readSamplePack(outDir, i);
+      if (existing) {
+        if (existing.hasTargetBody) result.fetched++;
+        else result.unmatched++;
+        result.reused++;
+        if (existing.systemName && existing.systemCacheFile) {
+          seen.set(existing.systemName, existing.systemCacheFile);
+        }
+        if (++sinceCheckpoint >= CHECKPOINT_EVERY) {
+          await writeCheckpoint(speciesLabel, i + 1);
+          sinceCheckpoint = 0;
+        }
+        continue;
+      }
+
+      let cacheFile = seen.get(o.systemName) ?? (await cachedSystemFileFor(o.systemName));
       let sysJson: unknown;
       if (cacheFile) {
+        seen.set(o.systemName, cacheFile);
         sysJson = JSON.parse(await readFile(join(rawSystemsDir(), cacheFile), "utf8"));
       } else {
         sysJson = await withEdsmGate(() =>
@@ -281,6 +355,7 @@ export async function hydrateSpecies(
         cacheFile = `${systemFileSlug(o.systemName)}.json`;
         seen.set(o.systemName, cacheFile);
         await writeFile(join(rawSystemsDir(), cacheFile), JSON.stringify(sysJson, null, 2), "utf8");
+        result.fetchedFromEdsm++;
       }
 
       const context = extractPlanetContext(sysJson, o.bodyName);
@@ -302,6 +377,7 @@ export async function hydrateSpecies(
       if (context.targetBody) result.fetched++;
       else result.unmatched++;
       await writeCheckpoint(speciesLabel, i + 1);
+      sinceCheckpoint = 0;
     } catch (e) {
       if (isEdsmRateLimitExhausted(e)) {
         // The checkpoint already points at this occurrence; stop rather than burn the rest of the
@@ -313,6 +389,7 @@ export async function hydrateSpecies(
       onProgress?.(`    skipped ${o.systemName} — ${o.bodyName}: ${String(e)}`);
       result.unmatched++;
       await writeCheckpoint(speciesLabel, i + 1);
+      sinceCheckpoint = 0;
     }
   }
 
@@ -382,7 +459,9 @@ export async function runPipeline(
       if (!opts?.skipHydrate) {
         const h = await hydrateSpecies(ctx, label, log);
         report.hydrated.push(h);
-        log(`    hydrated ${h.fetched}/${h.occurrences} (${h.unmatched} unmatched)`);
+        log(
+          `    hydrated ${h.fetched}/${h.occurrences} (${h.unmatched} unmatched, ${h.reused} already on disk, ${h.fetchedFromEdsm} fetched from EDSM)`,
+        );
         if (h.halted) {
           report.halted = true;
           log("    EDSM rate limit reached — run again later to resume from the checkpoint.");

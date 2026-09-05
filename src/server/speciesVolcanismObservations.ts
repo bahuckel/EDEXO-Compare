@@ -42,6 +42,10 @@ export const NO_VOLCANISM = "none";
  * | 3 | 96.5 % | 7.47 |
  * | **5** | **96.5 %** | **7.46** |
  * | 20 | 96.0 % | 7.45 (rescues nothing) |
+ *
+ * **Re-swept after the §45 hydration pass grew the corpus by 34 %** and none of the six floors
+ * moved: every upward step cost recall and bought nothing on ambiguity. The one exception proves
+ * the shape — doubling the planet-class floor to 40 buys 0.12 candidates for **nine species**.
  */
 export const MIN_VOLCANISM_OBSERVATIONS = 5;
 

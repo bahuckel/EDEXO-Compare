@@ -39,6 +39,10 @@ const TEMPERATURE_PATH = "body.surfaceTemperature";
  *
  * The same number the planet-class rescue landed on (§40), and the same floor the per-atmosphere
  * bands use (§24.1) — twenty is where this project keeps deciding a distribution becomes believable.
+ *
+ * **Re-swept after the §45 hydration pass grew the corpus by 34 %** and none of the six floors
+ * moved: every upward step cost recall and bought nothing on ambiguity. The one exception proves
+ * the shape — doubling the planet-class floor to 40 buys 0.12 candidates for **nine species**.
  */
 export const MIN_TEMPERATURE_OBSERVATIONS = 20;
 

@@ -43,6 +43,10 @@ const PLANET_CLASS_PATH = "body.subType";
  * Twenty keeps every species the lower floors recover and carries the least ambiguity of the three;
  * at fifty the recall starts falling again. The smallest real case sits comfortably above it —
  * Tussock ignis has 28 High metal content bodies, Tussock capillum 28 Rocky ice.
+ *
+ * **Re-swept after the §45 hydration pass grew the corpus by 34 %** and none of the six floors
+ * moved: every upward step cost recall and bought nothing on ambiguity. The one exception proves
+ * the shape — doubling the planet-class floor to 40 buys 0.12 candidates for **nine species**.
  */
 export const MIN_CLASS_OBSERVATIONS = 20;
 

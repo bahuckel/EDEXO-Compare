@@ -43,6 +43,10 @@ const GRAVITY_PATH = "body.gravity";
  *
  * Five buys nothing recall does not already have at ten, and costs a candidate somewhere; twenty
  * drops one of the two finds this exists for.
+ *
+ * **Re-swept after the §45 hydration pass grew the corpus by 34 %** and none of the six floors
+ * moved: every upward step cost recall and bought nothing on ambiguity. The one exception proves
+ * the shape — doubling the planet-class floor to 40 buys 0.12 candidates for **nine species**.
  */
 export const MIN_GRAVITY_OBSERVATIONS = 10;
 

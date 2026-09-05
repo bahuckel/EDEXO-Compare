@@ -370,6 +370,7 @@
         "frutexa_frutexa_metallicum",
         "stratum_stratum_paleas",
         "tubus_tubus_compagibus",
+        "tussock_tussock_ignis",
         "tussock_tussock_pennatis",
         "tussock_tussock_propagito",
         "tussock_tussock_ventusa"
@@ -419,7 +420,6 @@
         "tussock_tussock_catena",
         "tussock_tussock_cultro",
         "tussock_tussock_divisa",
-        "tussock_tussock_ignis",
         "tussock_tussock_stigmasis",
         "tussock_tussock_virgam"
       ]
