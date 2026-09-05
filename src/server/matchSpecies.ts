@@ -27,6 +27,7 @@ import {
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
 import { observedOnPlanetClass } from "./speciesPlanetClassObservations.js";
 import { observedAtTemperature } from "./speciesTemperatureObservations.js";
+import { observedWithVolcanism } from "./speciesVolcanismObservations.js";
 import {
   hostStarVerdict,
   speciesHostStarObservations,
@@ -380,29 +381,55 @@ export function speciesMatchesExcludingTempPressure(
   const criteriaVolcanoFragments = !!(c.volcanismIncludes && c.volcanismIncludes.length > 0);
   const explicitVolcanoRequired = c.volcanismActiveRequired === true;
 
+  /**
+   * What the corpus has watched this species grow with, which overrules both codex claims about
+   * volcanism — that there is any, and which kind (§42).
+   *
+   * Bacterium tela is why the first claim needs overruling: its codex row requires volcanism and 177
+   * of its 214 observed bodies have none. Fumerola extremus is why the second does: 10 of its 43 are
+   * metallic magma, which its fragment list does not admit.
+   */
+  const volcanismSeen = observedWithVolcanism(entry, scan.Volcanism);
+
   if (
     (genusNeedsVolcano || criteriaVolcanoFragments || explicitVolcanoRequired) &&
     !journalReportsAnyVolcanism(scan)
   ) {
-    failures.push({
-      field: "Volcanism",
-      detail: genusNeedsVolcano
-        ? "This genus requires active volcanism; journal has an empty or missing Volcanism field (treated as no volcanism)."
-        : explicitVolcanoRequired && !criteriaVolcanoFragments
-          ? "Species criteria require active volcanism; journal has none listed."
-          : `Species criteria require volcanism (${(c.volcanismIncludes ?? []).join(" / ")}); journal has no volcanism listed.`,
-    });
+    /**
+     * Deliberately *not* rescued by observation, unlike the type below.
+     *
+     * Bacterium tela has 177 of 214 observed bodies with no volcanism against a codex row that
+     * requires some, so the row looks as wrong as the others in this family. Overruling it was built
+     * and measured: one more species found, 0.96 more candidates on every body, and precision down
+     * 6.6 points — "requires volcanism" is load-bearing across many species at once in a way the
+     * type list is not.
+     */
+    {
+      failures.push({
+        field: "Volcanism",
+        detail: genusNeedsVolcano
+          ? "This genus requires active volcanism; journal has an empty or missing Volcanism field (treated as no volcanism)."
+          : explicitVolcanoRequired && !criteriaVolcanoFragments
+            ? "Species criteria require active volcanism; journal has none listed."
+            : `Species criteria require volcanism (${(c.volcanismIncludes ?? []).join(" / ")}); journal has no volcanism listed.`,
+      });
+    }
   }
 
   if (criteriaVolcanoFragments) {
     const okV = volcanismJournalMatchesFragments(scan.Volcanism, c.volcanismIncludes!);
-    if (!okV) {
+    if (okV) {
+      reasons.push({ field: "Volcanism", detail: scan.Volcanism || "" });
+    } else if (volcanismSeen) {
+      reasons.push({
+        field: "Volcanism",
+        detail: `${scan.Volcanism || "(none)"} — outside the codex list, but ${volcanismSeen.observations} of ${volcanismSeen.total} observed bodies for this species have it.`,
+      });
+    } else {
       failures.push({
         field: "Volcanism",
         detail: `Need fragment: ${c.volcanismIncludes!.join(" / ")}; journal: ${scan.Volcanism || "(empty)"}`,
       });
-    } else {
-      reasons.push({ field: "Volcanism", detail: scan.Volcanism || "" });
     }
   } else if (genusNeedsVolcano && journalReportsAnyVolcanism(scan)) {
     reasons.push({ field: "Volcanism", detail: scan.Volcanism || "" });
