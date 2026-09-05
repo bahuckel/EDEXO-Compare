@@ -2763,11 +2763,13 @@ button.data-value-pill.data-value-pill--clickable:active {
   border-top: none;
 }
 
+/* Hugs its image rather than stretching to the detail column: the image inside is a fixed 16:9 box,
+   so a growing button left a slab of its own dark background under every photo. */
 .species-thumb-btn--compact {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
   min-height: 0;
   width: 100%;
@@ -8817,7 +8819,11 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   height: auto;
   min-height: 0;
   aspect-ratio: 16 / 9;
-  object-fit: cover;
+  /* `contain`, not `cover`: the box is fixed so the grid keeps its rhythm, and the whole frame is
+     shown instead of a centre crop. 27 of the 96 photos are portrait — `cover` was cutting the top
+     and bottom off every one of them. The letterbox matches the button behind it. */
+  object-fit: contain;
+  background: #050508;
 }
 
 .species-compact-payout {
