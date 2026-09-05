@@ -2763,13 +2763,14 @@ button.data-value-pill.data-value-pill--clickable:active {
   border-top: none;
 }
 
-/* Hugs its image rather than stretching to the detail column: the image inside is a fixed 16:9 box,
-   so a growing button left a slab of its own dark background under every photo. */
+/* Grows to fill what the media column has left after the Value block, and the image fills the
+   button. The card's height comes from the detail column, so this is the only way the photo can use
+   that height instead of leaving a dead strip of dark panel below it. */
 .species-thumb-btn--compact {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
   width: 100%;
@@ -8812,20 +8813,23 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   justify-content: flex-start;
 }
 
+/* Fills the media column, centred, cropping what does not fit.
+ *
+ * Owner's choice of the three: a fixed 16:9 box left 75-109 px of empty dark column under the Value
+ * block, `contain` letterboxed the 27 photos that are not 16:9, and `fill` stretched them by an
+ * amount that changed from card to card because the space does. `cover` keeps every photo's own
+ * proportions and loses its edges instead, which is the one that looks like a photograph.
+ *
+ * No `aspect-ratio` here on purpose: the height comes from the column, so the crop is whatever the
+ * detail column's height makes it. */
 .body-pane--compact-candidates .species-card--compact .species-img--compact,
 .species-img--compact {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   width: 100%;
-  height: auto;
+  height: 100%;
   min-height: 0;
-  aspect-ratio: 16 / 9;
-  /* Owner's call: fill the box, centred, and let the 27 off-ratio photos stretch rather than lose
-     anything. `cover` cropped 13-50 % off each of them; `contain` kept every pixel but letterboxed
-     them, and the letterbox is what the compact grid could not carry. `fill` distorts instead —
-     Touradon albata (1.04) stretches widest, Tubus compagibus (2.39) squeezes — which is the trade
-     taken knowingly. 69 of the 96 are exactly 16:9 and are untouched by any of this.
-     The background stays for the moment between layout and decode. */
-  object-fit: fill;
+  aspect-ratio: auto;
+  object-fit: cover;
   object-position: center;
   background: #050508;
 }
