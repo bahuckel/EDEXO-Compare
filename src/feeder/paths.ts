@@ -21,10 +21,31 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getProjectRoot } from "../server/paths.js";
 
-const here = dirname(fileURLToPath(import.meta.url));
-/** `src/feeder/` → repository root. */
-export const PROJECT_ROOT = resolve(here, "..", "..");
+/**
+ * The repository root, resolved in a way the esbuild bundle survives.
+ *
+ * `import.meta.url` is the obvious answer and it is a trap here: `scripts/bundle.mjs` emits CJS, and
+ * esbuild replaces `import.meta` with an empty object in that format. `fileURLToPath(undefined)`
+ * then throws *"The 'path' argument must be of type string or an instance of URL"* at import time —
+ * so the packaged app refused to start at all, from the moment the Options status panel pulled this
+ * module into the server bundle. `openUrl.ts` carries a comment warning about exactly this hazard
+ * for a third-party package; this file walked into it anyway.
+ *
+ * Under ESM (tsx, vitest) the meta URL is used as before, so the feeder CLI and the tests keep the
+ * repository root they had. In the bundle it falls through to the app's own resolver, which already
+ * knows about the Electron, portable, pkg and dev layouts.
+ */
+function resolveProjectRoot(): string {
+  const metaUrl = (import.meta as unknown as { url?: string } | undefined)?.url;
+  if (typeof metaUrl === "string" && metaUrl) {
+    return resolve(dirname(fileURLToPath(metaUrl)), "..", "..");
+  }
+  return getProjectRoot();
+}
+
+export const PROJECT_ROOT = resolveProjectRoot();
 
 /** Candidate corpus locations, most specific first. */
 function candidateDataDirs(): string[] {
