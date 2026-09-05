@@ -14,6 +14,9 @@ export default defineConfig({
     proxy: {
       "/api": { target: "http://127.0.0.1:7111", changeOrigin: true },
       "/photos": { target: "http://127.0.0.1:7111", changeOrigin: true },
+      // The species images the panel actually asks for. Without this the dev server answers with
+      // its SPA fallback — HTTP 200, an HTML body, and every card showing "Image failed to load".
+      "/species-photos": { target: "http://127.0.0.1:7111", changeOrigin: true },
       "/ws": { target: "ws://127.0.0.1:7111", ws: true, changeOrigin: true },
     },
   },

@@ -7,6 +7,31 @@ import { useValueFlash } from "./ui/useValueFlash";
 import { SkeletonPanel } from "./ui/Skeleton";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 
+/*
+ * React first, above the `lazy()` calls below.
+ *
+ * Vite's dev server pre-bundles React as CJS and rewrites this import into a `const` at the import's
+ * own position; with the import further down the file, the `lazy()` calls ran first and the client
+ * died on "Cannot access 'lazy' before initialization" — a blank page in `npm run dev`, though the
+ * production build hoists correctly and was fine.
+ */
+import {
+  Fragment,
+  useCallback,
+  lazy,
+  memo,
+  Suspense,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from "react";
+
 /**
  * Modal-only code, split out of the initial bundle.
  *
@@ -53,22 +78,6 @@ import {
 } from "@shared/journalHistoryPreset";
 import { formatGenusStarColorSoftOneLine } from "@shared/genusStarColorSoft";
 import { candidateMorphColorShortLabel } from "@shared/candidateSpawnHints";
-import {
-  Fragment,
-  useCallback,
-  lazy,
-  memo,
-  Suspense,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
-  type ReactNode,
-} from "react";
 import { createPortal } from "react-dom";
 import {
   atmospherePillStyle,
