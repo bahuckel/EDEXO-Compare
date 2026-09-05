@@ -8819,10 +8819,14 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   height: auto;
   min-height: 0;
   aspect-ratio: 16 / 9;
-  /* `contain`, not `cover`: the box is fixed so the grid keeps its rhythm, and the whole frame is
-     shown instead of a centre crop. 27 of the 96 photos are portrait — `cover` was cutting the top
-     and bottom off every one of them. The letterbox matches the button behind it. */
-  object-fit: contain;
+  /* Owner's call: fill the box, centred, and let the 27 off-ratio photos stretch rather than lose
+     anything. `cover` cropped 13-50 % off each of them; `contain` kept every pixel but letterboxed
+     them, and the letterbox is what the compact grid could not carry. `fill` distorts instead —
+     Touradon albata (1.04) stretches widest, Tubus compagibus (2.39) squeezes — which is the trade
+     taken knowingly. 69 of the 96 are exactly 16:9 and are untouched by any of this.
+     The background stays for the moment between layout and decode. */
+  object-fit: fill;
+  object-position: center;
   background: #050508;
 }
 
