@@ -3,7 +3,7 @@
   "speciesLabel": "Aleoida spica",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T17:41:19.379Z",
+  "generatedAt": "2026-09-05T18:15:02.311Z",
   "sampleCount": 11,
   "numerics": {
     "body.distanceToArrival": {
@@ -73,7 +73,7 @@
     "body.solidComposition.Metal": {
       "min": 8.83,
       "max": 33.27,
-      "mean": 14.612727272727273,
+      "mean": 14.612727272727277,
       "count": 11,
       "mode": 8.98,
       "modeCount": 1
@@ -89,7 +89,7 @@
     "body.orbitalPeriod": {
       "min": 3.670572751655093,
       "max": 217.04064889086808,
-      "mean": 34.061021049217175,
+      "mean": 34.06102104921717,
       "count": 11,
       "mode": 5.675492118356481,
       "modeCount": 1
@@ -105,7 +105,7 @@
     "body.orbitalEccentricity": {
       "min": 0,
       "max": 0.00286,
-      "mean": 0.0008855454545454547,
+      "mean": 0.0008855454545454545,
       "count": 11,
       "mode": 0,
       "modeCount": 3
@@ -129,7 +129,7 @@
     "body.rotationalPeriod": {
       "min": -4.388065043171296,
       "max": 57.31705720214121,
-      "mean": 13.791913710356692,
+      "mean": 13.791913710356694,
       "count": 11,
       "mode": 5.67595488650463,
       "modeCount": 1
@@ -161,7 +161,7 @@
     "body.materials.Carbon": {
       "min": 13.12,
       "max": 17.15,
-      "mean": 15.383636363636366,
+      "mean": 15.383636363636363,
       "count": 11,
       "mode": 15.74,
       "modeCount": 1
@@ -169,7 +169,7 @@
     "body.materials.Nickel": {
       "min": 14.43,
       "max": 18.61,
-      "mean": 15.382727272727276,
+      "mean": 15.382727272727273,
       "count": 11,
       "mode": 14.52,
       "modeCount": 2
@@ -241,7 +241,7 @@
     "body.materials.Antimony": {
       "min": 1.17,
       "max": 1.27,
-      "mean": 1.2133333333333332,
+      "mean": 1.2133333333333334,
       "count": 3,
       "mode": 1.2,
       "modeCount": 1
@@ -254,28 +254,20 @@
       "mode": 1.08,
       "modeCount": 1
     },
-    "body.materials.Arsenic": {
-      "min": 2.32,
-      "max": 2.68,
-      "mean": 2.4633333333333334,
-      "count": 3,
-      "mode": 2.68,
-      "modeCount": 1
-    },
     "body.materials.Zirconium": {
       "min": 2.41,
       "max": 2.86,
       "mean": 2.635,
       "count": 2,
-      "mode": 2.41,
+      "mode": 2.86,
       "modeCount": 1
     },
-    "body.materials.Cadmium": {
-      "min": 1.48,
-      "max": 1.73,
-      "mean": 1.6,
-      "count": 4,
-      "mode": 1.61,
+    "body.materials.Arsenic": {
+      "min": 2.32,
+      "max": 2.68,
+      "mean": 2.4633333333333334,
+      "count": 3,
+      "mode": 2.32,
       "modeCount": 1
     },
     "body.materials.Niobium": {
@@ -308,6 +300,14 @@
       "mean": 1.21,
       "count": 5,
       "mode": 1.15,
+      "modeCount": 1
+    },
+    "body.materials.Cadmium": {
+      "min": 1.48,
+      "max": 1.73,
+      "mean": 1.6,
+      "count": 4,
+      "mode": 1.73,
       "modeCount": 1
     },
     "body.materials.Selenium": {
@@ -362,14 +362,14 @@
     "exo.host_star_spectral_primary": {
       "A6": 1,
       "A8": 2,
-      "Neutron Star": 1,
       "F1": 1,
       "M5": 1,
       "L8": 1,
       "F8": 1,
       "K5": 1,
       "K1": 1,
-      "Y2": 1
+      "Y2": 1,
+      "Neutron Star": 1
     },
     "exo.host_star_source": {
       "designation": 3,
@@ -378,14 +378,14 @@
     "exo.system_primary_spectral": {
       "A6": 1,
       "A8": 2,
-      "Neutron Star": 1,
       "F1": 1,
       "M5": 1,
       "M0": 1,
       "F8": 1,
       "K5": 1,
       "K1": 1,
-      "F4": 1
+      "F4": 1,
+      "Neutron Star": 1
     }
   },
   "materials": {},
@@ -402,7 +402,7 @@
     "metal": {
       "min": 8.83,
       "max": 33.27,
-      "mean": 14.612727272727273,
+      "mean": 14.612727272727277,
       "count": 11,
       "mode": 8.98,
       "modeCount": 1
@@ -448,13 +448,13 @@
     "body.materials.Zinc: typical (modal) 5.190000 (2/5 samples); range 5.19 … 5.53",
     "body.materials.Antimony: typical (modal) 1.200000 (1/3 samples); range 1.17 … 1.27",
     "body.materials.Tungsten: typical (modal) 1.080000 (1/3 samples); range 1.08 … 1.14",
-    "body.materials.Arsenic: typical (modal) 2.680000 (1/3 samples); range 2.32 … 2.68",
-    "body.materials.Zirconium: typical (modal) 2.410000 (1/2 samples); range 2.41 … 2.86",
-    "body.materials.Cadmium: typical (modal) 1.610000 (1/4 samples); range 1.48 … 1.73",
+    "body.materials.Zirconium: typical (modal) 2.860000 (1/2 samples); range 2.41 … 2.86",
+    "body.materials.Arsenic: typical (modal) 2.320000 (1/3 samples); range 2.32 … 2.68",
     "body.materials.Niobium: typical (modal) 1.390000 (2/5 samples); range 1.3 … 1.68",
     "body.materials.Tellurium: typical (modal) 1.340000 (1/1 samples); range 1.34 … 1.34",
     "body.materials.Chromium: typical (modal) 8.670000 (1/4 samples); range 8.58 … 9.14",
     "body.materials.Yttrium: typical (modal) 1.150000 (1/5 samples); range 1.14 … 1.33",
+    "body.materials.Cadmium: typical (modal) 1.730000 (1/4 samples); range 1.48 … 1.73",
     "body.materials.Selenium: typical (modal) 2.870000 (1/1 samples); range 2.87 … 2.87",
     "body.materials.Mercury: typical (modal) 0.840000 (1/1 samples); range 0.84 … 0.84",
     "body.materials.Technetium: typical (modal) 0.690000 (1/1 samples); range 0.69 … 0.69"
@@ -896,24 +896,6 @@
       0,
       0
     ],
-    "body.materials.Arsenic": [
-      0,
-      0,
-      2,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0
-    ],
     "body.materials.Zirconium": [
       0,
       0,
@@ -931,6 +913,24 @@
       0,
       0,
       1
+    ],
+    "body.materials.Arsenic": [
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
     ],
     "body.materials.Chromium": [
       0,
@@ -1564,28 +1564,6 @@
         1
       ]
     },
-    "body.materials.Arsenic": {
-      "min": 2.32,
-      "max": 2.68,
-      "counts": [
-        1,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1
-      ]
-    },
     "body.materials.Zirconium": {
       "min": 2.41,
       "max": 2.86,
@@ -1608,19 +1586,19 @@
         1
       ]
     },
-    "body.materials.Cadmium": {
-      "min": 1.48,
-      "max": 1.73,
+    "body.materials.Arsenic": {
+      "min": 2.32,
+      "max": 2.68,
       "counts": [
         1,
         0,
         0,
-        0,
-        0,
-        0,
         1,
         0,
-        1,
+        0,
+        0,
+        0,
+        0,
         0,
         0,
         0,
@@ -1687,6 +1665,28 @@
         1,
         0,
         0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "body.materials.Cadmium": {
+      "min": 1.48,
+      "max": 1.73,
+      "counts": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
         0,
         0,
         0,

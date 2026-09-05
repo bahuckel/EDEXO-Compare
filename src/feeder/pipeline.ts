@@ -40,6 +40,7 @@ import {
   rawSystemsDir,
 } from "./paths.js";
 import { writeFeederStatusSnapshot } from "./statusSnapshot.js";
+import { looseSampleName, packSpeciesSamples, readPackedSamples } from "./samplePacks.js";
 
 export interface FeederContext {
   store: FeederStore;
@@ -243,24 +244,48 @@ async function cachedSystemFileFor(systemName: string): Promise<string | undefin
   }
 }
 
-/** An occurrence already hydrated on a previous run: counted, not refetched and not rewritten. */
+interface HydratedOccurrence {
+  systemName?: string;
+  systemCacheFile?: string;
+  hasTargetBody: boolean;
+}
+
+function describeOccurrence(pack: {
+  systemName?: string;
+  systemCacheFile?: string;
+  context?: unknown;
+}): HydratedOccurrence {
+  const ctx = pack.context as { targetBody?: unknown } | undefined;
+  return {
+    systemName: pack.systemName,
+    systemCacheFile: pack.systemCacheFile,
+    hasTargetBody: Boolean(ctx?.targetBody),
+  };
+}
+
+/**
+ * An occurrence already hydrated on a previous run: counted, not refetched and not rewritten.
+ *
+ * Checks the loose file first and the archive second, because a species hydrated since its last
+ * `feeder pack` has its newest records loose. Missing this would make packing look like data loss
+ * and send the next run back to EDSM for the whole species.
+ */
 async function readSamplePack(
   outDir: string,
   index: number,
-): Promise<{ systemName?: string; systemCacheFile?: string; hasTargetBody: boolean } | null> {
+  archive: Map<number, { systemName?: string; systemCacheFile?: string; context?: unknown }>,
+): Promise<HydratedOccurrence | null> {
   try {
-    const pack = JSON.parse(await readFile(join(outDir, `sample_${index}.json`), "utf8")) as {
-      systemName?: string;
-      systemCacheFile?: string;
-      context?: { targetBody?: unknown };
-    };
-    return {
-      systemName: pack.systemName,
-      systemCacheFile: pack.systemCacheFile,
-      hasTargetBody: Boolean(pack.context?.targetBody),
-    };
+    return describeOccurrence(
+      JSON.parse(await readFile(join(outDir, looseSampleName(index)), "utf8")) as {
+        systemName?: string;
+        systemCacheFile?: string;
+        context?: unknown;
+      },
+    );
   } catch {
-    return null;
+    const archived = archive.get(index);
+    return archived ? describeOccurrence(archived) : null;
   }
 }
 
@@ -308,6 +333,7 @@ export async function hydrateSpecies(
 
   const start = Math.min(await readCheckpoint(speciesLabel), occ.length);
   const seen = await seenSystemsFromSamples(outDir, start);
+  const archive = await readPackedSamples(outDir);
   const result: HydrateResult = {
     speciesLabel,
     occurrences: occ.length,
@@ -325,7 +351,7 @@ export async function hydrateSpecies(
   for (let i = start; i < occ.length; i++) {
     const o = occ[i]!;
     try {
-      const existing = await readSamplePack(outDir, i);
+      const existing = await readSamplePack(outDir, i, archive);
       if (existing) {
         if (existing.hasTargetBody) result.fetched++;
         else result.unmatched++;
@@ -360,7 +386,7 @@ export async function hydrateSpecies(
 
       const context = extractPlanetContext(sysJson, o.bodyName);
       await writeFile(
-        join(outDir, `sample_${i}.json`),
+        join(outDir, looseSampleName(i)),
         JSON.stringify(
           {
             systemName: o.systemName,
@@ -477,6 +503,42 @@ export async function runPipeline(
     }
   }
   return report;
+}
+
+export interface PackReport {
+  speciesLabel: string;
+  records: number;
+  folded: number;
+  looseBytes: number;
+  packedBytes: number;
+}
+
+/**
+ * Fold every species' loose sample files into its archive.
+ *
+ * Separate from `run` on purpose: hydration writes one file per sighting because that is what makes
+ * it resumable after a rate limit, and packing is a tidy-up that should never be entangled with a
+ * network run that might halt halfway.
+ */
+export async function packSamples(
+  ctx: FeederContext,
+  labels: string[],
+  onProgress?: ProgressFn,
+): Promise<PackReport[]> {
+  const out: PackReport[] = [];
+  for (const speciesLabel of labels) {
+    const dir = join(rawPlanetsDir(), speciesFileSlug(speciesLabel));
+    const r = await packSpeciesSamples(dir);
+    if (r.folded === 0 && r.records === 0) continue;
+    out.push({ speciesLabel, ...r });
+    if (r.folded > 0) {
+      onProgress?.(
+        `  packed ${speciesLabel.padEnd(26)} ${r.folded} files → ${r.records} records, ` +
+          `${(r.looseBytes / 1e6).toFixed(1)} MB → ${(r.packedBytes / 1e6).toFixed(2)} MB`,
+      );
+    }
+  }
+  return out;
 }
 
 /**

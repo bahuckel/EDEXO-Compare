@@ -10,6 +10,7 @@
  *   npm run feeder -- import <file.csv>       the one manual step: import, then run what it touched
  *   npm run feeder -- run [species...]        hydrate + analyse + install (default: everything)
  *   npm run feeder -- rebuild [species...]    rebuild from packs already on disk, no EDSM calls
+ *   npm run feeder -- pack [species...]       fold loose sample files into the per-species archive
  *   npm run feeder -- edges                   candidate game thresholds, for review only
  *   npm run feeder -- cooccurrence            rebuild the genus co-occurrence table on its own
  *   npm run feeder -- coords                  fetch galactic coordinates for the corpus systems
@@ -35,6 +36,7 @@ import {
   importCsv,
   openFeeder,
   recordStatusSnapshot,
+  packSamples,
   runPipeline,
   speciesWithSamples,
   type FeederContext,
@@ -356,6 +358,40 @@ function finish(report: RunReport): void {
   if (bad) process.exitCode = 1;
 }
 
+/**
+ * Fold the loose per-sighting JSON into one gzipped archive per species.
+ *
+ * Idempotent and interruptible: loose files are deleted only after the archive is in place, so a
+ * killed run is simply re-runnable. Readers merge archive and loose, so a species can be packed and
+ * then hydrated again without a repack.
+ */
+async function cmdPack(): Promise<void> {
+  requireCorpus();
+  const ctx = await openFeeder();
+  const labels = positional.length ? positional : Object.keys(ctx.speciesIndex).sort();
+  console.log(`
+packing ${labels.length} species in ${feederDataDir()}
+`);
+
+  const reports = await packSamples(ctx, labels, log);
+  const folded = reports.reduce((a, r) => a + r.folded, 0);
+  const loose = reports.reduce((a, r) => a + r.looseBytes, 0);
+  const packed = reports.reduce((a, r) => a + r.packedBytes, 0);
+  const records = reports.reduce((a, r) => a + r.records, 0);
+
+  console.log("");
+  if (folded === 0) {
+    console.log(`nothing loose to pack — ${records} records already archived`);
+    return;
+  }
+  console.log(`folded           ${folded} files into ${reports.length} archives (${records} records)`);
+  console.log(
+    `size             ${(loose / 1e6).toFixed(1)} MB → ${(packed / 1e6).toFixed(1)} MB ` +
+      `(${((packed / loose) * 100).toFixed(1)}%)`,
+  );
+  console.log("\nRun `npm run feeder -- rebuild` to prove the archive reads back identically.");
+}
+
 switch (command) {
   case "status":
     await cmdStatus();
@@ -369,6 +405,9 @@ switch (command) {
   case "rebuild":
     await cmdRebuild();
     break;
+  case "pack":
+    await cmdPack();
+    break;
   case "edges":
     await cmdEdges();
     break;
@@ -381,7 +420,7 @@ switch (command) {
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | edges | cooccurrence | coords",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords",
     );
     process.exit(1);
 }

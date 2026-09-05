@@ -11,6 +11,7 @@ import type { FeederStarSummary } from "./feederStarHost.js";
 import type { PlanetSampleContext } from "./profileBuilder.js";
 import type { EdsmBody } from "./edsm.js";
 import { rawSystemsDir } from "./paths.js";
+import { looseSampleIndex, readPackedSamples, type SamplePackRecord } from "./samplePacks.js";
 
 const systemStarCache = new Map<string, FeederStarSummary[] | null>();
 
@@ -56,19 +57,45 @@ function pickSystemPrimary(stars: FeederStarSummary[] | null): FeederStarSummary
   return best ?? stars[0];
 }
 
-/** Load every `sample_*.json` in `dir` as a context for the profile builder. */
-export async function loadPlanetContextsFromDir(dir: string): Promise<PlanetSampleContext[]> {
-  let files: string[];
+/**
+ * Every sighting for one species: the packed archive plus any loose packs written since.
+ *
+ * Loose wins on collision — a species hydrated after its last `feeder pack` has newer records on
+ * disk than in the archive, and a rebuild has to see them. Sorted by occurrence index so the order
+ * is the hydration order whichever side a record came from (`sample_10` before `sample_9`, as the
+ * old name sort never managed).
+ */
+async function loadSamplePackRecords(dir: string): Promise<SamplePackRecord[]> {
+  const merged = await readPackedSamples(dir);
+  let names: string[];
   try {
-    files = (await readdir(dir)).filter((f) => f.startsWith("sample_") && f.endsWith(".json"));
+    names = await readdir(dir);
   } catch {
-    throw new Error("No samples — run fetch first");
+    if (merged.size === 0) throw new Error("No samples — run fetch first");
+    names = [];
   }
-  if (files.length === 0) throw new Error("No samples — run fetch first");
+
+  for (const name of names) {
+    const i = looseSampleIndex(name);
+    if (i === null) continue;
+    try {
+      merged.set(i, { i, ...(JSON.parse(await readFile(join(dir, name), "utf8")) as object) });
+    } catch {
+      /* unreadable pack: the count in the rebuild report is what actually loaded */
+    }
+  }
+
+  if (merged.size === 0) throw new Error("No samples — run fetch first");
+  return [...merged.values()].sort((a, b) => a.i - b.i);
+}
+
+/** Load every sighting for a species — archived or loose — as a context for the profile builder. */
+export async function loadPlanetContextsFromDir(dir: string): Promise<PlanetSampleContext[]> {
+  const records = await loadSamplePackRecords(dir);
 
   const contexts: PlanetSampleContext[] = [];
-  for (const f of files.sort()) {
-    const j = JSON.parse(await readFile(join(dir, f), "utf8")) as {
+  for (const rec of records) {
+    const j = rec as SamplePackRecord & {
       bodyName?: string;
       systemName?: string;
       systemCacheFile?: string;
