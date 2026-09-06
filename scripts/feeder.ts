@@ -17,6 +17,7 @@
  *   npm run feeder -- identity [--apply]      recover body IDs from the archives; reports by default
  *   npm run feeder -- system-ids [--apply]    fill system id64 from the cache; --fetch-missing for the rest
  *   npm run feeder -- import-dump <file>      validate and import a Spansh JSONL export
+ *   npm run feeder -- eddn [--seconds=N]      consume EDDN into the body register (consumer only)
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -59,6 +60,7 @@ import { countHydratableSamples } from "../src/feeder/samplePacks.js";
 import { backfillBodyIdentity, formatBackfillReport } from "../src/feeder/bodyIdentityBackfill.js";
 import { backfillSystemId64, formatSystemId64Report } from "../src/feeder/systemId64Backfill.js";
 import { formatImportReport, importSpanshExport } from "../src/feeder/spanshImport.js";
+import { EddnConsumer, formatCounters } from "../src/server/eddn/eddnConsumer.js";
 import {
   proposeEdgesForProfile,
   SNAP_MIN_SAMPLES,
@@ -526,6 +528,54 @@ async function cmdImportDump(): Promise<void> {
   console.log("");
 }
 
+/**
+ * Consume EDDN into the body register — INCLUDE-BODY-IDS Phase 4.
+ *
+ * Runs until interrupted. Restartable without changing a count: every observation is addressed by
+ * the game's own `(SystemAddress, BodyID)`, so replaying a batch folds into the same row.
+ *
+ * `--seconds N` stops on its own, which is what the tests and a quick look use.
+ */
+async function cmdEddn(): Promise<void> {
+  requireCorpus();
+  const secondsArg = argv.find((a) => a.startsWith("--seconds="));
+  const seconds = secondsArg ? Number(secondsArg.split("=")[1]) : 0;
+  const ctx = await openFeeder();
+
+  const before = ctx.store.eddnStats();
+  console.log(`\nregister holds ${before.bodies.toLocaleString()} bodies before this run`);
+  console.log("consuming eddn.edcd.io:9500 — consumer only, nothing is uploaded. Ctrl-C to stop.\n");
+
+  const consumer = new EddnConsumer({
+    store: ctx.store,
+    onTick: (c) => console.log(`  ${formatCounters(c)}`),
+    tickMs: 15_000,
+  });
+
+  let stopping = false;
+  const finish = () => {
+    if (stopping) return;
+    stopping = true;
+    consumer.stop();
+    const after = ctx.store.eddnStats();
+    console.log(`\n${formatCounters(consumer.stats)}`);
+    console.log(
+      `\nregister now holds ${after.bodies.toLocaleString()} bodies ` +
+        `(+${(after.bodies - before.bodies).toLocaleString()})`,
+    );
+    console.log(`  with biology     ${after.withBio.toLocaleString()}`);
+    console.log(`  mapped           ${after.mapped.toLocaleString()}   unmapped ${after.unmapped.toLocaleString()}`);
+    console.log(`  walked           ${after.walked.toLocaleString()}   not walked ${after.unwalked.toLocaleString()}`);
+    console.log(`  UNOPENED         ${after.unopened.toLocaleString()}   (biology, nobody mapped, nobody landed)`);
+    console.log("");
+    process.exit(0);
+  };
+
+  process.on("SIGINT", finish);
+  consumer.start();
+  if (seconds > 0) setTimeout(finish, seconds * 1000);
+}
+
 switch (command) {
   case "status":
     await cmdStatus();
@@ -557,13 +607,16 @@ switch (command) {
   case "import-dump":
     await cmdImportDump();
     break;
+  case "eddn":
+    await cmdEddn();
+    break;
   case "system-ids":
     await cmdSystemIds();
     break;
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing] | import-dump <file.jsonl.gz> [--apply]",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing] | import-dump <file.jsonl.gz> [--apply] | eddn [--seconds=N]",
     );
     process.exit(1);
 }

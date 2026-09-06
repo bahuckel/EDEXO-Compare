@@ -189,6 +189,43 @@ function migrateSchema(db: Database): void {
    * check runs first and the index simply waits. `UNIQUE(system_id, norm_body)` stays either way:
    * belt and braces, a body with no ID still cannot duplicate by name.
    */
+  /**
+   * The EDDN body register, schema 3 (INCLUDE-BODY-IDS Phase 4).
+   *
+   * Separate from `planets` on purpose. `planets` means "a body with at least one confirmed
+   * sighting" and every profile is built from it; EDDN reports bodies nobody has identified yet, and
+   * mixing the two would change what every count in the app means. This is Store A of §2.1 — one row
+   * per physical body, keyed by the game's own identity, holding the target-ladder facts and nothing
+   * about habitat.
+   *
+   * `system_id64` is TEXT for the same reason as everywhere else: `sql.js`'s default read hands an
+   * INTEGER back as a JavaScript `number`.
+   *
+   * Footfall and mapping are tri-states with an age, and the sticky-`true` rule is enforced in the
+   * upsert rather than trusted to the caller — see `observedFlag.ts` for why `true` outranks recency.
+   */
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS eddn_bodies (
+      system_id64      TEXT NOT NULL,
+      body_id          INTEGER NOT NULL,
+      system_name      TEXT,
+      body_name        TEXT,
+      x REAL, y REAL, z REAL,
+      bio_signal_count INTEGER,
+      genuses          TEXT,      -- JSON array, as EDDN's internal names
+      is_footfalled    INTEGER,   -- NULL | 0 | 1
+      footfall_seen_at TEXT,
+      is_mapped        INTEGER,   -- NULL | 0 | 1
+      mapped_seen_at   TEXT,
+      first_seen_at    TEXT NOT NULL,
+      last_seen_at     TEXT NOT NULL,
+      PRIMARY KEY (system_id64, body_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_eddn_bodies_system ON eddn_bodies(system_id64);
+    CREATE INDEX IF NOT EXISTS idx_eddn_bodies_unwalked
+      ON eddn_bodies(is_footfalled, is_mapped) WHERE bio_signal_count > 0;
+  `);
+
   const identityDupes = queryOne<[number]>(
     db,
     `SELECT COUNT(*) FROM (SELECT 1 FROM planets WHERE body_id IS NOT NULL
@@ -667,6 +704,124 @@ export class FeederStore {
       }
     });
     return written;
+  }
+
+  /**
+   * Fold one EDDN observation into the body register.
+   *
+   * Returns whether a row was created, so a long-running consumer can report growth separately from
+   * churn. The whole statement is one upsert because the stream is the only writer and a read-then-
+   * write would race itself on a busy system.
+   *
+   * Three rules live in the SQL, not in the caller:
+   *
+   * - **`true` is sticky.** `MAX(existing, incoming)` on both flags, so a later `false` — which is
+   *   always just a staler observation — can never clear a `true`. Footfall and mapping are monotone.
+   * - **A timestamp moves only with the value it belongs to.** The `_seen_at` columns are only
+   *   rewritten when that flag actually changes state, so the age always describes the claim beside
+   *   it rather than the last time any message mentioned the body.
+   * - **Silence overwrites nothing.** Every incoming field is `COALESCE`d, so a `Scan` that says
+   *   nothing about genera leaves the genera alone.
+   */
+  upsertEddnBody(o: {
+    systemId64: string;
+    bodyId: number;
+    systemName: string | null;
+    bodyName: string | null;
+    coords: { x: number; y: number; z: number } | null;
+    bioSignalCount: number | null;
+    genuses: string[] | null;
+    footfall: boolean | null;
+    mapped: boolean | null;
+    seenAt: string;
+    createsRow: boolean;
+  }): "created" | "updated" | "ignored" {
+    const exists = queryOne<[number]>(
+      this.db,
+      "SELECT 1 FROM eddn_bodies WHERE system_id64 = ? AND body_id = ?",
+      [o.systemId64, o.bodyId],
+    );
+    // A Scan may enrich a body we already track; it may never introduce one. That is what keeps the
+    // index bounded to bodies with evidence of biology.
+    if (!exists && !o.createsRow) return "ignored";
+
+    const f = o.footfall === null ? null : o.footfall ? 1 : 0;
+    const m = o.mapped === null ? null : o.mapped ? 1 : 0;
+    const genuses = o.genuses ? JSON.stringify(o.genuses) : null;
+
+    if (!exists) {
+      runExec(
+        this.db,
+        `INSERT INTO eddn_bodies
+           (system_id64, body_id, system_name, body_name, x, y, z, bio_signal_count, genuses,
+            is_footfalled, footfall_seen_at, is_mapped, mapped_seen_at, first_seen_at, last_seen_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [
+          o.systemId64, o.bodyId, o.systemName, o.bodyName,
+          o.coords?.x ?? null, o.coords?.y ?? null, o.coords?.z ?? null,
+          o.bioSignalCount, genuses,
+          f, f === null ? null : o.seenAt,
+          m, m === null ? null : o.seenAt,
+          o.seenAt, o.seenAt,
+        ],
+      );
+      return "created";
+    }
+
+    runExec(
+      this.db,
+      `UPDATE eddn_bodies SET
+         system_name      = COALESCE(?, system_name),
+         body_name        = COALESCE(?, body_name),
+         x = COALESCE(?, x), y = COALESCE(?, y), z = COALESCE(?, z),
+         bio_signal_count = COALESCE(?, bio_signal_count),
+         genuses          = COALESCE(?, genuses),
+         footfall_seen_at = CASE WHEN ? IS NOT NULL AND COALESCE(is_footfalled, -1) != MAX(COALESCE(is_footfalled, 0), ?)
+                                 THEN ? ELSE footfall_seen_at END,
+         is_footfalled    = CASE WHEN ? IS NULL THEN is_footfalled ELSE MAX(COALESCE(is_footfalled, 0), ?) END,
+         mapped_seen_at   = CASE WHEN ? IS NOT NULL AND COALESCE(is_mapped, -1) != MAX(COALESCE(is_mapped, 0), ?)
+                                 THEN ? ELSE mapped_seen_at END,
+         is_mapped        = CASE WHEN ? IS NULL THEN is_mapped ELSE MAX(COALESCE(is_mapped, 0), ?) END,
+         last_seen_at     = ?
+       WHERE system_id64 = ? AND body_id = ?`,
+      [
+        o.systemName, o.bodyName,
+        o.coords?.x ?? null, o.coords?.y ?? null, o.coords?.z ?? null,
+        o.bioSignalCount, genuses,
+        f, f, o.seenAt,
+        f, f,
+        m, m, o.seenAt,
+        m, m,
+        o.seenAt,
+        o.systemId64, o.bodyId,
+      ],
+    );
+    return "updated";
+  }
+
+  /** What the EDDN register holds, and how much of it is actionable. */
+  eddnStats(): {
+    bodies: number;
+    withBio: number;
+    mapped: number;
+    unmapped: number;
+    walked: number;
+    unwalked: number;
+    unopened: number;
+  } {
+    const one = (sql: string) => Number(queryOne<[number]>(this.db, sql, [])?.[0] ?? 0);
+    return {
+      bodies: one("SELECT COUNT(*) FROM eddn_bodies"),
+      withBio: one("SELECT COUNT(*) FROM eddn_bodies WHERE bio_signal_count > 0"),
+      mapped: one("SELECT COUNT(*) FROM eddn_bodies WHERE is_mapped = 1"),
+      unmapped: one("SELECT COUNT(*) FROM eddn_bodies WHERE is_mapped = 0"),
+      walked: one("SELECT COUNT(*) FROM eddn_bodies WHERE is_footfalled = 1"),
+      unwalked: one("SELECT COUNT(*) FROM eddn_bodies WHERE is_footfalled = 0"),
+      // Rung 1 of the target ladder: both flags observed false, and biology present.
+      unopened: one(
+        "SELECT COUNT(*) FROM eddn_bodies WHERE bio_signal_count > 0 AND is_footfalled = 0 AND is_mapped = 0",
+      ),
+    };
   }
 
   /** How much of the corpus now carries a mapped observation. */
