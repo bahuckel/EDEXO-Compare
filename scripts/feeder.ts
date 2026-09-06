@@ -16,6 +16,7 @@
  *   npm run feeder -- coords                  fetch galactic coordinates for the corpus systems
  *   npm run feeder -- identity [--apply]      recover body IDs from the archives; reports by default
  *   npm run feeder -- system-ids [--apply]    fill system id64 from the cache; --fetch-missing for the rest
+ *   npm run feeder -- import-dump <file>      validate and import a Spansh JSONL export
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -57,6 +58,7 @@ import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
 import { countHydratableSamples } from "../src/feeder/samplePacks.js";
 import { backfillBodyIdentity, formatBackfillReport } from "../src/feeder/bodyIdentityBackfill.js";
 import { backfillSystemId64, formatSystemId64Report } from "../src/feeder/systemId64Backfill.js";
+import { formatImportReport, importSpanshExport } from "../src/feeder/spanshImport.js";
 import {
   proposeEdgesForProfile,
   SNAP_MIN_SAMPLES,
@@ -497,6 +499,33 @@ async function cmdSystemIds(): Promise<void> {
   console.log("");
 }
 
+/**
+ * Import a Spansh JSONL export — INCLUDE-BODY-IDS Phase 8, the importer half.
+ *
+ * Four gates run before anything is written, and a single failure aborts the whole file: a
+ * partially-imported corpus is worse than none, because it looks finished.
+ */
+async function cmdImportDump(): Promise<void> {
+  requireCorpus();
+  const file = positional[0];
+  if (!file) {
+    console.error("Usage: npm run feeder -- import-dump <export.jsonl.gz> [--apply]");
+    process.exit(1);
+  }
+  if (!existsSync(file)) {
+    console.error(`No such file: ${file}`);
+    process.exit(1);
+  }
+  const apply = flags.has("--apply");
+  const ctx = await openFeeder();
+  console.log(apply ? `\nimporting ${file}…\n` : `\nvalidating ${file} (dry run)…\n`);
+  const report = await importSpanshExport(ctx.store, file, { apply });
+  console.log(formatImportReport(report, apply));
+  if (report.failures.length > 0) process.exitCode = 1;
+  else if (!apply) console.log("\nNothing was written. Re-run with --apply.");
+  console.log("");
+}
+
 switch (command) {
   case "status":
     await cmdStatus();
@@ -525,13 +554,16 @@ switch (command) {
   case "identity":
     await cmdIdentity();
     break;
+  case "import-dump":
+    await cmdImportDump();
+    break;
   case "system-ids":
     await cmdSystemIds();
     break;
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing]",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing] | import-dump <file.jsonl.gz> [--apply]",
     );
     process.exit(1);
 }

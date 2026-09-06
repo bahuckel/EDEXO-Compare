@@ -584,6 +584,101 @@ export class FeederStore {
     return written;
   }
 
+  /**
+   * Corpus bodies keyed by the game's own identity, `${systemId64}:${bodyId}`.
+   *
+   * This is acceptance rule 2 made usable: a third-party row joins to a corpus row through two
+   * integers the game itself assigns, with **no string comparison anywhere in the path**. Bodies
+   * that Phase 1 could not name are simply absent — an unidentified body cannot be joined by
+   * identity, and joining it by name is the thing this replaces.
+   */
+  planetsByIdentity(): Map<string, { planetId: number; isMapped: boolean | null; mappedSeenAt: string | null }> {
+    const out = new Map<string, { planetId: number; isMapped: boolean | null; mappedSeenAt: string | null }>();
+    for (const [pid, sysId64, bodyId, isMapped, seenAt] of queryAll<
+      [number, string, number, number | null, string | null]
+    >(
+      this.db,
+      `SELECT p.id, s.id64, p.body_id, p.is_mapped, p.mapped_seen_at
+         FROM planets p JOIN systems s ON s.id = p.system_id
+        WHERE s.id64 IS NOT NULL AND p.body_id IS NOT NULL`,
+      [],
+    )) {
+      out.set(`${sysId64}:${bodyId}`, {
+        planetId: pid,
+        isMapped: isMapped === null ? null : isMapped === 1,
+        mappedSeenAt: seenAt,
+      });
+    }
+    return out;
+  }
+
+  /**
+   * Store the mapped tri-state on corpus bodies.
+   *
+   * `is_mapped` is written unconditionally rather than through `COALESCE`, because unlike identity
+   * this is an observation that can legitimately improve: a body unmapped in one dump may be mapped
+   * in the next. The **sticky-`true`** rule is enforced in SQL rather than trusted to the caller —
+   * a `false` can never overwrite a `true`, whatever timestamp it carries, because footfall and
+   * mapping are monotone (see `observedFlag.ts` for why that rule outranks recency).
+   */
+  setBodyMapped(
+    rows: { planetId: number; isMapped: boolean; seenAt: string | null; source: string; bodyId64: string | null }[],
+  ): number {
+    if (rows.length === 0) return 0;
+    let written = 0;
+    this.transaction(() => {
+      for (const r of rows) {
+        runExec(
+          this.db,
+          `UPDATE planets
+              SET is_mapped      = CASE WHEN is_mapped = 1 THEN 1 ELSE ? END,
+                  mapped_source  = CASE WHEN is_mapped = 1 AND ? = 0 THEN mapped_source  ELSE ? END,
+                  mapped_seen_at = CASE WHEN is_mapped = 1 AND ? = 0 THEN mapped_seen_at ELSE ? END,
+                  body_id64      = COALESCE(body_id64, ?)
+            WHERE id = ?`,
+          [
+            r.isMapped ? 1 : 0,
+            r.isMapped ? 1 : 0,
+            r.source,
+            r.isMapped ? 1 : 0,
+            r.seenAt,
+            r.bodyId64,
+            r.planetId,
+          ],
+        );
+        written += this.db.getRowsModified();
+      }
+    });
+    return written;
+  }
+
+  /** Coordinates for systems addressed by `id64` rather than by name — the dump's own key. */
+  setSystemCoordsById64(rows: { id64: string; x: number; y: number; z: number }[]): number {
+    if (rows.length === 0) return 0;
+    let written = 0;
+    this.transaction(() => {
+      for (const r of rows) {
+        runExec(
+          this.db,
+          "UPDATE systems SET x = COALESCE(x, ?), y = COALESCE(y, ?), z = COALESCE(z, ?) WHERE id64 = ?",
+          [r.x, r.y, r.z, r.id64],
+        );
+        written += this.db.getRowsModified();
+      }
+    });
+    return written;
+  }
+
+  /** How much of the corpus now carries a mapped observation. */
+  mappedCoverage(): { planets: number; mapped: number; unmapped: number } {
+    const one = (sql: string) => Number(queryOne<[number]>(this.db, sql, [])?.[0] ?? 0);
+    return {
+      planets: one("SELECT COUNT(*) FROM planets"),
+      mapped: one("SELECT COUNT(*) FROM planets WHERE is_mapped = 1"),
+      unmapped: one("SELECT COUNT(*) FROM planets WHERE is_mapped = 0"),
+    };
+  }
+
   /** Every system with the identity it carries so far. */
   systemIdentityRows(): { systemId: number; normSystem: string; displayName: string; id64: string | null }[] {
     return queryAll<[number, string, string, string | null]>(
