@@ -68,6 +68,57 @@ describe("id64 survives JSON", () => {
   });
 });
 
+/**
+ * Where the rounding actually happens, pinned.
+ *
+ * §2.4 originally claimed TEXT was the only SQLite column type that survives this stack. It is not,
+ * and Fable was right to push back while building the Spansh ingest: SQLite's INTEGER is 64-bit and
+ * exact, and only the JavaScript boundary loses anything. This test exists so that correction cannot
+ * quietly rot back into the old claim — and so that a future switch to INTEGER storage has the
+ * evidence it needs sitting next to it.
+ */
+describe("SQLite is not the lossy part — the JS boundary is", () => {
+  const HUGE = "6160925022241180003"; // the largest body id64 in the Spansh galaxy dump
+
+  it("stores exactly, and only the default JS read rounds", async () => {
+    const initSqlJs = (await import("sql.js")).default;
+    const { PROJECT_ROOT } = await import("../src/feeder/paths.js");
+    const { join } = await import("node:path");
+    const SQL = await initSqlJs({
+      locateFile: (f: string) => join(PROJECT_ROOT, "node_modules", "sql.js", "dist", f),
+    });
+    const db = new SQL.Database();
+    db.run("CREATE TABLE t (a INTEGER, b TEXT)");
+    // A literal, so no JavaScript number is created on the way in.
+    db.run(`INSERT INTO t (a, b) VALUES (${HUGE}, '${HUGE}')`);
+
+    // SQLite kept both, and agrees they are the same value.
+    const cmp = db.prepare("SELECT a = CAST(b AS INTEGER) FROM t");
+    cmp.step();
+    expect(Number((cmp.get() as unknown[])[0])).toBe(1);
+    cmp.free();
+
+    const st = db.prepare("SELECT a, b, CAST(a AS TEXT) FROM t");
+    st.step();
+    const [asNumber, asText, cast] = st.get() as [unknown, unknown, unknown];
+
+    expect(typeof asNumber).toBe("number");
+    expect(String(asNumber)).not.toBe(HUGE); // the default read is where it is lost
+    expect(asText).toBe(HUGE);
+    expect(cast).toBe(HUGE); // INTEGER storage + CAST is exact
+
+    st.reset();
+    st.step();
+    const big = (st as unknown as { get: (p: unknown, c: unknown) => unknown[] }).get(null, {
+      useBigInt: true,
+    });
+    expect(typeof big[0]).toBe("bigint");
+    expect(String(big[0])).toBe(HUGE); // INTEGER storage + useBigInt is exact
+    st.free();
+    db.close();
+  });
+});
+
 describe("trust", () => {
   it("a big number is not trustworthy; the same digits as a string are", () => {
     expect(isTrustworthyId64(Number(REAL_BODY_ID64))).toBe(false);

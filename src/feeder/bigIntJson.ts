@@ -15,9 +15,15 @@
  * A `JSON.parse` reviver cannot do this: by the time a reviver runs, the value it is handed is
  * already the rounded float. The source text is the only place the digits still exist.
  *
- * The rule this module enforces (INCLUDE-BODY-IDS §2.4): **every id64 is a string at every
- * boundary — JSON, SQLite, HTTP, and any future API.** Parse and compare as `bigint`, store and
- * serialise as `string`, never as `number`.
+ * The rule this module enforces (INCLUDE-BODY-IDS §2.4): **an id64 must never pass through a
+ * JavaScript `number`.** Parse and compare as `bigint`, serialise as `string`.
+ *
+ * Note the rule is about the *value's path*, not about storage. SQLite's INTEGER is 64-bit and
+ * exact, and a Python ingest reads one back byte-exact because Python integers are arbitrary
+ * precision — the corruption above is a JavaScript problem, not a property of the data or of any
+ * database. What matters is every boundary a JS `number` could be created at: `JSON.parse`,
+ * `res.json()`, and `sql.js`'s default `.get()`. See `feederDb.ts` for why this codebase stores
+ * TEXT anyway, and why a galaxy-scale store should not.
  */
 
 /** Field names whose numeric values must survive as digits. */

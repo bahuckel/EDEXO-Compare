@@ -135,8 +135,24 @@ function migrateSchema(db: Database): void {
    * makes a corpus body and a journal body joinable with no string comparison anywhere in the path.
    *
    * `id64` columns are **TEXT, not INTEGER**. SQLite's INTEGER is 64-bit and would hold the value,
-   * but `sql.js` hands it back to JavaScript as a `number`, which puts the float64 rounding straight
-   * back — see `bigIntJson.ts`. TEXT is the only column type that survives this stack.
+   * but `sql.js`'s default `get()` hands it back to JavaScript as a `number`, which puts the float64
+   * rounding straight back — see `bigIntJson.ts`.
+   *
+   * TEXT is not the *only* way to survive that; it is the way that cannot be got wrong. Measured on
+   * sql.js 1.14.2 with `6160925022241180003`:
+   *
+   *   default get()                 6160925022241180000   rounded
+   *   get(null, {useBigInt: true})  6160925022241180003   exact, a bigint
+   *   CAST(col AS TEXT)             6160925022241180003   exact
+   *
+   * SQLite itself never loses the value in any of these — `a = CAST(b AS INTEGER)` compares equal.
+   * The rounding is entirely a property of the JavaScript boundary, not of the column.
+   *
+   * TEXT is chosen here because `queryAll`/`queryOne` use a plain `.get()`, so an INTEGER id64 would
+   * round in any call site that forgot to opt in, and forgetting is silent. At 2,993 systems the
+   * storage and indexing cost of TEXT is noise. **A galaxy-scale store should choose differently**:
+   * INTEGER with `useBigInt` keeps 64-bit exactness, an `INTEGER PRIMARY KEY` rowid alias, and no
+   * second index — which is what the Spansh ingest does, correctly, at ~10^8 rows.
    *
    * Footfall and mapping are declared here but stay NULL until Phase 3 fills them from EDDN. All
    * three states are meaningful: NULL is "never observed", which is **not** the same as 0, and the
