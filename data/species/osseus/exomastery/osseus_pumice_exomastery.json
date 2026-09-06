@@ -3,8 +3,14 @@
   "speciesLabel": "Osseus pumice",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.895Z",
+  "generatedAt": "2026-09-06T06:11:59.851Z",
   "sampleCount": 99,
+  "provenance": {
+    "inputHash": "3ed11dfbab08ded86bf1f199370ee28657a37d7712bcafc8226420f90f345631",
+    "csvRows": 226,
+    "occurrences": 101,
+    "bodies": 99
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 273,

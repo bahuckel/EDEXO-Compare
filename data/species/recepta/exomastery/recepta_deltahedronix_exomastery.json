@@ -3,8 +3,14 @@
   "speciesLabel": "Recepta deltahedronix",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.955Z",
+  "generatedAt": "2026-09-06T06:11:59.931Z",
   "sampleCount": 37,
+  "provenance": {
+    "inputHash": "1d97af733256830dab6f1a1fb2f8e36e381b29ca3380b8c0d9ce05336942eab1",
+    "csvRows": 95,
+    "occurrences": 37,
+    "bodies": 37
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 16,

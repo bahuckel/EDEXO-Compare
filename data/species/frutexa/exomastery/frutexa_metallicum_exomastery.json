@@ -3,8 +3,14 @@
   "speciesLabel": "Frutexa metallicum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.678Z",
+  "generatedAt": "2026-09-06T06:11:59.539Z",
   "sampleCount": 501,
+  "provenance": {
+    "inputHash": "4546c14a24793f8a413d39df17d814f4fa28d6c3b046a1e52f5af36f7149bd3f",
+    "csvRows": 1459,
+    "occurrences": 505,
+    "bodies": 501
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 19,

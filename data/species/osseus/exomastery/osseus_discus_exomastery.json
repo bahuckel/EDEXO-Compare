@@ -3,8 +3,14 @@
   "speciesLabel": "Osseus discus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.851Z",
+  "generatedAt": "2026-09-06T06:11:59.778Z",
   "sampleCount": 648,
+  "provenance": {
+    "inputHash": "dd91a95e69e9569d7f847c6e2080409aa1dd30204912620b46695dd7b26e4b04",
+    "csvRows": 1886,
+    "occurrences": 655,
+    "bodies": 648
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 21,

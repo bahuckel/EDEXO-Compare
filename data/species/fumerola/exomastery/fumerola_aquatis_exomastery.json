@@ -3,8 +3,14 @@
   "speciesLabel": "Fumerola aquatis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.702Z",
+  "generatedAt": "2026-09-06T06:11:59.579Z",
   "sampleCount": 34,
+  "provenance": {
+    "inputHash": "bf47b1b973a23ec7dfe45214f811ce0a2b2fa6f85339943f5d6dcb8a9875910d",
+    "csvRows": 71,
+    "occurrences": 34,
+    "bodies": 34
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 9,

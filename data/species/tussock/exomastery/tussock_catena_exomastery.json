@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock catena",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.310Z",
+  "generatedAt": "2026-09-06T06:12:00.401Z",
   "sampleCount": 188,
+  "provenance": {
+    "inputHash": "602afbc0869980094638ef43e30d5aeae7121458156277af49955c9c536f9c00",
+    "csvRows": 675,
+    "occurrences": 191,
+    "bodies": 188
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 104,

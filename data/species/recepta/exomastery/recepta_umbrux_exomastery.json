@@ -3,8 +3,14 @@
   "speciesLabel": "Recepta umbrux",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.969Z",
+  "generatedAt": "2026-09-06T06:11:59.938Z",
   "sampleCount": 42,
+  "provenance": {
+    "inputHash": "428dd521be8a19432aafe2710e0cfe47ceec205cb94ac8776ea5e41051bfbaf0",
+    "csvRows": 106,
+    "occurrences": 43,
+    "bodies": 42
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 57,

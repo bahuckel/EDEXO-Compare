@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock stigmasis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.447Z",
+  "generatedAt": "2026-09-06T06:12:00.605Z",
   "sampleCount": 45,
+  "provenance": {
+    "inputHash": "1c69c9a88392158d2f89b4449a228fa76ac5f675955d6bdfbbace691d4766f40",
+    "csvRows": 111,
+    "occurrences": 45,
+    "bodies": 45
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 554,

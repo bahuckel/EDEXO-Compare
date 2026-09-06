@@ -3,8 +3,14 @@
   "speciesLabel": "Frutexa acus",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.605Z",
+  "generatedAt": "2026-09-06T06:11:59.406Z",
   "sampleCount": 3106,
+  "provenance": {
+    "inputHash": "a3fe50c4116ec6606f4d80f0de2c3924c47db213cbcddb9aab10c9b69fbbfb61",
+    "csvRows": 9101,
+    "occurrences": 3155,
+    "bodies": 3106
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 133,

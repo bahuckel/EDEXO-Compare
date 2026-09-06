@@ -3,8 +3,14 @@
   "speciesLabel": "Cactoida cortexum",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.142Z",
+  "generatedAt": "2026-09-06T06:11:58.827Z",
   "sampleCount": 858,
+  "provenance": {
+    "inputHash": "f2b26ac62ef166ef12d195cb348d0fd876bc6aa6f9a02631d4325a7ec381d21e",
+    "csvRows": 2446,
+    "occurrences": 874,
+    "bodies": 858
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 122,

@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock cultro",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.343Z",
+  "generatedAt": "2026-09-06T06:12:00.445Z",
   "sampleCount": 998,
+  "provenance": {
+    "inputHash": "c62904246f5330921ae0b065e1c5129350393ad80f77e85c79765807d07b75e6",
+    "csvRows": 2800,
+    "occurrences": 1005,
+    "bodies": 998
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 19,

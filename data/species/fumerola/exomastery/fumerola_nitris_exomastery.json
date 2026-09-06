@@ -3,8 +3,14 @@
   "speciesLabel": "Fumerola nitris",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.717Z",
+  "generatedAt": "2026-09-06T06:11:59.594Z",
   "sampleCount": 20,
+  "provenance": {
+    "inputHash": "a24dc4d9702c35f2558257528b18e5a092ac02d44645c5b135083973f25d120e",
+    "csvRows": 42,
+    "occurrences": 20,
+    "bodies": 20
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 593,

@@ -3,8 +3,14 @@
   "speciesLabel": "Clypeus speculumi",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.314Z",
+  "generatedAt": "2026-09-06T06:11:59.039Z",
   "sampleCount": 298,
+  "provenance": {
+    "inputHash": "b1a0c82d90e87131a42091ff16b83d49d962e94bb7aa85951fd05ea19fccf50d",
+    "csvRows": 873,
+    "occurrences": 302,
+    "bodies": 298
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 2360,

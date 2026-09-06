@@ -3,8 +3,14 @@
   "speciesLabel": "Concha renibus",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.430Z",
+  "generatedAt": "2026-09-06T06:11:59.181Z",
   "sampleCount": 1189,
+  "provenance": {
+    "inputHash": "e056c00349d1e2b48dcfbacc4c8ef5fa0498dc0d85a214544a66226ecccafd23",
+    "csvRows": 3434,
+    "occurrences": 1208,
+    "bodies": 1189
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 18,

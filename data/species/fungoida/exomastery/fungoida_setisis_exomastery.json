@@ -3,8 +3,14 @@
   "speciesLabel": "Fungoida setisis",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.772Z",
+  "generatedAt": "2026-09-06T06:11:59.652Z",
   "sampleCount": 975,
+  "provenance": {
+    "inputHash": "2de7f0f4b193f2cd61bc7de8cbc9698f14d8b029abbfa5fbd179a85f637b759a",
+    "csvRows": 2797,
+    "occurrences": 982,
+    "bodies": 975
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 19,

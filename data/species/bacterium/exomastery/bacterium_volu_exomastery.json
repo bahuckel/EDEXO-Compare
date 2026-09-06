@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium volu",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.082Z",
+  "generatedAt": "2026-09-06T06:11:58.773Z",
   "sampleCount": 43,
+  "provenance": {
+    "inputHash": "3843cfccb36ea644a69c8993bab83a9b8682a7acc9afc6ca40dbd166c58d9b09",
+    "csvRows": 81,
+    "occurrences": 43,
+    "bodies": 43
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 44,

@@ -3,8 +3,14 @@
   "speciesLabel": "Concha biconcavis",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.326Z",
+  "generatedAt": "2026-09-06T06:11:59.059Z",
   "sampleCount": 7,
+  "provenance": {
+    "inputHash": "012f8ef94c7974585a07dedf0c40601601c6c7da9fbdffd716301f1c2cccc060",
+    "csvRows": 18,
+    "occurrences": 7,
+    "bodies": 7
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 3022,

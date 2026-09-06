@@ -3,8 +3,14 @@
   "speciesLabel": "Aleoida spica",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.311Z",
+  "generatedAt": "2026-09-06T06:11:57.836Z",
   "sampleCount": 11,
+  "provenance": {
+    "inputHash": "e4f693524956e7fd7193da46fec735b3ea1c867e0257df788a0f5c45ffdd5662",
+    "csvRows": 11,
+    "occurrences": 11,
+    "bodies": 11
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 149,

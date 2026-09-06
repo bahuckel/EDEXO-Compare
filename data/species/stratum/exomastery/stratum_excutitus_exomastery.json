@@ -3,8 +3,14 @@
   "speciesLabel": "Stratum excutitus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.029Z",
+  "generatedAt": "2026-09-06T06:12:00.000Z",
   "sampleCount": 670,
+  "provenance": {
+    "inputHash": "fe751e2397837e31428c839933bc45cf7cdc65ddc942b35664c8f3d48a79377a",
+    "csvRows": 1911,
+    "occurrences": 686,
+    "bodies": 670
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 153,

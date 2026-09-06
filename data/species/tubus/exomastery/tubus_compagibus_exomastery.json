@@ -3,8 +3,14 @@
   "speciesLabel": "Tubus compagibus",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.241Z",
+  "generatedAt": "2026-09-06T06:12:00.280Z",
   "sampleCount": 1913,
+  "provenance": {
+    "inputHash": "5374246c6bb70b968cdeab05fe42c5fc56bd501bbbbd65fd965bd9b165a324cc",
+    "csvRows": 5605,
+    "occurrences": 1946,
+    "bodies": 1913
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 122,

@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium alcyoneum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.504Z",
+  "generatedAt": "2026-09-06T06:11:58.033Z",
   "sampleCount": 1381,
+  "provenance": {
+    "inputHash": "edc51246febc79a02f8468e5277e1073316ba15b1d2222aa30674bd89feb6475",
+    "csvRows": 3898,
+    "occurrences": 1393,
+    "bodies": 1381
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 19,

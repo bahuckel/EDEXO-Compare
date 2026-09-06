@@ -3,8 +3,14 @@
   "speciesLabel": "Clypeus margaritus",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.297Z",
+  "generatedAt": "2026-09-06T06:11:59.019Z",
   "sampleCount": 226,
+  "provenance": {
+    "inputHash": "9b13cf0e77151d8f049ceca6576a4e1518174e2d6df816c7817405ba099ef0fe",
+    "csvRows": 649,
+    "occurrences": 230,
+    "bodies": 226
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 18,

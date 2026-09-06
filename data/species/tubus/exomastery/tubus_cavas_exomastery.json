@@ -3,8 +3,14 @@
   "speciesLabel": "Tubus cavas",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.176Z",
+  "generatedAt": "2026-09-06T06:12:00.214Z",
   "sampleCount": 152,
+  "provenance": {
+    "inputHash": "75edb63902f9dc0545cb9ce477d85185013e492ee1d143a7d97cb41c16d2cd4e",
+    "csvRows": 519,
+    "occurrences": 168,
+    "bodies": 152
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 727,

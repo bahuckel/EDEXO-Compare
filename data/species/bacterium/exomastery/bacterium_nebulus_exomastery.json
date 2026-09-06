@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium nebulus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:21:04.952Z",
+  "generatedAt": "2026-09-06T06:11:58.634Z",
   "sampleCount": 16,
+  "provenance": {
+    "inputHash": "8d4b6b4437a12624aa800135e0bdf1968b83b68e84e6ce5869e1142c3b26ed4d",
+    "csvRows": 16,
+    "occurrences": 16,
+    "bodies": 16
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 480,

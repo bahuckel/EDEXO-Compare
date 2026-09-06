@@ -3,8 +3,14 @@
   "speciesLabel": "Fonticulua campestris",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.473Z",
+  "generatedAt": "2026-09-06T06:11:59.245Z",
   "sampleCount": 560,
+  "provenance": {
+    "inputHash": "cee6ecceaa772522d666836feae0c4d842dc424696c81aea9c9f03d49b86acc9",
+    "csvRows": 846,
+    "occurrences": 573,
+    "bodies": 560
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 34,

@@ -75,6 +75,17 @@ export interface ExomasteryProfileV1 {
    * When absent, UI falls back to {@link maxExomasteryProfileSampleCount}.
    */
   sampleCount?: number;
+  /**
+   * C3 provenance: the hash of the bodies that produced these numbers, and the three counts that
+   * show how many raw CSV rows became how many observations. Absent on profiles built before it was
+   * recorded. See `feeder/profileProvenance.ts`.
+   */
+  provenance?: {
+    inputHash: string;
+    csvRows: number;
+    occurrences: number;
+    bodies: number;
+  };
   numerics: Record<string, ExomasteryNumericRollup>;
   materials: Record<string, ExomasteryNumericRollup>;
   atmosphereComposition: Record<string, ExomasteryNumericRollup>;
@@ -242,6 +253,16 @@ function normalizeLoadedProfile(j: Record<string, unknown>): ExomasteryProfileV1
   prof.solidComposition ??= {};
   const sc = j.sampleCount;
   if (typeof sc === "number" && Number.isFinite(sc) && sc >= 0) prof.sampleCount = Math.trunc(sc);
+  const pv = j.provenance as Record<string, unknown> | undefined;
+  if (pv && typeof pv.inputHash === "string" && pv.inputHash) {
+    const n = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? Math.trunc(v) : 0);
+    prof.provenance = {
+      inputHash: pv.inputHash,
+      csvRows: n(pv.csvRows),
+      occurrences: n(pv.occurrences),
+      bodies: n(pv.bodies),
+    };
+  }
   hoistFeederCompositionRollups(prof);
   return prof;
 }

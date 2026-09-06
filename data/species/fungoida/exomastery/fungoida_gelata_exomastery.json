@@ -3,8 +3,14 @@
   "speciesLabel": "Fungoida gelata",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.738Z",
+  "generatedAt": "2026-09-06T06:11:59.615Z",
   "sampleCount": 342,
+  "provenance": {
+    "inputHash": "11f57e372721fd54becdca42d4a65104168ea26dd7cea2f99a0c4339a0339816",
+    "csvRows": 973,
+    "occurrences": 355,
+    "bodies": 342
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 76,

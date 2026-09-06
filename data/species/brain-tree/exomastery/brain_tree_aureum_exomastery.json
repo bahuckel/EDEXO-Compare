@@ -3,8 +3,14 @@
   "speciesLabel": "Brain Tree Aureum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.315Z",
+  "generatedAt": "2026-09-06T06:11:57.842Z",
   "sampleCount": 2,
+  "provenance": {
+    "inputHash": "d123bb16aad35c5e62cc842ca15e2ce7c12ccbe71d174e2b4fa8f5092571a103",
+    "csvRows": 3,
+    "occurrences": 2,
+    "bodies": 2
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 94,

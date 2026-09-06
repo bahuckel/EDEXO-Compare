@@ -3,8 +3,14 @@
   "speciesLabel": "Cactoida peperatis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.192Z",
+  "generatedAt": "2026-09-06T06:11:58.899Z",
   "sampleCount": 72,
+  "provenance": {
+    "inputHash": "f23f6f2fcac0d8b0439ffe2b329d10078f7c5a1ea54cff47d847f29131a7a912",
+    "csvRows": 247,
+    "occurrences": 73,
+    "bodies": 72
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 117,

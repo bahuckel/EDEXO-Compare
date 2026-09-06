@@ -3,8 +3,14 @@
   "speciesLabel": "Recepta conditivus",
   "genus": "Recepta",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.950Z",
+  "generatedAt": "2026-09-06T06:11:59.927Z",
   "sampleCount": 25,
+  "provenance": {
+    "inputHash": "b8d40e21406886fffa641303101a661a29d19611a244b6dfb171e54325e7c2c6",
+    "csvRows": 74,
+    "occurrences": 25,
+    "bodies": 25
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 9,

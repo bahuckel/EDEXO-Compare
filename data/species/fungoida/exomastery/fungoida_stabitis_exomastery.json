@@ -3,8 +3,14 @@
   "speciesLabel": "Fungoida stabitis",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.819Z",
+  "generatedAt": "2026-09-06T06:11:59.723Z",
   "sampleCount": 1366,
+  "provenance": {
+    "inputHash": "156a3eb2231cd89d65fd5685972866a0558a5213eaa2db7c6e27febbdd4abf18",
+    "csvRows": 3887,
+    "occurrences": 1388,
+    "bodies": 1366
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 21,

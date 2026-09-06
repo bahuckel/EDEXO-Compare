@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium bullaris",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.816Z",
+  "generatedAt": "2026-09-06T06:11:58.477Z",
   "sampleCount": 253,
+  "provenance": {
+    "inputHash": "faa53f036cd2159fdbb4d81ea64f54c4fcebfa238eaa746e57063d534b8ab8b2",
+    "csvRows": 515,
+    "occurrences": 253,
+    "bodies": 253
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 394,

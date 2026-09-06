@@ -3,8 +3,14 @@
   "speciesLabel": "Fonticulua segmentatus",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.494Z",
+  "generatedAt": "2026-09-06T06:11:59.286Z",
   "sampleCount": 9,
+  "provenance": {
+    "inputHash": "45cc7f39b8b384e7b2da34f3367e89cbfc50430d098857e9c06b89608d260572",
+    "csvRows": 16,
+    "occurrences": 9,
+    "bodies": 9
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 685,

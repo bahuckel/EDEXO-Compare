@@ -3,8 +3,14 @@
   "speciesLabel": "Osseus fractus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.874Z",
+  "generatedAt": "2026-09-06T06:11:59.812Z",
   "sampleCount": 572,
+  "provenance": {
+    "inputHash": "c62a172fdf9bcf662246994a0ea111940a9493ab711c6a23161bed7f50b2e119",
+    "csvRows": 1604,
+    "occurrences": 583,
+    "bodies": 572
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 573,

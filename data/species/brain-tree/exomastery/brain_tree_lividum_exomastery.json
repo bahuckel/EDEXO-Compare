@@ -3,8 +3,14 @@
   "speciesLabel": "Brain Tree Lividum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.826Z",
+  "generatedAt": "2026-09-06T06:11:59.754Z",
   "sampleCount": 2,
+  "provenance": {
+    "inputHash": "ed206dfa0e71437326a9d0123635a66786e7cb5ec01232187e2e2d39582b5384",
+    "csvRows": 5,
+    "occurrences": 2,
+    "bodies": 2
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 704,

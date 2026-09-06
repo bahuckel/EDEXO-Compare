@@ -3,8 +3,14 @@
   "speciesLabel": "Frutexa collum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.609Z",
+  "generatedAt": "2026-09-06T06:11:59.464Z",
   "sampleCount": 36,
+  "provenance": {
+    "inputHash": "d162bce34421bd34f56a4601bc50277979b2d5661d740042138d9468a6794d0d",
+    "csvRows": 91,
+    "occurrences": 36,
+    "bodies": 36
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 554,

@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium tela",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.010Z",
+  "generatedAt": "2026-09-06T06:11:58.691Z",
   "sampleCount": 442,
+  "provenance": {
+    "inputHash": "a8118cd59d62d05685100d46a786bb99881f6de124612998e0b256ce3d9a625c",
+    "csvRows": 1211,
+    "occurrences": 444,
+    "bodies": 442
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 9,

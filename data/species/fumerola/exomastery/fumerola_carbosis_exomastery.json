@@ -3,8 +3,14 @@
   "speciesLabel": "Fumerola carbosis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.706Z",
+  "generatedAt": "2026-09-06T06:11:59.583Z",
   "sampleCount": 20,
+  "provenance": {
+    "inputHash": "b0fec70aaa82b44f269ffc82ae2e9ca571d64ff43adf6fd5b9a2d2ae12a74cea",
+    "csvRows": 41,
+    "occurrences": 20,
+    "bodies": 20
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 16,

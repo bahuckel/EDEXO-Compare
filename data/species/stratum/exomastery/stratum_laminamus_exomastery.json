@@ -3,8 +3,14 @@
   "speciesLabel": "Stratum laminamus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.037Z",
+  "generatedAt": "2026-09-06T06:12:00.019Z",
   "sampleCount": 149,
+  "provenance": {
+    "inputHash": "46170a80184e3b9f0716c351d0f6bf60dc7c3ac04fe796be6264303dfbab6eab",
+    "csvRows": 438,
+    "occurrences": 150,
+    "bodies": 149
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 235,

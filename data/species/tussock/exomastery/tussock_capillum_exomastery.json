@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock capillum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.277Z",
+  "generatedAt": "2026-09-06T06:12:00.358Z",
   "sampleCount": 42,
+  "provenance": {
+    "inputHash": "33f7592f47f4663bcbaff45b424004bfe2db70e740c51ad33f4c6d54df7b31c1",
+    "csvRows": 103,
+    "occurrences": 43,
+    "bodies": 42
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 273,

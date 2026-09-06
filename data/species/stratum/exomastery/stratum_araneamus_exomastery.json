@@ -3,8 +3,14 @@
   "speciesLabel": "Stratum araneamus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.992Z",
+  "generatedAt": "2026-09-06T06:11:59.961Z",
   "sampleCount": 21,
+  "provenance": {
+    "inputHash": "b5fb6fb2e88eee4a07b7ee2cdbb04bf96f04ec357d610414e7da73dedc98a4ad",
+    "csvRows": 27,
+    "occurrences": 21,
+    "bodies": 21
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 717,

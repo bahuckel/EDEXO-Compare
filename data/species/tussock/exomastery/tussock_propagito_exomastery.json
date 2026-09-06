@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock propagito",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.423Z",
+  "generatedAt": "2026-09-06T06:12:00.567Z",
   "sampleCount": 392,
+  "provenance": {
+    "inputHash": "c3b4c5bb557c0db4061bea9b87c4b89d15754eb18f77c70fd5321fdc2d38c59e",
+    "csvRows": 1273,
+    "occurrences": 408,
+    "bodies": 392
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 167,

@@ -3,8 +3,14 @@
   "speciesLabel": "Aleoida gravis",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.255Z",
+  "generatedAt": "2026-09-06T06:11:57.777Z",
   "sampleCount": 232,
+  "provenance": {
+    "inputHash": "3a0762a253bf286c16f65f719bf62879e7e9480807051947abd8fd40b481a702",
+    "csvRows": 654,
+    "occurrences": 238,
+    "bodies": 232
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 125,

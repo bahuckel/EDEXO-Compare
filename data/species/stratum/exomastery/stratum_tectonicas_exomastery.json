@@ -3,8 +3,14 @@
   "speciesLabel": "Stratum tectonicas",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.165Z",
+  "generatedAt": "2026-09-06T06:12:00.181Z",
   "sampleCount": 1371,
+  "provenance": {
+    "inputHash": "0a97dafd6b0261f008254f3be8d5e18d35192f5fb5bfce950f8c370845511e18",
+    "csvRows": 3731,
+    "occurrences": 1382,
+    "bodies": 1371
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 18,

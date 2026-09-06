@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock ventusa",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.479Z",
+  "generatedAt": "2026-09-06T06:12:00.643Z",
   "sampleCount": 366,
+  "provenance": {
+    "inputHash": "f3eaa2848a74094a9456730d31c3e794ecd78950cf8e025ca23ad18b74e7b792",
+    "csvRows": 1182,
+    "occurrences": 366,
+    "bodies": 366
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 133,

@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium cerbrus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.903Z",
+  "generatedAt": "2026-09-06T06:11:58.582Z",
   "sampleCount": 846,
+  "provenance": {
+    "inputHash": "505f79236ccd9c40dab95b8767a1f6766e84e25c4dd76fc164b349c9943d4560",
+    "csvRows": 2251,
+    "occurrences": 856,
+    "bodies": 846
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 15,

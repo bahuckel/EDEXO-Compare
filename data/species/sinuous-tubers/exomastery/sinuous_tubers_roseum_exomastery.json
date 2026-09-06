@@ -3,8 +3,14 @@
   "speciesLabel": "Sinuous Tubers Roseum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.983Z",
+  "generatedAt": "2026-09-06T06:11:59.951Z",
   "sampleCount": 3,
+  "provenance": {
+    "inputHash": "c439be923a3ea040d25ce2a1109ad7f99d85e1fdbb466abe9687f18ec6a32ae3",
+    "csvRows": 4,
+    "occurrences": 4,
+    "bodies": 3
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 206,

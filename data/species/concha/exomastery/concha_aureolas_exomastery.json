@@ -3,8 +3,14 @@
   "speciesLabel": "Concha aureolas",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.324Z",
+  "generatedAt": "2026-09-06T06:11:59.053Z",
   "sampleCount": 158,
+  "provenance": {
+    "inputHash": "f61c05fa7bae7f8d3a117d72919672b69cb1ab8aba4cb3ae16bd27cef52f3989",
+    "csvRows": 479,
+    "occurrences": 161,
+    "bodies": 158
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 324,

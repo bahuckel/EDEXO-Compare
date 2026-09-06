@@ -3,8 +3,14 @@
   "speciesLabel": "Frutexa flammasis",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.653Z",
+  "generatedAt": "2026-09-06T06:11:59.516Z",
   "sampleCount": 147,
+  "provenance": {
+    "inputHash": "635447a15805374519ec6408e04422fac24b84867438e6231f138b2c66c23a4d",
+    "csvRows": 511,
+    "occurrences": 148,
+    "bodies": 147
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 104,

@@ -3,8 +3,14 @@
   "speciesLabel": "Stratum paleas",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.098Z",
+  "generatedAt": "2026-09-06T06:12:00.090Z",
   "sampleCount": 1393,
+  "provenance": {
+    "inputHash": "614f0142fb8d85a096e78ab248da1dfc5daa265eabc80f06423d6d71edccf19a",
+    "csvRows": 3907,
+    "occurrences": 1424,
+    "bodies": 1393
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 75,

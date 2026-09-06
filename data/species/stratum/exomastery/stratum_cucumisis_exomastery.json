@@ -3,8 +3,14 @@
   "speciesLabel": "Stratum cucumisis",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.004Z",
+  "generatedAt": "2026-09-06T06:11:59.970Z",
   "sampleCount": 181,
+  "provenance": {
+    "inputHash": "f5a45b4efef1871736fc61c2bd63c97297fa51f25d7f932f89bbf71c6393abf9",
+    "csvRows": 523,
+    "occurrences": 184,
+    "bodies": 181
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 160,

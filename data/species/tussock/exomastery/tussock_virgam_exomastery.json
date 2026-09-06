@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock virgam",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.503Z",
+  "generatedAt": "2026-09-06T06:12:00.675Z",
   "sampleCount": 595,
+  "provenance": {
+    "inputHash": "0b0394716802f975a795301c48361eed4fdc705363371436a36396eb6c760b56",
+    "csvRows": 1688,
+    "occurrences": 602,
+    "bodies": 595
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 18,

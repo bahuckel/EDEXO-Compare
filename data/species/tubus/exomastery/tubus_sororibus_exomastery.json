@@ -3,8 +3,14 @@
   "speciesLabel": "Tubus sororibus",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.255Z",
+  "generatedAt": "2026-09-06T06:12:00.328Z",
   "sampleCount": 43,
+  "provenance": {
+    "inputHash": "1c94b701c0e9aafa9cbf658c00865a0d7749cae00f8d629d22bf0287ed240c07",
+    "csvRows": 123,
+    "occurrences": 43,
+    "bodies": 43
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 67,

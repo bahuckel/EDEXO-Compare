@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium scopulum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.950Z",
+  "generatedAt": "2026-09-06T06:11:58.644Z",
   "sampleCount": 12,
+  "provenance": {
+    "inputHash": "bc465a3d2e9abc494e75fc23d182ed491d45bc5769430da0fc4a20e313d81ffc",
+    "csvRows": 12,
+    "occurrences": 12,
+    "bodies": 12
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 1188,

@@ -3,8 +3,14 @@
   "speciesLabel": "Clypeus lacrimam",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.283Z",
+  "generatedAt": "2026-09-06T06:11:58.996Z",
   "sampleCount": 649,
+  "provenance": {
+    "inputHash": "a04a4cd95d0adaaac03a6f4a7691db182f68e9eee4b50606b548dea6f7824b6a",
+    "csvRows": 1824,
+    "occurrences": 661,
+    "bodies": 649
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 75,

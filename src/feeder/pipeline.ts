@@ -443,7 +443,10 @@ export async function analyseAndInstallSpecies(
   if (!entry) throw new Error(`Unknown species: ${speciesLabel}`);
   const dir = join(rawPlanetsDir(), speciesFileSlug(speciesLabel));
   const contexts = await loadPlanetContextsFromDir(dir);
-  const built = buildProfileFromPlanetContexts(speciesLabel, entry.genus, contexts);
+  const built = buildProfileFromPlanetContexts(speciesLabel, entry.genus, contexts, {
+    csvRows: entry.csvRowCount,
+    occurrences: entry.occurrences.length,
+  });
   const profile = sanitizeExomasteryProfileForEdexo(built);
   return installProfile(db, profile, opts);
 }

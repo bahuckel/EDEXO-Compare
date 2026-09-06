@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock ignis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.388Z",
+  "generatedAt": "2026-09-06T06:12:00.506Z",
   "sampleCount": 1212,
+  "provenance": {
+    "inputHash": "52bd4e778b485968ba18888f00d1f79209c0b59d9d60f17d944a596a5bb4b1d8",
+    "csvRows": 3586,
+    "occurrences": 1226,
+    "bodies": 1212
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 133,

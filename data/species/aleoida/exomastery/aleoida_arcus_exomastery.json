@@ -3,8 +3,14 @@
   "speciesLabel": "Aleoida arcus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.103Z",
+  "generatedAt": "2026-09-06T06:11:57.612Z",
   "sampleCount": 223,
+  "provenance": {
+    "inputHash": "ea450bca893350b0b954f29b26bfc1ca5d61306de976d825dabc5fe21fa5b5b6",
+    "csvRows": 584,
+    "occurrences": 228,
+    "bodies": 223
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 268,

@@ -3,8 +3,14 @@
   "speciesLabel": "Frutexa sponsae",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.696Z",
+  "generatedAt": "2026-09-06T06:11:59.564Z",
   "sampleCount": 418,
+  "provenance": {
+    "inputHash": "809f168918aa3d45b574a7be1539f0a085de6dc2c239ac978eb66e3b9091975c",
+    "csvRows": 1240,
+    "occurrences": 424,
+    "bodies": 418
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 75,

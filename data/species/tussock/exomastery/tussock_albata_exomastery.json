@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock albata",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.272Z",
+  "generatedAt": "2026-09-06T06:12:00.345Z",
   "sampleCount": 459,
+  "provenance": {
+    "inputHash": "a6daf5ade7bf8da3a9985b9c0032a0f5aa14417253505db6990780d5b4e517ba",
+    "csvRows": 1251,
+    "occurrences": 470,
+    "bodies": 459
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 142,

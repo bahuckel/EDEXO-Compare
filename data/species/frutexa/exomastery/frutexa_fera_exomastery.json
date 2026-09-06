@@ -3,8 +3,14 @@
   "speciesLabel": "Frutexa fera",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.618Z",
+  "generatedAt": "2026-09-06T06:11:59.474Z",
   "sampleCount": 60,
+  "provenance": {
+    "inputHash": "26efedbac18b3bc09600dc17e842dfc61f1c521e7c1a60443940a187c38d884d",
+    "csvRows": 63,
+    "occurrences": 63,
+    "bodies": 60
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 159,

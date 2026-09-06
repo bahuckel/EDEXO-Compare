@@ -3,8 +3,14 @@
   "speciesLabel": "Concha labiata",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.385Z",
+  "generatedAt": "2026-09-06T06:11:59.118Z",
   "sampleCount": 1200,
+  "provenance": {
+    "inputHash": "1213b3742e58b17a9553510d5328d6d6d44074c1fe30aaea8faaea7ac6953b14",
+    "csvRows": 3550,
+    "occurrences": 1224,
+    "bodies": 1200
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 468,

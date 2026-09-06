@@ -3,8 +3,14 @@
   "speciesLabel": "Frutexa flabellum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.643Z",
+  "generatedAt": "2026-09-06T06:11:59.497Z",
   "sampleCount": 633,
+  "provenance": {
+    "inputHash": "aa4f9b739a43bf9cfdebeeafd3ebc8454b01d30c7a71d6b84583a7c24337b395",
+    "csvRows": 1718,
+    "occurrences": 642,
+    "bodies": 633
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 102,

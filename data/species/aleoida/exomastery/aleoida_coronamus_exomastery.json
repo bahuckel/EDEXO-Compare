@@ -3,8 +3,14 @@
   "speciesLabel": "Aleoida coronamus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.186Z",
+  "generatedAt": "2026-09-06T06:11:57.705Z",
   "sampleCount": 300,
+  "provenance": {
+    "inputHash": "76841ce8f28ef012dca42f1c52db2079b396dca64231f2ebd166def4f0ae57e3",
+    "csvRows": 898,
+    "occurrences": 307,
+    "bodies": 300
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 197,

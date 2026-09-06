@@ -3,8 +3,14 @@
   "speciesLabel": "Electricae pluma",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.438Z",
+  "generatedAt": "2026-09-06T06:11:59.210Z",
   "sampleCount": 31,
+  "provenance": {
+    "inputHash": "4256752b50c3813fe5375d1a88844b620a7ea513d3ef1d2982c3fb034b553ed3",
+    "csvRows": 85,
+    "occurrences": 31,
+    "bodies": 31
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 665,

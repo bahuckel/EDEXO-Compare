@@ -3,8 +3,14 @@
   "speciesLabel": "Aleoida laminiae",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.304Z",
+  "generatedAt": "2026-09-06T06:11:57.824Z",
   "sampleCount": 212,
+  "provenance": {
+    "inputHash": "886477f90c9586c29e726987eb71fc729bf6835b31a4cff15bc9faab4db2f105",
+    "csvRows": 655,
+    "occurrences": 213,
+    "bodies": 212
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 67,

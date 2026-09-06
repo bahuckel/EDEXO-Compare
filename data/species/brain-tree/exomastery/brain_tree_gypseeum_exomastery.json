@@ -3,8 +3,14 @@
   "speciesLabel": "Brain Tree Gypseeum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.824Z",
+  "generatedAt": "2026-09-06T06:11:59.751Z",
   "sampleCount": 5,
+  "provenance": {
+    "inputHash": "f828a80dc81d909e5e5cd1c40af3ab674eb825edbfec07e7e0121795c7bfef44",
+    "csvRows": 5,
+    "occurrences": 5,
+    "bodies": 5
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 612,

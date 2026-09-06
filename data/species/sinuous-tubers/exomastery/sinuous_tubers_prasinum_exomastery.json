@@ -3,8 +3,14 @@
   "speciesLabel": "Sinuous Tubers Prasinum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.945Z",
+  "generatedAt": "2026-09-06T06:11:59.922Z",
   "sampleCount": 34,
+  "provenance": {
+    "inputHash": "d9110c2f8a6ff720bf92a82914e271a85aad3d1db4d5bfeebb441fbf379c8cdc",
+    "csvRows": 34,
+    "occurrences": 34,
+    "bodies": 34
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 74,

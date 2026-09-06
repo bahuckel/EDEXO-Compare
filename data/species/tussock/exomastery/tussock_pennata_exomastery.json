@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock pennata",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.398Z",
+  "generatedAt": "2026-09-06T06:12:00.537Z",
   "sampleCount": 172,
+  "provenance": {
+    "inputHash": "6d2de92dbcdeca3b105c3909a2760a26e63fc1add51c85d417c42c5854915710",
+    "csvRows": 531,
+    "occurrences": 173,
+    "bodies": 172
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 463,

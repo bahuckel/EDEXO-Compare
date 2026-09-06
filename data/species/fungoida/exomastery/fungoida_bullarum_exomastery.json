@@ -3,8 +3,14 @@
   "speciesLabel": "Fungoida bullarum",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.721Z",
+  "generatedAt": "2026-09-06T06:11:59.598Z",
   "sampleCount": 36,
+  "provenance": {
+    "inputHash": "d287d7298b7f46dc2d92d7249b8e15fe174ac7120755cbfb7bb752dd854a7d43",
+    "csvRows": 101,
+    "occurrences": 39,
+    "bodies": 36
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 273,

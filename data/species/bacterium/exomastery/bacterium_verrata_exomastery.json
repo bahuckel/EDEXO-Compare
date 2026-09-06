@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium verrata",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.016Z",
+  "generatedAt": "2026-09-06T06:11:58.706Z",
   "sampleCount": 22,
+  "provenance": {
+    "inputHash": "ecfa307ccf2ea5032a9cd6301efb1e97ad314a45855d1a02d66d6c5d4653ac08",
+    "csvRows": 51,
+    "occurrences": 22,
+    "bodies": 22
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 738,

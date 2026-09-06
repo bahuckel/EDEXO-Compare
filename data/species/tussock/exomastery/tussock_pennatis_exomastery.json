@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock pennatis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.405Z",
+  "generatedAt": "2026-09-06T06:12:00.548Z",
   "sampleCount": 96,
+  "provenance": {
+    "inputHash": "5233d6e837f4269fb341242e6a33240944139aa57e3b7bd7b23e3060e106a95e",
+    "csvRows": 100,
+    "occurrences": 100,
+    "bodies": 96
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 101,

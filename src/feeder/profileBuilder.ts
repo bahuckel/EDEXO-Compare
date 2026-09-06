@@ -13,6 +13,11 @@ import {
   resolveParentStarSummaryFromParents,
   syntheticStarTypeFromFeederSummary,
 } from "./feederStarHost.js";
+import {
+  hashProfileInput,
+  type ProfileProvenance,
+  type ProfileProvenanceCounts,
+} from "./profileProvenance.js";
 
 /** Must align with ED Exo Compare {@link loadExomasteryProfile} categorical host-star matchers. */
 /**
@@ -54,6 +59,13 @@ export interface ExomasteryProfileV1 {
   source: "exomastery_feeder";
   generatedAt: string;
   sampleCount: number;
+  /**
+   * C3 — which input produced these numbers, so a diff can be attributed (see profileProvenance.ts).
+   *
+   * Optional because profiles built before it exist on disk and must keep loading. Absent means
+   * "built before provenance was recorded", not "built from nothing".
+   */
+  provenance?: ProfileProvenance;
   /** Flattened numeric paths under planet (prefix "body.") */
   numerics: Record<string, NumericRange>;
   /** String / bool path -> value -> count */
@@ -145,6 +157,8 @@ export function buildProfileFromPlanetContexts(
   speciesLabel: string,
   genus: string,
   contexts: PlanetSampleContext[],
+  /** Row counts from the species index; the hash is derived here from the bodies themselves. */
+  counts?: Omit<ProfileProvenanceCounts, "bodies">,
 ): ExomasteryProfileV1 {
   const numerics = new Map<string, number[]>();
   const categorical: Record<string, Record<string, number>> = {};
@@ -236,6 +250,12 @@ export function buildProfileFromPlanetContexts(
     source: "exomastery_feeder",
     generatedAt: new Date().toISOString(),
     sampleCount: bodies.length,
+    provenance: {
+      inputHash: hashProfileInput(bodies),
+      csvRows: counts?.csvRows ?? 0,
+      occurrences: counts?.occurrences ?? bodies.length,
+      bodies: bodies.length,
+    },
     numerics: numDone,
     categorical,
     materials: finalizeMat(materialsAcc),

@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium acies",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.342Z",
+  "generatedAt": "2026-09-06T06:11:57.869Z",
   "sampleCount": 171,
+  "provenance": {
+    "inputHash": "07b96cf2d6c9be89859d289c64d6400f437a8e8d630f248b166d7a99634110f5",
+    "csvRows": 214,
+    "occurrences": 174,
+    "bodies": 171
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 274,

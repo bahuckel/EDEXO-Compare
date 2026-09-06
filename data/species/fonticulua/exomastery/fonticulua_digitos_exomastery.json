@@ -3,8 +3,14 @@
   "speciesLabel": "Fonticulua digitos",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.481Z",
+  "generatedAt": "2026-09-06T06:11:59.261Z",
   "sampleCount": 92,
+  "provenance": {
+    "inputHash": "8dc1b08a3a17319ac302868a5f86d67bff6032e777f147c5556f6da1f7ef084a",
+    "csvRows": 192,
+    "occurrences": 93,
+    "bodies": 92
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 397,

@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium omentum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.942Z",
+  "generatedAt": "2026-09-06T06:11:58.639Z",
   "sampleCount": 17,
+  "provenance": {
+    "inputHash": "0ab703748f8bc5caaaade75ab544c86cbc2de350878ce4f7d2abc64dc1e3af0d",
+    "csvRows": 23,
+    "occurrences": 17,
+    "bodies": 17
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 382,

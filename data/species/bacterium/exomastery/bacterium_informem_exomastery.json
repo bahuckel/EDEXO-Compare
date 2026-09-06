@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium informem",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.931Z",
+  "generatedAt": "2026-09-06T06:11:58.626Z",
   "sampleCount": 185,
+  "provenance": {
+    "inputHash": "4b307685f10f4be921ac00fff0a5557e2dffa3aaa33cc124ce8f63551074b47d",
+    "csvRows": 424,
+    "occurrences": 186,
+    "bodies": 185
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 116,

@@ -3,8 +3,14 @@
   "speciesLabel": "Stratum limaxus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.046Z",
+  "generatedAt": "2026-09-06T06:12:00.029Z",
   "sampleCount": 102,
+  "provenance": {
+    "inputHash": "c410d0cd40dea15c324de6f9784cf48dead14b8973ea40e67310b700ecde8faf",
+    "csvRows": 347,
+    "occurrences": 107,
+    "bodies": 102
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 1179,

@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock triticum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.461Z",
+  "generatedAt": "2026-09-06T06:12:00.620Z",
   "sampleCount": 319,
+  "provenance": {
+    "inputHash": "656b6a9db6813b8771701160ad9fa3203972c7e8632ef03f17088e56e6969ee3",
+    "csvRows": 890,
+    "occurrences": 326,
+    "bodies": 319
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 125,

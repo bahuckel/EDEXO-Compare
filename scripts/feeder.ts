@@ -149,6 +149,32 @@ async function cmdStatus(): Promise<void> {
     for (const s of stale.slice(0, 12)) console.log(s);
     if (stale.length > 12) console.log(`  … and ${stale.length - 12} more`);
   }
+  /**
+   * C3 provenance, in one line: how many raw CSV rows became how many observations.
+   *
+   * `csvRows ≥ occurrences ≥ bodies`, where the first gap is duplicate rows the store collapsed and
+   * the second is sightings whose body EDSM has no record of. Printed because de-duplication that
+   * nobody can see is de-duplication nobody can check.
+   */
+  const withProv = db.species
+    .map((e) => loadExomasteryProfile(root, e)?.provenance)
+    .filter((v): v is NonNullable<typeof v> => Boolean(v));
+  if (withProv.length) {
+    const sum = (f: (p: (typeof withProv)[number]) => number) => withProv.reduce((a, p) => a + f(p), 0);
+    const rows = sum((p) => p.csvRows);
+    const occ = sum((p) => p.occurrences);
+    const bod = sum((p) => p.bodies);
+    console.log(
+      `
+provenance       ${withProv.length} profile(s) carry an input hash
+` + `  ${rows} CSV row(s) → ${occ} unique body/species pair(s) → ${bod} hydrated into the numbers`,
+    );
+    const missing = db.species.filter(
+      (e) => loadExomasteryProfile(root, e) && !loadExomasteryProfile(root, e)?.provenance,
+    ).length;
+    if (missing) console.log(`  ${missing} profile(s) predate provenance — rebuild to stamp them`);
+  }
+
   // Every command leaves the snapshot behind, so the app's Options panel is never older than the
   // last time the feeder was touched.
   recordStatusSnapshot(ctx, "status");

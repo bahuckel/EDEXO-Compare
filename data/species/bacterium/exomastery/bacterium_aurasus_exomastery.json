@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium aurasus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:02.791Z",
+  "generatedAt": "2026-09-06T06:11:58.367Z",
   "sampleCount": 4301,
+  "provenance": {
+    "inputHash": "694cb5d928fd653e04e187264300ba9033dcc84e2d0b5b589cf8a7557c786a52",
+    "csvRows": 11728,
+    "occurrences": 4370,
+    "bodies": 4301
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 91,

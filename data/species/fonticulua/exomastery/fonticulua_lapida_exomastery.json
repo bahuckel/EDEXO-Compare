@@ -3,8 +3,14 @@
   "speciesLabel": "Fonticulua lapida",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.490Z",
+  "generatedAt": "2026-09-06T06:11:59.276Z",
   "sampleCount": 81,
+  "provenance": {
+    "inputHash": "f924a055e8b849e102b414050f4664644a5760c364ec68f9746df637233d8fdb",
+    "csvRows": 240,
+    "occurrences": 81,
+    "bodies": 81
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 127,

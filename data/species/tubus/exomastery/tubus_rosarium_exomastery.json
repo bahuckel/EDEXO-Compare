@@ -3,8 +3,14 @@
   "speciesLabel": "Tubus rosarium",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.250Z",
+  "generatedAt": "2026-09-06T06:12:00.321Z",
   "sampleCount": 140,
+  "provenance": {
+    "inputHash": "c0a967083ee86219ef07c70341c4d3c7e5ddecfedbc1f793952aa2e8a5ea0f04",
+    "csvRows": 378,
+    "occurrences": 141,
+    "bodies": 140
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 102,

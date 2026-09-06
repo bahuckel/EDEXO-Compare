@@ -3,8 +3,14 @@
   "speciesLabel": "Bacterium vesicula",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.068Z",
+  "generatedAt": "2026-09-06T06:11:58.752Z",
   "sampleCount": 645,
+  "provenance": {
+    "inputHash": "f66691ae00cce2b0096a37c43b748109acb79a7d5cacec063904818a8edf1584",
+    "csvRows": 968,
+    "occurrences": 652,
+    "bodies": 645
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 19,

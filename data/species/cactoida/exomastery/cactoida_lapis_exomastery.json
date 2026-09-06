@@ -3,8 +3,14 @@
   "speciesLabel": "Cactoida lapis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.182Z",
+  "generatedAt": "2026-09-06T06:11:58.880Z",
   "sampleCount": 709,
+  "provenance": {
+    "inputHash": "77a6884b1d798d46155db307c89a6bcefe7cc50ad7ef0fa325d6c389219fa506",
+    "csvRows": 2069,
+    "occurrences": 714,
+    "bodies": 709
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 45,

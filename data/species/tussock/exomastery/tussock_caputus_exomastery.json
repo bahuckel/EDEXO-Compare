@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock caputus",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.300Z",
+  "generatedAt": "2026-09-06T06:12:00.380Z",
   "sampleCount": 569,
+  "provenance": {
+    "inputHash": "0825171a3d73f62c0d3615abe8c357857b2b51ec7a922cdcad3f027fd05c8f45",
+    "csvRows": 1629,
+    "occurrences": 579,
+    "bodies": 569
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 122,

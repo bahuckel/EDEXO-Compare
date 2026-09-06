@@ -3,8 +3,14 @@
   "speciesLabel": "Tussock serrati",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:04.439Z",
+  "generatedAt": "2026-09-06T06:12:00.593Z",
   "sampleCount": 343,
+  "provenance": {
+    "inputHash": "57b7a7e3b4725595be618fe57d53181fc831898bab556d172445e2d8824accd5",
+    "csvRows": 924,
+    "occurrences": 348,
+    "bodies": 343
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 125,

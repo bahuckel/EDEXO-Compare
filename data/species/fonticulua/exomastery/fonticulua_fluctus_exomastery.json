@@ -3,8 +3,14 @@
   "speciesLabel": "Fonticulua fluctus",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.484Z",
+  "generatedAt": "2026-09-06T06:11:59.265Z",
   "sampleCount": 6,
+  "provenance": {
+    "inputHash": "de2c4e930e9135c50fe54a404bd6dbfb15577b29790ede7922721cf1180e8abc",
+    "csvRows": 16,
+    "occurrences": 6,
+    "bodies": 6
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 286,

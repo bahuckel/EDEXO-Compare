@@ -3,8 +3,14 @@
   "speciesLabel": "Electricae radialem",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.448Z",
+  "generatedAt": "2026-09-06T06:11:59.219Z",
   "sampleCount": 58,
+  "provenance": {
+    "inputHash": "0daa514cb62800e9269cc9e546bd113011bcc17a6ed229a25dc41a3116900dc6",
+    "csvRows": 116,
+    "occurrences": 62,
+    "bodies": 58
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 106,

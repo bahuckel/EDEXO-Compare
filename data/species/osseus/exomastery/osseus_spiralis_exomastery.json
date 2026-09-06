@@ -3,8 +3,14 @@
   "speciesLabel": "Osseus spiralis",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.928Z",
+  "generatedAt": "2026-09-06T06:11:59.891Z",
   "sampleCount": 826,
+  "provenance": {
+    "inputHash": "444f89d54427a50229219948ddbc6df6f633b367e75dbfe11e93c1cb8096f717",
+    "csvRows": 2329,
+    "occurrences": 840,
+    "bodies": 826
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 324,

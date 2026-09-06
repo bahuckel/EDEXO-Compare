@@ -3,8 +3,14 @@
   "speciesLabel": "Cactoida vermis",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-05T18:15:03.251Z",
+  "generatedAt": "2026-09-06T06:11:58.959Z",
   "sampleCount": 559,
+  "provenance": {
+    "inputHash": "67d12be2416b686f67bb6f737a3a36480e3a62de9bd6b6f96ab0a313c14f5a6f",
+    "csvRows": 1627,
+    "occurrences": 566,
+    "bodies": 559
+  },
   "numerics": {
     "body.distanceToArrival": {
       "min": 18,
