@@ -25,9 +25,43 @@ function footfallMeta(pr: ExoPayoutRangeDTO): {
     tone: "open",
     hint:
       pr.journalWasFootfalled === false
-        ? "Last detailed scan: not footfalled — bonus may still be available to the right landing."
+        ? // A `false` is a claim about a moment, and it only ever gets staler. Saying when it was
+          // observed is the difference between a useful pill and one that sends a commander 400 ly
+          // to find boot prints.
+          `Not footfalled as of the last detailed scan${pr.footfallSeenLabel ? ` (${pr.footfallSeenLabel})` : ""} — the bonus was intact then.`
         : "WasFootfalled not seen in merged journal yet; updates after DSS / surface lines.",
   };
+}
+
+/**
+ * The target ladder of INCLUDE-BODY-IDS §2.7, as one line.
+ *
+ * `unknown` is deliberately not dressed up as an opportunity: it is the absence of evidence, and
+ * the whole point of the tri-state is that it never masquerades as `unopened`.
+ */
+function rungLabel(pr: ExoPayoutRangeDTO): { text: string; hint: string } | null {
+  const age = pr.rungSeenLabel ? `, seen ${pr.rungSeenLabel}` : "";
+  switch (pr.targetRung) {
+    case "unopened":
+      return {
+        text: "UNOPENED",
+        hint: `Signals present, nobody had mapped or landed on it${age}. The first-footfall bonus was intact at that point.`,
+      };
+    case "mapped-not-walked":
+      return {
+        text: "MAPPED, NOT WALKED",
+        hint: pr.mappedPredatesExobiology
+          ? `Mapped${age} — before Odyssey, so it was mapped for the cartographic payout by somebody who could not collect plants. It says nothing about the biology.`
+          : `Somebody mapped it${age} and did not land. They saw the genera and declined, so weigh that against the age of the map.`,
+      };
+    case "walked":
+      return {
+        text: "WALKED",
+        hint: `Somebody has landed here${age}. Footfall is permanent — the ×5 is gone, though the base payout and the plants may well remain.`,
+      };
+    default:
+      return null;
+  }
 }
 
 export function ExoPayoutRangePanel({
@@ -38,6 +72,7 @@ export function ExoPayoutRangePanel({
   variant?: "popup" | "main";
 }) {
   const multLabel = pr.mult === 5 ? "×5 (your first footfall on this body)" : "×1 list price";
+  const rung = rungLabel(pr);
   const minListSum = pr.minTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
   const maxListSum = pr.maxTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
   const minFfSum = pr.minTotalSpecies.reduce((s, r) => s + r.listCredits * 5, 0);
@@ -221,6 +256,14 @@ export function ExoPayoutRangePanel({
             }
             hint="From latest merged detailed Scan.WasFootfalled when present — distinct from codex first-footfall organic bonus flags."
           />
+          {pr.wasMapped !== null ? (
+            <KvRow
+              label="Mapped"
+              value={`${pr.wasMapped ? "Yes" : "No"}${pr.mappedSeenLabel ? ` (${pr.mappedSeenLabel})` : ""}`}
+              hint="Whether anyone has DSS-mapped this body. A map's age is most of its meaning — one from before Odyssey predates collectable exobiology entirely."
+            />
+          ) : null}
+          {rung ? <KvRow label="Target" value={rung.text} hint={rung.hint} /> : null}
         </div>
       ) : null}
       {variant === "popup" ? (

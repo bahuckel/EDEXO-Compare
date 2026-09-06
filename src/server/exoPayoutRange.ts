@@ -1,4 +1,12 @@
 import type { BodyExoState, ExoPayoutRangeDTO, SpeciesMatch } from "../shared/types.js";
+import {
+  UNOBSERVED,
+  observationAgeLabel,
+  predatesExobiology,
+  rungEvidence,
+  targetRung,
+  type ObservedFlag,
+} from "../shared/observedFlag.js";
 import { lookupPriceStrict, type PriceIndex } from "./priceList.js";
 
 export type ExoPayoutSlotSource = "bio_signals" | "genus_hints" | "none";
@@ -28,6 +36,12 @@ export function computeExoPayoutRangeFromMatches(
   mult: 1 | 5,
   journalWasFootfalled: boolean | null,
   commanderFirstFootfall: boolean,
+  /**
+   * Phase 3 provenance. Defaulted so the many callers that do not have it yet — tests, the fixture
+   * generator — keep compiling and simply report `unknown`, which is the honest state for them.
+   */
+  footfallFlag: ObservedFlag = UNOBSERVED,
+  mappedFlag: ObservedFlag = UNOBSERVED,
 ): ExoPayoutRangeDTO | null {
   if (slotCount <= 0) return null;
   const byId = new Map<string, PricedSpecies>();
@@ -54,6 +68,7 @@ export function computeExoPayoutRangeFromMatches(
   const minTotalSpecies = minPick.map(toLine);
   const maxTotalSpecies = maxPick.map(toLine);
 
+  const rung = targetRung(footfallFlag, mappedFlag);
   const minCr = minTotalSpecies.reduce((s, r) => s + r.payoutCredits, 0);
   const maxCr = maxTotalSpecies.reduce((s, r) => s + r.payoutCredits, 0);
 
@@ -66,6 +81,12 @@ export function computeExoPayoutRangeFromMatches(
     mult,
     commanderFirstFootfall,
     journalWasFootfalled,
+    footfallSeenLabel: observationAgeLabel(footfallFlag),
+    wasMapped: mappedFlag.value,
+    mappedSeenLabel: observationAgeLabel(mappedFlag),
+    targetRung: rung,
+    rungSeenLabel: observationAgeLabel(rungEvidence(rung, footfallFlag, mappedFlag)),
+    mappedPredatesExobiology: predatesExobiology(mappedFlag),
     incomplete: slotCount > items.length,
     minTotalSpecies,
     maxTotalSpecies,

@@ -9,6 +9,12 @@ import type {
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import {
+  UNOBSERVED,
+  mergeObservation,
+  type ObservationSource,
+  type ObservedFlag,
+} from "../shared/observedFlag.js";
+import {
   displayLabelFromOrganicLine,
   nextOrganicProgressCount,
   speciesKeyFromOrganicJournal,
@@ -94,6 +100,13 @@ export type JournalMergeCachePayload = {
   footJournalContextBuffer: JournalLine[];
   organicAnalyseByKey: [string, OrganicAnalyseProgress][];
   bodyDetailedFootfallState: [string, boolean][];
+  /**
+   * Phase 3 provenance. Optional so a cache written before this existed still loads — it simply has
+   * no ages until the next rebuild from the logs, and an absent flag reads as unknown, which is the
+   * honest answer rather than a silent `false`.
+   */
+  bodyFootfallFlag?: [string, ObservedFlag][];
+  bodyMappedFlag?: [string, ObservedFlag][];
   firstFootfallBodies: string[];
   /**
    * Codex keys for species this commander has logged (B4). Optional so a cache written before this
@@ -431,6 +444,38 @@ export class GameStateStore {
    * false = no footfall yet at time of that scan; used with Disembark to detect first footfall.
    */
   readonly bodyDetailedFootfallState = new Map<string, boolean>();
+  /**
+   * Footfall and mapping as tri-states with provenance — INCLUDE-BODY-IDS Phase 3.
+   *
+   * {@link bodyDetailedFootfallState} above is now a **projection** of `bodyFootfallFlag`, kept
+   * because the payout path and the merge cache both speak boolean. Everything writes through
+   * {@link observeFootfall} / {@link observeMapped}, so the two cannot drift, and the sticky-`true`
+   * rule now applies to the payout path as well rather than only to the new surface.
+   *
+   * The flags carry what a bare boolean cannot: **when** the claim was made, and by whom. A `false`
+   * is only true as of its timestamp, and rung 2 of the target ladder is meaningless without a date
+   * (§1.5, §2.7).
+   */
+  readonly bodyFootfallFlag = new Map<string, ObservedFlag>();
+  readonly bodyMappedFlag = new Map<string, ObservedFlag>();
+
+  /**
+   * Record a footfall observation. The merge rules live in `observedFlag.ts`, not here — this is
+   * the only place the app folds one in, which is what makes a journal re-scan idempotent.
+   */
+  observeFootfall(bk: string, value: boolean, source: ObservationSource, seenAt: string): void {
+    const merged = mergeObservation(this.bodyFootfallFlag.get(bk) ?? UNOBSERVED, { value, source, seenAt });
+    this.bodyFootfallFlag.set(bk, merged);
+    if (merged.value !== null) this.bodyDetailedFootfallState.set(bk, merged.value);
+  }
+
+  /** Record a mapping observation. Same rules, same reason. */
+  observeMapped(bk: string, value: boolean, source: ObservationSource, seenAt: string): void {
+    this.bodyMappedFlag.set(
+      bk,
+      mergeObservation(this.bodyMappedFlag.get(bk) ?? UNOBSERVED, { value, source, seenAt }),
+    );
+  }
   /** Bodies where this commander gets first-footfall organic payout (1× + 4× bonus = 5× list in valuation). */
   readonly firstFootfallBodies = new Set<string>();
 
@@ -793,6 +838,8 @@ export class GameStateStore {
     this.scExitAt = null;
     this.organicRunStartedAt.clear();
     this.bodyDetailedFootfallState.clear();
+    this.bodyFootfallFlag.clear();
+    this.bodyMappedFlag.clear();
     this.exoOrganicTracker = null;
     this.exoOrganicLastFix = null;
     clearPersistedOrganicSampleSession(getProjectRoot());
@@ -818,6 +865,8 @@ export class GameStateStore {
     this.lastEventIso = null;
     this.organicAnalyseByKey.clear();
     this.bodyDetailedFootfallState.clear();
+    this.bodyFootfallFlag.clear();
+    this.bodyMappedFlag.clear();
     this.firstFootfallBodies.clear();
     this.codexLoggedSpecies.clear();
     this.landingMinutesSamples.length = 0;
@@ -1354,6 +1403,8 @@ export class GameStateStore {
 
         const bk = bodyKey(systemAddress, bodyId);
         this.dssMappedBodyKeys.add(bk);
+        // Our own DSS: the body is mapped from this moment on, whoever got there first.
+        this.observeMapped(bk, true, "journal", (line.timestamp as string) ?? new Date().toISOString());
         const recForMapper = this.explorationScans.get(bk);
         this.dssFirstMapperEligibleByBodyKey.set(bk, recForMapper ? recForMapper.wasMapped !== true : false);
         const probes = line.ProbesUsed as number | undefined;
@@ -1460,9 +1511,17 @@ export class GameStateStore {
 
         const starSystem = line.StarSystem as string;
 
+        const scanTs = (line.timestamp as string) ?? new Date().toISOString();
         const wfRaw = line.WasFootfalled;
         if (typeof wfRaw === "boolean") {
-          this.bodyDetailedFootfallState.set(bodyKey(systemAddress, bodyId), wfRaw);
+          this.observeFootfall(bodyKey(systemAddress, bodyId), wfRaw, "journal", scanTs);
+        }
+        // `Scan.WasMapped` is "had anyone mapped this at the moment of the scan". Our own DSS makes
+        // later scans report true, which is why the *first-mapper* question is frozen separately at
+        // SAAScanComplete — but for "has anyone mapped it", a later true is simply correct.
+        const wmRaw = (line as Record<string, unknown>).WasMapped;
+        if (typeof wmRaw === "boolean") {
+          this.observeMapped(bodyKey(systemAddress, bodyId), wmRaw, "journal", scanTs);
         }
 
         if (this.currentSystemAddress === null || systemAddress !== this.currentSystemAddress) return;
@@ -1665,6 +1724,10 @@ export class GameStateStore {
           if (detailedSaidUnfootfalled || journalFirstFootfall) {
             this.firstFootfallBodies.add(bk);
           }
+          // Read the eligibility above *before* recording this: standing on the body makes it
+          // footfalled from now on, and folding that in first would erase the `false` this
+          // commander's own ×5 bonus depends on.
+          this.observeFootfall(bk, true, "journal", (line.timestamp as string) ?? new Date().toISOString());
         }
         return;
       }
@@ -1949,6 +2012,8 @@ export class GameStateStore {
       footJournalContextBuffer: this.footJournalContextBuffer.slice(),
       organicAnalyseByKey: [...this.organicAnalyseByKey.entries()],
       bodyDetailedFootfallState: [...this.bodyDetailedFootfallState.entries()],
+      bodyFootfallFlag: [...this.bodyFootfallFlag.entries()],
+      bodyMappedFlag: [...this.bodyMappedFlag.entries()],
       firstFootfallBodies: [...this.firstFootfallBodies],
       codexLoggedSpecies: [...this.codexLoggedSpecies],
       landingMinutesSamples: [...this.landingMinutesSamples],
@@ -2000,6 +2065,8 @@ export class GameStateStore {
     this.footJournalContextBuffer.push(...data.footJournalContextBuffer);
     for (const [k, v] of data.organicAnalyseByKey) this.organicAnalyseByKey.set(k, v);
     for (const [k, v] of data.bodyDetailedFootfallState) this.bodyDetailedFootfallState.set(k, v);
+    for (const [k, v] of data.bodyFootfallFlag ?? []) this.bodyFootfallFlag.set(k, v);
+    for (const [k, v] of data.bodyMappedFlag ?? []) this.bodyMappedFlag.set(k, v);
     for (const k of data.firstFootfallBodies) this.firstFootfallBodies.add(k);
     for (const k of data.codexLoggedSpecies ?? []) this.codexLoggedSpecies.add(k);
     this.landingMinutesSamples.push(...(data.landingMinutesSamples ?? []));

@@ -684,6 +684,26 @@ export interface ExoPayoutRangeDTO {
   commanderFirstFootfall: boolean;
   /** Latest detailed `Scan.WasFootfalled` if seen in merged journal; null if unknown. */
   journalWasFootfalled: boolean | null;
+  /**
+   * Phase 3 provenance for that flag: how old the claim is, in words.
+   *
+   * A `false` is a statement about a moment, not a property of the body — the ×5 was intact *then*.
+   * Null when nothing has been observed, which is a different thing from a fresh `false` and must
+   * be drawn differently.
+   */
+  footfallSeenLabel: string | null;
+  /** Whether anyone has DSS-mapped it, as a tri-state, with the same age caveat. */
+  wasMapped: boolean | null;
+  mappedSeenLabel: string | null;
+  /**
+   * The target ladder of INCLUDE-BODY-IDS §2.7. `unknown` is **not** `unopened` — the first is the
+   * absence of evidence and the second is evidence of absence.
+   */
+  targetRung: "unopened" | "mapped-not-walked" | "walked" | "unknown";
+  /** Age of the observation the rung actually rests on, so the UI never shows a rung bare. */
+  rungSeenLabel: string | null;
+  /** A map from before Odyssey says nothing about plants — nobody could collect them yet (§1.5). */
+  mappedPredatesExobiology: boolean;
   /** `slotCount` exceeds priced species (range uses `pricedCandidateCount` terms only). */
   incomplete: boolean;
   /** The `k` cheapest distinct priced species (`k` = min(slots, pricedCandidateCount)); sums to `minCr`. */

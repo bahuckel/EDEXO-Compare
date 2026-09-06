@@ -1,4 +1,5 @@
 import { existsSync, statSync } from "node:fs";
+import { UNOBSERVED } from "../shared/observedFlag.js";
 import type {
   AppSnapshot,
   BodyComputed,
@@ -779,6 +780,13 @@ function computeBodyCacheSignature(
     bacterium: store.includeBacteriumInSearch,
     firstFootfall: store.firstFootfallBodies.has(b.key),
     wasFootfalled: store.bodyDetailedFootfallState.get(b.key) ?? null,
+    // The age is part of what is drawn, so the signature has to move when the observation does —
+    // otherwise a body keeps showing a stale rung from cache.
+    footfallSeenAt: store.bodyFootfallFlag.get(b.key)?.seenAt ?? null,
+    mappedFlag: (() => {
+      const m = store.bodyMappedFlag.get(b.key);
+      return m ? `${String(m.value)}:${m.seenAt ?? ""}` : null;
+    })(),
     organic: organicProgressSignature(store, b.key),
     species: speciesDataGeneration,
     footCatalog: footScannedCatalogSignature(root),
@@ -939,6 +947,8 @@ function computeBodyUncached(
           mult,
           journalWasFootfalled,
           mult === 5,
+          store.bodyFootfallFlag.get(b.key) ?? UNOBSERVED,
+          store.bodyMappedFlag.get(b.key) ?? UNOBSERVED,
         )
       : null;
 
