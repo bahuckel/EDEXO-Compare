@@ -568,6 +568,46 @@ export class FeederStore {
     return written;
   }
 
+  /** Every system with the identity it carries so far. */
+  systemIdentityRows(): { systemId: number; normSystem: string; displayName: string; id64: string | null }[] {
+    return queryAll<[number, string, string, string | null]>(
+      this.db,
+      "SELECT id, norm_name, display_name, id64 FROM systems ORDER BY id",
+      [],
+    ).map((r) => ({ systemId: r[0], normSystem: r[1], displayName: r[2], id64: r[3] }));
+  }
+
+  /**
+   * Store system `id64` as **text**.
+   *
+   * The column is TEXT and the value arrives as a string, so nothing in the path ever holds it as a
+   * JavaScript number — which is the only way the digits survive. `COALESCE` keeps a second run a
+   * no-op and stops a later source overwriting an identity already established.
+   */
+  setSystemId64(rows: { normSystem: string; id64: string; edsmId: number | null }[]): number {
+    if (rows.length === 0) return 0;
+    let written = 0;
+    this.transaction(() => {
+      for (const r of rows) {
+        runExec(
+          this.db,
+          "UPDATE systems SET id64 = COALESCE(id64, ?), edsm_id = COALESCE(edsm_id, ?) WHERE norm_name = ?",
+          [r.id64, r.edsmId, r.normSystem],
+        );
+        written += this.db.getRowsModified();
+      }
+    });
+    return written;
+  }
+
+  systemId64Coverage(): { systems: number; systemsWithId64: number } {
+    const one = (sql: string) => Number(queryOne<[number]>(this.db, sql, [])?.[0] ?? 0);
+    return {
+      systems: one("SELECT COUNT(*) FROM systems"),
+      systemsWithId64: one("SELECT COUNT(*) FROM systems WHERE id64 IS NOT NULL"),
+    };
+  }
+
   /** How much of the corpus can now be addressed by identity rather than by name. */
   identityCoverage(): { planets: number; planetsWithBodyId: number; systems: number; systemsWithEdsmId: number } {
     const one = (sql: string) => Number(queryOne<[number]>(this.db, sql, [])?.[0] ?? 0);

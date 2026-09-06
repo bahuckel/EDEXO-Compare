@@ -1,4 +1,5 @@
 import { formatFullSpectralNotation } from "./spectralNotation.js";
+import { parseJsonPreservingIds, toId64String } from "./bigIntJson.js";
 
 const EDSM_BODIES = "https://www.edsm.net/api-system-v1/bodies";
 /** Batch endpoint: many `systemName[]` per request, and it carries the coordinates the bodies one omits. */
@@ -244,6 +245,66 @@ export async function fetchEdsmSystemCoords(names: string[]): Promise<EdsmSystem
   if (!res.ok) throw new Error(`EDSM HTTP ${res.status} for a coordinate batch of ${wanted.length}`);
 
   return parseEdsmSystemCoords(await res.json());
+}
+
+/** A system's two identifiers. `id64` is a **string** — see `bigIntJson.ts` for why it must be. */
+export interface EdsmSystemIds {
+  name: string;
+  edsmId: number;
+  id64: string;
+}
+
+/**
+ * System `id64` and EDSM id for a batch of systems, on the same endpoint as the coordinates.
+ *
+ * Two things make this different from `fetchEdsmSystemCoords` despite the shared URL:
+ *
+ * - `showId=1` rather than `showCoordinates=1`, which is what puts `id` and `id64` in the response.
+ * - **`res.text()`, not `res.json()`.** `res.json()` is `JSON.parse` underneath, and `JSON.parse`
+ *   rounds every integer past 2^53 to a float64. Using it here would re-create on purpose the exact
+ *   corruption this whole item exists to undo. Corpus system ids top out at 4.9e14 so today they
+ *   would survive, but relying on that is relying on nobody ever visiting a far enough sector.
+ *
+ * Names EDSM does not know are absent from the result rather than an error, same as the coords call.
+ */
+export async function fetchEdsmSystemIds(names: string[]): Promise<EdsmSystemIds[]> {
+  const wanted = names.map((n) => n.trim()).filter(Boolean);
+  if (wanted.length === 0) return [];
+  const u = new URL(EDSM_SYSTEMS);
+  for (const n of wanted.slice(0, EDSM_COORDS_BATCH)) u.searchParams.append("systemName[]", n);
+  u.searchParams.set("showId", "1");
+
+  const res = await fetch(u.toString(), {
+    headers: { Accept: "application/json", "User-Agent": EDSM_UA },
+  });
+  if (res.status === 429) {
+    throw new EdsmRateLimitExhaustedError("EDSM returned HTTP 429 for an id batch.", wanted[0]!);
+  }
+  if (!res.ok) throw new Error(`EDSM HTTP ${res.status} for an id batch of ${wanted.length}`);
+
+  return parseEdsmSystemIds(await res.text());
+}
+
+/** Ids out of the raw response **text** — the digits have to be captured before a parser sees them. */
+export function parseEdsmSystemIds(body: string): EdsmSystemIds[] {
+  let parsed: unknown;
+  try {
+    parsed = parseJsonPreservingIds(body);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  const out: EdsmSystemIds[] = [];
+  for (const row of parsed) {
+    if (!row || typeof row !== "object") continue;
+    const r = row as { name?: unknown; id?: unknown; id64?: unknown };
+    const name = typeof r.name === "string" ? r.name.trim() : "";
+    const id64 = toId64String(r.id64);
+    const edsmId = typeof r.id === "number" && Number.isSafeInteger(r.id) ? r.id : null;
+    if (!name || !id64 || edsmId === null) continue;
+    out.push({ name, edsmId, id64 });
+  }
+  return out;
 }
 
 /**

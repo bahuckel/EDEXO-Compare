@@ -15,6 +15,7 @@
  *   npm run feeder -- cooccurrence            rebuild the genus co-occurrence table on its own
  *   npm run feeder -- coords                  fetch galactic coordinates for the corpus systems
  *   npm run feeder -- identity [--apply]      recover body IDs from the archives; reports by default
+ *   npm run feeder -- system-ids [--apply]    fill system id64 from the cache; --fetch-missing for the rest
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -51,10 +52,11 @@ import {
   writeCooccurrenceTable,
   writeSpeciesPrevalence,
 } from "../src/feeder/cooccurrence.js";
-import { EDSM_COORDS_BATCH, fetchEdsmSystemCoords, withEdsmGate } from "../src/feeder/edsm.js";
+import { EDSM_COORDS_BATCH, fetchEdsmSystemCoords, fetchEdsmSystemIds, withEdsmGate } from "../src/feeder/edsm.js";
 import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
 import { countHydratableSamples } from "../src/feeder/samplePacks.js";
 import { backfillBodyIdentity, formatBackfillReport } from "../src/feeder/bodyIdentityBackfill.js";
+import { backfillSystemId64, formatSystemId64Report } from "../src/feeder/systemId64Backfill.js";
 import {
   proposeEdgesForProfile,
   SNAP_MIN_SAMPLES,
@@ -445,6 +447,56 @@ async function cmdIdentity(): Promise<void> {
   if (!apply) console.log("\nNothing was written. `npm run feeder -- identity --apply` to backfill.");
 }
 
+/**
+ * Phase 2 — system `id64`.
+ *
+ * Almost entirely a disk job, which the plan did not expect: every system id64 in the cache is
+ * intact, because system addresses never reach the magnitudes that damage body ones. `--fetch-missing`
+ * is the small network tail for systems with no cache file, behind the same one-per-second gate as
+ * every other EDSM call.
+ */
+async function cmdSystemIds(): Promise<void> {
+  requireCorpus();
+  const apply = flags.has("--apply");
+  const fetchMissing = flags.has("--fetch-missing");
+  const ctx = await openFeeder();
+  console.log(apply ? "\nreading the system cache…\n" : "\nreading the system cache (dry run)…\n");
+  const report = await backfillSystemId64(ctx.store, { apply });
+  console.log(formatSystemId64Report(report, apply));
+
+  if (fetchMissing && report.missingNames.length > 0) {
+    if (!apply) {
+      console.log("\n--fetch-missing needs --apply; nothing was fetched.");
+    } else {
+      const missing = report.missingNames;
+      console.log(`\nfetching ${missing.length} systems EDSM may know (${EDSM_COORDS_BATCH} per call)…`);
+      let written = 0;
+      let unknown = 0;
+      for (let i = 0; i < missing.length; i += EDSM_COORDS_BATCH) {
+        const batch = missing.slice(i, i + EDSM_COORDS_BATCH);
+        let rows;
+        try {
+          rows = await withEdsmGate(() => fetchEdsmSystemIds(batch));
+        } catch (e) {
+          console.error(`  stopped at ${i}/${missing.length}: ${String(e instanceof Error ? e.message : e)}`);
+          break;
+        }
+        written += ctx.store.setSystemId64(
+          rows.map((r) => ({ normSystem: r.name.trim().toLowerCase(), id64: r.id64, edsmId: r.edsmId })),
+        );
+        unknown += batch.length - rows.length;
+      }
+      ctx.store.persist();
+      const after = ctx.store.systemId64Coverage();
+      console.log(`stored ${written} systems; ${unknown} names EDSM did not recognise`);
+      console.log(`coverage now ${after.systemsWithId64}/${after.systems} systems have id64`);
+    }
+  } else if (report.missingNames.length > 0) {
+    console.log("\n`npm run feeder -- system-ids --apply --fetch-missing` asks EDSM for the rest.");
+  }
+  console.log("");
+}
+
 switch (command) {
   case "status":
     await cmdStatus();
@@ -473,10 +525,13 @@ switch (command) {
   case "identity":
     await cmdIdentity();
     break;
+  case "system-ids":
+    await cmdSystemIds();
+    break;
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply]",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing]",
     );
     process.exit(1);
 }
