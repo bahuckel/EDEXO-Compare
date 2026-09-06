@@ -145,6 +145,8 @@ export function SecondScreen() {
                 {r.coverage < 0.75 ? (
                   <span className="ss-coverage"> · {Math.round(r.coverage * 100)}% scored</span>
                 ) : null}
+                {/* A9's value-at-risk — map before committing to the landing. */}
+                {r.risk.mapFirst ? <span className="ss-mapfirst"> · map first</span> : null}
               </div>
             </li>
           ))}

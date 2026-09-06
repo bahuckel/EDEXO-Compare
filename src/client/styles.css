@@ -9127,6 +9127,17 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   border-radius: 999px;
 }
 
+/*
+ * A9's value-at-risk tag. Deliberately a different colour from "certain" and "first footfall":
+ * those two are good news about the row, this one is a caution about the number beside it, and a
+ * commander scanning the column should be able to tell them apart without reading.
+ */
+.system-triage-tag--risk {
+  color: #ffc14d;
+  border-color: rgba(255, 193, 77, 0.45);
+  cursor: help;
+}
+
 .system-triage-note {
   margin: 0.7rem 0 0;
   line-height: 1.45;
@@ -9422,4 +9433,9 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 
 .second-screen .ss-coverage {
   color: #7a756e;
+}
+
+/* Second screen: the same caution as the triage table's "map first" tag, sized for a glance. */
+.second-screen .ss-mapfirst {
+  color: #ffc14d;
 }

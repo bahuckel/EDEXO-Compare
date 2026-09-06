@@ -51,6 +51,7 @@ export function triageInputsFromBodies(bodies: BodyComputed[]): TriageBodyInput[
         candidates: shown.map((m) => ({
           speciesId: m.entry.id,
           displayName: m.entry.displayName,
+          genus: m.entry.genus,
           probability:
             typeof m.presenceProbabilityPercent === "number" && Number.isFinite(m.presenceProbabilityPercent)
               ? m.presenceProbabilityPercent / 100
@@ -188,6 +189,19 @@ export function SystemTriageModal({
                       >
                         {" "}
                         ({Math.round(r.coverage * 100)}%)
+                      </span>
+                    ) : null}
+                    {/*
+                      A9's value-at-risk. Most of this row's number rests on one candidate that is
+                      less likely than not, so the number is a lottery ticket rather than an
+                      expectation you can plan around — and a DSS settles it for a few probes.
+                    */}
+                    {r.risk.mapFirst ? (
+                      <span
+                        className="system-triage-tag system-triage-tag--risk"
+                        title={`${creditsShort(r.risk.topContribution)} of this rests on ${r.risk.topSpecies ?? "one species"}, which is less likely than not. Map the body to find out whether it is there before committing to the landing.`}
+                      >
+                        map first
                       </span>
                     ) : null}
                   </td>

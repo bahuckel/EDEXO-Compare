@@ -101,6 +101,8 @@ export function timingFromSamples(landing: number[], sampling: number[]): Triage
 export interface TriageCandidate {
   speciesId: string;
   displayName: string;
+  /** Needed by {@link TriageRisk}: a DSS names the genus, so it only helps when genera differ. */
+  genus: string;
   /** Calibrated chance this species is on the body, 0-1. Null when the model had no opinion. */
   probability: number | null;
   /** List price before the first-footfall multiplier. */
@@ -121,6 +123,58 @@ export interface TriageBodyInput {
   certain: boolean;
 }
 
+/**
+ * A9's "value at risk" — is this body's number solid, or is it a lottery ticket?
+ *
+ * Expected value is honest **in aggregate**: the probabilities sum to the biological signal count, so
+ * a system's total is a fair expectation. What it cannot tell you is *what you are flying down for*.
+ * A body showing 4 M because one 15 %-likely species is worth 25 M is a completely different
+ * proposition from a body showing 4 M because four near-certain species are worth 1 M each — and the
+ * triage table draws them identically.
+ *
+ * When most of the value rests on one unlikely candidate, the cheap move is to **map the body
+ * first**. A DSS names the genus for the cost of a few probes, and §35's within-genus view then
+ * answers the rest — far cheaper than landing, sampling, and finding the 1 M species instead of the
+ * 25 M one.
+ *
+ * **The thresholds are definitions, not tuned parameters.** "Most of the value" means more than half
+ * of it; "unlikely" means less likely than not. Neither is swept against the probe, because neither
+ * is a claim about the world — they are what the two English words mean. The probability they are
+ * applied to is the calibrated one (§32.3), and no new percentage reaches the UI (§18 rule 3).
+ *
+ * **The advice has to be actionable, which is a third condition.** A DSS names the *genus*. If every
+ * candidate on the body is the same genus, mapping costs probes and tells the commander nothing they
+ * did not already know — the question was always which *species* of that genus, and §35 answers that
+ * after landing, not before. Honest note: measured on the current corpus this condition excludes
+ * **none** of the bodies the other two flag, so it is a guard rather than a filter. It stays because
+ * the alternative is advice that is true about the risk and useless as an instruction, and nothing
+ * about the corpus guarantees the overlap stays empty.
+ *
+ * So the flag means: *most of this number rests on one unlikely species, and a map would tell you
+ * whether it is there.*
+ *
+ * Measured on 1,091 bodies with a value: it fires on **38 (3.5 %)**, carrying **2.2 %** of the
+ * corpus's expected value. Rare enough to mean something when it appears. The shape of a hit, from
+ * that run:
+ *
+ *   Body 10 — 8.5 M expected, **63 % of it resting on Stratum cucumisis at 33 %**, while the
+ *   likeliest species on the body is Bacterium cerbrus. Two different genera, so one DSS decides
+ *   whether the 8.5 M was real.
+ */
+export interface TriageRisk {
+  /** Expected credits carried by the single largest contributor. */
+  topContribution: number;
+  /** That contributor's share of the row's expected value, 0-1. Zero when there is no value. */
+  concentration: number;
+  /**
+   * The species carrying that slice — **not** necessarily {@link TriageRow.best}, which is the
+   * *likeliest* candidate. The whole point of this flag is that on a risky body they differ.
+   */
+  topSpecies: string | null;
+  /** True when most of the value rests on one unlikely species and a map would settle it. */
+  mapFirst: boolean;
+}
+
 export interface TriageRow extends TriageBodyInput {
   /** Σ P(present) × price × multiplier, in credits. */
   expectedCredits: number;
@@ -132,6 +186,8 @@ export interface TriageRow extends TriageBodyInput {
   creditsPerMinute: number;
   /** The likeliest candidate, for the one-line "what is down there". */
   best: TriageCandidate | null;
+  /** Whether the number above is solid or a lottery ticket. See {@link TriageRisk}. */
+  risk: TriageRisk;
 }
 
 /**
@@ -158,17 +214,28 @@ export function triageRow(body: TriageBodyInput, timing?: TriageTiming | null): 
   let scoredWeight = 0;
   let totalWeight = 0;
   let best: TriageCandidate | null = null;
+  /** The single biggest slice of the expected value — not the same row as `best` (see TriageRisk). */
+  let topContribution = 0;
+  let topContributor: TriageCandidate | null = null;
 
   for (const c of body.candidates) {
     const price = c.priceCredits ?? 0;
     totalWeight += 1;
     if (c.probability == null || !Number.isFinite(c.probability)) continue;
     scoredWeight += 1;
-    expected += c.probability * price * body.multiplier;
+    const contribution = c.probability * price * body.multiplier;
+    expected += contribution;
+    if (contribution > topContribution) {
+      topContribution = contribution;
+      topContributor = c;
+    }
     if (!best || (best.probability ?? -1) < c.probability) best = c;
   }
 
   const minutes = onSiteMinutes(body.signalCount, timing);
+  const concentration = expected > 0 ? topContribution / expected : 0;
+  // A DSS names the genus, so it only settles anything when the scored candidates span more than one.
+  const scoredGenera = new Set(body.candidates.filter((c) => c.probability != null).map((c) => c.genus));
   return {
     ...body,
     expectedCredits: Math.round(expected),
@@ -176,6 +243,19 @@ export function triageRow(body: TriageBodyInput, timing?: TriageTiming | null): 
     onSiteMinutes: minutes,
     creditsPerMinute: minutes > 0 ? expected / minutes : 0,
     best,
+    risk: {
+      topContribution: Math.round(topContribution),
+      concentration,
+      topSpecies: topContributor?.displayName ?? null,
+      // "Most of it" and "less likely than not" — see TriageRisk. A body the game has already
+      // pinned down (§4.3's certainty) has nothing left for a DSS to narrow, and neither does one
+      // whose candidates are all the same genus.
+      mapFirst:
+        !body.certain &&
+        scoredGenera.size > 1 &&
+        concentration > 0.5 &&
+        (topContributor?.probability ?? 0) < 0.5,
+    },
   };
 }
 

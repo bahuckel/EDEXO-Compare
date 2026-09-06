@@ -20,8 +20,8 @@ function body(over: Partial<TriageBodyInput> = {}): TriageBodyInput {
     multiplier: 1,
     certain: false,
     candidates: [
-      { speciesId: "s1", displayName: "One", probability: 0.8, priceCredits: 1_000_000 },
-      { speciesId: "s2", displayName: "Two", probability: 0.5, priceCredits: 2_000_000 },
+      { speciesId: "s1", genus: "g", displayName: "One", probability: 0.8, priceCredits: 1_000_000 },
+      { speciesId: "s2", genus: "g", displayName: "Two", probability: 0.5, priceCredits: 2_000_000 },
     ],
     ...over,
   };
@@ -51,8 +51,8 @@ describe("triageRow", () => {
     const r = triageRow(
       body({
         candidates: [
-          { speciesId: "s1", displayName: "One", probability: 0.8, priceCredits: 1_000_000 },
-          { speciesId: "s2", displayName: "Two", probability: null, priceCredits: 9_000_000 },
+          { speciesId: "s1", genus: "g", displayName: "One", probability: 0.8, priceCredits: 1_000_000 },
+          { speciesId: "s2", genus: "g", displayName: "Two", probability: null, priceCredits: 9_000_000 },
         ],
       }),
     );
@@ -64,7 +64,9 @@ describe("triageRow", () => {
   it("counts a priceless candidate as evidence but not as credits", () => {
     const r = triageRow(
       body({
-        candidates: [{ speciesId: "s1", displayName: "One", probability: 0.9, priceCredits: null }],
+        candidates: [
+          { speciesId: "s1", genus: "g", displayName: "One", probability: 0.9, priceCredits: null },
+        ],
       }),
     );
     expect(r.expectedCredits).toBe(0);
@@ -97,7 +99,9 @@ describe("triageSystem", () => {
     bodyKey: "near",
     signalCount: 1,
     distanceLs: 120,
-    candidates: [{ speciesId: "s3", displayName: "Three", probability: 0.9, priceCredits: 500_000 }],
+    candidates: [
+      { speciesId: "s3", genus: "g", displayName: "Three", probability: 0.9, priceCredits: 500_000 },
+    ],
   });
 
   it("puts the most valuable body first by default", () => {
