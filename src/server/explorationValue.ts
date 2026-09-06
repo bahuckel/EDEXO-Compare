@@ -116,7 +116,6 @@ export function bodyScanValueCredits(
   let mappedValue = value * mappingMultiplier;
   let minMappedValue = minValue * mappingMultiplier;
   let honkValue = value / 3;
-  let minHonkValue = minValue / 3;
 
   if (odysseyBonus) {
     const bump = (v: number) => v + (v * 0.3 > 555 ? v * 0.3 : 555);
@@ -130,7 +129,6 @@ export function bodyScanValueCredits(
   mappedValue = floor500(mappedValue);
   minMappedValue = floor500(minMappedValue);
   honkValue = floor500(honkValue);
-  minHonkValue = floor500(minHonkValue);
 
   if (firstDiscoverer) {
     value *= 2.6;
@@ -138,7 +136,6 @@ export function bodyScanValueCredits(
     mappedValue *= 2.6;
     minMappedValue *= 2.6;
     honkValue *= 2.6;
-    minHonkValue *= 2.6;
   }
 
   if (dssProbeEfficient) {

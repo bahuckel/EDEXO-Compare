@@ -26,7 +26,6 @@ const COL_PLANET = 104;
 const ROW_STAR = 82;
 const MOON_V = 56;
 const MOON_STACK_GAP = 72;
-const SUBSYSTEM_GAP = 36;
 /** Minimum vertical gap between one hub’s lowest drawn content and the next hub’s planet row */
 const VERTICAL_STACK_GAP = 10;
 /** Must match name offset under non-bary nodes in SystemMapModal (approx. below disc). */
@@ -636,7 +635,7 @@ function buildLetterStarMap(sortedStars: SystemMapNodeDTO[]): Map<string, number
 function stellarBaryLetterKey(
   bary: SystemMapNodeDTO,
   starSystemName: string,
-  starById: Map<number, SystemMapNodeDTO>,
+  _starById: Map<number, SystemMapNodeDTO>,
 ): string {
   const stars = bary.children
     .filter((c) => c.isStar)

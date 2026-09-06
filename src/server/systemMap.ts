@@ -20,7 +20,7 @@ import { bodyScanValueCredits, referenceFssAt1EarthMass, starScanValueCredits } 
 import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
 import { estimatedTemperatureRangeForScan } from "./planetTemperature.js";
-import { lookupPrice, lookupPriceStrict, type PriceIndex } from "./priceList.js";
+import { lookupPriceStrict, type PriceIndex } from "./priceList.js";
 import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exoPayoutRange.js";
 import type { ParsedJournalParent } from "./orbitUtils.js";
 import {

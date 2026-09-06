@@ -23,7 +23,7 @@ import {
   planetScanFromExplorationRecord,
   recordFootScanned,
 } from "./footScannedCatalog.js";
-import { explorationRecordIsBeltClusterLike, explorationRecordIsStellar } from "./explorationStellar.js";
+import { explorationRecordIsBeltClusterLike } from "./explorationStellar.js";
 import { greatCircleDistanceMeters, type FootTravelFix } from "./footTravelStatus.js";
 import type { ExoOrganicTrackerInternal } from "./exoOrganicTracker.js";
 import {

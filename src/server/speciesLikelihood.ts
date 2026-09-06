@@ -74,11 +74,16 @@ export const BIN_SMOOTHING = 0.5;
 /**
  * Observations a profile needs before it is scored at all.
  *
- * One, now that the codex envelope exists. A single observation used to imply infinite precision —
- * all the probability in one bin and near zero everywhere else — so the model declined below 20
- * rather than publish that. §16.1's envelope supplies the width the observation cannot, in
- * proportion to how thin it is, and a rare species can be ranked instead of skipped. §15.2: a low
- * sample count is rarity, not unreliability.
+ * One. A single observation used to imply infinite precision — all the probability in one bin and
+ * near zero everywhere else — so the model declined below 20 rather than publish that. What supplies
+ * the width the observation cannot is {@link BIN_SMOOTHING}: half a pseudo-observation in every one
+ * of the sixteen shared bins, so a species seen once reads as a broad hint rather than a certainty,
+ * and a rare species can be ranked instead of skipped. §15.2: a low sample count is rarity, not
+ * unreliability.
+ *
+ * The earlier version of this comment credited §16.1's codex envelope. That envelope was built,
+ * measured at **zero effect on every headline number**, and removed (§34.2) — Laplace smoothing was
+ * already doing the whole job. Do not go looking for it.
  */
 export const MIN_PROFILE_SAMPLES = 1;
 

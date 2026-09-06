@@ -13,6 +13,17 @@
  * journals: approach and landing take a median 1.2 minutes (299 landings, p25 0.9, p75 1.8), and
  * sampling one genus takes 2.5 minutes (264 runs, p25 1.9, p75 4.2). Supercruise is not here, and
  * that is deliberate — see {@link ON_SITE_ONLY}.
+ *
+ * ## The genus-level version was measured and REJECTED (§26.4)
+ *
+ * An earlier attempt ordered bodies by expected value computed from **genus** co-occurrence, before
+ * the species-level model existed. It was built, measured, and refused: it read the system **4 M
+ * credits low on average**, because a genus's value is not the value of the species actually on the
+ * body and the error does not cancel. Sequencing mattered more than the idea — expected value only
+ * became honest once {@link TriageCandidate.probability} was a calibrated *species* probability.
+ *
+ * If you are tempted to add a cheaper genus-only estimate for bodies the model cannot score: that is
+ * the thing that was already tried. Leave such rows unscored and let `coverage` say so.
  */
 
 /**

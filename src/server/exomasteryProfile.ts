@@ -1151,16 +1151,47 @@ export function exomasterySimilarityPercent(
   return exomasteryHabitatQualityPercent(profile, scan, rec, journalHost);
 }
 
-/** Top dimensions with the strongest central tendency in the feeder sample (for spawn-variation hints). */
+/**
+ * Top dimensions with the strongest central tendency in the feeder sample (spawn-variation hints).
+ *
+ * **The number shown is {@link ExomasteryProfileV1.parameterImportance} when the profile carries
+ * it**, which is concentration measured against the corpus background and normalised by maximum
+ * entropy (§25). The fallback below is the old magnitude proxy, `1 / (1 + span / 8)`, and §5.2b is
+ * why it is only a fallback: it scores **argument of periapsis at 0.80** — a parameter that is
+ * uniformly distributed and means nothing — because a small mean makes any span look tight.
+ *
+ * §21b.2 fixed the panel's *ordering* with tier weights. This fixes the *number*, which was still the
+ * discredited one. Display only; the scorer has never read this function.
+ */
 export function buildExomasteryVarietyHints(profile: ExomasteryProfileV1): ExomasteryVarietyItemDTO[] {
   const rows: { label: string; concentration: number; rank: number }[] = [];
+  // Lower-cased, because the loader hands back `rock` where the measured path is `…solidComposition.Rock`.
+  const measured = new Map(
+    Object.entries(profile.parameterImportance ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
+  );
+
   /**
    * Ranked by tier-weighted concentration, displayed with the true one. A tightly clustered orbital
    * period is a real fact about the sample and stays in the list, but it must not head a panel the
    * commander reads as "what this species cares about" - the same demotion the scorer applies.
    */
   const addRow = (path: string, label: string, concentration: number) => {
-    rows.push({ label, concentration, rank: concentration * exomasteryHabitatTierWeight(path) });
+    /**
+     * A measured importance can be negative — the species is *less* concentrated on this parameter
+     * than the galaxy at large — which is information the panel has no way to draw. Clamped to zero
+     * so such a row sinks rather than sorting as if it were strongly negative-tight.
+     */
+    const m = measured.get(path.toLowerCase());
+    /**
+     * Measured where the profile has it, the old proxy where it does not.
+     *
+     * Dropping unmeasured rows instead was tried and rejected: 13 of the 93 shipped profiles carry no
+     * `parameterImportance` at all, and it emptied their panel completely. Falling back leaves those
+     * rows exactly as they are today and improves every row that has a measurement, which is a change
+     * with no case that gets worse.
+     */
+    const shown = m !== undefined ? Math.max(0, m) * 100 : concentration;
+    rows.push({ label, concentration: shown, rank: shown * exomasteryHabitatTierWeight(path) });
   };
 
   for (const [path, counts] of Object.entries(profile.categorical ?? {})) {
@@ -1172,10 +1203,31 @@ export function buildExomasteryVarietyHints(profile: ExomasteryProfileV1): Exoma
     addRow(path, formatPathLabel(path), (mx / total) * 100);
   }
 
+  /**
+   * The profile's own path for a rollup the loader has already split into bare keys.
+   *
+   * `profile.materials` holds `Iron`, not `body.materials.Iron`, so this used to build
+   * `crust.Iron` / `atmosphere.Carbon dioxide` — paths that exist nowhere else in the project. Two
+   * things went wrong with that:
+   *
+   * 1. Measured importance is keyed on the real path, so none of these rows could ever find it.
+   * 2. {@link exomasteryHabitatTier} promotes anything matching "atmosphere" *unless* it also says
+   *    "composition" — the guard exists precisely to keep per-gas fractions out of the primary
+   *    tier — and `atmosphere.Carbon dioxide` slipped through it. Carbon dioxide was heading the
+   *    panel for Tussock ignis on a tier weight it was never meant to have.
+   */
+  const rollupPath = (labelPrefix: string, key: string): string => {
+    if (labelPrefix === "Stat") return key;
+    if (labelPrefix === "Crust") return `body.materials.${key}`;
+    if (labelPrefix === "Atmosphere") return `body.atmosphereComposition.${key}`;
+    return `body.solidComposition.${key}`;
+  };
+
   const addNumericTightness = (labelPrefix: string, map: Record<string, ExomasteryNumericRollup>) => {
     for (const [k, r] of Object.entries(map)) {
-      const pathKey = labelPrefix === "Stat" ? k : `${labelPrefix.toLowerCase()}.${k}`;
+      const pathKey = rollupPath(labelPrefix, k);
       if (shouldOmitExomasterySciencePath(pathKey)) continue;
+      // Only reached when the profile has no measured importance for this path; see the header.
       const mode = r.mode ?? r.mean;
       const span = (r.max - r.min) / (Math.abs(mode) + 1e-9);
       const tight = 1 / (1 + span / 8);

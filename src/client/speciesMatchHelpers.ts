@@ -191,7 +191,7 @@ export function groupedSortedMatches(matches: BodyComputed["matches"], genusOrde
       // keeps its own price order among the other unscored rows.
       const ra = presenceOf(a);
       const rb = presenceOf(b);
-      if ((ra >= 0) !== (rb >= 0)) return ra >= 0 ? -1 : 1;
+      if (ra >= 0 !== rb >= 0) return ra >= 0 ? -1 : 1;
       if (ra >= 0 && rb >= 0 && ra !== rb) return rb - ra;
       const pa = a.priceCredits;
       const pb = b.priceCredits;
@@ -379,20 +379,28 @@ export function footCatalogBadgeText(confirmations: FootCatalogConfirmation[] | 
   return "FOOT CATALOG — Sample";
 }
 
+/**
+ * Written for a commander, not for whoever maintains the scorer.
+ *
+ * These used to name the constant to tune and the folder to drop a JSON into — a code comment shown
+ * to a user. Worse, a bare "%" implied the number was odds when it is a **similarity score**, sitting
+ * beside "Chance here", which is the one calibrated probability on the row. Each now says what it
+ * measures and points at the number to trust instead.
+ */
 export const EXO_SIMILARITY_INDEX_HELP =
-  "Deck match %: linear from weighted “Other matching details” chips (tier × colour; host lines boosted). Requires exomastery profile in species folder (same as habitat fit). ~100% ≈ strong deck; cross-genus. Tunable: server `DECK_SCORE_FULL_SCALE`.";
+  "Deck match: how many of this species’ usual signs this body shows, from the matching details listed below — higher means more of them line up. It compares across every genus, so it is a family resemblance, not odds. For the chance this species is actually here, read “Chance here”, the only calibrated number on this row.";
 
 export const EXO_HABITAT_FIT_HELP =
-  "Habitat fit %: importance-weighted blend vs exomastery profile (feeder `*_exomastery.json`), not genus `*_new.json`. Add that JSON under `data/species/<genus>/` for bars to appear. Journal Scan / ScanOrganic merge with Spansh/EDSM for the scan used in scoring.";
+  "Habitat fit: how close this body is to the kind of world this species has actually been found on, weighted towards the conditions that matter most for it. A resemblance score, not odds — for the chance this species is here, read “Chance here”. Blank until enough bodies have been recorded for this species.";
 
 export const EXO_PRESENCE_HELP =
   "Chance here %: the probability this species is one of the ones actually on this body. Bayes over the feeder profiles — how often the species has been seen at this gravity, temperature, pressure, planet class, atmosphere and host star, weighted by how common it is — normalised across the candidates and multiplied by the biological signal count. It is the one number on this row that has been calibrated: on bodies where every genus was sampled, rows it calls 90-100% turn up 97.8% of the time and rows it calls 0-10% turn up 8.9% of the time. Blank when the species has no profile or fewer than 20 observed bodies: unmeasured, not unlikely.";
 
 export const EXO_GENUS_RANK_HELP =
-  "Same genus on this body: each species' % of the group's combined deck-chip score (feeder alignment). All such rows sum to ~100% — relative feeder fit among siblings, not “confidence” the planet is that species and not codex/spawn truth. Hidden when only one exomastery candidate in the genus.";
+  "Same genus on this body: how this species compares with its siblings on resemblance alone. The rows add up to about 100%, so this says which of them fits best — not how likely the genus is to be here at all. Hidden when the genus has only one candidate.";
 
 export const EXO_CODEX_VS_EXO_PROFILE_HELP =
-  "Shown as candidate = `*_new.json` codex gates only. Habitat % & deck % need `*_exomastery.json` (feeder) in the same genus folder.";
+  "This species is listed because the body meets its codex conditions. Habitat fit and deck match also need observed bodies for it, and stay blank until enough have been recorded.";
 
 export function exomasteryDetailHasContent(d: ExomasteryDetailDTO | null | undefined): boolean {
   if (!d) return false;

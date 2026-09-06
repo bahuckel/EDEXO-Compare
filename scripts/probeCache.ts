@@ -28,7 +28,11 @@ function ageOf(file: string): string {
     const { mtime, size } = statSync(file);
     const minutes = Math.max(0, Math.round((Date.now() - mtime.getTime()) / 60000));
     const age =
-      minutes < 60 ? `${minutes} min` : minutes < 1440 ? `${(minutes / 60).toFixed(1)} h` : `${(minutes / 1440).toFixed(1)} d`;
+      minutes < 60
+        ? `${minutes} min`
+        : minutes < 1440
+          ? `${(minutes / 60).toFixed(1)} h`
+          : `${(minutes / 1440).toFixed(1)} d`;
     return `${(size / 1e6).toFixed(1)} MB, written ${age} ago`;
   } catch {
     return "size unknown";
@@ -54,7 +58,9 @@ export function loadJournalMergeCacheForTool(quiet = false): JournalMergeCachePa
     raw[0] === 0x1f && raw[1] === 0x8b ? v8.deserialize(gunzipSync(raw)) : JSON.parse(raw.toString("utf8"));
   const payload = decodeJournalMergeCache(doc);
   if (!payload) {
-    console.error(`Cache at ${payloadPath} is not in the current encoding; delete it and let the app rebuild.`);
+    console.error(
+      `Cache at ${payloadPath} is not in the current encoding; delete it and let the app rebuild.`,
+    );
     process.exit(1);
   }
   return payload;

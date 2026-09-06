@@ -2285,7 +2285,11 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
-  async function post(path: string, body: unknown, method = "POST"): Promise<{ ok: boolean; error?: string }> {
+  async function post(
+    path: string,
+    body: unknown,
+    method = "POST",
+  ): Promise<{ ok: boolean; error?: string }> {
     try {
       const r = await fetch(path, {
         method,
@@ -2301,13 +2305,13 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
   return (
     <section className="options-edsm options-meta-block">
       <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-        <strong>EDSM auto-fetch</strong> — when you jump into a system the app has no scans for, look it
-        up on EDSM while you travel, so the system can be triaged before you arrive.
+        <strong>EDSM auto-fetch</strong> — when you jump into a system the app has no scans for, look it up on
+        EDSM while you travel, so the system can be triaged before you arrive.
       </p>
       <p className="options-edsm-privacy dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-        This sends <strong>the name of every system you enter</strong> to edsm.net, a third party, and
-        your EDSM commander name and API key with it. Nothing else leaves your machine. It is off until
-        you turn it on.
+        This sends <strong>the name of every system you enter</strong> to edsm.net, a third party, and your
+        EDSM commander name and API key with it. Nothing else leaves your machine. It is off until you turn it
+        on.
       </p>
       <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
         It needs your own EDSM account: register at{" "}
@@ -2318,8 +2322,8 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
         <a href="https://www.edsm.net/en/settings/api" target="_blank" rel="noreferrer noopener">
           edsm.net/en/settings/api
         </a>
-        . The key is stored on this machine only, in its own file beside your settings — never in the
-        settings file itself, and never in the repository.
+        . The key is stored on this machine only, in its own file beside your settings — never in the settings
+        file itself, and never in the repository.
       </p>
 
       {state.hasKey ? (
@@ -2569,8 +2573,7 @@ function MapOptionsModal({
                   phone once and never typed again.
                 */}
                 <p className="options-journal-line dim">
-                  Second screen (read-only triage):{" "}
-                  {snap.lanUrls.map((u) => secondScreenUrl(u)).join(" · ")}
+                  Second screen (read-only triage): {snap.lanUrls.map((u) => secondScreenUrl(u)).join(" · ")}
                 </p>
               </>
             ) : (

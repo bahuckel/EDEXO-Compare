@@ -1,7 +1,7 @@
 {
   "name": "edexo-compare",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Journal-linked Elite Dangerous exobiology companion. Reads your local journal, merges scans and organic signals, and predicts the candidate species on a body from FSS/DSS telemetry alone — with payout ranges, first-footfall tracking, a system map and a species encyclopedia. Made by Bahuckel (CMDR FALrenica); reviewed and improved by Claude Code.",
   "author": "Bahuckel (CMDR FALrenica)",
   "type": "module",

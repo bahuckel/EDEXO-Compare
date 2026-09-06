@@ -117,9 +117,7 @@ export function SecondScreen() {
 
       {rows.length === 0 ? (
         <p className="ss-empty">
-          {snapshot
-            ? "No biological signals in this system yet — honk, or jump on."
-            : "Waiting for the app…"}
+          {snapshot ? "No biological signals in this system yet — honk, or jump on." : "Waiting for the app…"}
         </p>
       ) : (
         <ol className="ss-rows">

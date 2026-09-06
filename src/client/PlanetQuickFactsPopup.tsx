@@ -1,4 +1,4 @@
-import type { ExoPayoutRangeDTO, SystemMapBodyDetailDTO } from "@shared/types";
+import type { SystemMapBodyDetailDTO } from "@shared/types";
 import type { ReactNode } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";

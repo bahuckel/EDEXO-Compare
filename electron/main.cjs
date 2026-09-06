@@ -158,6 +158,13 @@ function createHudOverlayWindow(width, height, iconForChild, parentWin) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      // The two that matter are set above. `sandbox: false` is the only explicit opt-out in the app
+      // and it is on the overlay window, which loads a page from our own local server and has **no
+      // preload** — so nothing here is known to need the escape hatch, and `sandbox: true` is
+      // probably a free hardening step. Left as-is deliberately: the overlays are frameless,
+      // transparent, always-on-top windows whose rendering cannot be verified from a test or a
+      // headless run, and changing the packaged app on an untested assumption is how §31 happened.
+      // Flip it, launch the app, and open both overlays before committing.
       sandbox: false,
     },
   });

@@ -10,9 +10,7 @@ import { UiFeedbackProvider } from "./ui/feedback";
  * A query parameter rather than a router: this app has exactly two views and no history to manage,
  * and a bookmark on a phone is the whole delivery mechanism. Lazy so the main app does not carry it.
  */
-const SecondScreen = lazy(() =>
-  import("./SecondScreen").then((m) => ({ default: m.SecondScreen })),
-);
+const SecondScreen = lazy(() => import("./SecondScreen").then((m) => ({ default: m.SecondScreen })));
 
 const wantsSecondScreen = new URLSearchParams(window.location.search).get("screen") === "triage";
 

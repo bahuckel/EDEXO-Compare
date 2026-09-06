@@ -173,13 +173,6 @@ function speciesNeedsTemperatureGate(c: SpeciesCriterion): boolean {
   return speciesTempBand(c) !== null;
 }
 
-function speciesPressureBand(c: SpeciesCriterion): { lo: number; hi: number } | null {
-  const sp = c.surfacePressure;
-  if (!sp) return null;
-  if (sp.min === undefined && sp.max === undefined) return null;
-  return { lo: sp.min ?? OPEN_LO, hi: sp.max ?? OPEN_HI };
-}
-
 /** Planet band vs species band: overlap ⇒ inhabitable somewhere on the body. */
 function tempBandsOverlap(planet: PlanetTemperatureBand, species: { lo: number; hi: number }): boolean {
   return planet.minK <= species.hi && species.lo <= planet.maxK;

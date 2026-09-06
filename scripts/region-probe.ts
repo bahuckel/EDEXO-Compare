@@ -19,6 +19,19 @@
  * gain here is a gain at predicting *the corpus*, and only maybe a gain at predicting the galaxy.
  *
  *   npm run region-probe
+
+ * ## VERDICT: measured and REJECTED (§28)
+ *
+ * Nothing was shipped from this. Every cube size came within **0.2 points** of knowing nothing at
+ * all — the galaxy's genus mix in a 200 ly cube predicts a body's genera no better than the galaxy's
+ * mix everywhere. The species-level gain that looked promising turned out to be an artefact of how
+ * the source CSVs were sliced, which is §14.1a's sampling bias arriving exactly where it was
+ * predicted.
+ *
+ * The **coordinates ship** (`npm run feeder -- coords`, 2,993 systems) because they were cheap and
+ * are useful for other questions. **The prior does not.** This script stays so the measurement can
+ * be repeated against a larger corpus; do not wire its output into the matcher without re-running it
+ * and getting a different answer.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";

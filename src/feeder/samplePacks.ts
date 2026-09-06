@@ -122,6 +122,41 @@ export async function writePackedSamples(
   return { records: sorted.length, bytes: gz.length };
 }
 
+/**
+ * How many of a species' sightings could ever become profile samples.
+ *
+ * Not the same as its occurrence count. §45.2 measured **599 sightings across the corpus whose body
+ * EDSM has no record of** — a name the CSV holds and the galaxy's own database does not. Those can
+ * never become samples however many times the feeder runs.
+ *
+ * `feeder status` used to compare a profile's `sampleCount` against the raw occurrence count and
+ * therefore called 63 current profiles stale, telling the owner to run a job that would fetch
+ * nothing and change nothing. This is the number that comparison needs. Counting it means reading
+ * the archives, which is 0.51 s for all 39,088 records — measured, not assumed.
+ */
+export async function countHydratableSamples(speciesDir: string): Promise<number> {
+  const merged = await readPackedSamples(speciesDir);
+  try {
+    for (const name of await readdir(speciesDir)) {
+      const i = looseSampleIndex(name);
+      if (i === null) continue;
+      try {
+        merged.set(i, { i, ...(JSON.parse(await readFile(join(speciesDir, name), "utf8")) as object) });
+      } catch {
+        /* unreadable pack: it is not a sample either way */
+      }
+    }
+  } catch {
+    /* no directory: whatever the archive held is the answer */
+  }
+
+  let hydratable = 0;
+  for (const rec of merged.values()) {
+    if ((rec.context as { targetBody?: unknown } | undefined)?.targetBody) hydratable++;
+  }
+  return hydratable;
+}
+
 export interface PackResult {
   /** Records in the archive after packing. */
   records: number;

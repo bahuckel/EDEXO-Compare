@@ -29,7 +29,7 @@ import {
   loadExomasteryProfile,
   maxExomasteryProfileSampleCount,
 } from "../src/server/exomasteryProfile.js";
-import { feederDataDir, feederDataDirExists } from "../src/feeder/paths.js";
+import { feederDataDir, feederDataDirExists, rawPlanetsDir } from "../src/feeder/paths.js";
 import {
   analyseAndInstallSpecies,
   formatRunReport,
@@ -52,6 +52,7 @@ import {
 } from "../src/feeder/cooccurrence.js";
 import { EDSM_COORDS_BATCH, fetchEdsmSystemCoords, withEdsmGate } from "../src/feeder/edsm.js";
 import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
+import { countHydratableSamples } from "../src/feeder/samplePacks.js";
 import {
   proposeEdgesForProfile,
   SNAP_MIN_SAMPLES,
@@ -121,7 +122,14 @@ async function cmdStatus(): Promise<void> {
     if (missing.length > 12) console.log(`  … and ${missing.length - 12} more`);
   }
 
-  // A profile built from fewer bodies than the corpus now holds is one an import left behind.
+  /**
+   * A profile built from fewer bodies than the corpus can actually supply is one an import left
+   * behind. **Fewer than the corpus *holds* is a different question**, and asking that one was a bug:
+   * the occurrence count includes §45.2's 599 sightings whose body EDSM has no record of, so this
+   * called 63 current profiles stale and told the owner to run a job that would fetch nothing.
+   *
+   * The comparison is against {@link countHydratableSamples} — what a run could actually produce.
+   */
   const stale: string[] = [];
   for (const e of db.species) {
     const prof = loadExomasteryProfile(root, e);
@@ -131,8 +139,8 @@ async function cmdStatus(): Promise<void> {
     );
     if (!entry) continue;
     const have = prof.sampleCount ?? maxExomasteryProfileSampleCount(prof);
-    const could = entry[1].occurrences.length;
-    if (could > have) stale.push(`  ${e.displayName.padEnd(26)} profile ${have}, corpus has ${could}`);
+    const could = await countHydratableSamples(path.join(rawPlanetsDir(), speciesFileSlug(entry[0])));
+    if (could > have) stale.push(`  ${e.displayName.padEnd(26)} profile ${have}, can supply ${could}`);
   }
   if (stale.length) {
     console.log(

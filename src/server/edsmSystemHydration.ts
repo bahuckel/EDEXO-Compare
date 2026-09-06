@@ -11,7 +11,8 @@ const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
  * traffic makes that worse than untidy: a volunteer service seeing a rise in requests should be able
  * to find out whose they are.
  */
-export const EDSM_USER_AGENT = "ED-Exo-Compare/1.0.0 (+https://github.com/bahuckel/EDEXO-Compare)";
+/** Keep in step with `package.json`. A stale version here is worse than none: it tells EDSM a lie. */
+export const EDSM_USER_AGENT = "ED-Exo-Compare/1.1.0 (+https://github.com/bahuckel/EDEXO-Compare)";
 
 /**
  * The commander's own EDSM identity, when auto-fetch is configured.

@@ -1,6 +1,9 @@
 import path from "node:path";
 import { writeFileSync } from "node:fs";
-import { startEdexo, parseCli, startEdexoFromElectronMode } from "./edexoBootstrap.js";
+// `startEdexoFromElectronMode` is deliberately absent here and present in the re-export below:
+// `electron/main.cjs` destructures it off this bundle, so the export is load-bearing while the
+// import would be dead weight. Only `node scripts/bundle.mjs` catches breaking that.
+import { startEdexo, parseCli } from "./edexoBootstrap.js";
 
 export {
   startEdexo,

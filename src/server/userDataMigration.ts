@@ -166,7 +166,10 @@ export function migrateLegacyUserData(): UserDataMigration {
   }
 
   try {
-    out.outliersMerged = mergeOutlierLogs(join(legacyDir, "edexo-outliers.jsonl"), resolveExoOutlierLogPath());
+    out.outliersMerged = mergeOutlierLogs(
+      join(legacyDir, "edexo-outliers.jsonl"),
+      resolveExoOutlierLogPath(),
+    );
   } catch {
     /* the current log is untouched on failure */
   }

@@ -2,10 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  describeUserDataMigration,
-  migrateLegacyUserData,
-} from "../src/server/userDataMigration.js";
+import { describeUserDataMigration, migrateLegacyUserData } from "../src/server/userDataMigration.js";
 
 let legacy: string;
 let current: string;
@@ -93,7 +90,9 @@ describe("migrateLegacyUserData", () => {
     writeFileSync(path.join(current, OUTLIERS), `${record("b1", "s1", { blockedBy: "new" })}\n`, "utf8");
 
     expect(migrateLegacyUserData().outliersMerged).toBe(0);
-    const lines = readFileSync(path.join(current, OUTLIERS), "utf8").split("\n").filter((l) => l.trim());
+    const lines = readFileSync(path.join(current, OUTLIERS), "utf8")
+      .split("\n")
+      .filter((l) => l.trim());
     expect(lines).toHaveLength(1);
     expect(JSON.parse(lines[0]!).blockedBy).toBe("new");
   });

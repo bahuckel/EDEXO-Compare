@@ -28,6 +28,16 @@
  * a measure of the gates rather than of the panel.
  *
  *   npm run negatives-probe
+
+ * ## VERDICT: the background was measured and REJECTED (§29)
+ *
+ * The negatives themselves were worth having. **The availability background was not**: scoring a
+ * parameter against "what bodies are out there" makes **atmosphere score negative**, because 71 % of
+ * landable bodies are airless, so a species that requires an atmosphere looks like it is avoiding the
+ * commonest kind of world. The measure punishes the single most informative field in the matcher.
+ *
+ * Nothing from this feeds the scorer. The script stays as the record of why, and because the
+ * negatives are still the right way to ask the question if a better normalisation is found.
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";

@@ -59,10 +59,7 @@ describe("the second screen's sort orders", () => {
   /** An unknown distance is not a zero — it sorts last rather than to the top of the list. */
   it("sorts a body with no distance reading last", () => {
     const unknown = body("unknown", { distanceLs: null });
-    expect(triageSystem([unknown, near], "distance").map((r) => r.bodyKey)).toEqual([
-      "near",
-      "unknown",
-    ]);
+    expect(triageSystem([unknown, near], "distance").map((r) => r.bodyKey)).toEqual(["near", "unknown"]);
   });
 
   it("has nothing to show for a system with no bodies", () => {

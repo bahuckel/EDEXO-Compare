@@ -674,7 +674,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
     firstDefined(pr, ["atmosphere", "Atmosphere", "atmosphereType", "AtmosphereType"]),
   );
 
-  rows.forEach((row, idx) => {
+  rows.forEach((row, _idx) => {
     const r = row;
     const displayName = pickString(
       r,
