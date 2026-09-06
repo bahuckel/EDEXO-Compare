@@ -26,8 +26,31 @@
  * TEXT anyway, and why a galaxy-scale store should not.
  */
 
-/** Field names whose numeric values must survive as digits. */
-export const ID64_FIELDS = ["id64", "systemId64", "bodyId64", "SystemAddress"] as const;
+/**
+ * Field names whose numeric values must survive as digits.
+ *
+ * The `*Id64` entries are also matched by suffix (see {@link ID64_SUFFIX}), so a field the exporter
+ * adds later is covered without this list being updated. They are still named here because the list
+ * is what the pre-pass documents, and because `SystemAddress` — the journal's spelling — has no
+ * suffix to match on.
+ */
+export const ID64_FIELDS = [
+  "id64",
+  "systemId64",
+  "bodyId64",
+  "hostStarBodyId64",
+  "ringId64",
+  "SystemAddress",
+] as const;
+
+/**
+ * Any field whose name ends in `Id64` carries a 64-bit identifier.
+ *
+ * This is the handover contract with the Spansh ingest: id64-class fields are named `id64` or end in
+ * `Id64`, and everything else is below 2^53 by construction. Matching the suffix rather than a fixed
+ * list means a new id column cannot silently arrive unquoted and be rounded on the way in.
+ */
+const ID64_SUFFIX = /Id64$/;
 
 /**
  * The largest integer a float64 represents exactly. A value above this may already be wrong; a
@@ -52,7 +75,7 @@ const NAMED_INTEGER = /"([A-Za-z0-9_]+)"(\s*:\s*)(-?\d+)(?=\s*[,}\]])/g;
 export function quoteBigIntFields(text: string, fields: readonly string[] = ID64_FIELDS): string {
   const wanted = new Set(fields);
   return text.replace(NAMED_INTEGER, (match, name: string, sep: string, digits: string) =>
-    wanted.has(name) ? `"${name}"${sep}"${digits}"` : match,
+    wanted.has(name) || ID64_SUFFIX.test(name) ? `"${name}"${sep}"${digits}"` : match,
   );
 }
 
@@ -101,4 +124,43 @@ export function isTrustworthyId64(value: unknown): boolean {
   if (typeof value === "bigint") return true;
   if (typeof value === "number") return Number.isSafeInteger(value);
   return false;
+}
+
+/**
+ * A body's `id64` is not independent data — it is a function of its system and its in-system id.
+ *
+ *     bodyId64 == systemId64 + (bodyId << 55)
+ *
+ * Fable found this while building the Spansh ingest and reported it holding on all 770,214 bodies
+ * of the one-day dump. Verified here independently, twice, against different data:
+ *
+ * - **17,830 bodies** re-sampled from the Spansh dump: holds, zero exceptions, max `bodyId` 140.
+ * - **All 38,489 sightings in this corpus**, whose bodies came from **EDSM** rather than Spansh:
+ *   every reconstruction agrees with the (damaged) float on disk to within float64 rounding. 100.0 %.
+ *
+ * The second one matters more than it looks. It means the body `id64` values §57 measured as
+ * unrecoverable are **not lost at all** — they are recomputable from `systems.id64` and
+ * `planets.body_id`, both of which Phases 1 and 2 restored intact. No dump and no network are needed
+ * to repair them. It also means the field is redundant: `(systemId64, bodyId)` was always the whole
+ * identity, which is why §2.1 made it the join key.
+ *
+ * Keep using it as a **check**, not just a shortcut. A rounded id64 breaks the equation while a
+ * correct one satisfies it, so this catches a corrupted identifier that a digits-preserved parse
+ * would wave through — for instance one that lost its digits upstream, before the file was written.
+ */
+export function bodyId64From(systemId64: string | bigint, bodyId: number | bigint): string {
+  return (BigInt(systemId64) + (BigInt(bodyId) << 55n)).toString();
+}
+
+/** Whether a body's reported `id64` matches the identity above. */
+export function bodyId64Matches(
+  systemId64: string | bigint,
+  bodyId: number | bigint,
+  reportedId64: string | bigint,
+): boolean {
+  try {
+    return BigInt(reportedId64).toString() === bodyId64From(systemId64, bodyId);
+  } catch {
+    return false;
+  }
 }

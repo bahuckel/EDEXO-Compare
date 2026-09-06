@@ -10,6 +10,8 @@ import { describe, expect, it } from "vitest";
 import {
   ID64_FIELDS,
   MAX_SAFE_ID,
+  bodyId64From,
+  bodyId64Matches,
   isTrustworthyId64,
   parseJsonPreservingIds,
   quoteBigIntFields,
@@ -116,6 +118,58 @@ describe("SQLite is not the lossy part — the JS boundary is", () => {
     expect(String(big[0])).toBe(HUGE); // INTEGER storage + useBigInt is exact
     st.free();
     db.close();
+  });
+});
+
+/**
+ * The Spansh handover contract: id64-class fields are named `id64` or end in `Id64`, everything else
+ * is below 2^53 by construction. The suffix rule means a new id column cannot arrive unquoted and be
+ * silently rounded.
+ */
+describe("the *Id64 suffix contract", () => {
+  it("quotes an id64 field the list has never heard of", () => {
+    const parsed = parseJsonPreservingIds<{ ringId64: string; someNewId64: string; bodyId: number }>(
+      `{"ringId64": 6160925022241180003, "someNewId64": 6160925022241180003, "bodyId": 23}`,
+    );
+    expect(parsed.ringId64).toBe("6160925022241180003");
+    expect(parsed.someNewId64).toBe("6160925022241180003");
+    expect(parsed.bodyId).toBe(23); // not an id64 field, stays a number
+  });
+
+  it("leaves lookalikes that are not id64 fields alone", () => {
+    const parsed = parseJsonPreservingIds<{ id64x: number; bodyId: number; id: number }>(
+      `{"id64x": 12, "bodyId": 23, "id": 10904346}`,
+    );
+    expect(parsed.id64x).toBe(12);
+    expect(parsed.id).toBe(10904346);
+  });
+});
+
+/**
+ * `bodyId64 == systemId64 + (bodyId << 55)`, verified on 17,830 Spansh bodies and on all 38,489
+ * sightings in this corpus (whose bodies came from EDSM — a different source).
+ */
+describe("body id64 is derivable, not independent", () => {
+  it("reconstructs a real body from its system and in-system id", () => {
+    // 18 Andromedae 8 a: system id64 78611735724, bodyId 23.
+    expect(bodyId64From("78611735724", 23)).toBe("828662410047906988");
+  });
+
+  it("agrees with the damaged float actually on disk, to within float64 rounding", () => {
+    // What hydration wrote for that body, after JSON.parse had already rounded it.
+    const onDisk = 828662410047907000;
+    expect(Number(bodyId64From("78611735724", 23))).toBe(onDisk);
+  });
+
+  it("accepts a correct id64 and rejects a rounded one", () => {
+    expect(bodyId64Matches("78611735724", 23, "828662410047906988")).toBe(true);
+    // The rounded value fails the equation — which is the point of keeping it as a check.
+    expect(bodyId64Matches("78611735724", 23, "828662410047907000")).toBe(false);
+    expect(bodyId64Matches("78611735724", 23, "not a number")).toBe(false);
+  });
+
+  it("takes bigint or string for the system id, and never goes through a number", () => {
+    expect(bodyId64From(78611735724n, 23n)).toBe(bodyId64From("78611735724", 23));
   });
 });
 
