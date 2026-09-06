@@ -14,6 +14,7 @@
  *   npm run feeder -- edges                   candidate game thresholds, for review only
  *   npm run feeder -- cooccurrence            rebuild the genus co-occurrence table on its own
  *   npm run feeder -- coords                  fetch galactic coordinates for the corpus systems
+ *   npm run feeder -- identity [--apply]      recover body IDs from the archives; reports by default
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -53,6 +54,7 @@ import {
 import { EDSM_COORDS_BATCH, fetchEdsmSystemCoords, withEdsmGate } from "../src/feeder/edsm.js";
 import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
 import { countHydratableSamples } from "../src/feeder/samplePacks.js";
+import { backfillBodyIdentity, formatBackfillReport } from "../src/feeder/bodyIdentityBackfill.js";
 import {
   proposeEdgesForProfile,
   SNAP_MIN_SAMPLES,
@@ -426,6 +428,23 @@ packing ${labels.length} species in ${feederDataDir()}
   console.log("\nRun `npm run feeder -- rebuild` to prove the archive reads back identically.");
 }
 
+/**
+ * Phase 1 of INCLUDE-BODY-IDS — recover body identity from the archives, no network.
+ *
+ * Reports by default and writes only under `--apply`, because the deliverable here is the
+ * measurement of what name-based de-duplication has cost, and the owner sees that before the
+ * corpus changes.
+ */
+async function cmdIdentity(): Promise<void> {
+  requireCorpus();
+  const apply = flags.has("--apply");
+  const ctx = await openFeeder();
+  console.log(apply ? "\nbackfilling body identity from the archives…\n" : "\nreading archives (dry run)…\n");
+  const report = await backfillBodyIdentity(ctx.store, { apply });
+  console.log(formatBackfillReport(report, apply));
+  if (!apply) console.log("\nNothing was written. `npm run feeder -- identity --apply` to backfill.");
+}
+
 switch (command) {
   case "status":
     await cmdStatus();
@@ -451,10 +470,13 @@ switch (command) {
   case "coords":
     await cmdCoords();
     break;
+  case "identity":
+    await cmdIdentity();
+    break;
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply]",
     );
     process.exit(1);
 }

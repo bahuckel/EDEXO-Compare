@@ -4,7 +4,7 @@ import initSqlJs, { type Database, type SqlValue } from "sql.js";
 import { genusFromLandmark, occurrenceKey, type SpeciesIndexEntry, type SpanshExoRow } from "./csvImport.js";
 import { PROJECT_ROOT } from "./paths.js";
 
-const SCHEMA_VER = 2;
+const SCHEMA_VER = 3;
 const META_CUMULATIVE = "cumulative_csv_rows";
 const META_SCHEMA = "schema_ver";
 
@@ -121,6 +121,69 @@ function migrateSchema(db: Database): void {
     queryAll<SqlValue[]>(db, "PRAGMA table_info(planets)", []).map((r) => String(r[1])),
   );
   if (!planetCols.has("spansh_count")) db.run("ALTER TABLE planets ADD COLUMN spansh_count INTEGER");
+
+  /**
+   * Stable body identity, schema 3 (INCLUDE-BODY-IDS §2.3).
+   *
+   * The corpus has always de-duplicated bodies by normalised **name** — `UNIQUE(system_id,
+   * norm_body)` — which works until two sources spell the same body differently. §23.4 was already
+   * bitten by that class of bug once, at a cost of 16 species rows. These columns carry the game's
+   * own identity instead, so the join stops depending on rendering.
+   *
+   * The key is `(system_id, body_id)`: `body_id` is the in-system BodyID, which is exactly what the
+   * journal reports and what `gameState.ts` already keys on as `${SystemAddress}:${bodyId}`. That
+   * makes a corpus body and a journal body joinable with no string comparison anywhere in the path.
+   *
+   * `id64` columns are **TEXT, not INTEGER**. SQLite's INTEGER is 64-bit and would hold the value,
+   * but `sql.js` hands it back to JavaScript as a `number`, which puts the float64 rounding straight
+   * back — see `bigIntJson.ts`. TEXT is the only column type that survives this stack.
+   *
+   * Footfall and mapping are declared here but stay NULL until Phase 3 fills them from EDDN. All
+   * three states are meaningful: NULL is "never observed", which is **not** the same as 0, and the
+   * difference is what the high-value-target ladder is made of. A `false` is only true as of the
+   * moment beside it, which is why each carries its own `_seen_at`.
+   *
+   * The identity UNIQUE INDEX from §2.3 is created **only when the data already satisfies it** —
+   * see below. Creating it unconditionally would turn a corpus that needs the duplicate report into
+   * one that cannot be opened to read the report.
+   */
+  if (!planetCols.has("body_id")) db.run("ALTER TABLE planets ADD COLUMN body_id INTEGER");
+  if (!planetCols.has("body_id64")) db.run("ALTER TABLE planets ADD COLUMN body_id64 TEXT");
+  if (!planetCols.has("edsm_id")) db.run("ALTER TABLE planets ADD COLUMN edsm_id INTEGER");
+  if (!planetCols.has("is_footfalled")) db.run("ALTER TABLE planets ADD COLUMN is_footfalled INTEGER");
+  if (!planetCols.has("footfall_source")) db.run("ALTER TABLE planets ADD COLUMN footfall_source TEXT");
+  if (!planetCols.has("footfall_seen_at")) db.run("ALTER TABLE planets ADD COLUMN footfall_seen_at TEXT");
+  if (!planetCols.has("is_mapped")) db.run("ALTER TABLE planets ADD COLUMN is_mapped INTEGER");
+  if (!planetCols.has("mapped_source")) db.run("ALTER TABLE planets ADD COLUMN mapped_source TEXT");
+  if (!planetCols.has("mapped_seen_at")) db.run("ALTER TABLE planets ADD COLUMN mapped_seen_at TEXT");
+  if (!systemCols.has("id64")) db.run("ALTER TABLE systems ADD COLUMN id64 TEXT");
+  if (!systemCols.has("edsm_id")) db.run("ALTER TABLE systems ADD COLUMN edsm_id INTEGER");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_planets_body_id ON planets(system_id, body_id)");
+
+  /**
+   * The constraint that replaces name matching: one row per physical body.
+   *
+   * Partial, so the 476 rows the archives could not name — 319 never hydrated, 157 whose body EDSM
+   * has no record of — do not all collide on NULL. Once it exists, a body arriving under a second
+   * spelling is rejected by the store instead of quietly becoming a second row.
+   *
+   * Created only when the corpus already satisfies it. A `CREATE UNIQUE INDEX` over duplicate rows
+   * throws, and throwing inside `migrateSchema` would make the store unopenable — including by the
+   * `identity` command whose whole job is to list those duplicates so they can be resolved. So the
+   * check runs first and the index simply waits. `UNIQUE(system_id, norm_body)` stays either way:
+   * belt and braces, a body with no ID still cannot duplicate by name.
+   */
+  const identityDupes = queryOne<[number]>(
+    db,
+    `SELECT COUNT(*) FROM (SELECT 1 FROM planets WHERE body_id IS NOT NULL
+       GROUP BY system_id, body_id HAVING COUNT(*) > 1)`,
+    [],
+  );
+  if (Number(identityDupes?.[0] ?? 0) === 0) {
+    db.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_planets_identity ON planets(system_id, body_id) WHERE body_id IS NOT NULL",
+    );
+  }
   runExec(db, "INSERT INTO meta (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v", [
     META_SCHEMA,
     String(SCHEMA_VER),
@@ -432,6 +495,108 @@ export class FeederStore {
   }
 
   /** Systems with no coordinates yet, display names, for the batch fetch. */
+  /**
+   * Every planet row with the two names it is keyed by and whatever identity it already carries.
+   *
+   * The backfill joins against this by `(normSystem, normBody)` because that is the only key the
+   * corpus has today. Replacing that join with `(system_id, body_id)` is the point of the exercise,
+   * but the bootstrap has to start from where the data is.
+   */
+  planetIdentityRows(): {
+    planetId: number;
+    systemId: number;
+    normSystem: string;
+    normBody: string;
+    displayBody: string;
+    bodyId: number | null;
+    edsmId: number | null;
+    systemEdsmId: number | null;
+  }[] {
+    return queryAll<[number, number, string, string, string, number | null, number | null, number | null]>(
+      this.db,
+      `SELECT p.id, p.system_id, s.norm_name, p.norm_body, p.display_body, p.body_id, p.edsm_id, s.edsm_id
+         FROM planets p JOIN systems s ON s.id = p.system_id
+        ORDER BY p.id`,
+      [],
+    ).map((r) => ({
+      planetId: r[0],
+      systemId: r[1],
+      normSystem: r[2],
+      normBody: r[3],
+      displayBody: r[4],
+      bodyId: r[5],
+      edsmId: r[6],
+      systemEdsmId: r[7],
+    }));
+  }
+
+  /**
+   * Write in-system BodyID and EDSM's body id onto planet rows.
+   *
+   * `COALESCE` on the existing value, so a second run is a no-op rather than a rewrite, and so a
+   * later source cannot silently replace an identity already established.
+   */
+  setBodyIdentity(rows: { planetId: number; bodyId: number | null; edsmId: number | null }[]): number {
+    if (rows.length === 0) return 0;
+    let written = 0;
+    this.transaction(() => {
+      for (const r of rows) {
+        runExec(
+          this.db,
+          `UPDATE planets SET body_id = COALESCE(body_id, ?), edsm_id = COALESCE(edsm_id, ?) WHERE id = ?`,
+          [r.bodyId, r.edsmId, r.planetId],
+        );
+        written += this.db.getRowsModified();
+      }
+    });
+    return written;
+  }
+
+  /** Write EDSM's small integer system id. `id64` stays NULL — it is Phase 2's, and re-collected. */
+  setSystemEdsmIds(rows: { normSystem: string; edsmId: number }[]): number {
+    if (rows.length === 0) return 0;
+    let written = 0;
+    this.transaction(() => {
+      for (const r of rows) {
+        runExec(this.db, "UPDATE systems SET edsm_id = COALESCE(edsm_id, ?) WHERE norm_name = ?", [
+          r.edsmId,
+          r.normSystem,
+        ]);
+        written += this.db.getRowsModified();
+      }
+    });
+    return written;
+  }
+
+  /** How much of the corpus can now be addressed by identity rather than by name. */
+  identityCoverage(): { planets: number; planetsWithBodyId: number; systems: number; systemsWithEdsmId: number } {
+    const one = (sql: string) => Number(queryOne<[number]>(this.db, sql, [])?.[0] ?? 0);
+    return {
+      planets: one("SELECT COUNT(*) FROM planets"),
+      planetsWithBodyId: one("SELECT COUNT(*) FROM planets WHERE body_id IS NOT NULL"),
+      systems: one("SELECT COUNT(*) FROM systems"),
+      systemsWithEdsmId: one("SELECT COUNT(*) FROM systems WHERE edsm_id IS NOT NULL"),
+    };
+  }
+
+  /**
+   * Planet rows that share a `(system_id, body_id)` — the same physical body imported more than
+   * once because its name was rendered differently. This is the measurement Phase 1 exists to
+   * produce, and nothing merges until the owner has seen it.
+   */
+  duplicateIdentityGroups(): { systemId: number; systemName: string; bodyId: number; bodies: string[] }[] {
+    return queryAll<[number, string, number, string]>(
+      this.db,
+      `SELECT p.system_id, s.display_name, p.body_id, GROUP_CONCAT(p.display_body, ' | ')
+         FROM planets p JOIN systems s ON s.id = p.system_id
+        WHERE p.body_id IS NOT NULL
+        GROUP BY p.system_id, p.body_id
+       HAVING COUNT(*) > 1
+        ORDER BY s.display_name`,
+      [],
+    ).map((r) => ({ systemId: r[0], systemName: r[1], bodyId: r[2], bodies: String(r[3]).split(" | ") }));
+  }
+
   systemsMissingCoords(): string[] {
     return queryAll<[string]>(
       this.db,
