@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Brain Trees",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Fungal-like organic structures resembling trees with brain-shaped growths. They absorb minerals through subsurface roots and energy via their outer surfaces.",
       "min_sample_distance_m": 100,

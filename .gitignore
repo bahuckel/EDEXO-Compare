@@ -58,7 +58,22 @@ Thumbs.db
 # Internal planning notes / agent briefs. Kept on disk for provenance, never
 # published — the repository is going public and these are working documents.
 # ---------------------------------------------------------------------------
-/docs/archive/
+# The repository is public. Planning, review and handoff documents are not.
+#
+# Default-deny for markdown: only files explicitly un-ignored below are ever committed. This is
+# belt-and-braces on top of the /docs/ rule, so a plan dropped anywhere in the tree - the repo root,
+# a source folder, a new directory - cannot reach a public remote by being forgotten.
+#
+# To publish a new doc on purpose, add a matching `!` line. Nothing is hidden by accident, and
+# nothing is exposed by accident either.
+*.md
+!/README.md
+
+# Everything under docs/ except the two images the repo page uses.
+/docs/**
+!/docs/edexo-scan.jpg
+!/docs/species-screenshots/
+!/docs/species-screenshots/**
 
 # ---------------------------------------------------------------------------
 # Superseded / unused local files — kept on disk, not part of the project

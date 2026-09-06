@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Stratum",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Low-lying photosynthetic organisms that form tightly bonded colonies on rocky and metallic surfaces. The organism partially embeds into subsurface rock layers for protection, exposing only photosynthetic proto-leaves. Their evolution is primitive but highly successful, making them one of the most common xenobiological genera.",
       "min_sample_distance_m": 500,
@@ -73,7 +73,7 @@
         ],
         "temperature_K": [
           165,
-          999
+          null
         ],
         "atmospherePressureCategory": "thin"
       }
@@ -92,7 +92,7 @@
         ],
         "temperature_K": [
           190,
-          999
+          null
         ],
         "atmospherePressureCategory": "thin"
       }
@@ -130,7 +130,7 @@
         ],
         "temperature_K": [
           190,
-          999
+          null
         ],
         "atmospherePressureCategory": "thin"
       }
@@ -148,7 +148,7 @@
         ],
         "temperature_K": [
           165,
-          999
+          null
         ],
         "atmospherePressureCategory": "thin"
       }
@@ -187,7 +187,7 @@
         ],
         "temperature_K": [
           165,
-          999
+          null
         ],
         "atmospherePressureCategory": "thin"
       }
@@ -209,7 +209,7 @@
         ],
         "temperature_K": [
           165,
-          999
+          null
         ],
         "atmospherePressureCategory": "thin",
         "matchContextNotes": [

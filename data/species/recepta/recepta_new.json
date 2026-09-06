@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Recepta",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Highly advanced extremophile organisms that construct semi-enclosed protective bio-spheres. They regulate internal chemistry, temperature, and atmosphere by building a translucent shell around a central organism. Growth is slow and layered, resulting in very old and complex structures.",
       "min_sample_distance_m": 150,

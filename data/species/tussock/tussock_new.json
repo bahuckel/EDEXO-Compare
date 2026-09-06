@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Tussock",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Robust photosynthetic grass-like organisms forming clumped colonies across flat and gently sloped terrain. They rely on shallow but stable root systems anchored in solid ground and propagate through both tillering and spore dispersal mechanisms. Some species exhibit antifreeze cellular adaptations for survival in extreme cold environments.",
       "min_sample_distance_m": 200,

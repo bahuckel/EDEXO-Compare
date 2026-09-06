@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Tubus",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Highly specialised columnar biological organisms that grow in thin-atmosphere environments. They form tall vertical structures composed of layered, leaf-like modules that create internal chimneys for controlled atmospheric circulation. Some species exhibit external ring structures that indicate age progression.",
       "min_sample_distance_m": 800,

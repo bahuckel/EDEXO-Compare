@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Clypeus",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Extremophile organisms that form hardened shield-like structures to protect against stellar radiation. These shields are synthesized from surrounding inorganic material and help condense and channel trace atmospheric liquids, enabling survival in extremely arid environments.",
       "min_sample_distance_m": 150,

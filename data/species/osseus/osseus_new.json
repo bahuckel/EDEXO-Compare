@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Osseus",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Rock-like xenobiological organisms that resemble eroded mineral formations. They grow as semi-solid exoskeletal structures emerging from rocky terrain, often mistaken for geological features. They thrive in low-atmosphere environments and exhibit slow mineral accretion growth.",
       "min_sample_distance_m": 800,

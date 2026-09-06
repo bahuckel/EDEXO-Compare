@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Aleoida",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Extremely hardy photosynthetic organisms adapted to arid environments. They use waxy leaves for protection, can enter hibernation by sealing off atmospheric exchange, and funnel precipitation to internal storage via specialized cells.",
       "min_sample_distance_m": 150,

@@ -368,7 +368,19 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
   } else if (Array.isArray(tkAny) && tkAny.length >= 2) {
     const lo = toNumber(tkAny[0]);
     const hi = toNumber(tkAny[1]);
-    const openEnded = hi === undefined || hi >= 500 || hi === 999;
+    /**
+     * `[min, max]`, where **`null` means no upper bound** and a number means that number.
+     *
+     * It used to mean "no upper bound" for `999` *or anything ≥ 500*, and that threshold was a
+     * landmine rather than a convention: it fired on the six `999`s in `stratum_new.json` and on
+     * nothing else, so the only thing it could ever do in future was silently unbound a species
+     * whose codex row genuinely stops at 600 K. Checked before removing it — the distinct maxima in
+     * the whole database are 155, 160, 170, 175, 180, 190, 195 and 999, with nothing in between, so
+     * dropping the threshold changes no current row.
+     *
+     * `999` is still honoured for hand-edited or older files, and is deprecated. Write `null`.
+     */
+    const openEnded = hi === undefined || hi === 999;
     c.surfaceTemperatureK = { min: lo, max: openEnded ? undefined : hi };
   } else {
     const st = asRecord(src.surfaceTemperatureK ?? src.surfaceTemperature ?? src.temperatureK);

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Electricae",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Superconductive extremophile organisms found on extremely cold icy worlds, typically near frozen lakes. Most of the organism exists beneath the surface ice, extending into subsurface melt layers, while visible tips connect to the atmosphere to create electrical potential differences, producing bioluminescence.",
       "min_sample_distance_m": 1000,

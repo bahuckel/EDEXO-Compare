@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Concha",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Highly specialised extremophiles with protective shell-like structures that open and close depending on environmental conditions. Their inorganic-coated shells help regulate internal stability, exposing the organism only when conditions are suitable.",
       "min_sample_distance_m": 150,

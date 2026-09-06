@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "genus": "Cactoida",
   "meta": {
-    "temperature_K_convention": "Pair is [min_K, max_K]. Use 999 (or any value ≥ 500) for max to mean no practical upper bound in the matcher.",
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
     "general": {
       "description": "Photosynthetic organisms adapted to extreme environments by minimizing surface area to protect internal tissues. Their outer layer consists of light-transmitting cells with hydrophobic insulation, allowing temperature stability and fluid retention. They anchor via deep root systems and may reproduce through explosive seed dispersal.",
       "min_sample_distance_m": 300,
