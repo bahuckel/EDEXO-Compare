@@ -101,3 +101,50 @@ describe("importCsv", () => {
     await expect(importCsv(ctx, p)).rejects.toThrow(/System Name/);
   });
 });
+
+/**
+ * §54 — Spansh's `Count` column is preserved verbatim and uninterpreted.
+ *
+ * Of the three columns §9.4 queued, this is the only one kept: `Value` duplicates
+ * `data/price-list.json`, which is the app's authority, and `Jumps` is measured from whatever system
+ * the search ran in, so it describes the query rather than the body. Nothing derives anything from
+ * this number — it is stored so a future consumer does not need a full re-import to get it.
+ */
+describe("Spansh Count", () => {
+  it("survives import into the index", async () => {
+    await importCsv(ctx, csv(["Sol,Sol 4 a,High metal content body,120,Stratum Tectonicas,19010800,7"]));
+    const occ = ctx.speciesIndex["Stratum Tectonicas"]?.occurrences ?? [];
+    expect(occ).toHaveLength(1);
+    expect(occ[0]!.count).toBe(7);
+  });
+
+  it("survives a reopen, so it is on disk and not just in memory", async () => {
+    await importCsv(ctx, csv(["Sol,Sol 4 a,High metal content body,120,Stratum Tectonicas,19010800,7"]));
+    const reopened = await openFeeder();
+    expect(reopened.speciesIndex["Stratum Tectonicas"]?.occurrences[0]?.count).toBe(7);
+  });
+
+  it("is null when the column is absent, rather than zero", async () => {
+    const p = path.join(corpus, "no-count.csv");
+    writeFileSync(
+      p,
+      "System Name,Body Name,Body Subtype,Distance To Arrival,Landmark Subtype,Value\n" +
+        "Sol,Sol 4 a,High metal content body,120,Stratum Tectonicas,19010800\n",
+      "utf8",
+    );
+    await importCsv(ctx, p);
+    expect(ctx.speciesIndex["Stratum Tectonicas"]?.occurrences[0]?.count).toBeNull();
+  });
+
+  /** A duplicate row is the same body twice; the first one wins, as everywhere else in the importer. */
+  it("keeps the first value when the same body arrives twice", async () => {
+    await importCsv(
+      ctx,
+      csv([
+        "Sol,Sol 4 a,High metal content body,120,Stratum Tectonicas,19010800,7",
+        "Sol,Sol 4 a,High metal content body,120,Stratum Tectonicas,19010800,9",
+      ]),
+    );
+    expect(ctx.speciesIndex["Stratum Tectonicas"]?.occurrences[0]?.count).toBe(7);
+  });
+});

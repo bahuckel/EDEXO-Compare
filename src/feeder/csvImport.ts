@@ -55,8 +55,20 @@ export interface SpeciesIndexEntry {
   genus: string;
   speciesLabel: string;
   systems: string[];
-  /** Unique (system, body) pairs — deduped */
-  occurrences: { systemName: string; bodyName: string; bodySubtype: string; distanceLs: number | null }[];
+  /**
+   * Unique (system, body) pairs — deduped.
+   *
+   * `count` is Spansh's `Count` column, carried verbatim and **uninterpreted** (§54). Nothing derives
+   * anything from it; it is preserved because it is the only one of §9.4's three columns that cannot
+   * be recovered from elsewhere once an import has discarded it.
+   */
+  occurrences: {
+    systemName: string;
+    bodyName: string;
+    bodySubtype: string;
+    distanceLs: number | null;
+    count: number | null;
+  }[];
   csvRowCount: number;
 }
 
@@ -83,18 +95,17 @@ export function buildSpeciesIndex(rows: SpanshExoRow[]): Record<string, SpeciesI
   for (const [speciesLabel, list] of bySpecies) {
     const genus = genusFromLandmark(speciesLabel);
     const systems = uniqStrings(list.map((r) => r.systemName));
-    const occMap = new Map<
-      string,
-      { systemName: string; bodyName: string; bodySubtype: string; distanceLs: number | null }
-    >();
+    const occMap = new Map<string, SpeciesIndexEntry["occurrences"][number]>();
     for (const r of list) {
       const k = occurrenceKey(r.systemName, r.bodyName);
+      // First row wins, as everywhere else in the importer: a duplicate is the same body twice.
       if (!occMap.has(k))
         occMap.set(k, {
           systemName: r.systemName,
           bodyName: r.bodyName,
           bodySubtype: r.bodySubtype,
           distanceLs: r.distanceToArrival,
+          count: r.count,
         });
     }
     index[speciesLabel] = {
@@ -126,10 +137,7 @@ export function mergeSpeciesIndex(
       continue;
     }
 
-    const occMap = new Map<
-      string,
-      { systemName: string; bodyName: string; bodySubtype: string; distanceLs: number | null }
-    >();
+    const occMap = new Map<string, SpeciesIndexEntry["occurrences"][number]>();
     for (const o of cur.occurrences) occMap.set(occurrenceKey(o.systemName, o.bodyName), { ...o });
     for (const o of inc.occurrences) {
       const k = occurrenceKey(o.systemName, o.bodyName);
@@ -139,11 +147,14 @@ export function mergeSpeciesIndex(
           bodyName: o.bodyName,
           bodySubtype: o.bodySubtype,
           distanceLs: o.distanceLs,
+          count: o.count ?? null,
         });
       else {
         const prev = occMap.get(k)!;
         if (!prev.bodySubtype.trim() && o.bodySubtype.trim()) prev.bodySubtype = o.bodySubtype;
         if (prev.distanceLs == null && o.distanceLs != null) prev.distanceLs = o.distanceLs;
+        // Fill a gap, never overwrite: the same rule the two fields above already follow.
+        if (prev.count == null && o.count != null) prev.count = o.count;
       }
     }
 

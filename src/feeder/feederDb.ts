@@ -103,6 +103,24 @@ function migrateSchema(db: Database): void {
   if (!systemCols.has("x")) db.run("ALTER TABLE systems ADD COLUMN x REAL");
   if (!systemCols.has("y")) db.run("ALTER TABLE systems ADD COLUMN y REAL");
   if (!systemCols.has("z")) db.run("ALTER TABLE systems ADD COLUMN z REAL");
+
+  /**
+   * Spansh's `Count` column, preserved verbatim and **not interpreted** (§54).
+   *
+   * The import has always parsed it and thrown it away. It is kept now for one reason: of the three
+   * columns §9.4 queued, it is the only one that cannot be recovered from anywhere else once
+   * discarded. `Value` duplicates `data/price-list.json`, which is the app's authority and stays
+   * that way; `Jumps` is measured from whatever system the search was run in, so it describes the
+   * query rather than the body. Both were left out deliberately.
+   *
+   * Nothing reads this column. Its meaning is unverified — §9.4 required checking it against a
+   * fresh export and there is none on disk — so it is stored as the number Spansh wrote and nothing
+   * is derived from it until somebody confirms what it counts.
+   */
+  const planetCols = new Set(
+    queryAll<SqlValue[]>(db, "PRAGMA table_info(planets)", []).map((r) => String(r[1])),
+  );
+  if (!planetCols.has("spansh_count")) db.run("ALTER TABLE planets ADD COLUMN spansh_count INTEGER");
   runExec(db, "INSERT INTO meta (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v", [
     META_SCHEMA,
     String(SCHEMA_VER),
@@ -263,6 +281,7 @@ export class FeederStore {
             occ.distanceLs,
             speciesLabel,
             entry.genus,
+            occ.count ?? null,
           );
         }
       }
@@ -293,6 +312,7 @@ export class FeederStore {
             systemName: sn,
             bodyName: bn,
             bodySubtype: typeof rec.bodySubtype === "string" ? rec.bodySubtype : "",
+            count: typeof rec.count === "number" && Number.isFinite(rec.count) ? rec.count : null,
             distanceLs:
               typeof rec.distanceLs === "number" && Number.isFinite(rec.distanceLs) ? rec.distanceLs : null,
           });
@@ -340,6 +360,7 @@ export class FeederStore {
           row.distanceToArrival,
           label,
           genus,
+          row.count,
         );
       }
     });
@@ -362,11 +383,12 @@ export class FeederStore {
     displayBody: string,
     bodySubtype: string,
     distanceLs: number | null,
+    spanshCount: number | null,
   ): number {
     runExec(
       this.db,
-      `INSERT INTO planets (system_id, norm_body, display_body, body_subtype, distance_ls)
-         VALUES (?, ?, ?, ?, ?)
+      `INSERT INTO planets (system_id, norm_body, display_body, body_subtype, distance_ls, spansh_count)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(system_id, norm_body) DO UPDATE SET
            display_body = excluded.display_body,
            body_subtype = CASE
@@ -374,8 +396,9 @@ export class FeederStore {
              THEN excluded.body_subtype
              ELSE planets.body_subtype
            END,
-           distance_ls = COALESCE(planets.distance_ls, excluded.distance_ls)`,
-      [systemId, bodyNorm, displayBody, bodySubtype ?? "", distanceLs],
+           distance_ls = COALESCE(planets.distance_ls, excluded.distance_ls),
+           spansh_count = COALESCE(planets.spansh_count, excluded.spansh_count)`,
+      [systemId, bodyNorm, displayBody, bodySubtype ?? "", distanceLs, spanshCount],
     );
     const row = queryOne<[number]>(this.db, "SELECT id FROM planets WHERE system_id = ? AND norm_body = ?", [
       systemId,
@@ -392,12 +415,13 @@ export class FeederStore {
     distanceLs: number | null,
     speciesLabel: string,
     genus: string,
+    spanshCount: number | null,
   ): boolean {
     const sn = normSystem(systemName);
     const bn = normBody(bodyName);
     if (!sn || !bn) return false;
     const sid = this.ensureSystem(sn, systemName.trim());
-    const pid = this.ensurePlanet(sid, bn, bodyName.trim(), bodySubtype, distanceLs);
+    const pid = this.ensurePlanet(sid, bn, bodyName.trim(), bodySubtype, distanceLs, spanshCount);
     const speciesNorm = normSpeciesLabel(speciesLabel);
     runExec(
       this.db,
@@ -456,7 +480,7 @@ export class FeederStore {
     );
 
     const occSql = `
-      SELECT s.display_name AS systemName, p.display_body AS bodyName, p.body_subtype AS bodySubtype, p.distance_ls AS distanceLs
+      SELECT s.display_name AS systemName, p.display_body AS bodyName, p.body_subtype AS bodySubtype, p.distance_ls AS distanceLs, p.spansh_count AS spanshCount
       FROM sightings si
       JOIN planets p ON p.id = si.planet_id
       JOIN systems s ON s.id = p.system_id
@@ -467,19 +491,17 @@ export class FeederStore {
       const speciesNorm = sr[0]!;
       const speciesLabelRow = sr[1]!;
       const lineCount = sr[2]!;
-      const rawOcc = queryAll<[string, string, string, number | null]>(this.db, occSql, [speciesNorm]).map(
-        (row) => ({
-          systemName: row[0]!,
-          bodyName: row[1]!,
-          bodySubtype: row[2]!,
-          distanceLs: row[3],
-        }),
-      );
+      const rawOcc = queryAll<[string, string, string, number | null, number | null]>(this.db, occSql, [
+        speciesNorm,
+      ]).map((row) => ({
+        systemName: row[0]!,
+        bodyName: row[1]!,
+        bodySubtype: row[2]!,
+        distanceLs: row[3],
+        count: row[4],
+      }));
 
-      const occMap = new Map<
-        string,
-        { systemName: string; bodyName: string; bodySubtype: string; distanceLs: number | null }
-      >();
+      const occMap = new Map<string, SpeciesIndexEntry["occurrences"][number]>();
       for (const o of rawOcc) {
         const k = occurrenceKey(o.systemName, o.bodyName);
         if (!occMap.has(k))
@@ -488,6 +510,7 @@ export class FeederStore {
             bodyName: o.bodyName,
             bodySubtype: o.bodySubtype,
             distanceLs: o.distanceLs,
+            count: o.count,
           });
       }
       const occurrences = [...occMap.values()];
