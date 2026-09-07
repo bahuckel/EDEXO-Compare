@@ -11,11 +11,19 @@ import { UiFeedbackProvider } from "./ui/feedback";
  * and a bookmark on a phone is the whole delivery mechanism. Lazy so the main app does not carry it.
  */
 const SecondScreen = lazy(() => import("./SecondScreen").then((m) => ({ default: m.SecondScreen })));
+/** `?screen=map` gets the galaxy sector map (Phase 10). Lazy for the same reason. */
+const GalaxyMapScreen = lazy(() => import("./GalaxyMapScreen").then((m) => ({ default: m.GalaxyMapScreen })));
 
-const wantsSecondScreen = new URLSearchParams(window.location.search).get("screen") === "triage";
+const screen = new URLSearchParams(window.location.search).get("screen");
+const wantsSecondScreen = screen === "triage";
+const wantsMap = screen === "map";
 
 createRoot(document.getElementById("root")!).render(
-  wantsSecondScreen ? (
+  wantsMap ? (
+    <Suspense fallback={null}>
+      <GalaxyMapScreen />
+    </Suspense>
+  ) : wantsSecondScreen ? (
     <Suspense fallback={null}>
       <SecondScreen />
     </Suspense>

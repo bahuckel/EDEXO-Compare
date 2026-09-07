@@ -327,6 +327,26 @@ export function createHttpServer(opts: {
    * whole snapshot (~186 ms, ~630 KB) and consumed the one-shot auto-select key. This endpoint
    * reads store fields directly and allocates nothing.
    */
+  /**
+   * The sector heat map's data (Phase 10 step 3).
+   *
+   * Served from `data/exomastery/sector-map.json`, which the feeder writes — the app never opens the
+   * corpus store. Read on demand rather than held in the snapshot: it is 87 kB, the map is one
+   * screen among many, and most sessions never open it.
+   *
+   * A missing file is a 404 rather than an error. The map is a derived artefact; a build that has
+   * not run the feeder should show "no map yet", not a broken app.
+   */
+  app.get("/api/sector-map", (_req, res) => {
+    perfCount("http.sectorMap");
+    const file = path.join(getProjectRoot(), "data", "exomastery", "sector-map.json");
+    if (!existsSync(file)) {
+      res.status(404).json({ error: "no sector map built yet — run: npm run feeder -- sector-map --write" });
+      return;
+    }
+    res.type("application/json").send(readFileSync(file, "utf8"));
+  });
+
   app.get("/api/status", (_req, res) => {
     perfCount("http.apiStatus");
     res.json(opts.getStatus());

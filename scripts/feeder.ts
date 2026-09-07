@@ -18,7 +18,7 @@
  *   npm run feeder -- system-ids [--apply]    fill system id64 from the cache; --fetch-missing for the rest
  *   npm run feeder -- import-dump <file>      validate and import a Spansh JSONL export
  *   npm run feeder -- eddn [--seconds=N]      consume EDDN into the body register (consumer only)
- *   npm run feeder -- sector-map             what the sector heat map would draw today
+ *   npm run feeder -- sector-map [--write]    what the sector heat map would draw; --write ships it
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -62,7 +62,7 @@ import { backfillBodyIdentity, formatBackfillReport } from "../src/feeder/bodyId
 import { backfillSystemId64, formatSystemId64Report } from "../src/feeder/systemId64Backfill.js";
 import { formatImportReport, importSpanshExport } from "../src/feeder/spanshImport.js";
 import { EddnConsumer, formatCounters } from "../src/server/eddn/eddnConsumer.js";
-import { buildSectorMapData } from "../src/feeder/sectorMapData.js";
+import { buildSectorMapData, unnamedCells, writeSectorMapFile } from "../src/feeder/sectorMapData.js";
 import { markerKind, summariseAggregate } from "../src/shared/sectorAggregate.js";
 import {
   proposeEdgesForProfile,
@@ -607,6 +607,17 @@ async function cmdSectorMap(): Promise<void> {
     console.log(`  ${k.padEnd(10)} ${String(v).padStart(6)}`);
   }
 
+  if (flags.has("--write")) {
+    const D = String.fromCharCode(92);
+    const catalogue = ["C:", "Users", "FeraL", "Desktop", "Cursor Projects", "EDSM-targz-to-db", "docs", "sector-list.csv"].join(D);
+    const w = writeSectorMapFile(root, { entries, sources }, catalogue);
+    const unnamed = unnamedCells(w.file);
+    console.log("");
+    console.log(`wrote              ${w.path}`);
+    console.log(`                   ${(w.bytes / 1024).toFixed(1)} kB · ${w.file.cells.length} cells`);
+    console.log(`sector names       ${w.file.cells.length - unnamed.length} of ${w.file.cells.length}${unnamed.length ? `   (unnamed: ${unnamed.slice(0, 5).join(", ")})` : ""}`);
+  }
+
   const top = [...entries].sort((a, b) => b.counts.bodies - a.counts.bodies).slice(0, 8);
   console.log("");
   console.log("densest markers:");
@@ -659,7 +670,7 @@ switch (command) {
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing] | import-dump <file.jsonl.gz> [--apply] | eddn [--seconds=N] | sector-map",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing] | import-dump <file.jsonl.gz> [--apply] | eddn [--seconds=N] | sector-map [--write]",
     );
     process.exit(1);
 }

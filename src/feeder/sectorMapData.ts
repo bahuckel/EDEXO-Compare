@@ -19,11 +19,16 @@
  * near-meaningless — those are the bodies we already have *confirmed* answers for. It arrives with
  * the export, and until then the map draws three kinds honestly rather than four kinds badly.
  */
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import {
   aggregateBySector,
+  markerKind,
   type BodyEvidence,
   type SectorAggregateEntry,
 } from "../shared/sectorAggregate.js";
+import { sectorCellKey, type SectorCell } from "../shared/sectorName.js";
+import type { SectorMapFile } from "../shared/sectorMapFile.js";
 import type { FeederStore } from "./feederDb.js";
 
 /**
@@ -85,4 +90,118 @@ export function buildSectorMapData(store: FeederStore): SectorMapBuild {
   }
 
   return { entries: aggregateBySector(evidence), sources: { confirmed, genus, signal } };
+}
+
+/** Where the shipped aggregate lives — the app reads this, never the feeder store. */
+export function sectorMapPath(projectRoot: string): string {
+  return join(projectRoot, "data", "exomastery", "sector-map.json");
+}
+
+/**
+ * Sector names for the cells we actually draw.
+ *
+ * The full catalogue is 11,649 cells, and shipping all of it would be redistributing somebody
+ * else's compiled dataset for rows the app will never show. Only the cells that carry evidence get
+ * a name — 104 today — which keeps the file small, keeps the provenance narrow, and grows exactly as
+ * the data does.
+ *
+ * The names themselves are the game's own procedural sector names; the catalogue is the mapping from
+ * grid cell to name, and it is credited in the file it produces.
+ */
+export function readSectorNames(
+  catalogueCsvPath: string,
+  wanted: ReadonlySet<string>,
+): { names: Record<string, string>; catalogueCells: number } {
+  const names: Record<string, string> = {};
+  let catalogueCells = 0;
+  let text: string;
+  try {
+    text = readFileSync(catalogueCsvPath, "utf8");
+  } catch {
+    return { names, catalogueCells };
+  }
+  for (const line of text.split("\n").slice(1)) {
+    const c = line.split(",");
+    if (c.length < 17) continue;
+    const name = (c[0] ?? "").trim().replace(/^"|"$/g, "");
+    const [ix, iy, iz] = [c[14], c[15], c[16]].map((v) => (v ?? "").trim());
+    if (!name || !ix || !iy || !iz) continue;
+    catalogueCells += 1;
+    const key = `${ix}:${iy}:${iz}`;
+    if (wanted.has(key)) names[key] = name;
+  }
+  return { names, catalogueCells };
+}
+
+/**
+ * Write the aggregate the app draws.
+ *
+ * Markers are grouped by cell so the client can draw a sector without walking every taxon, and the
+ * per-taxon detail rides along for the tooltip and the species filter.
+ */
+export function writeSectorMapFile(
+  projectRoot: string,
+  build: SectorMapBuild,
+  catalogueCsvPath: string,
+): { path: string; bytes: number; file: SectorMapFile } {
+  const cells = new Map<string, { cell: SectorCell; taxa: Record<string, number[]> }>();
+  for (const e of build.entries) {
+    let row = cells.get(e.cellKey);
+    if (!row) {
+      row = { cell: e.cell, taxa: {} };
+      cells.set(e.cellKey, row);
+    }
+    // [confirmed, genus, signal, predicted] — an array rather than an object, because this repeats
+    // thousands of times and the key names would be most of the file.
+    row.taxa[e.taxon] = [e.counts.confirmed, e.counts.genus, e.counts.signal, e.counts.predicted];
+  }
+
+  const { names, catalogueCells } = readSectorNames(catalogueCsvPath, new Set(cells.keys()));
+
+  const file: SectorMapFile = {
+    generatedAt: new Date().toISOString(),
+    /**
+     * Said in the file itself, because a map read without it is a map of the galaxy rather than a
+     * map of where commanders have flown (§10.6 rule 3).
+     */
+    note:
+      "Counts describe what is KNOWN, not what exists. Density follows commander traffic — sectors " +
+      "around Sol are saturated because that is where people fly. 'predicted' is absent until the " +
+      "Spansh export is loaded at scale.",
+    sectorNameSource: "edastro sector-list.csv, mapped by 1280 ly grid cell; names are the game's own",
+    cells: [...cells.entries()].map(([key, row]) => ({
+      key,
+      x: row.cell.x,
+      y: row.cell.y,
+      z: row.cell.z,
+      name: names[key] ?? null,
+      taxa: row.taxa,
+    })),
+  };
+
+  const path = sectorMapPath(projectRoot);
+  mkdirSync(dirname(path), { recursive: true });
+  const json = JSON.stringify(file);
+  writeFileSync(path, json + "\n", "utf8");
+  return { path, bytes: json.length + 1, file };
+}
+
+/** Cells with no catalogue name, so the report can say so rather than the map showing blanks. */
+export function unnamedCells(file: SectorMapFile): string[] {
+  return file.cells.filter((c) => !c.name).map((c) => c.key);
+}
+
+/** The strongest evidence in a cell across every taxon — the colour of the sector marker itself. */
+export function cellMarkerKind(taxa: Record<string, number[]>): string | null {
+  let confirmed = 0;
+  let genus = 0;
+  let signal = 0;
+  let predicted = 0;
+  for (const v of Object.values(taxa)) {
+    confirmed += v[0] ?? 0;
+    genus += v[1] ?? 0;
+    signal += v[2] ?? 0;
+    predicted += v[3] ?? 0;
+  }
+  return markerKind({ confirmed, genus, signal, predicted, bodies: confirmed + genus + signal + predicted });
 }
