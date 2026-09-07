@@ -1527,8 +1527,21 @@ function FeederRouteImport() {
   );
 }
 
-function FeederModal({ status, onClose }: { status: FeederStatusDTO | null; onClose: () => void }) {
+function FeederModal({
+  status,
+  onRefresh,
+  onClose,
+}: {
+  status: FeederStatusDTO | null;
+  onRefresh: () => void;
+  onClose: () => void;
+}) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  // The status is read once at app start, so anything the feeder CLI did since then is invisible
+  // until asked for again. Opening this panel is exactly when the answer needs to be current.
+  useEffect(() => {
+    onRefresh();
+  }, [onRefresh]);
   useEffect(() => {
     dialogRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
@@ -1551,6 +1564,9 @@ function FeederModal({ status, onClose }: { status: FeederStatusDTO | null; onCl
       >
         <div className="modal-head">
           <h3 id="feeder-modal-title">Data feeder</h3>
+          <button type="button" className="feeder-refresh" onClick={onRefresh}>
+            Refresh
+          </button>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
@@ -4313,7 +4329,7 @@ const HeaderBar = memo(function HeaderBar({
           onClose={() => setOptionsOpen(false)}
         />
       ) : null}
-      {feederOpen ? <FeederModal status={feeder.status} onClose={() => setFeederOpen(false)} /> : null}
+      {feederOpen ? <FeederModal status={feeder.status} onRefresh={feeder.refresh} onClose={() => setFeederOpen(false)} /> : null}
       {notableQuick ? (
         <Suspense fallback={null}>
           <PlanetQuickFactsPopup

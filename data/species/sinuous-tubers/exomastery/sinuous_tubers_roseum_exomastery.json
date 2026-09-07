@@ -586,8 +586,8 @@
     "body.solidComposition.Rock": [
       0,
       2,
-      1,
       0,
+      1,
       0,
       0,
       0,
@@ -632,8 +632,8 @@
       0,
       0,
       0,
-      1,
       2,
+      1,
       0,
       0
     ],
@@ -765,8 +765,8 @@
     ],
     "body.materials.Sulphur": [
       2,
-      1,
       0,
+      1,
       0,
       0,
       0,
@@ -783,8 +783,8 @@
     ],
     "body.materials.Carbon": [
       2,
-      1,
       0,
+      1,
       0,
       0,
       0,
@@ -813,8 +813,8 @@
       0,
       0,
       0,
-      0,
       2,
+      0,
       0
     ],
     "body.materials.Manganese": [
@@ -837,8 +837,8 @@
     ],
     "body.materials.Phosphorus": [
       2,
-      1,
       0,
+      1,
       0,
       0,
       0,
@@ -906,6 +906,24 @@
       0,
       0,
       0
+    ],
+    "body.materials.Niobium": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
     ]
   },
   "displayHistograms": {

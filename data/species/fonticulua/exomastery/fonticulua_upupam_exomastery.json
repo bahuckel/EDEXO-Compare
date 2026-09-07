@@ -562,16 +562,16 @@
   },
   "sourceSpeciesLabel": "Fonticulua Upupam",
   "parameterImportance": {
-    "body.subType": 0.418,
-    "body.isLandable": 0.022,
+    "body.subType": 0.427,
+    "body.isLandable": 0.021,
     "body.volcanismType": 0.047,
-    "body.atmosphereType": 0.544,
-    "body.terraformingState": 0.049,
-    "body.rotationalPeriodTidallyLocked": 0.132,
-    "exo.host_star_spectral_primary": 0.113,
-    "exo.system_primary_spectral": 0.116,
+    "body.atmosphereType": 0.551,
+    "body.terraformingState": 0.056,
+    "body.rotationalPeriodTidallyLocked": 0.131,
+    "exo.host_star_spectral_primary": 0.117,
+    "exo.system_primary_spectral": 0.12,
     "body.distanceToArrival": 0.145,
-    "body.gravity": 0.734,
+    "body.gravity": 0.724,
     "body.earthMasses": 1,
     "body.radius": 1,
     "body.surfaceTemperature": 1,
@@ -581,7 +581,7 @@
     "body.orbitalPeriod": 0.602,
     "body.semiMajorAxis": 0.363,
     "body.orbitalEccentricity": 0.164,
-    "body.orbitalInclination": 0.241,
+    "body.orbitalInclination": 0.245,
     "body.argOfPeriapsis": 0.109,
     "body.rotationalPeriod": 0.326,
     "body.materials.Sulphur": 1,
@@ -595,8 +595,8 @@
   "histograms": {
     "body.distanceToArrival": [
       2,
-      3,
-      3,
+      2,
+      4,
       0,
       0,
       0,
@@ -626,8 +626,8 @@
       0,
       0,
       3,
-      24,
-      6
+      26,
+      4
     ],
     "body.earthMasses": [
       0,
@@ -732,8 +732,8 @@
       0,
       0,
       0,
-      14,
-      4,
+      16,
+      2,
       0,
       0
     ],
@@ -751,8 +751,8 @@
       0,
       0,
       1,
-      2,
-      7,
+      3,
+      6,
       19
     ],
     "body.semiMajorAxis": [
@@ -768,10 +768,10 @@
       1,
       1,
       0,
-      2,
       3,
-      4,
-      15
+      2,
+      5,
+      14
     ],
     "body.orbitalEccentricity": [
       11,
@@ -794,8 +794,8 @@
     "body.orbitalInclination": [
       5,
       2,
-      5,
-      2,
+      3,
+      4,
       4,
       0,
       0,
@@ -1063,6 +1063,24 @@
     ],
     "body.materials.Germanium": [
       11,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Niobium": [
+      10,
       0,
       0,
       0,

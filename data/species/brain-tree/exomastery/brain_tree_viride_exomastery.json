@@ -427,9 +427,9 @@
     "body.gravity": [
       0,
       0,
-      0,
-      2,
       1,
+      2,
+      0,
       0,
       0,
       0,
@@ -479,8 +479,8 @@
       0
     ],
     "body.surfaceTemperature": [
-      3,
-      0,
+      1,
+      2,
       0,
       0,
       0,
@@ -515,8 +515,8 @@
       0
     ],
     "body.solidComposition.Rock": [
-      3,
       0,
+      3,
       0,
       0,
       0,
@@ -803,6 +803,24 @@
       0
     ],
     "body.materials.Vanadium": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Niobium": [
       1,
       0,
       0,

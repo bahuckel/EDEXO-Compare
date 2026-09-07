@@ -539,24 +539,24 @@
   },
   "sourceSpeciesLabel": "Fungoida Bullarum",
   "parameterImportance": {
-    "body.subType": 0.284,
-    "body.isLandable": 0.022,
+    "body.subType": 0.294,
+    "body.isLandable": 0.021,
     "body.volcanismType": 0.047,
-    "body.atmosphereType": 0.454,
-    "body.terraformingState": 0.049,
-    "body.rotationalPeriodTidallyLocked": 0.396,
-    "exo.host_star_spectral_primary": 0.04,
-    "exo.system_primary_spectral": 0.055,
-    "body.distanceToArrival": 0.163,
-    "body.gravity": 0.561,
+    "body.atmosphereType": 0.462,
+    "body.terraformingState": 0.056,
+    "body.rotationalPeriodTidallyLocked": 0.395,
+    "exo.host_star_spectral_primary": 0.045,
+    "exo.system_primary_spectral": 0.059,
+    "body.distanceToArrival": 0.152,
+    "body.gravity": 0.562,
     "body.earthMasses": 0.745,
     "body.radius": 0.745,
     "body.surfaceTemperature": 0.907,
-    "body.surfacePressure": 0.313,
+    "body.surfacePressure": 0.319,
     "body.solidComposition.Rock": 0.852,
     "body.solidComposition.Metal": 0.743,
     "body.orbitalPeriod": 0.454,
-    "body.semiMajorAxis": 0.428,
+    "body.semiMajorAxis": 0.397,
     "body.orbitalEccentricity": 0.106,
     "body.orbitalInclination": 0.092,
     "body.argOfPeriapsis": 0.048,
@@ -570,8 +570,8 @@
   },
   "histograms": {
     "body.distanceToArrival": [
-      10,
-      2,
+      7,
+      5,
       3,
       3,
       0,
@@ -602,8 +602,8 @@
       0,
       0,
       2,
-      18,
-      11
+      23,
+      6
     ],
     "body.earthMasses": [
       2,
@@ -612,16 +612,16 @@
       0,
       0,
       0,
-      0,
       1,
       0,
       0,
-      1,
       0,
       1,
       0,
-      14,
-      17
+      1,
+      0,
+      19,
+      12
     ],
     "body.radius": [
       2,
@@ -662,12 +662,12 @@
     "body.surfacePressure": [
       3,
       3,
-      3,
-      3,
+      2,
+      4,
       6,
       2,
-      3,
-      10,
+      1,
+      12,
       1,
       0,
       0,
@@ -678,8 +678,8 @@
       0
     ],
     "body.solidComposition.Rock": [
-      32,
-      1,
+      25,
+      8,
       0,
       1,
       0,
@@ -708,8 +708,8 @@
       0,
       0,
       0,
-      0,
-      26,
+      1,
+      25,
       0,
       0
     ],
@@ -836,12 +836,12 @@
       0,
       0,
       0,
-      15,
-      21
+      18,
+      18
     ],
     "body.materials.Iron": [
-      16,
-      15,
+      14,
+      17,
       3,
       1,
       0,
@@ -872,12 +872,12 @@
       0,
       0,
       0,
-      15,
-      21
+      18,
+      18
     ],
     "body.materials.Nickel": [
-      16,
-      15,
+      14,
+      17,
       3,
       1,
       0,
@@ -908,8 +908,8 @@
       0,
       0,
       0,
-      17,
-      19
+      18,
+      18
     ],
     "body.materials.Chromium": [
       11,
@@ -930,8 +930,8 @@
       0
     ],
     "body.materials.Manganese": [
-      11,
-      6,
+      10,
+      7,
       0,
       0,
       1,
@@ -965,9 +965,27 @@
       0,
       2
     ],
-    "body.materials.Zinc": [
-      17,
+    "body.materials.Niobium": [
+      6,
+      5,
+      3,
       0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Zinc": [
+      15,
+      2,
       1,
       0,
       0,

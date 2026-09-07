@@ -260,6 +260,22 @@ async function cmdImport(): Promise<void> {
 
   console.log("");
   const report = await runPipeline(ctx, db, touched, { allowDowngrade, onProgress: log });
+  /**
+   * The same importance pass `run` does, and for the same reason.
+   *
+   * `runPipeline` rewrites each installed profile wholesale, which drops `displayHistograms`,
+   * `histograms` and `parameterImportance` -- they are added afterwards by `applyParameterImportance`
+   * because importance is relative to every other species and can only be measured once the installs
+   * land. `run` called it and `import` did not, so importing silently stripped three fields from every
+   * profile it touched: 43 of 44 lost their histograms and 37 lost their importance on the owner's
+   * 2026-09-07 route import.
+   *
+   * That is not cosmetic. `observedAtTemperature` and `observedAtGravity` read `displayHistograms`,
+   * and with it gone they return null and stop overruling the codex. Concha renibus lost its rescue
+   * on two bodies at 438-444 K -- its histogram had 402 observations in the bin covering them -- and
+   * fell back to a codex gate of 180-195 K it cannot pass. Species recall went 97.1 % to 96.5 %.
+   */
+  console.log(formatImportanceReport(await applyParameterImportance(loadSpeciesDatabaseFromTree(root))));
   finish(report);
 }
 

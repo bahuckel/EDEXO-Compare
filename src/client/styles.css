@@ -9575,3 +9575,10 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
 .feeder-route-summary code {
   word-break: break-all;
 }
+
+/* Feeder panel refresh — the status is read once at app start, so a CLI run needs asking for. */
+.feeder-refresh {
+  margin-left: auto;
+  margin-right: 0.4rem;
+  font-size: var(--fs-sm);
+}

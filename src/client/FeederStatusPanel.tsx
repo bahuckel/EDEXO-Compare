@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { FeederStatusDTO } from "@shared/types";
 
 /**
@@ -18,9 +18,26 @@ import type { FeederStatusDTO } from "@shared/types";
  * is why {@link useFeederStatus} exists separately: the toolbar has to know whether to show the
  * button *before* deciding to open anything.
  */
-export function useFeederStatus(): { status: FeederStatusDTO | null; available: boolean } {
+export function useFeederStatus(): {
+  status: FeederStatusDTO | null;
+  available: boolean;
+  refresh: () => void;
+} {
   const [status, setStatus] = useState<FeederStatusDTO | null>(null);
   const [failed, setFailed] = useState(false);
+  const [nonce, setNonce] = useState(0);
+
+  /**
+   * Re-read the status on demand.
+   *
+   * This used to fetch once, on mount, and never again — and the panel is mounted at app start, so
+   * its numbers were frozen at whenever the app launched. Running `feeder -- import` in a terminal
+   * while the app was open therefore left it reporting the state from before the run, and the owner
+   * saw "18 profiles are behind the corpus" for work that command had already finished: the CLI
+   * writes its status snapshot *before* rebuilding, so a reading taken mid-run is a real mid-run
+   * state that then goes stale the moment the rebuild lands.
+   */
+  const refresh = useCallback(() => setNonce((n) => n + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +50,10 @@ export function useFeederStatus(): { status: FeederStatusDTO | null; available: 
           return;
         }
         const j = (await res.json()) as FeederStatusDTO;
-        if (!cancelled) setStatus(j);
+        if (!cancelled) {
+          setStatus(j);
+          setFailed(false);
+        }
       } catch {
         if (!cancelled) setFailed(true);
       }
@@ -41,9 +61,9 @@ export function useFeederStatus(): { status: FeederStatusDTO | null; available: 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [nonce]);
 
-  return { status, available: !failed && status?.available === true };
+  return { status, available: !failed && status?.available === true, refresh };
 }
 
 /**
