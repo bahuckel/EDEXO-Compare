@@ -19,6 +19,8 @@
  * near-meaningless — those are the bodies we already have *confirmed* answers for. It arrives with
  * the export, and until then the map draws three kinds honestly rather than four kinds badly.
  */
+import type { SpeciesDatabase } from "../shared/types.js";
+import { findSpeciesEntryForLabel } from "./install.js";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
@@ -57,22 +59,86 @@ export function taxonFromSpeciesLabel(label: string): string {
 export interface SectorMapBuild {
   entries: SectorAggregateEntry[];
   sources: { confirmed: number; genus: number; signal: number };
+  /**
+   * Taxon to genus, for the map's Genus then Species picker. See the comment where it is built.
+   *
+   * Optional so a caller that has no genus information — a test, or an older tool — still writes a
+   * valid file; the picker then treats each taxon as its own genus rather than guessing at a name.
+   */
+  taxonGenus?: Record<string, string>;
 }
 
 /** Read both stores and aggregate. Everything is in memory already; this is a fold, not a query plan. */
-export function buildSectorMapData(store: FeederStore): SectorMapBuild {
+/**
+ * Which genus a species label belongs to, for the map's Genus picker.
+ *
+ * `sightings.genus` cannot answer this. It is written by `genusFromLandmark`, which takes the first
+ * word — right for `Bacterium Aurasus`, wrong for every structure, because those are named the other
+ * way round: `Roseum Brain Tree`, `Luteolum Anemone`, `Roseum Sinuous Tubers`. Left alone the picker
+ * would offer genera called "roseum", "aureum" and "luteolum".
+ *
+ * Three steps, each preferring a real answer to a guess:
+ *
+ *  1. **The species database.** `findSpeciesEntryForLabel` already handles the word-order difference
+ *     — its word-bag fallback matches `Roseum Brain Tree` to `Brain Tree Roseum` — and `entry.genus`
+ *     is the display name the app uses everywhere else.
+ *  2. **The database's genus vocabulary.** Six Anemone colour variants and Bark Mounds have sightings
+ *     but no species row, so step 1 cannot place them. `Roseum Bioluminescent Anemone` still contains
+ *     `Anemone`, which is one of the 19 genus names the tree defines, so it is placed by that.
+ *  3. **Itself.** Anything left is its own genus, which is the honest answer for `Bark Mounds` and
+ *     avoids inventing a name for anything else.
+ */
+export function speciesGenusResolver(db: SpeciesDatabase): (label: string) => string | null {
+  const genera = [...new Set(db.species.map((e) => e.genus).filter(Boolean))]
+    // Longest first so `Sinuous Tuber` is tried before any shorter name it might contain.
+    .sort((a, b) => b.length - a.length);
+
+  return (label: string): string | null => {
+    const entry = findSpeciesEntryForLabel(db, label);
+    if (entry?.genus) return entry.genus;
+    const lo = ` ${label.toLowerCase()} `;
+    for (const g of genera) {
+      if (lo.includes(` ${g.toLowerCase()} `)) return g;
+    }
+    return null;
+  };
+}
+
+export function buildSectorMapData(
+  store: FeederStore,
+  resolveGenus?: (label: string) => string | null,
+): SectorMapBuild {
   const evidence: BodyEvidence[] = [];
   let confirmed = 0;
   let genus = 0;
   let signal = 0;
 
+  /**
+   * Which genus each taxon belongs to, so the map's picker can offer Genus then Species.
+   *
+   * Not derivable from the taxon string: `bacterium aurasus` puts the genus first, `aureum brain
+   * tree` puts it last, and `bark mounds` is a genus with no species at all.
+   */
+  const taxonGenus: Record<string, string> = {};
+
   for (const s of store.sightingPositions()) {
+    const taxon = taxonFromSpeciesLabel(s.speciesLabel);
+    /**
+     * The resolver, then the taxon itself — never `sightings.genus`.
+     *
+     * That column is the first word of the label, which is the rule this exists to avoid. When the
+     * resolver cannot place a label the honest answer is that it is its own genus: `Bark Mounds`
+     * has sightings and no species row, and filing it under ark\ would be inventing a name the
+     * game does not use.
+     */
+    const g = (resolveGenus?.(s.speciesLabel) ?? taxon).trim().toLowerCase();
+    if (g) taxonGenus[taxon] = g;
     evidence.push({
       x: s.x,
       y: s.y,
       z: s.z,
       bodyKey: s.bodyKey,
-      taxon: taxonFromSpeciesLabel(s.speciesLabel),
+      taxon,
       kind: "confirmed",
     });
     confirmed += 1;
@@ -81,7 +147,10 @@ export function buildSectorMapData(store: FeederStore): SectorMapBuild {
   for (const b of store.eddnBodyPositions()) {
     if (b.genuses.length > 0) {
       for (const g of b.genuses) {
-        evidence.push({ x: b.x, y: b.y, z: b.z, bodyKey: b.bodyKey, taxon: genusKeyFromCodex(g), kind: "genus" });
+        const gTaxon = genusKeyFromCodex(g);
+        // A bare genus row is its own genus; it has no species to sit under.
+        taxonGenus[gTaxon] = gTaxon;
+        evidence.push({ x: b.x, y: b.y, z: b.z, bodyKey: b.bodyKey, taxon: gTaxon, kind: "genus" });
         genus += 1;
       }
       continue;
@@ -94,7 +163,7 @@ export function buildSectorMapData(store: FeederStore): SectorMapBuild {
     }
   }
 
-  return { entries: aggregateBySector(evidence), sources: { confirmed, genus, signal } };
+  return { entries: aggregateBySector(evidence), sources: { confirmed, genus, signal }, taxonGenus };
 }
 
 /** Where the shipped aggregate lives — the app reads this, never the feeder store. */
@@ -182,6 +251,12 @@ export function writeSectorMapFile(
       name: names[key] ?? null,
       taxa: row.taxa,
     })),
+    // Only the taxa this file actually draws, so a shrinking map does not carry stale keys.
+    taxonGenus: Object.fromEntries(
+      [...new Set(build.entries.map((e) => e.taxon))]
+        .sort()
+        .map((t) => [t, build.taxonGenus?.[t] ?? t]),
+    ),
   };
 
   const path = sectorMapPath(projectRoot);

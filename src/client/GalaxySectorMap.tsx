@@ -25,7 +25,7 @@
  * fly, not because that is where the plants are (§1.6, §10.6 rule 3). The legend says so on screen —
  * the owner already knows, a stranger reading a bright bubble does not.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   SECTOR_ORIGIN,
   SECTOR_SIZE_LY,
@@ -150,6 +150,14 @@ export function GalaxySectorMap({
   file: SectorMapFile;
   commander?: CommanderPosition | null;
 }) {
+  /**
+   * Genus and species are two pickers, not one.
+   *
+   * The single list held 103 entries mixing both, sorted alphabetically, so choosing "tussock
+   * ignis" meant scrolling past every Bacterium. `genus` narrows the second list; `taxon` is the
+   * exact taxon or "" for "every species in this genus".
+   */
+  const [genus, setGenus] = useState<string>("");
   const [taxon, setTaxon] = useState<string>("");
   const [query, setQuery] = useState("");
   const [hover, setHover] = useState<SectorMapCell | null>(null);
@@ -157,17 +165,56 @@ export function GalaxySectorMap({
 
   const taxa = useMemo(() => allTaxa(file), [file]);
 
+  /** Genus for a taxon, from the file. Falls back to the taxon itself for an older map file. */
+  const genusOf = useCallback(
+    (t: string): string => file.taxonGenus?.[t] ?? t,
+    [file],
+  );
+
+  const genera = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const t of taxa) {
+      const g = genusOf(t);
+      counts.set(g, (counts.get(g) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [taxa, genusOf]);
+
+  /**
+   * The species of the chosen genus.
+   *
+   * A genus whose only taxon *is* the genus — Bark Mounds, or a bare `bacterial` signal row — has
+   * nothing to choose between, so the second picker disables itself rather than offering one option
+   * that changes nothing.
+   */
+  const speciesOfGenus = useMemo(
+    () => (genus ? taxa.filter((t) => genusOf(t) === genus && t !== genus) : []),
+    [taxa, genus, genusOf],
+  );
+
+  /**
+   * What the map is actually filtered by: one taxon, a whole genus, or everything.
+   *
+   * `undefined` means no filter at all. A genus with no species selected passes the set of its
+   * taxa, which is what makes "show me all Tussock" work without a taxon per option.
+   */
+  const filterTaxa = useMemo<ReadonlySet<string> | undefined>(() => {
+    if (taxon) return new Set([taxon]);
+    if (genus) return new Set(taxa.filter((t) => genusOf(t) === genus));
+    return undefined;
+  }, [taxon, genus, taxa, genusOf]);
+
   /** Cells that have something to show for the current filter, with their totals. */
   const shown = useMemo(() => {
     const rows: { cell: SectorMapCell; totals: ReturnType<typeof cellTotals>; kind: Kind }[] = [];
     for (const cell of file.cells) {
-      const totals = cellTotals(cell, taxon || undefined);
+      const totals = cellTotals(cell, filterTaxa);
       const kind = strongestKind(totals);
       if (!kind || totals.bodies === 0) continue;
       rows.push({ cell, totals, kind });
     }
     return rows;
-  }, [file, taxon]);
+  }, [file, filterTaxa]);
 
   const maxBodies = useMemo(() => Math.max(1, ...shown.map((r) => r.totals.bodies)), [shown]);
 
@@ -205,12 +252,42 @@ export function GalaxySectorMap({
     <div className="galaxy-map">
       <div className="galaxy-map__controls">
         <label>
-          Species / genus
-          <select value={taxon} onChange={(e) => setTaxon(e.target.value)}>
-            <option value="">Everything ({taxa.length} taxa)</option>
-            {taxa.map((t) => (
+          Genus
+          <select
+            value={genus}
+            onChange={(e) => {
+              setGenus(e.target.value);
+              // The old species no longer belongs to the new genus, so it cannot stay selected.
+              setTaxon("");
+            }}
+          >
+            <option value="">Every genus ({genera.length})</option>
+            {genera.map(([g, n]) => (
+              <option key={g} value={g}>
+                {g === "*" ? "biology, unidentified" : g}
+                {n > 1 ? ` (${n})` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Species
+          <select
+            value={taxon}
+            disabled={!genus || speciesOfGenus.length === 0}
+            onChange={(e) => setTaxon(e.target.value)}
+          >
+            <option value="">
+              {!genus
+                ? "pick a genus first"
+                : speciesOfGenus.length === 0
+                  ? "no species under this genus"
+                  : `All ${genus} (${speciesOfGenus.length})`}
+            </option>
+            {speciesOfGenus.map((t) => (
               <option key={t} value={t}>
-                {t === "*" ? "biology, unidentified" : t}
+                {/* The genus is already the other picker; repeating it wastes the width. */}
+                {t.startsWith(`${genus} `) ? t.slice(genus.length + 1) : t}
               </option>
             ))}
           </select>

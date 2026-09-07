@@ -42,10 +42,22 @@ export interface SectorMapFile {
   note: string;
   sectorNameSource: string;
   cells: SectorMapCell[];
+  /**
+   * Taxon to genus, so the picker can offer Genus and then only that genus's species.
+   *
+   * Optional: a map file written before this existed simply has no entry for a taxon, and the
+   * picker falls back to treating that taxon as its own genus rather than guessing from its name.
+   */
+  taxonGenus?: Record<string, string>;
 }
 
-/** Sum one cell's counts across every taxon, or across one taxon when `taxon` is given. */
-export function cellTotals(cell: SectorMapCell, taxon?: string): {
+/**
+ * Sum one cell's counts, optionally narrowed to a set of taxa.
+ *
+ * A set rather than a single taxon because the picker offers a whole genus: "all Tussock" is
+ * fourteen taxa, and summing them here is one pass instead of fourteen.
+ */
+export function cellTotals(cell: SectorMapCell, taxa?: ReadonlySet<string> | string): {
   confirmed: number;
   genus: number;
   signal: number;
@@ -54,7 +66,11 @@ export function cellTotals(cell: SectorMapCell, taxon?: string): {
 } {
   const out = { confirmed: 0, genus: 0, signal: 0, predicted: 0, bodies: 0 };
   for (const [t, v] of Object.entries(cell.taxa)) {
-    if (taxon !== undefined && t !== taxon) continue;
+    if (taxa !== undefined) {
+      if (typeof taxa === "string") {
+        if (t !== taxa) continue;
+      } else if (!taxa.has(t)) continue;
+    }
     out.confirmed += v[EVIDENCE_INDEX.confirmed] ?? 0;
     out.genus += v[EVIDENCE_INDEX.genus] ?? 0;
     out.signal += v[EVIDENCE_INDEX.signal] ?? 0;

@@ -71,6 +71,7 @@ import { formatImportReport, importSpanshExport } from "../src/feeder/spanshImpo
 import { EddnConsumer, formatCounters } from "../src/server/eddn/eddnConsumer.js";
 import {
   buildSectorMapData,
+  speciesGenusResolver,
   buildSectorSystems,
   unnamedCells,
   writeSectorMapFile,
@@ -638,7 +639,12 @@ async function cmdEddn(): Promise<void> {
 async function cmdSectorMap(): Promise<void> {
   requireCorpus();
   const ctx = await openFeeder();
-  const { entries, sources } = buildSectorMapData(ctx.store);
+  // The genus of a structure is not the first word of its name, so the map resolves it through
+  // the species tree rather than through `sightings.genus`. See `speciesGenusResolver`.
+  const { entries, sources, taxonGenus } = buildSectorMapData(
+    ctx.store,
+    speciesGenusResolver(loadSpeciesDatabaseFromTree(root)),
+  );
   const sum = summariseAggregate(entries);
 
   console.log("");
@@ -660,7 +666,7 @@ async function cmdSectorMap(): Promise<void> {
   if (flags.has("--write")) {
     const D = String.fromCharCode(92);
     const catalogue = ["C:", "Users", "FeraL", "Desktop", "Cursor Projects", "EDSM-targz-to-db", "docs", "sector-list.csv"].join(D);
-    const w = writeSectorMapFile(root, { entries, sources }, catalogue);
+    const w = writeSectorMapFile(root, { entries, sources, taxonGenus }, catalogue);
     const unnamed = unnamedCells(w.file);
     console.log("");
     console.log(`wrote              ${w.path}`);

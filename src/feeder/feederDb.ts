@@ -840,10 +840,17 @@ export class FeederStore {
    * at the origin would draw a false marker in the busiest part of the galaxy. Phase 2 took the
    * corpus to 100 % coordinate coverage, so this excludes nothing today.
    */
-  sightingPositions(): { x: number; y: number; z: number; bodyKey: string; speciesLabel: string }[] {
-    return queryAll<[number, number, number, string, number, string]>(
+  sightingPositions(): {
+    x: number;
+    y: number;
+    z: number;
+    bodyKey: string;
+    speciesLabel: string;
+    genus: string;
+  }[] {
+    return queryAll<[number, number, number, string, number, string, string]>(
       this.db,
-      `SELECT s.x, s.y, s.z, COALESCE(s.id64, CAST(s.id AS TEXT)), p.id, sg.species_label
+      `SELECT s.x, s.y, s.z, COALESCE(s.id64, CAST(s.id AS TEXT)), p.id, sg.species_label, sg.genus
          FROM sightings sg
          JOIN planets p ON p.id = sg.planet_id
          JOIN systems s ON s.id = p.system_id
@@ -856,6 +863,9 @@ export class FeederStore {
       // `${system}:${planet}` — stable per body, which is all the fold needs.
       bodyKey: `${r[3]}:${r[4]}`,
       speciesLabel: r[5],
+      // Written by `applyCsvRows` from the landmark, so it is the corpus's own answer rather
+      // than a word taken off the front of the species label.
+      genus: r[6] ?? "",
     }));
   }
 
