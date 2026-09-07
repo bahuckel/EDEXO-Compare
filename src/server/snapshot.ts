@@ -1091,7 +1091,7 @@ export function buildSnapshot(
     bootLoading || focusAddr == null
       ? null
       : perfTime("snap.systemMap", () =>
-          buildSystemMapSnapshot(store, focusAddr, db, cachedStarRoles!, cachedPrices),
+          buildSystemMapSnapshot(store, focusAddr, db, cachedStarRoles!, cachedPrices, loadSpatialCatalogue(projectRoot)),
         );
   const dScanBodies = bootLoading
     ? null

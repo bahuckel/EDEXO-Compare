@@ -1326,7 +1326,7 @@ function GenusSpeciesOdds({ items, confirmed }: { items: BodyComputed["matches"]
    * numbers are withheld. Same discipline as `predictionUnsupported` on the card itself (§7.11), and
    * as §18's rule against a percentage with nothing behind it.
    */
-  const ungateable = shown.filter((m) => m.entry.predictionUnsupported);
+  const ungateable = shown.filter((m) => m.entry.predictionUnsupported || m.spatialGateUnresolved);
 
   const scored = shown
     .map((m) => ({ name: m.entry.displayName, share: m.genusSharePercent }))
@@ -1338,7 +1338,17 @@ function GenusSpeciesOdds({ items, confirmed }: { items: BodyComputed["matches"]
 
 
   if (ungateable.length > 0) {
-    const reason = ungateable[0]!.entry.predictionUnsupported!.reason;
+    /**
+     * Phase 7 gave three genera a gate they can actually be judged by, which removed their
+     * `predictionUnsupported` flag — and that flag was what this suppression keyed on. The gate can
+     * still come back unevaluable: viewing a system remotely, or before the first `StarPos` is read,
+     * there is no coordinate to measure from. Then the species is exactly as ungateable as it was
+     * before Phase 7, and the split must be withheld for the same reason it always was.
+     */
+    const first = ungateable[0]!;
+    const reason =
+      first.entry.predictionUnsupported?.reason ??
+      "its spawn depends on where the system is, and we have no coordinates for this one";
     return (
       <p
         className="genus-species-odds genus-species-odds--ungateable"

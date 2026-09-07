@@ -581,6 +581,16 @@ export interface SpeciesMatch {
    * Set only when {@link unlikely}.
    */
   unlikelyReasons?: MatchReason[];
+  /**
+   * This species carries a Phase 7 spatial gate, but the app could not evaluate it — no coordinate
+   * for the system, or no catalogue on disk.
+   *
+   * Not a failure and not a pass: it is the third answer, "we cannot check here". The card stays,
+   * because absence of evidence is not evidence of absence — but the genus split must not put a
+   * percentage on it, since a share is normalised inside the genus and one unknowable member makes
+   * every other member's figure wrong too.
+   */
+  spatialGateUnresolved?: boolean;
   /** Exobiology line complete on this body (two Sample + one Analyse in journal, per codex key). */
   organicAnalysisComplete?: boolean;
   /** Suggested from `data/foot_scanned.json` when DSS/signals imply genera the DB did not return under strict gates. */

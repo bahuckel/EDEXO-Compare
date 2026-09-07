@@ -14,6 +14,7 @@ import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "../shared/jou
 import {
   describeVerdict,
   evaluateSpatialGate,
+  gateForSpeciesId,
   type SpatialCatalogue,
 } from "../shared/spatialGates.js";
 import { observedAtGravity } from "./speciesGravityObservations.js";
@@ -859,14 +860,27 @@ function hostStarDeterminism(entry: SpeciesEntry): number {
  * signal count cannot otherwise be satisfied can still pull a spatially-demoted species back — the
  * game reporting N biological signals is a harder fact than a catalogue's completeness.
  */
-function demoteFailedSpatialGates(
+export function demoteFailedSpatialGates(
   strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
   unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
   matchContext: SpeciesMatchContext | null | undefined,
   catalogue: SpatialCatalogue | null,
 ): void {
   const coords = matchContext?.systemCoords;
-  if (!coords || !catalogue) return; // No position, no verdict — never a failure.
+
+  /**
+   * No position, no verdict — never a failure.
+   *
+   * But "we could not check" is not the same as "there is nothing to check", and the difference is
+   * visible to the reader: a gated species that survives unmarked looks like one that passed. Mark
+   * it so the genus split can withhold its percentage, then leave the tiers alone.
+   */
+  if (!coords || !catalogue) {
+    for (const m of strict) {
+      if (gateForSpeciesId(m.entry.id)) m.spatialGateUnresolved = true;
+    }
+    return;
+  }
 
   for (let i = strict.length - 1; i >= 0; i--) {
     const m = strict[i]!;

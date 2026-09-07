@@ -19,6 +19,7 @@ import type { GameStateStore } from "./gameState.js";
 import { bodyScanValueCredits, referenceFssAt1EarthMass, starScanValueCredits } from "./explorationValue.js";
 import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
+import type { SpatialCatalogue } from "../shared/spatialGates.js";
 import { estimatedTemperatureRangeForScan } from "./planetTemperature.js";
 import { lookupPriceStrict, type PriceIndex } from "./priceList.js";
 import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exoPayoutRange.js";
@@ -504,6 +505,7 @@ function maxExoHeuristicPair(
   db: SpeciesDatabase,
   prices: PriceIndex,
   r: ExplorationScanRecord,
+  spatialCatalogue: SpatialCatalogue | null,
 ): { displayMax: number; tierValue: number } {
   const bk = bodyKey(r.systemAddress, r.bodyId);
   const exo = store.bodies.get(bk);
@@ -513,6 +515,7 @@ function maxExoHeuristicPair(
   const run = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
     matchContext: buildSpeciesMatchContext(exo, store),
+    spatialCatalogue,
   });
   const mult: 1 | 5 = store.firstFootfallBodies.has(bk) ? 5 : 1;
   const vals: number[] = [];
@@ -532,6 +535,7 @@ function buildExoPayoutRangeForRecord(
   db: SpeciesDatabase,
   prices: PriceIndex,
   r: ExplorationScanRecord,
+  spatialCatalogue: SpatialCatalogue | null,
 ): ExoPayoutRangeDTO | null {
   const bk = bodyKey(r.systemAddress, r.bodyId);
   const exo = store.bodies.get(bk);
@@ -541,6 +545,7 @@ function buildExoPayoutRangeForRecord(
   const { matches } = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
     matchContext: buildSpeciesMatchContext(exo, store),
+    spatialCatalogue,
   });
   const { count: slots, source: slotSource } = resolveOrganicSlotCount(exo);
   if (slots <= 0 || slotSource === "none") return null;
@@ -588,6 +593,7 @@ function exoMatchSummaries(
   store: GameStateStore,
   db: SpeciesDatabase,
   r: ExplorationScanRecord,
+  spatialCatalogue: SpatialCatalogue | null,
 ): { displayName: string; id: string }[] {
   const exo = store.bodies.get(bodyKey(r.systemAddress, r.bodyId));
   if (!exo || !bodyHasExoMarkers(exo)) return [];
@@ -596,6 +602,7 @@ function exoMatchSummaries(
   const { matches } = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
     matchContext: buildSpeciesMatchContext(exo, store),
+    spatialCatalogue,
   });
   return shownSpeciesMatches(matches)
     .slice(0, 48)
@@ -667,6 +674,15 @@ export function buildSystemMapSnapshot(
   db: SpeciesDatabase,
   cfg: StarRolesConfig,
   prices: PriceIndex,
+  /**
+   * Phase 7 point catalogues, threaded from the caller rather than loaded here.
+   *
+   * The map's value tiers and its per-body species lists come from the same matcher as the detail
+   * panel. Leaving the catalogue out here did not make the map neutral — it made it *disagree*: a
+   * body could be coloured rich, and listed as holding Electricae radialem, by a candidate the
+   * panel beside it had already demoted for sitting 175 ly from the nearest nebula.
+   */
+  spatialCatalogue: SpatialCatalogue | null,
 ): SystemMapSnapshot | null {
   if (focusSystemAddress == null) return null;
   /** Narrowed copy: the closures below lose the null-check on the captured parameter. */
@@ -804,7 +820,7 @@ export function buildSystemMapSnapshot(
     const scan = scanForMatch(store, r, exo);
     const est = scan ? estimatedTemperatureRangeForScan(scan) : null;
 
-    const maxExo = maxExoHeuristicPair(store, db, prices, r);
+    const maxExo = maxExoHeuristicPair(store, db, prices, r, spatialCatalogue);
     const exoTier = exoValueTierFromHeuristic(
       maxExo.tierValue,
       store.exoMapTierPlusMinCr,
@@ -855,10 +871,10 @@ export function buildSystemMapSnapshot(
       hasExobiology: hasExo,
       bioBodyKey: hasExo ? bk : null,
       estimatedSurfaceTempK: est != null ? { minK: est.tMin, maxK: est.tMax, midK: est.tMid } : null,
-      exoMatchSummaries: exoMatchSummaries(store, db, r),
+      exoMatchSummaries: exoMatchSummaries(store, db, r, spatialCatalogue),
       maxExoHeuristicCredits: maxExo.displayMax,
       exoValueTier: exoTier,
-      exoPayoutRange: buildExoPayoutRangeForRecord(store, db, prices, r),
+      exoPayoutRange: buildExoPayoutRangeForRecord(store, db, prices, r, spatialCatalogue),
       parentBodyId,
       parentStarIds,
       isInferredPlaceholder: !!r.isSynthetic,
