@@ -46,27 +46,75 @@ export function systemExplorationScanIndex(
 /**
  * How far a body actually is from the star it orbits, in light seconds.
  *
- * This used to be `SemiMajorAxis / c` and nothing else, which is right for a planet and **wrong for
- * a moon**: a moon's semi-major axis is its orbit around its planet, so a moon 3,000 ls from its
- * star reported a few light seconds. Measured on the corpus, that single mistake put 20 of 298
- * Clypeus speculumi bodies at under 50 ls when their real distance was 2,858–206,459 ls — enough to
- * make speculumi's own 2,500 ls rule look like it failed a quarter of the time.
+ * ## What was wrong twice
  *
- * Four cases, in order:
+ * First this was `SemiMajorAxis / c` and nothing else — right for a planet, **wrong for a moon**,
+ * whose semi-major axis is its orbit around its *planet*. A moon 3,000 ls from its star reported a
+ * few light seconds, which put 20 of 298 Clypeus speculumi bodies under 50 ls when their real
+ * distance was 2,858–206,459 ls.
  *
- *  1. The body orbits the **arrival star** — then the arrival distance *is* the star distance, and it
- *     is a measurement rather than an orbital reconstruction.
- *  2. Otherwise climb the parent chain to the ancestor whose own immediate parent is a star, and use
- *     that ancestor's orbit. For a moon this is the planet's orbit, which is what we wanted.
- *  3. The chain names **no star at all** — the body orbits a barycentre. The stars sit at the point
- *     we arrive at, so the arrival distance is the right order of magnitude.
- *  4. Nothing resolves: return undefined, so the criterion is skipped rather than failed.
+ * The fix for that walked the chain, but only through `Planet` hops, and the owner spotted what it
+ * still missed: **barycentres**. Moons orbit each other, and the pair's barycentre is what orbits
+ * the planet or the star. Across 26,809 scanned bodies in the owner's own logs those shapes are not
+ * rare — `Null>Star` 1,007, `Planet>Null>Star` 829, `Null>Planet>Star` 366, and more — and every one
+ * of them broke the climb at the first `Null` and returned nothing.
  *
- * Measured after the fix: 293 of 295 resolvable speculumi bodies are ≥ 2,500 ls (99.3 %), against
- * 1.7 % of its 637 lacrimam and 2.5 % of its 198 margaritus siblings. The two below are 2,360 and
- * 2,494 ls — and the codex writes the rule as "5 AU", which is 2,495 ls.
+ * ## What the data can actually support
+ *
+ * A barycentre's own orbit is **not recoverable**. The journal writes no `Scan` for one, and the
+ * EDSM system caches carry no row for one either (checked: 0 non-star, non-planet rows across 400
+ * system files). Its children report their orbits *around it*, which is the wrong radius. So the
+ * honest set of answers is smaller than the set of chain shapes:
+ *
+ *  1. **The nearest star ancestor is the arrival star** → the arrival distance *is* the distance from
+ *     that star, whatever the chain looks like in between. Exact, and it covers every barycentre and
+ *     ring shape in a single-star system.
+ *  2. **Otherwise read the ancestry** — `Parents` lists it in full, nearest-first — and take the
+ *     entry sitting directly below the nearest star ancestor. That entry is the body orbiting the
+ *     star, and its semi-major axis is the radius. Exact, and this is the case that matters in
+ *     multi-star systems, where the arrival distance is measured from the *wrong* star.
+ *  3. **No star anywhere in the chain** — a pure barycentre system. The stars sit at the point we
+ *     arrive at, so the arrival distance is the right radius.
+ *  4. **Anything else** — a non-arrival host star reached only through a barycentre or a ring —
+ *     returns undefined. The arrival distance would be measured from the wrong star, and the
+ *     difference between two radial distances is a lower bound that can read zero when the body and
+ *     its star share a radius. A gate that fires on a fabricated zero is worse than one that abstains.
+ *
+ * `Ring` parents are left in case 4 rather than treated as transparent: all 7,314 of them in the
+ * owner's logs are belt clusters, and **not one is landable**, so exobiology never asks.
+ *
+ * ## What it resolves
+ *
+ * Over the 9,691 landable bodies in the owner's journals: 69.0 % through the arrival star, 18.6 %
+ * through an orbital radius, 8.9 % through a system whose chain names no star, and **3.5 % abstain**.
+ * Reading the ancestry rather than hopping records recovers 34 bodies of the shape
+ * `Null > Planet > Star` — a moon of a moon-pair whose barycentre orbits a planet — and loses none.
+ *
+ * Speculumi's rule under this resolution: 292 of 294 resolvable bodies ≥ 2,500 ls (99.3 %), against
+ * 1.6 % of its 628 lacrimam and 2.5 % of its 198 margaritus siblings. The two below are 2,360 and
+ * 2,494 ls, and the codex writes the rule as "5 AU", which is 2,495 ls.
  */
-function starDistanceLs(
+function arrivalStarBodyId(byId: Map<number, ExplorationScanRecord>): number | null {
+  /**
+   * The star you arrive at is the one the game reports at zero distance from arrival — 2,860 of the
+   * 4,635 star scans in the owner's logs carry that, and it is the only direct statement of which
+   * star the arrival distance is measured from.
+   *
+   * When the primary was never scanned, fall back to the lowest star `BodyID`, which is the primary
+   * in practice. That is a guess, so it is only ever used to *accept* the arrival distance for a body
+   * that orbits it — never to reject anything.
+   */
+  let zero: number | null = null;
+  let lowest: number | null = null;
+  for (const [bodyId, r] of byId) {
+    if (!r.starType?.trim()) continue;
+    if (lowest == null || bodyId < lowest) lowest = bodyId;
+    if (r.distanceFromArrivalLs === 0 && (zero == null || bodyId < zero)) zero = bodyId;
+  }
+  return zero ?? lowest;
+}
+
+export function starDistanceLs(
   rec: ExplorationScanRecord | undefined | null,
   scan: PlanetScan | undefined | null,
   byId: Map<number, ExplorationScanRecord>,
@@ -74,40 +122,46 @@ function starDistanceLs(
   const arrival = rec?.distanceFromArrivalLs ?? scan?.distanceFromArrivalLs;
   const arrivalLs = typeof arrival === "number" && Number.isFinite(arrival) ? arrival : undefined;
 
-  const parents = rec?.parents;
-  const starIds = allStarParentIds(parents);
+  // `Parents` is nearest-first, so the first star listed is the one this body ultimately orbits.
+  const starIds = allStarParentIds(rec?.parents);
+  const hostStarId = starIds.length ? starIds[0]! : null;
 
-  // 1. The arrival star is the smallest star id in the system we know of — body 0 in practice.
-  let mainStarId: number | null = null;
-  for (const [bodyId, r] of byId) {
-    if (r.starType?.trim() && (mainStarId == null || bodyId < mainStarId)) mainStarId = bodyId;
-  }
-  if (starIds.length && mainStarId != null && starIds[0] === mainStarId && arrivalLs !== undefined) {
+  // 1. Host is the arrival star: the arrival distance is the answer, whatever is in between.
+  if (hostStarId != null && hostStarId === arrivalStarBodyId(byId) && arrivalLs !== undefined) {
     return arrivalLs;
   }
 
-  // 2. Climb to whatever orbits a star, and take its semi-major axis.
-  // `PlanetScan` is the merged view and carries no `Parents`, so the climb needs the exploration
-  // record. Without one there is no chain to walk and case 3 answers instead.
-  let cur: { parents?: unknown; semiMajorAxis?: number } | null = rec ?? null;
-  const seen = new Set<number>();
-  for (let d = 0; d < 24 && cur; d++) {
-    const ps = cur.parents;
-    if (!Array.isArray(ps) || ps.length === 0) break;
-    const p0 = parseJournalParentEntry(ps[0]);
-    if (!p0) break;
-    if (p0.kind === "Star") {
-      const sma = cur.semiMajorAxis;
+  // 2. `Parents` is the whole ancestry, nearest-first, so no record-hopping is needed: find the
+  //    nearest star ancestor and look at whatever sits immediately below it. That entry is the body
+  //    orbiting the star, and its semi-major axis is the radius we want.
+  //
+  //      [{Planet:3},{Star:0}]           -> planet 3 orbits the star      -> sma of body 3
+  //      [{Null:5},{Planet:3},{Star:0}]  -> planet 3 orbits the star      -> sma of body 3
+  //      [{Star:0}]                      -> the body itself orbits it     -> its own sma
+  //      [{Null:5},{Star:0}]             -> a barycentre orbits the star  -> not recoverable
+  //
+  //    The third line is the shape the previous version missed: it hopped records through `Planet`
+  //    entries and stopped dead at the first `Null`, even when a planet with a perfectly good orbit
+  //    was listed right behind it.
+  const parents = Array.isArray(rec?.parents) ? rec.parents : [];
+  const chain = parents.map((e) => parseJournalParentEntry(e));
+  const starIndex = chain.findIndex((e) => e?.kind === "Star");
+  if (starIndex === 0) {
+    const sma = rec?.semiMajorAxis;
+    if (typeof sma === "number" && Number.isFinite(sma) && sma > 0) return sma / LIGHT_SECOND_METERS;
+  } else if (starIndex > 0) {
+    const orbiter = chain[starIndex - 1];
+    // A `Null` here is a barycentre orbiting the star, and nothing records its orbit — see above.
+    if (orbiter?.kind === "Planet") {
+      const sma = byId.get(orbiter.id)?.semiMajorAxis;
       if (typeof sma === "number" && Number.isFinite(sma) && sma > 0) return sma / LIGHT_SECOND_METERS;
-      break;
     }
-    if (p0.kind !== "Planet" || seen.has(p0.id)) break;
-    seen.add(p0.id);
-    cur = byId.get(p0.id) ?? null;
   }
 
-  // 3. A barycentre names no star; the stars are where we arrived.
+  // 3. A chain that names no star at all: the stars are where we arrived.
   if (starIds.length === 0 && arrivalLs !== undefined) return arrivalLs;
+
+  // 4. A non-arrival host reached only through a barycentre or a ring. Not measurable — say so.
   return undefined;
 }
 
