@@ -81,6 +81,7 @@ import type {
   OrganicPendingLineItem,
   OtherMatchDetailCardDTO,
   PlanetScan,
+  SpeciesProvenance,
   FeederStatusDTO,
 } from "@shared/types";
 import {
@@ -568,6 +569,48 @@ function OtherMatchDetailCardsGrid({ cards }: { cards: OtherMatchDetailCardDTO[]
 /** Stable empty list, so a card with nothing demoting it does not churn a new array each render. */
 const EMPTY_REASONS: MatchReason[] = [];
 
+/**
+ * Who says this species is here, said in the fewest words that stay true.
+ *
+ * Three states, and the difference between the last two is the whole reason provenance exists:
+ *
+ *  - **you scanned it** — your journal names this exact body. First-hand, and the only evidence in
+ *    the app that is.
+ *  - **in system (n)** — the shipped corpus confirms it somewhere in this system. It cannot say
+ *    which body, because the corpus ships as per-system aggregates, so the badge does not pretend
+ *    to. On a system with nine landable bodies "confirmed here" would be eight lies.
+ *  - **nothing** — no badge. Not an assertion of absence: the corpus only covers where commanders
+ *    have flown, and most of the galaxy is unvisited rather than barren.
+ *
+ * A row can be both: your own scan and a corpus record are different claims, and the first-hand one
+ * is shown because it is the stronger.
+ */
+function SpeciesProvenanceBadge({ p }: { p?: SpeciesProvenance }) {
+  if (!p) return null;
+  if (p.firstHand) {
+    const when = p.firstHandAt ? new Date(p.firstHandAt).toLocaleDateString() : null;
+    return (
+      <span
+        className="species-prov species-prov--mine"
+        title={`Your own journal records this species on this body${when ? ` on ${when}` : ""}. First-hand evidence — nothing else in the app is.`}
+      >
+        you scanned it
+      </span>
+    );
+  }
+  if (p.corpusInSystem > 0) {
+    return (
+      <span
+        className="species-prov species-prov--corpus"
+        title={`Spansh's exobiology data confirms this species on ${p.corpusInSystem} ${p.corpusInSystem === 1 ? "body" : "bodies"} in this system — another commander scanned it here. The shipped data records the system, not which body, so this does not say it is on this one.`}
+      >
+        in system{p.corpusInSystem > 1 ? ` (${p.corpusInSystem})` : ""}
+      </span>
+    );
+  }
+  return null;
+}
+
 const SpeciesCard = memo(function SpeciesCard({
   m,
   scan,
@@ -840,6 +883,7 @@ const SpeciesCard = memo(function SpeciesCard({
             new to you
           </span>
         ) : null}
+        <SpeciesProvenanceBadge p={m.provenance} />
         {m.entry.predictionUnsupported ? (
           <span
             className="species-not-predicted"

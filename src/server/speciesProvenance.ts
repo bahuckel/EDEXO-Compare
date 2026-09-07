@@ -31,26 +31,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { SectorSystemsFile } from "../shared/sectorMapFile.js";
-import type { SpeciesEntry } from "../shared/types.js";
+import type { SpeciesEntry, SpeciesProvenance } from "../shared/types.js";
 import { loadFootScannedCatalog } from "./footScannedCatalog.js";
-
-/** What is known about one species on one body, and at what resolution. */
-export interface SpeciesProvenance {
-  /** The commander scanned this species on this body. Exact. */
-  firstHand: boolean;
-  /** When first-hand: whether it was an Analyse or only a Sample. */
-  firstHandAt?: string;
-  /**
-   * How many bodies in **this system** the corpus has this species confirmed on.
-   *
-   * Zero does not mean the species is absent — it means no Spansh export names it here, and the
-   * corpus covers only where commanders have flown. Absence of evidence, as everywhere else in this
-   * app, is not evidence of absence.
-   */
-  corpusInSystem: number;
-  /** True when the system is in the shipped corpus at all, so a 0 above can be read correctly. */
-  systemInCorpus: boolean;
-}
 
 let cached: Map<string, Record<string, number>> | null | undefined;
 

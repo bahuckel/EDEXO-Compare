@@ -1,3 +1,4 @@
+import { speciesProvenance } from "./speciesProvenance.js";
 import { existsSync, statSync } from "node:fs";
 import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { UNOBSERVED } from "../shared/observedFlag.js";
@@ -920,6 +921,16 @@ function computeBodyUncached(
     matches = markExomasteryZeroHabitatMatches(matches);
   }
   attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root);
+  /*
+   * Who says this species is here, unioned from the two stores at the moment of rendering.
+   *
+   * Deliberately after the matcher has finished. Provenance describes the *evidence* for a row, not
+   * whether the row belongs — feeding it back into scoring would let the commander's own scan
+   * quietly re-weight a prediction, which is the circularity the whole gate ladder avoids.
+   */
+  for (const m of matches) {
+    m.provenance = speciesProvenance(root, b.systemAddress, b.bodyId, m.entry);
+  }
   attachCodexNovelty(matches, store);
   attachOtherMatchCardScores(matches, scanForExo, explorationRec, root, journalHost);
   applyExomasteryGenusCompetitivePercent(matches);

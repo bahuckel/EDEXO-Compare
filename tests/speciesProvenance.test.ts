@@ -14,7 +14,8 @@ import { loadFootScannedCatalog } from "../src/server/footScannedCatalog.js";
 
 const root = process.cwd();
 const db = loadSpeciesDatabaseFromTree(root);
-const entryById = (id: string) => db.species.find((e) => e.id === id);
+const entryById = (id: string | null | undefined) =>
+  id == null ? undefined : db.species.find((e) => e.id === id);
 
 describe("corpus side, at system resolution", () => {
   it("finds a genus-first species where the corpus has one", () => {

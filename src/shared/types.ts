@@ -587,9 +587,25 @@ export interface ExomasteryVarietyItemDTO {
   concentrationPercent: number;
 }
 
+export interface SpeciesProvenance {
+  /** The commander scanned this species on this exact body. */
+  firstHand: boolean;
+  firstHandAt?: string;
+  /** Bodies in this system the shipped corpus confirms this species on. System resolution, not body. */
+  corpusInSystem: number;
+  /** Whether the corpus knows this system at all, so a 0 above can be told from silence. */
+  systemInCorpus: boolean;
+}
+
 export interface SpeciesMatch {
   entry: SpeciesEntry;
   reasons: MatchReason[];
+  /**
+   * Who says this species is here — the read-time union of the shipped corpus and the commander's
+   * own journal. See `server/speciesProvenance.ts`; it is evidence *about* the row, never an input
+   * to whether the row is listed.
+   */
+  provenance?: SpeciesProvenance;
   photoUrl: string;
   photoNote: string | null;
   /** From `data/price-list.json` when this species is listed. */

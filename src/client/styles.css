@@ -9236,6 +9236,35 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   white-space: nowrap;
 }
 
+/*
+ * Provenance badges — who says this species is here.
+ *
+ * Deliberately quieter than `.species-codex-new`, which is a filled pill in the accent colour. That
+ * one is a call to action: a species you have never logged is worth more credits, so it should pull
+ * the eye. These two are context — they say where the claim came from, not that you should fly
+ * somewhere — so they are outlined rather than filled, and sit at the same size without competing.
+ *
+ * "You scanned it" is the only first-hand evidence in the app and gets the warmer of the two.
+ */
+.species-prov {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+  white-space: nowrap;
+}
+.species-prov--mine {
+  color: var(--accent);
+}
+.species-prov--corpus {
+  color: var(--muted, #8b97a8);
+}
+
 /* Measured distribution bars (B7) — counts the feeder observed, not a curve drawn over a mode. */
 .exo-dist-bar {
   fill: var(--accent-a45);
