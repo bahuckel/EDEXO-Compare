@@ -204,6 +204,36 @@ export const SystemMapModal = memo(function SystemMapModal({
   const mapHeading = systemTitleName.length > 0 ? `System map - ${systemTitleName}` : "System map";
   const layout = useMemo(() => (map ? computeSystemMapLayout(map.tree, map.starSystem ?? "") : null), [map]);
   const layoutKey = layout != null ? `${layout.minX},${layout.minY},${layout.width},${layout.height}` : "";
+
+  /** How many bodies the map draws that carry biology — the count beside the toggle. */
+  const bioCount = useMemo(
+    () => layout?.items.filter((it) => map?.detailsByBodyId[String(it.bodyId)]?.hasExobiology).length ?? null,
+    [layout, map],
+  );
+
+  /**
+   * The body the main panel is showing, so the map and the panel visibly agree.
+   *
+   * `uiSelectedBodyKey` is `${systemAddress}:${bodyId}`; the map only knows body ids, so the id is
+   * taken off the end. Comparing the whole key would need the address threaded in for no gain — the
+   * map only ever draws one system.
+   */
+  const selectedBodyId = useMemo(() => {
+    const key = snap.uiSelectedBodyKey;
+    if (!key) return null;
+    const id = Number(key.slice(key.lastIndexOf(":") + 1));
+    return Number.isFinite(id) ? id : null;
+  }, [snap.uiSelectedBodyKey]);
+  /**
+   * Fade everything that is not carrying biology, rather than removing it.
+   *
+   * Measured on the owner's home system: 39 nodes, 2 with biology, and **both are moons whose
+   * parent planet has none**. Deleting barren bodies would therefore orphan the only two worth
+   * flying to, and rebuilding the tree around that is a layout problem where this is a reading
+   * problem. Dimming keeps every orbit where it was, so the eye still finds the pair by their
+   * position under the planet they belong to.
+   */
+  const [bioOnly, setBioOnly] = useState(false);
   const [mapZoom, setMapZoom] = useState(1);
   const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
   const mapWheelRef = useRef<HTMLDivElement | null>(null);
@@ -426,6 +456,13 @@ export const SystemMapModal = memo(function SystemMapModal({
           >
             Reset
           </button>
+          <label className="system-map-bioonly">
+            <input type="checkbox" checked={bioOnly} onChange={(e) => setBioOnly(e.target.checked)} />
+            <span>
+              Biology only
+              {bioCount != null ? <span className="dim"> ({bioCount})</span> : null}
+            </span>
+          </label>
         </div>
 
         <div
@@ -566,10 +603,17 @@ export const SystemMapModal = memo(function SystemMapModal({
               const starRays = it.isStar || it.journalStellar === true;
               const rayStroke = neo.stroke;
               const rayOpacity = it.starVisual === "neutron" ? 0.44 : 0.36;
+              // Stars and barycentres stay lit under the filter: they are the scaffolding that makes
+              // the tree readable, and fading them would leave the survivors floating.
+              const structural = starRays || it.isBarycentre;
+              const dimmed = bioOnly && !structural && !det?.hasExobiology;
+              const isSelected = selectedBodyId != null && it.bodyId === selectedBodyId;
               return (
                 <g
                   key={it.bodyId}
-                  className="system-map-node-g"
+                  className={`system-map-node-g${dimmed ? " system-map-node-g--dim" : ""}${
+                    isSelected ? " system-map-node-g--selected" : ""
+                  }`}
                   style={{ cursor: "pointer" }}
                   onClick={(ev) => {
                     ev.stopPropagation();

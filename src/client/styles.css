@@ -9636,3 +9636,30 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
   border: 1.5px solid currentColor;
   flex: 0 0 auto;
 }
+
+/* Biology-only dimming and the panel's selected body. Dimming rather than hiding because the two
+   bodies that carry biology in the owner's home system are moons of a planet that carries none —
+   removing barren bodies would orphan exactly the ones worth flying to. */
+.system-map-node-g--dim {
+  opacity: 0.18;
+  transition: opacity 120ms ease;
+}
+
+.system-map-node-g--selected circle:first-of-type {
+  stroke-width: 3.5;
+  paint-order: stroke;
+}
+
+.system-map-node-g--selected {
+  filter: drop-shadow(0 0 6px var(--accent-a55, rgba(255, 200, 90, 0.55)));
+}
+
+.system-map-bioonly {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: var(--s-4);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
