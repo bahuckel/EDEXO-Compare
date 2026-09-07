@@ -1864,8 +1864,30 @@ const BodyPane = memo(function BodyPane({
     [body.tabLabel, s.starSystem].filter((x) => (x ?? "").trim().length > 0).join(" · ") || "—";
 
   // Demoted candidates are computed like any other; they are only hidden from the default view.
-  const likelyMatches = body.matches.filter((m) => !m.unlikely);
-  const unlikelyMatches = body.matches.filter((m) => m.unlikely);
+  /**
+   * Show only rows something has actually observed.
+   *
+   * Off by default, because the candidate list's job is to say what *could* be here — a species with
+   * no evidence yet is the normal case across most of the galaxy, not a defect. Turning it on
+   * answers a different and equally real question: "what has anyone actually confirmed around here?"
+   * Useful when deciding whether a body is worth landing on rather than what to look for once down.
+   *
+   * It filters on evidence, never on likelihood, so it cannot be confused with the unlikely split
+   * below — a demoted row that you personally scanned still passes.
+   */
+  const [evidenceOnly, setEvidenceOnly] = useState(false);
+  const hasEvidence = useCallback(
+    (m: BodyComputed["matches"][0]) =>
+      m.provenance != null && (m.provenance.firstHand || m.provenance.corpusInSystem > 0),
+    [],
+  );
+  const evidenceCount = useMemo(
+    () => body.matches.filter(hasEvidence).length,
+    [body.matches, hasEvidence],
+  );
+  const shownMatches = evidenceOnly ? body.matches.filter(hasEvidence) : body.matches;
+  const likelyMatches = shownMatches.filter((m) => !m.unlikely);
+  const unlikelyMatches = shownMatches.filter((m) => m.unlikely);
   // Genus order from the co-occurrence solver, most likely first. Ordering only — the probabilities
   // behind it are not calibrated, so nothing here renders a number.
   const genusOrder = body.genusLikelihoods?.map((l) => l.genus) ?? null;
@@ -2116,6 +2138,19 @@ const BodyPane = memo(function BodyPane({
               title="Off by default: Bacterium is low value for many routes. Turn on to include bacterium rows in planet matching."
             >
               {includeBacteriumInSearch ? "Bacterium ✓" : "Bacterium ✗"}
+            </button>
+            <button
+              type="button"
+              className={`candidate-species-evidence-toggle btn-top-toggle${evidenceOnly ? " btn-top-toggle--on" : ""}`}
+              onClick={() => setEvidenceOnly((v) => !v)}
+              disabled={evidenceCount === 0 && !evidenceOnly}
+              title={
+                evidenceCount === 0
+                  ? "Nothing here has been confirmed by you or recorded in the shipped data — every row is a prediction."
+                  : `Show only the ${evidenceCount} row${evidenceCount === 1 ? "" : "s"} something has actually observed: scanned by you on this body, or confirmed in this system by Spansh. Filters on evidence, not on likelihood.`
+              }
+            >
+              {evidenceOnly ? `Evidence ✓ (${evidenceCount})` : "Evidence ✗"}
             </button>
           </div>
         </div>
