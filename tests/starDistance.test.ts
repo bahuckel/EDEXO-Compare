@@ -10,12 +10,18 @@
  *    barycentre** — even when a planet with a perfectly good orbit was listed right behind it.
  *    Moons orbit each other, and the pair's barycentre is what orbits the planet or the star.
  *
+ * 3. And a claim that a barycentre's own orbit was unrecoverable, made after checking the two places
+ *    it is absent from — `Scan` events and the EDSM system caches — and not the one it is in. The
+ *    game emits `ScanBaryCentre`; EDSM and Spansh drop it; the app had been storing all 2,030 of the
+ *    owner's for months.
+ *
  * The parents array is the whole ancestry, nearest-first, so the answer is read from it directly
- * rather than walked. Over the 9,691 landable bodies in the owner's journals this resolves 96.5 %
- * and abstains on the rest.
+ * rather than walked. Over the 9,691 landable bodies in the owner's journals this resolves **99.9 %**
+ * and abstains on 11.
  */
 import { describe, expect, it } from "vitest";
 import { starDistanceLs } from "../src/server/speciesMatchContext.js";
+import { barycentreSyntheticBodyId } from "../src/server/orbitUtils.js";
 import type { ExplorationScanRecord } from "../src/shared/types.js";
 
 const C = 299792458;
@@ -117,15 +123,50 @@ describe("bodies orbiting some other star in the system", () => {
   });
 });
 
+describe("barycentres, whose orbit the game reports separately", () => {
+  /**
+   * The obvious conclusion is that a barycentre's orbit is unrecoverable — it has no `Scan` event,
+   * and the EDSM system caches carry no row for one. Both of those are true and both are beside the
+   * point: the game emits a **`ScanBaryCentre`** event with the orbital elements, EDSM and Spansh
+   * drop it, and `mergeBarycentreJournalLine` has been storing it under a synthetic body id since
+   * long before this function existed. There are 2,030 of them in the owner's logs.
+   */
+  it("uses the barycentre's own orbit around a star that is not the arrival star", () => {
+    const bary = rec(barycentreSyntheticBodyId(8), { semiMajorAxis: 2700 * C });
+    const moon = rec(9, {
+      parents: [{ Null: 8 }, { Star: 1 }],
+      distanceFromArrivalLs: 100_500,
+      semiMajorAxis: 0.001 * AU, // its orbit around the barycentre — the wrong radius
+    });
+    expect(Math.round(starDistanceLs(moon, null, index([arrivalStar, farStar, bary, moon]))!)).toBe(2700);
+  });
+
+  it("reads a barycentre under a planet the same way", () => {
+    // moon -> pair barycentre -> planet -> star: the planet's orbit is still the answer.
+    const planet = rec(6, { parents: [{ Star: 1 }], semiMajorAxis: 3100 * C });
+    const bary = rec(barycentreSyntheticBodyId(8), { semiMajorAxis: 0.002 * AU });
+    const moon = rec(9, { parents: [{ Null: 8 }, { Planet: 6 }, { Star: 1 }], semiMajorAxis: 0.0004 * AU });
+    expect(Math.round(starDistanceLs(moon, null, index([arrivalStar, farStar, planet, bary, moon]))!)).toBe(3100);
+  });
+
+  it("does not mistake the barycentre id for a real body id", () => {
+    // Body 8 exists and orbits close in; barycentre 8 is a different thing entirely.
+    const decoy = rec(8, { parents: [{ Star: 1 }], semiMajorAxis: 12 * C });
+    const bary = rec(barycentreSyntheticBodyId(8), { semiMajorAxis: 2700 * C });
+    const moon = rec(9, { parents: [{ Null: 8 }, { Star: 1 }], semiMajorAxis: 0.001 * AU });
+    expect(Math.round(starDistanceLs(moon, null, index([arrivalStar, farStar, decoy, bary, moon]))!)).toBe(2700);
+  });
+});
+
 describe("when it cannot be measured, it says so", () => {
   /**
-   * A barycentre orbiting a **non-arrival** star. Nothing records a barycentre's own orbit — the
-   * journal writes no scan for one and the EDSM system caches carry no row for one either — and the
-   * arrival distance is measured from the wrong star. Two radial distances subtracted can read zero
-   * when a body and its star share a radius, and a gate firing on a fabricated zero is worse than a
-   * gate that abstains.
+   * A barycentre we never saw the `ScanBaryCentre` for, under a non-arrival star. The arrival
+   * distance would be measured from the wrong star, and two radial distances subtracted are a lower
+   * bound that can read zero when a body and its star share a radius. A gate firing on a fabricated
+   * zero is worse than a gate that abstains. After the `ScanBaryCentre` lookup this is 11 of the
+   * 9,691 landable bodies in the owner's logs — 0.1 %.
    */
-  it("abstains for a barycentre under a star that is not the arrival star", () => {
+  it("abstains for a barycentre whose orbit was never scanned", () => {
     const moon = rec(9, {
       parents: [{ Null: 8 }, { Star: 1 }],
       distanceFromArrivalLs: 100_500,

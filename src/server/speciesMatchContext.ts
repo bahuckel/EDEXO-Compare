@@ -2,6 +2,7 @@ import type { BodyExoState, ExplorationScanRecord, PlanetScan, SpeciesMatchConte
 import { journalPressureToAtm, LIGHT_SECOND_METERS } from "../shared/journalPhysics.js";
 import {
   allStarParentIds,
+  barycentreSyntheticBodyId,
   hostStarBodyIdsForExobiology,
   parseJournalParentEntry,
   resolveHostStarBodyId,
@@ -59,12 +60,16 @@ export function systemExplorationScanIndex(
  * rare — `Null>Star` 1,007, `Planet>Null>Star` 829, `Null>Planet>Star` 366, and more — and every one
  * of them broke the climb at the first `Null` and returned nothing.
  *
- * ## What the data can actually support
+ * ## Where a barycentre's own orbit comes from
  *
- * A barycentre's own orbit is **not recoverable**. The journal writes no `Scan` for one, and the
- * EDSM system caches carry no row for one either (checked: 0 non-star, non-planet rows across 400
- * system files). Its children report their orbits *around it*, which is the wrong radius. So the
- * honest set of answers is smaller than the set of chain shapes:
+ * It is easy to conclude that a barycentre's orbit is unrecoverable: it has no `Scan` event, and the
+ * EDSM system caches carry no row for one (checked — 0 non-star, non-planet rows across 400 system
+ * files), so both of the obvious places are empty. The game reports it in a **separate
+ * `ScanBaryCentre` event**, which EDSM and Spansh drop and the journal keeps. There are 2,030 of them
+ * in the owner's logs, and `mergeBarycentreJournalLine` has been storing each one under
+ * {@link barycentreSyntheticBodyId} since long before this function existed.
+ *
+ * So every rung of the ladder is available, and the cases are:
  *
  *  1. **The nearest star ancestor is the arrival star** → the arrival distance *is* the distance from
  *     that star, whatever the chain looks like in between. Exact, and it covers every barycentre and
@@ -75,10 +80,11 @@ export function systemExplorationScanIndex(
  *     multi-star systems, where the arrival distance is measured from the *wrong* star.
  *  3. **No star anywhere in the chain** — a pure barycentre system. The stars sit at the point we
  *     arrive at, so the arrival distance is the right radius.
- *  4. **Anything else** — a non-arrival host star reached only through a barycentre or a ring —
- *     returns undefined. The arrival distance would be measured from the wrong star, and the
- *     difference between two radial distances is a lower bound that can read zero when the body and
- *     its star share a radius. A gate that fires on a fabricated zero is worse than one that abstains.
+ *  4. **Anything else** — a ring parent, or a barycentre whose `ScanBaryCentre` we never saw —
+ *     returns undefined. Substituting the arrival distance there would measure from the wrong star,
+ *     and the difference between two radial distances is a lower bound that can read zero when the
+ *     body and its star share a radius. A gate that fires on a fabricated zero is worse than one that
+ *     abstains.
  *
  * `Ring` parents are left in case 4 rather than treated as transparent: all 7,314 of them in the
  * owner's logs are belt clusters, and **not one is landable**, so exobiology never asks.
@@ -138,7 +144,7 @@ export function starDistanceLs(
   //      [{Planet:3},{Star:0}]           -> planet 3 orbits the star      -> sma of body 3
   //      [{Null:5},{Planet:3},{Star:0}]  -> planet 3 orbits the star      -> sma of body 3
   //      [{Star:0}]                      -> the body itself orbits it     -> its own sma
-  //      [{Null:5},{Star:0}]             -> a barycentre orbits the star  -> not recoverable
+  //      [{Null:5},{Star:0}]             -> barycentre 5 orbits the star -> its ScanBaryCentre sma
   //
   //    The third line is the shape the previous version missed: it hopped records through `Planet`
   //    entries and stopped dead at the first `Null`, even when a planet with a perfectly good orbit
@@ -151,9 +157,21 @@ export function starDistanceLs(
     if (typeof sma === "number" && Number.isFinite(sma) && sma > 0) return sma / LIGHT_SECOND_METERS;
   } else if (starIndex > 0) {
     const orbiter = chain[starIndex - 1];
-    // A `Null` here is a barycentre orbiting the star, and nothing records its orbit — see above.
-    if (orbiter?.kind === "Planet") {
-      const sma = byId.get(orbiter.id)?.semiMajorAxis;
+    /**
+     * A `Null` here is a **barycentre** orbiting the star, and the game does report its orbit — in a
+     * separate `ScanBaryCentre` event, which `mergeBarycentreJournalLine` has been storing all along
+     * under {@link barycentreSyntheticBodyId} so it cannot collide with a real `BodyID`. EDSM and
+     * Spansh both drop that event, which is why the system caches have no row for a barycentre; the
+     * journal keeps it, and the journal is what this reads.
+     */
+    const orbiterId =
+      orbiter?.kind === "Planet"
+        ? orbiter.id
+        : orbiter?.kind === "Null"
+          ? barycentreSyntheticBodyId(orbiter.id)
+          : null;
+    if (orbiterId != null) {
+      const sma = byId.get(orbiterId)?.semiMajorAxis;
       if (typeof sma === "number" && Number.isFinite(sma) && sma > 0) return sma / LIGHT_SECOND_METERS;
     }
   }
