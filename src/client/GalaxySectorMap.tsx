@@ -43,16 +43,53 @@ const KIND_COLOUR: Record<Kind, string> = {
   // Green for a fact, blue for a possibility — the owner's own choice.
   confirmed: "#3fb950",
   genus: "#58a6ff",
-  signal: "#388bfd",
+  signal: "#58a6ff",
   predicted: "#8b949e",
+};
+
+/**
+ * `signal` is drawn **hollow** rather than in a fourth hue.
+ *
+ * Genus and signal are both "blue" in the owner's scheme, and two blues a shade apart are the kind of
+ * distinction that survives a design review and fails on a real monitor at a glance. Filled versus
+ * outlined separates them by shape as well as colour, which also survives colour blindness — and it
+ * carries the meaning: a hollow marker is a body nobody has opened.
+ */
+const KIND_FILLED: Record<Kind, boolean> = {
+  confirmed: true,
+  genus: true,
+  signal: false,
+  predicted: false,
 };
 
 const KIND_LABEL: Record<Kind, string> = {
   confirmed: "Confirmed — species identified here",
-  genus: "Genus known, species not",
-  signal: "Biological signal, nobody has looked",
+  genus: "Genus known from a DSS, species not",
+  signal: "Biological signal from the FSS, nobody has mapped it",
   predicted: "Conditions match, no signal seen",
 };
+
+/**
+ * A kind the app **cannot compute yet**, as distinct from one that happens to be absent.
+ *
+ * `predicted` needs the matcher run across bodies the app has never seen, which needs the Spansh
+ * galaxy export loaded at scale. Leaving it in the legend unqualified would tell a reader there are
+ * no such bodies, when the truth is that we cannot say — the same absence-of-evidence trap the
+ * tri-state flags and `predictionUnsupported` exist to avoid, appearing here as a legend entry.
+ */
+const KIND_UNAVAILABLE: Partial<Record<Kind, string>> = {
+  predicted: "not computed yet — needs the galaxy export",
+};
+
+/** The owner's tooltip: confirmed, genus hits, FSS-only, in that order. */
+function evidenceSummary(t: { confirmed: number; genus: number; signal: number; predicted: number }): string {
+  const parts: string[] = [];
+  if (t.confirmed) parts.push(`${t.confirmed} confirmed`);
+  if (t.genus) parts.push(`${t.genus} genus-only`);
+  if (t.signal) parts.push(`${t.signal} signal-only`);
+  if (t.predicted) parts.push(`${t.predicted} predicted`);
+  return parts.length > 0 ? parts.join(" · ") : "nothing recorded";
+}
 
 function strongestKind(t: ReturnType<typeof cellTotals>): Kind | null {
   if (t.confirmed > 0) return "confirmed";
@@ -177,9 +214,18 @@ export function GalaxySectorMap({ file }: { file: SectorMapFile }) {
 
       <ul className="galaxy-map__legend">
         {KINDS.map((k) => (
-          <li key={k}>
-            <span className="galaxy-map__swatch" style={{ background: KIND_COLOUR[k] }} aria-hidden="true" />
+          <li key={k} className={KIND_UNAVAILABLE[k] ? "galaxy-map__legend--unavailable" : undefined}>
+            <span
+              className="galaxy-map__swatch"
+              style={
+                KIND_FILLED[k]
+                  ? { background: KIND_COLOUR[k] }
+                  : { background: "transparent", border: `2px solid ${KIND_COLOUR[k]}` }
+              }
+              aria-hidden="true"
+            />
             {KIND_LABEL[k]}
+            {KIND_UNAVAILABLE[k] ? <em> — {KIND_UNAVAILABLE[k]}</em> : null}
           </li>
         ))}
       </ul>
@@ -251,16 +297,17 @@ function SectorPlot({
               cx={sx(projection.ax(cell))}
               cy={sy(projection.ay(cell))}
               r={r}
-              fill={KIND_COLOUR[kind]}
-              fillOpacity={0.75}
-              stroke={isHit ? "#f0f6fc" : "none"}
-              strokeWidth={isHit ? 2 : 0}
+              fill={KIND_FILLED[kind] ? KIND_COLOUR[kind] : "none"}
+              fillOpacity={KIND_FILLED[kind] ? 0.75 : 1}
+              stroke={isHit ? "#f0f6fc" : KIND_FILLED[kind] ? "none" : KIND_COLOUR[kind]}
+              strokeWidth={isHit ? 2 : KIND_FILLED[kind] ? 0 : 1.5}
               onMouseEnter={() => onHover(cell)}
               onMouseLeave={() => onHover(null)}
               onClick={() => onOpen(cell)}
             >
               {/* A native title is the cheapest hover label and it works on touch and for readers. */}
-              <title>{`${cell.name ?? cell.key} — ${totals.bodies} bodies`}</title>
+              <title>{`${cell.name ?? cell.key} — ${totals.bodies} bodies
+${evidenceSummary(totals)}`}</title>
             </circle>
           );
         })}
@@ -289,10 +336,7 @@ function SectorReadout({ cell, taxon }: { cell: SectorMapCell | null; taxon: str
         {cell.name ?? cell.key}
         {cell.name ? <span className="galaxy-map__cellkey"> cell {cell.key}</span> : null}
       </h4>
-      <p>
-        {totals.confirmed} confirmed · {totals.genus} genus only · {totals.signal} signal only
-        {totals.predicted ? ` · ${totals.predicted} predicted` : ""}
-      </p>
+      <p>{evidenceSummary(totals)}</p>
       <ul>
         {rows.map((r) => (
           <li key={r.taxon}>
@@ -413,16 +457,19 @@ function SectorSystems({
                   cx={sx(system.x)}
                   cy={sy(system.z)}
                   r={2.5 + 4 * Math.cbrt(totals.bodies / Math.max(1, shown[0]!.totals.bodies))}
-                  fill={KIND_COLOUR[kind]}
-                  fillOpacity={0.8}
-                  stroke={hover?.key === system.key ? "#f0f6fc" : "none"}
-                  strokeWidth={hover?.key === system.key ? 1.5 : 0}
+                  fill={KIND_FILLED[kind] ? KIND_COLOUR[kind] : "none"}
+                  fillOpacity={KIND_FILLED[kind] ? 0.8 : 1}
+                  stroke={
+                    hover?.key === system.key ? "#f0f6fc" : KIND_FILLED[kind] ? "none" : KIND_COLOUR[kind]
+                  }
+                  strokeWidth={hover?.key === system.key ? 1.5 : KIND_FILLED[kind] ? 0 : 1.2}
                   onMouseEnter={() => setHover(system)}
                   onMouseLeave={() => setHover(null)}
                   onClick={() => setPinned(system)}
                   style={{ cursor: "pointer" }}
                 >
-                  <title>{`${system.name} — ${totals.bodies} bodies`}</title>
+                  <title>{`${system.name} — ${totals.bodies} bodies
+${evidenceSummary(totals)}`}</title>
                 </circle>
               );
             })}

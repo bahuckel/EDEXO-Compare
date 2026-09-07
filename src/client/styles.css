@@ -9509,3 +9509,8 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .sector-systems__bodies li:last-child { border-bottom: none; }
 .sector-systems__bodies strong { font-weight: 600; opacity: 0.92; }
 .sector-systems__bodies span { opacity: 0.72; }
+
+/* A legend entry for a kind the app cannot compute yet reads as unavailable, not as absent. */
+.galaxy-map__legend--unavailable { opacity: 0.5; }
+.galaxy-map__legend--unavailable em { font-style: normal; opacity: 0.8; }
+.galaxy-map__swatch { box-sizing: border-box; }
