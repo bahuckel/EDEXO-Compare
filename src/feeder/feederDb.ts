@@ -1178,7 +1178,19 @@ export class FeederStore {
     return out;
   }
 
-  rebuildSpeciesIndex(): Record<string, SpeciesIndexEntry> {
+  /**
+   * @param publishableOnly leave the commander's own claims out of the index.
+   *
+   * Defaults **on**, because this index is what the profile builder consumes and the profiles it
+   * produces are written under each genus's `exomastery` folder, all 96 of which are tracked in git.
+   * A journal claim reaching here would put the commander's own observations into a published model
+   * without anyone choosing that.
+   *
+   * Today this changes nothing — no journal row has ever entered the corpus, so the gate matches
+   * every row. It is here so the hole is closed before it can open, which is the only time closing
+   * it is free.
+   */
+  rebuildSpeciesIndex(publishableOnly = true): Record<string, SpeciesIndexEntry> {
     const out: Record<string, SpeciesIndexEntry> = {};
     const speciesRows = queryAll<[string, string, number]>(
       this.db,
@@ -1192,6 +1204,7 @@ export class FeederStore {
       JOIN planets p ON p.id = si.planet_id
       JOIN systems s ON s.id = p.system_id
       WHERE si.species_norm = ?
+        ${publishableOnly ? "AND COALESCE(si.claim_origin, 'unknown') <> 'journal'" : ""}
       ORDER BY s.display_name COLLATE NOCASE, p.display_body COLLATE NOCASE`;
 
     for (const sr of speciesRows) {
