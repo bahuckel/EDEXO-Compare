@@ -151,7 +151,28 @@ tests/          vitest suites
 docs/archive/   internal planning notes — not tracked, see .gitignore
 ```
 
+## Credits
+
+Built on four communities' work, none of them affiliated with this project:
+
+- **[Spansh](https://spansh.co.uk)** — the reason it was started, and the corpus every prediction is
+  measured against.
+- **[EDSM](https://edsm.net)** — body records and system coordinates.
+- **[Canonn Research Group](https://canonn.science)** — the published species conditions every gate
+  in this app started from.
+- **ED-DSN** — the species photographs.
+
+Full attribution in [NOTICE.md](NOTICE.md).
+
 ## Licence
 
-MIT — see [LICENSE](LICENSE). Elite Dangerous, its artwork and game content remain the property of
-Frontier Developments; see [site/terms.html](site/terms.html).
+MIT for the code and this project's own data — see [LICENSE](LICENSE), which sets out what the grant
+does **not** cover.
+
+The species photographs are **not** MIT licensed and are not this project's to sublicense: the game
+artwork is Frontier's and the capture belongs to the commander who took it. They are included as
+credited fan work, and any rights holder who would prefer theirs removed can ask and it will be, with
+no justification needed — see [NOTICE.md](NOTICE.md).
+
+Elite Dangerous, its artwork and game content remain the property of Frontier Developments; see
+[site/terms.html](site/terms.html).

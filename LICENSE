@@ -2,6 +2,21 @@ MIT License
 
 Copyright (c) 2026 bahuckel
 
+SCOPE — read this before relying on the grant below.
+
+This licence covers the source code of EDEXO-Compare and the data files this
+project produced itself. It does NOT cover:
+
+  * the species photographs under data/species/<genus>/<genus>_photos/, which
+    come from the ED-DSN community and are not this project's to sublicense;
+  * Elite Dangerous game content, artwork and species names, which are the
+    property of Frontier Developments plc;
+  * data/exomastery/region-map.json, which is MIT-licensed by Ben Peddell and
+    carries its own notice in data/exomastery/region-map.LICENSE.txt.
+
+See NOTICE.md for the full attribution and for how to request removal of an
+image.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
