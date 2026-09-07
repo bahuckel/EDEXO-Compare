@@ -62,7 +62,13 @@ import { backfillBodyIdentity, formatBackfillReport } from "../src/feeder/bodyId
 import { backfillSystemId64, formatSystemId64Report } from "../src/feeder/systemId64Backfill.js";
 import { formatImportReport, importSpanshExport } from "../src/feeder/spanshImport.js";
 import { EddnConsumer, formatCounters } from "../src/server/eddn/eddnConsumer.js";
-import { buildSectorMapData, unnamedCells, writeSectorMapFile } from "../src/feeder/sectorMapData.js";
+import {
+  buildSectorMapData,
+  buildSectorSystems,
+  unnamedCells,
+  writeSectorMapFile,
+  writeSectorSystemsFile,
+} from "../src/feeder/sectorMapData.js";
 import { markerKind, summariseAggregate } from "../src/shared/sectorAggregate.js";
 import {
   proposeEdgesForProfile,
@@ -616,6 +622,13 @@ async function cmdSectorMap(): Promise<void> {
     console.log(`wrote              ${w.path}`);
     console.log(`                   ${(w.bytes / 1024).toFixed(1)} kB · ${w.file.cells.length} cells`);
     console.log(`sector names       ${w.file.cells.length - unnamed.length} of ${w.file.cells.length}${unnamed.length ? `   (unnamed: ${unnamed.slice(0, 5).join(", ")})` : ""}`);
+
+    // The drill-down is a second file on purpose: every session that opens the map pays for the
+    // galaxy view, and almost none of them click a sector.
+    const sysFile = buildSectorSystems(ctx.store);
+    const sw = writeSectorSystemsFile(root, sysFile);
+    console.log(`                   ${sw.path}`);
+    console.log(`                   ${(sw.bytes / 1024).toFixed(1)} kB · ${sw.systems.toLocaleString()} systems in ${Object.keys(sysFile.cells).length} cells`);
   }
 
   const top = [...entries].sort((a, b) => b.counts.bodies - a.counts.bodies).slice(0, 8);

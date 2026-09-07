@@ -9486,3 +9486,17 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .galaxy-map__legend li { display: flex; align-items: center; gap: 6px; }
 .galaxy-map__swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .galaxy-map__caveat { font-size: 0.78rem; opacity: 0.7; margin-top: 10px; line-height: 1.5; }
+
+/* Sector drill-down (Phase 10 step 4) — appears under the galaxy view when a sector is clicked. */
+.sector-systems { margin-top: 14px; padding: 12px; border: 1px solid #30363d; border-radius: 8px;
+  background: #0b0f14; }
+.sector-systems header { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 6px; }
+.sector-systems h3 { margin: 0; font-size: 1rem; }
+.sector-systems button { background: #161b22; color: inherit; border: 1px solid #30363d;
+  border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer; }
+.sector-systems button:hover { border-color: #58a6ff; }
+.sector-systems svg { width: 100%; height: auto; border: 1px solid #21262d; border-radius: 6px;
+  display: block; margin: 6px 0; }
+.sector-systems circle { cursor: default; }
+.galaxy-map__plot circle { cursor: pointer; }

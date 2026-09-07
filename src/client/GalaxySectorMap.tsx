@@ -25,12 +25,14 @@
  * fly, not because that is where the plants are (§1.6, §10.6 rule 3). The legend says so on screen —
  * the owner already knows, a stranger reading a bright bubble does not.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   allTaxa,
   cellTotals,
+  systemTotals,
   type SectorMapCell,
   type SectorMapFile,
+  type SectorSystem,
 } from "@shared/sectorMapFile.js";
 
 /** Strongest-first, and the order the legend reads in. */
@@ -97,6 +99,7 @@ export function GalaxySectorMap({ file }: { file: SectorMapFile }) {
   const [taxon, setTaxon] = useState<string>("");
   const [query, setQuery] = useState("");
   const [hover, setHover] = useState<SectorMapCell | null>(null);
+  const [openCell, setOpenCell] = useState<SectorMapCell | null>(null);
 
   const taxa = useMemo(() => allTaxa(file), [file]);
 
@@ -161,11 +164,16 @@ export function GalaxySectorMap({ file }: { file: SectorMapFile }) {
             maxBodies={maxBodies}
             highlight={searchHit}
             onHover={setHover}
+            onOpen={setOpenCell}
           />
         ))}
       </div>
 
-      <SectorReadout cell={hover ?? searchHit} taxon={taxon} />
+      <SectorReadout cell={hover ?? openCell ?? searchHit} taxon={taxon} />
+
+      {openCell ? (
+        <SectorSystems cell={openCell} taxon={taxon} onClose={() => setOpenCell(null)} />
+      ) : null}
 
       <ul className="galaxy-map__legend">
         {KINDS.map((k) => (
@@ -191,12 +199,14 @@ function SectorPlot({
   maxBodies,
   highlight,
   onHover,
+  onOpen,
 }: {
   projection: Projection;
   rows: { cell: SectorMapCell; totals: ReturnType<typeof cellTotals>; kind: Kind }[];
   maxBodies: number;
   highlight: SectorMapCell | null;
   onHover: (c: SectorMapCell | null) => void;
+  onOpen: (c: SectorMapCell) => void;
 }) {
   // The grid spans roughly 0..78 cells on each axis; fitting to the data rather than the whole
   // galaxy keeps a small corpus legible instead of a dot in the corner.
@@ -247,6 +257,7 @@ function SectorPlot({
               strokeWidth={isHit ? 2 : 0}
               onMouseEnter={() => onHover(cell)}
               onMouseLeave={() => onHover(null)}
+              onClick={() => onOpen(cell)}
             >
               {/* A native title is the cheapest hover label and it works on touch and for readers. */}
               <title>{`${cell.name ?? cell.key} — ${totals.bodies} bodies`}</title>
@@ -294,6 +305,151 @@ function SectorReadout({ cell, taxon }: { cell: SectorMapCell | null; taxon: str
         <p className="galaxy-map__more">Nothing recorded here for that selection.</p>
       ) : null}
       {hidden > 0 ? <p className="galaxy-map__more">…and {hidden} more here</p> : null}
+    </div>
+  );
+}
+
+/**
+ * A sector's systems, fetched on click — INCLUDE-BODY-IDS Phase 10, step 4.
+ *
+ * The systems file is 935 kB for 3,015 systems and grows with the corpus, so the client never
+ * downloads it whole: it asks the server for the one cell it just clicked. Most sessions open the
+ * galaxy view and never click, and this is what keeps them from paying for the drill-down.
+ *
+ * Positions are absolute light years within the sector, plotted top-down (X, Z) like the galaxy view
+ * above it. A 1280 ly cell is small enough that a second projection would add nothing.
+ */
+function SectorSystems({
+  cell,
+  taxon,
+  onClose,
+}: {
+  cell: SectorMapCell;
+  taxon: string;
+  onClose: () => void;
+}) {
+  const [systems, setSystems] = useState<SectorSystem[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [hover, setHover] = useState<SectorSystem | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSystems(null);
+    setError(null);
+    setHover(null);
+    fetch(`/api/sector-systems?cell=${encodeURIComponent(cell.key)}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return (await r.json()) as { systems: SectorSystem[] };
+      })
+      .then((d) => {
+        if (!cancelled) setSystems(d.systems);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cell.key]);
+
+  // Only systems that have something for the current filter — clicking a sector while filtered to
+  // one species should not show every system in it.
+  const shown = useMemo(() => {
+    if (!systems) return [];
+    return systems
+      .map((s) => ({ system: s, totals: systemTotals(s, taxon || undefined) }))
+      .filter((r) => r.totals.bodies > 0);
+  }, [systems, taxon]);
+
+  const bounds = useMemo(() => {
+    if (shown.length === 0) return { minX: 0, maxX: 1, minZ: 0, maxZ: 1 };
+    const xs = shown.map((r) => r.system.x);
+    const zs = shown.map((r) => r.system.z);
+    return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
+  }, [shown]);
+
+  const W = 520;
+  const H = 300;
+  const sx = (v: number) => PAD + ((v - bounds.minX) / Math.max(1, bounds.maxX - bounds.minX)) * (W - PAD * 2);
+  const sy = (v: number) => H - PAD - ((v - bounds.minZ) / Math.max(1, bounds.maxZ - bounds.minZ)) * (H - PAD * 2);
+
+  return (
+    <section className="sector-systems">
+      <header>
+        <h3>
+          {cell.name ?? cell.key}
+          <span className="galaxy-map__cellkey"> cell {cell.key}</span>
+        </h3>
+        <button type="button" onClick={onClose} aria-label="Close sector view">
+          Close
+        </button>
+      </header>
+
+      {error ? <p className="galaxy-map__more">Could not load systems: {error}</p> : null}
+      {!systems && !error ? <p className="galaxy-map__more">Loading systems…</p> : null}
+
+      {systems && shown.length === 0 ? (
+        <p className="galaxy-map__more">
+          No systems here for that selection{taxon ? ` (${taxon})` : ""}.
+        </p>
+      ) : null}
+
+      {shown.length > 0 ? (
+        <>
+          <p className="galaxy-map__more">
+            {shown.length} system{shown.length === 1 ? "" : "s"} · top-down (X / Z) within the sector
+          </p>
+          <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Systems in ${cell.name ?? cell.key}`}>
+            <rect x={0} y={0} width={W} height={H} className="galaxy-map__bg" />
+            {shown.map(({ system, totals }) => {
+              const kind = strongestKind(totals) ?? "predicted";
+              return (
+                <circle
+                  key={system.key}
+                  cx={sx(system.x)}
+                  cy={sy(system.z)}
+                  r={2.5 + 4 * Math.cbrt(totals.bodies / Math.max(1, shown[0]!.totals.bodies))}
+                  fill={KIND_COLOUR[kind]}
+                  fillOpacity={0.8}
+                  stroke={hover?.key === system.key ? "#f0f6fc" : "none"}
+                  strokeWidth={hover?.key === system.key ? 1.5 : 0}
+                  onMouseEnter={() => setHover(system)}
+                  onMouseLeave={() => setHover(null)}
+                >
+                  <title>{`${system.name} — ${totals.bodies} bodies`}</title>
+                </circle>
+              );
+            })}
+          </svg>
+          <SystemReadout system={hover} taxon={taxon} />
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+/** What one system holds — the last rung before the app's own body panel. */
+function SystemReadout({ system, taxon }: { system: SectorSystem | null; taxon: string }) {
+  if (!system) {
+    return <p className="galaxy-map__readout galaxy-map__readout--empty">Hover a system.</p>;
+  }
+  const rows = Object.entries(system.taxa)
+    .filter(([t]) => !taxon || t === taxon)
+    .map(([t, v]) => ({ taxon: t, n: (v[0] ?? 0) + (v[1] ?? 0) + (v[2] ?? 0) }))
+    .sort((a, b) => b.n - a.n);
+
+  return (
+    <div className="galaxy-map__readout">
+      <h4>{system.name}</h4>
+      <ul>
+        {rows.map((r) => (
+          <li key={r.taxon}>
+            <span>{r.taxon === "*" ? "biology, unidentified" : r.taxon}</span>
+            <span>{r.n}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

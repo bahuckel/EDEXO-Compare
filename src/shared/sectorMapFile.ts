@@ -70,3 +70,48 @@ export function allTaxa(file: SectorMapFile): string[] {
   for (const c of file.cells) for (const t of Object.keys(c.taxa)) s.add(t);
   return [...s].sort();
 }
+
+/**
+ * One system inside a sector — the drill-down (Phase 10 step 4).
+ *
+ * Coordinates are absolute light years, not offsets: the sector view rescales to whatever it holds,
+ * and an offset would have to be recomputed the moment a cell's contents changed.
+ */
+export interface SectorSystem {
+  /** `id64` where known, else the store's row id as text. Stable, and not a name. */
+  key: string;
+  name: string;
+  x: number;
+  y: number;
+  z: number;
+  /** Species label or genus key → packed counts, same layout as {@link SectorMapCell}. */
+  taxa: Record<string, PackedCounts>;
+}
+
+/**
+ * `data/exomastery/sector-systems.json`.
+ *
+ * **Deliberately a second file.** The galaxy view is 87 kB and every session that opens the map
+ * downloads it; the systems are several times that and most sessions never click a sector. Keeping
+ * them apart means the first paint does not pay for the drill-down, and the server hands out one
+ * sector at a time rather than the lot.
+ */
+export interface SectorSystemsFile {
+  generatedAt: string;
+  /** Cell key → the systems inside it. */
+  cells: Record<string, SectorSystem[]>;
+}
+
+/** Totals for one system, across every taxon or just one. */
+export function systemTotals(system: SectorSystem, taxon?: string) {
+  const out = { confirmed: 0, genus: 0, signal: 0, predicted: 0, bodies: 0 };
+  for (const [t, v] of Object.entries(system.taxa)) {
+    if (taxon !== undefined && t !== taxon) continue;
+    out.confirmed += v[EVIDENCE_INDEX.confirmed] ?? 0;
+    out.genus += v[EVIDENCE_INDEX.genus] ?? 0;
+    out.signal += v[EVIDENCE_INDEX.signal] ?? 0;
+    out.predicted += v[EVIDENCE_INDEX.predicted] ?? 0;
+  }
+  out.bodies = out.confirmed + out.genus + out.signal + out.predicted;
+  return out;
+}

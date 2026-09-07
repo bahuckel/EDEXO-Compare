@@ -347,6 +347,36 @@ export function createHttpServer(opts: {
     res.type("application/json").send(readFileSync(file, "utf8"));
   });
 
+  /**
+   * One sector's systems (Phase 10 step 4).
+   *
+   * The file is 935 kB for 3,015 systems and would be far larger once the Spansh export lands, so
+   * the client never downloads it — it asks for the cell it just clicked. The file is parsed once
+   * and held; it changes only when the feeder runs, and re-reading 935 kB per hover would be silly.
+   *
+   * The cell key arrives as a query parameter rather than a path segment because it contains colons.
+   */
+  let sectorSystemsCache: { mtimeMs: number; cells: Record<string, unknown[]> } | null = null;
+  app.get("/api/sector-systems", (req, res) => {
+    perfCount("http.sectorSystems");
+    const cell = String(req.query.cell ?? "").trim();
+    if (!/^-?\d+:-?\d+:-?\d+$/.test(cell)) {
+      res.status(400).json({ error: "cell must look like x:y:z" });
+      return;
+    }
+    const file = path.join(getProjectRoot(), "data", "exomastery", "sector-systems.json");
+    if (!existsSync(file)) {
+      res.status(404).json({ error: "no sector systems built yet — run: npm run feeder -- sector-map --write" });
+      return;
+    }
+    const mtimeMs = statSync(file).mtimeMs;
+    if (!sectorSystemsCache || sectorSystemsCache.mtimeMs !== mtimeMs) {
+      const parsed = JSON.parse(readFileSync(file, "utf8")) as { cells?: Record<string, unknown[]> };
+      sectorSystemsCache = { mtimeMs, cells: parsed.cells ?? {} };
+    }
+    res.json({ cell, systems: sectorSystemsCache.cells[cell] ?? [] });
+  });
+
   app.get("/api/status", (_req, res) => {
     perfCount("http.apiStatus");
     res.json(opts.getStatus());

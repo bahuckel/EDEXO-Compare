@@ -826,6 +826,42 @@ export class FeederStore {
     }));
   }
 
+  /**
+   * Confirmed sightings grouped to the **system**, with its name — the per-sector drill-down
+   * (Phase 10 step 4).
+   *
+   * The galaxy view aggregates to a 1280 ly cell; clicking one needs the systems inside it, and a
+   * system needs a name to be worth hovering. Same coordinate rule as {@link sightingPositions}: a
+   * system without a position is excluded rather than drawn at the origin.
+   */
+  sightingSystems(): {
+    systemKey: string;
+    systemName: string;
+    x: number;
+    y: number;
+    z: number;
+    bodyKey: string;
+    speciesLabel: string;
+  }[] {
+    return queryAll<[string, string, number, number, number, number, string]>(
+      this.db,
+      `SELECT COALESCE(s.id64, CAST(s.id AS TEXT)), s.display_name, s.x, s.y, s.z, p.id, sg.species_label
+         FROM sightings sg
+         JOIN planets p ON p.id = sg.planet_id
+         JOIN systems s ON s.id = p.system_id
+        WHERE s.x IS NOT NULL AND s.y IS NOT NULL AND s.z IS NOT NULL`,
+      [],
+    ).map((r) => ({
+      systemKey: r[0],
+      systemName: r[1],
+      x: r[2],
+      y: r[3],
+      z: r[4],
+      bodyKey: `${r[0]}:${r[5]}`,
+      speciesLabel: r[6],
+    }));
+  }
+
   /** EDDN register rows with a position — the `genus` and `signal` evidence. */
   eddnBodyPositions(): {
     x: number;

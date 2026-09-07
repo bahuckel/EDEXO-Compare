@@ -27,8 +27,8 @@ import {
   type BodyEvidence,
   type SectorAggregateEntry,
 } from "../shared/sectorAggregate.js";
-import { sectorCellKey, type SectorCell } from "../shared/sectorName.js";
-import type { SectorMapFile } from "../shared/sectorMapFile.js";
+import { sectorCellFromCoords, sectorCellKey, type SectorCell } from "../shared/sectorName.js";
+import type { SectorMapFile, SectorSystem, SectorSystemsFile } from "../shared/sectorMapFile.js";
 import type { FeederStore } from "./feederDb.js";
 
 /**
@@ -204,4 +204,100 @@ export function cellMarkerKind(taxa: Record<string, number[]>): string | null {
     predicted += v[3] ?? 0;
   }
   return markerKind({ confirmed, genus, signal, predicted, bodies: confirmed + genus + signal + predicted });
+}
+
+export function sectorSystemsPath(projectRoot: string): string {
+  return join(projectRoot, "data", "exomastery", "sector-systems.json");
+}
+
+/**
+ * Build the per-sector system rows for the drill-down.
+ *
+ * Same evidence rules as the galaxy view — one body counted once at its strongest kind — but folded
+ * to `(system, taxon)` instead of `(cell, taxon)`. The two files therefore agree by construction:
+ * summing a sector's systems gives the sector's counts.
+ */
+export function buildSectorSystems(store: FeederStore): SectorSystemsFile {
+  /** `systemKey` → the system, and per taxon the set of bodies at each evidence kind. */
+  type Acc = {
+    name: string;
+    x: number;
+    y: number;
+    z: number;
+    taxa: Map<string, { confirmed: Set<string>; genus: Set<string>; signal: Set<string> }>;
+  };
+  const systems = new Map<string, Acc>();
+
+  const bucket = (acc: Acc, taxon: string) => {
+    let b = acc.taxa.get(taxon);
+    if (!b) {
+      b = { confirmed: new Set(), genus: new Set(), signal: new Set() };
+      acc.taxa.set(taxon, b);
+    }
+    return b;
+  };
+
+  for (const r of store.sightingSystems()) {
+    let acc = systems.get(r.systemKey);
+    if (!acc) {
+      acc = { name: r.systemName, x: r.x, y: r.y, z: r.z, taxa: new Map() };
+      systems.set(r.systemKey, acc);
+    }
+    bucket(acc, taxonFromSpeciesLabel(r.speciesLabel)).confirmed.add(r.bodyKey);
+  }
+
+  for (const b of store.eddnBodyPositions()) {
+    const systemKey = b.bodyKey.split(":")[0] ?? b.bodyKey;
+    let acc = systems.get(systemKey);
+    if (!acc) {
+      // EDDN carries the system name on the body row; the register is the only source for systems
+      // the corpus has never seen.
+      acc = { name: systemKey, x: b.x, y: b.y, z: b.z, taxa: new Map() };
+      systems.set(systemKey, acc);
+    }
+    if (b.genuses.length > 0) {
+      for (const g of b.genuses) bucket(acc, genusKeyFromCodex(g)).genus.add(b.bodyKey);
+    } else if ((b.bioSignalCount ?? 0) > 0) {
+      bucket(acc, "*").signal.add(b.bodyKey);
+    }
+  }
+
+  const cells: Record<string, SectorSystem[]> = {};
+  for (const [key, acc] of systems) {
+    const taxa: Record<string, number[]> = {};
+    for (const [taxon, sets] of acc.taxa) {
+      // A body already counted as confirmed must not also count as a genus hit or a signal — the
+      // same collapse the galaxy view does, applied here so the two files cannot disagree.
+      const confirmed = sets.confirmed.size;
+      const genus = [...sets.genus].filter((b) => !sets.confirmed.has(b)).length;
+      const signal = [...sets.signal].filter((b) => !sets.confirmed.has(b) && !sets.genus.has(b)).length;
+      if (confirmed + genus + signal === 0) continue;
+      taxa[taxon] = [confirmed, genus, signal, 0];
+    }
+    if (Object.keys(taxa).length === 0) continue;
+    const cellKey = sectorCellKey(sectorCellFromCoords(acc.x, acc.y, acc.z));
+    (cells[cellKey] ??= []).push({ key, name: acc.name, x: acc.x, y: acc.y, z: acc.z, taxa });
+  }
+
+  // Densest first, so a truncated view still shows the systems worth flying to.
+  for (const list of Object.values(cells)) {
+    list.sort((a, b) => Object.keys(b.taxa).length - Object.keys(a.taxa).length || a.name.localeCompare(b.name));
+  }
+
+  return { generatedAt: new Date().toISOString(), cells };
+}
+
+export function writeSectorSystemsFile(
+  projectRoot: string,
+  file: SectorSystemsFile,
+): { path: string; bytes: number; systems: number } {
+  const path = sectorSystemsPath(projectRoot);
+  mkdirSync(dirname(path), { recursive: true });
+  const json = JSON.stringify(file);
+  writeFileSync(path, json + "\n", "utf8");
+  return {
+    path,
+    bytes: json.length + 1,
+    systems: Object.values(file.cells).reduce((n, l) => n + l.length, 0),
+  };
 }
