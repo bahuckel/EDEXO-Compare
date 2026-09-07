@@ -177,6 +177,15 @@ export interface SpeciesCriterion {
    */
   whenAtmosphereLinkedMaxTempK?: number;
   /**
+   * Lower half of an atmosphere-linked temperature band.
+   *
+   * The linked rule started as a cap because every species that used it had only a ceiling. Concha
+   * renibus has both: its codex row reads 180-195 K **for carbon dioxide only**, and water
+   * atmospheres carry no temperature limit at all. Expressing that as a flat range gated water
+   * bodies it should never have touched.
+   */
+  whenAtmosphereLinkedMinTempK?: number;
+  /**
    * If set with {@link whenAtmosphereLinkedMaxTempK}, the temperature cap applies only when the scan
    * atmosphere matches one of these journal atmosphere tokens (e.g. CO₂-only on a row that also allows ammonia).
    */

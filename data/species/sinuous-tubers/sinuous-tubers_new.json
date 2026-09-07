@@ -56,7 +56,7 @@
       "displayName": "Sinuous Tubers Albidum",
       "description": "Pale tubular structures adapted to generic rocky volcanic environments.",
       "conditions": {
-        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). The app has no system coordinates in its match context, so this cannot be evaluated per body - the species is listed, not predicted.",
+        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). Evaluated per body since Phase 7: the app holds the commander's position and the shipped spatial catalogue, and a system beyond the radius is demoted to the unlikely tier rather than removed.",
         "volcanism": [
           "Any"
         ],
@@ -74,7 +74,7 @@
       "displayName": "Sinuous Tubers Blatteum",
       "description": "Dark clustered tubular formations commonly found on metal-rich volcanic worlds.",
       "conditions": {
-        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). The app has no system coordinates in its match context, so this cannot be evaluated per body - the species is listed, not predicted.",
+        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). Evaluated per body since Phase 7: the app holds the commander's position and the shipped spatial catalogue, and a system beyond the radius is demoted to the unlikely tier rather than removed.",
         "volcanism": [
           "Any"
         ],
@@ -92,7 +92,7 @@
       "displayName": "Sinuous Tubers Caeruleum",
       "description": "Blue-hued tubular fungal structures linked to silicate-rich volcanism.",
       "conditions": {
-        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). The app has no system coordinates in its match context, so this cannot be evaluated per body - the species is listed, not predicted.",
+        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). Evaluated per body since Phase 7: the app holds the commander's position and the shipped spatial catalogue, and a system beyond the radius is demoted to the unlikely tier rather than removed.",
         "volcanism": [
           "Any"
         ],
@@ -110,7 +110,7 @@
       "displayName": "Sinuous Tubers Lindigoticum",
       "description": "Deep indigo branching tubers forming dense underground-linked colonies.",
       "conditions": {
-        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). The app has no system coordinates in its match context, so this cannot be evaluated per body - the species is listed, not predicted.",
+        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). Evaluated per body since Phase 7: the app holds the commander's position and the shipped spatial catalogue, and a system beyond the radius is demoted to the unlikely tier rather than removed.",
         "volcanism": [
           "Any"
         ],
@@ -128,7 +128,7 @@
       "displayName": "Sinuous Tubers Prasinum",
       "description": "Green-tinted variant associated with mixed volcanic mineral deposits.",
       "conditions": {
-        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). The app has no system coordinates in its match context, so this cannot be evaluated per body - the species is listed, not predicted.",
+        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). Evaluated per body since Phase 7: the app holds the commander's position and the shipped spatial catalogue, and a system beyond the radius is demoted to the unlikely tier rather than removed.",
         "volcanism": [
           "Any"
         ],
@@ -146,9 +146,9 @@
       "displayName": "Sinuous Tubers Roseum",
       "description": "Pink/red variant strongly linked to silicate magma volcanism zones.",
       "conditions": {
-        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). The app has no system coordinates in its match context, so this cannot be evaluated per body - the species is listed, not predicted.",
+        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). Evaluated per body since Phase 7: the app holds the commander's position and the shipped spatial catalogue, and a system beyond the radius is demoted to the unlikely tier rather than removed.",
         "volcanism": [
-          "Silicate Magma"
+          "Any"
         ],
         "planet_types": [
           "Rocky"
@@ -156,7 +156,10 @@
         "atmosphere": [
           "None"
         ],
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Volcanism is not used to tell the colour variants apart. The codex records Roseum against 'Silicate Magma', which is the in-game display label and appears in no dataset the app reads: not in the journal's Volcanism field (21 distinct values), not on any of the 6,979 Sinuous Tuber bodies in the Spansh galaxy dump, and not among the 22 values carried by the 7.3 million bodies that hold any genus at all. Silicate exists only as Vapour Geysers. Since every Tuber variant sells for the same 1,514,500 credits, the distinction would cost recall and buy nothing."
+        ]
       }
     },
     {
@@ -164,7 +167,7 @@
       "displayName": "Sinuous Tubers Violaceum",
       "description": "Violet tubular structures associated with rare metal-rich volcanic substrates.",
       "conditions": {
-        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). The app has no system coordinates in its match context, so this cannot be evaluated per body - the species is listed, not predicted.",
+        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). Evaluated per body since Phase 7: the app holds the commander's position and the shipped spatial catalogue, and a system beyond the radius is demoted to the unlikely tier rather than removed.",
         "volcanism": [
           "Any"
         ],
@@ -182,7 +185,7 @@
       "displayName": "Sinuous Tubers Viride",
       "description": "Green branching variants typically found in mixed mineral volcanic environments.",
       "conditions": {
-        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). The app has no system coordinates in its match context, so this cannot be evaluated per body - the species is listed, not predicted.",
+        "location_requirement": "Galactic-core region: 94 % of Sinuous Tubers systems lie within 10 000 ly of Sgr A* (5 139 systems, edastro codex-data; controls 0-20 %). Evaluated per body since Phase 7: the app holds the commander's position and the shipped spatial catalogue, and a system beyond the radius is demoted to the unlikely tier rather than removed.",
         "volcanism": [
           "Any"
         ],

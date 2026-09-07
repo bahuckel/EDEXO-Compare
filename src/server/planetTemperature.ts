@@ -21,10 +21,29 @@ function hasMeaningfulVolcanism(scan: PlanetScan): boolean {
 
 export { normalizeScanAtmosphereForMatch, atmosphereCompositionKey } from "../shared/scanAtmosphereMatch.js";
 
+/**
+ * Thickness comes from `Atmosphere`, not `AtmosphereType`.
+ *
+ * `AtmosphereType` is the *composition* — `Ammonia`, `SulphurDioxide`, `NeonRich` — and the journal
+ * puts the thickness in `Atmosphere`: "thin ammonia atmosphere", "hot thick carbon dioxide
+ * atmosphere". Reading only the former meant this returned `thin` **never**: across 6,750 scans in
+ * the owner's journals, `AtmosphereType` contains "thin" zero times while `Atmosphere` contains it
+ * 2,023 times. Every thin-atmosphere body in the game was being classified as thick.
+ *
+ * That fed two things. `inferBodyClass` could never select `rocky_thin_atmo`, so the temperature
+ * estimator used the wrong class for exactly the bodies exobiology cares about; and the "any thin
+ * atmosphere" gate fell back on it whenever no measured surface pressure was available.
+ *
+ * `AtmosphereType` is still checked first: EDSM-hydrated records spell it `Thin Argon`, and a
+ * caller may hand us either vocabulary.
+ */
 export function atmosphereBucketForEstimator(scan: PlanetScan): "none" | "thin" | "thick" {
   const t = (scan.AtmosphereType ?? "").trim().toLowerCase();
-  if (!t || t === "none" || t.includes("no atmosphere")) return "none";
-  if (t.includes("thin")) return "thin";
+  const a = (scan.Atmosphere ?? "").trim().toLowerCase();
+  const noType = !t || t === "none" || t.includes("no atmosphere");
+  const noText = !a || a === "none" || a.includes("no atmosphere");
+  if (noType && noText) return "none";
+  if (t.includes("thin") || a.includes("thin")) return "thin";
   return "thick";
 }
 

@@ -42,6 +42,7 @@ const PARSED_CRITERION_KEYS: readonly string[] = [
   "whenAtmosphereLinkedAtmosphereAnyOf", "when_atmosphere_linked_atmosphere_any_of",
   "atmosphereLinkedAtmosphereAnyOf",
   "whenAtmosphereLinkedMaxTempK", "when_atmosphere_max_temp_k", "atmosphereLinkedMaxTempK",
+  "whenAtmosphereLinkedMinTempK", "when_atmosphere_min_temp_k", "atmosphereLinkedMinTempK",
   "co2MaxTempK",
   // gravity
   "surfaceGravity", "SurfaceGravity", "max_gravity", "maxGravity", "minGravity",

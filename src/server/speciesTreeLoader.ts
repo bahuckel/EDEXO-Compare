@@ -347,9 +347,20 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
   );
   if (atRaw?.length) {
     const anyThinOnly = atRaw.every((x) => isCodexAnyThinAtmospherePhrase(String(x)));
-    if (!anyThinOnly) {
-      c.atmosphereTypeAnyOf = normalizeAtmosphereToJournal(atRaw);
-    }
+    /**
+     * "Any thin atmosphere" is a constraint, not the absence of one.
+     *
+     * It drops the *composition* restriction and keeps the requirement that there **be** an
+     * atmosphere. Dropping the list entirely lost the second half, so Bacterium tela — whose row
+     * reads exactly that phrase — carried no atmosphere gate at all and was offered on airless
+     * bodies once its volcanism list was overruled by observation.
+     *
+     * The matcher has always been ready for it: `atmosphereAllowlistMeansAnyThinCompositionOnly`
+     * plus a thin `atmospherePressureCategory` selects a branch that fails on vacuum with
+     * "journal must report an atmosphere after detailed scan". That branch was unreachable while
+     * this function was the only thing that could set the phrase and refused to.
+     */
+    c.atmosphereTypeAnyOf = anyThinOnly ? atRaw : normalizeAtmosphereToJournal(atRaw);
   }
 
   const land = toBool(src.landable ?? src.Landable);
@@ -522,6 +533,15 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
     ]),
   );
   if (watm !== undefined) c.whenAtmosphereLinkedMaxTempK = watm;
+
+  const watmMin = toNumber(
+    firstDefined(src, [
+      "whenAtmosphereLinkedMinTempK",
+      "when_atmosphere_min_temp_k",
+      "atmosphereLinkedMinTempK",
+    ]),
+  );
+  if (watmMin !== undefined) c.whenAtmosphereLinkedMinTempK = watmMin;
 
   const watmAt = toStringArray(
     firstDefined(src, [

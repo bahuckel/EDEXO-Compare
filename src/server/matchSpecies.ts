@@ -708,8 +708,9 @@ export function speciesMatchesCriteria(
   }
 
   const linkedMax = c.whenAtmosphereLinkedMaxTempK;
+  const linkedMin = c.whenAtmosphereLinkedMinTempK;
   const linkedAtmo = c.whenAtmosphereLinkedAtmosphereAnyOf;
-  if (linkedMax !== undefined) {
+  if (linkedMax !== undefined || linkedMin !== undefined) {
     const applies = linkedAtmo?.length
       ? (() => {
           const atmoNorm = normalizeScanAtmosphereForMatch(scan);
@@ -732,18 +733,61 @@ export function speciesMatchesCriteria(
           detail:
             "Atmosphere-linked temperature cap needs SurfaceTemperature (or a mappable PlanetClass) to estimate the surface band.",
         });
-      } else if (planetTempBand.maxK > linkedMax) {
-        const near = rangeFit(planetTempBand.maxK, undefined, linkedMax) === "near";
-        failures.push({
-          field: "SurfaceTemperature",
-          ...(near ? { soft: true } : {}),
-          detail: `With matching atmosphere, codex caps the mean band at ≤ ${linkedMax} K (estimated band max ${planetTempBand.maxK.toFixed(0)} K).${near ? ` Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
-        });
+      } else if (
+        (linkedMax !== undefined && planetTempBand.maxK > linkedMax) ||
+        (linkedMin !== undefined && planetTempBand.minK < linkedMin)
+      ) {
+        /**
+         * Observation overrules the atmosphere-linked band, exactly as it overrules the flat one.
+         *
+         * The flat path has done this since section 27 -- Fungoida stabitis reads 180-195 K in the
+         * codex and has been found nine times above 424 K -- and the linked path did not, purely
+         * because no species had needed it yet. Moving Concha renibus onto the linked keys exposed
+         * the asymmetry: one body where the commander actually found it fell out of the shown tier,
+         * not because the rule changed but because the rescue was missing on this branch.
+         *
+         * So the owner's codex band is the default and measured reality still wins over it. Anything
+         * else would make the correct rule score worse than the wrong one.
+         */
+        const observedLinked = observedAtTemperature(entry, scan.SurfaceTemperature);
+        if (observedLinked) {
+          extraOkReasons.push({
+            field: "SurfaceTemperature",
+            detail: `${(scan.SurfaceTemperature ?? 0).toFixed(0)} K is outside the codex band for this atmosphere, but ${observedLinked.observations} of ${observedLinked.total} observed bodies for this species sit at this temperature.`,
+          });
+        } else if (linkedMax !== undefined && planetTempBand.maxK > linkedMax) {
+          const near = rangeFit(planetTempBand.maxK, undefined, linkedMax) === "near";
+          failures.push({
+            field: "SurfaceTemperature",
+            ...(near ? { soft: true } : {}),
+            detail: `With matching atmosphere, codex caps the mean band at ≤ ${linkedMax} K (estimated band max ${planetTempBand.maxK.toFixed(0)} K).${near ? ` Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
+          });
+        } else if (linkedMin !== undefined && planetTempBand.minK < linkedMin) {
+          /**
+           * The floor half of the band, and it only exists because a species had one.
+           *
+           * Concha renibus reads 180-195 K **for carbon dioxide only**; water atmospheres carry no
+           * temperature rule at all. Written as a flat range it gated water bodies at 438 K that the
+           * codex never meant to exclude, and the only thing keeping the species visible on them was
+           * an observation histogram — which vanished the moment a rebuild dropped it.
+           */
+          const near = rangeFit(planetTempBand.minK, linkedMin, undefined) === "near";
+          failures.push({
+            field: "SurfaceTemperature",
+            ...(near ? { soft: true } : {}),
+            detail: `With matching atmosphere, codex floors the mean band at ≥ ${linkedMin} K (estimated band min ${planetTempBand.minK.toFixed(0)} K).${near ? ` Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
+          });
+        }
       } else {
         const atNote = linkedAtmo?.length ? ` (${linkedAtmo.join(" / ")})` : "";
         extraOkReasons.push({
           field: "SurfaceTemperature",
-          detail: `Atmosphere-linked cap ≤ ${linkedMax} K satisfied (band max ${planetTempBand.maxK.toFixed(0)} K)${atNote}`,
+          detail:
+            linkedMin !== undefined && linkedMax !== undefined
+              ? `Atmosphere-linked band ${linkedMin}–${linkedMax} K satisfied (estimated ${planetTempBand.minK.toFixed(0)}–${planetTempBand.maxK.toFixed(0)} K)${atNote}`
+              : linkedMin !== undefined
+                ? `Atmosphere-linked floor ≥ ${linkedMin} K satisfied (band min ${planetTempBand.minK.toFixed(0)} K)${atNote}`
+                : `Atmosphere-linked cap ≤ ${linkedMax} K satisfied (band max ${planetTempBand.maxK.toFixed(0)} K)${atNote}`,
         });
       }
     }

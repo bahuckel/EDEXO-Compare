@@ -137,12 +137,15 @@
           "Water-rich (thin)"
         ],
         "max_gravity": 0.27,
-        "temperature_K": {
-          "min": 180,
-          "max": 195,
-          "applies_to": "Carbon dioxide only"
-        },
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "whenAtmosphereLinkedMinTempK": 180,
+        "whenAtmosphereLinkedMaxTempK": 195,
+        "whenAtmosphereLinkedAtmosphereAnyOf": [
+          "Carbon dioxide"
+        ],
+        "matchContextNotes": [
+          "For carbon dioxide atmospheres the codex mean temperature must sit between 180 K and 195 K. Water atmospheres carry no temperature rule at all, so the band is linked to the atmosphere rather than applied flat."
+        ]
       },
       "color_rules": {
         "type": "material_based",
