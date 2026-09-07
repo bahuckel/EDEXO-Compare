@@ -42,23 +42,28 @@ const PLUMA = "electricae_electricae_pluma";
 const RADIALEM = "electricae_electricae_radialem";
 
 describe("which species carry a host-star gate", () => {
-  it("gates pluma and nothing else", () => {
+  it("gates the three species whose host star was measured, and nothing else", () => {
     expect(hostStarGateForSpeciesId(PLUMA)?.allowed).toEqual(["A", "N", "D", "H"]);
-    for (const id of [RADIALEM, "amphora_amphora_plant", "anemone_anemone", "bacterium_bacterium_aurasus"]) {
+    expect(hostStarGateForSpeciesId("amphora_amphora_plant")?.allowed).toEqual(["A", "B"]);
+    expect(hostStarGateForSpeciesId("anemone_anemone")?.allowed).toEqual(["O", "B", "A"]);
+    for (const id of [RADIALEM, "bacterium_bacterium_aurasus", "cone_bark_mounds", "osseus_osseus_discus"]) {
       expect(hostStarGateForSpeciesId(id), id).toBeNull();
     }
   });
 
   /**
-   * Amphora and Anemone carry the same shape of claim in their own JSON — `parent_star: "A"` and
-   * `parent_star_types: ["O","B","A (rare)"]` — and ed-dsn states both without a count. A gate with
-   * no measurement behind it is exactly what this project keeps refusing to ship, so there is one
-   * entry in the table until somebody measures the other two.
+   * Every threshold carries its count and its share. All three were measured against edastro's
+   * 4,845,751-row codex file, whose own distribution is the control: K 26.9 %, F 23.8 %, M 22.9 %,
+   * G 14.4 %, A 6.2 %, N 2.4 %, B 0.8 %. Bark Mounds sit on that background almost exactly, which is
+   * what a genus with no star rule is supposed to look like — and why they carry no gate.
    */
-  it("keeps the measurement beside the one threshold it has", () => {
-    expect(HOST_STAR_GATES).toHaveLength(1);
-    expect(HOST_STAR_GATES[0]!.gate.evidence).toMatch(/10,194/);
-    expect(HOST_STAR_GATES[0]!.gate.evidence).toMatch(/%/);
+  it("keeps a measured count beside every threshold", () => {
+    expect(HOST_STAR_GATES).toHaveLength(3);
+    for (const { idIncludes, gate } of HOST_STAR_GATES) {
+      expect(gate.evidence, idIncludes).toMatch(/\d,\d{3}/); // a sighting count
+      expect(gate.evidence, idIncludes).toMatch(/%/);
+      expect(gate.allowed.length, idIncludes).toBeGreaterThan(0);
+    }
   });
 });
 

@@ -80,6 +80,9 @@ const HANDLED_ELSEWHERE: Readonly<Record<string, string>> = {
   requires_system_bodies: "Raises predictionUnsupported — depends on other bodies in the system.",
   system_requirements: "Raises predictionUnsupported — depends on other bodies in the system.",
   min_sample_distance_m: "Sampling range, shown in the UI rather than used for matching.",
+  parent_star:
+    "hostStarGates — Electricae pluma {A,N,D,H} on 10,139 sightings, Amphora {A,B} on 1,484.",
+  parent_star_types: "hostStarGates — Anemone {O,B,A} on 27,232 sightings.",
 };
 
 /**
@@ -89,10 +92,6 @@ const HANDLED_ELSEWHERE: Readonly<Record<string, string>> = {
  * on purpose, not something that happens because a parser shrugged.
  */
 export const UNGATED_CONDITION_KEYS: Readonly<Record<string, string>> = {
-  parent_star:
-    "Electricae pluma is gated by hostStarGates on 10,194 measured sightings. Amphora carries the same key with ed-dsn's bare claim 'A' and no count behind it, so it is left unenforced until the galaxy export can measure it.",
-  parent_star_types:
-    "Anemone: 'O, B, more rarely A'. Stated by ed-dsn without a count, and ABSTRACT-COND.md measures no distribution for it. Needs the galaxy export.",
   gravity_constraints:
     "Anemone, written as null. Placeholder for the fact that Anemone ignores gravity entirely (measured to 3.85 g), which is the absence of a rule rather than one.",
 };

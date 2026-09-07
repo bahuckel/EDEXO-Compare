@@ -69,18 +69,60 @@ export interface HostStarGate {
 /**
  * The gates, keyed by the species-id fragment they apply to.
  *
- * One entry, deliberately. Amphora ("A") and Anemone ("O, B, more rarely A") carry the same shape of
- * claim in the data, but ed-dsn states them without a count and nothing has measured them yet —
- * `ABSTRACT-COND.md` gives pluma 10,194 sightings and gives those two none. A threshold with no
- * measurement behind it is the thing this project keeps refusing to ship.
+ * All three thresholds are measured against edastro's `codex-life-data.csv` — 4,845,751 codex
+ * sightings, 1,136 codex ids — with the whole file as the background control:
+ *
+ * | class | K | F | M | G | A | N | B |
+ * |---|---|---|---|---|---|---|---|
+ * | all life (n = 4,809,242) | 26.9 % | 23.8 % | 22.9 % | 14.4 % | 6.2 % | 2.4 % | 0.8 % |
+ *
+ * Bark Mounds are the negative control and behave like one: F 22.8 %, M 20.9 %, K 19.1 %, A 18.1 %
+ * across 23,552 sightings — the background, which is what "no star rule" should look like.
+ *
+ * **A caveat that travels with the last two.** The CSV records the *system's main star*, not the
+ * body's host, and our gate reads the body's host set. For pluma that mismatch does not arise —
+ * `ABSTRACT-COND.md` measured the same quantity and our own body-level corpus agrees 31 of 31. For
+ * Amphora and Anemone the class sets are extreme enough (97.4 % and 98.2 %) that the distinction
+ * cannot plausibly reverse them, but they should be re-measured at body-host granularity when the
+ * galaxy database lands.
  */
 export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
+  {
+    /**
+     * Amphora Plant. `conditions.parent_star: "A"` sat unread in the species file; ed-dsn states it
+     * with no count, and the CSV supplies one: **A 97.4 % of 1,484 sightings**, against 6.2 % of all
+     * life. B adds 1.8 % and is kept — the whole set costs nothing in filtering power, because B is
+     * 0.8 % of the background, and dropping it would delete 27 real sightings.
+     *
+     * Amphora also needs a life-bearing companion body in the system, which nothing here can answer,
+     * so the row keeps its `predictionUnsupported` flag either way. This gate narrows *where*, not
+     * whether.
+     */
+    idIncludes: "amphora",
+    gate: {
+      allowed: ["A", "B"],
+      evidence: "A-class hosts 97.4 % of 1,484 Amphora sightings (B a further 1.8 %); A is 6.2 % of all life",
+    },
+  },
+  {
+    /**
+     * Anemone. `conditions.parent_star_types: ["O","B","A (rare)"]`, also unread. Measured across
+     * **27,232 sightings**: B 82.8 %, O 10.4 %, A 5.0 % — 98.2 % inside the set ed-dsn names, and
+     * the ordering it gives ("O, B, more rarely A") is wrong only in that B leads. Herbig Ae/Be adds
+     * 0.9 % and folds into A through {@link hostStarClassKey}, taking the set to 99.1 %.
+     */
+    idIncludes: "anemone",
+    gate: {
+      allowed: ["O", "B", "A"],
+      evidence: "B 82.8 %, O 10.4 %, A 5.0 % of 27,232 Anemone sightings — 98.2 %; those three are 7 % of all life",
+    },
+  },
   {
     idIncludes: "electricae_pluma",
     gate: {
       allowed: ["A", "N", "D", "H"],
       evidence:
-        "10,194 pluma sightings: neutron 46 %, white dwarf 30 %, A 14 %, black hole 8 %; O and B measured at 0 %",
+        "10,139 pluma sightings: neutron 46.0 %, white dwarf 30.6 %, A 14.2 %, black hole 8.3 % — 99.1 %; B 0.2 %, O 0.0 %",
     },
   },
 ];

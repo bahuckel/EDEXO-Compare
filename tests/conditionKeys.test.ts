@@ -6,7 +6,8 @@
  *
  *  - `parent_star` on Electricae pluma — never gated on its host star, so it stood on an M3 red
  *    dwarf 175 ly from a nebula until §7.12;
- *  - `parent_star` on Amphora and `parent_star_types` on Anemone — the same claim, unenforced;
+ *  - `parent_star` on Amphora and `parent_star_types` on Anemone — the same claim, now measured
+ *    against edastro's 4.85 M-row codex file and gated;
  *  - `distance_from_star` on Clypeus speculumi — measured at **293 of 295 bodies ≥ 2,500 ls**
  *    (99.3 %), against 1.7 % of lacrimam and 2.5 % of margaritus, and read by nothing.
  *
@@ -60,11 +61,7 @@ describe("every condition key in the shipped data is accounted for", () => {
    * side effect of a parser shrugging — and removing one should mean a gate was built.
    */
   it("pins the list of conditions we know about and deliberately do not enforce", () => {
-    expect(Object.keys(UNGATED_CONDITION_KEYS).sort()).toEqual([
-      "gravity_constraints",
-      "parent_star",
-      "parent_star_types",
-    ]);
+    expect(Object.keys(UNGATED_CONDITION_KEYS).sort()).toEqual(["gravity_constraints"]);
     for (const [key, reason] of Object.entries(UNGATED_CONDITION_KEYS)) {
       expect(reason.length, key).toBeGreaterThan(40);
     }
