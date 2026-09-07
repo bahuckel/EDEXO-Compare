@@ -9582,3 +9582,57 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
   margin-right: 0.4rem;
   font-size: var(--fs-sm);
 }
+
+/* System map legend and zoom controls — the map had a full colour vocabulary and no key, and a
+   wheel zoom with nothing on screen saying it existed. */
+.system-map-zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin: 0 0 0.4rem;
+}
+
+.system-map-zoom button {
+  min-width: 2rem;
+  font-size: var(--fs-sm);
+}
+
+.system-map-zoom-val {
+  min-width: 3.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.system-map-legend {
+  margin-top: 0.5rem;
+  font-size: var(--fs-sm);
+}
+
+.system-map-legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  align-items: center;
+}
+
+.system-map-legend-row--marks {
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
+.system-map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.system-map-legend-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex: 0 0 auto;
+}

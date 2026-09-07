@@ -125,6 +125,68 @@ function notableBodyIsTerraformable(n: NotableBodyInfo): boolean {
   return n.tag.toLowerCase().includes("terraformable");
 }
 
+/**
+ * What the map draws, said in words.
+ *
+ * The map has a full colour vocabulary — nine body kinds, each with its own stroke — and three
+ * suffix marks, and it explained none of them. A commander could see that some rings are cyan and
+ * some orange, and that some names end in `+`, without anything on screen saying which is which.
+ * The colours are read from {@link systemMapNodeAppearance} rather than restated, so a change to a
+ * body's colour cannot leave this describing the old one.
+ *
+ * `++` and `+` are the exobiology value tiers the owner sets in Options, which is why they are
+ * spelled out with the setting that drives them rather than as bare symbols.
+ */
+function SystemMapLegend({ plusMinCr, plusPlusMinCr }: { plusMinCr: number; plusPlusMinCr: number }) {
+  const swatch = (label: string, it: Partial<LayoutItem>) => {
+    const a = systemMapNodeAppearance(it as LayoutItem);
+    return (
+      <span className="system-map-legend-item" key={label}>
+        <span
+          className="system-map-legend-dot"
+          style={{ background: a.fill, borderColor: a.stroke }}
+          aria-hidden="true"
+        />
+        {label}
+      </span>
+    );
+  };
+
+  return (
+    <div className="system-map-legend">
+      <div className="system-map-legend-row">
+        {swatch("Star", { isStar: true })}
+        {swatch("Neutron", { isStar: true, starVisual: "neutron" })}
+        {swatch("Earth-like", { baseLabel: "ELW" })}
+        {swatch("Water", { baseLabel: "WW" })}
+        {swatch("Ammonia", { baseLabel: "AW" })}
+        {swatch("Icy", { baseLabel: "I" })}
+        {swatch("Rocky / HMC", { baseLabel: "R" })}
+        {swatch("Gas giant", { baseLabel: "GG" })}
+        {swatch("Barycentre", { isBarycentre: true })}
+        {swatch("Not yet scanned", { isPlaceholder: true })}
+      </div>
+      <div className="system-map-legend-row system-map-legend-row--marks">
+        <span className="system-map-legend-item">
+          <b>*</b> terraformable
+        </span>
+        <span className="system-map-legend-item">
+          <b>+</b> exobiology worth ≥ {plusMinCr.toLocaleString()} CR
+        </span>
+        <span className="system-map-legend-item">
+          <b>++</b> ≥ {plusPlusMinCr.toLocaleString()} CR
+        </span>
+        <span className="system-map-legend-item">
+          <b>+</b> on a star: scoopable
+        </span>
+        <span className="system-map-legend-item dim">
+          Scroll to zoom · drag to pan · double-click to reset
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export const SystemMapModal = memo(function SystemMapModal({
   snap,
   onClose,
@@ -333,6 +395,38 @@ export const SystemMapModal = memo(function SystemMapModal({
             </div>
           </div>
         ) : null}
+
+        {/*
+          The zoom existed and was invisible: wheel to scale, double-click to reset, and nothing on
+          screen saying so. Buttons make it discoverable and give a keyboard and touch route to the
+          same state, and the readout doubles as the hint that the map is zoomable at all.
+        */}
+        <div className="system-map-zoom" role="group" aria-label="Map zoom">
+          <button
+            type="button"
+            onClick={() => setMapZoom((z) => Math.max(0.012, z / 1.3))}
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <span className="system-map-zoom-val">{Math.round(mapZoom * 100)}%</span>
+          <button
+            type="button"
+            onClick={() => setMapZoom((z) => Math.min(220, z * 1.3))}
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMapZoom(1);
+              setMapPan({ x: 0, y: 0 });
+            }}
+          >
+            Reset
+          </button>
+        </div>
 
         <div
           ref={mapWheelRef}
@@ -561,6 +655,8 @@ export const SystemMapModal = memo(function SystemMapModal({
             })}
           </svg>
         </div>
+
+        <SystemMapLegend plusMinCr={snap.exoMapTierPlusMinCr} plusPlusMinCr={snap.exoMapTierPlusPlusMinCr} />
 
         {popup ? (
           <PlanetQuickFactsPopup
