@@ -18,6 +18,7 @@
  *   npm run feeder -- system-ids [--apply]    fill system id64 from the cache; --fetch-missing for the rest
  *   npm run feeder -- import-dump <file>      validate and import a Spansh JSONL export
  *   npm run feeder -- eddn [--seconds=N]      consume EDDN into the body register (consumer only)
+ *   npm run feeder -- sector-map             what the sector heat map would draw today
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -61,6 +62,8 @@ import { backfillBodyIdentity, formatBackfillReport } from "../src/feeder/bodyId
 import { backfillSystemId64, formatSystemId64Report } from "../src/feeder/systemId64Backfill.js";
 import { formatImportReport, importSpanshExport } from "../src/feeder/spanshImport.js";
 import { EddnConsumer, formatCounters } from "../src/server/eddn/eddnConsumer.js";
+import { buildSectorMapData } from "../src/feeder/sectorMapData.js";
+import { markerKind, summariseAggregate } from "../src/shared/sectorAggregate.js";
 import {
   proposeEdgesForProfile,
   SNAP_MIN_SAMPLES,
@@ -576,6 +579,43 @@ async function cmdEddn(): Promise<void> {
   if (seconds > 0) setTimeout(finish, seconds * 1000);
 }
 
+/**
+ * Sector-map aggregate — INCLUDE-BODY-IDS Phase 10 step 2.
+ *
+ * Prints what the map would draw today, per evidence kind, so the picture is a measurement before it
+ * is a rendering.
+ */
+async function cmdSectorMap(): Promise<void> {
+  requireCorpus();
+  const ctx = await openFeeder();
+  const { entries, sources } = buildSectorMapData(ctx.store);
+  const sum = summariseAggregate(entries);
+
+  console.log("");
+  console.log(`evidence rows      confirmed ${sources.confirmed.toLocaleString()} · genus ${sources.genus.toLocaleString()} · signal ${sources.signal.toLocaleString()}`);
+  console.log(`aggregated to      ${sum.entries.toLocaleString()} (sector, taxon) markers`);
+  console.log(`                   ${sum.sectors.toLocaleString()} sectors · ${sum.taxa.toLocaleString()} taxa`);
+  console.log("");
+  console.log(`bodies behind them ${sum.totals.bodies.toLocaleString()}`);
+  console.log(`  confirmed        ${sum.totals.confirmed.toLocaleString()}`);
+  console.log(`  genus only       ${sum.totals.genus.toLocaleString()}`);
+  console.log(`  signal only      ${sum.totals.signal.toLocaleString()}`);
+  console.log(`  predicted        ${sum.totals.predicted.toLocaleString()}   (not built yet - needs the Spansh export at scale)`);
+  console.log("");
+  console.log("marker colour, by strongest evidence in that sector for that taxon:");
+  for (const [k, v] of Object.entries(sum.byMarker)) {
+    console.log(`  ${k.padEnd(10)} ${String(v).padStart(6)}`);
+  }
+
+  const top = [...entries].sort((a, b) => b.counts.bodies - a.counts.bodies).slice(0, 8);
+  console.log("");
+  console.log("densest markers:");
+  for (const e of top) {
+    console.log(`  ${e.cellKey.padEnd(12)} ${e.taxon.padEnd(30)} ${String(e.counts.bodies).padStart(4)} bodies  (${markerKind(e.counts)})`);
+  }
+  console.log("");
+}
+
 switch (command) {
   case "status":
     await cmdStatus();
@@ -610,13 +650,16 @@ switch (command) {
   case "eddn":
     await cmdEddn();
     break;
+  case "sector-map":
+    await cmdSectorMap();
+    break;
   case "system-ids":
     await cmdSystemIds();
     break;
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing] | import-dump <file.jsonl.gz> [--apply] | eddn [--seconds=N]",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing] | import-dump <file.jsonl.gz> [--apply] | eddn [--seconds=N] | sector-map",
     );
     process.exit(1);
 }

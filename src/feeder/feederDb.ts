@@ -799,6 +799,62 @@ export class FeederStore {
     return "updated";
   }
 
+  /**
+   * Every confirmed sighting with the position of its system — the `confirmed` evidence for the
+   * sector map (Phase 10 step 2).
+   *
+   * Bodies whose system has no coordinates are excluded rather than defaulted, because a body placed
+   * at the origin would draw a false marker in the busiest part of the galaxy. Phase 2 took the
+   * corpus to 100 % coordinate coverage, so this excludes nothing today.
+   */
+  sightingPositions(): { x: number; y: number; z: number; bodyKey: string; speciesLabel: string }[] {
+    return queryAll<[number, number, number, string, number, string]>(
+      this.db,
+      `SELECT s.x, s.y, s.z, COALESCE(s.id64, CAST(s.id AS TEXT)), p.id, sg.species_label
+         FROM sightings sg
+         JOIN planets p ON p.id = sg.planet_id
+         JOIN systems s ON s.id = p.system_id
+        WHERE s.x IS NOT NULL AND s.y IS NOT NULL AND s.z IS NOT NULL`,
+      [],
+    ).map((r) => ({
+      x: r[0],
+      y: r[1],
+      z: r[2],
+      // `${system}:${planet}` — stable per body, which is all the fold needs.
+      bodyKey: `${r[3]}:${r[4]}`,
+      speciesLabel: r[5],
+    }));
+  }
+
+  /** EDDN register rows with a position — the `genus` and `signal` evidence. */
+  eddnBodyPositions(): {
+    x: number;
+    y: number;
+    z: number;
+    bodyKey: string;
+    genuses: string[];
+    bioSignalCount: number | null;
+  }[] {
+    return queryAll<[number, number, number, string, number, string | null, number | null]>(
+      this.db,
+      `SELECT x, y, z, system_id64, body_id, genuses, bio_signal_count
+         FROM eddn_bodies
+        WHERE x IS NOT NULL AND y IS NOT NULL AND z IS NOT NULL`,
+      [],
+    ).map((r) => {
+      let genuses: string[] = [];
+      if (r[5]) {
+        try {
+          const parsed: unknown = JSON.parse(r[5]);
+          if (Array.isArray(parsed)) genuses = parsed.filter((g): g is string => typeof g === "string");
+        } catch {
+          // A malformed genus list is one lost marker, not a lost run.
+        }
+      }
+      return { x: r[0], y: r[1], z: r[2], bodyKey: `${r[3]}:${r[4]}`, genuses, bioSignalCount: r[6] };
+    });
+  }
+
   /** What the EDDN register holds, and how much of it is actionable. */
   eddnStats(): {
     bodies: number;
