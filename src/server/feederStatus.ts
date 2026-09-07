@@ -12,6 +12,8 @@
  * the app said so.
  */
 import { readdirSync, statSync } from "node:fs";
+import { speciesFileSlug } from "../feeder/profileBuilder.js";
+import { countHydratableSamplesSync } from "../feeder/samplePacks.js";
 import { join } from "node:path";
 import type { FeederStatusDTO, SpeciesDatabase } from "../shared/types.js";
 import { feederDataDir, feederDataDirExists, rawPlanetsDir } from "../feeder/paths.js";
@@ -24,15 +26,17 @@ import {
   resolveExomasteryProfileJsonPath,
 } from "./exomasteryProfile.js";
 
-/** Sample packs on disk for one species slug — what a `rebuild` would actually read. */
+/**
+ * Samples on disk for one species slug — what a `rebuild` would actually read.
+ *
+ * This counted **loose `sample_N.json` files only**, and §46 folded every one of them into a
+ * `samples.jsonl.gz` archive. So it returned 0 for all 100 species: the panel reported "0 of 100
+ * hydrated" and, worse, called 63 profiles stale because every profile looked to have more samples
+ * than the corpus could supply. `scripts/feeder.ts` had already been fixed for exactly this (§C3);
+ * the HTTP path had not.
+ */
 function packCount(slug: string): number {
-  try {
-    return readdirSync(join(rawPlanetsDir(), slug)).filter(
-      (f) => f.startsWith("sample_") && f.endsWith(".json"),
-    ).length;
-  } catch {
-    return 0;
-  }
+  return countHydratableSamplesSync(join(rawPlanetsDir(), slug));
 }
 
 function hydratedSlugs(): string[] {
@@ -83,6 +87,20 @@ export function buildFeederStatus(projectRoot: string, db: SpeciesDatabase): Fee
   }
   unmatchedCorpusLabels.sort();
 
+  /**
+   * What each species' archives could actually supply, keyed the same way.
+   *
+   * The corpus label maps to a slug the same way the installer does it, so the count and the profile
+   * describe the same species even when the spellings differ (§23.4).
+   */
+  const hydratableByEntryId = new Map<string, number>();
+  for (const label of Object.keys(snapshot?.occurrencesBySpecies ?? {})) {
+    const entry = findSpeciesEntryForLabel(db, label);
+    if (!entry) continue;
+    const n = packCount(speciesFileSlug(label));
+    hydratableByEntryId.set(entry.id, Math.max(hydratableByEntryId.get(entry.id) ?? 0, n));
+  }
+
   let speciesRowsWithProfile = 0;
   let profileBytes = 0;
   const behind: FeederStatusDTO["behind"] = [];
@@ -102,9 +120,15 @@ export function buildFeederStatus(projectRoot: string, db: SpeciesDatabase): Fee
     if (!prof) continue;
     const have = prof.sampleCount ?? maxExomasteryProfileSampleCount(prof);
 
-    const corpusOccurrences = occurrencesByEntryId.get(entry.id) ?? 0;
-    if (corpusOccurrences > have) {
-      behind.push({ species: entry.displayName, profileSamples: have, corpusOccurrences });
+    /**
+     * "Behind" means the corpus can supply bodies this profile was not built from — not that the
+     * corpus *holds* more occurrences than the profile has samples. The two differ by §45.2's 599
+     * sightings whose body EDSM has no record of, and comparing the wrong one told the owner 63
+     * profiles were stale and to run a job that would fetch nothing.
+     */
+    const canSupply = hydratableByEntryId.get(entry.id) ?? 0;
+    if (canSupply > have) {
+      behind.push({ species: entry.displayName, profileSamples: have, corpusOccurrences: canSupply });
     }
   }
   behind.sort((a, b) => b.corpusOccurrences - b.profileSamples - (a.corpusOccurrences - a.profileSamples));

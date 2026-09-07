@@ -6,6 +6,7 @@ import {
   IconChevronDown,
   IconEncyclopedia,
   IconExobiology,
+  IconFeeder,
   IconGalaxy,
   IconOptions,
   IconTriage,
@@ -80,6 +81,7 @@ import type {
   OrganicPendingLineItem,
   OtherMatchDetailCardDTO,
   PlanetScan,
+  FeederStatusDTO,
 } from "@shared/types";
 import {
   journalHistoryPresetLabel,
@@ -127,7 +129,7 @@ import { buildBodyOrbitGroups, groupTabBodiesIntoHostCards } from "./bodyTabGrou
 import { useStableBioTabOrder } from "./useStableBioTabOrder";
 import { BodyTabStrip, type TabSection } from "./BodyTabStrip";
 import { BodyJumpPalette, bodyJumpItems } from "./BodyJumpPalette";
-import { FeederStatusPanel } from "./FeederStatusPanel";
+import { FeederStatusPanel, useFeederStatus } from "./FeederStatusPanel";
 
 function FootScanMatchCard({ payload }: { payload: FootScanMatchPayload }) {
   const [expanded, setExpanded] = useState(false);
@@ -1378,6 +1380,51 @@ function GenusSpeciesOdds({ items, confirmed }: { items: BodyComputed["matches"]
         </span>
       ))}
     </p>
+  );
+}
+
+/**
+ * The feeder, in its own modal — INCLUDE-BODY-IDS §11.3.
+ *
+ * It was rendered inside Options, under the miss log and the EDSM panel, and the owner could not
+ * find it. The panel itself was fine; only its address was wrong.
+ *
+ * The toolbar button that opens this is shown **only when a corpus exists on this machine**, which is
+ * not a normal install. An always-visible entry would open an empty modal for almost everyone.
+ */
+function FeederModal({ status, onClose }: { status: FeederStatusDTO | null; onClose: () => void }) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    dialogRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="modal-panel options-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="feeder-modal-title"
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="modal-head">
+          <h3 id="feeder-modal-title">Data feeder</h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div className="modal-body">
+          <FeederStatusPanel status={status} />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -2633,8 +2680,6 @@ function MapOptionsModal({
 
           <EdsmAutoFetchPanel state={snap.edsmAutoFetch} />
 
-          <FeederStatusPanel />
-
           <section className="options-journal-history options-meta-block">
             <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
               <strong>Journal history</strong> — by default the app merges <strong>every</strong>{" "}
@@ -3517,6 +3562,12 @@ const HeaderBar = memo(function HeaderBar({
   );
   const [dataBreakdownOpen, setDataBreakdownOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [feederOpen, setFeederOpen] = useState(false);
+  /**
+   * §11.3. The button appears only when this machine actually has a corpus — otherwise it would
+   * open an empty modal for every normal install. One fetch, shared with the panel.
+   */
+  const feeder = useFeederStatus();
   const [myExoOpen, setMyExoOpen] = useState(false);
   const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
   const [triageOpen, setTriageOpen] = useState(false);
@@ -3697,6 +3748,18 @@ const HeaderBar = memo(function HeaderBar({
               <IconTriage />
             </button>
           </Tooltip>
+          {feeder.available ? (
+            <Tooltip text="Data feeder — the corpus behind the rankings, and whether any profile is behind it.">
+              <button
+                type="button"
+                className="appbar-icon-btn"
+                onClick={() => setFeederOpen(true)}
+                aria-label="Data feeder"
+              >
+                <IconFeeder />
+              </button>
+            </Tooltip>
+          ) : null}
           <Tooltip text="Galaxy map — every sector where a species is known, confirmed or merely signalled. Opens in a new tab.">
             <a
               className="appbar-icon-btn"
@@ -4018,6 +4081,7 @@ const HeaderBar = memo(function HeaderBar({
           onClose={() => setOptionsOpen(false)}
         />
       ) : null}
+      {feederOpen ? <FeederModal status={feeder.status} onClose={() => setFeederOpen(false)} /> : null}
       {notableQuick ? (
         <Suspense fallback={null}>
           <PlanetQuickFactsPopup

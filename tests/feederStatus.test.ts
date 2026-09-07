@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -34,6 +35,24 @@ function writeProfile(genus: string, file: string, speciesLabel: string, samples
     }),
     "utf8",
   );
+}
+
+
+/**
+ * Sample archives for a species, as §46 packing leaves them.
+ *
+ * "Behind" means *the archives can supply bodies this profile was not built from*, not "the corpus
+ * snapshot counts more occurrences". Those differ by the sightings whose body EDSM has no record of
+ * (§45.2), and writing only a snapshot — as this test used to — simulates a state that cannot
+ * actually happen on disk.
+ */
+function writePacks(slug: string, hydratable: number): void {
+  const dir = path.join(corpus, "raw", "planets", slug);
+  mkdirSync(dir, { recursive: true });
+  const lines = Array.from({ length: hydratable }, (_, i) =>
+    JSON.stringify({ i, systemName: "S", bodyName: `S ${i}`, context: { targetBody: { id: i, bodyId: i } } }),
+  );
+  writeFileSync(path.join(dir, "samples.jsonl.gz"), gzipSync(Buffer.from(lines.join("\n"), "utf8")));
 }
 
 beforeEach(() => {
@@ -93,6 +112,10 @@ describe("buildFeederStatus", () => {
       // level. This is the state 72 of 79 shipped profiles were in before the merge.
       occurrencesBySpecies: { "Bacterium Aurasus": 4370, "Stratum Tectonicas": 1280 },
     });
+    // What the archives can actually supply. Bacterium's corpus row counts 4,370 occurrences but
+    // only 3,900 have a body EDSM knows — a rebuild can reach those and no more.
+    writePacks("bacterium_aurasus", 3900);
+    writePacks("stratum_tectonicas", 1280);
 
     const s = buildFeederStatus(appRoot, db);
     expect(s.snapshot?.uniqueSightings).toBe(39088);
@@ -100,9 +123,10 @@ describe("buildFeederStatus", () => {
     expect(s.behind[0]).toEqual({
       species: "Bacterium aurasus",
       profileSamples: 2797,
-      corpusOccurrences: 4370,
+      // 3,900 — what a rebuild could reach — not the snapshot's 4,370.
+      corpusOccurrences: 3900,
     });
-    expect(s.behindOccurrences).toBe(4370 - 2797);
+    expect(s.behindOccurrences).toBe(3900 - 2797);
   });
 
   it("finds the corpus entry by species row, whatever the profile calls itself", () => {
@@ -137,6 +161,9 @@ describe("buildFeederStatus", () => {
       cumulativeCsvRows: 1,
       occurrencesBySpecies: { "Stratum Tectonicas": 1280 },
     });
+    // The archives are what a rebuild reads, so the fixture has to have them — a snapshot alone
+    // describes a state that cannot exist on disk.
+    writePacks("stratum_tectonicas", 1280);
 
     const s = buildFeederStatus(appRoot, db);
     expect(s.behindCount).toBe(1);

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { FeederStatusDTO } from "@shared/types";
 
 /**
- * Feeder state, in the Options modal.
+ * Feeder state.
  *
  * The feeder builds the exomastery profiles the app ranks with, from a 250 MB corpus of raw EDSM
  * sample packs that never ships. This panel answers the one question that matters about it: **is the
@@ -10,9 +10,15 @@ import type { FeederStatusDTO } from "@shared/types";
  * into the app the answer was no on 72 of 79 profiles — every profile was installed by hand, so
  * every profile could be skipped by hand — and nothing anywhere said so.
  *
- * Renders nothing when there is no corpus on this machine, which is every normal install.
+ * It lived inside the Options modal, three clicks deep and below two other panels, which meant the
+ * owner could not find it and reasonably asked whether it had been merged at all (§11.3). It has its
+ * own toolbar entry now.
+ *
+ * Renders nothing when there is no corpus on this machine, which is every normal install — and that
+ * is why {@link useFeederStatus} exists separately: the toolbar has to know whether to show the
+ * button *before* deciding to open anything.
  */
-export function FeederStatusPanel() {
+export function useFeederStatus(): { status: FeederStatusDTO | null; available: boolean } {
   const [status, setStatus] = useState<FeederStatusDTO | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -37,7 +43,17 @@ export function FeederStatusPanel() {
     };
   }, []);
 
-  if (failed || !status?.available) return null;
+  return { status, available: !failed && status?.available === true };
+}
+
+/**
+ * The panel itself.
+ *
+ * Takes the status rather than fetching it, so the toolbar's availability check and the panel share
+ * one request instead of asking the same question twice.
+ */
+export function FeederStatusPanel({ status }: { status: FeederStatusDTO | null }) {
+  if (!status?.available) return null;
 
   const { snapshot, behind, unmatchedCorpusLabels } = status;
   const profileMb = (status.profileBytes / 1048576).toFixed(2);

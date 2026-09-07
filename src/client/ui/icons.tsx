@@ -59,6 +59,22 @@ export function IconGalaxy({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Flask over a stack — the data feeder.
+ *
+ * It builds the profiles the app ranks with, so the icon says "process that produces the data"
+ * rather than "settings", which is where it used to be buried.
+ */
+export function IconFeeder({ className }: { className?: string }) {
+  return (
+    <svg {...BASE} className={className}>
+      <path d="M6.4 2.4v3.4L3.3 11a1.6 1.6 0 0 0 1.4 2.4h6.6A1.6 1.6 0 0 0 12.7 11L9.6 5.8V2.4" />
+      <path d="M5.6 2.4h4.8" />
+      <path d="M4.6 9.6h6.8" />
+    </svg>
+  );
+}
+
 /** Open book — the species encyclopedia. */
 export function IconEncyclopedia({ className }: { className?: string }) {
   return (
