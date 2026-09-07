@@ -45,7 +45,7 @@ import { buildFeederStatus } from "./feederStatus.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
 import { clearFootScannedCatalogCache } from "./footScannedCatalog.js";
-import { clearGenusPhotosFolderCache } from "./speciesTreeLoader.js";
+import { clearGenusPhotosFolderCache, getSpeciesDataWarnings } from "./speciesTreeLoader.js";
 import { parseStatusJsonFootFix, parseStatusJsonFuel } from "./footTravelStatus.js";
 import { parseNavRouteJson } from "./navRouteFuel.js";
 import {
@@ -446,6 +446,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       lastJournalEventIso: store.lastEventIso,
       commanderName: store.commanderName,
       journalBoot: journalBootProgress,
+      speciesDataWarnings: getSpeciesDataWarnings(),
     };
   };
 

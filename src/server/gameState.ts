@@ -968,8 +968,20 @@ export class GameStateStore {
   }
 
   /**
-   * Journal `ScanBaryCentre`: mutual orbit for `{ Null: BodyID }` in `Scan.Parents`.
-   * Stored at `bodyId = barycentreSyntheticBodyId(journalNullId)` so rows never collide with real body scans.
+   * Journal `ScanBaryCentre`: the orbit of the `{ Null: BodyID }` node in `Scan.Parents`.
+   *
+   * **These elements describe the barycentre's own orbit around *its* parent — not the mutual orbit
+   * of its children**, which is what this comment used to claim. Measured on Swoilz KI-E b4-9:
+   * `ScanBaryCentre` for barycentre 7 reports a semi-major axis of 56.6 ls, and its two children,
+   * planets 3 and 4, sit at 56.6 ls from the star. Their orbits *around each other* are 0.097 and
+   * 0.144 ls. The number is the distance to the star, unambiguously.
+   *
+   * The distinction is load-bearing: `starDistanceLs` reads this field to answer how far a body is
+   * from its host star when a barycentre stands between them, and EDSM and Spansh both drop the
+   * event, so the journal is the only place it exists.
+   *
+   * Stored at `bodyId = barycentreSyntheticBodyId(journalNullId)` so rows never collide with real
+   * body scans.
    */
   mergeBarycentreJournalLine(line: JournalLine, ts: string): void {
     const systemAddress = line.SystemAddress as number;

@@ -24,7 +24,7 @@ import {
   isRecognisedConditionKey,
   unrecognisedConditionKeys,
 } from "../src/server/conditionKeyAudit.js";
-import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
+import { getSpeciesDataWarnings, loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -98,5 +98,25 @@ describe("the condition that was being dropped", () => {
       const e = db.species.find((x) => x.id === id)!;
       expect(e.criteria.orbitDistanceFromParentStarLs?.min, id).toBeUndefined();
     }
+  });
+});
+
+describe("a warning nobody can read is not a warning", () => {
+  /**
+   * The unknown-key report was a `console.warn`, and a packaged Electron build has no console — the
+   * owner went looking for it in the app folder and in `%APPDATA%` and found nothing, which is the
+   * correct outcome of writing to a stream that does not exist. It is collected and served on
+   * `/api/status` instead.
+   */
+  it("collects nothing for the shipped tree", () => {
+    loadSpeciesDatabaseFromTree(root);
+    expect(getSpeciesDataWarnings()).toEqual([]);
+  });
+
+  it("replaces the list on reload rather than accumulating", () => {
+    loadSpeciesDatabaseFromTree(root);
+    const first = getSpeciesDataWarnings().length;
+    loadSpeciesDatabaseFromTree(root);
+    expect(getSpeciesDataWarnings()).toHaveLength(first);
   });
 });

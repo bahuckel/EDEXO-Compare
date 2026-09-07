@@ -1,6 +1,23 @@
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { gateForSpeciesId } from "../shared/spatialGates.js";
 import { unrecognisedConditionKeys } from "./conditionKeyAudit.js";
+
+/**
+ * Warnings raised while reading the species tree, kept so `/api/status` can show them.
+ *
+ * A `console.warn` is invisible in a packaged Electron build — there is no console attached and
+ * nothing writes it to a file, so the message reached nobody. Collected here and cleared on each
+ * load, so the list always describes the tree currently in memory rather than accumulating.
+ */
+const speciesDataWarnings: string[] = [];
+
+export function getSpeciesDataWarnings(): string[] {
+  return [...speciesDataWarnings];
+}
+
+function clearSpeciesDataWarnings(): void {
+  speciesDataWarnings.length = 0;
+}
 import { join, relative } from "node:path";
 import type { SpeciesCriterion, SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
 import { applyCodexCriteriaPatchesFromFixesJson } from "./exoDataAlertFix.js";
@@ -672,10 +689,11 @@ function buildCriteriaForRow(row: Record<string, unknown>, speciesId?: string): 
    */
   const unknown = unrecognisedConditionKeys(nested);
   if (unknown.length) {
-    console.warn(
-      `ED Exo Compare — ${speciesId ?? "species row"}: ignoring unknown condition key(s) ${unknown.join(", ")}. ` +
-        "Nothing in the matcher reads them, so the species is NOT being gated on them.",
-    );
+    const note =
+      `${speciesId ?? "species row"}: ignoring unknown condition key(s) ${unknown.join(", ")} — ` +
+      "nothing in the matcher reads them, so the species is NOT gated on them.";
+    if (!speciesDataWarnings.includes(note)) speciesDataWarnings.push(note);
+    console.warn(`ED Exo Compare — ${note}`);
   }
   const merged: Record<string, unknown> = { ...row, ...(nested ?? {}) };
   return buildCriterionFromRecord(merged);
@@ -898,6 +916,8 @@ function extractSpeciesRows(parsed: unknown): Record<string, unknown>[] {
  * Load all species from `data/species/<genusDir>/` — prefers `<genus>_new.json`, then `<genus>.json`.
  */
 export function loadSpeciesDatabaseFromTree(projectRoot: string): SpeciesDatabase {
+  // The list describes the tree in memory, so a reload replaces it rather than appending to it.
+  clearSpeciesDataWarnings();
   const base = getSpeciesDataDir(projectRoot);
   if (!existsSync(base) || !isDir(base)) {
     return { species: [] };

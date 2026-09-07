@@ -115,7 +115,8 @@ function BaryDetailCard({ detail }: { detail: SystemMapBodyDetailDTO }) {
     <DetailCard title="Mutual barycentre">
       <p className="body-detail-lead dim">
         Journal <code className="body-detail-code">ScanBaryCentre</code> — center of mass for bodies that
-        co-orbit. Not landable; shown for orbital reference only.
+        co-orbit. Not landable; shown for orbital reference only. The elements below are this
+        barycentre&rsquo;s own orbit around its parent, not the children&rsquo;s orbit around each other.
       </p>
       <KvList>
         {detail.baryJournalNullId != null ? (
@@ -129,7 +130,7 @@ function BaryDetailCard({ detail }: { detail: SystemMapBodyDetailDTO }) {
           />
         ) : null}
         <KvRow
-          label="Semi-major axis"
+          label="Semi-major axis (around parent)"
           value={detail.semiMajorAxis != null ? `${detail.semiMajorAxis.toExponential(5)} m` : null}
         />
         <KvRow label="Eccentricity" value={detail.baryEccentricity} />

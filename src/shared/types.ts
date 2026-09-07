@@ -1002,6 +1002,16 @@ export interface AppStatusDTO {
   lastJournalEventIso: string | null;
   commanderName: string | null;
   journalBoot: JournalBootProgressDTO | null;
+  /**
+   * Species rows carrying a `conditions` key nothing in the app reads — see `conditionKeyAudit`.
+   *
+   * Empty for the shipped data, and a test keeps it that way. It is surfaced here because the only
+   * other report was a `console.warn`, and a packaged Electron build has no console: the owner went
+   * looking for it in the app folder and in `%APPDATA%` and found nothing, which is the correct
+   * outcome of writing a warning to a stream nobody can read. A hand-edited genus file is the case
+   * this exists for, and `/api/status` is somewhere a commander can actually look.
+   */
+  speciesDataWarnings: string[];
 }
 
 export interface AppSnapshot {
@@ -1238,7 +1248,7 @@ export interface ExplorationScanRecord {
   isBarycentreJournal?: boolean;
   /** Raw journal `ScanBaryCentre.BodyID` (the `Null` chain id, not a ship body id). */
   journalBarycentreNullId?: number;
-  /** Orbital elements from `ScanBaryCentre` (mutual orbit of direct children under this barycentre). */
+  /** Orbital elements from `ScanBaryCentre`: this barycentre's own orbit around its parent. */
   eccentricity?: number;
   orbitalInclination?: number;
   periapsis?: number;
@@ -1352,7 +1362,10 @@ export interface SystemMapBodyDetailDTO {
   isMutualBarycentre?: boolean;
   /** Bodies that directly orbit this mutual barycentre (map children). */
   baryAffectsBodyIds?: number[];
-  /** Journal `ScanBaryCentre` / mutual orbit (when `isMutualBarycentre`). */
+  /**
+   * Journal `ScanBaryCentre` elements (when `isMutualBarycentre`) — the barycentre's own orbit
+   * around its parent, **not** the mutual orbit of its children. See `mergeBarycentreJournalLine`.
+   */
   baryEccentricity?: number;
   baryOrbitalInclination?: number;
   baryPeriapsis?: number;
