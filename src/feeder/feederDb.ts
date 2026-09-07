@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import initSqlJs, { type Database, type SqlValue } from "sql.js";
 import { genusFromLandmark, occurrenceKey, type SpeciesIndexEntry, type SpanshExoRow } from "./csvImport.js";
 import { PROJECT_ROOT } from "./paths.js";
-import type { ClaimOrigin } from "../shared/provenance.js";
+import { asClaimOrigin, type ClaimOrigin } from "../shared/provenance.js";
 
 const SCHEMA_VER = 4;
 const META_CUMULATIVE = "cumulative_csv_rows";
@@ -916,21 +916,29 @@ export class FeederStore {
    * at the origin would draw a false marker in the busiest part of the galaxy. Phase 2 took the
    * corpus to 100 % coordinate coverage, so this excludes nothing today.
    */
-  sightingPositions(): {
+  /**
+   * @param publishableOnly drop claims that are the commander's own — see {@link isPublishableClaim}.
+   * The sector map is written to `data/exomastery/`, which is tracked in git, so the export defaults
+   * to excluding them. A caller that wants the owner's full picture asks for it explicitly.
+   */
+  sightingPositions(publishableOnly = false): {
     x: number;
     y: number;
     z: number;
     bodyKey: string;
     speciesLabel: string;
     genus: string;
+    claimOrigin: ClaimOrigin;
   }[] {
-    return queryAll<[number, number, number, string, number, string, string]>(
+    return queryAll<[number, number, number, string, number, string, string, string | null]>(
       this.db,
-      `SELECT s.x, s.y, s.z, COALESCE(s.id64, CAST(s.id AS TEXT)), p.id, sg.species_label, sg.genus
+      `SELECT s.x, s.y, s.z, COALESCE(s.id64, CAST(s.id AS TEXT)), p.id, sg.species_label, sg.genus,
+              sg.claim_origin
          FROM sightings sg
          JOIN planets p ON p.id = sg.planet_id
          JOIN systems s ON s.id = p.system_id
-        WHERE s.x IS NOT NULL AND s.y IS NOT NULL AND s.z IS NOT NULL`,
+        WHERE s.x IS NOT NULL AND s.y IS NOT NULL AND s.z IS NOT NULL
+          ${publishableOnly ? "AND COALESCE(sg.claim_origin, 'unknown') <> 'journal'" : ""}`,
       [],
     ).map((r) => ({
       x: r[0],
@@ -942,6 +950,7 @@ export class FeederStore {
       // Written by `applyCsvRows` from the landmark, so it is the corpus's own answer rather
       // than a word taken off the front of the species label.
       genus: r[6] ?? "",
+      claimOrigin: asClaimOrigin(r[7]),
     }));
   }
 
@@ -953,7 +962,8 @@ export class FeederStore {
    * system needs a name to be worth hovering. Same coordinate rule as {@link sightingPositions}: a
    * system without a position is excluded rather than drawn at the origin.
    */
-  sightingSystems(): {
+  /** @param publishableOnly as {@link sightingPositions}. */
+  sightingSystems(publishableOnly = false): {
     systemKey: string;
     systemName: string;
     x: number;
@@ -962,15 +972,17 @@ export class FeederStore {
     bodyKey: string;
     bodyName: string;
     speciesLabel: string;
+    claimOrigin: ClaimOrigin;
   }[] {
-    return queryAll<[string, string, number, number, number, number, string, string]>(
+    return queryAll<[string, string, number, number, number, number, string, string, string | null]>(
       this.db,
       `SELECT COALESCE(s.id64, CAST(s.id AS TEXT)), s.display_name, s.x, s.y, s.z,
-              p.id, p.display_body, sg.species_label
+              p.id, p.display_body, sg.species_label, sg.claim_origin
          FROM sightings sg
          JOIN planets p ON p.id = sg.planet_id
          JOIN systems s ON s.id = p.system_id
-        WHERE s.x IS NOT NULL AND s.y IS NOT NULL AND s.z IS NOT NULL`,
+        WHERE s.x IS NOT NULL AND s.y IS NOT NULL AND s.z IS NOT NULL
+          ${publishableOnly ? "AND COALESCE(sg.claim_origin, 'unknown') <> 'journal'" : ""}`,
       [],
     ).map((r) => ({
       systemKey: r[0],
@@ -981,6 +993,7 @@ export class FeederStore {
       bodyKey: `${r[0]}:${r[5]}`,
       bodyName: r[6],
       speciesLabel: r[7],
+      claimOrigin: asClaimOrigin(r[8]),
     }));
   }
 

@@ -104,9 +104,21 @@ export function speciesGenusResolver(db: SpeciesDatabase): (label: string) => st
   };
 }
 
+/**
+ * @param publishableOnly leave the commander's own journal claims out of the build.
+ *
+ * `data/exomastery/sector-map.json` and `sector-systems.json` are **tracked in git**. They name
+ * 5,033 systems and the species confirmed in each, and a journal claim is the commander's own flight
+ * history — which systems they visited and what they scanned there. That is theirs to publish, not
+ * the build's to publish on their behalf, so the shipped files are built with this on.
+ *
+ * It cannot be enforced further down: by the time evidence is folded, a journal row and a Spansh row
+ * are the same shape. The gate belongs at the query, and `sightingPositions` takes it.
+ */
 export function buildSectorMapData(
   store: FeederStore,
   resolveGenus?: (label: string) => string | null,
+  publishableOnly = true,
 ): SectorMapBuild {
   const evidence: BodyEvidence[] = [];
   let confirmed = 0;
@@ -121,7 +133,7 @@ export function buildSectorMapData(
    */
   const taxonGenus: Record<string, string> = {};
 
-  for (const s of store.sightingPositions()) {
+  for (const s of store.sightingPositions(publishableOnly)) {
     const taxon = taxonFromSpeciesLabel(s.speciesLabel);
     /**
      * The resolver, then the taxon itself — never `sightings.genus`.
@@ -297,7 +309,8 @@ export function sectorSystemsPath(projectRoot: string): string {
  * to `(system, taxon)` instead of `(cell, taxon)`. The two files therefore agree by construction:
  * summing a sector's systems gives the sector's counts.
  */
-export function buildSectorSystems(store: FeederStore): SectorSystemsFile {
+/** @param publishableOnly as {@link buildSectorMapData} — this file is tracked too, and names systems. */
+export function buildSectorSystems(store: FeederStore, publishableOnly = true): SectorSystemsFile {
   /** `systemKey` → the system, and per taxon the set of bodies at each evidence kind. */
   type Acc = {
     name: string;
@@ -319,7 +332,7 @@ export function buildSectorSystems(store: FeederStore): SectorSystemsFile {
     return b;
   };
 
-  for (const r of store.sightingSystems()) {
+  for (const r of store.sightingSystems(publishableOnly)) {
     let acc = systems.get(r.systemKey);
     if (!acc) {
       acc = { name: r.systemName, x: r.x, y: r.y, z: r.z, taxa: new Map(), bodies: new Map() };
