@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { gateForSpeciesId } from "../shared/spatialGates.js";
+import { unrecognisedConditionKeys } from "./conditionKeyAudit.js";
 import { join, relative } from "node:path";
 import type { SpeciesCriterion, SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
 import { applyCodexCriteriaPatchesFromFixesJson } from "./exoDataAlertFix.js";
@@ -445,12 +446,28 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
   }
 
   const orbitRec = asRecord(
-    firstDefined(src, ["orbitDistanceFromParentStarLs", "orbit_ls", "orbitFromStarLs", "orbit_from_star_ls"]),
+    firstDefined(src, [
+      "orbitDistanceFromParentStarLs",
+      "orbit_ls",
+      "orbitFromStarLs",
+      "orbit_from_star_ls",
+      /**
+       * The spelling the species files actually use, and the one this parser did not read.
+       *
+       * `clypeus_speculumi` carries `distance_from_star: { min_ls: 2500, approx_AU: 5 }` and it was
+       * dropped in silence — the rule existed in the data, in `ABSTRACT-COND.md` §4, and nowhere in
+       * the matcher. Measured on the corpus it is one of the sharpest conditions we have: 293 of 295
+       * resolvable speculumi bodies are ≥ 2,500 ls (99.3 %), against 1.7 % of lacrimam and 2.5 % of
+       * margaritus.
+       */
+      "distance_from_star",
+      "distanceFromStar",
+    ]),
   );
   if (orbitRec) {
     c.orbitDistanceFromParentStarLs = {
-      min: toNumber(orbitRec.min),
-      max: toNumber(orbitRec.max),
+      min: toNumber(orbitRec.min ?? orbitRec.min_ls ?? orbitRec.minLs),
+      max: toNumber(orbitRec.max ?? orbitRec.max_ls ?? orbitRec.maxLs),
     };
   }
 
@@ -643,8 +660,23 @@ function detectPredictionUnsupported(
   return undefined;
 }
 
-function buildCriteriaForRow(row: Record<string, unknown>): SpeciesCriterion {
+function buildCriteriaForRow(row: Record<string, unknown>, speciesId?: string): SpeciesCriterion {
   const nested = asRecord(row.criteria ?? row.Criteria ?? row.conditions ?? row.Conditions);
+  /**
+   * A spawn rule written into the data and understood by nobody is worse than one that is missing:
+   * the species then looks like it *passed* a condition that was never applied. Four real rules were
+   * being dropped this way — see `conditionKeyAudit` — so say so.
+   *
+   * A warning rather than a throw: a commander with a hand-edited genus file should still get an
+   * app. `tests/conditionKeys.test.ts` is where this is an error.
+   */
+  const unknown = unrecognisedConditionKeys(nested);
+  if (unknown.length) {
+    console.warn(
+      `ED Exo Compare — ${speciesId ?? "species row"}: ignoring unknown condition key(s) ${unknown.join(", ")}. ` +
+        "Nothing in the matcher reads them, so the species is NOT being gated on them.",
+    );
+  }
   const merged: Record<string, unknown> = { ...row, ...(nested ?? {}) };
   return buildCriterionFromRecord(merged);
 }
@@ -739,7 +771,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
 
     const predictionUnsupported = detectPredictionUnsupported(r, id);
 
-    let criteria = buildCriteriaForRow(r);
+    let criteria = buildCriteriaForRow(r, id);
     if (!criteria.planetClassAnyOf?.length && genusPlanetTypes?.length) {
       criteria = {
         ...criteria,
