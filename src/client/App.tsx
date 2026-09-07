@@ -106,10 +106,7 @@ import {
   type TempUnit,
 } from "./planetDisplayUtils";
 import {
-  EXO_SIMILARITY_INDEX_HELP,
-  EXO_HABITAT_FIT_HELP,
   EXO_PRESENCE_HELP,
-  EXO_GENUS_RANK_HELP,
   EXO_CODEX_VS_EXO_PROFILE_HELP,
   exomasteryDetailHasContent,
   footCatalogBadgeText,
@@ -365,17 +362,24 @@ function GenusCertaintyLine({
   );
 }
 
+/**
+ * One bar, and it is the one that has been checked.
+ *
+ * This used to show four: "Chance here" beside habitat fit, deck match and a within-genus rank.
+ * The owner asked for the other three to go, and measuring them settled it — they feed **nothing**.
+ * "Chance here" is `presenceProbabilityPercent`, written by `attachPresenceProbability` from
+ * `rankSpeciesOnBody` -> `speciesLogScore`, which reads the exomastery profile, the scan, the
+ * exploration record and the host star. The three that were beside it were computed separately in
+ * this file and consumed by nobody: deleting them cannot move a prediction by a thousandth.
+ *
+ * What they cost was attention. They say how close this body is to the species' own average on
+ * scales nothing has calibrated, and they sat at equal width next to the one number with a
+ * reliability table behind it — measured on complete-label bodies, the 90-100 % bin comes in at
+ * 97.8 % and the 0-10 % bin at 8.9 %. Three uncalibrated bars beside one calibrated one invites
+ * exactly the wrong reading, which is why a "Chance here" under 5 % looked like a defect rather
+ * than what it is: an honest split across a lot of candidates.
+ */
 function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["matches"][0] }) {
-  const hq = m.exomasteryHabitatQuality;
-  const deck = m.exomasterySimilarityPercent;
-  const gr = m.exomasteryGenusRelativePercent;
-  const hasHq = hq != null && Number.isFinite(hq);
-  const hasDeck = deck != null && Number.isFinite(deck);
-  const hasGr = gr != null && Number.isFinite(gr);
-  const wh = hasHq ? Math.max(0, Math.min(100, hq)) : 0;
-  const wd = hasDeck ? Math.max(0, Math.min(100, deck)) : 0;
-  const wg = hasGr ? Math.max(0, Math.min(100, gr)) : 0;
-
   type SimCol = {
     key: string;
     shortLabel: string;
@@ -403,32 +407,6 @@ function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["matches"][
       barOpacity: 1,
       barExtraStyle: { filter: "hue-rotate(-35deg)" },
     });
-  if (hasHq)
-    cols.push({
-      key: "hq",
-      shortLabel: "Habitat fit",
-      help: EXO_HABITAT_FIT_HELP,
-      pct: wh,
-      barOpacity: 0.55,
-    });
-  if (hasDeck)
-    cols.push({
-      key: "deck",
-      shortLabel: "Deck match",
-      help: EXO_SIMILARITY_INDEX_HELP,
-      pct: wd,
-      barOpacity: 1,
-    });
-  if (hasGr)
-    cols.push({
-      key: "gr",
-      shortLabel: "vs same genus",
-      help: EXO_GENUS_RANK_HELP,
-      pct: wg,
-      barOpacity: 1,
-      barExtraStyle: { filter: "hue-rotate(25deg)" },
-    });
-
   if (cols.length === 0) {
     return (
       <div className="species-similarity-index-empty dim" style={{ fontSize: "0.72rem" }}>
@@ -914,14 +892,14 @@ const SpeciesCard = memo(function SpeciesCard({
             type="button"
             className="species-similarity-index species-similarity-index--clickable"
             onClick={() => setExoDetailOpen(true)}
-            title={`${EXO_HABITAT_FIT_HELP} · ${EXO_SIMILARITY_INDEX_HELP} · ${EXO_GENUS_RANK_HELP}`}
+            title={EXO_PRESENCE_HELP}
           >
             <SpeciesExomasterySimilarityContent m={m} />
           </button>
         ) : (
           <div
             className="species-similarity-index species-similarity-index--static"
-            title={`${EXO_HABITAT_FIT_HELP} Profile loaded; field breakdown empty — bars still show when scores exist.`}
+            title={`${EXO_PRESENCE_HELP} Profile loaded; field breakdown empty.`}
           >
             <SpeciesExomasterySimilarityContent m={m} />
           </div>
