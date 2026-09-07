@@ -16,7 +16,13 @@ import { speciesFileSlug } from "../feeder/profileBuilder.js";
 import { countHydratableSamplesSync } from "../feeder/samplePacks.js";
 import { join } from "node:path";
 import type { FeederStatusDTO, SpeciesDatabase } from "../shared/types.js";
-import { feederDataDir, feederDataDirExists, rawPlanetsDir } from "../feeder/paths.js";
+import {
+  configuredFeederDataDir,
+  feederDataDir,
+  feederDataDirCandidates,
+  feederDataDirExists,
+  rawPlanetsDir,
+} from "../feeder/paths.js";
 import { readFeederStatusSnapshot } from "../feeder/statusSnapshot.js";
 import { findSpeciesEntryForLabel } from "../feeder/install.js";
 import {
@@ -52,6 +58,8 @@ export function buildFeederStatus(projectRoot: string, db: SpeciesDatabase): Fee
     return {
       available: false,
       corpusDir: feederDataDir(),
+      configuredCorpusDir: configuredFeederDataDir(),
+      searchedDirs: feederDataDirCandidates(),
       snapshot: null,
       hydratedSpecies: 0,
       speciesRows: db.species.length,
@@ -136,6 +144,8 @@ export function buildFeederStatus(projectRoot: string, db: SpeciesDatabase): Fee
   return {
     available: true,
     corpusDir: feederDataDir(),
+    configuredCorpusDir: configuredFeederDataDir(),
+    searchedDirs: feederDataDirCandidates(),
     snapshot: snapshot
       ? {
           writtenAtIso: snapshot.writtenAtIso,

@@ -364,6 +364,16 @@ export interface FeederStatusDTO {
   available: boolean;
   corpusDir: string | null;
   /**
+   * The path the owner set in Options, or null when none is remembered.
+   *
+   * The two search locations are relative to `PROJECT_ROOT`, which in a packaged build is the
+   * install directory — so a corpus that lives beside the *repository* was unreachable and the
+   * feeder reported itself unavailable no matter what was on disk. This is the escape.
+   */
+  configuredCorpusDir: string | null;
+  /** Everywhere the app looked, in order, so an unavailable feeder can say why rather than just hide. */
+  searchedDirs: string[];
+  /**
    * Counts that need the feeder's SQLite store, taken from the snapshot its CLI writes rather than
    * by opening the store here — that would pull a WASM SQLite build into the shipped server.
    * Null until the feeder has run once on this machine.

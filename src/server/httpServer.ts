@@ -17,6 +17,7 @@ import type {
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { isJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { getProjectRoot, getSpeciesDataDir, getWebRoot } from "./paths.js";
+import { setConfiguredFeederDataDir } from "../feeder/paths.js";
 import { findGenusPhotosFolder, findGenusNotesFile } from "./speciesTreeLoader.js";
 import { perfBytes, perfCount, perfTime } from "./perf.js";
 import { createLanAuthGuard, requestIsAuthorized } from "./lanAuth.js";
@@ -547,6 +548,28 @@ export function createHttpServer(opts: {
       return;
     }
     const result = await opts.setJournalDirectory(dir.trim());
+    if (!result.ok) {
+      res.status(400).json({ ok: false, error: result.error ?? "Invalid folder." });
+      return;
+    }
+    opts.scheduleBroadcast?.();
+    res.json({ ok: true });
+  });
+
+  /**
+   * Where the feeder corpus lives, remembered across restarts.
+   *
+   * Needed because the two built-in search paths are relative to `PROJECT_ROOT`, which in a packaged
+   * build is the install directory — so a corpus kept beside the repository is unreachable and the
+   * feeder hides itself. Sending `null` forgets the path and falls back to the search.
+   */
+  app.post("/api/settings/feeder-data-directory", (req, res) => {
+    const raw = req.body?.feederDataDir;
+    if (raw !== null && typeof raw !== "string") {
+      res.status(400).json({ ok: false, error: 'JSON body must include string or null "feederDataDir".' });
+      return;
+    }
+    const result = setConfiguredFeederDataDir(raw);
     if (!result.ok) {
       res.status(400).json({ ok: false, error: result.error ?? "Invalid folder." });
       return;
