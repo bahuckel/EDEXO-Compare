@@ -605,6 +605,39 @@ export class FeederStore {
     return written;
   }
 
+  /**
+   * Write in-system `BodyID` and `body_id64` onto planet rows addressed by **name**.
+   *
+   * A Spansh route export names bodies; it does not know the corpus's own row ids. The corpus keys
+   * planets by `(system_id, norm_body)` already, so the join is the same one `applyCsvRows` uses to
+   * insert them, and a row the file mentions but the corpus has never seen is simply not there to
+   * update — the landmark rows create it first, so this runs after them.
+   *
+   * `COALESCE` for the same reason as {@link setBodyIdentity}: a second run is a no-op, and a later
+   * source cannot quietly replace an identity already established by an earlier one.
+   */
+  setBodyIdentityByName(
+    rows: { systemName: string; bodyName: string; bodyId: number; bodyId64: string | null }[],
+  ): number {
+    if (rows.length === 0) return 0;
+    let written = 0;
+    this.transaction(() => {
+      for (const r of rows) {
+        runExec(
+          this.db,
+          `UPDATE planets
+              SET body_id = COALESCE(body_id, ?),
+                  body_id64 = COALESCE(body_id64, ?)
+            WHERE norm_body = ?
+              AND system_id = (SELECT id FROM systems WHERE norm_name = ?)`,
+          [r.bodyId, r.bodyId64, normBody(r.bodyName), normSystem(r.systemName)],
+        );
+        written += this.db.getRowsModified();
+      }
+    });
+    return written;
+  }
+
   /** Write EDSM's small integer system id. `id64` stays NULL — it is Phase 2's, and re-collected. */
   setSystemEdsmIds(rows: { normSystem: string; edsmId: number }[]): number {
     if (rows.length === 0) return 0;

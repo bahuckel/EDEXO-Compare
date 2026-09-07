@@ -27,8 +27,16 @@
  * Nothing here creates directories; {@link feederDataDirExists} lets a caller find out whether there
  * is a corpus at all before offering to do anything with it.
  */
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import { getProjectRoot, resolveUserSettingsJsonPath } from "../server/paths.js";
 
 /**
@@ -135,6 +143,54 @@ export function setFeederDataDirForTests(dir: string | null): void {
 
 export function feederDataDirExists(): boolean {
   return existsSync(feederDataDir());
+}
+
+/**
+ * Where the app files Spansh route exports it cannot ingest itself.
+ *
+ * The packaged build has no `node_modules` and therefore no `sql.js`, so it can parse a route export
+ * and describe it but cannot write a row to the corpus. Rather than pretend otherwise, the app drops
+ * the file here and `npm run feeder -- import` drains it. That also answers the owner's own question
+ * about whether to use a button or a drop folder: it is both, and the button is the tidier way to put
+ * a file in the folder.
+ */
+export function feederInboxDir(): string {
+  return join(feederDataDir(), "inbox");
+}
+
+/** Files already imported, kept rather than deleted so a bad run can be repeated. */
+export function feederInboxArchiveDir(): string {
+  return join(feederInboxDir(), "imported");
+}
+
+/**
+ * Queued exports, oldest first, so a run of them lands in the order they were fed.
+ *
+ * Ordered by the timestamp in the filename rather than by mtime: copying a file can reset mtime, and
+ * the name is written by the app at the moment it accepted the upload.
+ */
+export function listFeederInboxFiles(): string[] {
+  const dir = feederInboxDir();
+  if (!existsSync(dir)) return [];
+  try {
+    return readdirSync(dir)
+      .filter((n) => /\.(json|csv)$/i.test(n))
+      .sort()
+      .map((n) => join(dir, n));
+  } catch {
+    return [];
+  }
+}
+
+/** Move a drained file aside. Failure is not fatal: a re-import is a no-op, not a corruption. */
+export function archiveFeederInboxFile(filePath: string): void {
+  try {
+    const dest = feederInboxArchiveDir();
+    mkdirSync(dest, { recursive: true });
+    renameSync(filePath, join(dest, basename(filePath)));
+  } catch {
+    /* leave it queued rather than lose it */
+  }
 }
 
 /** Cached EDSM system responses, one file per system. */

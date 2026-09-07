@@ -34,7 +34,14 @@ import {
   loadExomasteryProfile,
   maxExomasteryProfileSampleCount,
 } from "../src/server/exomasteryProfile.js";
-import { feederDataDir, feederDataDirExists, rawPlanetsDir } from "../src/feeder/paths.js";
+import {
+  archiveFeederInboxFile,
+  feederDataDir,
+  feederDataDirExists,
+  feederInboxDir,
+  listFeederInboxFiles,
+  rawPlanetsDir,
+} from "../src/feeder/paths.js";
 import {
   analyseAndInstallSpecies,
   formatRunReport,
@@ -200,38 +207,59 @@ provenance       ${withProv.length} profile(s) carry an input hash
 
 async function cmdImport(): Promise<void> {
   requireCorpus();
-  const csv = positional[0];
-  if (!csv) {
-    console.error("Usage: npm run feeder -- import <file.csv>");
+  /**
+   * With no argument, drain the inbox the app writes into.
+   *
+   * The packaged app cannot write to the corpus itself: `sql.js` is a devDependency and ships in
+   * no build, so the "Feed Spansh route" button parses the file, reports what is in it, and files
+   * it here. Oldest first, so a run of exports lands in the order they were fed.
+   */
+  const explicit = positional[0];
+  const queued = explicit ? [] : listFeederInboxFiles();
+  if (!explicit && queued.length === 0) {
+    console.error("Usage: npm run feeder -- import <route.json|route.csv>");
+    console.error(`Nothing queued in ${feederInboxDir()} either.`);
     process.exit(1);
   }
-  const csvPath = path.resolve(csv);
-  if (!existsSync(csvPath)) {
-    console.error(`No such file: ${csvPath}`);
-    process.exit(1);
+  const paths = explicit ? [path.resolve(explicit)] : queued;
+  for (const candidate of paths) {
+    if (!existsSync(candidate)) {
+      console.error(`No such file: ${candidate}`);
+      process.exit(1);
+    }
   }
 
   const db = loadSpeciesDatabaseFromTree(root);
   const ctx = await openFeeder();
-  const r = await importCsv(ctx, csvPath);
+  const touchedAll = new Set<string>();
 
-  console.log(`\nimported ${r.rowsInFile} rows from ${path.basename(csvPath)}`);
-  console.log(`  species in corpus   ${r.speciesTotal}`);
-  console.log(`  new species         ${r.newSpeciesLabels.length}`);
-  console.log(`  new occurrences     ${r.newOccurrences}`);
-  console.log(`  species to refresh  ${r.touchedSpecies.length}`);
-  if (r.newSpeciesLabels.length) console.log(`  new: ${r.newSpeciesLabels.join(", ")}`);
+  for (const filePath of paths) {
+    const r = await importCsv(ctx, filePath);
+    console.log(`\nimported ${r.rowsInFile} rows from ${path.basename(filePath)} (${r.format})`);
+    console.log(`  species in corpus   ${r.speciesTotal}`);
+    console.log(`  new species         ${r.newSpeciesLabels.length}`);
+    console.log(`  new occurrences     ${r.newOccurrences}`);
+    console.log(`  species to refresh  ${r.touchedSpecies.length}`);
+    // Only the JSON export can fill these two; the CSV has no column for either.
+    console.log(`  systems placed      ${r.coordsApplied}`);
+    console.log(`  bodies identified   ${r.identitiesApplied}`);
+    if (r.newSpeciesLabels.length) console.log(`  new: ${r.newSpeciesLabels.join(", ")}`);
+    for (const w of r.warnings) console.log(`  note: ${w}`);
+    for (const t of r.touchedSpecies) touchedAll.add(t);
+    if (!explicit) archiveFeederInboxFile(filePath);
+  }
+  const touched = [...touchedAll].sort();
 
   recordStatusSnapshot(ctx, "import");
   refreshCooccurrence(ctx);
 
-  if (r.touchedSpecies.length === 0) {
+  if (touched.length === 0) {
     console.log("\nNothing gained occurrences — no rebuild needed.");
     return;
   }
 
   console.log("");
-  const report = await runPipeline(ctx, db, r.touchedSpecies, { allowDowngrade, onProgress: log });
+  const report = await runPipeline(ctx, db, touched, { allowDowngrade, onProgress: log });
   finish(report);
 }
 

@@ -19,7 +19,8 @@ import { access, mkdir, readFile, readdir, unlink, writeFile } from "node:fs/pro
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import type { SpeciesDatabase } from "../shared/types.js";
-import { countIndexGrowth, parseSpanshExobiologyCsv, type SpeciesIndexEntry } from "./csvImport.js";
+import { countIndexGrowth, type SpeciesIndexEntry } from "./csvImport.js";
+import { parseSpanshRouteFile } from "./spanshRouteFile.js";
 import { openFeederStore, type FeederStore } from "./feederDb.js";
 import {
   extractPlanetContext,
@@ -113,6 +114,8 @@ export function recordStatusSnapshot(ctx: FeederContext, lastCommand: string): v
 }
 
 export interface ImportResult {
+  /** Which export format the file turned out to be, decided by content rather than extension. */
+  format: "csv" | "json";
   rowsInFile: number;
   speciesTotal: number;
   cumulativeCsvRows: number;
@@ -121,20 +124,62 @@ export interface ImportResult {
   newOccurrences: number;
   /** Species labels whose occurrence list grew — exactly what needs re-hydrating. */
   touchedSpecies: string[];
+  /** Systems the file could place, which the CSV format never can. */
+  coordsApplied: number;
+  /** Bodies given an in-system `BodyID` from the id64 pair, so they need no EDSM lookup. */
+  identitiesApplied: number;
+  warnings: string[];
 }
 
-/** The one manual step: a Spansh exobiology CSV. Everything else follows from what it changed. */
+/**
+ * The one manual step: a Spansh exobiology route export, as CSV or as JSON.
+ *
+ * **Feed the JSON when you have it.** Both formats carry the same landmark rows — verified on the
+ * owner's two routes, 342 rows each with zero difference in either direction — but the JSON also
+ * carries the system's coordinates and `id64` and every body's `id64`, which the CSV has no column
+ * for. On the same two files that is coordinates for 260 of 260 systems and an in-system `BodyID`
+ * for **all 326 bodies**, none of which then needs an EDSM round trip to place. See
+ * `spanshRouteFile.ts` for how the body id falls out of the id64 pair.
+ */
 export async function importCsv(ctx: FeederContext, csvPath: string): Promise<ImportResult> {
   const text = await readFile(csvPath, "utf8");
-  const rows = parseSpanshExobiologyCsv(text);
+  const file = parseSpanshRouteFile(text);
+  const rows = file.rows;
   if (rows.length === 0) {
     throw new Error(
-      "No usable rows — the CSV needs System Name, Body Name and Landmark Subtype columns with values.",
+      "No usable rows — the export needs a system name, a body name and a landmark for each row.",
     );
   }
 
   const before = structuredClone(ctx.speciesIndex);
   ctx.store.applyCsvRows(rows);
+
+  /**
+   * Everything the JSON knows that the CSV cannot express, applied while we have it.
+   *
+   * Coordinates place a system for the spatial gates and the sector map, and the body id is what
+   * ties a corpus row to a journal scan. Both were previously filled by a separate pass over EDSM;
+   * a route export that already carries them makes that pass smaller by exactly this much.
+   */
+  let coordsApplied = 0;
+  let identitiesApplied = 0;
+  if (file.systems.length > 0) {
+    coordsApplied = ctx.store.setSystemCoords(
+      file.systems.map((sys) => ({ name: sys.name, x: sys.x, y: sys.y, z: sys.z })),
+    );
+  }
+  const identifiable = file.bodies.filter((b) => b.bodyId != null);
+  if (identifiable.length > 0) {
+    identitiesApplied = ctx.store.setBodyIdentityByName(
+      identifiable.map((b) => ({
+        systemName: b.systemName,
+        bodyName: b.bodyName,
+        bodyId: b.bodyId!,
+        bodyId64: b.bodyId64,
+      })),
+    );
+  }
+
   ctx.speciesIndex = ctx.store.rebuildSpeciesIndex();
   ctx.cumulativeCsvRows = ctx.store.getCumulativeCsvRows();
   await saveIndexMirror(ctx);
@@ -151,12 +196,16 @@ export async function importCsv(ctx: FeederContext, csvPath: string): Promise<Im
   }
 
   return {
+    format: file.format,
     rowsInFile: rows.length,
     speciesTotal: Object.keys(ctx.speciesIndex).length,
     cumulativeCsvRows: ctx.cumulativeCsvRows,
     newSpeciesLabels: newLabels.sort(),
     newOccurrences: growth.newOccurrences,
     touchedSpecies: touched.sort(),
+    coordsApplied,
+    identitiesApplied,
+    warnings: file.warnings,
   };
 }
 

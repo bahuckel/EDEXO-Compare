@@ -9563,3 +9563,15 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 /* The galaxy-map entry is an anchor, not a button, so it needs the button's own box back. */
 a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: center;
   text-decoration: none; color: inherit; }
+
+/* Summary of a queued Spansh route export — see FeederRouteImport. */
+.feeder-route-summary {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--accent-a15);
+  border-radius: 4px;
+}
+
+.feeder-route-summary code {
+  word-break: break-all;
+}

@@ -1,7 +1,7 @@
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { promises as fsp } from "node:fs";
 import { gzip as gzipCb } from "node:zlib";
 import express from "express";
@@ -17,7 +17,8 @@ import type {
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { isJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { getProjectRoot, getSpeciesDataDir, getWebRoot } from "./paths.js";
-import { setConfiguredFeederDataDir } from "../feeder/paths.js";
+import { feederDataDirExists, feederInboxDir, setConfiguredFeederDataDir } from "../feeder/paths.js";
+import { parseSpanshRouteFile, summariseSpanshRouteFile } from "../feeder/spanshRouteFile.js";
 import { findGenusPhotosFolder, findGenusNotesFile } from "./speciesTreeLoader.js";
 import { perfBytes, perfCount, perfTime } from "./perf.js";
 import { createLanAuthGuard, requestIsAuthorized } from "./lanAuth.js";
@@ -176,6 +177,16 @@ export function createHttpServer(opts: {
   const lanKey = opts.lanKey ?? null;
   app.use(createLanAuthGuard(lanKey));
 
+  /**
+   * A route export needs more room than everything else combined.
+   *
+   * The global limit below is 48 kB, which is right for every other endpoint and far too small for a
+   * Spansh export: the owner's two are 136 kB and 145 kB, and a longer route is bigger again. This
+   * must be mounted *before* the global parser, because express.json rejects an oversized body where
+   * it is mounted and a later, larger parser never sees the request. Bounded at 8 MB, and scoped to
+   * the one path: the galaxy dump is read from disk by the CLI and never travels through here.
+   */
+  app.use("/api/feeder/import", express.json({ limit: "8mb" }));
   app.use(express.json({ limit: "48kb" }));
 
   app.get("/photos/__builtin_placeholder.svg", (_req, res) => {
@@ -563,6 +574,54 @@ export function createHttpServer(opts: {
    * build is the install directory — so a corpus kept beside the repository is unreachable and the
    * feeder hides itself. Sending `null` forgets the path and falls back to the search.
    */
+  /**
+   * Accept a Spansh exobiology route export and queue it for the feeder.
+   *
+   * The file is parsed here so the panel can say what is in it immediately, and then written to the
+   * corpus inbox rather than imported: the packaged app has no `sql.js` and cannot write a row to
+   * the corpus. `npm run feeder -- import` drains the inbox.
+   *
+   * A route export is a few hundred kilobytes, so it arrives as text in the JSON body rather than as
+   * a multipart upload, which would mean a new dependency for one endpoint.
+   */
+  app.post("/api/feeder/import", (req, res) => {
+    const text = req.body?.text;
+    const name = typeof req.body?.filename === "string" ? req.body.filename : "route";
+    if (typeof text !== "string" || !text.trim()) {
+      res.status(400).json({ ok: false, error: 'JSON body must include a non-empty string "text".' });
+      return;
+    }
+    if (!feederDataDirExists()) {
+      res.status(409).json({ ok: false, error: "No corpus on this machine. Set its folder in Options first." });
+      return;
+    }
+    let summary;
+    try {
+      summary = summariseSpanshRouteFile(parseSpanshRouteFile(text));
+    } catch (e) {
+      res.status(400).json({ ok: false, error: e instanceof Error ? e.message : "Could not read that file." });
+      return;
+    }
+    if (summary.rows === 0) {
+      res.status(400).json({ ok: false, error: "No landmark rows in that file." });
+      return;
+    }
+    try {
+      const dir = feederInboxDir();
+      mkdirSync(dir, { recursive: true });
+      // Timestamp first so the inbox drains oldest-first by name, and the original name is kept so
+      // the owner can tell two routes apart.
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const safe = name.replace(/[^A-Za-z0-9._-]+/g, "_").slice(-80) || "route";
+      const ext = summary.format === "json" ? "json" : "csv";
+      const file = path.join(dir, `${stamp}__${safe.replace(/\.(json|csv)$/i, "")}.${ext}`);
+      writeFileSync(file, text, "utf8");
+      res.json({ ok: true, queuedAs: file, summary });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e instanceof Error ? e.message : "Could not queue the file." });
+    }
+  });
+
   app.post("/api/settings/feeder-data-directory", (req, res) => {
     const raw = req.body?.feederDataDir;
     if (raw !== null && typeof raw !== "string") {
