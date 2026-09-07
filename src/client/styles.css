@@ -9500,3 +9500,12 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   display: block; margin: 6px 0; }
 .sector-systems circle { cursor: default; }
 .galaxy-map__plot circle { cursor: pointer; }
+
+/* Body list inside a system (Phase 10 step 5) — history, so it reads as a list not a forecast. */
+.sector-systems__bodies { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px;
+  max-height: 240px; overflow-y: auto; }
+.sector-systems__bodies li { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 10px;
+  font-size: 0.8rem; padding: 2px 0; border-bottom: 1px solid #161b22; }
+.sector-systems__bodies li:last-child { border-bottom: none; }
+.sector-systems__bodies strong { font-weight: 600; opacity: 0.92; }
+.sector-systems__bodies span { opacity: 0.72; }

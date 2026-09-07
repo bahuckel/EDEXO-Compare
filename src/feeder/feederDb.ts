@@ -841,11 +841,13 @@ export class FeederStore {
     y: number;
     z: number;
     bodyKey: string;
+    bodyName: string;
     speciesLabel: string;
   }[] {
-    return queryAll<[string, string, number, number, number, number, string]>(
+    return queryAll<[string, string, number, number, number, number, string, string]>(
       this.db,
-      `SELECT COALESCE(s.id64, CAST(s.id AS TEXT)), s.display_name, s.x, s.y, s.z, p.id, sg.species_label
+      `SELECT COALESCE(s.id64, CAST(s.id AS TEXT)), s.display_name, s.x, s.y, s.z,
+              p.id, p.display_body, sg.species_label
          FROM sightings sg
          JOIN planets p ON p.id = sg.planet_id
          JOIN systems s ON s.id = p.system_id
@@ -858,7 +860,8 @@ export class FeederStore {
       y: r[3],
       z: r[4],
       bodyKey: `${r[0]}:${r[5]}`,
-      speciesLabel: r[6],
+      bodyName: r[6],
+      speciesLabel: r[7],
     }));
   }
 
@@ -868,12 +871,13 @@ export class FeederStore {
     y: number;
     z: number;
     bodyKey: string;
+    bodyName: string | null;
     genuses: string[];
     bioSignalCount: number | null;
   }[] {
-    return queryAll<[number, number, number, string, number, string | null, number | null]>(
+    return queryAll<[number, number, number, string, number, string | null, number | null, string | null]>(
       this.db,
-      `SELECT x, y, z, system_id64, body_id, genuses, bio_signal_count
+      `SELECT x, y, z, system_id64, body_id, genuses, bio_signal_count, body_name
          FROM eddn_bodies
         WHERE x IS NOT NULL AND y IS NOT NULL AND z IS NOT NULL`,
       [],
@@ -887,7 +891,15 @@ export class FeederStore {
           // A malformed genus list is one lost marker, not a lost run.
         }
       }
-      return { x: r[0], y: r[1], z: r[2], bodyKey: `${r[3]}:${r[4]}`, genuses, bioSignalCount: r[6] };
+      return {
+        x: r[0],
+        y: r[1],
+        z: r[2],
+        bodyKey: `${r[3]}:${r[4]}`,
+        bodyName: r[7],
+        genuses,
+        bioSignalCount: r[6],
+      };
     });
   }
 

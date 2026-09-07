@@ -28,7 +28,12 @@ import {
   type SectorAggregateEntry,
 } from "../shared/sectorAggregate.js";
 import { sectorCellFromCoords, sectorCellKey, type SectorCell } from "../shared/sectorName.js";
-import type { SectorMapFile, SectorSystem, SectorSystemsFile } from "../shared/sectorMapFile.js";
+import type {
+  SectorMapFile,
+  SectorSystem,
+  SectorSystemBody,
+  SectorSystemsFile,
+} from "../shared/sectorMapFile.js";
 import type { FeederStore } from "./feederDb.js";
 
 /**
@@ -225,6 +230,8 @@ export function buildSectorSystems(store: FeederStore): SectorSystemsFile {
     y: number;
     z: number;
     taxa: Map<string, { confirmed: Set<string>; genus: Set<string>; signal: Set<string> }>;
+    /** bodyKey → what is known about that body, for the step-5 list. */
+    bodies: Map<string, { name: string; species: Set<string>; genuses: Set<string>; signal: number }>;
   };
   const systems = new Map<string, Acc>();
 
@@ -240,10 +247,17 @@ export function buildSectorSystems(store: FeederStore): SectorSystemsFile {
   for (const r of store.sightingSystems()) {
     let acc = systems.get(r.systemKey);
     if (!acc) {
-      acc = { name: r.systemName, x: r.x, y: r.y, z: r.z, taxa: new Map() };
+      acc = { name: r.systemName, x: r.x, y: r.y, z: r.z, taxa: new Map(), bodies: new Map() };
       systems.set(r.systemKey, acc);
     }
-    bucket(acc, taxonFromSpeciesLabel(r.speciesLabel)).confirmed.add(r.bodyKey);
+    const taxon = taxonFromSpeciesLabel(r.speciesLabel);
+    bucket(acc, taxon).confirmed.add(r.bodyKey);
+    let body = acc.bodies.get(r.bodyKey);
+    if (!body) {
+      body = { name: r.bodyName, species: new Set(), genuses: new Set(), signal: 0 };
+      acc.bodies.set(r.bodyKey, body);
+    }
+    body.species.add(taxon);
   }
 
   for (const b of store.eddnBodyPositions()) {
@@ -252,13 +266,25 @@ export function buildSectorSystems(store: FeederStore): SectorSystemsFile {
     if (!acc) {
       // EDDN carries the system name on the body row; the register is the only source for systems
       // the corpus has never seen.
-      acc = { name: systemKey, x: b.x, y: b.y, z: b.z, taxa: new Map() };
+      acc = { name: systemKey, x: b.x, y: b.y, z: b.z, taxa: new Map(), bodies: new Map() };
       systems.set(systemKey, acc);
     }
+    let body = acc.bodies.get(b.bodyKey);
+    if (!body) {
+      // EDDN gives a body name; the register keeps it, and it is the only name a system the corpus
+      // has never seen will ever have.
+      body = { name: b.bodyName ?? b.bodyKey, species: new Set(), genuses: new Set(), signal: 0 };
+      acc.bodies.set(b.bodyKey, body);
+    }
     if (b.genuses.length > 0) {
-      for (const g of b.genuses) bucket(acc, genusKeyFromCodex(g)).genus.add(b.bodyKey);
+      for (const g of b.genuses) {
+        const key = genusKeyFromCodex(g);
+        bucket(acc, key).genus.add(b.bodyKey);
+        body.genuses.add(key);
+      }
     } else if ((b.bioSignalCount ?? 0) > 0) {
       bucket(acc, "*").signal.add(b.bodyKey);
+      body.signal = b.bioSignalCount ?? 0;
     }
   }
 
@@ -275,8 +301,21 @@ export function buildSectorSystems(store: FeederStore): SectorSystemsFile {
       taxa[taxon] = [confirmed, genus, signal, 0];
     }
     if (Object.keys(taxa).length === 0) continue;
+
+    const bodies: SectorSystemBody[] = [...acc.bodies.values()]
+      .map((b) => ({
+        name: b.name,
+        species: [...b.species].sort(),
+        // A genus already settled to a species on this body adds nothing — drop it rather than show
+        // "Bacterium" beside "Bacterium aurasus".
+        genuses: [...b.genuses].filter((g) => ![...b.species].some((sp) => sp.startsWith(g))).sort(),
+        signal: b.signal,
+      }))
+      .filter((b) => b.species.length > 0 || b.genuses.length > 0 || b.signal > 0)
+      .sort((a, b) => b.species.length - a.species.length || a.name.localeCompare(b.name));
+
     const cellKey = sectorCellKey(sectorCellFromCoords(acc.x, acc.y, acc.z));
-    (cells[cellKey] ??= []).push({ key, name: acc.name, x: acc.x, y: acc.y, z: acc.z, taxa });
+    (cells[cellKey] ??= []).push({ key, name: acc.name, x: acc.x, y: acc.y, z: acc.z, taxa, bodies });
   }
 
   // Densest first, so a truncated view still shows the systems worth flying to.

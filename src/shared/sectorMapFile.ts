@@ -86,6 +86,26 @@ export interface SectorSystem {
   z: number;
   /** Species label or genus key → packed counts, same layout as {@link SectorMapCell}. */
   taxa: Record<string, PackedCounts>;
+  /** The bodies behind those counts — the last rung of the drill-down (step 5). */
+  bodies: SectorSystemBody[];
+}
+
+/**
+ * One body, and what is known to grow on it.
+ *
+ * This is **history, not prediction**. The app's own panel offers *candidate* species for the system
+ * the commander is standing in, scored from a live scan; nothing here can do that for a system on
+ * the other side of the galaxy, because there is no scan to score. So a body lists what was actually
+ * found — and says which of the three kinds of evidence found it — rather than guessing.
+ */
+export interface SectorSystemBody {
+  name: string;
+  /** Species confirmed on this body. */
+  species: string[];
+  /** Genus known, species not — from `SAASignalsFound` / Spansh `genuses`. */
+  genuses: string[];
+  /** Biological signals with nothing identified, when that is all we have. */
+  signal: number;
 }
 
 /**

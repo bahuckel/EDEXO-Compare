@@ -331,12 +331,15 @@ function SectorSystems({
   const [systems, setSystems] = useState<SectorSystem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hover, setHover] = useState<SectorSystem | null>(null);
+  /** Clicking pins a system so the body list survives the mouse leaving the dot. */
+  const [pinned, setPinned] = useState<SectorSystem | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setSystems(null);
     setError(null);
     setHover(null);
+    setPinned(null);
     fetch(`/api/sector-systems?cell=${encodeURIComponent(cell.key)}`)
       .then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -416,40 +419,79 @@ function SectorSystems({
                   strokeWidth={hover?.key === system.key ? 1.5 : 0}
                   onMouseEnter={() => setHover(system)}
                   onMouseLeave={() => setHover(null)}
+                  onClick={() => setPinned(system)}
+                  style={{ cursor: "pointer" }}
                 >
                   <title>{`${system.name} — ${totals.bodies} bodies`}</title>
                 </circle>
               );
             })}
           </svg>
-          <SystemReadout system={hover} taxon={taxon} />
+          <SystemReadout system={hover ?? pinned} taxon={taxon} pinned={pinned !== null && !hover} />
         </>
       ) : null}
     </section>
   );
 }
 
-/** What one system holds — the last rung before the app's own body panel. */
-function SystemReadout({ system, taxon }: { system: SectorSystem | null; taxon: string }) {
+/**
+ * What one system holds, body by body — INCLUDE-BODY-IDS Phase 10, step 5.
+ *
+ * **This is history, not prediction, and the wording says so.** The app's own panel offers *candidate*
+ * species for the system the commander is standing in, scored from a live scan. Nothing here can do
+ * that for a system on the other side of the galaxy, because there is no scan to score — so a body
+ * lists what was actually found and which kind of evidence found it. Presenting it as a forecast
+ * would be inventing the one thing the map is not entitled to claim.
+ */
+function SystemReadout({
+  system,
+  taxon,
+  pinned,
+}: {
+  system: SectorSystem | null;
+  taxon: string;
+  pinned: boolean;
+}) {
   if (!system) {
-    return <p className="galaxy-map__readout galaxy-map__readout--empty">Hover a system.</p>;
+    return (
+      <p className="galaxy-map__readout galaxy-map__readout--empty">
+        Hover a system for its bodies, or click one to keep it open.
+      </p>
+    );
   }
-  const rows = Object.entries(system.taxa)
-    .filter(([t]) => !taxon || t === taxon)
-    .map(([t, v]) => ({ taxon: t, n: (v[0] ?? 0) + (v[1] ?? 0) + (v[2] ?? 0) }))
-    .sort((a, b) => b.n - a.n);
+
+  const bodies = (system.bodies ?? []).filter(
+    (b) => !taxon || b.species.includes(taxon) || b.genuses.includes(taxon) || taxon === "*",
+  );
 
   return (
     <div className="galaxy-map__readout">
-      <h4>{system.name}</h4>
-      <ul>
-        {rows.map((r) => (
-          <li key={r.taxon}>
-            <span>{r.taxon === "*" ? "biology, unidentified" : r.taxon}</span>
-            <span>{r.n}</span>
+      <h4>
+        {system.name}
+        {pinned ? <span className="galaxy-map__cellkey"> pinned — click another to change</span> : null}
+      </h4>
+      <p>
+        {bodies.length} bod{bodies.length === 1 ? "y" : "ies"} with something recorded · found, not
+        predicted
+      </p>
+      <ul className="sector-systems__bodies">
+        {bodies.map((b) => (
+          <li key={b.name}>
+            <strong>{b.name}</strong>
+            <span>
+              {b.species.length > 0 ? b.species.join(", ") : null}
+              {b.species.length > 0 && b.genuses.length > 0 ? " · " : null}
+              {b.genuses.length > 0 ? `${b.genuses.join(", ")} (genus only)` : null}
+              {b.species.length === 0 && b.genuses.length === 0 && b.signal > 0
+                ? `${b.signal} biological signal${b.signal === 1 ? "" : "s"}, nothing identified`
+                : null}
+            </span>
           </li>
         ))}
       </ul>
+      {bodies.length === 0 ? (
+        <p className="galaxy-map__more">No bodies here match that selection.</p>
+      ) : null}
     </div>
   );
 }

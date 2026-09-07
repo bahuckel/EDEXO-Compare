@@ -139,6 +139,47 @@ describe("per-sector systems", () => {
     expect(Object.keys(buildSectorSystems(ctx.store).cells)).toHaveLength(0);
   });
 
+  /**
+   * Step 5: the bodies behind a system's counts. This is **history**, not prediction — the app's own
+   * panel scores candidates from a live scan, and there is no scan for a system across the galaxy.
+   */
+  it("lists the bodies and what was found on each", async () => {
+    await seed(
+      [
+        "Alpha,Alpha 1 a,Rocky body,100,Osseus Discus,19010000,1",
+        "Alpha,Alpha 1 a,Rocky body,100,Bacterium Aurasus,19010000,1",
+        "Alpha,Alpha 2 b,Rocky body,100,Frutexa Acus,19010000,1",
+      ],
+      [{ name: "Alpha", x: 0, y: 0, z: 0 }],
+    );
+    const sys = buildSectorSystems(ctx.store).cells[sectorCellKey(sectorCellFromCoords(0, 0, 0))]![0]!;
+    expect(sys.bodies).toHaveLength(2);
+    // Densest body first, so a truncated list still shows the one worth flying to.
+    expect(sys.bodies[0]!.name).toBe("Alpha 1 a");
+    expect(sys.bodies[0]!.species).toEqual(["bacterium aurasus", "osseus discus"]);
+    expect(sys.bodies[1]!.species).toEqual(["frutexa acus"]);
+  });
+
+  it("does not repeat a genus beside the species it already resolved to", async () => {
+    // A body with a confirmed Bacterium species should not also advertise the bare genus.
+    await seed(
+      ["Alpha,Alpha 1 a,Rocky body,100,Bacterium Aurasus,19010000,1"],
+      [{ name: "Alpha", x: 0, y: 0, z: 0 }],
+    );
+    const sys = buildSectorSystems(ctx.store).cells[sectorCellKey(sectorCellFromCoords(0, 0, 0))]![0]!;
+    expect(sys.bodies[0]!.species).toEqual(["bacterium aurasus"]);
+    expect(sys.bodies[0]!.genuses).toEqual([]);
+  });
+
+  it("drops a body with nothing recorded rather than listing it empty", async () => {
+    await seed(
+      ["Alpha,Alpha 1 a,Rocky body,100,Osseus Discus,19010000,1"],
+      [{ name: "Alpha", x: 0, y: 0, z: 0 }],
+    );
+    const sys = buildSectorSystems(ctx.store).cells[sectorCellKey(sectorCellFromCoords(0, 0, 0))]![0]!;
+    expect(sys.bodies.every((b) => b.species.length + b.genuses.length + b.signal > 0)).toBe(true);
+  });
+
   it("writes the file and reports its size", async () => {
     await seed(
       ["Alpha,Alpha 1 a,Rocky body,100,Osseus Discus,19010000,1"],
