@@ -3,8 +3,9 @@ import { dirname, join } from "node:path";
 import initSqlJs, { type Database, type SqlValue } from "sql.js";
 import { genusFromLandmark, occurrenceKey, type SpeciesIndexEntry, type SpanshExoRow } from "./csvImport.js";
 import { PROJECT_ROOT } from "./paths.js";
+import type { ClaimOrigin } from "../shared/provenance.js";
 
-const SCHEMA_VER = 3;
+const SCHEMA_VER = 4;
 const META_CUMULATIVE = "cumulative_csv_rows";
 const META_SCHEMA = "schema_ver";
 
@@ -175,6 +176,37 @@ function migrateSchema(db: Database): void {
   if (!systemCols.has("id64")) db.run("ALTER TABLE systems ADD COLUMN id64 TEXT");
   if (!systemCols.has("edsm_id")) db.run("ALTER TABLE systems ADD COLUMN edsm_id INTEGER");
   db.exec("CREATE INDEX IF NOT EXISTS idx_planets_body_id ON planets(system_id, body_id)");
+
+  /**
+   * Who said so, schema 4 — see `../shared/provenance.ts` for the vocabulary and the reasoning.
+   *
+   * The corpus already recorded **how strong** each claim is: every row in `sightings` is a species
+   * identification, which `sectorMapData` counts as `confirmed`. What it never recorded is **who
+   * made it**, so 47,983 rows arrived indistinguishable — a Spansh export, a live EDDN upload and
+   * the owner's own scan all looked identical once stored.
+   *
+   * Two columns, not one, because a row is two claims from two sources:
+   *
+   *   `sightings.claim_origin`     who says this species grows on this body
+   *   `planets.body_data_origin`   who supplied that body's gravity, temperature and atmosphere
+   *
+   * They are usually different, and the tempting shortcut is wrong. 79.5 % of sightings sit on a
+   * planet with an `edsm_id`, but reading that as "EDSM identified this species" would misattribute
+   * most of the corpus: EDSM's bodies endpoint returns **no** biological signals — measured this
+   * session as 0 of 1,444 planet records, with the `signals` key absent entirely. EDSM hydrated the
+   * body; the Exomastery CSV made the claim.
+   *
+   * That asymmetry is why only one is backfillable. `body_data_origin` is recoverable from columns
+   * already present; `claim_origin` is not, and a row imported before this existed is written
+   * `unknown` rather than guessed. `unknown` is a real answer — the corpus genuinely does not know —
+   * and it is deliberately not the same as a NULL that might mean "not yet migrated".
+   */
+  const sightingCols = new Set(
+    queryAll<SqlValue[]>(db, "PRAGMA table_info(sightings)", []).map((r) => String(r[1])),
+  );
+  if (!sightingCols.has("claim_origin")) db.run("ALTER TABLE sightings ADD COLUMN claim_origin TEXT");
+  if (!planetCols.has("body_data_origin")) db.run("ALTER TABLE planets ADD COLUMN body_data_origin TEXT");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_sightings_claim_origin ON sightings(claim_origin)");
 
   /**
    * The constraint that replaces name matching: one row per physical body.
@@ -390,6 +422,9 @@ export class FeederStore {
         );
 
         for (const occ of entry.occurrences) {
+          // Restoring a legacy index: the file predates origin tracking and carries no feed, so
+          // these rows stay `unknown`. Guessing "exomastery" here would be the most likely answer
+          // and still a fabrication, on the largest block of rows in the corpus.
           this.upsertSightingRow(
             occ.systemName,
             occ.bodyName,
@@ -398,6 +433,7 @@ export class FeederStore {
             speciesLabel,
             entry.genus,
             occ.count ?? null,
+            "unknown",
           );
         }
       }
@@ -454,7 +490,11 @@ export class FeederStore {
     return rebuilt;
   }
 
-  applyCsvRows(rows: SpanshExoRow[]): void {
+  /**
+   * @param claimOrigin which feed these rows came from. Defaults to `unknown` so an older caller
+   * cannot silently mislabel a whole import as Exomastery when it was a route export.
+   */
+  applyCsvRows(rows: SpanshExoRow[], claimOrigin: ClaimOrigin = "unknown"): void {
     if (rows.length === 0) return;
     this.transaction(() => {
       this.setCumulativeCsvRows(this.getCumulativeCsvRows() + rows.length);
@@ -477,6 +517,7 @@ export class FeederStore {
           label,
           genus,
           row.count,
+          claimOrigin,
         );
       }
     });
@@ -524,6 +565,9 @@ export class FeederStore {
     return row[0];
   }
 
+  /**
+   * @param claimOrigin who is asserting this species is on this body. See `shared/provenance.ts`.
+   */
   private upsertSightingRow(
     systemName: string,
     bodyName: string,
@@ -532,6 +576,7 @@ export class FeederStore {
     speciesLabel: string,
     genus: string,
     spanshCount: number | null,
+    claimOrigin: ClaimOrigin = "unknown",
   ): boolean {
     const sn = normSystem(systemName);
     const bn = normBody(bodyName);
@@ -539,12 +584,43 @@ export class FeederStore {
     const sid = this.ensureSystem(sn, systemName.trim());
     const pid = this.ensurePlanet(sid, bn, bodyName.trim(), bodySubtype, distanceLs, spanshCount);
     const speciesNorm = normSpeciesLabel(speciesLabel);
+    /**
+     * `INSERT OR IGNORE` would keep whatever origin arrived first, which gets the one case that
+     * matters backwards: a species already known from a Spansh export, then scanned by the owner
+     * themselves, would stay attributed to Spansh and never show as theirs.
+     *
+     * So the row is kept — it is the same sighting, and re-inserting would lose nothing but gain
+     * nothing — and only the attribution is allowed to improve. First-hand wins over second-hand;
+     * anything wins over `unknown` or a NULL left by a pre-schema-4 import. Nothing else about the
+     * row is touched, so this cannot alter a count.
+     */
+    /**
+     * Newness is asked before the write, not inferred from it.
+     *
+     * The old `INSERT OR IGNORE` could report it with `getRowsModified()`, because a conflict
+     * modified nothing. An upsert that improves the origin modifies a row every time, so that
+     * signal now always says "new" — and this return value is what the import reports to the owner
+     * as bodies added. Asking first keeps the count honest.
+     */
+    const existed =
+      queryOne<[number]>(this.db, "SELECT 1 FROM sightings WHERE planet_id = ? AND species_norm = ?", [
+        pid,
+        speciesNorm,
+      ]) !== undefined;
     runExec(
       this.db,
-      "INSERT OR IGNORE INTO sightings (planet_id, species_norm, genus, species_label) VALUES (?, ?, ?, ?)",
-      [pid, speciesNorm, genus, speciesLabel.trim()],
+      `INSERT INTO sightings (planet_id, species_norm, genus, species_label, claim_origin)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(planet_id, species_norm) DO UPDATE SET
+           claim_origin = CASE
+             WHEN excluded.claim_origin = 'journal' THEN excluded.claim_origin
+             WHEN sightings.claim_origin IS NULL OR sightings.claim_origin = 'unknown'
+               THEN excluded.claim_origin
+             ELSE sightings.claim_origin
+           END`,
+      [pid, speciesNorm, genus, speciesLabel.trim(), claimOrigin],
     );
-    return this.db.getRowsModified() > 0;
+    return !existed;
   }
 
   /** Systems with no coordinates yet, display names, for the batch fetch. */

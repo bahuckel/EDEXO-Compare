@@ -152,7 +152,19 @@ export async function importCsv(ctx: FeederContext, csvPath: string): Promise<Im
   }
 
   const before = structuredClone(ctx.speciesIndex);
-  ctx.store.applyCsvRows(rows);
+  /**
+   * Tagged `exomastery`, in both formats.
+   *
+   * `parseSpanshRouteFile` reports `format: "csv" | "json"`, which is how the file is written, not
+   * where it came from — both are Spansh exobiology exports, and both carry another commander's
+   * confirmed identification. The distinction that matters for provenance is the feed, so they get
+   * the same origin.
+   *
+   * `spansh-dump` is deliberately not used here. That origin is reserved for the galaxy-dump path,
+   * where a body carries a biological signal and the species may be inferred rather than seen; no
+   * such rows enter the corpus today.
+   */
+  ctx.store.applyCsvRows(rows, "exomastery");
 
   /**
    * Everything the JSON knows that the CSV cannot express, applied while we have it.
