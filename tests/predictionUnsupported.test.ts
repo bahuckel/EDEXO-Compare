@@ -30,6 +30,19 @@ describe("predictionUnsupported", () => {
         "Brain Tree Puniceum",
         "Brain Tree Viride",
         "Electricae radialem",
+        // Added 2026-09-07. Sinuous Tubers need the galactic-core region: 94 % of their systems are
+        // within 10 000 ly of Sgr A* across 5,139 systems, against controls of 0-20 %
+        // (EDSM-targz-to-db/docs/ABSTRACT-COND.md §10.2). The match context carries no system
+        // coordinates, so this cannot be answered per body — the same position Electricae radialem
+        // is in, and marked the same way.
+        "Sinuous Tubers Albidum",
+        "Sinuous Tubers Blatteum",
+        "Sinuous Tubers Caeruleum",
+        "Sinuous Tubers Lindigoticum",
+        "Sinuous Tubers Prasinum",
+        "Sinuous Tubers Roseum",
+        "Sinuous Tubers Violaceum",
+        "Sinuous Tubers Viride",
       ].sort(),
     );
   });
@@ -61,9 +74,29 @@ describe("predictionUnsupported", () => {
     }
   });
 
+  /**
+   * The conditions that are *checkable* must stay checkable. ABSTRACT-COND tags nine genera as
+   * carrying an abstract condition; on inspection the app can already evaluate most of them, and
+   * marking those would lose predictions rather than gain honesty:
+   *
+   * - Anemone's `parent_star_types: [O, B, A]` — encoded, and the context has `parentStarType`.
+   * - Clypeus speculumi's `distance_from_star.min_ls: 2500` — encoded, context has the orbit distance.
+   * - Fumerola's `geologicalSignalIncludes` — encoded, context has `signalHints`.
+   *
+   * Only the conditions needing data the context does not carry are flagged: other bodies in the
+   * system, and galactic position.
+   */
+  it("does not flag conditions the matcher can already evaluate", () => {
+    for (const name of ["Clypeus speculumi", "Fumerola aquatis", "Anemone"]) {
+      const e = db.species.find((x) => x.displayName === name);
+      expect(e, name).toBeDefined();
+      expect(e!.predictionUnsupported, name).toBeUndefined();
+    }
+  });
+
   it("leaves the overwhelming majority predictable", () => {
     const flagged = db.species.filter((e) => e.predictionUnsupported).length;
-    expect(flagged).toBe(9);
-    expect(db.species.length - flagged).toBeGreaterThan(95);
+    expect(flagged).toBe(17);
+    expect(db.species.length - flagged).toBeGreaterThan(85);
   });
 });
