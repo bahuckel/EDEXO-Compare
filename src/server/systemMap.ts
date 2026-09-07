@@ -668,6 +668,37 @@ export function countPhysicalBodiesInSystemMapTree(nodes: SystemMapNodeDTO[]): n
   return n;
 }
 
+/**
+ * Every exploration record we hold for a system — **including the ones already sold**.
+ *
+ * Selling exploration data pays the commander and moves nothing in space, but the store files those
+ * rows under `soldExplorationScans`, and the system map and the star header read only
+ * `explorationScans`. So a commander who cashed in their data lost the orbital view of their own
+ * home system: the map button disappears with the star header it hangs off, and nothing says why.
+ *
+ * Measured on the owner's logs: replaying up to 2026-05-15 leaves 42 Swoilz KI-E b4-9 records and a
+ * working map. Adding the next file — which carries a `MultiSellExplorationData` for 38 of its
+ * bodies — leaves **zero**, and `buildSystemMapSnapshot` returns null from then on.
+ *
+ * `systemExplorationScanIndex` already made this call for host-star resolution, in those words:
+ * *"selling the data does not move the star"*. It is just as true of the map.
+ *
+ * Live rows win over sold ones where both exist, and EDSM fills in only when we hold nothing of our
+ * own — the same order the map used before, with the sold archive added to the "our own" side.
+ */
+export function explorationRecordsForSystem(
+  store: GameStateStore,
+  systemAddress: number,
+): ExplorationScanRecord[] {
+  const prefix = `${systemAddress}:`;
+  const byBodyId = new Map<number, ExplorationScanRecord>();
+  for (const [key, r] of store.soldExplorationScans) if (key.startsWith(prefix)) byBodyId.set(r.bodyId, r);
+  for (const [key, r] of store.explorationScans) if (key.startsWith(prefix)) byBodyId.set(r.bodyId, r);
+  if (byBodyId.size > 0) return [...byBodyId.values()];
+  for (const [key, r] of store.edsmExplorationByKey) if (key.startsWith(prefix)) byBodyId.set(r.bodyId, r);
+  return [...byBodyId.values()];
+}
+
 export function buildSystemMapSnapshot(
   store: GameStateStore,
   focusSystemAddress: number | null,
@@ -687,19 +718,7 @@ export function buildSystemMapSnapshot(
   if (focusSystemAddress == null) return null;
   /** Narrowed copy: the closures below lose the null-check on the captured parameter. */
   const focusAddr: number = focusSystemAddress;
-  const prefix = `${focusSystemAddress}:`;
-  const journalRecs: ExplorationScanRecord[] = [];
-  for (const [key, r] of store.explorationScans) {
-    if (key.startsWith(prefix)) journalRecs.push(r);
-  }
-  let recs = journalRecs.filter((r) => !isBeltClusterRecord(r));
-  if (recs.length === 0) {
-    const edsmRecs: ExplorationScanRecord[] = [];
-    for (const [key, r] of store.edsmExplorationByKey) {
-      if (key.startsWith(prefix)) edsmRecs.push(r);
-    }
-    recs = edsmRecs.filter((r) => !isBeltClusterRecord(r));
-  }
+  let recs = explorationRecordsForSystem(store, focusSystemAddress).filter((r) => !isBeltClusterRecord(r));
   if (recs.length === 0) return null;
 
   const starSystemName = canonicalStarSystemNameForMap(recs);

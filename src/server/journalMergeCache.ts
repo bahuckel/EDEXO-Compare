@@ -194,6 +194,8 @@ function tryPrepareJournalCacheLoadFromDir(
       return { hit: false };
     }
     if (payload.format !== JOURNAL_MERGE_CACHE_FORMAT) return { hit: false };
+    // An already-poisoned cache from a build before the write guard: rebuild instead of restoring it.
+    if (payloadIsEmptyHistory(payload)) return { hit: false };
 
     return { hit: true, payload, steps };
   }
@@ -315,6 +317,29 @@ function clearJournalMergeFilesInDir(cacheDir: string): void {
  * Writes journal merge cache under user data (survives rebuilds). Clears project-local cache
  * so stale duplicates are not left next to `resources/`.
  */
+/**
+ * A payload that says the commander has never seen anything.
+ *
+ * This is not a hypothetical. The owner's `%LOCALAPPDATA%\ED Exo Compare\.edexo-cache` held a
+ * **538-byte** payload beside a complete 245-file manifest: every array empty, every system unvisited
+ * — while the 7.6 MB cache at the previous user-data location held the real history. An empty payload
+ * with a full manifest is self-perpetuating, because the next boot sees the manifest match, restores
+ * nothing, replays nothing, and saves the same emptiness back. Nothing in the app could recover from
+ * it; the only escape was deleting files by hand.
+ *
+ * So it is refused on both sides: never written when there were logs to read, and never trusted on
+ * load. A commander with a genuinely empty journal folder gets `manifest.length === 0` and no cache
+ * at all, which is the same outcome by a shorter road.
+ */
+function payloadIsEmptyHistory(p: JournalMergeCachePayload): boolean {
+  return (
+    (p.bodies?.length ?? 0) === 0 &&
+    (p.explorationScans?.length ?? 0) === 0 &&
+    (p.soldExplorationScans?.length ?? 0) === 0 &&
+    (p.visitedSystems?.length ?? 0) === 0
+  );
+}
+
 export function saveJournalMergeCache(
   journalDirNorm: string,
   manifest: JournalFileFingerprint[],
@@ -327,6 +352,8 @@ export function saveJournalMergeCache(
     const dir = resolveJournalMergeCacheRoot();
     mkdirSync(dir, { recursive: true });
     const payload = store.serializeJournalMergePayload();
+    // Writing this would poison every later boot — see `payloadIsEmptyHistory`.
+    if (payloadIsEmptyHistory(payload)) return;
     const meta: JournalMergeMetaFile = {
       version: JOURNAL_CACHE_FILE_VERSION,
       journalDir: path.normalize(journalDirNorm),

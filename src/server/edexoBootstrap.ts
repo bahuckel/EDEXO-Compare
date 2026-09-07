@@ -111,7 +111,6 @@ export async function backfillCommanderPosition(store: GameStateStore, files: st
   }
 }
 
-
 const DEFAULT_JOURNAL =
   process.platform === "win32"
     ? path.join(process.env.USERPROFILE || "", "Saved Games", "Frontier Developments", "Elite Dangerous")
@@ -614,71 +613,84 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         message: "Restoring merged journal state from cache…",
       };
       pushFlush();
-      store.hydrateJournalMergePayload(cacheResult.payload);
-      if (cacheResult.steps.length > 0) {
-        const stepCount = cacheResult.steps.length;
-        let stepsDone = 0;
-        journalBootProgress = {
-          percent: 70,
-          phase: "merging",
-          filesDone: 0,
-          filesTotal: stepCount,
-          message: `Applying ${stepCount} journal log file(s) written since the last run…`,
-        };
-        pushFlush();
-        for (const step of cacheResult.steps) {
-          if (step.kind === "tail") {
-            await readJournalFromOffset(step.path, step.startByte, (line) => store.apply(line));
-          } else {
-            await readJournalFull(step.path, (line) => store.apply(line));
-          }
-          stepsDone += 1;
-          journalBootProgress = {
-            percent: 70 + Math.floor((25 * stepsDone) / stepCount),
-            phase: "merging",
-            filesDone: stepsDone,
-            filesTotal: stepCount,
-            message: `Applying new journal lines — file ${stepsDone} of ${stepCount}…`,
-          };
-          pushMergeProgress();
+      /**
+       * A payload the store cannot read is a cache miss, not an empty history. Falling through to
+       * the full replay is the only safe answer: carrying on would apply the new journal lines to an
+       * empty store and then save that over a good cache.
+       */
+      const hydrated = store.hydrateJournalMergePayload(cacheResult.payload);
+      if (!hydrated) {
+        // Leave the store as `resyncAllJournalFiles` found it and fall through to the full replay.
+        store.resetAll();
+        if (!quietConsole) {
+          console.warn("Journal cache could not be read — rebuilding from the logs.");
         }
       } else {
-        journalBootProgress = {
-          percent: 90,
-          phase: "merging",
-          filesDone: files.length,
-          filesTotal: files.length,
-          message: "Journal unchanged since the last run — finishing up…",
-        };
-        pushFlush();
-      }
-      await backfillCommanderPosition(store, files);
-      journalPath = files[files.length - 1]!;
-      store.resetFootTravelRuntime();
-      loadOrganicSampleSessionFromDisk(projectRoot, store, getCachedSpeciesDatabase());
-      journalBootProgress = null;
-      refreshLiveHudFromJournalDir();
-      pushFlush();
-      if (cacheResult.steps.length > 0 || cacheResult.loadedFromLegacy) {
-        saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
-      }
-      if (!quietConsole) {
-        const s = cacheResult.steps.length;
-        if (s === 0 && !cacheResult.loadedFromLegacy) {
-          console.info(
-            "Journal fast path: full cache hit (log set unchanged) — skipped replaying all files.",
-          );
-        } else if (s === 0 && cacheResult.loadedFromLegacy) {
-          console.info(
-            "Journal fast path: full cache hit — journal cache moved to app data (survives rebuilds).",
-          );
+        if (cacheResult.steps.length > 0) {
+          const stepCount = cacheResult.steps.length;
+          let stepsDone = 0;
+          journalBootProgress = {
+            percent: 70,
+            phase: "merging",
+            filesDone: 0,
+            filesTotal: stepCount,
+            message: `Applying ${stepCount} journal log file(s) written since the last run…`,
+          };
+          pushFlush();
+          for (const step of cacheResult.steps) {
+            if (step.kind === "tail") {
+              await readJournalFromOffset(step.path, step.startByte, (line) => store.apply(line));
+            } else {
+              await readJournalFull(step.path, (line) => store.apply(line));
+            }
+            stepsDone += 1;
+            journalBootProgress = {
+              percent: 70 + Math.floor((25 * stepsDone) / stepCount),
+              phase: "merging",
+              filesDone: stepsDone,
+              filesTotal: stepCount,
+              message: `Applying new journal lines — file ${stepsDone} of ${stepCount}…`,
+            };
+            pushMergeProgress();
+          }
         } else {
-          console.info(
-            `Journal fast path: cache + ${s} incremental replay step(s); state saved to app data cache.`,
-          );
+          journalBootProgress = {
+            percent: 90,
+            phase: "merging",
+            filesDone: files.length,
+            filesTotal: files.length,
+            message: "Journal unchanged since the last run — finishing up…",
+          };
+          pushFlush();
         }
+        await backfillCommanderPosition(store, files);
+        journalPath = files[files.length - 1]!;
+        store.resetFootTravelRuntime();
+        loadOrganicSampleSessionFromDisk(projectRoot, store, getCachedSpeciesDatabase());
+        journalBootProgress = null;
+        refreshLiveHudFromJournalDir();
+        pushFlush();
+        if (cacheResult.steps.length > 0 || cacheResult.loadedFromLegacy) {
+          saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
+        }
+        if (!quietConsole) {
+          const s = cacheResult.steps.length;
+          if (s === 0 && !cacheResult.loadedFromLegacy) {
+            console.info(
+              "Journal fast path: full cache hit (log set unchanged) — skipped replaying all files.",
+            );
+          } else if (s === 0 && cacheResult.loadedFromLegacy) {
+            console.info(
+              "Journal fast path: full cache hit — journal cache moved to app data (survives rebuilds).",
+            );
+          } else {
+            console.info(
+              `Journal fast path: cache + ${s} incremental replay step(s); state saved to app data cache.`,
+            );
+          }
+        }
+        return;
       }
-      return;
     }
 
     journalBootProgress = {

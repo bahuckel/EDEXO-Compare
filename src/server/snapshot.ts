@@ -37,6 +37,7 @@ import {
 import {
   buildPrimaryStarsHeader,
   buildSystemMapSnapshot,
+  explorationRecordsForSystem,
   bodyHasExoMarkers,
   countPhysicalBodiesInSystemMapTree,
   loadStarRolesConfig,
@@ -1097,18 +1098,10 @@ export function buildSnapshot(
     ? null
     : buildDScanBodiesSnapshot(store, focusAddr, dScanNameFallback, systemMap);
 
+  // Sold rows count here too — see `explorationRecordsForSystem`. The star header is what the system
+  // map button hangs off, so losing it to a sale takes the map with it.
   const recsForPrimary =
-    !bootLoading && focusAddr != null
-      ? (() => {
-          const fromJournal = [...store.explorationScans.entries()]
-            .filter(([key]) => key.startsWith(`${focusAddr}:`))
-            .map(([, v]) => v);
-          if (fromJournal.length > 0) return fromJournal;
-          return [...store.edsmExplorationByKey.entries()]
-            .filter(([key]) => key.startsWith(`${focusAddr}:`))
-            .map(([, v]) => v);
-        })()
-      : [];
+    !bootLoading && focusAddr != null ? explorationRecordsForSystem(store, focusAddr) : [];
   const primaryStarsHeader =
     !bootLoading && recsForPrimary.length > 0
       ? buildPrimaryStarsHeader(recsForPrimary, cachedStarRoles)

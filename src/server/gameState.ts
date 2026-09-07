@@ -2066,14 +2066,26 @@ export class GameStateStore {
    * Restores journal-derived state after {@link resetAll}. User prefs on the store are unchanged
    * (they were not cleared by `resetAll`).
    */
-  hydrateJournalMergePayload(data: JournalMergeCachePayload): void {
-    if (data.format !== 1 && data.format !== 2) return;
+  hydrateJournalMergePayload(data: JournalMergeCachePayload): boolean {
+    /**
+     * **Returns whether it restored anything**, and the return value is not decoration.
+     *
+     * This used to return `void` and bail silently on a payload it did not recognise, leaving the
+     * store exactly as empty as it started. The caller could not tell that apart from a cache that
+     * legitimately held nothing, so it went on to apply the new journal lines and *save* — writing an
+     * empty history, with a complete file manifest, over a good cache. That is how the owner's
+     * 7.8 MB cache became 538 bytes at 11:18 on 2026-09-07, taking the whole system view and the
+     * accuracy probe's ground truth with it.
+     *
+     * A false here means "treat this as a cache miss and replay the logs".
+     */
+    if (data.format !== 1 && data.format !== 2) return false;
     if (
       !Array.isArray(data.bodies) ||
       !Array.isArray(data.explorationScans) ||
       !Array.isArray(data.visitedSystems)
     ) {
-      return;
+      return false;
     }
     this.resetAll();
     this.commanderName = data.commanderName;
@@ -2135,5 +2147,6 @@ export class GameStateStore {
     this.lastFsdJumpFuelUsedT = typeof lff === "number" && Number.isFinite(lff) && lff > 0 ? lff : null;
     const ljd = data.lastFsdJumpDistLy;
     this.lastFsdJumpDistLy = typeof ljd === "number" && Number.isFinite(ljd) && ljd > 0 ? ljd : null;
+    return true;
   }
 }
