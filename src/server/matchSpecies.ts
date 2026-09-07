@@ -17,6 +17,11 @@ import {
   gateForSpeciesId,
   type SpatialCatalogue,
 } from "../shared/spatialGates.js";
+import {
+  describeHostStarVerdict,
+  evaluateHostStarGate,
+  hostStarGateForSpeciesId,
+} from "../shared/hostStarGates.js";
 import { observedAtGravity } from "./speciesGravityObservations.js";
 import { observedUnderAtmosphere } from "./speciesAtmosphereObservations.js";
 import {
@@ -901,6 +906,58 @@ export function demoteFailedSpatialGates(
   }
 }
 
+/**
+ * Demote candidates whose **host-star class** gate fails — INCLUDE-BODY-IDS §7.12.
+ *
+ * Runs beside {@link demoteFailedSpatialGates} and for the same reason: this is a fact about the
+ * star, shared by every body that orbits it, and it is measured rather than quoted. Electricae pluma
+ * was recorded under a neutron star, white dwarf, A-class star or black hole in all 10,194 sightings
+ * `ABSTRACT-COND.md` measured, and under nothing else — O and B, which ed-dsn lists as unconfirmed
+ * possibilities, came in at 0 %.
+ *
+ * Against our own corpus the gate keeps all 31 confirmed pluma bodies and withdraws the species from
+ * 591 of the 627 bodies that match the Electricae genus shape, which is the whole point: the shape
+ * alone is nearly worthless for telling pluma from radialem.
+ *
+ * **Demotes, never deletes**, and an unresolved star produces no verdict at all — see
+ * `evaluateHostStarGate`. The single write path with the spatial gate is deliberate: both mark
+ * `spatialGateUnresolved`-style state through the same tier so the genus split can withhold a
+ * percentage rather than normalising one against a candidate nobody can judge.
+ */
+export function demoteFailedHostStarGates(
+  strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  matchContext: SpeciesMatchContext | null | undefined,
+): void {
+  const classes = matchContext?.hostStarClasses;
+
+  if (!classes || classes.length === 0) {
+    // No star scanned yet. Not a pass — mark it, so the split does not put a number on it.
+    for (const m of strict) {
+      if (hostStarGateForSpeciesId(m.entry.id)) m.spatialGateUnresolved = true;
+    }
+    return;
+  }
+
+  for (let i = strict.length - 1; i >= 0; i--) {
+    const m = strict[i]!;
+    const verdict = evaluateHostStarGate(m.entry.id, classes);
+    if (!verdict || verdict.passes) continue;
+    const reason: MatchReason = {
+      field: "StarType",
+      detail: `${describeHostStarVerdict(verdict)} ${verdict.evidence}. ${DEMOTED_NOTE}`,
+      soft: true,
+    };
+    strict.splice(i, 1);
+    unlikely.push({
+      ...m,
+      reasons: [...m.reasons, reason],
+      unlikely: true,
+      unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
+    });
+  }
+}
+
 export function matchDatabaseToScan(
   db: SpeciesDatabase,
   scan: PlanetScan,
@@ -987,6 +1044,7 @@ export function matchDatabaseToScan(
   }
 
   demoteFailedSpatialGates(strict, unlikely, matchContext, options?.spatialCatalogue ?? null);
+  demoteFailedHostStarGates(strict, unlikely, matchContext);
 
   restoreDemotionsBelowSignalCount(strict, unlikely, options?.biologicalSignals ?? null);
 

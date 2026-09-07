@@ -1,6 +1,7 @@
 import type { BodyExoState, ExplorationScanRecord, SpeciesMatchContext } from "../shared/types.js";
 import { journalPressureToAtm, LIGHT_SECOND_METERS } from "../shared/journalPhysics.js";
-import { resolveHostStarBodyId } from "./orbitUtils.js";
+import { hostStarBodyIdsForExobiology, resolveHostStarBodyId } from "./orbitUtils.js";
+import { hostStarClassKeys } from "../shared/hostStarGates.js";
 import type { GameStateStore } from "./gameState.js";
 
 function bodyKey(systemAddress: number, bodyId: number): string {
@@ -62,6 +63,21 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
     }
   }
 
+  /**
+   * The host-star class *set*, which is not always one star (§7.12).
+   *
+   * A body orbiting a barycentre names no star in its parents chain, and picking one of the pair is
+   * how a neutron-star system came to contribute an M-dwarf observation to Electricae pluma. Collect
+   * every star the chain names, and every star in the system when it names none.
+   */
+  let hostStarClasses: string[] | undefined;
+  if (rec) {
+    const keys = hostStarClassKeys(
+      hostStarBodyIdsForExobiology(rec, byId).map((id) => byId.get(id)?.starType),
+    );
+    if (keys.length) hostStarClasses = keys;
+  }
+
   let orbitDistanceFromParentStarLs: number | undefined;
   const sma = rec?.semiMajorAxis ?? scan?.SemiMajorAxis;
   if (typeof sma === "number" && Number.isFinite(sma) && sma > 0) {
@@ -85,6 +101,7 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   if (orbitDistanceFromParentStarLs !== undefined)
     ctx.orbitDistanceFromParentStarLs = orbitDistanceFromParentStarLs;
   if (signalHints?.length) ctx.signalHints = signalHints;
+  if (hostStarClasses?.length) ctx.hostStarClasses = hostStarClasses;
   /**
    * The system's position (Phase 7).
    *

@@ -83,3 +83,46 @@ export function resolveHostStarBodyId(
   if (!stars.length) return null;
   return stars.reduce((a, b) => Math.min(a, b));
 }
+
+/**
+ * Every host-star `BodyID` for a body, walking the same `Parents[0]` chain as
+ * {@link resolveHostStarBodyId} but keeping **all** the stars it names rather than the first.
+ *
+ * A body orbiting a star *pair* lists only `{Null: n}` and has no star in its chain at all. Picking
+ * one of the pair invents an answer, and the invented answer has already cost us: the shipped
+ * Electricae pluma profile carries an `M3` host taken from a body orbiting an M + L barycentre in a
+ * system whose primary is a neutron star, and that one row licensed pluma on every M-class body in
+ * the game. `ABSTRACT-COND.md` §6.3 reaches the same rule from the ingest side after 35 Anemone
+ * bodies were missed the same way: when the chain names no star, fall back to every star in the
+ * system.
+ *
+ * Returns an empty array when the system holds no scanned star, which callers must read as "we do
+ * not know" rather than as a failed condition.
+ */
+export function hostStarBodyIdsForExobiology(
+  rec: ExplorationScanRecord,
+  byBodyId: Map<number, ExplorationScanRecord>,
+): number[] {
+  const found = new Set<number>();
+  const visitedPlanets = new Set<number>();
+  let cur: ExplorationScanRecord | null = rec;
+  for (let d = 0; d < 24 && cur; d++) {
+    for (const id of allStarParentIds(cur.parents)) found.add(id);
+    if (found.size > 0) break;
+    const parents = cur.parents;
+    if (!Array.isArray(parents) || parents.length === 0) break;
+    const im = parseJournalParentEntry(parents[0]);
+    if (!im || im.kind !== "Planet") break;
+    if (visitedPlanets.has(im.id)) break;
+    visitedPlanets.add(im.id);
+    cur = byBodyId.get(im.id) ?? null;
+  }
+  if (found.size > 0) return [...found];
+
+  // Barycentre with no star anywhere in the chain: every star in the system is a candidate host.
+  const all: number[] = [];
+  for (const [bodyId, r] of byBodyId) {
+    if (r.starType?.trim()) all.push(bodyId);
+  }
+  return all;
+}

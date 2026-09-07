@@ -137,6 +137,16 @@ export interface SpeciesMatchContext {
   parentStarLuminosity?: string;
   /** Orbit distance from host star: `SemiMajorAxis` (m) / c in LS (not cumulative for nested moons). */
   orbitDistanceFromParentStarLs?: number;
+  /**
+   * Host-star class keys for this body — one star, both stars of a pair, or every star in the
+   * system when the body orbits a barycentre that names none.
+   *
+   * `parentStarType` above is the single best host and stays what the codex fragment and colour
+   * tables read. This is the *set*, and it exists because a body orbiting a star pair has no single
+   * host: choosing one of the pair is how the corpus came to record an M-dwarf host for Electricae
+   * pluma on a body whose system primary is a neutron star.
+   */
+  hostStarClasses?: string[];
   /** Lowercased hints from scanner signal `Type` / `Type_Localised`. */
   signalHints?: string[];
   /**
