@@ -42,6 +42,23 @@ export function IconTriage({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Galaxy — the sector heat map.
+ *
+ * A disc seen edge-on with a bright centre, which is what the map's own side projection shows, so
+ * the icon and the thing it opens agree.
+ */
+export function IconGalaxy({ className }: { className?: string }) {
+  return (
+    <svg {...BASE} className={className}>
+      <ellipse cx="8" cy="8" rx="6.2" ry="2.6" />
+      <circle cx="8" cy="8" r="1.2" />
+      <path d="M2.6 6.6C4 5 6 4.2 8 4.2" />
+      <path d="M13.4 9.4C12 11 10 11.8 8 11.8" />
+    </svg>
+  );
+}
+
 /** Open book — the species encyclopedia. */
 export function IconEncyclopedia({ className }: { className?: string }) {
   return (

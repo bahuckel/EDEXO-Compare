@@ -11,6 +11,11 @@ import type {
   OrganicGenusLock,
 } from "../shared/types.js";
 import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "../shared/journalPhysics.js";
+import {
+  describeVerdict,
+  evaluateSpatialGate,
+  type SpatialCatalogue,
+} from "../shared/spatialGates.js";
 import { observedAtGravity } from "./speciesGravityObservations.js";
 import { observedUnderAtmosphere } from "./speciesAtmosphereObservations.js";
 import {
@@ -837,6 +842,51 @@ function hostStarDeterminism(entry: SpeciesEntry): number {
   return speciesHostStarObservations(entry)?.determinism ?? 0;
 }
 
+/**
+ * Demote candidates whose **spatial** gate fails — INCLUDE-BODY-IDS Phase 7.
+ *
+ * Runs after the strict/unlikely split rather than inside `speciesMatchesCriteria`, because this is
+ * a fact about the *system*, not about the body: every body in a system shares the answer, and
+ * threading a galactic coordinate through a per-body criterion would put it in the wrong place.
+ *
+ * **Demotes, never deletes.** Bark Mounds reach 100 % within 300 ly of a nebula, so a hard cut there
+ * would lose nothing — but Electricae radialem only reaches 82 %, meaning about one radialem system
+ * in five is further from a *catalogued* nebula than any threshold allows. A hard gate cannot tell
+ * "no nebula here" from "no nebula recorded here", so it would silently delete real sightings. The
+ * unlikely tier already exists for exactly this: listed, collapsed, and explained.
+ *
+ * Ordering matters. This runs **before** {@link restoreDemotionsBelowSignalCount}, so a body whose
+ * signal count cannot otherwise be satisfied can still pull a spatially-demoted species back — the
+ * game reporting N biological signals is a harder fact than a catalogue's completeness.
+ */
+function demoteFailedSpatialGates(
+  strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  matchContext: SpeciesMatchContext | null | undefined,
+  catalogue: SpatialCatalogue | null,
+): void {
+  const coords = matchContext?.systemCoords;
+  if (!coords || !catalogue) return; // No position, no verdict — never a failure.
+
+  for (let i = strict.length - 1; i >= 0; i--) {
+    const m = strict[i]!;
+    const verdict = evaluateSpatialGate(m.entry.id, coords, catalogue);
+    if (!verdict || verdict.passes) continue;
+    const reason: MatchReason = {
+      field: verdict.kind === "core" ? "GalacticCore" : verdict.kind === "nebula" ? "Nebula" : "GuardianSite",
+      detail: `${describeVerdict(verdict)} ${verdict.evidence}.`,
+      soft: true,
+    };
+    strict.splice(i, 1);
+    unlikely.push({
+      ...m,
+      reasons: [...m.reasons, reason],
+      unlikely: true,
+      unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
+    });
+  }
+}
+
 export function matchDatabaseToScan(
   db: SpeciesDatabase,
   scan: PlanetScan,
@@ -845,6 +895,8 @@ export function matchDatabaseToScan(
   options?: {
     includeBacterium?: boolean;
     matchContext?: SpeciesMatchContext | null;
+    /** Phase 7 point catalogues. Absent means the spatial gates simply do not run. */
+    spatialCatalogue?: SpatialCatalogue | null;
     /**
      * `FSSBodySignals` biological count for this body, when the game has reported one.
      *
@@ -919,6 +971,8 @@ export function matchDatabaseToScan(
       });
     }
   }
+
+  demoteFailedSpatialGates(strict, unlikely, matchContext, options?.spatialCatalogue ?? null);
 
   restoreDemotionsBelowSignalCount(strict, unlikely, options?.biologicalSignals ?? null);
 

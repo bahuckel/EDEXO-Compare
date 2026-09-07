@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
+import { gateForSpeciesId } from "../shared/spatialGates.js";
 import { join, relative } from "node:path";
 import type { SpeciesCriterion, SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
 import { applyCodexCriteriaPatchesFromFixesJson } from "./exoDataAlertFix.js";
@@ -614,9 +615,25 @@ const PREDICTION_UNSUPPORTED_KEYS: { key: string; reason: string }[] = [
 
 function detectPredictionUnsupported(
   row: Record<string, unknown>,
+  speciesId?: string,
 ): { reason: string; sourceKey: string } | undefined {
   const nested = asRecord(row.criteria ?? row.Criteria ?? row.conditions ?? row.Conditions);
+  /**
+   * A `location_requirement` the app can now **measure** is no longer unsupported (Phase 7).
+   *
+   * Electricae radialem's nebula rule and the Sinuous Tubers' core rule both have a catalogue and a
+   * measured threshold behind them, so the condition is evaluated rather than shrugged at. This is
+   * §7.9 acceptance rule 6 — the flag comes off only where a real check replaced it, never as a
+   * relabel — and the data keeps the condition documented either way.
+   *
+   * Brain Trees and Amphora keep the flag: their *other* condition needs the presence of a
+   * companion body elsewhere in the system, which nothing here can answer. Half a check is not a
+   * check.
+   */
+  const spatiallyChecked = speciesId ? gateForSpeciesId(speciesId) !== null : false;
+
   for (const { key, reason } of PREDICTION_UNSUPPORTED_KEYS) {
+    if (key === "location_requirement" && spatiallyChecked) continue;
     const v = nested?.[key] ?? row[key];
     if (v === undefined || v === null) continue;
     // `requires_system_bodies: false` is a row saying the requirement does *not* apply.
@@ -720,7 +737,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
 
     const id = slugId(genusFromFile, displayName, pickString(r, "id", "ID", "key", "Key"));
 
-    const predictionUnsupported = detectPredictionUnsupported(r);
+    const predictionUnsupported = detectPredictionUnsupported(r, id);
 
     let criteria = buildCriteriaForRow(r);
     if (!criteria.planetClassAnyOf?.length && genusPlanetTypes?.length) {

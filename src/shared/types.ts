@@ -139,6 +139,13 @@ export interface SpeciesMatchContext {
   orbitDistanceFromParentStarLs?: number;
   /** Lowercased hints from scanner signal `Type` / `Type_Localised`. */
   signalHints?: string[];
+  /**
+   * The system's galactic position, from `FSDJump` / `CarrierJump` / `Location` `StarPos`.
+   *
+   * §28 recorded that `StarPos` "stays unconnected to the matcher — there is nothing to connect it
+   * to". Phase 7 is the something: three genera are gated on position, and this is the wire.
+   */
+  systemCoords?: { x: number; y: number; z: number };
   /** Surface pressure in atm after `journalPressureToAtm`; `null` / missing when not in scan. */
   surfacePressureAtm?: number | null;
 }

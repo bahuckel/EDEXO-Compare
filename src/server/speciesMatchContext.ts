@@ -85,6 +85,17 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   if (orbitDistanceFromParentStarLs !== undefined)
     ctx.orbitDistanceFromParentStarLs = orbitDistanceFromParentStarLs;
   if (signalHints?.length) ctx.signalHints = signalHints;
+  /**
+   * The system's position (Phase 7).
+   *
+   * `commanderPos` is where the commander last jumped to, so it is the right coordinate for bodies
+   * in the *current* system and the wrong one for a system being viewed remotely. Only attach it
+   * when the body actually belongs to the commander's current system — a wrong coordinate would
+   * demote candidates for a reason that has nothing to do with them.
+   */
+  if (store.commanderPos && exo.systemAddress === store.currentSystemAddress) {
+    ctx.systemCoords = store.commanderPos;
+  }
   const rawP = scan?.SurfacePressure ?? rec?.surfacePressure;
   if (rawP != null && Number.isFinite(rawP)) ctx.surfacePressureAtm = journalPressureToAtm(rawP);
 

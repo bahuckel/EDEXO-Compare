@@ -29,20 +29,6 @@ describe("predictionUnsupported", () => {
         "Brain Tree Ostrinum",
         "Brain Tree Puniceum",
         "Brain Tree Viride",
-        "Electricae radialem",
-        // Added 2026-09-07. Sinuous Tubers need the galactic-core region: 94 % of their systems are
-        // within 10 000 ly of Sgr A* across 5,139 systems, against controls of 0-20 %
-        // (EDSM-targz-to-db/docs/ABSTRACT-COND.md §10.2). The match context carries no system
-        // coordinates, so this cannot be answered per body — the same position Electricae radialem
-        // is in, and marked the same way.
-        "Sinuous Tubers Albidum",
-        "Sinuous Tubers Blatteum",
-        "Sinuous Tubers Caeruleum",
-        "Sinuous Tubers Lindigoticum",
-        "Sinuous Tubers Prasinum",
-        "Sinuous Tubers Roseum",
-        "Sinuous Tubers Violaceum",
-        "Sinuous Tubers Viride",
       ].sort(),
     );
   });
@@ -86,6 +72,26 @@ describe("predictionUnsupported", () => {
    * Only the conditions needing data the context does not carry are flagged: other bodies in the
    * system, and galactic position.
    */
+  /**
+   * Phase 7 lifted the flag from the two species whose *location* condition is now measured against
+   * a catalogue — §7.9 acceptance rule 6: it comes off only where a real check replaced it.
+   *
+   * Brain Trees and Amphora keep it, and the reason is worth stating: their other condition needs a
+   * companion body elsewhere in the system, which nothing in a scan answers. Half a check is not a
+   * check.
+   */
+  it("lifts the flag where a real spatial check replaced it", () => {
+    for (const name of ["Electricae radialem", "Sinuous Tubers Prasinum", "Sinuous Tubers Roseum"]) {
+      const e = db.species.find((x) => x.displayName === name);
+      expect(e, name).toBeDefined();
+      expect(e!.predictionUnsupported, name).toBeUndefined();
+    }
+    // Still marked: the companion-body condition has no catalogue behind it.
+    for (const name of ["Amphora plant", "Brain Tree Aureum"]) {
+      expect(db.species.find((x) => x.displayName === name)!.predictionUnsupported, name).toBeDefined();
+    }
+  });
+
   it("does not flag conditions the matcher can already evaluate", () => {
     for (const name of ["Clypeus speculumi", "Fumerola aquatis", "Anemone"]) {
       const e = db.species.find((x) => x.displayName === name);
@@ -96,7 +102,7 @@ describe("predictionUnsupported", () => {
 
   it("leaves the overwhelming majority predictable", () => {
     const flagged = db.species.filter((e) => e.predictionUnsupported).length;
-    expect(flagged).toBe(17);
-    expect(db.species.length - flagged).toBeGreaterThan(85);
+    expect(flagged).toBe(8);
+    expect(db.species.length - flagged).toBeGreaterThan(95);
   });
 });

@@ -1,4 +1,5 @@
 import { existsSync, statSync } from "node:fs";
+import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { UNOBSERVED } from "../shared/observedFlag.js";
 import type {
   AppSnapshot,
@@ -866,6 +867,7 @@ function computeBodyUncached(
   } = matchDatabaseToScan(db, mergedScan, b.genusHints, b.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
     matchContext: speciesMatchCtx,
+    spatialCatalogue: loadSpatialCatalogue(root),
     biologicalSignals: b.biologicalSignals,
   });
   const scanForExo = mergedScan;

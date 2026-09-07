@@ -2,7 +2,14 @@ import { useLastStateAt, useLiveSnapshot } from "./useLiveSnapshot";
 import { useConfirm, useToast } from "./ui/feedback";
 import { useModal } from "./ui/useModal";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
-import { IconChevronDown, IconEncyclopedia, IconExobiology, IconOptions, IconTriage } from "./ui/icons";
+import {
+  IconChevronDown,
+  IconEncyclopedia,
+  IconExobiology,
+  IconGalaxy,
+  IconOptions,
+  IconTriage,
+} from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { SkeletonPanel } from "./ui/Skeleton";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
@@ -3689,6 +3696,17 @@ const HeaderBar = memo(function HeaderBar({
             >
               <IconTriage />
             </button>
+          </Tooltip>
+          <Tooltip text="Galaxy map — every sector where a species is known, confirmed or merely signalled. Opens in a new tab.">
+            <a
+              className="appbar-icon-btn"
+              href="?screen=map"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Galaxy sector map"
+            >
+              <IconGalaxy />
+            </a>
           </Tooltip>
           <Tooltip text="Encyclopedia — every species, its requirements, and what you have found.">
             <button
