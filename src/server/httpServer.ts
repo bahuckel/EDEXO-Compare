@@ -93,6 +93,9 @@ export function createHttpServer(opts: {
   getSnapshot: () => AppSnapshot;
   /** GET /api/status — launcher-sized status; must not rebuild the snapshot. */
   getStatus: () => AppStatusDTO;
+  /** §10.3 — the commander's own coordinates, or null before the first jump this session. */
+  getCommanderPosition: () => { x: number; y: number; z: number } | null;
+  getCommanderSystem: () => string | null;
   /** GET /api/species-encyclopedia — species rows including exomastery flags */
   getEncyclopedia?: () => EncyclopediaSpeciesRowDTO[];
   /**
@@ -375,6 +378,22 @@ export function createHttpServer(opts: {
       sectorSystemsCache = { mtimeMs, cells: parsed.cells ?? {} };
     }
     res.json({ cell, systems: sectorSystemsCache.cells[cell] ?? [] });
+  });
+
+  /**
+   * Where the commander is (§10.3).
+   *
+   * Its own endpoint rather than a field on the snapshot: the sector map is a separate screen with no
+   * WebSocket, and it wants one small thing on a slow poll. `/api/state` rebuilds the whole snapshot
+   * (~186 ms, ~630 kB) and would be absurd for three numbers.
+   *
+   * Null is a real answer — the app may not have seen a jump yet — and the map draws nothing rather
+   * than guessing the origin.
+   */
+  app.get("/api/commander-position", (_req, res) => {
+    perfCount("http.commanderPosition");
+    const pos = opts.getCommanderPosition();
+    res.json({ position: pos, system: opts.getCommanderSystem() });
   });
 
   app.get("/api/status", (_req, res) => {

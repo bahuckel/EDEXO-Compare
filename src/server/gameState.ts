@@ -105,6 +105,8 @@ export type JournalMergeCachePayload = {
    * no ages until the next rebuild from the logs, and an absent flag reads as unknown, which is the
    * honest answer rather than a silent `false`.
    */
+  /** §10.3. Optional so a cache written before this loads; absent simply means "not drawn yet". */
+  commanderPos?: { x: number; y: number; z: number } | null;
   bodyFootfallFlag?: [string, ObservedFlag][];
   bodyMappedFlag?: [string, ObservedFlag][];
   firstFootfallBodies: string[];
@@ -860,6 +862,7 @@ export class GameStateStore {
     this.commanderName = null;
     this.currentSystem = null;
     this.currentSystemAddress = null;
+    this.commanderPos = null;
     this.viewingSystemAddress = null;
     this.visitedSystems.clear();
     this.lastEventIso = null;
@@ -912,6 +915,28 @@ export class GameStateStore {
 
   setViewingSystemAddress(systemAddress: number | null): void {
     this.viewingSystemAddress = systemAddress;
+  }
+
+  /**
+   * The commander's own position in light years, from `FSDJump` / `CarrierJump` / `Location`.
+   *
+   * The app has always known *which* system the commander is in; it never kept **where that is**,
+   * because nothing needed a coordinate until the sector map (§10.3). `StarPos` rides on all three
+   * of those events, so this is a capture rather than a lookup — no EDSM call, no join.
+   *
+   * Null until the first such event. A journal replay fills it from the last one in the logs, which
+   * is the right answer for a commander who has just started the app.
+   */
+  commanderPos: { x: number; y: number; z: number } | null = null;
+
+  /** Read `StarPos` off a journal line, when it carries one. */
+  private setPositionFromLine(line: JournalLine): void {
+    const p = (line as Record<string, unknown>).StarPos;
+    if (!Array.isArray(p) || p.length < 3) return;
+    const [x, y, z] = p as unknown[];
+    if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") return;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
+    this.commanderPos = { x, y, z };
   }
 
   /** Commander location after FSD/carrier jump — does not delete other systems’ bodies. */
@@ -1272,6 +1297,7 @@ export class GameStateStore {
             this.fsdJumpWasDiscoveredBySystem.set(addr, wd);
           }
           this.viewingSystemAddress = null;
+          this.setPositionFromLine(line);
           this.resetSystem(sys, addr);
         }
         return;
@@ -1288,7 +1314,10 @@ export class GameStateStore {
       if (event === "Location") {
         const sys = line.StarSystem as string;
         const addr = line.SystemAddress as number;
-        if (sys && typeof addr === "number") this.setLocation(sys, addr);
+        if (sys && typeof addr === "number") {
+          this.setPositionFromLine(line);
+          this.setLocation(sys, addr);
+        }
         return;
       }
 
@@ -2012,6 +2041,7 @@ export class GameStateStore {
       footJournalContextBuffer: this.footJournalContextBuffer.slice(),
       organicAnalyseByKey: [...this.organicAnalyseByKey.entries()],
       bodyDetailedFootfallState: [...this.bodyDetailedFootfallState.entries()],
+      commanderPos: this.commanderPos,
       bodyFootfallFlag: [...this.bodyFootfallFlag.entries()],
       bodyMappedFlag: [...this.bodyMappedFlag.entries()],
       firstFootfallBodies: [...this.firstFootfallBodies],
@@ -2065,6 +2095,7 @@ export class GameStateStore {
     this.footJournalContextBuffer.push(...data.footJournalContextBuffer);
     for (const [k, v] of data.organicAnalyseByKey) this.organicAnalyseByKey.set(k, v);
     for (const [k, v] of data.bodyDetailedFootfallState) this.bodyDetailedFootfallState.set(k, v);
+    this.commanderPos = data.commanderPos ?? null;
     for (const [k, v] of data.bodyFootfallFlag ?? []) this.bodyFootfallFlag.set(k, v);
     for (const [k, v] of data.bodyMappedFlag ?? []) this.bodyMappedFlag.set(k, v);
     for (const k of data.firstFootfallBodies) this.firstFootfallBodies.add(k);

@@ -9514,3 +9514,7 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .galaxy-map__legend--unavailable { opacity: 0.5; }
 .galaxy-map__legend--unavailable em { font-style: normal; opacity: 0.8; }
 .galaxy-map__swatch { box-sizing: border-box; }
+
+/* "You are here" — a cross rather than a dot, so it is never mistaken for a sector marker. */
+.galaxy-map__you line { stroke: #f0f6fc; stroke-width: 1.5; }
+.galaxy-map__you circle { stroke: #f0f6fc; stroke-width: 1.5; }

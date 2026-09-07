@@ -154,3 +154,66 @@ describe("Phase 3 through the real journal events", () => {
     expect(t.bodyMappedFlag.get(KEY)).toBeUndefined();
   });
 });
+
+describe("the commander's own position (§10.3)", () => {
+  const jump = (ts: string, sys: string, addr: number, pos: unknown, event = "FSDJump") => ({
+    timestamp: ts,
+    event,
+    StarSystem: sys,
+    SystemAddress: addr,
+    StarPos: pos,
+  });
+
+  it("captures StarPos from a jump", () => {
+    const s = new GameStateStore();
+    feed(s, [jump("2026-09-07T01:00:00Z", "Swoilz KI-E b4-9", 1, [137, -88.84375, 298.09375])]);
+    expect(s.commanderPos).toEqual({ x: 137, y: -88.84375, z: 298.09375 });
+    expect(s.currentSystem).toBe("Swoilz KI-E b4-9");
+  });
+
+  it("takes it from Location and CarrierJump too — all three carry StarPos", () => {
+    for (const event of ["Location", "CarrierJump"]) {
+      const s = new GameStateStore();
+      feed(s, [jump("2026-09-07T01:00:00Z", "Sol", 10477373803, [0, 0, 0], event)]);
+      expect(s.commanderPos, event).toEqual({ x: 0, y: 0, z: 0 });
+    }
+  });
+
+  it("moves with the commander", () => {
+    const s = new GameStateStore();
+    feed(s, [
+      jump("2026-09-07T01:00:00Z", "A", 1, [1, 2, 3]),
+      jump("2026-09-07T02:00:00Z", "B", 2, [10, 20, 30]),
+    ]);
+    expect(s.commanderPos).toEqual({ x: 10, y: 20, z: 30 });
+  });
+
+  /** A jump line without usable coordinates must not move the ship to the origin. */
+  it("ignores a malformed StarPos rather than jumping to 0,0,0", () => {
+    const s = new GameStateStore();
+    feed(s, [jump("2026-09-07T01:00:00Z", "A", 1, [1, 2, 3])]);
+    feed(s, [
+      jump("2026-09-07T02:00:00Z", "B", 2, ["x", 2, 3]),
+      jump("2026-09-07T03:00:00Z", "C", 3, [1, 2]),
+      jump("2026-09-07T04:00:00Z", "D", 4, undefined),
+    ]);
+    expect(s.commanderPos).toEqual({ x: 1, y: 2, z: 3 });
+  });
+
+  it("survives the cache, and an older cache simply has no position", () => {
+    const s = new GameStateStore();
+    feed(s, [jump("2026-09-07T01:00:00Z", "A", 1, [1, 2, 3])]);
+    const payload = s.serializeJournalMergePayload();
+
+    const t = new GameStateStore();
+    t.hydrateJournalMergePayload(payload);
+    expect(t.commanderPos).toEqual({ x: 1, y: 2, z: 3 });
+
+    // A cache written before §10.3 loads and reports null — the map draws nothing rather than
+    // guessing, and the next jump fills it in.
+    delete (payload as { commanderPos?: unknown }).commanderPos;
+    const u = new GameStateStore();
+    u.hydrateJournalMergePayload(payload);
+    expect(u.commanderPos).toBeNull();
+  });
+});

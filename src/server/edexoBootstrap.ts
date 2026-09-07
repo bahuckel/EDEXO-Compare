@@ -768,6 +768,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     lanKey,
     getSnapshot,
     getStatus,
+    getCommanderPosition: () => store.commanderPos,
+    getCommanderSystem: () => store.currentSystem,
     setIncludeBacterium: (v) => {
       store.setIncludeBacteriumInSearch(v);
       persistUserPreferences();

@@ -27,6 +27,12 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import {
+  SECTOR_ORIGIN,
+  SECTOR_SIZE_LY,
+  sectorCellFromCoords,
+  sectorCellKey,
+} from "@shared/sectorName.js";
+import {
   allTaxa,
   cellTotals,
   systemTotals,
@@ -132,7 +138,18 @@ const VIEW_W = 520;
 const VIEW_H = 380;
 const PAD = 28;
 
-export function GalaxySectorMap({ file }: { file: SectorMapFile }) {
+export interface CommanderPosition {
+  position: { x: number; y: number; z: number } | null;
+  system: string | null;
+}
+
+export function GalaxySectorMap({
+  file,
+  commander,
+}: {
+  file: SectorMapFile;
+  commander?: CommanderPosition | null;
+}) {
   const [taxon, setTaxon] = useState<string>("");
   const [query, setQuery] = useState("");
   const [hover, setHover] = useState<SectorMapCell | null>(null);
@@ -153,6 +170,26 @@ export function GalaxySectorMap({ file }: { file: SectorMapFile }) {
   }, [file, taxon]);
 
   const maxBodies = useMemo(() => Math.max(1, ...shown.map((r) => r.totals.bodies)), [shown]);
+
+  /**
+   * The commander, in cell coordinates.
+   *
+   * The plots are drawn in grid indices, not light years, so the position is converted once here
+   * rather than in both projections. Fractional on purpose — a marker snapped to the cell centre
+   * would sit up to 640 ly from where the ship actually is.
+   */
+  const commanderCell = useMemo(() => {
+    const p = commander?.position;
+    if (!p) return null;
+    const cell = sectorCellFromCoords(p.x, p.y, p.z);
+    return {
+      x: (p.x - SECTOR_ORIGIN.x) / SECTOR_SIZE_LY,
+      y: (p.y - SECTOR_ORIGIN.y) / SECTOR_SIZE_LY,
+      z: (p.z - SECTOR_ORIGIN.z) / SECTOR_SIZE_LY,
+      key: sectorCellKey(cell),
+      system: commander?.system ?? null,
+    };
+  }, [commander]);
 
   const searchHit = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -202,6 +239,7 @@ export function GalaxySectorMap({ file }: { file: SectorMapFile }) {
             highlight={searchHit}
             onHover={setHover}
             onOpen={setOpenCell}
+            commander={commanderCell}
           />
         ))}
       </div>
@@ -246,6 +284,7 @@ function SectorPlot({
   highlight,
   onHover,
   onOpen,
+  commander,
 }: {
   projection: Projection;
   rows: { cell: SectorMapCell; totals: ReturnType<typeof cellTotals>; kind: Kind }[];
@@ -253,6 +292,7 @@ function SectorPlot({
   highlight: SectorMapCell | null;
   onHover: (c: SectorMapCell | null) => void;
   onOpen: (c: SectorMapCell) => void;
+  commander: { x: number; y: number; z: number; key: string; system: string | null } | null;
 }) {
   // The grid spans roughly 0..78 cells on each axis; fitting to the data rather than the whole
   // galaxy keeps a small corpus legible instead of a dot in the corner.
@@ -260,13 +300,19 @@ function SectorPlot({
     if (rows.length === 0) return { minX: 0, maxX: 1, minY: 0, maxY: 1 };
     const xs = rows.map((r) => projection.ax(r.cell));
     const ys = rows.map((r) => projection.ay(r.cell));
+    // The ship may be well outside the sampled corpus. Stretching the view to include it beats
+    // drawing it off-canvas, which would silently look like "no position".
+    if (commander) {
+      xs.push(projection.ax(commander as unknown as SectorMapCell));
+      ys.push(projection.ay(commander as unknown as SectorMapCell));
+    }
     return {
       minX: Math.min(...xs),
       maxX: Math.max(...xs),
       minY: Math.min(...ys),
       maxY: Math.max(...ys),
     };
-  }, [rows, projection]);
+  }, [rows, projection, commander]);
 
   const sx = (v: number) =>
     PAD + ((v - bounds.minX) / Math.max(1, bounds.maxX - bounds.minX)) * (VIEW_W - PAD * 2);
@@ -311,6 +357,21 @@ ${evidenceSummary(totals)}`}</title>
             </circle>
           );
         })}
+        {commander ? (
+          <g
+            transform={`translate(${sx(projection.ax(commander as unknown as SectorMapCell))}, ${sy(
+              projection.ay(commander as unknown as SectorMapCell),
+            )})`}
+            className="galaxy-map__you"
+          >
+            {/* A cross, not a dot: at a glance it must not be mistaken for a sector marker, and it
+                stays legible on top of one. Drawn last so a dense sector never hides the ship. */}
+            <line x1={-7} y1={0} x2={7} y2={0} />
+            <line x1={0} y1={-7} x2={0} y2={7} />
+            <circle r={4} fill="none" />
+            <title>{`You are here — ${commander.system ?? "unknown system"} (cell ${commander.key})`}</title>
+          </g>
+        ) : null}
       </svg>
     </figure>
   );

@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import type { SectorMapFile } from "@shared/sectorMapFile.js";
-import { GalaxySectorMap } from "./GalaxySectorMap";
+import { GalaxySectorMap, type CommanderPosition } from "./GalaxySectorMap";
 
 type Load =
   | { state: "loading" }
@@ -18,6 +18,7 @@ type Load =
 
 export function GalaxyMapScreen() {
   const [load, setLoad] = useState<Load>({ state: "loading" });
+  const [commander, setCommander] = useState<CommanderPosition | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +39,33 @@ export function GalaxyMapScreen() {
     };
   }, []);
 
+  /**
+   * The commander's position, polled (§10.3).
+   *
+   * A slow poll rather than a WebSocket: this screen has no live state and wants three numbers. At
+   * 1280 ly per cell a jump of ~50 ly rarely leaves the cell, so 15 seconds is far finer than the
+   * map can show — and a stale-by-seconds ship is honest in a way that no ship at all is not.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    const read = () => {
+      fetch("/api/commander-position")
+        .then((r) => (r.ok ? (r.json() as Promise<CommanderPosition>) : null))
+        .then((p) => {
+          if (!cancelled && p) setCommander(p);
+        })
+        .catch(() => {
+          // The map is useful without the ship; a failed poll must not disturb it.
+        });
+    };
+    read();
+    const t = setInterval(read, 15_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, []);
+
   return (
     <main className="galaxy-screen">
       <header>
@@ -45,6 +73,7 @@ export function GalaxyMapScreen() {
         {load.state === "ready" ? (
           <p className="galaxy-screen__meta">
             {load.file.cells.length} sectors · built {new Date(load.file.generatedAt).toLocaleString()}
+            {commander?.system ? ` · you are in ${commander.system}` : ""}
           </p>
         ) : null}
       </header>
@@ -64,7 +93,7 @@ export function GalaxyMapScreen() {
 
       {load.state === "ready" ? (
         <>
-          <GalaxySectorMap file={load.file} />
+          <GalaxySectorMap file={load.file} commander={commander} />
           {/* The provenance travels with the data; show it rather than paraphrasing it. */}
           <p className="galaxy-screen__note">{load.file.note}</p>
           <p className="galaxy-screen__source">Sector names: {load.file.sectorNameSource}</p>
