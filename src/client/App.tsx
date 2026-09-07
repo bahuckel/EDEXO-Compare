@@ -1297,8 +1297,29 @@ function ExoPayoutRangeDetailModal({
  * Nothing is shown for a single-species genus: "100 % of one" is not information.
  */
 function GenusSpeciesOdds({ items, confirmed }: { items: BodyComputed["matches"]; confirmed: boolean }) {
-  const scored = items
-    .filter((m) => !m.unlikely)
+  const shortName = (full: string) => {
+    const parts = full.trim().split(/\s+/);
+    return parts.length > 1 ? parts.slice(1).join(" ") : full;
+  };
+
+  const shown = items.filter((m) => !m.unlikely);
+
+  /**
+   * A genus holding a species the app cannot gate gets **no percentages at all**.
+   *
+   * The shares are normalised *inside the genus*, so one unevaluable member poisons every other
+   * number rather than just its own: Electricae radialem needs a nebula the app cannot measure, and
+   * "radialem 70 % · pluma 30 %" is therefore two wrong figures, not one. Dropping radialem and
+   * showing "pluma 100 %" would be worse still — it would assert the answer is pluma when the real
+   * answer is that we cannot tell.
+   *
+   * So the species are still named, because knowing which ones the genus contains is useful, and the
+   * numbers are withheld. Same discipline as `predictionUnsupported` on the card itself (§7.11), and
+   * as §18's rule against a percentage with nothing behind it.
+   */
+  const ungateable = shown.filter((m) => m.entry.predictionUnsupported);
+
+  const scored = shown
     .map((m) => ({ name: m.entry.displayName, share: m.genusSharePercent }))
     .filter(
       (x): x is { name: string; share: number } => typeof x.share === "number" && Number.isFinite(x.share),
@@ -1306,10 +1327,30 @@ function GenusSpeciesOdds({ items, confirmed }: { items: BodyComputed["matches"]
     .sort((a, b) => b.share - a.share);
   if (scored.length < 2) return null;
 
-  const shortName = (full: string) => {
-    const parts = full.trim().split(/\s+/);
-    return parts.length > 1 ? parts.slice(1).join(" ") : full;
-  };
+
+  if (ungateable.length > 0) {
+    const reason = ungateable[0]!.entry.predictionUnsupported!.reason;
+    return (
+      <p
+        className="genus-species-odds genus-species-odds--ungateable"
+        title={`These shares are normalised inside the genus, so a species the app cannot gate makes every other share wrong too — not only its own. ${reason}.`}
+      >
+        <span className="genus-species-odds-lead">
+          {confirmed ? "DSS confirmed — one of:" : "If this genus is here, one of:"}
+        </span>{" "}
+        {scored.map((x, i) => (
+          <span key={x.name} className="genus-species-odds-item">
+            {i > 0 ? " · " : ""}
+            {shortName(x.name)}
+          </span>
+        ))}{" "}
+        <span className="genus-species-odds-why">
+          — no split: {ungateable.map((m) => shortName(m.entry.displayName)).join(", ")}{" "}
+          {ungateable.length === 1 ? "depends" : "depend"} on something a scan cannot answer
+        </span>
+      </p>
+    );
+  }
 
   return (
     <p

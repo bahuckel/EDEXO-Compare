@@ -9518,3 +9518,8 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 /* "You are here" — a cross rather than a dot, so it is never mistaken for a sector marker. */
 .galaxy-map__you line { stroke: #f0f6fc; stroke-width: 1.5; }
 .galaxy-map__you circle { stroke: #f0f6fc; stroke-width: 1.5; }
+
+/* A genus holding an ungateable species shows names without numbers — §18: no percentage with
+   nothing behind it, and the shares are normalised so one bad member poisons them all. */
+.genus-species-odds--ungateable { opacity: 0.9; }
+.genus-species-odds--ungateable .genus-species-odds-why { opacity: 0.6; font-size: 0.92em; }
