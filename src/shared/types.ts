@@ -432,14 +432,35 @@ export interface MatchReason {
   soft?: boolean;
 }
 
-/** How a foot-catalog row was recorded from the journal. */
-export type FootCatalogConfirmation = "analyse" | "sample";
+/**
+ * How a foot-catalog row was recorded from the journal, weakest first.
+ *
+ * All three name the species — the journal writes `Species_Localised` on every `ScanOrganic` line —
+ * so all three confirm the species was on that body. What they differ on is how much of it the
+ * commander then took:
+ *
+ *  - `log`     — first contact with the composition scanner. Seen and identified, nothing harvested.
+ *  - `sample`  — one of the three samples that make a sellable specimen.
+ *  - `analyse` — the third sample, which completes it.
+ *
+ * The distinction is about payout, not about presence, so a `log` is evidence exactly as much as an
+ * `analyse` is. Skipping the low-value species after logging it is a normal way to play, and 85 of
+ * this commander's 352 observations are that.
+ */
+export type FootCatalogConfirmation = "analyse" | "sample" | "log";
+
+/** Strongest wins when the same species on the same body is seen more than once. */
+export const FOOT_CONFIRMATION_RANK: Record<FootCatalogConfirmation, number> = {
+  log: 0,
+  sample: 1,
+  analyse: 2,
+};
 
 /** One row learned from a prior on-foot `ScanOrganic` plus detailed scan (persisted in `data/foot_scanned.json`). */
 export interface FootScannedEntry {
   id: string;
   recordedAt: string;
-  /** Whether this row was first confirmed from `ScanType: Analyse` or `Sample` (analyse wins if both exist). */
+  /** Strongest `ScanType` seen for this species on this body — see {@link FOOT_CONFIRMATION_RANK}. */
   confirmationSource?: FootCatalogConfirmation;
   planetClass: string;
   /** From `normalizeScanAtmosphereForMatch` — compositional token or "" (vacuum). */

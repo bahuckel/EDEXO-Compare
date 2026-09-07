@@ -1695,7 +1695,18 @@ export class GameStateStore {
         }
 
         const scanType = (line.ScanType as string | undefined)?.trim();
-        if ((scanType === "Analyse" || scanType === "Sample") && (genusLoc || genusSym)) {
+        /*
+         * `Log` counts, and used to be dropped.
+         *
+         * All three ScanOrganic types name the species — every one of this commander's 1,166 lines
+         * carries `Species_Localised` — so all three are first-hand proof the species was on that
+         * body. Only `Analyse` and `Sample` were recorded, which silently lost every species that
+         * was logged and then left alone: 85 of 352 observations, because skipping a low-value plant
+         * after logging it is a normal way to play, not an incomplete action.
+         */
+        const isOrganicConfirmation =
+          scanType === "Analyse" || scanType === "Sample" || scanType === "Log";
+        if (isOrganicConfirmation && (genusLoc || genusSym)) {
           const rec = this.explorationScans.get(bk);
           const exo = this.bodies.get(bk);
           const baseScan = exo?.scan ?? (rec ? planetScanFromExplorationRecord(rec) : null);
@@ -1720,7 +1731,7 @@ export class GameStateStore {
                 lock,
                 ts,
                 includeBacterium: this.includeBacteriumInSearch,
-                confirmationSource: scanType === "Analyse" ? "analyse" : "sample",
+                confirmationSource: scanType === "Analyse" ? "analyse" : scanType === "Sample" ? "sample" : "log",
               });
             } catch {
               /* non-fatal: catalog file may be read-only */

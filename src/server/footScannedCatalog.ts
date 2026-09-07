@@ -1,5 +1,6 @@
 import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { FOOT_CONFIRMATION_RANK } from "../shared/types.js";
 import type {
   BodyExoState,
   ExplorationScanRecord,
@@ -524,12 +525,10 @@ export function footCatalogEntriesForSpecies(
 }
 
 function orderedConfirmations(rows: FootScannedEntry[]): FootCatalogConfirmation[] {
-  const hasA = rows.some((r) => (r.confirmationSource ?? "analyse") === "analyse");
-  const hasS = rows.some((r) => r.confirmationSource === "sample");
-  const out: FootCatalogConfirmation[] = [];
-  if (hasA) out.push("analyse");
-  if (hasS) out.push("sample");
-  return out;
+  // Strongest first, and every type the rows actually carry — a set that omitted `log` would make
+  // logged-only species look like they had no confirmation at all.
+  const present = new Set(rows.map((r) => r.confirmationSource ?? "analyse"));
+  return (["analyse", "sample", "log"] as FootCatalogConfirmation[]).filter((c) => present.has(c));
 }
 
 /**
@@ -635,10 +634,22 @@ export function recordFootScanned(
   const idx = file.entries.findIndex((e) => e.id === id);
   if (idx >= 0) {
     const prev = file.entries[idx]!;
+    /*
+     * The strongest scan wins, by rank rather than by arrival.
+     *
+     * A run is Log then Sample then Analyse, so the weaker lines arrive *after* the row already
+     * exists — a plain overwrite would leave a fully analysed species recorded as merely logged, and
+     * with three types instead of two the old two-way test could not express that at all.
+     */
     const prevSrc: FootCatalogConfirmation = prev.confirmationSource ?? "analyse";
-    const mergedSrc: FootCatalogConfirmation =
-      prevSrc === "analyse" || meta.confirmationSource === "analyse" ? "analyse" : "sample";
-    row.confirmationSource = mergedSrc;
+    row.confirmationSource =
+      FOOT_CONFIRMATION_RANK[meta.confirmationSource] >= FOOT_CONFIRMATION_RANK[prevSrc]
+        ? meta.confirmationSource
+        : prevSrc;
+    // The stronger scan's own timestamp goes with it; a later weak line must not restamp the row.
+    if (FOOT_CONFIRMATION_RANK[prevSrc] > FOOT_CONFIRMATION_RANK[meta.confirmationSource]) {
+      row.recordedAt = prev.recordedAt;
+    }
     file.entries[idx] = row;
   } else {
     file.entries.push(row);
