@@ -90,3 +90,14 @@ sign.txt
 
 # Feeder corpus: 250+ MB of raw EDSM sample packs. A build input, never shipped.
 feeder-data/
+
+# Per-image photo attribution: 22 commander names, from ED-DSN.
+#
+# Ignored rather than committed because this repo is public and the owner's standing decision is that
+# the app credits ed-dsn.net by link and names no commanders yet — most of the original expedition
+# cannot be reached to be asked. Keep the file; publishing it is a separate decision, and until it is
+# made this stops an `add -A` sweeping it in. Remove this line to publish it.
+/photo-contributions.txt
+
+# Generated report pages (galaxy coverage map and friends). Built from data/exomastery on demand.
+/build-artifacts/
