@@ -1,0 +1,632 @@
+/*
+ * Photo lightbox, My-exobiology cards, and the data-value breakdown.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 3866-4487 of the original.
+ */
+
+/* Full-screen photo lightbox (click image / Esc to close) */
+.photo-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem 1rem;
+  cursor: zoom-out;
+}
+
+.photo-lightbox-close {
+  position: fixed;
+  top: 0.75rem;
+  right: 1rem;
+  z-index: 2001;
+  font: inherit;
+  font-size: var(--fs-4xl);
+  line-height: 1;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--accent-bright);
+  cursor: pointer;
+  box-shadow: var(--glow);
+}
+
+.photo-lightbox-close:hover {
+  background: var(--accent-a15);
+}
+
+.photo-lightbox-img {
+  max-width: min(92vw, 1200px);
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 32px var(--accent-glow);
+  cursor: default;
+}
+
+.photo-lightbox-cap {
+  position: fixed;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(90vw, 640px);
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-align: center;
+  background: rgba(12, 12, 16, 0.92);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.species-img-ph {
+  padding: 1.25rem 0.75rem;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  min-height: 112px;
+}
+
+.species-photo-note {
+  margin: 0;
+  padding: 0.45rem 0.5rem 0.55rem;
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  color: var(--muted);
+  background: var(--shadow-a35);
+  border-top: 1px solid var(--accent-dim);
+}
+
+.species-body {
+  padding: 0.85rem 1rem 1rem;
+  min-width: 0;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border-top: 1px solid var(--accent-a22);
+  overflow: visible;
+  width: 100%;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .species-body {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+}
+
+.species-match-heading {
+  margin: 0.5rem 0 0.4rem;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+}
+
+.species-title-line {
+  margin: 0 0 0.55rem;
+  font-size: var(--fs-lg);
+  line-height: 1.45;
+  color: var(--text);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.species-scan-ok {
+  color: #5fd88a;
+  font-weight: 800;
+  text-shadow: 0 0 8px rgba(95, 216, 138, 0.55);
+}
+
+.species-scan-ok--identity {
+  margin-right: 0.12rem;
+}
+
+.species-title-name {
+  color: var(--text);
+}
+
+.species-title-sep {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.species-title-cr {
+  color: var(--accent-bright);
+  text-shadow: 0 0 12px var(--accent-glow);
+}
+
+.species-facts-list--match {
+  margin-top: 0;
+}
+
+/* Compact vertical facts (secondary / overflow rows) */
+.species-facts-list {
+  list-style: none;
+  margin: 0.55rem 0 0.45rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 8, 12, 0.92);
+  box-shadow:
+    inset 0 0 0 1px var(--accent-a06),
+    0 1px 8px var(--shadow-a35);
+}
+
+.species-fact-row {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 32%) 1fr;
+  gap: 0.2rem 0.65rem;
+  padding: 0.22rem 0;
+  align-items: start;
+  border-bottom: 1px solid var(--accent-a12);
+}
+
+.species-fact-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.species-fact-row:first-child {
+  padding-top: 0;
+}
+
+.species-fact-row--source .species-fact-value {
+  font-size: var(--fs-sm);
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  word-break: break-all;
+  color: #d4cfc7;
+}
+
+.species-fact-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+  color: var(--accent-bright);
+  line-height: 1.35;
+}
+
+.species-fact-value {
+  font-size: var(--fs-md);
+  font-weight: 500;
+  color: #f7f4ef;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+@media (max-width: 480px) {
+  .species-fact-row {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+  .species-fact-label {
+    margin-bottom: 0.05rem;
+  }
+}
+
+.species-body h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-xl);
+}
+
+.genus-path-only {
+  font-size: var(--fs-sm);
+  margin: 0.2rem 0 0;
+}
+
+.genus {
+  margin: 0.15rem 0 0.4rem;
+  color: var(--accent);
+  font-size: var(--fs-md);
+}
+
+.desc {
+  margin: 0 0 0.5rem;
+  font-size: var(--fs-md);
+  color: var(--muted);
+}
+
+.why h4 {
+  margin: 0.35rem 0 0.25rem;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.why ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: var(--fs-md);
+  color: var(--muted);
+}
+
+.notes {
+  margin: 0.5rem 0 0;
+  font-size: var(--fs-sm);
+  font-style: italic;
+  color: var(--muted);
+}
+
+.species-price {
+  margin: 0.25rem 0 0.5rem;
+  font-size: var(--fs-lg);
+  color: var(--text);
+}
+
+.species-actions {
+  margin: 0.65rem 0 0.35rem;
+  flex-shrink: 0;
+}
+
+.btn-notes {
+  font: inherit;
+  font-size: var(--fs-md);
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--r-xs);
+  border: var(--border);
+  background: #14141a;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.btn-notes:hover {
+  background: rgba(255, 106, 26, 0.12);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-panel {
+  max-width: min(640px, 100%);
+  max-height: min(80vh, 720px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--glow);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-7);
+  padding: 0.55rem 0.75rem;
+  border-bottom: var(--border);
+}
+
+.modal-head h3 {
+  margin: 0;
+  font-size: var(--fs-lg);
+}
+
+.modal-close {
+  font: inherit;
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  padding: 0 0.35rem;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: var(--accent);
+}
+
+.modal-body {
+  padding: 0.75rem;
+  overflow: auto;
+}
+
+.modal-panel--data-value {
+  max-width: min(520px, 100%);
+}
+
+.modal-panel--my-exo {
+  max-width: min(520px, 100%);
+}
+
+.modal-body--my-exo {
+  padding-top: 0.5rem;
+}
+
+.my-exo-intro {
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  margin: 0 0 0.75rem;
+}
+
+.my-exo-card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+}
+
+.my-exo-card {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius-sm);
+  background: rgba(10, 10, 14, 0.92);
+}
+
+.my-exo-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+}
+
+.my-exo-card-loc {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.my-exo-nav-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  margin: 0;
+  border: 1px solid rgba(130, 180, 255, 0.45);
+  border-radius: var(--r-sm);
+  background: rgba(40, 70, 110, 0.35);
+  color: var(--info-soft);
+  cursor: pointer;
+}
+
+.my-exo-nav-icon:hover {
+  background: rgba(55, 90, 140, 0.5);
+  color: #c5ddff;
+}
+
+.my-exo-nav-icon-svg {
+  display: block;
+}
+
+.my-exo-card-time {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.my-exo-card-sub {
+  margin: 0.2rem 0 0.45rem;
+}
+
+.my-exo-card-sub--indented {
+  padding-left: 2.15rem;
+}
+
+.my-exo-card-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.35rem 0.75rem;
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 440px) {
+  .my-exo-card-facts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.my-exo-card-fact {
+  margin: 0;
+}
+
+.my-exo-card-fact--wide {
+  grid-column: 1 / -1;
+}
+
+.my-exo-card-fact dt {
+  margin: 0;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.my-exo-card-fact dd {
+  margin: 0.08rem 0 0;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.my-exo-body {
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.modal-body--data-value {
+  max-height: min(65vh, 560px);
+}
+
+.data-value-breakdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.data-value-breakdown-row {
+  display: flex;
+  gap: var(--s-7);
+  align-items: flex-start;
+  padding: 0.65rem 0.5rem;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 8, 12, 0.88);
+}
+
+.data-value-breakdown-thumb {
+  width: 4.25rem;
+  height: 4.25rem;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--accent-dim);
+  flex-shrink: 0;
+}
+
+.data-value-breakdown-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  font-size: var(--fs-md);
+}
+
+.data-value-breakdown-planet {
+  line-height: 1.35;
+}
+
+.data-value-breakdown-species {
+  font-weight: 650;
+  color: var(--text);
+}
+
+.data-value-breakdown-value-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+  margin-top: 0.15rem;
+}
+
+.data-value-breakdown-credits {
+  font-weight: 800;
+  color: var(--accent-bright);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.data-value-footfall-badge {
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--r-xs);
+  border: 1px solid rgba(95, 216, 138, 0.55);
+  background: rgba(95, 216, 138, 0.12);
+  color: #7ae8a8;
+}
+
+.data-value-footfall-detail {
+  font-size: var(--fs-sm);
+  margin-top: 0.1rem;
+}
+
+.notes-pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.small-caps {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tiny {
+  font-size: var(--fs-sm);
+}
+
+.btn.system-map-launch--solo {
+  font: inherit;
+  font-weight: 700;
+  font-size: var(--fs-md);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-bright);
+  background: var(--accent-a12);
+  color: var(--accent-bright);
+  cursor: pointer;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.tab.system-map-launch {
+  border: 1px dashed var(--accent);
+  color: var(--accent-bright);
+}
+
+.system-map-panel {
+  max-width: min(92rem, 98vw);
+  width: min(92rem, 98vw);
+  max-height: min(94vh, 56rem);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  position: relative;
+}
+
+.card-neon {
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius-md);
+  background: rgba(10, 10, 14, 0.92);
+  padding: 0.65rem 0.75rem;
+  box-shadow: 0 0 14px rgba(255, 106, 26, 0.12);
+}
+
+.system-map-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--s-7);
+}
+
+.system-map-dscan-wrap {
+  padding: 0 0.15rem;
+}

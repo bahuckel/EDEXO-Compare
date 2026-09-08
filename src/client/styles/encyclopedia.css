@@ -1,0 +1,835 @@
+/*
+ * Encyclopedia panel, its filter bar, and the inline exomastery fields.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 6735-7559 of the original.
+ */
+
+/* Encyclopedia */
+
+/* Encyclopedia panel: don't clip filter dropdowns; keep list scroll inside .encyclopedia-scroll */
+.modal-panel.encyclopedia-panel {
+  overflow: visible;
+  min-height: min(420px, 72vh);
+  max-height: min(88vh, 900px);
+}
+
+.encyclopedia-panel {
+  max-width: min(1360px, 100%);
+}
+
+.encyclopedia-body {
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.modal-panel.encyclopedia-panel .modal-body.encyclopedia-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+/* Encyclopedia filters — custom selects + summary bar */
+.encyclopedia-filters {
+  margin-bottom: 0.75rem;
+  padding: 0.65rem 0.7rem 0.5rem;
+  border-radius: var(--r-xl);
+  border: 1px solid rgba(120, 160, 255, 0.22);
+  background: linear-gradient(165deg, rgba(18, 28, 52, 0.92), rgba(10, 14, 26, 0.88));
+  box-shadow:
+    0 4px 18px var(--shadow-a35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  position: relative;
+  z-index: 2;
+}
+
+.encyclopedia-filters__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  margin-bottom: 0.55rem;
+}
+
+.encyclopedia-filters__hint {
+  font-size: var(--fs-md);
+  color: rgba(215, 225, 240, 0.82);
+}
+
+.encyclopedia-filters__hint strong {
+  color: rgba(160, 210, 255, 0.95);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.encyclopedia-filters__pill {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.45rem;
+  border-radius: var(--r-pill);
+  background: rgba(100, 180, 255, 0.18);
+  color: rgba(180, 220, 255, 0.95);
+  border: 1px solid rgba(120, 190, 255, 0.35);
+}
+
+.encyclopedia-filters__clear {
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(255, 140, 90, 0.4);
+  background: rgba(80, 40, 20, 0.35);
+  color: rgba(255, 200, 170, 0.92);
+  cursor: pointer;
+}
+
+.encyclopedia-filters__clear:hover {
+  background: rgba(100, 50, 28, 0.5);
+}
+
+.encyclopedia-filters__chip {
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.22rem 0.6rem;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(120, 255, 190, 0.35);
+  background: rgba(20, 55, 40, 0.45);
+  color: rgba(170, 245, 210, 0.95);
+  cursor: pointer;
+}
+
+.encyclopedia-filters__chip:hover {
+  background: rgba(28, 72, 52, 0.55);
+}
+
+.encyclopedia-filters__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 0.5rem 0.65rem;
+}
+
+.encyclopedia-filters__note {
+  margin: 0.55rem 0 0;
+  line-height: 1.35;
+}
+
+.ency-filter-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.ency-filter-field__label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(160, 175, 205, 0.75);
+}
+
+.ency-filter-field__control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  width: 100%;
+  margin: 0;
+  padding: 0.4rem 0.55rem 0.42rem 0.6rem;
+  font: inherit;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  text-align: left;
+  border-radius: var(--r-lg);
+  border: 1px solid rgba(90, 120, 180, 0.45);
+  background: linear-gradient(180deg, rgba(35, 45, 72, 0.95), rgba(22, 28, 48, 0.98));
+  color: rgba(235, 240, 255, 0.96);
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 2px 8px var(--shadow-a25);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.ency-filter-field__control:hover:not(:disabled) {
+  border-color: rgba(130, 185, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 0 0 1px rgba(100, 160, 255, 0.15);
+}
+
+.ency-filter-field__control:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ency-filter-field__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ency-filter-field__chev {
+  flex-shrink: 0;
+  font-size: var(--fs-2xs);
+  opacity: 0.65;
+}
+
+.ency-filter-field__menu {
+  position: absolute;
+  z-index: 4000;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.3rem 0;
+  list-style: none;
+  max-height: min(14rem, 42vh);
+  overflow-y: auto;
+  border-radius: var(--r-lg);
+  border: 1px solid rgba(120, 170, 255, 0.32);
+  background: rgba(12, 16, 28, 0.98);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.ency-filter-field__menu li {
+  margin: 0;
+}
+
+.ency-filter-field__opt {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  width: 100%;
+  margin: 0;
+  padding: 0.38rem 0.55rem 0.38rem 0.45rem;
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: rgba(225, 230, 245, 0.92);
+  cursor: pointer;
+}
+
+.ency-filter-field__opt:hover {
+  background: rgba(80, 120, 200, 0.22);
+}
+
+.ency-filter-field__opt.is-active {
+  background: rgba(60, 110, 200, 0.28);
+  color: rgba(195, 225, 255, 0.98);
+}
+
+.ency-filter-field__tick {
+  display: inline-block;
+  width: 0.85rem;
+  flex-shrink: 0;
+  font-size: var(--fs-sm);
+  opacity: 0.9;
+}
+
+.ency-filter-field--search .ency-filter-field__search {
+  width: 100%;
+  margin: 0;
+  padding: 0.42rem 0.6rem;
+  font: inherit;
+  font-size: var(--fs-md);
+  border-radius: var(--r-lg);
+  border: 1px solid rgba(90, 120, 180, 0.45);
+  background: rgba(18, 22, 36, 0.92);
+  color: rgba(235, 240, 255, 0.96);
+  box-shadow: inset 0 2px 6px var(--shadow-a25);
+}
+
+.ency-filter-field--search .ency-filter-field__search::placeholder {
+  color: rgba(160, 170, 195, 0.45);
+}
+
+.ency-filter-field--search .ency-filter-field__search:focus {
+  outline: none;
+  border-color: rgba(130, 185, 255, 0.55);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(80, 140, 255, 0.2);
+}
+
+.encyclopedia-scroll {
+  overflow-y: auto;
+  flex: 1;
+  min-height: min(200px, 32vh);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-right: 0.25rem;
+}
+
+.encyclopedia-empty-filtered {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: var(--fs-lg);
+  line-height: 1.45;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(120, 160, 255, 0.28);
+  background: rgba(12, 16, 30, 0.42);
+  color: var(--muted);
+}
+
+.encyclopedia-species-card {
+  position: relative;
+  border: 1px solid rgba(255, 122, 36, 0.18);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.75rem;
+  background: rgba(12, 12, 18, 0.65);
+}
+
+/* Was a bare "(!)" with a title attribute: a symbol with no legend, no keyboard access and no
+   explanation until you rested the pointer on exactly two characters. */
+.ency-low-sample-anchor {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.55rem;
+  z-index: 1;
+}
+
+.encyclopedia-exomastery-insufficient {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(240, 176, 48, 0.4);
+  background: rgba(60, 40, 6, 0.72);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  color: #f0b030;
+  cursor: help;
+  white-space: nowrap;
+}
+
+.ency-low-sample-icon {
+  flex: 0 0 auto;
+}
+
+.encyclopedia-focus-body-panel {
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.65rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(100, 180, 255, 0.28);
+  background: rgba(8, 20, 40, 0.45);
+}
+
+.encyclopedia-focus-body-title {
+  margin: 0 0 0.35rem;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--info);
+}
+
+.encyclopedia-focus-body-class {
+  font-weight: 600;
+  color: rgba(230, 225, 215, 0.95);
+}
+
+.encyclopedia-focus-body-line {
+  margin: 0 0 0.35rem;
+}
+
+.encyclopedia-habitat-pct {
+  color: #7ee0c8;
+  font-variant-numeric: tabular-nums;
+}
+
+.encyclopedia-focus-body-duplex-wrap {
+  margin-top: 0.25rem;
+  max-height: min(70vh, 36rem);
+  overflow: auto;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(80, 140, 200, 0.2);
+}
+
+.encyclopedia-species-card--row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.encyclopedia-species-card-main {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s-7);
+}
+
+.encyclopedia-exomastery-drawer {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 1px solid transparent;
+  transition:
+    max-height 380ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms ease,
+    margin-top 300ms ease,
+    padding-top 300ms ease,
+    border-top-color 300ms ease;
+  scroll-margin-bottom: 1.25rem;
+  scroll-margin-top: 1rem;
+}
+
+.encyclopedia-exomastery-drawer--open {
+  max-height: min(72vh, 920px);
+  opacity: 1;
+  margin-top: 0.55rem;
+  padding-top: 0.05rem;
+  border-top-color: rgba(100, 200, 255, 0.12);
+}
+
+.encyclopedia-exomastery-drawer-inner {
+  max-height: min(70vh, 880px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(100, 200, 255, 0.22);
+  background: var(--shadow-a35);
+}
+
+.encyclopedia-thumb-btn {
+  flex-shrink: 0;
+  width: 104px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--accent-a25);
+  border-radius: var(--r-md);
+  background: var(--surface-3);
+  cursor: zoom-in;
+  overflow: hidden;
+  line-height: 0;
+  align-self: flex-start;
+}
+
+.encyclopedia-thumb-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.encyclopedia-species-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.encyclopedia-species-img--thumb {
+  width: 100%;
+  height: 88px;
+  object-fit: cover;
+  display: block;
+}
+
+.encyclopedia-species-hero {
+  margin-bottom: 0.5rem;
+}
+
+.encyclopedia-species-img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+}
+
+.encyclopedia-photo-note {
+  margin: 0.35rem 0 0;
+}
+
+.encyclopedia-species-head {
+  margin-bottom: 0.35rem;
+}
+
+.encyclopedia-species-title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  color: var(--accent-bright);
+}
+
+.encyclopedia-desc {
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  margin: 0.35rem 0;
+  color: #d6d2cb;
+}
+
+.encyclopedia-criteria-label {
+  display: block;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.encyclopedia-criteria ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: var(--fs-md);
+  line-height: 1.45;
+}
+
+.encyclopedia-spawn-compare-line {
+  margin: 0.35rem 0 0.55rem;
+  line-height: 1.45;
+}
+
+.ency-spawn-card-line {
+  display: block;
+  line-height: 1.35;
+}
+
+.encyclopedia-species-actions {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  align-items: center;
+}
+
+.btn-ency-found {
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-dim);
+  background: var(--accent-a10);
+  color: var(--accent-bright);
+  cursor: pointer;
+}
+
+.btn-ency-found:hover {
+  border-color: var(--accent);
+}
+
+.encyclopedia-found-backdrop {
+  z-index: 1100;
+}
+
+.encyclopedia-found-panel {
+  max-width: min(520px, 100%);
+}
+
+.encyclopedia-found-body {
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+}
+
+.encyclopedia-found-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.encyclopedia-found-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  background: var(--shadow-a25);
+}
+
+.encyclopedia-found-date {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.encyclopedia-found-planet {
+  font-size: var(--fs-md);
+  margin: 0.25rem 0;
+}
+
+.encyclopedia-found-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.75rem;
+  font-size: var(--fs-sm);
+}
+
+.encyclopedia-found-facts dt {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.btn-ency-exomastery {
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(100, 200, 255, 0.45);
+  background: rgba(80, 160, 220, 0.12);
+  color: var(--info);
+  cursor: pointer;
+}
+
+.btn-ency-exomastery:hover {
+  border-color: rgba(140, 220, 255, 0.75);
+}
+
+.encyclopedia-exomastery-backdrop {
+  z-index: 1120;
+}
+
+.encyclopedia-exomastery-inline {
+  margin-top: 0.5rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(100, 200, 255, 0.22);
+  background: var(--shadow-a35);
+  max-height: min(55vh, 520px);
+  overflow-y: auto;
+}
+
+.encyclopedia-exomastery-inline--full {
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.encyclopedia-exomastery-inline-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-7);
+  margin-bottom: 0.35rem;
+}
+
+.encyclopedia-exomastery-inline-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.encyclopedia-exomastery-inline-sub {
+  display: block;
+  line-height: 1.35;
+}
+
+.encyclopedia-exomastery-refetch {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 0.24rem 0.55rem;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(120, 190, 255, 0.45);
+  background: rgba(12, 28, 48, 0.65);
+  color: #c8e8ff;
+  cursor: pointer;
+}
+
+.encyclopedia-exomastery-refetch:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.encyclopedia-exomastery-refetch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.encyclopedia-exomastery-inline-title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--info);
+}
+
+.encyclopedia-exomastery-panel {
+  max-width: min(1100px, 100%);
+  width: min(1100px, 100%);
+}
+
+.encyclopedia-exomastery-body {
+  max-height: min(78vh, 720px);
+  overflow-y: auto;
+  padding-top: 0.25rem;
+}
+
+.encyclopedia-exomastery-lede {
+  margin: 0 0 0.65rem;
+  line-height: 1.4;
+}
+
+.encyclopedia-exomastery-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+}
+
+.encyclopedia-exomastery-planet {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.6rem;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.encyclopedia-exomastery-planet-title {
+  margin: 0 0 0.5rem;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  color: #e8e4de;
+}
+
+.encyclopedia-exomastery-section {
+  margin-bottom: 0.75rem;
+}
+
+.encyclopedia-exomastery-section:last-child {
+  margin-bottom: 0;
+}
+
+.encyclopedia-exomastery-section-title {
+  margin: 0 0 0.35rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 122, 36, 0.85);
+}
+
+.encyclopedia-exomastery-subsection-title {
+  margin: 0.4rem 0 0.25rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: rgba(200, 200, 200, 0.78);
+  letter-spacing: 0.02em;
+}
+
+.encyclopedia-exomastery-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.4rem;
+}
+
+.encyclopedia-exomastery-fields--quad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+
+@media (max-width: 1080px) {
+  .encyclopedia-exomastery-fields--quad {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .encyclopedia-exomastery-fields--quad {
+    grid-template-columns: 1fr;
+  }
+}
+
+.encyclopedia-exo-field-name {
+  line-height: 1.2;
+  max-height: 2.5em;
+  overflow: hidden;
+}
+
+.encyclopedia-exomastery-stat-card .species-other-match-mini-line {
+  font-size: var(--fs-xs);
+}
+
+.encyclopedia-exomastery-stat-card .species-other-match-mini-legend {
+  font-size: var(--fs-2xs);
+}
+
+.encyclopedia-exomastery-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: var(--r-xs);
+  border-left: 3px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.encyclopedia-exomastery-field-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.encyclopedia-exomastery-field-value {
+  font-size: var(--fs-md);
+  color: #e4e0d9;
+  word-break: break-word;
+}
+
+.encyclopedia-exomastery-field-pct {
+  font-size: var(--fs-xs);
+}
+
+/* Encyclopedia exomastery deviation tiers (match server `deviationToTier`) */
+.exo-ency-tier--blue {
+  border-left-color: #5aa7ff;
+  background: rgba(60, 130, 255, 0.08);
+}
+
+.exo-ency-tier--green {
+  border-left-color: #52c962;
+  background: rgba(60, 200, 90, 0.09);
+}
+
+.exo-ency-tier--yellow {
+  border-left-color: #e6c84a;
+  background: rgba(220, 190, 60, 0.1);
+}
+
+.exo-ency-tier--orange {
+  border-left-color: #f0a038;
+  background: rgba(240, 140, 50, 0.1);
+}
+
+.exo-ency-tier--red {
+  border-left-color: #ff5a4a;
+  background: rgba(240, 70, 60, 0.12);
+}
+
+.exo-ency-tier--neutral {
+  border-left-color: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.18);
+}

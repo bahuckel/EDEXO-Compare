@@ -1,0 +1,609 @@
+/*
+ * Body tab strip, planetary body information card, and its info pills.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 6136-6734 of the original.
+ */
+
+/* Body tabs (system map opens from header star icon only) */
+
+.tabs-rework {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.tabs-body-rail {
+  border: 1px solid var(--accent-a22);
+  border-radius: var(--radius-sm);
+  background: rgba(12, 12, 18, 0.55);
+  padding: 0.26rem 0.4rem;
+  margin: 0.3rem 0 0.4rem;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.tabs-body-rail .tabs-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: var(--s-5);
+  padding: 0.1rem 0 0.15rem;
+  align-items: center;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs-strip-host-card {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: 0.28rem;
+  padding: 0.18rem 0.32rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--accent-a38);
+  background: rgba(8, 8, 12, 0.45);
+  box-sizing: border-box;
+}
+
+.tabs-body-rail .tab {
+  flex: 0 0 auto;
+}
+
+.tabs-body-heading {
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--accent-bright);
+  text-shadow: 0 0 10px var(--accent-glow);
+  letter-spacing: 0.04em;
+}
+
+.tabs-rework .tabs-strip {
+  flex: 1;
+  min-width: 0;
+}
+
+.tabs-rework .tabs-body-rail {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Planetary body information card */
+
+.planetary-info-card {
+  margin-bottom: 0.75rem;
+}
+
+/* Exo-signals + DSS + From Arrival — one toolbar row; fr tracks absorb free space (no dead gaps). */
+.planetary-info-signals-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) auto minmax(0, 1fr);
+  grid-template-areas: "exo dss arrival";
+  gap: var(--s-4);
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+.planetary-info-signals-toolbar .info-pill--exo-genus-combo {
+  grid-area: exo;
+}
+
+.planetary-info-signals-toolbar .info-pill--dss-planetary-compact {
+  grid-area: dss;
+  justify-self: stretch;
+}
+
+.planetary-info-signals-toolbar .info-pill--from-arrival {
+  grid-area: arrival;
+}
+
+.info-pill--dss-planetary-compact {
+  padding: 0.3rem 0.48rem !important;
+  font-size: var(--fs-xs) !important;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  min-width: 2.35rem !important;
+  line-height: 1.2;
+}
+
+.info-pill--from-arrival {
+  justify-content: flex-start;
+  border-color: rgba(120, 190, 255, 0.42);
+  background: rgba(12, 28, 52, 0.35);
+  font-size: var(--fs-sm);
+}
+
+.planetary-info-card .planetary-info-row {
+  display: flex;
+  width: 100%;
+  gap: var(--s-4);
+  justify-content: stretch;
+  align-items: stretch;
+  margin-bottom: 0.45rem;
+  box-sizing: border-box;
+}
+
+.planetary-info-card .planetary-info-row .info-pill {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.planetary-info-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+  margin: 0 0 0.65rem;
+}
+
+.planetary-info-title-row .planetary-info-title {
+  margin: 0;
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+.planetary-info-copy-summary {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.15rem 0.35rem;
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.planetary-info-copy-summary:hover {
+  opacity: 1;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.planetary-info-title {
+  margin: 0 0 0.65rem;
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--accent-bright);
+  text-shadow: 0 0 10px var(--accent-glow);
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+/* Codex vs journal / feeder consistency (Planetary Body Information) */
+.exo-data-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin: 0 0 0.65rem;
+}
+
+.exo-data-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-5);
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(140, 140, 150, 0.5);
+  background: rgba(18, 18, 24, 0.95);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+
+.exo-data-alert--error {
+  border-color: rgba(220, 72, 72, 0.65);
+  background: rgba(48, 12, 12, 0.55);
+}
+
+.exo-data-alert--warning {
+  border-color: rgba(210, 175, 48, 0.6);
+  background: rgba(40, 32, 8, 0.5);
+}
+
+.exo-data-alert__icon {
+  flex: 0 0 auto;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: 0.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: var(--fs-md);
+  line-height: 1;
+}
+
+.exo-data-alert__icon--error {
+  color: #ffb0b0;
+  background: rgba(180, 40, 40, 0.55);
+  border: 1px solid rgba(255, 120, 120, 0.55);
+  animation: exo-data-alert-pulse-error 1.1s ease-in-out infinite;
+}
+
+.exo-data-alert__icon--warning {
+  color: #ffe8a0;
+  background: rgba(140, 110, 20, 0.45);
+  border: 1px solid rgba(220, 180, 60, 0.5);
+  animation: exo-data-alert-pulse-warn 1.4s ease-in-out infinite;
+}
+
+@keyframes exo-data-alert-pulse-error {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(255, 80, 80, 0.45);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 12px 2px rgba(255, 60, 60, 0.35);
+  }
+}
+
+@keyframes exo-data-alert-pulse-warn {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(230, 190, 60, 0.35);
+  }
+  50% {
+    opacity: 0.88;
+    box-shadow: 0 0 10px 1px rgba(230, 190, 60, 0.28);
+  }
+}
+
+.exo-data-alert__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.exo-data-alert__title {
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.exo-data-alert__detail {
+  color: var(--muted);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.exo-data-alert__actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.exo-data-alert__btn {
+  font-size: var(--fs-sm);
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255, 122, 36, 0.55);
+  background: var(--accent-a20);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.exo-data-alert__btn:hover {
+  background: rgba(255, 122, 36, 0.32);
+}
+
+.exo-data-alert__btn--secondary {
+  border-color: rgba(120, 120, 130, 0.6);
+  background: rgba(30, 30, 38, 0.8);
+}
+
+.exo-data-alert__btn--secondary:hover {
+  background: rgba(50, 50, 58, 0.9);
+}
+
+.dss-genus-orphan-mark {
+  font-weight: 800;
+  color: #ffb070;
+  margin-left: 0.12em;
+  text-shadow: 0 0 8px var(--accent-a45);
+}
+
+.planetary-info-card .info-pill {
+  font-size: var(--fs-md);
+}
+
+.planetary-info-row--signals {
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+
+.planetary-info-card .planetary-info-row--signals .info-pill--exo-genus-combo {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: unset;
+  height: auto;
+  justify-content: flex-start;
+  align-items: flex-start;
+  align-content: flex-start;
+  text-align: left;
+  white-space: normal;
+  padding: 0.45rem 0.55rem;
+  line-height: 1.38;
+  word-break: break-word;
+}
+
+.planetary-info-signals-toolbar .info-pill--from-arrival {
+  min-width: 0;
+  max-width: 100%;
+  align-items: flex-start;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  white-space: normal;
+  line-height: 1.38;
+  word-break: break-word;
+  text-align: left;
+}
+
+.planetary-info-card .planetary-info-row--signals > .info-pill--onfoot {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+  align-items: flex-start;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.38;
+  word-break: break-word;
+  height: auto;
+  min-height: unset;
+}
+
+.planetary-info-signals-toolbar .info-pill-label {
+  white-space: normal;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.planetary-info-row--signals .info-pill--onfoot .info-pill-label {
+  white-space: normal;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .planetary-info-signals-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "exo exo"
+      "dss arrival";
+  }
+}
+
+.info-pill-exo-genus-sep {
+  opacity: 0.75;
+  font-weight: 600;
+}
+
+.info-pill {
+  font-size: var(--fs-sm);
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(120, 120, 130, 0.45);
+  background: rgba(16, 16, 22, 0.9);
+  min-height: 2.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  flex: 1 1 160px;
+  text-align: center;
+}
+
+.info-pill--static {
+  cursor: default;
+}
+
+.info-pill--click {
+  cursor: pointer;
+  text-align: center;
+  font: inherit;
+  color: inherit;
+}
+
+.info-pill--click:hover {
+  filter: brightness(1.06);
+}
+
+.info-pill-label {
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.info-pill--land-yes {
+  border-color: rgba(74, 222, 128, 0.55);
+  color: #9cf5c2;
+  background: rgba(20, 50, 32, 0.5);
+  justify-content: center;
+  font-weight: 700;
+}
+
+.info-pill--land-no {
+  border-color: rgba(248, 113, 113, 0.5);
+  color: #feb4b4;
+  background: rgba(50, 22, 22, 0.45);
+  justify-content: center;
+  font-weight: 700;
+}
+
+.info-pill--land-unknown {
+  border-color: rgba(120, 120, 135, 0.45);
+  color: var(--muted);
+  justify-content: center;
+}
+
+.info-pill--dss-yes {
+  border-color: rgba(74, 222, 128, 0.55);
+  color: #8cf5bd;
+  font-weight: 800;
+  flex: 0 0 auto;
+  min-width: 4.5rem;
+  justify-content: center;
+}
+
+.info-pill--dss-no {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: var(--danger-soft);
+  font-weight: 800;
+  flex: 0 0 auto;
+  min-width: 4.5rem;
+  justify-content: center;
+}
+
+.info-pill--signals {
+  flex: 0 1 auto;
+  justify-content: center;
+}
+
+.exo-signals-label {
+  font-weight: 400;
+  color: var(--text);
+}
+
+.exo-signals-num {
+  font-weight: 700;
+  color: var(--accent-bright);
+}
+
+.info-pill--dss-genus {
+  flex: 2 1 220px;
+  min-width: 140px;
+}
+
+.info-pill--onfoot {
+  flex: 1 1 180px;
+  min-width: 120px;
+  border-color: rgba(95, 216, 138, 0.4);
+  background: rgba(8, 42, 28, 0.2);
+}
+
+.info-pill--dss-genus-empty {
+  flex: 2 1 260px;
+}
+
+.info-pill-long-hint {
+  display: inline;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.35;
+  color: #c4bfb8;
+}
+
+.planetary-onfoot-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.35rem;
+  align-items: baseline;
+  font-size: var(--fs-md);
+  margin-top: 0.15rem;
+}
+
+.onfoot-scans-label {
+  font-weight: 400;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.onfoot-scans-values {
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+
+.planetary-lock-line {
+  margin: 0.45rem 0 0;
+}
+
+/* Organic sell range collapsible */
+
+.exo-payout-collapsible {
+  padding: 0.5rem 0.65rem 0.65rem;
+}
+
+.exo-payout-collapse-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  font: inherit;
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.15rem 0 0.35rem;
+  text-align: left;
+}
+
+.exo-payout-chevron {
+  display: inline-block;
+  transition: transform 250ms ease;
+  font-weight: 900;
+  color: var(--accent-bright);
+}
+
+.exo-payout-chevron--open {
+  transform: rotate(0deg);
+}
+
+.exo-payout-collapsible--closed .exo-payout-chevron {
+  transform: rotate(180deg);
+}
+
+.exo-payout-inner-click {
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  padding: 0.25rem 0 0;
+  font: inherit;
+  color: inherit;
+}
+
+.exo-payout-body-anim {
+  overflow: hidden;
+  max-height: 2400px;
+  opacity: 1;
+  transition:
+    max-height 250ms ease,
+    opacity 250ms ease;
+}
+
+.exo-payout-body-anim--closed {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.exo-payout-body-anim-inner {
+  padding-bottom: 0.15rem;
+}

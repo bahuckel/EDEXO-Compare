@@ -1,0 +1,528 @@
+/*
+ * Encyclopedia rail, candidate species cards, the unlikely tier, feeder status.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 8580-9097 of the original.
+ */
+
+/* ==========================================================================
+   v0.12.0 — encyclopedia + species cards
+   ==========================================================================
+   The encyclopedia was one flat column of 108 rows with a 219 px filter grid stacked on top of it,
+   leaving the results 501 px of a 787 px modal. Filters moved to a rail, the list groups by genus
+   with sticky headers, and the toolbar says which filters are on rather than how many.
+   ========================================================================== */
+
+.ency-layout {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Not scrollable on purpose: the facet dropdowns are absolutely positioned inside it, and an
+   `overflow` here would clip every open menu. */
+.ency-rail {
+  flex: 0 0 17.5rem;
+  min-width: 0;
+  overflow: visible;
+}
+
+.ency-rail .encyclopedia-filters {
+  margin-bottom: 0;
+}
+
+.ency-rail .encyclopedia-filters__grid {
+  grid-template-columns: 1fr;
+}
+
+.ency-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ency-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ency-search {
+  flex: 1 1 14rem;
+  min-width: 9rem;
+  max-width: 26rem;
+  font: inherit;
+  font-size: var(--fs-md);
+  padding: 0.34rem 0.6rem;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(120, 160, 255, 0.35);
+  background: rgba(8, 12, 24, 0.92);
+  color: var(--text);
+}
+
+.ency-search::placeholder {
+  color: var(--text-faint);
+}
+
+.ency-search:focus {
+  outline: none;
+  border-color: rgba(140, 190, 255, 0.85);
+  box-shadow: 0 0 0 2px rgba(120, 160, 255, 0.22);
+}
+
+.ency-count {
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.ency-count strong {
+  color: var(--text);
+}
+
+.ency-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+/* "3 filters active" told you that you were being filtered, not what to undo. */
+.ency-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  max-width: 16rem;
+  padding: 0.14rem 0.4rem;
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  color: rgba(215, 228, 255, 0.92);
+  background: rgba(30, 44, 82, 0.85);
+  border: 1px solid rgba(120, 160, 255, 0.4);
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    border-color 0.14s ease,
+    background-color 0.14s ease;
+}
+
+.ency-chip:hover {
+  border-color: rgba(160, 200, 255, 0.85);
+  background: rgba(44, 62, 108, 0.9);
+}
+
+.ency-chip-label {
+  color: rgba(170, 190, 225, 0.85);
+}
+
+.ency-chip-value {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ency-chip-x {
+  margin-left: 0.15rem;
+  font-size: 1.05em;
+  line-height: 1;
+  color: rgba(190, 210, 245, 0.75);
+}
+
+.ency-chip:hover .ency-chip-x {
+  color: #fff;
+}
+
+.ency-clear-all {
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 0.16rem 0.5rem;
+  cursor: pointer;
+  color: var(--accent-bright);
+  background: transparent;
+  border: 1px solid var(--accent-a38);
+  border-radius: var(--r-pill);
+}
+
+.ency-clear-all:hover {
+  border-color: var(--accent);
+  background: var(--accent-a10);
+}
+
+/* Wide screens keep the rail open; the toggle only exists where the rail stacks. */
+.ency-rail-toggle {
+  display: none;
+}
+
+/* The rail needs 466 px of column beside the list. Below that width — or that height, since the
+   modal body shrinks with the window — it stacks above the list behind a toggle instead. */
+@media (max-width: 1099px), (max-height: 580px) {
+  .ency-layout {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .ency-rail {
+    flex: 0 0 auto;
+    display: none;
+  }
+
+  .ency-rail--open {
+    display: block;
+  }
+
+  .ency-rail .encyclopedia-filters__grid {
+    grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  }
+
+  .ency-rail-toggle {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    color: rgba(215, 228, 255, 0.92);
+    background: rgba(20, 30, 56, 0.9);
+    border: 1px solid rgba(120, 160, 255, 0.4);
+    border-radius: var(--r-sm);
+  }
+
+  .ency-rail-toggle--on {
+    border-color: rgba(160, 200, 255, 0.9);
+    background: rgba(40, 58, 102, 0.95);
+  }
+}
+
+/* Genus grouping — how players actually think about exobiology, and enough structure that 108
+   rows stay navigable without virtualisation. */
+.ency-genus-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.ency-genus-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.28rem 0.55rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--accent-a22);
+  background: rgba(10, 8, 12, 0.96);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  font-size: var(--fs-md);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+}
+
+.ency-genus-count {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--r-pill);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.encyclopedia-filters__help {
+  margin-top: 0.5rem;
+}
+
+.encyclopedia-filters__help-summary {
+  cursor: pointer;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgba(180, 200, 235, 0.85);
+  list-style: none;
+}
+
+.encyclopedia-filters__help-summary::-webkit-details-marker {
+  display: none;
+}
+
+.encyclopedia-filters__help-summary::before {
+  content: "B8";
+  display: inline-block;
+  margin-right: 0.3rem;
+  transition: transform 0.14s ease;
+}
+
+.encyclopedia-filters__help[open] .encyclopedia-filters__help-summary::before {
+  transform: rotate(90deg);
+}
+
+.encyclopedia-filters__help-summary:hover {
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .encyclopedia-filters__help-summary::before {
+    transition: none;
+  }
+}
+
+/* --- compact candidate thumbnails ---------------------------------------
+   The source illustrations are 1024x576. Stretched to fill the media column they rendered at
+   175x255, 175x211, 175x286 — a different aspect ratio on every card, each one a different
+   vertical slice of a landscape photo. Fixed at the source ratio they are all the same shape and
+   show the whole frame. */
+/* The media column keeps its full height so the dark panel and its right border run the length of
+   the card; only its contents are pinned to the top. */
+.species-card-compact-media {
+  justify-content: flex-start;
+}
+
+/* Fills the media column, centred, cropping what does not fit.
+ *
+ * Owner's choice of the three: a fixed 16:9 box left 75-109 px of empty dark column under the Value
+ * block, `contain` letterboxed the 27 photos that are not 16:9, and `fill` stretched them by an
+ * amount that changed from card to card because the space does. `cover` keeps every photo's own
+ * proportions and loses its edges instead, which is the one that looks like a photograph.
+ *
+ * No `aspect-ratio` here on purpose: the height comes from the column, so the crop is whatever the
+ * detail column's height makes it. */
+.body-pane--compact-candidates .species-card--compact .species-img--compact,
+.species-img--compact {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+  object-fit: cover;
+  object-position: center;
+  background: #050508;
+}
+
+.species-compact-payout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.4rem 0.5rem 0.45rem;
+  border-top: 1px solid var(--accent-a22);
+  background: linear-gradient(180deg, var(--accent-a12) 0%, rgba(6, 6, 10, 0.95) 100%);
+}
+
+.species-compact-payout-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.species-compact-payout-amount {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--accent-bright);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.species-compact-payout-done {
+  margin-top: 0.15rem;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: #6ee7b7;
+}
+
+/* Candidate whose feeder profile matches nothing about this body: ranked last, never removed. */
+.species-similarity-index-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.species-habitat-unlikely {
+  align-self: flex-start;
+  padding: 0.12rem 0.4rem;
+  border: 1px solid rgba(255, 170, 90, 0.34);
+  border-radius: 3px;
+  background: rgba(255, 150, 60, 0.09);
+  color: rgba(255, 196, 140, 0.92);
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: help;
+}
+
+/* Species whose spawn depends on something a body scan cannot answer (system contents, nebulae). */
+.species-not-predicted {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0.02rem 0.3rem;
+  border: 1px solid rgba(150, 160, 190, 0.34);
+  border-radius: 3px;
+  background: rgba(120, 135, 170, 0.12);
+  color: rgba(190, 200, 220, 0.86);
+  font-size: 0.6rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  cursor: help;
+}
+
+/* Signal-count verdict: candidate genera vs the count the game reports. */
+.genus-certainty {
+  margin: 0.2rem 0 0.35rem;
+  padding: 0.22rem 0.45rem;
+  border-left: 2px solid transparent;
+  border-radius: 2px;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  cursor: help;
+}
+
+.genus-certainty--certain {
+  border-left-color: rgba(120, 230, 160, 0.7);
+  background: rgba(80, 200, 130, 0.1);
+  color: rgba(190, 245, 210, 0.94);
+}
+
+.genus-certainty--short {
+  border-left-color: rgba(255, 170, 90, 0.7);
+  background: rgba(255, 150, 60, 0.09);
+  color: rgba(255, 205, 155, 0.92);
+}
+
+.genus-certainty--ambiguous {
+  border-left-color: rgba(150, 165, 200, 0.5);
+  background: rgba(120, 135, 170, 0.09);
+  color: rgba(200, 210, 230, 0.85);
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * The unlikely tier.
+ *
+ * Codex lists are no longer walls: a species that disagrees with the body on planet class or
+ * atmosphere, or misses a numeric band by under 2%, is demoted here instead of being deleted. The
+ * default panel stays exactly as short as it was; this is what the reader opens when the shown list
+ * does not account for every biological signal.
+ * ---------------------------------------------------------------------------------------------- */
+.candidate-species-unlikely {
+  margin-top: 0.5rem;
+  border-top: 1px dashed rgba(150, 160, 190, 0.22);
+  padding-top: 0.45rem;
+}
+
+.candidate-species-unlikely-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.16rem 0.5rem;
+  border: 1px solid rgba(150, 160, 190, 0.3);
+  border-radius: 4px;
+  background: rgba(120, 135, 170, 0.08);
+  color: rgba(190, 200, 220, 0.82);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.candidate-species-unlikely-toggle:hover {
+  border-color: rgba(150, 160, 190, 0.5);
+  color: rgba(215, 225, 240, 0.95);
+}
+
+.candidate-species-unlikely-toggle--on {
+  background: rgba(120, 135, 170, 0.16);
+  color: rgba(215, 225, 240, 0.95);
+}
+
+.candidate-species-unlikely-note {
+  margin: 0.35rem 0 0.15rem;
+  max-width: 68ch;
+}
+
+/* Demoted rows read as secondary without becoming unreadable — they are still real candidates. */
+.species-list--unlikely {
+  opacity: 0.86;
+}
+
+.species-demoted-badge {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0.02rem 0.3rem;
+  border: 1px solid rgba(255, 170, 90, 0.34);
+  border-radius: 3px;
+  background: rgba(255, 150, 60, 0.09);
+  color: rgba(255, 196, 140, 0.92);
+  font-size: 0.6rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  cursor: help;
+}
+
+.species-identity-sub--demoted {
+  color: rgba(255, 196, 140, 0.78);
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * Feeder status, in Options.
+ *
+ * Only rendered where a feeder corpus exists, so this is a maintainer's view rather than part of the
+ * normal UI. It answers one question: is the data the app ranks with the data the corpus holds?
+ * ---------------------------------------------------------------------------------------------- */
+.options-feeder-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.85rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+}
+
+.options-feeder-grid dt {
+  color: rgba(190, 200, 220, 0.72);
+  white-space: nowrap;
+}
+
+.options-feeder-grid dd {
+  margin: 0;
+}
+
+.options-feeder-behind {
+  border-left: 2px solid rgba(255, 170, 90, 0.34);
+  padding-left: 0.6rem;
+  margin: 0.5rem 0 0;
+}
+
+.options-feeder-list {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.options-feeder-species {
+  color: rgba(215, 225, 240, 0.92);
+}

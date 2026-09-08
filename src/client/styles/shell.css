@@ -1,0 +1,629 @@
+/*
+ * Page backdrop, app chrome, options modal, footer, data-consistency alerts.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 122-740 of the original.
+ */
+
+/*
+ * The page backdrop lives on its own fixed layer instead of on `body` with
+ * `background-attachment: fixed`.
+ *
+ * Fixed attachment makes the browser repaint the whole viewport background on every scroll frame
+ * and defeats scroll compositing — with a repeating hex-grid SVG *and* a radial gradient stacked on
+ * it, that was the reason scrolling a long body list felt heavy. As a fixed layer the backdrop is
+ * painted once and the compositor scrolls the content over it.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -15%, var(--accent-a06), transparent 55%), var(--hex-grid);
+  background-size:
+    auto,
+    55.425626px 56px;
+  background-position:
+    0 0,
+    center top;
+  background-repeat: no-repeat, repeat;
+}
+
+.app-shell {
+  /*
+   * Tabular figures everywhere in the app.
+   *
+   * Credits, distances, temperatures and countdowns update live; with proportional digits every
+   * tick changes the string width and the row jitters. This is a data HUD — lining figures are the
+   * right default, and it was previously set on exactly one selector.
+   */
+  font-variant-numeric: tabular-nums;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 2rem;
+}
+
+.app-legal-footer {
+  margin-top: 2rem;
+  padding: 1rem 0 0;
+  border-top: var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.app-legal-footer-note {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.45;
+  max-width: 52rem;
+}
+
+.app-legal-footer-note em {
+  font-style: italic;
+}
+
+.app-legal-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+}
+
+.app-legal-footer a {
+  color: var(--accent-bright);
+  text-decoration: none;
+}
+
+.app-legal-footer a:hover {
+  text-decoration: underline;
+  color: var(--accent);
+}
+
+.app-legal-footer-sep {
+  user-select: none;
+  font-weight: 500;
+}
+
+.top {
+  /* Elevate above .app-shell siblings (tabs + body) so fixed overlays in the header aren’t
+     painted under later candidate species cards (stacking: isolation + DOM order). */
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
+  /* Dropdown for journal / EDSM search must extend below this card; hidden would clip it. */
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+  padding: 0.65rem 0.85rem;
+  background: transparent;
+  border: var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--glow);
+}
+
+.top::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: #0c0a08;
+  background-image:
+    linear-gradient(165deg, rgba(12, 7, 4, 0.88) 0%, rgba(16, 9, 5, 0.5) 38%, rgba(12, 7, 4, 0.85) 100%),
+    url("../../../vista.webp");
+  /* Full width inside the card; height follows aspect ratio — top/bottom crop when taller */
+  background-size:
+    100% 100%,
+    100% auto;
+  background-position:
+    center,
+    center center;
+  background-repeat: no-repeat;
+}
+
+.top > *:not(.modal-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+/* The app bar holds the system search; its dropdown must paint over the context strip below. */
+.top > .appbar {
+  z-index: 40;
+}
+
+.top-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-7);
+}
+
+.top-data-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s-6);
+}
+
+.top-data-value-block {
+  flex: 1 1 220px;
+  min-width: min(100%, 280px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.elite-tip-line {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 0;
+  max-width: 52rem;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+}
+
+.elite-tip-line--show {
+  opacity: 1;
+}
+
+.elite-tip-prefix {
+  color: var(--accent-bright);
+  font-weight: 600;
+}
+
+.btn-top-toggle {
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.38rem 0.72rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-dim);
+  background: rgba(12, 12, 18, 0.95);
+  color: var(--muted);
+  cursor: pointer;
+  box-shadow: 0 1px 4px var(--shadow-a35);
+}
+
+.btn-top-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.btn-top-toggle--on {
+  border-color: var(--accent-bright);
+  color: var(--accent-bright);
+  background: var(--accent-a12);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.btn-top-danger {
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.38rem 0.72rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(232, 96, 80, 0.65);
+  background: rgba(40, 18, 14, 0.92);
+  color: #f7a898;
+  cursor: pointer;
+}
+
+.btn-top-danger:hover {
+  border-color: #e86050;
+  color: #ffc8be;
+}
+
+.btn-top-neutral {
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.38rem 0.72rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-bright);
+  background: rgba(14, 12, 10, 0.94);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow:
+    0 0 12px var(--accent-glow),
+    inset 0 1px 0 rgba(255, 200, 120, 0.12);
+}
+
+.btn-top-neutral:hover {
+  border-color: #ff9a4d;
+  color: var(--text);
+  filter: brightness(1.07);
+}
+
+/* Header: codex consistency inbox (journal + exo-feeder), next to My exobiology */
+.exo-data-alerts-header-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.exo-data-alerts-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 2.35rem;
+  justify-content: center;
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
+}
+
+.exo-data-alerts-trigger--idle .exo-data-alerts-trigger__mail {
+  opacity: 0.82;
+}
+
+.exo-data-alerts-trigger--warn {
+  border-color: rgba(210, 175, 48, 0.75);
+  box-shadow:
+    0 0 14px rgba(230, 190, 60, 0.22),
+    inset 0 1px 0 rgba(255, 220, 120, 0.1);
+}
+
+.exo-data-alerts-trigger--error {
+  border-color: rgba(220, 72, 72, 0.85);
+  box-shadow:
+    0 0 14px rgba(220, 60, 60, 0.3),
+    inset 0 1px 0 rgba(255, 160, 140, 0.08);
+  animation: exo-data-alert-pulse-error 1.15s ease-in-out infinite;
+}
+
+.exo-data-alerts-trigger__mail {
+  font-size: var(--fs-xl);
+  line-height: 1;
+}
+
+.exo-data-alerts-trigger__glyph {
+  font-size: var(--fs-md);
+  line-height: 1;
+  font-weight: 800;
+}
+
+.exo-data-alerts-trigger__glyph--error {
+  color: var(--danger-faint);
+}
+
+.exo-data-alerts-trigger__glyph--warn {
+  color: var(--warn-soft);
+  animation: exo-data-alert-pulse-warn 1.35s ease-in-out infinite;
+}
+
+.exo-data-alerts-trigger__badge {
+  position: absolute;
+  top: -0.38rem;
+  right: -0.42rem;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.22rem;
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  line-height: 1.05rem;
+  text-align: center;
+  border-radius: var(--r-pill);
+  background: #b91c1c;
+  color: #fff;
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.55);
+}
+
+.exo-data-alerts-trigger--unread .exo-data-alerts-trigger__mail {
+  animation: exo-data-alerts-unread-blink 0.85s ease-in-out infinite;
+}
+
+@keyframes exo-data-alerts-unread-blink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(1.07);
+  }
+}
+
+.exo-data-alerts-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 500;
+  min-width: min(380px, calc(100vw - 24px));
+  max-width: 440px;
+  max-height: min(72vh, 560px);
+  overflow: auto;
+  padding: 0.55rem 0.65rem;
+  background: rgba(14, 14, 20, 0.98);
+  border: 1px solid var(--accent-a38);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+}
+
+.exo-data-alerts-popover__detect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(120, 120, 130, 0.38);
+}
+
+.exo-data-alerts-popover__detect-label {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin-right: 0.1rem;
+}
+
+.exo-data-alerts-source-toggle {
+  font-size: var(--fs-sm) !important;
+  padding: 0.26rem 0.52rem !important;
+}
+
+.exo-data-alerts-scan-btn {
+  font: inherit;
+  font-size: var(--fs-sm) !important;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem !important;
+  margin-left: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(52, 211, 153, 0.55);
+  background: rgba(22, 101, 70, 0.45);
+  color: #d1fae5;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.exo-data-alerts-scan-btn:hover:not(:disabled) {
+  background: rgba(34, 148, 105, 0.55);
+  border-color: rgba(110, 231, 183, 0.65);
+}
+
+.exo-data-alerts-scan-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.exo-data-alerts--in-popover {
+  margin: 0;
+}
+
+.exo-data-alert__meta {
+  font-size: var(--fs-xs);
+  color: var(--accent-bright);
+  opacity: 0.92;
+  margin-bottom: 0.1rem;
+}
+
+.options-modal .options-tier-field {
+  margin-bottom: 1.25rem;
+}
+
+.options-modal .options-tier-field label {
+  display: block;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.options-modal .options-tier-field input[type="range"] {
+  width: 100%;
+  max-width: 420px;
+}
+
+.options-modal .options-tier-value {
+  font-size: var(--fs-md);
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.options-modal .options-full-toggle {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.35rem;
+  text-align: center;
+}
+
+.options-modal .options-full-toggle-hint {
+  font-size: var(--fs-sm);
+  margin: 0 0 1rem;
+  line-height: 1.35;
+}
+
+.data-value-pill {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-bright);
+  background: linear-gradient(180deg, rgba(255, 122, 36, 0.14) 0%, rgba(20, 18, 16, 0.95) 100%);
+  box-shadow:
+    0 0 14px var(--accent-glow),
+    inset 0 1px 0 rgba(255, 200, 120, 0.18);
+  font-size: var(--fs-md);
+  color: var(--text);
+  cursor: help;
+  max-width: 100%;
+}
+
+button.data-value-pill.data-value-pill--clickable {
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+  appearance: none;
+}
+
+button.data-value-pill.data-value-pill--clickable:hover {
+  filter: brightness(1.08);
+  border-color: #ff9a4d;
+}
+
+button.data-value-pill.data-value-pill--clickable:active {
+  transform: scale(0.99);
+}
+
+.data-value-label {
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.data-value-amount {
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--accent-bright);
+  text-shadow: 0 0 12px var(--accent-glow);
+}
+
+.data-value-meta {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+.brand-logo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.15rem;
+  line-height: 1.3;
+}
+
+.brand .logo {
+  display: inline;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  font-size: var(--fs-xl);
+  text-shadow:
+    0 0 8px var(--accent-glow),
+    0 0 20px var(--accent-glow);
+}
+
+/* Normal weight, slightly smaller — neon/glow applies to `.logo` (“ED EXO COMPARE”) only */
+.brand-logo-suffix {
+  font-weight: 400;
+  font-size: calc(1rem - 3px);
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
+.brand-playing-as {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 0.2rem;
+  line-height: 1.35;
+}
+
+.brand-current-line {
+  display: block;
+  font-size: var(--fs-md);
+  margin-top: 0.28rem;
+  line-height: 1.35;
+}
+
+.brand-current-label {
+  font-weight: 400;
+  color: var(--text);
+}
+
+.brand-neon-name {
+  font-weight: 700;
+  color: var(--accent-bright);
+  text-shadow:
+    0 0 8px var(--accent-glow),
+    0 0 20px var(--accent-glow);
+}
+
+.brand-journal-suffix {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.brand-stars-line {
+  display: block;
+  font-size: var(--fs-md);
+  margin-top: 0.22rem;
+  line-height: 1.35;
+}
+
+.brand-stars-label {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.brand-notable-line {
+  display: block;
+  font-size: var(--fs-md);
+  margin-top: 0.22rem;
+  line-height: 1.5;
+}
+
+.d-scan-card {
+  display: inline-block;
+  margin-top: 0.38rem;
+  padding: 0.22rem 0.55rem;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.35;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255, 140, 70, 0.55);
+  color: #ff9447;
+  text-shadow:
+    0 0 10px rgba(255, 130, 60, 0.55),
+    0 0 18px rgba(255, 100, 40, 0.25);
+  background: rgba(40, 20, 10, 0.55);
+  box-shadow: 0 0 14px rgba(255, 120, 60, 0.18);
+}
+
+.d-scan-card,
+.d-scan-card * {
+  font-family: inherit;
+}
+
+.d-scan-card--complete {
+  border-color: rgba(100, 220, 150, 0.6);
+  color: #5fdf98;
+  text-shadow:
+    0 0 10px rgba(80, 220, 130, 0.45),
+    0 0 16px rgba(40, 180, 100, 0.22);
+  background: rgba(12, 42, 28, 0.55);
+  box-shadow: 0 0 14px rgba(80, 200, 130, 0.2);
+}
+
+.d-scan-card__label {
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  margin-right: 0.35rem;
+}

@@ -1,0 +1,253 @@
+/*
+ * Photo credit and gallery, species provenance, EDSM credential fields.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 9258-9500 of the original.
+ */
+
+/*
+ * Photo credit — the images are not this project's.
+ *
+ * Quiet on purpose: it sits under a photograph on a card the reader is scanning for gravity and
+ * temperature, so it must not compete with the data. But it is a credit, not a footnote, so the link
+ * takes the accent colour and stays underlined — an attribution nobody can see is not an attribution.
+ *
+ * Only rendered where there is room for it. The compact card and the encyclopedia thumbnail carry it
+ * on the hover instead, and it appears in full whenever the photo is opened.
+ */
+.photo-credit {
+  /* Full width and centred: it sits directly under the photo in a centring column, and a
+     shrink-to-fit line would drift off the image's axis on narrow cards. */
+  width: 100%;
+  text-align: center;
+  margin: 0.3rem 0 0.15rem;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--muted, #8b97a8);
+  opacity: 0.85;
+}
+.photo-credit a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.photo-credit--lightbox {
+  margin-top: 0.5rem;
+  font-size: 11px;
+  text-align: center;
+  opacity: 1;
+}
+
+/*
+ * Gallery — a species with more than one photograph.
+ *
+ * Arrows sit *on* the image rather than beside it, so the frame stays the size of the picture and
+ * the picture stays the largest thing on screen. They are always visible rather than appearing on
+ * hover: a second photograph nobody knows is there may as well not exist, and this viewer opens on
+ * a click that was already about looking at the image.
+ *
+ * All of it is absent for a single-photo species, which is still the overwhelming majority.
+ */
+.photo-gallery-frame {
+  position: relative;
+  display: flex;
+  line-height: 0;
+}
+.photo-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.25rem;
+  height: 3.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: var(--fs-3xl);
+  line-height: 1;
+  color: var(--accent-bright);
+  background: rgba(12, 12, 16, 0.72);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.photo-gallery-nav:hover {
+  background: rgba(12, 12, 16, 0.92);
+  border-color: var(--accent);
+}
+.photo-gallery-nav:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.photo-gallery-nav--prev { left: 0.5rem; }
+.photo-gallery-nav--next { right: 0.5rem; }
+
+.photo-gallery-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.photo-gallery-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--accent-dim);
+  background: transparent;
+  cursor: pointer;
+}
+.photo-gallery-dot--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.photo-gallery-dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.photo-gallery-count {
+  margin-left: 0.4rem;
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The count on the card — the only hint that there is more than one, short of opening it.
+ *
+ * A button, not a label, because it does the same thing the photo does: it opens the viewer. A
+ * caption that looked clickable and was not would be worse than no caption.
+ */
+.photo-count-hint {
+  align-self: center;
+  margin-top: 0.3rem;
+  padding: 0.05rem 0.4rem;
+  font: inherit;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.photo-count-hint:hover {
+  background: var(--accent-a15);
+}
+
+/*
+ * The image and its credit as one column.
+ *
+ * `.photo-lightbox-backdrop` centres its children in a *row*, so a credit added as a sibling of the
+ * image lands to its right rather than beneath it. The existing caption dodges that by being
+ * `position: fixed` to the bottom of the viewport, which is not where a credit belongs — it should
+ * stay attached to the picture it credits, and move with it.
+ */
+.photo-lightbox-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: min(92vw, 1200px);
+  cursor: default;
+}
+
+/*
+ * Provenance badges — who says this species is here.
+ *
+ * Deliberately quieter than `.species-codex-new`, which is a filled pill in the accent colour. That
+ * one is a call to action: a species you have never logged is worth more credits, so it should pull
+ * the eye. These two are context — they say where the claim came from, not that you should fly
+ * somewhere — so they are outlined rather than filled, and sit at the same size without competing.
+ *
+ * "You scanned it" is the only first-hand evidence in the app and gets the warmer of the two.
+ */
+.species-prov {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+  white-space: nowrap;
+}
+.species-prov--mine {
+  color: var(--accent);
+}
+.species-prov--corpus {
+  color: var(--muted, #8b97a8);
+}
+
+/* Measured distribution bars (B7) — counts the feeder observed, not a curve drawn over a mode. */
+.exo-dist-bar {
+  fill: var(--accent-a45);
+  stroke: var(--accent-a22);
+  stroke-width: 0.5;
+}
+
+/*
+ * EDSM auto-fetch, in Options (§50).
+ *
+ * The privacy line gets a left rule and its own colour so it does not read as one more paragraph of
+ * settings prose. A control that starts sending your position to a third party should look different
+ * from a control that changes a temperature unit.
+ */
+.options-modal .options-edsm-privacy {
+  border-left: 3px solid var(--ed-orange, #ff5c1a);
+  padding-left: 0.75rem;
+  color: var(--fg, inherit);
+}
+
+.options-modal .options-edsm-stored {
+  margin-bottom: 0.65rem;
+}
+
+.options-modal .options-edsm-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 22rem);
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.options-modal .options-edsm-fields label {
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.options-modal .options-edsm-fields input {
+  width: 100%;
+  min-width: 0;
+}
+
+.options-modal .options-edsm-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.options-modal .options-edsm-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: var(--fs-md);
+  cursor: pointer;
+}
+
+.options-modal .options-edsm-toggle input[disabled] + span {
+  color: var(--muted);
+}
+
+@media (max-width: 620px) {
+  .options-modal .options-edsm-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

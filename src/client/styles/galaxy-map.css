@@ -1,0 +1,198 @@
+/*
+ * Galaxy sector map, sector drill-down, and the system map legend.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 9674-9861 of the original.
+ */
+
+/* ── Galaxy sector map (INCLUDE-BODY-IDS Phase 10 step 3) ───────────────────────────────────────
+   Two flat projections, no 3D. Sized to sit on a second monitor, which is what the screen is for. */
+.galaxy-screen { padding: 18px 22px 40px; max-width: 1140px; margin: 0 auto; }
+.galaxy-screen h1 { font-size: 1.25rem; margin: 0 0 2px; }
+.galaxy-screen__meta { margin: 0 0 14px; opacity: 0.7; font-size: 0.85rem; }
+.galaxy-screen__empty { padding: 24px; border: 1px dashed #30363d; border-radius: 8px; opacity: 0.85; }
+.galaxy-screen__empty code { background: #161b22; padding: 2px 6px; border-radius: 4px; }
+.galaxy-screen__note { margin-top: 18px; font-size: 0.85rem; opacity: 0.85; line-height: 1.5; }
+.galaxy-screen__source { font-size: 0.78rem; opacity: 0.55; }
+
+.galaxy-map__controls { display: flex; gap: 18px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
+.galaxy-map__controls label { display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem; opacity: 0.8; }
+.galaxy-map__controls select,
+.galaxy-map__controls input { min-width: 220px; padding: 5px 7px; background: #0d1117; color: inherit;
+  border: 1px solid #30363d; border-radius: 6px; font-size: 0.85rem; }
+.galaxy-map__count { font-size: 0.8rem; opacity: 0.7; padding-bottom: 6px; }
+
+/* Side by side on a wide screen, stacked when there is not room — the map is useless if it needs
+   horizontal scrolling to compare the two projections. */
+.galaxy-map__views { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px; }
+.galaxy-map__plot { margin: 0; }
+.galaxy-map__plot figcaption { font-size: 0.8rem; margin-bottom: 4px; display: flex; flex-direction: column; }
+.galaxy-map__hint { opacity: 0.55; font-size: 0.72rem; }
+.galaxy-map__plot svg { width: 100%; height: auto; border: 1px solid #30363d; border-radius: 8px; display: block; }
+.galaxy-map__bg { fill: #06090f; }
+.galaxy-map__axis { fill: #6e7681; font-size: 11px; }
+.galaxy-map__plot circle { cursor: pointer; transition: fill-opacity 120ms ease; }
+.galaxy-map__plot circle:hover { fill-opacity: 1; }
+
+.galaxy-map__readout { margin-top: 12px; padding: 10px 12px; border: 1px solid #30363d; border-radius: 8px;
+  min-height: 92px; }
+.galaxy-map__readout--empty { opacity: 0.55; font-size: 0.85rem; }
+.galaxy-map__readout h4 { margin: 0 0 4px; font-size: 0.95rem; }
+.galaxy-map__cellkey { font-weight: 400; opacity: 0.5; font-size: 0.78rem; margin-left: 6px; }
+.galaxy-map__readout p { margin: 0 0 6px; font-size: 0.82rem; opacity: 0.85; }
+.galaxy-map__readout ul { list-style: none; margin: 0; padding: 0; display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2px 14px; }
+.galaxy-map__readout li { display: flex; justify-content: space-between; font-size: 0.8rem; gap: 10px; }
+.galaxy-map__readout li span:last-child { opacity: 0.65; }
+.galaxy-map__more { opacity: 0.5; font-size: 0.75rem; margin-top: 6px; }
+
+.galaxy-map__legend { list-style: none; margin: 12px 0 0; padding: 0; display: flex; gap: 16px;
+  flex-wrap: wrap; font-size: 0.78rem; opacity: 0.85; }
+.galaxy-map__legend li { display: flex; align-items: center; gap: 6px; }
+.galaxy-map__swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.galaxy-map__caveat { font-size: 0.78rem; opacity: 0.7; margin-top: 10px; line-height: 1.5; }
+
+/* Sector drill-down (Phase 10 step 4) — appears under the galaxy view when a sector is clicked. */
+.sector-systems { margin-top: 14px; padding: 12px; border: 1px solid #30363d; border-radius: 8px;
+  background: #0b0f14; }
+.sector-systems header { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 6px; }
+.sector-systems h3 { margin: 0; font-size: 1rem; }
+.sector-systems button { background: #161b22; color: inherit; border: 1px solid #30363d;
+  border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer; }
+.sector-systems button:hover { border-color: #58a6ff; }
+.sector-systems svg { width: 100%; height: auto; border: 1px solid #21262d; border-radius: 6px;
+  display: block; margin: 6px 0; }
+.sector-systems circle { cursor: default; }
+.galaxy-map__plot circle { cursor: pointer; }
+
+/* Body list inside a system (Phase 10 step 5) — history, so it reads as a list not a forecast. */
+.sector-systems__bodies { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px;
+  max-height: 240px; overflow-y: auto; }
+.sector-systems__bodies li { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 10px;
+  font-size: 0.8rem; padding: 2px 0; border-bottom: 1px solid #161b22; }
+.sector-systems__bodies li:last-child { border-bottom: none; }
+.sector-systems__bodies strong { font-weight: 600; opacity: 0.92; }
+.sector-systems__bodies span { opacity: 0.72; }
+
+/* A legend entry for a kind the app cannot compute yet reads as unavailable, not as absent. */
+.galaxy-map__legend--unavailable { opacity: 0.5; }
+.galaxy-map__legend--unavailable em { font-style: normal; opacity: 0.8; }
+.galaxy-map__swatch { box-sizing: border-box; }
+
+/* "You are here" — a cross rather than a dot, so it is never mistaken for a sector marker. */
+.galaxy-map__you line { stroke: #f0f6fc; stroke-width: 1.5; }
+.galaxy-map__you circle { stroke: #f0f6fc; stroke-width: 1.5; }
+
+/* A genus holding an ungateable species shows names without numbers — §18: no percentage with
+   nothing behind it, and the shares are normalised so one bad member poisons them all. */
+.genus-species-odds--ungateable { opacity: 0.9; }
+.genus-species-odds--ungateable .genus-species-odds-why { opacity: 0.6; font-size: 0.92em; }
+
+/* The galaxy-map entry is an anchor, not a button, so it needs the button's own box back. */
+a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: center;
+  text-decoration: none; color: inherit; }
+
+/* Summary of a queued Spansh route export — see FeederRouteImport. */
+.feeder-route-summary {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--accent-a15);
+  border-radius: 4px;
+}
+
+.feeder-route-summary code {
+  word-break: break-all;
+}
+
+/* Feeder panel refresh — the status is read once at app start, so a CLI run needs asking for. */
+.feeder-refresh {
+  margin-left: auto;
+  margin-right: 0.4rem;
+  font-size: var(--fs-sm);
+}
+
+/* System map legend and zoom controls — the map had a full colour vocabulary and no key, and a
+   wheel zoom with nothing on screen saying it existed. */
+.system-map-zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin: 0 0 0.4rem;
+}
+
+.system-map-zoom button {
+  min-width: 2rem;
+  font-size: var(--fs-sm);
+}
+
+.system-map-zoom-val {
+  min-width: 3.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.system-map-legend {
+  margin-top: 0.5rem;
+  font-size: var(--fs-sm);
+}
+
+.system-map-legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  align-items: center;
+}
+
+.system-map-legend-row--marks {
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
+.system-map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.system-map-legend-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex: 0 0 auto;
+}
+
+/* Biology-only dimming and the panel's selected body. Dimming rather than hiding because the two
+   bodies that carry biology in the owner's home system are moons of a planet that carries none —
+   removing barren bodies would orphan exactly the ones worth flying to. */
+.system-map-node-g--dim {
+  opacity: 0.18;
+  transition: opacity 120ms ease;
+}
+
+.system-map-node-g--selected circle:first-of-type {
+  stroke-width: 3.5;
+  paint-order: stroke;
+}
+
+.system-map-node-g--selected {
+  filter: drop-shadow(0 0 6px var(--accent-a55, rgba(255, 200, 90, 0.55)));
+}
+
+.system-map-bioonly {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: var(--s-4);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}

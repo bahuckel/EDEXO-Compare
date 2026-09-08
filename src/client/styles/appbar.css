@@ -1,0 +1,562 @@
+/*
+ * App bar, status dots, context strip, body tab strip, Ctrl+K jump palette.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 8028-8579 of the original.
+ */
+
+/* ==========================================================================
+   v0.11.0 — information architecture
+   ==========================================================================
+   The header used to stack seven full-width rows: two status pills, a session action bar, a 62 px
+   brand lockup with a rotating tip, the system search, a star strip, a notable-bodies row and the
+   route/fuel/data cards. That is most of a 1080p viewport before a single species is on screen.
+   It is three rows now — app bar, context strip, foldable tray — and the brand + tip moved to the
+   idle state, where there is nothing else to read.
+   ========================================================================== */
+
+.appbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-4) var(--s-5);
+  width: 100%;
+  min-height: 2.3rem;
+}
+
+.appbar-mark {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 8px var(--accent-a45));
+}
+
+.appbar-wordmark {
+  flex: 0 0 auto;
+  font-size: var(--fs-md) !important;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  color: var(--accent-bright);
+  text-shadow: 0 0 10px var(--accent-glow);
+  white-space: nowrap;
+}
+
+.appbar-system {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.appbar-system-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  max-width: 22rem;
+  padding: 0.18rem 0.5rem;
+  font: inherit;
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  background: rgba(8, 8, 12, 0.6);
+  border: 1px solid var(--accent-a38);
+  border-radius: var(--r-pill);
+  transition:
+    border-color 0.14s ease,
+    background-color 0.14s ease,
+    transform 0.14s ease;
+}
+
+.appbar-system-btn:hover {
+  border-color: var(--accent);
+  background: rgba(20, 14, 8, 0.75);
+  transform: translateY(-1px);
+}
+
+.appbar-system-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+
+.appbar-system-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-bright);
+}
+
+/* The search brings its own "Return to commander" / "Load bodies from EDSM" buttons. Its default
+   `flex: 1 1 100%` basis dropped them onto their own line and made the app bar 107 px tall. Given
+   room they sit beside the input; only while browsing *another* system, when both buttons show,
+   does the block wrap to a second line. */
+.appbar-search {
+  position: relative;
+  flex: 2 1 22rem;
+  min-width: 12rem;
+  max-width: 42rem;
+}
+
+.appbar-search .journal-system-search {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  gap: var(--s-4);
+  row-gap: var(--s-3);
+}
+
+.appbar-search .journal-system-search-input {
+  flex: 1 1 8rem;
+  min-width: 6rem;
+  padding: 0.28rem 0.55rem;
+}
+
+.appbar-search .journal-system-view-actions {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+}
+
+.appbar-search .journal-system-follow-btn,
+.appbar-search .journal-system-edsm-load-btn {
+  padding: 0.24rem 0.5rem;
+  font-size: var(--fs-xs);
+}
+
+.appbar-spacer {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Status pills became dots. The label stays for "Live" — it is the one status that changes while
+   you play — and FDev shows its wording on hover, where it is only read when something is wrong. */
+.appbar-status {
+  flex: 0 0 auto;
+}
+
+.appbar-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0.16rem 0.45rem;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(80, 80, 90, 0.55);
+  background: rgba(10, 10, 14, 0.8);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.appbar-dot--ok {
+  color: #6ee7b7;
+  border-color: rgba(74, 222, 128, 0.42);
+}
+
+.appbar-dot--ok .top-live-dot {
+  background: #34d399;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.65);
+}
+
+.appbar-dot--err {
+  color: var(--danger-soft);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.appbar-dot--err .top-live-dot {
+  background: #f87171;
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.6);
+}
+
+.appbar-dot--pending {
+  color: var(--text-faint);
+  border-color: rgba(120, 120, 130, 0.55);
+}
+
+.appbar-dot--pending .top-live-dot {
+  background: #6b7280;
+  box-shadow: none;
+}
+
+.appbar-dot-text--compact {
+  opacity: 0.75;
+}
+
+.appbar-cmdr {
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.appbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+}
+
+.appbar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  cursor: pointer;
+  color: var(--muted);
+  background: rgba(10, 10, 14, 0.7);
+  border: 1px solid var(--accent-a22);
+  border-radius: var(--r-sm);
+  transition:
+    color 0.14s ease,
+    border-color 0.14s ease,
+    background-color 0.14s ease,
+    transform 0.14s ease;
+}
+
+.appbar-icon-btn:hover {
+  color: var(--accent-bright);
+  border-color: var(--accent);
+  background: rgba(28, 16, 8, 0.8);
+  transform: translateY(-1px);
+}
+
+.appbar-icon-btn:active {
+  transform: translateY(0);
+}
+
+.appbar-tray-toggle svg {
+  transition: transform 0.16s ease;
+}
+
+.appbar-tray-toggle--open svg {
+  transform: rotate(180deg);
+}
+
+/* Context strip: what system you are looking at, on one scrollable line. */
+.context-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4) var(--s-6);
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.12rem;
+  scrollbar-width: thin;
+}
+
+.context-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+}
+
+.context-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  flex: 0 0 auto;
+}
+
+.context-strip .brand-star-chip,
+.context-strip .brand-notable-pill {
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+}
+
+/* Foldable tray — these matter while travelling, not while sampling. */
+.header-tray {
+  animation: header-tray-in 0.16s ease-out;
+}
+
+@keyframes header-tray-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-tray {
+    animation: none;
+  }
+}
+
+/* --- body tab strip: one model at every width ---------------------------- */
+
+.tabs-chevron {
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 1.9rem;
+  padding: 0;
+  font-size: var(--fs-lg);
+  line-height: 1;
+  cursor: pointer;
+  color: var(--accent-bright);
+  background: rgba(10, 10, 14, 0.75);
+  border: 1px solid var(--accent-a22);
+  border-radius: var(--r-sm);
+  transition:
+    opacity 0.14s ease,
+    border-color 0.14s ease;
+}
+
+.tabs-chevron:hover {
+  border-color: var(--accent);
+}
+
+/* Kept in the layout so the strip does not resize when an edge is reached. */
+.tabs-chevron--idle {
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.tabs-strip--fade-l {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 22px);
+  mask-image: linear-gradient(to right, transparent, #000 22px);
+}
+
+.tabs-strip--fade-r {
+  -webkit-mask-image: linear-gradient(to left, transparent, #000 22px);
+  mask-image: linear-gradient(to left, transparent, #000 22px);
+}
+
+.tabs-strip--fade-l.tabs-strip--fade-r {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 22px, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 22px, #000 calc(100% - 22px), transparent);
+}
+
+.tabs-orbit-section {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-4);
+  flex: 0 0 auto;
+}
+
+/* Was an orbit-group <select> that filtered the strip; now a separator that hides nothing. */
+.tabs-orbit-label {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: 0 0 auto;
+  padding: 0.14rem 0.4rem;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  background: rgba(12, 12, 18, 0.92);
+  border-radius: var(--r-xs);
+  white-space: nowrap;
+}
+
+.tabs-jump-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 0 0 auto;
+  padding: 0.2rem 0.45rem;
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  color: var(--muted);
+  background: rgba(10, 10, 14, 0.75);
+  border: 1px solid var(--accent-a22);
+  border-radius: var(--r-sm);
+  transition:
+    color 0.14s ease,
+    border-color 0.14s ease;
+}
+
+.tabs-jump-btn:hover {
+  color: var(--accent-bright);
+  border-color: var(--accent);
+}
+
+.tabs-jump-icon {
+  font-size: var(--fs-lg);
+  line-height: 1;
+}
+
+.tabs-jump-count {
+  font-weight: 700;
+  color: var(--accent-bright);
+}
+
+.tabs-jump-kbd,
+.jump-hint kbd {
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  padding: 0.05rem 0.28rem;
+  border: 1px solid var(--accent-a22);
+  border-radius: var(--r-xs);
+  color: var(--text-faint);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 620px) {
+  .tabs-jump-kbd {
+    display: none;
+  }
+}
+
+/* --- Ctrl+K jump palette ------------------------------------------------- */
+
+.jump-backdrop {
+  align-items: flex-start;
+  padding-top: 12vh;
+}
+
+.jump-palette {
+  width: min(30rem, 92vw);
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: 0.7rem;
+}
+
+.jump-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: var(--fs-lg);
+  padding: 0.45rem 0.6rem;
+  color: var(--text);
+  background: rgba(6, 6, 10, 0.92);
+  border: 1px solid var(--accent-a38);
+  border-radius: var(--r-sm);
+}
+
+.jump-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-a22);
+}
+
+.jump-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.jump-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-5);
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: var(--fs-md);
+  padding: 0.32rem 0.5rem;
+  cursor: pointer;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-xs);
+}
+
+.jump-row--active {
+  background: rgba(28, 16, 8, 0.85);
+  border-color: var(--accent-a38);
+  color: var(--accent-bright);
+}
+
+.jump-row--current .jump-row-label::after {
+  content: " •";
+  color: var(--accent);
+}
+
+.jump-row-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jump-row-bio {
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.jump-row-group {
+  flex: 0 0 auto;
+  font-size: var(--fs-xs);
+}
+
+.jump-empty {
+  list-style: none;
+  padding: 0.5rem;
+  font-size: var(--fs-md);
+}
+
+.jump-hint {
+  margin: 0;
+  font-size: var(--fs-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* --- idle state ---------------------------------------------------------- */
+
+.bio-empty-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+/* Both art panels carried their guidance only in aria-label — invisible to the people looking
+   straight at them. The caption is real text over the art now. */
+.bio-empty-caption {
+  position: relative;
+  z-index: 2;
+  max-width: 34rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--r-md);
+  background: linear-gradient(150deg, rgba(6, 4, 3, 0.88), rgba(6, 4, 3, 0.62));
+  border: 1px solid var(--accent-a22);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.bio-empty-caption-hed {
+  margin: 0 0 0.2rem;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--accent-bright);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.bio-empty-caption-sub {
+  margin: 0;
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.brand-hero--idle {
+  margin-top: 0.2rem;
+}

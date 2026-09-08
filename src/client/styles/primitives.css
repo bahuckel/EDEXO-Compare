@@ -1,0 +1,478 @@
+/*
+ * Interaction primitives and motion: focus ring, toasts, dialogs, skeletons.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 7560-8027 of the original.
+ */
+
+/* ===========================================================================
+ * v0.9.0 — interaction primitives
+ * Toasts, confirm dialog, tooltip/info popover, and one global focus ring.
+ * =========================================================================== */
+
+/* ---- focus ring ---------------------------------------------------------
+ * One rule for the whole app. There were 8 :focus-visible declarations for
+ * hundreds of interactive elements, so most of the UI was invisible to a
+ * keyboard.
+ */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* ---- toasts ------------------------------------------------------------- */
+.toast-stack {
+  position: fixed;
+  right: var(--s-8);
+  bottom: var(--s-8);
+  z-index: 4000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  max-width: min(420px, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-5);
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--accent-a25);
+  background: var(--surface-scrim);
+  box-shadow:
+    0 10px 30px var(--shadow-a45),
+    inset 0 0 0 1px var(--shadow-a25);
+  color: var(--text);
+  font-size: var(--fs-md);
+  line-height: 1.35;
+  pointer-events: auto;
+  animation: toast-in 160ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.toast--error {
+  border-color: var(--danger);
+  box-shadow:
+    0 10px 30px var(--shadow-a45),
+    inset 0 0 0 1px rgba(248, 113, 113, 0.25);
+}
+
+.toast--success {
+  border-color: var(--ok);
+}
+
+.toast-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.toast-close:hover {
+  color: var(--text);
+  background: var(--accent-a10);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+/* ---- confirm dialog ----------------------------------------------------- */
+.confirm-backdrop {
+  display: grid;
+  place-items: center;
+  z-index: 3500;
+}
+
+.confirm-modal {
+  width: min(460px, calc(100vw - 2rem));
+  padding: var(--s-8);
+  border-radius: var(--r-2xl);
+  border: 1px solid var(--accent-a38);
+  background: var(--surface-1);
+  box-shadow: 0 20px 60px var(--shadow-a45);
+}
+
+.confirm-title {
+  margin: 0 0 var(--s-5);
+  font-size: var(--fs-xl);
+  color: var(--accent-bright);
+}
+
+.confirm-body {
+  margin: 0 0 var(--s-8);
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  white-space: pre-line;
+  color: var(--text);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-6);
+}
+
+.btn-confirm-cancel,
+.btn-confirm-go {
+  min-height: 32px;
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--r-md);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-confirm-cancel {
+  border: 1px solid var(--accent-a25);
+  background: transparent;
+  color: var(--text);
+}
+
+.btn-confirm-go {
+  border: 1px solid var(--accent);
+  background: var(--accent-a20);
+  color: var(--text);
+}
+
+.btn-confirm-go--danger {
+  border-color: var(--danger);
+  background: rgba(248, 113, 113, 0.18);
+}
+
+.btn-confirm-cancel:hover {
+  background: var(--accent-a10);
+}
+
+.btn-confirm-go:hover {
+  background: var(--accent-a35);
+}
+
+/* ---- tooltip ------------------------------------------------------------ */
+.tip-anchor {
+  display: inline-flex;
+  align-items: center;
+}
+
+.tip-bubble {
+  position: fixed;
+  z-index: 5000;
+  max-width: 320px;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--accent-a25);
+  background: var(--surface-scrim);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  box-shadow: 0 8px 24px var(--shadow-a45);
+  pointer-events: none;
+}
+
+/* ---- info popover ------------------------------------------------------- */
+.info-anchor {
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-affordance {
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--fs-md);
+  line-height: 1;
+  cursor: help;
+}
+
+.info-affordance:hover,
+.info-affordance--on {
+  color: var(--accent-bright);
+  background: var(--accent-a12);
+}
+
+.info-panel {
+  position: fixed;
+  z-index: 5000;
+  width: min(420px, calc(100vw - 2rem));
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--accent-a38);
+  background: var(--surface-1);
+  box-shadow: 0 16px 48px var(--shadow-a45);
+}
+
+.info-panel-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+  padding: var(--s-6) var(--s-6) var(--s-4);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--accent-a15);
+}
+
+.info-panel-title {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--accent-bright);
+}
+
+.info-panel-close {
+  min-width: 32px;
+  min-height: 32px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-xl);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.info-panel-close:hover {
+  color: var(--text);
+  background: var(--accent-a10);
+}
+
+.info-panel-body {
+  padding: var(--s-6);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.info-panel-body p {
+  margin: 0 0 var(--s-6);
+}
+
+.info-panel-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ===========================================================================
+ * v0.10.0 — motion + feedback
+ *
+ * The app had 15 `transition` declarations in 7,750 lines: state changed by
+ * snapping, and live values swapped silently, so the only proof the app was
+ * still connected was the "Live · 3s ago" pill. Everything here animates
+ * `transform`/`opacity`/colour only — no layout, no filters — and every rule
+ * is disabled under prefers-reduced-motion at the end of this block.
+ * =========================================================================== */
+
+:root {
+  --motion-fast: 120ms;
+  --motion-base: 160ms;
+  --motion-ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* ---- controls: tabs, pills, chips, buttons ------------------------------- */
+.tab,
+.brand-star-chip,
+.brand-notable-pill,
+.btn-top-neutral,
+.info-pill,
+.modal-close,
+.encyclopedia-thumb-btn,
+.species-thumb-btn {
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.tab:hover,
+.brand-notable-pill:hover,
+.btn-top-neutral:hover {
+  transform: translateY(-1px);
+}
+
+.tab:active,
+.brand-notable-pill:active,
+.btn-top-neutral:active {
+  transform: translateY(0);
+}
+
+/* ---- dialogs ------------------------------------------------------------- */
+.modal-backdrop {
+  animation: modal-backdrop-in var(--motion-base) var(--motion-ease);
+}
+
+.modal-panel,
+.confirm-modal,
+.info-panel {
+  animation: modal-panel-in var(--motion-base) var(--motion-ease);
+}
+
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---- live value change ---------------------------------------------------
+ * A journal event that changes a number now shows it changing. Without this the
+ * credits total simply differed from what you last looked at.
+ */
+@keyframes value-flash {
+  0% {
+    background-color: var(--accent-a30);
+    color: var(--accent-bright);
+  }
+  100% {
+    background-color: transparent;
+    color: inherit;
+  }
+}
+
+.value-flash {
+  animation: value-flash 900ms ease-out;
+  border-radius: var(--r-xs);
+}
+
+/* ---- skeletons ----------------------------------------------------------- */
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  padding: var(--s-6) 0;
+}
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+}
+
+.skeleton-block {
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--accent-a08) 37%, var(--surface-2) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+.skeleton-thumb {
+  width: 104px;
+  height: 88px;
+  flex-shrink: 0;
+}
+
+.skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.skeleton-line {
+  height: 10px;
+}
+
+.skeleton-line--title {
+  width: 40%;
+  height: 14px;
+}
+
+.skeleton-line--wide {
+  width: 92%;
+}
+
+.skeleton-line--mid {
+  width: 68%;
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .brand-star-chip,
+  .brand-notable-pill,
+  .btn-top-neutral,
+  .info-pill,
+  .modal-close,
+  .encyclopedia-thumb-btn,
+  .species-thumb-btn {
+    transition: none;
+  }
+
+  .tab:hover,
+  .brand-notable-pill:hover,
+  .btn-top-neutral:hover {
+    transform: none;
+  }
+
+  .modal-backdrop,
+  .modal-panel,
+  .confirm-modal,
+  .info-panel,
+  .value-flash,
+  .skeleton-block {
+    animation: none;
+  }
+}
+
+.modal-panel--loading {
+  width: min(520px, calc(100vw - 2rem));
+  padding: var(--s-8);
+}

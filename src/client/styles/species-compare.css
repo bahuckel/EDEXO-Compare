@@ -1,0 +1,737 @@
+/*
+ * Foot-catalog comparison and the similarity index: predicted vs actually found.
+ *
+ * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
+ * by styles.css in the order it imports them, and that order is the original file's order. Rules
+ * here can be overridden by any later file, so moving a block between files can change the page
+ * even though nothing was edited. Add new rules to the region they belong to, at the end.
+ *
+ * Was lines 1728-2454 of the original.
+ */
+
+/* Foot catalog suggestion: structured compare vs data/foot_scanned.json */
+.foot-scan-match-card {
+  container: foot-scan / inline-size;
+  margin: 0.5rem 0 0.35rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(120, 180, 255, 0.35);
+  background: rgba(40, 60, 100, 0.12);
+  text-align: left;
+}
+
+.foot-scan-match-title {
+  margin: 0 0 0.4rem;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #8eb8ff;
+}
+
+.foot-scan-hit-block {
+  padding: 0.35rem 0;
+}
+.foot-scan-hit-block + .foot-scan-hit-block {
+  border-top: 1px solid rgba(120, 180, 255, 0.2);
+  margin-top: 0.3rem;
+  padding-top: 0.5rem;
+}
+
+.foot-scan-hit-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.45rem;
+  margin-bottom: 0.35rem;
+}
+
+.foot-scan-body-name {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--text);
+  order: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+.foot-scan-hit-meta {
+  order: 3;
+  flex: 1 1 100%;
+  text-align: left;
+}
+
+.foot-scan-hit-source {
+  order: 2;
+  flex: 0 0 auto;
+  max-width: 100%;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #a8c8ff;
+  border: 1px solid rgba(160, 200, 255, 0.4);
+  padding: 0.08rem 0.28rem;
+  border-radius: var(--r-xs);
+  background: rgba(60, 90, 140, 0.35);
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.foot-scan-match-more-wrap {
+  margin-top: 0.35rem;
+}
+
+.foot-scan-match-more-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  padding: 0.28rem 0.38rem;
+  margin: 0;
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  color: var(--info-soft);
+  background: rgba(30, 45, 80, 0.45);
+  border: 1px solid rgba(120, 170, 255, 0.35);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.foot-scan-match-more-btn:hover {
+  background: rgba(40, 55, 95, 0.55);
+}
+
+.foot-scan-match-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  font-weight: 700;
+  transition: transform 0.15s ease;
+}
+
+.foot-scan-match-chevron--open {
+  transform: rotate(180deg);
+}
+
+.foot-scan-match-more-list {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+/* Mini-cards in a responsive grid (not one tall column — especially in compact species view). */
+.foot-scan-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--s-3);
+  align-items: stretch;
+}
+
+.species-card--compact .foot-scan-field-grid {
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+}
+
+.foot-scan-section {
+  padding: 0.3rem 0.4rem;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(100, 140, 200, 0.22);
+  background: rgba(0, 0, 0, 0.15);
+  min-width: 0;
+}
+
+.foot-scan-section--ok {
+  border-color: rgba(100, 200, 140, 0.28);
+}
+
+.foot-scan-section-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+  line-height: 1.25;
+}
+
+.foot-scan-section-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--s-3);
+}
+
+@container foot-scan (max-width: 13.5rem) {
+  .foot-scan-section-pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+.foot-scan-section-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.06rem;
+  font-size: var(--fs-sm);
+  min-width: 0;
+}
+
+.foot-scan-section-tag {
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.foot-scan-section-val {
+  color: var(--text);
+  word-break: break-word;
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+}
+
+.foot-scan-section-note {
+  margin: 0.22rem 0 0;
+  line-height: 1.35;
+}
+
+.foot-scan-section-note--warn {
+  color: #ffb38a;
+}
+
+/* Optional field diff (not in genus JSON criteria): compact card, orange emphasis */
+.foot-scan-section--optional-mismatch {
+  border-color: rgba(255, 140, 70, 0.55);
+  box-shadow: 0 0 12px rgba(255, 120, 50, 0.18);
+  background: rgba(48, 28, 10, 0.42);
+}
+
+.foot-scan-section--optional-mismatch .foot-scan-section-label,
+.foot-scan-section--optional-mismatch .foot-scan-section-tag,
+.foot-scan-section--optional-mismatch .foot-scan-section-val {
+  color: #ff8c42;
+  font-weight: 700;
+}
+
+/* Mismatch on a criteria field from genus data */
+.foot-scan-section--criteria-mismatch {
+  border-color: rgba(255, 160, 90, 0.48);
+  box-shadow: 0 0 10px rgba(255, 120, 60, 0.15);
+  background: rgba(50, 30, 15, 0.35);
+}
+
+.stats-grid .stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.35rem 0.75rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: var(--fs-md);
+}
+.stat-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+}
+.stat-value {
+  color: var(--text);
+}
+
+.species-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+/* One scrollable “card” per genus; title centered on top */
+.genus-card-shell {
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(165deg, #12121a 0%, var(--surface-3) 48%, #08080d 100%);
+  box-shadow:
+    var(--glow),
+    inset 0 1px 0 var(--accent-a12);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: min(92vh, 1400px);
+  scroll-margin-top: 0.85rem;
+  scroll-margin-bottom: 0.85rem;
+}
+
+.genus-card-header-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s-3);
+  border-bottom: 1px solid var(--accent-dim);
+  background: var(--accent-a06);
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.genus-card-collapse-hit {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.65rem 0.55rem 0.85rem;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  color: inherit;
+}
+
+.genus-card-chevron {
+  display: inline-block;
+  font-weight: 900;
+  color: var(--accent-bright);
+  transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(180deg);
+  line-height: 1;
+}
+
+.genus-card-chevron--open {
+  transform: rotate(0deg);
+}
+
+.genus-card-header-row .genus-card-title {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--accent-bright);
+  text-shadow: 0 0 16px var(--accent-glow);
+  border: none;
+  background: transparent;
+  flex: 1;
+  min-width: 0;
+  text-transform: uppercase;
+}
+
+.genus-notes-pill {
+  align-self: center;
+  margin-right: 0.65rem;
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.5rem;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(200, 200, 210, 0.35);
+  background: rgba(40, 38, 50, 0.65);
+  color: #e7e4ef;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.genus-notes-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.genus-card-collapse-grid {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.genus-card-collapse-grid--collapsed {
+  grid-template-rows: 0fr;
+  flex: 0 0 auto;
+}
+
+.genus-card-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.genus-card-collapse-grid--collapsed .genus-card-collapse-inner {
+  pointer-events: none;
+}
+
+.genus-card-scroll--in-anim {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: min(78vh, 1100px);
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.genus-card-title {
+  margin: 0;
+  padding: 0.7rem 1rem 0.65rem;
+  text-align: center;
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent-bright);
+  text-shadow:
+    0 0 20px var(--accent-glow),
+    0 0 40px var(--accent-a15);
+  border-bottom: 1px solid var(--accent-dim);
+  background: var(--accent-a06);
+  flex-shrink: 0;
+}
+
+.genus-card-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.genus-card-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.genus-card-scroll::-webkit-scrollbar-track {
+  background: var(--shadow-a25);
+  border-radius: var(--r-xs);
+}
+.genus-card-scroll::-webkit-scrollbar-thumb {
+  background: var(--accent-a35);
+  border-radius: var(--r-xs);
+}
+.genus-card-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 122, 36, 0.5);
+}
+
+.species-card {
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius-md);
+  overflow: visible;
+  background: var(--surface);
+  box-shadow: 0 2px 12px var(--shadow-a35);
+}
+
+.species-card--compact {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Avoid one-character-per-line wrapping when the flex detail column is narrow */
+.species-card--compact .species-quad-value {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.species-card--compact .species-quad-label {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.species-card--compact .species-identity-neon-inner {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.species-identity-neon--complete .species-similarity-index {
+  border-top-color: rgba(255, 180, 100, 0.2);
+}
+
+.species-similarity-index {
+  margin: 0.5rem 0.65rem 0.45rem;
+  padding: 0.45rem 0.55rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, rgba(10, 28, 52, 0.95) 0%, rgba(6, 14, 28, 0.98) 100%);
+  border: 1px solid rgba(80, 160, 255, 0.4);
+  box-shadow: 0 0 12px rgba(60, 140, 255, 0.12);
+}
+
+.species-similarity-index-label {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(190, 220, 255, 0.92);
+  margin-bottom: 0.35rem;
+}
+
+.species-spawn-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-5);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 220, 150, 0.92);
+  margin-bottom: 0.3rem;
+}
+
+.species-spawn-head-values strong {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 236, 200, 1);
+}
+
+.species-spawn-track {
+  position: relative;
+  height: 7px;
+  border-radius: var(--r-xs);
+  background: rgba(18, 22, 30, 0.95);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px var(--shadow-a45);
+}
+
+.species-spawn-yellow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(255, 210, 90, 0.88), rgba(190, 140, 45, 0.8));
+  border-radius: 4px 0 0 4px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.species-spawn-blue {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(130, 200, 255, 0.95), rgba(60, 130, 255, 0.88));
+  box-shadow: 0 0 8px rgba(80, 160, 255, 0.35);
+  pointer-events: none;
+}
+
+.species-spawn-red {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(255, 130, 110, 0.92), rgba(200, 60, 55, 0.88));
+  pointer-events: none;
+}
+
+.species-similarity-index-cols {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.species-similarity-index-col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.species-similarity-index-pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: rgba(210, 240, 255, 1);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.species-similarity-index-pct strong {
+  font-weight: 700;
+}
+
+.species-similarity-index-bar {
+  height: 6px;
+  border-radius: var(--r-xs);
+  background: rgba(30, 70, 120, 0.45);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.species-similarity-index-fill {
+  height: 100%;
+  border-radius: var(--r-xs);
+  background: linear-gradient(
+    90deg,
+    rgba(55, 130, 255, 0.88) 0%,
+    rgba(130, 200, 255, 0.95) 50%,
+    rgba(75, 155, 255, 0.9) 100%
+  );
+  box-shadow: 0 0 10px rgba(100, 180, 255, 0.35);
+  transition: width 0.25s ease;
+}
+
+/** Similarity bar: warm at low %, cool at high % (single track — no separate spawn-share row). */
+.species-similarity-index-fill--graded {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 200, 85, 0.95) 0%,
+    rgba(255, 220, 140, 0.75) 22%,
+    rgba(120, 190, 255, 0.92) 70%,
+    rgba(60, 130, 255, 0.95) 100%
+  );
+  box-shadow: 0 0 10px rgba(100, 180, 255, 0.3);
+}
+
+.species-similarity-index--clickable {
+  display: block;
+  width: calc(100% - 0.1rem);
+  margin-left: auto;
+  margin-right: auto;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.species-similarity-index--static {
+  display: block;
+  width: calc(100% - 0.1rem);
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+  cursor: default;
+}
+
+.species-similarity-index--codex-hint {
+  display: block;
+  width: calc(100% - 0.1rem);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0.4rem 0.5rem;
+  border-style: dashed;
+  border-color: rgba(100, 140, 200, 0.35);
+  background: linear-gradient(180deg, rgba(10, 18, 36, 0.88) 0%, rgba(8, 12, 24, 0.92) 100%);
+  cursor: help;
+}
+
+.species-similarity-index-codex-hint-text {
+  margin: 0;
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  color: rgba(160, 175, 205, 0.92);
+  text-transform: none;
+}
+
+.exo-variety-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.exo-variety-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(80px, 1.2fr) auto;
+  gap: var(--s-5);
+  align-items: center;
+  font-size: var(--fs-sm);
+}
+
+.exo-variety-label {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.exo-variety-bar-track {
+  height: 8px;
+  border-radius: var(--r-xs);
+  background: rgba(30, 40, 55, 0.85);
+  overflow: hidden;
+}
+
+.exo-variety-bar-fill {
+  height: 100%;
+  border-radius: var(--r-xs);
+  background: linear-gradient(90deg, var(--accent-a45), rgba(255, 200, 120, 0.92));
+}
+
+.exo-variety-pct {
+  font-variant-numeric: tabular-nums;
+  min-width: 2.75rem;
+  text-align: right;
+  color: rgba(230, 220, 205, 0.95);
+}
+
+.exomastery-detail-footer {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--accent-a20);
+}
+
+.exomastery-download-link {
+  display: inline-block;
+  text-decoration: none;
+  font: inherit;
+  font-size: var(--fs-md);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: var(--border);
+  background: #14141a;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.exomastery-download-link:hover {
+  background: rgba(255, 106, 26, 0.12);
+}
+
+.exomastery-force-recompare-btn {
+  display: inline-block;
+  font: inherit;
+  font-size: var(--fs-md);
+  padding: 0.45rem 0.85rem;
+  margin-top: 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(120, 190, 255, 0.45);
+  background: rgba(12, 28, 48, 0.75);
+  color: var(--info);
+  cursor: pointer;
+}
+
+.exomastery-force-recompare-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.exomastery-force-recompare-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.species-similarity-index--clickable:hover {
+  border-color: rgba(120, 190, 255, 0.65);
+  box-shadow: 0 0 16px rgba(80, 160, 255, 0.22);
+}
+
+.species-similarity-index--clickable:focus {
+  outline: 2px solid rgba(130, 200, 255, 0.7);
+  outline-offset: 2px;
+}
+
+.species-similarity-index--clickable:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.species-similarity-index-hint {
+  display: block;
+  margin-top: 0.35rem;
+  text-align: center;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(160, 210, 255, 0.75);
+}
