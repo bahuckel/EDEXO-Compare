@@ -73,8 +73,18 @@ export type PendingOrganicSample = {
 
 export type OrganicAnalyseProgress = { count: number; label: string };
 
-/** Increment when journal-derived snapshot shape changes — invalidates on-disk merge cache. */
-export const JOURNAL_MERGE_CACHE_FORMAT = 2;
+/**
+ * Increment when journal-derived snapshot shape changes — invalidates on-disk merge cache.
+ *
+ * "Shape" includes *adding* a field, not only changing one. Every field here is optional on decode,
+ * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
+ * feature that reads it stays dark with nothing logged anywhere.
+ *
+ * 3 — `mainStarWasDiscoveredBySystem`. It was added to the payload without bumping this, so caches
+ * written before 2026-09-08 replayed nothing and the FIRST chip could never light for anyone holding
+ * one. Bumping forces a single rebuild per user, which is the whole cost.
+ */
+export const JOURNAL_MERGE_CACHE_FORMAT = 3;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -2150,7 +2160,10 @@ export class GameStateStore {
      *
      * A false here means "treat this as a cache miss and replay the logs".
      */
-    if (data.format !== 1 && data.format !== 2) return false;
+    // Exactly the current format, nothing else. This was an explicit allowlist (`!== 1 && !== 2`),
+    // a third place the version had to be remembered: bumping the constant without editing it here
+    // turns every cache into a permanent miss and replays 245 logs on every launch.
+    if (data.format !== JOURNAL_MERGE_CACHE_FORMAT) return false;
     if (
       !Array.isArray(data.bodies) ||
       !Array.isArray(data.explorationScans) ||
@@ -2196,17 +2209,17 @@ export class GameStateStore {
         this.fssAllBodiesFoundCountBySystem.set(addr, cnt);
       }
     }
+    // No version branch here on purpose: the loader admits a payload only when its `format` equals
+    // JOURNAL_MERGE_CACHE_FORMAT exactly, so anything reaching this point is current. A `>= n` test
+    // reads as though older caches still flow through and quietly excuses a missing field — which is
+    // how `mainStarWasDiscoveredBySystem` shipped restoring nothing. Trust the per-value type checks.
     this.mainStarWasDiscoveredBySystem.clear();
-    if (data.format >= 2) {
-      for (const [a, w] of data.mainStarWasDiscoveredBySystem ?? []) {
-        if (typeof a === "number" && typeof w === "boolean") this.mainStarWasDiscoveredBySystem.set(a, w);
-      }
-      const rj = data.remainingJumpsInRoute;
-      this.remainingJumpsInRoute =
-        typeof rj === "number" && Number.isFinite(rj) ? Math.max(0, Math.floor(rj)) : null;
-    } else {
-      this.remainingJumpsInRoute = null;
+    for (const [a, w] of data.mainStarWasDiscoveredBySystem ?? []) {
+      if (typeof a === "number" && typeof w === "boolean") this.mainStarWasDiscoveredBySystem.set(a, w);
     }
+    const rj = data.remainingJumpsInRoute;
+    this.remainingJumpsInRoute =
+      typeof rj === "number" && Number.isFinite(rj) ? Math.max(0, Math.floor(rj)) : null;
     const lmj = data.loadoutMaxJumpRangeLy;
     this.loadoutMaxJumpRangeLy = typeof lmj === "number" && Number.isFinite(lmj) && lmj > 0 ? lmj : null;
     const lfm = data.loadoutFuelMainCapacityT;
