@@ -9270,6 +9270,104 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 /*
+ * Gallery — a species with more than one photograph.
+ *
+ * Arrows sit *on* the image rather than beside it, so the frame stays the size of the picture and
+ * the picture stays the largest thing on screen. They are always visible rather than appearing on
+ * hover: a second photograph nobody knows is there may as well not exist, and this viewer opens on
+ * a click that was already about looking at the image.
+ *
+ * All of it is absent for a single-photo species, which is still the overwhelming majority.
+ */
+.photo-gallery-frame {
+  position: relative;
+  display: flex;
+  line-height: 0;
+}
+.photo-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.25rem;
+  height: 3.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: var(--fs-3xl);
+  line-height: 1;
+  color: var(--accent-bright);
+  background: rgba(12, 12, 16, 0.72);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.photo-gallery-nav:hover {
+  background: rgba(12, 12, 16, 0.92);
+  border-color: var(--accent);
+}
+.photo-gallery-nav:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.photo-gallery-nav--prev { left: 0.5rem; }
+.photo-gallery-nav--next { right: 0.5rem; }
+
+.photo-gallery-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.photo-gallery-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--accent-dim);
+  background: transparent;
+  cursor: pointer;
+}
+.photo-gallery-dot--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.photo-gallery-dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.photo-gallery-count {
+  margin-left: 0.4rem;
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The count on the card — the only hint that there is more than one, short of opening it.
+ *
+ * A button, not a label, because it does the same thing the photo does: it opens the viewer. A
+ * caption that looked clickable and was not would be worse than no caption.
+ */
+.photo-count-hint {
+  align-self: center;
+  margin-top: 0.3rem;
+  padding: 0.05rem 0.4rem;
+  font: inherit;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.photo-count-hint:hover {
+  background: var(--accent-a15);
+}
+
+/*
  * The image and its credit as one column.
  *
  * `.photo-lightbox-backdrop` centres its children in a *row*, so a credit added as a sibling of the

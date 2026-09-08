@@ -10,7 +10,8 @@ import type {
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { BUILTIN_PLACEHOLDER_URL } from "@shared/photoPlaceholder";
-import { PhotoCredit, photoCreditTitle } from "./photoCredit";
+import { photoCreditTitle } from "./photoCredit";
+import { PhotoGallery } from "./PhotoGallery";
 import { useModal } from "./ui/useModal";
 import { SkeletonRows } from "./ui/Skeleton";
 import { Tooltip } from "./ui/Tooltip";
@@ -431,7 +432,7 @@ export function EncyclopediaModal({
     defaultEncyclopediaFilters(ENC_FILTERS_ALL),
   );
   const [foundFor, setFoundFor] = useState<SpeciesEntry | null>(null);
-  const [photoZoom, setPhotoZoom] = useState<{ url: string; note: string | null } | null>(null);
+  const [photoZoom, setPhotoZoom] = useState<{ urls: string[]; note: string | null } | null>(null);
   /** Inline exomastery planetary cards inside the encyclopedia list (not a nested modal). */
   const [inlineExo, setInlineExo] = useState<{
     speciesEntryId: string;
@@ -692,6 +693,7 @@ export function EncyclopediaModal({
   const renderSpeciesRow = ({
     entry,
     photoUrl,
+    photoUrls,
     photoNote,
     exomasteryFeederBodyCount = 0,
     exomasteryProfileFilePresent = false,
@@ -736,7 +738,7 @@ export function EncyclopediaModal({
           <button
             type="button"
             className="encyclopedia-thumb-btn"
-            onClick={() => setPhotoZoom({ url: photoUrl, note: photoNote })}
+            onClick={() => setPhotoZoom({ urls: photoUrls?.length ? photoUrls : [photoUrl], note: photoNote })}
             aria-label={`Enlarge photo for ${entry.displayName}`}
             // Credit on the hover here and in full once opened: the grid cell is a thumbnail with
             // no room for a caption, and the photographs are not this project's to show unmarked.
@@ -983,29 +985,7 @@ export function EncyclopediaModal({
         </div>
       </div>
       {photoZoom ? (
-        <div className="photo-lightbox-backdrop" role="presentation" onClick={() => setPhotoZoom(null)}>
-          <button
-            type="button"
-            className="photo-lightbox-close"
-            aria-label="Close"
-            onClick={(ev) => {
-              ev.stopPropagation();
-              setPhotoZoom(null);
-            }}
-          >
-            ×
-          </button>
-          {/* One column box: the backdrop centres in a row, so a bare sibling lands beside the image. */}
-          <div className="photo-lightbox-stack" onClick={(ev) => ev.stopPropagation()}>
-            <img src={photoZoom.url} alt="" className="photo-lightbox-img" />
-            <PhotoCredit photoUrl={photoZoom.url} variant="lightbox" />
-          </div>
-          {photoZoom.note ? (
-            <p className="photo-lightbox-cap" onClick={(ev) => ev.stopPropagation()}>
-              {photoZoom.note}
-            </p>
-          ) : null}
-        </div>
+        <PhotoGallery urls={photoZoom.urls} note={photoZoom.note} onClose={() => setPhotoZoom(null)} />
       ) : null}
       {foundFor ? (
         <FoundSpeciesPopup

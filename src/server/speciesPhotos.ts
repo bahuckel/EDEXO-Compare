@@ -9,8 +9,22 @@ export { BUILTIN_PLACEHOLDER_FILE } from "../shared/photoPlaceholder.js";
 import { BUILTIN_PLACEHOLDER_FILE } from "../shared/photoPlaceholder.js";
 
 export interface ResolvedPhoto {
+  /** The photo to show when there is only room for one. Always present. */
   photoUrl: string;
   photoNote: string | null;
+  /**
+   * Every photo found for this species, `photoUrl` first.
+   *
+   * A species can have more than one picture — the same organism on a different world, at a
+   * different time of day, by a different commander — and the ED-DSN expedition will produce exactly
+   * that. A single image was never a property of the data, only of this resolver throwing away
+   * everything it did not pick.
+   *
+   * Length 1 for a species with one photo, so a caller can always read this and ignore
+   * {@link photoUrl}; both are kept because most callers want the one image and should not have to
+   * index into an array to say so.
+   */
+  photoUrls: string[];
 }
 
 function speciesPhotoBaseUrl(genusDataDir: string, filename: string): string {
@@ -101,6 +115,32 @@ function candidateFilenames(entry: SpeciesEntry): string[] {
   return out;
 }
 
+/**
+ * Extra photographs of the same species, by filename.
+ *
+ * The convention is the primary's name with a number after it — `Aleoida-arcus.png` alongside
+ * `Aleoida-arcus-2.png`, `Aleoida-arcus_3.jpg`, `Aleoida-arcus (4).png`. Comparison is on
+ * {@link normStem}, which already strips punctuation and case, so all three separators fall out for
+ * free and no new spelling rule has to be learned to add a second picture: keep the name, add a
+ * number.
+ *
+ * Deliberately *not* a similarity match. This runs after a species has been identified by exact
+ * filename, and a loose rule here would quietly pull a sibling species into the gallery — the
+ * Frutexa acus bug, but silent, because a gallery of the wrong plant still looks like a gallery.
+ */
+function numberedSiblings(files: string[], primary: string): string[] {
+  const stem = normStem(primary);
+  if (!stem) return [];
+  const extras = files
+    .filter((f) => f !== primary)
+    .map((f) => ({ f, n: normStem(f) }))
+    .filter((x) => x.n !== stem && x.n.startsWith(stem) && /^\d+$/.test(x.n.slice(stem.length)))
+    .map((x) => ({ f: x.f, order: Number(x.n.slice(stem.length)) }))
+    // Numerically, so 10 follows 9 rather than 1.
+    .sort((a, b) => a.order - b.order || a.f.localeCompare(b.f));
+  return extras.map((x) => x.f);
+}
+
 function bestFuzzyPhoto(files: string[], entry: SpeciesEntry): { name: string; note: string } | null {
   const target = normStem(entry.displayName.replace(/\s*\([^)]*\)\s*/g, "").trim());
   const targetSpecies =
@@ -161,9 +201,11 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
   const genusPath = join(getSpeciesDataDir(projectRoot), entry.genusDataDir);
   const photosDir = findGenusPhotosFolder(genusPath, entry.genusDataDir);
 
+  const placeholderUrl = `/photos/${BUILTIN_PLACEHOLDER_FILE}`;
   const builtin: ResolvedPhoto = {
-    photoUrl: `/photos/${BUILTIN_PLACEHOLDER_FILE}`,
+    photoUrl: placeholderUrl,
     photoNote: `No image found in data/species/${entry.genusDataDir}/ — expected a folder like ${entry.genusDataDir}_photos next to your genus .json.`,
+    photoUrls: [placeholderUrl],
   };
 
   if (!photosDir || !existsSync(photosDir)) {
@@ -181,19 +223,37 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
   for (const name of cands) {
     const abs = join(photosDir, basename(name));
     if (!existsSync(abs)) continue;
+    /*
+     * Use the name the directory actually has, not the candidate that matched it.
+     *
+     * `existsSync` is case-insensitive on Windows and on macOS's default volume, so the candidate
+     * `aleoida-arcus.png` "exists" when the file is really `Aleoida-arcus.png` — and the URL built
+     * from the candidate then 404s on any case-sensitive filesystem, which is where this is served
+     * from in a Linux container. It has always been latent; it surfaces here because the gallery
+     * compares the primary against the directory listing to find its siblings.
+     */
+    const primary = imageFiles.find((f) => f.toLowerCase() === basename(name).toLowerCase()) ?? basename(name);
     const wanted = entry.photoFile ? basename(entry.photoFile) : null;
     const note =
-      wanted && basename(name) !== wanted
-        ? `Species file “${wanted}” was not found — showing “${basename(name)}” from ${entry.genusDataDir}_photos.`
+      wanted && primary !== wanted
+        ? `Species file “${wanted}” was not found — showing “${primary}” from ${entry.genusDataDir}_photos.`
         : null;
-    return { photoUrl: speciesPhotoBaseUrl(entry.genusDataDir, basename(name)), photoNote: note };
+    const all = [primary, ...numberedSiblings(imageFiles, primary)];
+    return {
+      photoUrl: speciesPhotoBaseUrl(entry.genusDataDir, primary),
+      photoNote: note,
+      photoUrls: all.map((f) => speciesPhotoBaseUrl(entry.genusDataDir, f)),
+    };
   }
 
   const fuzzy = bestFuzzyPhoto(imageFiles, entry);
   if (fuzzy) {
+    // No siblings collected here on purpose: the species was matched by similarity rather than by
+    // name, so a numbered neighbour of *that* file is not evidence of anything about this species.
     return {
       photoUrl: speciesPhotoBaseUrl(entry.genusDataDir, fuzzy.name),
       photoNote: fuzzy.note,
+      photoUrls: [speciesPhotoBaseUrl(entry.genusDataDir, fuzzy.name)],
     };
   }
 
@@ -202,6 +262,7 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
     return {
       photoUrl: speciesPhotoBaseUrl(entry.genusDataDir, fallback),
       photoNote: `Species image not specified or missing — showing sample file “${fallback}” from ${entry.genusDataDir}_photos.`,
+      photoUrls: [speciesPhotoBaseUrl(entry.genusDataDir, fallback)],
     };
   }
 

@@ -828,7 +828,7 @@ export function augmentMatchesWithFootCatalog(
     haveIds.add(speciesId);
     matchedGenera.add(gFold);
 
-    const { photoUrl, photoNote } = resolveSpeciesPhoto(entry, projectRoot);
+    const { photoUrl, photoNote, photoUrls } = resolveSpeciesPhoto(entry, projectRoot);
     const priceCredits = lookupPrice(prices, entry.displayName, entry.id);
 
     const primary = rows[0]!;
@@ -866,6 +866,7 @@ export function augmentMatchesWithFootCatalog(
       ],
       photoUrl,
       photoNote,
+      photoUrls,
       priceCredits,
       organicAnalysisComplete: isOrganicComplete(entry),
       learnedFromFootScan: true,

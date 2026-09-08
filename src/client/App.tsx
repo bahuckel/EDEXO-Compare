@@ -15,6 +15,7 @@ import { useValueFlash } from "./ui/useValueFlash";
 import { SkeletonPanel } from "./ui/Skeleton";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { PhotoCredit, photoCreditTitle } from "./photoCredit";
+import { PhotoGallery } from "./PhotoGallery";
 
 /*
  * React first, above the `lazy()` calls below.
@@ -661,6 +662,16 @@ const SpeciesCard = memo(function SpeciesCard({
     );
   }, [m.otherMatchDetailCards, extras]);
 
+  /**
+   * Every photo of this species, primary first.
+   *
+   * `photoUrls` is optional on the wire so a payload written before galleries existed still parses;
+   * a single-photo species is then `[photoUrl]`, which every consumer here can treat identically.
+   */
+  const galleryUrls = useMemo(
+    () => (m.photoUrls?.length ? m.photoUrls : [m.photoUrl]),
+    [m.photoUrls, m.photoUrl],
+  );
   const [photoLightbox, setPhotoLightbox] = useState(false);
   const [exoDetailOpen, setExoDetailOpen] = useState(false);
   const [otherDetailsOpen, setOtherDetailsOpen] = useState(false);
@@ -734,7 +745,12 @@ const SpeciesCard = memo(function SpeciesCard({
       aria-label="Enlarge species photo"
       // The compact card has no room for a caption, so the credit rides on the hover here and is
       // shown in full once the photo is opened.
-      title={photoCreditTitle(m.photoUrl)}
+      title={[
+        galleryUrls.length > 1 ? `${galleryUrls.length} photos — click to browse` : null,
+        photoCreditTitle(m.photoUrl),
+      ]
+        .filter(Boolean)
+        .join(" — ")}
     >
       <img
         src={src}
@@ -987,6 +1003,16 @@ const SpeciesCard = memo(function SpeciesCard({
             {thumbBtn}
             {/* Directly under the photo it credits — the hero is a column, so anywhere further down
                 reads as a footnote to the card rather than to the image. */}
+            {galleryUrls.length > 1 ? (
+              <button
+                type="button"
+                className="photo-count-hint"
+                onClick={() => setPhotoLightbox(true)}
+                title={`${galleryUrls.length} photographs of this species — click to browse`}
+              >
+                {galleryUrls.length} photos
+              </button>
+            ) : null}
             <PhotoCredit photoUrl={m.photoUrl} />
             {identityNeon}
             {quadGrid}
@@ -1109,34 +1135,11 @@ const SpeciesCard = memo(function SpeciesCard({
 
       {photoLightbox
         ? createPortal(
-            <div
-              className="photo-lightbox-backdrop"
-              role="presentation"
-              onClick={() => setPhotoLightbox(false)}
-            >
-              <button
-                type="button"
-                className="photo-lightbox-close"
-                aria-label="Close"
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  setPhotoLightbox(false);
-                }}
-              >
-                ×
-              </button>
-              {/* The backdrop centres its children in a ROW, so the image and its credit have to
-                  share one column box or the credit sits beside the photo instead of beneath it. */}
-              <div className="photo-lightbox-stack" onClick={(ev) => ev.stopPropagation()}>
-                <img src={m.photoUrl} alt="" className="photo-lightbox-img" />
-                <PhotoCredit photoUrl={m.photoUrl} variant="lightbox" />
-              </div>
-              {m.photoNote ? (
-                <p className="photo-lightbox-cap" onClick={(ev) => ev.stopPropagation()}>
-                  {m.photoNote}
-                </p>
-              ) : null}
-            </div>,
+            <PhotoGallery
+              urls={galleryUrls}
+              note={m.photoNote}
+              onClose={() => setPhotoLightbox(false)}
+            />,
             document.body,
           )
         : null}

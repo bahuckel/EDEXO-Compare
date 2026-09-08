@@ -265,6 +265,15 @@ export interface EncyclopediaSpeciesRowDTO {
   photoUrl: string;
   photoNote: string | null;
   /**
+   * Every photograph of this species, {@link photoUrl} first.
+   *
+   * A species can have several — the same organism on a different world, by a different commander —
+   * and the viewer steps through them. Optional so a payload written before galleries existed still
+   * parses; a reader that finds it absent should treat `[photoUrl]` as the whole set.
+   */
+  photoUrls?: string[];
+
+  /**
    * Count of per-body EDSM / CSV / JSON row exports when present.
    * Feeder profile cards use {@link exomasteryProfileFilePresent} instead.
    */
@@ -629,6 +638,15 @@ export interface SpeciesMatch {
   provenance?: SpeciesProvenance;
   photoUrl: string;
   photoNote: string | null;
+  /**
+   * Every photograph of this species, {@link photoUrl} first.
+   *
+   * A species can have several — the same organism on a different world, by a different commander —
+   * and the viewer steps through them. Optional so a payload written before galleries existed still
+   * parses; a reader that finds it absent should treat `[photoUrl]` as the whole set.
+   */
+  photoUrls?: string[];
+
   /** From `data/price-list.json` when this species is listed. */
   priceCredits: number | null;
   /** True when strict temp/pressure gates failed and this row was kept as a closest-distance guess. */
