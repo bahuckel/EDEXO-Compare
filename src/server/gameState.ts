@@ -124,7 +124,7 @@ export type JournalMergeCachePayload = {
   /** Optional — `FSSAllBodiesFound.Count` per system. */
   fssAllBodiesFoundCountBySystem?: [number, number][];
   /** Present when {@link format} >= 2. */
-  fsdJumpWasDiscoveredBySystem?: [number, boolean][];
+  mainStarWasDiscoveredBySystem?: [number, boolean][];
   remainingJumpsInRoute?: number | null;
   loadoutMaxJumpRangeLy?: number | null;
   loadoutFuelMainCapacityT?: number | null;
@@ -527,9 +527,23 @@ export class GameStateStore {
   >();
 
   /**
-   * `FSDJump` / `CarrierJump` merged `WasDiscovered` for arrived `SystemAddress`.
+   * Whether each system's **main star** had been discovered before this commander scanned it.
+   *
+   * Populated from `Scan`, which is the only event that carries `WasDiscovered`. It used to be fed
+   * from `FSDJump` / `CarrierJump`, which never carry it — measured across this commander's 244
+   * journals, the field appears on 0 of 6,549 of those events — so the map was permanently empty and
+   * the "FIRST" badge that reads it had never once rendered.
+   *
+   * Keyed on the main star rather than on any body because that is what the badge claims. A body can
+   * be undiscovered inside a system somebody else found: of the 1,159 systems where this commander
+   * was first to scan *something*, 672 had a primary that was already known. Counting those as a
+   * system discovery would inflate the badge nearly threefold.
+   *
+   * Absent means "no main-star scan yet", which is not the same as `true` — 1,417 of 2,847 visited
+   * systems have no `BodyID 0` scan at all, and the badge must stay silent for those rather than
+   * claim the system was already found.
    */
-  readonly fsdJumpWasDiscoveredBySystem = new Map<number, boolean>();
+  readonly mainStarWasDiscoveredBySystem = new Map<number, boolean>();
   remainingJumpsInRoute: number | null = null;
 
   /** Journal `Loadout` / `LoadGame` — FSD range with minimal fuel (Ly). */
@@ -889,7 +903,7 @@ export class GameStateStore {
     this.pendingUiAutoSelectBodyKey = null;
     this.uiSelectedBodyKey = null;
     this.overlayTouchdownBodyKey = null;
-    this.fsdJumpWasDiscoveredBySystem.clear();
+    this.mainStarWasDiscoveredBySystem.clear();
     this.remainingJumpsInRoute = null;
     this.loadoutMaxJumpRangeLy = null;
     this.loadoutFuelMainCapacityT = null;
@@ -1100,6 +1114,23 @@ export class GameStateStore {
     setStr("volcanism", line.Volcanism);
     setBool("tidalLock", line.TidalLock);
     setBool("wasDiscovered", (line as Record<string, unknown>).WasDiscovered);
+    /*
+     * The main star's flag answers a question about the whole system, so it is lifted out here.
+     *
+     * `BodyID 0` is the main star. Its `WasDiscovered` is what the game uses to decide whether the
+     * system counts as this commander's discovery — the name on the system, and the bonus on the
+     * cartographic sale. Every other body's flag is about that body alone.
+     *
+     * Written once and not overwritten by a later re-scan of the same star: the first observation is
+     * the one made before anyone could have been beaten to it, and a subsequent visit would report
+     * the system as discovered — by this commander.
+     */
+    if (bodyId === 0) {
+      const wd = (line as Record<string, unknown>).WasDiscovered;
+      if (typeof wd === "boolean" && !this.mainStarWasDiscoveredBySystem.has(systemAddress)) {
+        this.mainStarWasDiscoveredBySystem.set(systemAddress, wd);
+      }
+    }
     setBool("wasMapped", (line as Record<string, unknown>).WasMapped);
     setNum("eccentricity", line.Eccentricity);
     setNum("orbitalInclination", line.OrbitalInclination);
@@ -1304,10 +1335,8 @@ export class GameStateStore {
         const sys = line.StarSystem as string;
         const addr = line.SystemAddress as number;
         if (sys && typeof addr === "number") {
-          const wd = (line as Record<string, unknown>).WasDiscovered;
-          if (typeof wd === "boolean") {
-            this.fsdJumpWasDiscoveredBySystem.set(addr, wd);
-          }
+          // No `WasDiscovered` read here: jump events do not carry it. See
+          // `mainStarWasDiscoveredBySystem`, which is filled from `Scan` instead.
           this.viewingSystemAddress = null;
           this.setPositionFromLine(line);
           this.resetSystem(sys, addr);
@@ -2075,7 +2104,7 @@ export class GameStateStore {
       fssAllBodiesCompleteSystems: [...this.fssAllBodiesCompleteSystems],
       fssDiscoveryScanBySystem: [...this.fssDiscoveryScanBySystem.entries()],
       fssAllBodiesFoundCountBySystem: [...this.fssAllBodiesFoundCountBySystem.entries()],
-      fsdJumpWasDiscoveredBySystem: [...this.fsdJumpWasDiscoveredBySystem.entries()],
+      mainStarWasDiscoveredBySystem: [...this.mainStarWasDiscoveredBySystem.entries()],
       remainingJumpsInRoute: this.remainingJumpsInRoute,
       loadoutMaxJumpRangeLy: this.loadoutMaxJumpRangeLy,
       loadoutFuelMainCapacityT: this.loadoutFuelMainCapacityT,
@@ -2148,10 +2177,10 @@ export class GameStateStore {
         this.fssAllBodiesFoundCountBySystem.set(addr, cnt);
       }
     }
-    this.fsdJumpWasDiscoveredBySystem.clear();
+    this.mainStarWasDiscoveredBySystem.clear();
     if (data.format >= 2) {
-      for (const [a, w] of data.fsdJumpWasDiscoveredBySystem ?? []) {
-        if (typeof a === "number" && typeof w === "boolean") this.fsdJumpWasDiscoveredBySystem.set(a, w);
+      for (const [a, w] of data.mainStarWasDiscoveredBySystem ?? []) {
+        if (typeof a === "number" && typeof w === "boolean") this.mainStarWasDiscoveredBySystem.set(a, w);
       }
       const rj = data.remainingJumpsInRoute;
       this.remainingJumpsInRoute =

@@ -4235,10 +4235,10 @@ const HeaderBar = memo(function HeaderBar({
                 </button>
               )}
             </div>
-            {snap.focusedSystemUndiscoveredFromLastFsdJump ? (
+            {snap.focusedSystemUndiscovered ? (
               <div
                 className="d-scan-card d-scan-card--complete d-scan-card--header-row header-route-mini"
-                title="Journal FSDJump/CarrierJump reported WasDiscovered: false — first discovery of this system."
+                title="You scanned this system's main star before anyone else had — the system is your discovery, and its cartographic data pays the first-discovery bonus."
               >
                 <span className="d-scan-card__label header-metric-card-label">FIRST</span>
               </div>

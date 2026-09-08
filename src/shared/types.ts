@@ -1218,8 +1218,14 @@ export interface AppSnapshot {
    * Built from merged journal `Scan` events plus exobiology state.
    */
   systemMap: SystemMapSnapshot | null;
-  /** `FSDJump`/`CarrierJump` into focused system had `WasDiscovered: false` — show FIRST chip. */
-  focusedSystemUndiscoveredFromLastFsdJump: boolean;
+  /**
+   * The focused system's main star was undiscovered when this commander scanned it — show FIRST.
+   *
+   * From `Scan` on `BodyID 0`, the only event that carries `WasDiscovered`. False also covers "no
+   * main-star scan yet", which is why the chip is an award rather than a verdict: its absence never
+   * claims somebody else got there first.
+   */
+  focusedSystemUndiscovered: boolean;
   /** Journal `FSDTarget.RemainingJumpsInRoute`; null until line merged. */
   remainingJumpsInRoute: number | null;
   /**

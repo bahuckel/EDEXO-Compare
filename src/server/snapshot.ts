@@ -1209,8 +1209,8 @@ export function buildSnapshot(
     uiSelectedBodyKey: bootLoading ? null : store.uiSelectedBodyKey,
     exoOverlayFocusBodyKey,
     exoOverlayFocusBody,
-    focusedSystemUndiscoveredFromLastFsdJump:
-      !bootLoading && focusAddr != null && store.fsdJumpWasDiscoveredBySystem.get(focusAddr) === false,
+    focusedSystemUndiscovered:
+      !bootLoading && focusAddr != null && store.mainStarWasDiscoveredBySystem.get(focusAddr) === false,
     remainingJumpsInRoute: bootLoading ? null : store.remainingJumpsInRoute,
     liveShipFuelRange: bootLoading ? null : buildLiveShipFuelRangeDTO(store, cachedStarRoles!),
     footTravelOdometerEnabled: store.footTravelOdometerEnabled,
