@@ -32,28 +32,45 @@ observations disagree with the published conditions, the observation wins — bu
 conditions are where every gate started, and being able to disagree with something is a debt to
 whoever wrote it down first.
 
-### ED-DSN — the Deep Space Network community
+### ED-DSN — [ed-dsn.net](https://ed-dsn.net)
 
 The species photographs. Commanders flew to these places, landed, and photographed the organism, and
-that is not a small thing to have done 288 times.
+that is not a small thing to have done ninety-six times.
+
+Credited by link to the network rather than by commander name, at ED-DSN's request and ours: the
+photographs were taken on an expedition years ago and a significant number of those commanders can no
+longer be reached, so naming some and not others would be worse than naming none.
 
 ---
 
 ## Species photographs
 
-`data/species/<genus>/<genus>_photos/` holds 288 images of Elite Dangerous exobiology, sourced from
-the ED-DSN community. They are **not covered by this project's MIT licence** and are not the project's
-to sublicense.
+`data/species/<genus>/<genus>_photos/` holds 96 images of Elite Dangerous exobiology (each also
+present as a cropped card and thumbnail, so 288 files), sourced from the ED-DSN community. They are
+**not covered by this project's MIT licence** and are not this project's to sublicense.
 
 Two rights sit in each image and neither belongs to this project:
 
 - the game artwork, which is Frontier Developments';
 - the capture itself, which belongs to the commander who took it.
 
-No licence was stated at the source, and no licence stated means all rights reserved — the absence of
-a licence is not permission. They are included here in good faith as fan work, credited above,
-non-commercially, and this notice exists so that nobody downstream mistakes them for MIT-licensed
-material they may redistribute or sell.
+### What has and has not been agreed
+
+ED-DSN's owner was asked directly, told what the images are used for, and **agreed that this project
+may keep them for now**, until replacements exist. That is the agreement of the network that
+curates them, and it is what this project has.
+
+It is deliberately not described as a licence. The photographs were taken on an expedition years ago
+and a significant number of those commanders are no longer reachable, so most of the individual
+authors have neither granted nor refused anything — and nobody else can grant it for them. The images
+are therefore here with the curator's agreement and without the authors', which is stated plainly
+rather than papered over.
+
+### They are being replaced
+
+ED-DSN and this project are organising an expedition to photograph each species afresh, with
+commanders who agree up front that their images may be used here. Those images will replace the ones
+in this folder. Until then these stand in.
 
 **If any rights holder would prefer their image not be here, it will be removed on request** — open
 an issue or contact the maintainer, and no justification is needed.
