@@ -1801,6 +1801,25 @@ export class GameStateStore {
         if (onPlanet && !onStation && typeof bodyId === "number" && typeof systemAddress === "number") {
           const bk = bodyKey(systemAddress, bodyId);
           const detailedSaidUnfootfalled = this.bodyDetailedFootfallState.get(bk) === false;
+          /**
+           * Kept for a field the journal does not currently write.
+           *
+           * Audited 2026-09-08 against 244 journals: `Disembark` carries `Body`, `BodyID`, `ID`,
+           * `MarketID`, `Multicrew`, `OnPlanet`, `OnStation`, `SRV`, `StarSystem`, `StationName`,
+           * `StationType`, `SystemAddress`, `Taxi`, `event` and `timestamp` — and nothing resembling
+           * a first-footfall flag, in any casing, across 1,029 events. This half has never fired.
+           *
+           * Left in place rather than deleted because it costs nothing and would start working if
+           * Frontier ever adds the field. Documented because two other reads of never-written fields
+           * turned out to be real bugs — `WasDiscovered` on `FSDJump` and the missing `Log` scan type
+           * — and the next reader needs to know this one is *known* dead rather than assumed live.
+           *
+           * The line above carries the feature on its own, and correctly: of 253 planet bodies this
+           * commander has disembarked on, 87 had a scan saying not-footfalled, which is exactly the
+           * 87 in `firstFootfallBodies`. Of the remainder, 158 were landed on before `WasFootfalled`
+           * existed in the journal at all (first seen 2025-09-29), so they are unknowable rather than
+           * missed.
+           */
           const journalFirstFootfall = line.firstfootfall === true || line.FirstFootfall === true;
           if (detailedSaidUnfootfalled || journalFirstFootfall) {
             this.firstFootfallBodies.add(bk);
