@@ -9,6 +9,8 @@ import type {
 } from "@shared/types";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
+import { BUILTIN_PLACEHOLDER_URL } from "@shared/photoPlaceholder";
+import { PhotoCredit, photoCreditTitle } from "./photoCredit";
 import { useModal } from "./ui/useModal";
 import { SkeletonRows } from "./ui/Skeleton";
 import { Tooltip } from "./ui/Tooltip";
@@ -115,7 +117,8 @@ function encyclopediaExomasteryFetchPath(
   return `/api/encyclopedia-exomastery/${encodeURIComponent(genusDir)}/${encodeURIComponent(speciesEntryId)}${qs ? `?${qs}` : ""}`;
 }
 
-const BUILTIN_PLACEHOLDER = "/photos/__builtin_placeholder.svg";
+// The placeholder URL is shared with the server, which writes it — see shared/photoPlaceholder.
+const BUILTIN_PLACEHOLDER = BUILTIN_PLACEHOLDER_URL;
 
 function footHitsForEntry(entry: SpeciesEntry, catalog: FootScannedEntry[]): FootScannedEntry[] {
   const nid = entry.id;
@@ -735,7 +738,11 @@ export function EncyclopediaModal({
             className="encyclopedia-thumb-btn"
             onClick={() => setPhotoZoom({ url: photoUrl, note: photoNote })}
             aria-label={`Enlarge photo for ${entry.displayName}`}
-            title="Click for full-size illustration"
+            // Credit on the hover here and in full once opened: the grid cell is a thumbnail with
+            // no room for a caption, and the photographs are not this project's to show unmarked.
+            title={[photoCreditTitle(photoUrl), "Click for full-size illustration"]
+              .filter(Boolean)
+              .join(" — ")}
           >
             <EncyclopediaThumb photoUrl={photoUrl} displayName={entry.displayName} />
           </button>
@@ -999,6 +1006,9 @@ export function EncyclopediaModal({
               {photoZoom.note}
             </p>
           ) : null}
+          <div onClick={(ev) => ev.stopPropagation()}>
+            <PhotoCredit photoUrl={photoZoom.url} variant="lightbox" />
+          </div>
         </div>
       ) : null}
       {foundFor ? (

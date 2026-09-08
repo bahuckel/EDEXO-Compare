@@ -9237,6 +9237,35 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 /*
+ * Photo credit — the images are not this project's.
+ *
+ * Quiet on purpose: it sits under a photograph on a card the reader is scanning for gravity and
+ * temperature, so it must not compete with the data. But it is a credit, not a footnote, so the link
+ * takes the accent colour and stays underlined — an attribution nobody can see is not an attribution.
+ *
+ * Only rendered where there is room for it. The compact card and the encyclopedia thumbnail carry it
+ * on the hover instead, and it appears in full whenever the photo is opened.
+ */
+.photo-credit {
+  margin: 0.3rem 0 0;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--muted, #8b97a8);
+  opacity: 0.85;
+}
+.photo-credit a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.photo-credit--lightbox {
+  margin-top: 0.45rem;
+  font-size: 11px;
+  text-align: center;
+  opacity: 1;
+}
+
+/*
  * Provenance badges — who says this species is here.
  *
  * Deliberately quieter than `.species-codex-new`, which is a filled pill in the accent colour. That

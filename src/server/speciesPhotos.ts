@@ -5,7 +5,8 @@ import { findGenusPhotosFolder } from "./speciesTreeLoader.js";
 import { getSpeciesDataDir } from "./paths.js";
 
 /** Single-segment URL file param uses encodeURIComponent; route uses basename only. */
-export const BUILTIN_PLACEHOLDER_FILE = "__builtin_placeholder.svg";
+export { BUILTIN_PLACEHOLDER_FILE } from "../shared/photoPlaceholder.js";
+import { BUILTIN_PLACEHOLDER_FILE } from "../shared/photoPlaceholder.js";
 
 export interface ResolvedPhoto {
   photoUrl: string;

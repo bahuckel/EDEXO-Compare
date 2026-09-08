@@ -14,6 +14,7 @@ import {
 import { useValueFlash } from "./ui/useValueFlash";
 import { SkeletonPanel } from "./ui/Skeleton";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
+import { PhotoCredit, photoCreditTitle } from "./photoCredit";
 
 /*
  * React first, above the `lazy()` calls below.
@@ -731,6 +732,9 @@ const SpeciesCard = memo(function SpeciesCard({
       }
       onClick={() => setPhotoLightbox(true)}
       aria-label="Enlarge species photo"
+      // The compact card has no room for a caption, so the credit rides on the hover here and is
+      // shown in full once the photo is opened.
+      title={photoCreditTitle(m.photoUrl)}
     >
       <img
         src={src}
@@ -986,6 +990,7 @@ const SpeciesCard = memo(function SpeciesCard({
             {m.photoNote ? (
               <p className="species-photo-note species-photo-note--hero">{m.photoNote}</p>
             ) : null}
+            <PhotoCredit photoUrl={m.photoUrl} />
           </div>
         )}
 
@@ -1129,6 +1134,9 @@ const SpeciesCard = memo(function SpeciesCard({
                   {m.photoNote}
                 </p>
               ) : null}
+              <div onClick={(ev) => ev.stopPropagation()}>
+                <PhotoCredit photoUrl={m.photoUrl} variant="lightbox" />
+              </div>
             </div>,
             document.body,
           )
