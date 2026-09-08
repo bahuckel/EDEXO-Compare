@@ -35,7 +35,7 @@ whoever wrote it down first.
 ### ED-DSN — [ed-dsn.net](https://ed-dsn.net)
 
 The species photographs. Commanders flew to these places, landed, and photographed the organism, and
-that is not a small thing to have done ninety-six times.
+that is not a small thing to have done ninety-seven times.
 
 Credited by link to the network rather than by commander name, at ED-DSN's request and ours: the
 photographs were taken on an expedition years ago and a significant number of those commanders can no
@@ -45,8 +45,8 @@ longer be reached, so naming some and not others would be worse than naming none
 
 ## Species photographs
 
-`data/species/<genus>/<genus>_photos/` holds 96 images of Elite Dangerous exobiology (each also
-present as a cropped card and thumbnail, so 288 files), sourced from the ED-DSN community. They are
+`data/species/<genus>/<genus>_photos/` holds 97 images of Elite Dangerous exobiology (each also
+present as a cropped card and thumbnail, so 291 files), sourced from the ED-DSN community. They are
 **not covered by this project's MIT licence** and are not this project's to sublicense.
 
 Two rights sit in each image and neither belongs to this project:
