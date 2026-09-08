@@ -12,6 +12,7 @@ import type {
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
+  FirstDiscoveryBacklogDTO,
   ExoDataAlertDTO,
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
@@ -100,6 +101,14 @@ export function createHttpServer(opts: {
   getCommanderSystem: () => string | null;
   /** GET /api/species-encyclopedia — species rows including exomastery flags */
   getEncyclopedia?: () => EncyclopediaSpeciesRowDTO[];
+  /**
+   * GET /api/first-discovery-backlog — biology left uncollected in systems this commander found.
+   *
+   * Its own endpoint rather than a snapshot field because it costs ~15 s over this commander's
+   * history, and the snapshot rebuilds on every journal line. Absent on a build with no store
+   * behind it, in which case the panel hides itself.
+   */
+  getFirstDiscoveryBacklog?: () => FirstDiscoveryBacklogDTO;
   /**
    * GET /api/feeder/status — feeder corpus vs installed profiles.
    *
@@ -352,6 +361,15 @@ export function createHttpServer(opts: {
    * A missing file is a 404 rather than an error. The map is a derived artefact; a build that has
    * not run the feeder should show "no map yet", not a broken app.
    */
+  app.get("/api/first-discovery-backlog", (_req, res) => {
+    perfCount("http.firstDiscoveryBacklog");
+    if (!opts.getFirstDiscoveryBacklog) {
+      res.status(404).json({ error: "no journal store behind this build" });
+      return;
+    }
+    res.json(opts.getFirstDiscoveryBacklog());
+  });
+
   app.get("/api/sector-map", (_req, res) => {
     perfCount("http.sectorMap");
     const file = path.join(getProjectRoot(), "data", "exomastery", "sector-map.json");

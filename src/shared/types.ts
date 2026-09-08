@@ -770,6 +770,41 @@ export interface ExoPayoutSpeciesLineDTO {
 }
 
 /** Estimated sell-value band for completing all exo slots on a body (strict price list × footfall mult). */
+/**
+ * One body in the first-discovery backlog: biology this commander found and never collected.
+ *
+ * Both credit figures already carry the 5x, because the whole point of the row is that the
+ * first-footfall bonus is still unclaimed. `minCr` is the floor — what the body pays if every slot
+ * turns out to hold the cheapest candidate — and is the number to plan a route on. `maxCr` is the
+ * ceiling and can be wildly higher on a body whose candidate list has one rare outlier.
+ */
+export interface FirstDiscoveryBacklogRowDTO {
+  bodyKey: string;
+  systemAddress: number;
+  starSystem: string;
+  bodyName: string;
+  /** FSS biological signal count — how many species the game says are down there. */
+  biologicalSignals: number;
+  /** Guaranteed floor at 5x: every slot pays its cheapest candidate. */
+  minCr: number;
+  /** Ceiling at 5x: every slot pays its dearest. */
+  maxCr: number;
+  /** Distinct predicted species carrying a list price. */
+  candidateCount: number;
+  /** True once a DSS has named the genera, which narrows the prediction sharply. */
+  genusKnown: boolean;
+  dssComplete: boolean;
+}
+
+export interface FirstDiscoveryBacklogDTO {
+  /** Ranked by `minCr`, highest first. */
+  rows: FirstDiscoveryBacklogRowDTO[];
+  systemCount: number;
+  totalMinCr: number;
+  totalMaxCr: number;
+  computedAt: string;
+}
+
 export interface ExoPayoutRangeDTO {
   minCr: number;
   maxCr: number;

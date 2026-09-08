@@ -43,6 +43,22 @@ export function IconTriage({ className }: { className?: string }) {
 }
 
 /**
+ * A flag on a planet — the first-discovery backlog.
+ *
+ * Footfall is what the list is about, so the mark is a claim planted on a surface rather than a
+ * plant or a chart: these are bodies where the flag is still there to be planted.
+ */
+export function IconBacklog({ className }: { className?: string }) {
+  return (
+    <svg {...BASE} className={className}>
+      <path d="M2.4 11.6a7.4 7.4 0 0 0 11.2 0" />
+      <path d="M5.6 11.6V2.9" />
+      <path d="M5.6 3.1h5.1l-1.5 2 1.5 2H5.6" />
+    </svg>
+  );
+}
+
+/**
  * Galaxy — the sector heat map.
  *
  * A disc seen edge-on with a bright centre, which is what the map's own side projection shows, so

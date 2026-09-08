@@ -10,6 +10,7 @@ import {
   IconGalaxy,
   IconOptions,
   IconTriage,
+  IconBacklog,
 } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { SkeletonPanel } from "./ui/Skeleton";
@@ -58,6 +59,9 @@ const ExomasteryHabitatMatchModal = lazy(() =>
 );
 const SystemTriageModal = lazy(() =>
   import("./SystemTriageModal").then((m) => ({ default: m.SystemTriageModal })),
+);
+const FirstDiscoveryBacklogModal = lazy(() =>
+  import("./FirstDiscoveryBacklogModal").then((m) => ({ default: m.FirstDiscoveryBacklogModal })),
 );
 const PlanetQuickFactsPopup = lazy(() =>
   import("./PlanetQuickFactsPopup").then((m) => ({ default: m.PlanetQuickFactsPopup })),
@@ -3886,6 +3890,7 @@ const HeaderBar = memo(function HeaderBar({
   const [myExoOpen, setMyExoOpen] = useState(false);
   const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
   const [triageOpen, setTriageOpen] = useState(false);
+  const [backlogOpen, setBacklogOpen] = useState(false);
   const [notableQuick, setNotableQuick] = useState<{
     notable: NotableBodyInfo;
     x: number;
@@ -4061,6 +4066,16 @@ const HeaderBar = memo(function HeaderBar({
               aria-label="System triage"
             >
               <IconTriage />
+            </button>
+          </Tooltip>
+          <Tooltip text="Unfinished business — biology you found first and never collected, still worth 5x.">
+            <button
+              type="button"
+              className="appbar-icon-btn"
+              onClick={() => setBacklogOpen(true)}
+              aria-label="Unfinished business"
+            >
+              <IconBacklog />
             </button>
           </Tooltip>
           {feeder.available ? (
@@ -4340,6 +4355,12 @@ const HeaderBar = memo(function HeaderBar({
       snap.currentSystemAddress != null &&
       snap.viewingSystemAddress !== snap.currentSystemAddress ? (
         <p className="sub-live dim header-commander-away">Commander: {snap.currentSystem ?? "—"}</p>
+      ) : null}
+
+      {backlogOpen ? (
+        <Suspense fallback={<ModalLoading />}>
+          <FirstDiscoveryBacklogModal onClose={() => setBacklogOpen(false)} />
+        </Suspense>
       ) : null}
 
       {triageOpen ? (

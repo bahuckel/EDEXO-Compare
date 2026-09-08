@@ -9858,3 +9858,177 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
   cursor: pointer;
   white-space: nowrap;
 }
+
+/*
+ * Unfinished business — the first-discovery backlog.
+ *
+ * A long table inside a modal, so the header, summary and filters stay put and only the rows move.
+ * The panel is a column flex with a fixed max height for that reason; giving the scroll to the whole
+ * modal instead would push the threshold buttons off screen exactly when they are wanted.
+ */
+.fdb-panel {
+  /*
+   * `.modal-panel` caps every modal at 640px wide and 720px tall, which is right for a detail card
+   * and wrong for a six-column table of 293 rows — setting only `width` left it clamped at 640 and
+   * the credit columns wrapped. Both maxima have to be raised here, not just the width.
+   */
+  width: min(1100px, 94vw);
+  max-width: min(1100px, 94vw);
+  max-height: 86vh;
+  padding: 0.85rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.fdb-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.fdb-title {
+  margin: 0 0 0.25rem;
+  font-size: var(--fs-lg);
+  letter-spacing: 0.02em;
+}
+
+.fdb-sub {
+  margin: 0;
+  max-width: 68ch;
+  line-height: 1.45;
+}
+
+.fdb-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1.1rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(100, 220, 150, 0.35);
+  border-radius: var(--r-sm);
+  background: rgba(12, 42, 28, 0.4);
+}
+
+.fdb-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.fdb-chip {
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(150, 190, 230, 0.4);
+  background: rgba(20, 30, 45, 0.6);
+  color: inherit;
+  cursor: pointer;
+}
+
+.fdb-chip:hover {
+  border-color: rgba(180, 215, 255, 0.7);
+}
+
+.fdb-chip--on {
+  border-color: rgba(100, 220, 150, 0.75);
+  background: rgba(14, 52, 34, 0.85);
+  color: #5fdf98;
+}
+
+/* The only scrolling region, so the controls above it never leave the viewport. */
+.fdb-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.fdb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.fdb-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.5rem;
+  background: var(--panel-bg, #0d1117);
+  border-bottom: 1px solid rgba(150, 190, 230, 0.3);
+}
+
+.fdb-table td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: baseline;
+}
+
+.fdb-row--clickable {
+  cursor: pointer;
+}
+
+.fdb-row:hover td {
+  background: rgba(120, 180, 255, 0.08);
+}
+
+.fdb-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fdb-floor {
+  font-weight: 700;
+  color: #5fdf98;
+}
+
+.fdb-sys {
+  white-space: nowrap;
+}
+
+.fdb-body {
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.fdb-dss {
+  margin-left: 0.4rem;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.05rem 0.3rem;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(130, 200, 255, 0.5);
+  color: #8fc8ff;
+}
+
+.fdb-copy {
+  font: inherit;
+  font-size: var(--fs-xs);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(150, 190, 230, 0.4);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.fdb-copy:hover {
+  border-color: rgba(180, 215, 255, 0.8);
+}
+
+.fdb-empty {
+  padding: 1.4rem 0.6rem;
+  opacity: 0.75;
+  line-height: 1.5;
+}
