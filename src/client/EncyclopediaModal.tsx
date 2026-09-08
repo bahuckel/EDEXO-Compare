@@ -995,20 +995,16 @@ export function EncyclopediaModal({
           >
             ×
           </button>
-          <img
-            src={photoZoom.url}
-            alt=""
-            className="photo-lightbox-img"
-            onClick={(ev) => ev.stopPropagation()}
-          />
+          {/* One column box: the backdrop centres in a row, so a bare sibling lands beside the image. */}
+          <div className="photo-lightbox-stack" onClick={(ev) => ev.stopPropagation()}>
+            <img src={photoZoom.url} alt="" className="photo-lightbox-img" />
+            <PhotoCredit photoUrl={photoZoom.url} variant="lightbox" />
+          </div>
           {photoZoom.note ? (
             <p className="photo-lightbox-cap" onClick={(ev) => ev.stopPropagation()}>
               {photoZoom.note}
             </p>
           ) : null}
-          <div onClick={(ev) => ev.stopPropagation()}>
-            <PhotoCredit photoUrl={photoZoom.url} variant="lightbox" />
-          </div>
         </div>
       ) : null}
       {foundFor ? (

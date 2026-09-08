@@ -9247,7 +9247,11 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
  * on the hover instead, and it appears in full whenever the photo is opened.
  */
 .photo-credit {
-  margin: 0.3rem 0 0;
+  /* Full width and centred: it sits directly under the photo in a centring column, and a
+     shrink-to-fit line would drift off the image's axis on narrow cards. */
+  width: 100%;
+  text-align: center;
+  margin: 0.3rem 0 0.15rem;
   font-size: 10px;
   line-height: 1.35;
   color: var(--muted, #8b97a8);
@@ -9259,10 +9263,26 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   text-underline-offset: 2px;
 }
 .photo-credit--lightbox {
-  margin-top: 0.45rem;
+  margin-top: 0.5rem;
   font-size: 11px;
   text-align: center;
   opacity: 1;
+}
+
+/*
+ * The image and its credit as one column.
+ *
+ * `.photo-lightbox-backdrop` centres its children in a *row*, so a credit added as a sibling of the
+ * image lands to its right rather than beneath it. The existing caption dodges that by being
+ * `position: fixed` to the bottom of the viewport, which is not where a credit belongs — it should
+ * stay attached to the picture it credits, and move with it.
+ */
+.photo-lightbox-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: min(92vw, 1200px);
+  cursor: default;
 }
 
 /*

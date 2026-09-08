@@ -985,12 +985,14 @@ const SpeciesCard = memo(function SpeciesCard({
         ) : (
           <div className="species-card-hero">
             {thumbBtn}
+            {/* Directly under the photo it credits — the hero is a column, so anywhere further down
+                reads as a footnote to the card rather than to the image. */}
+            <PhotoCredit photoUrl={m.photoUrl} />
             {identityNeon}
             {quadGrid}
             {m.photoNote ? (
               <p className="species-photo-note species-photo-note--hero">{m.photoNote}</p>
             ) : null}
-            <PhotoCredit photoUrl={m.photoUrl} />
           </div>
         )}
 
@@ -1123,20 +1125,17 @@ const SpeciesCard = memo(function SpeciesCard({
               >
                 ×
               </button>
-              <img
-                src={m.photoUrl}
-                alt=""
-                className="photo-lightbox-img"
-                onClick={(ev) => ev.stopPropagation()}
-              />
+              {/* The backdrop centres its children in a ROW, so the image and its credit have to
+                  share one column box or the credit sits beside the photo instead of beneath it. */}
+              <div className="photo-lightbox-stack" onClick={(ev) => ev.stopPropagation()}>
+                <img src={m.photoUrl} alt="" className="photo-lightbox-img" />
+                <PhotoCredit photoUrl={m.photoUrl} variant="lightbox" />
+              </div>
               {m.photoNote ? (
                 <p className="photo-lightbox-cap" onClick={(ev) => ev.stopPropagation()}>
                   {m.photoNote}
                 </p>
               ) : null}
-              <div onClick={(ev) => ev.stopPropagation()}>
-                <PhotoCredit photoUrl={m.photoUrl} variant="lightbox" />
-              </div>
             </div>,
             document.body,
           )
