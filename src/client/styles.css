@@ -738,6 +738,25 @@ button.data-value-pill.data-value-pill--clickable:active {
   margin-right: 0.35rem;
 }
 
+/*
+ * A card whose whole content is its label — the FIRST chip.
+ *
+ * The header cluster is `align-items: stretch`, so this card is as tall as the D-Scan card beside
+ * it, which has a label *and* a value. An `inline-block` with one short child then pins that child
+ * to the top-left of all that borrowed height, and `.d-scan-card__label`'s right margin (a gutter
+ * for a value that does not exist here) pushes it further off-centre.
+ */
+.d-scan-card--label-only {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.d-scan-card--label-only .d-scan-card__label {
+  margin-right: 0;
+}
+
 .d-scan-card__sys {
   display: inline-block;
   font-weight: 600;
