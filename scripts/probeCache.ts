@@ -16,6 +16,7 @@ import path from "node:path";
 import v8 from "node:v8";
 import { gunzipSync } from "node:zlib";
 import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
+import { JOURNAL_MERGE_CACHE_FORMAT } from "../src/server/gameState.js";
 import type { JournalMergeCachePayload } from "../src/server/gameState.js";
 import { resolveJournalMergeCacheRoot } from "../src/server/paths.js";
 
@@ -60,6 +61,39 @@ export function loadJournalMergeCacheForTool(quiet = false): JournalMergeCachePa
   if (!payload) {
     console.error(
       `Cache at ${payloadPath} is not in the current encoding; delete it and let the app rebuild.`,
+    );
+    process.exit(1);
+  }
+
+  /*
+   * Everything below is the app's own admission test, which this loader used to skip.
+   *
+   * The encoding check above only says the bytes parse. It says nothing about whether the payload is
+   * the shape the current code writes, or whether it holds anything — and a probe that measures a
+   * stale or truncated cache does not fail, it reports. On 2026-09-09 a build's smoke boot left this
+   * cache at 125 kB carrying a complete 247-file manifest; the probes read it without a word and
+   * measured 57 truth bodies instead of 453, and a floor sweep run across that change produced a
+   * table of differences that were really just the corpus moving underneath it.
+   *
+   * So: refuse, loudly, rather than measure something nobody asked about.
+   */
+  if (payload.format !== JOURNAL_MERGE_CACHE_FORMAT) {
+    console.error(
+      `Cache at ${payloadPath} is format ${payload.format}; this build writes ${JOURNAL_MERGE_CACHE_FORMAT}.
+` +
+        `Run the app once so it replays the journals, then re-run this probe.`,
+    );
+    process.exit(1);
+  }
+  if (
+    (payload.bodies?.length ?? 0) === 0 &&
+    (payload.explorationScans?.length ?? 0) === 0 &&
+    (payload.visitedSystems?.length ?? 0) === 0
+  ) {
+    console.error(
+      `Cache at ${payloadPath} has a file manifest but no history — it was written by a run that was
+` +
+        `killed mid-replay. Delete it and run the app once.`,
     );
     process.exit(1);
   }
