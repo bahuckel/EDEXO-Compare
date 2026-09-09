@@ -48,8 +48,12 @@ const GRAVITY_PATH = "body.gravity";
  * **Re-swept after the §45 hydration pass grew the corpus by 34 %** and none of the six floors
  * moved: every upward step cost recall and bought nothing on ambiguity. The one exception proves
  * the shape — doubling the planet-class floor to 40 buys 0.12 candidates for **nine species**.
- */
-export const MIN_GRAVITY_OBSERVATIONS = observationFloor("GRAVITY", 10);
+ *
+ * **Re-swept 2026-09-09** against a corpus twice the size, and this floor held: neither step away
+ * from it bought decidability without costing recall. The full table and the one near-miss (the
+ * atmosphere floor at 20) are in speciesAtmosphereObservations.ts; the runner is
+ * scripts/floor-sweep.ts.
+ */export const MIN_GRAVITY_OBSERVATIONS = observationFloor("GRAVITY", 10);
 
 export interface GravityObservation {
   /** Bodies observed in the bin containing this reading. */

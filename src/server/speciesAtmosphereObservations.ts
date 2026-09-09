@@ -51,6 +51,31 @@ export const NO_ATMOSPHERE = "";
  * **Re-swept after the §45 hydration pass grew the corpus by 34 %** and none of the six floors
  * moved: every upward step cost recall and bought nothing on ambiguity. The one exception proves
  * the shape — doubling the planet-class floor to 40 buys 0.12 candidates for **nine species**.
+ *
+ * ## Re-swept again, 2026-09-09, and 20 was refused on a number the earlier sweeps did not report
+ *
+ * Twenty is the only floor in this codebase that looks like an improvement on the headline metrics:
+ * decidability 32.6 % → **35.1 %**, ambiguity 7.98 → 7.55, precision 39.4 % → 42.0 %, for one extra
+ * species missed. Twenty-seven more bodies where the app can name the genera outright is a real gain
+ * and the cost looks trivial.
+ *
+ * It is not, because of what happens to the answers it is newly confident about:
+ *
+ * | floor | decidable | decided **and right** |
+ * |---|---|---|
+ * | **10** | 355 (32.6 %) | **67/67 — 100 %** |
+ * | 20 | 382 (35.1 %) | 73/75 — 97.3 % |
+ *
+ * The extra confidence is bought by being wrong twice where the app had never been wrong at all. A
+ * body the panel calls ambiguous costs the commander a longer list; a body it names wrongly costs
+ * them the trip, and they only find out on the ground. An honest "one of these five" outranks a
+ * confident mistake, so decidability is only worth having while `decided & right` stays perfect.
+ *
+ * Value-weighted recall moves the same way — 97.1 % → 96.7 %, 101.8 M → 114.7 M credits missed.
+ *
+ * **Every one of the five floors held.** Each shipped value reproduced the baseline exactly, which is
+ * the control the run before it failed: see scripts/floor-sweep.ts and the cache guards in
+ * scripts/probeCache.ts, added after a sweep measured a corpus that was changing underneath it.
  */
 export const MIN_ATMOSPHERE_OBSERVATIONS = observationFloor("ATMOSPHERE", 10);
 
