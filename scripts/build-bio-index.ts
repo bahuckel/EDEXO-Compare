@@ -35,6 +35,10 @@
  *   species table (JSON: our species ids, in index order)
  *   systems, ascending by id64:  u64 id64 | f32 x | f32 y | f32 z | u8 regionId | u8 speciesCount
  *   species run: one u8 index per (system, species), in system order
+ *   name run:    u8 byte-length + UTF-8 name per system, in system order
+ *
+ * v2 added the names. Without them the index can locate a system but cannot say what to type into
+ * the galaxy map, which is the one thing a commander does with the answer.
  */
 import { createReadStream, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline";
@@ -43,7 +47,7 @@ import { fileURLToPath } from "node:url";
 import { normaliseRegionName, regionIndexForCoords, type RegionMapData } from "../src/shared/regionMap.js";
 
 const MAGIC = "EDEXOBIO";
-const VERSION = 1;
+const VERSION = 2;
 
 const argv = process.argv.slice(2);
 const positional = argv.filter((a) => !a.startsWith("--"));
@@ -160,6 +164,7 @@ if (speciesIds.length > 255) {
 }
 
 interface Row {
+  name: string;
   x: number;
   y: number;
   z: number;
@@ -198,6 +203,7 @@ for await (const line of rl) {
   let rec = systems.get(id);
   if (!rec) {
     rec = {
+      name: (f[5] ?? "").trim(),
       x: Number(f[6]),
       y: Number(f[7]),
       z: Number(f[8]),
@@ -250,8 +256,10 @@ head.writeUInt32LE(json.length, 16);
 
 const table = Buffer.alloc(ids.length * RECORD);
 const runs = Buffer.alloc(totalSpecies);
+const nameParts: Buffer[] = [];
 let off = 0;
 let runAt = 0;
+let longNames = 0;
 for (const id of ids) {
   const r = systems.get(id)!;
   table.writeBigUInt64LE(id, off);
@@ -262,11 +270,23 @@ for (const id of ids) {
   table.writeUInt8(Math.min(255, r.species.size), off + 21);
   off += RECORD;
   for (const s of r.species) runs.writeUInt8(s, runAt++);
+  // u8 length: the longest real system name is well under 255 bytes, but truncate rather than
+  // corrupt the run if the source ever surprises us.
+  let nb = Buffer.from(r.name, "utf8");
+  if (nb.length > 255) {
+    nb = nb.subarray(0, 255);
+    longNames++;
+  }
+  const len = Buffer.alloc(1);
+  len.writeUInt8(nb.length, 0);
+  nameParts.push(len, nb);
 }
+const names = Buffer.concat(nameParts);
+if (longNames) console.log(`names truncated to 255 bytes: ${longNames}`);
 
 const outPath = path.isAbsolute(OUT) ? OUT : path.join(root, OUT);
-writeFileSync(outPath, Buffer.concat([head, json, table, runs]));
-const bytes = head.length + json.length + table.length + runs.length;
+writeFileSync(outPath, Buffer.concat([head, json, table, runs, names]));
+const bytes = head.length + json.length + table.length + runs.length + names.length;
 console.log(
   `\nwrote ${outPath}\n  ${ids.length.toLocaleString()} systems, ${totalSpecies.toLocaleString()} species hits, ` +
     `${speciesIds.length} species\n  ${(bytes / 1048576).toFixed(1)} MB`,

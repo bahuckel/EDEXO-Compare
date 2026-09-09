@@ -29,6 +29,8 @@ const RECORD = 22;
 
 export interface BioIndexSystem {
   id64: bigint;
+  /** What to type into the galaxy map. Empty only if the source had no name. */
+  name: string;
   x: number;
   y: number;
   z: number;
@@ -52,6 +54,8 @@ class Index implements BioIndex {
   private readonly tableAt: number;
   private readonly runsAt: number;
   private readonly offsets: Uint32Array;
+  private readonly namesAt: number;
+  private readonly nameOffsets: Uint32Array;
   readonly systemCount: number;
   readonly species: string[];
 
@@ -75,6 +79,20 @@ class Index implements BioIndex {
     }
     this.offsets[this.systemCount] = at;
     if (this.runsAt + at > buf.length) throw new Error("bio index is truncated");
+
+    // v2 appends a name run: u8 length + UTF-8, one per system, same order. Offsets are a prefix sum
+    // for the same reason as the species runs — the length is already on disk, an offset would not be.
+    this.namesAt = this.runsAt + at;
+    this.nameOffsets = new Uint32Array(this.systemCount + 1);
+    let nAt = this.namesAt;
+    const hasNames = nAt < buf.length;
+    for (let i = 0; i < this.systemCount; i++) {
+      this.nameOffsets[i] = nAt;
+      if (!hasNames || nAt >= buf.length) continue;
+      nAt += 1 + this.view.getUint8(nAt);
+    }
+    this.nameOffsets[this.systemCount] = nAt;
+    if (hasNames && nAt > buf.length) throw new Error("bio index name run is truncated");
   }
 
   private at(i: number): BioIndexSystem {
@@ -88,12 +106,21 @@ class Index implements BioIndex {
     }
     return {
       id64: this.view.getBigUint64(o, true),
+      name: this.nameAt(i),
       x: this.view.getFloat32(o + 8, true),
       y: this.view.getFloat32(o + 12, true),
       z: this.view.getFloat32(o + 16, true),
       regionId: this.view.getUint8(o + 20),
       species,
     };
+  }
+
+  /** Empty string on a v1 file, which carried no names — absent, not a wrong name. */
+  private nameAt(i: number): string {
+    const at = this.nameOffsets[i]!;
+    if (at >= this.buf.length) return "";
+    const len = this.view.getUint8(at);
+    return this.buf.toString("utf8", at + 1, at + 1 + len);
   }
 
   /** Binary search — the file is written ascending by id64 precisely so this needs no index. */

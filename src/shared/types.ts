@@ -778,6 +778,49 @@ export interface ExoPayoutSpeciesLineDTO {
  * turns out to hold the cheapest candidate — and is the number to plan a route on. `maxCr` is the
  * ceiling and can be wildly higher on a body whose candidate list has one rare outlier.
  */
+/** One species in a system, priced. `firstFootfallCr` is display only — the filter uses `baseCr`. */
+export interface GalaxyValueSpeciesDTO {
+  speciesId: string;
+  displayName: string;
+  /** What one sample sells for at 1x — the number the filter tests. */
+  baseCr: number;
+  /** The same at 5x, for a commander who gets there first. Never filtered on. */
+  firstFootfallCr: number;
+}
+
+/**
+ * A system the codex says holds something worth at least the asked-for price.
+ *
+ * A recorded sighting, not a prediction — somebody logged this species in this system. That is a
+ * different claim from the backlog panel's estimates and must not be shown as the same thing.
+ */
+export interface GalaxyValueHitDTO {
+  systemAddress: number;
+  starSystem: string;
+  x: number;
+  y: number;
+  z: number;
+  /** klightspeed region index, 1-42; 0 when unknown. */
+  regionId: number;
+  /** Straight-line light years from the commander, or null when their position is unknown. */
+  distanceLy: number | null;
+  /** Only the species that clear the threshold, dearest first. */
+  species: GalaxyValueSpeciesDTO[];
+  bestCr: number;
+  /** Everything the codex knows here, including species under the threshold. */
+  totalKnownSpecies: number;
+}
+
+export interface GalaxyValueSearchDTO {
+  /** False on a build with no galaxy index — the feature hides itself rather than showing nothing. */
+  available: boolean;
+  minCr: number;
+  /** How many systems matched in total, before trimming to the nearest few. */
+  matchedSystems: number;
+  speciesConsidered: number;
+  hits: GalaxyValueHitDTO[];
+}
+
 export interface FirstDiscoveryBacklogRowDTO {
   bodyKey: string;
   systemAddress: number;

@@ -13,6 +13,7 @@ import type {
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
   BacklogMapDTO,
+  GalaxyValueSearchDTO,
   FirstDiscoveryBacklogDTO,
   ExoDataAlertDTO,
 } from "../shared/types.js";
@@ -112,6 +113,13 @@ export function createHttpServer(opts: {
   getFirstDiscoveryBacklog?: () => FirstDiscoveryBacklogDTO;
   /** GET /api/backlog-map — the same backlog rolled up to placed systems, for the galaxy map. */
   getBacklogMap?: () => BacklogMapDTO;
+  /**
+   * GET /api/galaxy/worth — systems the codex says hold a species worth at least `minCr`.
+   *
+   * Absent on a build with no galaxy index, which is every install until the index ships; the caller
+   * hides the control rather than showing an empty answer.
+   */
+  searchGalaxyByValue?: (minCr: number, limit: number) => GalaxyValueSearchDTO;
   /**
    * GET /api/feeder/status — feeder corpus vs installed profiles.
    *
@@ -371,6 +379,21 @@ export function createHttpServer(opts: {
    * when the file is replaced, and the client paints it once into a canvas. Sent from disk rather
    * than through the decoder so the bytes on the wire are the bytes in the repo, notice and all.
    */
+  app.get("/api/galaxy/worth", (req, res) => {
+    perfCount("http.galaxyWorth");
+    if (!opts.searchGalaxyByValue) {
+      res.status(404).json({ error: "no galaxy index in this build" });
+      return;
+    }
+    const minCr = Number(req.query.minCr ?? 0);
+    const limit = Number(req.query.limit ?? 200);
+    if (!Number.isFinite(minCr) || minCr < 0) {
+      res.status(400).json({ error: "minCr must be a non-negative number" });
+      return;
+    }
+    res.json(opts.searchGalaxyByValue(minCr, Number.isFinite(limit) ? limit : 200));
+  });
+
   app.get("/api/backlog-map", (_req, res) => {
     perfCount("http.backlogMap");
     if (!opts.getBacklogMap) {
