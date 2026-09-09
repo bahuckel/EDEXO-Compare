@@ -34,6 +34,7 @@ import {
 } from "@shared/sectorName.js";
 import type { BacklogMapDTO, BacklogSystemDTO } from "@shared/types";
 import { regionSpanInCells } from "./regionBackdrop";
+import { CopySystemButton } from "./CopySystemButton";
 import {
   allTaxa,
   cellTotals,
@@ -180,9 +181,43 @@ export function GalaxySectorMap({
 
   const taxa = useMemo(() => allTaxa(file), [file]);
 
-  const shownBacklog = useMemo(
-    () => (backlog?.systems ?? []).filter((s) => s.floorCr >= minCr),
-    [backlog, minCr],
+  /**
+   * The backlog, filtered, with distances measured against the *polled* commander position.
+   *
+   * The server stamps a distance when the layer is fetched, and that fetch happens once — this
+   * screen is meant to be left open on a second monitor while flying, so those numbers would age
+   * out of usefulness exactly when the commander is using them. The position is already polled here
+   * every 15 s and every system carries its own coordinates, so re-measuring is arithmetic.
+   *
+   * Falls back to the server's figure when there is no polled position, which is the honest answer
+   * before the first jump of a session rather than a distance from the origin.
+   */
+  const shownBacklog = useMemo(() => {
+    const kept = (backlog?.systems ?? []).filter((s) => s.floorCr >= minCr);
+    const p = commander?.position;
+    if (!p) return kept;
+    return kept.map((s) => {
+      const dx = p.x - s.x;
+      const dy = p.y - s.y;
+      const dz = p.z - s.z;
+      return { ...s, distanceLy: Math.sqrt(dx * dx + dy * dy + dz * dz) };
+    });
+  }, [backlog, minCr, commander]);
+
+  /**
+   * The nearest system that clears the current minimum — "take me to the next one".
+   *
+   * A null distance means no journal recorded the commander's position, or the system's; either way
+   * it is not a candidate for *nearest*, so it is skipped rather than treated as zero.
+   */
+  const nextTarget = useMemo(
+    () =>
+      shownBacklog.reduce<BacklogSystemDTO | null>(
+        (best, s) =>
+          s.distanceLy == null ? best : !best || s.distanceLy < (best.distanceLy ?? Infinity) ? s : best,
+        null,
+      ),
+    [shownBacklog],
   );
 
   /** Genus for a taxon, from the file. Falls back to the taxon itself for an older map file. */
@@ -350,6 +385,31 @@ export function GalaxySectorMap({
         ) : null}
       </div>
 
+      {nextTarget ? (
+        <div className="galaxy-map__next">
+          <span className="galaxy-map__next-label">Nearest that qualifies</span>
+          <strong>{nextTarget.starSystem}</strong>
+          <span className="dim">
+            {/*
+              Under a light year is the same system: the commander is standing in it. "0 ly away"
+              is arithmetically true and reads like a broken number.
+            */}
+            {nextTarget.distanceLy == null
+              ? ""
+              : nextTarget.distanceLy < 1
+                ? "you are here"
+                : nextTarget.distanceLy >= 10000
+                  ? `${(nextTarget.distanceLy / 1000).toFixed(1)} kly away`
+                  : `${Math.round(nextTarget.distanceLy).toLocaleString("en-US")} ly away`}
+          </span>
+          <span className="dim">
+            {nextTarget.bodies} unfinished {nextTarget.bodies === 1 ? "body" : "bodies"} ·{" "}
+            {Math.round(nextTarget.floorCr).toLocaleString("en-US")} CR floor
+          </span>
+          <CopySystemButton system={nextTarget.starSystem} className="galaxy-map__copy" />
+        </div>
+      ) : null}
+
       <div className="galaxy-map__views">
         {PROJECTIONS.map((p) => (
           <SectorPlot
@@ -363,6 +423,7 @@ export function GalaxySectorMap({
             commander={commanderCell}
             backdrop={backdrop ?? null}
             backlog={shownBacklog}
+            nextTarget={nextTarget}
           />
         ))}
       </div>
@@ -410,6 +471,7 @@ function SectorPlot({
   commander,
   backdrop,
   backlog,
+  nextTarget,
 }: {
   projection: Projection;
   rows: { cell: SectorMapCell; totals: ReturnType<typeof cellTotals>; kind: Kind }[];
@@ -422,6 +484,8 @@ function SectorPlot({
   backdrop: string | null;
   /** Backlog systems already filtered by the caller's minimum. */
   backlog: BacklogSystemDTO[];
+  /** The one the banner names, ringed so the name and the dot cannot disagree. */
+  nextTarget: BacklogSystemDTO | null;
 }) {
   /*
    * The region map is a plane map: y was discarded when it was built, so there is nothing to draw
@@ -544,9 +608,16 @@ ${evidenceSummary(totals)}`}</title>
                   cx={sx(projection.ax(cell as unknown as SectorMapCell))}
                   cy={sy(projection.ay(cell as unknown as SectorMapCell))}
                   r={2 + Math.min(3, Math.cbrt(s.bodies))}
-                  className={
-                    s.allVerified ? "galaxy-map__target" : "galaxy-map__target galaxy-map__target--unverified"
-                  }
+                  className={[
+                    "galaxy-map__target",
+                    s.allVerified ? "" : "galaxy-map__target--unverified",
+                    // Ringed rather than recoloured: the fill already carries whether the 5x is
+                    // verified, and overwriting that to show "this is the one" would trade a fact
+                    // for a pointer.
+                    nextTarget?.systemAddress === s.systemAddress ? "galaxy-map__target--next" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 >
                   <title>
                     {[

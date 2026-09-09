@@ -228,3 +228,52 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
   align-items: center;
   gap: 0.4rem;
 }
+
+/*
+ * "Take me to the next one" — the same conclusion the backlog panel draws, on the map the commander
+ * pastes the name into. Given the accent border both panels use for a statement rather than data.
+ */
+.galaxy-map__next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0.2rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(255, 171, 64, 0.5);
+  border-radius: var(--r-sm);
+  background: rgba(40, 26, 10, 0.45);
+}
+
+.galaxy-map__next-label {
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffab40;
+}
+
+.galaxy-map__copy {
+  font: inherit;
+  font-size: var(--fs-xs);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255, 171, 64, 0.5);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.galaxy-map__copy:hover {
+  border-color: rgba(255, 190, 110, 0.9);
+}
+
+/*
+ * The system the banner names. A ring rather than a different colour: the fill already carries
+ * whether the 5x is verified, and recolouring would trade a fact for a pointer.
+ */
+.galaxy-map__target--next {
+  stroke: #f0f6fc;
+  stroke-width: 2;
+  paint-order: stroke;
+}

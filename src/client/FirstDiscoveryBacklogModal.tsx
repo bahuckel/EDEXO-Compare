@@ -20,6 +20,7 @@
  * body). It is memoised there until the store changes, so re-opening this is instant.
  */
 import { useEffect, useMemo, useState } from "react";
+import { CopySystemButton } from "./CopySystemButton";
 import type { FirstDiscoveryBacklogDTO, FirstDiscoveryBacklogRowDTO } from "@shared/types";
 
 const crFmt = new Intl.NumberFormat("en-US");
@@ -48,36 +49,11 @@ const floorLabel = (n: number) => (n === 0 ? "All" : `${Math.round(n / 1e6)}M+`)
 /** Light years, at a precision that matches how far away the thing is. */
 function ly(d: number | null): string {
   if (d == null) return "—";
+  // Under a light year is the same system — the commander is standing in it, and "0 ly" reads as a
+  // broken number rather than the best possible answer.
+  if (d < 1) return "here";
   if (d >= 10000) return `${(d / 1000).toFixed(1)} kly`;
   return `${Math.round(d).toLocaleString("en-US")} ly`;
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [done, setDone] = useState(false);
-  useEffect(() => {
-    if (!done) return;
-    const t = setTimeout(() => setDone(false), 1200);
-    return () => clearTimeout(t);
-  }, [done]);
-  return (
-    <button
-      type="button"
-      className="fdb-copy"
-      // The system name is what gets pasted into the galaxy map, so this is the one control on the
-      // row that matters. Stops propagation so copying does not also count as picking the row.
-      onClick={(ev) => {
-        ev.stopPropagation();
-        void navigator.clipboard?.writeText(text).then(
-          () => setDone(true),
-          () => setDone(false),
-        );
-      }}
-      aria-label={`Copy ${text}`}
-      title={`Copy "${text}" for the galaxy map`}
-    >
-      {done ? "copied" : "copy"}
-    </button>
-  );
 }
 
 export function FirstDiscoveryBacklogModal({
@@ -228,12 +204,16 @@ export function FirstDiscoveryBacklogModal({
                 */}
                 <span className="fdb-next__label">Nearest that qualifies</span>
                 <strong className="fdb-next__sys">{nextTarget.starSystem}</strong>
-                <span className="dim">{ly(nextTarget.distanceLy)} away</span>
+                <span className="dim">
+                  {nextTarget.distanceLy != null && nextTarget.distanceLy < 1
+                    ? "you are here"
+                    : `${ly(nextTarget.distanceLy)} away`}
+                </span>
                 <span className="dim">
                   {nextTarget.biologicalSignals} signal{nextTarget.biologicalSignals === 1 ? "" : "s"} ·{" "}
                   {cr(nextTarget.minCr)} floor
                 </span>
-                <CopyButton text={nextTarget.starSystem} />
+                <CopySystemButton system={nextTarget.starSystem} />
               </div>
             ) : null}
 
@@ -344,7 +324,7 @@ export function FirstDiscoveryBacklogModal({
                       <td className="fdb-num fdb-floor">{cr(r.minCr)}</td>
                       <td className="fdb-num dim">{cr(r.maxCr)}</td>
                       <td>
-                        <CopyButton text={r.starSystem} />
+                        <CopySystemButton system={r.starSystem} />
                       </td>
                     </tr>
                   ))}
