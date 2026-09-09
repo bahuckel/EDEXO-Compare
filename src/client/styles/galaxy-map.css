@@ -196,3 +196,35 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
   cursor: pointer;
   white-space: nowrap;
 }
+
+/*
+ * The galaxy behind the sector markers, and the backlog layer over them.
+ *
+ * Both sit low in opacity on purpose. The backdrop exists to give the markers somewhere to be, and
+ * the moment a region reads as strongly as a sector the map is answering a question nobody asked.
+ */
+.galaxy-map__backdrop {
+  opacity: 0.55;
+}
+
+/* Amber: no evidence kind uses it, so a target cannot be mistaken for a fifth kind of sighting. */
+.galaxy-map__target {
+  fill: #ffab40;
+  fill-opacity: 0.85;
+  stroke: #1a1207;
+  stroke-width: 0.5;
+}
+
+/* The 5x here rests on silence rather than a reading — hollow, the same grammar the panel uses. */
+.galaxy-map__target--unverified {
+  fill: none;
+  stroke: #ffab40;
+  stroke-width: 1.2;
+  stroke-dasharray: 2 1.5;
+}
+
+.galaxy-map__backlog-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}

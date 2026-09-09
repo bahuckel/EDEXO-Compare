@@ -9,6 +9,8 @@
 import { useEffect, useState } from "react";
 import type { SectorMapFile } from "@shared/sectorMapFile.js";
 import { GalaxySectorMap, type CommanderPosition } from "./GalaxySectorMap";
+import { renderRegionBackdrop, type RegionMapPayload } from "./regionBackdrop";
+import type { BacklogMapDTO } from "@shared/types";
 
 type Load =
   | { state: "loading" }
@@ -19,6 +21,54 @@ type Load =
 export function GalaxyMapScreen() {
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [commander, setCommander] = useState<CommanderPosition | null>(null);
+  const [backdrop, setBackdrop] = useState<string | null>(null);
+  const [backlog, setBacklog] = useState<BacklogMapDTO | null>(null);
+
+  /**
+   * The galaxy behind the markers, painted once.
+   *
+   * Both of these are optional decoration in the strict sense: a failure leaves the sector map
+   * exactly as it was before either existed, which is why neither touches `load`. A map that refuses
+   * to draw because its backdrop 404'd would be a worse map than one with no backdrop.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/region-map")
+      .then((r) => (r.ok ? (r.json() as Promise<RegionMapPayload>) : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        // ~4 M pixels. Off the critical path on purpose: the markers are already on screen by now.
+        setBackdrop(renderRegionBackdrop(data));
+      })
+      .catch(() => {
+        /* no backdrop, same map */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * The backlog layer.
+   *
+   * Costs the server a species match per body the first time it is asked, so it is fetched once and
+   * never polled — the answer only changes when the commander flies somewhere new, and this screen
+   * is something left open on a second monitor.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/backlog-map")
+      .then((r) => (r.ok ? (r.json() as Promise<BacklogMapDTO>) : null))
+      .then((d) => {
+        if (!cancelled && d) setBacklog(d);
+      })
+      .catch(() => {
+        /* no layer, same map */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +143,12 @@ export function GalaxyMapScreen() {
 
       {load.state === "ready" ? (
         <>
-          <GalaxySectorMap file={load.file} commander={commander} />
+          <GalaxySectorMap
+            file={load.file}
+            commander={commander}
+            backdrop={backdrop}
+            backlog={backlog}
+          />
           {/* The provenance travels with the data; show it rather than paraphrasing it. */}
           <p className="galaxy-screen__note">{load.file.note}</p>
           <p className="galaxy-screen__source">Sector names: {load.file.sectorNameSource}</p>

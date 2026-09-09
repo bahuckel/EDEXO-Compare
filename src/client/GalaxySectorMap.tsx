@@ -32,6 +32,8 @@ import {
   sectorCellFromCoords,
   sectorCellKey,
 } from "@shared/sectorName.js";
+import type { BacklogMapDTO, BacklogSystemDTO } from "@shared/types";
+import { regionSpanInCells } from "./regionBackdrop";
 import {
   allTaxa,
   cellTotals,
@@ -146,9 +148,15 @@ export interface CommanderPosition {
 export function GalaxySectorMap({
   file,
   commander,
+  backdrop,
+  backlog,
 }: {
   file: SectorMapFile;
   commander?: CommanderPosition | null;
+  /** The galaxy image, painted once by the screen above. Null while it loads, or on a build without it. */
+  backdrop?: string | null;
+  /** Unfinished business, rolled up to systems. Null on a build with no journal store. */
+  backlog?: BacklogMapDTO | null;
 }) {
   /**
    * Genus and species are two pickers, not one.
@@ -162,8 +170,20 @@ export function GalaxySectorMap({
   const [query, setQuery] = useState("");
   const [hover, setHover] = useState<SectorMapCell | null>(null);
   const [openCell, setOpenCell] = useState<SectorMapCell | null>(null);
+  /**
+   * Minimum floor for a system to appear on the backlog layer, in credits. 0 shows every one.
+   *
+   * The same steps the backlog panel uses, for the same reason: the question is "what is worth a
+   * detour", which is answered in orders of magnitude rather than exact credits.
+   */
+  const [minCr, setMinCr] = useState(0);
 
   const taxa = useMemo(() => allTaxa(file), [file]);
+
+  const shownBacklog = useMemo(
+    () => (backlog?.systems ?? []).filter((s) => s.floorCr >= minCr),
+    [backlog, minCr],
+  );
 
   /** Genus for a taxon, from the file. Falls back to the taxon itself for an older map file. */
   const genusOf = useCallback(
@@ -304,6 +324,30 @@ export function GalaxySectorMap({
         <span className="galaxy-map__count">
           {shown.length} sector{shown.length === 1 ? "" : "s"}
         </span>
+        {backlog && backlog.systems.length > 0 ? (
+          <label className="galaxy-map__backlog-filter">
+            Unfinished worth at least
+            <select value={minCr} onChange={(e) => setMinCr(Number(e.target.value))}>
+              <option value={0}>anything</option>
+              <option value={10e6}>10 M</option>
+              <option value={20e6}>20 M</option>
+              <option value={50e6}>50 M</option>
+              <option value={100e6}>100 M</option>
+            </select>
+            <span className="galaxy-map__count">
+              {shownBacklog.length} system{shownBacklog.length === 1 ? "" : "s"}
+              {backlog.unplaceable > 0 ? (
+                <span
+                  className="dim"
+                  title="These systems are in the backlog but no journal ever recorded their position, so nothing can place them on the map."
+                >
+                  {" "}
+                  · {backlog.unplaceable} unplaceable
+                </span>
+              ) : null}
+            </span>
+          </label>
+        ) : null}
       </div>
 
       <div className="galaxy-map__views">
@@ -317,6 +361,8 @@ export function GalaxySectorMap({
             onHover={setHover}
             onOpen={setOpenCell}
             commander={commanderCell}
+            backdrop={backdrop ?? null}
+            backlog={shownBacklog}
           />
         ))}
       </div>
@@ -362,6 +408,8 @@ function SectorPlot({
   onHover,
   onOpen,
   commander,
+  backdrop,
+  backlog,
 }: {
   projection: Projection;
   rows: { cell: SectorMapCell; totals: ReturnType<typeof cellTotals>; kind: Kind }[];
@@ -370,10 +418,27 @@ function SectorPlot({
   onHover: (c: SectorMapCell | null) => void;
   onOpen: (c: SectorMapCell) => void;
   commander: { x: number; y: number; z: number; key: string; system: string | null } | null;
+  /** The galaxy image, as a data URL. Top projection only — the region map has no y axis. */
+  backdrop: string | null;
+  /** Backlog systems already filtered by the caller's minimum. */
+  backlog: BacklogSystemDTO[];
 }) {
-  // The grid spans roughly 0..78 cells on each axis; fitting to the data rather than the whole
-  // galaxy keeps a small corpus legible instead of a dot in the corner.
+  /*
+   * The region map is a plane map: y was discarded when it was built, so there is nothing to draw
+   * behind the edge-on view. Asking for it there would silently place a top-down galaxy against a
+   * vertical axis, which would look like data.
+   */
+  const showBackdrop = backdrop != null && projection.id === "top";
+  const span = regionSpanInCells(SECTOR_SIZE_LY);
+  /*
+   * Two framings, and which one is right depends on whether the galaxy is drawn.
+   *
+   * Without a backdrop, fitting to the data keeps a small corpus legible instead of a dot in the
+   * corner. With one, the whole galaxy has to be in frame or the backdrop is a meaningless crop —
+   * and seeing the data as a small cluster inside the galaxy is the entire point of drawing it.
+   */
   const bounds = useMemo(() => {
+    if (showBackdrop) return { minX: 0, maxX: span, minY: 0, maxY: span };
     if (rows.length === 0) return { minX: 0, maxX: 1, minY: 0, maxY: 1 };
     const xs = rows.map((r) => projection.ax(r.cell));
     const ys = rows.map((r) => projection.ay(r.cell));
@@ -389,7 +454,7 @@ function SectorPlot({
       minY: Math.min(...ys),
       maxY: Math.max(...ys),
     };
-  }, [rows, projection, commander]);
+  }, [rows, projection, commander, showBackdrop, span]);
 
   const sx = (v: number) =>
     PAD + ((v - bounds.minX) / Math.max(1, bounds.maxX - bounds.minX)) * (VIEW_W - PAD * 2);
@@ -405,6 +470,22 @@ function SectorPlot({
       </figcaption>
       <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" aria-label={`${projection.label} sector map`}>
         <rect x={0} y={0} width={VIEW_W} height={VIEW_H} className="galaxy-map__bg" />
+        {showBackdrop && backdrop ? (
+          /*
+           * The galaxy, under everything else. `preserveAspectRatio="none"` because the two axes are
+           * already scaled independently by sx/sy to fill the plot, and letting the image keep its
+           * own square aspect would put it out of register with the markers drawn over it.
+           */
+          <image
+            href={backdrop}
+            x={sx(0)}
+            y={sy(span)}
+            width={sx(span) - sx(0)}
+            height={sy(0) - sy(span)}
+            preserveAspectRatio="none"
+            className="galaxy-map__backdrop"
+          />
+        ) : null}
         <text x={VIEW_W - PAD} y={VIEW_H - 8} className="galaxy-map__axis" textAnchor="end">
           {projection.axisLabel[0]}
         </text>
@@ -414,16 +495,25 @@ function SectorPlot({
         {rows.map(({ cell, totals, kind }) => {
           const r = 2 + 7 * Math.cbrt(totals.bodies / maxBodies);
           const isHit = highlight?.key === cell.key;
+          /*
+           * Outlined, not filled, once there is a galaxy behind them.
+           *
+           * A filled marker over the backdrop hides the region it sits in, which is the one thing
+           * the backdrop was added to show. Hollow keeps both readable, and the evidence colour
+           * moves to the stroke where it still reads at this size. Without a backdrop the original
+           * filled form is kept: on a flat background hollow markers are harder to see, not easier.
+           */
+          const hollow = showBackdrop || !KIND_FILLED[kind];
           return (
             <circle
               key={cell.key}
               cx={sx(projection.ax(cell))}
               cy={sy(projection.ay(cell))}
               r={r}
-              fill={KIND_FILLED[kind] ? KIND_COLOUR[kind] : "none"}
-              fillOpacity={KIND_FILLED[kind] ? 0.75 : 1}
-              stroke={isHit ? "#f0f6fc" : KIND_FILLED[kind] ? "none" : KIND_COLOUR[kind]}
-              strokeWidth={isHit ? 2 : KIND_FILLED[kind] ? 0 : 1.5}
+              fill={hollow ? "none" : KIND_COLOUR[kind]}
+              fillOpacity={hollow ? 1 : 0.75}
+              stroke={isHit ? "#f0f6fc" : hollow ? KIND_COLOUR[kind] : "none"}
+              strokeWidth={isHit ? 2 : hollow ? 1.5 : 0}
               onMouseEnter={() => onHover(cell)}
               onMouseLeave={() => onHover(null)}
               onClick={() => onOpen(cell)}
@@ -434,6 +524,43 @@ ${evidenceSummary(totals)}`}</title>
             </circle>
           );
         })}
+        {/*
+          The backlog: systems holding biology this commander found and never collected.
+
+          Drawn after the sector markers and before the commander, so it reads as a layer over the
+          survey rather than part of it — these are targets, not evidence. One dot per system, sized
+          by how many unfinished bodies it holds, because a system with four is worth one trip.
+
+          Amber, which no evidence kind uses: green/blue/grey already mean confirmed/possible/
+          predicted on this map, and a fifth shade of those would read as a fifth kind of evidence.
+        */}
+        {backlog.length > 0 ? (
+          <g className="galaxy-map__backlog">
+            {backlog.map((s) => {
+              const cell = sectorCellFromCoords(s.x, s.y, s.z);
+              return (
+                <circle
+                  key={s.systemAddress}
+                  cx={sx(projection.ax(cell as unknown as SectorMapCell))}
+                  cy={sy(projection.ay(cell as unknown as SectorMapCell))}
+                  r={2 + Math.min(3, Math.cbrt(s.bodies))}
+                  className={
+                    s.allVerified ? "galaxy-map__target" : "galaxy-map__target galaxy-map__target--unverified"
+                  }
+                >
+                  <title>
+                    {[
+                      `${s.starSystem} — ${s.bodies} unfinished ${s.bodies === 1 ? "body" : "bodies"}`,
+                      `floor ${Math.round(s.floorCr).toLocaleString("en-US")} CR at 5×`,
+                      ...(s.allVerified ? [] : ["footfall never reported — not confirmed"]),
+                    ].join(`
+`)}
+                  </title>
+                </circle>
+              );
+            })}
+          </g>
+        ) : null}
         {commander ? (
           <g
             transform={`translate(${sx(projection.ax(commander as unknown as SectorMapCell))}, ${sy(
