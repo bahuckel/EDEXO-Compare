@@ -1,19 +1,29 @@
 /**
- * What is still worth flying to, in systems this commander found first.
+ * What is still worth flying to: biology found and never collected, with the 5x unclaimed.
  *
- * A first discovery pays a cartographic bonus and nothing else; the prize this list is about is
- * **first footfall**, which multiplies organic payouts by five and belongs to whoever steps on the
- * body first. The two coincide usefully: a system whose main star nobody had scanned when the
- * commander arrived is a system whose landable bodies were, at that moment, unwalked.
+ * The prize is **first footfall**, which multiplies organic payouts by five and belongs to whoever
+ * steps on the body first. A row here means the game says there is biology on this landable body,
+ * the commander never scanned or walked it, and nothing in the journal says anyone else did.
  *
- * So a row here means: you found this system, the game says there is biology on this body, you
- * never scanned or walked it, and nothing in the journal has since said anyone else did.
+ * This began as first-discovery systems only, on the reasoning that a system nobody had scanned on
+ * arrival had bodies nobody had walked. True, but far too narrow: footfall is claimed per *body*,
+ * and 538 of this commander's 831 qualifying bodies sit in systems already carrying someone else's
+ * name. Gating on the system hid two thirds of the backlog.
  *
- * Measured over the owner's 245 journals: 293 bodies across 143 systems, a 4.6 bn CR floor at 5x.
- * `scripts/first-discovery-probe.ts` prints the same numbers straight from the merge cache and is
- * the reference this module is checked against.
+ * So both facts ride on every row instead of deciding membership:
  *
- * **Why this is not part of the snapshot.** Matching one body costs ~53 ms, so the set costs ~15 s.
+ *   - `firstDiscovery` — this commander scanned the main star before anyone. 293 bodies.
+ *   - `footfallObserved` — the journal has actually reported this body unwalked, rather than simply
+ *     never mentioning it. 608 of 831. The remaining 223 are unknowable rather than unclaimed, since
+ *     `WasFootfalled` did not exist before 2025-09-29.
+ *
+ * The distinction matters because the panel cannot afford to promise a 5x it has no evidence for:
+ * the commander finds out after flying there.
+ *
+ * `scripts/first-discovery-probe.ts` derives the first-discovery subset straight from the merge
+ * cache and is the reference this module is checked against.
+ *
+ * **Why this is not part of the snapshot.** Matching one body costs ~53 ms, so the set costs ~45 s.
  * `buildSnapshot` runs on every journal line; putting this inside it would stall the app on each
  * one. It is computed on demand behind an endpoint and memoised until the store changes.
  */
@@ -47,6 +57,22 @@ function footfallLost(store: GameStateStore, key: string): boolean {
   return store.bodyDetailedFootfallState.get(key) === true;
 }
 
+/**
+ * Has anything ever actually reported that this body was unwalked?
+ *
+ * `WasFootfalled` did not exist in the journal until 2025-09-29, so for anything scanned before then
+ * the field is not false, it is absent — and absent is not evidence. 203 of the 538 bodies outside
+ * this commander's own discoveries are in exactly that state: plausibly untouched, but nothing has
+ * ever said so.
+ *
+ * Both kinds are worth showing, because a body nobody has reported on is still probably unclaimed
+ * out in the black. They must not look the same, though: a row that promises a 5x on no evidence
+ * is the one failure this panel cannot afford, since the commander only finds out after the trip.
+ */
+function footfallObserved(store: GameStateStore, key: string): boolean {
+  return store.bodyFootfallFlag.get(key)?.value === false || store.bodyDetailedFootfallState.get(key) === false;
+}
+
 function matchContextFor(
   b: BodyExoState,
   scansBySystem: Map<number, Map<number, ExplorationScanRecord>>,
@@ -67,7 +93,13 @@ function matchContextFor(
 }
 
 /**
- * Every body whose system this commander discovered, that still has unclaimed biology.
+ * Every body that still has unclaimed biology and an unclaimed first footfall.
+ *
+ * First discovery is **not** a gate here, though it was at first. The 5x belongs to whoever steps on
+ * a *body* first, and that is decided body by body: 538 qualifying bodies sit in systems somebody
+ * else's name is on, and excluding them hid two thirds of the commander's own backlog. It is carried
+ * as a label instead, because it is still the strongest evidence available — see `firstDiscovery`
+ * and `footfallObserved` on the row.
  *
  * Sold systems stay in. A cartographic sale moves the physics to `soldExplorationScans` and never
  * touches `bodies`, so the signal count and the genus list survive it. Selling the *data* is not
@@ -77,7 +109,6 @@ function matchContextFor(
 function candidates(store: GameStateStore): BodyExoState[] {
   const out: BodyExoState[] = [];
   for (const b of store.bodies.values()) {
-    if (store.mainStarWasDiscoveredBySystem.get(b.systemAddress) !== false) continue;
     if (!b.biologicalSignals || b.biologicalSignals <= 0) continue;
     // An organic lock means a ScanOrganic named something here — the body has been worked. Locks
     // survive SellOrganicData on purpose, so cashing in does not re-offer a stripped body.
@@ -138,6 +169,8 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
       candidateCount: range.pricedCandidateCount,
       genusKnown: (b.genusHints?.length ?? 0) > 0,
       dssComplete: b.dssComplete,
+      firstDiscovery: store.mainStarWasDiscoveredBySystem.get(b.systemAddress) === false,
+      footfallObserved: footfallObserved(store, b.key),
     });
   }
 
@@ -148,6 +181,8 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
   return {
     rows,
     systemCount: new Set(rows.map((r) => r.systemAddress)).size,
+    firstDiscoveryCount: rows.filter((r) => r.firstDiscovery).length,
+    footfallObservedCount: rows.filter((r) => r.footfallObserved).length,
     totalMinCr: rows.reduce((a, r) => a + r.minCr, 0),
     totalMaxCr: rows.reduce((a, r) => a + r.maxCr, 0),
     computedAt: new Date().toISOString(),

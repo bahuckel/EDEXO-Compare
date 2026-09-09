@@ -107,6 +107,24 @@ describe("what belongs in the list", () => {
     expect(keys(seeded())).toContain(`${SYS}:3`);
   });
 
+  it("includes a body in a system somebody else discovered", () => {
+    // First footfall is claimed per body, not per system. Gating on the system hid 538 of this
+    // commander's 831 qualifying bodies — two thirds of the backlog — behind somebody else's name
+    // on the star.
+    const st = seeded("Somebody Elses AB-C d1-2", OTHER, true);
+    expect(keys(st)).toContain(`${OTHER}:3`);
+  });
+
+  it("includes a body whose system star was never scanned", () => {
+    // 1,417 of this commander's visited systems have no BodyID 0 scan. Silence about the star says
+    // nothing about whether anyone has walked the planet.
+    const st = new GameStateStore();
+    st.apply(j({ timestamp: TS, event: "FSDJump", StarSystem: "Unhonked", SystemAddress: SYS }));
+    st.apply(planet(SYS, 3, "Unhonked"));
+    st.apply(bioSignals(SYS, 3, "Unhonked"));
+    expect(keys(st)).toContain(`${SYS}:3`);
+  });
+
   it("carries the 5x on every row, since nobody has walked them", () => {
     const [row] = computeFirstDiscoveryBacklog(seeded()).rows;
     expect(row).toBeDefined();
@@ -117,21 +135,6 @@ describe("what belongs in the list", () => {
 });
 
 describe("what must never appear", () => {
-  it("drops a system somebody else discovered", () => {
-    // The whole premise is that this commander got there first.
-    expect(keys(seeded("Somebody Elses AB-C d1-2", OTHER, true))).toHaveLength(0);
-  });
-
-  it("drops a system whose main star was never scanned", () => {
-    // Absent is not the same as undiscovered — 1,417 of this commander's visited systems have no
-    // BodyID 0 scan, and treating silence as a discovery would invent a backlog out of nothing.
-    const st = new GameStateStore();
-    st.apply(j({ timestamp: TS, event: "FSDJump", StarSystem: "Unhonked", SystemAddress: SYS }));
-    st.apply(planet(SYS, 3, "Unhonked"));
-    st.apply(bioSignals(SYS, 3, "Unhonked"));
-    expect(keys(st)).toHaveLength(0);
-  });
-
   it("drops a body the commander has already sampled", () => {
     const st = seeded();
     st.apply(scanOrganic(SYS, 3));
@@ -183,6 +186,54 @@ describe("what must never appear", () => {
   });
 });
 
+describe("the two evidence labels", () => {
+  it("marks a first discovery as one, and another commander's system as not", () => {
+    const mine = computeFirstDiscoveryBacklog(seeded()).rows[0];
+    expect(mine?.firstDiscovery).toBe(true);
+    clearFirstDiscoveryBacklogCache();
+    const theirs = computeFirstDiscoveryBacklog(seeded("Theirs AB-C d1-2", OTHER, true)).rows[0];
+    expect(theirs?.firstDiscovery).toBe(false);
+  });
+
+  it("marks a body the journal reported unwalked as observed", () => {
+    // `planet()` writes WasFootfalled: false, which is a statement, not a silence.
+    expect(computeFirstDiscoveryBacklog(seeded()).rows[0]?.footfallObserved).toBe(true);
+  });
+
+  it("marks a body nothing ever reported as unobserved, but still lists it", () => {
+    // The pre-2025-09-29 case: the scan carries no WasFootfalled at all. Absent is not false, so the
+    // row has to appear — 223 of 831 are like this — and has to say that the 5x is unconfirmed.
+    const st = new GameStateStore();
+    const name = "Old Scan AB-C d1-2";
+    st.apply(j({ timestamp: TS, event: "FSDJump", StarSystem: name, SystemAddress: SYS }));
+    st.apply(star(SYS, false, name));
+    st.apply(
+      j({
+        timestamp: TS,
+        event: "Scan",
+        ScanType: "Detailed",
+        BodyName: `${name} 3`,
+        BodyID: 3,
+        StarSystem: name,
+        SystemAddress: SYS,
+        PlanetClass: "High metal content body",
+        AtmosphereType: "CarbonDioxide",
+        SurfaceGravity: 3.2,
+        SurfaceTemperature: 210,
+        SurfacePressure: 1500,
+        Landable: true,
+        Volcanism: "",
+        WasDiscovered: false,
+        WasMapped: false,
+      }),
+    );
+    st.apply(bioSignals(SYS, 3, name));
+    const row = computeFirstDiscoveryBacklog(st).rows[0];
+    expect(row).toBeDefined();
+    expect(row!.footfallObserved).toBe(false);
+  });
+});
+
 describe("surviving a cartographic sale", () => {
   it("still lists the body after the system's data is sold", () => {
     // Selling the map is not collecting the plants. The physics moves to soldExplorationScans and
@@ -213,6 +264,8 @@ describe("the summary", () => {
     expect(out.rows.length).toBe(2);
     expect(out.systemCount).toBe(1);
     expect(out.totalMinCr).toBe(out.rows.reduce((a, r) => a + r.minCr, 0));
+    expect(out.firstDiscoveryCount).toBe(2);
+    expect(out.footfallObservedCount).toBe(2);
   });
 
   it("ranks by the floor, which is the number a route is planned on", () => {

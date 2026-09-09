@@ -162,6 +162,21 @@
   color: #8fc8ff;
 }
 
+/*
+ * The row whose 5x is an assumption. Deliberately quieter than the DSS badge beside it: this is a
+ * caveat, not a feature, and a loud one on 223 of 831 rows would read as a table full of warnings.
+ */
+.fdb-unverified {
+  margin-left: 0.4rem;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.05rem 0.3rem;
+  border-radius: var(--r-sm);
+  border: 1px dashed rgba(200, 190, 170, 0.4);
+  color: var(--muted);
+}
+
 .fdb-copy {
   font: inherit;
   font-size: var(--fs-xs);

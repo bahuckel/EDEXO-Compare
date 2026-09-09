@@ -794,12 +794,31 @@ export interface FirstDiscoveryBacklogRowDTO {
   /** True once a DSS has named the genera, which narrows the prediction sharply. */
   genusKnown: boolean;
   dssComplete: boolean;
+  /**
+   * This commander scanned the system's main star before anyone else had.
+   *
+   * Not a condition of appearing — footfall is claimed body by body — but the strongest single
+   * indicator that the 5x is really still there, since nobody had been in the system at all.
+   */
+  firstDiscovery: boolean;
+  /**
+   * The journal has actually reported this body unwalked, rather than never mentioning it.
+   *
+   * `WasFootfalled` did not exist before 2025-09-29, so on older scans the field is absent, not
+   * false. A row without this is a plausible target, not a verified one, and must not be drawn as
+   * though the bonus were confirmed.
+   */
+  footfallObserved: boolean;
 }
 
 export interface FirstDiscoveryBacklogDTO {
   /** Ranked by `minCr`, highest first. */
   rows: FirstDiscoveryBacklogRowDTO[];
   systemCount: number;
+  /** How many rows are in systems this commander discovered. */
+  firstDiscoveryCount: number;
+  /** How many rows have a journal statement that the body was unwalked. */
+  footfallObservedCount: number;
   totalMinCr: number;
   totalMaxCr: number;
   computedAt: string;
