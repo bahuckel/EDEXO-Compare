@@ -12,6 +12,7 @@ import type {
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
+  BacklogMapDTO,
   FirstDiscoveryBacklogDTO,
   ExoDataAlertDTO,
 } from "../shared/types.js";
@@ -109,6 +110,8 @@ export function createHttpServer(opts: {
    * behind it, in which case the panel hides itself.
    */
   getFirstDiscoveryBacklog?: () => FirstDiscoveryBacklogDTO;
+  /** GET /api/backlog-map — the same backlog rolled up to placed systems, for the galaxy map. */
+  getBacklogMap?: () => BacklogMapDTO;
   /**
    * GET /api/feeder/status — feeder corpus vs installed profiles.
    *
@@ -361,6 +364,33 @@ export function createHttpServer(opts: {
    * A missing file is a 404 rather than an error. The map is a derived artefact; a build that has
    * not run the feeder should show "no map yet", not a broken app.
    */
+  /**
+   * The vendored region map, for the galaxy backdrop.
+   *
+   * 179 kB of run-length rows, served whole and cached hard: it is checked-in data that changes only
+   * when the file is replaced, and the client paints it once into a canvas. Sent from disk rather
+   * than through the decoder so the bytes on the wire are the bytes in the repo, notice and all.
+   */
+  app.get("/api/backlog-map", (_req, res) => {
+    perfCount("http.backlogMap");
+    if (!opts.getBacklogMap) {
+      res.status(404).json({ error: "no journal store behind this build" });
+      return;
+    }
+    res.json(opts.getBacklogMap());
+  });
+
+  app.get("/api/region-map", (_req, res) => {
+    perfCount("http.regionMap");
+    const file = path.join(getProjectRoot(), "data", "exomastery", "region-map.json");
+    if (!existsSync(file)) {
+      res.status(404).json({ error: "no region map vendored in this build" });
+      return;
+    }
+    res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+    res.type("application/json").send(readFileSync(file, "utf8"));
+  });
+
   app.get("/api/first-discovery-backlog", (_req, res) => {
     perfCount("http.firstDiscoveryBacklog");
     if (!opts.getFirstDiscoveryBacklog) {

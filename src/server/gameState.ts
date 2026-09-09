@@ -80,11 +80,12 @@ export type OrganicAnalyseProgress = { count: number; label: string };
  * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
  * feature that reads it stays dark with nothing logged anywhere.
  *
+ * 4 — `systemPositions`, so the galaxy map can place the backlog.
  * 3 — `mainStarWasDiscoveredBySystem`. It was added to the payload without bumping this, so caches
  * written before 2026-09-08 replayed nothing and the FIRST chip could never light for anyone holding
  * one. Bumping forces a single rebuild per user, which is the whole cost.
  */
-export const JOURNAL_MERGE_CACHE_FORMAT = 3;
+export const JOURNAL_MERGE_CACHE_FORMAT = 4;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -135,6 +136,7 @@ export type JournalMergeCachePayload = {
   fssAllBodiesFoundCountBySystem?: [number, number][];
   /** Present when {@link format} >= 2. */
   mainStarWasDiscoveredBySystem?: [number, boolean][];
+  systemPositions?: [number, { x: number; y: number; z: number }][];
   remainingJumpsInRoute?: number | null;
   loadoutMaxJumpRangeLy?: number | null;
   loadoutFuelMainCapacityT?: number | null;
@@ -914,6 +916,7 @@ export class GameStateStore {
     this.uiSelectedBodyKey = null;
     this.overlayTouchdownBodyKey = null;
     this.mainStarWasDiscoveredBySystem.clear();
+    this.systemPositions.clear();
     this.remainingJumpsInRoute = null;
     this.loadoutMaxJumpRangeLy = null;
     this.loadoutFuelMainCapacityT = null;
@@ -953,6 +956,20 @@ export class GameStateStore {
    */
   commanderPos: { x: number; y: number; z: number } | null = null;
 
+  /**
+   * Where each system the commander has been is, in light years.
+   *
+   * `commanderPos` above answers "where am I"; this answers "where was that". Nothing needed the
+   * second question until the galaxy map had to plot the backlog: a list of systems worth flying to
+   * is useless on a map that cannot place them. The coordinate rides on the same events, so this is
+   * still a capture rather than a lookup — no EDSM call, no join.
+   *
+   * Only systems actually visited appear. A system known only from a Spansh export or an EDSM
+   * hydration has no `StarPos` in this commander's journals and is simply absent, which the map
+   * draws as "not placeable" rather than as the origin.
+   */
+  readonly systemPositions = new Map<number, { x: number; y: number; z: number }>();
+
   /** Read `StarPos` off a journal line, when it carries one. */
   private setPositionFromLine(line: JournalLine): void {
     const p = (line as Record<string, unknown>).StarPos;
@@ -961,6 +978,10 @@ export class GameStateStore {
     if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") return;
     if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
     this.commanderPos = { x, y, z };
+    const addr = (line as Record<string, unknown>).SystemAddress;
+    if (typeof addr === "number" && Number.isFinite(addr)) {
+      this.systemPositions.set(addr, { x, y, z });
+    }
   }
 
   /** Commander location after FSD/carrier jump — does not delete other systems’ bodies. */
@@ -2134,6 +2155,7 @@ export class GameStateStore {
       fssDiscoveryScanBySystem: [...this.fssDiscoveryScanBySystem.entries()],
       fssAllBodiesFoundCountBySystem: [...this.fssAllBodiesFoundCountBySystem.entries()],
       mainStarWasDiscoveredBySystem: [...this.mainStarWasDiscoveredBySystem.entries()],
+      systemPositions: [...this.systemPositions.entries()],
       remainingJumpsInRoute: this.remainingJumpsInRoute,
       loadoutMaxJumpRangeLy: this.loadoutMaxJumpRangeLy,
       loadoutFuelMainCapacityT: this.loadoutFuelMainCapacityT,
@@ -2213,6 +2235,10 @@ export class GameStateStore {
     // JOURNAL_MERGE_CACHE_FORMAT exactly, so anything reaching this point is current. A `>= n` test
     // reads as though older caches still flow through and quietly excuses a missing field — which is
     // how `mainStarWasDiscoveredBySystem` shipped restoring nothing. Trust the per-value type checks.
+    this.systemPositions.clear();
+    for (const [a, p] of data.systemPositions ?? []) {
+      if (typeof a === "number" && p && typeof p.x === "number") this.systemPositions.set(a, p);
+    }
     this.mainStarWasDiscoveredBySystem.clear();
     for (const [a, w] of data.mainStarWasDiscoveredBySystem ?? []) {
       if (typeof a === "number" && typeof w === "boolean") this.mainStarWasDiscoveredBySystem.set(a, w);

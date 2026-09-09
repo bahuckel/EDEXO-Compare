@@ -30,6 +30,8 @@
 import type {
   BodyExoState,
   ExplorationScanRecord,
+  BacklogMapDTO,
+  BacklogSystemDTO,
   FirstDiscoveryBacklogDTO,
   FirstDiscoveryBacklogRowDTO,
   SpeciesMatchContext,
@@ -216,4 +218,56 @@ export function firstDiscoveryBacklog(store: GameStateStore): FirstDiscoveryBack
 /** Test seam — the module-level memo would otherwise leak between cases. */
 export function clearFirstDiscoveryBacklogCache(): void {
   cache = null;
+}
+
+/**
+ * The same backlog, rolled up to systems and placed in the galaxy.
+ *
+ * The map plots places, so a system holding four unfinished bodies is one dot carrying their summed
+ * floor — that sum is what the minimum-value filter tests, because "is this system worth a detour"
+ * is the question a route is planned on, not "is this body".
+ *
+ * A system with no `StarPos` in the journals cannot be placed and is counted rather than dropped
+ * silently. Placing it at the origin would put a false marker on Sol; omitting it without saying so
+ * would quietly shrink the backlog every time the map is consulted.
+ */
+export function backlogMap(store: GameStateStore): BacklogMapDTO {
+  const rows = firstDiscoveryBacklog(store).rows;
+  const bySystem = new Map<number, BacklogSystemDTO>();
+  // A set, not a counter: an unplaceable system never reaches `bySystem`, so testing that map to
+  // dedupe counted every *body* instead of every system and reported three where one was meant.
+  const unplaceable = new Set<number>();
+
+  for (const r of rows) {
+    const pos = store.systemPositions.get(r.systemAddress);
+    if (!pos) {
+      unplaceable.add(r.systemAddress);
+      continue;
+    }
+    const cur = bySystem.get(r.systemAddress);
+    if (cur) {
+      cur.bodies += 1;
+      cur.floorCr += r.minCr;
+      cur.ceilingCr += r.maxCr;
+      cur.allVerified &&= r.footfallObserved;
+    } else {
+      bySystem.set(r.systemAddress, {
+        systemAddress: r.systemAddress,
+        starSystem: r.starSystem,
+        x: pos.x,
+        y: pos.y,
+        z: pos.z,
+        bodies: 1,
+        floorCr: r.minCr,
+        ceilingCr: r.maxCr,
+        firstDiscovery: r.firstDiscovery,
+        allVerified: r.footfallObserved,
+      });
+    }
+  }
+
+  return {
+    systems: [...bySystem.values()].sort((a, b) => b.floorCr - a.floorCr),
+    unplaceable: unplaceable.size,
+  };
 }

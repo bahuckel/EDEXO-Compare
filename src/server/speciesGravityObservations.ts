@@ -22,6 +22,7 @@
 import type { SpeciesEntry } from "../shared/types.js";
 import { loadExomasteryProfile } from "./exomasteryProfile.js";
 import { getProjectRoot } from "./paths.js";
+import { observationFloor } from "./observationFloors.js";
 
 const GRAVITY_PATH = "body.gravity";
 
@@ -48,7 +49,7 @@ const GRAVITY_PATH = "body.gravity";
  * moved: every upward step cost recall and bought nothing on ambiguity. The one exception proves
  * the shape — doubling the planet-class floor to 40 buys 0.12 candidates for **nine species**.
  */
-export const MIN_GRAVITY_OBSERVATIONS = 10;
+export const MIN_GRAVITY_OBSERVATIONS = observationFloor("GRAVITY", 10);
 
 export interface GravityObservation {
   /** Bodies observed in the bin containing this reading. */

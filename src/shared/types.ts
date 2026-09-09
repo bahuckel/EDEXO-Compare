@@ -811,6 +811,36 @@ export interface FirstDiscoveryBacklogRowDTO {
   footfallObserved: boolean;
 }
 
+/**
+ * One system on the galaxy map's backlog layer: its position, and what is left in it.
+ *
+ * Systems rather than bodies, because the map plots places and a system with four unfinished bodies
+ * is one dot, not four. `floorCr` sums the bodies so the minimum-value filter is answering "is this
+ * system worth the detour", which is the question a route is planned on.
+ */
+export interface BacklogSystemDTO {
+  systemAddress: number;
+  starSystem: string;
+  x: number;
+  y: number;
+  z: number;
+  bodies: number;
+  /** Summed guaranteed floor across this system's unfinished bodies, at 5x. */
+  floorCr: number;
+  /** Summed ceiling. */
+  ceilingCr: number;
+  /** This commander scanned the main star first. */
+  firstDiscovery: boolean;
+  /** Every body here has a journal statement that it is unwalked. */
+  allVerified: boolean;
+}
+
+export interface BacklogMapDTO {
+  systems: BacklogSystemDTO[];
+  /** Backlog systems with no `StarPos` in the journals, so nothing can place them. */
+  unplaceable: number;
+}
+
 export interface FirstDiscoveryBacklogDTO {
   /** Ranked by `minCr`, highest first. */
   rows: FirstDiscoveryBacklogRowDTO[];

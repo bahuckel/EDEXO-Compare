@@ -25,6 +25,7 @@ import type { SpeciesEntry } from "../shared/types.js";
 import { atmosphereCompositionKey } from "../shared/scanAtmosphereMatch.js";
 import { loadExomasteryProfile } from "./exomasteryProfile.js";
 import { getProjectRoot } from "./paths.js";
+import { observationFloor } from "./observationFloors.js";
 
 const ATMOSPHERE_PATH = "body.atmosphereType";
 
@@ -51,7 +52,7 @@ export const NO_ATMOSPHERE = "";
  * moved: every upward step cost recall and bought nothing on ambiguity. The one exception proves
  * the shape — doubling the planet-class floor to 40 buys 0.12 candidates for **nine species**.
  */
-export const MIN_ATMOSPHERE_OBSERVATIONS = 10;
+export const MIN_ATMOSPHERE_OBSERVATIONS = observationFloor("ATMOSPHERE", 10);
 
 /**
  * Composition key for either vocabulary: `Thin Water` and `Water` both become `water`,
