@@ -105,3 +105,11 @@ photo-contributions.txt
 
 # Generated report pages (galaxy coverage map and friends). Built from data/exomastery on demand.
 /build-artifacts/
+
+# The built galaxy biology index (~40 MB), from edastro's codex export.
+#
+# Ignored until its distribution is settled, not because it is large: it is derived from someone
+# else's dataset, and this repo is public and MIT. The builder that makes it is committed, so anyone
+# with the inputs can produce it; whether the artifact itself ships is the owner's call and needs a
+# line in NOTICE.md when it does.
+/data/galaxy/
