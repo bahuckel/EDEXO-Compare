@@ -171,6 +171,8 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
       candidateCount: range.pricedCandidateCount,
       genusKnown: (b.genusHints?.length ?? 0) > 0,
       dssComplete: b.dssComplete,
+      // Filled in per request by `withDistances`; see the field's own note.
+      distanceLy: null,
       firstDiscovery: store.mainStarWasDiscoveredBySystem.get(b.systemAddress) === false,
       footfallObserved: footfallObserved(store, b.key),
     });
@@ -213,6 +215,41 @@ export function firstDiscoveryBacklog(store: GameStateStore): FirstDiscoveryBack
   const value = perfTime("backlog.firstDiscovery", () => computeFirstDiscoveryBacklog(store));
   cache = { key, value };
   return value;
+}
+
+/**
+ * Attach "how far is that" to a memoised answer.
+ *
+ * Distance is the one part of a row that changes without the store changing: the commander jumps,
+ * the backlog does not. It is therefore computed on the way out rather than inside the memo, which
+ * is keyed on the corpus and would otherwise pin every distance to wherever they happened to be when
+ * the panel was first opened — a routing list quietly measured from the wrong place.
+ *
+ * Straight-line, not jump count. The commander's own jump range and route planner decide the second,
+ * and a number this list invented would be a worse guess than the one they can already make.
+ */
+function distanceFrom(
+  from: { x: number; y: number; z: number } | null,
+  to: { x: number; y: number; z: number } | undefined,
+): number | null {
+  if (!from || !to) return null;
+  const dx = from.x - to.x;
+  const dy = from.y - to.y;
+  const dz = from.z - to.z;
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+/** The backlog as the endpoint serves it: memoised rows, distances measured now. */
+export function firstDiscoveryBacklogWithDistance(store: GameStateStore): FirstDiscoveryBacklogDTO {
+  const base = firstDiscoveryBacklog(store);
+  const pos = store.commanderPos;
+  return {
+    ...base,
+    rows: base.rows.map((r) => ({
+      ...r,
+      distanceLy: distanceFrom(pos, store.systemPositions.get(r.systemAddress)),
+    })),
+  };
 }
 
 /** Test seam — the module-level memo would otherwise leak between cases. */
@@ -262,8 +299,14 @@ export function backlogMap(store: GameStateStore): BacklogMapDTO {
         ceilingCr: r.maxCr,
         firstDiscovery: r.firstDiscovery,
         allVerified: r.footfallObserved,
+        distanceLy: null,
       });
     }
+  }
+
+  const pos = store.commanderPos;
+  for (const sys of bySystem.values()) {
+    sys.distanceLy = distanceFrom(pos, { x: sys.x, y: sys.y, z: sys.z });
   }
 
   return {

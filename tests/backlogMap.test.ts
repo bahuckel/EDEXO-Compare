@@ -157,3 +157,55 @@ describe("rolling bodies up to their system", () => {
     expect(out.systems[0]!.allVerified).toBe(false);
   });
 });
+
+describe("how far away it is", () => {
+  it("measures from where the commander is now", () => {
+    const st = seeded(true, [3]);
+    // The seeded system sits at (123.5, -45.25, 678.75); put the ship 100 ly along x from it.
+    st.apply(
+      j({
+        timestamp: TS,
+        event: "FSDJump",
+        StarSystem: "Somewhere Else",
+        SystemAddress: 999,
+        StarPos: [223.5, -45.25, 678.75],
+      }),
+    );
+    const out = backlogMap(st);
+    expect(out.systems[0]!.distanceLy).toBeCloseTo(100, 6);
+  });
+
+  it("is null when the system is placed but the commander is not", () => {
+    // Zero would read as "you are already here", which is the most useful-looking wrong answer a
+    // routing list can give.
+    //
+    // Not reachable by replaying events — the line that places a system is the line that places the
+    // commander — so it is reached the way it actually could be: a cache restored with positions but
+    // no last-known commander position.
+    const source = seeded(true, [3]);
+    const payload = { ...source.serializeJournalMergePayload(), commanderPos: null };
+    const st = new GameStateStore();
+    expect(st.hydrateJournalMergePayload(payload)).toBe(true);
+    clearFirstDiscoveryBacklogCache();
+    const out = backlogMap(st);
+    expect(out.systems).toHaveLength(1);
+    expect(out.systems[0]!.distanceLy).toBeNull();
+  });
+
+  it("is not frozen into the memoised backlog", () => {
+    // The rows cost ~45 s to compute and are cached against the corpus; the commander moves without
+    // the corpus changing. A distance baked into that cache would stay pinned to wherever they were
+    // when the panel was first opened.
+    const st = seeded(true, [3]);
+    st.apply(
+      j({ timestamp: TS, event: "FSDJump", StarSystem: "A", SystemAddress: 991, StarPos: [123.5, -45.25, 778.75] }),
+    );
+    const near = backlogMap(st).systems[0]!.distanceLy;
+    st.apply(
+      j({ timestamp: TS, event: "FSDJump", StarSystem: "B", SystemAddress: 992, StarPos: [123.5, -45.25, 1678.75] }),
+    );
+    const far = backlogMap(st).systems[0]!.distanceLy;
+    expect(near).toBeCloseTo(100, 6);
+    expect(far).toBeCloseTo(1000, 6);
+  });
+});

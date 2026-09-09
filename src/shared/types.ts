@@ -802,6 +802,14 @@ export interface FirstDiscoveryBacklogRowDTO {
    */
   firstDiscovery: boolean;
   /**
+   * Straight-line distance from the commander, in light years, or null before their first jump.
+   *
+   * Attached per request rather than with the rest of the row: the row is memoised behind a species
+   * match that costs ~45 s, and the commander moves constantly. Baking a distance into that cache
+   * would freeze it at whatever system they were in when the panel was first opened.
+   */
+  distanceLy: number | null;
+  /**
    * The journal has actually reported this body unwalked, rather than never mentioning it.
    *
    * `WasFootfalled` did not exist before 2025-09-29, so on older scans the field is absent, not
@@ -833,6 +841,8 @@ export interface BacklogSystemDTO {
   firstDiscovery: boolean;
   /** Every body here has a journal statement that it is unwalked. */
   allVerified: boolean;
+  /** Straight-line distance from the commander, in light years. Null when their position is unknown. */
+  distanceLy: number | null;
 }
 
 export interface BacklogMapDTO {

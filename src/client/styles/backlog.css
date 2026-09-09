@@ -61,6 +61,41 @@
   background: rgba(12, 42, 28, 0.4);
 }
 
+/*
+ * The single row worth acting on, lifted above a list of 823.
+ *
+ * Given the accent border the summary uses, because it is the same kind of statement: a conclusion
+ * rather than data. It disappears entirely when nothing qualifies, rather than showing an empty
+ * frame that reads as a broken feature.
+ */
+.fdb-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(255, 140, 70, 0.5);
+  border-radius: var(--r-sm);
+  background: rgba(40, 20, 10, 0.45);
+}
+
+.fdb-next__label {
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ff9447;
+}
+
+.fdb-next__sys {
+  font-size: var(--fs-md);
+}
+
+/* Pushes the sort chips away from the filter chips: same control, different question. */
+.fdb-filters__gap {
+  flex: 0 0 0.9rem;
+}
+
 .fdb-filters {
   display: flex;
   flex-wrap: wrap;

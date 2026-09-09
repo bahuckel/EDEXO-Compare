@@ -45,6 +45,13 @@ function compactCr(n: number): string {
 const FLOORS = [0, 10e6, 20e6, 30e6, 50e6] as const;
 const floorLabel = (n: number) => (n === 0 ? "All" : `${Math.round(n / 1e6)}M+`);
 
+/** Light years, at a precision that matches how far away the thing is. */
+function ly(d: number | null): string {
+  if (d == null) return "—";
+  if (d >= 10000) return `${(d / 1000).toFixed(1)} kly`;
+  return `${Math.round(d).toLocaleString("en-US")} ly`;
+}
+
 function CopyButton({ text }: { text: string }) {
   const [done, setDone] = useState(false);
   useEffect(() => {
@@ -87,6 +94,11 @@ export function FirstDiscoveryBacklogModal({
   const [dssOnly, setDssOnly] = useState(false);
   const [firstOnly, setFirstOnly] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  /**
+   * Value or distance. Both are honest answers to different questions, and neither is a default that
+   * suits every trip: the richest body in the list is often thousands of light years away.
+   */
+  const [sort, setSort] = useState<"value" | "distance">("value");
 
   useEffect(() => {
     let cancelled = false;
@@ -118,14 +130,38 @@ export function FirstDiscoveryBacklogModal({
 
   const rows: FirstDiscoveryBacklogRowDTO[] = useMemo(() => {
     const all = data?.rows ?? [];
-    return all.filter(
+    const kept = all.filter(
       (r) =>
         r.minCr >= minCr &&
         (!dssOnly || r.genusKnown) &&
         (!firstOnly || r.firstDiscovery) &&
         (!verifiedOnly || r.footfallObserved),
     );
-  }, [data, minCr, dssOnly, firstOnly, verifiedOnly]);
+    if (sort === "value") return kept;
+    /*
+     * Nearest first, with unplaceable rows last rather than first.
+     *
+     * A null distance means no journal ever recorded that system's position, not that it is nearby.
+     * Sorting nulls as zero would put every unknown at the top of a list whose entire purpose is
+     * "what is closest", which is the most confidently wrong a routing list can be.
+     */
+    return [...kept].sort((a, b) => {
+      if (a.distanceLy == null) return b.distanceLy == null ? 0 : 1;
+      if (b.distanceLy == null) return -1;
+      return a.distanceLy - b.distanceLy || b.minCr - a.minCr;
+    });
+  }, [data, minCr, dssOnly, firstOnly, verifiedOnly, sort]);
+
+  /** The answer to "take me to the next one": nearest row that clears the current filters. */
+  const nextTarget = useMemo(
+    () =>
+      rows.reduce<FirstDiscoveryBacklogRowDTO | null>(
+        (best, r) =>
+          r.distanceLy == null ? best : !best || r.distanceLy < (best.distanceLy ?? Infinity) ? r : best,
+        null,
+      ),
+    [rows],
+  );
 
   const shownFloor = rows.reduce((a, r) => a + r.minCr, 0);
   const systems = new Set(rows.map((r) => r.systemAddress)).size;
@@ -183,6 +219,24 @@ export function FirstDiscoveryBacklogModal({
               ) : null}
             </div>
 
+            {nextTarget ? (
+              <div className="fdb-next">
+                {/*
+                  The one row the commander is most likely to act on, lifted out of a list of 823 so
+                  it does not have to be found. It answers the owner's own phrasing — "take me to the
+                  next that matches or exceeds it" — against whatever the filters currently say.
+                */}
+                <span className="fdb-next__label">Nearest that qualifies</span>
+                <strong className="fdb-next__sys">{nextTarget.starSystem}</strong>
+                <span className="dim">{ly(nextTarget.distanceLy)} away</span>
+                <span className="dim">
+                  {nextTarget.biologicalSignals} signal{nextTarget.biologicalSignals === 1 ? "" : "s"} ·{" "}
+                  {cr(nextTarget.minCr)} floor
+                </span>
+                <CopyButton text={nextTarget.starSystem} />
+              </div>
+            ) : null}
+
             <div className="fdb-filters">
               <span className="dim">Worth at least</span>
               {FLOORS.map((f) => (
@@ -219,6 +273,23 @@ export function FirstDiscoveryBacklogModal({
               >
                 Verified 5×
               </button>
+              <span className="fdb-filters__gap" />
+              <span className="dim">Sort</span>
+              <button
+                type="button"
+                className={`fdb-chip${sort === "value" ? " fdb-chip--on" : ""}`}
+                onClick={() => setSort("value")}
+              >
+                Richest
+              </button>
+              <button
+                type="button"
+                className={`fdb-chip${sort === "distance" ? " fdb-chip--on" : ""}`}
+                onClick={() => setSort("distance")}
+                title="Nearest first, measured straight-line from where your commander is now."
+              >
+                Nearest
+              </button>
             </div>
 
             <div className="fdb-scroll">
@@ -227,6 +298,7 @@ export function FirstDiscoveryBacklogModal({
                   <tr>
                     <th>System</th>
                     <th>Body</th>
+                    <th className="fdb-num">Away</th>
                     <th className="fdb-num">Sig</th>
                     <th className="fdb-num">Floor</th>
                     <th className="fdb-num">Ceiling</th>
@@ -267,6 +339,7 @@ export function FirstDiscoveryBacklogModal({
                           ? r.bodyName.slice(r.starSystem.length).trim() || r.bodyName
                           : r.bodyName}
                       </td>
+                      <td className="fdb-num dim">{ly(r.distanceLy)}</td>
                       <td className="fdb-num">{r.biologicalSignals}</td>
                       <td className="fdb-num fdb-floor">{cr(r.minCr)}</td>
                       <td className="fdb-num dim">{cr(r.maxCr)}</td>
