@@ -37,6 +37,12 @@ whoever wrote it down first.
 The species photographs. Commanders flew to these places, landed, and photographed the organism, and
 that is not a small thing to have done ninety-seven times.
 
+The colour-variant tables in `data/species/eddsn-colour-variants.json` were transcribed from the same
+site — which species reads its colour off the parent star and which off a material on the body, and
+what each key maps to. Community knowledge rather than a proprietary dataset, and checked against
+this commander's own journals before it was wired in, but ED-DSN is where it was read from and typing
+several hundred rows by hand was the alternative.
+
 Credited by link to the network rather than by commander name, at ED-DSN's request and ours: the
 photographs were taken on an expedition years ago and a significant number of those commanders can no
 longer be reached, so naming some and not others would be worse than naming none.

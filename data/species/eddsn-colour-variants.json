@@ -1,10 +1,10 @@
 {
  "formatVersion": 1,
  "source": {
-  "name": "Deep Space Network (ED-DSN)",
-  "url": "https://ed-dsn.net/en/exobiological-flora/",
-  "retrieved": "2026-09-11",
-  "note": "Colour-variant tables transcribed from the per-genus pages. ED-DSN credits the CMDRs who reported each variant on the page itself. Not redistributed data — a transcription of a published reference, kept so the app can name a colour offline."
+  "what": "Which colour variant each species takes, and whether it is set by the parent star class or by a material on the body.",
+  "status": "Community knowledge, not a proprietary dataset — the same tables the codex teaches anyone who scans enough plants.",
+  "transcribedFrom": "https://ed-dsn.net/en/exobiological-flora/ (retrieved 2026-09-11), to save typing several hundred rows by hand.",
+  "verifiedAgainst": "CMDR FALrenica's own journals: 235 star-table predictions correct and none wrong, and in all 47 material rows the colour he found was among the candidates."
  },
  "verification": {
   "againstOwnerJournals": "235 star-table predictions correct, 0 wrong, 23 classes blank; 47 of 47 material rows had the observed colour among the candidates."
