@@ -7,7 +7,7 @@
  * claims wearing the same clothes.
  */
 import { describe, expect, it } from "vitest";
-import { bodyHasExoMarkers, exoMarkerBasis } from "../src/server/systemMap.js";
+import { bodyHasExoMarkers, bodyHasJournalExoEvidence, exoMarkerBasis } from "../src/server/systemMap.js";
 import type { BodyExoState } from "../src/shared/types.js";
 
 const body = (over: Partial<BodyExoState> = {}): BodyExoState =>
@@ -77,5 +77,29 @@ describe("bodies with nothing to say", () => {
   it("says none when the class is missing, however landable it claims to be", () => {
     const b = body({ scan: { Landable: true } as BodyExoState["scan"] });
     expect(exoMarkerBasis(b)).toBe("none");
+  });
+});
+
+describe("what the map is allowed to mark as carrying life", () => {
+  /**
+   * The map's bio filter and its bio-body count say "biological signals", so they must only ever
+   * mark bodies that have them. On Blu Thua ML-P b47-2 the wide test marked every landable rock in
+   * the system — nineteen bodies where the journal knows of nine.
+   */
+  it("marks a body the journal reports signals on", () => {
+    expect(bodyHasJournalExoEvidence(body({ biologicalSignals: 1 }))).toBe(true);
+  });
+
+  it("does not mark a body that is only landable and described", () => {
+    const b = body({
+      scan: { BodyName: "x", BodyID: 1, StarSystem: "s", SystemAddress: 1, Landable: true, PlanetClass: "Rocky body" },
+    });
+    // The candidate list still runs — it is the mark on the map that would be a claim.
+    expect(bodyHasExoMarkers(b)).toBe(true);
+    expect(bodyHasJournalExoEvidence(b)).toBe(false);
+  });
+
+  it("does not mark a body with nothing at all", () => {
+    expect(bodyHasJournalExoEvidence(body())).toBe(false);
   });
 });

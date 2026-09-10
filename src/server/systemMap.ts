@@ -390,6 +390,20 @@ export function exoMarkerBasis(b: BodyExoState): ExoMarkerBasis {
   return "none";
 }
 
+/**
+ * Does the **journal** say there is life here — as opposed to "could there be".
+ *
+ * The map's bio filter, its bio-body count and the glow on a node all answer the first question, and
+ * they went wrong the moment {@link bodyHasExoMarkers} learned to include auto-scanned bodies: on
+ * Blu Thua ML-P b47-2 every landable rock in the system came back `hasExobiology`, so the mark that
+ * used to pick out the nine bodies carrying signals picked out nineteen and meant nothing. Candidate
+ * lists still want the wide test — saying what the conditions suit is the whole point of it — but a
+ * map legend that reads "biological signals" must only ever mark bodies that have them.
+ */
+export function bodyHasJournalExoEvidence(b: BodyExoState): boolean {
+  return exoMarkerBasis(b) !== "conditions" && exoMarkerBasis(b) !== "none";
+}
+
 export function bodyHasExoMarkers(b: BodyExoState): boolean {
   const hasBioCount = b.biologicalSignals !== null && b.biologicalSignals > 0;
   const hasHints = !!(b.genusHints && b.genusHints.length);
@@ -820,7 +834,7 @@ export function buildSystemMapSnapshot(
 
     const bk = bodyKey(r.systemAddress, r.bodyId);
     const exo = store.bodies.get(bk);
-    const hasExo = exo ? bodyHasExoMarkers(exo) : false;
+    const hasExo = exo ? bodyHasJournalExoEvidence(exo) : false;
     const tf = terraformableFromRecord(r);
     const mass = r.massEM ?? 1;
     const isStar = isStarOnSystemMap(r, starSystemName);
