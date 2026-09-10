@@ -277,3 +277,75 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
   stroke-width: 2;
   paint-order: stroke;
 }
+
+/*
+ * Zoom, pan and camera controls.
+ *
+ * The map could be looked at but not used: a hundred thousand light years in five hundred pixels
+ * puts the whole bubble inside one marker, and edge-on the galaxy is a line. These are the way in.
+ */
+.galaxy-map__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0 0.4rem;
+  font-size: var(--fs-xs);
+}
+
+.galaxy-map__controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  opacity: 0.85;
+}
+
+.galaxy-map__controls input[type="range"] {
+  width: 7rem;
+  accent-color: #58a6ff;
+}
+
+.galaxy-map__controls button {
+  font: inherit;
+  min-width: 1.9rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(150, 190, 230, 0.4);
+  background: rgba(20, 30, 45, 0.6);
+  color: inherit;
+  cursor: pointer;
+}
+
+.galaxy-map__controls button:hover {
+  border-color: rgba(180, 215, 255, 0.8);
+}
+
+.galaxy-map__zoom {
+  font-variant-numeric: tabular-nums;
+}
+
+.galaxy-map__cam {
+  margin-left: 0.5rem;
+  opacity: 0.6;
+  font-size: var(--fs-2xs);
+}
+
+.galaxy-map__svg {
+  cursor: grab;
+  touch-action: none;
+}
+
+.galaxy-map__svg--panning {
+  cursor: grabbing;
+}
+
+/*
+ * The invisible target over each marker.
+ *
+ * `pointer-events: all` is what lets an unpainted circle catch a click — without it a hollow marker
+ * is only clickable on its 1.5px ring, which is the complaint this exists to answer.
+ */
+.galaxy-map__hit {
+  pointer-events: all;
+  cursor: pointer;
+}

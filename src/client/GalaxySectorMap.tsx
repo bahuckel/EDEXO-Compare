@@ -35,6 +35,8 @@ import {
 } from "@shared/sectorName.js";
 import type { BacklogMapDTO, BacklogSystemDTO } from "@shared/types";
 import { regionSpanInCells } from "./regionBackdrop";
+import { CAMERA_SIDE, CAMERA_TOP, axisLabels, cameraLabel, project } from "./galaxyProjection";
+import { useMapViewport } from "./useMapViewport";
 import { CopySystemButton } from "./CopySystemButton";
 import {
   allTaxa,
@@ -109,32 +111,32 @@ function strongestKind(t: ReturnType<typeof cellTotals>): Kind | null {
   return null;
 }
 
+/**
+ * A view is now a starting camera, not a fixed pair of axis pickers.
+ *
+ * The two used to be separate code paths that happened to look similar. They are one camera at two
+ * angles, and saying so is what lets the commander tilt to anything between — which is the only way
+ * out of the edge-on view, where a galaxy 100 000 ly across and 2 000 thick draws as a line.
+ */
 interface Projection {
   id: "top" | "side";
   label: string;
   hint: string;
-  /** Cell → plot axes. Cell indices, not light years: the grid is what we draw. */
-  ax: (c: SectorMapCell) => number;
-  ay: (c: SectorMapCell) => number;
-  axisLabel: [string, string];
+  camera: { yaw: number; pitch: number };
 }
 
 const PROJECTIONS: Projection[] = [
   {
     id: "top",
-    label: "Top (X / Z)",
-    hint: "Looking down on the galactic plane. Sol sits near the middle-right; the core is far to the galactic north.",
-    ax: (c) => c.x,
-    ay: (c) => c.z,
-    axisLabel: ["X →", "Z ↑"],
+    label: "Top",
+    hint: "Looking down on the galactic plane. Drag to pan, wheel to zoom, double-click to reset.",
+    camera: CAMERA_TOP,
   },
   {
     id: "side",
-    label: "Side (X / Y)",
-    hint: "Edge-on. The galaxy is thin — most sectors sit within a few cells of the plane.",
-    ax: (c) => c.x,
-    ay: (c) => c.y,
-    axisLabel: ["X →", "Y ↑"],
+    label: "Side",
+    hint: "Edge-on, tilted slightly so near and far separate. Yaw spins the galaxy; pitch tips it.",
+    camera: CAMERA_SIDE,
   },
 ];
 
@@ -493,8 +495,22 @@ function SectorPlot({
    * behind the edge-on view. Asking for it there would silently place a top-down galaxy against a
    * vertical axis, which would look like data.
    */
-  const showBackdrop = backdrop != null && projection.id === "top";
+  const vp = useMapViewport(projection.camera);
+  const cam = vp.camera;
+
+  /**
+   * The backdrop is a plane image, so it only makes sense looking straight down.
+   *
+   * Tilt away and it would be a top-down galaxy pasted against a vertical axis — a picture that
+   * looks like data and is not. It fades out as the camera leaves the plane rather than vanishing,
+   * so the commander can see it go.
+   */
+  const backdropOpacity = Math.max(0, (Math.abs(cam.pitch) - 60) / 30);
+  const showBackdrop = backdrop != null && backdropOpacity > 0.02 && Math.abs(cam.yaw % 360) < 1;
   const span = regionSpanInCells(SECTOR_SIZE_LY);
+
+  /** Plot coordinates for a point in cell space, at the current camera. */
+  const at = useCallback((c: { x: number; y: number; z: number }) => project(c, cam), [cam]);
   /*
    * Two framings, and which one is right depends on whether the galaxy is drawn.
    *
@@ -505,13 +521,15 @@ function SectorPlot({
   const bounds = useMemo(() => {
     if (showBackdrop) return { minX: 0, maxX: span, minY: 0, maxY: span };
     if (rows.length === 0) return { minX: 0, maxX: 1, minY: 0, maxY: 1 };
-    const xs = rows.map((r) => projection.ax(r.cell));
-    const ys = rows.map((r) => projection.ay(r.cell));
+    const pts = rows.map((r) => at(r.cell));
+    const xs = pts.map((p) => p.u);
+    const ys = pts.map((p) => p.v);
     // The ship may be well outside the sampled corpus. Stretching the view to include it beats
     // drawing it off-canvas, which would silently look like "no position".
     if (commander) {
-      xs.push(projection.ax(commander as unknown as SectorMapCell));
-      ys.push(projection.ay(commander as unknown as SectorMapCell));
+      const c = at(commander);
+      xs.push(c.u);
+      ys.push(c.v);
     }
     return {
       minX: Math.min(...xs),
@@ -519,7 +537,7 @@ function SectorPlot({
       minY: Math.min(...ys),
       maxY: Math.max(...ys),
     };
-  }, [rows, projection, commander, showBackdrop, span]);
+  }, [rows, at, commander, showBackdrop, span]);
 
   const sx = (v: number) =>
     PAD + ((v - bounds.minX) / Math.max(1, bounds.maxX - bounds.minX)) * (VIEW_W - PAD * 2);
@@ -532,9 +550,66 @@ function SectorPlot({
       <figcaption>
         {projection.label}
         <span className="galaxy-map__hint">{projection.hint}</span>
+        <span className="galaxy-map__cam">{cameraLabel(cam)}</span>
       </figcaption>
-      <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} role="img" aria-label={`${projection.label} sector map`}>
+
+      <div className="galaxy-map__controls">
+        <label>
+          Yaw
+          <input
+            type="range"
+            min={0}
+            max={360}
+            step={1}
+            value={cam.yaw}
+            onChange={(e) => vp.setCamera({ ...cam, yaw: Number(e.target.value) })}
+            aria-label={`${projection.label} yaw`}
+          />
+        </label>
+        <label>
+          Pitch
+          <input
+            type="range"
+            min={0}
+            max={90}
+            step={1}
+            value={cam.pitch}
+            onChange={(e) => vp.setCamera({ ...cam, pitch: Number(e.target.value) })}
+            aria-label={`${projection.label} pitch`}
+          />
+        </label>
+        <button type="button" onClick={() => vp.zoomBy(1.4, { x: VIEW_W / 2, y: VIEW_H / 2 })} aria-label="Zoom in">
+          +
+        </button>
+        <button
+          type="button"
+          onClick={() => vp.zoomBy(1 / 1.4, { x: VIEW_W / 2, y: VIEW_H / 2 })}
+          aria-label="Zoom out"
+        >
+          −
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            vp.reset();
+            vp.setCamera(projection.camera);
+          }}
+        >
+          Reset
+        </button>
+        <span className="dim galaxy-map__zoom">{vp.view.scale.toFixed(1)}×</span>
+      </div>
+
+      <svg
+        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+        role="img"
+        aria-label={`${projection.label} sector map`}
+        className={vp.panning ? "galaxy-map__svg galaxy-map__svg--panning" : "galaxy-map__svg"}
+        {...vp.handlers}
+      >
+        {/* Outside the panned group: the background is the window, not part of the scene. */}
         <rect x={0} y={0} width={VIEW_W} height={VIEW_H} className="galaxy-map__bg" />
+        <g transform={vp.transform}>
         {showBackdrop && backdrop ? (
           /*
            * The galaxy, under everything else. `preserveAspectRatio="none"` because the two axes are
@@ -549,14 +624,9 @@ function SectorPlot({
             height={sy(0) - sy(span)}
             preserveAspectRatio="none"
             className="galaxy-map__backdrop"
+            opacity={backdropOpacity}
           />
         ) : null}
-        <text x={VIEW_W - PAD} y={VIEW_H - 8} className="galaxy-map__axis" textAnchor="end">
-          {projection.axisLabel[0]}
-        </text>
-        <text x={8} y={PAD} className="galaxy-map__axis">
-          {projection.axisLabel[1]}
-        </text>
         {rows.map(({ cell, totals, kind }) => {
           const r = 2 + 7 * Math.cbrt(totals.bodies / maxBodies);
           const isHit = highlight?.key === cell.key;
@@ -569,24 +639,47 @@ function SectorPlot({
            * filled form is kept: on a flat background hollow markers are harder to see, not easier.
            */
           const hollow = showBackdrop || !KIND_FILLED[kind];
+          const cx = sx(at(cell).u);
+          const cy = sy(at(cell).v);
           return (
+            <g key={cell.key}>
+              {/*
+                An invisible disc over the whole marker, so a hollow one can be clicked through its
+                middle. Hitting a 1.5px ring is a game of patience, and the empty centre reads as
+                part of the marker to everybody except the hit tester.
+
+                `pointer-events: all` with no fill is what makes an unpainted shape catch a click.
+                Sized in screen pixels via `vp.pixel` so it stays a comfortable target at every zoom,
+                and given at least 6 so the smallest sectors are still reachable.
+              */}
+              <circle
+                cx={cx}
+                cy={cy}
+                r={Math.max(6, r + 3) * vp.pixel}
+                fill="none"
+                className="galaxy-map__hit"
+                onMouseEnter={() => onHover(cell)}
+                onMouseLeave={() => onHover(null)}
+                onClick={() => {
+                  // A drag that ends over a marker is a pan, not a pick.
+                  if (!vp.panning) onOpen(cell);
+                }}
+              >
+                <title>{`${cell.name ?? cell.key} — ${totals.bodies} bodies
+${evidenceSummary(totals)}`}</title>
+              </circle>
             <circle
-              key={cell.key}
-              cx={sx(projection.ax(cell))}
-              cy={sy(projection.ay(cell))}
-              r={r}
+              cx={cx}
+              cy={cy}
+              r={r * vp.pixel}
+              pointerEvents="none"
               fill={hollow ? "none" : KIND_COLOUR[kind]}
               fillOpacity={hollow ? 1 : 0.75}
               stroke={isHit ? "#f0f6fc" : hollow ? KIND_COLOUR[kind] : "none"}
-              strokeWidth={isHit ? 2 : hollow ? 1.5 : 0}
-              onMouseEnter={() => onHover(cell)}
-              onMouseLeave={() => onHover(null)}
-              onClick={() => onOpen(cell)}
+              strokeWidth={(isHit ? 2 : hollow ? 1.5 : 0) * vp.pixel}
             >
-              {/* A native title is the cheapest hover label and it works on touch and for readers. */}
-              <title>{`${cell.name ?? cell.key} — ${totals.bodies} bodies
-${evidenceSummary(totals)}`}</title>
             </circle>
+            </g>
           );
         })}
         {/*
@@ -611,9 +704,9 @@ ${evidenceSummary(totals)}`}</title>
               return (
                 <circle
                   key={s.systemAddress}
-                  cx={sx(projection.ax(cell as unknown as SectorMapCell))}
-                  cy={sy(projection.ay(cell as unknown as SectorMapCell))}
-                  r={2 + Math.min(3, Math.cbrt(s.bodies))}
+                  cx={sx(at(cell).u)}
+                  cy={sy(at(cell).v)}
+                  r={(2 + Math.min(3, Math.cbrt(s.bodies))) * vp.pixel}
                   className={[
                     "galaxy-map__target",
                     s.allVerified ? "" : "galaxy-map__target--unverified",
@@ -640,19 +733,27 @@ ${evidenceSummary(totals)}`}</title>
         ) : null}
         {commander ? (
           <g
-            transform={`translate(${sx(projection.ax(commander as unknown as SectorMapCell))}, ${sy(
-              projection.ay(commander as unknown as SectorMapCell),
-            )})`}
+            transform={`translate(${sx(at(commander).u)}, ${sy(at(commander).v)})`}
             className="galaxy-map__you"
           >
             {/* A cross, not a dot: at a glance it must not be mistaken for a sector marker, and it
                 stays legible on top of one. Drawn last so a dense sector never hides the ship. */}
-            <line x1={-7} y1={0} x2={7} y2={0} />
-            <line x1={0} y1={-7} x2={0} y2={7} />
-            <circle r={4} fill="none" />
+            {/* Sized in screen pixels: zooming in should reveal space, not inflate the ship. */}
+            <line x1={-7 * vp.pixel} y1={0} x2={7 * vp.pixel} y2={0} strokeWidth={1.5 * vp.pixel} />
+            <line x1={0} y1={-7 * vp.pixel} x2={0} y2={7 * vp.pixel} strokeWidth={1.5 * vp.pixel} />
+            <circle r={4 * vp.pixel} fill="none" strokeWidth={1.5 * vp.pixel} />
             <title>{`You are here — ${commander.system ?? "unknown system"} (cell ${commander.key})`}</title>
           </g>
         ) : null}
+        </g>
+
+        {/* Axis captions live outside the panned group: they describe the view, not the scene. */}
+        <text x={VIEW_W - PAD} y={VIEW_H - 8} className="galaxy-map__axis" textAnchor="end">
+          {axisLabels(cam)[0]}
+        </text>
+        <text x={8} y={PAD} className="galaxy-map__axis">
+          {axisLabels(cam)[1]}
+        </text>
       </svg>
     </figure>
   );
