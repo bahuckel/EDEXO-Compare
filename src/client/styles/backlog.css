@@ -374,3 +374,14 @@
   cursor: not-allowed;
   border-style: dashed;
 }
+
+/*
+ * "Auto scan only" — the candidate list is a prediction with no organic count behind it.
+ *
+ * Dashed rather than solid: this is a statement about how much is known, not a warning about
+ * something wrong, and it sits above a list that is otherwise perfectly good.
+ */
+.exo-conditions-only {
+  border-left: 2px dashed rgba(210, 153, 34, 0.7);
+  padding-left: 0.5rem;
+}

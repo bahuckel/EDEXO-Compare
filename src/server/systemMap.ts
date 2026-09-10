@@ -369,6 +369,27 @@ function inferBarycentreDisplayTag(
  * to make, and withholding it until the commander has already probed the body answers the question
  * after it stopped mattering.
  */
+/**
+ * *Why* this body is showing candidates — which is not the same as whether it should.
+ *
+ * `conditions` is the weak case and the one that needs saying out loud. An auto scan describes the
+ * body completely and reports no organics at all: the game shows a signal count on screen, the
+ * journal never writes one, and only an FSS or a DSS puts it in a file. So the app can say what the
+ * conditions suit and cannot say whether anything is there, and a commander reading a candidate list
+ * has no way to tell those apart unless it is on the page.
+ */
+export type ExoMarkerBasis = "scanned" | "genus" | "signals" | "conditions" | "none";
+
+export function exoMarkerBasis(b: BodyExoState): ExoMarkerBasis {
+  if (b.organicGenusLocks.length > 0 || b.confirmedVariants.length > 0) return "scanned";
+  if (b.genusHints && b.genusHints.length) return "genus";
+  if (b.biologicalSignals !== null && b.biologicalSignals > 0) return "signals";
+  if (b.scan?.Landable === true && typeof b.scan.PlanetClass === "string" && b.scan.PlanetClass.trim()) {
+    return "conditions";
+  }
+  return "none";
+}
+
 export function bodyHasExoMarkers(b: BodyExoState): boolean {
   const hasBioCount = b.biologicalSignals !== null && b.biologicalSignals > 0;
   const hasHints = !!(b.genusHints && b.genusHints.length);

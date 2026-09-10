@@ -2147,6 +2147,20 @@ const BodyPane = memo(function BodyPane({
           <GenusCertaintyLine c={body.genusCertainty} ordered={(body.genusLikelihoods?.length ?? 0) > 1} />
         ) : null}
         {body.ambiguityNote ? <p className="warn tiny">{body.ambiguityNote}</p> : null}
+        {/*
+          The weak case, said out loud.
+
+          An auto scan describes a body completely and reports no organics at all: the game shows a
+          signal count on screen, the journal never writes one, and only an FSS or a DSS puts it in a
+          file. So this list is what the conditions suit, not what is known to be there — and without
+          the notice a commander cannot tell it apart from a list backed by a real count.
+        */}
+        {body.exoMarkerBasis === "conditions" ? (
+          <p className="warn tiny exo-conditions-only">
+            Auto scan only — the journal has no organic count for this body. These are the species
+            its conditions suit; run an FSS or a DSS to learn whether anything is actually here.
+          </p>
+        ) : null}
       </div>
 
       {body.exoPayoutRange ? (

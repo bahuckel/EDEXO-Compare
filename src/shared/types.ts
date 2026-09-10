@@ -1144,6 +1144,14 @@ export interface BodyComputed {
    */
   approximateMatchingUsed: boolean;
   /** Total CR band if you sell one sample per bio slot from current candidates (updates with DSS / on-foot / Include Bacterium). */
+  /**
+   * Why this body is showing candidates at all.
+   *
+   * `conditions` means an auto scan described the body and nothing has counted its organics — the
+   * game shows a signal count on screen but never writes one to the journal until an FSS or a DSS.
+   * The candidate list is then "what could live here", not "what is here", and the UI has to say so.
+   */
+  exoMarkerBasis?: "scanned" | "genus" | "signals" | "conditions" | "none";
   exoPayoutRange: ExoPayoutRangeDTO | null;
   /**
    * Live organic / feeder checks vs genus JSON — errors (red) and warnings (yellow).
