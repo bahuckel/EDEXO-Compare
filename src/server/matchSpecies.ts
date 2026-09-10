@@ -23,6 +23,9 @@ import {
   hostStarGateForSpeciesId,
 } from "../shared/hostStarGates.js";
 import { observedAtGravity } from "./speciesGravityObservations.js";
+import { regionalPresence } from "./regionSpeciesData.js";
+import { regionPresenceDetail } from "../shared/regionAbsence.js";
+import { getProjectRoot } from "./paths.js";
 import { observedUnderAtmosphere } from "./speciesAtmosphereObservations.js";
 import {
   normalizeScanAtmosphereForMatch,
@@ -705,6 +708,32 @@ export function speciesMatchesExcludingTempPressure(
       });
     } else {
       reasons.push({ field: "Signals", detail: `Scanner: matched ${geos.join(", ")}` });
+    }
+  }
+
+  /**
+   * Region: what actually grows here, as opposed to what could.
+   *
+   * The last gate, and the only one that asks a question about the galaxy rather than about the rock
+   * under the ship. Conditions cannot separate two species that share a codex row and live half a
+   * galaxy apart — on Blu Thua EM-D d12-25 A 1 a they admitted twenty species for nine signals, and
+   * every loser the owner named was a region miss. Tussock caputus has 22,026 records in Inner Orion
+   * Spur; Tussock pennatis has five.
+   *
+   * Soft, and quiet when it does not know: `unknown` covers every region the corpus has barely
+   * touched, and somebody has to be the first to record a species somewhere. See
+   * `shared/regionAbsence.ts` for the two thresholds and how they were measured.
+   */
+  if (ctx?.regionIndex) {
+    const region = regionalPresence(getProjectRoot(), ctx.regionIndex, entry.id);
+    if (region?.presence === "absent") {
+      failures.push({
+        field: "Region",
+        soft: true,
+        detail: regionPresenceDetail(region.regionName, region, true),
+      });
+    } else if (region?.presence === "present") {
+      reasons.push({ field: "Region", detail: regionPresenceDetail(region.regionName, region, false) });
     }
   }
 

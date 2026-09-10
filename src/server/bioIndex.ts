@@ -57,6 +57,10 @@ export interface BioIndex {
   lookup(id64: bigint): BioIndexSystem | null;
   /** Every system holding at least one of `speciesIds`. */
   systemsWithAny(speciesIds: Iterable<string>): BioIndexSystem[];
+  /** Allocation-free pass over every (region, species) pair; see the implementation for why. */
+  forEachRegionSpecies(
+    cb: (systemIndex: number, regionId: number, speciesIndex: number, tiers: number) => void,
+  ): void;
 }
 
 class Index implements BioIndex {
@@ -147,6 +151,35 @@ class Index implements BioIndex {
       else hi = mid - 1;
     }
     return null;
+  }
+
+  /**
+   * Every (region, species) pair in the file, without building a single object.
+   *
+   * `systemsWithAny` materialises a `BioIndexSystem` per hit, which is right for a search returning
+   * a few hundred rows and wrong for a pass over all 5.3 million: the rollups this exists for touch
+   * every system and every species run, and 1.7 million objects to count integers is a gigabyte of
+   * garbage for nothing. The callback gets the two numbers it needs and the buffer stays bytes.
+   *
+   * `speciesIndex` indexes {@link species}. A system with no species run is visited once with
+   * `speciesIndex` of -1, so a caller can count regional coverage as well as regional finds, and the
+   * system ordinal comes along so a caller can tell where one system's run ends and the next begins.
+   */
+  forEachRegionSpecies(
+    cb: (systemIndex: number, regionId: number, speciesIndex: number, tiers: number) => void,
+  ): void {
+    for (let i = 0; i < this.systemCount; i++) {
+      const o = this.tableAt + i * RECORD;
+      const region = this.view.getUint8(o + 20);
+      const tiers = this.view.getUint8(o + 22);
+      const from = this.offsets[i]!;
+      const to = this.offsets[i + 1]!;
+      if (from === to) {
+        cb(i, region, -1, tiers);
+        continue;
+      }
+      for (let s = from; s < to; s++) cb(i, region, this.view.getUint8(this.runsAt + s), tiers);
+    }
   }
 
   systemsWithAny(speciesIds: Iterable<string>): BioIndexSystem[] {
