@@ -59,6 +59,22 @@ export function IconBacklog({ className }: { className?: string }) {
 }
 
 /**
+ * A magnifier over a disc — searching the galaxy, not the system.
+ *
+ * Distinct from IconGalaxy (the sector heat map) and IconBacklog (a flag on a surface): this one is
+ * about looking something up out there, so the lens leads and the galaxy is what it is over.
+ */
+export function IconGalaxySearch({ className }: { className?: string }) {
+  return (
+    <svg {...BASE} className={className}>
+      <circle cx="7" cy="7" r="4.2" />
+      <path d="M10.2 10.2 14 14" />
+      <path d="M5.1 7.6c1.3-1.9 3.4-2.6 4.9-1.5" />
+    </svg>
+  );
+}
+
+/**
  * Galaxy — the sector heat map.
  *
  * A disc seen edge-on with a bright centre, which is what the map's own side projection shows, so

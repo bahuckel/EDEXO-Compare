@@ -823,6 +823,24 @@ export interface GalaxyValueHitDTO {
  * and says why. Choosing the *genus* Stratum leaves eight species spanning 1 M to 19 M, where "at
  * least 10 M" is a real question, so price stays live.
  */
+/** One row of the genus/species picker: what can be searched for, and what it pays. */
+export interface GalaxySpeciesOptionDTO {
+  speciesId: string;
+  displayName: string;
+  genusDir: string;
+  genusName: string;
+  baseCr: number;
+  /** Systems in the index where the codex has recorded this species. */
+  systemCount: number;
+}
+
+export interface GalaxySpeciesCatalogueDTO {
+  available: boolean;
+  /** Ascending; the price control offers steps drawn from these. */
+  species: GalaxySpeciesOptionDTO[];
+  systemCount: number;
+}
+
 export interface GalaxyValueQueryDTO {
   /** Minimum list price of a single species. Ignored when `speciesIds` is set. */
   minCr: number;

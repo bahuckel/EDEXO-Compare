@@ -232,3 +232,114 @@
   opacity: 0.75;
   line-height: 1.5;
 }
+
+/*
+ * Search the galaxy — the counterpart to the backlog panel, and deliberately built from its parts.
+ *
+ * Same table, same chips, same copy button. The two answer different questions and must not be
+ * confused, but they are the same *kind* of screen, and inventing a second visual language for the
+ * second one would say they are more different than they are.
+ */
+.gsx-panel {
+  width: min(1180px, 95vw);
+  max-width: min(1180px, 95vw);
+  max-height: 86vh;
+  padding: 0.85rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.gsx-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.9rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid rgba(150, 190, 230, 0.3);
+  border-radius: var(--r-sm);
+  background: rgba(20, 30, 45, 0.4);
+}
+
+.gsx-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.gsx-field select {
+  font: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+  max-width: 22rem;
+}
+
+/* The price control when a species has already fixed it. Dimmed, with the reason spelled out. */
+.gsx-price--locked {
+  opacity: 0.5;
+}
+
+.gsx-note {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: var(--fs-2xs);
+}
+
+.gsx-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.gsx-go {
+  font: inherit;
+  font-weight: 700;
+  padding: 0.35rem 1.1rem;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(100, 220, 150, 0.6);
+  background: rgba(14, 52, 34, 0.85);
+  color: #5fdf98;
+  cursor: pointer;
+}
+
+.gsx-go:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.gsx-species {
+  max-width: 30rem;
+}
+
+/*
+ * Evidence badges. The colours are the map's own vocabulary — green for a fact, blue for a
+ * possibility, grey for a guess — so a reader who has seen the sector map already knows what they
+ * mean, and nothing here invents a second scheme for the same ideas.
+ */
+.gsx-tier {
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--r-sm);
+  border: 1px solid currentColor;
+  opacity: 0.9;
+}
+
+.gsx-tier--codex {
+  color: #3fb950;
+}
+
+.gsx-tier--dss {
+  color: #58a6ff;
+}
+
+.gsx-tier--fss {
+  color: #d29922;
+}

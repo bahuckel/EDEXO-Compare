@@ -24,7 +24,12 @@ import type { BioIndex, BioIndexSystem } from "./bioIndex.js";
 import { loadBioIndex } from "./bioIndex.js";
 import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { lookupPrice } from "./priceList.js";
-import type { GalaxyValueHitDTO, GalaxyValueQueryDTO, GalaxyValueSearchDTO } from "../shared/types.js";
+import type {
+  GalaxySpeciesCatalogueDTO,
+  GalaxyValueHitDTO,
+  GalaxyValueQueryDTO,
+  GalaxyValueSearchDTO,
+} from "../shared/types.js";
 
 /** First-footfall multiplier, for display beside the base price. */
 const FIRST_FOOTFALL = 5;
@@ -178,4 +183,53 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
     speciesConsidered: wanted.size,
     hits,
   };
+}
+
+/**
+ * What the picker can offer, with how many systems each species actually appears in.
+ *
+ * The counts matter more than they look. A species the codex has recorded in eleven systems is a
+ * search that will nearly always come back empty, and a picker that offers it identically to one with
+ * four hundred thousand is quietly wasting the commander's time. Showing the count lets them choose
+ * a question that has an answer.
+ *
+ * Computed once and held: it is a scan of 5.3 M systems, and nothing about it changes until the index
+ * is rebuilt.
+ */
+let catalogue: GalaxySpeciesCatalogueDTO | null = null;
+
+export function galaxySpeciesCatalogue(): GalaxySpeciesCatalogueDTO {
+  if (catalogue) return catalogue;
+  const index = loadBioIndex();
+  if (!index) return (catalogue = { available: false, species: [], systemCount: 0 });
+
+  const priced = pricedSpecies(index);
+  const db = getCachedSpeciesDatabase();
+  const genusName = new Map(db.species.map((e) => [e.genusDataDir, e.genus]));
+  const counts = new Map<string, number>();
+  for (const id of priced.keys()) counts.set(id, 0);
+  for (const id of priced.keys()) {
+    counts.set(id, index.systemsWithAny([id]).length);
+  }
+
+  catalogue = {
+    available: true,
+    systemCount: index.systemCount,
+    species: [...priced.entries()]
+      .map(([speciesId, v]) => ({
+        speciesId,
+        displayName: v.displayName,
+        genusDir: v.genusDir,
+        genusName: genusName.get(v.genusDir) ?? v.genusDir,
+        baseCr: v.price,
+        systemCount: counts.get(speciesId) ?? 0,
+      }))
+      .sort((a, b) => a.displayName.localeCompare(b.displayName)),
+  };
+  return catalogue;
+}
+
+/** Test seam. */
+export function clearGalaxyCatalogueCache(): void {
+  catalogue = null;
 }

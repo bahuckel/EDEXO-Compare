@@ -13,6 +13,7 @@ import type {
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
   BacklogMapDTO,
+  GalaxySpeciesCatalogueDTO,
   GalaxyValueQueryDTO,
   GalaxyValueSearchDTO,
   FirstDiscoveryBacklogDTO,
@@ -121,6 +122,8 @@ export function createHttpServer(opts: {
    * hides the control rather than showing an empty answer.
    */
   searchGalaxyByValue?: (query: GalaxyValueQueryDTO, limit: number) => GalaxyValueSearchDTO;
+  /** GET /api/galaxy/species — what the genus/species picker can offer, with per-species coverage. */
+  getGalaxySpecies?: () => GalaxySpeciesCatalogueDTO;
   /**
    * GET /api/feeder/status — feeder corpus vs installed profiles.
    *
@@ -380,6 +383,15 @@ export function createHttpServer(opts: {
    * when the file is replaced, and the client paints it once into a canvas. Sent from disk rather
    * than through the decoder so the bytes on the wire are the bytes in the repo, notice and all.
    */
+  app.get("/api/galaxy/species", (_req, res) => {
+    perfCount("http.galaxySpecies");
+    if (!opts.getGalaxySpecies) {
+      res.status(404).json({ error: "no galaxy index in this build" });
+      return;
+    }
+    res.json(opts.getGalaxySpecies());
+  });
+
   app.get("/api/galaxy/worth", (req, res) => {
     perfCount("http.galaxyWorth");
     if (!opts.searchGalaxyByValue) {
