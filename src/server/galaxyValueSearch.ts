@@ -24,14 +24,12 @@ import type { BioIndex, BioIndexSystem } from "./bioIndex.js";
 import { loadBioIndex } from "./bioIndex.js";
 import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { lookupPrice } from "./priceList.js";
-import type { GalaxyValueHitDTO, GalaxyValueSearchDTO } from "../shared/types.js";
+import type { GalaxyValueHitDTO, GalaxyValueQueryDTO, GalaxyValueSearchDTO } from "../shared/types.js";
 
 /** First-footfall multiplier, for display beside the base price. */
 const FIRST_FOOTFALL = 5;
 
-export interface GalaxyValueQuery {
-  /** Minimum list price of a single species, in credits. */
-  minCr: number;
+export interface GalaxyValueQuery extends GalaxyValueQueryDTO {
   /** Measure distance from here; without it, results are ordered by value. */
   from?: { x: number; y: number; z: number } | null;
   /** How many systems to return. */
@@ -39,16 +37,43 @@ export interface GalaxyValueQuery {
 }
 
 /** Species id -> list price, for the species the index actually carries. */
-function pricedSpecies(index: BioIndex): Map<string, { price: number; displayName: string }> {
+function pricedSpecies(
+  index: BioIndex,
+): Map<string, { price: number; displayName: string; genusDir: string }> {
   const db = getCachedSpeciesDatabase();
   const prices = getCachedPriceIndex();
   const byId = new Map(db.species.map((e) => [e.id, e]));
-  const out = new Map<string, { price: number; displayName: string }>();
+  const out = new Map<string, { price: number; displayName: string; genusDir: string }>();
   for (const id of index.species) {
     const entry = byId.get(id);
     if (!entry) continue;
     const price = lookupPrice(prices, entry.displayName, entry.id);
-    if (price != null && price > 0) out.set(id, { price, displayName: entry.displayName });
+    if (price != null && price > 0) {
+      out.set(id, { price, displayName: entry.displayName, genusDir: entry.genusDataDir });
+    }
+  }
+  return out;
+}
+
+/**
+ * Which species the commander is actually asking about.
+ *
+ * Named species win outright: someone who picked *Stratum tectonicas* has already decided, and
+ * testing their price again can only take the answer away. A genus narrows the field and leaves price
+ * meaningful, because Stratum spans 1 M to 19 M across eight species.
+ */
+function wantedSpecies(
+  priced: Map<string, { price: number; displayName: string; genusDir: string }>,
+  query: GalaxyValueQuery,
+): Set<string> {
+  const explicit = query.speciesIds?.filter((id) => priced.has(id)) ?? [];
+  if (explicit.length > 0) return new Set(explicit);
+  const genus = query.genusDirs?.length ? new Set(query.genusDirs) : null;
+  const out = new Set<string>();
+  for (const [id, v] of priced) {
+    if (genus && !genus.has(v.genusDir)) continue;
+    if (v.price < query.minCr) continue;
+    out.add(id);
   }
   return out;
 }
@@ -71,8 +96,9 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
   }
 
   const priced = pricedSpecies(index);
-  const wanted = new Set<string>();
-  for (const [id, { price }] of priced) if (price >= query.minCr) wanted.add(id);
+  const wanted = wantedSpecies(priced, query);
+  const explicitSpecies = (query.speciesIds?.length ?? 0) > 0;
+  const need = query.requireTiers ?? 0;
 
   if (wanted.size === 0) {
     return {
@@ -84,7 +110,10 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
     };
   }
 
-  const systems = index.systemsWithAny(wanted);
+  const all = index.systemsWithAny(wanted);
+  // All requested flags must be present, not any of them: "mapped AND has a species" is a narrower
+  // and more useful question than "mapped OR has a species".
+  const systems = need === 0 ? all : all.filter((s) => (s.tiers & need) === need);
   const limit = Math.max(1, Math.min(query.limit ?? 200, 2000));
 
   /*
@@ -110,7 +139,8 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
     const matched = s.species
       .map((id) => {
         const p = priced.get(id);
-        return p && p.price >= query.minCr
+        // With a species named, "matched" means the one they asked for, whatever it costs.
+        return p && (explicitSpecies ? wanted.has(id) : p.price >= query.minCr)
           ? { speciesId: id, displayName: p.displayName, baseCr: p.price, firstFootfallCr: p.price * FIRST_FOOTFALL }
           : null;
       })
@@ -128,6 +158,8 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
       species: matched,
       bestCr: matched[0]!.baseCr,
       totalKnownSpecies: s.species.length,
+      tiers: s.tiers,
+      bodyCount: s.bodyCount,
     });
   }
 
@@ -136,6 +168,12 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
   return {
     available: true,
     minCr: query.minCr,
+    query: {
+      minCr: query.minCr,
+      speciesIds: query.speciesIds,
+      genusDirs: query.genusDirs,
+      requireTiers: need,
+    },
     matchedSystems: systems.length,
     speciesConsidered: wanted.size,
     hits,

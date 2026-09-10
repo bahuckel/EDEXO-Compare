@@ -831,8 +831,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getCommanderPosition: () => store.commanderPos,
     getFirstDiscoveryBacklog: () => firstDiscoveryBacklogWithDistance(store),
     getBacklogMap: () => backlogMap(store),
-    searchGalaxyByValue: (minCr, limit) =>
-      galaxyValueSearch({ minCr, from: store.commanderPos, limit }),
+    searchGalaxyByValue: (query, limit) =>
+      galaxyValueSearch({ ...query, from: store.commanderPos, limit }),
     getCommanderSystem: () => store.currentSystem,
     setIncludeBacterium: (v) => {
       store.setIncludeBacteriumInSearch(v);

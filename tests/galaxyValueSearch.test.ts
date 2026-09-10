@@ -68,7 +68,14 @@ afterEach(() => {
 
 async function search(
   rows: Parameters<typeof writeIndex>[2],
-  query: { minCr: number; from?: { x: number; y: number; z: number } | null; limit?: number },
+  query: {
+    minCr: number;
+    from?: { x: number; y: number; z: number } | null;
+    limit?: number;
+    speciesIds?: string[];
+    genusDirs?: string[];
+    requireTiers?: number;
+  },
 ) {
   const file = join(dir, "bio-index.bin");
   writeIndex(file, [CHEAP, DEAR], rows);
@@ -146,5 +153,48 @@ describe("a build with no index", () => {
     const r = galaxyValueSearch({ minCr: 1, from: null });
     if (!r.available) expect(r.hits).toEqual([]);
     else expect(r.available).toBe(true);
+  });
+});
+
+describe("choosing a species instead of a price", () => {
+  it("returns that species whatever it costs, ignoring the threshold", async () => {
+    // Someone who picked Bacterium Aurasus has already decided. Re-testing its 1 M price against a
+    // 19 M threshold could only take the answer away from them.
+    const r = await search(ROWS, {
+      minCr: 19_000_000,
+      speciesIds: [CHEAP],
+      from: { x: 0, y: 0, z: 0 },
+    });
+    expect(r.hits.map((h) => h.starSystem)).toEqual(["Cheap Only", "Dear And Cheap"]);
+    for (const h of r.hits) expect(h.species.map((s) => s.speciesId)).toEqual([CHEAP]);
+  });
+
+  it("lists only the chosen species, not the dearer one beside it", async () => {
+    const r = await search(ROWS, { minCr: 0, speciesIds: [CHEAP], from: { x: 0, y: 0, z: 0 } });
+    const both = r.hits.find((h) => h.starSystem === "Dear And Cheap")!;
+    expect(both.species.map((s) => s.speciesId)).toEqual([CHEAP]);
+    expect(both.totalKnownSpecies).toBe(2);
+  });
+});
+
+describe("filtering by evidence", () => {
+  it("requires every asked-for flag, not any of them", async () => {
+    // "Mapped AND has a species" is the narrow, useful question; "mapped OR has a species" is nearly
+    // everything and answers nothing.
+    const rows = [
+      { id64: 10n, name: "Codex Only", x: 0, y: 0, z: 0, region: 1, species: [1], tiers: 4 },
+      { id64: 20n, name: "Codex And Mapped", x: 1, y: 0, z: 0, region: 1, species: [1], tiers: 4 | 2 },
+    ];
+    const both = await search(rows, { minCr: 0, requireTiers: 4 | 2, from: { x: 0, y: 0, z: 0 } });
+    expect(both.hits.map((h) => h.starSystem)).toEqual(["Codex And Mapped"]);
+    const either = await search(rows, { minCr: 0, requireTiers: 4, from: { x: 0, y: 0, z: 0 } });
+    expect(either.hits).toHaveLength(2);
+  });
+
+  it("carries the flags and body count through to the caller", async () => {
+    const rows = [{ id64: 10n, name: "A", x: 0, y: 0, z: 0, region: 1, species: [1], tiers: 4 | 8, bodyCount: 32 }];
+    const r = await search(rows, { minCr: 0, from: null });
+    expect(r.hits[0]!.tiers & 8).toBeTruthy();
+    expect(r.hits[0]!.bodyCount).toBe(32);
   });
 });

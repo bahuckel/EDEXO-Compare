@@ -13,6 +13,7 @@ import type {
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
   BacklogMapDTO,
+  GalaxyValueQueryDTO,
   GalaxyValueSearchDTO,
   FirstDiscoveryBacklogDTO,
   ExoDataAlertDTO,
@@ -119,7 +120,7 @@ export function createHttpServer(opts: {
    * Absent on a build with no galaxy index, which is every install until the index ships; the caller
    * hides the control rather than showing an empty answer.
    */
-  searchGalaxyByValue?: (minCr: number, limit: number) => GalaxyValueSearchDTO;
+  searchGalaxyByValue?: (query: GalaxyValueQueryDTO, limit: number) => GalaxyValueSearchDTO;
   /**
    * GET /api/feeder/status — feeder corpus vs installed profiles.
    *
@@ -391,7 +392,25 @@ export function createHttpServer(opts: {
       res.status(400).json({ error: "minCr must be a non-negative number" });
       return;
     }
-    res.json(opts.searchGalaxyByValue(minCr, Number.isFinite(limit) ? limit : 200));
+    /** Comma-separated so the whole query stays a GET a human can read in a log. */
+    const list = (v: unknown): string[] | undefined => {
+      const raw = String(v ?? "").trim();
+      if (!raw) return undefined;
+      const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+      return parts.length ? parts : undefined;
+    };
+    const tiers = Number(req.query.tiers ?? 0);
+    res.json(
+      opts.searchGalaxyByValue(
+        {
+          minCr,
+          speciesIds: list(req.query.species),
+          genusDirs: list(req.query.genus),
+          requireTiers: Number.isFinite(tiers) && tiers > 0 ? tiers : 0,
+        },
+        Number.isFinite(limit) ? limit : 200,
+      ),
+    );
   });
 
   app.get("/api/backlog-map", (_req, res) => {

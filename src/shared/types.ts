@@ -809,12 +809,37 @@ export interface GalaxyValueHitDTO {
   bestCr: number;
   /** Everything the codex knows here, including species under the threshold. */
   totalKnownSpecies: number;
+  /** Evidence flags for this system — TIER_FSS | TIER_DSS | TIER_CODEX | TIER_BODIES_KNOWN. */
+  tiers: number;
+  /** Spansh's body count, or 0 when unknown — not the same as a system with no bodies. */
+  bodyCount: number;
+}
+
+/**
+ * What a commander asked the galaxy for.
+ *
+ * Price and species are alternatives, not a pair. Choosing *Stratum tectonicas* fixes the price at
+ * 19,010,800, so a price filter beside it is either redundant or contradictory — the UI disables it
+ * and says why. Choosing the *genus* Stratum leaves eight species spanning 1 M to 19 M, where "at
+ * least 10 M" is a real question, so price stays live.
+ */
+export interface GalaxyValueQueryDTO {
+  /** Minimum list price of a single species. Ignored when `speciesIds` is set. */
+  minCr: number;
+  /** Exact species wanted. When present, price is not consulted. */
+  speciesIds?: string[];
+  /** Genus data directories to restrict to. Combines with `minCr`. */
+  genusDirs?: string[];
+  /** Required evidence flags (TIER_*), all of which must be present. 0 means any. */
+  requireTiers?: number;
 }
 
 export interface GalaxyValueSearchDTO {
   /** False on a build with no galaxy index — the feature hides itself rather than showing nothing. */
   available: boolean;
   minCr: number;
+  /** Echoed back so a stale response can be told from a current one. */
+  query?: GalaxyValueQueryDTO;
   /** How many systems matched in total, before trimming to the nearest few. */
   matchedSystems: number;
   speciesConsidered: number;
