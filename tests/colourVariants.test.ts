@@ -6,7 +6,12 @@
  * and nothing in 373 foot scans decides which one drives the colour — so both are offered and the
  * truth has never yet fallen outside the pair.
  */
+import { readFileSync } from "node:fs";
+import { globSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { getProjectRoot } from "../src/server/paths.js";
+import { normaliseMaterial } from "../src/shared/speciesColour.js";
 import { loadSpeciesDatabase } from "../src/server/snapshot.js";
 import { candidateMorphColorShortLabel } from "../src/shared/candidateSpawnHints.js";
 import { colourVariantLabel, resolveColourVariant } from "../src/shared/colourVariants.js";
@@ -102,5 +107,33 @@ describe("the resolver itself", () => {
     const mat = { source: "material" as const, map: { yttrium: "Lime" } };
     expect(resolveColourVariant(star, { materials: [{ Name: "yttrium" }] }).basis).toBe("none");
     expect(resolveColourVariant(mat, { parentStarType: "F" }).basis).toBe("none");
+  });
+});
+
+describe("the antimony spelling", () => {
+  /**
+   * The game writes `antimony`. Our species data used to write `Antinomy` in ten rows across three
+   * genera, and every one of them resolved nothing at all. The data is fixed; the filter stays, for
+   * anything that reaches us from somewhere other than a journal.
+   */
+  it("has no Antinomy left in the shipped species data", () => {
+    const files = globSync("data/species/*/*_new.json", { cwd: getProjectRoot() });
+    expect(files.length).toBeGreaterThan(10);
+    for (const f of files) {
+      const raw = readFileSync(join(getProjectRoot(), f), "utf8");
+      expect(raw.toLowerCase().includes("antinomy"), f).toBe(false);
+    }
+  });
+
+  it("still resolves the old spelling if something hands it to us", () => {
+    expect(normaliseMaterial("Antinomy")).toBe("antimony");
+    expect(normaliseMaterial("antimony")).toBe("antimony");
+  });
+
+  it("names the colour off the journal's own spelling", () => {
+    // Bacterium vesicula, antimony -> Cyan; the row the misspelling used to hide.
+    expect(candidateMorphColorShortLabel(find("Bacterium vesicula"), "M", [{ Name: "antimony" }])).toBe(
+      "Cyan",
+    );
   });
 });

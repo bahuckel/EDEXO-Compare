@@ -82,7 +82,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Peach",
+          "Antimony": "Peach",
           "Polonium": null,
           "Ruthenium": "Orange",
           "Technetium": null,

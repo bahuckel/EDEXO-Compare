@@ -32,7 +32,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Cyan",
+          "Antimony": "Cyan",
           "Polonium": "Magenta",
           "Ruthenium": "Cobalt",
           "Technetium": "Lime",
@@ -72,7 +72,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Cobalt",
+          "Antimony": "Cobalt",
           "Polonium": "Yellow",
           "Ruthenium": "Aquamarine",
           "Technetium": "Gold",
@@ -127,7 +127,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Red",
+          "Antimony": "Red",
           "Polonium": "Lime",
           "Ruthenium": "Gold",
           "Technetium": "Aquamarine",
@@ -150,7 +150,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Magenta",
+          "Antimony": "Magenta",
           "Polonium": "Gold",
           "Ruthenium": "Orange",
           "Tellurium": "Green",
@@ -279,7 +279,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Cyan",
+          "Antimony": "Cyan",
           "Polonium": "Orange",
           "Ruthenium": "Mulberry",
           "Technetium": "Gold",
@@ -304,7 +304,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Yellow",
+          "Antimony": "Yellow",
           "Polonium": "Aquamarine",
           "Ruthenium": "Green",
           "Technetium": "Gold",
@@ -327,7 +327,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Red",
+          "Antimony": "Red",
           "Polonium": "Aquamarine",
           "Ruthenium": "Cobalt",
           "Tellurium": "Cyan",

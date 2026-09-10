@@ -74,7 +74,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Cobalt",
+          "Antimony": "Cobalt",
           "Polonium": "Cyan",
           "Ruthenium": "Blue",
           "Technetium": "Magenta",
@@ -103,7 +103,7 @@
       "color_rules": {
         "type": "material_based",
         "mapping": {
-          "Antinomy": "Cyan",
+          "Antimony": "Cyan",
           "Polonium": "Cobalt",
           "Ruthenium": "Blue",
           "Technetium": "Aquamarine",

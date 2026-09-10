@@ -16,15 +16,17 @@
  *
  * ## The misspelling
  *
- * Our own species data writes **Antinomy** where the game writes **antimony** — across ten species,
- * the most-used key after yttrium. Left alone it would silently resolve nothing for all of them,
- * which is the failure mode this whole file exists to end. Normalising both sides fixes it here;
- * the data should be corrected too, and until it is, this is what keeps those ten working.
+ * Our own species data used to write **Antinomy** where the game writes **antimony**, across ten
+ * rows in three genera, and every one of them silently resolved nothing. The data is corrected now,
+ * but the alias stays: the game's spelling is the only one that will ever come out of a journal, and
+ * anything we take in from elsewhere — a hand-written fix file, a table transcribed from a website,
+ * a future import — can spell it either way. A filter that costs one map lookup is cheaper than
+ * discovering the misspelling again from a commander's field report.
  */
 
 /** Materials whose presence names a colour, as the game spells them. */
 const MATERIAL_ALIASES: Record<string, string> = {
-  // Our data's spelling → the game's. See the header.
+  // Anything that reaches us spelled the old way. See the header.
   antinomy: "antimony",
 };
 
