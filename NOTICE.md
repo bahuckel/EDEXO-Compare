@@ -54,7 +54,12 @@ longer be reached, so naming some and not others would be worse than naming none
 `data/species/<genus>/<genus>_photos/` holds 97 images of Elite Dangerous exobiology (each also
 present as a cropped card and thumbnail, so 291 files), sourced from the ED-DSN community. They are
 **not covered by this project's MIT licence** and are not this project's to sublicense.
-Bahuckel / CMDR Falrenica (me, the owner of the project) - Is working on sourcing his own photographs to replace the images from ED-DSN, that are there mainly as placeholders. 
+Bahuckel / CMDR FALrenica (me, the owner of the project) is sourcing his own photographs to replace
+the ED-DSN images, which are there mainly as placeholders. His are listed in
+`data/species/photo-credits.json` and credited to him in the app; anything not listed there is
+ED-DSN's and carries the standing credit below. They are also **variant** photographs — the exact
+colour a body grows — which is what lets a card show the plant you are about to walk up to rather
+than one of its siblings.
 
 Two rights sit in each image and neither belongs to this project:
 

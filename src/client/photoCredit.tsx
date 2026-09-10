@@ -26,9 +26,28 @@ export function isPlaceholderPhoto(url: string | null | undefined): boolean {
   return !url || url.includes(BUILTIN_PLACEHOLDER_FILE);
 }
 
+/**
+ * Who took one particular photograph.
+ *
+ * ED-DSN is the standing credit and the default, because the 97 images the project shipped with are
+ * theirs. A contributed photograph carries its own, and the server sends one only for the
+ * exceptions — see `server/photoCredits.ts`. Crediting a commander's own work to somebody else is
+ * the one mistake this area of the project has been careful about, so the contributor wins whenever
+ * there is one.
+ */
+export interface PhotoContributor {
+  name: string;
+  url?: string;
+  licence?: string;
+}
+
 /** Hover text for places too small for a visible line — the compact card, a thumbnail grid. */
-export function photoCreditTitle(url: string | null | undefined): string | undefined {
-  return isPlaceholderPhoto(url) ? undefined : PHOTO_CREDIT_TEXT;
+export function photoCreditTitle(
+  url: string | null | undefined,
+  contributor?: PhotoContributor,
+): string | undefined {
+  if (isPlaceholderPhoto(url)) return undefined;
+  return contributor ? `Photo by ${contributor.name}` : PHOTO_CREDIT_TEXT;
 }
 
 /**
@@ -39,11 +58,28 @@ export function photoCreditTitle(url: string | null | undefined): string | undef
 export function PhotoCredit({
   photoUrl,
   variant = "card",
+  contributor,
 }: {
   photoUrl: string | null | undefined;
   variant?: "card" | "lightbox";
+  /** Set when this photograph is not ED-DSN's. Absent means the standing credit applies. */
+  contributor?: PhotoContributor;
 }) {
   if (isPlaceholderPhoto(photoUrl)) return null;
+  if (contributor) {
+    return (
+      <p className={`photo-credit photo-credit--${variant}`}>
+        Photo by{" "}
+        {contributor.url ? (
+          <a href={contributor.url} target="_blank" rel="noreferrer noopener">
+            {contributor.name}
+          </a>
+        ) : (
+          contributor.name
+        )}
+      </p>
+    );
+  }
   return (
     <p className={`photo-credit photo-credit--${variant}`}>
       Photo from:{" "}

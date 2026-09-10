@@ -675,16 +675,48 @@ const SpeciesCard = memo(function SpeciesCard({
     );
   }, [m.otherMatchDetailCards, extras]);
 
+  /*
+   * The body's own materials decide the colour for material-driven species, and the card already
+   * has the scan. Passing it is the whole fix for "Bacterium Vesicula (unknown)" on a body whose
+   * only colour-driving material was yttrium.
+   */
+  const morphColorRaw = useMemo(
+    () => candidateMorphColorShortLabel(e, hostStarType, scan?.materials),
+    [e, hostStarType, scan?.materials],
+  );
+  const morphColorDisplay =
+    morphColorRaw === "(unknown)" ? morphColorRaw : titleCaseSpeciesWords(morphColorRaw);
+
   /**
-   * Every photo of this species, primary first.
+   * The photograph of the variant this body will actually grow, when somebody has taken it.
+   *
+   * Two things had to be true at once for this to be possible, and now both are: the app works out
+   * the colour from the star or the body's materials, and the owner is photographing the variants
+   * one at a time. Without it the card shows *a* Bacterium vesicula, which is a different plant from
+   * the one waiting on the surface.
+   *
+   * Only for a colour that is decided. "Lime or Cyan" means the rule genuinely did not choose, and
+   * picking a photograph would be the app choosing for it, silently, in a picture.
+   */
+  const variantPhotoUrl = useMemo(() => {
+    if (morphColorRaw === "(unknown)" || morphColorRaw.includes(" or ")) return null;
+    const want = morphColorRaw.trim().toLowerCase();
+    return m.photoVariants?.find((v) => v.colour.trim().toLowerCase() === want)?.url ?? null;
+  }, [m.photoVariants, morphColorRaw]);
+  const heroPhotoUrl = variantPhotoUrl ?? m.photoUrl;
+  /**
+   * Every photo of this species, the one you are going to see first.
    *
    * `photoUrls` is optional on the wire so a payload written before galleries existed still parses;
    * a single-photo species is then `[photoUrl]`, which every consumer here can treat identically.
    */
-  const galleryUrls = useMemo(
-    () => (m.photoUrls?.length ? m.photoUrls : [m.photoUrl]),
-    [m.photoUrls, m.photoUrl],
-  );
+  const galleryUrls = useMemo(() => {
+    const all = m.photoUrls?.length ? m.photoUrls : [m.photoUrl];
+    if (!variantPhotoUrl) return all;
+    // The variant leads, and the rest keep their order behind it.
+    return [variantPhotoUrl, ...all.filter((u) => u !== variantPhotoUrl)];
+  }, [m.photoUrls, m.photoUrl, variantPhotoUrl]);
+  const heroSrc = speciesPhotoVariant(heroPhotoUrl, "card");
   const [photoLightbox, setPhotoLightbox] = useState(false);
   const [exoDetailOpen, setExoDetailOpen] = useState(false);
   const [otherDetailsOpen, setOtherDetailsOpen] = useState(false);
@@ -727,17 +759,6 @@ const SpeciesCard = memo(function SpeciesCard({
   const { genusShow, epithet } = speciesCaptionParts(e.genus, e.displayName);
   const genusDisplay = genusShow ? titleCaseSpeciesWords(genusShow) : "";
   const epithetDisplay = titleCaseSpeciesWords(epithet);
-  /*
-   * The body's own materials decide the colour for material-driven species, and the card already
-   * has the scan. Passing it is the whole fix for "Bacterium Vesicula (unknown)" on a body whose
-   * only colour-driving material was yttrium.
-   */
-  const morphColorRaw = useMemo(
-    () => candidateMorphColorShortLabel(e, hostStarType, scan?.materials),
-    [e, hostStarType, scan?.materials],
-  );
-  const morphColorDisplay =
-    morphColorRaw === "(unknown)" ? morphColorRaw : titleCaseSpeciesWords(morphColorRaw);
   const identityNote = useMemo(() => {
     const notesPart = (e.notes ?? "").trim();
     const descPart = (e.description ?? "").trim();
@@ -768,13 +789,13 @@ const SpeciesCard = memo(function SpeciesCard({
       // shown in full once the photo is opened.
       title={[
         galleryUrls.length > 1 ? `${galleryUrls.length} photos — click to browse` : null,
-        photoCreditTitle(m.photoUrl),
+        photoCreditTitle(heroPhotoUrl, m.photoCreditByUrl?.[heroPhotoUrl]),
       ]
         .filter(Boolean)
         .join(" — ")}
     >
       <img
-        src={src}
+        src={heroSrc}
         alt=""
         className={compact ? "species-img species-img--compact" : "species-img species-img--hero"}
         onError={(ev) => {
@@ -1034,7 +1055,7 @@ const SpeciesCard = memo(function SpeciesCard({
                 {galleryUrls.length} photos
               </button>
             ) : null}
-            <PhotoCredit photoUrl={m.photoUrl} />
+            <PhotoCredit photoUrl={heroPhotoUrl} contributor={m.photoCreditByUrl?.[heroPhotoUrl]} />
             {identityNeon}
             {quadGrid}
             {m.photoNote ? (

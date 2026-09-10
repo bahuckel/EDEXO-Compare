@@ -522,7 +522,7 @@ export function buildEncyclopediaPayload(): EncyclopediaSpeciesRowDTO[] {
     cachedDb = loadSpeciesDatabaseFromTree(root);
   }
   return cachedDb.species.map((entry) => {
-    const { photoUrl, photoNote, photoUrls } = resolveSpeciesPhoto(entry, root);
+    const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(entry, root);
     const exomasteryEdsmSampleCount = countEdsmPlanetRows(root, entry);
     const exomasteryProfile = loadExomasteryProfile(root, entry);
     const exomasteryProfileFilePresent = exomasteryProfile != null;
@@ -541,6 +541,8 @@ export function buildEncyclopediaPayload(): EncyclopediaSpeciesRowDTO[] {
       photoUrl,
       photoNote,
       photoUrls,
+      ...(photoVariants.length ? { photoVariants } : {}),
+      ...(photoCreditByUrl ? { photoCreditByUrl } : {}),
       exomasteryEdsmSampleCount,
       exomasteryFeederBodyCount,
       exomasteryProfileFilePresent,
@@ -948,7 +950,7 @@ function computeBodyUncached(
   const scanForExo = mergedScan;
   const bodyScanDetail = buildBodyScanExomasteryDetail(mergedScan, explorationRec);
   let matches: SpeciesMatch[] = raw.map((m) => {
-    const { photoUrl, photoNote, photoUrls } = resolveSpeciesPhoto(m.entry, root);
+    const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(m.entry, root);
     const priceCredits = lookupPrice(prices, m.entry.displayName, m.entry.id);
     const hasFile = hasExomasteryProfileFile(root, m.entry);
     const profile = loadExomasteryProfile(root, m.entry);
@@ -961,6 +963,8 @@ function computeBodyUncached(
       photoUrl,
       photoNote,
       photoUrls,
+      ...(photoVariants.length ? { photoVariants } : {}),
+      ...(photoCreditByUrl ? { photoCreditByUrl } : {}),
       priceCredits,
       organicAnalysisComplete: store.isOrganicAnalysisCompleteForEntry(b.key, m.entry),
       ...(hasFile

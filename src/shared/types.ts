@@ -317,6 +317,22 @@ export interface EncyclopediaSpeciesRowDTO {
    * parses; a reader that finds it absent should treat `[photoUrl]` as the whole set.
    */
   photoUrls?: string[];
+  /**
+   * Photographs of the specific colour variants, when someone has taken them.
+   *
+   * The app works out which variant a body will grow, and the owner is photographing the variants
+   * themselves. Apart, each is a curiosity; together they let the card show the plant the commander
+   * is actually going to find rather than one of its siblings.
+   */
+  photoVariants?: { url: string; colour: string }[];
+  /**
+   * Photographs that are not ED-DSN's, by URL.
+   *
+   * Only the exceptions travel — the shipped images are ED-DSN's and carry the standing credit — so
+   * this is a handful of entries or absent entirely. Crediting a commander's own photograph to
+   * somebody else is the one mistake this area of the project has been careful about.
+   */
+  photoCreditByUrl?: Record<string, { name: string; url?: string; licence?: string }>;
 
   /**
    * Count of per-body EDSM / CSV / JSON row exports when present.
@@ -691,6 +707,22 @@ export interface SpeciesMatch {
    * parses; a reader that finds it absent should treat `[photoUrl]` as the whole set.
    */
   photoUrls?: string[];
+  /**
+   * Photographs of the specific colour variants, when someone has taken them.
+   *
+   * The app works out which variant a body will grow, and the owner is photographing the variants
+   * themselves. Apart, each is a curiosity; together they let the card show the plant the commander
+   * is actually going to find rather than one of its siblings.
+   */
+  photoVariants?: { url: string; colour: string }[];
+  /**
+   * Photographs that are not ED-DSN's, by URL.
+   *
+   * Only the exceptions travel — the shipped images are ED-DSN's and carry the standing credit — so
+   * this is a handful of entries or absent entirely. Crediting a commander's own photograph to
+   * somebody else is the one mistake this area of the project has been careful about.
+   */
+  photoCreditByUrl?: Record<string, { name: string; url?: string; licence?: string }>;
 
   /** From `data/price-list.json` when this species is listed. */
   priceCredits: number | null;

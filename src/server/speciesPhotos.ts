@@ -3,6 +3,7 @@ import { basename, join } from "node:path";
 import type { SpeciesEntry } from "../shared/types.js";
 import { findGenusPhotosFolder } from "./speciesTreeLoader.js";
 import { getSpeciesDataDir } from "./paths.js";
+import { photoContributorFor, type PhotoContributor } from "./photoCredits.js";
 
 /** Single-segment URL file param uses encodeURIComponent; route uses basename only. */
 export { BUILTIN_PLACEHOLDER_FILE } from "../shared/photoPlaceholder.js";
@@ -25,6 +26,74 @@ export interface ResolvedPhoto {
    * index into an array to say so.
    */
   photoUrls: string[];
+  /**
+   * The colour-variant photographs, when there are any.
+   *
+   * The owner is photographing the variants themselves — `Bacterium-vesicula-Lime.jpg` beside
+   * `Bacterium-vesicula-Red.jpg` — and the app now works out which variant a body will grow. The two
+   * facts are worth nothing apart and everything together: the card can show the plant the commander
+   * is actually going to find rather than one of its siblings.
+   *
+   * Empty for a species nobody has photographed by variant yet, which is most of them.
+   */
+  photoVariants: { url: string; colour: string }[];
+  /**
+   * Photographs that are **not** ED-DSN's, by URL.
+   *
+   * Only the exceptions travel: the shipped 97 are ED-DSN's and stay credited by the standing line,
+   * so this carries the handful a commander contributed and nothing else. See `photoCredits.ts`.
+   */
+  photoCreditByUrl?: Record<string, PhotoContributor>;
+}
+
+/**
+ * Colours a variant filename can carry.
+ *
+ * Elite's variant names are a closed set — the codex has never invented a new one — so this can be a
+ * list rather than "any word after the species", which would happily read `Bacterium-vesicula-2` or
+ * a stray suffix as a colour.
+ */
+const VARIANT_COLOURS = [
+  "amethyst",
+  "aquamarine",
+  "blue",
+  "cobalt",
+  "cyan",
+  "emerald",
+  "gold",
+  "green",
+  "grey",
+  "indigo",
+  "lime",
+  "magenta",
+  "maroon",
+  "mauve",
+  "mulberry",
+  "ocher",
+  "orange",
+  "peach",
+  "red",
+  "sage",
+  "teal",
+  "turquoise",
+  "white",
+  "yellow",
+] as const;
+
+/**
+ * The colour a filename names for this species, or null when it names none.
+ *
+ * Compared on {@link normStem}, so `Bacterium-vesicula-Lime.jpg` and `bacterium vesicula lime.jpg`
+ * are the same file as far as this is concerned and no new spelling rule has to be learned to add a
+ * photograph: keep the species name, append the colour.
+ */
+function variantColourOf(file: string, speciesStem: string): string | null {
+  const n = normStem(file);
+  if (!speciesStem || !n.startsWith(speciesStem)) return null;
+  const tail = n.slice(speciesStem.length);
+  if (!tail) return null;
+  const hit = VARIANT_COLOURS.find((c) => c === tail);
+  return hit ? hit.charAt(0).toUpperCase() + hit.slice(1) : null;
 }
 
 function speciesPhotoBaseUrl(genusDataDir: string, filename: string): string {
@@ -175,6 +244,43 @@ function bestFuzzyPhoto(files: string[], entry: SpeciesEntry): { name: string; n
 }
 
 /**
+ * One return shape for every path out of the resolver.
+ *
+ * Four of them built the same object by hand and three had already drifted apart on which fields
+ * they bothered with. The credit lookup in particular must not be optional per path: a contributed
+ * photograph shown down the fallback route would carry ED-DSN's name.
+ */
+function withCredits(
+  entry: SpeciesEntry,
+  projectRoot: string,
+  primary: string,
+  note: string | null,
+  files: string[],
+  variantFiles: string[],
+): ResolvedPhoto {
+  const seen = new Set<string>();
+  const ordered = files.filter((f) => f && !seen.has(f.toLowerCase()) && seen.add(f.toLowerCase()));
+  const url = (f: string) => speciesPhotoBaseUrl(entry.genusDataDir, f);
+  const speciesStem = normStem(displayStemForFiles(entry));
+
+  const photoCreditByUrl: Record<string, PhotoContributor> = {};
+  for (const f of ordered) {
+    const who = photoContributorFor(projectRoot, f);
+    if (who) photoCreditByUrl[url(f)] = who;
+  }
+
+  return {
+    photoUrl: url(primary),
+    photoNote: note,
+    photoUrls: ordered.map(url),
+    photoVariants: variantFiles
+      .map((f) => ({ url: url(f), colour: variantColourOf(f, speciesStem) }))
+      .filter((v): v is { url: string; colour: string } => v.colour !== null),
+    ...(Object.keys(photoCreditByUrl).length ? { photoCreditByUrl } : {}),
+  };
+}
+
+/**
  * Resolved photos, keyed by genus folder + species id. Resolution walks the photo directory and
  * stats candidate filenames; it ran for every match, on every body, on every snapshot push
  * (10x/sec while scanning). The layout is static for a run — the species-tree watcher clears this.
@@ -206,6 +312,7 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
     photoUrl: placeholderUrl,
     photoNote: `No image found in data/species/${entry.genusDataDir}/ — expected a folder like ${entry.genusDataDir}_photos next to your genus .json.`,
     photoUrls: [placeholderUrl],
+    photoVariants: [],
   };
 
   if (!photosDir || !existsSync(photosDir)) {
@@ -217,6 +324,30 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
     imageFiles = readdirSync(photosDir).filter((n) => /\.(png|jpe?g|webp|gif|svg)$/i.test(n));
   } catch {
     imageFiles = [];
+  }
+
+  /*
+   * The variants, found before anything else because every return path below wants them.
+   *
+   * A species with no ED-DSN photograph but one of the owner's own would otherwise fall through to
+   * the fuzzy matcher and then to "here is some file from this genus", which is how you end up
+   * showing a commander a picture of a different plant.
+   */
+  const speciesStem = normStem(displayStemForFiles(entry));
+  const variantFiles = imageFiles
+    .map((f) => ({ f, colour: variantColourOf(f, speciesStem) }))
+    .filter((x): x is { f: string; colour: string } => x.colour !== null)
+    .sort((a, b) => a.colour.localeCompare(b.colour))
+    .map((x) => x.f);
+
+  /*
+   * A variant is a better primary than a guess.
+   *
+   * When the tree has no photograph under the species' own name, one that names the species *and* a
+   * colour still shows the right organism — and it is the owner's own, taken on a body he walked.
+   */
+  if (variantFiles.length > 0 && !candidateFilenames(entry).some((c) => imageFiles.some((f) => f.toLowerCase() === basename(c).toLowerCase()))) {
+    return withCredits(entry, projectRoot, variantFiles[0]!, null, variantFiles, variantFiles);
   }
 
   const cands = candidateFilenames(entry);
@@ -238,32 +369,27 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
       wanted && primary !== wanted
         ? `Species file “${wanted}” was not found — showing “${primary}” from ${entry.genusDataDir}_photos.`
         : null;
-    const all = [primary, ...numberedSiblings(imageFiles, primary)];
-    return {
-      photoUrl: speciesPhotoBaseUrl(entry.genusDataDir, primary),
-      photoNote: note,
-      photoUrls: all.map((f) => speciesPhotoBaseUrl(entry.genusDataDir, f)),
-    };
+    const all = [primary, ...numberedSiblings(imageFiles, primary), ...variantFiles];
+    return withCredits(entry, projectRoot, primary, note, all, variantFiles);
   }
 
   const fuzzy = bestFuzzyPhoto(imageFiles, entry);
   if (fuzzy) {
     // No siblings collected here on purpose: the species was matched by similarity rather than by
     // name, so a numbered neighbour of *that* file is not evidence of anything about this species.
-    return {
-      photoUrl: speciesPhotoBaseUrl(entry.genusDataDir, fuzzy.name),
-      photoNote: fuzzy.note,
-      photoUrls: [speciesPhotoBaseUrl(entry.genusDataDir, fuzzy.name)],
-    };
+    return withCredits(entry, projectRoot, fuzzy.name, fuzzy.note, [fuzzy.name, ...variantFiles], variantFiles);
   }
 
   const fallback = imageFiles[0];
   if (fallback) {
-    return {
-      photoUrl: speciesPhotoBaseUrl(entry.genusDataDir, fallback),
-      photoNote: `Species image not specified or missing — showing sample file “${fallback}” from ${entry.genusDataDir}_photos.`,
-      photoUrls: [speciesPhotoBaseUrl(entry.genusDataDir, fallback)],
-    };
+    return withCredits(
+      entry,
+      projectRoot,
+      fallback,
+      `Species image not specified or missing — showing sample file “${fallback}” from ${entry.genusDataDir}_photos.`,
+      [fallback, ...variantFiles],
+      variantFiles,
+    );
   }
 
   return builtin;

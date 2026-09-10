@@ -1,0 +1,33 @@
+{
+ "formatVersion": 1,
+ "note": "Photographs not listed here came with the project from the ED-DSN community and are credited to ED-DSN. Anything listed was contributed by the commander named against it.",
+ "contributors": {
+  "falrenica": {
+   "name": "Bahuckel — CMDR FALrenica",
+   "licence": "Photographed by the project owner and contributed to this project."
+  }
+ },
+ "byFile": {
+  "Aleoida-coronamus-Teal.jpg": "falrenica",
+  "Bacterium-acies-White.jpg": "falrenica",
+  "Bacterium-alcyoneum-Green.jpg": "falrenica",
+  "Bacterium-aurasus-Green.jpg": "falrenica",
+  "Bacterium-aurasus-Lime.jpg": "falrenica",
+  "Bacterium-cerbrus-Lime.jpg": "falrenica",
+  "Bacterium-cerbrus-Teal.jpg": "falrenica",
+  "Bacterium-cerbrus-Green.jpg": "falrenica",
+  "Bacterium-vesicula-Lime.jpg": "falrenica",
+  "Bacterium-vesicula-Orange.jpg": "falrenica",
+  "Bacterium-vesicula-Red.jpg": "falrenica",
+  "Cactoida-cortexum-Yellow.jpg": "falrenica",
+  "Concha-renibus-White.jpg": "falrenica",
+  "Fonticulua-campestris-Amethyst.jpg": "falrenica",
+  "Frutexa-acus-Green.jpg": "falrenica",
+  "Fungoida-stabitis-Peach.jpg": "falrenica",
+  "Osseus-fractus-Turquoise.jpg": "falrenica",
+  "Stratum-excutitus-Emerald.jpg": "falrenica",
+  "Stratum-tectonicas-Green.jpg": "falrenica",
+  "Stratum-tectonicas-Lime.jpg": "falrenica",
+  "Tussock-caputus-Yellow.jpg": "falrenica"
+ }
+}
