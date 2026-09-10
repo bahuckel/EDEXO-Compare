@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { EDSM_AUTO_MIN_GAP_MS, EdsmAutoFetcher } from "../src/server/edsmAutoFetch.js";
 
 /** A clock the test drives, so a throttle measured in seconds costs no wall time. */
-function harness(opts: { enabled?: () => boolean; needs?: (a: number) => boolean } = {}) {
+function harness(
+  opts: { enabled?: () => boolean; needs?: (a: number, arrived: boolean) => boolean } = {},
+) {
   const calls: { systemAddress: number; systemName: string; at: number }[] = [];
   let clock = 1_000_000;
   const fetcher = new EdsmAutoFetcher({
@@ -129,5 +131,43 @@ describe("EdsmAutoFetcher", () => {
     fetcher.onArrivedInSystem(1, "Sol");
     await expect(fetcher.idle()).resolves.toBeUndefined();
     expect(fetcher.stats.failed).toBe(1);
+  });
+});
+
+describe("asking at the countdown rather than on arrival", () => {
+  /**
+   * `StartJump` names the destination the moment the FSD charges, which buys the whole hyperspace
+   * transit to ask EDSM in. Hydrating on arrival dropped the commander out of witchspace into a
+   * system the app had nothing to say about yet.
+   */
+  it("queues the destination when the jump starts", async () => {
+    const h = harness();
+    h.fetcher.onJumpStarted(2880984459777, "Smojai QS-C b1");
+    await h.fetcher.idle();
+    expect(h.calls.map((c) => c.systemName)).toEqual(["Smojai QS-C b1"]);
+  });
+
+  it("does not ask twice when the arrival follows its own countdown", async () => {
+    const h = harness();
+    h.fetcher.onJumpStarted(7, "Smojai QS-C b1");
+    await h.fetcher.idle();
+    h.fetcher.onArrivedInSystem(7, "Smojai QS-C b1");
+    await h.fetcher.idle();
+    expect(h.calls).toHaveLength(1);
+    expect(h.fetcher.stats.skipped).toBe(1);
+  });
+
+  it("tells the gate which question it is answering", async () => {
+    const seen: boolean[] = [];
+    const h = harness({
+      needs: (_a, arrived) => {
+        seen.push(arrived);
+        return true;
+      },
+    });
+    h.fetcher.onJumpStarted(1, "A");
+    h.fetcher.onArrivedInSystem(2, "B");
+    await h.fetcher.idle();
+    expect(seen).toEqual([false, true]);
   });
 });

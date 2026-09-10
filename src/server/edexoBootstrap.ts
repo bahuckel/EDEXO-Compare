@@ -517,8 +517,13 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
    */
   const edsmAutoFetcher = new EdsmAutoFetcher({
     isEnabled: () => store.edsmAutoFetchEnabled && readEdsmCredentials() !== null,
-    needsHydration: (systemAddress) =>
-      store.isKnownJournalSystem(systemAddress) &&
+    needsHydration: (systemAddress, arrived) =>
+      /*
+       * On arrival the system is in the journal, so not knowing it means something is off and we
+       * leave it alone. A jump destination is somewhere the commander has *not* been — that is the
+       * whole point of asking early — so the journal-knows-it half of the gate cannot apply.
+       */
+      (arrived ? store.isKnownJournalSystem(systemAddress) : true) &&
       !store.hasMappableJournalExplorationForSystem(systemAddress),
     hydrate: async (systemAddress, systemName) => {
       const edsm = await fetchEdsmBodiesAsExplorationRecords(
@@ -533,13 +538,24 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
   });
 
-  /** `FSDJump` and `CarrierJump` are arrivals; `Location` covers a game started in a fresh system. */
+  /**
+   * `StartJump` is the countdown and names the destination; the rest are arrivals.
+   *
+   * Asking at the countdown spends the hyperspace transit on the request instead of making the
+   * commander wait once they are already there. A `StartJump` with `JumpType: "Supercruise"` names
+   * no system and is ignored.
+   */
   function maybeAutoFetchOnArrival(line: JournalLine): void {
     const event = line.event;
-    if (event !== "FSDJump" && event !== "CarrierJump" && event !== "Location") return;
     const systemName = typeof line.StarSystem === "string" ? line.StarSystem : "";
     const systemAddress = typeof line.SystemAddress === "number" ? line.SystemAddress : NaN;
     if (!systemName || !Number.isFinite(systemAddress)) return;
+    if (event === "StartJump") {
+      if (line.JumpType !== "Hyperspace") return;
+      edsmAutoFetcher.onJumpStarted(systemAddress, systemName);
+      return;
+    }
+    if (event !== "FSDJump" && event !== "CarrierJump" && event !== "Location") return;
     edsmAutoFetcher.onArrivedInSystem(systemAddress, systemName);
   }
 

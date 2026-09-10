@@ -27,8 +27,14 @@ const MAX_REMEMBERED_SYSTEMS = 5_000;
 export interface EdsmAutoFetchDeps {
   /** Is the toggle on, and are credentials present? */
   isEnabled: () => boolean;
-  /** False when the journal already holds mappable scans, so there is nothing to supplement. */
-  needsHydration: (systemAddress: number) => boolean;
+  /**
+   * False when the journal already holds mappable scans, so there is nothing to supplement.
+   *
+   * `arrived` is false for a jump the commander has only *started*. The two cases want different
+   * questions: on arrival the system is in the journal and being unknown to it is suspicious, while
+   * a destination is by definition somewhere they have not been yet.
+   */
+  needsHydration: (systemAddress: number, arrived: boolean) => boolean;
   hydrate: (systemAddress: number, systemName: string) => Promise<{ ok: boolean; error?: string }>;
   /** Injected so tests do not sleep. */
   now?: () => number;
@@ -54,19 +60,39 @@ export class EdsmAutoFetcher {
   constructor(private readonly deps: EdsmAutoFetchDeps) {}
 
   /**
-   * Called on `FSDJump` / `Location`. Returns immediately; the work happens on its own.
+   * Called on `FSDJump` / `CarrierJump` / `Location`. Returns immediately; work happens on its own.
    *
    * The enabled check happens here *and* again before each request, because a commander can turn the
    * toggle off while a queue is draining and that has to stop it.
    */
   onArrivedInSystem(systemAddress: number, systemName: string): void {
+    this.enqueue(systemAddress, systemName, true);
+  }
+
+  /**
+   * Called on `StartJump` with `JumpType: "Hyperspace"` — the countdown, not the arrival.
+   *
+   * The journal names the destination the moment the FSD charges, which buys the whole hyperspace
+   * transit to ask EDSM in. Hydrating on arrival meant the commander dropped out of witchspace into
+   * a system the app had nothing to say about yet, and the answer landed a second or two later, by
+   * which time they were already reading the empty panel.
+   *
+   * Same queue, same once-per-system set, same throttle. A `StartJump` followed by its own `FSDJump`
+   * asks once, and a jump that is cancelled costs one request for a system the commander was headed
+   * to anyway.
+   */
+  onJumpStarted(systemAddress: number, systemName: string): void {
+    this.enqueue(systemAddress, systemName, false);
+  }
+
+  private enqueue(systemAddress: number, systemName: string, arrived: boolean): void {
     if (!Number.isFinite(systemAddress) || !systemName.trim()) return;
     if (!this.deps.isEnabled()) return;
     if (this.attempted.has(systemAddress)) {
       this.stats.skipped++;
       return;
     }
-    if (!this.deps.needsHydration(systemAddress)) {
+    if (!this.deps.needsHydration(systemAddress, arrived)) {
       this.stats.skipped++;
       return;
     }

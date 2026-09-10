@@ -45,6 +45,25 @@ before it shipped.
 
 No number reaches the screen as a percentage unless the probe has calibrated it.
 
+### The 5 % chance floor
+
+Every candidate carries a **Chance here** figure — how often a species with this profile turns out to
+actually be on a body like this one. It is the one percentage in the app that has been calibrated
+against real outcomes: on bodies where every species is known, the 90-100 % band comes in at 97.8 %
+and the 0-10 % band at 8.9 %.
+
+Candidates below **5 %** are moved behind *show unlikely* rather than listed. A row at 2.7 % beside a
+row at 100 % is the model telling you it has already decided, and putting them on the same list asks
+you to do that arithmetic again.
+
+The floor never empties a panel — if nothing clears it, the single best candidate stays — never
+touches a row the model has no opinion about, and never argues with a species you have scanned on
+foot yourself.
+
+To change it, edit `PRESENCE_FLOOR_PCT` in [`src/server/snapshot.ts`](src/server/snapshot.ts) and
+rebuild. Measured against 378 species the author later confirmed on foot, a 5 % floor moved exactly
+one of them behind *show unlikely*.
+
 ## EDSM
 
 The app can look a system up on [EDSM](https://www.edsm.net/) so a system already in the community
@@ -52,7 +71,9 @@ database can be triaged before you arrive.
 
 This is **off by default**, and it stays off until you enter your own EDSM API key from
 [edsm.net/en/settings/api](https://www.edsm.net/en/settings/api) in **Options**. Turning it on sends
-the name of each system you enter to EDSM, at most once per system. The key is stored on your
+the name of each system you jump to to EDSM, at most once per system — asked the moment the FSD
+starts its countdown, so the answer is waiting when you drop out of witchspace rather than arriving
+after you have already read an empty panel. The key is stored on your
 machine in its own file beside your settings, never in the settings file, and **Forget key** deletes
 it and switches auto-fetch off.
 
