@@ -93,6 +93,60 @@ const GENUS_DATA_DIR_REQUIRING_VOLCANISM = new Set<string>(["brain-tree"]);
  */
 const GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE = new Set<string>(["brain-tree"]);
 
+/**
+ * How much of a gas has to be in the mix before a plant can be said to live in it.
+ *
+ * Reported from the field: a body whose atmosphere is 99 % CO₂ and 0.99 % SO₂ is not a sulphur
+ * dioxide world, and offering the SO₂-only genus there wastes a trip. Five per cent is the owner's
+ * line and it is the only number in this file that came from playing the game rather than from
+ * measuring the corpus, which is why it is named rather than inlined.
+ */
+export const REQUIRED_GAS_MIN_SHARE_PCT = 5;
+
+/**
+ * Is the required gas present in usable quantity?
+ *
+ * Three answers, because they read differently to a commander: the gas is the atmosphere (`ok`), it
+ * is in the mix but a trace (`trace`, with the number), or it is not there at all (`absent`).
+ *
+ * `AtmosphereType` naming the gas is enough on its own — that is the game saying this *is* a sulphur
+ * dioxide world — and it is the only path open for a scan that predates `AtmosphereComposition` or
+ * arrived from a cache that dropped it. Without composition we cannot measure a trace, and inventing
+ * a rejection from missing data is worse than letting a rare body through.
+ */
+function requiredAtmosphereShare(
+  scan: PlanetScan,
+  atmoNorm: string,
+  required: readonly string[],
+): { kind: "ok" | "trace" | "absent"; pct: number | null; gas: string } {
+  const wanted = required.filter((r) => r?.trim());
+  const scanKey = atmosphereCompositionKey(atmoNorm);
+  for (const w of wanted) {
+    if (w === atmoNorm || w.toLowerCase() === atmoNorm.toLowerCase() || atmosphereCompositionKey(w) === scanKey) {
+      return { kind: "ok", pct: null, gas: w };
+    }
+  }
+  const comp = scan.atmosphereComposition;
+  if (!Array.isArray(comp) || comp.length === 0) return { kind: "absent", pct: null, gas: wanted[0] ?? "" };
+  let best: { pct: number; gas: string } | null = null;
+  for (const row of comp) {
+    const name = String(row?.Name ?? row?.name ?? "").trim();
+    if (!name) continue;
+    const key = atmosphereCompositionKey(name);
+    const hit = wanted.find(
+      (w) => w.toLowerCase() === name.toLowerCase() || atmosphereCompositionKey(w) === key,
+    );
+    if (!hit) continue;
+    const pctRaw = row?.Percent ?? row?.percent;
+    const pct = typeof pctRaw === "number" && Number.isFinite(pctRaw) ? pctRaw : 0;
+    if (!best || pct > best.pct) best = { pct, gas: name };
+  }
+  if (!best) return { kind: "absent", pct: null, gas: wanted[0] ?? "" };
+  return best.pct >= REQUIRED_GAS_MIN_SHARE_PCT
+    ? { kind: "ok", pct: best.pct, gas: best.gas }
+    : { kind: "trace", pct: best.pct, gas: best.gas };
+}
+
 /** Codex list entry `ALL` means any allowed value for that gate (match any scan). */
 function codexListMeansAll(values: string[] | undefined): boolean {
   return !!values?.some((v) => (v ?? "").trim().toUpperCase() === "ALL");
@@ -382,32 +436,38 @@ export function speciesMatchesExcludingTempPressure(
   }
 
   /**
-   * The genus-wide atmosphere wall.
+   * A gas the genus cannot live without, measured against how much of it is actually there.
    *
-   * Everything above this line is a soft gate the corpus may overrule, which is right for a codex
-   * row and wrong for a requirement. Recepta's own file says sulphur dioxide is needed by every
-   * species in the genus; the observation floor was letting it through anyway on the strength of 21
-   * corpus bodies labelled "Thin Carbon dioxide", and both Recepta species were offered on a CO₂
-   * body carrying 1 % SO₂. A requirement that a distribution can talk you out of is not one.
+   * Recepta needs sulphur dioxide. Blu Thua EM-D d12-25 A 1 a is a **carbon dioxide** body — 99.01 %
+   * CO₂ — that carries 0.99 % SO₂ in the mix, and both Recepta species were offered on the shown
+   * list. Two separate things were wrong with that. The atmosphere test only ever read
+   * `AtmosphereType`, which names the *dominant* gas and so says nothing about the trace; and the
+   * observation floor was then overruling the miss anyway, on the strength of corpus bodies
+   * labelled "Thin Carbon dioxide".
+   *
+   * So: read the composition, and require **{@link REQUIRED_GAS_MIN_SHARE_PCT} %** of it before the
+   * gas counts as an atmosphere something can grow in. One per cent is a trace, not a habitat.
+   *
+   * Soft, not a wall. A trace of the right gas is a long shot rather than an impossibility, and the
+   * app already has a place for long shots — the unlikely tier, behind "show unlikely (N)". The
+   * commander asked for exactly that: hidden below with the others, not deleted.
    */
   const requiredAtmo = c.atmosphereTypeRequiredAnyOf;
   if (requiredAtmo?.length) {
-    const scanKey = atmosphereCompositionKey(atmoNorm);
-    const ok =
-      atmoNorm !== "" &&
-      requiredAtmo.some(
-        (a) =>
-          !!a?.trim() &&
-          (a === atmoNorm ||
-            a.toLowerCase() === atmoNorm.toLowerCase() ||
-            atmosphereCompositionKey(a) === scanKey),
-      );
-    if (!ok) {
+    const verdict = requiredAtmosphereShare(scan, atmoNorm, requiredAtmo);
+    if (verdict.kind !== "ok") {
       failures.push({
         field: "AtmosphereType",
-        detail: `${entry.genus} needs ${requiredAtmo.join(" / ")}; journal has ${
-          atmoNorm === "" ? "(none)" : atmoNorm
-        }.`,
+        soft: true,
+        detail:
+          verdict.kind === "trace"
+            ? `${entry.genus} needs ${requiredAtmo.join(" / ")}; this body has ${(verdict.pct ?? 0).toFixed(2)} % of it in a ${atmoNorm || "(none)"} atmosphere — below the ${REQUIRED_GAS_MIN_SHARE_PCT} % a spawn needs. ${DEMOTED_NOTE}`
+            : `${entry.genus} needs ${requiredAtmo.join(" / ")}; journal has ${atmoNorm === "" ? "(none)" : atmoNorm}. ${DEMOTED_NOTE}`,
+      });
+    } else if (verdict.pct != null) {
+      reasons.push({
+        field: "AtmosphereType",
+        detail: `${verdict.gas} ${verdict.pct.toFixed(1)} % of the atmosphere`,
       });
     }
   }

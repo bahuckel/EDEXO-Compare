@@ -174,15 +174,20 @@ export interface SpeciesCriterion {
   planetClassAnyOf?: string[];
   atmosphereTypeAnyOf?: string[];
   /**
-   * An atmosphere the **genus** cannot live without. A wall, unlike `atmosphereTypeAnyOf`.
+   * A gas the **genus** cannot live without, measured against the body's atmosphere composition.
    *
-   * The per-species list is soft on purpose: it rejects only 0.33 % of observed habitats, and the
-   * corpus is allowed to overrule it because a codex row is a summary and a mislabelled body is
-   * cheaper than a hidden Stratum tectonicas. A genus-wide requirement is a different statement.
-   * Recepta needs sulphur dioxide the way a fish needs water, and 21 Recepta bodies in the corpus
-   * carrying "Thin Carbon dioxide" are 21 rows about something else, not evidence that Recepta grows
-   * in CO₂. Offered on Blu Thua EM-D d12-25 A 1 a — a CO₂ body with 1 % SO₂ in the mix — where both
-   * Recepta species were listed until the DSS genus list threw them out.
+   * Different in kind from `atmosphereTypeAnyOf`, which lists the atmospheres the codex mentions and
+   * is soft because the corpus may know better. This one is the genus saying "no sulphur dioxide, no
+   * Recepta", and the corpus is not allowed to argue — 21 Recepta rows labelled "Thin Carbon
+   * dioxide" are 21 rows about something else.
+   *
+   * It is checked against `AtmosphereComposition`, not `AtmosphereType`, because the type names only
+   * the dominant gas. Blu Thua EM-D d12-25 A 1 a is 99.01 % CO₂ with 0.99 % SO₂, and both Recepta
+   * species were offered there: the gas is present, but a trace is not a habitat. Five per cent is
+   * the floor — see `REQUIRED_GAS_MIN_SHARE_PCT`.
+   *
+   * Failing it **demotes** rather than excludes. A trace of the right gas is a long shot, not an
+   * impossibility, and the unlikely tier is where long shots belong.
    */
   atmosphereTypeRequiredAnyOf?: string[];
   /** Earth **g** (compared after converting journal m/s² → g). */
