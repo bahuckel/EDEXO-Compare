@@ -169,6 +169,10 @@ Full attribution in [NOTICE.md](NOTICE.md).
 MIT for the code and this project's own data — see [LICENSE](LICENSE), which sets out what the grant
 does **not** cover.
 
+If you use the code or the species data in something of your own, a credit and a link back —
+"based on EDEXO-Compare by Bahuckel, https://bahuckel.com/projects/edexo-compare" — is appreciated.
+The licence does not require it; this is a request, not a term.
+
 The species photographs are **not** MIT licensed and are not this project's to sublicense: the game
 artwork is Frontier's and the capture belongs to the commander who took it. They are here with
 [ED-DSN](https://ed-dsn.net)'s agreement while replacements are photographed, and any rights holder
