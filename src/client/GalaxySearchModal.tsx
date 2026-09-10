@@ -32,9 +32,20 @@ const cr = (n: number) => `${crFmt.format(Math.round(n))} CR`;
 const ly = (d: number | null) =>
   d == null ? "—" : d >= 10000 ? `${(d / 1000).toFixed(1)} kly` : `${crFmt.format(Math.round(d))} ly`;
 
-/** Price steps, in credits. Species prices run 1 M to 20 M, so these actually divide the field. */
-const FLOORS = [0, 5e6, 10e6, 15e6, 19e6] as const;
-const floorLabel = (n: number) => (n === 0 ? "Any" : `${Math.round(n / 1e6)}M+`);
+/**
+ * The slider's range, in credits: nothing to half a billion, per system, at 1x.
+ *
+ * Per system because that is the unit of a trip — four 5 M plants in one place beat one 15 M plant.
+ * At 1x because the index cannot know whether anybody has already walked those bodies; a commander
+ * who arrives and finds them untouched earns five times this, and the row says so beside it.
+ *
+ * Stepped in millions rather than credits: nobody is choosing between 19,000,000 and 19,000,001, and
+ * a slider that pretends they are is 500 million positions of false precision.
+ */
+const MAX_CR = 500e6;
+const STEP_CR = 1e6;
+const sliderLabel = (n: number) =>
+  n === 0 ? "anything" : n >= 1e9 ? `${(n / 1e9).toFixed(2)} bn CR` : `${Math.round(n / 1e6)} M CR`;
 
 /**
  * The strongest evidence a system carries, which is what colours its row.
@@ -227,29 +238,34 @@ export function GalaxySearchModal({ onClose }: { onClose: () => void }) {
               </label>
 
               <div className={`gsx-field gsx-price${priceLocked ? " gsx-price--locked" : ""}`}>
-                Worth at least
-                <div className="fdb-filters">
-                  {FLOORS.map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      disabled={priceLocked}
-                      className={`fdb-chip${minCr === f && !priceLocked ? " fdb-chip--on" : ""}`}
-                      onClick={() => setMinCr(f)}
-                    >
-                      {floorLabel(f)}
-                    </button>
-                  ))}
-                </div>
+                <span>
+                  System worth at least <strong className="gsx-price-value">{sliderLabel(minCr)}</strong>
+                </span>
+                <input
+                  type="range"
+                  className="gsx-slider"
+                  min={0}
+                  max={MAX_CR}
+                  step={STEP_CR}
+                  value={minCr}
+                  disabled={priceLocked}
+                  onChange={(e) => setMinCr(Number(e.target.value))}
+                  aria-label="Minimum system value in credits"
+                />
                 {/*
                   Said out loud rather than left as a greyed control. A commander who picked a species
-                  and then finds the price ignored would reasonably think the search was broken.
+                  and then found the price ignored would reasonably think the search was broken.
                 */}
                 {priceLocked ? (
                   <span className="dim gsx-note">
                     A named species already has a price — clear it to filter by value.
                   </span>
-                ) : null}
+                ) : (
+                  <span className="dim gsx-note">
+                    Everything the codex knows there, at list price. Five times that if nobody has
+                    landed yet.
+                  </span>
+                )}
               </div>
 
               <label className="gsx-field gsx-check">
@@ -287,7 +303,7 @@ export function GalaxySearchModal({ onClose }: { onClose: () => void }) {
                       <th>Evidence</th>
                       <th className="fdb-num">Bodies</th>
                       <th>What is there</th>
-                      <th className="fdb-num">Best</th>
+                      <th className="fdb-num">System worth</th>
                       <th />
                     </tr>
                   </thead>
@@ -311,7 +327,16 @@ export function GalaxySearchModal({ onClose }: { onClose: () => void }) {
                               <span className="dim"> +{h.totalKnownSpecies - h.species.length} more</span>
                             ) : null}
                           </td>
-                          <td className="fdb-num fdb-floor">{cr(h.bestCr)}</td>
+                          {/*
+                            Both figures, because the index genuinely cannot say whether anybody has
+                            walked these bodies — that only becomes knowable from the commander's own
+                            journal once they arrive. Where it *is* known, the app shows one number;
+                            here it is honestly open.
+                          */}
+                          <td className="fdb-num fdb-floor">
+                            {cr(h.systemCr)}
+                            <span className="dim gsx-ff"> · {cr(h.systemFirstFootfallCr)} at 5×</span>
+                          </td>
                           <td>
                             <CopyButton text={h.starSystem} />
                           </td>

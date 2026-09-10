@@ -97,22 +97,36 @@ const ROWS = [
 ];
 
 describe("what clears the threshold", () => {
-  it("returns only systems holding a species at or above the price", async () => {
+  it("tests the system total, not one species", async () => {
+    // The threshold moved from per-species to per-system on the owner's instruction: a trip is worth
+    // everything in the system, so four cheap plants can clear a bar one dear plant misses.
     const r = await search(ROWS, { minCr: 19_000_000, from: { x: 0, y: 0, z: 0 } });
     expect(r.hits.map((h) => h.starSystem)).toEqual(["Dear And Cheap", "Dear Far Away"]);
+    // "Cheap Only" holds 1 M and is correctly out.
+    expect(r.hits.map((h) => h.starSystem)).not.toContain("Cheap Only");
   });
 
-  it("lists only the species that cleared it, not everything in the system", async () => {
+  it("adds the cheap species up rather than discarding them", async () => {
+    // Dear And Cheap holds 19,010,800 + 1,000,000. Filtering species before summing would drop the
+    // 1 M and understate the system by exactly that.
+    const r = await search(ROWS, { minCr: 20_000_000, from: { x: 0, y: 0, z: 0 } });
+    const hit = r.hits.find((h) => h.starSystem === "Dear And Cheap");
+    expect(hit).toBeDefined();
+    expect(hit!.systemCr).toBe(19_010_800 + 1_000_000);
+    expect(hit!.systemFirstFootfallCr).toBe(hit!.systemCr * 5);
+  });
+
+  it("lists everything known there, since the whole system cleared the bar", async () => {
     const r = await search(ROWS, { minCr: 19_000_000, from: { x: 0, y: 0, z: 0 } });
     const hit = r.hits.find((h) => h.starSystem === "Dear And Cheap")!;
-    expect(hit.species.map((s) => s.speciesId)).toEqual([DEAR]);
-    // …but it still reports how much is really there, so "1 of 2" is visible.
+    expect(hit.species.map((s) => s.speciesId).sort()).toEqual([CHEAP, DEAR].sort());
     expect(hit.totalKnownSpecies).toBe(2);
   });
 
-  it("filters on the base price, never the first-footfall one", async () => {
-    // Stratum tectonicas is 19,010,800 at 1x and 95,054,000 at 5x. A 25 M threshold must exclude it:
-    // filtering on 5x would answer a question the commander did not ask.
+  it("filters at 1x, never at the first-footfall figure", async () => {
+    // Dear And Cheap totals 20,010,800 at 1x and 100,054,000 at 5x. A 25 M threshold must exclude it:
+    // the index cannot know whether anybody has walked those bodies, so promising the bonus would be
+    // inventing the one fact this data does not have.
     const r = await search(ROWS, { minCr: 25_000_000, from: { x: 0, y: 0, z: 0 } });
     expect(r.hits).toHaveLength(0);
   });

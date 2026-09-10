@@ -60,6 +60,16 @@ function pricedSpecies(
   return out;
 }
 
+/** Everything the codex knows in a system, at 1x. The number the slider tests. */
+function systemValue(
+  species: string[],
+  priced: Map<string, { price: number; displayName: string; genusDir: string }>,
+): number {
+  let total = 0;
+  for (const id of species) total += priced.get(id)?.price ?? 0;
+  return total;
+}
+
 /**
  * Which species the commander is actually asking about.
  *
@@ -77,7 +87,9 @@ function wantedSpecies(
   const out = new Set<string>();
   for (const [id, v] of priced) {
     if (genus && !genus.has(v.genusDir)) continue;
-    if (v.price < query.minCr) continue;
+    // No price test here any more. The threshold is a question about the *system* total, so it is
+    // applied once the system's species are known — filtering species first would drop the cheap
+    // ones that make a system worth the trip when added together.
     out.add(id);
   }
   return out;
@@ -118,7 +130,18 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
   const all = index.systemsWithAny(wanted);
   // All requested flags must be present, not any of them: "mapped AND has a species" is a narrower
   // and more useful question than "mapped OR has a species".
-  const systems = need === 0 ? all : all.filter((s) => (s.tiers & need) === need);
+  const byTier = need === 0 ? all : all.filter((s) => (s.tiers & need) === need);
+  /*
+   * The slider, applied to the whole system: four 5 M plants beat one 15 M plant for a single trip.
+   *
+   * Skipped entirely when a species was named. Someone hunting Bacterium Aurasus specifically does
+   * not want the systems holding it filtered by how rich they are — they asked for the plant, and a
+   * leftover threshold would silently answer a narrower question than the one on screen.
+   */
+  const systems =
+    query.minCr > 0 && !explicitSpecies
+      ? byTier.filter((s) => systemValue(s.species, priced) >= query.minCr)
+      : byTier;
   const limit = Math.max(1, Math.min(query.limit ?? 200, 2000));
 
   /*
@@ -144,8 +167,10 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
     const matched = s.species
       .map((id) => {
         const p = priced.get(id);
-        // With a species named, "matched" means the one they asked for, whatever it costs.
-        return p && (explicitSpecies ? wanted.has(id) : p.price >= query.minCr)
+        // With a species named, only that one is "matched". Otherwise everything known here counts —
+        // the system cleared the threshold as a whole, so listing only its dearest plant would
+        // misrepresent why.
+        return p && (explicitSpecies ? wanted.has(id) : true)
           ? { speciesId: id, displayName: p.displayName, baseCr: p.price, firstFootfallCr: p.price * FIRST_FOOTFALL }
           : null;
       })
@@ -163,6 +188,8 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
       species: matched,
       bestCr: matched[0]!.baseCr,
       totalKnownSpecies: s.species.length,
+      systemCr: systemValue(s.species, priced),
+      systemFirstFootfallCr: systemValue(s.species, priced) * FIRST_FOOTFALL,
       tiers: s.tiers,
       bodyCount: s.bodyCount,
     });

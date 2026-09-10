@@ -809,6 +809,10 @@ export interface GalaxyValueHitDTO {
   bestCr: number;
   /** Everything the codex knows here, including species under the threshold. */
   totalKnownSpecies: number;
+  /** Sum of every known species here at 1x — what the slider tests. */
+  systemCr: number;
+  /** The same at 5x, if nobody has walked these bodies. Never filtered on; the index cannot know. */
+  systemFirstFootfallCr: number;
   /** Evidence flags for this system — TIER_FSS | TIER_DSS | TIER_CODEX | TIER_BODIES_KNOWN. */
   tiers: number;
   /** Spansh's body count, or 0 when unknown — not the same as a system with no bodies. */
@@ -842,7 +846,14 @@ export interface GalaxySpeciesCatalogueDTO {
 }
 
 export interface GalaxyValueQueryDTO {
-  /** Minimum list price of a single species. Ignored when `speciesIds` is set. */
+  /**
+   * Minimum **system** total, in credits, at 1x list price.
+   *
+   * Per system rather than per species, and at 1x rather than 5x, because the bonus is not knowable
+   * from the index: nothing here says whether anybody has already walked those bodies. A commander
+   * who arrives and finds it untouched earns five times this; the filter promises only what can be
+   * promised. Ignored when `speciesIds` is set — a named species already has a price.
+   */
   minCr: number;
   /** Exact species wanted. When present, price is not consulted. */
   speciesIds?: string[];

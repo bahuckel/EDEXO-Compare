@@ -16,6 +16,11 @@ import {
 import { useValueFlash } from "./ui/useValueFlash";
 import { SkeletonPanel } from "./ui/Skeleton";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
+import {
+  footfallCertainty,
+  showsFootfallPrice,
+  showsListPrice,
+} from "@shared/footfallValue";
 import { PhotoCredit, photoCreditTitle } from "./photoCredit";
 import { PhotoGallery } from "./PhotoGallery";
 
@@ -1180,6 +1185,20 @@ function ExoPayoutRangeDetailModal({
       ? "FSS / DSS biological signal count in the merged journal."
       : "DSS genus list length (fallback when signal count is not present yet).";
 
+  /*
+   * Which columns this body has any business showing.
+   *
+   * Both figures were drawn unconditionally, including on bodies the journal had already reported as
+   * walked — so a ×5 total sat beside a bonus that was gone. Once the answer is known, only the
+   * number the commander will actually be paid belongs on screen.
+   */
+  const certainty = footfallCertainty({
+    journalWasFootfalled: pr.journalWasFootfalled,
+    commanderFirstFootfall: pr.commanderFirstFootfall,
+  });
+  const showList = showsListPrice(certainty);
+  const showFf = showsFootfallPrice(certainty);
+
   const minListTot = pr.minTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
   const minFfTot = pr.minTotalSpecies.reduce((s, r) => s + r.listCredits * 5, 0);
   const maxListTot = pr.maxTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
@@ -1251,37 +1270,51 @@ function ExoPayoutRangeDetailModal({
           <section className="exo-payout-detail-section">
             <h4>Worst-paying set (k cheapest)</h4>
             <p className="dim tiny" style={{ marginTop: "-0.25rem" }}>
-              List / standard sell (×1) total {minListTot.toLocaleString()} CR · Footfall (×5) total{" "}
-              {minFfTot.toLocaleString()} CR
+              {[
+                showList ? `List / standard sell (×1) total ${minListTot.toLocaleString()} CR` : null,
+                showFf ? `Footfall (×5) total ${minFfTot.toLocaleString()} CR` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
             <table className="exo-payout-detail-table">
               <thead>
                 <tr>
                   <th>Species</th>
-                  <th className="exo-payout-detail-num">List / sell (×1)</th>
-                  <th className="exo-payout-detail-num exo-payout-detail-footfall-col">Footfall (×5)</th>
+                  {showList ? <th className="exo-payout-detail-num">List / sell (×1)</th> : null}
+                  {showFf ? (
+                    <th className="exo-payout-detail-num exo-payout-detail-footfall-col">Footfall (×5)</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
                 {pr.minTotalSpecies.map((row) => (
                   <tr key={`min-${row.id}`}>
                     <td>{row.displayName}</td>
-                    <td className="exo-payout-detail-num">{row.listCredits.toLocaleString()}</td>
-                    <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
-                      {(row.listCredits * 5).toLocaleString()}
-                    </td>
+                    {showList ? (
+                      <td className="exo-payout-detail-num">{row.listCredits.toLocaleString()}</td>
+                    ) : null}
+                    {showFf ? (
+                      <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
+                        {(row.listCredits * 5).toLocaleString()}
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
                 <tr className="exo-payout-detail-sum">
                   <td>
                     <strong>Total</strong>
                   </td>
-                  <td className="exo-payout-detail-num">
-                    <strong>{minListTot.toLocaleString()}</strong>
-                  </td>
-                  <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
-                    <strong>{minFfTot.toLocaleString()}</strong>
-                  </td>
+                  {showList ? (
+                    <td className="exo-payout-detail-num">
+                      <strong>{minListTot.toLocaleString()}</strong>
+                    </td>
+                  ) : null}
+                  {showFf ? (
+                    <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
+                      <strong>{minFfTot.toLocaleString()}</strong>
+                    </td>
+                  ) : null}
                 </tr>
               </tbody>
             </table>
@@ -1290,37 +1323,51 @@ function ExoPayoutRangeDetailModal({
           <section className="exo-payout-detail-section">
             <h4>Best-paying set (k priciest)</h4>
             <p className="dim tiny" style={{ marginTop: "-0.25rem" }}>
-              List / standard sell (×1) total {maxListTot.toLocaleString()} CR · Footfall (×5) total{" "}
-              {maxFfTot.toLocaleString()} CR
+              {[
+                showList ? `List / standard sell (×1) total ${maxListTot.toLocaleString()} CR` : null,
+                showFf ? `Footfall (×5) total ${maxFfTot.toLocaleString()} CR` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
             <table className="exo-payout-detail-table">
               <thead>
                 <tr>
                   <th>Species</th>
-                  <th className="exo-payout-detail-num">List / sell (×1)</th>
-                  <th className="exo-payout-detail-num exo-payout-detail-footfall-col">Footfall (×5)</th>
+                  {showList ? <th className="exo-payout-detail-num">List / sell (×1)</th> : null}
+                  {showFf ? (
+                    <th className="exo-payout-detail-num exo-payout-detail-footfall-col">Footfall (×5)</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
                 {pr.maxTotalSpecies.map((row) => (
                   <tr key={`max-${row.id}`}>
                     <td>{row.displayName}</td>
-                    <td className="exo-payout-detail-num">{row.listCredits.toLocaleString()}</td>
-                    <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
-                      {(row.listCredits * 5).toLocaleString()}
-                    </td>
+                    {showList ? (
+                      <td className="exo-payout-detail-num">{row.listCredits.toLocaleString()}</td>
+                    ) : null}
+                    {showFf ? (
+                      <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
+                        {(row.listCredits * 5).toLocaleString()}
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
                 <tr className="exo-payout-detail-sum">
                   <td>
                     <strong>Total</strong>
                   </td>
-                  <td className="exo-payout-detail-num">
-                    <strong>{maxListTot.toLocaleString()}</strong>
-                  </td>
-                  <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
-                    <strong>{maxFfTot.toLocaleString()}</strong>
-                  </td>
+                  {showList ? (
+                    <td className="exo-payout-detail-num">
+                      <strong>{maxListTot.toLocaleString()}</strong>
+                    </td>
+                  ) : null}
+                  {showFf ? (
+                    <td className="exo-payout-detail-num exo-payout-detail-footfall-col">
+                      <strong>{maxFfTot.toLocaleString()}</strong>
+                    </td>
+                  ) : null}
                 </tr>
               </tbody>
             </table>

@@ -343,3 +343,34 @@
 .gsx-tier--fss {
   color: #d29922;
 }
+
+/* The value slider. Wide enough that a million-credit step is a real movement, not a pixel. */
+.gsx-slider {
+  width: 22rem;
+  max-width: 100%;
+  accent-color: #5fdf98;
+}
+
+.gsx-slider:disabled {
+  opacity: 0.4;
+}
+
+.gsx-price-value {
+  color: #5fdf98;
+  font-variant-numeric: tabular-nums;
+}
+
+.gsx-ff {
+  font-size: var(--fs-2xs);
+  white-space: nowrap;
+}
+
+/*
+ * A disabled chip must *look* disabled. It did not: `.fdb-chip` had no disabled styling, so a locked
+ * price control was reported as "still the same" — correct behaviour that read as a broken one.
+ */
+.fdb-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-style: dashed;
+}
