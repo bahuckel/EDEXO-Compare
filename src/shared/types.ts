@@ -163,6 +163,18 @@ export interface SpeciesMatchContext {
 export interface SpeciesCriterion {
   planetClassAnyOf?: string[];
   atmosphereTypeAnyOf?: string[];
+  /**
+   * An atmosphere the **genus** cannot live without. A wall, unlike `atmosphereTypeAnyOf`.
+   *
+   * The per-species list is soft on purpose: it rejects only 0.33 % of observed habitats, and the
+   * corpus is allowed to overrule it because a codex row is a summary and a mislabelled body is
+   * cheaper than a hidden Stratum tectonicas. A genus-wide requirement is a different statement.
+   * Recepta needs sulphur dioxide the way a fish needs water, and 21 Recepta bodies in the corpus
+   * carrying "Thin Carbon dioxide" are 21 rows about something else, not evidence that Recepta grows
+   * in CO₂. Offered on Blu Thua EM-D d12-25 A 1 a — a CO₂ body with 1 % SO₂ in the mix — where both
+   * Recepta species were listed until the DSS genus list threw them out.
+   */
+  atmosphereTypeRequiredAnyOf?: string[];
   /** Earth **g** (compared after converting journal m/s² → g). */
   surfaceGravity?: { min?: number; max?: number };
   surfaceTemperatureK?: { min?: number; max?: number };
@@ -211,6 +223,14 @@ export interface SpeciesEntry {
   id: string;
   displayName: string;
   genus: string;
+  /**
+   * How this **species** gets its colour variant, and the table.
+   *
+   * Per species rather than per genus because the game is per species: three Bacterium read the
+   * star and six read a material. See `shared/colourVariants.ts`. Absent when ED-DSN publishes no
+   * table for it — Brain Trees and Sinuous Tubers carry the colour in the species name instead.
+   */
+  colourVariant?: import("./colourVariants.js").ColourVariantRule;
   /** Folder name under `data/species/<this>/` where the genus `.json` and `*_photos` live. */
   genusDataDir: string;
   photoFile?: string;

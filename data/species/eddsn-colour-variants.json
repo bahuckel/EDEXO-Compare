@@ -1,0 +1,548 @@
+{
+ "formatVersion": 1,
+ "source": {
+  "name": "Deep Space Network (ED-DSN)",
+  "url": "https://ed-dsn.net/en/exobiological-flora/",
+  "retrieved": "2026-09-11",
+  "note": "Colour-variant tables transcribed from the per-genus pages. ED-DSN credits the CMDRs who reported each variant on the page itself. Not redistributed data — a transcription of a published reference, kept so the app can name a colour offline."
+ },
+ "verification": {
+  "againstOwnerJournals": "235 star-table predictions correct, 0 wrong, 23 classes blank; 47 of 47 material rows had the observed colour among the candidates."
+ },
+ "corpusFills": {
+  "note": "Star classes ED-DSN leaves blank that the owner has scanned himself. Listed separately so a later ED-DSN update can overwrite them without touching the transcription.",
+  "byGenus": {
+   "stratum": {
+    "A": "Emerald",
+    "L": "Turquoise"
+   },
+   "frutexa": {
+    "Y": "Green"
+   },
+   "osseus": {
+    "Y": "Lime"
+   }
+  }
+ },
+ "byGenus": {
+  "aleoida": {
+   "source": "star",
+   "map": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Teal",
+    "N": "Ocher"
+   }
+  },
+  "cactoida": {
+   "source": "star",
+   "map": {
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "N": "Sage"
+   }
+  },
+  "clypeus": {
+   "source": "star",
+   "map": {
+    "A": "Orange",
+    "F": "Mauve",
+    "G": "Amethyst",
+    "K": "Grey",
+    "M": "Turquoise",
+    "L": "Teal",
+    "N": "Yellow"
+   }
+  },
+  "fonticulua": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage",
+    "AE/BE": "Maroon"
+   }
+  },
+  "frutexa": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "stratum": {
+   "source": "star",
+   "map": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "D": "Mauve"
+   }
+  },
+  "tubus": {
+   "source": "star",
+   "map": {
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "N": "Amethyst"
+   }
+  },
+  "tussock": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "D": "Maroon",
+    "BLACK HOLE": "Red"
+   }
+  }
+ },
+ "bySpecies": {
+  "bacterium acies": {
+   "source": "material",
+   "map": {
+    "antimony": "Cyan",
+    "polonium": "Magenta",
+    "ruthenium": "Cobalt",
+    "technetium": "Lime",
+    "tellurium": "White",
+    "yttrium": "Aquamarine"
+   }
+  },
+  "bacterium alcyoneum": {
+   "source": "star",
+   "map": {
+    "O": "Turquoise",
+    "B": "Grey",
+    "A": "Yellow",
+    "F": "Lime",
+    "G": "Emerald",
+    "K": "Green",
+    "M": "Teal",
+    "L": "Sage",
+    "T": "Red",
+    "TTS": "Maroon",
+    "W": "Amethyst",
+    "D": "Ocher",
+    "N": "Indigo"
+   }
+  },
+  "bacterium aurasus": {
+   "source": "star",
+   "map": {
+    "O": "Turquoise",
+    "B": "Grey",
+    "A": "Yellow",
+    "F": "Lime",
+    "G": "Emerald",
+    "K": "Green",
+    "M": "Teal",
+    "L": "Sage",
+    "T": "Red",
+    "TTS": "Maroon",
+    "W": "Amethyst",
+    "D": "Ocher",
+    "N": "Indigo"
+   }
+  },
+  "bacterium bullaris": {
+   "source": "material",
+   "map": {
+    "antimony": "Cobalt",
+    "polonium": "Yellow",
+    "ruthenium": "Aquamarine",
+    "technetium": "Gold",
+    "tellurium": "Lime",
+    "yttrium": "Red"
+   }
+  },
+  "bacterium cerbrus": {
+   "source": "star",
+   "map": {
+    "O": "Turquoise",
+    "B": "Grey",
+    "A": "Yellow",
+    "F": "Lime",
+    "G": "Emerald",
+    "K": "Green",
+    "M": "Teal",
+    "L": "Sage",
+    "T": "Red",
+    "TTS": "Maroon",
+    "W": "Amethyst",
+    "D": "Ocher",
+    "N": "Indigo"
+   }
+  },
+  "bacterium informem": {
+   "source": "material",
+   "map": {
+    "antimony": "Red",
+    "polonium": "Lime",
+    "ruthenium": "Gold",
+    "technetium": "Aquamarine",
+    "tellurium": "Yellow",
+    "yttrium": "Cobalt"
+   }
+  },
+  "bacterium nebulus": {
+   "source": "material",
+   "map": {
+    "antimony": "Magenta",
+    "polonium": "Gold",
+    "ruthenium": "Orange",
+    "tellurium": "Green",
+    "yttrium": "Cobalt"
+   }
+  },
+  "bacterium omentum": {
+   "source": "material",
+   "map": {
+    "cadmium": "Lime",
+    "mercury": "White",
+    "molybdenum": "Aquamarine",
+    "niobium": "Peach",
+    "tungsten": "Blue",
+    "tin": "Red"
+   }
+  },
+  "bacterium scopulum": {
+   "source": "material",
+   "map": {
+    "cadmium": "White",
+    "mercury": "Peach",
+    "molybdenum": "Lime",
+    "niobium": "Red",
+    "tungsten": "Aquamarine",
+    "tin": "Mulberry"
+   }
+  },
+  "bacterium tela": {
+   "source": "material",
+   "map": {
+    "cadmium": "Gold",
+    "mercury": "Orange",
+    "molybdenum": "Yellow",
+    "niobium": "Magenta",
+    "tungsten": "Green",
+    "tin": "Cobalt"
+   }
+  },
+  "bacterium verrata": {
+   "source": "material",
+   "map": {
+    "cadmium": "Peach",
+    "mercury": "Red",
+    "molybdenum": "White",
+    "niobium": "Mulberry",
+    "tungsten": "Lime",
+    "tin": "Blue"
+   }
+  },
+  "bacterium vesicula": {
+   "source": "material",
+   "map": {
+    "antimony": "Cyan",
+    "polonium": "Orange",
+    "ruthenium": "Mulberry",
+    "technetium": "Gold",
+    "tellurium": "Red",
+    "yttrium": "Lime"
+   }
+  },
+  "bacterium volu": {
+   "source": "material",
+   "map": {
+    "antimony": "Red",
+    "polonium": "Aquamarine",
+    "ruthenium": "Cobalt",
+    "tellurium": "Cyan",
+    "yttrium": "Gold"
+   }
+  },
+  "concha aureolas": {
+   "source": "star",
+   "map": {
+    "A": "Teal",
+    "F": "Grey",
+    "G": "Turquoise",
+    "K": "Red",
+    "L": "Orange",
+    "N": "Emerald"
+   }
+  },
+  "concha biconcavis": {
+   "source": "material",
+   "map": {
+    "antimony": "Peach",
+    "ruthenium": "Orange"
+   }
+  },
+  "concha labiata": {
+   "source": "star",
+   "map": {
+    "A": "Teal",
+    "F": "Grey",
+    "G": "Turquoise",
+    "K": "Red",
+    "L": "Orange",
+    "N": "Emerald"
+   }
+  },
+  "concha renibus": {
+   "source": "material",
+   "map": {
+    "cadmium": "Red",
+    "mercury": "Mulberry",
+    "molybdenum": "Peach",
+    "niobium": "Blue",
+    "tungsten": "White",
+    "tin": "Aquamarine"
+   }
+  },
+  "electricae pluma": {
+   "source": "material",
+   "map": {
+    "antimony": "Cobalt",
+    "polonium": "Cyan",
+    "ruthenium": "Blue",
+    "technetium": "Magenta",
+    "tellurium": "Red",
+    "yttrium": "Mulberry"
+   }
+  },
+  "electricae radialem": {
+   "source": "material",
+   "map": {
+    "antimony": "Cyan",
+    "polonium": "Cobalt",
+    "ruthenium": "Blue",
+    "technetium": "Aquamarine",
+    "tellurium": "Magenta",
+    "yttrium": "Green"
+   }
+  },
+  "fumerola aquatis": {
+   "source": "material",
+   "map": {
+    "cadmium": "Green",
+    "mercury": "Yellow",
+    "molybdenum": "Cyan",
+    "niobium": "Gold",
+    "tungsten": "Cobalt",
+    "tin": "Orange"
+   }
+  },
+  "fumerola carbosis": {
+   "source": "material",
+   "map": {
+    "cadmium": "Orange",
+    "mercury": "Magenta",
+    "molybdenum": "Gold",
+    "niobium": "Cobalt",
+    "tungsten": "Yellow",
+    "tin": "Teal"
+   }
+  },
+  "fumerola extremus": {
+   "source": "material",
+   "map": {
+    "mercury": "Lime",
+    "molybdenum": "Blue",
+    "niobium": "White",
+    "tungsten": "Mulberry",
+    "tin": "Peach"
+   }
+  },
+  "fumerola nitris": {
+   "source": "material",
+   "map": {
+    "cadmium": "White",
+    "mercury": "Peach",
+    "molybdenum": "Lime",
+    "niobium": "Red",
+    "tungsten": "Aquamarine",
+    "tin": "Mulberry"
+   }
+  },
+  "fungoida bullarum": {
+   "source": "material",
+   "map": {
+    "antimony": "Red",
+    "polonium": "Mulberry",
+    "ruthenium": "Magenta",
+    "technetium": "Peach",
+    "tellurium": "Gold",
+    "yttrium": "Orange"
+   }
+  },
+  "fungoida gelata": {
+   "source": "material",
+   "map": {
+    "cadmium": "Cyan",
+    "mercury": "Lime",
+    "molybdenum": "Mulberry",
+    "niobium": "Green",
+    "tungsten": "Orange",
+    "tin": "Red"
+   }
+  },
+  "fungoida setisis": {
+   "source": "material",
+   "map": {
+    "antimony": "Peach",
+    "polonium": "White",
+    "ruthenium": "Gold",
+    "technetium": "Lime",
+    "tellurium": "Yellow",
+    "yttrium": "Orange"
+   }
+  },
+  "fungoida stabitis": {
+   "source": "material",
+   "map": {
+    "cadmium": "Blue",
+    "mercury": "Green",
+    "molybdenum": "Magenta",
+    "niobium": "White",
+    "tungsten": "Peach",
+    "tin": "Orange"
+   }
+  },
+  "osseus cornibus": {
+   "source": "star",
+   "map": {
+    "A": "Lime",
+    "F": "Turquoise",
+    "G": "Grey",
+    "K": "Indigo",
+    "T": "Emerald",
+    "TTS": "Green"
+   }
+  },
+  "osseus discus": {
+   "source": "material",
+   "map": {
+    "cadmium": "White",
+    "mercury": "Lime",
+    "molybdenum": "Peach",
+    "niobium": "Aquamarine",
+    "tungsten": "Red",
+    "tin": "Blue"
+   }
+  },
+  "osseus fractus": {
+   "source": "star",
+   "map": {
+    "A": "Lime",
+    "F": "Turquoise",
+    "G": "Grey",
+    "K": "Indigo",
+    "T": "Emerald",
+    "TTS": "Green"
+   }
+  },
+  "osseus pellebantus": {
+   "source": "star",
+   "map": {
+    "A": "Lime",
+    "F": "Turquoise",
+    "G": "Grey",
+    "K": "Indigo",
+    "T": "Emerald",
+    "TTS": "Green"
+   }
+  },
+  "osseus pumice": {
+   "source": "material",
+   "map": {
+    "antimony": "White",
+    "polonium": "Peach",
+    "ruthenium": "Gold",
+    "technetium": "Lime",
+    "tellurium": "Green",
+    "yttrium": "Yellow"
+   }
+  },
+  "osseus spiralis": {
+   "source": "star",
+   "map": {
+    "A": "Lime",
+    "F": "Turquoise",
+    "G": "Grey",
+    "K": "Indigo",
+    "T": "Emerald",
+    "TTS": "Green"
+   }
+  },
+  "recepta conditivus": {
+   "source": "material",
+   "map": {
+    "antimony": "Lime",
+    "polonium": "White",
+    "tellurium": "Cyan",
+    "yttrium": "Green"
+   }
+  },
+  "recepta deltahedronix": {
+   "source": "material",
+   "map": {
+    "cadmium": "Lime",
+    "mercury": "Gold",
+    "molybdenum": "Orange",
+    "niobium": "Mulberry",
+    "tungsten": "Red"
+   }
+  },
+  "recepta umbrux": {
+   "source": "star",
+   "map": {
+    "A": "Amethyst",
+    "F": "Mauve",
+    "G": "Orange",
+    "K": "Red",
+    "M": "Maroon",
+    "T": "Teal"
+   }
+  }
+ }
+}

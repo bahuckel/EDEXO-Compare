@@ -1,6 +1,7 @@
 import type { SpeciesEntry } from "./types.js";
 import { normalizeStellarMappingKey, spectralKeysFromJournalStarType } from "./starSpectralKeys.js";
 import { colourFromMaterials } from "./speciesColour.js";
+import { colourVariantLabel, resolveColourVariant } from "./colourVariants.js";
 
 /**
  * Short morph colour for candidate title line from host star + genus `meta.color_variants` stellar map.
@@ -22,6 +23,23 @@ export function candidateMorphColorShortLabel(
   hostStarType?: string | null,
   materials?: readonly { Name?: string }[] | null,
 ): string {
+  /*
+   * The species' own table decides, when we have one.
+   *
+   * This runs ahead of everything below because the tables under it are per *genus*, and the game is
+   * not: Bacterium aurasus reads the star while Bacterium vesicula reads a material, and a genus
+   * table has to be wrong about one of them. It reported Gold for an aurasus that came out Lime.
+   * See `shared/colourVariants.ts`.
+   */
+  const rule = entry.colourVariant;
+  if (rule) {
+    const label = colourVariantLabel(
+      resolveColourVariant(rule, { parentStarType: hostStarType, materials }),
+    );
+    if (label) return label;
+    return "(unknown)";
+  }
+
   // Materials first: they are a fact about the body in front of the commander.
   const byMaterial = colourFromMaterials(entry.speciesColourRules, materials);
   if (byMaterial.colour) return byMaterial.colour;

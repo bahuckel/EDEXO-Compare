@@ -381,6 +381,37 @@ export function speciesMatchesExcludingTempPressure(
     }
   }
 
+  /**
+   * The genus-wide atmosphere wall.
+   *
+   * Everything above this line is a soft gate the corpus may overrule, which is right for a codex
+   * row and wrong for a requirement. Recepta's own file says sulphur dioxide is needed by every
+   * species in the genus; the observation floor was letting it through anyway on the strength of 21
+   * corpus bodies labelled "Thin Carbon dioxide", and both Recepta species were offered on a CO₂
+   * body carrying 1 % SO₂. A requirement that a distribution can talk you out of is not one.
+   */
+  const requiredAtmo = c.atmosphereTypeRequiredAnyOf;
+  if (requiredAtmo?.length) {
+    const scanKey = atmosphereCompositionKey(atmoNorm);
+    const ok =
+      atmoNorm !== "" &&
+      requiredAtmo.some(
+        (a) =>
+          !!a?.trim() &&
+          (a === atmoNorm ||
+            a.toLowerCase() === atmoNorm.toLowerCase() ||
+            atmosphereCompositionKey(a) === scanKey),
+      );
+    if (!ok) {
+      failures.push({
+        field: "AtmosphereType",
+        detail: `${entry.genus} needs ${requiredAtmo.join(" / ")}; journal has ${
+          atmoNorm === "" ? "(none)" : atmoNorm
+        }.`,
+      });
+    }
+  }
+
   if (GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE.has(entry.genusDataDir) && atmoNorm !== "") {
     const raw = (scan.AtmosphereType ?? "").trim();
     failures.push({

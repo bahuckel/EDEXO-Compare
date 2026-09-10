@@ -27,6 +27,7 @@ import {
   normalizeStellarMappingKey,
   sortStellarSpectralKeysForDisplay,
 } from "../shared/starSpectralKeys.js";
+import { colourVariantRuleFor } from "./eddsnColourVariants.js";
 import { getSpeciesDataDir } from "./paths.js";
 
 export const SPECIES_SUBDIR = "species";
@@ -804,6 +805,16 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
   const genusAtmosphereRaw = toStringArray(
     firstDefined(pr, ["atmosphere", "Atmosphere", "atmosphereType", "AtmosphereType"]),
   );
+  /**
+   * `required_atmosphere_type` is the genus saying "without this, nothing here grows".
+   *
+   * Kept apart from `atmosphere`, which is the softer "these are the atmospheres we list". Only
+   * Recepta declares one today; see `SpeciesCriterion.atmosphereTypeRequiredAnyOf` for why the
+   * distinction had to exist.
+   */
+  const genusRequiredAtmosphere = toStringArray(
+    firstDefined(pr, ["required_atmosphere_type", "requiredAtmosphereType"]),
+  );
 
   rows.forEach((row, _idx) => {
     const r = row;
@@ -857,6 +868,13 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
           atmosphereTypeAnyOf: normalizeAtmosphereToJournal(genusAtmosphereRaw),
         };
       }
+    }
+
+    if (genusRequiredAtmosphere?.length) {
+      criteria = {
+        ...criteria,
+        atmosphereTypeRequiredAnyOf: normalizeAtmosphereToJournal(genusRequiredAtmosphere),
+      };
     }
 
     out.push({
@@ -998,6 +1016,12 @@ export function loadSpeciesDatabaseFromTree(projectRoot: string): SpeciesDatabas
     else loadedLegacy++;
     const genusSpecies = parseGenusFile(jsonPath, folderBaseName, projectRoot);
     applyCodexCriteriaPatchesFromFixesJson(jsonPath, genusSpecies);
+    // Attached here rather than in the genus parser: the tables live in one file for the whole
+    // tree, and which of them applies is a species question, not a genus one.
+    for (const e of genusSpecies) {
+      const rule = colourVariantRuleFor(projectRoot, e.genusDataDir, e.displayName);
+      if (rule) e.colourVariant = rule;
+    }
     species.push(...genusSpecies);
   }
 
