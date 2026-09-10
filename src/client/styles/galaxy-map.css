@@ -85,8 +85,26 @@
 .galaxy-map__swatch { box-sizing: border-box; }
 
 /* "You are here" — a cross rather than a dot, so it is never mistaken for a sector marker. */
-.galaxy-map__you line { stroke: #f0f6fc; stroke-width: 1.5; }
-.galaxy-map__you circle { stroke: #f0f6fc; stroke-width: 1.5; }
+/*
+ * The ship. `stroke-width` is set per element in the markup so it can be kept constant in screen
+ * pixels as the plot zooms; the value here is only the fallback for the sector view, which does not
+ * zoom.
+ */
+.galaxy-map__you line { stroke: #f0f6fc; }
+.galaxy-map__you circle { stroke: #f0f6fc; }
+
+/*
+ * The ring around the sector marker the ship is in.
+ *
+ * Dashed and in the ship's own white so it cannot be mistaken for an evidence colour: it says
+ * "this marker and that cross are the same place", which is a statement about the view rather than
+ * about what grows there.
+ */
+.galaxy-map__you-cell {
+  stroke: #f0f6fc;
+  stroke-opacity: 0.55;
+  stroke-dasharray: 3 3;
+}
 
 /* A genus holding an ungateable species shows names without numbers — §18: no percentage with
    nothing behind it, and the shares are normalised so one bad member poisons them all. */

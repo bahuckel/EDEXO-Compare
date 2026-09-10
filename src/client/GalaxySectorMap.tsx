@@ -134,6 +134,22 @@ export interface CommanderPosition {
   system: string | null;
 }
 
+/**
+ * The ship in the two coordinate systems the map needs at once.
+ *
+ * `x/y/z` are cell units, because that is what the plots are drawn in. `ly` is where the ship
+ * actually is, which the sector drill-down needs — inside one 1 280 ly box, cell units are all the
+ * same number.
+ */
+interface CommanderCell {
+  x: number;
+  y: number;
+  z: number;
+  key: string;
+  system: string | null;
+  ly: { x: number; y: number; z: number };
+}
+
 export function GalaxySectorMap({
   file,
   commander,
@@ -281,13 +297,15 @@ export function GalaxySectorMap({
     const p = commander?.position;
     if (!p) return null;
     const cell = sectorCellFromCoords(p.x, p.y, p.z);
-    return {
+    const out: CommanderCell = {
       x: (p.x - SECTOR_ORIGIN.x) / SECTOR_SIZE_LY,
       y: (p.y - SECTOR_ORIGIN.y) / SECTOR_SIZE_LY,
       z: (p.z - SECTOR_ORIGIN.z) / SECTOR_SIZE_LY,
       key: sectorCellKey(cell),
       system: commander?.system ?? null,
+      ly: { x: p.x, y: p.y, z: p.z },
     };
+    return out;
   }, [commander]);
 
   const searchHit = useMemo(() => {
@@ -429,7 +447,12 @@ export function GalaxySectorMap({
       <SectorReadout cell={hover ?? openCell ?? searchHit} taxon={taxon} />
 
       {openCell ? (
-        <SectorSystems cell={openCell} taxon={taxon} onClose={() => setOpenCell(null)} />
+        <SectorSystems
+          cell={openCell}
+          taxon={taxon}
+          commander={commanderCell?.key === openCell.key ? commanderCell : null}
+          onClose={() => setOpenCell(null)}
+        />
       ) : null}
 
       {/*
@@ -516,8 +539,34 @@ function SectorPlot({
   const showBackdrop = backdrop != null && backdropOpacity > 0.02 && Math.abs(cam.yaw % 360) < 1;
   const span = regionSpanInCells(SECTOR_SIZE_LY);
 
+  /**
+   * Cells by key, so a mark that knows only its coordinates can find the sector it belongs to.
+   *
+   * The backlog dots are drawn over the sector markers and used to eat the click that was meant for
+   * the sector underneath — they carry a tooltip and no handler, so the click simply vanished.
+   * Reported as "I cannot click the sector which is under it".
+   */
+  const cellByKey = useMemo(() => new Map(rows.map((r) => [sectorCellKey(r.cell), r.cell])), [rows]);
+
   /** Plot coordinates for a point in cell space, at the current camera. */
   const at = useCallback((c: { x: number; y: number; z: number }) => project(c, cam), [cam]);
+  /**
+   * Plot coordinates for a whole **sector**, which is a 1 280 ly box and not a point.
+   *
+   * A cell's coordinates are the floor of a division, so `12:0:34` is the box's *corner*. Drawing
+   * the aggregate there put every sector marker up to a full cell down-and-left of the space it
+   * describes, and the visible cost was the ship: the commander's cross is plotted from real
+   * coordinates, so it sat somewhere inside its own sector's box while that sector's marker sat at
+   * the corner — as much as 1 280 ly away, and never under the cross. Reported as "my location is
+   * not on the sector I am in".
+   *
+   * Half a cell puts the marker in the middle of what it stands for, and the ship back inside it.
+   */
+  const atCell = useCallback(
+    (c: { x: number; y: number; z: number }) =>
+      project({ x: c.x + 0.5, y: c.y + 0.5, z: c.z + 0.5 }, cam),
+    [cam],
+  );
   /*
    * Two framings, and which one is right depends on whether the galaxy is drawn.
    *
@@ -528,7 +577,7 @@ function SectorPlot({
   const bounds = useMemo(() => {
     if (showBackdrop) return { minX: 0, maxX: span, minY: 0, maxY: span };
     if (rows.length === 0) return { minX: 0, maxX: 1, minY: 0, maxY: 1 };
-    const pts = rows.map((r) => at(r.cell));
+    const pts = rows.map((r) => atCell(r.cell));
     const xs = pts.map((p) => p.u);
     const ys = pts.map((p) => p.v);
     // The ship may be well outside the sampled corpus. Stretching the view to include it beats
@@ -544,7 +593,7 @@ function SectorPlot({
       minY: Math.min(...ys),
       maxY: Math.max(...ys),
     };
-  }, [rows, at, commander, showBackdrop, span]);
+  }, [rows, at, atCell, commander, showBackdrop, span]);
 
   const sx = (v: number) =>
     PAD + ((v - bounds.minX) / Math.max(1, bounds.maxX - bounds.minX)) * (VIEW_W - PAD * 2);
@@ -664,8 +713,8 @@ function SectorPlot({
           const style = TIER_STYLE[tier];
           // Hollow means one thing now: your own unfinished work.
           const hollow = style.fill === null;
-          const cx = sx(at(cell).u);
-          const cy = sy(at(cell).v);
+          const cx = sx(atCell(cell).u);
+          const cy = sy(atCell(cell).v);
           return (
             <g key={cell.key}>
               {/*
@@ -690,7 +739,12 @@ function SectorPlot({
                   if (!vp.panning) onOpen(cell);
                 }}
               >
-                <title>{`${cell.name ?? cell.key} — ${style.label}
+                <title>{`${cell.name ?? cell.key} — ${style.label}${
+                  commander?.key === cell.key
+                    ? `
+You are here — ${commander.system ?? "unknown system"}`
+                    : ""
+                }
 ${style.help}
 ${totals.bodies} bodies recorded here${
                   m ? ` · you scanned ${m.scannedByYou}, ${m.unscannedByYou} left` : ""
@@ -707,6 +761,25 @@ ${totals.bodies} bodies recorded here${
               strokeWidth={(isHit ? 2 : hollow ? 1.6 : 0.6) * vp.pixel}
             >
             </circle>
+            {/*
+              The sector the ship is in, ringed.
+
+              The cross alone left the pairing to the eye, and at galaxy scale two marks a few
+              pixels apart are not obviously the same place. A ring around the marker says which
+              sector the cross belongs to without needing a hover, and stays out of the evidence
+              colours by being drawn in the ship's own colour.
+            */}
+            {commander?.key === cell.key ? (
+              <circle
+                cx={cx}
+                cy={cy}
+                r={(r + 5) * vp.pixel}
+                className="galaxy-map__you-cell"
+                pointerEvents="none"
+                fill="none"
+                strokeWidth={1.2 * vp.pixel}
+              />
+            ) : null}
             </g>
           );
         })}
@@ -729,11 +802,18 @@ ${totals.bodies} bodies recorded here${
                 because that is how few cells thick the galaxy is.
               */
               const cell = sectorCellFractional(s.x, s.y, s.z);
+              // The sector this target sits in, so a click on the dot opens the drill-down instead
+              // of being swallowed by a mark that has nowhere to send it.
+              const owner = cellByKey.get(sectorCellKey(sectorCellFromCoords(s.x, s.y, s.z))) ?? null;
               return (
                 <circle
                   key={s.systemAddress}
                   cx={sx(at(cell).u)}
                   cy={sy(at(cell).v)}
+                  onClick={() => {
+                    if (!vp.panning && owner) onOpen(owner);
+                  }}
+                  style={owner ? { cursor: "pointer" } : undefined}
                   r={(2 + Math.min(3, Math.cbrt(s.bodies))) * vp.pixel}
                   className={[
                     "galaxy-map__target",
@@ -750,6 +830,7 @@ ${totals.bodies} bodies recorded here${
                     {[
                       `${s.starSystem} — ${s.bodies} unfinished ${s.bodies === 1 ? "body" : "bodies"}`,
                       `floor ${Math.round(s.floorCr).toLocaleString("en-US")} CR at 5×`,
+                      ...(owner ? [`click to open ${owner.name ?? sectorCellKey(owner)}`] : []),
                       ...(s.allVerified ? [] : ["footfall never reported — not confirmed"]),
                     ].join(`
 `)}
@@ -760,9 +841,16 @@ ${totals.bodies} bodies recorded here${
           </g>
         ) : null}
         {commander ? (
+          /*
+           * Drawn last so a dense sector never hides the ship, and `pointer-events: none` so the
+           * ship never hides a sector: the cross sits on top of the marker for the cell it is in,
+           * and without this it ate every click and hover meant for it. The sector's own tooltip
+           * says "you are here" instead.
+           */
           <g
             transform={`translate(${sx(at(commander).u)}, ${sy(at(commander).v)})`}
             className="galaxy-map__you"
+            pointerEvents="none"
           >
             {/* A cross, not a dot: at a glance it must not be mistaken for a sector marker, and it
                 stays legible on top of one. Drawn last so a dense sector never hides the ship. */}
@@ -770,7 +858,6 @@ ${totals.bodies} bodies recorded here${
             <line x1={-7 * vp.pixel} y1={0} x2={7 * vp.pixel} y2={0} strokeWidth={1.5 * vp.pixel} />
             <line x1={0} y1={-7 * vp.pixel} x2={0} y2={7 * vp.pixel} strokeWidth={1.5 * vp.pixel} />
             <circle r={4 * vp.pixel} fill="none" strokeWidth={1.5 * vp.pixel} />
-            <title>{`You are here — ${commander.system ?? "unknown system"} (cell ${commander.key})`}</title>
           </g>
         ) : null}
         </g>
@@ -837,10 +924,13 @@ function SectorReadout({ cell, taxon }: { cell: SectorMapCell | null; taxon: str
 function SectorSystems({
   cell,
   taxon,
+  commander,
   onClose,
 }: {
   cell: SectorMapCell;
   taxon: string;
+  /** The ship, when it is inside *this* cell. Null otherwise — the caller decides. */
+  commander: CommanderCell | null;
   onClose: () => void;
 }) {
   const [systems, setSystems] = useState<SectorSystem[] | null>(null);
@@ -881,11 +971,22 @@ function SectorSystems({
   }, [systems, taxon]);
 
   const bounds = useMemo(() => {
-    if (shown.length === 0) return { minX: 0, maxX: 1, minZ: 0, maxZ: 1 };
     const xs = shown.map((r) => r.system.x);
     const zs = shown.map((r) => r.system.z);
+    /*
+     * The ship stretches the frame the same way it does on the galaxy plot.
+     *
+     * A sector is 1 280 ly across and the recorded systems in it can sit in one corner, so fitting
+     * to them alone can put the commander off-canvas — which reads as "no position" rather than as
+     * "outside this crop". A cell holding nothing recorded at all still frames the ship.
+     */
+    if (commander) {
+      xs.push(commander.ly.x);
+      zs.push(commander.ly.z);
+    }
+    if (xs.length === 0) return { minX: 0, maxX: 1, minZ: 0, maxZ: 1 };
     return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
-  }, [shown]);
+  }, [shown, commander]);
 
   const W = 520;
   const H = 300;
@@ -913,10 +1014,22 @@ function SectorSystems({
         </p>
       ) : null}
 
+      {/*
+        A sector with the ship in it and nothing recorded still has something to say: where you are.
+        Without this the panel answered "no systems here for that selection" and stopped, which is
+        true and useless.
+      */}
+      {systems && shown.length === 0 && commander ? (
+        <p className="galaxy-map__more">
+          You are here — {commander.system ?? "unknown system"}.
+        </p>
+      ) : null}
+
       {shown.length > 0 ? (
         <>
           <p className="galaxy-map__more">
             {shown.length} system{shown.length === 1 ? "" : "s"} · top-down (X / Z) within the sector
+            {commander ? " · your ship marked" : ""}
           </p>
           <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Systems in ${cell.name ?? cell.key}`}>
             <rect x={0} y={0} width={W} height={H} className="galaxy-map__bg" />
@@ -944,6 +1057,25 @@ ${evidenceSummary(totals)}`}</title>
                 </circle>
               );
             })}
+            {/*
+              The ship, inside the sector.
+
+              The galaxy plot can only say which 1 280 ly box you are in; this is the one view where
+              "where you are in the sector" is a question with an answer, and the commander asked for
+              it. Same cross as the galaxy plot so the two read as one mark, and `pointer-events:
+              none` so it never takes a click from a system underneath it.
+            */}
+            {commander ? (
+              <g
+                transform={`translate(${sx(commander.ly.x)}, ${sy(commander.ly.z)})`}
+                className="galaxy-map__you"
+                pointerEvents="none"
+              >
+                <line x1={-7} y1={0} x2={7} y2={0} strokeWidth={1.5} />
+                <line x1={0} y1={-7} x2={0} y2={7} strokeWidth={1.5} />
+                <circle r={4} fill="none" strokeWidth={1.5} />
+              </g>
+            ) : null}
           </svg>
           <SystemReadout system={hover ?? pinned} taxon={taxon} pinned={pinned !== null && !hover} />
         </>
