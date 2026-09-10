@@ -1617,8 +1617,8 @@ export class GameStateStore {
          * sticky-`true` merge in observedFlag.ts is what settles the contradiction, but it can only
          * do that if it is shown both claims.
          *
-         * Note what this does *not* do: the physics below still requires a detailed scan, because an
-         * auto scan does not carry the full body. Only the two flags are hoisted.
+         * The physics below has its own admission test, on what the line contains rather than on its
+         * label — an auto scan from flying to a body carries the whole record.
          */
         if (
           typeof systemAddress === "number" &&
@@ -1640,7 +1640,27 @@ export class GameStateStore {
           }
         }
 
-        if (scanType !== "Detailed") return;
+        /*
+         * Accept any scan that actually describes the body, whatever it is labelled.
+         *
+         * This used to require `ScanType === "Detailed"`, on the assumption that nothing else
+         * carries the physics. It is not true. Flying to a body — rather than reaching it through
+         * the FSS — writes an `AutoScan` with the whole record: planet class, atmosphere, volcanism,
+         * gravity, temperature, pressure, materials, composition. Reported from the field on
+         * Aucoks AN-Q d6-59 BC 2, where the commander flew out, got a complete scan, and the app
+         * offered no candidate species at all because of the label on it.
+         *
+         * Across this commander's 245 journals that gate discarded **1,223 landable bodies** whose
+         * `AutoScan` carried full physics, and 142 more from `NavBeaconDetail`. So the test is what
+         * the line contains, not what it is called: a planet class plus the two numbers every gate
+         * needs. `Basic` scans have none of that and still fall out here, as they should.
+         */
+        const hasPhysics =
+          typeof line.PlanetClass === "string" &&
+          line.PlanetClass.trim() !== "" &&
+          typeof line.SurfaceGravity === "number" &&
+          typeof line.SurfaceTemperature === "number";
+        if (!hasPhysics) return;
 
         if (
           typeof systemAddress !== "number" ||
