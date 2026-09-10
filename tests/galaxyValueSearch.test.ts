@@ -14,17 +14,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { clearBioIndexCache } from "../src/server/bioIndex.js";
 
-const RECORD = 22;
+const RECORD = 25;
 
 function writeIndex(
   file: string,
   species: string[],
-  rows: { id64: bigint; name: string; x: number; y: number; z: number; region: number; species: number[] }[],
+  rows: { id64: bigint; name: string; x: number; y: number; z: number; region: number; species: number[]; tiers?: number; bodyCount?: number }[],
 ) {
   const json = Buffer.from(JSON.stringify({ species }), "utf8");
   const head = Buffer.alloc(20);
   head.write("EDEXOBIO", 0, "ascii");
-  head.writeUInt16LE(2, 8);
+  head.writeUInt16LE(3, 8);
   head.writeUInt16LE(species.length, 10);
   head.writeUInt32LE(rows.length, 12);
   head.writeUInt32LE(json.length, 16);
@@ -39,6 +39,8 @@ function writeIndex(
     table.writeFloatLE(r.z, o + 16);
     table.writeUInt8(r.region, o + 20);
     table.writeUInt8(r.species.length, o + 21);
+    table.writeUInt8(r.tiers ?? 0, o + 22);
+    table.writeUInt16LE(r.bodyCount ?? 0, o + 23);
     runs.push(...r.species);
     const nb = Buffer.from(r.name, "utf8");
     const len = Buffer.alloc(1);

@@ -12,18 +12,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadBioIndex, clearBioIndexCache } from "../src/server/bioIndex.js";
 
-const RECORD = 22;
+const RECORD = 25;
 
 /** Write a file in the shape scripts/build-bio-index.ts produces. */
 function writeIndex(
   file: string,
   species: string[],
-  rows: { id64: bigint; x: number; y: number; z: number; region: number; species: number[] }[],
+  rows: { id64: bigint; x: number; y: number; z: number; region: number; species: number[]; tiers?: number; bodyCount?: number }[],
 ) {
   const json = Buffer.from(JSON.stringify({ species }), "utf8");
   const head = Buffer.alloc(20);
   head.write("EDEXOBIO", 0, "ascii");
-  head.writeUInt16LE(1, 8);
+  head.writeUInt16LE(3, 8);
   head.writeUInt16LE(species.length, 10);
   head.writeUInt32LE(rows.length, 12);
   head.writeUInt32LE(json.length, 16);
@@ -37,6 +37,8 @@ function writeIndex(
     table.writeFloatLE(r.z, o + 16);
     table.writeUInt8(r.region, o + 20);
     table.writeUInt8(r.species.length, o + 21);
+    table.writeUInt8(r.tiers ?? 0, o + 22);
+    table.writeUInt16LE(r.bodyCount ?? 0, o + 23);
     runs.push(...r.species);
   });
   writeFileSync(file, Buffer.concat([head, json, table, Buffer.from(runs)]));
@@ -125,5 +127,27 @@ describe("a build without an index", () => {
     writeFileSync(bad, Buffer.from("not an index at all, but long enough to read a header from"));
     clearBioIndexCache();
     expect(loadBioIndex(bad)).toBeNull();
+  });
+});
+
+describe("evidence tiers", () => {
+  it("reads the flags back as a set, not a ladder position", async () => {
+    // A system can hold several at once — a confirmed species on one body and only an FSS count on
+    // another. Collapsing to "the strongest" at build time would hide the system most worth flying to.
+    const file = join(dir, "tiers.bin");
+    writeIndex(file, SPECIES, [
+      { id64: 10n, x: 0, y: 0, z: 0, region: 1, species: [0], tiers: 1 | 4, bodyCount: 32 },
+      { id64: 20n, x: 0, y: 0, z: 0, region: 1, species: [], tiers: 1, bodyCount: 0 },
+    ]);
+    clearBioIndexCache();
+    const ix = loadBioIndex(file)!;
+    const both = ix.lookup(10n)!;
+    expect(both.tiers & 1).toBeTruthy();
+    expect(both.tiers & 4).toBeTruthy();
+    expect(both.bodyCount).toBe(32);
+    const one = ix.lookup(20n)!;
+    expect(one.tiers & 4).toBe(0);
+    // Zero is "Spansh does not know", which is not "this system has no bodies".
+    expect(one.bodyCount).toBe(0);
   });
 });

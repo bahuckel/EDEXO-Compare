@@ -25,7 +25,13 @@ import path from "node:path";
 import { getProjectRoot } from "./paths.js";
 
 const MAGIC = "EDEXOBIO";
-const RECORD = 22;
+const RECORD = 25;
+
+/** Evidence tier bit flags — see scripts/build-bio-index.ts. A system can carry several. */
+export const TIER_FSS = 1;
+export const TIER_DSS = 2;
+export const TIER_CODEX = 4;
+export const TIER_BODIES_KNOWN = 8;
 
 export interface BioIndexSystem {
   id64: bigint;
@@ -38,6 +44,10 @@ export interface BioIndexSystem {
   regionId: number;
   /** Our own species ids. */
   species: string[];
+  /** Bit flags: TIER_*. Zero on a pre-v3 file, which knew only about codex species. */
+  tiers: number;
+  /** Spansh's body count, or 0 when unknown — which is not the same as a system with no bodies. */
+  bodyCount: number;
 }
 
 export interface BioIndex {
@@ -111,6 +121,8 @@ class Index implements BioIndex {
       y: this.view.getFloat32(o + 12, true),
       z: this.view.getFloat32(o + 16, true),
       regionId: this.view.getUint8(o + 20),
+      tiers: this.view.getUint8(o + 22),
+      bodyCount: this.view.getUint16(o + 23, true),
       species,
     };
   }
