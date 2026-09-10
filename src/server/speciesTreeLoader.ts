@@ -607,6 +607,29 @@ function readMinSampleDistanceFromMetaRecord(meta: Record<string, unknown> | nul
   return undefined;
 }
 
+/**
+ * A species' own `color_rules`, kept whole.
+ *
+ * Deliberately not flattened into a colour: the mapping is a rule, and which colour it yields
+ * depends on the body the commander is looking at. Flattening here would need a body, which the
+ * loader does not have and should not want.
+ */
+function readSpeciesColourRules(
+  r: Record<string, unknown>,
+): { type?: string; mapping?: Record<string, string> } | undefined {
+  const cr = asRecord(r.color_rules);
+  if (!cr) return undefined;
+  const mapping = asRecord(cr.mapping);
+  if (!mapping) return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(mapping)) {
+    if (typeof v === "string" && v.trim() && k.trim()) out[k.trim()] = v.trim();
+  }
+  if (!Object.keys(out).length) return undefined;
+  const type = typeof cr.type === "string" ? cr.type.trim() : undefined;
+  return { ...(type ? { type } : {}), mapping: out };
+}
+
 function collectGenusColorVariantRich(meta: Record<string, unknown> | null): {
   rule?: string;
   stellarMap?: Record<string, string>;
@@ -808,6 +831,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
     const id = slugId(genusFromFile, displayName, pickString(r, "id", "ID", "key", "Key"));
 
     const predictionUnsupported = detectPredictionUnsupported(r, id);
+    const speciesColourRules = readSpeciesColourRules(r);
 
     let criteria = buildCriteriaForRow(r, id);
     if (!criteria.planetClassAnyOf?.length && genusPlanetTypes?.length) {
@@ -845,6 +869,9 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
         ? { genusColorStellarMapping: colorRich.stellarMap }
         : {}),
       ...(colorRich?.materialDriven ? { genusColorMaterialDriven: true } : {}),
+      // The species' own colour rule. Each Bacterium maps the same material to a different colour,
+      // so only this one can answer for it; the genus map cannot.
+      ...(speciesColourRules ? { speciesColourRules } : {}),
     });
   });
 

@@ -80,12 +80,18 @@ export type OrganicAnalyseProgress = { count: number; label: string };
  * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
  * feature that reads it stays dark with nothing logged anywhere.
  *
+ * 5 — no new field. `WasFootfalled` is now read from every scan type and the physics gate tests
+ *     content rather than the `Detailed` label, so a cache built by the old code carries wrong
+ *     `firstFootfallBodies` and missing body scans. **A change in how the payload is derived
+ *     invalidates it exactly as much as a change in its shape** — the owner's Stratum Tectonicas
+ *     stayed flagged as a first footfall through a fix that had already landed, because the shape
+ *     had not changed and the old answer was restored verbatim.
  * 4 — `systemPositions`, so the galaxy map can place the backlog.
  * 3 — `mainStarWasDiscoveredBySystem`. It was added to the payload without bumping this, so caches
  * written before 2026-09-08 replayed nothing and the FIRST chip could never light for anyone holding
  * one. Bumping forces a single rebuild per user, which is the whole cost.
  */
-export const JOURNAL_MERGE_CACHE_FORMAT = 4;
+export const JOURNAL_MERGE_CACHE_FORMAT = 5;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {

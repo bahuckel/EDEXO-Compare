@@ -253,6 +253,16 @@ export interface SpeciesEntry {
   genusColorStellarMapping?: Record<string, string>;
   /** True when colour map includes material / composition keys (not only host spectral class). */
   genusColorMaterialDriven?: boolean;
+  /**
+   * This species' own `color_rules`, as written in the genus file.
+   *
+   * Per species, not per genus: each Bacterium names a different colour for the same material, so
+   * the genus-level map cannot answer for any of them. The loader used to read only the genus meta
+   * and record a bare `genusColorMaterialDriven` boolean, which is why a material-driven species
+   * always displayed "(unknown)" — the app had the rule in its data and never carried it far enough
+   * to use.
+   */
+  speciesColourRules?: { type?: string; mapping?: Record<string, string> };
 }
 
 export interface SpeciesDatabase {

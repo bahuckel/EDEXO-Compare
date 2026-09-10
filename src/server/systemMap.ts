@@ -355,12 +355,31 @@ function inferBarycentreDisplayTag(
   return "";
 }
 
+/**
+ * Is there anything to say about biology on this body?
+ *
+ * Four of these are evidence that life *is* there. The fifth is different and was missing: a
+ * landable body whose conditions are known at all. Flying to a body writes a complete `AutoScan`
+ * and no signal count — the count only arrives from an FSS or a DSS — so a commander who flew out
+ * saw nothing at all, reported on Blu Thua VH-G b38-1 1 where the journal has no `FSSBodySignals`
+ * anywhere and the first count came at DSS two minutes later.
+ *
+ * Predicting from conditions alone is a weaker claim than a signal count and must be shown as one:
+ * "these species could live here", not "these species are here". But it is the claim the app exists
+ * to make, and withholding it until the commander has already probed the body answers the question
+ * after it stopped mattering.
+ */
 export function bodyHasExoMarkers(b: BodyExoState): boolean {
   const hasBioCount = b.biologicalSignals !== null && b.biologicalSignals > 0;
   const hasHints = !!(b.genusHints && b.genusHints.length);
   const confirmed = b.confirmedVariants.length > 0;
   const organicLocks = b.organicGenusLocks.length > 0;
-  return hasBioCount || hasHints || confirmed || organicLocks;
+  // Landable and described: enough to say what could grow, never enough to say what does.
+  const predictable =
+    b.scan?.Landable === true &&
+    typeof b.scan.PlanetClass === "string" &&
+    b.scan.PlanetClass.trim() !== "";
+  return hasBioCount || hasHints || confirmed || organicLocks || predictable;
 }
 
 export type StarRolesConfig = {

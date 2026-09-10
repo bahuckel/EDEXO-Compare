@@ -727,7 +727,15 @@ const SpeciesCard = memo(function SpeciesCard({
   const { genusShow, epithet } = speciesCaptionParts(e.genus, e.displayName);
   const genusDisplay = genusShow ? titleCaseSpeciesWords(genusShow) : "";
   const epithetDisplay = titleCaseSpeciesWords(epithet);
-  const morphColorRaw = useMemo(() => candidateMorphColorShortLabel(e, hostStarType), [e, hostStarType]);
+  /*
+   * The body's own materials decide the colour for material-driven species, and the card already
+   * has the scan. Passing it is the whole fix for "Bacterium Vesicula (unknown)" on a body whose
+   * only colour-driving material was yttrium.
+   */
+  const morphColorRaw = useMemo(
+    () => candidateMorphColorShortLabel(e, hostStarType, scan?.materials),
+    [e, hostStarType, scan?.materials],
+  );
   const morphColorDisplay =
     morphColorRaw === "(unknown)" ? morphColorRaw : titleCaseSpeciesWords(morphColorRaw);
   const identityNote = useMemo(() => {

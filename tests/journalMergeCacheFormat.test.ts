@@ -54,10 +54,10 @@ describe("payload round-trip", () => {
 
 describe("the format constant", () => {
   it("only ever goes up, so an old cache can never be re-admitted", () => {
-    // 3 retired caches written before `mainStarWasDiscoveredBySystem`; 4 retired those written
-    // before `systemPositions`. Lowering it would let a cache back in that is missing a field the
-    // app now reads, which is the exact failure this file exists for.
-    expect(JOURNAL_MERGE_CACHE_FORMAT).toBeGreaterThanOrEqual(4);
+    // 3 retired caches written before `mainStarWasDiscoveredBySystem`; 4 before `systemPositions`;
+    // 5 retired caches whose *derivation* was wrong even though the shape was right — footfall read
+    // from Detailed scans only. Lowering it lets back in a cache the app would misread.
+    expect(JOURNAL_MERGE_CACHE_FORMAT).toBeGreaterThanOrEqual(5);
   });
 
   it("covers every key the store serializes", () => {
