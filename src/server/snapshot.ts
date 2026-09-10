@@ -23,6 +23,7 @@ import type {
 } from "../shared/types.js";
 import { getProjectRoot } from "./paths.js";
 import { perfTime } from "./perf.js";
+import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
 import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
@@ -1053,6 +1054,27 @@ function buildOrganicPendingLines(
   return out;
 }
 
+/**
+ * The region under the system being looked at.
+ *
+ * Cheap: one `Map` lookup for the coordinates and one run-length walk across a 2 048-entry row. It
+ * runs once per snapshot, not once per body, which is the difference between free and the kind of
+ * cost that ends up in a CPU profile.
+ */
+function regionForFocusedSystem(
+  store: GameStateStore,
+  focusAddr: number | null,
+  projectRoot: string,
+): { name: string; index: number } | null {
+  if (focusAddr == null) return null;
+  const pos = store.systemPositions.get(focusAddr);
+  if (!pos) return null;
+  const index = regionIndexForSystem(projectRoot, pos.x, pos.z);
+  if (index == null || index <= 0) return null;
+  const name = regionForSystem(projectRoot, pos.x, pos.y, pos.z);
+  return name ? { name, index } : null;
+}
+
 export function buildSnapshot(
   store: GameStateStore,
   journalPath: string | null,
@@ -1176,6 +1198,7 @@ export function buildSnapshot(
     commanderName: store.commanderName,
     currentSystem: store.currentSystem,
     currentSystemAddress: store.currentSystemAddress,
+    currentRegion: regionForFocusedSystem(store, focusAddr, projectRoot),
     viewingSystemAddress: store.viewingSystemAddress,
     viewingSystemName,
     journalSystems,

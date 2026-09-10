@@ -560,3 +560,29 @@
 .brand-hero--idle {
   margin-top: 0.2rem;
 }
+
+/*
+ * The region chip, beside the system name.
+ *
+ * Reads as an annotation on the system, not as a second heading: same row, dimmer, smaller, and it
+ * wraps out of the way rather than pushing the search box off a narrow window.
+ */
+.appbar-region {
+  display: inline-flex;
+  min-width: 0;
+}
+
+.appbar-region-chip {
+  display: inline-block;
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  background: var(--panel-2, transparent);
+}

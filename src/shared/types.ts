@@ -156,6 +156,16 @@ export interface SpeciesMatchContext {
    * to". Phase 7 is the something: three genera are gated on position, and this is the wire.
    */
   systemCoords?: { x: number; y: number; z: number };
+  /**
+   * The named galactic region the body's system sits in, resolved from `systemCoords`.
+   *
+   * Carried here so a region rule can be written against it without every call site having to load
+   * a 182 kB map. Nothing gates on it yet — the region×species table that would make it a gate has
+   * not been built — but the owner's field reports keep landing on region questions ("Cactoida —
+   * region check"), and a context that cannot answer where you are cannot answer those.
+   */
+  regionName?: string;
+  regionIndex?: number;
   /** Surface pressure in atm after `journalPressureToAtm`; `null` / missing when not in scan. */
   surfacePressureAtm?: number | null;
 }
@@ -1367,6 +1377,20 @@ export interface AppSnapshot {
   commanderName: string | null;
   currentSystem: string | null;
   currentSystemAddress: number | null;
+  /**
+   * Which of the galaxy's 42 named regions the focused system sits in.
+   *
+   * Region is one of the strongest signals in exobiology — several species simply do not occur
+   * outside particular regions — and the app already shipped a 2 048-row region map that nothing
+   * read. It was reachable only by opening the galaxy map, which is the one place a commander does
+   * not need to be told where they are. Now it rides on every snapshot, so the header can say it and
+   * the matcher can eventually use it.
+   *
+   * Follows the *viewed* system, not the commander: browsing a system 5 kly away should name that
+   * system's region, not the one under the ship. Null when the system has no recorded `StarPos`, or
+   * when the point falls outside every named region — which is most of the galaxy.
+   */
+  currentRegion: { name: string; index: number } | null;
   /**
    * When non-null, the body list reflects this system (journal memory); null = follow commander (`currentSystemAddress`).
    */

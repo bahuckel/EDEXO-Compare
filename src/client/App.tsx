@@ -4077,6 +4077,22 @@ const HeaderBar = memo(function HeaderBar({
               <span className="appbar-system-name">{snap.primaryStarsHeader.systemName}</span>
             </button>
             <CopySystemNameButton systemName={snap.primaryStarsHeader.systemName} />
+            {snap.currentRegion ? (
+              /*
+               * Where in the galaxy this is, without opening the galaxy map.
+               *
+               * Region decides what can grow here — several species do not occur outside particular
+               * ones — and a commander deep in the black checking a candidate list should not have
+               * to open a second screen to learn which region they are reading it in. Follows the
+               * system on show, so browsing somewhere else names *that* region.
+               */
+              <Tooltip
+                className="appbar-region"
+                text={`${snap.currentRegion.name} — the galactic region this system sits in. Region is one of the strongest signals in exobiology; several species never appear outside particular ones.`}
+              >
+                <span className="appbar-region-chip">{snap.currentRegion.name}</span>
+              </Tooltip>
+            ) : null}
           </div>
         ) : null}
 

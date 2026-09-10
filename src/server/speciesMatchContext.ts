@@ -8,6 +8,8 @@ import {
   resolveHostStarBodyId,
 } from "./orbitUtils.js";
 import { hostStarClassKeys } from "../shared/hostStarGates.js";
+import { getProjectRoot } from "./paths.js";
+import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
 
 function bodyKey(systemAddress: number, bodyId: number): string {
@@ -236,6 +238,18 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   }
 
   const ctx: SpeciesMatchContext = {};
+  const pos = store.systemPositions.get(exo.systemAddress);
+  if (pos) {
+    const root = getProjectRoot();
+    const idx = regionIndexForSystem(root, pos.x, pos.z);
+    if (idx != null && idx > 0) {
+      const name = regionForSystem(root, pos.x, pos.y, pos.z);
+      if (name) {
+        ctx.regionName = name;
+        ctx.regionIndex = idx;
+      }
+    }
+  }
   if (parentStarType) ctx.parentStarType = parentStarType;
   if (parentStarSubclass !== undefined) ctx.parentStarSubclass = parentStarSubclass;
   if (parentStarLuminosity) ctx.parentStarLuminosity = parentStarLuminosity;
