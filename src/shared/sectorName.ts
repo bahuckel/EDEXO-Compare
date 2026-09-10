@@ -76,6 +76,25 @@ export function sectorCellFromCoords(x: number, y: number, z: number): SectorCel
   };
 }
 
+/**
+ * The same cell coordinates without the floor, for things that know exactly where they are.
+ *
+ * A sector is 1 280 ly on a side and the galaxy is only about ±2 000 ly thick, so flooring y leaves
+ * **four** possible values — which is why an edge-on map of cell coordinates draws every system in
+ * the galaxy as two or three stacked rows. Aggregated sector data really is that coarse vertically
+ * and cannot be helped, but a system with its own coordinates should never be rounded into a 1 280 ly
+ * bucket before being drawn: it already knows better.
+ *
+ * Same origin and scale as {@link sectorCellFromCoords}, so the two plot in one space.
+ */
+export function sectorCellFractional(x: number, y: number, z: number): SectorCell {
+  return {
+    x: (x - SECTOR_ORIGIN.x) / SECTOR_SIZE_LY,
+    y: (y - SECTOR_ORIGIN.y) / SECTOR_SIZE_LY,
+    z: (z - SECTOR_ORIGIN.z) / SECTOR_SIZE_LY,
+  };
+}
+
 /** The catalogue key for a cell — `x:y:z`, matching `sector-list.csv`'s `id64 X/Y/Z`. */
 export function sectorCellKey(cell: SectorCell): string {
   return `${cell.x}:${cell.y}:${cell.z}`;

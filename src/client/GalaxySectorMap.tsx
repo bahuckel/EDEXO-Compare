@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   SECTOR_ORIGIN,
   SECTOR_SIZE_LY,
+  sectorCellFractional,
   sectorCellFromCoords,
   sectorCellKey,
 } from "@shared/sectorName.js";
@@ -601,7 +602,12 @@ ${evidenceSummary(totals)}`}</title>
         {backlog.length > 0 ? (
           <g className="galaxy-map__backlog">
             {backlog.map((s) => {
-              const cell = sectorCellFromCoords(s.x, s.y, s.z);
+              /*
+                Fractional, not floored. These systems know their own coordinates; rounding them into
+                a 1 280 ly cell before drawing collapses the edge-on view into three stacked rows,
+                because that is how few cells thick the galaxy is.
+              */
+              const cell = sectorCellFractional(s.x, s.y, s.z);
               return (
                 <circle
                   key={s.systemAddress}

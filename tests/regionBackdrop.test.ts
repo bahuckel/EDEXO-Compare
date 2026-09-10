@@ -72,3 +72,34 @@ describe("rendering without a canvas", () => {
     expect(renderRegionBackdrop({ regions: [], regionmap: [] })).toBeNull();
   });
 });
+
+describe("plotting a system that knows where it is", () => {
+  it("does not round it into a 1280 ly cell first", async () => {
+    // The edge-on map drew every system as two or three stacked rows, because flooring y leaves four
+    // possible values across the whole galaxy. Systems with real coordinates must keep them.
+    const { sectorCellFractional, sectorCellFromCoords } = await import("../src/shared/sectorName.js");
+    // Both inside one cell: 600 ly apart in the galaxy, identical on the map.
+    const a = sectorCellFromCoords(0, 0, 0);
+    const b = sectorCellFromCoords(0, 600, 0);
+    expect(a.y).toBe(b.y);
+
+    const fa = sectorCellFractional(0, 0, 0);
+    const fb = sectorCellFractional(0, 600, 0);
+    expect(fb.y - fa.y).toBeCloseTo(600 / 1280, 6);
+  });
+
+  it("stays in the same space as the floored form, so the two overlay", async () => {
+    const { sectorCellFractional, sectorCellFromCoords } = await import("../src/shared/sectorName.js");
+    for (const p of [
+      [0, 0, 0],
+      [-9530.5, -910.28, 19808.125],
+      [25.2, -20.9, 25899.97],
+    ] as const) {
+      const f = sectorCellFractional(...p);
+      const c = sectorCellFromCoords(...p);
+      expect(Math.floor(f.x)).toBe(c.x);
+      expect(Math.floor(f.y)).toBe(c.y);
+      expect(Math.floor(f.z)).toBe(c.z);
+    }
+  });
+});

@@ -1600,6 +1600,46 @@ export class GameStateStore {
         }
 
         const scanType = line.ScanType as string | undefined;
+
+        /*
+         * `WasFootfalled` and `WasMapped` are read from **every** scan that carries them, not only
+         * the detailed one — and that placement is the whole bug this block exists to prevent.
+         *
+         * Aucoks OG-E b18-3 A 1, 2026-09-09, is the case that found it. The game wrote two scans:
+         *
+         *   11:55:05  AutoScan   WasMapped true   WasFootfalled true
+         *   11:56:10  Detailed   WasMapped false  WasFootfalled false
+         *
+         * The second arrives immediately after the commander's own `SAAScanComplete` and contradicts
+         * the first. With these reads sitting below a `ScanType !== "Detailed"` return, the honest
+         * `true` was thrown away unseen and only the `false` was ever recorded — so a body somebody
+         * else had already walked was offered as an unclaimed 5x. Footfall does not un-happen; the
+         * sticky-`true` merge in observedFlag.ts is what settles the contradiction, but it can only
+         * do that if it is shown both claims.
+         *
+         * Note what this does *not* do: the physics below still requires a detailed scan, because an
+         * auto scan does not carry the full body. Only the two flags are hoisted.
+         */
+        if (
+          typeof systemAddress === "number" &&
+          typeof bodyId === "number" &&
+          typeof bodyName === "string" &&
+          bodyName.trim()
+        ) {
+          const anyScanTs = (line.timestamp as string) ?? new Date().toISOString();
+          const wf = line.WasFootfalled;
+          if (typeof wf === "boolean") {
+            this.observeFootfall(bodyKey(systemAddress, bodyId), wf, "journal", anyScanTs);
+          }
+          // `Scan.WasMapped` is "had anyone mapped this at the moment of the scan". Our own DSS makes
+          // later scans report true, which is why the *first-mapper* question is frozen separately at
+          // SAAScanComplete — but for "has anyone mapped it", a later true is simply correct.
+          const wm = (line as Record<string, unknown>).WasMapped;
+          if (typeof wm === "boolean") {
+            this.observeMapped(bodyKey(systemAddress, bodyId), wm, "journal", anyScanTs);
+          }
+        }
+
         if (scanType !== "Detailed") return;
 
         if (
@@ -1614,16 +1654,6 @@ export class GameStateStore {
 
         const scanTs = (line.timestamp as string) ?? new Date().toISOString();
         const wfRaw = line.WasFootfalled;
-        if (typeof wfRaw === "boolean") {
-          this.observeFootfall(bodyKey(systemAddress, bodyId), wfRaw, "journal", scanTs);
-        }
-        // `Scan.WasMapped` is "had anyone mapped this at the moment of the scan". Our own DSS makes
-        // later scans report true, which is why the *first-mapper* question is frozen separately at
-        // SAAScanComplete — but for "has anyone mapped it", a later true is simply correct.
-        const wmRaw = (line as Record<string, unknown>).WasMapped;
-        if (typeof wmRaw === "boolean") {
-          this.observeMapped(bodyKey(systemAddress, bodyId), wmRaw, "journal", scanTs);
-        }
 
         if (this.currentSystemAddress === null || systemAddress !== this.currentSystemAddress) return;
 
