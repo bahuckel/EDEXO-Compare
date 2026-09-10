@@ -21,8 +21,8 @@ function body(over: Partial<BodyExoState>): BodyExoState {
   };
 }
 
-function match(id: string, displayName: string): Pick<SpeciesMatch, "entry"> {
-  return { entry: { id, displayName } as SpeciesEntry };
+function match(id: string, displayName: string, genus = displayName): Pick<SpeciesMatch, "entry"> {
+  return { entry: { id, displayName, genus } as SpeciesEntry };
 }
 
 /** Prices are keyed by lowercased display name; see priceList.normKey. */
@@ -109,5 +109,55 @@ describe("computeExoPayoutRangeFromMatches", () => {
     expect(unknown.journalWasFootfalled).toBeNull();
     const footfalled = computeExoPayoutRangeFromMatches(all, prices, 1, "bio_signals", 1, true, false)!;
     expect(footfalled.journalWasFootfalled).toBe(true);
+  });
+});
+
+describe("one species per genus", () => {
+  /**
+   * A body grows at most one species of each genus, so the signal count is a *genus* count.
+   *
+   * Blu Thua ML-P b47-2 B 7: one biological signal, three Bacterium candidates, and the range
+   * treated them as three things that could all be down there at once.
+   */
+  const bacteria = [
+    match("b1", "Cheap one", "Bacterium"),
+    match("b2", "Middle one", "Bacterium"),
+    match("b3", "Dear one", "Bacterium"),
+  ];
+
+  it("never sums two species of the same genus", () => {
+    const r = computeExoPayoutRangeFromMatches(bacteria, prices, 3, "bio_signals", 1, null, false);
+    // Three slots, three candidates — but one genus, so one plant.
+    expect(r?.maxCr).toBe(5_000_000);
+    expect(r?.minCr).toBe(1_000_000);
+    expect(r?.maxTotalSpecies).toHaveLength(1);
+  });
+
+  it("says the list is short of genera, not short of species", () => {
+    const r = computeExoPayoutRangeFromMatches(bacteria, prices, 2, "bio_signals", 1, null, false);
+    // Two signals means two genera; three Bacterium cover one of them.
+    expect(r?.incomplete).toBe(true);
+  });
+
+  it("still adds up across different genera", () => {
+    const mixed = [
+      match("b1", "Cheap one", "Bacterium"),
+      match("s1", "Dear one", "Stratum"),
+    ];
+    const r = computeExoPayoutRangeFromMatches(mixed, prices, 2, "bio_signals", 1, null, false);
+    expect(r?.maxCr).toBe(6_000_000);
+    expect(r?.incomplete).toBe(false);
+  });
+
+  it("takes each genus's own best and worst for the two ends", () => {
+    const mixed = [
+      match("b1", "Cheap one", "Bacterium"),
+      match("b2", "Dear one", "Bacterium"),
+      match("s1", "Middle one", "Stratum"),
+    ];
+    const r = computeExoPayoutRangeFromMatches(mixed, prices, 2, "bio_signals", 1, null, false);
+    // Ceiling: dearest Bacterium + Stratum. Floor: cheapest Bacterium + the same Stratum.
+    expect(r?.maxCr).toBe(7_000_000);
+    expect(r?.minCr).toBe(3_000_000);
   });
 });

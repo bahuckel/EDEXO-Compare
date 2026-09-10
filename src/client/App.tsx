@@ -4882,19 +4882,24 @@ export function App() {
 
   /**
    * One section per orbit group, host cards inside it. The orbit label used to be a `<select>` that
-   * *filtered* the strip; it is a sticky separator now, so every body stays reachable in one scroll.
+   * *filtered* the strip; it became a sticky separator, so every body stays reachable in one scroll.
+   *
+   * The separator carries no text any more. `Near B` above a tab already labelled `B 1` spends a
+   * slot of a strip that has to hold every bio body in the system to repeat what the designation
+   * says — commanders read the ancestry straight off the name, which is what the name is for. The
+   * grouping itself stays: it is what puts a moon next to its planet.
    */
   const tabSections = useMemo<TabSection[]>(
     () =>
       bodyGroups.map((g) => ({
         key: g.key,
-        label: multiOrbit ? g.label : null,
+        label: null,
         hostCards: groupTabBodiesIntoHostCards(
           orderedBodies.filter((b) => g.bodyKeys.has(b.state.key)),
           snapshot?.systemMap,
         ),
       })),
-    [bodyGroups, multiOrbit, orderedBodies, snapshot?.systemMap],
+    [bodyGroups, orderedBodies, snapshot?.systemMap],
   );
 
   const jumpItems = useMemo(() => {

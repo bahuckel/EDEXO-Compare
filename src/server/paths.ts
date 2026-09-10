@@ -209,8 +209,41 @@ function portableCandidateDirs(): string[] {
   return out;
 }
 
+/**
+ * Where the app is installed, worked out once.
+ *
+ * Everything below answers by probing the filesystem, and the answer cannot change while the process
+ * lives: it is derived from `process.execPath`, `argv` and environment variables that are all fixed
+ * before the server starts. Recomputing it was costing more than everything else in the app put
+ * together — a CPU profile of one system-map build (27 bodies, Blu Thua ML-P b47-2) spent **82 % of
+ * its time in `existsSync`**, because the matcher asks each of the six observation modules for the
+ * project root, once per species, once per body, three times over. Roughly a quarter of a million
+ * stat calls to learn the same path. The map took 2.5 seconds to build and the window went
+ * unresponsive, which is what the owner reported from the field.
+ *
+ * Cached as a three-state box rather than a truthy check, because `null` is a real answer for the
+ * two that can return it.
+ */
+let cachedElectronRes: { v: string | null } | null = null;
+let cachedPortableRoot: { v: string | null } | null = null;
+let cachedProjectRoot: { v: string } | null = null;
+
+/** Drop the memoized install paths. For tests that move the tree or rewrite the environment. */
+export function resetInstallPathCache(): void {
+  cachedElectronRes = null;
+  cachedPortableRoot = null;
+  cachedProjectRoot = null;
+}
+
 /** Next to the .exe: `data/species/` (per-genus JSON tree), `web/index.html`, or legacy `dist/web/index.html`. */
 export function getPortableExeRoot(): string | null {
+  if (cachedPortableRoot) return cachedPortableRoot.v;
+  const v = computePortableExeRoot();
+  cachedPortableRoot = { v };
+  return v;
+}
+
+function computePortableExeRoot(): string | null {
   const markers: string[][] = [
     ["data", "species"],
     ["web", "index.html"],
@@ -236,6 +269,13 @@ export function getWebRoot(projectRoot: string): string {
  * the server bundle so this code never `require("electron")` (keeps @yao-pkg/pkg CLI exes lean).
  */
 function electronPackagedResourcesRoot(): string | null {
+  if (cachedElectronRes) return cachedElectronRes.v;
+  const v = computeElectronPackagedResourcesRoot();
+  cachedElectronRes = { v };
+  return v;
+}
+
+function computeElectronPackagedResourcesRoot(): string | null {
   try {
     if (process.env.EDEXO_ELECTRON_PACKAGED === "1") {
       const res = process.env.EDEXO_RESOURCES_ROOT?.trim();
@@ -263,6 +303,13 @@ function electronPackagedResourcesRoot(): string | null {
  * Electron: resources folder with `web/index.html`.
  */
 export function getProjectRoot(): string {
+  if (cachedProjectRoot) return cachedProjectRoot.v;
+  const v = computeProjectRoot();
+  cachedProjectRoot = { v };
+  return v;
+}
+
+function computeProjectRoot(): string {
   const electronRes = electronPackagedResourcesRoot();
   if (electronRes) return electronRes;
 

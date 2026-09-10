@@ -657,7 +657,16 @@ function collectGenusColorVariantRich(meta: Record<string, unknown> | null): {
       nonStellar++;
     }
   }
-  const materialDriven = nonStellar > 0;
+  /*
+   * Material-driven means the mapping names materials *instead of* star classes, not as well as.
+   *
+   * This used to be `nonStellar > 0`, which let one stray key veto a whole star table: Fonticulua
+   * maps fourteen spectral classes and `Ae/Be`, Tussock maps fourteen and `Black Hole`, and both
+   * genera reported "(unknown)" for every candidate in the game because of that one entry. Those two
+   * keys are spectral classes now (see `starSpectralKeys.ts`), and this is the second lock: a table
+   * that names any star class at all is a star table, whatever else is in it.
+   */
+  const materialDriven = nonStellar > 0 && Object.keys(stellarMap).length === 0;
   const out: { rule?: string; stellarMap?: Record<string, string>; materialDriven?: boolean } = {};
   if (rule) out.rule = rule;
   if (Object.keys(stellarMap).length) out.stellarMap = stellarMap;
