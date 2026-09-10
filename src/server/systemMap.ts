@@ -8,6 +8,7 @@ import type {
   PrimaryStarHeaderEntryDTO,
   PrimaryStarsHeaderDTO,
   SpeciesDatabase,
+  SpeciesMatch,
   StarRoleDTO,
   SystemMapBodyDetailDTO,
   SystemMapNodeDTO,
@@ -550,31 +551,76 @@ function exoValueTierFromHeuristic(credits: number, plusMin: number, plusPlusMin
 }
 
 /**
+ * Everything the map needs to know about what could grow on one body, worked out once.
+ *
+ * The value tier, the payout range and the candidate list are three questions with one answer, and
+ * they used to ask it separately: three `matchDatabaseToScan` calls per body over identical inputs,
+ * each rebuilding the same match context and walking the same 108 species. On a 27-body system that
+ * is 81 runs of the matcher to produce 27 results.
+ *
+ * Computed in the caller's loop and handed down. Null means the body has nothing to say — no exo
+ * markers, or no scan that names a planet class — which all three consumers used to decide for
+ * themselves, in the same words.
+ */
+interface ExoMatchRun {
+  exo: BodyExoState;
+  scan: PlanetScan;
+  /**
+   * The matcher's own rows, which are not yet `SpeciesMatch`.
+   *
+   * Photos, notes and prices are attached later by the snapshot path; the map wants names and ids
+   * and never looks at those, so this takes the matcher's output as it comes rather than paying to
+   * decorate 108 rows per body for three fields nobody here reads.
+   */
+  matches: MatcherRow[];
+  /** `shownSpeciesMatches(matches)`, since all three consumers want the shown tier and not the rest. */
+  shown: MatcherRow[];
+  approximateMatchingUsed: boolean;
+}
+
+type MatcherRow = Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">;
+
+function exoMatchRun(
+  store: GameStateStore,
+  db: SpeciesDatabase,
+  r: ExplorationScanRecord,
+  spatialCatalogue: SpatialCatalogue | null,
+): ExoMatchRun | null {
+  const exo = store.bodies.get(bodyKey(r.systemAddress, r.bodyId));
+  if (!exo || !bodyHasExoMarkers(exo)) return null;
+  const scan = scanForMatch(store, r, exo);
+  if (!scan?.PlanetClass) return null;
+  const run = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
+    includeBacterium: store.includeBacteriumInSearch,
+    matchContext: buildSpeciesMatchContext(exo, store),
+    spatialCatalogue,
+  });
+  return {
+    exo,
+    scan,
+    matches: run.matches,
+    shown: shownSpeciesMatches(run.matches),
+    approximateMatchingUsed: run.approximateMatchingUsed,
+  };
+}
+
+/**
  * `displayMax`: best single-species payout heuristic for map tiers (list × 5 only when this commander has
  * first-footfall on the body, else × 1 — same rule as pending organic valuation).
  * `tierValue`: conservative basis for `+` / `++` when matching is approximate-only (minimum among tied ×vals).
  */
 function maxExoHeuristicPair(
   store: GameStateStore,
-  db: SpeciesDatabase,
   prices: PriceIndex,
   r: ExplorationScanRecord,
-  spatialCatalogue: SpatialCatalogue | null,
+  run: ExoMatchRun | null,
 ): { displayMax: number; tierValue: number } {
+  if (!run) return { displayMax: 0, tierValue: 0 };
   const bk = bodyKey(r.systemAddress, r.bodyId);
-  const exo = store.bodies.get(bk);
-  if (!exo || !bodyHasExoMarkers(exo)) return { displayMax: 0, tierValue: 0 };
-  const scan = scanForMatch(store, r, exo);
-  if (!scan?.PlanetClass) return { displayMax: 0, tierValue: 0 };
-  const run = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
-    includeBacterium: store.includeBacteriumInSearch,
-    matchContext: buildSpeciesMatchContext(exo, store),
-    spatialCatalogue,
-  });
   const mult: 1 | 5 = store.firstFootfallBodies.has(bk) ? 5 : 1;
   const vals: number[] = [];
   // Value tiers colour the map. A demoted candidate must not make a body look rich.
-  for (const m of shownSpeciesMatches(run.matches)) {
+  for (const m of run.shown) {
     const p = lookupPriceStrict(prices, m.entry.displayName, m.entry.id);
     if (p != null) vals.push(p * mult);
   }
@@ -586,28 +632,19 @@ function maxExoHeuristicPair(
 
 function buildExoPayoutRangeForRecord(
   store: GameStateStore,
-  db: SpeciesDatabase,
   prices: PriceIndex,
   r: ExplorationScanRecord,
-  spatialCatalogue: SpatialCatalogue | null,
+  run: ExoMatchRun | null,
 ): ExoPayoutRangeDTO | null {
+  if (!run) return null;
   const bk = bodyKey(r.systemAddress, r.bodyId);
-  const exo = store.bodies.get(bk);
-  if (!exo || !bodyHasExoMarkers(exo)) return null;
-  const scan = scanForMatch(store, r, exo);
-  if (!scan?.PlanetClass) return null;
-  const { matches } = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
-    includeBacterium: store.includeBacteriumInSearch,
-    matchContext: buildSpeciesMatchContext(exo, store),
-    spatialCatalogue,
-  });
-  const { count: slots, source: slotSource } = resolveOrganicSlotCount(exo);
+  const { count: slots, source: slotSource } = resolveOrganicSlotCount(run.exo);
   if (slots <= 0 || slotSource === "none") return null;
   const mult: 1 | 5 = store.firstFootfallBodies.has(bk) ? 5 : 1;
   const wf = store.bodyDetailedFootfallState.get(bk);
   const journalWasFootfalled = wf === undefined ? null : wf === true;
   return computeExoPayoutRangeFromMatches(
-    shownSpeciesMatches(matches),
+    run.shown,
     prices,
     slots,
     slotSource,
@@ -643,24 +680,9 @@ function scanForMatch(
   };
 }
 
-function exoMatchSummaries(
-  store: GameStateStore,
-  db: SpeciesDatabase,
-  r: ExplorationScanRecord,
-  spatialCatalogue: SpatialCatalogue | null,
-): { displayName: string; id: string }[] {
-  const exo = store.bodies.get(bodyKey(r.systemAddress, r.bodyId));
-  if (!exo || !bodyHasExoMarkers(exo)) return [];
-  const scan = scanForMatch(store, r, exo);
-  if (!scan?.PlanetClass) return [];
-  const { matches } = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
-    includeBacterium: store.includeBacteriumInSearch,
-    matchContext: buildSpeciesMatchContext(exo, store),
-    spatialCatalogue,
-  });
-  return shownSpeciesMatches(matches)
-    .slice(0, 48)
-    .map((m) => ({ displayName: m.entry.displayName, id: m.entry.id }));
+function exoMatchSummaries(run: ExoMatchRun | null): { displayName: string; id: string }[] {
+  if (!run) return [];
+  return run.shown.slice(0, 48).map((m) => ({ displayName: m.entry.displayName, id: m.entry.id }));
 }
 
 export function buildPrimaryStarsHeader(
@@ -893,7 +915,15 @@ export function buildSystemMapSnapshot(
     const scan = scanForMatch(store, r, exo);
     const est = scan ? estimatedTemperatureRangeForScan(scan) : null;
 
-    const maxExo = maxExoHeuristicPair(store, db, prices, r, spatialCatalogue);
+    /*
+     * One matcher run for the three things the map asks about this body.
+     *
+     * The value tier, the payout range and the candidate list want the same answer, and they used to
+     * fetch it separately — 81 runs of the matcher on a 27-body system to produce 27 results, each
+     * rebuilding the same context and walking the same 108 species.
+     */
+    const matchRun = exoMatchRun(store, db, r, spatialCatalogue);
+    const maxExo = maxExoHeuristicPair(store, prices, r, matchRun);
     const exoTier = exoValueTierFromHeuristic(
       maxExo.tierValue,
       store.exoMapTierPlusMinCr,
@@ -944,10 +974,10 @@ export function buildSystemMapSnapshot(
       hasExobiology: hasExo,
       bioBodyKey: hasExo ? bk : null,
       estimatedSurfaceTempK: est != null ? { minK: est.tMin, maxK: est.tMax, midK: est.tMid } : null,
-      exoMatchSummaries: exoMatchSummaries(store, db, r, spatialCatalogue),
+      exoMatchSummaries: exoMatchSummaries(matchRun),
       maxExoHeuristicCredits: maxExo.displayMax,
       exoValueTier: exoTier,
-      exoPayoutRange: buildExoPayoutRangeForRecord(store, db, prices, r, spatialCatalogue),
+      exoPayoutRange: buildExoPayoutRangeForRecord(store, prices, r, matchRun),
       parentBodyId,
       parentStarIds,
       isInferredPlaceholder: !!r.isSynthetic,
