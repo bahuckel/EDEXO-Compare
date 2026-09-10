@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import type { SectorMapFile } from "@shared/sectorMapFile.js";
 import { GalaxySectorMap, type CommanderPosition } from "./GalaxySectorMap";
 import { renderRegionBackdrop, type RegionMapPayload } from "./regionBackdrop";
-import type { BacklogMapDTO } from "@shared/types";
+import type { BacklogMapDTO, CommanderSectorsDTO } from "@shared/types";
 
 type Load =
   | { state: "loading" }
@@ -23,6 +23,7 @@ export function GalaxyMapScreen() {
   const [commander, setCommander] = useState<CommanderPosition | null>(null);
   const [backdrop, setBackdrop] = useState<string | null>(null);
   const [backlog, setBacklog] = useState<BacklogMapDTO | null>(null);
+  const [commanderSectors, setCommanderSectors] = useState<CommanderSectorsDTO | null>(null);
 
   /**
    * The galaxy behind the markers, painted once.
@@ -42,6 +43,27 @@ export function GalaxyMapScreen() {
       })
       .catch(() => {
         /* no backdrop, same map */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * This commander's own half of the sector colouring.
+   *
+   * The corpus half is already in `load.file`; merging happens on this side so the ladder lives in
+   * one place and the 900 kB sector file is not parsed twice.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/galaxy/my-sectors")
+      .then((r) => (r.ok ? (r.json() as Promise<CommanderSectorsDTO>) : null))
+      .then((d) => {
+        if (!cancelled && d) setCommanderSectors(d);
+      })
+      .catch(() => {
+        /* the map still draws, in everybody-else's colours */
       });
     return () => {
       cancelled = true;
@@ -148,6 +170,7 @@ export function GalaxyMapScreen() {
             commander={commander}
             backdrop={backdrop}
             backlog={backlog}
+            commanderSectors={commanderSectors}
           />
           {/* The provenance travels with the data; show it rather than paraphrasing it. */}
           <p className="galaxy-screen__note">{load.file.note}</p>

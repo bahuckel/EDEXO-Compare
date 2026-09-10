@@ -113,6 +113,14 @@ export interface TierFacts {
   unscannedByYou: number;
   /** Somebody has logged a species here. */
   confirmedElsewhere: boolean;
+  /**
+   * Bodies with biology anybody has recorded here, from the corpus.
+   *
+   * The commander's own journal only knows the bodies they personally scanned or honked. A sector
+   * can hold 378 recorded bodies while their journal knows of one — and with only the journal to go
+   * on, scanning that one reads as finishing the sector. This is the denominator that stops it.
+   */
+  knownBodies?: number;
   /** A DSS genus list exists here. */
   genusKnown: boolean;
   /** An FSS counted biological signals here. */
@@ -130,7 +138,16 @@ export interface TierFacts {
 export function tierFor(f: TierFacts): GalaxyTier {
   // Anything of yours left unfinished outranks everything, however much is already done here.
   if (f.unscannedByYou > 0) return "missed";
-  if (f.confirmedElsewhere) return "confirmed";
+  /*
+   * More recorded here than you have scanned means there is more to find, even when your own
+   * journal has nothing outstanding — you cannot have missed what you never saw.
+   *
+   * Caught in the field on Dryooe Flyou: 378 bodies recorded, one scanned, and the map said "you
+   * scanned it all". The two counts have different denominators and comparing them is a heuristic,
+   * but the alternative is telling a commander they have finished a sector they have barely entered.
+   */
+  const moreOutThere = (f.knownBodies ?? 0) > f.scannedByYou;
+  if (f.confirmedElsewhere || (moreOutThere && f.scannedByYou > 0)) return "confirmed";
   if (f.genusKnown) return "genus";
   if (f.signals) return "signals";
   if (f.knownBarren) return "barren";

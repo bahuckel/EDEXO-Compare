@@ -34,7 +34,18 @@ describe("the thousand-plant sector", () => {
   });
 
   it("only says you scanned it all when nothing is outstanding", () => {
-    expect(tierFor(facts({ visited: true, scannedByYou: 1000, unscannedByYou: 0 }))).toBe("done");
+    expect(
+      tierFor(facts({ visited: true, scannedByYou: 1000, unscannedByYou: 0, knownBodies: 1000 })),
+    ).toBe("done");
+  });
+
+  it("does not call it done when the corpus knows of more than you scanned", () => {
+    // Dryooe Flyou, from the field: 378 bodies recorded, one scanned, journal has nothing
+    // outstanding because the other 377 were never in it. "You scanned it all" was the answer, and
+    // it is the exact thing the owner said the map must never say.
+    expect(
+      tierFor(facts({ visited: true, scannedByYou: 1, unscannedByYou: 0, knownBodies: 378 })),
+    ).toBe("confirmed");
   });
 
   it("still points at other people's finds once yours are done", () => {

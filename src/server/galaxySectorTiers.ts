@@ -118,3 +118,27 @@ export function sectorTiers(
 
   return rows;
 }
+
+/**
+ * Only the commander's half, for the client to merge with the sector file it already loaded.
+ *
+ * Sending the merged answer would mean the server parsing a 900 kB corpus the browser is holding
+ * anyway, and would put the ladder in two places. This sends the part only the server can know —
+ * what is in the journals — and the shared module decides on the client.
+ *
+ * Small: a few thousand visited cells against 5.3 million systems.
+ */
+export function commanderSectorsDto(store: GameStateStore): {
+  available: true;
+  rows: { key: string; visited: boolean; scannedByYou: number; unscannedByYou: number }[];
+} {
+  return {
+    available: true,
+    rows: [...commanderSectorFacts(store).entries()].map(([key, f]) => ({
+      key,
+      visited: f.visited,
+      scannedByYou: f.scannedByYou,
+      unscannedByYou: f.unscannedByYou,
+    })),
+  };
+}

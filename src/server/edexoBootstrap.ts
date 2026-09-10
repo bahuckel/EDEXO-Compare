@@ -69,6 +69,7 @@ import {
 import { fetchEdsmBodiesAsExplorationRecords, searchEdsmSystemsByName } from "./edsmSystemHydration.js";
 import { backlogMap, firstDiscoveryBacklogWithDistance } from "./firstDiscoveryBacklog.js";
 import { galaxySpeciesCatalogue, galaxyValueSearch } from "./galaxyValueSearch.js";
+import { commanderSectorsDto } from "./galaxySectorTiers.js";
 
 /**
  * Recover the commander's galactic position when the merge cache did not carry one.
@@ -834,6 +835,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     searchGalaxyByValue: (query, limit) =>
       galaxyValueSearch({ ...query, from: store.commanderPos, limit }),
     getGalaxySpecies: () => galaxySpeciesCatalogue(),
+    getCommanderSectors: () => commanderSectorsDto(store),
     getCommanderSystem: () => store.currentSystem,
     setIncludeBacterium: (v) => {
       store.setIncludeBacteriumInSearch(v);

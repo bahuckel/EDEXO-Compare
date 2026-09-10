@@ -37,6 +37,8 @@ import type { BacklogMapDTO, BacklogSystemDTO } from "@shared/types";
 import { regionSpanInCells } from "./regionBackdrop";
 import { CAMERA_SIDE, CAMERA_TOP, axisLabels, cameraLabel, project } from "./galaxyProjection";
 import { useMapViewport } from "./useMapViewport";
+import { TIER_ORDER, TIER_STYLE, tierFor, type GalaxyTier } from "@shared/galaxyTier";
+import type { CommanderSectorDTO, CommanderSectorsDTO } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
 import {
   allTaxa,
@@ -74,24 +76,7 @@ const KIND_FILLED: Record<Kind, boolean> = {
   predicted: false,
 };
 
-const KIND_LABEL: Record<Kind, string> = {
-  confirmed: "Confirmed — species identified here",
-  genus: "Genus known from a DSS, species not",
-  signal: "Biological signal from the FSS, nobody has mapped it",
-  predicted: "Conditions match, no signal seen",
-};
 
-/**
- * A kind the app **cannot compute yet**, as distinct from one that happens to be absent.
- *
- * `predicted` needs the matcher run across bodies the app has never seen, which needs the Spansh
- * galaxy export loaded at scale. Leaving it in the legend unqualified would tell a reader there are
- * no such bodies, when the truth is that we cannot say — the same absence-of-evidence trap the
- * tri-state flags and `predictionUnsupported` exist to avoid, appearing here as a legend entry.
- */
-const KIND_UNAVAILABLE: Partial<Record<Kind, string>> = {
-  predicted: "not computed yet — needs the galaxy export",
-};
 
 /** The owner's tooltip: confirmed, genus hits, FSS-only, in that order. */
 function evidenceSummary(t: { confirmed: number; genus: number; signal: number; predicted: number }): string {
@@ -154,6 +139,7 @@ export function GalaxySectorMap({
   commander,
   backdrop,
   backlog,
+  commanderSectors,
 }: {
   file: SectorMapFile;
   commander?: CommanderPosition | null;
@@ -161,6 +147,8 @@ export function GalaxySectorMap({
   backdrop?: string | null;
   /** Unfinished business, rolled up to systems. Null on a build with no journal store. */
   backlog?: BacklogMapDTO | null;
+  /** This commander's own state per sector. Null while it loads or on a build with no journals. */
+  commanderSectors?: CommanderSectorsDTO | null;
 }) {
   /**
    * Genus and species are two pickers, not one.
@@ -195,6 +183,12 @@ export function GalaxySectorMap({
    * Falls back to the server's figure when there is no polled position, which is the honest answer
    * before the first jump of a session rather than a distance from the origin.
    */
+  /** Keyed for the per-cell lookup the plot does once per marker. */
+  const mine = useMemo(
+    () => new Map((commanderSectors?.rows ?? []).map((r) => [r.key, r])),
+    [commanderSectors],
+  );
+
   const shownBacklog = useMemo(() => {
     const kept = (backlog?.systems ?? []).filter((s) => s.floorCr >= minCr);
     const p = commander?.position;
@@ -426,6 +420,7 @@ export function GalaxySectorMap({
             commander={commanderCell}
             backdrop={backdrop ?? null}
             backlog={shownBacklog}
+            mine={mine}
             nextTarget={nextTarget}
           />
         ))}
@@ -437,22 +432,31 @@ export function GalaxySectorMap({
         <SectorSystems cell={openCell} taxon={taxon} onClose={() => setOpenCell(null)} />
       ) : null}
 
+      {/*
+        The ladder, in the order the map applies it: most actionable first, "done" last. Reading it
+        top to bottom is reading the rule — a sector shows the highest thing on this list that is
+        still true of it, which is why a thousand finished plants never outrank one unfinished.
+      */}
       <ul className="galaxy-map__legend">
-        {KINDS.map((k) => (
-          <li key={k} className={KIND_UNAVAILABLE[k] ? "galaxy-map__legend--unavailable" : undefined}>
-            <span
-              className="galaxy-map__swatch"
-              style={
-                KIND_FILLED[k]
-                  ? { background: KIND_COLOUR[k] }
-                  : { background: "transparent", border: `2px solid ${KIND_COLOUR[k]}` }
-              }
-              aria-hidden="true"
-            />
-            {KIND_LABEL[k]}
-            {KIND_UNAVAILABLE[k] ? <em> — {KIND_UNAVAILABLE[k]}</em> : null}
-          </li>
-        ))}
+        {TIER_ORDER.map((t) => {
+          const st = TIER_STYLE[t];
+          const missing = t === "barren";
+          return (
+            <li key={t} className={missing ? "galaxy-map__legend--unavailable" : undefined} title={st.help}>
+              <span
+                className="galaxy-map__swatch"
+                style={
+                  st.fill
+                    ? { background: st.fill }
+                    : { background: "transparent", border: `2px solid ${st.stroke}` }
+                }
+                aria-hidden="true"
+              />
+              {st.label}
+              {missing ? <em> — needs a source that lists systems with no life</em> : null}
+            </li>
+          );
+        })}
       </ul>
 
       <p className="galaxy-map__caveat">
@@ -474,6 +478,7 @@ function SectorPlot({
   commander,
   backdrop,
   backlog,
+  mine,
   nextTarget,
 }: {
   projection: Projection;
@@ -487,6 +492,8 @@ function SectorPlot({
   backdrop: string | null;
   /** Backlog systems already filtered by the caller's minimum. */
   backlog: BacklogSystemDTO[];
+  /** This commander's own state per sector, keyed by cell. Empty on a build with no journals. */
+  mine: Map<string, CommanderSectorDTO>;
   /** The one the banner names, ringed so the name and the dot cannot disagree. */
   nextTarget: BacklogSystemDTO | null;
 }) {
@@ -627,7 +634,7 @@ function SectorPlot({
             opacity={backdropOpacity}
           />
         ) : null}
-        {rows.map(({ cell, totals, kind }) => {
+        {rows.map(({ cell, totals }) => {
           const r = 2 + 7 * Math.cbrt(totals.bodies / maxBodies);
           const isHit = highlight?.key === cell.key;
           /*
@@ -638,7 +645,25 @@ function SectorPlot({
            * moves to the stroke where it still reads at this size. Without a backdrop the original
            * filled form is kept: on a flat background hollow markers are harder to see, not easier.
            */
-          const hollow = showBackdrop || !KIND_FILLED[kind];
+          /*
+           * What this sector is worth the commander's attention for — not what is best known about
+           * it. A cell where they have scanned one plant of a thousand must show the nine hundred
+           * and ninety-nine, so `tierFor` walks a ladder ordered by what is left and puts "done" at
+           * the bottom. See shared/galaxyTier.ts.
+           */
+          const m = mine.get(cell.key);
+          const tier: GalaxyTier = tierFor({
+            visited: m?.visited ?? false,
+            scannedByYou: m?.scannedByYou ?? 0,
+            unscannedByYou: m?.unscannedByYou ?? 0,
+            confirmedElsewhere: totals.confirmed > 0 && (m?.scannedByYou ?? 0) === 0,
+            genusKnown: totals.genus > 0,
+            signals: totals.signal > 0,
+            knownBodies: totals.bodies,
+          });
+          const style = TIER_STYLE[tier];
+          // Hollow means one thing now: your own unfinished work.
+          const hollow = style.fill === null;
           const cx = sx(at(cell).u);
           const cy = sy(at(cell).v);
           return (
@@ -665,18 +690,21 @@ function SectorPlot({
                   if (!vp.panning) onOpen(cell);
                 }}
               >
-                <title>{`${cell.name ?? cell.key} — ${totals.bodies} bodies
-${evidenceSummary(totals)}`}</title>
+                <title>{`${cell.name ?? cell.key} — ${style.label}
+${style.help}
+${totals.bodies} bodies recorded here${
+                  m ? ` · you scanned ${m.scannedByYou}, ${m.unscannedByYou} left` : ""
+                }`}</title>
               </circle>
             <circle
               cx={cx}
               cy={cy}
               r={r * vp.pixel}
               pointerEvents="none"
-              fill={hollow ? "none" : KIND_COLOUR[kind]}
-              fillOpacity={hollow ? 1 : 0.75}
-              stroke={isHit ? "#f0f6fc" : hollow ? KIND_COLOUR[kind] : "none"}
-              strokeWidth={(isHit ? 2 : hollow ? 1.5 : 0) * vp.pixel}
+              fill={style.fill ?? "none"}
+              fillOpacity={style.fill ? 0.8 : 1}
+              stroke={isHit ? "#f0f6fc" : style.stroke}
+              strokeWidth={(isHit ? 2 : hollow ? 1.6 : 0.6) * vp.pixel}
             >
             </circle>
             </g>

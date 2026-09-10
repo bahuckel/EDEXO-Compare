@@ -845,6 +845,27 @@ export interface GalaxySpeciesCatalogueDTO {
   systemCount: number;
 }
 
+/**
+ * What this commander's own journals say about one sector.
+ *
+ * Only their half: the client merges it with the sector map file it already holds, so the ladder in
+ * shared/galaxyTier.ts lives in one place and a 900 kB corpus is not parsed twice.
+ */
+export interface CommanderSectorDTO {
+  /** `x:y:z` sector cell key, matching the sector map file. */
+  key: string;
+  visited: boolean;
+  scannedByYou: number;
+  /** Bodies here with biology this commander has not scanned. Decides the "you missed some" tier. */
+  unscannedByYou: number;
+}
+
+export interface CommanderSectorsDTO {
+  /** False when there is no journal store behind this build. */
+  available: boolean;
+  rows: CommanderSectorDTO[];
+}
+
 export interface GalaxyValueQueryDTO {
   /**
    * Minimum **system** total, in credits, at 1x list price.

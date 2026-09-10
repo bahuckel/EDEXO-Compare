@@ -13,6 +13,7 @@ import type {
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
   BacklogMapDTO,
+  CommanderSectorsDTO,
   GalaxySpeciesCatalogueDTO,
   GalaxyValueQueryDTO,
   GalaxyValueSearchDTO,
@@ -124,6 +125,8 @@ export function createHttpServer(opts: {
   searchGalaxyByValue?: (query: GalaxyValueQueryDTO, limit: number) => GalaxyValueSearchDTO;
   /** GET /api/galaxy/species — what the genus/species picker can offer, with per-species coverage. */
   getGalaxySpecies?: () => GalaxySpeciesCatalogueDTO;
+  /** GET /api/galaxy/my-sectors — this commander's own state per sector, for colouring the map. */
+  getCommanderSectors?: () => CommanderSectorsDTO;
   /**
    * GET /api/feeder/status — feeder corpus vs installed profiles.
    *
@@ -383,6 +386,15 @@ export function createHttpServer(opts: {
    * when the file is replaced, and the client paints it once into a canvas. Sent from disk rather
    * than through the decoder so the bytes on the wire are the bytes in the repo, notice and all.
    */
+  app.get("/api/galaxy/my-sectors", (_req, res) => {
+    perfCount("http.commanderSectors");
+    if (!opts.getCommanderSectors) {
+      res.status(404).json({ error: "no journal store behind this build" });
+      return;
+    }
+    res.json(opts.getCommanderSectors());
+  });
+
   app.get("/api/galaxy/species", (_req, res) => {
     perfCount("http.galaxySpecies");
     if (!opts.getGalaxySpecies) {
