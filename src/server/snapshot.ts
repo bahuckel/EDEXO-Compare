@@ -720,6 +720,76 @@ function attachPresenceProbability(
 }
 
 /**
+ * How likely a candidate has to be before the panel offers it as a candidate.
+ *
+ * The commander's line, and the same five per cent he set for a trace gas. It is defensible here
+ * because this is the one number on the card that has been calibrated against reality: on
+ * complete-label bodies the 0-10 % bin comes in at 8.9 % observed. A row at 2.6 % is not a
+ * borderline call, it is the model saying *probably not*, and printing it beside rows at 40 % asks
+ * the reader to do arithmetic the app has already done.
+ */
+export const PRESENCE_FLOOR_PCT = 5;
+
+/**
+ * Push the long shots behind "show unlikely".
+ *
+ * Reported from the field twice: an icy moon offering Fonticulua upupam at 2.6 % and a Fungoida at
+ * 1.5 %, on a body where other candidates were well clear of the floor. Nothing was wrong with the
+ * numbers — the panel was simply showing rows its own model had already judged.
+ *
+ * Three things it will not do:
+ *
+ *  - **Empty the list.** If nothing at all clears the floor, the single best row stays. A body where
+ *    the answer is spread that thin still deserves a best guess, and an empty panel over a body the
+ *    game says has life on it reads as a broken app rather than as an honest shrug.
+ *
+ *    Deliberately *one* row and not one per biological signal. Two signals mean two genera are down
+ *    there, so keeping the runner-up looks defensible — but it puts a row the model scored at 4.7 %
+ *    on the same list as one it scored at 100 %, which is the thing being complained about. The
+ *    second genus is not unknown, it is unnamed, and the ambiguity note already says so.
+ *  - **Touch an unmeasured row.** `presenceProbabilityPercent` is null when the model has no opinion
+ *    — no profile, too few observed bodies. Null is "unmeasured", never "unlikely".
+ *  - **Argue with the commander's own boots.** A species he has sampled on this body stays, whatever
+ *    the model thinks of it.
+ */
+export function demoteBelowPresenceFloor(matches: SpeciesMatch[], b: BodyExoState, db: SpeciesDatabase): void {
+  const confirmed = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
+  const shown = matches.filter((m) => !m.unlikely);
+  if (shown.length === 0) return;
+
+  const keepAtLeast = 1;
+  // Highest chance first, so the one row that survives an all-below-floor body is the best of them.
+  // An unmeasured row sorts with the survivors rather than the casualties: it is not a weak claim,
+  // it is no claim.
+  const order = [...shown].sort(
+    (x, y) => (y.presenceProbabilityPercent ?? Infinity) - (x.presenceProbabilityPercent ?? Infinity),
+  );
+
+  let kept = 0;
+  for (const m of order) {
+    const pct = m.presenceProbabilityPercent;
+    const immune =
+      pct == null ||
+      !Number.isFinite(pct) ||
+      m.organicAnalysisComplete === true ||
+      m.approximateMatch === true ||
+      confirmed.has(m.entry.id);
+    if (immune || pct >= PRESENCE_FLOOR_PCT || kept < keepAtLeast) {
+      kept++;
+      continue;
+    }
+    m.unlikely = true;
+    m.unlikelyReasons = [
+      ...(m.unlikelyReasons ?? []),
+      {
+        field: "Chance here",
+        detail: `${pct.toFixed(1)} % — under the ${PRESENCE_FLOOR_PCT} % this panel shows. Listed as a low-probability find rather than excluded.`,
+      },
+    ];
+  }
+}
+
+/**
  * Mark the candidates this commander has never logged in the codex (B4).
  *
  * Silent until the journals have been merged by a build that collects `CodexEntry` — with an empty
@@ -925,6 +995,8 @@ function computeBodyUncached(
     matches = markExomasteryZeroHabitatMatches(matches);
   }
   attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root);
+  // After the ranking, because the floor is a rule about the ranking's own output.
+  demoteBelowPresenceFloor(matches, b, db);
   /*
    * Who says this species is here, unioned from the two stores at the moment of rendering.
    *
