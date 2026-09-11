@@ -299,6 +299,18 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   }
 
   const store = new GameStateStore();
+  /*
+    The radar's memory, before any journal is read.
+
+    The owner's ask: "overlay/radar should read Status.json + latest Journal logs on launch". The
+    journal half happens anyway — the replay below picks up Touchdown and puts the ship back — and
+    Status.json is polled from the first tick. This is the half neither of those can supply: where
+    the plants were, which exists only because a previous run of this app recorded it.
+
+    Loaded first so a journal replay can overwrite it with something newer rather than the other way
+    round.
+  */
+  store.loadSurfaceMarksFromDisk();
 
   /** Re-read `NavRoute.json` + `Status.json` after a full journal replay (new log file / resync). */
   function refreshLiveHudFromJournalDir(): void {

@@ -68,6 +68,18 @@ export function resolveExoOutlierLogPath(): string {
 }
 
 /**
+ * Where plants were sampled and where the ship is parked — the overlay radar's memory.
+ *
+ * Its own file beside the user settings, and **not** part of the journal merge cache, because it is
+ * not derived from the journal: `ScanOrganic` carries no coordinates, so a plant's position exists
+ * only because this app read `Status.json` as the scan landed. A cache rebuilt from the logs cannot
+ * regenerate it, which means losing this file loses the positions for good.
+ */
+export function resolveSurfaceMarksPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "edexo-surface-marks.json");
+}
+
+/**
  * Writable journal merge cache (fast launcher / boot). Same tree as user settings — survives
  * `npm run build`, Electron `resources/` replacement, and unpackaged installs.
  */

@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import type { FootTravelFix } from "./footTravelStatus.js";
+import type { SurfaceMark } from "./surfaceMarksFile.js";
 import { greatCircleDistanceMeters, resolveFootFixForOrganicLine } from "./footTravelStatus.js";
 import type {
   JournalLine,
@@ -15,6 +16,7 @@ import {
   normOrganicToken,
 } from "./organicTracking.js";
 import {
+  normStatusBodyName,
   schedulePersistOrganicSampleSession,
   wipeOrganicSampleSession,
   type OrganicSampleSessionHost,
@@ -45,10 +47,17 @@ export type ExoOrganicOverlayHost = {
   exoOrganicTracker: ExoOrganicTrackerInternal | null;
   exoOrganicLastFix: FootTravelFix | null;
   readonly firstFootfallBodies: Set<string>;
-  /** Where each plant was sampled on this body — the minimap's dots. */
-  surfaceSampleMarks: { bodyKey: string; latDeg: number; lonDeg: number; label: string }[];
-  addSurfaceSampleMark(bodyKey: string, latDeg: number, lonDeg: number, label: string): void;
-  surfaceShipMark: { bodyKey: string; latDeg: number; lonDeg: number } | null;
+  /** Where each plant was sampled — the radar's dots, kept across bodies and across restarts. */
+  surfaceSampleMarks: SurfaceMark[];
+  addSurfaceSampleMark(
+    bodyKey: string,
+    bodyNameNorm: string,
+    latDeg: number,
+    lonDeg: number,
+    label: string,
+    atIso: string,
+  ): void;
+  surfaceShipMark: SurfaceMark | null;
 };
 
 /**
@@ -131,6 +140,9 @@ export function ingestExoOrganicJournalLine(
   expireCelebrationIfNeeded(store, projectRoot);
   if (line.event !== "ScanOrganic") return;
 
+  /** The line's own timestamp, so a mark is dated by when it happened rather than when it was read. */
+  const lineIso = typeof line.timestamp === "string" ? line.timestamp : new Date().toISOString();
+
   const scanTypeRaw = line.ScanType;
   const scanType = typeof scanTypeRaw === "string" ? scanTypeRaw.trim() : "";
   if (!scanType) return;
@@ -200,7 +212,7 @@ export function ingestExoOrganicJournalLine(
       };
       // The anchors are this species' own and are wiped when the next one starts; the map wants
       // every plant taken on this body, so it keeps its own list.
-      store.addSurfaceSampleMark(bk, fix.latDeg, fix.lonDeg, speciesDisplay);
+      store.addSurfaceSampleMark(bk, bodyNameNormEarly, fix.latDeg, fix.lonDeg, speciesDisplay, lineIso);
       store.footSessionBodyKey = bk;
       store.footSessionBodyNameNorm = bodyNameNormEarly;
       if (store.footTravelOdometerEnabled) {
@@ -228,7 +240,7 @@ export function ingestExoOrganicJournalLine(
       };
       // The anchors are this species' own and are wiped when the next one starts; the map wants
       // every plant taken on this body, so it keeps its own list.
-      store.addSurfaceSampleMark(bk, fix.latDeg, fix.lonDeg, speciesDisplay);
+      store.addSurfaceSampleMark(bk, bodyNameNormEarly, fix.latDeg, fix.lonDeg, speciesDisplay, lineIso);
       store.footSessionBodyKey = bk;
       store.footSessionBodyNameNorm = bodyNameNormEarly;
       if (store.footTravelOdometerEnabled) {
@@ -245,7 +257,14 @@ export function ingestExoOrganicJournalLine(
         lonDeg: fix.lonDeg,
         planetRadiusM: fix.planetRadiusM,
       });
-      store.addSurfaceSampleMark(bk, fix.latDeg, fix.lonDeg, speciesDisplay || t.speciesDisplay);
+      store.addSurfaceSampleMark(
+        bk,
+        bodyNameNormEarly,
+        fix.latDeg,
+        fix.lonDeg,
+        speciesDisplay || t.speciesDisplay,
+        lineIso,
+      );
       t.speciesDisplay = speciesDisplay || t.speciesDisplay;
       t.genusLocalised = genusLoc || t.genusLocalised;
       t.minSampleDistanceM = minM || t.minSampleDistanceM;
@@ -320,18 +339,31 @@ export function buildExoMinimapDto(
   };
 
   /*
-    Which body's marks to show. With a session it is that session's body; without one it is wherever
-    the ship last touched down. Null means we cannot tell, and then nothing is drawn rather than
-    marks from the last rock — a map of somewhere else is worse than an empty one.
+    Which body's marks to show — and it is decided by `Status.json`, not by the journal.
+
+    The owner's rule: "if I enter supercruise they get dropped until I go down on that planet
+    again". Nothing is deleted when he leaves; the marks are filed under their body and stop
+    matching while he is elsewhere. `Status.json` names the body he is actually on, second by
+    second, which is the only source that knows he has left — the journal's last Touchdown still
+    says "that planet" long after he has flown away.
+
+    The body key is the fallback for the case where the live fix has no name, which happens on some
+    surfaces; a key from the session or the last landing is better than refusing to draw.
   */
+  const onBodyNorm = normStatusBodyName(fix.bodyName);
+  const belongsHere = (m: { bodyKey: string; bodyNameNorm?: string }): boolean => {
+    // A mark from an older store may have no name; its key is then the only thing to go on, and
+    // refusing to draw it would lose a ship that is genuinely parked here.
+    if (onBodyNorm && m.bodyNameNorm) return m.bodyNameNorm === onBodyNorm;
+    return bodyKeyOnFoot == null || m.bodyKey === bodyKeyOnFoot;
+  };
+
   for (const m of store.surfaceSampleMarks) {
-    if (bodyKeyOnFoot != null && m.bodyKey !== bodyKeyOnFoot) continue;
+    if (!belongsHere(m)) continue;
     push(m.latDeg, m.lonDeg, "sample", m.label);
   }
   const ship = store.surfaceShipMark;
-  if (ship && (bodyKeyOnFoot == null || ship.bodyKey === bodyKeyOnFoot)) {
-    push(ship.latDeg, ship.lonDeg, "ship", "Your ship");
-  }
+  if (ship && belongsHere(ship)) push(ship.latDeg, ship.lonDeg, "ship", "Your ship");
 
   return { radiusM: MINIMAP_RADIUS_M, headingDeg: fix.headingDeg, minSampleDistanceM, marks };
 }

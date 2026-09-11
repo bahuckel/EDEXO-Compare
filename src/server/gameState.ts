@@ -37,6 +37,12 @@ import {
   clearPersistedOrganicSampleSession,
   normStatusBodyName,
 } from "./organicSampleSessionFile.js";
+import {
+  loadSurfaceMarks,
+  scheduleSaveSurfaceMarks,
+  MAX_SURFACE_MARKS,
+  type SurfaceMark,
+} from "./surfaceMarksFile.js";
 import type { NavRouteWaypointDTO } from "./navRouteFuel.js";
 import { codexSpeciesFromLine } from "../shared/codexLog.js";
 function bodyKey(systemAddress: number, bodyId: number): string {
@@ -92,7 +98,13 @@ export type OrganicAnalyseProgress = { count: number; label: string };
  * one. Bumping forces a single rebuild per user, which is the whole cost.
  */
 /*
-  Bumped to 6 for `surfaceShipMark` / `overlayTouchdownBodyKey`.
+  Bumped to 6 for `surfaceShipMark` / `overlayTouchdownBodyKey`, and to 7 when that mark grew a
+  `bodyNameNorm` — the field the radar matches against. Worth noting how *that* one got through:
+  the format had already moved, and the guard test snapshots the payload's **keys**, not the shape
+  of what is inside them. A cache written minutes earlier was still admitted and restored a ship
+  with no body name, which silently stopped matching the surface it was parked on.
+
+  So: a change to a field's *contents* needs the bump as much as a new field does.
 
   A cache is a replay's *result*, not the journal, so a field added to the store is simply absent
   from every cache already on disk — and the next start restores a store with a hole in it rather
@@ -102,7 +114,7 @@ export type OrganicAnalyseProgress = { count: number; label: string };
   Anything derived from the journal that the UI reads has to be either in this payload or
   deliberately transient. Bump the format when you add one.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 6;
+export const JOURNAL_MERGE_CACHE_FORMAT = 7;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -148,7 +160,7 @@ export type JournalMergeCachePayload = {
   samplingMinutesSamples?: number[];
   pendingOrganicSales: PendingOrganicSample[];
   /** Present when {@link format} >= 6 — where the ship is parked, and on which body. */
-  surfaceShipMark?: { bodyKey: string; latDeg: number; lonDeg: number } | null;
+  surfaceShipMark?: SurfaceMark | null;
   /** Present when {@link format} >= 6 — the body the ship last touched down on. */
   overlayTouchdownBodyKey?: string | null;
   fssAllBodiesCompleteSystems: number[];
@@ -684,7 +696,7 @@ export class GameStateStore {
    * Cleared on `Liftoff`, because the owner's rule is that the mark means "your ship is there", and
    * once it leaves, it is not.
    */
-  surfaceShipMark: { bodyKey: string; latDeg: number; lonDeg: number } | null = null;
+  surfaceShipMark: SurfaceMark | null = null;
 
   /**
    * Where each plant was sampled on the body currently under foot.
@@ -697,21 +709,55 @@ export class GameStateStore {
    * Kept for one body at a time: the map is "where have I walked on this rock", and marks from the
    * last one would be somewhere else entirely.
    */
-  surfaceSampleMarks: { bodyKey: string; latDeg: number; lonDeg: number; label: string }[] = [];
+  surfaceSampleMarks: SurfaceMark[] = [];
 
-  /** Record a sampled plant's position. Same body only; duplicates within a metre are ignored. */
-  addSurfaceSampleMark(bodyKeyStr: string, latDeg: number, lonDeg: number, label: string): void {
+  /**
+   * Record a sampled plant's position, and remember it across restarts.
+   *
+   * Marks from other bodies are **kept**, not cleared. The owner's rule: leaving for supercruise
+   * drops them from the map "until I go down on that planet again", which is a question of what
+   * matches the body underfoot, not of what is worth keeping. Walk back on and they are there.
+   *
+   * Written to disk on every new mark because the thing being protected is a position that cannot
+   * be recovered from anything — no journal line carries it. The file is a few kB.
+   */
+  addSurfaceSampleMark(
+    bodyKeyStr: string,
+    bodyNameNorm: string,
+    latDeg: number,
+    lonDeg: number,
+    label: string,
+    atIso: string,
+  ): void {
     if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) return;
-    if (this.surfaceSampleMarks.length > 0 && this.surfaceSampleMarks[0]!.bodyKey !== bodyKeyStr) {
-      this.surfaceSampleMarks = [];
-    }
     const dup = this.surfaceSampleMarks.some(
-      (m) => Math.abs(m.latDeg - latDeg) < 1e-5 && Math.abs(m.lonDeg - lonDeg) < 1e-5,
+      (m) =>
+        m.bodyKey === bodyKeyStr &&
+        Math.abs(m.latDeg - latDeg) < 1e-5 &&
+        Math.abs(m.lonDeg - lonDeg) < 1e-5,
     );
     if (dup) return;
-    this.surfaceSampleMarks.push({ bodyKey: bodyKeyStr, latDeg, lonDeg, label });
-    // A long session on one body is still a few dozen plants; this is a guard, not a policy.
-    if (this.surfaceSampleMarks.length > 200) this.surfaceSampleMarks.shift();
+    this.surfaceSampleMarks.push({ bodyKey: bodyKeyStr, bodyNameNorm, latDeg, lonDeg, label, atIso });
+    // Oldest first: the rock underfoot is the one visited most recently.
+    while (this.surfaceSampleMarks.length > MAX_SURFACE_MARKS) this.surfaceSampleMarks.shift();
+    this.persistSurfaceMarks();
+  }
+
+  /** Load the radar's memory at boot, so a restart on a planet is not a blank map. */
+  loadSurfaceMarksFromDisk(): void {
+    const f = loadSurfaceMarks();
+    this.surfaceSampleMarks = f.samples;
+    // The ship also arrives from the journal replay; whichever is newer wins, and Touchdown always
+    // overwrites this afterwards, so a stale file cannot outlive a real landing.
+    if (!this.surfaceShipMark) this.surfaceShipMark = f.ship;
+  }
+
+  persistSurfaceMarks(): void {
+    scheduleSaveSurfaceMarks({
+      formatVersion: 1,
+      samples: this.surfaceSampleMarks,
+      ship: this.surfaceShipMark,
+    });
   }
 
   /**
@@ -1665,9 +1711,15 @@ export class GameStateStore {
           if (typeof tdLat === "number" && typeof tdLon === "number") {
             this.surfaceShipMark = {
               bodyKey: bodyKey(systemAddress, bodyId),
+              // Status.json names the body and never gives its id, so the name is what a live fix
+              // can be matched against.
+              bodyNameNorm: normStatusBodyName(nm) ?? "",
               latDeg: tdLat,
               lonDeg: tdLon,
+              label: "Your ship",
+              atIso: ts,
             };
+            this.persistSurfaceMarks();
           }
           this.requestUiAutoSelectBody(systemAddress, bodyId);
         }
@@ -1681,6 +1733,7 @@ export class GameStateStore {
           is worse than none: it is an instruction to walk to a place nothing is parked.
         */
         this.surfaceShipMark = null;
+        this.persistSurfaceMarks();
         return;
       }
 
@@ -2385,9 +2438,20 @@ export class GameStateStore {
     this.landingMinutesSamples.push(...(data.landingMinutesSamples ?? []));
     this.samplingMinutesSamples.push(...(data.samplingMinutesSamples ?? []));
     this.pendingOrganicSales = data.pendingOrganicSales.map((p) => ({ ...p }));
-    // Format 6. `?? null` rather than a guard on `format`: the version check above has already
-    // rejected anything older, so absent here means the field was genuinely null when written.
-    this.surfaceShipMark = data.surfaceShipMark ? { ...data.surfaceShipMark } : null;
+    /*
+      Format 6+. Two sources can know where the ship is parked and they arrive in a fixed order:
+      the marks file is read when the store is built, this cache lands on top of it.
+
+      So "last one wins" would mean the cache always wins, including when it is the older answer —
+      a full cache hit skips the journal entirely, so a Touchdown made after the cache was written
+      is not replayed and could be silently overwritten by a stale one. Whichever was recorded later
+      wins instead, and an absent cache value never clears a mark the file supplied.
+    */
+    const cachedShip = data.surfaceShipMark ? { ...data.surfaceShipMark } : null;
+    if (cachedShip) {
+      const have = this.surfaceShipMark;
+      if (!have || !have.atIso || (cachedShip.atIso ?? "") >= have.atIso) this.surfaceShipMark = cachedShip;
+    }
     this.overlayTouchdownBodyKey = data.overlayTouchdownBodyKey ?? null;
     for (const addr of data.fssAllBodiesCompleteSystems) this.fssAllBodiesCompleteSystems.add(addr);
     for (const [addr, row] of data.fssDiscoveryScanBySystem) {
