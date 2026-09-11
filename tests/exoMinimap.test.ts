@@ -376,3 +376,60 @@ describe("restoring a session from the journal", () => {
     expect(s.exoOrganicTracker!.recoveredSamples).toBe(2);
   });
 });
+
+/**
+ * Where a scan says it happened.
+ *
+ * `ScanOrganic` carries no `BodyName` — only `SystemAddress` and a numeric `Body`. Deriving a name
+ * from that yields "body 22", which nothing else in the app calls anything, so a mark filed under it
+ * could never match the radar's `Status.json` body name. The dot was recorded and then filtered out
+ * of its own map; the owner reported the distances working and the dot missing, which is exactly
+ * that shape.
+ */
+describe("the body a sample is filed under", () => {
+  it("takes the name from Status.json, not from the journal line", async () => {
+    const { ingestExoOrganicJournalLine } = await import("../src/server/exoOrganicTracker.js");
+    const { loadSpeciesDatabase, getCachedSpeciesDatabase } = await import("../src/server/snapshot.js");
+    const { normStatusBodyName } = await import("../src/server/organicSampleSessionFile.js");
+    loadSpeciesDatabase();
+
+    const recorded: { bodyNameNorm: string }[] = [];
+    const store = {
+      exoOrganicTracker: null,
+      exoOrganicLastFix: null,
+      footSessionBodyKey: null,
+      footSessionBodyNameNorm: null,
+      footTravelOdometerEnabled: false,
+      firstFootfallBodies: new Set<string>(),
+      surfaceSampleMarks: [],
+      surfaceShipMark: null,
+      addSurfaceSampleMark(_k: string, bodyNameNorm: string) {
+        recorded.push({ bodyNameNorm });
+      },
+      beginFootTravelOdometerSession() {},
+    } as never;
+
+    ingestExoOrganicJournalLine(
+      store,
+      {
+        event: "ScanOrganic",
+        timestamp: "2026-09-11T10:15:50Z",
+        ScanType: "Log",
+        Genus_Localised: "Bacterium",
+        Species_Localised: "Bacterium Acies",
+        WasLogged: false,
+        SystemAddress: 685719759473,
+        // No BodyName: this is the real shape of the line.
+        Body: 22,
+      } as never,
+      { latDeg: -12.5, lonDeg: 32.5, planetRadiusM: 5_246_376, bodyName: "Smojai UJ-F b13-0 B 4", headingDeg: 62 },
+      process.cwd(),
+      getCachedSpeciesDatabase(),
+    );
+
+    expect(recorded).toHaveLength(1);
+    expect(recorded[0]!.bodyNameNorm).toBe(normStatusBodyName("Smojai UJ-F b13-0 B 4"));
+    // And emphatically not the "body 22" the journal line alone would have produced.
+    expect(recorded[0]!.bodyNameNorm).not.toContain("22");
+  });
+});

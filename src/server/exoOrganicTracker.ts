@@ -241,10 +241,29 @@ export function ingestExoOrganicJournalLine(
   if (typeof sa !== "number" || typeof bodyId !== "number") return;
 
   const bk = organicBodyKey(sa, bodyId);
-  const bodyNameNormEarly = normOrganicToken(
-    (typeof line.BodyName === "string" && line.BodyName.trim() ? line.BodyName.trim() : `Body ${bodyId}`) ||
-      `body ${bodyId}`,
-  );
+  /*
+    What to call the body this scan happened on.
+
+    `ScanOrganic` does **not** carry `BodyName` — only `SystemAddress` and a numeric `Body`. Every
+    one of the commander's scans confirms it. So the fallback below produces "body 22", which is not
+    a name anything else in the app uses, and anything comparing it against `Status.json`'s
+    `BodyName` can never match.
+
+    That is what hid the radar dot: the mark was filed under "body 22" while the radar asked for
+    "smojai uj-f b13-0 b 4". The ship was unaffected because `Touchdown` does carry a real name.
+
+    `Status.json` is read at the moment the scan lands and names the surface the commander is
+    standing on, which is by definition the body being scanned — so it is both the correct name and
+    the same vocabulary the radar matches in. The old derivation stays as the fallback for a fix
+    with no name.
+  */
+  const statusBodyNorm = normStatusBodyName(statusFix?.bodyName ?? null);
+  const bodyNameNormEarly =
+    statusBodyNorm ??
+    normOrganicToken(
+      (typeof line.BodyName === "string" && line.BodyName.trim() ? line.BodyName.trim() : `Body ${bodyId}`) ||
+        `body ${bodyId}`,
+    );
 
   const tCross = store.exoOrganicTracker;
   if (tCross && tCross.bodyKey !== bk) {

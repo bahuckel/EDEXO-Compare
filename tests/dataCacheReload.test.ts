@@ -110,3 +110,46 @@ describe("the region × species table", () => {
     expect(verdict?.presence).not.toBe("unknown");
   });
 });
+
+/**
+ * Marks written before the body name came from Status.json.
+ *
+ * `ScanOrganic` has no `BodyName`, so the old derivation produced `"body 22"` — a string nothing
+ * else in the app uses, which meant a recorded plant could never match the surface it was taken on.
+ * The position is unrecoverable, so those marks are repaired rather than dropped: the name is
+ * cleared and the radar falls back to the body key, which was always correct.
+ */
+describe("surface marks written by an older build", () => {
+  it("clears a placeholder body name instead of discarding the position", async () => {
+    /*
+      Into a temp directory, never the real one. `resolveSurfaceMarksPath` is derived from the user
+      data dir, and this file holds positions that nothing can recreate — a test that writes over a
+      commander's own marks destroys data, which is exactly what happened once before this guard.
+    */
+    const previous = process.env.EDEXO_USER_DATA_DIR;
+    const dir = mkdtempSync(join(tmpdir(), "edexo-marks-"));
+    roots.push(dir);
+    process.env.EDEXO_USER_DATA_DIR = dir;
+    const { resetInstallPathCache } = await import("../src/server/paths.js");
+    resetInstallPathCache();
+    const { loadSurfaceMarks, saveSurfaceMarks } = await import("../src/server/surfaceMarksFile.js");
+    saveSurfaceMarks({
+      formatVersion: 1,
+      samples: [
+        { bodyKey: "1:22", bodyNameNorm: "body 22", latDeg: 1, lonDeg: 2, label: "Bacterium Acies", atIso: "x" },
+        { bodyKey: "1:23", bodyNameNorm: "smojai uj-f b13-0 b 4", latDeg: 3, lonDeg: 4, label: "Keep", atIso: "y" },
+      ],
+      ship: null,
+    });
+    const back = loadSurfaceMarks();
+    expect(back.samples).toHaveLength(2);
+    expect(back.samples[0]!.bodyNameNorm).toBe("");
+    // The coordinates are the irreplaceable part and must survive the repair untouched.
+    expect(back.samples[0]!.latDeg).toBe(1);
+    expect(back.samples[1]!.bodyNameNorm).toBe("smojai uj-f b13-0 b 4");
+
+    if (previous === undefined) delete process.env.EDEXO_USER_DATA_DIR;
+    else process.env.EDEXO_USER_DATA_DIR = previous;
+    resetInstallPathCache();
+  });
+});

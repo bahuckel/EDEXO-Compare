@@ -64,12 +64,34 @@ function isMark(v: unknown): v is SurfaceMark {
   return (
     !!m &&
     typeof m.bodyKey === "string" &&
-    typeof m.bodyNameNorm === "string" &&
+    typeof m.bodyNameNorm === "string" && // may be "" once repaired — see repairName
+
     typeof m.latDeg === "number" &&
     Number.isFinite(m.latDeg) &&
     typeof m.lonDeg === "number" &&
     Number.isFinite(m.lonDeg)
   );
+}
+
+/**
+ * A name that is not a name.
+ *
+ * Marks written before the body name came from `Status.json` were filed under `"body 22"` — the
+ * placeholder produced by a `ScanOrganic` line, which carries no `BodyName`. Nothing else in the
+ * app calls a body that, so such a mark could never match the surface it was taken on and was
+ * silently invisible on its own map.
+ *
+ * Clearing the field rather than dropping the mark is the repair: the radar already falls back to
+ * the body *key* when a mark has no name, and the key was always right. The position survives,
+ * which matters because nothing can recreate it.
+ */
+const PLACEHOLDER_BODY_NAME = /^body\s*\d+$/i;
+
+function repairName<T extends { bodyNameNorm?: string }>(m: T): T {
+  if (m && typeof m.bodyNameNorm === "string" && PLACEHOLDER_BODY_NAME.test(m.bodyNameNorm.trim())) {
+    return { ...m, bodyNameNorm: "" };
+  }
+  return m;
 }
 
 /**
@@ -84,8 +106,8 @@ export function loadSurfaceMarks(): SurfaceMarksFile {
   if (!existsSync(file)) return emptySurfaceMarks();
   try {
     const parsed = JSON.parse(readFileSync(file, "utf8")) as Partial<SurfaceMarksFile>;
-    const samples = Array.isArray(parsed.samples) ? parsed.samples.filter(isMark) : [];
-    const ship = isMark(parsed.ship) ? parsed.ship : null;
+    const samples = Array.isArray(parsed.samples) ? parsed.samples.map(repairName).filter(isMark) : [];
+    const ship = isMark(parsed.ship) ? repairName(parsed.ship) : null;
     return { formatVersion: 1, samples, ship };
   } catch {
     return emptySurfaceMarks();
