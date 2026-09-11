@@ -56,8 +56,10 @@ describe("the format constant", () => {
   it("only ever goes up, so an old cache can never be re-admitted", () => {
     // 3 retired caches written before `mainStarWasDiscoveredBySystem`; 4 before `systemPositions`;
     // 5 retired caches whose *derivation* was wrong even though the shape was right — footfall read
-    // from Detailed scans only. Lowering it lets back in a cache the app would misread.
-    expect(JOURNAL_MERGE_CACHE_FORMAT).toBeGreaterThanOrEqual(5);
+    // from Detailed scans only; 6 retires caches written before the ship's parked position, which
+    // the overlay minimap draws and which no amount of re-reading a cache can invent.
+    // Lowering it lets back in a cache the app would misread.
+    expect(JOURNAL_MERGE_CACHE_FORMAT).toBeGreaterThanOrEqual(6);
   });
 
   it("covers every key the store serializes", () => {

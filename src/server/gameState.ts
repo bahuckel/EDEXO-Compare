@@ -91,7 +91,18 @@ export type OrganicAnalyseProgress = { count: number; label: string };
  * written before 2026-09-08 replayed nothing and the FIRST chip could never light for anyone holding
  * one. Bumping forces a single rebuild per user, which is the whole cost.
  */
-export const JOURNAL_MERGE_CACHE_FORMAT = 5;
+/*
+  Bumped to 6 for `surfaceShipMark` / `overlayTouchdownBodyKey`.
+
+  A cache is a replay's *result*, not the journal, so a field added to the store is simply absent
+  from every cache already on disk — and the next start restores a store with a hole in it rather
+  than replaying the lines that would fill it. That is how the minimap came up with no ship on a
+  body the commander was standing on: the Touchdown was inside the cached span.
+
+  Anything derived from the journal that the UI reads has to be either in this payload or
+  deliberately transient. Bump the format when you add one.
+*/
+export const JOURNAL_MERGE_CACHE_FORMAT = 6;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -136,6 +147,10 @@ export type JournalMergeCachePayload = {
   landingMinutesSamples?: number[];
   samplingMinutesSamples?: number[];
   pendingOrganicSales: PendingOrganicSample[];
+  /** Present when {@link format} >= 6 — where the ship is parked, and on which body. */
+  surfaceShipMark?: { bodyKey: string; latDeg: number; lonDeg: number } | null;
+  /** Present when {@link format} >= 6 — the body the ship last touched down on. */
+  overlayTouchdownBodyKey?: string | null;
   fssAllBodiesCompleteSystems: number[];
   fssDiscoveryScanBySystem: [number, { systemName: string; bodyCount: number; progress: number }][];
   /** Optional — `FSSAllBodiesFound.Count` per system. */
@@ -2298,6 +2313,8 @@ export class GameStateStore {
       landingMinutesSamples: [...this.landingMinutesSamples],
       samplingMinutesSamples: [...this.samplingMinutesSamples],
       pendingOrganicSales: this.pendingOrganicSales.map((p) => ({ ...p })),
+      surfaceShipMark: this.surfaceShipMark ? { ...this.surfaceShipMark } : null,
+      overlayTouchdownBodyKey: this.overlayTouchdownBodyKey,
       fssAllBodiesCompleteSystems: [...this.fssAllBodiesCompleteSystems],
       fssDiscoveryScanBySystem: [...this.fssDiscoveryScanBySystem.entries()],
       fssAllBodiesFoundCountBySystem: [...this.fssAllBodiesFoundCountBySystem.entries()],
@@ -2368,6 +2385,10 @@ export class GameStateStore {
     this.landingMinutesSamples.push(...(data.landingMinutesSamples ?? []));
     this.samplingMinutesSamples.push(...(data.samplingMinutesSamples ?? []));
     this.pendingOrganicSales = data.pendingOrganicSales.map((p) => ({ ...p }));
+    // Format 6. `?? null` rather than a guard on `format`: the version check above has already
+    // rejected anything older, so absent here means the field was genuinely null when written.
+    this.surfaceShipMark = data.surfaceShipMark ? { ...data.surfaceShipMark } : null;
+    this.overlayTouchdownBodyKey = data.overlayTouchdownBodyKey ?? null;
     for (const addr of data.fssAllBodiesCompleteSystems) this.fssAllBodiesCompleteSystems.add(addr);
     for (const [addr, row] of data.fssDiscoveryScanBySystem) {
       this.fssDiscoveryScanBySystem.set(addr, { ...row });

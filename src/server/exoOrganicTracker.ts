@@ -5,6 +5,7 @@ import type {
   JournalLine,
   SpeciesDatabase,
   ExoOrganicOverlayDTO,
+  ExoMinimapDTO,
   ExoMinimapMarkDTO,
 } from "../shared/types.js";
 import { lookupPrice, type PriceIndex } from "./priceList.js";
@@ -272,6 +273,69 @@ export function ingestExoOrganicJournalLine(
   }
 }
 
+/**
+ * Where things are around you on this body, in metres.
+ *
+ * **Not tied to a sample session.** It was, and that was wrong: the overlay only built a payload
+ * while a species was being tracked, so a commander standing on a planet having just landed saw no
+ * map at all — the owner reported exactly that. A radar answers "what is around me here", which is
+ * a question about the rock, not about whichever plant is half-sampled. So it is built from the
+ * live surface fix alone, and the distance rows above it keep their own gate.
+ *
+ * Done here rather than in the overlay because the overlay is a transparent HUD ticking every
+ * 320 ms and should not be running spherical trigonometry; and because the latitudes are here.
+ *
+ * The flat-earth approximation is fine and worth saying out loud: over a few hundred metres on a
+ * body thousands of kilometres across, treating a degree of latitude as a fixed number of metres is
+ * wrong by far less than a marker is wide. The longitude term keeps its cos(lat) factor because
+ * that one is not negligible — near a pole it is the difference between a map and a lie.
+ */
+export function buildExoMinimapDto(
+  store: ExoOrganicOverlayHost,
+  bodyKeyOnFoot: string | null,
+  minSampleDistanceM: number,
+): ExoMinimapDTO | null {
+  const fix = store.exoOrganicLastFix;
+  if (!fix) return null;
+  const R = fix.planetRadiusM;
+  if (!(R > 0)) return null;
+
+  const torad = Math.PI / 180;
+  const mPerDegLat = (Math.PI * R) / 180;
+  const mPerDegLon = mPerDegLat * Math.cos(fix.latDeg * torad);
+  const marks: ExoMinimapMarkDTO[] = [];
+
+  const push = (latDeg: number, lonDeg: number, kind: "sample" | "ship", markLabel: string) => {
+    // Longitude wraps; without this a plant just across the antimeridian reads as half a planet away.
+    let dLon = lonDeg - fix.lonDeg;
+    if (dLon > 180) dLon -= 360;
+    if (dLon < -180) dLon += 360;
+    marks.push({
+      kind,
+      northM: (latDeg - fix.latDeg) * mPerDegLat,
+      eastM: dLon * mPerDegLon,
+      distanceM: greatCircleDistanceMeters(fix.latDeg, fix.lonDeg, latDeg, lonDeg, R),
+      label: markLabel,
+    });
+  };
+
+  /*
+    Which body's marks to show. With a session it is that session's body; without one it is wherever
+    the ship last touched down. Null means we cannot tell, and then nothing is drawn rather than
+    marks from the last rock — a map of somewhere else is worse than an empty one.
+  */
+  for (const m of store.surfaceSampleMarks) {
+    if (bodyKeyOnFoot != null && m.bodyKey !== bodyKeyOnFoot) continue;
+    push(m.latDeg, m.lonDeg, "sample", m.label);
+  }
+  const ship = store.surfaceShipMark;
+  if (ship && (bodyKeyOnFoot == null || ship.bodyKey === bodyKeyOnFoot)) {
+    push(ship.latDeg, ship.lonDeg, "ship", "Your ship");
+  }
+
+  return { radiusM: MINIMAP_RADIUS_M, headingDeg: fix.headingDeg, minSampleDistanceM, marks };
+}
+
 export function buildExoOrganicOverlayDto(
   store: ExoOrganicOverlayHost,
   prices: PriceIndex,
@@ -342,56 +406,7 @@ export function buildExoOrganicOverlayDto(
   const nearestSampleMeetsMin =
     distToNearestSampleM != null && minG > 0 ? distToNearestSampleM >= minG : null;
 
-  /*
-    The minimap payload, in metres relative to where the commander is standing.
-
-    Done here rather than in the overlay because the overlay is a transparent HUD ticking at 320 ms
-    and should not be running spherical trigonometry; and because the latitudes are here anyway.
-
-    The flat-earth approximation is fine and worth saying out loud: over a few hundred metres on a
-    body thousands of kilometres across, treating a degree of latitude as a fixed number of metres
-    is wrong by far less than the marker is wide. The longitude term carries the cos(lat) factor
-    because that one is not negligible — near a pole it is the difference between a map and a lie.
-  */
-  const minimap = (() => {
-    if (!fix) return null;
-    const R = fix.planetRadiusM;
-    if (!(R > 0)) return null;
-    const torad = Math.PI / 180;
-    const mPerDegLat = (Math.PI * R) / 180;
-    const mPerDegLon = mPerDegLat * Math.cos(fix.latDeg * torad);
-    const marks: ExoMinimapMarkDTO[] = [];
-
-    const push = (latDeg: number, lonDeg: number, kind: "sample" | "ship", markLabel: string) => {
-      // Longitude wraps; without this a plant just across the antimeridian reads as half a planet away.
-      let dLon = lonDeg - fix.lonDeg;
-      if (dLon > 180) dLon -= 360;
-      if (dLon < -180) dLon += 360;
-      const northM = (latDeg - fix.latDeg) * mPerDegLat;
-      const eastM = dLon * mPerDegLon;
-      marks.push({
-        kind,
-        northM,
-        eastM,
-        distanceM: greatCircleDistanceMeters(fix.latDeg, fix.lonDeg, latDeg, lonDeg, R),
-        label: markLabel,
-      });
-    };
-
-    for (const m of store.surfaceSampleMarks) {
-      if (m.bodyKey !== t.bodyKey) continue;
-      push(m.latDeg, m.lonDeg, "sample", m.label);
-    }
-    const ship = store.surfaceShipMark;
-    if (ship && ship.bodyKey === t.bodyKey) push(ship.latDeg, ship.lonDeg, "ship", "Your ship");
-
-    return {
-      radiusM: MINIMAP_RADIUS_M,
-      headingDeg: fix.headingDeg,
-      minSampleDistanceM: minG,
-      marks,
-    };
-  })();
+  const minimap = buildExoMinimapDto(store, t.bodyKey, minG);
 
   const label = t.speciesDisplay;
   const baseCredits = lookupPrice(prices, label, label);

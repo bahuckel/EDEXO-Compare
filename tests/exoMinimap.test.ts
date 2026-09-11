@@ -15,7 +15,11 @@
  * app was running when it was scanned. `ScanOrganic` carries no coordinates.
  */
 import { describe, expect, it } from "vitest";
-import { buildExoOrganicOverlayDto, type ExoOrganicOverlayHost } from "../src/server/exoOrganicTracker.js";
+import {
+  buildExoMinimapDto,
+  buildExoOrganicOverlayDto,
+  type ExoOrganicOverlayHost,
+} from "../src/server/exoOrganicTracker.js";
 import type { PriceIndex } from "../src/server/priceList.js";
 
 /** A body about the size of a small moon, so a degree is a round-ish number of metres. */
@@ -145,5 +149,28 @@ describe("the minimap payload", () => {
     const h = host();
     h.exoOrganicLastFix = null;
     expect(build(h)!.minimap).toBeNull();
+  });
+
+  it("draws without a sample session, which is the state you land in", () => {
+    /*
+      The radar used to live inside the session payload, so a commander who had just touched down
+      and not yet scanned anything saw nothing at all. Reported as "overlay does not have the
+      radar".
+    */
+    const h = host({ ship: { bodyKey: "1:2", latDeg: 0, lonDeg: 0.002 } });
+    h.exoOrganicTracker = null;
+    expect(buildExoOrganicOverlayDto(h, prices)).toBeNull();
+
+    const mm = buildExoMinimapDto(h, "1:2", 0)!;
+    expect(mm.marks).toHaveLength(1);
+    expect(mm.marks[0]!.kind).toBe("ship");
+  });
+
+  it("shows nothing rather than another rock's marks when the body is unknown", () => {
+    const h = host({ marks: [{ bodyKey: "1:2", latDeg: 0.001, lonDeg: 0, label: "Here" }] });
+    // A known body keeps its own marks...
+    expect(buildExoMinimapDto(h, "1:2", 0)!.marks).toHaveLength(1);
+    // ...and a different one keeps none of them.
+    expect(buildExoMinimapDto(h, "7:7", 0)!.marks).toHaveLength(0);
   });
 });

@@ -253,7 +253,19 @@
         clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
         border-left: 1px solid rgba(8, 8, 10, 0.28);
       }
-      .btn-split-menu {
+      /*
+       * `display: flex` here beat the `hidden` attribute, which is only `display: none` from the
+       * user-agent sheet — an author rule outranks it. So the menu was open from the moment the
+       * launcher loaded and the arrow could not shut it: every toggle flipped an attribute that no
+       * longer decided anything. Reported as "stuck extended and cant be retracted".
+       *
+       * Guarding the rule rather than adding `!important` to the other one keeps `hidden` meaning
+       * what it means everywhere else in this file.
+       */
+      .btn-split-menu[hidden] {
+        display: none;
+      }
+      .btn-split-menu:not([hidden]) {
         position: absolute;
         z-index: 40;
         top: calc(100% + 6px);

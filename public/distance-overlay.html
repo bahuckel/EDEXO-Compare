@@ -343,7 +343,16 @@
           }
         }
         // North, inside the rotated group so it moves with the world rather than with the screen.
-        parts.push('<text class="minimap-north" x="0" y="' + (-MAP_R + 11) + '" text-anchor="middle">N</text>');
+        /*
+          Spelled out rather than a bare "N". On a rotating map the letter is the only thing telling
+          you which way the world is, and the owner asked for it by name: "pole at heading 0 could
+          be marked as North". Counter-rotated so it reads level whichever way the map is turned.
+        */
+        parts.push(
+          '<text class="minimap-north" x="0" y="' + (-MAP_R + 12) +
+            '" text-anchor="middle" transform="rotate(' + (-rot).toFixed(2) + ',0,' + (-MAP_R + 12) +
+            ')">North</text>',
+        );
         parts.push("</g>");
 
         // You, at the centre, always upright: a triangle when the heading is known, a dot when not.
@@ -364,6 +373,12 @@
         var card = document.getElementById("card");
         shell.classList.remove("shell--off");
         var eo = d.exoOrganicOverlay;
+        /*
+          The radar draws whenever the game is reporting a surface position, session or not. It
+          used to be nested inside the sample-session payload, so standing on a planet having just
+          landed showed nothing at all.
+        */
+        drawMinimap(d.journalBoot ? null : d.exoMinimap);
         if (d.journalBoot || !eo || eo.visible !== true) {
           card.classList.remove("card--ok");
           document.getElementById("species").textContent = "—";
@@ -378,9 +393,10 @@
           document.getElementById("rowSpan").style.display = "none";
           document.getElementById("pay").innerHTML = "<span class='row--muted'>—</span>";
           document.getElementById("footNote").textContent =
-            "HUD is always visible. Data appears when you are in an active organic sample session from the journal.";
+            d.exoMinimap
+              ? "No sample in progress. The radar shows your ship and any plants taken here while this app was running."
+              : "HUD is always visible. Data appears when you are in an active organic sample session from the journal.";
           document.getElementById("celebrate").style.display = "none";
-          drawMinimap(null);
           return;
         }
 
@@ -390,7 +406,6 @@
           card.classList.remove("card--ok");
         }
 
-        drawMinimap(eo.minimap);
         document.getElementById("species").textContent = eo.speciesDisplay || "—";
         document.getElementById("minGap").textContent =
           eo.minSampleDistanceM > 0 ? eo.minSampleDistanceM + " m" : "—";

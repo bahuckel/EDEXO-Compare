@@ -1617,6 +1617,14 @@ export interface AppSnapshot {
    */
   exoOrganicOverlay: ExoOrganicOverlayDTO | null;
   /**
+   * The overlay radar, independent of whether a species is being sampled.
+   *
+   * Separate from {@link exoOrganicOverlay} because the two answer different questions: that one is
+   * about the plant half-collected, this one is about the ground underfoot. Null until the game
+   * reports a surface position.
+   */
+  exoMinimap: ExoMinimapDTO | null;
+  /**
    * One-shot: client selects this body tab (`systemAddress:bodyId`) when present in `bodies`.
    * The server clears the pending value after a single snapshot build.
    */

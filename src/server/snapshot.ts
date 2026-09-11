@@ -72,7 +72,11 @@ import {
   maxExomasteryProfileSampleCount,
   resolveExomasteryExportBasename,
 } from "./exomasteryProfile.js";
-import { clearExoOrganicGenusMinDistCache, buildExoOrganicOverlayDto } from "./exoOrganicTracker.js";
+import {
+  clearExoOrganicGenusMinDistCache,
+  buildExoMinimapDto,
+  buildExoOrganicOverlayDto,
+} from "./exoOrganicTracker.js";
 import { shortBodyLabel } from "../shared/systemMapLabels.js";
 import {
   explorationRecordIsBeltClusterLike,
@@ -1327,6 +1331,21 @@ export function buildSnapshot(
     footTravelOdometerTracking: bootLoading ? false : store.footTravelOdometerTracking,
     footTravelDistanceMeters: bootLoading ? 0 : store.footTravelDistanceMeters,
     exoOrganicOverlay: bootLoading ? null : buildExoOrganicOverlayDto(store, cachedPrices),
+    /*
+      The radar rides on the snapshot separately from the sample session.
+
+      It used to live only inside `exoOrganicOverlay`, which is null until a species is being
+      tracked — so landing on a planet and looking at the overlay showed nothing, which is what the
+      owner reported. Where the ship is parked and which plants are already taken is a question
+      about the body underfoot, and it has an answer the moment the game reports a surface position.
+    */
+    exoMinimap: bootLoading
+      ? null
+      : buildExoMinimapDto(
+          store,
+          store.exoOrganicTracker?.bodyKey ?? store.overlayTouchdownBodyKey,
+          store.exoOrganicTracker ? Math.max(0, Math.round(store.exoOrganicTracker.minSampleDistanceM)) : 0,
+        ),
   };
 }
 
