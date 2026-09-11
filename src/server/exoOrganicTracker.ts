@@ -1,7 +1,12 @@
 import { join } from "node:path";
 import type { FootTravelFix } from "./footTravelStatus.js";
 import { greatCircleDistanceMeters, resolveFootFixForOrganicLine } from "./footTravelStatus.js";
-import type { JournalLine, SpeciesDatabase, ExoOrganicOverlayDTO } from "../shared/types.js";
+import type {
+  JournalLine,
+  SpeciesDatabase,
+  ExoOrganicOverlayDTO,
+  ExoMinimapMarkDTO,
+} from "../shared/types.js";
 import { lookupPrice, type PriceIndex } from "./priceList.js";
 import {
   displayLabelFromOrganicLine,
@@ -39,7 +44,20 @@ export type ExoOrganicOverlayHost = {
   exoOrganicTracker: ExoOrganicTrackerInternal | null;
   exoOrganicLastFix: FootTravelFix | null;
   readonly firstFootfallBodies: Set<string>;
+  /** Where each plant was sampled on this body — the minimap's dots. */
+  surfaceSampleMarks: { bodyKey: string; latDeg: number; lonDeg: number; label: string }[];
+  addSurfaceSampleMark(bodyKey: string, latDeg: number, lonDeg: number, label: string): void;
+  surfaceShipMark: { bodyKey: string; latDeg: number; lonDeg: number } | null;
 };
+
+/**
+ * How far the minimap draws, in metres.
+ *
+ * The owner's number: "scanned plants outside the 500m radius of the minimap should appear as
+ * arrows". It is also the right scale for the job — the widest genus separation in the game is
+ * 500 m, so a map of this radius always contains the ring you are trying to clear.
+ */
+const MINIMAP_RADIUS_M = 500;
 
 const genusMinDistCache = new Map<string, number>();
 
@@ -179,6 +197,9 @@ export function ingestExoOrganicJournalLine(
         phase: "tracking",
         celebrationUntil: 0,
       };
+      // The anchors are this species' own and are wiped when the next one starts; the map wants
+      // every plant taken on this body, so it keeps its own list.
+      store.addSurfaceSampleMark(bk, fix.latDeg, fix.lonDeg, speciesDisplay);
       store.footSessionBodyKey = bk;
       store.footSessionBodyNameNorm = bodyNameNormEarly;
       if (store.footTravelOdometerEnabled) {
@@ -204,6 +225,9 @@ export function ingestExoOrganicJournalLine(
         phase: "tracking",
         celebrationUntil: 0,
       };
+      // The anchors are this species' own and are wiped when the next one starts; the map wants
+      // every plant taken on this body, so it keeps its own list.
+      store.addSurfaceSampleMark(bk, fix.latDeg, fix.lonDeg, speciesDisplay);
       store.footSessionBodyKey = bk;
       store.footSessionBodyNameNorm = bodyNameNormEarly;
       if (store.footTravelOdometerEnabled) {
@@ -220,6 +244,7 @@ export function ingestExoOrganicJournalLine(
         lonDeg: fix.lonDeg,
         planetRadiusM: fix.planetRadiusM,
       });
+      store.addSurfaceSampleMark(bk, fix.latDeg, fix.lonDeg, speciesDisplay || t.speciesDisplay);
       t.speciesDisplay = speciesDisplay || t.speciesDisplay;
       t.genusLocalised = genusLoc || t.genusLocalised;
       t.minSampleDistanceM = minM || t.minSampleDistanceM;
@@ -317,6 +342,57 @@ export function buildExoOrganicOverlayDto(
   const nearestSampleMeetsMin =
     distToNearestSampleM != null && minG > 0 ? distToNearestSampleM >= minG : null;
 
+  /*
+    The minimap payload, in metres relative to where the commander is standing.
+
+    Done here rather than in the overlay because the overlay is a transparent HUD ticking at 320 ms
+    and should not be running spherical trigonometry; and because the latitudes are here anyway.
+
+    The flat-earth approximation is fine and worth saying out loud: over a few hundred metres on a
+    body thousands of kilometres across, treating a degree of latitude as a fixed number of metres
+    is wrong by far less than the marker is wide. The longitude term carries the cos(lat) factor
+    because that one is not negligible — near a pole it is the difference between a map and a lie.
+  */
+  const minimap = (() => {
+    if (!fix) return null;
+    const R = fix.planetRadiusM;
+    if (!(R > 0)) return null;
+    const torad = Math.PI / 180;
+    const mPerDegLat = (Math.PI * R) / 180;
+    const mPerDegLon = mPerDegLat * Math.cos(fix.latDeg * torad);
+    const marks: ExoMinimapMarkDTO[] = [];
+
+    const push = (latDeg: number, lonDeg: number, kind: "sample" | "ship", markLabel: string) => {
+      // Longitude wraps; without this a plant just across the antimeridian reads as half a planet away.
+      let dLon = lonDeg - fix.lonDeg;
+      if (dLon > 180) dLon -= 360;
+      if (dLon < -180) dLon += 360;
+      const northM = (latDeg - fix.latDeg) * mPerDegLat;
+      const eastM = dLon * mPerDegLon;
+      marks.push({
+        kind,
+        northM,
+        eastM,
+        distanceM: greatCircleDistanceMeters(fix.latDeg, fix.lonDeg, latDeg, lonDeg, R),
+        label: markLabel,
+      });
+    };
+
+    for (const m of store.surfaceSampleMarks) {
+      if (m.bodyKey !== t.bodyKey) continue;
+      push(m.latDeg, m.lonDeg, "sample", m.label);
+    }
+    const ship = store.surfaceShipMark;
+    if (ship && ship.bodyKey === t.bodyKey) push(ship.latDeg, ship.lonDeg, "ship", "Your ship");
+
+    return {
+      radiusM: MINIMAP_RADIUS_M,
+      headingDeg: fix.headingDeg,
+      minSampleDistanceM: minG,
+      marks,
+    };
+  })();
+
   const label = t.speciesDisplay;
   const baseCredits = lookupPrice(prices, label, label);
   const ff: 1 | 5 = store.firstFootfallBodies.has(t.bodyKey) ? 5 : 1;
@@ -357,6 +433,7 @@ export function buildExoOrganicOverlayDto(
     sampleCount: anchors.length,
     trackingBodyKey: t.bodyKey,
     distToNearestSampleM,
+    minimap,
     nearestSampleMeetsMin,
   };
 }

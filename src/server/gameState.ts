@@ -660,6 +660,46 @@ export class GameStateStore {
   overlayTouchdownBodyKey: string | null = null;
 
   /**
+   * Where the ship is parked, from `Touchdown` (A-list: the overlay minimap).
+   *
+   * The journal gives this one for free: every `Touchdown` carries `Latitude` and `Longitude` —
+   * 32 of 32 in the owner's recent logs — so unlike a plant, the ship's position needs no live
+   * `Status.json` capture and survives a restart of the app.
+   *
+   * Cleared on `Liftoff`, because the owner's rule is that the mark means "your ship is there", and
+   * once it leaves, it is not.
+   */
+  surfaceShipMark: { bodyKey: string; latDeg: number; lonDeg: number } | null = null;
+
+  /**
+   * Where each plant was sampled on the body currently under foot.
+   *
+   * **This cannot be recovered from history.** `ScanOrganic` does not carry coordinates — 0 of 38
+   * in the owner's recent journals — so the only way to know where a plant was is to read
+   * `Status.json` at the moment the scan lands, which means only scans taken while this app is
+   * running can ever be placed. A replay of four years of logs yields nothing here, by construction.
+   *
+   * Kept for one body at a time: the map is "where have I walked on this rock", and marks from the
+   * last one would be somewhere else entirely.
+   */
+  surfaceSampleMarks: { bodyKey: string; latDeg: number; lonDeg: number; label: string }[] = [];
+
+  /** Record a sampled plant's position. Same body only; duplicates within a metre are ignored. */
+  addSurfaceSampleMark(bodyKeyStr: string, latDeg: number, lonDeg: number, label: string): void {
+    if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) return;
+    if (this.surfaceSampleMarks.length > 0 && this.surfaceSampleMarks[0]!.bodyKey !== bodyKeyStr) {
+      this.surfaceSampleMarks = [];
+    }
+    const dup = this.surfaceSampleMarks.some(
+      (m) => Math.abs(m.latDeg - latDeg) < 1e-5 && Math.abs(m.lonDeg - lonDeg) < 1e-5,
+    );
+    if (dup) return;
+    this.surfaceSampleMarks.push({ bodyKey: bodyKeyStr, latDeg, lonDeg, label });
+    // A long session on one body is still a few dozen plants; this is a guard, not a policy.
+    if (this.surfaceSampleMarks.length > 200) this.surfaceSampleMarks.shift();
+  }
+
+  /**
    * Read the pending one-shot key without consuming it.
    *
    * Consuming belongs to the broadcast path only ({@link clearPendingUiAutoSelectBodyKey}); when
@@ -1601,8 +1641,31 @@ export class GameStateStore {
           const nm = nameFromJournal ?? `Body ${bodyId}`;
           ensureBody(this.bodies, systemAddress, bodyId, nm, star, ts);
           this.overlayTouchdownBodyKey = bodyKey(systemAddress, bodyId);
+          /*
+            Where the ship is parked, for the minimap. Straight off the journal line — Touchdown
+            carries Latitude and Longitude — so this one needs no live Status.json read.
+          */
+          const tdLat = line.Latitude;
+          const tdLon = line.Longitude;
+          if (typeof tdLat === "number" && typeof tdLon === "number") {
+            this.surfaceShipMark = {
+              bodyKey: bodyKey(systemAddress, bodyId),
+              latDeg: tdLat,
+              lonDeg: tdLon,
+            };
+          }
           this.requestUiAutoSelectBody(systemAddress, bodyId);
         }
+        return;
+      }
+
+      if (event === "Liftoff") {
+        /*
+          The ship has gone, so the mark goes with it — the owner's rule: "after takeoff, the
+          'position landed' for the ship gets removed, we keep only the scans." A stale ship marker
+          is worse than none: it is an instruction to walk to a place nothing is parked.
+        */
+        this.surfaceShipMark = null;
         return;
       }
 

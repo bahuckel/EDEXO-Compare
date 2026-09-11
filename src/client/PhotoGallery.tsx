@@ -12,17 +12,30 @@
  * no keyboard handlers competing with the modal's own Escape.
  */
 import { useCallback, useEffect, useState } from "react";
-import { PhotoCredit } from "./photoCredit";
+import { PhotoCredit, type PhotoContributor } from "./photoCredit";
 
 export function PhotoGallery({
   urls,
   startIndex = 0,
   note,
+  creditByUrl,
+  variantByUrl,
   onClose,
 }: {
   urls: string[];
   startIndex?: number;
   note?: string | null;
+  /**
+   * Who took each photograph, by URL. Absent for the shipped images, which are ED-DSN's.
+   *
+   * Passed per photo rather than per species because a species can have both: the ED-DSN
+   * photographs it shipped with, and the owner's own of a variant he walked to. The lightbox showed
+   * the standing ED-DSN credit for every one of them, which credited his work to somebody else —
+   * the one mistake this area of the project has been careful about.
+   */
+  creditByUrl?: Record<string, PhotoContributor>;
+  /** What each photograph is of — "Bacterium Aurasus — Lime". Shown above the open image. */
+  variantByUrl?: Record<string, string>;
   onClose: () => void;
 }) {
   const count = urls.length;
@@ -73,6 +86,15 @@ export function PhotoGallery({
         it instead of beneath it.
       */}
       <div className="photo-lightbox-stack" onClick={(ev) => ev.stopPropagation()}>
+        {/*
+          What you are looking at, above the picture.
+
+          A species with several photographs usually has them in several colours, and stepping
+          through them silently means the commander is comparing the plant in front of them against
+          a variant that is not theirs. The owner asked for the name "only when its open", which is
+          exactly right: on the card there is one photograph and it is already the right one.
+        */}
+        {variantByUrl?.[url] ? <p className="photo-lightbox-what">{variantByUrl[url]}</p> : null}
         <div className="photo-gallery-frame">
           <img src={url} alt="" className="photo-lightbox-img" />
           {count > 1 ? (
@@ -116,7 +138,7 @@ export function PhotoGallery({
           </div>
         ) : null}
 
-        <PhotoCredit photoUrl={url} variant="lightbox" />
+        <PhotoCredit photoUrl={url} variant="lightbox" contributor={creditByUrl?.[url]} />
       </div>
 
       {note ? (

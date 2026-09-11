@@ -46,6 +46,71 @@
           0 8px 28px rgba(0, 20, 60, 0.45),
           inset 0 1px 0 rgba(255, 255, 255, 0.12);
       }
+      /*
+       * The minimap.
+       *
+       * Rotated so "up" is where the commander is looking, because a north-up map asks them to do
+       * the rotation in their head while walking. It falls back to north-up when the game is not
+       * reporting a heading, and says so rather than pretending.
+       */
+      .minimap {
+        display: block;
+        width: 100%;
+        max-width: 13rem;
+        margin: 0.45rem auto 0.1rem;
+      }
+      .minimap-rim {
+        fill: rgba(6, 14, 30, 0.5);
+        stroke: rgba(120, 190, 255, 0.45);
+        stroke-width: 1.5;
+      }
+      /* The separation this genus needs — the ring you are trying to get outside of. */
+      .minimap-minring {
+        fill: none;
+        stroke: rgba(255, 193, 77, 0.55);
+        stroke-width: 1;
+        stroke-dasharray: 4 3;
+      }
+      .minimap-grid {
+        fill: none;
+        stroke: rgba(120, 190, 255, 0.16);
+        stroke-width: 0.8;
+      }
+      .minimap-you {
+        fill: rgba(232, 244, 255, 0.95);
+      }
+      .minimap-you-dir {
+        stroke: rgba(232, 244, 255, 0.95);
+        stroke-width: 2;
+        stroke-linecap: round;
+      }
+      .minimap-sample {
+        fill: rgba(63, 185, 80, 0.9);
+        stroke: rgba(8, 28, 12, 0.8);
+        stroke-width: 0.6;
+      }
+      .minimap-ship {
+        fill: rgba(255, 171, 64, 0.95);
+        stroke: rgba(40, 22, 4, 0.8);
+        stroke-width: 0.6;
+      }
+      /* Off the map: an arrow on the rim pointing the way, with how far. */
+      .minimap-arrow--sample {
+        fill: rgba(63, 185, 80, 0.9);
+      }
+      .minimap-arrow--ship {
+        fill: rgba(255, 171, 64, 0.95);
+      }
+      .minimap-far-label {
+        fill: rgba(232, 244, 255, 0.75);
+        font-size: 8px;
+        font-family: inherit;
+      }
+      .minimap-north {
+        fill: rgba(232, 244, 255, 0.5);
+        font-size: 9px;
+        font-family: inherit;
+      }
       .card.card--ok {
         background: linear-gradient(165deg, rgba(28, 120, 72, 0.78), rgba(12, 58, 40, 0.85));
         border-color: rgba(120, 255, 170, 0.45);
@@ -164,6 +229,20 @@
           <span class="lbl">3rd Scan</span>
           <span class="val" id="pay">—</span>
         </div>
+        <!--
+          The minimap. A plain list of distances tells you how far the last plant is; it does not
+          tell you which way to walk, which is the thing you are actually deciding while standing on
+          a rock. The owner asked for "a minimap based on the coordinates on the planet" and the
+          coordinates were already being captured for the distance readouts above.
+        -->
+        <svg
+          id="minimap"
+          class="minimap"
+          viewBox="-110 -110 220 220"
+          role="img"
+          aria-label="Where your samples and ship are, around you"
+          style="display: none"
+        ></svg>
         <div class="subnote" id="footNote"></div>
         <div class="cele" id="celebrate" style="display: none"></div>
       </div>
@@ -193,6 +272,93 @@
         return "";
       }
 
+      /**
+       * Draw the minimap.
+       *
+       * Plot units are a 100-unit radius circle; metres are scaled into it. Anything beyond the
+       * radius becomes an arrow on the rim with its distance beside it, which is the owner's rule
+       * and also the only honest way to show it — clamping a 3 km plant to the edge as a dot would
+       * say it is 500 m away.
+       *
+       * "Up" is the way the commander is facing when the game reports a heading. Without one it
+       * stays north-up and the N stays visible so the difference is not silent.
+       */
+      var MAP_R = 100;
+      function drawMinimap(mm) {
+        var el = document.getElementById("minimap");
+        if (!mm || !mm.marks) {
+          el.style.display = "none";
+          return;
+        }
+        el.style.display = "";
+        var parts = [];
+        var heading = typeof mm.headingDeg === "number" && isFinite(mm.headingDeg) ? mm.headingDeg : null;
+        // Rotating the *scene* by -heading puts the way you are facing at the top of the map.
+        var rot = heading == null ? 0 : -heading;
+        var scale = MAP_R / (mm.radiusM > 0 ? mm.radiusM : 500);
+
+        parts.push('<circle class="minimap-rim" cx="0" cy="0" r="' + MAP_R + '" />');
+        parts.push('<circle class="minimap-grid" cx="0" cy="0" r="' + MAP_R / 2 + '" />');
+        if (mm.minSampleDistanceM > 0 && mm.minSampleDistanceM * scale < MAP_R) {
+          parts.push(
+            '<circle class="minimap-minring" cx="0" cy="0" r="' +
+              (mm.minSampleDistanceM * scale).toFixed(1) +
+              '" />',
+          );
+        }
+
+        parts.push('<g transform="rotate(' + rot.toFixed(2) + ')">');
+        for (var i = 0; i < mm.marks.length; i++) {
+          var m = mm.marks[i];
+          // SVG y grows downward and north is up, so north becomes -y.
+          var x = m.eastM * scale;
+          var y = -m.northM * scale;
+          var r = Math.sqrt(x * x + y * y);
+          var cls = m.kind === "ship" ? "ship" : "sample";
+          if (r <= MAP_R - 6) {
+            var rr = m.kind === "ship" ? 4.5 : 3.5;
+            parts.push(
+              '<circle class="minimap-' + cls + '" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) +
+                '" r="' + rr + '"><title>' + esc(m.label) + " — " + Math.round(m.distanceM) +
+                " m</title></circle>",
+            );
+          } else {
+            // On the rim, pointing outward, with the real distance beside it.
+            var ang = (Math.atan2(y, x) * 180) / Math.PI;
+            var ax = Math.cos((ang * Math.PI) / 180) * (MAP_R - 8);
+            var ay = Math.sin((ang * Math.PI) / 180) * (MAP_R - 8);
+            parts.push(
+              '<g transform="translate(' + ax.toFixed(1) + "," + ay.toFixed(1) + ") rotate(" +
+                ang.toFixed(1) + ')"><polygon class="minimap-arrow--' + cls +
+                '" points="7,0 -3,-4.5 -3,4.5" /><title>' + esc(m.label) + " — " +
+                Math.round(m.distanceM) + " m</title></g>",
+            );
+            // The label is counter-rotated so it reads level however the map is turned.
+            parts.push(
+              '<text class="minimap-far-label" x="' + (ax * 0.82).toFixed(1) + '" y="' +
+                (ay * 0.82).toFixed(1) + '" text-anchor="middle" transform="rotate(' +
+                (-rot).toFixed(2) + "," + (ax * 0.82).toFixed(1) + "," + (ay * 0.82).toFixed(1) +
+                ')">' + Math.round(m.distanceM) + "</text>",
+            );
+          }
+        }
+        // North, inside the rotated group so it moves with the world rather than with the screen.
+        parts.push('<text class="minimap-north" x="0" y="' + (-MAP_R + 11) + '" text-anchor="middle">N</text>');
+        parts.push("</g>");
+
+        // You, at the centre, always upright: a triangle when the heading is known, a dot when not.
+        if (heading == null) {
+          parts.push('<circle class="minimap-you" cx="0" cy="0" r="3.5" />');
+        } else {
+          parts.push('<polygon class="minimap-you" points="0,-7 4.5,4 0,1.5 -4.5,4" />');
+        }
+        el.innerHTML = parts.join("");
+      }
+
+      function esc(t) {
+        return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
       function render(d) {
         var shell = document.getElementById("shell");
         var card = document.getElementById("card");
@@ -214,6 +380,7 @@
           document.getElementById("footNote").textContent =
             "HUD is always visible. Data appears when you are in an active organic sample session from the journal.";
           document.getElementById("celebrate").style.display = "none";
+          drawMinimap(null);
           return;
         }
 
@@ -223,6 +390,7 @@
           card.classList.remove("card--ok");
         }
 
+        drawMinimap(eo.minimap);
         document.getElementById("species").textContent = eo.speciesDisplay || "—";
         document.getElementById("minGap").textContent =
           eo.minSampleDistanceM > 0 ? eo.minSampleDistanceM + " m" : "—";

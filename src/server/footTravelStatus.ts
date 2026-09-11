@@ -11,6 +11,14 @@ export type FootTravelFix = {
   planetRadiusM: number;
   /** `Status.json` BodyName when on/near a surface — used to gate odometer to the session body. */
   bodyName: string | null;
+  /**
+   * Degrees clockwise from north, or null when the game is not reporting it.
+   *
+   * Only needed by the minimap, which rotates to face the way the commander is looking — a map that
+   * stays north-up asks them to do the rotation in their head while walking. Everything else here
+   * works without it, so it is optional rather than part of the fix being valid.
+   */
+  headingDeg: number | null;
 };
 
 function pickFinite(obj: Record<string, unknown>, keys: string[]): number | null {
@@ -55,7 +63,8 @@ export function parseScanOrganicLineFootFix(line: JournalLine): FootTravelFix | 
   if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
   const bnRaw = o.BodyName;
   const bodyName = typeof bnRaw === "string" && bnRaw.trim() ? bnRaw.trim() : null;
-  return { latDeg: lat, lonDeg: lon, planetRadiusM: radius, bodyName };
+  const heading = pickFinite(o, ["Heading", "heading"]);
+  return { latDeg: lat, lonDeg: lon, planetRadiusM: radius, bodyName, headingDeg: heading };
 }
 
 /** Prefer live `Status.json` parse; fall back to coordinates on the journal line. */
@@ -91,7 +100,8 @@ export function parseStatusJsonFootFix(rawText: string): FootTravelFix | null {
   if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
   const bnRaw = o.BodyName;
   const bodyName = typeof bnRaw === "string" && bnRaw.trim() ? bnRaw.trim() : null;
-  return { latDeg: lat, lonDeg: lon, planetRadiusM: radius, bodyName };
+  const heading = pickFinite(o, ["Heading", "heading"]);
+  return { latDeg: lat, lonDeg: lon, planetRadiusM: radius, bodyName, headingDeg: heading };
 }
 
 export type StatusJsonFuelTons = { fuelMain: number; fuelReserve: number };

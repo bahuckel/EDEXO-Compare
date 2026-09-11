@@ -66,6 +66,25 @@ export function PhotoCredit({
   contributor?: PhotoContributor;
 }) {
   if (isPlaceholderPhoto(photoUrl)) return null;
+
+  /*
+    The card gets the short form.
+
+    On the species card this line sits under the photograph in a column, so every line it takes is
+    height the picture loses — and the full wording wrapped to two or three of them, costing about a
+    sixth of the image. The owner reported exactly that. The attribution itself is not negotiable,
+    so it is shortened rather than dropped: the name stays, the sentence around it goes, and the
+    full wording with its link is still there the moment the photograph is opened. `NOTICE.md`
+    carries the formal credit either way.
+  */
+  if (variant === "card") {
+    return (
+      <p className="photo-credit photo-credit--card" title={photoCreditTitle(photoUrl, contributor)}>
+        {contributor ? contributor.name : "ED-DSN"}
+      </p>
+    );
+  }
+
   if (contributor) {
     return (
       <p className={`photo-credit photo-credit--${variant}`}>
@@ -77,6 +96,7 @@ export function PhotoCredit({
         ) : (
           contributor.name
         )}
+        {contributor.licence ? <span className="photo-credit-licence"> {contributor.licence}</span> : null}
       </p>
     );
   }

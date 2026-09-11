@@ -1144,6 +1144,44 @@ export interface ExoOrganicOverlayDTO {
   distToNearestSampleM: number | null;
   /** True when {@link distToNearestSampleM} ≥ {@link minSampleDistanceM} (both known). */
   nearestSampleMeetsMin: boolean | null;
+  /** Where things are around you on this body. Null until the game reports a surface position. */
+  minimap: ExoMinimapDTO | null;
+}
+
+/**
+ * The overlay minimap — where you are standing and what is around you.
+ *
+ * Everything is already in metres **relative to the commander**, north-up, because the overlay is a
+ * transparent HUD panel and should not be doing spherical trigonometry on a 320 ms tick. The server
+ * holds the latitudes; the client holds a compass.
+ *
+ * What can and cannot appear here is set by the game, not by choice:
+ *
+ * - **Plants** are only placeable if this app was running when they were scanned. `ScanOrganic`
+ *   carries no coordinates, so the position has to be taken from `Status.json` at the moment the
+ *   scan lands. Nothing can be recovered from old journals.
+ * - **The ship** comes from `Touchdown`, which does carry them, so it survives a restart and is
+ *   known even for a landing made before the app opened.
+ */
+export interface ExoMinimapDTO {
+  /** Radius the map draws to, metres. Things beyond it become arrows on the rim. */
+  radiusM: number;
+  /** Degrees clockwise from north, or null when the game is not reporting a heading. */
+  headingDeg: number | null;
+  /** The minimum separation this genus needs, so the map can draw the ring you have to clear. */
+  minSampleDistanceM: number;
+  marks: ExoMinimapMarkDTO[];
+}
+
+export interface ExoMinimapMarkDTO {
+  kind: "sample" | "ship";
+  /** Metres north (+) or south (−) of the commander. */
+  northM: number;
+  /** Metres east (+) or west (−) of the commander. */
+  eastM: number;
+  /** Straight-line surface distance, metres — what the label shows for an off-map arrow. */
+  distanceM: number;
+  label: string;
 }
 
 /** Heuristic surface temperature band (K) from journal + body class (not raw game min/max). */

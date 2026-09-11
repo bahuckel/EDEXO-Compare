@@ -766,6 +766,19 @@ function SectorPlot({
    */
   const level = regionGroups ? lodLevel(vp.view.scale) : "sector";
 
+  /** Groups are keyed by region, except the unnamed ones which stand alone at their own position. */
+  const regionKeyOf = useCallback(
+    (g: RegionGroup<SectorMapCell>) => (g.regionId === 0 ? `unnamed:${g.x},${g.y},${g.z}` : `r:${g.regionId}`),
+    [],
+  );
+
+  /** The group holding the commander's own sector, so it can be ringed like the sector is. */
+  const youRegionKey = useMemo(() => {
+    if (!commander || !regionGroups) return null;
+    const g = regionGroups.find((grp) => grp.rows.some((r) => sectorCellKey(r.cell) === commander.key));
+    return g ? regionKeyOf(g) : null;
+  }, [commander, regionGroups, regionKeyOf]);
+
   /** Plot coordinates for a point in cell space, at the current camera. */
   const at = useCallback((c: { x: number; y: number; z: number }) => project(c, cam), [cam]);
   /*
@@ -905,7 +918,23 @@ function SectorPlot({
                 // because its whole job at this zoom is to be clickable.
                 const r = 4 + 9 * Math.cbrt(g.bodies / Math.max(1, maxBodies * 4));
                 return (
-                  <g key={`region:${g.regionId}:${g.x},${g.z}`} className="galaxy-map__region">
+                  <g key={regionKeyOf(g)} className="galaxy-map__region">
+                    {/*
+                      The region the ship is in, ringed — the same pairing the sector marker gets.
+                      A region is drawn at the centroid of its sectors, which can be a long way from
+                      the commander, so without this the two marks read as unrelated.
+                    */}
+                    {youRegionKey === regionKeyOf(g) ? (
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={(r + 5) * vp.pixel}
+                        className="galaxy-map__you-cell"
+                        pointerEvents="none"
+                        fill="none"
+                        strokeWidth={1.2 * vp.pixel}
+                      />
+                    ) : null}
                     <circle
                       cx={cx}
                       cy={cy}
@@ -929,10 +958,21 @@ Click to list its sectors, or zoom in to split it`}</title>
                 );
               })
           : null}
-        {level === "sector"
-          ? rows
-              .filter((row) => isOnScreen(sx(at(row).u), sy(at(row).v), vp.view, VIEW_W, VIEW_H))
-              .map(({ cell, bodies, tier, ...pos }) => {
+        {/*
+          The commander's own sector is drawn at **both** levels.
+
+          Grouping into regions took it away: a region circle sits at the centroid of its sectors,
+          which for Inner Orion Spur is 22 plot units from where the ship actually is and smaller
+          than that gap. So the cross was left standing on its own with nothing under it, and the
+          owner reported the map "showing me outside in the black". He was in the middle of a
+          region the whole time — the mark that used to say so had been grouped away.
+
+          One extra circle, and the ring below pairs it with the ship.
+        */}
+        {(level === "sector"
+          ? rows.filter((row) => isOnScreen(sx(at(row).u), sy(at(row).v), vp.view, VIEW_W, VIEW_H))
+          : rows.filter((row) => commander != null && sectorCellKey(row.cell) === commander.key)
+        ).map(({ cell, bodies, tier, ...pos }) => {
           const r = 2 + 7 * Math.cbrt(bodies / maxBodies);
           const isHit = highlight?.key === cell.key;
           /*
@@ -1021,8 +1061,7 @@ ${bodies} bodies recorded here${
             ) : null}
             </g>
           );
-              })
-          : null}
+        })}
         {/*
           The backlog: systems holding biology this commander found and never collected.
 

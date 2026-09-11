@@ -741,6 +741,20 @@ const SpeciesCard = memo(function SpeciesCard({
     // The variant leads, and the rest keep their order behind it.
     return [variantPhotoUrl, ...all.filter((u) => u !== variantPhotoUrl)];
   }, [m.photoUrls, m.photoUrl, variantPhotoUrl]);
+  /**
+   * What each photograph is of, for the label over the open image.
+   *
+   * Built from `photoVariants`, which is the only thing that knows a file's colour — the URL is a
+   * filename and reading a colour out of it here would duplicate a rule that already lives on the
+   * server. A photograph with no variant row gets no label rather than a guessed one.
+   */
+  const galleryVariantLabels = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const v of m.photoVariants ?? []) {
+      if (v.url && v.colour) out[v.url] = `${m.entry.displayName} — ${v.colour}`;
+    }
+    return out;
+  }, [m.photoVariants, m.entry.displayName]);
   const heroSrc = speciesPhotoVariant(heroPhotoUrl, "card");
   const [photoLightbox, setPhotoLightbox] = useState(false);
   const [exoDetailOpen, setExoDetailOpen] = useState(false);
@@ -1068,19 +1082,26 @@ const SpeciesCard = memo(function SpeciesCard({
         ) : (
           <div className="species-card-hero">
             {thumbBtn}
-            {/* Directly under the photo it credits — the hero is a column, so anywhere further down
-                reads as a footnote to the card rather than to the image. */}
-            {galleryUrls.length > 1 ? (
-              <button
-                type="button"
-                className="photo-count-hint"
-                onClick={() => setPhotoLightbox(true)}
-                title={`${galleryUrls.length} photographs of this species — click to browse`}
-              >
-                {galleryUrls.length} photos
-              </button>
-            ) : null}
-            <PhotoCredit photoUrl={heroPhotoUrl} contributor={m.photoCreditByUrl?.[heroPhotoUrl]} />
+            {/*
+              Directly under the photo it credits — the hero is a column, so anywhere further down
+              reads as a footnote to the card rather than to the image. One row rather than two
+              stacked blocks: the count and the credit were costing three lines of height between
+              them, and on this layout every line below the photograph is height the photograph
+              loses.
+            */}
+            <div className="photo-meta-row">
+              {galleryUrls.length > 1 ? (
+                <button
+                  type="button"
+                  className="photo-count-hint"
+                  onClick={() => setPhotoLightbox(true)}
+                  title={`${galleryUrls.length} photographs of this species — click to browse`}
+                >
+                  {galleryUrls.length} photos
+                </button>
+              ) : null}
+              <PhotoCredit photoUrl={heroPhotoUrl} contributor={m.photoCreditByUrl?.[heroPhotoUrl]} />
+            </div>
             {identityNeon}
             {quadGrid}
             {m.photoNote ? (
@@ -1205,6 +1226,8 @@ const SpeciesCard = memo(function SpeciesCard({
             <PhotoGallery
               urls={galleryUrls}
               note={m.photoNote}
+              creditByUrl={m.photoCreditByUrl}
+              variantByUrl={galleryVariantLabels}
               onClose={() => setPhotoLightbox(false)}
             />,
             document.body,

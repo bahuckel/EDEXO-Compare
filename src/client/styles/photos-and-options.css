@@ -35,11 +35,61 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+/*
+ * Card credit and photo count on one row, under the picture.
+ *
+ * They were two stacked blocks and the credit wrapped to two lines, so between them they cost about
+ * a sixth of the image's height on the hero layout — which the owner reported. One row, one line,
+ * truncated rather than wrapped: the full attribution is in the lightbox and in NOTICE.md.
+ */
+.photo-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+  margin-top: 0.2rem;
+}
+
+.photo-meta-row .photo-count-hint {
+  margin-top: 0;
+  flex: 0 0 auto;
+}
+
+.photo-credit--card {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+}
+
 .photo-credit--lightbox {
   margin-top: 0.5rem;
   font-size: 11px;
   text-align: center;
   opacity: 1;
+}
+
+.photo-credit-licence {
+  opacity: 0.7;
+}
+
+/*
+ * What the open photograph is of.
+ *
+ * A species with several photographs usually has them in several colours, and stepping through them
+ * silently invites comparing the plant in front of you against a variant that is not yours.
+ */
+.photo-lightbox-what {
+  margin: 0 0 0.4rem;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--fg, #e6edf3);
 }
 
 /*
