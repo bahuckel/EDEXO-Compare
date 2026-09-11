@@ -3,270 +3,270 @@
   "speciesLabel": "Fonticulua fluctus",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-07T11:52:43.317Z",
-  "sampleCount": 7,
+  "generatedAt": "2026-09-11T17:52:34.211Z",
+  "sampleCount": 14,
   "provenance": {
-    "inputHash": "51aede7ebe8c6bbbf0ba98b7334713f4ca3325877a83f6b743780e7b41930f62",
-    "csvRows": 17,
-    "occurrences": 7,
-    "bodies": 7
+    "inputHash": "507288a4aa363a05b603f5c0d421c570d76c4f54d782ac31816f831457c2e9e6",
+    "csvRows": 26,
+    "occurrences": 14,
+    "bodies": 14
   },
   "numerics": {
     "body.distanceToArrival": {
       "min": 286,
       "max": 16536,
-      "mean": 3470.5714285714284,
-      "count": 7,
-      "mode": 286,
-      "modeCount": 2
+      "mean": 4798.714285714285,
+      "count": 14,
+      "mode": 1354,
+      "modeCount": 4
     },
     "body.gravity": {
       "min": 0.24487659002445092,
       "max": 0.27336691053394757,
-      "mean": 0.2642181328474583,
-      "count": 7,
-      "mode": 0.2703672337261073,
-      "modeCount": 2
+      "mean": 0.26212209992772234,
+      "count": 14,
+      "mode": 0.2655533517663922,
+      "modeCount": 4
     },
     "body.earthMasses": {
       "min": 0.088518,
       "max": 0.133503,
-      "mean": 0.10890142857142858,
-      "count": 7,
-      "mode": 0.088518,
-      "modeCount": 2
+      "mean": 0.10779771428571429,
+      "count": 14,
+      "mode": 0.126047,
+      "modeCount": 4
     },
     "body.radius": {
       "min": 3649.41525,
       "max": 4457.148,
-      "mean": 4080.9571428571435,
-      "count": 7,
-      "mode": 3649.41525,
-      "modeCount": 2
+      "mean": 4079.3698392857154,
+      "count": 14,
+      "mode": 4394.15,
+      "modeCount": 4
     },
     "body.surfaceTemperature": {
       "min": 145,
       "max": 167,
-      "mean": 153.71428571428572,
-      "count": 7,
-      "mode": 153,
-      "modeCount": 2
+      "mean": 153.78571428571428,
+      "count": 14,
+      "mode": 151,
+      "modeCount": 4
     },
     "body.surfacePressure": {
       "min": 0.016121971043671354,
       "max": 0.052486410530471254,
-      "mean": 0.04285810372563533,
-      "count": 7,
-      "mode": 0.052486410530471254,
-      "modeCount": 2
+      "mean": 0.0420409972965352,
+      "count": 14,
+      "mode": 0.049501955539106836,
+      "modeCount": 4
     },
     "body.atmosphereComposition.Oxygen": {
-      "min": 82.52,
+      "min": 80.15,
       "max": 100,
-      "mean": 97.49428571428572,
-      "count": 7,
+      "mean": 93.41428571428573,
+      "count": 14,
       "mode": 100,
-      "modeCount": 5
+      "modeCount": 8
     },
     "body.solidComposition.Ice": {
       "min": 68.41,
       "max": 92.78,
-      "mean": 83.68142857142857,
-      "count": 7,
-      "mode": 68.41,
-      "modeCount": 2
+      "mean": 84.37571428571428,
+      "count": 14,
+      "mode": 92.78,
+      "modeCount": 4
     },
     "body.solidComposition.Rock": {
       "min": 6.21,
       "max": 21.15,
-      "mean": 12.314285714285713,
-      "count": 7,
-      "mode": 21.15,
-      "modeCount": 2
+      "mean": 12.149285714285716,
+      "count": 14,
+      "mode": 6.21,
+      "modeCount": 4
     },
     "body.solidComposition.Metal": {
       "min": 1.01,
       "max": 10.44,
-      "mean": 4.007142857142858,
-      "count": 7,
-      "mode": 10.44,
-      "modeCount": 2
+      "mean": 3.477857142857143,
+      "count": 14,
+      "mode": 1.01,
+      "modeCount": 4
     },
     "body.orbitalPeriod": {
       "min": 2.4868986672800926,
       "max": 238.6458838979398,
-      "mean": 124.3379897975099,
-      "count": 7,
-      "mode": 238.6458838979398,
-      "modeCount": 2
+      "mean": 128.59230607787532,
+      "count": 14,
+      "mode": 49.03229643349537,
+      "modeCount": 4
     },
     "body.semiMajorAxis": {
       "min": 0.005330971195000705,
       "max": 0.575033560292192,
-      "mean": 0.2125829124739855,
-      "count": 7,
-      "mode": 0.575033560292192,
-      "modeCount": 2
+      "mean": 0.18526738096811815,
+      "count": 14,
+      "mode": 0.07293189089840434,
+      "modeCount": 4
     },
     "body.orbitalEccentricity": {
       "min": 0,
       "max": 0.00424,
-      "mean": 0.0012114285714285714,
-      "count": 7,
+      "mean": 0.0009085714285714285,
+      "count": 14,
       "mode": 0,
-      "modeCount": 5
+      "modeCount": 11
     },
     "body.orbitalInclination": {
       "min": -30.661809,
       "max": 79.653485,
-      "mean": 23.584647571428572,
-      "count": 7,
-      "mode": 1.047254,
-      "modeCount": 2
+      "mean": 37.44744921428571,
+      "count": 14,
+      "mode": 79.653485,
+      "modeCount": 4
     },
     "body.argOfPeriapsis": {
-      "min": 7.788916,
+      "min": 4.689403,
       "max": 316.424779,
-      "mean": 144.66799785714286,
-      "count": 7,
-      "mode": 160.682355,
-      "modeCount": 2
+      "mean": 93.89769871428574,
+      "count": 14,
+      "mode": 58.126402,
+      "modeCount": 4
     },
     "body.rotationalPeriod": {
       "min": 2.4870608821875,
       "max": 238.64944630984954,
-      "mean": 124.30686105501984,
-      "count": 7,
-      "mode": 238.64944630984954,
-      "modeCount": 2
+      "mean": 128.53327432806464,
+      "count": 14,
+      "mode": 48.91118157475694,
+      "modeCount": 4
     },
     "body.axialTilt": {
       "min": -0.512321,
       "max": 0.397605,
-      "mean": -0.056076285714285704,
-      "count": 7,
-      "mode": 0.379194,
-      "modeCount": 2
+      "mean": -0.1776007142857143,
+      "count": 14,
+      "mode": -0.512321,
+      "modeCount": 4
     },
     "body.materials.Sulphur": {
       "min": 22.14,
       "max": 28.7,
-      "mean": 26.265714285714285,
-      "count": 7,
-      "mode": 22.14,
-      "modeCount": 2
+      "mean": 26.584285714285716,
+      "count": 14,
+      "mode": 28.7,
+      "modeCount": 4
     },
     "body.materials.Carbon": {
       "min": 18.61,
       "max": 24.13,
-      "mean": 22.08285714285714,
-      "count": 7,
-      "mode": 18.61,
-      "modeCount": 2
+      "mean": 22.350714285714286,
+      "count": 14,
+      "mode": 24.13,
+      "modeCount": 4
     },
     "body.materials.Iron": {
       "min": 10.87,
       "max": 15.4,
-      "mean": 12.627142857142857,
-      "count": 7,
-      "mode": 15.4,
-      "modeCount": 2
+      "mean": 12.537857142857145,
+      "count": 14,
+      "mode": 10.87,
+      "modeCount": 4
     },
     "body.materials.Phosphorus": {
       "min": 11.92,
       "max": 15.45,
-      "mean": 14.14,
-      "count": 7,
-      "mode": 11.92,
-      "modeCount": 2
+      "mean": 14.31142857142857,
+      "count": 14,
+      "mode": 15.45,
+      "modeCount": 4
     },
     "body.materials.Nickel": {
       "min": 8.22,
       "max": 11.65,
-      "mean": 9.552857142857144,
-      "count": 7,
-      "mode": 11.65,
-      "modeCount": 2
+      "mean": 9.484285714285715,
+      "count": 14,
+      "mode": 8.22,
+      "modeCount": 4
     },
     "body.materials.Chromium": {
       "min": 4.89,
       "max": 6.93,
-      "mean": 5.658333333333332,
-      "count": 6,
-      "mode": 6.93,
-      "modeCount": 2
+      "mean": 5.628888888888889,
+      "count": 9,
+      "mode": 4.89,
+      "modeCount": 4
     },
     "body.materials.Manganese": {
-      "min": 6.36,
+      "min": 4.99,
       "max": 6.36,
-      "mean": 6.36,
-      "count": 2,
+      "mean": 5.812,
+      "count": 5,
       "mode": 6.36,
-      "modeCount": 2
+      "modeCount": 3
     },
     "body.materials.Zinc": {
       "min": 2.95,
       "max": 4.19,
-      "mean": 3.4983333333333335,
-      "count": 6,
-      "mode": 4.19,
-      "modeCount": 2
+      "mean": 3.4636363636363643,
+      "count": 11,
+      "mode": 2.95,
+      "modeCount": 4
     },
     "body.materials.Molybdenum": {
       "min": 0.73,
       "max": 1.01,
-      "mean": 0.8719999999999999,
-      "count": 5,
+      "mean": 0.8812499999999999,
+      "count": 8,
       "mode": 1.01,
-      "modeCount": 2
+      "modeCount": 3
     },
     "body.materials.Ruthenium": {
       "min": 0.67,
       "max": 0.95,
-      "mean": 0.8099999999999999,
-      "count": 4,
-      "mode": 0.95,
-      "modeCount": 2
+      "mean": 0.7899999999999999,
+      "count": 7,
+      "mode": 0.67,
+      "modeCount": 4
     },
     "body.materials.Tungsten": {
       "min": 0.6,
       "max": 0.85,
-      "mean": 0.71,
-      "count": 6,
-      "mode": 0.85,
-      "modeCount": 2
+      "mean": 0.7027272727272726,
+      "count": 11,
+      "mode": 0.6,
+      "modeCount": 4
     },
     "body.atmosphereComposition.Sulphur dioxide": {
       "min": 0.06,
-      "max": 17.48,
-      "mean": 8.77,
-      "count": 2,
-      "mode": 0.06,
-      "modeCount": 1
+      "max": 19.85,
+      "mean": 15.366666666666665,
+      "count": 6,
+      "mode": 17.48,
+      "modeCount": 3
     },
     "body.materials.Selenium": {
-      "min": 4.23,
+      "min": 4.22,
       "max": 4.34,
-      "mean": 4.285,
-      "count": 2,
-      "mode": 4.34,
-      "modeCount": 1
+      "mean": 4.2524999999999995,
+      "count": 4,
+      "mode": 4.22,
+      "modeCount": 2
     },
     "body.materials.Germanium": {
       "min": 2.95,
       "max": 3.37,
-      "mean": 3.16,
-      "count": 2,
-      "mode": 2.95,
-      "modeCount": 1
+      "mean": 3.25,
+      "count": 6,
+      "mode": 3.3699999999999997,
+      "modeCount": 3
     },
     "body.materials.Tellurium": {
       "min": 0.77,
-      "max": 0.81,
-      "mean": 0.79,
-      "count": 2,
-      "mode": 0.77,
-      "modeCount": 1
+      "max": 0.83,
+      "mean": 0.81,
+      "count": 4,
+      "mode": 0.83,
+      "modeCount": 2
     },
     "body.materials.Tin": {
       "min": 0.69,
@@ -279,99 +279,118 @@
     "body.materials.Vanadium": {
       "min": 2.67,
       "max": 3.17,
-      "mean": 2.8366666666666664,
-      "count": 3,
+      "mean": 2.884285714285714,
+      "count": 7,
       "mode": 2.67,
-      "modeCount": 2
+      "modeCount": 4
     },
     "body.materials.Technetium": {
       "min": 0.46,
       "max": 0.46,
       "mean": 0.46,
-      "count": 1,
+      "count": 3,
       "mode": 0.46,
-      "modeCount": 1
+      "modeCount": 3
     },
     "body.materials.Cadmium": {
       "min": 0.84,
       "max": 0.84,
       "mean": 0.84,
-      "count": 2,
+      "count": 4,
       "mode": 0.84,
-      "modeCount": 2
+      "modeCount": 4
     },
     "body.rings[0].mass": {
       "min": 1978.9,
       "max": 1978.9,
       "mean": 1978.9,
-      "count": 2,
+      "count": 4,
       "mode": 1978.9,
-      "modeCount": 2
+      "modeCount": 4
     },
     "body.rings[0].innerRadius": {
       "min": 7737.3,
       "max": 7737.3,
       "mean": 7737.3,
-      "count": 2,
+      "count": 4,
       "mode": 7737.3,
-      "modeCount": 2
+      "modeCount": 4
     },
     "body.rings[0].outerRadius": {
       "min": 17455,
       "max": 17455,
       "mean": 17455,
-      "count": 2,
+      "count": 4,
       "mode": 17455,
+      "modeCount": 4
+    },
+    "body.materials.Niobium": {
+      "min": 0.83,
+      "max": 0.83,
+      "mean": 0.83,
+      "count": 2,
+      "mode": 0.83,
+      "modeCount": 2
+    },
+    "body.materials.Mercury": {
+      "min": 0.53,
+      "max": 0.53,
+      "mean": 0.53,
+      "count": 2,
+      "mode": 0.53,
       "modeCount": 2
     }
   },
   "categorical": {
     "body.type": {
-      "Planet": 7
+      "Planet": 14
     },
     "body.subType": {
-      "Icy body": 7
+      "Icy body": 14
     },
     "body.isLandable": {
-      "true": 7
+      "true": 14
     },
     "body.volcanismType": {
-      "No volcanism": 6,
+      "No volcanism": 13,
       "Carbon Dioxide Geysers": 1
     },
     "body.atmosphereType": {
-      "Thin Oxygen": 7
+      "Thin Oxygen": 14
     },
     "body.rotationalPeriodTidallyLocked": {
-      "true": 3,
-      "false": 4
+      "true": 6,
+      "false": 8
     },
     "body.terraformingState": {
-      "Not terraformable": 5
+      "Not terraformable": 11
     },
     "body.rings[0].name": {
-      "Wregoe HT-Z c13-8 4 d A Ring": 2
+      "Wregoe HT-Z c13-8 4 d A Ring": 4
     },
     "body.rings[0].type": {
-      "Rocky": 2
+      "Rocky": 4
     },
     "body.reserveLevel": {
-      "Pristine": 2
+      "Pristine": 4
     },
     "exo.host_star_spectral_primary": {
-      "M0": 2,
+      "M0": 3,
       "F7": 2,
-      "K5": 1,
-      "Y2": 2
+      "K5": 3,
+      "Y2": 4,
+      "A8": 2
     },
     "exo.host_star_source": {
-      "parents": 7
+      "parents": 12,
+      "designation": 2
     },
     "exo.system_primary_spectral": {
-      "M0": 2,
+      "M0": 3,
       "F7": 2,
-      "A7": 1,
-      "Y2": 2
+      "A7": 3,
+      "Y2": 4,
+      "A8": 2
     }
   },
   "materials": {},
@@ -380,74 +399,76 @@
     "ice": {
       "min": 68.41,
       "max": 92.78,
-      "mean": 83.68142857142857,
-      "count": 7,
-      "mode": 68.41,
-      "modeCount": 2
+      "mean": 84.37571428571428,
+      "count": 14,
+      "mode": 92.78,
+      "modeCount": 4
     },
     "rock": {
       "min": 6.21,
       "max": 21.15,
-      "mean": 12.314285714285713,
-      "count": 7,
-      "mode": 21.15,
-      "modeCount": 2
+      "mean": 12.149285714285716,
+      "count": 14,
+      "mode": 6.21,
+      "modeCount": 4
     },
     "metal": {
       "min": 1.01,
       "max": 10.44,
-      "mean": 4.007142857142858,
-      "count": 7,
-      "mode": 10.44,
-      "modeCount": 2
+      "mean": 3.477857142857143,
+      "count": 14,
+      "mode": 1.01,
+      "modeCount": 4
     }
   },
   "summaryLines": [
-    "body.distanceToArrival: typical (modal) 286.000000 (2/7 samples); range 286 … 16536",
-    "body.gravity: typical (modal) 0.270367 (2/7 samples); range 0.24487659002445092 … 0.27336691053394757",
-    "body.earthMasses: typical (modal) 0.088518 (2/7 samples); range 0.088518 … 0.133503",
-    "body.radius: typical (modal) 3649.415250 (2/7 samples); range 3649.41525 … 4457.148",
-    "body.surfaceTemperature: typical (modal) 153.000000 (2/7 samples); range 145 … 167",
-    "body.surfacePressure: typical (modal) 0.052486 (2/7 samples); range 0.016121971043671354 … 0.052486410530471254",
-    "body.atmosphereComposition.Oxygen: typical (modal) 100.000000 (5/7 samples); range 82.52 … 100",
-    "body.solidComposition.Ice: typical (modal) 68.410000 (2/7 samples); range 68.41 … 92.78",
-    "body.solidComposition.Rock: typical (modal) 21.150000 (2/7 samples); range 6.21 … 21.15",
-    "body.solidComposition.Metal: typical (modal) 10.440000 (2/7 samples); range 1.01 … 10.44",
-    "body.orbitalPeriod: typical (modal) 238.645884 (2/7 samples); range 2.4868986672800926 … 238.6458838979398",
-    "body.semiMajorAxis: typical (modal) 0.575034 (2/7 samples); range 0.005330971195000705 … 0.575033560292192",
-    "body.orbitalEccentricity: typical (modal) 0.000000 (5/7 samples); range 0 … 0.00424",
-    "body.orbitalInclination: typical (modal) 1.047254 (2/7 samples); range -30.661809 … 79.653485",
-    "body.argOfPeriapsis: typical (modal) 160.682355 (2/7 samples); range 7.788916 … 316.424779",
-    "body.rotationalPeriod: typical (modal) 238.649446 (2/7 samples); range 2.4870608821875 … 238.64944630984954",
-    "body.axialTilt: typical (modal) 0.379194 (2/7 samples); range -0.512321 … 0.397605",
-    "body.materials.Sulphur: typical (modal) 22.140000 (2/7 samples); range 22.14 … 28.7",
-    "body.materials.Carbon: typical (modal) 18.610000 (2/7 samples); range 18.61 … 24.13",
-    "body.materials.Iron: typical (modal) 15.400000 (2/7 samples); range 10.87 … 15.4",
-    "body.materials.Phosphorus: typical (modal) 11.920000 (2/7 samples); range 11.92 … 15.45",
-    "body.materials.Nickel: typical (modal) 11.650000 (2/7 samples); range 8.22 … 11.65",
-    "body.materials.Chromium: typical (modal) 6.930000 (2/6 samples); range 4.89 … 6.93",
-    "body.materials.Manganese: typical (modal) 6.360000 (2/2 samples); range 6.36 … 6.36",
-    "body.materials.Zinc: typical (modal) 4.190000 (2/6 samples); range 2.95 … 4.19",
-    "body.materials.Molybdenum: typical (modal) 1.010000 (2/5 samples); range 0.73 … 1.01",
-    "body.materials.Ruthenium: typical (modal) 0.950000 (2/4 samples); range 0.67 … 0.95",
-    "body.materials.Tungsten: typical (modal) 0.850000 (2/6 samples); range 0.6 … 0.85",
-    "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.060000 (1/2 samples); range 0.06 … 17.48",
-    "body.materials.Selenium: typical (modal) 4.340000 (1/2 samples); range 4.23 … 4.34",
-    "body.materials.Germanium: typical (modal) 2.950000 (1/2 samples); range 2.95 … 3.37",
-    "body.materials.Tellurium: typical (modal) 0.770000 (1/2 samples); range 0.77 … 0.81",
+    "body.distanceToArrival: typical (modal) 1354.000000 (4/14 samples); range 286 … 16536",
+    "body.gravity: typical (modal) 0.265553 (4/14 samples); range 0.24487659002445092 … 0.27336691053394757",
+    "body.earthMasses: typical (modal) 0.126047 (4/14 samples); range 0.088518 … 0.133503",
+    "body.radius: typical (modal) 4394.150000 (4/14 samples); range 3649.41525 … 4457.148",
+    "body.surfaceTemperature: typical (modal) 151.000000 (4/14 samples); range 145 … 167",
+    "body.surfacePressure: typical (modal) 0.049502 (4/14 samples); range 0.016121971043671354 … 0.052486410530471254",
+    "body.atmosphereComposition.Oxygen: typical (modal) 100.000000 (8/14 samples); range 80.15 … 100",
+    "body.solidComposition.Ice: typical (modal) 92.780000 (4/14 samples); range 68.41 … 92.78",
+    "body.solidComposition.Rock: typical (modal) 6.210000 (4/14 samples); range 6.21 … 21.15",
+    "body.solidComposition.Metal: typical (modal) 1.010000 (4/14 samples); range 1.01 … 10.44",
+    "body.orbitalPeriod: typical (modal) 49.032296 (4/14 samples); range 2.4868986672800926 … 238.6458838979398",
+    "body.semiMajorAxis: typical (modal) 0.072932 (4/14 samples); range 0.005330971195000705 … 0.575033560292192",
+    "body.orbitalEccentricity: typical (modal) 0.000000 (11/14 samples); range 0 … 0.00424",
+    "body.orbitalInclination: typical (modal) 79.653485 (4/14 samples); range -30.661809 … 79.653485",
+    "body.argOfPeriapsis: typical (modal) 58.126402 (4/14 samples); range 4.689403 … 316.424779",
+    "body.rotationalPeriod: typical (modal) 48.911182 (4/14 samples); range 2.4870608821875 … 238.64944630984954",
+    "body.axialTilt: typical (modal) -0.512321 (4/14 samples); range -0.512321 … 0.397605",
+    "body.materials.Sulphur: typical (modal) 28.700000 (4/14 samples); range 22.14 … 28.7",
+    "body.materials.Carbon: typical (modal) 24.130000 (4/14 samples); range 18.61 … 24.13",
+    "body.materials.Iron: typical (modal) 10.870000 (4/14 samples); range 10.87 … 15.4",
+    "body.materials.Phosphorus: typical (modal) 15.450000 (4/14 samples); range 11.92 … 15.45",
+    "body.materials.Nickel: typical (modal) 8.220000 (4/14 samples); range 8.22 … 11.65",
+    "body.materials.Chromium: typical (modal) 4.890000 (4/9 samples); range 4.89 … 6.93",
+    "body.materials.Manganese: typical (modal) 6.360000 (3/5 samples); range 4.99 … 6.36",
+    "body.materials.Zinc: typical (modal) 2.950000 (4/11 samples); range 2.95 … 4.19",
+    "body.materials.Molybdenum: typical (modal) 1.010000 (3/8 samples); range 0.73 … 1.01",
+    "body.materials.Ruthenium: typical (modal) 0.670000 (4/7 samples); range 0.67 … 0.95",
+    "body.materials.Tungsten: typical (modal) 0.600000 (4/11 samples); range 0.6 … 0.85",
+    "body.atmosphereComposition.Sulphur dioxide: typical (modal) 17.480000 (3/6 samples); range 0.06 … 19.85",
+    "body.materials.Selenium: typical (modal) 4.220000 (2/4 samples); range 4.22 … 4.34",
+    "body.materials.Germanium: typical (modal) 3.370000 (3/6 samples); range 2.95 … 3.37",
+    "body.materials.Tellurium: typical (modal) 0.830000 (2/4 samples); range 0.77 … 0.83",
     "body.materials.Tin: typical (modal) 0.690000 (1/1 samples); range 0.69 … 0.69",
-    "body.materials.Vanadium: typical (modal) 2.670000 (2/3 samples); range 2.67 … 3.17",
-    "body.materials.Technetium: typical (modal) 0.460000 (1/1 samples); range 0.46 … 0.46",
-    "body.materials.Cadmium: typical (modal) 0.840000 (2/2 samples); range 0.84 … 0.84",
-    "body.rings[0].mass: typical (modal) 1978.900000 (2/2 samples); range 1978.9 … 1978.9",
-    "body.rings[0].innerRadius: typical (modal) 7737.300000 (2/2 samples); range 7737.3 … 7737.3",
-    "body.rings[0].outerRadius: typical (modal) 17455.000000 (2/2 samples); range 17455 … 17455"
+    "body.materials.Vanadium: typical (modal) 2.670000 (4/7 samples); range 2.67 … 3.17",
+    "body.materials.Technetium: typical (modal) 0.460000 (3/3 samples); range 0.46 … 0.46",
+    "body.materials.Cadmium: typical (modal) 0.840000 (4/4 samples); range 0.84 … 0.84",
+    "body.rings[0].mass: typical (modal) 1978.900000 (4/4 samples); range 1978.9 … 1978.9",
+    "body.rings[0].innerRadius: typical (modal) 7737.300000 (4/4 samples); range 7737.3 … 7737.3",
+    "body.rings[0].outerRadius: typical (modal) 17455.000000 (4/4 samples); range 17455 … 17455",
+    "body.materials.Niobium: typical (modal) 0.830000 (2/2 samples); range 0.83 … 0.83",
+    "body.materials.Mercury: typical (modal) 0.530000 (2/2 samples); range 0.53 … 0.53"
   ],
   "atmosphereBands": {
     "Thin Oxygen": {
-      "n": 7,
+      "n": 14,
       "surfaceTemperatureK": {
-        "n": 7,
+        "n": 14,
         "min": 145,
         "p1": 145,
         "p50": 153,
@@ -455,7 +476,7 @@
         "max": 167
       },
       "surfacePressureAtm": {
-        "n": 7,
+        "n": 14,
         "min": 0.016121971043671354,
         "p1": 0.016121971043671354,
         "p50": 0.049501955539106836,
@@ -467,21 +488,21 @@
   "sourceSpeciesLabel": "Fonticulua Fluctus",
   "histograms": {
     "body.distanceToArrival": [
+      3,
+      0,
+      0,
+      4,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
       2,
       0,
       0,
-      2,
-      0,
-      1,
-      0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
+      3,
       0
     ],
     "body.gravity": [
@@ -499,8 +520,8 @@
       0,
       0,
       0,
-      4,
-      3
+      14,
+      0
     ],
     "body.earthMasses": [
       0,
@@ -518,7 +539,7 @@
       0,
       0,
       0,
-      7
+      14
     ],
     "body.radius": [
       0,
@@ -536,15 +557,15 @@
       0,
       0,
       0,
-      7
+      14
     ],
     "body.surfaceTemperature": [
       0,
-      6,
-      0,
+      13,
       0,
       0,
       1,
+      0,
       0,
       0,
       0,
@@ -563,11 +584,11 @@
       0,
       0,
       0,
-      0,
       1,
       0,
-      1,
-      5,
+      2,
+      4,
+      7,
       0,
       0,
       0,
@@ -575,7 +596,7 @@
       0
     ],
     "body.solidComposition.Rock": [
-      7,
+      14,
       0,
       0,
       0,
@@ -593,7 +614,7 @@
       0
     ],
     "body.solidComposition.Metal": [
-      5,
+      11,
       0,
       0,
       0,
@@ -604,8 +625,8 @@
       0,
       0,
       0,
+      3,
       0,
-      2,
       0,
       0,
       0
@@ -622,32 +643,32 @@
       0,
       0,
       0,
-      2,
+      4,
       0,
-      0,
-      2,
-      2
+      3,
+      6,
+      0
     ],
     "body.semiMajorAxis": [
       0,
       0,
       0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
       0,
       1,
-      2,
-      1,
-      2
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      3,
+      7,
+      0,
+      3
     ],
     "body.orbitalEccentricity": [
-      5,
+      11,
       0,
       0,
       0,
@@ -658,7 +679,7 @@
       0,
       0,
       0,
-      2,
+      3,
       0,
       0,
       0,
@@ -678,19 +699,19 @@
       0,
       0,
       0,
-      2,
+      3,
       0,
-      3
+      9
     ],
     "body.argOfPeriapsis": [
-      1,
+      5,
       0,
-      2,
-      0,
-      0,
+      4,
       0,
       0,
-      2,
+      0,
+      0,
+      3,
       0,
       0,
       0,
@@ -715,8 +736,8 @@
       0,
       0,
       0,
-      2,
-      4
+      4,
+      9
     ],
     "body.materials.Sulphur": [
       0,
@@ -734,7 +755,7 @@
       0,
       0,
       0,
-      7
+      14
     ],
     "body.materials.Carbon": [
       0,
@@ -752,10 +773,10 @@
       0,
       0,
       0,
-      7
+      14
     ],
     "body.materials.Iron": [
-      7,
+      14,
       0,
       0,
       0,
@@ -788,10 +809,10 @@
       0,
       0,
       0,
-      7
+      14
     ],
     "body.materials.Nickel": [
-      7,
+      14,
       0,
       0,
       0,
@@ -809,7 +830,7 @@
       0
     ],
     "body.materials.Chromium": [
-      6,
+      9,
       0,
       0,
       0,
@@ -827,7 +848,7 @@
       0
     ],
     "body.materials.Manganese": [
-      2,
+      5,
       0,
       0,
       0,
@@ -845,7 +866,7 @@
       0
     ],
     "body.materials.Zinc": [
-      6,
+      11,
       0,
       0,
       0,
@@ -878,10 +899,46 @@
       0,
       0,
       0,
-      2
+      4
     ],
     "body.materials.Germanium": [
-      2,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Tellurium": [
+      4,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.materials.Tin": [
+      1,
       0,
       0,
       0,
@@ -899,7 +956,7 @@
       0
     ],
     "body.materials.Vanadium": [
-      3,
+      7,
       0,
       0,
       0,
@@ -922,9 +979,10 @@
       "min": 286,
       "max": 16536,
       "counts": [
-        2,
         3,
+        5,
         1,
+        2,
         0,
         0,
         0,
@@ -936,8 +994,7 @@
         0,
         0,
         0,
-        0,
-        1
+        3
       ]
     },
     "body.gravity": {
@@ -946,19 +1003,19 @@
       "counts": [
         1,
         0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
         2,
         0,
         0,
-        2,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        4,
+        0,
+        0,
+        3,
         1
       ]
     },
@@ -966,20 +1023,20 @@
       "min": 0.088518,
       "max": 0.133503,
       "counts": [
-        2,
+        3,
         1,
         0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
         2,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
         0,
         1
       ]
@@ -988,21 +1045,21 @@
       "min": 3649.41525,
       "max": 4457.148,
       "counts": [
-        2,
+        3,
         0,
         0,
         0,
         0,
         0,
-        1,
+        3,
         0,
-        1,
-        0,
-        0,
+        3,
         0,
         0,
         0,
-        2,
+        0,
+        0,
+        4,
         1
       ]
     },
@@ -1014,11 +1071,11 @@
         0,
         0,
         0,
-        2,
-        2,
+        4,
+        3,
         0,
-        0,
-        1,
+        2,
+        3,
         0,
         0,
         0,
@@ -1039,22 +1096,23 @@
         0,
         0,
         0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
         2,
-        2
+        3,
+        0,
+        0,
+        0,
+        1,
+        0,
+        4,
+        3
       ]
     },
     "body.atmosphereComposition.Oxygen": {
-      "min": 82.52,
+      "min": 80.15,
       "max": 100,
       "counts": [
-        1,
+        2,
+        3,
         0,
         0,
         0,
@@ -1068,44 +1126,43 @@
         0,
         0,
         0,
-        0,
-        6
+        9
       ]
     },
     "body.solidComposition.Ice": {
       "min": 68.41,
       "max": 92.78,
       "counts": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
         2,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
         1,
         0,
         1,
-        0,
-        1,
-        2
+        4
       ]
     },
     "body.solidComposition.Rock": {
       "min": 6.21,
       "max": 21.15,
       "counts": [
+        4,
+        1,
+        0,
+        0,
+        1,
+        0,
         2,
-        1,
-        0,
-        0,
-        1,
-        0,
-        0,
-        1,
+        3,
         0,
         0,
         0,
@@ -1113,16 +1170,16 @@
         0,
         0,
         0,
-        2
+        3
       ]
     },
     "body.solidComposition.Metal": {
       "min": 1.01,
       "max": 10.44,
       "counts": [
+        5,
         3,
-        1,
-        1,
+        3,
         0,
         0,
         0,
@@ -1135,7 +1192,7 @@
         0,
         0,
         0,
-        2
+        3
       ]
     },
     "body.orbitalPeriod": {
@@ -1145,19 +1202,19 @@
         1,
         0,
         0,
+        4,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        1,
         2,
         0,
         0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        2
+        3
       ]
     },
     "body.semiMajorAxis": {
@@ -1165,9 +1222,10 @@
       "max": 0.575033560292192,
       "counts": [
         1,
+        7,
+        0,
         3,
         0,
-        1,
         0,
         0,
         0,
@@ -1178,15 +1236,14 @@
         0,
         0,
         0,
-        0,
-        2
+        3
       ]
     },
     "body.orbitalEccentricity": {
       "min": 0,
       "max": 0.00424,
       "counts": [
-        5,
+        11,
         0,
         0,
         0,
@@ -1201,7 +1258,7 @@
         0,
         0,
         0,
-        2
+        3
       ]
     },
     "body.orbitalInclination": {
@@ -1212,33 +1269,33 @@
         0,
         0,
         0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
         2,
         0,
         0,
+        3,
         0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        2
+        4
       ]
     },
     "body.argOfPeriapsis": {
-      "min": 7.788916,
+      "min": 4.689403,
       "max": 316.424779,
       "counts": [
-        1,
+        5,
         0,
-        2,
-        0,
-        0,
+        4,
         0,
         0,
-        2,
         0,
+        0,
+        0,
+        3,
         0,
         0,
         0,
@@ -1255,26 +1312,26 @@
         1,
         0,
         0,
+        4,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        1,
         2,
         0,
         0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        2
+        3
       ]
     },
     "body.materials.Sulphur": {
       "min": 22.14,
       "max": 28.7,
       "counts": [
-        2,
+        3,
         0,
         0,
         0,
@@ -1285,18 +1342,18 @@
         0,
         0,
         0,
+        3,
+        3,
         1,
-        1,
-        1,
         0,
-        2
+        4
       ]
     },
     "body.materials.Carbon": {
       "min": 18.61,
       "max": 24.13,
       "counts": [
-        2,
+        3,
         0,
         0,
         0,
@@ -1307,40 +1364,40 @@
         0,
         0,
         0,
+        3,
+        3,
         1,
-        1,
-        1,
         0,
-        2
+        4
       ]
     },
     "body.materials.Iron": {
       "min": 10.87,
       "max": 15.4,
       "counts": [
+        5,
+        0,
+        0,
+        1,
+        2,
+        0,
+        0,
         3,
         0,
         0,
-        1,
-        0,
-        0,
-        0,
-        1,
         0,
         0,
         0,
         0,
         0,
-        0,
-        0,
-        2
+        3
       ]
     },
     "body.materials.Phosphorus": {
       "min": 11.92,
       "max": 15.45,
       "counts": [
-        2,
+        3,
         0,
         0,
         0,
@@ -1351,40 +1408,40 @@
         0,
         0,
         0,
+        3,
+        3,
         1,
-        1,
-        1,
         0,
-        2
+        4
       ]
     },
     "body.materials.Nickel": {
       "min": 8.22,
       "max": 11.65,
       "counts": [
+        5,
+        0,
+        0,
+        1,
+        2,
+        0,
+        0,
         3,
         0,
         0,
-        1,
-        0,
-        0,
-        0,
-        1,
         0,
         0,
         0,
         0,
         0,
-        0,
-        0,
-        2
+        3
       ]
     },
     "body.materials.Chromium": {
       "min": 4.89,
       "max": 6.93,
       "counts": [
-        3,
+        5,
         0,
         0,
         1,
@@ -1399,21 +1456,43 @@
         0,
         0,
         0,
-        2
+        3
+      ]
+    },
+    "body.materials.Manganese": {
+      "min": 4.99,
+      "max": 6.36,
+      "counts": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3
       ]
     },
     "body.materials.Zinc": {
       "min": 2.95,
       "max": 4.19,
       "counts": [
-        2,
+        4,
         0,
         0,
         1,
         0,
         0,
         0,
-        1,
+        3,
         0,
         0,
         0,
@@ -1421,7 +1500,7 @@
         0,
         0,
         0,
-        2
+        3
       ]
     },
     "body.materials.Molybdenum": {
@@ -1434,7 +1513,7 @@
         0,
         0,
         0,
-        1,
+        3,
         0,
         0,
         0,
@@ -1443,14 +1522,14 @@
         0,
         0,
         0,
-        2
+        3
       ]
     },
     "body.materials.Ruthenium": {
       "min": 0.67,
       "max": 0.95,
       "counts": [
-        2,
+        4,
         0,
         0,
         0,
@@ -1465,21 +1544,21 @@
         0,
         0,
         0,
-        2
+        3
       ]
     },
     "body.materials.Tungsten": {
       "min": 0.6,
       "max": 0.85,
       "counts": [
-        2,
+        4,
         0,
         0,
         1,
         0,
         0,
         0,
-        1,
+        3,
         0,
         0,
         0,
@@ -1487,12 +1566,12 @@
         0,
         0,
         0,
-        2
+        3
       ]
     },
     "body.atmosphereComposition.Sulphur dioxide": {
       "min": 0.06,
-      "max": 17.48,
+      "max": 19.85,
       "counts": [
         1,
         0,
@@ -1508,16 +1587,16 @@
         0,
         0,
         0,
-        0,
-        1
+        3,
+        2
       ]
     },
     "body.materials.Selenium": {
-      "min": 4.23,
+      "min": 4.22,
       "max": 4.34,
       "counts": [
+        2,
         1,
-        0,
         0,
         0,
         0,
@@ -1548,17 +1627,17 @@
         0,
         0,
         0,
+        2,
         0,
         0,
         0,
         0,
-        0,
-        1
+        3
       ]
     },
     "body.materials.Tellurium": {
       "min": 0.77,
-      "max": 0.81,
+      "max": 0.83,
       "counts": [
         1,
         0,
@@ -1570,19 +1649,19 @@
         0,
         0,
         0,
+        1,
         0,
         0,
         0,
         0,
-        0,
-        1
+        2
       ]
     },
     "body.materials.Vanadium": {
       "min": 2.67,
       "max": 3.17,
       "counts": [
-        2,
+        4,
         0,
         0,
         0,
@@ -1597,7 +1676,7 @@
         0,
         0,
         0,
-        1
+        3
       ]
     }
   }

@@ -3,7 +3,7 @@
   "speciesLabel": "Sinuous Tubers Albidum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-07T12:49:22.296Z",
+  "generatedAt": "2026-09-11T17:40:38.484Z",
   "sampleCount": 2,
   "provenance": {
     "inputHash": "78ac41e683126f2e001c5ae517244889262d0f8d40322e78d368c97142fea4f1",
@@ -384,8 +384,8 @@
       0,
       0,
       0,
-      2,
-      0,
+      1,
+      1,
       0,
       0,
       0,
@@ -647,8 +647,8 @@
       0,
       0,
       0,
-      2,
-      0
+      1,
+      1
     ],
     "body.materials.Iron": [
       0,
@@ -661,8 +661,8 @@
       0,
       0,
       0,
-      0,
       1,
+      0,
       0,
       0,
       0,
@@ -683,8 +683,8 @@
       0,
       0,
       0,
-      2,
-      0
+      1,
+      1
     ],
     "body.materials.Nickel": [
       0,
@@ -697,8 +697,8 @@
       0,
       0,
       0,
-      0,
       1,
+      0,
       0,
       0,
       0,
@@ -719,8 +719,8 @@
       0,
       0,
       0,
-      2,
-      0
+      1,
+      1
     ],
     "body.materials.Chromium": [
       0,
@@ -741,8 +741,8 @@
       0
     ],
     "body.materials.Vanadium": [
-      0,
       1,
+      0,
       0,
       0,
       0,
@@ -758,8 +758,7 @@
       0,
       0
     ],
-    "body.materials.Zirconium": [
-      0,
+    "body.materials.Tin": [
       1,
       0,
       0,
@@ -767,7 +766,8 @@
       0,
       0,
       0,
-      1,
+      0,
+      0,
       0,
       0,
       0,
@@ -788,8 +788,8 @@
       0,
       0,
       0,
-      0,
       1,
+      0,
       0,
       0,
       0
@@ -809,6 +809,24 @@
       1,
       0,
       0,
+      0,
+      0
+    ],
+    "body.materials.Tellurium": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
       0,
       0
     ]

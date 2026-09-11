@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Aureum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-06T06:11:57.842Z",
+  "generatedAt": "2026-09-11T17:41:41.557Z",
   "sampleCount": 2,
   "provenance": {
     "inputHash": "d123bb16aad35c5e62cc842ca15e2ce7c12ccbe71d174e2b4fa8f5092571a103",
@@ -626,8 +626,8 @@
       0,
       0,
       0,
-      1,
-      1
+      2,
+      0
     ],
     "body.orbitalEccentricity": [
       0,
@@ -739,8 +739,8 @@
     ],
     "body.materials.Sulphur": [
       0,
-      2,
-      0,
+      1,
+      1,
       0,
       0,
       0,
@@ -757,8 +757,8 @@
     ],
     "body.materials.Carbon": [
       0,
-      2,
-      0,
+      1,
+      1,
       0,
       0,
       0,
@@ -788,13 +788,13 @@
       0,
       0,
       0,
-      0,
-      1
+      1,
+      0
     ],
     "body.materials.Phosphorus": [
       0,
-      2,
-      0,
+      1,
+      1,
       0,
       0,
       0,
@@ -881,7 +881,10 @@
       0,
       0
     ],
-    "body.materials.Niobium": [
+    "body.materials.Tellurium": [
+      0,
+      0,
+      1,
       0,
       0,
       0,
@@ -894,10 +897,7 @@
       0,
       0,
       0,
-      0,
-      0,
-      0,
-      1
+      0
     ]
   },
   "displayHistograms": {
