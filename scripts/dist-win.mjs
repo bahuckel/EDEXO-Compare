@@ -8,19 +8,41 @@ const require = createRequire(import.meta.url);
 
 const staging = join("dist", "eb-staging");
 
+/**
+ * Block this thread without burning the CPU while doing it.
+ *
+ * This used to be a `while (Date.now() < until)` spin. What it waits for is almost always Windows
+ * Defender finishing with a file it is scanning, and spinning a core competes with the scanner for
+ * exactly the CPU it needs to finish and let go — the wait made itself longer. `Atomics.wait` on a
+ * throwaway buffer is a real sleep and stays synchronous, which is what the rest of this script is
+ * built on.
+ */
 function sleepSync(ms) {
-  const until = Date.now() + ms;
-  while (Date.now() < until) {
-    /* busy-wait for EBUSY unlock without adding async */
-  }
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 function rimraf(p) {
   if (existsSync(p)) rmSync(p, { recursive: true, maxRetries: 6, retryDelay: 120 });
 }
 
-/** Windows AV / Explorer often briefly lock `*.nsis.7z` after a failed or interrupted build. */
-function rimrafRetry(p, attempts = 12, delayMs = 400) {
+/**
+ * Remove a build directory, waiting out whatever is holding it.
+ *
+ * Windows AV and Explorer lock files here routinely. The budget used to be twelve tries 400 ms
+ * apart — about five seconds — and that turned out to be short of what actually happens: after a
+ * successful build Defender scans the 370 MB portable exe this script has just written, and a
+ * rebuild started while that is still going fails on a `.pak` deep inside `win-unpacked`.
+ *
+ * That failure is expensive in a way an ordinary build error is not. The wipe runs **first**, so by
+ * the time it gives up it has already deleted most of the previous build: the commander is left
+ * with no exe at all, having had a working one a minute earlier. Waiting half a minute for a lock
+ * that usually clears in five seconds is free; giving up early is not. Measured once in the field:
+ * the same directory removed cleanly on the second attempt of a two-second loop, well after this
+ * had abandoned it.
+ *
+ * The delay grows, so a lock that clears immediately still costs almost nothing.
+ */
+function rimrafRetry(p, attempts = 24, delayMs = 400) {
   for (let i = 0; i < attempts; i++) {
     try {
       if (existsSync(p)) rmSync(p, { recursive: true, maxRetries: 8, retryDelay: 200 });
@@ -29,12 +51,16 @@ function rimrafRetry(p, attempts = 12, delayMs = 400) {
       const code = /** @type {NodeJS.ErrnoException} */ (e).code;
       const retriable = code === "EBUSY" || code === "EPERM" || code === "ENOTEMPTY";
       if (retriable && i < attempts - 1) {
-        sleepSync(delayMs);
+        // Say something once it is clearly not instant, so a long wait does not look like a hang.
+        if (i === 5) console.log(`Waiting for "${p}" to be released (${code})…`);
+        sleepSync(Math.min(2000, delayMs + i * 150));
         continue;
       }
       console.error(
-        `\nCould not remove "${p}" (${code}). Close Explorer windows on dist/, stop any running EDExoCompare *.exe, and retry. ` +
-          `If it persists, add a Defender exclusion for this repo folder.\n`,
+        `\nCould not remove "${p}" (${code}) after ${attempts} attempts. This is usually antivirus ` +
+          `still scanning the previous build — wait a minute and retry. Otherwise close Explorer ` +
+          `windows on dist/, stop any running EDExoCompare *.exe, or add a Defender exclusion for ` +
+          `this repo folder.\n`,
       );
       throw e;
     }
