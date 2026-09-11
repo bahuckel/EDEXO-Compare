@@ -93,3 +93,28 @@ describe("the chance floor", () => {
     expect(shownIds(ms)).toEqual(["a", "b"]);
   });
 });
+
+describe("after a DSS", () => {
+  /**
+   * Probes name the genera, and the matcher drops every candidate outside them. What is left is no
+   * longer "might any of this be here" but "which of this is it", and a 2.3 % row beside a 97 % one
+   * is then a real answer — the only other thing it could be. Measured across the owner's journals:
+   * five rows on DSS-mapped bodies were being hidden this way, all of them Fonticulua upupam.
+   */
+  const withDss = () =>
+    body({
+      genusHints: [{ Genus: "$Codex_Ent_Fonticulua_Genus_Name;", Genus_Localised: "Fonticulua" }],
+    });
+
+  it("puts the genus back on the list", () => {
+    const ms = [match("fonticulua_campestris", 97), match("fonticulua_upupam", 2.3)];
+    demoteBelowPresenceFloor(ms, withDss(), db);
+    expect(shownIds(ms)).toEqual(["fonticulua_campestris", "fonticulua_upupam"]);
+  });
+
+  it("still applies the floor when the genera are not named", () => {
+    const ms = [match("fonticulua_campestris", 97), match("fonticulua_upupam", 2.3)];
+    demoteBelowPresenceFloor(ms, body({ genusHints: null }), db);
+    expect(shownIds(ms)).toEqual(["fonticulua_campestris"]);
+  });
+});

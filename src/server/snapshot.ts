@@ -755,6 +755,10 @@ export const PRESENCE_FLOOR_PCT = 5;
  *    the model thinks of it.
  */
 export function demoteBelowPresenceFloor(matches: SpeciesMatch[], b: BodyExoState, db: SpeciesDatabase): void {
+  // Probes have named the genera and the matcher has already dropped everything outside them; see
+  // the header. Nothing left on this list is a guess about whether the genus is present.
+  if (b.genusHints?.length) return;
+
   const confirmed = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
   const shown = matches.filter((m) => !m.unlikely);
   if (shown.length === 0) return;
