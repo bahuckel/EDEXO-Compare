@@ -33,13 +33,14 @@ import {
   sectorCellFromCoords,
   sectorCellKey,
 } from "@shared/sectorName.js";
-import type { BacklogMapDTO, BacklogSystemDTO } from "@shared/types";
+import type { BacklogMapDTO, BacklogSystemDTO, GalaxyValueHitDTO } from "@shared/types";
 import { regionSpanInCells } from "./regionBackdrop";
 import { CAMERA_SIDE, CAMERA_TOP, axisLabels, cameraLabel, project } from "./galaxyProjection";
 import { useMapViewport } from "./useMapViewport";
 import { TIER_ORDER, TIER_STYLE, tierFor, type GalaxyTier } from "@shared/galaxyTier";
 import type { CommanderSectorDTO, CommanderSectorsDTO } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
+import { MAX_CR, STEP_CR, sliderLabel, type GalaxySearchApplied } from "./GalaxySearchPanel";
 import {
   allTaxa,
   cellTotals,
@@ -48,6 +49,9 @@ import {
   type SectorMapFile,
   type SectorSystem,
 } from "@shared/sectorMapFile.js";
+
+/** One identity for "no search", so an unsearched map does not hand its plots a new array each render. */
+const EMPTY_HITS: readonly GalaxyValueHitDTO[] = [];
 
 /** Strongest-first, and the order the legend reads in. */
 const KINDS = ["confirmed", "genus", "signal", "predicted"] as const;
@@ -156,6 +160,7 @@ export function GalaxySectorMap({
   backdrop,
   backlog,
   commanderSectors,
+  search,
 }: {
   file: SectorMapFile;
   commander?: CommanderPosition | null;
@@ -165,16 +170,15 @@ export function GalaxySectorMap({
   backlog?: BacklogMapDTO | null;
   /** This commander's own state per sector. Null while it loads or on a build with no journals. */
   commanderSectors?: CommanderSectorsDTO | null;
-}) {
   /**
-   * Genus and species are two pickers, not one.
+   * What the search above this map asked for, once it was asked (A3).
    *
-   * The single list held 103 entries mixing both, sorted alphabetically, so choosing "tussock
-   * ignis" meant scrolling past every Bacterium. `genus` narrows the second list; `taxon` is the
-   * exact taxon or "" for "every species in this genus".
+   * This map used to own a genus and a species picker of its own, duplicating the search that lived
+   * behind a magnifying glass in the app's top bar. They are one control now: the search names the
+   * taxon and the systems, and the map draws both.
    */
-  const [genus, setGenus] = useState<string>("");
-  const [taxon, setTaxon] = useState<string>("");
+  search?: GalaxySearchApplied | null;
+}) {
   const [query, setQuery] = useState("");
   const [hover, setHover] = useState<SectorMapCell | null>(null);
   const [openCell, setOpenCell] = useState<SectorMapCell | null>(null);
@@ -239,38 +243,35 @@ export function GalaxySectorMap({
     [file],
   );
 
-  const genera = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const t of taxa) {
-      const g = genusOf(t);
-      counts.set(g, (counts.get(g) ?? 0) + 1);
-    }
-    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [taxa, genusOf]);
-
   /**
-   * The species of the chosen genus.
+   * The taxon the search named, if this map file has ever heard of it.
    *
-   * A genus whose only taxon *is* the genus — Bark Mounds, or a bare `bacterial` signal row — has
-   * nothing to choose between, so the second picker disables itself rather than offering one option
-   * that changes nothing.
+   * The two sides speak different vocabularies: the galaxy index speaks species ids and genus
+   * directories, this file speaks lowercase names — `"bacterium"`, `"bacterium aurasus"`. The
+   * translation happens here because this is the side that holds the file, and only the file knows
+   * which taxa actually appear in it.
    */
-  const speciesOfGenus = useMemo(
-    () => (genus ? taxa.filter((t) => genusOf(t) === genus && t !== genus) : []),
-    [taxa, genus, genusOf],
-  );
+  const taxon = useMemo(() => {
+    const want = search?.species;
+    if (!want) return "";
+    return taxa.find((t) => t === want) ?? "";
+  }, [search, taxa]);
 
   /**
    * What the map is actually filtered by: one taxon, a whole genus, or everything.
    *
-   * `undefined` means no filter at all. A genus with no species selected passes the set of its
-   * taxa, which is what makes "show me all Tussock" work without a taxon per option.
+   * `undefined` means no filter at all. A genus with no species named passes the set of its taxa,
+   * which is what makes "show me all Tussock" work without a taxon per option.
+   *
+   * A search for something this sector map has never recorded yields an **empty** set rather than
+   * `undefined`: an honest "no sectors" beats quietly showing the whole galaxy, which would read as
+   * "it is everywhere".
    */
   const filterTaxa = useMemo<ReadonlySet<string> | undefined>(() => {
-    if (taxon) return new Set([taxon]);
-    if (genus) return new Set(taxa.filter((t) => genusOf(t) === genus));
+    if (search?.species) return new Set(taxon ? [taxon] : []);
+    if (search?.genus) return new Set(taxa.filter((t) => genusOf(t) === search.genus));
     return undefined;
-  }, [taxon, genus, taxa, genusOf]);
+  }, [search, taxon, taxa, genusOf]);
 
   /** Cells that have something to show for the current filter, with their totals. */
   const shown = useMemo(() => {
@@ -321,47 +322,20 @@ export function GalaxySectorMap({
   return (
     <div className="galaxy-map">
       <div className="galaxy-map__controls">
-        <label>
-          Genus
-          <select
-            value={genus}
-            onChange={(e) => {
-              setGenus(e.target.value);
-              // The old species no longer belongs to the new genus, so it cannot stay selected.
-              setTaxon("");
-            }}
-          >
-            <option value="">Every genus ({genera.length})</option>
-            {genera.map(([g, n]) => (
-              <option key={g} value={g}>
-                {g === "*" ? "biology, unidentified" : g}
-                {n > 1 ? ` (${n})` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Species
-          <select
-            value={taxon}
-            disabled={!genus || speciesOfGenus.length === 0}
-            onChange={(e) => setTaxon(e.target.value)}
-          >
-            <option value="">
-              {!genus
-                ? "pick a genus first"
-                : speciesOfGenus.length === 0
-                  ? "no species under this genus"
-                  : `All ${genus} (${speciesOfGenus.length})`}
-            </option>
-            {speciesOfGenus.map((t) => (
-              <option key={t} value={t}>
-                {/* The genus is already the other picker; repeating it wastes the width. */}
-                {t.startsWith(`${genus} `) ? t.slice(genus.length + 1) : t}
-              </option>
-            ))}
-          </select>
-        </label>
+        {/*
+          The genus and species pickers that stood here are the search panel's pickers now (A3).
+          What is left is the one thing the search cannot do — go to a sector by name — and a line
+          saying what the plot below is currently showing, since the control that decided it is no
+          longer beside it.
+        */}
+        {search ? (
+          <span className="galaxy-map__filter">
+            Showing <strong>{search.label}</strong>
+            {filterTaxa && filterTaxa.size === 0 ? (
+              <span className="dim"> — no sector in this map has recorded it</span>
+            ) : null}
+          </span>
+        ) : null}
         <label>
           Find a sector
           <input
@@ -374,16 +348,27 @@ export function GalaxySectorMap({
         <span className="galaxy-map__count">
           {shown.length} sector{shown.length === 1 ? "" : "s"}
         </span>
+        {/*
+            A slider, not five fixed steps (A3). The owner asked for a price bar on this map and got
+            one in the search modal instead, which he called redundant: *"the bar I asked for, for
+            the price was the 'Unfinished worth at least' drop down INSIDE ?screen=map"*. Same range
+            and step as the search's own slider — 0 to half a billion in millions — because the two
+            controls now sit on one screen and reading differently would say they measure different
+            things.
+        */}
         {backlog && backlog.systems.length > 0 ? (
           <label className="galaxy-map__backlog-filter">
-            Unfinished worth at least
-            <select value={minCr} onChange={(e) => setMinCr(Number(e.target.value))}>
-              <option value={0}>anything</option>
-              <option value={10e6}>10 M</option>
-              <option value={20e6}>20 M</option>
-              <option value={50e6}>50 M</option>
-              <option value={100e6}>100 M</option>
-            </select>
+            Unfinished worth at least <strong>{sliderLabel(minCr)}</strong>
+            <input
+              type="range"
+              className="galaxy-map__backlog-slider"
+              min={0}
+              max={MAX_CR}
+              step={STEP_CR}
+              value={minCr}
+              onChange={(e) => setMinCr(Number(e.target.value))}
+              aria-label="Minimum unfinished system value in credits"
+            />
             <span className="galaxy-map__count">
               {shownBacklog.length} system{shownBacklog.length === 1 ? "" : "s"}
               {backlog.unplaceable > 0 ? (
@@ -438,6 +423,7 @@ export function GalaxySectorMap({
             commander={commanderCell}
             backdrop={backdrop ?? null}
             backlog={shownBacklog}
+            searchHits={search?.hits ?? EMPTY_HITS}
             mine={mine}
             nextTarget={nextTarget}
           />
@@ -501,6 +487,7 @@ function SectorPlot({
   commander,
   backdrop,
   backlog,
+  searchHits,
   mine,
   nextTarget,
 }: {
@@ -515,6 +502,14 @@ function SectorPlot({
   backdrop: string | null;
   /** Backlog systems already filtered by the caller's minimum. */
   backlog: BacklogSystemDTO[];
+  /**
+   * Systems the galaxy search found, drawn over the survey (A3).
+   *
+   * The owner's reason for moving the search here: *"when a player searches for something, those
+   * filters are applied to the galaxy map below"*. A table of two hundred names answers *which*;
+   * the same two hundred as marks answers *where*, which is the question a map is for.
+   */
+  searchHits: readonly GalaxyValueHitDTO[];
   /** This commander's own state per sector, keyed by cell. Empty on a build with no journals. */
   mine: Map<string, CommanderSectorDTO>;
   /** The one the banner names, ringed so the name and the dot cannot disagree. */
@@ -836,6 +831,53 @@ ${totals.bodies} bodies recorded here${
 `)}
                   </title>
                 </circle>
+              );
+            })}
+          </g>
+        ) : null}
+        {/*
+          What the search found, as places rather than rows.
+
+          Diamonds, and a violet nothing else on this map uses. Every other mark here is either
+          evidence (green / blue / grey) or the commander's own unfinished work (amber), and a sixth
+          circle in a seventh shade would read as a sixth kind of evidence. These are not evidence at
+          all — they are the answer to a question somebody asked a minute ago, and they should look
+          like an overlay that will go away again.
+
+          Drawn from each system's own coordinates, fractionally: rounding them into a 1 280 ly cell
+          first collapses the edge-on view into three stacked rows, because that is how few cells
+          thick the galaxy is.
+        */}
+        {searchHits.length > 0 ? (
+          <g className="galaxy-map__hits">
+            {searchHits.map((h) => {
+              const cell = sectorCellFractional(h.x, h.y, h.z);
+              const owner = cellByKey.get(sectorCellKey(sectorCellFromCoords(h.x, h.y, h.z))) ?? null;
+              const cx = sx(at(cell).u);
+              const cy = sy(at(cell).v);
+              const d = 3.2 * vp.pixel;
+              return (
+                <polygon
+                  key={h.systemAddress}
+                  points={`${cx},${cy - d} ${cx + d},${cy} ${cx},${cy + d} ${cx - d},${cy}`}
+                  className="galaxy-map__hit-mark"
+                  strokeWidth={1.1 * vp.pixel}
+                  style={owner ? { cursor: "pointer" } : undefined}
+                  onClick={() => {
+                    if (!vp.panning && owner) onOpen(owner);
+                  }}
+                >
+                  <title>
+                    {[
+                      `${h.starSystem} — ${Math.round(h.systemCr).toLocaleString("en-US")} CR recorded`,
+                      ...(h.distanceLy == null
+                        ? []
+                        : [`${Math.round(h.distanceLy).toLocaleString("en-US")} ly away`]),
+                      ...(owner ? [`click to open ${owner.name ?? sectorCellKey(owner)}`] : []),
+                    ].join(`
+`)}
+                  </title>
+                </polygon>
               );
             })}
           </g>

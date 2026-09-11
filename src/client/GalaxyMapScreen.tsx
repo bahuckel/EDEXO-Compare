@@ -5,10 +5,23 @@
  * on a second monitor while flying, which is exactly what `?screen=triage` already exists for. It
  * shares that screen's shape — fetch once, no WebSocket, no live state — because the aggregate only
  * changes when the feeder runs.
+ *
+ * ## The galaxy search lives here now (A3)
+ *
+ * It was a modal behind a magnifying glass in the app's top bar, while this screen carried its own
+ * genus and species pickers — two doors to the same room. The owner's verdict: the search belongs
+ * with the map, because *"that was the whole point of the map, to explore sectors with less
+ * visitors"*. So {@link GalaxySearchPanel} sits above the plot and what it finds filters what is
+ * drawn: one question, asked once, answered as a list and as a picture.
+ *
+ * The applied search is held here rather than in either component, because both need it and neither
+ * owns it — the panel decides what was asked and the map decides what that means for a 1 280 ly
+ * grid it alone holds the file for.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { SectorMapFile } from "@shared/sectorMapFile.js";
 import { GalaxySectorMap, type CommanderPosition } from "./GalaxySectorMap";
+import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
 import { renderRegionBackdrop, type RegionMapPayload } from "./regionBackdrop";
 import type { BacklogMapDTO, CommanderSectorsDTO } from "@shared/types";
 
@@ -24,6 +37,10 @@ export function GalaxyMapScreen() {
   const [backdrop, setBackdrop] = useState<string | null>(null);
   const [backlog, setBacklog] = useState<BacklogMapDTO | null>(null);
   const [commanderSectors, setCommanderSectors] = useState<CommanderSectorsDTO | null>(null);
+  const [search, setSearch] = useState<GalaxySearchApplied | null>(null);
+
+  /** Stable, so the panel's own `run` callback does not change identity on every render here. */
+  const onApply = useCallback((applied: GalaxySearchApplied | null) => setSearch(applied), []);
 
   /**
    * The galaxy behind the markers, painted once.
@@ -163,6 +180,8 @@ export function GalaxyMapScreen() {
 
       {load.state === "error" ? <p className="galaxy-screen__empty">Could not load the map: {load.message}</p> : null}
 
+      <GalaxySearchPanel onApply={onApply} />
+
       {load.state === "ready" ? (
         <>
           <GalaxySectorMap
@@ -171,6 +190,7 @@ export function GalaxyMapScreen() {
             backdrop={backdrop}
             backlog={backlog}
             commanderSectors={commanderSectors}
+            search={search}
           />
           {/* The provenance travels with the data; show it rather than paraphrasing it. */}
           <p className="galaxy-screen__note">{load.file.note}</p>

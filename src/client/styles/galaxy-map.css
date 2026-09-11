@@ -247,6 +247,35 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
   gap: 0.4rem;
 }
 
+/* A3 — the price bar the owner asked for, on the map rather than in a modal beside it. */
+.galaxy-map__backlog-slider {
+  min-width: 200px;
+}
+
+/* What the search above has filtered the plot to, said where the pickers used to stand. */
+.galaxy-map__filter {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+/*
+ * Systems the galaxy search found.
+ *
+ * Violet, which no evidence tier and no backlog mark uses: these are the answer to a question
+ * somebody asked a moment ago, not a property of the galaxy, and they should read as an overlay.
+ */
+.galaxy-map__hit-mark {
+  fill: rgba(187, 134, 252, 0.55);
+  stroke: #bb86fc;
+}
+
+.galaxy-map__hit-mark:hover {
+  fill: rgba(187, 134, 252, 0.9);
+}
+
 /*
  * "Take me to the next one" — the same conclusion the backlog panel draws, on the map the commander
  * pastes the name into. Given the accent border both panels use for a statement rather than data.

@@ -250,6 +250,34 @@
   gap: 0.7rem;
 }
 
+/*
+ * A3 — the panel on `?screen=map`, where it is a section of the page rather than a dialog over it.
+ * It keeps the modal's internals and drops the modal's framing.
+ */
+.gsx-panel--inline {
+  width: auto;
+  max-width: none;
+  max-height: none;
+  padding: 0 0 0.4rem;
+}
+
+.gsx-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.gsx-title-icon {
+  width: 1em;
+  height: 1em;
+}
+
+/* The results list is one panel among several on a scrolling page, so it caps its own height
+   rather than growing until the map is below the fold. */
+.gsx-scroll {
+  max-height: 40vh;
+}
+
 .gsx-controls {
   display: flex;
   flex-wrap: wrap;
@@ -294,6 +322,21 @@
   align-items: center;
   gap: 0.4rem;
   flex-wrap: wrap;
+}
+
+.gsx-clear {
+  font: inherit;
+  padding: 0.3rem 0.7rem;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--accent-a22);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.gsx-clear:hover {
+  color: var(--text);
+  border-color: var(--accent);
 }
 
 .gsx-go {

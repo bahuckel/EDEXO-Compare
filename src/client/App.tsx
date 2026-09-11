@@ -12,7 +12,6 @@ import {
   IconGalaxy,
   IconOptions,
   IconBacklog,
-  IconGalaxySearch,
 } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { SkeletonPanel } from "./ui/Skeleton";
@@ -66,9 +65,6 @@ const ExomasteryHabitatMatchModal = lazy(() =>
 );
 const FirstDiscoveryBacklogModal = lazy(() =>
   import("./FirstDiscoveryBacklogModal").then((m) => ({ default: m.FirstDiscoveryBacklogModal })),
-);
-const GalaxySearchModal = lazy(() =>
-  import("./GalaxySearchModal").then((m) => ({ default: m.GalaxySearchModal })),
 );
 const PlanetQuickFactsPopup = lazy(() =>
   import("./PlanetQuickFactsPopup").then((m) => ({ default: m.PlanetQuickFactsPopup })),
@@ -4192,7 +4188,6 @@ const HeaderBar = memo(function HeaderBar({
   const [myExoOpen, setMyExoOpen] = useState(false);
   const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
   const [backlogOpen, setBacklogOpen] = useState(false);
-  const [galaxySearchOpen, setGalaxySearchOpen] = useState(false);
   const [notableQuick, setNotableQuick] = useState<{
     notable: NotableBodyInfo;
     x: number;
@@ -4384,16 +4379,6 @@ const HeaderBar = memo(function HeaderBar({
               aria-label="Unfinished business"
             >
               <IconBacklog />
-            </button>
-          </Tooltip>
-          <Tooltip text="Search the galaxy — where anybody has recorded a species, genus or biological signal.">
-            <button
-              type="button"
-              className="appbar-icon-btn"
-              onClick={() => setGalaxySearchOpen(true)}
-              aria-label="Search the galaxy"
-            >
-              <IconGalaxySearch />
             </button>
           </Tooltip>
           {feeder.available ? (
@@ -4673,12 +4658,6 @@ const HeaderBar = memo(function HeaderBar({
       snap.currentSystemAddress != null &&
       snap.viewingSystemAddress !== snap.currentSystemAddress ? (
         <p className="sub-live dim header-commander-away">Commander: {snap.currentSystem ?? "—"}</p>
-      ) : null}
-
-      {galaxySearchOpen ? (
-        <Suspense fallback={<ModalLoading />}>
-          <GalaxySearchModal onClose={() => setGalaxySearchOpen(false)} />
-        </Suspense>
       ) : null}
 
       {backlogOpen ? (
