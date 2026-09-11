@@ -4963,8 +4963,17 @@ function AppLegalFooter() {
           Terms of Service
         </a>
         <span className="app-legal-footer-sep dim">·</span>
-        <a href="https://edexo.bahuckel.com" target="_blank" rel="noopener noreferrer">
-          edexo.bahuckel.com
+        {/*
+          The project's page on the owner's site. Deliberately not `marketingSiteOrigin()`, which is
+          still where privacy.html and terms.html live — those are served from the site root and
+          moving this link must not quietly move them with it.
+        */}
+        <a
+          href="https://bahuckel.com/projects/edexo-compare"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          bahuckel.com/projects/edexo-compare
         </a>
       </div>
     </footer>
