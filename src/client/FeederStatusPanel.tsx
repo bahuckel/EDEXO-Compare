@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FeederStatusDTO } from "@shared/types";
+import { InfoPopover } from "./ui/Tooltip";
 
 /**
  * Feeder state.
@@ -138,12 +139,28 @@ export function FeederStatusPanel({ status }: { status: FeederStatusDTO | null }
         <p className="dim tiny">Every installed profile is built from everything the corpus holds.</p>
       )}
 
+      {/*
+        This was four lines of prose explaining a deliberate omission — the kind of text that is
+        worth having once and worth reading never again. It answers a question ("why is the corpus
+        bigger than the database?") that most readers of this panel are not asking, and it pushed
+        the figures they *are* here for further up the screen. So: the count stays visible, because
+        a number that differs from the corpus total needs accounting for, and the reasoning moves
+        behind the ⓘ.
+      */}
       {unmatchedCorpusLabels.length > 0 ? (
-        <p className="dim tiny" style={{ marginTop: "0.5rem", lineHeight: 1.45 }}>
-          {unmatchedCorpusLabels.length} corpus species have no row in the species database and are not
-          installed: <span className="options-feeder-species">{unmatchedCorpusLabels.join(", ")}</span>. Left
-          alone deliberately — the Anemone colour variants would have to be folded into a single
-          <code> Anemone </code> row, which would describe a habitat none of them has.
+        <p className="dim tiny options-feeder-excluded" style={{ marginTop: "0.5rem" }}>
+          What is excluded{" "}
+          <InfoPopover title="Corpus species with no database row" label="What is excluded">
+            <p>
+              {unmatchedCorpusLabels.length} species in the corpus have no row in the species database, so
+              no profile is built for them and the app never ranks them:
+            </p>
+            <p className="options-feeder-species">{unmatchedCorpusLabels.join(", ")}</p>
+            <p>
+              Left alone deliberately. The Anemone colour variants would have to be folded into a single{" "}
+              <code>Anemone</code> row, and that row would describe a habitat none of them actually has.
+            </p>
+          </InfoPopover>
         </p>
       ) : null}
 

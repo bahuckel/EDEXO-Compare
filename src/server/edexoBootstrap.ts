@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import type { AppSnapshot, AppStatusDTO, JournalBootProgressDTO, JournalLine } from "../shared/types.js";
 import { journalHistoryCutoffUtcMs, parseJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
-import { openUrlInBrowser, openLauncherShell } from "./openUrl.js";
+import { openUrlInBrowser, openLauncherShell, openLocalFile } from "./openUrl.js";
 import { GameStateStore } from "./gameState.js";
 import {
   startJournalWatcher,
@@ -54,6 +54,7 @@ import {
   getWebRoot,
   resolveLanKeyPath,
   resolveUserSettingsJsonPath,
+  resolveExoOutlierLogPath,
   USER_SETTINGS_FILENAME,
   getSpeciesDataDir,
   reapplySpeciesDataDirDiscoveryFromDisk,
@@ -902,6 +903,15 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     setExoMapTierThresholds: (plus, pp) => {
       store.setExoMapTierThresholds(plus, pp);
       persistUserPreferences();
+    },
+    openExoMissLog: () => {
+      const file = resolveExoOutlierLogPath();
+      // The panel that offers this is hidden at zero misses, so a missing file means the log was
+      // deleted between the snapshot and the click. Say which file rather than failing blankly —
+      // the path is the useful half of the answer either way.
+      if (!existsSync(file)) return { ok: false, error: `No miss log yet: ${file}` };
+      openLocalFile(file);
+      return { ok: true };
     },
     reloadExomastery: () => {
       retargetSpeciesDataWatcherIfNeeded();

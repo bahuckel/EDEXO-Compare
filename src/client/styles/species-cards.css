@@ -526,3 +526,11 @@
 .options-feeder-species {
   color: rgba(215, 225, 240, 0.92);
 }
+
+/* "What is excluded ⓘ" — the label and its affordance read as one phrase, so they sit on one
+   baseline rather than the button hanging below the text. */
+.options-feeder-excluded {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}

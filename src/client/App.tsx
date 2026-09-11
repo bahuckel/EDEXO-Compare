@@ -102,6 +102,7 @@ import type {
 import {
   journalHistoryPresetLabel,
   journalHistoryWindowPresetChoices,
+  parseJournalHistoryPreset,
   type JournalHistoryPreset,
 } from "@shared/journalHistoryPreset";
 import { formatGenusStarColorSoftOneLine } from "@shared/genusStarColorSoft";
@@ -510,8 +511,14 @@ const RARE_SAMPLE_BELOW = 10;
  * A count rather than a list: the records carry body parameters and the whole candidate list, which
  * belongs in a file to diff, not in a modal. Silent at zero, because "no misses recorded" on a fresh
  * install reads as a claim about accuracy that nothing has earned.
+ *
+ * **Shape (A5).** This was a five-line paragraph for a number and a filename. The number is the
+ * thing being reported and the file is the thing to do about it, so it is now a number, a button,
+ * and an ⓘ holding the explanation — which is read once and then never again.
  */
 function ExoMissLogPanel({ outliers }: { outliers: AppSnapshot["exoOutliers"] }) {
+  const toast = useToast();
+  const [opening, setOpening] = useState(false);
   if (!outliers || outliers.total <= 0) return null;
   const parts = [
     outliers.absent > 0 ? `${outliers.absent} not listed at all` : null,
@@ -520,14 +527,38 @@ function ExoMissLogPanel({ outliers }: { outliers: AppSnapshot["exoOutliers"] })
   ].filter(Boolean);
 
   return (
-    <section className="options-meta-block">
-      <p className="dim" style={{ lineHeight: 1.45 }}>
-        <strong>Misses recorded</strong> — {outliers.total} {outliers.total === 1 ? "species" : "species"} you
-        found where this app did not point at {outliers.total === 1 ? "it" : "them"}
-        {parts.length ? `: ${parts.join(", ")}` : ""}. Each one is written to{" "}
-        <code>edexo-outliers.jsonl</code> beside your settings, with the body&apos;s parameters and the
-        candidate list at the time — evidence for the next gate fix, and it never leaves this machine.
-      </p>
+    <section className="options-meta-block options-oneline">
+      <span className="options-oneline-label">Misses recorded</span>
+      <strong className="options-oneline-value">{outliers.total}</strong>
+      <button
+        type="button"
+        className="btn secondary tiny"
+        disabled={opening}
+        onClick={() => {
+          setOpening(true);
+          void fetch("/api/settings/open-miss-log", { method: "POST" })
+            .then((r) => r.json() as Promise<{ ok: boolean; error?: string }>)
+            .then((r) => {
+              if (!r.ok) toast.error(r.error ?? "Could not open the miss log.");
+            })
+            .catch(() => toast.error("Could not open the miss log."))
+            .finally(() => setOpening(false));
+        }}
+      >
+        Open JSON
+      </button>
+      <InfoPopover title="Misses recorded" label="What the miss log holds">
+        <p>
+          {outliers.total} {outliers.total === 1 ? "species" : "species"} you found where this app did not
+          point at {outliers.total === 1 ? "it" : "them"}
+          {parts.length ? `: ${parts.join(", ")}` : ""}.
+        </p>
+        <p>
+          Each one is written to <code>edexo-outliers.jsonl</code> beside your settings, with the
+          body&apos;s parameters and the candidate list at the time — evidence for the next gate fix.
+        </p>
+        <p>It never leaves this machine.</p>
+      </InfoPopover>
     </section>
   );
 }
@@ -2681,6 +2712,50 @@ const EXO_MAP_PLUS_SLIDER_MAX = EXO_MAP_CR_MAX - EXO_MAP_CR_STEP;
  * Built with `URL` rather than string concatenation because these URLs already have a `?k=` on them,
  * and "does this one need ? or &" is exactly the question that produces a broken link on a phone.
  */
+/**
+ * Copy one LAN URL, labelled by the address rather than by the whole link (A5).
+ *
+ * The URLs were printed in full, two of them per network interface, which on a machine with a
+ * wired card and a wireless one is four lines of `http://192.168.0.3:7111/?k=…` — and the key in
+ * them is long, so they wrapped. Nobody reads a URL they are about to paste: the address is enough
+ * to tell two interfaces apart, and the clipboard carries the rest.
+ *
+ * Same confirmation rule as {@link CopySystemButton}: a refused clipboard leaves the label alone,
+ * because a false "copied" is discovered by pasting nothing into a phone.
+ */
+function CopyLanUrlButton({ url }: { url: string }) {
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!done) return;
+    const t = setTimeout(() => setDone(false), 1200);
+    return () => clearTimeout(t);
+  }, [done]);
+
+  let host = url;
+  try {
+    host = new URL(url).host;
+  } catch {
+    /* an unparseable URL is still copyable; it just gets its whole self as the label */
+  }
+
+  return (
+    <button
+      type="button"
+      className="btn secondary tiny"
+      onClick={() => {
+        void navigator.clipboard?.writeText(url).then(
+          () => setDone(true),
+          () => setDone(false),
+        );
+      }}
+      title={url}
+    >
+      {done ? "copied" : `Copy for ${host}`}
+    </button>
+  );
+}
+
 function secondScreenUrl(lanUrl: string): string {
   try {
     const u = new URL(lanUrl);
@@ -2798,17 +2873,27 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
         EDSM commander name and API key with it. Nothing else leaves your machine. It is off until you turn it
         on.
       </p>
-      <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-        It needs your own EDSM account: register at{" "}
-        <a href="https://www.edsm.net/" target="_blank" rel="noreferrer noopener">
-          edsm.net
-        </a>{" "}
-        and copy your API key from{" "}
+      {/*
+        Was a paragraph explaining account registration and key storage (A5). The registration part
+        is one instruction and belongs on one line; the storage part is a promise about a secret,
+        which is worth keeping but is not what somebody reads while they are fetching a key — so it
+        sits behind the ⓘ with the rest of the detail.
+      */}
+      <p className="dim" style={{ marginBottom: "0.65rem" }}>
+        Register or log in, then copy your key from{" "}
         <a href="https://www.edsm.net/en/settings/api" target="_blank" rel="noreferrer noopener">
           edsm.net/en/settings/api
         </a>
-        . The key is stored on this machine only, in its own file beside your settings — never in the settings
-        file itself, and never in the repository.
+        .
+        <InfoPopover title="Where the key is kept" label="Where the key is kept">
+          <p>
+            The key is stored on this machine only, in its own file beside your settings — never in the
+            settings file itself, and never in the repository.
+          </p>
+          <p>
+            <strong>Forget key</strong> deletes that file and switches auto-fetch off with it.
+          </p>
+        </InfoPopover>
       </p>
 
       {state.hasKey ? (
@@ -3061,17 +3146,13 @@ function MapOptionsModal({
     setOptPlusPlus(plusPlusMinCr);
   }, [plusMinCr, plusPlusMinCr]);
 
+  /*
+    A checkbox plus a conditional dropdown, for a setting with one value (A5). The checkbox was
+    derived state — "is the preset not `all`" — and the dropdown it revealed could not express the
+    off position, so turning the window off and on again silently reset which window it was. One
+    select holds the whole range, `all` included, and the server's value is the only state there is.
+  */
   const serverJournalHistoryPreset: JournalHistoryPreset = snap.journalHistoryPreset ?? "all";
-  const [limitJournalHistory, setLimitJournalHistory] = useState(serverJournalHistoryPreset !== "all");
-  const [journalWindowPreset, setJournalWindowPreset] = useState<Exclude<JournalHistoryPreset, "all">>(
-    serverJournalHistoryPreset !== "all" ? serverJournalHistoryPreset : "1m",
-  );
-
-  useEffect(() => {
-    const p = snap.journalHistoryPreset ?? "all";
-    setLimitJournalHistory(p !== "all");
-    if (p !== "all") setJournalWindowPreset(p);
-  }, [snap.journalHistoryPreset]);
 
   const persistJournalHistory = useCallback(
     async (preset: JournalHistoryPreset) => {
@@ -3145,20 +3226,41 @@ function MapOptionsModal({
             </p>
             <p className="options-journal-line dim">Species DB: {snap.speciesCount}</p>
             <FeederCorpusSetting />
+            {/*
+              The second screen is the same server on the same key — one query parameter apart
+              (§51). Both were printed as whole URLs, on the reasoning that a bookmarkable link
+              should be visible; in practice the link is pasted, never read, and the access key made
+              every one of them wrap (A5).
+            */}
             {snap.mode === "server" && snap.lanUrls.length > 0 ? (
               <>
-                <p className="options-journal-line dim">Phone: {snap.lanUrls.join(" · ")}</p>
-                {/*
-                  The second screen is the same server on the same key — one query parameter apart
-                  (§51). Shown as a whole URL because the point is that it can be bookmarked on a
-                  phone once and never typed again.
-                */}
-                <p className="options-journal-line dim">
-                  Second screen (read-only triage): {snap.lanUrls.map((u) => secondScreenUrl(u)).join(" · ")}
+                <p className="options-journal-line options-oneline dim">
+                  <span className="options-oneline-label">Phone</span>
+                  {snap.lanUrls.map((u) => (
+                    <CopyLanUrlButton key={u} url={u} />
+                  ))}
+                </p>
+                <p className="options-journal-line options-oneline dim">
+                  <span className="options-oneline-label">Second screen</span>
+                  {snap.lanUrls.map((u) => (
+                    <CopyLanUrlButton key={u} url={secondScreenUrl(u)} />
+                  ))}
+                  <InfoPopover title="Second screen" label="What the second screen shows">
+                    <p>
+                      The same server, one query parameter apart: read-only triage for this system, meant
+                      for a tablet or a spare monitor beside the game.
+                    </p>
+                    <p>
+                      The link carries this machine&apos;s LAN access key, so bookmark it on the device once
+                      and it keeps working across restarts.
+                    </p>
+                  </InfoPopover>
                 </p>
               </>
             ) : (
-              <p className="options-journal-line dim">LAN server: use npm run start:server</p>
+              <p className="options-journal-line dim">
+                LAN server: use <code>npm run start:server</code>
+              </p>
             )}
           </section>
 
@@ -3167,58 +3269,60 @@ function MapOptionsModal({
           <EdsmAutoFetchPanel state={snap.edsmAutoFetch} />
           <CanonnUploadPanel state={snap.canonnUpload} />
 
-          <section className="options-journal-history options-meta-block">
-            <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-              <strong>Journal history</strong> — by default the app merges <strong>every</strong>{" "}
-              <code>Journal.*.log</code> in your Elite folder (all journal logs). Check the box below to use
-              only a rolling time window (the cutoff uses real time and advances while the app runs; changing
-              this triggers a full journal resync).
-            </p>
-            <label className="options-journal-history-row">
-              <input
-                type="checkbox"
-                checked={limitJournalHistory}
-                onChange={(ev) => {
-                  const on = ev.target.checked;
-                  setLimitJournalHistory(on);
-                  void persistJournalHistory(on ? journalWindowPreset : "all");
-                }}
-              />
-              <span>Limit merged logs to a rolling window…</span>
+          <section className="options-journal-history options-meta-block options-oneline">
+            <label className="options-oneline-label" htmlFor="journal-history-window">
+              Journal history
             </label>
-            {limitJournalHistory ? (
-              <div className="options-tier-field" style={{ marginTop: "0.55rem" }}>
-                <label htmlFor="journal-history-window">Include logs from</label>
-                <select
-                  id="journal-history-window"
-                  value={journalWindowPreset}
-                  onChange={(ev) => {
-                    const v = ev.target.value as Exclude<JournalHistoryPreset, "all">;
-                    setJournalWindowPreset(v);
-                    void persistJournalHistory(v);
-                  }}
-                >
-                  {journalHistoryWindowPresetChoices().map((p) => (
-                    <option key={p} value={p}>
-                      {journalHistoryPresetLabel(p)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
+            <select
+              id="journal-history-window"
+              value={serverJournalHistoryPreset}
+              onChange={(ev) => {
+                void persistJournalHistory(parseJournalHistoryPreset(ev.target.value));
+              }}
+            >
+              <option value="all">{journalHistoryPresetLabel("all")}</option>
+              {journalHistoryWindowPresetChoices().map((p) => (
+                <option key={p} value={p}>
+                  {journalHistoryPresetLabel(p)}
+                </option>
+              ))}
+            </select>
+            <InfoPopover title="Journal history" label="What journal history changes">
+              <p>
+                By default the app merges <strong>every</strong> <code>Journal.*.log</code> in your Elite
+                folder. Pick a window instead and it reads only the logs that start inside it.
+              </p>
+              <p>
+                The cutoff uses real time and advances while the app runs. Changing this triggers a full
+                journal resync.
+              </p>
+            </InfoPopover>
           </section>
 
-          <p className="dim" style={{ marginBottom: "1rem", lineHeight: 1.45 }}>
-            <strong>Minimum CR for single +</strong> is the lowest per-species sell value (CR) that must be
-            met before the system map shows a <strong>+</strong> on that planet for exobiology.
-          </p>
-          <p className="dim" style={{ marginBottom: "1rem", lineHeight: 1.45 }}>
-            <strong>Minimum CR for ++ (always above +)</strong> does the same but with a higher threshold:
-            when it is met, the map shows <strong>++</strong> instead of <strong>+</strong>, so you can spot
-            the more valuable exobiology finds quickly. The ++ threshold must stay above the + threshold.
-          </p>
+          {/*
+            The mechanism here predates this session and is not being changed — only its presentation
+            (A5). Two paragraphs explained what a <strong>+</strong> means before either slider was
+            reachable, which put the explanation of a control above the control itself. The owner's
+            shape: one title saying what is being marked, then two labelled bars.
+          */}
+          <section className="options-meta-block options-tier-group">
+            <h4 className="options-block-title">Body on system map marking</h4>
+            <p className="options-tier-lead dim">
+              The lowest per-species sell value a body must be worth before the system map marks it.
+              <InfoPopover title="Body on system map marking" label="How the map marking works">
+                <p>
+                  <strong>Min. CR for +</strong> is the lowest per-species sell value (CR) that must be met
+                  before the system map shows a <strong>+</strong> on that planet for exobiology.
+                </p>
+                <p>
+                  <strong>Min. CR for ++</strong> does the same with a higher threshold: when it is met the
+                  map shows <strong>++</strong> instead, so the more valuable finds stand out. It must stay
+                  above the <strong>+</strong> threshold, which is why its slider starts where it does.
+                </p>
+              </InfoPopover>
+            </p>
           <div className="options-tier-field">
-            <label htmlFor="exo-tier-plus">Minimum CR for single +</label>
+            <label htmlFor="exo-tier-plus">Min. CR for +</label>
             <input
               id="exo-tier-plus"
               type="range"
@@ -3243,7 +3347,7 @@ function MapOptionsModal({
             </div>
           </div>
           <div className="options-tier-field">
-            <label htmlFor="exo-tier-plusplus">Minimum CR for ++ (always above +)</label>
+            <label htmlFor="exo-tier-plusplus">Min. CR for ++</label>
             <input
               id="exo-tier-plusplus"
               type="range"
@@ -3265,6 +3369,7 @@ function MapOptionsModal({
               {plusPlusSliderMin.toLocaleString()} CR)
             </div>
           </div>
+          </section>
 
           <button type="button" className="btn-top-danger options-reset-exo" onClick={onResetExobiology}>
             Reset exobiology…

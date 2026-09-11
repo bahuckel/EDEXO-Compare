@@ -27,7 +27,7 @@ import { feederDataDirExists, feederInboxDir, setConfiguredFeederDataDir } from 
 import { parseSpanshRouteFile, summariseSpanshRouteFile } from "../feeder/spanshRouteFile.js";
 import { findGenusPhotosFolder, findGenusNotesFile } from "./speciesTreeLoader.js";
 import { perfBytes, perfCount, perfTime } from "./perf.js";
-import { createLanAuthGuard, requestIsAuthorized } from "./lanAuth.js";
+import { createLanAuthGuard, isLoopbackAddress, requestIsAuthorized } from "./lanAuth.js";
 import { EDSM_USER_AGENT } from "./edsmSystemHydration.js";
 
 export function getLanIPv4s(port: number): string[] {
@@ -141,6 +141,15 @@ export function createHttpServer(opts: {
   setFootTravelOdometer?: (value: boolean) => void;
   /** POST /api/settings/exo-map-tiers — JSON { plusMinCr: number, plusPlusMinCr: number } */
   setExoMapTierThresholds?: (plusMinCr: number, plusPlusMinCr: number) => void;
+  /**
+   * POST /api/settings/open-miss-log — hand `edexo-outliers.jsonl` to the desktop.
+   *
+   * **Loopback only**, and not because the file is a secret to the commander: it is *their* miss log
+   * and it never leaves the machine. The point is that the window that opens would open on the PC
+   * running the app, so a phone on the LAN pressing this would make a window appear on a screen it
+   * cannot see and cannot close. The route refuses rather than doing that.
+   */
+  openExoMissLog?: () => { ok: boolean; error?: string };
   /** POST /api/exobiology/reset with confirm: true */
   resetExobiology?: () => void;
   /** POST /api/system/hydrate-from-edsm — JSON { systemAddress: number, systemName: string } (known systems only). */
@@ -1007,6 +1016,21 @@ export function createHttpServer(opts: {
     opts.setExoMapTierThresholds(plus, pp);
     opts.scheduleBroadcast?.();
     res.json({ ok: true });
+  });
+
+  app.post("/api/settings/open-miss-log", (req, res) => {
+    if (typeof opts.openExoMissLog !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    if (!isLoopbackAddress(req.socket.remoteAddress)) {
+      res.status(403).json({
+        ok: false,
+        error: "The miss log opens on the PC running the app, so it can only be opened from there.",
+      });
+      return;
+    }
+    res.json(opts.openExoMissLog());
   });
 
   app.post("/api/exo-data-alerts/fix", (req, res) => {

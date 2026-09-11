@@ -631,17 +631,45 @@
   border-bottom: 1px solid var(--accent-a15);
 }
 
-.options-journal-history-row {
+/* ---------------------------------------------------------------------------
+ * One-line settings (A5)
+ *
+ * Options had become a wall of explanation: every setting introduced itself in a
+ * paragraph before showing its control, so the panel read top to bottom as prose
+ * with widgets embedded in it. A setting is a label, a control and a value — the
+ * reasoning behind it belongs behind an ⓘ, where it is available and not in the
+ * way. This is the row that shape uses.
+ * ------------------------------------------------------------------------- */
+.options-oneline {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--s-4);
-  margin: 0.4rem 0;
-  cursor: pointer;
-  font-size: var(--fs-lg);
 }
 
-.options-journal-history-row input {
-  flex-shrink: 0;
+.options-oneline-label {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+
+.options-oneline-value {
+  font-size: var(--fs-lg);
+  color: var(--text);
+}
+
+/* The buttons on these rows sit beside text, so they take the row's height rather
+   than a form control's. */
+.options-oneline .btn {
+  padding: 0.15rem 0.5rem;
+  font-size: var(--fs-sm);
+}
+
+/* Title, one line of lead, then the two bars — see "Body on system map marking". */
+.options-tier-group .options-tier-lead {
+  margin: 0 0 0.75rem;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
 }
 
 .options-last-event {
