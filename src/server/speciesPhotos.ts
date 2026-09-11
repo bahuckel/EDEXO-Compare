@@ -341,6 +341,26 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
     .map((x) => x.f);
 
   /*
+   * A photograph the commander took of this species retires ED-DSN's of the same species.
+   *
+   * His words: *"remove ED-DSN photos for every Genus+Species I have photographed"*. He walked to
+   * the plant, stood in front of it and photographed it; showing somebody else's picture of the
+   * same species beside his is at best redundant and at worst wrong, since the two may be different
+   * colour variants of it.
+   *
+   * Decided by the credits manifest rather than by the filename, because the manifest is what
+   * actually knows who took a picture — a naming convention is a proxy for that and would quietly
+   * retire an ED-DSN photograph that happened to be named like a variant.
+   *
+   * Only that species. A genus he has photographed once keeps ED-DSN's pictures of its other
+   * species, which is the whole point of them still being here.
+   */
+  const ownFiles = variantFiles.filter((f) => photoContributorFor(projectRoot, f) !== null);
+  if (ownFiles.length > 0) {
+    return withCredits(entry, projectRoot, ownFiles[0]!, null, ownFiles, ownFiles);
+  }
+
+  /*
    * A variant is a better primary than a guess.
    *
    * When the tree has no photograph under the species' own name, one that names the species *and* a
