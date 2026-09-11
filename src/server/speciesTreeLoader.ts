@@ -364,6 +364,29 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
     c.atmosphereTypeAnyOf = anyThinOnly ? atRaw : normalizeAtmosphereToJournal(atRaw);
   }
 
+  /**
+   * The same "without this gas, nothing here grows" rule the genus can declare, said by one species.
+   *
+   * A genus can only require a gas when *every* species in it does. Recepta can; Bacterium, Tussock,
+   * Frutexa and Fonticulua cannot — they live in every atmosphere the game has, and yet each holds a
+   * species that has never once been recorded outside a single gas. Frutexa collum is 133 of 133
+   * sightings on sulphur dioxide inside a genus whose other six species agree with it 0 times.
+   *
+   * Without a species-level key those rows are ungated, so a body carrying a trace of the gas offers
+   * them exactly as if it were their habitat — the failure the genus rule was written to stop, in
+   * the genera the genus rule cannot reach.
+   */
+  const reqAtmoRaw = toStringArray(
+    firstDefined(src, [
+      "required_atmosphere_type",
+      "requiredAtmosphereType",
+      "atmosphereTypeRequiredAnyOf",
+    ]),
+  );
+  if (reqAtmoRaw?.length) {
+    c.atmosphereTypeRequiredAnyOf = normalizeAtmosphereToJournal(reqAtmoRaw);
+  }
+
   const land = toBool(src.landable ?? src.Landable);
   if (land !== undefined) c.landable = land;
 
@@ -870,7 +893,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
       }
     }
 
-    if (genusRequiredAtmosphere?.length) {
+    if (!criteria.atmosphereTypeRequiredAnyOf?.length && genusRequiredAtmosphere?.length) {
       criteria = {
         ...criteria,
         atmosphereTypeRequiredAnyOf: normalizeAtmosphereToJournal(genusRequiredAtmosphere),

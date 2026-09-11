@@ -61,6 +61,7 @@
         "atmosphere": [
           "Argon"
         ],
+        "required_atmosphere_type": "Argon",
         "max_gravity": 0.28,
         "planet_types": [
           "Icy",

@@ -261,6 +261,7 @@
         "atmosphere": [
           "Sulphur Dioxide"
         ],
+        "required_atmosphere_type": "Sulphur Dioxide",
         "planet_types": [
           "Rocky"
         ],

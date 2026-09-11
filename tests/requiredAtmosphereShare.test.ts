@@ -89,3 +89,66 @@ describe("a genus-required gas, measured against the composition", () => {
     expect(without.shown).toEqual(withComposition.shown);
   });
 });
+
+/**
+ * The same rule, said by one species instead of by its genus.
+ *
+ * A genus can only require a gas when every species in it does. Frutexa cannot — Frutexa acus lives
+ * in carbon dioxide — yet Frutexa collum is 133 of 133 recorded sightings on sulphur dioxide. Before
+ * `required_atmosphere_type` was readable on a species row, collum was offered on any body holding a
+ * trace of it, which is the failure the genus rule exists to stop, in the genus it cannot reach.
+ */
+describe("a species-required gas, in a genus that cannot declare one", () => {
+  const idsFor = (s: PlanetScan, id: string) => {
+    const run = matchDatabaseToScan(db, s, null, null, { includeBacterium: true });
+    const m = run.matches.find((x) => x.entry.id === id);
+    return m ? { found: true, unlikely: !!m.unlikely } : { found: false, unlikely: false };
+  };
+  const traceSO2 = scan({
+    AtmosphereType: "CarbonDioxide",
+    Atmosphere: "thin carbon dioxide atmosphere",
+    atmosphereComposition: [
+      { Name: "CarbonDioxide", Percent: 99.009911 },
+      { Name: "SulphurDioxide", Percent: 0.990099 },
+    ],
+  });
+
+  it("demotes Frutexa collum on a trace of sulphur dioxide", () => {
+    expect(idsFor(traceSO2, "frutexa_frutexa_collum").unlikely).toBe(true);
+  });
+
+  it("leaves a sibling species in the same genus alone", () => {
+    // Frutexa acus declares no required gas, so the rule must not reach it through the genus.
+    const acus = idsFor(traceSO2, "frutexa_frutexa_acus");
+    if (acus.found) expect(acus.unlikely).toBe(false);
+  });
+
+  it("keeps Tussock stigmasis shown when the gas is the atmosphere", () => {
+    const got = idsFor(
+      scan({ AtmosphereType: "SulphurDioxide", Atmosphere: "thin sulphur dioxide atmosphere" }),
+      "tussock_tussock_stigmasis",
+    );
+    expect(got.found && !got.unlikely).toBe(true);
+  });
+
+  /**
+   * A required gas is only writable when `AtmosphereType` can stand in for a missing composition.
+   *
+   * Measured over every landable body in the corpus, counting the times a gas sits at 5 % or more:
+   * Neon is named by the type 100 % of the time, Argon 98.3 %, sulphur dioxide 76.5 % — but
+   * **nitrogen only 40.3 %**, because Neon-rich and Argon-rich air is nitrogen with a trace of the
+   * gas in the label. A nitrogen rule therefore demotes on scans that simply never carried the
+   * evidence: it cost Fonticulua upupam its place on Body 5, a body the commander found it on.
+   */
+  it("writes no required gas the atmosphere type cannot stand in for", () => {
+    const UNCONFIRMABLE = new Set(["nitrogen", "oxygen"]);
+    const offenders = db.species
+      .filter((e) => e.criteria?.atmosphereTypeRequiredAnyOf?.length)
+      .flatMap((e) =>
+        (e.criteria.atmosphereTypeRequiredAnyOf ?? [])
+          .filter((g) => UNCONFIRMABLE.has(String(g).toLowerCase().replace(/[^a-z]/g, "")))
+          .map((g) => `${e.id} requires ${g}`),
+      );
+    expect(offenders).toEqual([]);
+  });
+});

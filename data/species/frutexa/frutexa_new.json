@@ -167,6 +167,7 @@
         "atmosphere": [
           "Sulphur Dioxide"
         ],
+        "required_atmosphere_type": "Sulphur Dioxide",
         "max_gravity": 0.27,
         "planet_types": [
           "Rocky"
