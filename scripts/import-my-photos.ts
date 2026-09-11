@@ -1,7 +1,10 @@
 /**
  * Import the owner's own exobiology photographs into the species tree.
  *
- *   npx tsx scripts/import-my-photos.ts ["C:\\path\\to\\Images"]
+ *   npx tsx scripts/import-my-photos.ts "<path to Images>"
+ *
+ * The folder can also come from `EDEXO_PHOTO_SOURCE`. There is no built-in default: this
+ * repository is public, and a path under somebody's home directory is not something to publish.
  *
  * ## What it expects
  *
@@ -44,7 +47,14 @@ import { loadSpeciesDatabaseFromTree, findGenusPhotosFolder } from "../src/serve
 import { colourVariantRuleFor } from "../src/server/eddsnColourVariants.js";
 import type { SpeciesEntry } from "../src/shared/types.js";
 
-const DEFAULT_SOURCE = "C:\\Users\\FeraL\\Desktop\\My ED Discoveries\\Images";
+/**
+ * Where the photographs are, if the command line does not say.
+ *
+ * An environment variable rather than a path baked into the file: this repository is public,
+ * and a hard-coded path under somebody's home directory publishes whose machine it is and how
+ * their desktop is arranged. Nothing about the import needs that to be committed.
+ */
+const DEFAULT_SOURCE = process.env.EDEXO_PHOTO_SOURCE?.trim() ?? "";
 
 /** Who took these. One entry per contributor; the manifest keys files to it. */
 const CREDIT_ID = "falrenica";
@@ -92,6 +102,17 @@ function loadCredits(file: string): CreditsFile {
 function main(): void {
   const source = process.argv[2]?.trim() || DEFAULT_SOURCE;
   const root = getProjectRoot();
+  if (!source) {
+    console.error(
+      [
+        "Where are the photographs? Pass the folder:",
+        '  npx tsx scripts/import-my-photos.ts "<path to Images>"',
+        "or set EDEXO_PHOTO_SOURCE to it.",
+      ].join("\n"),
+    );
+    process.exitCode = 1;
+    return;
+  }
   if (!existsSync(source) || !statSync(source).isDirectory()) {
     console.error(`No such folder: ${source}`);
     process.exitCode = 1;
