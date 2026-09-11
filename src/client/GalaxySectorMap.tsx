@@ -37,10 +37,13 @@ import type { BacklogMapDTO, BacklogSystemDTO, GalaxyValueHitDTO } from "@shared
 import { regionSpanInCells } from "./regionBackdrop";
 import { CAMERA_SIDE, CAMERA_TOP, axisLabels, cameraLabel, project } from "./galaxyProjection";
 import { useMapViewport } from "./useMapViewport";
-import { TIER_ORDER, TIER_STYLE, tierFor, type GalaxyTier } from "@shared/galaxyTier";
+import { TIER_ORDER, TIER_STYLE, tierFor, tierRank } from "@shared/galaxyTier";
 import type { CommanderSectorDTO, CommanderSectorsDTO } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
 import { MAX_CR, STEP_CR, sliderLabel, type GalaxySearchApplied } from "./GalaxySearchPanel";
+import { groupByRegion, isOnScreen, lodLevel, type LodRow, type RegionGroup } from "./galaxyLod";
+import { regionIndexForCoords } from "@shared/regionMap.js";
+import type { RegionMapPayload } from "./regionBackdrop";
 import {
   allTaxa,
   cellTotals,
@@ -161,6 +164,7 @@ export function GalaxySectorMap({
   backlog,
   commanderSectors,
   search,
+  regionMap,
 }: {
   file: SectorMapFile;
   commander?: CommanderPosition | null;
@@ -178,10 +182,26 @@ export function GalaxySectorMap({
    * taxon and the systems, and the map draws both.
    */
   search?: GalaxySearchApplied | null;
+  /**
+   * The region map, as data rather than as a picture (A3).
+   *
+   * Null while it loads or on a build without it, in which case the map simply never groups: every
+   * sector stays its own mark, exactly as before. A missing region map must cost detail, never
+   * correctness.
+   */
+  regionMap?: RegionMapPayload | null;
 }) {
   const [query, setQuery] = useState("");
   const [hover, setHover] = useState<SectorMapCell | null>(null);
   const [openCell, setOpenCell] = useState<SectorMapCell | null>(null);
+  /**
+   * The region whose sectors are listed below the plots, or null (A3).
+   *
+   * The owner's drill-down: *"clicking it opens that specific region's sectors below, and clicking
+   * that sector shows all the systems in it"*. Three levels, each one a click into the last, and the
+   * deepest was already built — {@link SectorSystems} has always listed a sector's systems.
+   */
+  const [openRegion, setOpenRegion] = useState<RegionGroup<SectorMapCell> | null>(null);
   /**
    * Minimum floor for a system to appear on the backlog layer, in credits. 0 shows every one.
    *
@@ -286,6 +306,66 @@ export function GalaxySectorMap({
   }, [file, filterTaxa]);
 
   const maxBodies = useMemo(() => Math.max(1, ...shown.map((r) => r.totals.bodies)), [shown]);
+
+  /**
+   * The tier for each shown sector, computed once here instead of once per marker per projection.
+   *
+   * It moved up out of the plot because grouping needs it: a region can only be said to report the
+   * same thing as its sectors if something has already decided what each sector reports. Both plots
+   * read the same answer, which they should — the two projections are one dataset at two angles.
+   */
+  const lodRows = useMemo<LodRow<SectorMapCell>[]>(
+    () =>
+      shown.map(({ cell, totals }) => {
+        const m = mine.get(cell.key);
+        return {
+          cell,
+          /*
+            A cell's coordinates are the floor of a division, so `12:0:34` is the box's *corner*,
+            not a point. Drawing the aggregate there put every sector marker up to a full cell
+            down-and-left of the space it describes, and the visible cost was the ship: the
+            commander's cross is plotted from real coordinates, so it sat inside its own sector's
+            box while that sector's marker sat at the corner — as much as 1 280 ly away, and never
+            under the cross. Reported as "my location is not on the sector I am in".
+
+            Half a cell puts the mark in the middle of what it stands for. It happens once, here,
+            so both projections and the region centroids all agree about where a sector is.
+          */
+          x: cell.x + 0.5,
+          y: cell.y + 0.5,
+          z: cell.z + 0.5,
+          bodies: totals.bodies,
+          tier: tierFor({
+            visited: m?.visited ?? false,
+            scannedByYou: m?.scannedByYou ?? 0,
+            unscannedByYou: m?.unscannedByYou ?? 0,
+            confirmedElsewhere: totals.confirmed > 0 && (m?.scannedByYou ?? 0) === 0,
+            genusKnown: totals.genus > 0,
+            signals: totals.signal > 0,
+            knownBodies: totals.bodies,
+          }),
+        };
+      }),
+    [shown, mine],
+  );
+
+  /**
+   * Sectors collapsed into regions, for the zoomed-out view.
+   *
+   * Regions come from the same klightspeed map the backdrop is drawn from, so a group sits inside
+   * the coloured area a reader can already see. A sector's region is looked up from the centre of
+   * its box in light years — the map is a plane map, so only x and z are consulted.
+   */
+  const regionGroups = useMemo<RegionGroup<SectorMapCell>[] | null>(() => {
+    if (!regionMap) return null;
+    const names = regionMap.regions;
+    return groupByRegion(lodRows, (r) => {
+      const x = SECTOR_ORIGIN.x + r.x * SECTOR_SIZE_LY;
+      const z = SECTOR_ORIGIN.z + r.z * SECTOR_SIZE_LY;
+      const id = regionIndexForCoords(regionMap, x, z);
+      return { id, name: names[id] ?? "" };
+    });
+  }, [lodRows, regionMap]);
 
   /**
    * The commander, in cell coordinates.
@@ -415,7 +495,9 @@ export function GalaxySectorMap({
           <SectorPlot
             key={p.id}
             projection={p}
-            rows={shown}
+            rows={lodRows}
+            regionGroups={regionGroups}
+            onOpenRegion={setOpenRegion}
             maxBodies={maxBodies}
             highlight={searchHit}
             onHover={setHover}
@@ -429,6 +511,60 @@ export function GalaxySectorMap({
           />
         ))}
       </div>
+
+      {/*
+        The middle rung of the drill-down: a region's sectors, listed below the plots (A3).
+
+        A list rather than a zoomed plot, because the question at this point has stopped being
+        spatial — the commander has picked a region and now wants to know which sector in it is
+        worth the trip. Sorted by what is most actionable, then by how much is recorded, so the row
+        to read is the first one.
+      */}
+      {openRegion ? (
+        <section className="galaxy-region">
+          <header className="galaxy-region__head">
+            <h3>{openRegion.name || "Unnamed space"}</h3>
+            <span className="dim">
+              {openRegion.rows.length} sector{openRegion.rows.length === 1 ? "" : "s"} ·{" "}
+              {openRegion.bodies} bodies recorded
+            </span>
+            <button type="button" className="galaxy-region__close" onClick={() => setOpenRegion(null)}>
+              Close
+            </button>
+          </header>
+          <ul className="galaxy-region__list">
+            {[...openRegion.rows]
+              .sort((a, b) => tierRank(a.tier) - tierRank(b.tier) || b.bodies - a.bodies)
+              .map((r) => {
+                const style = TIER_STYLE[r.tier];
+                const isOpen = openCell?.key === r.cell.key;
+                return (
+                  <li key={r.cell.key}>
+                    <button
+                      type="button"
+                      className={isOpen ? "galaxy-region__row galaxy-region__row--on" : "galaxy-region__row"}
+                      onClick={() => setOpenCell(r.cell)}
+                      title={style.help}
+                    >
+                      <span
+                        className="galaxy-map__swatch"
+                        style={
+                          style.fill
+                            ? { background: style.fill }
+                            : { background: "transparent", border: `2px solid ${style.stroke}` }
+                        }
+                        aria-hidden="true"
+                      />
+                      <span className="galaxy-region__name">{r.cell.name ?? r.cell.key}</span>
+                      <span className="dim galaxy-region__tier">{style.label}</span>
+                      <span className="dim galaxy-region__bodies">{r.bodies}</span>
+                    </button>
+                  </li>
+                );
+              })}
+          </ul>
+        </section>
+      ) : null}
 
       <SectorReadout cell={hover ?? openCell ?? searchHit} taxon={taxon} />
 
@@ -480,6 +616,8 @@ export function GalaxySectorMap({
 function SectorPlot({
   projection,
   rows,
+  regionGroups,
+  onOpenRegion,
   maxBodies,
   highlight,
   onHover,
@@ -492,7 +630,15 @@ function SectorPlot({
   nextTarget,
 }: {
   projection: Projection;
-  rows: { cell: SectorMapCell; totals: ReturnType<typeof cellTotals>; kind: Kind }[];
+  rows: LodRow<SectorMapCell>[];
+  /**
+   * Sectors collapsed by region, or null when there is no region map to group by.
+   *
+   * Null is not an error state: without it the plot draws every sector at every zoom, which is what
+   * it always did. Detail is the thing that degrades, never correctness.
+   */
+  regionGroups: RegionGroup<SectorMapCell>[] | null;
+  onOpenRegion: (g: RegionGroup<SectorMapCell> | null) => void;
   maxBodies: number;
   highlight: SectorMapCell | null;
   onHover: (c: SectorMapCell | null) => void;
@@ -543,25 +689,17 @@ function SectorPlot({
    */
   const cellByKey = useMemo(() => new Map(rows.map((r) => [sectorCellKey(r.cell), r.cell])), [rows]);
 
+  /**
+   * Regions or sectors, decided by how far in the commander has zoomed (A3).
+   *
+   * The split is a display decision and lives here rather than above, because zoom is per plot:
+   * the top view and the edge-on view are panned and zoomed independently, and forcing them to the
+   * same level of detail would mean zooming into one to coarsen the other.
+   */
+  const level = regionGroups ? lodLevel(vp.view.scale) : "sector";
+
   /** Plot coordinates for a point in cell space, at the current camera. */
   const at = useCallback((c: { x: number; y: number; z: number }) => project(c, cam), [cam]);
-  /**
-   * Plot coordinates for a whole **sector**, which is a 1 280 ly box and not a point.
-   *
-   * A cell's coordinates are the floor of a division, so `12:0:34` is the box's *corner*. Drawing
-   * the aggregate there put every sector marker up to a full cell down-and-left of the space it
-   * describes, and the visible cost was the ship: the commander's cross is plotted from real
-   * coordinates, so it sat somewhere inside its own sector's box while that sector's marker sat at
-   * the corner — as much as 1 280 ly away, and never under the cross. Reported as "my location is
-   * not on the sector I am in".
-   *
-   * Half a cell puts the marker in the middle of what it stands for, and the ship back inside it.
-   */
-  const atCell = useCallback(
-    (c: { x: number; y: number; z: number }) =>
-      project({ x: c.x + 0.5, y: c.y + 0.5, z: c.z + 0.5 }, cam),
-    [cam],
-  );
   /*
    * Two framings, and which one is right depends on whether the galaxy is drawn.
    *
@@ -572,7 +710,8 @@ function SectorPlot({
   const bounds = useMemo(() => {
     if (showBackdrop) return { minX: 0, maxX: span, minY: 0, maxY: span };
     if (rows.length === 0) return { minX: 0, maxX: 1, minY: 0, maxY: 1 };
-    const pts = rows.map((r) => atCell(r.cell));
+    // Rows already carry the centre of their box, so no half-cell nudge is needed here.
+    const pts = rows.map((r) => at(r));
     const xs = pts.map((p) => p.u);
     const ys = pts.map((p) => p.v);
     // The ship may be well outside the sampled corpus. Stretching the view to include it beats
@@ -588,7 +727,7 @@ function SectorPlot({
       minY: Math.min(...ys),
       maxY: Math.max(...ys),
     };
-  }, [rows, at, atCell, commander, showBackdrop, span]);
+  }, [rows, at, commander, showBackdrop, span]);
 
   const sx = (v: number) =>
     PAD + ((v - bounds.minX) / Math.max(1, bounds.maxX - bounds.minX)) * (VIEW_W - PAD * 2);
@@ -678,8 +817,54 @@ function SectorPlot({
             opacity={backdropOpacity}
           />
         ) : null}
-        {rows.map(({ cell, totals }) => {
-          const r = 2 + 7 * Math.cbrt(totals.bodies / maxBodies);
+        {/*
+          One circle per region while zoomed out (A3).
+
+          Sized by everything recorded inside it, so a region reads as dense or thin at a glance,
+          and coloured only when its sectors agree: a region whose sectors report different things
+          is a place to look into, not an answer, and painting it as any one of them would be a
+          claim no sector makes.
+        */}
+        {level === "region" && regionGroups
+          ? regionGroups
+              .filter((g) => isOnScreen(sx(at(g).u), sy(at(g).v), vp.view, VIEW_W, VIEW_H))
+              .map((g) => {
+                const style = TIER_STYLE[g.tier];
+                const cx = sx(at(g).u);
+                const cy = sy(at(g).v);
+                // A floor of 4: a region is always a bigger target than the sectors inside it,
+                // because its whole job at this zoom is to be clickable.
+                const r = 4 + 9 * Math.cbrt(g.bodies / Math.max(1, maxBodies * 4));
+                return (
+                  <g key={`region:${g.regionId}:${g.x},${g.z}`} className="galaxy-map__region">
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={r * vp.pixel}
+                      fill={g.uniform ? (style.fill ?? "none") : "none"}
+                      fillOpacity={g.uniform && style.fill ? 0.45 : 1}
+                      stroke={g.uniform ? style.stroke : "#8b949e"}
+                      strokeWidth={1.4 * vp.pixel}
+                      strokeDasharray={g.uniform ? undefined : `${2 * vp.pixel} ${1.5 * vp.pixel}`}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => {
+                        if (!vp.panning) onOpenRegion(g);
+                      }}
+                    >
+                      <title>{`${g.name || "unnamed space"}
+${g.rows.length} sector${g.rows.length === 1 ? "" : "s"} · ${g.bodies} bodies recorded
+${g.uniform ? style.label : "sectors here report different things"}
+Click to list its sectors, or zoom in to split it`}</title>
+                    </circle>
+                  </g>
+                );
+              })
+          : null}
+        {level === "sector"
+          ? rows
+              .filter((row) => isOnScreen(sx(at(row).u), sy(at(row).v), vp.view, VIEW_W, VIEW_H))
+              .map(({ cell, bodies, tier, ...pos }) => {
+          const r = 2 + 7 * Math.cbrt(bodies / maxBodies);
           const isHit = highlight?.key === cell.key;
           /*
            * Outlined, not filled, once there is a galaxy behind them.
@@ -690,26 +875,16 @@ function SectorPlot({
            * filled form is kept: on a flat background hollow markers are harder to see, not easier.
            */
           /*
-           * What this sector is worth the commander's attention for — not what is best known about
-           * it. A cell where they have scanned one plant of a thousand must show the nine hundred
-           * and ninety-nine, so `tierFor` walks a ladder ordered by what is left and puts "done" at
-           * the bottom. See shared/galaxyTier.ts.
+           * The tier — what this sector is worth the commander's attention for, not what is best
+           * known about it — is decided above this component now, because the region grouping needs
+           * it too. See shared/galaxyTier.ts for the ladder itself.
            */
           const m = mine.get(cell.key);
-          const tier: GalaxyTier = tierFor({
-            visited: m?.visited ?? false,
-            scannedByYou: m?.scannedByYou ?? 0,
-            unscannedByYou: m?.unscannedByYou ?? 0,
-            confirmedElsewhere: totals.confirmed > 0 && (m?.scannedByYou ?? 0) === 0,
-            genusKnown: totals.genus > 0,
-            signals: totals.signal > 0,
-            knownBodies: totals.bodies,
-          });
           const style = TIER_STYLE[tier];
           // Hollow means one thing now: your own unfinished work.
           const hollow = style.fill === null;
-          const cx = sx(atCell(cell).u);
-          const cy = sy(atCell(cell).v);
+          const cx = sx(at(pos).u);
+          const cy = sy(at(pos).v);
           return (
             <g key={cell.key}>
               {/*
@@ -741,7 +916,7 @@ You are here — ${commander.system ?? "unknown system"}`
                     : ""
                 }
 ${style.help}
-${totals.bodies} bodies recorded here${
+${bodies} bodies recorded here${
                   m ? ` · you scanned ${m.scannedByYou}, ${m.unscannedByYou} left` : ""
                 }`}</title>
               </circle>
@@ -777,7 +952,8 @@ ${totals.bodies} bodies recorded here${
             ) : null}
             </g>
           );
-        })}
+              })
+          : null}
         {/*
           The backlog: systems holding biology this commander found and never collected.
 
@@ -790,7 +966,12 @@ ${totals.bodies} bodies recorded here${
         */}
         {backlog.length > 0 ? (
           <g className="galaxy-map__backlog">
-            {backlog.map((s) => {
+            {backlog
+              .filter((s) => {
+                const c = sectorCellFractional(s.x, s.y, s.z);
+                return isOnScreen(sx(at(c).u), sy(at(c).v), vp.view, VIEW_W, VIEW_H);
+              })
+              .map((s) => {
               /*
                 Fractional, not floored. These systems know their own coordinates; rounding them into
                 a 1 280 ly cell before drawing collapses the edge-on view into three stacked rows,
@@ -850,7 +1031,12 @@ ${totals.bodies} bodies recorded here${
         */}
         {searchHits.length > 0 ? (
           <g className="galaxy-map__hits">
-            {searchHits.map((h) => {
+            {searchHits
+              .filter((h) => {
+                const c = sectorCellFractional(h.x, h.y, h.z);
+                return isOnScreen(sx(at(c).u), sy(at(c).v), vp.view, VIEW_W, VIEW_H);
+              })
+              .map((h) => {
               const cell = sectorCellFractional(h.x, h.y, h.z);
               const owner = cellByKey.get(sectorCellKey(sectorCellFromCoords(h.x, h.y, h.z))) ?? null;
               const cx = sx(at(cell).u);

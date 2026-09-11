@@ -35,6 +35,14 @@ export function GalaxyMapScreen() {
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [commander, setCommander] = useState<CommanderPosition | null>(null);
   const [backdrop, setBackdrop] = useState<string | null>(null);
+  /**
+   * The region map itself, kept rather than discarded once the backdrop is painted (A3).
+   *
+   * It used to be read, turned into a 4 M-pixel image and thrown away. The level-of-detail work
+   * needs the same payload as *data* — which sector belongs to which region — and fetching it twice
+   * for one file would be worse than holding the one already in hand.
+   */
+  const [regionMap, setRegionMap] = useState<RegionMapPayload | null>(null);
   const [backlog, setBacklog] = useState<BacklogMapDTO | null>(null);
   const [commanderSectors, setCommanderSectors] = useState<CommanderSectorsDTO | null>(null);
   const [search, setSearch] = useState<GalaxySearchApplied | null>(null);
@@ -55,6 +63,7 @@ export function GalaxyMapScreen() {
       .then((r) => (r.ok ? (r.json() as Promise<RegionMapPayload>) : null))
       .then((data) => {
         if (cancelled || !data) return;
+        setRegionMap(data);
         // ~4 M pixels. Off the critical path on purpose: the markers are already on screen by now.
         setBackdrop(renderRegionBackdrop(data));
       })
@@ -191,6 +200,7 @@ export function GalaxyMapScreen() {
             backlog={backlog}
             commanderSectors={commanderSectors}
             search={search}
+            regionMap={regionMap}
           />
           {/* The provenance travels with the data; show it rather than paraphrasing it. */}
           <p className="galaxy-screen__note">{load.file.note}</p>

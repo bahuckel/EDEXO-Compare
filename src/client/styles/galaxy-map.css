@@ -396,3 +396,118 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
   pointer-events: all;
   cursor: pointer;
 }
+
+/* ===========================================================================
+ * A3 — level of detail: regions, and the drill-down below the plots.
+ *
+ * The map drew every sector at every zoom plus a dot per backlog system and per
+ * search hit, all re-rendered on each pan. Zoomed out they were stacked on top
+ * of each other, so most of that work produced nothing a reader could see. The
+ * fix the owner asked for: group sectors into their region while zoomed out,
+ * open a region to list its sectors, open a sector for its systems.
+ * ======================================================================== */
+
+/* A region is a target before it is a datum — it exists at this zoom to be clicked. */
+.galaxy-map__region circle {
+  transition: fill-opacity 120ms ease;
+}
+
+.galaxy-map__region circle:hover {
+  fill-opacity: 0.75;
+}
+
+.galaxy-region {
+  margin: 0.6rem 0 0.2rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: rgba(13, 17, 23, 0.6);
+}
+
+.galaxy-region__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.galaxy-region__head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.galaxy-region__close {
+  margin-left: auto;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.15rem 0.5rem;
+  background: transparent;
+  color: inherit;
+  opacity: 0.75;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.galaxy-region__close:hover {
+  opacity: 1;
+}
+
+/* Two columns on a wide screen: a region can hold thirty sectors, and one long
+   column would push the plots off the top of the page to read the last of them. */
+.galaxy-region__list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.galaxy-region__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.2rem 0.4rem;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.galaxy-region__row:hover {
+  background: rgba(88, 166, 255, 0.12);
+}
+
+/* The sector whose systems are open below, so the two panels cannot disagree. */
+.galaxy-region__row--on {
+  border-color: rgba(88, 166, 255, 0.55);
+  background: rgba(88, 166, 255, 0.15);
+}
+
+.galaxy-region__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.galaxy-region__tier {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+}
+
+.galaxy-region__bodies {
+  flex: 0 0 auto;
+  min-width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
