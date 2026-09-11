@@ -143,6 +143,31 @@
           .catch(function () {});
       }
       tick();
+
+      /**
+       * Tell the host window how tall this overlay actually is.
+       *
+       * These windows are transparent, so height an overlay is not using reads as a gap before the
+       * next one in the stack — which is what "the spacing between them is too large" was. Each page
+       * is the only thing that knows its own height, since that depends on what the game is doing.
+       */
+      var lastReportedHeight = 0;
+      function reportHeight() {
+        var ee = window.edexoElectron;
+        if (!ee || typeof ee.resizeHudOverlay !== "function") return;
+        var card = document.querySelector(".card");
+        if (!card) return;
+        var h = Math.ceil(card.getBoundingClientRect().height) + 4;
+        if (!h || Math.abs(h - lastReportedHeight) <= 2) return;
+        lastReportedHeight = h;
+        try {
+          void ee.resizeHudOverlay({ height: h });
+        } catch (e) {
+          /* not in Electron, or the host said no; the overlay is still readable either way */
+        }
+      }
+      setInterval(reportHeight, 700);
+
       setInterval(tick, 500);
 
       try {

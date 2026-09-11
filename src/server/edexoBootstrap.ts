@@ -59,7 +59,10 @@ import {
   getSpeciesDataDir,
   reapplySpeciesDataDirDiscoveryFromDisk,
 } from "./paths.js";
-import { ingestExoOrganicJournalLine } from "./exoOrganicTracker.js";
+import {
+  ingestExoOrganicJournalLine,
+  restoreOrganicSessionFromJournal,
+} from "./exoOrganicTracker.js";
 import { clearEddsnColourVariantsCache } from "./eddsnColourVariants.js";
 import { clearPhotoCreditsCache } from "./photoCredits.js";
 import { clearRegionSpeciesCache } from "./regionSpeciesData.js";
@@ -1132,6 +1135,28 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         const footHud = store.footTravelOdometerEnabled && store.footTravelOdometerTracking;
         if (footHud || store.exoOrganicTracker || fuelChanged || navChanged) push();
       }, STATUS_POLL_MS);
+
+      /*
+        A sample already in progress when the app started.
+
+        `ingestExoOrganicJournalLine` runs on live lines only — replaying four years of scans would
+        fire a celebration for each — so a plant half-sampled while the app was closed was invisible
+        and the overlay said zero scans. The owner scanned one and was told none.
+
+        Only the newest log, and only back to the last landing: a sample happens in one visit to one
+        surface. Count only — the positions are not in the journal and must not be guessed.
+      */
+      if (journalPath) {
+        try {
+          const tail: JournalLine[] = [];
+          await readJournalFull(journalPath, (l) => tail.push(l));
+          if (restoreOrganicSessionFromJournal(store, tail, projectRoot, getCachedSpeciesDatabase())) {
+            pushFlush();
+          }
+        } catch {
+          /* An unreadable log costs a restored count, never the boot. */
+        }
+      }
 
       pushFlush();
 

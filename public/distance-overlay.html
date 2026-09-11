@@ -56,8 +56,27 @@
       .minimap {
         display: block;
         width: 100%;
-        max-width: 13rem;
-        margin: 0.45rem auto 0.1rem;
+        max-width: 11.5rem;
+        margin: 0.35rem auto 0.05rem;
+      }
+
+      /* Three scans across, not down. Each is a label over its distance. */
+      .scans {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      .scan {
+        display: flex;
+        align-items: baseline;
+        gap: 0.3rem;
+        min-width: 0;
+      }
+      .scan .lbl {
+        opacity: 0.7;
+      }
+      .scan--muted {
+        opacity: 0.45;
       }
       .minimap-rim {
         fill: rgba(6, 14, 30, 0.5);
@@ -213,21 +232,23 @@
           <span class="lbl">Min gap (genus)</span>
           <span class="val" id="minGap">—</span>
         </div>
-        <div class="row" id="row1">
-          <span class="lbl">1st Scan</span>
-          <span class="val" id="d1">—</span>
-        </div>
-        <div class="row" id="row2wrap">
-          <span class="lbl">2nd Scan</span>
-          <span class="val"><span id="d2">—</span><span id="pill2"></span></span>
+        <!--
+          Three scans on one line, not three stacked rows.
+
+          The owner: "the 3 vertically stacked scans on top take too much place as well... Can we
+          have just Scan 1: X, Scan 2: X, Scan 3: X". Each X is the distance back to that sample, so
+          the line reads as a row of anchors rather than a form.
+        -->
+        <div class="row scans" id="scanRow">
+          <span class="scan" id="scan1"><span class="lbl">Scan 1</span><span class="val" id="d1">—</span></span>
+          <span class="scan" id="scan2"
+            ><span class="lbl">Scan 2</span><span class="val" id="d2">—</span><span id="pill2"></span
+          ></span>
+          <span class="scan" id="scan3"><span class="lbl">Scan 3</span><span class="val" id="pay">—</span></span>
         </div>
         <div class="row" id="rowSpan">
           <span class="lbl">Sample spacing</span>
           <span class="val"><span id="span12">—</span><span id="pillSpan"></span></span>
-        </div>
-        <div class="row" id="row3">
-          <span class="lbl">3rd Scan</span>
-          <span class="val" id="pay">—</span>
         </div>
         <!--
           The minimap. A plain list of distances tells you how far the last plant is; it does not
@@ -368,6 +389,32 @@
         return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       }
 
+      /**
+       * Tell the host window how tall this overlay actually is.
+       *
+       * An overlay window is transparent, so height it is not using reads as a gap before the next
+       * one — and height it *needs* and does not have simply cuts the content off, which is how the
+       * radar ended up sliced in half. The page is the only thing that knows: its height depends on
+       * whether a sample is in progress.
+       *
+       * Only on a real change, because a resize triggers a relayout of the whole stack.
+       */
+      var lastReportedHeight = 0;
+      function reportHeight() {
+        var ee = window.edexoElectron;
+        if (!ee || typeof ee.resizeHudOverlay !== "function") return;
+        var card = document.getElementById("card");
+        if (!card) return;
+        var h = Math.ceil(card.getBoundingClientRect().height) + 4;
+        if (!h || Math.abs(h - lastReportedHeight) <= 2) return;
+        lastReportedHeight = h;
+        try {
+          void ee.resizeHudOverlay({ height: h });
+        } catch (e) {
+          /* not in Electron, or the host said no; the overlay is still readable either way */
+        }
+      }
+
       function render(d) {
         var shell = document.getElementById("shell");
         var card = document.getElementById("card");
@@ -383,9 +430,9 @@
           card.classList.remove("card--ok");
           document.getElementById("species").textContent = "—";
           document.getElementById("minGap").textContent = "—";
-          document.getElementById("row1").className = "row row--muted";
+          document.getElementById("scan1").className = "scan scan--muted";
           document.getElementById("d1").textContent = "—";
-          document.getElementById("row2wrap").className = "row row--muted";
+          document.getElementById("scan2").className = "scan scan--muted";
           document.getElementById("d2").textContent = "—";
           document.getElementById("pill2").innerHTML = "";
           document.getElementById("span12").textContent = "—";
@@ -410,14 +457,14 @@
         document.getElementById("minGap").textContent =
           eo.minSampleDistanceM > 0 ? eo.minSampleDistanceM + " m" : "—";
 
-        document.getElementById("row1").className =
-          "row" + (eo.distToFirstM == null && eo.phase === "tracking" ? " row--muted" : "");
+        document.getElementById("scan1").className =
+          "scan" + (eo.distToFirstM == null && eo.phase === "tracking" ? " scan--muted" : "");
 
         document.getElementById("d1").textContent = fmtM(eo.distToFirstM);
 
-        document.getElementById("row2wrap").className =
-          "row" +
-          (eo.sampleCount < 2 || (eo.phase === "tracking" && eo.distToSecondM == null) ? " row--muted" : "");
+        document.getElementById("scan2").className =
+          "scan" +
+          (eo.sampleCount < 2 || (eo.phase === "tracking" && eo.distToSecondM == null) ? " scan--muted" : "");
         document.getElementById("d2").textContent = eo.sampleCount >= 2 ? fmtM(eo.distToSecondM) : "—";
 
         document.getElementById("pill2").innerHTML =
@@ -474,13 +521,19 @@
         }
       }
 
+      /* After paint, so the measurement is of what is actually on screen. */
+      function renderAndFit(d) {
+        render(d);
+        requestAnimationFrame(reportHeight);
+      }
+
       async function tick() {
         try {
           var r = await fetch(api("/api/state"), { cache: "no-store" });
           if (!r.ok) throw new Error("HTTP " + r.status);
           var d = await r.json();
           if (typeof d.port === "number" && d.port > 0) lastPort = d.port;
-          render(d);
+          renderAndFit(d);
         } catch (e) {
           document.getElementById("shell").classList.remove("shell--off");
         }
@@ -500,7 +553,7 @@
               if (typeof msg.payload.port === "number" && msg.payload.port > 0) {
                 lastPort = msg.payload.port;
               }
-              render(msg.payload);
+              renderAndFit(msg.payload);
             }
           } catch (_) {}
         };

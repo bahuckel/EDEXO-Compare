@@ -16,4 +16,11 @@ contextBridge.exposeInMainWorld("edexoElectron", {
   getFootOverlayOpen: () => ipcRenderer.invoke("edexo:foot-overlay-state"),
   /** @returns {Promise<{ paths: string[] }>} */
   getHudOverlayState: () => ipcRenderer.invoke("edexo:hud-overlay-state"),
+  /**
+   * Ask for this overlay's window to match its content height.
+   *
+   * @param {{ height: number }} opts
+   * @returns {Promise<{ ok: boolean }>}
+   */
+  resizeHudOverlay: (opts) => ipcRenderer.invoke("edexo:resize-hud-overlay", opts),
 });

@@ -6,7 +6,17 @@ const fs = require("fs");
 const { execFileSync } = require("child_process");
 
 const MAX_HUD_OVERLAYS = 3;
-const HUD_STACK_GAP = 8;
+const HUD_STACK_GAP = 6;
+
+/*
+  An overlay window is transparent, so any height it has beyond its content reads as empty space
+  between it and the next one — the owner's "spacing between them is too large" was mostly windows
+  bigger than what they were drawing. They ask to be resized to their own content instead, which
+  also fixes the opposite failure: the distance HUD grew a radar and was being cut off by a window
+  sized before the radar existed.
+*/
+const HUD_MIN_HEIGHT = 90;
+const HUD_MAX_HEIGHT = 900;
 
 /**
  * Some electron-builder targets report `app.isPackaged === false` even though resources are laid out
@@ -301,7 +311,7 @@ function registerFootOverlayIpc(iconForChild) {
     const w = Number(o.width);
     const h = Number(o.height);
     const width = Number.isFinite(w) && w > 0 ? Math.floor(w) : 404;
-    const height = Number.isFinite(h) && h > 0 ? Math.floor(h) : 274;
+    const height = Number.isFinite(h) && h > 0 ? Math.floor(h) : 330;
     return requestHudOverlaySlot(pathNorm, width, height, iconForChild, "open");
   });
 
@@ -313,13 +323,38 @@ function registerFootOverlayIpc(iconForChild) {
     const w = Number(o.width);
     const h = Number(o.height);
     const width = Number.isFinite(w) && w > 0 ? Math.floor(w) : 404;
-    const height = Number.isFinite(h) && h > 0 ? Math.floor(h) : 274;
+    const height = Number.isFinite(h) && h > 0 ? Math.floor(h) : 330;
     return requestHudOverlaySlot(pathNorm, width, height, iconForChild, "toggle");
+  });
+
+  /**
+   * An overlay reporting how tall it actually is.
+   *
+   * The page is the only thing that knows: its height depends on what the game is doing — a sample
+   * in progress draws rows an idle one does not. Width is left alone, because that *is* a layout
+   * choice and a HUD that changes width as data arrives would be unreadable.
+   */
+  ipcMain.handle("edexo:resize-hud-overlay", (evt, opts) => {
+    const win = BrowserWindow.fromWebContents(evt.sender);
+    if (!win || win.isDestroyed()) return { ok: false };
+    const raw = Number(opts && typeof opts === "object" ? opts.height : NaN);
+    if (!Number.isFinite(raw)) return { ok: false };
+    const height = Math.max(HUD_MIN_HEIGHT, Math.min(HUD_MAX_HEIGHT, Math.ceil(raw)));
+    try {
+      const [w, h] = win.getSize();
+      // A pixel or two of jitter from a font metric must not start a resize loop.
+      if (Math.abs(h - height) <= 2) return { ok: true };
+      win.setBounds({ ...win.getBounds(), width: w, height }, false);
+      relayoutHudStack();
+      return { ok: true };
+    } catch {
+      return { ok: false };
+    }
   });
 
   ipcMain.handle("edexo:toggle-foot-overlay", async () => {
     try {
-      return await requestHudOverlaySlot("/distance-overlay.html", 404, 274, iconForChild, "toggle");
+      return await requestHudOverlaySlot("/distance-overlay.html", 404, 330, iconForChild, "toggle");
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       return { opened: false, paths: hudPathsFiltered(), error: msg };

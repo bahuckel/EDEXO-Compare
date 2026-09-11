@@ -18,6 +18,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildExoMinimapDto,
   buildExoOrganicOverlayDto,
+  restoreOrganicSessionFromJournal,
   type ExoOrganicOverlayHost,
 } from "../src/server/exoOrganicTracker.js";
 import type { PriceIndex } from "../src/server/priceList.js";
@@ -288,5 +289,90 @@ describe("what survives a restart", () => {
     payload.surfaceShipMark = null;
     store.hydrateJournalMergePayload(payload);
     expect(store.surfaceShipMark).not.toBeNull();
+  });
+});
+
+/**
+ * A sample already in progress when the app starts.
+ *
+ * The overlay only ever saw live lines, so scanning a plant, closing the app and reopening it
+ * reported zero scans — the owner's "gives me 0 scans when I scanned one". The count is in the log
+ * and can be recovered; the position is not and must not be invented.
+ */
+describe("restoring a session from the journal", () => {
+  const scan = (scanType: string, species = "Bacterium Aurasus") =>
+    ({
+      event: "ScanOrganic",
+      timestamp: "2026-09-11T10:15:50Z",
+      ScanType: scanType,
+      SystemAddress: 1,
+      Body: 2,
+      BodyName: "Test Sector AB-C d1-2 B 4",
+      Genus_Localised: "Bacterium",
+      Species_Localised: species,
+    }) as never;
+
+  const store = () =>
+    ({ exoOrganicTracker: null, footSessionBodyKey: null }) as unknown as Parameters<
+      typeof restoreOrganicSessionFromJournal
+    >[0];
+
+  it("counts the samples taken since the last landing", async () => {
+    const { restoreOrganicSessionFromJournal } = await import("../src/server/exoOrganicTracker.js");
+    const { loadSpeciesDatabase, getCachedSpeciesDatabase } = await import("../src/server/snapshot.js");
+    loadSpeciesDatabase();
+    const s = store();
+    const ok = restoreOrganicSessionFromJournal(
+      s,
+      [{ event: "Touchdown" } as never, scan("Sample")],
+      process.cwd(),
+      getCachedSpeciesDatabase(),
+    );
+    expect(ok).toBe(true);
+    expect(s.exoOrganicTracker!.recoveredSamples).toBe(1);
+    // Recovered, never placed: a count is in the log, a position is not.
+    expect(s.exoOrganicTracker!.anchors).toEqual([]);
+  });
+
+  it("ignores everything before the last landing — that was a different visit", async () => {
+    const { restoreOrganicSessionFromJournal } = await import("../src/server/exoOrganicTracker.js");
+    const { getCachedSpeciesDatabase } = await import("../src/server/snapshot.js");
+    const s = store();
+    const restored = restoreOrganicSessionFromJournal(
+      s,
+      [scan("Sample"), scan("Sample"), { event: "Liftoff" } as never],
+      process.cwd(),
+      getCachedSpeciesDatabase(),
+    );
+    expect(restored).toBe(false);
+    expect(s.exoOrganicTracker).toBeNull();
+  });
+
+  it("counts a Log as the first scan, the way the live path does", async () => {
+    /*
+      A new species opens with a codex Log, and the live tracker treats that as its first anchor.
+      Counting only Samples reported nothing for a plant genuinely started — which is exactly what
+      the owner hit: one Log of Bacterium Acies since landing, and the overlay said zero.
+    */
+    const { restoreOrganicSessionFromJournal } = await import("../src/server/exoOrganicTracker.js");
+    const { getCachedSpeciesDatabase } = await import("../src/server/snapshot.js");
+    const s = store();
+    expect(
+      restoreOrganicSessionFromJournal(s, [scan("Log")], process.cwd(), getCachedSpeciesDatabase()),
+    ).toBe(true);
+    expect(s.exoOrganicTracker!.recoveredSamples).toBe(1);
+  });
+
+  it("does not let a second Log advance the count", async () => {
+    const { restoreOrganicSessionFromJournal } = await import("../src/server/exoOrganicTracker.js");
+    const { getCachedSpeciesDatabase } = await import("../src/server/snapshot.js");
+    const s = store();
+    restoreOrganicSessionFromJournal(
+      s,
+      [scan("Log"), scan("Log"), scan("Sample")],
+      process.cwd(),
+      getCachedSpeciesDatabase(),
+    );
+    expect(s.exoOrganicTracker!.recoveredSamples).toBe(2);
   });
 });

@@ -36,6 +36,14 @@ export type ExoOrganicTrackerInternal = {
   bodyNameNorm: string;
   minSampleDistanceM: number;
   anchors: ExoOrganicAnchors[];
+  /**
+   * Samples the journal says were taken but whose position was never captured.
+   *
+   * `ScanOrganic` has no coordinates, so a scan made while this app was closed can be *counted*
+   * from the log and never *placed*. Kept separate from `anchors` so the two are never confused:
+   * an anchor is somewhere you stood, this is only a number.
+   */
+  recoveredSamples?: number;
   phase: "tracking" | "celebrate";
   celebrationUntil: number;
   /** Set when Analyse merges; true = species already in codex (no 5× codex bonus). */
@@ -123,6 +131,86 @@ function resolveMinSampleDistanceM(projectRoot: string, db: SpeciesDatabase, gen
 function speciesDisplayFromLine(line: JournalLine): string {
   const sl = typeof line.Species_Localised === "string" ? line.Species_Localised.trim() : "";
   return sl || displayLabelFromOrganicLine(line);
+}
+
+/**
+ * Rebuild the sample count for a plant that was scanned while this app was closed.
+ *
+ * The owner's report: he scanned one and the overlay said zero. `ingestExoOrganicJournalLine` runs
+ * on live lines only — deliberately, since replaying four years of scans would fire a celebration
+ * for each — so a session in progress when the app starts was invisible.
+ *
+ * **Count only, never a position.** `ScanOrganic` carries no coordinates, so the one thing that
+ * could be invented here is where the plant was, and inventing it would put a false dot on the
+ * radar and a false distance in the rows. The count is a fact in the log; the position is not, and
+ * the difference is kept in the type.
+ *
+ * Returns true when a session was restored, so the caller can say so.
+ */
+export function restoreOrganicSessionFromJournal(
+  store: ExoOrganicJournalStore,
+  lines: readonly JournalLine[],
+  projectRoot: string,
+  db: SpeciesDatabase,
+): boolean {
+  /*
+    Walk backwards to the start of the current attempt. A Touchdown or a Liftoff ends whatever came
+    before it: a plant is sampled in one visit to one surface, so anything older belongs to a
+    different one.
+  */
+  const recent: JournalLine[] = [];
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const e = lines[i]!.event;
+    if (e === "Liftoff" || e === "Touchdown") break;
+    if (e === "ScanOrganic") recent.push(lines[i]!);
+  }
+  if (recent.length === 0) return false;
+  recent.reverse();
+
+  /*
+    The same state machine the live path runs, which is not "count the Samples".
+
+    A new species opens with a **Log** — the codex entry — and that is the first anchor; after it,
+    only Sample advances. Filtering to Sample alone reported nothing for a plant the commander had
+    genuinely started: his one scan since landing was a Log of Bacterium Acies, and the overlay said
+    zero. Mirroring the live rule rather than inventing a stricter one is the fix.
+  */
+  const counted: JournalLine[] = [];
+  for (const l of recent) {
+    const kind = String(l.ScanType ?? "").trim().toLowerCase();
+    if (kind !== "sample" && kind !== "log") continue;
+    // A Log only ever opens a run; it never advances one.
+    if (counted.length > 0 && kind === "log") continue;
+    counted.push(l);
+    if (counted.length >= 3) break;
+  }
+  if (counted.length === 0) return false;
+  const last = counted[counted.length - 1]!;
+
+  const sa = last.SystemAddress;
+  const bodyId = last.Body;
+  if (typeof sa !== "number" || typeof bodyId !== "number") return false;
+  const bk = organicBodyKey(sa, bodyId);
+
+  const speciesKey = speciesKeyFromOrganicJournal(last);
+  const genusLoc = typeof last.Genus_Localised === "string" ? last.Genus_Localised.trim() : "";
+  const speciesDisplay = speciesDisplayFromLine(last);
+  store.exoOrganicTracker = {
+    bundleKey: `${bk}::${speciesKey}`,
+    bodyKey: bk,
+    speciesKey,
+    speciesDisplay,
+    genusLocalised: genusLoc,
+    bodyNameNorm: normOrganicToken(
+      typeof last.BodyName === "string" && last.BodyName.trim() ? last.BodyName.trim() : `Body ${bodyId}`,
+    ),
+    minSampleDistanceM: resolveMinSampleDistanceM(projectRoot, db, genusLoc),
+    anchors: [],
+    recoveredSamples: counted.length,
+    phase: "tracking",
+    celebrationUntil: 0,
+  };
+  return true;
 }
 
 /**
@@ -477,7 +565,8 @@ export function buildExoOrganicOverlayDto(
     finalCredits,
     analyseWasLogged,
     footfallMult: ff,
-    sampleCount: anchors.length,
+    // The journal may know of samples this app never saw the position of; they still count.
+    sampleCount: Math.max(anchors.length, t.recoveredSamples ?? 0),
     trackingBodyKey: t.bodyKey,
     distToNearestSampleM,
     minimap,
