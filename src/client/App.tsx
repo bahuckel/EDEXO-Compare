@@ -3,6 +3,7 @@ import { useConfirm, useToast } from "./ui/feedback";
 import { useModal } from "./ui/useModal";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
 import { fuzzyRankAny } from "./fuzzyMatch";
+import { arrivalTripRanks, type ArrivalTrip } from "@shared/systemTriage";
 import {
   IconChevronDown,
   IconEncyclopedia,
@@ -10,7 +11,6 @@ import {
   IconFeeder,
   IconGalaxy,
   IconOptions,
-  IconTriage,
   IconBacklog,
   IconGalaxySearch,
 } from "./ui/icons";
@@ -63,9 +63,6 @@ const EncyclopediaModal = lazy(() =>
 );
 const ExomasteryHabitatMatchModal = lazy(() =>
   import("./exomasteryHabitatMatchModal").then((m) => ({ default: m.ExomasteryHabitatMatchModal })),
-);
-const SystemTriageModal = lazy(() =>
-  import("./SystemTriageModal").then((m) => ({ default: m.SystemTriageModal })),
 );
 const FirstDiscoveryBacklogModal = lazy(() =>
   import("./FirstDiscoveryBacklogModal").then((m) => ({ default: m.FirstDiscoveryBacklogModal })),
@@ -1874,6 +1871,19 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
   );
 });
 
+/**
+ * "nearest", "2nd nearest", "3rd nearest" — this body's place in the queue of flights worth making.
+ *
+ * Only ever reaches the screen when there is something to compare against, so there is no wording
+ * for a lone body: one biological body in a system is not nearest to anything.
+ */
+function tripRankLabel(rank: number): string {
+  if (rank === 1) return "nearest";
+  const tens = rank % 100;
+  const suffix = tens >= 11 && tens <= 13 ? "th" : ["th", "st", "nd", "rd"][rank % 10] ?? "th";
+  return `${rank}${suffix} nearest`;
+}
+
 /** FSS biological signal count for this body (denominator for candidate species; never use DSS-only genus count). */
 function candidateSpeciesDenomFromFss(state: BodyComputed["state"]): number {
   return state.biologicalSignals ?? 0;
@@ -1885,10 +1895,13 @@ function genusHintIsDssOrphan(g: GenusHint, orphans: GenusHint[]): boolean {
 
 const BodyPane = memo(function BodyPane({
   body,
+  trip,
   includeBacteriumInSearch,
   onToggleIncludeBacterium,
 }: {
   body: BodyComputed;
+  /** This body's flight from the arrival star, against the system's other biological bodies (A2). */
+  trip?: ArrivalTrip | null;
   includeBacteriumInSearch: boolean;
   onToggleIncludeBacterium: () => void;
 }) {
@@ -2170,18 +2183,33 @@ const BodyPane = memo(function BodyPane({
             >
               DSS
             </button>
+            {/*
+              A2 — what replaced "Worth the trip?". That panel ranked bodies by expected credits per
+              on-site minute; the owner's verdict was that it was not implemented as intended, and
+              the flight is what actually decides whether to go. The journals cannot time a
+              supercruise leg (see ON_SITE_ONLY), so the honest form is the distance the game states
+              plus where this body sits among the others in the system worth landing on.
+            */}
             <div
               className="info-pill info-pill--static info-pill--from-arrival"
               title={
-                arrivalLs != null
-                  ? "Journal Scan.DistanceFromArrivalLS — distance from the system entry / arrival point (light-seconds). 0 usually means the body you dropped in at."
-                  : "Requires a detailed journal Scan that includes DistanceFromArrivalLS for this body."
+                arrivalLs == null
+                  ? "Requires a detailed journal Scan that includes DistanceFromArrivalLS for this body."
+                  : trip && trip.rank != null && trip.ranked > 1
+                    ? `Journal Scan.DistanceFromArrivalLS — light-seconds from the system's arrival point. Of the ${trip.ranked} bodies here carrying biology and a measured distance, this is the ${tripRankLabel(trip.rank)}. Supercruise minutes are not shown: timing that leg in the journals measures honking and deciding as much as flying.`
+                    : "Journal Scan.DistanceFromArrivalLS — distance from the system entry / arrival point (light-seconds). 0 usually means the body you dropped in at."
               }
             >
               <span className="info-pill-label" style={pillLabelStyle}>
                 From Arrival:
               </span>{" "}
               {fromArrivalDisplay}
+              {trip && trip.rank != null && trip.ranked > 1 ? (
+                <span className="info-pill-trip-rank dim">
+                  {" "}
+                  · {tripRankLabel(trip.rank)} of {trip.ranked}
+                </span>
+              ) : null}
             </div>
           </div>
           <div
@@ -4163,7 +4191,6 @@ const HeaderBar = memo(function HeaderBar({
   const feeder = useFeederStatus();
   const [myExoOpen, setMyExoOpen] = useState(false);
   const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
-  const [triageOpen, setTriageOpen] = useState(false);
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [galaxySearchOpen, setGalaxySearchOpen] = useState(false);
   const [notableQuick, setNotableQuick] = useState<{
@@ -4347,16 +4374,6 @@ const HeaderBar = memo(function HeaderBar({
               aria-label="My exobiology"
             >
               <IconExobiology />
-            </button>
-          </Tooltip>
-          <Tooltip text="Worth the trip? — every body in this system ranked by what sampling it is expected to pay.">
-            <button
-              type="button"
-              className="appbar-icon-btn"
-              onClick={() => setTriageOpen(true)}
-              aria-label="System triage"
-            >
-              <IconTriage />
             </button>
           </Tooltip>
           <Tooltip text="Unfinished business — biology you found first and never collected, still worth 5x.">
@@ -4670,24 +4687,6 @@ const HeaderBar = memo(function HeaderBar({
         </Suspense>
       ) : null}
 
-      {triageOpen ? (
-        <Suspense fallback={<ModalLoading />}>
-          <SystemTriageModal
-            bodies={snap.bodies ?? []}
-            systemName={snap.viewingSystemName ?? snap.currentSystem}
-            timing={snap.onSiteTiming}
-            onClose={() => setTriageOpen(false)}
-            onSelectBody={
-              onGoToBioBody
-                ? (key) => {
-                    onGoToBioBody(key);
-                    setTriageOpen(false);
-                  }
-                : undefined
-            }
-          />
-        </Suspense>
-      ) : null}
       {encyclopediaOpen ? (
         <Suspense fallback={<ModalLoading />}>
           <EncyclopediaModal
@@ -5243,6 +5242,12 @@ export function App() {
   }, [snapshot?.uiAutoSelectBodyKey]);
 
   const selected = orderedBodies.find((b) => b.state.key === selectedBodyKey) ?? orderedBodies[0] ?? null;
+  /*
+    A2 — the trip, ranked once for the system and read off by whichever body is on screen. Computed
+    here rather than in the pane because the comparison is between siblings and the pane only ever
+    sees one of them.
+  */
+  const tripRanks = useMemo(() => arrivalTripRanks(orderedBodies), [orderedBodies]);
 
   /** Memoized: a fresh object literal here would defeat <HeaderBar>'s memo on every render. */
   const encyclopediaSpawnCompare: EncyclopediaSpawnCompare | null = useMemo(
@@ -5359,6 +5364,7 @@ export function App() {
           {selected ? (
             <BodyPane
               body={selected}
+              trip={tripRanks.get(selected.state.key) ?? null}
               includeBacteriumInSearch={snapshot.includeBacteriumInSearch === true}
               onToggleIncludeBacterium={toggleIncludeBacteriumInSearch}
             />

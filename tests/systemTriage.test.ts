@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { BodyComputed } from "../src/shared/types.js";
 import {
+  arrivalTripRanks,
   genusShares,
   MIN_TIMING_SAMPLES,
   onSiteMinutes,
@@ -199,5 +201,47 @@ describe("timingFromSamples", () => {
     expect(onSiteMinutes(3, t)).toBeCloseTo(2 + 3 * 4, 6);
     // Without it the shipped medians stand, so the screen still works on a fresh install.
     expect(onSiteMinutes(3, null)).toBeCloseTo(LANDING_MINUTES + 3 * SAMPLING_MINUTES_PER_GENUS, 6);
+  });
+});
+
+/**
+ * A2 — the trip, per body. Only the fields `arrivalTripRanks` reads are filled in; the rest of
+ * `BodyComputed` is irrelevant to it and faking it whole would only hide what the function uses.
+ */
+function bioBody(key: string, ls: number | undefined, signals = 1): BodyComputed {
+  return {
+    state: { key, biologicalSignals: signals },
+    matches: [],
+    mergedScan: ls == null ? undefined : { distanceFromArrivalLs: ls },
+  } as unknown as BodyComputed;
+}
+
+describe("arrivalTripRanks", () => {
+  it("ranks the biological bodies nearest first", () => {
+    const ranks = arrivalTripRanks([bioBody("a", 900), bioBody("b", 120), bioBody("c", 4000)]);
+    expect(ranks.get("b")).toMatchObject({ rank: 1, ranked: 3, distanceLs: 120 });
+    expect(ranks.get("a")?.rank).toBe(2);
+    expect(ranks.get("c")?.rank).toBe(3);
+  });
+
+  it("gives two moons of the same planet the same rank, since it is the same trip", () => {
+    const ranks = arrivalTripRanks([bioBody("a", 300), bioBody("b", 300), bioBody("c", 900)]);
+    expect(ranks.get("a")?.rank).toBe(1);
+    expect(ranks.get("b")?.rank).toBe(1);
+    // The next body keeps its position in the queue rather than closing the gap.
+    expect(ranks.get("c")?.rank).toBe(3);
+  });
+
+  it("leaves a body with no measured distance unranked, and out of the denominator", () => {
+    const ranks = arrivalTripRanks([bioBody("a", 300), bioBody("b", undefined)]);
+    expect(ranks.get("b")).toMatchObject({ rank: null, distanceLs: null, ranked: 1 });
+    expect(ranks.get("a")).toMatchObject({ rank: 1, ranked: 1 });
+  });
+
+  it("ignores bodies with no biology — the nearest body is rarely the nearest worth landing on", () => {
+    const dead = { state: { key: "x", biologicalSignals: 0 }, matches: [], mergedScan: { distanceFromArrivalLs: 5 } } as unknown as BodyComputed;
+    const ranks = arrivalTripRanks([dead, bioBody("a", 300)]);
+    expect(ranks.has("x")).toBe(false);
+    expect(ranks.get("a")).toMatchObject({ rank: 1, ranked: 1 });
   });
 });

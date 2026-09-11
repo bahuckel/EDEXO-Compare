@@ -25,6 +25,8 @@
  * If you are tempted to add a cheaper genus-only estimate for bodies the model cannot score: that is
  * the thing that was already tried. Leave such rows unscored and let `coverage` say so.
  */
+import type { BodyComputed } from "./types.js";
+
 
 /**
  * Median minutes from dropping out of supercruise to touchdown. Measured, 299 landings.
@@ -301,6 +303,94 @@ export function genusShares<T extends { genus: string; probability: number }>(
   for (const r of rows) {
     const total = totals.get(r.genus) ?? 0;
     out.set(r, total > 0 ? r.probability / total : null);
+  }
+  return out;
+}
+
+/**
+ * Snapshot bodies → the shape the triage maths takes. Shown candidates only.
+ *
+ * Lived in the client's "Worth the trip?" modal until that screen was retired; the second screen
+ * kept using it, so it moved here rather than leaving a deleted panel as somebody's import path.
+ * Both sides of the cycle with `types.ts` are `import type`, so nothing is imported at runtime.
+ */
+export function triageInputsFromBodies(bodies: BodyComputed[]): TriageBodyInput[] {
+  return bodies
+    .filter((b) => (b.state.biologicalSignals ?? 0) > 0 || b.matches.length > 0)
+    .map((b) => {
+      const shown = b.matches.filter((m) => !m.unlikely);
+      return {
+        bodyKey: b.state.key,
+        bodyName: b.tabLabel || b.state.bodyName || b.state.key,
+        signalCount: b.state.biologicalSignals ?? null,
+        distanceLs: b.mergedScan?.distanceFromArrivalLs ?? null,
+        multiplier: (b.exoPayoutRange?.mult ?? 1) as 1 | 5,
+        certain: b.genusCertainty?.status === "certain",
+        candidates: shown.map((m) => ({
+          speciesId: m.entry.id,
+          displayName: m.entry.displayName,
+          genus: m.entry.genus,
+          probability:
+            typeof m.presenceProbabilityPercent === "number" && Number.isFinite(m.presenceProbabilityPercent)
+              ? m.presenceProbabilityPercent / 100
+              : null,
+          priceCredits: m.priceCredits ?? null,
+        })),
+      };
+    });
+}
+
+/**
+ * How far each biological body in this system sits from the arrival star, and how that compares.
+ *
+ * The replacement for the "Worth the trip?" panel (A2). That panel ranked a system's bodies by
+ * expected credits per on-site minute, and the owner's verdict was that it was not implemented as
+ * intended — the number it ranked by is an aggregate, and what actually decides whether to go is
+ * the flight. The flight is the one leg the journals cannot time ({@link ON_SITE_ONLY}), so the
+ * honest form of it is the raw distance the game states, compared against the other bodies worth
+ * landing on.
+ *
+ * Which is a per-planet fact, not a table: it belongs on the screen the commander is already
+ * looking at when they decide.
+ *
+ * Only bodies with biology are ranked — a system's nearest body is rarely the nearest one worth
+ * flying to — and only those whose distance the journal actually carries. Equal distances share a
+ * rank, because two moons of the same planet are the same trip.
+ */
+export interface ArrivalTrip {
+  /** Light-seconds from the arrival star, or null when no scan has said. */
+  distanceLs: number | null;
+  /** 1-based position among this system's ranked biological bodies, nearest first. */
+  rank: number | null;
+  /** How many biological bodies carry a distance to be ranked against. */
+  ranked: number;
+}
+
+export function arrivalTripRanks(bodies: BodyComputed[]): Map<string, ArrivalTrip> {
+  const bio = bodies.filter((b) => (b.state.biologicalSignals ?? 0) > 0 || b.matches.length > 0);
+  const withDistance = bio
+    .map((b) => ({ key: b.state.key, ls: b.mergedScan?.distanceFromArrivalLs }))
+    .filter((r): r is { key: string; ls: number } => typeof r.ls === "number" && Number.isFinite(r.ls))
+    .sort((a, b) => a.ls - b.ls);
+
+  const rankByKey = new Map<string, number>();
+  let rank = 0;
+  let previous: number | null = null;
+  withDistance.forEach((r, i) => {
+    if (previous == null || r.ls !== previous) rank = i + 1;
+    previous = r.ls;
+    rankByKey.set(r.key, rank);
+  });
+
+  const out = new Map<string, ArrivalTrip>();
+  for (const b of bio) {
+    const ls = b.mergedScan?.distanceFromArrivalLs;
+    const known = typeof ls === "number" && Number.isFinite(ls);
+    out.set(b.state.key, {
+      distanceLs: known ? ls : null,
+      rank: known ? (rankByKey.get(b.state.key) ?? null) : null,
+      ranked: withDistance.length,
+    });
   }
   return out;
 }

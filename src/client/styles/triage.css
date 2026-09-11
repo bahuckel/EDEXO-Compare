@@ -1,116 +1,16 @@
 /*
- * System triage — "Worth the trip?" — and the genus/species odds tables.
+ * Genus/species odds tables, and the thin-sample note.
  *
  * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
  * by styles.css in the order it imports them, and that order is the original file's order. Rules
  * here can be overridden by any later file, so moving a block between files can change the page
  * even though nothing was edited. Add new rules to the region they belong to, at the end.
  *
- * Was lines 9098-9257 of the original.
+ * Was lines 9098-9257 of the original. The "Worth the trip?" table that opened this file went with
+ * the panel itself — each planet answers that question on its own screen now, and the second screen
+ * is the one place that still ranks a whole system. The filename is kept because these files are
+ * assembled in a fixed order and renaming one moves its rules.
  */
-
-/* ── System triage ("Worth the trip?") ─────────────────────────────────────
-   A table rather than cards: the whole point is comparing six bodies down one
-   column, and cards make the eye travel sideways for every comparison. */
-.modal-panel.system-triage-modal {
-  width: min(920px, 94vw);
-  max-height: 88vh;
-  overflow: auto;
-}
-
-.system-triage-intro {
-  margin: 0 0 0.6rem;
-}
-
-.system-triage-sorts {
-  display: flex;
-  gap: 0.35rem;
-  margin-bottom: 0.6rem;
-  flex-wrap: wrap;
-}
-
-.system-triage-sort {
-  padding: 0.22rem 0.6rem;
-  font-size: var(--fs-2xs);
-  color: var(--muted);
-  background: var(--shadow-a45);
-  border: 1px solid var(--accent-a22);
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.system-triage-sort.on {
-  color: var(--fg);
-  border-color: var(--accent);
-  background: var(--accent-a12);
-}
-
-.system-triage-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--fs-xs);
-}
-
-.system-triage-table th,
-.system-triage-table td {
-  padding: 0.34rem 0.5rem;
-  border-bottom: 1px solid var(--accent-a15);
-  text-align: left;
-  vertical-align: baseline;
-}
-
-.system-triage-table th {
-  color: var(--muted);
-  font-weight: 600;
-  font-size: var(--fs-2xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.system-triage-table .num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.system-triage-table tbody tr:first-child td {
-  color: var(--fg);
-  background: var(--accent-a12);
-}
-
-.system-triage-row--clickable {
-  cursor: pointer;
-}
-
-.system-triage-row--clickable:hover td {
-  background: var(--accent-a15);
-}
-
-.system-triage-tag {
-  margin-left: 0.35rem;
-  padding: 0.05rem 0.35rem;
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--accent);
-  border: 1px solid var(--accent-a22);
-  border-radius: 999px;
-}
-
-/*
- * A9's value-at-risk tag. Deliberately a different colour from "certain" and "first footfall":
- * those two are good news about the row, this one is a caution about the number beside it, and a
- * commander scanning the column should be able to tell them apart without reading.
- */
-.system-triage-tag--risk {
-  color: #ffc14d;
-  border-color: rgba(255, 193, 77, 0.45);
-  cursor: help;
-}
-
-.system-triage-note {
-  margin: 0.7rem 0 0;
-  line-height: 1.45;
-}
 
 /* A percentage built on very few bodies says so, in the row it belongs to (§15.2, §16.1). */
 .species-thin-sample {

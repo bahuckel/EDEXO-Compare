@@ -2,8 +2,10 @@
  * Second screen — the system, triaged, on a device you are not typing on.
  *
  * B8, which the backlog left as the owner's call because it is "only worth anything after B1". B1
- * shipped, so this is that: the same arithmetic as {@link SystemTriageModal}, rendered for a phone
- * propped against the monitor or a tablet on the desk while both hands are on a HOTAS.
+ * shipped, so this is that: {@link triageSystem}'s arithmetic, rendered for a phone propped against
+ * the monitor or a tablet on the desk while both hands are on a HOTAS. It is now the only screen
+ * that ranks a whole system — the in-app "Worth the trip?" modal it was built alongside has been
+ * retired, and each planet answers the question on its own screen instead.
  *
  * Three properties do all the design work:
  *
@@ -20,8 +22,12 @@
  */
 import { useMemo, useState } from "react";
 import { useLiveSnapshot } from "./useLiveSnapshot";
-import { triageInputsFromBodies } from "./SystemTriageModal";
-import { triageSystem, type TriageRow, type TriageSort } from "@shared/systemTriage";
+import {
+  triageInputsFromBodies,
+  triageSystem,
+  type TriageRow,
+  type TriageSort,
+} from "@shared/systemTriage";
 
 const SORT_STORAGE_KEY = "edexo.secondscreen.sort";
 

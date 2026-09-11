@@ -124,6 +124,13 @@
   font-size: var(--fs-sm);
 }
 
+/* A2 — where this body sits in the queue of flights worth making. Smaller than the distance
+   because the distance is the fact and this is the comparison. */
+.info-pill-trip-rank {
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+
 .planetary-info-card .planetary-info-row {
   display: flex;
   width: 100%;
