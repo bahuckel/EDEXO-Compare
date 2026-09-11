@@ -433,3 +433,81 @@ describe("the body a sample is filed under", () => {
     expect(recorded[0]!.bodyNameNorm).not.toContain("22");
   });
 });
+
+/**
+ * A run that starts before the app does.
+ *
+ * The owner's sequence is Log, Sample, Analyse. Restoring the Log from the journal gives a session
+ * with a count and no anchors — `ScanOrganic` has no position to anchor — and the live path tested
+ * `anchors.length === 1` to decide whether a Sample advanced the run. With no anchors that matched
+ * neither branch, so the Sample was silently dropped: first and third scans registered, second did
+ * not.
+ */
+describe("advancing a run restored from the journal", () => {
+  const line = (scanType: string) =>
+    ({
+      event: "ScanOrganic",
+      timestamp: "2026-09-11T10:20:00Z",
+      ScanType: scanType,
+      Genus_Localised: "Bacterium",
+      Species_Localised: "Bacterium Acies",
+      WasLogged: false,
+      SystemAddress: 685719759473,
+      Body: 22,
+    }) as never;
+
+  const fix = {
+    latDeg: -12.5,
+    lonDeg: 32.5,
+    planetRadiusM: 5_246_376,
+    bodyName: "Smojai UJ-F b13-0 B 4",
+    headingDeg: 62,
+  };
+
+  async function session() {
+    const mod = await import("../src/server/exoOrganicTracker.js");
+    const { loadSpeciesDatabase, getCachedSpeciesDatabase } = await import("../src/server/snapshot.js");
+    loadSpeciesDatabase();
+    const store = {
+      exoOrganicTracker: null,
+      exoOrganicLastFix: fix,
+      footSessionBodyKey: null,
+      footSessionBodyNameNorm: null,
+      footTravelOdometerEnabled: false,
+      firstFootfallBodies: new Set<string>(),
+      surfaceSampleMarks: [],
+      surfaceShipMark: null,
+      addSurfaceSampleMark() {},
+      beginFootTravelOdometerSession() {},
+    } as never;
+    return { mod, store, db: getCachedSpeciesDatabase() };
+  }
+
+  it("counts the live Sample as the second scan", async () => {
+    const { mod, store, db } = await session();
+    // Boot: the journal says one Log happened, with no position.
+    mod.restoreOrganicSessionFromJournal(store, [line("Log")], process.cwd(), db);
+    expect(mod.buildExoOrganicOverlayDto(store, new Map())!.sampleCount).toBe(1);
+
+    // Live: the second scan arrives, and this one does have a position.
+    mod.ingestExoOrganicJournalLine(store, line("Sample"), fix, process.cwd(), db);
+    expect(mod.buildExoOrganicOverlayDto(store, new Map())!.sampleCount).toBe(2);
+  });
+
+  it("accepts the Analyse that ends it rather than wiping the run", async () => {
+    const { mod, store, db } = await session();
+    mod.restoreOrganicSessionFromJournal(store, [line("Log")], process.cwd(), db);
+    mod.ingestExoOrganicJournalLine(store, line("Sample"), fix, process.cwd(), db);
+    mod.ingestExoOrganicJournalLine(store, line("Analyse"), fix, process.cwd(), db);
+    const dto = mod.buildExoOrganicOverlayDto(store, new Map())!;
+    expect(dto.phase).toBe("celebrate");
+  });
+
+  it("still counts an ordinary run the app watched from the start", async () => {
+    const { mod, store, db } = await session();
+    mod.ingestExoOrganicJournalLine(store, line("Log"), fix, process.cwd(), db);
+    expect(mod.buildExoOrganicOverlayDto(store, new Map())!.sampleCount).toBe(1);
+    mod.ingestExoOrganicJournalLine(store, line("Sample"), fix, process.cwd(), db);
+    expect(mod.buildExoOrganicOverlayDto(store, new Map())!.sampleCount).toBe(2);
+  });
+});

@@ -98,8 +98,29 @@ function expireCelebrationIfNeeded(store: ExoOrganicJournalStore, projectRoot: s
   if (!t || t.phase !== "celebrate") return;
   if (Date.now() >= t.celebrationUntil) {
     wipeOrganicSampleSession(store, projectRoot);
-    store.exoOrganicLastFix = null;
+    /*
+      The live surface fix is **not** cleared with the session.
+
+      It belongs to the `Status.json` poll, which rewrites it every 150 ms, and it is now what the
+      radar draws from — so clearing it here made the radar blank for a frame and then reappear as
+      the next poll landed. Against a card whose colour also changed as the session ended, that read
+      as flashing. Owning a field means owning when it is emptied.
+    */
   }
+}
+
+/**
+ * How many scans of this plant are done.
+ *
+ * Two kinds, added: **anchors** are scans this app watched and therefore knows the position of, and
+ * **recoveredSamples** are scans the journal reported while the app was closed, which can be counted
+ * and never placed. A session restored at boot has only the second kind, so any rule written against
+ * `anchors.length` alone reads it as untouched — which is how a second scan came to be ignored.
+ *
+ * Capped at three, because that is the run.
+ */
+function effectiveSampleCount(t: ExoOrganicTrackerInternal): number {
+  return Math.min(3, (t.recoveredSamples ?? 0) + t.anchors.length);
 }
 
 function persistSoon(store: ExoOrganicJournalStore, projectRoot: string): void {
@@ -331,7 +352,7 @@ export function ingestExoOrganicJournalLine(
 
     if (t.bundleKey !== bundleKey) return;
 
-    if (t.anchors.length >= 2) {
+    if (effectiveSampleCount(t) >= 2) {
       wipeOrganicSampleSession(store, projectRoot);
       store.exoOrganicTracker = {
         bundleKey,
@@ -357,7 +378,15 @@ export function ingestExoOrganicJournalLine(
       return;
     }
 
-    if (t.anchors.length === 1) {
+    /*
+      `< 2`, not `=== 1`.
+
+      A session restored from the journal at boot knows a scan happened but has no anchor for it —
+      `ScanOrganic` carries no position, so there is nothing to anchor. With `=== 1` the next live
+      Sample matched neither this branch nor the `>= 2` restart above and was silently dropped: the
+      owner's second scan went unrecorded while the first and third worked.
+    */
+    if (effectiveSampleCount(t) < 2) {
       if (scanKind === "log") return;
       t.anchors.push({
         latDeg: fix.latDeg,
@@ -386,7 +415,7 @@ export function ingestExoOrganicJournalLine(
     const t = store.exoOrganicTracker;
     if (!t || t.phase !== "tracking") return;
     if (t.bundleKey !== bundleKey) return;
-    if (t.anchors.length < 2) {
+    if (effectiveSampleCount(t) < 2) {
       wipeOrganicSampleSession(store, projectRoot);
       return;
     }
@@ -584,8 +613,7 @@ export function buildExoOrganicOverlayDto(
     finalCredits,
     analyseWasLogged,
     footfallMult: ff,
-    // The journal may know of samples this app never saw the position of; they still count.
-    sampleCount: Math.max(anchors.length, t.recoveredSamples ?? 0),
+    sampleCount: effectiveSampleCount(t),
     trackingBodyKey: t.bodyKey,
     distToNearestSampleM,
     minimap,

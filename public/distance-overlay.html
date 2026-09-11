@@ -527,7 +527,23 @@
         requestAnimationFrame(reportHeight);
       }
 
+      /*
+        One source of truth at a time.
+
+        This polled `/api/state` every 320 ms *and* rendered every WebSocket push. Two streams of
+        snapshots built at different moments, and when they disagreed — which they do around the end
+        of a sample celebration, since building a snapshot is what retires it — the card alternated
+        between the two answers several times a second. The owner saw it as the radar flashing blue
+        and green.
+
+        The socket is the better source: it arrives when something actually changed. The poll stays
+        as the fallback for a socket that is not up, and stands down while one is delivering.
+      */
+      var lastWsAt = 0;
+      var WS_CONSIDERED_LIVE_MS = 2000;
+
       async function tick() {
+        if (Date.now() - lastWsAt < WS_CONSIDERED_LIVE_MS) return;
         try {
           var r = await fetch(api("/api/state"), { cache: "no-store" });
           if (!r.ok) throw new Error("HTTP " + r.status);
@@ -550,6 +566,7 @@
           try {
             var msg = JSON.parse(String(ev.data));
             if (msg.type === "state" && msg.payload) {
+              lastWsAt = Date.now();
               if (typeof msg.payload.port === "number" && msg.payload.port > 0) {
                 lastPort = msg.payload.port;
               }
