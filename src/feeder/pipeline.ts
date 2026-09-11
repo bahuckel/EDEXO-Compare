@@ -41,7 +41,13 @@ import {
   rawSystemsDir,
 } from "./paths.js";
 import { writeFeederStatusSnapshot } from "./statusSnapshot.js";
-import { looseSampleName, packSpeciesSamples, readPackedSamples } from "./samplePacks.js";
+import {
+  bodyIdentityKey,
+  bodySampleName,
+  packSpeciesSamples,
+  readSamplesByIdentity,
+  type SamplePackRecord,
+} from "./samplePacks.js";
 
 export interface FeederContext {
   store: FeederStore;
@@ -235,18 +241,6 @@ function checkpointPath(speciesLabel: string): string {
   return join(fetchCheckpointsDir(), `${speciesFileSlug(speciesLabel)}__species_fetch.json`);
 }
 
-async function readCheckpoint(speciesLabel: string): Promise<number> {
-  try {
-    const j = JSON.parse(await readFile(checkpointPath(speciesLabel), "utf8")) as SpeciesCheckpoint;
-    if (j?.version !== 1 || j.speciesLabel !== speciesLabel) return 0;
-    return typeof j.nextOccurrenceIndex === "number" && j.nextOccurrenceIndex >= 0
-      ? j.nextOccurrenceIndex
-      : 0;
-  } catch {
-    return 0;
-  }
-}
-
 async function writeCheckpoint(speciesLabel: string, nextOccurrenceIndex: number): Promise<void> {
   await mkdir(fetchCheckpointsDir(), { recursive: true });
   await writeFile(
@@ -269,23 +263,6 @@ function systemFileSlug(name: string): string {
   const h = createHash("sha1").update(name.trim().toLowerCase()).digest("hex").slice(0, 20);
   const safe = name.replace(/[^\w-]+/g, "_").slice(0, 60);
   return `${safe}__${h}`;
-}
-
-/** Reload the system→cache-file map from packs already on disk, so a resume re-fetches nothing. */
-async function seenSystemsFromSamples(outDir: string, upTo: number): Promise<Map<string, string>> {
-  const seen = new Map<string, string>();
-  for (let i = 0; i < upTo; i++) {
-    try {
-      const pack = JSON.parse(await readFile(join(outDir, `sample_${i}.json`), "utf8")) as {
-        systemName?: string;
-        systemCacheFile?: string;
-      };
-      if (pack.systemName && pack.systemCacheFile) seen.set(pack.systemName, pack.systemCacheFile);
-    } catch {
-      /* missing pack: the fetch loop will handle it */
-    }
-  }
-  return seen;
 }
 
 /**
@@ -331,23 +308,13 @@ function describeOccurrence(pack: {
  * `feeder pack` has its newest records loose. Missing this would make packing look like data loss
  * and send the next run back to EDSM for the whole species.
  */
-async function readSamplePack(
-  outDir: string,
-  index: number,
-  archive: Map<number, { systemName?: string; systemCacheFile?: string; context?: unknown }>,
-): Promise<HydratedOccurrence | null> {
-  try {
-    return describeOccurrence(
-      JSON.parse(await readFile(join(outDir, looseSampleName(index)), "utf8")) as {
-        systemName?: string;
-        systemCacheFile?: string;
-        context?: unknown;
-      },
-    );
-  } catch {
-    const archived = archive.get(index);
-    return archived ? describeOccurrence(archived) : null;
-  }
+function readSamplePack(
+  known: Map<string, SamplePackRecord>,
+  systemName: string,
+  bodyName: string,
+): HydratedOccurrence | null {
+  const rec = known.get(bodyIdentityKey(systemName, bodyName));
+  return rec ? describeOccurrence(rec) : null;
 }
 
 export interface HydrateResult {
@@ -392,9 +359,20 @@ export async function hydrateSpecies(
   await mkdir(outDir, { recursive: true });
   await mkdir(rawSystemsDir(), { recursive: true });
 
-  const start = Math.min(await readCheckpoint(speciesLabel), occ.length);
-  const seen = await seenSystemsFromSamples(outDir, start);
-  const archive = await readPackedSamples(outDir);
+  /*
+    Every pack this species already has, keyed by the body it describes.
+
+    Read once per species and consulted by identity, so an occurrence list that reordered under an
+    import still finds the work already done — and, critically, still notices the work not yet done.
+    Walking from 0 costs a map lookup per already-hydrated body and no network, which is a better
+    resume than the occurrence index ever was: a position is not a name.
+  */
+  const known = await readSamplesByIdentity(outDir);
+  const start = 0;
+  const seen = new Map<string, string>();
+  for (const rec of known.values()) {
+    if (rec.systemName && rec.systemCacheFile) seen.set(rec.systemName, rec.systemCacheFile);
+  }
   const result: HydrateResult = {
     speciesLabel,
     occurrences: occ.length,
@@ -412,7 +390,7 @@ export async function hydrateSpecies(
   for (let i = start; i < occ.length; i++) {
     const o = occ[i]!;
     try {
-      const existing = await readSamplePack(outDir, i, archive);
+      const existing = readSamplePack(known, o.systemName, o.bodyName);
       if (existing) {
         if (existing.hasTargetBody) result.fetched++;
         else result.unmatched++;
@@ -447,7 +425,7 @@ export async function hydrateSpecies(
 
       const context = extractPlanetContext(sysJson, o.bodyName);
       await writeFile(
-        join(outDir, looseSampleName(i)),
+        join(outDir, bodySampleName(o.systemName, o.bodyName)),
         JSON.stringify(
           {
             systemName: o.systemName,

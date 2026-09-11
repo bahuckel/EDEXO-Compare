@@ -81,6 +81,79 @@ export function looseSampleName(index: number): string {
 }
 
 /**
+ * A body's identity, and why a pack is keyed on it rather than on its position.
+ *
+ * Packs used to be addressed purely by occurrence index — `sample_1424.json` meant "the 1,424th
+ * row of this species' occurrence list". That list is `ORDER BY display_name, display_body`, so it
+ * is **alphabetical, not append-only**: importing one sighting for *Hypua Pruae* shifts every
+ * occurrence after it by one, and every archived pack from that point on silently comes to describe
+ * a different body.
+ *
+ * Two things went wrong at once when that happened, and both were invisible:
+ *
+ * - A body inserted mid-alphabet was never hydrated. Its index already had a pack — somebody
+ *   else's — so the loop counted it "reused" and moved on. 1,421 freshly cached systems were read
+ *   zero times because of this.
+ * - The profile was built from a set that no longer matched the occurrence list, while
+ *   `sampleCount` counted the list. Priors moved, evidence did not, and the model measurably got
+ *   worse after an import that should only have helped.
+ *
+ * The identity is the pair the corpus already records on every pack, so existing archives migrate
+ * by being read — no refetch, no loss.
+ */
+export function bodyIdentityKey(systemName: string, bodyName: string): string {
+  return `${systemName.trim().toLowerCase()}\u0000${bodyName.trim().toLowerCase()}`;
+}
+
+const BODY_PREFIX = "body_";
+
+/** Stable filename for a pack, derived from the body it describes rather than where it sorts. */
+export function bodySampleName(systemName: string, bodyName: string): string {
+  const h = createHash("sha1").update(bodyIdentityKey(systemName, bodyName)).digest("hex").slice(0, 24);
+  return `${BODY_PREFIX}${h}${LOOSE_SUFFIX}`;
+}
+
+export function isBodySampleName(fileName: string): boolean {
+  return fileName.startsWith(BODY_PREFIX) && fileName.endsWith(LOOSE_SUFFIX);
+}
+
+/**
+ * Every pack a species has, keyed by the body it describes.
+ *
+ * Reads the archive and both filename generations, so a corpus mid-migration answers correctly:
+ * a pack written before this change is found by its contents, exactly like one written after.
+ * Records with no identity recorded are skipped rather than guessed at — there is nothing to key
+ * them on, and inventing one would resurrect the bug this replaces.
+ */
+export async function readSamplesByIdentity(
+  speciesDir: string,
+): Promise<Map<string, SamplePackRecord>> {
+  const out = new Map<string, SamplePackRecord>();
+  const add = (rec: SamplePackRecord | undefined): void => {
+    if (!rec?.systemName || !rec.bodyName) return;
+    out.set(bodyIdentityKey(rec.systemName, rec.bodyName), rec);
+  };
+
+  for (const rec of (await readPackedSamples(speciesDir)).values()) add(rec);
+
+  let names: string[] = [];
+  try {
+    names = await readdir(speciesDir);
+  } catch {
+    return out;
+  }
+  for (const name of names) {
+    if (looseSampleIndex(name) === null && !isBodySampleName(name)) continue;
+    try {
+      add(JSON.parse(await readFile(join(speciesDir, name), "utf8")) as SamplePackRecord);
+    } catch {
+      /* one unreadable pack is one sighting, not a species */
+    }
+  }
+  return out;
+}
+
+/**
  * Every record in a species' archive, keyed by occurrence index.
  *
  * Returns an empty map when there is no archive, so callers never branch on its existence — a
