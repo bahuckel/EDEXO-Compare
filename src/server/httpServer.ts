@@ -142,6 +142,21 @@ export function createHttpServer(opts: {
   /** POST /api/settings/exo-map-tiers — JSON { plusMinCr: number, plusPlusMinCr: number } */
   setExoMapTierThresholds?: (plusMinCr: number, plusPlusMinCr: number) => void;
   /**
+   * POST /api/ui/open-external — open one of this app's own views in the system browser.
+   *
+   * The launcher's "Open exobiology UI" used to navigate the launcher window itself, which is the
+   * one place the commander cannot get back from. The owner asked for a choice, with the browser
+   * as the default.
+   *
+   * The view is an **enum, not a URL**. The server builds the address from its own port, so this
+   * can never be talked into launching something else — a route that takes a URL and hands it to
+   * the shell is an open redirect with a browser on the end of it.
+   *
+   * Loopback only, for the same reason as the miss log: the window opens on the PC running the
+   * app, so a phone pressing this would open something on a screen it cannot see.
+   */
+  openAppView?: (view: "app" | "phone") => { ok: boolean; error?: string };
+  /**
    * POST /api/settings/open-miss-log — hand `edexo-outliers.jsonl` to the desktop.
    *
    * **Loopback only**, and not because the file is a secret to the commander: it is *their* miss log
@@ -1016,6 +1031,26 @@ export function createHttpServer(opts: {
     opts.setExoMapTierThresholds(plus, pp);
     opts.scheduleBroadcast?.();
     res.json({ ok: true });
+  });
+
+  app.post("/api/ui/open-external", (req, res) => {
+    if (typeof opts.openAppView !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    if (!isLoopbackAddress(req.socket.remoteAddress)) {
+      res.status(403).json({
+        ok: false,
+        error: "A browser opens on the PC running the app, so it can only be opened from there.",
+      });
+      return;
+    }
+    const view = req.body?.view;
+    if (view !== "app" && view !== "phone") {
+      res.status(400).json({ ok: false, error: 'Send JSON { "view": "app" | "phone" }.' });
+      return;
+    }
+    res.json(opts.openAppView(view));
   });
 
   app.post("/api/settings/open-miss-log", (req, res) => {

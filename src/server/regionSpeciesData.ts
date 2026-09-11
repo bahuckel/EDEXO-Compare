@@ -86,6 +86,21 @@ export function regionalPresence(
   return { ...verdict, regionName: row.name };
 }
 
+/**
+ * Drop the cached file so the next read comes off disk.
+ *
+ * Wired into the launcher's **Refresh exomastery**, which is the one control that promises a
+ * commander their edits to `data/` have been picked up. Every module-level cache under `data/` has
+ * to be listed there or that promise is quietly false for the file it holds — which is exactly what
+ * happened to this one until the owner asked whether the button still worked.
+ */
+export function clearRegionSpeciesCache(): void {
+  cached = undefined;
+  // The vocabulary is derived from the file, so it must go with it or the next read keeps the old
+  // species list and silently answers "unknown" for anything newly added.
+  cachedVocabulary = null;
+}
+
 /** Test seam — the file is process-wide, so a test that swaps it must be able to put it back. */
 export function setRegionSpeciesForTests(v: RegionSpeciesFile | null | undefined): void {
   cached = v;

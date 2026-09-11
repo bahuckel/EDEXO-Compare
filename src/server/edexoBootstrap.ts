@@ -60,6 +60,9 @@ import {
   reapplySpeciesDataDirDiscoveryFromDisk,
 } from "./paths.js";
 import { ingestExoOrganicJournalLine } from "./exoOrganicTracker.js";
+import { clearEddsnColourVariantsCache } from "./eddsnColourVariants.js";
+import { clearPhotoCreditsCache } from "./photoCredits.js";
+import { clearRegionSpeciesCache } from "./regionSpeciesData.js";
 import { perfTime, startPerfReporter } from "./perf.js";
 import { loadOrganicSampleSessionFromDisk } from "./organicSampleSessionFile.js";
 import {
@@ -904,6 +907,16 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       store.setExoMapTierThresholds(plus, pp);
       persistUserPreferences();
     },
+    /*
+      The launcher's "open in browser" and "phone view". The path is chosen here from a two-value
+      enum rather than taken from the caller, so the route cannot be used to launch anything but
+      this app's own views.
+    */
+    openAppView: (view) => {
+      const url = view === "phone" ? `http://127.0.0.1:${port}/?screen=triage` : `http://127.0.0.1:${port}/`;
+      openUrlInBrowser(url);
+      return { ok: true };
+    },
     openExoMissLog: () => {
       const file = resolveExoOutlierLogPath();
       // The panel that offers this is hidden at zero misses, so a missing file means the log was
@@ -913,11 +926,26 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       openLocalFile(file);
       return { ok: true };
     },
+    /*
+      Everything the app holds in memory from `data/`, dropped together.
+
+      This is the launcher's "Refresh exomastery", and it makes one promise: the files on disk are
+      re-read. Three caches added later — the ED-DSN colour tables, the photo credits manifest and
+      the region x species table — were never listed here, so editing any of those files and
+      pressing the button did nothing at all, silently. The owner asked whether it still worked
+      after a session of changes; it did not, for those three.
+
+      Anything that memoises a file under `data/` belongs on this list. There is no mechanism that
+      enforces that, which is why it is written down.
+    */
     reloadExomastery: () => {
       retargetSpeciesDataWatcherIfNeeded();
       clearExomasteryProfileCache();
       clearSpeciesPhotoCache();
       clearGenusPhotosFolderCache();
+      clearEddsnColourVariantsCache();
+      clearPhotoCreditsCache();
+      clearRegionSpeciesCache();
       loadSpeciesDatabase();
       pushFlush();
     },

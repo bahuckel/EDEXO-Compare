@@ -226,6 +226,79 @@
           inset 0 1px 0 rgba(255, 255, 255, 0.2),
           0 8px 24px rgba(0, 0, 0, 0.45);
       }
+      /*
+       * The split button. Two buttons that read as one: the big half acts, the narrow half chooses.
+       * The clip-path corner belongs to the pair, not to each of them, so the halves square off the
+       * edges they share and only the outer two keep the cut.
+       */
+      .btn-split {
+        position: relative;
+        display: flex;
+        width: 100%;
+      }
+      .btn-split .btn-split-main {
+        flex: 1 1 auto;
+        width: auto;
+        clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%, 0 14px);
+        border-right: none;
+      }
+      .btn-split .btn-split-arrow {
+        flex: 0 0 46px;
+        width: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 0;
+        font-size: 1rem;
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+        border-left: 1px solid rgba(8, 8, 10, 0.28);
+      }
+      .btn-split-menu {
+        position: absolute;
+        z-index: 40;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        background: #0c0c11;
+        border: 1px solid rgba(255, 140, 70, 0.5);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+      }
+      .btn-split-menu button {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
+        padding: 10px 14px;
+        background: transparent;
+        border: 0;
+        color: #e8e8ef;
+        font-family: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .btn-split-menu button + button {
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .btn-split-menu button:hover {
+        background: rgba(255, 140, 70, 0.14);
+      }
+      .btn-split-menu strong {
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.76rem;
+        letter-spacing: 0.08em;
+      }
+      .btn-split-menu span {
+        font-family: "Rajdhani", system-ui, sans-serif;
+        font-size: 0.9rem;
+        opacity: 0.7;
+      }
+      /* The chosen one, so the menu says what the button will do before it is pressed. */
+      .btn-split-menu button[aria-current="true"] strong::after {
+        content: " ✓";
+        color: var(--ed-orange);
+      }
       .btn:hover {
         filter: brightness(1.06);
         transform: translateY(-1px);
@@ -678,12 +751,49 @@
         </div>
 
         <div class="launcher-actions">
-          <a class="btn" id="btnMainUi" href="/">
-            <span class="btn-lines">
-              <strong>Open exobiology UI</strong>
-              <span class="subline">This device — same origin as this launcher</span>
-            </span>
-          </a>
+          <!--
+            A split button: the big half does the chosen thing, the arrow chooses it.
+
+            It used to be one link that navigated *this* window to the app, which is the one place a
+            commander cannot get back from without restarting the launcher. The owner asked for the
+            choice, with the browser as the default: "button should have an integrated a drop down,
+            making you choose whatever you want to open, default should be in browser, second,
+            dedicated window like in the moment. Third, the Phone view."
+
+            The choice is remembered, so the second launch does what the first one taught it.
+          -->
+          <div class="btn-split" id="mainUiSplit">
+            <button type="button" class="btn btn-split-main" id="btnMainUi">
+              <span class="btn-lines">
+                <strong id="btnMainUiTitle">Open exobiology UI</strong>
+                <span class="subline" id="btnMainUiSub">In your browser</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-split-arrow"
+              id="btnMainUiMenu"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-label="Choose where to open the exobiology UI"
+            >
+              <span aria-hidden="true">▾</span>
+            </button>
+            <div class="btn-split-menu" id="mainUiMenu" role="menu" hidden>
+              <button type="button" role="menuitem" data-open-mode="browser">
+                <strong>In your browser</strong>
+                <span>Your default browser, on this PC</span>
+              </button>
+              <button type="button" role="menuitem" data-open-mode="window">
+                <strong>This window</strong>
+                <span>Replaces the launcher until you close it</span>
+              </button>
+              <button type="button" role="menuitem" data-open-mode="phone">
+                <strong>Phone view</strong>
+                <span>Read-only triage, sized for a phone or tablet</span>
+              </button>
+            </div>
+          </div>
           <button type="button" class="btn secondary" id="btnOptions">
             <span class="btn-lines">
               <strong>Journal folder</strong>
@@ -909,6 +1019,10 @@
         const ovDataValue = document.getElementById("ovDataValue");
         const launcherActionMsg = document.getElementById("launcherActionMsg");
         const btnMainUi = document.getElementById("btnMainUi");
+        const btnMainUiMenu = document.getElementById("btnMainUiMenu");
+        const mainUiMenu = document.getElementById("mainUiMenu");
+        const mainUiSplit = document.getElementById("mainUiSplit");
+        const btnMainUiSub = document.getElementById("btnMainUiSub");
         const btnOptions = document.getElementById("btnOptions");
         const modal = document.getElementById("modal");
         const journalInput = document.getElementById("journalInput");
@@ -969,6 +1083,8 @@
         var LS_SEC_PUBLIC = "edexo.launcher.sec.public";
         var LS_REVEAL_LAN = "edexo.launcher.reveal.lan";
         var LS_REVEAL_PUBLIC = "edexo.launcher.reveal.public";
+        /* Where "Open exobiology UI" opens. Defaults to the browser, per the owner. */
+        var LS_OPEN_MODE = "edexo.launcher.openMode";
         var lastPort = 7111;
         var lastConnectData = null;
 
@@ -1275,7 +1391,6 @@
           }
 
           renderConnectUrls(data);
-          btnMainUi.href = location.origin + "/";
           journalInput.value = data.journalDir || "";
         }
 
@@ -1454,6 +1569,111 @@
             }
           });
         }
+
+        /*
+          Where "Open exobiology UI" opens (owner's launcher request).
+
+          Three destinations, one remembered choice, browser by default. The old button navigated
+          this window to the app, which left no way back to the launcher short of restarting it —
+          that is still offered, as "This window", but it is no longer the only option.
+
+          Opening the system browser needs the server: window.open inside Electron makes another
+          Electron window, not a browser. The route takes a two-value enum rather than a URL, so it
+          can only ever open this app's own views.
+        */
+        var OPEN_MODES = {
+          browser: { sub: "In your browser", view: "app" },
+          window: { sub: "In this window", view: null },
+          phone: { sub: "Phone view — read-only triage", view: "phone" },
+        };
+
+        function readOpenMode() {
+          try {
+            var v = localStorage.getItem(LS_OPEN_MODE);
+            if (v && OPEN_MODES[v]) return v;
+          } catch (e) {
+            /* private window, or storage disabled — the default is still correct */
+          }
+          return "browser";
+        }
+
+        function applyOpenMode(mode) {
+          btnMainUiSub.textContent = OPEN_MODES[mode].sub;
+          var items = mainUiMenu.querySelectorAll("button[data-open-mode]");
+          for (var i = 0; i < items.length; i++) {
+            items[i].setAttribute("aria-current", items[i].dataset.openMode === mode ? "true" : "false");
+          }
+        }
+
+        function setOpenMode(mode) {
+          try {
+            localStorage.setItem(LS_OPEN_MODE, mode);
+          } catch (e) {
+            /* the choice still applies for this session */
+          }
+          applyOpenMode(mode);
+        }
+
+        function closeOpenMenu() {
+          mainUiMenu.hidden = true;
+          btnMainUiMenu.setAttribute("aria-expanded", "false");
+        }
+
+        function openChosenUi() {
+          var mode = readOpenMode();
+          if (mode === "window") {
+            location.href = location.origin + "/";
+            return;
+          }
+          launcherActionMsg.className = "msg-launcher";
+          launcherActionMsg.textContent = "";
+          fetch(apiUrl("/api/ui/open-external"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ view: OPEN_MODES[mode].view }),
+          })
+            .then(function (r) {
+              return r.json().then(function (j) {
+                return { r: r, j: j };
+              });
+            })
+            .then(function (x) {
+              if (!x.r.ok || !x.j.ok) throw new Error((x.j && x.j.error) || x.r.statusText);
+            })
+            .catch(function (e) {
+              /*
+                Falling back rather than failing: on a build with no such route the commander still
+                gets their UI, in a new tab, which is the nearest honest thing to what they asked
+                for.
+              */
+              window.open(mode === "phone" ? "/?screen=triage" : "/", "_blank", "noopener");
+              launcherActionMsg.className = "msg-launcher";
+              launcherActionMsg.textContent = "Opened in a new tab (" + String(e && e.message ? e.message : e) + ")";
+            });
+        }
+
+        applyOpenMode(readOpenMode());
+        btnMainUi.addEventListener("click", openChosenUi);
+        btnMainUiMenu.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          var open = mainUiMenu.hidden;
+          mainUiMenu.hidden = !open;
+          btnMainUiMenu.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        mainUiMenu.addEventListener("click", function (ev) {
+          var item = ev.target.closest("button[data-open-mode]");
+          if (!item) return;
+          setOpenMode(item.dataset.openMode);
+          closeOpenMenu();
+          // Choosing is also asking for it: nobody opens this menu to browse it.
+          openChosenUi();
+        });
+        document.addEventListener("click", function (ev) {
+          if (!mainUiMenu.hidden && !mainUiSplit.contains(ev.target)) closeOpenMenu();
+        });
+        document.addEventListener("keydown", function (ev) {
+          if (ev.key === "Escape" && !mainUiMenu.hidden) closeOpenMenu();
+        });
 
         btnExomasteryRefresh.addEventListener("click", function () {
           launcherActionMsg.className = "msg-launcher";

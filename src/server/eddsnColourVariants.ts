@@ -74,6 +74,18 @@ export function colourVariantRuleFor(
   return { source: "star", map: { ...fills, ...base.map } };
 }
 
+/**
+ * Drop the cached file so the next read comes off disk.
+ *
+ * Wired into the launcher's **Refresh exomastery**, which is the one control that promises a
+ * commander their edits to `data/` have been picked up. Every module-level cache under `data/` has
+ * to be listed there or that promise is quietly false for the file it holds — which is exactly what
+ * happened to this one until the owner asked whether the button still worked.
+ */
+export function clearEddsnColourVariantsCache(): void {
+  cached = undefined;
+}
+
 /** Test seam — the file is process-wide, so a test that swaps it must be able to put it back. */
 export function setEddsnColourVariantsForTests(v: ColourVariantFile | null | undefined): void {
   cached = v;
