@@ -1459,6 +1459,13 @@ export interface AppSnapshot {
    * `keyHint` is the key's last four characters and nothing else — enough to recognise, useless to
    * anyone who reads it. The key itself never leaves the server.
    */
+  /**
+   * Sending discoveries to Canonn Research.
+   *
+   * `sent` / `failed` are this session's tally, so the option can say what it has actually done
+   * rather than only what it is set to.
+   */
+  canonnUpload: { enabled: boolean; sent: number; failed: number };
   edsmAutoFetch: {
     enabled: boolean;
     commanderName: string | null;

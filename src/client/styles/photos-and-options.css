@@ -199,10 +199,28 @@
  * settings prose. A control that starts sending your position to a third party should look different
  * from a control that changes a temperature unit.
  */
-.options-modal .options-edsm-privacy {
+.options-modal .options-edsm-privacy,
+.options-modal .options-canonn-privacy {
   border-left: 3px solid var(--ed-orange, #ff5c1a);
   padding-left: 0.75rem;
   color: var(--fg, inherit);
+}
+
+/*
+ * The Canonn switch, and the tally under it.
+ *
+ * The checkbox sits below the privacy rule rather than beside the heading on purpose: the order on
+ * the page is the order of the decision — what it does, what it costs you, then the control.
+ */
+.options-modal .options-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.options-modal .options-canonn-tally {
+  margin-top: 0.45rem;
 }
 
 .options-modal .options-edsm-stored {

@@ -77,6 +77,16 @@ after you have already read an empty panel. The key is stored on your
 machine in its own file beside your settings, never in the settings file, and **Forget key** deletes
 it and switches auto-fetch off.
 
+## Canonn
+
+The app can send your discoveries to [Canonn Research](https://canonn.science/), the community
+science archive most of the exobiology knowledge in this project came from.
+
+This is **off by default**. Turning it on sends organic scans, the sales that date them, codex
+entries and whatever else Canonn is currently asking for — **with your CMDR name attached**, because
+their archive is keyed on it, and with the journal line exactly as the game wrote it. There is no
+anonymous form of it. Only live events go: switching it on never uploads journals you already have.
+
 There is no telemetry, no analytics and no update check. See [site/privacy.html](site/privacy.html).
 
 ## Running it

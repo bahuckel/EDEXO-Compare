@@ -2691,6 +2691,79 @@ function secondScreenUrl(lanUrl: string): string {
   }
 }
 
+/**
+ * Contributing discoveries back to Canonn Research.
+ *
+ * The privacy line is the point of this panel, not a footnote on it. Canonn's endpoint takes the
+ * journal line verbatim with the commander's name attached — there is no anonymous form and no key
+ * to scope it down — so the switch itself is the whole consent and it has to say so before it is
+ * flipped, not after.
+ */
+function CanonnUploadPanel({ state }: { state: AppSnapshot["canonnUpload"] }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const setEnabled = async (enabled: boolean) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await fetch("/api/settings/canonn-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      const j = (await r.json()) as { ok: boolean; error?: string };
+      if (!j.ok) setMsg(j.error ?? "Could not change the setting.");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Request failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="options-canonn options-meta-block">
+      <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
+        <strong>Send discoveries to Canonn</strong> — the community science archive this app's rules
+        came from. Organic scans, the sales that date them, codex entries, and whatever else Canonn is
+        currently asking for.
+      </p>
+
+      <p className="options-canonn-privacy dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
+        <strong>Your CMDR name is shared.</strong> Canonn's archive is keyed on it, and the journal
+        line is sent exactly as the game wrote it. There is no anonymous form of this. Only live
+        events go — turning it on never uploads your existing journals — and it is off until you turn
+        it on.
+      </p>
+
+      <label className="options-toggle">
+        <input
+          type="checkbox"
+          checked={state.enabled}
+          disabled={busy}
+          onChange={(ev) => void setEnabled(ev.target.checked)}
+        />
+        <span>Send my discoveries to Canonn</span>
+      </label>
+
+      {state.enabled && state.sent + state.failed > 0 ? (
+        <p className="dim options-canonn-tally">
+          This session: {state.sent.toLocaleString()} sent
+          {state.failed > 0 ? `, ${state.failed.toLocaleString()} not accepted` : ""}.
+        </p>
+      ) : null}
+
+      {msg ? <p className="warn tiny">{msg}</p> : null}
+
+      <p className="dim tiny" style={{ marginTop: "0.5rem" }}>
+        <a href="https://canonn.science/" target="_blank" rel="noreferrer noopener">
+          canonn.science
+        </a>
+      </p>
+    </section>
+  );
+}
+
 function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) {
   const [commanderName, setCommanderName] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -3092,6 +3165,7 @@ function MapOptionsModal({
           <ExoMissLogPanel outliers={snap.exoOutliers} />
 
           <EdsmAutoFetchPanel state={snap.edsmAutoFetch} />
+          <CanonnUploadPanel state={snap.canonnUpload} />
 
           <section className="options-journal-history options-meta-block">
             <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>

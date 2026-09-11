@@ -616,6 +616,25 @@ export class GameStateStore {
   edsmAutoFetchEnabled = false;
 
   /**
+   * Send discoveries to Canonn Research (§CAPI).
+   *
+   * **Default off**, and unlike the EDSM toggle there is no second key to hide behind: Canonn's
+   * endpoint is unauthenticated and takes the journal line verbatim with the commander's name on it.
+   * So the switch itself is the whole consent, and the option that offers it says so in those words.
+   */
+  canonnUploadEnabled = false;
+
+  /**
+   * This session's tally of what actually went to Canonn.
+   *
+   * Not persisted: a count that survives a restart says nothing about what the commander is doing
+   * now, and the option's job is to show that the switch is doing something rather than to keep
+   * a lifetime score.
+   */
+  canonnUploadSent = 0;
+  canonnUploadFailed = 0;
+
+  /**
    * How much journal history to merge: all logs in the folder, or a rolling window from “now”.
    * Separately persisted in user settings JSON (not part of the journal merge payload).
    */
@@ -689,6 +708,15 @@ export class GameStateStore {
 
   setEdsmAutoFetchEnabled(value: boolean): void {
     this.edsmAutoFetchEnabled = value;
+  }
+
+  setCanonnUploadEnabled(value: boolean): void {
+    this.canonnUploadEnabled = value;
+  }
+
+  recordCanonnUploadResult(ok: boolean): void {
+    if (ok) this.canonnUploadSent++;
+    else this.canonnUploadFailed++;
   }
 
   setJournalHistoryPreset(value: JournalHistoryPreset): void {

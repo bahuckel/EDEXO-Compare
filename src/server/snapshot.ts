@@ -1290,6 +1290,11 @@ export function buildSnapshot(
     organicPendingLines,
     fssAllBodiesFoundNoBio,
     includeBacteriumInSearch: store.includeBacteriumInSearch,
+    canonnUpload: {
+      enabled: store.canonnUploadEnabled,
+      sent: store.canonnUploadSent,
+      failed: store.canonnUploadFailed,
+    },
     edsmAutoFetch: {
       enabled: store.edsmAutoFetchEnabled,
       ...edsmCredentialsStatus(),

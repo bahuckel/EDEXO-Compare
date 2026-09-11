@@ -31,6 +31,7 @@ import {
   saveEdsmCredentials,
 } from "./edsmCredentials.js";
 import { EdsmAutoFetcher } from "./edsmAutoFetch.js";
+import { CANONN_CLIENT_VERSION, CanonnUploader } from "./canonnUpload.js";
 import { lanUrlWithKey, loadOrCreateLanKey } from "./lanAuth.js";
 import { buildEncyclopediaExomasteryPlanetsPayload } from "./exomasteryEdsmEncyclopedia.js";
 import {
@@ -325,6 +326,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             // The toggle only. The EDSM key lives in its own file (edsmCredentials.ts) precisely so
             // it never lands in a settings JSON that gets pasted into bug reports.
             edsmAutoFetchEnabled: store.edsmAutoFetchEnabled,
+            canonnUploadEnabled: store.canonnUploadEnabled,
           },
           null,
           2,
@@ -344,6 +346,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     footTravelOdometerEnabled?: boolean;
     journalHistoryPreset?: string;
     edsmAutoFetchEnabled?: boolean;
+    canonnUploadEnabled?: boolean;
   };
 
   function applyPersistedUserPrefs(j: PersistedUserPrefs): void {
@@ -368,6 +371,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     if (j.edsmAutoFetchEnabled === true && readEdsmCredentials()) {
       store.setEdsmAutoFetchEnabled(true);
     }
+    // Restored as written. There is no second factor to check the way the EDSM key is checked —
+    // the switch is the whole consent — so a settings file that says on means the commander said on.
+    if (j.canonnUploadEnabled === true) store.setCanonnUploadEnabled(true);
   }
 
   function tryReadUserPrefs(file: string): PersistedUserPrefs | null {
@@ -539,6 +545,33 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   });
 
   /**
+   * Contributing discoveries back to Canonn, when the commander has asked for it.
+   *
+   * Off unless the toggle says otherwise, and fed only from the live tail — the historical replay
+   * calls `store.apply` directly, which is what keeps switching it on from uploading four years of
+   * journals in one burst. See `canonnUpload.ts` for what is sent and what the commander gives up.
+   */
+  const canonnUploader = new CanonnUploader({
+    isEnabled: () => store.canonnUploadEnabled,
+    cmdrName: () => store.commanderName,
+    onResult: (ok) => store.recordCanonnUploadResult(ok),
+    gameState: () => {
+      const addr = store.currentSystemAddress;
+      const pos = addr != null ? store.systemPositions.get(addr) : undefined;
+      const name = store.currentSystem?.trim();
+      if (!name) return null;
+      return {
+        systemName: name,
+        ...(pos ? { systemCoordinates: [pos.x, pos.y, pos.z] as [number, number, number] } : {}),
+        clientVersion: CANONN_CLIENT_VERSION,
+        isBeta: false,
+        platform: "PC" as const,
+      };
+    },
+  });
+  if (store.canonnUploadEnabled) void canonnUploader.loadWhitelist();
+
+  /**
    * `StartJump` is the countdown and names the destination; the rest are arrivals.
    *
    * Asking at the countdown spends the hyperspace transit on the request instead of making the
@@ -566,6 +599,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         // Live lines only. The historical replay calls store.apply directly, which is what keeps a
         // first run from asking EDSM about every system the commander has ever visited.
         maybeAutoFetchOnArrival(line);
+        canonnUploader.offer(line);
         store.applyLiveNavRoute(readLiveNavRouteWaypoints());
         let statusRaw: string | null = null;
         try {
@@ -950,6 +984,14 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       }
       store.setEdsmAutoFetchEnabled(enabled);
       persistUserPreferences();
+      return { ok: true };
+    },
+    setCanonnUploadEnabled: (enabled) => {
+      store.setCanonnUploadEnabled(enabled);
+      persistUserPreferences();
+      // Asked for the first time it is switched on, not at boot: a commander who never turns this
+      // on should not cost Canonn a request.
+      if (enabled) void canonnUploader.loadWhitelist();
       return { ok: true };
     },
     scheduleBroadcast: push,
