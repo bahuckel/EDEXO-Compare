@@ -132,8 +132,20 @@ const PROJECTIONS: Projection[] = [
   },
 ];
 
-const VIEW_W = 520;
-const VIEW_H = 380;
+/**
+ * The plot's own coordinate space, which is not pixels.
+ *
+ * The svg scales to the width it is given, so these set the *aspect* and the units everything else
+ * is expressed in. They doubled when the two projections stopped sitting side by side and each took
+ * the full width of the page: at 520 x 380 stretched across 1400 px, every stroke and marker radius
+ * was being blown up by 2.7x, so a 1 px line drew as nearly 3. Wider units keep the linework the
+ * size it was designed at.
+ *
+ * The shape is deliberately landscape and flatter than before: the galaxy is 100 000 ly across and
+ * about 2 000 thick, and the top view is the one anybody actually reads.
+ */
+const VIEW_W = 1040;
+const VIEW_H = 560;
 const PAD = 28;
 
 export interface CommanderPosition {
@@ -306,6 +318,7 @@ export function GalaxySectorMap({
   }, [file, filterTaxa]);
 
   const maxBodies = useMemo(() => Math.max(1, ...shown.map((r) => r.totals.bodies)), [shown]);
+  const searchHitCount = search?.hits.length ?? 0;
 
   /**
    * The tier for each shown sector, computed once here instead of once per marker per projection.
@@ -497,6 +510,7 @@ export function GalaxySectorMap({
             projection={p}
             rows={lodRows}
             regionGroups={regionGroups}
+            allCells={file.cells}
             onOpenRegion={setOpenRegion}
             maxBodies={maxBodies}
             highlight={searchHit}
@@ -602,6 +616,45 @@ export function GalaxySectorMap({
             </li>
           );
         })}
+        {/*
+          The two layers drawn *over* the survey, which had no legend at all.
+
+          The owner saw both and could not tell what either was: *"legend for the 'moon like'
+          imperfect orange circles on the map and the purple ones"*. A mark nobody can name is
+          noise, however carefully it was chosen — and these two are the only marks on the map that
+          are not evidence about a place, which is exactly the thing a reader has to be told.
+        */}
+        <li
+          className="galaxy-map__legend--layer"
+          title="Systems where you found biology and never collected it, sized by how many bodies are unfinished there."
+        >
+          <span className="galaxy-map__swatch galaxy-map__swatch--target" aria-hidden="true" />
+          Your unfinished systems
+        </li>
+        {/*
+          The dashed ones are the marks the owner described as "moon like" — a broken ring rather
+          than a disc. They are not a different kind of thing, they are the same thing with one fact
+          missing, so they sit beside it in the legend rather than somewhere else.
+        */}
+        <li
+          className="galaxy-map__legend--layer"
+          title="The same, where the journal never reported footfall. The biology is recorded; whether the 5x first-footfall bonus is still intact is not, so the ring is left open."
+        >
+          <span
+            className="galaxy-map__swatch galaxy-map__swatch--target-unverified"
+            aria-hidden="true"
+          />
+          … with footfall unconfirmed
+        </li>
+        {searchHitCount > 0 ? (
+          <li
+            className="galaxy-map__legend--layer"
+            title="Systems the search above found. They are the nearest matches to you, so at galaxy scale they cluster tightly around your position. Click one to open the sector it is in."
+          >
+            <span className="galaxy-map__swatch galaxy-map__swatch--hit" aria-hidden="true" />
+            Search results ({searchHitCount})
+          </li>
+        ) : null}
       </ul>
 
       <p className="galaxy-map__caveat">
@@ -617,6 +670,7 @@ function SectorPlot({
   projection,
   rows,
   regionGroups,
+  allCells,
   onOpenRegion,
   maxBodies,
   highlight,
@@ -638,6 +692,8 @@ function SectorPlot({
    * it always did. Detail is the thing that degrades, never correctness.
    */
   regionGroups: RegionGroup<SectorMapCell>[] | null;
+  /** Every sector the file holds, so a mark can find its sector even when the filter hides it. */
+  allCells: SectorMapCell[];
   onOpenRegion: (g: RegionGroup<SectorMapCell> | null) => void;
   maxBodies: number;
   highlight: SectorMapCell | null;
@@ -687,7 +743,19 @@ function SectorPlot({
    * the sector underneath — they carry a tooltip and no handler, so the click simply vanished.
    * Reported as "I cannot click the sector which is under it".
    */
-  const cellByKey = useMemo(() => new Map(rows.map((r) => [sectorCellKey(r.cell), r.cell])), [rows]);
+  /**
+   * Every sector in the file, not only the ones the current filter draws.
+   *
+   * Built from `allCells` because a mark drawn from its own coordinates — a backlog system, a search
+   * hit — needs the sector underneath it whether or not that sector is currently on the map. When
+   * this was built from the filtered rows, searching for a species narrowed the sectors and the
+   * diamonds sitting outside them silently stopped being clickable. Reported as "I cannot click
+   * them".
+   */
+  const cellByKey = useMemo(
+    () => new Map(allCells.map((c) => [sectorCellKey(c), c])),
+    [allCells],
+  );
 
   /**
    * Regions or sectors, decided by how far in the commander has zoomed (A3).
@@ -791,6 +859,7 @@ function SectorPlot({
       </div>
 
       <svg
+        ref={vp.svgRef}
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         role="img"
         aria-label={`${projection.label} sector map`}
@@ -1059,7 +1128,15 @@ ${bodies} bodies recorded here${
                       ...(h.distanceLy == null
                         ? []
                         : [`${Math.round(h.distanceLy).toLocaleString("en-US")} ly away`]),
-                      ...(owner ? [`click to open ${owner.name ?? sectorCellKey(owner)}`] : []),
+                      /*
+                        A hit can land in a sector this map has no cell for: the sector file only
+                        covers where the feeder corpus has data, while the search runs over 5.3
+                        million systems. Saying so beats a mark that quietly does nothing when
+                        clicked — which is how the missing click was reported in the first place.
+                      */
+                      owner
+                        ? `click to open ${owner.name ?? sectorCellKey(owner)}`
+                        : "this system's sector is not in the sector map",
                     ].join(`
 `)}
                   </title>

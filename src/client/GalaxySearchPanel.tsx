@@ -26,7 +26,8 @@
  * quietly being ignored — a filter that looks active and does nothing is worse than one that is
  * visibly off. Choosing the *genus* Stratum leaves eight species from 1 M to 19 M, so price stays.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useModal } from "./ui/useModal";
 import type {
   GalaxySpeciesCatalogueDTO,
   GalaxySpeciesOptionDTO,
@@ -105,6 +106,52 @@ function evidence(tiers: number): { label: string; className: string; help: stri
   return { label: "—", className: "gsx-tier", help: "No biological evidence recorded." };
 }
 
+/**
+ * The results, in a window over the map rather than in the page under it.
+ *
+ * The owner's ranking of the two: *"the main focus there is the map, the list is just a 'nice to
+ * have' and for people who will find it easier than dealing with the map"*. A 200-row table in the
+ * page pushed the thing it describes off the screen, which inverted that — so the table opens on
+ * request and closes again, and the map keeps the page.
+ *
+ * It reuses {@link useModal}, so it behaves like every other dialog in the app: Escape closes it,
+ * focus is trapped inside and handed back on the way out, and the page behind it does not scroll.
+ */
+function GalaxyHitsModal({
+  hits,
+  onClose,
+  children,
+}: {
+  hits: readonly GalaxyValueHitDTO[];
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const dialogRef = useModal<HTMLDivElement>(true, onClose);
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="modal-panel gsx-hits-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gsx-hits-title"
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="modal-head">
+          <h3 id="gsx-hits-title">
+            {hits.length} system{hits.length === 1 ? "" : "s"}, nearest first
+          </h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div className="fdb-scroll gsx-hits-scroll">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearchApplied | null) => void }) {
   const [cat, setCat] = useState<GalaxySpeciesCatalogueDTO | null>(null);
   const [result, setResult] = useState<GalaxyValueSearchDTO | null>(null);
@@ -115,6 +162,7 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
   const [genusDir, setGenusDir] = useState("");
   const [speciesId, setSpeciesId] = useState("");
   const [needDss, setNeedDss] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -166,6 +214,8 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
       }
       const j = (await res.json()) as GalaxyValueSearchDTO;
       setResult(j);
+      // A list left open from the previous search would sit over the new map showing old rows.
+      setListOpen(false);
 
       /*
         The map is told what was *searched*, not what is selected: the pickers can be fiddled with
@@ -194,6 +244,7 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
     setMinCr(0);
     setNeedDss(false);
     setResult(null);
+    setListOpen(false);
     onApply(null);
   }, [onApply]);
 
@@ -311,13 +362,24 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
                 <strong>{result.speciesConsidered}</strong> species searched
               </span>
               {result.matchedSystems > hits.length ? (
-                <span className="dim">showing the {hits.length} nearest</span>
+                <span className="dim">the {hits.length} nearest are on the map</span>
+              ) : null}
+              {/*
+                The list opens on request rather than filling the page (A3, owner's follow-up):
+                *"the main focus there is the map, the list is just a 'nice to have' and for people
+                who will find it easier than dealing with the map"*. So the map keeps the page and
+                the table is one click away for anybody who would rather read names than marks.
+              */}
+              {hits.length > 0 ? (
+                <button type="button" className="gsx-list-open" onClick={() => setListOpen(true)}>
+                  List {hits.length} systems
+                </button>
               ) : null}
             </div>
           ) : null}
 
-          {result ? (
-            <div className="fdb-scroll gsx-scroll">
+          {listOpen && result ? (
+            <GalaxyHitsModal hits={hits} onClose={() => setListOpen(false)}>
               <table className="fdb-table">
                 <thead>
                   <tr>
@@ -368,13 +430,14 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
                   })}
                 </tbody>
               </table>
-              {hits.length === 0 ? (
-                <p className="fdb-empty">Nothing recorded matches that. Widen the genus, or lower the price.</p>
-              ) : null}
-            </div>
-          ) : (
+            </GalaxyHitsModal>
+          ) : null}
+          {result && hits.length === 0 ? (
+            <p className="fdb-empty">Nothing recorded matches that. Widen the genus, or lower the price.</p>
+          ) : null}
+          {!result ? (
             <p className="fdb-empty">Choose what you are looking for, then search. The map follows.</p>
-          )}
+          ) : null}
         </>
       ) : null}
 

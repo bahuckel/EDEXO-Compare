@@ -11,7 +11,8 @@
 
 /* ── Galaxy sector map (INCLUDE-BODY-IDS Phase 10 step 3) ───────────────────────────────────────
    Two flat projections, no 3D. Sized to sit on a second monitor, which is what the screen is for. */
-.galaxy-screen { padding: 18px 22px 40px; max-width: 1140px; margin: 0 auto; }
+/* Wider than the old 1140px cap: with the plots stacked, the width is the map. */
+.galaxy-screen { padding: 18px 22px 40px; max-width: 1500px; margin: 0 auto; }
 .galaxy-screen h1 { font-size: 1.25rem; margin: 0 0 2px; }
 .galaxy-screen__meta { margin: 0 0 14px; opacity: 0.7; font-size: 0.85rem; }
 .galaxy-screen__empty { padding: 24px; border: 1px dashed #30363d; border-radius: 8px; opacity: 0.85; }
@@ -28,11 +29,22 @@
 
 /* Side by side on a wide screen, stacked when there is not room — the map is useless if it needs
    horizontal scrolling to compare the two projections. */
-.galaxy-map__views { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px; }
+/*
+ * One above the other, each the full width of the page.
+ *
+ * They were side by side, which halved the width of both and made the galaxy about 360 px across —
+ * the owner asked for them "bigger (like the sector one) and under each other". Side by side also
+ * invites reading them as a pair to compare, which they are not: they are one dataset at two
+ * angles, panned and zoomed independently, and the top view is the one anybody uses.
+ */
+.galaxy-map__views { display: grid; grid-template-columns: 1fr; gap: 18px; }
 .galaxy-map__plot { margin: 0; }
 .galaxy-map__plot figcaption { font-size: 0.8rem; margin-bottom: 4px; display: flex; flex-direction: column; }
 .galaxy-map__hint { opacity: 0.55; font-size: 0.72rem; }
-.galaxy-map__plot svg { width: 100%; height: auto; border: 1px solid #30363d; border-radius: 8px; display: block; }
+/* `touch-action: none` so a drag on a touchscreen pans the map instead of scrolling the page —
+   the same complaint as the wheel, in the form a tablet makes it. */
+.galaxy-map__plot svg { width: 100%; height: auto; border: 1px solid #30363d; border-radius: 8px;
+  display: block; touch-action: none; }
 .galaxy-map__bg { fill: #06090f; }
 .galaxy-map__axis { fill: #6e7681; font-size: 11px; }
 .galaxy-map__plot circle { cursor: pointer; transition: fill-opacity 120ms ease; }
@@ -510,4 +522,36 @@ a.appbar-icon-btn { display: inline-flex; align-items: center; justify-content: 
   min-width: 3ch;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * Legend swatches for the two layers drawn over the survey.
+ *
+ * The owner saw both on the map and could not name either: the amber dots are
+ * his own unfinished systems and the violet diamonds are search results. A mark
+ * nobody can identify is noise however well chosen, and these are the only
+ * marks here that are not evidence about a place — which is the very thing a
+ * reader needs telling.
+ * ------------------------------------------------------------------------- */
+.galaxy-map__swatch--target {
+  background: #ffab40;
+}
+
+/* The "moon like" ones: the same target with footfall unconfirmed, so the ring is left open. */
+.galaxy-map__swatch--target-unverified {
+  background: transparent;
+  border: 2px dashed #ffab40;
+}
+
+/* Search results are diamonds on the map, so the swatch is a diamond too — a circle here would
+   send the reader looking for a round violet mark that does not exist. */
+.galaxy-map__swatch--hit {
+  background: rgba(187, 134, 252, 0.55);
+  border: 1px solid #bb86fc;
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.galaxy-map__legend--layer {
+  opacity: 0.95;
 }

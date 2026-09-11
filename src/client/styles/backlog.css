@@ -428,3 +428,37 @@
   border-left: 2px dashed rgba(210, 153, 34, 0.7);
   padding-left: 0.5rem;
 }
+
+/*
+ * The search results, in a window over the map.
+ *
+ * The map is the page on ?screen=map; a 200-row table belongs on top of it and
+ * out of the way again, not wedged underneath pushing it off the screen.
+ */
+.gsx-hits-modal {
+  width: min(1180px, 94vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.gsx-hits-scroll {
+  overflow: auto;
+  min-height: 0;
+}
+
+.gsx-list-open {
+  font: inherit;
+  font-size: var(--fs-xs);
+  padding: 0.2rem 0.6rem;
+  margin-left: auto;
+  background: transparent;
+  color: var(--accent-bright);
+  border: 1px solid var(--accent-a38);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.gsx-list-open:hover {
+  background: var(--accent-a12);
+}

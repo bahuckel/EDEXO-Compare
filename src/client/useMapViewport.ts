@@ -18,7 +18,7 @@
  * so they keep their pixel size — a zoomed-in map should show more space between dots, not fatter
  * dots.
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Camera } from "./galaxyProjection";
 
 export interface Viewport {
@@ -35,6 +35,15 @@ const MAX_SCALE = 60;
 
 export interface MapViewport {
   view: Viewport;
+  /**
+   * Attach to the `<svg>`. The wheel listener is bound here rather than through React.
+   *
+   * React attaches `onWheel` **passively**, and a passive listener is not allowed to call
+   * `preventDefault` — so zooming the map also scrolled the page under it, which the owner
+   * reported: *"scrolling on the galaxy map makes the page scroll as well"*. There is no React prop
+   * that fixes this; the listener has to be registered by hand with `{ passive: false }`.
+   */
+  svgRef: React.RefObject<SVGSVGElement | null>;
   camera: Camera;
   setCamera: (next: Camera) => void;
   /** `transform` for the group holding everything that should move. */
@@ -44,7 +53,6 @@ export interface MapViewport {
   reset: () => void;
   zoomBy: (factor: number, at?: { x: number; y: number }) => void;
   handlers: {
-    onWheel: (e: React.WheelEvent<SVGSVGElement>) => void;
     onPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
     onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void;
     onPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -64,6 +72,7 @@ function svgPoint(e: { clientX: number; clientY: number }, svg: SVGSVGElement): 
 }
 
 export function useMapViewport(initialCamera: Camera): MapViewport {
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const [view, setView] = useState<Viewport>(IDENTITY);
   const [camera, setCamera] = useState<Camera>(initialCamera);
   const [panning, setPanning] = useState(false);
@@ -89,14 +98,24 @@ export function useMapViewport(initialCamera: Camera): MapViewport {
 
   const reset = useCallback(() => setView(IDENTITY), []);
 
-  const onWheel = useCallback(
-    (e: React.WheelEvent<SVGSVGElement>) => {
-      // Not preventDefault: React attaches wheel passively, and the plot is not scrollable anyway.
-      const svg = e.currentTarget;
+  /**
+   * Wheel-to-zoom, bound by hand so it can swallow the scroll.
+   *
+   * The plot fills the width of the page now, so a commander reaching for the map with the wheel
+   * has no way to avoid it — and with a passive listener every zoom also scrolled the page out
+   * from under them. `preventDefault` needs a listener registered with `{ passive: false }`, which
+   * React's `onWheel` prop cannot give.
+   */
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
       zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, svgPoint(e, svg));
-    },
-    [zoomAt],
-  );
+    };
+    svg.addEventListener("wheel", onWheel, { passive: false });
+    return () => svg.removeEventListener("wheel", onWheel);
+  }, [zoomAt]);
 
   const onPointerDown = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0) return;
@@ -142,6 +161,7 @@ export function useMapViewport(initialCamera: Camera): MapViewport {
 
   return {
     view,
+    svgRef,
     camera,
     setCamera,
     transform: `translate(${view.tx} ${view.ty}) scale(${view.scale})`,
@@ -149,6 +169,6 @@ export function useMapViewport(initialCamera: Camera): MapViewport {
     reset,
     zoomBy,
     panning,
-    handlers: { onWheel, onPointerDown, onPointerMove, onPointerUp, onDoubleClick: reset },
+    handlers: { onPointerDown, onPointerMove, onPointerUp, onDoubleClick: reset },
   };
 }
