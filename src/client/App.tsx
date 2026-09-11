@@ -2,6 +2,7 @@ import { useLastStateAt, useLiveSnapshot } from "./useLiveSnapshot";
 import { useConfirm, useToast } from "./ui/feedback";
 import { useModal } from "./ui/useModal";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
+import { fuzzyRankAny } from "./fuzzyMatch";
 import {
   IconChevronDown,
   IconEncyclopedia,
@@ -4748,6 +4749,18 @@ const HeaderBar = memo(function HeaderBar({
   );
 });
 
+/**
+ * Everything the commander has actually confirmed on foot.
+ *
+ * **The search (A1).** This opened with a line explaining where the records come from — a mechanism
+ * described to somebody who has already opened the panel and therefore already trusts it. The owner
+ * has 373 entries in here and wanted the one thing he comes for: find the body, the system, or every
+ * time he has seen a genus. So the line is behind the ⓘ and its space is the search.
+ *
+ * Filtering, not re-ranking. {@link fuzzyRankAny} returns a rank and it is tempting to sort by it,
+ * but the list's spine is time — newest first — and a query that reshuffles the order costs more
+ * than a slightly better first row wins. A match is kept where it was.
+ */
 function MyExobiologyModal({
   entries,
   onClose,
@@ -4757,7 +4770,19 @@ function MyExobiologyModal({
   onClose: () => void;
   onNavigateEntry?: (e: FootScannedEntry) => void;
 }) {
-  const dialogRef = useModal<HTMLDivElement>(true, onClose);
+  /*
+    `useModal` focuses the first focusable in the dialog, which is the close button — right for
+    every other dialog in the app, wrong for one whose whole purpose is now a search box. So it
+    hands over initial focus and the input claims it. The focus trap and focus restore are
+    untouched; a plain `autoFocus` attribute would not work here, because the hook's effect runs
+    after React applies it and would take the focus straight back.
+  */
+  const dialogRef = useModal<HTMLDivElement>(true, onClose, { autoFocus: false });
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const [query, setQuery] = useState("");
+  useEffect(() => {
+    (searchRef.current ?? dialogRef.current)?.focus({ preventScroll: true });
+  }, [dialogRef]);
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") onClose();
@@ -4765,6 +4790,18 @@ function MyExobiologyModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  const shown = useMemo(() => {
+    const q = query.trim();
+    if (!q) return entries;
+    return entries.filter(
+      (e) =>
+        fuzzyRankAny(
+          [e.starSystem, e.bodyName, e.genusLocalised, e.speciesLocalised, e.variantLocalised],
+          q,
+        ) != null,
+    );
+  }, [entries, query]);
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -4784,15 +4821,36 @@ function MyExobiologyModal({
           </button>
         </div>
         <div className="modal-body modal-body--my-exo">
-          <p className="my-exo-intro dim">
-            From merged journals: <code>ScanOrganic</code> Sample or Analyse + detailed <code>Scan</code>.
-            Stored in <code>data/foot_scanned.json</code>.
-          </p>
+          <div className="my-exo-search">
+            <input
+              ref={searchRef}
+              type="search"
+              className="my-exo-search-input"
+              value={query}
+              placeholder="Search system, planet, genus or species…"
+              aria-label="Search your foot scans"
+              onChange={(ev) => setQuery(ev.target.value)}
+            />
+            <span className="my-exo-search-count dim tiny">
+              {query.trim() ? `${shown.length} of ${entries.length}` : `${entries.length}`}
+            </span>
+            <InfoPopover title="My exobiology" label="Where these records come from">
+              <p>
+                From your merged journals: a <code>ScanOrganic</code> Sample or Analyse, paired with the
+                detailed <code>Scan</code> of the body it happened on.
+              </p>
+              <p>
+                Stored in <code>data/foot_scanned.json</code>, on this machine.
+              </p>
+            </InfoPopover>
+          </div>
           {entries.length === 0 ? (
             <p className="dim">No foot-catalog entries yet.</p>
+          ) : shown.length === 0 ? (
+            <p className="dim">Nothing here matches “{query.trim()}”.</p>
           ) : (
             <ul className="my-exo-card-list">
-              {entries.map((e) => (
+              {shown.map((e) => (
                 <li key={e.id} className="my-exo-card">
                   <div className="my-exo-card-top">
                     <div className="my-exo-card-loc">

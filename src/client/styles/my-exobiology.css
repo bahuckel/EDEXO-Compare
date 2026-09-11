@@ -362,10 +362,42 @@
   padding-top: 0.5rem;
 }
 
-.my-exo-intro {
-  font-size: var(--fs-md);
-  line-height: 1.45;
+/* The search that replaced the intro line (A1). Input, live count, and the ⓘ holding what the
+   line used to say. */
+.my-exo-search {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
   margin: 0 0 0.75rem;
+}
+
+.my-exo-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  font-size: var(--fs-md);
+  padding: 0.3rem 0.5rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--accent-a38);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.my-exo-search-input::placeholder {
+  color: var(--muted);
+}
+
+.my-exo-search-input:focus-visible {
+  outline: 1px solid var(--accent-bright);
+  outline-offset: 1px;
+}
+
+/* Fixed-width so filtering does not shift the ⓘ left and right as the count changes. */
+.my-exo-search-count {
+  flex: 0 0 auto;
+  min-width: 5.5ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .my-exo-card-list {
