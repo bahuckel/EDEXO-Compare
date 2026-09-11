@@ -24,6 +24,7 @@ import type { BioIndex, BioIndexSystem } from "./bioIndex.js";
 import { loadBioIndex } from "./bioIndex.js";
 import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { lookupPrice } from "./priceList.js";
+import { sectorCellFromCoords, sectorCellKey } from "../shared/sectorName.js";
 import type {
   GalaxySpeciesCatalogueDTO,
   GalaxyValueHitDTO,
@@ -106,6 +107,56 @@ function distance(
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+/**
+ * How many sector cells the map sample may carry.
+ *
+ * One mark per 1 280 ly cell, so this is a resolution rather than a count of systems: 500 cells is
+ * already a finer grid than the galaxy map can show at any zoom a reader uses, and the client culls
+ * and groups what is left. Higher would cost bytes nobody sees.
+ */
+const SPREAD_CELLS = 500;
+
+/**
+ * Where the thing *lives*, as opposed to which of it is nearest.
+ *
+ * The list answers "where should I go", and nearest-first is exactly right for it. The map asks a
+ * different question — the owner's reason for having one at all was *"to explore sectors with less
+ * visitors"* — and nearest-first is close to the worst possible answer to that. Measured on his own
+ * machine: a search for Stratum returned 508,820 matching systems, and the 200 nearest spanned
+ * **12 x 6 pixels** on a 1,441-pixel-wide galaxy. He saw them and asked what the line of diamonds
+ * was, which is the correct reaction to a distribution collapsed onto one point.
+ *
+ * So the map gets a second, spatial sample: the dearest system in each sector cell that matched,
+ * over the whole galaxy. One per cell rather than the top N overall, because the top N overall
+ * would cluster in whichever corner happens to be richest and tell the same kind of lie in a
+ * different place.
+ *
+ * **This is a sample and the UI has to say so.** `spreadCells` carries how many cells actually
+ * matched, so a reader can see when they are being shown 500 of 3,000 rather than all of them.
+ */
+function spreadSample(
+  systems: readonly BioIndexSystem[],
+  query: GalaxyValueQuery,
+  toHit: (s: BioIndexSystem, d: number | null) => GalaxyValueHitDTO | null,
+): { spread: GalaxyValueHitDTO[]; spreadCells: number } {
+  const best = new Map<string, { s: BioIndexSystem; value: number }>();
+  for (const s of systems) {
+    const key = sectorCellKey(sectorCellFromCoords(s.x, s.y, s.z));
+    const value = s.species.length;
+    const held = best.get(key);
+    // Ties keep the first seen: the order the index yields is stable, so the sample is too.
+    if (!held || value > held.value) best.set(key, { s, value });
+  }
+
+  const chosen = [...best.values()].sort((a, b) => b.value - a.value).slice(0, SPREAD_CELLS);
+  const spread: GalaxyValueHitDTO[] = [];
+  for (const { s } of chosen) {
+    const hit = toHit(s, distance(query.from, s));
+    if (hit) spread.push(hit);
+  }
+  return { spread, spreadCells: best.size };
+}
+
 export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO {
   const index = loadBioIndex();
   if (!index) {
@@ -161,9 +212,7 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
     });
   }
 
-  const hits: GalaxyValueHitDTO[] = [];
-  for (const { s, d } of scored) {
-    if (hits.length >= limit) break;
+  const toHit = (s: BioIndexSystem, d: number | null): GalaxyValueHitDTO | null => {
     const matched = s.species
       .map((id) => {
         const p = priced.get(id);
@@ -176,8 +225,9 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
       })
       .filter((v): v is NonNullable<typeof v> => v !== null)
       .sort((a, b) => b.baseCr - a.baseCr);
-    if (matched.length === 0) continue;
-    hits.push({
+    if (matched.length === 0) return null;
+    const total = systemValue(s.species, priced);
+    return {
       systemAddress: Number(s.id64),
       starSystem: s.name,
       x: s.x,
@@ -188,12 +238,21 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
       species: matched,
       bestCr: matched[0]!.baseCr,
       totalKnownSpecies: s.species.length,
-      systemCr: systemValue(s.species, priced),
-      systemFirstFootfallCr: systemValue(s.species, priced) * FIRST_FOOTFALL,
+      systemCr: total,
+      systemFirstFootfallCr: total * FIRST_FOOTFALL,
       tiers: s.tiers,
       bodyCount: s.bodyCount,
-    });
+    };
+  };
+
+  const hits: GalaxyValueHitDTO[] = [];
+  for (const { s, d } of scored) {
+    if (hits.length >= limit) break;
+    const hit = toHit(s, d);
+    if (hit) hits.push(hit);
   }
+
+  const { spread, spreadCells } = spreadSample(systems, query, toHit);
 
   if (!query.from) hits.sort((a, b) => b.bestCr - a.bestCr);
 
@@ -209,6 +268,8 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
     matchedSystems: systems.length,
     speciesConsidered: wanted.size,
     hits,
+    spread,
+    spreadCells,
   };
 }
 

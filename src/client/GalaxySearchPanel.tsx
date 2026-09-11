@@ -74,7 +74,17 @@ export interface GalaxySearchApplied {
   species: string | null;
   /** What to call this filter on screen. */
   label: string;
+  /**
+   * What the **map** draws: the richest system in each matching sector cell, galaxy-wide.
+   *
+   * Not the same rows the list shows. The list is nearest-first, which is right for choosing where
+   * to fly and wrong for seeing where a species lives — the 200 nearest matches to a commander sit
+   * inside about twelve pixels of a galaxy-wide plot, which is what the owner saw and could not
+   * identify. Falls back to the nearest hits on a server that has no spread to give.
+   */
   hits: GalaxyValueHitDTO[];
+  /** Distinct sector cells that matched, before the sample was capped. */
+  spreadCells: number;
   matchedSystems: number;
 }
 
@@ -228,7 +238,8 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
         genus: genusName ? genusName.toLowerCase() : null,
         species: chosen ? chosen.displayName.toLowerCase() : null,
         label: chosen?.displayName ?? genusName ?? "everything recorded",
-        hits: j.hits ?? [],
+        hits: j.spread?.length ? j.spread : (j.hits ?? []),
+        spreadCells: j.spreadCells ?? 0,
         matchedSystems: j.matchedSystems,
       });
     } catch {
@@ -361,8 +372,15 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
               <span>
                 <strong>{result.speciesConsidered}</strong> species searched
               </span>
-              {result.matchedSystems > hits.length ? (
-                <span className="dim">the {hits.length} nearest are on the map</span>
+              {/*
+                The two numbers describe different things now and saying so is the whole point:
+                the list is the nearest few, the map is a galaxy-wide sample one system per sector.
+              */}
+              {result.spread?.length ? (
+                <span className="dim">
+                  map: {result.spread.length} of{" "}
+                  {crFmt.format(result.spreadCells ?? result.spread.length)} sectors
+                </span>
               ) : null}
               {/*
                 The list opens on request rather than filling the page (A3, owner's follow-up):

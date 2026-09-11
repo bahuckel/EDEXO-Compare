@@ -212,3 +212,63 @@ describe("filtering by evidence", () => {
     expect(r.hits[0]!.bodyCount).toBe(32);
   });
 });
+
+/**
+ * The map sample (A3 follow-up).
+ *
+ * The list and the map ask different questions, and the list's answer is the wrong one for the map:
+ * nearest-first collapses onto the commander. The owner saw exactly that — 200 diamonds inside
+ * twelve pixels — and asked what the line was. So the search also returns one system per sector
+ * cell, galaxy-wide.
+ */
+describe("the map sample", () => {
+  it("returns one system per sector cell, however many matched in it", async () => {
+    // Three systems a few hundred ly apart: one 1 280 ly cell holds all of them.
+    const res = await search(
+      [
+        { id64: 1n, name: "Near A", x: 0, y: 0, z: 0, region: 1, species: [1] },
+        { id64: 2n, name: "Near B", x: 100, y: 0, z: 0, region: 1, species: [1] },
+        { id64: 3n, name: "Near C", x: 200, y: 0, z: 0, region: 1, species: [1] },
+      ],
+      { minCr: 0, from: { x: 0, y: 0, z: 0 } },
+    );
+    expect(res.hits).toHaveLength(3);
+    expect(res.spread).toHaveLength(1);
+    expect(res.spreadCells).toBe(1);
+  });
+
+  it("keeps one mark in each cell that matched, so the spread is the galaxy's", async () => {
+    const res = await search(
+      [
+        { id64: 1n, name: "Home", x: 0, y: 0, z: 0, region: 1, species: [1] },
+        { id64: 2n, name: "Next Door", x: 20, y: 0, z: 0, region: 1, species: [1] },
+        { id64: 3n, name: "Far Side", x: 40000, y: 0, z: 0, region: 2, species: [1] },
+      ],
+      { minCr: 0, from: { x: 0, y: 0, z: 0 } },
+    );
+    // The list is nearest-first and buries the far one; the sample keeps both places.
+    expect(res.hits!.map((h) => h.starSystem)).toEqual(["Home", "Next Door", "Far Side"]);
+    expect(res.spread).toHaveLength(2);
+    expect(new Set(res.spread!.map((h) => h.starSystem))).toEqual(new Set(["Home", "Far Side"]));
+  });
+
+  it("picks the richest system in a cell as its representative", async () => {
+    const res = await search(
+      [
+        { id64: 1n, name: "One Species", x: 0, y: 0, z: 0, region: 1, species: [1] },
+        { id64: 2n, name: "Two Species", x: 100, y: 0, z: 0, region: 1, species: [0, 1] },
+      ],
+      { minCr: 0, from: { x: 0, y: 0, z: 0 } },
+    );
+    expect(res.spread).toHaveLength(1);
+    expect(res.spread![0]!.starSystem).toBe("Two Species");
+  });
+
+  it("carries the same figures as a list row, so the two cannot disagree", async () => {
+    const res = await search([{ id64: 1n, name: "Solo", x: 0, y: 0, z: 0, region: 1, species: [0, 1] }], {
+      minCr: 0,
+      from: { x: 0, y: 0, z: 0 },
+    });
+    expect(res.spread![0]).toEqual(res.hits![0]);
+  });
+});

@@ -649,10 +649,10 @@ export function GalaxySectorMap({
         {searchHitCount > 0 ? (
           <li
             className="galaxy-map__legend--layer"
-            title="Systems the search above found. They are the nearest matches to you, so at galaxy scale they cluster tightly around your position. Click one to open the sector it is in."
+            title="Where the search found biology, sampled across the galaxy: the richest system in each sector that matched, not the ones nearest you. Click one to open its sector."
           >
             <span className="galaxy-map__swatch galaxy-map__swatch--hit" aria-hidden="true" />
-            Search results ({searchHitCount})
+            Search results — {searchHitCount} sector{searchHitCount === 1 ? "" : "s"} sampled
           </li>
         ) : null}
       </ul>

@@ -970,7 +970,19 @@ export interface GalaxyValueSearchDTO {
   /** How many systems matched in total, before trimming to the nearest few. */
   matchedSystems: number;
   speciesConsidered: number;
+  /** The nearest matches, for the list. Ordered by distance when the commander's position is known. */
   hits: GalaxyValueHitDTO[];
+  /**
+   * A galaxy-wide sample for the **map**: the richest system in each matching sector cell.
+   *
+   * The list and the map ask different questions. "Which of these should I fly to" is answered
+   * nearest-first; "where does this species live" is not, and a nearest-first sample collapses onto
+   * the commander's own position — 200 systems inside twelve pixels, in the case that prompted
+   * this. Capped, so {@link spreadCells} says how many cells there really were.
+   */
+  spread?: GalaxyValueHitDTO[];
+  /** Distinct sector cells that matched, before the sample was capped. */
+  spreadCells?: number;
 }
 
 export interface FirstDiscoveryBacklogRowDTO {
