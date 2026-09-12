@@ -716,6 +716,23 @@ export function valueForNumericPath(
     const { v, known } = solidValue(scan, rec, solid[1]!);
     return known ? v : null;
   }
+  /**
+   * `body.materials.*` is deliberately **not** answered here, and the model is better for it.
+   *
+   * Fourteen of these paths carry histograms in every profile and none of them has ever been scored,
+   * for the same reason the crust split was not: no branch, so null, so no term. That is also why
+   * the note in `speciesLogScore` about "dropping any one of the seventeen material paths moves
+   * nothing" held — dropping all fourteen at once moved nothing either.
+   *
+   * Wiring them through {@link crustMaterialValue} was measured rather than assumed, and it is a
+   * loss on every axis: mean rank 3.260 -> 3.294, top-1 165 -> 164, top-3 310 -> 303, and the
+   * reliability of "Chance here" within a genus more than doubled its error, 0.0050 -> 0.0107.
+   * Averaging the terms instead of summing them (`--per-term`) does not rescue it, so it is not the
+   * term count: fourteen percentages that sum to a hundred over the same crust are one fact counted
+   * fourteen times, and each repeat makes the posterior more certain without making it more right.
+   * Crust materials stay where they are useful — the habitat similarity, which weights them by
+   * measured importance instead of multiplying them.
+   */
   if (low.endsWith(".gravity") || low === "body.gravity" || low.includes("surfacegravity")) {
     const raw = scan.SurfaceGravity ?? rec?.surfaceGravity;
     if (raw != null && Number.isFinite(raw)) return journalSurfaceGravityToG(raw);
