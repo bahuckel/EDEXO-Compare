@@ -47,6 +47,7 @@ import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
 import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
+import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
 import { loadPriceList, lookupPrice } from "../src/server/priceList.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
 import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
@@ -102,6 +103,8 @@ const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
  * The app builds this context for every body it matches. The probe did not, so anything the matcher
  * reads from it — host star, orbit distance from the star — was measured as permanently absent.
  */
+const systemPositions = new Map<number, { x: number; y: number; z: number }>(payload.systemPositions ?? []);
+
 const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
 for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explorationScans]) {
   const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
@@ -112,8 +115,28 @@ for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explora
 function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
   const byId = scansBySystem.get(b.systemAddress);
   const rec = byId?.get(b.bodyId);
-  if (!byId || !rec) return undefined;
   const ctx: SpeciesMatchContext = {};
+  /*
+    Region, which this probe used to leave out.
+
+    `speciesMatchesScan` consults the region gate only when the context carries a `regionIndex`, and
+    the app always supplies one. Omitting it here measured a matcher the commander never sees: Tubus
+    cavas sits at 0.0061 % of Inner Orion Spur's bio systems against compagibus's 7.66 %, well under
+    the absence cut, so the app demotes it there while this probe kept scoring it. The positions have
+    been in the merge cache all along.
+  */
+  const pos = systemPositions.get(b.systemAddress);
+  if (pos) {
+    const idx = regionIndexForSystem(root, pos.x, pos.z);
+    if (idx != null && idx > 0) {
+      const name = regionForSystem(root, pos.x, pos.y, pos.z);
+      if (name) {
+        ctx.regionName = name;
+        ctx.regionIndex = idx;
+      }
+    }
+  }
+  if (!byId || !rec) return Object.keys(ctx).length ? ctx : undefined;
   const starId = resolveHostStarBodyId(rec, byId);
   const star = starId == null ? null : byId.get(starId);
   if (star?.starType?.trim()) {

@@ -30,6 +30,8 @@ import { matchDatabaseToScan, shownSpeciesMatches } from "../src/server/matchSpe
 import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
+import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
+import type { SpeciesMatchContext } from "../src/shared/types.js";
 import { exomasteryHabitatQualityPercent, loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
 import { rankSpeciesOnBody, TERM_DAMPING } from "../src/server/speciesLikelihood.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
@@ -58,11 +60,50 @@ const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
  * (Bacterium volu and Fumerola extremus both key entirely on star type). Ranking measured without it
  * cannot see the effect of weighting it.
  */
+/**
+ * Where each system sits, so the matcher can be asked the question the app asks.
+ *
+ * Without this the region gate never runs — `speciesMatchesScan` only consults it when the context
+ * carries a `regionIndex`, and a probe that passes no context measures a matcher the commander never
+ * sees. Tubus cavas is recorded in 0.0061 % of Inner Orion Spur's bio systems against compagibus's
+ * 7.66 %, far under the absence cut, so the app demotes it there and this probe was still ranking it
+ * first. The cache has carried the positions all along.
+ */
+const systemPositions = new Map<number, { x: number; y: number; z: number }>(payload.systemPositions ?? []);
+
 const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
 for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explorationScans]) {
   const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
   byId.set(r.bodyId, r);
   scansBySystem.set(r.systemAddress, byId);
+}
+
+/** Star and region, the two things the app knows about a body that the rock itself does not say. */
+function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
+  const ctx: SpeciesMatchContext = {};
+  const byId = scansBySystem.get(b.systemAddress);
+  const rec = byId?.get(b.bodyId);
+  if (byId && rec) {
+    const starId = resolveHostStarBodyId(rec, byId);
+    const star = starId == null ? null : byId.get(starId);
+    if (star?.starType?.trim()) {
+      ctx.parentStarType = star.starType;
+      if (typeof star.subclass === "number" && Number.isFinite(star.subclass)) ctx.parentStarSubclass = star.subclass;
+      if (star.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity;
+    }
+  }
+  const pos = systemPositions.get(b.systemAddress);
+  if (pos) {
+    const idx = regionIndexForSystem(root, pos.x, pos.z);
+    if (idx != null && idx > 0) {
+      const name = regionForSystem(root, pos.x, pos.y, pos.z);
+      if (name) {
+        ctx.regionName = name;
+        ctx.regionIndex = idx;
+      }
+    }
+  }
+  return Object.keys(ctx).length ? ctx : undefined;
 }
 
 function hostStarFor(b: BodyExoState): JournalHostStarObservation | null {
@@ -129,7 +170,11 @@ for (const b of bodies) {
   // The shown tier only. The demoted rows are collapsed behind "show unlikely (N)", so where they
   // land is a question for step 6's ranking, not for this measurement of the default panel.
   const matches = shownSpeciesMatches(
-    matchDatabaseToScan(db, b.scan, null, null, { includeBacterium: true }).matches,
+    matchDatabaseToScan(db, b.scan, null, null, {
+      includeBacterium: true,
+      matchContext: matchContextFor(b),
+      biologicalSignals: b.biologicalSignals,
+    }).matches,
   );
   if (matches.length < 2) continue;
 
