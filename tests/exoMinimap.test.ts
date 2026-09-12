@@ -83,6 +83,7 @@ function host(
     },
     firstFootfallBodies: new Set<string>(),
     surfaceSampleMarks: over.marks ?? [],
+    explorationScans: new Map<string, { surfaceGravity?: number; radius?: number }>(),
     surfaceShipMark: over.ship ?? null,
     addSurfaceSampleMark() {
       /* not exercised by the DTO builder */
@@ -402,6 +403,7 @@ describe("the body a sample is filed under", () => {
       footTravelOdometerEnabled: false,
       firstFootfallBodies: new Set<string>(),
       surfaceSampleMarks: [],
+      explorationScans: new Map<string, { surfaceGravity?: number; radius?: number }>(),
       surfaceShipMark: null,
       addSurfaceSampleMark(_k: string, bodyNameNorm: string) {
         recorded.push({ bodyNameNorm });
@@ -476,6 +478,7 @@ describe("advancing a run restored from the journal", () => {
       footTravelOdometerEnabled: false,
       firstFootfallBodies: new Set<string>(),
       surfaceSampleMarks: [],
+      explorationScans: new Map<string, { surfaceGravity?: number; radius?: number }>(),
       surfaceShipMark: null,
       addSurfaceSampleMark() {},
       beginFootTravelOdometerSession() {},

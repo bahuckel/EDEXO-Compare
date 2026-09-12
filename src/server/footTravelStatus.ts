@@ -19,6 +19,18 @@ export type FootTravelFix = {
    * works without it, so it is optional rather than part of the fix being valid.
    */
   headingDeg: number | null;
+  /**
+   * Kelvin at the commander's feet, or null when the game is not reporting it.
+   *
+   * A body's `SurfaceTemperature` is one number for a whole planet, and the journal offers nothing
+   * finer — a pole on a 180 K world is far colder than its equator, and every profile built so far
+   * has treated the two as the same place. `Status.json` reports the local value while on foot, and
+   * a `ScanOrganic` is by definition made on foot, so the scan is the one moment the real condition
+   * can be read. It is never recoverable afterwards: `Status.json` is a live file, not a log.
+   */
+  temperatureK: number | null;
+  /** Earth **g** at the commander's feet — already the profiles' unit, unlike the journal's m/s². */
+  gravityG: number | null;
 };
 
 function pickFinite(obj: Record<string, unknown>, keys: string[]): number | null {
@@ -64,7 +76,16 @@ export function parseScanOrganicLineFootFix(line: JournalLine): FootTravelFix | 
   const bnRaw = o.BodyName;
   const bodyName = typeof bnRaw === "string" && bnRaw.trim() ? bnRaw.trim() : null;
   const heading = pickFinite(o, ["Heading", "heading"]);
-  return { latDeg: lat, lonDeg: lon, planetRadiusM: radius, bodyName, headingDeg: heading };
+  // A journal line carries no local temperature or gravity; only `Status.json` ever has them.
+  return {
+    latDeg: lat,
+    lonDeg: lon,
+    planetRadiusM: radius,
+    bodyName,
+    headingDeg: heading,
+    temperatureK: null,
+    gravityG: null,
+  };
 }
 
 /** Prefer live `Status.json` parse; fall back to coordinates on the journal line. */
@@ -101,7 +122,15 @@ export function parseStatusJsonFootFix(rawText: string): FootTravelFix | null {
   const bnRaw = o.BodyName;
   const bodyName = typeof bnRaw === "string" && bnRaw.trim() ? bnRaw.trim() : null;
   const heading = pickFinite(o, ["Heading", "heading"]);
-  return { latDeg: lat, lonDeg: lon, planetRadiusM: radius, bodyName, headingDeg: heading };
+  return {
+    latDeg: lat,
+    lonDeg: lon,
+    planetRadiusM: radius,
+    bodyName,
+    headingDeg: heading,
+    temperatureK: pickFinite(o, ["Temperature", "temperature"]),
+    gravityG: pickFinite(o, ["Gravity", "gravity"]),
+  };
 }
 
 export type StatusJsonFuelTons = { fuelMain: number; fuelReserve: number };

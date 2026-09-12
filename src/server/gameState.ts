@@ -728,6 +728,8 @@ export class GameStateStore {
     lonDeg: number,
     label: string,
     atIso: string,
+    /** `Status.json` conditions at the plant; absent when the game was not reporting them. */
+    conditions?: { temperatureK: number | null; gravityG: number | null; elevationM: number | null },
   ): void {
     if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) return;
     const dup = this.surfaceSampleMarks.some(
@@ -737,7 +739,20 @@ export class GameStateStore {
         Math.abs(m.lonDeg - lonDeg) < 1e-5,
     );
     if (dup) return;
-    this.surfaceSampleMarks.push({ bodyKey: bodyKeyStr, bodyNameNorm, latDeg, lonDeg, label, atIso });
+    const tK = conditions?.temperatureK;
+    const gG = conditions?.gravityG;
+    const eM = conditions?.elevationM;
+    this.surfaceSampleMarks.push({
+      bodyKey: bodyKeyStr,
+      bodyNameNorm,
+      latDeg,
+      lonDeg,
+      label,
+      atIso,
+      ...(typeof tK === "number" && Number.isFinite(tK) ? { temperatureK: tK } : {}),
+      ...(typeof gG === "number" && Number.isFinite(gG) ? { gravityG: gG } : {}),
+      ...(typeof eM === "number" && Number.isFinite(eM) ? { elevationM: eM } : {}),
+    });
     // Oldest first: the rock underfoot is the one visited most recently.
     while (this.surfaceSampleMarks.length > MAX_SURFACE_MARKS) this.surfaceSampleMarks.shift();
     this.persistSurfaceMarks();

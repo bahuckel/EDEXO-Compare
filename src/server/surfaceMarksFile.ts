@@ -44,6 +44,21 @@ export interface SurfaceMark {
   label: string;
   /** When it was recorded, so the cap evicts the oldest rather than an arbitrary one. */
   atIso: string;
+  /**
+   * Conditions at the plant, from `Status.json` at the moment of the scan.
+   *
+   * Optional because every mark written before this existed has neither, and because the game does
+   * not always report them. They are stored here rather than derived later for the same reason the
+   * position is: `Status.json` keeps no history, so a value not captured at the scan is gone.
+   */
+  temperatureK?: number | null;
+  /** Earth g at the plant, not the body's average. */
+  gravityG?: number | null;
+  /**
+   * Metres above the body's reference radius, derived from {@link gravityG} at the moment of the
+   * scan. Stored rather than derived on read so the file stands on its own as a record.
+   */
+  elevationM?: number | null;
 }
 
 export interface SurfaceMarksFile {

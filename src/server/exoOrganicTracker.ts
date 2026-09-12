@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import type { FootTravelFix } from "./footTravelStatus.js";
 import type { SurfaceMark } from "./surfaceMarksFile.js";
+import { elevationFromGravity } from "../shared/journalPhysics.js";
 import { greatCircleDistanceMeters, resolveFootFixForOrganicLine } from "./footTravelStatus.js";
 import type {
   JournalLine,
@@ -57,6 +58,8 @@ export type ExoOrganicOverlayHost = {
   readonly firstFootfallBodies: Set<string>;
   /** Where each plant was sampled — the radar's dots, kept across bodies and across restarts. */
   surfaceSampleMarks: SurfaceMark[];
+  /** Body records, for the reference gravity and radius an elevation is measured against. */
+  readonly explorationScans: ReadonlyMap<string, { surfaceGravity?: number; radius?: number }>;
   addSurfaceSampleMark(
     bodyKey: string,
     bodyNameNorm: string,
@@ -64,6 +67,7 @@ export type ExoOrganicOverlayHost = {
     lonDeg: number,
     label: string,
     atIso: string,
+    conditions?: { temperatureK: number | null; gravityG: number | null; elevationM: number | null },
   ): void;
   surfaceShipMark: SurfaceMark | null;
 };
@@ -278,6 +282,20 @@ export function ingestExoOrganicJournalLine(
     the same vocabulary the radar matches in. The old derivation stays as the fallback for a fix
     with no name.
   */
+  /*
+    Conditions at the plant, captured here because they cannot be captured anywhere else.
+
+    `Status.json` is a live file, not a log: the temperature and gravity at the commander's feet
+    exist only while they are standing there. Elevation is derived from that gravity against the
+    body's own figures — `Altitude` is absent on foot, so there is no other source for it.
+  */
+  const bodyRec = store.explorationScans.get(organicBodyKey(sa, bodyId));
+  const conditionsAtPlant = {
+    temperatureK: statusFix?.temperatureK ?? null,
+    gravityG: statusFix?.gravityG ?? null,
+    elevationM: elevationFromGravity(statusFix?.gravityG, bodyRec?.surfaceGravity, bodyRec?.radius),
+  };
+
   const statusBodyNorm = normStatusBodyName(statusFix?.bodyName ?? null);
   const bodyNameNormEarly =
     statusBodyNorm ??
@@ -340,7 +358,7 @@ export function ingestExoOrganicJournalLine(
       };
       // The anchors are this species' own and are wiped when the next one starts; the map wants
       // every plant taken on this body, so it keeps its own list.
-      store.addSurfaceSampleMark(bk, bodyNameNormEarly, fix.latDeg, fix.lonDeg, speciesDisplay, lineIso);
+      store.addSurfaceSampleMark(bk, bodyNameNormEarly, fix.latDeg, fix.lonDeg, speciesDisplay, lineIso, conditionsAtPlant);
       store.footSessionBodyKey = bk;
       store.footSessionBodyNameNorm = bodyNameNormEarly;
       if (store.footTravelOdometerEnabled) {
@@ -368,7 +386,7 @@ export function ingestExoOrganicJournalLine(
       };
       // The anchors are this species' own and are wiped when the next one starts; the map wants
       // every plant taken on this body, so it keeps its own list.
-      store.addSurfaceSampleMark(bk, bodyNameNormEarly, fix.latDeg, fix.lonDeg, speciesDisplay, lineIso);
+      store.addSurfaceSampleMark(bk, bodyNameNormEarly, fix.latDeg, fix.lonDeg, speciesDisplay, lineIso, conditionsAtPlant);
       store.footSessionBodyKey = bk;
       store.footSessionBodyNameNorm = bodyNameNormEarly;
       if (store.footTravelOdometerEnabled) {
@@ -400,6 +418,7 @@ export function ingestExoOrganicJournalLine(
         fix.lonDeg,
         speciesDisplay || t.speciesDisplay,
         lineIso,
+        conditionsAtPlant,
       );
       t.speciesDisplay = speciesDisplay || t.speciesDisplay;
       t.genusLocalised = genusLoc || t.genusLocalised;
