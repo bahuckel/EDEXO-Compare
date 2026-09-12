@@ -593,10 +593,6 @@ input[type="text"]:focus {
   background: conic-gradient(from 0deg, transparent 0 72%, rgba(255, 138, 31, 0.05) 80%, rgba(255, 160, 60, 0.45) 100%);
   animation: bio-empty-sweep 2.2s linear infinite;
 }
-.panel-empty--dead-system .bio-empty-scope::after {
-  animation: none;
-  background: none;
-}
 @keyframes bio-empty-sweep {
   to {
     transform: rotate(360deg);
@@ -864,4 +860,20 @@ input[type="text"]:focus {
   .body-stage .tab {
     width: 100%;
   }
+}
+
+/* ---- empty state (owner review): the caption sits centred in the art panel, not in a corner ---- */
+.bio-empty-wrap .panel.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bio-empty-wrap .bio-empty-caption {
+  width: min(100%, 40rem);
+  max-width: none;
+  margin: 0 auto;
+  padding: 1.1rem 1.4rem 1.2rem;
+  text-align: center;
+  border-radius: 0;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }

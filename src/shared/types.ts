@@ -1456,8 +1456,8 @@ export interface AppStatusDTO {
     bioSignals: number | null;
     organicDataValueCredits: number | null;
     organicPendingSampleCount: number;
-    /** The last hyperspace target, mirrored for the strip. */
-    jumpTarget: { starSystem: string; starClass: string; arrived: boolean } | null;
+    /** The next jump, mirrored for the strip. See AppSnapshot.jumpTarget for `source`. */
+    jumpTarget: { starSystem: string; starClass: string; arrived: boolean; source: JumpTargetSource } | null;
   };
   /**
    * Species rows carrying a `conditions` key nothing in the app reads — see `conditionKeyAudit`.
@@ -1700,11 +1700,20 @@ export interface AppSnapshot {
     starSystem: string;
     systemAddress: number;
     starClass: string;
-    /** ISO timestamp of the StartJump line. */
+    /** ISO timestamp of the journal line that named it ("" for a NavRoute hop). */
     at: string;
     arrived: boolean;
+    source: JumpTargetSource;
   } | null;
 }
+
+/**
+ * Where the next-jump card's target came from, best first:
+ * - `jump`: `StartJump` (hyperspace in progress), or the system just arrived in, held for a minute;
+ * - `target`: `FSDTarget` — the system locked in the nav panel before the countdown starts;
+ * - `route`: the next hop after the current system in the live `NavRoute.json`.
+ */
+export type JumpTargetSource = "jump" | "target" | "route";
 
 /** Single journal `Scan` row merged over time (basic + detailed). */
 export interface ExplorationScanRecord {

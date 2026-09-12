@@ -6,6 +6,7 @@ import type {
   GenusHint,
   OrganicGenusLock,
   SpeciesEntry,
+  AppSnapshot,
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import {
@@ -631,6 +632,11 @@ export class GameStateStore {
   exoOrganicLastFix: FootTravelFix | null = null;
   /** Latest `Status.json` `Destination` (targeted body), for the HUD; null when none is set. */
   statusDestination: StatusDestination | null = null;
+  /**
+   * The system locked in the nav panel (`FSDTarget`), which fires well before the countdown. Cleared
+   * on arriving there. Second rung of the next-jump ladder, see {@link nextJumpTarget}.
+   */
+  fsdTarget: { starSystem: string; systemAddress: number; starClass: string; at: string } | null = null;
   /** Last hyperspace target from `StartJump`, for the HUD's next-jump card. See AppSnapshot.jumpTarget. */
   lastJumpTarget: { starSystem: string; systemAddress: number; starClass: string; at: string; arrived: boolean } | null =
     null;
@@ -1088,6 +1094,7 @@ export class GameStateStore {
     this.lastLiveShipFuelPushKey = null;
     this.liveNavRoute = null;
     this.lastLiveNavRoutePushKey = null;
+    this.fsdTarget = null;
     this.resetFootTravelRuntime();
     this.exoOrganicTracker = null;
     this.exoOrganicLastFix = null;
@@ -1525,6 +1532,13 @@ export class GameStateStore {
       if (event === "FSDJump" || event === "CarrierJump") {
         const sys = line.StarSystem as string;
         const addr = line.SystemAddress as number;
+        if (event === "FSDJump" && typeof addr === "number") {
+          // The next-jump card: the target is reached (held for a minute), the nav lock is spent.
+          if (this.lastJumpTarget && (this.lastJumpTarget.systemAddress === addr || !this.lastJumpTarget.systemAddress)) {
+            this.lastJumpTarget = { ...this.lastJumpTarget, arrived: true };
+          }
+          if (this.fsdTarget && this.fsdTarget.systemAddress === addr) this.fsdTarget = null;
+        }
         if (sys && typeof addr === "number") {
           // No `WasDiscovered` read here: jump events do not carry it. See
           // `mainStarWasDiscoveredBySystem`, which is filled from `Scan` instead.
@@ -1540,6 +1554,10 @@ export class GameStateStore {
         if (typeof rj === "number" && Number.isFinite(rj)) {
           this.remainingJumpsInRoute = Math.max(0, Math.floor(rj));
         }
+        const name = typeof line.Name === "string" ? line.Name : "";
+        const addr = typeof line.SystemAddress === "number" ? line.SystemAddress : 0;
+        const starClass = typeof line.StarClass === "string" ? line.StarClass : "";
+        if (name) this.fsdTarget = { starSystem: name, systemAddress: addr, starClass, at: ts };
         return;
       }
 
@@ -2371,6 +2389,38 @@ export class GameStateStore {
     if (key === this.lastLiveShipFuelPushKey) return false;
     this.lastLiveShipFuelPushKey = key;
     return true;
+  }
+
+  /**
+   * The next-jump card's target, best source first (owner, 2026-09-13):
+   * 1. a hyperspace jump in progress (`StartJump`);
+   * 2. the system locked in the nav panel (`FSDTarget`), known long before the countdown;
+   * 3. the next hop after the current system in the live `NavRoute.json`;
+   * 4. the system just arrived in, only when nothing further is plotted.
+   * No hold after arriving: the owner wants the next star on screen the moment the jump ends.
+   */
+  nextJumpTarget(): NonNullable<AppSnapshot["jumpTarget"]> | null {
+    const jt = this.lastJumpTarget;
+    if (jt && !jt.arrived) return { ...jt, source: "jump" };
+    const cur = this.currentSystemAddress;
+    const ft = this.fsdTarget;
+    if (ft && ft.systemAddress !== cur) {
+      return { starSystem: ft.starSystem, systemAddress: ft.systemAddress, starClass: ft.starClass, at: ft.at, arrived: false, source: "target" };
+    }
+    const hop = this.navRouteNextHop();
+    if (hop) return hop;
+    return jt ? { ...jt, source: "jump" } : null;
+  }
+
+  /** The hop after the current system in the live route; the first hop when the route starts elsewhere. */
+  private navRouteNextHop(): NonNullable<AppSnapshot["jumpTarget"]> | null {
+    const r = this.liveNavRoute;
+    if (!r || r.length === 0) return null;
+    const cur = this.currentSystemAddress;
+    const i = r.findIndex((w) => w.systemAddress === cur);
+    const w = i >= 0 ? r[i + 1] : r[0] && r[0].systemAddress !== cur ? r[0] : r[1];
+    if (!w) return null;
+    return { starSystem: w.starSystem, systemAddress: w.systemAddress, starClass: w.starClass ?? "", at: "", arrived: false, source: "route" };
   }
 
   /**

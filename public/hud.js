@@ -187,8 +187,10 @@
         return null;
       }
       var k = starKind(jt.starClass);
-      status.textContent = jt.arrived ? "Arrived" : "Jumping";
-      box.className = "jump jump--" + k.kind + (jt.arrived ? " jump--arrived" : "");
+      var src = jt.source || "jump";
+      status.textContent =
+        src === "target" ? "Targeted" : src === "route" ? "Next on route" : jt.arrived ? "Arrived" : "Jumping";
+      box.className = "jump jump--" + k.kind + (jt.arrived ? " jump--arrived" : "") + " jump--src-" + src;
       q(root, "sys").textContent = jt.starSystem;
       q(root, "star").textContent = k.label;
       q(root, "note").textContent = k.note;

@@ -127,30 +127,63 @@ function destroyAllHudOverlays() {
 */
 let hudLayout = { corner: "tr", order: [] };
 let hudHidden = false;
+/**
+ * The HUDs that were open when the app last ran, restored on the next launch — hidden, so the
+ * hotkey brings back exactly the set the owner left (owner, 2026-09-13). Same file as the layout.
+ */
+let hudRestoreList = [];
 function hudLayoutPath() {
   return path.join(app.getPath("userData"), "hud-layout.json");
 }
 function loadHudLayout() {
   try {
     const j = JSON.parse(fs.readFileSync(hudLayoutPath(), "utf8"));
-    if (j && typeof j === "object") setHudLayout(j, false);
+    if (j && typeof j === "object") {
+      setHudLayout(j, false);
+      if (Array.isArray(j.open)) {
+        hudRestoreList = j.open
+          .filter((o) => o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"))
+          .slice(0, MAX_HUD_OVERLAYS)
+          .map((o) => ({
+            pathname: o.pathname,
+            width: Number.isFinite(Number(o.width)) && Number(o.width) > 0 ? Math.floor(Number(o.width)) : 404,
+            height: Number.isFinite(Number(o.height)) && Number(o.height) > 0 ? Math.floor(Number(o.height)) : 330,
+          }));
+      }
+    }
   } catch {
     /* first run, or unreadable: defaults */
+  }
+}
+function persistHudFile() {
+  try {
+    const open = hudOverlayStack.map((s) => ({ pathname: s.pathname, width: s.width, height: s.height }));
+    fs.writeFileSync(hudLayoutPath(), JSON.stringify({ ...hudLayout, open, hidden: hudHidden }), "utf8");
+  } catch {
+    /* ignore */
   }
 }
 function setHudLayout(next, persist) {
   const corner = typeof next.corner === "string" && /^(tl|tr|bl|br)$/.test(next.corner) ? next.corner : hudLayout.corner;
   const order = Array.isArray(next.order) ? next.order.filter((k) => typeof k === "string").slice(0, 16) : hudLayout.order;
   hudLayout = { corner, order };
-  if (persist) {
-    try {
-      fs.writeFileSync(hudLayoutPath(), JSON.stringify(hudLayout), "utf8");
-    } catch {
-      /* ignore */
-    }
-  }
+  if (persist) persistHudFile();
   relayoutHudStack();
   return hudLayout;
+}
+/** Reopen last session's HUDs, hidden; the hotkey shows them as they were. */
+async function restoreHudOverlays(iconForChild) {
+  const list = hudRestoreList;
+  hudRestoreList = [];
+  if (!list.length) return;
+  for (const o of list) {
+    try {
+      await requestHudOverlaySlot(o.pathname, o.width, o.height, iconForChild, "open");
+    } catch {
+      /* a page that no longer exists: skip it */
+    }
+  }
+  toggleHudVisibility(true);
 }
 
 /**
@@ -195,6 +228,7 @@ function relayoutHudStack() {
 /** Hide or show every HUD window (the global shortcut). Windows keep their state; only visibility changes. */
 function toggleHudVisibility(force) {
   hudHidden = typeof force === "boolean" ? force : !hudHidden;
+  persistHudFile();
   for (const s of hudOverlayStack) {
     if (!s.win || s.win.isDestroyed()) continue;
     try {
@@ -214,8 +248,12 @@ function hudSlotKey(pathNorm) {
 
 /** @param {number} width @param {number} height @param {Electron.BrowserWindow | null} parentWin */
 function createHudOverlayWindow(width, height, iconForChild, parentWin) {
+  // No `parent`: a child window is minimised together with its parent on Windows, which took every
+  // HUD off the screen whenever the launcher was minimised (owner, 2026-09-12). The HUDs are
+  // always-on-top, click-through windows of their own; the launcher closing still closes them
+  // through the app's own shutdown path.
+  void parentWin;
   const win = new BrowserWindow({
-    parent: parentWin ?? undefined,
     width,
     height,
     frame: false,
@@ -311,14 +349,17 @@ async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode
       hudOverlayStack.splice(existing, 1);
       destroyHudWindow(slot.win);
       relayoutHudStack();
+      persistHudFile();
       return { opened: false, paths: hudPathsFiltered() };
     }
     if (mode === "set" && slot.pathname !== pathNorm) {
       slot.pathname = pathNorm;
       slot.width = Math.max(slot.width || 0, width);
+      slot.height = Math.max(slot.height || 0, height);
       try {
         await slot.win.loadURL(`${runtime.getLocalBaseUrl()}${pathNorm}`);
         relayoutHudStack();
+        persistHudFile();
       } catch (e) {
         return { opened: true, paths: hudPathsFiltered(), error: e instanceof Error ? e.message : String(e) };
       }
@@ -333,7 +374,7 @@ async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode
 
   const url = `${runtime.getLocalBaseUrl()}${pathNorm}`;
   const win = createHudOverlayWindow(width, height, iconForChild, mainWindow);
-  hudOverlayStack.push({ win, pathname: pathNorm, key, width });
+  hudOverlayStack.push({ win, pathname: pathNorm, key, width, height });
 
   win.webContents.once("did-fail-load", (_e, code, desc) => {
     console.error("[edexo-compare] HUD overlay failed to load:", url, code, desc);
@@ -342,6 +383,8 @@ async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode
   try {
     await win.loadURL(url);
     relayoutHudStack();
+    if (hudHidden) win.hide();
+    persistHudFile();
     return { opened: true, paths: hudPathsFiltered() };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -434,6 +477,7 @@ function registerFootOverlayIpc(iconForChild) {
     hudOverlayStack.splice(idx, 1);
     destroyHudWindow(slot.win);
     relayoutHudStack();
+    persistHudFile();
     return { closed: true, paths: hudPathsFiltered() };
   });
 
@@ -568,6 +612,7 @@ async function start() {
     },
   });
   mainWindow.loadURL(url);
+  void restoreHudOverlays(winIcon);
   mainWindow.on("close", () => {
     destroyAllHudOverlays();
   });

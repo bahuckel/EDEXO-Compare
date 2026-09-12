@@ -1158,8 +1158,17 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         footStatusPollTimer = null;
       }
       const STATUS_POLL_MS = 1000;
+      let lastJumpKey: string | null = null;
+      const jumpChangedNow = (): boolean => {
+        const jt = store.nextJumpTarget();
+        const key = jt ? `${jt.source}|${jt.systemAddress}|${jt.starSystem}|${jt.arrived ? 1 : 0}` : "";
+        if (key === lastJumpKey) return false;
+        lastJumpKey = key;
+        return true;
+      };
       footStatusPollTimer = setInterval(() => {
         const navChanged = store.applyLiveNavRoute(readLiveNavRouteWaypoints());
+        const jumpChanged = jumpChangedNow();
         const statusPath = path.join(journalDir, "Status.json");
         let raw: string;
         try {
@@ -1170,7 +1179,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           store.statusDestination = null;
           store.applyLiveShipFuel(null, null);
           const footHudEmpty = store.footTravelOdometerEnabled && store.footTravelOdometerTracking;
-          if (footHudEmpty || store.exoOrganicTracker || navChanged || hadDest) push();
+          if (footHudEmpty || store.exoOrganicTracker || navChanged || hadDest || jumpChanged) push();
           return;
         }
         const fix = parseStatusJsonFootFix(raw);
@@ -1195,7 +1204,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           fuel != null ? fuel.fuelReserve : null,
         );
         const footHud = store.footTravelOdometerEnabled && store.footTravelOdometerTracking;
-        if (footHud || store.exoOrganicTracker || fuelChanged || navChanged || destChanged) push();
+        if (footHud || store.exoOrganicTracker || fuelChanged || navChanged || destChanged || jumpChanged) push();
       }, STATUS_POLL_MS);
 
       /*

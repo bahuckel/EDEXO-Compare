@@ -1172,14 +1172,14 @@ export function organicLiveSummary(store: GameStateStore): NonNullable<AppStatus
   const { credits, pendingSamples } = organicDataValuation(store, cachedPrices);
   const bodyKey = store.exoOrganicTracker?.bodyKey ?? store.overlayTouchdownBodyKey ?? store.uiSelectedBodyKey;
   const body = bodyKey ? store.bodies.get(bodyKey) : undefined;
-  const jt = store.lastJumpTarget;
+  const jt = store.nextJumpTarget();
   return {
     systemName: store.currentSystem ?? null,
     bodyName: body?.bodyName ?? null,
     bioSignals: body?.biologicalSignals ?? null,
     organicDataValueCredits: credits,
     organicPendingSampleCount: pendingSamples,
-    jumpTarget: jt ? { starSystem: jt.starSystem, starClass: jt.starClass, arrived: jt.arrived } : null,
+    jumpTarget: jt ? { starSystem: jt.starSystem, starClass: jt.starClass, arrived: jt.arrived, source: jt.source } : null,
   };
 }
 
@@ -1348,7 +1348,7 @@ export function buildSnapshot(
     exoOverlayFocusBodyKey,
     exoOverlayFocusBody,
     statusDestination: bootLoading ? null : store.statusDestination,
-    jumpTarget: bootLoading ? null : store.lastJumpTarget,
+    jumpTarget: bootLoading ? null : store.nextJumpTarget(),
     focusedSystemUndiscovered:
       !bootLoading && focusAddr != null && store.mainStarWasDiscoveredBySystem.get(focusAddr) === false,
     remainingJumpsInRoute: bootLoading ? null : store.remainingJumpsInRoute,
