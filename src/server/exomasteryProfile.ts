@@ -700,6 +700,22 @@ export function valueForNumericPath(
   rec: ExplorationScanRecord | null | undefined,
 ): number | null {
   const low = path.toLowerCase();
+  /**
+   * `body.solidComposition.Rock|Metal|Ice` — the crust split, read before anything else.
+   *
+   * The profiles have carried these two histograms since the feeder was built and the ranking model
+   * never scored either, because this function had no branch for them and every caller reads the
+   * value through here. For the pair it separates best that is not a small loss: Frutexa acus lives
+   * on 85.31-97.28 % rock and metallicum on 64.25-72 %, ranges that do not touch, and the model was
+   * ordering the two on temperature and gravity alone. {@link solidValue} already does the lookup
+   * and the fraction-to-percent conversion for the habitat scorer; the same call keeps both scorers
+   * on one set of units.
+   */
+  const solid = /^body\.solidComposition\.(.+)$/i.exec(path);
+  if (solid) {
+    const { v, known } = solidValue(scan, rec, solid[1]!);
+    return known ? v : null;
+  }
   if (low.endsWith(".gravity") || low === "body.gravity" || low.includes("surfacegravity")) {
     const raw = scan.SurfaceGravity ?? rec?.surfaceGravity;
     if (raw != null && Number.isFinite(raw)) return journalSurfaceGravityToG(raw);

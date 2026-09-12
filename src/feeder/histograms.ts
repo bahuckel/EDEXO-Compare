@@ -65,11 +65,69 @@ export function histogramOf(values: number[], edges: number[], bins = HISTOGRAM_
   return counts;
 }
 
+/**
+ * Interior edges at equal width across the pooled range.
+ *
+ * Quantiles put the bins where the *rows* are, which is right for a parameter whose corpus is spread
+ * and badly wrong for one whose corpus is a few tight clusters. Rock fraction is the second kind:
+ * Frutexa acus alone contributes 3,612 bodies within half a percentage point of 91 % rock, so the
+ * quantile cut spent twelve of sixteen bins on 90.64-91.21 and left everything from 69 % to 90.6 %
+ * in a single bin. Acus (85.31-97.28 %) and metallicum (64.25-72 %) do not overlap on this axis at
+ * all, and that one fat bin held both — a body at 85.9 % rock scored 224 acus against 14 metallicum
+ * where the true ratio is every acus against none.
+ *
+ * Equal width cannot collapse like that: the bin a value lands in depends on the value, not on how
+ * many rows some other species contributed nearby.
+ */
+export function equalWidthEdges(values: number[], bins = HISTOGRAM_BINS): number[] {
+  const clean = values.filter((v) => Number.isFinite(v));
+  if (clean.length < MIN_SAMPLES_FOR_EDGES) return [];
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const v of clean) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  if (!(hi > lo)) return [];
+  const edges: number[] = [];
+  for (let i = 1; i < bins; i++) edges.push(lo + ((hi - lo) * i) / bins);
+  const distinct = [...new Set(edges)];
+  return distinct.length === edges.length ? edges : [];
+}
+
+/**
+ * Parameters cut at equal width rather than at quantiles.
+ *
+ * Rock and metal only. Every other numeric is spread widely enough across the corpus that quantiles
+ * do what they are there for, and these are the two measured to collapse — see {@link
+ * equalWidthEdges}.
+ */
+function usesEqualWidthEdges(path: string): boolean {
+  return /^body\.solidComposition\.(rock|metal)$/i.test(path);
+}
+
+/**
+ * Ice, left out of the model on purpose.
+ *
+ * The three fractions sum to a hundred, so any two of them carry the whole crust and the third is
+ * the same fact counted again — and the terms are summed as if independent. Ice is the one to drop:
+ * on the landable bodies biology grows on it is almost always zero, and where it is not, the body's
+ * own class already says so. Quantile edges collapsed on it and it had no edges at all, so the model
+ * has never scored it; measured with all three, ordering gained nothing over rock and metal alone
+ * (mean rank 3.248 against 3.257, top-3 62.5 % against 62.9 %) and the reliability of "Chance here"
+ * lost a third of its accuracy (0.0072 against 0.0050). A term that says what two other terms
+ * already said only makes the model more certain, never more right.
+ */
+function isExcludedCompositionPath(path: string): boolean {
+  return /^body\.solidComposition\.ice$/i.test(path);
+}
+
 /** Edges for every parameter the pooled corpus can support. */
 export function buildGlobalEdges(pooled: Map<string, number[]>): HistogramEdges {
   const out: HistogramEdges = {};
   for (const [path, values] of pooled) {
-    const edges = globalEdges(values);
+    if (isExcludedCompositionPath(path)) continue;
+    const edges = usesEqualWidthEdges(path) ? equalWidthEdges(values) : globalEdges(values);
     if (edges.length) out[path] = edges;
   }
   return out;
