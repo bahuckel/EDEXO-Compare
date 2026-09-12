@@ -55,6 +55,8 @@ export type ExoOrganicTrackerInternal = {
 export type ExoOrganicOverlayHost = {
   exoOrganicTracker: ExoOrganicTrackerInternal | null;
   exoOrganicLastFix: FootTravelFix | null;
+  /** When the run for this species on this body began (ms epoch), for the HUD timer. Optional on test hosts. */
+  organicRunStartedAtMs?: (bodyKey: string, speciesKey: string) => number | undefined;
   readonly firstFootfallBodies: Set<string>;
   /** Where each plant was sampled — the radar's dots, kept across bodies and across restarts. */
   surfaceSampleMarks: SurfaceMark[];
@@ -439,6 +441,33 @@ export function ingestExoOrganicJournalLine(
       return;
     }
 
+    /*
+      The third sample is a place too.
+
+      Analyse ends the run, and until now it ended it without recording where it happened: no anchor,
+      so the overlay had no third distance to show and put the payout in the "Scan 3" slot instead;
+      and no mark, so the third plant never appeared on the radar beside the first two. The commander
+      walked to it like the others — the position is as real as theirs, and `Status.json` is the only
+      place it exists.
+    */
+    const analyseFix = resolveFootFixForOrganicLine(statusFix, line);
+    if (analyseFix) {
+      t.anchors.push({
+        latDeg: analyseFix.latDeg,
+        lonDeg: analyseFix.lonDeg,
+        planetRadiusM: analyseFix.planetRadiusM,
+      });
+      store.addSurfaceSampleMark(
+        bk,
+        bodyNameNormEarly || t.bodyNameNorm,
+        analyseFix.latDeg,
+        analyseFix.lonDeg,
+        speciesDisplayFromLine(line) || t.speciesDisplay,
+        lineIso,
+        conditionsAtPlant,
+      );
+    }
+
     const wasLogged = line.WasLogged === true;
     t.phase = "celebrate";
     t.celebrationUntil = Date.now() + 60_000;
@@ -471,6 +500,9 @@ export function buildExoMinimapDto(
 ): ExoMinimapDTO | null {
   const fix = store.exoOrganicLastFix;
   if (!fix) return null;
+  // No body underfoot (no touchdown, no sample run) means no radar. `Status.json` keeps reporting a
+  // latitude from orbit, so the fix alone would draw an empty radar all the way out to supercruise.
+  if (!bodyKeyOnFoot) return null;
   const R = fix.planetRadiusM;
   if (!(R > 0)) return null;
 
@@ -479,7 +511,13 @@ export function buildExoMinimapDto(
   const mPerDegLon = mPerDegLat * Math.cos(fix.latDeg * torad);
   const marks: ExoMinimapMarkDTO[] = [];
 
-  const push = (latDeg: number, lonDeg: number, kind: "sample" | "ship", markLabel: string) => {
+  const push = (
+    latDeg: number,
+    lonDeg: number,
+    kind: "sample" | "ship",
+    markLabel: string,
+    active = false,
+  ) => {
     // Longitude wraps; without this a plant just across the antimeridian reads as half a planet away.
     let dLon = lonDeg - fix.lonDeg;
     if (dLon > 180) dLon -= 360;
@@ -490,6 +528,7 @@ export function buildExoMinimapDto(
       eastM: dLon * mPerDegLon,
       distanceM: greatCircleDistanceMeters(fix.latDeg, fix.lonDeg, latDeg, lonDeg, R),
       label: markLabel,
+      active,
     });
   };
 
@@ -513,9 +552,23 @@ export function buildExoMinimapDto(
     return bodyKeyOnFoot == null || m.bodyKey === bodyKeyOnFoot;
   };
 
+  /*
+    The species the commander is sampling right now, if the run is on this body.
+
+    `ScanOrganic` tracks one species per planet, so the tracker names the only run that can be in
+    progress here. Everything else on this rock is a leftover — worth keeping on the map, worth not
+    mistaking for the thing being collected.
+  */
+  const tracker = store.exoOrganicTracker;
+  const activeSpecies =
+    tracker && belongsHere({ bodyKey: tracker.bodyKey, bodyNameNorm: tracker.bodyNameNorm })
+      ? tracker.speciesDisplay.trim().toLowerCase()
+      : null;
+
   for (const m of store.surfaceSampleMarks) {
     if (!belongsHere(m)) continue;
-    push(m.latDeg, m.lonDeg, "sample", m.label);
+    const isActive = activeSpecies != null && m.label.trim().toLowerCase() === activeSpecies;
+    push(m.latDeg, m.lonDeg, "sample", m.label, isActive);
   }
   const ship = store.surfaceShipMark;
   if (ship && belongsHere(ship)) push(ship.latDeg, ship.lonDeg, "ship", "Your ship");
@@ -540,6 +593,7 @@ export function buildExoOrganicOverlayDto(
 
   let distFirstM: number | null = null;
   let distSecondM: number | null = null;
+  let distThirdM: number | null = null;
   let spacingBetweenSamplesM: number | null = null;
 
   if (fix && anchors[0] && avgR(anchors[0]) > 0) {
@@ -549,6 +603,15 @@ export function buildExoOrganicOverlayDto(
       anchors[0].latDeg,
       anchors[0].lonDeg,
       avgR(anchors[0]),
+    );
+  }
+  if (fix && anchors[2] && avgR(anchors[2]) > 0) {
+    distThirdM = greatCircleDistanceMeters(
+      fix.latDeg,
+      fix.lonDeg,
+      anchors[2].latDeg,
+      anchors[2].lonDeg,
+      avgR(anchors[2]),
     );
   }
   if (fix && anchors[1] && avgR(anchors[1]) > 0) {
@@ -613,14 +676,19 @@ export function buildExoOrganicOverlayDto(
   const celebrationRemainSec =
     t.phase === "celebrate" ? Math.max(0, Math.ceil((t.celebrationUntil - Date.now()) / 1000)) : 0;
 
+  const runStartedMs =
+    typeof store.organicRunStartedAtMs === "function" ? store.organicRunStartedAtMs(t.bodyKey, t.speciesKey) : undefined;
+
   return {
     visible: true,
     phase: t.phase,
     celebrationRemainSec,
+    runStartedIso: runStartedMs != null && Number.isFinite(runStartedMs) ? new Date(runStartedMs).toISOString() : null,
     speciesDisplay: label,
     minSampleDistanceM: minG,
     distToFirstM: distFirstM != null ? Math.round(distFirstM) : null,
     distToSecondM: distSecondM != null ? Math.round(distSecondM) : null,
+    distToThirdM: distThirdM != null ? Math.round(distThirdM) : null,
     spacingBetweenSamplesM: spacingBetweenSamplesM != null ? Math.round(spacingBetweenSamplesM) : null,
     spacingMeetsMin,
     separationForSecondSampleM:

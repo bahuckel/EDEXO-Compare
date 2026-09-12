@@ -152,7 +152,7 @@ export type JournalWatcherHandle = {
   getPath: () => string | null;
 };
 
-const POLL_MS = 500;
+const POLL_MS = 2000; // owner: keep log polling slow; the mtime watch below still wakes it early
 
 /**
  * After game restart Elite adds a new log; we must merge **all** journal files in order, then tail only the newest.
@@ -196,7 +196,7 @@ export function startJournalWatcher(
     if (!currentPath) return;
     watchTarget = currentPath;
     try {
-      watchFile(watchTarget, { interval: 200 }, onWatchEvent);
+      watchFile(watchTarget, { interval: 1000 }, onWatchEvent);
     } catch {
       watchTarget = null;
     }

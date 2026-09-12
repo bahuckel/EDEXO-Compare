@@ -31,7 +31,6 @@ import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
-import type { SpeciesMatchContext } from "../src/shared/types.js";
 import { exomasteryHabitatQualityPercent, loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
 import { rankSpeciesOnBody, TERM_DAMPING } from "../src/server/speciesLikelihood.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
@@ -76,6 +75,14 @@ for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explora
   const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
   byId.set(r.bodyId, r);
   scansBySystem.set(r.systemAddress, byId);
+}
+
+/** klightspeed region index for a body's system, or null when the position is not known. */
+function regionIndexFor(b: BodyExoState): number | null {
+  const pos = systemPositions.get(b.systemAddress);
+  if (!pos) return null;
+  const idx = regionIndexForSystem(root, pos.x, pos.z);
+  return idx != null && idx > 0 ? idx : null;
 }
 
 /** Star and region, the two things the app knows about a body that the rock itself does not say. */
@@ -129,6 +136,16 @@ let ranked = 0;
  */
 const USE_MODEL = process.argv.includes("--model");
 const NO_PRIOR = process.argv.includes("--no-prior");
+/** Rank on the species' count in this region instead of its share of the whole corpus. */
+const REGION_PRIOR = process.argv.includes("--region-prior");
+const PER_TERM = process.argv.includes("--per-term");
+/** `--drop=body.surfaceTemperature,body.atmosphereType` — measure what a term was worth. */
+const DROP_PATHS = new Set(
+  (process.argv.find((a) => a.startsWith("--drop=")) ?? "--drop=").split("=")[1]!.split(",").filter(Boolean),
+);
+const REGION_WEIGHT = Number(
+  (process.argv.find((a) => a.startsWith("--region-weight=")) ?? "--region-weight=1").split("=")[1],
+);
 const MIN_SAMPLES = Number(
   (process.argv.find((a) => a.startsWith("--min-samples=")) ?? "--min-samples=1").split("=")[1],
 );
@@ -195,6 +212,11 @@ for (const b of bodies) {
       damping: DAMPING,
       noPrior: NO_PRIOR,
       minSamples: MIN_SAMPLES,
+      regionPrior: REGION_PRIOR,
+      regionIndex: REGION_PRIOR ? regionIndexFor(b) : null,
+      regionPriorWeight: REGION_WEIGHT,
+      dropPaths: DROP_PATHS,
+      perTerm: PER_TERM,
     }).ranked.map((r) => [r.match.entry.id, r.probability]),
   );
   const scored = matches
@@ -266,7 +288,7 @@ if (ranked === 0) {
 }
 
 console.log(
-  `\nordering           ${USE_MODEL ? `Bayes posterior (damping ${DAMPING}${NO_PRIOR ? ", no prior" : ""}, min ${MIN_SAMPLES})` : "habitat similarity"}`,
+  `\nordering           ${USE_MODEL ? `Bayes posterior (damping ${DAMPING}${NO_PRIOR ? ", no prior" : ""}${REGION_PRIOR ? `, region prior w=${REGION_WEIGHT}` : ""}${DROP_PATHS.size ? `, without ${DROP_PATHS.size} path(s)` : ""}${PER_TERM ? ", per-term" : ""}, min ${MIN_SAMPLES})` : "habitat similarity"}`,
 );
 console.log(`ranked species     ${ranked}   over ${scoredRows} scored candidate rows`);
 console.log(`mean rank          ${(rankSum / ranked).toFixed(3)}`);

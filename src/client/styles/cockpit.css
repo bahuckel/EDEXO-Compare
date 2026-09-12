@@ -1,0 +1,867 @@
+/*
+ * Cockpit pass over the shared primitives (WEBUI-REDESIGN 6.2 / 6.3): every modal, every primary
+ * button and the neutral chips get the launcher's language — chamfered corners, a hairline header
+ * rule, ink-on-orange for the pressed state — without touching any component's markup. Loaded
+ * last, so it wins ties against the older rules.
+ */
+
+/* ---- modals: encyclopedia, my exobiology, unfinished business, feeder, system map, options … --- */
+.modal-backdrop {
+  background: rgba(3, 2, 2, 0.78);
+}
+.modal-panel,
+.confirm-modal,
+.info-panel {
+  border: 1px solid var(--accent-dim);
+  border-radius: 0;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.7);
+  background: linear-gradient(180deg, rgba(48, 24, 8, 0.55), transparent 22%), #0d0907;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% 100%,
+    12px 100%,
+    0 calc(100% - 12px)
+  );
+}
+.modal-head {
+  border-bottom: 0;
+  background: linear-gradient(90deg, var(--accent) 0 34%, var(--accent-a22) 70%, transparent) bottom left / 100% 1px no-repeat;
+}
+.modal-head h3 {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+.modal-head h3::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 0.5rem 1px 0;
+  background: var(--accent);
+  transform: rotate(45deg);
+  box-shadow: 0 0 6px var(--accent-glow);
+  vertical-align: middle;
+}
+.modal-close {
+  color: var(--accent);
+  opacity: 0.75;
+}
+.modal-close:hover {
+  opacity: 1;
+  color: var(--accent-bright);
+}
+
+/* ---- panels inside the app: square corners, no glow on everything. No clip-path here: it cut
+ * shadows, dropdowns and the unfolded card's edges (owner review 2026-09-12). ----------------- */
+.panel,
+.card-neon {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ---- buttons: primary = orange fill with ink text; neutral = frame that fills on hover ---------- */
+.btn-top-neutral,
+.btn-top-toggle,
+.btn-confirm-cancel,
+.btn-confirm-go,
+.candidate-species-toggle,
+.planetary-info-copy-summary,
+.tabs-jump-btn {
+  border-radius: 0 !important;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  font-family: inherit;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.btn-confirm-go {
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  color: var(--ink, #07060a);
+  border-color: #ffb060;
+}
+.btn-confirm-go--danger {
+  background: linear-gradient(180deg, #ff9c88, #ff5a3c 60%, #e64a2e);
+  border-color: #ff9c88;
+}
+.btn-top-neutral:hover,
+.btn-top-toggle:hover,
+.btn-confirm-cancel:hover,
+.planetary-info-copy-summary:hover,
+.tabs-jump-btn:hover {
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  color: var(--ink, #07060a);
+  transform: none;
+}
+
+/* ---- chips and pills: square the corners, keep the colours ---------------------------------------- */
+.info-pill,
+.exo-pill,
+.tab {
+  border-radius: 0 !important;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}
+.tab.on {
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  color: var(--ink, #07060a);
+  border-color: #ffb060;
+}
+.tab.on .tab-meta {
+  color: rgba(7, 6, 10, 0.75);
+}
+.tab.on .tab-dot {
+  background: var(--ink, #07060a);
+  box-shadow: none;
+}
+
+/* ---- inputs ------------------------------------------------------------------------------------------ */
+.my-exo-search-input,
+.appbar-search input,
+input[type="search"],
+input[type="text"] {
+  border-radius: 0;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}
+input[type="search"]:focus,
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 12px var(--accent-a12);
+}
+
+/* ==== round 3 (owner review 2026-09-12) ======================================================== */
+
+/* ---- popovers open to the right; the alerts panel in the cockpit frame --------------------------- */
+.exo-data-alerts-popover {
+  left: 0;
+  right: auto;
+  border-radius: 0;
+  border: 1px solid var(--accent-dim);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+.exo-data-alerts-trigger__mail {
+  display: block;
+}
+.appbar-menu {
+  left: 0;
+  right: auto;
+}
+
+/* ---- the six secondary buttons sit inline when there is room; the menu only on narrow screens --- */
+@media (min-width: 1100px) {
+  .appbar-menu-btn {
+    display: none;
+  }
+  .appbar-menu {
+    display: inline-flex;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s-3);
+    min-width: 0;
+    padding: 0;
+    background: none;
+    clip-path: none;
+    box-shadow: none;
+  }
+  .appbar-menu > * {
+    background: none;
+  }
+  .appbar-menu > * + * {
+    border-top: 0;
+  }
+  .appbar-menu .appbar-icon-btn {
+    width: 1.85rem;
+    height: 1.85rem;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+    letter-spacing: 0;
+    color: var(--muted);
+    background: rgba(10, 10, 14, 0.7);
+    border: 1px solid var(--accent-a22);
+  }
+  .appbar-menu .appbar-icon-btn::after {
+    content: none;
+  }
+  .appbar-menu .appbar-icon-btn:hover,
+  .appbar-menu .appbar-icon-btn:focus-visible {
+    color: var(--ink, #07060a);
+    border-color: #ffb060;
+  }
+}
+
+/* ---- sell range: square, and the ×5 tag on the price's centre line ------------------------------- */
+.exo-payout-range-panel.exo-payout-range-panel--clickable,
+.exo-pill--footfall-full,
+.exo-payout-v2-greenbox,
+.exo-pill--grid,
+.body-detail-callout,
+.genus-notes-pill,
+.tabs-strip-host-card,
+.appbar-icon-btn {
+  border-radius: 0 !important;
+}
+.price-hero {
+  align-items: center;
+}
+.price-hero .price-tag {
+  align-self: center;
+  line-height: 1.5;
+}
+
+/* ---- scrollbars: the standard properties (Chromium 121+, Firefox); inherited from the root ------ */
+:root {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) #0b0806;
+}
+.tabs-body-rail .tabs-strip {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-a35) transparent;
+}
+
+/* ---- rows mode: a genus with several candidates is a slim divider, not a boxed card ------------ */
+.body-pane--rows .genus-card-shell {
+  max-height: none;
+  overflow: visible;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.body-pane--rows .species-list {
+  gap: 0.9rem;
+}
+.body-pane--rows .genus-card-header-row {
+  justify-content: flex-start;
+  padding: 0;
+  border-bottom: 1px solid var(--accent-a22);
+  background: none;
+}
+.body-pane--rows .genus-card-collapse-hit {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+}
+.body-pane--rows .genus-card-header-row .genus-card-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--accent);
+  text-shadow: none;
+}
+.body-pane--rows .genus-card-chevron {
+  font-size: var(--fs-xs);
+  color: var(--accent);
+}
+.body-pane--rows .genus-species-odds {
+  display: none;
+}
+.body-pane--rows .genus-card-collapse-grid {
+  flex: 0 0 auto;
+}
+.body-pane--rows .genus-notes-pill {
+  font-size: var(--fs-2xs);
+  padding: 0.12rem 0.45rem;
+  margin-right: 0.4rem;
+}
+
+/* ==== round 4 (owner review 2026-09-12): the sell range in the cockpit's own language ============ */
+
+/* the old blue neon box is gone; the fold is the frame */
+.exo-payout-range-panel,
+.exo-payout-range-panel.exo-payout-range-panel--clickable {
+  border: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+.exo-payout-inner-click {
+  padding: 0;
+}
+.exo-payout-inner-click:hover .payout-hero {
+  filter: brightness(1.12);
+}
+
+/* hero tile: label, the number, the ×5/×1 tag on its centre line, the alternative below */
+.payout-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "k k"
+    "cr tag"
+    "alt alt";
+  align-items: center;
+  gap: 0.15rem 0.7rem;
+  margin-bottom: 0.5rem;
+  padding: 0.6rem 0.85rem 0.65rem;
+  color: var(--text);
+  border: 1px solid var(--accent-a35);
+  background:
+    linear-gradient(135deg, var(--accent-a15), transparent 55%),
+    rgba(20, 14, 10, 0.8);
+  clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+  transition: filter 0.15s;
+}
+.payout-hero > .fact-k {
+  grid-area: k;
+  color: var(--accent);
+  opacity: 0.9;
+}
+.payout-cr {
+  grid-area: cr;
+  min-width: 0;
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-bright);
+  text-shadow: 0 0 10px var(--accent-glow);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.payout-cr small {
+  margin-left: 0.3rem;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  text-shadow: none;
+}
+.payout-hero > .price-tag {
+  grid-area: tag;
+  justify-self: end;
+  align-self: center;
+  line-height: 1.5;
+}
+.payout-alt {
+  grid-area: alt;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+}
+/* ×5 you would take: the analysis blue */
+.payout-hero--unwalked {
+  border-color: rgba(79, 208, 255, 0.5);
+  background:
+    linear-gradient(135deg, rgba(79, 208, 255, 0.16), transparent 55%),
+    rgba(10, 16, 20, 0.8);
+}
+.payout-hero--unwalked > .fact-k {
+  color: var(--ok);
+}
+.payout-hero--unwalked .payout-cr {
+  color: var(--ok-soft);
+  text-shadow: 0 0 10px rgba(79, 208, 255, 0.35);
+}
+/* unknown: caution yellow on the frame only */
+.payout-hero--unknown {
+  border-color: rgba(255, 210, 63, 0.45);
+}
+.payout-hero--unknown > .fact-k {
+  color: var(--warn);
+}
+
+/* the three facts under it: the planetary panel's tiles, footfall tinted by its state */
+.facts--payout .fact-v {
+  white-space: normal;
+  overflow: visible;
+}
+.fact--tone-yours {
+  color: var(--live, #7be07b);
+  border-color: rgba(123, 224, 123, 0.45);
+}
+.fact--tone-open {
+  color: var(--ok);
+  border-color: rgba(79, 208, 255, 0.45);
+}
+.fact--tone-other {
+  color: var(--danger);
+  border-color: rgba(255, 90, 60, 0.45);
+}
+
+/* ==== round 5: the species card wall in the cockpit's language ================================ */
+
+/* genus box: hairline frame, warm fill, no glow; title = tracked label bar */
+.genus-card-shell {
+  border: 1px solid var(--accent-a35);
+  background: linear-gradient(180deg, rgba(48, 24, 8, 0.28), transparent 18%), #0d0907;
+  box-shadow: none;
+}
+.genus-card-header-row {
+  background: var(--accent-a06);
+  border-bottom: 1px solid var(--accent-a22);
+}
+.genus-card-header-row .genus-card-title {
+  font-size: var(--fs-md);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+.genus-card-chevron {
+  color: var(--accent);
+}
+.genus-card-scroll,
+.genus-card-scroll--in-anim {
+  padding: 0.7rem;
+  gap: 0.7rem;
+}
+
+/* the card: square, hairline, warm; the photo keeps its frame */
+.species-card {
+  border: 1px solid var(--accent-a22);
+  background: #0b0806;
+  box-shadow: none;
+}
+.species-card-hero {
+  background: #050406;
+  border-radius: 0;
+  border-bottom: 1px solid var(--accent-a22);
+}
+.species-thumb-btn--hero {
+  background: #050406;
+}
+.species-photo-note--hero {
+  border-top: 1px solid var(--accent-a15);
+  letter-spacing: 0.08em;
+}
+
+/* identity strip: one chamfered tile — genus tracked, species in text, done = analysis blue */
+.species-identity-neon {
+  padding: 0.55rem 0.7rem 0.5rem;
+  border-top: 0;
+  background: none;
+  box-shadow: none;
+}
+.species-identity-neon-inner {
+  border: 1px solid var(--accent-a35);
+  background: linear-gradient(135deg, var(--accent-a12), transparent 60%), rgba(20, 14, 10, 0.8);
+  box-shadow: none;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.species-identity-genus {
+  letter-spacing: 0.16em;
+  font-size: var(--fs-sm);
+  text-shadow: none;
+}
+.species-identity-epithet {
+  letter-spacing: 0.04em;
+}
+.species-identity-neon--done .species-identity-neon-inner {
+  border-color: rgba(79, 208, 255, 0.55);
+  background: linear-gradient(135deg, rgba(79, 208, 255, 0.14), transparent 60%), rgba(10, 16, 20, 0.8);
+}
+.species-scan-ok {
+  color: var(--ok);
+  text-shadow: 0 0 8px rgba(79, 208, 255, 0.5);
+}
+.species-identity-value-label {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: var(--fs-2xs);
+}
+
+/* similarity index: cockpit tile, not a blue box */
+.species-similarity-index {
+  margin: 0.5rem 0.7rem 0.45rem;
+  border: 1px solid var(--accent-a22);
+  background: var(--accent-a06);
+  box-shadow: none;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.species-similarity-index--clickable:hover {
+  background: var(--accent-a12);
+}
+.species-similarity-index-label {
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.16em;
+  color: var(--accent);
+}
+
+/* the body-value cells: the planetary panel's tiles */
+.species-quad-grid {
+  background: none;
+  border-top: 1px solid var(--accent-a15);
+  padding: 0.6rem 0.7rem 0.7rem;
+  gap: 0.45rem;
+}
+.species-quad-cell {
+  align-items: flex-start;
+  text-align: left;
+  min-height: 3.6rem;
+  padding: 0.45rem 0.6rem 0.5rem;
+  gap: 0.15rem;
+  background: rgba(20, 14, 10, 0.75);
+  border: 1px solid var(--accent-a22);
+  box-shadow: none;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.species-quad-cell--click:hover {
+  filter: brightness(1.2);
+}
+.species-quad-label {
+  font-size: var(--fs-2xs) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: left;
+  color: currentColor !important;
+  opacity: 0.7;
+}
+.species-quad-value {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  text-align: left;
+  color: inherit;
+}
+.species-quad-cell--other-match {
+  background: var(--accent-a06) !important;
+  border-color: var(--accent-a35) !important;
+  color: var(--accent-bright);
+}
+.species-quad-cell--other-match .species-quad-value {
+  color: var(--text);
+}
+
+/* drawer + badges */
+.species-other-match-shell-title,
+.species-other-match-drawer-toggle {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: var(--fs-2xs);
+  color: var(--accent);
+}
+.species-codex-new,
+.species-demoted-badge,
+.badge-foot-learned,
+.badge-approx {
+  border-radius: 0 !important;
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+}
+.badge-foot-learned {
+  color: var(--ok);
+  border-color: rgba(79, 208, 255, 0.45);
+  background: rgba(79, 208, 255, 0.08);
+}
+.badge-approx {
+  color: var(--warn);
+}
+
+/* 3.2 in rows mode: the unfolded card does not repeat the planet's own values under the planet */
+.body-pane--rows .srow-card .species-quad-cell:not(.species-quad-cell--other-match) {
+  display: none;
+}
+.body-pane--rows .srow-card .species-quad-grid {
+  grid-template-columns: 1fr;
+}
+
+/* ==== 4.3: the empty state in the launcher's language, with its radar scope ==================== */
+.bio-empty-wrap .panel.empty {
+  padding: 1.4rem 1rem 1.3rem;
+  text-align: center;
+  border: 1px solid var(--accent-a35);
+  background: linear-gradient(180deg, rgba(48, 24, 8, 0.35), transparent 40%), #0d0907;
+}
+.bio-empty-scope {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 0.9rem;
+  border-radius: 50%;
+  border: 1px solid var(--accent-dim);
+  box-shadow: inset 0 0 0 1px rgba(255, 138, 31, 0.08), 0 0 16px var(--accent-glow);
+  background:
+    radial-gradient(circle, transparent 0 30%, rgba(255, 138, 31, 0.14) 30.5% 31%, transparent 31.5%),
+    radial-gradient(circle, transparent 0 60%, rgba(255, 138, 31, 0.14) 60.5% 61%, transparent 61.5%),
+    linear-gradient(90deg, transparent 49.5%, rgba(255, 138, 31, 0.16) 49.5% 50.5%, transparent 50.5%),
+    linear-gradient(180deg, transparent 49.5%, rgba(255, 138, 31, 0.16) 49.5% 50.5%, transparent 50.5%);
+}
+.bio-empty-scope::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 72%, rgba(255, 138, 31, 0.05) 80%, rgba(255, 160, 60, 0.45) 100%);
+  animation: bio-empty-sweep 2.2s linear infinite;
+}
+.panel-empty--dead-system .bio-empty-scope::after {
+  animation: none;
+  background: none;
+}
+@keyframes bio-empty-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.bio-empty-caption-hed {
+  margin: 0 0 0.35rem;
+  font-size: var(--fs-md);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+.bio-empty-caption-sub {
+  margin: 0 auto;
+  max-width: 44rem;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+}
+.bio-empty-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  padding: 0.35rem 0.75rem;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  border: 1px solid var(--accent-a35);
+  background: var(--accent-a06);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.bio-empty-next .fact-k {
+  color: var(--accent);
+  opacity: 0.9;
+}
+.bio-empty-next-class {
+  font-weight: 700;
+  color: var(--accent-bright);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bio-empty-scope::after {
+    animation: none;
+  }
+}
+
+/* ==== round 6: 3.7 unlikely tier as a fold; header tray + context strip; modal tables ========= */
+
+/* 3.7 — the unlikely tier reads like every other fold: hairline, chevron, tracked label */
+.candidate-species-unlikely {
+  margin-top: 0.6rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--accent-a22);
+}
+.candidate-species-unlikely-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.2rem;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  cursor: pointer;
+}
+.candidate-species-unlikely-toggle:hover {
+  color: var(--accent-bright);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+.candidate-species-unlikely-toggle--on {
+  background: none;
+}
+.candidate-species-unlikely-note {
+  margin: 0.2rem 0 0.5rem;
+  color: var(--text-faint);
+}
+.species-list--unlikely {
+  opacity: 0.9;
+}
+
+/* header tray and context strip: chips square, route bar a hairline track */
+.brand-star-chip,
+.brand-notable-pill,
+.system-map-notable-pill,
+.context-group,
+.appbar-dot {
+  border-radius: 0 !important;
+}
+.brand-star-chip {
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+  letter-spacing: 0.04em;
+}
+.header-route-bar-track {
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--accent-a22);
+}
+.header-route-num {
+  color: var(--accent-bright);
+}
+.top-data-value-block .exo-pill,
+.header-tray .exo-pill {
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}
+
+/* modal tables and cards: tracked heads, hairline rows, warm tiles */
+.fdb-table thead th,
+.exo-payout-detail-table th,
+.encyclopedia-criteria-label,
+.species-fact-label,
+.my-exo-card-fact > small,
+.data-value-breakdown-list > .data-value-breakdown-row:first-child {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.fdb-table td,
+.exo-payout-detail-table td {
+  border-bottom: 1px solid var(--accent-a15);
+}
+.fdb-row--clickable:hover td,
+.fdb-row:hover td {
+  background: var(--accent-a08);
+}
+.my-exo-card,
+.encyclopedia-found-card,
+.fdb-panel,
+.gsx-panel,
+.encyclopedia-exomastery-panel,
+.encyclopedia-focus-body-panel {
+  border-radius: 0 !important;
+  border: 1px solid var(--accent-a22);
+  background: linear-gradient(180deg, rgba(48, 24, 8, 0.22), transparent 30%), #0d0907;
+  box-shadow: none;
+}
+.fdb-chip,
+.gsx-tier,
+.gsx-ff,
+.ency-filter-field,
+.btn-ency-exomastery,
+.btn-ency-found,
+.btn-notes,
+.my-exo-nav-icon {
+  border-radius: 0 !important;
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+.fdb-chip--on,
+.gsx-tier--codex {
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f) !important;
+  color: var(--ink, #07060a) !important;
+  border-color: #ffb060 !important;
+}
+.modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) transparent;
+}
+
+/* ==== round 7: 5.3 help drawers; 2.4 vertical body rail on wide screens ======================== */
+.fold-help-btn {
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: 0.4rem;
+  padding: 0;
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent-a35);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+  cursor: pointer;
+}
+.fold-help-btn:hover,
+.fold-help-btn--on {
+  color: var(--ink, #07060a);
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  border-color: #ffb060;
+}
+.fold-help {
+  margin: 0 0 0.7rem;
+  padding: 0.55rem 0.8rem 0.4rem;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--text-dim);
+  border: 1px solid var(--accent-a22);
+  border-left: 3px solid var(--accent);
+  background: var(--accent-a06);
+  animation: pane-in 220ms var(--fold-ease, ease);
+}
+.fold-help p {
+  margin: 0 0 0.45rem;
+}
+.fold-help strong {
+  color: var(--accent-bright);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.fold-help em {
+  color: var(--warn);
+  font-style: normal;
+}
+
+/* 2.4: from 1500 px the body list is a vertical rail on the left of the pane */
+@media (min-width: 1500px) {
+  .body-stage {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    column-gap: 1.2rem;
+    align-items: start;
+  }
+  .body-stage > .tabs-rework {
+    position: sticky;
+    top: 0.5rem;
+    max-height: calc(100vh - 1rem);
+    margin: 0;
+  }
+  .body-stage .tabs-body-rail {
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0;
+    padding: 0.4rem;
+    max-height: calc(100vh - 1.2rem);
+    overflow: hidden;
+  }
+  .body-stage .tabs-body-heading {
+    padding: 0.2rem 0.3rem 0.4rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+  }
+  .body-stage .tabs-chevron {
+    display: none;
+  }
+  .body-stage .tabs-body-rail .tabs-strip {
+    flex-direction: column;
+    align-items: stretch;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+    gap: 0.35rem;
+  }
+  .body-stage .tabs-orbit-section {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.3rem;
+  }
+  .body-stage .tabs-orbit-label {
+    padding: 0.2rem 0.3rem 0;
+  }
+  .body-stage .tabs-strip-host-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+  .body-stage .tab {
+    width: 100%;
+  }
+}

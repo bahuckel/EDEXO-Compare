@@ -60,7 +60,7 @@
   border-color: var(--danger);
   box-shadow:
     0 10px 30px var(--shadow-a45),
-    inset 0 0 0 1px rgba(248, 113, 113, 0.25);
+    inset 0 0 0 1px rgba(255, 90, 60, 0.25);
 }
 
 .toast--success {
@@ -169,7 +169,7 @@
 
 .btn-confirm-go--danger {
   border-color: var(--danger);
-  background: rgba(248, 113, 113, 0.18);
+  background: rgba(255, 90, 60, 0.18);
 }
 
 .btn-confirm-cancel:hover {

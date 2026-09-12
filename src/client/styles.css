@@ -28,4 +28,9 @@
 @import "./styles/photos-and-options.css";
 @import "./styles/second-screen.css";
 @import "./styles/galaxy-map.css";
+@import "./styles/prices.css";
+@import "./styles/fold.css";
+@import "./styles/species-rows.css";
+@import "./styles/layout.css";
 @import "./styles/backlog.css";
+@import "./styles/cockpit.css";

@@ -14,6 +14,7 @@ import type {
   SystemMapNodeDTO,
   SystemMapSnapshot,
 } from "../shared/types.js";
+import { estimateSurfaceTemperatureRange } from "./surfaceTemperatureRange.js";
 import { shortBodyLabel } from "../shared/systemMapLabels.js";
 import { formatFullSpectralNotation, spectralDiscGlyph } from "../shared/spectralNotation.js";
 import type { GameStateStore } from "./gameState.js";
@@ -1036,9 +1037,7 @@ export function buildSystemMapSnapshot(
             hasExobiology: false,
             bioBodyKey: null,
             estimatedSurfaceTempK: null,
-          surfaceTemperatureRangeK: null,
             surfaceTemperatureRangeK: null,
-        surfaceTemperatureRangeK: null,
             exoMatchSummaries: [],
             maxExoHeuristicCredits: 0,
             exoValueTier: 0,
@@ -1100,7 +1099,6 @@ export function buildSystemMapSnapshot(
           bioBodyKey: null,
           estimatedSurfaceTempK: null,
           surfaceTemperatureRangeK: null,
-        surfaceTemperatureRangeK: null,
           exoMatchSummaries: [],
           maxExoHeuristicCredits: 0,
           exoValueTier: 0,

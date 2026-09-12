@@ -1,5 +1,7 @@
 import type { ExoPayoutRangeDTO } from "@shared/types";
+import { footfallCertainty, footfallValueNote, type FootfallCertainty } from "@shared/footfallValue";
 import { KvRow } from "./bodyDetailKv";
+import { fmtCrRangeExact, fmtCrRangeShort } from "./credits";
 
 function footfallMeta(pr: ExoPayoutRangeDTO): {
   text: string;
@@ -64,6 +66,46 @@ function rungLabel(pr: ExoPayoutRangeDTO): { text: string; hint: string } | null
   }
 }
 
+/**
+ * One price, the right one (WEBUI-REDESIGN 1.1).
+ *
+ * The panel used to draw the ×1 band and the ×5 band side by side on every body. The journal
+ * usually knows which applies (`footfallCertainty`): when it does, only that figure is the price;
+ * when it does not, the list price is the price and the ×5 is one small line underneath, worded as
+ * the conditional it is. Nothing is lost — the detail modal keeps the full per-species table.
+ */
+export function payoutHeadline(pr: ExoPayoutRangeDTO): {
+  certainty: FootfallCertainty;
+  mult: 1 | 5;
+  min: number;
+  max: number;
+  /** Tracked-uppercase tag beside the price. */
+  tag: string;
+  /** The conditional line under the price when the answer is unknown; null otherwise. */
+  alt: { label: string; min: number; max: number } | null;
+} {
+  const certainty = footfallCertainty({
+    journalWasFootfalled: pr.journalWasFootfalled,
+    commanderFirstFootfall: pr.commanderFirstFootfall,
+  });
+  const minList = pr.minTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
+  const maxList = pr.maxTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
+  if (certainty === "unwalked") {
+    return { certainty, mult: 5, min: minList * 5, max: maxList * 5, tag: "×5 first footfall", alt: null };
+  }
+  if (certainty === "walked") {
+    return { certainty, mult: 1, min: minList, max: maxList, tag: "×1 footfalled", alt: null };
+  }
+  return {
+    certainty,
+    mult: 1,
+    min: minList,
+    max: maxList,
+    tag: "×1 list · footfall unknown",
+    alt: { label: "if first footfall ×5", min: minList * 5, max: maxList * 5 },
+  };
+}
+
 export function ExoPayoutRangePanel({
   pr,
   variant = "popup",
@@ -73,127 +115,73 @@ export function ExoPayoutRangePanel({
 }) {
   const multLabel = pr.mult === 5 ? "×5 (your first footfall on this body)" : "×1 list price";
   const rung = rungLabel(pr);
-  const minListSum = pr.minTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
-  const maxListSum = pr.maxTotalSpecies.reduce((s, r) => s + r.listCredits, 0);
-  const minFfSum = pr.minTotalSpecies.reduce((s, r) => s + r.listCredits * 5, 0);
-  const maxFfSum = pr.maxTotalSpecies.reduce((s, r) => s + r.listCredits * 5, 0);
-
-  const primaryIsFootfall = pr.commanderFirstFootfall === true;
-  const primaryMin = primaryIsFootfall ? pr.minCr : minListSum;
-  const primaryMax = primaryIsFootfall ? pr.maxCr : maxListSum;
-  const secondaryMin = primaryIsFootfall ? minListSum : minFfSum;
-  const secondaryMax = primaryIsFootfall ? maxListSum : maxFfSum;
-  const primaryTitle = primaryIsFootfall
-    ? "Organic payout (first footfall ×5)"
-    : "Standard sell (price list ×1)";
-  const secondaryTitle = primaryIsFootfall ? "List value (×1)" : "First-footfall payout (×5)";
+  const head = payoutHeadline(pr);
+  const note = footfallValueNote(head.certainty, pr.footfallSeenLabel);
 
   const slotHint =
     pr.slotSource === "bio_signals"
-      ? "From FSS / DSS biological signal count in the merged journal (when present)."
-      : "Fallback: DSS genus list length when the journal has not published a bio signal count yet.";
-  const candidateHint =
-    "Species count after the same gates as Candidate species (scan, DSS genus filter, on-foot locks, Include Bacterium). Only rows with a strict price-list match are priced.";
+      ? "Bio signal count from the journal's FSS / DSS."
+      : "DSS genus count (no bio signal count in the journal yet).";
+  const candidateHint = "Priced species passing the same gates as the candidate list.";
   const candidateShortfall = pr.pricedCandidateCount < pr.slotCount;
-  const candidateShortfallHint =
-    "Candidates are fewer than bio signals for this body — try turning on Include Bacterium (Candidate species header), or narrow with DSS / on-foot confirmation.";
+  const candidateShortfallHint = "Fewer candidates than signals — try Include Bacterium, or narrow with a DSS.";
   const candidatesPillTitle = candidateShortfall
     ? `${candidateHint} ${candidateShortfallHint}`
     : candidateHint;
-  const listBandHint =
-    "Low / high band uses k = min(bio slots, priced candidates): sum the k cheapest vs k priciest distinct list prices (strict keys).";
-  const ffBandHint =
-    "Same k species, each row ×5 — what you earn if the commander qualifies for first-footfall organics on this body.";
+  const bandHint = "Band: k cheapest vs k priciest list prices, k = min(signals, candidates). Click for the table.";
 
   const ff = footfallMeta(pr);
 
   const wrapClass =
     variant === "main" ? "exo-payout-range-main" : "body-detail-callout body-detail-callout--exo-range";
 
-  const listPriceBody =
-    minListSum === maxListSum
-      ? `${minListSum.toLocaleString()} CR`
-      : `${minListSum.toLocaleString()}–${maxListSum.toLocaleString()} CR`;
-  const ffPriceBody =
-    minFfSum === maxFfSum
-      ? `${minFfSum.toLocaleString()} CR`
-      : `${minFfSum.toLocaleString()}–${maxFfSum.toLocaleString()} CR`;
-
-  const popupPrimaryCr =
-    primaryMin === primaryMax
-      ? `${primaryMin.toLocaleString()} CR`
-      : `${primaryMin.toLocaleString()} – ${primaryMax.toLocaleString()} CR`;
-  const popupSecondaryCr =
-    secondaryMin === secondaryMax
-      ? `${secondaryMin.toLocaleString()} CR`
-      : `${secondaryMin.toLocaleString()} – ${secondaryMax.toLocaleString()} CR`;
+  const priceTitle = `${fmtCrRangeExact(head.min, head.max)} — ${note} ${bandHint}`;
 
   return (
     <div className={wrapClass}>
       {variant === "popup" ? (
         <>
-          <span className="body-detail-callout-label">Organic Sell Range (estimate)</span>
-          <span className="body-detail-callout-value">{popupPrimaryCr}</span>
-          <span
-            className="body-detail-callout-value dim tiny"
-            style={{ display: "block", marginTop: "0.35rem" }}
-          >
-            {secondaryTitle}: {popupSecondaryCr}
+          <span className="body-detail-callout-label">Organic sell (estimate)</span>
+          <span className="body-detail-callout-value" title={priceTitle}>
+            {fmtCrRangeShort(head.min, head.max)} CR{" "}
+            <span className={`price-tag price-tag--${head.certainty}`}>{head.tag}</span>
           </span>
+          {head.alt ? (
+            <span className="body-detail-callout-value dim tiny price-alt" style={{ display: "block", marginTop: "0.35rem" }}>
+              {head.alt.label}: {fmtCrRangeShort(head.alt.min, head.alt.max)} CR
+            </span>
+          ) : null}
         </>
       ) : (
-        <div className="exo-payout-v2">
-          <div className="exo-payout-hero-pills">
-            <span className="exo-pill exo-pill--grid exo-pill--hero exo-pill--hero-pay">
-              <span className="exo-pill-tag">{primaryTitle}</span>
-              <span className="exo-pill-body exo-pill-body--hero-cr">
-                {primaryMin === primaryMax ? (
-                  <>
-                    {primaryMin.toLocaleString()} <span className="exo-payout-range-cr">CR</span>
-                  </>
-                ) : (
-                  <>
-                    {primaryMin.toLocaleString()} <span className="exo-payout-range-sep">–</span>{" "}
-                    {primaryMax.toLocaleString()} <span className="exo-payout-range-cr">CR</span>
-                  </>
-                )}
-              </span>
+        <div className="exo-payout-v2 payout">
+          {/* The hero: one price, the right one, in the cockpit's frame; blue when it is the ×5 you would take. */}
+          <div className={`payout-hero payout-hero--${head.certainty}`} title={priceTitle}>
+            <span className="fact-k">
+              {head.certainty === "unwalked"
+                ? "First footfall value"
+                : head.certainty === "walked"
+                  ? "Sell value · body walked"
+                  : "Sell value · footfall unknown"}
             </span>
-            <span className="exo-pill exo-pill--grid exo-pill--hero exo-pill--hero-secondary">
-              <span className="exo-pill-tag">{secondaryTitle}</span>
-              <span className="exo-pill-body exo-pill-body--hero-cr">
-                {secondaryMin === secondaryMax ? (
-                  <>
-                    {secondaryMin.toLocaleString()} <span className="exo-payout-range-cr">CR</span>
-                  </>
-                ) : (
-                  <>
-                    {secondaryMin.toLocaleString()} <span className="exo-payout-range-sep">–</span>{" "}
-                    {secondaryMax.toLocaleString()} <span className="exo-payout-range-cr">CR</span>
-                  </>
-                )}
-              </span>
+            <span className="payout-cr">
+              {fmtCrRangeShort(head.min, head.max)}
+              <small>CR</small>
             </span>
+            <span className={`price-tag price-tag--${head.certainty}`}>{head.tag}</span>
+            {head.alt ? (
+              <span className="payout-alt" title={fmtCrRangeExact(head.alt.min, head.alt.max)}>
+                {head.alt.label}: {fmtCrRangeShort(head.alt.min, head.alt.max)} CR
+              </span>
+            ) : null}
           </div>
-          <div className="exo-payout-pills-grid">
-            <span
-              className="exo-pill exo-pill--grid exo-pill--price"
-              title={`${listBandHint} ${candidateHint}`}
-            >
-              <span className="exo-pill-tag">CANDIDATES PRICE</span>
-              <span className="exo-pill-body">Price: {listPriceBody}</span>
-            </span>
-            <span className="exo-pill exo-pill--grid exo-pill--footfall-price" title={ffBandHint}>
-              <span className="exo-pill-tag">FOOTFALL PRICE</span>
-              <span className="exo-pill-body">{ffPriceBody}</span>
-            </span>
-            <span className="exo-pill exo-pill--grid exo-pill--meta" title={slotHint}>
-              <span className="exo-pill-tag">BIO SIGNALS</span>
-              <span className="exo-pill-body">{pr.slotCount}</span>
-            </span>
-            <span className="exo-pill exo-pill--grid exo-pill--meta" title={candidatesPillTitle}>
-              <span className="exo-pill-tag">CANDIDATES</span>
-              <span className="exo-pill-body">
+          <div className="facts facts--payout">
+            <div className="fact" title={slotHint}>
+              <span className="fact-k">Bio signals</span>
+              <span className="fact-v">{pr.slotCount}</span>
+            </div>
+            <div className="fact" title={candidatesPillTitle}>
+              <span className="fact-k">Candidates</span>
+              <span className="fact-v">
                 {pr.pricedCandidateCount}
                 {candidateShortfall ? (
                   <span
@@ -206,15 +194,11 @@ export function ExoPayoutRangePanel({
                   </span>
                 ) : null}
               </span>
-            </span>
-          </div>
-          <div className="exo-payout-footfall-row">
-            <span
-              className={`exo-pill exo-pill--footfall exo-pill--footfall-full exo-pill--footfall-${ff.tone}`}
-              title={`${ff.hint} Payout rule: ${multLabel}`}
-            >
-              {ff.text}
-            </span>
+            </div>
+            <div className={`fact fact--tone-${ff.tone}`} title={`${ff.hint} Payout rule: ${multLabel}`}>
+              <span className="fact-k">Footfall</span>
+              <span className="fact-v">{ff.text.replace("FOOTFALL — ", "")}</span>
+            </div>
           </div>
         </div>
       )}
@@ -267,11 +251,7 @@ export function ExoPayoutRangePanel({
         </div>
       ) : null}
       {variant === "popup" ? (
-        <p className="dim tiny body-detail-callout-note">
-          Band = k cheapest vs k priciest distinct price-list matches (strict keys). Detail view lists
-          list/sell (×1) and footfall (×5) per species. Narrows after DSS / on-foot confirmation; respects{" "}
-          <strong>Include Bacterium</strong>.
-        </p>
+        <p className="dim tiny body-detail-callout-note">{note}</p>
       ) : null}
     </div>
   );

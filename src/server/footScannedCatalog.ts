@@ -35,6 +35,7 @@ import { matchDatabaseToScan, shownSpeciesMatches, speciesMatchesCriteria } from
 import { loadSpeciesDatabaseFromTree } from "./speciesTreeLoader.js";
 import { filterByGenusHints } from "./genusMatchUtils.js";
 import { resolveSpeciesPhoto } from "./speciesPhotos.js";
+import { isBacteriumSpeciesEntry } from "../shared/speciesBacterium.js";
 import { lookupPrice } from "./priceList.js";
 
 const REL_PATH = join("data", "foot_scanned.json");
@@ -761,6 +762,13 @@ export function augmentMatchesWithFootCatalog(
   explorationRec: ExplorationScanRecord | null,
   journalHost?: JournalHostStarObservation | null,
   matchContext?: SpeciesMatchContext | null,
+  options?: {
+    /**
+     * The Candidate species "Bacterium" toggle. Off means off: a bacterium the catalog remembers on a
+     * body like this one is not brought back in through this door either (owner, 2026-09-12).
+     */
+    includeBacterium?: boolean;
+  },
 ): SpeciesMatch[] {
   const mode = footGenusMode(body, matches);
   if (mode.kind === "none") return matches;
@@ -821,6 +829,7 @@ export function augmentMatchesWithFootCatalog(
   for (const [speciesId, rawRows] of rowsBySpeciesId) {
     const entry = db.species.find((s) => s.id === speciesId);
     if (!entry) continue;
+    if (options?.includeBacterium === false && isBacteriumSpeciesEntry(entry)) continue;
 
     const rows = dedupeFootRowsById(rawRows).sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
     const gFold = genusFold(entry.genus);
@@ -828,7 +837,12 @@ export function augmentMatchesWithFootCatalog(
     haveIds.add(speciesId);
     matchedGenera.add(gFold);
 
-    const { photoUrl, photoNote, photoUrls } = resolveSpeciesPhoto(entry, projectRoot);
+    // The whole photo record, as the matcher's own rows carry it: without the variants and the
+    // credit map a commander's own photograph was shown under the standing ED-DSN credit.
+    const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(
+      entry,
+      projectRoot,
+    );
     const priceCredits = lookupPrice(prices, entry.displayName, entry.id);
 
     const primary = rows[0]!;
@@ -867,6 +881,8 @@ export function augmentMatchesWithFootCatalog(
       photoUrl,
       photoNote,
       photoUrls,
+      ...(photoVariants.length ? { photoVariants } : {}),
+      ...(photoCreditByUrl ? { photoCreditByUrl } : {}),
       priceCredits,
       organicAnalysisComplete: isOrganicComplete(entry),
       learnedFromFootScan: true,

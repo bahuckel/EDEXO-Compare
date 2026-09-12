@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { BodyComputed } from "@shared/types";
+import { fmtCrShort } from "./credits";
 
 /**
  * One tab model at every width.
@@ -138,6 +139,11 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                 >
                   {grp.map((b) => {
                     const on = b.state.key === selectedBodyKey;
+                    // The micro-summary (WEBUI-REDESIGN 2.4): bio count, best list price, a dot when a
+                    // species here has been analysed. Enough to choose a body without opening it.
+                    const bio = b.state.biologicalSignals;
+                    const best = b.matches.reduce((m, x) => (x.unlikely ? m : Math.max(m, x.priceCredits ?? 0)), 0);
+                    const done = b.matches.some((x) => x.organicAnalysisComplete === true);
                     return (
                       <button
                         key={b.state.key}
@@ -146,10 +152,17 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         aria-selected={on}
                         tabIndex={on ? 0 : -1}
                         data-body-key={b.state.key}
-                        className={on ? "tab on" : "tab"}
+                        className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}`}
                         onClick={() => onSelect(b.state.key)}
+                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}`}
                       >
-                        {b.tabLabel}
+                        <span className="tab-label">{b.tabLabel}</span>
+                        <span className="tab-meta">
+                          {bio ?? "?"}
+                          <small>bio</small>
+                          {best > 0 ? <> · {fmtCrShort(best)}</> : null}
+                        </span>
+                        {done ? <span className="tab-dot" aria-hidden="true" /> : null}
                       </button>
                     );
                   })}

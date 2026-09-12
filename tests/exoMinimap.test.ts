@@ -68,7 +68,7 @@ function host(
       speciesKey: "bacterium aurasus",
       speciesDisplay: "Bacterium Aurasus",
       genusLocalised: "Bacterium",
-      bodyNameNorm: "body",
+      bodyNameNorm: HERE_NORM,
       minSampleDistanceM: 500,
       anchors: [{ latDeg: over.lat ?? 0, lonDeg: over.lon ?? 0, planetRadiusM: RADIUS_M }],
       phase: "tracking",
@@ -80,6 +80,8 @@ function host(
       planetRadiusM: RADIUS_M,
       bodyName: over.bodyName === undefined ? HERE : over.bodyName,
       headingDeg: over.heading === undefined ? 90 : over.heading,
+      temperatureK: null,
+      gravityG: null,
     },
     firstFootfallBodies: new Set<string>(),
     surfaceSampleMarks: over.marks ?? [],
@@ -424,7 +426,15 @@ describe("the body a sample is filed under", () => {
         // No BodyName: this is the real shape of the line.
         Body: 22,
       } as never,
-      { latDeg: -12.5, lonDeg: 32.5, planetRadiusM: 5_246_376, bodyName: "Smojai UJ-F b13-0 B 4", headingDeg: 62 },
+      {
+        latDeg: -12.5,
+        lonDeg: 32.5,
+        planetRadiusM: 5_246_376,
+        bodyName: "Smojai UJ-F b13-0 B 4",
+        headingDeg: 62,
+        temperatureK: null,
+        gravityG: null,
+      },
       process.cwd(),
       getCachedSpeciesDatabase(),
     );
@@ -464,6 +474,8 @@ describe("advancing a run restored from the journal", () => {
     planetRadiusM: 5_246_376,
     bodyName: "Smojai UJ-F b13-0 B 4",
     headingDeg: 62,
+    temperatureK: null,
+    gravityG: null,
   };
 
   async function session() {
@@ -512,5 +524,98 @@ describe("advancing a run restored from the journal", () => {
     expect(mod.buildExoOrganicOverlayDto(store, new Map())!.sampleCount).toBe(1);
     mod.ingestExoOrganicJournalLine(store, line("Sample"), fix, process.cwd(), db);
     expect(mod.buildExoOrganicOverlayDto(store, new Map())!.sampleCount).toBe(2);
+  });
+});
+
+/**
+ * Which marks belong to what the commander is doing right now.
+ *
+ * The game's sampler holds one genus/species per planet at a time, so only one run can be in
+ * progress on this rock. The owner's case: standing among Stratum marks while three samples into a
+ * Tussock, and reading one as the other. Same species on another planet is a separate run entirely —
+ * fresh credits — and its marks are filed under that body, so they never reach this map.
+ */
+describe("telling the run in progress from what was left behind", () => {
+  const near = (m: number) => m / M_PER_DEG;
+
+  it("marks the species being sampled as active and the rest as leftovers", () => {
+    const dto = buildExoMinimapDto(
+      host({
+        marks: [
+          mark(near(50), 0, "Bacterium Aurasus"),
+          mark(near(80), 0, "Stratum Tectonicas"),
+          mark(0, near(60), "Tussock Ignis"),
+        ],
+      }),
+      "1:2",
+      500,
+    )!;
+    const byLabel = new Map(dto.marks.map((m) => [m.label, m]));
+    expect(byLabel.get("Bacterium Aurasus")!.active, "the run in progress").toBe(true);
+    expect(byLabel.get("Stratum Tectonicas")!.active, "a different species").toBeFalsy();
+    expect(byLabel.get("Tussock Ignis")!.active, "a different species").toBeFalsy();
+  });
+
+  it("treats every mark as a leftover when no run is in progress", () => {
+    const store = host({ marks: [mark(near(50), 0, "Bacterium Aurasus")] });
+    store.exoOrganicTracker = null;
+    const dto = buildExoMinimapDto(store, "1:2", 500)!;
+    expect(dto.marks.every((m) => !m.active)).toBe(true);
+  });
+
+  it("does not call a mark active because the run is on another body", () => {
+    const store = host({ marks: [mark(near(50), 0, "Bacterium Aurasus")] });
+    store.exoOrganicTracker = {
+      ...store.exoOrganicTracker!,
+      bodyKey: "9:9",
+      bodyNameNorm: normStatusBodyName(ELSEWHERE)!,
+    };
+    const dto = buildExoMinimapDto(store, "1:2", 500)!;
+    expect(dto.marks.every((m) => !m.active)).toBe(true);
+  });
+
+  it("never calls the ship active", () => {
+    const dto = buildExoMinimapDto(
+      host({ marks: [], ship: mark(near(30), 0, "ship") }),
+      "1:2",
+      500,
+    )!;
+    expect(dto.marks.find((m) => m.kind === "ship")!.active).toBeFalsy();
+  });
+});
+
+/**
+ * The third sample is a place, not a payout.
+ *
+ * Analyse ends the run, and it used to end it without recording where it happened — so the overlay
+ * had no third distance and showed credits in the "Scan 3" slot instead, and the third plant never
+ * joined the first two on the radar. The commander walked to it like the others.
+ */
+describe("the position of the third sample", () => {
+  const near = (m: number) => m / M_PER_DEG;
+
+  it("reports a distance back to the third sample once it exists", () => {
+    const h = host({});
+    h.exoOrganicTracker = {
+      ...h.exoOrganicTracker!,
+      anchors: [
+        { latDeg: 0, lonDeg: 0, planetRadiusM: RADIUS_M },
+        { latDeg: near(600), lonDeg: 0, planetRadiusM: RADIUS_M },
+        { latDeg: near(900), lonDeg: 0, planetRadiusM: RADIUS_M },
+      ],
+    };
+    const dto = build(h)!;
+    expect(dto.distToThirdM).not.toBeNull();
+    expect(dto.distToThirdM!).toBeGreaterThan(800);
+    expect(dto.distToThirdM!).toBeLessThan(1000);
+  });
+
+  it("says nothing about a third sample that has not been taken", () => {
+    const h = host({});
+    h.exoOrganicTracker = {
+      ...h.exoOrganicTracker!,
+      anchors: [{ latDeg: 0, lonDeg: 0, planetRadiusM: RADIUS_M }],
+    };
+    expect(build(h)!.distToThirdM).toBeNull();
   });
 });

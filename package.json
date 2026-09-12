@@ -42,11 +42,12 @@
     "travel-probe": "tsx scripts/travel-probe.ts",
     "fixture": "tsx scripts/gen-match-fixture.ts",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "npm run typecheck:client && npm run typecheck:server && npm run typecheck:tests",
     "typecheck:server": "tsc --noEmit -p tsconfig.server.json",
     "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",
     "dev:perf": "cross-env EDEXO_PERF=1 npm run dev",
-    "start:client:perf": "cross-env EDEXO_PERF=1 tsx src/server/devEntry.ts --host 127.0.0.1 --port 7111 --open"
+    "start:client:perf": "cross-env EDEXO_PERF=1 tsx src/server/devEntry.ts --host 127.0.0.1 --port 7111 --open",
+    "typecheck:client": "tsc --noEmit"
   },
   "dependencies": {
     "express": "^4.21.2",
@@ -72,6 +73,7 @@
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^17.12.0",
+    "jsdom": "^29.1.1",
     "png-to-ico": "^2.1.8",
     "pngjs": "^6.0.0",
     "prettier": "^3.9.6",

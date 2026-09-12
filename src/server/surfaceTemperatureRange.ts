@@ -99,7 +99,11 @@ function heatingOrbit(
   let cur: ExplorationScanRecord | null = rec;
   const seen = new Set<number>();
   for (let d = 0; d < 24 && cur; d++) {
-    const first = Array.isArray(cur.parents) ? (cur.parents[0] as Record<string, unknown>) : null;
+    const parents: unknown[] = Array.isArray(cur.parents) ? (cur.parents as unknown[]) : [];
+    const first: Record<string, unknown> | null =
+      parents.length > 0 && parents[0] && typeof parents[0] === "object"
+        ? (parents[0] as Record<string, unknown>)
+        : null;
     if (!first) break;
     if (typeof first.Star === "number") {
       const star = byBodyId.get(first.Star);
@@ -107,8 +111,13 @@ function heatingOrbit(
       if (star && au > 0) return { star, au };
       break;
     }
-    const nextId = typeof first.Planet === "number" ? first.Planet : (first.Null as number | undefined);
-    if (typeof nextId !== "number" || seen.has(nextId)) break;
+    const nextId: number | null =
+      typeof first.Planet === "number"
+        ? first.Planet
+        : typeof first.Null === "number"
+          ? first.Null
+          : null;
+    if (nextId == null || seen.has(nextId)) break;
     seen.add(nextId);
     cur = byBodyId.get(nextId) ?? null;
   }

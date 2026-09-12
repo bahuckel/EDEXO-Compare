@@ -133,6 +133,32 @@ export function parseStatusJsonFootFix(rawText: string): FootTravelFix | null {
   };
 }
 
+/**
+ * `Status.json` `Destination` — the body the commander has targeted, which the game keeps set
+ * while they are still standing on the previous one. The HUD uses it to show the candidates for
+ * where they are going next rather than where they are.
+ */
+export type StatusDestination = { systemAddress: number; bodyId: number; name: string };
+
+export function parseStatusJsonDestination(rawText: string): StatusDestination | null {
+  let j: unknown;
+  try {
+    j = JSON.parse(rawText);
+  } catch {
+    return null;
+  }
+  if (!j || typeof j !== "object") return null;
+  const dest = (j as Record<string, unknown>).Destination;
+  if (!dest || typeof dest !== "object") return null;
+  const o = dest as Record<string, unknown>;
+  const systemAddress = pickFinite(o, ["System", "system"]);
+  const bodyId = pickFinite(o, ["Body", "body"]);
+  const nameRaw = o.Name;
+  const name = typeof nameRaw === "string" && nameRaw.trim() ? nameRaw.trim() : "";
+  if (systemAddress == null || bodyId == null || !name) return null;
+  return { systemAddress, bodyId, name };
+}
+
 export type StatusJsonFuelTons = { fuelMain: number; fuelReserve: number };
 
 /** `Status.json` `Fuel.FuelMain` / `Fuel.FuelReservoir` (tonnes). */

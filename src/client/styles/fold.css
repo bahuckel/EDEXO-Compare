@@ -1,0 +1,147 @@
+/*
+ * The fold (WEBUI-REDESIGN 2.5 / 4.1): one header, one motion, one memory for every panel.
+ *
+ * Motion is `grid-template-rows` 1fr → 0fr, which animates to the content's real height without
+ * a max-height guess, plus a fade. The summary slides into the header only while folded. The
+ * existing genus-group collapse is retuned to the same duration and easing so the page has one
+ * rhythm.
+ */
+:root {
+  --fold-ms: 260ms;
+  --fold-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fold {
+  padding: 0;
+}
+.fold-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  padding: 0.7rem 1rem 0.65rem;
+  background: linear-gradient(90deg, var(--accent) 0 34%, var(--accent-a22) 70%, transparent) bottom left / 100% 1px no-repeat;
+}
+.fold--closed .fold-head {
+  background-size: 100% 0;
+}
+.fold-toggle {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.fold-toggle:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 4px;
+}
+.fold-chevron {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  align-self: center;
+  border-right: 1.5px solid var(--accent);
+  border-bottom: 1.5px solid var(--accent);
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform var(--fold-ms) var(--fold-ease);
+}
+.fold--closed .fold-chevron {
+  transform: rotate(-45deg) translate(1px, 0);
+}
+.fold-title {
+  flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent-glow);
+  white-space: nowrap;
+}
+.fold-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-md);
+  color: var(--text-dim);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity var(--fold-ms) var(--fold-ease),
+    transform var(--fold-ms) var(--fold-ease);
+}
+.fold--closed .fold-summary {
+  opacity: 1;
+  transform: none;
+}
+.fold-aside {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+.fold-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows var(--fold-ms) var(--fold-ease),
+    opacity var(--fold-ms) var(--fold-ease);
+  opacity: 1;
+}
+.fold--closed .fold-body {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.fold-inner {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.7rem 1rem 0.9rem;
+  transition: padding var(--fold-ms) var(--fold-ease);
+}
+.fold--closed .fold-inner {
+  pointer-events: none;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* the genus groups already fold; same rhythm now */
+.genus-card-collapse-grid {
+  transition: grid-template-rows var(--fold-ms) var(--fold-ease);
+}
+
+/* body switch: the pane arrives instead of snapping */
+@keyframes pane-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.body-pane {
+  animation: pane-in 220ms var(--fold-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fold-body,
+  .fold-chevron,
+  .fold-summary,
+  .genus-card-collapse-grid {
+    transition: none;
+  }
+  .body-pane {
+    animation: none;
+  }
+}

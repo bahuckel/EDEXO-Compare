@@ -10,7 +10,7 @@ import {
   statSync,
   readdirSync,
 } from "node:fs";
-import type { AppSnapshot, AppStatusDTO, JournalBootProgressDTO, JournalLine } from "../shared/types.js";
+import type { AppSnapshot, AppStatusDTO, ImportDumpStatusDTO, JournalBootProgressDTO, JournalLine } from "../shared/types.js";
 import { journalHistoryCutoffUtcMs, parseJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { openUrlInBrowser, openLauncherShell, openLocalFile } from "./openUrl.js";
 import { GameStateStore } from "./gameState.js";
@@ -37,17 +37,21 @@ import { buildEncyclopediaExomasteryPlanetsPayload } from "./exomasteryEdsmEncyc
 import {
   buildEncyclopediaPayload,
   buildSnapshot,
+  organicLiveSummary,
   findSpeciesEntryForEncyclopedia,
   getCachedSpeciesDatabase,
   loadSpeciesDatabase,
 } from "./snapshot.js";
 import { writeExoDataAlertFixFiles } from "./exoDataAlertFix.js";
 import { buildFeederStatus } from "./feederStatus.js";
+import { openFeeder } from "../feeder/pipeline.js";
+import { formatImportReport, importSpanshExport } from "../feeder/spanshImport.js";
+import { feederDataDirExists } from "../feeder/paths.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
 import { clearFootScannedCatalogCache } from "./footScannedCatalog.js";
 import { clearGenusPhotosFolderCache, getSpeciesDataWarnings } from "./speciesTreeLoader.js";
-import { parseStatusJsonFootFix, parseStatusJsonFuel } from "./footTravelStatus.js";
+import { parseStatusJsonDestination, parseStatusJsonFootFix, parseStatusJsonFuel } from "./footTravelStatus.js";
 import { parseNavRouteJson } from "./navRouteFuel.js";
 import {
   getProjectRoot,
@@ -453,6 +457,50 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   /**
    * Launcher-sized status. Reads store fields directly — no snapshot build, no one-shot state.
    */
+  /*
+    "Import Spansh export" from the launcher. Same importer and gates as `feeder -- import-dump`;
+    runs in the background because the file is gigabytes, and one at a time because the feeder
+    store is a single in-memory database written back on persist.
+  */
+  let importDump: ImportDumpStatusDTO = {
+    running: false,
+    file: null,
+    apply: false,
+    startedAt: null,
+    finishedAt: null,
+    report: null,
+    error: null,
+  };
+  const startImportDump = (file: string, apply: boolean): { ok: boolean; error?: string } => {
+    if (importDump.running) return { ok: false, error: "An import is already running." };
+    if (!feederDataDirExists()) return { ok: false, error: "No feeder corpus on this machine — this is a build-side tool." };
+    if (!existsSync(file)) return { ok: false, error: `File not found: ${file}` };
+    importDump = { running: true, file, apply, startedAt: new Date().toISOString(), finishedAt: null, report: null, error: null };
+    void (async () => {
+      try {
+        const ctx = await openFeeder();
+        const report = await importSpanshExport(ctx.store, file, { apply });
+        importDump = {
+          ...importDump,
+          running: false,
+          finishedAt: new Date().toISOString(),
+          report: formatImportReport(report, apply),
+          failures: report.failures.length,
+          matched: report.matched,
+          changed: report.changed,
+        };
+      } catch (e) {
+        importDump = {
+          ...importDump,
+          running: false,
+          finishedAt: new Date().toISOString(),
+          error: e instanceof Error ? e.message : String(e),
+        };
+      }
+    })();
+    return { ok: true };
+  };
+
   const getStatus = (): AppStatusDTO => {
     let journalDirConfiguredOk = false;
     try {
@@ -475,6 +523,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       commanderName: store.commanderName,
       journalBoot: journalBootProgress,
       speciesDataWarnings: getSpeciesDataWarnings(),
+      live: organicLiveSummary(store),
     };
   };
 
@@ -1050,6 +1099,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     scheduleBroadcast: push,
     getEncyclopedia: buildEncyclopediaPayload,
     getFeederStatus: () => buildFeederStatus(projectRoot, getCachedSpeciesDatabase()),
+    startImportDump,
+    getImportDumpStatus: () => importDump,
     getEncyclopediaExomastery: (genusDir, speciesEntryId, focusBodyKey) => {
       const entry = findSpeciesEntryForEncyclopedia(genusDir, speciesEntryId);
       if (!entry) return null;
@@ -1106,7 +1157,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         clearInterval(footStatusPollTimer);
         footStatusPollTimer = null;
       }
-      const STATUS_POLL_MS = 175;
+      const STATUS_POLL_MS = 1000;
       footStatusPollTimer = setInterval(() => {
         const navChanged = store.applyLiveNavRoute(readLiveNavRouteWaypoints());
         const statusPath = path.join(journalDir, "Status.json");
@@ -1115,9 +1166,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           raw = readFileSync(statusPath, "utf8");
         } catch {
           store.exoOrganicLastFix = null;
+          const hadDest = store.statusDestination != null;
+          store.statusDestination = null;
           store.applyLiveShipFuel(null, null);
           const footHudEmpty = store.footTravelOdometerEnabled && store.footTravelOdometerTracking;
-          if (footHudEmpty || store.exoOrganicTracker || navChanged) push();
+          if (footHudEmpty || store.exoOrganicTracker || navChanged || hadDest) push();
           return;
         }
         const fix = parseStatusJsonFootFix(raw);
@@ -1127,13 +1180,22 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         } else {
           store.exoOrganicLastFix = null;
         }
+        // The targeted body, for the HUD's candidate list. Pushed only when it actually changes.
+        const dest = parseStatusJsonDestination(raw);
+        const prevDest = store.statusDestination;
+        const destChanged =
+          (dest == null) !== (prevDest == null) ||
+          (dest != null &&
+            prevDest != null &&
+            (dest.systemAddress !== prevDest.systemAddress || dest.bodyId !== prevDest.bodyId || dest.name !== prevDest.name));
+        if (destChanged) store.statusDestination = dest;
         const fuel = parseStatusJsonFuel(raw);
         const fuelChanged = store.applyLiveShipFuel(
           fuel != null ? fuel.fuelMain : null,
           fuel != null ? fuel.fuelReserve : null,
         );
         const footHud = store.footTravelOdometerEnabled && store.footTravelOdometerTracking;
-        if (footHud || store.exoOrganicTracker || fuelChanged || navChanged) push();
+        if (footHud || store.exoOrganicTracker || fuelChanged || navChanged || destChanged) push();
       }, STATUS_POLL_MS);
 
       /*

@@ -1,0 +1,265 @@
+/*
+ * Species rows (WEBUI-REDESIGN 3.1–3.6): the candidate list as ranked one-line rows.
+ *
+ * A row is what you read on approach: thumbnail, genus + species + colour, scan progress, fit,
+ * scan spacing, chance (as a bar behind the row and a number), the value here. Click → the row
+ * unfolds into the full card (the old one, unchanged). Confirmed rows float up and tint like the
+ * HUD: green for the run in progress, blue when analysed. Attribute pills live only in the card.
+ */
+.srows {
+  display: flex;
+  flex-direction: column;
+}
+.srow {
+  position: relative;
+  background: linear-gradient(90deg, var(--accent-a15), transparent 70%) bottom left / 100% 1px no-repeat;
+}
+.srow:last-child {
+  background: none;
+}
+.srow-main {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto auto auto auto 14px;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0.5rem 0.75rem 0.5rem 0.6rem;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  overflow: hidden;
+}
+.srow-main:hover {
+  background: var(--accent-a08);
+}
+.srow-main:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+/* the chance, as a bar behind the row: the eye ranks before it reads */
+.srow-main::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--chance, 0%);
+  background: linear-gradient(90deg, var(--accent-a10), var(--accent-a06) 60%, transparent);
+  pointer-events: none;
+  transition: width var(--fold-ms, 260ms) ease;
+}
+.srow--live .srow-main::before {
+  background: linear-gradient(90deg, rgba(123, 224, 123, 0.16), rgba(123, 224, 123, 0.06) 60%, transparent);
+}
+.srow--done .srow-main::before {
+  background: linear-gradient(90deg, rgba(79, 208, 255, 0.16), rgba(79, 208, 255, 0.06) 60%, transparent);
+}
+.srow-main > * {
+  position: relative;
+}
+.srow-thumb {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border: 1px solid var(--accent-a22);
+  background: var(--surface-3);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+.srow-thumb--missing {
+  visibility: hidden;
+}
+.srow-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-lg);
+  color: var(--text);
+}
+.srow-name em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--accent-bright);
+}
+.srow-colour {
+  color: var(--text-dim);
+}
+.srow-colour--unknown {
+  color: var(--text-faint);
+}
+.srow-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.32rem;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.6;
+  vertical-align: 1px;
+  border: 1px solid currentColor;
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+}
+.srow-tag--new {
+  color: var(--accent);
+}
+.srow-tag--unlikely {
+  color: var(--text-faint);
+}
+.srow-tag--notpredicted {
+  color: var(--warn);
+}
+.srow-prog {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  padding: 0 0.32rem;
+  border: 1px solid currentColor;
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+}
+.srow-prog--live {
+  color: var(--live);
+  text-shadow: 0 0 6px rgba(123, 224, 123, 0.5);
+}
+.srow-prog--done {
+  color: var(--ok);
+  text-shadow: 0 0 6px var(--ok-dim, rgba(79, 208, 255, 0.5));
+}
+.srow-prog--seen {
+  color: var(--text-dim);
+}
+.srow-metric {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.srow-metric small {
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-right: 0.25rem;
+  color: var(--accent);
+  opacity: 0.8;
+}
+.srow-chance {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  min-width: 3.2em;
+  text-align: right;
+}
+.srow-price {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-bright);
+  white-space: nowrap;
+  text-align: right;
+}
+.srow-price .price-tag {
+  margin-left: 0.3rem;
+  font-size: var(--fs-2xs);
+}
+.srow--unwalked .srow-price {
+  color: var(--ok-soft);
+}
+.srow-chevron {
+  width: 6px;
+  height: 6px;
+  justify-self: center;
+  border-right: 1.5px solid var(--accent);
+  border-bottom: 1.5px solid var(--accent);
+  transform: rotate(-45deg);
+  transition: transform var(--fold-ms, 260ms) ease;
+}
+.srow--open .srow-chevron {
+  transform: rotate(45deg);
+}
+.srow--unlikely .srow-name,
+.srow--unlikely .srow-price,
+.srow--unlikely .srow-chance {
+  color: var(--text-faint);
+}
+
+/* the unfolded card: the existing species card, arriving with the fold rhythm */
+.srow-card {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: srow-open var(--fold-ms, 260ms) var(--fold-ease, ease);
+}
+.srow-card > .srow-card-inner {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.3rem 0 0.9rem;
+}
+/* the unfolded card is the normal card: full row width, nothing squeezed */
+.srow-card-inner > .species-card {
+  width: 100%;
+  max-width: none;
+}
+@keyframes srow-open {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+/* a genus with one candidate: the heading would repeat the row, so the shell goes header-less */
+.genus-card-shell--single .genus-card-header-row {
+  display: none;
+}
+.genus-card-shell--single .genus-species-odds {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .srow-main {
+    grid-template-columns: 28px minmax(0, 1fr) auto auto 14px;
+  }
+  .srow-fit,
+  .srow-dist {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .srow-card {
+    animation: none;
+  }
+  .srow-main::before,
+  .srow-chevron {
+    transition: none;
+  }
+}
+
+/* consecutive single-candidate genera read as one list, not a stack of boxes */
+.genus-card-shell--single {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+  max-height: none;
+}
+.genus-card-shell--single + .genus-card-shell--single {
+  margin-top: -0.9rem; /* cancels .body-pane--rows .species-list's gap */
+}
+/* rows mode: the genus box loses its padding, rows sit edge to edge */
+.body-pane--rows .genus-card-collapse-inner > .srows {
+  padding: 0.15rem 0;
+}
+.genus-card-shell--single .genus-card-collapse-grid {
+  flex: 0 0 auto;
+}

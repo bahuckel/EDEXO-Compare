@@ -29,7 +29,7 @@ export default defineConfig({
     alias: { "@shared": path.resolve(__dirname, "src/shared") },
   },
   test: {
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.{ts,tsx}"],
     environment: "node",
     // The species-database tests read data/species/**; keep them off the same worker clock as the
     // pure-function suites so a slow first read cannot fail an unrelated file.

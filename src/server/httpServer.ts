@@ -12,6 +12,7 @@ import type {
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
+  ImportDumpStatusDTO,
   BacklogMapDTO,
   CommanderSectorsDTO,
   GalaxySpeciesCatalogueDTO,
@@ -134,6 +135,13 @@ export function createHttpServer(opts: {
    * rather than showing empty numbers.
    */
   getFeederStatus?: () => FeederStatusDTO;
+  /**
+   * POST /api/feeder/import-dump — start a Spansh JSONL export import into the feeder corpus
+   * (`{ file, apply }`); GET /api/feeder/import-dump/status — its progress and last report.
+   * Absent on a build with no feeder corpus.
+   */
+  startImportDump?: (file: string, apply: boolean) => { ok: boolean; error?: string };
+  getImportDumpStatus?: () => ImportDumpStatusDTO;
   /** POST /api/settings/include-bacterium */
   setIncludeBacterium?: (value: boolean) => void;
   setIncludeExplorationScanData?: (value: boolean) => void;
@@ -655,6 +663,33 @@ export function createHttpServer(opts: {
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
     }
+  });
+
+  /*
+    The launcher's "Import Spansh export" button. The import streams a multi-gigabyte file through
+    the same four gates the CLI uses, so it runs as a background job and the launcher polls the
+    status route; only one at a time.
+  */
+  app.post("/api/feeder/import-dump", (req, res) => {
+    if (typeof opts.startImportDump !== "function") {
+      res.status(501).json({ ok: false, error: "Not available on this build" });
+      return;
+    }
+    const body = (req.body ?? {}) as { file?: unknown; apply?: unknown };
+    const file = typeof body.file === "string" ? body.file.trim() : "";
+    if (!file) {
+      res.status(400).json({ ok: false, error: "Send JSON { file, apply }" });
+      return;
+    }
+    const r = opts.startImportDump(file, body.apply === true);
+    res.status(r.ok ? 200 : 409).json(r);
+  });
+  app.get("/api/feeder/import-dump/status", (_req, res) => {
+    if (typeof opts.getImportDumpStatus !== "function") {
+      res.status(501).json({ error: "Not available on this build" });
+      return;
+    }
+    res.json(opts.getImportDumpStatus());
   });
 
   app.get("/api/encyclopedia-exomastery/:genusDir/:speciesEntryId", (req, res) => {

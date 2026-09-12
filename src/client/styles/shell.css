@@ -323,7 +323,7 @@ body::before {
   border-radius: var(--r-pill);
   background: #b91c1c;
   color: #fff;
-  box-shadow: 0 0 8px rgba(248, 113, 113, 0.55);
+  box-shadow: 0 0 8px rgba(255, 90, 60, 0.55);
 }
 
 .exo-data-alerts-trigger--unread .exo-data-alerts-trigger__mail {
@@ -459,7 +459,7 @@ body::before {
   padding: 0.45rem 0.75rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--accent-bright);
-  background: linear-gradient(180deg, rgba(255, 122, 36, 0.14) 0%, rgba(20, 18, 16, 0.95) 100%);
+  background: linear-gradient(180deg, rgba(255, 138, 31, 0.14) 0%, rgba(20, 18, 16, 0.95) 100%);
   box-shadow:
     0 0 14px var(--accent-glow),
     inset 0 1px 0 rgba(255, 200, 120, 0.18);

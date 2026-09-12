@@ -15,7 +15,7 @@
   margin: 0 0 0.5rem;
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 1px solid rgba(255, 122, 36, 0.32);
+  border: 1px solid rgba(255, 138, 31, 0.32);
   background-color: #0a0908;
   background-image: url("../../../fss-required.webp");
   background-position: center;
@@ -55,8 +55,8 @@
   cursor: pointer;
   border-radius: var(--r-lg);
   padding: 0.32rem 0.6rem;
-  border: 1.5px solid rgba(255, 122, 36, 0.92);
-  background: rgba(255, 122, 36, 0.09);
+  border: 1.5px solid rgba(255, 138, 31, 0.92);
+  background: rgba(255, 138, 31, 0.09);
   color: var(--text);
   box-shadow:
     0 0 14px var(--accent-dim),
@@ -66,9 +66,9 @@
 }
 
 .system-map-notable-pill:hover {
-  border-color: #ffa64d;
+  border-color: #ffb060;
   box-shadow:
-    0 0 18px rgba(255, 122, 36, 0.55),
+    0 0 18px rgba(255, 138, 31, 0.55),
     inset 0 0 12px var(--accent-a08);
 }
 
@@ -76,22 +76,22 @@
   border-color: rgba(255, 154, 77, 0.95);
   box-shadow:
     0 0 16px var(--accent-a45),
-    inset 0 0 10px rgba(255, 122, 36, 0.07);
+    inset 0 0 10px rgba(255, 138, 31, 0.07);
 }
 
 .system-map-notable-pill--dss {
-  border: 1.5px solid rgba(74, 222, 128, 0.92);
-  background: rgba(74, 222, 128, 0.09);
+  border: 1.5px solid rgba(79, 208, 255, 0.92);
+  background: rgba(79, 208, 255, 0.09);
   box-shadow:
-    0 0 16px rgba(74, 222, 128, 0.42),
-    inset 0 0 10px rgba(74, 222, 128, 0.08);
+    0 0 16px rgba(79, 208, 255, 0.42),
+    inset 0 0 10px rgba(79, 208, 255, 0.08);
 }
 
 .system-map-notable-pill--dss:hover {
   border-color: var(--ok-bright);
   box-shadow:
-    0 0 18px rgba(74, 222, 128, 0.55),
-    inset 0 0 12px rgba(74, 222, 128, 0.1);
+    0 0 18px rgba(79, 208, 255, 0.55),
+    inset 0 0 12px rgba(79, 208, 255, 0.1);
 }
 
 .system-map-notable-tf-star {
@@ -156,7 +156,7 @@
 }
 
 .system-map-line {
-  stroke: rgba(255, 122, 36, 0.42);
+  stroke: rgba(255, 138, 31, 0.42);
   stroke-width: 1.35;
 }
 
@@ -178,7 +178,7 @@
 .planet-quick-popup {
   background: rgba(7, 8, 12, 0.88) !important;
   backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 122, 36, 0.52) !important;
+  border: 1px solid rgba(255, 138, 31, 0.52) !important;
   box-shadow:
     0 4px 32px var(--shadow-a45),
     0 0 28px rgba(255, 106, 26, 0.28),
@@ -250,7 +250,7 @@
 }
 
 .body-detail-chip--scoop-no {
-  border-color: rgba(248, 113, 113, 0.75);
+  border-color: rgba(255, 90, 60, 0.75);
   background: rgba(239, 68, 68, 0.12);
   color: var(--danger-faint);
   font-weight: 800;
@@ -276,8 +276,8 @@
 }
 
 .body-detail-chip--exo {
-  border-color: rgba(74, 222, 128, 0.6);
-  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(79, 208, 255, 0.6);
+  background: rgba(79, 208, 255, 0.12);
   color: #b8ffd0;
 }
 
@@ -298,7 +298,7 @@
   letter-spacing: 0.09em;
   color: var(--muted);
   background: rgba(0, 0, 0, 0.28);
-  border-bottom: 1px solid rgba(255, 122, 36, 0.14);
+  border-bottom: 1px solid rgba(255, 138, 31, 0.14);
 }
 
 .body-detail-card-body {
@@ -318,8 +318,8 @@
 .body-detail-inferred-note {
   padding: 0.45rem 0.5rem;
   border-radius: var(--radius-sm);
-  border: 1px dashed rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.06);
+  border: 1px dashed rgba(255, 210, 63, 0.35);
+  background: rgba(255, 210, 63, 0.06);
   color: var(--warn-soft);
 }
 
@@ -381,8 +381,8 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .body-detail-callout {
   padding: 0.55rem 0.65rem;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(74, 222, 128, 0.35);
-  background: rgba(74, 222, 128, 0.07);
+  border: 1px solid rgba(79, 208, 255, 0.35);
+  background: rgba(79, 208, 255, 0.07);
 }
 
 .body-detail-callout-label {
@@ -406,9 +406,9 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 .body-detail-callout--exo-range {
-  border-color: rgba(74, 222, 128, 0.5);
-  background: rgba(74, 222, 128, 0.09);
-  box-shadow: 0 0 18px rgba(74, 222, 128, 0.15);
+  border-color: rgba(79, 208, 255, 0.5);
+  background: rgba(79, 208, 255, 0.09);
+  box-shadow: 0 0 18px rgba(79, 208, 255, 0.15);
 }
 
 .body-detail-kv-list--tight {
@@ -417,11 +417,11 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 .exo-payout-range-panel {
-  border: 1px solid rgba(74, 222, 128, 0.58) !important;
-  background: rgba(74, 222, 128, 0.07) !important;
+  border: 1px solid rgba(79, 208, 255, 0.58) !important;
+  background: rgba(79, 208, 255, 0.07) !important;
   box-shadow:
-    0 0 22px rgba(74, 222, 128, 0.28),
-    inset 0 0 20px rgba(74, 222, 128, 0.06) !important;
+    0 0 22px rgba(79, 208, 255, 0.28),
+    inset 0 0 20px rgba(79, 208, 255, 0.06) !important;
 }
 
 .exo-payout-range-panel.exo-payout-range-panel--clickable {
@@ -444,11 +444,11 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 
 .exo-payout-v2-greenbox {
   border-radius: var(--r-2xl);
-  border: 1px solid rgba(74, 222, 128, 0.45);
-  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(79, 208, 255, 0.45);
+  background: rgba(79, 208, 255, 0.08);
   box-shadow:
-    0 0 18px rgba(74, 222, 128, 0.12),
-    inset 0 0 20px rgba(74, 222, 128, 0.05);
+    0 0 18px rgba(79, 208, 255, 0.12),
+    inset 0 0 20px rgba(79, 208, 255, 0.05);
   padding: 0.55rem 0.65rem 0.65rem;
   margin-bottom: 0.55rem;
 }
@@ -462,11 +462,11 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 
 .exo-pill--hero {
   border-radius: 14px !important;
-  border-color: rgba(74, 222, 128, 0.5) !important;
-  background: rgba(74, 222, 128, 0.1) !important;
+  border-color: rgba(79, 208, 255, 0.5) !important;
+  background: rgba(79, 208, 255, 0.1) !important;
   box-shadow:
-    0 0 16px rgba(74, 222, 128, 0.14),
-    inset 0 0 14px rgba(74, 222, 128, 0.06);
+    0 0 16px rgba(79, 208, 255, 0.14),
+    inset 0 0 14px rgba(79, 208, 255, 0.06);
   padding: 0.48rem 0.6rem !important;
   justify-content: center;
 }
@@ -485,7 +485,7 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   font-size: var(--fs-xl);
   font-weight: 800;
   color: var(--ok-soft);
-  text-shadow: 0 0 12px rgba(74, 222, 128, 0.35);
+  text-shadow: 0 0 12px rgba(79, 208, 255, 0.35);
   text-align: center;
   line-height: 1.35;
 }
@@ -517,10 +517,10 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 .exo-pill-warn {
-  color: #fbbf24;
+  color: #ffd23f;
   font-weight: 800;
   cursor: help;
-  text-shadow: 0 0 8px rgba(251, 191, 36, 0.45);
+  text-shadow: 0 0 8px rgba(255, 210, 63, 0.45);
 }
 
 @media (max-width: 520px) {
@@ -592,13 +592,13 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 .exo-pill--footfall-open {
-  border-color: rgba(251, 191, 36, 0.55);
+  border-color: rgba(255, 210, 63, 0.55);
   color: var(--warn-soft);
   background: rgba(70, 50, 10, 0.4);
 }
 
 .exo-pill--footfall-other {
-  border-color: rgba(248, 113, 113, 0.55);
+  border-color: rgba(255, 90, 60, 0.55);
   color: var(--danger-faint);
   background: rgba(72, 18, 18, 0.42);
 }
@@ -608,7 +608,7 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   font-size: var(--fs-xl);
   font-weight: 800;
   color: var(--ok-soft);
-  text-shadow: 0 0 14px rgba(74, 222, 128, 0.35);
+  text-shadow: 0 0 14px rgba(79, 208, 255, 0.35);
 }
 
 .exo-payout-range-sep {
@@ -655,7 +655,7 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 .exo-payout-range-panel--clickable:focus-visible {
-  outline: 2px solid rgba(74, 222, 128, 0.85);
+  outline: 2px solid rgba(79, 208, 255, 0.85);
   outline-offset: 2px;
 }
 
@@ -721,7 +721,7 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .exo-payout-detail-table th,
 .exo-payout-detail-table td {
   padding: 0.35rem 0.45rem;
-  border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+  border-bottom: 1px solid rgba(79, 208, 255, 0.2);
   text-align: left;
 }
 
@@ -740,8 +740,8 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 
 /* Separate “footfall (×5)” values from list / ×1 in breakdown tables */
 .exo-payout-detail-footfall-col {
-  border-left: 2px solid rgba(74, 222, 128, 0.5);
-  background: rgba(74, 222, 128, 0.07);
+  border-left: 2px solid rgba(79, 208, 255, 0.5);
+  background: rgba(79, 208, 255, 0.07);
 }
 
 .exo-payout-detail-sum td {
@@ -901,10 +901,10 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 
 .system-map-orbit--exo {
   color: #8cffb1;
-  border-color: #4ade80;
+  border-color: #4fd0ff;
   box-shadow:
-    0 0 14px rgba(74, 222, 128, 0.45),
-    inset 0 0 8px rgba(74, 222, 128, 0.12);
+    0 0 14px rgba(79, 208, 255, 0.45),
+    inset 0 0 8px rgba(79, 208, 255, 0.12);
 }
 
 .system-map-node--plus .system-map-orbit::after {
@@ -955,8 +955,8 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   font-size: var(--fs-md);
   padding: 0.4rem 0.75rem;
   border-radius: var(--radius-sm);
-  border: 1px solid #4ade80;
-  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid #4fd0ff;
+  background: rgba(79, 208, 255, 0.1);
   color: #b8ffd0;
   cursor: pointer;
 }

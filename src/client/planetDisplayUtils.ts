@@ -183,13 +183,13 @@ export function planetClassToMapBaseLabel(planetClass: string): string {
 
 export function planetClassPillStyle(planetClass: string): CSSProperties {
   const bl = planetClassToMapBaseLabel(planetClass);
-  if (bl === "ELW") return { borderColor: "#4ade80", color: "#86efac", background: "rgba(52,211,153,0.15)" };
+  if (bl === "ELW") return { borderColor: "#4fd0ff", color: "#9fe4ff", background: "rgba(52,211,153,0.15)" };
   if (bl === "WW") return { borderColor: "#60a5fa", color: "#93c5fd", background: "rgba(37,99,235,0.18)" };
   if (bl === "AW") return { borderColor: "#facc15", color: "#fde047", background: "rgba(234,179,8,0.2)" };
   if (bl === "I" || bl === "RI")
     return { borderColor: "#22d3ee", color: "#a5f3fc", background: "rgba(34,211,238,0.16)" };
   if (bl === "R" || bl === "HMC" || bl === "MR")
-    return { borderColor: "#ff7a24", color: "#ff9a4d", background: "rgba(255,122,36,0.12)" };
+    return { borderColor: "#ff8a1f", color: "#ff9a4d", background: "rgba(255,122,36,0.12)" };
   if (bl === "GG" || /^GG[1-5]$/.test(bl))
     return { borderColor: "#c4a574", color: "#e8d5b8", background: "rgba(196,165,116,0.22)" };
   return { borderColor: "#fb923c", color: "#fdba74", background: "rgba(251,146,60,0.12)" };

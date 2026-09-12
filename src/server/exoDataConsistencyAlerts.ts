@@ -107,8 +107,16 @@ export function computeExoDataAlertsForBody(input: {
   matches: SpeciesMatch[];
   speciesMatchCtx: SpeciesMatchContext | null;
   db: SpeciesDatabase;
+  /**
+   * The Candidate species "Bacterium" toggle. Off is a choice, not a data defect: a bacterium is on
+   * most bodies that carry biology, so with the toggle off one signal is assumed to be its slot and
+   * the shortfall alert does not fire for it, and a bacterium confirmed on foot is not reported as
+   * "hidden" either (owner, 2026-09-12).
+   */
+  includeBacterium?: boolean;
 }): { alerts: ExoDataAlertDTO[]; dssGenusOrphanHints: GenusHint[] } {
   const { body, mergedScan, matches, speciesMatchCtx, db } = input;
+  const bacteriumOff = input.includeBacterium === false;
   const alerts: ExoDataAlertDTO[] = [];
   // A DSS genus that appears only in the demoted tier is still absent from the default panel, so it
   // is still an orphan hint as far as the reader is concerned.
@@ -132,8 +140,11 @@ export function computeExoDataAlertsForBody(input: {
   if (signalCount != null && Number.isFinite(signalCount) && signalCount > 0) {
     const predictable = matches.filter((m) => !m.entry.predictionUnsupported);
     const predictedGenera = new Set(predictable.filter((m) => !m.unlikely).map((m) => m.entry.genusDataDir));
-    if (predictedGenera.size > 0 && predictedGenera.size < signalCount) {
-      const short = signalCount - predictedGenera.size;
+    // With bacterium switched off, one signal is taken to be its slot (see `includeBacterium`).
+    const assumedSlots = bacteriumOff && !predictedGenera.has("bacterium") ? 1 : 0;
+    const predictedCount = predictedGenera.size + assumedSlots;
+    if (predictedGenera.size > 0 && predictedCount < signalCount) {
+      const short = signalCount - predictedCount;
       /**
        * The demoted tier usually holds the answer. Measured across the journal cache the shortfall
        * fires on 10 of 1,091 scored bodies with the shown tier alone and on **0** once the unlikely
@@ -227,6 +238,7 @@ export function computeExoDataAlertsForBody(input: {
       continue;
     }
     if (!matchIds.has(entry.id) && !demotedIds.has(entry.id)) {
+      if (bacteriumOff && entry.genusDataDir.trim().toLowerCase() === "bacterium") continue;
       const id = `err-hidden-${body.key}-${entry.id}`;
       if (!seenErr.has(id)) {
         seenErr.add(id);

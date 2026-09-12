@@ -1,0 +1,41 @@
+/*
+  EDEXO shared tokens — one palette for the launcher, the HUD overlays and the app.
+
+  Served as /tokens.css from public/ (Vite copies it into dist/web), linked by launcher.html,
+  hud.css and the app's index.html, so the three surfaces cannot drift apart again (they had three
+  oranges: #ff5c1a, #ff7a24, #ff8a1f). The HUD's colour picker overrides these on its own pages
+  only, by setting the same variables inline on <html>.
+
+  Cockpit rule for state colours (WEBUI-REDESIGN 4.2): orange = normal, analysis blue = complete /
+  done / information, red = warning, yellow = caution, green only for the live sampling run.
+*/
+:root {
+  /* ---- accent ladder: one orange, derived alphas --------------------------------------------- */
+  --hud: #ff8a1f;
+  --hud-hi: #ffb060;
+  --hud-text: #ffe6cf;
+  --hud-dim: rgba(255, 138, 31, 0.55);
+  --hud-faint: rgba(255, 138, 31, 0.22);
+  --hud-ghost: rgba(255, 138, 31, 0.1);
+  --hud-glow: 0 0 6px rgba(255, 138, 31, 0.45);
+  --ink: #07060a;
+
+  /* ---- states ---------------------------------------------------------------------------------- */
+  --ok: #4fd0ff;
+  --ok-dim: rgba(79, 208, 255, 0.5);
+  --ok-bright: #9fe4ff;
+  --ok-soft: #d2f1ff;
+  --warn: #ffd23f;
+  --warn-soft: #ffe89a;
+  --bad: #ff5a3c;
+  --danger: #ff5a3c;
+  --danger-soft: #ff9c88;
+  --danger-faint: #ffc9bc;
+  --info: #4fd0ff;
+  --info-soft: #9fe4ff;
+  --bio: #7be07b;
+  --live: #7be07b;
+
+  /* ---- type ------------------------------------------------------------------------------------ */
+  --hud-font: "Bahnschrift", "Eurostile", "Square721 BT", "Segoe UI", system-ui, sans-serif;
+}

@@ -1,0 +1,892 @@
+/*
+  EDEXO HUD theme — the in-game holographic panel look, shared by every overlay page.
+
+  The overlays float over the game on a transparent, click-through window, so they should read as
+  part of the cockpit UI rather than a web card: Frontier orange on near-nothing, chamfered panel
+  corners, a hairline frame that fades at the ends, faint scanlines, a slow sweep, and the two other
+  states the game itself uses — analysis-mode blue for "complete", warning red for "too close".
+
+  Everything here is plain CSS on a transparent background. No backdrop-filter (there is nothing
+  behind a transparent Electron window to blur), no web fonts (the pages must work offline and
+  from file://). Bahnschrift ships with Windows 10+ and is the closest stock face to Eurostile.
+
+  Tunables live in :root. Section markup comes from hud.js; the page only supplies the shell.
+*/
+@import url("tokens.css?v=4");
+:root {
+  /* the palette comes from tokens.css (shared with the launcher and the app); these are HUD-only */
+  --hud-bg: rgba(18, 9, 2, 0.42); /* the panel fill: mostly the game showing through */
+  --hud-bg-2: rgba(40, 18, 3, 0.3);
+  --chamfer: 11px;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  overflow: hidden;
+  font-family: var(--hud-font);
+  color: var(--hud-text);
+}
+
+/* ---- shell: fills the window; the host decides the width so every HUD in the stack lines up --- */
+.shell {
+  position: relative;
+  width: 100%;
+  padding: 3px 4px 5px 3px; /* room for the corner brackets that sit outside the panel */
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+.shell.shell--off {
+  opacity: 0;
+  transform: scale(0.97);
+  pointer-events: none;
+}
+
+/* ---- panel: frame + fill, chamfered like the cockpit panels ---------------------------------- */
+.panel {
+  position: relative;
+  padding: 1px; /* the hairline frame is the gap between this layer and the body */
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer)) 0,
+    100% var(--chamfer),
+    100% 100%,
+    var(--chamfer) 100%,
+    0 calc(100% - var(--chamfer))
+  );
+  background: linear-gradient(
+    135deg,
+    var(--hud) 0%,
+    var(--hud-dim) 28%,
+    var(--hud-faint) 55%,
+    var(--hud-dim) 82%,
+    var(--hud) 100%
+  );
+  filter: drop-shadow(0 0 5px rgba(255, 138, 31, 0.25));
+  animation: hudFlicker 7s steps(1, end) infinite;
+}
+.panel__body {
+  position: relative;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--chamfer) + 0.5px) 0,
+    100% calc(var(--chamfer) - 0.5px),
+    100% 100%,
+    calc(var(--chamfer) - 0.5px) 100%,
+    0 calc(100% - var(--chamfer) + 0.5px)
+  );
+  padding: 0.5rem 0.8rem 0.62rem;
+  background:
+    linear-gradient(180deg, var(--hud-bg-2), transparent 38%),
+    var(--hud-bg);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+/* scanlines + a slow sweep, both on the fill so text stays crisp above them */
+.panel__body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(255, 160, 80, 0.05) 0 1px, transparent 1px 3px);
+  mix-blend-mode: screen;
+}
+.panel__body::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 28%;
+  top: -30%;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(255, 170, 90, 0.07) 50%, transparent);
+  animation: hudSweep 9s linear infinite;
+}
+.panel__body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* corner brackets outside the frame, top-left and bottom-right like the game's target panels */
+.shell::before,
+.shell::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  border: 1.5px solid var(--hud);
+  opacity: 0.9;
+}
+.shell::before {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+.shell::after {
+  bottom: 1px;
+  right: 0;
+  border-left: none;
+  border-top: none;
+}
+
+/* ---- sections: one per HUD inside the panel; merged HUDs stack them with a rule between ------- */
+.hud-section + .hud-section {
+  margin-top: 0.55rem;
+  padding-top: 0.45rem;
+  background: linear-gradient(90deg, var(--hud-dim), var(--hud-faint) 60%, transparent) top left / 100% 1px no-repeat;
+}
+/* a section's own state, without retinting the frame (the merged HUD) */
+.hud-section--ok {
+  --hud: var(--ok);
+  --hud-hi: #9fe4ff;
+  --hud-dim: rgba(79, 208, 255, 0.55);
+  --hud-faint: rgba(79, 208, 255, 0.22);
+  --hud-glow: 0 0 8px rgba(79, 208, 255, 0.55);
+}
+.hud-section--warn {
+  --hud: var(--bad);
+  --hud-hi: #ff9c88;
+  --hud-dim: rgba(255, 90, 60, 0.55);
+  --hud-faint: rgba(255, 90, 60, 0.22);
+  --hud-glow: 0 0 8px rgba(255, 90, 60, 0.5);
+}
+
+/* ---- header ------------------------------------------------------------------------------------ */
+.hud-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding-bottom: 0.22rem;
+  margin-bottom: 0.34rem;
+  background: linear-gradient(90deg, var(--hud) 0 40%, transparent) bottom left / 100% 1px no-repeat;
+}
+.hud-title {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hud);
+  text-shadow: var(--hud-glow);
+  white-space: nowrap;
+}
+.hud-title::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 0.45rem 1px 0;
+  background: var(--hud);
+  transform: rotate(45deg);
+  box-shadow: var(--hud-glow);
+  vertical-align: middle;
+}
+.hud-status {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud-hi);
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+/* ---- text roles ---------------------------------------------------------------------------------- */
+.hud-big {
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--hud-hi);
+  text-shadow: var(--hud-glow);
+  margin-bottom: 0.28rem;
+}
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.55rem;
+  margin-top: 0.24rem;
+}
+.row .lbl,
+.row .k {
+  flex-shrink: 0;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hud);
+  opacity: 0.85;
+}
+.row .val,
+.row .v {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-text);
+}
+.row .v.off {
+  color: var(--hud-dim);
+  font-weight: 500;
+}
+.row--muted .val,
+.row--muted .lbl,
+.row--muted .v,
+.row--muted .k,
+.row--muted {
+  color: var(--hud-dim);
+  text-shadow: none;
+}
+.row--rule {
+  margin-top: 0.38rem;
+  padding-top: 0.3rem;
+  background: linear-gradient(90deg, var(--hud-faint), var(--hud-dim) 50%, var(--hud-faint)) top left / 100% 1px no-repeat;
+}
+.row--total .v {
+  font-size: 0.92rem;
+  color: var(--hud-hi);
+  text-shadow: var(--hud-glow);
+}
+.hud-note {
+  margin: 0.36rem 0 0;
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 1.32;
+  color: var(--hud-hi);
+  opacity: 0.62;
+}
+.pay-est {
+  color: var(--hud-text);
+}
+.pay-est small {
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--hud);
+  margin: 0 0.15rem;
+}
+.cele {
+  margin-top: 0.35rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud-hi);
+  text-shadow: var(--hud-glow);
+}
+
+/* badges in the game's three colours */
+.pill {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0 0.34rem;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  vertical-align: middle;
+  border: 1px solid currentColor;
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+.pill.ok {
+  color: var(--ok);
+  text-shadow: 0 0 6px var(--ok-dim);
+}
+.pill.bad {
+  color: var(--bad);
+  text-shadow: 0 0 6px rgba(255, 90, 60, 0.5);
+}
+
+/* ---- the tracker: radar left, the run's numbers right; folds shut away from a surface ------------ */
+.trk {
+  overflow: hidden;
+  max-height: 32rem;
+  opacity: 1;
+  transition:
+    max-height 0.55s ease,
+    opacity 0.4s ease,
+    margin 0.55s ease;
+}
+.trk.trk--away {
+  max-height: 0;
+  opacity: 0;
+  margin-top: -0.3rem;
+}
+.trk__inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+.trk__radar {
+  flex: 0 0 auto;
+  width: 11.2rem;
+  max-width: 48%;
+  margin: 0.15rem 0 0;
+}
+.trk__side {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.trk__side .row {
+  margin-top: 0.18rem;
+}
+.trk__side .row .lbl {
+  font-size: 0.58rem;
+}
+.trk__side .row .val {
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+.trk__species {
+  font-size: 0.92rem;
+  line-height: 1.2;
+  margin-bottom: 0.32rem;
+  overflow-wrap: anywhere;
+}
+.trk__away {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hud-hi);
+  text-shadow: var(--hud-glow);
+  transition:
+    max-height 0.45s ease 0.25s,
+    opacity 0.45s ease 0.25s;
+}
+.trk__away--on {
+  max-height: 3rem;
+  opacity: 0.85;
+  padding-top: 0.15rem;
+}
+.trk__away::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 0.45rem 1px 0;
+  background: var(--hud);
+  transform: rotate(45deg);
+  vertical-align: middle;
+}
+
+/* ---- candidates: body / signals / DSS as three readouts across, then the list ------------------- */
+.facts {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.3rem;
+}
+.fact {
+  min-width: 0;
+}
+.fact--body {
+  flex: 1 1 auto;
+}
+.fact .k {
+  display: block;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud);
+  opacity: 0.85;
+}
+.fact .v {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fact .v.dim {
+  color: var(--hud-dim);
+}
+.fact .v.yes {
+  color: var(--hud-hi);
+  text-shadow: var(--hud-glow);
+}
+.fact .v.tgt {
+  color: var(--hud-hi);
+  text-shadow: var(--hud-glow);
+}
+.fact .v.tgt::after {
+  content: "TARGET";
+  margin-left: 0.4rem;
+  font-size: 0.52rem;
+  letter-spacing: 0.14em;
+  vertical-align: middle;
+  padding: 0 0.3rem;
+  border: 1px solid var(--hud-dim);
+  color: var(--hud);
+  text-shadow: none;
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+}
+/* scan progress after the species: the run in progress, a finished one, or a species merely seen */
+.prog {
+  margin-left: 0.4rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  vertical-align: 1px;
+  padding: 0 0.3rem;
+  border: 1px solid currentColor;
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+}
+.prog--live {
+  color: var(--bio);
+  text-shadow: 0 0 6px rgba(123, 224, 123, 0.5);
+}
+.prog--done {
+  color: var(--ok);
+  text-shadow: 0 0 6px var(--ok-dim);
+}
+.prog--seen {
+  color: var(--hud-hi);
+  opacity: 0.8;
+}
+.hud-list li.has-live::before {
+  background: var(--bio);
+}
+.hud-list li.has-done::before {
+  background: var(--ok);
+}
+.hud-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 14.5rem;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.hud-list::-webkit-scrollbar {
+  display: none;
+}
+.hud-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.22rem 0 0.22rem 0.7rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  background: linear-gradient(90deg, var(--hud-faint), transparent 70%) bottom left / 100% 1px no-repeat;
+  user-select: none;
+  cursor: default;
+  position: relative;
+}
+.hud-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.52rem;
+  width: 4px;
+  height: 4px;
+  background: var(--hud);
+  transform: rotate(45deg);
+  opacity: 0.8;
+}
+.hud-list li:last-child {
+  background: none;
+}
+.hud-list .name {
+  color: var(--hud-text);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.hud-list .name em {
+  font-style: normal;
+  color: var(--hud-hi);
+}
+.hud-list .cr {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--hud);
+}
+.hud-list li.plain {
+  padding-left: 0;
+  color: var(--hud-hi);
+  opacity: 0.75;
+  font-size: 0.66rem;
+}
+.hud-list li.plain::before {
+  display: none;
+}
+
+/* ---- discovery scan: system name, count, progress bar --------------------------------------------- */
+.fss-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.fss-line .sys {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--hud-text);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.fss-line .nums {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--hud-hi);
+  text-shadow: var(--hud-glow);
+}
+.fss-line .nums small {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hud);
+  margin-left: 0.25rem;
+}
+.hud-bar {
+  position: relative;
+  height: 6px;
+  margin-top: 0.42rem;
+  background: var(--hud-ghost);
+  clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
+}
+.hud-bar__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  background: linear-gradient(90deg, var(--hud-dim), var(--hud));
+  box-shadow: var(--hud-glow);
+  transition: width 0.4s ease;
+}
+.hud-bar__ticks {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0, 0, 0, 0.45) calc(10% - 1px) 10%);
+}
+
+/* ---- whole-panel state variants (single-section pages): the cockpit retints everything ---------- */
+.panel.panel--ok {
+  --hud: var(--ok);
+  --hud-hi: #9fe4ff;
+  --hud-dim: rgba(79, 208, 255, 0.55);
+  --hud-faint: rgba(79, 208, 255, 0.22);
+  --hud-bg: rgba(3, 16, 26, 0.45);
+  --hud-bg-2: rgba(8, 40, 60, 0.3);
+  --hud-glow: 0 0 8px rgba(79, 208, 255, 0.55);
+  filter: drop-shadow(0 0 9px rgba(79, 208, 255, 0.35));
+  animation: hudPulseOk 1.2s ease-in-out infinite alternate;
+}
+.panel.panel--warn {
+  --hud: var(--bad);
+  --hud-hi: #ff9c88;
+  --hud-dim: rgba(255, 90, 60, 0.55);
+  --hud-faint: rgba(255, 90, 60, 0.22);
+  --hud-glow: 0 0 8px rgba(255, 90, 60, 0.5);
+}
+.shell.shell--ok::before,
+.shell.shell--ok::after {
+  border-color: var(--ok);
+}
+.shell.shell--warn::before,
+.shell.shell--warn::after {
+  border-color: var(--bad);
+}
+
+/* ---- radar ----------------------------------------------------------------------------------------- */
+.minimap {
+  display: block;
+  width: 100%;
+  max-width: 11.5rem;
+  margin: 0.4rem auto 0.05rem;
+  overflow: visible;
+}
+.minimap-rim {
+  fill: rgba(30, 14, 2, 0.35);
+  stroke: var(--hud);
+  stroke-width: 1.2;
+}
+.minimap-rim-outer {
+  fill: none;
+  stroke: var(--hud-faint);
+  stroke-width: 0.8;
+}
+.minimap-grid {
+  fill: none;
+  stroke: var(--hud-dim);
+  stroke-width: 0.7;
+  stroke-dasharray: 2 3;
+}
+.minimap-cross {
+  stroke: var(--hud-faint);
+  stroke-width: 0.7;
+}
+.minimap-tick {
+  stroke: var(--hud-dim);
+  stroke-width: 1;
+}
+.minimap-tick--major {
+  stroke: var(--hud);
+  stroke-width: 1.4;
+}
+/* The separation this genus needs — the ring you are trying to get outside of. */
+.minimap-minring {
+  fill: rgba(255, 138, 31, 0.06);
+  stroke: var(--hud-hi);
+  stroke-width: 1;
+  stroke-dasharray: 5 3;
+}
+/* The sweep lives in the static layer and is never rebuilt, so its rotation stays continuous. */
+.minimap-sweep {
+  fill: url(#hudSweepGrad);
+  opacity: 0.8;
+  transform-origin: 0 0;
+  animation: hudRadarSweep 4s linear infinite;
+}
+.minimap-you {
+  fill: var(--hud-hi);
+  stroke: #fff3e6;
+  stroke-width: 0.6;
+  filter: drop-shadow(0 0 3px var(--hud));
+}
+.minimap-sample {
+  fill: var(--bio);
+  stroke: rgba(0, 0, 0, 0.6);
+  stroke-width: 0.6;
+}
+.minimap-ship {
+  fill: none;
+  stroke: var(--hud-text);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+.minimap-arrow--sample {
+  fill: var(--bio);
+}
+.minimap-arrow--ship {
+  fill: var(--hud-text);
+}
+.minimap-far-label {
+  fill: var(--hud-hi);
+  font-size: 7.5px;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+}
+.minimap-north {
+  fill: var(--hud);
+  font-size: 8px;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+/* ---- next jump: system name with the arrival star's scoop verdict as a triangle -------------------- */
+.jump {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.jump__tri {
+  flex: 0 0 auto;
+  width: 2.1rem;
+  height: 2.1rem;
+  color: var(--hud-dim);
+}
+.jump__tri svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.jump__tri .jump__mark {
+  stroke-width: 2.2;
+}
+.jump__body {
+  min-width: 0;
+}
+.jump__sys {
+  margin-bottom: 0.15rem;
+  overflow-wrap: anywhere;
+}
+.jump__cls {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.jump__star {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud);
+}
+.jump__note {
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--hud-hi);
+  opacity: 0.75;
+}
+.jump--none .jump__tri {
+  opacity: 0.35;
+}
+.jump--scoop .jump__tri {
+  color: var(--bio);
+  filter: drop-shadow(0 0 4px rgba(123, 224, 123, 0.5));
+}
+.jump--noscoop .jump__tri,
+.jump--unknown .jump__tri {
+  color: #ffd23f;
+  filter: drop-shadow(0 0 5px rgba(255, 210, 63, 0.6));
+  animation: hudBlink 1.6s ease-in-out infinite;
+}
+.jump--hole .jump__tri {
+  color: var(--bad);
+  filter: drop-shadow(0 0 6px rgba(255, 90, 60, 0.7));
+  animation: hudBlink 0.9s ease-in-out infinite;
+}
+.jump--neutron .jump__tri {
+  color: var(--ok);
+  filter: drop-shadow(0 0 6px var(--ok-dim));
+  animation: hudBlink 1.6s ease-in-out infinite;
+}
+.jump--arrived .jump__tri {
+  animation: none;
+}
+.jump--scoop .jump__star {
+  color: var(--bio);
+}
+.jump--noscoop .jump__star,
+.jump--unknown .jump__star {
+  color: #ffd23f;
+}
+.jump--hole .jump__star {
+  color: var(--bad);
+}
+.jump--neutron .jump__star {
+  color: var(--ok);
+}
+@keyframes hudBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ---- candidates: the region line under the facts ------------------------------------------------ */
+.region {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: -0.1rem 0 0.3rem;
+}
+.region .k {
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud);
+  opacity: 0.85;
+}
+.region .v {
+  font-size: 0.7rem;
+  color: var(--hud-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- radar: the "walk this way" hint when the second sample would be too close ------------------ */
+.minimap-hint {
+  fill: none;
+  stroke: var(--bio);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px rgba(123, 224, 123, 0.7));
+  animation: hudBlink 1.4s ease-in-out infinite;
+}
+.minimap-hint-arrow {
+  fill: var(--bio);
+  filter: drop-shadow(0 0 3px rgba(123, 224, 123, 0.7));
+}
+
+/* ---- motion ----------------------------------------------------------------------------------------- */
+@keyframes hudSweep {
+  0% {
+    top: -30%;
+  }
+  70% {
+    top: 110%;
+  }
+  100% {
+    top: 110%;
+  }
+}
+@keyframes hudFlicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  37% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 0.93;
+  }
+  39% {
+    opacity: 1;
+  }
+  71% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 0.96;
+  }
+  73% {
+    opacity: 1;
+  }
+}
+@keyframes hudPulseOk {
+  from {
+    filter: drop-shadow(0 0 5px rgba(79, 208, 255, 0.25));
+  }
+  to {
+    filter: drop-shadow(0 0 14px rgba(79, 208, 255, 0.6));
+  }
+}
+@keyframes hudRadarSweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panel__body::after,
+  .minimap-sweep,
+  .panel.panel--ok {
+    animation: none;
+  }
+}

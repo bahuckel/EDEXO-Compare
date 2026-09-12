@@ -65,3 +65,35 @@ export function candidateMorphColorShortLabel(
   }
   return "(unknown)";
 }
+
+/**
+ * The colour, when the host star is not one star but a set.
+ *
+ * A body orbiting a barycentre has no single host — `AB 1` is lit by A and B, `BCD 3` by three — and
+ * the app has always refused to pick one of them, for good reason: choosing a star the body does not
+ * orbit is how an M-dwarf observation reached Electricae pluma from a neutron-star system. Refusing
+ * to choose is right; refusing to *say anything* threw away what is actually known. If every host
+ * would give the same colour, that colour is certain. If they differ, naming both beats "(unknown)".
+ *
+ * The `" or "` form is already understood downstream, where it suppresses the variant photograph —
+ * the app must not pick a picture the rule declined to pick.
+ */
+export function candidateMorphColorShortLabelForHosts(
+  entry: SpeciesEntry,
+  hostStarTypes: readonly (string | null | undefined)[] | null | undefined,
+  materials?: readonly { Name?: string }[] | null,
+): string {
+  const hosts = (hostStarTypes ?? []).map((h) => (h ?? "").trim()).filter(Boolean);
+  if (hosts.length === 0) return candidateMorphColorShortLabel(entry, null, materials);
+  const labels: string[] = [];
+  for (const host of hosts) {
+    const label = candidateMorphColorShortLabel(entry, host, materials);
+    // One unknown host makes the whole answer unknown: the body may well be that one.
+    if (label === "(unknown)") return "(unknown)";
+    for (const part of label.split(" or ")) {
+      const t = part.trim();
+      if (t && !labels.includes(t)) labels.push(t);
+    }
+  }
+  return labels.length ? labels.join(" or ") : "(unknown)";
+}

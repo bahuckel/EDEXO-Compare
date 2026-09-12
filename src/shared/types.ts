@@ -1123,6 +1123,14 @@ export interface ExoOrganicOverlayDTO {
   minSampleDistanceM: number;
   distToFirstM: number | null;
   distToSecondM: number | null;
+  /**
+   * Distance back to the third sample, once Analyse has been taken.
+   *
+   * The "Scan 3" slot used to carry the payout, which put a credits figure in a row of two
+   * distances and read as a bug. The payout has its own banner on completion; this row is about
+   * where you have been.
+   */
+  distToThirdM: number | null;
   spacingBetweenSamplesM: number | null;
   spacingMeetsMin: boolean | null;
   /** Distance from current position to first sample point (only while one sample taken). */
@@ -1135,6 +1143,8 @@ export interface ExoOrganicOverlayDTO {
   analyseWasLogged: boolean | null;
   footfallMult: 1 | 5;
   sampleCount: number;
+  /** ISO time of the first Log/Sample of this run on this body, for the HUD's run timer; null if unknown. */
+  runStartedIso?: string | null;
   /** Journal organic session body (`systemAddress:bodyId`) — distances apply only on this body. */
   trackingBodyKey: string | null;
   /**
@@ -1175,6 +1185,18 @@ export interface ExoMinimapDTO {
 
 export interface ExoMinimapMarkDTO {
   kind: "sample" | "ship";
+  /**
+   * Whether this mark belongs to the sampling run in progress on this body.
+   *
+   * The game's sampler holds **one genus/species per planet at a time**, so a mark left by a species
+   * the commander has moved on from is not part of what they are doing now. Drawing every mark the
+   * same colour invited the mistake the owner described: standing among Stratum marks while sampling
+   * Tussock, and reading one as the other.
+   *
+   * Per body, because the sampler is: the same species on another planet is a fresh run worth fresh
+   * credits, and its marks are not shown here anyway.
+   */
+  active?: boolean;
   /** Metres north (+) or south (−) of the commander. */
   northM: number;
   /** Metres east (+) or west (−) of the commander. */
@@ -1424,6 +1446,20 @@ export interface AppStatusDTO {
   commanderName: string | null;
   journalBoot: JournalBootProgressDTO | null;
   /**
+   * The launcher's live strip, cheap store reads only (no snapshot rebuild): where the commander
+   * is and what is unsold. All optional so older status payloads still parse.
+   */
+  live?: {
+    systemName: string | null;
+    bodyName: string | null;
+    /** FSS biological signal count on that body, when known. */
+    bioSignals: number | null;
+    organicDataValueCredits: number | null;
+    organicPendingSampleCount: number;
+    /** The last hyperspace target, mirrored for the strip. */
+    jumpTarget: { starSystem: string; starClass: string; arrived: boolean } | null;
+  };
+  /**
    * Species rows carrying a `conditions` key nothing in the app reads — see `conditionKeyAudit`.
    *
    * Empty for the shipped data, and a test keeps it that way. It is surfaced here because the only
@@ -1647,6 +1683,27 @@ export interface AppSnapshot {
    * full {@link BodyComputed} for that body so the overlay can still show `0/0` and species rows.
    */
   exoOverlayFocusBody: BodyComputed | null;
+
+  /**
+   * The body the commander has targeted, from `Status.json` `Destination` (polled live). The game
+   * keeps it set while they are still on the previous body, which is exactly when the HUD should
+   * already be showing the next one's candidates. Null when nothing is targeted.
+   */
+  statusDestination?: { systemAddress: number; bodyId: number; name: string } | null;
+
+  /**
+   * The last hyperspace jump target from `StartJump` (JumpType Hyperspace), for the HUD's next-jump
+   * card: system name and the arrival star class, which decides whether the ship can scoop there.
+   * `arrived` flips on the matching `FSDJump`. Null until the first jump this session.
+   */
+  jumpTarget?: {
+    starSystem: string;
+    systemAddress: number;
+    starClass: string;
+    /** ISO timestamp of the StartJump line. */
+    at: string;
+    arrived: boolean;
+  } | null;
 }
 
 /** Single journal `Scan` row merged over time (basic + detailed). */
@@ -1863,4 +1920,19 @@ export interface SystemMapSnapshot {
    * depending on completion) — scales with discoveries and DSS state.
    */
   journalExplorationSaleCreditsFocused: number;
+}
+
+/** GET /api/feeder/import-dump/status — the Spansh export import started from the launcher. */
+export interface ImportDumpStatusDTO {
+  running: boolean;
+  file: string | null;
+  apply: boolean;
+  startedAt: string | null;
+  finishedAt: string | null;
+  /** The importer's human report (same text the CLI prints), once finished. */
+  report: string | null;
+  error: string | null;
+  failures?: number;
+  matched?: number;
+  changed?: number;
 }

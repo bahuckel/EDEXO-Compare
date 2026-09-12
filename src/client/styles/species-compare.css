@@ -417,7 +417,7 @@
   border-radius: var(--r-xs);
 }
 .genus-card-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 122, 36, 0.5);
+  background: rgba(255, 138, 31, 0.5);
 }
 
 .species-card {

@@ -18,52 +18,58 @@
  * literal to a token is a byte-identical change; only the type scale deliberately moves pixels.
  */
 :root {
-  /* ---- surfaces ------------------------------------------------------- */
-  --bg: #060608;
-  --panel: #0c0c10;
-  --surface: #101016;
-  --surface-0: #060608;
-  --surface-1: #0c0c10;
-  --surface-2: #101016;
-  --surface-3: #0a0a0f;
-  --surface-scrim: rgba(10, 10, 14, 0.98);
+  /* The shared palette (--hud, --hud-hi, --ok, --warn, --danger, --live, --hud-font) comes from
+   * public/tokens.css, linked from index.html. The values below repeat it in the app's own names so
+   * the 29 000 lines of existing rules keep working unchanged. */
+
+  /* ---- surfaces: near-black with a warm cast, like the launcher --------------------------- */
+  --bg: #07060a;
+  --panel: #0e0b0a;
+  --surface: #120e0c;
+  --surface-0: #07060a;
+  --surface-1: #0e0b0a;
+  --surface-2: #120e0c;
+  --surface-3: #0b0908;
+  --surface-scrim: rgba(12, 9, 8, 0.98);
 
   /* ---- text ----------------------------------------------------------- */
-  --text: #f0ede8;
-  --muted: #7a756e;
-  --text-dim: #c4c0ba;
-  --text-faint: #9ca3af;
+  --text: #ffe6cf;
+  --muted: #8f8378;
+  --text-dim: #d9cabb;
+  --text-faint: #ab9f94;
 
   /* ---- accent --------------------------------------------------------- */
-  --accent: #ff7a24;
-  --accent-bright: #ffa64d;
-  --accent-dim: rgba(255, 122, 36, 0.4);
-  --accent-glow: rgba(255, 122, 36, 0.22);
-  /* Alpha ramp — the same orange at the opacities the UI already uses. */
-  --accent-a06: rgba(255, 122, 36, 0.06);
-  --accent-a08: rgba(255, 122, 36, 0.08);
-  --accent-a10: rgba(255, 122, 36, 0.1);
-  --accent-a12: rgba(255, 122, 36, 0.12);
-  --accent-a15: rgba(255, 122, 36, 0.15);
-  --accent-a20: rgba(255, 122, 36, 0.2);
-  --accent-a22: rgba(255, 122, 36, 0.22);
-  --accent-a25: rgba(255, 122, 36, 0.25);
-  --accent-a30: rgba(255, 122, 36, 0.3);
-  --accent-a35: rgba(255, 122, 36, 0.35);
-  --accent-a38: rgba(255, 122, 36, 0.38);
-  --accent-a45: rgba(255, 122, 36, 0.45);
+  --accent: #ff8a1f;
+  --accent-bright: #ffb060;
+  --accent-dim: rgba(255, 138, 31, 0.4);
+  --accent-glow: rgba(255, 138, 31, 0.22);
+  --accent-a06: rgba(255, 138, 31, 0.06);
+  --accent-a08: rgba(255, 138, 31, 0.08);
+  --accent-a10: rgba(255, 138, 31, 0.1);
+  --accent-a12: rgba(255, 138, 31, 0.12);
+  --accent-a15: rgba(255, 138, 31, 0.15);
+  --accent-a20: rgba(255, 138, 31, 0.2);
+  --accent-a22: rgba(255, 138, 31, 0.22);
+  --accent-a25: rgba(255, 138, 31, 0.25);
+  --accent-a30: rgba(255, 138, 31, 0.3);
+  --accent-a35: rgba(255, 138, 31, 0.35);
+  --accent-a38: rgba(255, 138, 31, 0.38);
+  --accent-a45: rgba(255, 138, 31, 0.45);
 
-  /* ---- semantic status ------------------------------------------------ */
-  --ok: #4ade80;
-  --ok-bright: #86efac;
-  --ok-soft: #bbf7d0;
-  --warn: #fbbf24;
-  --warn-soft: #fde68a;
-  --danger: #f87171;
-  --danger-soft: #fca5a5;
-  --danger-faint: #fecaca;
-  --info: #9fd4ff;
-  --info-soft: #9ec5ff;
+  /* ---- semantic status: the cockpit's states (WEBUI-REDESIGN 4.2) --------------------------
+   * orange = normal · analysis blue = complete / done / info · red = warning · yellow = caution ·
+   * green only for the live sampling run (--live). Tailwind's green/amber/red are gone. */
+  --ok: #4fd0ff;
+  --ok-bright: #9fe4ff;
+  --ok-soft: #d2f1ff;
+  --warn: #ffd23f;
+  --warn-soft: #ffe89a;
+  --danger: #ff5a3c;
+  --danger-soft: #ff9c88;
+  --danger-faint: #ffc9bc;
+  --info: #4fd0ff;
+  --info-soft: #9fe4ff;
+  --live: #7be07b;
 
   /* ---- elevation ------------------------------------------------------ */
   --shadow-a25: rgba(0, 0, 0, 0.25);
@@ -73,12 +79,12 @@
   --glow: 0 0 16px var(--accent-glow);
 
   /* ---- radius --------------------------------------------------------- */
-  --r-xs: 4px;
-  --r-sm: 6px;
-  --r-md: 8px;
-  --r-lg: 10px;
-  --r-xl: 12px;
-  --r-2xl: 14px;
+  --r-xs: 0px;
+  --r-sm: 0px;
+  --r-md: 0px;
+  --r-lg: 0px;
+  --r-xl: 0px;
+  --r-2xl: 0px;
   --r-pill: 999px;
   /* Legacy aliases, kept so 60+ existing declarations stay untouched. */
   --radius-sm: var(--r-md);
@@ -101,18 +107,23 @@
    * glance mid-flight; sub-10px text was not legible at 1440p+. Ties round
    * up, so nothing gets smaller by more than a pixel.
    */
-  --fs-2xs: 10px;
-  --fs-xs: 11px;
-  --fs-sm: 12px;
-  --fs-md: 13px;
-  --fs-lg: 15px;
+  --fs-2xs: 11px;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
   --fs-xl: 17px;
   --fs-2xl: 20px;
   --fs-3xl: 26px;
   --fs-4xl: 32px;
   /* Match launcher honeycomb math; stroke uses UI accent */
-  --hex-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 55.42562584220407 56'%3E%3Cg fill='none' stroke='%23ff7a24' stroke-opacity='0.14' stroke-width='0.85'%3E%3Cpath d='M13.856406460551017 0L27.712812921102035 8L27.712812921102035 24L13.856406460551017 32L0 24L0 8Z'/%3E%3Cpath d='M41.56821838165305 0L55.42462484220407 8L55.42462484220407 24L41.56821838165305 32L27.712812921102035 24L27.712812921102035 8Z'/%3E%3Cpath d='M27.712812921102035 24L41.56821838165305 32L41.56821838165305 48L27.712812921102035 56L13.856406460551017 48L13.856406460551017 32Z'/%3E%3C/g%3E%3C/svg%3E");
+  --hex-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 55.42562584220407 56'%3E%3Cg fill='none' stroke='%23ff8a1f' stroke-opacity='0.14' stroke-width='0.85'%3E%3Cpath d='M13.856406460551017 0L27.712812921102035 8L27.712812921102035 24L13.856406460551017 32L0 24L0 8Z'/%3E%3Cpath d='M41.56821838165305 0L55.42462484220407 8L55.42462484220407 24L41.56821838165305 32L27.712812921102035 24L27.712812921102035 8Z'/%3E%3Cpath d='M27.712812921102035 24L41.56821838165305 32L41.56821838165305 48L27.712812921102035 56L13.856406460551017 48L13.856406460551017 32Z'/%3E%3C/g%3E%3C/svg%3E");
+  /* Bahnschrift ships with Windows 10+ and is the closest stock face to the game's Eurostile;
+   * the launcher and the HUD use the same stack. */
   font-family:
+    "Bahnschrift",
+    "Eurostile",
+    "Square721 BT",
     "Segoe UI",
     system-ui,
     -apple-system,

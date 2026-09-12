@@ -30,7 +30,7 @@ import {
   recordFootScanned,
 } from "./footScannedCatalog.js";
 import { explorationRecordIsBeltClusterLike } from "./explorationStellar.js";
-import { greatCircleDistanceMeters, type FootTravelFix } from "./footTravelStatus.js";
+import { greatCircleDistanceMeters, type FootTravelFix, type StatusDestination } from "./footTravelStatus.js";
 import type { ExoOrganicTrackerInternal } from "./exoOrganicTracker.js";
 import {
   wipeOrganicSampleSession,
@@ -629,6 +629,16 @@ export class GameStateStore {
   exoOrganicTracker: ExoOrganicTrackerInternal | null = null;
   /** Latest Status.json fix; updated on poll when overlay may be active. */
   exoOrganicLastFix: FootTravelFix | null = null;
+  /** Latest `Status.json` `Destination` (targeted body), for the HUD; null when none is set. */
+  statusDestination: StatusDestination | null = null;
+  /** Last hyperspace target from `StartJump`, for the HUD's next-jump card. See AppSnapshot.jumpTarget. */
+  lastJumpTarget: { starSystem: string; systemAddress: number; starClass: string; at: string; arrived: boolean } | null =
+    null;
+
+  /** When the sampling run for this species on this body began (ms epoch), or undefined. */
+  organicRunStartedAtMs(bodyKey: string, speciesKey: string): number | undefined {
+    return this.organicRunStartedAt.get(`${bodyKey}::${speciesKey}`);
+  }
 
   /** When true, bacterium genus/species rules are included in body search (default off, can leak spoilers). */
   includeBacteriumInSearch = false;
@@ -1739,6 +1749,33 @@ export class GameStateStore {
           this.requestUiAutoSelectBody(systemAddress, bodyId);
         }
         return;
+      }
+
+      if (event === "StartJump" || event === "SupercruiseEntry" || event === "FSDJump") {
+        /*
+          Leaving the body. The game drops a half-collected sample the moment the ship leaves the
+          planet, and the HUD should fold with it rather than keep showing a radar for ground that
+          is no longer underfoot — the owner saw the tracker stay open through a jump. `Status.json`
+          cannot tell us this on its own: it keeps reporting a latitude from orbit. No `return`:
+          `FSDJump` has its own handling below.
+        */
+        this.overlayTouchdownBodyKey = null;
+        if (this.exoOrganicTracker) {
+          this.exoOrganicTracker = null;
+          clearPersistedOrganicSampleSession(getProjectRoot());
+        }
+        if (event === "StartJump" && line.JumpType === "Hyperspace") {
+          const starSystem = typeof line.StarSystem === "string" ? line.StarSystem : "";
+          const systemAddress = typeof line.SystemAddress === "number" ? line.SystemAddress : 0;
+          const starClass = typeof line.StarClass === "string" ? line.StarClass : "";
+          if (starSystem) this.lastJumpTarget = { starSystem, systemAddress, starClass, at: ts, arrived: false };
+        }
+        if (event === "FSDJump" && this.lastJumpTarget) {
+          const addr = typeof line.SystemAddress === "number" ? line.SystemAddress : null;
+          if (addr === this.lastJumpTarget.systemAddress || addr == null) {
+            this.lastJumpTarget = { ...this.lastJumpTarget, arrived: true };
+          }
+        }
       }
 
       if (event === "Liftoff") {

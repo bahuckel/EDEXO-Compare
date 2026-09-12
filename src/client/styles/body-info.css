@@ -300,7 +300,7 @@
   font-size: var(--fs-sm);
   padding: 0.2rem 0.45rem;
   border-radius: var(--r-sm);
-  border: 1px solid rgba(255, 122, 36, 0.55);
+  border: 1px solid rgba(255, 138, 31, 0.55);
   background: var(--accent-a20);
   color: var(--text);
   cursor: pointer;
@@ -308,7 +308,7 @@
 }
 
 .exo-data-alert__btn:hover {
-  background: rgba(255, 122, 36, 0.32);
+  background: rgba(255, 138, 31, 0.32);
 }
 
 .exo-data-alert__btn--secondary {
@@ -445,7 +445,7 @@
 }
 
 .info-pill--land-yes {
-  border-color: rgba(74, 222, 128, 0.55);
+  border-color: rgba(79, 208, 255, 0.55);
   color: #9cf5c2;
   background: rgba(20, 50, 32, 0.5);
   justify-content: center;
@@ -453,7 +453,7 @@
 }
 
 .info-pill--land-no {
-  border-color: rgba(248, 113, 113, 0.5);
+  border-color: rgba(255, 90, 60, 0.5);
   color: #feb4b4;
   background: rgba(50, 22, 22, 0.45);
   justify-content: center;
@@ -467,7 +467,7 @@
 }
 
 .info-pill--dss-yes {
-  border-color: rgba(74, 222, 128, 0.55);
+  border-color: rgba(79, 208, 255, 0.55);
   color: #8cf5bd;
   font-weight: 800;
   flex: 0 0 auto;
@@ -476,7 +476,7 @@
 }
 
 .info-pill--dss-no {
-  border-color: rgba(248, 113, 113, 0.45);
+  border-color: rgba(255, 90, 60, 0.45);
   color: var(--danger-soft);
   font-weight: 800;
   flex: 0 0 auto;

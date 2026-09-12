@@ -1,28 +1,19 @@
 /*
- * Second screen: the same data sized to be read from across a desk.
+ * Second screen / phone triage (`?screen=triage`) — WEBUI-REDESIGN 6.1.
  *
- * Split out of a single 10,034-line styles.css. **Order matters**: these files are re-assembled
- * by styles.css in the order it imports them, and that order is the original file's order. Rules
- * here can be overridden by any later file, so moving a block between files can change the page
- * even though nothing was edited. Add new rules to the region they belong to, at the end.
- *
- * Was lines 9501-9673 of the original.
- */
-
-/*
- * Second screen (§51) — read across a desk, not leaned into.
- *
- * Its own block rather than a variant of the app's: everything here is sized for a phone propped
- * against a monitor or a tablet at arm's length, so the type scale is absolute rather than inherited
- * from a layout tuned for a screen 50 cm away. `clamp` lets one page serve a 5-inch phone and a
- * spare 24-inch monitor without a breakpoint for each.
+ * The HUD's design, 1:1: tokens from /tokens.css, tracked uppercase labels, chamfered rows, the
+ * cockpit's state colours (blue = certain, yellow = map first), large tap targets. No web font:
+ * Bahnschrift via the shared stack, so the phone view no longer waits on a CDN either.
  */
 .second-screen {
   min-height: 100vh;
   padding: clamp(0.6rem, 2vw, 1.2rem);
-  background: #060608;
-  color: #f0ede8;
-  font-family: "Orbitron", system-ui, sans-serif;
+  background:
+    radial-gradient(ellipse 90% 40% at 50% -10%, rgba(255, 120, 30, 0.18), transparent 60%),
+    linear-gradient(180deg, #0b0806, #050406 45%, #030304);
+  color: var(--hud-text, #ffe6cf);
+  font-family: var(--hud-font, "Bahnschrift", "Segoe UI", system-ui, sans-serif);
+  letter-spacing: 0.02em;
 }
 
 .second-screen .ss-head {
@@ -31,13 +22,16 @@
   gap: 0.15rem 0.75rem;
   align-items: baseline;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 122, 36, 0.35);
+  background: linear-gradient(90deg, var(--hud, #ff8a1f) 0 36%, rgba(255, 138, 31, 0.22) 70%, transparent) bottom left / 100% 1px no-repeat;
 }
 
 .second-screen .ss-system {
-  font-size: clamp(1.1rem, 3.2vw, 1.8rem);
+  font-size: clamp(1.1rem, 3.2vw, 1.7rem);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hud-hi, #ffb060);
+  text-shadow: 0 0 10px rgba(255, 138, 31, 0.4);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -45,69 +39,73 @@
 
 .second-screen .ss-verdict {
   grid-column: 1;
-  font-size: clamp(0.95rem, 2.6vw, 1.35rem);
-  color: #ffa64d;
+  font-size: clamp(0.9rem, 2.6vw, 1.25rem);
+  letter-spacing: 0.06em;
+  color: var(--hud-hi, #ffb060);
 }
 
 .second-screen .ss-verdict--none,
 .second-screen .ss-verdict--low {
-  color: #7a756e;
+  color: rgba(255, 176, 96, 0.55);
 }
 
-/* The connection state is the one thing that must be readable without being looked for: a stale
-   screen and a live one are otherwise identical, and a stale one is worse than no screen. */
+/* the live link: a badge in the row's colour, the one thing that must be visible from a metre away */
 .second-screen .ss-link {
   grid-row: 1 / span 2;
   grid-column: 2;
   align-self: center;
-  font-size: clamp(0.62rem, 1.5vw, 0.78rem);
-  letter-spacing: 0.12em;
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  font-size: clamp(0.6rem, 1.5vw, 0.72rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.55rem;
   border: 1px solid currentColor;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
 }
-
 .second-screen .ss-link--on {
-  color: #6ede8a;
+  color: var(--ok, #4fd0ff);
+  text-shadow: 0 0 6px rgba(79, 208, 255, 0.5);
 }
-
 .second-screen .ss-link--off {
-  color: #ff6b6b;
+  color: var(--bad, #ff5a3c);
+  text-shadow: 0 0 6px rgba(255, 90, 60, 0.5);
 }
 
 .second-screen .ss-sorts {
   display: flex;
   gap: 0.4rem;
-  margin: 0.6rem 0;
+  margin: 0.7rem 0;
   flex-wrap: wrap;
 }
 
 .second-screen .ss-sort {
   flex: 1 1 auto;
-  min-height: 2.4rem;
+  min-height: 2.6rem;
   padding: 0.35rem 0.7rem;
   font-family: inherit;
-  font-size: clamp(0.7rem, 1.9vw, 0.9rem);
-  letter-spacing: 0.06em;
+  font-size: clamp(0.68rem, 1.9vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #b8b3ac;
-  background: rgba(255, 122, 36, 0.08);
-  border: 1px solid rgba(255, 122, 36, 0.35);
-  border-radius: 8px;
+  color: var(--hud-hi, #ffb060);
+  background: rgba(255, 138, 31, 0.08);
+  border: 1px solid rgba(255, 138, 31, 0.45);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   cursor: pointer;
 }
-
 .second-screen .ss-sort--on {
-  color: #060608;
-  background: #ff7a24;
-  border-color: #ff7a24;
+  color: var(--ink, #07060a);
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  border-color: #ffb060;
 }
 
 .second-screen .ss-empty {
   margin-top: 2rem;
   text-align: center;
-  color: #7a756e;
-  font-size: clamp(0.9rem, 2.4vw, 1.1rem);
+  font-size: clamp(0.85rem, 2.4vw, 1rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 176, 96, 0.6);
 }
 
 .second-screen .ss-rows {
@@ -119,18 +117,24 @@
   gap: 0.45rem;
 }
 
+/* one body per row: chamfered, hairline frame, a left bar in the state colour */
 .second-screen .ss-row {
-  padding: 0.5rem 0.65rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: 4px solid rgba(255, 122, 36, 0.35);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+  padding: 0.55rem 0.7rem 0.55rem 0.85rem;
+  border: 1px solid rgba(255, 138, 31, 0.28);
+  border-left: 3px solid rgba(255, 138, 31, 0.6);
+  background: linear-gradient(180deg, rgba(40, 18, 3, 0.3), transparent 45%), rgba(22, 12, 5, 0.6);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
 }
-
-/* §4.3's certainty: every genus the game reports is accounted for, so the list is the answer and
-   not a shortlist. Worth a colour on a screen that is read at a glance. */
+.second-screen .ss-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(255, 160, 80, 0.04) 0 1px, transparent 1px 3px);
+}
 .second-screen .ss-row--certain {
-  border-left-color: #6ede8a;
+  border-left-color: var(--ok, #4fd0ff);
 }
 
 .second-screen .ss-row-main {
@@ -141,17 +145,21 @@
 }
 
 .second-screen .ss-body {
-  font-size: clamp(1rem, 2.8vw, 1.4rem);
+  font-size: clamp(1rem, 2.8vw, 1.35rem);
   font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .second-screen .ss-value {
-  font-size: clamp(1rem, 2.8vw, 1.4rem);
+  font-size: clamp(1rem, 2.8vw, 1.35rem);
   font-weight: 700;
-  color: #ffa64d;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-hi, #ffb060);
+  text-shadow: 0 0 8px rgba(255, 138, 31, 0.4);
   flex-shrink: 0;
 }
 
@@ -159,25 +167,25 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.2rem 0.85rem;
-  margin-top: 0.15rem;
-  font-size: clamp(0.72rem, 1.9vw, 0.92rem);
-  color: #7a756e;
+  margin-top: 0.2rem;
+  font-size: clamp(0.7rem, 1.9vw, 0.86rem);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 230, 207, 0.65);
 }
 
 .second-screen .ss-row-best {
-  margin-top: 0.15rem;
-  font-size: clamp(0.75rem, 2vw, 0.95rem);
-  color: #b8b3ac;
+  margin-top: 0.2rem;
+  font-size: clamp(0.72rem, 2vw, 0.9rem);
+  color: rgba(255, 230, 207, 0.85);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .second-screen .ss-coverage {
-  color: #7a756e;
+  color: rgba(255, 230, 207, 0.5);
 }
 
-/* Second screen: the same caution as the triage table's "map first" tag, sized for a glance. */
 .second-screen .ss-mapfirst {
-  color: #ffc14d;
+  color: var(--warn, #ffd23f);
 }

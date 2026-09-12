@@ -45,7 +45,7 @@ describe("what the list is standing on", () => {
     const b = body({
       scan: landableScan,
       biologicalSignals: 1,
-      genusHints: [{ genusLocalised: "Bacterium" }] as BodyExoState["genusHints"],
+      genusHints: [{ Genus_Localised: "Bacterium" }] as BodyExoState["genusHints"],
     });
     expect(exoMarkerBasis(b)).toBe("genus");
   });

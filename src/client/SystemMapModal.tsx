@@ -55,9 +55,9 @@ function systemMapNodeAppearance(it: LayoutItem): {
   if (bl === "ELW") {
     return {
       fill: "rgba(52,211,153,0.22)",
-      stroke: "#4ade80",
+      stroke: "#4fd0ff",
       filter: "url(#neonElw)",
-      textFill: "#86efac",
+      textFill: "#9fe4ff",
     };
   }
   if (bl === "WW") {
@@ -87,7 +87,7 @@ function systemMapNodeAppearance(it: LayoutItem): {
   if (bl === "R" || bl === "HMC" || bl === "MR") {
     return {
       fill: "rgba(255,122,36,0.12)",
-      stroke: "#ff7a24",
+      stroke: "#ff8a1f",
       filter: "url(#neonOrange)",
       textFill: "#ff9a4d",
     };
@@ -535,16 +535,16 @@ export const SystemMapModal = memo(function SystemMapModal({
           >
             <defs>
               <filter id="neonOrange" x="-40%" y="-40%" width="180%" height="180%">
-                <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor="#ff7a24" floodOpacity="0.55" />
+                <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor="#ff8a1f" floodOpacity="0.55" />
               </filter>
               <filter id="neonGreen" x="-40%" y="-40%" width="180%" height="180%">
-                <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor="#4ade80" floodOpacity="0.55" />
+                <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor="#4fd0ff" floodOpacity="0.55" />
               </filter>
               <filter id="neonBlue" x="-40%" y="-40%" width="180%" height="180%">
                 <feDropShadow dx="0" dy="0" stdDeviation="1.4" floodColor="#38bdf8" floodOpacity="0.65" />
               </filter>
               <filter id="neonElw" x="-40%" y="-40%" width="180%" height="180%">
-                <feDropShadow dx="0" dy="0" stdDeviation="1.35" floodColor="#4ade80" floodOpacity="0.72" />
+                <feDropShadow dx="0" dy="0" stdDeviation="1.35" floodColor="#4fd0ff" floodOpacity="0.72" />
               </filter>
               <filter id="neonWw" x="-40%" y="-40%" width="180%" height="180%">
                 <feDropShadow dx="0" dy="0" stdDeviation="1.45" floodColor="#3b82f6" floodOpacity="0.72" />
@@ -590,7 +590,7 @@ export const SystemMapModal = memo(function SystemMapModal({
             {layout.items.map((it) => {
               let neo = systemMapNodeAppearance(it);
               if (it.isArrivalBody) {
-                neo = { ...neo, stroke: "#fbbf24", strokeWidth: Math.max(neo.strokeWidth ?? 2, 2.6) };
+                neo = { ...neo, stroke: "#ffd23f", strokeWidth: Math.max(neo.strokeWidth ?? 2, 2.6) };
               }
               const sw = neo.strokeWidth ?? 2;
               const fs = neo.mapLabelFontSize ?? (it.mapLabel.length > 5 ? 8.5 : 10);

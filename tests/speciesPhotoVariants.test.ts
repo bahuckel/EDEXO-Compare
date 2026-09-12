@@ -6,7 +6,7 @@
  * shows *a* Bacterium vesicula, which is a different plant from the one waiting on the surface.
  */
 import { describe, expect, it } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { getProjectRoot } from "../src/server/paths.js";
@@ -24,9 +24,20 @@ const find = (n: string): SpeciesEntry => {
 };
 
 describe("colour-variant photographs", () => {
-  it("finds the three Bacterium vesicula variants the owner photographed", () => {
+  it("finds every Bacterium vesicula variant the owner has photographed", () => {
+    /*
+      Read off the folder rather than frozen into a list. The batches keep coming -- Cyan arrived
+      after this test was written and broke it -- and a test that fails whenever the owner takes
+      another photograph is testing the photographs, not the code that finds them.
+    */
+    const dir = join(root, "data", "species", "bacterium", "bacterium_photos");
+    const onDisk = readdirSync(dir)
+      .map((f) => /^Bacterium-vesicula-(.+)\.(png|jpe?g|webp)$/i.exec(f)?.[1])
+      .filter((c): c is string => !!c)
+      .sort();
+    expect(onDisk.length, "the owner has photographed some vesicula variants").toBeGreaterThan(1);
     const p = resolveSpeciesPhoto(find("Bacterium vesicula"), root);
-    expect(p.photoVariants.map((v) => v.colour).sort()).toEqual(["Lime", "Orange", "Red"]);
+    expect(p.photoVariants.map((v) => v.colour).sort()).toEqual(onDisk);
   });
 
   it("shows the commander's own photographs and retires ED-DSN's of that species", () => {
@@ -38,7 +49,8 @@ describe("colour-variant photographs", () => {
       misleading when the two are different colour variants.
     */
     const p = resolveSpeciesPhoto(find("Bacterium vesicula"), root);
-    expect(p.photoUrl).toMatch(/-(Lime|Orange|Red)\./);
+    // One of the owner's own, whichever colours he has: never the shipped single image.
+    expect(p.photoVariants.some((v) => v.url === p.photoUrl)).toBe(true);
     expect(p.photoUrls.some((u) => /Bacterium-vesicula\.(png|jpe?g|webp)/i.test(u))).toBe(false);
     expect(p.photoUrls).toContain(p.photoUrl);
     for (const v of p.photoVariants) expect(p.photoUrls).toContain(v.url);

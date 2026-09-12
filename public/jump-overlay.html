@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Next jump</title>
+    <!-- One HUD section on its own. The look is hud.css, the section and its data feed are hud.js. -->
+    <link rel="stylesheet" href="hud.css?v=4" />
+  </head>
+  <body>
+    <div class="shell" id="shell">
+      <div class="panel" id="card" role="status" aria-live="polite">
+        <div class="panel__body" id="hud"></div>
+      </div>
+    </div>
+    <script src="hud.js?v=4"></script>
+    <script>
+      HUD.mount(["jump"]);
+    </script>
+  </body>
+</html>

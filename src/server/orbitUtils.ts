@@ -119,10 +119,49 @@ export function hostStarBodyIdsForExobiology(
   }
   if (found.size > 0) return [...found];
 
-  // Barycentre with no star anywhere in the chain: every star in the system is a candidate host.
+  /*
+    No star in the chain, so read the body's own designation.
+
+    `... ABC 2 a` orbits the A+B+C barycentre and `... AB 1` orbits A and B, with C no part of it
+    however close it sits. Both name `{Null: n}` and no star at all, so the designation is the only
+    thing that tells them apart — and a system can carry ten stars, which makes "every star in the
+    system" a wild over-reach rather than a cautious one.
+  */
+  const wanted = new Set(starLettersFromDesignation(rec));
+  if (wanted.size > 0) {
+    const named: number[] = [];
+    for (const [bodyId, r] of byBodyId) {
+      if (!r.starType?.trim()) continue;
+      const letters = starLettersFromDesignation(r);
+      // A star is a single letter; anything longer is a barycentre label, not a host.
+      if (letters.length === 1 && wanted.has(letters[0]!)) named.push(bodyId);
+    }
+    if (named.length > 0) return named;
+  }
+
+  // Nothing to go on: every star in the system is a candidate host.
   const all: number[] = [];
   for (const [bodyId, r] of byBodyId) {
     if (r.starType?.trim()) all.push(bodyId);
   }
   return all;
+}
+
+/**
+ * The star letters a body's designation names, e.g. `BCD 3` -> B, C, D.
+ *
+ * The system name is stripped first, because a system can itself end in letters. Bodies with no
+ * letter group — `Sol 4` — return nothing, and the caller falls back.
+ */
+export function starLettersFromDesignation(rec: {
+  bodyName?: string | null;
+  starSystem?: string | null;
+}): string[] {
+  const system = (rec.starSystem ?? "").trim();
+  let name = (rec.bodyName ?? "").trim();
+  if (system && name.toLowerCase().startsWith(system.toLowerCase())) {
+    name = name.slice(system.length).trim();
+  }
+  const first = name.split(/\s+/)[0] ?? "";
+  return /^[A-Z]+$/.test(first) ? [...first] : [];
 }

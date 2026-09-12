@@ -33,6 +33,7 @@ import type {
 } from "../shared/types.js";
 import { histogramBin, type HistogramEdgesFile } from "../shared/likelihoodBins.js";
 import { speciesPrior, type SpeciesPrevalenceFile } from "../shared/speciesPrior.js";
+import { regionalSpeciesCount } from "./regionSpeciesData.js";
 import { bucketCategoricalValue } from "../feeder/parameterImportance.js";
 import {
   loadExomasteryProfile,
@@ -121,6 +122,47 @@ export function speciesLogScore(
     noPrior?: boolean;
     /** Probe seam: sweep the floor below which a profile is not scored at all. */
     minSamples?: number;
+    /**
+     * Probe seam: rank on how common the species is *in this region* instead of in the galaxy.
+     *
+     * The corpus prior asks "how much of all recorded biology is this species", which is the same
+     * number over the whole galaxy. Region answers a narrower and far sharper question, and the
+     * counts are already shipped — they are simply thresholded into a boolean by the absence gate
+     * and discarded. Off by default until it is measured.
+     */
+    regionPrior?: boolean;
+    /** klightspeed region index for the body's system; {@link regionPrior} does nothing without it. */
+    regionIndex?: number | null;
+    /**
+     * How far to move from the corpus prior toward the regional one, 0…1.
+     *
+     * A log count and a log share are on different scales, and the count's range is the wider by
+     * far — 12,760 recordings against none at all is ten log units, where the damped likelihood
+     * contributes a fraction of that. At full weight the posterior stops being a posterior and
+     * becomes a region lookup: ordering improves and the calibration of "Chance here" halves, which
+     * is a bad trade for the one number in the panel that has been checked against reality.
+     */
+    regionPriorWeight?: number;
+    /**
+     * Probe seam: leave these paths out of the score.
+     *
+     * The terms are summed as if independent, and some of them are not. Six species split into two
+     * temperature clusters ~200 K apart that are 99.8-100 % separated by atmosphere — carbon dioxide
+     * cold, water hot — so `body.surfaceTemperature` and `body.atmosphereType` are very nearly the
+     * same fact for them, counted twice. Dropping one measures how much of the other it was already
+     * saying.
+     */
+    dropPaths?: Set<string>;
+    /**
+     * Probe seam: score the *average* term instead of their sum.
+     *
+     * The sum penalises a species for being measurable on more axes, because every term adds a log
+     * probability and all of them are negative. Tubus compagibus scored on fifteen terms against
+     * cavas's fourteen and lost the likelihood by 1.886 while holding the larger prior. Most of the
+     * extra terms carry no information at all — dropping any one of the seventeen material paths
+     * moves nothing — so the species with more data is fined for having it.
+     */
+    perTerm?: boolean;
   },
 ): SpeciesLikelihood | null {
   const root = opts?.root ?? getProjectRoot();
@@ -140,6 +182,7 @@ export function speciesLogScore(
   if (edgesFile) {
     for (const [path, counts] of Object.entries(histograms)) {
       if (opts?.paths && !opts.paths.has(path)) continue;
+      if (opts?.dropPaths?.has(path)) continue;
       if (shouldOmitExomasterySciencePath(path)) continue;
       const edges = edgesFile.edges[path];
       if (!edges || counts.length !== edgesFile.bins) continue;
@@ -154,6 +197,7 @@ export function speciesLogScore(
 
   for (const [path, counts] of Object.entries(profile.categorical ?? {})) {
     if (opts?.paths && !opts.paths.has(path)) continue;
+    if (opts?.dropPaths?.has(path)) continue;
     if (shouldOmitExomasterySciencePath(path)) continue;
     const raw = valueForCategoricalPath(path, scan, rec, journalHost);
     if (!raw) continue;
@@ -177,8 +221,31 @@ export function speciesLogScore(
 
   if (terms === 0) return null;
 
-  const logPrior = opts?.noPrior ? 0 : Math.log(speciesPrior(prevalence, entry.id, 1 / 108));
-  return { logScore: logPrior + damping * logLik, terms, logPrior };
+  /*
+    Which prior, and why the two cannot be mixed on one body.
+
+    A regional log-prior is a log *count* and the corpus one is a log *share*; putting some
+    candidates on one scale and the rest on the other would not be a weighting, it would be noise.
+    So the region answers for every candidate or for none — and where it has no row, every candidate
+    falls back together.
+  */
+  const regionalCount =
+    opts?.regionPrior && opts.regionIndex != null
+      ? regionalSpeciesCount(root, opts.regionIndex, entry.id)
+      : null;
+  const corpusLogPrior = Math.log(speciesPrior(prevalence, entry.id, 1 / 108));
+  const regionWeight = Math.min(1, Math.max(0, opts?.regionPriorWeight ?? 1));
+  const logPrior = opts?.noPrior
+    ? 0
+    : regionalCount != null
+      ? // Half a system of smoothing: a species not yet recorded here is rare, not impossible.
+        regionWeight * Math.log(regionalCount + 0.5) + (1 - regionWeight) * corpusLogPrior
+      : corpusLogPrior;
+  // Averaging rescales the likelihood, so multiply back by a typical term count to keep it on the
+  // same footing as the prior and leave `damping` meaning what it meant before.
+  const TYPICAL_TERMS = 14;
+  const shaped = opts?.perTerm && terms > 0 ? (logLik / terms) * TYPICAL_TERMS : logLik;
+  return { logScore: logPrior + damping * shaped, terms, logPrior };
 }
 
 export interface RankedSpecies<T> {
@@ -206,6 +273,11 @@ export function rankSpeciesOnBody<T extends { entry: SpeciesEntry }>(
     paths?: Set<string>;
     noPrior?: boolean;
     minSamples?: number;
+    regionPrior?: boolean;
+    regionIndex?: number | null;
+    regionPriorWeight?: number;
+    dropPaths?: Set<string>;
+    perTerm?: boolean;
   },
 ): { ranked: RankedSpecies<T>[]; unscored: T[] } {
   const ranked: RankedSpecies<T>[] = [];

@@ -251,7 +251,7 @@
  */
 .options-modal .options-edsm-privacy,
 .options-modal .options-canonn-privacy {
-  border-left: 3px solid var(--ed-orange, #ff5c1a);
+  border-left: 3px solid var(--ed-orange, #ff8a1f);
   padding-left: 0.75rem;
   color: var(--fg, inherit);
 }

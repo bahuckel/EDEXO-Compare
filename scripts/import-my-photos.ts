@@ -99,6 +99,22 @@ function loadCredits(file: string): CreditsFile {
   };
 }
 
+/** `grey` -> `Grey`, `light green` -> `Light_Green`-ready words. */
+function titleCaseColour(key: string): string {
+  return key
+    .split(/\s+/)
+    .map((w) => (w ? w[0]!.toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
+/** "Gray" -> "grey" when, and only when, the species actually has that colour. */
+function normaliseColourSpelling(colour: string, allowed: ReadonlySet<string>): string {
+  const key = colour.trim().toLowerCase();
+  if (allowed.has(key)) return key;
+  const swapped = key.replace(/gray/g, "grey");
+  return allowed.has(swapped) ? swapped : key;
+}
+
 function main(): void {
   const source = process.argv[2]?.trim() || DEFAULT_SOURCE;
   const root = getProjectRoot();
@@ -148,7 +164,15 @@ function main(): void {
         continue;
       }
       const allowed = coloursFor(root, entry);
-      if (allowed.size > 0 && !allowed.has(parsed.colour.toLowerCase())) {
+      /*
+        The game's vocabulary is British and a keyboard is not.
+
+        "Gray" and "Grey" are the same colour, and rejecting one of them sends a photograph back over
+        a spelling. The species tables are the authority on which colours exist, so the alias only
+        ever maps onto a colour the species already has -- it cannot invent one.
+      */
+      const colourKey = normaliseColourSpelling(parsed.colour, allowed);
+      if (allowed.size > 0 && !allowed.has(colourKey)) {
         problems.push(
           `${genusFolder}/${file} — "${parsed.colour}" is not a colour ${entry.displayName} can be (${[...allowed].sort().join(", ")})`,
         );
@@ -166,7 +190,14 @@ function main(): void {
       // <Genus>-<species>-<Colour>.<ext>, matching the tree's existing <Genus>-<species>.<ext>.
       const [genus, ...rest] = entry.displayName.trim().split(/\s+/);
       const speciesWord = rest.join("_") || genus!;
-      const target = `${genus}-${speciesWord}-${parsed.colour.replace(/\s+/g, "_")}.${parsed.ext}`;
+      /*
+        The file is named for the colour the *species table* uses, not the colour the filename used.
+
+        The app finds a variant photograph by matching this stem against the colour it predicted, so
+        a file saying "Gray" while the prediction says "Grey" is a photograph nothing can ever find.
+      */
+      const canonicalColour = titleCaseColour(colourKey);
+      const target = `${genus}-${speciesWord}-${canonicalColour.replace(/\s+/g, "_")}.${parsed.ext}`;
       const abs = path.join(photosDir, target);
 
       const src = path.join(dir, file);

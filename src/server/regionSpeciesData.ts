@@ -99,10 +99,50 @@ export function clearRegionSpeciesCache(): void {
   // The vocabulary is derived from the file, so it must go with it or the next read keeps the old
   // species list and silently answers "unknown" for anything newly added.
   cachedVocabulary = null;
+  // Derived from the same file, so it goes with it for the same reason.
+  medianByRegion.clear();
 }
 
 /** Test seam — the file is process-wide, so a test that swaps it must be able to put it back. */
 export function setRegionSpeciesForTests(v: RegionSpeciesFile | null | undefined): void {
   cached = v;
   cachedVocabulary = v?.speciesIds ? new Set(v.speciesIds) : null;
+}
+
+/**
+ * How often a species is recorded in one region, as a count, with a floor that is not zero.
+ *
+ * The absence gate asks a yes/no question at 0.02 %, which throws the magnitude away. In The Veils
+ * Tubus cavas is recorded 2,115 times and compagibus 11 — a ratio of 192 to 1 — and **both clear the
+ * gate**, so the ranking sees them as equally plausible while no habitat term in the model comes
+ * close to that much evidence.
+ *
+ * Returned as a raw count rather than a share because every candidate on a body sits in the same
+ * region: `bioSystems` is identical for all of them and cancels in the softmax.
+ *
+ * A species the galaxy index has never heard of gets the region's **median** count rather than zero.
+ * Six of the 108 shipped species are outside that index, and scoring them as absent everywhere would
+ * bury them on evidence nobody ever gathered.
+ */
+export function regionalSpeciesCount(
+  projectRoot: string,
+  regionIndex: number | null | undefined,
+  speciesId: string,
+): number | null {
+  if (regionIndex == null || regionIndex <= 0) return null;
+  const data = loadRegionSpecies(projectRoot);
+  const row = data?.regions?.[String(regionIndex)];
+  if (!row) return null;
+  if (cachedVocabulary && !cachedVocabulary.has(speciesId)) return medianCountFor(regionIndex, row);
+  return row.species[speciesId] ?? 0;
+}
+
+const medianByRegion = new Map<number, number>();
+function medianCountFor(regionIndex: number, row: RegionRow): number {
+  const hit = medianByRegion.get(regionIndex);
+  if (hit != null) return hit;
+  const counts = Object.values(row.species).filter((n) => Number.isFinite(n) && n > 0).sort((a, b) => a - b);
+  const med = counts.length ? counts[Math.floor(counts.length / 2)]! : 0;
+  medianByRegion.set(regionIndex, med);
+  return med;
 }

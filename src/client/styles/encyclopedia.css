@@ -297,7 +297,7 @@
 
 .encyclopedia-species-card {
   position: relative;
-  border: 1px solid rgba(255, 122, 36, 0.18);
+  border: 1px solid rgba(255, 138, 31, 0.18);
   border-radius: var(--radius-sm);
   padding: 0.65rem 0.75rem;
   background: rgba(12, 12, 18, 0.65);
@@ -725,7 +725,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: rgba(255, 122, 36, 0.85);
+  color: rgba(255, 138, 31, 0.85);
 }
 
 .encyclopedia-exomastery-subsection-title {

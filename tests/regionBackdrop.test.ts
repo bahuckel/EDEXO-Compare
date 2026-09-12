@@ -95,8 +95,9 @@ describe("plotting a system that knows where it is", () => {
       [-9530.5, -910.28, 19808.125],
       [25.2, -20.9, 25899.97],
     ] as const) {
-      const f = sectorCellFractional(...p);
-      const c = sectorCellFromCoords(...p);
+      const [px, py, pz] = p;
+      const f = sectorCellFractional(px, py, pz);
+      const c = sectorCellFromCoords(px, py, pz);
       expect(Math.floor(f.x)).toBe(c.x);
       expect(Math.floor(f.y)).toBe(c.y);
       expect(Math.floor(f.z)).toBe(c.z);

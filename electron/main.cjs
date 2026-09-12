@@ -1,12 +1,14 @@
 "use strict";
 
-const { app, BrowserWindow, nativeImage, dialog, ipcMain, screen } = require("electron");
+const { app, BrowserWindow, nativeImage, dialog, ipcMain, screen, globalShortcut } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { execFileSync } = require("child_process");
 
-const MAX_HUD_OVERLAYS = 3;
+const MAX_HUD_OVERLAYS = 8; // was 3; the owner wants every HUD selectable at once
 const HUD_STACK_GAP = 6;
+/** Ctrl+Alt+H hides and shows every HUD window at once (menus, screenshots), checked free by the owner. */
+const HUD_TOGGLE_SHORTCUT = "Control+Alt+H";
 
 /*
   An overlay window is transparent, so any height it has beyond its content reads as empty space
@@ -117,31 +119,97 @@ function destroyAllHudOverlays() {
   hudOverlayStack = [];
 }
 
-/** Right edge, stacked top → bottom; first opened sits highest. */
+/*
+  Where the stack lives and in what order — the owner's choice, remembered across launches in
+  userData/hud-layout.json. `corner` is tl / tr / bl / br; `order` lists page keys (query string
+  aside), first = outermost (top of a top-anchored stack, bottom of a bottom-anchored one). Pages not
+  in the list follow in the order they were opened.
+*/
+let hudLayout = { corner: "tr", order: [] };
+let hudHidden = false;
+function hudLayoutPath() {
+  return path.join(app.getPath("userData"), "hud-layout.json");
+}
+function loadHudLayout() {
+  try {
+    const j = JSON.parse(fs.readFileSync(hudLayoutPath(), "utf8"));
+    if (j && typeof j === "object") setHudLayout(j, false);
+  } catch {
+    /* first run, or unreadable: defaults */
+  }
+}
+function setHudLayout(next, persist) {
+  const corner = typeof next.corner === "string" && /^(tl|tr|bl|br)$/.test(next.corner) ? next.corner : hudLayout.corner;
+  const order = Array.isArray(next.order) ? next.order.filter((k) => typeof k === "string").slice(0, 16) : hudLayout.order;
+  hudLayout = { corner, order };
+  if (persist) {
+    try {
+      fs.writeFileSync(hudLayoutPath(), JSON.stringify(hudLayout), "utf8");
+    } catch {
+      /* ignore */
+    }
+  }
+  relayoutHudStack();
+  return hudLayout;
+}
+
+/**
+ * Stack the HUD windows in the chosen corner, in the chosen order.
+ *
+ * Every HUD in the stack gets the same width — the widest one asked for — so the panels line up
+ * as one column instead of four different boxes. The pages fill whatever width they are given.
+ */
 function relayoutHudStack() {
   const d = screen.getPrimaryDisplay();
   const wa = d.workArea;
   const margin = 14;
-  let y = wa.y + margin;
-  const rightX = wa.x + wa.width - margin;
   hudOverlayStack = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
-  for (const slot of hudOverlayStack) {
+  const rank = (s) => {
+    const i = hudLayout.order.indexOf(s.key);
+    return i < 0 ? 1000 + hudOverlayStack.indexOf(s) : i;
+  };
+  const ordered = hudOverlayStack.slice().sort((a, b) => rank(a) - rank(b));
+  const w = Math.max(0, ...hudOverlayStack.map((s) => s.width || 0)) || 404;
+  const atBottom = hudLayout.corner.startsWith("b");
+  const atRight = hudLayout.corner.endsWith("r");
+  const x = atRight ? Math.floor(wa.x + wa.width - margin - w) : wa.x + margin;
+  let y = atBottom ? wa.y + wa.height - margin : wa.y + margin;
+  for (const slot of ordered) {
     let sz;
     try {
       sz = slot.win.getSize();
     } catch {
       continue;
     }
-    const w = sz[0];
     const h = sz[1];
-    const x = Math.floor(rightX - w);
+    if (atBottom) y -= h;
     try {
       slot.win.setBounds({ x, y, width: w, height: h, animate: false });
     } catch {
       /* ignore */
     }
-    y += h + HUD_STACK_GAP;
+    y = atBottom ? y - HUD_STACK_GAP : y + h + HUD_STACK_GAP;
   }
+}
+
+/** Hide or show every HUD window (the global shortcut). Windows keep their state; only visibility changes. */
+function toggleHudVisibility(force) {
+  hudHidden = typeof force === "boolean" ? force : !hudHidden;
+  for (const s of hudOverlayStack) {
+    if (!s.win || s.win.isDestroyed()) continue;
+    try {
+      if (hudHidden) s.win.hide();
+      else s.win.showInactive();
+    } catch {
+      /* ignore */
+    }
+  }
+  return hudHidden;
+}
+
+/** The slot identity: the page, not its query string (the merged HUD changes sections via the query). */
+function hudSlotKey(pathNorm) {
+  return String(pathNorm).split("?")[0];
 }
 
 /** @param {number} width @param {number} height @param {Electron.BrowserWindow | null} parentWin */
@@ -168,13 +236,14 @@ function createHudOverlayWindow(width, height, iconForChild, parentWin) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      // The two that matter are set above. `sandbox: false` is the only explicit opt-out in the app
-      // and it is on the overlay window, which loads a page from our own local server and has **no
-      // preload** — so nothing here is known to need the escape hatch, and `sandbox: true` is
-      // probably a free hardening step. Left as-is deliberately: the overlays are frameless,
+      // The same bridge the launcher gets. Without it `window.edexoElectron` is undefined in the
+      // overlay pages, `resizeHudOverlay` silently no-ops, and every HUD stays at the size it was
+      // opened with — which is why the tracker's radar was cut off at the bottom.
+      preload: path.join(__dirname, "preload.cjs"),
+      // `sandbox: false` is the only explicit opt-out in the app. The overlays are frameless,
       // transparent, always-on-top windows whose rendering cannot be verified from a test or a
       // headless run, and changing the packaged app on an untested assumption is how §31 happened.
-      // Flip it, launch the app, and open both overlays before committing.
+      // Flip it, launch the app, and open the overlays before committing.
       sandbox: false,
     },
   });
@@ -228,19 +297,31 @@ function createHudOverlayWindow(width, height, iconForChild, parentWin) {
  * @param {string} pathNorm
  * @param {number} width
  * @param {number} height
- * @param {"toggle" | "open"} mode toggle: same path closes; open: already-open path is no-op
+ * @param {"toggle" | "open" | "set"} mode toggle: same page closes; open: already-open page is a
+ *   no-op; set: an already-open page is pointed at the new URL (query string changes)
  */
 async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode) {
   if (!runtime) return { opened: false, paths: hudPathsFiltered(), error: "Server not ready yet." };
 
-  const existing = hudOverlayStack.findIndex((s) => s.pathname === pathNorm);
+  const key = hudSlotKey(pathNorm);
+  const existing = hudOverlayStack.findIndex((s) => s.key === key);
   if (existing >= 0) {
+    const slot = hudOverlayStack[existing];
     if (mode === "toggle") {
-      const victim = hudOverlayStack[existing];
       hudOverlayStack.splice(existing, 1);
-      destroyHudWindow(victim.win);
+      destroyHudWindow(slot.win);
       relayoutHudStack();
       return { opened: false, paths: hudPathsFiltered() };
+    }
+    if (mode === "set" && slot.pathname !== pathNorm) {
+      slot.pathname = pathNorm;
+      slot.width = Math.max(slot.width || 0, width);
+      try {
+        await slot.win.loadURL(`${runtime.getLocalBaseUrl()}${pathNorm}`);
+        relayoutHudStack();
+      } catch (e) {
+        return { opened: true, paths: hudPathsFiltered(), error: e instanceof Error ? e.message : String(e) };
+      }
     }
     return { opened: true, paths: hudPathsFiltered() };
   }
@@ -252,7 +333,7 @@ async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode
 
   const url = `${runtime.getLocalBaseUrl()}${pathNorm}`;
   const win = createHudOverlayWindow(width, height, iconForChild, mainWindow);
-  hudOverlayStack.push({ win, pathname: pathNorm });
+  hudOverlayStack.push({ win, pathname: pathNorm, key, width });
 
   win.webContents.once("did-fail-load", (_e, code, desc) => {
     console.error("[edexo-compare] HUD overlay failed to load:", url, code, desc);
@@ -325,6 +406,45 @@ function registerFootOverlayIpc(iconForChild) {
     const width = Number.isFinite(w) && w > 0 ? Math.floor(w) : 404;
     const height = Number.isFinite(h) && h > 0 ? Math.floor(h) : 330;
     return requestHudOverlaySlot(pathNorm, width, height, iconForChild, "toggle");
+  });
+
+  /*
+    The merged HUD. One window, its sections chosen by the query string; changing the sections is
+    a `set` (the open window navigates) rather than a close-and-reopen, so it does not blink.
+  */
+  ipcMain.handle("edexo:set-hud-overlay", async (_evt, opts) => {
+    const o = opts && typeof opts === "object" ? opts : {};
+    const pathname = typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : "/hud-overlay.html";
+    const pathNorm = pathname.startsWith("/") ? pathname : `/${pathname}`;
+    const w = Number(o.width);
+    const h = Number(o.height);
+    const width = Number.isFinite(w) && w > 0 ? Math.floor(w) : 404;
+    const height = Number.isFinite(h) && h > 0 ? Math.floor(h) : 330;
+    return requestHudOverlaySlot(pathNorm, width, height, iconForChild, "set");
+  });
+
+  ipcMain.handle("edexo:close-hud-overlay", async (_evt, opts) => {
+    const o = opts && typeof opts === "object" ? opts : {};
+    const pathname = typeof o.pathname === "string" ? o.pathname.trim() : "";
+    if (!pathname) return { closed: false, paths: hudPathsFiltered() };
+    const key = hudSlotKey(pathname.startsWith("/") ? pathname : `/${pathname}`);
+    const idx = hudOverlayStack.findIndex((s) => s.key === key);
+    if (idx < 0) return { closed: false, paths: hudPathsFiltered() };
+    const slot = hudOverlayStack[idx];
+    hudOverlayStack.splice(idx, 1);
+    destroyHudWindow(slot.win);
+    relayoutHudStack();
+    return { closed: true, paths: hudPathsFiltered() };
+  });
+
+  ipcMain.handle("edexo:get-hud-layout", () => ({ ...hudLayout, hidden: hudHidden, shortcut: HUD_TOGGLE_SHORTCUT }));
+  ipcMain.handle("edexo:set-hud-layout", (_evt, opts) => {
+    const o = opts && typeof opts === "object" ? opts : {};
+    return { ...setHudLayout(o, true), hidden: hudHidden, shortcut: HUD_TOGGLE_SHORTCUT };
+  });
+  ipcMain.handle("edexo:toggle-hud-visibility", (_evt, opts) => {
+    const o = opts && typeof opts === "object" ? opts : {};
+    return { hidden: toggleHudVisibility(typeof o.hidden === "boolean" ? o.hidden : undefined) };
   });
 
   /**
@@ -423,6 +543,14 @@ async function start() {
   }
 
   registerFootOverlayIpc(winIcon);
+  loadHudLayout();
+  try {
+    if (!globalShortcut.register(HUD_TOGGLE_SHORTCUT, () => toggleHudVisibility())) {
+      console.warn("[edexo-compare] could not register", HUD_TOGGLE_SHORTCUT, "(taken by another app)");
+    }
+  } catch (e) {
+    console.warn("[edexo-compare] global shortcut failed:", e);
+  }
 
   const preloadPath = path.join(__dirname, "preload.cjs");
   const url = `${runtime.getLocalBaseUrl()}/launcher.html`;
@@ -470,6 +598,11 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
+  try {
+    globalShortcut.unregisterAll();
+  } catch {
+    /* ignore */
+  }
   destroyAllHudOverlays();
   if (runtime && typeof runtime.shutdown === "function") {
     void runtime.shutdown();

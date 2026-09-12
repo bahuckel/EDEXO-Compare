@@ -1,4 +1,5 @@
 import { speciesProvenance } from "./speciesProvenance.js";
+import type { AppStatusDTO } from "../shared/types.js";
 import { existsSync, statSync } from "node:fs";
 import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { UNOBSERVED } from "../shared/observedFlag.js";
@@ -918,6 +919,7 @@ function computeBodyUncached(
       matches: [],
       speciesMatchCtx,
       db,
+      includeBacterium: store.includeBacteriumInSearch,
     });
     return {
       state: b,
@@ -1003,6 +1005,7 @@ function computeBodyUncached(
       explorationRec,
       journalHost,
       speciesMatchCtx,
+      { includeBacterium: store.includeBacteriumInSearch },
     );
     matches = markExomasteryZeroHabitatMatches(matches);
   }
@@ -1064,6 +1067,7 @@ function computeBodyUncached(
     matches,
     speciesMatchCtx,
     db,
+    includeBacterium: store.includeBacteriumInSearch,
   });
 
   return {
@@ -1157,6 +1161,26 @@ function regionForFocusedSystem(
   if (index == null || index <= 0) return null;
   const name = regionForSystem(projectRoot, pos.x, pos.y, pos.z);
   return name ? { name, index } : null;
+}
+
+/**
+ * The launcher's live strip: cheap store reads, no snapshot build. Where the commander is, what is
+ * unsold, and the last jump target — enough to make the launcher a glance-able dashboard while the
+ * game runs, without the ~180 ms a full snapshot costs.
+ */
+export function organicLiveSummary(store: GameStateStore): NonNullable<AppStatusDTO["live"]> {
+  const { credits, pendingSamples } = organicDataValuation(store, cachedPrices);
+  const bodyKey = store.exoOrganicTracker?.bodyKey ?? store.overlayTouchdownBodyKey ?? store.uiSelectedBodyKey;
+  const body = bodyKey ? store.bodies.get(bodyKey) : undefined;
+  const jt = store.lastJumpTarget;
+  return {
+    systemName: store.currentSystem ?? null,
+    bodyName: body?.bodyName ?? null,
+    bioSignals: body?.biologicalSignals ?? null,
+    organicDataValueCredits: credits,
+    organicPendingSampleCount: pendingSamples,
+    jumpTarget: jt ? { starSystem: jt.starSystem, starClass: jt.starClass, arrived: jt.arrived } : null,
+  };
 }
 
 export function buildSnapshot(
@@ -1323,6 +1347,8 @@ export function buildSnapshot(
     uiSelectedBodyKey: bootLoading ? null : store.uiSelectedBodyKey,
     exoOverlayFocusBodyKey,
     exoOverlayFocusBody,
+    statusDestination: bootLoading ? null : store.statusDestination,
+    jumpTarget: bootLoading ? null : store.lastJumpTarget,
     focusedSystemUndiscovered:
       !bootLoading && focusAddr != null && store.mainStarWasDiscoveredBySystem.get(focusAddr) === false,
     remainingJumpsInRoute: bootLoading ? null : store.remainingJumpsInRoute,
