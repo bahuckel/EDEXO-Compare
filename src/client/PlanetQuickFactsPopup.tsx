@@ -7,6 +7,7 @@ import { ExoPayoutRangePanel } from "./ExoPayoutRangePanel";
 import {
   formatPressurePill,
   formatTemperaturePillLine,
+  formatTempScalar,
   gravityFromScan,
   type PressDisplay,
   type TempUnit,
@@ -275,6 +276,16 @@ function WorldDetailBody({
                 )}
               </button>
             </div>
+            {detail.surfaceTemperatureRangeK ? (
+              <KvRow
+                label="Surface span"
+                value={`${formatTempScalar(detail.surfaceTemperatureRangeK.minK, tempUnit)} · ${formatTempScalar(
+                  detail.surfaceTemperatureRangeK.maxK,
+                  tempUnit,
+                )}`}
+                hint="Coldest to hottest point on the surface. The journal states one average for the whole body, which is the figure above; the game's own panel shows this span, and no journal event carries it. Derived from the parent star, the orbit, the planet class and the atmosphere."
+              />
+            ) : null}
           </KvList>
         </DetailCard>
       ) : null}

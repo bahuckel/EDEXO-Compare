@@ -800,6 +800,9 @@ export function buildSystemMapSnapshot(
   const starSystemName = canonicalStarSystemNameForMap(recs);
   recs = mergeExplorationRecordsWithInferredPlaceholders(store, focusSystemAddress, recs, starSystemName);
 
+  /** The star a body falls back to when its own orbit cannot be resolved: the one you arrive at. */
+  const arrivalStarRecord =
+    recs.find((r) => r.starType && !((r.distanceFromArrivalLs ?? 0) > 0)) ?? null;
   const byId = new Map<number, ExplorationScanRecord>();
   for (const r of recs) byId.set(r.bodyId, r);
 
@@ -835,6 +838,7 @@ export function buildSystemMapSnapshot(
         hasExobiology: false,
         bioBodyKey: null,
         estimatedSurfaceTempK: null,
+        surfaceTemperatureRangeK: null,
         exoMatchSummaries: [],
         maxExoHeuristicCredits: 0,
         exoValueTier: 0,
@@ -974,6 +978,7 @@ export function buildSystemMapSnapshot(
       hasExobiology: hasExo,
       bioBodyKey: hasExo ? bk : null,
       estimatedSurfaceTempK: est != null ? { minK: est.tMin, maxK: est.tMax, midK: est.tMid } : null,
+      surfaceTemperatureRangeK: estimateSurfaceTemperatureRange(r, byId, arrivalStarRecord),
       exoMatchSummaries: exoMatchSummaries(matchRun),
       maxExoHeuristicCredits: maxExo.displayMax,
       exoValueTier: exoTier,
@@ -1031,6 +1036,9 @@ export function buildSystemMapSnapshot(
             hasExobiology: false,
             bioBodyKey: null,
             estimatedSurfaceTempK: null,
+          surfaceTemperatureRangeK: null,
+            surfaceTemperatureRangeK: null,
+        surfaceTemperatureRangeK: null,
             exoMatchSummaries: [],
             maxExoHeuristicCredits: 0,
             exoValueTier: 0,
@@ -1091,6 +1099,8 @@ export function buildSystemMapSnapshot(
           hasExobiology: false,
           bioBodyKey: null,
           estimatedSurfaceTempK: null,
+          surfaceTemperatureRangeK: null,
+        surfaceTemperatureRangeK: null,
           exoMatchSummaries: [],
           maxExoHeuristicCredits: 0,
           exoValueTier: 0,

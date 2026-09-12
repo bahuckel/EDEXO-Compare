@@ -1800,6 +1800,15 @@ export interface SystemMapBodyDetailDTO {
   hasExobiology: boolean;
   bioBodyKey: string | null;
   estimatedSurfaceTempK: EstimatedSurfaceTempBand | null;
+  /**
+   * The span between the coldest and hottest point on a landable surface.
+   *
+   * Different in kind from {@link estimatedSurfaceTempK}, which guesses the *average* before a
+   * detailed scan. This is the range the game's own body panel prints once the body is scanned, and
+   * no journal event carries it. Null when the body is not landable, when its atmosphere has never
+   * been calibrated, or when the star is unknown.
+   */
+  surfaceTemperatureRangeK: { minK: number; maxK: number } | null;
   exoMatchSummaries: { displayName: string; id: string }[];
   /** max(list price × multiplier) over matched exo species; multiplier is 5 with first-footfall on this body, else 1 (pending-sale rule). */
   maxExoHeuristicCredits: number;
