@@ -34,7 +34,7 @@ import {
   sectorCellKey,
 } from "@shared/sectorName.js";
 import type { BacklogMapDTO, BacklogSystemDTO, GalaxyValueHitDTO } from "@shared/types";
-import { regionSpanInCells } from "./regionBackdrop";
+import { galaxyImageRect, REGION_LAYER_ALPHA, REGION_MAP_SIZE, regionSpanInCells } from "./regionBackdrop";
 import { CAMERA_SIDE, CAMERA_TOP, axisLabels, cameraLabel, project } from "./galaxyProjection";
 import { useMapViewport } from "./useMapViewport";
 import { TIER_ORDER, TIER_STYLE, tierFor, tierRank } from "@shared/galaxyTier";
@@ -43,7 +43,7 @@ import { CopySystemButton } from "./CopySystemButton";
 import { MAX_CR, STEP_CR, sliderLabel, type GalaxySearchApplied } from "./GalaxySearchPanel";
 import { groupByRegion, isOnScreen, lodLevel, type LodRow, type RegionGroup } from "./galaxyLod";
 import { regionIndexForCoords } from "@shared/regionMap.js";
-import type { RegionMapPayload } from "./regionBackdrop";
+import type { GalaxyImage, RegionMapPayload } from "./regionBackdrop";
 import {
   allTaxa,
   cellTotals,
@@ -173,6 +173,7 @@ export function GalaxySectorMap({
   file,
   commander,
   backdrop,
+  galaxyImage,
   backlog,
   commanderSectors,
   search,
@@ -182,6 +183,8 @@ export function GalaxySectorMap({
   commander?: CommanderPosition | null;
   /** The galaxy image, painted once by the screen above. Null while it loads, or on a build without it. */
   backdrop?: string | null;
+  /** A photograph of the galaxy to put under the regions, where this machine has one. */
+  galaxyImage?: GalaxyImage | null;
   /** Unfinished business, rolled up to systems. Null on a build with no journal store. */
   backlog?: BacklogMapDTO | null;
   /** This commander's own state per sector. Null while it loads or on a build with no journals. */
@@ -518,6 +521,7 @@ export function GalaxySectorMap({
             onOpen={setOpenCell}
             commander={commanderCell}
             backdrop={backdrop ?? null}
+            galaxyImage={galaxyImage ?? null}
             backlog={shownBacklog}
             searchHits={search?.hits ?? EMPTY_HITS}
             mine={mine}
@@ -678,6 +682,7 @@ function SectorPlot({
   onOpen,
   commander,
   backdrop,
+  galaxyImage,
   backlog,
   searchHits,
   mine,
@@ -702,6 +707,8 @@ function SectorPlot({
   commander: { x: number; y: number; z: number; key: string; system: string | null } | null;
   /** The galaxy image, as a data URL. Top projection only — the region map has no y axis. */
   backdrop: string | null;
+  /** The photograph the regions are drawn over, or null when this machine has none. */
+  galaxyImage: GalaxyImage | null;
   /** Backlog systems already filtered by the caller's minimum. */
   backlog: BacklogSystemDTO[];
   /**
@@ -789,7 +796,21 @@ function SectorPlot({
    * and seeing the data as a small cluster inside the galaxy is the entire point of drawing it.
    */
   const bounds = useMemo(() => {
-    if (showBackdrop) return { minX: 0, maxX: span, minY: 0, maxY: span };
+    if (showBackdrop) {
+      /*
+       * Square data range, and the plot is 1040x560 — so mapping 0..span onto both axes squashes
+       * the galaxy to about half its height. That was invisible while the backdrop was an abstract
+       * mosaic of regions and is obvious the moment it is a photograph of a round galaxy.
+       *
+       * Fixed by widening the *x* range instead of stretching the image: the view keeps the whole
+       * span vertically, and the horizontal range grows to whatever makes a cell the same size on
+       * both axes. Every marker goes through the same sx/sy, so the plot stays in register with
+       * itself and the galaxy comes out round.
+       */
+      const aspect = (VIEW_W - PAD * 2) / (VIEW_H - PAD * 2);
+      const halfWide = (span * aspect) / 2;
+      return { minX: span / 2 - halfWide, maxX: span / 2 + halfWide, minY: 0, maxY: span };
+    }
     if (rows.length === 0) return { minX: 0, maxX: 1, minY: 0, maxY: 1 };
     // Rows already carry the centre of their box, so no half-cell nudge is needed here.
     const pts = rows.map((r) => at(r));
@@ -882,11 +903,41 @@ function SectorPlot({
         {/* Outside the panned group: the background is the window, not part of the scene. */}
         <rect x={0} y={0} width={VIEW_W} height={VIEW_H} className="galaxy-map__bg" />
         <g transform={vp.transform}>
+        {showBackdrop && galaxyImage ? (
+          /*
+           * The photograph, under the regions and under everything else.
+           *
+           * Drawn as its own element rather than painted into the region canvas, so the browser
+           * samples the original once at the size it is actually shown instead of taking it through
+           * a 2048-pixel intermediate that upscales it by 2.6 and then scales the result back down.
+           * `galaxyImageRect` puts it in grid pixels, which are the region layer's own coordinates,
+           * so the two stay pinned to each other whatever the view does.
+           */
+          (() => {
+            const rect = galaxyImageRect(galaxyImage.width, galaxyImage.height);
+            const u = (px: number) => (px / REGION_MAP_SIZE) * span;
+            return (
+              <image
+                href={galaxyImage.url}
+                x={sx(u(rect.x))}
+                y={sy(span - u(rect.y))}
+                width={sx(u(rect.width)) - sx(0)}
+                height={sy(0) - sy(u(rect.height))}
+                preserveAspectRatio="none"
+                className="galaxy-map__galaxy"
+                opacity={backdropOpacity}
+              />
+            );
+          })()
+        ) : null}
         {showBackdrop && backdrop ? (
           /*
-           * The galaxy, under everything else. `preserveAspectRatio="none"` because the two axes are
-           * already scaled independently by sx/sy to fill the plot, and letting the image keep its
-           * own square aspect would put it out of register with the markers drawn over it.
+           * The regions over it. `preserveAspectRatio="none"` because sx/sy already place the grid,
+           * and letting the image impose its own aspect would put it out of register with the
+           * markers drawn over it.
+           *
+           * Dropped to {@link REGION_LAYER_ALPHA} when there is a photograph underneath: the two
+           * layers answer different questions and only the boundaries need to read here.
            */
           <image
             href={backdrop}
@@ -896,7 +947,7 @@ function SectorPlot({
             height={sy(0) - sy(span)}
             preserveAspectRatio="none"
             className="galaxy-map__backdrop"
-            opacity={backdropOpacity}
+            opacity={backdropOpacity * (galaxyImage ? REGION_LAYER_ALPHA : 1)}
           />
         ) : null}
         {/*

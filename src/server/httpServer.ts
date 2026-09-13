@@ -491,6 +491,26 @@ export function createHttpServer(opts: {
     res.type("application/json").send(readFileSync(file, "utf8"));
   });
 
+  /**
+   * The galaxy photograph the region map is drawn over, when this machine has one.
+   *
+   * Served from `data/galaxy/`, which is gitignored, and 404s cleanly when the file is absent — the
+   * backdrop then paints exactly as it did before, region colours on nothing. That is deliberate:
+   * the image is a picture of the Milky Way as the game renders it, and shipping it inside a public
+   * MIT repository is a licensing decision for the owner to make, not a side effect of adding a
+   * backdrop. Nothing here copies it anywhere it would be committed.
+   */
+  app.get("/api/galaxy-image", (_req, res) => {
+    perfCount("http.galaxyImage");
+    const file = path.join(getProjectRoot(), "data", "galaxy", "milkyway-game-normalized.jpg");
+    if (!existsSync(file)) {
+      res.status(404).json({ error: "no galaxy image on this machine" });
+      return;
+    }
+    res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+    res.type("image/jpeg").send(readFileSync(file));
+  });
+
   app.get("/api/first-discovery-backlog", (_req, res) => {
     perfCount("http.firstDiscoveryBacklog");
     if (!opts.getFirstDiscoveryBacklog) {

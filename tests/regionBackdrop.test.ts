@@ -8,6 +8,8 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  galaxyImageRect,
+  loadGalaxyImage,
   LY_PER_REGION_PX,
   REGION_MAP_SIZE,
   regionSpanInCells,
@@ -70,6 +72,42 @@ describe("rendering without a canvas", () => {
     // vitest runs this file in node, so there is no document. A missing backdrop must leave the map
     // working, because the markers are the point and the galaxy behind them is decoration.
     expect(renderRegionBackdrop({ regions: [], regionmap: [] })).toBeNull();
+  });
+
+  it("resolves null for the photograph too, rather than rejecting", async () => {
+    // The photograph is the one part of this that reaches the network, and it must not turn a
+    // decorative layer into a failure the map has to handle.
+    await expect(loadGalaxyImage("/api/galaxy-image")).resolves.toBeNull();
+  });
+});
+
+describe("placing the photograph against the grid", () => {
+  /**
+   * The core is the only landmark the two images share, so the test is that it lands on it: the
+   * image's own core pixel, carried through the rect, has to come out at Sagittarius A*'s place on
+   * the grid. Getting this wrong moves the whole galaxy without moving anything a reader can point
+   * at, which is why it is pinned rather than eyeballed.
+   */
+  it("puts the image's core pixel on Sagittarius A*", () => {
+    const rect = galaxyImageRect(1212, 864);
+    const scale = rect.width / 1212;
+    const coreX = rect.x + 587.7 * scale;
+    const coreY = rect.y + 433.7 * scale;
+    // (25.21, 25899.97) through the same offsets the grid is built with.
+    expect(xForRegionPx(coreX)).toBeCloseTo(25.21, 0);
+    expect(zForRegionPz(REGION_MAP_SIZE - 1 - coreY)).toBeCloseTo(25899.97, 0);
+  });
+
+  it("scales both axes by the same factor, so the galaxy is not stretched", () => {
+    const rect = galaxyImageRect(1212, 864);
+    expect(rect.width / 1212).toBeCloseTo(rect.height / 864, 10);
+  });
+
+  it("overhangs the grid, because the photograph carries black around the disc", () => {
+    const rect = galaxyImageRect(1212, 864);
+    expect(rect.x).toBeLessThan(0);
+    expect(rect.y).toBeLessThan(0);
+    expect(rect.width).toBeGreaterThan(REGION_MAP_SIZE);
   });
 });
 

@@ -22,7 +22,12 @@ import { useCallback, useEffect, useState } from "react";
 import type { SectorMapFile } from "@shared/sectorMapFile.js";
 import { GalaxySectorMap, type CommanderPosition } from "./GalaxySectorMap";
 import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
-import { renderRegionBackdrop, type RegionMapPayload } from "./regionBackdrop";
+import {
+  loadGalaxyImage,
+  renderRegionBackdrop,
+  type GalaxyImage,
+  type RegionMapPayload,
+} from "./regionBackdrop";
 import type { BacklogMapDTO, CommanderSectorsDTO } from "@shared/types";
 
 type Load =
@@ -43,6 +48,14 @@ export function GalaxyMapScreen() {
    * for one file would be worse than holding the one already in hand.
    */
   const [regionMap, setRegionMap] = useState<RegionMapPayload | null>(null);
+  /**
+   * The galaxy photograph, where this machine has one.
+   *
+   * Only its URL and size are held; the map draws the image element itself so the browser samples
+   * the original once, at the size it is actually shown. A 404 is the ordinary case for anyone who
+   * has not put a picture in `data/galaxy/`, and leaves the regions as the backdrop they were.
+   */
+  const [galaxyImage, setGalaxyImage] = useState<GalaxyImage | null>(null);
   const [backlog, setBacklog] = useState<BacklogMapDTO | null>(null);
   const [commanderSectors, setCommanderSectors] = useState<CommanderSectorsDTO | null>(null);
   const [search, setSearch] = useState<GalaxySearchApplied | null>(null);
@@ -69,6 +82,20 @@ export function GalaxyMapScreen() {
       })
       .catch(() => {
         /* no backdrop, same map */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadGalaxyImage("/api/galaxy-image")
+      .then((img) => {
+        if (!cancelled && img) setGalaxyImage(img);
+      })
+      .catch(() => {
+        /* regions on their own, same map */
       });
     return () => {
       cancelled = true;
@@ -197,6 +224,7 @@ export function GalaxyMapScreen() {
             file={load.file}
             commander={commander}
             backdrop={backdrop}
+            galaxyImage={galaxyImage}
             backlog={backlog}
             commanderSectors={commanderSectors}
             search={search}
