@@ -7,6 +7,7 @@ import { InfoPopover } from "./ui/Tooltip";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppSnapshot } from "@shared/types";
 import { journalHistoryPresetLabel, journalHistoryWindowPresetChoices, parseJournalHistoryPreset, JournalHistoryPreset } from "@shared/journalHistoryPreset";
+import { FoldPanel } from "./ui/Fold";
 import { useFeederStatus } from "./FeederStatusPanel";
 import { ExoMissLogPanel } from "./SpeciesCard";
 import { EXO_MAP_CR_MAX, EXO_MAP_CR_MIN, EXO_MAP_CR_STEP, EXO_MAP_PLUS_SLIDER_MAX, secondScreenUrl } from "./lsPrefs";
@@ -309,13 +310,14 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
 /**
  * Contributing the journal to EDSM, in Options.
  *
- * Sits below auto-fetch and shares its key, and is deliberately a separate switch: reading somebody
- * else's data and handing them yours are different decisions, and a commander who wanted the first
- * has not thereby agreed to the second.
+ * Three controls and one line of prose. The first draft explained the protocol, the privacy position
+ * and the catch-up's resume behaviour in four paragraphs above the switch, which is a wall of text
+ * in a settings menu — the owner's note: *"no one wants to be greeted by a wall of text in their
+ * options menu"*. All of it moved behind the `?`, which is the drawer `FoldPanel` already provides
+ * (WEBUI-REDESIGN 5.3) and which the commander opens only if they care.
  *
- * The paragraph above the switch says what leaves the machine in the same plain words the auto-fetch
- * panel uses, because this one sends a great deal more — the game's own journal lines, which carry
- * where you have been, what you scanned and when.
+ * The one sentence that stays visible is the one a commander must not have to ask for: that this
+ * sends the journal itself, not just system names. Consent is not a footnote.
  */
 function EdsmUploadPanel({
   state,
@@ -326,72 +328,88 @@ function EdsmUploadPanel({
 }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
-  /**
-   * How far back to reach.
-   *
-   * Defaults to a week rather than to everything: the first press of this button on a four-year
-   * history is a long run against a volunteer service, and it should be a thing the commander
-   * chooses rather than the thing that happens if they do not read the dropdown.
-   */
+  /** A week, not everything: a four-year run should be chosen, not the default. */
   const [scope, setScope] = useState<"day" | "week" | "month" | "year" | "all">("week");
   const progress = state.progress;
   const running = progress?.running === true;
 
+  const flip = (path: string, enabled: boolean) => {
+    setBusy(true);
+    setMsg(null);
+    void postSetting(path, { enabled })
+      .then((r) => {
+        if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Could not change the setting." });
+      })
+      .finally(() => setBusy(false));
+  };
+
   return (
-    <section className="options-edsm options-meta-block">
-      <p>
-        <strong>Send my journal to EDSM</strong> — the same thing EDMarketConnector and EDDiscovery do, so
-        your discoveries show up on your EDSM commander profile.
-      </p>
-      <p className="options-edsm-privacy dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-        This sends <strong>your game journal</strong> to edsm.net, a third party — where you jumped, what you
-        scanned, when — minus the event types EDSM publishes as unwanted. That is far more than auto-fetch
-        above, which only sends system names. It is off until you turn it on, and it uses the same API key.
-      </p>
+    <FoldPanel
+      foldKey="options-edsm-upload"
+      className="options-meta-block"
+      title="EDSM — send my journal"
+      summary={state.enabled ? (state.live ? "on, live" : "on") : "off"}
+      help={
+        <>
+          <p>
+            The same thing EDMarketConnector and EDDiscovery do: your discoveries appear on your EDSM
+            commander profile. Uses the API key above.
+          </p>
+          <p>
+            <strong>What is sent</strong> — the game's own journal lines: where you jumped, what you
+            scanned, when. EDSM publishes a list of event types it does not want and those are skipped.
+            Auto-fetch above sends only system names; this is much more.
+          </p>
+          <p>
+            <strong>Catch up</strong> reads your journals oldest first and sends whatever EDSM has not
+            been given, as far back as you choose. It remembers how far it got, so stopping is safe and
+            running it again resumes. A short run does not stop a longer one later.
+          </p>
+          <p>
+            <strong>Keep sending</strong> repeats that every few minutes while you play, reaching back a
+            week so a few days with the app closed heal themselves. Gaps older than that are what the
+            button is for.
+          </p>
+          <p>
+            If EDMarketConnector is also running, you will both be uploading. EDSM ignores what it
+            already has, so it is redundant rather than harmful.
+          </p>
+        </>
+      }
+    >
+      <p className="dim options-edsm-privacy">Sends your journal — jumps, scans, times — to edsm.net.</p>
 
       <label className="options-edsm-toggle">
         <input
           type="checkbox"
           checked={state.enabled}
           disabled={busy || !hasKey || running}
-          onChange={(ev) => {
-            const enabled = ev.target.checked;
-            setBusy(true);
-            setMsg(null);
-            void postSetting("/api/settings/edsm-upload", { enabled })
-              .then((r) => {
-                if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Could not change the setting." });
-              })
-              .finally(() => setBusy(false));
-          }}
+          onChange={(ev) => flip("/api/settings/edsm-upload", ev.target.checked)}
         />
-        <span>
-          Upload my journal to EDSM
-          {hasKey ? "" : " (store your API key first)"}
-        </span>
+        <span>Send my journal to EDSM{hasKey ? "" : " (store your API key first)"}</span>
       </label>
 
-      <p className="dim" style={{ marginTop: "0.55rem", lineHeight: 1.45 }}>
-        <strong>Catch up</strong> reads your journals oldest first and sends whatever EDSM has not been
-        given yet, as far back as you choose. It remembers how far it got, so stopping it is safe and
-        running it again picks up where it left off — and a short run now does not stop a longer one
-        later. <em>Everything</em> over several years of logs takes a while.
-      </p>
+      <label className="options-edsm-toggle">
+        <input
+          type="checkbox"
+          checked={state.live}
+          disabled={busy || !state.enabled}
+          onChange={(ev) => flip("/api/settings/edsm-live-upload", ev.target.checked)}
+        />
+        <span>Keep sending as I play</span>
+      </label>
 
       <div className="options-edsm-actions">
-        <label className="dim" htmlFor="edsm-scope" style={{ alignSelf: "center" }}>
-          Upload
-        </label>
         <select
-          id="edsm-scope"
+          aria-label="How far back to upload"
           value={scope}
           disabled={busy || !state.enabled || running}
           onChange={(ev) => setScope(ev.target.value as typeof scope)}
         >
-          <option value="day">the last day</option>
-          <option value="week">the last week</option>
-          <option value="month">the last month</option>
-          <option value="year">the last year</option>
+          <option value="day">last day</option>
+          <option value="week">last week</option>
+          <option value="month">last month</option>
+          <option value="year">last year</option>
           <option value="all">everything</option>
         </select>
         <button
@@ -408,46 +426,35 @@ function EdsmUploadPanel({
               .finally(() => setBusy(false));
           }}
         >
-          {running ? "Catching up…" : "Catch up now"}
+          {running ? "Catching up…" : "Catch up"}
         </button>
-        <button
-          type="button"
-          className="btn secondary"
-          disabled={!running}
-          onClick={() => {
-            void postSetting("/api/settings/edsm-catch-up-cancel", {});
-          }}
-        >
-          Stop
-        </button>
+        {running ? (
+          <button type="button" className="btn secondary" onClick={() => void postSetting("/api/settings/edsm-catch-up-cancel", {})}>
+            Stop
+          </button>
+        ) : null}
       </div>
 
-      {progress ? (
+      {running && progress ? (
         <p className="options-edsm-stored dim">
-          {progress.filesDone} / {progress.filesTotal} journals
-          {progress.currentFile ? ` — ${progress.currentFile}` : ""} · {progress.eventsSent.toLocaleString()} sent
-          {progress.eventsDiscarded > 0 ? ` · ${progress.eventsDiscarded.toLocaleString()} skipped` : ""}
-          {progress.eventsRejected > 0 ? ` · ${progress.eventsRejected.toLocaleString()} refused` : ""}
+          {progress.filesDone} / {progress.filesTotal} journals · {progress.eventsSent.toLocaleString()} sent
         </p>
-      ) : null}
-
-      {state.ledger.eventsAccepted > 0 || state.ledger.lastRunAt ? (
+      ) : state.ledger.eventsAccepted > 0 ? (
         <p className="options-edsm-stored dim">
-          {state.ledger.eventsAccepted.toLocaleString()} events accepted from {state.ledger.filesTracked}{" "}
-          journals in total
-          {state.ledger.lastRunAt ? `, last run ${new Date(state.ledger.lastRunAt).toLocaleString()}` : ""}.
+          {state.ledger.eventsAccepted.toLocaleString()} events sent
+          {state.ledger.lastRunAt ? `, last ${new Date(state.ledger.lastRunAt).toLocaleDateString()}` : ""}
         </p>
       ) : null}
 
       {progress?.error ? (
         <p className="msg err">
           {progress.error}
-          {progress.fatal ? " — this one will not fix itself; check the commander name and key above." : ""}
+          {progress.fatal ? " — check the commander name and key above." : ""}
         </p>
       ) : null}
 
       {msg ? <p className={msg.kind === "ok" ? "msg ok" : "msg err"}>{msg.text}</p> : null}
-    </section>
+    </FoldPanel>
   );
 }
 

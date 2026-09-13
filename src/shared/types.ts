@@ -1566,6 +1566,8 @@ export interface AppSnapshot {
    */
   edsmUpload: {
     enabled: boolean;
+    /** Keep sending while the commander plays — a timer over the same catch-up. */
+    live: boolean;
     progress: {
       running: boolean;
       filesDone: number;

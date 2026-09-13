@@ -82,7 +82,7 @@ import { fetchEdsmBodiesAsExplorationRecords, searchEdsmSystemsByName } from "./
 import { backlogMap, firstDiscoveryBacklogWithDistance } from "./firstDiscoveryBacklog.js";
 import { galaxySpeciesCatalogue, galaxyValueSearch } from "./galaxyValueSearch.js";
 import { commanderSectorsDto } from "./galaxySectorTiers.js";
-import { runEdsmCatchUp } from "./edsmCatchUp.js";
+import { runEdsmCatchUp, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 
 /**
  * Recover the commander's galactic position when the merge cache did not carry one.
@@ -352,6 +352,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             edsmAutoFetchEnabled: store.edsmAutoFetchEnabled,
             canonnUploadEnabled: store.canonnUploadEnabled,
             edsmUploadEnabled: store.edsmUploadEnabled,
+            edsmLiveUploadEnabled: store.edsmLiveUploadEnabled,
           },
           null,
           2,
@@ -373,6 +374,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     edsmAutoFetchEnabled?: boolean;
     canonnUploadEnabled?: boolean;
     edsmUploadEnabled?: boolean;
+    edsmLiveUploadEnabled?: boolean;
   };
 
   function applyPersistedUserPrefs(j: PersistedUserPrefs): void {
@@ -401,6 +403,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     // the switch is the whole consent — so a settings file that says on means the commander said on.
     if (j.canonnUploadEnabled === true) store.setCanonnUploadEnabled(true);
     if (j.edsmUploadEnabled === true) store.setEdsmUploadEnabled(true);
+    // Only meaningful with the upload on; a settings file saying otherwise is a file that was edited.
+    if (j.edsmLiveUploadEnabled === true && store.edsmUploadEnabled) store.setEdsmLiveUploadEnabled(true);
   }
 
   function tryReadUserPrefs(file: string): PersistedUserPrefs | null {
@@ -625,6 +629,78 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
    */
   let edsmCatchUpRunning = false;
   let edsmCatchUpCancelled = false;
+
+  /**
+   * How often the live upload looks for new journal lines, and how far back it reaches.
+   *
+   * Three minutes because exploration data is not time-critical and a quiet tick costs nothing: the
+   * discard list is cached for a day and unchanged journals are never opened, so a tick with no new
+   * play makes no network request at all.
+   *
+   * A **week**, not everything. Wide enough to heal a gap from an app that was closed for a few days,
+   * narrow enough that switching this on cannot silently start uploading four years — that is what
+   * the button and its dropdown are for, and it should stay a deliberate act.
+   */
+  const EDSM_LIVE_INTERVAL_MS = 3 * 60 * 1000;
+  const EDSM_LIVE_SCOPE = "week" as const;
+
+  /**
+   * One catch-up, whoever asked for it.
+   *
+   * The button and the timer go through here so there is exactly one place that decides whether a
+   * run may start. Two runs would read the same watermark and send the history twice.
+   */
+  function startEdsmRun(
+    scope: EdsmCatchUpScope,
+    silent = false,
+  ): { ok: boolean; error?: string } {
+    if (!store.edsmUploadEnabled) return { ok: false, error: "Turn EDSM upload on first." };
+    const credentials = readEdsmCredentials();
+    if (!credentials) return { ok: false, error: "Store your EDSM commander name and API key first." };
+    if (edsmCatchUpRunning) return { ok: false, error: "A catch-up is already running." };
+    edsmCatchUpRunning = true;
+    edsmCatchUpCancelled = false;
+    void runEdsmCatchUp({
+      journalDir,
+      credentials,
+      scope,
+      isCancelled: () => edsmCatchUpCancelled,
+      onProgress: (p) => {
+        /*
+          A live tick that found nothing does not touch the panel.
+
+          Otherwise every three minutes the progress line would blink through "0 / 214 journals" and
+          back, which reads as something going wrong. A tick that actually sends is worth showing.
+        */
+        if (silent && p.eventsSent === 0 && !p.error) return;
+        store.setEdsmUploadProgress(p);
+        push();
+      },
+    })
+      .catch((e: unknown) => {
+        // `runEdsmCatchUp` does not throw, so this is belt and braces — but a rejected promise that
+        // left the flag set would make the button dead until a restart.
+        console.error("[edsm] catch-up:", e);
+      })
+      .finally(() => {
+        edsmCatchUpRunning = false;
+        push();
+      });
+    return { ok: true };
+  }
+
+  /**
+   * The live loop.
+   *
+   * Unref'd so it never holds the process open, and it asks `startEdsmRun` rather than checking the
+   * switches itself — a commander who turns the upload off mid-tick gets the same refusal the button
+   * would get.
+   */
+  const edsmLiveTimer = setInterval(() => {
+    if (!store.edsmLiveUploadEnabled) return;
+    startEdsmRun(EDSM_LIVE_SCOPE, true);
+  }, EDSM_LIVE_INTERVAL_MS);
+  edsmLiveTimer.unref?.();
 
   /**
    * Contributing discoveries back to Canonn, when the commander has asked for it.
@@ -1107,35 +1183,20 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         return { ok: false, error: "Store your EDSM commander name and API key first." };
       }
       store.setEdsmUploadEnabled(enabled);
+      // Switching the upload off takes the live loop with it, the way deleting the key takes
+      // auto-fetch down. A "keep sending" left on under a switch that says off is a lie waiting to
+      // be believed the next time the upload is turned back on.
+      if (!enabled) store.setEdsmLiveUploadEnabled(false);
       persistUserPreferences();
       return { ok: true };
     },
-    startEdsmCatchUp: (scope) => {
-      if (!store.edsmUploadEnabled) return { ok: false, error: "Turn EDSM upload on first." };
-      const credentials = readEdsmCredentials();
-      if (!credentials) return { ok: false, error: "Store your EDSM commander name and API key first." };
-      if (edsmCatchUpRunning) return { ok: false, error: "A catch-up is already running." };
-      edsmCatchUpRunning = true;
-      edsmCatchUpCancelled = false;
-      void runEdsmCatchUp({
-        journalDir,
-        credentials,
-        scope,
-        isCancelled: () => edsmCatchUpCancelled,
-        onProgress: (p) => {
-          store.setEdsmUploadProgress(p);
-          push();
-        },
-      })
-        .catch((e: unknown) => {
-          // `runEdsmCatchUp` does not throw, so this is belt and braces — but a rejected promise
-          // that left the flag set would make the button dead until a restart.
-          console.error("[edsm] catch-up:", e);
-        })
-        .finally(() => {
-          edsmCatchUpRunning = false;
-          push();
-        });
+    startEdsmCatchUp: (scope) => startEdsmRun(scope),
+    setEdsmLiveUploadEnabled: (enabled) => {
+      if (enabled && !store.edsmUploadEnabled) {
+        return { ok: false, error: "Turn EDSM upload on first." };
+      }
+      store.setEdsmLiveUploadEnabled(enabled);
+      persistUserPreferences();
       return { ok: true };
     },
     cancelEdsmCatchUp: () => {

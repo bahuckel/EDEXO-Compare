@@ -212,6 +212,8 @@ export function createHttpServer(opts: {
   /** Kick off a catch-up. Refused when one is already running or the switch is off. */
   startEdsmCatchUp?: (scope: EdsmCatchUpScope) => { ok: boolean; error?: string };
   cancelEdsmCatchUp?: () => void;
+  /** POST /api/settings/edsm-live-upload — JSON { enabled }. Refused unless upload is on. */
+  setEdsmLiveUploadEnabled?: (enabled: boolean) => { ok: boolean; error?: string };
   /** After mutating server state, refresh WebSocket clients (e.g. debounced push). */
   scheduleBroadcast?: () => void;
   /** GET /api/encyclopedia-exomastery/:genusDir/:speciesEntryId — feeder profile or per-body EDSM rows. */
@@ -997,6 +999,21 @@ export function createHttpServer(opts: {
       return;
     }
     const r = opts.setEdsmUploadEnabled(enabled);
+    if (r.ok) opts.scheduleBroadcast?.();
+    res.status(r.ok ? 200 : 400).json(r);
+  });
+
+  app.post("/api/settings/edsm-live-upload", (req, res) => {
+    if (typeof opts.setEdsmLiveUploadEnabled !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const enabled = req.body?.enabled;
+    if (typeof enabled !== "boolean") {
+      res.status(400).json({ ok: false, error: "enabled must be a boolean." });
+      return;
+    }
+    const r = opts.setEdsmLiveUploadEnabled(enabled);
     if (r.ok) opts.scheduleBroadcast?.();
     res.status(r.ok ? 200 : 400).json(r);
   });

@@ -1335,6 +1335,7 @@ export function buildSnapshot(
     },
     edsmUpload: {
       enabled: store.edsmUploadEnabled,
+      live: store.edsmLiveUploadEnabled,
       progress: store.edsmUploadProgress,
       ledger: edsmUploadLedgerSummary(),
     },

@@ -681,6 +681,17 @@ export class GameStateStore {
    */
   edsmUploadEnabled = false;
 
+  /**
+   * Keep sending while the commander plays.
+   *
+   * A second switch under {@link edsmUploadEnabled}, because "I will contribute my journal" and "do
+   * it without asking me again" are not the same promise. It runs the ordinary catch-up on a timer
+   * rather than tailing the journal into a second queue: the catch-up already skips files whose size
+   * has not moved, so a tick with nothing new is a few hundred `stat` calls and no network at all,
+   * and one code path that is tested beats two that have to agree with each other.
+   */
+  edsmLiveUploadEnabled = false;
+
   /** This session's view of the catch-up run, for the panel. Not persisted — it describes a run. */
   edsmUploadProgress: import("./edsmCatchUp.js").EdsmCatchUpProgress | null = null;
 
@@ -865,6 +876,10 @@ export class GameStateStore {
 
   setEdsmUploadEnabled(value: boolean): void {
     this.edsmUploadEnabled = value;
+  }
+
+  setEdsmLiveUploadEnabled(value: boolean): void {
+    this.edsmLiveUploadEnabled = value;
   }
 
   setEdsmUploadProgress(p: import("./edsmCatchUp.js").EdsmCatchUpProgress | null): void {
