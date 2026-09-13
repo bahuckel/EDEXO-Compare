@@ -125,15 +125,75 @@ describe("hud.js tracker", () => {
     };
     HUD.render({
       exoMinimap: mm,
-      exoOrganicOverlay: { visible: true, phase: "tracking", sampleCount: 1, separationMeetsMin: false, minSampleDistanceM: 200, distToFirstM: 30, speciesDisplay: "Tussock propagito" },
+      exoOrganicOverlay: { visible: true, phase: "tracking", sampleCount: 1, nearestSampleMeetsMin: false, minSampleDistanceM: 200, distToFirstM: 30, speciesDisplay: "Tussock propagito" },
     });
     expect(document.querySelector(".minimap-hint")).not.toBeNull();
     expect(document.querySelector('[data-f="status"]')?.textContent).toBe("Too close");
     HUD.render({
       exoMinimap: mm,
-      exoOrganicOverlay: { visible: true, phase: "tracking", sampleCount: 1, separationMeetsMin: true, minSampleDistanceM: 200, distToFirstM: 250, speciesDisplay: "Tussock propagito" },
+      exoOrganicOverlay: { visible: true, phase: "tracking", sampleCount: 1, nearestSampleMeetsMin: true, minSampleDistanceM: 200, distToFirstM: 250, speciesDisplay: "Tussock propagito" },
     });
     expect(document.querySelector(".minimap-hint")).toBeNull();
+  });
+
+  /**
+   * The OK / LOW pill, on the row for the scan you are about to take.
+   *
+   * It used to sit against the second scan and against a "Spacing" row that reported the gap between
+   * the first two after both were taken — by which point there was nothing left to decide. Hunting
+   * for the third plant is the same problem as hunting for the second and had no pill at all, which
+   * is what the commander reported.
+   */
+  describe("the distance pill", () => {
+    const pill = (n: string) => (document.querySelector('[data-f="' + n + '"]')?.textContent ?? "").trim();
+    const eo = (sampleCount: number, ok: boolean | null) => ({
+      exoMinimap: {
+        headingDeg: 0,
+        radiusM: 500,
+        minSampleDistanceM: 200,
+        marks: [{ kind: "sample", active: true, eastM: 30, northM: 0, distanceM: 30, label: "Tussock" }],
+      },
+      exoOrganicOverlay: {
+        visible: true,
+        phase: "tracking",
+        sampleCount,
+        nearestSampleMeetsMin: ok,
+        minSampleDistanceM: 200,
+        distToFirstM: 250,
+        distToSecondM: 250,
+        speciesDisplay: "Tussock propagito",
+      },
+    });
+
+    it("sits on scan 2 while there is one plant down", () => {
+      HUD.render(eo(1, false));
+      expect(pill("pill2")).toBe("LOW");
+      expect(pill("pill3")).toBe("");
+    });
+
+    it("moves to scan 3 once there are two", () => {
+      HUD.render(eo(2, true));
+      expect(pill("pill2")).toBe("");
+      expect(pill("pill3")).toBe("OK");
+    });
+
+    it("goes quiet when the run is done", () => {
+      HUD.render(eo(3, true));
+      expect(pill("pill2")).toBe("");
+      expect(pill("pill3")).toBe("");
+    });
+
+    it("has no Spacing row left to put one on", () => {
+      HUD.render(eo(2, true));
+      expect(document.querySelector('[data-f="span12"]')).toBeNull();
+      expect(document.querySelector('[data-f="pillSpan"]')).toBeNull();
+    });
+
+    it("warns on the radar while hunting for the third, not only the second", () => {
+      HUD.render(eo(2, false));
+      expect(document.querySelector(".minimap-hint")).not.toBeNull();
+      expect(document.querySelector('[data-f="status"]')?.textContent).toBe("Too close");
+    });
   });
 
   it("keeps the radar's static layer across renders (the sweep must not restart)", () => {

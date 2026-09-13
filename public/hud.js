@@ -583,8 +583,7 @@
         '<div class="hud-big trk__species" data-f="species">—</div>' +
         '<div class="row"><span class="lbl">Scan 1</span><span class="val" data-f="d1">—</span></div>' +
         '<div class="row"><span class="lbl">Scan 2</span><span class="val"><span data-f="d2">—</span><span data-f="pill2"></span></span></div>' +
-        '<div class="row"><span class="lbl">Scan 3</span><span class="val" data-f="d3">—</span></div>' +
-        '<div class="row" data-f="rowSpan"><span class="lbl">Spacing</span><span class="val"><span data-f="span12">—</span><span data-f="pillSpan"></span></span></div>' +
+        '<div class="row"><span class="lbl">Scan 3</span><span class="val"><span data-f="d3">—</span><span data-f="pill3"></span></span></div>' +
         '<div class="row"><span class="lbl">Min gap</span><span class="val" data-f="minGap">—</span></div>' +
         '<div class="row"><span class="lbl">Run time</span><span class="val" data-f="timer">—</span></div>' +
         "</div>" +
@@ -603,7 +602,10 @@
       var away = q(root, "away");
       var svg = q(root, "minimap");
       var live = !d.journalBoot && eo && eo.visible === true;
-      var tooClose = live && eo.sampleCount === 1 && eo.separationMeetsMin === false;
+      // Standing on top of a plant is the same mistake whether you are looking for the second or the
+      // third, and `nearestSampleMeetsMin` measures against every plant taken, not only the first.
+      var hunting = live && (eo.sampleCount === 1 || eo.sampleCount === 2);
+      var tooClose = hunting && eo.nearestSampleMeetsMin === false;
       var onSurface = !d.journalBoot && drawMinimap(svg, d.exoMinimap, tooClose);
       var showTracker = onSurface || live;
       trk.classList.toggle("trk--away", !showTracker);
@@ -623,13 +625,13 @@
         status.textContent = "On foot";
         q(root, "species").textContent = "No sample in progress";
         q(root, "minGap").textContent = "—";
-        ["d1", "d2", "d3", "span12", "timer"].forEach(function (n) {
+        ["d1", "d2", "d3", "timer"].forEach(function (n) {
           q(root, n).textContent = "—";
           rowClass(n, true);
         });
         rowClass("minGap", true);
         q(root, "pill2").innerHTML = "";
-        q(root, "pillSpan").innerHTML = "";
+        q(root, "pill3").innerHTML = "";
         pay.innerHTML = "<span class='row--muted'>—</span>";
         note.textContent = "The radar shows your ship and any plants taken here while this app was running.";
         cele.style.display = "none";
@@ -648,10 +650,16 @@
       // The third sample only exists once Analyse has been taken, and then it is a place like the others.
       rowClass("d3", eo.distToThirdM == null);
       q(root, "d3").textContent = eo.distToThirdM != null ? fmtM(eo.distToThirdM) : "—";
-      q(root, "pill2").innerHTML = eo.sampleCount === 1 ? pillEl(eo.separationMeetsMin) : "";
-      rowClass("span12", eo.sampleCount < 2);
-      q(root, "span12").textContent = eo.sampleCount >= 2 ? fmtM(eo.spacingBetweenSamplesM) : "—";
-      q(root, "pillSpan").innerHTML = eo.sampleCount >= 2 ? pillEl(eo.spacingMeetsMin) : "";
+      /*
+        The pill answers one question — "far enough to take the next one here?" — so it belongs on
+        the row for the scan about to be taken, and on that row only.
+        `nearestSampleMeetsMin` measures against the nearest plant already sampled, which is the rule
+        the game enforces: with two down you have to clear both, not just the first. It was only ever
+        shown against the second scan, and against a "Spacing" row that reported the gap between the
+        first two after the fact — a number with nothing left to decide. That row is gone.
+      */
+      q(root, "pill2").innerHTML = eo.sampleCount === 1 ? pillEl(eo.nearestSampleMeetsMin) : "";
+      q(root, "pill3").innerHTML = eo.sampleCount === 2 ? pillEl(eo.nearestSampleMeetsMin) : "";
       // The run timer: first Log/Sample of this species on this body to now (frozen on completion).
       var startMs = eo.runStartedIso ? Date.parse(eo.runStartedIso) : NaN;
       root.__runStart = isFinite(startMs) && eo.phase !== "celebrate" ? startMs : null;
