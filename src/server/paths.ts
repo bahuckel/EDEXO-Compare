@@ -68,6 +68,17 @@ export function resolveExoOutlierLogPath(): string {
 }
 
 /**
+ * Why the app suggested what it suggested, body by body.
+ *
+ * Beside the outlier log and for the same reason: it is an observation the commander made, it never
+ * ships, and it cannot be rebuilt from the journal — the narrowing it records is the app's own
+ * changing opinion, which nothing else writes down.
+ */
+export function resolvePredictionAuditPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "edexo-predictions.json");
+}
+
+/**
  * Where plants were sampled and where the ship is parked — the overlay radar's memory.
  *
  * Its own file beside the user settings, and **not** part of the journal merge cache, because it is

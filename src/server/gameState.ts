@@ -44,6 +44,7 @@ import {
   MAX_SURFACE_MARKS,
   type SurfaceMark,
 } from "./surfaceMarksFile.js";
+import { finalisePredictionsForSystem } from "./predictionAuditLog.js";
 import type { NavRouteWaypointDTO } from "./navRouteFuel.js";
 import { codexSpeciesFromLine } from "../shared/codexLog.js";
 function bodyKey(systemAddress: number, bodyId: number): string {
@@ -1153,6 +1154,18 @@ export class GameStateStore {
 
   /** Commander location after FSD/carrier jump — does not delete other systems’ bodies. */
   resetSystem(starSystem: string, systemAddress: number): void {
+    /*
+      Leaving is what closes a prediction record.
+
+      The conditions at each plant live only in the radar's own marks, and a body is not finished
+      with until the commander has gone: hopping to orbit and back down is one visit. Jumping away
+      is the moment the record can be given its ground truth and sealed. Done here rather than on the
+      journal line so a carrier jump closes them too.
+    */
+    const leaving = this.currentSystemAddress;
+    if (leaving !== null && leaving !== systemAddress) {
+      finalisePredictionsForSystem(leaving, this.surfaceSampleMarks);
+    }
     this.rememberVisitedSystem(starSystem, systemAddress);
     this.currentSystem = starSystem;
     this.currentSystemAddress = systemAddress;

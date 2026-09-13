@@ -95,6 +95,7 @@ import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurre
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
 import { exoOutlierTally, recordExoOutliersForBody } from "./exoOutlierLog.js";
+import { recordPredictionForBody } from "./predictionAuditLog.js";
 import { edsmCredentialsStatus } from "./edsmCredentials.js";
 
 let cachedStarRoles: ReturnType<typeof loadStarRolesConfig> | null = null;
@@ -1060,6 +1061,10 @@ function computeBodyUncached(
   // Evidence for the next gate fix: a species the commander confirmed here that we never offered.
   // Writes once per (body, species) and never throws.
   recordExoOutliersForBody({ body: b, matches, db });
+
+  // And the other half of the same question: what was offered *before* the answer arrived, so a
+  // suggestion that turned out wrong can be argued with rather than only counted.
+  recordPredictionForBody({ body: b, matches, db });
 
   const { alerts: exoDataAlerts, dssGenusOrphanHints } = computeExoDataAlertsForBody({
     body: b,
