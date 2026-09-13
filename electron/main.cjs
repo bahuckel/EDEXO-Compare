@@ -341,6 +341,21 @@ function createHudOverlayWindow(width, height, iconForChild, parentWin) {
 async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode) {
   if (!runtime) return { opened: false, paths: hudPathsFiltered(), error: "Server not ready yet." };
 
+  /*
+    Asking for a HUD is asking to see it.
+
+    `restoreHudOverlays` reopens last session's set and then hides the stack, so the hotkey brings
+    back exactly what the commander left. That leaves `hudHidden` true for the rest of the run, and
+    nothing in the launcher ever cleared it — the launcher has no visibility control at all. So every
+    overlay opened from the picker was hidden the instant it loaded (see the `hudHidden` check further
+    down), the picker ticked it as on, and the commander saw nothing. Toggling anything else in the
+    picker only opened more invisible windows.
+
+    `open` is exempt because that *is* the restore path, and un-hiding there would defeat the point of
+    restoring quietly. A `toggle` or a `set` is somebody clicking.
+  */
+  if (mode !== "open" && hudHidden) toggleHudVisibility(false);
+
   const key = hudSlotKey(pathNorm);
   const existing = hudOverlayStack.findIndex((s) => s.key === key);
   if (existing >= 0) {
