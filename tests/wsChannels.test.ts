@@ -60,7 +60,7 @@ describe("socket channels: slim snapshots per client kind", () => {
   });
 
   it("gives the launcher its five fields and nothing heavy", () => {
-    const out = slimSnapshotForChannel(snap(), "launcher") as Record<string, unknown>;
+    const out = slimSnapshotForChannel(snap(), "launcher") as unknown as Record<string, unknown>;
     expect(Object.keys(out).sort()).toEqual(
       ["journalBoot", "journalDir", "journalDirConfiguredOk", "journalFileCount", "lastJournalEventIso", "port"].sort(),
     );
@@ -72,19 +72,19 @@ describe("socket channels: slim snapshots per client kind", () => {
     const out = slimSnapshotForChannel(snap(), "hud") as unknown as AppSnapshot;
     expect(out.jumpTarget?.starSystem).toBe("A");
     expect(out.currentRegion?.name).toBe("Inner Orion Spur");
-    expect((out as Record<string, unknown>).journalSystems).toBeUndefined();
-    expect((out as Record<string, unknown>).speciesCount).toBeUndefined();
+    expect((out as unknown as Record<string, unknown>).journalSystems).toBeUndefined();
+    expect((out as unknown as Record<string, unknown>).speciesCount).toBeUndefined();
     expect(out.bodies).toHaveLength(2);
     const b = out.bodies[0]!;
     expect(b.state.key).toBe("1:2");
     expect(b.tabLabel).toBe("1:2");
-    expect((b as Record<string, unknown>).exoPayoutRange).toBeUndefined();
-    const m = b.matches[0]! as Record<string, unknown>;
+    expect((b as unknown as Record<string, unknown>).exoPayoutRange).toBeUndefined();
+    const m = b.matches[0]! as unknown as Record<string, unknown>;
     expect(m.priceCredits).toBe(2_000_000);
     expect(m.organicAnalysisComplete).toBe(true);
     expect(m.photoUrl).toBeUndefined();
     expect(m.exomasteryDetail).toBeUndefined();
-    expect((m.entry as Record<string, unknown>).notes).toBeUndefined();
+    expect((m.entry as unknown as Record<string, unknown>).notes).toBeUndefined();
     expect(out.exoOverlayFocusBody?.matches[0]?.entry.displayName).toBe("Tubus compagibus");
   });
 

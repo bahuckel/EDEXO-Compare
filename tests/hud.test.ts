@@ -17,6 +17,20 @@ type HudApi = {
   render: (d: unknown) => void;
   starKind: (cls: string) => { kind: string; label: string };
   SECTIONS: string[];
+  /*
+    The rest of `public/hud.js`'s surface, as the newer tests drive it. This type is hand-written —
+    `hud.js` is a plain browser script loaded through `new Function`, so nothing generates it — and
+    it had fallen behind what the file exports, which typechecks as an error while the tests
+    themselves pass. Kept loose on purpose: it describes what the tests need, not the whole API.
+  */
+  readScale: () => number;
+  readOpacity: () => number;
+  readAlpha?: () => number;
+  audioOn: () => boolean;
+  /** A hook the page assigns, not a registrar: `hud.js` calls `HUD.onCue(kind)` if it is set. */
+  onCue?: (kind: string) => unknown;
+  /** Fed the overlay payload each frame; it decides whether a cue has just become due. */
+  cueFromOverlay: (eo: unknown) => void;
 };
 
 function loadHud(): HudApi {
