@@ -4,7 +4,7 @@
 import { useToast } from "./ui/feedback";
 import { useModal } from "./ui/useModal";
 import { InfoPopover } from "./ui/Tooltip";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { AppSnapshot } from "@shared/types";
 import { journalHistoryPresetLabel, journalHistoryWindowPresetChoices, parseJournalHistoryPreset, JournalHistoryPreset } from "@shared/journalHistoryPreset";
 import { FoldPanel } from "./ui/Fold";
@@ -40,7 +40,16 @@ import { EXO_MAP_CR_MAX, EXO_MAP_CR_MIN, EXO_MAP_CR_STEP, EXO_MAP_PLUS_SLIDER_MA
  * Same confirmation rule as {@link CopySystemButton}: a refused clipboard leaves the label alone,
  * because a false "copied" is discovered by pasting nothing into a phone.
  */
-function CopyLanUrlButton({ url }: { url: string }) {
+/** The `host:port` out of a LAN URL, or the whole thing when it will not parse. */
+function lanHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
+function CopyLanUrlButton({ url, label = "Copy" }: { url: string; label?: string }) {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
@@ -48,13 +57,6 @@ function CopyLanUrlButton({ url }: { url: string }) {
     const t = setTimeout(() => setDone(false), 1200);
     return () => clearTimeout(t);
   }, [done]);
-
-  let host = url;
-  try {
-    host = new URL(url).host;
-  } catch {
-    /* an unparseable URL is still copyable; it just gets its whole self as the label */
-  }
 
   return (
     <button
@@ -68,7 +70,7 @@ function CopyLanUrlButton({ url }: { url: string }) {
       }}
       title={url}
     >
-      {done ? "copied" : `Copy for ${host}`}
+      {done ? "copied" : label}
     </button>
   );
 }
@@ -78,44 +80,45 @@ function CopyLanUrlButton({ url }: { url: string }) {
  *
  * The privacy line is the point of this panel, not a footnote on it. Canonn's endpoint takes the
  * journal line verbatim with the commander's name attached — there is no anonymous form and no key
- * to scope it down — so the switch itself is the whole consent and it has to say so before it is
- * flipped, not after.
+ * to scope it down — so the switch itself is the whole consent and it has to say so **before** it is
+ * flipped, not behind the `?`. That is the one difference from the two EDSM boxes: everything else
+ * folds away, and "your CMDR name is shared" does not.
  */
 function CanonnUploadPanel({ state }: { state: AppSnapshot["canonnUpload"] }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const setEnabled = async (enabled: boolean) => {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const r = await fetch("/api/settings/canonn-upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled }),
-      });
-      const j = (await r.json()) as { ok: boolean; error?: string };
-      if (!j.ok) setMsg(j.error ?? "Could not change the setting.");
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Request failed.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
-    <section className="options-canonn options-meta-block">
-      <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-        <strong>Send discoveries to Canonn</strong> — the community science archive this app's rules
-        came from. Organic scans, the sales that date them, codex entries, and whatever else Canonn is
-        currently asking for.
-      </p>
-
-      <p className="options-canonn-privacy dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-        <strong>Your CMDR name is shared.</strong> Canonn's archive is keyed on it, and the journal
-        line is sent exactly as the game wrote it. There is no anonymous form of this. Only live
-        events go — turning it on never uploads your existing journals — and it is off until you turn
-        it on.
+    <FoldPanel
+      foldKey="options-canonn"
+      className="options-meta-block"
+      title="Send to Canonn"
+      summary={state.enabled ? "on" : "off"}
+      help={
+        <>
+          <p>
+            Canonn Research is the community science archive this app's matching rules came from.
+            Sending discoveries back is how the rules get better for everyone.
+          </p>
+          <p>
+            <strong>What is sent</strong> — organic scans, the sales that date them, codex entries, and
+            whatever else Canonn is currently asking for, as the game wrote them.
+          </p>
+          <p>
+            <strong>Only live events.</strong> Turning this on never uploads your existing journals; it
+            starts from the next thing you scan.
+          </p>
+          <p>
+            <a href="https://canonn.science/" target="_blank" rel="noreferrer noopener">
+              canonn.science
+            </a>
+          </p>
+        </>
+      }
+    >
+      <p className="dim options-canonn-privacy">
+        <strong>Your CMDR name is shared.</strong> Canonn's archive is keyed on it and there is no
+        anonymous form.
       </p>
 
       <label className="options-toggle">
@@ -123,7 +126,16 @@ function CanonnUploadPanel({ state }: { state: AppSnapshot["canonnUpload"] }) {
           type="checkbox"
           checked={state.enabled}
           disabled={busy}
-          onChange={(ev) => void setEnabled(ev.target.checked)}
+          onChange={(ev) => {
+            const enabled = ev.target.checked;
+            setBusy(true);
+            setMsg(null);
+            void postSetting("/api/settings/canonn-upload", { enabled })
+              .then((r) => {
+                if (!r.ok) setMsg(r.error ?? "Could not change the setting.");
+              })
+              .finally(() => setBusy(false));
+          }}
         />
         <span>Send my discoveries to Canonn</span>
       </label>
@@ -136,20 +148,14 @@ function CanonnUploadPanel({ state }: { state: AppSnapshot["canonnUpload"] }) {
       ) : null}
 
       {msg ? <p className="warn tiny">{msg}</p> : null}
-
-      <p className="dim tiny" style={{ marginTop: "0.5rem" }}>
-        <a href="https://canonn.science/" target="_blank" rel="noreferrer noopener">
-          canonn.science
-        </a>
-      </p>
-    </section>
+    </FoldPanel>
   );
 }
 
 /**
- * One settings POST, shared by both EDSM panels.
+ * One settings POST, shared by the three contribution panels.
  *
- * Lifted out of `EdsmAutoFetchPanel` when the upload panel arrived: two copies of "post JSON, read
+ * Lifted out of the EDSM fetch panel when the others arrived: three copies of "post JSON, read
  * `{ok, error}` back, turn a thrown fetch into an error object" drift, and the one that drifts is
  * the one that stops reporting failures.
  */
@@ -170,54 +176,58 @@ async function postSetting(
   }
 }
 
-function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) {
+/**
+ * Fetching from EDSM, in Options.
+ *
+ * The half that reads: system names go out, somebody else's scans come back. It holds the API key
+ * because the key is the account, and the account is what both halves use — but the switch here buys
+ * only the lookups. Sending is its own box below, with its own switch.
+ *
+ * Same shape as that one: three controls and one line, everything else behind the `?`. What stays
+ * visible is what leaves the machine, because that is the part nobody should have to go looking for.
+ */
+function EdsmFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) {
   const [commanderName, setCommanderName] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   return (
-    <section className="options-edsm options-meta-block">
-      <p className="dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-        <strong>EDSM auto-fetch</strong> — when you jump into a system the app has no scans for, look it up on
-        EDSM while you travel, so the system can be triaged before you arrive.
-      </p>
-      <p className="options-edsm-privacy dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
-        This sends <strong>the name of every system you enter</strong> to edsm.net, a third party, and your
-        EDSM commander name and API key with it. Nothing else leaves your machine. It is off until you turn it
-        on.
-      </p>
-      {/*
-        Was a paragraph explaining account registration and key storage (A5). The registration part
-        is one instruction and belongs on one line; the storage part is a promise about a secret,
-        which is worth keeping but is not what somebody reads while they are fetching a key — so it
-        sits behind the ⓘ with the rest of the detail.
-      */}
-      <p className="dim" style={{ marginBottom: "0.65rem" }}>
-        Register or log in, then copy your key from{" "}
-        <a href="https://www.edsm.net/en/settings/api" target="_blank" rel="noreferrer noopener">
-          edsm.net/en/settings/api
-        </a>
-        .
-        <InfoPopover title="Where the key is kept" label="Where the key is kept">
+    <FoldPanel
+      foldKey="options-edsm-fetch"
+      className="options-meta-block"
+      title="Fetch from EDSM"
+      summary={state.hasKey ? (state.enabled ? "on" : "key stored") : "no key"}
+      help={
+        <>
           <p>
-            The key is stored on this machine only, in its own file beside your settings — never in the
-            settings file itself, and never in the repository.
+            When you jump into a system this app has no scans for, it looks the system up on EDSM while
+            you travel, so it can be triaged before you arrive.
           </p>
           <p>
-            <strong>Forget key</strong> deletes that file and switches auto-fetch off with it.
+            <strong>What is sent</strong> — the name of every system you enter, with your commander name
+            and key. Nothing else. Off until you turn it on.
           </p>
-        </InfoPopover>
-      </p>
+          <p>
+            <strong>The key</strong> lives on this machine in its own file beside your settings, never in
+            the settings file and never in the repository. The app only ever shows its last four
+            characters back to you. <strong>Forget key</strong> deletes it and switches both EDSM
+            features off.
+          </p>
+          <p>
+            Get a key from{" "}
+            <a href="https://www.edsm.net/en/settings/api" target="_blank" rel="noreferrer noopener">
+              edsm.net/en/settings/api
+            </a>
+            .
+          </p>
+        </>
+      }
+    >
+      <p className="dim options-edsm-privacy">Sends the name of each system you enter to edsm.net.</p>
 
-      {state.hasKey ? (
-        <p className="options-edsm-stored dim">
-          Stored: <strong>{state.commanderName}</strong> · key ending <code>{state.keyHint}</code>
-        </p>
-      ) : null}
-
-      <div className="options-edsm-fields">
-        <label htmlFor="edsm-cmdr">EDSM commander name</label>
+      <div className="options-field-rows">
+        <label htmlFor="edsm-cmdr">Commander</label>
         <input
           id="edsm-cmdr"
           type="text"
@@ -226,7 +236,7 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
           placeholder={state.commanderName ?? "CMDR name on EDSM"}
           onChange={(ev) => setCommanderName(ev.target.value)}
         />
-        <label htmlFor="edsm-key">EDSM API key</label>
+        <label htmlFor="edsm-key">API key</label>
         <input
           id="edsm-key"
           type="password"
@@ -271,7 +281,7 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
             void postSetting("/api/settings/edsm-credentials", null, "DELETE")
               .then(() => {
                 setApiKey("");
-                setMsg({ kind: "ok", text: "Key deleted. Auto-fetch is off." });
+                setMsg({ kind: "ok", text: "Key deleted." });
               })
               .finally(() => setBusy(false));
           }}
@@ -279,6 +289,12 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
           Forget key
         </button>
       </div>
+
+      {state.hasKey ? (
+        <p className="options-edsm-stored dim">
+          <strong>{state.commanderName}</strong> · key ending <code>{state.keyHint}</code>
+        </p>
+      ) : null}
 
       <label className="options-edsm-toggle">
         <input
@@ -296,14 +312,11 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
               .finally(() => setBusy(false));
           }}
         />
-        <span>
-          Look up systems on EDSM automatically when I jump
-          {state.hasKey ? "" : " (store your API key first)"}
-        </span>
+        <span>Look up systems when I jump{state.hasKey ? "" : " (store your key first)"}</span>
       </label>
 
       {msg ? <p className={msg.kind === "ok" ? "msg ok" : "msg err"}>{msg.text}</p> : null}
-    </section>
+    </FoldPanel>
   );
 }
 
@@ -347,18 +360,18 @@ function EdsmUploadPanel({
     <FoldPanel
       foldKey="options-edsm-upload"
       className="options-meta-block"
-      title="EDSM — send my journal"
+      title="Send to EDSM"
       summary={state.enabled ? (state.live ? "on, live" : "on") : "off"}
       help={
         <>
           <p>
             The same thing EDMarketConnector and EDDiscovery do: your discoveries appear on your EDSM
-            commander profile. Uses the API key above.
+            commander profile. Uses the key from <em>Fetch from EDSM</em> above.
           </p>
           <p>
             <strong>What is sent</strong> — the game's own journal lines: where you jumped, what you
             scanned, when. EDSM publishes a list of event types it does not want and those are skipped.
-            Auto-fetch above sends only system names; this is much more.
+            Fetching above sends only system names; this is much more.
           </p>
           <p>
             <strong>Catch up</strong> reads your journals oldest first and sends whatever EDSM has not
@@ -429,7 +442,11 @@ function EdsmUploadPanel({
           {running ? "Catching up…" : "Catch up"}
         </button>
         {running ? (
-          <button type="button" className="btn secondary" onClick={() => void postSetting("/api/settings/edsm-catch-up-cancel", {})}>
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={() => void postSetting("/api/settings/edsm-catch-up-cancel", {})}
+          >
             Stop
           </button>
         ) : null}
@@ -698,18 +715,19 @@ export function MapOptionsModal({
               every one of them wrap (A5).
             */}
             {snap.mode === "server" && snap.lanUrls.length > 0 ? (
-              <>
-                <p className="options-journal-line options-oneline dim">
-                  <span className="options-oneline-label">Phone</span>
-                  {snap.lanUrls.map((u) => (
-                    <CopyLanUrlButton key={u} url={u} />
-                  ))}
-                </p>
-                <p className="options-journal-line options-oneline dim">
-                  <span className="options-oneline-label">Second screen</span>
-                  {snap.lanUrls.map((u) => (
-                    <CopyLanUrlButton key={u} url={secondScreenUrl(u)} />
-                  ))}
+              /*
+                One row per address, rather than one button per address per destination.
+
+                Two paragraphs of "Copy for 192.168.0.3:7111" buttons meant a machine with a wired
+                card and a wireless one produced four long buttons that wrapped, with nothing saying
+                which pair belonged to which address. The address is said once now and the two
+                destinations are columns beside it.
+              */
+              <div className="options-lan">
+                <span />
+                <span className="options-lan-head">Phone</span>
+                <span className="options-lan-head">
+                  Second screen
                   <InfoPopover title="Second screen" label="What the second screen shows">
                     <p>
                       The same server, one query parameter apart: read-only triage for this system, meant
@@ -720,8 +738,15 @@ export function MapOptionsModal({
                       and it keeps working across restarts.
                     </p>
                   </InfoPopover>
-                </p>
-              </>
+                </span>
+                {snap.lanUrls.map((u) => (
+                  <Fragment key={u}>
+                    <span className="options-lan-addr">{lanHost(u)}</span>
+                    <CopyLanUrlButton url={u} label="Copy" />
+                    <CopyLanUrlButton url={secondScreenUrl(u)} label="Copy" />
+                  </Fragment>
+                ))}
+              </div>
             ) : (
               <p className="options-journal-line dim">
                 LAN server: use <code>npm run start:server</code>
@@ -731,7 +756,7 @@ export function MapOptionsModal({
 
           <ExoMissLogPanel outliers={snap.exoOutliers} />
 
-          <EdsmAutoFetchPanel state={snap.edsmAutoFetch} />
+          <EdsmFetchPanel state={snap.edsmAutoFetch} />
           <EdsmUploadPanel state={snap.edsmUpload} hasKey={snap.edsmAutoFetch.hasKey} />
           <CanonnUploadPanel state={snap.canonnUpload} />
 

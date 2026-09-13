@@ -464,8 +464,31 @@ export const HeaderBar = memo(function HeaderBar({
   */
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * Which way the menu opens.
+   *
+   * It is pinned to the left edge of its button and grows right, which is fine until the button is
+   * near the right edge of the window — then the panel runs off-screen and the entries at the bottom
+   * of it cannot be reached. Measured when it opens rather than guessed from a breakpoint, because
+   * the button's position depends on how much else is in the bar, which depends on the route, the
+   * commander's ship and the window width all at once.
+   */
+  const [menuSide, setMenuSide] = useState<"left" | "right">("left");
   useEffect(() => {
     if (!menuOpen) return;
+    const wrap = menuRef.current;
+    const panel = wrap?.querySelector<HTMLElement>(".appbar-menu");
+    if (wrap && panel) {
+      const anchor = wrap.getBoundingClientRect();
+      // `min-width` is the honest figure: the panel may not have been laid out yet on the first open,
+      // and its rendered width is zero while `display: none`.
+      const width = Math.max(panel.getBoundingClientRect().width, panel.offsetWidth, 240);
+      const roomRight = window.innerWidth - anchor.left;
+      // Only flip when the right genuinely does not fit *and* the left does — a window narrower than
+      // the menu has no good side, and flipping there would just move which edge it escapes from.
+      const roomLeft = anchor.right;
+      setMenuSide(roomRight < width + 8 && roomLeft >= width + 8 ? "right" : "left");
+    }
     const onDoc = (ev: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(ev.target as Node)) setMenuOpen(false);
     };
@@ -655,7 +678,11 @@ export const HeaderBar = memo(function HeaderBar({
             >
               <span className="appbar-menu-glyph" aria-hidden="true" />
             </button>
-          <div className={`appbar-menu${menuOpen ? " appbar-menu--open" : ""}`} role="menu" onClick={() => setMenuOpen(false)}>
+          <div
+            className={`appbar-menu appbar-menu--${menuSide}${menuOpen ? " appbar-menu--open" : ""}`}
+            role="menu"
+            onClick={() => setMenuOpen(false)}
+          >
           <Tooltip text="My exobiology — completed on-foot samples recorded from your journal.">
             <button
               type="button"

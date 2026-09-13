@@ -146,9 +146,21 @@ input[type="text"]:focus {
 .exo-data-alerts-trigger__mail {
   display: block;
 }
-.appbar-menu {
+/*
+  The menu opens towards whichever side has room.
+
+  It used to be pinned `left: 0` unconditionally, which grows rightwards off the window whenever the
+  button is near the right edge — the entries at the bottom of the panel then cannot be reached at
+  all. `HeaderBar` measures the button against the viewport when the menu opens and picks the class;
+  these two rules are the whole of the flip.
+*/
+.appbar-menu--left {
   left: 0;
   right: auto;
+}
+.appbar-menu--right {
+  left: auto;
+  right: 0;
 }
 
 /* ---- the six secondary buttons sit inline when there is room; the menu only on narrow screens --- */
