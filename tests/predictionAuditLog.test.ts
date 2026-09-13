@@ -170,3 +170,72 @@ describe("closing a record", () => {
     expect(predictionRecords()[0]!.conditions).toEqual([]);
   });
 });
+
+/**
+ * Why a candidate was hidden, not just that it was.
+ *
+ * The commander's question about `Qeajo TT-A c29-1 4` — "it was there at 2.6 %, why could I not see
+ * it?" — could not be answered from the file, and rebuilding the body offline did not reproduce the
+ * demotion, because the gates depend on context a reconstruction does not have. Recorded at the time
+ * it is a lookup.
+ */
+describe("the reason a candidate was demoted", () => {
+  const demoted = (id: string, reasons: { field: string; detail: string; soft?: boolean }[]) =>
+    ({
+      entry: { id, genus: "Bacterium", displayName: id.replace("_", " ") },
+      presenceProbabilityPercent: 2.6,
+      unlikely: true,
+      unlikelyReasons: reasons,
+    }) as unknown as SpeciesMatch;
+
+  it("records the matcher's own reasons against the hidden candidate", () => {
+    recordPredictionForBody({
+      body: body(),
+      matches: [
+        m("stratum_tectonicas", "Stratum", 97.4),
+        demoted("bacterium_aurasus", [{ field: "PlanetClass", detail: "High metal content body", soft: true }]),
+      ],
+      db,
+    });
+    const offered = predictionRecords()[0]!.stages[0]!.offered;
+    const aurasus = offered.find((o) => o.speciesId === "bacterium_aurasus")!;
+    expect(aurasus.unlikely).toBe(true);
+    expect(aurasus.blockedBy).toEqual([
+      { field: "PlanetClass", detail: "High metal content body", soft: true },
+    ]);
+  });
+
+  it("leaves the list empty for a candidate that was shown", () => {
+    recordPredictionForBody({ body: body(), matches: [m("stratum_tectonicas", "Stratum", 97.4)], db });
+    expect(predictionRecords()[0]!.stages[0]!.offered[0]!.blockedBy).toEqual([]);
+  });
+
+  it("writes a new stage when only the reason changed", () => {
+    // The same names in the same order with a different reason is a different answer, and it is the
+    // change this file exists to catch.
+    const shown = m("stratum_tectonicas", "Stratum", 97.4);
+    recordPredictionForBody({
+      body: body(),
+      matches: [shown, demoted("bacterium_aurasus", [{ field: "PlanetClass", detail: "x", soft: true }])],
+      db,
+    });
+    recordPredictionForBody({
+      body: body(),
+      matches: [shown, demoted("bacterium_aurasus", [{ field: "StarType", detail: "y", soft: true }])],
+      db,
+    });
+    expect(predictionRecords()[0]!.stages).toHaveLength(2);
+  });
+
+  it("reads back a record written before the field existed", () => {
+    // Old files are on disk right now; a missing `blockedBy` must not throw.
+    const rec = predictionRecords();
+    expect(rec).toHaveLength(0);
+    recordPredictionForBody({ body: body(), matches: [m("stratum_tectonicas", "Stratum", 97.4)], db });
+    const stage = predictionRecords()[0]!.stages[0]!;
+    delete (stage.offered[0] as { blockedBy?: unknown }).blockedBy;
+    expect(() =>
+      recordPredictionForBody({ body: body(), matches: [m("stratum_tectonicas", "Stratum", 97.4)], db }),
+    ).not.toThrow();
+  });
+});

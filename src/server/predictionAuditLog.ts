@@ -47,6 +47,20 @@ export interface PredictionOffer {
   percent: number | null;
   /** True when it was behind "show unlikely (N)" and the commander would not have seen it. */
   unlikely: boolean;
+  /**
+   * Why it was demoted, when it was: the matcher's own reasons, shortest useful form.
+   *
+   * The file recorded *what* was offered and at what rank and never why anything was hidden, which
+   * makes the most common question about a wrong answer — "it was right there at 2.6 %, why could I
+   * not see it?" — unanswerable after the fact. The commander hit exactly that on
+   * `Qeajo TT-A c29-1 4`: Bacterium was demoted, Stratum shown alone, and rebuilding the body
+   * offline afterwards did not reproduce the demotion, because the gates that run in the app depend
+   * on context a reconstruction does not have. Written at the time, it is a lookup instead.
+   *
+   * `field` is the criterion, `soft` marks the ones that demote rather than exclude. Empty for a
+   * candidate that was shown.
+   */
+  blockedBy: { field: string; detail: string; soft: boolean }[];
 }
 
 export interface PredictionStage {
@@ -221,6 +235,7 @@ function offersFrom(matches: SpeciesMatch[]): PredictionOffer[] {
     rank: i + 1,
     percent: m.presenceProbabilityPercent ?? null,
     unlikely: false,
+    blockedBy: [],
   }));
   for (const m of matches) {
     if (!m.unlikely) continue;
@@ -230,9 +245,25 @@ function offersFrom(matches: SpeciesMatch[]): PredictionOffer[] {
       rank: null,
       percent: m.presenceProbabilityPercent ?? null,
       unlikely: true,
+      blockedBy: reasonsOf(m),
     });
   }
   return out;
+}
+
+/**
+ * The reasons a candidate was demoted, trimmed to what a later reader needs.
+ *
+ * Capped, because a species can fail several criteria at once and the first few are the ones that
+ * decide it; the detail strings are the matcher's own wording, so they stay readable without the
+ * matcher to hand.
+ */
+function reasonsOf(m: SpeciesMatch): { field: string; detail: string; soft: boolean }[] {
+  return (m.unlikelyReasons ?? []).slice(0, 6).map((r) => ({
+    field: r.field,
+    detail: r.detail,
+    soft: r.soft === true,
+  }));
 }
 
 /** The same list twice over is not a narrowing, and writing it would bury the ones that are. */
@@ -241,6 +272,13 @@ function sameOffer(a: PredictionOffer[], b: PredictionOffer[]): boolean {
   for (let i = 0; i < a.length; i++) {
     if (a[i]!.speciesId !== b[i]!.speciesId) return false;
     if (a[i]!.unlikely !== b[i]!.unlikely) return false;
+    // A candidate demoted for a different reason is a different answer, even with the same names in
+    // the same order — that change is the one this file exists to catch.
+    // `?? []` because records written before this field existed are still on disk, and a file the
+    // app wrote yesterday must not crash the app today.
+    const ra = (a[i]!.blockedBy ?? []).map((r) => r.field).join("|");
+    const rb = (b[i]!.blockedBy ?? []).map((r) => r.field).join("|");
+    if (ra !== rb) return false;
   }
   return true;
 }
