@@ -1110,7 +1110,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       persistUserPreferences();
       return { ok: true };
     },
-    startEdsmCatchUp: () => {
+    startEdsmCatchUp: (scope) => {
       if (!store.edsmUploadEnabled) return { ok: false, error: "Turn EDSM upload on first." };
       const credentials = readEdsmCredentials();
       if (!credentials) return { ok: false, error: "Store your EDSM commander name and API key first." };
@@ -1120,6 +1120,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       void runEdsmCatchUp({
         journalDir,
         credentials,
+        scope,
         isCancelled: () => edsmCatchUpCancelled,
         onProgress: (p) => {
           store.setEdsmUploadProgress(p);

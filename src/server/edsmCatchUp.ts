@@ -62,9 +62,25 @@ export interface EdsmCatchUpProgress {
   finishedAt: string | null;
 }
 
+/** How far back a run reaches. `all` is every journal on the machine. */
+export type EdsmCatchUpScope = "day" | "week" | "month" | "year" | "all";
+
+export const EDSM_SCOPE_DAYS: Record<Exclude<EdsmCatchUpScope, "all">, number> = {
+  day: 1,
+  week: 7,
+  month: 31,
+  year: 365,
+};
+
+export function isEdsmCatchUpScope(v: unknown): v is EdsmCatchUpScope {
+  return v === "day" || v === "week" || v === "month" || v === "year" || v === "all";
+}
+
 export interface EdsmCatchUpOptions {
   journalDir: string;
   credentials: EdsmCredentials;
+  /** Default `all`. Anything else stops at journals older than the window. */
+  scope?: EdsmCatchUpScope;
   /** Called after each batch, so the UI can show a live count without polling the ledger. */
   onProgress?: (p: EdsmCatchUpProgress) => void;
   /** Returns true to stop at the next batch boundary. */
@@ -122,9 +138,36 @@ export async function runEdsmCatchUp(opts: EdsmCatchUpOptions): Promise<EdsmCatc
   const ledger = readEdsmUploadLedger();
   ledger.lastRunAt = new Date().toISOString();
 
-  // `minFileStartUtcMs: null` is the whole history, not the app's rolling window — the point of a
-  // catch-up is the gap before today, and that window exists to keep the *matcher* fast.
-  const files = await listJournalFilesChronological(opts.journalDir, { minFileStartUtcMs: null });
+  // `minFileStartUtcMs: null` is the whole history, not the app's rolling window — that window
+  // exists to keep the *matcher* fast and has nothing to do with what EDSM has been given.
+  const all = await listJournalFilesChronological(opts.journalDir, { minFileStartUtcMs: null });
+
+  /*
+    The scope, filtered on **last write** rather than on when the session started.
+
+    A commander who asks for the last week means the last week of play. A session that began nine
+    days ago and ran until six is part of that week, and filtering on the filename's timestamp — what
+    `listJournalFilesChronological` does — would drop it. `mtime` is when the game last appended to
+    the file, which is the end of that session, so this keeps the straddling one and still excludes
+    everything that finished before the window.
+  */
+  const cutoffMs =
+    !opts.scope || opts.scope === "all"
+      ? null
+      : Date.now() - EDSM_SCOPE_DAYS[opts.scope] * 24 * 60 * 60 * 1000;
+
+  const files: string[] = [];
+  for (const f of all) {
+    if (cutoffMs == null) {
+      files.push(f);
+      continue;
+    }
+    try {
+      if ((await fs.stat(f)).mtimeMs >= cutoffMs) files.push(f);
+    } catch {
+      /* a file that cannot be stat'd is one the run would skip anyway */
+    }
+  }
   progress.filesTotal = files.length;
   report();
 

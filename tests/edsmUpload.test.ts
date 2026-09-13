@@ -7,7 +7,7 @@
  * volunteer service, and a run interrupted halfway must resume where it stopped rather than at the
  * beginning or past the gap.
  */
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -315,6 +315,72 @@ describe("a catch-up run", () => {
     expect(p.running).toBe(false);
     expect(p.filesTotal).toBe(2);
     expect(p.filesDone).toBeLessThan(2);
+  });
+
+  describe("how far back a run reaches", () => {
+    /** A journal whose last write was `daysAgo`, which is what the scope filter reads. */
+    function agedJournal(name: string, daysAgo: number, lines: Record<string, unknown>[]): void {
+      const p = writeJournal(tmp, name, lines);
+      const when = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+      utimesSync(p, when, when);
+    }
+
+    beforeEach(() => {
+      agedJournal("Journal.2020-01-01T100000.01.log", 400, journal(1));
+      agedJournal("Journal.2026-08-20T100000.01.log", 20, journal(2));
+      agedJournal("Journal.2026-09-12T100000.01.log", 1.5, journal(3));
+    });
+
+    const bodiesFor = async (scope: "day" | "week" | "month" | "year" | "all") => {
+      const server = fakeEdsm();
+      await runEdsmCatchUp({
+        journalDir: tmp,
+        credentials: creds,
+        scope,
+        fetchImpl: server.impl,
+        gapMs: 0,
+      });
+      return server.batches
+        .flat()
+        .filter((e) => e.event === "Scan")
+        .map((e) => e.BodyName);
+    };
+
+    it("sends nothing for a day when nothing was played today", async () => {
+      // The newest journal here was last written 36 hours ago, so a one-day window excludes it —
+      // an empty run, not an error.
+      expect(await bodiesFor("day")).toEqual([]);
+    });
+
+    it("reaches back a week", async () => {
+      expect(await bodiesFor("week")).toEqual(["Sol 3"]);
+    });
+
+    it("reaches back a month", async () => {
+      expect(await bodiesFor("month")).toEqual(["Sol 2", "Sol 3"]);
+    });
+
+    it("takes everything when asked for everything", async () => {
+      expect(await bodiesFor("all")).toEqual(["Sol 1", "Sol 2", "Sol 3"]);
+    });
+
+    it("counts only the journals in range, so the progress line means something", async () => {
+      const server = fakeEdsm();
+      const p = await runEdsmCatchUp({
+        journalDir: tmp,
+        credentials: creds,
+        scope: "month",
+        fetchImpl: server.impl,
+        gapMs: 0,
+      });
+      expect(p.filesTotal).toBe(2);
+    });
+
+    it("does not stop a longer run later — a short one leaves the older files untouched", async () => {
+      await bodiesFor("week");
+      // The week run never opened the older journals, so "all" still has them to send.
+      expect(await bodiesFor("all")).toEqual(["Sol 1", "Sol 2"]);
+    });
   });
 
   it("reports an empty journal folder as a finished run, not an error", async () => {

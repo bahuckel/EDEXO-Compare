@@ -30,6 +30,7 @@ import { findGenusPhotosFolder, findGenusNotesFile } from "./speciesTreeLoader.j
 import { perfBytes, perfCount, perfTime } from "./perf.js";
 import { createLanAuthGuard, isLoopbackAddress, requestIsAuthorized } from "./lanAuth.js";
 import { EDSM_USER_AGENT } from "./edsmSystemHydration.js";
+import { isEdsmCatchUpScope, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 
 export function getLanIPv4s(port: number): string[] {
   const nets = os.networkInterfaces();
@@ -209,7 +210,7 @@ export function createHttpServer(opts: {
   /** POST /api/settings/edsm-upload — JSON { enabled }. Refused without stored credentials. */
   setEdsmUploadEnabled?: (enabled: boolean) => { ok: boolean; error?: string };
   /** Kick off a catch-up. Refused when one is already running or the switch is off. */
-  startEdsmCatchUp?: () => { ok: boolean; error?: string };
+  startEdsmCatchUp?: (scope: EdsmCatchUpScope) => { ok: boolean; error?: string };
   cancelEdsmCatchUp?: () => void;
   /** After mutating server state, refresh WebSocket clients (e.g. debounced push). */
   scheduleBroadcast?: () => void;
@@ -1000,12 +1001,17 @@ export function createHttpServer(opts: {
     res.status(r.ok ? 200 : 400).json(r);
   });
 
-  app.post("/api/settings/edsm-catch-up", (_req, res) => {
+  app.post("/api/settings/edsm-catch-up", (req, res) => {
     if (typeof opts.startEdsmCatchUp !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
     }
-    const r = opts.startEdsmCatchUp();
+    const scope = req.body?.scope;
+    if (scope !== undefined && !isEdsmCatchUpScope(scope)) {
+      res.status(400).json({ ok: false, error: "scope must be day, week, month, year or all." });
+      return;
+    }
+    const r = opts.startEdsmCatchUp(scope ?? "all");
     if (r.ok) opts.scheduleBroadcast?.();
     res.status(r.ok ? 200 : 400).json(r);
   });

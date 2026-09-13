@@ -326,6 +326,14 @@ function EdsmUploadPanel({
 }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  /**
+   * How far back to reach.
+   *
+   * Defaults to a week rather than to everything: the first press of this button on a four-year
+   * history is a long run against a volunteer service, and it should be a thing the commander
+   * chooses rather than the thing that happens if they do not read the dropdown.
+   */
+  const [scope, setScope] = useState<"day" | "week" | "month" | "year" | "all">("week");
   const progress = state.progress;
   const running = progress?.running === true;
 
@@ -364,12 +372,28 @@ function EdsmUploadPanel({
       </label>
 
       <p className="dim" style={{ marginTop: "0.55rem", lineHeight: 1.45 }}>
-        <strong>Catch up</strong> reads every journal on this machine, oldest first, and sends whatever EDSM
-        has not been given yet. It remembers how far it got, so stopping it is safe and running it again
-        picks up where it left off. The first run over several years of logs takes a while.
+        <strong>Catch up</strong> reads your journals oldest first and sends whatever EDSM has not been
+        given yet, as far back as you choose. It remembers how far it got, so stopping it is safe and
+        running it again picks up where it left off — and a short run now does not stop a longer one
+        later. <em>Everything</em> over several years of logs takes a while.
       </p>
 
       <div className="options-edsm-actions">
+        <label className="dim" htmlFor="edsm-scope" style={{ alignSelf: "center" }}>
+          Upload
+        </label>
+        <select
+          id="edsm-scope"
+          value={scope}
+          disabled={busy || !state.enabled || running}
+          onChange={(ev) => setScope(ev.target.value as typeof scope)}
+        >
+          <option value="day">the last day</option>
+          <option value="week">the last week</option>
+          <option value="month">the last month</option>
+          <option value="year">the last year</option>
+          <option value="all">everything</option>
+        </select>
         <button
           type="button"
           className="btn secondary"
@@ -377,7 +401,7 @@ function EdsmUploadPanel({
           onClick={() => {
             setBusy(true);
             setMsg(null);
-            void postSetting("/api/settings/edsm-catch-up", {})
+            void postSetting("/api/settings/edsm-catch-up", { scope })
               .then((r) => {
                 if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Could not start." });
               })
