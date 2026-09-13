@@ -145,28 +145,35 @@ function CanonnUploadPanel({ state }: { state: AppSnapshot["canonnUpload"] }) {
   );
 }
 
+/**
+ * One settings POST, shared by both EDSM panels.
+ *
+ * Lifted out of `EdsmAutoFetchPanel` when the upload panel arrived: two copies of "post JSON, read
+ * `{ok, error}` back, turn a thrown fetch into an error object" drift, and the one that drifts is
+ * the one that stops reporting failures.
+ */
+async function postSetting(
+  path: string,
+  body: unknown,
+  method = "POST",
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const r = await fetch(path, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: method === "DELETE" ? undefined : JSON.stringify(body),
+    });
+    return (await r.json()) as { ok: boolean; error?: string };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Request failed." };
+  }
+}
+
 function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) {
   const [commanderName, setCommanderName] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
-
-  async function post(
-    path: string,
-    body: unknown,
-    method = "POST",
-  ): Promise<{ ok: boolean; error?: string }> {
-    try {
-      const r = await fetch(path, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: method === "DELETE" ? undefined : JSON.stringify(body),
-      });
-      return (await r.json()) as { ok: boolean; error?: string };
-    } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : "Request failed." };
-    }
-  }
 
   return (
     <section className="options-edsm options-meta-block">
@@ -238,7 +245,7 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
           onClick={() => {
             setBusy(true);
             setMsg(null);
-            void post("/api/settings/edsm-credentials", { commanderName, apiKey })
+            void postSetting("/api/settings/edsm-credentials", { commanderName, apiKey })
               .then((r) => {
                 setMsg(
                   r.ok
@@ -260,7 +267,7 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
           onClick={() => {
             setBusy(true);
             setMsg(null);
-            void post("/api/settings/edsm-credentials", null, "DELETE")
+            void postSetting("/api/settings/edsm-credentials", null, "DELETE")
               .then(() => {
                 setApiKey("");
                 setMsg({ kind: "ok", text: "Key deleted. Auto-fetch is off." });
@@ -281,7 +288,7 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
             const enabled = ev.target.checked;
             setBusy(true);
             setMsg(null);
-            void post("/api/settings/edsm-auto-fetch", { enabled })
+            void postSetting("/api/settings/edsm-auto-fetch", { enabled })
               .then((r) => {
                 if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Could not change the setting." });
               })
@@ -293,6 +300,127 @@ function EdsmAutoFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) 
           {state.hasKey ? "" : " (store your API key first)"}
         </span>
       </label>
+
+      {msg ? <p className={msg.kind === "ok" ? "msg ok" : "msg err"}>{msg.text}</p> : null}
+    </section>
+  );
+}
+
+/**
+ * Contributing the journal to EDSM, in Options.
+ *
+ * Sits below auto-fetch and shares its key, and is deliberately a separate switch: reading somebody
+ * else's data and handing them yours are different decisions, and a commander who wanted the first
+ * has not thereby agreed to the second.
+ *
+ * The paragraph above the switch says what leaves the machine in the same plain words the auto-fetch
+ * panel uses, because this one sends a great deal more — the game's own journal lines, which carry
+ * where you have been, what you scanned and when.
+ */
+function EdsmUploadPanel({
+  state,
+  hasKey,
+}: {
+  state: AppSnapshot["edsmUpload"];
+  hasKey: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const progress = state.progress;
+  const running = progress?.running === true;
+
+  return (
+    <section className="options-edsm options-meta-block">
+      <p>
+        <strong>Send my journal to EDSM</strong> — the same thing EDMarketConnector and EDDiscovery do, so
+        your discoveries show up on your EDSM commander profile.
+      </p>
+      <p className="options-edsm-privacy dim" style={{ marginBottom: "0.65rem", lineHeight: 1.45 }}>
+        This sends <strong>your game journal</strong> to edsm.net, a third party — where you jumped, what you
+        scanned, when — minus the event types EDSM publishes as unwanted. That is far more than auto-fetch
+        above, which only sends system names. It is off until you turn it on, and it uses the same API key.
+      </p>
+
+      <label className="options-edsm-toggle">
+        <input
+          type="checkbox"
+          checked={state.enabled}
+          disabled={busy || !hasKey || running}
+          onChange={(ev) => {
+            const enabled = ev.target.checked;
+            setBusy(true);
+            setMsg(null);
+            void postSetting("/api/settings/edsm-upload", { enabled })
+              .then((r) => {
+                if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Could not change the setting." });
+              })
+              .finally(() => setBusy(false));
+          }}
+        />
+        <span>
+          Upload my journal to EDSM
+          {hasKey ? "" : " (store your API key first)"}
+        </span>
+      </label>
+
+      <p className="dim" style={{ marginTop: "0.55rem", lineHeight: 1.45 }}>
+        <strong>Catch up</strong> reads every journal on this machine, oldest first, and sends whatever EDSM
+        has not been given yet. It remembers how far it got, so stopping it is safe and running it again
+        picks up where it left off. The first run over several years of logs takes a while.
+      </p>
+
+      <div className="options-edsm-actions">
+        <button
+          type="button"
+          className="btn secondary"
+          disabled={busy || !state.enabled || running}
+          onClick={() => {
+            setBusy(true);
+            setMsg(null);
+            void postSetting("/api/settings/edsm-catch-up", {})
+              .then((r) => {
+                if (!r.ok) setMsg({ kind: "err", text: r.error ?? "Could not start." });
+              })
+              .finally(() => setBusy(false));
+          }}
+        >
+          {running ? "Catching up…" : "Catch up now"}
+        </button>
+        <button
+          type="button"
+          className="btn secondary"
+          disabled={!running}
+          onClick={() => {
+            void postSetting("/api/settings/edsm-catch-up-cancel", {});
+          }}
+        >
+          Stop
+        </button>
+      </div>
+
+      {progress ? (
+        <p className="options-edsm-stored dim">
+          {progress.filesDone} / {progress.filesTotal} journals
+          {progress.currentFile ? ` — ${progress.currentFile}` : ""} · {progress.eventsSent.toLocaleString()} sent
+          {progress.eventsDiscarded > 0 ? ` · ${progress.eventsDiscarded.toLocaleString()} skipped` : ""}
+          {progress.eventsRejected > 0 ? ` · ${progress.eventsRejected.toLocaleString()} refused` : ""}
+        </p>
+      ) : null}
+
+      {state.ledger.eventsAccepted > 0 || state.ledger.lastRunAt ? (
+        <p className="options-edsm-stored dim">
+          {state.ledger.eventsAccepted.toLocaleString()} events accepted from {state.ledger.filesTracked}{" "}
+          journals in total
+          {state.ledger.lastRunAt ? `, last run ${new Date(state.ledger.lastRunAt).toLocaleString()}` : ""}.
+        </p>
+      ) : null}
+
+      {progress?.error ? (
+        <p className="msg err">
+          {progress.error}
+          {progress.fatal ? " — this one will not fix itself; check the commander name and key above." : ""}
+        </p>
+      ) : null}
 
       {msg ? <p className={msg.kind === "ok" ? "msg ok" : "msg err"}>{msg.text}</p> : null}
     </section>
@@ -573,6 +701,7 @@ export function MapOptionsModal({
           <ExoMissLogPanel outliers={snap.exoOutliers} />
 
           <EdsmAutoFetchPanel state={snap.edsmAutoFetch} />
+          <EdsmUploadPanel state={snap.edsmUpload} hasKey={snap.edsmAutoFetch.hasKey} />
           <CanonnUploadPanel state={snap.canonnUpload} />
 
           <section className="options-journal-history options-meta-block options-oneline">

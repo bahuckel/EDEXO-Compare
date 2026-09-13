@@ -59,6 +59,17 @@ export function resolveEdsmCredentialsPath(): string {
 }
 
 /**
+ * How much of each journal EDSM has already been given.
+ *
+ * Beside the key rather than inside the settings, for the same reason the key is: this is a record
+ * of what left the machine and it should not travel in a file people paste into bug reports. It is
+ * also the one thing that makes a catch-up re-runnable, so losing it costs a re-upload, not data.
+ */
+export function resolveEdsmUploadLedgerPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "edexo-edsm-uploaded.json");
+}
+
+/**
  * Species the commander found that the app failed to offer (see exoOutlierLog.ts). Its own file
  * beside the user settings: append-only evidence that must survive a cache rebuild, since a cache is
  * regenerated routinely and this is the only record of what the predictor got wrong.

@@ -96,6 +96,7 @@ import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
 import { exoOutlierTally, recordExoOutliersForBody } from "./exoOutlierLog.js";
 import { recordPredictionForBody } from "./predictionAuditLog.js";
+import { edsmUploadLedgerSummary } from "./edsmUploadLedger.js";
 import { edsmCredentialsStatus } from "./edsmCredentials.js";
 
 let cachedStarRoles: ReturnType<typeof loadStarRolesConfig> | null = null;
@@ -1331,6 +1332,11 @@ export function buildSnapshot(
     edsmAutoFetch: {
       enabled: store.edsmAutoFetchEnabled,
       ...edsmCredentialsStatus(),
+    },
+    edsmUpload: {
+      enabled: store.edsmUploadEnabled,
+      progress: store.edsmUploadProgress,
+      ledger: edsmUploadLedgerSummary(),
     },
     includeExplorationScanDataInDataValue: store.includeExplorationScanDataInDataValue,
     explorationScanDataValueCredits,

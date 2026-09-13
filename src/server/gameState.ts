@@ -669,6 +669,22 @@ export class GameStateStore {
   canonnUploadEnabled = false;
 
   /**
+   * Contributing the journal itself to EDSM, the way EDMC and EDDiscovery do.
+   *
+   * **Default off, and gated on the API key like auto-fetch** — but this one sends far more than the
+   * name of the system you are in. It sends the game's own journal lines, minus the ~250 event types
+   * EDSM publishes as unwanted. The Options panel says that in those words before the switch.
+   *
+   * Separate from {@link edsmAutoFetchEnabled} on purpose: reading somebody's data and handing them
+   * yours are different decisions, and a commander who wants the first is not thereby agreeing to
+   * the second.
+   */
+  edsmUploadEnabled = false;
+
+  /** This session's view of the catch-up run, for the panel. Not persisted — it describes a run. */
+  edsmUploadProgress: import("./edsmCatchUp.js").EdsmCatchUpProgress | null = null;
+
+  /**
    * This session's tally of what actually went to Canonn.
    *
    * Not persisted: a count that survives a restart says nothing about what the commander is doing
@@ -845,6 +861,14 @@ export class GameStateStore {
 
   setCanonnUploadEnabled(value: boolean): void {
     this.canonnUploadEnabled = value;
+  }
+
+  setEdsmUploadEnabled(value: boolean): void {
+    this.edsmUploadEnabled = value;
+  }
+
+  setEdsmUploadProgress(p: import("./edsmCatchUp.js").EdsmCatchUpProgress | null): void {
+    this.edsmUploadProgress = p;
   }
 
   recordCanonnUploadResult(ok: boolean): void {

@@ -206,6 +206,11 @@ export function createHttpServer(opts: {
   setJournalDirectory?: (dir: string) => Promise<{ ok: boolean; error?: string }>;
   /** POST /api/settings/journal-history — JSON { preset: JournalHistoryPreset } */
   setJournalHistoryPreset?: (preset: JournalHistoryPreset) => Promise<void>;
+  /** POST /api/settings/edsm-upload — JSON { enabled }. Refused without stored credentials. */
+  setEdsmUploadEnabled?: (enabled: boolean) => { ok: boolean; error?: string };
+  /** Kick off a catch-up. Refused when one is already running or the switch is off. */
+  startEdsmCatchUp?: () => { ok: boolean; error?: string };
+  cancelEdsmCatchUp?: () => void;
   /** After mutating server state, refresh WebSocket clients (e.g. debounced push). */
   scheduleBroadcast?: () => void;
   /** GET /api/encyclopedia-exomastery/:genusDir/:speciesEntryId — feeder profile or per-body EDSM rows. */
@@ -971,6 +976,48 @@ export function createHttpServer(opts: {
     const r = opts.setEdsmAutoFetchEnabled(enabled);
     if (r.ok) opts.scheduleBroadcast?.();
     res.status(r.ok ? 200 : 400).json(r);
+  });
+
+  /**
+   * Contributing the journal to EDSM.
+   *
+   * Two endpoints, because the switch and the work are different decisions: turning it on says the
+   * commander agrees to send their journal, and the catch-up run is what actually sends four years
+   * of it. Neither happens on its own.
+   */
+  app.post("/api/settings/edsm-upload", (req, res) => {
+    if (typeof opts.setEdsmUploadEnabled !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const enabled = req.body?.enabled;
+    if (typeof enabled !== "boolean") {
+      res.status(400).json({ ok: false, error: "enabled must be a boolean." });
+      return;
+    }
+    const r = opts.setEdsmUploadEnabled(enabled);
+    if (r.ok) opts.scheduleBroadcast?.();
+    res.status(r.ok ? 200 : 400).json(r);
+  });
+
+  app.post("/api/settings/edsm-catch-up", (_req, res) => {
+    if (typeof opts.startEdsmCatchUp !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const r = opts.startEdsmCatchUp();
+    if (r.ok) opts.scheduleBroadcast?.();
+    res.status(r.ok ? 200 : 400).json(r);
+  });
+
+  app.post("/api/settings/edsm-catch-up-cancel", (_req, res) => {
+    if (typeof opts.cancelEdsmCatchUp !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    opts.cancelEdsmCatchUp();
+    opts.scheduleBroadcast?.();
+    res.json({ ok: true });
   });
 
   app.post("/api/settings/canonn-upload", (req, res) => {

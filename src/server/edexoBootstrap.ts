@@ -82,6 +82,7 @@ import { fetchEdsmBodiesAsExplorationRecords, searchEdsmSystemsByName } from "./
 import { backlogMap, firstDiscoveryBacklogWithDistance } from "./firstDiscoveryBacklog.js";
 import { galaxySpeciesCatalogue, galaxyValueSearch } from "./galaxyValueSearch.js";
 import { commanderSectorsDto } from "./galaxySectorTiers.js";
+import { runEdsmCatchUp } from "./edsmCatchUp.js";
 
 /**
  * Recover the commander's galactic position when the merge cache did not carry one.
@@ -350,6 +351,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             // it never lands in a settings JSON that gets pasted into bug reports.
             edsmAutoFetchEnabled: store.edsmAutoFetchEnabled,
             canonnUploadEnabled: store.canonnUploadEnabled,
+            edsmUploadEnabled: store.edsmUploadEnabled,
           },
           null,
           2,
@@ -370,6 +372,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     journalHistoryPreset?: string;
     edsmAutoFetchEnabled?: boolean;
     canonnUploadEnabled?: boolean;
+    edsmUploadEnabled?: boolean;
   };
 
   function applyPersistedUserPrefs(j: PersistedUserPrefs): void {
@@ -397,6 +400,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     // Restored as written. There is no second factor to check the way the EDSM key is checked —
     // the switch is the whole consent — so a settings file that says on means the commander said on.
     if (j.canonnUploadEnabled === true) store.setCanonnUploadEnabled(true);
+    if (j.edsmUploadEnabled === true) store.setEdsmUploadEnabled(true);
   }
 
   function tryReadUserPrefs(file: string): PersistedUserPrefs | null {
@@ -611,6 +615,16 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       return { ok: true };
     },
   });
+
+  /**
+   * One catch-up at a time.
+   *
+   * Two concurrent runs would both start from the same watermark and send the whole history twice —
+   * harmless to EDSM, which discards duplicates, and exactly the kind of traffic a volunteer service
+   * should not have to absorb from one client.
+   */
+  let edsmCatchUpRunning = false;
+  let edsmCatchUpCancelled = false;
 
   /**
    * Contributing discoveries back to Canonn, when the commander has asked for it.
@@ -1087,6 +1101,44 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       store.setEdsmAutoFetchEnabled(enabled);
       persistUserPreferences();
       return { ok: true };
+    },
+    setEdsmUploadEnabled: (enabled) => {
+      if (enabled && !readEdsmCredentials()) {
+        return { ok: false, error: "Store your EDSM commander name and API key first." };
+      }
+      store.setEdsmUploadEnabled(enabled);
+      persistUserPreferences();
+      return { ok: true };
+    },
+    startEdsmCatchUp: () => {
+      if (!store.edsmUploadEnabled) return { ok: false, error: "Turn EDSM upload on first." };
+      const credentials = readEdsmCredentials();
+      if (!credentials) return { ok: false, error: "Store your EDSM commander name and API key first." };
+      if (edsmCatchUpRunning) return { ok: false, error: "A catch-up is already running." };
+      edsmCatchUpRunning = true;
+      edsmCatchUpCancelled = false;
+      void runEdsmCatchUp({
+        journalDir,
+        credentials,
+        isCancelled: () => edsmCatchUpCancelled,
+        onProgress: (p) => {
+          store.setEdsmUploadProgress(p);
+          push();
+        },
+      })
+        .catch((e: unknown) => {
+          // `runEdsmCatchUp` does not throw, so this is belt and braces — but a rejected promise
+          // that left the flag set would make the button dead until a restart.
+          console.error("[edsm] catch-up:", e);
+        })
+        .finally(() => {
+          edsmCatchUpRunning = false;
+          push();
+        });
+      return { ok: true };
+    },
+    cancelEdsmCatchUp: () => {
+      edsmCatchUpCancelled = true;
     },
     setCanonnUploadEnabled: (enabled) => {
       store.setCanonnUploadEnabled(enabled);

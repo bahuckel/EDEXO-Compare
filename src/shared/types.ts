@@ -1559,6 +1559,34 @@ export interface AppSnapshot {
     keyHint: string | null;
   };
   /**
+   * Contributing the journal to EDSM. Off unless asked for; see `edsmUpload.ts`.
+   *
+   * `progress` describes the run happening now and is null between runs; `ledger` is what has ever
+   * been sent, and survives restarts.
+   */
+  edsmUpload: {
+    enabled: boolean;
+    progress: {
+      running: boolean;
+      filesDone: number;
+      filesTotal: number;
+      currentFile: string | null;
+      eventsSent: number;
+      eventsRejected: number;
+      eventsDiscarded: number;
+      error: string | null;
+      fatal: boolean;
+      finishedAt: string | null;
+    } | null;
+    ledger: {
+      filesTracked: number;
+      eventsAccepted: number;
+      eventsRejected: number;
+      lastRunAt: string | null;
+      lastError: string | null;
+    };
+  };
+  /**
    * DSS fallback: extra slack (0–50%) on physical gates — temperature estimator band, codex pressure, codex gravity.
    * 0 = strict codex matching for those fallbacks. See Options.
    */
