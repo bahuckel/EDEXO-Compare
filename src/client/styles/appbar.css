@@ -19,13 +19,46 @@
    idle state, where there is nothing else to read.
    ========================================================================== */
 
+/*
+  Three zones with fixed homes, rather than one row that wraps.
+
+  `flex-wrap: wrap` meant that at any width where the contents did not quite fit, items wrapped in
+  whatever order they fell — the commander name, the status dots and the menu each landing somewhere
+  different depending on how long the system name happened to be. Identity left, system and search in
+  the middle, status and actions right; only the middle is elastic and it truncates in place.
+*/
 .appbar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--s-4) var(--s-5);
+  gap: var(--s-5);
   width: 100%;
   min-height: 2.3rem;
+}
+
+.appbar-left,
+.appbar-centre,
+.appbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+.appbar-right {
+  justify-self: end;
+}
+
+/* The elastic one. Its children give way here rather than pushing the right-hand zone about. */
+.appbar-centre > .appbar-system,
+.appbar-centre > .appbar-search {
+  min-width: 0;
+}
+
+.appbar-centre .appbar-system-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .appbar-mark {
@@ -131,11 +164,6 @@
   font-size: var(--fs-xs);
 }
 
-.appbar-spacer {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
 /* Status pills became dots. The label stays for "Live" — it is the one status that changes while
    you play — and FDev shows its wording on hover, where it is only read when something is wrong. */
 .appbar-status {
@@ -195,6 +223,12 @@
   flex: 0 0 auto;
   font-size: var(--fs-sm);
   white-space: nowrap;
+  /*
+    No `order` here on purpose. Putting the name after the actions would pin it to the very corner and
+    push the menu button inboard, and a menu that is not in the corner is a menu people hunt for. It
+    sits in the right-hand zone with the status dots, which is what stops it moving with the width —
+    the thing that was actually wrong with it.
+  */
 }
 
 .appbar-actions {
@@ -585,4 +619,33 @@
   letter-spacing: 0.02em;
   color: var(--muted);
   background: var(--panel-2, transparent);
+}
+
+/* ---- narrow: give the middle everything, and let the right shed its labels -------------------- */
+@media (max-width: 1000px) {
+  .appbar-wordmark {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  /* The commander's own name is the first thing they already know. */
+  .appbar-cmdr .top-playing-as-muted {
+    display: none;
+  }
+  .appbar-dot-text--compact {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .appbar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  /* Status and actions drop to their own row rather than squeezing the system name to nothing. */
+  .appbar-right {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    justify-content: flex-end;
+  }
 }

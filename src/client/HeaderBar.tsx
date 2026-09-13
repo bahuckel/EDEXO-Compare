@@ -589,10 +589,25 @@ export const HeaderBar = memo(function HeaderBar({
 
   return (
     <header className="top">
-      <div className="appbar">
-        <img src="/edexo-icon-124.webp" alt="" className="appbar-mark" width={24} height={24} />
-        <span className="appbar-wordmark logo">ED EXO COMPARE</span>
+      {/*
+        Three zones, not one wrapping row.
 
+        The bar was `display: flex; flex-wrap: wrap`, so at any width where the contents did not quite
+        fit, items wrapped in whatever order they happened to fall — the commander name, the two status
+        dots and the menu each landing somewhere different depending on how long the system name was.
+        The owner's complaint was that they are "all around the screen when the width changes".
+
+        A grid gives each of them a home that width cannot take away: identity on the left, the system
+        and its search in the middle, status and actions on the right. Only the middle is elastic, and
+        it truncates rather than pushing anything out of place.
+      */}
+      <div className="appbar">
+        <div className="appbar-left">
+          <img src="/edexo-icon-124.webp" alt="" className="appbar-mark" width={24} height={24} />
+          <span className="appbar-wordmark logo">ED EXO COMPARE</span>
+        </div>
+
+        <div className="appbar-centre">
         {snap.primaryStarsHeader ? (
           <div className="appbar-system">
             <button
@@ -627,9 +642,9 @@ export const HeaderBar = memo(function HeaderBar({
         <div className="appbar-search">
           <JournalSystemSearch snap={snap} />
         </div>
+        </div>
 
-        <span className="appbar-spacer" />
-
+        <div className="appbar-right">
         <Tooltip
           className="appbar-status"
           text={
@@ -657,6 +672,7 @@ export const HeaderBar = memo(function HeaderBar({
           </span>
         </Tooltip>
 
+        {/* Pinned to the right, on the same row as the wordmark and the system — the owner's ask. */}
         {cmdr ? (
           <span className="appbar-cmdr">
             <span className="top-playing-as-muted">CMDR </span>
@@ -766,6 +782,7 @@ export const HeaderBar = memo(function HeaderBar({
               <IconChevronDown />
             </button>
           </Tooltip>
+        </div>
         </div>
       </div>
 

@@ -889,3 +889,145 @@ input[type="text"]:focus {
   border-radius: 0;
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
+
+/* ==== round 4 (owner review 2026-09-13) ========================================================= */
+
+/* ---- the generic controls nobody had themed --------------------------------------------------
+   `.btn` had **no rule anywhere**. The cockpit treatment above lists class names — `.btn-top-neutral`,
+   `.btn-confirm-*`, `.tabs-jump-btn` — and every button that did not happen to be on that list was a
+   raw browser button: system font, grey bevel, rounded corners, in a panel that is square and orange.
+   That is most of the buttons in Options.
+
+   Checkboxes and ranges were the same story: platform defaults, which on Windows means a blue tick
+   and a blue slider in an app that has no blue in it.
+---------------------------------------------------------------------------------------------- */
+.btn {
+  min-height: 30px;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--accent-a25);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  /* The same cut corner every other button in the cockpit has. */
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+
+.btn:hover:not([disabled]) {
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  color: var(--ink, #07060a);
+  border-color: #ffb060;
+}
+
+.btn[disabled] {
+  color: var(--muted);
+  border-color: var(--accent-a10);
+  cursor: default;
+}
+
+.btn.tiny {
+  min-height: 24px;
+  padding: 0.15rem 0.55rem;
+  font-size: var(--fs-xs);
+}
+
+/* ---- checkboxes --------------------------------------------------------------------------------
+   Drawn rather than tinted. `accent-color` alone keeps the platform's shape, and the platform's
+   shape is a rounded blue box — the tick is the part that has to change colour, and the box is the
+   part that has to stop being rounded.
+---------------------------------------------------------------------------------------------- */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--accent-dim);
+  background: var(--panel);
+  cursor: pointer;
+  position: relative;
+  /* Cut corner, at the scale of a 15px box. */
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+
+input[type="checkbox"]:hover:not([disabled]) {
+  border-color: var(--accent);
+}
+
+input[type="checkbox"]:checked {
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  border-color: #ffb060;
+}
+
+/* The tick, drawn in the ink colour so it reads against the orange fill. */
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--ink, #07060a);
+  border-width: 0 2px 2px 0;
+  transform: rotate(42deg);
+}
+
+input[type="checkbox"][disabled] {
+  border-color: var(--accent-a10);
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* ---- ranges ------------------------------------------------------------------------------------
+   The two credit filters that decide when the system map shows + and ++. They are the only sliders
+   the commander drags regularly and they were stock: a grey groove and a blue lozenge.
+---------------------------------------------------------------------------------------------- */
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent-a22));
+  border: 1px solid var(--accent-a22);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent-a22));
+  border: 1px solid var(--accent-a22);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 16px;
+  margin-top: -7px;
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  border: 1px solid #ffb060;
+  /* A slab with the corner cut, so the handle is the same object as the buttons. */
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 16px;
+  border-radius: 0;
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  border: 1px solid #ffb060;
+}
+
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
