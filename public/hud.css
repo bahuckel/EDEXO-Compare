@@ -12,7 +12,7 @@
 
   Tunables live in :root. Section markup comes from hud.js; the page only supplies the shell.
 */
-@import url("tokens.css?v=4");
+@import url("tokens.css?v=5");
 :root {
   /* the palette comes from tokens.css (shared with the launcher and the app); these are HUD-only */
   --hud-bg: rgba(18, 9, 2, 0.42); /* the panel fill: mostly the game showing through */
@@ -60,6 +60,19 @@ body {
     var(--chamfer) 100%,
     0 calc(100% - var(--chamfer))
   );
+  isolation: isolate;
+  filter: drop-shadow(0 0 5px rgba(255, 138, 31, 0.25));
+  animation: hudFlicker 7s steps(1, end) infinite;
+}
+/*
+  The chrome on its own layer (owner, 2026-09-14): the frame gradient here, the fill under the
+  body below, both faded by --hud-bg-opacity from the launcher's slider — exactly what window
+  opacity did to the box, while the text and icons on top stay solid.
+*/
+.panel > .panel__frame {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background: linear-gradient(
     135deg,
     var(--hud) 0%,
@@ -68,8 +81,8 @@ body {
     var(--hud-dim) 82%,
     var(--hud) 100%
   );
-  filter: drop-shadow(0 0 5px rgba(255, 138, 31, 0.25));
-  animation: hudFlicker 7s steps(1, end) infinite;
+  opacity: var(--hud-bg-opacity, 1);
+  pointer-events: none;
 }
 .panel__body {
   position: relative;
@@ -82,12 +95,20 @@ body {
     0 calc(100% - var(--chamfer) + 0.5px)
   );
   padding: 0.5rem 0.8rem 0.62rem;
-  background:
-    linear-gradient(180deg, var(--hud-bg-2), transparent 38%),
-    var(--hud-bg);
+  isolation: isolate;
   font-size: 0.78rem;
   line-height: 1.4;
   letter-spacing: 0.02em;
+}
+.panel__body > .panel__fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  /* the fill's own alpha already follows the slider (hud.js); no second fade here */
+  background:
+    linear-gradient(180deg, var(--hud-bg-2), transparent 38%),
+    var(--hud-bg);
+  pointer-events: none;
 }
 /* scanlines + a slow sweep, both on the fill so text stays crisp above them */
 .panel__body::before {
@@ -889,4 +910,182 @@ body {
   .panel.panel--ok {
     animation: none;
   }
+}
+
+/* ---- next jump: the route strip ------------------------------------------------------------ */
+.jump__route {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.2rem 0.32rem;
+  /* one row: hud.js drops hops off the end until it fits */
+  white-space: nowrap;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  padding-top: 0.42rem;
+  border-top: 1px solid var(--hud-faint, rgba(255, 138, 31, 0.2));
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+.hop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+  color: var(--hud);
+}
+.hop--scoop {
+  color: var(--bio);
+}
+.hop--noscoop,
+.hop--unknown {
+  color: #ffd23f;
+}
+.hop--hole {
+  color: var(--bad);
+}
+.hop--neutron {
+  color: var(--ok);
+}
+.hop--beyond {
+  font-size: 0.66rem;
+  color: var(--hud-hi);
+  opacity: 0.85;
+}
+.hop--dry {
+  color: var(--bad);
+  opacity: 1;
+}
+.hop__sep {
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  color: var(--hud-dim);
+}
+.hop__fuel {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hop__fuel--yellow {
+  color: #ffd23f;
+  filter: drop-shadow(0 0 4px rgba(255, 210, 63, 0.6));
+}
+.hop__fuel--red {
+  color: var(--bad);
+  filter: drop-shadow(0 0 5px rgba(255, 90, 60, 0.7));
+  animation: hudBlink 0.9s ease-in-out infinite;
+}
+
+/* ---- phone mode (task 13): the same HUD, laid out for a hand-held screen ------------------------ */
+body.phone {
+  min-height: 100vh;
+  padding: 0.4rem 0.4rem 1.2rem;
+  background: #050406 !important;
+  font-size: 18px;
+  overflow: auto;
+}
+body.phone .shell {
+  max-width: none;
+  padding: 3px;
+}
+body.phone .panel__body {
+  display: grid;
+  /* minmax(0, …): a bare 1fr has an auto minimum, and the nowrap route strip pushed the column
+     to its content width — 600 px on a 375 px phone (owner, 2026-09-14). */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem;
+}
+body.phone .hud-section + .hud-section {
+  margin-top: 0;
+  padding-top: 0.6rem;
+}
+body.phone .hud-section--distance {
+  order: -1;
+}
+@media (orientation: landscape) and (min-width: 640px) {
+  body.phone .panel__body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1rem;
+  }
+  body.phone .hud-section--distance {
+    grid-row: span 2;
+  }
+}
+body.phone .phone-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+}
+body.phone .phone-chip {
+  flex: 1 1 auto;
+  min-height: 2.6rem;
+  padding: 0.35rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud-hi);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--hud-dim);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  cursor: pointer;
+}
+body.phone .phone-chip--on {
+  color: #07060a;
+  background: linear-gradient(180deg, var(--hud-hi), var(--hud) 60%, var(--hud));
+  border-color: var(--hud-hi);
+}
+
+/* the phone's full-screen chip (task 13 follow-up) */
+body.phone .phone-chip--fs {
+  flex: 0 0 auto;
+  min-width: 2.6rem;
+  font-size: 1.1rem;
+  letter-spacing: 0;
+}
+body.phone .phone-chip--dim {
+  opacity: 0.45;
+}
+body.phone.phone--fullscreen {
+  padding-top: 0.2rem;
+}
+
+/* phone: nothing may size itself to its content — the strip must overflow its box, not the screen */
+body.phone {
+  overflow-x: hidden;
+}
+body.phone .shell,
+body.phone .panel,
+body.phone .panel__body {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+body.phone .hud-section,
+body.phone .jump__route,
+body.phone .jump__body {
+  min-width: 0;
+  max-width: 100%;
+}
+.hop {
+  flex: 0 0 auto;
+}
+
+/* the chrome layers must never be caught by the generic child rules above: pinned, under the content */
+.panel > .panel__frame,
+.panel__body > .panel__fill {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }

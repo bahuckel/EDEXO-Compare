@@ -70,6 +70,14 @@ export function resolveEdsmUploadLedgerPath(): string {
 }
 
 /**
+ * The last Spansh export import from the launcher: which file, when, and the file's mtime at the
+ * time — so the launcher can say "a newer export is on disk" without the commander remembering.
+ */
+export function resolveImportDumpLedgerPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "edexo-import-dump-last.json");
+}
+
+/**
  * Species the commander found that the app failed to offer (see exoOutlierLog.ts). Its own file
  * beside the user settings: append-only evidence that must survive a cache rebuild, since a cache is
  * regenerated routinely and this is the only record of what the predictor got wrong.

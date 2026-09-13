@@ -96,6 +96,21 @@ export function SecondScreen() {
           {system}
         </div>
         <div className={`ss-verdict ss-verdict--${verdict.tone}`}>{verdict.text}</div>
+        <a
+          className="ss-hud-link"
+          href={(() => {
+            const u = new URL(window.location.href);
+            const k = u.searchParams.get("k");
+            u.pathname = "/hud-overlay.html";
+            u.search = "";
+            u.searchParams.set("phone", "1");
+            if (k) u.searchParams.set("k", k);
+            return u.pathname + u.search;
+          })()}
+          title="The HUD as on the game screen, laid out for this phone"
+        >
+          HUD view
+        </a>
         <div className={`ss-link ${connected ? "ss-link--on" : "ss-link--off"}`}>
           {connected ? "LIVE" : "OFFLINE"}
         </div>

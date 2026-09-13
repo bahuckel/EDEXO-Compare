@@ -1,5 +1,7 @@
 import { speciesProvenance } from "./speciesProvenance.js";
-import type { AppStatusDTO } from "../shared/types.js";
+import type { AppStatusDTO,
+  SessionLogDTO,
+} from "../shared/types.js";
 import { existsSync, statSync } from "node:fs";
 import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { UNOBSERVED } from "../shared/observedFlag.js";
@@ -513,6 +515,10 @@ export function loadSpeciesDatabase(): SpeciesDatabase {
     console.warn("ED Exo Compare — no species loaded; add data/species/<genus>/… (*_new.json or *.json)");
   }
   return cachedDb;
+}
+
+export function getCachedPrices(): PriceIndex {
+  return cachedPrices;
 }
 
 export function getCachedSpeciesDatabase(): SpeciesDatabase {
@@ -1198,6 +1204,7 @@ export function buildSnapshot(
   lanUrls: string[],
   journalFileCount: number,
   journalBoot: JournalBootProgressDTO | null = null,
+  sessionLog: SessionLogDTO | null = null,
 ): AppSnapshot {
   const bootLoading = journalBoot != null;
   const db = cachedDb;
@@ -1324,6 +1331,8 @@ export function buildSnapshot(
     organicPendingLines,
     fssAllBodiesFoundNoBio,
     includeBacteriumInSearch: store.includeBacteriumInSearch,
+    hudPrefs: store.hudPrefs,
+    sessionLog,
     canonnUpload: {
       enabled: store.canonnUploadEnabled,
       sent: store.canonnUploadSent,

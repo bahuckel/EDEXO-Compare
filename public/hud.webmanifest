@@ -1,0 +1,10 @@
+{
+  "name": "EDEXO HUD",
+  "short_name": "EDEXO HUD",
+  "start_url": "hud-overlay.html?phone=1",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#050406",
+  "theme_color": "#050406",
+  "icons": [{ "src": "edexo-icon-124.webp", "sizes": "124x124", "type": "image/webp" }]
+}

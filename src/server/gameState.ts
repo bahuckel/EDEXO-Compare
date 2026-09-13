@@ -7,6 +7,7 @@ import type {
   OrganicGenusLock,
   SpeciesEntry,
   AppSnapshot,
+  HudPrefsDTO,
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import {
@@ -649,6 +650,8 @@ export class GameStateStore {
 
   /** When true, bacterium genus/species rules are included in body search (default off, can leak spoilers). */
   includeBacteriumInSearch = false;
+  /** Mirrored launcher HUD settings, see AppSnapshot.hudPrefs. */
+  hudPrefs: HudPrefsDTO | null = null;
 
   /**
    * Look the destination system up on EDSM as soon as the commander jumps into it (§50).
@@ -864,6 +867,31 @@ export class GameStateStore {
 
   setIncludeBacteriumInSearch(value: boolean): void {
     this.includeBacteriumInSearch = value;
+  }
+
+  /** Keep only the known keys, with sane bounds; anything else a client sends is dropped. */
+  setHudPrefs(raw: unknown): HudPrefsDTO | null {
+    if (!raw || typeof raw !== "object") {
+      this.hudPrefs = null;
+      return null;
+    }
+    const r = raw as Record<string, unknown>;
+    const out: HudPrefsDTO = {};
+    if (r.theme && typeof r.theme === "object") {
+      const t = r.theme as Record<string, unknown>;
+      const theme: NonNullable<HudPrefsDTO["theme"]> = {};
+      if (typeof t.preset === "string" && t.preset.length <= 24) theme.preset = t.preset;
+      if (typeof t.accent === "string" && /^#[0-9a-f]{6}$/i.test(t.accent)) theme.accent = t.accent;
+      if (typeof t.text === "string" && /^#[0-9a-f]{6}$/i.test(t.text)) theme.text = t.text;
+      out.theme = theme;
+    }
+    if (typeof r.scale === "number" && Number.isFinite(r.scale)) out.scale = Math.min(2, Math.max(0.5, r.scale));
+    if (typeof r.opacity === "number" && Number.isFinite(r.opacity)) out.opacity = Math.min(1, Math.max(0.1, r.opacity));
+    if (r.candOrder === "likelihood" || r.candOrder === "value") out.candOrder = r.candOrder;
+    if (typeof r.region === "boolean") out.region = r.region;
+    if (typeof r.audio === "boolean") out.audio = r.audio;
+    this.hudPrefs = out;
+    return out;
   }
 
   setEdsmAutoFetchEnabled(value: boolean): void {

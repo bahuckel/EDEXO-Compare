@@ -189,3 +189,19 @@
 .second-screen .ss-mapfirst {
   color: var(--warn, #ffd23f);
 }
+
+/* the way to the phone HUD (task 13) */
+.second-screen .ss-hud-link {
+  grid-column: 1;
+  justify-self: start;
+  margin-top: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  font-size: clamp(0.62rem, 1.6vw, 0.74rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink, #07060a);
+  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+}

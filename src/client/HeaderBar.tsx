@@ -4,7 +4,7 @@
 import { useLastStateAt } from "./useLiveSnapshot";
 import { useConfirm, useToast } from "./ui/feedback";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
-import { IconChevronDown, IconEncyclopedia, IconExobiology, IconFeeder, IconGalaxy, IconOptions, IconBacklog } from "./ui/icons";
+import { IconChevronDown, IconEncyclopedia, IconExobiology, IconFeeder, IconGalaxy, IconOptions, IconBacklog, IconSession } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useCallback, lazy, memo, Suspense, useEffect, useId, useRef, useState, MouseEvent as ReactMouseEvent, ReactNode } from "react";
@@ -14,7 +14,7 @@ import { DScanBodiesBadge } from "./DScanBodiesBadge";
 import type { AppSnapshot, FootScannedEntry, JournalSystemInfo, NotableBodyInfo } from "@shared/types";
 import { primaryStarChipClass, primaryStarRoleTag, primaryStarRoleTooltip } from "./speciesMatchHelpers";
 import { useFeederStatus } from "./FeederStatusPanel";
-import { DataValueBreakdownModal, FeederModal, MyExobiologyModal } from "./AppModals";
+import { DataValueBreakdownModal, FeederModal, MyExobiologyModal, SessionLogModal } from "./AppModals";
 import { ExoDataAlertsHeaderHub } from "./ExoDataAlertsHub";
 import { MapOptionsModal } from "./OptionsModal";
 import { EncyclopediaModal, FirstDiscoveryBacklogModal, InlineSpinner, ModalLoading } from "./SharedModals";
@@ -113,14 +113,17 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
       ? systems
       : systems.filter((s) => s.starSystem.toLowerCase().includes(q) || String(s.systemAddress).includes(q));
 
-  const runEdsmGalaxySearch = async () => {
+  /* Two galaxy sources behind the same list (owner, 2026-09-13): "Search: [EDSM] [Spansh]". */
+  const [galaxySource, setGalaxySource] = useState<"edsm" | "spansh">("edsm");
+  const runGalaxySearch = async (source: "edsm" | "spansh") => {
     const q = query.trim();
     if (q.length < 2) return;
+    setGalaxySource(source);
     setEdsmBusy(true);
     setEdsmErr(null);
     setEdsmSearchAttempted(true);
     try {
-      const r = await fetch(`/api/system/edsm-search?q=${encodeURIComponent(q)}`);
+      const r = await fetch(`/api/system/${source}-search?q=${encodeURIComponent(q)}`);
       const j = (await r.json().catch(() => null)) as {
         systems?: JournalSystemInfo[];
         error?: string;
@@ -128,14 +131,14 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
       if (!r.ok) throw new Error(j?.error || r.statusText);
       setEdsmHits(j?.systems ?? []);
     } catch (e) {
-      setEdsmErr(e instanceof Error ? e.message : "Galaxy search (EDSM) failed.");
+      setEdsmErr(e instanceof Error ? e.message : `Galaxy search (${source === "edsm" ? "EDSM" : "Spansh"}) failed.`);
       setEdsmHits([]);
     } finally {
       setEdsmBusy(false);
     }
   };
 
-  const runHydrateFromEdsmForViewing = async () => {
+  const runHydrateForViewing = async (source: "edsm" | "spansh") => {
     const addr = snap.viewingSystemAddress ?? snap.currentSystemAddress;
     if (addr == null || journalLoading) return;
     const name =
@@ -145,31 +148,25 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
       systems.find((s) => s.systemAddress === addr)?.starSystem?.trim() ||
       "";
     if (!name) {
-      toast.error(
-        "Could not resolve system name for EDSM. Choose the system from search so a name is stored, then try again.",
-      );
+      toast.error("Could not resolve the system name. Choose the system from search so a name is stored, then try again.");
       return;
     }
     setMapHydrateBusy(true);
     try {
-      const r = await fetch("/api/system/hydrate-from-edsm", {
+      const r = await fetch(`/api/system/hydrate-from-${source}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ systemAddress: addr, systemName: name }),
       });
-      const j = (await r.json().catch(() => null)) as {
-        ok?: boolean;
-        error?: string;
-      } | null;
-      if (!r.ok) {
-        toast.error(j?.error || r.statusText);
-      }
+      const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+      if (!r.ok) toast.error(j?.error || r.statusText);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not load bodies from EDSM.");
+      toast.error(e instanceof Error ? e.message : `Could not load bodies from ${source === "edsm" ? "EDSM" : "Spansh"}.`);
     } finally {
       setMapHydrateBusy(false);
     }
   };
+
 
   const applyView = (systemAddress: number | null, meta?: { starSystem?: string }) => {
     void (async () => {
@@ -234,21 +231,27 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
               Return to commander
             </button>
           ) : null}
-          <button
-            type="button"
-            className="journal-system-edsm-load-btn"
-            disabled={mapHydrateBusy}
-            title="Fetch body list from EDSM for the focused system (commander or browsed system). Manual only."
-            onClick={() => void runHydrateFromEdsmForViewing()}
-          >
-            {mapHydrateBusy ? (
-              <>
-                <InlineSpinner /> Loading…
-              </>
-            ) : (
-              "Load bodies from EDSM"
-            )}
-          </button>
+          <span className="journal-system-source-group" role="group" aria-label="Load bodies from">
+            <span className="journal-system-source-label">Load bodies:</span>
+            <button
+              type="button"
+              className="journal-system-edsm-load-btn"
+              disabled={mapHydrateBusy}
+              title="Fetch the body list from EDSM for the focused system. Manual only."
+              onClick={() => void runHydrateForViewing("edsm")}
+            >
+              {mapHydrateBusy ? <InlineSpinner /> : null} EDSM
+            </button>
+            <button
+              type="button"
+              className="journal-system-edsm-load-btn journal-system-edsm-load-btn--spansh"
+              disabled={mapHydrateBusy}
+              title="Fetch the body list from Spansh for the focused system. Manual only."
+              onClick={() => void runHydrateForViewing("spansh")}
+            >
+              Spansh
+            </button>
+          </span>
         </div>
       ) : null}
       {open && !journalLoading ? (
@@ -282,26 +285,31 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
           {filtered.length === 0 && q.length >= 2 ? (
             <>
               <li className="journal-system-search-edsm-action">
+                <span className="journal-system-source-label">Search:</span>
                 <button
                   type="button"
                   className="journal-system-edsm-search-btn"
                   disabled={edsmBusy}
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => void runEdsmGalaxySearch()}
+                  onClick={() => void runGalaxySearch("edsm")}
                 >
-                  {edsmBusy ? (
-                    <>
-                      <InlineSpinner />
-                      Searching EDSM…
-                    </>
-                  ) : (
-                    "Search galaxy (EDSM)"
-                  )}
+                  {edsmBusy && galaxySource === "edsm" ? <InlineSpinner /> : null} EDSM
+                </button>
+                <button
+                  type="button"
+                  className="journal-system-edsm-search-btn journal-system-edsm-search-btn--spansh"
+                  disabled={edsmBusy}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => void runGalaxySearch("spansh")}
+                >
+                  {edsmBusy && galaxySource === "spansh" ? <InlineSpinner /> : null} Spansh
                 </button>
               </li>
               {!edsmBusy && edsmErr ? <li className="journal-system-search-empty">{edsmErr}</li> : null}
               {!edsmBusy && !edsmErr && edsmSearchAttempted && edsmHits.length === 0 ? (
-                <li className="journal-system-search-empty dim">No EDSM matches for “{query.trim()}”.</li>
+                <li className="journal-system-search-empty dim">
+                  No {galaxySource === "edsm" ? "EDSM" : "Spansh"} matches for “{query.trim()}”.
+                </li>
               ) : null}
               {!edsmBusy &&
                 edsmHits.map((s) => (
@@ -315,7 +323,7 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
                     >
                       <span className="journal-system-search-name">{s.starSystem}</span>
                       <span className="journal-system-search-addr dim tab">{s.systemAddress}</span>
-                      <span className="journal-system-search-edsm-badge dim">EDSM</span>
+                      <span className="journal-system-search-edsm-badge dim">{galaxySource === "edsm" ? "EDSM" : "Spansh"}</span>
                     </button>
                   </li>
                 ))}
@@ -440,6 +448,7 @@ export const HeaderBar = memo(function HeaderBar({
   );
   const [dataBreakdownOpen, setDataBreakdownOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [sessionOpen, setSessionOpen] = useState(false);
   const [feederOpen, setFeederOpen] = useState(false);
   /**
    * §11.3. The button appears only when this machine actually has a corpus — otherwise it would
@@ -752,6 +761,16 @@ export const HeaderBar = memo(function HeaderBar({
               <IconEncyclopedia />
             </button>
           </Tooltip>
+          <Tooltip text="Session log — tonight's systems, landings, species analysed and sales; copy as Markdown.">
+            <button
+              type="button"
+              className="appbar-icon-btn"
+              onClick={() => setSessionOpen(true)}
+              aria-label="Session log"
+            >
+              <IconSession />
+            </button>
+          </Tooltip>
           <Tooltip text="Options — journal service info, map tier thresholds, reset.">
             <button
               type="button"
@@ -788,7 +807,7 @@ export const HeaderBar = memo(function HeaderBar({
 
       {snap.edsmMapSupplementForViewingSystem ? (
         <p className="header-edsm-map-note dim">
-          System map uses public EDSM data (no journal <code>Scan</code> for this system yet).
+          System map uses public galaxy data, EDSM or Spansh (no journal <code>Scan</code> for this system yet).
         </p>
       ) : null}
 
@@ -1042,6 +1061,7 @@ export const HeaderBar = memo(function HeaderBar({
           onClose={() => setDataBreakdownOpen(false)}
         />
       ) : null}
+      {sessionOpen ? <SessionLogModal log={snap.sessionLog ?? null} onClose={() => setSessionOpen(false)} /> : null}
       {optionsOpen ? (
         <MapOptionsModal
           snap={snap}

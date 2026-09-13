@@ -1104,6 +1104,47 @@
         outline: none;
         border-color: var(--hud);
       }
+      .import-newer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 8px 0 4px;
+        padding: 8px 10px;
+        font-size: 0.76rem;
+        color: #ffd23f;
+        border: 1px solid rgba(255, 210, 63, 0.45);
+        background: rgba(255, 210, 63, 0.08);
+        clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+      }
+      .btn-mini {
+        flex: 0 0 auto;
+        padding: 5px 10px;
+        font-family: inherit;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink);
+        background: linear-gradient(180deg, #ffe07a, #ffd23f 60%, #e6b800);
+        border: 0;
+        clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+        cursor: pointer;
+      }
+      .btn.btn--attn {
+        box-shadow: 0 0 0 1px rgba(255, 210, 63, 0.6), 0 0 14px rgba(255, 210, 63, 0.35);
+      }
+      .hud-set-row input[type="range"] {
+        width: 11rem;
+        accent-color: var(--hud);
+        cursor: pointer;
+      }
+      .hud-set-row output {
+        min-width: 3.2rem;
+        text-align: right;
+        color: var(--hud-hi);
+        font-variant-numeric: tabular-nums;
+      }
       .hud-set-row input[type="color"] {
         width: 2.4rem;
         height: 1.7rem;
@@ -1617,6 +1658,15 @@
               <label for="hudThemeAccent">Custom accent <input type="color" id="hudThemeAccent" value="#ff8a1f" /></label>
               <label for="hudThemeText">Custom text <input type="color" id="hudThemeText" value="#ffe6cf" /></label>
             </div>
+            <h4>HUD size</h4>
+            <div class="hud-set-row">
+              <label for="hudScale">Scale <output id="hudScaleOut">100 %</output></label>
+              <input type="range" id="hudScale" min="50" max="200" step="5" value="100" />
+            </div>
+            <div class="hud-set-row">
+              <label for="hudAlpha">Background opacity <output id="hudAlphaOut">45 %</output></label>
+              <input type="range" id="hudAlpha" min="10" max="100" step="1" value="45" />
+            </div>
             <h4>Candidates</h4>
             <div class="hud-set-row">
               <span>Order</span>
@@ -1627,6 +1677,10 @@
             </div>
             <div class="hud-set-row">
               <label><input type="checkbox" id="hudRegion" checked /> Show the current region</label>
+            </div>
+            <h4>Sound</h4>
+            <div class="hud-set-row">
+              <label><input type="checkbox" id="hudAudio" /> Audio cues: ring cleared, third sample (off by default)</label>
             </div>
             <h4>Position</h4>
             <div class="hud-set-row">
@@ -1659,6 +1713,10 @@
           </p>
           <input type="text" id="importFile" placeholder="Full path to galaxy_bio.jsonl.gz" autocomplete="off" />
           <div class="hud-set-row"><label><input type="checkbox" id="importApply" /> Apply (write matched bodies)</label></div>
+          <div class="import-newer" id="importNewer" hidden>
+            <span id="importNewerText">A newer export is on disk.</span>
+            <button type="button" class="btn-mini" id="importNewerGo">Re-import now</button>
+          </div>
           <div class="import-status" id="importStatus" hidden></div>
           <div class="row">
             <button type="button" class="btn secondary" id="importClose"><span class="btn-lines"><strong>Close</strong></span></button>
@@ -1788,6 +1846,8 @@
             ws = new WebSocket(proto + "//" + location.host + "/ws");
             ws.onopen = function () {
               wsOk = true;
+              /* The launcher's slice only: lamp, folder, boot progress. The strip polls /api/status. */
+              try { ws.send(JSON.stringify({ type: "hello", channel: "launcher" })); } catch (e) {}
             };
             /*
               Every state push is the full snapshot (hundreds of KB, up to once a second while the
@@ -2062,6 +2122,13 @@
           } else {
             data.lanUrls.forEach(function (u) {
               modalLanUrlList.appendChild(makeUrlRow(u, "LAN"));
+              /* The same address as the HUD for a phone: sections, theme and order as on the PC. */
+              try {
+                var pu = new URL(u);
+                pu.pathname = "/hud-overlay.html";
+                pu.searchParams.set("phone", "1");
+                modalLanUrlList.appendChild(makeUrlRow(pu.toString(), "PHONE HUD"));
+              } catch (e) {}
             });
           }
 
@@ -2755,6 +2822,9 @@
         var LS_HUD_THEME = "edexoHudTheme";
         var LS_HUD_CAND = "edexoHudCandOrder";
         var LS_HUD_REGION = "edexoHudRegion";
+        var LS_HUD_SCALE = "edexoHudScale";
+        var LS_HUD_ALPHA = "edexoHudOpacity";
+        var LS_HUD_AUDIO = "edexoHudAudio";
         var HUD_PRESETS = {
           orange: "#ff8a1f", amber: "#ffb020", red: "#ff4a3a", magenta: "#ff4fd8", purple: "#b46bff",
           blue: "#4fa8ff", cyan: "#3fe0e0", green: "#5fe07a", lime: "#c8f04a", white: "#e8e8f0",
@@ -2766,11 +2836,33 @@
             return {};
           }
         }
+        /* Mirror every HUD setting to the server, so a phone renders the HUD the same way (task 13). */
+        var syncHudPrefsTimer = null;
+        function syncHudPrefs() {
+          if (syncHudPrefsTimer) clearTimeout(syncHudPrefsTimer);
+          syncHudPrefsTimer = setTimeout(function () {
+            syncHudPrefsTimer = null;
+            var prefs = {};
+            try { prefs.theme = JSON.parse(localStorage.getItem(LS_HUD_THEME) || "{}") || {}; } catch (e) {}
+            try { var sc = parseFloat(localStorage.getItem(LS_HUD_SCALE) || ""); if (isFinite(sc)) prefs.scale = sc; } catch (e) {}
+            try { var op = parseFloat(localStorage.getItem(LS_HUD_ALPHA) || ""); if (isFinite(op)) prefs.opacity = op; } catch (e) {}
+            try { prefs.candOrder = localStorage.getItem(LS_HUD_CAND) || "likelihood"; } catch (e) {}
+            try { prefs.region = localStorage.getItem(LS_HUD_REGION) !== "0"; } catch (e) {}
+            try { prefs.audio = localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) {}
+            fetch(apiUrl("/api/settings/hud-prefs"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(prefs),
+            }).catch(function () {});
+          }, 400);
+        }
+        setTimeout(syncHudPrefs, 2500);
         function writeTheme(t) {
           try {
             localStorage.setItem(LS_HUD_THEME, JSON.stringify(t));
           } catch (e) {}
           renderSwatches();
+          syncHudPrefs();
         }
         var hudSwatches = document.getElementById("hudSwatches");
         var hudThemeAccent = document.getElementById("hudThemeAccent");
@@ -2801,6 +2893,36 @@
         }
         if (hudThemeAccent) hudThemeAccent.addEventListener("input", customTheme);
         if (hudThemeText) hudThemeText.addEventListener("input", customTheme);
+        /* size + opacity: the HUD pages read the same keys and re-apply on the storage event */
+        var hudScale = document.getElementById("hudScale");
+        var hudScaleOut = document.getElementById("hudScaleOut");
+        var hudAlpha = document.getElementById("hudAlpha");
+        var hudAlphaOut = document.getElementById("hudAlphaOut");
+        function showSizeOutputs() {
+          if (hudScale && hudScaleOut) hudScaleOut.textContent = hudScale.value + " %";
+          if (hudAlpha && hudAlphaOut) hudAlphaOut.textContent = hudAlpha.value + " %";
+        }
+        if (hudScale) {
+          hudScale.addEventListener("input", function () {
+            showSizeOutputs();
+            try { localStorage.setItem(LS_HUD_SCALE, String(Number(hudScale.value) / 100)); } catch (e) {}
+            syncHudPrefs();
+          });
+        }
+        if (hudAlpha) {
+          hudAlpha.addEventListener("input", function () {
+            showSizeOutputs();
+            try { localStorage.setItem(LS_HUD_ALPHA, String(Number(hudAlpha.value) / 100)); } catch (e) {}
+            syncHudPrefs();
+          });
+        }
+        var hudAudio = document.getElementById("hudAudio");
+        if (hudAudio) {
+          hudAudio.addEventListener("change", function () {
+            try { localStorage.setItem(LS_HUD_AUDIO, hudAudio.checked ? "1" : "0"); } catch (e) {}
+            syncHudPrefs();
+          });
+        }
         var hudCandOrder = document.getElementById("hudCandOrder");
         var hudRegion = document.getElementById("hudRegion");
         if (hudCandOrder) {
@@ -2808,6 +2930,7 @@
             try {
               localStorage.setItem(LS_HUD_CAND, hudCandOrder.value);
             } catch (e) {}
+            syncHudPrefs();
           });
         }
         if (hudRegion) {
@@ -2815,6 +2938,7 @@
             try {
               localStorage.setItem(LS_HUD_REGION, hudRegion.checked ? "1" : "0");
             } catch (e) {}
+            syncHudPrefs();
           });
         }
         var hudCorner = document.getElementById("hudCorner");
@@ -2882,6 +3006,10 @@
           renderSwatches();
           if (hudCandOrder) hudCandOrder.value = (function () { try { return localStorage.getItem(LS_HUD_CAND) || "likelihood"; } catch (e) { return "likelihood"; } })();
           if (hudRegion) hudRegion.checked = (function () { try { return localStorage.getItem(LS_HUD_REGION) !== "0"; } catch (e) { return true; } })();
+          if (hudAudio) hudAudio.checked = (function () { try { return localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) { return false; } })();
+          if (hudScale) hudScale.value = String(Math.round((function () { try { return parseFloat(localStorage.getItem(LS_HUD_SCALE) || "1") || 1; } catch (e) { return 1; } })() * 100));
+          if (hudAlpha) hudAlpha.value = String(Math.round((function () { try { var v = parseFloat(localStorage.getItem(LS_HUD_ALPHA) || "0.45"); return isFinite(v) ? v : 0.45; } catch (e) { return 0.45; } })() * 100));
+          showSizeOutputs();
           var ee = window.edexoElectron;
           if (ee && typeof ee.getHudLayout === "function") {
             try {
@@ -2907,7 +3035,51 @@
         var importFile = document.getElementById("importFile");
         var importApply = document.getElementById("importApply");
         var importStatus = document.getElementById("importStatus");
+        var importNewer = document.getElementById("importNewer");
+        var importNewerText = document.getElementById("importNewerText");
+        var importNewerGo = document.getElementById("importNewerGo");
         var LS_IMPORT_FILE = "edexo.launcher.importFile";
+        function rememberedImportFile() {
+          try { return localStorage.getItem(LS_IMPORT_FILE) || ""; } catch (e) { return ""; }
+        }
+        /* The "newer export on disk" chip (owner, 2026-09-13): mtime moved since the last import of that file. */
+        function renderImportNewer(st) {
+          var show = !!(st && st.newerOnDisk && !st.running);
+          if (importNewer) importNewer.hidden = !show;
+          if (btnImportDump) btnImportDump.classList.toggle("btn--attn", show);
+          if (show && importNewerText) {
+            var when = st.fileMtimeIso ? new Date(st.fileMtimeIso).toLocaleString() : "";
+            importNewerText.textContent = "Newer export on disk" + (when ? " (" + when + ")" : "") + " — last imported " + (st.lastImport && st.lastImport.finishedAt ? new Date(st.lastImport.finishedAt).toLocaleString() : "before") + ".";
+          }
+        }
+        function startImport(file, apply) {
+          if (importStart) importStart.disabled = true;
+          return fetch(apiUrl("/api/feeder/import-dump"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ file: file, apply: !!apply }),
+          })
+            .then(function (r) { return r.json().then(function (j) { return { r: r, j: j }; }); })
+            .then(function (x) {
+              if (!x.r.ok || !x.j.ok) throw new Error((x.j && x.j.error) || x.r.statusText);
+              showImportStatus("Started…", "");
+              if (!importPollTimer) pollImport();
+            })
+            .catch(function (e) {
+              if (importStart) importStart.disabled = false;
+              showImportStatus(String(e && e.message ? e.message : e), "err");
+            });
+        }
+        if (importNewerGo) {
+          importNewerGo.addEventListener("click", function () {
+            var file = rememberedImportFile();
+            if (!file) return;
+            pollImport(); // refresh once so the apply flag below is the latest
+            fetch(apiUrl("/api/feeder/import-dump/status?file=" + encodeURIComponent(file)), { cache: "no-store" })
+              .then(function (r) { return r.json(); })
+              .then(function (st) { return startImport(file, st && st.lastImport ? st.lastImport.apply : !!(importApply && importApply.checked)); });
+          });
+        }
         var importPollTimer = null;
         function showImportStatus(text, cls) {
           if (!importStatus) return;
@@ -2928,10 +3100,12 @@
           else if (importStatus) importStatus.hidden = true;
         }
         function pollImport() {
-          fetch(apiUrl("/api/feeder/import-dump/status"), { cache: "no-store" })
+          var remembered = rememberedImportFile();
+          fetch(apiUrl("/api/feeder/import-dump/status" + (remembered ? "?file=" + encodeURIComponent(remembered) : "")), { cache: "no-store" })
             .then(function (r) { return r.json(); })
             .then(function (st) {
               renderImportStatus(st);
+              renderImportNewer(st);
               if (st && st.running) importPollTimer = setTimeout(pollImport, 2000);
               else importPollTimer = null;
             })
@@ -2951,24 +3125,11 @@
             var file = importFile ? importFile.value.trim() : "";
             if (!file) { showImportStatus("Enter the path to the .jsonl.gz file.", "err"); return; }
             try { localStorage.setItem(LS_IMPORT_FILE, file); } catch (e) {}
-            importStart.disabled = true;
-            fetch(apiUrl("/api/feeder/import-dump"), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ file: file, apply: !!(importApply && importApply.checked) }),
-            })
-              .then(function (r) { return r.json().then(function (j) { return { r: r, j: j }; }); })
-              .then(function (x) {
-                if (!x.r.ok || !x.j.ok) throw new Error((x.j && x.j.error) || x.r.statusText);
-                showImportStatus("Started…", "");
-                if (!importPollTimer) pollImport();
-              })
-              .catch(function (e) {
-                importStart.disabled = false;
-                showImportStatus(String(e && e.message ? e.message : e), "err");
-              });
+            void startImport(file, !!(importApply && importApply.checked));
           });
         }
+        /* One silent check at start-up, so the button glows when there is something to import. */
+        if (rememberedImportFile()) setTimeout(pollImport, 4000);
 
         /* ------------------------------------------------------------------ first-run wizard */
         var LS_WIZARD = "edexo.launcher.wizardDone";

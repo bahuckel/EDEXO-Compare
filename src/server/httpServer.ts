@@ -1,3 +1,4 @@
+import { parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -142,8 +143,10 @@ export function createHttpServer(opts: {
    * Absent on a build with no feeder corpus.
    */
   startImportDump?: (file: string, apply: boolean) => { ok: boolean; error?: string };
-  getImportDumpStatus?: () => ImportDumpStatusDTO;
+  getImportDumpStatus?: (file?: string | null) => ImportDumpStatusDTO;
   /** POST /api/settings/include-bacterium */
+  /** POST /api/settings/hud-prefs */
+  setHudPrefs?: (raw: unknown) => void;
   setIncludeBacterium?: (value: boolean) => void;
   setIncludeExplorationScanData?: (value: boolean) => void;
   /** POST /api/settings/foot-travel-odometer — JSON { value: boolean } */
@@ -197,6 +200,17 @@ export function createHttpServer(opts: {
   ) => Promise<
     { ok: true; systems: { systemAddress: number; starSystem: string }[] } | { ok: false; error: string }
   >;
+  /** GET /api/system/spansh-search?q= — the same shape from Spansh (id64 = SystemAddress). */
+  searchSpanshSystems?: (
+    query: string,
+  ) => Promise<
+    { ok: true; systems: { systemAddress: number; starSystem: string }[] } | { ok: false; error: string }
+  >;
+  /** POST /api/system/hydrate-from-spansh — bodies from Spansh's dump for a system the journal never scanned. */
+  hydrateSystemFromSpansh?: (
+    systemAddress: number,
+    systemName: string,
+  ) => Promise<{ ok: boolean; error?: string }>;
   /** POST /api/ui/view-system — JSON { systemAddress: number | null, starSystem?: string } */
   setViewingSystem?: (systemAddress: number | null) => void;
   /** Optional: remember system name when client provides it (journal row or EDSM pick). */
@@ -591,7 +605,10 @@ export function createHttpServer(opts: {
 
   app.get("/api/state", (req, res) => {
     perfCount("http.apiState");
-    const body = perfTime("http.apiState.serialize", () => JSON.stringify(opts.getSnapshot()));
+    const chq = parseWsChannel(req.query?.channel) ?? "app";
+    const body = perfTime("http.apiState.serialize", () =>
+      JSON.stringify(slimSnapshotForChannel(opts.getSnapshot(), chq)),
+    );
     sendJson(req, res, body, (raw, sent) => {
       perfBytes("http.apiState.bytes", raw);
       perfBytes("http.apiState.sent", sent);
@@ -712,12 +729,13 @@ export function createHttpServer(opts: {
     const r = opts.startImportDump(file, body.apply === true);
     res.status(r.ok ? 200 : 409).json(r);
   });
-  app.get("/api/feeder/import-dump/status", (_req, res) => {
+  app.get("/api/feeder/import-dump/status", (req, res) => {
     if (typeof opts.getImportDumpStatus !== "function") {
       res.status(501).json({ error: "Not available on this build" });
       return;
     }
-    res.json(opts.getImportDumpStatus());
+    const f = typeof req.query.file === "string" ? req.query.file : null;
+    res.json(opts.getImportDumpStatus(f));
   });
 
   app.get("/api/encyclopedia-exomastery/:genusDir/:speciesEntryId", (req, res) => {
@@ -865,6 +883,22 @@ export function createHttpServer(opts: {
     }
   });
 
+  /** POST /api/settings/hud-prefs — the launcher mirrors its HUD settings here for phones. */
+  app.post("/api/settings/hud-prefs", (req, res) => {
+    if (typeof opts.setHudPrefs !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const body = req.body;
+    if (!body || typeof body !== "object") {
+      res.status(400).json({ ok: false, error: "JSON body must be an object." });
+      return;
+    }
+    opts.setHudPrefs(body);
+    opts.scheduleBroadcast?.();
+    res.json({ ok: true });
+  });
+
   app.post("/api/settings/include-bacterium", (req, res) => {
     if (typeof opts.setIncludeBacterium !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
@@ -908,6 +942,53 @@ export function createHttpServer(opts: {
     opts.setFootTravelOdometer(value);
     opts.scheduleBroadcast?.();
     res.json({ ok: true });
+  });
+
+  app.get("/api/system/spansh-search", async (req, res) => {
+    if (typeof opts.searchSpanshSystems !== "function") {
+      res.status(501).json({ error: "Not available" });
+      return;
+    }
+    const qRaw = req.query?.q;
+    const q = typeof qRaw === "string" ? qRaw : "";
+    try {
+      const result = await opts.searchSpanshSystems(q);
+      if (!result.ok) {
+        res.status(400).json({ error: result.error });
+        return;
+      }
+      res.json({ systems: result.systems });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.post("/api/system/hydrate-from-spansh", async (req, res) => {
+    if (typeof opts.hydrateSystemFromSpansh !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const systemAddress = req.body?.systemAddress;
+    const systemName = req.body?.systemName;
+    if (typeof systemAddress !== "number" || !Number.isFinite(systemAddress)) {
+      res.status(400).json({ ok: false, error: 'JSON body must include numeric "systemAddress".' });
+      return;
+    }
+    if (typeof systemName !== "string" || !systemName.trim()) {
+      res.status(400).json({ ok: false, error: 'JSON body must include non-empty string "systemName".' });
+      return;
+    }
+    try {
+      const result = await opts.hydrateSystemFromSpansh(systemAddress, systemName.trim());
+      if (!result.ok) {
+        res.status(400).json({ ok: false, error: result.error ?? "Spansh hydrate failed." });
+        return;
+      }
+      opts.scheduleBroadcast?.();
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
   });
 
   app.get("/api/system/edsm-search", async (req, res) => {
@@ -1329,6 +1410,10 @@ export function createHttpServer(opts: {
     },
   });
   const clients = new Set<import("ws").WebSocket>();
+  /** What each socket asked for with its hello; "app" (the full state) until it says otherwise. */
+  const channelOf = new WeakMap<import("ws").WebSocket, WsChannel>();
+  const stateMessage = (snap: AppSnapshot, channel: WsChannel): string =>
+    JSON.stringify({ type: "state", channel, payload: slimSnapshotForChannel(snap, channel) });
 
   /** Keep connections warm (NAT / middleboxes); helps clients detect half-open TCP. */
   const wsKeepAlive = setInterval(() => {
@@ -1350,34 +1435,58 @@ export function createHttpServer(opts: {
 
   wss.on("connection", (ws) => {
     clients.add(ws);
+    channelOf.set(ws, "app");
     perfCount("ws.connect");
     try {
-      ws.send(JSON.stringify({ type: "state", payload: opts.getSnapshot() }));
+      ws.send(stateMessage(opts.getSnapshot(), "app"));
     } catch {
       /* ignore */
     }
+    ws.on("message", (raw) => {
+      // The only message a client sends: which slice of the state it wants from now on.
+      try {
+        const msg = JSON.parse(String(raw)) as { type?: unknown; channel?: unknown };
+        if (msg && msg.type === "hello") {
+          const ch = parseWsChannel(msg.channel);
+          if (ch && ch !== channelOf.get(ws)) {
+            channelOf.set(ws, ch);
+            ws.send(stateMessage(opts.getSnapshot(), ch));
+          }
+        }
+      } catch {
+        /* not ours */
+      }
+    });
     ws.on("close", () => clients.delete(ws));
   });
 
-  /** Last frame sent, so an identical rebuild is not pushed to every client again. */
-  let lastBroadcastMsg: string | null = null;
+  /** Last frame sent per channel, so an identical rebuild is not pushed to those clients again. */
+  const lastBroadcastMsg = new Map<WsChannel, string>();
 
   const broadcast = (snap: AppSnapshot) => {
-    const msg = perfTime("ws.serialize", () => JSON.stringify({ type: "state", payload: snap }));
-    if (msg === lastBroadcastMsg) {
-      perfCount("ws.push.skippedIdentical");
-      return;
-    }
-    lastBroadcastMsg = msg;
-    perfCount("ws.push");
-    perfBytes("ws.push.bytes", Buffer.byteLength(msg));
+    // One serialization per channel per push; null marks "identical to the last frame, skip".
+    const built = new Map<WsChannel, string | null>();
     for (const ws of clients) {
-      if (ws.readyState === ws.OPEN) {
-        try {
-          ws.send(msg);
-        } catch {
-          clients.delete(ws);
+      if (ws.readyState !== ws.OPEN) continue;
+      const ch = channelOf.get(ws) ?? "app";
+      if (!built.has(ch)) {
+        const msg = perfTime("ws.serialize", () => stateMessage(snap, ch));
+        if (msg === lastBroadcastMsg.get(ch)) {
+          perfCount("ws.push.skippedIdentical");
+          built.set(ch, null);
+        } else {
+          lastBroadcastMsg.set(ch, msg);
+          perfCount("ws.push");
+          perfBytes("ws.push.bytes", Buffer.byteLength(msg));
+          built.set(ch, msg);
         }
+      }
+      const msg = built.get(ch);
+      if (!msg) continue;
+      try {
+        ws.send(msg);
+      } catch {
+        clients.delete(ws);
       }
     }
   };

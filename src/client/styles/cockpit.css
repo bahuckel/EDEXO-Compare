@@ -1031,3 +1031,96 @@ input[type="range"]::-moz-range-thumb {
 input[type="range"]:focus-visible::-webkit-slider-thumb {
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
+
+/* ---- galaxy sources (task 15): "Search: [EDSM] [Spansh]" and "Load bodies: [EDSM] [Spansh]" ---- */
+.journal-system-source-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.journal-system-source-label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-right: 0.2rem;
+}
+.journal-system-search-edsm-action {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.journal-system-edsm-search-btn,
+.journal-system-edsm-load-btn {
+  border-radius: 0 !important;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ---- session log modal (NEXT-TASKS 11) --------------------------------------------------------- */
+.modal-panel--session {
+  width: min(96vw, 56rem);
+}
+.modal-head .session-copy {
+  margin-left: auto;
+  margin-right: 0.6rem;
+}
+.facts--session {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 720px) {
+  .facts--session {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.session-block {
+  margin-top: 0.9rem;
+}
+.session-h {
+  margin: 0 0 0.35rem;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.session-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.3rem 0.2rem;
+  border-top: 1px solid var(--accent-a15);
+  font-size: var(--fs-sm);
+}
+.session-t {
+  flex: 0 0 3.4rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+.session-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.session-cr {
+  flex: 0 0 auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-bright);
+}
+.session-cr--ff {
+  color: var(--ok-soft);
+}
+.session-cr .price-tag {
+  margin-left: 0.3rem;
+}

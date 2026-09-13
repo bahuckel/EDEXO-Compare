@@ -119,10 +119,32 @@
       return (v < 16 ? "0" : "") + v.toString(16);
     }).join("");
   }
+  /*
+    Phone mode (owner, 2026-09-13, task 13): `?phone=1` on the merged page. A phone has its own
+    localStorage, so the settings come from the server's mirror of the launcher (`d.hudPrefs`),
+    which the launcher writes on every change. On the PC the local keys still win.
+  */
+  var PHONE = /[?&]phone=1(&|$)/.test(String(location.search || ""));
+  function serverPref(key) {
+    var p = HUD.serverPrefs;
+    if (!p) return null;
+    if (key === "edexoHudTheme") return p.theme ? JSON.stringify(p.theme) : null;
+    if (key === "edexoHudScale") return typeof p.scale === "number" ? String(p.scale) : null;
+    if (key === "edexoHudOpacity") return typeof p.opacity === "number" ? String(p.opacity) : null;
+    if (key === "edexoHudCandOrder") return p.candOrder || null;
+    if (key === "edexoHudRegion") return typeof p.region === "boolean" ? (p.region ? "1" : "0") : null;
+    if (key === "edexoHudAudio") return typeof p.audio === "boolean" ? (p.audio ? "1" : "0") : null;
+    return null;
+  }
+  function pref(key, def) {
+    var v = PHONE ? null : ls(key, null);
+    if (v == null) v = serverPref(key);
+    return v == null ? def : v;
+  }
   function readTheme() {
     var t = {};
     try {
-      t = JSON.parse(ls("edexoHudTheme", "{}")) || {};
+      t = JSON.parse(pref("edexoHudTheme", "{}")) || {};
     } catch (e) {
       t = {};
     }
@@ -131,19 +153,109 @@
     var text = hexRgb(t.preset === "custom" ? t.text : preset ? preset.text : PRESETS.orange.text) || mix(accent, [255, 255, 255], 0.78);
     return { accent: accent, text: text };
   }
+  /*
+    Size and panel opacity (owner, 2026-09-13): two sliders in the launcher, remembered like the
+    colour. Scale multiplies the root font size, so every rem in the page follows; the host widens
+    the window by the same factor (see reportHeight). Opacity is the panel fill's alpha.
+  */
+  function clampNum(v, lo, hi, def) {
+    var n = parseFloat(v);
+    if (!isFinite(n)) return def;
+    return Math.min(hi, Math.max(lo, n));
+  }
+  function readScale() {
+    // The phone has its own size: the launcher's slider is for the overlay on the game screen.
+    if (PHONE) return 1;
+    return clampNum(pref("edexoHudScale", "1"), 0.5, 2, 1);
+  }
+  /*
+    Background opacity (owner, 2026-09-14): the panel fill's alpha only — text, icons and lines
+    stay solid, and the fill keeps its colour; the slider decides how much of the game shows
+    through it. 42 % is the design default.
+  */
+  function readOpacity() {
+    if (PHONE) return 0.7;
+    return clampNum(pref("edexoHudOpacity", "0.45"), 0.1, 1, 0.45);
+  }
   function applyTheme() {
     var th = readTheme();
     var a = th.accent;
     var st = document.documentElement.style;
+    st.fontSize = Math.round(readScale() * 100) + "%";
+    /*
+      The slider runs from clear to a dark orange panel (owner, 2026-09-14: "not a second sun"):
+      the fill is a near-black orange whose alpha follows the slider up to 92 %, the frame hairline
+      dims with it. 45 % is roughly the old default look.
+    */
+    var t = readOpacity();
+    st.setProperty("--hud-bg-opacity", String(t));
     st.setProperty("--hud", toHex(a));
     st.setProperty("--hud-hi", toHex(mix(a, [255, 255, 255], 0.35)));
     st.setProperty("--hud-text", toHex(th.text));
     st.setProperty("--hud-dim", rgba(a, 0.55));
     st.setProperty("--hud-faint", rgba(a, 0.22));
     st.setProperty("--hud-ghost", rgba(a, 0.1));
-    st.setProperty("--hud-bg", rgba(mix(a, [0, 0, 0], 0.88), 0.42));
-    st.setProperty("--hud-bg-2", rgba(mix(a, [0, 0, 0], 0.75), 0.3));
+    st.setProperty("--hud-bg", rgba(mix(a, [0, 0, 0], 0.9), Math.round(92 * t) / 100));
+    st.setProperty("--hud-bg-2", rgba(mix(a, [0, 0, 0], 0.8), Math.round(35 * t) / 100));
     st.setProperty("--hud-glow", "0 0 6px " + rgba(a, 0.45));
+  }
+
+  /* ============================================================== Audio cues =================== */
+  /*
+    Two short tones, off by default (owner, 2026-09-13): one when the min-gap ring is cleared after
+    a sample, a two-note chime when the third sample lands. Synthesised, no asset. The tracker's
+    render calls `cueFromOverlay` with each snapshot and the cue fires on the edge, once.
+  */
+  var audioCtx = null;
+  function audioOn() {
+    return pref("edexoHudAudio", "0") === "1";
+  }
+  function tone(freq, atMs, durMs, gain) {
+    if (!audioCtx) return;
+    var t0 = audioCtx.currentTime + atMs / 1000;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.type = "sine";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + durMs / 1000);
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    o.start(t0);
+    o.stop(t0 + durMs / 1000 + 0.02);
+  }
+  function playCue(kind) {
+    if (typeof HUD.onCue === "function") HUD.onCue(kind);
+    if (!audioOn()) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === "suspended" && typeof audioCtx.resume === "function") void audioCtx.resume();
+      if (kind === "clear") {
+        tone(880, 0, 120, 0.18);
+      } else if (kind === "third") {
+        tone(660, 0, 140, 0.18);
+        tone(990, 150, 220, 0.2);
+      }
+    } catch (e) {
+      /* no audio device, or the page is not allowed to play: the cue is optional */
+    }
+  }
+  var cuePrev = { key: "", count: 0, clear: false };
+  function cueFromOverlay(eo) {
+    if (!eo || !eo.visible) {
+      cuePrev = { key: "", count: 0, clear: false };
+      return;
+    }
+    var key = String(eo.bodyKeyOnFoot || "") + "|" + String(eo.speciesDisplay || "");
+    var count = Math.max(0, Math.min(3, eo.sampleCount || 0));
+    var clear = eo.nearestSampleMeetsMin === true && (count === 1 || count === 2);
+    var same = key === cuePrev.key;
+    if (same && count === 3 && cuePrev.count < 3) playCue("third");
+    else if (same && clear && !cuePrev.clear && count === cuePrev.count) playCue("clear");
+    cuePrev = { key: key, count: count, clear: clear };
   }
 
   /* ============================================================== Next jump ==================== */
@@ -171,13 +283,15 @@
         '<div class="jump__body">' +
         '<div class="hud-big jump__sys" data-f="sys">—</div>' +
         '<div class="jump__cls"><span class="jump__star" data-f="star">—</span><span class="jump__note" data-f="note"></span></div>' +
-        "</div></div>"
+        "</div></div>" +
+        '<div class="jump__route" data-f="route" hidden></div>'
       );
     },
     render: function (d, root) {
       var jt = d.jumpTarget;
       var status = q(root, "status");
       var box = q(root, "jump");
+      renderRouteStrip(d, q(root, "route"));
       if (!jt || !jt.starSystem) {
         status.textContent = "No jump";
         box.className = "jump jump--none";
@@ -197,6 +311,92 @@
       return null;
     },
   };
+
+  /*
+    The route strip under the card (owner, 2026-09-13): the next hops as star-class letters in the
+    KGBFOAM colours, a fuel pump on the star where the tank says to scoop — yellow to plan on it,
+    red when skipping it means running dry. `⛽ +N` when that star is beyond the hops shown.
+  */
+  function fuelPump(level) {
+    return (
+      '<svg class="hop__fuel hop__fuel--' +
+      level +
+      '" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15M4 20h12M7 7h6v4H7zM15 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0v-7l-2.5-2.5"/></svg>'
+    );
+  }
+  function renderRouteStrip(d, el) {
+    if (!el) return;
+    var nav = d.liveShipFuelRange && d.liveShipFuelRange.navRoute;
+    var hops = nav && nav.ahead ? nav.ahead : [];
+    if (!hops.length) {
+      el.hidden = true;
+      el.innerHTML = "";
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < hops.length; i++) {
+      var h = hops[i];
+      var k = starKind(h.starClass);
+      html +=
+        (i ? '<span class="hop__sep" aria-hidden="true">››</span>' : "") +
+        '<span class="hop hop--' +
+        k.kind +
+        '" title="' +
+        esc(h.starSystem + " — " + k.label) +
+        '">' +
+        esc(h.starClass || "?") +
+        (h.refuel && h.refuel !== "none" ? fuelPump(h.refuel) : "") +
+        "</span>";
+    }
+    if (nav.refuelInHops != null && nav.refuelInHops > hops.length && nav.refuelLevel !== "none") {
+      html +=
+        '<span class="hop__sep" aria-hidden="true">››</span><span class="hop hop--beyond" title="Scoop in ' +
+        nav.refuelInHops +
+        ' jumps">' +
+        fuelPump(nav.refuelLevel) +
+        "+" +
+        (nav.refuelInHops - hops.length) +
+        "</span>";
+    } else if (nav.refuelInHops == null && nav.refuelLevel === "red") {
+      // the tank cannot finish the plot and no scoopable star is within reach: say so at the end
+      html +=
+        '<span class="hop__sep" aria-hidden="true">››</span><span class="hop hop--beyond hop--dry" title="No scoopable star within reach on this tank">' +
+        fuelPump("red") +
+        "!</span>";
+    }
+    el.innerHTML = html;
+    el.hidden = false;
+    fitRouteStrip(el, hops, nav);
+  }
+  /*
+    One row, no wrapping (owner, 2026-09-14): drop hops off the end until the strip fits its width.
+    If the pump's hop is cut, a "+N" with the pump takes the last place so the scoop is never lost.
+  */
+  function fitRouteStrip(el, hops, nav) {
+    var pumpIdx = -1;
+    for (var i = 0; i < hops.length; i++) if (hops[i].refuel && hops[i].refuel !== "none") pumpIdx = i;
+    var guard = 0;
+    while (el.scrollWidth > el.clientWidth + 1 && guard++ < 60) {
+      var kids = el.children;
+      if (kids.length < 3) break;
+      // remove the last hop and the separator before it
+      el.removeChild(kids[kids.length - 1]);
+      if (el.lastElementChild && el.lastElementChild.classList.contains("hop__sep")) el.removeChild(el.lastElementChild);
+      var shown = el.querySelectorAll(".hop:not(.hop--beyond)").length;
+      if (pumpIdx >= shown && !el.querySelector(".hop--beyond")) {
+        var tail = document.createElement("span");
+        tail.className = "hop hop--beyond";
+        tail.title = "Scoop in " + (pumpIdx + 1) + " jumps";
+        tail.innerHTML = fuelPump(hops[pumpIdx].refuel) + "+" + (pumpIdx + 1 - shown);
+        var sep = document.createElement("span");
+        sep.className = "hop__sep";
+        sep.setAttribute("aria-hidden", "true");
+        sep.textContent = "››";
+        el.appendChild(sep);
+        el.appendChild(tail);
+      }
+    }
+  }
 
   /* ============================================================== Discovery scan (FSS honk) ==== */
   var fss = {
@@ -309,7 +509,7 @@
     render: function (d, root) {
       var status = q(root, "status");
       var ul = q(root, "list");
-      var showRegion = ls("edexoHudRegion", "1") !== "0";
+      var showRegion = pref("edexoHudRegion", "1") !== "0";
       var regionEl = q(root, "region");
       var regionName = d.currentRegion && d.currentRegion.name ? d.currentRegion.name : null;
       regionEl.style.display = showRegion && regionName ? "" : "none";
@@ -367,7 +567,7 @@
       }
       // The app's order (genus likelihood from the co-occurrence solver, then as delivered), or by
       // credits when the owner has asked for the value lens.
-      var byValue = ls("edexoHudCandOrder", "likelihood") === "value";
+      var byValue = pref("edexoHudCandOrder", "likelihood") === "value";
       var rank = {};
       (bc.genusLikelihoods || []).forEach(function (l, idx) {
         if (l && l.genus) rank[norm(l.genus)] = idx;
@@ -605,6 +805,7 @@
       // Standing on top of a plant is the same mistake whether you are looking for the second or the
       // third, and `nearestSampleMeetsMin` measures against every plant taken, not only the first.
       var hunting = live && (eo.sampleCount === 1 || eo.sampleCount === 2);
+      cueFromOverlay(eo);
       var tooClose = hunting && eo.nearestSampleMeetsMin === false;
       var onSurface = !d.journalBoot && drawMinimap(svg, d.exoMinimap, tooClose);
       var showTracker = onSurface || live;
@@ -751,6 +952,11 @@
   HUD.PRESETS = PRESETS;
   HUD.applyTheme = applyTheme;
   HUD.starKind = starKind;
+  HUD.readScale = readScale;
+  HUD.readOpacity = readOpacity;
+  HUD.audioOn = audioOn;
+  HUD.serverPrefs = null;
+  HUD.cueFromOverlay = cueFromOverlay;
 
   /**
    * Build the panel for `names` (in canonical order) inside #hud and start the state feed.
@@ -759,11 +965,96 @@
    * cockpit does; in the merged HUD only the section itself retints, so a finished discovery scan
    * does not paint the sample tracker blue for the rest of the visit.
    */
+  /* Phone chrome: a chip per section at the top; tapping toggles it, the choice stays on the phone. */
+  var PHONE_LS = "edexoPhoneSections";
+  function phoneSavedSections() {
+    try {
+      var v = localStorage.getItem(PHONE_LS);
+      if (!v) return null;
+      var arr = JSON.parse(v);
+      return Array.isArray(arr) && arr.length ? arr : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function mountPhoneBar(list) {
+    document.body.classList.add("phone");
+    var bar = document.createElement("nav");
+    bar.className = "phone-bar";
+    bar.setAttribute("aria-label", "HUD sections");
+    ORDER.forEach(function (n) {
+      var on = list.indexOf(n) >= 0;
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "phone-chip" + (on ? " phone-chip--on" : "");
+      b.textContent = SECTIONS[n].title;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.addEventListener("click", function () {
+        var next = list.slice();
+        var i = next.indexOf(n);
+        if (i >= 0) next.splice(i, 1);
+        else next.push(n);
+        if (!next.length) return;
+        try {
+          localStorage.setItem(PHONE_LS, JSON.stringify(next));
+        } catch (e) {}
+        var u = new URL(location.href);
+        u.searchParams.set("s", next.join(","));
+        location.href = u.toString();
+      });
+      bar.appendChild(b);
+    });
+    /*
+      Full screen on the phone: the Fullscreen API on Android Chrome (tap the chip or the phone's
+      back button to leave); iOS Safari has no API for it — there, "Add to Home Screen" opens the
+      page without browser chrome (the web-app manifest says `display: fullscreen`).
+    */
+    var fs = document.createElement("button");
+    fs.type = "button";
+    fs.className = "phone-chip phone-chip--fs";
+    fs.setAttribute("aria-label", "Full screen");
+    fs.title = "Full screen (tap again, or the back button, to leave). iPhone: use Add to Home Screen.";
+    fs.textContent = "\u26F6";
+    var canFs = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+    if (!canFs) fs.classList.add("phone-chip--dim");
+    fs.addEventListener("click", function () {
+      try {
+        var de = document.documentElement;
+        var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+        if (fsEl) {
+          (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        } else if (de.requestFullscreen) {
+          de.requestFullscreen({ navigationUI: "hide" });
+        } else if (de.webkitRequestFullscreen) {
+          de.webkitRequestFullscreen();
+        }
+      } catch (e) {}
+    });
+    var syncFs = function () {
+      var on = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      fs.classList.toggle("phone-chip--on", on);
+      document.body.classList.toggle("phone--fullscreen", on);
+    };
+    document.addEventListener("fullscreenchange", syncFs);
+    document.addEventListener("webkitfullscreenchange", syncFs);
+    bar.appendChild(fs);
+    var shellEl = document.querySelector(".shell");
+    if (shellEl && shellEl.parentNode) shellEl.parentNode.insertBefore(bar, shellEl);
+  }
+
   HUD.mount = function (names, opts) {
     opts = opts || {};
     var root = document.getElementById("hud");
     var shell = document.querySelector(".shell");
     var panel = document.querySelector(".panel");
+    // The box's own layers (frame gradient, body fill) as elements, so the opacity slider can fade
+    // them without touching the text; pseudo-elements were taken by the scanlines.
+    if (panel && !panel.querySelector(".panel__frame")) {
+      var frame = document.createElement("div");
+      frame.className = "panel__frame";
+      frame.setAttribute("aria-hidden", "true");
+      panel.insertBefore(frame, panel.firstChild);
+    }
     // In the order given: the launcher passes the owner's stack order, so the merged panel and the
     // separate windows agree on who sits above whom.
     var list = [];
@@ -772,6 +1063,7 @@
     });
     if (!list.length) list = ["distance"];
     var single = list.length === 1;
+    if (PHONE) mountPhoneBar(list);
     applyTheme();
     try {
       window.addEventListener("storage", function (ev) {
@@ -788,6 +1080,13 @@
         return '<section class="hud-section hud-section--' + n + '" data-section="' + n + '">' + SECTIONS[n].html() + "</section>";
       })
       .join("");
+    // the fill layer sits under the sections (after innerHTML, which would have wiped it)
+    if (root && !root.querySelector(":scope > .panel__fill")) {
+      var fill = document.createElement("div");
+      fill.className = "panel__fill";
+      fill.setAttribute("aria-hidden", "true");
+      root.insertBefore(fill, root.firstChild);
+    }
     if (single) document.title = SECTIONS[list[0]].title;
     var els = {};
     list.forEach(function (n) {
@@ -802,9 +1101,17 @@
       }
     }
 
+    var lastPrefsJson = "";
     function render(d) {
       HUD.lastSnapshot = d;
       shell.classList.remove("shell--off");
+      // The launcher's settings, mirrored: re-theme when they change (the phone's only source).
+      var pj = d && d.hudPrefs ? JSON.stringify(d.hudPrefs) : "";
+      if (pj !== lastPrefsJson) {
+        lastPrefsJson = pj;
+        HUD.serverPrefs = d && d.hudPrefs ? d.hudPrefs : null;
+        applyTheme();
+      }
       list.forEach(function (n) {
         var state = null;
         try {
@@ -826,14 +1133,19 @@
       the whole stack.
     */
     var lastReportedHeight = 0;
+    var lastReportedScale = 0;
     function reportHeight() {
+      if (PHONE) return;
       var ee = window.edexoElectron;
       if (!ee || typeof ee.resizeHudOverlay !== "function") return;
       var h = Math.ceil(shell.getBoundingClientRect().height) + 2;
-      if (!h || Math.abs(h - lastReportedHeight) <= 2) return;
+      var sc = readScale();
+      var scaleChanged = Math.abs(sc - lastReportedScale) > 0.004;
+      if (!h || (!scaleChanged && Math.abs(h - lastReportedHeight) <= 2)) return;
       lastReportedHeight = h;
+      lastReportedScale = sc;
       try {
-        void ee.resizeHudOverlay({ height: h });
+        void ee.resizeHudOverlay({ height: h, scale: sc });
       } catch (e) {
         /* not in Electron, or the host said no; the overlay is still readable either way */
       }
@@ -857,7 +1169,7 @@
     var WS_LIVE_MS = 8000;
     function tick() {
       if (Date.now() - lastWsAt < WS_LIVE_MS) return;
-      fetch(api("/api/state"), { cache: "no-store" })
+      fetch(api("/api/state?channel=hud"), { cache: "no-store" })
         .then(function (r) {
           if (!r.ok) throw new Error("HTTP " + r.status);
           return r.json();
@@ -877,6 +1189,12 @@
         var proto = location.protocol === "https:" ? "wss:" : "ws:";
         var host = typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
         var ws = new WebSocket(proto + "//" + host + "/ws");
+        ws.onopen = function () {
+          // Ask for the HUD's slice of the state, not the whole snapshot (see server/wsChannels.ts).
+          try {
+            ws.send(JSON.stringify({ type: "hello", channel: "hud" }));
+          } catch (e) {}
+        };
         ws.onmessage = function (ev) {
           try {
             var msg = JSON.parse(String(ev.data));
@@ -896,6 +1214,10 @@
 
   /** Sections named in the page URL (`?s=fss,distance`), or everything when absent. */
   HUD.sectionsFromUrl = function () {
+    if (PHONE && !/[?&]s=/.test(String(location.search || ""))) {
+      var saved = phoneSavedSections();
+      if (saved) return saved;
+    }
     var m = /[?&]s=([^&]*)/.exec(location.search || "");
     if (!m) return ORDER.slice();
     return decodeURIComponent(m[1])

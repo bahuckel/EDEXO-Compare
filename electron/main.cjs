@@ -1,6 +1,6 @@
 "use strict";
 
-const { app, BrowserWindow, nativeImage, dialog, ipcMain, screen, globalShortcut } = require("electron");
+const { app, BrowserWindow, nativeImage, dialog, ipcMain, screen, globalShortcut, Tray, Menu, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { execFileSync } = require("child_process");
@@ -127,6 +127,9 @@ function destroyAllHudOverlays() {
 */
 let hudLayout = { corner: "tr", order: [] };
 let hudHidden = false;
+/** The HUD size multiplier from the launcher's slider; the pages report it, the stack width follows. */
+let hudScale = 1;
+
 /**
  * The HUDs that were open when the app last ran, restored on the next launch — hidden, so the
  * hotkey brings back exactly the set the owner left (owner, 2026-09-13). Same file as the layout.
@@ -140,6 +143,7 @@ function loadHudLayout() {
     const j = JSON.parse(fs.readFileSync(hudLayoutPath(), "utf8"));
     if (j && typeof j === "object") {
       setHudLayout(j, false);
+      if (Number.isFinite(Number(j.scale))) hudScale = Math.min(2, Math.max(0.5, Number(j.scale)));
       if (Array.isArray(j.open)) {
         hudRestoreList = j.open
           .filter((o) => o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"))
@@ -158,7 +162,11 @@ function loadHudLayout() {
 function persistHudFile() {
   try {
     const open = hudOverlayStack.map((s) => ({ pathname: s.pathname, width: s.width, height: s.height }));
-    fs.writeFileSync(hudLayoutPath(), JSON.stringify({ ...hudLayout, open, hidden: hudHidden }), "utf8");
+    fs.writeFileSync(
+      hudLayoutPath(),
+      JSON.stringify({ ...hudLayout, open, hidden: hudHidden, scale: hudScale }),
+      "utf8",
+    );
   } catch {
     /* ignore */
   }
@@ -202,7 +210,7 @@ function relayoutHudStack() {
     return i < 0 ? 1000 + hudOverlayStack.indexOf(s) : i;
   };
   const ordered = hudOverlayStack.slice().sort((a, b) => rank(a) - rank(b));
-  const w = Math.max(0, ...hudOverlayStack.map((s) => s.width || 0)) || 404;
+  const w = Math.round((Math.max(0, ...hudOverlayStack.map((s) => s.width || 0)) || 404) * hudScale);
   const atBottom = hudLayout.corner.startsWith("b");
   const atRight = hudLayout.corner.endsWith("r");
   const x = atRight ? Math.floor(wa.x + wa.width - margin - w) : wa.x + margin;
@@ -225,10 +233,75 @@ function relayoutHudStack() {
   }
 }
 
+/*
+  The tray (owner, 2026-09-13): minimising the launcher hides it to the tray; the tray menu shows
+  it again, toggles the HUDs, opens the UI in the browser, quits. One instance, rebuilt when the
+  HUD visibility changes so the label reads right.
+*/
+let tray = null;
+function showLauncher() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+function buildTrayMenu() {
+  return Menu.buildFromTemplate([
+    { label: "Show launcher", click: showLauncher },
+    {
+      label: hudHidden ? "Show HUDs" : "Hide HUDs",
+      accelerator: HUD_TOGGLE_SHORTCUT,
+      enabled: hudOverlayStack.length > 0,
+      click: () => toggleHudVisibility(),
+    },
+    {
+      label: "Open exobiology UI",
+      click: () => {
+        if (runtime) void shell.openExternal(`${runtime.getLocalBaseUrl()}/`);
+      },
+    },
+    { type: "separator" },
+    { label: "Quit ED Exo Compare", click: () => app.quit() },
+  ]);
+}
+function refreshTrayMenu() {
+  if (!tray) return;
+  try {
+    tray.setContextMenu(buildTrayMenu());
+  } catch {
+    /* ignore */
+  }
+}
+function createTray(iconImage) {
+  if (tray) return;
+  try {
+    let img = iconImage && !iconImage.isEmpty() ? iconImage : nativeImage.createEmpty();
+    if (!img.isEmpty() && process.platform === "win32") img = img.resize({ width: 16, height: 16 });
+    tray = new Tray(img);
+    tray.setToolTip("ED Exo Compare");
+    tray.setContextMenu(buildTrayMenu());
+    tray.on("click", showLauncher);
+    tray.on("double-click", showLauncher);
+  } catch (e) {
+    console.warn("[edexo-compare] tray unavailable:", e);
+    tray = null;
+  }
+}
+function destroyTray() {
+  if (!tray) return;
+  try {
+    tray.destroy();
+  } catch {
+    /* ignore */
+  }
+  tray = null;
+}
+
 /** Hide or show every HUD window (the global shortcut). Windows keep their state; only visibility changes. */
 function toggleHudVisibility(force) {
   hudHidden = typeof force === "boolean" ? force : !hudHidden;
   persistHudFile();
+  refreshTrayMenu();
   for (const s of hudOverlayStack) {
     if (!s.win || s.win.isDestroyed()) continue;
     try {
@@ -365,6 +438,7 @@ async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode
       destroyHudWindow(slot.win);
       relayoutHudStack();
       persistHudFile();
+      refreshTrayMenu();
       return { opened: false, paths: hudPathsFiltered() };
     }
     if (mode === "set" && slot.pathname !== pathNorm) {
@@ -390,6 +464,7 @@ async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode
   const url = `${runtime.getLocalBaseUrl()}${pathNorm}`;
   const win = createHudOverlayWindow(width, height, iconForChild, mainWindow);
   hudOverlayStack.push({ win, pathname: pathNorm, key, width, height });
+  refreshTrayMenu();
 
   win.webContents.once("did-fail-load", (_e, code, desc) => {
     console.error("[edexo-compare] HUD overlay failed to load:", url, code, desc);
@@ -493,6 +568,7 @@ function registerFootOverlayIpc(iconForChild) {
     destroyHudWindow(slot.win);
     relayoutHudStack();
     persistHudFile();
+    refreshTrayMenu();
     return { closed: true, paths: hudPathsFiltered() };
   });
 
@@ -519,10 +595,21 @@ function registerFootOverlayIpc(iconForChild) {
     const raw = Number(opts && typeof opts === "object" ? opts.height : NaN);
     if (!Number.isFinite(raw)) return { ok: false };
     const height = Math.max(HUD_MIN_HEIGHT, Math.min(HUD_MAX_HEIGHT, Math.ceil(raw)));
+    // The page's scale rides along; a change widens every window in the stack together.
+    const sc = Number(opts && typeof opts === "object" ? opts.scale : NaN);
+    let scaleChanged = false;
+    if (Number.isFinite(sc)) {
+      const next = Math.min(2, Math.max(0.5, sc));
+      if (Math.abs(next - hudScale) > 0.004) {
+        hudScale = next;
+        scaleChanged = true;
+        persistHudFile();
+      }
+    }
     try {
       const [w, h] = win.getSize();
       // A pixel or two of jitter from a font metric must not start a resize loop.
-      if (Math.abs(h - height) <= 2) return { ok: true };
+      if (!scaleChanged && Math.abs(h - height) <= 2) return { ok: true };
       win.setBounds({ ...win.getBounds(), width: w, height }, false);
       relayoutHudStack();
       return { ok: true };
@@ -627,9 +714,16 @@ async function start() {
     },
   });
   mainWindow.loadURL(url);
+  createTray(winIcon);
   void restoreHudOverlays(winIcon);
+  mainWindow.on("minimize", (e) => {
+    // Minimise means "get out of the way": the window goes to the tray, the HUDs stay where they are.
+    e.preventDefault();
+    mainWindow.hide();
+  });
   mainWindow.on("close", () => {
     destroyAllHudOverlays();
+    destroyTray();
   });
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -664,6 +758,7 @@ app.on("before-quit", () => {
     /* ignore */
   }
   destroyAllHudOverlays();
+  destroyTray();
   if (runtime && typeof runtime.shutdown === "function") {
     void runtime.shutdown();
   }

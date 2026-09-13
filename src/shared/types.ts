@@ -1366,6 +1366,24 @@ export interface LiveShipFuelNavRouteDTO {
    * Null when no scoop ahead is reachable or fuel/range data rules it out.
    */
   jumpsToLastScoopableOnRoute: number | null;
+  /**
+   * The HUD's route strip (owner, 2026-09-13): the next hops after the current system, at most
+   * `ROUTE_AHEAD_HOPS`, each with its star class and, on the nearest scoopable star when the tank
+   * cannot finish the plot, the refuel mark. Empty when off plot or at the destination.
+   */
+  ahead: RouteAheadHopDTO[];
+  /** Hops to that nearest scoopable star (may exceed `ahead.length`); null when none is needed. */
+  refuelInHops: number | null;
+  /** `yellow` = plan to scoop there; `red` = you must (last reachable scoop, or none reachable). */
+  refuelLevel: "none" | "yellow" | "red";
+}
+
+export interface RouteAheadHopDTO {
+  starSystem: string;
+  /** NavRoute `StarClass` ("" when the file has none). */
+  starClass: string;
+  scoopable: boolean;
+  refuel: "none" | "yellow" | "red";
 }
 
 /** Live ship fuel from `Status.json` + jump calibration from merged `Loadout` / `FSDJump`. */
@@ -1538,6 +1556,13 @@ export interface AppSnapshot {
   fssAllBodiesFoundNoBio: boolean;
   /** When true, Bacterium genus is included in planet↔species matching. */
   includeBacteriumInSearch: boolean;
+  /**
+   * The launcher's HUD settings, mirrored on the server so a phone (its own browser, its own
+   * localStorage) renders the HUD in the same colours and order (owner, 2026-09-13, task 13).
+   */
+  hudPrefs: HudPrefsDTO | null;
+  /** Tonight's play, from live journal lines since the app started (NEXT-TASKS 11). App channel only. */
+  sessionLog: SessionLogDTO | null;
   /**
    * EDSM auto-fetch on jump (§50): the toggle, plus enough about the stored credentials for the
    * Options panel to tell the commander what state they are in.
@@ -1974,4 +1999,41 @@ export interface ImportDumpStatusDTO {
   failures?: number;
   matched?: number;
   changed?: number;
+  /** The last import that finished without error (persisted across runs). */
+  lastImport?: { file: string; finishedAt: string; fileMtimeIso: string | null; apply: boolean } | null;
+  /** mtime of the file the status was asked about (`?file=`), or of `lastImport.file`; null when unreadable. */
+  fileMtimeIso?: string | null;
+  /** True when that file is the last-imported one and has been rewritten since (owner, 2026-09-13: one-click re-import). */
+  newerOnDisk?: boolean;
+}
+
+/** What the launcher's HUD settings modal writes; every field optional, unknown keys dropped. */
+export interface HudPrefsDTO {
+  theme?: { preset?: string; accent?: string; text?: string };
+  scale?: number;
+  /** The panel fill's opacity, 0.1–1 (text and lines stay solid). */
+  opacity?: number;
+  candOrder?: "likelihood" | "value";
+  region?: boolean;
+  audio?: boolean;
+}
+
+/** The session log: what happened since the app started, for the modal and the Markdown copy. */
+export interface SessionLogDTO {
+  startedIso: string;
+  systems: { name: string; at: string; jumpLy: number | null }[];
+  landings: { body: string; system: string; at: string; firstFootfall: boolean; key: string | null }[];
+  samples: {
+    species: string;
+    body: string;
+    system: string;
+    at: string;
+    listCredits: number | null;
+    mult: 1 | 5;
+    credits: number | null;
+  }[];
+  sales: { at: string; items: number; credits: number }[];
+  firstFootfalls: number;
+  creditsAnalysed: number;
+  creditsSold: number;
 }

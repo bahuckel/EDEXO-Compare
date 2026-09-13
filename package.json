@@ -42,6 +42,7 @@
     "travel-probe": "tsx scripts/travel-probe.ts",
     "fixture": "tsx scripts/gen-match-fixture.ts",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "typecheck": "npm run typecheck:client && npm run typecheck:server && npm run typecheck:tests",
     "typecheck:server": "tsc --noEmit -p tsconfig.server.json",
     "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",
@@ -55,6 +56,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
     "@types/express": "^5.0.1",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.1",

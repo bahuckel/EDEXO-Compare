@@ -41,6 +41,7 @@ import {
   findSpeciesEntryForEncyclopedia,
   getCachedSpeciesDatabase,
   loadSpeciesDatabase,
+  getCachedPrices,
 } from "./snapshot.js";
 import { writeExoDataAlertFixFiles } from "./exoDataAlertFix.js";
 import { buildFeederStatus } from "./feederStatus.js";
@@ -62,6 +63,7 @@ import {
   USER_SETTINGS_FILENAME,
   getSpeciesDataDir,
   reapplySpeciesDataDirDiscoveryFromDisk,
+  resolveImportDumpLedgerPath,
 } from "./paths.js";
 import {
   ingestExoOrganicJournalLine,
@@ -79,6 +81,8 @@ import {
   tryPrepareJournalCacheLoad,
 } from "./journalMergeCache.js";
 import { fetchEdsmBodiesAsExplorationRecords, searchEdsmSystemsByName } from "./edsmSystemHydration.js";
+import { fetchSpanshBodiesAsExplorationRecords, searchSpanshSystemsByName } from "./spanshSystemHydration.js";
+import { SessionLog } from "./sessionLog.js";
 import { backlogMap, firstDiscoveryBacklogWithDistance } from "./firstDiscoveryBacklog.js";
 import { galaxySpeciesCatalogue, galaxyValueSearch } from "./galaxyValueSearch.js";
 import { commanderSectorsDto } from "./galaxySectorTiers.js";
@@ -353,6 +357,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             canonnUploadEnabled: store.canonnUploadEnabled,
             edsmUploadEnabled: store.edsmUploadEnabled,
             edsmLiveUploadEnabled: store.edsmLiveUploadEnabled,
+            hudPrefs: store.hudPrefs,
           },
           null,
           2,
@@ -375,9 +380,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     canonnUploadEnabled?: boolean;
     edsmUploadEnabled?: boolean;
     edsmLiveUploadEnabled?: boolean;
+    hudPrefs?: unknown;
   };
 
   function applyPersistedUserPrefs(j: PersistedUserPrefs): void {
+    if (j.hudPrefs && typeof j.hudPrefs === "object") store.setHudPrefs(j.hudPrefs);
     if (typeof j.includeBacteriumInSearch === "boolean") {
       store.setIncludeBacteriumInSearch(j.includeBacteriumInSearch);
     }
@@ -448,6 +455,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     message: "Starting journal service…",
   };
 
+  const sessionLog = new SessionLog();
   const getSnapshot = () =>
     perfTime("buildSnapshot", () =>
       buildSnapshot(
@@ -459,6 +467,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         lanExposed ? lanUrlsWithKey() : [],
         journalFilesMerged,
         journalBootProgress,
+        sessionLog.toDto(),
       ),
     );
 
@@ -478,7 +487,40 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     finishedAt: null,
     report: null,
     error: null,
+    lastImport: readImportDumpLedger(),
   };
+  function readImportDumpLedger(): ImportDumpStatusDTO["lastImport"] {
+    try {
+      const j = JSON.parse(readFileSync(resolveImportDumpLedgerPath(), "utf8")) as Record<string, unknown>;
+      if (j && typeof j.file === "string" && typeof j.finishedAt === "string") {
+        return {
+          file: j.file,
+          finishedAt: j.finishedAt,
+          fileMtimeIso: typeof j.fileMtimeIso === "string" ? j.fileMtimeIso : null,
+          apply: j.apply === true,
+        };
+      }
+    } catch {
+      /* no import yet */
+    }
+    return null;
+  }
+  function fileMtimeIso(file: string | null | undefined): string | null {
+    if (!file) return null;
+    try {
+      return statSync(file).mtime.toISOString();
+    } catch {
+      return null;
+    }
+  }
+  function importDumpStatusFor(file?: string | null): ImportDumpStatusDTO {
+    const last = importDump.lastImport ?? null;
+    const asked = file && file.trim() ? file.trim() : (last?.file ?? null);
+    const mtime = fileMtimeIso(asked);
+    const newerOnDisk =
+      !!last && !!asked && !!mtime && !!last.fileMtimeIso && asked === last.file && mtime > last.fileMtimeIso;
+    return { ...importDump, fileMtimeIso: mtime, newerOnDisk };
+  }
   const startImportDump = (file: string, apply: boolean): { ok: boolean; error?: string } => {
     if (importDump.running) return { ok: false, error: "An import is already running." };
     if (!feederDataDirExists()) return { ok: false, error: "No feeder corpus on this machine — this is a build-side tool." };
@@ -488,14 +530,22 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       try {
         const ctx = await openFeeder();
         const report = await importSpanshExport(ctx.store, file, { apply });
+        const finishedAt = new Date().toISOString();
+        const lastImport = { file, finishedAt, fileMtimeIso: fileMtimeIso(file), apply };
+        try {
+          writeFileSync(resolveImportDumpLedgerPath(), JSON.stringify(lastImport), "utf8");
+        } catch {
+          /* the status still says it; only the memory across runs is lost */
+        }
         importDump = {
           ...importDump,
           running: false,
-          finishedAt: new Date().toISOString(),
+          finishedAt,
           report: formatImportReport(report, apply),
           failures: report.failures.length,
           matched: report.matched,
           changed: report.changed,
+          lastImport,
         };
       } catch (e) {
         importDump = {
@@ -508,6 +558,20 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     })();
     return { ok: true };
   };
+
+  /** The same two rules before either galaxy source fills a system's map. */
+  function hydrateGate(systemAddress: number, source: string): { ok: false; error: string } | null {
+    if (!store.isKnownJournalSystem(systemAddress)) {
+      return { ok: false, error: "That system is not present in merged journal data." };
+    }
+    if (store.hasMappableJournalExplorationForSystem(systemAddress)) {
+      return {
+        ok: false,
+        error: `Journal already has mappable scan data for this system — no ${source} supplement needed.`,
+      };
+    }
+    return null;
+  }
 
   const getStatus = (): AppStatusDTO => {
     let journalDirConfiguredOk = false;
@@ -767,6 +831,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         }
         const footFix = statusRaw ? parseStatusJsonFootFix(statusRaw) : null;
         ingestExoOrganicJournalLine(store, line, footFix, projectRoot, getCachedSpeciesDatabase());
+        sessionLog.record(line, store, getCachedPrices());
         push();
       } catch (e) {
         console.error("Journal live line failed (skipped line):", e);
@@ -774,7 +839,30 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     };
   }
 
+  /*
+    Boot timing (owner, 2026-09-13, "startup speed"): every phase of the journal resync is clocked
+    and one console line reports them, so a slow start can be read off the log instead of guessed.
+  */
+  const bootClock = { t0: 0, marks: [] as Array<[string, number]>, last: 0 };
+  const bootStart = (): void => {
+    bootClock.t0 = performance.now();
+    bootClock.last = bootClock.t0;
+    bootClock.marks = [];
+  };
+  const bootMark = (label: string): void => {
+    const now = performance.now();
+    bootClock.marks.push([label, now - bootClock.last]);
+    bootClock.last = now;
+  };
+  const bootReport = (path: string): void => {
+    if (quietConsole) return;
+    const total = performance.now() - bootClock.t0;
+    const parts = bootClock.marks.map(([l, ms]) => `${l} ${ms >= 1000 ? (ms / 1000).toFixed(1) + " s" : Math.round(ms) + " ms"}`);
+    console.info(`Journal boot (${path}): ${parts.join(" · ")} · total ${(total / 1000).toFixed(1)} s`);
+  };
+
   async function resyncAllJournalFiles(): Promise<void> {
+    bootStart();
     store.resetAll();
     journalBootProgress = {
       percent: 4,
@@ -785,6 +873,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     };
     pushFlush();
     const files = await listJournalFilesChronological(journalDir, getJournalListFilterOpts());
+    bootMark(`list ${files.length} files`);
     journalFilesMerged = files.length;
     if (files.length === 0) {
       journalPath = null;
@@ -805,6 +894,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     };
     pushFlush();
     const manifest = await buildJournalFileManifest(files);
+    bootMark("manifest");
     const cacheResult =
       process.env.EDEXO_DISABLE_JOURNAL_CACHE === "1"
         ? { hit: false as const }
@@ -830,7 +920,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
        * the full replay is the only safe answer: carrying on would apply the new journal lines to an
        * empty store and then save that over a good cache.
        */
+      bootMark("cache read");
       const hydrated = store.hydrateJournalMergePayload(cacheResult.payload);
+      bootMark("hydrate");
       if (!hydrated) {
         // Leave the store as `resyncAllJournalFiles` found it and fall through to the full replay.
         store.resetAll();
@@ -865,6 +957,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             };
             pushMergeProgress();
           }
+          bootMark(`replay ${stepCount} new file(s)`);
         } else {
           journalBootProgress = {
             percent: 90,
@@ -876,15 +969,19 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           pushFlush();
         }
         await backfillCommanderPosition(store, files);
+        bootMark("position backfill");
         journalPath = files[files.length - 1]!;
         store.resetFootTravelRuntime();
         loadOrganicSampleSessionFromDisk(projectRoot, store, getCachedSpeciesDatabase());
         journalBootProgress = null;
         refreshLiveHudFromJournalDir();
         pushFlush();
+        bootMark("session + first push");
         if (cacheResult.steps.length > 0 || cacheResult.loadedFromLegacy) {
           saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
+          bootMark("cache save");
         }
+        bootReport("cache");
         if (!quietConsole) {
           const s = cacheResult.steps.length;
           if (s === 0 && !cacheResult.loadedFromLegacy) {
@@ -1045,6 +1142,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getGalaxySpecies: () => galaxySpeciesCatalogue(),
     getCommanderSectors: () => commanderSectorsDto(store),
     getCommanderSystem: () => store.currentSystem,
+    setHudPrefs: (raw) => {
+      store.setHudPrefs(raw);
+      persistUserPreferences();
+    },
     setIncludeBacterium: (v) => {
       store.setIncludeBacteriumInSearch(v);
       persistUserPreferences();
@@ -1139,16 +1240,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       pushFlush();
     },
     searchEdsmSystems: (query) => searchEdsmSystemsByName(query),
+    searchSpanshSystems: (query) => searchSpanshSystemsByName(query),
     hydrateSystemFromEdsm: async (systemAddress, systemName) => {
-      if (!store.isKnownJournalSystem(systemAddress)) {
-        return { ok: false, error: "That system is not present in merged journal data." };
-      }
-      if (store.hasMappableJournalExplorationForSystem(systemAddress)) {
-        return {
-          ok: false,
-          error: "Journal already has mappable scan data for this system — no EDSM supplement needed.",
-        };
-      }
+      const gate = hydrateGate(systemAddress, "EDSM");
+      if (gate) return gate;
       const edsm = await fetchEdsmBodiesAsExplorationRecords(
         systemName,
         systemAddress,
@@ -1156,6 +1251,14 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       );
       if (!edsm.ok) return { ok: false, error: edsm.error };
       store.replaceEdsmExplorationForSystem(systemAddress, edsm.records);
+      return { ok: true };
+    },
+    hydrateSystemFromSpansh: async (systemAddress, systemName) => {
+      const gate = hydrateGate(systemAddress, "Spansh");
+      if (gate) return gate;
+      const sp = await fetchSpanshBodiesAsExplorationRecords(systemAddress, systemName);
+      if (!sp.ok) return { ok: false, error: sp.error };
+      store.replaceEdsmExplorationForSystem(systemAddress, sp.records);
       return { ok: true };
     },
     getEdsmCredentialsStatus: () => edsmCredentialsStatus(),
@@ -1214,7 +1317,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getEncyclopedia: buildEncyclopediaPayload,
     getFeederStatus: () => buildFeederStatus(projectRoot, getCachedSpeciesDatabase()),
     startImportDump,
-    getImportDumpStatus: () => importDump,
+    getImportDumpStatus: (file?: string | null) => importDumpStatusFor(file),
     getEncyclopediaExomastery: (genusDir, speciesEntryId, focusBodyKey) => {
       const entry = findSpeciesEntryForEncyclopedia(genusDir, speciesEntryId);
       if (!entry) return null;

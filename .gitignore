@@ -53,6 +53,8 @@ data/species_backup_*/
 .DS_Store
 Thumbs.db
 *.log
+# The e2e smoke fixture is a hand-written journal, not a commander's: it ships.
+!/tests/fixtures/journal-smoke/*.log
 
 # ---------------------------------------------------------------------------
 # Internal planning notes / agent briefs. Kept on disk for provenance, never

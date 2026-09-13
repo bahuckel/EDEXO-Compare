@@ -68,6 +68,16 @@ export function parseNavRouteJson(raw: string): NavRouteWaypointDTO[] | null {
 
 export type RouteRefuelAlertDTO = "none" | "yellow" | "red";
 
+/** How many hops the HUD's route strip carries; the page fills its row and clips the rest. */
+export const ROUTE_AHEAD_HOPS = 40;
+
+export interface RouteAheadHop {
+  starSystem: string;
+  starClass: string;
+  scoopable: boolean;
+  refuel: RouteRefuelAlertDTO;
+}
+
 export interface NavRouteFuelAnalysis {
   onPlot: boolean;
   routeTotalLy: number;
@@ -90,6 +100,10 @@ export interface NavRouteFuelAnalysis {
    * when range is known). `null` when no scoop ahead or none reachable.
    */
   jumpsToLastScoopableOnRoute: number | null;
+  /** See `LiveShipFuelNavRouteDTO.ahead`. */
+  ahead: RouteAheadHop[];
+  refuelInHops: number | null;
+  refuelLevel: RouteRefuelAlertDTO;
 }
 
 const FUEL_MARGIN_T = 0.06;
@@ -253,6 +267,9 @@ export function analyzeNavRouteFuel(opts: {
       anyRemainingLegOverMaxRange: false,
       routeRefuelAlert: "none",
       jumpsToLastScoopableOnRoute: null,
+      ahead: [],
+      refuelInHops: null,
+      refuelLevel: "none",
     };
   }
 
@@ -332,6 +349,33 @@ export function analyzeNavRouteFuel(opts: {
     }
   }
 
+  /*
+    The route strip (owner, 2026-09-14: same logic as the web UI). The refuel mark sits on the
+    LAST scoopable star the tank can still reach — `jumpsToLastScoopableOnRoute` — and only when
+    the tank cannot finish the plot. Its colour is the web UI's alert: yellow = plan to scoop,
+    red = scoop now / critical. No reachable scoop at all: red, no hop to point at.
+  */
+  let refuelIdx = -1;
+  if (fuelCanFinishPlottedRoute === false && jumpsToLastScoopableOnRoute != null && jumpsToLastScoopableOnRoute > 0) {
+    refuelIdx = idx + jumpsToLastScoopableOnRoute;
+  }
+  let refuelLevel: RouteRefuelAlertDTO = "none";
+  if (refuelIdx > idx) {
+    refuelLevel = routeRefuelAlert === "red" ? "red" : "yellow";
+  } else if (fuelCanFinishPlottedRoute === false && routeJumpsRemaining > 0) {
+    refuelLevel = "red"; // no scoop reachable on this tank
+  }
+  const ahead: RouteAheadHop[] = [];
+  for (let j = idx + 1; j < route.length && ahead.length < ROUTE_AHEAD_HOPS; j++) {
+    const w = route[j]!;
+    ahead.push({
+      starSystem: w.starSystem,
+      starClass: w.starClass ?? "",
+      scoopable: scoop[j]!,
+      refuel: j === refuelIdx ? refuelLevel : "none",
+    });
+  }
+
   return {
     onPlot: true,
     routeTotalLy,
@@ -343,5 +387,8 @@ export function analyzeNavRouteFuel(opts: {
     anyRemainingLegOverMaxRange,
     routeRefuelAlert,
     jumpsToLastScoopableOnRoute,
+    ahead,
+    refuelInHops: refuelIdx > idx ? refuelIdx - idx : null,
+    refuelLevel,
   };
 }

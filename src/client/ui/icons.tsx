@@ -125,3 +125,13 @@ export function IconChevronDown({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/** The session log: a page with lines, the last one a check. */
+export function IconSession({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 3h9l4 4v14H6z" />
+      <path d="M15 3v4h4M9 11h6M9 15h4M9 19l1.5 1.5L14 17" />
+    </svg>
+  );
+}

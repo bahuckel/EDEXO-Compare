@@ -205,6 +205,60 @@ describe("hud.js tracker", () => {
   });
 });
 
+describe("hud.js size and opacity", () => {
+  it("scales the root font and the panel alpha from the launcher's keys", () => {
+    localStorage.setItem("edexoHudScale", "1.5");
+    localStorage.setItem("edexoHudOpacity", "0.6");
+    const HUD = loadHud();
+    HUD.mount(["jump"], { noTimers: true });
+    expect(document.documentElement.style.fontSize).toBe("150%");
+    // the slider fades the box's own layers (frame + fill) through one variable; the text above stays solid
+    expect(document.documentElement.style.getPropertyValue("--hud-bg-opacity")).toBe("0.6");
+    expect(document.documentElement.style.getPropertyValue("--hud-bg")).toContain("0.55)"); // 92 % of 0.6
+    expect(document.documentElement.style.getPropertyValue("--hud-bg-2")).toContain("0.21)");
+    localStorage.setItem("edexoHudScale", "9");
+    expect(HUD.readScale()).toBe(2);
+    localStorage.removeItem("edexoHudScale");
+    localStorage.removeItem("edexoHudOpacity");
+    expect(HUD.readScale()).toBe(1);
+    expect(HUD.readOpacity()).toBe(0.45);
+  });
+});
+
+describe("hud.js audio cues", () => {
+  it("fires once on the ring clearing and once on the third sample, and stays silent when off", () => {
+    const HUD = loadHud();
+    const cues: string[] = [];
+    HUD.onCue = (k: string) => cues.push(k);
+    const eo = (sampleCount: number, meets: boolean | null) => ({
+      visible: true,
+      bodyKeyOnFoot: "1:2",
+      speciesDisplay: "Tubus compagibus",
+      sampleCount,
+      nearestSampleMeetsMin: meets,
+    });
+    HUD.cueFromOverlay(eo(1, false));
+    HUD.cueFromOverlay(eo(1, false));
+    expect(cues).toEqual([]);
+    HUD.cueFromOverlay(eo(1, true));
+    HUD.cueFromOverlay(eo(1, true));
+    expect(cues).toEqual(["clear"]);
+    HUD.cueFromOverlay(eo(2, false)); // second sample taken: back inside the ring
+    HUD.cueFromOverlay(eo(2, true));
+    expect(cues).toEqual(["clear", "clear"]);
+    HUD.cueFromOverlay(eo(3, null));
+    HUD.cueFromOverlay(eo(3, null));
+    expect(cues).toEqual(["clear", "clear", "third"]);
+    // a new species starts a new run: no cue for its first frame
+    HUD.cueFromOverlay({ ...eo(1, true), speciesDisplay: "Stratum tectonicas" });
+    expect(cues).toHaveLength(3);
+    expect(HUD.audioOn()).toBe(false);
+    localStorage.setItem("edexoHudAudio", "1");
+    expect(HUD.audioOn()).toBe(true);
+    localStorage.removeItem("edexoHudAudio");
+  });
+});
+
 describe("hud.js next jump", () => {
   it("classifies star classes the way the owner asked", () => {
     const HUD = loadHud();
@@ -227,6 +281,31 @@ describe("hud.js next jump", () => {
     HUD.render({ jumpTarget: { starSystem: "Traikee GL-S c6-0", starClass: "H", arrived: true } });
     expect(document.querySelector(".jump")?.className).toContain("jump--hole");
     expect(document.querySelector('[data-f="status"]')?.textContent).toBe("Arrived");
+  });
+
+  it("draws the route strip with the refuel pump on the nearest scoop", () => {
+    const HUD = loadHud();
+    HUD.mount(["jump"], { noTimers: true });
+    const ahead = [
+      { starSystem: "A", starClass: "K", scoopable: true, refuel: "none" },
+      { starSystem: "B", starClass: "M", scoopable: true, refuel: "yellow" },
+      { starSystem: "C", starClass: "F", scoopable: true, refuel: "none" },
+      { starSystem: "D", starClass: "T", scoopable: false, refuel: "none" },
+      { starSystem: "E", starClass: "N", scoopable: false, refuel: "none" },
+    ];
+    HUD.render({
+      jumpTarget: { starSystem: "A", starClass: "K", arrived: false, source: "route" },
+      liveShipFuelRange: { navRoute: { ahead, refuelInHops: 2, refuelLevel: "yellow" } },
+    });
+    const hops = [...document.querySelectorAll(".hop")];
+    expect(hops.map((h) => h.textContent)).toEqual(["K", "M", "F", "T", "N"]);
+    expect(hops[3]?.className).toContain("hop--noscoop");
+    expect(hops[4]?.className).toContain("hop--neutron");
+    expect(document.querySelectorAll(".hop__fuel--yellow")).toHaveLength(1);
+    expect(hops[1]?.querySelector(".hop__fuel")).not.toBeNull();
+
+    HUD.render({ jumpTarget: null, liveShipFuelRange: { navRoute: { ahead: [], refuelInHops: null, refuelLevel: "none" } } });
+    expect((document.querySelector('[data-f="route"]') as HTMLElement).hidden).toBe(true);
   });
 });
 
