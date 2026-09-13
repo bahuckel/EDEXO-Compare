@@ -754,6 +754,24 @@
       92,
       114
     ],
+    "body.atmosphereComposition.Carbon dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      451
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1059,6 +1077,24 @@
       16,
       12,
       13
+    ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      210,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "body.materials.Chromium": [
       1,

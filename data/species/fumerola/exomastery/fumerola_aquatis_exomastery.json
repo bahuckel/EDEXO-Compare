@@ -822,6 +822,24 @@
       2,
       0
     ],
+    "body.atmosphereComposition.Argon": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      36
+    ],
     "body.solidComposition.Rock": [
       0,
       3,
@@ -1164,6 +1182,24 @@
       0,
       1
     ],
+    "body.atmosphereComposition.Ammonia": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2
+    ],
     "body.materials.Selenium": [
       0,
       0,
@@ -1200,6 +1236,24 @@
       0,
       0
     ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      6
+    ],
     "body.materials.Vanadium": [
       20,
       0,
@@ -1217,6 +1271,42 @@
       0,
       0,
       0
+    ],
+    "body.atmosphereComposition.Water": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      4
+    ],
+    "body.atmosphereComposition.Nitrogen": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
     ]
   },
   "displayHistograms": {

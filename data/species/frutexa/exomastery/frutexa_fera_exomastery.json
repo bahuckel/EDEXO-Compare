@@ -704,6 +704,24 @@
       8,
       7
     ],
+    "body.atmosphereComposition.Carbon dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      213
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1081,6 +1099,24 @@
       7,
       4,
       6
+    ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      133,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "body.materials.Arsenic": [
       0,

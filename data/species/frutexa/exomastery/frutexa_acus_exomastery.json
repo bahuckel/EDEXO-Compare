@@ -793,6 +793,24 @@
       84,
       73
     ],
+    "body.atmosphereComposition.Carbon dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      3610
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1099,6 +1117,24 @@
       0,
       0
     ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      2370,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
     "body.materials.Manganese": [
       42,
       174,
@@ -1188,6 +1224,24 @@
       50,
       73,
       61
+    ],
+    "body.atmosphereComposition.Ammonia": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
     ]
   },
   "displayHistograms": {

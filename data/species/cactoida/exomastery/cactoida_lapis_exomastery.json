@@ -805,6 +805,24 @@
       0,
       0
     ],
+    "body.atmosphereComposition.Ammonia": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      840
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1200,6 +1218,24 @@
       9,
       4,
       2
+    ],
+    "body.atmosphereComposition.Carbon dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
     ]
   },
   "displayHistograms": {

@@ -787,6 +787,24 @@
       55,
       51
     ],
+    "body.atmosphereComposition.Ammonia": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      428
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1093,6 +1111,24 @@
       78,
       82
     ],
+    "body.atmosphereComposition.Carbon dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      497
+    ],
     "body.materials.Manganese": [
       0,
       0,
@@ -1165,6 +1201,24 @@
       0,
       0
     ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      350,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
     "body.materials.Arsenic": [
       22,
       46,
@@ -1182,6 +1236,24 @@
       0,
       0,
       0
+    ],
+    "body.atmosphereComposition.Water": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5
     ]
   },
   "displayHistograms": {

@@ -733,6 +733,24 @@
       0,
       1
     ],
+    "body.atmosphereComposition.Argon": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      62
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1092,6 +1110,24 @@
       0,
       0,
       2
+    ],
+    "body.atmosphereComposition.Methane": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      17
     ],
     "body.materials.Selenium": [
       0,

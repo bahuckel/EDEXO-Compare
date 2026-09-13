@@ -717,6 +717,24 @@ export function valueForNumericPath(
     return known ? v : null;
   }
   /**
+   * `body.atmosphereComposition.*` — which gases, and how much of each.
+   *
+   * Dead here for the same reason the crust was, and it costs more than either. Fonticulua splits on
+   * this axis and on almost nothing else: campestris lives on 52-100 % argon, upupam on 50-100 %
+   * nitrogen with 0.4-50 % argon beside it, and the two ranges do not touch across 761 and 56 rows.
+   * The model could not see either number, so it separated them on the corpus prior — campestris has
+   * thirteen times the rows — and upupam sat at 15-17 % on bodies that were unambiguously its own.
+   *
+   * The atmosphere *type* does not rescue it. The commander's upupam body is `ArgonRich` by name and
+   * 64 % nitrogen by composition; matching on the label alone leaves both species plausible, which is
+   * exactly what the panel showed.
+   */
+  const atmo = /^body\.atmosphereComposition\.(.+)$/i.exec(path);
+  if (atmo) {
+    const { v, known } = atmoGasValue(scan, rec, atmo[1]!);
+    return known ? v : null;
+  }
+  /**
    * `body.materials.*` is deliberately **not** answered here, and the model is better for it.
    *
    * Fourteen of these paths carry histograms in every profile and none of them has ever been scored,

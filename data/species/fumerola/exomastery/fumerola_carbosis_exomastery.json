@@ -736,6 +736,24 @@
       2,
       4
     ],
+    "body.atmosphereComposition.Methane": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      10
+    ],
     "body.solidComposition.Rock": [
       0,
       3,
@@ -1078,6 +1096,24 @@
       0,
       0
     ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5
+    ],
     "body.materials.Tellurium": [
       5,
       0,
@@ -1113,6 +1149,24 @@
       0,
       0,
       0
+    ],
+    "body.atmosphereComposition.Argon": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16
     ],
     "body.materials.Zinc": [
       8,

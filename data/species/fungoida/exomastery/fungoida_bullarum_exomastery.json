@@ -709,6 +709,24 @@
       0,
       0
     ],
+    "body.atmosphereComposition.Argon": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      53
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1104,6 +1122,24 @@
       1,
       14,
       0
+    ],
+    "body.atmosphereComposition.Nitrogen": [
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2
     ]
   },
   "displayHistograms": {

@@ -98,12 +98,21 @@ export function equalWidthEdges(values: number[], bins = HISTOGRAM_BINS): number
 /**
  * Parameters cut at equal width rather than at quantiles.
  *
- * Rock and metal only. Every other numeric is spread widely enough across the corpus that quantiles
- * do what they are there for, and these are the two measured to collapse — see {@link
- * equalWidthEdges}.
+ * The crust split and the atmosphere gases: percentages of a whole, and the two families of path
+ * measured to collapse under quantiles. Every other numeric is spread widely enough across the corpus
+ * that quantiles do what they are there for — see {@link equalWidthEdges}.
+ *
+ * Atmospheres collapse harder than the crust did. A gas is usually one of a few repeated values —
+ * 100 % nitrogen, 98 % carbon dioxide — so the pooled quantiles land on the same number many times
+ * over, the distinct-edge check fails, and `globalEdges` returns nothing at all. That is why the
+ * shipped `histogram-edges.json` had **no atmosphere paths whatsoever**: not a term the model scored
+ * badly, a term it never had.
  */
 function usesEqualWidthEdges(path: string): boolean {
-  return /^body\.solidComposition\.(rock|metal)$/i.test(path);
+  return (
+    /^body\.solidComposition\.(rock|metal)$/i.test(path) ||
+    /^body\.atmosphereComposition\./i.test(path)
+  );
 }
 
 /**

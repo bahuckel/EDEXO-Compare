@@ -751,6 +751,24 @@
       29,
       16
     ],
+    "body.atmosphereComposition.Carbon dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      3,
+      0,
+      0,
+      803
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1092,6 +1110,24 @@
       1,
       0,
       0
+    ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      638,
+      0,
+      0,
+      3,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      18
     ],
     "body.materials.Manganese": [
       5,

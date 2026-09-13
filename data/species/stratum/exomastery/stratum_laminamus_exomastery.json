@@ -698,6 +698,24 @@
       0,
       0
     ],
+    "body.atmosphereComposition.Ammonia": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      1,
+      0,
+      0,
+      0,
+      191
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1092,6 +1110,24 @@
       5,
       0,
       2,
+      0
+    ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      3,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0
     ]
   },

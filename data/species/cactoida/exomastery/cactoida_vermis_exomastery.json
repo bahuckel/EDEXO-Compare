@@ -785,6 +785,24 @@
       280,
       250
     ],
+    "body.atmosphereComposition.Water": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1186
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1180,6 +1198,24 @@
       20,
       14,
       15
+    ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      4
     ]
   },
   "displayHistograms": {

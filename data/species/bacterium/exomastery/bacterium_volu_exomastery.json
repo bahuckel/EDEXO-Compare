@@ -1152,6 +1152,42 @@
       0,
       0,
       0
+    ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      6,
+      0,
+      1,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "body.atmosphereComposition.Argon": [
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
     ]
   },
   "displayHistograms": {

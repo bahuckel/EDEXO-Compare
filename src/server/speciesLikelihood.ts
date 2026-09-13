@@ -69,6 +69,29 @@ import { getProjectRoot } from "./paths.js";
  */
 export const TERM_DAMPING = 0.15;
 
+/**
+ * What the atmosphere is worth, in terms.
+ *
+ * Its gases are fractions of one envelope summing to a hundred, so a term per gas lets a single fact
+ * vote as many times as the game happened to name gases — and on a two-gas body most of those terms
+ * are "0 % of something neither species uses", which agrees with nearly every candidate. Pooled to
+ * the mean and then given this many terms' weight, swept on the probe like {@link TERM_DAMPING}:
+ *
+ * | weight | mean rank | top-1 | calibration B3 |
+ * |---|---|---|---|
+ * | dead (before) | 3.259 | 170 (33.1 %) | 0.0060 |
+ * | 1 | 3.248 | 181 (35.3 %) | 0.0061 |
+ * | 2 | 3.251 | 190 (37.0 %) | 0.0148 |
+ * | **3** | **3.250** | **198 (38.6 %)** | **0.0115** |
+ * | 4 | 3.287 | 199 (38.8 %) | 0.0197 |
+ * | 5 | 3.314 | 197 (38.4 %) | 0.0208 |
+ * | 8, one term per gas | 3.257 | 194 (37.8 %) | 0.0152 |
+ *
+ * Three is the knee: past it top-1 stops moving while mean rank and calibration both give way, which
+ * is the shape of a term being asked to carry more than it knows.
+ */
+const ATMOSPHERE_TERM_WEIGHT = 3;
+
 /** Laplace smoothing, in pseudo-observations per bin. */
 export const BIN_SMOOTHING = 0.5;
 
@@ -179,6 +202,21 @@ export function speciesLogScore(
   let terms = 0;
 
   const histograms = profile.histograms ?? {};
+  /*
+    The atmosphere is one observation, not eight.
+
+    Its gases are fractions of a single envelope and sum to a hundred, so summing a term per gas lets
+    one fact vote as many times as the game happened to name gases — and on a two-gas body six of
+    those terms are "0 % of a gas this species does not use either", which agree with almost every
+    candidate and multiply confidence without separating anything. Scored that way the ordering
+    improved sharply and the reliability of "Chance here" lost more than half its accuracy.
+
+    Pooled and averaged instead: the gases share one term's worth of weight between them. The
+    discrimination survives — a body with no argon still excludes an argon species, which is the
+    whole point — and the posterior stops treating one atmosphere as eight independent agreements.
+  */
+  let atmoLog = 0;
+  let atmoTerms = 0;
   if (edgesFile) {
     for (const [path, counts] of Object.entries(histograms)) {
       if (opts?.paths && !opts.paths.has(path)) continue;
@@ -190,9 +228,19 @@ export function speciesLogScore(
       if (v == null) continue;
       const total = counts.reduce((a, b) => a + b, 0);
       if (total <= 0) continue;
-      logLik += logSmoothed(counts[histogramBin(edges, v)] ?? 0, total, edgesFile.bins);
+      const lp = logSmoothed(counts[histogramBin(edges, v)] ?? 0, total, edgesFile.bins);
+      if (/^body\.atmosphereComposition\./i.test(path)) {
+        atmoLog += lp;
+        atmoTerms++;
+        continue;
+      }
+      logLik += lp;
       terms++;
     }
+  }
+  if (atmoTerms > 0) {
+    logLik += (ATMOSPHERE_TERM_WEIGHT * atmoLog) / atmoTerms;
+    terms += ATMOSPHERE_TERM_WEIGHT;
   }
 
   for (const [path, counts] of Object.entries(profile.categorical ?? {})) {

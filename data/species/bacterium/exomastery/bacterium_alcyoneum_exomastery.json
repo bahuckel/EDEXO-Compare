@@ -831,6 +831,24 @@
       0,
       0
     ],
+    "body.atmosphereComposition.Ammonia": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      27,
+      24,
+      19,
+      9,
+      2,
+      2442
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1119,6 +1137,24 @@
       96,
       129
     ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      52,
+      10,
+      27,
+      44,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
     "body.materials.Germanium": [
       38,
       143,
@@ -1226,6 +1262,24 @@
       26,
       20,
       10
+    ],
+    "body.atmosphereComposition.Carbon dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2
     ]
   },
   "displayHistograms": {

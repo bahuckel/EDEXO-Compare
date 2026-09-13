@@ -725,6 +725,24 @@
       9,
       2
     ],
+    "body.atmosphereComposition.Carbon dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      312
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1012,6 +1030,24 @@
       6,
       14,
       8
+    ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      220,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      14
     ],
     "body.materials.Zinc": [
       4,

@@ -671,6 +671,24 @@
       5,
       1
     ],
+    "body.atmosphereComposition.Argon": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      15
+    ],
     "body.solidComposition.Rock": [
       0,
       1,
@@ -940,6 +958,24 @@
       0,
       0,
       0
+    ],
+    "body.atmosphereComposition.Methane": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      14
     ],
     "body.materials.Vanadium": [
       11,

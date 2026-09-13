@@ -738,6 +738,24 @@
       25,
       16
     ],
+    "body.atmosphereComposition.Carbon dioxide": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      394
+    ],
     "body.solidComposition.Rock": [
       0,
       0,
@@ -1079,6 +1097,24 @@
       3,
       6,
       13
+    ],
+    "body.atmosphereComposition.Sulphur dioxide": [
+      268,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     "body.materials.Vanadium": [
       5,
