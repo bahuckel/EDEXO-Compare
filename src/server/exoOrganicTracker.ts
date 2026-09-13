@@ -189,7 +189,18 @@ export function restoreOrganicSessionFromJournal(
   for (let i = lines.length - 1; i >= 0; i--) {
     const e = lines[i]!.event;
     if (e === "Liftoff" || e === "Touchdown") break;
-    if (e === "ScanOrganic") recent.push(lines[i]!);
+    if (e !== "ScanOrganic") continue;
+    /*
+      An Analyse ends the run before it, as surely as a landing does.
+
+      Without this, a completed run was walked straight back into: the log since the last Touchdown
+      holds `Log, Sample, Sample, Analyse` for a plant that is finished, and counting from the far
+      end restored it as three-of-three in progress. Worse, the Log of whatever the commander
+      started *next* was then ignored — the counter below takes the first Log it sees and treats
+      later ones as noise. The owner reported exactly this: nothing picked up after the last Analyse.
+    */
+    if (String(lines[i]!.ScanType ?? "").trim().toLowerCase() === "analyse") break;
+    recent.push(lines[i]!);
   }
   if (recent.length === 0) return false;
   recent.reverse();
@@ -202,16 +213,31 @@ export function restoreOrganicSessionFromJournal(
     genuinely started: his one scan since landing was a Log of Bacterium Acies, and the overlay said
     zero. Mirroring the live rule rather than inventing a stricter one is the fix.
   */
-  const counted: JournalLine[] = [];
+  let counted: JournalLine[] = [];
+  let runSpeciesKey = "";
   for (const l of recent) {
     const kind = String(l.ScanType ?? "").trim().toLowerCase();
     if (kind !== "sample" && kind !== "log") continue;
+    const key = speciesKeyFromOrganicJournal(l);
+    /*
+      A different species starts the count again.
+
+      Abandoning a half-sampled plant for a better one is ordinary play — walk off, find another
+      genus, log that instead. Counting every Log and Sample since the landing as one run reported
+      the abandoned species and its stale count, and the plant the commander is actually standing
+      over went unmentioned.
+    */
+    if (counted.length > 0 && key !== runSpeciesKey) {
+      counted = [];
+      runSpeciesKey = "";
+    }
     // A Log only ever opens a run; it never advances one.
     if (counted.length > 0 && kind === "log") continue;
+    if (counted.length === 0) runSpeciesKey = key;
     counted.push(l);
-    if (counted.length >= 3) break;
   }
   if (counted.length === 0) return false;
+  if (counted.length > 3) counted = counted.slice(0, 3);
   const last = counted[counted.length - 1]!;
 
   const sa = last.SystemAddress;
@@ -222,8 +248,30 @@ export function restoreOrganicSessionFromJournal(
   const speciesKey = speciesKeyFromOrganicJournal(last);
   const genusLoc = typeof last.Genus_Localised === "string" ? last.Genus_Localised.trim() : "";
   const speciesDisplay = speciesDisplayFromLine(last);
+  const bundleKey = `${bk}::${speciesKey}`;
+
+  /*
+    A session restored from disk already covers this run, and it knows more than the log does.
+
+    This function used to assign over whatever was there, which threw away every anchor the saved
+    session had just brought back — and the anchors are the only record of *where* the plants were,
+    since `ScanOrganic` has no coordinates. A commander who restarted the app after two samples came
+    back to "2 scans" and no distances to either of them.
+
+    So when the saved run is the same plant on the same body, it is kept and only topped up: any
+    scan the log knows about and the file does not becomes a recovered count, which is the honest
+    shape — a scan we know happened and cannot place.
+  */
+  const held = store.exoOrganicTracker;
+  if (held && held.bundleKey === bundleKey) {
+    const placed = held.anchors.length;
+    const missing = Math.max(0, counted.length - placed);
+    if (missing > (held.recoveredSamples ?? 0)) held.recoveredSamples = missing;
+    return true;
+  }
+
   store.exoOrganicTracker = {
-    bundleKey: `${bk}::${speciesKey}`,
+    bundleKey,
     bodyKey: bk,
     speciesKey,
     speciesDisplay,
@@ -372,7 +420,17 @@ export function ingestExoOrganicJournalLine(
 
     if (t.bundleKey !== bundleKey) return;
 
-    if (effectiveSampleCount(t) >= 2) {
+    /*
+      Three, not two — a run is three plants.
+
+      The journal writes `Log, Sample, Sample, Analyse`: four events for three places, because Log is
+      the first plant and Analyse fires a few seconds after the third at the same spot. At `>= 2`
+      this branch treated the *third* plant as the start of a fresh run of the same species: it wiped
+      the two anchors it had and began again with one. The overlay then had no third distance to
+      show, and Analyse arrived at a session holding a single sample and wiped that too, so the run
+      ended with no "Complete" at all. Only a fourth Log/Sample is a new run.
+    */
+    if (effectiveSampleCount(t) >= 3) {
       wipeOrganicSampleSession(store, projectRoot);
       store.exoOrganicTracker = {
         bundleKey,
@@ -406,7 +464,7 @@ export function ingestExoOrganicJournalLine(
       Sample matched neither this branch nor the `>= 2` restart above and was silently dropped: the
       owner's second scan went unrecorded while the first and third worked.
     */
-    if (effectiveSampleCount(t) < 2) {
+    if (effectiveSampleCount(t) < 3) {
       if (scanKind === "log") return;
       t.anchors.push({
         latDeg: fix.latDeg,
@@ -442,15 +500,16 @@ export function ingestExoOrganicJournalLine(
     }
 
     /*
-      The third sample is a place too.
+      A fallback for a third plant whose own position was missed, not a fourth place.
 
-      Analyse ends the run, and until now it ended it without recording where it happened: no anchor,
-      so the overlay had no third distance to show and put the payout in the "Scan 3" slot instead;
-      and no mark, so the third plant never appeared on the radar beside the first two. The commander
-      walked to it like the others — the position is as real as theirs, and `Status.json` is the only
-      place it exists.
+      Analyse fires seconds after the third Sample and at the same spot, so in an ordinary run the
+      three anchors are already here and there is nothing to add — pushing one anyway would leave a
+      duplicate of the third plant in the list. It is still worth doing when the third Sample landed
+      without a fix (`Status.json` between writes, the app started mid-run), because Analyse is then
+      the last chance to learn where the commander was standing. The radar's own marks dedupe by
+      position, so the mark alongside is free either way.
     */
-    const analyseFix = resolveFootFixForOrganicLine(statusFix, line);
+    const analyseFix = t.anchors.length < 3 ? resolveFootFixForOrganicLine(statusFix, line) : null;
     if (analyseFix) {
       t.anchors.push({
         latDeg: analyseFix.latDeg,

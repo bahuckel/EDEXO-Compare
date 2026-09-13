@@ -4,7 +4,7 @@ import type { SpeciesDatabase } from "../shared/types.js";
 import { normOrganicToken } from "./organicTracking.js";
 import { readGenusMinSampleDistanceM } from "./speciesTreeLoader.js";
 import type { ExoOrganicTrackerInternal } from "./exoOrganicTracker.js";
-import { getSpeciesDataDir } from "./paths.js";
+import { getSpeciesDataDir, resolveOrganicSampleSessionPath } from "./paths.js";
 
 export const ORGANIC_SAMPLE_SESSION_FORMAT = 1;
 
@@ -41,7 +41,19 @@ export type OrganicSampleSessionHost = {
   footSessionBodyNameNorm: string | null;
 };
 
-export function organicSampleSessionPath(projectRoot: string): string {
+/**
+ * Where the run is kept, and where it used to be kept.
+ *
+ * `projectRoot` is still taken so every caller keeps its signature, but it is only consulted for the
+ * old location on read — see {@link resolveOrganicSampleSessionPath} for why the live path moved out
+ * of the install directory.
+ */
+export function organicSampleSessionPath(_projectRoot: string): string {
+  return resolveOrganicSampleSessionPath();
+}
+
+/** The pre-move location, read once so a run in progress survives the upgrade. */
+function legacyOrganicSampleSessionPath(projectRoot: string): string {
   return join(projectRoot, "data", "organic_sample_session.json");
 }
 
@@ -123,6 +135,13 @@ function flushPersistOrganicSampleSession(host: OrganicSampleSessionHost, projec
 export function clearPersistedOrganicSampleSession(projectRoot: string): void {
   try {
     unlinkSync(organicSampleSessionPath(projectRoot));
+    // The old location too, or an upgraded app would keep rediscovering a run it has finished.
+    try {
+      const legacy = legacyOrganicSampleSessionPath(projectRoot);
+      if (existsSync(legacy)) unlinkSync(legacy);
+    } catch {
+      /* best-effort */
+    }
   } catch {
     /* missing file ok */
   }
@@ -145,8 +164,13 @@ export function loadOrganicSampleSessionFromDisk(
   host: OrganicSampleSessionHost,
   db: SpeciesDatabase,
 ): void {
-  const abs = organicSampleSessionPath(projectRoot);
-  if (!existsSync(abs)) return;
+  let abs = organicSampleSessionPath(projectRoot);
+  if (!existsSync(abs)) {
+    // A run that was in progress across the upgrade, still sitting in the install directory.
+    const legacy = legacyOrganicSampleSessionPath(projectRoot);
+    if (!existsSync(legacy)) return;
+    abs = legacy;
+  }
   let raw: string;
   try {
     raw = readFileSync(abs, "utf8");

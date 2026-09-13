@@ -80,6 +80,19 @@ export function resolveSurfaceMarksPath(): string {
 }
 
 /**
+ * The half-finished sampling run — which plant, how many scans down, and where each one was.
+ *
+ * Beside the user settings for the same reason the marks are, and it was not: it used to be written
+ * to `<projectRoot>/data/`, which in the portable build is a temporary extraction directory that is
+ * new on every launch. The file was written faithfully and then never found again, so a commander
+ * who restarted the app mid-run came back to a tracker that knew nothing — no count, and none of
+ * the positions, which exist nowhere else because `ScanOrganic` carries no coordinates.
+ */
+export function resolveOrganicSampleSessionPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "edexo-organic-sample-session.json");
+}
+
+/**
  * Writable journal merge cache (fast launcher / boot). Same tree as user settings — survives
  * `npm run build`, Electron `resources/` replacement, and unpackaged installs.
  */
