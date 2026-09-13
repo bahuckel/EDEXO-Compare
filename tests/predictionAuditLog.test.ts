@@ -239,3 +239,80 @@ describe("the reason a candidate was demoted", () => {
     ).not.toThrow();
   });
 });
+
+/**
+ * Partial failures: the right genus, the wrong species within it.
+ *
+ * The owner's case — three species of one genus offered and the one actually growing is not the one
+ * at the top of them. Across the whole list that reads as `shown` at rank four, which says almost
+ * nothing: the genera above it stopped being candidates the moment the DSS named one. Within the
+ * genus it is the only question left.
+ */
+describe("how the confirmed species did inside its own genus", () => {
+  const lock = { genus: "Bacterium", genusLocalised: "Bacterium", speciesLocalised: "Bacterium cerbrus" };
+  const withTruth = () =>
+    body({
+      organicGenusLocks: [lock] as never,
+      genusHints: [hint("Bacterium")],
+      dssComplete: true,
+    });
+  const dbWith = {
+    species: [
+      { id: "bacterium_cerbrus", genus: "Bacterium", displayName: "Bacterium cerbrus" },
+      { id: "bacterium_aurasus", genus: "Bacterium", displayName: "Bacterium aurasus" },
+      { id: "bacterium_acies", genus: "Bacterium", displayName: "Bacterium acies" },
+      { id: "stratum_tectonicas", genus: "Stratum", displayName: "Stratum tectonicas" },
+    ],
+  } as unknown as Parameters<typeof recordPredictionForBody>[0]["db"];
+
+  /** Offer the whole list first, so there is a previous stage to score the truth against. */
+  const offerThenConfirm = (matches: SpeciesMatch[]) => {
+    recordPredictionForBody({ body: body(), matches, db: dbWith });
+    recordPredictionForBody({ body: withTruth(), matches: matches.slice(0, 1), db: dbWith });
+    return predictionRecords()[0]!.outcomes[0]!;
+  };
+
+  it("says which species of the genus outranked the one that was there", () => {
+    const out = offerThenConfirm([
+      m("stratum_tectonicas", "Stratum", 60),
+      m("bacterium_aurasus", "Bacterium", 25),
+      m("bacterium_cerbrus", "Bacterium", 10),
+      m("bacterium_acies", "Bacterium", 5),
+    ]);
+    expect(out.speciesId).toBe("bacterium_cerbrus");
+    // Fourth across the whole list, but second of the three Bacterium — which is the real miss.
+    expect(out.rank).toBe(3);
+    expect(out.genusRank).toBe(2);
+    expect(out.genusCandidates).toBe(3);
+    expect(out.beatenBy).toBe("bacterium aurasus");
+  });
+
+  it("calls it right within the genus even when other genera outranked the group", () => {
+    const out = offerThenConfirm([
+      m("stratum_tectonicas", "Stratum", 80),
+      m("bacterium_cerbrus", "Bacterium", 12),
+      m("bacterium_aurasus", "Bacterium", 8),
+    ]);
+    expect(out.verdict).toBe("shown");
+    expect(out.genusRank).toBe(1);
+    expect(out.beatenBy).toBeNull();
+  });
+
+  it("places a demoted species among its own kind, where it has no overall rank", () => {
+    const out = offerThenConfirm([
+      m("bacterium_aurasus", "Bacterium", 90),
+      m("bacterium_cerbrus", "Bacterium", 2, true),
+    ]);
+    expect(out.verdict).toBe("unlikelyOnly");
+    expect(out.rank).toBeNull();
+    expect(out.genusRank).toBe(2);
+    expect(out.beatenBy).toBe("bacterium aurasus");
+  });
+
+  it("leaves the genus figures empty for a species that was never offered", () => {
+    const out = offerThenConfirm([m("stratum_tectonicas", "Stratum", 100)]);
+    expect(out.verdict).toBe("absent");
+    expect(out.genusRank).toBeNull();
+    expect(out.genusCandidates).toBe(0);
+  });
+});

@@ -41,6 +41,8 @@ export type PredictionStageName = "fss" | "dss" | "organic";
 export interface PredictionOffer {
   speciesId: string;
   name: string;
+  /** Carried so a verdict can be scored within the genus as well as across the whole list. */
+  genus: string;
   /** 1-based position among the shown candidates, best first. Null for a demoted one. */
   rank: number | null;
   /** The app's own "chance here", when it had one. */
@@ -101,6 +103,23 @@ export interface PredictionOutcome {
    * `absent` — never offered at all. Also recorded in the outlier log.
    */
   verdict: "top" | "shown" | "unlikelyOnly" | "absent";
+  /**
+   * Where it sat **among its own genus**, and what beat it there.
+   *
+   * The owner's case: three species of one genus on offer and the one that was actually growing is
+   * not the one at the top of them. Across the whole list that reads as `shown` at rank four or
+   * five, which says almost nothing — the genera above it were never in question once the DSS named
+   * one. Within the genus it is the only question left, and the species that outranked it is the
+   * specific thing to argue with.
+   *
+   * `genusRank` is 1 when the app had the right species at the top of its genus, even if other
+   * genera outranked the whole group. Null when the species was never offered.
+   */
+  genusRank: number | null;
+  /** How many of that genus were on the list at all, demoted ones included. */
+  genusCandidates: number;
+  /** The species of the same genus the app put above it, or null when there was none. */
+  beatenBy: string | null;
 }
 
 /** The conditions a plant was actually standing in, carried over from the radar's own file. */
@@ -232,6 +251,7 @@ function offersFrom(matches: SpeciesMatch[]): PredictionOffer[] {
   const out: PredictionOffer[] = ranked.map((m, i) => ({
     speciesId: m.entry.id,
     name: m.entry.displayName,
+    genus: m.entry.genus ?? "",
     rank: i + 1,
     percent: m.presenceProbabilityPercent ?? null,
     unlikely: false,
@@ -242,6 +262,7 @@ function offersFrom(matches: SpeciesMatch[]): PredictionOffer[] {
     out.push({
       speciesId: m.entry.id,
       name: m.entry.displayName,
+      genus: m.entry.genus ?? "",
       rank: null,
       percent: m.presenceProbabilityPercent ?? null,
       unlikely: true,
@@ -368,12 +389,25 @@ export function recordPredictionForBody(input: {
             : o.rank === 1
               ? "top"
               : "shown";
+        /*
+          The same verdict again, scored inside the genus.
+
+          Offers arrive shown-first in rank order and demoted after, so position in this filtered
+          list is the order the commander read them in. A demoted candidate has no rank across the
+          whole list but still has a place among its own kind, which is the comparison that matters
+          once the game has named the genus.
+        */
+        const sameGenus = o ? last.offered.filter((x) => x.genus && x.genus === o.genus) : [];
+        const at = o ? sameGenus.findIndex((x) => x.speciesId === id) : -1;
         return {
           speciesId: id,
           name: o?.name ?? id,
           rank: o?.rank ?? null,
           percent: o?.percent ?? null,
           verdict,
+          genusRank: at >= 0 ? at + 1 : null,
+          genusCandidates: sameGenus.length,
+          beatenBy: at > 0 ? (sameGenus[at - 1]?.name ?? null) : null,
         };
       });
     }
