@@ -98,9 +98,16 @@ body::before {
 
 .top {
   /* Elevate above .app-shell siblings (tabs + body) so fixed overlays in the header aren’t
-     painted under later candidate species cards (stacking: isolation + DOM order). */
+     painted under later candidate species cards (stacking: isolation + DOM order).
+
+     Ten, not two, because `isolation: isolate` cuts both ways: every dropdown in this card —
+     `.appbar-menu` at 40, the journal search results at 100, the alerts popover at 500 — is sealed
+     inside this stacking context and competes with the rest of the shell at *this* number alone.
+     The glance bar below sits at 6, so at 2 the body's sticky header painted straight over every
+     menu in the top right. It has to clear that bar and stay under the modals and toasts, which
+     start at 3500. */
   position: relative;
-  z-index: 2;
+  z-index: 10;
   isolation: isolate;
   /* Dropdown for journal / EDSM search must extend below this card; hidden would clip it. */
   overflow: visible;
