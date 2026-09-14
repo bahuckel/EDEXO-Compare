@@ -51,15 +51,15 @@ longer be reached, so naming some and not others would be worse than naming none
 
 ## Species photographs
 
-`data/species/<genus>/<genus>_photos/` holds 113 images of Elite Dangerous exobiology (each also
-present as a cropped card and thumbnail, so 339 files). **47 of them are the project owner's own
-photographs**; the remaining 66 are sourced from the ED-DSN community, are **not covered by this
+`data/species/<genus>/<genus>_photos/` holds 118 images of Elite Dangerous exobiology (each also
+present as a cropped card and thumbnail, so 354 files). **64 of them are the project owner's own
+photographs**; the remaining 54 are sourced from the ED-DSN community, are **not covered by this
 project's MIT licence** and are not this project's to sublicense.
 Bahuckel / CMDR FALrenica (me, the owner of the project) is sourcing his own photographs to replace
 the ED-DSN images, which are there mainly as placeholders. His are listed in
 `data/species/photo-credits.json` and credited to him in the app; anything not listed there is
 ED-DSN's and carries the standing credit below. **Once a species has one of his photographs, ED-DSN's
-of that same species is removed from the tree** — 31 were retired this way — so the borrowed images
+of that same species is removed from the tree** — 43 were retired this way — so the borrowed images
 shrink as his own arrive. They are also **variant** photographs — the exact
 colour a body grows — which is what lets a card show the plant you are about to walk up to rather
 than one of its siblings.
