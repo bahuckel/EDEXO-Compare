@@ -1502,14 +1502,46 @@ export class GameStateStore {
       const sibRec = this.explorationScans.get(bodyKey(systemAddress, bid)) ?? null;
       if (selfRec && sibRec && !explorationRecordsSimilarForSharedExo(selfRec, sibRec)) continue;
 
-      if (sib.biologicalSignals != null) {
+      /*
+        Fill a gap, never outbid the game.
+
+        The docstring above says "if this body was missing it", and taking the larger of the two is
+        not that: a moon the game said has two signals would be raised to a neighbour's three, and
+        the panel would then insist a genus was missing from a body that never had one. Only a body
+        the game has not spoken about can inherit a count. See `propagateExoAmongSimilarMoons`.
+      */
+      const selfOwnCount = this.fssBodySignalsBodyKeys.has(sk);
+      if (sib.biologicalSignals != null && !selfOwnCount) {
         const n = self.biologicalSignals ?? 0;
         if (sib.biologicalSignals > n) {
           self.biologicalSignals = sib.biologicalSignals;
           changed = true;
         }
       }
-      if (sib.genusHints?.length) {
+      /*
+        A body the commander has DSS'd already knows its own genera, and that list is complete.
+
+        `SAASignalsFound` names every genus on the body — the whole "1 genus missing" alert is built
+        on that being true. So a neighbour's genus is a *guess* worth having only while this body has
+        no answer of its own; once it does, adding to it invents biology the game has ruled out.
+
+        The report that found it, on `Plio Aip NM-U d3-13 4 c`. A DSS emits three lines at once:
+
+        ```
+          02:33:06  SAAScanComplete   4 c
+          02:33:06  SAASignalsFound   4 c   Genuses: Bacterium, Tussock      <- replaces, correctly
+          02:33:06  Scan              4 c                                    <- lands here
+        ```
+
+        That trailing `Scan` ran this sync, which merged sibling 4 b's [Bacterium, Tubus, Tussock]
+        back over the answer the game had just given, and Tubus reappeared on a body the commander
+        had personally confirmed does not have it.
+
+        `dssMappedBodyKeys` is the right test and not `dssComplete`, which propagates between
+        siblings and so cannot say whose DSS it was.
+      */
+      const selfOwnGenera = this.dssMappedBodyKeys.has(sk);
+      if (sib.genusHints?.length && !selfOwnGenera) {
         const merged = mergeGenusHints(self.genusHints, sib.genusHints);
         if (merged && merged.length > (self.genusHints?.length ?? 0)) {
           self.genusHints = merged;
@@ -2379,9 +2411,32 @@ export class GameStateStore {
       const sibStar = sibRec?.starSystem?.trim() || sourceRec?.starSystem?.trim() || this.currentSystem || "";
       const b = ensureBody(this.bodies, systemAddress, bid, sibName, sibStar, ts);
 
+      /**
+       * The sibling's own count, when the game has given it one, outranks anything inherited.
+       *
+       * `FSSBodySignals` is per body: the game says how many signals *that* rock has. Copying a
+       * neighbour's count over it invents biology. On `Plio Aip NM-U d3-13` the owner's 4 c reported
+       * two signals at 02:01:19 and 4 b's DSS reported three at 02:03:50; the propagation overwrote
+       * the two with three, and since 4 b's genera came with it — Bacterium, Tubus, Tussock — the
+       * panel then raised "1 genus missing from the candidate list" against a body that never had
+       * three signals and was never DSS'd. The gate it accused was correct: 4 c is 154 K and every
+       * Tubus starts at 160.
+       *
+       * Hints merge (below) because a genus really seen next door is worth suggesting here. A count
+       * cannot merge — it is a fact about one body, and the sibling's own is the only one that is
+       * about this one.
+       */
+      const sibOwnCount = this.fssBodySignalsBodyKeys.has(bodyKey(systemAddress, bid));
+      /**
+       * And the same for the genus list: a sibling the commander has DSS'd knows its own genera, and
+       * `SAASignalsFound` names all of them. Suggesting a neighbour's extra genus there contradicts
+       * the game. See the matching note in {@link syncExoStateFromSiblingMoons}.
+       */
+      const sibOwnGenera = this.dssMappedBodyKeys.has(bodyKey(systemAddress, bid));
+
       if (mode === "fss_signals") {
-        if (sourceBody.biologicalSignals != null) b.biologicalSignals = sourceBody.biologicalSignals;
-        if (sourceBody.genusHints?.length) {
+        if (sourceBody.biologicalSignals != null && !sibOwnCount) b.biologicalSignals = sourceBody.biologicalSignals;
+        if (sourceBody.genusHints?.length && !sibOwnGenera) {
           b.genusHints = mergeGenusHints(b.genusHints, sourceBody.genusHints);
         }
         if (sourceBody.signalHints?.length) {
@@ -2389,11 +2444,11 @@ export class GameStateStore {
           b.signalHints = set.size ? [...set] : b.signalHints;
         }
       } else if (mode === "saas_signals") {
-        if (sourceBody.biologicalSignals != null) b.biologicalSignals = sourceBody.biologicalSignals;
+        if (sourceBody.biologicalSignals != null && !sibOwnCount) b.biologicalSignals = sourceBody.biologicalSignals;
         // Merge, never replace: the sibling's own DSS result is at least as authoritative as this
         // one's, and overwriting it deleted genera the commander went on to scan there. See the
         // `fss_signals` branch above, which has always merged.
-        if (sourceBody.genusHints?.length) {
+        if (sourceBody.genusHints?.length && !sibOwnGenera) {
           b.genusHints = mergeGenusHints(b.genusHints, sourceBody.genusHints);
         }
         if (sourceBody.signalHints?.length) {
@@ -2402,10 +2457,10 @@ export class GameStateStore {
         }
       } else if (mode === "dss_complete") {
         b.dssComplete = true;
-        if (sourceBody.genusHints?.length) {
+        if (sourceBody.genusHints?.length && !sibOwnGenera) {
           b.genusHints = mergeGenusHints(b.genusHints, sourceBody.genusHints);
         }
-        if (sourceBody.biologicalSignals != null) b.biologicalSignals = sourceBody.biologicalSignals;
+        if (sourceBody.biologicalSignals != null && !sibOwnCount) b.biologicalSignals = sourceBody.biologicalSignals;
       } else if (mode === "detailed_scan") {
         const srcScan = sourceBody.scan;
         if (srcScan?.PlanetClass) {
