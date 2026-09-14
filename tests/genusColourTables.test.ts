@@ -38,6 +38,28 @@ describe("multi-character spectral keys", () => {
     expect(spectralKeysFromJournalStarType("H")).toEqual(["H"]);
     expect(spectralKeysFromJournalStarType("M")).toEqual(["M"]);
   });
+
+  /**
+   * A giant is its spectral letter, and it used to be nothing at all.
+   *
+   * `M_RedGiant8`, `K_OrangeGiant`, `A_BlueWhiteSuperGiant` — the underscore was missing from the
+   * lookahead, so these named no class and every candidate under one read "colour unknown". Found on
+   * `Preae Aip RO-S b7-0 2 b`, a Fonticulua under an `M_RedGiant8`.
+   *
+   * That they follow the letter is measured: 18 confirmed scans in the owner's journals sit under a
+   * giant, and each matches the main-sequence answer for that letter — `M_RedGiant` gave Fonticulua
+   * Amethyst, `K_OrangeGiant` gave Tussock Green and Stratum Lime, exactly as plain M and K do.
+   */
+  it("reads a giant or supergiant as its spectral letter", () => {
+    expect(spectralKeysFromJournalStarType("M_RedGiant")).toEqual(["M"]);
+    expect(spectralKeysFromJournalStarType("M_RedGiant8")).toEqual(["M"]);
+    expect(spectralKeysFromJournalStarType("K_OrangeGiant")).toEqual(["K"]);
+    expect(spectralKeysFromJournalStarType("A_BlueWhiteSuperGiant")).toEqual(["A"]);
+    expect(spectralKeysFromJournalStarType("F_WhiteSuperGiant")).toEqual(["F"]);
+    // Unchanged: the classes that were already read correctly must stay that way.
+    expect(spectralKeysFromJournalStarType("DA")).toEqual(["DA"]);
+    expect(spectralKeysFromJournalStarType("TTS")).toEqual(["TTS"]);
+  });
 });
 
 describe("shipped genus colour tables", () => {

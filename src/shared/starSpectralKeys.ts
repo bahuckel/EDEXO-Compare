@@ -86,8 +86,32 @@ export function spectralKeysFromJournalStarType(starType: string): string[] {
   const brown = s.match(/^([A-Z])\s+Brown\s+ dwarf/i);
   if (brown) keys.add(brown[1]!.toUpperCase());
 
+  /*
+    Giants and supergiants are their spectral letter with a tail: `M_RedGiant`, `K_OrangeGiant`,
+    `A_BlueWhiteSuperGiant`, and the game also emits numbered forms like `M_RedGiant8`.
+
+    The underscore was not in the lookahead, so every one of them named no class at all and the whole
+    colour prediction collapsed to "colour unknown" — reported on `Preae Aip RO-S b7-0 2 b`, a
+    Fonticulua under an `M_RedGiant8`.
+
+    That giants follow their letter is measured, not assumed. Across this commander's journals, 18
+    confirmed scans sit under a giant and every one matches the main-sequence answer for the same
+    letter:
+
+    ```
+      M_RedGiant     Fonticulua Digitos  Amethyst   (plain M gives Fonticulua Amethyst)
+      K_OrangeGiant  Tussock Virgam      Green      (plain K gives Tussock Green, 19 scans)
+      K_OrangeGiant  Stratum Paleas      Lime       (plain K gives Stratum Lime, 37 scans)
+      K_OrangeGiant  Clypeus Lacrimam    Grey
+      K_OrangeGiant  Fungoida Stabitis   White
+      K_OrangeGiant  Osseus Discus       Red
+    ```
+
+    Only strings carrying an underscore are affected, and in this vocabulary those are exactly the
+    giant and supergiant forms.
+  */
   if (keys.size === 0) {
-    const head = s.match(/^([A-Z]{1,3})(?=\s|[/:]|\s*Star|\s*dwarf|$)/i);
+    const head = s.match(/^([A-Z]{1,3})(?=\s|[/:_]|\s*Star|\s*dwarf|$)/i);
     if (head) keys.add(head[1]!.toUpperCase());
   }
 
