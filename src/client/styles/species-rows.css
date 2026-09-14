@@ -263,3 +263,17 @@
 .genus-card-shell--single .genus-card-collapse-grid {
   flex: 0 0 auto;
 }
+
+/*
+  The collection marker: this species is one the corpus and the commander are both short of, so a
+  sample here is worth more than its credits. Quiet on purpose — it is a suggestion, not an alert,
+  and it sits next to the name rather than competing with the payout column.
+*/
+.srow-focus {
+  margin-left: 6px;
+  font-size: var(--fs-sm);
+  line-height: 1;
+  color: var(--accent, var(--ok));
+  opacity: 0.85;
+  cursor: help;
+}

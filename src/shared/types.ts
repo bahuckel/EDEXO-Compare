@@ -738,6 +738,14 @@ export interface SpeciesMatch {
    */
   unlikely?: boolean;
   /**
+   * Our data on this species is thin and yours is thinner — sampling one here would teach the app
+   * something. Set by `server/collectionFocus.ts` from a **local-only** file; never shipped, never
+   * committed, and absent entirely when the commander switches the marker off.
+   */
+  collectionFocus?: boolean;
+  /** Why it is marked: bodies in the corpus, and confirmations of your own. Display only. */
+  collectionFocusNote?: { ownScans: number; corpusBodies: number };
+  /**
    * The terms that demoted it, so the card can say *why* rather than showing a bare percentage.
    * Set only when {@link unlikely}.
    */

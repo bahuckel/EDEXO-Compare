@@ -144,6 +144,9 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                     const bio = b.state.biologicalSignals;
                     const best = b.matches.reduce((m, x) => (x.unlikely ? m : Math.max(m, x.priceCredits ?? 0)), 0);
                     const done = b.matches.some((x) => x.organicAnalysisComplete === true);
+                    // Derived here rather than sent down: the strip already holds the matches, and a
+                    // body is worth a detour exactly when something it might grow is worth sampling.
+                    const focus = !done && b.matches.some((x) => !x.unlikely && x.collectionFocus === true);
                     return (
                       <button
                         key={b.state.key}
@@ -154,7 +157,7 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         data-body-key={b.state.key}
                         className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}`}
                         onClick={() => onSelect(b.state.key)}
-                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}`}
+                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}`}
                       >
                         <span className="tab-label">{b.tabLabel}</span>
                         <span className="tab-meta">
@@ -163,6 +166,11 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                           {best > 0 ? <> · {fmtCrShort(best)}</> : null}
                         </span>
                         {done ? <span className="tab-dot" aria-hidden="true" /> : null}
+                        {focus ? (
+                          <span className="tab-focus" aria-hidden="true">
+                            ⌖
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}

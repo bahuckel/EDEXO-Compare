@@ -98,6 +98,7 @@ import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
 import { exoOutlierTally, recordExoOutliersForBody } from "./exoOutlierLog.js";
 import { recordPredictionForBody } from "./predictionAuditLog.js";
+import { collectionFocusCached } from "./collectionFocus.js";
 import { edsmUploadLedgerSummary } from "./edsmUploadLedger.js";
 import { edsmCredentialsStatus } from "./edsmCredentials.js";
 
@@ -1067,6 +1068,27 @@ function computeBodyUncached(
   attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root, store);
   // After the ranking, because the floor is a rule about the ranking's own output.
   demoteBelowPresenceFloor(matches, b, db);
+  /*
+    The collection marker: species where both the corpus and this commander are short of bodies.
+
+    **After the demotion, and only on rows the panel still offers.** A demoted candidate is one the
+    app has decided will not grow here, so marking it "worth sampling" would send the commander to
+    fetch something that is not there — the marker is advice about where to spend a landing, not a
+    note about the species in the abstract. Read rather than computed, so a body being scrolled past
+    costs one map lookup. See `collectionFocus.ts` for why none of it is ever shipped.
+  */
+  {
+    const focus = collectionFocusCached(store.bodies.values(), db, root);
+    if (focus.size > 0) {
+      for (const m of matches) {
+        if (m.unlikely) continue;
+        const r = focus.get(m.entry.id);
+        if (!r) continue;
+        m.collectionFocus = true;
+        m.collectionFocusNote = { ownScans: r.ownScans, corpusBodies: r.corpusBodies };
+      }
+    }
+  }
   /*
    * Who says this species is here, unioned from the two stores at the moment of rendering.
    *

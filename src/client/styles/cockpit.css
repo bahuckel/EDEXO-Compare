@@ -1124,3 +1124,19 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
 .session-cr .price-tag {
   margin-left: 0.3rem;
 }
+
+/*
+  The collection marker on a species card.
+
+  A glyph, not a badge: the row beside it already carries "new to you" and the demotion badges, and a
+  fourth box would turn the caption into a shelf of labels. It is advice about where the app is
+  ignorant, which is quieter than anything the game itself is telling the commander.
+*/
+.species-focus-mark {
+  margin-left: 6px;
+  font-size: 0.95em;
+  line-height: 1;
+  color: var(--accent, var(--ok));
+  opacity: 0.85;
+  cursor: help;
+}

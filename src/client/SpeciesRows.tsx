@@ -148,6 +148,19 @@ export function SpeciesRow({
               unlikely
             </span>
           ) : null}
+          {m.collectionFocus ? (
+            <span
+              className="srow-focus"
+              title={
+                `Worth sampling: the corpus has ${m.collectionFocusNote?.corpusBodies ?? 0} bodies for this ` +
+                `species and you have confirmed it on ${m.collectionFocusNote?.ownScans ?? 0}. ` +
+                `The mark clears once you have enough of them.`
+              }
+              aria-label="Worth sampling: thin data for this species"
+            >
+              ⌖
+            </span>
+          ) : null}
         </span>
         <span className="srow-prog-slot">
           {prog ? <span className={`srow-prog srow-prog--${prog.cls}`}>{prog.text}</span> : null}

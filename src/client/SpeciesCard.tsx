@@ -626,6 +626,19 @@ export const SpeciesCard = memo(function SpeciesCard({
           </>
         ) : null}
         <span className="species-identity-epithet">{epithetDisplay}</span>
+        {m.collectionFocus ? (
+          <span
+            className="species-focus-mark"
+            title={
+              `Worth sampling. The corpus has ${m.collectionFocusNote?.corpusBodies ?? 0} bodies for this species ` +
+              `and you have confirmed it on ${m.collectionFocusNote?.ownScans ?? 0}, so one more here teaches the ` +
+              `predictor more than its payout suggests. The mark clears once there are enough.`
+            }
+            aria-label="Worth sampling: thin data for this species"
+          >
+            ⌖
+          </span>
+        ) : null}
         {m.notInCodex ? (
           <span
             className="species-codex-new"

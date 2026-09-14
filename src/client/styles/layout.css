@@ -368,3 +368,16 @@
 .land-badge--unknown {
   color: var(--text-faint);
 }
+
+/* Same marker on the body tab: something here is worth sampling. Sits where the analysed dot would,
+   and yields to it — a body already finished has nothing left to ask for. */
+.tab-focus {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--accent, var(--ok));
+  opacity: 0.9;
+  pointer-events: none;
+}
