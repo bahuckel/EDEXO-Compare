@@ -33,14 +33,20 @@ import {
   sectorCellFromCoords,
   sectorCellKey,
 } from "@shared/sectorName.js";
-import type { BacklogMapDTO, BacklogSystemDTO, GalaxyValueHitDTO } from "@shared/types";
+import type { BacklogMapDTO, BacklogSystemDTO } from "@shared/types";
 import { galaxyImageRect, REGION_LAYER_ALPHA, REGION_MAP_SIZE, regionSpanInCells } from "./regionBackdrop";
 import { CAMERA_SIDE, CAMERA_TOP, axisLabels, cameraLabel, project } from "./galaxyProjection";
 import { useMapViewport } from "./useMapViewport";
 import { TIER_ORDER, TIER_STYLE, tierFor, tierRank } from "@shared/galaxyTier";
 import type { CommanderSectorDTO, CommanderSectorsDTO } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
-import { MAX_CR, STEP_CR, sliderLabel, type GalaxySearchApplied } from "./GalaxySearchPanel";
+import {
+  MAX_CR,
+  STEP_CR,
+  sliderLabel,
+  type GalaxySearchApplied,
+  type GalaxySearchMark,
+} from "./GalaxySearchPanel";
 import { groupByRegion, isOnScreen, lodLevel, type LodRow, type RegionGroup } from "./galaxyLod";
 import { regionIndexForCoords } from "@shared/regionMap.js";
 import type { GalaxyImage, RegionMapPayload } from "./regionBackdrop";
@@ -54,7 +60,7 @@ import {
 } from "@shared/sectorMapFile.js";
 
 /** One identity for "no search", so an unsearched map does not hand its plots a new array each render. */
-const EMPTY_HITS: readonly GalaxyValueHitDTO[] = [];
+const EMPTY_HITS: readonly GalaxySearchMark[] = [];
 
 /** Strongest-first, and the order the legend reads in. */
 const KINDS = ["confirmed", "genus", "signal", "predicted"] as const;
@@ -718,7 +724,7 @@ function SectorPlot({
    * filters are applied to the galaxy map below"*. A table of two hundred names answers *which*;
    * the same two hundred as marks answers *where*, which is the question a map is for.
    */
-  searchHits: readonly GalaxyValueHitDTO[];
+  searchHits: readonly GalaxySearchMark[];
   /** This commander's own state per sector, keyed by cell. Empty on a build with no journals. */
   mine: Map<string, CommanderSectorDTO>;
   /** The one the banner names, ringed so the name and the dot cannot disagree. */
@@ -1214,7 +1220,7 @@ ${bodies} bodies recorded here${
                 >
                   <title>
                     {[
-                      `${h.starSystem} — ${Math.round(h.systemCr).toLocaleString("en-US")} CR recorded`,
+                      `${h.starSystem} — ${h.note}`,
                       ...(h.distanceLy == null
                         ? []
                         : [`${Math.round(h.distanceLy).toLocaleString("en-US")} ly away`]),

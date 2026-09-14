@@ -17,6 +17,9 @@ import type {
   BacklogMapDTO,
   CommanderSectorsDTO,
   GalaxySpeciesCatalogueDTO,
+  GalaxyBodyScanDTO,
+  GalaxyBodyScanQueryDTO,
+  GalaxyRegionsDTO,
   GalaxyValueQueryDTO,
   GalaxyValueSearchDTO,
   FirstDiscoveryBacklogDTO,
@@ -128,6 +131,20 @@ export function createHttpServer(opts: {
   searchGalaxyByValue?: (query: GalaxyValueQueryDTO, limit: number) => GalaxyValueSearchDTO;
   /** GET /api/galaxy/species — what the genus/species picker can offer, with per-species coverage. */
   getGalaxySpecies?: () => GalaxySpeciesCatalogueDTO;
+  /**
+   * GET /api/galaxy/regions — the regions the body file holds, for the predicted search's picker.
+   *
+   * Absent on a build with no body file, which is every install but the one that built it; the
+   * panel hides the whole predicted mode rather than offering a picker with nothing behind it.
+   */
+  getGalaxyRegions?: () => GalaxyRegionsDTO;
+  /**
+   * GET /api/galaxy/possible — bodies whose conditions suit a species, in systems nobody has walked.
+   *
+   * Async because it is seconds of work, not milliseconds: a region is up to 3.2 M bodies and the
+   * scan yields to the event loop as it goes so the journal watcher keeps running underneath it.
+   */
+  scanGalaxyBodies?: (query: GalaxyBodyScanQueryDTO, limit: number) => Promise<GalaxyBodyScanDTO>;
   /** GET /api/galaxy/my-sectors — this commander's own state per sector, for colouring the map. */
   getCommanderSectors?: () => CommanderSectorsDTO;
   /**
@@ -458,6 +475,66 @@ export function createHttpServer(opts: {
       return;
     }
     res.json(opts.getGalaxySpecies());
+  });
+
+  app.get("/api/galaxy/regions", (_req, res) => {
+    perfCount("http.galaxyRegions");
+    if (!opts.getGalaxyRegions) {
+      res.status(404).json({ error: "no galaxy body file on this machine" });
+      return;
+    }
+    res.json(opts.getGalaxyRegions());
+  });
+
+  /**
+   * Bodies that could hold a species, in places nobody has looked.
+   *
+   * The evidence ticks arrive as three independent booleans rather than a mode, because that is
+   * what they are: FSS-only, already probed, and already walked are separate questions and the
+   * commander may want any combination. Defaults match the panel's — untouched bodies only.
+   */
+  app.get("/api/galaxy/possible", (req, res) => {
+    perfCount("http.galaxyPossible");
+    if (!opts.scanGalaxyBodies) {
+      res.status(404).json({ error: "no galaxy body file on this machine" });
+      return;
+    }
+    const regionId = Number(req.query.regionId ?? 0);
+    if (!Number.isFinite(regionId) || regionId <= 0) {
+      res.status(400).json({ error: "regionId must be a positive region index" });
+      return;
+    }
+    const limit = Number(req.query.limit ?? 200);
+    const list = (v: unknown): string[] | undefined => {
+      const raw = String(v ?? "").trim();
+      if (!raw) return undefined;
+      const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+      return parts.length ? parts : undefined;
+    };
+    // Absent means the default, so `fss=0` can turn the default off — `!== "0"` would read a
+    // missing parameter as a tick the commander never made.
+    const tick = (v: unknown, fallback: boolean): boolean => {
+      const raw = String(v ?? "").trim();
+      if (!raw) return fallback;
+      return raw === "1" || raw.toLowerCase() === "true";
+    };
+    opts
+      .scanGalaxyBodies(
+        {
+          regionId: Math.trunc(regionId),
+          speciesIds: list(req.query.species),
+          genusDirs: list(req.query.genus),
+          includeUnprobed: tick(req.query.fss, true),
+          includeProbed: tick(req.query.dss, false),
+          includeWalked: tick(req.query.walked, false),
+        },
+        Number.isFinite(limit) ? limit : 200,
+      )
+      .then((dto) => res.json(dto))
+      .catch((e: unknown) => {
+        console.warn(`ED Exo Compare — galaxy body scan failed: ${String(e)}`);
+        res.status(500).json({ error: "the galaxy body scan failed" });
+      });
   });
 
   app.get("/api/galaxy/worth", (req, res) => {

@@ -289,6 +289,60 @@
   background: rgba(20, 30, 45, 0.4);
 }
 
+/* Which of the two questions the panel is asking: what somebody recorded, or what could be there.
+   A pair of tabs rather than a dropdown — there are two, and both should be readable at a glance. */
+.gsx-modes {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0 0 0.6rem;
+}
+
+.gsx-mode {
+  font: inherit;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.3rem 0.85rem;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--accent-a22);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.gsx-mode:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.gsx-mode--on {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(20, 40, 60, 0.7);
+}
+
+/* The three evidence ticks sit on one row: they are one question with three answers, and stacking
+   them would read as three separate settings. */
+.gsx-evidence {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  max-width: 34rem;
+}
+
+.gsx-evidence .gsx-note {
+  flex-basis: 100%;
+  opacity: 0.8;
+}
+
+/* One line above the predicted body list, saying what kind of claim every row below it is. */
+.gsx-caveat {
+  margin: 0 0 0.6rem;
+  font-size: var(--fs-2xs);
+  max-width: 46rem;
+}
+
 .gsx-field {
   display: flex;
   flex-direction: column;

@@ -18,7 +18,7 @@
  * owns it — the panel decides what was asked and the map decides what that means for a 1 280 ly
  * grid it alone holds the file for.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SectorMapFile } from "@shared/sectorMapFile.js";
 import { GalaxySectorMap, type CommanderPosition } from "./GalaxySectorMap";
 import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
@@ -28,6 +28,7 @@ import {
   type GalaxyImage,
   type RegionMapPayload,
 } from "./regionBackdrop";
+import { regionIndexForCoords } from "@shared/regionMap.js";
 import type { BacklogMapDTO, CommanderSectorsDTO } from "@shared/types";
 
 type Load =
@@ -62,6 +63,14 @@ export function GalaxyMapScreen() {
 
   /** Stable, so the panel's own `run` callback does not change identity on every render here. */
   const onApply = useCallback((applied: GalaxySearchApplied | null) => setSearch(applied), []);
+
+  /** Which region the ship is in, for the predicted search's picker. Null until both parts arrive. */
+  const commanderRegionId = useMemo(() => {
+    const pos = commander?.position;
+    if (!regionMap || !pos) return null;
+    const id = regionIndexForCoords(regionMap, pos.x, pos.z);
+    return id > 0 ? id : null;
+  }, [regionMap, commander]);
 
   /**
    * The galaxy behind the markers, painted once.
@@ -216,7 +225,11 @@ export function GalaxyMapScreen() {
 
       {load.state === "error" ? <p className="galaxy-screen__empty">Could not load the map: {load.message}</p> : null}
 
-      <GalaxySearchPanel onApply={onApply} />
+      {/*
+        The panel opens its region picker on the region the ship is in. Both halves are already
+        here — the region map and the commander's position — and neither belongs in the panel.
+      */}
+      <GalaxySearchPanel onApply={onApply} commanderRegionId={commanderRegionId} />
 
       {load.state === "ready" ? (
         <>

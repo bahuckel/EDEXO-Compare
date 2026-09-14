@@ -4,9 +4,23 @@
  * The counterpart to the backlog panel. That one answers "what have *I* left unfinished"; this one
  * answers "what is out there at all", over 5.3 million systems nobody in this app has visited.
  *
- * The two must not be confused, so they are separate screens with separate words. Everything here is
- * a **recorded sighting** — somebody logged this species in this system — never a prediction. The
- * backlog panel's numbers are estimates from planet conditions; these are facts with a date on them.
+ * The two must not be confused, so they are separate screens with separate words.
+ *
+ * ## Two questions, one set of pickers
+ *
+ * **Recorded** is a sighting: somebody logged this species in this system, and the codex has it.
+ * **Could be there** is a shortlist: a body whose conditions suit the species, in a system nobody
+ * has walked — the owner's ask, *"someone might have just FSS-ed the place and left… we can pretty
+ * easily determine if there is going to be plant X"*.
+ *
+ * They share the genus and species pickers because they are the same question about the same
+ * organism; what changes is who is being asked. Everything else differs, and the panel says which
+ * it is in the subtitle, on the switch, and again above the list — because the difference between
+ * "somebody found this" and "this would be offered here" is the whole value of the recorded list,
+ * and one blurred sentence would cost it.
+ *
+ * The predicted half only appears where there is a body file to search, which is the machine that
+ * built one from a galaxy dump. Everywhere else the panel is exactly what it was.
  *
  * ## It used to be a modal in the main window (A3)
  *
@@ -29,6 +43,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useModal } from "./ui/useModal";
 import type {
+  GalaxyBodyScanDTO,
+  GalaxyRegionsDTO,
   GalaxySpeciesCatalogueDTO,
   GalaxySpeciesOptionDTO,
   GalaxyValueHitDTO,
@@ -63,11 +79,35 @@ export const sliderLabel = (n: number) =>
   n === 0 ? "anything" : n >= 1e9 ? `${(n / 1e9).toFixed(2)} bn CR` : `${Math.round(n / 1e6)} M CR`;
 
 /**
+ * One place the search found, as the map needs it.
+ *
+ * The map draws *places*, so this is the whole of what it is told about one: where it is, what it
+ * is called, and one line of prose for the tooltip. `note` exists because the two searches make
+ * different claims — "19,010,800 CR recorded" is a sighting somebody logged, "2 bodies could hold
+ * it" is a shortlist — and a map that printed credits over a prediction would be quietly lying.
+ */
+export interface GalaxySearchMark {
+  systemAddress: number;
+  starSystem: string;
+  x: number;
+  y: number;
+  z: number;
+  distanceLy: number | null;
+  /** What this mark is, in a few words. Goes straight into the tooltip. */
+  note: string;
+}
+
+/**
  * What a search, once run, asks of the map below it.
  *
  * `genus` and `species` are **lowercase**, which is the sector map file's own vocabulary
  * (`"bacterium"`, `"bacterium aurasus"`). The map does the widening from a genus to its taxa,
  * because the map is what holds the file that knows which taxa exist.
+ *
+ * Both are **null in predicted mode**, deliberately. Those names light up the sectors where the
+ * corpus has *recorded* the taxon, and a predicted search is by definition about the places where
+ * nobody has. Narrowing the sectors to recorded ground while the marks sit outside it would be the
+ * map contradicting itself.
  */
 export interface GalaxySearchApplied {
   genus: string | null;
@@ -75,14 +115,14 @@ export interface GalaxySearchApplied {
   /** What to call this filter on screen. */
   label: string;
   /**
-   * What the **map** draws: the richest system in each matching sector cell, galaxy-wide.
+   * What the **map** draws: one system per matching sector cell, over the whole search.
    *
    * Not the same rows the list shows. The list is nearest-first, which is right for choosing where
    * to fly and wrong for seeing where a species lives — the 200 nearest matches to a commander sit
    * inside about twelve pixels of a galaxy-wide plot, which is what the owner saw and could not
    * identify. Falls back to the nearest hits on a server that has no spread to give.
    */
-  hits: GalaxyValueHitDTO[];
+  hits: GalaxySearchMark[];
   /** Distinct sector cells that matched, before the sample was capped. */
   spreadCells: number;
   matchedSystems: number;
@@ -162,7 +202,128 @@ function GalaxyHitsModal({
   );
 }
 
-export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearchApplied | null) => void }) {
+/**
+ * The bodies a predicted search found, in the same window the recorded list uses.
+ *
+ * A body table rather than a system table: the answer is "this world would be offered that plant",
+ * and the world is what the commander has to fly to and land on. The system is the heading.
+ */
+function GalaxyPossibleModal({
+  result,
+  onClose,
+}: {
+  result: GalaxyBodyScanDTO;
+  onClose: () => void;
+}) {
+  const dialogRef = useModal<HTMLDivElement>(true, onClose);
+  const bodies = result.hits.reduce((n, h) => n + h.bodies.length, 0);
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="modal-panel gsx-hits-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="gsx-possible-title"
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="modal-head">
+          <h3 id="gsx-possible-title">
+            {bodies} bod{bodies === 1 ? "y" : "ies"} in {result.hits.length} system
+            {result.hits.length === 1 ? "" : "s"}, nearest first
+          </h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div className="fdb-scroll gsx-hits-scroll">
+          {/*
+            Said once, at the top of the list, rather than beside every row. Every row here is the
+            same kind of claim and repeating it would turn a warning into wallpaper.
+          */}
+          <p className="dim gsx-caveat">
+            These are bodies whose conditions suit the species — the same gates the app applies when
+            you are standing there. Nobody has confirmed anything on them.
+          </p>
+          <table className="fdb-table">
+            <thead>
+              <tr>
+                <th>Body</th>
+                <th className="fdb-num">Away</th>
+                <th>Conditions</th>
+                <th className="fdb-num">Signals</th>
+                <th>Could be</th>
+                <th className="fdb-num">At 5×</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {result.hits.map((h) =>
+                h.bodies.map((b, i) => (
+                  <tr key={`${h.systemAddress}:${b.bodyId}`} className="fdb-row">
+                    <td className="fdb-sys">
+                      {b.bodyName}
+                      {b.probed ? (
+                        <span className="dim gsx-ff" title="Somebody has mapped this body with probes.">
+                          {" "}
+                          · probed
+                        </span>
+                      ) : null}
+                      {h.walked ? (
+                        <span className="dim gsx-ff" title="Somebody has logged a species in this system.">
+                          {" "}
+                          · walked
+                        </span>
+                      ) : null}
+                    </td>
+                    {/* Once per system: the distance is the system's, and repeating it reads as detail. */}
+                    <td className="fdb-num dim">{i === 0 ? ly(h.distanceLy) : ""}</td>
+                    <td className="gsx-species">
+                      {[
+                        b.planetClass || "unknown class",
+                        b.atmosphere || "no atmosphere",
+                        `${Math.round(b.temperatureK)} K`,
+                        `${b.gravityG.toFixed(2)} g`,
+                        h.starType ? `${h.starType} star` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </td>
+                    {/*
+                      The FSS count is the hard fact on the row: the game puts one genus per signal,
+                      so it is how many different plants are down there whatever anybody predicts.
+                    */}
+                    <td className="fdb-num">{b.bioCount || "—"}</td>
+                    <td className="gsx-species">{b.species.map((s) => s.displayName).join(", ")}</td>
+                    <td className="fdb-num fdb-floor">
+                      {b.species[0] ? cr(b.species[0].firstFootfallCr) : "—"}
+                    </td>
+                    <td>{i === 0 ? <CopySystemButton system={h.starSystem} /> : null}</td>
+                  </tr>
+                )),
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function GalaxySearchPanel({
+  onApply,
+  commanderRegionId,
+}: {
+  onApply: (applied: GalaxySearchApplied | null) => void;
+  /**
+   * The region the commander is in, so the picker opens on the one they are standing in.
+   *
+   * Resolved by the map screen, which already holds both the region map and the ship's position.
+   * Null simply means the picker starts empty and waits to be told.
+   */
+  commanderRegionId?: number | null;
+}) {
   const [cat, setCat] = useState<GalaxySpeciesCatalogueDTO | null>(null);
   const [result, setResult] = useState<GalaxyValueSearchDTO | null>(null);
   const [busy, setBusy] = useState(false);
@@ -173,6 +334,22 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
   const [speciesId, setSpeciesId] = useState("");
   const [needDss, setNeedDss] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+
+  /*
+    The second question this panel can ask.
+
+    "Recorded" is a sighting somebody logged; "possible" is a body whose conditions suit the plant
+    in a system nobody has walked. They share the genus and species pickers because they are the
+    same question about the same organism — what changes is who is being asked.
+  */
+  const [mode, setMode] = useState<"recorded" | "possible">("recorded");
+  const [regions, setRegions] = useState<GalaxyRegionsDTO | null>(null);
+  const [regionId, setRegionId] = useState(0);
+  const [wantFss, setWantFss] = useState(true);
+  const [wantDss, setWantDss] = useState(false);
+  const [wantWalked, setWantWalked] = useState(false);
+  const [scan, setScan] = useState<GalaxyBodyScanDTO | null>(null);
+  const [scanListOpen, setScanListOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -193,6 +370,30 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
       cancelled = true;
     };
   }, []);
+
+  /*
+    The body file is optional and local — it is built from a galaxy dump and never ships — so a 404
+    here is the ordinary case, not a failure. The mode switch simply does not appear.
+  */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/galaxy/regions")
+      .then((r) => (r.ok ? (r.json() as Promise<GalaxyRegionsDTO>) : null))
+      .then((j) => {
+        if (!cancelled && j) setRegions(j);
+      })
+      .catch(() => {
+        /* no body file, no predicted search */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** Open on the commander's own region once both halves are known, and never override a choice. */
+  useEffect(() => {
+    if (regionId === 0 && commanderRegionId && regions?.available) setRegionId(commanderRegionId);
+  }, [commanderRegionId, regions, regionId]);
 
   const genera = useMemo(() => {
     const m = new Map<string, string>();
@@ -234,11 +435,20 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
       */
       const chosen = cat?.species.find((s) => s.speciesId === speciesId) ?? null;
       const genusName = chosen?.genusName ?? genera.find(([dir]) => dir === genusDir)?.[1] ?? null;
+      const rows = j.spread?.length ? j.spread : (j.hits ?? []);
       onApply({
         genus: genusName ? genusName.toLowerCase() : null,
         species: chosen ? chosen.displayName.toLowerCase() : null,
         label: chosen?.displayName ?? genusName ?? "everything recorded",
-        hits: j.spread?.length ? j.spread : (j.hits ?? []),
+        hits: rows.map((h) => ({
+          systemAddress: h.systemAddress,
+          starSystem: h.starSystem,
+          x: h.x,
+          y: h.y,
+          z: h.z,
+          distanceLy: h.distanceLy,
+          note: `${cr(h.systemCr)} recorded`,
+        })),
         spreadCells: j.spreadCells ?? 0,
         matchedSystems: j.matchedSystems,
       });
@@ -249,17 +459,87 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
     }
   }, [minCr, genusDir, speciesId, needDss, priceLocked, cat, genera, onApply]);
 
+  const runPossible = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const q = new URLSearchParams({ limit: "200", regionId: String(regionId) });
+      if (speciesId) q.set("species", speciesId);
+      else if (genusDir) q.set("genus", genusDir);
+      q.set("fss", wantFss ? "1" : "0");
+      q.set("dss", wantDss ? "1" : "0");
+      q.set("walked", wantWalked ? "1" : "0");
+      const res = await fetch(`/api/galaxy/possible?${q.toString()}`);
+      if (!res.ok) {
+        setError("This machine has no galaxy body file.");
+        return;
+      }
+      const j = (await res.json()) as GalaxyBodyScanDTO;
+      setScan(j);
+      setScanListOpen(false);
+
+      const chosen = cat?.species.find((s) => s.speciesId === speciesId) ?? null;
+      const genusName = chosen?.genusName ?? genera.find(([dir]) => dir === genusDir)?.[1] ?? null;
+      const rows = j.spread?.length ? j.spread : (j.hits ?? []);
+      onApply({
+        /*
+          No taxon for the sector filter, on purpose. Those names narrow the map to the sectors
+          where the corpus has *recorded* the species, and every mark in this mode is somewhere it
+          has not — the map would hide exactly the ground the answer is about.
+        */
+        genus: null,
+        species: null,
+        label: `${chosen?.displayName ?? genusName ?? "biology"} — possible in ${j.regionName ?? "this region"}`,
+        hits: rows.map((h) => ({
+          systemAddress: h.systemAddress,
+          starSystem: h.starSystem,
+          x: h.x,
+          y: h.y,
+          z: h.z,
+          distanceLy: h.distanceLy,
+          note: `${h.bodies.length} bod${h.bodies.length === 1 ? "y" : "ies"} could hold it`,
+        })),
+        spreadCells: j.spreadCells ?? 0,
+        matchedSystems: j.matchedSystems,
+      });
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setBusy(false);
+    }
+  }, [regionId, speciesId, genusDir, wantFss, wantDss, wantWalked, cat, genera, onApply]);
+
   const clear = useCallback(() => {
     setGenusDir("");
     setSpeciesId("");
     setMinCr(0);
     setNeedDss(false);
     setResult(null);
+    setScan(null);
     setListOpen(false);
+    setScanListOpen(false);
     onApply(null);
   }, [onApply]);
 
+  /** Switching the question throws away the other question's answer rather than leaving it on the map. */
+  const switchMode = useCallback(
+    (next: "recorded" | "possible") => {
+      if (next === mode) return;
+      setMode(next);
+      setResult(null);
+      setScan(null);
+      setListOpen(false);
+      setScanListOpen(false);
+      onApply(null);
+    },
+    [mode, onApply],
+  );
+
   const hits = result?.hits ?? [];
+  const possible = mode === "possible";
+  const scanBodies = scan?.hits.reduce((n, h) => n + h.bodies.length, 0) ?? 0;
+  /** Nothing chosen searches every species in the region, which is slow and answers nothing. */
+  const canScan = regionId > 0 && (speciesId !== "" || genusDir !== "") && (wantFss || wantDss);
 
   return (
     <section className="gsx-panel gsx-panel--inline" aria-label="Search the galaxy">
@@ -274,12 +554,45 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
             <IconGalaxySearch className="gsx-title-icon" /> Search the galaxy
           </h2>
           <p className="dim fdb-sub">
-            Where anybody has recorded biology, across {cat ? crFmt.format(cat.systemCount) : "5.3 million"}{" "}
-            systems. These are sightings somebody logged, not predictions — nearest to you first, and
-            the map below follows what you search for.
+            {possible ? (
+              <>
+                Bodies whose conditions suit the species, in systems nobody has walked — the same
+                gates the app applies when you are standing there. A shortlist, not a sighting.
+              </>
+            ) : (
+              <>
+                Where anybody has recorded biology, across{" "}
+                {cat ? crFmt.format(cat.systemCount) : "5.3 million"} systems. These are sightings
+                somebody logged, not predictions — nearest to you first, and the map below follows
+                what you search for.
+              </>
+            )}
           </p>
         </div>
       </header>
+
+      {/*
+        The mode switch appears only where there is a body file to search. On every other install
+        the panel is exactly what it was, rather than offering a question that cannot be answered.
+      */}
+      {regions?.available ? (
+        <div className="gsx-modes" role="group" aria-label="What to search for">
+          <button
+            type="button"
+            className={possible ? "gsx-mode" : "gsx-mode gsx-mode--on"}
+            onClick={() => switchMode("recorded")}
+          >
+            Recorded
+          </button>
+          <button
+            type="button"
+            className={possible ? "gsx-mode gsx-mode--on" : "gsx-mode"}
+            onClick={() => switchMode("possible")}
+          >
+            Could be there
+          </button>
+        </div>
+      ) : null}
 
       {error ? <p className="fdb-empty">{error}</p> : null}
       {!cat && !error ? <p className="fdb-empty">Reading the index…</p> : null}
@@ -317,54 +630,155 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
               </select>
             </label>
 
-            <div className={`gsx-field gsx-price${priceLocked ? " gsx-price--locked" : ""}`}>
-              <span>
-                System worth at least <strong className="gsx-price-value">{sliderLabel(minCr)}</strong>
-              </span>
-              <input
-                type="range"
-                className="gsx-slider"
-                min={0}
-                max={MAX_CR}
-                step={STEP_CR}
-                value={minCr}
-                disabled={priceLocked}
-                onChange={(e) => setMinCr(Number(e.target.value))}
-                aria-label="Minimum system value in credits"
-              />
-              {/*
-                Said out loud rather than left as a greyed control. A commander who picked a species
-                and then found the price ignored would reasonably think the search was broken.
-              */}
-              {priceLocked ? (
-                <span className="dim gsx-note">
-                  A named species already has a price — clear it to filter by value.
-                </span>
-              ) : (
-                <span className="dim gsx-note">
-                  Everything the codex knows there, at list price. Five times that if nobody has landed
-                  yet.
-                </span>
-              )}
-            </div>
+            {possible ? (
+              <>
+                <label className="gsx-field">
+                  Region
+                  <select value={regionId} onChange={(e) => setRegionId(Number(e.target.value))}>
+                    <option value={0}>Choose a region</option>
+                    {(regions?.regions ?? []).map((r) => (
+                      <option key={r.regionId} value={r.regionId}>
+                        {r.name} ({crFmt.format(r.systemCount)})
+                      </option>
+                    ))}
+                  </select>
+                  {/*
+                    The reason the search is scoped at all, said where the choice is made. A region
+                    is seconds; the galaxy is forty-two of those and an answer nobody can act on.
+                  */}
+                  <span className="dim gsx-note">
+                    One region at a time — a few seconds each. The largest takes longest.
+                  </span>
+                </label>
 
-            <label className="gsx-field gsx-check">
-              <input type="checkbox" checked={needDss} onChange={(e) => setNeedDss(e.target.checked)} />
-              Mapped only
-              <span className="dim gsx-note">Somebody has probed a body here, so the genus is known.</span>
-            </label>
+                {/*
+                  Three independent ticks, the owner's own design: *"I choose filters
+                  FSS/DSS/ScanOrganic as proof. If ScanOrganic is not selected it excludes them."*
+                  The first two describe a body, the third a system.
+                */}
+                <div className="gsx-field gsx-evidence" role="group" aria-label="What evidence to allow">
+                  <span>Include</span>
+                  <label className="gsx-check">
+                    <input type="checkbox" checked={wantFss} onChange={(e) => setWantFss(e.target.checked)} />
+                    Signals only
+                  </label>
+                  <label className="gsx-check">
+                    <input type="checkbox" checked={wantDss} onChange={(e) => setWantDss(e.target.checked)} />
+                    Already probed
+                  </label>
+                  <label className="gsx-check">
+                    <input
+                      type="checkbox"
+                      checked={wantWalked}
+                      onChange={(e) => setWantWalked(e.target.checked)}
+                    />
+                    Already walked
+                  </label>
+                  <span className="dim gsx-note">
+                    An FSS counted signals and nobody followed it up; a probed body already has its
+                    genus; a walked system has a species somebody logged on foot.
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={`gsx-field gsx-price${priceLocked ? " gsx-price--locked" : ""}`}>
+                  <span>
+                    System worth at least <strong className="gsx-price-value">{sliderLabel(minCr)}</strong>
+                  </span>
+                  <input
+                    type="range"
+                    className="gsx-slider"
+                    min={0}
+                    max={MAX_CR}
+                    step={STEP_CR}
+                    value={minCr}
+                    disabled={priceLocked}
+                    onChange={(e) => setMinCr(Number(e.target.value))}
+                    aria-label="Minimum system value in credits"
+                  />
+                  {/*
+                    Said out loud rather than left as a greyed control. A commander who picked a
+                    species and then found the price ignored would reasonably think the search was
+                    broken.
+                  */}
+                  {priceLocked ? (
+                    <span className="dim gsx-note">
+                      A named species already has a price — clear it to filter by value.
+                    </span>
+                  ) : (
+                    <span className="dim gsx-note">
+                      Everything the codex knows there, at list price. Five times that if nobody has
+                      landed yet.
+                    </span>
+                  )}
+                </div>
 
-            <button type="button" className="gsx-go" onClick={() => void run()} disabled={busy}>
+                <label className="gsx-field gsx-check">
+                  <input type="checkbox" checked={needDss} onChange={(e) => setNeedDss(e.target.checked)} />
+                  Mapped only
+                  <span className="dim gsx-note">
+                    Somebody has probed a body here, so the genus is known.
+                  </span>
+                </label>
+              </>
+            )}
+
+            <button
+              type="button"
+              className="gsx-go"
+              onClick={() => void (possible ? runPossible() : run())}
+              disabled={busy || (possible && !canScan)}
+            >
               {busy ? "Searching…" : "Search"}
             </button>
-            {result ? (
+            {result || scan ? (
               <button type="button" className="gsx-clear" onClick={clear}>
                 Clear
               </button>
             ) : null}
           </div>
 
-          {result ? (
+          {possible && !canScan && !busy ? (
+            <p className="fdb-empty">
+              {regionId === 0
+                ? "Choose a region to search."
+                : !wantFss && !wantDss
+                  ? "Tick at least one kind of body to include."
+                  : "Choose a genus or a species — searching every plant in a region answers nothing."}
+            </p>
+          ) : null}
+
+          {possible && scan ? (
+            <div className="fdb-summary">
+              <span>
+                <strong>{crFmt.format(scanBodies)}</strong> bodies
+              </span>
+              <span>
+                in <strong>{crFmt.format(scan.matchedSystems)}</strong> systems
+              </span>
+              {/*
+                How much ground the answer covers, because the claim is a weak one and its size is
+                what makes it readable: a hundred matches out of three million bodies is a different
+                statement from a hundred out of two hundred.
+              */}
+              <span className="dim">
+                {crFmt.format(scan.bodiesScanned)} bodies searched in {(scan.elapsedMs / 1000).toFixed(1)} s
+              </span>
+              {scan.truncated ? (
+                <span className="dim" title="The region held more than one answer can carry. Narrow it to a species.">
+                  partial answer
+                </span>
+              ) : null}
+              {scanBodies > 0 ? (
+                <button type="button" className="gsx-list-open" onClick={() => setScanListOpen(true)}>
+                  List {crFmt.format(scanBodies)} bodies
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!possible && result ? (
             <div className="fdb-summary">
               <span>
                 <strong>{crFmt.format(result.matchedSystems)}</strong> systems
@@ -394,6 +808,10 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
                 </button>
               ) : null}
             </div>
+          ) : null}
+
+          {scanListOpen && scan ? (
+            <GalaxyPossibleModal result={scan} onClose={() => setScanListOpen(false)} />
           ) : null}
 
           {listOpen && result ? (
@@ -450,10 +868,16 @@ export function GalaxySearchPanel({ onApply }: { onApply: (applied: GalaxySearch
               </table>
             </GalaxyHitsModal>
           ) : null}
-          {result && hits.length === 0 ? (
+          {possible && scan && scanBodies === 0 ? (
+            <p className="fdb-empty">
+              Nothing in {scan.regionName ?? "that region"} suits it. Try another region, or include
+              bodies somebody has already probed.
+            </p>
+          ) : null}
+          {!possible && result && hits.length === 0 ? (
             <p className="fdb-empty">Nothing recorded matches that. Widen the genus, or lower the price.</p>
           ) : null}
-          {!result ? (
+          {!result && !scan ? (
             <p className="fdb-empty">Choose what you are looking for, then search. The map follows.</p>
           ) : null}
         </>

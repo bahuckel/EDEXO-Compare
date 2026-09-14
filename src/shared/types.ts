@@ -993,6 +993,127 @@ export interface GalaxyValueSearchDTO {
   spreadCells?: number;
 }
 
+/**
+ * One named galactic region the body file holds, for the region picker.
+ *
+ * The system count travels with the name because it is the difference between a one-second search
+ * and a slow one: Inner Orion Spur carries two orders of magnitude more systems than the far arms,
+ * and a picker that offers all forty-two identically hides that.
+ */
+export interface GalaxyRegionOptionDTO {
+  /** klightspeed region index, 1-42. */
+  regionId: number;
+  name: string;
+  systemCount: number;
+}
+
+export interface GalaxyRegionsDTO {
+  /** False when this machine has no body file — the whole predicted search hides itself. */
+  available: boolean;
+  regions: GalaxyRegionOptionDTO[];
+  systemCount: number;
+  bodyCount: number;
+  /** Bytes on disk. Half a gigabyte, and a reader is entitled to know what they are searching. */
+  fileBytes: number;
+}
+
+/**
+ * What a commander asked the galaxy's *unvisited* bodies for.
+ *
+ * The three evidence flags are independent ticks rather than a mode, which is the owner's design:
+ * *"I choose filters FSS/DSS/ScanOrganic as proof. If ScanOrganic is not selected it excludes
+ * them."* The first two describe a **body** — the dump carries a genus list only where somebody
+ * probed it — and the third describes a **system**, and is answered from `bio-index.bin`, because
+ * the body file knows nothing about who has walked where.
+ */
+export interface GalaxyBodyScanQueryDTO {
+  /** Which region to walk. Required: the galaxy in one request is forty-two regions of waiting. */
+  regionId: number;
+  /** Exact species wanted. */
+  speciesIds?: string[];
+  /** Genus data directories, when no species was named. */
+  genusDirs?: string[];
+  /** Bodies with biological signals that nobody has probed. The default, and the point of this. */
+  includeUnprobed?: boolean;
+  /** Bodies somebody has already mapped with probes, where the genus is public knowledge. */
+  includeProbed?: boolean;
+  /** Systems where somebody has already logged a species on foot. Off excludes them entirely. */
+  includeWalked?: boolean;
+}
+
+/** One body that would be offered this species if a commander were standing on it. */
+export interface GalaxyBodyMatchDTO {
+  bodyId: number;
+  bodyName: string;
+  /** Planet class as the dump spells it, e.g. `Icy body`. Empty when unrecorded. */
+  planetClass: string;
+  atmosphere: string;
+  volcanism: string;
+  /** Kelvin; 0 means the dump did not record it. */
+  temperatureK: number;
+  /** Earth gees — the dump's unit, kept as measured. */
+  gravityG: number;
+  /** Atmospheres — the dump's unit. */
+  pressureAtm: number;
+  /** How many biological signals the FSS counted. The number of genera actually down there. */
+  bioCount: number;
+  landable: boolean;
+  /** Somebody has probed this body, so the genus is already known. */
+  probed: boolean;
+  /** The wanted species that survive the gates here, un-demoted. Dearest first. */
+  species: GalaxyValueSpeciesDTO[];
+}
+
+export interface GalaxyBodyHitDTO {
+  systemAddress: number;
+  starSystem: string;
+  x: number;
+  y: number;
+  z: number;
+  regionId: number;
+  /** The primary's spectral class as the dump writes it — `K3`, `M9`. Empty when it named none. */
+  starType: string;
+  distanceLy: number | null;
+  /** Somebody has logged a species in this system. Only ever true when the filter allowed it. */
+  walked: boolean;
+  /** How many bodies here carry biological signals at all, matched or not. */
+  bioBodyCount: number;
+  bodies: GalaxyBodyMatchDTO[];
+}
+
+/**
+ * The answer to "where could this be, where nobody has looked".
+ *
+ * Every count is reported because the claim is a weak one and the reader has to be able to size it:
+ * how many bodies were looked at, how many cleared the cheap numeric gate, how many the matcher
+ * actually accepted. A bare list of names would read as certainty this does not have — these are
+ * bodies whose conditions suit the species, not sightings.
+ */
+export interface GalaxyBodyScanDTO {
+  /** False when this machine has no body file. The feature hides rather than showing nothing. */
+  available: boolean;
+  regionId: number;
+  regionName: string | null;
+  /** Systems in the region that held at least one candidate body. */
+  systemsScanned: number;
+  /** Bodies with biological signals walked in this region. */
+  bodiesScanned: number;
+  /** Of those, how many cleared the evidence filter and the numeric bands. */
+  bodiesGated: number;
+  /** Of those, how many the full matcher accepted un-demoted. */
+  bodiesMatched: number;
+  matchedSystems: number;
+  speciesConsidered: number;
+  /** The gate left more bodies than one request will match; the answer is a partial one. */
+  truncated: boolean;
+  elapsedMs: number;
+  /** The nearest systems, for the list. */
+  hits: GalaxyBodyHitDTO[];
+  /** One system per sector cell, for the map — see `galaxyValueSearch`'s spread for why. */
+  spread?: GalaxyBodyHitDTO[];
+  spreadCells?: number;
+}
+
 export interface FirstDiscoveryBacklogRowDTO {
   bodyKey: string;
   systemAddress: number;

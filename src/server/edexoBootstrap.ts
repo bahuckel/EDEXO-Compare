@@ -85,6 +85,7 @@ import { fetchSpanshBodiesAsExplorationRecords, searchSpanshSystemsByName } from
 import { SessionLog } from "./sessionLog.js";
 import { backlogMap, firstDiscoveryBacklogWithDistance } from "./firstDiscoveryBacklog.js";
 import { galaxySpeciesCatalogue, galaxyValueSearch } from "./galaxyValueSearch.js";
+import { galaxyBodyScan, galaxyRegions } from "./galaxyBodyScan.js";
 import { commanderSectorsDto } from "./galaxySectorTiers.js";
 import { runEdsmCatchUp, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 
@@ -1140,6 +1141,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     searchGalaxyByValue: (query, limit) =>
       galaxyValueSearch({ ...query, from: store.commanderPos, limit }),
     getGalaxySpecies: () => galaxySpeciesCatalogue(),
+    getGalaxyRegions: () => galaxyRegions(),
+    scanGalaxyBodies: (query, limit) =>
+      galaxyBodyScan({ ...query, from: store.commanderPos, limit }),
     getCommanderSectors: () => commanderSectorsDto(store),
     getCommanderSystem: () => store.currentSystem,
     setHudPrefs: (raw) => {
