@@ -687,6 +687,47 @@ function genusLikelihoodsForBody(
 }
 
 /**
+ * How far the region is allowed to speak, against the corpus-wide prior it replaces.
+ *
+ * Measured on `rank-probe --model --region-prior`, 515 ranked species from this commander's
+ * journals. `0` is the galaxy-wide prior alone, `1` is the regional count alone:
+ *
+ * ```
+ *   w=0      mean rank 3.247   top-1 199 (38.6%)   top-3 318 (61.7%)
+ *   w=0.25   mean rank 3.095   top-1 201 (39.0%)   top-3 327 (63.5%)
+ *   w=0.5    mean rank 3.045   top-1 202 (39.2%)   top-3 332 (64.5%)
+ *   w=1      mean rank 2.994   top-1 203 (39.4%)   top-3 347 (67.4%)
+ * ```
+ *
+ * `1` wins mean rank and top-3; `0.5` is chosen anyway. The panel's job is to name the species
+ * before the commander flies out, so top-1 is the metric that spends their fuel, and the deeper
+ * list is what they resolve on the ground either way. Half also keeps the galaxy-wide prior in the
+ * blend, which matters because the regional counts come from bodies commanders *chose* to map —
+ * a species that is merely unpopular to scan here should not be ruled out for it.
+ *
+ * Revisit if the corpus ever carries complete labels: the survey bias is the only reason to hedge.
+ */
+const PRESENCE_REGION_PRIOR_WEIGHT = 0.5;
+
+/**
+ * klightspeed region index for the body's own system, or null when its position is not known.
+ *
+ * The body's system, not the focused one: the panel can be showing a body the commander has
+ * flown away from, and scoring it against wherever they happen to be standing would be worse
+ * than not scoring it at all.
+ */
+function regionIndexForBody(
+  store: GameStateStore,
+  b: BodyExoState,
+  projectRoot: string,
+): number | null {
+  const pos = store.systemPositions.get(b.systemAddress);
+  if (!pos) return null;
+  const index = regionIndexForSystem(projectRoot, pos.x, pos.z);
+  return index != null && index > 0 ? index : null;
+}
+
+/**
  * The ranking model's answer, written onto the matches.
  *
  * `rankSpeciesOnBody` normalises across the candidates, which answers "which one species is this".
@@ -705,11 +746,17 @@ function attachPresenceProbability(
   rec: ExplorationScanRecord | null,
   journalHost: JournalHostStarObservation | null,
   root: string,
+  store: GameStateStore,
 ): void {
   if (!scan) return;
   const shown = matches.filter((m) => !m.unlikely);
   if (shown.length === 0) return;
-  const { ranked } = rankSpeciesOnBody(shown, scan, rec, journalHost, { root });
+  const { ranked } = rankSpeciesOnBody(shown, scan, rec, journalHost, {
+    root,
+    regionPrior: true,
+    regionIndex: regionIndexForBody(store, b, root),
+    regionPriorWeight: PRESENCE_REGION_PRIOR_WEIGHT,
+  });
   if (ranked.length === 0) return;
 
   const signals = b.biologicalSignals;
@@ -1017,7 +1064,7 @@ function computeBodyUncached(
     );
     matches = markExomasteryZeroHabitatMatches(matches);
   }
-  attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root);
+  attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root, store);
   // After the ranking, because the floor is a rule about the ranking's own output.
   demoteBelowPresenceFloor(matches, b, db);
   /*
