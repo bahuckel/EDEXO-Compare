@@ -231,6 +231,10 @@ export function buildProfileFromPlanetContexts(
         atmosphereType: typeof o.atmosphereType === "string" ? o.atmosphereType : null,
         surfaceTemperatureK: typeof o.surfaceTemperature === "number" ? o.surfaceTemperature : null,
         surfacePressureAtm: typeof o.surfacePressure === "number" ? o.surfacePressure : null,
+        // Already Earth gees and kilometres in the pack, the units the app compares against.
+        gravityG: typeof o.gravity === "number" ? o.gravity : null,
+        radiusKm: typeof o.radius === "number" ? o.radius : null,
+        earthMasses: typeof o.earthMasses === "number" ? o.earthMasses : null,
       };
     }),
   );

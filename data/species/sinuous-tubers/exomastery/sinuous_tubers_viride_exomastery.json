@@ -3,7 +3,7 @@
   "speciesLabel": "Sinuous Tubers Viride",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-11T18:00:34.063Z",
+  "generatedAt": "2026-09-14T01:37:06.752Z",
   "sampleCount": 1,
   "provenance": {
     "inputHash": "091cf3d9de3c46abd249c7eaa88f8d507f8265de15feec900611cd5a214a1311",
@@ -336,6 +336,30 @@
         "p50": 0,
         "p99": 0,
         "max": 0
+      },
+      "gravityG": {
+        "n": 1,
+        "min": 0.10567750015498048,
+        "p1": 0.10567750015498048,
+        "p50": 0.10567750015498048,
+        "p99": 0.10567750015498048,
+        "max": 0.10567750015498048
+      },
+      "radiusKm": {
+        "n": 1,
+        "min": 901.014,
+        "p1": 901.014,
+        "p50": 901.014,
+        "p99": 901.014,
+        "max": 901.014
+      },
+      "earthMasses": {
+        "n": 1,
+        "min": 0.002109,
+        "p1": 0.002109,
+        "p50": 0.002109,
+        "p99": 0.002109,
+        "max": 0.002109
       }
     }
   },

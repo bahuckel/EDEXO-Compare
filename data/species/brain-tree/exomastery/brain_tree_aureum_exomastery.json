@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Aureum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-11T17:41:41.557Z",
+  "generatedAt": "2026-09-14T01:36:55.278Z",
   "sampleCount": 2,
   "provenance": {
     "inputHash": "d123bb16aad35c5e62cc842ca15e2ce7c12ccbe71d174e2b4fa8f5092571a103",
@@ -444,6 +444,30 @@
         "p50": 0,
         "p99": 0,
         "max": 0
+      },
+      "gravityG": {
+        "n": 2,
+        "min": 2.1805040725210953,
+        "p1": 2.1805040725210953,
+        "p50": 2.2403047992285043,
+        "p99": 2.2403047992285043,
+        "max": 2.2403047992285043
+      },
+      "radiusKm": {
+        "n": 2,
+        "min": 9542.924,
+        "p1": 9542.924,
+        "p50": 9753.452,
+        "p99": 9753.452,
+        "max": 9753.452
+      },
+      "earthMasses": {
+        "n": 2,
+        "min": 4.881472,
+        "p1": 4.881472,
+        "p50": 5.239077,
+        "p99": 5.239077,
+        "max": 5.239077
       }
     }
   },

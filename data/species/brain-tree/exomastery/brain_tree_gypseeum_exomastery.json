@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Gypseeum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-11T17:54:21.890Z",
+  "generatedAt": "2026-09-14T01:37:02.112Z",
   "sampleCount": 5,
   "provenance": {
     "inputHash": "f828a80dc81d909e5e5cd1c40af3ab674eb825edbfec07e7e0121795c7bfef44",
@@ -435,6 +435,30 @@
         "p50": 0,
         "p99": 0,
         "max": 0
+      },
+      "gravityG": {
+        "n": 5,
+        "min": 0.06750412104526188,
+        "p1": 0.06750412104526188,
+        "p50": 0.10952128298183582,
+        "p99": 0.21647596871104044,
+        "max": 0.21647596871104044
+      },
+      "radiusKm": {
+        "n": 5,
+        "min": 580.9160625,
+        "p1": 580.9160625,
+        "p50": 932.0739375,
+        "p99": 1790.793625,
+        "max": 1790.793625
+      },
+      "earthMasses": {
+        "n": 5,
+        "min": 0.00056,
+        "p1": 0.00056,
+        "p50": 0.002339,
+        "p99": 0.017066,
+        "max": 0.017066
       }
     }
   },

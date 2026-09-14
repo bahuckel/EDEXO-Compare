@@ -3,7 +3,7 @@
   "speciesLabel": "Sinuous Tubers Caeruleum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-11T17:51:16.453Z",
+  "generatedAt": "2026-09-14T01:36:58.967Z",
   "sampleCount": 3,
   "provenance": {
     "inputHash": "1ea4271fb78b832edb2ae9be97480acfa36a7e97f8f3d87b3a8ef8b66625aff2",
@@ -395,6 +395,30 @@
         "p50": 0,
         "p99": 0,
         "max": 0
+      },
+      "gravityG": {
+        "n": 3,
+        "min": 0.1077143219005071,
+        "p1": 0.1077143219005071,
+        "p50": 0.14062520701356532,
+        "p99": 0.21551487736049002,
+        "max": 0.21551487736049002
+      },
+      "radiusKm": {
+        "n": 3,
+        "min": 885.018125,
+        "p1": 885.018125,
+        "p50": 1185.56775,
+        "p99": 1785.02775,
+        "max": 1785.02775
+      },
+      "earthMasses": {
+        "n": 3,
+        "min": 0.002074,
+        "p1": 0.002074,
+        "p50": 0.004859,
+        "p99": 0.016881,
+        "max": 0.016881
       }
     }
   },

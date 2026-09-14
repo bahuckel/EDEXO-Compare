@@ -3,7 +3,7 @@
   "speciesLabel": "Brain Tree Ostrinum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-11T17:54:27.004Z",
+  "generatedAt": "2026-09-14T01:37:02.867Z",
   "sampleCount": 11,
   "provenance": {
     "inputHash": "01ec8ed2e48fe1dc568d5c9bbf5da826609c91e354f61d52abbd0ec22fabda31",
@@ -463,6 +463,30 @@
         "p50": 0,
         "p99": 0,
         "max": 0
+      },
+      "gravityG": {
+        "n": 11,
+        "min": 0.182351364613142,
+        "p1": 0.182351364613142,
+        "p50": 1.2073498046008102,
+        "p99": 1.7036903137841126,
+        "max": 1.7036903137841126
+      },
+      "radiusKm": {
+        "n": 11,
+        "min": 1268.844375,
+        "p1": 1268.844375,
+        "p50": 6415.0785,
+        "p99": 8209.3225,
+        "max": 8209.3225
+      },
+      "earthMasses": {
+        "n": 11,
+        "min": 0.007217,
+        "p1": 0.007217,
+        "p50": 1.197894,
+        "p99": 2.822515,
+        "max": 2.822515
       }
     }
   },

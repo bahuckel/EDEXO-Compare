@@ -1087,6 +1087,19 @@ function bandForNumericPath(path: string, cell: AtmosphereBandCell | null): Perc
   const low = path.toLowerCase();
   if (low.includes("surfacetemperature") || low.includes("surfacetemp")) return cell.surfaceTemperatureK;
   if (low.includes("surfacepressure")) return cell.surfacePressureAtm;
+  /*
+    Size and mass belong to the atmosphere cell too — see `AtmosphereBandCell`. Matched on the exact
+    tail rather than `includes`, because the loop that calls this walks every numeric path and
+    `body.solidComposition.Metal` must not be mistaken for a mass.
+
+    `?? null` because a profile built before these fields existed has them undefined, and the caller
+    reads null as "no cell for this path" and falls back to the pooled rollup — the old behaviour,
+    unchanged, until that profile is rebuilt.
+  */
+  const tail = low.startsWith("body.") ? low.slice(5) : low;
+  if (tail === "gravity") return cell.gravityG ?? null;
+  if (tail === "radius") return cell.radiusKm ?? null;
+  if (tail === "earthmasses") return cell.earthMasses ?? null;
   return null;
 }
 

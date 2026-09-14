@@ -41,6 +41,30 @@ export interface AtmosphereBandCell {
   n: number;
   surfaceTemperatureK: PercentileBand | null;
   surfacePressureAtm: PercentileBand | null;
+  /**
+   * Size and mass, split the same way — because the atmosphere fractures these too.
+   *
+   * The pooled rollup was measured against 51,340 raw packs and 53 of 1,001 species/path pairs hold
+   * two dense clusters with an empty middle. Every large one groups by atmosphere, and it is not
+   * only temperature that splits:
+   *
+   * ```
+   *   Clypeus Margaritus  Thin Water  n=326  T 392-449  g 0.046-0.063  r  327- 447
+   *                       Thin CO2    n=321  T 190-195  g 0.078-0.270  r  562-1827
+   *                       pooled             T 190-449  g 0.046-0.270  r  327-1827
+   * ```
+   *
+   * A body at `g = 0.07` is impossible for Margaritus under either atmosphere, and the pooled range
+   * scored it as ordinary. Gravity is the worst of the three (56 % of the pooled range empty for
+   * Margaritus, 51 % for Tussock Capillum), radius next, mass close behind — they move together
+   * because `g` is a function of the other two.
+   *
+   * Older profiles predate these fields and read back `undefined`, which falls through to the
+   * pooled rollup exactly as before. Rebuilding a profile fills them in.
+   */
+  gravityG: PercentileBand | null;
+  radiusKm: PercentileBand | null;
+  earthMasses: PercentileBand | null;
 }
 
 /** Keyed by the body's `atmosphereType` exactly as EDSM reports it ("Thin Carbon dioxide"). */
@@ -76,22 +100,28 @@ export interface BandSampleRow {
   atmosphereType: string | null | undefined;
   surfaceTemperatureK: number | null | undefined;
   surfacePressureAtm: number | null | undefined;
+  gravityG: number | null | undefined;
+  radiusKm: number | null | undefined;
+  earthMasses: number | null | undefined;
 }
 
 /** Group observed bodies by atmosphere and reduce each cell to percentile bands. */
 export function buildAtmosphereBands(rows: BandSampleRow[]): AtmosphereBands {
-  const byAtmo = new Map<string, { t: number[]; p: number[]; n: number }>();
+  type Cell = { t: number[]; p: number[]; g: number[]; r: number[]; m: number[]; n: number };
+  const byAtmo = new Map<string, Cell>();
+  const push = (into: number[], v: number | null | undefined) => {
+    if (typeof v === "number" && Number.isFinite(v)) into.push(v);
+  };
   for (const r of rows) {
     const key = (r.atmosphereType ?? "").trim();
     if (!key) continue;
-    const cell = byAtmo.get(key) ?? { t: [], p: [], n: 0 };
+    const cell: Cell = byAtmo.get(key) ?? { t: [], p: [], g: [], r: [], m: [], n: 0 };
     cell.n++;
-    if (typeof r.surfaceTemperatureK === "number" && Number.isFinite(r.surfaceTemperatureK)) {
-      cell.t.push(r.surfaceTemperatureK);
-    }
-    if (typeof r.surfacePressureAtm === "number" && Number.isFinite(r.surfacePressureAtm)) {
-      cell.p.push(r.surfacePressureAtm);
-    }
+    push(cell.t, r.surfaceTemperatureK);
+    push(cell.p, r.surfacePressureAtm);
+    push(cell.g, r.gravityG);
+    push(cell.r, r.radiusKm);
+    push(cell.m, r.earthMasses);
     byAtmo.set(key, cell);
   }
 
@@ -102,6 +132,9 @@ export function buildAtmosphereBands(rows: BandSampleRow[]): AtmosphereBands {
       n: cell.n,
       surfaceTemperatureK: bandFrom(cell.t),
       surfacePressureAtm: bandFrom(cell.p),
+      gravityG: bandFrom(cell.g),
+      radiusKm: bandFrom(cell.r),
+      earthMasses: bandFrom(cell.m),
     };
   }
   return out;

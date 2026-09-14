@@ -8,11 +8,14 @@ import {
 } from "../src/feeder/atmosphereBands.js";
 import { proposeEdgesForProfile, SNAP_MIN_SAMPLES, summariseProposals } from "../src/feeder/edgeSnapping.js";
 
-function rows(atmo: string, temps: number[], press: number[] = []) {
+function rows(atmo: string, temps: number[], press: number[] = [], grav: number[] = []) {
   return temps.map((t, i) => ({
     atmosphereType: atmo,
     surfaceTemperatureK: t,
     surfacePressureAtm: press[i] ?? null,
+    gravityG: grav[i] ?? null,
+    radiusKm: null,
+    earthMasses: null,
   }));
 }
 
@@ -87,8 +90,8 @@ describe("buildAtmosphereBands", () => {
 
   it("skips bodies with no atmosphere reading rather than inventing a cell for them", () => {
     const b = buildAtmosphereBands([
-      { atmosphereType: "", surfaceTemperatureK: 100, surfacePressureAtm: 0.01 },
-      { atmosphereType: null, surfaceTemperatureK: 100, surfacePressureAtm: 0.01 },
+      { atmosphereType: "", surfaceTemperatureK: 100, surfacePressureAtm: 0.01, gravityG: null, radiusKm: null, earthMasses: null },
+      { atmosphereType: null, surfaceTemperatureK: 100, surfacePressureAtm: 0.01, gravityG: null, radiusKm: null, earthMasses: null },
     ]);
     expect(Object.keys(b)).toEqual([]);
   });
@@ -157,5 +160,42 @@ describe("summariseProposals", () => {
     expect(out[0]!.species).toBe(2);
     expect(out[0]!.bodies).toBe(1500);
     expect(out[0]!.exact).toBe(3);
+  });
+});
+
+/**
+ * Clypeus Margaritus, reduced: 326 water bodies at g 0.046-0.063 under 321 carbon-dioxide ones at
+ * g 0.078-0.270. Pooling them spans 0.046-0.270, and a body at g = 0.07 — impossible under either
+ * atmosphere — scores as ordinary. Measured on 51,340 raw packs; gravity was the worst of the three
+ * size parameters at 56 % of the pooled range empty.
+ */
+describe("buildAtmosphereBands, size and mass", () => {
+  const bands = buildAtmosphereBands([
+    ...rows(
+      "Thin Water",
+      Array.from({ length: 326 }, () => 400),
+      [],
+      Array.from({ length: 326 }, (_, i) => 0.046 + (i % 18) * 0.001),
+    ),
+    ...rows(
+      "Thin Carbon dioxide",
+      Array.from({ length: 321 }, () => 192),
+      [],
+      Array.from({ length: 321 }, (_, i) => 0.078 + (i % 20) * 0.01),
+    ),
+  ]);
+
+  it("splits gravity by atmosphere instead of pooling across the gap", () => {
+    const water = bands["Thin Water"]!.gravityG!;
+    const co2 = bands["Thin Carbon dioxide"]!.gravityG!;
+    expect(water.max).toBeLessThan(0.07);
+    expect(co2.min).toBeGreaterThan(0.07);
+    // The empty middle is the whole point: neither cell admits 0.07.
+    expect(water.max).toBeLessThan(co2.min);
+  });
+
+  it("leaves a band null when no body reported that parameter", () => {
+    expect(bands["Thin Water"]!.radiusKm).toBeNull();
+    expect(bands["Thin Water"]!.earthMasses).toBeNull();
   });
 });
