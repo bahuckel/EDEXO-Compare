@@ -1,6 +1,7 @@
 /**
  * Small blocks the species card and the options modal share (7.3).
  */
+import type { BodyComputed } from "@shared/types";
 import type { FootScanMatchPayload, MatchReason, OtherMatchDetailCardDTO, SpeciesProvenance } from "@shared/types";
 
 export function FootScanHitBlock({ hit }: { hit: FootScanMatchPayload["hits"][number] }) {
@@ -208,4 +209,115 @@ export function SpeciesProvenanceBadge({ p }: { p?: SpeciesProvenance }) {
     );
   }
   return null;
+}
+
+/**
+ * Which species, given the genus — B3.
+ *
+ * The question changes the moment `SAASignalsFound` arrives: the game names the genera, so "is
+ * Bacterium here" is settled and only "which Bacterium" is left. This is that answer, and it is the
+ * body's posterior normalised inside the genus rather than across it.
+ *
+ * Measured on 447 rows where the commander sampled the genus, so exactly one candidate in each group
+ * was right: rows called 90-100 % came in at 95.9 %, 70-80 % at 75.0 %, 0-10 % at 8.7 %, mean squared
+ * gap 0.0026. Tighter than the across-the-body number, which makes sense — it answers a smaller
+ * question.
+ *
+ * Nothing is shown for a single-species genus: "100 % of one" is not information.
+ */
+export function GenusSpeciesOdds({
+  items,
+  confirmed,
+  inCard,
+}: {
+  items: BodyComputed["matches"];
+  confirmed: boolean;
+  /** Under a card's chance bar (owner, 2026-09-14) rather than in the genus header. */
+  inCard?: boolean;
+}) {
+  const shortName = (full: string) => {
+    const parts = full.trim().split(/\s+/);
+    return parts.length > 1 ? parts.slice(1).join(" ") : full;
+  };
+
+  const shown = items.filter((m) => !m.unlikely);
+
+  /**
+   * A genus holding a species the app cannot gate gets **no percentages at all**.
+   *
+   * The shares are normalised *inside the genus*, so one unevaluable member poisons every other
+   * number rather than just its own: Electricae radialem needs a nebula the app cannot measure, and
+   * "radialem 70 % · pluma 30 %" is therefore two wrong figures, not one. Dropping radialem and
+   * showing "pluma 100 %" would be worse still — it would assert the answer is pluma when the real
+   * answer is that we cannot tell.
+   *
+   * So the species are still named, because knowing which ones the genus contains is useful, and the
+   * numbers are withheld. Same discipline as `predictionUnsupported` on the card itself (§7.11), and
+   * as §18's rule against a percentage with nothing behind it.
+   */
+  const ungateable = shown.filter((m) => m.entry.predictionUnsupported || m.spatialGateUnresolved);
+
+  const scored = shown
+    .map((m) => ({ name: m.entry.displayName, share: m.genusSharePercent }))
+    .filter(
+      (x): x is { name: string; share: number } => typeof x.share === "number" && Number.isFinite(x.share),
+    )
+    .sort((a, b) => b.share - a.share);
+  if (scored.length < 2) return null;
+
+
+  if (ungateable.length > 0) {
+    /**
+     * Phase 7 gave three genera a gate they can actually be judged by, which removed their
+     * `predictionUnsupported` flag — and that flag was what this suppression keyed on. The gate can
+     * still come back unevaluable: viewing a system remotely, or before the first `StarPos` is read,
+     * there is no coordinate to measure from. Then the species is exactly as ungateable as it was
+     * before Phase 7, and the split must be withheld for the same reason it always was.
+     */
+    const first = ungateable[0]!;
+    const reason =
+      first.entry.predictionUnsupported?.reason ??
+      "its spawn depends on where the system is, and we have no coordinates for this one";
+    return (
+      <p
+        className={`genus-species-odds genus-species-odds--ungateable${inCard ? " genus-species-odds--card" : ""}`}
+        title={`These shares are normalised inside the genus, so a species the app cannot gate makes every other share wrong too — not only its own. ${reason}.`}
+      >
+        <span className="genus-species-odds-lead">
+          {confirmed ? "DSS confirmed — one of:" : "If this genus is here, one of:"}
+        </span>{" "}
+        {scored.map((x, i) => (
+          <span key={x.name} className="genus-species-odds-item">
+            {i > 0 ? " · " : ""}
+            {shortName(x.name)}
+          </span>
+        ))}{" "}
+        <span className="genus-species-odds-why">
+          — no split: {ungateable.map((m) => shortName(m.entry.displayName)).join(", ")}{" "}
+          {ungateable.length === 1 ? "depends" : "depend"} on something a scan cannot answer
+        </span>
+      </p>
+    );
+  }
+
+  return (
+    <p
+      className={`genus-species-odds${confirmed ? " genus-species-odds--confirmed" : ""}${inCard ? " genus-species-odds--card" : ""}`}
+      title={
+        confirmed
+          ? "The DSS has named this genus, so it is on the body. These are the odds on which species it is — the ranking model's posterior, normalised inside the genus."
+          : "If this genus is on the body, these are the odds on which of its species it is. Before a DSS the genus itself is not certain; see the chance on each card for that."
+      }
+    >
+      <span className="genus-species-odds-lead">
+        {confirmed ? "DSS confirmed — which species:" : "If this genus is here:"}
+      </span>{" "}
+      {scored.map((x, i) => (
+        <span key={x.name} className="genus-species-odds-item">
+          {i > 0 ? " · " : ""}
+          {shortName(x.name)} <strong>{Math.round(x.share)}%</strong>
+        </span>
+      ))}
+    </p>
+  );
 }

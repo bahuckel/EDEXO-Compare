@@ -342,13 +342,13 @@ export function primaryMatchQuad(
   return [
     {
       key: "PlanetClass",
-      label: "Planet type",
+      label: "Type",
       value: planet,
       pillStyle: planetClassPillStyle(planet === "—" ? "" : planet),
     },
     {
       key: "AtmosphereType",
-      label: "Atmosphere type",
+      label: "Atmosphere",
       value: atmo,
       pillStyle: atmospherePillStyle(atmoRaw || atmo),
     },

@@ -1,0 +1,316 @@
+/*
+ * Bridge layout (owner reviews 2026-09-14, two rounds): the main screen as fixed zones that scale
+ * with the window instead of a 1200 px column that left half of a wide monitor empty and stacked
+ * everything on the other half.
+ *
+ *   header      three locked rows that never wrap: command bar, context chips, metric cards
+ *               (from 1500 px the last two share one row). Narrow windows scroll a row sideways.
+ *   body strip  horizontal, on top, always (the vertical rail is gone: owner, round two).
+ *   dossier     planetary body and sell range, side by side from 900 px, above the species
+ *   wall        the candidates below, one or two cards wide
+ *
+ * Never more than two species side by side (owner): the wall is one column until it is 50 rem
+ * wide, then two, and a multi-species genus spans both and lays its species out two abreast.
+ * layout.css only keeps the two panes as columns now; this file adds everything else.
+ */
+
+/* ---- shell: wide, but not a 4K wall of cards ---------------------------------------------------- */
+.app-shell {
+  max-width: 116rem;
+}
+
+/* ---- header row 1: the command bar. One line at every width; the search shrinks, the name
+ * ellipsises, nothing drops to a second row. ---------------------------------------------------- */
+.top > .appbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.3rem;
+}
+.top > .appbar > .appbar-left {
+  flex: 0 0 auto;
+}
+.top > .appbar > .appbar-centre {
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}
+.top > .appbar .appbar-system {
+  flex: 0 1 auto;
+  min-width: 6rem;
+}
+.top > .appbar .appbar-system-name {
+  display: inline-block;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.top > .appbar .appbar-search {
+  flex: 1 1 8rem;
+  min-width: 5rem;
+  max-width: 28rem;
+}
+.top > .appbar .appbar-search .journal-system-search {
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: none;
+}
+.top > .appbar .appbar-search .journal-system-search-input {
+  flex: 1 1 4rem;
+  min-width: 4rem;
+}
+.top > .appbar .appbar-search .journal-system-view-actions {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+.top > .appbar > .appbar-right {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  justify-self: auto;
+}
+/* what leaves the bar as it narrows: the freshness, the commander's own name, the region chip and
+ * the "Load bodies" label, then FDev's word, then the two load buttons (the follow button stays) */
+@media (max-width: 1499px) {
+  .top-live-freshness {
+    display: none;
+  }
+}
+@media (max-width: 1279px) {
+  .appbar-region,
+  .appbar-cmdr,
+  .journal-system-source-label {
+    display: none;
+  }
+}
+@media (max-width: 999px) {
+  .appbar-dot-text--compact {
+    display: none;
+  }
+}
+@media (max-width: 699px) {
+  .top > .appbar .journal-system-source-group {
+    display: none;
+  }
+}
+
+/* ---- header row 2: the context chips. One line; sideways scroll behind a fade when it is long -- */
+.top > .context-strip {
+  flex-wrap: nowrap;
+  min-height: 2rem;
+  padding-bottom: 0;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent);
+}
+.top > .context-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---- header row 3: the metric cards. One line of equal-height cards; the D-scan card drops the
+ * system name (row 1 has it), so it cannot wrap into a tall block and drag the others with it. -- */
+.top > .header-tray {
+  flex-wrap: nowrap;
+  align-items: stretch;
+  margin-top: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.top > .header-tray::-webkit-scrollbar {
+  display: none;
+}
+/* a narrow window gets two short rows of cards rather than a sideways scroll */
+@media (max-width: 699px) {
+  .top > .header-tray {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+    overflow: visible;
+  }
+}
+.top > .header-tray > * {
+  flex: 0 0 auto;
+}
+.top > .header-tray .header-dscan-cluster,
+.top > .header-tray .header-dscan-cluster > .header-dscan-pill,
+.top > .header-tray .header-dscan-cluster > .d-scan-card,
+.top > .header-tray .header-dscan-pill > .d-scan-card,
+.top > .header-tray .data-value-pill {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  min-height: 2.6rem;
+  white-space: nowrap;
+}
+.top > .header-tray .d-scan-card__sys,
+.top > .header-tray .d-scan-card__sep {
+  display: none;
+}
+.top > .header-tray .header-scan-data-plus {
+  min-height: 2.6rem;
+  align-self: stretch;
+}
+.top > .header-tray .header-route-mini.d-scan-card.d-scan-card--route {
+  min-width: 11rem;
+  min-height: 2.6rem;
+}
+
+/* ---- from 1500 px rows 2 and 3 share one line: chips left, numbers right ----------------------- */
+@media (min-width: 1500px) {
+  .top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "appbar appbar"
+      "context tray";
+    column-gap: 1.2rem;
+    align-items: center;
+  }
+  .top > .appbar {
+    grid-area: appbar;
+  }
+  .top > .context-strip {
+    grid-area: context;
+    width: auto;
+    min-width: 0;
+  }
+  .top > .header-tray {
+    grid-area: tray;
+    width: auto;
+    margin-top: 0;
+  }
+  .top > .header-edsm-map-note,
+  .top > .header-commander-away {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---- dossier: planetary body and sell range side by side from 900 px, both above the species ---- */
+@media (min-width: 900px) {
+  .body-pane-left {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 0.8rem;
+  }
+}
+/* facts: three tiles across when the panel has 32 rem, two below that; the sell range's three
+ * tiles always share one row */
+@container (max-width: 32rem) {
+  .body-pane .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.body-pane .exo-payout-collapsible .facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* ---- the candidate wall: genus boxes one column wide, two columns from 50 rem, never more. A genus
+ * with several species stacks them inside its box, so the ranking order reads down each column. --- */
+.body-pane:not(.body-pane--rows) .body-pane-right .species-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+.body-pane:not(.body-pane--rows) .body-pane-right .genus-card-shell {
+  min-width: 0;
+  max-height: none;
+}
+.body-pane:not(.body-pane--rows) .genus-card-scroll,
+.body-pane:not(.body-pane--rows) .genus-card-scroll--in-anim {
+  overflow: visible;
+  max-height: none; /* the old inner scroll box; with it, an opened drawer was clipped at 78vh */
+}
+/* the genus's species split sits under the chance bar of each of its cards (owner, round four) */
+.genus-species-odds--card {
+  margin: 0.15rem 0.7rem 0.55rem;
+  border-radius: 0;
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+}
+@container (min-width: 50rem) {
+  .body-pane:not(.body-pane--rows) .body-pane-right .species-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.body-pane-right .panel--candidate-species .genus-card-collapse-grid {
+  min-height: 0;
+}
+
+/* ---- species card: the photo fills the card's width (it used to shrink to its own pixels and sit
+ * centred between two black bars), and the tiles never break a word ------------------------------ */
+.species-card-inner--stacked,
+.species-card-hero {
+  align-items: stretch;
+}
+.species-hero-photo {
+  width: 100%;
+}
+.species-img--hero {
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+  max-height: 20rem;
+}
+.species-quad-grid {
+  grid-template-columns: repeat(auto-fill, minmax(8.25rem, 1fr));
+  gap: 0.4rem;
+  padding: 0.55rem 0.7rem 0.65rem;
+}
+.species-quad-cell {
+  min-height: 0;
+  padding: 0.4rem 0.55rem 0.45rem;
+  overflow: hidden;
+}
+.species-quad-label {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.12em;
+}
+.species-quad-value {
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+.species-card--compact .species-quad-value,
+.species-card--compact .species-quad-label {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* ---- fold heads: in a narrow panel the controls drop under the title instead of over it. A panel
+ * whose aside is the lone "?" keeps one line; only two or more controls earn the second row. ---- */
+.fold {
+  container-type: inline-size;
+}
+@container (max-width: 44rem) {
+  .fold-head:has(.fold-aside :nth-child(2)) {
+    flex-wrap: wrap;
+    row-gap: 0.45rem;
+  }
+  /* line one: title (+ summary) and the "?"; line two: the controls, indented under the title */
+  .fold-head:has(.fold-aside :nth-child(2)) .fold-toggle {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .fold-head:has(.fold-aside :nth-child(2)) .fold-aside {
+    order: 1;
+    flex: 1 1 100%;
+    min-width: 0;
+    padding-left: 1.05rem;
+  }
+}
+
+/* ---- empty state: a wide window does not need a 3 m wide radar ------------------------------- */
+.bio-empty-wrap {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+}

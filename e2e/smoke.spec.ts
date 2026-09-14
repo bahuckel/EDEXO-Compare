@@ -78,7 +78,10 @@ test("session log: opens from the cockpit menu and offers the Markdown copy", as
   const errors = watchErrors(page);
   await page.goto("/");
   await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
-  await page.getByRole("button", { name: "Session log" }).click();
+  // Below 1700 px the cockpit buttons live behind the menu; open it first when the button is hidden.
+  const sessionLog = page.getByRole("button", { name: "Session log" });
+  if (!(await sessionLog.isVisible())) await page.getByRole("button", { name: "Menu" }).click();
+  await sessionLog.click();
   await expect(page.locator(".modal-panel--session")).toBeVisible();
   await expect(page.getByRole("button", { name: /Copy as Markdown|Copied/ })).toBeVisible();
   await page.waitForTimeout(500); // the modal fades in

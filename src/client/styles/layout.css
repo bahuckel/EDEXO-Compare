@@ -71,35 +71,14 @@
   color: var(--text-faint);
 }
 
-/* ---- two columns from 1750 px (the body rail takes 15 rem from 1500 px): facts + price left, species right ---- */
+/* ---- dossier (facts + price) above the species at every width (owner, 2026-09-14 round three);
+ * the two dossier panels sit side by side from 900 px — see bridge.css ------------------------------ */
 .body-pane-left,
 .body-pane-right {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
   min-width: 0;
-}
-@media (min-width: 1750px) {
-  .body-pane {
-    display: grid;
-    grid-template-columns: minmax(400px, 460px) minmax(0, 1fr);
-    grid-template-areas:
-      "glance glance"
-      "left right";
-    column-gap: 1.2rem;
-    align-items: start;
-  }
-  .body-pane > .glance {
-    grid-area: glance;
-  }
-  .body-pane-left {
-    grid-area: left;
-    position: sticky;
-    top: 3.1rem; /* below the glance bar */
-  }
-  .body-pane-right {
-    grid-area: right;
-  }
 }
 
 /* ---- body tabs: label + bio count · best price, a dot for an analysed species ------------------ */

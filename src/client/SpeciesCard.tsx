@@ -17,7 +17,7 @@ import { createPortal } from "react-dom";
 import { pillLabelStyle, TempUnit } from "./planetDisplayUtils";
 import { EXO_PRESENCE_HELP, EXO_CODEX_VS_EXO_PROFILE_HELP, exomasteryDetailHasContent, footCatalogBadgeText, labelForReasonField, primaryMatchQuad, speciesCaptionParts, speciesMatchExtraReasons, titleCaseSpeciesWords } from "./speciesMatchHelpers";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
-import { EMPTY_REASONS, FootScanHitBlock, OtherMatchDetailCardsGrid, SpeciesProvenanceBadge, ThinSampleNote, hostHitsMorphSpectralChip, morphSpectralChipHeatClass, sortMorphSpectralKeys } from "./SpeciesCardBits";
+import { EMPTY_REASONS, FootScanHitBlock, GenusSpeciesOdds, OtherMatchDetailCardsGrid, SpeciesProvenanceBadge, ThinSampleNote, hostHitsMorphSpectralChip, morphSpectralChipHeatClass, sortMorphSpectralKeys } from "./SpeciesCardBits";
 import { readTempUnitFromLs, writeTempUnitToLs } from "./lsPrefs";
 
 function FootScanMatchCard({ payload }: { payload: FootScanMatchPayload }) {
@@ -284,6 +284,7 @@ export const SpeciesCard = memo(function SpeciesCard({
   hostStarType,
   hostStarTypes,
   compactCandidateView,
+  genusOdds = null,
 }: {
   m: BodyComputed["matches"][0];
   scan: PlanetScan | null;
@@ -293,6 +294,8 @@ export const SpeciesCard = memo(function SpeciesCard({
   /** Every star that could be the host, when the body orbits a barycentre rather than one star. */
   hostStarTypes?: string[];
   compactCandidateView?: boolean;
+  /** The genus's species split, shown under the chance bar when the genus has several candidates. */
+  genusOdds?: { items: BodyComputed["matches"]; confirmed: boolean } | null;
 }) {
   const e = m.entry;
   /*
@@ -724,6 +727,7 @@ export const SpeciesCard = memo(function SpeciesCard({
           <p className="species-similarity-index-codex-hint-text">{EXO_CODEX_VS_EXO_PROFILE_HELP}</p>
         </div>
       )}
+      {genusOdds ? <GenusSpeciesOdds items={genusOdds.items} confirmed={genusOdds.confirmed} inCard /> : null}
     </div>
   );
 
