@@ -149,6 +149,18 @@ export interface PredictionRecord {
   truth: string[];
   /** How each confirmed species was ranked just before it was confirmed. */
   outcomes: PredictionOutcome[];
+  /**
+   * Why {@link outcomes} is empty despite {@link truth} being known, or null when there is no
+   * anomaly to explain.
+   *
+   * Empty outcomes have two completely different meanings and nothing on the record distinguished
+   * them: usually the commander simply has not sampled anything here yet, but sometimes the app
+   * first met the body *after* the scan — a journal replay, or the app started mid-session — and
+   * there is no pre-truth list to score against, because the only list we ever saw already had the
+   * answer in it. The second case is unscoreable rather than broken, and saying so is the difference
+   * between a reader shrugging and a reader filing a bug. One did.
+   */
+  unscored?: string | null;
   /** Merged from `edexo-surface-marks.json` when the commander leaves. Null until then. */
   conditions: PredictionConditions[] | null;
   /** True once the commander has left and the record has had its conditions merged. */
@@ -354,6 +366,7 @@ export function recordPredictionForBody(input: {
         outcomes: [],
         conditions: null,
         final: false,
+        unscored: null,
       };
       m.set(body.key, rec);
     }
@@ -412,6 +425,18 @@ export function recordPredictionForBody(input: {
       });
     }
     rec.truth = truth;
+    /*
+      Say why, when the verdict cannot be taken. `last` is the list the commander was choosing from
+      before the answer arrived; without one there is nothing to score, and an empty `outcomes` would
+      otherwise be indistinguishable from "nothing sampled here yet".
+    */
+    if (truth.length > 0 && rec.outcomes.length === 0) {
+      rec.unscored = last
+        ? "the offer never changed after the scan, so no pre-truth list was captured"
+        : "first seen after the scan — journal replay or a late start, so there is no pre-truth list to score";
+    } else if (rec.outcomes.length > 0) {
+      rec.unscored = null;
+    }
 
     rec.stages.push({
       stage,
