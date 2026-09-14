@@ -7,7 +7,7 @@ import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useFootfallCertainty } from "./footfallContext";
 import { settledMultiplier } from "@shared/footfallValue";
-import { PhotoCredit, photoCreditTitle } from "./photoCredit";
+import { PhotoCredit, isPlaceholderPhoto, photoCreditTitle } from "./photoCredit";
 import { PhotoGallery } from "./PhotoGallery";
 import { memo, Suspense, useEffect, useMemo, useRef, useState, CSSProperties } from "react";
 import type { AppSnapshot, BodyComputed, EstimatedSurfaceTempBand, FootScanMatchPayload, OtherMatchDetailCardDTO, PlanetScan } from "@shared/types";
@@ -748,26 +748,38 @@ export const SpeciesCard = memo(function SpeciesCard({
           </>
         ) : (
           <div className="species-card-hero">
-            {thumbBtn}
             {/*
-              Directly under the photo it credits — the hero is a column, so anywhere further down
-              reads as a footnote to the card rather than to the image. One row rather than two
-              stacked blocks: the count and the credit were costing three lines of height between
-              them, and on this layout every line below the photograph is height the photograph
-              loses.
+              On the photograph, not under it.
+
+              The credit belongs to the image and has to stay with it, but a full-width row below the
+              picture is height the picture loses — the owner's words: a black bar hiding a good part
+              of them. Laid over the bottom-right corner in its own translucent plate it costs the
+              photograph nothing but the corner it sits in, which is the emptiest part of a plant
+              photographed from the front.
+
+              The plate is a sibling of the button, not a child, so clicking the credit or the photo
+              count cannot open the lightbox by accident. And it is skipped entirely when it would be
+              empty: a house-drawn placeholder carries no credit and a lone photograph has no count,
+              so both children can render nothing at once, and an empty translucent box laid on the
+              picture would be worse than the bar this replaced.
             */}
-            <div className="photo-meta-row">
-              {galleryUrls.length > 1 ? (
-                <button
-                  type="button"
-                  className="photo-count-hint"
-                  onClick={() => setPhotoLightbox(true)}
-                  title={`${galleryUrls.length} photographs of this species — click to browse`}
-                >
-                  {galleryUrls.length} photos
-                </button>
+            <div className="species-hero-photo">
+              {thumbBtn}
+              {galleryUrls.length > 1 || !isPlaceholderPhoto(heroPhotoUrl) ? (
+                <div className="photo-meta-row photo-meta-row--overlay">
+                  {galleryUrls.length > 1 ? (
+                    <button
+                      type="button"
+                      className="photo-count-hint"
+                      onClick={() => setPhotoLightbox(true)}
+                      title={`${galleryUrls.length} photographs of this species — click to browse`}
+                    >
+                      {galleryUrls.length} photos
+                    </button>
+                  ) : null}
+                  <PhotoCredit photoUrl={heroPhotoUrl} contributor={m.photoCreditByUrl?.[heroPhotoUrl]} />
+                </div>
               ) : null}
-              <PhotoCredit photoUrl={heroPhotoUrl} contributor={m.photoCreditByUrl?.[heroPhotoUrl]} />
             </div>
             {identityNeon}
             {quadGrid}

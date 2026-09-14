@@ -414,3 +414,49 @@
     display: none;
   }
 }
+
+/*
+  The hero photograph's credit, laid over the picture instead of under it.
+
+  `.species-hero-photo` exists only to give the overlay something to anchor to; the button inside it
+  is unchanged, so the image still sizes itself. The plate is pinned bottom-right — a plant shot from
+  the front leaves that corner emptiest, and the alternative (a full-width row below) charged the
+  photograph a whole line of height for a nine-pixel credit.
+*/
+.species-hero-photo {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.photo-meta-row--overlay {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  z-index: 2;
+  width: auto;
+  max-width: calc(100% - 10px);
+  margin: 0;
+  padding: 2px 6px;
+  gap: 0.3rem;
+  justify-content: flex-end;
+  /* Dark enough to read a light caption over a bright sky, sheer enough to show the plant through. */
+  background: rgba(6, 6, 8, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* The chamfer the rest of the panel furniture uses, so it reads as part of the app. */
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+  pointer-events: auto;
+}
+
+/* Half the old line height: the credit has to be legible, not prominent. */
+.photo-meta-row--overlay .photo-credit--card {
+  font-size: 8px;
+  line-height: 1.25;
+  opacity: 0.82;
+}
+
+.photo-meta-row--overlay .photo-count-hint {
+  font-size: 8px;
+  line-height: 1.25;
+  padding: 0 2px;
+}
