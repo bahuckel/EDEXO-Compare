@@ -155,6 +155,16 @@ export interface BioBodies {
   bodyName(systemIndex: number, bodyIndex: number): string;
   /** How many systems the file holds per region index, so a picker need not offer empty ones. */
   systemsByRegion(): Uint32Array;
+  /**
+   * Every planet class the file interns, including the empty string for "not recorded".
+   *
+   * Six of them across 10.3 M bodies, which is what makes a per-class decision worth precomputing:
+   * a caller can ask the matcher once per class instead of once per body. The strings are the
+   * **dump's** spelling — `High metal content world`, not the journal's `High metal content body`.
+   */
+  planetClasses(): string[];
+  /** Every atmosphere the file interns, the dump's spelling, empty string included. */
+  atmospheres(): string[];
 }
 
 class Cursor implements BioBodyCursor {
@@ -386,6 +396,16 @@ class Bodies implements BioBodies {
     const out = new Uint32Array(256);
     for (let i = 0; i < this.systemCount; i++) out[this.view.getUint8(this.sysOffset(i) + 20)]!++;
     return out;
+  }
+
+  // The empty string leads both lists because index 0 means "the dump did not record this", and a
+  // caller deciding per value has to be given that case rather than left to discover it.
+  planetClasses(): string[] {
+    return ["", ...this.strings.subTypes];
+  }
+
+  atmospheres(): string[] {
+    return ["", ...this.strings.atmospheres];
   }
 }
 

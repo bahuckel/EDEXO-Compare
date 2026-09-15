@@ -336,6 +336,13 @@
   opacity: 0.8;
 }
 
+/* A partial answer says so in the summary row, in the colour the app uses for "read this". It is
+   not an error — the rows are real — but a reader who misses it will read a prefix as a ranking. */
+.gsx-partial {
+  color: var(--warn, #e0a54a);
+  font-size: var(--fs-2xs);
+}
+
 /* One line above the predicted body list, saying what kind of claim every row below it is. */
 .gsx-caveat {
   margin: 0 0 0.6rem;

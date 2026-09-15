@@ -27,7 +27,11 @@ import {
   readBioBodiesSummary,
   type BioBodyRow,
 } from "../src/server/bioBodies.js";
-import { galaxyBodyScan } from "../src/server/galaxyBodyScan.js";
+import {
+  atmosphereTypeFromDump,
+  galaxyBodyScan,
+  planetClassFromDump,
+} from "../src/server/galaxyBodyScan.js";
 import { loadSpeciesDatabase } from "../src/server/snapshot.js";
 import type { SpeciesEntry } from "../src/shared/types.js";
 
@@ -181,7 +185,19 @@ const SYSTEMS: TestSystem[] = [
     z: 60,
     regionId: 8,
     starType: "K3",
-    bodies: [{ ...FLUCTUS_BODY, bodyId: 21, suffix: "1 a" }],
+    bodies: [
+      { ...FLUCTUS_BODY, bodyId: 21, suffix: "1 a" },
+      /*
+        The same world under the dump's own spelling of a class the journal writes differently.
+        Fonticulua fluctus lists `Rocky ice body`; Spansh writes `Rocky Ice world`, and the matcher
+        compares those strings exactly — so without the translation this body is rejected on a
+        technicality, and it is 92,883 bodies in Inner Orion Spur alone.
+      */
+      { ...FLUCTUS_BODY, bodyId: 22, suffix: "1 b", subType: "Rocky Ice world" },
+      // Spansh joins what the journal splits: `AtmosphereType` is the composition alone, and the
+      // normaliser strips a leading Thin or Thick but not a leading Hot.
+      { ...FLUCTUS_BODY, bodyId: 23, suffix: "1 c", atmosphere: "Hot thin Oxygen" },
+    ],
   },
 ];
 
@@ -206,7 +222,7 @@ describe("the galaxy body file", () => {
   it("reads back what the builder wrote", () => {
     const f = loadBioBodies(file)!;
     expect(f.systemCount).toBe(2);
-    expect(f.bodyCount).toBe(4);
+    expect(f.bodyCount).toBe(6);
 
     const sys = f.system(0);
     expect(sys.name).toBe("Testia AA-A a1-0");
@@ -237,7 +253,7 @@ describe("the galaxy body file", () => {
     ]);
     const other: number[] = [];
     f.forEachInRegion(8, (b) => void other.push(b.bodyId));
-    expect(other).toEqual([21]);
+    expect(other).toEqual([21, 22, 23]);
   });
 
   it("keeps the dump's own units, unconverted", () => {
@@ -284,7 +300,7 @@ describe("the galaxy body file", () => {
     */
     const summary = readBioBodiesSummary(file)!;
     expect(summary.systemCount).toBe(2);
-    expect(summary.bodyCount).toBe(4);
+    expect(summary.bodyCount).toBe(6);
     expect([...summary.systemsByRegion]).toEqual([...loadBioBodies(file)!.systemsByRegion()]);
   });
 
@@ -295,6 +311,46 @@ describe("the galaxy body file", () => {
   it("is absent rather than broken when the machine has no file", () => {
     clearBioBodiesCache();
     expect(loadBioBodies(path.join(dir, "not-here.bin"))).toBeNull();
+  });
+});
+
+/**
+ * The vocabulary bridge, tested on its own rather than through the scan.
+ *
+ * It has to be, for the atmosphere half. Going through the scan proved nothing: `Hot thin Oxygen`
+ * matched Fonticulua fluctus whether or not the prefix was stripped, because the matcher's §44
+ * observation overrule let it through the back door — the same escape hatch that hid the planet
+ * class mismatch for a whole session. A test that passes with the fix reverted is not a test.
+ */
+describe("the dump's vocabulary against the journal's", () => {
+  it("renames the two classes Spansh spells differently", () => {
+    expect(planetClassFromDump("High metal content world")).toBe("High metal content body");
+    expect(planetClassFromDump("Rocky Ice world")).toBe("Rocky ice body");
+  });
+
+  it("leaves the four it already spells the journal's way", () => {
+    for (const same of ["Icy body", "Rocky body", "Metal-rich body", "Class III gas giant"]) {
+      expect(planetClassFromDump(same)).toBe(same);
+    }
+    // A body the dump never classified stays unset rather than becoming an empty class name.
+    expect(planetClassFromDump("")).toBeUndefined();
+  });
+
+  it("strips the heat word the journal keeps in its prose field", () => {
+    // The journal writes AtmosphereType "SulphurDioxide" and Atmosphere "hot thin sulphur dioxide
+    // atmosphere". The dump writes one string for both, and the matcher's normaliser strips a
+    // leading Thin or Thick and nothing else.
+    expect(atmosphereTypeFromDump("Hot thin Sulphur dioxide")).toBe("thin Sulphur dioxide");
+    expect(atmosphereTypeFromDump("Hot thick Carbon dioxide")).toBe("thick Carbon dioxide");
+    expect(atmosphereTypeFromDump("Hot Water")).toBe("Water");
+  });
+
+  it("leaves an ordinary atmosphere alone, and reports none as none", () => {
+    expect(atmosphereTypeFromDump("Thin Oxygen")).toBe("Thin Oxygen");
+    expect(atmosphereTypeFromDump("")).toBeUndefined();
+    // "No atmosphere" travels through as-is; `normalizeScanAtmosphereForMatch` reads it as vacuum,
+    // which is what Brain Trees gate on.
+    expect(atmosphereTypeFromDump("No atmosphere")).toBe("No atmosphere");
   });
 });
 
@@ -369,6 +425,31 @@ describe("what could be there", () => {
     expect(r.hits.map((h) => h.starSystem)).toEqual(["Testia BB-B b2-0"]);
   });
 
+  it("reads the dump's spelling of a planet class the journal spells differently", async () => {
+    /*
+      `Rocky Ice world` is Spansh; `Rocky ice body` is the journal, and every `planetClassAnyOf` in
+      the species data. The comparison is an exact string match, so without a translation the body
+      is rejected — measured across the whole database, 37 species-and-class verdicts flip from
+      rejected to allowed once it is applied, Fonticulua fluctus on Rocky ice among them.
+    */
+    expect(fluctus.criteria.planetClassAnyOf).toContain("Rocky ice body");
+    const r = await galaxyBodyScan({ regionId: 8, speciesIds: [fluctus.id], includeUnprobed: true });
+    expect(r.hits[0]!.bodies.map((b) => b.bodyId)).toContain(22);
+  });
+
+  it("offers a body whose atmosphere the dump prefixed with Hot", async () => {
+    const r = await galaxyBodyScan({ regionId: 8, speciesIds: [fluctus.id], includeUnprobed: true });
+    expect(r.hits[0]!.bodies.map((b) => b.bodyId)).toContain(23);
+  });
+
+  it("reports the class and atmosphere as the dump wrote them", async () => {
+    // The translation is for the matcher, not for the reader: a commander looking this up on Spansh
+    // has to see the words Spansh uses.
+    const r = await galaxyBodyScan({ regionId: 8, speciesIds: [fluctus.id], includeUnprobed: true });
+    const row = r.hits[0]!.bodies.find((b) => b.bodyId === 22)!;
+    expect(row.planetClass).toBe("Rocky Ice world");
+  });
+
   it("reports how much ground it covered, not only what it found", () => {
     /*
       The counts are what make the claim readable: one match out of three bodies searched is a
@@ -376,6 +457,8 @@ describe("what could be there", () => {
     */
     return galaxyBodyScan({ regionId: 7, speciesIds: [fluctus.id], includeUnprobed: true }).then((r) => {
       expect(r.bodiesScanned).toBe(3);
+      expect(r.systemsWithCandidates).toBe(1);
+      expect(r.systemsSearched).toBe(r.systemsInRegion);
       expect(r.bodiesMatched).toBe(1);
       expect(r.matchedSystems).toBe(1);
       expect(r.regionId).toBe(7);

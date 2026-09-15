@@ -231,7 +231,9 @@ function GalaxyPossibleModal({
         <div className="modal-head">
           <h3 id="gsx-possible-title">
             {bodies} bod{bodies === 1 ? "y" : "ies"} in {result.hits.length} system
-            {result.hits.length === 1 ? "" : "s"}, nearest first
+            {result.hits.length === 1 ? "" : "s"}
+            {/* Never "nearest first" over a partial walk — see the summary row for why. */}
+            {result.truncated ? ", nearest in the part searched" : ", nearest first"}
           </h3>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
@@ -751,8 +753,16 @@ export function GalaxySearchPanel({
 
           {possible && scan ? (
             <div className="fdb-summary">
+              {/*
+                Both figures are the whole answer, not the part on screen.
+
+                They were `scanBodies` and `matchedSystems` — the bodies in the two hundred systems
+                the list returns, against every system that matched — which read as "383 bodies in
+                98,031 systems" and described no population at all. What the list holds is the
+                button's job to say.
+              */}
               <span>
-                <strong>{crFmt.format(scanBodies)}</strong> bodies
+                <strong>{crFmt.format(scan.bodiesMatched)}</strong> bodies
               </span>
               <span>
                 in <strong>{crFmt.format(scan.matchedSystems)}</strong> systems
@@ -765,14 +775,29 @@ export function GalaxySearchPanel({
               <span className="dim">
                 {crFmt.format(scan.bodiesScanned)} bodies searched in {(scan.elapsedMs / 1000).toFixed(1)} s
               </span>
+              {/*
+                A truncated answer names the fraction of the region it covers, and does not call
+                itself nearest-first.
+
+                The walk goes through a region in system order, so running out of time leaves a
+                *prefix* rather than a sample — the nearest match in the part that was reached is
+                not the nearest match in the region. Saying "partial" alone would let a commander
+                read the top row as the closest one, which is the one thing this list is for.
+              */}
               {scan.truncated ? (
-                <span className="dim" title="The region held more than one answer can carry. Narrow it to a species.">
-                  partial answer
+                <span
+                  className="gsx-partial"
+                  title="A region is walked in system order, so an answer that ran out of time covers the first part of it rather than a spread across it — the nearest row here is the nearest in that part, not in the region. Name a single species to search the whole of it."
+                >
+                  covered {Math.round((scan.systemsSearched / Math.max(1, scan.systemsInRegion)) * 100)}
+                  % of {scan.regionName ?? "the region"} — ran out of time
                 </span>
               ) : null}
               {scanBodies > 0 ? (
                 <button type="button" className="gsx-list-open" onClick={() => setScanListOpen(true)}>
-                  List {crFmt.format(scanBodies)} bodies
+                  {/* Says what opens, which is the nearest few systems rather than every match. */}
+                  List the nearest {crFmt.format(scan.hits.length)} system
+                  {scan.hits.length === 1 ? "" : "s"}
                 </button>
               ) : null}
             </div>

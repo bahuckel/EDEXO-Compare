@@ -81,6 +81,7 @@ import {
   demoteFailedHostStarGates,
   demoteFailedSpatialGates,
   speciesMatchesCriteria,
+  speciesMatchesExcludingTempPressure,
   NUMERIC_GATE_TOLERANCE,
   type PlanetTemperatureBand,
 } from "./matchSpecies.js";
@@ -116,13 +117,100 @@ export interface GalaxyBodyScanQuery extends GalaxyBodyScanQueryDTO {
 }
 
 /**
- * The most matching bodies one request will collect before it stops walking.
+ * How long one request may walk before it stops and says how far it got.
  *
- * A ceiling rather than a target, and it bites only on a question with no gates worth the name —
- * "any Bacterium, anywhere in Inner Orion Spur". Stopping and saying so beats a response nobody can
- * read; {@link GalaxyBodyScanDTO.truncated} is what the panel reads to say it out loud.
+ * A **time** budget rather than a cap on matches, and the difference matters. The first version
+ * stopped after 400,000 matching bodies, which is reachable — Tussock across Inner Orion Spur hits
+ * it having seen 1.4 M of the region's 3.2 M bodies. Stopping there truncates in **encounter
+ * order**, so a list headed "nearest first" was drawn from an arbitrary prefix of the region:
+ * confidently wrong, and invisible, because the rows it did show were all real.
+ *
+ * Storage is bounded by pruning instead (see the walk), so the only thing left worth bounding is
+ * the wait. When this bites, {@link GalaxyBodyScanDTO.systemsSearched} against
+ * {@link GalaxyBodyScanDTO.systemsInRegion} says exactly how much of the region the answer covers,
+ * and the panel reports the fraction rather than implying the whole.
  */
-const MAX_MATCHED_BODIES = 400_000;
+const TIME_BUDGET_MS = 20_000;
+
+/**
+ * Whether a planet class can ever suit one of the wanted species, decided once per class.
+ *
+ * The matcher's planet-class verdict is a pure function of the class string and the species — the
+ * codex list, or `observedOnPlanetClass` overruling it — so it can be asked in advance and reused
+ * across millions of bodies. The probe calls the matcher's own
+ * {@link speciesMatchesExcludingTempPressure} rather than reimplementing the rule, and reads only
+ * whether a `PlanetClass` failure came back; every other gate failing on a bare scan is expected
+ * and ignored.
+ *
+ * This is what makes a whole-genus search bearable. Brain Trees allow two of the six classes the
+ * file holds, Stratum two, Tussock three — and a class the genus cannot use is a body the full
+ * matcher never has to see.
+ */
+function planetClassMask(entries: readonly SpeciesEntry[], classes: readonly string[]): Set<string> {
+  const allow = new Set<string>();
+  for (const cls of classes) {
+    if (!cls) {
+      // A body the dump never classified cannot be judged here; let the matcher have it.
+      allow.add(cls);
+      continue;
+    }
+    const scan = {
+      BodyName: "probe",
+      BodyID: 0,
+      StarSystem: "probe",
+      SystemAddress: 0,
+      PlanetClass: planetClassFromDump(cls),
+    } as PlanetScan;
+    for (const entry of entries) {
+      const r = speciesMatchesExcludingTempPressure(entry, scan, null);
+      if (r.ok || !r.reasons.some((f) => f.field === "PlanetClass")) {
+        allow.add(cls);
+        break;
+      }
+    }
+  }
+  return allow;
+}
+
+/**
+ * The same trick for atmospheres, and it only works for some species.
+ *
+ * Where the codex names actual atmospheres, the verdict is a pure function of the atmosphere string
+ * and the mask is exact. Where it means "any thin atmosphere", the gate consults the body's
+ * *pressure* instead, and no amount of asking about the string can answer it — so those species are
+ * left out of the mask entirely and contribute "allow everything", which is the safe direction.
+ *
+ * `atmospherePressureCategory` is the flag that tells the two apart, and it is exactly the case
+ * that pays: Brain Trees want vacuum and nothing else, so this takes them from 3.2 M bodies to the
+ * 428 airless ones in the largest region.
+ */
+function atmosphereMask(
+  entries: readonly SpeciesEntry[],
+  atmospheres: readonly string[],
+): Set<string> | null {
+  const maskable = entries.filter((e) => !e.criteria.atmospherePressureCategory);
+  if (maskable.length !== entries.length) return null;
+  const allow = new Set<string>();
+  for (const atmo of atmospheres) {
+    const scan = {
+      BodyName: "probe",
+      BodyID: 0,
+      StarSystem: "probe",
+      SystemAddress: 0,
+      PlanetClass: "Rocky body",
+      AtmosphereType: atmosphereTypeFromDump(atmo),
+      Atmosphere: atmo || undefined,
+    } as PlanetScan;
+    for (const entry of maskable) {
+      const r = speciesMatchesExcludingTempPressure(entry, scan, null);
+      if (r.ok || !r.reasons.some((f) => f.field === "AtmosphereType")) {
+        allow.add(atmo);
+        break;
+      }
+    }
+  }
+  return allow;
+}
 
 /** Bands a body must be inside for the species to have any chance, read straight off the criteria. */
 interface CheapGate {
@@ -200,6 +288,50 @@ function passesCheapGate(b: BioBodyCursor, g: CheapGate): boolean {
   return true;
 }
 
+/**
+ * The dump does not spell a planet class the way the journal does, and the difference is not cosmetic.
+ *
+ * Spansh writes `High metal content world` and `Rocky Ice world`; the journal — and therefore every
+ * `planetClassAnyOf` in the species data — writes `High metal content body` and `Rocky ice body`.
+ * The comparison in the matcher is an exact string match, so handing the dump's spelling straight
+ * across means the codex list never matches and the row survives only if
+ * `observedOnPlanetClass` happens to overrule it.
+ *
+ * That is **806,020 bodies in Inner Orion Spur alone — 25 % of the region** — arriving under a name
+ * the species data does not use. Well-observed species were rescued by the corpus and looked fine,
+ * which is exactly why this was invisible: Stratum tectonicas came back with High metal content
+ * worlds throughout, through the escape hatch rather than through the gate.
+ *
+ * The other four classes the file holds (`Icy body`, `Rocky body`, `Metal-rich body`, and a lone
+ * `Class III gas giant`) are already spelled the journal's way and pass through untouched.
+ */
+const PLANET_CLASS_FROM_DUMP: Record<string, string> = {
+  "high metal content world": "High metal content body",
+  "rocky ice world": "Rocky ice body",
+};
+
+export function planetClassFromDump(subType: string): string | undefined {
+  if (!subType) return undefined;
+  return PLANET_CLASS_FROM_DUMP[subType.toLowerCase()] ?? subType;
+}
+
+/**
+ * The same problem, much smaller, for atmospheres.
+ *
+ * The journal splits what Spansh joins: `AtmosphereType` is the composition alone (`SulphurDioxide`)
+ * and `Atmosphere` carries the prose (`hot thin sulphur dioxide atmosphere`). The dump writes one
+ * string for both, and `normalizeScanAtmosphereForMatch` already strips a leading `Thin` or `Thick`
+ * — but not `Hot`, so `Hot thin Sulphur dioxide` keys as itself and matches no species.
+ *
+ * 46 bodies in Inner Orion Spur, against 806,020 for the planet class. Fixed because it is one
+ * regex and the alternative is a silent miss, not because it is common.
+ */
+export function atmosphereTypeFromDump(atmosphere: string): string | undefined {
+  if (!atmosphere) return undefined;
+  const t = atmosphere.replace(/^\s*(hot|cold|warm)\s+/i, "").trim();
+  return t || undefined;
+}
+
 /** A body record turned into the shape the matcher reads. */
 function scanFromBody(
   row: BioBodyRow,
@@ -212,8 +344,10 @@ function scanFromBody(
     BodyID: row.bodyId,
     StarSystem: systemName,
     SystemAddress: systemAddress,
-    PlanetClass: row.subType || undefined,
-    AtmosphereType: row.atmosphere || undefined,
+    PlanetClass: planetClassFromDump(row.subType),
+    AtmosphereType: atmosphereTypeFromDump(row.atmosphere),
+    // The prose form keeps the dump's whole string, `Hot` and all, exactly as the journal's own
+    // `Atmosphere` field does — the temperature estimator reads it for "thin" and "thick".
     Atmosphere: row.atmosphere || undefined,
     // The dump's gees back into the journal's m/s², because that is what the matcher converts from.
     SurfaceGravity: row.gravityG > 0 ? row.gravityG * EARTH_G_MS2 : undefined,
@@ -283,7 +417,9 @@ function empty(regionId: number, available: boolean): GalaxyBodyScanDTO {
     available,
     regionId,
     regionName: regionName(regionId),
-    systemsScanned: 0,
+    systemsWithCandidates: 0,
+    systemsSearched: 0,
+    systemsInRegion: 0,
     bodiesScanned: 0,
     bodiesGated: 0,
     bodiesMatched: 0,
@@ -381,6 +517,13 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
   if (wanted.length === 0) return empty(regionId, true);
   const wantedIds = new Set(wanted.map((e) => e.id));
   const gate = cheapGateFor(wanted);
+  /*
+    Asked once per distinct string rather than once per body. The file interns its vocabulary — six
+    planet classes and twenty-two atmospheres across 10.3 M bodies — so these cost a few hundred
+    matcher calls at setup and save millions in the walk.
+  */
+  const classAllowed = planetClassMask(wanted, file.planetClasses());
+  const atmoAllowed = atmosphereMask(wanted, file.atmospheres());
 
   /*
     The evidence filter, the owner's design: three independent ticks, and unticking one excludes.
@@ -537,13 +680,17 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
   const best = new Map<string, GalaxyBodyHitDTO>();
 
   const systems = file.regionSystemIndices(regionId);
+  let systemsSearched = 0;
   for (let s = 0; s < systems.length; s++) {
     const systemIndex = systems[s]!;
+    systemsSearched++;
     let rows: GalaxyBodyMatchDTO[] | null = null;
     file.forEachBodyOfSystem(systemIndex, (b) => {
       bodiesScanned++;
       const probed = (b.flags & BODY_DSS) !== 0;
       if (probed ? !wantProbed : !wantUnprobed) return;
+      if (!classAllowed.has(b.subType)) return;
+      if (atmoAllowed && !atmoAllowed.has(b.atmosphere)) return;
       if (!passesCheapGate(b, gate)) return;
       bodiesGated++;
       candidateSystems.add(systemIndex);
@@ -580,20 +727,24 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
       if (!held || hit.bodies.length > held.bodies.length) best.set(key, hit);
     }
 
-    if (bodiesMatched >= MAX_MATCHED_BODIES) {
-      truncated = true;
-      break;
-    }
-
     /*
-      Give the event loop a turn.
+      Give the event loop a turn, and check the clock while we are here.
 
-      The widest question measured — a whole genus across Inner Orion Spur, 3.2 M bodies — is 36
-      seconds of work, and 36 seconds of *uninterrupted* work would stop the journal watcher, the
-      websocket and every other request in the process. A commander flying while they search would
-      watch the app go deaf. Every 5,000 systems is a few milliseconds of latency at most.
+      Seconds of *uninterrupted* work would stop the journal watcher, the websocket and every other
+      request in the process — a commander flying while they search would watch the app go deaf.
+      Every 4,096 systems costs a few milliseconds of latency at most.
+
+      The budget is checked at the same boundary because a region is walked in system order, so
+      stopping anywhere makes the answer a prefix of the region rather than a sample of it. That is
+      only honest if the caller is told, which is what `systemsSearched` is for.
     */
-    if ((s & 0x0fff) === 0x0fff) await new Promise<void>((r) => setImmediate(r));
+    if ((s & 0x0fff) === 0x0fff) {
+      await new Promise<void>((r) => setImmediate(r));
+      if (Date.now() - t0 > TIME_BUDGET_MS) {
+        truncated = true;
+        break;
+      }
+    }
   }
 
   kept.sort(better);
@@ -606,7 +757,9 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
     available: true,
     regionId,
     regionName: regionName(regionId),
-    systemsScanned: candidateSystems.size,
+    systemsWithCandidates: candidateSystems.size,
+    systemsSearched,
+    systemsInRegion: systems.length,
     bodiesScanned,
     bodiesGated,
     bodiesMatched,

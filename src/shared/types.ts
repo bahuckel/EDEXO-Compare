@@ -1094,8 +1094,18 @@ export interface GalaxyBodyScanDTO {
   available: boolean;
   regionId: number;
   regionName: string | null;
-  /** Systems in the region that held at least one candidate body. */
-  systemsScanned: number;
+  /** Systems in the region that held at least one body worth handing to the matcher. */
+  systemsWithCandidates: number;
+  /**
+   * How many of the region's systems the walk actually reached.
+   *
+   * Equal to {@link systemsInRegion} unless {@link truncated}, and the pair is what makes a
+   * truncated answer honest: a region is walked in system order, so stopping early leaves a prefix
+   * rather than a sample, and a list headed "nearest first" over a prefix would be confidently
+   * wrong. The panel reports the fraction instead of implying the whole.
+   */
+  systemsSearched: number;
+  systemsInRegion: number;
   /** Bodies with biological signals walked in this region. */
   bodiesScanned: number;
   /** Of those, how many cleared the evidence filter and the numeric bands. */
@@ -1104,7 +1114,7 @@ export interface GalaxyBodyScanDTO {
   bodiesMatched: number;
   matchedSystems: number;
   speciesConsidered: number;
-  /** The gate left more bodies than one request will match; the answer is a partial one. */
+  /** The walk ran out of time before the region ended; {@link systemsSearched} says how far it got. */
   truncated: boolean;
   elapsedMs: number;
   /** The nearest systems, for the list. */
