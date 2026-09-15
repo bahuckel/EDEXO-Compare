@@ -408,3 +408,39 @@ export function exomasteryDetailHasContent(d: ExomasteryDetailDTO | null | undef
   if ((d.atmosphereClimateStats?.length ?? 0) > 0) return true;
   return (d.compositionGroups ?? []).some((g) => g.rows.length > 0);
 }
+
+/**
+ * The photograph of the colour this body is actually going to grow.
+ *
+ * The app works out the variant from the host star or the body's crust materials, and the commanders
+ * are photographing the variants one at a time — `Cactoida-peperatis-Amethyst.jpg` beside
+ * `Cactoida-peperatis-Teal.jpg`. Apart, the two facts are worth little; together they let a row show
+ * the plant waiting on the surface rather than one of its siblings.
+ *
+ * It lived inline in `SpeciesCard`, so the hero image was right and the **rows** view was not: a row
+ * printed "Cactoida Peperatis - Amethyst" beside a photograph of the Teal one. The owner reported
+ * exactly that, and the fix is one rule in one place rather than the same `useMemo` copied twice.
+ *
+ * Null for a colour that was not decided. `(unknown)` means the rule had nothing to read, and
+ * "Lime or Cyan" means it genuinely did not choose — picking a photograph then would be the app
+ * choosing for it, silently, in a picture. The caller falls back to the species' own photograph,
+ * which is stable rather than random: the same species shows the same picture every time, which
+ * matters for a list somebody is scanning down.
+ */
+export function variantPhotoUrlFor(
+  m: Pick<SpeciesMatch, "photoVariants">,
+  predictedColour: string | null | undefined,
+): string | null {
+  const raw = (predictedColour ?? "").trim();
+  if (!raw || raw === "(unknown)" || raw.toLowerCase().includes(" or ")) return null;
+  const want = raw.toLowerCase();
+  return m.photoVariants?.find((v) => v.colour.trim().toLowerCase() === want)?.url ?? null;
+}
+
+/** The variant photograph when there is one, otherwise the species' own. Never empty. */
+export function heroPhotoUrlFor(
+  m: Pick<SpeciesMatch, "photoVariants" | "photoUrl">,
+  predictedColour: string | null | undefined,
+): string {
+  return variantPhotoUrlFor(m, predictedColour) ?? m.photoUrl;
+}

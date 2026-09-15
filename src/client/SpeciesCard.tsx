@@ -15,7 +15,7 @@ import { formatGenusStarColorSoftOneLine } from "@shared/genusStarColorSoft";
 import { candidateMorphColorShortLabel, candidateMorphColorShortLabelForHosts } from "@shared/candidateSpawnHints";
 import { createPortal } from "react-dom";
 import { pillLabelStyle, TempUnit } from "./planetDisplayUtils";
-import { EXO_PRESENCE_HELP, EXO_CODEX_VS_EXO_PROFILE_HELP, exomasteryDetailHasContent, footCatalogBadgeText, labelForReasonField, primaryMatchQuad, speciesCaptionParts, speciesMatchExtraReasons, titleCaseSpeciesWords } from "./speciesMatchHelpers";
+import { EXO_PRESENCE_HELP, EXO_CODEX_VS_EXO_PROFILE_HELP, exomasteryDetailHasContent, footCatalogBadgeText, labelForReasonField, primaryMatchQuad, speciesCaptionParts, speciesMatchExtraReasons, titleCaseSpeciesWords, variantPhotoUrlFor } from "./speciesMatchHelpers";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
 import { EMPTY_REASONS, FootScanHitBlock, GenusSpeciesOdds, OtherMatchDetailCardsGrid, SpeciesProvenanceBadge, ThinSampleNote, hostHitsMorphSpectralChip, morphSpectralChipHeatClass, sortMorphSpectralKeys } from "./SpeciesCardBits";
 import { readTempUnitFromLs, writeTempUnitToLs } from "./lsPrefs";
@@ -314,11 +314,6 @@ export const SpeciesCard = memo(function SpeciesCard({
         : footfall === "walked"
           ? `${fmtCrExact(m.priceCredits)} — list price; this body has been walked, the ×5 is gone`
           : `${fmtCrExact(m.priceCredits)} list; ${fmtCrExact(m.priceCredits * 5)} if you take first footfall here (unknown yet)`;
-  /**
-   * Card artwork comes from the generated 1024 px WebP (~51 KB) instead of the original
-   * (~600 KB average, up to 2.8 MB); the lightbox below still opens the full-size file.
-   */
-  const src = speciesPhotoVariant(m.photoUrl, "card");
   const [tempUnit, setTempUnit] = useState<TempUnit>(() => readTempUnitFromLs());
   const quadCells = useMemo(() => {
     const base = primaryMatchQuad(m, scan, estimatedSurfaceTempK, tempUnit);
@@ -365,19 +360,14 @@ export const SpeciesCard = memo(function SpeciesCard({
   /**
    * The photograph of the variant this body will actually grow, when somebody has taken it.
    *
-   * Two things had to be true at once for this to be possible, and now both are: the app works out
-   * the colour from the star or the body's materials, and the owner is photographing the variants
-   * one at a time. Without it the card shows *a* Bacterium vesicula, which is a different plant from
-   * the one waiting on the surface.
-   *
-   * Only for a colour that is decided. "Lime or Cyan" means the rule genuinely did not choose, and
-   * picking a photograph would be the app choosing for it, silently, in a picture.
+   * The rule itself lives in `speciesMatchHelpers` so the rows view can apply the same one — it was
+   * inline here, which is how a row came to print "Cactoida Peperatis - Amethyst" beside a
+   * photograph of the Teal one.
    */
-  const variantPhotoUrl = useMemo(() => {
-    if (morphColorRaw === "(unknown)" || morphColorRaw.includes(" or ")) return null;
-    const want = morphColorRaw.trim().toLowerCase();
-    return m.photoVariants?.find((v) => v.colour.trim().toLowerCase() === want)?.url ?? null;
-  }, [m.photoVariants, morphColorRaw]);
+  const variantPhotoUrl = useMemo(
+    () => variantPhotoUrlFor(m, morphColorRaw),
+    [m, morphColorRaw],
+  );
   const heroPhotoUrl = variantPhotoUrl ?? m.photoUrl;
   /**
    * Every photo of this species, the one you are going to see first.
@@ -405,6 +395,10 @@ export const SpeciesCard = memo(function SpeciesCard({
     }
     return out;
   }, [m.photoVariants, m.entry.displayName]);
+  /**
+   * Card artwork comes from the generated 1024 px WebP (~51 KB) rather than the original (~600 KB
+   * average, up to 2.8 MB); the lightbox still opens the full-size file.
+   */
   const heroSrc = speciesPhotoVariant(heroPhotoUrl, "card");
   const [photoLightbox, setPhotoLightbox] = useState(false);
   const [exoDetailOpen, setExoDetailOpen] = useState(false);

@@ -6,7 +6,7 @@ import { fmtCrExact, fmtCrShort } from "./credits";
 import { useFootfallCertainty } from "./footfallContext";
 import { useRowContext, type LiveRun, type RowContextValue } from "./rowContext";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
-import { titleCaseSpeciesWords } from "./speciesMatchHelpers";
+import { heroPhotoUrlFor, titleCaseSpeciesWords } from "./speciesMatchHelpers";
 
 type Match = BodyComputed["matches"][number];
 
@@ -87,6 +87,15 @@ export function SpeciesRow({
     ? candidateMorphColorShortLabel(m.entry, hostStarType, scan?.materials)
     : candidateMorphColorShortLabelForHosts(m.entry, hostStarTypes, scan?.materials);
   const colourUnknown = !colourRaw || colourRaw === "(unknown)";
+  /*
+    The thumbnail has to be the colour the row is claiming.
+
+    This row prints the predicted variant beside the name, and it used to sit next to `m.photoUrl` —
+    whichever photograph of the species came first. So a row read "Cactoida Peperatis - Amethyst"
+    over a picture of the Teal one, which is a different plant, and the row was the thing saying so.
+    Falls back to the species' own photograph when no variant matches.
+  */
+  const thumbUrl = heroPhotoUrlFor(m, colourRaw);
   const chance = m.presenceProbabilityPercent;
   const chancePct = typeof chance === "number" && Number.isFinite(chance) ? Math.max(0, Math.min(100, chance)) : null;
   const fit = m.exomasterySimilarityPercent;
@@ -123,8 +132,8 @@ export function SpeciesRow({
         title={open ? "Fold the card" : "Unfold the full card"}
       >
         <img
-          className={`srow-thumb${thumbMissing || !m.photoUrl ? " srow-thumb--missing" : ""}`}
-          src={m.photoUrl ? speciesPhotoVariant(m.photoUrl, "thumb") : undefined}
+          className={`srow-thumb${thumbMissing || !thumbUrl ? " srow-thumb--missing" : ""}`}
+          src={thumbUrl ? speciesPhotoVariant(thumbUrl, "thumb") : undefined}
           alt=""
           loading="lazy"
           onError={() => setThumbMissing(true)}
