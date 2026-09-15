@@ -5,6 +5,10 @@
   "falrenica": {
    "name": "Bahuckel — CMDR FALrenica",
    "licence": "Photographed by the project owner and contributed to this project."
+  },
+  "phoenixdfa": {
+   "name": "Bahuckel — CMDR PhoEniXDFA",
+   "licence": "Photographed by CMDR PhoEniXDFA and contributed to this project."
   }
  },
  "byFile": {
@@ -71,6 +75,19 @@
   "Tubus-cavas-Red.jpg": "falrenica",
   "Tubus-rosarium-Red.jpg": "falrenica",
   "Tussock-propagito-Lime.jpg": "falrenica",
-  "Tussock-triticum-Lime.jpg": "falrenica"
+  "Tussock-triticum-Lime.jpg": "falrenica",
+  "Aleoida-coronamus-Emerald.jpg": "falrenica",
+  "Bacterium-bullaris-Gold.jpg": "falrenica",
+  "Aleoida-spica-Emerald.jpg": "phoenixdfa",
+  "Fungoida-setisis-Yellow.jpg": "phoenixdfa",
+  "Stratum-paleas-Lime.jpg": "falrenica",
+  "Cactoida-peperatis-Teal.jpg": "falrenica",
+  "Tubus-cavas-Grey.jpg": "falrenica",
+  "Tussock-propagito-Green.jpg": "falrenica",
+  "Tussock-propagito-Yellow.jpg": "falrenica",
+  "Bacterium-volu-Cobalt.jpg": "falrenica",
+  "Cactoida-peperatis-Amethyst.jpg": "phoenixdfa",
+  "Cactoida-peperatis-Yellow.jpg": "falrenica",
+  "Frutexa-flammasis-Green.jpg": "falrenica"
  }
 }

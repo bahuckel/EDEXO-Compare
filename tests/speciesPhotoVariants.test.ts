@@ -143,3 +143,65 @@ describe("a species the commander has photographed", () => {
     }
   });
 });
+
+/**
+ * A second photographer, and the one mistake this area cannot make.
+ *
+ * CMDR PhoEniXDFA of the owner's clan contributed two photographs. They are not the owner's, they
+ * are not ED-DSN's, and crediting them to either would be a false attribution of somebody's work —
+ * which `NOTICE.md` exists to prevent and `photo-credits.json` exists to record.
+ *
+ * Fungoida setisis is the case worth pinning: three photographs, two of them the owner's and one
+ * his, in one gallery. A credit that is right per *species* rather than per *file* passes every
+ * other test and fails this one.
+ */
+describe("a photograph contributed by somebody else", () => {
+  it("credits each file to whoever took it, inside one species", () => {
+    clearPhotoCreditsCache();
+    expect(photoContributorFor(root, "Fungoida-setisis-Yellow.jpg")?.name).toBe(
+      "Bahuckel — CMDR PhoEniXDFA",
+    );
+    expect(photoContributorFor(root, "Fungoida-setisis-Orange.jpg")?.name).toBe(
+      "Bahuckel — CMDR FALrenica",
+    );
+    expect(photoContributorFor(root, "Aleoida-spica-Emerald.jpg")?.name).toBe(
+      "Bahuckel — CMDR PhoEniXDFA",
+    );
+    /*
+      Cactoida peperatis is the one the owner noticed missing, and the reason is worth keeping: his
+      Teal was imported in one batch and PhoEniXDFA's Amethyst arrived in the next. The species now
+      holds three photographs by two commanders, so a credit resolved per species rather than per
+      file would put his name on two of somebody else's pictures.
+    */
+    expect(photoContributorFor(root, "Cactoida-peperatis-Amethyst.jpg")?.name).toBe(
+      "Bahuckel — CMDR PhoEniXDFA",
+    );
+    expect(photoContributorFor(root, "Cactoida-peperatis-Teal.jpg")?.name).toBe(
+      "Bahuckel — CMDR FALrenica",
+    );
+  });
+
+  it("shows every variant of a species two commanders photographed", () => {
+    clearSpeciesPhotoCache();
+    clearPhotoCreditsCache();
+    const r = resolveSpeciesPhoto(find("Cactoida Peperatis"), root);
+    expect((r.photoVariants ?? []).map((v) => v.colour).sort()).toEqual(["Amethyst", "Teal", "Yellow"]);
+  });
+
+  it("carries the right name onto every photo of a mixed gallery", () => {
+    clearSpeciesPhotoCache();
+    clearPhotoCreditsCache();
+    const r = resolveSpeciesPhoto(find("Fungoida Setisis"), root);
+    const byName = Object.fromEntries(
+      Object.entries(r.photoCreditByUrl ?? {}).map(([url, c]) => [url.split("/").pop(), c.name]),
+    );
+    expect(byName["Fungoida-setisis-Yellow.jpg"]).toBe("Bahuckel — CMDR PhoEniXDFA");
+    expect(byName["Fungoida-setisis-White.jpg"]).toBe("Bahuckel — CMDR FALrenica");
+  });
+
+  it("leaves an ED-DSN photograph uncredited, which is how the standing credit applies", () => {
+    clearPhotoCreditsCache();
+    // Absent from the manifest means ED-DSN's — the default that keeps every unlisted image correct.
+    expect(photoContributorFor(root, "Aleoida-arcus.jpg")).toBeNull();
+  });
+});
