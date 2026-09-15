@@ -33,12 +33,27 @@
  * species' own table cannot produce. Both are silent failures otherwise — a photograph in the tree
  * that nothing ever shows — and both usually mean a typo in a filename rather than a discovery.
  *
- * ## Credit
+ * ## Credit, and how a second photographer says so
  *
  * Every file it copies is recorded in `data/species/photo-credits.json` against the commander who
  * took it. The photographs already in the tree are ED-DSN's and stay credited to ED-DSN; these are
  * not, and attributing them to the wrong people would be the one mistake this whole area of the
  * project has been careful about.
+ *
+ * Photographs are the owner's unless a folder says otherwise. A folder named **`By CMDR <name>`**
+ * hands everything beneath it to that commander:
+ *
+ *   Images/Stratum/Stratum Tectonicas - Green.jpg          -> CMDR FALrenica
+ *   Images/By CMDR PhoEniXDFA/Aleoida Spica - Emerald.jpg  -> CMDR PhoEniXDFA
+ *   Images/By CMDR PhoEniXDFA/Osseus/Osseus Discus - Red.jpg  -> CMDR PhoEniXDFA
+ *
+ * The walk is recursive for exactly that reason: a contributor may hand over a flat folder or one
+ * sorted by genus, and which of those they chose should not decide whether their name survives.
+ * The nearest `By CMDR` ancestor wins, so a contributor folder can sit anywhere in the tree.
+ *
+ * The credit reads `Bahuckel — CMDR <name>`, because the contributors so far are all of the owner's
+ * clan and that is how he asked for them to be named. Somebody outside it would need a line here
+ * rather than a folder rename — which is the right amount of friction for a claim about authorship.
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -56,8 +71,42 @@ import type { SpeciesEntry } from "../src/shared/types.js";
  */
 const DEFAULT_SOURCE = process.env.EDEXO_PHOTO_SOURCE?.trim() ?? "";
 
-/** Who took these. One entry per contributor; the manifest keys files to it. */
-const CREDIT_ID = "falrenica";
+/** Whose photographs these are unless a `By CMDR …` folder says otherwise. */
+const OWNER_ID = "falrenica";
+
+/** A folder that reassigns everything beneath it to somebody else. */
+const BY_CMDR_RE = /^By\s+CMDR\s+(.+)$/i;
+
+interface Contributor {
+  id: string;
+  name: string;
+  licence: string;
+}
+
+const OWNER: Contributor = {
+  id: OWNER_ID,
+  name: "Bahuckel — CMDR FALrenica",
+  licence: "Photographed by the project owner and contributed to this project.",
+};
+
+/**
+ * The commander a folder name names, or null when it names none.
+ *
+ * The id is the commander's own name lowercased, so the manifest reads as a list of people rather
+ * than a list of slugs, and re-importing the same folder cannot create a second entry for the same
+ * photographer under a different key.
+ */
+function contributorFromFolder(folder: string): Contributor | null {
+  const m = BY_CMDR_RE.exec(folder.trim());
+  if (!m) return null;
+  const cmdr = m[1]!.trim();
+  if (!cmdr) return null;
+  return {
+    id: cmdr.toLowerCase().replace(/[^a-z0-9]+/g, ""),
+    name: `Bahuckel — CMDR ${cmdr}`,
+    licence: `Photographed by CMDR ${cmdr} and contributed to this project.`,
+  };
+}
 
 interface CreditsFile {
   formatVersion: number;
@@ -139,20 +188,35 @@ function main(): void {
   const bySpecies = new Map(db.species.map((e) => [e.displayName.trim().toLowerCase(), e]));
   const creditsPath = path.join(getSpeciesDataDir(root), "photo-credits.json");
   const credits = loadCredits(creditsPath);
-  credits.contributors[CREDIT_ID] = {
-    name: "Bahuckel — CMDR FALrenica",
-    licence: "Photographed by the project owner and contributed to this project.",
-  };
+  credits.contributors[OWNER.id] = { name: OWNER.name, licence: OWNER.licence };
 
   let copied = 0;
   let skipped = 0;
   const problems: string[] = [];
+  const byContributor = new Map<string, number>();
 
-  for (const genusFolder of readdirSync(source)) {
-    const dir = path.join(source, genusFolder);
-    if (!statSync(dir).isDirectory()) continue;
-    for (const file of readdirSync(dir)) {
-      if (!IMAGE_RE.test(file)) continue;
+  /**
+   * Every image under the source folder, carrying whoever the tree says took it.
+   *
+   * Recursive, because a contributor may hand over a flat folder or one sorted by genus and which
+   * of those they chose should not decide whether their name survives. The nearest `By CMDR …`
+   * ancestor wins; without one the photographs are the owner's, which is what they have always been.
+   */
+  const files: { genusFolder: string; dir: string; file: string; by: Contributor }[] = [];
+  const walk = (dir: string, rel: string, by: Contributor): void => {
+    for (const name of readdirSync(dir)) {
+      const abs = path.join(dir, name);
+      if (statSync(abs).isDirectory()) {
+        walk(abs, rel ? `${rel}/${name}` : name, contributorFromFolder(name) ?? by);
+      } else if (IMAGE_RE.test(name)) {
+        files.push({ genusFolder: rel || ".", dir, file: name, by });
+      }
+    }
+  };
+  walk(source, "", OWNER);
+
+  {
+    for (const { genusFolder, dir, file, by } of files) {
       const parsed = parseName(file);
       if (!parsed) {
         problems.push(`${genusFolder}/${file} — cannot read "Genus Species - Colour.ext" from the name`);
@@ -206,9 +270,19 @@ function main(): void {
       } else {
         copyFileSync(src, abs);
         copied++;
-        console.log(`  ${entry.displayName.padEnd(24)} ${parsed.colour.padEnd(11)} -> ${entry.genusDataDir}/${target}`);
+        console.log(
+          `  ${entry.displayName.padEnd(24)} ${parsed.colour.padEnd(11)} -> ${entry.genusDataDir}/${target}` +
+            (by.id === OWNER.id ? "" : `  (${by.name})`),
+        );
       }
-      credits.byFile[target] = CREDIT_ID;
+      /*
+        Written on every pass, not only on a copy. A photograph already in the tree still has to
+        carry the right name — re-running the import after a contributor folder appears is how a
+        file imported under the wrong credit gets the right one.
+      */
+      if (by.id !== OWNER.id) credits.contributors[by.id] = { name: by.name, licence: by.licence };
+      credits.byFile[target] = by.id;
+      byContributor.set(by.name, (byContributor.get(by.name) ?? 0) + 1);
     }
   }
 
@@ -216,6 +290,9 @@ function main(): void {
 
   console.log(`\n${copied} copied, ${skipped} already present, ${problems.length} not imported`);
   console.log(`credits: ${path.relative(root, creditsPath)} (${Object.keys(credits.byFile).length} files)`);
+  for (const [name, n] of [...byContributor].sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${String(n).padStart(4)}  ${name}`);
+  }
   for (const p of problems) console.log(`  ! ${p}`);
   if (copied > 0) console.log(`\nRun \`npm run images\` to build the card and thumbnail derivatives.`);
 }
