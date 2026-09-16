@@ -130,11 +130,23 @@ function hostStarFor(b: BodyExoState): JournalHostStarObservation | null {
 
 let ranked = 0;
 /**
- * `--model` ranks by the Bayes posterior instead of the habitat similarity, and `--damping=<x>`
- * sweeps the exponent on the likelihood terms. Both orderings are measured on exactly the same
- * bodies and the same candidate lists, so the only difference is the score they sort by.
+ * Which score the list is sorted by — **the Bayes posterior, by default**.
+ *
+ * It used to be the other way round: habitat similarity ranked unless `--model` was passed. That
+ * default outlived its truth. The panel has ordered by the posterior since the model landed, so
+ * every sweep run without `--model` was tuning a weight against a score the app does not use, and
+ * the numbers it produced were not wrong so much as about something else. It cost a full round of
+ * reporting on the volcanism term before anyone noticed the flag was missing.
+ *
+ * `--similarity` still gets the old ordering, because the comparison between the two is worth
+ * keeping and §25.3 is the measurement that justified the model in the first place. `--model` is
+ * accepted and ignored, so older notes and scripts that pass it keep working.
+ *
+ * `--damping=<x>` sweeps the exponent on the likelihood terms. Both orderings are measured on
+ * exactly the same bodies and the same candidate lists, so the only difference is the score they
+ * sort by.
  */
-const USE_MODEL = process.argv.includes("--model");
+const USE_MODEL = !process.argv.includes("--similarity");
 const NO_PRIOR = process.argv.includes("--no-prior");
 /** Rank on the species' count in this region instead of its share of the whole corpus. */
 const REGION_PRIOR = process.argv.includes("--region-prior");
