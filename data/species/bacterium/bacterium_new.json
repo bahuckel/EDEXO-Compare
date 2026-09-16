@@ -27,9 +27,15 @@
           "Neon-rich"
         ],
         "required_atmosphere_type": "Neon",
+        "atmosphere_gas_share_pct": {
+          "Neon": {
+            "min": 50
+          }
+        },
         "volcanism": null,
         "atmospherePressureCategory": "thin"
       },
+      "_atmosphereNote": "Neon here means neon air, not the word Neon in the label. All 213 observed acies bodies are 85.36-100% neon, and the 'NeonRich' worlds the row also matched average 5.5% neon - nitrogen with a neon trace, which is where Fonticulua segmentatus lives (0.24-0.53% neon on all 16 of its bodies). The floor is 50% because that is where the game itself stops calling a body Neon: across 8,000 journal scans, plain Neon runs 50.29-100% and NeonRich never exceeds 49.74%. A demotion, not a wall. This also closes the 93% helium / 6.7% neon body that passed the 5% required-gas floor. See tests/atmosphereGasShare.test.ts.",
       "color_rules": {
         "type": "material_based",
         "mapping": {
@@ -53,9 +59,24 @@
         "volcanism": null,
         "atmospherePressureCategory": "thin"
       },
+      "_colourNote": "The mapping used to be the sentence 'Parent star type determines color', which is prose and not a table, so colourFromStar iterated the string's character indices and matched nothing: alcyoneum reported no colour on every body it has ever grown on. The table is the one it shares with cerbrus and aurasus, confirmed against 11 of the commander's own sightings where the host star resolves to one class. See tests/bacteriumColourTables.test.ts.",
       "color_rules": {
         "type": "star_based",
-        "mapping": "Parent star type determines color"
+        "mapping": {
+          "O": "Turquoise",
+          "B": "Grey",
+          "A": "Yellow",
+          "F": "Lime",
+          "G": "Emerald",
+          "K": "Green",
+          "M": "Teal",
+          "L": "Sage",
+          "T": "Red",
+          "TTS": "Maroon",
+          "W": "Amethyst",
+          "D": "Ocher",
+          "N": "Indigo"
+        }
       }
     },
     {
@@ -164,16 +185,13 @@
       "displayName": "Bacterium omentum",
       "description": "Thermosynthetic bacteria linked to nitrogen/ammonia volcanism.",
       "conditions": {
-        "atmosphere": [
-          "Neon",
-          "Neon-rich"
-        ],
         "volcanism": [
           "Nitrogen",
           "Ammonia"
         ],
         "atmospherePressureCategory": "thin"
       },
+      "_atmosphereNote": "Neon was a wall here and the corpus does not support one: 45% Thin Neon, 32% Neon-rich, and the rest Argon, Water-rich, Methane and airless. The commander sampled it on Thin Methane at Synookooe WW-F b55-0 A 2 a, a moon whose sibling one orbit out \u2014 same class, same Thin Methane, no volcanism \u2014 carried Bacterium bullaris instead. The volcanism is the real rule: 95.5% of its 22 observed bodies have nitrogen or ammonia volcanism against 4.4% ambient in the population it lives in, an enrichment of 21.8x. See tests/volcanismBacteriumGates.test.ts.",
       "color_rules": {
         "type": "material_based",
         "mapping": {
@@ -191,16 +209,13 @@
       "displayName": "Bacterium scopulum",
       "description": "Carbon-volcanism bacteria forming ridged patterns.",
       "conditions": {
-        "atmosphere": [
-          "Neon",
-          "Neon-rich"
-        ],
         "volcanism": [
           "Carbon",
           "Methane"
         ],
         "atmospherePressureCategory": "thin"
       },
+      "_atmosphereNote": "Neon was a wall here and the corpus does not support one: 59% Thin Neon, 24% Thin Argon, which the row never listed. The volcanism is the real rule: every one of its 17 observed bodies has carbon or methane volcanism, against 2.5% ambient \u2014 an enrichment of 40.7x. See tests/volcanismBacteriumGates.test.ts.",
       "color_rules": {
         "type": "material_based",
         "mapping": {
@@ -219,14 +234,9 @@
       "description": "Web-like bacteria linked to multiple volcanism types.",
       "conditions": {
         "atmosphere": "Any thin atmosphere",
-        "volcanism": [
-          "Helium",
-          "Iron",
-          "Silicate",
-          "Ammonia"
-        ],
         "atmospherePressureCategory": "thin"
       },
+      "_volcanismNote": "The codex list (Helium, Iron, Silicate, Ammonia) was a requirement here and is not one. 706 of the 833 bodies the corpus holds for this species — 84.8% — have no volcanism at all, so the gate hid it on the great majority of the worlds it actually grows on. Found on Eorgh Prou OP-C c27-179 B 2, which the commander sampled and the app refused to list. Every other volcanism-gated species checks out at 0-4.5% no-volcanism, so this was one bad row rather than a rule worth softening; the description above says 'linked to multiple volcanism types', which reads like a list of where it has also been seen, transcribed as a condition. See tests/bacteriumTelaVolcanism.test.ts.",
       "color_rules": {
         "type": "material_based",
         "mapping": {
@@ -244,15 +254,12 @@
       "displayName": "Bacterium verrata",
       "description": "Volcanic bacteria associated with water-based activity.",
       "conditions": {
-        "atmosphere": [
-          "Neon",
-          "Neon-rich"
-        ],
         "volcanism": [
           "Water"
         ],
         "atmospherePressureCategory": "thin"
       },
+      "_atmosphereNote": "Neon was a wall here and it is not even this species' commonest atmosphere: Thin Argon 38% against Thin Neon 35%, and Argon was never in the list. The volcanism is the real rule: every one of its 26 observed bodies has water volcanism, against 2.3% ambient \u2014 an enrichment of 44.1x. See tests/volcanismBacteriumGates.test.ts.",
       "color_rules": {
         "type": "material_based",
         "mapping": {
@@ -303,15 +310,23 @@
         "volcanism": null,
         "atmospherePressureCategory": "thin"
       },
+      "_colourNote": "Aurasus is coloured by its parent star, not by the ground. The material table this row used to carry scored 4 of 15 against the commander's own sightings, and all four were 'Green', which sits in both tables by coincidence; the star table scores 15 of 15, with 11 of those on bodies whose host star resolves to a single class. His own photographs agree - Emerald, Green, Lime and Teal are G, K, F and M, and not one of them appears in the material table. Because the predicted colour also chooses the photograph, the app could almost never show the right picture for the commonest Bacterium in the corpus. Table from https://ed-dsn.net/en/bacterium_en/, same as alcyoneum and cerbrus. See tests/bacteriumColourTables.test.ts.",
       "color_rules": {
-        "type": "material_based",
+        "type": "star_based",
         "mapping": {
-          "Antimony": "Yellow",
-          "Polonium": "Aquamarine",
-          "Ruthenium": "Green",
-          "Technetium": "Gold",
-          "Tellurium": "Magenta",
-          "Yttrium": "Orange"
+          "O": "Turquoise",
+          "B": "Grey",
+          "A": "Yellow",
+          "F": "Lime",
+          "G": "Emerald",
+          "K": "Green",
+          "M": "Teal",
+          "L": "Sage",
+          "T": "Red",
+          "TTS": "Maroon",
+          "W": "Amethyst",
+          "D": "Ocher",
+          "N": "Indigo"
         }
       }
     },
@@ -400,7 +415,8 @@
       },
       {
         "species": "Bacterium tela",
-        "requires": [
+        "_retired": "Not a requirement — 706 of 833 observed bodies have no volcanism. Kept here as the note it always was; nothing reads this block.",
+        "seenWith": [
           "Helium",
           "Iron",
           "Silicate",

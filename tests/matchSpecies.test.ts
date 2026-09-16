@@ -101,7 +101,17 @@ describe("matchDatabaseToScan", () => {
    */
   it("predicts the right species on a thin-CO₂ high metal content body", () => {
     const r = matchDatabaseToScan(db, HMC_THIN_CO2, null, null, { includeBacterium: true });
-    expect(shown(r).map((m) => m.entry.id)).toEqual(["bacterium_bacterium_aurasus"]);
+    /*
+      Bacterium tela joined this list when its volcanism requirement was removed — the codex row
+      demanded Helium/Iron/Silicate/Ammonia volcanism and 706 of 833 observed bodies for it have
+      none, so the gate was hiding it on 85% of the worlds it grows on. This body has a thin
+      atmosphere and no volcanism, which is exactly the case that was wrong.
+      See tests/bacteriumTelaVolcanism.test.ts.
+    */
+    expect(shown(r).map((m) => m.entry.id).sort()).toEqual([
+      "bacterium_bacterium_aurasus",
+      "bacterium_bacterium_tela",
+    ]);
     expect(r.approximateMatchingUsed).toBe(false);
     expect(r.genusFilterActive).toBe(false);
 

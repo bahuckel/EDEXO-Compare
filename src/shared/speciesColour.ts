@@ -106,9 +106,22 @@ export function colourFromStar(
   parentStarClass: string | null | undefined,
 ): ColourGuess {
   if (!rules?.mapping || rules.type !== "star_based") return NONE;
+  /*
+    A string is not a table, and `Object.entries` will not say so — it yields character indices, so
+    a mapping written as prose reads as keys "0", "1", "2" and matches nothing. That is exactly how
+    Bacterium alcyoneum came to report no colour on every body it grows on, silently, for as long as
+    the row existed. Refuse it here rather than return a confident NONE.
+  */
+  if (typeof rules.mapping !== "object") return NONE;
   const cls = (parentStarClass ?? "").trim();
   if (!cls) return NONE;
-  for (const [key, colour] of Object.entries(rules.mapping)) {
+  /*
+    Longest key first, because the class codes are prefixes of one another. `TTS` — a T Tauri star —
+    starts with `T`, and object order put plain `T` first, so every T Tauri was coloured Red where
+    the table says Maroon. Sorting by length makes the specific code win wherever both fit.
+  */
+  const keys = Object.entries(rules.mapping).sort((a, b) => b[0].trim().length - a[0].trim().length);
+  for (const [key, colour] of keys) {
     // Keys are class letters or short codes; match the start so "K5 V" hits "K".
     if (cls.toUpperCase().startsWith(key.trim().toUpperCase())) {
       return { colour, candidates: [colour], basis: "star", reason: `${key}-class parent star` };
