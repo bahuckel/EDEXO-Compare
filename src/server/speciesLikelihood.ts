@@ -92,6 +92,44 @@ export const TERM_DAMPING = 0.15;
  */
 const ATMOSPHERE_TERM_WEIGHT = 3;
 
+/**
+ * What volcanism is worth, in terms.
+ *
+ * It is one fact, not eight like the atmosphere, so the question here is only how hard it should
+ * pull. Swept on `npx tsx scripts/rank-probe.ts --model` — **on the posterior**, which matters:
+ * without `--model` the probe ranks by habitat similarity, a score the panel does not use, and this
+ * term was first reported against that one. Over 585 species on 2,126 scored candidate rows:
+ *
+ * | weight | mean rank | top-1 | top-3 | calibration | B3 |
+ * |---|---|---|---|---|---|
+ * | 0, dead | 3.326 | 195 (33.3 %) | 362 (61.9 %) | 0.0026 | 0.0097 |
+ * | 0.5 | 3.320 | 196 (33.5 %) | 363 (62.1 %) | 0.0024 | 0.0096 |
+ * | 1 | 3.311 | 198 (33.8 %) | 363 (62.1 %) | 0.0028 | 0.0099 |
+ * | **2** | **3.303** | **199 (34.0 %)** | **363 (62.1 %)** | **0.0024** | **0.0107** |
+ * | 3 | 3.304 | 200 (34.2 %) | 362 (61.9 %) | 0.0024 | 0.0107 |
+ * | 4 | 3.304 | 200 (34.2 %) | 362 (61.9 %) | 0.0019 | 0.0103 |
+ * | 5 | 3.301 | 200 (34.2 %) | 362 (61.9 %) | 0.0025 | 0.0093 |
+ * | 8 | 3.299 | 200 (34.2 %) | 361 (61.7 %) | 0.0023 | 0.0085 |
+ *
+ * Two is the knee, and a modest one. Top-3 is at its maximum there and does not reach it again;
+ * mean rank is within 0.004 of the floor the whole curve ever finds; and everything past 3 is drift
+ * of one or two bodies, which on 585 is not a result. Where the curve is this flat the smaller
+ * weight is the honest choice, because it claims less for the same answer.
+ *
+ * **The whole term is worth about four bodies of top-1** — 195 to 199 — and roughly 0.02 of mean
+ * rank. Real, in the right direction, and small. It is worth having because the bodies it moves are
+ * the ones the commander cannot resolve any other way: volcanism is on 5.7 % of landable bio bodies
+ * galaxy-wide, so most of this corpus never asks the question, and on the bodies that do ask it the
+ * corpus separates the species sharply — Bacterium verrata is 26 of 26 volcanic against a 19.1 %
+ * ambient, aurasus 6,889 of 6,889 quiet.
+ *
+ * The B3 column wobbles by 0.001 with no pattern; its top bins hold 19 and 68 rows and that is
+ * noise, not a signal about the weight. The overall calibration does not degrade at any weight,
+ * which corrects what was reported when this term first landed: the 0.0572 → 0.0641 drift seen then
+ * was measured on the habitat scorer, not on the posterior.
+ */
+export const VOLCANISM_TERM_WEIGHT = 2;
+
 /** Laplace smoothing, in pseudo-observations per bin. */
 export const BIN_SMOOTHING = 0.5;
 
@@ -145,6 +183,8 @@ export function speciesLogScore(
     noPrior?: boolean;
     /** Probe seam: sweep the floor below which a profile is not scored at all. */
     minSamples?: number;
+    /** Probe seam: sweep {@link VOLCANISM_TERM_WEIGHT}. Zero drops the term entirely. */
+    volcanismWeight?: number;
     /**
      * Probe seam: rank on how common the species is *in this region* instead of in the galaxy.
      *
@@ -263,7 +303,15 @@ export function speciesLogScore(
       if (bucketCategoricalValue(path, label) === want) hit += n;
     }
     if (total <= 0 || categories < 1) continue;
-    logLik += logSmoothed(hit, total, categories);
+    const lp = logSmoothed(hit, total, categories);
+    if (/volcanism/i.test(path)) {
+      const w = opts?.volcanismWeight ?? VOLCANISM_TERM_WEIGHT;
+      if (w <= 0) continue;
+      logLik += w * lp;
+      terms += w;
+      continue;
+    }
+    logLik += lp;
     terms++;
   }
 
@@ -321,6 +369,7 @@ export function rankSpeciesOnBody<T extends { entry: SpeciesEntry }>(
     paths?: Set<string>;
     noPrior?: boolean;
     minSamples?: number;
+    volcanismWeight?: number;
     regionPrior?: boolean;
     regionIndex?: number | null;
     regionPriorWeight?: number;

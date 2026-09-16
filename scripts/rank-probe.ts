@@ -32,7 +32,7 @@ import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
 import { exomasteryHabitatQualityPercent, loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
-import { rankSpeciesOnBody, TERM_DAMPING } from "../src/server/speciesLikelihood.js";
+import { rankSpeciesOnBody, TERM_DAMPING, VOLCANISM_TERM_WEIGHT } from "../src/server/speciesLikelihood.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
 import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
 import type {
@@ -152,6 +152,13 @@ const MIN_SAMPLES = Number(
 const DAMPING = Number(
   (process.argv.find((a) => a.startsWith("--damping=")) ?? `--damping=${TERM_DAMPING}`).split("=")[1],
 );
+/** `--volcanism-weight=<x>` sweeps `VOLCANISM_TERM_WEIGHT`; 0 drops the term. */
+const VOLCANISM_WEIGHT = Number(
+  (
+    process.argv.find((a) => a.startsWith("--volcanism-weight=")) ??
+    `--volcanism-weight=${VOLCANISM_TERM_WEIGHT}`
+  ).split("=")[1],
+);
 
 /**
  * Reliability of the posterior, for acceptance rule 3.
@@ -212,6 +219,7 @@ for (const b of bodies) {
       damping: DAMPING,
       noPrior: NO_PRIOR,
       minSamples: MIN_SAMPLES,
+      volcanismWeight: VOLCANISM_WEIGHT,
       regionPrior: REGION_PRIOR,
       regionIndex: REGION_PRIOR ? regionIndexFor(b) : null,
       regionPriorWeight: REGION_WEIGHT,

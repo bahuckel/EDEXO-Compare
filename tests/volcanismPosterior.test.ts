@@ -41,7 +41,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { loadSpeciesDatabase } from "../src/server/snapshot.js";
-import { speciesLogScore } from "../src/server/speciesLikelihood.js";
+import { speciesLogScore, VOLCANISM_TERM_WEIGHT } from "../src/server/speciesLikelihood.js";
 import { bucketCategoricalValue, NO_VOLCANISM } from "../src/feeder/parameterImportance.js";
 import { valueForCategoricalPath } from "../src/server/exomasteryProfile.js";
 import type { PlanetScan, SpeciesEntry } from "../src/shared/types.js";
@@ -198,6 +198,28 @@ describe("volcanism in the posterior", () => {
         expect(Number.isFinite(r!.logScore), name).toBe(true);
       }
     }
+  });
+
+  it("carries the weight the sweep chose, and can be swept again", () => {
+    /*
+      `VOLCANISM_TERM_WEIGHT` is 2, picked on `rank-probe --model` over 585 species: top-3 is at its
+      maximum there and mean rank within 0.004 of anything the curve ever reaches, so the smaller
+      weight wins a flat comparison. The seam is what made that measurable, and it has to keep
+      working or the next person re-tunes by editing a constant and guessing.
+    */
+    expect(VOLCANISM_TERM_WEIGHT).toBe(2);
+
+    const at = (w: number, scan: PlanetScan) =>
+      speciesLogScore(find("Bacterium omentum"), scan, null, null, { volcanismWeight: w })!.logScore;
+
+    // Zero drops the term: the quiet body and the volcanic one become indistinguishable.
+    expect(at(0, NITROGEN)).toBe(at(0, QUIET));
+    // And a heavier weight pulls harder, in the same direction.
+    const d1 = at(1, NITROGEN) - at(1, QUIET);
+    const d4 = at(4, NITROGEN) - at(4, QUIET);
+    expect(d1).toBeGreaterThan(0);
+    expect(d4).toBeGreaterThan(d1);
+    expect(d4 / d1).toBeCloseTo(4, 5);
   });
 
   it("leaves no volcanism gate behind in the data", () => {
