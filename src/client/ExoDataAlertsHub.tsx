@@ -2,6 +2,7 @@
  * The codex-consistency alerts hub in the app bar, split out of App.tsx (7.3).
  */
 import { useToast } from "./ui/feedback";
+import { measurePopoverSide, type PopoverSide } from "./ui/popoverSide";
 import { useCallback, useEffect, useMemo, useRef, useState, ReactNode } from "react";
 import type { AppSnapshot, ExoDataAlertDTO } from "@shared/types";
 import { EXO_ALERT_DETECT_FEEDER_LS, EXO_ALERT_DETECT_JOURNAL_LS, EXO_DATA_ALERT_DISMISS_LS, applyExoDataScanSourceClear, collectExoDataAlertsFromSnapshot, readExoAlertAckIds, readExoAlertDismissals, writeExoAlertAckIds } from "./exoAlertsStore";
@@ -45,8 +46,18 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
     return null;
   }, [visible]);
 
+  /*
+    Which way the popover opens.
+
+    Same rule as the cockpit menu, and it needs it more: this button sits further right than the
+    menu on every layout, and `cockpit.css` pins the panel `left: 0` — so near the right edge it
+    grew off the window and the alerts at the bottom could not be reached.
+  */
+  const [side, setSide] = useState<PopoverSide>("left");
   useEffect(() => {
     if (!open) return;
+    const wrap = wrapRef.current;
+    setSide(measurePopoverSide(wrap, wrap?.querySelector<HTMLElement>(".exo-data-alerts-popover"), 380));
     const onDoc = (ev: MouseEvent) => {
       const el = wrapRef.current;
       if (el && ev.target instanceof Node && !el.contains(ev.target)) setOpen(false);
@@ -258,7 +269,11 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
         {visible.length > 0 ? <span className="exo-data-alerts-trigger__badge">{visible.length}</span> : null}
       </button>
       {open ? (
-        <div className="exo-data-alerts-popover" role="dialog" aria-label="Codex consistency alerts">
+        <div
+          className={`exo-data-alerts-popover exo-data-alerts-popover--${side}`}
+          role="dialog"
+          aria-label="Codex consistency alerts"
+        >
           <div className="exo-data-alerts-popover__detect">
             <span className="exo-data-alerts-popover__detect-label">Detect from:</span>
             <button

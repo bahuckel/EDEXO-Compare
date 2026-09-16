@@ -137,8 +137,6 @@ input[type="text"]:focus {
 
 /* ---- popovers open to the right; the alerts panel in the cockpit frame --------------------------- */
 .exo-data-alerts-popover {
-  left: 0;
-  right: auto;
   border-radius: 0;
   border: 1px solid var(--accent-dim);
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
@@ -159,6 +157,21 @@ input[type="text"]:focus {
   right: auto;
 }
 .appbar-menu--right {
+  left: auto;
+  right: 0;
+}
+
+/*
+  The alerts popover flips the same way, and needs it more: its button sits further right than the
+  menu on every layout. It used to be pinned `left: 0` here, overriding the `right: 0` in shell.css,
+  so near the right edge it grew off the window and the alerts at the bottom could not be reached.
+  `ExoDataAlertsHub` measures the button on open and picks the class; these two rules are the flip.
+*/
+.exo-data-alerts-popover--left {
+  left: 0;
+  right: auto;
+}
+.exo-data-alerts-popover--right {
   left: auto;
   right: 0;
 }
