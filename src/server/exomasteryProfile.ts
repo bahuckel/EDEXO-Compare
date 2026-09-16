@@ -39,6 +39,7 @@ import {
 import { exomasteryHabitatTierWeight } from "./exomasteryHabitatTiers.js";
 import type { SpeciesHistograms } from "../shared/likelihoodBins.js";
 import { loadHistogramEdges } from "./likelihoodData.js";
+import { NO_VOLCANISM } from "../feeder/parameterImportance.js";
 import { getProjectRoot } from "./paths.js";
 import { shouldOmitExomasterySciencePath } from "./exomasteryPathHygiene.js";
 import { getSpeciesDataDir } from "./paths.js";
@@ -1045,8 +1046,21 @@ export function valueForCategoricalPath(
     return s || null;
   }
   if (low.includes("volcanism")) {
-    const s = (scan.Volcanism ?? rec?.volcanism ?? "").trim();
-    return s || null;
+    /*
+      A quiet body is an observation, not a missing one.
+
+      The journal writes `"Volcanism": ""` on a body with none, and returning null for that made the
+      likelihood skip the term on the 94 % of bodies where it has the most to say. The corpus is
+      emphatic about it — Bacterium aurasus is 6,889 of 6,889 on quiet bodies and Bacterium verrata
+      26 of 26 on volcanic ones — and none of that could reach the posterior.
+
+      The distinction that matters is *absent* against *empty*: a scan that never carried the field
+      still knows nothing, and `??` keeps the two apart because an empty string is not nullish.
+    */
+    const raw = scan.Volcanism ?? rec?.volcanism;
+    if (raw == null) return null;
+    const s = String(raw).trim();
+    return s || NO_VOLCANISM;
   }
   if (low.includes("terraform")) {
     const s = (scan.TerraformState ?? rec?.terraformState ?? "").trim();

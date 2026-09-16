@@ -38,12 +38,19 @@ describe("bucketCategoricalValue", () => {
   });
 
   it("collapses volcanism intensity, which is the same mechanism either way", () => {
+    /*
+      The expected value used to be `rocky magma volcanism`, with the trailing word left on — which
+      pinned the bug rather than the rule. Only the journal writes that word; a corpus profile says
+      `Minor Rocky Magma`, so the two sides bucketed differently and the volcanism term never matched
+      on any body. Both spellings have to land here now. See tests/volcanismPosterior.test.ts.
+    */
     expect(bucketCategoricalValue("body.volcanismType", "Minor rocky magma volcanism")).toBe(
-      "rocky magma volcanism",
+      "rocky magma",
     );
     expect(bucketCategoricalValue("body.volcanismType", "Major rocky magma volcanism")).toBe(
-      "rocky magma volcanism",
+      "rocky magma",
     );
+    expect(bucketCategoricalValue("body.volcanismType", "Minor Rocky Magma")).toBe("rocky magma");
   });
 
   it("leaves anything it has no rule for alone", () => {

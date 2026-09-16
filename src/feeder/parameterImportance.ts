@@ -37,6 +37,15 @@ export type CategoricalTable = Record<string, CategoricalCounts>;
 export type ParameterImportance = Record<string, number>;
 
 /**
+ * What a body with no volcanism is called, on both sides of the comparison.
+ *
+ * The corpus already writes this exact label — 706 of Bacterium tela's 833 bodies carry it — so a
+ * scan reporting an empty `Volcanism` says the same word rather than saying nothing.
+ * {@link bucketCategoricalValue} folds it onto `none`.
+ */
+export const NO_VOLCANISM = "No volcanism";
+
+/**
  * Collapse a value to the bucket the game plausibly keys on.
  *
  * Anything finer is noise that flattens the measurement: 88 spectral classes make a species that
@@ -65,9 +74,20 @@ export function bucketCategoricalValue(path: string, value: string): string {
   }
 
   if (low.includes("volcanism")) {
-    // "Minor rocky magma volcanism" and "Major rocky magma volcanism" are the same mechanism.
-    const t = v.toLowerCase().replace(/^(minor|major)\s+/, "");
-    return t.trim() || "none";
+    /*
+      "Minor rocky magma volcanism" and "Major rocky magma volcanism" are the same mechanism.
+
+      The two sides also spell it differently and always have: a journal says
+      `minor nitrogen magma volcanism` and the corpus profile says `Minor Nitrogen Magma`. Stripping
+      only the intensity left `nitrogen magma volcanism` against `nitrogen magma`, so the buckets
+      never once matched and the volcanism term contributed nothing to any posterior, on any body.
+      The trailing word goes too, and `No volcanism` joins the empty string on one token so that a
+      quiet body can agree with a species that is only ever found on quiet bodies.
+    */
+    let t = v.toLowerCase().replace(/^(minor|major)\s+/, "");
+    t = t.replace(/\s*volcanism\s*$/, "").trim();
+    if (!t || t === "no" || t === "none") return "none";
+    return t;
   }
 
   return v;

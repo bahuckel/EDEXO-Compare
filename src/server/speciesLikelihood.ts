@@ -262,7 +262,7 @@ export function speciesLogScore(
       categories++;
       if (bucketCategoricalValue(path, label) === want) hit += n;
     }
-    if (total <= 0 || categories <= 1) continue;
+    if (total <= 0 || categories < 1) continue;
     logLik += logSmoothed(hit, total, categories);
     terms++;
   }
