@@ -32,7 +32,12 @@ import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
 import { exomasteryHabitatQualityPercent, loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
-import { rankSpeciesOnBody, TERM_DAMPING, VOLCANISM_TERM_WEIGHT } from "../src/server/speciesLikelihood.js";
+import {
+  rankSpeciesOnBody,
+  TERM_DAMPING,
+  VOLCANISM_TERM_WEIGHT,
+  REGION_PRIOR_WEIGHT,
+} from "../src/server/speciesLikelihood.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
 import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
 import type {
@@ -148,15 +153,22 @@ let ranked = 0;
  */
 const USE_MODEL = !process.argv.includes("--similarity");
 const NO_PRIOR = process.argv.includes("--no-prior");
-/** Rank on the species' count in this region instead of its share of the whole corpus. */
-const REGION_PRIOR = process.argv.includes("--region-prior");
+/**
+ * Blend the species' count in this region into the corpus-wide prior — **on by default**, because
+ * the panel does it and a probe that does not is measuring an app that does not exist. That was the
+ * `--model` mistake a second time: the flag was opt-in, so every run reported a configuration the
+ * commander has never seen. `--no-region-prior` turns it off; `--region-prior` is still accepted.
+ */
+const REGION_PRIOR = !process.argv.includes("--no-region-prior");
 const PER_TERM = process.argv.includes("--per-term");
 /** `--drop=body.surfaceTemperature,body.atmosphereType` — measure what a term was worth. */
 const DROP_PATHS = new Set(
   (process.argv.find((a) => a.startsWith("--drop=")) ?? "--drop=").split("=")[1]!.split(",").filter(Boolean),
 );
 const REGION_WEIGHT = Number(
-  (process.argv.find((a) => a.startsWith("--region-weight=")) ?? "--region-weight=1").split("=")[1],
+  (
+    process.argv.find((a) => a.startsWith("--region-weight=")) ?? `--region-weight=${REGION_PRIOR_WEIGHT}`
+  ).split("=")[1],
 );
 const MIN_SAMPLES = Number(
   (process.argv.find((a) => a.startsWith("--min-samples=")) ?? "--min-samples=1").split("=")[1],

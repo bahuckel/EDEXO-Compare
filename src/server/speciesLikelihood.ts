@@ -130,6 +130,44 @@ const ATMOSPHERE_TERM_WEIGHT = 3;
  */
 export const VOLCANISM_TERM_WEIGHT = 2;
 
+/**
+ * How far the region is allowed to speak, against the corpus-wide prior it replaces.
+ *
+ * `0` is the galaxy-wide prior alone, `1` the regional count alone. It lives here rather than in
+ * `snapshot.ts` because `rank-probe` has to read the same number the panel does — when the probe
+ * defaulted this to off it was measuring a configuration the app has never run, which is how a
+ * comparison against "off" came to be presented as a live option.
+ *
+ * Swept on `rank-probe --region-weight=`, 585 ranked species over 2,126 candidate rows. The
+ * calibration column is the one the earlier sweep did not carry, and it is what moved the answer:
+ *
+ * | weight | mean rank | top-1 | top-3 | calibration |
+ * |---|---|---|---|---|
+ * | 0, corpus only | 3.303 | 199 (34.0 %) | 363 (62.1 %) | 0.0024 |
+ * | **0.25** | **3.094** | **202 (34.5 %)** | **386 (66.0 %)** | **0.0069** |
+ * | 0.5 (was) | 3.072 | 205 (35.0 %) | 382 (65.3 %) | 0.0108 |
+ * | 0.75 | 3.075 | 214 (36.6 %) | 389 (66.5 %) | 0.0127 |
+ * | 1 | 3.087 | 220 (37.6 %) | 389 (66.5 %) | 0.0190 |
+ *
+ * **Top-3 is all but saturated at 0.25** — 386 of the 389 the curve ever reaches — so the cheapest
+ * setting buys nearly all of "the right answer is visible without scrolling". Everything above it
+ * buys top-1 specifically, and pays for it in the one number on the card that has been checked
+ * against reality: as a root-mean-square gap, "Chance here" is out by about 8 points at 0.25, 10 at
+ * 0.5 and 14 at 1.
+ *
+ * The blend is `w · log(regionalCount + 0.5) + (1 − w) · corpusLogPrior`. A log count spans ten log
+ * units from 12,760 recordings down to none, while the damped likelihood — everything the body
+ * itself says — contributes one or two. At full weight the posterior stops being a posterior and
+ * becomes a regional popularity lookup with the body's physics as a tiebreaker, which is exactly
+ * what the calibration column reports.
+ *
+ * Moving from 0.5 to 0.25 costs 3 bodies of top-1 and returns 4 of top-3, and takes the calibration
+ * gap down by a third. The regional counts come from bodies commanders *chose* to map, so the
+ * lighter hand is also the more honest one: a species merely unpopular to scan here should not be
+ * ranked away for it. Revisit if the corpus ever carries complete labels.
+ */
+export const REGION_PRIOR_WEIGHT = 0.25;
+
 /** Laplace smoothing, in pseudo-observations per bin. */
 export const BIN_SMOOTHING = 0.5;
 

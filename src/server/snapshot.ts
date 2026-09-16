@@ -89,7 +89,7 @@ import {
 import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
-import { rankSpeciesOnBody } from "./speciesLikelihood.js";
+import { rankSpeciesOnBody, REGION_PRIOR_WEIGHT } from "./speciesLikelihood.js";
 import { genusShares, timingFromSamples } from "../shared/systemTriage.js";
 import { codexHasSpecies } from "../shared/codexLog.js";
 import type { JournalHostStarObservation } from "../shared/types.js";
@@ -687,28 +687,7 @@ function genusLikelihoodsForBody(
   return genusLikelihoods(table, candidates, signalCount, known)?.likelihoods ?? null;
 }
 
-/**
- * How far the region is allowed to speak, against the corpus-wide prior it replaces.
- *
- * Measured on `rank-probe --model --region-prior`, 515 ranked species from this commander's
- * journals. `0` is the galaxy-wide prior alone, `1` is the regional count alone:
- *
- * ```
- *   w=0      mean rank 3.247   top-1 199 (38.6%)   top-3 318 (61.7%)
- *   w=0.25   mean rank 3.095   top-1 201 (39.0%)   top-3 327 (63.5%)
- *   w=0.5    mean rank 3.045   top-1 202 (39.2%)   top-3 332 (64.5%)
- *   w=1      mean rank 2.994   top-1 203 (39.4%)   top-3 347 (67.4%)
- * ```
- *
- * `1` wins mean rank and top-3; `0.5` is chosen anyway. The panel's job is to name the species
- * before the commander flies out, so top-1 is the metric that spends their fuel, and the deeper
- * list is what they resolve on the ground either way. Half also keeps the galaxy-wide prior in the
- * blend, which matters because the regional counts come from bodies commanders *chose* to map —
- * a species that is merely unpopular to scan here should not be ruled out for it.
- *
- * Revisit if the corpus ever carries complete labels: the survey bias is the only reason to hedge.
- */
-const PRESENCE_REGION_PRIOR_WEIGHT = 0.5;
+/* The region-prior weight now lives with the other model constants; see REGION_PRIOR_WEIGHT. */
 
 /**
  * klightspeed region index for the body's own system, or null when its position is not known.
@@ -756,7 +735,7 @@ function attachPresenceProbability(
     root,
     regionPrior: true,
     regionIndex: regionIndexForBody(store, b, root),
-    regionPriorWeight: PRESENCE_REGION_PRIOR_WEIGHT,
+    regionPriorWeight: REGION_PRIOR_WEIGHT,
   });
   if (ranked.length === 0) return;
 
