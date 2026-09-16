@@ -387,6 +387,33 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
     c.atmosphereTypeRequiredAnyOf = normalizeAtmosphereToJournal(reqAtmoRaw);
   }
 
+  /**
+   * Composition bands, written in the species file as the gas name against its allowed share:
+   *
+   * ```json
+   * "atmosphere_gas_share_pct": { "Argon": { "min": 50 } }
+   * ```
+   *
+   * Gas names are left exactly as written and matched against `AtmosphereComposition` by
+   * `atmosphereCompositionKey`, so `Carbon dioxide`, `CarbonDioxide` and `carbon_dioxide` all work.
+   */
+  const gasShareRaw = asRecord(
+    firstDefined(src, ["atmosphere_gas_share_pct", "atmosphereGasSharePct", "gas_share_pct"]),
+  );
+  if (gasShareRaw) {
+    const bands: { gas: string; min?: number; max?: number }[] = [];
+    for (const [gas, spec] of Object.entries(gasShareRaw)) {
+      const name = gas.trim();
+      if (!name) continue;
+      const r = asRecord(spec);
+      const min = toNumber(r?.min ?? r?.minimum ?? r?.minPct);
+      const max = toNumber(r?.max ?? r?.maximum ?? r?.maxPct);
+      if (min === undefined && max === undefined) continue;
+      bands.push({ gas: name, ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}) });
+    }
+    if (bands.length) c.atmosphereGasSharePct = bands;
+  }
+
   const land = toBool(src.landable ?? src.Landable);
   if (land !== undefined) c.landable = land;
 

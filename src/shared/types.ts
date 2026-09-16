@@ -190,6 +190,42 @@ export interface SpeciesCriterion {
    * impossibility, and the unlikely tier is where long shots belong.
    */
   atmosphereTypeRequiredAnyOf?: string[];
+  /**
+   * How much of the air has to be a given gas — the axis `AtmosphereType` cannot express.
+   *
+   * `AtmosphereType` names the **dominant** gas, and a trailing `Rich` means the named gas is
+   * present but something else dominates. Measured over 8,000 journal scans:
+   *
+   * ```
+   *                plain label        "…Rich" label
+   * Neon           50.29 – 100 %      0.13 – 49.74 %
+   * Argon          43.21 – 100 %      0.10 – 47.76 %
+   * CarbonDioxide  44.37 – 100 %      0.11 – 46.24 %
+   * ```
+   *
+   * So `NeonRich` air is not neon-rich at all — it averages **5.5 % neon**, usually nitrogen with a
+   * neon trace. Both the loader and `atmosphereCompositionKey` fold the suffix away, which is right
+   * for the many species that live either side of it and wrong for the few that do not:
+   *
+   * ```
+   *                        the gas its codex row names
+   * Bacterium acies        Neon   85.36 – 100.00 %   (213 bodies)
+   * Fonticulua segmentatus Neon    0.24 –   0.53 %   (16 bodies, labelled NeonRich)
+   * Fonticulua campestris  Argon  51.97 – 100.00 %   (761 bodies)
+   * Fonticulua upupam      Argon   0.36 –  49.68 %   (56 bodies, labelled ArgonRich)
+   * ```
+   *
+   * Campestris and upupam are the pair this was written for: two ranges that do not touch, on a
+   * label that cannot tell them apart. The bands say it directly and leave the folding alone.
+   *
+   * Read from `AtmosphereComposition`, which is present on **100 %** of the 8,000 scans measured,
+   * AutoScan included. When a scan carries none the band is skipped rather than failed — inventing a
+   * rejection from missing data is worse than letting a rare body through.
+   *
+   * **Soft**, like every atmosphere verdict here: it demotes with its reason shown rather than
+   * deleting the row, and one foot sample there lifts it back (`sampledHere`).
+   */
+  atmosphereGasSharePct?: { gas: string; min?: number; max?: number }[];
   /** Earth **g** (compared after converting journal m/s² → g). */
   surfaceGravity?: { min?: number; max?: number };
   surfaceTemperatureK?: { min?: number; max?: number };
@@ -762,6 +798,16 @@ export interface SpeciesMatch {
   spatialGateUnresolved?: boolean;
   /** Exobiology line complete on this body (two Sample + one Analyse in journal, per codex key). */
   organicAnalysisComplete?: boolean;
+  /**
+   * Demoted by the gates, and sampled here anyway — so it is listed with the candidates, banner and
+   * all, instead of being collapsed behind "show unlikely".
+   *
+   * {@link unlikely} stays true and so does {@link unlikelyReasons}: the demotion is still the
+   * honest description of what the app thought, and the reason is usually the interesting part. Only
+   * where the row is filed changes. The commander's own boots outrank the app's opinion about a body
+   * it has never stood on.
+   */
+  sampledHere?: boolean;
   /** Suggested from `data/foot_scanned.json` when DSS/signals imply genera the DB did not return under strict gates. */
   learnedFromFootScan?: boolean;
   /** Which journal confirmations (`ScanOrganic`) produced matching foot-catalog rows (analyse vs sample). */

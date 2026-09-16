@@ -439,6 +439,70 @@ export function speciesMatchesExcludingTempPressure(
   }
 
   /**
+   * How much of the air is actually the gas — the question `AtmosphereType` cannot answer.
+   *
+   * The type names the **dominant** gas, and a trailing `Rich` means the named gas is there but
+   * something else dominates: across 8,000 journal scans `NeonRich` air averages **5.5 % neon** and
+   * never exceeds 49.74 %. Both the loader and `atmosphereCompositionKey` fold that suffix away,
+   * which is right for most species and hides the only thing separating a few pairs of them:
+   *
+   * ```
+   * Fonticulua campestris   argon 51.97 – 100.00 %    761 bodies
+   * Fonticulua upupam       argon  0.36 –  49.68 %     56 bodies
+   * ```
+   *
+   * Two ranges that do not touch, on one folded label. Upupam had been sitting at 15-17 % on bodies
+   * that were unmistakably its own, because nothing in the matcher could see the difference.
+   *
+   * **Soft**, like every atmosphere verdict here — the band demotes with its number shown rather
+   * than deleting the row, and a foot sample there lifts it back (`sampledHere`).
+   */
+  const gasBands = c.atmosphereGasSharePct;
+  if (gasBands?.length) {
+    const comp = scan.atmosphereComposition;
+    // No composition, no opinion. Every scan measured carries it, but a cached or pre-Odyssey one
+    // may not, and a rejection invented from missing data is worse than a rare body let through.
+    if (Array.isArray(comp) && comp.length > 0) {
+      for (const band of gasBands) {
+        const wantKey = atmosphereCompositionKey(band.gas);
+        let pct = 0;
+        for (const row of comp) {
+          const name = String(row?.Name ?? row?.name ?? "").trim();
+          if (!name || atmosphereCompositionKey(name) !== wantKey) continue;
+          const raw = row?.Percent ?? row?.percent;
+          if (typeof raw === "number" && Number.isFinite(raw)) pct = Math.max(pct, raw);
+        }
+        const belowMin = band.min !== undefined && pct < band.min;
+        const aboveMax = band.max !== undefined && pct > band.max;
+        if (!belowMin && !aboveMax) {
+          reasons.push({
+            field: "AtmosphereType",
+            detail: `${band.gas} ${pct.toFixed(1)} % of the atmosphere${
+              band.min !== undefined && band.max !== undefined
+                ? ` (needs ${band.min}-${band.max} %)`
+                : band.min !== undefined
+                  ? ` (needs ≥ ${band.min} %)`
+                  : ` (needs ≤ ${band.max} %)`
+            }`,
+          });
+          continue;
+        }
+        const want =
+          band.min !== undefined && band.max !== undefined
+            ? `${band.min}-${band.max} %`
+            : belowMin
+              ? `at least ${band.min} %`
+              : `at most ${band.max} %`;
+        failures.push({
+          field: "AtmosphereType",
+          soft: true,
+          detail: `${entry.displayName} needs ${want} ${band.gas}; this body is ${pct.toFixed(2)} % — every observed body for it sits inside that band. ${DEMOTED_NOTE}`,
+        });
+      }
+    }
+  }
+
+  /**
    * A gas the genus cannot live without, measured against how much of it is actually there.
    *
    * Recepta needs sulphur dioxide. Blu Thua EM-D d12-25 A 1 a is a **carbon dioxide** body — 99.01 %
