@@ -60,6 +60,7 @@ export function slimBodyForHud(b: BodyComputed): Partial<BodyComputed> {
       presenceProbabilityPercent: m.presenceProbabilityPercent,
       unlikely: m.unlikely,
       organicAnalysisComplete: m.organicAnalysisComplete,
+      sampledHere: m.sampledHere,
       exomasterySimilarityPercent: m.exomasterySimilarityPercent,
     })) as unknown as BodyComputed["matches"],
   };

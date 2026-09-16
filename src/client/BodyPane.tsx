@@ -620,8 +620,16 @@ export const BodyPane = memo(function BodyPane({
     [body.matches, hasEvidence],
   );
   const shownMatches = evidenceOnly ? body.matches.filter(hasEvidence) : body.matches;
-  const likelyMatches = shownMatches.filter((m) => !m.unlikely);
-  const unlikelyMatches = shownMatches.filter((m) => m.unlikely);
+  /*
+    A species he has sampled here is listed with the candidates, banner and all.
+
+    The owner, on Bacterium omentum: *"keep the [unlikely] banner after the name. But do not continue
+    to hide it in the unlikely list if the user scans it."* The demotion is still true and still
+    shown — `m.unlikely` is untouched, so the card keeps its banner and its reasons — but a row he
+    has proved is on this body does not belong behind "show unlikely (N)".
+  */
+  const likelyMatches = shownMatches.filter((m) => !m.unlikely || m.sampledHere === true);
+  const unlikelyMatches = shownMatches.filter((m) => m.unlikely && m.sampledHere !== true);
   // Genus order from the co-occurrence solver, most likely first. Ordering only — the probabilities
   // behind it are not calibrated, so nothing here renders a number.
   const genusOrder = body.genusLikelihoods?.map((l) => l.genus) ?? null;

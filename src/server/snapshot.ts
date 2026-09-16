@@ -857,6 +857,40 @@ export function demoteBelowPresenceFloor(matches: SpeciesMatch[], b: BodyExoStat
 }
 
 /**
+ * A species the commander has sampled on this body belongs in the list, banner and all.
+ *
+ * The owner, on Bacterium omentum at `Synookooe WW-F b55-0 A 2 a`: *"keep the [unlikely] banner
+ * after the name. But do not continue to hide it in the unlikely list if the user scans it, it
+ * should go into candidate species with the [unlikely] banner."*
+ *
+ * He is right, and the reason is that the two facts are not in competition. "Unlikely" is the app's
+ * opinion about a body it has never stood on; a sample is the commander's own boots. Collapsing the
+ * row behind "show unlikely (N)" after he has proved it is there makes the panel argue with him —
+ * and the species he has to hunt for hardest is exactly the one worth not hiding.
+ *
+ * So the demotion is **kept**: `unlikely` stays true, `unlikelyReasons` stays, and the banner still
+ * says which gate it failed. Only where the row is *filed* changes. That is deliberate — the reason
+ * it was demoted is usually the interesting part. Omentum's codex row lists Neon and this body is
+ * Methane, which the corpus says happens in 1 of 22 observed bodies; the banner is how he finds out
+ * the codex is narrow rather than the app being broken.
+ *
+ * Runs after every demotion pass, because it is about the final verdict rather than any one gate.
+ * `exoDataConsistencyAlerts` still reports the mismatch: the row being visible does not make the
+ * codex list right.
+ */
+function markSampledDespiteUnlikely(matches: SpeciesMatch[], b: BodyExoState, db: SpeciesDatabase): void {
+  const sampled = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
+  if (sampled.size === 0) return;
+  for (const m of matches) {
+    // A Log already resolves the species, so `organicAnalysisComplete` is too strict a test here:
+    // one sample is proof the plant is on the body, whatever the remaining two would add.
+    if (m.unlikely && (sampled.has(m.entry.id) || m.organicAnalysisComplete === true)) {
+      m.sampledHere = true;
+    }
+  }
+}
+
+/**
  * Mark the candidates this commander has never logged in the codex (B4).
  *
  * Silent until the journals have been merged by a build that collects `CodexEntry` — with an empty
@@ -1068,6 +1102,7 @@ function computeBodyUncached(
   attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root, store);
   // After the ranking, because the floor is a rule about the ranking's own output.
   demoteBelowPresenceFloor(matches, b, db);
+  markSampledDespiteUnlikely(matches, b, db);
   /*
     The collection marker: species where both the corpus and this commander are short of bodies.
 
