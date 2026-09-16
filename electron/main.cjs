@@ -215,6 +215,15 @@ function relayoutHudStack() {
   const atRight = hudLayout.corner.endsWith("r");
   const x = atRight ? Math.floor(wa.x + wa.width - margin - w) : wa.x + margin;
   let y = atBottom ? wa.y + wa.height - margin : wa.y + margin;
+  /*
+    Clamped into the work area, always.
+
+    A stack taller than the screen used to run off the bottom (or off the top, anchored at a bottom
+    corner) and the windows down there are simply gone — click-through, frameless, no taskbar entry,
+    nothing to drag back. The same arithmetic put every window off the side when the work area
+    shrank under it, which is the failure this clamp exists for: see the display listener below.
+  */
+  const fit = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   for (const slot of ordered) {
     let sz;
     try {
@@ -225,11 +234,52 @@ function relayoutHudStack() {
     const h = sz[1];
     if (atBottom) y -= h;
     try {
-      slot.win.setBounds({ x, y, width: w, height: h, animate: false });
+      slot.win.setBounds({
+        x: fit(x, wa.x, Math.max(wa.x, wa.x + wa.width - w)),
+        y: fit(y, wa.y, Math.max(wa.y, wa.y + wa.height - h)),
+        width: w,
+        height: h,
+        animate: false,
+      });
     } catch {
       /* ignore */
     }
     y = atBottom ? y - HUD_STACK_GAP : y + h + HUD_STACK_GAP;
+  }
+}
+
+/**
+ * Put the stack back on the screen when the screen changes underneath it.
+ *
+ * The HUDs are positioned from `screen.getPrimaryDisplay().workArea` and were only ever repositioned
+ * when something in the app happened to call {@link relayoutHudStack}. Nothing listened to the
+ * display itself — so when the work area changed, the windows stayed at coordinates computed for a
+ * screen that no longer existed, which on a shrink means **off the edge and unreachable**.
+ *
+ * Elite does this routinely: it changes resolution going fullscreen, changes it back on exit, and a
+ * monitor waking or sleeping does the same. That is the "now and again" in the owner's report — the
+ * overlay disappears, the hotkey cannot bring it back because hiding and showing does not move
+ * anything, and the only way out is to make a *new* window, which is what unticking "merge into one
+ * panel" and re-ticking it does.
+ *
+ * Coalesced, because Windows emits several of these for one resolution change.
+ */
+let relayoutTimer = null;
+function scheduleHudRelayout() {
+  if (relayoutTimer) clearTimeout(relayoutTimer);
+  relayoutTimer = setTimeout(() => {
+    relayoutTimer = null;
+    relayoutHudStack();
+  }, 250);
+}
+
+function watchDisplaysForHudRelayout() {
+  for (const ev of ["display-metrics-changed", "display-added", "display-removed"]) {
+    try {
+      screen.on(ev, scheduleHudRelayout);
+    } catch {
+      /* a platform without it: the stack simply keeps its position */
+    }
   }
 }
 
@@ -311,6 +361,14 @@ function toggleHudVisibility(force) {
       /* ignore */
     }
   }
+  /*
+    Showing is also a rescue, so it repositions.
+
+    The hotkey is what a commander reaches for when a HUD is not where it should be, and hiding and
+    showing a window parked off the edge of a changed work area brings back exactly nothing — which
+    is what the owner reported. One relayout here means the reflex works.
+  */
+  if (!hudHidden) relayoutHudStack();
   return hudHidden;
 }
 
@@ -430,6 +488,15 @@ async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode
   if (mode !== "open" && hudHidden) toggleHudVisibility(false);
 
   const key = hudSlotKey(pathNorm);
+  /*
+    A dead window must not answer for a live one.
+
+    `closed` prunes the slot when a window is destroyed normally, but a renderer that goes away some
+    other way leaves the slot behind — and then `set` finds it, sees the pathname already matches,
+    and returns `opened: true` having done nothing at all. The launcher ticks the row, the commander
+    sees nothing, and no amount of clicking helps because every click takes the same early return.
+  */
+  hudOverlayStack = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
   const existing = hudOverlayStack.findIndex((s) => s.key === key);
   if (existing >= 0) {
     const slot = hudOverlayStack[existing];
@@ -690,6 +757,7 @@ async function start() {
 
   registerFootOverlayIpc(winIcon);
   loadHudLayout();
+  watchDisplaysForHudRelayout();
   try {
     if (!globalShortcut.register(HUD_TOGGLE_SHORTCUT, () => toggleHudVisibility())) {
       console.warn("[edexo-compare] could not register", HUD_TOGGLE_SHORTCUT, "(taken by another app)");
