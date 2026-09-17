@@ -330,7 +330,6 @@
       ],
       "candidates": [
         "bacterium_bacterium_tela",
-        "bacterium_bacterium_vesicula",
         "electricae_electricae_pluma",
         "electricae_electricae_radialem",
         "fonticulua_fonticulua_upupam",
@@ -347,6 +346,7 @@
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu",
         "cactoida_cactoida_lapis",
         "cactoida_cactoida_peperatis",

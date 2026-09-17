@@ -207,12 +207,65 @@ describe("the gas share that decides two pairs of species", () => {
     expect(verdict(find("Fonticulua upupam"), noComposition).ok).toBe(true);
   });
 
-  it("is opted into by three rows and no others", () => {
+  it("is opted into by the five rows the corpus can decide, and no others", () => {
+    /*
+      All 108 species were checked. Only two gases have a `-rich` population large enough to conclude
+      anything from — argon at 2.9 % of argon habitats and neon at 14.5 % of neon ones. For carbon
+      dioxide, ammonia, water, sulphur dioxide, methane, nitrogen and oxygen the `-rich` form is
+      0.0-0.1 % of the corpus, so a species being zero on it says nothing and the fold cannot be
+      wrong for them.
+
+      Seven argon species look one-sided and are not: Tussock capillum is 62 bodies with 1.8
+      expected on the rich side (p = 0.16), Fungoida bullarum 57 with 1.7 (p = 0.19), and it falls
+      away from there. They simply have not had enough argon bodies for a 2.9 % event to appear.
+      Listing them as findings would have been arithmetic dressed up as evidence.
+    */
     const optedIn = db.species
       .filter((e) => (e.criteria.atmosphereGasSharePct ?? []).length > 0)
       .map((e) => e.displayName)
       .sort();
-    expect(optedIn).toEqual(["Bacterium acies", "Fonticulua campestris", "Fonticulua upupam"]);
+    expect(optedIn).toEqual([
+      "Bacterium acies",
+      "Bacterium vesicula",
+      "Fonticulua campestris",
+      "Fonticulua segmentatus",
+      "Fonticulua upupam",
+    ]);
+  });
+
+  it("separates vesicula from upupam on the same ArgonRich body", () => {
+    /*
+      880 of vesicula's 881 bodies are plain Thin Argon at 51.6-100 % argon and none is Argon-rich,
+      where argon averages 3 % and the air is usually nitrogen. Under indifference that is p = 6e-12.
+      Its `required_atmosphere_type` floor of 5 % was letting it through on 33.8 % argon — which is
+      upupam's world, not its own.
+    */
+    expect(verdict(find("Bacterium vesicula"), ARGON_RICH_NITROGEN).ok).toBe(false);
+    expect(verdict(find("Bacterium vesicula"), ARGON_DOMINANT).ok).toBe(true);
+  });
+
+  it("keeps segmentatus off acies' neon worlds, and acies off segmentatus'", () => {
+    /*
+      The other half of the acies fix. All 16 segmentatus bodies are Thin Neon-rich at 0.2-0.5 %
+      neon — a nitrogen world carrying a trace — and its row said `Neon` and `Neon-rich`, both of
+      which fold to `Neon`. So it matched the 50-100 % neon bodies where acies lives and it never
+      has. Neon-rich is 14.5 % of neon habitats: 16 of 16 on it is p = 4e-14.
+    */
+    expect(verdict(find("Fonticulua segmentatus"), NEON_RICH_NITROGEN).ok).toBe(true);
+    expect(verdict(find("Fonticulua segmentatus"), NEON_DOMINANT).ok).toBe(false);
+    expect(verdict(find("Bacterium acies"), NEON_DOMINANT).ok).toBe(true);
+    expect(verdict(find("Bacterium acies"), NEON_RICH_NITROGEN).ok).toBe(false);
+  });
+
+  it("does not shut segmentatus out of its own habitat with the floor", () => {
+    // Neon is on all 16 of its bodies, so the 0.1 % floor is a requirement it meets — but a pure
+    // nitrogen world with no neon at all is Fonticulua lapida's, and must not read as segmentatus.
+    const pureNitrogen = body({
+      AtmosphereType: "Nitrogen",
+      Atmosphere: "thin nitrogen atmosphere",
+      atmosphereComposition: [{ Name: "Nitrogen", Percent: 100 }],
+    });
+    expect(verdict(find("Fonticulua segmentatus"), pureNitrogen).ok).toBe(false);
   });
 
   it("parses the band out of the species file without folding the gas name", () => {

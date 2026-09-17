@@ -191,7 +191,7 @@
         ],
         "atmospherePressureCategory": "thin"
       },
-      "_atmosphereNote": "Neon was a wall here and the corpus does not support one: 45% Thin Neon, 32% Neon-rich, and the rest Argon, Water-rich, Methane and airless. The commander sampled it on Thin Methane at Synookooe WW-F b55-0 A 2 a, a moon whose sibling one orbit out \u2014 same class, same Thin Methane, no volcanism \u2014 carried Bacterium bullaris instead. The volcanism is the real rule: 95.5% of its 22 observed bodies have nitrogen or ammonia volcanism against 4.4% ambient in the population it lives in, an enrichment of 21.8x. See tests/volcanismBacteriumGates.test.ts.",
+      "_atmosphereNote": "Neon was a wall here and the corpus does not support one: 45% Thin Neon, 32% Neon-rich, and the rest Argon, Water-rich, Methane and airless. The commander sampled it on Thin Methane at Synookooe WW-F b55-0 A 2 a, a moon whose sibling one orbit out — same class, same Thin Methane, no volcanism — carried Bacterium bullaris instead. The volcanism is the real rule: 95.5% of its 22 observed bodies have nitrogen or ammonia volcanism against 4.4% ambient in the population it lives in, an enrichment of 21.8x. See tests/volcanismBacteriumGates.test.ts.",
       "color_rules": {
         "type": "material_based",
         "mapping": {
@@ -215,7 +215,7 @@
         ],
         "atmospherePressureCategory": "thin"
       },
-      "_atmosphereNote": "Neon was a wall here and the corpus does not support one: 59% Thin Neon, 24% Thin Argon, which the row never listed. The volcanism is the real rule: every one of its 17 observed bodies has carbon or methane volcanism, against 2.5% ambient \u2014 an enrichment of 40.7x. See tests/volcanismBacteriumGates.test.ts.",
+      "_atmosphereNote": "Neon was a wall here and the corpus does not support one: 59% Thin Neon, 24% Thin Argon, which the row never listed. The volcanism is the real rule: every one of its 17 observed bodies has carbon or methane volcanism, against 2.5% ambient — an enrichment of 40.7x. See tests/volcanismBacteriumGates.test.ts.",
       "color_rules": {
         "type": "material_based",
         "mapping": {
@@ -259,7 +259,7 @@
         ],
         "atmospherePressureCategory": "thin"
       },
-      "_atmosphereNote": "Neon was a wall here and it is not even this species' commonest atmosphere: Thin Argon 38% against Thin Neon 35%, and Argon was never in the list. The volcanism is the real rule: every one of its 26 observed bodies has water volcanism, against 2.3% ambient \u2014 an enrichment of 44.1x. See tests/volcanismBacteriumGates.test.ts.",
+      "_atmosphereNote": "Neon was a wall here and it is not even this species' commonest atmosphere: Thin Argon 38% against Thin Neon 35%, and Argon was never in the list. The volcanism is the real rule: every one of its 26 observed bodies has water volcanism, against 2.3% ambient — an enrichment of 44.1x. See tests/volcanismBacteriumGates.test.ts.",
       "color_rules": {
         "type": "material_based",
         "mapping": {
@@ -282,6 +282,11 @@
           "Argon-rich"
         ],
         "required_atmosphere_type": "Argon",
+        "atmosphere_gas_share_pct": {
+          "Argon": {
+            "min": 50
+          }
+        },
         "volcanism": null,
         "atmospherePressureCategory": "thin"
       },
@@ -295,7 +300,8 @@
           "Tellurium": "Red",
           "Yttrium": "Lime"
         }
-      }
+      },
+      "_atmosphereNote": "Argon-dominant. 880 of its 881 observed bodies are plain Thin Argon at 51.6-100% argon and not one is Thin Argon-rich, where argon averages 3% and the air is usually nitrogen. Argon-rich is 2.9% of argon habitats in the corpus, so 0 of 880 is a distribution and not a thin sample: under indifference that outcome has probability 6e-12. Without the band the required-gas floor of 5% lets vesicula through on an Argon-rich body carrying 30% argon - one of Fonticulua upupam's worlds. Same evidence as Fonticulua campestris at a larger n. See tests/atmosphereGasShare.test.ts."
     },
     {
       "id": "bacterium_bacterium_aurasus",
