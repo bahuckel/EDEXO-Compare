@@ -10,10 +10,21 @@
  *
  * The genus is the reason this was missed. `meta.genusWideRequirements.max_gravity` is `null` and the
  * other seven Stratum are Rocky-body species living low — paleas averages 0.134 g, laminamus tops out
- * at 0.327 g — so nothing in the file suggested a Stratum could need a ceiling at all. Tectonicas is
- * the exception twice over: it is the only High metal content one, and its gravity histogram piles up
- * at the **top** of its range rather than the bottom. The cap is a ceiling on a species that likes
- * heavy worlds, not a preference for light ones.
+ * at 0.327 g — so nothing in the file suggested a Stratum could need a ceiling at all, and tectonicas
+ * is the only High metal content one.
+ *
+ * **Correction.** This comment first said tectonicas "likes heavy worlds", from its `histograms`
+ * array piling into the last bin. That array is on **globally shared quantile edges** whose top bin
+ * is simply "above 0.2753 g" — more than half of tectonicas' range — so it says nothing about the
+ * shape within the species. `displayHistograms`, which is keyed to the species' own min and max, is
+ * the one to read, and it says the reverse: the distribution peaks at **0.22–0.25 g** (615 of 3,930
+ * bodies) and thins to **4 bodies** in the top bin, 0.564–0.598 g.
+ *
+ * So the cap is the far edge of a long thin tail, not the edge of a preference. The commander's own
+ * FSS record agrees and is sharper: across 270 tectonicas-eligible bodies of his, the share carrying
+ * any biology falls from **100 % below 0.35 g** to **19 % above 0.55 g**, monotonically. The cap is
+ * still right — 0.598 observed, 0.607 his figure, 0.61 set above both — but it is a ceiling on
+ * something already vanishing, not a wall across a species' favourite ground.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
@@ -62,9 +73,9 @@ describe("Stratum tectonicas' gravity ceiling", () => {
 
   it("offers it across the range it actually lives in", () => {
     /*
-      0.048 to 0.598 g in the corpus, and the bodies it was wrongly offered on sat at 0.4-0.6 — which
-      is its best ground, not its edge. A cap that clipped those would cost far more than the two
-      bodies it was written for.
+      0.048 to 0.598 g in the corpus. The cap must not clip the tail, because the tail is real — it is
+      thin, not empty, and a body at 0.55 g still grows tectonicas about one time in five. Its best
+      ground is far lower: the per-species histogram peaks at 0.22-0.25 g.
     */
     for (const gg of [0.05, 0.28, 0.45, 0.598, 0.607]) {
       expect(verdict(find("Stratum tectonicas"), body(gg)).ok, `${gg} g`).toBe(true);
