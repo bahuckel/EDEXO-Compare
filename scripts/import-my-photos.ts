@@ -13,6 +13,11 @@
  *   Images/Bacterium/Bacterium Vesicula - Lime.jpg
  *   Images/Stratum/Stratum Tectonicas - Green.jpg
  *
+ * A colour may have more than one photograph. Add an index and both are kept:
+ *
+ *   Images/Fungoida/Fungoida Bullarum - Gold.jpg
+ *   Images/Fungoida/Fungoida Bullarum - Gold 2.jpg
+ *
  * Spacing around the dash is not load-bearing — `Bacterium Cerbrus- Green.jpg` reads the same — and
  * the extension may be jpg, jpeg, png or webp.
  *
@@ -118,10 +123,29 @@ interface CreditsFile {
 
 const IMAGE_RE = /\.(jpe?g|png|webp)$/i;
 
-function parseName(file: string): { species: string; colour: string; ext: string } | null {
-  const m = /^(.*?)\s*-\s*([A-Za-z][A-Za-z ]*?)\s*\.(jpe?g|png|webp)$/i.exec(file);
+/**
+ * `Genus Species - Colour.ext`, with an optional index for a second photograph of the same colour.
+ *
+ * `Fungoida Bullarum - Gold 2.jpg` is the first of those. One colour on two bodies can look quite
+ * unlike itself, so a commander photographing both is adding information rather than duplicating a
+ * file, and the old pattern refused it outright: the colour group was letters and spaces, so a
+ * trailing digit made the whole name unreadable and the photograph was reported as a typo.
+ *
+ * The index is optional, may be written `Gold 2`, `Gold-2` or `Gold (2)`, and is never part of the
+ * colour — it is carried through to the target name only so the second file does not overwrite the
+ * first.
+ */
+function parseName(file: string): { species: string; colour: string; index: string; ext: string } | null {
+  const m = /^(.*?)\s*-\s*([A-Za-z][A-Za-z ]*?)\s*(?:[-(\s]\s*(\d+)\s*\)?)?\s*\.(jpe?g|png|webp)$/i.exec(
+    file,
+  );
   if (!m) return null;
-  return { species: m[1]!.trim(), colour: m[2]!.trim(), ext: m[3]!.toLowerCase() };
+  return {
+    species: m[1]!.trim(),
+    colour: m[2]!.trim(),
+    index: (m[3] ?? "").trim(),
+    ext: m[4]!.toLowerCase(),
+  };
 }
 
 /** Every colour this species can actually be, from its own table. Empty when it has none. */
@@ -261,7 +285,13 @@ function main(): void {
         a file saying "Gray" while the prediction says "Grey" is a photograph nothing can ever find.
       */
       const canonicalColour = titleCaseColour(colourKey);
-      const target = `${genus}-${speciesWord}-${canonicalColour.replace(/\s+/g, "_")}.${parsed.ext}`;
+      /*
+        The index rides on the end, where `variantColourOf` reads a run of digits after the colour as
+        an index and still calls the file that colour. Without it the second Gold would land on the
+        first Gold's name and the import would look like a no-op.
+      */
+      const suffix = parsed.index ? `-${parsed.index}` : "";
+      const target = `${genus}-${speciesWord}-${canonicalColour.replace(/\s+/g, "_")}${suffix}.${parsed.ext}`;
       const abs = path.join(photosDir, target);
 
       const src = path.join(dir, file);
@@ -271,7 +301,7 @@ function main(): void {
         copyFileSync(src, abs);
         copied++;
         console.log(
-          `  ${entry.displayName.padEnd(24)} ${parsed.colour.padEnd(11)} -> ${entry.genusDataDir}/${target}` +
+          `  ${entry.displayName.padEnd(24)} ${(parsed.colour + (parsed.index ? ` #${parsed.index}` : "")).padEnd(11)} -> ${entry.genusDataDir}/${target}` +
             (by.id === OWNER.id ? "" : `  (${by.name})`),
         );
       }

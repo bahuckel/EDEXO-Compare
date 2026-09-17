@@ -86,14 +86,36 @@ const VARIANT_COLOURS = [
  * Compared on {@link normStem}, so `Bacterium-vesicula-Lime.jpg` and `bacterium vesicula lime.jpg`
  * are the same file as far as this is concerned and no new spelling rule has to be learned to add a
  * photograph: keep the species name, append the colour.
+ *
+ * **A colour may have more than one photograph.** `Fungoida Bullarum - Gold 2` is the first, and
+ * there was never a reason for it to be the last — one colour on two bodies can look quite unlike
+ * itself. A run of digits after the colour is an index and nothing else, so `…-Gold.jpg` and
+ * `…-Gold-2.jpg` both read as Gold and both reach the gallery. The digits must be the whole
+ * remainder: `…-Golden.jpg` is still not a colour this understands, which is the point of keeping
+ * {@link VARIANT_COLOURS} a closed list rather than "any word after the species".
  */
 function variantColourOf(file: string, speciesStem: string): string | null {
   const n = normStem(file);
   if (!speciesStem || !n.startsWith(speciesStem)) return null;
   const tail = n.slice(speciesStem.length);
   if (!tail) return null;
-  const hit = VARIANT_COLOURS.find((c) => c === tail);
+  const hit = VARIANT_COLOURS.find(
+    (c) => tail === c || (tail.startsWith(c) && /^\d+$/.test(tail.slice(c.length))),
+  );
   return hit ? hit.charAt(0).toUpperCase() + hit.slice(1) : null;
+}
+
+/**
+ * The index a variant filename carries after its colour, or 0 when it carries none.
+ *
+ * `…-Gold.jpg` is 0 and `…-Gold-2.jpg` is 2, which is the order a commander adding a second
+ * photograph would expect: the one that was already there stays the face of the species.
+ */
+function variantIndexOf(file: string, speciesStem: string): number {
+  const n = normStem(file);
+  if (!speciesStem || !n.startsWith(speciesStem)) return 0;
+  const m = /(\d+)$/.exec(n.slice(speciesStem.length));
+  return m ? Number(m[1]) : 0;
 }
 
 function speciesPhotoBaseUrl(genusDataDir: string, filename: string): string {
@@ -337,7 +359,21 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
   const variantFiles = imageFiles
     .map((f) => ({ f, colour: variantColourOf(f, speciesStem) }))
     .filter((x): x is { f: string; colour: string } => x.colour !== null)
-    .sort((a, b) => a.colour.localeCompare(b.colour))
+    /*
+      Within a colour, the unindexed photograph leads and the rest follow in index order.
+
+      `heroPhotoUrlFor` takes the first variant of the predicted colour, so this decides which of
+      several photographs of one colour the card shows. Sorting on colour alone left that to readdir
+      order — the filesystem's business, and different between machines. Sorting on filename was no
+      better: `-` sorts before `.`, so `…-Gold-2.jpg` came out ahead of `…-Gold.jpg` and the second
+      photograph became the face of the species.
+    */
+    .sort(
+      (a, b) =>
+        a.colour.localeCompare(b.colour) ||
+        variantIndexOf(a.f, speciesStem) - variantIndexOf(b.f, speciesStem) ||
+        a.f.localeCompare(b.f),
+    )
     .map((x) => x.f);
 
   /*
