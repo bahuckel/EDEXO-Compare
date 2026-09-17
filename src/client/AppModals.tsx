@@ -372,6 +372,8 @@ export function DataValueBreakdownModal({
   explorationFssValueCredits,
   explorationDssScanCount,
   explorationDssValueCredits,
+  exobioScanCount,
+  exobioValueCredits,
   onClose,
 }: {
   lines: OrganicPendingLineItem[];
@@ -380,6 +382,9 @@ export function DataValueBreakdownModal({
   explorationFssValueCredits: number;
   explorationDssScanCount: number;
   explorationDssValueCredits: number;
+  /** Completed samples waiting to sell, and their value — the header pill's own two numbers. */
+  exobioScanCount: number;
+  exobioValueCredits: number;
   onClose: () => void;
 }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
@@ -400,25 +405,55 @@ export function DataValueBreakdownModal({
           </button>
         </div>
         <div className="modal-body modal-body--data-value">
-          {includeExplorationScanDataInDataValue ? (
-            <div className="data-value-exploration-block card-neon" style={{ marginBottom: "1rem" }}>
-              <p className="small-caps dim" style={{ marginTop: 0 }}>
-                Exploration (journal events)
-              </p>
-              <p style={{ margin: "0.35rem 0" }}>
-                <strong>FSS scans</strong> — journal <code>event: FSSBodySignals</code> —{" "}
-                <strong>{explorationFssScanCount}</strong> bodies · Value:{" "}
-                <strong>{explorationFssValueCredits.toLocaleString()} CR</strong>{" "}
-                <span className="dim tiny">(FSS-only est. where merged Scan exists)</span>
-              </p>
-              <p style={{ margin: "0.35rem 0" }}>
-                <strong>DSS scans</strong> — journal <code>event: SAAScanComplete</code> —{" "}
-                <strong>{explorationDssScanCount}</strong> planetary bodies · Value:{" "}
-                <strong>{explorationDssValueCredits.toLocaleString()} CR</strong>{" "}
-                <span className="dim tiny">(full mapped est.)</span>
-              </p>
-            </div>
-          ) : null}
+          {/*
+            The three things worth selling, on three lines, before the per-sample list.
+
+            Exploration is counted in the header total only while the ⊕ toggle is on, so the two
+            exploration rows say when they are not — the alternative is three rows that look like
+            they add up to the pill and do not.
+          */}
+          <ul className="data-value-summary">
+            <li
+              className="data-value-summary-row"
+              title="Journal event: FSSBodySignals — FSS-only estimate where a merged Scan exists"
+            >
+              <span className="data-value-summary-count">{explorationFssScanCount}</span>
+              <span className="data-value-summary-label">
+                FSS scans
+                {!includeExplorationScanDataInDataValue ? (
+                  <span className="dim tiny"> · not in total</span>
+                ) : null}
+              </span>
+              <span className="data-value-summary-value">
+                {explorationFssValueCredits.toLocaleString()} CR
+              </span>
+            </li>
+            <li
+              className="data-value-summary-row"
+              title="Journal event: SAAScanComplete — full mapped estimate"
+            >
+              <span className="data-value-summary-count">{explorationDssScanCount}</span>
+              <span className="data-value-summary-label">
+                DSS scans
+                {!includeExplorationScanDataInDataValue ? (
+                  <span className="dim tiny"> · not in total</span>
+                ) : null}
+              </span>
+              <span className="data-value-summary-value">
+                {explorationDssValueCredits.toLocaleString()} CR
+              </span>
+            </li>
+            <li
+              className="data-value-summary-row"
+              title="Completed samples (3x Analyse) not yet sold; first footfall pays 5x"
+            >
+              <span className="data-value-summary-count">{exobioScanCount}</span>
+              <span className="data-value-summary-label">Exobio scans</span>
+              <span className="data-value-summary-value">
+                {exobioValueCredits.toLocaleString()} CR
+              </span>
+            </li>
+          </ul>
           {lines.length === 0 ? (
             <p className="dim">
               {includeExplorationScanDataInDataValue

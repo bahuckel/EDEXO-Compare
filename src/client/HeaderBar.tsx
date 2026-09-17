@@ -1040,6 +1040,8 @@ export const HeaderBar = memo(function HeaderBar({
           explorationFssValueCredits={snap.explorationFssValueCredits ?? 0}
           explorationDssScanCount={snap.explorationDssScanCount ?? 0}
           explorationDssValueCredits={snap.explorationDssValueCredits ?? 0}
+          exobioScanCount={snap.organicPendingSampleCount}
+          exobioValueCredits={snap.organicDataValueCredits}
           onClose={() => setDataBreakdownOpen(false)}
         />
       ) : null}

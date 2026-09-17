@@ -519,6 +519,47 @@
   max-height: min(65vh, 560px);
 }
 
+/*
+  The three totals, above the per-sample list.
+
+  A grid rather than three flex rows so the counts, the labels and the credits line up in columns
+  down the panel — the reason for the layout is comparing the three numbers, and ragged columns are
+  exactly what stops that. The value column is `max-content` so the widest figure sets the width and
+  the digits stay right-aligned against each other.
+*/
+.data-value-summary {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr max-content;
+  gap: 0.15rem 0.6rem;
+  align-items: baseline;
+}
+
+.data-value-summary-row {
+  display: contents;
+}
+
+.data-value-summary-count {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text);
+}
+
+.data-value-summary-label {
+  color: var(--text);
+}
+
+.data-value-summary-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
 .data-value-breakdown-list {
   list-style: none;
   margin: 0;
