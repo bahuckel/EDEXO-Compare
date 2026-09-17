@@ -54,15 +54,23 @@ import { getProjectRoot } from "./paths.js";
  * likelihood weighing about a sixth of what it would unchecked, which is enough to move the ranking
  * without letting it overrule the prior.
  *
- * Swept in `npm run rank-probe`, over 398 species on 1,577 candidate rows:
+ * Re-swept 2026-09-17 on the current model — after the volcanism term landed and the regional prior
+ * moved to 0.25, either of which could have moved the optimum. 585 species over 2,126 candidate
+ * rows:
  *
- * | damping | mean rank | top-1 | top-3 |
- * |---|---|---|---|
- * | 0.10 | 3.281 | 35.7 % | 66.1 % |
- * | **0.15** | **3.266** | **36.2 %** | **66.3 %** |
- * | 0.25 | 3.374 | 35.7 % | 66.3 % |
- * | 0.60 | 3.693 | 33.9 % | 60.3 % |
- * | 1.00 | 3.786 | 32.9 % | 59.8 % |
+ * | damping | mean rank | top-1 | top-3 | calibration |
+ * |---|---|---|---|---|
+ * | 0.05 | 3.328 | 174 (29.7 %) | 371 (63.4 %) | 0.0084 |
+ * | 0.10 | 3.070 | 187 (32.0 %) | 383 (65.5 %) | 0.0047 |
+ * | **0.15** | **3.094** | **202 (34.5 %)** | **386 (66.0 %)** | **0.0069** |
+ * | 0.20 | 3.137 | 207 (35.4 %) | 379 (64.8 %) | 0.0103 |
+ * | 0.25 | 3.193 | 211 (36.1 %) | 365 (62.4 %) | 0.0155 |
+ * | 0.40 | 3.332 | 203 (34.7 %) | 365 (62.4 %) | 0.0307 |
+ *
+ * It held. Top-3 peaks here and nowhere else; 0.10 takes mean rank by 0.024 and gives up fifteen
+ * bodies of top-1 for it; and every step above buys top-1 by letting the likelihood shout, with the
+ * calibration gap climbing monotonically — 0.0069 here against 0.0307 at 0.40, which is what
+ * over-trusting twenty-seven correlated parameters looks like from the outside.
  *
  * Undamped still beats the similarity scorer it replaces; the damping is worth about three points
  * of top-1 on top of that.
@@ -77,20 +85,29 @@ export const TERM_DAMPING = 0.15;
  * are "0 % of something neither species uses", which agrees with nearly every candidate. Pooled to
  * the mean and then given this many terms' weight, swept on the probe like {@link TERM_DAMPING}:
  *
- * | weight | mean rank | top-1 | calibration B3 |
- * |---|---|---|---|
- * | dead (before) | 3.259 | 170 (33.1 %) | 0.0060 |
- * | 1 | 3.248 | 181 (35.3 %) | 0.0061 |
- * | 2 | 3.251 | 190 (37.0 %) | 0.0148 |
- * | **3** | **3.250** | **198 (38.6 %)** | **0.0115** |
- * | 4 | 3.287 | 199 (38.8 %) | 0.0197 |
- * | 5 | 3.314 | 197 (38.4 %) | 0.0208 |
- * | 8, one term per gas | 3.257 | 194 (37.8 %) | 0.0152 |
+ * Re-swept 2026-09-17 on the current model, 585 species over 2,126 candidate rows:
  *
- * Three is the knee: past it top-1 stops moving while mean rank and calibration both give way, which
- * is the shape of a term being asked to carry more than it knows.
+ * | weight | mean rank | top-1 | top-3 | calibration | B3 |
+ * |---|---|---|---|---|---|
+ * | 0, dead | 3.116 | 175 (29.9 %) | 377 (64.4 %) | 0.0071 | 0.0073 |
+ * | 1 | 3.058 | 191 (32.6 %) | 382 (65.3 %) | 0.0070 | 0.0069 |
+ * | 2 | 3.067 | 197 (33.7 %) | 383 (65.5 %) | 0.0039 | 0.0092 |
+ * | **3** | **3.094** | **202 (34.5 %)** | **386 (66.0 %)** | **0.0069** | **0.0111** |
+ * | 4 | 3.161 | 200 (34.2 %) | 379 (64.8 %) | 0.0157 | 0.0100 |
+ * | 5 | 3.186 | 199 (34.0 %) | 376 (64.3 %) | 0.0085 | 0.0092 |
+ * | 6 | 3.226 | 198 (33.8 %) | 375 (64.1 %) | 0.0102 | 0.0113 |
+ *
+ * Three held. It takes both top-1 and top-3 outright, and past it every column gives way at once,
+ * which is the shape of a term being asked to carry more than it knows. Two has the best
+ * calibration in the table at 0.0039 and it was not taken: the column reads 0.0071, 0.0070, 0.0039,
+ * 0.0069, 0.0157, 0.0085, 0.0102 — it bounces rather than trends, so 0.0039 is a low draw and not a
+ * property of that weight. Compare the regional prior, where the same column climbs monotonically
+ * across five points and the trade is real.
+ *
+ * **The term is worth 27 bodies of top-1** — 175 dead against 202 — which is the largest single
+ * contribution in this file.
  */
-const ATMOSPHERE_TERM_WEIGHT = 3;
+export const ATMOSPHERE_TERM_WEIGHT = 3;
 
 /**
  * What volcanism is worth, in terms.
@@ -223,6 +240,8 @@ export function speciesLogScore(
     minSamples?: number;
     /** Probe seam: sweep {@link VOLCANISM_TERM_WEIGHT}. Zero drops the term entirely. */
     volcanismWeight?: number;
+    /** Probe seam: sweep {@link ATMOSPHERE_TERM_WEIGHT}. Zero drops the pooled gas term. */
+    atmosphereWeight?: number;
     /**
      * Probe seam: rank on how common the species is *in this region* instead of in the galaxy.
      *
@@ -316,9 +335,10 @@ export function speciesLogScore(
       terms++;
     }
   }
-  if (atmoTerms > 0) {
-    logLik += (ATMOSPHERE_TERM_WEIGHT * atmoLog) / atmoTerms;
-    terms += ATMOSPHERE_TERM_WEIGHT;
+  const atmoWeight = opts?.atmosphereWeight ?? ATMOSPHERE_TERM_WEIGHT;
+  if (atmoTerms > 0 && atmoWeight > 0) {
+    logLik += (atmoWeight * atmoLog) / atmoTerms;
+    terms += atmoWeight;
   }
 
   for (const [path, counts] of Object.entries(profile.categorical ?? {})) {
@@ -408,6 +428,7 @@ export function rankSpeciesOnBody<T extends { entry: SpeciesEntry }>(
     noPrior?: boolean;
     minSamples?: number;
     volcanismWeight?: number;
+    atmosphereWeight?: number;
     regionPrior?: boolean;
     regionIndex?: number | null;
     regionPriorWeight?: number;

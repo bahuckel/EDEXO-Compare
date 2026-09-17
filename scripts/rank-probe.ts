@@ -36,6 +36,7 @@ import {
   rankSpeciesOnBody,
   TERM_DAMPING,
   VOLCANISM_TERM_WEIGHT,
+  ATMOSPHERE_TERM_WEIGHT,
   REGION_PRIOR_WEIGHT,
 } from "../src/server/speciesLikelihood.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
@@ -176,6 +177,13 @@ const MIN_SAMPLES = Number(
 const DAMPING = Number(
   (process.argv.find((a) => a.startsWith("--damping=")) ?? `--damping=${TERM_DAMPING}`).split("=")[1],
 );
+/** `--atmosphere-weight=<x>` sweeps `ATMOSPHERE_TERM_WEIGHT`; 0 drops the pooled gas term. */
+const ATMOSPHERE_WEIGHT = Number(
+  (
+    process.argv.find((a) => a.startsWith("--atmosphere-weight=")) ??
+    `--atmosphere-weight=${ATMOSPHERE_TERM_WEIGHT}`
+  ).split("=")[1],
+);
 /** `--volcanism-weight=<x>` sweeps `VOLCANISM_TERM_WEIGHT`; 0 drops the term. */
 const VOLCANISM_WEIGHT = Number(
   (
@@ -244,6 +252,7 @@ for (const b of bodies) {
       noPrior: NO_PRIOR,
       minSamples: MIN_SAMPLES,
       volcanismWeight: VOLCANISM_WEIGHT,
+      atmosphereWeight: ATMOSPHERE_WEIGHT,
       regionPrior: REGION_PRIOR,
       regionIndex: REGION_PRIOR ? regionIndexFor(b) : null,
       regionPriorWeight: REGION_WEIGHT,
