@@ -32,11 +32,23 @@ const payload = loadJournalMergeCacheForTool();
 
 const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
 
-/** Only the fields the matcher reads, so the fixture stays small and its inputs are obvious. */
+/**
+ * Only the fields the matcher reads, so the fixture stays small and its inputs are obvious.
+ *
+ * `atmosphereComposition` was missing from this list for as long as it existed, which made the
+ * fixture's scans something the app never actually receives: every journal scan naming an
+ * atmosphere carries the composition, AutoScan included, and the matcher reads it for both the
+ * required-gas share and `atmosphereGasSharePct`. So the gas-share bands on Fonticulua campestris,
+ * Fonticulua upupam and Bacterium acies could not be exercised here at all — the band skips when a
+ * scan has no composition, which is correct behaviour and silent. Seventeen of the twenty bodies
+ * were repaired by hand from their journal rows; the three that carry no `SemiMajorAxis`/`MassEM`
+ * to match on will only get it from a deliberate regeneration.
+ */
 const SCAN_FIELDS = [
   "PlanetClass",
   "AtmosphereType",
   "Atmosphere",
+  "atmosphereComposition",
   "SurfaceTemperature",
   "SurfaceGravity",
   "SurfacePressure",
