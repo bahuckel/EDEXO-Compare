@@ -287,6 +287,12 @@ function GalaxyPossibleModal({
                         b.atmosphere || "no atmosphere",
                         `${Math.round(b.temperatureK)} K`,
                         `${b.gravityG.toFixed(2)} g`,
+                        /*
+                          The odds beside the gravity that produced them, so the number is read as
+                          a consequence of the body rather than a verdict on it. Absent for an
+                          airless body or one the dump never measured — see gravityBiologyOdds.ts.
+                        */
+                        b.gravityOdds ? `${b.gravityOdds.observedPct}% carry biology` : null,
                         h.starType ? `${h.starType} star` : null,
                       ]
                         .filter(Boolean)
@@ -350,6 +356,13 @@ export function GalaxySearchPanel({
   const [wantFss, setWantFss] = useState(true);
   const [wantDss, setWantDss] = useState(false);
   const [wantWalked, setWantWalked] = useState(false);
+  /*
+    A floor on "does this body have biology at all", from the gravity curve in the commander's own
+    journals (server/gravityBiologyOdds.ts). Off by default: the shortlist's gates are a superset of
+    the matcher's, and a curve measured from one commander's flying should narrow the list only when
+    he says so.
+  */
+  const [minGravityOdds, setMinGravityOdds] = useState(0);
   const [scan, setScan] = useState<GalaxyBodyScanDTO | null>(null);
   const [scanListOpen, setScanListOpen] = useState(false);
 
@@ -471,6 +484,7 @@ export function GalaxySearchPanel({
       q.set("fss", wantFss ? "1" : "0");
       q.set("dss", wantDss ? "1" : "0");
       q.set("walked", wantWalked ? "1" : "0");
+      if (minGravityOdds > 0) q.set("minGravityOdds", String(minGravityOdds));
       const res = await fetch(`/api/galaxy/possible?${q.toString()}`);
       if (!res.ok) {
         setError("This machine has no galaxy body file.");
@@ -509,7 +523,7 @@ export function GalaxySearchPanel({
     } finally {
       setBusy(false);
     }
-  }, [regionId, speciesId, genusDir, wantFss, wantDss, wantWalked, cat, genera, onApply]);
+  }, [regionId, speciesId, genusDir, wantFss, wantDss, wantWalked, minGravityOdds, cat, genera, onApply]);
 
   const clear = useCallback(() => {
     setGenusDir("");
@@ -679,6 +693,37 @@ export function GalaxySearchPanel({
                   <span className="dim gsx-note">
                     An FSS counted signals and nobody followed it up; a probed body already has its
                     genus; a walked system has a species somebody logged on foot.
+                  </span>
+                </div>
+                {/*
+                  The gravity floor.
+
+                  A separate question from the evidence ticks: those ask what is known about a body,
+                  this asks how often a body like it turns out to have anything growing on it. Off by
+                  default, and the figure is shown on every row whether or not it filters, so the
+                  curve can be read before it is trusted.
+                */}
+                <div className="gsx-field gsx-gravity">
+                  <span>
+                    Biology likely by gravity{" "}
+                    <strong className="gsx-price-value">
+                      {minGravityOdds > 0 ? `at least ${minGravityOdds} %` : "any"}
+                    </strong>
+                  </span>
+                  <input
+                    className="gsx-slider"
+                    type="range"
+                    min={0}
+                    max={90}
+                    step={10}
+                    value={minGravityOdds}
+                    onChange={(e) => setMinGravityOdds(Number(e.target.value))}
+                    aria-label="Least likely body to list, by gravity"
+                  />
+                  <span className="dim gsx-note">
+                    From this commander&rsquo;s journals: of landable bodies with an atmosphere,
+                    every one below 0.25 g carried biology and none above 0.65 g did. Signal presence,
+                    not species — and his flying, not a survey of the galaxy.
                   </span>
                 </div>
               </>

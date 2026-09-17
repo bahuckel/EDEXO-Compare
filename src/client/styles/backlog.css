@@ -336,6 +336,16 @@
   opacity: 0.8;
 }
 
+/* The gravity floor. Same width as the evidence ticks above it, because they read as one block of
+   "what to include" and a slider at a different width breaks that line. */
+.gsx-gravity {
+  max-width: 34rem;
+}
+
+.gsx-gravity .gsx-slider {
+  max-width: 22rem;
+}
+
 /* A partial answer says so in the summary row, in the colour the app uses for "read this". It is
    not an error — the rows are real — but a reader who misses it will read a prefix as a ranking. */
 .gsx-partial {

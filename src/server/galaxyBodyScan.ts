@@ -77,6 +77,7 @@ import {
   type BioBodyRow,
 } from "./bioBodies.js";
 import { loadBioIndex } from "./bioIndex.js";
+import { clearsGravityOdds, gravityBiologyOdds } from "./gravityBiologyOdds.js";
 import {
   demoteFailedHostStarGates,
   demoteFailedSpatialGates,
@@ -332,6 +333,18 @@ export function atmosphereTypeFromDump(atmosphere: string): string | undefined {
   return t || undefined;
 }
 
+/**
+ * Does this body have an atmosphere, as the dump spells it?
+ *
+ * The gravity curve was measured on atmosphere-bearing bodies only, and the airless population it
+ * was measured beside carries biology at 0 in 8,239 — so applying the curve's numbers to an airless
+ * row would answer a question they were never measured on.
+ */
+function dumpBodyHasAtmosphere(atmosphere: string): boolean {
+  const a = atmosphere.trim();
+  return a !== "" && !/^no atmosphere$/i.test(a);
+}
+
 /** A body record turned into the shape the matcher reads. */
 function scanFromBody(
   row: BioBodyRow,
@@ -422,6 +435,7 @@ function empty(regionId: number, available: boolean): GalaxyBodyScanDTO {
     systemsInRegion: 0,
     bodiesScanned: 0,
     bodiesGated: 0,
+    bodiesBelowGravityFloor: 0,
     bodiesMatched: 0,
     matchedSystems: 0,
     speciesConsidered: 0,
@@ -641,11 +655,15 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
       landable: (row.flags & 1) !== 0,
       probed: (row.flags & BODY_DSS) !== 0,
       species,
+      gravityOdds: gravityBiologyOdds(row.gravityG, dumpBodyHasAtmosphere(row.atmosphere)),
     };
   };
 
   let bodiesScanned = 0;
   let bodiesGated = 0;
+  /** Dropped by the commander's gravity floor, so the panel can say how many and not just show fewer. */
+  let bodiesBelowGravityFloor = 0;
+  const minGravityOddsPct = Math.max(0, Math.min(100, Math.round(query.minGravityOddsPct ?? 0)));
   let bodiesMatched = 0;
   let matchedSystems = 0;
   let truncated = false;
@@ -692,6 +710,19 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
       if (!classAllowed.has(b.subType)) return;
       if (atmoAllowed && !atmoAllowed.has(b.atmosphere)) return;
       if (!passesCheapGate(b, gate)) return;
+      /*
+        The commander's gravity floor, when they set one.
+
+        Here rather than after the matcher because it is cheap and skipping the matcher is the
+        expensive work saved — and it is counted *out* of `bodiesGated`, so the panel's "gated" and
+        "matched" figures keep meaning what they have always meant. Unlike everything else in this
+        gate it is not a superset of the matcher: it is the commander deliberately narrowing the
+        shortlist, which is why it is off unless asked for.
+      */
+      if (minGravityOddsPct > 0 && !clearsGravityOdds(b.gravityG, dumpBodyHasAtmosphere(b.atmosphere), minGravityOddsPct)) {
+        bodiesBelowGravityFloor++;
+        return;
+      }
       bodiesGated++;
       candidateSystems.add(systemIndex);
       const hit = decide(b.snapshot(), systemIndex);
@@ -762,6 +793,7 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
     systemsInRegion: systems.length,
     bodiesScanned,
     bodiesGated,
+    bodiesBelowGravityFloor,
     bodiesMatched,
     matchedSystems,
     speciesConsidered: wanted.length,

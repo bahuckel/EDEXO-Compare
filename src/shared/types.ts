@@ -1198,6 +1198,15 @@ export interface GalaxyBodyScanQueryDTO {
   includeProbed?: boolean;
   /** Systems where somebody has already logged a species on foot. Off excludes them entirely. */
   includeWalked?: boolean;
+  /**
+   * Drop bodies whose gravity gives biology less than this chance of being there at all.
+   *
+   * Off (0 or absent) by default and deliberately so: the scan's gates are a superset of the
+   * matcher's, and a curve measured from one commander's journals should not quietly delete rows
+   * nobody asked it to. Compared against the *smoothed* figure — see `server/gravityBiologyOdds.ts`
+   * — so a band measured at 0 of 32 bodies is treated as unlikely rather than impossible.
+   */
+  minGravityOddsPct?: number;
 }
 
 /** One body that would be offered this species if a commander were standing on it. */
@@ -1221,6 +1230,20 @@ export interface GalaxyBodyMatchDTO {
   probed: boolean;
   /** The wanted species that survive the gates here, un-demoted. Dearest first. */
   species: GalaxyValueSpeciesDTO[];
+  /**
+   * How often a body of this gravity carries **any** biology, from the commander's own journals.
+   *
+   * Reported, not applied — the species rows above are the matcher's verdict and this does not
+   * change them. Null when the curve has nothing to say: an airless body, or one whose gravity the
+   * dump never recorded. See `server/gravityBiologyOdds.ts` for the measurement and its limits.
+   */
+  gravityOdds?: {
+    observedPct: number;
+    smoothedPct: number;
+    /** Bodies behind the figure. Small at the ends of the curve; shown so the row can say so. */
+    bodies: number;
+    bandLabel: string;
+  } | null;
 }
 
 export interface GalaxyBodyHitDTO {
@@ -1269,6 +1292,14 @@ export interface GalaxyBodyScanDTO {
   bodiesScanned: number;
   /** Of those, how many cleared the evidence filter and the numeric bands. */
   bodiesGated: number;
+  /**
+   * Dropped by {@link GalaxyBodyScanQueryDTO.minGravityOddsPct}, when one was set.
+   *
+   * Reported rather than left implicit: a filter that only makes a list shorter cannot be told apart
+   * from a region with nothing in it, and the commander should be able to see what their own floor
+   * cost them. Always 0 when no floor was asked for.
+   */
+  bodiesBelowGravityFloor?: number;
   /** Of those, how many the full matcher accepted un-demoted. */
   bodiesMatched: number;
   matchedSystems: number;

@@ -551,6 +551,8 @@ export function createHttpServer(opts: {
           includeUnprobed: tick(req.query.fss, true),
           includeProbed: tick(req.query.dss, false),
           includeWalked: tick(req.query.walked, false),
+          // Absent or 0 means no floor, which is the default; see GalaxyBodyScanQueryDTO.
+          minGravityOddsPct: Number(req.query.minGravityOdds ?? 0) || 0,
         },
         Number.isFinite(limit) ? limit : 200,
       )
