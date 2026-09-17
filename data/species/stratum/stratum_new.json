@@ -211,12 +211,14 @@
           165,
           null
         ],
+        "max_gravity": 0.61,
         "atmospherePressureCategory": "thin",
         "matchContextNotes": [
           "Morph colour follows genus meta.color_variants (star type). Example: Turquoise variant on L-type host stars (L → Turquoise in the mapping).",
           "Codex entry id suffix in journals often encodes colour (e.g. stratumtectonicasturquoise) — not a separate species row."
         ]
-      }
+      },
+      "_gravityNote": "Its own corpus tops out at 0.598 g over 3,930 bodies and the commander reads 0.607 as the in-game ceiling; 0.61 is set deliberately above both so a body at the edge is never excluded by a rounding difference. The row had no gravity criterion at all, and two High metal content bodies he FSS'd in September - 0.631 g and 1.297 g - were offered Stratum tectonicas and carried no biological signal. Unlike the other Stratum this is not a low-gravity species: its gravity histogram piles up at the TOP of its range, so the cap is a ceiling and not a preference. See tests/stratumTectonicasGravity.test.ts."
     }
   ],
   "distributionReference": {
