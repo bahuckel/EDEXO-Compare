@@ -1101,6 +1101,31 @@
       }
     }
 
+    /*
+      The radar's own frame (server: ExoLiveDTO).
+
+      It carries the two fields the radar draws and nothing else, and it arrives at the Status.json
+      poll rate rather than through the snapshot's 250 ms coalescing window — which is what made the
+      radar choppy no matter how low that poll was set. Only the section that draws it is re-rendered:
+      running every section ten times a second would rebuild the candidate list and the FSS table for
+      data that has not changed.
+    */
+    function renderExoLive(live) {
+      var d = HUD.lastSnapshot;
+      if (!d || !live) return;
+      d.exoOrganicOverlay = live.exoOrganicOverlay;
+      d.exoMinimap = live.exoMinimap;
+      if (list.indexOf("distance") === -1) return;
+      var state = null;
+      try {
+        state = SECTIONS.distance.render(d, els.distance);
+      } catch (e) {
+        /* one broken section must not take the others down */
+      }
+      applyState(els.distance, state);
+      requestAnimationFrame(reportHeight);
+    }
+
     var lastPrefsJson = "";
     function render(d) {
       HUD.lastSnapshot = d;
@@ -1202,6 +1227,11 @@
               lastWsAt = Date.now();
               if (typeof msg.payload.port === "number" && msg.payload.port > 0) lastPort = msg.payload.port;
               render(msg.payload);
+            } else if (msg.type === "exoLive" && msg.payload) {
+              // Counts as the socket being alive, or the 5 s fallback poll would start fighting it
+              // during a sample run — which is exactly when these frames are arriving.
+              lastWsAt = Date.now();
+              renderExoLive(msg.payload);
             }
           } catch (_) {}
         };
@@ -1209,6 +1239,13 @@
     }
 
     HUD.render = render; // for previews and tests
+    HUD.renderExoLive = renderExoLive;
+    /*
+      The section implementations, on the same footing as `HUD.render` above: exposed so a test can
+      see which of them a frame actually ran. `render` and `renderExoLive` both dispatch through
+      this object, so replacing a property here is enough to count the calls.
+    */
+    HUD.sectionImpls = SECTIONS;
     return root;
   };
 

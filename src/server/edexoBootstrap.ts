@@ -10,7 +10,14 @@ import {
   statSync,
   readdirSync,
 } from "node:fs";
-import type { AppSnapshot, AppStatusDTO, ImportDumpStatusDTO, JournalBootProgressDTO, JournalLine } from "../shared/types.js";
+import type {
+  AppSnapshot,
+  AppStatusDTO,
+  ExoLiveDTO,
+  ImportDumpStatusDTO,
+  JournalBootProgressDTO,
+  JournalLine,
+} from "../shared/types.js";
 import { journalHistoryCutoffUtcMs, parseJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { clampStatusPollMs, pollRatesDto } from "../shared/pollRates.js";
 import { openUrlInBrowser, openLauncherShell, openLocalFile } from "./openUrl.js";
@@ -68,6 +75,8 @@ import {
   resolveImportDumpLedgerPath,
 } from "./paths.js";
 import {
+  buildExoMinimapDto,
+  buildExoOrganicOverlayDto,
   ingestExoOrganicJournalLine,
   restoreOrganicSessionFromJournal,
 } from "./exoOrganicTracker.js";
@@ -673,6 +682,22 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   /** The interval the armed timer was created with; see {@link armFootStatusPoll}. */
   let footStatusArmedMs = 0;
 
+  /**
+   * The radar's frame, for {@link ExoLiveDTO}.
+   *
+   * Deliberately not `getSnapshot()`. These two builders read the store and the price index and
+   * nothing else; the snapshot rebuilds every body, every match and every derived list to arrive at
+   * the same two fields, which is why the radar was pinned to the 250 ms coalescing window.
+   */
+  const buildExoLive = (): ExoLiveDTO => ({
+    exoOrganicOverlay: buildExoOrganicOverlayDto(store, getCachedPrices()),
+    exoMinimap: buildExoMinimapDto(
+      store,
+      store.exoOrganicTracker?.bodyKey ?? store.overlayTouchdownBodyKey,
+      store.exoOrganicTracker ? Math.max(0, Math.round(store.exoOrganicTracker.minSampleDistanceM)) : 0,
+    ),
+  });
+
   /** (Re-)arm the `Status.json` poll at `store.statusPollMs`. A no-op when nothing moved. */
   function armFootStatusPoll(force = false): void {
     if (footStatusTick == null) return;
@@ -1179,6 +1204,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const {
     server,
     broadcast: broadcastFn,
+    broadcastExoLive,
     listening,
   } = createHttpServer({
     port,
@@ -1476,6 +1502,16 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           fuel != null ? fuel.fuelMain : null,
           fuel != null ? fuel.fuelReserve : null,
         );
+        /*
+          The radar goes out on every tick, at the commander's chosen poll rate, whether or not
+          anything else changed. It is the one thing on the HUD that has to move smoothly, and the
+          coalesced `push()` below cannot carry it: that window exists because a full snapshot is
+          expensive to build, and the radar's two fields are not.
+
+          Identical frames are dropped inside the broadcaster, so standing still costs nothing.
+        */
+        if (store.exoOrganicTracker || store.overlayTouchdownBodyKey) broadcastExoLive(buildExoLive());
+
         const footHud = store.footTravelOdometerEnabled && store.footTravelOdometerTracking;
         if (footHud || store.exoOrganicTracker || fuelChanged || navChanged || destChanged || jumpChanged) push();
       };

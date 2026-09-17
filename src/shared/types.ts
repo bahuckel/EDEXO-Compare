@@ -1743,6 +1743,21 @@ export interface JournalBootProgressDTO {
  * Launcher-sized status. Everything the launcher window renders (lamp, journal folder, file count,
  * connect URLs, boot splash) without touching the snapshot builder — see GET /api/status.
  */
+/**
+ * The radar's own frame, sent on its own so it is not gated on a snapshot rebuild.
+ *
+ * The sample radar is the one part of the HUD that has to move smoothly: it draws where the
+ * commander is standing, and a commander walking at 7 m/s crosses a 500 m radar in a minute. It
+ * used to arrive only inside the full snapshot push, which is coalesced at 250 ms and rebuilds the
+ * entire state to produce it, so the radar could never update faster than four times a second no
+ * matter how often `Status.json` was read. These two fields are the whole of what it draws, they
+ * come straight off the store, and they cost nothing to build — so they go out on every poll.
+ */
+export interface ExoLiveDTO {
+  exoOrganicOverlay: ExoOrganicOverlayDTO | null;
+  exoMinimap: ExoMinimapDTO | null;
+}
+
 export interface AppStatusDTO {
   mode: "server" | "client";
   bindHost: string;

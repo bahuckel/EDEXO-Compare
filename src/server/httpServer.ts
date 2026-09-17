@@ -10,6 +10,7 @@ import { WebSocketServer } from "ws";
 import type {
   AppSnapshot,
   AppStatusDTO,
+  ExoLiveDTO,
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
@@ -275,7 +276,13 @@ export function createHttpServer(opts: {
   };
   /** When set (e.g. Electron main process), successful Fix can show a native dialog instead of the browser. */
   showFixStubNativeDialog?: (message: string) => boolean;
-}): { server: http.Server; broadcast: (s: AppSnapshot) => void; listening: Promise<void> } {
+}): {
+  server: http.Server;
+  broadcast: (s: AppSnapshot) => void;
+  /** The radar's own frame, straight to the HUD sockets. See {@link ExoLiveDTO}. */
+  broadcastExoLive: (live: ExoLiveDTO) => void;
+  listening: Promise<void>;
+} {
   const app = express();
   const root = getProjectRoot();
   const webRoot = getWebRoot(root);
@@ -1617,6 +1624,42 @@ export function createHttpServer(opts: {
     }
   };
 
+  /**
+   * Push the radar's two fields to the HUD sockets, and to nothing else.
+   *
+   * Separate from {@link broadcast} on purpose: this frame is a few hundred bytes built straight
+   * from the store, so it is sent on every `Status.json` poll rather than through the 250 ms
+   * coalescing window that exists to stop full snapshot rebuilds piling up. The app and launcher
+   * channels do not get it — neither draws a radar, and the app keeps receiving the same data in
+   * the snapshot it already reads.
+   *
+   * Identical frames are dropped. A commander standing still produces the same numbers every tick,
+   * and at a 100 ms poll that would be ten redundant sends a second into a window redrawing an SVG.
+   */
+  let lastExoLiveMsg: string | null = null;
+  const broadcastExoLive = (live: ExoLiveDTO) => {
+    let msg: string | null = null;
+    for (const ws of clients) {
+      if (ws.readyState !== ws.OPEN) continue;
+      if ((channelOf.get(ws) ?? "app") !== "hud") continue;
+      if (msg === null) {
+        msg = JSON.stringify({ type: "exoLive", channel: "hud", payload: live });
+        if (msg === lastExoLiveMsg) {
+          perfCount("ws.exoLive.skippedIdentical");
+          return;
+        }
+        lastExoLiveMsg = msg;
+        perfCount("ws.exoLive");
+        perfBytes("ws.exoLive.bytes", Buffer.byteLength(msg));
+      }
+      try {
+        ws.send(msg);
+      } catch {
+        clients.delete(ws);
+      }
+    }
+  };
+
   server.listen(opts.port, opts.bindHost);
-  return { server, broadcast, listening };
+  return { server, broadcast, broadcastExoLive, listening };
 }
