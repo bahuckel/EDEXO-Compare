@@ -1719,6 +1719,13 @@
                 <option value="bl">Bottom left</option>
               </select>
             </div>
+            <h4>Radar</h4>
+            <div class="hud-set-row" id="radarRadiusRow" hidden>
+              <label for="radarRadiusM">How far it draws <span class="hint" style="margin: 0">further out becomes a rim arrow</span></label>
+              <span>
+                <input type="number" id="radarRadiusM" step="50" /> m
+              </span>
+            </div>
             <h4>Refresh rate</h4>
             <div class="hud-set-row">
               <span id="hudPollSummary">The HUDs follow Status.json</span>
@@ -1885,6 +1892,8 @@
         const pollDefaults = document.getElementById("pollDefaults");
         const hudPollSummary = document.getElementById("hudPollSummary");
         const btnPollFromOverlay = document.getElementById("btnPollFromOverlay");
+        const radarRadiusRow = document.getElementById("radarRadiusRow");
+        const radarRadiusM = document.getElementById("radarRadiusM");
         const splashPct = document.getElementById("splashPct");
         const splashBar = document.getElementById("splashBar");
         const splashMsg = document.getElementById("splashMsg");
@@ -2273,6 +2282,7 @@
           if (!modal.classList.contains("on")) {
             journalInput.value = data.journalDir || "";
             renderPollRates(data.pollRates);
+            renderRadarRadius(data.radarRadius);
           }
           renderLiveStrip(data);
           renderJournalHealth(data);
@@ -2426,6 +2436,56 @@
           pollStatusMs.addEventListener("change", onPollFieldChange);
           pollJournalMs.addEventListener("change", onPollFieldChange);
         }
+        /*
+          How far the sample radar draws.
+
+          It lives in the Overlay panel rather than beside the poll rates, because it is a property
+          of the radar and this is where the radar's other settings are. Bounds come from the server
+          for the same reason as the poll rates: the input cannot then offer a value that gets
+          clamped on arrival.
+        */
+        var radarBounds = null;
+
+        function renderRadarRadius(r) {
+          if (!radarRadiusRow) return;
+          if (!r || typeof r !== "object") {
+            radarRadiusRow.hidden = true;
+            return;
+          }
+          radarBounds = r;
+          radarRadiusRow.hidden = false;
+          radarRadiusM.min = String(r.minM);
+          radarRadiusM.max = String(r.maxM);
+          if (document.activeElement !== radarRadiusM) radarRadiusM.value = String(r.radiusM);
+        }
+
+        async function saveRadarRadius(value) {
+          if (!radarBounds) return;
+          try {
+            var r = await fetch(apiUrl("/api/settings/radar-radius"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ radiusM: value }),
+            });
+            var j = await r.json().catch(function () {
+              return {};
+            });
+            if (!r.ok) return;
+            // What was accepted, not what was sent.
+            radarBounds.radiusM = j.radiusM;
+            radarRadiusM.value = String(j.radiusM);
+          } catch (e) {
+            /* the radar keeps its current circle; nothing here is worth an error banner */
+          }
+        }
+
+        if (radarRadiusM) {
+          // `change`, not `input` — typing "1000" would otherwise walk the radar through 1, 10, 100.
+          radarRadiusM.addEventListener("change", function () {
+            void saveRadarRadius(Number(radarRadiusM.value));
+          });
+        }
+
         if (btnPollFromOverlay) {
           btnPollFromOverlay.addEventListener("click", function () {
             // Out of the overlay panel and into the one place the controls live. Leaving the overlay

@@ -2,9 +2,11 @@ import type { GenusLikelihood } from "./genusCooccurrence.js";
 import type { TriageTiming } from "./systemTriage.js";
 import type { JournalHistoryPreset } from "./journalHistoryPreset.js";
 import type { PollRatesDTO } from "./pollRates.js";
+import type { RadarRadiusDTO } from "./radarRadius.js";
 
 export type { JournalHistoryPreset };
 export type { PollRatesDTO };
+export type { RadarRadiusDTO };
 
 /** Elite journal line (subset) */
 export interface JournalLine {
@@ -1804,6 +1806,8 @@ export interface AppStatusDTO {
    * reverse, simply hides the row. See `shared/pollRates.ts`.
    */
   pollRates?: PollRatesDTO;
+  /** The sample radar's radius and its bounds, for the Overlay panel's control. */
+  radarRadius?: RadarRadiusDTO;
 }
 
 export interface AppSnapshot {

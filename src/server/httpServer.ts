@@ -175,6 +175,13 @@ export function createHttpServer(opts: {
    * than what it sent.
    */
   setPollRates?: (statusPollMs: unknown, journalPollMs: unknown) => { statusPollMs: number; journalPollMs: number };
+  /**
+   * POST /api/settings/radar-radius — JSON `{ radiusM }`. Returns the accepted (clamped) value.
+   *
+   * Applied to the live radar, not queued: the commander changing this is looking at the thing it
+   * changes.
+   */
+  setRadarRadiusM?: (radiusM: unknown) => number;
   setIncludeBacterium?: (value: boolean) => void;
   setIncludeExplorationScanData?: (value: boolean) => void;
   /** POST /api/settings/foot-travel-odometer — JSON { value: boolean } */
@@ -1030,6 +1037,20 @@ export function createHttpServer(opts: {
     }
     const applied = opts.setPollRates(statusMs, journalMs);
     res.json({ ok: true, ...applied });
+  });
+
+  /** How far the sample radar draws. See `shared/radarRadius.ts` for the bounds and the reason. */
+  app.post("/api/settings/radar-radius", (req, res) => {
+    if (typeof opts.setRadarRadiusM !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const raw = (req.body as { radiusM?: unknown } | undefined)?.radiusM;
+    if (!Number.isFinite(Number(raw))) {
+      res.status(400).json({ ok: false, error: 'JSON body must include a number "radiusM".' });
+      return;
+    }
+    res.json({ ok: true, radiusM: opts.setRadarRadiusM(raw) });
   });
 
   app.post("/api/settings/include-bacterium", (req, res) => {

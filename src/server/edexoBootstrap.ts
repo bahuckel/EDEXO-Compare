@@ -20,6 +20,7 @@ import type {
 } from "../shared/types.js";
 import { journalHistoryCutoffUtcMs, parseJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { clampStatusPollMs, pollRatesDto } from "../shared/pollRates.js";
+import { radarRadiusDto } from "../shared/radarRadius.js";
 import { openUrlInBrowser, openLauncherShell, openLocalFile } from "./openUrl.js";
 import { GameStateStore } from "./gameState.js";
 import {
@@ -371,6 +372,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             edsmLiveUploadEnabled: store.edsmLiveUploadEnabled,
             statusPollMs: store.statusPollMs,
             journalPollMs: store.journalPollMs,
+            minimapRadiusM: store.minimapRadiusM,
             hudPrefs: store.hudPrefs,
           },
           null,
@@ -396,6 +398,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     edsmLiveUploadEnabled?: boolean;
     statusPollMs?: number;
     journalPollMs?: number;
+    minimapRadiusM?: number;
     hudPrefs?: unknown;
   };
 
@@ -406,6 +409,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       // this exists for, and a 5 ms status poll would read the same file two hundred times a second.
       store.setPollRates(j.statusPollMs ?? store.statusPollMs, j.journalPollMs ?? store.journalPollMs);
     }
+    if (typeof j.minimapRadiusM === "number") store.setMinimapRadiusM(j.minimapRadiusM);
     if (typeof j.includeBacteriumInSearch === "boolean") {
       store.setIncludeBacteriumInSearch(j.includeBacteriumInSearch);
     }
@@ -617,6 +621,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       journalBoot: journalBootProgress,
       speciesDataWarnings: getSpeciesDataWarnings(),
       pollRates: pollRatesDto(store.statusPollMs, store.journalPollMs),
+      radarRadius: radarRadiusDto(store.minimapRadiusM),
       live: organicLiveSummary(store),
     };
   };
@@ -1229,6 +1234,19 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       persistUserPreferences();
     },
     setPollRates: (statusMs, journalMs) => applyPollRates(statusMs, journalMs),
+    setRadarRadiusM: (raw) => {
+      /*
+        Pushed as well as persisted. The radar is drawn from a field on its DTO, so a client that is
+        not looking at a live fix right now would otherwise keep the old circle until the next
+        sample — and the commander changing this is, by definition, looking at the radar.
+      */
+      if (store.setMinimapRadiusM(raw)) {
+        persistUserPreferences();
+        if (store.exoOrganicTracker || store.overlayTouchdownBodyKey) broadcastExoLive(buildExoLive());
+        push();
+      }
+      return store.minimapRadiusM;
+    },
     setIncludeBacterium: (v) => {
       store.setIncludeBacteriumInSearch(v);
       persistUserPreferences();

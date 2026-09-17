@@ -16,6 +16,7 @@ import {
   clampJournalPollMs,
   clampStatusPollMs,
 } from "../shared/pollRates.js";
+import { RADAR_RADIUS_DEFAULT_M, clampRadarRadiusM } from "../shared/radarRadius.js";
 import {
   UNOBSERVED,
   mergeObservation,
@@ -696,6 +697,13 @@ export class GameStateStore {
   statusPollMs = STATUS_POLL_DEFAULT_MS;
   journalPollMs = JOURNAL_POLL_DEFAULT_MS;
 
+  /**
+   * How far the sample radar draws, in metres. See `shared/radarRadius.ts` for why it moved off a
+   * constant. Server-side rather than a launcher preference because the radar's DTO carries it, and
+   * the HUD and the app both read that one field.
+   */
+  minimapRadiusM = RADAR_RADIUS_DEFAULT_M;
+
   /** When true, bacterium genus/species rules are included in body search (default off, can leak spoilers). */
   includeBacteriumInSearch = false;
   /** Mirrored launcher HUD settings, see AppSnapshot.hudPrefs. */
@@ -922,6 +930,14 @@ export class GameStateStore {
    * re-arms timers and rewrites the preferences file when something changed — the launcher sends
    * this on every keystroke-settled change and a no-op should cost nothing.
    */
+  /** Set the radar radius, clamped. Returns whether it moved, so a no-op writes no file. */
+  setMinimapRadiusM(raw: unknown): boolean {
+    const next = clampRadarRadiusM(raw);
+    const changed = next !== this.minimapRadiusM;
+    this.minimapRadiusM = next;
+    return changed;
+  }
+
   setPollRates(statusRaw: unknown, journalRaw: unknown): boolean {
     const s = clampStatusPollMs(statusRaw);
     const j = clampJournalPollMs(journalRaw);

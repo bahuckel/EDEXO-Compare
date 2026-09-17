@@ -2,6 +2,7 @@ import { join } from "node:path";
 import type { FootTravelFix } from "./footTravelStatus.js";
 import type { SurfaceMark } from "./surfaceMarksFile.js";
 import { elevationFromGravity } from "../shared/journalPhysics.js";
+import { RADAR_RADIUS_DEFAULT_M, clampRadarRadiusM } from "../shared/radarRadius.js";
 import { greatCircleDistanceMeters, resolveFootFixForOrganicLine } from "./footTravelStatus.js";
 import type {
   JournalLine,
@@ -72,16 +73,19 @@ export type ExoOrganicOverlayHost = {
     conditions?: { temperatureK: number | null; gravityG: number | null; elevationM: number | null },
   ): void;
   surfaceShipMark: SurfaceMark | null;
+  /** How far the radar draws. Optional so the test hosts in this repo keep working unchanged. */
+  minimapRadiusM?: number;
 };
 
 /**
- * How far the minimap draws, in metres.
+ * How far the minimap draws, in metres — now a setting, see `shared/radarRadius.ts`.
  *
- * The owner's number: "scanned plants outside the 500m radius of the minimap should appear as
- * arrows". It is also the right scale for the job — the widest genus separation in the game is
- * 500 m, so a map of this radius always contains the ring you are trying to clear.
+ * It was 500 m: the owner's number, and the widest genus separation in the game, so a radar of that
+ * radius always contained the ring being cleared. It stopped being the only sensible number when he
+ * raised Elite's `LODDistanceScale` and plants began rendering out to about a kilometre.
  */
-const MINIMAP_RADIUS_M = 500;
+const minimapRadiusFor = (store: ExoOrganicOverlayHost): number =>
+  clampRadarRadiusM(store.minimapRadiusM ?? RADAR_RADIUS_DEFAULT_M);
 
 const genusMinDistCache = new Map<string, number>();
 
@@ -632,7 +636,7 @@ export function buildExoMinimapDto(
   const ship = store.surfaceShipMark;
   if (ship && belongsHere(ship)) push(ship.latDeg, ship.lonDeg, "ship", "Your ship");
 
-  return { radiusM: MINIMAP_RADIUS_M, headingDeg: fix.headingDeg, minSampleDistanceM, marks };
+  return { radiusM: minimapRadiusFor(store), headingDeg: fix.headingDeg, minSampleDistanceM, marks };
 }
 
 export function buildExoOrganicOverlayDto(
