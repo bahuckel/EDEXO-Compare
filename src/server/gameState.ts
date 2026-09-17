@@ -82,6 +82,9 @@ export type PendingOrganicSample = {
 
 export type OrganicAnalyseProgress = { count: number; label: string };
 
+/** Credits a system has actually paid out, and how many things were sold to get them. */
+export type SoldTally = { credits: number; items: number; sales: number; lastAt: string };
+
 /**
  * Increment when journal-derived snapshot shape changes — invalidates on-disk merge cache.
  *
@@ -89,6 +92,8 @@ export type OrganicAnalyseProgress = { count: number; label: string };
  * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
  * feature that reads it stays dark with nothing logged anywhere.
  *
+ * 6 — `soldExplorationBySystem` and `soldOrganicBySystem`, so "my discoveries" can rank a system by
+ *     what it actually paid instead of by an estimate of what it might.
  * 5 — no new field. `WasFootfalled` is now read from every scan type and the physics gate tests
  *     content rather than the `Detailed` label, so a cache built by the old code carries wrong
  *     `firstFootfallBodies` and missing body scans. **A change in how the payload is derived
@@ -117,7 +122,7 @@ export type OrganicAnalyseProgress = { count: number; label: string };
   Anything derived from the journal that the UI reads has to be either in this payload or
   deliberately transient. Bump the format when you add one.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 7;
+export const JOURNAL_MERGE_CACHE_FORMAT = 8;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -170,6 +175,9 @@ export type JournalMergeCachePayload = {
   fssDiscoveryScanBySystem: [number, { systemName: string; bodyCount: number; progress: number }][];
   /** Optional — `FSSAllBodiesFound.Count` per system. */
   fssAllBodiesFoundCountBySystem?: [number, number][];
+  /** What selling actually paid, per system. See the maps of the same names. */
+  soldExplorationBySystem?: [number, SoldTally][];
+  soldOrganicBySystem?: [number, SoldTally][];
   /** Present when {@link format} >= 2. */
   mainStarWasDiscoveredBySystem?: [number, boolean][];
   systemPositions?: [number, { x: number; y: number; z: number }][];
@@ -458,6 +466,30 @@ export class GameStateStore {
    * EDSM fallback rows for system map only (no journal `Scan` in merged logs for that system).
    * Cleared per body when a real journal {@link mergeExplorationScan} arrives.
    */
+  /**
+   * What cartographic data has actually paid, per system.
+   *
+   * The journal reports a sale, not a price list: `MultiSellExplorationData` carries one
+   * `TotalEarnings` for a batch of systems and only `NumBodies` to tell them apart. So the batch is
+   * **apportioned** by body count — a system with twice the bodies is credited twice the earnings.
+   * That is an estimate of a real number rather than a real number, and anything that shows it has
+   * to say so; it is still far closer to the truth than the per-body model, which never sees a
+   * bonus or a discount and cannot know what the commander chose to sell.
+   *
+   * Recorded before the sale clears the system's scan rows, or there would be nothing left to
+   * attribute it to.
+   */
+  readonly soldExplorationBySystem = new Map<number, SoldTally>();
+
+  /**
+   * What exobiology has actually paid, per system.
+   *
+   * Exact, unlike the exploration side. `SellOrganicData` names a value and a bonus per species, and
+   * the pending-sale queue still knows which body each completed sample came from — so the credits
+   * land on the system the commander actually walked on rather than the station he sold at.
+   */
+  readonly soldOrganicBySystem = new Map<number, SoldTally>();
+
   readonly edsmExplorationByKey = new Map<string, ExplorationScanRecord>();
   /** Bodies with at least one journal `FSSBodySignals` line (FSS “scan” of that body); keyed globally, not current system only. */
   readonly fssBodySignalsBodyKeys = new Set<string>();
@@ -1139,6 +1171,8 @@ export class GameStateStore {
     this.pendingOrganicSales = [];
     this.fssAllBodiesCompleteSystems.clear();
     this.fssAllBodiesFoundCountBySystem.clear();
+    this.soldExplorationBySystem.clear();
+    this.soldOrganicBySystem.clear();
     this.fssDiscoveryScanBySystem.clear();
     this.orbitParentPlanetByBody.clear();
     this.dssMappedBodyKeys.clear();
@@ -2271,25 +2305,42 @@ export class GameStateStore {
       if (event === "SellOrganicData") {
         const bios = line.BioData;
         if (!Array.isArray(bios)) return;
+        const ts = typeof line.timestamp === "string" ? line.timestamp : "";
         for (const raw of bios) {
           if (!raw || typeof raw !== "object") continue;
-          const sk = speciesKeyFromSellBio(raw as Record<string, unknown>);
+          const bio = raw as Record<string, unknown>;
+          const sk = speciesKeyFromSellBio(bio);
           const idx = this.pendingOrganicSales.findIndex((p) => p.speciesKey === sk);
           if (idx >= 0) {
             const [removed] = this.pendingOrganicSales.splice(idx, 1);
-            if (removed) this.organicAnalyseByKey.delete(removed.fullKey);
+            if (removed) {
+              this.organicAnalyseByKey.delete(removed.fullKey);
+              /*
+                The sale names a price but not a place, and the station is not the place: the
+                credits belong to the system he walked on. The pending queue still knows which body
+                the completed sample came from, and it is about to be dropped — so the attribution
+                has to happen here or not at all.
+              */
+              const value = Number(bio.Value);
+              const bonus = Number(bio.Bonus);
+              const credits =
+                (Number.isFinite(value) ? value : 0) + (Number.isFinite(bonus) ? bonus : 0);
+              const addr = Number(removed.bodyKey.split(":")[0]);
+              if (credits > 0 && Number.isFinite(addr)) {
+                this.addSoldTally(this.soldOrganicBySystem, addr, credits, 1, ts);
+              }
+            }
           }
         }
         return;
       }
 
-      if (event === "SellExplorationData") {
-        this.clearExplorationForSoldSystems((line as Record<string, unknown>).Systems);
-        return;
-      }
-
-      if (event === "MultiSellExplorationData") {
-        this.clearExplorationForSoldSystemsMulti((line as Record<string, unknown>).Discovered);
+      if (event === "SellExplorationData" || event === "MultiSellExplorationData") {
+        const o = line as Record<string, unknown>;
+        // Recorded before the clear, which is what removes the rows this is attributed to.
+        this.recordExplorationSale(o, event === "MultiSellExplorationData" ? o.Discovered : o.Systems);
+        if (event === "SellExplorationData") this.clearExplorationForSoldSystems(o.Systems);
+        else this.clearExplorationForSoldSystemsMulti(o.Discovered);
         return;
       }
     } finally {
@@ -2338,6 +2389,68 @@ export class GameStateStore {
     this.fssDiscoveryScanBySystem.delete(systemAddress);
     for (const k of [...this.orbitParentPlanetByBody.keys()]) {
       if (k.startsWith(prefix)) this.orbitParentPlanetByBody.delete(k);
+    }
+  }
+
+  /** Add to a per-system tally, keeping the latest timestamp. */
+  private addSoldTally(
+    map: Map<number, SoldTally>,
+    systemAddress: number,
+    credits: number,
+    items: number,
+    at: string,
+  ): void {
+    const cur = map.get(systemAddress) ?? { credits: 0, items: 0, sales: 0, lastAt: "" };
+    cur.credits += credits;
+    cur.items += items;
+    cur.sales += 1;
+    if (at > cur.lastAt) cur.lastAt = at;
+    map.set(systemAddress, cur);
+  }
+
+  /**
+   * Credit an exploration sale to the systems it covered.
+   *
+   * The journal gives one `TotalEarnings` for the whole batch and, at best, a body count per system.
+   * So the money is **apportioned by body count** — twice the bodies, twice the credits — and where
+   * no counts are given it is split evenly. This is an estimate of a real payment rather than a
+   * real per-system payment, and the panel that shows it says so.
+   *
+   * `TotalEarnings` is preferred over `BaseValue + Bonus` because it is what actually arrived: the
+   * other two are the pre-discount figures and do not always sum to it.
+   */
+  private recordExplorationSale(line: Record<string, unknown>, listed: unknown): void {
+    if (!Array.isArray(listed) || listed.length === 0) return;
+    const total = Number(line.TotalEarnings);
+    const fallback = Number(line.BaseValue) + Number(line.Bonus);
+    const earned = Number.isFinite(total) && total > 0 ? total : Number.isFinite(fallback) ? fallback : 0;
+    if (!(earned > 0)) return;
+    const ts = typeof line.timestamp === "string" ? line.timestamp : "";
+
+    const rows: { addr: number; bodies: number }[] = [];
+    for (const item of listed) {
+      let addr: number | null = null;
+      let bodies = 0;
+      if (typeof item === "string") {
+        addr = this.findSystemAddressByStarSystemName(item);
+      } else if (item && typeof item === "object") {
+        const o = item as Record<string, unknown>;
+        if (typeof o.SystemAddress === "number" && Number.isFinite(o.SystemAddress)) addr = o.SystemAddress;
+        else {
+          const nm = o.SystemName ?? o.StarSystem ?? o.System;
+          if (typeof nm === "string") addr = this.findSystemAddressByStarSystemName(nm);
+        }
+        const n = Number(o.NumBodies);
+        if (Number.isFinite(n) && n > 0) bodies = n;
+      }
+      if (addr != null) rows.push({ addr, bodies });
+    }
+    if (rows.length === 0) return;
+
+    const totalBodies = rows.reduce((n, r) => n + r.bodies, 0);
+    for (const r of rows) {
+      const share = totalBodies > 0 ? r.bodies / totalBodies : 1 / rows.length;
+      this.addSoldTally(this.soldExplorationBySystem, r.addr, earned * share, r.bodies, ts);
     }
   }
 
@@ -2608,6 +2721,8 @@ export class GameStateStore {
       fssAllBodiesCompleteSystems: [...this.fssAllBodiesCompleteSystems],
       fssDiscoveryScanBySystem: [...this.fssDiscoveryScanBySystem.entries()],
       fssAllBodiesFoundCountBySystem: [...this.fssAllBodiesFoundCountBySystem.entries()],
+      soldExplorationBySystem: [...this.soldExplorationBySystem.entries()],
+      soldOrganicBySystem: [...this.soldOrganicBySystem.entries()],
       mainStarWasDiscoveredBySystem: [...this.mainStarWasDiscoveredBySystem.entries()],
       systemPositions: [...this.systemPositions.entries()],
       remainingJumpsInRoute: this.remainingJumpsInRoute,
@@ -2698,6 +2813,21 @@ export class GameStateStore {
     for (const [addr, cnt] of data.fssAllBodiesFoundCountBySystem ?? []) {
       if (typeof addr === "number" && typeof cnt === "number" && cnt > 0) {
         this.fssAllBodiesFoundCountBySystem.set(addr, cnt);
+      }
+    }
+    for (const [target, rows] of [
+      [this.soldExplorationBySystem, data.soldExplorationBySystem],
+      [this.soldOrganicBySystem, data.soldOrganicBySystem],
+    ] as const) {
+      target.clear();
+      for (const [addr, t] of rows ?? []) {
+        if (typeof addr !== "number" || !t || typeof t.credits !== "number") continue;
+        target.set(addr, {
+          credits: t.credits,
+          items: typeof t.items === "number" ? t.items : 0,
+          sales: typeof t.sales === "number" ? t.sales : 0,
+          lastAt: typeof t.lastAt === "string" ? t.lastAt : "",
+        });
       }
     }
     // No version branch here on purpose: the loader admits a payload only when its `format` equals

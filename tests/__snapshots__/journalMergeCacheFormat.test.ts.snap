@@ -2,7 +2,7 @@
 
 exports[`the format constant > covers every key the store serializes 1`] = `
 {
-  "format": 7,
+  "format": 8,
   "keys": [
     "bodies",
     "bodyDetailedFootfallState",
@@ -38,7 +38,9 @@ exports[`the format constant > covers every key the store serializes 1`] = `
     "pendingOrganicSales",
     "remainingJumpsInRoute",
     "samplingMinutesSamples",
+    "soldExplorationBySystem",
     "soldExplorationScans",
+    "soldOrganicBySystem",
     "surfaceShipMark",
     "systemPositions",
     "viewingSystemAddress",

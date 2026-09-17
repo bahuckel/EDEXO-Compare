@@ -358,6 +358,18 @@
   max-width: min(520px, 100%);
 }
 
+/*
+  The table tabs need room the species list does not.
+
+  520px is right for a column of cards and hopeless for twelve columns of figures, so the width is a
+  modifier rather than a change to the shared panel — widening both would stretch the exobiology
+  list it was sized for. Tall as well as wide: the point of the tables is scanning down them.
+*/
+.modal-panel--discoveries {
+  max-width: min(1480px, 97vw);
+  max-height: min(90vh, 900px);
+}
+
 .modal-body--my-exo {
   padding-top: 0.5rem;
 }
@@ -702,4 +714,164 @@
 
 .system-map-dscan-wrap {
   padding: 0 0.15rem;
+}
+
+/* ------------------------------------------------------------------ My discoveries
+   Three tables of everything scanned, beside the foot-confirmed species list. Dense on purpose:
+   18,127 bodies is a table to scan down, not a list of cards to read, so the row height and the
+   tabular figures matter more here than anywhere else in the app. */
+
+.disc-tabs {
+  display: flex;
+  gap: var(--s-2);
+  margin-left: auto;
+  margin-right: var(--s-4);
+}
+
+.disc-tab {
+  background: transparent;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-sm);
+  padding: 0.2rem 0.6rem;
+}
+
+.disc-tab:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.disc-tab--on {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.disc-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-3);
+}
+
+.disc-chip-label {
+  min-width: 4.5rem;
+}
+
+.disc-chip {
+  background: transparent;
+  border: 1px solid var(--accent-dim);
+  border-radius: 999px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-sm);
+  padding: 0.1rem 0.55rem;
+  white-space: nowrap;
+}
+
+.disc-chip:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.disc-chip--on {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* The table scrolls inside the dialog rather than growing it — the header row stays put, which is
+   what makes a wide table with a dozen columns usable at all. */
+.disc-table-wrap {
+  overflow: auto;
+  max-height: min(58vh, 520px);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius-sm);
+}
+
+.disc-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--fs-sm);
+}
+
+.disc-th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(8, 8, 12, 0.97);
+  border-bottom: 1px solid var(--accent-dim);
+  padding: 0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.disc-th--num {
+  text-align: right;
+}
+
+.disc-th--active {
+  color: var(--accent);
+}
+
+.disc-sort {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.35rem 0.5rem;
+  width: 100%;
+  text-align: inherit;
+  white-space: nowrap;
+}
+
+.disc-sort:hover {
+  color: var(--accent);
+}
+
+.disc-sort-caret {
+  font-size: 0.7em;
+  margin-left: 0.25rem;
+}
+
+.disc-td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.28rem 0.5rem;
+  white-space: nowrap;
+}
+
+.disc-td--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.disc-table tbody tr:hover .disc-td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.disc-link {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.disc-link:hover {
+  text-decoration: underline;
+}
+
+.disc-more,
+.disc-empty {
+  margin: var(--s-3) 0 0;
 }

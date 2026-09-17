@@ -50,6 +50,7 @@ import { formatImportReport, importSpanshExport } from "../feeder/spanshImport.j
 import { feederDataDirExists } from "../feeder/paths.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
+import { buildDiscoveries } from "./discoveries.js";
 import { clearFootScannedCatalogCache } from "./footScannedCatalog.js";
 import { clearGenusPhotosFolderCache, getSpeciesDataWarnings } from "./speciesTreeLoader.js";
 import { parseStatusJsonDestination, parseStatusJsonFootFix, parseStatusJsonFuel } from "./footTravelStatus.js";
@@ -1138,6 +1139,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getCommanderPosition: () => store.commanderPos,
     getFirstDiscoveryBacklog: () => firstDiscoveryBacklogWithDistance(store),
     getBacklogMap: () => backlogMap(store),
+    getDiscoveries: () => buildDiscoveries(store, getProjectRoot()),
     searchGalaxyByValue: (query, limit) =>
       galaxyValueSearch({ ...query, from: store.commanderPos, limit }),
     getGalaxySpecies: () => galaxySpeciesCatalogue(),

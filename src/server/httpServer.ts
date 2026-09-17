@@ -24,7 +24,7 @@ import type {
   GalaxyValueSearchDTO,
   FirstDiscoveryBacklogDTO,
   ExoDataAlertDTO,
-} from "../shared/types.js";
+  DiscoveriesDTO,} from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { isJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { getProjectRoot, getSpeciesDataDir, getWebRoot } from "./paths.js";
@@ -122,6 +122,8 @@ export function createHttpServer(opts: {
   getFirstDiscoveryBacklog?: () => FirstDiscoveryBacklogDTO;
   /** GET /api/backlog-map — the same backlog rolled up to placed systems, for the galaxy map. */
   getBacklogMap?: () => BacklogMapDTO;
+  /** Everything scanned, for the "My discoveries" panel. Built on request; see discoveries.ts. */
+  getDiscoveries?: () => DiscoveriesDTO;
   /**
    * GET /api/galaxy/worth — systems the codex says hold a species worth at least `minCr`.
    *
@@ -568,6 +570,15 @@ export function createHttpServer(opts: {
         Number.isFinite(limit) ? limit : 200,
       ),
     );
+  });
+
+  app.get("/api/discoveries", (_req, res) => {
+    perfCount("http.discoveries");
+    if (!opts.getDiscoveries) {
+      res.status(404).json({ error: "discoveries not available in this build" });
+      return;
+    }
+    res.json(opts.getDiscoveries());
   });
 
   app.get("/api/backlog-map", (_req, res) => {

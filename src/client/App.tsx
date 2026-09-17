@@ -322,6 +322,32 @@ export function App() {
     [focusBodyKey, toast],
   );
 
+  /**
+   * Jump the app to a system from "My discoveries".
+   *
+   * The same `view-system` call the foot catalog makes, without a body to focus: those tables list
+   * systems and stars as well as bodies, and a star has no exobiology panel to open.
+   */
+  const discoveriesNavigate = useCallback(
+    (systemAddress: number, bodyName?: string) => {
+      void (async () => {
+        try {
+          const r = await fetch("/api/ui/view-system", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ systemAddress }),
+          });
+          const j = (await r.json().catch(() => null)) as { error?: string } | null;
+          if (!r.ok) throw new Error(j?.error || r.statusText);
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Could not switch system view.");
+        }
+      })();
+      void bodyName;
+    },
+    [toast],
+  );
+
   if (!snapshot) {
     return (
       <div className="app-shell">
@@ -349,6 +375,7 @@ export function App() {
         onOpenSystemMap={openSystemMap}
         onGoToBioBody={focusBodyKey}
         onFootCatalogNavigate={footCatalogNavigate}
+        onDiscoveriesNavigate={discoveriesNavigate}
       />
       {orderedBodies.length === 0 ? (
         <BioEmptyState snap={snapshot} />

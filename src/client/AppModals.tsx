@@ -7,8 +7,15 @@ import { useModal } from "./ui/useModal";
 import { InfoPopover } from "./ui/Tooltip";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { FootScannedEntry, OrganicPendingLineItem, FeederStatusDTO, SessionLogDTO } from "@shared/types";
+import type {
+  FootScannedEntry,
+  OrganicPendingLineItem,
+  FeederStatusDTO,
+  SessionLogDTO,
+  DiscoveriesDTO,
+} from "@shared/types";
 import { FeederStatusPanel } from "./FeederStatusPanel";
+import { DiscoveriesTables, type DiscoveriesTab } from "./DiscoveriesTables";
 import type { SpanshRouteSummaryDTO } from "./bodyHelpers";
 
 /**
@@ -186,15 +193,47 @@ export function FeederModal({
  * but the list's spine is time — newest first — and a query that reshuffles the order costs more
  * than a slightly better first row wins. A match is kept where it was.
  */
+type DiscoveriesView = "species" | DiscoveriesTab;
+
 export function MyExobiologyModal({
   entries,
   onClose,
   onNavigateEntry,
+  onNavigateSystem,
 }: {
   entries: FootScannedEntry[];
   onClose: () => void;
   onNavigateEntry?: (e: FootScannedEntry) => void;
+  onNavigateSystem?: (systemAddress: number, bodyName?: string) => void;
 }) {
+  /*
+    The other three tabs are fetched, not pushed.
+
+    ~14,000 scanned bodies would be on every websocket tick to serve a panel that is shut almost all
+    of the time, so `/api/discoveries` builds them when a tab is first opened and they are kept for
+    as long as the dialog is. Reopening asks again, which is what makes a freshly scanned system
+    appear without a restart.
+  */
+  const [view, setView] = useState<DiscoveriesView>("species");
+  const [discoveries, setDiscoveries] = useState<DiscoveriesDTO | null>(null);
+  const [discoveriesError, setDiscoveriesError] = useState<string | null>(null);
+  useEffect(() => {
+    if (view === "species" || discoveries || discoveriesError) return;
+    let live = true;
+    void (async () => {
+      try {
+        const r = await fetch("/api/discoveries");
+        if (!r.ok) throw new Error(r.statusText || `HTTP ${r.status}`);
+        const j = (await r.json()) as DiscoveriesDTO;
+        if (live) setDiscoveries(j);
+      } catch (e) {
+        if (live) setDiscoveriesError(e instanceof Error ? e.message : "Could not read your journals.");
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [view, discoveries, discoveriesError]);
   /*
     `useModal` focuses the first focusable in the dialog, which is the close button — right for
     every other dialog in the app, wrong for one whose whole purpose is now a search box. So it
@@ -233,19 +272,50 @@ export function MyExobiologyModal({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="modal-panel modal-panel--my-exo"
+        className={`modal-panel modal-panel--my-exo${view !== "species" ? " modal-panel--discoveries" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="my-exo-title"
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="modal-head">
-          <h3 id="my-exo-title">My exobiology</h3>
+          <h3 id="my-exo-title">My discoveries</h3>
+          <div className="disc-tabs" role="tablist" aria-label="What to show">
+            {(
+              [
+                ["species", "Exobiology"],
+                ["systems", "Systems"],
+                ["bodies", "Bodies"],
+                ["stars", "Stars"],
+              ] as const
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                aria-selected={view === k}
+                className={`disc-tab${view === k ? " disc-tab--on" : ""}`}
+                onClick={() => setView(k)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
         <div className="modal-body modal-body--my-exo">
+          {view !== "species" ? (
+            discoveriesError ? (
+              <p className="dim disc-empty">{discoveriesError}</p>
+            ) : !discoveries ? (
+              <p className="dim disc-empty">Reading your journals…</p>
+            ) : (
+              <DiscoveriesTables data={discoveries} tab={view} onNavigateSystem={onNavigateSystem} />
+            )
+          ) : (
+          <>
           <div className="my-exo-search">
             <input
               ref={searchRef}
@@ -358,6 +428,8 @@ export function MyExobiologyModal({
                 </li>
               ))}
             </ul>
+          )}
+          </>
           )}
         </div>
       </div>

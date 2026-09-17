@@ -399,6 +399,7 @@ export const HeaderBar = memo(function HeaderBar({
   snap,
   connected,
   onFootCatalogNavigate,
+  onDiscoveriesNavigate,
   onGoToBioBody,
   encyclopediaSpawnCompare,
   onOpenSystemMap,
@@ -406,6 +407,7 @@ export const HeaderBar = memo(function HeaderBar({
   snap: AppSnapshot;
   connected: boolean;
   onFootCatalogNavigate?: (e: FootScannedEntry) => void;
+  onDiscoveriesNavigate?: (systemAddress: number, bodyName?: string) => void;
   onGoToBioBody?: (bodyKey: string) => void;
   encyclopediaSpawnCompare: EncyclopediaSpawnCompare | null;
   onOpenSystemMap: () => void;
@@ -690,12 +692,18 @@ export const HeaderBar = memo(function HeaderBar({
             role="menu"
             onClick={() => setMenuOpen(false)}
           >
-          <Tooltip text="My exobiology — completed on-foot samples recorded from your journal.">
+          {/*
+            The panel behind this icon stopped being only exobiology: it now carries every system,
+            body and star in the merged journals beside the foot-confirmed species. The menu is
+            icons and tooltips, so the tooltip is the only place the name lives — leaving it as "My
+            exobiology" made three new tabs unfindable.
+          */}
+          <Tooltip text="My discoveries — every system, body and star you have scanned, plus the species you confirmed on foot.">
             <button
               type="button"
               className="appbar-icon-btn"
               onClick={() => setMyExoOpen(true)}
-              aria-label="My exobiology"
+              aria-label="My discoveries"
             >
               <IconExobiology />
             </button>
@@ -1030,6 +1038,7 @@ export const HeaderBar = memo(function HeaderBar({
           entries={snap.footScannedEntries ?? []}
           onClose={() => setMyExoOpen(false)}
           onNavigateEntry={onFootCatalogNavigate}
+          onNavigateSystem={onDiscoveriesNavigate}
         />
       ) : null}
       {dataBreakdownOpen ? (
