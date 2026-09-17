@@ -166,6 +166,14 @@ export function createHttpServer(opts: {
   /** POST /api/settings/include-bacterium */
   /** POST /api/settings/hud-prefs */
   setHudPrefs?: (raw: unknown) => void;
+  /**
+   * POST /api/settings/poll-rates — JSON `{ statusPollMs, journalPollMs }`.
+   *
+   * Applied to the running timers, not queued for the next launch: that is the entire request. The
+   * implementation clamps, so the reply is the accepted pair and the launcher shows that rather
+   * than what it sent.
+   */
+  setPollRates?: (statusPollMs: unknown, journalPollMs: unknown) => { statusPollMs: number; journalPollMs: number };
   setIncludeBacterium?: (value: boolean) => void;
   setIncludeExplorationScanData?: (value: boolean) => void;
   /** POST /api/settings/foot-travel-odometer — JSON { value: boolean } */
@@ -985,6 +993,36 @@ export function createHttpServer(opts: {
     opts.setHudPrefs(body);
     opts.scheduleBroadcast?.();
     res.json({ ok: true });
+  });
+
+  /**
+   * How often the server re-reads `Status.json` and tails the journal.
+   *
+   * Both numbers are sent together even when one changed: the pair is one setting in the launcher,
+   * and a partial body would make "leave the other alone" a second, silent meaning for a missing
+   * field. The values are clamped server-side (`shared/pollRates.ts`) and the accepted pair comes
+   * back, so a launcher that is out of step with the bounds still ends up showing the truth.
+   */
+  app.post("/api/settings/poll-rates", (req, res) => {
+    if (typeof opts.setPollRates !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const body = req.body;
+    if (!body || typeof body !== "object") {
+      res.status(400).json({ ok: false, error: "JSON body must be an object." });
+      return;
+    }
+    const statusMs = (body as { statusPollMs?: unknown }).statusPollMs;
+    const journalMs = (body as { journalPollMs?: unknown }).journalPollMs;
+    if (!Number.isFinite(Number(statusMs)) || !Number.isFinite(Number(journalMs))) {
+      res
+        .status(400)
+        .json({ ok: false, error: 'JSON body must include numbers "statusPollMs" and "journalPollMs".' });
+      return;
+    }
+    const applied = opts.setPollRates(statusMs, journalMs);
+    res.json({ ok: true, ...applied });
   });
 
   app.post("/api/settings/include-bacterium", (req, res) => {

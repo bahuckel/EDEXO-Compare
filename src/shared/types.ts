@@ -1,8 +1,10 @@
 import type { GenusLikelihood } from "./genusCooccurrence.js";
 import type { TriageTiming } from "./systemTriage.js";
 import type { JournalHistoryPreset } from "./journalHistoryPreset.js";
+import type { PollRatesDTO } from "./pollRates.js";
 
 export type { JournalHistoryPreset };
+export type { PollRatesDTO };
 
 /** Elite journal line (subset) */
 export interface JournalLine {
@@ -1781,6 +1783,12 @@ export interface AppStatusDTO {
    * this exists for, and `/api/status` is somewhere a commander can actually look.
    */
   speciesDataWarnings: string[];
+  /**
+   * The two live-file poll intervals and their bounds, so the launcher's inputs can never offer a
+   * value the server would clamp. Optional: an older launcher against a newer server, or the
+   * reverse, simply hides the row. See `shared/pollRates.ts`.
+   */
+  pollRates?: PollRatesDTO;
 }
 
 export interface AppSnapshot {

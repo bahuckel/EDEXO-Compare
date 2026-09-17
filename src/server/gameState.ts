@@ -11,6 +11,12 @@ import type {
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import {
+  JOURNAL_POLL_DEFAULT_MS,
+  STATUS_POLL_DEFAULT_MS,
+  clampJournalPollMs,
+  clampStatusPollMs,
+} from "../shared/pollRates.js";
+import {
   UNOBSERVED,
   mergeObservation,
   type ObservationSource,
@@ -680,6 +686,16 @@ export class GameStateStore {
     return this.organicRunStartedAt.get(`${bodyKey}::${speciesKey}`);
   }
 
+  /**
+   * How often the two live files are re-read, in milliseconds. Both were compiled-in constants.
+   *
+   * Kept on the store rather than in the timer closures so one place answers "what is it now" for
+   * `/api/status`, the settings route and the persisted preferences file. Changing either re-arms
+   * its timer immediately — see `edexoBootstrap.applyPollRates`.
+   */
+  statusPollMs = STATUS_POLL_DEFAULT_MS;
+  journalPollMs = JOURNAL_POLL_DEFAULT_MS;
+
   /** When true, bacterium genus/species rules are included in body search (default off, can leak spoilers). */
   includeBacteriumInSearch = false;
   /** Mirrored launcher HUD settings, see AppSnapshot.hudPrefs. */
@@ -899,6 +915,20 @@ export class GameStateStore {
 
   setIncludeBacteriumInSearch(value: boolean): void {
     this.includeBacteriumInSearch = value;
+  }
+
+  /**
+   * Set both poll intervals, clamped. Returns whether either actually moved, so the caller only
+   * re-arms timers and rewrites the preferences file when something changed — the launcher sends
+   * this on every keystroke-settled change and a no-op should cost nothing.
+   */
+  setPollRates(statusRaw: unknown, journalRaw: unknown): boolean {
+    const s = clampStatusPollMs(statusRaw);
+    const j = clampJournalPollMs(journalRaw);
+    const changed = s !== this.statusPollMs || j !== this.journalPollMs;
+    this.statusPollMs = s;
+    this.journalPollMs = j;
+    return changed;
   }
 
   /** Keep only the known keys, with sane bounds; anything else a client sends is dropped. */

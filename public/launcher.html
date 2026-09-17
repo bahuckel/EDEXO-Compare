@@ -632,6 +632,32 @@
         font-size: 0.8rem;
         color: var(--ed-bad);
       }
+      .modal-section {
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid var(--hud-dim);
+      }
+      .modal-section h4 {
+        margin: 0;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--hud-text);
+      }
+      .hud-set-row input[type="number"] {
+        min-width: 6rem;
+        text-align: right;
+      }
+      .poll-applied {
+        font-size: 0.72rem;
+        color: var(--ed-ok);
+        opacity: 0;
+        transition: opacity 0.25s;
+      }
+      .poll-applied.on {
+        opacity: 0.9;
+      }
       .foot {
         margin-top: 22px;
         display: flex;
@@ -1089,6 +1115,7 @@
         cursor: pointer;
       }
       .hud-set-row select,
+      .hud-set-row input[type="number"],
       .hud-set-row input[type="text"] {
         font-family: inherit;
         font-size: 0.78rem;
@@ -1767,6 +1794,33 @@
           <p class="hint">Usually: Saved Games → Frontier Developments → Elite Dangerous</p>
           <input type="text" id="journalInput" placeholder="Full path to folder containing Journal.*.log" autocomplete="off" />
           <div class="err-msg" id="optErr" style="display: none"></div>
+
+          <div class="modal-section" id="pollSection" hidden>
+            <h4>How often the files are read</h4>
+            <p class="hint">
+              Applied as soon as you change them — no relaunch. Lower is quicker to react and costs
+              more disk reads; the journal also wakes early on its own when Elite writes to it.
+            </p>
+            <div class="hud-set-row">
+              <label for="pollStatusMs">Status.json <span class="hint" style="margin: 0">position, fuel, target</span></label>
+              <span>
+                <input type="number" id="pollStatusMs" step="50" /> ms
+              </span>
+            </div>
+            <div class="hud-set-row">
+              <label for="pollJournalMs">Journal log <span class="hint" style="margin: 0">events and rotation</span></label>
+              <span>
+                <input type="number" id="pollJournalMs" step="250" /> ms
+              </span>
+            </div>
+            <div class="hud-set-row">
+              <span class="poll-applied" id="pollApplied">Applied</span>
+              <button type="button" class="btn secondary" id="pollDefaults">
+                <span class="btn-lines"><strong>Defaults</strong></span>
+              </button>
+            </div>
+          </div>
+
           <div class="row">
             <button type="button" class="btn secondary" id="modalCancel">
               <span class="btn-lines"><strong>Cancel</strong></span>
@@ -1819,6 +1873,11 @@
         const modalCancel = document.getElementById("modalCancel");
         const modalSave = document.getElementById("modalSave");
         const optErr = document.getElementById("optErr");
+        const pollSection = document.getElementById("pollSection");
+        const pollStatusMs = document.getElementById("pollStatusMs");
+        const pollJournalMs = document.getElementById("pollJournalMs");
+        const pollApplied = document.getElementById("pollApplied");
+        const pollDefaults = document.getElementById("pollDefaults");
         const splashPct = document.getElementById("splashPct");
         const splashBar = document.getElementById("splashBar");
         const splashMsg = document.getElementById("splashMsg");
@@ -2202,7 +2261,12 @@
           }
 
           renderConnectUrls(data);
-          journalInput.value = data.journalDir || "";
+          // Only while the modal is shut. The poll runs every 2.5 s, so writing these fields
+          // unconditionally rewrote the folder path out from under whoever was typing it.
+          if (!modal.classList.contains("on")) {
+            journalInput.value = data.journalDir || "";
+            renderPollRates(data.pollRates);
+          }
           renderLiveStrip(data);
           renderJournalHealth(data);
           maybeShowWizard(data);
@@ -2274,6 +2338,90 @@
             optErr.style.display = "block";
           }
         });
+
+        /*
+          The two live-file poll rates.
+
+          Bounds come from the server (`shared/pollRates.ts`) rather than being written into the
+          input attributes here, so this window can never offer a number the server would clamp.
+          A build without the setting sends no `pollRates` and the section simply stays hidden.
+        */
+        let pollBounds = null;
+        let pollAppliedTimer = null;
+
+        function renderPollRates(rates) {
+          if (!pollSection) return;
+          if (!rates || typeof rates !== "object") {
+            pollSection.hidden = true;
+            return;
+          }
+          pollBounds = rates;
+          pollSection.hidden = false;
+          pollStatusMs.min = String(rates.statusMinMs);
+          pollStatusMs.max = String(rates.statusMaxMs);
+          pollJournalMs.min = String(rates.journalMinMs);
+          pollJournalMs.max = String(rates.journalMaxMs);
+          if (document.activeElement !== pollStatusMs) pollStatusMs.value = String(rates.statusPollMs);
+          if (document.activeElement !== pollJournalMs) pollJournalMs.value = String(rates.journalPollMs);
+        }
+
+        function flashPollApplied() {
+          if (!pollApplied) return;
+          pollApplied.classList.add("on");
+          if (pollAppliedTimer) clearTimeout(pollAppliedTimer);
+          pollAppliedTimer = setTimeout(function () {
+            pollApplied.classList.remove("on");
+          }, 1400);
+        }
+
+        /*
+          Sent on `change`, not on every keystroke: `input` fires per digit, so typing "2000" would
+          walk the server through 2, 20 and 200 ms — re-arming the timer three times on its way to a
+          rate the commander never asked for.
+        */
+        async function savePollRates(statusMs, journalMs) {
+          if (!pollBounds) return;
+          try {
+            const r = await fetch(apiUrl("/api/settings/poll-rates"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ statusPollMs: statusMs, journalPollMs: journalMs }),
+            });
+            const j = await r.json().catch(function () {
+              return {};
+            });
+            if (!r.ok) {
+              optErr.textContent = j.error || r.statusText;
+              optErr.style.display = "block";
+              return;
+            }
+            // Show what was accepted, not what was sent — the server clamps.
+            pollBounds.statusPollMs = j.statusPollMs;
+            pollBounds.journalPollMs = j.journalPollMs;
+            pollStatusMs.value = String(j.statusPollMs);
+            pollJournalMs.value = String(j.journalPollMs);
+            optErr.style.display = "none";
+            flashPollApplied();
+          } catch (e) {
+            optErr.textContent = String(e);
+            optErr.style.display = "block";
+          }
+        }
+
+        function onPollFieldChange() {
+          void savePollRates(Number(pollStatusMs.value), Number(pollJournalMs.value));
+        }
+
+        if (pollStatusMs && pollJournalMs) {
+          pollStatusMs.addEventListener("change", onPollFieldChange);
+          pollJournalMs.addEventListener("change", onPollFieldChange);
+        }
+        if (pollDefaults) {
+          pollDefaults.addEventListener("click", function () {
+            if (!pollBounds) return;
+            void savePollRates(pollBounds.statusDefaultMs, pollBounds.journalDefaultMs);
+          });
+        }
 
         function openNetworkSettingsModal() {
           if (!networkSettingsModal) return;

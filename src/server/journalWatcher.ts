@@ -1,6 +1,7 @@
 import { createReadStream, promises as fs, unwatchFile, watchFile } from "node:fs";
 import path from "node:path";
 import type { JournalLine } from "../shared/types.js";
+import { JOURNAL_POLL_DEFAULT_MS, clampJournalPollMs } from "../shared/pollRates.js";
 
 function isJournalFile(name: string): boolean {
   return name.startsWith("Journal.") && name.endsWith(".log");
@@ -150,9 +151,15 @@ export async function readJournalFromOffset(
 export type JournalWatcherHandle = {
   close: () => Promise<void>;
   getPath: () => string | null;
+  /**
+   * Re-read `getPollMs` and re-arm the interval. Called when the commander changes the rate in the
+   * launcher: without it the new number would only take effect on the next journal-pipeline
+   * restart, which for most sessions means "never".
+   */
+  retimePoll: () => void;
+  /** The interval currently armed, for tests and for the settings route's reply. */
+  currentPollMs: () => number;
 };
-
-const POLL_MS = 2000; // owner: keep log polling slow; the mtime watch below still wakes it early
 
 /**
  * After game restart Elite adds a new log; we must merge **all** journal files in order, then tail only the newest.
@@ -165,6 +172,14 @@ export function startJournalWatcher(
   seed: { path: string; size: number } | null,
   /** Rolling journal window — recomputed each poll so age cutoffs track real time. */
   getListFilterOpts: () => JournalListFilterOpts,
+  /**
+   * The poll interval, read every time the timer is armed rather than captured once.
+   *
+   * Owner's standing preference is a slow log poll, and the `watchFile` below still wakes the tail
+   * early, so this is the backstop for rotation and the rolling window — not the delivery path for
+   * events. Absent, it is the shipped default.
+   */
+  getPollMs: () => number = () => JOURNAL_POLL_DEFAULT_MS,
 ): JournalWatcherHandle {
   let currentPath: string | null = seed?.path != null ? path.resolve(seed.path) : null;
   let position = seed?.size ?? 0;
@@ -175,6 +190,8 @@ export function startJournalWatcher(
   let lastListIdentity: string | null = null;
 
   let poll: ReturnType<typeof setInterval> | null = null;
+  /** The interval the armed timer was created with, so `retimePoll` can tell a change from a no-op. */
+  let armedPollMs = clampJournalPollMs(getPollMs());
   /** Path we passed to watchFile — must match listener identity for unwatchFile. */
   let watchTarget: string | null = null;
   const onWatchEvent = (): void => {
@@ -204,9 +221,21 @@ export function startJournalWatcher(
 
   function ensurePoll(): void {
     if (poll != null) return;
+    armedPollMs = clampJournalPollMs(getPollMs());
     poll = setInterval(() => {
       void pulse().catch((e) => console.error("[journalWatcher] pulse:", e));
-    }, POLL_MS);
+    }, armedPollMs);
+  }
+
+  /** Re-arm only when the number actually moved; a needless clear/set drops part of an interval. */
+  function retimePoll(): void {
+    const next = clampJournalPollMs(getPollMs());
+    if (poll != null && next === armedPollMs) return;
+    if (poll != null) {
+      clearInterval(poll);
+      poll = null;
+    }
+    ensurePoll();
   }
 
   const tailChunk = async (): Promise<void> => {
@@ -308,6 +337,8 @@ export function startJournalWatcher(
 
   return {
     getPath: () => currentPath,
+    retimePoll,
+    currentPollMs: () => armedPollMs,
     close: async () => {
       if (poll) {
         clearInterval(poll);

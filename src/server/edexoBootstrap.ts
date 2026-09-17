@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import type { AppSnapshot, AppStatusDTO, ImportDumpStatusDTO, JournalBootProgressDTO, JournalLine } from "../shared/types.js";
 import { journalHistoryCutoffUtcMs, parseJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
+import { clampStatusPollMs, pollRatesDto } from "../shared/pollRates.js";
 import { openUrlInBrowser, openLauncherShell, openLocalFile } from "./openUrl.js";
 import { GameStateStore } from "./gameState.js";
 import {
@@ -359,6 +360,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             canonnUploadEnabled: store.canonnUploadEnabled,
             edsmUploadEnabled: store.edsmUploadEnabled,
             edsmLiveUploadEnabled: store.edsmLiveUploadEnabled,
+            statusPollMs: store.statusPollMs,
+            journalPollMs: store.journalPollMs,
             hudPrefs: store.hudPrefs,
           },
           null,
@@ -382,11 +385,18 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     canonnUploadEnabled?: boolean;
     edsmUploadEnabled?: boolean;
     edsmLiveUploadEnabled?: boolean;
+    statusPollMs?: number;
+    journalPollMs?: number;
     hudPrefs?: unknown;
   };
 
   function applyPersistedUserPrefs(j: PersistedUserPrefs): void {
     if (j.hudPrefs && typeof j.hudPrefs === "object") store.setHudPrefs(j.hudPrefs);
+    if (typeof j.statusPollMs === "number" || typeof j.journalPollMs === "number") {
+      // Read back through the same clamp that wrote them: a hand-edited settings file is the case
+      // this exists for, and a 5 ms status poll would read the same file two hundred times a second.
+      store.setPollRates(j.statusPollMs ?? store.statusPollMs, j.journalPollMs ?? store.journalPollMs);
+    }
     if (typeof j.includeBacteriumInSearch === "boolean") {
       store.setIncludeBacteriumInSearch(j.includeBacteriumInSearch);
     }
@@ -597,6 +607,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       commanderName: store.commanderName,
       journalBoot: journalBootProgress,
       speciesDataWarnings: getSpeciesDataWarnings(),
+      pollRates: pollRatesDto(store.statusPollMs, store.journalPollMs),
       live: organicLiveSummary(store),
     };
   };
@@ -654,6 +665,44 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
 
   let watcher: JournalWatcherHandle | null = null;
   let footStatusPollTimer: ReturnType<typeof setInterval> | null = null;
+  /**
+   * The `Status.json` tick, kept as a value so the interval can be re-armed at a new rate without
+   * rebuilding the closure it lives in (it owns the jump-key memo, which must survive a retime).
+   */
+  let footStatusTick: (() => void) | null = null;
+  /** The interval the armed timer was created with; see {@link armFootStatusPoll}. */
+  let footStatusArmedMs = 0;
+
+  /** (Re-)arm the `Status.json` poll at `store.statusPollMs`. A no-op when nothing moved. */
+  function armFootStatusPoll(force = false): void {
+    if (footStatusTick == null) return;
+    const next = clampStatusPollMs(store.statusPollMs);
+    if (!force && footStatusPollTimer != null && next === footStatusArmedMs) return;
+    if (footStatusPollTimer != null) {
+      clearInterval(footStatusPollTimer);
+      footStatusPollTimer = null;
+    }
+    footStatusArmedMs = next;
+    const tick = footStatusTick;
+    footStatusPollTimer = setInterval(() => tick(), next);
+  }
+
+  /**
+   * Both live-file poll rates, applied to the running timers at once.
+   *
+   * The whole point of the setting is that it takes effect now: the commander changes the number in
+   * the launcher and the next tick is at the new rate, with no relaunch and no journal-pipeline
+   * restart. Persisted only when something actually changed.
+   */
+  function applyPollRates(statusRaw: unknown, journalRaw: unknown): { statusPollMs: number; journalPollMs: number } {
+    const changed = store.setPollRates(statusRaw, journalRaw);
+    if (changed) {
+      armFootStatusPoll();
+      watcher?.retimePoll();
+      persistUserPreferences();
+    }
+    return { statusPollMs: store.statusPollMs, journalPollMs: store.journalPollMs };
+  }
 
   function getJournalListFilterOpts(): JournalListFilterOpts {
     return { minFileStartUtcMs: journalHistoryCutoffUtcMs(store.journalHistoryPreset) };
@@ -1049,6 +1098,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       resyncAllJournalFiles,
       seed,
       getJournalListFilterOpts,
+      () => store.journalPollMs,
     );
   }
 
@@ -1152,6 +1202,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       store.setHudPrefs(raw);
       persistUserPreferences();
     },
+    setPollRates: (statusMs, journalMs) => applyPollRates(statusMs, journalMs),
     setIncludeBacterium: (v) => {
       store.setIncludeBacteriumInSearch(v);
       persistUserPreferences();
@@ -1380,7 +1431,6 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         clearInterval(footStatusPollTimer);
         footStatusPollTimer = null;
       }
-      const STATUS_POLL_MS = 1000;
       let lastJumpKey: string | null = null;
       const jumpChangedNow = (): boolean => {
         const jt = store.nextJumpTarget();
@@ -1389,7 +1439,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         lastJumpKey = key;
         return true;
       };
-      footStatusPollTimer = setInterval(() => {
+      footStatusTick = () => {
         const navChanged = store.applyLiveNavRoute(readLiveNavRouteWaypoints());
         const jumpChanged = jumpChangedNow();
         const statusPath = path.join(journalDir, "Status.json");
@@ -1428,7 +1478,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         );
         const footHud = store.footTravelOdometerEnabled && store.footTravelOdometerTracking;
         if (footHud || store.exoOrganicTracker || fuelChanged || navChanged || destChanged || jumpChanged) push();
-      }, STATUS_POLL_MS);
+      };
+      armFootStatusPoll(true);
 
       /*
         A sample already in progress when the app started.
