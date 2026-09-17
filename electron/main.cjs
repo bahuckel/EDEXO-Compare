@@ -463,6 +463,42 @@ function createHudOverlayWindow(width, height, iconForChild, parentWin) {
 }
 
 /**
+ * Load a HUD overlay's page, retrying a couple of times before giving up.
+ *
+ * The owner hit `ERR_FAILED (-2) loading 'http://127.0.0.1:7111/fss-scan-overlay.html'` on a server
+ * that serves that page perfectly well a second later. `runtime` being set means the HTTP server
+ * has been created, not that the listening socket is answering yet, and opening the merged stack
+ * fires several `loadURL` calls at once — so the first one through can lose a race it would win on
+ * any later attempt.
+ *
+ * One failed load used to destroy the window and report the raw Chromium string, which put the
+ * commander in front of an error for something that had not actually gone wrong. Three attempts
+ * over roughly half a second; a page that is genuinely missing still fails, just three times.
+ *
+ * @param {import("electron").BrowserWindow} win
+ * @param {string} url
+ */
+async function loadHudUrlWithRetry(win, url) {
+  const ATTEMPTS = 3;
+  const BACKOFF_MS = 200;
+  let last;
+  for (let i = 0; i < ATTEMPTS; i += 1) {
+    if (win.isDestroyed()) throw last ?? new Error("Overlay window closed while loading.");
+    try {
+      await win.loadURL(url);
+      return;
+    } catch (e) {
+      last = e;
+      if (i < ATTEMPTS - 1) {
+        console.warn(`[edexo-compare] HUD overlay load attempt ${i + 1} failed, retrying:`, url, String(e));
+        await new Promise((r) => setTimeout(r, BACKOFF_MS * (i + 1)));
+      }
+    }
+  }
+  throw last ?? new Error("Overlay failed to load.");
+}
+
+/**
  * @param {string} pathNorm
  * @param {number} width
  * @param {number} height
@@ -513,7 +549,7 @@ async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode
       slot.width = Math.max(slot.width || 0, width);
       slot.height = Math.max(slot.height || 0, height);
       try {
-        await slot.win.loadURL(`${runtime.getLocalBaseUrl()}${pathNorm}`);
+        await loadHudUrlWithRetry(slot.win, `${runtime.getLocalBaseUrl()}${pathNorm}`);
         relayoutHudStack();
         persistHudFile();
       } catch (e) {
@@ -533,12 +569,14 @@ async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode
   hudOverlayStack.push({ win, pathname: pathNorm, key, width, height });
   refreshTrayMenu();
 
-  win.webContents.once("did-fail-load", (_e, code, desc) => {
+  win.webContents.on("did-fail-load", (_e, code, desc) => {
+    // Logged at every attempt, not just the first: a retry that succeeds leaves one of these behind
+    // and it should not read like the failure that was reported to the commander.
     console.error("[edexo-compare] HUD overlay failed to load:", url, code, desc);
   });
 
   try {
-    await win.loadURL(url);
+    await loadHudUrlWithRetry(win, url);
     relayoutHudStack();
     if (hudHidden) win.hide();
     persistHudFile();

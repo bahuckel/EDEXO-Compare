@@ -1470,8 +1470,8 @@
               <svg viewBox="0 0 24 24"><path d="M3 7.5V19a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-8l-2-2.5H4a1 1 0 0 0-1 1z" /></svg>
             </span>
             <span class="btn-lines">
-              <strong>Journal folder</strong>
-              <span class="subline">Set the path to the folder with Journal.*.log</span>
+              <strong>Journal folder &amp; polling</strong>
+              <span class="subline">Path to Journal.*.log — and how often it and Status.json are read</span>
             </span>
           </button>
           <button type="button" class="btn btn-exomastery" id="btnExomasteryRefresh">
@@ -1719,6 +1719,11 @@
                 <option value="bl">Bottom left</option>
               </select>
             </div>
+            <h4>Refresh rate</h4>
+            <div class="hud-set-row">
+              <span id="hudPollSummary">The HUDs follow Status.json</span>
+              <button type="button" class="btn-mini" id="btnPollFromOverlay">Change polling</button>
+            </div>
             <ul class="hud-order" id="hudOrderList" aria-label="Order of the HUDs in the stack"></ul>
             <p class="hud-hint"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>H</kbd> hides and shows every HUD.</p>
           </div>
@@ -1790,7 +1795,7 @@
     <div class="modal-bg" id="modal">
       <div class="modal">
         <div class="modal-in">
-          <h3>Elite Dangerous journal folder</h3>
+          <h3>Journal folder &amp; polling</h3>
           <p class="hint">Usually: Saved Games → Frontier Developments → Elite Dangerous</p>
           <input type="text" id="journalInput" placeholder="Full path to folder containing Journal.*.log" autocomplete="off" />
           <div class="err-msg" id="optErr" style="display: none"></div>
@@ -1878,6 +1883,8 @@
         const pollJournalMs = document.getElementById("pollJournalMs");
         const pollApplied = document.getElementById("pollApplied");
         const pollDefaults = document.getElementById("pollDefaults");
+        const hudPollSummary = document.getElementById("hudPollSummary");
+        const btnPollFromOverlay = document.getElementById("btnPollFromOverlay");
         const splashPct = document.getElementById("splashPct");
         const splashBar = document.getElementById("splashBar");
         const splashMsg = document.getElementById("splashMsg");
@@ -2363,6 +2370,9 @@
           pollJournalMs.max = String(rates.journalMaxMs);
           if (document.activeElement !== pollStatusMs) pollStatusMs.value = String(rates.statusPollMs);
           if (document.activeElement !== pollJournalMs) pollJournalMs.value = String(rates.journalPollMs);
+          if (hudPollSummary) {
+            hudPollSummary.textContent = "The HUDs follow Status.json, read every " + rates.statusPollMs + " ms";
+          }
         }
 
         function flashPollApplied() {
@@ -2415,6 +2425,15 @@
         if (pollStatusMs && pollJournalMs) {
           pollStatusMs.addEventListener("change", onPollFieldChange);
           pollJournalMs.addEventListener("change", onPollFieldChange);
+        }
+        if (btnPollFromOverlay) {
+          btnPollFromOverlay.addEventListener("click", function () {
+            // Out of the overlay panel and into the one place the controls live. Leaving the overlay
+            // modal open behind it would stack two dialogs over each other.
+            if (overlayPickModal) overlayPickModal.classList.remove("on");
+            btnOptions.click();
+            if (pollStatusMs) pollStatusMs.focus();
+          });
         }
         if (pollDefaults) {
           pollDefaults.addEventListener("click", function () {
