@@ -135,6 +135,17 @@ let hudScale = 1;
  * hotkey brings back exactly the set the owner left (owner, 2026-09-13). Same file as the layout.
  */
 let hudRestoreList = [];
+/**
+ * The last set of HUDs the commander actually had open.
+ *
+ * Kept apart from `hudRestoreList`, which `restoreHudOverlays` consumes, and never overwritten with
+ * an empty list: the stack is pruned as windows are destroyed, so a shutdown can leave it empty
+ * while the commander's intent — "these four HUDs" — has not changed at all. This is what the
+ * hotkey reopens when it is pressed and there is nothing on screen to show.
+ */
+let hudRememberedOpen = [];
+/** The icon child windows are created with, stashed at boot so the hotkey can open one later. */
+let hudChildIcon;
 function hudLayoutPath() {
   return path.join(app.getPath("userData"), "hud-layout.json");
 }
@@ -144,6 +155,16 @@ function loadHudLayout() {
     if (j && typeof j === "object") {
       setHudLayout(j, false);
       if (Number.isFinite(Number(j.scale))) hudScale = Math.min(2, Math.max(0.5, Number(j.scale)));
+      if (Array.isArray(j.lastOpen)) {
+        hudRememberedOpen = j.lastOpen
+          .filter((o) => o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"))
+          .slice(0, MAX_HUD_OVERLAYS)
+          .map((o) => ({
+            pathname: o.pathname,
+            width: Number.isFinite(Number(o.width)) && Number(o.width) > 0 ? Math.floor(Number(o.width)) : 404,
+            height: Number.isFinite(Number(o.height)) && Number(o.height) > 0 ? Math.floor(Number(o.height)) : 330,
+          }));
+      }
       if (Array.isArray(j.open)) {
         hudRestoreList = j.open
           .filter((o) => o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"))
@@ -153,6 +174,7 @@ function loadHudLayout() {
             width: Number.isFinite(Number(o.width)) && Number(o.width) > 0 ? Math.floor(Number(o.width)) : 404,
             height: Number.isFinite(Number(o.height)) && Number(o.height) > 0 ? Math.floor(Number(o.height)) : 330,
           }));
+        if (hudRestoreList.length && !hudRememberedOpen.length) hudRememberedOpen = hudRestoreList.slice();
       }
     }
   } catch {
@@ -161,10 +183,16 @@ function loadHudLayout() {
 }
 function persistHudFile() {
   try {
-    const open = hudOverlayStack.map((s) => ({ pathname: s.pathname, width: s.width, height: s.height }));
+    const open = hudOverlayStack
+      .filter((s) => s.win && !s.win.isDestroyed())
+      .map((s) => ({ pathname: s.pathname, width: s.width, height: s.height }));
+    // Only ever remember a real set. An empty `open` is usually windows going away at shutdown, not
+    // the commander deciding he wants no HUDs, and forgetting on every quit is how the hotkey ended
+    // up with nothing to show.
+    if (open.length) hudRememberedOpen = open;
     fs.writeFileSync(
       hudLayoutPath(),
-      JSON.stringify({ ...hudLayout, open, hidden: hudHidden, scale: hudScale }),
+      JSON.stringify({ ...hudLayout, open, lastOpen: hudRememberedOpen, hidden: hudHidden, scale: hudScale }),
       "utf8",
     );
   } catch {
@@ -191,7 +219,14 @@ async function restoreHudOverlays(iconForChild) {
       /* a page that no longer exists: skip it */
     }
   }
-  toggleHudVisibility(true);
+  /*
+    Only hide if something actually came back.
+
+    Hiding an empty stack records "the HUDs are hidden" when there are no HUDs, so the first press
+    of the hotkey spends itself un-hiding nothing and the commander sees the keys do nothing at all.
+    A restore that opened none of its set has failed, and should leave the flag alone.
+  */
+  if (hudOverlayStack.some((s) => s.win && !s.win.isDestroyed())) toggleHudVisibility(true);
 }
 
 /**
@@ -347,11 +382,55 @@ function destroyTray() {
   tray = null;
 }
 
+/**
+ * Reopen the remembered HUDs, for a hotkey press that has nothing to show.
+ *
+ * Deliberately not `restoreHudOverlays`: that one consumes its list and hides the stack afterwards,
+ * which is right at boot and exactly wrong here — this is somebody asking to see them now.
+ */
+async function reopenRememberedHuds() {
+  const list = hudRememberedOpen.slice();
+  for (const o of list) {
+    try {
+      await requestHudOverlaySlot(o.pathname, o.width, o.height, hudChildIcon, "open");
+    } catch {
+      /* a page that no longer exists: skip it, the others still come back */
+    }
+  }
+  relayoutHudStack();
+  for (const s of hudOverlayStack) {
+    if (!s.win || s.win.isDestroyed()) continue;
+    try {
+      s.win.showInactive();
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 /** Hide or show every HUD window (the global shortcut). Windows keep their state; only visibility changes. */
 function toggleHudVisibility(force) {
   hudHidden = typeof force === "boolean" ? force : !hudHidden;
   persistHudFile();
   refreshTrayMenu();
+
+  /*
+    Showing when there is nothing on screen has to *open* something.
+
+    The hotkey only ever flipped a flag and looped over `hudOverlayStack`. When that stack is empty
+    the loop does nothing, so the commander presses the keys, sees no HUD, presses again, and the
+    flag simply flips back — forever. Nothing else in the app reopens them, which is why the only
+    way out was toggling a HUD off and on in the picker until one got created.
+
+    The stack is empty more often than it looks: it is pruned as windows are destroyed, and a
+    restore that failed leaves it empty while `hudHidden` says the HUDs are merely hidden.
+  */
+  const live = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
+  if (!hudHidden && live.length === 0 && hudRememberedOpen.length) {
+    void reopenRememberedHuds();
+    return hudHidden;
+  }
+
   for (const s of hudOverlayStack) {
     if (!s.win || s.win.isDestroyed()) continue;
     try {
@@ -793,6 +872,7 @@ async function start() {
     }
   }
 
+  hudChildIcon = winIcon;
   registerFootOverlayIpc(winIcon);
   loadHudLayout();
   watchDisplaysForHudRelayout();
