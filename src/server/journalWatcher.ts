@@ -268,6 +268,22 @@ export function startJournalWatcher(
   };
 
   const pulse = async (): Promise<void> => {
+    /*
+      Never while a resync is running.
+
+      A rotation sends `pulse` into `resyncAllJournalFiles`, which resets the store and re-merges
+      every log — about fifteen seconds on a full journal folder. The interval keeps firing the
+      whole time, and the later pulses do **not** fall back out: `currentPath` is already the new
+      file so they skip the rotation branch, then meet `identity !== lastListIdentity` — which is
+      still stale, because that is only updated once the first resync finishes — and start a resync
+      of their own. Each one resets the store the others are filling, and whichever finishes last
+      saves the remains as a complete cache.
+
+      That is how a 19,000-body merge became 215 bodies with one codex species, recorded as all 271
+      files merged. It was always possible; a poll of 500 ms made it likely, because it is the ratio
+      of the poll to the resync that decides how many of these pile up.
+    */
+    if (resyncing) return;
     const listOpts = getListFilterOpts();
     const files = await listJournalFilesChronological(journalDir, listOpts);
     const latest = files.length ? files[files.length - 1]! : null;

@@ -942,7 +942,33 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     console.info(`Journal boot (${path}): ${parts.join(" · ")} · total ${(total / 1000).toFixed(1)} s`);
   };
 
-  async function resyncAllJournalFiles(): Promise<void> {
+  /**
+   * The in-flight full re-merge, so two callers can never run one at once.
+   *
+   * {@link resyncAllJournalFilesInner} begins with `store.resetAll()` and then spends about fifteen
+   * seconds re-reading every log into that store. Two of them overlapping is not slow, it is
+   * **destructive**: the second wipes what the first has built, and whichever finishes last writes
+   * the remains to the cache as a complete merge. The commander's 19,000-body history came back as
+   * 215 bodies and one codex species that way, recorded as all 271 files merged.
+   *
+   * The watcher is the usual source of a second call (see its own guard), but it is not the only
+   * one — `restartJournalPipeline` and a journal-folder change call this too, and a guard that only
+   * lives in the watcher would leave those free to collide with it. Callers share the running
+   * promise instead of starting a rival: they all want the same thing, which is a store that has
+   * finished merging.
+   */
+  let resyncInFlight: Promise<void> | null = null;
+
+  function resyncAllJournalFiles(): Promise<void> {
+    if (resyncInFlight) return resyncInFlight;
+    const run = resyncAllJournalFilesInner().finally(() => {
+      resyncInFlight = null;
+    });
+    resyncInFlight = run;
+    return run;
+  }
+
+  async function resyncAllJournalFilesInner(): Promise<void> {
     bootStart();
     store.resetAll();
     journalBootProgress = {
