@@ -104,15 +104,39 @@ export function resolveFootFixForOrganicLine(
   return parseScanOrganicLineFootFix(line);
 }
 
-export function parseStatusJsonFootFix(rawText: string): FootTravelFix | null {
+/**
+ * Why a read produced no fix — which is two very different facts wearing one `null`.
+ *
+ * `off-surface` is news: the commander is in a ship, in supercruise, anywhere without a latitude.
+ * `unreadable` is not news at all: the file was caught half-written, which happens constantly now
+ * that it is read on every write plus a 100 ms poll. Treating the second as the first blanked the
+ * radar and made the "far enough now" cue fire again on the next good read, over and over.
+ */
+export type FootFixRead =
+  | { kind: "fix"; fix: FootTravelFix }
+  | { kind: "off-surface" }
+  | { kind: "unreadable" };
+
+export function readStatusJsonFootFixText(rawText: string): FootFixRead {
   let j: unknown;
   try {
     j = JSON.parse(rawText);
   } catch {
-    return null;
+    // Torn read. Elite rewrites this file in place; catching it mid-write is expected, not an error.
+    return { kind: "unreadable" };
   }
-  if (!j || typeof j !== "object") return null;
-  const o = j as Record<string, unknown>;
+  if (!j || typeof j !== "object") return { kind: "unreadable" };
+  const fix = footFixFromParsed(j as Record<string, unknown>);
+  return fix ? { kind: "fix", fix } : { kind: "off-surface" };
+}
+
+/** The original shape, for callers that genuinely do not care why. */
+export function parseStatusJsonFootFix(rawText: string): FootTravelFix | null {
+  const r = readStatusJsonFootFixText(rawText);
+  return r.kind === "fix" ? r.fix : null;
+}
+
+function footFixFromParsed(o: Record<string, unknown>): FootTravelFix | null {
   const lat = pickFinite(o, ["Latitude", "latitude"]);
   const lon = pickFinite(o, ["Longitude", "longitude"]);
   const radius = pickFinite(o, ["PlanetRadius", "planetRadius"]);

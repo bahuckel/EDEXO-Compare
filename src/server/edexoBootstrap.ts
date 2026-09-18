@@ -62,7 +62,12 @@ import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
 import { buildDiscoveries } from "./discoveries.js";
 import { clearFootScannedCatalogCache } from "./footScannedCatalog.js";
 import { clearGenusPhotosFolderCache, getSpeciesDataWarnings } from "./speciesTreeLoader.js";
-import { parseStatusJsonDestination, parseStatusJsonFootFix, parseStatusJsonFuel } from "./footTravelStatus.js";
+import {
+  parseStatusJsonDestination,
+  parseStatusJsonFootFix,
+  parseStatusJsonFuel,
+  readStatusJsonFootFixText,
+} from "./footTravelStatus.js";
 import { parseNavRouteJson } from "./navRouteFuel.js";
 import {
   getProjectRoot,
@@ -1566,7 +1571,14 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         let raw: string;
         try {
           raw = readFileSync(statusPath, "utf8");
-        } catch {
+        } catch (e) {
+          /*
+            A locked or momentarily missing file is not news either — same reasoning as a torn read
+            below. Elite holds the file briefly while rewriting it, and at a 100 ms poll plus a
+            watch on every write we land in that window often. Reporting "no position" each time
+            blanked the radar and re-armed the sample cue.
+          */
+          if ((e as NodeJS.ErrnoException)?.code !== "ENOENT") return;
           store.exoOrganicLastFix = null;
           const hadDest = store.statusDestination != null;
           store.statusDestination = null;
@@ -1575,7 +1587,19 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           if (footHudEmpty || store.exoOrganicTracker || navChanged || hadDest || jumpChanged) push();
           return;
         }
-        const fix = parseStatusJsonFootFix(raw);
+        /*
+          A read that could not be parsed is skipped outright, not reported as "off the surface".
+
+          Those are two different facts and they used to share one `null`. Elite rewrites this file
+          in place, so reading it mid-write yields a truncated line — constantly, now that the read
+          happens on every write as well as every 100 ms. Each one cleared `exoOrganicLastFix`,
+          which blanked the radar for a frame and, worse, sent `nearestSampleMeetsMin` through
+          `true -> null -> true`: an edge, so the HUD played the "far enough now" cue again. The
+          owner heard it on every radar update instead of once per boundary crossing.
+        */
+        const read = readStatusJsonFootFixText(raw);
+        if (read.kind === "unreadable") return;
+        const fix = read.kind === "fix" ? read.fix : null;
         if (fix) {
           store.applyFootTravelSample(fix.latDeg, fix.lonDeg, fix.planetRadiusM, fix.bodyName);
           store.exoOrganicLastFix = fix;

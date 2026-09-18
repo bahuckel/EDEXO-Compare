@@ -297,6 +297,16 @@
       cuePrev = { key: "", count: 0, clear: false };
       return;
     }
+    /*
+      A frame that does not know how far the nearest plant is changes nothing.
+
+      `nearestSampleMeetsMin` is null when there is no position to measure from. Treating that as
+      "not far enough" armed the cue again, so the next frame that *did* know looked like a fresh
+      crossing and played the tone — once per radar update rather than once per boundary. The server
+      no longer manufactures those nulls (it stops reporting a fix lost to a torn read at all), and
+      this makes the HUD indifferent to them whatever their source.
+    */
+    if (eo.nearestSampleMeetsMin == null && (eo.sampleCount === 1 || eo.sampleCount === 2)) return;
     var key = String(eo.bodyKeyOnFoot || "") + "|" + String(eo.speciesDisplay || "");
     var count = Math.max(0, Math.min(3, eo.sampleCount || 0));
     var clear = eo.nearestSampleMeetsMin === true && (count === 1 || count === 2);
