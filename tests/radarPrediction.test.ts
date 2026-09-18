@@ -187,21 +187,39 @@ describe("predicting forward", () => {
     expect(markY(root, "Scan 2"), "the new mark should move with the ground").toBeGreaterThan(atFix);
   });
 
-  it("never predicts more turn than was just seen", async () => {
+  it("never predicts the heading, so the radar stops turning when the commander does", async () => {
     /*
-      Heading is the one input that is not smooth — a flick of the mouse and a stop. Extrapolating a
-      flick across a three-second gap would swing the radar far past where he is looking, so the
-      predicted turn is capped at the observed one.
+      The owner's report: "flick the mouse and the radar keeps turning" — it did, and capping the
+      predicted turn at the observed one could never fix it, because half of a flick that is over is
+      still a turn that is not happening.
+
+      Position is worth predicting because walking is continuous. Mouse-look is not: it starts and
+      stops instantly, so the angle between two fixes three seconds apart describes a flick that has
+      already finished. And because the world layer rotates about the commander, a heading that
+      keeps creeping swings every dot with it — which is why this also read as the dots drifting
+      while walking in a straight line.
     */
     HUD.render({ port: 7111, ...payload([mk("Scan 1", 200)], 0) });
     await wait(250);
     HUD.renderExoLive(payload([mk("Scan 1", 200)], 20));
 
+    const atFix = worldRotation(root)!;
+    expect(atFix).toBeCloseTo(-20, 2); // the world is rotated by -heading
     await wait(600);
+    expect(worldRotation(root), "the radar kept turning after the fix").toBeCloseTo(-20, 2);
+  });
+
+  it("still holds the heading steady while it predicts position", async () => {
+    // The two are independent: dots keep closing, the compass does not creep.
+    HUD.render({ port: 7111, ...payload([mk("Scan 1", 200)], 45) });
+    await wait(300);
+    HUD.renderExoLive(payload([mk("Scan 1", 160)], 60));
+
     const rot = worldRotation(root)!;
-    // The world is rotated by -heading, so 20 deg observed allows at most 40 deg predicted.
-    expect(Math.abs(rot)).toBeLessThanOrEqual(40.5);
-    expect(Math.abs(rot)).toBeGreaterThanOrEqual(20);
+    const atFix = markY(root, "Scan 1")!;
+    await wait(150);
+    expect(worldRotation(root)).toBeCloseTo(rot, 2);
+    expect(markY(root, "Scan 1")).toBeGreaterThan(atFix);
   });
 
   it("takes no velocity from a gap that is not a walking cadence", async () => {

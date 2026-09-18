@@ -853,9 +853,13 @@
         rather than sailing off the map while the game says nothing.
       - a gap outside PREDICT_MIN_GAP_MS..PREDICT_MAX_GAP_MS is not a walking cadence — a pause, a
         menu, a first frame — so no velocity is taken from it.
-      - the predicted turn never exceeds the turn just observed. Heading is the one input that is not
-        smooth (a commander flicks the mouse and stops), and extrapolating a flick for three seconds
-        would spin the whole radar past where he is looking.
+      - heading is never predicted at all. Position is worth predicting because walking is
+        continuous; mouse-look is not — it starts and stops instantly, so the angle between two
+        fixes is a flick that already finished, not a rate. Projecting it kept the radar turning
+        after the commander had stopped, and since the world layer rotates about him every dot
+        swung with it, which reads as drift even walking in a straight line. Capping the predicted
+        turn at the observed one was not enough: half of a flick that is over is still a turn that
+        is not happening.
 
     `prefers-reduced-motion` disables all of it and draws each fix exactly, which is also what
     happens before two fixes have been seen.
@@ -913,11 +917,6 @@
     return { north: median(dN), east: median(dE) };
   }
 
-  /** Shortest way round, so a turn past north is a small number. */
-  function angleDelta(from, to) {
-    return ((to - from + 540) % 360) - 180;
-  }
-
   /** The radar as it should look `t` ms after the newest fix. */
   function predictMinimap(st, t) {
     var out = cloneMinimap(st.last);
@@ -930,14 +929,19 @@
         m.distanceM = Math.sqrt(m.northM * m.northM + m.eastM * m.eastM);
       }
     }
-    if (st.headingDelta != null && typeof out.headingDeg === "number") {
-      // Never predict more turn than was just seen: a flick of the mouse must not become a spin.
-      var turn = st.headingDelta * f;
-      var cap = Math.abs(st.headingDelta);
-      if (turn > cap) turn = cap;
-      if (turn < -cap) turn = -cap;
-      out.headingDeg = ((out.headingDeg + turn) % 360 + 360) % 360;
-    }
+    /*
+      Heading is deliberately left alone — it is the newest fix's, never predicted.
+
+      Position is worth predicting because walking is continuous: a commander moving at 2 m/s a
+      moment ago is still moving at 2 m/s now. Mouse-look is not like that at all. It starts and
+      stops instantly, so the angle between two fixes three seconds apart is a flick that already
+      finished, not a rate to carry forward. Projecting it kept the radar turning after the
+      commander had stopped, and because the whole world layer rotates about him, every dot swung
+      with it — which reads as drift even when walking in a straight line.
+
+      Capping the predicted turn at the observed one was not enough, and could not be: half of a
+      flick that is over is still a turn that is not happening.
+    */
     return out;
   }
 
@@ -977,7 +981,7 @@
     var st = svg.__mmPredict;
     if (!st) {
       st = svg.__mmPredict = {
-        last: null, at: 0, gap: 0, motion: null, headingDelta: null, raf: 0, sig: null, hint: hint,
+        last: null, at: 0, gap: 0, motion: null, raf: 0, sig: null, hint: hint,
       };
     }
 
@@ -991,7 +995,7 @@
       st.hint = hint;
       if (!st.raf) {
         var held = st.gap > 0 ? Math.min(now - st.at, st.gap * PREDICT_MAX_GAPS) : 0;
-        drawMinimapAt(svg, st.motion || st.headingDelta != null ? predictMinimap(st, held) : st.last, hint);
+        drawMinimapAt(svg, st.motion ? predictMinimap(st, held) : st.last, hint);
       }
       return true;
     }
@@ -999,15 +1003,10 @@
     var gap = st.last ? now - st.at : 0;
     if (reduceMotion || !st.last || gap < PREDICT_MIN_GAP_MS || gap > PREDICT_MAX_GAP_MS) {
       st.motion = null;
-      st.headingDelta = null;
     } else {
       var motion = motionBetween(st.last, next);
       var moved = motion ? Math.sqrt(motion.north * motion.north + motion.east * motion.east) : 0;
       st.motion = motion && moved >= PREDICT_MIN_SPEED_M ? motion : null;
-      st.headingDelta =
-        typeof st.last.headingDeg === "number" && typeof next.headingDeg === "number"
-          ? angleDelta(st.last.headingDeg, next.headingDeg)
-          : null;
       st.gap = gap;
     }
 
@@ -1022,7 +1021,7 @@
     }
     // The newest fix is the truth: draw it, then start estimating forward from it.
     drawMinimapAt(svg, next, hint);
-    if (!st.motion && st.headingDelta == null) return true;
+    if (!st.motion) return true;
 
     var limit = st.gap * PREDICT_MAX_GAPS;
     var step = function () {
