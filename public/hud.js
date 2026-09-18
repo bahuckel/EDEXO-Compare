@@ -35,6 +35,54 @@
     if (n == null || !isFinite(n)) return "—";
     return Math.round(n) + " m";
   }
+  /*
+    The metres readout counts rather than steps.
+
+    The radar itself is drawn exactly where each fix says (see the note above it) — that is the
+    owner's call and it is about *position*, where inventing a value between two real ones means
+    drawing him somewhere he was not. A number has no such problem: nobody reads 312 m as a claim
+    about a specific instant, they read it as "about three hundred and closing", and a figure that
+    lurches in eight-metre jumps is harder to read than one that runs.
+
+    Short and linear. 180 ms is just over Elite's own ~150 ms write cadence, so each count finishes
+    about when the next fix lands and the number never falls behind the radar beside it.
+
+    A big change snaps: switching body, or a row going from "—" to a distance, is not movement and
+    counting through it would be a lie with a nice animation on top.
+  */
+  var COUNT_MS = 180;
+  var COUNT_SNAP_M = 250;
+
+  function setMetres(el, value) {
+    if (el.__numRaf) {
+      cancelAnimationFrame(el.__numRaf);
+      el.__numRaf = 0;
+    }
+    if (value == null || !isFinite(value)) {
+      el.__num = null;
+      el.textContent = "—";
+      return;
+    }
+    var from = typeof el.__num === "number" ? el.__num : null;
+    if (from == null || Math.abs(value - from) > COUNT_SNAP_M) {
+      el.__num = value;
+      el.textContent = fmtM(value);
+      return;
+    }
+    var t0 = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+    var step = function () {
+      el.__numRaf = 0;
+      if (!el.isConnected) return;
+      var at = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+      var t = Math.min(1, (at - t0) / COUNT_MS);
+      var v = from + (value - from) * t;
+      el.__num = t >= 1 ? value : v;
+      el.textContent = fmtM(el.__num);
+      if (t < 1) el.__numRaf = requestAnimationFrame(step);
+    };
+    step();
+  }
+
   function fmtClock(ms) {
     if (!(ms >= 0)) return "";
     var s = Math.floor(ms / 1000);
@@ -687,7 +735,7 @@
    * away from the first sample — the direction to walk. Nothing is drawn when the sample is not on
    * the map, because a guess would be worse than no arrow.
    */
-  function drawMinimapAt(svg, mm, hint) {
+  function drawMinimap(svg, mm, hint) {
     if (!mm || !mm.marks) return false;
     radarStatic(svg);
     var heading = typeof mm.headingDeg === "number" && isFinite(mm.headingDeg) ? mm.headingDeg : null;
@@ -767,140 +815,23 @@
   }
 
   /*
-    ============================ the radar moves between frames ============================
+    ============================ the radar does not tween ============================
 
-    Polling faster stopped being the answer. `Status.json` is re-read on the commander's chosen
-    interval and each read is one position, so the radar was redrawing four to ten times a second
-    and *snapping* each time. That reads as chop however short the interval is: ten discrete jumps a
-    second is still ten jumps, and Elite only rewrites the file about every 150 ms anyway, so there
-    is no interval that makes snapping look continuous.
+    It did, briefly. Polling faster had not fixed the chop — each read is one position, so the radar
+    jumped once per fix however short the interval — so the drawing was decoupled from the data and
+    walked to each new fix across the gap. It looked smooth and the owner did not want it: the dots
+    drifting toward and away from him read as the ground moving, and a tween is a frame of latency
+    bought with a frame of fiction.
 
-    So the drawing is decoupled from the data. Each new fix becomes a *target*, and the radar walks
-    to it across the gap at animation-frame rate. Walking and turning are continuous in the world,
-    and this makes them continuous on the screen.
+    His call, and it is the right one now that `Status.json` is **watched rather than polled**
+    (`edexoBootstrap.startFootStatusWatch`). The read happens because the game wrote, so fixes land
+    at Elite's own ~150 ms cadence and within milliseconds of it. That is as live as the file gets,
+    and it is smooth enough without inventing positions between the real ones.
 
-    The tween lasts as long as the gap between the last two frames actually measured, rather than a
-    fixed guess: set the poll to 250 ms and it tweens over 250 ms, set it to 1000 and it stretches.
-    That costs one interval of latency — the radar shows where the commander was a frame ago rather
-    than where the last packet said they are. For a plant 300 m away that is invisible, and it buys
-    continuous motion; snapping to the freshest number is only "more correct" if you never look at
-    it.
-
-    Linear, deliberately. Easing would make a constant walking pace look like a series of lunges.
+    So: he stays at the centre, his arrow points up, and north and the dots rotate around him. Each
+    fix is drawn exactly where it is. **Do not add interpolation back** — `tests/radarLive.test.ts`
+    holds this shape on purpose.
   */
-  var MIN_TWEEN_MS = 60;
-  var MAX_TWEEN_MS = 1500;
-
-  function markKey(m) {
-    return m.kind + "|" + m.label;
-  }
-
-  function lerp(a, b, t) {
-    return a + (b - a) * t;
-  }
-
-  /** Shortest way round: turning past north is a small move, not a 359-degree spin. */
-  function lerpAngle(a, b, t) {
-    var d = ((b - a + 540) % 360) - 180;
-    return a + d * t;
-  }
-
-  function cloneMinimap(mm) {
-    return {
-      radiusM: mm.radiusM,
-      headingDeg: mm.headingDeg,
-      minSampleDistanceM: mm.minSampleDistanceM,
-      marks: mm.marks.map(function (m) {
-        return {
-          kind: m.kind,
-          label: m.label,
-          active: m.active,
-          northM: m.northM,
-          eastM: m.eastM,
-          distanceM: m.distanceM,
-        };
-      }),
-    };
-  }
-
-  /**
-   * A frame part-way between two fixes.
-   *
-   * Marks are matched by kind and label. One that appears only in the target is drawn at the target:
-   * a newly sampled plant is a discrete event, and sliding it in from wherever the previous mark of
-   * that index happened to be would invent a movement that never happened.
-   */
-  function blendMinimap(from, to, t) {
-    var prev = {};
-    for (var i = 0; i < from.marks.length; i++) prev[markKey(from.marks[i])] = from.marks[i];
-    var out = cloneMinimap(to);
-    for (var j = 0; j < out.marks.length; j++) {
-      var m = out.marks[j];
-      var p = prev[markKey(m)];
-      if (!p) continue;
-      m.northM = lerp(p.northM, m.northM, t);
-      m.eastM = lerp(p.eastM, m.eastM, t);
-      m.distanceM = lerp(p.distanceM, m.distanceM, t);
-    }
-    if (typeof from.headingDeg === "number" && typeof to.headingDeg === "number") {
-      out.headingDeg = lerpAngle(from.headingDeg, to.headingDeg, t);
-    }
-    return out;
-  }
-
-  var reduceMotion = false;
-  try {
-    reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch (e) {
-    /* no matchMedia: animate, which is the behaviour everyone had before this existed */
-  }
-
-  /**
-   * Draw the radar, animating from whatever is currently on screen.
-   *
-   * State lives on the SVG element, so a HUD with two radars — or one that is torn down and rebuilt
-   * — cannot leak a frame loop into another. The loop stops when it arrives.
-   */
-  function drawMinimap(svg, mm, hint) {
-    if (!mm || !mm.marks) return false;
-    var st = svg.__mmAnim;
-    if (!st) {
-      st = svg.__mmAnim = { shown: null, target: null, from: null, t0: 0, dur: 0, raf: 0, lastAt: 0 };
-    }
-
-    var now = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
-    // The observed gap between fixes is the tween length. First frame has nothing to measure.
-    var gap = st.lastAt ? now - st.lastAt : 0;
-    st.lastAt = now;
-
-    if (reduceMotion || !st.shown || !gap) {
-      st.shown = cloneMinimap(mm);
-      st.target = st.shown;
-      if (st.raf) {
-        cancelAnimationFrame(st.raf);
-        st.raf = 0;
-      }
-      return drawMinimapAt(svg, mm, hint);
-    }
-
-    st.from = st.shown;
-    st.target = cloneMinimap(mm);
-    st.dur = Math.max(MIN_TWEEN_MS, Math.min(MAX_TWEEN_MS, gap));
-    st.t0 = now;
-
-    if (st.raf) cancelAnimationFrame(st.raf);
-    var step = function () {
-      st.raf = 0;
-      if (!svg.isConnected) return;
-      var at = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
-      var t = st.dur > 0 ? Math.min(1, (at - st.t0) / st.dur) : 1;
-      st.shown = t >= 1 ? st.target : blendMinimap(st.from, st.target, t);
-      drawMinimapAt(svg, st.shown, hint);
-      if (t < 1) st.raf = requestAnimationFrame(step);
-    };
-    step();
-    return true;
-  }
 
   /*
     Layout: the radar on the left, everything about the run on the right. Away from a surface the
@@ -963,7 +894,10 @@
         q(root, "species").textContent = "No sample in progress";
         q(root, "minGap").textContent = "—";
         ["d1", "d2", "d3", "timer"].forEach(function (n) {
-          q(root, n).textContent = "—";
+          // Through `setMetres` for the distance rows, so the next run starts from "—" and snaps to
+          // its first real figure instead of counting down from the previous body's.
+          if (n === "timer") q(root, n).textContent = "—";
+          else setMetres(q(root, n), null);
           rowClass(n, true);
         });
         rowClass("minGap", true);
@@ -981,12 +915,12 @@
       q(root, "minGap").textContent = eo.minSampleDistanceM > 0 ? eo.minSampleDistanceM + " m" : "—";
       rowClass("minGap", false);
       rowClass("d1", eo.distToFirstM == null && eo.phase === "tracking");
-      q(root, "d1").textContent = fmtM(eo.distToFirstM);
+      setMetres(q(root, "d1"), eo.distToFirstM);
       rowClass("d2", eo.sampleCount < 2 || (eo.phase === "tracking" && eo.distToSecondM == null));
-      q(root, "d2").textContent = eo.sampleCount >= 2 ? fmtM(eo.distToSecondM) : "—";
+      setMetres(q(root, "d2"), eo.sampleCount >= 2 ? eo.distToSecondM : null);
       // The third sample only exists once Analyse has been taken, and then it is a place like the others.
       rowClass("d3", eo.distToThirdM == null);
-      q(root, "d3").textContent = eo.distToThirdM != null ? fmtM(eo.distToThirdM) : "—";
+      setMetres(q(root, "d3"), eo.distToThirdM);
       /*
         The pill answers one question — "far enough to take the next one here?" — so it belongs on
         the row for the scan about to be taken, and on that row only.

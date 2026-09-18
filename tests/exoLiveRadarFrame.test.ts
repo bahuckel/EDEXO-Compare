@@ -44,13 +44,28 @@ function loadHud(): HudApi {
   return (window as unknown as { HUD: HudApi }).HUD;
 }
 
-/** A surface position with one plant already taken, which is all the radar needs to draw. */
+/**
+ * A surface position with one plant already taken, which is all the radar needs to draw.
+ *
+ * `northM`/`eastM` are the field names the renderer actually reads. An earlier version of this
+ * helper invented `xM`/`yM`, so every mark drew at the origin and the radar assertions below were
+ * really only watching the distance text change.
+ */
 const minimap = (youAheadM: number) => ({
   radiusM: 500,
   headingDeg: 0,
   minSampleDistanceM: 500,
-  marks: [{ kind: "sample", xM: 0, yM: youAheadM, label: "Scan 1" }],
+  marks: [
+    { kind: "sample", label: "Scan 1", active: true, northM: youAheadM, eastM: 0, distanceM: youAheadM },
+  ],
 });
+
+/** Where the sample dot is plotted, which is what "the radar redrew" has to mean. */
+function sampleY(root: HTMLElement): number | null {
+  const el = root.querySelector(".minimap-sample");
+  const m = /translate\([-\d.]+,([-\d.]+)\)/.exec(el?.getAttribute("transform") ?? "");
+  return m ? Number(m[1]) : null;
+}
 
 const overlay = (distToFirstM: number) => ({
   visible: true,
@@ -71,7 +86,8 @@ describe("the radar's own frame", () => {
 
     HUD.renderExoLive({ exoOrganicOverlay: overlay(340), exoMinimap: minimap(340) });
     expect(root.innerHTML).not.toBe(first);
-    expect(root.textContent).toContain("340");
+    // The dot itself moved: 120 m -> 340 m of a 500 m radius, so -24 -> -68 in plot units.
+    expect(sampleY(root)).toBeCloseTo(-68, 1);
   });
 
   it("leaves the rest of the last snapshot alone", () => {

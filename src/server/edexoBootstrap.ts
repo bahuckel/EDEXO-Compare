@@ -703,6 +703,52 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     ),
   });
 
+  /**
+   * `Status.json`, driven by the game's own writes instead of by the clock.
+   *
+   * Elite rewrites the file roughly every 150 ms, and a poll can only ever be a guess at when that
+   * happened: set it slower and the HUD lags, set it faster and it re-reads bytes that have not
+   * changed. Watching the directory turns it round — the read happens because the game wrote, and
+   * lands within milliseconds of it.
+   *
+   * The **directory** rather than the file: a watch on the file itself dies if the game ever
+   * replaces it rather than rewriting in place, and comes back attached to an inode nobody writes
+   * to again, which is a HUD that silently stops updating.
+   *
+   * The interval stays as a backstop. `fs.watch` is best-effort on Windows — it can miss events
+   * under load, and it does not exist at all on some network paths — so the poll is what guarantees
+   * the HUD keeps moving; the watch is what makes it prompt.
+   */
+  let footStatusFsWatcher: ReturnType<typeof watch> | null = null;
+  /** Coalesces the duplicate events one write produces, and caps the work a busy file can cause. */
+  let lastFootStatusRunAt = 0;
+  const FOOT_STATUS_MIN_GAP_MS = 40;
+
+  function runFootStatusTickFromWatch(): void {
+    if (footStatusTick == null) return;
+    const now = Date.now();
+    if (now - lastFootStatusRunAt < FOOT_STATUS_MIN_GAP_MS) return;
+    lastFootStatusRunAt = now;
+    try {
+      footStatusTick();
+    } catch (e) {
+      console.error("[edexo-compare] Status.json watch tick:", e);
+    }
+  }
+
+  function startFootStatusWatch(): void {
+    footStatusFsWatcher?.close();
+    footStatusFsWatcher = null;
+    try {
+      footStatusFsWatcher = watch(journalDir, { persistent: false }, (_ev, name) => {
+        if (name && String(name).toLowerCase() !== "status.json") return;
+        runFootStatusTickFromWatch();
+      });
+    } catch {
+      /* no watch on this path; the interval below is still doing the job */
+    }
+  }
+
   /** (Re-)arm the `Status.json` poll at `store.statusPollMs`. A no-op when nothing moved. */
   function armFootStatusPoll(force = false): void {
     if (footStatusTick == null) return;
@@ -1178,6 +1224,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     process.env.ED_JOURNAL_DIR = next;
 
     await restartJournalPipeline();
+    // The Status.json watch is bound to the old folder; without this the HUD would keep waiting for
+    // writes that now happen somewhere else, and fall back to the interval without saying so.
+    startFootStatusWatch();
     pushFlush();
     return { ok: true };
   }
@@ -1268,6 +1317,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       */
       if (store.setMinimapRadiusM(raw)) {
         persistUserPreferences();
+        lastFootStatusRunAt = Date.now();
         if (store.exoOrganicTracker || store.overlayTouchdownBodyKey) broadcastExoLive(buildExoLive());
         push();
       }
@@ -1560,6 +1610,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         if (footHud || store.exoOrganicTracker || fuelChanged || navChanged || destChanged || jumpChanged) push();
       };
       armFootStatusPoll(true);
+      startFootStatusWatch();
 
       /*
         A sample already in progress when the app started.
@@ -1624,6 +1675,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       clearInterval(footStatusPollTimer);
       footStatusPollTimer = null;
     }
+    footStatusFsWatcher?.close();
+    footStatusFsWatcher = null;
     speciesFsWatcher?.close();
     if (speciesPollFallback) unwatchFile(speciesDataWatchRoot, onSpeciesTreeOrPricesChange);
     if (existsSync(priceListPath)) unwatchFile(priceListPath, onSpeciesTreeOrPricesChange);
