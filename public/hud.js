@@ -44,8 +44,9 @@
     about a specific instant, they read it as "about three hundred and closing", and a figure that
     lurches in eight-metre jumps is harder to read than one that runs.
 
-    Short and linear. 180 ms is just over Elite's own ~150 ms write cadence, so each count finishes
-    about when the next fix lands and the number never falls behind the radar beside it.
+    Short and linear. 180 ms is far shorter than the gap between fixes — Elite changes this file's
+    contents about three times a minute per second of walking, median 3 s — so each count finishes
+    long before the next figure lands and the number never falls behind the radar beside it.
 
     A big change snaps: switching body, or a row going from "—" to a distance, is not movement and
     counting through it would be a lie with a nice animation on top.
@@ -833,10 +834,15 @@
     drifting toward and away from him read as the ground moving, and a tween is a frame of latency
     bought with a frame of fiction.
 
-    His call, and it is the right one now that `Status.json` is **watched rather than polled**
-    (`edexoBootstrap.startFootStatusWatch`). The read happens because the game wrote, so fixes land
-    at Elite's own ~150 ms cadence and within milliseconds of it. That is as live as the file gets,
-    and it is smooth enough without inventing positions between the real ones.
+    His call. `Status.json` is now **watched rather than polled**
+    (`edexoBootstrap.startFootStatusWatch`), so a fix lands within milliseconds of the game writing
+    it — which is as live as the file gets, and is the whole of what this side can control.
+
+    It is not, however, smooth: measured while running and turning on foot, the contents change
+    about **0.33 times a second**, median gap 3.0 s. So the radar genuinely does step, and the only
+    remedy left is prediction rather than interpolation — extrapolating forward from the last two
+    fixes, which shows where he is now instead of where he was three seconds ago. Not built; his
+    call when he wants it.
 
     So: he stays at the centre, his arrow points up, and north and the dots rotate around him. Each
     fix is drawn exactly where it is. **Do not add interpolation back** — `tests/radarLive.test.ts`

@@ -9,8 +9,12 @@
  * `Status.json` is one position, so it jumped once per fix however short the interval — so drawing
  * was decoupled from data and walked to each fix across the gap. He did not want it: dots drifting
  * toward and away read as the ground moving, and a tween is a frame of latency bought with a frame
- * of fiction. It is unnecessary now that `Status.json` is watched rather than polled, so fixes
- * arrive at Elite's own ~150 ms cadence, within milliseconds of the write.
+ * of fiction. `Status.json` is now watched rather than polled, so a fix arrives within milliseconds
+ * of the game writing it.
+ *
+ * That removes the latency we were adding; it does not make the source fast. Measured while running
+ * and turning on foot, the file's contents change about **0.33 times a second** — median gap 3.0 s.
+ * Smoothing that is a job for prediction, not for a tween that shows where he was three seconds ago.
  *
  * The **number** is the opposite case and he asked for the opposite treatment. Nobody reads "312 m"
  * as a claim about an instant, so counting between two real figures invents nothing, while a

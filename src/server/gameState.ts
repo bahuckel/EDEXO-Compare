@@ -1096,7 +1096,8 @@ export class GameStateStore {
 
   /**
    * Integrate lat/lon from Status.json while tracking.
-   * Skips bogus jumps (>800 m per tick @ ~150 ms poll ⇒ speed glitch).
+   * Skips bogus jumps: >800 m between two fixes is a speed glitch, not a walk. Elite writes a new
+   * position about every 3 s (see `edexoBootstrap`'s note), so a real one moves tens of metres.
    */
   applyFootTravelSample(
     latDeg: number,

@@ -711,10 +711,13 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   /**
    * `Status.json`, driven by the game's own writes instead of by the clock.
    *
-   * Elite rewrites the file roughly every 150 ms, and a poll can only ever be a guess at when that
-   * happened: set it slower and the HUD lags, set it faster and it re-reads bytes that have not
-   * changed. Watching the directory turns it round — the read happens because the game wrote, and
-   * lands within milliseconds of it.
+   * A poll can only ever be a guess at when the game wrote: slower and the HUD lags, faster and it
+   * re-reads bytes that have not changed. Watching the directory turns it round — the read happens
+   * because the game wrote, and lands within milliseconds of it.
+   *
+   * It does not make the data fast, because the data is not fast. measured on 2026-09-18 while running, jumping and turning on foot: the file is rewritten about 0.7 times a second and its *contents* change about 0.33 times a second, median gap 3.0 s, fastest 2.0 s.
+   * So this is about *latency*, not rate: it removes the delay we were adding, and nothing more.
+   * Anything smoother than 0.33 Hz on screen has to be predicted, not polled for.
    *
    * The **directory** rather than the file: a watch on the file itself dies if the game ever
    * replaces it rather than rewriting in place, and comes back attached to an inode nobody writes

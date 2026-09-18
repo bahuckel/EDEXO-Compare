@@ -111,7 +111,7 @@ function expireCelebrationIfNeeded(store: ExoOrganicJournalStore, projectRoot: s
     /*
       The live surface fix is **not** cleared with the session.
 
-      It belongs to the `Status.json` poll, which rewrites it every 150 ms, and it is now what the
+      It belongs to the `Status.json` read, which is where every position comes from, and it is now what the
       radar draws from — so clearing it here made the radar blank for a frame and then reappear as
       the next poll landed. Against a card whose colour also changed as the session ended, that read
       as flashing. Owning a field means owning when it is emptied.
