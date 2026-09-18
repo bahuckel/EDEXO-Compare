@@ -746,7 +746,7 @@
    * away from the first sample — the direction to walk. Nothing is drawn when the sample is not on
    * the map, because a guess would be worse than no arrow.
    */
-  function drawMinimap(svg, mm, hint) {
+  function drawMinimapAt(svg, mm, hint) {
     if (!mm || !mm.marks) return false;
     radarStatic(svg);
     var heading = typeof mm.headingDeg === "number" && isFinite(mm.headingDeg) ? mm.headingDeg : null;
@@ -826,28 +826,181 @@
   }
 
   /*
-    ============================ the radar does not tween ============================
+    ============================ the radar predicts forward ============================
 
-    It did, briefly. Polling faster had not fixed the chop — each read is one position, so the radar
-    jumped once per fix however short the interval — so the drawing was decoupled from the data and
-    walked to each new fix across the gap. It looked smooth and the owner did not want it: the dots
-    drifting toward and away from him read as the ground moving, and a tween is a frame of latency
-    bought with a frame of fiction.
+    `Status.json` is the only place a position exists, and it changes about **0.33 times a second** —
+    measured while running and turning on foot: median gap 3.0 s, fastest 2.0 s. It is already read
+    within milliseconds of each write (the file is watched, not polled), so nothing on this side can
+    make it arrive sooner. A radar drawn straight from it steps once every three seconds.
 
-    His call. `Status.json` is now **watched rather than polled**
-    (`edexoBootstrap.startFootStatusWatch`), so a fix lands within milliseconds of the game writing
-    it — which is as live as the file gets, and is the whole of what this side can control.
+    A tween was tried and removed. It walked from the previous fix to the newest one, which looks
+    smooth and is *backwards*: it shows where the commander was up to three seconds ago, and the
+    dots drift toward him as it catches up — which is exactly what he disliked.
 
-    It is not, however, smooth: measured while running and turning on foot, the contents change
-    about **0.33 times a second**, median gap 3.0 s. So the radar genuinely does step, and the only
-    remedy left is prediction rather than interpolation — extrapolating forward from the last two
-    fixes, which shows where he is now instead of where he was three seconds ago. Not built; his
-    call when he wants it.
+    This is the opposite sign of error. The last two fixes give a velocity; between fixes the radar
+    continues at that velocity, so it shows where he **is**, estimated, rather than where he was. The
+    dots hold still relative to the ground while he moves through them, which is what walking
+    actually looks like. Each new fix replaces the estimate with the truth.
 
-    So: he stays at the centre, his arrow points up, and north and the dots rotate around him. Each
-    fix is drawn exactly where it is. **Do not add interpolation back** — `tests/radarLive.test.ts`
-    holds this shape on purpose.
+    Every mark is world-fixed — plants and a parked ship do not move — so between two fixes they all
+    shift by the same amount, and that shift is the commander's own movement with the sign flipped.
+    The median of those shifts is therefore a robust velocity, and it lets a mark that appeared only
+    in the newest fix be carried along with the rest instead of sitting frozen among moving dots.
+
+    Bounded on purpose:
+
+      - prediction stops at PREDICT_MAX_GAPS gaps. Walk, stop, and the dots settle a beat later
+        rather than sailing off the map while the game says nothing.
+      - a gap outside PREDICT_MIN_GAP_MS..PREDICT_MAX_GAP_MS is not a walking cadence — a pause, a
+        menu, a first frame — so no velocity is taken from it.
+      - the predicted turn never exceeds the turn just observed. Heading is the one input that is not
+        smooth (a commander flicks the mouse and stops), and extrapolating a flick for three seconds
+        would spin the whole radar past where he is looking.
+
+    `prefers-reduced-motion` disables all of it and draws each fix exactly, which is also what
+    happens before two fixes have been seen.
   */
+  var PREDICT_MAX_GAPS = 1.5;
+  var PREDICT_MIN_GAP_MS = 200;
+  var PREDICT_MAX_GAP_MS = 8000;
+  /** Below this the commander is standing still; predicting it only adds jitter. */
+  var PREDICT_MIN_SPEED_M = 0.05;
+
+  function markKey(m) {
+    return m.kind + "|" + m.label;
+  }
+
+  function median(xs) {
+    if (!xs.length) return 0;
+    var s = xs.slice().sort(function (a, b) {
+      return a - b;
+    });
+    return s[Math.floor(s.length / 2)];
+  }
+
+  function cloneMinimap(mm) {
+    return {
+      radiusM: mm.radiusM,
+      headingDeg: mm.headingDeg,
+      minSampleDistanceM: mm.minSampleDistanceM,
+      marks: mm.marks.map(function (m) {
+        return {
+          kind: m.kind,
+          label: m.label,
+          active: m.active,
+          northM: m.northM,
+          eastM: m.eastM,
+          distanceM: m.distanceM,
+        };
+      }),
+    };
+  }
+
+  /** How far every mark moved between two fixes — the commander's movement, negated. */
+  function motionBetween(prev, next) {
+    var by = {};
+    for (var i = 0; i < prev.marks.length; i++) by[markKey(prev.marks[i])] = prev.marks[i];
+    var dN = [];
+    var dE = [];
+    for (var j = 0; j < next.marks.length; j++) {
+      var m = next.marks[j];
+      var p = by[markKey(m)];
+      if (!p) continue;
+      dN.push(m.northM - p.northM);
+      dE.push(m.eastM - p.eastM);
+    }
+    if (!dN.length) return null;
+    return { north: median(dN), east: median(dE) };
+  }
+
+  /** Shortest way round, so a turn past north is a small number. */
+  function angleDelta(from, to) {
+    return ((to - from + 540) % 360) - 180;
+  }
+
+  /** The radar as it should look `t` ms after the newest fix. */
+  function predictMinimap(st, t) {
+    var out = cloneMinimap(st.last);
+    var f = st.gap > 0 ? t / st.gap : 0;
+    if (st.motion) {
+      for (var i = 0; i < out.marks.length; i++) {
+        var m = out.marks[i];
+        m.northM += st.motion.north * f;
+        m.eastM += st.motion.east * f;
+        m.distanceM = Math.sqrt(m.northM * m.northM + m.eastM * m.eastM);
+      }
+    }
+    if (st.headingDelta != null && typeof out.headingDeg === "number") {
+      // Never predict more turn than was just seen: a flick of the mouse must not become a spin.
+      var turn = st.headingDelta * f;
+      var cap = Math.abs(st.headingDelta);
+      if (turn > cap) turn = cap;
+      if (turn < -cap) turn = -cap;
+      out.headingDeg = ((out.headingDeg + turn) % 360 + 360) % 360;
+    }
+    return out;
+  }
+
+  var reduceMotion = false;
+  try {
+    reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch (e) {
+    /* no matchMedia: predict, which is the better default */
+  }
+
+  /**
+   * Draw the radar, continuing the commander's motion between fixes.
+   *
+   * State lives on the SVG element so two radars cannot share a loop, and the loop stops once the
+   * prediction window closes or the node leaves the document.
+   */
+  function drawMinimap(svg, mm, hint) {
+    if (!mm || !mm.marks) return false;
+    var st = svg.__mmPredict;
+    if (!st) st = svg.__mmPredict = { last: null, at: 0, gap: 0, motion: null, headingDelta: null, raf: 0 };
+
+    var now = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+    var next = cloneMinimap(mm);
+    var gap = st.last ? now - st.at : 0;
+
+    if (reduceMotion || !st.last || gap < PREDICT_MIN_GAP_MS || gap > PREDICT_MAX_GAP_MS) {
+      st.motion = null;
+      st.headingDelta = null;
+    } else {
+      var motion = motionBetween(st.last, next);
+      var moved = motion ? Math.sqrt(motion.north * motion.north + motion.east * motion.east) : 0;
+      st.motion = motion && moved >= PREDICT_MIN_SPEED_M ? motion : null;
+      st.headingDelta =
+        typeof st.last.headingDeg === "number" && typeof next.headingDeg === "number"
+          ? angleDelta(st.last.headingDeg, next.headingDeg)
+          : null;
+      st.gap = gap;
+    }
+
+    st.last = next;
+    st.at = now;
+
+    if (st.raf) {
+      cancelAnimationFrame(st.raf);
+      st.raf = 0;
+    }
+    // The newest fix is the truth: draw it, then start estimating forward from it.
+    drawMinimapAt(svg, next, hint);
+    if (!st.motion && st.headingDelta == null) return true;
+
+    var limit = st.gap * PREDICT_MAX_GAPS;
+    var step = function () {
+      st.raf = 0;
+      if (!svg.isConnected) return;
+      var at = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+      var t = at - st.at;
+      if (t > limit) t = limit;
+      drawMinimapAt(svg, predictMinimap(st, t), hint);
+      if (t < limit) st.raf = requestAnimationFrame(step);
+    };
+    st.raf = requestAnimationFrame(step);
+    return true;
+  }
 
   /*
     Layout: the radar on the left, everything about the run on the right. Away from a surface the
