@@ -949,6 +949,24 @@
   }
 
   /**
+   * A fingerprint of the fix, so a re-render can be told from a new position.
+   *
+   * This distinction is the whole reason the first version of the prediction did nothing in the
+   * real app while passing its tests. The tracker section re-renders on every snapshot push —
+   * several times a second — and hands over the *same* minimap each time. Treated as fresh fixes,
+   * those repeats measured zero movement between them, which cleared the velocity and stopped any
+   * prediction from ever starting. Only a change of position is a fix.
+   */
+  function minimapSignature(mm) {
+    var s = String(mm.headingDeg) + "|" + mm.radiusM + "|" + mm.minSampleDistanceM;
+    for (var i = 0; i < mm.marks.length; i++) {
+      var m = mm.marks[i];
+      s += "|" + m.kind + ":" + m.label + ":" + m.northM + "," + m.eastM;
+    }
+    return s;
+  }
+
+  /**
    * Draw the radar, continuing the commander's motion between fixes.
    *
    * State lives on the SVG element so two radars cannot share a loop, and the loop stops once the
@@ -957,12 +975,28 @@
   function drawMinimap(svg, mm, hint) {
     if (!mm || !mm.marks) return false;
     var st = svg.__mmPredict;
-    if (!st) st = svg.__mmPredict = { last: null, at: 0, gap: 0, motion: null, headingDelta: null, raf: 0 };
+    if (!st) {
+      st = svg.__mmPredict = {
+        last: null, at: 0, gap: 0, motion: null, headingDelta: null, raf: 0, sig: null, hint: hint,
+      };
+    }
 
     var now = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
     var next = cloneMinimap(mm);
-    var gap = st.last ? now - st.at : 0;
+    var sig = minimapSignature(next);
 
+    // A repeat of the fix already showing. Keep predicting from it rather than restarting on a
+    // measurement of zero — but honour the newest `hint`, which changes on its own schedule.
+    if (st.sig === sig && st.last) {
+      st.hint = hint;
+      if (!st.raf) {
+        var held = st.gap > 0 ? Math.min(now - st.at, st.gap * PREDICT_MAX_GAPS) : 0;
+        drawMinimapAt(svg, st.motion || st.headingDelta != null ? predictMinimap(st, held) : st.last, hint);
+      }
+      return true;
+    }
+
+    var gap = st.last ? now - st.at : 0;
     if (reduceMotion || !st.last || gap < PREDICT_MIN_GAP_MS || gap > PREDICT_MAX_GAP_MS) {
       st.motion = null;
       st.headingDelta = null;
@@ -979,6 +1013,8 @@
 
     st.last = next;
     st.at = now;
+    st.sig = sig;
+    st.hint = hint;
 
     if (st.raf) {
       cancelAnimationFrame(st.raf);
@@ -995,7 +1031,7 @@
       var at = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
       var t = at - st.at;
       if (t > limit) t = limit;
-      drawMinimapAt(svg, predictMinimap(st, t), hint);
+      drawMinimapAt(svg, predictMinimap(st, t), st.hint);
       if (t < limit) st.raf = requestAnimationFrame(step);
     };
     st.raf = requestAnimationFrame(step);

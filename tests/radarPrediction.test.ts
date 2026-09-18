@@ -118,6 +118,33 @@ describe("predicting forward", () => {
     expect(later, "the dot should have kept closing").toBeGreaterThan(atFix);
   });
 
+  it("keeps predicting while the panel re-renders the same fix", async () => {
+    /*
+      The bug the first version shipped with, and the reason it did nothing in the real app while
+      every other test here passed.
+
+      The tracker section re-renders on every snapshot push, several times a second, handing over
+      the *same* minimap each time. Those repeats were treated as fresh fixes: `motionBetween`
+      measured zero movement between two identical frames, cleared the velocity and stopped the
+      prediction from ever starting. Only a change of position is a fix; a repeat must be left to
+      carry on.
+    */
+    HUD.render({ port: 7111, ...payload([mk("Scan 1", 200)]) });
+    await wait(300);
+    HUD.renderExoLive(payload([mk("Scan 1", 160)]));
+    const atFix = markY(root, "Scan 1")!;
+
+    // Four re-renders of the very same fix, as the snapshot push does.
+    for (let i = 0; i < 4; i += 1) {
+      await wait(30);
+      HUD.renderExoLive(payload([mk("Scan 1", 160)]));
+    }
+
+    expect(markY(root, "Scan 1"), "re-renders of one fix must not stop the prediction").toBeGreaterThan(
+      atFix,
+    );
+  });
+
   it("stops predicting once the game has gone quiet for too long", async () => {
     /*
       Bounded at 1.5 gaps. Walk, stop, and the dots settle a beat later instead of sailing off the
