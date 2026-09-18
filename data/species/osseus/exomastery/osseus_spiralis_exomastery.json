@@ -3,10 +3,10 @@
   "speciesLabel": "Osseus spiralis",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:02.838Z",
+  "generatedAt": "2026-09-18T01:43:56.857Z",
   "sampleCount": 1488,
   "provenance": {
-    "inputHash": "42e30fe2a4e27a373fc8dd108ccb00f1678f012ea70e3f16e140e408bd0ebef7",
+    "inputHash": "13ff96c37b3a3a10da652c01a255e93fec7d32d5fba0208eeb92c5b19c13ac24",
     "csvRows": 3120,
     "occurrences": 1522,
     "bodies": 1488
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 160,
       "max": 224,
-      "mean": 167.01344086021504,
+      "mean": 167.40360294287663,
       "count": 1488,
-      "mode": 165,
-      "modeCount": 125
+      "mode": 163.99761397674416,
+      "modeCount": 43
     },
     "body.surfacePressure": {
       "min": 0.0009903335109795214,
@@ -556,7 +556,7 @@
     "body.gravity: typical (modal) 0.174422 (4/1488 samples); range 0.04182198994786506 … 0.2753064169808658",
     "body.earthMasses: typical (modal) 0.005559 (6/1488 samples); range 0.000135 … 0.034039",
     "body.radius: typical (modal) 1543.881625 (6/1488 samples); range 362.36734375 … 2242.66675",
-    "body.surfaceTemperature: typical (modal) 165.000000 (125/1488 samples); range 160 … 224",
+    "body.surfaceTemperature: typical (modal) 163.997614 (43/1488 samples); range 160 … 224",
     "body.surfacePressure: typical (modal) 0.001865 (4/1487 samples); range 0.0009903335109795214 … 0.06940081517887985",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (1485/1486 samples); range 99.47 … 100",
     "body.solidComposition.Rock: typical (modal) 91.060000 (58/1488 samples); range 65.52 … 96.93",
@@ -604,9 +604,9 @@
         "n": 1486,
         "min": 160,
         "p1": 160,
-        "p50": 167,
-        "p99": 174,
-        "max": 175
+        "p50": 167.158066,
+        "p99": 174.850052,
+        "max": 175.77916
       },
       "surfacePressureAtm": {
         "n": 1486,
@@ -735,7 +735,7 @@
     "body.gravity": 0.185,
     "body.earthMasses": 0.191,
     "body.radius": 0.187,
-    "body.surfaceTemperature": 0.338,
+    "body.surfaceTemperature": 0.335,
     "body.surfacePressure": 0.493,
     "body.solidComposition.Rock": 0.019,
     "body.solidComposition.Metal": 0.009,
@@ -844,12 +844,12 @@
     "body.surfaceTemperature": [
       0,
       0,
-      280,
-      325,
-      210,
-      197,
-      193,
-      198,
+      245,
+      261,
+      221,
+      224,
+      228,
+      224,
       83,
       0,
       0,

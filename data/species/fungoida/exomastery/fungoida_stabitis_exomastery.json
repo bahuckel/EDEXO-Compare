@@ -3,10 +3,10 @@
   "speciesLabel": "Fungoida stabitis",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:02.077Z",
+  "generatedAt": "2026-09-18T01:43:56.005Z",
   "sampleCount": 1682,
   "provenance": {
-    "inputHash": "92fcfc1dff51970de99d1c978bea20ed5677abd0ab47ab8819cb8849b3d05c28",
+    "inputHash": "460fead68a29f091be014c212a73bdc5941e0877b4d9b3d47a8b444ce2447a90",
     "csvRows": 4258,
     "occurrences": 1718,
     "bodies": 1682
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 79,
       "max": 467,
-      "mean": 264.3513674197384,
+      "mean": 264.61096747562436,
       "count": 1682,
-      "mode": 180,
-      "modeCount": 113
+      "mode": 180.99632132758623,
+      "modeCount": 58
     },
     "body.surfacePressure": {
       "min": 0.0012157880088823094,
@@ -608,7 +608,7 @@
     "body.gravity: typical (modal) 0.202422 (3/1682 samples); range 0.0401711276436417 … 0.2671427160510142",
     "body.earthMasses: typical (modal) 0.000205 (16/1682 samples); range 0.000119 … 0.021879",
     "body.radius: typical (modal) 416.275948 (9/1682 samples); range 344.62409375 … 1896.6025",
-    "body.surfaceTemperature: typical (modal) 180.000000 (113/1682 samples); range 79 … 467",
+    "body.surfaceTemperature: typical (modal) 180.996321 (58/1682 samples); range 79 … 467",
     "body.surfacePressure: typical (modal) 0.076241 (3/1682 samples); range 0.0012157880088823094 … 0.09852098368615839",
     "body.atmosphereComposition.Water: typical (modal) 100.000000 (556/556 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.100000 (62/1682 samples); range 65.27 … 96.89",
@@ -660,7 +660,7 @@
         "min": 180,
         "p1": 180,
         "p50": 186,
-        "p99": 195,
+        "p99": 195.212814,
         "max": 467
       },
       "surfacePressureAtm": {
@@ -700,10 +700,10 @@
       "n": 556,
       "surfaceTemperatureK": {
         "n": 556,
-        "min": 395,
-        "p1": 398,
+        "min": 395.742157,
+        "p1": 398.388916,
         "p50": 423,
-        "p99": 449,
+        "p99": 449.577301,
         "max": 450
       },
       "surfacePressureAtm": {
@@ -745,7 +745,7 @@
         "n": 9,
         "min": 79,
         "p1": 79,
-        "p50": 81,
+        "p50": 81.753456,
         "p99": 91,
         "max": 91
       },
@@ -840,7 +840,7 @@
     "body.gravity": 0.122,
     "body.earthMasses": 0.168,
     "body.radius": 0.174,
-    "body.surfaceTemperature": 0.332,
+    "body.surfaceTemperature": 0.341,
     "body.surfacePressure": 0.321,
     "body.solidComposition.Rock": 0.032,
     "body.solidComposition.Metal": 0.019,
@@ -956,13 +956,13 @@
       0,
       0,
       1,
-      281,
-      319,
-      309,
-      175,
+      251,
+      311,
+      297,
+      218,
       151,
-      208,
-      228
+      210,
+      233
     ],
     "body.surfacePressure": [
       1,
@@ -1593,9 +1593,9 @@
         0,
         0,
         0,
-        219,
-        295,
-        43
+        214,
+        298,
+        45
       ]
     },
     "body.surfacePressure": {

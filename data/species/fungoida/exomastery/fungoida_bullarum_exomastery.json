@@ -3,10 +3,10 @@
   "speciesLabel": "Fungoida bullarum",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:01.305Z",
+  "generatedAt": "2026-09-18T01:43:55.153Z",
   "sampleCount": 64,
   "provenance": {
-    "inputHash": "8c426ebbc7c4ce16da9bdb4669e0433d7029cd786b2f33c6c822a9046bc84251",
+    "inputHash": "6cad0fd7b8f3bc7acac308459c898c35504b229f1fad78070c98d12d3b5bd36f",
     "csvRows": 139,
     "occurrences": 70,
     "bodies": 64
@@ -45,12 +45,12 @@
       "modeCount": 5
     },
     "body.surfaceTemperature": {
-      "min": 54,
-      "max": 160,
-      "mean": 91.859375,
+      "min": 54.646324,
+      "max": 160.632767,
+      "mean": 92.16123256250002,
       "count": 64,
-      "mode": 97,
-      "modeCount": 8
+      "mode": 160.632767,
+      "modeCount": 5
     },
     "body.surfacePressure": {
       "min": 0.0009963691882556131,
@@ -470,7 +470,7 @@
     "body.gravity: typical (modal) 0.044828 (5/64 samples); range 0.044827766911507014 … 0.2738832644197251",
     "body.earthMasses: typical (modal) 0.000181 (5/64 samples); range 0.000181 … 0.063328",
     "body.radius: typical (modal) 405.275406 (5/64 samples); range 405.27540625 … 3082.65775",
-    "body.surfaceTemperature: typical (modal) 97.000000 (8/64 samples); range 54 … 160",
+    "body.surfaceTemperature: typical (modal) 160.632767 (5/64 samples); range 54.646324 … 160.632767",
     "body.surfacePressure: typical (modal) 0.001040 (5/59 samples); range 0.0009963691882556131 … 0.04101573584011844",
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (52/57 samples); range 51.33 … 100",
     "body.solidComposition.Ice: typical (modal) 0.000000 (5/64 samples); range 0 … 49.28",
@@ -515,9 +515,9 @@
       "n": 57,
       "surfaceTemperatureK": {
         "n": 57,
-        "min": 54,
+        "min": 54.646324,
         "p1": 55,
-        "p50": 91,
+        "p50": 91.675636,
         "p99": 113,
         "max": 119
       },
@@ -558,11 +558,11 @@
       "n": 5,
       "surfaceTemperatureK": {
         "n": 5,
-        "min": 160,
-        "p1": 160,
-        "p50": 160,
-        "p99": 160,
-        "max": 160
+        "min": 160.632767,
+        "p1": 160.632767,
+        "p50": 160.632767,
+        "p99": 160.632767,
+        "max": 160.632767
       },
       "surfacePressureAtm": null,
       "gravityG": {
@@ -594,11 +594,11 @@
       "n": 2,
       "surfaceTemperatureK": {
         "n": 2,
-        "min": 59,
-        "p1": 59,
-        "p50": 59,
-        "p99": 59,
-        "max": 59
+        "min": 59.382305,
+        "p1": 59.382305,
+        "p50": 59.382305,
+        "p99": 59.382305,
+        "max": 59.382305
       },
       "surfacePressureAtm": {
         "n": 2,
@@ -1304,13 +1304,13 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 54,
-      "max": 160,
+      "min": 54.646324,
+      "max": 160.632767,
       "counts": [
         6,
         1,
-        9,
         10,
+        9,
         4,
         1,
         17,

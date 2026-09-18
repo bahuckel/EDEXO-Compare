@@ -3,10 +3,10 @@
   "speciesLabel": "Osseus pumice",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:02.636Z",
+  "generatedAt": "2026-09-18T01:43:56.615Z",
   "sampleCount": 203,
   "provenance": {
-    "inputHash": "cd104220e3b914d7b26f8a13045500c19249223b735b60deb5a55f5d44c1e69a",
+    "inputHash": "d2e90e6376578f2ba19f488da9769a823e6da680372bd9ef89269c34973e0e7d",
     "csvRows": 354,
     "occurrences": 212,
     "bodies": 203
@@ -45,12 +45,12 @@
       "modeCount": 4
     },
     "body.surfaceTemperature": {
-      "min": 47,
-      "max": 124,
-      "mean": 85.16256157635468,
+      "min": 47.486828,
+      "max": 124.72332,
+      "mean": 85.51746948275861,
       "count": 203,
-      "mode": 68,
-      "modeCount": 17
+      "mode": 48,
+      "modeCount": 5
     },
     "body.surfacePressure": {
       "min": 0.0009963691882556131,
@@ -514,7 +514,7 @@
     "body.gravity: typical (modal) 0.105794 (4/203 samples); range 0.04521032160567447 … 0.2751492703773623",
     "body.earthMasses: typical (modal) 0.002110 (4/203 samples); range 0.000185 … 0.067029",
     "body.radius: typical (modal) 900.729500 (4/203 samples); range 407.149625 … 3149.88025",
-    "body.surfaceTemperature: typical (modal) 68.000000 (17/203 samples); range 47 … 124",
+    "body.surfaceTemperature: typical (modal) 48.000000 (5/203 samples); range 47.486828 … 124.72332",
     "body.surfacePressure: typical (modal) 0.068640 (4/203 samples); range 0.0009963691882556131 … 0.0914745828670121",
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (88/95 samples); range 45.63 … 100",
     "body.solidComposition.Ice: typical (modal) 0.000000 (102/203 samples); range 0 … 49.96",
@@ -560,11 +560,11 @@
       "n": 94,
       "surfaceTemperatureK": {
         "n": 94,
-        "min": 54,
-        "p1": 54,
-        "p50": 96,
-        "p99": 124,
-        "max": 124
+        "min": 54.255524,
+        "p1": 54.255524,
+        "p50": 96.677078,
+        "p99": 124.72332,
+        "max": 124.72332
       },
       "surfacePressureAtm": {
         "n": 94,
@@ -603,11 +603,11 @@
       "n": 94,
       "surfaceTemperatureK": {
         "n": 94,
-        "min": 68,
-        "p1": 68,
-        "p50": 88,
-        "p99": 102,
-        "max": 102
+        "min": 68.221481,
+        "p1": 68.221481,
+        "p50": 88.968513,
+        "p99": 102.503487,
+        "max": 102.503487
       },
       "surfacePressureAtm": {
         "n": 94,
@@ -646,11 +646,11 @@
       "n": 14,
       "surfaceTemperatureK": {
         "n": 14,
-        "min": 47,
-        "p1": 47,
+        "min": 47.486828,
+        "p1": 47.486828,
         "p50": 48,
-        "p99": 59,
-        "max": 59
+        "p99": 59.382305,
+        "max": 59.382305
       },
       "surfacePressureAtm": {
         "n": 14,
@@ -689,11 +689,11 @@
       "n": 1,
       "surfaceTemperatureK": {
         "n": 1,
-        "min": 70,
-        "p1": 70,
-        "p50": 70,
-        "p99": 70,
-        "max": 70
+        "min": 70.27494,
+        "p1": 70.27494,
+        "p50": 70.27494,
+        "p99": 70.27494,
+        "max": 70.27494
       },
       "surfacePressureAtm": {
         "n": 1,
@@ -1426,23 +1426,23 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 47,
-      "max": 124,
+      "min": 47.486828,
+      "max": 124.72332,
       "counts": [
         12,
         7,
         4,
         2,
-        24,
-        7,
-        26,
+        22,
+        13,
+        22,
         10,
         17,
-        27,
-        31,
-        17,
-        4,
-        4,
+        23,
+        39,
+        13,
+        6,
+        2,
         6,
         5
       ]

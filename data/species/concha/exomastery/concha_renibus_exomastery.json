@@ -3,10 +3,10 @@
   "speciesLabel": "Concha renibus",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:59.995Z",
+  "generatedAt": "2026-09-18T01:43:53.659Z",
   "sampleCount": 2297,
   "provenance": {
-    "inputHash": "5542df56ee7303090891d7125cb58df675871ad8793b00b8ea95db1d7f97866e",
+    "inputHash": "b0e759d1a9086f0eec375b8e0ac15533b1e711b2bae60f0c145c1598e0d05d2a",
     "csvRows": 4751,
     "occurrences": 2370,
     "bodies": 2297
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 79,
       "max": 467,
-      "mean": 316.59207662168046,
+      "mean": 316.98338470788116,
       "count": 2297,
-      "mode": 191,
-      "modeCount": 104
+      "mode": 183.0036930999999,
+      "modeCount": 30
     },
     "body.surfacePressure": {
       "min": 0.01037692348383913,
@@ -609,7 +609,7 @@
     "body.gravity: typical (modal) 0.047054 (5/2297 samples); range 0.0401711276436417 … 0.2671427160510142",
     "body.earthMasses: typical (modal) 0.000205 (25/2297 samples); range 0.000119 … 0.021879",
     "body.radius: typical (modal) 416.272514 (11/2297 samples); range 344.62409375 … 1890.275625",
-    "body.surfaceTemperature: typical (modal) 191.000000 (104/2297 samples); range 79 … 467",
+    "body.surfaceTemperature: typical (modal) 183.003693 (30/2297 samples); range 79 … 467",
     "body.surfacePressure: typical (modal) 0.075830 (5/2297 samples); range 0.01037692348383913 … 0.09858412171724648",
     "body.atmosphereComposition.Water: typical (modal) 100.000000 (1263/1263 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.070000 (95/2297 samples); range 65.27 … 97.12",
@@ -658,11 +658,11 @@
       "n": 1263,
       "surfaceTemperatureK": {
         "n": 1263,
-        "min": 395,
+        "min": 395.742157,
         "p1": 399,
         "p50": 424,
-        "p99": 449,
-        "max": 451
+        "p99": 449.48761,
+        "max": 451.270569
       },
       "surfacePressureAtm": {
         "n": 1263,
@@ -703,8 +703,8 @@
         "n": 1020,
         "min": 180,
         "p1": 180,
-        "p50": 186,
-        "p99": 195,
+        "p50": 186.77356,
+        "p99": 195.212814,
         "max": 467
       },
       "surfacePressureAtm": {
@@ -746,9 +746,9 @@
         "n": 10,
         "min": 79,
         "p1": 79,
-        "p50": 92,
-        "p99": 92,
-        "max": 92
+        "p50": 92.468704,
+        "p99": 92.468704,
+        "max": 92.468704
       },
       "surfacePressureAtm": {
         "n": 10,
@@ -787,11 +787,11 @@
       "n": 4,
       "surfaceTemperatureK": {
         "n": 4,
-        "min": 174,
-        "p1": 174,
-        "p50": 176,
-        "p99": 176,
-        "max": 176
+        "min": 174.386169,
+        "p1": 174.386169,
+        "p50": 176.27951,
+        "p99": 176.27951,
+        "max": 176.27951
       },
       "surfacePressureAtm": {
         "n": 4,
@@ -841,7 +841,7 @@
     "body.gravity": 0.178,
     "body.earthMasses": 0.229,
     "body.radius": 0.233,
-    "body.surfaceTemperature": 0.353,
+    "body.surfaceTemperature": 0.366,
     "body.surfacePressure": 0.348,
     "body.solidComposition.Rock": 0.026,
     "body.solidComposition.Metal": 0.013,
@@ -957,13 +957,13 @@
       0,
       0,
       4,
-      235,
-      283,
-      310,
-      164,
-      270,
-      523,
-      498
+      196,
+      275,
+      275,
+      234,
+      257,
+      533,
+      513
     ],
     "body.surfacePressure": [
       0,
@@ -1594,9 +1594,9 @@
         0,
         0,
         0,
-        471,
-        703,
-        90
+        453,
+        720,
+        91
       ]
     },
     "body.surfacePressure": {

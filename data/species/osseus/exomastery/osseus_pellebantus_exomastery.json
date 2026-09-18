@@ -3,10 +3,10 @@
   "speciesLabel": "Osseus pellebantus",
   "genus": "Osseus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:02.599Z",
+  "generatedAt": "2026-09-18T01:43:56.564Z",
   "sampleCount": 523,
   "provenance": {
-    "inputHash": "e7cdf229e9af1b86545dc9f5b894338ec3ae5aabee9c9a75fe70c3fb7d637e90",
+    "inputHash": "e610aee1293ec84291b7932252f5b82084cc06a6cac13c3ca58b83f62d9cc47a",
     "csvRows": 1085,
     "occurrences": 536,
     "bodies": 523
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 191,
-      "max": 195,
-      "mean": 192.35946462715106,
+      "max": 195.369598,
+      "mean": 192.7371421472273,
       "count": 523,
-      "mode": 191,
-      "modeCount": 184
+      "mode": 191.00730926530616,
+      "modeCount": 49
     },
     "body.surfacePressure": {
       "min": 0.058286093056994816,
@@ -521,7 +521,7 @@
     "body.gravity: typical (modal) 0.212275 (4/523 samples); range 0.041980958226033246 … 0.26887385639474737",
     "body.earthMasses: typical (modal) 0.016115 (5/523 samples); range 0.000137 … 0.021951",
     "body.radius: typical (modal) 1661.668400 (5/523 samples); range 364.349875 … 1896.6025",
-    "body.surfaceTemperature: typical (modal) 191.000000 (184/523 samples); range 191 … 195",
+    "body.surfaceTemperature: typical (modal) 191.007309 (49/523 samples); range 191 … 195.369598",
     "body.surfacePressure: typical (modal) 0.083748 (4/523 samples); range 0.058286093056994816 … 0.09852098368615839",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 100.000000 (286/523 samples); range 98.23 … 100",
     "body.solidComposition.Rock: typical (modal) 91.020000 (21/523 samples); range 65.12 … 96.84",
@@ -568,9 +568,9 @@
         "n": 523,
         "min": 191,
         "p1": 191,
-        "p50": 192,
-        "p99": 195,
-        "max": 195
+        "p50": 192.623825,
+        "p99": 195.313721,
+        "max": 195.369598
       },
       "surfacePressureAtm": {
         "n": 523,
@@ -620,7 +620,7 @@
     "body.gravity": 0.381,
     "body.earthMasses": 0.517,
     "body.radius": 0.532,
-    "body.surfaceTemperature": 0.779,
+    "body.surfaceTemperature": 0.741,
     "body.surfacePressure": 0.471,
     "body.solidComposition.Rock": 0.021,
     "body.solidComposition.Metal": 0.016,
@@ -738,9 +738,9 @@
       0,
       0,
       0,
-      184,
-      296,
-      43,
+      54,
+      402,
+      67,
       0,
       0
     ],
@@ -1286,24 +1286,24 @@
     },
     "body.surfaceTemperature": {
       "min": 191,
-      "max": 195,
+      "max": 195.369598,
       "counts": [
-        184,
-        0,
-        0,
-        0,
-        118,
-        0,
-        0,
-        0,
-        113,
-        0,
-        0,
-        0,
-        65,
-        0,
-        0,
-        43
+        85,
+        40,
+        30,
+        63,
+        32,
+        16,
+        28,
+        42,
+        16,
+        40,
+        39,
+        16,
+        13,
+        12,
+        17,
+        34
       ]
     },
     "body.surfacePressure": {

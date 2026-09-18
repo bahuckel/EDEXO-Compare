@@ -3,10 +3,10 @@
   "speciesLabel": "Sinuous Tubers Viride",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:06.752Z",
+  "generatedAt": "2026-09-18T01:44:01.029Z",
   "sampleCount": 1,
   "provenance": {
-    "inputHash": "091cf3d9de3c46abd249c7eaa88f8d507f8265de15feec900611cd5a214a1311",
+    "inputHash": "c243b5fbd5d878f6e3dd50fb0a9e609e95b30ff8989ee325882f57dfede495cd",
     "csvRows": 1,
     "occurrences": 1,
     "bodies": 1
@@ -45,11 +45,11 @@
       "modeCount": 1
     },
     "body.surfaceTemperature": {
-      "min": 402,
-      "max": 402,
-      "mean": 402,
+      "min": 402.585999,
+      "max": 402.585999,
+      "mean": 402.585999,
       "count": 1,
-      "mode": 402,
+      "mode": 402.585999,
       "modeCount": 1
     },
     "body.surfacePressure": {
@@ -294,7 +294,7 @@
     "body.gravity: typical (modal) 0.105678 (1/1 samples); range 0.10567750015498048 … 0.10567750015498048",
     "body.earthMasses: typical (modal) 0.002109 (1/1 samples); range 0.002109 … 0.002109",
     "body.radius: typical (modal) 901.014000 (1/1 samples); range 901.014 … 901.014",
-    "body.surfaceTemperature: typical (modal) 402.000000 (1/1 samples); range 402 … 402",
+    "body.surfaceTemperature: typical (modal) 402.585999 (1/1 samples); range 402.585999 … 402.585999",
     "body.surfacePressure: typical (modal) 0.000000 (1/1 samples); range 0 … 0",
     "body.solidComposition.Rock: typical (modal) 91.210000 (1/1 samples); range 91.21 … 91.21",
     "body.solidComposition.Metal: typical (modal) 8.790000 (1/1 samples); range 8.79 … 8.79",
@@ -323,11 +323,11 @@
       "n": 1,
       "surfaceTemperatureK": {
         "n": 1,
-        "min": 402,
-        "p1": 402,
-        "p50": 402,
-        "p99": 402,
-        "max": 402
+        "min": 402.585999,
+        "p1": 402.585999,
+        "p50": 402.585999,
+        "p99": 402.585999,
+        "max": 402.585999
       },
       "surfacePressureAtm": {
         "n": 1,

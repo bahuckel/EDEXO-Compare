@@ -3,10 +3,10 @@
   "speciesLabel": "Tussock catena",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:05.510Z",
+  "generatedAt": "2026-09-18T01:43:59.797Z",
   "sampleCount": 707,
   "provenance": {
-    "inputHash": "aa3b663b49069bb4433d3d13497585f89cb809e863320af4b1ce35e44051f11b",
+    "inputHash": "344c92a1588db7e3e36ac30b813e3d35e1245dc98a5369dbbdc1a590466230c4",
     "csvRows": 1308,
     "occurrences": 731,
     "bodies": 707
@@ -45,12 +45,12 @@
       "modeCount": 5
     },
     "body.surfaceTemperature": {
-      "min": 152,
-      "max": 176,
-      "mean": 165.92644978783594,
+      "min": 152.367203,
+      "max": 176.27951,
+      "mean": 166.42885809901009,
       "count": 707,
-      "mode": 167,
-      "modeCount": 49
+      "mode": 173.11499838461538,
+      "modeCount": 13
     },
     "body.surfacePressure": {
       "min": 0.0009914116062176165,
@@ -529,7 +529,7 @@
     "body.gravity: typical (modal) 0.247584 (3/707 samples); range 0.04390320894307479 … 0.27430253397544885",
     "body.earthMasses: typical (modal) 0.004734 (5/707 samples); range 0.000149 … 0.033675",
     "body.radius: typical (modal) 1637.624950 (5/707 samples); range 351.76375 … 2234.7215",
-    "body.surfaceTemperature: typical (modal) 167.000000 (49/707 samples); range 152 … 176",
+    "body.surfaceTemperature: typical (modal) 173.114998 (13/707 samples); range 152.367203 … 176.27951",
     "body.surfacePressure: typical (modal) 0.003766 (3/707 samples); range 0.0009914116062176165 … 0.012965817665926475",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (707/707 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.000000 (24/707 samples); range 65.32 … 96.89",
@@ -573,11 +573,11 @@
       "n": 707,
       "surfaceTemperatureK": {
         "n": 707,
-        "min": 152,
-        "p1": 154,
-        "p50": 166,
-        "p99": 175,
-        "max": 176
+        "min": 152.367203,
+        "p1": 154.137665,
+        "p50": 166.633759,
+        "p99": 175.558243,
+        "max": 176.27951
       },
       "surfacePressureAtm": {
         "n": 707,
@@ -627,7 +627,7 @@
     "body.gravity": 0.181,
     "body.earthMasses": 0.194,
     "body.radius": 0.196,
-    "body.surfaceTemperature": 0.281,
+    "body.surfaceTemperature": 0.279,
     "body.surfacePressure": 0.49,
     "body.solidComposition.Rock": 0.012,
     "body.solidComposition.Metal": 0.006,
@@ -735,13 +735,13 @@
     ],
     "body.surfaceTemperature": [
       0,
-      96,
-      102,
-      125,
-      94,
-      73,
-      78,
-      88,
+      71,
+      106,
+      103,
+      89,
+      89,
+      97,
+      101,
       51,
       0,
       0,
@@ -1274,25 +1274,25 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 152,
-      "max": 176,
+      "min": 152.367203,
+      "max": 176.27951,
       "counts": [
         6,
-        13,
-        19,
-        18,
-        40,
-        21,
-        81,
-        44,
-        81,
-        45,
-        90,
-        32,
-        78,
-        40,
-        87,
-        12
+        16,
+        12,
+        28,
+        33,
+        26,
+        70,
+        63,
+        60,
+        80,
+        60,
+        48,
+        55,
+        71,
+        63,
+        16
       ]
     },
     "body.surfacePressure": {

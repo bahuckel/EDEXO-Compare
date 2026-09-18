@@ -3,10 +3,10 @@
   "speciesLabel": "Concha biconcavis",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:59.472Z",
+  "generatedAt": "2026-09-18T01:43:52.987Z",
   "sampleCount": 26,
   "provenance": {
-    "inputHash": "f38b8121e6c3513a78de5491d8549e6bc41e87895c62cb3b1e9a2f93f39f1fa5",
+    "inputHash": "4d16355db67eaa9e597d0edac43d12e04437f85bbd17b1058567e49138b09486",
     "csvRows": 38,
     "occurrences": 27,
     "bodies": 26
@@ -45,12 +45,12 @@
       "modeCount": 5
     },
     "body.surfaceTemperature": {
-      "min": 46,
-      "max": 49,
-      "mean": 48.15384615384615,
+      "min": 46.83905,
+      "max": 49.829071,
+      "mean": 48.63551353846154,
       "count": 26,
-      "mode": 49,
-      "modeCount": 12
+      "mode": 48,
+      "modeCount": 5
     },
     "body.surfacePressure": {
       "min": 0.0010001368566493955,
@@ -411,7 +411,7 @@
     "body.gravity: typical (modal) 0.188186 (5/26 samples); range 0.12766044076258534 … 0.2643421536381292",
     "body.earthMasses: typical (modal) 0.011384 (5/26 samples); range 0.00367 … 0.03037",
     "body.radius: typical (modal) 1568.694000 (5/26 samples); range 1081.4075 … 2161.84075",
-    "body.surfaceTemperature: typical (modal) 49.000000 (12/26 samples); range 46 … 49",
+    "body.surfaceTemperature: typical (modal) 48.000000 (5/26 samples); range 46.83905 … 49.829071",
     "body.surfacePressure: typical (modal) 0.002172 (5/26 samples); range 0.0010001368566493955 … 0.0042969024031581544",
     "body.atmosphereComposition.Nitrogen: typical (modal) 100.000000 (26/26 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.040000 (5/26 samples); range 85.45 … 91.26",
@@ -453,11 +453,11 @@
       "n": 26,
       "surfaceTemperatureK": {
         "n": 26,
-        "min": 46,
-        "p1": 46,
-        "p50": 48,
-        "p99": 49,
-        "max": 49
+        "min": 46.83905,
+        "p1": 46.83905,
+        "p50": 48.985069,
+        "p99": 49.829071,
+        "max": 49.829071
       },
       "surfacePressureAtm": {
         "n": 26,
@@ -1136,25 +1136,25 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 46,
-      "max": 49,
+      "min": 46.83905,
+      "max": 49.829071,
       "counts": [
+        1,
+        1,
+        0,
+        5,
+        0,
+        0,
+        5,
+        0,
         1,
         0,
         0,
-        0,
-        0,
-        6,
-        0,
-        0,
+        1,
         0,
         0,
         7,
-        0,
-        0,
-        0,
-        0,
-        12
+        5
       ]
     },
     "body.surfacePressure": {

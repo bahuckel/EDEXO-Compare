@@ -3,10 +3,10 @@
   "speciesLabel": "Electricae radialem",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:00.084Z",
+  "generatedAt": "2026-09-18T01:43:53.783Z",
   "sampleCount": 87,
   "provenance": {
-    "inputHash": "abe30ac2b6dbd6d383b9666329a29674dc6e85006114471123d61e56adf94431",
+    "inputHash": "99e75a76c223257941c5e6b993833c510f0ba8a2104e3f667c70cae21142ff65",
     "csvRows": 147,
     "occurrences": 93,
     "bodies": 87
@@ -45,12 +45,12 @@
       "modeCount": 5
     },
     "body.surfaceTemperature": {
-      "min": 50,
-      "max": 133,
-      "mean": 77.80459770114942,
+      "min": 50.826557,
+      "max": 133.973572,
+      "mean": 78.19633250574721,
       "count": 87,
-      "mode": 53,
-      "modeCount": 10
+      "mode": 101.347885,
+      "modeCount": 5
     },
     "body.surfacePressure": {
       "min": 0.0010088144485566248,
@@ -529,7 +529,7 @@
     "body.gravity: typical (modal) 0.240977 (5/87 samples); range 0.04655446137333949 … 0.2733751880169771",
     "body.earthMasses: typical (modal) 0.063734 (5/87 samples); range 0.00071 … 0.127887",
     "body.radius: typical (modal) 3280.065250 (5/87 samples); range 787.6495625 … 4362.3265",
-    "body.surfaceTemperature: typical (modal) 53.000000 (10/87 samples); range 50 … 133",
+    "body.surfaceTemperature: typical (modal) 101.347885 (5/87 samples); range 50.826557 … 133.973572",
     "body.surfacePressure: typical (modal) 0.015023 (5/87 samples); range 0.0010088144485566248 … 0.07434665004687885",
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (77/85 samples); range 0.37 … 100",
     "body.solidComposition.Ice: typical (modal) 82.630000 (9/87 samples); range 51.75 … 91.94",
@@ -578,11 +578,11 @@
       "n": 82,
       "surfaceTemperatureK": {
         "n": 82,
-        "min": 50,
-        "p1": 50,
+        "min": 50.826557,
+        "p1": 50.826557,
         "p50": 80,
-        "p99": 127,
-        "max": 133
+        "p99": 127.940033,
+        "max": 133.973572
       },
       "surfacePressureAtm": {
         "n": 82,
@@ -621,8 +621,8 @@
       "n": 3,
       "surfaceTemperatureK": {
         "n": 3,
-        "min": 76,
-        "p1": 76,
+        "min": 76.428101,
+        "p1": 76.428101,
         "p50": 82,
         "p99": 84,
         "max": 84
@@ -666,9 +666,9 @@
         "n": 2,
         "min": 63,
         "p1": 63,
-        "p50": 64,
-        "p99": 64,
-        "max": 64
+        "p50": 64.965179,
+        "p99": 64.965179,
+        "max": 64.965179
       },
       "surfacePressureAtm": {
         "n": 2,
@@ -820,8 +820,8 @@
       60
     ],
     "body.surfaceTemperature": [
-      87,
-      0,
+      86,
+      1,
       0,
       0,
       0,
@@ -1396,19 +1396,19 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 50,
-      "max": 133,
+      "min": 50.826557,
+      "max": 133.973572,
       "counts": [
-        24,
-        4,
-        6,
+        26,
+        2,
+        7,
         3,
         2,
         8,
-        10,
-        8,
-        3,
-        8,
+        12,
+        6,
+        5,
+        5,
         4,
         0,
         1,

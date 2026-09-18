@@ -3,10 +3,10 @@
   "speciesLabel": "Tubus conifer",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:05.130Z",
+  "generatedAt": "2026-09-18T01:43:59.394Z",
   "sampleCount": 205,
   "provenance": {
-    "inputHash": "2bf7d1ff65dfaf0fdaf52dcfa8e52c457a09841d7e8661b145411334c33de27a",
+    "inputHash": "c345a737fa03055c78987df55005d44b11291f81292a9f1e646ed90a1e39ebe7",
     "csvRows": 225,
     "occurrences": 225,
     "bodies": 205
@@ -45,12 +45,12 @@
       "modeCount": 2
     },
     "body.surfaceTemperature": {
-      "min": 160,
-      "max": 194,
-      "mean": 170.93658536585366,
+      "min": 160.206894,
+      "max": 194.993546,
+      "mean": 171.41655780487812,
       "count": 205,
-      "mode": 166,
-      "modeCount": 16
+      "mode": 174.20886975000002,
+      "modeCount": 4
     },
     "body.surfacePressure": {
       "min": 0.0036376874808783616,
@@ -496,7 +496,7 @@
     "body.gravity: typical (modal) 0.125901 (1/205 samples); range 0.04403765424581964 … 0.14561090911637437",
     "body.earthMasses: typical (modal) 0.000399 (3/205 samples); range 0.000161 … 0.005368",
     "body.radius: typical (modal) 749.932375 (2/205 samples); range 383.9545 … 1224.59875",
-    "body.surfaceTemperature: typical (modal) 166.000000 (16/205 samples); range 160 … 194",
+    "body.surfaceTemperature: typical (modal) 174.208870 (4/205 samples); range 160.206894 … 194.993546",
     "body.surfacePressure: typical (modal) 0.029257 (1/205 samples); range 0.0036376874808783616 … 0.09607703783863805",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (114/205 samples); range 98.1 … 100",
     "body.solidComposition.Rock: typical (modal) 91.120000 (11/205 samples); range 85.83 … 96.86",
@@ -541,11 +541,11 @@
       "n": 205,
       "surfaceTemperatureK": {
         "n": 205,
-        "min": 160,
-        "p1": 161,
-        "p50": 170,
-        "p99": 192,
-        "max": 194
+        "min": 160.206894,
+        "p1": 161.051483,
+        "p50": 170.458984,
+        "p99": 192.585434,
+        "max": 194.993546
       },
       "surfacePressureAtm": {
         "n": 205,
@@ -595,7 +595,7 @@
     "body.gravity": 0.385,
     "body.earthMasses": 0.367,
     "body.radius": 0.362,
-    "body.surfaceTemperature": 0.196,
+    "body.surfaceTemperature": 0.186,
     "body.surfacePressure": 0.348,
     "body.solidComposition.Rock": 0.125,
     "body.solidComposition.Metal": 0.106,
@@ -704,18 +704,18 @@
     "body.surfaceTemperature": [
       0,
       0,
-      30,
-      22,
-      29,
-      18,
+      24,
       20,
-      14,
+      24,
+      22,
+      26,
+      17,
       37,
-      21,
+      18,
+      7,
+      4,
       5,
-      6,
-      3,
-      0,
+      1,
       0,
       0
     ],
@@ -1260,25 +1260,25 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 160,
-      "max": 194,
+      "min": 160.206894,
+      "max": 194.993546,
       "counts": [
-        30,
-        12,
-        26,
-        22,
-        18,
-        18,
-        18,
+        20,
+        20,
         24,
-        9,
+        25,
+        20,
+        17,
+        25,
+        19,
+        7,
         11,
         5,
-        2,
-        2,
+        3,
         1,
-        4,
-        3
+        1,
+        5,
+        2
       ]
     },
     "body.surfacePressure": {

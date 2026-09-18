@@ -3,10 +3,10 @@
   "speciesLabel": "Aleoida spica",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:55.270Z",
+  "generatedAt": "2026-09-18T01:43:47.701Z",
   "sampleCount": 165,
   "provenance": {
-    "inputHash": "c7f9ec01d314bf5a4bb8688323bf8917eb894ecbe27cf27b1d18beb044524236",
+    "inputHash": "85b0d6c05141bc6b8643f610b1a87a91e44d8b27fe19903544d8f3e802ee5aec",
     "csvRows": 190,
     "occurrences": 170,
     "bodies": 165
@@ -45,12 +45,12 @@
       "modeCount": 4
     },
     "body.surfaceTemperature": {
-      "min": 170,
-      "max": 176,
-      "mean": 172.1939393939394,
+      "min": 170.015991,
+      "max": 176.142365,
+      "mean": 172.68777301212108,
       "count": 165,
-      "mode": 174,
-      "modeCount": 40
+      "mode": 173.49440299999998,
+      "modeCount": 10
     },
     "body.surfacePressure": {
       "min": 0.0010229333333333333,
@@ -487,7 +487,7 @@
     "body.gravity: typical (modal) 0.200004 (4/165 samples); range 0.04424370401620473 … 0.27259193653987585",
     "body.earthMasses: typical (modal) 0.009462 (4/165 samples); range 0.00016 … 0.032438",
     "body.radius: typical (modal) 1387.257125 (4/165 samples); range 377.69971875 … 2207.69025",
-    "body.surfaceTemperature: typical (modal) 174.000000 (40/165 samples); range 170 … 176",
+    "body.surfaceTemperature: typical (modal) 173.494403 (10/165 samples); range 170.015991 … 176.142365",
     "body.surfacePressure: typical (modal) 0.001812 (4/165 samples); range 0.0010229333333333333 … 0.011440540528003947",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (165/165 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.090000 (7/165 samples); range 65.32 … 91.27",
@@ -531,11 +531,11 @@
       "n": 165,
       "surfaceTemperatureK": {
         "n": 165,
-        "min": 170,
-        "p1": 170,
-        "p50": 172,
-        "p99": 175,
-        "max": 176
+        "min": 170.015991,
+        "p1": 170.021072,
+        "p50": 172.976517,
+        "p99": 175.556091,
+        "max": 176.142365
       },
       "surfacePressureAtm": {
         "n": 165,
@@ -585,7 +585,7 @@
     "body.gravity": 0.083,
     "body.earthMasses": 0.102,
     "body.radius": 0.113,
-    "body.surfaceTemperature": 0.558,
+    "body.surfaceTemperature": 0.696,
     "body.surfacePressure": 0.437,
     "body.solidComposition.Rock": 0.085,
     "body.solidComposition.Metal": 0.09,
@@ -698,8 +698,8 @@
       0,
       0,
       0,
-      60,
-      62,
+      54,
+      68,
       43,
       0,
       0,
@@ -1232,24 +1232,24 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 170,
-      "max": 176,
+      "min": 170.015991,
+      "max": 176.142365,
       "counts": [
-        35,
-        0,
-        25,
-        0,
-        0,
-        25,
-        0,
-        0,
-        37,
-        0,
-        40,
-        0,
-        0,
+        20,
+        12,
+        5,
+        9,
+        13,
+        9,
+        5,
+        14,
+        9,
+        23,
+        15,
+        15,
+        10,
+        3,
         2,
-        0,
         1
       ]
     },

@@ -3,10 +3,10 @@
   "speciesLabel": "Bacterium nebulus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:57.787Z",
+  "generatedAt": "2026-09-18T01:43:50.940Z",
   "sampleCount": 18,
   "provenance": {
-    "inputHash": "f5f6894d71bfd591cc11b9cdbe9e743bcb4245d7ca46157fc13abcd04017ea66",
+    "inputHash": "dc2f3b0e827f6b1ab3f71b1ffa674624b43180ddc25177487df41df50634881b",
     "csvRows": 18,
     "occurrences": 18,
     "bodies": 18
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 20,
-      "max": 20,
-      "mean": 20,
+      "max": 20.135464,
+      "mean": 20.030103111111114,
       "count": 18,
       "mode": 20,
-      "modeCount": 18
+      "modeCount": 14
     },
     "body.surfacePressure": {
       "min": 0.06898810005428077,
@@ -437,7 +437,7 @@
     "body.gravity: typical (modal) 0.502250 (4/18 samples); range 0.49634229762268417 … 0.5045150136649623",
     "body.earthMasses: typical (modal) 0.474125 (4/18 samples); range 0.460032 … 0.477961",
     "body.radius: typical (modal) 6196.850000 (4/18 samples); range 6140.276 … 6207.8855",
-    "body.surfaceTemperature: typical (modal) 20.000000 (18/18 samples); range 20 … 20",
+    "body.surfaceTemperature: typical (modal) 20.000000 (14/18 samples); range 20 … 20.135464",
     "body.surfacePressure: typical (modal) 0.092131 (4/18 samples); range 0.06898810005428077 … 0.09744647097952133",
     "body.atmosphereComposition.Helium: typical (modal) 100.000000 (18/18 samples); range 100 … 100",
     "body.solidComposition.Ice: typical (modal) 68.230000 (4/18 samples); range 67.22 … 68.72",
@@ -484,8 +484,8 @@
         "min": 20,
         "p1": 20,
         "p50": 20,
-        "p99": 20,
-        "max": 20
+        "p99": 20.135464,
+        "max": 20.135464
       },
       "surfacePressureAtm": {
         "n": 18,
@@ -1113,6 +1113,28 @@
         1,
         1,
         4,
+        0,
+        4
+      ]
+    },
+    "body.surfaceTemperature": {
+      "min": 20,
+      "max": 20.135464,
+      "counts": [
+        14,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         4
       ]

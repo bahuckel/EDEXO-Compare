@@ -3,10 +3,10 @@
   "speciesLabel": "Sinuous Tubers Albidum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:54.464Z",
+  "generatedAt": "2026-09-18T01:43:46.443Z",
   "sampleCount": 2,
   "provenance": {
-    "inputHash": "78ac41e683126f2e001c5ae517244889262d0f8d40322e78d368c97142fea4f1",
+    "inputHash": "fc1669e08d061ce2aa4e13d6c1c701f8df055eef0d5c71868becb3d4833e8434",
     "csvRows": 2,
     "occurrences": 2,
     "bodies": 2
@@ -45,11 +45,11 @@
       "modeCount": 1
     },
     "body.surfaceTemperature": {
-      "min": 224,
-      "max": 279,
-      "mean": 251.5,
+      "min": 224.088699,
+      "max": 279.374634,
+      "mean": 251.73166650000002,
       "count": 2,
-      "mode": 279,
+      "mode": 279.374634,
       "modeCount": 1
     },
     "body.surfacePressure": {
@@ -329,7 +329,7 @@
     "body.gravity: typical (modal) 0.066363 (1/2 samples); range 0.06636345199123517 … 0.10785955011344216",
     "body.earthMasses: typical (modal) 0.000579 (1/2 samples); range 0.000579 … 0.002242",
     "body.radius: typical (modal) 595.743500 (1/2 samples); range 595.7435 … 919.5450625",
-    "body.surfaceTemperature: typical (modal) 279.000000 (1/2 samples); range 224 … 279",
+    "body.surfaceTemperature: typical (modal) 279.374634 (1/2 samples); range 224.088699 … 279.374634",
     "body.surfacePressure: typical (modal) 0.000000 (2/2 samples); range 0 … 0",
     "body.solidComposition.Rock: typical (modal) 96.920000 (1/2 samples); range 91.29 … 96.92",
     "body.solidComposition.Metal: typical (modal) 3.080000 (1/2 samples); range 3.08 … 8.71",
@@ -362,11 +362,11 @@
       "n": 2,
       "surfaceTemperatureK": {
         "n": 2,
-        "min": 224,
-        "p1": 224,
-        "p50": 279,
-        "p99": 279,
-        "max": 279
+        "min": 224.088699,
+        "p1": 224.088699,
+        "p50": 279.374634,
+        "p99": 279.374634,
+        "max": 279.374634
       },
       "surfacePressureAtm": {
         "n": 2,
@@ -945,8 +945,8 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 224,
-      "max": 279,
+      "min": 224.088699,
+      "max": 279.374634,
       "counts": [
         1,
         0,

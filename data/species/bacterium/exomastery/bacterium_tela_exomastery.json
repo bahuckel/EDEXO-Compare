@@ -3,10 +3,10 @@
   "speciesLabel": "Bacterium tela",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:57.980Z",
+  "generatedAt": "2026-09-18T01:43:51.211Z",
   "sampleCount": 836,
   "provenance": {
-    "inputHash": "642483b014ff593780049cef1c0f5e9bf2182d3510ea7237b5d269aff4500199",
+    "inputHash": "bcebc53545502a3f95b67cb180485d459e415fa219536d53d5a567cfa936f854",
     "csvRows": 1686,
     "occurrences": 860,
     "bodies": 836
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 20,
       "max": 698,
-      "mean": 372.39354066985646,
+      "mean": 372.70071264593264,
       "count": 836,
-      "mode": 429,
-      "modeCount": 28
+      "mode": 413.9988577142857,
+      "modeCount": 14
     },
     "body.surfacePressure": {
       "min": 0.001179515016037503,
@@ -650,7 +650,7 @@
     "body.gravity: typical (modal) 0.042914 (6/836 samples); range 0.03583069487998972 … 0.6034595851958665",
     "body.earthMasses: typical (modal) 0.000169 (16/836 samples); range 0.000128 … 0.763885",
     "body.radius: typical (modal) 435.684156 (10/836 samples); range 355.53434375 … 7175.8675",
-    "body.surfaceTemperature: typical (modal) 429.000000 (28/836 samples); range 20 … 698",
+    "body.surfaceTemperature: typical (modal) 413.998858 (14/836 samples); range 20 … 698",
     "body.surfacePressure: typical (modal) 0.063017 (6/836 samples); range 0.001179515016037503 … 0.09853350335060448",
     "body.atmosphereComposition.Water: typical (modal) 100.000000 (575/575 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.070000 (31/836 samples); range 14.56 … 97.12",
@@ -703,10 +703,10 @@
       "surfaceTemperatureK": {
         "n": 575,
         "min": 398,
-        "p1": 398,
-        "p50": 426,
+        "p1": 398.388916,
+        "p50": 426.727478,
         "p99": 449,
-        "max": 449
+        "max": 449.577301
       },
       "surfacePressureAtm": {
         "n": 575,
@@ -745,10 +745,10 @@
       "n": 140,
       "surfaceTemperatureK": {
         "n": 140,
-        "min": 164,
-        "p1": 164,
-        "p50": 341,
-        "p99": 444,
+        "min": 164.258255,
+        "p1": 164.258255,
+        "p50": 341.017822,
+        "p99": 444.224609,
         "max": 486
       },
       "surfacePressureAtm": {
@@ -790,7 +790,7 @@
         "n": 28,
         "min": 306,
         "p1": 306,
-        "p50": 337,
+        "p50": 337.876923,
         "p99": 467,
         "max": 467
       },
@@ -831,9 +831,9 @@
       "n": 26,
       "surfaceTemperatureK": {
         "n": 26,
-        "min": 54,
-        "p1": 54,
-        "p50": 84,
+        "min": 54.148701,
+        "p1": 54.148701,
+        "p50": 84.049255,
         "p99": 112,
         "max": 112
       },
@@ -876,7 +876,7 @@
         "n": 20,
         "min": 79,
         "p1": 79,
-        "p50": 93,
+        "p50": 93.254547,
         "p99": 102,
         "max": 102
       },
@@ -917,11 +917,11 @@
       "n": 16,
       "surfaceTemperatureK": {
         "n": 16,
-        "min": 174,
-        "p1": 174,
-        "p50": 176,
-        "p99": 176,
-        "max": 176
+        "min": 174.386169,
+        "p1": 174.386169,
+        "p50": 176.27951,
+        "p99": 176.483948,
+        "max": 176.483948
       },
       "surfacePressureAtm": {
         "n": 16,
@@ -962,7 +962,7 @@
         "n": 13,
         "min": 20,
         "p1": 20,
-        "p50": 28,
+        "p50": 28.014282,
         "p99": 67,
         "max": 67
       },
@@ -1143,7 +1143,7 @@
     "body.gravity": 0.372,
     "body.earthMasses": 0.482,
     "body.radius": 0.481,
-    "body.surfaceTemperature": 0.533,
+    "body.surfaceTemperature": 0.534,
     "body.surfacePressure": 0.189,
     "body.solidComposition.Rock": 0.041,
     "body.solidComposition.Metal": 0.026,
@@ -1254,18 +1254,18 @@
       0,
       0,
       3,
+      0,
       2,
       1,
       2,
-      0,
       17,
+      0,
       2,
       0,
       0,
-      0,
-      234,
-      217,
-      285
+      222,
+      218,
+      296
     ],
     "body.surfacePressure": [
       1,
@@ -1928,8 +1928,8 @@
         47,
         55,
         44,
-        532,
-        50,
+        523,
+        59,
         0,
         0,
         0,

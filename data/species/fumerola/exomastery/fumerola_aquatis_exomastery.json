@@ -3,10 +3,10 @@
   "speciesLabel": "Fumerola aquatis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:01.242Z",
+  "generatedAt": "2026-09-18T01:43:55.071Z",
   "sampleCount": 50,
   "provenance": {
-    "inputHash": "216406ac88ec07eb9ee6e0e10436c2ff68599898d806e7ba61ec8f37feb5ab07",
+    "inputHash": "25f312b426b5a5f44e579f8cda14d8d0dc67ddc418356c23a8fcc141dfa71235",
     "csvRows": 93,
     "occurrences": 53,
     "bodies": 50
@@ -45,12 +45,12 @@
       "modeCount": 4
     },
     "body.surfaceTemperature": {
-      "min": 61,
+      "min": 61.945854,
       "max": 436,
-      "mean": 128.22,
+      "mean": 128.46847133999998,
       "count": 50,
-      "mode": 87,
-      "modeCount": 5
+      "mode": 87.105934,
+      "modeCount": 4
     },
     "body.surfacePressure": {
       "min": 0.001556862264988897,
@@ -518,7 +518,7 @@
     "body.gravity: typical (modal) 0.195517 (4/50 samples); range 0.04616613947047526 … 0.2693572168666963",
     "body.earthMasses: typical (modal) 0.046762 (4/50 samples); range 0.00018 … 0.129478",
     "body.radius: typical (modal) 3119.168250 (4/50 samples); range 398.2529375 … 4421.9945",
-    "body.surfaceTemperature: typical (modal) 87.000000 (5/50 samples); range 61 … 436",
+    "body.surfaceTemperature: typical (modal) 87.105934 (4/50 samples); range 61.945854 … 436",
     "body.surfacePressure: typical (modal) 0.003126 (4/50 samples); range 0.001556862264988897 … 0.08901035883543056",
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (34/36 samples); range 94.81 … 100",
     "body.solidComposition.Ice: typical (modal) 82.430000 (7/50 samples); range 0 … 91.85",
@@ -567,9 +567,9 @@
       "n": 36,
       "surfaceTemperatureK": {
         "n": 36,
-        "min": 61,
-        "p1": 61,
-        "p50": 84,
+        "min": 61.945854,
+        "p1": 61.945854,
+        "p50": 84.049255,
         "p99": 112,
         "max": 112
       },
@@ -610,9 +610,9 @@
       "n": 6,
       "surfaceTemperatureK": {
         "n": 6,
-        "min": 164,
-        "p1": 164,
-        "p50": 196,
+        "min": 164.258255,
+        "p1": 164.258255,
+        "p50": 196.989334,
         "p99": 261,
         "max": 261
       },
@@ -696,11 +696,11 @@
       "n": 2,
       "surfaceTemperatureK": {
         "n": 2,
-        "min": 174,
-        "p1": 174,
-        "p50": 174,
-        "p99": 174,
-        "max": 174
+        "min": 174.473297,
+        "p1": 174.473297,
+        "p50": 174.850052,
+        "p99": 174.850052,
+        "max": 174.850052
       },
       "surfacePressureAtm": {
         "n": 2,
@@ -782,11 +782,11 @@
       "n": 1,
       "surfaceTemperatureK": {
         "n": 1,
-        "min": 171,
-        "p1": 171,
-        "p50": 171,
-        "p99": 171,
-        "max": 171
+        "min": 171.939026,
+        "p1": 171.939026,
+        "p50": 171.939026,
+        "p99": 171.939026,
+        "max": 171.939026
       },
       "surfacePressureAtm": {
         "n": 1,
@@ -937,8 +937,8 @@
       3,
       0,
       0,
-      1,
       0,
+      1,
       2,
       0,
       0,
@@ -1543,11 +1543,11 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 61,
+      "min": 61.945854,
       "max": 436,
       "counts": [
-        20,
-        16,
+        21,
+        15,
         1,
         0,
         6,

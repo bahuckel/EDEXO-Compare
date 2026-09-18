@@ -3,10 +3,10 @@
   "speciesLabel": "Concha aureolas",
   "genus": "Concha",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:59.456Z",
+  "generatedAt": "2026-09-18T01:43:52.967Z",
   "sampleCount": 329,
   "provenance": {
-    "inputHash": "7c93379d9084d67d491434c43dd1942683fd61170f9d29eacd5a8c94512cce05",
+    "inputHash": "8d7a91cdee5d528251d0d91b549e2c284fe4bd33857c2af40a8353b2549f43a3",
     "csvRows": 686,
     "occurrences": 335,
     "bodies": 329
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 152,
-      "max": 176,
-      "mean": 165.99088145896656,
+      "max": 176.483948,
+      "mean": 166.37617365957448,
       "count": 329,
-      "mode": 174,
-      "modeCount": 29
+      "mode": 174.3980732222222,
+      "modeCount": 9
     },
     "body.surfacePressure": {
       "min": 0.0009876185541574142,
@@ -502,7 +502,7 @@
     "body.gravity: typical (modal) 0.126842 (5/329 samples); range 0.0417106120724166 … 0.27034714388521636",
     "body.earthMasses: typical (modal) 0.000184 (7/329 samples); range 0.000134 … 0.030013",
     "body.radius: typical (modal) 1074.944250 (5/329 samples); range 361.5044375 … 2150.66225",
-    "body.surfaceTemperature: typical (modal) 174.000000 (29/329 samples); range 152 … 176",
+    "body.surfaceTemperature: typical (modal) 174.398073 (9/329 samples); range 152 … 176.483948",
     "body.surfacePressure: typical (modal) 0.000988 (5/329 samples); range 0.0009876185541574142 … 0.012591290402171232",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (329/329 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.110000 (18/329 samples); range 68.02 … 96.93",
@@ -547,10 +547,10 @@
       "surfaceTemperatureK": {
         "n": 329,
         "min": 152,
-        "p1": 152,
-        "p50": 166,
-        "p99": 176,
-        "max": 176
+        "p1": 152.41275,
+        "p50": 166.598572,
+        "p99": 176.483948,
+        "max": 176.483948
       },
       "surfacePressureAtm": {
         "n": 329,
@@ -600,7 +600,7 @@
     "body.gravity": 0.168,
     "body.earthMasses": 0.158,
     "body.radius": 0.155,
-    "body.surfaceTemperature": 0.25,
+    "body.surfaceTemperature": 0.254,
     "body.surfacePressure": 0.456,
     "body.solidComposition.Rock": 0.119,
     "body.solidComposition.Metal": 0.12,
@@ -708,13 +708,13 @@
     ],
     "body.surfaceTemperature": [
       0,
-      54,
-      50,
-      50,
-      29,
-      23,
-      44,
+      47,
+      55,
+      38,
       33,
+      27,
+      42,
+      41,
       46,
       0,
       0,
@@ -1248,24 +1248,24 @@
     },
     "body.surfaceTemperature": {
       "min": 152,
-      "max": 176,
+      "max": 176.483948,
       "counts": [
         9,
-        2,
-        18,
-        4,
-        21,
-        13,
-        37,
-        20,
+        7,
+        8,
+        16,
+        10,
+        22,
         30,
-        15,
+        31,
+        16,
         26,
-        11,
-        44,
-        24,
-        38,
-        17
+        15,
+        28,
+        28,
+        30,
+        34,
+        19
       ]
     },
     "body.surfacePressure": {

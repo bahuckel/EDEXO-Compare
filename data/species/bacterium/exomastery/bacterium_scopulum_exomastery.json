@@ -3,10 +3,10 @@
   "speciesLabel": "Bacterium scopulum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:57.802Z",
+  "generatedAt": "2026-09-18T01:43:50.961Z",
   "sampleCount": 17,
   "provenance": {
-    "inputHash": "1426dc85860a2b3fce95057ec33491911cfa96b2b35e49f03bb2a3d0fa79897f",
+    "inputHash": "38e685272d910c1d259306841d2553226dab7546bc8016f786aed7acaeb185e8",
     "csvRows": 20,
     "occurrences": 17,
     "bodies": 17
@@ -47,9 +47,9 @@
     "body.surfaceTemperature": {
       "min": 20,
       "max": 103,
-      "mean": 49.64705882352941,
+      "mean": 49.8875514117647,
       "count": 17,
-      "mode": 23,
+      "mode": 23.480434,
       "modeCount": 4
     },
     "body.surfacePressure": {
@@ -443,7 +443,7 @@
     "body.gravity: typical (modal) 0.404754 (4/17 samples); range 0.04297109240378807 … 0.5575151767873764",
     "body.earthMasses: typical (modal) 0.266868 (4/17 samples); range 0.000561 … 0.621313",
     "body.radius: typical (modal) 5178.894500 (4/17 samples); range 728.748625 … 6733.043",
-    "body.surfaceTemperature: typical (modal) 23.000000 (4/17 samples); range 20 … 103",
+    "body.surfaceTemperature: typical (modal) 23.480434 (4/17 samples); range 20 … 103",
     "body.surfacePressure: typical (modal) 0.001889 (4/17 samples); range 0.001462518302491981 … 0.0880187418998273",
     "body.atmosphereComposition.Helium: typical (modal) 61.480000 (1/2 samples); range 61.48 … 95.29",
     "body.atmosphereComposition.Neon: typical (modal) 100.000000 (10/12 samples); range 4.71 … 100",
@@ -490,7 +490,7 @@
         "n": 10,
         "min": 20,
         "p1": 20,
-        "p50": 23,
+        "p50": 23.480434,
         "p99": 49,
         "max": 49
       },
@@ -533,9 +533,9 @@
         "n": 4,
         "min": 89,
         "p1": 89,
-        "p50": 102,
-        "p99": 102,
-        "max": 102
+        "p50": 102.625565,
+        "p99": 102.625565,
+        "max": 102.625565
       },
       "surfacePressureAtm": {
         "n": 4,

@@ -3,10 +3,10 @@
   "speciesLabel": "Fumerola extremus",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:01.280Z",
+  "generatedAt": "2026-09-18T01:43:55.122Z",
   "sampleCount": 116,
   "provenance": {
-    "inputHash": "acbbb7c22567f1d32696b3d18402f72236938e12dd6e1d4846fd750798d3d709",
+    "inputHash": "ba9db8e4f2e95c5b5faa201f560380615d4e15316909e5de8a4e7c5ca20ed8d1",
     "csvRows": 192,
     "occurrences": 121,
     "bodies": 116
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 79,
       "max": 641,
-      "mean": 117.81896551724138,
+      "mean": 118.24191945689648,
       "count": 116,
-      "mode": 92,
-      "modeCount": 11
+      "mode": 176.483948,
+      "modeCount": 5
     },
     "body.surfacePressure": {
       "min": 0.0015729288329632371,
@@ -499,7 +499,7 @@
     "body.gravity: typical (modal) 0.043833 (5/116 samples); range 0.04115866250603857 … 0.2747657679128154",
     "body.earthMasses: typical (modal) 0.000169 (5/116 samples); range 0.000128 … 0.033768",
     "body.radius: typical (modal) 396.027438 (5/116 samples); range 355.67953125 … 2235.918",
-    "body.surfaceTemperature: typical (modal) 92.000000 (11/116 samples); range 79 … 641",
+    "body.surfaceTemperature: typical (modal) 176.483948 (5/116 samples); range 79 … 641",
     "body.surfacePressure: typical (modal) 0.012591 (5/116 samples); range 0.0015729288329632371 … 0.0920229132000987",
     "body.atmosphereComposition.Methane: typical (modal) 100.000000 (83/83 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 90.860000 (12/116 samples); range 67.38 … 96.94",
@@ -549,7 +549,7 @@
         "n": 83,
         "min": 79,
         "p1": 79,
-        "p50": 92,
+        "p50": 92.317322,
         "p99": 102,
         "max": 107
       },
@@ -590,11 +590,11 @@
       "n": 24,
       "surfaceTemperatureK": {
         "n": 24,
-        "min": 168,
-        "p1": 168,
-        "p50": 175,
-        "p99": 176,
-        "max": 176
+        "min": 168.277908,
+        "p1": 168.277908,
+        "p50": 175.75853,
+        "p99": 176.483948,
+        "max": 176.483948
       },
       "surfacePressureAtm": {
         "n": 24,
@@ -633,11 +633,11 @@
       "n": 8,
       "surfaceTemperatureK": {
         "n": 8,
-        "min": 154,
-        "p1": 154,
-        "p50": 160,
-        "p99": 167,
-        "max": 167
+        "min": 154.888336,
+        "p1": 154.888336,
+        "p50": 160.607147,
+        "p99": 167.15007,
+        "max": 167.15007
       },
       "surfacePressureAtm": {
         "n": 8,
@@ -840,8 +840,8 @@
       3,
       3,
       0,
-      2,
-      2,
+      0,
+      4,
       0,
       0,
       22,

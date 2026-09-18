@@ -3,10 +3,10 @@
   "speciesLabel": "Tussock ignis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:05.758Z",
+  "generatedAt": "2026-09-18T01:44:00.066Z",
   "sampleCount": 1386,
   "provenance": {
-    "inputHash": "e5a4cf48a78343dbe11a1be7ce29c25c5e761c27982176cc821e394f88e4ce55",
+    "inputHash": "5c7a80264686c4aeadbabade4a318b2c8276e0fd53f6af0a40612143ca6d50bd",
     "csvRows": 3785,
     "occurrences": 1404,
     "bodies": 1386
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 150,
       "max": 224,
-      "mean": 165.01298701298703,
+      "mean": 165.2142702388165,
       "count": 1386,
-      "mode": 166,
-      "modeCount": 191
+      "mode": 163.9999877747748,
+      "modeCount": 111
     },
     "body.surfacePressure": {
       "min": 0.0031049317345176416,
@@ -538,7 +538,7 @@
     "body.gravity: typical (modal) 0.078659 (4/1386 samples); range 0.04100015262300251 … 0.18383406163469576",
     "body.earthMasses: typical (modal) 0.000582 (6/1386 samples); range 0.000127 … 0.010603",
     "body.radius: typical (modal) 680.611667 (6/1386 samples); range 354.971625 … 1531.743",
-    "body.surfaceTemperature: typical (modal) 166.000000 (191/1386 samples); range 150 … 224",
+    "body.surfaceTemperature: typical (modal) 163.999988 (111/1386 samples); range 150 … 224",
     "body.surfacePressure: typical (modal) 0.011488 (4/1385 samples); range 0.0031049317345176416 … 0.048350074404145085",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (1030/1385 samples); range 97.58 … 100",
     "body.solidComposition.Rock: typical (modal) 91.030000 (56/1386 samples); range 65.36 … 97.32",
@@ -586,8 +586,8 @@
         "min": 150,
         "p1": 161,
         "p50": 165,
-        "p99": 169,
-        "max": 169
+        "p99": 169.639511,
+        "max": 169.985291
       },
       "surfacePressureAtm": {
         "n": 1385,
@@ -673,7 +673,7 @@
     "body.gravity": 0.381,
     "body.earthMasses": 0.39,
     "body.radius": 0.391,
-    "body.surfaceTemperature": 0.52,
+    "body.surfaceTemperature": 0.523,
     "body.surfacePressure": 0.43,
     "body.solidComposition.Rock": 0.08,
     "body.solidComposition.Metal": 0.064,
@@ -782,11 +782,11 @@
     "body.surfaceTemperature": [
       0,
       1,
-      284,
-      485,
-      341,
-      274,
-      0,
+      258,
+      440,
+      343,
+      288,
+      55,
       0,
       0,
       0,
@@ -1343,9 +1343,9 @@
       "counts": [
         1,
         0,
-        443,
-        807,
-        134,
+        435,
+        788,
+        161,
         0,
         0,
         0,

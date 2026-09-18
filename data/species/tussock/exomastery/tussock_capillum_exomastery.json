@@ -3,10 +3,10 @@
   "speciesLabel": "Tussock capillum",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:05.283Z",
+  "generatedAt": "2026-09-18T01:43:59.557Z",
   "sampleCount": 83,
   "provenance": {
-    "inputHash": "d43f2c7e91b19ae42d7421bd81cb33ff579cc1bb9f4cb4e58ef106d9094e8109",
+    "inputHash": "1c9b4f99b6470c64ea59d32dc5c4bd4de8055475248dc9f69574aadbffa5d295",
     "csvRows": 154,
     "occurrences": 86,
     "bodies": 83
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 80,
-      "max": 160,
-      "mean": 101.09638554216868,
+      "max": 160.632767,
+      "mean": 101.47282169879517,
       "count": 83,
-      "mode": 97,
-      "modeCount": 7
+      "mode": 104.973358,
+      "modeCount": 4
     },
     "body.surfacePressure": {
       "min": 0.0009963691882556131,
@@ -492,7 +492,7 @@
     "body.gravity: typical (modal) 0.253198 (4/83 samples); range 0.044827766911507014 … 0.274817056241145",
     "body.earthMasses: typical (modal) 0.050735 (4/83 samples); range 0.000181 … 0.067029",
     "body.radius: typical (modal) 2855.014500 (4/83 samples); range 405.27540625 … 3149.88025",
-    "body.surfaceTemperature: typical (modal) 97.000000 (7/83 samples); range 80 … 160",
+    "body.surfaceTemperature: typical (modal) 104.973358 (4/83 samples); range 80 … 160.632767",
     "body.surfacePressure: typical (modal) 0.001696 (4/79 samples); range 0.0009963691882556131 … 0.0935298794867999",
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (62/62 samples); range 100 … 100",
     "body.solidComposition.Ice: typical (modal) 0.000000 (20/83 samples); range 0 … 49.96",
@@ -537,11 +537,11 @@
       "n": 62,
       "surfaceTemperatureK": {
         "n": 62,
-        "min": 80,
-        "p1": 80,
-        "p50": 100,
-        "p99": 124,
-        "max": 124
+        "min": 80.629799,
+        "p1": 80.629799,
+        "p50": 100.315086,
+        "p99": 124.72332,
+        "max": 124.72332
       },
       "surfacePressureAtm": {
         "n": 62,
@@ -583,8 +583,8 @@
         "min": 80,
         "p1": 80,
         "p50": 91,
-        "p99": 101,
-        "max": 101
+        "p99": 101.073067,
+        "max": 101.073067
       },
       "surfacePressureAtm": {
         "n": 17,
@@ -623,11 +623,11 @@
       "n": 4,
       "surfaceTemperatureK": {
         "n": 4,
-        "min": 160,
-        "p1": 160,
-        "p50": 160,
-        "p99": 160,
-        "max": 160
+        "min": 160.632767,
+        "p1": 160.632767,
+        "p50": 160.632767,
+        "p99": 160.632767,
+        "max": 160.632767
       },
       "surfacePressureAtm": null,
       "gravityG": {
@@ -1329,15 +1329,15 @@
     },
     "body.surfaceTemperature": {
       "min": 80,
-      "max": 160,
+      "max": 160.632767,
       "counts": [
         13,
-        6,
+        7,
         5,
-        23,
-        15,
+        22,
+        17,
         3,
-        4,
+        2,
         6,
         4,
         0,

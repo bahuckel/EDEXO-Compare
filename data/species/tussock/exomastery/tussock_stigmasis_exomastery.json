@@ -3,10 +3,10 @@
   "speciesLabel": "Tussock stigmasis",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:06.467Z",
+  "generatedAt": "2026-09-18T01:44:00.755Z",
   "sampleCount": 221,
   "provenance": {
-    "inputHash": "d801772603b16d429fea082143099c30ea200bf65fe68bbe151dd0d599e45012",
+    "inputHash": "d8f35696e4899a100f12996d1cc855846c7a5856e16547ab94b887c0b99b2938",
     "csvRows": 316,
     "occurrences": 223,
     "bodies": 221
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 132,
-      "max": 167,
-      "mean": 134.83710407239818,
+      "max": 167.443466,
+      "mean": 135.24456828506797,
       "count": 221,
-      "mode": 133,
-      "modeCount": 100
+      "mode": 134.10905689999998,
+      "modeCount": 20
     },
     "body.surfacePressure": {
       "min": 0.0009877743399950654,
@@ -495,7 +495,7 @@
     "body.gravity: typical (modal) 0.262534 (5/221 samples); range 0.04523520390682096 … 0.27483854260493357",
     "body.earthMasses: typical (modal) 0.029699 (5/221 samples); range 0.000171 … 0.03405",
     "body.radius: typical (modal) 2145.176250 (5/221 samples); range 368.17365625 … 2244.9375",
-    "body.surfaceTemperature: typical (modal) 133.000000 (100/221 samples); range 132 … 167",
+    "body.surfaceTemperature: typical (modal) 134.109057 (20/221 samples); range 132 … 167.443466",
     "body.surfacePressure: typical (modal) 0.001270 (5/221 samples); range 0.0009877743399950654 … 0.005429055011102887",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 100.000000 (221/221 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 90.990000 (10/221 samples); range 66.44 … 96.84",
@@ -541,9 +541,9 @@
         "n": 221,
         "min": 132,
         "p1": 132,
-        "p50": 133,
-        "p99": 167,
-        "max": 167
+        "p50": 133.603897,
+        "p99": 167.15007,
+        "max": 167.443466
       },
       "surfacePressureAtm": {
         "n": 221,
@@ -700,12 +700,12 @@
       0
     ],
     "body.surfaceTemperature": [
-      150,
-      62,
+      134,
+      78,
       3,
+      0,
       2,
       4,
-      0,
       0,
       0,
       0,
@@ -1241,19 +1241,19 @@
     },
     "body.surfaceTemperature": {
       "min": 132,
-      "max": 167,
+      "max": 167.443466,
       "counts": [
-        205,
-        0,
+        188,
+        17,
         0,
         0,
         0,
         0,
         0,
         3,
-        3,
+        2,
+        2,
         0,
-        1,
         0,
         2,
         1,

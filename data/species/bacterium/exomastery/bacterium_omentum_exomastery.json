@@ -3,10 +3,10 @@
   "speciesLabel": "Bacterium omentum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:57.794Z",
+  "generatedAt": "2026-09-18T01:43:50.951Z",
   "sampleCount": 22,
   "provenance": {
-    "inputHash": "20626339d70b8ccf139712c0ac5e9e34ac2c6918d59d6383e61c3a8c908cd59f",
+    "inputHash": "2fdfa9647c8c46559e25e15df54c8567e4d82fb063ef71283afdf538c284a402",
     "csvRows": 28,
     "occurrences": 22,
     "bodies": 22
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 20,
       "max": 195,
-      "mean": 40.95454545454545,
+      "mean": 41.0173690909091,
       "count": 22,
-      "mode": 20,
-      "modeCount": 10
+      "mode": 20.047585,
+      "modeCount": 5
     },
     "body.surfacePressure": {
       "min": 0.0009588367036762891,
@@ -481,7 +481,7 @@
     "body.gravity: typical (modal) 0.469220 (5/22 samples); range 0.03051743188243206 … 0.5092847625024607",
     "body.earthMasses: typical (modal) 0.398049 (5/22 samples); range 0.000202 … 0.491533",
     "body.radius: typical (modal) 5874.412000 (5/22 samples); range 518.90303125 … 6464.343",
-    "body.surfaceTemperature: typical (modal) 20.000000 (10/22 samples); range 20 … 195",
+    "body.surfaceTemperature: typical (modal) 20.047585 (5/22 samples); range 20 … 195",
     "body.surfacePressure: typical (modal) 0.005623 (5/22 samples); range 0.0009588367036762891 … 0.0921601572168764",
     "body.atmosphereComposition.Neon: typical (modal) 100.000000 (5/17 samples); range 3.35 … 100",
     "body.solidComposition.Ice: typical (modal) 68.580000 (8/22 samples); range 68.39 … 88.08",
@@ -573,9 +573,9 @@
       "n": 7,
       "surfaceTemperatureK": {
         "n": 7,
-        "min": 20,
-        "p1": 20,
-        "p50": 20,
+        "min": 20.047585,
+        "p1": 20.047585,
+        "p50": 20.047585,
         "p99": 86,
         "max": 86
       },
@@ -616,8 +616,8 @@
       "n": 2,
       "surfaceTemperatureK": {
         "n": 2,
-        "min": 56,
-        "p1": 56,
+        "min": 56.186901,
+        "p1": 56.186901,
         "p50": 65,
         "p99": 65,
         "max": 65

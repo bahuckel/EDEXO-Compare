@@ -3,10 +3,10 @@
   "speciesLabel": "Stratum tectonicas",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:04.468Z",
+  "generatedAt": "2026-09-18T01:43:58.637Z",
   "sampleCount": 3930,
   "provenance": {
-    "inputHash": "667387d648f6f7330ff6ad3bd43aa02310961cafb23a81c2763ffa402ea15ec8",
+    "inputHash": "07365c39f1a441c4c3d89de5bcb14786ee1f915165e8ed094578aa620577057b",
     "csvRows": 6618,
     "occurrences": 4009,
     "bodies": 3930
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 165,
-      "max": 449,
-      "mean": 204.7681933842239,
+      "max": 449.577301,
+      "mean": 205.18766413613233,
       "count": 3930,
-      "mode": 174,
-      "modeCount": 206
+      "mode": 166.00127518181822,
+      "modeCount": 44
     },
     "body.surfacePressure": {
       "min": 0.000992620932642487,
@@ -577,7 +577,7 @@
     "body.gravity: typical (modal) 0.163985 (5/3930 samples); range 0.04795189684824869 … 0.5982120879001769",
     "body.earthMasses: typical (modal) 0.000177 (7/3930 samples); range 0.00014 … 0.207163",
     "body.radius: typical (modal) 1667.524268 (7/3930 samples); range 344.62409375 … 3753.29775",
-    "body.surfaceTemperature: typical (modal) 174.000000 (206/3930 samples); range 165 … 449",
+    "body.surfaceTemperature: typical (modal) 166.001275 (44/3930 samples); range 165 … 449.577301",
     "body.surfacePressure: typical (modal) 0.001136 (8/3930 samples); range 0.000992620932642487 … 0.09868193699481864",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 100.000000 (997/2429 samples); range 0.1 … 100",
     "body.solidComposition.Rock: typical (modal) 67.120000 (94/3930 samples); range 63.72 … 72.64",
@@ -627,9 +627,9 @@
       "surfaceTemperatureK": {
         "n": 1525,
         "min": 165,
-        "p1": 166,
-        "p50": 185,
-        "p99": 308,
+        "p1": 166.052872,
+        "p50": 185.545395,
+        "p99": 308.445007,
         "max": 369
       },
       "surfacePressureAtm": {
@@ -671,9 +671,9 @@
         "n": 1138,
         "min": 165,
         "p1": 165,
-        "p50": 170,
-        "p99": 174,
-        "max": 175
+        "p50": 170.282288,
+        "p99": 174.905258,
+        "max": 175.926544
       },
       "surfacePressureAtm": {
         "n": 1138,
@@ -713,10 +713,10 @@
       "surfaceTemperatureK": {
         "n": 1038,
         "min": 165,
-        "p1": 165,
-        "p50": 196,
-        "p99": 424,
-        "max": 447
+        "p1": 165.499954,
+        "p50": 196.312012,
+        "p99": 424.655212,
+        "max": 447.51825
       },
       "surfacePressureAtm": {
         "n": 1038,
@@ -755,11 +755,11 @@
       "n": 198,
       "surfaceTemperatureK": {
         "n": 198,
-        "min": 395,
-        "p1": 395,
-        "p50": 424,
-        "p99": 449,
-        "max": 449
+        "min": 395.742157,
+        "p1": 395.742157,
+        "p50": 424.543335,
+        "p99": 449.577301,
+        "max": 449.577301
       },
       "surfacePressureAtm": {
         "n": 198,
@@ -798,8 +798,8 @@
       "n": 20,
       "surfaceTemperatureK": {
         "n": 20,
-        "min": 169,
-        "p1": 169,
+        "min": 169.033798,
+        "p1": 169.033798,
         "p50": 199,
         "p99": 245,
         "max": 245
@@ -841,9 +841,9 @@
       "n": 11,
       "surfaceTemperatureK": {
         "n": 11,
-        "min": 171,
-        "p1": 171,
-        "p50": 174,
+        "min": 171.282104,
+        "p1": 171.282104,
+        "p50": 174.246124,
         "p99": 244,
         "max": 244
       },
@@ -895,7 +895,7 @@
     "body.gravity": 0.314,
     "body.earthMasses": 0.228,
     "body.radius": 0.204,
-    "body.surfaceTemperature": 0.14,
+    "body.surfaceTemperature": 0.146,
     "body.surfacePressure": 0.074,
     "body.solidComposition.Rock": 0.549,
     "body.solidComposition.Metal": 0.698,
@@ -1005,17 +1005,17 @@
       0,
       0,
       0,
-      123,
-      291,
-      310,
+      27,
+      273,
       293,
-      334,
-      368,
-      320,
-      255,
-      379,
-      286,
-      803,
+      369,
+      388,
+      350,
+      270,
+      268,
+      383,
+      324,
+      817,
       89,
       79
     ],
@@ -1615,18 +1615,18 @@
     },
     "body.surfaceTemperature": {
       "min": 165,
-      "max": 449,
+      "max": 449.577301,
       "counts": [
-        2039,
-        1062,
-        153,
-        113,
-        88,
-        34,
+        2018,
+        1083,
+        144,
+        124,
+        86,
         33,
-        43,
-        43,
         34,
+        49,
+        38,
+        33,
         38,
         18,
         17,

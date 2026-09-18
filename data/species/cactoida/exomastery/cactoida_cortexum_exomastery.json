@@ -3,10 +3,10 @@
   "speciesLabel": "Cactoida cortexum",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:58.321Z",
+  "generatedAt": "2026-09-18T01:43:51.631Z",
   "sampleCount": 1076,
   "provenance": {
-    "inputHash": "85cede13edeaab1cf0fce851f90475fa3f60b9f5d2a3312d5ed1493816855931",
+    "inputHash": "18e315a7ecda8c625ea7f6b1966ee2cc013877e6189012922e76328835325ae2",
     "csvRows": 2703,
     "occurrences": 1100,
     "bodies": 1076
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 158,
-      "max": 195,
-      "mean": 186.57899628252787,
+      "max": 195.390732,
+      "mean": 186.85295185315962,
       "count": 1076,
-      "mode": 180,
-      "modeCount": 100
+      "mode": 184.00225140816326,
+      "modeCount": 49
     },
     "body.surfacePressure": {
       "min": 0.0012157880088823094,
@@ -561,7 +561,7 @@
     "body.gravity: typical (modal) 0.208581 (3/1076 samples); range 0.041980958226033246 … 0.26887385639474737",
     "body.earthMasses: typical (modal) 0.018596 (5/1076 samples); range 0.000137 … 0.021999",
     "body.radius: typical (modal) 1677.821417 (6/1076 samples); range 364.349875 … 1896.6025",
-    "body.surfaceTemperature: typical (modal) 180.000000 (100/1076 samples); range 158 … 195",
+    "body.surfaceTemperature: typical (modal) 184.002251 (49/1076 samples); range 158 … 195.390732",
     "body.surfacePressure: typical (modal) 0.080861 (3/1076 samples); range 0.0012157880088823094 … 0.09868193699481864",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (646/1075 samples); range 98.23 … 100",
     "body.solidComposition.Rock: typical (modal) 91.090000 (35/1076 samples); range 65.1 … 96.86",
@@ -609,9 +609,9 @@
         "n": 1075,
         "min": 180,
         "p1": 180,
-        "p50": 186,
-        "p99": 195,
-        "max": 195
+        "p50": 186.220978,
+        "p99": 195.163025,
+        "max": 195.390732
       },
       "surfacePressureAtm": {
         "n": 1075,
@@ -704,7 +704,7 @@
     "body.gravity": 0.227,
     "body.earthMasses": 0.287,
     "body.radius": 0.291,
-    "body.surfaceTemperature": 0.514,
+    "body.surfaceTemperature": 0.52,
     "body.surfacePressure": 0.322,
     "body.solidComposition.Rock": 0.018,
     "body.solidComposition.Metal": 0.009,
@@ -820,11 +820,11 @@
       0,
       0,
       0,
-      267,
-      295,
-      304,
-      185,
-      24,
+      223,
+      302,
+      292,
+      222,
+      36,
       0,
       0
     ],
@@ -1388,7 +1388,7 @@
     },
     "body.surfaceTemperature": {
       "min": 158,
-      "max": 195,
+      "max": 195.390732,
       "counts": [
         1,
         0,
@@ -1399,13 +1399,13 @@
         0,
         0,
         0,
+        159,
+        177,
+        193,
+        115,
+        131,
         183,
-        173,
-        136,
-        176,
-        111,
-        158,
-        138
+        117
       ]
     },
     "body.surfacePressure": {

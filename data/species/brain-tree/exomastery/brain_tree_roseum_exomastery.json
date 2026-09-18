@@ -3,10 +3,10 @@
   "speciesLabel": "Brain Tree Roseum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:02.996Z",
+  "generatedAt": "2026-09-18T01:43:57.059Z",
   "sampleCount": 46,
   "provenance": {
-    "inputHash": "ee7b0665d57d5aff7f7222cfbca8828cb13e1c2125bb0d2ea3b7cbea8c5a62db",
+    "inputHash": "962bbbaa3d7cb15d8237ad7cc1851ed2601c185814df3543816d33380d60d9da",
     "csvRows": 54,
     "occurrences": 46,
     "bodies": 46
@@ -47,7 +47,7 @@
     "body.surfaceTemperature": {
       "min": 174,
       "max": 475,
-      "mean": 273.9347826086956,
+      "mean": 273.94240802173914,
       "count": 46,
       "mode": 226,
       "modeCount": 2

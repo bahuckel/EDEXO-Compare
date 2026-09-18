@@ -3,10 +3,10 @@
   "speciesLabel": "Tussock propagito",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:06.338Z",
+  "generatedAt": "2026-09-18T01:44:00.626Z",
   "sampleCount": 1896,
   "provenance": {
-    "inputHash": "493a9eea3612456e32938d6d164e7c39dc06b725cfab4d53a8c65ec5d3dc13a5",
+    "inputHash": "2bc0d57c6b269125bf9a1c011fc3c990c8490550b26216d0204d691fd12aa70b",
     "csvRows": 3053,
     "occurrences": 1974,
     "bodies": 1896
@@ -45,12 +45,12 @@
       "modeCount": 5
     },
     "body.surfaceTemperature": {
-      "min": 147,
-      "max": 195,
-      "mean": 173.7399789029536,
+      "min": 147.177292,
+      "max": 195.386536,
+      "mean": 174.22346682964155,
       "count": 1896,
-      "mode": 163,
-      "modeCount": 93
+      "mode": 163.02090866666668,
+      "modeCount": 18
     },
     "body.surfacePressure": {
       "min": 0.0036899214113002713,
@@ -538,7 +538,7 @@
     "body.gravity: typical (modal) 0.089202 (3/1896 samples); range 0.042080058236904826 … 0.26894027495535555",
     "body.earthMasses: typical (modal) 0.000612 (7/1896 samples); range 0.000137 … 0.021951",
     "body.radius: typical (modal) 852.197350 (5/1896 samples); range 363.92059375 … 1895.24025",
-    "body.surfaceTemperature: typical (modal) 163.000000 (93/1896 samples); range 147 … 195",
+    "body.surfaceTemperature: typical (modal) 163.020909 (18/1896 samples); range 147.177292 … 195.386536",
     "body.surfacePressure: typical (modal) 0.014794 (3/1896 samples); range 0.0036899214113002713 … 0.09842852709597828",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (1212/1896 samples); range 97.75 … 100",
     "body.solidComposition.Rock: typical (modal) 91.060000 (70/1896 samples); range 65.03 … 97.58",
@@ -583,11 +583,11 @@
       "n": 1896,
       "surfaceTemperatureK": {
         "n": 1896,
-        "min": 147,
-        "p1": 153,
+        "min": 147.177292,
+        "p1": 153.030716,
         "p50": 173,
-        "p99": 194,
-        "max": 195
+        "p99": 194.369507,
+        "max": 195.386536
       },
       "surfacePressureAtm": {
         "n": 1896,
@@ -637,7 +637,7 @@
     "body.gravity": 0.087,
     "body.earthMasses": 0.114,
     "body.radius": 0.113,
-    "body.surfaceTemperature": 0.111,
+    "body.surfaceTemperature": 0.101,
     "body.surfacePressure": 0.146,
     "body.solidComposition.Rock": 0.021,
     "body.solidComposition.Metal": 0.012,
@@ -745,19 +745,19 @@
     ],
     "body.surfaceTemperature": [
       0,
-      111,
+      85,
+      165,
+      189,
+      143,
+      133,
       163,
-      232,
-      159,
-      109,
-      127,
-      99,
-      213,
-      224,
-      153,
-      198,
-      99,
-      9,
+      122,
+      193,
+      201,
+      168,
+      168,
+      149,
+      17,
       0,
       0
     ],
@@ -1302,25 +1302,25 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 147,
-      "max": 195,
+      "min": 147.177292,
+      "max": 195.386536,
       "counts": [
         14,
-        4,
-        30,
-        35,
-        134,
-        216,
-        232,
-        167,
-        168,
+        8,
+        26,
+        40,
+        146,
+        221,
+        219,
+        178,
+        162,
         173,
-        119,
-        145,
-        125,
-        79,
-        147,
-        108
+        117,
+        150,
+        118,
+        73,
+        164,
+        87
       ]
     },
     "body.surfacePressure": {

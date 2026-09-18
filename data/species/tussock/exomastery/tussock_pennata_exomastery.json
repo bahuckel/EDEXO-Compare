@@ -3,10 +3,10 @@
   "speciesLabel": "Tussock pennata",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:05.798Z",
+  "generatedAt": "2026-09-18T01:44:00.108Z",
   "sampleCount": 204,
   "provenance": {
-    "inputHash": "a7278f7db626b2edc220be4f19b4c6e8fd4bee925fedb5ee73631acbd0dfa82d",
+    "inputHash": "8cac845e2174e98a03320446e710d9031736adefd00e180887dfe6d46327f41a",
     "csvRows": 569,
     "occurrences": 205,
     "bodies": 204
@@ -45,12 +45,12 @@
       "modeCount": 4
     },
     "body.surfaceTemperature": {
-      "min": 146,
-      "max": 153,
-      "mean": 151.33333333333334,
+      "min": 146.575684,
+      "max": 153.969025,
+      "mean": 151.56892320588221,
       "count": 204,
-      "mode": 153,
-      "modeCount": 68
+      "mode": 153.0003048,
+      "modeCount": 40
     },
     "body.surfacePressure": {
       "min": 0.0032424627880582287,
@@ -477,7 +477,7 @@
     "body.gravity: typical (modal) 0.045640 (4/204 samples); range 0.04202344824659925 … 0.07285756720523182",
     "body.earthMasses: typical (modal) 0.000406 (4/204 samples); range 0.000136 … 0.000703",
     "body.radius: typical (modal) 393.810187 (4/204 samples); range 362.834125 … 626.5054375",
-    "body.surfaceTemperature: typical (modal) 153.000000 (68/204 samples); range 146 … 153",
+    "body.surfaceTemperature: typical (modal) 153.000305 (40/204 samples); range 146.575684 … 153.969025",
     "body.surfacePressure: typical (modal) 0.003827 (4/204 samples); range 0.0032424627880582287 … 0.00990168776708611",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 100.000000 (186/204 samples); range 99.01 … 100",
     "body.solidComposition.Rock: typical (modal) 91.000000 (16/204 samples); range 66.88 … 97.28",
@@ -522,11 +522,11 @@
       "n": 204,
       "surfaceTemperatureK": {
         "n": 204,
-        "min": 146,
+        "min": 146.575684,
         "p1": 148,
         "p50": 152,
-        "p99": 153,
-        "max": 153
+        "p99": 153.969025,
+        "max": 153.969025
       },
       "surfacePressureAtm": {
         "n": 204,
@@ -1241,25 +1241,25 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 146,
-      "max": 153,
+      "min": 146.575684,
+      "max": 153.969025,
       "counts": [
         2,
         0,
         0,
-        0,
-        14,
-        0,
-        20,
-        0,
-        0,
-        20,
-        0,
-        36,
-        0,
-        44,
-        0,
-        68
+        8,
+        2,
+        17,
+        5,
+        17,
+        2,
+        28,
+        7,
+        27,
+        9,
+        52,
+        11,
+        17
       ]
     },
     "body.surfacePressure": {

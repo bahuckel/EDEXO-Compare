@@ -3,10 +3,10 @@
   "speciesLabel": "Cactoida pullulanta",
   "genus": "Cactoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:58.689Z",
+  "generatedAt": "2026-09-18T01:43:52.093Z",
   "sampleCount": 152,
   "provenance": {
-    "inputHash": "8c6b672ecc8367f4e566d232fe04c24465cdaf7cd9144135f217bb6a59b1cbca",
+    "inputHash": "938bed4fce6cb00ee5f0f25723cc9f6dad0eef445b7a017f0a2206b169d14d4b",
     "csvRows": 166,
     "occurrences": 166,
     "bodies": 152
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 180,
-      "max": 194,
-      "mean": 186.91447368421052,
+      "max": 194.982956,
+      "mean": 187.49912160526318,
       "count": 152,
-      "mode": 182,
-      "modeCount": 17
+      "mode": 182.987547,
+      "modeCount": 8
     },
     "body.surfacePressure": {
       "min": 0.029053187357512954,
@@ -504,7 +504,7 @@
     "body.gravity: typical (modal) 0.125880 (2/152 samples); range 0.046022464771995626 … 0.2626338923922671",
     "body.earthMasses: typical (modal) 0.003500 (2/152 samples); range 0.00018 … 0.020686",
     "body.radius: typical (modal) 1377.892083 (3/152 samples); range 398.87409375 … 1894.28525",
-    "body.surfaceTemperature: typical (modal) 182.000000 (17/152 samples); range 180 … 194",
+    "body.surfaceTemperature: typical (modal) 182.987547 (8/152 samples); range 180 … 194.982956",
     "body.surfacePressure: typical (modal) 0.029053 (2/152 samples); range 0.029053187357512954 … 0.09823518073525783",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (81/152 samples); range 97.87 … 100",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (81/85 samples); range 0.99 … 2.13",
@@ -550,10 +550,10 @@
       "surfaceTemperatureK": {
         "n": 152,
         "min": 180,
-        "p1": 180,
-        "p50": 187,
-        "p99": 194,
-        "max": 194
+        "p1": 180.022949,
+        "p50": 187.579376,
+        "p99": 194.934052,
+        "max": 194.982956
       },
       "surfacePressureAtm": {
         "n": 152,
@@ -603,7 +603,7 @@
     "body.gravity": 0.261,
     "body.earthMasses": 0.305,
     "body.radius": 0.305,
-    "body.surfaceTemperature": 0.506,
+    "body.surfaceTemperature": 0.521,
     "body.surfacePressure": 0.361,
     "body.solidComposition.Rock": 0.05,
     "body.solidComposition.Metal": 0.017,
@@ -719,11 +719,11 @@
       0,
       0,
       0,
-      38,
-      34,
-      53,
-      27,
-      0,
+      21,
+      39,
+      50,
+      32,
+      10,
       0,
       0
     ],
@@ -1269,23 +1269,23 @@
     },
     "body.surfaceTemperature": {
       "min": 180,
-      "max": 194,
+      "max": 194.982956,
       "counts": [
         15,
         6,
-        17,
+        8,
+        13,
+        7,
         5,
+        15,
+        6,
+        6,
         10,
         6,
-        13,
-        0,
-        7,
-        12,
-        5,
         14,
-        15,
-        8,
+        14,
         9,
+        8,
         10
       ]
     },

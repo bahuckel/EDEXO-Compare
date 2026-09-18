@@ -3,10 +3,10 @@
   "speciesLabel": "Bacterium vesicula",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:58.132Z",
+  "generatedAt": "2026-09-18T01:43:51.422Z",
   "sampleCount": 881,
   "provenance": {
-    "inputHash": "d25105509345d05ef0c6be0101de24a3595607ed4616acc0a1f160432c3d1e41",
+    "inputHash": "56bf554d5a6d20437d1f0bb85427a76158b8f90e8cbe4256b92c99558ae05e27",
     "csvRows": 1293,
     "occurrences": 933,
     "bodies": 881
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 50,
       "max": 203,
-      "mean": 78.76958002270148,
+      "mean": 79.01151980136214,
       "count": 881,
       "mode": 55,
-      "modeCount": 80
+      "modeCount": 45
     },
     "body.surfacePressure": {
       "min": 0.0009915921638292623,
@@ -607,7 +607,7 @@
     "body.gravity: typical (modal) 0.054142 (6/881 samples); range 0.02936764794422483 … 0.47679280892246884",
     "body.earthMasses: typical (modal) 0.001224 (7/881 samples); range 0.000182 … 0.299811",
     "body.radius: typical (modal) 3135.413214 (7/881 samples); range 502.0946875 … 5413.0545",
-    "body.surfaceTemperature: typical (modal) 55.000000 (80/881 samples); range 50 … 203",
+    "body.surfaceTemperature: typical (modal) 55.000000 (45/881 samples); range 50 … 203",
     "body.surfacePressure: typical (modal) 0.001395 (6/881 samples); range 0.0009915921638292623 … 0.09481952989884036",
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (754/880 samples); range 51.6 … 100",
     "body.solidComposition.Ice: typical (modal) 82.370000 (35/881 samples); range 0 … 93.81",
@@ -659,8 +659,8 @@
         "n": 880,
         "min": 50,
         "p1": 50,
-        "p50": 74,
-        "p99": 161,
+        "p50": 74.032722,
+        "p99": 161.190735,
         "max": 203
       },
       "surfacePressureAtm": {
@@ -861,8 +861,8 @@
       519
     ],
     "body.surfaceTemperature": [
-      853,
-      14,
+      852,
+      15,
       7,
       1,
       0,
@@ -1462,9 +1462,9 @@
         49,
         53,
         86,
-        92,
+        90,
         108,
-        67,
+        69,
         26,
         14,
         1,

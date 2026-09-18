@@ -3,10 +3,10 @@
   "speciesLabel": "Stratum cucumisis",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:03.049Z",
+  "generatedAt": "2026-09-18T01:43:57.119Z",
   "sampleCount": 252,
   "provenance": {
-    "inputHash": "b7a4c9988a9e21862298e4c7e6698a4b33536e14af28113dbc382904bd422e24",
+    "inputHash": "af2e825103232c03e09c90f90007ac7539f8d254c46e0bfd19dfc0ad5a38c832",
     "csvRows": 602,
     "occurrences": 256,
     "bodies": 252
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 74,
       "max": 357,
-      "mean": 206.9404761904762,
+      "mean": 207.2155454642855,
       "count": 252,
-      "mode": 191,
-      "modeCount": 58
+      "mode": 191.00251289473684,
+      "modeCount": 19
     },
     "body.surfacePressure": {
       "min": 0.0011010996693807055,
@@ -502,7 +502,7 @@
     "body.gravity: typical (modal) 0.199894 (5/252 samples); range 0.041980958226033246 … 0.49535402427495906",
     "body.earthMasses: typical (modal) 0.013568 (5/252 samples); range 0.000137 … 0.175128",
     "body.radius: typical (modal) 1661.667438 (6/252 samples); range 364.349875 … 3792.3155",
-    "body.surfaceTemperature: typical (modal) 191.000000 (58/252 samples); range 74 … 357",
+    "body.surfaceTemperature: typical (modal) 191.002513 (19/252 samples); range 74 … 357",
     "body.surfacePressure: typical (modal) 0.073616 (5/251 samples); range 0.0011010996693807055 … 0.09769526430792005",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 100.000000 (69/164 samples); range 0.21 … 100",
     "body.solidComposition.Rock: typical (modal) 91.100000 (13/252 samples); range 15.94 … 91.3",
@@ -550,9 +550,9 @@
         "n": 178,
         "min": 191,
         "p1": 191,
-        "p50": 192,
-        "p99": 250,
-        "max": 250
+        "p50": 192.811111,
+        "p99": 250.012085,
+        "max": 250.012085
       },
       "surfacePressureAtm": {
         "n": 178,
@@ -593,8 +593,8 @@
         "n": 72,
         "min": 192,
         "p1": 192,
-        "p50": 221,
-        "p99": 340,
+        "p50": 221.577621,
+        "p99": 340.057312,
         "max": 357
       },
       "surfacePressureAtm": {
@@ -724,7 +724,7 @@
     "body.gravity": 0.366,
     "body.earthMasses": 0.392,
     "body.radius": 0.418,
-    "body.surfaceTemperature": 0.691,
+    "body.surfaceTemperature": 0.689,
     "body.surfacePressure": 0.144,
     "body.solidComposition.Rock": 0.112,
     "body.solidComposition.Metal": 0.134,
@@ -842,9 +842,9 @@
       0,
       0,
       0,
-      58,
-      95,
-      98,
+      24,
+      124,
+      103,
       0,
       0
     ],
@@ -1399,8 +1399,8 @@
         0,
         0,
         175,
-        27,
-        13,
+        26,
+        14,
         16,
         4,
         0,

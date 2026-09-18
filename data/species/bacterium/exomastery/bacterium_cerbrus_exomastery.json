@@ -3,10 +3,10 @@
   "speciesLabel": "Bacterium cerbrus",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:57.646Z",
+  "generatedAt": "2026-09-18T01:43:50.756Z",
   "sampleCount": 1937,
   "provenance": {
-    "inputHash": "bde7f45509664ac6ad7bb93159999a1344aa6ec2539055f7e15098e154d2b945",
+    "inputHash": "e1787302f53bc80ce55785e4ce13ffd14b440f0745f42059ad649b594afbc11b",
     "csvRows": 3566,
     "occurrences": 2018,
     "bodies": 1937
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 132,
-      "max": 490,
-      "mean": 278.0485286525555,
+      "max": 490.829346,
+      "mean": 278.42483665823505,
       "count": 1937,
-      "mode": 133,
-      "modeCount": 58
+      "mode": 134.10689699999998,
+      "modeCount": 15
     },
     "body.surfacePressure": {
       "min": 0.000990265738958796,
@@ -596,7 +596,7 @@
     "body.gravity: typical (modal) 0.390177 (6/1937 samples); range 0.0401711276436417 … 0.5746194310185043",
     "body.earthMasses: typical (modal) 0.000210 (17/1937 samples); range 0.000119 … 0.184573",
     "body.radius: typical (modal) 372.464520 (11/1937 samples); range 344.62409375 … 3614.7515",
-    "body.surfaceTemperature: typical (modal) 133.000000 (58/1937 samples); range 132 … 490",
+    "body.surfaceTemperature: typical (modal) 134.106897 (15/1937 samples); range 132 … 490.829346",
     "body.surfacePressure: typical (modal) 0.002073 (6/1937 samples); range 0.000990265738958796 … 0.09826205126079447",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 100.000000 (1229/1281 samples); range 52.14 … 100",
     "body.solidComposition.Rock: typical (modal) 91.070000 (43/1937 samples); range 34.65 … 97.11",
@@ -644,10 +644,10 @@
       "surfaceTemperatureK": {
         "n": 1281,
         "min": 132,
-        "p1": 132,
-        "p50": 193,
-        "p99": 394,
-        "max": 490
+        "p1": 132.311462,
+        "p50": 193.0513,
+        "p99": 394.38504,
+        "max": 490.829346
       },
       "surfacePressureAtm": {
         "n": 1281,
@@ -686,10 +686,10 @@
       "n": 654,
       "surfaceTemperatureK": {
         "n": 654,
-        "min": 394,
-        "p1": 395,
-        "p50": 420,
-        "p99": 449,
+        "min": 394.931061,
+        "p1": 395.742157,
+        "p50": 420.721588,
+        "p99": 449.823212,
         "max": 450
       },
       "surfacePressureAtm": {
@@ -783,7 +783,7 @@
     "body.gravity": 0.523,
     "body.earthMasses": 0.55,
     "body.radius": 0.563,
-    "body.surfaceTemperature": 0.263,
+    "body.surfaceTemperature": 0.265,
     "body.surfacePressure": 0.189,
     "body.solidComposition.Rock": 0.111,
     "body.solidComposition.Metal": 0.148,
@@ -890,22 +890,22 @@
       524
     ],
     "body.surfaceTemperature": [
-      97,
       91,
-      45,
-      23,
-      41,
-      13,
-      9,
+      97,
+      44,
       12,
-      63,
-      88,
-      53,
-      75,
-      79,
-      740,
-      280,
-      228
+      37,
+      26,
+      12,
+      12,
+      61,
+      70,
+      59,
+      72,
+      87,
+      742,
+      282,
+      233
     ],
     "body.surfacePressure": [
       184,
@@ -1485,22 +1485,22 @@
     },
     "body.surfaceTemperature": {
       "min": 132,
-      "max": 490,
+      "max": 490.829346,
       "counts": [
-        182,
-        201,
-        405,
-        168,
-        109,
-        48,
+        177,
+        203,
+        397,
+        179,
+        111,
+        46,
         44,
         41,
         21,
-        34,
+        36,
+        13,
         15,
-        15,
-        351,
-        282,
+        356,
+        277,
         17,
         4
       ]

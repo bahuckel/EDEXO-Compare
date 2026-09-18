@@ -3,10 +3,10 @@
   "speciesLabel": "Brain Tree Lividum",
   "genus": "Brain Trees",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:02.116Z",
+  "generatedAt": "2026-09-18T01:43:56.051Z",
   "sampleCount": 2,
   "provenance": {
-    "inputHash": "ed206dfa0e71437326a9d0123635a66786e7cb5ec01232187e2e2d39582b5384",
+    "inputHash": "2c395b465d3e88c2dda828e2f8773bef2646d8b46a86dd2d06903a3e4f00fa46",
     "csvRows": 5,
     "occurrences": 2,
     "bodies": 2
@@ -45,11 +45,11 @@
       "modeCount": 1
     },
     "body.surfaceTemperature": {
-      "min": 380,
+      "min": 380.350769,
       "max": 489,
-      "mean": 434.5,
+      "mean": 434.6753845,
       "count": 2,
-      "mode": 380,
+      "mode": 380.350769,
       "modeCount": 1
     },
     "body.solidComposition.Rock": {
@@ -338,7 +338,7 @@
     "body.gravity: typical (modal) 0.270930 (1/2 samples); range 0.07451651154468215 … 0.27093002840554387",
     "body.earthMasses: typical (modal) 0.032538 (1/2 samples); range 0.000695 … 0.032538",
     "body.radius: typical (modal) 2210.300750 (1/2 samples); range 615.957375 … 2210.30075",
-    "body.surfaceTemperature: typical (modal) 380.000000 (1/2 samples); range 380 … 489",
+    "body.surfaceTemperature: typical (modal) 380.350769 (1/2 samples); range 380.350769 … 489",
     "body.solidComposition.Rock: typical (modal) 91.170000 (1/2 samples); range 86 … 91.17",
     "body.solidComposition.Metal: typical (modal) 8.830000 (1/2 samples); range 8.83 … 14",
     "body.solidComposition.Ice: typical (modal) 0.000000 (2/2 samples); range 0 … 0",
@@ -372,8 +372,8 @@
       "n": 2,
       "surfaceTemperatureK": {
         "n": 2,
-        "min": 380,
-        "p1": 380,
+        "min": 380.350769,
+        "p1": 380.350769,
         "p50": 489,
         "p99": 489,
         "max": 489
@@ -973,7 +973,7 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 380,
+      "min": 380.350769,
       "max": 489,
       "counts": [
         1,

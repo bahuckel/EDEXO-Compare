@@ -3,10 +3,10 @@
   "speciesLabel": "Tussock caputus",
   "genus": "Tussock",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:05.351Z",
+  "generatedAt": "2026-09-18T01:43:59.628Z",
   "sampleCount": 747,
   "provenance": {
-    "inputHash": "7a149d59834f3501ff7b89552264029dd90d444f64f017bfaccc6a0f90676161",
+    "inputHash": "a50d6a5498ef929e3c13723a288cd194c51eade7b3bd74d9cfff8ef36f8dd038",
     "csvRows": 1852,
     "occurrences": 774,
     "bodies": 747
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 158,
-      "max": 189,
-      "mean": 184.44042838018743,
+      "max": 189.991364,
+      "mean": 184.72072025167319,
       "count": 747,
-      "mode": 181,
-      "modeCount": 105
+      "mode": 184.00244616666666,
+      "modeCount": 54
     },
     "body.surfacePressure": {
       "min": 0.0012157880088823094,
@@ -552,7 +552,7 @@
     "body.gravity: typical (modal) 0.189081 (4/747 samples); range 0.04419859439472677 … 0.267461958808996",
     "body.earthMasses: typical (modal) 0.011544 (4/747 samples); range 0.000173 … 0.021791",
     "body.radius: typical (modal) 1677.818025 (5/747 samples); range 399.02796875 … 1894.72175",
-    "body.surfaceTemperature: typical (modal) 181.000000 (105/747 samples); range 158 … 189",
+    "body.surfaceTemperature: typical (modal) 184.002446 (54/747 samples); range 158 … 189.991364",
     "body.surfacePressure: typical (modal) 0.066501 (4/747 samples); range 0.0012157880088823094 … 0.09830064150012337",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (525/746 samples); range 98.54 … 100",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (525/540 samples); range 0.99 … 1.46",
@@ -600,9 +600,9 @@
         "n": 746,
         "min": 181,
         "p1": 181,
-        "p50": 184,
-        "p99": 189,
-        "max": 189
+        "p50": 184.627884,
+        "p99": 189.747589,
+        "max": 189.991364
       },
       "surfacePressureAtm": {
         "n": 746,
@@ -695,7 +695,7 @@
     "body.gravity": 0.262,
     "body.earthMasses": 0.307,
     "body.radius": 0.31,
-    "body.surfaceTemperature": 0.799,
+    "body.surfaceTemperature": 0.773,
     "body.surfacePressure": 0.38,
     "body.solidComposition.Rock": 0.014,
     "body.solidComposition.Metal": 0.009,
@@ -811,9 +811,9 @@
       0,
       0,
       0,
-      207,
-      352,
-      187,
+      153,
+      360,
+      233,
       0,
       0,
       0,
@@ -1379,7 +1379,7 @@
     },
     "body.surfaceTemperature": {
       "min": 158,
-      "max": 189,
+      "max": 189.991364,
       "counts": [
         1,
         0,
@@ -1393,8 +1393,8 @@
         0,
         0,
         105,
-        205,
-        171,
+        203,
+        173,
         139,
         126
       ]

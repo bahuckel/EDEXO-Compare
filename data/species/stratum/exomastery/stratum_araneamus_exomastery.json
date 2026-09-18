@@ -3,10 +3,10 @@
   "speciesLabel": "Stratum araneamus",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:03.021Z",
+  "generatedAt": "2026-09-18T01:43:57.092Z",
   "sampleCount": 35,
   "provenance": {
-    "inputHash": "eae90f79da46bc252683703491725ffb98add706d89d54135e7229d9d7d48bea",
+    "inputHash": "df630d4e67f0874cde90f9fde174b4649ea13b1b08a817f5745ec10cd1b1368d",
     "csvRows": 42,
     "occurrences": 35,
     "bodies": 35
@@ -45,11 +45,11 @@
       "modeCount": 3
     },
     "body.surfaceTemperature": {
-      "min": 165,
+      "min": 165.36412,
       "max": 371,
-      "mean": 231.4857142857143,
+      "mean": 231.7579472285714,
       "count": 35,
-      "mode": 259,
+      "mode": 259.36731,
       "modeCount": 3
     },
     "body.surfacePressure": {
@@ -445,7 +445,7 @@
     "body.gravity: typical (modal) 0.394669 (3/35 samples); range 0.278707029166614 … 0.5292823231048597",
     "body.earthMasses: typical (modal) 0.087320 (3/35 samples); range 0.035196 … 0.195646",
     "body.radius: typical (modal) 3000.024500 (3/35 samples); range 2266.50775 … 3877.71875",
-    "body.surfaceTemperature: typical (modal) 259.000000 (3/35 samples); range 165 … 371",
+    "body.surfaceTemperature: typical (modal) 259.367310 (3/35 samples); range 165.36412 … 371",
     "body.surfacePressure: typical (modal) 0.002712 (3/35 samples); range 0.00100193372810264 … 0.03622121875154207",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 100.000000 (34/35 samples); range 63.48 … 100",
     "body.solidComposition.Rock: typical (modal) 91.060000 (4/35 samples); range 85.98 … 91.33",
@@ -490,9 +490,9 @@
       "n": 35,
       "surfaceTemperatureK": {
         "n": 35,
-        "min": 165,
-        "p1": 165,
-        "p50": 230,
+        "min": 165.36412,
+        "p1": 165.36412,
+        "p50": 230.238922,
         "p99": 371,
         "max": 371
       },
@@ -640,15 +640,15 @@
       0,
       0,
       0,
-      1,
-      2,
+      0,
+      3,
       0,
       0,
       0,
       0,
       5,
-      2,
-      0,
+      1,
+      1,
       2,
       23,
       0,
@@ -1195,7 +1195,7 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 165,
+      "min": 165.36412,
       "max": 371,
       "counts": [
         3,

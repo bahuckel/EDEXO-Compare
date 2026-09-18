@@ -3,10 +3,10 @@
   "speciesLabel": "Fungoida gelata",
   "genus": "Fungoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:01.650Z",
+  "generatedAt": "2026-09-18T01:43:55.546Z",
   "sampleCount": 1411,
   "provenance": {
-    "inputHash": "6b3f84606a9255ca34b5c337df91bd2da50cd1b8f5f064ff152f123fc05fbaef",
+    "inputHash": "0dbe75a6ef3ad73fb4b8413d0799e587cf867de1b19ea6d97c6fce43b0579218",
     "csvRows": 2248,
     "occurrences": 1477,
     "bodies": 1411
@@ -45,12 +45,12 @@
       "modeCount": 8
     },
     "body.surfaceTemperature": {
-      "min": 82,
-      "max": 451,
-      "mean": 293.1474131821403,
+      "min": 82.473457,
+      "max": 451.270569,
+      "mean": 293.6381402707304,
       "count": 1411,
-      "mode": 180,
-      "modeCount": 99
+      "mode": 180.07865841176465,
+      "modeCount": 17
     },
     "body.surfacePressure": {
       "min": 0.003901267495682211,
@@ -582,7 +582,7 @@
     "body.gravity: typical (modal) 0.042012 (4/1411 samples); range 0.04115866250603857 … 0.2642230474725739",
     "body.earthMasses: typical (modal) 0.000193 (17/1411 samples); range 0.000128 … 0.021069",
     "body.radius: typical (modal) 409.091414 (8/1411 samples); range 342.27984375 … 1896.58075",
-    "body.surfaceTemperature: typical (modal) 180.000000 (99/1411 samples); range 82 … 451",
+    "body.surfaceTemperature: typical (modal) 180.078658 (17/1411 samples); range 82.473457 … 451.270569",
     "body.surfacePressure: typical (modal) 0.060308 (4/1411 samples); range 0.003901267495682211 … 0.09858412171724648",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (433/740 samples); range 97.64 … 100",
     "body.solidComposition.Rock: typical (modal) 91.070000 (52/1411 samples); range 65.37 … 97.12",
@@ -630,11 +630,11 @@
       "n": 740,
       "surfaceTemperatureK": {
         "n": 740,
-        "min": 180,
-        "p1": 180,
-        "p50": 185,
-        "p99": 195,
-        "max": 195
+        "min": 180.04213,
+        "p1": 180.068008,
+        "p50": 185.495972,
+        "p99": 195.189224,
+        "max": 195.386536
       },
       "surfacePressureAtm": {
         "n": 740,
@@ -673,11 +673,11 @@
       "n": 644,
       "surfaceTemperatureK": {
         "n": 644,
-        "min": 394,
-        "p1": 398,
-        "p50": 424,
-        "p99": 449,
-        "max": 451
+        "min": 394.931061,
+        "p1": 398.316956,
+        "p50": 424.584625,
+        "p99": 449.48761,
+        "max": 451.270569
       },
       "surfacePressureAtm": {
         "n": 644,
@@ -716,9 +716,9 @@
       "n": 19,
       "surfaceTemperatureK": {
         "n": 19,
-        "min": 82,
-        "p1": 82,
-        "p50": 89,
+        "min": 82.473457,
+        "p1": 82.473457,
+        "p50": 89.446404,
         "p99": 97,
         "max": 97
       },
@@ -759,11 +759,11 @@
       "n": 8,
       "surfaceTemperatureK": {
         "n": 8,
-        "min": 168,
-        "p1": 168,
-        "p50": 175,
-        "p99": 176,
-        "max": 176
+        "min": 168.277908,
+        "p1": 168.277908,
+        "p50": 175.373016,
+        "p99": 176.27951,
+        "max": 176.27951
       },
       "surfacePressureAtm": {
         "n": 8,
@@ -813,7 +813,7 @@
     "body.gravity": 0.144,
     "body.earthMasses": 0.167,
     "body.radius": 0.169,
-    "body.surfaceTemperature": 0.314,
+    "body.surfaceTemperature": 0.327,
     "body.surfacePressure": 0.303,
     "body.solidComposition.Rock": 0.041,
     "body.solidComposition.Metal": 0.02,
@@ -929,13 +929,13 @@
       0,
       0,
       6,
-      213,
-      207,
-      223,
-      86,
-      121,
-      288,
-      246
+      160,
+      238,
+      193,
+      126,
+      112,
+      295,
+      260
     ],
     "body.surfacePressure": [
       0,
@@ -1532,8 +1532,8 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 82,
-      "max": 451,
+      "min": 82.473457,
+      "max": 451.270569,
       "counts": [
         19,
         0,
@@ -1549,8 +1549,8 @@
         0,
         0,
         24,
-        374,
-        246
+        377,
+        243
       ]
     },
     "body.surfacePressure": {

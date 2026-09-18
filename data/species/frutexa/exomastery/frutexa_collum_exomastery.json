@@ -3,10 +3,10 @@
   "speciesLabel": "Frutexa collum",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:00.610Z",
+  "generatedAt": "2026-09-18T01:43:54.353Z",
   "sampleCount": 133,
   "provenance": {
-    "inputHash": "55fc0868a8c0558a8f4f72775a2bf550557e4f2867f5ce11acfed34f54cbc951",
+    "inputHash": "5eea0137890efd02f0d2cafc12df1d800f42d72c79edb1ef85adc08ed911f165",
     "csvRows": 202,
     "occurrences": 133,
     "bodies": 133
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 132,
-      "max": 167,
-      "mean": 135.45864661654136,
+      "max": 167.443466,
+      "mean": 135.84112983458644,
       "count": 133,
-      "mode": 133,
-      "modeCount": 69
+      "mode": 133.01082670588235,
+      "modeCount": 17
     },
     "body.surfacePressure": {
       "min": 0.0009911601085615593,
@@ -470,7 +470,7 @@
     "body.gravity: typical (modal) 0.236352 (4/133 samples); range 0.05259538766502607 … 0.27483854260493357",
     "body.earthMasses: typical (modal) 0.021919 (4/133 samples); range 0.000266 … 0.03405",
     "body.radius: typical (modal) 1942.294875 (4/133 samples); range 453.5775 … 2244.9375",
-    "body.surfaceTemperature: typical (modal) 133.000000 (69/133 samples); range 132 … 167",
+    "body.surfaceTemperature: typical (modal) 133.010827 (17/133 samples); range 132 … 167.443466",
     "body.surfacePressure: typical (modal) 0.001027 (4/133 samples); range 0.0009911601085615593 … 0.005429055011102887",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 100.000000 (133/133 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.030000 (12/133 samples); range 67.03 … 91.7",
@@ -516,9 +516,9 @@
         "n": 133,
         "min": 132,
         "p1": 132,
-        "p50": 133,
-        "p99": 167,
-        "max": 167
+        "p50": 133.41243,
+        "p99": 167.443466,
+        "max": 167.443466
       },
       "surfacePressureAtm": {
         "n": 133,
@@ -675,12 +675,12 @@
       0
     ],
     "body.surfaceTemperature": [
-      97,
-      29,
+      88,
+      38,
       3,
-      2,
-      2,
       0,
+      2,
+      2,
       0,
       0,
       0,
@@ -1216,10 +1216,10 @@
     },
     "body.surfaceTemperature": {
       "min": 132,
-      "max": 167,
+      "max": 167.443466,
       "counts": [
-        119,
-        0,
+        110,
+        9,
         0,
         0,
         0,
@@ -1227,8 +1227,8 @@
         0,
         3,
         3,
-        0,
         1,
+        0,
         0,
         2,
         1,

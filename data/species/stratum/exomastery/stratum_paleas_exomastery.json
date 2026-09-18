@@ -3,10 +3,10 @@
   "speciesLabel": "Stratum paleas",
   "genus": "Stratum",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:03.612Z",
+  "generatedAt": "2026-09-18T01:43:57.712Z",
   "sampleCount": 2446,
   "provenance": {
-    "inputHash": "c00db4b7501ccf27f77f33e91c189cd547f4e4ba5057acf3b77674d117d31ab2",
+    "inputHash": "2902fbc28c33698aa1afefb8f690e6536ce9f070d948349b5377f1c6c352968f",
     "csvRows": 5177,
     "occurrences": 2531,
     "bodies": 2446
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 158,
-      "max": 449,
-      "mean": 219.5306623058054,
+      "max": 449.976349,
+      "mean": 219.88845263246188,
       "count": 2446,
-      "mode": 166,
-      "modeCount": 135
+      "mode": 171.9984634897959,
+      "modeCount": 49
     },
     "body.surfacePressure": {
       "min": 0.00099652014803849,
@@ -565,7 +565,7 @@
     "body.gravity: typical (modal) 0.301206 (4/2446 samples); range 0.04055129718091373 … 0.5339549135388825",
     "body.earthMasses: typical (modal) 0.000280 (11/2446 samples); range 0.000122 … 0.215082",
     "body.radius: typical (modal) 1038.682531 (8/2446 samples); range 349.83403125 … 4047.94175",
-    "body.surfaceTemperature: typical (modal) 166.000000 (135/2446 samples); range 158 … 449",
+    "body.surfaceTemperature: typical (modal) 171.998463 (49/2446 samples); range 158 … 449.976349",
     "body.surfacePressure: typical (modal) 0.006675 (4/2445 samples); range 0.00099652014803849 … 0.09852098368615839",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (1092/1618 samples); range 1.29 … 100",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (1092/1184 samples); range 0.09 … 48.08",
@@ -615,9 +615,9 @@
         "n": 1615,
         "min": 165,
         "p1": 165,
-        "p50": 176,
-        "p99": 212,
-        "max": 352
+        "p50": 176.511627,
+        "p99": 212.941055,
+        "max": 352.261475
       },
       "surfacePressureAtm": {
         "n": 1615,
@@ -656,11 +656,11 @@
       "n": 424,
       "surfaceTemperatureK": {
         "n": 424,
-        "min": 394,
-        "p1": 401,
-        "p50": 422,
-        "p99": 449,
-        "max": 449
+        "min": 394.931061,
+        "p1": 401.234375,
+        "p50": 422.23468,
+        "p99": 449.823212,
+        "max": 449.976349
       },
       "surfacePressureAtm": {
         "n": 424,
@@ -701,9 +701,9 @@
         "n": 403,
         "min": 158,
         "p1": 165,
-        "p50": 170,
-        "p99": 176,
-        "max": 176
+        "p50": 170.728638,
+        "p99": 176.260529,
+        "max": 176.27951
       },
       "surfacePressureAtm": {
         "n": 403,
@@ -745,8 +745,8 @@
         "min": 222,
         "p1": 222,
         "p50": 231,
-        "p99": 234,
-        "max": 234
+        "p99": 234.839005,
+        "max": 234.839005
       },
       "surfacePressureAtm": {
         "n": 3,
@@ -832,7 +832,7 @@
     "body.gravity": 0.033,
     "body.earthMasses": 0.023,
     "body.radius": 0.019,
-    "body.surfaceTemperature": 0.11,
+    "body.surfaceTemperature": 0.111,
     "body.surfacePressure": 0.035,
     "body.solidComposition.Rock": 0.102,
     "body.solidComposition.Metal": 0.101,
@@ -942,19 +942,19 @@
       0,
       1,
       0,
-      117,
+      33,
       244,
-      186,
-      223,
-      239,
-      291,
-      231,
-      143,
-      208,
-      99,
-      107,
-      192,
-      165
+      215,
+      247,
+      266,
+      281,
+      229,
+      133,
+      189,
+      132,
+      112,
+      195,
+      169
     ],
     "body.surfacePressure": [
       78,
@@ -1534,12 +1534,12 @@
     },
     "body.surfaceTemperature": {
       "min": 158,
-      "max": 449,
+      "max": 449.976349,
       "counts": [
-        1230,
-        752,
-        21,
-        7,
+        1184,
+        786,
+        29,
+        11,
         3,
         4,
         0,
@@ -1549,9 +1549,9 @@
         3,
         0,
         2,
-        81,
-        208,
-        133
+        89,
+        206,
+        127
       ]
     },
     "body.surfacePressure": {

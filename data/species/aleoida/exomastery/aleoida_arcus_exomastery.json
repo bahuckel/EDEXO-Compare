@@ -3,10 +3,10 @@
   "speciesLabel": "Aleoida arcus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:54.658Z",
+  "generatedAt": "2026-09-18T01:43:46.754Z",
   "sampleCount": 415,
   "provenance": {
-    "inputHash": "efe09087b4e30453054f2dbd1833f31424b558e33cf5c53e57463c47fb44e4b5",
+    "inputHash": "7f8b81c81ae8f3c4772c568048d4a1416dd1742a8698b17b0f707a110acfdf05",
     "csvRows": 809,
     "occurrences": 431,
     "bodies": 415
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 175,
-      "max": 179,
-      "mean": 176.85060240963855,
+      "max": 179.89035,
+      "mean": 177.19375942168682,
       "count": 415,
-      "mode": 178,
-      "modeCount": 104
+      "mode": 177.00227135294114,
+      "modeCount": 34
     },
     "body.surfacePressure": {
       "min": 0.017452323602269924,
@@ -499,7 +499,7 @@
     "body.gravity: typical (modal) 0.165285 (5/415 samples); range 0.050272725970514846 … 0.23518102841442745",
     "body.earthMasses: typical (modal) 0.003677 (6/415 samples); range 0.000233 … 0.020233",
     "body.radius: typical (modal) 1386.415375 (5/415 samples); range 434.2064375 … 1891.958375",
-    "body.surfaceTemperature: typical (modal) 178.000000 (104/415 samples); range 175 … 179",
+    "body.surfaceTemperature: typical (modal) 177.002271 (34/415 samples); range 175 … 179.89035",
     "body.surfacePressure: typical (modal) 0.050819 (5/415 samples); range 0.017452323602269924 … 0.09806675803602269",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (284/415 samples); range 97.81 … 100",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (284/310 samples); range 0.99 … 2.19",
@@ -546,9 +546,9 @@
         "n": 415,
         "min": 175,
         "p1": 175,
-        "p50": 177,
-        "p99": 179,
-        "max": 179
+        "p50": 177.046326,
+        "p99": 179.703079,
+        "max": 179.89035
       },
       "surfacePressureAtm": {
         "n": 415,
@@ -713,8 +713,8 @@
       0,
       0,
       0,
-      259,
-      156,
+      238,
+      177,
       0,
       0,
       0,
@@ -1264,24 +1264,24 @@
     },
     "body.surfaceTemperature": {
       "min": 175,
-      "max": 179,
+      "max": 179.89035,
       "counts": [
-        92,
-        0,
-        0,
-        0,
-        86,
-        0,
-        0,
-        0,
-        81,
-        0,
-        0,
-        0,
-        104,
-        0,
-        0,
-        52
+        50,
+        24,
+        11,
+        43,
+        24,
+        11,
+        51,
+        21,
+        11,
+        42,
+        26,
+        28,
+        21,
+        23,
+        18,
+        11
       ]
     },
     "body.surfacePressure": {

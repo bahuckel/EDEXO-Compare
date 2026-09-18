@@ -3,10 +3,10 @@
   "speciesLabel": "Bacterium volu",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:58.171Z",
+  "generatedAt": "2026-09-18T01:43:51.471Z",
   "sampleCount": 68,
   "provenance": {
-    "inputHash": "7f6b078d798b498ff7c1b151918fce254a0c9c34bbf5cf4d80ce2ad45b70d817",
+    "inputHash": "df2082be9ddfa068b22a8c1f8c9d7f313a5f59c127d720eae1de3b61f15754bc",
     "csvRows": 111,
     "occurrences": 68,
     "bodies": 68
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 145,
       "max": 209,
-      "mean": 171.69117647058823,
+      "mean": 172.02427655882352,
       "count": 68,
-      "mode": 151,
-      "modeCount": 7
+      "mode": 175.267731,
+      "modeCount": 6
     },
     "body.surfacePressure": {
       "min": 0.015466995894399212,
@@ -539,7 +539,7 @@
     "body.gravity: typical (modal) 0.354970 (6/68 samples); range 0.24487659002445092 … 0.449281476530889",
     "body.earthMasses: typical (modal) 0.187676 (6/68 samples); range 0.0623 … 0.222586",
     "body.radius: typical (modal) 4637.599500 (6/68 samples); range 2607.1975 … 5194.47",
-    "body.surfaceTemperature: typical (modal) 151.000000 (7/68 samples); range 145 … 209",
+    "body.surfaceTemperature: typical (modal) 175.267731 (6/68 samples); range 145 … 209",
     "body.surfacePressure: typical (modal) 0.077245 (6/68 samples); range 0.015466995894399212 … 0.09622013207994078",
     "body.atmosphereComposition.Oxygen: typical (modal) 100.000000 (56/68 samples); range 80.15 … 100",
     "body.solidComposition.Ice: typical (modal) 68.490000 (6/68 samples); range 0 … 93",
@@ -645,7 +645,7 @@
     "body.gravity": 0.903,
     "body.earthMasses": 1,
     "body.radius": 1,
-    "body.surfaceTemperature": 0.201,
+    "body.surfaceTemperature": 0.199,
     "body.surfacePressure": 0.328,
     "body.solidComposition.Rock": 0.942,
     "body.solidComposition.Metal": 0.634,
@@ -757,8 +757,8 @@
       8,
       1,
       1,
-      6,
-      0,
+      2,
+      4,
       13,
       0,
       0

@@ -3,10 +3,10 @@
   "speciesLabel": "Fonticulua lapida",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:00.228Z",
+  "generatedAt": "2026-09-18T01:43:53.945Z",
   "sampleCount": 125,
   "provenance": {
-    "inputHash": "4211983a04e533e5896655805572998858efe7df848d055a8dfdbd1542f15df0",
+    "inputHash": "fe5990c2dccf2345c683839f61473fb91e5717765361240f7384f96e627d2026",
     "csvRows": 294,
     "occurrences": 128,
     "bodies": 125
@@ -45,12 +45,12 @@
       "modeCount": 5
     },
     "body.surfaceTemperature": {
-      "min": 50,
-      "max": 80,
-      "mean": 66.968,
+      "min": 50.620167,
+      "max": 80.036583,
+      "mean": 67.22110551200001,
       "count": 125,
       "mode": 61,
-      "modeCount": 21
+      "modeCount": 11
     },
     "body.surfacePressure": {
       "min": 0.0011864424179620036,
@@ -508,7 +508,7 @@
     "body.gravity: typical (modal) 0.249632 (5/125 samples); range 0.19084102574508452 … 0.27468585853065286",
     "body.earthMasses: typical (modal) 0.099427 (5/125 samples); range 0.044289 … 0.119089",
     "body.radius: typical (modal) 4025.190250 (5/125 samples); range 2817.75025 … 4264.3795",
-    "body.surfaceTemperature: typical (modal) 61.000000 (21/125 samples); range 50 … 80",
+    "body.surfaceTemperature: typical (modal) 61.000000 (11/125 samples); range 50.620167 … 80.036583",
     "body.surfacePressure: typical (modal) 0.017165 (5/125 samples); range 0.0011864424179620036 … 0.06890177318529485",
     "body.atmosphereComposition.Nitrogen: typical (modal) 100.000000 (125/125 samples); range 100 … 100",
     "body.solidComposition.Ice: typical (modal) 87.920000 (10/125 samples); range 46.3 … 91.55",
@@ -555,11 +555,11 @@
       "n": 125,
       "surfaceTemperatureK": {
         "n": 125,
-        "min": 50,
+        "min": 50.620167,
         "p1": 51,
         "p50": 65,
-        "p99": 80,
-        "max": 80
+        "p99": 80.036583,
+        "max": 80.036583
       },
       "surfacePressureAtm": {
         "n": 125,
@@ -1255,24 +1255,24 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 50,
-      "max": 80,
+      "min": 50.620167,
+      "max": 80.036583,
       "counts": [
         2,
         5,
         6,
-        4,
-        7,
+        2,
+        9,
         25,
         9,
-        4,
-        8,
-        1,
+        7,
+        6,
+        0,
         0,
         0,
         15,
-        12,
-        18,
+        11,
+        19,
         9
       ]
     },

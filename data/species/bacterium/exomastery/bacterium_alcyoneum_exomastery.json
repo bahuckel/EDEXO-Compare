@@ -3,10 +3,10 @@
   "speciesLabel": "Bacterium alcyoneum",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:55.884Z",
+  "generatedAt": "2026-09-18T01:43:48.591Z",
   "sampleCount": 2526,
   "provenance": {
-    "inputHash": "18b56b5c77771e282e2e6166b127866874ef77fa83e647d1f0f50105f7e8c346",
+    "inputHash": "038439506bee70b83a92672774c0a1360ef0a9b9ee30ef9e6a9d3950e306a93d",
     "csvRows": 5259,
     "occurrences": 2582,
     "bodies": 2526
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 152,
       "max": 224,
-      "mean": 166.3618368962787,
+      "mean": 166.7298754267619,
       "count": 2526,
-      "mode": 172,
-      "modeCount": 222
+      "mode": 171.9999646666668,
+      "modeCount": 66
     },
     "body.surfacePressure": {
       "min": 0.0009876185541574142,
@@ -582,7 +582,7 @@
     "body.gravity: typical (modal) 0.161606 (6/2526 samples); range 0.04182198994786506 … 0.3674142884455557",
     "body.earthMasses: typical (modal) 0.009313 (8/2526 samples); range 0.000135 … 0.055041",
     "body.radius: typical (modal) 1497.775523 (11/2526 samples); range 362.36734375 … 2617.19225",
-    "body.surfaceTemperature: typical (modal) 172.000000 (222/2526 samples); range 152 … 224",
+    "body.surfaceTemperature: typical (modal) 171.999965 (66/2526 samples); range 152 … 224",
     "body.surfacePressure: typical (modal) 0.001556 (7/2525 samples); range 0.0009876185541574142 … 0.047923292741179374",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (2391/2523 samples); range 76.91 … 100",
     "body.solidComposition.Rock: typical (modal) 91.060000 (98/2526 samples); range 64.25 … 96.93",
@@ -629,10 +629,10 @@
       "surfaceTemperatureK": {
         "n": 2523,
         "min": 152,
-        "p1": 152,
-        "p50": 167,
+        "p1": 152.583481,
+        "p50": 167.575104,
         "p99": 175,
-        "max": 176
+        "max": 176.260529
       },
       "surfacePressureAtm": {
         "n": 2523,
@@ -671,8 +671,8 @@
       "n": 2,
       "surfaceTemperatureK": {
         "n": 2,
-        "min": 179,
-        "p1": 179,
+        "min": 179.288208,
+        "p1": 179.288208,
         "p50": 183,
         "p99": 183,
         "max": 183
@@ -761,7 +761,7 @@
     "body.gravity": 0.175,
     "body.earthMasses": 0.179,
     "body.radius": 0.183,
-    "body.surfaceTemperature": 0.262,
+    "body.surfaceTemperature": 0.268,
     "body.surfacePressure": 0.468,
     "body.solidComposition.Rock": 0.019,
     "body.solidComposition.Metal": 0.039,
@@ -869,13 +869,13 @@
     ],
     "body.surfaceTemperature": [
       0,
-      342,
-      309,
-      349,
-      310,
-      292,
-      353,
-      385,
+      315,
+      312,
+      240,
+      326,
+      330,
+      375,
+      442,
       183,
       1,
       1,
@@ -1447,12 +1447,12 @@
       "min": 152,
       "max": 224,
       "counts": [
-        187,
-        255,
-        558,
-        602,
-        893,
-        28,
+        168,
+        274,
+        494,
+        666,
+        863,
+        58,
         2,
         0,
         0,

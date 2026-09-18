@@ -3,10 +3,10 @@
   "speciesLabel": "Aleoida coronamus",
   "genus": "Aleoida",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:54.880Z",
+  "generatedAt": "2026-09-18T01:43:47.093Z",
   "sampleCount": 578,
   "provenance": {
-    "inputHash": "fb94d7d66a71a8f0dd036c7f1489e93f1d25ce1b8edac3247f722ddea1383785",
+    "inputHash": "347dc76674d50c7c0ba0157471cbc586b7eb89b80ba22001668d6d409bf96c36",
     "csvRows": 1233,
     "occurrences": 603,
     "bodies": 578
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 180,
-      "max": 189,
-      "mean": 183.88754325259515,
+      "max": 189.988068,
+      "mean": 184.26085939965375,
       "count": 578,
-      "mode": 180,
-      "modeCount": 86
+      "mode": 183.99966096296296,
+      "modeCount": 27
     },
     "body.surfacePressure": {
       "min": 0.027166089356032565,
@@ -527,7 +527,7 @@
     "body.gravity: typical (modal) 0.139829 (5/578 samples); range 0.04425588308888139 … 0.267461958808996",
     "body.earthMasses: typical (modal) 0.006732 (5/578 samples); range 0.000158 … 0.021791",
     "body.radius: typical (modal) 1180.714625 (5/578 samples); range 381.09 … 1894.72175",
-    "body.surfaceTemperature: typical (modal) 180.000000 (86/578 samples); range 180 … 189",
+    "body.surfaceTemperature: typical (modal) 183.999661 (27/578 samples); range 180 … 189.988068",
     "body.surfacePressure: typical (modal) 0.036012 (5/578 samples); range 0.027166089356032565 … 0.09830064150012337",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (377/578 samples); range 97.64 … 100",
     "body.atmosphereComposition.Sulphur dioxide: typical (modal) 0.990000 (377/397 samples); range 0.99 … 2.36",
@@ -575,8 +575,8 @@
         "min": 180,
         "p1": 180,
         "p50": 184,
-        "p99": 189,
-        "max": 189
+        "p99": 189.791595,
+        "max": 189.988068
       },
       "surfacePressureAtm": {
         "n": 578,
@@ -626,7 +626,7 @@
     "body.gravity": 0.259,
     "body.earthMasses": 0.277,
     "body.radius": 0.273,
-    "body.surfaceTemperature": 0.654,
+    "body.surfaceTemperature": 0.646,
     "body.surfacePressure": 0.376,
     "body.solidComposition.Rock": 0.067,
     "body.solidComposition.Metal": 0.06,
@@ -742,9 +742,9 @@
       0,
       0,
       0,
-      207,
-      242,
-      129,
+      174,
+      234,
+      170,
       0,
       0,
       0,
@@ -1292,24 +1292,24 @@
     },
     "body.surfaceTemperature": {
       "min": 180,
-      "max": 189,
+      "max": 189.988068,
       "counts": [
-        86,
-        67,
-        0,
-        54,
-        0,
-        73,
-        0,
-        67,
+        61,
+        51,
+        32,
         47,
-        0,
-        55,
-        0,
-        50,
-        0,
-        41,
-        38
+        42,
+        33,
+        44,
+        37,
+        40,
+        27,
+        26,
+        37,
+        31,
+        25,
+        25,
+        20
       ]
     },
     "body.surfacePressure": {

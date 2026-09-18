@@ -3,10 +3,10 @@
   "speciesLabel": "Fumerola carbosis",
   "genus": "Fumerola",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:01.251Z",
+  "generatedAt": "2026-09-18T01:43:55.086Z",
   "sampleCount": 32,
   "provenance": {
-    "inputHash": "038424d53345d66e54da0a2ce3e92da00fddcfad01de2a0f4f8610a2399928eb",
+    "inputHash": "2c41597740a2ed1d02e837050f1cfdb60a50a1595886dc69dbc7b177e35db13b",
     "csvRows": 57,
     "occurrences": 33,
     "bodies": 32
@@ -45,12 +45,12 @@
       "modeCount": 3
     },
     "body.surfaceTemperature": {
-      "min": 57,
-      "max": 182,
-      "mean": 106.96875,
+      "min": 57.978504,
+      "max": 182.192154,
+      "mean": 107.29861684375001,
       "count": 32,
-      "mode": 102,
-      "modeCount": 4
+      "mode": 102.625565,
+      "modeCount": 3
     },
     "body.surfacePressure": {
       "min": 0.001239149055020972,
@@ -477,7 +477,7 @@
     "body.gravity: typical (modal) 0.213897 (3/32 samples); range 0.029752919798816967 … 0.27336691053394757",
     "body.earthMasses: typical (modal) 0.060141 (3/32 samples); range 0.000188 … 0.133503",
     "body.radius: typical (modal) 3381.952000 (3/32 samples); range 506.989125 … 4457.148",
-    "body.surfaceTemperature: typical (modal) 102.000000 (4/32 samples); range 57 … 182",
+    "body.surfaceTemperature: typical (modal) 102.625565 (3/32 samples); range 57.978504 … 182.192154",
     "body.surfacePressure: typical (modal) 0.009143 (3/32 samples); range 0.001239149055020972 … 0.09545061142857143",
     "body.atmosphereComposition.Methane: typical (modal) 100.000000 (10/10 samples); range 100 … 100",
     "body.solidComposition.Ice: typical (modal) 82.620000 (3/32 samples); range 68.5 … 91.09",
@@ -524,11 +524,11 @@
       "n": 16,
       "surfaceTemperatureK": {
         "n": 16,
-        "min": 57,
-        "p1": 57,
+        "min": 57.978504,
+        "p1": 57.978504,
         "p50": 89,
-        "p99": 105,
-        "max": 105
+        "p99": 105.590149,
+        "max": 105.590149
       },
       "surfacePressureAtm": {
         "n": 16,
@@ -567,9 +567,9 @@
       "n": 10,
       "surfaceTemperatureK": {
         "n": 10,
-        "min": 88,
-        "p1": 88,
-        "p50": 100,
+        "min": 88.082626,
+        "p1": 88.082626,
+        "p50": 100.397339,
         "p99": 107,
         "max": 107
       },
@@ -610,11 +610,11 @@
       "n": 5,
       "surfaceTemperatureK": {
         "n": 5,
-        "min": 169,
-        "p1": 169,
-        "p50": 181,
-        "p99": 182,
-        "max": 182
+        "min": 169.764893,
+        "p1": 169.764893,
+        "p50": 181.787033,
+        "p99": 182.192154,
+        "max": 182.192154
       },
       "surfacePressureAtm": {
         "n": 5,
@@ -653,11 +653,11 @@
       "n": 1,
       "surfaceTemperatureK": {
         "n": 1,
-        "min": 167,
-        "p1": 167,
-        "p50": 167,
-        "p99": 167,
-        "max": 167
+        "min": 167.050018,
+        "p1": 167.050018,
+        "p50": 167.050018,
+        "p99": 167.050018,
+        "max": 167.050018
       },
       "surfacePressureAtm": {
         "n": 1,
@@ -801,13 +801,13 @@
       0,
       0,
       0,
+      0,
       1,
       1,
       0,
-      0,
       1,
-      3,
-      0,
+      2,
+      1,
       0,
       0,
       0,
@@ -1373,14 +1373,14 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 57,
-      "max": 182,
+      "min": 57.978504,
+      "max": 182.192154,
       "counts": [
         3,
         0,
         3,
-        2,
-        5,
+        4,
+        3,
         10,
         3,
         0,

@@ -3,10 +3,10 @@
   "speciesLabel": "Fonticulua segmentatus",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:00.238Z",
+  "generatedAt": "2026-09-18T01:43:53.958Z",
   "sampleCount": 16,
   "provenance": {
-    "inputHash": "5cfeeb157c5b067f1cc9f64c7a330eb2e836039a5fe15538eeaf5d457743f692",
+    "inputHash": "196eb46a77801fa51ddafbcc5e4f6ae3dacac20d27bf743321445040d5a70e1e",
     "csvRows": 24,
     "occurrences": 16,
     "bodies": 16
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 61,
-      "max": 64,
-      "mean": 62.8125,
+      "max": 64.965179,
+      "mean": 63.0680809375,
       "count": 16,
       "mode": 64,
-      "modeCount": 7
+      "modeCount": 4
     },
     "body.surfacePressure": {
       "min": 0.0017092837503084135,
@@ -456,7 +456,7 @@
     "body.gravity: typical (modal) 0.266246 (3/16 samples); range 0.2659202093410858 … 0.2733751880169771",
     "body.earthMasses: typical (modal) 0.118667 (3/16 samples); range 0.118455 … 0.127887",
     "body.radius: typical (modal) 4258.020500 (3/16 samples); range 4207.314 … 4362.3265",
-    "body.surfaceTemperature: typical (modal) 64.000000 (7/16 samples); range 61 … 64",
+    "body.surfaceTemperature: typical (modal) 64.000000 (4/16 samples); range 61 … 64.965179",
     "body.surfacePressure: typical (modal) 0.001709 (3/16 samples); range 0.0017092837503084135 … 0.0032847392252652358",
     "body.atmosphereComposition.Nitrogen: typical (modal) 99.650000 (4/16 samples); range 99.47 … 99.76",
     "body.atmosphereComposition.Neon: typical (modal) 0.350000 (4/16 samples); range 0.24 … 0.53",
@@ -504,9 +504,9 @@
         "n": 16,
         "min": 61,
         "p1": 61,
-        "p50": 63,
-        "p99": 64,
-        "max": 64
+        "p50": 63.738945,
+        "p99": 64.965179,
+        "max": 64.965179
       },
       "surfacePressureAtm": {
         "n": 16,
@@ -1176,7 +1176,7 @@
     },
     "body.surfaceTemperature": {
       "min": 61,
-      "max": 64,
+      "max": 64.965179,
       "counts": [
         5,
         0,
@@ -1186,14 +1186,14 @@
         0,
         0,
         0,
+        3,
         0,
         0,
+        1,
         4,
         0,
         0,
-        0,
-        0,
-        7
+        3
       ]
     },
     "body.surfacePressure": {

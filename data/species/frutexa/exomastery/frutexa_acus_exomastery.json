@@ -3,10 +3,10 @@
   "speciesLabel": "Frutexa acus",
   "genus": "Frutexa",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:00.499Z",
+  "generatedAt": "2026-09-18T01:43:54.238Z",
   "sampleCount": 3612,
   "provenance": {
-    "inputHash": "3563b5c1c14da8e4ff7b4c522869ccec3271fa1f907bbc83544e777db0d043eb",
+    "inputHash": "54f702c4c8c940a8dabb708452deb096380e22fe2917611d0649e4a1cfce90d0",
     "csvRows": 9673,
     "occurrences": 3683,
     "bodies": 3612
@@ -45,12 +45,12 @@
       "modeCount": 6
     },
     "body.surfaceTemperature": {
-      "min": 146,
-      "max": 195,
-      "mean": 169.93272425249168,
+      "min": 146.575684,
+      "max": 195.369598,
+      "mean": 170.1513241038206,
       "count": 3612,
-      "mode": 165,
-      "modeCount": 156
+      "mode": 163.9998838125,
+      "modeCount": 96
     },
     "body.surfacePressure": {
       "min": 0.0012157880088823094,
@@ -544,7 +544,7 @@
     "body.gravity: typical (modal) 0.138205 (2/3612 samples); range 0.04107615055254231 … 0.23601669520417906",
     "body.earthMasses: typical (modal) 0.000716 (8/3612 samples); range 0.000127 … 0.020409",
     "body.radius: typical (modal) 680.606854 (6/3612 samples); range 354.64309375 … 1896.6025",
-    "body.surfaceTemperature: typical (modal) 165.000000 (156/3612 samples); range 146 … 195",
+    "body.surfaceTemperature: typical (modal) 163.999884 (96/3612 samples); range 146.575684 … 195.369598",
     "body.surfacePressure: typical (modal) 0.023298 (2/3611 samples); range 0.0012157880088823094 … 0.09852098368615839",
     "body.atmosphereComposition.Carbon dioxide: typical (modal) 99.010000 (2307/3610 samples); range 97.58 … 100",
     "body.solidComposition.Rock: typical (modal) 91.030000 (147/3612 samples); range 85.31 … 97.28",
@@ -590,11 +590,11 @@
       "n": 3610,
       "surfaceTemperatureK": {
         "n": 3610,
-        "min": 146,
+        "min": 146.575684,
         "p1": 150,
         "p50": 169,
         "p99": 194,
-        "max": 195
+        "max": 195.369598
       },
       "surfacePressureAtm": {
         "n": 3610,
@@ -723,7 +723,7 @@
     "body.gravity": 0.128,
     "body.earthMasses": 0.126,
     "body.radius": 0.121,
-    "body.surfaceTemperature": 0.104,
+    "body.surfaceTemperature": 0.097,
     "body.surfacePressure": 0.177,
     "body.solidComposition.Rock": 0.119,
     "body.solidComposition.Metal": 0.104,
@@ -831,19 +831,19 @@
     ],
     "body.surfaceTemperature": [
       0,
-      631,
-      353,
-      439,
-      260,
-      236,
-      224,
-      200,
-      355,
-      355,
+      599,
+      364,
+      385,
+      293,
       231,
-      211,
-      102,
-      15,
+      260,
+      209,
+      342,
+      341,
+      234,
+      195,
+      135,
+      24,
       0,
       0
     ],
@@ -1406,25 +1406,25 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 146,
-      "max": 195,
+      "min": 146.575684,
+      "max": 195.369598,
       "counts": [
-        34,
-        93,
-        170,
-        240,
-        315,
-        415,
-        416,
-        366,
-        294,
-        262,
-        236,
-        212,
-        186,
-        116,
-        140,
-        117
+        30,
+        89,
+        168,
+        245,
+        313,
+        418,
+        419,
+        365,
+        348,
+        258,
+        234,
+        207,
+        171,
+        107,
+        144,
+        96
       ]
     },
     "body.surfacePressure": {

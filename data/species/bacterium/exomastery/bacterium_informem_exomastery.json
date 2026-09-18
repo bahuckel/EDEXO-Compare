@@ -3,10 +3,10 @@
   "speciesLabel": "Bacterium informem",
   "genus": "Bacterium",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:57.774Z",
+  "generatedAt": "2026-09-18T01:43:50.928Z",
   "sampleCount": 345,
   "provenance": {
-    "inputHash": "6b0d637b93f83c0fc43b0ed67c6bb124b6928fc44229f94743973899d75260e5",
+    "inputHash": "da65b9890088a2ef5fe44a9a30cb159502cc74db3cd90ff2a6bb8c68199c11a2",
     "csvRows": 634,
     "occurrences": 358,
     "bodies": 345
@@ -45,12 +45,12 @@
       "modeCount": 6
     },
     "body.surfaceTemperature": {
-      "min": 47,
+      "min": 47.486828,
       "max": 148,
-      "mean": 79.81159420289855,
+      "mean": 80.08247604637683,
       "count": 345,
-      "mode": 61,
-      "modeCount": 32
+      "mode": 78,
+      "modeCount": 15
     },
     "body.surfacePressure": {
       "min": 0.0009989547100912905,
@@ -570,7 +570,7 @@
     "body.gravity: typical (modal) 0.249632 (6/345 samples); range 0.048463670167045406 … 0.5456780655401601",
     "body.earthMasses: typical (modal) 0.099427 (6/345 samples); range 0.000211 … 0.189561",
     "body.radius: typical (modal) 4025.190250 (6/345 samples); range 420.8405625 … 4844.9585",
-    "body.surfaceTemperature: typical (modal) 61.000000 (32/345 samples); range 47 … 148",
+    "body.surfaceTemperature: typical (modal) 78.000000 (15/345 samples); range 47.486828 … 148",
     "body.surfacePressure: typical (modal) 0.017165 (6/345 samples); range 0.0009989547100912905 … 0.06890177318529485",
     "body.atmosphereComposition.Nitrogen: typical (modal) 100.000000 (335/345 samples); range 74.33 … 100",
     "body.solidComposition.Ice: typical (modal) 0.000000 (89/345 samples); range 0 … 91.55",
@@ -619,10 +619,10 @@
       "n": 345,
       "surfaceTemperatureK": {
         "n": 345,
-        "min": 47,
-        "p1": 47,
-        "p50": 75,
-        "p99": 140,
+        "min": 47.486828,
+        "p1": 47.486828,
+        "p50": 75.17411,
+        "p99": 140.964722,
         "max": 148
       },
       "surfacePressureAtm": {
@@ -1356,16 +1356,16 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 47,
+      "min": 47.486828,
       "max": 148,
       "counts": [
         22,
-        17,
-        64,
-        8,
+        19,
+        65,
+        5,
         120,
-        47,
-        3,
+        48,
+        2,
         0,
         4,
         8,

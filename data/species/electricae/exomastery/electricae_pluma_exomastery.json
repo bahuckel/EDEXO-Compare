@@ -3,10 +3,10 @@
   "speciesLabel": "Electricae pluma",
   "genus": "Electricae",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:00.061Z",
+  "generatedAt": "2026-09-18T01:43:53.745Z",
   "sampleCount": 51,
   "provenance": {
-    "inputHash": "b6054cd19476ecbf3cce626054562a6119324f989ac44a6512116df0562c16fd",
+    "inputHash": "886050dcb7674db14b9beab72f67b82915efcb562f7c2de53700cc2b5566b4cd",
     "csvRows": 107,
     "occurrences": 51,
     "bodies": 51
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 52,
-      "max": 127,
-      "mean": 74.05882352941177,
+      "max": 127.312912,
+      "mean": 74.35509752941176,
       "count": 51,
       "mode": 53,
-      "modeCount": 10
+      "modeCount": 6
     },
     "body.surfacePressure": {
       "min": 0.0010246064939550949,
@@ -490,7 +490,7 @@
     "body.gravity: typical (modal) 0.051180 (4/51 samples); range 0.04638450948679998 … 0.2659202093410858",
     "body.earthMasses: typical (modal) 0.000931 (4/51 samples); range 0.000703 … 0.118455",
     "body.radius: typical (modal) 860.216312 (4/51 samples); range 785.1916875 … 4256.8225",
-    "body.surfaceTemperature: typical (modal) 53.000000 (10/51 samples); range 52 … 127",
+    "body.surfaceTemperature: typical (modal) 53.000000 (6/51 samples); range 52 … 127.312912",
     "body.surfacePressure: typical (modal) 0.001236 (4/51 samples); range 0.0010246064939550949 … 0.07956329127066371",
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (44/50 samples); range 0.37 … 100",
     "body.solidComposition.Ice: typical (modal) 82.380000 (10/51 samples); range 50.04 … 92.36",
@@ -542,8 +542,8 @@
         "min": 52,
         "p1": 52,
         "p50": 63,
-        "p99": 127,
-        "max": 127
+        "p99": 127.312912,
+        "max": 127.312912
       },
       "surfacePressureAtm": {
         "n": 48,
@@ -582,11 +582,11 @@
       "n": 2,
       "surfaceTemperatureK": {
         "n": 2,
-        "min": 81,
-        "p1": 81,
-        "p50": 81,
-        "p99": 81,
-        "max": 81
+        "min": 81.987465,
+        "p1": 81.987465,
+        "p50": 81.987465,
+        "p99": 81.987465,
+        "max": 81.987465
       },
       "surfacePressureAtm": {
         "n": 2,
@@ -625,11 +625,11 @@
       "n": 1,
       "surfaceTemperatureK": {
         "n": 1,
-        "min": 63,
-        "p1": 63,
-        "p50": 63,
-        "p99": 63,
-        "max": 63
+        "min": 63.738945,
+        "p1": 63.738945,
+        "p50": 63.738945,
+        "p99": 63.738945,
+        "max": 63.738945
       },
       "surfacePressureAtm": {
         "n": 1,
@@ -1352,7 +1352,7 @@
     },
     "body.surfaceTemperature": {
       "min": 52,
-      "max": 127,
+      "max": 127.312912,
       "counts": [
         24,
         0,

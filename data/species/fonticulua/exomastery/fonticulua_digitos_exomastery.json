@@ -3,10 +3,10 @@
   "speciesLabel": "Fonticulua digitos",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:00.203Z",
+  "generatedAt": "2026-09-18T01:43:53.917Z",
   "sampleCount": 125,
   "provenance": {
-    "inputHash": "f6e24615f0ded1874d2723fb0b2e7b00305206eb4a5ea63e116c122847de94ce",
+    "inputHash": "162bd2bd717d29ec207813186ea9c8a9439f03aafc557bb7b53993a4b795fd33",
     "csvRows": 238,
     "occurrences": 127,
     "bodies": 125
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 85,
-      "max": 107,
-      "mean": 95.496,
+      "max": 107.441162,
+      "mean": 95.80063339199997,
       "count": 125,
-      "mode": 97,
-      "modeCount": 18
+      "mode": 93,
+      "modeCount": 11
     },
     "body.surfacePressure": {
       "min": 0.03584322424870466,
@@ -460,7 +460,7 @@
     "body.gravity: typical (modal) 0.035376 (4/125 samples); range 0.02736890240898501 … 0.045552493007781546",
     "body.earthMasses: typical (modal) 0.000328 (5/125 samples); range 0.000147 … 0.000662",
     "body.radius: typical (modal) 600.890625 (4/125 samples); range 467.42775 … 768.878",
-    "body.surfaceTemperature: typical (modal) 97.000000 (18/125 samples); range 85 … 107",
+    "body.surfaceTemperature: typical (modal) 93.000000 (11/125 samples); range 85 … 107.441162",
     "body.surfacePressure: typical (modal) 0.059517 (4/125 samples); range 0.03584322424870466 … 0.09831079987169997",
     "body.atmosphereComposition.Methane: typical (modal) 100.000000 (125/125 samples); range 100 … 100",
     "body.solidComposition.Ice: typical (modal) 82.510000 (21/125 samples); range 81.48 … 82.68",
@@ -505,10 +505,10 @@
       "surfaceTemperatureK": {
         "n": 125,
         "min": 85,
-        "p1": 85,
+        "p1": 85.101288,
         "p50": 96,
-        "p99": 107,
-        "max": 107
+        "p99": 107.441162,
+        "max": 107.441162
       },
       "surfacePressureAtm": {
         "n": 125,
@@ -1206,23 +1206,23 @@
     },
     "body.surfaceTemperature": {
       "min": 85,
-      "max": 107,
+      "max": 107.441162,
       "counts": [
-        5,
-        5,
+        3,
         4,
         6,
-        9,
-        19,
+        7,
+        14,
+        14,
         3,
-        10,
-        20,
-        6,
-        19,
+        12,
+        11,
+        23,
+        9,
         5,
-        1,
-        10,
-        0,
+        4,
+        4,
+        3,
         3
       ]
     },

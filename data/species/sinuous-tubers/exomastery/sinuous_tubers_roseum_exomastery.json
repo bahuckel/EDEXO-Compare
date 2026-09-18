@@ -3,10 +3,10 @@
   "speciesLabel": "Sinuous Tubers Roseum",
   "genus": "Sinuous Tuber",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:03.003Z",
+  "generatedAt": "2026-09-18T01:43:57.069Z",
   "sampleCount": 5,
   "provenance": {
-    "inputHash": "d6447b00204b5d3650563d059e35567c3094390a587175521d183a97d85bcb87",
+    "inputHash": "5b9a887d1bda14c889507a7d0ba7f1dc782c5970d143122f3b84ed3df206d627",
     "csvRows": 8,
     "occurrences": 8,
     "bodies": 5
@@ -45,9 +45,9 @@
       "modeCount": 1
     },
     "body.surfaceTemperature": {
-      "min": 224,
-      "max": 492,
-      "mean": 416.8,
+      "min": 224.088699,
+      "max": 492.919525,
+      "mean": 417.0016448,
       "count": 5,
       "mode": 491,
       "modeCount": 1
@@ -455,7 +455,7 @@
     "body.gravity: typical (modal) 1.037116 (1/5 samples); range 0.10785955011344216 … 2.851471491643633",
     "body.earthMasses: typical (modal) 0.861828 (1/5 samples); range 0.002242 … 8.581202",
     "body.radius: typical (modal) 5814.083000 (1/5 samples); range 919.5450625 … 11064.303",
-    "body.surfaceTemperature: typical (modal) 491.000000 (1/5 samples); range 224 … 492",
+    "body.surfaceTemperature: typical (modal) 491.000000 (1/5 samples); range 224.088699 … 492.919525",
     "body.surfacePressure: typical (modal) 0.000000 (5/5 samples); range 0 … 0",
     "body.solidComposition.Rock: typical (modal) 66.860000 (1/5 samples); range 66.37 … 91.29",
     "body.solidComposition.Metal: typical (modal) 33.140000 (1/5 samples); range 8.71 … 33.18",
@@ -500,11 +500,11 @@
       "n": 5,
       "surfaceTemperatureK": {
         "n": 5,
-        "min": 224,
-        "p1": 224,
+        "min": 224.088699,
+        "p1": 224.088699,
         "p50": 442,
-        "p99": 492,
-        "max": 492
+        "p99": 492.919525,
+        "max": 492.919525
       },
       "surfacePressureAtm": {
         "n": 5,
@@ -1119,8 +1119,8 @@
       ]
     },
     "body.surfaceTemperature": {
-      "min": 224,
-      "max": 492,
+      "min": 224.088699,
+      "max": 492.919525,
       "counts": [
         1,
         0,
@@ -1134,8 +1134,8 @@
         0,
         0,
         0,
-        1,
-        1,
+        2,
+        0,
         0,
         2
       ]

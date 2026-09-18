@@ -3,10 +3,10 @@
   "speciesLabel": "Clypeus speculumi",
   "genus": "Clypeus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:36:59.394Z",
+  "generatedAt": "2026-09-18T01:43:52.899Z",
   "sampleCount": 544,
   "provenance": {
-    "inputHash": "775b46fa16037cb7d5164ff272fbeabb363973ab4537828f6eabd66b8696e5aa",
+    "inputHash": "f7dd41154921c3196bbf04d97dc884b77194c54554754120450f20bf0cf4fe32",
     "csvRows": 1152,
     "occurrences": 552,
     "bodies": 544
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 190,
-      "max": 451,
-      "mean": 269.10110294117646,
+      "max": 451.136078,
+      "mean": 269.44320909926444,
       "count": 544,
-      "mode": 191,
-      "modeCount": 103
+      "mode": 190.01950525925926,
+      "modeCount": 27
     },
     "body.surfacePressure": {
       "min": 0.054627291902294595,
@@ -527,7 +527,7 @@
     "body.gravity: typical (modal) 0.195389 (6/544 samples); range 0.04119228481878229 … 0.23643777042749478",
     "body.earthMasses: typical (modal) 0.000193 (11/544 samples); range 0.000128 … 0.020404",
     "body.radius: typical (modal) 1670.921563 (8/544 samples); range 355.4549375 … 1890.275625",
-    "body.surfaceTemperature: typical (modal) 191.000000 (103/544 samples); range 190 … 451",
+    "body.surfaceTemperature: typical (modal) 190.019505 (27/544 samples); range 190 … 451.136078",
     "body.surfacePressure: typical (modal) 0.070956 (6/544 samples); range 0.054627291902294595 … 0.09858412171724648",
     "body.atmosphereComposition.Water: typical (modal) 100.000000 (182/182 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.040000 (29/544 samples); range 85.87 … 91.3",
@@ -575,9 +575,9 @@
         "n": 362,
         "min": 190,
         "p1": 190,
-        "p50": 191,
-        "p99": 195,
-        "max": 195
+        "p50": 191.930817,
+        "p99": 195.271805,
+        "max": 195.369598
       },
       "surfacePressureAtm": {
         "n": 362,
@@ -618,9 +618,9 @@
         "n": 182,
         "min": 398,
         "p1": 400,
-        "p50": 424,
-        "p99": 448,
-        "max": 451
+        "p50": 424.161591,
+        "p99": 448.397644,
+        "max": 451.136078
       },
       "surfacePressureAtm": {
         "n": 182,
@@ -670,7 +670,7 @@
     "body.gravity": 0.292,
     "body.earthMasses": 0.289,
     "body.radius": 0.323,
-    "body.surfaceTemperature": 0.572,
+    "body.surfaceTemperature": 0.566,
     "body.surfacePressure": 0.451,
     "body.solidComposition.Rock": 0.12,
     "body.solidComposition.Metal": 0.102,
@@ -788,11 +788,11 @@
       0,
       0,
       0,
-      188,
-      153,
-      45,
-      93,
-      65
+      109,
+      217,
+      57,
+      91,
+      70
     ],
     "body.surfacePressure": [
       0,
@@ -1354,7 +1354,7 @@
     },
     "body.surfaceTemperature": {
       "min": 190,
-      "max": 451,
+      "max": 451.136078,
       "counts": [
         362,
         0,

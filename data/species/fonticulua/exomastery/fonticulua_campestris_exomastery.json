@@ -3,10 +3,10 @@
   "speciesLabel": "Fonticulua campestris",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:00.172Z",
+  "generatedAt": "2026-09-18T01:43:53.880Z",
   "sampleCount": 761,
   "provenance": {
-    "inputHash": "46eaa605cbb35c223f6f304d91f23e47fd907110c58a8cb70fe1ee8d08bd1ff8",
+    "inputHash": "28be4b87c57e3565c1d59b601112003b71994fa2d198dc80a859939c90884ee2",
     "csvRows": 1130,
     "occurrences": 815,
     "bodies": 761
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 50,
-      "max": 148,
-      "mean": 73.36136662286465,
+      "max": 148.222565,
+      "mean": 73.58237289093314,
       "count": 761,
       "mode": 55,
-      "modeCount": 79
+      "modeCount": 53
     },
     "body.surfacePressure": {
       "min": 0.0009915921638292623,
@@ -581,7 +581,7 @@
     "body.gravity: typical (modal) 0.213745 (5/761 samples); range 0.02936764794422483 … 0.2751492703773623",
     "body.earthMasses: typical (modal) 0.001224 (6/761 samples); range 0.000182 … 0.121037",
     "body.radius: typical (modal) 2916.201000 (5/761 samples); range 502.0946875 … 4286.6475",
-    "body.surfaceTemperature: typical (modal) 55.000000 (79/761 samples); range 50 … 148",
+    "body.surfaceTemperature: typical (modal) 55.000000 (53/761 samples); range 50 … 148.222565",
     "body.surfacePressure: typical (modal) 0.011055 (5/761 samples); range 0.0009915921638292623 … 0.08007628415494696",
     "body.atmosphereComposition.Argon: typical (modal) 100.000000 (704/761 samples); range 51.97 … 100",
     "body.solidComposition.Ice: typical (modal) 82.580000 (34/761 samples); range 16.67 … 93.81",
@@ -631,9 +631,9 @@
         "n": 761,
         "min": 50,
         "p1": 50,
-        "p50": 66,
+        "p50": 66.249214,
         "p99": 121,
-        "max": 148
+        "max": 148.222565
       },
       "surfacePressureAtm": {
         "n": 761,
@@ -1349,19 +1349,19 @@
     },
     "body.surfaceTemperature": {
       "min": 50,
-      "max": 148,
+      "max": 148.222565,
       "counts": [
-        337,
-        25,
-        37,
-        41,
-        46,
+        307,
+        55,
+        36,
         40,
+        38,
+        50,
         43,
-        56,
-        65,
-        41,
-        17,
+        60,
+        61,
+        37,
+        21,
         5,
         3,
         0,

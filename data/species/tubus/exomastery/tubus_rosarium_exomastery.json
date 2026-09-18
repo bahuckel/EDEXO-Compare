@@ -3,10 +3,10 @@
   "speciesLabel": "Tubus rosarium",
   "genus": "Tubus",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:05.177Z",
+  "generatedAt": "2026-09-18T01:43:59.448Z",
   "sampleCount": 270,
   "provenance": {
-    "inputHash": "a5b84434daf4701be651b0d8ef7adae2274c4566f06d9bc701fb9e66debd25f8",
+    "inputHash": "9f8fc5a42c592e5c67d316c7012180c26c728f8cc50efdecd363fa576fbc9628",
     "csvRows": 531,
     "occurrences": 273,
     "bodies": 270
@@ -46,11 +46,11 @@
     },
     "body.surfaceTemperature": {
       "min": 160,
-      "max": 176,
-      "mean": 167.7888888888889,
+      "max": 176.27951,
+      "mean": 168.17202782222222,
       "count": 270,
       "mode": 172,
-      "modeCount": 27
+      "modeCount": 9
     },
     "body.surfacePressure": {
       "min": 0.0009890252356279299,
@@ -510,7 +510,7 @@
     "body.gravity: typical (modal) 0.098577 (4/270 samples); range 0.0417106120724166 … 0.15006645409096334",
     "body.earthMasses: typical (modal) 0.001707 (4/270 samples); range 0.000134 … 0.005895",
     "body.radius: typical (modal) 839.290875 (4/270 samples); range 361.5044375 … 1264.10925",
-    "body.surfaceTemperature: typical (modal) 172.000000 (27/270 samples); range 160 … 176",
+    "body.surfaceTemperature: typical (modal) 172.000000 (9/270 samples); range 160 … 176.27951",
     "body.surfacePressure: typical (modal) 0.006524 (4/270 samples); range 0.0009890252356279299 … 0.012965817665926475",
     "body.atmosphereComposition.Ammonia: typical (modal) 100.000000 (270/270 samples); range 100 … 100",
     "body.solidComposition.Rock: typical (modal) 91.040000 (13/270 samples); range 85.79 … 96.93",
@@ -556,9 +556,9 @@
         "n": 270,
         "min": 160,
         "p1": 160,
-        "p50": 168,
-        "p99": 176,
-        "max": 176
+        "p50": 168.151413,
+        "p99": 176.142365,
+        "max": 176.27951
       },
       "surfacePressureAtm": {
         "n": 270,
@@ -608,7 +608,7 @@
     "body.gravity": 0.336,
     "body.earthMasses": 0.314,
     "body.radius": 0.299,
-    "body.surfaceTemperature": 0.319,
+    "body.surfaceTemperature": 0.309,
     "body.surfacePressure": 0.515,
     "body.solidComposition.Rock": 0.12,
     "body.solidComposition.Metal": 0.114,
@@ -717,12 +717,12 @@
     "body.surfaceTemperature": [
       0,
       0,
-      52,
-      44,
+      49,
+      37,
+      26,
+      36,
       31,
-      28,
-      32,
-      43,
+      51,
       40,
       0,
       0,
@@ -1256,24 +1256,24 @@
     },
     "body.surfaceTemperature": {
       "min": 160,
-      "max": 176,
+      "max": 176.27951,
       "counts": [
-        20,
+        21,
+        16,
+        18,
+        21,
+        10,
+        12,
         15,
-        17,
         21,
-        11,
-        12,
-        11,
-        20,
-        16,
-        12,
-        21,
-        11,
-        27,
-        16,
-        23,
-        17
+        15,
+        14,
+        14,
+        30,
+        13,
+        19,
+        18,
+        13
       ]
     },
     "body.surfacePressure": {

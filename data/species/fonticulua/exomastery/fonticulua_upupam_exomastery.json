@@ -3,10 +3,10 @@
   "speciesLabel": "Fonticulua upupam",
   "genus": "Fonticulua",
   "source": "exomastery_feeder",
-  "generatedAt": "2026-09-14T01:37:00.254Z",
+  "generatedAt": "2026-09-18T01:43:53.979Z",
   "sampleCount": 56,
   "provenance": {
-    "inputHash": "420de0087fbb10737c8a6868b8a152b25af52f4f64840692b87c272e8b7c783d",
+    "inputHash": "6cc8e9adb28544928c45cbb29dba90a78544f040e16bbd878fb705a2c9a094c1",
     "csvRows": 96,
     "occurrences": 57,
     "bodies": 56
@@ -47,10 +47,10 @@
     "body.surfaceTemperature": {
       "min": 64,
       "max": 111,
-      "mean": 79.19642857142857,
+      "mean": 79.4959225,
       "count": 56,
-      "mode": 70,
-      "modeCount": 6
+      "mode": 77,
+      "modeCount": 4
     },
     "body.surfacePressure": {
       "min": 0.02214025971872687,
@@ -507,7 +507,7 @@
     "body.gravity: typical (modal) 0.224893 (4/56 samples); range 0.22041243741736122 … 0.27248340892163675",
     "body.earthMasses: typical (modal) 0.074180 (4/56 samples); range 0.057046 … 0.123096",
     "body.radius: typical (modal) 3663.025500 (4/56 samples); range 2937.19975 … 4308.6605",
-    "body.surfaceTemperature: typical (modal) 70.000000 (6/56 samples); range 64 … 111",
+    "body.surfaceTemperature: typical (modal) 77.000000 (4/56 samples); range 64 … 111",
     "body.surfacePressure: typical (modal) 0.056584 (4/56 samples); range 0.02214025971872687 … 0.08622931701949173",
     "body.atmosphereComposition.Nitrogen: typical (modal) 99.630000 (6/56 samples); range 50.32 … 99.64",
     "body.atmosphereComposition.Argon: typical (modal) 0.370000 (6/56 samples); range 0.36 … 49.68",
@@ -557,7 +557,7 @@
         "n": 56,
         "min": 64,
         "p1": 65,
-        "p50": 78,
+        "p50": 78.112465,
         "p99": 104,
         "max": 111
       },
@@ -1270,12 +1270,12 @@
         5,
         6,
         6,
-        9,
-        7,
+        8,
         5,
+        8,
         4,
-        3,
-        4,
+        2,
+        5,
         0,
         0,
         0,
