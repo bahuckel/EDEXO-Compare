@@ -687,7 +687,7 @@
    * away from the first sample — the direction to walk. Nothing is drawn when the sample is not on
    * the map, because a guess would be worse than no arrow.
    */
-  function drawMinimap(svg, mm, hint) {
+  function drawMinimapAt(svg, mm, hint) {
     if (!mm || !mm.marks) return false;
     radarStatic(svg);
     var heading = typeof mm.headingDeg === "number" && isFinite(mm.headingDeg) ? mm.headingDeg : null;
@@ -763,6 +763,142 @@
       heading == null
         ? '<circle class="minimap-you" cx="0" cy="0" r="3.5" />'
         : '<polygon class="minimap-you" points="0,-7.5 5,4.5 0,1.8 -5,4.5" />';
+    return true;
+  }
+
+  /*
+    ============================ the radar moves between frames ============================
+
+    Polling faster stopped being the answer. `Status.json` is re-read on the commander's chosen
+    interval and each read is one position, so the radar was redrawing four to ten times a second
+    and *snapping* each time. That reads as chop however short the interval is: ten discrete jumps a
+    second is still ten jumps, and Elite only rewrites the file about every 150 ms anyway, so there
+    is no interval that makes snapping look continuous.
+
+    So the drawing is decoupled from the data. Each new fix becomes a *target*, and the radar walks
+    to it across the gap at animation-frame rate. Walking and turning are continuous in the world,
+    and this makes them continuous on the screen.
+
+    The tween lasts as long as the gap between the last two frames actually measured, rather than a
+    fixed guess: set the poll to 250 ms and it tweens over 250 ms, set it to 1000 and it stretches.
+    That costs one interval of latency — the radar shows where the commander was a frame ago rather
+    than where the last packet said they are. For a plant 300 m away that is invisible, and it buys
+    continuous motion; snapping to the freshest number is only "more correct" if you never look at
+    it.
+
+    Linear, deliberately. Easing would make a constant walking pace look like a series of lunges.
+  */
+  var MIN_TWEEN_MS = 60;
+  var MAX_TWEEN_MS = 1500;
+
+  function markKey(m) {
+    return m.kind + "|" + m.label;
+  }
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  /** Shortest way round: turning past north is a small move, not a 359-degree spin. */
+  function lerpAngle(a, b, t) {
+    var d = ((b - a + 540) % 360) - 180;
+    return a + d * t;
+  }
+
+  function cloneMinimap(mm) {
+    return {
+      radiusM: mm.radiusM,
+      headingDeg: mm.headingDeg,
+      minSampleDistanceM: mm.minSampleDistanceM,
+      marks: mm.marks.map(function (m) {
+        return {
+          kind: m.kind,
+          label: m.label,
+          active: m.active,
+          northM: m.northM,
+          eastM: m.eastM,
+          distanceM: m.distanceM,
+        };
+      }),
+    };
+  }
+
+  /**
+   * A frame part-way between two fixes.
+   *
+   * Marks are matched by kind and label. One that appears only in the target is drawn at the target:
+   * a newly sampled plant is a discrete event, and sliding it in from wherever the previous mark of
+   * that index happened to be would invent a movement that never happened.
+   */
+  function blendMinimap(from, to, t) {
+    var prev = {};
+    for (var i = 0; i < from.marks.length; i++) prev[markKey(from.marks[i])] = from.marks[i];
+    var out = cloneMinimap(to);
+    for (var j = 0; j < out.marks.length; j++) {
+      var m = out.marks[j];
+      var p = prev[markKey(m)];
+      if (!p) continue;
+      m.northM = lerp(p.northM, m.northM, t);
+      m.eastM = lerp(p.eastM, m.eastM, t);
+      m.distanceM = lerp(p.distanceM, m.distanceM, t);
+    }
+    if (typeof from.headingDeg === "number" && typeof to.headingDeg === "number") {
+      out.headingDeg = lerpAngle(from.headingDeg, to.headingDeg, t);
+    }
+    return out;
+  }
+
+  var reduceMotion = false;
+  try {
+    reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch (e) {
+    /* no matchMedia: animate, which is the behaviour everyone had before this existed */
+  }
+
+  /**
+   * Draw the radar, animating from whatever is currently on screen.
+   *
+   * State lives on the SVG element, so a HUD with two radars — or one that is torn down and rebuilt
+   * — cannot leak a frame loop into another. The loop stops when it arrives.
+   */
+  function drawMinimap(svg, mm, hint) {
+    if (!mm || !mm.marks) return false;
+    var st = svg.__mmAnim;
+    if (!st) {
+      st = svg.__mmAnim = { shown: null, target: null, from: null, t0: 0, dur: 0, raf: 0, lastAt: 0 };
+    }
+
+    var now = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+    // The observed gap between fixes is the tween length. First frame has nothing to measure.
+    var gap = st.lastAt ? now - st.lastAt : 0;
+    st.lastAt = now;
+
+    if (reduceMotion || !st.shown || !gap) {
+      st.shown = cloneMinimap(mm);
+      st.target = st.shown;
+      if (st.raf) {
+        cancelAnimationFrame(st.raf);
+        st.raf = 0;
+      }
+      return drawMinimapAt(svg, mm, hint);
+    }
+
+    st.from = st.shown;
+    st.target = cloneMinimap(mm);
+    st.dur = Math.max(MIN_TWEEN_MS, Math.min(MAX_TWEEN_MS, gap));
+    st.t0 = now;
+
+    if (st.raf) cancelAnimationFrame(st.raf);
+    var step = function () {
+      st.raf = 0;
+      if (!svg.isConnected) return;
+      var at = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+      var t = st.dur > 0 ? Math.min(1, (at - st.t0) / st.dur) : 1;
+      st.shown = t >= 1 ? st.target : blendMinimap(st.from, st.target, t);
+      drawMinimapAt(svg, st.shown, hint);
+      if (t < 1) st.raf = requestAnimationFrame(step);
+    };
+    step();
     return true;
   }
 
