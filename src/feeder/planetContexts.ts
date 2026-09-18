@@ -12,8 +12,42 @@ import type { PlanetSampleContext } from "./profileBuilder.js";
 import type { EdsmBody } from "./edsm.js";
 import { rawSystemsDir } from "./paths.js";
 import { looseSampleIndex, readPackedSamples, type SamplePackRecord } from "./samplePacks.js";
+import { readNumericOverlay } from "./numericRehydration.js";
 
 const systemStarCache = new Map<string, FeederStarSummary[] | null>();
+
+/**
+ * The restored numerics, read once. `undefined` means "not looked for yet", `null` means "no
+ * overlay on this machine" — which is the normal state for anyone who has not run
+ * `feeder -- rehydrate-numerics`, and must cost nothing.
+ */
+let overlayCache: ReturnType<typeof readNumericOverlay> | undefined;
+
+/**
+ * Put the dump's float temperature back on a pack body, when this machine has one for it.
+ *
+ * A copy, never a mutation: the pack objects are parsed fresh per load today, but a cache one day
+ * would make an in-place edit persist into readers that asked for the original, and the whole point
+ * of a sidecar is that the packs stay as EDSM sent them. See `feeder/numericRehydration.ts`.
+ */
+function applyNumericOverlayToBody(body: EdsmBody | null): EdsmBody | null {
+  if (!body) return body;
+  if (overlayCache === undefined) overlayCache = readNumericOverlay();
+  if (!overlayCache) return body;
+  const o = body as unknown as Record<string, unknown>;
+  // By name, not by id64: EDSM's id64 arrives already rounded through a double, so the value this
+  // reader holds is not the body's real id. See `feeder/numericRehydration.ts`.
+  const name = typeof o.name === "string" ? o.name : null;
+  if (!name) return body;
+  const fix = overlayCache.bodies[name];
+  if (!fix || typeof fix.surfaceTemperature !== "number") return body;
+  return { ...(body as object), surfaceTemperature: fix.surfaceTemperature } as EdsmBody;
+}
+
+/** Test seam: forget the cached overlay so a test can write one and see it applied. */
+export function clearNumericOverlayCache(): void {
+  overlayCache = undefined;
+}
 
 async function loadSystemStarSummaries(cacheFile: string): Promise<FeederStarSummary[] | null> {
   const key = cacheFile.trim();
@@ -140,7 +174,7 @@ export async function loadPlanetContextsFromDir(dir: string): Promise<PlanetSamp
     const fromCache = await loadSystemStarSummaries(j.systemCacheFile ?? "");
 
     contexts.push({
-      targetBody: c.targetBody ?? null,
+      targetBody: applyNumericOverlayToBody(c.targetBody ?? null),
       systemName: systemNameMerged,
       bodyName: bodyNameGuess,
       // Cached system bodies carry bodyId, which is what makes parent-chain resolution possible.

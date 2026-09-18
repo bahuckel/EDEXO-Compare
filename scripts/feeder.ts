@@ -55,6 +55,10 @@ import {
   type RunReport,
 } from "../src/feeder/pipeline.js";
 import { describeInstall, findSpeciesEntryForLabel } from "../src/feeder/install.js";
+import {
+  formatRehydrationReport,
+  rehydrateNumericsFromDump,
+} from "../src/feeder/numericRehydration.js";
 import { applyParameterImportance, formatImportanceReport } from "../src/feeder/applyImportance.js";
 import {
   buildCooccurrenceTable,
@@ -583,6 +587,32 @@ async function cmdImportDump(): Promise<void> {
 }
 
 /**
+ * Put the kelvin back into the sample packs' temperatures — see `feeder/numericRehydration.ts`.
+ *
+ * Reads every pack, streams the galaxy dump once, and writes a sidecar of restored floats. The
+ * packs themselves are never edited: deleting `raw/numeric-overlay.json` undoes it completely.
+ *
+ * `rebuild` afterwards is what actually moves the profiles; this only prepares the numbers.
+ */
+async function cmdRehydrateNumerics(): Promise<void> {
+  const file = positional[0];
+  if (!file) {
+    console.error("Usage: npm run feeder -- rehydrate-numerics <export.jsonl.gz> [--apply]");
+    process.exit(1);
+  }
+  if (!existsSync(file)) {
+    console.error(`No such file: ${file}`);
+    process.exit(1);
+  }
+  const apply = flags.has("--apply");
+  console.log(apply ? `\nrehydrating from ${file}…\n` : `\nreading ${file} (dry run)…\n`);
+  const report = await rehydrateNumericsFromDump(file, { apply });
+  console.log(formatRehydrationReport(report, apply));
+  if (apply) console.log("\n  Now run: npm run feeder -- rebuild");
+  console.log("");
+}
+
+/**
  * Consume EDDN into the body register — INCLUDE-BODY-IDS Phase 4.
  *
  * Runs until interrupted. Restartable without changing a count: every observation is addressed by
@@ -721,6 +751,9 @@ switch (command) {
   case "import-dump":
     await cmdImportDump();
     break;
+  case "rehydrate-numerics":
+    await cmdRehydrateNumerics();
+    break;
   case "eddn":
     await cmdEddn();
     break;
@@ -733,7 +766,7 @@ switch (command) {
   default:
     console.error(`Unknown command: ${command}\n`);
     console.error(
-      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing] | import-dump <file.jsonl.gz> [--apply] | eddn [--seconds=N] | sector-map [--write]",
+      "  npm run feeder -- status | import <file.csv> | run [species...] | rebuild [species...] | pack [species...] | edges | cooccurrence | coords | identity [--apply] | system-ids [--apply] [--fetch-missing] | import-dump <file.jsonl.gz> [--apply] | rehydrate-numerics <file.jsonl.gz> [--apply] | eddn [--seconds=N] | sector-map [--write]",
     );
     process.exit(1);
 }
