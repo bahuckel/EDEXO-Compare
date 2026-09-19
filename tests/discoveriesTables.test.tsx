@@ -212,24 +212,21 @@ describe("the discoveries tables", () => {
 });
 
 /**
- * The Type chips on the Bodies tab.
+ * The Type chips on the Bodies tab list **every** class present.
  *
- * They come from `topValues` over `planetClass`, which ranks by frequency and keeps the top twelve.
- * That is the wrong ranking for a filter list: measured on the commander's own data, Earth-like
- * world is the **thirteenth** commonest class he has scanned — 30 bodies against 10,170 Icy ones —
- * so it fell off by a single place, and an Earth-like is exactly what somebody opens this panel to
- * look for. He reported it as "they are already in the list, just no filter for them".
+ * They used to be the commonest twelve. On the commander's own data that cut off Earth-like world,
+ * which is thirteenth — 30 bodies against 10,170 Icy ones — along with Ammonia world (26), Water
+ * giant (14) and Helium rich gas giant (3). His words: "make sure ALL types of planets are included,
+ * even if there are only 2 of a type".
  *
- * Notable classes are pinned in when the data contains them, and never invented when it does not: a
- * chip that filters to nothing is worse than no chip at all.
+ * Frequency is the wrong ranking for a filter list, because the values worth filtering *for* are the
+ * rare ones. It stays the right ranking for the *order* — most-scanned first, rarities at the end.
+ *
+ * A first attempt pinned a hand-picked list of "notable" classes instead. That fixed the four I had
+ * thought of and would have failed the next commander with a Helium rich gas giant, which is the
+ * kind of half-measure this test exists to prevent.
  */
 describe("the Bodies type chips", () => {
-  /** Enough classes ahead of it to push anything rare past a top-twelve cut. */
-  const crowd = (): DiscoveryBodyRow[] =>
-    Array.from({ length: 14 }, (_, i) =>
-      bod({ key: `c:${i}`, bodyName: `Filler ${i}`, planetClass: `Filler class ${i}` }),
-    );
-
   const dto = (bodies: DiscoveryBodyRow[]): DiscoveriesDTO => ({ ...DATA, bodies });
 
   const chipLabels = (bodies: DiscoveryBodyRow[]) => {
@@ -241,7 +238,13 @@ describe("the Bodies type chips", () => {
     return labels;
   };
 
-  it("offers an Earth-like chip even when it is far down the frequency list", () => {
+  /** Twenty common classes, enough to bury anything rare under any cap worth having. */
+  const crowd = (): DiscoveryBodyRow[] =>
+    Array.from({ length: 20 }, (_, i) =>
+      bod({ key: `c:${i}`, bodyName: `Filler ${i}`, planetClass: `Filler class ${i}` }),
+    );
+
+  it("lists a class with a single body, however far down it sits", () => {
     const labels = chipLabels([
       ...crowd(),
       bod({ key: "e:1", bodyName: "Eden", planetClass: "Earth-like world" }),
@@ -249,29 +252,30 @@ describe("the Bodies type chips", () => {
     expect(labels.some((t) => t.includes("Earth-like world"))).toBe(true);
   });
 
-  it("does not offer one when no such body has been scanned", () => {
-    // Never invent the chip. Filtering to an empty table reads as a bug in the data, not the filter.
+  it("lists every rare class at once, not a chosen few", () => {
+    // The real shape of his data: several rarities at the bottom, all of them worth a chip.
+    const rare = ["Earth-like world", "Ammonia world", "Water giant", "Helium rich gas giant"];
+    const labels = chipLabels([
+      ...crowd(),
+      ...rare.map((planetClass, i) => bod({ key: `r:${i}`, bodyName: `Rare ${i}`, planetClass })),
+    ]);
+    for (const c of rare) expect(labels.some((t) => t.includes(c)), c).toBe(true);
+  });
+
+  it("does not invent a class nobody has scanned", () => {
+    // A chip that filters to nothing reads as a broken panel rather than an empty result.
     expect(chipLabels(crowd()).some((t) => t.includes("Earth-like world"))).toBe(false);
   });
 
-  it("keeps the common classes too", () => {
+  it("still puts the commonest first", () => {
     const labels = chipLabels([
-      ...crowd(),
       bod({ key: "i:1", bodyName: "Ice", planetClass: "Icy body" }),
       bod({ key: "i:2", bodyName: "Ice 2", planetClass: "Icy body" }),
       bod({ key: "e:1", bodyName: "Eden", planetClass: "Earth-like world" }),
     ]);
-    expect(labels.some((t) => t.includes("Icy body"))).toBe(true);
-    expect(labels.some((t) => t.includes("Earth-like world"))).toBe(true);
-  });
-
-  it("pins the other rarities a commander goes looking for", () => {
-    const labels = chipLabels([
-      ...crowd(),
-      bod({ key: "a:1", bodyName: "Ammonia", planetClass: "Ammonia world" }),
-      bod({ key: "w:1", bodyName: "Giant", planetClass: "Water giant" }),
-    ]);
-    expect(labels.some((t) => t.includes("Ammonia world"))).toBe(true);
-    expect(labels.some((t) => t.includes("Water giant"))).toBe(true);
+    const icy = labels.findIndex((t) => t.includes("Icy body"));
+    const eden = labels.findIndex((t) => t.includes("Earth-like world"));
+    expect(icy).toBeGreaterThanOrEqual(0);
+    expect(icy).toBeLessThan(eden);
   });
 });
