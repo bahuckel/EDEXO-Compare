@@ -23,7 +23,7 @@ function scan(over: Partial<PlanetScan>): PlanetScan {
     SystemAddress: 1,
     PlanetClass: "Rocky body",
     SurfaceGravity: 2.28,
-    SurfaceTemperature: 181,
+    SurfaceTemperature: 150,
     SurfacePressure: 9649,
     Landable: true,
     ...over,

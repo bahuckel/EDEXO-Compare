@@ -996,6 +996,40 @@ export function speciesMatchesCriteria(
     }
   }
 
+  /*
+    Outside the range this species has actually been found in — a demotion, never a gate.
+
+    It runs last, on a row that has cleared every codex gate, and it only ever adds a *soft* failure:
+    the row leaves the default panel and waits one click away with this sentence attached. Nothing is
+    excluded, which is the entire difference between this and replacing the gate.
+
+    Replacing it was measured and is worse on every headline — recall 97.9 to 97.4 %, value-weighted
+    97.4 to 97.0 %, precision 43.2 to 39.4 % on *more* candidates. The codex bands are deliberately
+    wider than anything yet observed and that width earns its keep. Used softly the same numbers pay:
+    decidable bodies 497 to 527 (35.1 to 37.2 %), mean ambiguity 4.80 to 4.71 genera, and the two
+    tiers together do not move at all — 616 found and 9 missed either way. Three species step out of
+    the default panel and none is lost.
+
+    Skipped entirely when the species has no envelope: under twenty bodies is a handful of anecdotes,
+    and demoting a row against three observations would assert more than we know.
+  */
+  const envelope = entry.observedTemperatureK;
+  const tHere = scan.SurfaceTemperature;
+  if (envelope && typeof tHere === "number" && Number.isFinite(tHere) && failures.length === 0) {
+    if (tHere < envelope.min || tHere > envelope.max) {
+      failures.push({
+        // Its own field name, not "SurfaceTemperature": the signal-count rescue has to be able to
+        // tell this from a codex-gate near miss, and it reads better in the tooltip besides.
+        field: "ObservedTemperature",
+        soft: true,
+        detail:
+          `${tHere.toFixed(1)} K is outside the ${envelope.min.toFixed(0)}–${envelope.max.toFixed(0)} K ` +
+          `range this species has been found in across ${envelope.count} bodies. ` +
+          `The codex band still allows it. ${DEMOTED_NOTE}`,
+      });
+    }
+  }
+
   if (failures.length > 0) {
     return {
       ok: false,
@@ -1055,10 +1089,31 @@ function restoreDemotionsBelowSignalCount(
     new Set(rows.filter((m) => !m.entry.predictionUnsupported).map((m) => m.entry.genusDataDir));
   if (generaOf(strict).size >= signalCount) return;
 
-  const eligible = unlikely
+  /*
+    Weakest evidence gives way first, and the observed-temperature envelope is the weakest we have.
+
+    It says "nobody has recorded this species at this temperature yet", which a corpus of a few
+    hundred bodies can easily be wrong about. A host-star gate says "this species has never been seen
+    under this kind of star", which is a harder observation and is there because of a real report —
+    Electricae pluma turning up on a neutron-star body.
+
+    Ordering matters more than it looks. Before this, only star-type demotions were eligible, so a
+    body whose shown list fell below the count *because of a temperature demotion* restored the
+    Electricae instead of the row that had actually been pushed out — resurrecting the exact bug
+    `hostStarGates` exists to hold down. Temperature rows are offered first and the star-type ones
+    only if the count still is not met.
+  */
+  const solely = (m: PendingMatch, field: string) =>
+    (m.unlikelyReasons ?? []).length > 0 && (m.unlikelyReasons ?? []).every((r) => r.field === field);
+
+  const byTemperature = unlikely
     .map((m, i) => ({ m, i }))
-    .filter(({ m }) => (m.unlikelyReasons ?? []).every((r) => r.field === "StarType"))
+    .filter(({ m }) => solely(m, "ObservedTemperature"));
+  const byStar = unlikely
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => solely(m, "StarType"))
     .sort((a, b) => hostStarDeterminism(a.m.entry) - hostStarDeterminism(b.m.entry));
+  const eligible = [...byTemperature, ...byStar];
 
   const restored = new Set<number>();
   for (const { m, i } of eligible) {

@@ -58,7 +58,7 @@ function body(over: Partial<PlanetScan>): PlanetScan {
     SystemAddress: 1,
     PlanetClass: "Icy body",
     SurfaceGravity: 0.26,
-    SurfaceTemperature: 62,
+    SurfaceTemperature: 70,
     SurfacePressure: 5000,
     Landable: true,
     ...over,
@@ -98,7 +98,7 @@ const ARGON_DOMINANT = body({
 const NEON_RICH_NITROGEN = body({
   AtmosphereType: "NeonRich",
   Atmosphere: "thin neon rich atmosphere",
-  SurfaceTemperature: 62,
+  SurfaceTemperature: 70,
   atmosphereComposition: [
     { Name: "Nitrogen", Percent: 99.6 },
     { Name: "Neon", Percent: 0.4 },

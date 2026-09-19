@@ -311,6 +311,21 @@ export interface SpeciesEntry {
     sourceKey: string;
   };
   /**
+   * The surface temperature range this species has actually been found in, from its exomastery
+   * profile. Attached at load so the matcher stays free of file access.
+   *
+   * It is a **demotion**, never a gate — see `matchSpecies.ts`. Replacing the codex temperature gate
+   * with this range was measured and is worse on every headline: recall 97.9 to 97.4 %, value
+   * 97.4 to 97.0 %, precision 43.2 to 39.4 % on *more* candidates. The codex bands are deliberately
+   * wider than anything observed and that width is doing real work. Used softly it pays instead:
+   * decidable bodies 497 to 527, mean ambiguity 4.80 to 4.71 genera, and the two tiers together are
+   * unchanged — 616 found, 9 missed, either way.
+   *
+   * Absent for the ~20 species whose profile has fewer than {@link OBSERVED_TEMP_MIN_SAMPLES}
+   * bodies, because a handful of observations is not an envelope.
+   */
+  observedTemperatureK?: { min: number; max: number; count: number };
+  /**
    * From genus `meta.color_variants.mapping`: spectral keys (e.g. `O`, `A`) whose value is JSON `null`
    * — codex assigns no colour for that host star class, so the matcher rejects the body when host `StarType` resolves to that key.
    */

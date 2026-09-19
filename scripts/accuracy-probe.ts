@@ -33,6 +33,7 @@
  *
  *   npx tsx scripts/accuracy-probe.ts
  *   USE_FEEDER_TEMP=1 npx tsx scripts/accuracy-probe.ts   # observed ranges instead of codex gates
+ *   NO_TEMP_ENVELOPE=1 npx tsx scripts/accuracy-probe.ts  # without the observed-range demotion
  *
  * Reads the local journal merge cache, so the numbers are specific to this commander's history.
  * Run the app once first if the cache does not exist yet.
@@ -62,6 +63,75 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = loadSpeciesDatabaseFromTree(root);
 const prices = loadPriceList(root);
 const byId = new Map<string, SpeciesEntry>(db.species.map((e) => [e.id, e]));
+
+/**
+ * `NO_TEMP_ENVELOPE=1` — measure as if the observed-temperature demotion did not exist.
+ *
+ * The demotion ships: `speciesTreeLoader` hangs each species' observed range on its entry and
+ * `matchSpecies` pushes a row one tier down when the body sits outside it. This flag strips those
+ * envelopes back off, which is the only way to get the before-number without checking out the old
+ * code — and comparing against a stale saved run is how the first version of this measurement went
+ * wrong.
+ *
+ * Measured on 2026-09-19, same cache either way: decidable 497 to 527 (35.1 to 37.2 %), mean
+ * ambiguity 4.80 to 4.71 genera, default-panel precision 43.2 to 43.9 % on 461 to 453 candidates,
+ * recall 13 to 16 missed — and the two tiers together identical at 616 found, 9 missed.
+ */
+if (process.env.NO_TEMP_ENVELOPE === "1") {
+  let stripped = 0;
+  for (const e of db.species) {
+    if (e.observedTemperatureK) {
+      delete e.observedTemperatureK;
+      stripped++;
+    }
+  }
+  console.log(`observed temperature envelopes stripped: ${stripped}`);
+}
+
+/**
+ * `TEMP_ENVELOPE_MIN=N` — try a higher sample floor than the shipped one.
+ *
+ * The loader attaches an envelope at 20 bodies. Whether that is the right floor is a question about
+ * how much evidence a demotion should need, and the golden diff put real cases on both sides of it:
+ * Bacterium aurasus off a 402 K body rests on 6,912 observations, while Electricae pluma leaves a
+ * 129.5 K body on 51, only 2.5 K outside. This sweeps the floor so the number is chosen rather than
+ * assumed.
+ */
+if (process.env.TEMP_ENVELOPE_MIN) {
+  const floor = Number(process.env.TEMP_ENVELOPE_MIN);
+  let dropped = 0;
+  if (Number.isFinite(floor)) {
+    for (const e of db.species) {
+      const env = e.observedTemperatureK;
+      if (env && env.count < floor) {
+        delete e.observedTemperatureK;
+        dropped++;
+      }
+    }
+    console.log(`envelopes below ${floor} bodies dropped: ${dropped}`);
+  }
+}
+
+/**
+ * `TEMP_ENVELOPE_MARGIN=0.05` — how far outside the observed range is still "close enough".
+ *
+ * Swept by widening the envelopes here rather than by adding a knob to the matcher, because the two
+ * are the same measurement and only the winning number needs to exist in shipped code. The case that
+ * prompted it: Electricae pluma demoted off a 129.5 K body whose observed range ends at 127 K — two
+ * and a half kelvin outside, on 51 observations.
+ */
+if (process.env.TEMP_ENVELOPE_MARGIN) {
+  const frac = Number(process.env.TEMP_ENVELOPE_MARGIN);
+  if (Number.isFinite(frac) && frac > 0) {
+    for (const e of db.species) {
+      const env = e.observedTemperatureK;
+      if (!env) continue;
+      const pad = (env.max - env.min) * frac;
+      e.observedTemperatureK = { min: env.min - pad, max: env.max + pad, count: env.count };
+    }
+    console.log(`envelopes widened by ${(frac * 100).toFixed(0)}% of their span`);
+  }
+}
 
 /**
  * Swap each species' codex temperature gate for the range actually observed in its exomastery

@@ -28,6 +28,7 @@ import {
   sortStellarSpectralKeysForDisplay,
 } from "../shared/starSpectralKeys.js";
 import { colourVariantRuleFor } from "./eddsnColourVariants.js";
+import { hasExomasteryProfileFile, loadExomasteryProfile } from "./exomasteryProfile.js";
 import { getSpeciesDataDir } from "./paths.js";
 
 export const SPECIES_SUBDIR = "species";
@@ -1039,6 +1040,55 @@ function extractSpeciesRows(parsed: unknown): Record<string, unknown>[] {
 /**
  * Load all species from `data/species/<genusDir>/` — prefers `<genus>_new.json`, then `<genus>.json`.
  */
+/**
+ * How many bodies a profile needs before its temperature range counts as an envelope.
+ *
+ * Swept rather than chosen, 2026-09-19, on one cache — decidable bodies and the recall it costs:
+ *
+ * ```
+ *   off   497 (35.1 %)   13 missed   ambiguity 4.80    envelopes 0
+ *   20    527 (37.2 %)   16 missed   ambiguity 4.71    envelopes 88
+ *   50    522 (36.9 %)   16 missed   ambiguity 4.69    envelopes 78   <- shipped
+ *   100   506 (35.7 %)   14 missed   ambiguity 4.78    envelopes 70
+ *   200+  503 (35.5 %)   14 missed   ambiguity 4.79    envelopes 59 and fewer
+ * ```
+ *
+ * Nearly all the benefit lives below 100: at that floor the gain collapses from +30 decidable bodies
+ * to +6, and past 200 the numbers stop moving at all — those envelopes were deciding nothing.
+ *
+ * Fifty rather than twenty because it costs five decidable bodies, has the best ambiguity of any
+ * setting, and drops the two cases that looked like the app asserting more than it knew: Stratum
+ * frigus demoting a body on 25 observations, and araneamus on 35.
+ */
+export const OBSERVED_TEMP_MIN_SAMPLES = 50;
+
+/**
+ * Hang each species' observed temperature range on its entry, from the exomastery profile.
+ *
+ * Done here, once at load, so `matchSpecies` can read it without touching the disk — the matcher is
+ * called for every species on every body and is deliberately free of file access.
+ *
+ * Only the range, and only when the profile has enough bodies behind it. A species with no profile,
+ * or a thin one, simply gets no envelope and is never demoted for being outside it.
+ */
+function attachObservedTemperatureEnvelopes(projectRoot: string, species: SpeciesEntry[]): void {
+  for (const entry of species) {
+    try {
+      if (!hasExomasteryProfileFile(projectRoot, entry)) continue;
+      const prof = loadExomasteryProfile(projectRoot, entry);
+      const t = prof?.numerics?.["body.surfaceTemperature"];
+      if (!t) continue;
+      const { min, max, count } = t;
+      if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) continue;
+      const n = count ?? 0;
+      if (n < OBSERVED_TEMP_MIN_SAMPLES) continue;
+      entry.observedTemperatureK = { min, max, count: n };
+    } catch {
+      /* a profile we cannot read is a species with no envelope, which is a fine state to be in */
+    }
+  }
+}
+
 export function loadSpeciesDatabaseFromTree(projectRoot: string): SpeciesDatabase {
   // The list describes the tree in memory, so a reload replaces it rather than appending to it.
   clearSpeciesDataWarnings();
@@ -1082,5 +1132,6 @@ export function loadSpeciesDatabaseFromTree(projectRoot: string): SpeciesDatabas
     console.info(`ED Exo Compare — ${parts.join("; ")}`);
   }
 
+  attachObservedTemperatureEnvelopes(projectRoot, species);
   return { species };
 }
