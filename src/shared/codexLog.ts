@@ -55,6 +55,67 @@ export function codexSpeciesFromLine(line: {
 }
 
 /**
+ * `$Codex_SubCategory_Organic_Structures;` — plants. The *category* is "Biological and Geological",
+ * so category alone lets a fumarole through, and a geological codex entry must never confirm a plant.
+ */
+const ORGANIC_SUBCATEGORY = /organic_structures/i;
+
+/**
+ * The species-on-a-body a composition scan confirms, as the same lock a `ScanOrganic` builds.
+ *
+ * The owner asked for this: *"Events like CodexEntry done by the composition scanner should also
+ * count as confirmation, some plants are hard to land near."* The line carries everything needed —
+ *
+ * ```
+ * "Name_Localised":"Fonticulua Fluctus - Amethyst", "SystemAddress":11666607646129, "BodyID":13
+ * ```
+ *
+ * — so the genus is the first word, the species is the part before the dash, and the whole string is
+ * the variant. `genusSymbol` is deliberately left empty rather than guessed: the token spells the
+ * genus its own way (`$Codex_Ent_Fonticulus_05_M_Name;` for Fonticulua) and `collectResolvedOrganic-
+ * LockSpeciesIds` resolves happily on the localised name alone.
+ *
+ * Returns null for geology, for a name with no species in it, and for anything that is not a codex
+ * line. The caller still has to check `BodyID`, which is what ties it to a body.
+ */
+export function codexOrganicLockFromLine(line: {
+  event?: unknown;
+  Category?: unknown;
+  Category_Localised?: unknown;
+  SubCategory?: unknown;
+  SubCategory_Localised?: unknown;
+  Name_Localised?: unknown;
+}): {
+  genusLocalised: string;
+  genusSymbol: string;
+  speciesLocalised: string;
+  speciesSymbol: string;
+  variantLocalised: string;
+  source: "codex";
+} | null {
+  if (!codexSpeciesFromLine(line)) return null;
+  const sub = `${typeof line.SubCategory === "string" ? line.SubCategory : ""} ${
+    typeof line.SubCategory_Localised === "string" ? line.SubCategory_Localised : ""
+  }`;
+  if (!ORGANIC_SUBCATEGORY.test(sub)) return null;
+
+  const full = typeof line.Name_Localised === "string" ? line.Name_Localised.trim() : "";
+  const species = (full.split(" - ")[0] ?? "").trim();
+  const genus = species.split(/\s+/)[0]?.trim() ?? "";
+  // "Bacterium" on its own names a genus and no species, and a lock that vague resolves to nothing.
+  if (!genus || species.split(/\s+/).length < 2) return null;
+
+  return {
+    genusLocalised: genus,
+    genusSymbol: "",
+    speciesLocalised: species,
+    speciesSymbol: "",
+    variantLocalised: full,
+    source: "codex",
+  };
+}
+
+/**
  * Has this species been logged?
  *
  * Two words or more, or the answer is not worth having: "Bacterium" alone matches nothing useful, and

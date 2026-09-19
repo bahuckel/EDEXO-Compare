@@ -96,6 +96,16 @@ export interface OrganicGenusLock {
   speciesLocalised: string;
   speciesSymbol: string;
   variantLocalised: string;
+  /**
+   * How the species was confirmed on this body.
+   *
+   * `foot` is a `ScanOrganic` — the commander walked up to it. `codex` is a `CodexEntry` written by
+   * the composition scanner, which names the species and the body without a landing, and which the
+   * owner asked to count: some plants are on ground you cannot put a ship down near.
+   *
+   * Absent means `foot`. Caches written before this field existed hold nothing but foot scans.
+   */
+  source?: "foot" | "codex";
 }
 
 export interface BodyExoState {
@@ -960,6 +970,13 @@ export interface SpeciesMatch {
   spatialGateUnresolved?: boolean;
   /** Exobiology line complete on this body (two Sample + one Analyse in journal, per codex key). */
   organicAnalysisComplete?: boolean;
+  /**
+   * Confirmed here by the composition scanner and not on foot — the `[Comp Scan]` badge.
+   *
+   * Set only when there is no `ScanOrganic` for this species on this body: a foot scan says
+   * everything a comp scan does and also that the commander could get to it.
+   */
+  confirmedByCompositionScan?: boolean;
   /**
    * Demoted by the gates, and sampled here anyway — so it is listed with the candidates, banner and
    * all, instead of being collapsed behind "show unlikely".

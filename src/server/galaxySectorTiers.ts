@@ -25,6 +25,7 @@ import type { GalaxyTier, TierFacts } from "../shared/galaxyTier.js";
 import { tierFor } from "../shared/galaxyTier.js";
 import { sectorCellFromCoords, sectorCellKey } from "../shared/sectorName.js";
 import type { GameStateStore } from "./gameState.js";
+import { footOrganicLocks } from "./organicLocks.js";
 
 export interface SectorTierRow {
   /** `x:y:z` sector cell key, matching the sector map file. */
@@ -73,7 +74,9 @@ export function commanderSectorFacts(store: GameStateStore): Map<string, TierFac
     const f = out.get(key) ?? blank();
     f.visited = true;
     const hasBiology = (body.biologicalSignals ?? 0) > 0 || (body.genusHints?.length ?? 0) > 0;
-    if (body.organicGenusLocks.length > 0) f.scannedByYou++;
+    // Foot scans only: this counts bodies he has worked, and a composition scan names a plant from
+    // the ship without sampling it.
+    if (footOrganicLocks(body.organicGenusLocks).length > 0) f.scannedByYou++;
     else if (hasBiology) f.unscannedByYou++;
     out.set(key, f);
   }

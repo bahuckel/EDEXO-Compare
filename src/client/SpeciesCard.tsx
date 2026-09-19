@@ -520,6 +520,15 @@ export const SpeciesCard = memo(function SpeciesCard({
           ✓ Analysed
         </span>
       ) : null}
+      {/* Named by the composition scanner, never sampled on foot — so the value here is unclaimed. */}
+      {m.confirmedByCompositionScan ? (
+        <span
+          className="species-compact-payout-done species-compact-payout-done--compscan"
+          title="Confirmed here by the composition scanner. It grows on this body; you have not sampled it."
+        >
+          [Comp Scan]
+        </span>
+      ) : null}
     </div>
   );
 

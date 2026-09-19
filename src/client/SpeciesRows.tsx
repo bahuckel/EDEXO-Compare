@@ -185,6 +185,22 @@ export function SpeciesRow({
               unlikely
             </span>
           ) : null}
+          {/*
+            Named by the ship rather than found on foot.
+
+            The owner asked for this to count as a confirmation — *"some plants are hard to land
+            near"* — and the badge is what keeps the two apart afterwards: a comp scan settles what
+            grows here and says nothing about whether you can get down to it.
+          */}
+          {m.confirmedByCompositionScan ? (
+            <span
+              className="srow-tag srow-tag--compscan"
+              title="Confirmed here by the composition scanner. Counts as a confirmation; you have not sampled it on foot."
+              aria-label="Confirmed by composition scan"
+            >
+              comp scan
+            </span>
+          ) : null}
           {infoGather ? (
             <span
               className="srow-tag srow-tag--gather"

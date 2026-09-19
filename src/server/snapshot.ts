@@ -1107,6 +1107,24 @@ function computeBodyUncached(
   });
   const scanForExo = mergedScan;
   const bodyScanDetail = buildBodyScanExomasteryDetail(mergedScan, explorationRec);
+
+  /*
+    Which species on this body are known only from a composition scan.
+    A foot scan says strictly more — it also proves the commander could reach it — so a species with
+    both is simply confirmed, and the badge is for the ones the ship named from orbit.
+  */
+  const compScanOnly = new Set(
+    collectResolvedOrganicLockSpeciesIds(
+      (b.organicGenusLocks ?? []).filter((l) => l.source === "codex"),
+      db,
+    ),
+  );
+  for (const id of collectResolvedOrganicLockSpeciesIds(
+    (b.organicGenusLocks ?? []).filter((l) => l.source !== "codex"),
+    db,
+  )) {
+    compScanOnly.delete(id);
+  }
   let matches: SpeciesMatch[] = raw.map((m) => {
     const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(m.entry, root);
     const priceCredits = lookupPrice(prices, m.entry.displayName, m.entry.id);
@@ -1125,6 +1143,7 @@ function computeBodyUncached(
       ...(photoCreditByUrl ? { photoCreditByUrl } : {}),
       priceCredits,
       organicAnalysisComplete: store.isOrganicAnalysisCompleteForEntry(b.key, m.entry),
+      ...(compScanOnly.has(m.entry.id) ? { confirmedByCompositionScan: true } : {}),
       ...(hasFile
         ? {
             exomasteryProfilePresent: true,

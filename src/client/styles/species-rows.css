@@ -127,6 +127,14 @@
   color: var(--accent, var(--ok));
   cursor: help;
 }
+/*
+  Confirmed from the ship rather than on foot. It reads as a confirmation, so it takes the same
+  colour the finished rows do — the distinction it carries is *how*, not *whether*.
+*/
+.srow-tag--compscan {
+  color: var(--ok);
+  cursor: help;
+}
 .srow-prog {
   font-size: var(--fs-xs);
   font-weight: 700;

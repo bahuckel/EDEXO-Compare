@@ -41,6 +41,7 @@ import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
 import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exoPayoutRange.js";
 import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { resolveHostStarBodyId } from "./orbitUtils.js";
+import { footOrganicLocks } from "./organicLocks.js";
 import { perfTime } from "./perf.js";
 
 /**
@@ -112,9 +113,12 @@ function candidates(store: GameStateStore): BodyExoState[] {
   const out: BodyExoState[] = [];
   for (const b of store.bodies.values()) {
     if (!b.biologicalSignals || b.biologicalSignals <= 0) continue;
-    // An organic lock means a ScanOrganic named something here — the body has been worked. Locks
+    // A foot lock means a ScanOrganic named something here — the body has been worked. Locks
     // survive SellOrganicData on purpose, so cashing in does not re-offer a stripped body.
-    if (b.organicGenusLocks.length > 0) continue;
+    //
+    // A composition scan is not that. It names the species from the ship, pays nothing, and leaves
+    // the footfall unclaimed, so a body he comp-scanned is still worth the trip and stays in.
+    if (footOrganicLocks(b.organicGenusLocks).length > 0) continue;
     if (footfallLost(store, b.key)) continue;
     // `Landable`, capitalised: PlanetScan mirrors the journal's field names and carries an index
     // signature, so a lower-case guess type-checks and silently reads undefined.

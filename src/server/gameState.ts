@@ -54,7 +54,7 @@ import {
 } from "./surfaceMarksFile.js";
 import { finalisePredictionsForSystem } from "./predictionAuditLog.js";
 import type { NavRouteWaypointDTO } from "./navRouteFuel.js";
-import { codexSpeciesFromLine } from "../shared/codexLog.js";
+import { codexOrganicLockFromLine, codexSpeciesFromLine } from "../shared/codexLog.js";
 function bodyKey(systemAddress: number, bodyId: number): string {
   return `${systemAddress}:${bodyId}`;
 }
@@ -99,6 +99,9 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
  * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
  * feature that reads it stays dark with nothing logged anywhere.
  *
+ * 10 — `organicGenusLocks` now also carries locks built from `CodexEntry`, so a species the
+ *     composition scanner named on a body counts as confirmed there (`source: "codex"`). A cache
+ *     written by the old code holds foot scans only, and no replay would add the rest.
  * 9 — no new field. `mainStarWasDiscoveredBySystem` is now derived from the **arrival star**
  *     (`DistanceFromArrivalLS === 0`) rather than from `BodyID 0`, which does not exist in every
  *     system: `Pru Aihm BL-U b33-2` starts at body 2 and the owner's own discovery was missing from
@@ -134,7 +137,7 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   Anything derived from the journal that the UI reads has to be either in this payload or
   deliberately transient. Bump the format when you add one.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 9;
+export const JOURNAL_MERGE_CACHE_FORMAT = 10;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -1811,6 +1814,46 @@ export class GameStateStore {
       if (event === "CodexEntry") {
         const species = codexSpeciesFromLine(line as Parameters<typeof codexSpeciesFromLine>[0]);
         if (species) this.codexLoggedSpecies.add(species);
+
+        /*
+          The composition scanner confirms a species on a body without a landing, and the owner asked
+          for it: some plants grow where a ship will not go down. The line names both halves —
+          `Name_Localised` is "Fonticulua Fluctus - Amethyst" and `BodyID`/`SystemAddress` say where —
+          so it resolves to the same lock a `ScanOrganic` would build, carrying `source: "codex"` so
+          the panel can say which it was.
+
+          `SubCategory` has to be read, not just `Category`: the category is "Biological and
+          Geological" and a fumarole would otherwise confirm a plant.
+        */
+        const lock = codexOrganicLockFromLine(line as Parameters<typeof codexOrganicLockFromLine>[0]);
+        const codexBodyId = line.BodyID as number | undefined;
+        if (!lock || typeof codexBodyId !== "number" || !Number.isFinite(codexBodyId)) return;
+        const codexSystem = line.SystemAddress as number | undefined;
+        if (typeof codexSystem !== "number" || !Number.isFinite(codexSystem)) return;
+
+        const codexStarSystem =
+          (typeof line.System === "string" ? line.System.trim() : "") ||
+          this.visitedSystems.get(codexSystem) ||
+          this.currentSystem ||
+          "";
+        const codexBody = ensureBody(
+          this.bodies,
+          codexSystem,
+          codexBodyId,
+          `Body ${codexBodyId}`,
+          codexStarSystem,
+          ts,
+        );
+        // A comp scan fires more than once for the same plant, and a foot scan of the same species
+        // says strictly more. Either way one row per species on this body is enough.
+        const already = codexBody.organicGenusLocks.some(
+          (l) =>
+            l.speciesLocalised.trim().toLowerCase() === lock.speciesLocalised.trim().toLowerCase(),
+        );
+        if (!already) codexBody.organicGenusLocks.push(lock);
+        if (lock.variantLocalised && !codexBody.confirmedVariants.includes(lock.variantLocalised)) {
+          codexBody.confirmedVariants.push(lock.variantLocalised);
+        }
         return;
       }
 

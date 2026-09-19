@@ -121,3 +121,19 @@ export function organicScanConfirmsNonBacteriumGenus(
   }
   return false;
 }
+
+/**
+ * The locks that mean the commander was actually there.
+ *
+ * A `CodexEntry` from the composition scanner confirms **what grows on a body** without confirming
+ * that anyone reached it: no sample, no credits, no first footfall. Most consumers want either kind
+ * — the matcher narrowing to a known species, the worth-sampling count, the chance floor's immunity
+ * — but two ask a different question, "has this body been worked", and for those a comp scan is a no.
+ *
+ * Absent `source` is a foot scan: every lock written before the field existed came from `ScanOrganic`.
+ */
+export function footOrganicLocks(
+  locks: OrganicGenusLock[] | null | undefined,
+): OrganicGenusLock[] {
+  return (locks ?? []).filter((l) => l.source !== "codex");
+}
