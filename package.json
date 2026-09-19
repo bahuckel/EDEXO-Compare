@@ -40,6 +40,7 @@
     "region-probe": "tsx scripts/region-probe.ts",
     "negatives-probe": "tsx scripts/negatives-probe.ts",
     "travel-probe": "tsx scripts/travel-probe.ts",
+    "colour-probe": "tsx scripts/colour-precedence-probe.ts",
     "fixture": "tsx scripts/gen-match-fixture.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
