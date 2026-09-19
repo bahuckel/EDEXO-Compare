@@ -115,6 +115,18 @@
 .srow-tag--notpredicted {
   color: var(--warn);
 }
+/*
+  Information gathering: the app cannot say what he would find here, either because the corpus is
+  thin on this species or because the colour rule does not decide. It replaced the bare crosshair,
+  which said the same thing in a form that had to be hovered to mean anything.
+
+  The accent colour, not a warning one: it is an invitation to go and look, and the row it sits on
+  is otherwise a perfectly good prediction.
+*/
+.srow-tag--gather {
+  color: var(--accent, var(--ok));
+  cursor: help;
+}
 .srow-prog {
   font-size: var(--fs-xs);
   font-weight: 700;

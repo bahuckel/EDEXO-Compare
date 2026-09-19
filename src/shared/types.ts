@@ -893,7 +893,7 @@ export interface SpeciesMatch {
    */
   collectionFocus?: boolean;
   /** Why it is marked: bodies in the corpus, and confirmations of your own. Display only. */
-  collectionFocusNote?: { ownScans: number; corpusBodies: number };
+  collectionFocusNote?: { ownScans: number; corpusBodies: number; remaining?: number };
   /**
    * The terms that demoted it, so the card can say *why* rather than showing a bare percentage.
    * Set only when {@link unlikely}.

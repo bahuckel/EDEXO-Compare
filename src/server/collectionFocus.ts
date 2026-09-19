@@ -87,6 +87,15 @@ export function saveCollectionFocusConfig(cfg: CollectionFocusConfig): void {
  * of the marker is to stop asking once we know the species grows there; making the commander finish
  * a run they had already decided to walk away from would measure their patience, not the plant.
  */
+/*
+  What counts as one of "yours": Analyse, Sample **and** Log.
+
+  `organicGenusLocks` is pushed for all three (`gameState.ts`, `isOrganicConfirmation`), so a species
+  the commander logged once and walked away from is already answered as far as this marker goes. That
+  is deliberate and the owner asked for it explicitly: the point is to stop asking about a species we
+  know grows there, and making him finish a run he had decided to abandon would measure his patience
+  rather than the plant.
+*/
 export function ownScanCountsBySpecies(
   bodies: Iterable<BodyExoState>,
   db: SpeciesDatabase,
@@ -105,6 +114,14 @@ export interface CollectionFocusReason {
   speciesId: string;
   ownScans: number;
   corpusBodies: number;
+  /**
+   * How many more of your own confirmations this species still wants, `targetScans - ownScans`.
+   *
+   * Sent rather than derived on the client so the number on screen always matches the threshold in
+   * the local config — which is editable, and will get an Options screen. A client computing
+   * `3 - ownScans` would quietly disagree with a commander who had set four.
+   */
+  remaining: number;
 }
 
 /**
@@ -132,7 +149,12 @@ export function computeCollectionFocus(
       ? feederProfileBodyCount(loadExomasteryProfile(projectRoot, entry) ?? ({} as never)) || 0
       : 0;
     if (corpusBodies >= cfg.corpusFloor) continue;
-    out.set(entry.id, { speciesId: entry.id, ownScans, corpusBodies });
+    out.set(entry.id, {
+      speciesId: entry.id,
+      ownScans,
+      corpusBodies,
+      remaining: Math.max(0, cfg.targetScans - ownScans),
+    });
   }
   return out;
 }

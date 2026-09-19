@@ -1099,7 +1099,7 @@ function computeBodyUncached(
         const r = focus.get(m.entry.id);
         if (!r) continue;
         m.collectionFocus = true;
-        m.collectionFocusNote = { ownScans: r.ownScans, corpusBodies: r.corpusBodies };
+        m.collectionFocusNote = { ownScans: r.ownScans, corpusBodies: r.corpusBodies, remaining: r.remaining };
       }
     }
   }

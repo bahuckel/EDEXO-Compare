@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import type { BodyComputed, PlanetScan } from "@shared/types";
 import { settledMultiplier } from "@shared/footfallValue";
 import { candidateMorphColorShortLabel, candidateMorphColorShortLabelForHosts } from "@shared/candidateSpawnHints";
+import { infoGatherReasons } from "@shared/infoGather";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useFootfallCertainty } from "./footfallContext";
 import { useRowContext, type LiveRun, type RowContextValue } from "./rowContext";
@@ -88,6 +89,33 @@ export function SpeciesRow({
     : candidateMorphColorShortLabelForHosts(m.entry, hostStarTypes, scan?.materials);
   const colourUnknown = !colourRaw || colourRaw === "(unknown)";
   /*
+    "We cannot tell you what you would find here."
+
+    Two different gaps, one flag, because to the commander deciding whether to land they are the same
+    question. **Thin data**: the corpus has few bodies for this species and he has confirmed it few
+    times, which is the existing collection marker. **Undecided colour**: either no rule resolves
+    (`(unknown)`) or two of them do and the answer is genuinely "A or B" — the grade-4 material
+    precedence that ~40 observations would settle, and the reason this tag was asked for.
+
+    Sampling any of these teaches the app something, which is the whole point of marking them.
+  */
+  const gatherReasons = infoGatherReasons({ collectionFocus: m.collectionFocus, colourLabel: colourRaw });
+  const infoGather = gatherReasons.length > 0;
+  const gatherRemaining = gatherReasons.includes("thin-data") ? m.collectionFocusNote?.remaining : null;
+  const gatherWhy = [
+    gatherReasons.includes("thin-data")
+      ? `Thin data: the corpus has ${m.collectionFocusNote?.corpusBodies ?? 0} bodies for this species and ` +
+        `you have confirmed it on ${m.collectionFocusNote?.ownScans ?? 0}.`
+      : null,
+    gatherReasons.includes("colour-unknown")
+      ? "The colour rule does not resolve on this body, so the variant is unknown."
+      : gatherReasons.includes("colour-ambiguous")
+        ? `The evidence allows more than one colour here (${colourRaw}), so the variant is undecided.`
+        : null,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  /*
     The thumbnail has to be the colour the row is claiming.
 
     This row prints the predicted variant beside the name, and it used to sit next to `m.photoUrl` —
@@ -157,17 +185,33 @@ export function SpeciesRow({
               unlikely
             </span>
           ) : null}
-          {m.collectionFocus ? (
+          {infoGather ? (
+            <span
+              className="srow-tag srow-tag--gather"
+              title={`${gatherWhy}\n\nSampling this one would teach the app something.`}
+              aria-label="Information gathering: the app cannot fully predict this species here"
+            >
+              info gather
+            </span>
+          ) : null}
+          {/*
+            How many more of his own confirmations this species wants.
+
+            Analyse, Sample and Log all count — a species he logged once is one we can stop asking
+            about — so this is usually 3, 2 or 1 and vanishes at zero. The number comes from the
+            server rather than `3 - ownScans` computed here, because the target lives in a local
+            config the commander can edit.
+          */}
+          {gatherRemaining != null && gatherRemaining > 0 ? (
             <span
               className="srow-focus"
               title={
-                `Worth sampling: the corpus has ${m.collectionFocusNote?.corpusBodies ?? 0} bodies for this ` +
-                `species and you have confirmed it on ${m.collectionFocusNote?.ownScans ?? 0}. ` +
-                `The mark clears once you have enough of them.`
+                `${gatherRemaining} more scan${gatherRemaining === 1 ? "" : "s"} of this species would clear the mark. ` +
+                `A Log counts — you do not have to finish a run.`
               }
-              aria-label="Worth sampling: thin data for this species"
+              aria-label={`${gatherRemaining} more scans wanted for this species`}
             >
-              ⌖
+              ⌖{gatherRemaining}
             </span>
           ) : null}
         </span>
