@@ -21,6 +21,13 @@ import type {
 import { journalHistoryCutoffUtcMs, parseJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { clampStatusPollMs, pollRatesDto } from "../shared/pollRates.js";
 import { radarRadiusDto } from "../shared/radarRadius.js";
+import { mergeCollectionFocus } from "../shared/collectionFocus.js";
+import {
+  clearCollectionFocusCache,
+  loadCollectionFocusConfig,
+  saveCollectionFocusConfig,
+  type CollectionFocusConfig,
+} from "./collectionFocus.js";
 import { openUrlInBrowser, openLauncherShell, openLocalFile } from "./openUrl.js";
 import { GameStateStore } from "./gameState.js";
 import {
@@ -1317,6 +1324,24 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       persistUserPreferences();
     },
     setPollRates: (statusMs, journalMs) => applyPollRates(statusMs, journalMs),
+    getCollectionFocus: () => loadCollectionFocusConfig(),
+    /*
+      Clamped on the way in and the stored config handed straight back, so a figure the server
+      refused shows up in the panel as the figure that will actually be used.
+
+      The cache is cleared because the marker is memoised for a few seconds and a threshold the
+      commander has just moved should take effect on the next body, not when a timer says so.
+    */
+    setCollectionFocus: (raw) => {
+      const next = mergeCollectionFocus(
+        loadCollectionFocusConfig(),
+        (raw ?? {}) as Partial<CollectionFocusConfig>,
+      );
+      saveCollectionFocusConfig(next);
+      clearCollectionFocusCache();
+      push();
+      return next;
+    },
     setRadarRadiusM: (raw) => {
       /*
         Pushed as well as persisted. The radar is drawn from a field on its DTO, so a client that is

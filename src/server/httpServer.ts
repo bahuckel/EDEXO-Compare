@@ -29,6 +29,7 @@ import type {
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { isJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { getProjectRoot, getSpeciesDataDir, getWebRoot } from "./paths.js";
+import type { CollectionFocusConfig } from "./collectionFocus.js";
 import { feederDataDirExists, feederInboxDir, setConfiguredFeederDataDir } from "../feeder/paths.js";
 import { parseSpanshRouteFile, summariseSpanshRouteFile } from "../feeder/spanshRouteFile.js";
 import { findGenusPhotosFolder, findGenusNotesFile } from "./speciesTreeLoader.js";
@@ -182,6 +183,15 @@ export function createHttpServer(opts: {
    * changes.
    */
   setRadarRadiusM?: (radiusM: unknown) => number;
+  /**
+   * GET/POST `/api/settings/collection-focus` — the thresholds behind the ⌖ mark.
+   *
+   * Local-only state (`edexo-collection-focus.json` beside the user settings), so it is read back
+   * from the server rather than mirrored into the snapshot: it changes when somebody edits it and
+   * at no other time, and the snapshot is already the biggest thing on the wire.
+   */
+  getCollectionFocus?: () => CollectionFocusConfig;
+  setCollectionFocus?: (raw: unknown) => CollectionFocusConfig;
   setIncludeBacterium?: (value: boolean) => void;
   setIncludeExplorationScanData?: (value: boolean) => void;
   /** POST /api/settings/foot-travel-odometer — JSON { value: boolean } */
@@ -1039,6 +1049,33 @@ export function createHttpServer(opts: {
     }
     const applied = opts.setPollRates(statusMs, journalMs);
     res.json({ ok: true, ...applied });
+  });
+
+  /**
+   * The collection marker's thresholds, read and written.
+   *
+   * The reply is always the stored config, so a value the server clamped comes straight back and the
+   * panel shows what will actually be used rather than what was typed.
+   */
+  app.get("/api/settings/collection-focus", (_req, res) => {
+    if (typeof opts.getCollectionFocus !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    res.json({ ok: true, config: opts.getCollectionFocus() });
+  });
+
+  app.post("/api/settings/collection-focus", (req, res) => {
+    if (typeof opts.setCollectionFocus !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const body = req.body;
+    if (!body || typeof body !== "object") {
+      res.status(400).json({ ok: false, error: "JSON body must be an object." });
+      return;
+    }
+    res.json({ ok: true, config: opts.setCollectionFocus(body) });
   });
 
   /** How far the sample radar draws. See `shared/radarRadius.ts` for the bounds and the reason. */

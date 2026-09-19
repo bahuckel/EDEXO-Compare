@@ -262,6 +262,33 @@
  * The checkbox sits below the privacy rule rather than beside the heading on purpose: the order on
  * the page is the order of the decision — what it does, what it costs you, then the control.
  */
+/*
+  The worth-sampling thresholds: label on the left, number and its unit on the right.
+
+  A grid rather than two inline rows because "3" and "150" are different widths and the units beside
+  them ("of your own scans", "bodies") would otherwise start in different places, which reads as two
+  unrelated controls rather than one pair.
+*/
+.options-modal .options-focus-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.4rem 0.7rem;
+  margin-top: 0.5rem;
+  font-size: var(--fs-xs);
+}
+
+.options-modal .options-focus-grid input[type="number"] {
+  width: 5rem;
+  font: inherit;
+  text-align: right;
+}
+
+.options-modal .options-focus-dismissed {
+  margin-top: 0.5rem;
+  font-size: var(--fs-2xs);
+}
+
 .options-modal .options-toggle {
   display: flex;
   align-items: center;

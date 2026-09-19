@@ -22,18 +22,9 @@ import { resolveUserSettingsJsonPath } from "./paths.js";
 import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { hasExomasteryProfileFile, loadExomasteryProfile, feederProfileBodyCount } from "./exomasteryProfile.js";
 import type { BodyExoState, SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
+import type { CollectionFocusConfig } from "../shared/collectionFocus.js";
 
-export interface CollectionFocusConfig {
-  formatVersion: 1;
-  /** Master switch; the marker disappears entirely when false. */
-  enabled: boolean;
-  /** Confirmed sightings of your own after which a species stops being asked for. */
-  targetScans: number;
-  /** Corpus bodies at or above which the envelope is considered well fed. */
-  corpusFloor: number;
-  /** Species ids you never want marked, whatever the counts say. */
-  dismissed: string[];
-}
+export type { CollectionFocusConfig } from "../shared/collectionFocus.js";
 
 export const DEFAULT_COLLECTION_FOCUS: CollectionFocusConfig = {
   formatVersion: 1,
