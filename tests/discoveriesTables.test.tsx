@@ -69,6 +69,7 @@ function bod(over: Partial<DiscoveryBodyRow>): DiscoveryBodyRow {
     speciesConfirmed: [],
     dssMapped: false,
     firstDiscoverer: false,
+    firstDiscoveredSystem: null,
     firstFootfall: false,
     estimatedCredits: 500,
     scannedAt: "2026-09-01T00:00:00Z",
@@ -90,6 +91,7 @@ const STAR: DiscoveryStarRow = {
   surfaceTemperatureK: 4200,
   distanceLs: 0,
   firstDiscoverer: true,
+  firstDiscoveredSystem: null,
   estimatedCredits: 1200,
   scannedAt: "2026-09-01T00:00:00Z",
 };
@@ -272,6 +274,52 @@ describe("the Systems first-discovery filter", () => {
     */
     const names = namesWith("Has first-scanned bodies");
     expect(names.some((n) => n.startsWith("TheirsMyBodies"))).toBe(true);
+    expect(names.some((n) => n.startsWith("Mine"))).toBe(true);
+  });
+});
+
+/**
+ * "First discovery" means the same thing on every tab.
+ *
+ * The owner, comparing two panels on the same data: "the same filter for Earth-like with first
+ * discovery in the system tab shows 6 earth-like bodies. The body tab shows 25." Both numbers were
+ * right and they answered different questions — the Systems tab asked about the system, the Bodies
+ * tab asked whether he was first to *scan that body*, which is an everyday occurrence inside a
+ * system somebody else found.
+ *
+ * A label that means one thing on one tab and something looser on the next is worse than either
+ * rule on its own, so all three now ask about the system, and the per-body question keeps its own
+ * chip under a name that says what it is.
+ */
+describe("first discovery means the system, on every tab", () => {
+  const rows: DiscoveryBodyRow[] = [
+    bod({ key: "a:1", bodyName: "Mine", planetClass: "Earth-like world", firstDiscoverer: true, firstDiscoveredSystem: true }),
+    bod({ key: "b:1", bodyName: "TheirSystem", planetClass: "Earth-like world", firstDiscoverer: true, firstDiscoveredSystem: false }),
+    bod({ key: "c:1", bodyName: "Unknown", planetClass: "Earth-like world", firstDiscoverer: true, firstDiscoveredSystem: null }),
+  ];
+
+  const namesWith = (chip: string, tab: "bodies" | "stars" = "bodies") => {
+    const r = render({ ...DATA, bodies: rows }, tab);
+    r.click(r.chip(chip));
+    const names = r.firstCells().map((t) => (t ?? "").trim());
+    r.unmount();
+    return names;
+  };
+
+  it("counts only bodies in systems the game credits to him", () => {
+    const names = namesWith("First discovery");
+    expect(names.some((n) => n.startsWith("Mine"))).toBe(true);
+    expect(names.some((n) => n.startsWith("TheirSystem")), "25-vs-6 case").toBe(false);
+  });
+
+  it("does not claim a body whose system was never resolved", () => {
+    expect(namesWith("First discovery").some((n) => n.startsWith("Unknown"))).toBe(false);
+  });
+
+  it("keeps the per-body question under its own name", () => {
+    // Still worth asking: first to a body nobody had, inside a system somebody else found.
+    const names = namesWith("First to scan this body");
+    expect(names.some((n) => n.startsWith("TheirSystem"))).toBe(true);
     expect(names.some((n) => n.startsWith("Mine"))).toBe(true);
   });
 });

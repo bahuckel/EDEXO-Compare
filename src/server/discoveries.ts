@@ -165,6 +165,13 @@ export function buildDiscoveries(store: GameStateStore, projectRoot: string): Di
     if (at && (!sys.lastVisit || at > sys.lastVisit)) sys.lastVisit = at;
 
     const firstDiscoverer = rec.wasDiscovered === false;
+    /*
+      The system's own verdict, carried onto each row so the Bodies and Stars tabs can ask the same
+      question the Systems tab asks. Read from the store rather than recomputed: `gameState` decides
+      it on the arrival star and that is the only definition the game itself uses.
+    */
+    const wdSystem = store.mainStarWasDiscoveredBySystem.get(addr);
+    const firstDiscoveredSystem = typeof wdSystem === "boolean" ? !wdSystem : null;
     if (firstDiscoverer) sys.firstDiscoveries += 1;
 
     if (rec.starType?.trim()) {
@@ -189,6 +196,7 @@ export function buildDiscoveries(store: GameStateStore, projectRoot: string): Di
         surfaceTemperatureK: rec.surfaceTemperature ?? null,
         distanceLs: rec.distanceFromArrivalLs ?? null,
         firstDiscoverer,
+      firstDiscoveredSystem,
         estimatedCredits: Math.round(v.value),
         scannedAt: at || null,
       });
@@ -253,6 +261,7 @@ export function buildDiscoveries(store: GameStateStore, projectRoot: string): Di
       speciesConfirmed: species,
       dssMapped: dssComplete,
       firstDiscoverer,
+      firstDiscoveredSystem,
       firstFootfall: footfall,
       estimatedCredits: Math.round(estimated),
       scannedAt: at || null,

@@ -452,6 +452,17 @@ export interface DiscoveryBodyRow {
   speciesConfirmed: string[];
   dssMapped: boolean;
   firstDiscoverer: boolean;
+  /**
+   * Whether the **system** this sits in is the commander's discovery, from its arrival star.
+   *
+   * Separate from {@link firstDiscoverer}, which is about this body alone. Both are true facts and
+   * they answer different questions: being first to scan a body in somebody else's system makes the
+   * body his and the system theirs. Filtering on the body's own flag listed 25 Earth-likes as first
+   * discoveries where the Systems tab, asking the same question of the system, found 6.
+   *
+   * `null` when the arrival star was never scanned with the flag present.
+   */
+  firstDiscoveredSystem: boolean | null;
   firstFootfall: boolean;
   estimatedCredits: number;
   scannedAt: string | null;
@@ -472,6 +483,17 @@ export interface DiscoveryStarRow {
   surfaceTemperatureK: number | null;
   distanceLs: number | null;
   firstDiscoverer: boolean;
+  /**
+   * Whether the **system** this sits in is the commander's discovery, from its arrival star.
+   *
+   * Separate from {@link firstDiscoverer}, which is about this body alone. Both are true facts and
+   * they answer different questions: being first to scan a body in somebody else's system makes the
+   * body his and the system theirs. Filtering on the body's own flag listed 25 Earth-likes as first
+   * discoveries where the Systems tab, asking the same question of the system, found 6.
+   *
+   * `null` when the arrival star was never scanned with the flag present.
+   */
+  firstDiscoveredSystem: boolean | null;
   estimatedCredits: number;
   scannedAt: string | null;
 }

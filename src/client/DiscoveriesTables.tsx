@@ -488,7 +488,18 @@ export function DiscoveriesTables({
       if (flagFilter.has("bio") && !(r.bioSignals && r.bioSignals > 0)) return false;
       if (flagFilter.has("species") && r.speciesConfirmed.length === 0) return false;
       if (flagFilter.has("dss") && !r.dssMapped) return false;
-      if (flagFilter.has("first") && !r.firstDiscoverer) return false;
+      /*
+        "First discovery" asks the same question here as on the Systems tab: is the *system* his.
+
+        It used to read the body's own flag, which is a different and much looser thing — first to
+        scan a body in somebody else's system. Filtering Earth-likes gave **25** where the Systems
+        tab, asking about the system, gave **6**. Both numbers were correct answers to different
+        questions and only one of them is what the label says.
+
+        The body's own flag keeps its own chip, because it is still worth asking.
+      */
+      if (flagFilter.has("first") && r.firstDiscoveredSystem !== true) return false;
+      if (flagFilter.has("bodyfirst") && !r.firstDiscoverer) return false;
       if (flagFilter.has("footfall") && !r.firstFootfall) return false;
       if (flagFilter.has("terra") && !/terraformable/i.test(r.terraformState ?? "")) return false;
       if (flagFilter.has("volcanic") && !r.volcanism) return false;
@@ -516,6 +527,7 @@ export function DiscoveriesTables({
             { key: "species", label: "Species found" },
             { key: "dss", label: "Mapped" },
             { key: "first", label: "First discovery" },
+            { key: "bodyfirst", label: "First to scan this body" },
             { key: "footfall", label: "First footfall" },
             { key: "terra", label: "Terraformable" },
           ]}
@@ -605,7 +617,10 @@ export function DiscoveriesTables({
   const types = topValues(data.stars, (r) => r.starType, Infinity);
   const filtered = data.stars.filter((r) => {
     if (classFilter.size && !classFilter.has(r.starType)) return false;
-    if (flagFilter.has("first") && !r.firstDiscoverer) return false;
+    // Same question, same answer as the other two tabs. A secondary star in somebody else's system
+    // is his to have scanned first and still not his system.
+    if (flagFilter.has("first") && r.firstDiscoveredSystem !== true) return false;
+    if (flagFilter.has("bodyfirst") && !r.firstDiscoverer) return false;
     if (!q) return true;
     return fuzzyRankAny([r.bodyName, r.system, r.starType, r.luminosity ?? "", r.region ?? ""], q) != null;
   });
@@ -616,7 +631,10 @@ export function DiscoveriesTables({
       <ChipRow label="Class" options={types} picked={classFilter} onToggle={toggleClass} />
       <ChipRow
         label="Only"
-        options={[{ key: "first", label: "First discovery" }]}
+        options={[
+          { key: "first", label: "First discovery" },
+          { key: "bodyfirst", label: "First to scan this star" },
+        ]}
         picked={flagFilter}
         onToggle={toggleFlag}
       />
