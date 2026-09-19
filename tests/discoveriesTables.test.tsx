@@ -267,6 +267,29 @@ describe("the Bodies type chips", () => {
     expect(chipLabels(crowd()).some((t) => t.includes("Earth-like world"))).toBe(false);
   });
 
+  it("does the same for star class, where the rarities are the point", () => {
+    /*
+      The Stars tab had the same defect with a cap of 16. It hid seven of this commander's 23 types —
+      neutron stars, Wolf-Rayet, Herbig Ae/Be and three white-dwarf classes — while a black hole
+      survived at rank 12 by luck. Those are precisely what somebody filters a star list for.
+    */
+    const stars: DiscoveryStarRow[] = [
+      ...Array.from({ length: 20 }, (_, i) => ({
+        ...STAR,
+        key: `s:${i}`,
+        bodyName: `Common ${i}`,
+        starType: `Type${i}`,
+      })),
+      { ...STAR, key: "s:n", bodyName: "Neutron", starType: "N" },
+    ];
+    const r = render({ ...DATA, stars }, "stars");
+    const labels = [...r.host.querySelectorAll<HTMLButtonElement>("button.disc-chip")].map(
+      (b) => b.textContent ?? "",
+    );
+    r.unmount();
+    expect(labels.some((t) => t.startsWith("N"))).toBe(true);
+  });
+
   it("still puts the commonest first", () => {
     const labels = chipLabels([
       bod({ key: "i:1", bodyName: "Ice", planetClass: "Icy body" }),

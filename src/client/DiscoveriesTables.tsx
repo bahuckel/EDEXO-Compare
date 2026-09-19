@@ -581,7 +581,15 @@ export function DiscoveriesTables({
     { key: "when", label: "Scanned", value: (r) => r.scannedAt, render: (r) => date(r.scannedAt) },
   ];
 
-  const types = topValues(data.stars, (r) => r.starType, 16);
+  /*
+    Every star type, for the same reason as planet class.
+
+    The cap of 16 hid seven of this commander's 23, and they were the ones worth filtering for:
+    neutron stars (2), Wolf-Rayet (1), Herbig Ae/Be (2) and three white-dwarf classes. A black hole
+    survived at rank 12 by luck rather than design. Twenty-three chips is the same order as the
+    seventeen on Bodies and reads as one row.
+  */
+  const types = topValues(data.stars, (r) => r.starType, Infinity);
   const filtered = data.stars.filter((r) => {
     if (classFilter.size && !classFilter.has(r.starType)) return false;
     if (flagFilter.has("first") && !r.firstDiscoverer) return false;
