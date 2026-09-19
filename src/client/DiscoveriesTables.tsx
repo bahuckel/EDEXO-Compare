@@ -184,18 +184,52 @@ function useToggleSet(): [Set<string>, (k: string) => void, () => void] {
   return [set, toggle, () => setSet(new Set())];
 }
 
-/** The commonest values of a field, as chips — a filter list nobody has to maintain by hand. */
-function topValues<T>(rows: T[], read: (r: T) => string | null, limit = 12) {
+/**
+ * The commonest values of a field, as chips — a filter list nobody has to maintain by hand.
+ *
+ * `always` is there because frequency is the wrong ranking for a filter. The commander's own
+ * numbers: Earth-like world is the **thirteenth** most common class he has scanned, 30 bodies
+ * against 10,170 Icy ones, so a top-twelve list cut it off by one place — and an Earth-like is
+ * precisely the thing somebody opens this panel to find. Ammonia world (26) and Water giant (14)
+ * sit just behind it for the same reason.
+ *
+ * Listed keys are included whenever the data contains them, and never invented when it does not: a
+ * chip that filters to nothing is worse than no chip.
+ */
+function topValues<T>(
+  rows: T[],
+  read: (r: T) => string | null,
+  limit = 12,
+  always: readonly string[] = [],
+) {
   const counts = new Map<string, number>();
   for (const r of rows) {
     const v = read(r);
     if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
   }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
+  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const picked = new Map(ranked.slice(0, limit));
+  for (const key of always) {
+    const n = counts.get(key);
+    if (n != null && !picked.has(key)) picked.set(key, n);
+  }
+  // Back into frequency order, so the pinned rarities sit at the end rather than jumping the queue.
+  return ranked
+    .filter(([key]) => picked.has(key))
     .map(([key, n]) => ({ key, label: key, n }));
 }
+
+/**
+ * Classes worth a chip however few there are — the ones a commander goes looking for.
+ *
+ * Spelled as the journal spells them, because that is what `planetClass` carries.
+ */
+const NOTABLE_PLANET_CLASSES = [
+  "Earth-like world",
+  "Ammonia world",
+  "Water world",
+  "Water giant",
+] as const;
 
 export type DiscoveriesTab = "systems" | "bodies" | "stars";
 
@@ -455,7 +489,7 @@ export function DiscoveriesTables({
       { key: "when", label: "Scanned", value: (r) => r.scannedAt, render: (r) => date(r.scannedAt) },
     ];
 
-    const classes = topValues(data.bodies, (r) => r.planetClass);
+    const classes = topValues(data.bodies, (r) => r.planetClass, 12, NOTABLE_PLANET_CLASSES);
     const filtered = data.bodies.filter((r) => {
       if (classFilter.size && !classFilter.has(r.planetClass)) return false;
       if (flagFilter.has("landable") && r.landable !== true) return false;
