@@ -99,6 +99,11 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
  * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
  * feature that reads it stays dark with nothing logged anywhere.
  *
+ * 9 — no new field. `mainStarWasDiscoveredBySystem` is now derived from the **arrival star**
+ *     (`DistanceFromArrivalLS === 0`) rather than from `BodyID 0`, which does not exist in every
+ *     system: `Pru Aihm BL-U b33-2` starts at body 2 and the owner's own discovery was missing from
+ *     the first-discovery filter because of it. The map's shape is unchanged and its contents are
+ *     not, which is exactly the case note 5 below is about.
  * 6 — `soldExplorationBySystem` and `soldOrganicBySystem`, so "my discoveries" can rank a system by
  *     what it actually paid instead of by an estimate of what it might.
  * 5 — no new field. `WasFootfalled` is now read from every scan type and the physics gate tests
@@ -129,7 +134,7 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   Anything derived from the journal that the UI reads has to be either in this payload or
   deliberately transient. Bump the format when you add one.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 8;
+export const JOURNAL_MERGE_CACHE_FORMAT = 9;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -631,6 +636,14 @@ export class GameStateStore {
    * claim the system was already found.
    */
   readonly mainStarWasDiscoveredBySystem = new Map<number, boolean>();
+  /**
+   * How good the evidence behind each {@link mainStarWasDiscoveredBySystem} entry is: `0` for the
+   * arrival star, `1` for a body-zero fallback. A better source replaces a worse one whenever it
+   * turns up, and journals do not arrive in body order.
+   *
+   * Not persisted: it only resolves ties while merging, and a replay rebuilds it.
+   */
+  readonly mainStarSourceRankBySystem = new Map<number, number>();
   remainingJumpsInRoute: number | null = null;
 
   /** Journal `Loadout` / `LoadGame` — FSD range with minimal fuel (Ly). */
@@ -1231,6 +1244,7 @@ export class GameStateStore {
     this.uiSelectedBodyKey = null;
     this.overlayTouchdownBodyKey = null;
     this.mainStarWasDiscoveredBySystem.clear();
+    this.mainStarSourceRankBySystem.clear();
     this.systemPositions.clear();
     this.remainingJumpsInRoute = null;
     this.loadoutMaxJumpRangeLy = null;
@@ -1474,20 +1488,43 @@ export class GameStateStore {
     setBool("tidalLock", line.TidalLock);
     setBool("wasDiscovered", (line as Record<string, unknown>).WasDiscovered);
     /*
-     * The main star's flag answers a question about the whole system, so it is lifted out here.
+     * The arrival star's flag answers a question about the whole system, so it is lifted out here.
      *
-     * `BodyID 0` is the main star. Its `WasDiscovered` is what the game uses to decide whether the
-     * system counts as this commander's discovery — the name on the system, and the bonus on the
-     * cartographic sale. Every other body's flag is about that body alone.
+     * Its `WasDiscovered` is what the game uses to decide whether the system counts as this
+     * commander's discovery — the name on the system, and the bonus on the cartographic sale. Every
+     * other body's flag is about that body alone.
      *
-     * Written once and not overwritten by a later re-scan of the same star: the first observation is
-     * the one made before anyone could have been beaten to it, and a subsequent visit would report
-     * the system as discovered — by this commander.
+     * **It is not always `BodyID 0`.** That was the original rule here and it is wrong: in
+     * `Pru Aihm BL-U b33-2` the lowest body is 2, the star named "A", and the owner reported a
+     * system he had plainly discovered — every body in it reads `WasDiscovered: false` — missing
+     * from the first-discovery filter because no body zero existed to record. Multi-star systems
+     * routinely start numbering above zero.
+     *
+     * The rule is the **arrival star**, which the journal names exactly: `DistanceFromArrivalLS` is
+     * `0` for it and nothing else. In that system it is body 2 at 0.0 LS, while the other stars sit
+     * at 2,283 and 350,734 LS. "Lowest-numbered star" was tried and is not the same thing — it would
+     * let a secondary speak for the system whenever the primary went unscanned, which is precisely
+     * what `firstDiscovery.test.ts` was written to prevent: 672 of 1,159 first-scanned systems have
+     * a primary somebody else had found.
+     *
+     * `BodyID 0` remains a fallback for a scan that carries no distance at all, since that was the
+     * old rule and it is right whenever it applies. An arrival-star reading always wins over it.
+     *
+     * First answer kept, per source: a second visit reports the system as discovered — by him — and
+     * overwriting would erase the discovery on the second look at his own find.
      */
-    if (bodyId === 0) {
+    const starTypeOnLine = (line as Record<string, unknown>).StarType;
+    if (typeof starTypeOnLine === "string" && starTypeOnLine.trim()) {
       const wd = (line as Record<string, unknown>).WasDiscovered;
-      if (typeof wd === "boolean" && !this.mainStarWasDiscoveredBySystem.has(systemAddress)) {
-        this.mainStarWasDiscoveredBySystem.set(systemAddress, wd);
+      const dist = (line as Record<string, unknown>).DistanceFromArrivalLS;
+      const isArrival = typeof dist === "number" && dist === 0;
+      const rank = isArrival ? 0 : dist === undefined && bodyId === 0 ? 1 : -1;
+      if (typeof wd === "boolean" && rank >= 0) {
+        const prior = this.mainStarSourceRankBySystem.get(systemAddress);
+        if (prior === undefined || rank < prior) {
+          this.mainStarSourceRankBySystem.set(systemAddress, rank);
+          this.mainStarWasDiscoveredBySystem.set(systemAddress, wd);
+        }
       }
     }
     setBool("wasMapped", (line as Record<string, unknown>).WasMapped);
