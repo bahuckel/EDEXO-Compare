@@ -795,11 +795,15 @@ export const PRESENCE_FLOOR_PCT = 5;
  *    the model thinks of it.
  */
 export function demoteBelowPresenceFloor(matches: SpeciesMatch[], b: BodyExoState, db: SpeciesDatabase): void {
-  // Probes have named the genera and the matcher has already dropped everything outside them; see
-  // the header. Nothing left on this list is a guess about whether the genus is present.
-  if (b.genusHints?.length) return;
-
   const confirmed = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
+
+  // Probes have named the genera, so "is Bacterium here" is settled and the presence floor has
+  // nothing left to judge. "Which Bacterium" is wide open, and that is a different floor.
+  if (b.genusHints?.length) {
+    demoteBelowGenusShareFloor(matches, confirmed);
+    return;
+  }
+
   const shown = matches.filter((m) => !m.unlikely);
   if (shown.length === 0) return;
 
@@ -832,6 +836,81 @@ export function demoteBelowPresenceFloor(matches: SpeciesMatch[], b: BodyExoStat
         detail: `${pct.toFixed(1)} % — under the ${PRESENCE_FLOOR_PCT} % this panel shows. Listed as a low-probability find rather than excluded.`,
       },
     ];
+  }
+}
+
+/**
+ * How large a share of its own genus a candidate needs after a DSS.
+ *
+ * The same five per cent as {@link PRESENCE_FLOOR_PCT}, and measured the same way rather than
+ * assumed to match: across the 609 species the commander has confirmed on probed bodies, a 5 % floor
+ * on this number would have hidden **two** of them beforehand (Bacterium omentum at 0.81 %, Osseus
+ * discus at 4.78 %), and both come straight back the moment he samples them, because a confirmed
+ * species is immune below. 2 % hides one, 10 % hides three.
+ */
+export const GENUS_SHARE_FLOOR_PCT = 5;
+
+/**
+ * The same idea as the presence floor, for the list after a DSS.
+ *
+ * Reported from the field: *"I shouldn't be getting Tela as a suggestion for every single body with
+ * 1 bio signal."* He was right, and the cause was this function returning early on any probed body.
+ * The early return reasoned that the probes had named the genera so nothing left was a guess — true
+ * of the **genus** and not of the **species**, and the panel lists species. On his own cache
+ * Bacterium tela sat on 546 of 574 probed bodies (95.1 %) at a median share of its own genus of
+ * **1.9 %**, while the never-probed bodies, where the floor did run, showed it on 13.7 %. One early
+ * return, one species on almost every body he had actually flown to.
+ *
+ * `genusSharePercent` is the right number here and `presenceProbabilityPercent` is not: after a DSS
+ * the genus is settled, so a species' chance of being the one down there is its share within that
+ * genus. On the two bodies where tela really did grow, that share was 39.4 % and 98.0 % — the floor
+ * never came near them.
+ *
+ * The three exemptions of the presence floor hold here for the same reasons: never empty a genus
+ * (the best row in each hinted genus stays, whatever its share), never touch an unmeasured row, and
+ * never argue with the commander's own boots.
+ */
+function demoteBelowGenusShareFloor(matches: SpeciesMatch[], confirmed: Set<string>): void {
+  const shown = matches.filter((m) => !m.unlikely);
+  if (shown.length === 0) return;
+
+  const byGenus = new Map<string, SpeciesMatch[]>();
+  for (const m of shown) {
+    const genus = m.entry.genusDataDir;
+    byGenus.set(genus, [...(byGenus.get(genus) ?? []), m]);
+  }
+
+  for (const rows of byGenus.values()) {
+    // Best share first, so the row that survives a genus where nothing clears is the best of them.
+    // Unmeasured sorts with the survivors: it is not a weak claim, it is no claim.
+    const order = [...rows].sort(
+      (x, y) => (y.genusSharePercent ?? Infinity) - (x.genusSharePercent ?? Infinity),
+    );
+    let kept = 0;
+    for (const m of order) {
+      const pct = m.genusSharePercent;
+      const immune =
+        pct == null ||
+        !Number.isFinite(pct) ||
+        m.organicAnalysisComplete === true ||
+        m.approximateMatch === true ||
+        confirmed.has(m.entry.id);
+      if (immune || pct >= GENUS_SHARE_FLOOR_PCT || kept < 1) {
+        kept++;
+        continue;
+      }
+      m.unlikely = true;
+      m.unlikelyReasons = [
+        ...(m.unlikelyReasons ?? []),
+        {
+          field: "Share of its genus",
+          detail:
+            `${pct.toFixed(1)} % of ${m.entry.genus || m.entry.genusDataDir} here — under the ` +
+            `${GENUS_SHARE_FLOOR_PCT} % this panel shows once the genus is confirmed. Listed as a ` +
+            `low-probability find rather than excluded.`,
+        },
+      ];
+    }
   }
 }
 
