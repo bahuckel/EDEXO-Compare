@@ -33,6 +33,7 @@ function sys(over: Partial<DiscoverySystemRow>): DiscoverySystemRow {
     bioSignals: 0,
     speciesConfirmed: 0,
     firstDiscoveries: 0,
+    firstDiscoveredSystem: null,
     firstFootfalls: 0,
     dssMapped: 0,
     primaryStarType: "K",
@@ -226,6 +227,55 @@ describe("the discoveries tables", () => {
  * thought of and would have failed the next commander with a Helium rich gas giant, which is the
  * kind of half-measure this test exists to prevent.
  */
+/**
+ * "First discovery" on the Systems tab means the **system** is his.
+ *
+ * The owner: "its showing systems that I recognize that I wasnt the first there." The chip filtered
+ * on `firstDiscoveries > 0` — the count of *bodies* he was first to scan — and being first to a
+ * body in somebody else's system is an everyday occurrence, so the list was full of systems he knew
+ * he had not found.
+ *
+ * The game decides the system on the main star's `WasDiscovered`, which the store has always tracked
+ * (`mainStarWasDiscoveredBySystem`) and `discoveries.ts` never read. Unknown stays out: a main star
+ * that was never scanned with the flag is not evidence of anything.
+ */
+describe("the Systems first-discovery filter", () => {
+  const rows: DiscoverySystemRow[] = [
+    sys({ systemAddress: 10, name: "Mine", firstDiscoveredSystem: true, firstDiscoveries: 3 }),
+    sys({ systemAddress: 11, name: "TheirsMyBodies", firstDiscoveredSystem: false, firstDiscoveries: 4 }),
+    sys({ systemAddress: 12, name: "Unknown", firstDiscoveredSystem: null, firstDiscoveries: 2 }),
+  ];
+
+  const namesWith = (chip: string) => {
+    const r = render({ ...DATA, systems: rows }, "systems");
+    r.click(r.chip(chip));
+    const names = r.firstCells().map((t) => (t ?? "").trim());
+    r.unmount();
+    return names;
+  };
+
+  it("lists only systems the game credits to him", () => {
+    const names = namesWith("First discovery");
+    expect(names.some((n) => n.startsWith("Mine"))).toBe(true);
+    expect(names.some((n) => n.startsWith("TheirsMyBodies")), "someone else's system").toBe(false);
+  });
+
+  it("does not claim a system whose main star was never scanned", () => {
+    // Unknown is not "yes". Claiming one would be the same mistake in the other direction.
+    expect(namesWith("First discovery").some((n) => n.startsWith("Unknown"))).toBe(false);
+  });
+
+  it("keeps the body-count question available under its own name", () => {
+    /*
+      Still worth asking: a system somebody else found where he was first to bodies nobody had. It
+      just is not what "first discovery" means.
+    */
+    const names = namesWith("Has first-scanned bodies");
+    expect(names.some((n) => n.startsWith("TheirsMyBodies"))).toBe(true);
+    expect(names.some((n) => n.startsWith("Mine"))).toBe(true);
+  });
+});
+
 describe("the Bodies type chips", () => {
   const dto = (bodies: DiscoveryBodyRow[]): DiscoveriesDTO => ({ ...DATA, bodies });
 

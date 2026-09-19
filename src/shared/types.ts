@@ -390,6 +390,18 @@ export interface DiscoverySystemRow {
   /** Species confirmed on foot here. */
   speciesConfirmed: number;
   firstDiscoveries: number;
+  /**
+   * Whether **this system** is the commander's discovery, which is a different question from
+   * {@link firstDiscoveries}.
+   *
+   * The game decides it on the main star — `BodyID 0`'s `WasDiscovered` — and that is what puts his
+   * name on the system and pays the bonus. Being first to scan body 7 of somebody else's system
+   * makes that *body* his and the system still theirs, so a filter built on the body count listed
+   * systems he knew perfectly well he had not found.
+   *
+   * `null` when the main star was never scanned with the flag present: unknown is not "yes".
+   */
+  firstDiscoveredSystem: boolean | null;
   firstFootfalls: number;
   dssMapped: number;
   /** Type of body 0, which is what a commander means by "the star". */

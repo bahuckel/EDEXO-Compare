@@ -132,6 +132,11 @@ export function buildDiscoveries(store: GameStateStore, projectRoot: string): Di
         bioSignals: 0,
         speciesConfirmed: 0,
         firstDiscoveries: 0,
+        // The game's own answer, straight from the main star. `false` means nobody had been here.
+        firstDiscoveredSystem: (() => {
+          const wd = store.mainStarWasDiscoveredBySystem.get(addr);
+          return typeof wd === "boolean" ? !wd : null;
+        })(),
         firstFootfalls: 0,
         dssMapped: 0,
         primaryStarType: null,

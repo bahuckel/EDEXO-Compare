@@ -332,6 +332,18 @@ export function DiscoveriesTables({
       if (classFilter.size && !(r.region && classFilter.has(r.region))) return false;
       if (flagFilter.has("bio") && r.bioSignals <= 0) return false;
       if (flagFilter.has("species") && r.speciesConfirmed <= 0) return false;
+      /*
+        Two different questions, and they used to share one chip.
+
+        "First discovery" now means the system is his — the game decides that on the main star, and
+        it is what puts his name on it. The old behaviour, at least one body he was first to scan,
+        is still worth having and keeps its own chip: a system somebody else found where he still
+        took bodies nobody had.
+
+        The owner reported the old chip "showing systems that I recognize that I wasnt the first
+        there", which is exactly what a body-count filter does.
+      */
+      if (flagFilter.has("sysfirst") && r.firstDiscoveredSystem !== true) return false;
       if (flagFilter.has("firsts") && r.firstDiscoveries <= 0) return false;
       if (flagFilter.has("footfall") && r.firstFootfalls <= 0) return false;
       if (flagFilter.has("sold") && r.soldExplorationCredits == null && r.soldExobiologyCredits == null)
@@ -356,7 +368,8 @@ export function DiscoveriesTables({
           options={[
             { key: "bio", label: "Biology" },
             { key: "species", label: "Species found" },
-            { key: "firsts", label: "First discovery" },
+            { key: "sysfirst", label: "First discovery" },
+            { key: "firsts", label: "Has first-scanned bodies" },
             { key: "footfall", label: "First footfall" },
             { key: "earthlike", label: "Earth-like" },
             { key: "water", label: "Water world" },
