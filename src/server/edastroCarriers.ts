@@ -41,6 +41,7 @@ import { carrierHasServices, parseCarrierServices } from "../shared/carrierServi
 import { carrierMatchesQuery, parseCarrierQuery } from "../shared/carrierSearch.js";
 import { resolveUserSettingsJsonPath } from "./paths.js";
 import { fetchDssaData, readDssaByCallsign } from "./edastroDssa.js";
+import { networkForCallsign } from "../shared/carrierNetworks.js";
 import type { CarrierDataStatusDTO, CarrierRowDTO } from "../shared/types.js";
 
 const CARRIERS_URL = "https://edastro.com/mapcharts/files/fleetcarriers.csv";
@@ -421,6 +422,8 @@ export interface CarrierQuery {
   maxLastSeenDays?: number;
   /** Only the Deep Space Support Array — 101 curated, deliberately parked service carriers. */
   dssaOnly?: boolean;
+  /** Only carriers in a network this app carries a roster for, e.g. "oasis". */
+  networkKey?: string;
   /** Free text over callsign, name, system, region and the DSSA commander. See `carrierSearch.ts`. */
   search?: string;
   limit?: number;
@@ -451,11 +454,17 @@ export function queryCarriers(q: CarrierQuery, nowMs: number = Date.now()): Carr
   for (const r of rows) {
     const network = dssa.get(r.callsign);
     if (q.dssaOnly && !network) continue;
+    const member = networkForCallsign(r.callsign);
+    if (q.networkKey && member?.network.key !== q.networkKey) continue;
     if (!carrierHasServices(r.services, wanted)) continue;
-    // Searched against the joined values rather than the raw row: the network's name and commander
-    // are on screen, so they must be findable, and the name shown is often the network's rather than
-    // the carrier file's.
-    if (!carrierMatchesQuery({ ...r, name: network?.name || r.name, dssa: network ?? null }, terms))
+    // Searched against the joined values rather than the raw row: the roster name, the DSSA name and
+    // the commander are all on screen, so all of them must be findable.
+    if (
+      !carrierMatchesQuery(
+        { ...r, name: member?.name || network?.name || r.name, dssa: network ?? null },
+        terms,
+      )
+    )
       continue;
     const lastSeenDays = days(r.lastUpdatedMs, nowMs);
     if (q.maxLastSeenDays && q.maxLastSeenDays > 0) {
@@ -467,9 +476,9 @@ export function queryCarriers(q: CarrierQuery, nowMs: number = Date.now()): Carr
     seen.add(r.callsign);
     out.push({
       callsign: r.callsign,
-      // The network's own name wins where it has one: "DSSA Sleeper Service" says what the carrier is
-      // for, where the carrier file often carries an empty name or whatever its owner last set.
-      name: network?.name || r.name,
+      // The roster name wins, then DSSA's, then the file's. EDAstro holds the OASIS carriers under
+      // four capitalisations and one with no prefix at all, so its spelling is not a reliable label.
+      name: member?.name || network?.name || r.name,
       system: r.system,
       systemAddress: r.systemAddress,
       region: r.region,
@@ -485,6 +494,9 @@ export function queryCarriers(q: CarrierQuery, nowMs: number = Date.now()): Carr
       services: r.services,
       dssa: network
         ? { commander: network.commander, status: network.status, deploymentSystem: network.deploymentSystem }
+        : null,
+      network: member
+        ? { key: member.network.key, label: member.network.label, name: member.name }
         : null,
     });
   }
@@ -530,6 +542,7 @@ export function queryCarriers(q: CarrierQuery, nowMs: number = Date.now()): Carr
         lastSeenDays,
         dwellDays: null,
         services: [],
+        network: null,
         dssa: {
           commander: network.commander,
           status: network.status,
@@ -560,8 +573,15 @@ export function countCarriers(q: CarrierQuery, nowMs: number = Date.now()): numb
   for (const r of rows) {
     const network = dssa.get(r.callsign);
     if (q.dssaOnly && !network) continue;
+    const member = networkForCallsign(r.callsign);
+    if (q.networkKey && member?.network.key !== q.networkKey) continue;
     if (!carrierHasServices(r.services, wanted)) continue;
-    if (!carrierMatchesQuery({ ...r, name: network?.name || r.name, dssa: network ?? null }, terms))
+    if (
+      !carrierMatchesQuery(
+        { ...r, name: member?.name || network?.name || r.name, dssa: network ?? null },
+        terms,
+      )
+    )
       continue;
     if (q.maxLastSeenDays && q.maxLastSeenDays > 0) {
       const seen = days(r.lastUpdatedMs, nowMs);

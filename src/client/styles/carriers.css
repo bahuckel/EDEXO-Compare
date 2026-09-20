@@ -88,15 +88,11 @@
 }
 
 /*
-  Points of interest reuse the carriers shell; only the two things unique to a catalogue row live
-  here. The summary is a second line under the name rather than a column, because 200 characters in
-  a table cell either wraps a row to four lines or gets clipped to uselessness.
-*/
-/*
   The per-row Spansh check, under the stability verdict it is a second opinion on.
 
-  Muted until it has something to say, and only loud when the two sources name different systems —
-  that disagreement is the whole reason to press it, and on a sample of 16 it happened once.
+  Muted until it has something to say. Loud in two directions: amber when the two sources name
+  different systems, green when Spansh has a newer sighting of the same one. Both are answers; only
+  "same system, older sighting" is not, and it stays dim.
 */
 .carriers-live {
   margin-top: 0.2rem;
@@ -106,6 +102,25 @@
 
 .carriers-live--differs {
   color: var(--warn, #ffd23f);
+}
+
+/*
+  Spansh has a newer sighting of the same system.
+
+  Green, because it is the answer that upgrades a row: a ten-month-old record with a sighting from
+  yesterday is somewhere worth flying to, and that is the commonest thing this button finds --
+  Spansh was newer on 9 of 16 sampled carriers.
+*/
+.carriers-live--newer {
+  color: var(--ok, #4fd0ff);
+}
+
+/* The cached figure, kept under Spansh's when the two disagree. Neither source is authoritative. */
+.carriers-was {
+  font-size: 0.72rem;
+  line-height: 1.25;
+  text-decoration: line-through;
+  opacity: 0.75;
 }
 
 .carriers-live__btn {
@@ -123,6 +138,11 @@
   border-color: var(--ok-bright, #9fe4ff);
 }
 
+/*
+  Points of interest reuse the carriers shell; only what is unique to a catalogue row lives here. The
+  summary is a second line under the name rather than a column, because 200 characters in a table
+  cell either wraps the row to four lines or is clipped to uselessness.
+*/
 .poi-summary {
   margin-top: 0.15rem;
   max-width: 46rem;
@@ -178,6 +198,27 @@
   a commander scanning for somewhere to sell wants to see at a glance that one of these is a curated
   service carrier deliberately parked there, not somebody's mining base passing through.
 */
+/*
+  A network this app carries a roster for, OASIS today.
+
+  Same shape as the DSSA mark and a different colour, because the evidence behind it is different in
+  kind: DSSA arrives as a curated file with an operational status, this is a stated membership list
+  that goes stale silently. Hidden once the list is already filtered to that network, where every row
+  would carry it.
+*/
+.carriers-network-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  vertical-align: 1px;
+  color: var(--ok-bright, #9fe4ff);
+}
+
 .carriers-dssa-badge {
   display: inline-block;
   margin-left: 0.35rem;

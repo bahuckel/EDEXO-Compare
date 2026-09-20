@@ -1528,6 +1528,13 @@ export interface CarrierRowDTO {
     /** Where the network placed it. It has drifted from this on 0 of 101 rows, which is the point. */
     deploymentSystem: string;
   } | null;
+  /**
+   * A network whose membership this app carries rather than downloads — OASIS today.
+   *
+   * Separate from `dssa` because the evidence is different in kind: DSSA arrives as a curated file
+   * with an operational status, this is a stated list that goes stale silently.
+   */
+  network: { key: string; label: string; name: string } | null;
 }
 
 /** Whether the commander has a carrier file yet, how old it is, and whether the button is armed. */

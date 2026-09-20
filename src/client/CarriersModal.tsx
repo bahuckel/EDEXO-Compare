@@ -24,6 +24,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CARRIER_SERVICE_OPTIONS, carrierServiceLabel } from "@shared/carrierServices";
+import { CARRIER_NETWORKS } from "@shared/carrierNetworks";
 import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
 import type { CarrierLiveFixDTO, CarrierQueryResultDTO, CarrierRowDTO } from "@shared/types";
@@ -64,20 +65,75 @@ function dwellVerdict(row: CarrierRowDTO): { text: string; tone: "good" | "warn"
 }
 
 /**
+ * The sighting age as a phrase.
+ *
+ * Separate from {@link ageLabel} because "today" and "1 day" want different words after them, and a
+ * cell that appends " ago" to every label produces "today ago" -- which it did, on every carrier
+ * seen in the last 24 hours.
+ */
+function lastSeenPhrase(days: number | null): string {
+  if (days == null) return "unknown";
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
+  return `${ageLabel(days)} ago`;
+}
+
+/** How old Spansh's sighting is, in whole days, or null when it carries no date. */
+function spanshAgeDays(updatedAt: string | null): number | null {
+  if (!updatedAt) return null;
+  const t = Date.parse(updatedAt);
+  if (!Number.isFinite(t)) return null;
+  return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
+}
+
+/**
+ * What Spansh added, if anything.
+ *
+ * The first version of this said only "Spansh agrees", which was true and useless: it answered
+ * neither of the two questions the commander has. **Has it moved** is one; **does anyone have a more
+ * recent sighting** is the other, and a source that agrees on the system but saw it yesterday turns a
+ * ten-month-old row into a usable one. Agreement on a *staler* sighting adds nothing at all and
+ * should not be dressed up as confirmation.
+ *
+ * Measured on 16 carriers: Spansh newer on 9, EDAstro newer on 3, same on 3 — so all three verdicts
+ * happen often enough to be worth naming.
+ */
+function liveVerdict(
+  fix: CarrierLiveFixDTO,
+  rowSeenDays: number | null,
+): { tone: "differs" | "newer" | "flat"; text: string } {
+  const age = spanshAgeDays(fix.updatedAt);
+  const seen = age == null ? "unknown" : lastSeenPhrase(age);
+  if (fix.differs) {
+    return { tone: "differs", text: `moved — Spansh saw it in ${fix.system || "an unknown system"}, ${seen}` };
+  }
+  if (age != null && rowSeenDays != null && age < rowSeenDays) {
+    return { tone: "newer", text: `still there ${seen} — Spansh is newer` };
+  }
+  return { tone: "flat", text: `same system, Spansh saw it ${seen}` };
+}
+
+/** The Spansh answer for a row, or null while it is absent, loading or failed. */
+type LiveState = CarrierLiveFixDTO | { error: string } | "loading" | undefined;
+
+function liveFix(state: LiveState): CarrierLiveFixDTO | null {
+  return state && state !== "loading" && !("error" in state) ? state : null;
+}
+
+/**
  * The second opinion, under the row's own stability verdict.
  *
- * Deliberately nothing until pressed. One press is one small POST to Spansh for one carrier, which
- * is a different bargain from the 21 MB catalogue and does not want a cooldown — but it is also not
- * something to fire for two hundred rows because a panel opened.
- *
- * When the two sources name the same system, saying so is the useful answer: it is the only way the
- * commander gets to treat a month-old sighting as probably still true.
+ * Deliberately nothing until pressed. One press is one small POST for one carrier, which is a
+ * different bargain from the 21 MB catalogue and wants no cooldown — but it is also not something to
+ * fire for two hundred rows because a panel opened.
  */
 function CarrierLive({
   state,
+  rowSeenDays,
   onCheck,
 }: {
-  state: CarrierLiveFixDTO | { error: string } | "loading" | undefined;
+  state: LiveState;
+  rowSeenDays: number | null;
   onCheck: () => void;
 }) {
   if (state === "loading") return <div className="dim carriers-live">checking Spansh…</div>;
@@ -94,21 +150,10 @@ function CarrierLive({
   }
 
   if (state) {
-    const seen = state.updatedAt ? state.updatedAt.slice(0, 10) : "unknown";
+    const v = liveVerdict(state, rowSeenDays);
     return (
-      <div className={`carriers-live${state.differs ? " carriers-live--differs" : ""}`}>
-        {state.differs ? (
-          <>
-            <strong>Spansh: {state.system || "unknown"}</strong>
-            <span className="dim">
-              {" "}
-              seen {seen}
-              {state.distanceLy != null ? ` · ${Math.round(state.distanceLy).toLocaleString("en-US")} ly` : ""}
-            </span>
-          </>
-        ) : (
-          <span className="dim">Spansh agrees · seen {seen}</span>
-        )}
+      <div className={`carriers-live carriers-live--${v.tone}`}>
+        {v.tone === "flat" ? <span className="dim">{v.text}</span> : <strong>{v.text}</strong>}
       </div>
     );
   }
@@ -123,20 +168,6 @@ function CarrierLive({
 }
 
 /** Sighting ages, as chips. 0 means "any", which is the honest default for deep space. */
-/**
- * The sighting age as a phrase.
- *
- * Separate from {@link ageLabel} because "today" and "1 day" want different words after them, and a
- * cell that appends " ago" to every label produces "today ago" -- which it did, on every carrier
- * seen in the last 24 hours.
- */
-function lastSeenPhrase(days: number | null): string {
-  if (days == null) return "unknown";
-  if (days === 0) return "today";
-  if (days === 1) return "yesterday";
-  return `${ageLabel(days)} ago`;
-}
-
 const SEEN_FILTERS = [0, 7, 30, 90] as const;
 const seenLabel = (n: number) => (n === 0 ? "Any age" : `Seen ≤ ${n}d`);
 
@@ -148,6 +179,7 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
   const [services, setServices] = useState<string[]>([]);
   const [maxSeen, setMaxSeen] = useState<number>(0);
   const [dssaOnly, setDssaOnly] = useState(false);
+  const [networkKey, setNetworkKey] = useState("");
   /*
     Per-row Spansh answers, keyed by callsign.
 
@@ -186,6 +218,7 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
     if (services.length) params.set("services", services.join(","));
     if (maxSeen) params.set("maxLastSeenDays", String(maxSeen));
     if (dssaOnly) params.set("dssaOnly", "1");
+    if (networkKey) params.set("network", networkKey);
     if (search.trim()) params.set("q", search.trim());
     params.set("limit", "200");
     const seq = (requestSeq.current += 1);
@@ -199,7 +232,7 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
       if (seq !== requestSeq.current) return;
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [services, maxSeen, dssaOnly, search]);
+  }, [services, maxSeen, dssaOnly, networkKey, search]);
 
   useEffect(() => {
     void load();
@@ -356,6 +389,23 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
                   DSSA only
                 </button>
               </Tooltip>
+              {/*
+                Networks this app carries a roster for rather than downloads. A stated membership
+                list, which is why it sits beside DSSA and not among the service chips: those say
+                what a carrier sells, these say who runs it.
+              */}
+              {CARRIER_NETWORKS.map((net) => (
+                <Tooltip key={net.key} text={net.hint}>
+                  <button
+                    type="button"
+                    className={`fdb-chip${networkKey === net.key ? " fdb-chip--on" : ""}`}
+                    onClick={() => setNetworkKey((v) => (v === net.key ? "" : net.key))}
+                    aria-pressed={networkKey === net.key}
+                  >
+                    {net.label} only
+                  </button>
+                </Tooltip>
+              ))}
               <span className="fdb-filters__gap" />
               {CARRIER_SERVICE_OPTIONS.map((opt) => (
                 <Tooltip key={opt.key} text={opt.hint}>
@@ -411,12 +461,28 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
               <tbody>
                 {rows.map((r) => {
                   const verdict = dwellVerdict(r);
+                  // Non-null only once Spansh has answered AND named a different system: that is the
+                  // single case where the row itself should stop showing the cached location.
+                  const fix = liveFix(live[r.callsign]);
+                  const moved = fix?.differs ? fix : null;
                   return (
                     <tr key={r.callsign}>
-                      <td>{ly(r.distanceLy)}</td>
+                      <td>
+                        {moved ? (
+                          <>
+                            <strong className="carriers-live--differs">{ly(moved.distanceLy)}</strong>
+                            <div className="dim carriers-was">was {ly(r.distanceLy)}</div>
+                          </>
+                        ) : (
+                          ly(r.distanceLy)
+                        )}
+                      </td>
                       <td>
                         <strong>{r.callsign}</strong>
                         {r.name ? <span className="dim"> {r.name}</span> : null}
+                        {r.network && !networkKey ? (
+                          <span className="carriers-network-badge">{r.network.label}</span>
+                        ) : null}
                         {r.dssa ? (
                           <>
                             {/*
@@ -441,13 +507,37 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
                         ) : null}
                       </td>
                       <td>
-                        {r.system || "—"}
-                        {r.region ? <span className="dim"> · {r.region}</span> : null}
+                        {/*
+                          When Spansh names a different system the row shows Spansh's, because "the
+                          location did not update" was the first thing the owner said about this
+                          feature. The cached answer stays underneath rather than disappearing: the
+                          two sources disagree in both directions and neither is authoritative.
+                        */}
+                        {moved ? (
+                          <>
+                            <strong className="carriers-live--differs">
+                              {moved.system || "unknown"}
+                            </strong>
+                            <div className="dim carriers-was">
+                              EDAstro had {r.system || "—"}
+                              {r.region ? ` · ${r.region}` : ""}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {r.system || "—"}
+                            {r.region ? <span className="dim"> · {r.region}</span> : null}
+                          </>
+                        )}
                       </td>
                       <td>{lastSeenPhrase(r.lastSeenDays)}</td>
                       <td className={`carriers-dwell carriers-dwell--${verdict.tone}`}>
                         {verdict.text}
-                        <CarrierLive state={live[r.callsign]} onCheck={() => void checkSpansh(r)} />
+                        <CarrierLive
+                          state={live[r.callsign]}
+                          rowSeenDays={r.lastSeenDays}
+                          onCheck={() => void checkSpansh(r)}
+                        />
                       </td>
                       <td className="dim">
                         {r.services
