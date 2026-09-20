@@ -242,7 +242,16 @@ for (const doc of packDocs) {
     gravityG: num(body.gravity),
     temperatureK: num(body.surfaceTemperature),
     pressureAtm: num(body.surfacePressure),
-    volcanism: clean(body.volcanismType) || "No volcanism",
+    /*
+      Absent is not "No volcanism".
+
+      The system caches omit `volcanismType` on some records -- 156 of tela's 860 -- and reading a
+      missing field as a negative is how this dossier first reported 85 % of its bodies as quiet. The
+      tell that it is missing data and not a recorded absence: Fumerola, which cannot grow without
+      volcanism, has the field on every one of its bodies and never has it absent, while species that
+      are usually quiet carry the gap 18-36 % of the time. An unrecorded field gets its own row.
+    */
+    volcanism: clean(body.volcanismType) || "(not recorded)",
     star: starFor(body, doc.context?.starSummaries ?? [], sysBodies),
     distanceLs: num(body.distanceToArrival),
     grade3: grade3Of(body.materials),
@@ -420,7 +429,9 @@ if (existsSync(collectorDb)) {
         gravityG: scan.SurfaceGravity == null ? null : scan.SurfaceGravity / 9.80665,
         temperatureK: num(scan.SurfaceTemperature),
         pressureAtm: scan.SurfacePressure == null ? null : scan.SurfacePressure / 101_325,
-        volcanism: clean(scan.Volcanism) || (scan.PlanetClass ? "No volcanism" : ""),
+        // An EDDN `Scan` writes `Volcanism: ""` for a body with none, so empty here is a real
+        // negative -- unlike the system caches above, where the key is simply missing.
+        volcanism: scan.PlanetClass ? clean(scan.Volcanism) || "No volcanism" : "(not recorded)",
         star: clean(r.host_star) || "?",
         distanceLs: num(scan.DistanceFromArrivalLS),
         grade3: grade3Of(mats),
@@ -480,7 +491,7 @@ function flatten(raw: string): string {
 const AXES: { label: string; of: (r: Row) => string; ambient: string }[] = [
   { label: "Atmosphere", of: (r) => r.atmosphere || "(none recorded)", ambient: "body.atmosphereType" },
   { label: "Body class", of: (r) => r.bodyClass || "(unknown)", ambient: "body.subType" },
-  { label: "Volcanism", of: (r) => r.volcanism || "(unknown)", ambient: "body.volcanismType" },
+  { label: "Volcanism", of: (r) => r.volcanism || "(not recorded)", ambient: "body.volcanismType" },
   { label: "Host star", of: (r) => r.star || "?", ambient: "exo.host_star_spectral_primary" },
 ];
 
@@ -585,6 +596,21 @@ for (const axis of AXES) {
   md.push("");
 }
 
+const volKnown = rows.filter((r) => r.volcanism && r.volcanism !== "(not recorded)");
+const volActive = volKnown.filter((r) => !r.volcanism.toLowerCase().startsWith("no volcanism"));
+md.push("**Read the volcanism table with its unrecorded row in mind.** The system caches omit the field on");
+md.push("some records, and a missing field is not a recorded absence: Fumerola, which cannot grow without");
+md.push("volcanism, carries the field on every body and never lacks it, while mostly-quiet species lack it on");
+md.push("18-36 % of theirs. Counting only the bodies where it was actually recorded,");
+md.push("");
+md.push(
+  `**${volActive.length} of ${volKnown.length} (${((volActive.length / Math.max(1, volKnown.length)) * 100).toFixed(1)} %) ` +
+    `are volcanic**, against an ambient of about 1.4 % across bio bodies — a real enrichment of roughly ten times, ` +
+    "and nothing like a requirement. The codex line about helium, iron and silicate magma describes where it is " +
+    "often found, not a gate: the explicit negatives are explicit, and the commander's own confirmed body at " +
+    "`Eorgh Prou OP-C c27-179 B 2` reads `Volcanism: \"\"` on two Detailed scans.",
+);
+md.push("");
 md.push("### The continuous ones");
 md.push("");
 md.push(`- **Gravity** — ${numericSummary(rows.map((r) => r.gravityG), "g")}`);
