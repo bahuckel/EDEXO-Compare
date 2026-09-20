@@ -41,6 +41,7 @@ const PARSED_CRITERION_KEYS: readonly string[] = [
   "atmospherePressureCategory", "pressureCategory", "atmosphere_pressure", "atmospherePressure",
   "required_atmosphere_type", "requiredAtmosphereType", "atmosphereTypeRequiredAnyOf",
   "atmosphere_gas_share_pct", "atmosphereGasSharePct", "gas_share_pct",
+  "atmosphere_unfavoured", "atmosphereUnfavoured", "atmosphereUnfavouredAnyOf",
   "whenAtmosphereLinkedAtmosphereAnyOf", "when_atmosphere_linked_atmosphere_any_of",
   "atmosphereLinkedAtmosphereAnyOf",
   "whenAtmosphereLinkedMaxTempK", "when_atmosphere_max_temp_k", "atmosphereLinkedMaxTempK",

@@ -11,6 +11,7 @@ import type {
   OrganicGenusLock,
 } from "../shared/types.js";
 import { describeSystemBodyVerdict, evaluateSystemBodyGate } from "../shared/systemBodyGates.js";
+import { atmosphereIsUnfavoured } from "../shared/atmospherePreference.js";
 import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "../shared/journalPhysics.js";
 import {
   describeVerdict,
@@ -1292,6 +1293,50 @@ export function demoteFailedSystemBodyGates(
   }
 }
 
+/**
+ * Demote a species on an atmosphere it is recorded on but rarely wins.
+ *
+ * The owner's call, after the genus comparison: *"demote tela on CO2, ammonia, nitrogen and argon."*
+ * Those are the four where tela takes between 0.3 % and 1.8 % of the bodies its own genus holds,
+ * against 47 % on water and 58 % on neon-rich.
+ *
+ * A demotion rather than an exclusion, for the usual reason: the corpus does record twenty tela
+ * bodies on carbon dioxide, and a rule that removed them would be claiming something the data does
+ * not say. The row keeps its place behind "show unlikely" and carries the share with it.
+ *
+ * Runs beside the spatial, host-star and system-body gates and reads the same way: a species with no
+ * such list is untouched, and an unknown atmosphere says nothing.
+ */
+export function demoteUnfavouredAtmospheres(
+  strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  scan: PlanetScan,
+): void {
+  const atmosphere = scan.AtmosphereType ?? scan.Atmosphere ?? null;
+  if (!atmosphere) return;
+
+  for (let i = strict.length - 1; i >= 0; i--) {
+    const m = strict[i]!;
+    const verdict = atmosphereIsUnfavoured(m.entry.criteria?.atmosphereUnfavouredAnyOf, atmosphere);
+    if (!verdict) continue;
+
+    const reason: MatchReason = {
+      field: "Atmosphere",
+      detail:
+        `${m.entry.displayName} is recorded on ${verdict.matched} atmospheres but rarely wins one: ` +
+        `its own genus holds far more of them. ${DEMOTED_NOTE}`,
+      soft: true,
+    };
+    strict.splice(i, 1);
+    unlikely.push({
+      ...m,
+      reasons: [...m.reasons, reason],
+      unlikely: true,
+      unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
+    });
+  }
+}
+
 export function matchDatabaseToScan(
   db: SpeciesDatabase,
   scan: PlanetScan,
@@ -1380,6 +1425,7 @@ export function matchDatabaseToScan(
   demoteFailedSpatialGates(strict, unlikely, matchContext, options?.spatialCatalogue ?? null);
   demoteFailedHostStarGates(strict, unlikely, matchContext);
   demoteFailedSystemBodyGates(strict, unlikely, matchContext);
+  demoteUnfavouredAtmospheres(strict, unlikely, scan);
 
   restoreDemotionsBelowSignalCount(strict, unlikely, options?.biologicalSignals ?? null);
 

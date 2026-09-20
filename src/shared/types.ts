@@ -207,6 +207,13 @@ export interface SpeciesCriterion {
    * finished — an absence in a half-scanned system is not an absence.
    */
   systemBodyClassesAnyOf?: string[];
+  /**
+   * Atmospheres the species is recorded on but rarely wins, measured against its own genus.
+   *
+   * Demotes, never excludes: `shared/atmospherePreference.ts` carries the numbers. A species row
+   * without it behaves exactly as before.
+   */
+  atmosphereUnfavouredAnyOf?: string[];
   planetClassAnyOf?: string[];
   atmosphereTypeAnyOf?: string[];
   /**

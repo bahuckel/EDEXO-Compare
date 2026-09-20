@@ -102,16 +102,19 @@ describe("matchDatabaseToScan", () => {
   it("predicts the right species on a thin-CO₂ high metal content body", () => {
     const r = matchDatabaseToScan(db, HMC_THIN_CO2, null, null, { includeBacterium: true });
     /*
-      Bacterium tela joined this list when its volcanism requirement was removed — the codex row
-      demanded Helium/Iron/Silicate/Ammonia volcanism and 706 of 833 observed bodies for it have
-      none, so the gate was hiding it on 85% of the worlds it grows on. This body has a thin
-      atmosphere and no volcanism, which is exactly the case that was wrong.
-      See tests/bacteriumTelaVolcanism.test.ts.
+      Bacterium tela used to be shown here too. It joined the list when its volcanism requirement was
+      removed — that codex row demanded Helium/Iron/Silicate/Ammonia volcanism while 706 of 833
+      observed bodies have none — and the removal was right, but nothing then narrowed it.
+
+      It is demoted on this body now, on the owner's call, because carbon dioxide is one of the four
+      atmospheres where tela almost never wins its own genus: **20 bodies of 6,904**, against 47 % of
+      the water ones and 58 % of the neon-rich. Demoted, not excluded — those twenty exist, and the
+      row is still behind "show unlikely" with its share in the reason.
+      See tests/atmosphereUnfavoured.test.ts and tests/bacteriumTelaVolcanism.test.ts.
     */
-    expect(shown(r).map((m) => m.entry.id).sort()).toEqual([
-      "bacterium_bacterium_aurasus",
-      "bacterium_bacterium_tela",
-    ]);
+    expect(shown(r).map((m) => m.entry.id).sort()).toEqual(["bacterium_bacterium_aurasus"]);
+    const telaRow = r.matches.find((m) => m.entry.id === "bacterium_bacterium_tela");
+    expect(telaRow?.unlikely, "tela must be demoted, never dropped").toBe(true);
     expect(r.approximateMatchingUsed).toBe(false);
     expect(r.genusFilterActive).toBe(false);
 

@@ -31,7 +31,6 @@
       "candidates": [
         "aleoida_aleoida_laminiae",
         "bacterium_bacterium_alcyoneum",
-        "bacterium_bacterium_tela",
         "concha_concha_aureolas",
         "frutexa_frutexa_flabellum",
         "frutexa_frutexa_flammasis",
@@ -51,6 +50,7 @@
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu",
         "cactoida_cactoida_lapis",
@@ -119,7 +119,6 @@
       ],
       "candidates": [
         "bacterium_bacterium_alcyoneum",
-        "bacterium_bacterium_tela",
         "stratum_stratum_tectonicas"
       ],
       "unlikely": [
@@ -130,6 +129,7 @@
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu",
         "stratum_stratum_araneamus",
@@ -164,7 +164,6 @@
         "fonticulua_fonticulua_campestris"
       ],
       "candidates": [
-        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "fonticulua_fonticulua_campestris"
       ],
@@ -179,6 +178,7 @@
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_volu",
         "cactoida_cactoida_lapis",
         "cactoida_cactoida_peperatis",
@@ -247,7 +247,6 @@
         "fonticulua_fonticulua_campestris"
       ],
       "candidates": [
-        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "electricae_electricae_radialem",
         "fonticulua_fonticulua_campestris",
@@ -264,6 +263,7 @@
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_volu",
         "cactoida_cactoida_lapis",
         "cactoida_cactoida_peperatis",
@@ -411,7 +411,7 @@
         "Landable": true,
         "MassEM": 0.080197,
         "SemiMajorAxis": 92573065161.70502,
-        "Eccentricity": 0.00001,
+        "Eccentricity": 1e-05,
         "TidalLock": false,
         "TerraformState": ""
       },
@@ -507,7 +507,6 @@
       ],
       "candidates": [
         "bacterium_bacterium_aurasus",
-        "bacterium_bacterium_tela",
         "concha_concha_labiata",
         "frutexa_frutexa_acus",
         "frutexa_frutexa_fera",
@@ -525,6 +524,7 @@
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu",
         "cactoida_cactoida_lapis",
@@ -593,7 +593,6 @@
         "stratum_stratum_tectonicas"
       ],
       "candidates": [
-        "bacterium_bacterium_tela",
         "stratum_stratum_tectonicas"
       ],
       "unlikely": [
@@ -605,6 +604,7 @@
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu",
         "stratum_stratum_araneamus",
@@ -1135,7 +1135,6 @@
       ],
       "candidates": [
         "bacterium_bacterium_informem",
-        "bacterium_bacterium_tela",
         "fonticulua_fonticulua_lapida"
       ],
       "unlikely": [
@@ -1148,6 +1147,7 @@
         "bacterium_bacterium_bullaris",
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu",
         "cactoida_cactoida_lapis",
@@ -1216,8 +1216,7 @@
         "bacterium_bacterium_informem"
       ],
       "candidates": [
-        "bacterium_bacterium_informem",
-        "bacterium_bacterium_tela"
+        "bacterium_bacterium_informem"
       ],
       "unlikely": [
         "amphora_amphora_plant",
@@ -1227,6 +1226,7 @@
         "bacterium_bacterium_bullaris",
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu"
       ]

@@ -473,6 +473,36 @@ for (const s of seen.filter((x) => x.truth.includes(target.id))) {
   );
 }
 
+/*
+  Where it sits, split by atmosphere.
+
+  The genus comparison says tela is a Water/Neon-rich species, not a catch-all. If the ranking model
+  already knows that, its rank on a Water body will be near the top and on a carbon-dioxide body near
+  the bottom, and "promote it on its best atmospheres" is already done. This is the check before
+  building anything.
+*/
+const atmKey = (r: Seen) => (r.body.scan?.AtmosphereType ?? "(none)").replace(/^(hot\s+)?thin\s+/i, "");
+const byAtmRank = new Map<string, { n: number; rank1: number; top3: number; pct: number[] }>();
+for (const s of seen) {
+  if (s.rank == null) continue;
+  const k = atmKey(s);
+  const e = byAtmRank.get(k) ?? { n: 0, rank1: 0, top3: 0, pct: [] };
+  e.n += 1;
+  if (s.rank === 1) e.rank1 += 1;
+  if (s.rank <= 3) e.top3 += 1;
+  e.pct.push(s.presencePct ?? 0);
+  byAtmRank.set(k, e);
+}
+console.log("\nwhere tela ranks, by the body's atmosphere:");
+console.log(`  ${"atmosphere".padEnd(20)} ${"bodies".padStart(7)} ${"1st".padStart(7)} ${"top 3".padStart(7)} ${"median chance".padStart(14)}`);
+for (const [k, e] of [...byAtmRank].sort((a, b) => b[1].n - a[1].n)) {
+  if (e.n < 5) continue;
+  const med = [...e.pct].sort((a, b) => a - b)[Math.floor(e.pct.length / 2)] ?? 0;
+  console.log(
+    `  ${k.padEnd(20)} ${String(e.n).padStart(7)} ${`${((e.rank1 / e.n) * 100).toFixed(0)} %`.padStart(7)} ${`${((e.top3 / e.n) * 100).toFixed(0)} %`.padStart(7)} ${`${med.toFixed(1)} %`.padStart(14)}`,
+  );
+}
+
 /* ------------------------------------------------------------------ pass two: is it actually there */
 
 const truthBodies = seen.filter((s) => s.truth.length > 0);

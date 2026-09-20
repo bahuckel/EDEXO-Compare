@@ -936,6 +936,18 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
     let criteria = buildCriteriaForRow(r, id);
     const systemBodies = systemBodyRequirementForRow(r);
     if (systemBodies?.length) criteria = { ...criteria, systemBodyClassesAnyOf: systemBodies };
+
+    /*
+      Atmospheres the species rarely wins on. Read straight off the row rather than inferred: it is a
+      claim about the corpus that somebody measured, and the measurement belongs next to the number.
+    */
+    const nested = asRecord(r.criteria ?? r.Criteria ?? r.conditions ?? r.Conditions);
+    const unfavouredRaw =
+      nested?.atmosphere_unfavoured ?? nested?.atmosphereUnfavoured ?? nested?.atmosphereUnfavouredAnyOf;
+    if (Array.isArray(unfavouredRaw)) {
+      const list = unfavouredRaw.map((x) => String(x).trim()).filter(Boolean);
+      if (list.length) criteria = { ...criteria, atmosphereUnfavouredAnyOf: list };
+    }
     if (!criteria.planetClassAnyOf?.length && genusPlanetTypes?.length) {
       criteria = {
         ...criteria,
