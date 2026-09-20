@@ -102,10 +102,31 @@ function liveVerdict(
   fix: CarrierLiveFixDTO,
   rowSeenDays: number | null,
 ): { tone: "differs" | "newer" | "flat"; text: string } {
+  /*
+    EDAstro's map feed carries no per-carrier sighting time, so there is no age to compare — but it
+    is the source that saw jumps the daily file missed, so a disagreement from it is worth more than
+    one from Spansh, not less. Agreement from it is worth less, because "the map also has this
+    system" says nothing about when.
+  */
+  if (fix.source === "galmap") {
+    const where = fix.system || "an unknown system";
+    const net = fix.network ? `${fix.network} map` : "EDAstro map";
+    if (fix.differs) {
+      return {
+        tone: "differs",
+        text: `moved — the ${net} has it in ${where}${fix.positionUnknown ? " (distance unknown)" : ""}`,
+      };
+    }
+    return { tone: "flat", text: `the ${net} agrees on ${where}` };
+  }
+
   const age = spanshAgeDays(fix.updatedAt);
   const seen = age == null ? "unknown" : lastSeenPhrase(age);
   if (fix.differs) {
-    return { tone: "differs", text: `moved — Spansh saw it in ${fix.system || "an unknown system"}, ${seen}` };
+    return {
+      tone: "differs",
+      text: `moved — Spansh saw it in ${fix.system || "an unknown system"}, ${seen}`,
+    };
   }
   if (age != null && rowSeenDays != null && age < rowSeenDays) {
     return { tone: "newer", text: `still there ${seen} — Spansh is newer` };
@@ -161,7 +182,7 @@ function CarrierLive({
   return (
     <div className="carriers-live">
       <button type="button" className="carriers-live__btn" onClick={onCheck}>
-        Check Spansh
+        Check live
       </button>
     </div>
   );
@@ -187,9 +208,7 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
     directions -- measured on 16 carriers, Spansh was newer on 9 and EDAstro on 3 -- so this is a
     second opinion shown next to the first, never a correction applied over it.
   */
-  const [live, setLive] = useState<Record<string, CarrierLiveFixDTO | { error: string } | "loading">>(
-    {},
-  );
+  const [live, setLive] = useState<Record<string, CarrierLiveFixDTO | { error: string } | "loading">>({});
   const [searchInput, setSearchInput] = useState("");
   /*
     The query the server actually sees, a beat behind the box.
@@ -298,16 +317,11 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
             <h2 className="fdb-title">Carriers</h2>
             <p className="dim fdb-sub">
               Fleet carriers near you, from{" "}
-              <a
-                className="carriers-source-link"
-                href="https://edastro.com"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a className="carriers-source-link" href="https://edastro.com" target="_blank" rel="noreferrer">
                 EDAstro
               </a>
-              . Positions are <strong>last sightings</strong>, not live — a carrier is only reported
-              when someone aboard it is running a journal uploader.
+              . Positions are <strong>last sightings</strong>, not live — a carrier is only reported when
+              someone aboard it is running a journal uploader.
             </p>
           </div>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
@@ -441,124 +455,135 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
                 <span className="dim">of {data.matchCount.toLocaleString("en-US")} matching</span>
               ) : null}
               {!data?.origin ? (
-                <span className="dim">
-                  No position yet — jump once and distances appear.
-                </span>
+                <span className="dim">No position yet — jump once and distances appear.</span>
               ) : null}
             </div>
 
-            <table className="fdb-table carriers-table">
-              <thead>
-                <tr>
-                  <th>Distance</th>
-                  <th>Carrier</th>
-                  <th>System</th>
-                  <th>Last seen</th>
-                  <th>Stability</th>
-                  <th>Services</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => {
-                  const verdict = dwellVerdict(r);
-                  // Non-null only once Spansh has answered AND named a different system: that is the
-                  // single case where the row itself should stop showing the cached location.
-                  const fix = liveFix(live[r.callsign]);
-                  const moved = fix?.differs ? fix : null;
-                  return (
-                    <tr key={r.callsign}>
-                      <td>
-                        {moved ? (
-                          <>
-                            <strong className="carriers-live--differs">{ly(moved.distanceLy)}</strong>
-                            <div className="dim carriers-was">was {ly(r.distanceLy)}</div>
-                          </>
-                        ) : (
-                          ly(r.distanceLy)
-                        )}
-                      </td>
-                      <td>
-                        <strong>{r.callsign}</strong>
-                        {r.name ? <span className="dim"> {r.name}</span> : null}
-                        {r.network && !networkKey ? (
-                          <span className="carriers-network-badge">{r.network.label}</span>
-                        ) : null}
-                        {r.dssa ? (
-                          <>
-                            {/*
+            {/*
+              The scroller the backlog panel has and this one did not.
+
+              `.fdb-panel` is a flex column capped at 86vh, so a table placed straight into it is
+              simply cut off at the bottom -- no scrollbar, no hint that rows exist below. The owner
+              hit it on an eleven-row filter and could see nine.
+            */}
+            <div className="fdb-scroll">
+              <table className="fdb-table carriers-table">
+                <thead>
+                  <tr>
+                    <th>Distance</th>
+                    <th>Carrier</th>
+                    <th>System</th>
+                    <th>Last seen</th>
+                    <th>Stability</th>
+                    <th>Services</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const verdict = dwellVerdict(r);
+                    // Non-null only once Spansh has answered AND named a different system: that is the
+                    // single case where the row itself should stop showing the cached location.
+                    const fix = liveFix(live[r.callsign]);
+                    const moved = fix?.differs ? fix : null;
+                    return (
+                      <tr key={r.callsign}>
+                        <td>
+                          {moved ? (
+                            <>
+                              {/*
+                                A cluster pin on the map is not the carrier's position, so there is
+                                no distance to give — only the fact that the cached one is wrong.
+                              */}
+                              <strong className="carriers-live--differs">
+                                {moved.positionUnknown ? "—" : ly(moved.distanceLy)}
+                              </strong>
+                              <div className="dim carriers-was">was {ly(r.distanceLy)}</div>
+                            </>
+                          ) : (
+                            ly(r.distanceLy)
+                          )}
+                        </td>
+                        <td>
+                          <strong>{r.callsign}</strong>
+                          {r.name ? <span className="dim"> {r.name}</span> : null}
+                          {r.network && !networkKey ? (
+                            <span className="carriers-network-badge">{r.network.label}</span>
+                          ) : null}
+                          {r.dssa ? (
+                            <>
+                              {/*
                               The badge marks a network carrier in a list of ninety thousand. It is
                               dropped once the list is already filtered to the network, where every
                               row would carry it and it says nothing, and dropped again when the
                               carrier's own name opens with "DSSA" -- which most of theirs do, so
                               the badge would sit next to the word it repeats.
                             */}
-                            {!dssaOnly && !/^DSSA\b/i.test(r.name) ? (
-                              <span
-                                className="carriers-dssa-badge"
-                                title={`Deep Space Support Array — ${r.dssa.status}`}
-                              >
-                                DSSA
-                              </span>
-                            ) : null}
-                            {r.dssa.commander ? (
-                              <span className="dim"> CMDR {r.dssa.commander}</span>
-                            ) : null}
-                          </>
-                        ) : null}
-                      </td>
-                      <td>
-                        {/*
+                              {!dssaOnly && !/^DSSA\b/i.test(r.name) ? (
+                                <span
+                                  className="carriers-dssa-badge"
+                                  title={`Deep Space Support Array — ${r.dssa.status}`}
+                                >
+                                  DSSA
+                                </span>
+                              ) : null}
+                              {r.dssa.commander ? (
+                                <span className="dim"> CMDR {r.dssa.commander}</span>
+                              ) : null}
+                            </>
+                          ) : null}
+                        </td>
+                        <td>
+                          {/*
                           When Spansh names a different system the row shows Spansh's, because "the
                           location did not update" was the first thing the owner said about this
                           feature. The cached answer stays underneath rather than disappearing: the
                           two sources disagree in both directions and neither is authoritative.
                         */}
-                        {moved ? (
-                          <>
-                            <strong className="carriers-live--differs">
-                              {moved.system || "unknown"}
-                            </strong>
-                            <div className="dim carriers-was">
-                              EDAstro had {r.system || "—"}
-                              {r.region ? ` · ${r.region}` : ""}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            {r.system || "—"}
-                            {r.region ? <span className="dim"> · {r.region}</span> : null}
-                          </>
-                        )}
-                      </td>
-                      <td>{lastSeenPhrase(r.lastSeenDays)}</td>
-                      <td className={`carriers-dwell carriers-dwell--${verdict.tone}`}>
-                        {verdict.text}
-                        <CarrierLive
-                          state={live[r.callsign]}
-                          rowSeenDays={r.lastSeenDays}
-                          onCheck={() => void checkSpansh(r)}
-                        />
-                      </td>
-                      <td className="dim">
-                        {r.services
-                          .filter((s) => CARRIER_SERVICE_OPTIONS.some((o) => o.key === s))
-                          .map(carrierServiceLabel)
-                          .join(", ") || "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          {moved ? (
+                            <>
+                              <strong className="carriers-live--differs">{moved.system || "unknown"}</strong>
+                              <div className="dim carriers-was">
+                                EDAstro had {r.system || "—"}
+                                {r.region ? ` · ${r.region}` : ""}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {r.system || "—"}
+                              {r.region ? <span className="dim"> · {r.region}</span> : null}
+                            </>
+                          )}
+                        </td>
+                        <td>{lastSeenPhrase(r.lastSeenDays)}</td>
+                        <td className={`carriers-dwell carriers-dwell--${verdict.tone}`}>
+                          {verdict.text}
+                          <CarrierLive
+                            state={live[r.callsign]}
+                            rowSeenDays={r.lastSeenDays}
+                            onCheck={() => void checkSpansh(r)}
+                          />
+                        </td>
+                        <td className="dim">
+                          {r.services
+                            .filter((s) => CARRIER_SERVICE_OPTIONS.some((o) => o.key === s))
+                            .map(carrierServiceLabel)
+                            .join(", ") || "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
             {rows.length === 0 ? (
               <p className="fdb-empty">
-                Nothing matches{search.trim() ? <> “{search.trim()}”</> : " those filters"}. Out in the
-                black the sighting ages are long — try <strong>Any age</strong>
+                Nothing matches{search.trim() ? <> “{search.trim()}”</> : " those filters"}. Out in the black
+                the sighting ages are long — try <strong>Any age</strong>
                 {dssaOnly ? (
                   <>
-                    , or turn <strong>DSSA only</strong> off: the network is 101 carriers across the
-                    whole galaxy, so the nearest can be a long way out.
+                    , or turn <strong>DSSA only</strong> off: the network is 101 carriers across the whole
+                    galaxy, so the nearest can be a long way out.
                   </>
                 ) : null}
                 .

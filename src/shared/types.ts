@@ -1606,8 +1606,20 @@ export interface CarrierLiveFixDTO {
   distanceLy: number | null;
   /** True when Spansh names a different system from the cached row — the reason to press the button. */
   differs: boolean;
-  /** Stable game id; the name match that found it is fuzzy, this is not. */
+  /** Stable game id; the name match that found it is fuzzy, this is not. Null from the map feed. */
   marketId: number | null;
+  /**
+   * Which source answered.
+   *
+   * `galmap` is EDAstro's own map feed, which is fresher than the daily CSV for carriers it carries
+   * and is the only source that saw some jumps at all. `spansh` is the fallback for the ~88,000
+   * carriers the map does not track.
+   */
+  source: "galmap" | "spansh";
+  /** The network the map files it under — OASIS, DSSA, IGAU, STAR, Pioneer — or null. */
+  network: string | null;
+  /** True when the map put it in a cluster pin, so its system is known and its distance is not. */
+  positionUnknown?: boolean;
 }
 
 export interface CarrierQueryResultDTO {

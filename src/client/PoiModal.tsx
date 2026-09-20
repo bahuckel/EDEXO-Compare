@@ -240,53 +240,50 @@ export function PoiModal({ onClose }: { onClose: () => void }) {
               ) : null}
             </div>
 
-            <table className="fdb-table carriers-table poi-table">
-              <thead>
-                <tr>
-                  <th>Distance</th>
-                  <th>Name</th>
-                  <th>System</th>
-                  <th>Type</th>
-                  <th>Rating</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.key}>
-                    <td>{ly(r.distanceLy)}</td>
-                    <td>
-                      {r.url ? (
-                        <a
-                          className="carriers-source-link"
-                          href={r.url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {r.name}
-                        </a>
-                      ) : (
-                        <strong>{r.name}</strong>
-                      )}
-                      {r.organic ? <span className="poi-organic-badge">ORGANIC</span> : null}
-                      {r.summary ? <div className="dim poi-summary">{r.summary}</div> : null}
-                    </td>
-                    <td>
-                      {r.system || "—"}
-                      {r.region ? <span className="dim"> · {r.region}</span> : null}
-                    </td>
-                    <td className="dim">{r.typeLabel}</td>
-                    {/* Only the 643 GEC rows are rated; a dash is the honest reading for the rest. */}
-                    <td>{r.rating != null ? r.rating.toFixed(1) : <span className="dim">—</span>}</td>
+            {/* Same scroller as Carriers: without it the panel clips instead of scrolling. */}
+            <div className="fdb-scroll">
+              <table className="fdb-table carriers-table poi-table">
+                <thead>
+                  <tr>
+                    <th>Distance</th>
+                    <th>Name</th>
+                    <th>System</th>
+                    <th>Type</th>
+                    <th>Rating</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.key}>
+                      <td>{ly(r.distanceLy)}</td>
+                      <td>
+                        {r.url ? (
+                          <a className="carriers-source-link" href={r.url} target="_blank" rel="noreferrer">
+                            {r.name}
+                          </a>
+                        ) : (
+                          <strong>{r.name}</strong>
+                        )}
+                        {r.organic ? <span className="poi-organic-badge">ORGANIC</span> : null}
+                        {r.summary ? <div className="dim poi-summary">{r.summary}</div> : null}
+                      </td>
+                      <td>
+                        {r.system || "—"}
+                        {r.region ? <span className="dim"> · {r.region}</span> : null}
+                      </td>
+                      <td className="dim">{r.typeLabel}</td>
+                      {/* Only the 643 GEC rows are rated; a dash is the honest reading for the rest. */}
+                      <td>{r.rating != null ? r.rating.toFixed(1) : <span className="dim">—</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {rows.length === 0 ? (
               <p className="fdb-empty">
-                Nothing matches{search.trim() ? <> “{search.trim()}”</> : " those filters"}. The
-                catalogue is 2,766 points across the whole galaxy, so the nearest can be a long way
-                out.
+                Nothing matches{search.trim() ? <> “{search.trim()}”</> : " those filters"}. The catalogue is
+                2,766 points across the whole galaxy, so the nearest can be a long way out.
               </p>
             ) : null}
           </>

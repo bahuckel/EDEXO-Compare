@@ -46,6 +46,8 @@ import {
 } from "./edastroCarriers.js";
 import { countPoi, fetchPoiData, queryPoi, readPoiStatus } from "./edastroPoi.js";
 import { lookupCarrierOnSpansh } from "./spanshCarrier.js";
+import { EDASTRO_USER_AGENT } from "./edastroCarriers.js";
+import { lookupCarrierOnGalmap } from "./edastroGalmap.js";
 import { isEdsmCatchUpScope, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 
 export function getLanIPv4s(port: number): string[] {
@@ -820,31 +822,67 @@ export function createHttpServer(opts: {
   app.get("/api/carriers/live", async (req, res) => {
     const callsign = typeof req.query?.callsign === "string" ? req.query.callsign : "";
     const cachedSystem = typeof req.query?.system === "string" ? req.query.system : "";
+    const origin = opts.getCommanderPosition();
+    const distanceFrom = (x: number | null, y: number | null, z: number | null) =>
+      origin && x != null && y != null && z != null
+        ? Math.sqrt((x - origin.x) ** 2 + (y - origin.y) ** 2 + (z - origin.z) ** 2)
+        : null;
+    // Compared case-insensitively on the trimmed name: the sources agree on spelling, but a stray
+    // space would otherwise read as "it moved".
+    const differsFrom = (system: string) =>
+      cachedSystem.trim().length > 0 &&
+      system.trim().toLowerCase() !== cachedSystem.trim().toLowerCase();
+
     try {
+      /*
+        EDAstro's own map feed first.
+
+        It is the only source that knew OASIS Vera Rubin had jumped -- the daily CSV and Spansh both
+        still had the previous system, from the same EDDN event. It covers ~2,300 carriers: the
+        curated networks and whatever moved recently. Fetched once per session, held in memory, never
+        written to disk, so a restart falls back to the CSV and nothing upstream can corrupt what is
+        stored.
+      */
+      const onMap = await lookupCarrierOnGalmap(callsign, EDASTRO_USER_AGENT);
+      if (onMap) {
+        res.json({
+          ok: true,
+          fix: {
+            callsign: onMap.callsign,
+            system: onMap.system,
+            // The map carries no per-carrier sighting time, so there is none to report. Saying
+            // "unknown" is honest where inventing "now" would not be.
+            updatedAt: null,
+            distanceLy: distanceFrom(onMap.x, onMap.y, onMap.z),
+            differs: differsFrom(onMap.system),
+            marketId: null,
+            source: "galmap",
+            network: onMap.network,
+            // 767 of the feed's carriers sit in a cluster pin that is nobody's position.
+            positionUnknown: onMap.x == null,
+          },
+        });
+        return;
+      }
+
+      // Not on the map: Spansh still covers the other ~88,000.
       const result = await lookupCarrierOnSpansh(callsign);
       if (!result.ok) {
         res.status(result.notFound ? 404 : 502).json({ ok: false, error: result.error });
         return;
       }
-      const origin = opts.getCommanderPosition();
       const { fix } = result;
-      const distanceLy =
-        origin && fix.x != null && fix.y != null && fix.z != null
-          ? Math.sqrt((fix.x - origin.x) ** 2 + (fix.y - origin.y) ** 2 + (fix.z - origin.z) ** 2)
-          : null;
       res.json({
         ok: true,
         fix: {
           callsign: fix.callsign,
           system: fix.system,
           updatedAt: fix.updatedAt,
-          distanceLy,
-          // Compared case-insensitively on the trimmed name: the two sources spell system names the
-          // same way, but a stray space would otherwise read as "it moved".
-          differs:
-            cachedSystem.trim().length > 0 &&
-            fix.system.trim().toLowerCase() !== cachedSystem.trim().toLowerCase(),
+          distanceLy: distanceFrom(fix.x, fix.y, fix.z),
+          differs: differsFrom(fix.system),
           marketId: fix.marketId,
+          source: "spansh",
+          network: null,
         },
       });
     } catch (e) {
