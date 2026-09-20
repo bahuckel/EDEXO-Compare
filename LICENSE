@@ -7,15 +7,41 @@ SCOPE — read this before relying on the grant below.
 This licence covers the source code of EDEXO-Compare and the data files this
 project produced itself. It does NOT cover:
 
-  * the species photographs under data/species/<genus>/<genus>_photos/, which
-    come from the ED-DSN community and are not this project's to sublicense;
+  * the species photographs under data/species/<genus>/<genus>_photos/, of
+    either kind, described below;
   * Elite Dangerous game content, artwork and species names, which are the
     property of Frontier Developments plc;
   * data/exomastery/region-map.json, which is MIT-licensed by Ben Peddell and
     carries its own notice in data/exomastery/region-map.LICENSE.txt.
 
+THE PHOTOGRAPHS — there are two kinds, and the app says which is which.
+
+Every photograph displayed in the app carries a credit beneath it. There is no
+unlabelled image, and the credit is the statement of origin:
+
+  * "Photo by Bahuckel - CMDR <name>" means the photograph was contributed.
+    That commander took it themselves, in their own game, and gave it to this
+    project knowingly - either the project owner's own work, or a commander who
+    photographed a species for this project or offered an existing capture in
+    support of it. These files are named individually in
+    data/species/photo-credits.json.
+
+  * "Photo from: https://ed-dsn.net/ and its respective owner" means the
+    photograph is sourced from the ED-DSN community. It is here with ED-DSN's
+    agreement while replacements are photographed, and it is not this project's
+    to sublicense. This is the standing credit, applied to any image not named
+    in that manifest, so an image cannot pass as contributed by omission.
+
+Neither kind is covered by the grant below. Two rights sit in every one of them
+and neither belongs to this project: the game artwork, which is Frontier's, and
+the capture itself, which belongs to the commander who took it. A contributor
+gave this project permission to use their photograph here; they did not
+transfer ownership of it, and this licence cannot pass on what it was never
+given.
+
 See NOTICE.md for the full attribution and for how to request removal of an
-image.
+image. Any rights holder who would prefer theirs removed can ask, and it will
+be, with no justification needed.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

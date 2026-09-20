@@ -51,18 +51,32 @@ longer be reached, so naming some and not others would be worse than naming none
 
 ## Species photographs
 
-`data/species/<genus>/<genus>_photos/` holds 128 images of Elite Dangerous exobiology (each also
-present as a cropped card and thumbnail, so 384 files). **77 of them were contributed by commanders
+`data/species/<genus>/<genus>_photos/` holds 157 images of Elite Dangerous exobiology (each also
+present as a cropped card and thumbnail, so 471 files). **106 of them were contributed by commanders
 of the Bahuckel clan**; the remaining 51 are sourced from the ED-DSN community, are **not covered by
 this project's MIT licence** and are not this project's to sublicense.
 
+### Telling them apart, in the app and on disk
+
+**Every photograph the app displays carries a credit, and the credit says which of the two it is.**
+There is no unlabelled image.
+
+| what you see under the photograph | what it means |
+|---|---|
+| **`Photo by Bahuckel — CMDR <name>`** | Contributed. That commander took it themselves, in their own game, and gave it to this project knowingly — either the project owner's own, or a commander who photographed a species for the project or offered an existing shot in support of it. |
+| **`Photo from: https://ed-dsn.net/ and its respective owner`** | Sourced from the ED-DSN community. Not this project's, not MIT, and here with ED-DSN's agreement while replacements are photographed. |
+
+A named commander under an image is therefore a positive statement about where it came from and that
+its author agreed to it being here. The ED-DSN line is the standing default, applied to anything not
+named in the manifest, so an image can never be silently treated as contributed.
+
 The contributed photographs are listed in `data/species/photo-credits.json`, which names the
-commander against each file, and each is credited to that commander in the app:
+commander against each file:
 
 | commander | images |
 |---|---|
-| Bahuckel — CMDR FALrenica (the project owner) | 74 |
-| Bahuckel — CMDR PhoEniXDFA | 3 |
+| Bahuckel — CMDR FALrenica (the project owner) | 102 |
+| Bahuckel — CMDR PhoEniXDFA | 4 |
 
 Each contributor took the photographs themselves and gave them to this project knowingly. That is
 the difference from the ED-DSN set below, and it is the whole reason the manifest exists: an image

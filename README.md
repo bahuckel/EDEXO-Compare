@@ -205,9 +205,21 @@ If you use the code or the species data in something of your own, a credit and a
 The licence does not require it; this is a request, not a term.
 
 The species photographs are **not** MIT licensed and are not this project's to sublicense: the game
-artwork is Frontier's and the capture belongs to the commander who took it. They are here with
-[ED-DSN](https://ed-dsn.net)'s agreement while replacements are photographed, and any rights holder
-who would prefer theirs removed can ask and it will be, with no justification needed — see
+artwork is Frontier's and the capture belongs to the commander who took it.
+
+**Every photograph in the app is labelled with where it came from**, and the label is the answer:
+
+- **`Photo by Bahuckel — CMDR <name>`** — contributed. That commander took it themselves and gave it
+  to this project knowingly: either the project owner's own, or a commander who photographed a
+  species for the project or offered an existing shot in support of it. These are listed by file in
+  [`data/species/photo-credits.json`](data/species/photo-credits.json).
+- **`Photo from: https://ed-dsn.net/ and its respective owner`** — sourced from the
+  [ED-DSN](https://ed-dsn.net) community. Here with ED-DSN's agreement while replacements are
+  photographed, and the standing credit for anything not named in that manifest.
+
+So a named commander under an image means its author agreed to it being here; the ED-DSN line is the
+default, which is why an image can never quietly pass as contributed. Any rights holder who would
+prefer theirs removed can ask and it will be, with no justification needed — see
 [NOTICE.md](NOTICE.md).
 
 Elite Dangerous, its artwork and game content remain the property of Frontier Developments; see
