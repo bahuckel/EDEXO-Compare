@@ -777,6 +777,8 @@ export function createHttpServer(opts: {
       origin,
       services,
       maxLastSeenDays: Number.isFinite(maxLastSeenDays) ? maxLastSeenDays : 0,
+      dssaOnly: req.query?.dssaOnly === "1",
+      search: typeof req.query?.q === "string" ? req.query.q : "",
       limit: Number.isFinite(limit) ? limit : 100,
     };
     res.json({

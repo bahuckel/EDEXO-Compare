@@ -133,6 +133,46 @@ describe("parseCarrierCsv", () => {
   });
 });
 
+describe("the file repeats carriers, and a callsign is unique", () => {
+  /*
+    152 callsigns appear more than once in the real 2026-09-19 file, up to three times. The rows are
+    identical apart from Name -- the two below are T9J-L2N's actual pair, "CRV Haruspex" against
+    "haruspex" -- so it is one carrier recorded twice. Left alone the panel lists it twice and React
+    warns about a duplicate key, which is how this was found.
+  */
+  const DUPE_A =
+    'T9J-L2N,CRV Haruspex,,"2026-08-21 04:31:09","2026-08-21 04:31:09",Kuelua RY-R d4-0,11902979755,' +
+    '6746.78,-2251.44,13417.5,15186.09,Norma Expanse,304,358,"dock;vistagenomics"';
+  const DUPE_B =
+    'T9J-L2N,haruspex,,"2026-08-21 04:31:09","2026-08-21 04:31:09",Kuelua RY-R d4-0,11902979755,' +
+    '6746.78,-2251.44,13417.5,15186.09,Norma Expanse,304,358,"dock;vistagenomics"';
+
+  it("keeps one row per callsign", () => {
+    const rows = parseCarrierCsv([HEADER, DUPE_A, DUPE_B].join("\n"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.callsign).toBe("T9J-L2N");
+  });
+
+  it("keeps the newest sighting when the copies disagree", () => {
+    /*
+      The older copy comes SECOND on purpose. Written the other way round this test passes against a
+      parser with no rule at all -- plain last-wins picks the newer row by luck of file order -- and
+      it did, until the sabotage check caught it. Ordered like this, only a parser that compares the
+      timestamps keeps the right one.
+    */
+    const older = DUPE_B.replace("2026-08-21 04:31:09", "2026-01-01 00:00:00");
+    const rows = parseCarrierCsv([HEADER, DUPE_A, older].join("\n"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.name).toBe("CRV Haruspex");
+  });
+
+  it("prefers a named copy over an unnamed one at the same timestamp", () => {
+    const unnamed = DUPE_A.replace("CRV Haruspex", "");
+    const rows = parseCarrierCsv([HEADER, unnamed, DUPE_B].join("\n"));
+    expect(rows[0]!.name).toBe("haruspex");
+  });
+});
+
 describe("queryCarriers", () => {
   const origin = { x: 0, y: 0, z: 0 };
 

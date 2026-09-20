@@ -38,7 +38,9 @@
 import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { carrierHasServices, parseCarrierServices } from "../shared/carrierServices.js";
+import { carrierMatchesQuery, parseCarrierQuery } from "../shared/carrierSearch.js";
 import { resolveUserSettingsJsonPath } from "./paths.js";
+import { fetchDssaData, readDssaByCallsign } from "./edastroDssa.js";
 import type { CarrierDataStatusDTO, CarrierRowDTO } from "../shared/types.js";
 
 const CARRIERS_URL = "https://edastro.com/mapcharts/files/fleetcarriers.csv";
@@ -196,7 +198,19 @@ export function parseCarrierCsv(text: string): CarrierRecord[] {
   const iServices = at("Services");
   if (iCall < 0 || iX < 0 || iY < 0 || iZ < 0 || iServices < 0) return [];
 
-  const out: CarrierRecord[] = [];
+  /*
+    Keyed by callsign because the file repeats carriers.
+
+    152 callsigns appear more than once in the 2026-09-19 file, up to three times. The rows are
+    byte-identical apart from `Name` -- "CRV Haruspex" against "haruspex" for T9J-L2N, same
+    coordinates, same system, same timestamps -- so this is the same carrier recorded twice rather
+    than two carriers. A callsign is unique in the game, so collapsing them is the correct reading
+    and not merely a tidy-up: left alone the panel lists one carrier twice and React warns about the
+    duplicate key.
+
+    The keeper is the newest sighting, and on a tie the one that actually carries a name.
+  */
+  const byCallsign = new Map<string, CarrierRecord>();
   for (let i = 1; i < lines.length; i += 1) {
     const line = lines[i];
     if (!line) continue;
@@ -208,7 +222,7 @@ export function parseCarrierCsv(text: string): CarrierRecord[] {
     if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue;
     if (!f[iX]?.trim()) continue;
     const address = Number(f[iAddress]);
-    out.push({
+    const record: CarrierRecord = {
       callsign: (f[iCall] ?? "").trim(),
       name: (f[iName] ?? "").trim(),
       system: (f[iSystem] ?? "").trim(),
@@ -220,9 +234,20 @@ export function parseCarrierCsv(text: string): CarrierRecord[] {
       services: parseCarrierServices(f[iServices]),
       lastUpdatedMs: parseEdastroDate(f[iUpdated]),
       lastMovedMs: parseEdastroDate(f[iMoved]),
-    });
+    };
+    const existing = byCallsign.get(record.callsign);
+    if (existing && !supersedes(record, existing)) continue;
+    byCallsign.set(record.callsign, record);
   }
-  return out;
+  return [...byCallsign.values()];
+}
+
+/** Which of two records for the same callsign to keep: newer sighting, then the one with a name. */
+function supersedes(next: CarrierRecord, current: CarrierRecord): boolean {
+  const a = next.lastUpdatedMs ?? -1;
+  const b = current.lastUpdatedMs ?? -1;
+  if (a !== b) return a > b;
+  return next.name.length > 0 && current.name.length === 0;
 }
 
 /** Parsed file, kept in memory and invalidated by the cache file's mtime. */
@@ -261,11 +286,16 @@ export function readCarrierStatus(nowMs: number = Date.now()): CarrierDataStatus
   const cooldownMsRemaining = Math.max(0, CARRIER_FETCH_COOLDOWN_MS - sinceFetch);
   return {
     haveData: have,
-    rowCount: have ? (meta?.rowCount ?? loadRows().length) : 0,
+    // The parsed count, not the stored one. `rowCount` in the meta file was written by whichever
+    // build fetched it, and a parser change -- the callsign de-duplication, for instance -- leaves it
+    // describing a file that is no longer read that way. Parsing is memoised on mtime, so this is a
+    // map lookup after the first call.
+    rowCount: have ? loadRows().length : 0,
     fetchedAtMs: meta?.fetchedAtMs ?? null,
     sourceLastModified: meta?.sourceLastModified ?? null,
     cooldownMsRemaining: Number.isFinite(cooldownMsRemaining) ? cooldownMsRemaining : 0,
     sourceUrl: CARRIERS_URL,
+    dssaCount: readDssaByCallsign().size,
   };
 }
 
@@ -291,6 +321,18 @@ export async function fetchCarrierData(opts?: {
   const nowMs = opts?.nowMs ?? Date.now();
   const before = readCarrierStatus(nowMs);
   if (!opts?.force && before.cooldownMsRemaining > 0 && before.haveData) {
+    /*
+      The cooldown guards the 21 MB file, not the 12 KB one.
+
+      Returning here unconditionally strands anyone whose carrier data predates the DSSA list, or
+      whose DSSA fetch failed once: the deployment list is empty, the filter is disabled, and the
+      only way out is to wait half an hour for a download they do not need. So if the carrier file is
+      present and the network list is not, fetch just that.
+    */
+    if (before.dssaCount === 0) {
+      const network = await fetchDssaData();
+      if (network.ok) return { ok: true, unchanged: true, status: readCarrierStatus(nowMs) };
+    }
     return { ok: false, status: before, error: "Fetched recently. Try again shortly." };
   }
 
@@ -320,6 +362,9 @@ export async function fetchCarrierData(opts?: {
   if (res.status === 304 && before.haveData) {
     const next: CarrierCacheMeta = { ...(meta ?? { fetchedAtMs: nowMs }), fetchedAtMs: nowMs };
     writeMeta(next);
+    // The DSSA list is 12 KB with its own rebuild cadence, so it is worth refreshing even when the
+    // big file has not changed. A failure here is not fatal to the fetch.
+    await fetchDssaData();
     return { ok: true, unchanged: true, status: readCarrierStatus(nowMs) };
   }
   if (!res.ok) {
@@ -351,6 +396,13 @@ export async function fetchCarrierData(opts?: {
     return { ok: false, status: before, error: e instanceof Error ? e.message : "Could not save the file." };
   }
   resetCarrierMemo();
+  /*
+    The deployment list rides along with the big download rather than having a button of its own:
+    12 KB on the back of 21 MB is not worth a second press, and DSSA rows are useless without the
+    coordinates that download carries. Failure is tolerated — the carrier list still works and the
+    DSSA filter simply has nothing to show.
+  */
+  await fetchDssaData();
   writeMeta({
     etag: res.headers.get("etag") ?? undefined,
     lastModified: res.headers.get("last-modified") ?? undefined,
@@ -367,6 +419,10 @@ export interface CarrierQuery {
   services?: readonly string[];
   /** Hide sightings older than this. 0 or undefined keeps everything. */
   maxLastSeenDays?: number;
+  /** Only the Deep Space Support Array — 101 curated, deliberately parked service carriers. */
+  dssaOnly?: boolean;
+  /** Free text over callsign, name, system, region and the DSSA commander. See `carrierSearch.ts`. */
+  search?: string;
   limit?: number;
 }
 
@@ -385,12 +441,22 @@ function days(fromMs: number | null, toMs: number): number | null {
  */
 export function queryCarriers(q: CarrierQuery, nowMs: number = Date.now()): CarrierRowDTO[] {
   const rows = loadRows();
+  const dssa = readDssaByCallsign();
   const wanted = q.services ?? [];
   const limit = Math.max(1, Math.min(500, q.limit ?? 100));
   const out: CarrierRowDTO[] = [];
+  const seen = new Set<string>();
 
+  const terms = parseCarrierQuery(q.search);
   for (const r of rows) {
+    const network = dssa.get(r.callsign);
+    if (q.dssaOnly && !network) continue;
     if (!carrierHasServices(r.services, wanted)) continue;
+    // Searched against the joined values rather than the raw row: the network's name and commander
+    // are on screen, so they must be findable, and the name shown is often the network's rather than
+    // the carrier file's.
+    if (!carrierMatchesQuery({ ...r, name: network?.name || r.name, dssa: network ?? null }, terms))
+      continue;
     const lastSeenDays = days(r.lastUpdatedMs, nowMs);
     if (q.maxLastSeenDays && q.maxLastSeenDays > 0) {
       if (lastSeenDays == null || lastSeenDays > q.maxLastSeenDays) continue;
@@ -398,9 +464,12 @@ export function queryCarriers(q: CarrierQuery, nowMs: number = Date.now()): Carr
     const distanceLy = q.origin
       ? Math.sqrt((r.x - q.origin.x) ** 2 + (r.y - q.origin.y) ** 2 + (r.z - q.origin.z) ** 2)
       : null;
+    seen.add(r.callsign);
     out.push({
       callsign: r.callsign,
-      name: r.name,
+      // The network's own name wins where it has one: "DSSA Sleeper Service" says what the carrier is
+      // for, where the carrier file often carries an empty name or whatever its owner last set.
+      name: network?.name || r.name,
       system: r.system,
       systemAddress: r.systemAddress,
       region: r.region,
@@ -414,11 +483,68 @@ export function queryCarriers(q: CarrierQuery, nowMs: number = Date.now()): Carr
           ? Math.max(0, Math.floor((r.lastUpdatedMs - r.lastMovedMs) / MS_PER_DAY))
           : null,
       services: r.services,
+      dssa: network
+        ? { commander: network.commander, status: network.status, deploymentSystem: network.deploymentSystem }
+        : null,
     });
   }
 
+  /*
+    A DSSA carrier the big file does not carry.
+
+    None today — 101 of 101 join — but the two files are built from different pipelines and this is
+    the failure that would be invisible: the carrier would simply not be in the list, and a list of
+    deep-space service carriers silently missing one is worse than a row that cannot say how far away
+    it is. These are listed without a distance and sort last.
+  */
+  if (q.dssaOnly) {
+    for (const network of dssa.values()) {
+      if (seen.has(network.callsign)) continue;
+      // Nothing is known about its services, so a service filter cannot be honoured — and claiming a
+      // match would be guessing. It drops out of a filtered view rather than pretending.
+      if (wanted.length > 0) continue;
+      if (
+        !carrierMatchesQuery(
+          {
+            callsign: network.callsign,
+            name: network.name,
+            system: network.lastSeenSystem,
+            region: "",
+            dssa: network,
+          },
+          terms,
+        )
+      )
+        continue;
+      const lastSeenDays = days(network.lastSeenMs, nowMs);
+      if (q.maxLastSeenDays && q.maxLastSeenDays > 0) {
+        if (lastSeenDays == null || lastSeenDays > q.maxLastSeenDays) continue;
+      }
+      out.push({
+        callsign: network.callsign,
+        name: network.name,
+        system: network.lastSeenSystem,
+        systemAddress: null,
+        region: "",
+        distanceLy: null,
+        lastSeenDays,
+        dwellDays: null,
+        services: [],
+        dssa: {
+          commander: network.commander,
+          status: network.status,
+          deploymentSystem: network.deploymentSystem,
+        },
+      });
+    }
+  }
+
   out.sort((a, b) => {
-    if (a.distanceLy == null || b.distanceLy == null) return a.callsign.localeCompare(b.callsign);
+    // Rows without a distance cannot be ranked against ones that have it, and must not sort to the
+    // top by comparing as zero. They go last, in callsign order.
+    if (a.distanceLy == null && b.distanceLy == null) return a.callsign.localeCompare(b.callsign);
+    if (a.distanceLy == null) return 1;
+    if (b.distanceLy == null) return -1;
     return a.distanceLy - b.distanceLy;
   });
   return out.slice(0, limit);
@@ -429,8 +555,14 @@ export function countCarriers(q: CarrierQuery, nowMs: number = Date.now()): numb
   const rows = loadRows();
   const wanted = q.services ?? [];
   let n = 0;
+  const dssa = readDssaByCallsign();
+  const terms = parseCarrierQuery(q.search);
   for (const r of rows) {
+    const network = dssa.get(r.callsign);
+    if (q.dssaOnly && !network) continue;
     if (!carrierHasServices(r.services, wanted)) continue;
+    if (!carrierMatchesQuery({ ...r, name: network?.name || r.name, dssa: network ?? null }, terms))
+      continue;
     if (q.maxLastSeenDays && q.maxLastSeenDays > 0) {
       const seen = days(r.lastUpdatedMs, nowMs);
       if (seen == null || seen > q.maxLastSeenDays) continue;

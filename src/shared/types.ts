@@ -1517,6 +1517,17 @@ export interface CarrierRowDTO {
   dwellDays: number | null;
   /** Raw EDAstro service keys; `carrierServices.ts` turns them into names. */
   services: string[];
+  /**
+   * Set when this carrier is part of the Deep Space Support Array — 101 curated, deliberately parked
+   * service carriers. Null for the other ~90,000, which is almost all of them.
+   */
+  dssa: {
+    commander: string;
+    /** "Carrier Operational" on all 101 today; surfaced because the column exists to say otherwise. */
+    status: string;
+    /** Where the network placed it. It has drifted from this on 0 of 101 rows, which is the point. */
+    deploymentSystem: string;
+  } | null;
 }
 
 /** Whether the commander has a carrier file yet, how old it is, and whether the button is armed. */
@@ -1529,6 +1540,8 @@ export interface CarrierDataStatusDTO {
   sourceLastModified: string | null;
   cooldownMsRemaining: number;
   sourceUrl: string;
+  /** How many Deep Space Support Array carriers are on disk; 0 until the first fetch. */
+  dssaCount: number;
 }
 
 export interface CarrierQueryResultDTO {

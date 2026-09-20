@@ -22,6 +22,41 @@
   font-size: 0.82rem;
 }
 
+.carriers-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0 0 0.5rem;
+}
+
+.carriers-search__input {
+  flex: 1 1 22rem;
+  min-width: 12rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.18));
+  border-radius: 6px;
+  background: var(--panel-2, rgba(255, 255, 255, 0.04));
+  color: inherit;
+  font: inherit;
+}
+
+.carriers-search__input:focus-visible {
+  outline: 2px solid var(--accent, #6fb3e0);
+  outline-offset: 1px;
+}
+
+.carriers-search__hint {
+  font-size: 0.78rem;
+}
+
+.carriers-search__hint code {
+  padding: 0 0.2rem;
+  border-radius: 3px;
+  background: var(--panel-2, rgba(255, 255, 255, 0.07));
+  font-size: 0.95em;
+}
+
 .carriers-table td {
   vertical-align: top;
 }
@@ -44,4 +79,24 @@
 
 .carriers-dwell--dim {
   color: var(--dim, rgba(255, 255, 255, 0.55));
+}
+
+/*
+  The DSSA mark.
+
+  101 carriers of ~90,000, so this is rare enough to be worth spotting in a list sorted by distance:
+  a commander scanning for somewhere to sell wants to see at a glance that one of these is a curated
+  service carrier deliberately parked there, not somebody's mining base passing through.
+*/
+.carriers-dssa-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  vertical-align: 1px;
+  color: var(--accent, #6fb3e0);
 }

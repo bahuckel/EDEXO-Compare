@@ -22,7 +22,7 @@
  * A staler record on a long-parked carrier beats a fresher one on a mover. That is backwards from
  * instinct, which is exactly why both numbers are on screen instead of one confidence score.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CARRIER_SERVICE_OPTIONS, carrierServiceLabel } from "@shared/carrierServices";
 import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
@@ -64,6 +64,20 @@ function dwellVerdict(row: CarrierRowDTO): { text: string; tone: "good" | "warn"
 }
 
 /** Sighting ages, as chips. 0 means "any", which is the honest default for deep space. */
+/**
+ * The sighting age as a phrase.
+ *
+ * Separate from {@link ageLabel} because "today" and "1 day" want different words after them, and a
+ * cell that appends " ago" to every label produces "today ago" -- which it did, on every carrier
+ * seen in the last 24 hours.
+ */
+function lastSeenPhrase(days: number | null): string {
+  if (days == null) return "unknown";
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
+  return `${ageLabel(days)} ago`;
+}
+
 const SEEN_FILTERS = [0, 7, 30, 90] as const;
 const seenLabel = (n: number) => (n === 0 ? "Any age" : `Seen ≤ ${n}d`);
 
@@ -74,20 +88,49 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [services, setServices] = useState<string[]>([]);
   const [maxSeen, setMaxSeen] = useState<number>(0);
+  const [dssaOnly, setDssaOnly] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  /*
+    The query the server actually sees, a beat behind the box.
+
+    Each keystroke otherwise scans 90,077 carriers and re-renders up to 200 rows. 200 ms is below
+    the point where the list feels detached from the typing and well above a burst of fast typing.
+  */
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 200);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  /*
+    Which request the panel is waiting for.
+
+    Every keystroke starts a scan of 90,077 carriers, and those do not finish in the order they were
+    sent -- a narrow query returns faster than the broad one typed before it. Without this the older,
+    slower answer lands last and the list shows results for a query the commander has already
+    finished editing. Only the newest request may write to state.
+  */
+  const requestSeq = useRef(0);
 
   const load = useCallback(async () => {
     const params = new URLSearchParams();
     if (services.length) params.set("services", services.join(","));
     if (maxSeen) params.set("maxLastSeenDays", String(maxSeen));
+    if (dssaOnly) params.set("dssaOnly", "1");
+    if (search.trim()) params.set("q", search.trim());
     params.set("limit", "200");
+    const seq = (requestSeq.current += 1);
     try {
       const res = await fetch(`/api/carriers/query?${params.toString()}`);
       if (!res.ok) throw new Error(`Query failed (${res.status})`);
-      setData((await res.json()) as CarrierQueryResultDTO);
+      const body = (await res.json()) as CarrierQueryResultDTO;
+      if (seq !== requestSeq.current) return;
+      setData(body);
     } catch (e) {
+      if (seq !== requestSeq.current) return;
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [services, maxSeen]);
+  }, [services, maxSeen, dssaOnly, search]);
 
   useEffect(() => {
     void load();
@@ -183,7 +226,45 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
 
         {haveData ? (
           <>
+            <div className="carriers-search">
+              <input
+                type="search"
+                className="carriers-search__input"
+                value={searchInput}
+                onChange={(ev) => setSearchInput(ev.target.value)}
+                placeholder="Search callsign, name, system, region, CMDR"
+                aria-label="Search carriers"
+              />
+              {/*
+                Says what it searches rather than leaving the commander to guess. 98.1% of carriers
+                carry a name and every one carries a region, so all five fields are worth offering;
+                the alternative is a box that silently does nothing for four of them.
+              */}
+              <span className="dim carriers-search__hint">
+                All words must match, in any field. <code>T9JL2N</code> finds <code>T9J-L2N</code>.
+              </span>
+            </div>
+
             <div className="fdb-filters">
+              {/*
+                DSSA sits first and apart because it answers a different question from the service
+                chips. Those narrow by what a carrier sells; this one narrows by who put it there and
+                why. The network is 101 carriers deliberately parked as a galaxy-wide service array,
+                and its sightings run a median 6 days old against 35 for deep-space carriers at
+                large -- people visit them, so people report them.
+              */}
+              <Tooltip text="Deep Space Support Array — 101 carriers deliberately parked as a service network. Curated, and far better reported than carriers at large.">
+                <button
+                  type="button"
+                  className={`fdb-chip${dssaOnly ? " fdb-chip--on" : ""}`}
+                  onClick={() => setDssaOnly((v) => !v)}
+                  aria-pressed={dssaOnly}
+                  disabled={(status?.dssaCount ?? 0) === 0}
+                >
+                  DSSA only
+                </button>
+              </Tooltip>
+              <span className="fdb-filters__gap" />
               {CARRIER_SERVICE_OPTIONS.map((opt) => (
                 <Tooltip key={opt.key} text={opt.hint}>
                   <button
@@ -239,17 +320,39 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
                 {rows.map((r) => {
                   const verdict = dwellVerdict(r);
                   return (
-                    <tr key={`${r.callsign}-${r.systemAddress ?? r.system}`}>
+                    <tr key={r.callsign}>
                       <td>{ly(r.distanceLy)}</td>
                       <td>
                         <strong>{r.callsign}</strong>
                         {r.name ? <span className="dim"> {r.name}</span> : null}
+                        {r.dssa ? (
+                          <>
+                            {/*
+                              The badge marks a network carrier in a list of ninety thousand. It is
+                              dropped once the list is already filtered to the network, where every
+                              row would carry it and it says nothing, and dropped again when the
+                              carrier's own name opens with "DSSA" -- which most of theirs do, so
+                              the badge would sit next to the word it repeats.
+                            */}
+                            {!dssaOnly && !/^DSSA\b/i.test(r.name) ? (
+                              <span
+                                className="carriers-dssa-badge"
+                                title={`Deep Space Support Array — ${r.dssa.status}`}
+                              >
+                                DSSA
+                              </span>
+                            ) : null}
+                            {r.dssa.commander ? (
+                              <span className="dim"> CMDR {r.dssa.commander}</span>
+                            ) : null}
+                          </>
+                        ) : null}
                       </td>
                       <td>
                         {r.system || "—"}
                         {r.region ? <span className="dim"> · {r.region}</span> : null}
                       </td>
-                      <td>{ageLabel(r.lastSeenDays)} ago</td>
+                      <td>{lastSeenPhrase(r.lastSeenDays)}</td>
                       <td className={`carriers-dwell carriers-dwell--${verdict.tone}`}>
                         {verdict.text}
                       </td>
@@ -267,8 +370,15 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
 
             {rows.length === 0 ? (
               <p className="fdb-empty">
-                Nothing matches those filters. Out in the black the sighting ages are long — try{" "}
-                <strong>Any age</strong>.
+                Nothing matches{search.trim() ? <> “{search.trim()}”</> : " those filters"}. Out in the
+                black the sighting ages are long — try <strong>Any age</strong>
+                {dssaOnly ? (
+                  <>
+                    , or turn <strong>DSSA only</strong> off: the network is 101 carriers across the
+                    whole galaxy, so the nearest can be a long way out.
+                  </>
+                ) : null}
+                .
               </p>
             ) : null}
           </>
