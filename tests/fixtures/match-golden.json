@@ -916,8 +916,7 @@
         "bacterium_bacterium_acies"
       ],
       "candidates": [
-        "bacterium_bacterium_acies",
-        "bacterium_bacterium_tela"
+        "bacterium_bacterium_acies"
       ],
       "unlikely": [
         "amphora_amphora_plant",
@@ -927,6 +926,7 @@
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu"
       ]
@@ -959,8 +959,7 @@
       ],
       "candidates": [
         "bacterium_bacterium_acies",
-        "bacterium_bacterium_omentum",
-        "bacterium_bacterium_tela"
+        "bacterium_bacterium_omentum"
       ],
       "unlikely": [
         "amphora_amphora_plant",
@@ -970,6 +969,7 @@
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
+        "bacterium_bacterium_tela",
         "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu"
       ]
