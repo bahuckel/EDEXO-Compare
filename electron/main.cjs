@@ -854,7 +854,21 @@ async function start() {
 
   const res = process.resourcesPath;
   let winIcon;
+  /*
+    The .ico first, the PNG as the fallback.
+
+    Reported from the field: the taskbar button kept showing "the old icon" while the folder showed
+    the new one. The artwork was never two different files -- `build/icon.ico` and this window icon
+    are both built from `public/edexo-icon.png` -- but the two paths reach the screen differently.
+    The exe's icon is an .ico, so Windows draws the 32px frame somebody drew at 32px. The window's
+    was a 1024px PNG, which Electron downsamples to whatever the taskbar asks for, and a 1024 -> 24
+    resample of a ringed logo loses the ring and reads as another mark entirely.
+
+    Same art, sharp at the sizes Windows actually asks for.
+  */
   const iconCandidates = [
+    res && path.join(res, "edexo", "icon.ico"),
+    path.join(__dirname, "..", "build", "icon.ico"),
     res && path.join(res, "edexo", "icon.png"),
     path.join(__dirname, "..", "public", "edexo-icon.png"),
   ].filter(Boolean);
@@ -914,6 +928,26 @@ async function start() {
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
+}
+
+/**
+ * Tell Windows who this application is, before any window exists.
+ *
+ * The taskbar keys a button's identity — its grouping, its pin, and the icon it draws — on the
+ * Application User Model ID, not on the exe path. Without this call Electron leaves the default,
+ * which for a portable build is derived from the running process, so Windows can hold an icon
+ * association from an older run and redraw it over a window whose own icon has since changed. That
+ * is the taskbar half of the icon report; the .ico above is the other half.
+ *
+ * `com.edexo.compare` is the same id `electron-builder.cjs` publishes as `appId`, deliberately: two
+ * different ids would make the packaged app and the dev run two different applications to the shell.
+ */
+if (process.platform === "win32") {
+  try {
+    app.setAppUserModelId("com.edexo.compare");
+  } catch (e) {
+    console.warn("[edexo-compare] could not set the app user model id:", e);
+  }
 }
 
 app.whenReady().then(() => {

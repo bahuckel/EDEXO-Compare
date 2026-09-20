@@ -76,6 +76,16 @@ module.exports = {
     { from: "dist/eb-staging/web", to: "web" },
     { from: "dist/eb-staging/data", to: "data" },
     { from: "public/edexo-icon.png", to: "edexo/icon.png" },
+    /*
+      The window icon, as an .ico rather than only the 1024px source.
+
+      Windows asks a window for 16, 24, 32 and 48 pixel icons for the taskbar button, the alt-tab
+      list and the title bar. `nativeImage` from a single 1024px PNG has to scale to each of those,
+      and the result at 24px is a smudge that reads as a different -- older -- logo. The .ico built
+      by `scripts/make-ico.mjs` carries drawn frames at every one of those sizes, from the same
+      artwork, so Windows picks instead of resampling.
+    */
+    { from: "build/icon.ico", to: "edexo/icon.ico" },
   ],
   win,
   portable: {
