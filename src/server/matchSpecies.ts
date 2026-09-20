@@ -10,6 +10,7 @@ import type {
   EstimatedSurfaceTempBand,
   OrganicGenusLock,
 } from "../shared/types.js";
+import { describeSystemBodyVerdict, evaluateSystemBodyGate } from "../shared/systemBodyGates.js";
 import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "../shared/journalPhysics.js";
 import {
   describeVerdict,
@@ -1241,6 +1242,56 @@ export function demoteFailedHostStarGates(
   }
 }
 
+/**
+ * Demote a species whose system does not hold the companion body it grows alongside.
+ *
+ * Amphora plant wants an Earth-like world, ammonia world, water giant, or a gas giant with water- or
+ * ammonia-based life somewhere in the system; the Brain Trees want an Earth-like world or a gas giant
+ * with water-based life. Both conditions sat in the data raising `predictionUnsupported` until the
+ * match context learned to carry the system's other bodies.
+ *
+ * Demotion, not exclusion, and the reason travels with the row: the requirement lists are transcribed
+ * community knowledge, and one missing entry on a 3 M credit species should cost a tier rather than
+ * the body. An unfinished honk is marked unresolved instead, exactly as the spatial gates do — an
+ * Earth-like world nobody has scanned yet is not an Earth-like world that is not there.
+ */
+export function demoteFailedSystemBodyGates(
+  strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  matchContext: SpeciesMatchContext | null | undefined,
+): void {
+  for (let i = strict.length - 1; i >= 0; i--) {
+    const m = strict[i]!;
+    const wanted = m.entry.criteria?.systemBodyClassesAnyOf;
+    if (!wanted?.length) continue;
+
+    const verdict = evaluateSystemBodyGate(
+      wanted,
+      matchContext?.systemBodyClasses,
+      matchContext?.systemBodyListComplete === true,
+    );
+    if (!verdict || verdict.kind === "pass") continue;
+    if (verdict.kind === "unresolved") {
+      // Not a pass. Marked, so nothing downstream counts it as one.
+      m.spatialGateUnresolved = true;
+      continue;
+    }
+
+    const reason: MatchReason = {
+      field: "System bodies",
+      detail: `${describeSystemBodyVerdict(verdict)}. ${DEMOTED_NOTE}`,
+      soft: true,
+    };
+    strict.splice(i, 1);
+    unlikely.push({
+      ...m,
+      reasons: [...m.reasons, reason],
+      unlikely: true,
+      unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
+    });
+  }
+}
+
 export function matchDatabaseToScan(
   db: SpeciesDatabase,
   scan: PlanetScan,
@@ -1328,6 +1379,7 @@ export function matchDatabaseToScan(
 
   demoteFailedSpatialGates(strict, unlikely, matchContext, options?.spatialCatalogue ?? null);
   demoteFailedHostStarGates(strict, unlikely, matchContext);
+  demoteFailedSystemBodyGates(strict, unlikely, matchContext);
 
   restoreDemotionsBelowSignalCount(strict, unlikely, options?.biologicalSignals ?? null);
 

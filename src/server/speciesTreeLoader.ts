@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
+import { BRAIN_TREE_SYSTEM_REQUIREMENT } from "../shared/systemBodyGates.js";
 import { gateForSpeciesId } from "../shared/spatialGates.js";
 import { unrecognisedConditionKeys } from "./conditionKeyAudit.js";
 
@@ -769,15 +770,43 @@ function detectPredictionUnsupported(
    * check.
    */
   const spatiallyChecked = speciesId ? gateForSpeciesId(speciesId) !== null : false;
+  /**
+   * The companion-body conditions are measured now, so their flag comes off for the same reason the
+   * nebula rule's did: a real check replaced it. `buildCriteriaForRow` carries the requirement into
+   * `systemBodyClassesAnyOf` and `demoteFailedSystemBodyGates` reads it against the system's scans,
+   * abstaining until the honk is finished. The flag stays wherever no requirement could be read.
+   */
+  const systemBodiesChecked = systemBodyRequirementForRow(row) !== undefined;
 
   for (const { key, reason } of PREDICTION_UNSUPPORTED_KEYS) {
     if (key === "location_requirement" && spatiallyChecked) continue;
+    if ((key === "requires_system_bodies" || key === "system_requirements") && systemBodiesChecked) continue;
     const v = nested?.[key] ?? row[key];
     if (v === undefined || v === null) continue;
     // `requires_system_bodies: false` is a row saying the requirement does *not* apply.
     if (v === false) continue;
     return { reason, sourceKey: key };
   }
+  return undefined;
+}
+
+/**
+ * The companion-body requirement a row carries, in the row's own spelling.
+ *
+ * Two shapes, because the two genera were transcribed from different pages. Amphora names the classes
+ * inline; the Brain Trees say `requires_system_bodies: true` and leave the list to the genus file,
+ * which is where {@link BRAIN_TREE_SYSTEM_REQUIREMENT} comes from. `false` is a row saying the rule
+ * does not apply to that variant — Brain Tree Roseum — and must not be read as an empty list.
+ */
+function systemBodyRequirementForRow(row: Record<string, unknown>): string[] | undefined {
+  const nested = asRecord(row.criteria ?? row.Criteria ?? row.conditions ?? row.Conditions);
+  const inline = nested?.system_requirements ?? row.system_requirements;
+  if (Array.isArray(inline)) {
+    const list = inline.map((x) => String(x).trim()).filter(Boolean);
+    if (list.length) return list;
+  }
+  const flag = nested?.requires_system_bodies ?? row.requires_system_bodies;
+  if (flag === true) return [...BRAIN_TREE_SYSTEM_REQUIREMENT];
   return undefined;
 }
 
@@ -905,6 +934,8 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
     const speciesColourRules = readSpeciesColourRules(r);
 
     let criteria = buildCriteriaForRow(r, id);
+    const systemBodies = systemBodyRequirementForRow(r);
+    if (systemBodies?.length) criteria = { ...criteria, systemBodyClassesAnyOf: systemBodies };
     if (!criteria.planetClassAnyOf?.length && genusPlanetTypes?.length) {
       criteria = {
         ...criteria,

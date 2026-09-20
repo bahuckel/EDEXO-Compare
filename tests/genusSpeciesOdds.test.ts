@@ -9,9 +9,13 @@
  *
  * **Phase 7 changed which species that applies to.** Electricae radialem and the Sinuous Tubers are
  * now *measured* against a catalogue, so they are predictable again — and when their gate fails they
- * are demoted to the `unlikely` tier, which this split already filters out. The suppression rule
- * therefore stays, and the set it catches shrinks to the species whose condition still has nothing
- * behind it: a companion body elsewhere in the system.
+ * are demoted to the `unlikely` tier, which this split already filters out.
+ *
+ * **The companion-body conditions followed**, once the match context started carrying the system's
+ * other bodies: Amphora plant and the Brain Trees are gated by `demoteFailedSystemBodyGates` and no
+ * species in the tree is flagged unpredictable any more. The suppression rule stays anyway — it is
+ * the guard for the next condition somebody writes into the data without a check behind it, and it
+ * costs nothing while the set is empty.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,10 +40,24 @@ function splitIsSuppressed(entries: readonly SpeciesEntry[]): boolean {
 const byGenus = (genusFragment: string) => db.species.filter((e) => e.id.startsWith(genusFragment));
 
 describe("within-genus odds", () => {
-  it("suppresses the split where the condition still has nothing behind it", () => {
-    // Brain Trees: every variant but Roseum needs a companion body elsewhere in the system, and no
-    // catalogue answers that.
-    expect(splitIsSuppressed(byGenus("brain_tree"))).toBe(true);
+  it("no longer suppresses the Brain Trees, whose companion-body rule is measured now", () => {
+    /*
+      This asserted `true` until the system's other bodies reached the match context. The rule they
+      were suppressed for — an Earth-like world or a gas giant with water-based life somewhere in the
+      system — is now evaluated, and a failing one is demoted to the `unlikely` tier that this split
+      already filters out, which is the same route Phase 7 took for Electricae.
+    */
+    expect(splitIsSuppressed(byGenus("brain_tree"))).toBe(false);
+  });
+
+  it("still suppresses a genus carrying an unevaluable condition", () => {
+    // The rule itself, asserted on a synthetic entry, so it survives the tree having nothing flagged.
+    const unevaluable = [
+      { predictionUnsupported: { reason: "needs something nobody measures", sourceKey: "x" } },
+      {},
+    ] as unknown as SpeciesEntry[];
+    expect(splitIsSuppressed(unevaluable)).toBe(true);
+    expect(splitIsSuppressed([{}, {}] as unknown as SpeciesEntry[])).toBe(false);
   });
 
   /**

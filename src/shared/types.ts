@@ -161,6 +161,20 @@ export interface SpeciesMatchContext {
    * pluma on a body whose system primary is a neutron star.
    */
   hostStarClasses?: string[];
+  /**
+   * Journal `PlanetClass` of every other body the FSS has found in this system.
+   *
+   * The wire for the companion-body conditions: Amphora plant and the Brain Trees spawn on what else
+   * the system holds, and this is the only thing in the matcher's inputs that can say.
+   */
+  systemBodyClasses?: string[];
+  /**
+   * Whether the system's body list is complete (`FSSAllBodiesFound`).
+   *
+   * Without it a missing companion body means "not found yet" rather than "not there", and gating on
+   * that would demote a species precisely where the commander is still deciding whether to honk.
+   */
+  systemBodyListComplete?: boolean;
   /** Lowercased hints from scanner signal `Type` / `Type_Localised`. */
   signalHints?: string[];
   /**
@@ -185,6 +199,14 @@ export interface SpeciesMatchContext {
 }
 
 export interface SpeciesCriterion {
+  /**
+   * Body classes that must exist **elsewhere in the same system** for this species to spawn.
+   *
+   * Amphora plant and the Brain Trees are the only rows that carry it. Read by
+   * `shared/systemBodyGates.ts`, which demotes rather than excludes and abstains until the honk is
+   * finished — an absence in a half-scanned system is not an absence.
+   */
+  systemBodyClassesAnyOf?: string[];
   planetClassAnyOf?: string[];
   atmosphereTypeAnyOf?: string[];
   /**

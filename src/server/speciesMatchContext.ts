@@ -268,6 +268,22 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   if (store.commanderPos && exo.systemAddress === store.currentSystemAddress) {
     ctx.systemCoords = store.commanderPos;
   }
+  /**
+   * What else is in this system, for the companion-body conditions (Amphora, the Brain Trees).
+   *
+   * Every body but this one: a metal-rich world does not satisfy its own requirement, and including
+   * it would let a species vouch for itself in a one-body system. Completeness comes from the honk —
+   * without `FSSAllBodiesFound` a missing Earth-like world only means the FSS has not got to it.
+   */
+  const classes: string[] = [];
+  for (const [bodyId, r] of byId) {
+    if (bodyId === exo.bodyId) continue;
+    const pc = r.planetClass?.trim();
+    if (pc) classes.push(pc);
+  }
+  if (classes.length) ctx.systemBodyClasses = [...new Set(classes)];
+  ctx.systemBodyListComplete = store.fssAllBodiesCompleteSystems.has(exo.systemAddress);
+
   const rawP = scan?.SurfacePressure ?? rec?.surfacePressure;
   if (rawP != null && Number.isFinite(rawP)) ctx.surfacePressureAtm = journalPressureToAtm(rawP);
 

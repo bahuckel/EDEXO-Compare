@@ -17,27 +17,39 @@ beforeAll(() => {
  * something it did not.
  */
 describe("predictionUnsupported", () => {
-  it("flags the species whose requirements a Scan cannot satisfy", () => {
+  it("flags nothing any more, because every condition in the tree is now measured", () => {
+    /*
+      This list used to hold Amphora plant and seven Brain Trees. Their condition is about a
+      *different* body in the same system, and the match context now carries the system's other
+      bodies, so `demoteFailedSystemBodyGates` answers it against real scans instead of the loader
+      shrugging. The flag comes off only where a real check replaced it — §7.9 acceptance rule 6,
+      the same bar Phase 7 cleared for the nebula and core rules.
+    */
     const flagged = db.species.filter((e) => e.predictionUnsupported).map((e) => e.displayName);
-    expect(flagged.sort()).toEqual(
-      [
-        "Amphora plant",
-        "Brain Tree Aureum",
-        "Brain Tree Gypseeum",
-        "Brain Tree Lindigoticum",
-        "Brain Tree Lividum",
-        "Brain Tree Ostrinum",
-        "Brain Tree Puniceum",
-        "Brain Tree Viride",
-      ].sort(),
-    );
+    expect(flagged).toEqual([]);
   });
 
-  it("does not flag a row whose requirement is explicitly false", () => {
-    // Brain Tree Roseum carries `requires_system_bodies: false` — the requirement does not apply.
+  it("carries the companion-body requirement into the criteria instead", () => {
+    // The condition did not disappear; it moved somewhere the matcher reads.
+    const amphora = db.species.find((e) => e.displayName === "Amphora plant");
+    expect(amphora!.criteria.systemBodyClassesAnyOf).toContain("Earth-Like World");
+    expect(amphora!.criteria.systemBodyClassesAnyOf).toContain("Water Giant");
+
+    // The Brain Trees say `requires_system_bodies: true` and leave the list to the genus file.
+    const aureum = db.species.find((e) => e.displayName === "Brain Tree Aureum");
+    expect(aureum!.criteria.systemBodyClassesAnyOf).toEqual([
+      "Earth-Like World",
+      "Gas Giant with water-based life",
+    ]);
+  });
+
+  it("does not gate a row whose requirement is explicitly false", () => {
+    // Brain Tree Roseum carries `requires_system_bodies: false` — the requirement does not apply, and
+    // `false` must not be read as an empty list that nothing can satisfy.
     const roseum = db.species.find((e) => e.displayName === "Brain Tree Roseum");
     expect(roseum).toBeDefined();
     expect(roseum!.predictionUnsupported).toBeUndefined();
+    expect(roseum!.criteria.systemBodyClassesAnyOf).toBeUndefined();
   });
 
   it("does not flag star-type requirements, which are resolvable from the journal", () => {
@@ -73,22 +85,20 @@ describe("predictionUnsupported", () => {
    * system, and galactic position.
    */
   /**
-   * Phase 7 lifted the flag from the two species whose *location* condition is now measured against
-   * a catalogue — §7.9 acceptance rule 6: it comes off only where a real check replaced it.
-   *
-   * Brain Trees and Amphora keep it, and the reason is worth stating: their other condition needs a
-   * companion body elsewhere in the system, which nothing in a scan answers. Half a check is not a
-   * check.
+   * Phase 7 lifted the flag from the species whose *location* condition is measured against a
+   * catalogue. The companion-body conditions followed, once the context could see the system.
    */
-  it("lifts the flag where a real spatial check replaced it", () => {
-    for (const name of ["Electricae radialem", "Sinuous Tubers Prasinum", "Sinuous Tubers Roseum"]) {
+  it("lifts the flag wherever a real check replaced it", () => {
+    for (const name of [
+      "Electricae radialem",
+      "Sinuous Tubers Prasinum",
+      "Sinuous Tubers Roseum",
+      "Amphora plant",
+      "Brain Tree Aureum",
+    ]) {
       const e = db.species.find((x) => x.displayName === name);
       expect(e, name).toBeDefined();
       expect(e!.predictionUnsupported, name).toBeUndefined();
-    }
-    // Still marked: the companion-body condition has no catalogue behind it.
-    for (const name of ["Amphora plant", "Brain Tree Aureum"]) {
-      expect(db.species.find((x) => x.displayName === name)!.predictionUnsupported, name).toBeDefined();
     }
   });
 
@@ -100,9 +110,8 @@ describe("predictionUnsupported", () => {
     }
   });
 
-  it("leaves the overwhelming majority predictable", () => {
-    const flagged = db.species.filter((e) => e.predictionUnsupported).length;
-    expect(flagged).toBe(8);
-    expect(db.species.length - flagged).toBeGreaterThan(95);
+  it("leaves every species predictable", () => {
+    expect(db.species.filter((e) => e.predictionUnsupported).length).toBe(0);
+    expect(db.species.length).toBeGreaterThan(95);
   });
 });
