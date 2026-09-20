@@ -49,9 +49,9 @@ function ageLabel(days: number | null): string {
 /**
  * How much to trust the row, stated as words rather than a score.
  *
- * The thresholds come from the file's own shape (§4 of `docs/edastro-integration.md`): p75 dwell is
- * 13 days and p90 is 180, so 30 days is comfortably inside the parked population and 2 days is
- * inside the working one.
+ * The thresholds come from the file's own shape (§4 of
+ * `docs/archive/edastro-integration.md`): p75 dwell is 13 days and p90 is 180, so 30 days is
+ * comfortably inside the parked population and 2 days is inside the working one.
  */
 function dwellVerdict(row: CarrierRowDTO): { text: string; tone: "good" | "warn" | "dim" } {
   if (row.dwellDays == null) return { text: "unknown", tone: "dim" };

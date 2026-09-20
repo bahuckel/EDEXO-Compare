@@ -3,8 +3,8 @@
  *
  * Same contract as the carrier list and for the same reasons: the commander presses a button, the
  * file lands on their machine, every question after that is answered locally, and nothing from
- * EDAstro is in this repository or the installer. See `docs/edastro-integration.md`; the rule that
- * must not move is that this fetch never goes through a server of ours.
+ * EDAstro is in this repository or the installer. See `docs/archive/edastro-integration.md`; the
+ * rule that must not move is that this fetch never goes through a server of ours.
  *
  * ### Which feed, and why it is the big one
  *

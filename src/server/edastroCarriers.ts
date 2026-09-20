@@ -4,7 +4,7 @@
  * **Nothing about this runs on its own.** The commander presses a button, the file downloads to
  * their machine, and every question after that is answered locally. There is no background poll, no
  * per-jump call and no second source: the file is rebuilt about once a day, so anything faster
- * spends someone else's bandwidth to learn nothing. See `docs/edastro-integration.md`.
+ * spends someone else's bandwidth to learn nothing. See `docs/archive/edastro-integration.md`.
  *
  * The app ships the endpoint, never the data — nothing from EDAstro is in this repository, in the
  * installer or in a fixture, and the cache lives beside the user's settings. That is what keeps this

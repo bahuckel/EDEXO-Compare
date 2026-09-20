@@ -742,9 +742,9 @@ export function createHttpServer(opts: {
 
     The commander presses a button, `fetch` downloads a 21 MB CSV to their own machine, and `query`
     answers from that file forever after. There is no background poll and no per-jump call: the
-    source rebuilds about daily. See `docs/edastro-integration.md` for the licence position — the
-    short version is that we ship the endpoint and never the data, so the fetch must stay on the
-    commander's machine and must never be proxied through here.
+    source rebuilds about daily. See `docs/archive/edastro-integration.md` for the licence position
+    — the short version is that we ship the endpoint and never the data, so the fetch must stay on
+    the commander's machine and must never be proxied through here.
   */
   app.get("/api/carriers/status", (_req, res) => {
     res.json(readCarrierStatus());
