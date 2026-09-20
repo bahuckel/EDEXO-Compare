@@ -25,11 +25,7 @@ import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "../sr
 import { loadPriceList } from "../src/server/priceList.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
-import type {
-  BodyExoState,
-  ExplorationScanRecord,
-  SpeciesMatchContext,
-} from "../src/shared/types.js";
+import type { BodyExoState, ExplorationScanRecord, SpeciesMatchContext } from "../src/shared/types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const limitArg = process.argv.indexOf("--limit");
@@ -100,10 +96,16 @@ for (const b of bodies) {
   if (footfalled.has(b.key)) continue;
   considered++;
 
-  if (!b.scan) { noScan++; continue; }
+  if (!b.scan) {
+    noScan++;
+    continue;
+  }
   // `Landable`, capitalised — PlanetScan mirrors the journal's own field names and carries an index
   // signature, so a lower-case guess type-checks and silently reads undefined.
-  if (b.scan.Landable !== true) { notLandable++; continue; }
+  if (b.scan.Landable !== true) {
+    notLandable++;
+    continue;
+  }
 
   const run = matchDatabaseToScan(db, b.scan, b.genusHints, b.organicGenusLocks, {
     includeBacterium: true,
@@ -117,7 +119,10 @@ for (const b of bodies) {
   // Nobody has walked here as far as the journal ever said, so the 5x is the honest assumption.
   const seen = detailedFootfall.get(b.key);
   const range = computeExoPayoutRangeFromMatches(shown, prices, slots, source, 5, seen ?? null, true);
-  if (!range) { noPayout++; continue; }
+  if (!range) {
+    noPayout++;
+    continue;
+  }
 
   rows.push({
     system: b.starSystem,
@@ -144,7 +149,9 @@ console.log(`  systems involved: ${new Set(rows.map((r) => r.system)).size}`);
 console.log(`  genus already known (DSS done): ${rows.filter((r) => r.genusKnown).length}`);
 console.log(`\nfloor if every body pays its cheapest candidates: ${cr(sum((r) => r.minCr))} CR`);
 console.log(`ceiling if every body pays its dearest:           ${cr(sum((r) => r.maxCr))} CR`);
-console.log(`matched ${rows.length} bodies in ${ms} ms (${(ms / Math.max(rows.length, 1)).toFixed(1)} ms each)\n`);
+console.log(
+  `matched ${rows.length} bodies in ${ms} ms (${(ms / Math.max(rows.length, 1)).toFixed(1)} ms each)\n`,
+);
 
 console.log(`--- top ${Math.min(LIMIT, rows.length)} by guaranteed floor (all at 5x) ---`);
 for (const r of rows.slice(0, LIMIT)) {

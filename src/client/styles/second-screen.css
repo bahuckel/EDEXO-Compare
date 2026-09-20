@@ -22,7 +22,8 @@
   gap: 0.15rem 0.75rem;
   align-items: baseline;
   padding-bottom: 0.5rem;
-  background: linear-gradient(90deg, var(--hud, #ff8a1f) 0 36%, rgba(255, 138, 31, 0.22) 70%, transparent) bottom left / 100% 1px no-repeat;
+  background: linear-gradient(90deg, var(--hud, #ff8a1f) 0 36%, rgba(255, 138, 31, 0.22) 70%, transparent)
+    bottom left / 100% 1px no-repeat;
 }
 
 .second-screen .ss-system {

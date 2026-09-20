@@ -43,12 +43,7 @@ export function eliteDisplaySettingsPath(): string {
   const override = process.env.EDEXO_ELITE_OPTIONS_DIR?.trim();
   const base =
     override ||
-    path.join(
-      process.env.LOCALAPPDATA || "",
-      "Frontier Developments",
-      "Elite Dangerous",
-      "Options",
-    );
+    path.join(process.env.LOCALAPPDATA || "", "Frontier Developments", "Elite Dangerous", "Options");
   return path.join(base, "Graphics", "DisplaySettings.xml");
 }
 

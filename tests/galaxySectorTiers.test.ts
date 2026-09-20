@@ -18,7 +18,13 @@ const TS = "2026-05-05T05:09:05Z";
 const j = (o: Record<string, unknown>) => o as unknown as JournalLine;
 
 const jump = () =>
-  j({ timestamp: TS, event: "FSDJump", StarSystem: "Test", SystemAddress: SYS, StarPos: [POS.x, POS.y, POS.z] });
+  j({
+    timestamp: TS,
+    event: "FSDJump",
+    StarSystem: "Test",
+    SystemAddress: SYS,
+    StarPos: [POS.x, POS.y, POS.z],
+  });
 
 const planetWithBio = (bodyId: number) => [
   j({

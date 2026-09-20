@@ -110,8 +110,18 @@ const base = results[0]!;
 const d = (a: number | null, b: number | null) =>
   a == null || b == null ? "" : `${a - b >= 0 ? "+" : ""}${(a - b).toFixed(1)}`;
 
-console.log("\n" + "dimension".padEnd(13) + "floor".padStart(6) + "recall".padStart(9) + "Δ".padStart(7) +
-  "genus".padStart(8) + "decidable".padStart(11) + "Δ".padStart(7) + "ambig".padStart(8) + "missed".padStart(8));
+console.log(
+  "\n" +
+    "dimension".padEnd(13) +
+    "floor".padStart(6) +
+    "recall".padStart(9) +
+    "Δ".padStart(7) +
+    "genus".padStart(8) +
+    "decidable".padStart(11) +
+    "Δ".padStart(7) +
+    "ambig".padStart(8) +
+    "missed".padStart(8),
+);
 for (const r of results) {
   console.log(
     r.dimension.padEnd(13) +

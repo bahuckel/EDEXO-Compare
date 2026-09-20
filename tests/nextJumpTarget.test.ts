@@ -39,14 +39,20 @@ describe("nextJumpTarget", () => {
       { systemAddress: 2, starSystem: "B", starPos: [10, 0, 0], starClass: "M" },
     ]);
     st.apply(line("FSDTarget", 5, { Name: "Blo Eurl YM-J b42-0", SystemAddress: 9, StarClass: "F" }));
-    expect(st.nextJumpTarget()).toMatchObject({ starSystem: "Blo Eurl YM-J b42-0", starClass: "F", source: "target" });
+    expect(st.nextJumpTarget()).toMatchObject({
+      starSystem: "Blo Eurl YM-J b42-0",
+      starClass: "F",
+      source: "target",
+    });
   });
 
   it("shows the jump in progress, then the next lock the moment the jump ends", () => {
     const st = new GameStateStore();
     arrivedAt(st, "A", 1);
     st.apply(line("FSDTarget", 5, { Name: "B", SystemAddress: 2, StarClass: "M" }));
-    st.apply(line("StartJump", 10, { JumpType: "Hyperspace", StarSystem: "B", SystemAddress: 2, StarClass: "M" }));
+    st.apply(
+      line("StartJump", 10, { JumpType: "Hyperspace", StarSystem: "B", SystemAddress: 2, StarClass: "M" }),
+    );
     expect(st.nextJumpTarget()).toMatchObject({ starSystem: "B", source: "jump", arrived: false });
 
     arrivedAt(st, "B", 2, 30);

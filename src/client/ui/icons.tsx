@@ -129,7 +129,18 @@ export function IconChevronDown({ className }: { className?: string }) {
 /** Carriers: the flat disc and central tower a Drake-Class reads as from the side. */
 export function IconCarrier({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M3 14h18l-3 3H6z" />
       <path d="M9 14V9h6v5" />
       <path d="M12 9V4M9.5 6.5h5" />
@@ -140,7 +151,18 @@ export function IconCarrier({ className }: { className?: string }) {
 /** Points of interest: a map pin over a horizon line. */
 export function IconPoi({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M12 21s6-5.3 6-10a6 6 0 1 0-12 0c0 4.7 6 10 6 10z" />
       <circle cx="12" cy="11" r="2.2" />
     </svg>
@@ -150,7 +172,18 @@ export function IconPoi({ className }: { className?: string }) {
 /** The session log: a page with lines, the last one a check. */
 export function IconSession({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M6 3h9l4 4v14H6z" />
       <path d="M15 3v4h4M9 11h6M9 15h4M9 19l1.5 1.5L14 17" />
     </svg>

@@ -560,9 +560,18 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   }
   const startImportDump = (file: string, apply: boolean): { ok: boolean; error?: string } => {
     if (importDump.running) return { ok: false, error: "An import is already running." };
-    if (!feederDataDirExists()) return { ok: false, error: "No feeder corpus on this machine — this is a build-side tool." };
+    if (!feederDataDirExists())
+      return { ok: false, error: "No feeder corpus on this machine — this is a build-side tool." };
     if (!existsSync(file)) return { ok: false, error: `File not found: ${file}` };
-    importDump = { running: true, file, apply, startedAt: new Date().toISOString(), finishedAt: null, report: null, error: null };
+    importDump = {
+      running: true,
+      file,
+      apply,
+      startedAt: new Date().toISOString(),
+      finishedAt: null,
+      report: null,
+      error: null,
+    };
     void (async () => {
       try {
         const ctx = await openFeeder();
@@ -785,7 +794,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
    * the launcher and the next tick is at the new rate, with no relaunch and no journal-pipeline
    * restart. Persisted only when something actually changed.
    */
-  function applyPollRates(statusRaw: unknown, journalRaw: unknown): { statusPollMs: number; journalPollMs: number } {
+  function applyPollRates(
+    statusRaw: unknown,
+    journalRaw: unknown,
+  ): { statusPollMs: number; journalPollMs: number } {
     const changed = store.setPollRates(statusRaw, journalRaw);
     if (changed) {
       armFootStatusPoll();
@@ -856,10 +868,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
    * The button and the timer go through here so there is exactly one place that decides whether a
    * run may start. Two runs would read the same watermark and send the history twice.
    */
-  function startEdsmRun(
-    scope: EdsmCatchUpScope,
-    silent = false,
-  ): { ok: boolean; error?: string } {
+  function startEdsmRun(scope: EdsmCatchUpScope, silent = false): { ok: boolean; error?: string } {
     if (!store.edsmUploadEnabled) return { ok: false, error: "Turn EDSM upload on first." };
     const credentials = readEdsmCredentials();
     if (!credentials) return { ok: false, error: "Store your EDSM commander name and API key first." };
@@ -999,7 +1008,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const bootReport = (path: string): void => {
     if (quietConsole) return;
     const total = performance.now() - bootClock.t0;
-    const parts = bootClock.marks.map(([l, ms]) => `${l} ${ms >= 1000 ? (ms / 1000).toFixed(1) + " s" : Math.round(ms) + " ms"}`);
+    const parts = bootClock.marks.map(
+      ([l, ms]) => `${l} ${ms >= 1000 ? (ms / 1000).toFixed(1) + " s" : Math.round(ms) + " ms"}`,
+    );
     console.info(`Journal boot (${path}): ${parts.join(" · ")} · total ${(total / 1000).toFixed(1)} s`);
   };
 
@@ -1311,12 +1322,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getFirstDiscoveryBacklog: () => firstDiscoveryBacklogWithDistance(store),
     getBacklogMap: () => backlogMap(store),
     getDiscoveries: () => buildDiscoveries(store, getProjectRoot()),
-    searchGalaxyByValue: (query, limit) =>
-      galaxyValueSearch({ ...query, from: store.commanderPos, limit }),
+    searchGalaxyByValue: (query, limit) => galaxyValueSearch({ ...query, from: store.commanderPos, limit }),
     getGalaxySpecies: () => galaxySpeciesCatalogue(),
     getGalaxyRegions: () => galaxyRegions(),
-    scanGalaxyBodies: (query, limit) =>
-      galaxyBodyScan({ ...query, from: store.commanderPos, limit }),
+    scanGalaxyBodies: (query, limit) => galaxyBodyScan({ ...query, from: store.commanderPos, limit }),
     getCommanderSectors: () => commanderSectorsDto(store),
     getCommanderSystem: () => store.currentSystem,
     setHudPrefs: (raw) => {
@@ -1641,7 +1650,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           (dest == null) !== (prevDest == null) ||
           (dest != null &&
             prevDest != null &&
-            (dest.systemAddress !== prevDest.systemAddress || dest.bodyId !== prevDest.bodyId || dest.name !== prevDest.name));
+            (dest.systemAddress !== prevDest.systemAddress ||
+              dest.bodyId !== prevDest.bodyId ||
+              dest.name !== prevDest.name));
         if (destChanged) store.statusDestination = dest;
         const fuel = parseStatusJsonFuel(raw);
         const fuelChanged = store.applyLiveShipFuel(
@@ -1659,7 +1670,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         if (store.exoOrganicTracker || store.overlayTouchdownBodyKey) broadcastExoLive(buildExoLive());
 
         const footHud = store.footTravelOdometerEnabled && store.footTravelOdometerTracking;
-        if (footHud || store.exoOrganicTracker || fuelChanged || navChanged || destChanged || jumpChanged) push();
+        if (footHud || store.exoOrganicTracker || fuelChanged || navChanged || destChanged || jumpChanged)
+          push();
       };
       armFootStatusPoll(true);
       startFootStatusWatch();

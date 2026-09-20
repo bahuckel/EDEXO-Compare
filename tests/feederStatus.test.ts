@@ -37,7 +37,6 @@ function writeProfile(genus: string, file: string, speciesLabel: string, samples
   );
 }
 
-
 /**
  * Sample archives for a species, as §46 packing leaves them.
  *

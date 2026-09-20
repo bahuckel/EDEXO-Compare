@@ -719,7 +719,10 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
         gate it is not a superset of the matcher: it is the commander deliberately narrowing the
         shortlist, which is why it is off unless asked for.
       */
-      if (minGravityOddsPct > 0 && !clearsGravityOdds(b.gravityG, dumpBodyHasAtmosphere(b.atmosphere), minGravityOddsPct)) {
+      if (
+        minGravityOddsPct > 0 &&
+        !clearsGravityOdds(b.gravityG, dumpBodyHasAtmosphere(b.atmosphere), minGravityOddsPct)
+      ) {
         bodiesBelowGravityFloor++;
         return;
       }
@@ -747,9 +750,7 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
         distanceLy: distance(query.from, sys),
         walked: walkedSystem(systemIndex, sys.id64),
         bioBodyCount: sys.bioBodyCount,
-        bodies: (rows as GalaxyBodyMatchDTO[]).sort(
-          (a, b) => b.bioCount - a.bioCount || a.bodyId - b.bodyId,
-        ),
+        bodies: (rows as GalaxyBodyMatchDTO[]).sort((a, b) => b.bioCount - a.bioCount || a.bodyId - b.bodyId),
       };
       kept.push(hit);
       prune();
@@ -780,9 +781,7 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
 
   kept.sort(better);
   const hits = kept.slice(0, limit);
-  const spread = [...best.values()]
-    .sort((a, b) => b.bodies.length - a.bodies.length)
-    .slice(0, SPREAD_CELLS);
+  const spread = [...best.values()].sort((a, b) => b.bodies.length - a.bodies.length).slice(0, SPREAD_CELLS);
 
   return {
     available: true,

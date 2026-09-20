@@ -57,7 +57,10 @@ export interface SectorMapFile {
  * A set rather than a single taxon because the picker offers a whole genus: "all Tussock" is
  * fourteen taxa, and summing them here is one pass instead of fourteen.
  */
-export function cellTotals(cell: SectorMapCell, taxa?: ReadonlySet<string> | string): {
+export function cellTotals(
+  cell: SectorMapCell,
+  taxa?: ReadonlySet<string> | string,
+): {
   confirmed: number;
   genus: number;
   signal: number;

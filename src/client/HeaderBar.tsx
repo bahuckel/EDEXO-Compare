@@ -4,10 +4,32 @@
 import { useLastStateAt } from "./useLiveSnapshot";
 import { useConfirm, useToast } from "./ui/feedback";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
-import { IconChevronDown, IconEncyclopedia, IconExobiology, IconFeeder, IconGalaxy, IconOptions, IconBacklog, IconCarrier, IconPoi, IconSession } from "./ui/icons";
+import {
+  IconChevronDown,
+  IconEncyclopedia,
+  IconExobiology,
+  IconFeeder,
+  IconGalaxy,
+  IconOptions,
+  IconBacklog,
+  IconCarrier,
+  IconPoi,
+  IconSession,
+} from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { fmtCrExact, fmtCrShort } from "./credits";
-import { useCallback, lazy, memo, Suspense, useEffect, useId, useRef, useState, MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import {
+  useCallback,
+  lazy,
+  memo,
+  Suspense,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  MouseEvent as ReactMouseEvent,
+  ReactNode,
+} from "react";
 import { useFdevServerStatus } from "./useFdevServerStatus";
 import type { EncyclopediaSpawnCompare } from "./EncyclopediaModal";
 import { DScanBodiesBadge } from "./DScanBodiesBadge";
@@ -18,9 +40,23 @@ import { DataValueBreakdownModal, FeederModal, MyExobiologyModal, SessionLogModa
 import { ExoDataAlertsHeaderHub } from "./ExoDataAlertsHub";
 import { measurePopoverSide, type PopoverSide } from "./ui/popoverSide";
 import { MapOptionsModal } from "./OptionsModal";
-import { CarriersModal, EncyclopediaModal, PoiModal, FirstDiscoveryBacklogModal, InlineSpinner, ModalLoading } from "./SharedModals";
+import {
+  CarriersModal,
+  EncyclopediaModal,
+  PoiModal,
+  FirstDiscoveryBacklogModal,
+  InlineSpinner,
+  ModalLoading,
+} from "./SharedModals";
 import { EDEXO_HEADER_TRAY_LS, readLsBool, writeLsBool } from "./lsPrefs";
-import { readRouteHeaderMetricMode, routeHeaderBarAria, routeHeaderBarModel, routeHeaderToggleTitleHint, routeNavCardTitle, writeRouteHeaderMetricMode } from "./routeHeader";
+import {
+  readRouteHeaderMetricMode,
+  routeHeaderBarAria,
+  routeHeaderBarModel,
+  routeHeaderToggleTitleHint,
+  routeNavCardTitle,
+  writeRouteHeaderMetricMode,
+} from "./routeHeader";
 import type { RouteHeaderMetricMode } from "./routeHeader";
 
 const PlanetQuickFactsPopup = lazy(() =>
@@ -132,7 +168,9 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
       if (!r.ok) throw new Error(j?.error || r.statusText);
       setEdsmHits(j?.systems ?? []);
     } catch (e) {
-      setEdsmErr(e instanceof Error ? e.message : `Galaxy search (${source === "edsm" ? "EDSM" : "Spansh"}) failed.`);
+      setEdsmErr(
+        e instanceof Error ? e.message : `Galaxy search (${source === "edsm" ? "EDSM" : "Spansh"}) failed.`,
+      );
       setEdsmHits([]);
     } finally {
       setEdsmBusy(false);
@@ -149,7 +187,9 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
       systems.find((s) => s.systemAddress === addr)?.starSystem?.trim() ||
       "";
     if (!name) {
-      toast.error("Could not resolve the system name. Choose the system from search so a name is stored, then try again.");
+      toast.error(
+        "Could not resolve the system name. Choose the system from search so a name is stored, then try again.",
+      );
       return;
     }
     setMapHydrateBusy(true);
@@ -162,12 +202,15 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
       const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
       if (!r.ok) toast.error(j?.error || r.statusText);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : `Could not load bodies from ${source === "edsm" ? "EDSM" : "Spansh"}.`);
+      toast.error(
+        e instanceof Error
+          ? e.message
+          : `Could not load bodies from ${source === "edsm" ? "EDSM" : "Spansh"}.`,
+      );
     } finally {
       setMapHydrateBusy(false);
     }
   };
-
 
   const applyView = (systemAddress: number | null, meta?: { starSystem?: string }) => {
     void (async () => {
@@ -324,7 +367,9 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
                     >
                       <span className="journal-system-search-name">{s.starSystem}</span>
                       <span className="journal-system-search-addr dim tab">{s.systemAddress}</span>
-                      <span className="journal-system-search-edsm-badge dim">{galaxySource === "edsm" ? "EDSM" : "Spansh"}</span>
+                      <span className="journal-system-search-edsm-badge dim">
+                        {galaxySource === "edsm" ? "EDSM" : "Spansh"}
+                      </span>
                     </button>
                   </li>
                 ))}
@@ -603,228 +648,229 @@ export const HeaderBar = memo(function HeaderBar({
         </div>
 
         <div className="appbar-centre">
-        {snap.primaryStarsHeader ? (
-          <div className="appbar-system">
-            <button
-              type="button"
-              className="appbar-system-btn"
-              onClick={onOpenSystemMap}
-              title="Open system map (orbital view from merged journal)"
-            >
-              <StarSystemMapIcon className="appbar-system-icon" />
-              <span className="appbar-system-name">{snap.primaryStarsHeader.systemName}</span>
-            </button>
-            <CopySystemNameButton systemName={snap.primaryStarsHeader.systemName} />
-            {snap.currentRegion ? (
-              /*
-               * Where in the galaxy this is, without opening the galaxy map.
-               *
-               * Region decides what can grow here — several species do not occur outside particular
-               * ones — and a commander deep in the black checking a candidate list should not have
-               * to open a second screen to learn which region they are reading it in. Follows the
-               * system on show, so browsing somewhere else names *that* region.
-               */
-              <Tooltip
-                className="appbar-region"
-                text={`${snap.currentRegion.name} — the galactic region this system sits in. Region is one of the strongest signals in exobiology; several species never appear outside particular ones.`}
+          {snap.primaryStarsHeader ? (
+            <div className="appbar-system">
+              <button
+                type="button"
+                className="appbar-system-btn"
+                onClick={onOpenSystemMap}
+                title="Open system map (orbital view from merged journal)"
               >
-                <span className="appbar-region-chip">{snap.currentRegion.name}</span>
-              </Tooltip>
-            ) : null}
-          </div>
-        ) : null}
+                <StarSystemMapIcon className="appbar-system-icon" />
+                <span className="appbar-system-name">{snap.primaryStarsHeader.systemName}</span>
+              </button>
+              <CopySystemNameButton systemName={snap.primaryStarsHeader.systemName} />
+              {snap.currentRegion ? (
+                /*
+                 * Where in the galaxy this is, without opening the galaxy map.
+                 *
+                 * Region decides what can grow here — several species do not occur outside particular
+                 * ones — and a commander deep in the black checking a candidate list should not have
+                 * to open a second screen to learn which region they are reading it in. Follows the
+                 * system on show, so browsing somewhere else names *that* region.
+                 */
+                <Tooltip
+                  className="appbar-region"
+                  text={`${snap.currentRegion.name} — the galactic region this system sits in. Region is one of the strongest signals in exobiology; several species never appear outside particular ones.`}
+                >
+                  <span className="appbar-region-chip">{snap.currentRegion.name}</span>
+                </Tooltip>
+              ) : null}
+            </div>
+          ) : null}
 
-        <div className="appbar-search">
-          <JournalSystemSearch snap={snap} />
-        </div>
+          <div className="appbar-search">
+            <JournalSystemSearch snap={snap} />
+          </div>
         </div>
 
         <div className="appbar-right">
-        <Tooltip
-          className="appbar-status"
-          text={
-            connected
-              ? "Connected to the journal service — live snapshots are arriving."
-              : "No live connection to the journal service. Check that it is still running."
-          }
-        >
-          <span className={`appbar-dot${connected ? " appbar-dot--ok" : " appbar-dot--err"}`}>
-            <span className="top-live-dot" aria-hidden />
-            <span className="appbar-dot-text">
-              {connected ? "Live" : "Error"}
-              <LiveSnapshotFreshness connected={connected} />
-            </span>
-          </span>
-        </Tooltip>
-
-        <Tooltip
-          className="appbar-status"
-          text={`Frontier server status: ${fdev.statusText}${fdev.fromEdsm ? " (via EDSM)" : ""}`}
-        >
-          <span className={`appbar-dot ${fdevDotClass}`}>
-            <span className="top-live-dot" aria-hidden />
-            <span className="appbar-dot-text appbar-dot-text--compact">FDev</span>
-          </span>
-        </Tooltip>
-
-        {/* Pinned to the right, on the same row as the wordmark and the system — the owner's ask. */}
-        {cmdr ? (
-          <span className="appbar-cmdr">
-            <span className="top-playing-as-muted">CMDR </span>
-            <span className="top-playing-as-cmdr">{cmdr}</span>
-          </span>
-        ) : null}
-
-        <div className="appbar-actions">
-          <ExoDataAlertsHeaderHub snap={snap} />
-          <div className="appbar-menu-wrap" ref={menuRef}>
-            <button
-              type="button"
-              className={`appbar-icon-btn appbar-menu-btn${menuOpen ? " appbar-menu-btn--open" : ""}`}
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              aria-label="Menu"
-              title="Menu: my exobiology, unfinished business, carriers, points of interest, feeder, galaxy map, encyclopedia, options"
-            >
-              <span className="appbar-menu-glyph" aria-hidden="true" />
-            </button>
-          <div
-            className={`appbar-menu appbar-menu--${menuSide}${menuOpen ? " appbar-menu--open" : ""}`}
-            role="menu"
-            onClick={() => setMenuOpen(false)}
+          <Tooltip
+            className="appbar-status"
+            text={
+              connected
+                ? "Connected to the journal service — live snapshots are arriving."
+                : "No live connection to the journal service. Check that it is still running."
+            }
           >
-          {/*
+            <span className={`appbar-dot${connected ? " appbar-dot--ok" : " appbar-dot--err"}`}>
+              <span className="top-live-dot" aria-hidden />
+              <span className="appbar-dot-text">
+                {connected ? "Live" : "Error"}
+                <LiveSnapshotFreshness connected={connected} />
+              </span>
+            </span>
+          </Tooltip>
+
+          <Tooltip
+            className="appbar-status"
+            text={`Frontier server status: ${fdev.statusText}${fdev.fromEdsm ? " (via EDSM)" : ""}`}
+          >
+            <span className={`appbar-dot ${fdevDotClass}`}>
+              <span className="top-live-dot" aria-hidden />
+              <span className="appbar-dot-text appbar-dot-text--compact">FDev</span>
+            </span>
+          </Tooltip>
+
+          {/* Pinned to the right, on the same row as the wordmark and the system — the owner's ask. */}
+          {cmdr ? (
+            <span className="appbar-cmdr">
+              <span className="top-playing-as-muted">CMDR </span>
+              <span className="top-playing-as-cmdr">{cmdr}</span>
+            </span>
+          ) : null}
+
+          <div className="appbar-actions">
+            <ExoDataAlertsHeaderHub snap={snap} />
+            <div className="appbar-menu-wrap" ref={menuRef}>
+              <button
+                type="button"
+                className={`appbar-icon-btn appbar-menu-btn${menuOpen ? " appbar-menu-btn--open" : ""}`}
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                aria-label="Menu"
+                title="Menu: my exobiology, unfinished business, carriers, points of interest, feeder, galaxy map, encyclopedia, options"
+              >
+                <span className="appbar-menu-glyph" aria-hidden="true" />
+              </button>
+              <div
+                className={`appbar-menu appbar-menu--${menuSide}${menuOpen ? " appbar-menu--open" : ""}`}
+                role="menu"
+                onClick={() => setMenuOpen(false)}
+              >
+                {/*
             The panel behind this icon stopped being only exobiology: it now carries every system,
             body and star in the merged journals beside the foot-confirmed species. The menu is
             icons and tooltips, so the tooltip is the only place the name lives — leaving it as "My
             exobiology" made three new tabs unfindable.
           */}
-          <Tooltip text="My discoveries — every system, body and star you have scanned, plus the species you confirmed on foot.">
-            <button
-              type="button"
-              className="appbar-icon-btn"
-              onClick={() => setMyExoOpen(true)}
-              aria-label="My discoveries"
-            >
-              <IconExobiology />
-            </button>
-          </Tooltip>
-          <Tooltip text="Unfinished business — biology you found first and never collected, still worth 5x.">
-            <button
-              type="button"
-              className="appbar-icon-btn"
-              onClick={() => setBacklogOpen(true)}
-              aria-label="Unfinished business"
-            >
-              <IconBacklog />
-            </button>
-          </Tooltip>
-          {/*
+                <Tooltip text="My discoveries — every system, body and star you have scanned, plus the species you confirmed on foot.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setMyExoOpen(true)}
+                    aria-label="My discoveries"
+                  >
+                    <IconExobiology />
+                  </button>
+                </Tooltip>
+                <Tooltip text="Unfinished business — biology you found first and never collected, still worth 5x.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setBacklogOpen(true)}
+                    aria-label="Unfinished business"
+                  >
+                    <IconBacklog />
+                  </button>
+                </Tooltip>
+                {/*
             Carriers is in the menu rather than the app bar because it is a thing the commander goes
             looking for — where do I sell a full sample bag — not something they watch. The panel
             holds no data until they press its button.
           */}
-          <Tooltip text="Carriers — fleet carriers near you, from EDAstro. Downloads on request; positions are last sightings.">
-            <button
-              type="button"
-              className="appbar-icon-btn"
-              onClick={() => setCarriersOpen(true)}
-              aria-label="Carriers"
+                <Tooltip text="Carriers — fleet carriers near you, from EDAstro. Downloads on request; positions are last sightings.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setCarriersOpen(true)}
+                    aria-label="Carriers"
+                  >
+                    <IconCarrier />
+                  </button>
+                </Tooltip>
+                <Tooltip text="Points of interest — the Galactic Exploration Catalog near you, from EDAstro. Downloads on request.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setPoiOpen(true)}
+                    aria-label="Points of interest"
+                  >
+                    <IconPoi />
+                  </button>
+                </Tooltip>
+                {feeder.available ? (
+                  <Tooltip text="Data feeder — the corpus behind the rankings, and whether any profile is behind it.">
+                    <button
+                      type="button"
+                      className="appbar-icon-btn"
+                      onClick={() => setFeederOpen(true)}
+                      aria-label="Data feeder"
+                    >
+                      <IconFeeder />
+                    </button>
+                  </Tooltip>
+                ) : null}
+                <Tooltip text="Galaxy map — every sector where a species is known, confirmed or merely signalled. Opens in a new tab.">
+                  <a
+                    className="appbar-icon-btn"
+                    href="?screen=map"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Galaxy sector map"
+                  >
+                    <IconGalaxy />
+                  </a>
+                </Tooltip>
+                <Tooltip text="Encyclopedia — every species, its requirements, and what you have found.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setEncyclopediaOpen(true)}
+                    aria-label="Encyclopedia"
+                  >
+                    <IconEncyclopedia />
+                  </button>
+                </Tooltip>
+                <Tooltip text="Session log — tonight's systems, landings, species analysed and sales; copy as Markdown.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setSessionOpen(true)}
+                    aria-label="Session log"
+                  >
+                    <IconSession />
+                  </button>
+                </Tooltip>
+                <Tooltip text="Options — journal service info, map tier thresholds, reset.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setOptionsOpen(true)}
+                    aria-label="Options"
+                  >
+                    <IconOptions />
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+            <Tooltip
+              text={
+                trayOpen
+                  ? "Hide the route, fuel and data value tray"
+                  : "Show the route, fuel and data value tray"
+              }
             >
-              <IconCarrier />
-            </button>
-          </Tooltip>
-          <Tooltip text="Points of interest — the Galactic Exploration Catalog near you, from EDAstro. Downloads on request.">
-            <button
-              type="button"
-              className="appbar-icon-btn"
-              onClick={() => setPoiOpen(true)}
-              aria-label="Points of interest"
-            >
-              <IconPoi />
-            </button>
-          </Tooltip>
-          {feeder.available ? (
-            <Tooltip text="Data feeder — the corpus behind the rankings, and whether any profile is behind it.">
               <button
                 type="button"
-                className="appbar-icon-btn"
-                onClick={() => setFeederOpen(true)}
-                aria-label="Data feeder"
+                className={`appbar-icon-btn appbar-tray-toggle${trayOpen ? " appbar-tray-toggle--open" : ""}`}
+                onClick={() => setTrayOpen((v) => !v)}
+                aria-expanded={trayOpen}
+                aria-controls="header-tray"
+                aria-label="Route, fuel and data value"
               >
-                <IconFeeder />
+                <IconChevronDown />
               </button>
             </Tooltip>
-          ) : null}
-          <Tooltip text="Galaxy map — every sector where a species is known, confirmed or merely signalled. Opens in a new tab.">
-            <a
-              className="appbar-icon-btn"
-              href="?screen=map"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Galaxy sector map"
-            >
-              <IconGalaxy />
-            </a>
-          </Tooltip>
-          <Tooltip text="Encyclopedia — every species, its requirements, and what you have found.">
-            <button
-              type="button"
-              className="appbar-icon-btn"
-              onClick={() => setEncyclopediaOpen(true)}
-              aria-label="Encyclopedia"
-            >
-              <IconEncyclopedia />
-            </button>
-          </Tooltip>
-          <Tooltip text="Session log — tonight's systems, landings, species analysed and sales; copy as Markdown.">
-            <button
-              type="button"
-              className="appbar-icon-btn"
-              onClick={() => setSessionOpen(true)}
-              aria-label="Session log"
-            >
-              <IconSession />
-            </button>
-          </Tooltip>
-          <Tooltip text="Options — journal service info, map tier thresholds, reset.">
-            <button
-              type="button"
-              className="appbar-icon-btn"
-              onClick={() => setOptionsOpen(true)}
-              aria-label="Options"
-            >
-              <IconOptions />
-            </button>
-          </Tooltip>
           </div>
-          </div>
-          <Tooltip
-            text={
-              trayOpen
-                ? "Hide the route, fuel and data value tray"
-                : "Show the route, fuel and data value tray"
-            }
-          >
-            <button
-              type="button"
-              className={`appbar-icon-btn appbar-tray-toggle${trayOpen ? " appbar-tray-toggle--open" : ""}`}
-              onClick={() => setTrayOpen((v) => !v)}
-              aria-expanded={trayOpen}
-              aria-controls="header-tray"
-              aria-label="Route, fuel and data value"
-            >
-              <IconChevronDown />
-            </button>
-          </Tooltip>
-        </div>
         </div>
       </div>
 
       {snap.edsmMapSupplementForViewingSystem ? (
         <p className="header-edsm-map-note dim">
-          System map uses public galaxy data, EDSM or Spansh (no journal <code>Scan</code> for this system yet).
+          System map uses public galaxy data, EDSM or Spansh (no journal <code>Scan</code> for this system
+          yet).
         </p>
       ) : null}
 
@@ -1093,7 +1139,9 @@ export const HeaderBar = memo(function HeaderBar({
           onClose={() => setDataBreakdownOpen(false)}
         />
       ) : null}
-      {sessionOpen ? <SessionLogModal log={snap.sessionLog ?? null} onClose={() => setSessionOpen(false)} /> : null}
+      {sessionOpen ? (
+        <SessionLogModal log={snap.sessionLog ?? null} onClose={() => setSessionOpen(false)} />
+      ) : null}
       {optionsOpen ? (
         <MapOptionsModal
           snap={snap}
@@ -1103,7 +1151,9 @@ export const HeaderBar = memo(function HeaderBar({
           onClose={() => setOptionsOpen(false)}
         />
       ) : null}
-      {feederOpen ? <FeederModal status={feeder.status} onRefresh={feeder.refresh} onClose={() => setFeederOpen(false)} /> : null}
+      {feederOpen ? (
+        <FeederModal status={feeder.status} onRefresh={feeder.refresh} onClose={() => setFeederOpen(false)} />
+      ) : null}
       {notableQuick ? (
         <Suspense fallback={null}>
           <PlanetQuickFactsPopup

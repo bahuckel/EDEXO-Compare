@@ -94,7 +94,12 @@ describe("counting hydrated samples synchronously", () => {
     const good = JSON.stringify({ i: 0, context: { targetBody: { id: 1 } } });
     writeFileSync(
       path.join(d, "samples.jsonl.gz"),
-      gzipSync(Buffer.from(`${good}\n{not json\n${JSON.stringify({ i: 2, context: { targetBody: { id: 3 } } })}`, "utf8")),
+      gzipSync(
+        Buffer.from(
+          `${good}\n{not json\n${JSON.stringify({ i: 2, context: { targetBody: { id: 3 } } })}`,
+          "utf8",
+        ),
+      ),
     );
     expect(countHydratableSamplesSync(d)).toBe(2);
   });

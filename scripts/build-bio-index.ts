@@ -93,7 +93,14 @@ if (!CSV || !BIOFORGE) {
 }
 
 const bag = (s: string): string =>
-  s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(Boolean).sort().join(" ");
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .sort()
+    .join(" ");
 
 function loadTree(root: string): Map<string, string> {
   const out = new Map<string, string>();
@@ -122,7 +129,9 @@ function loadCodexBridge(bioforgeDir: string, tree: Map<string, string>): Map<st
     for (const e of Object.values(d)) {
       const m = /^\$(Codex_Ent_[A-Za-z]+_\d+)/.exec(String(e.id ?? ""));
       if (!m) continue;
-      const species = String(e.name ?? "").replace(/\s*-\s*[^-]+$/, "").trim();
+      const species = String(e.name ?? "")
+        .replace(/\s*-\s*[^-]+$/, "")
+        .trim();
       const ours = tree.get(bag(species));
       if (ours) out.set(m[1]!.toLowerCase(), ours);
     }
@@ -215,7 +224,10 @@ if (EXPORT) {
 
 {
   process.stderr.write("pass 1b — system ids from the codex…\n");
-  const rl = createInterface({ input: createReadStream(CSV, { highWaterMark: 1 << 22 }), crlfDelay: Infinity });
+  const rl = createInterface({
+    input: createReadStream(CSV, { highWaterMark: 1 << 22 }),
+    crlfDelay: Infinity,
+  });
   let header = false;
   for await (const line of rl) {
     if (!header) {
@@ -348,7 +360,10 @@ let codexKept = 0;
 let regionAgree = 0;
 let regionDisagree = 0;
 {
-  const rl = createInterface({ input: createReadStream(CSV, { highWaterMark: 1 << 22 }), crlfDelay: Infinity });
+  const rl = createInterface({
+    input: createReadStream(CSV, { highWaterMark: 1 << 22 }),
+    crlfDelay: Infinity,
+  });
   let header = false;
   for await (const line of rl) {
     if (!header) {

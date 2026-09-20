@@ -109,10 +109,7 @@ export function equalWidthEdges(values: number[], bins = HISTOGRAM_BINS): number
  * badly, a term it never had.
  */
 function usesEqualWidthEdges(path: string): boolean {
-  return (
-    /^body\.solidComposition\.(rock|metal)$/i.test(path) ||
-    /^body\.atmosphereComposition\./i.test(path)
-  );
+  return /^body\.solidComposition\.(rock|metal)$/i.test(path) || /^body\.atmosphereComposition\./i.test(path);
 }
 
 /**

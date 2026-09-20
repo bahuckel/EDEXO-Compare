@@ -71,11 +71,7 @@ export function PhotoGallery({
   if (!url) return null;
 
   return (
-    <div
-      className="photo-lightbox-backdrop"
-      role="presentation"
-      onClick={onClose}
-    >
+    <div className="photo-lightbox-backdrop" role="presentation" onClick={onClose}>
       <button type="button" className="photo-lightbox-close" aria-label="Close" onClick={onClose}>
         ×
       </button>

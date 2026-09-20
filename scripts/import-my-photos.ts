@@ -60,7 +60,15 @@
  * clan and that is how he asked for them to be named. Somebody outside it would need a line here
  * rather than a folder rename — which is the right amount of friction for a claim about authorship.
  */
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { getProjectRoot, getSpeciesDataDir } from "../src/server/paths.js";
 import { loadSpeciesDatabaseFromTree, findGenusPhotosFolder } from "../src/server/speciesTreeLoader.js";
@@ -165,8 +173,7 @@ function loadCredits(file: string): CreditsFile {
   }
   return {
     formatVersion: 1,
-    note:
-      "Photographs not listed here came with the project from the ED-DSN community and are credited to ED-DSN. Anything listed was contributed by the commander named against it.",
+    note: "Photographs not listed here came with the project from the ED-DSN community and are credited to ED-DSN. Anything listed was contributed by the commander named against it.",
     contributors: {},
     byFile: {},
   };

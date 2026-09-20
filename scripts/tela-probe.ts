@@ -78,7 +78,14 @@ function loadProfile(entry: SpeciesEntry): {
   sampleCount: number;
 } | null {
   const slug = entry.displayName.toLowerCase().replace(/[^a-z0-9]+/g, "_");
-  const file = path.join(root, "data", "species", entry.genusDataDir, "exomastery", `${slug}_exomastery.json`);
+  const file = path.join(
+    root,
+    "data",
+    "species",
+    entry.genusDataDir,
+    "exomastery",
+    `${slug}_exomastery.json`,
+  );
   if (!existsSync(file)) return null;
   return JSON.parse(readFileSync(file, "utf8")) as {
     numerics: Record<string, Numeric>;
@@ -123,7 +130,8 @@ function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
   const star = starId == null ? null : byId.get(starId);
   if (star?.starType?.trim()) {
     ctx.parentStarType = star.starType;
-    if (typeof star.subclass === "number" && Number.isFinite(star.subclass)) ctx.parentStarSubclass = star.subclass;
+    if (typeof star.subclass === "number" && Number.isFinite(star.subclass))
+      ctx.parentStarSubclass = star.subclass;
     if (star.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity;
   }
   return Object.keys(ctx).length ? ctx : undefined;
@@ -262,7 +270,11 @@ for (const b of bodies) {
       regionIndex: ctx?.regionIndex ?? null,
       regionPriorWeight: REGION_PRIOR_WEIGHT,
     }).ranked;
-    const rows = hintedRanked.map((r) => ({ genus: r.match.entry.genusDataDir, probability: r.probability, r }));
+    const rows = hintedRanked.map((r) => ({
+      genus: r.match.entry.genusDataDir,
+      probability: r.probability,
+      r,
+    }));
     const shares = genusShares(rows);
     for (const id of new Set(truth)) {
       const row = rows.find((x) => x.r.match.entry.id === id);
@@ -317,9 +329,7 @@ for (const b of bodies) {
     offeredAfterFloor: afterFloor.some((m) => m.entry.id === target.id),
     pctAtFloor: targetPctBefore,
     genusSharePct: targetGenusShare == null ? null : targetGenusShare * 100,
-    genusRowCount: targetShareRow
-      ? shareRows.filter((row) => row.genus === targetShareRow.genus).length
-      : 0,
+    genusRowCount: targetShareRow ? shareRows.filter((row) => row.genus === targetShareRow.genus).length : 0,
     flags: targetFlags,
     shownAfterFloor: afterFloor.length,
     offeredWithHints: hinted.some((m) => m.entry.id === target.id),
@@ -355,9 +365,15 @@ const hintBodies = seen.filter((s) => s.hintedGenera > 0);
 const hintOffered = hintBodies.filter((s) => s.offeredWithHints).length;
 
 console.log(`bodies with a bio signal and a scan   ${fssBodies}`);
-console.log(`the matcher lets it through on        ${offeredTotal} (${((offeredTotal / fssBodies) * 100).toFixed(1)} %)`);
-console.log(`the panel still shows it on           ${afterFloorTotal} (${((afterFloorTotal / fssBodies) * 100).toFixed(1)} %)   <- after the ${PRESENCE_FLOOR_PCT} % floor`);
-console.log(`post-DSS list, before any floor       ${hintOffered} of ${hintBodies.length} hinted bodies (${((hintOffered / Math.max(1, hintBodies.length)) * 100).toFixed(1)} %)`);
+console.log(
+  `the matcher lets it through on        ${offeredTotal} (${((offeredTotal / fssBodies) * 100).toFixed(1)} %)`,
+);
+console.log(
+  `the panel still shows it on           ${afterFloorTotal} (${((afterFloorTotal / fssBodies) * 100).toFixed(1)} %)   <- after the ${PRESENCE_FLOOR_PCT} % floor`,
+);
+console.log(
+  `post-DSS list, before any floor       ${hintOffered} of ${hintBodies.length} hinted bodies (${((hintOffered / Math.max(1, hintBodies.length)) * 100).toFixed(1)} %)`,
+);
 console.log("\nby signal count:");
 for (const key of [...bySignals.keys()].sort()) {
   const e = bySignals.get(key)!;
@@ -399,14 +415,20 @@ const p90 = pcts.length ? pcts[Math.floor(pcts.length * 0.9)]! : 0;
 console.log("\nwhere it sits in the panel's own ordering:");
 for (const key of ["1st", "2nd-3rd", "4th-6th", "7th or worse"]) {
   const n = rankBuckets.get(key) ?? 0;
-  console.log(`  ${key.padEnd(14)} ${String(n).padStart(5)}  ${((n / Math.max(1, ranksSeen.length)) * 100).toFixed(1)} %`);
+  console.log(
+    `  ${key.padEnd(14)} ${String(n).padStart(5)}  ${((n / Math.max(1, ranksSeen.length)) * 100).toFixed(1)} %`,
+  );
 }
 console.log(`  chance-here: median ${median.toFixed(1)} %, 90th percentile ${p90.toFixed(1)} %`);
-console.log(`  shown list length: median ${[...seen.map((s) => s.shownCount)].sort((a, b) => a - b)[Math.floor(seen.length / 2)]} candidates`);
+console.log(
+  `  shown list length: median ${[...seen.map((s) => s.shownCount)].sort((a, b) => a - b)[Math.floor(seen.length / 2)]} candidates`,
+);
 
 const found = seen.filter((s) => s.truth.includes(target.id));
 for (const s of found) {
-  console.log(`  where it really grew: ${s.body.bodyName} — ranked ${s.rank} of ${s.shownCount} at ${(s.presencePct ?? 0).toFixed(1)} %`);
+  console.log(
+    `  where it really grew: ${s.body.bodyName} — ranked ${s.rank} of ${s.shownCount} at ${(s.presencePct ?? 0).toFixed(1)} %`,
+  );
 }
 
 /*
@@ -432,12 +454,20 @@ const preUnderFloor = preShown.filter((s) => (s.pctAtFloor ?? 0) < PRESENCE_FLOO
 
 console.log(`
 the two populations, counted apart:`);
-console.log(`  never probed (the floor runs)   ${preDss.length} bodies, shown on ${preShown.length} (${((preShown.length / Math.max(1, preDss.length)) * 100).toFixed(1)} %)`);
+console.log(
+  `  never probed (the floor runs)   ${preDss.length} bodies, shown on ${preShown.length} (${((preShown.length / Math.max(1, preDss.length)) * 100).toFixed(1)} %)`,
+);
 console.log(`    of those, under the floor and kept as the single best row  ${preUnderFloor.length}`);
-console.log(`  probed (the genus-share floor)  ${postDss.length} bodies, shown on ${postDss.filter((s) => s.offeredWithHints).length} (${((postDss.filter((s) => s.offeredWithHints).length / Math.max(1, postDss.length)) * 100).toFixed(1)} %)`);
+console.log(
+  `  probed (the genus-share floor)  ${postDss.length} bodies, shown on ${postDss.filter((s) => s.offeredWithHints).length} (${((postDss.filter((s) => s.offeredWithHints).length / Math.max(1, postDss.length)) * 100).toFixed(1)} %)`,
+);
 const postUnder = postDss.filter((s) => s.offeredWithHints && (s.pctAtFloor ?? 0) < PRESENCE_FLOOR_PCT);
-console.log(`    after the floor, the panel shows it on ${postDss.filter((s) => s.shownWithHintsAfterFloor).length} of them`);
-console.log(`    of those, rows the floor would have hidden  ${postUnder.length} (${((postUnder.length / Math.max(1, postDss.length)) * 100).toFixed(1)} % of probed bodies)`);
+console.log(
+  `    after the floor, the panel shows it on ${postDss.filter((s) => s.shownWithHintsAfterFloor).length} of them`,
+);
+console.log(
+  `    of those, rows the floor would have hidden  ${postUnder.length} (${((postUnder.length / Math.max(1, postDss.length)) * 100).toFixed(1)} % of probed bodies)`,
+);
 
 /*
   What a post-DSS floor would have to read. "Is the genus here" is settled by the probe; "which
@@ -448,13 +478,16 @@ const sharesOnProbed = postDss
   .map((s) => s.genusSharePct!)
   .sort((a, b) => a - b);
 if (sharesOnProbed.length > 0) {
-  const at = (q: number) => sharesOnProbed[Math.min(sharesOnProbed.length - 1, Math.floor(q * sharesOnProbed.length))]!;
+  const at = (q: number) =>
+    sharesOnProbed[Math.min(sharesOnProbed.length - 1, Math.floor(q * sharesOnProbed.length))]!;
   console.log(
     `    its share within its own genus on those bodies: median ${at(0.5).toFixed(1)} %, 25th ${at(0.25).toFixed(1)} %, 75th ${at(0.75).toFixed(1)} %`,
   );
   for (const cut of [2, 5, 10]) {
     const hidden = sharesOnProbed.filter((x) => x < cut).length;
-    console.log(`      a ${cut} % within-genus floor would hide it on ${hidden} of ${sharesOnProbed.length} probed bodies`);
+    console.log(
+      `      a ${cut} % within-genus floor would hide it on ${hidden} of ${sharesOnProbed.length} probed bodies`,
+    );
   }
   /*
     `presenceFloor.test.ts` already settled one case the other way: after a DSS a runner-up is "the
@@ -494,7 +527,9 @@ for (const s of seen) {
   byAtmRank.set(k, e);
 }
 console.log("\nwhere tela ranks, by the body's atmosphere:");
-console.log(`  ${"atmosphere".padEnd(20)} ${"bodies".padStart(7)} ${"1st".padStart(7)} ${"top 3".padStart(7)} ${"median chance".padStart(14)}`);
+console.log(
+  `  ${"atmosphere".padEnd(20)} ${"bodies".padStart(7)} ${"1st".padStart(7)} ${"top 3".padStart(7)} ${"median chance".padStart(14)}`,
+);
 for (const [k, e] of [...byAtmRank].sort((a, b) => b[1].n - a[1].n)) {
   if (e.n < 5) continue;
   const med = [...e.pct].sort((a, b) => a - b)[Math.floor(e.pct.length / 2)] ?? 0;
@@ -525,11 +560,17 @@ const completeRight = completeOffered.filter((s) => s.truth.includes(target.id))
 
 console.log(`\nagainst his own confirmed scans:`);
 console.log(`  bodies with any confirmed species    ${truthBodies.length}`);
-console.log(`  ... where it was actually found      ${targetTruth.length} (ambient ${((targetTruth.length / truthBodies.length) * 100).toFixed(1)} %)`);
+console.log(
+  `  ... where it was actually found      ${targetTruth.length} (ambient ${((targetTruth.length / truthBodies.length) * 100).toFixed(1)} %)`,
+);
 console.log(`  ... where it was offered             ${offeredOnTruthBody.length}`);
 console.log(`  offered and found                    ${offeredAndRight.length}`);
-console.log(`  on fully-sampled bodies only:        offered ${completeOffered.length}, found ${completeRight.length}` +
-  (completeOffered.length ? `  -> precision ${((completeRight.length / completeOffered.length) * 100).toFixed(1)} %` : ""));
+console.log(
+  `  on fully-sampled bodies only:        offered ${completeOffered.length}, found ${completeRight.length}` +
+    (completeOffered.length
+      ? `  -> precision ${((completeRight.length / completeOffered.length) * 100).toFixed(1)} %`
+      : ""),
+);
 
 /* ------------------------------------------------------------------ spelling, journal vs corpus */
 
@@ -548,7 +589,11 @@ function atmosphereKey(raw: string): string {
 }
 
 function bodyClassKey(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\s+(body|world)$/, "").replace(/[\s_-]+/g, "");
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/\s+(body|world)$/, "")
+    .replace(/[\s_-]+/g, "");
 }
 
 /* ------------------------------------------------------------------ pass three: what would a bound cost */
@@ -592,7 +637,8 @@ if (profile) {
     bounds.push({
       name: "pressure",
       describe: `outside ${pres.min.toFixed(4)}-${pres.max.toFixed(4)} atm`,
-      outside: (b) => Number.isFinite(pressureAtm(b)) && (pressureAtm(b) < pres.min || pressureAtm(b) > pres.max),
+      outside: (b) =>
+        Number.isFinite(pressureAtm(b)) && (pressureAtm(b) < pres.min || pressureAtm(b) > pres.max),
     });
   }
   const atmosSet = new Set(Object.keys(atmos).map(atmosphereKey));
@@ -636,12 +682,17 @@ if (!profile) {
   console.log(
     `\n  offered on ${offeredBodies.length} bodies; ${removesAll} of them (${((removesAll / Math.max(1, offeredBodies.length)) * 100).toFixed(1)} %) are outside everything the corpus has ever shown.`,
   );
-  console.log(`  it has been confirmed on ${confirmedBodies.length} of his bodies; the bounds together lose ${losesAll}.`);
+  console.log(
+    `  it has been confirmed on ${confirmedBodies.length} of his bodies; the bounds together lose ${losesAll}.`,
+  );
 
   if (losesAll > 0) {
     console.log("\n  the confirmed bodies a bound would throw away:");
     for (const s of confirmedBodies.filter((x) => anyOutside(x.body))) {
-      const which = bounds.filter((x) => x.outside(s.body)).map((x) => x.name).join(", ");
+      const which = bounds
+        .filter((x) => x.outside(s.body))
+        .map((x) => x.name)
+        .join(", ");
       console.log(
         `    ${s.body.bodyName.padEnd(34)} ${planetClass(s.body).padEnd(22)} ${g(s.body).toFixed(3)} g  ${tempK(s.body).toFixed(0)} K  ${atmType(s.body).padEnd(20)} -> ${which}`,
       );
@@ -656,13 +707,17 @@ the cost side: every species he confirmed on a probed body, by its within-genus 
 console.log(`  confirmed rows measured   ${truthShares.length}`);
 for (const cut of [2, 5, 10]) {
   const lost = truthShares.filter((t) => t.sharePct < cut);
-  console.log(`  a ${String(cut).padStart(2)} % floor would hide ${String(lost.length).padStart(3)} of them (${((lost.length / Math.max(1, truthShares.length)) * 100).toFixed(1)} %)`);
+  console.log(
+    `  a ${String(cut).padStart(2)} % floor would hide ${String(lost.length).padStart(3)} of them (${((lost.length / Math.max(1, truthShares.length)) * 100).toFixed(1)} %)`,
+  );
 }
 const lostAt5 = truthShares.filter((t) => t.sharePct < 5).sort((a, b) => a.sharePct - b.sharePct);
 if (lostAt5.length > 0) {
   console.log("  the ones a 5 % floor would hide, lowest first:");
   for (const t of lostAt5.slice(0, 15)) {
-    console.log(`    ${t.species.padEnd(26)} ${t.sharePct.toFixed(2).padStart(6)} %  of ${t.genusRows} in its genus   ${t.body}`);
+    console.log(
+      `    ${t.species.padEnd(26)} ${t.sharePct.toFixed(2).padStart(6)} %  of ${t.genusRows} in its genus   ${t.body}`,
+    );
   }
   if (lostAt5.length > 15) console.log(`    ... and ${lostAt5.length - 15} more`);
 }
@@ -705,7 +760,11 @@ const AXES = [
   { label: "atmosphere", path: "body.atmosphereType", key: atmosphereKey },
   { label: "body class", path: "body.subType", key: bodyClassKey },
   { label: "volcanism", path: "body.volcanismType", key: (v: string) => v.trim().toLowerCase() },
-  { label: "host star", path: "exo.host_star_spectral_primary", key: (v: string) => v.trim().toUpperCase().slice(0, 1) },
+  {
+    label: "host star",
+    path: "exo.host_star_spectral_primary",
+    key: (v: string) => v.trim().toUpperCase().slice(0, 1),
+  },
 ] as const;
 
 const corpusAmbient = new Map<string, Tally>(AXES.map((a) => [a.path, newTally()]));
@@ -737,7 +796,10 @@ for (const s of seen) {
   add(ownAmbient.get("body.subType")!, bodyClassKey(planetClass(s.body)));
   const volc = (s.body.scan?.Volcanism ?? "").trim().toLowerCase();
   add(ownAmbient.get("body.volcanismType")!, volc === "" ? "no volcanism" : volc);
-  add(ownAmbient.get("exo.host_star_spectral_primary")!, (s.star ?? "").trim().toUpperCase().slice(0, 1) || "?");
+  add(
+    ownAmbient.get("exo.host_star_spectral_primary")!,
+    (s.star ?? "").trim().toUpperCase().slice(0, 1) || "?",
+  );
 }
 
 const share = (t: Tally, key: string) => (t.total === 0 ? 0 : ((t.byKey.get(key) ?? 0) / t.total) * 100);
@@ -751,7 +813,9 @@ for (const axis of AXES) {
   const own = ownAmbient.get(axis.path)!;
   console.log(`
   ${axis.label}   (${mine.total} rows for ${target.displayName})`);
-  console.log(`    ${"value".padEnd(26)} ${"this".padStart(7)} ${"corpus".padStart(8)} ${"lift".padStart(6)}   ${"his bodies".padStart(10)}`);
+  console.log(
+    `    ${"value".padEnd(26)} ${"this".padStart(7)} ${"corpus".padStart(8)} ${"lift".padStart(6)}   ${"his bodies".padStart(10)}`,
+  );
   const rows = [...mine.byKey].sort((a, b) => b[1] - a[1]).slice(0, 8);
   for (const [key, n] of rows) {
     const mineShare = (n / mine.total) * 100;
@@ -764,5 +828,7 @@ for (const axis of AXES) {
   /* What share of the ambient this species' own values cover: a low number is a usable gate. */
   const covered = [...mine.byKey.keys()].reduce((sum, k) => sum + share(corpus, k), 0);
   const coveredOwn = [...mine.byKey.keys()].reduce((sum, k) => sum + share(own, k), 0);
-  console.log(`    the values it has ever shown cover ${covered.toFixed(1)}% of corpus rows, ${coveredOwn.toFixed(1)}% of his bio bodies`);
+  console.log(
+    `    the values it has ever shown cover ${covered.toFixed(1)}% of corpus rows, ${coveredOwn.toFixed(1)}% of his bio bodies`,
+  );
 }

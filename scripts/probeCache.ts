@@ -80,8 +80,7 @@ export function loadJournalMergeCacheForTool(quiet = false): JournalMergeCachePa
   if (payload.format !== JOURNAL_MERGE_CACHE_FORMAT) {
     console.error(
       `Cache at ${payloadPath} is format ${payload.format}; this build writes ${JOURNAL_MERGE_CACHE_FORMAT}.
-` +
-        `Run the app once so it replays the journals, then re-run this probe.`,
+` + `Run the app once so it replays the journals, then re-run this probe.`,
     );
     process.exit(1);
   }
@@ -92,8 +91,7 @@ export function loadJournalMergeCacheForTool(quiet = false): JournalMergeCachePa
   ) {
     console.error(
       `Cache at ${payloadPath} has a file manifest but no history — it was written by a run that was
-` +
-        `killed mid-replay. Delete it and run the app once.`,
+` + `killed mid-replay. Delete it and run the app once.`,
     );
     process.exit(1);
   }

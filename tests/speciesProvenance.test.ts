@@ -44,9 +44,9 @@ describe("corpus side, at system resolution", () => {
      * Tubers, Brain Trees, Anemones — and nothing about the app looks wrong; the species simply
      * never show corpus support. So this asserts the count, not that a lookup ran.
      */
-    const file = JSON.parse(
-      readFileSync(sectorSystemsPath(root), "utf8"),
-    ) as { cells: Record<string, { key: string }[]> };
+    const file = JSON.parse(readFileSync(sectorSystemsPath(root), "utf8")) as {
+      cells: Record<string, { key: string }[]>;
+    };
     const systems = Object.values(file.cells).flat();
     expect(systems.length).toBeGreaterThan(1000);
 

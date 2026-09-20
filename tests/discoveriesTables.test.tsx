@@ -12,7 +12,12 @@ import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { act } from "react";
 import { DiscoveriesTables } from "../src/client/DiscoveriesTables";
-import type { DiscoveriesDTO, DiscoveryBodyRow, DiscoveryStarRow, DiscoverySystemRow } from "../src/shared/types";
+import type {
+  DiscoveriesDTO,
+  DiscoveryBodyRow,
+  DiscoveryStarRow,
+  DiscoverySystemRow,
+} from "../src/shared/types";
 
 function sys(over: Partial<DiscoverySystemRow>): DiscoverySystemRow {
   return {
@@ -125,7 +130,13 @@ const DATA: DiscoveriesDTO = {
   systems: [
     sys({ systemAddress: 1, name: "Alpha", estimatedCredits: 100, bioSignals: 0 }),
     sys({ systemAddress: 2, name: "Beta", estimatedCredits: 9000, bioSignals: 4, region: "Norma Expanse" }),
-    sys({ systemAddress: 3, name: "Gamma", estimatedCredits: 5000, bioSignals: 0, soldExobiologyCredits: 42 }),
+    sys({
+      systemAddress: 3,
+      name: "Gamma",
+      estimatedCredits: 5000,
+      bioSignals: 0,
+      soldExobiologyCredits: 42,
+    }),
   ],
   bodies: [
     bod({ key: "1:1", bodyName: "Alpha 1", planetClass: "Icy body", estimatedCredits: 10 }),
@@ -206,7 +217,10 @@ describe("the discoveries tables", () => {
   it("shows a dash where a value was never measured", () => {
     // Null is "not measured" and must never render as 0 — on this table a 0 g body would be a lie.
     const r = render(
-      { ...DATA, bodies: [bod({ gravityG: null, surfaceTemperatureK: null, massEM: null, radiusEarth: null })] },
+      {
+        ...DATA,
+        bodies: [bod({ gravityG: null, surfaceTemperatureK: null, massEM: null, radiusEarth: null })],
+      },
       "bodies",
     );
     expect(r.host.textContent).toContain("—");
@@ -259,7 +273,10 @@ describe("the Systems first-discovery filter", () => {
   it("lists only systems the game credits to him", () => {
     const names = namesWith("First discovery");
     expect(names.some((n) => n.startsWith("Mine"))).toBe(true);
-    expect(names.some((n) => n.startsWith("TheirsMyBodies")), "someone else's system").toBe(false);
+    expect(
+      names.some((n) => n.startsWith("TheirsMyBodies")),
+      "someone else's system",
+    ).toBe(false);
   });
 
   it("does not claim a system whose main star was never scanned", () => {
@@ -293,9 +310,27 @@ describe("the Systems first-discovery filter", () => {
  */
 describe("first discovery means the system, on every tab", () => {
   const rows: DiscoveryBodyRow[] = [
-    bod({ key: "a:1", bodyName: "Mine", planetClass: "Earth-like world", firstDiscoverer: true, firstDiscoveredSystem: true }),
-    bod({ key: "b:1", bodyName: "TheirSystem", planetClass: "Earth-like world", firstDiscoverer: true, firstDiscoveredSystem: false }),
-    bod({ key: "c:1", bodyName: "Unknown", planetClass: "Earth-like world", firstDiscoverer: true, firstDiscoveredSystem: null }),
+    bod({
+      key: "a:1",
+      bodyName: "Mine",
+      planetClass: "Earth-like world",
+      firstDiscoverer: true,
+      firstDiscoveredSystem: true,
+    }),
+    bod({
+      key: "b:1",
+      bodyName: "TheirSystem",
+      planetClass: "Earth-like world",
+      firstDiscoverer: true,
+      firstDiscoveredSystem: false,
+    }),
+    bod({
+      key: "c:1",
+      bodyName: "Unknown",
+      planetClass: "Earth-like world",
+      firstDiscoverer: true,
+      firstDiscoveredSystem: null,
+    }),
   ];
 
   const namesWith = (chip: string, tab: "bodies" | "stars" = "bodies") => {
@@ -309,7 +344,10 @@ describe("first discovery means the system, on every tab", () => {
   it("counts only bodies in systems the game credits to him", () => {
     const names = namesWith("First discovery");
     expect(names.some((n) => n.startsWith("Mine"))).toBe(true);
-    expect(names.some((n) => n.startsWith("TheirSystem")), "25-vs-6 case").toBe(false);
+    expect(
+      names.some((n) => n.startsWith("TheirSystem")),
+      "25-vs-6 case",
+    ).toBe(false);
   });
 
   it("does not claim a body whose system was never resolved", () => {
@@ -357,7 +395,11 @@ describe("the Bodies type chips", () => {
       ...crowd(),
       ...rare.map((planetClass, i) => bod({ key: `r:${i}`, bodyName: `Rare ${i}`, planetClass })),
     ]);
-    for (const c of rare) expect(labels.some((t) => t.includes(c)), c).toBe(true);
+    for (const c of rare)
+      expect(
+        labels.some((t) => t.includes(c)),
+        c,
+      ).toBe(true);
   });
 
   it("does not invent a class nobody has scanned", () => {

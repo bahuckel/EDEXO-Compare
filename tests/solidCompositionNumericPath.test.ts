@@ -22,7 +22,9 @@ describe("body.solidComposition.* reaches the ranking model", () => {
   });
 
   it("falls back to the exploration record when the scan carries no composition", () => {
-    const rec = { composition: { Ice: 0, Rock: 0.669908, Metal: 0.330091 } } as unknown as ExplorationScanRecord;
+    const rec = {
+      composition: { Ice: 0, Rock: 0.669908, Metal: 0.330091 },
+    } as unknown as ExplorationScanRecord;
     expect(valueForNumericPath("body.solidComposition.Rock", {} as PlanetScan, rec)).toBeCloseTo(66.9908, 4);
   });
 

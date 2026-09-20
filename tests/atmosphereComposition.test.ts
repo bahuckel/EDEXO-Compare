@@ -27,7 +27,10 @@ const upupamBody = {
 
 describe("body.atmosphereComposition reaches the ranking model", () => {
   it("reports each gas as the percentage the profile stores", () => {
-    expect(valueForNumericPath("body.atmosphereComposition.Nitrogen", upupamBody, null)).toBeCloseTo(64.38, 2);
+    expect(valueForNumericPath("body.atmosphereComposition.Nitrogen", upupamBody, null)).toBeCloseTo(
+      64.38,
+      2,
+    );
     expect(valueForNumericPath("body.atmosphereComposition.Argon", upupamBody, null)).toBeCloseTo(35.62, 2);
   });
 
@@ -37,7 +40,13 @@ describe("body.atmosphereComposition reaches the ranking model", () => {
   });
 
   it("says nothing when the body has no atmosphere reading at all", () => {
-    expect(valueForNumericPath("body.atmosphereComposition.Argon", { PlanetClass: "Icy body" } as PlanetScan, null)).toBeNull();
+    expect(
+      valueForNumericPath(
+        "body.atmosphereComposition.Argon",
+        { PlanetClass: "Icy body" } as PlanetScan,
+        null,
+      ),
+    ).toBeNull();
   });
 
   it("separates the two Fonticulua on a body whose name says the opposite", () => {

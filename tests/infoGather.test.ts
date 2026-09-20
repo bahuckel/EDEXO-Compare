@@ -90,9 +90,7 @@ describe("Analyse, Sample and Log all count", () => {
       LOG it once, it should count." Only `Analyse` and `Sample` were recorded once, which silently
       lost every species he had logged.
     */
-    expect(gameState).toMatch(
-      /scanType === "Analyse" \|\| scanType === "Sample" \|\| scanType === "Log"/,
-    );
+    expect(gameState).toMatch(/scanType === "Analyse" \|\| scanType === "Sample" \|\| scanType === "Log"/);
   });
 
   it("counts confirmations from the locks those scans create, one per body", () => {

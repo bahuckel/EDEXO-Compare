@@ -10,12 +10,7 @@
  * else's data and it gains categories without telling us.
  */
 import { describe, expect, it } from "vitest";
-import {
-  POI_GROUP_OPTIONS,
-  poiGroup,
-  poiIsOrganic,
-  poiTypeLabel,
-} from "../src/shared/gecCategories.js";
+import { POI_GROUP_OPTIONS, poiGroup, poiIsOrganic, poiTypeLabel } from "../src/shared/gecCategories.js";
 
 /** Every type in the 2026-09-20 feed, with its count, so a mapping gap is visible as a number. */
 const FEED_TYPES: ReadonlyArray<readonly [string, number]> = [

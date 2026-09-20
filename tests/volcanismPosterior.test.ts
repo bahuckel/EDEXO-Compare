@@ -129,9 +129,7 @@ describe("volcanism in the posterior", () => {
       const q = score(name, QUIET)!;
       const v = score(name, NITROGEN)!;
       expect(q, name).not.toBeNull();
-      expect(v.logScore, `${name} must not score the same with and without volcanism`).not.toBe(
-        q.logScore,
-      );
+      expect(v.logScore, `${name} must not score the same with and without volcanism`).not.toBe(q.logScore);
     }
   });
 

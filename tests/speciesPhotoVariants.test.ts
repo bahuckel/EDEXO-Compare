@@ -158,15 +158,9 @@ describe("a species the commander has photographed", () => {
 describe("a photograph contributed by somebody else", () => {
   it("credits each file to whoever took it, inside one species", () => {
     clearPhotoCreditsCache();
-    expect(photoContributorFor(root, "Fungoida-setisis-Yellow.jpg")?.name).toBe(
-      "Bahuckel — CMDR PhoEniXDFA",
-    );
-    expect(photoContributorFor(root, "Fungoida-setisis-Orange.jpg")?.name).toBe(
-      "Bahuckel — CMDR FALrenica",
-    );
-    expect(photoContributorFor(root, "Aleoida-spica-Emerald.jpg")?.name).toBe(
-      "Bahuckel — CMDR PhoEniXDFA",
-    );
+    expect(photoContributorFor(root, "Fungoida-setisis-Yellow.jpg")?.name).toBe("Bahuckel — CMDR PhoEniXDFA");
+    expect(photoContributorFor(root, "Fungoida-setisis-Orange.jpg")?.name).toBe("Bahuckel — CMDR FALrenica");
+    expect(photoContributorFor(root, "Aleoida-spica-Emerald.jpg")?.name).toBe("Bahuckel — CMDR PhoEniXDFA");
     /*
       Cactoida peperatis is the one the owner noticed missing, and the reason is worth keeping: his
       Teal was imported in one batch and PhoEniXDFA's Amethyst arrived in the next. The species now
@@ -176,9 +170,7 @@ describe("a photograph contributed by somebody else", () => {
     expect(photoContributorFor(root, "Cactoida-peperatis-Amethyst.jpg")?.name).toBe(
       "Bahuckel — CMDR PhoEniXDFA",
     );
-    expect(photoContributorFor(root, "Cactoida-peperatis-Teal.jpg")?.name).toBe(
-      "Bahuckel — CMDR FALrenica",
-    );
+    expect(photoContributorFor(root, "Cactoida-peperatis-Teal.jpg")?.name).toBe("Bahuckel — CMDR FALrenica");
   });
 
   it("shows every variant of a species two commanders photographed", () => {

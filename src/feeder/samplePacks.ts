@@ -125,9 +125,7 @@ export function isBodySampleName(fileName: string): boolean {
  * Records with no identity recorded are skipped rather than guessed at — there is nothing to key
  * them on, and inventing one would resurrect the bug this replaces.
  */
-export async function readSamplesByIdentity(
-  speciesDir: string,
-): Promise<Map<string, SamplePackRecord>> {
+export async function readSamplesByIdentity(speciesDir: string): Promise<Map<string, SamplePackRecord>> {
   const out = new Map<string, SamplePackRecord>();
   const add = (rec: SamplePackRecord | undefined): void => {
     if (!rec?.systemName || !rec.bodyName) return;

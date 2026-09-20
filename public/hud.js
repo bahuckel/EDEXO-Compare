@@ -25,7 +25,10 @@
     return "http://127.0.0.1:" + lastPort + p;
   }
   function esc(t) {
-    return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return String(t == null ? "" : t)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
   function fmtCr(n) {
     if (n == null || !isFinite(n)) return "—";
@@ -104,7 +107,9 @@
       .join(" ");
   }
   function norm(s) {
-    return String(s || "").trim().toLowerCase();
+    return String(s || "")
+      .trim()
+      .toLowerCase();
   }
   function ls(key, def) {
     try {
@@ -124,8 +129,11 @@
   }
   function head(title, status) {
     return (
-      '<div class="hud-head"><span class="hud-title">' + esc(title) +
-      '</span><span class="hud-status" data-f="status">' + esc(status || "Standby") + "</span></div>"
+      '<div class="hud-head"><span class="hud-title">' +
+      esc(title) +
+      '</span><span class="hud-status" data-f="status">' +
+      esc(status || "Standby") +
+      "</span></div>"
     );
   }
 
@@ -164,9 +172,14 @@
     ];
   }
   function toHex(c) {
-    return "#" + c.map(function (v) {
-      return (v < 16 ? "0" : "") + v.toString(16);
-    }).join("");
+    return (
+      "#" +
+      c
+        .map(function (v) {
+          return (v < 16 ? "0" : "") + v.toString(16);
+        })
+        .join("")
+    );
   }
   /*
     Phone mode (owner, 2026-09-13, task 13): `?phone=1` on the merged page. A phone has its own
@@ -198,8 +211,12 @@
       t = {};
     }
     var preset = PRESETS[t.preset] || null;
-    var accent = hexRgb(t.preset === "custom" ? t.accent : preset ? preset.accent : PRESETS.orange.accent) || hexRgb(PRESETS.orange.accent);
-    var text = hexRgb(t.preset === "custom" ? t.text : preset ? preset.text : PRESETS.orange.text) || mix(accent, [255, 255, 255], 0.78);
+    var accent =
+      hexRgb(t.preset === "custom" ? t.accent : preset ? preset.accent : PRESETS.orange.accent) ||
+      hexRgb(PRESETS.orange.accent);
+    var text =
+      hexRgb(t.preset === "custom" ? t.text : preset ? preset.text : PRESETS.orange.text) ||
+      mix(accent, [255, 255, 255], 0.78);
     return { accent: accent, text: text };
   }
   /*
@@ -327,8 +344,14 @@
   function starKind(cls) {
     var c = String(cls || "").toUpperCase();
     if (!c) return { kind: "unknown", label: "?", note: "Star class unknown" };
-    if (c === "H" || c === "SUPERMASSIVEBLACKHOLE") return { kind: "hole", label: c === "H" ? "Black hole" : "Supermassive black hole", note: "Black hole — no scoop, drop out early" };
-    if (c === "N") return { kind: "neutron", label: "Neutron star", note: "Neutron star — jet cone boost, no scoop" };
+    if (c === "H" || c === "SUPERMASSIVEBLACKHOLE")
+      return {
+        kind: "hole",
+        label: c === "H" ? "Black hole" : "Supermassive black hole",
+        note: "Black hole — no scoop, drop out early",
+      };
+    if (c === "N")
+      return { kind: "neutron", label: "Neutron star", note: "Neutron star — jet cone boost, no scoop" };
     if (/^[KGBFOAM]$/.test(c)) return { kind: "scoop", label: c + " class", note: "Scoopable" };
     return { kind: "noscoop", label: c, note: "Not scoopable" };
   }
@@ -362,7 +385,13 @@
       var k = starKind(jt.starClass);
       var src = jt.source || "jump";
       status.textContent =
-        src === "target" ? "Targeted" : src === "route" ? "Next on route" : jt.arrived ? "Arrived" : "Jumping";
+        src === "target"
+          ? "Targeted"
+          : src === "route"
+            ? "Next on route"
+            : jt.arrived
+              ? "Arrived"
+              : "Jumping";
       box.className = "jump jump--" + k.kind + (jt.arrived ? " jump--arrived" : "") + " jump--src-" + src;
       q(root, "sys").textContent = jt.starSystem;
       q(root, "star").textContent = k.label;
@@ -440,7 +469,8 @@
       if (kids.length < 3) break;
       // remove the last hop and the separator before it
       el.removeChild(kids[kids.length - 1]);
-      if (el.lastElementChild && el.lastElementChild.classList.contains("hop__sep")) el.removeChild(el.lastElementChild);
+      if (el.lastElementChild && el.lastElementChild.classList.contains("hop__sep"))
+        el.removeChild(el.lastElementChild);
       var shown = el.querySelectorAll(".hop:not(.hop--beyond)").length;
       if (pumpIdx >= shown && !el.querySelector(".hop--beyond")) {
         var tail = document.createElement("span");
@@ -475,7 +505,8 @@
       if (!dscan || dscan.total == null) {
         status.textContent = "Standby";
         bar.style.width = "0%";
-        q(root, "dline").innerHTML = "<span class='sys'>—</span><span class='nums'>— / —<small>bodies</small></span>";
+        q(root, "dline").innerHTML =
+          "<span class='sys'>—</span><span class='nums'>— / —<small>bodies</small></span>";
         return null;
       }
       var complete = dscan.complete || dscan.found >= dscan.total;
@@ -484,8 +515,15 @@
       bar.style.width = pct.toFixed(1) + "%";
       status.textContent = complete ? "Complete" : "Scanning " + Math.round(pct) + "%";
       q(root, "dline").innerHTML =
-        "<span class='sys' title='" + esc(sys) + "'>" + esc(sys) + "</span><span class='nums'>" +
-        dscan.found + " / " + dscan.total + "<small>bodies</small></span>";
+        "<span class='sys' title='" +
+        esc(sys) +
+        "'>" +
+        esc(sys) +
+        "</span><span class='nums'>" +
+        dscan.found +
+        " / " +
+        dscan.total +
+        "<small>bodies</small></span>";
       return complete ? "ok" : null;
     },
   };
@@ -508,7 +546,8 @@
     for (var i = 0; i < bodies.length; i++) {
       if (((bodies[i].state || {}).key || "") === key) return bodies[i];
     }
-    if (d.exoOverlayFocusBody && ((d.exoOverlayFocusBody.state || {}).key || "") === key) return d.exoOverlayFocusBody;
+    if (d.exoOverlayFocusBody && ((d.exoOverlayFocusBody.state || {}).key || "") === key)
+      return d.exoOverlayFocusBody;
     return null;
   }
   /*
@@ -530,7 +569,12 @@
     }
     if (!focusKey) return null;
     var fb = bodyByKey(d, focusKey);
-    return { body: fb, key: focusKey, name: fb ? (fb.tabLabel || (fb.state || {}).bodyName || focusKey) : focusKey, target: false };
+    return {
+      body: fb,
+      key: focusKey,
+      name: fb ? fb.tabLabel || (fb.state || {}).bodyName || focusKey : focusKey,
+      target: false,
+    };
   }
   /**
    * Same rule as the app's candidate list: the unlikely tier stays hidden — unless something has
@@ -574,7 +618,9 @@
       regionEl.style.display = showRegion && regionName ? "" : "none";
       if (regionName) q(root, "regionV").textContent = regionName;
       function facts(body, sig, dss, target) {
-        var b = q(root, "body"), s = q(root, "sig"), x = q(root, "dss");
+        var b = q(root, "body"),
+          s = q(root, "sig"),
+          x = q(root, "dss");
         q(root, "bodyK").textContent = target ? "Target body" : "Body";
         b.textContent = body || "—";
         b.className = "v" + (body ? "" : " dim") + (target ? " tgt" : "");
@@ -608,7 +654,11 @@
       if (!bc) {
         status.textContent = pick.target ? "Target" : "No data";
         facts(pick.name, null, null, pick.target);
-        plain(pick.target ? "No exobiology data for this body yet — FSS or DSS it." : "No exobiology data for this body.");
+        plain(
+          pick.target
+            ? "No exobiology data for this body yet — FSS or DSS it."
+            : "No exobiology data for this body.",
+        );
         return null;
       }
       var st = bc.state || {};
@@ -692,7 +742,16 @@
     three samples into. The colour is a hash of the species name, so a species keeps the same
     colour for as long as it is on screen, and no palette entry is green.
   */
-  var LEFTOVER_COLOURS = ["#c9a227", "#b25fd0", "#3fa7d6", "#e06c4a", "#d05a86", "#5a8bd0", "#a8842c", "#8c6fd0"];
+  var LEFTOVER_COLOURS = [
+    "#c9a227",
+    "#b25fd0",
+    "#3fa7d6",
+    "#e06c4a",
+    "#d05a86",
+    "#5a8bd0",
+    "#a8842c",
+    "#8c6fd0",
+  ];
   function leftoverColour(label) {
     var h = 0;
     var t = String(label || "");
@@ -713,15 +772,40 @@
       '<defs><linearGradient id="hudSweepGrad" x1="0" y1="0" x2="1" y2="0">' +
       '<stop offset="0" stop-color="currentColor" stop-opacity="0"/>' +
       '<stop offset="1" stop-color="currentColor" stop-opacity="0.28"/></linearGradient></defs>' +
-      '<circle class="minimap-rim-outer" cx="0" cy="0" r="' + (MAP_R + 7) + '" />' +
-      '<circle class="minimap-rim" cx="0" cy="0" r="' + MAP_R + '" />' +
-      '<circle class="minimap-grid" cx="0" cy="0" r="' + MAP_R / 4 + '" />' +
-      '<circle class="minimap-grid" cx="0" cy="0" r="' + MAP_R / 2 + '" />' +
-      '<circle class="minimap-grid" cx="0" cy="0" r="' + (MAP_R * 3) / 4 + '" />' +
-      '<line class="minimap-cross" x1="-' + MAP_R + '" y1="0" x2="' + MAP_R + '" y2="0" />' +
-      '<line class="minimap-cross" x1="0" y1="-' + MAP_R + '" x2="0" y2="' + MAP_R + '" />' +
-      '<path class="minimap-sweep" style="color:var(--hud)" d="M0,0 L' + MAP_R + ",0 A" + MAP_R + "," + MAP_R +
-      " 0 0,0 0,-" + MAP_R + '" />' +
+      '<circle class="minimap-rim-outer" cx="0" cy="0" r="' +
+      (MAP_R + 7) +
+      '" />' +
+      '<circle class="minimap-rim" cx="0" cy="0" r="' +
+      MAP_R +
+      '" />' +
+      '<circle class="minimap-grid" cx="0" cy="0" r="' +
+      MAP_R / 4 +
+      '" />' +
+      '<circle class="minimap-grid" cx="0" cy="0" r="' +
+      MAP_R / 2 +
+      '" />' +
+      '<circle class="minimap-grid" cx="0" cy="0" r="' +
+      (MAP_R * 3) / 4 +
+      '" />' +
+      '<line class="minimap-cross" x1="-' +
+      MAP_R +
+      '" y1="0" x2="' +
+      MAP_R +
+      '" y2="0" />' +
+      '<line class="minimap-cross" x1="0" y1="-' +
+      MAP_R +
+      '" x2="0" y2="' +
+      MAP_R +
+      '" />' +
+      '<path class="minimap-sweep" style="color:var(--hud)" d="M0,0 L' +
+      MAP_R +
+      ",0 A" +
+      MAP_R +
+      "," +
+      MAP_R +
+      " 0 0,0 0,-" +
+      MAP_R +
+      '" />' +
       '<g class="mm-world"></g><g class="mm-you"></g>';
   }
   function arcPath(r, a0, a1) {
@@ -729,7 +813,8 @@
       var t = (a * Math.PI) / 180;
       return [(r * Math.cos(t)).toFixed(1), (r * Math.sin(t)).toFixed(1)];
     };
-    var s = p(a0), e = p(a1);
+    var s = p(a0),
+      e = p(a1);
     var large = Math.abs(a1 - a0) > 180 ? 1 : 0;
     return "M" + s[0] + "," + s[1] + " A" + r + "," + r + " 0 " + large + ",1 " + e[0] + "," + e[1];
   }
@@ -761,8 +846,15 @@
     for (var t = 0; t < 360; t += 30) {
       var major = t % 90 === 0;
       parts.push(
-        '<line class="minimap-tick' + (major ? " minimap-tick--major" : "") + '" x1="0" y1="-' + MAP_R +
-          '" x2="0" y2="-' + (MAP_R + (major ? 7 : 4)) + '" transform="rotate(' + t + ')" />',
+        '<line class="minimap-tick' +
+          (major ? " minimap-tick--major" : "") +
+          '" x1="0" y1="-' +
+          MAP_R +
+          '" x2="0" y2="-' +
+          (MAP_R + (major ? 7 : 4)) +
+          '" transform="rotate(' +
+          t +
+          ')" />',
       );
     }
     var firstActive = null;
@@ -778,13 +870,27 @@
       if (r <= MAP_R - 6) {
         if (m.kind === "ship") {
           parts.push(
-            '<g transform="translate(' + x.toFixed(1) + "," + y.toFixed(1) + ") rotate(" + (-rot).toFixed(2) +
-              ')"><polygon class="minimap-ship" points="0,-5.5 5,4.5 0,2.2 -5,4.5" />' + title + "</g>",
+            '<g transform="translate(' +
+              x.toFixed(1) +
+              "," +
+              y.toFixed(1) +
+              ") rotate(" +
+              (-rot).toFixed(2) +
+              ')"><polygon class="minimap-ship" points="0,-5.5 5,4.5 0,2.2 -5,4.5" />' +
+              title +
+              "</g>",
           );
         } else {
           parts.push(
-            '<rect class="minimap-sample"' + tint + ' x="-3.2" y="-3.2" width="6.4" height="6.4" transform="translate(' +
-              x.toFixed(1) + "," + y.toFixed(1) + ') rotate(45)">' + title + "</rect>",
+            '<rect class="minimap-sample"' +
+              tint +
+              ' x="-3.2" y="-3.2" width="6.4" height="6.4" transform="translate(' +
+              x.toFixed(1) +
+              "," +
+              y.toFixed(1) +
+              ') rotate(45)">' +
+              title +
+              "</rect>",
           );
         }
       } else {
@@ -792,13 +898,34 @@
         var ax = Math.cos((ang * Math.PI) / 180) * (MAP_R - 8);
         var ay = Math.sin((ang * Math.PI) / 180) * (MAP_R - 8);
         parts.push(
-          '<g transform="translate(' + ax.toFixed(1) + "," + ay.toFixed(1) + ") rotate(" + ang.toFixed(1) +
-            ')"><polygon class="minimap-arrow--' + cls + '"' + tint + ' points="7,0 -3,-4.5 -3,4.5" />' + title + "</g>",
+          '<g transform="translate(' +
+            ax.toFixed(1) +
+            "," +
+            ay.toFixed(1) +
+            ") rotate(" +
+            ang.toFixed(1) +
+            ')"><polygon class="minimap-arrow--' +
+            cls +
+            '"' +
+            tint +
+            ' points="7,0 -3,-4.5 -3,4.5" />' +
+            title +
+            "</g>",
         );
         parts.push(
-          '<text class="minimap-far-label" x="' + (ax * 0.8).toFixed(1) + '" y="' + (ay * 0.8).toFixed(1) +
-            '" text-anchor="middle" transform="rotate(' + (-rot).toFixed(2) + "," + (ax * 0.8).toFixed(1) + "," +
-            (ay * 0.8).toFixed(1) + ')">' + Math.round(m.distanceM) + "</text>",
+          '<text class="minimap-far-label" x="' +
+            (ax * 0.8).toFixed(1) +
+            '" y="' +
+            (ay * 0.8).toFixed(1) +
+            '" text-anchor="middle" transform="rotate(' +
+            (-rot).toFixed(2) +
+            "," +
+            (ax * 0.8).toFixed(1) +
+            "," +
+            (ay * 0.8).toFixed(1) +
+            ')">' +
+            Math.round(m.distanceM) +
+            "</text>",
         );
       }
     }
@@ -808,13 +935,21 @@
       var rr = Math.min(minR + 6, MAP_R - 4);
       parts.push('<path class="minimap-hint" d="' + arcPath(rr, away - 55, away + 55) + '" />');
       parts.push(
-        '<polygon class="minimap-hint-arrow" transform="rotate(' + away.toFixed(1) + ') translate(' + (rr + 4).toFixed(1) +
+        '<polygon class="minimap-hint-arrow" transform="rotate(' +
+          away.toFixed(1) +
+          ") translate(" +
+          (rr + 4).toFixed(1) +
           ',0)" points="0,-4 6,0 0,4" />',
       );
     }
     parts.push(
-      '<text class="minimap-north" x="0" y="' + (-MAP_R + 13) + '" text-anchor="middle" transform="rotate(' +
-        (-rot).toFixed(2) + ",0," + (-MAP_R + 13) + ')">NORTH</text>',
+      '<text class="minimap-north" x="0" y="' +
+        (-MAP_R + 13) +
+        '" text-anchor="middle" transform="rotate(' +
+        (-rot).toFixed(2) +
+        ",0," +
+        (-MAP_R + 13) +
+        ')">NORTH</text>',
     );
     parts.push("</g>");
     svg.querySelector(".mm-world").innerHTML = parts.join("");
@@ -981,7 +1116,13 @@
     var st = svg.__mmPredict;
     if (!st) {
       st = svg.__mmPredict = {
-        last: null, at: 0, gap: 0, motion: null, raf: 0, sig: null, hint: hint,
+        last: null,
+        at: 0,
+        gap: 0,
+        motion: null,
+        raf: 0,
+        sig: null,
+        hint: hint,
       };
     }
 
@@ -1082,7 +1223,10 @@
       var showTracker = onSurface || live;
       trk.classList.toggle("trk--away", !showTracker);
       away.classList.toggle("trk__away--on", !showTracker);
-      var pay = q(root, "pay"), note = q(root, "note"), cele = q(root, "cele"), timer = q(root, "timer");
+      var pay = q(root, "pay"),
+        note = q(root, "note"),
+        cele = q(root, "cele"),
+        timer = q(root, "timer");
       var rowClass = function (name, muted) {
         var el = q(root, name);
         var row = el.closest(".row");
@@ -1114,7 +1258,11 @@
       }
       var state = eo.phase === "celebrate" ? "ok" : tooClose ? "warn" : null;
       status.textContent =
-        eo.phase === "celebrate" ? "Complete" : tooClose ? "Too close" : "Sampling " + Math.min(eo.sampleCount || 0, 3) + " / 3";
+        eo.phase === "celebrate"
+          ? "Complete"
+          : tooClose
+            ? "Too close"
+            : "Sampling " + Math.min(eo.sampleCount || 0, 3) + " / 3";
       q(root, "species").textContent = cap(eo.speciesDisplay || "—");
       q(root, "minGap").textContent = eo.minSampleDistanceM > 0 ? eo.minSampleDistanceM + " m" : "—";
       rowClass("minGap", false);
@@ -1160,11 +1308,15 @@
         cele.style.display = "block";
         cele.textContent = "Complete — hiding in " + (eo.celebrationRemainSec || 0) + "s";
       } else if (eo.sampleCount >= 2) {
-        var a = eo.payLoggedCodex, b = eo.payNewCodex;
+        var a = eo.payLoggedCodex,
+          b = eo.payNewCodex;
         if (a != null && b != null) {
           pay.innerHTML =
-            "<span class='pay-est'>" + fmtCr(b).replace(" CR", "") + "<small>new</small>· " +
-            fmtCr(a).replace(" CR", "") + "<small>logged</small></span>";
+            "<span class='pay-est'>" +
+            fmtCr(b).replace(" CR", "") +
+            "<small>new</small>· " +
+            fmtCr(a).replace(" CR", "") +
+            "<small>logged</small></span>";
         } else pay.textContent = "—";
         note.textContent =
           "Estimates: new codex = 5× list; logged codex = list × footfall (×1 or ×5). These are not multiplied together.";
@@ -1173,7 +1325,9 @@
         note.textContent =
           eo.sampleCount === 1
             ? tooClose
-              ? "Too close to Scan 1 — walk ≥ " + (eo.minSampleDistanceM || "?") + " m the way the radar arc points."
+              ? "Too close to Scan 1 — walk ≥ " +
+                (eo.minSampleDistanceM || "?") +
+                " m the way the radar arc points."
               : "Need ≥ " + (eo.minSampleDistanceM || "?") + " m from first sample before second."
             : "";
       }
@@ -1289,7 +1443,9 @@
     fs.setAttribute("aria-label", "Full screen");
     fs.title = "Full screen (tap again, or the back button, to leave). iPhone: use Add to Home Screen.";
     fs.textContent = "\u26F6";
-    var canFs = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+    var canFs = !!(
+      document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen
+    );
     if (!canFs) fs.classList.add("phone-chip--dim");
     fs.addEventListener("click", function () {
       try {
@@ -1351,7 +1507,15 @@
     }
     root.innerHTML = list
       .map(function (n) {
-        return '<section class="hud-section hud-section--' + n + '" data-section="' + n + '">' + SECTIONS[n].html() + "</section>";
+        return (
+          '<section class="hud-section hud-section--' +
+          n +
+          '" data-section="' +
+          n +
+          '">' +
+          SECTIONS[n].html() +
+          "</section>"
+        );
       })
       .join("");
     // the fill layer sits under the sections (after innerHTML, which would have wiped it)
@@ -1368,7 +1532,8 @@
     });
 
     function applyState(el, state) {
-      el.className = el.className.replace(/\s*hud-section--(ok|warn)/g, "") + (state ? " hud-section--" + state : "");
+      el.className =
+        el.className.replace(/\s*hud-section--(ok|warn)/g, "") + (state ? " hud-section--" + state : "");
       if (single) {
         shell.className = "shell" + (state === "ok" ? " shell--ok" : state === "warn" ? " shell--warn" : "");
         panel.className = "panel" + (state === "ok" ? " panel--ok" : state === "warn" ? " panel--warn" : "");

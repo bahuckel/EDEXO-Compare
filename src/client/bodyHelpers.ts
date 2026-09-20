@@ -36,7 +36,7 @@ export interface SpanshRouteSummaryDTO {
 export function tripRankLabel(rank: number): string {
   if (rank === 1) return "nearest";
   const tens = rank % 100;
-  const suffix = tens >= 11 && tens <= 13 ? "th" : ["th", "st", "nd", "rd"][rank % 10] ?? "th";
+  const suffix = tens >= 11 && tens <= 13 ? "th" : (["th", "st", "nd", "rd"][rank % 10] ?? "th");
   return `${rank}${suffix} nearest`;
 }
 

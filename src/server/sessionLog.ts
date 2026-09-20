@@ -48,7 +48,13 @@ export class SessionLog {
       const key = addr != null && bodyId != null ? `${addr}:${bodyId}` : null;
       const last = this.landings[this.landings.length - 1];
       if (last && last.body === body && Date.parse(at) - Date.parse(last.at) < 5 * 60_000) return false;
-      this.push(this.landings, { body, system, at, firstFootfall: key != null && store.firstFootfallBodies.has(key), key });
+      this.push(this.landings, {
+        body,
+        system,
+        at,
+        firstFootfall: key != null && store.firstFootfallBodies.has(key),
+        key,
+      });
       return true;
     }
     if (event === "Disembark" || event === "Disembarked") {

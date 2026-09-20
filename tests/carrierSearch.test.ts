@@ -31,8 +31,7 @@ const networkRow = {
   dssa: { commander: "Gleaner Chalmers" },
 };
 
-const find = (r: typeof row | typeof networkRow, q: string) =>
-  carrierMatchesQuery(r, parseCarrierQuery(q));
+const find = (r: typeof row | typeof networkRow, q: string) => carrierMatchesQuery(r, parseCarrierQuery(q));
 
 describe("parseCarrierQuery", () => {
   it("splits on whitespace and lowercases", () => {

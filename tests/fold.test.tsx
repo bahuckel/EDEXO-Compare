@@ -25,7 +25,13 @@ beforeEach(() => {
 function mount(defaultOpen?: boolean) {
   act(() => {
     root!.render(
-      <FoldPanel foldKey="t" title="Panel" summary="a summary" aside={<button type="button">aside</button>} defaultOpen={defaultOpen}>
+      <FoldPanel
+        foldKey="t"
+        title="Panel"
+        summary="a summary"
+        aside={<button type="button">aside</button>}
+        defaultOpen={defaultOpen}
+      >
         <p>content</p>
       </FoldPanel>,
     );

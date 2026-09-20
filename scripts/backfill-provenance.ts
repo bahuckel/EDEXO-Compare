@@ -67,7 +67,9 @@ const before = {
   withBody: count("SELECT COUNT(*) FROM planets WHERE body_data_origin IS NOT NULL"),
 };
 
-console.log(`corpus: ${before.sightings.toLocaleString()} sightings, ${before.planets.toLocaleString()} planets`);
+console.log(
+  `corpus: ${before.sightings.toLocaleString()} sightings, ${before.planets.toLocaleString()} planets`,
+);
 console.log(`  already tagged: ${before.withClaim} claims, ${before.withBody} bodies`);
 
 /**

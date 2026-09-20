@@ -90,9 +90,7 @@ export function colourFromBodyMaterials(
 ): ColourVariantAnswer {
   if (rule?.source !== "material") return NONE;
   if (!materials?.length) return NONE;
-  const present = new Set(
-    materials.map((m) => normaliseMaterial(String(m?.Name ?? ""))).filter(Boolean),
-  );
+  const present = new Set(materials.map((m) => normaliseMaterial(String(m?.Name ?? ""))).filter(Boolean));
   const hits: { material: string; colour: string }[] = [];
   for (const [material, colour] of Object.entries(rule.map)) {
     if (present.has(normaliseMaterial(material)) && colour?.trim()) {

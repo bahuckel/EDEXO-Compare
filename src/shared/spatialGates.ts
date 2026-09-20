@@ -208,7 +208,8 @@ export function evaluateSpatialGate(
 
 /** One line for the reader: the distance, the rule, and the object it was measured to. */
 export function describeVerdict(v: SpatialVerdict): string {
-  const d = v.distanceLy >= 1000 ? `${Math.round(v.distanceLy / 100) / 10} kly` : `${Math.round(v.distanceLy)} ly`;
+  const d =
+    v.distanceLy >= 1000 ? `${Math.round(v.distanceLy / 100) / 10} kly` : `${Math.round(v.distanceLy)} ly`;
   const rule = v.thresholdLy >= 1000 ? `${v.thresholdLy / 1000} kly` : `${v.thresholdLy} ly`;
   // The core is one named place; the other two are "the nearest of many", and the sentence has to
   // read correctly for both rather than gluing an article onto a noun that does not want one.

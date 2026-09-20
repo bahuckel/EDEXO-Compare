@@ -1,4 +1,9 @@
-import type { BodyExoState, ExplorationScanRecord, PlanetScan, SpeciesMatchContext } from "../shared/types.js";
+import type {
+  BodyExoState,
+  ExplorationScanRecord,
+  PlanetScan,
+  SpeciesMatchContext,
+} from "../shared/types.js";
 import { journalPressureToAtm, LIGHT_SECOND_METERS } from "../shared/journalPhysics.js";
 import {
   allStarParentIds,

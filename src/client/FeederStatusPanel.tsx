@@ -152,8 +152,8 @@ export function FeederStatusPanel({ status }: { status: FeederStatusDTO | null }
           What is excluded{" "}
           <InfoPopover title="Corpus species with no database row" label="What is excluded">
             <p>
-              {unmatchedCorpusLabels.length} species in the corpus have no row in the species database, so
-              no profile is built for them and the app never ranks them:
+              {unmatchedCorpusLabels.length} species in the corpus have no row in the species database, so no
+              profile is built for them and the app never ranks them:
             </p>
             <p className="options-feeder-species">{unmatchedCorpusLabels.join(", ")}</p>
             <p>

@@ -52,7 +52,7 @@ export const NO_VOLCANISM = "none";
  * from it bought decidability without costing recall. The full table and the one near-miss (the
  * atmosphere floor at 20) are in speciesAtmosphereObservations.ts; the runner is
  * scripts/floor-sweep.ts.
- */export const MIN_VOLCANISM_OBSERVATIONS = observationFloor("VOLCANISM", 5);
+ */ export const MIN_VOLCANISM_OBSERVATIONS = observationFloor("VOLCANISM", 5);
 
 /**
  * Type without intensity: `Minor Metallic Magma`, `Major Metallic Magma` and

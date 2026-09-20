@@ -312,6 +312,9 @@ export function formatRehydrationReport(r: RehydrationReport, apply: boolean): s
     lines.push("", "  mismatches, first few:");
     for (const m of r.mismatchExamples) lines.push(`    ${m.body}  pack ${m.pack}  dump ${m.dump}`);
   }
-  lines.push("", apply ? `  written: ${numericOverlayPath()}` : "  Nothing was written. Re-run with --apply.");
+  lines.push(
+    "",
+    apply ? `  written: ${numericOverlayPath()}` : "  Nothing was written. Re-run with --apply.",
+  );
   return lines.join("\n");
 }

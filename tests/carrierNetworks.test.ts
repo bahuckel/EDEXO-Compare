@@ -16,11 +16,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  CARRIER_NETWORKS,
-  OASIS_NETWORK,
-  networkForCallsign,
-} from "../src/shared/carrierNetworks.js";
+import { CARRIER_NETWORKS, OASIS_NETWORK, networkForCallsign } from "../src/shared/carrierNetworks.js";
 import {
   countCarriers,
   queryCarriers,
@@ -142,10 +138,7 @@ describe("filtering a carrier list to a network", () => {
   it("finds a member by its roster name in search, not only by callsign", () => {
     // "korriban" appears nowhere in EDAstro's row for W5X-43H other than through the roster name.
     expect(queryCarriers({ origin, search: "korriban" }).map((r) => r.callsign)).toEqual(["W5X-43H"]);
-    expect(queryCarriers({ origin, search: "oasis" }).map((r) => r.callsign)).toEqual([
-      "G8Q-9QN",
-      "W5X-43H",
-    ]);
+    expect(queryCarriers({ origin, search: "oasis" }).map((r) => r.callsign)).toEqual(["G8Q-9QN", "W5X-43H"]);
   });
 
   it("the count agrees with the list", () => {

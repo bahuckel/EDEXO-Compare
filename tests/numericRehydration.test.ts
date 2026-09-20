@@ -78,8 +78,7 @@ beforeEach(() => {
 
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-const run = async () =>
-  rehydrateNumericsFromDump(dumpFile, { apply: true, planetsDir: planets, outFile });
+const run = async () => rehydrateNumericsFromDump(dumpFile, { apply: true, planetsDir: planets, outFile });
 
 const overlay = (): NumericOverlay => JSON.parse(readFileSync(outFile, "utf8")) as NumericOverlay;
 
@@ -89,7 +88,12 @@ describe("choosing what to repair", () => {
       A pack that already holds a float came from a source with the resolution. Replacing it with
       another source's float is not a repair, it is a preference between measurements.
     */
-    pack("stratum_tectonicas", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 159 });
+    pack("stratum_tectonicas", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 159,
+    });
     pack("stratum_tectonicas", 1, {
       systemName: "Sys A",
       name: "Sys A 1 b",
@@ -104,15 +108,30 @@ describe("choosing what to repair", () => {
 
   it("counts one body once, however many species were sampled on it", () => {
     // The same rock appears in every species' folder it grew. It is still one repair.
-    pack("stratum_tectonicas", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 159 });
-    pack("bacterium_aurasus", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 159 });
+    pack("stratum_tectonicas", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 159,
+    });
+    pack("bacterium_aurasus", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 159,
+    });
     expect(collectIntegerTemperatureBodies(planets).bodyCount).toBe(1);
   });
 });
 
 describe("the walk", () => {
   it("restores a truncated temperature", async () => {
-    pack("stratum_tectonicas", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 159 });
+    pack("stratum_tectonicas", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 159,
+    });
     writeDump([system("100", "Sys A"), dumpBody("100", 4, "Sys A 1 a", 159.864456)]);
 
     const r = await run();
@@ -143,7 +162,12 @@ describe("the walk", () => {
 
   it("keys the overlay by body name, which is what the profile builder can look up", async () => {
     // The builder holds the rounded id64; the name is the only identifier both sides agree on.
-    pack("stratum_tectonicas", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 159 });
+    pack("stratum_tectonicas", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 159,
+    });
     writeDump([system("100", "Sys A"), dumpBody("100", 4, "Sys A 1 a", 159.5)]);
     await run();
     expect(Object.keys(overlay().bodies)).toEqual(["Sys A 1 a"]);
@@ -155,7 +179,12 @@ describe("the walk", () => {
       different measurement — and it is reported, because a count climbing here is how the
       hypothesis gets falsified.
     */
-    pack("stratum_tectonicas", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 401 });
+    pack("stratum_tectonicas", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 401,
+    });
     writeDump([system("100", "Sys A"), dumpBody("100", 4, "Sys A 1 a", 221.078812)]);
 
     const r = await run();
@@ -166,7 +195,12 @@ describe("the walk", () => {
   });
 
   it("leaves a body the dump also records as an integer", async () => {
-    pack("stratum_tectonicas", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 159 });
+    pack("stratum_tectonicas", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 159,
+    });
     writeDump([system("100", "Sys A"), dumpBody("100", 4, "Sys A 1 a", 159)]);
 
     const r = await run();
@@ -176,7 +210,12 @@ describe("the walk", () => {
 
   it("refuses a bodyId whose name disagrees", async () => {
     // A bodyId is only unique within its system; if the name differs, the system match was wrong.
-    pack("stratum_tectonicas", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 159 });
+    pack("stratum_tectonicas", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 159,
+    });
     writeDump([system("100", "Sys A"), dumpBody("100", 4, "Sys A 2 c", 159.7)]);
 
     const r = await run();
@@ -185,7 +224,12 @@ describe("the walk", () => {
   });
 
   it("ignores bodies in systems it was not looking for", async () => {
-    pack("stratum_tectonicas", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 159 });
+    pack("stratum_tectonicas", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 159,
+    });
     writeDump([
       system("100", "Sys A"),
       dumpBody("100", 4, "Sys A 1 a", 159.9),
@@ -201,7 +245,12 @@ describe("the walk", () => {
 
   it("writes nothing without --apply", async () => {
     // A half-applied repair looks finished; the report has to be readable before anything changes.
-    pack("stratum_tectonicas", 0, { systemName: "Sys A", name: "Sys A 1 a", bodyId: 4, surfaceTemperature: 159 });
+    pack("stratum_tectonicas", 0, {
+      systemName: "Sys A",
+      name: "Sys A 1 a",
+      bodyId: 4,
+      surfaceTemperature: 159,
+    });
     writeDump([system("100", "Sys A"), dumpBody("100", 4, "Sys A 1 a", 159.9)]);
 
     const r = await rehydrateNumericsFromDump(dumpFile, { apply: false, planetsDir: planets, outFile });

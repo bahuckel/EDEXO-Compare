@@ -27,9 +27,8 @@ const {
   seedEdsmDiscardCacheForTests,
 } = await import("../src/server/edsmUpload.js");
 const { runEdsmCatchUp } = await import("../src/server/edsmCatchUp.js");
-const { readEdsmUploadLedger, resetEdsmUploadLedgerForTests } = await import(
-  "../src/server/edsmUploadLedger.js"
-);
+const { readEdsmUploadLedger, resetEdsmUploadLedgerForTests } =
+  await import("../src/server/edsmUploadLedger.js");
 
 const creds = { commanderName: "TESTCMDR", apiKey: "0123456789abcdef0123456789abcdef01234567" };
 
@@ -62,7 +61,14 @@ function fakeEdsm(opts: { failAfter?: number; fatal?: boolean } = {}) {
       { status: 200 },
     );
   }) as unknown as typeof fetch;
-  return { impl, batches, forms, get calls() { return calls; } };
+  return {
+    impl,
+    batches,
+    forms,
+    get calls() {
+      return calls;
+    },
+  };
 }
 
 beforeEach(() => {
@@ -89,7 +95,12 @@ describe("reply codes", () => {
 
   it("treats a 2xx as fatal, so a bad key is not retried for ever", async () => {
     const server = fakeEdsm({ failAfter: 0, fatal: true });
-    const res = await postEdsmJournalBatch(creds, [{ event: "FSDJump" }], { gameVersion: null, gameBuild: null }, server.impl);
+    const res = await postEdsmJournalBatch(
+      creds,
+      [{ event: "FSDJump" }],
+      { gameVersion: null, gameBuild: null },
+      server.impl,
+    );
     expect(res.ok).toBe(false);
     expect(res.fatal).toBe(true);
     expect(res.error).toContain("Commander name/API key not found");
@@ -97,7 +108,12 @@ describe("reply codes", () => {
 
   it("counts a 5xx as accepted, because EDSM kept the events", async () => {
     const server = fakeEdsm({ failAfter: 0, fatal: false });
-    const res = await postEdsmJournalBatch(creds, [{ event: "FSDJump" }, { event: "Scan" }], { gameVersion: null, gameBuild: null }, server.impl);
+    const res = await postEdsmJournalBatch(
+      creds,
+      [{ event: "FSDJump" }, { event: "Scan" }],
+      { gameVersion: null, gameBuild: null },
+      server.impl,
+    );
     expect(res.ok).toBe(true);
     expect(res.accepted).toBe(2);
     expect(res.fatal).toBe(false);
@@ -105,11 +121,15 @@ describe("reply codes", () => {
 
   it("counts a per-event 4xx as rejected rather than accepted", async () => {
     const impl = (async () =>
-      new Response(
-        JSON.stringify({ msgnum: 100, events: [{ msgnum: 100 }, { msgnum: 401 }] }),
-        { status: 200 },
-      )) as unknown as typeof fetch;
-    const res = await postEdsmJournalBatch(creds, [{ event: "A" }, { event: "B" }], { gameVersion: null, gameBuild: null }, impl);
+      new Response(JSON.stringify({ msgnum: 100, events: [{ msgnum: 100 }, { msgnum: 401 }] }), {
+        status: 200,
+      })) as unknown as typeof fetch;
+    const res = await postEdsmJournalBatch(
+      creds,
+      [{ event: "A" }, { event: "B" }],
+      { gameVersion: null, gameBuild: null },
+      impl,
+    );
     expect(res).toMatchObject({ ok: true, accepted: 1, rejected: 1 });
   });
 });
@@ -205,7 +225,10 @@ describe("a catch-up run", () => {
     const first = fakeEdsm();
     await runEdsmCatchUp({ journalDir: tmp, credentials: creds, fetchImpl: first.impl, gapMs: 0 });
 
-    writeJournal(tmp, name, [...journal(1), { timestamp: "2026-09-01T11:00:00Z", event: "Scan", BodyName: "Sol 9" }]);
+    writeJournal(tmp, name, [
+      ...journal(1),
+      { timestamp: "2026-09-01T11:00:00Z", event: "Scan", BodyName: "Sol 9" },
+    ]);
     const second = fakeEdsm();
     await runEdsmCatchUp({ journalDir: tmp, credentials: creds, fetchImpl: second.impl, gapMs: 0 });
     const sent = second.batches.flat();
@@ -296,7 +319,10 @@ describe("a catch-up run", () => {
     writeJournal(tmp, "Journal.2026-09-01T100000.01.log", journal(1));
     const server = fakeEdsm();
     await runEdsmCatchUp({ journalDir: tmp, credentials: creds, fetchImpl: server.impl, gapMs: 0 });
-    const bodies = server.batches.flat().filter((e) => e.event === "Scan").map((e) => e.BodyName);
+    const bodies = server.batches
+      .flat()
+      .filter((e) => e.event === "Scan")
+      .map((e) => e.BodyName);
     expect(bodies).toEqual(["Sol 1", "Sol 2"]);
   });
 

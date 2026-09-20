@@ -1,7 +1,10 @@
 import { useState, type ReactNode } from "react";
 import type { BodyComputed, PlanetScan } from "@shared/types";
 import { settledMultiplier } from "@shared/footfallValue";
-import { candidateMorphColorShortLabel, candidateMorphColorShortLabelForHosts } from "@shared/candidateSpawnHints";
+import {
+  candidateMorphColorShortLabel,
+  candidateMorphColorShortLabelForHosts,
+} from "@shared/candidateSpawnHints";
 import { infoGatherReasons } from "@shared/infoGather";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useFootfallCertainty } from "./footfallContext";
@@ -52,7 +55,9 @@ function splitName(m: Match): { genus: string; epithet: string } {
   const genus = (m.entry.genus || "").trim();
   const full = (m.entry.displayName || "").trim();
   const epithet =
-    genus && full.toLowerCase().startsWith(genus.toLowerCase() + " ") ? full.slice(genus.length + 1).trim() : full;
+    genus && full.toLowerCase().startsWith(genus.toLowerCase() + " ")
+      ? full.slice(genus.length + 1).trim()
+      : full;
   return { genus: titleCaseSpeciesWords(genus), epithet: titleCaseSpeciesWords(epithet) };
 }
 
@@ -125,7 +130,8 @@ export function SpeciesRow({
   */
   const thumbUrl = heroPhotoUrlFor(m, colourRaw);
   const chance = m.presenceProbabilityPercent;
-  const chancePct = typeof chance === "number" && Number.isFinite(chance) ? Math.max(0, Math.min(100, chance)) : null;
+  const chancePct =
+    typeof chance === "number" && Number.isFinite(chance) ? Math.max(0, Math.min(100, chance)) : null;
   const fit = m.exomasterySimilarityPercent;
   const dist = m.entry.genusMinSampleDistanceM;
   const [thumbMissing, setThumbMissing] = useState(false);
@@ -169,9 +175,15 @@ export function SpeciesRow({
         <span className="srow-name">
           {genus ? <em>{genus} </em> : null}
           {epithet}
-          <span className={`srow-colour${colourUnknown ? " srow-colour--unknown" : ""}`}> - {colourUnknown ? "colour unknown" : colourRaw}</span>
+          <span className={`srow-colour${colourUnknown ? " srow-colour--unknown" : ""}`}>
+            {" "}
+            - {colourUnknown ? "colour unknown" : colourRaw}
+          </span>
           {m.notInCodex ? (
-            <span className="srow-tag srow-tag--new" title="No codex entry for this species in your journals yet">
+            <span
+              className="srow-tag srow-tag--new"
+              title="No codex entry for this species in your journals yet"
+            >
               new to you
             </span>
           ) : null}
@@ -181,7 +193,10 @@ export function SpeciesRow({
             </span>
           ) : null}
           {m.unlikely ? (
-            <span className="srow-tag srow-tag--unlikely" title={(m.unlikelyReasons ?? []).map((r) => r.detail).join("\n\n")}>
+            <span
+              className="srow-tag srow-tag--unlikely"
+              title={(m.unlikelyReasons ?? []).map((r) => r.detail).join("\n\n")}
+            >
               unlikely
             </span>
           ) : null}
@@ -234,7 +249,10 @@ export function SpeciesRow({
         <span className="srow-prog-slot">
           {prog ? <span className={`srow-prog srow-prog--${prog.cls}`}>{prog.text}</span> : null}
         </span>
-        <span className="srow-metric srow-fit" title="Habitat fit: how closely this body resembles the bodies this species was found on">
+        <span
+          className="srow-metric srow-fit"
+          title="Habitat fit: how closely this body resembles the bodies this species was found on"
+        >
           {typeof fit === "number" && Number.isFinite(fit) ? (
             <>
               <small>fit</small>
@@ -242,7 +260,10 @@ export function SpeciesRow({
             </>
           ) : null}
         </span>
-        <span className="srow-metric srow-dist" title="Minimum distance between the three samples for this genus">
+        <span
+          className="srow-metric srow-dist"
+          title="Minimum distance between the three samples for this genus"
+        >
           {dist != null && dist > 0 ? (
             <>
               <small>gap</small>
@@ -250,7 +271,10 @@ export function SpeciesRow({
             </>
           ) : null}
         </span>
-        <span className="srow-chance" title="Chance here: the probability this species is one of the ones actually on this body">
+        <span
+          className="srow-chance"
+          title="Chance here: the probability this species is one of the ones actually on this body"
+        >
           {chancePct != null ? `${Math.round(chancePct)}%` : "—"}
         </span>
         <span className="srow-price" title={priceTitle}>

@@ -140,10 +140,7 @@ describe("one species per genus", () => {
   });
 
   it("still adds up across different genera", () => {
-    const mixed = [
-      match("b1", "Cheap one", "Bacterium"),
-      match("s1", "Dear one", "Stratum"),
-    ];
+    const mixed = [match("b1", "Cheap one", "Bacterium"), match("s1", "Dear one", "Stratum")];
     const r = computeExoPayoutRangeFromMatches(mixed, prices, 2, "bio_signals", 1, null, false);
     expect(r?.maxCr).toBe(6_000_000);
     expect(r?.incomplete).toBe(false);

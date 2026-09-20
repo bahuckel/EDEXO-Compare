@@ -38,7 +38,12 @@ function cacheFile(name: string, id: number, id64: string, bodies = 2): void {
     name,
     url: `https://www.edsm.net/en/system/bodies/id/${id}`,
     bodyCount: bodies,
-    bodies: Array.from({ length: bodies }, (_, i) => ({ id: id + i, id64: "@@BODY@@", bodyId: i, name: `${name} ${i}` })),
+    bodies: Array.from({ length: bodies }, (_, i) => ({
+      id: id + i,
+      id64: "@@BODY@@",
+      bodyId: i,
+      name: `${name} ${i}`,
+    })),
   };
   const text = JSON.stringify(body, null, 2)
     .replace('"@@ID64@@"', id64)
@@ -74,9 +79,11 @@ describe("parseEdsmSystemIds", () => {
   });
 
   it("skips rows missing a name or an id, and survives junk", () => {
-    expect(parseEdsmSystemIds(`[{"id":1,"id64":${REAL_ID64}},{"name":"X"},{"name":"Y","id":2,"id64":${REAL_ID64}}]`)).toEqual(
-      [{ name: "Y", edsmId: 2, id64: REAL_ID64 }],
-    );
+    expect(
+      parseEdsmSystemIds(
+        `[{"id":1,"id64":${REAL_ID64}},{"name":"X"},{"name":"Y","id":2,"id64":${REAL_ID64}}]`,
+      ),
+    ).toEqual([{ name: "Y", edsmId: 2, id64: REAL_ID64 }]);
     expect(parseEdsmSystemIds("not json")).toEqual([]);
     expect(parseEdsmSystemIds('{"name":"not an array"}')).toEqual([]);
   });
@@ -85,7 +92,11 @@ describe("parseEdsmSystemIds", () => {
 describe("parseSystemCacheHeader", () => {
   it("reads id, id64 and name without parsing the body list", () => {
     const head = `{\n  "id": 15695809,\n  "id64": ${REAL_ID64},\n  "name": "18 Andromedae",\n  "bodyCount": 21,\n  "bodies": [\n    {\n      "id": 109043`;
-    expect(parseSystemCacheHeader(head)).toEqual({ name: "18 Andromedae", edsmId: 15695809, id64: REAL_ID64 });
+    expect(parseSystemCacheHeader(head)).toEqual({
+      name: "18 Andromedae",
+      edsmId: 15695809,
+      id64: REAL_ID64,
+    });
   });
 
   it("keeps the digits of an id64 past 2^53 even from a truncated header", () => {

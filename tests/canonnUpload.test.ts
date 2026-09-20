@@ -66,12 +66,10 @@ describe("reading Canonn's whitelist", () => {
     const rules = parseWhitelist(LIVE);
     expect(matchesWhitelist(rules, line({ event: "Docked", StationName: "Hutton Orbital" }))).toBe(true);
     // Same event, a station Canonn did not ask about.
-    expect(matchesWhitelist(rules, line({ event: "Docked", StationName: "Jameson Memorial" }))).toBe(
+    expect(matchesWhitelist(rules, line({ event: "Docked", StationName: "Jameson Memorial" }))).toBe(false);
+    expect(matchesWhitelist(rules, line({ event: "Interdicted", IsPlayer: false, IsThargoid: false }))).toBe(
       false,
     );
-    expect(
-      matchesWhitelist(rules, line({ event: "Interdicted", IsPlayer: false, IsThargoid: false })),
-    ).toBe(false);
   });
 });
 

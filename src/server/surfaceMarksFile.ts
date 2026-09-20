@@ -80,7 +80,6 @@ function isMark(v: unknown): v is SurfaceMark {
     !!m &&
     typeof m.bodyKey === "string" &&
     typeof m.bodyNameNorm === "string" && // may be "" once repaired — see repairName
-
     typeof m.latDeg === "number" &&
     Number.isFinite(m.latDeg) &&
     typeof m.lonDeg === "number" &&

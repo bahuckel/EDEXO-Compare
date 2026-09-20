@@ -89,8 +89,6 @@ const KIND_FILLED: Record<Kind, boolean> = {
   predicted: false,
 };
 
-
-
 /** The owner's tooltip: confirmed, genus hits, FSS-only, in that order. */
 function evidenceSummary(t: { confirmed: number; genus: number; signal: number; predicted: number }): string {
   const parts: string[] = [];
@@ -279,10 +277,7 @@ export function GalaxySectorMap({
   );
 
   /** Genus for a taxon, from the file. Falls back to the taxon itself for an older map file. */
-  const genusOf = useCallback(
-    (t: string): string => file.taxonGenus?.[t] ?? t,
-    [file],
-  );
+  const genusOf = useCallback((t: string): string => file.taxonGenus?.[t] ?? t, [file]);
 
   /**
    * The taxon the search named, if this map file has ever heard of it.
@@ -549,8 +544,8 @@ export function GalaxySectorMap({
           <header className="galaxy-region__head">
             <h3>{openRegion.name || "Unnamed space"}</h3>
             <span className="dim">
-              {openRegion.rows.length} sector{openRegion.rows.length === 1 ? "" : "s"} ·{" "}
-              {openRegion.bodies} bodies recorded
+              {openRegion.rows.length} sector{openRegion.rows.length === 1 ? "" : "s"} · {openRegion.bodies}{" "}
+              bodies recorded
             </span>
             <button type="button" className="galaxy-region__close" onClick={() => setOpenRegion(null)}>
               Close
@@ -650,11 +645,8 @@ export function GalaxySectorMap({
           className="galaxy-map__legend--layer"
           title="The same, where the journal never reported footfall. The biology is recorded; whether the 5x first-footfall bonus is still intact is not, so the ring is left open."
         >
-          <span
-            className="galaxy-map__swatch galaxy-map__swatch--target-unverified"
-            aria-hidden="true"
-          />
-          … with footfall unconfirmed
+          <span className="galaxy-map__swatch galaxy-map__swatch--target-unverified" aria-hidden="true" />…
+          with footfall unconfirmed
         </li>
         {searchHitCount > 0 ? (
           <li
@@ -668,9 +660,9 @@ export function GalaxySectorMap({
       </ul>
 
       <p className="galaxy-map__caveat">
-        Marker size is the cube root of the body count, so a single sighting stays visible next to a
-        sector holding hundreds. <strong>Density follows commander traffic</strong> — the bright
-        region around Sol is where people fly, not where the plants are.
+        Marker size is the cube root of the body count, so a single sighting stays visible next to a sector
+        holding hundreds. <strong>Density follows commander traffic</strong> — the bright region around Sol is
+        where people fly, not where the plants are.
       </p>
     </div>
   );
@@ -765,10 +757,7 @@ function SectorPlot({
    * diamonds sitting outside them silently stopped being clickable. Reported as "I cannot click
    * them".
    */
-  const cellByKey = useMemo(
-    () => new Map(allCells.map((c) => [sectorCellKey(c), c])),
-    [allCells],
-  );
+  const cellByKey = useMemo(() => new Map(allCells.map((c) => [sectorCellKey(c), c])), [allCells]);
 
   /**
    * Regions or sectors, decided by how far in the commander has zoomed (A3).
@@ -781,7 +770,8 @@ function SectorPlot({
 
   /** Groups are keyed by region, except the unnamed ones which stand alone at their own position. */
   const regionKeyOf = useCallback(
-    (g: RegionGroup<SectorMapCell>) => (g.regionId === 0 ? `unnamed:${g.x},${g.y},${g.z}` : `r:${g.regionId}`),
+    (g: RegionGroup<SectorMapCell>) =>
+      g.regionId === 0 ? `unnamed:${g.x},${g.y},${g.z}` : `r:${g.regionId}`,
     [],
   );
 
@@ -876,7 +866,11 @@ function SectorPlot({
             aria-label={`${projection.label} pitch`}
           />
         </label>
-        <button type="button" onClick={() => vp.zoomBy(1.4, { x: VIEW_W / 2, y: VIEW_H / 2 })} aria-label="Zoom in">
+        <button
+          type="button"
+          onClick={() => vp.zoomBy(1.4, { x: VIEW_W / 2, y: VIEW_H / 2 })}
+          aria-label="Zoom in"
+        >
           +
         </button>
         <button
@@ -909,54 +903,54 @@ function SectorPlot({
         {/* Outside the panned group: the background is the window, not part of the scene. */}
         <rect x={0} y={0} width={VIEW_W} height={VIEW_H} className="galaxy-map__bg" />
         <g transform={vp.transform}>
-        {showBackdrop && galaxyImage ? (
-          /*
-           * The photograph, under the regions and under everything else.
-           *
-           * Drawn as its own element rather than painted into the region canvas, so the browser
-           * samples the original once at the size it is actually shown instead of taking it through
-           * a 2048-pixel intermediate that upscales it by 2.6 and then scales the result back down.
-           * `galaxyImageRect` puts it in grid pixels, which are the region layer's own coordinates,
-           * so the two stay pinned to each other whatever the view does.
-           */
-          (() => {
-            const rect = galaxyImageRect(galaxyImage.width, galaxyImage.height);
-            const u = (px: number) => (px / REGION_MAP_SIZE) * span;
-            return (
-              <image
-                href={galaxyImage.url}
-                x={sx(u(rect.x))}
-                y={sy(span - u(rect.y))}
-                width={sx(u(rect.width)) - sx(0)}
-                height={sy(0) - sy(u(rect.height))}
-                preserveAspectRatio="none"
-                className="galaxy-map__galaxy"
-                opacity={backdropOpacity}
-              />
-            );
-          })()
-        ) : null}
-        {showBackdrop && backdrop ? (
-          /*
-           * The regions over it. `preserveAspectRatio="none"` because sx/sy already place the grid,
-           * and letting the image impose its own aspect would put it out of register with the
-           * markers drawn over it.
-           *
-           * Dropped to {@link REGION_LAYER_ALPHA} when there is a photograph underneath: the two
-           * layers answer different questions and only the boundaries need to read here.
-           */
-          <image
-            href={backdrop}
-            x={sx(0)}
-            y={sy(span)}
-            width={sx(span) - sx(0)}
-            height={sy(0) - sy(span)}
-            preserveAspectRatio="none"
-            className="galaxy-map__backdrop"
-            opacity={backdropOpacity * (galaxyImage ? REGION_LAYER_ALPHA : 1)}
-          />
-        ) : null}
-        {/*
+          {showBackdrop && galaxyImage
+            ? /*
+               * The photograph, under the regions and under everything else.
+               *
+               * Drawn as its own element rather than painted into the region canvas, so the browser
+               * samples the original once at the size it is actually shown instead of taking it through
+               * a 2048-pixel intermediate that upscales it by 2.6 and then scales the result back down.
+               * `galaxyImageRect` puts it in grid pixels, which are the region layer's own coordinates,
+               * so the two stay pinned to each other whatever the view does.
+               */
+              (() => {
+                const rect = galaxyImageRect(galaxyImage.width, galaxyImage.height);
+                const u = (px: number) => (px / REGION_MAP_SIZE) * span;
+                return (
+                  <image
+                    href={galaxyImage.url}
+                    x={sx(u(rect.x))}
+                    y={sy(span - u(rect.y))}
+                    width={sx(u(rect.width)) - sx(0)}
+                    height={sy(0) - sy(u(rect.height))}
+                    preserveAspectRatio="none"
+                    className="galaxy-map__galaxy"
+                    opacity={backdropOpacity}
+                  />
+                );
+              })()
+            : null}
+          {showBackdrop && backdrop ? (
+            /*
+             * The regions over it. `preserveAspectRatio="none"` because sx/sy already place the grid,
+             * and letting the image impose its own aspect would put it out of register with the
+             * markers drawn over it.
+             *
+             * Dropped to {@link REGION_LAYER_ALPHA} when there is a photograph underneath: the two
+             * layers answer different questions and only the boundaries need to read here.
+             */
+            <image
+              href={backdrop}
+              x={sx(0)}
+              y={sy(span)}
+              width={sx(span) - sx(0)}
+              height={sy(0) - sy(span)}
+              preserveAspectRatio="none"
+              className="galaxy-map__backdrop"
+              opacity={backdropOpacity * (galaxyImage ? REGION_LAYER_ALPHA : 1)}
+            />
+          ) : null}
+          {/*
           One circle per region while zoomed out (A3).
 
           Sized by everything recorded inside it, so a region reads as dense or thin at a glance,
@@ -964,58 +958,58 @@ function SectorPlot({
           is a place to look into, not an answer, and painting it as any one of them would be a
           claim no sector makes.
         */}
-        {level === "region" && regionGroups
-          ? regionGroups
-              .filter((g) => isOnScreen(sx(at(g).u), sy(at(g).v), vp.view, VIEW_W, VIEW_H))
-              .map((g) => {
-                const style = TIER_STYLE[g.tier];
-                const cx = sx(at(g).u);
-                const cy = sy(at(g).v);
-                // A floor of 4: a region is always a bigger target than the sectors inside it,
-                // because its whole job at this zoom is to be clickable.
-                const r = 4 + 9 * Math.cbrt(g.bodies / Math.max(1, maxBodies * 4));
-                return (
-                  <g key={regionKeyOf(g)} className="galaxy-map__region">
-                    {/*
+          {level === "region" && regionGroups
+            ? regionGroups
+                .filter((g) => isOnScreen(sx(at(g).u), sy(at(g).v), vp.view, VIEW_W, VIEW_H))
+                .map((g) => {
+                  const style = TIER_STYLE[g.tier];
+                  const cx = sx(at(g).u);
+                  const cy = sy(at(g).v);
+                  // A floor of 4: a region is always a bigger target than the sectors inside it,
+                  // because its whole job at this zoom is to be clickable.
+                  const r = 4 + 9 * Math.cbrt(g.bodies / Math.max(1, maxBodies * 4));
+                  return (
+                    <g key={regionKeyOf(g)} className="galaxy-map__region">
+                      {/*
                       The region the ship is in, ringed — the same pairing the sector marker gets.
                       A region is drawn at the centroid of its sectors, which can be a long way from
                       the commander, so without this the two marks read as unrelated.
                     */}
-                    {youRegionKey === regionKeyOf(g) ? (
+                      {youRegionKey === regionKeyOf(g) ? (
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={(r + 5) * vp.pixel}
+                          className="galaxy-map__you-cell"
+                          pointerEvents="none"
+                          fill="none"
+                          strokeWidth={1.2 * vp.pixel}
+                        />
+                      ) : null}
                       <circle
                         cx={cx}
                         cy={cy}
-                        r={(r + 5) * vp.pixel}
-                        className="galaxy-map__you-cell"
-                        pointerEvents="none"
-                        fill="none"
-                        strokeWidth={1.2 * vp.pixel}
-                      />
-                    ) : null}
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={r * vp.pixel}
-                      fill={g.uniform ? (style.fill ?? "none") : "none"}
-                      fillOpacity={g.uniform && style.fill ? 0.45 : 1}
-                      stroke={g.uniform ? style.stroke : "#8b949e"}
-                      strokeWidth={1.4 * vp.pixel}
-                      strokeDasharray={g.uniform ? undefined : `${2 * vp.pixel} ${1.5 * vp.pixel}`}
-                      style={{ cursor: "pointer" }}
-                      onClick={() => {
-                        if (!vp.panning) onOpenRegion(g);
-                      }}
-                    >
-                      <title>{`${g.name || "unnamed space"}
+                        r={r * vp.pixel}
+                        fill={g.uniform ? (style.fill ?? "none") : "none"}
+                        fillOpacity={g.uniform && style.fill ? 0.45 : 1}
+                        stroke={g.uniform ? style.stroke : "#8b949e"}
+                        strokeWidth={1.4 * vp.pixel}
+                        strokeDasharray={g.uniform ? undefined : `${2 * vp.pixel} ${1.5 * vp.pixel}`}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => {
+                          if (!vp.panning) onOpenRegion(g);
+                        }}
+                      >
+                        <title>{`${g.name || "unnamed space"}
 ${g.rows.length} sector${g.rows.length === 1 ? "" : "s"} · ${g.bodies} bodies recorded
 ${g.uniform ? style.label : "sectors here report different things"}
 Click to list its sectors, or zoom in to split it`}</title>
-                    </circle>
-                  </g>
-                );
-              })
-          : null}
-        {/*
+                      </circle>
+                    </g>
+                  );
+                })
+            : null}
+          {/*
           The commander's own sector is drawn at **both** levels.
 
           Grouping into regions took it away: a region circle sits at the centroid of its sectors,
@@ -1026,34 +1020,34 @@ Click to list its sectors, or zoom in to split it`}</title>
 
           One extra circle, and the ring below pairs it with the ship.
         */}
-        {(level === "sector"
-          ? rows.filter((row) => isOnScreen(sx(at(row).u), sy(at(row).v), vp.view, VIEW_W, VIEW_H))
-          : rows.filter((row) => commander != null && sectorCellKey(row.cell) === commander.key)
-        ).map(({ cell, bodies, tier, ...pos }) => {
-          const r = 2 + 7 * Math.cbrt(bodies / maxBodies);
-          const isHit = highlight?.key === cell.key;
-          /*
-           * Outlined, not filled, once there is a galaxy behind them.
-           *
-           * A filled marker over the backdrop hides the region it sits in, which is the one thing
-           * the backdrop was added to show. Hollow keeps both readable, and the evidence colour
-           * moves to the stroke where it still reads at this size. Without a backdrop the original
-           * filled form is kept: on a flat background hollow markers are harder to see, not easier.
-           */
-          /*
-           * The tier — what this sector is worth the commander's attention for, not what is best
-           * known about it — is decided above this component now, because the region grouping needs
-           * it too. See shared/galaxyTier.ts for the ladder itself.
-           */
-          const m = mine.get(cell.key);
-          const style = TIER_STYLE[tier];
-          // Hollow means one thing now: your own unfinished work.
-          const hollow = style.fill === null;
-          const cx = sx(at(pos).u);
-          const cy = sy(at(pos).v);
-          return (
-            <g key={cell.key}>
-              {/*
+          {(level === "sector"
+            ? rows.filter((row) => isOnScreen(sx(at(row).u), sy(at(row).v), vp.view, VIEW_W, VIEW_H))
+            : rows.filter((row) => commander != null && sectorCellKey(row.cell) === commander.key)
+          ).map(({ cell, bodies, tier, ...pos }) => {
+            const r = 2 + 7 * Math.cbrt(bodies / maxBodies);
+            const isHit = highlight?.key === cell.key;
+            /*
+             * Outlined, not filled, once there is a galaxy behind them.
+             *
+             * A filled marker over the backdrop hides the region it sits in, which is the one thing
+             * the backdrop was added to show. Hollow keeps both readable, and the evidence colour
+             * moves to the stroke where it still reads at this size. Without a backdrop the original
+             * filled form is kept: on a flat background hollow markers are harder to see, not easier.
+             */
+            /*
+             * The tier — what this sector is worth the commander's attention for, not what is best
+             * known about it — is decided above this component now, because the region grouping needs
+             * it too. See shared/galaxyTier.ts for the ladder itself.
+             */
+            const m = mine.get(cell.key);
+            const style = TIER_STYLE[tier];
+            // Hollow means one thing now: your own unfinished work.
+            const hollow = style.fill === null;
+            const cx = sx(at(pos).u);
+            const cy = sy(at(pos).v);
+            return (
+              <g key={cell.key}>
+                {/*
                 An invisible disc over the whole marker, so a hollow one can be clicked through its
                 middle. Hitting a 1.5px ring is a game of patience, and the empty centre reads as
                 part of the marker to everybody except the hit tester.
@@ -1062,42 +1056,41 @@ Click to list its sectors, or zoom in to split it`}</title>
                 Sized in screen pixels via `vp.pixel` so it stays a comfortable target at every zoom,
                 and given at least 6 so the smallest sectors are still reachable.
               */}
-              <circle
-                cx={cx}
-                cy={cy}
-                r={Math.max(6, r + 3) * vp.pixel}
-                fill="none"
-                className="galaxy-map__hit"
-                onMouseEnter={() => onHover(cell)}
-                onMouseLeave={() => onHover(null)}
-                onClick={() => {
-                  // A drag that ends over a marker is a pan, not a pick.
-                  if (!vp.panning) onOpen(cell);
-                }}
-              >
-                <title>{`${cell.name ?? cell.key} — ${style.label}${
-                  commander?.key === cell.key
-                    ? `
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={Math.max(6, r + 3) * vp.pixel}
+                  fill="none"
+                  className="galaxy-map__hit"
+                  onMouseEnter={() => onHover(cell)}
+                  onMouseLeave={() => onHover(null)}
+                  onClick={() => {
+                    // A drag that ends over a marker is a pan, not a pick.
+                    if (!vp.panning) onOpen(cell);
+                  }}
+                >
+                  <title>{`${cell.name ?? cell.key} — ${style.label}${
+                    commander?.key === cell.key
+                      ? `
 You are here — ${commander.system ?? "unknown system"}`
-                    : ""
-                }
+                      : ""
+                  }
 ${style.help}
 ${bodies} bodies recorded here${
-                  m ? ` · you scanned ${m.scannedByYou}, ${m.unscannedByYou} left` : ""
-                }`}</title>
-              </circle>
-            <circle
-              cx={cx}
-              cy={cy}
-              r={r * vp.pixel}
-              pointerEvents="none"
-              fill={style.fill ?? "none"}
-              fillOpacity={style.fill ? 0.8 : 1}
-              stroke={isHit ? "#f0f6fc" : style.stroke}
-              strokeWidth={(isHit ? 2 : hollow ? 1.6 : 0.6) * vp.pixel}
-            >
-            </circle>
-            {/*
+                    m ? ` · you scanned ${m.scannedByYou}, ${m.unscannedByYou} left` : ""
+                  }`}</title>
+                </circle>
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={r * vp.pixel}
+                  pointerEvents="none"
+                  fill={style.fill ?? "none"}
+                  fillOpacity={style.fill ? 0.8 : 1}
+                  stroke={isHit ? "#f0f6fc" : style.stroke}
+                  strokeWidth={(isHit ? 2 : hollow ? 1.6 : 0.6) * vp.pixel}
+                ></circle>
+                {/*
               The sector the ship is in, ringed.
 
               The cross alone left the pairing to the eye, and at galaxy scale two marks a few
@@ -1105,21 +1098,21 @@ ${bodies} bodies recorded here${
               sector the cross belongs to without needing a hover, and stays out of the evidence
               colours by being drawn in the ship's own colour.
             */}
-            {commander?.key === cell.key ? (
-              <circle
-                cx={cx}
-                cy={cy}
-                r={(r + 5) * vp.pixel}
-                className="galaxy-map__you-cell"
-                pointerEvents="none"
-                fill="none"
-                strokeWidth={1.2 * vp.pixel}
-              />
-            ) : null}
-            </g>
-          );
-        })}
-        {/*
+                {commander?.key === cell.key ? (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={(r + 5) * vp.pixel}
+                    className="galaxy-map__you-cell"
+                    pointerEvents="none"
+                    fill="none"
+                    strokeWidth={1.2 * vp.pixel}
+                  />
+                ) : null}
+              </g>
+            );
+          })}
+          {/*
           The backlog: systems holding biology this commander found and never collected.
 
           Drawn after the sector markers and before the commander, so it reads as a layer over the
@@ -1129,59 +1122,59 @@ ${bodies} bodies recorded here${
           Amber, which no evidence kind uses: green/blue/grey already mean confirmed/possible/
           predicted on this map, and a fifth shade of those would read as a fifth kind of evidence.
         */}
-        {backlog.length > 0 ? (
-          <g className="galaxy-map__backlog">
-            {backlog
-              .filter((s) => {
-                const c = sectorCellFractional(s.x, s.y, s.z);
-                return isOnScreen(sx(at(c).u), sy(at(c).v), vp.view, VIEW_W, VIEW_H);
-              })
-              .map((s) => {
-              /*
+          {backlog.length > 0 ? (
+            <g className="galaxy-map__backlog">
+              {backlog
+                .filter((s) => {
+                  const c = sectorCellFractional(s.x, s.y, s.z);
+                  return isOnScreen(sx(at(c).u), sy(at(c).v), vp.view, VIEW_W, VIEW_H);
+                })
+                .map((s) => {
+                  /*
                 Fractional, not floored. These systems know their own coordinates; rounding them into
                 a 1 280 ly cell before drawing collapses the edge-on view into three stacked rows,
                 because that is how few cells thick the galaxy is.
               */
-              const cell = sectorCellFractional(s.x, s.y, s.z);
-              // The sector this target sits in, so a click on the dot opens the drill-down instead
-              // of being swallowed by a mark that has nowhere to send it.
-              const owner = cellByKey.get(sectorCellKey(sectorCellFromCoords(s.x, s.y, s.z))) ?? null;
-              return (
-                <circle
-                  key={s.systemAddress}
-                  cx={sx(at(cell).u)}
-                  cy={sy(at(cell).v)}
-                  onClick={() => {
-                    if (!vp.panning && owner) onOpen(owner);
-                  }}
-                  style={owner ? { cursor: "pointer" } : undefined}
-                  r={(2 + Math.min(3, Math.cbrt(s.bodies))) * vp.pixel}
-                  className={[
-                    "galaxy-map__target",
-                    s.allVerified ? "" : "galaxy-map__target--unverified",
-                    // Ringed rather than recoloured: the fill already carries whether the 5x is
-                    // verified, and overwriting that to show "this is the one" would trade a fact
-                    // for a pointer.
-                    nextTarget?.systemAddress === s.systemAddress ? "galaxy-map__target--next" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  <title>
-                    {[
-                      `${s.starSystem} — ${s.bodies} unfinished ${s.bodies === 1 ? "body" : "bodies"}`,
-                      `floor ${Math.round(s.floorCr).toLocaleString("en-US")} CR at 5×`,
-                      ...(owner ? [`click to open ${owner.name ?? sectorCellKey(owner)}`] : []),
-                      ...(s.allVerified ? [] : ["footfall never reported — not confirmed"]),
-                    ].join(`
+                  const cell = sectorCellFractional(s.x, s.y, s.z);
+                  // The sector this target sits in, so a click on the dot opens the drill-down instead
+                  // of being swallowed by a mark that has nowhere to send it.
+                  const owner = cellByKey.get(sectorCellKey(sectorCellFromCoords(s.x, s.y, s.z))) ?? null;
+                  return (
+                    <circle
+                      key={s.systemAddress}
+                      cx={sx(at(cell).u)}
+                      cy={sy(at(cell).v)}
+                      onClick={() => {
+                        if (!vp.panning && owner) onOpen(owner);
+                      }}
+                      style={owner ? { cursor: "pointer" } : undefined}
+                      r={(2 + Math.min(3, Math.cbrt(s.bodies))) * vp.pixel}
+                      className={[
+                        "galaxy-map__target",
+                        s.allVerified ? "" : "galaxy-map__target--unverified",
+                        // Ringed rather than recoloured: the fill already carries whether the 5x is
+                        // verified, and overwriting that to show "this is the one" would trade a fact
+                        // for a pointer.
+                        nextTarget?.systemAddress === s.systemAddress ? "galaxy-map__target--next" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    >
+                      <title>
+                        {[
+                          `${s.starSystem} — ${s.bodies} unfinished ${s.bodies === 1 ? "body" : "bodies"}`,
+                          `floor ${Math.round(s.floorCr).toLocaleString("en-US")} CR at 5×`,
+                          ...(owner ? [`click to open ${owner.name ?? sectorCellKey(owner)}`] : []),
+                          ...(s.allVerified ? [] : ["footfall never reported — not confirmed"]),
+                        ].join(`
 `)}
-                  </title>
-                </circle>
-              );
-            })}
-          </g>
-        ) : null}
-        {/*
+                      </title>
+                    </circle>
+                  );
+                })}
+            </g>
+          ) : null}
+          {/*
           What the search found, as places rather than rows.
 
           Diamonds, and a violet nothing else on this map uses. Every other mark here is either
@@ -1194,73 +1187,73 @@ ${bodies} bodies recorded here${
           first collapses the edge-on view into three stacked rows, because that is how few cells
           thick the galaxy is.
         */}
-        {searchHits.length > 0 ? (
-          <g className="galaxy-map__hits">
-            {searchHits
-              .filter((h) => {
-                const c = sectorCellFractional(h.x, h.y, h.z);
-                return isOnScreen(sx(at(c).u), sy(at(c).v), vp.view, VIEW_W, VIEW_H);
-              })
-              .map((h) => {
-              const cell = sectorCellFractional(h.x, h.y, h.z);
-              const owner = cellByKey.get(sectorCellKey(sectorCellFromCoords(h.x, h.y, h.z))) ?? null;
-              const cx = sx(at(cell).u);
-              const cy = sy(at(cell).v);
-              const d = 3.2 * vp.pixel;
-              return (
-                <polygon
-                  key={h.systemAddress}
-                  points={`${cx},${cy - d} ${cx + d},${cy} ${cx},${cy + d} ${cx - d},${cy}`}
-                  className="galaxy-map__hit-mark"
-                  strokeWidth={1.1 * vp.pixel}
-                  style={owner ? { cursor: "pointer" } : undefined}
-                  onClick={() => {
-                    if (!vp.panning && owner) onOpen(owner);
-                  }}
-                >
-                  <title>
-                    {[
-                      `${h.starSystem} — ${h.note}`,
-                      ...(h.distanceLy == null
-                        ? []
-                        : [`${Math.round(h.distanceLy).toLocaleString("en-US")} ly away`]),
-                      /*
+          {searchHits.length > 0 ? (
+            <g className="galaxy-map__hits">
+              {searchHits
+                .filter((h) => {
+                  const c = sectorCellFractional(h.x, h.y, h.z);
+                  return isOnScreen(sx(at(c).u), sy(at(c).v), vp.view, VIEW_W, VIEW_H);
+                })
+                .map((h) => {
+                  const cell = sectorCellFractional(h.x, h.y, h.z);
+                  const owner = cellByKey.get(sectorCellKey(sectorCellFromCoords(h.x, h.y, h.z))) ?? null;
+                  const cx = sx(at(cell).u);
+                  const cy = sy(at(cell).v);
+                  const d = 3.2 * vp.pixel;
+                  return (
+                    <polygon
+                      key={h.systemAddress}
+                      points={`${cx},${cy - d} ${cx + d},${cy} ${cx},${cy + d} ${cx - d},${cy}`}
+                      className="galaxy-map__hit-mark"
+                      strokeWidth={1.1 * vp.pixel}
+                      style={owner ? { cursor: "pointer" } : undefined}
+                      onClick={() => {
+                        if (!vp.panning && owner) onOpen(owner);
+                      }}
+                    >
+                      <title>
+                        {[
+                          `${h.starSystem} — ${h.note}`,
+                          ...(h.distanceLy == null
+                            ? []
+                            : [`${Math.round(h.distanceLy).toLocaleString("en-US")} ly away`]),
+                          /*
                         A hit can land in a sector this map has no cell for: the sector file only
                         covers where the feeder corpus has data, while the search runs over 5.3
                         million systems. Saying so beats a mark that quietly does nothing when
                         clicked — which is how the missing click was reported in the first place.
                       */
-                      owner
-                        ? `click to open ${owner.name ?? sectorCellKey(owner)}`
-                        : "this system's sector is not in the sector map",
-                    ].join(`
+                          owner
+                            ? `click to open ${owner.name ?? sectorCellKey(owner)}`
+                            : "this system's sector is not in the sector map",
+                        ].join(`
 `)}
-                  </title>
-                </polygon>
-              );
-            })}
-          </g>
-        ) : null}
-        {commander ? (
-          /*
-           * Drawn last so a dense sector never hides the ship, and `pointer-events: none` so the
-           * ship never hides a sector: the cross sits on top of the marker for the cell it is in,
-           * and without this it ate every click and hover meant for it. The sector's own tooltip
-           * says "you are here" instead.
-           */
-          <g
-            transform={`translate(${sx(at(commander).u)}, ${sy(at(commander).v)})`}
-            className="galaxy-map__you"
-            pointerEvents="none"
-          >
-            {/* A cross, not a dot: at a glance it must not be mistaken for a sector marker, and it
+                      </title>
+                    </polygon>
+                  );
+                })}
+            </g>
+          ) : null}
+          {commander ? (
+            /*
+             * Drawn last so a dense sector never hides the ship, and `pointer-events: none` so the
+             * ship never hides a sector: the cross sits on top of the marker for the cell it is in,
+             * and without this it ate every click and hover meant for it. The sector's own tooltip
+             * says "you are here" instead.
+             */
+            <g
+              transform={`translate(${sx(at(commander).u)}, ${sy(at(commander).v)})`}
+              className="galaxy-map__you"
+              pointerEvents="none"
+            >
+              {/* A cross, not a dot: at a glance it must not be mistaken for a sector marker, and it
                 stays legible on top of one. Drawn last so a dense sector never hides the ship. */}
-            {/* Sized in screen pixels: zooming in should reveal space, not inflate the ship. */}
-            <line x1={-7 * vp.pixel} y1={0} x2={7 * vp.pixel} y2={0} strokeWidth={1.5 * vp.pixel} />
-            <line x1={0} y1={-7 * vp.pixel} x2={0} y2={7 * vp.pixel} strokeWidth={1.5 * vp.pixel} />
-            <circle r={4 * vp.pixel} fill="none" strokeWidth={1.5 * vp.pixel} />
-          </g>
-        ) : null}
+              {/* Sized in screen pixels: zooming in should reveal space, not inflate the ship. */}
+              <line x1={-7 * vp.pixel} y1={0} x2={7 * vp.pixel} y2={0} strokeWidth={1.5 * vp.pixel} />
+              <line x1={0} y1={-7 * vp.pixel} x2={0} y2={7 * vp.pixel} strokeWidth={1.5 * vp.pixel} />
+              <circle r={4 * vp.pixel} fill="none" strokeWidth={1.5 * vp.pixel} />
+            </g>
+          ) : null}
         </g>
 
         {/* Axis captions live outside the panned group: they describe the view, not the scene. */}
@@ -1277,7 +1270,9 @@ ${bodies} bodies recorded here${
 
 function SectorReadout({ cell, taxon }: { cell: SectorMapCell | null; taxon: string }) {
   if (!cell) {
-    return <p className="galaxy-map__readout galaxy-map__readout--empty">Hover a sector, or search for one.</p>;
+    return (
+      <p className="galaxy-map__readout galaxy-map__readout--empty">Hover a sector, or search for one.</p>
+    );
   }
   const totals = cellTotals(cell, taxon || undefined);
   const matching = Object.entries(cell.taxa).filter(([t]) => !taxon || t === taxon);
@@ -1391,8 +1386,10 @@ function SectorSystems({
 
   const W = 520;
   const H = 300;
-  const sx = (v: number) => PAD + ((v - bounds.minX) / Math.max(1, bounds.maxX - bounds.minX)) * (W - PAD * 2);
-  const sy = (v: number) => H - PAD - ((v - bounds.minZ) / Math.max(1, bounds.maxZ - bounds.minZ)) * (H - PAD * 2);
+  const sx = (v: number) =>
+    PAD + ((v - bounds.minX) / Math.max(1, bounds.maxX - bounds.minX)) * (W - PAD * 2);
+  const sy = (v: number) =>
+    H - PAD - ((v - bounds.minZ) / Math.max(1, bounds.maxZ - bounds.minZ)) * (H - PAD * 2);
 
   return (
     <section className="sector-systems">
@@ -1410,9 +1407,7 @@ function SectorSystems({
       {!systems && !error ? <p className="galaxy-map__more">Loading systems…</p> : null}
 
       {systems && shown.length === 0 ? (
-        <p className="galaxy-map__more">
-          No systems here for that selection{taxon ? ` (${taxon})` : ""}.
-        </p>
+        <p className="galaxy-map__more">No systems here for that selection{taxon ? ` (${taxon})` : ""}.</p>
       ) : null}
 
       {/*
@@ -1421,9 +1416,7 @@ function SectorSystems({
         true and useless.
       */}
       {systems && shown.length === 0 && commander ? (
-        <p className="galaxy-map__more">
-          You are here — {commander.system ?? "unknown system"}.
-        </p>
+        <p className="galaxy-map__more">You are here — {commander.system ?? "unknown system"}.</p>
       ) : null}
 
       {shown.length > 0 ? (
@@ -1522,8 +1515,7 @@ function SystemReadout({
         {pinned ? <span className="galaxy-map__cellkey"> pinned — click another to change</span> : null}
       </h4>
       <p>
-        {bodies.length} bod{bodies.length === 1 ? "y" : "ies"} with something recorded · found, not
-        predicted
+        {bodies.length} bod{bodies.length === 1 ? "y" : "ies"} with something recorded · found, not predicted
       </p>
       <ul className="sector-systems__bodies">
         {bodies.map((b) => (
@@ -1540,9 +1532,7 @@ function SystemReadout({
           </li>
         ))}
       </ul>
-      {bodies.length === 0 ? (
-        <p className="galaxy-map__more">No bodies here match that selection.</p>
-      ) : null}
+      {bodies.length === 0 ? <p className="galaxy-map__more">No bodies here match that selection.</p> : null}
     </div>
   );
 }

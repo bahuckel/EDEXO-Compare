@@ -73,7 +73,9 @@ function footfallLost(store: GameStateStore, key: string): boolean {
  * is the one failure this panel cannot afford, since the commander only finds out after the trip.
  */
 function footfallObserved(store: GameStateStore, key: string): boolean {
-  return store.bodyFootfallFlag.get(key)?.value === false || store.bodyDetailedFootfallState.get(key) === false;
+  return (
+    store.bodyFootfallFlag.get(key)?.value === false || store.bodyDetailedFootfallState.get(key) === false
+  );
 }
 
 function matchContextFor(

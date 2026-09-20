@@ -56,7 +56,8 @@ const outPath = path.resolve(root, argOf("out", path.join("docs", `${slug.replac
 
 const feederDir = process.env.EXOMASTERY_FEEDER_DIR?.trim() || path.resolve(root, "..", "exomastery-feeder");
 const collectorDb =
-  process.env.EDDN_COLLECTOR_DB?.trim() || path.resolve(root, "..", "eddn-bio-collector", "data", "collector.sqlite");
+  process.env.EDDN_COLLECTOR_DB?.trim() ||
+  path.resolve(root, "..", "eddn-bio-collector", "data", "collector.sqlite");
 
 /* ------------------------------------------------------------------ the row */
 
@@ -343,7 +344,9 @@ for (const [key, variant] of journalHits) {
   if (!b) continue;
   const sys = key.split(":")[0]!;
   const star =
-    b.parentStarId != null ? (journalBodies.get(`${sys}:${b.parentStarId}`)?.starType ?? "?") : (b.starType ?? "?");
+    b.parentStarId != null
+      ? (journalBodies.get(`${sys}:${b.parentStarId}`)?.starType ?? "?")
+      : (b.starType ?? "?");
   rows.push({
     source: "journal",
     system: b.system,
@@ -417,7 +420,9 @@ if (existsSync(collectorDb)) {
         const n = clean(c?.Name);
         if (n) comp[n] = Number(c?.Percent ?? 0);
       }
-      const tokenMaterial = labels.map((l) => /_([A-Za-z]{4,})_Name;?$/.exec(clean(l.token))?.[1]).find(Boolean);
+      const tokenMaterial = labels
+        .map((l) => /_([A-Za-z]{4,})_Name;?$/.exec(clean(l.token))?.[1])
+        .find(Boolean);
 
       rows.push({
         source: "relay",
@@ -542,7 +547,7 @@ md.push(`# ${speciesName} — every body we have`);
 md.push("");
 md.push(
   `Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC by ` +
-    "`npx tsx scripts/species-dossier.ts --species \"" +
+    '`npx tsx scripts/species-dossier.ts --species "' +
     speciesName +
     '"`. Local-only, like everything under `docs/`.',
 );
@@ -570,8 +575,12 @@ md.push("");
 
 md.push("## The numbers, before the list");
 md.push("");
-md.push("Each categorical axis is shown against the **ambient** — every species profile's counts pooled — because a");
-md.push("share on its own says nothing. 69 % Thin Water only means something once you know bio bodies are 15 %");
+md.push(
+  "Each categorical axis is shown against the **ambient** — every species profile's counts pooled — because a",
+);
+md.push(
+  "share on its own says nothing. 69 % Thin Water only means something once you know bio bodies are 15 %",
+);
 md.push("Thin Water anyway.");
 md.push("");
 
@@ -591,7 +600,9 @@ for (const axis of AXES) {
     const amb = ambientTotal > 0 ? ((ambient.get(key) ?? 0) / ambientTotal) * 100 : 0;
     const lift = amb > 0 ? `${(share / amb).toFixed(2)}×` : "—";
     const label = mine.labels.get(key) ?? key;
-    md.push(`| ${label} | ${n} | ${share.toFixed(1)} % | ${amb > 0 ? `${amb.toFixed(1)} %` : "—"} | ${lift} |`);
+    md.push(
+      `| ${label} | ${n} | ${share.toFixed(1)} % | ${amb > 0 ? `${amb.toFixed(1)} %` : "—"} | ${lift} |`,
+    );
   }
   md.push("");
 }
@@ -600,7 +611,9 @@ const volKnown = rows.filter((r) => r.volcanism && r.volcanism !== "(not recorde
 const volActive = volKnown.filter((r) => !r.volcanism.toLowerCase().startsWith("no volcanism"));
 md.push("**Read the volcanism table with its unrecorded row in mind.** The system caches omit the field on");
 md.push("some records, and a missing field is not a recorded absence: Fumerola, which cannot grow without");
-md.push("volcanism, carries the field on every body and never lacks it, while mostly-quiet species lack it on");
+md.push(
+  "volcanism, carries the field on every body and never lacks it, while mostly-quiet species lack it on",
+);
 md.push("18-36 % of theirs. Counting only the bodies where it was actually recorded,");
 md.push("");
 md.push(
@@ -608,15 +621,38 @@ md.push(
     `are volcanic**, against an ambient of about 1.4 % across bio bodies — a real enrichment of roughly ten times, ` +
     "and nothing like a requirement. The codex line about helium, iron and silicate magma describes where it is " +
     "often found, not a gate: the explicit negatives are explicit, and the commander's own confirmed body at " +
-    "`Eorgh Prou OP-C c27-179 B 2` reads `Volcanism: \"\"` on two Detailed scans.",
+    '`Eorgh Prou OP-C c27-179 B 2` reads `Volcanism: ""` on two Detailed scans.',
 );
 md.push("");
 md.push("### The continuous ones");
 md.push("");
-md.push(`- **Gravity** — ${numericSummary(rows.map((r) => r.gravityG), "g")}`);
-md.push(`- **Surface temperature** — ${numericSummary(rows.map((r) => r.temperatureK), "K", 1)}`);
-md.push(`- **Surface pressure** — ${numericSummary(rows.map((r) => r.pressureAtm), "atm", 4)}`);
-md.push(`- **Distance from arrival** — ${numericSummary(rows.map((r) => r.distanceLs), "ls", 0)}`);
+md.push(
+  `- **Gravity** — ${numericSummary(
+    rows.map((r) => r.gravityG),
+    "g",
+  )}`,
+);
+md.push(
+  `- **Surface temperature** — ${numericSummary(
+    rows.map((r) => r.temperatureK),
+    "K",
+    1,
+  )}`,
+);
+md.push(
+  `- **Surface pressure** — ${numericSummary(
+    rows.map((r) => r.pressureAtm),
+    "atm",
+    4,
+  )}`,
+);
+md.push(
+  `- **Distance from arrival** — ${numericSummary(
+    rows.map((r) => r.distanceLs),
+    "ls",
+    0,
+  )}`,
+);
 md.push("");
 
 const g3Count = (r: Row) => r.grade3.split(",").filter((x) => x.trim()).length;
@@ -676,10 +712,14 @@ if (known.length > 0) {
 
 md.push("## Every body");
 md.push("");
-md.push("Gravity in g, temperature in K, pressure in atm, distance in ls. Materials are the full crust, biggest");
+md.push(
+  "Gravity in g, temperature in K, pressure in atm, distance in ls. Materials are the full crust, biggest",
+);
 md.push("first; the grade-3 column repeats the six the colour tables read.");
 md.push("");
-md.push("| # | source | body | class | atmosphere | main gas | g | K | atm | volcanism | star | ls | grade-3 | materials |");
+md.push(
+  "| # | source | body | class | atmosphere | main gas | g | K | atm | volcanism | star | ls | grade-3 | materials |",
+);
 md.push("|---:|---|---|---|---|---|---:|---:|---:|---|---|---:|---|---|");
 
 const sorted = [...rows].sort((a, b) => {

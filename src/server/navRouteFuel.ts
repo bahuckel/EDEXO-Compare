@@ -356,7 +356,11 @@ export function analyzeNavRouteFuel(opts: {
     red = scoop now / critical. No reachable scoop at all: red, no hop to point at.
   */
   let refuelIdx = -1;
-  if (fuelCanFinishPlottedRoute === false && jumpsToLastScoopableOnRoute != null && jumpsToLastScoopableOnRoute > 0) {
+  if (
+    fuelCanFinishPlottedRoute === false &&
+    jumpsToLastScoopableOnRoute != null &&
+    jumpsToLastScoopableOnRoute > 0
+  ) {
     refuelIdx = idx + jumpsToLastScoopableOnRoute;
   }
   let refuelLevel: RouteRefuelAlertDTO = "none";

@@ -173,7 +173,18 @@ describe("what the filter keeps", () => {
 describe("the register", () => {
   const feed = (c: EddnConsumer, o: unknown) => c.handleFrame(frame(o));
   const row = () =>
-    (ctx.store as unknown as { db: { prepare: (s: string) => { bind: (p: unknown[]) => void; step: () => boolean; get: () => unknown[]; free: () => void } } }).db;
+    (
+      ctx.store as unknown as {
+        db: {
+          prepare: (s: string) => {
+            bind: (p: unknown[]) => void;
+            step: () => boolean;
+            get: () => unknown[];
+            free: () => void;
+          };
+        };
+      }
+    ).db;
 
   function readBody() {
     const st = row().prepare(
@@ -184,7 +195,14 @@ describe("the register", () => {
       st.free();
       return null;
     }
-    const [f, fAt, m, mAt, bio, gen] = st.get() as [number | null, string | null, number | null, string | null, number | null, string | null];
+    const [f, fAt, m, mAt, bio, gen] = st.get() as [
+      number | null,
+      string | null,
+      number | null,
+      string | null,
+      number | null,
+      string | null,
+    ];
     st.free();
     return { footfall: f, footfallSeenAt: fAt, mapped: m, mappedSeenAt: mAt, bio, genuses: gen };
   }

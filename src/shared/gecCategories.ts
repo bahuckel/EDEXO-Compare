@@ -48,13 +48,25 @@ export interface PoiGroupOption {
 
 export const POI_GROUP_OPTIONS: readonly PoiGroupOption[] = [
   { key: "organic", label: "Organic", hint: "Biology worth the trip. The reason this panel is here." },
-  { key: "planetary", label: "Planetary", hint: "Surface features, geysers, unusual worlds and green gas giants." },
+  {
+    key: "planetary",
+    label: "Planetary",
+    hint: "Surface features, geysers, unusual worlds and green gas giants.",
+  },
   { key: "stellar", label: "Stellar", hint: "Stars, remnants, black holes, pulsars and stellar phenomena." },
   { key: "nebulae", label: "Nebulae", hint: "Nebulae and planetary nebulae." },
-  { key: "outposts", label: "Outposts", hint: "Deep space stations, carriers on station, inhabited systems." },
+  {
+    key: "outposts",
+    label: "Outposts",
+    hint: "Deep space stations, carriers on station, inhabited systems.",
+  },
   { key: "mystery", label: "Mystery", hint: "Xenology, unexplained sites and game glitches." },
   { key: "scenery", label: "Scenery", hint: "Views, tourist beacons, clusters and named regions." },
-  { key: "historical", label: "Historical", hint: "Memorials, community sites and places something happened." },
+  {
+    key: "historical",
+    label: "Historical",
+    hint: "Memorials, community sites and places something happened.",
+  },
   { key: "routes", label: "Routes", hint: "Travel routes, jumponium-rich systems and restricted space." },
 ] as const;
 

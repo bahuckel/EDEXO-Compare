@@ -142,7 +142,10 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                     // The micro-summary (WEBUI-REDESIGN 2.4): bio count, best list price, a dot when a
                     // species here has been analysed. Enough to choose a body without opening it.
                     const bio = b.state.biologicalSignals;
-                    const best = b.matches.reduce((m, x) => (x.unlikely ? m : Math.max(m, x.priceCredits ?? 0)), 0);
+                    const best = b.matches.reduce(
+                      (m, x) => (x.unlikely ? m : Math.max(m, x.priceCredits ?? 0)),
+                      0,
+                    );
                     const done = b.matches.some((x) => x.organicAnalysisComplete === true);
                     // Derived here rather than sent down: the strip already holds the matches, and a
                     // body is worth a detour exactly when something it might grow is worth sampling.

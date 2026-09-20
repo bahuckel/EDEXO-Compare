@@ -44,12 +44,8 @@ describe("bucketCategoricalValue", () => {
       `Minor Rocky Magma`, so the two sides bucketed differently and the volcanism term never matched
       on any body. Both spellings have to land here now. See tests/volcanismPosterior.test.ts.
     */
-    expect(bucketCategoricalValue("body.volcanismType", "Minor rocky magma volcanism")).toBe(
-      "rocky magma",
-    );
-    expect(bucketCategoricalValue("body.volcanismType", "Major rocky magma volcanism")).toBe(
-      "rocky magma",
-    );
+    expect(bucketCategoricalValue("body.volcanismType", "Minor rocky magma volcanism")).toBe("rocky magma");
+    expect(bucketCategoricalValue("body.volcanismType", "Major rocky magma volcanism")).toBe("rocky magma");
     expect(bucketCategoricalValue("body.volcanismType", "Minor Rocky Magma")).toBe("rocky magma");
   });
 

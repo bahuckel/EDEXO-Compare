@@ -90,8 +90,22 @@ describe("buildAtmosphereBands", () => {
 
   it("skips bodies with no atmosphere reading rather than inventing a cell for them", () => {
     const b = buildAtmosphereBands([
-      { atmosphereType: "", surfaceTemperatureK: 100, surfacePressureAtm: 0.01, gravityG: null, radiusKm: null, earthMasses: null },
-      { atmosphereType: null, surfaceTemperatureK: 100, surfacePressureAtm: 0.01, gravityG: null, radiusKm: null, earthMasses: null },
+      {
+        atmosphereType: "",
+        surfaceTemperatureK: 100,
+        surfacePressureAtm: 0.01,
+        gravityG: null,
+        radiusKm: null,
+        earthMasses: null,
+      },
+      {
+        atmosphereType: null,
+        surfaceTemperatureK: 100,
+        surfacePressureAtm: 0.01,
+        gravityG: null,
+        radiusKm: null,
+        earthMasses: null,
+      },
     ]);
     expect(Object.keys(b)).toEqual([]);
   });

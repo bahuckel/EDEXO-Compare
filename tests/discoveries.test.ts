@@ -64,7 +64,13 @@ function storeWith(rows: [string, ExplorationScanRecord][], sold: [string, Explo
 
 describe("the discoveries tables", () => {
   it("splits stars from bodies and counts both onto the system", () => {
-    const d = buildDiscoveries(storeWith([["1:0", star()], ["1:1", planet()]]), root);
+    const d = buildDiscoveries(
+      storeWith([
+        ["1:0", star()],
+        ["1:1", planet()],
+      ]),
+      root,
+    );
     expect(d.stars).toHaveLength(1);
     expect(d.bodies).toHaveLength(1);
     const sys = d.systems.find((s) => s.systemAddress === 1)!;
@@ -112,7 +118,10 @@ describe("the discoveries tables", () => {
   });
 
   it("reports sold credits separately from the estimate, and only where a sale happened", () => {
-    const store = storeWith([["1:0", star()], ["1:1", planet()]]);
+    const store = storeWith([
+      ["1:0", star()],
+      ["1:1", planet()],
+    ]);
     let d = buildDiscoveries(store, root);
     let sys = d.systems.find((s) => s.systemAddress === 1)!;
     expect(sys.estimatedCredits).toBeGreaterThan(0);

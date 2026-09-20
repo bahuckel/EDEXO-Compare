@@ -125,7 +125,10 @@ describe("the wiring that makes the fix real", () => {
   });
 
   it("clamps inside relayoutHudStack itself, not only in this transcription", () => {
-    const relayout = SRC.slice(SRC.indexOf("function relayoutHudStack()"), SRC.indexOf("function scheduleHudRelayout"));
+    const relayout = SRC.slice(
+      SRC.indexOf("function relayoutHudStack()"),
+      SRC.indexOf("function scheduleHudRelayout"),
+    );
     expect(relayout).toContain("const fit =");
     expect(relayout).toContain("wa.x + wa.width - w");
   });

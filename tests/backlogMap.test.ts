@@ -198,11 +198,23 @@ describe("how far away it is", () => {
     // when the panel was first opened.
     const st = seeded(true, [3]);
     st.apply(
-      j({ timestamp: TS, event: "FSDJump", StarSystem: "A", SystemAddress: 991, StarPos: [123.5, -45.25, 778.75] }),
+      j({
+        timestamp: TS,
+        event: "FSDJump",
+        StarSystem: "A",
+        SystemAddress: 991,
+        StarPos: [123.5, -45.25, 778.75],
+      }),
     );
     const near = backlogMap(st).systems[0]!.distanceLy;
     st.apply(
-      j({ timestamp: TS, event: "FSDJump", StarSystem: "B", SystemAddress: 992, StarPos: [123.5, -45.25, 1678.75] }),
+      j({
+        timestamp: TS,
+        event: "FSDJump",
+        StarSystem: "B",
+        SystemAddress: 992,
+        StarPos: [123.5, -45.25, 1678.75],
+      }),
     );
     const far = backlogMap(st).systems[0]!.distanceLy;
     expect(near).toBeCloseTo(100, 6);

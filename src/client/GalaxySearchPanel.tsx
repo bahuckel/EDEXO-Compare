@@ -208,13 +208,7 @@ function GalaxyHitsModal({
  * A body table rather than a system table: the answer is "this world would be offered that plant",
  * and the world is what the commander has to fly to and land on. The system is the heading.
  */
-function GalaxyPossibleModal({
-  result,
-  onClose,
-}: {
-  result: GalaxyBodyScanDTO;
-  onClose: () => void;
-}) {
+function GalaxyPossibleModal({ result, onClose }: { result: GalaxyBodyScanDTO; onClose: () => void }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
   const bodies = result.hits.reduce((n, h) => n + h.bodies.length, 0);
   return (
@@ -245,8 +239,8 @@ function GalaxyPossibleModal({
             same kind of claim and repeating it would turn a warning into wallpaper.
           */}
           <p className="dim gsx-caveat">
-            These are bodies whose conditions suit the species — the same gates the app applies when
-            you are standing there. Nobody has confirmed anything on them.
+            These are bodies whose conditions suit the species — the same gates the app applies when you are
+            standing there. Nobody has confirmed anything on them.
           </p>
           <table className="fdb-table">
             <thead>
@@ -572,15 +566,14 @@ export function GalaxySearchPanel({
           <p className="dim fdb-sub">
             {possible ? (
               <>
-                Bodies whose conditions suit the species, in systems nobody has walked — the same
-                gates the app applies when you are standing there. A shortlist, not a sighting.
+                Bodies whose conditions suit the species, in systems nobody has walked — the same gates the
+                app applies when you are standing there. A shortlist, not a sighting.
               </>
             ) : (
               <>
                 Where anybody has recorded biology, across{" "}
-                {cat ? crFmt.format(cat.systemCount) : "5.3 million"} systems. These are sightings
-                somebody logged, not predictions — nearest to you first, and the map below follows
-                what you search for.
+                {cat ? crFmt.format(cat.systemCount) : "5.3 million"} systems. These are sightings somebody
+                logged, not predictions — nearest to you first, and the map below follows what you search for.
               </>
             )}
           </p>
@@ -691,8 +684,8 @@ export function GalaxySearchPanel({
                     Already walked
                   </label>
                   <span className="dim gsx-note">
-                    An FSS counted signals and nobody followed it up; a probed body already has its
-                    genus; a walked system has a species somebody logged on foot.
+                    An FSS counted signals and nobody followed it up; a probed body already has its genus; a
+                    walked system has a species somebody logged on foot.
                   </span>
                 </div>
                 {/*
@@ -721,9 +714,9 @@ export function GalaxySearchPanel({
                     aria-label="Least likely body to list, by gravity"
                   />
                   <span className="dim gsx-note">
-                    From this commander&rsquo;s journals: of landable bodies with an atmosphere,
-                    every one below 0.25 g carried biology and none above 0.65 g did. Signal presence,
-                    not species — and his flying, not a survey of the galaxy.
+                    From this commander&rsquo;s journals: of landable bodies with an atmosphere, every one
+                    below 0.25 g carried biology and none above 0.65 g did. Signal presence, not species — and
+                    his flying, not a survey of the galaxy.
                   </span>
                 </div>
               </>
@@ -755,8 +748,8 @@ export function GalaxySearchPanel({
                     </span>
                   ) : (
                     <span className="dim gsx-note">
-                      Everything the codex knows there, at list price. Five times that if nobody has
-                      landed yet.
+                      Everything the codex knows there, at list price. Five times that if nobody has landed
+                      yet.
                     </span>
                   )}
                 </div>
@@ -834,8 +827,8 @@ export function GalaxySearchPanel({
                   className="gsx-partial"
                   title="A region is walked in system order, so an answer that ran out of time covers the first part of it rather than a spread across it — the nearest row here is the nearest in that part, not in the region. Name a single species to search the whole of it."
                 >
-                  covered {Math.round((scan.systemsSearched / Math.max(1, scan.systemsInRegion)) * 100)}
-                  % of {scan.regionName ?? "the region"} — ran out of time
+                  covered {Math.round((scan.systemsSearched / Math.max(1, scan.systemsInRegion)) * 100)}% of{" "}
+                  {scan.regionName ?? "the region"} — ran out of time
                 </span>
               ) : null}
               {scanBodies > 0 ? (
@@ -862,8 +855,8 @@ export function GalaxySearchPanel({
               */}
               {result.spread?.length ? (
                 <span className="dim">
-                  map: {result.spread.length} of{" "}
-                  {crFmt.format(result.spreadCells ?? result.spread.length)} sectors
+                  map: {result.spread.length} of {crFmt.format(result.spreadCells ?? result.spread.length)}{" "}
+                  sectors
                 </span>
               ) : null}
               {/*
@@ -940,8 +933,8 @@ export function GalaxySearchPanel({
           ) : null}
           {possible && scan && scanBodies === 0 ? (
             <p className="fdb-empty">
-              Nothing in {scan.regionName ?? "that region"} suits it. Try another region, or include
-              bodies somebody has already probed.
+              Nothing in {scan.regionName ?? "that region"} suits it. Try another region, or include bodies
+              somebody has already probed.
             </p>
           ) : null}
           {!possible && result && hits.length === 0 ? (
@@ -955,8 +948,8 @@ export function GalaxySearchPanel({
 
       {cat && !cat.available ? (
         <p className="fdb-empty">
-          This build has no galaxy index. Build one with <code>npm run feeder</code>&apos;s index script
-          to search beyond your own journals.
+          This build has no galaxy index. Build one with <code>npm run feeder</code>&apos;s index script to
+          search beyond your own journals.
         </p>
       ) : null}
     </section>

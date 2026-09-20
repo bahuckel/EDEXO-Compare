@@ -18,7 +18,16 @@ const RECORD = 25;
 function writeIndex(
   file: string,
   species: string[],
-  rows: { id64: bigint; x: number; y: number; z: number; region: number; species: number[]; tiers?: number; bodyCount?: number }[],
+  rows: {
+    id64: bigint;
+    x: number;
+    y: number;
+    z: number;
+    region: number;
+    species: number[];
+    tiers?: number;
+    bodyCount?: number;
+  }[],
 ) {
   const json = Buffer.from(JSON.stringify({ species }), "utf8");
   const head = Buffer.alloc(20);

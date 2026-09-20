@@ -18,16 +18,75 @@ describe("the session log", () => {
       st.apply(l);
       return log.record(l, st, prices);
     };
-    expect(rec(line("FSDJump", 1, { StarSystem: "A", SystemAddress: 1, StarPos: [0, 0, 0], JumpDist: 12.3 }))).toBe(true);
+    expect(
+      rec(line("FSDJump", 1, { StarSystem: "A", SystemAddress: 1, StarPos: [0, 0, 0], JumpDist: 12.3 })),
+    ).toBe(true);
     expect(rec(line("FSDJump", 2, { StarSystem: "A", SystemAddress: 1, StarPos: [0, 0, 0] }))).toBe(false); // same system twice
-    rec(line("Scan", 3, { ScanType: "Detailed", BodyName: "A 1", BodyID: 1, StarSystem: "A", SystemAddress: 1, PlanetClass: "Rocky body", Landable: true, WasFootfalled: false }));
-    expect(rec(line("Touchdown", 4, { PlayerControlled: true, Body: "A 1", BodyID: 1, StarSystem: "A", SystemAddress: 1 }))).toBe(true);
+    rec(
+      line("Scan", 3, {
+        ScanType: "Detailed",
+        BodyName: "A 1",
+        BodyID: 1,
+        StarSystem: "A",
+        SystemAddress: 1,
+        PlanetClass: "Rocky body",
+        Landable: true,
+        WasFootfalled: false,
+      }),
+    );
+    expect(
+      rec(
+        line("Touchdown", 4, {
+          PlayerControlled: true,
+          Body: "A 1",
+          BodyID: 1,
+          StarSystem: "A",
+          SystemAddress: 1,
+        }),
+      ),
+    ).toBe(true);
     // the first footfall is settled on disembarking; the landing row picks it up
     rec(line("Disembark", 5, { OnPlanet: true, Body: "A 1", BodyID: 1, StarSystem: "A", SystemAddress: 1 }));
-    expect(rec(line("ScanOrganic", 6, { ScanType: "Sample", Genus_Localised: "Tubus", Species_Localised: "Tubus Compagibus", SystemAddress: 1, Body: 1 }))).toBe(false);
-    expect(rec(line("ScanOrganic", 7, { ScanType: "Analyse", Genus_Localised: "Tubus", Species_Localised: "Tubus Compagibus", SystemAddress: 1, Body: 1 }))).toBe(true);
-    expect(rec(line("ScanOrganic", 8, { ScanType: "Analyse", Genus_Localised: "Tubus", Species_Localised: "Tubus Compagibus", SystemAddress: 1, Body: 1 }))).toBe(false); // once
-    expect(rec(line("SellOrganicData", 9, { BioData: [{ Species_Localised: "Tubus Compagibus", Value: 2_000_000, Bonus: 8_000_000 }] }))).toBe(true);
+    expect(
+      rec(
+        line("ScanOrganic", 6, {
+          ScanType: "Sample",
+          Genus_Localised: "Tubus",
+          Species_Localised: "Tubus Compagibus",
+          SystemAddress: 1,
+          Body: 1,
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      rec(
+        line("ScanOrganic", 7, {
+          ScanType: "Analyse",
+          Genus_Localised: "Tubus",
+          Species_Localised: "Tubus Compagibus",
+          SystemAddress: 1,
+          Body: 1,
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      rec(
+        line("ScanOrganic", 8, {
+          ScanType: "Analyse",
+          Genus_Localised: "Tubus",
+          Species_Localised: "Tubus Compagibus",
+          SystemAddress: 1,
+          Body: 1,
+        }),
+      ),
+    ).toBe(false); // once
+    expect(
+      rec(
+        line("SellOrganicData", 9, {
+          BioData: [{ Species_Localised: "Tubus Compagibus", Value: 2_000_000, Bonus: 8_000_000 }],
+        }),
+      ),
+    ).toBe(true);
 
     const d = log.toDto();
     expect(d.systems).toHaveLength(1);
@@ -48,7 +107,9 @@ describe("the session log", () => {
     const st = new GameStateStore();
     const log = new SessionLog();
     expect(log.record(line("Music", 1, { MusicTrack: "NoTrack" }), st, new Map())).toBe(false);
-    expect(log.record(line("Touchdown", 2, { PlayerControlled: false, Body: "X 1" }), st, new Map())).toBe(false);
+    expect(log.record(line("Touchdown", 2, { PlayerControlled: false, Body: "X 1" }), st, new Map())).toBe(
+      false,
+    );
     expect(log.toDto().landings).toEqual([]);
   });
 });

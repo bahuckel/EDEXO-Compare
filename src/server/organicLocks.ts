@@ -132,8 +132,6 @@ export function organicScanConfirmsNonBacteriumGenus(
  *
  * Absent `source` is a foot scan: every lock written before the field existed came from `ScanOrganic`.
  */
-export function footOrganicLocks(
-  locks: OrganicGenusLock[] | null | undefined,
-): OrganicGenusLock[] {
+export function footOrganicLocks(locks: OrganicGenusLock[] | null | undefined): OrganicGenusLock[] {
   return (locks ?? []).filter((l) => l.source !== "codex");
 }

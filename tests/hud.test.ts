@@ -38,7 +38,12 @@ function loadHud(): HudApi {
     '<div class="shell" id="shell"><div class="panel" id="card"><div class="panel__body" id="hud"></div></div></div>';
   const src = readFileSync(path.resolve(__dirname, "../public/hud.js"), "utf8");
   // eslint-disable-next-line no-new-func
-  new Function("window", "document", "localStorage", "location", src)(window, document, window.localStorage, window.location);
+  new Function("window", "document", "localStorage", "location", src)(
+    window,
+    document,
+    window.localStorage,
+    window.location,
+  );
   return (window as unknown as { HUD: HudApi }).HUD;
 }
 
@@ -82,8 +87,18 @@ describe("hud.js candidates", () => {
   it("capitalises the species and shows the live run's progress only for the active species", () => {
     HUD.render({
       exoOverlayFocusBodyKey: "1:2",
-      bodies: [body("1:2", "A 2", [match("Tussock", "propagito", 1_000_000), match("Bacterium", "cerbrus", 1_689_800)])],
-      exoOrganicOverlay: { visible: true, trackingBodyKey: "1:2", speciesDisplay: "Tussock propagito", sampleCount: 2 },
+      bodies: [
+        body("1:2", "A 2", [
+          match("Tussock", "propagito", 1_000_000),
+          match("Bacterium", "cerbrus", 1_689_800),
+        ]),
+      ],
+      exoOrganicOverlay: {
+        visible: true,
+        trackingBodyKey: "1:2",
+        speciesDisplay: "Tussock propagito",
+        sampleCount: 2,
+      },
     });
     const rows = [...document.querySelectorAll(".hud-list li")].map((li) => li.textContent ?? "");
     expect(rows.find((t) => t.includes("Tussock"))).toContain("Tussock Propagito2/3");
@@ -94,7 +109,10 @@ describe("hud.js candidates", () => {
     HUD.render({
       exoOverlayFocusBodyKey: "1:2",
       statusDestination: { systemAddress: 1, bodyId: 3, name: "Sys C 3" },
-      bodies: [body("1:2", "A 2", [match("Tussock", "propagito", 1)]), body("1:3", "C 3", [match("Fonticulua", "campestris", 5)])],
+      bodies: [
+        body("1:2", "A 2", [match("Tussock", "propagito", 1)]),
+        body("1:3", "C 3", [match("Fonticulua", "campestris", 5)]),
+      ],
     });
     expect(document.querySelector('[data-f="body"]')?.textContent).toBe("C 3");
     expect(document.querySelector('[data-f="body"]')?.className).toContain("tgt");
@@ -106,7 +124,9 @@ describe("hud.js candidates", () => {
     window.localStorage.setItem("edexoHudCandOrder", "value");
     HUD.render({
       exoOverlayFocusBodyKey: "1:2",
-      bodies: [body("1:2", "A 2", [match("Stratum", "tectonicas", 100), match("Tussock", "propagito", 5_000_000)])],
+      bodies: [
+        body("1:2", "A 2", [match("Stratum", "tectonicas", 100), match("Tussock", "propagito", 5_000_000)]),
+      ],
     });
     const first = document.querySelector(".hud-list li")?.textContent ?? "";
     expect(first).toContain("Tussock");
@@ -125,7 +145,10 @@ describe("hud.js tracker", () => {
     HUD.render({ exoOrganicOverlay: null, exoMinimap: null });
     expect(document.querySelector(".trk")?.className).toContain("trk--away");
     expect(document.querySelector(".trk__away")?.className).toContain("trk__away--on");
-    HUD.render({ exoOrganicOverlay: null, exoMinimap: { headingDeg: 10, radiusM: 500, minSampleDistanceM: 0, marks: [] } });
+    HUD.render({
+      exoOrganicOverlay: null,
+      exoMinimap: { headingDeg: 10, radiusM: 500, minSampleDistanceM: 0, marks: [] },
+    });
     expect(document.querySelector(".trk")?.className).not.toContain("trk--away");
     expect(document.querySelector('[data-f="status"]')?.textContent).toBe("On foot");
   });
@@ -139,13 +162,29 @@ describe("hud.js tracker", () => {
     };
     HUD.render({
       exoMinimap: mm,
-      exoOrganicOverlay: { visible: true, phase: "tracking", sampleCount: 1, nearestSampleMeetsMin: false, minSampleDistanceM: 200, distToFirstM: 30, speciesDisplay: "Tussock propagito" },
+      exoOrganicOverlay: {
+        visible: true,
+        phase: "tracking",
+        sampleCount: 1,
+        nearestSampleMeetsMin: false,
+        minSampleDistanceM: 200,
+        distToFirstM: 30,
+        speciesDisplay: "Tussock propagito",
+      },
     });
     expect(document.querySelector(".minimap-hint")).not.toBeNull();
     expect(document.querySelector('[data-f="status"]')?.textContent).toBe("Too close");
     HUD.render({
       exoMinimap: mm,
-      exoOrganicOverlay: { visible: true, phase: "tracking", sampleCount: 1, nearestSampleMeetsMin: true, minSampleDistanceM: 200, distToFirstM: 250, speciesDisplay: "Tussock propagito" },
+      exoOrganicOverlay: {
+        visible: true,
+        phase: "tracking",
+        sampleCount: 1,
+        nearestSampleMeetsMin: true,
+        minSampleDistanceM: 200,
+        distToFirstM: 250,
+        speciesDisplay: "Tussock propagito",
+      },
     });
     expect(document.querySelector(".minimap-hint")).toBeNull();
   });
@@ -318,7 +357,10 @@ describe("hud.js next jump", () => {
     expect(document.querySelectorAll(".hop__fuel--yellow")).toHaveLength(1);
     expect(hops[1]?.querySelector(".hop__fuel")).not.toBeNull();
 
-    HUD.render({ jumpTarget: null, liveShipFuelRange: { navRoute: { ahead: [], refuelInHops: null, refuelLevel: "none" } } });
+    HUD.render({
+      jumpTarget: null,
+      liveShipFuelRange: { navRoute: { ahead: [], refuelInHops: null, refuelLevel: "none" } },
+    });
     expect((document.querySelector('[data-f="route"]') as HTMLElement).hidden).toBe(true);
   });
 });

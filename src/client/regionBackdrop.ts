@@ -134,7 +134,10 @@ function canvasYForZ(z: number): number {
  *
  * Wider and taller than the grid itself, because the image carries a lot of black around the disc.
  */
-export function galaxyImageRect(imageWidth: number, imageHeight: number): {
+export function galaxyImageRect(
+  imageWidth: number,
+  imageHeight: number,
+): {
   x: number;
   y: number;
   width: number;
@@ -168,9 +171,7 @@ export async function loadGalaxyImage(url: string): Promise<GalaxyImage | null> 
     const img = new Image();
     img.src = url;
     await img.decode();
-    return img.naturalWidth > 0
-      ? { url, width: img.naturalWidth, height: img.naturalHeight }
-      : null;
+    return img.naturalWidth > 0 ? { url, width: img.naturalWidth, height: img.naturalHeight } : null;
   } catch {
     return null;
   }

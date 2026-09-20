@@ -70,7 +70,10 @@ describe("matching the atmosphere across two spellings", () => {
   });
 });
 
-function match(id: string, unfavoured?: string[]): Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits"> {
+function match(
+  id: string,
+  unfavoured?: string[],
+): Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits"> {
   return {
     entry: {
       id,

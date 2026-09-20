@@ -78,7 +78,8 @@ const speciesOnBody = new Map<string, Set<string>>();
 const recordOf = new Map<string, CacheBody>();
 
 const genusSpecies = db.species.filter(
-  (e) => (e.genus || e.genusDataDir).toLowerCase().replace(/[^a-z]/g, "") === genusWanted.replace(/[^a-z]/g, ""),
+  (e) =>
+    (e.genus || e.genusDataDir).toLowerCase().replace(/[^a-z]/g, "") === genusWanted.replace(/[^a-z]/g, ""),
 );
 
 for (const e of genusSpecies) {
@@ -117,8 +118,12 @@ const shared = bodiesWithRecord.filter((n) => (speciesOnBody.get(n)?.size ?? 0) 
 
 console.log(`genus                       ${genusWanted}`);
 console.log(`species in the tree         ${genusSpecies.length}`);
-console.log(`bodies carrying the genus   ${speciesOnBody.size}  (${bodiesWithRecord.length} with a body record)`);
-console.log(`bodies carrying two or more ${shared.length}   <- one genus per signal, so these are rivals meeting`);
+console.log(
+  `bodies carrying the genus   ${speciesOnBody.size}  (${bodiesWithRecord.length} with a body record)`,
+);
+console.log(
+  `bodies carrying two or more ${shared.length}   <- one genus per signal, so these are rivals meeting`,
+);
 
 const focus = genusSpecies.find((e) => e.displayName.toLowerCase() === focusWanted);
 if (!focus) {
@@ -142,7 +147,8 @@ const axes: { label: string; of: (b: CacheBody) => string }[] = [
   { label: "body class", of: (b) => b.subType ?? "(unknown)" },
   {
     label: "volcanism",
-    of: (b) => (b.volcanismType ? (b.volcanismType === "No volcanism" ? "none" : "volcanic") : "(not recorded)"),
+    of: (b) =>
+      b.volcanismType ? (b.volcanismType === "No volcanism" ? "none" : "volcanic") : "(not recorded)",
   },
   {
     label: "grade-4 materials present",
@@ -185,7 +191,9 @@ for (const axis of axes) {
     const pa = ((a.get(k) ?? 0) / Math.max(1, mine.length)) * 100;
     const pb = ((b.get(k) ?? 0) / Math.max(1, theirs.length)) * 100;
     const lift = pb > 0 ? `${(pa / pb).toFixed(2)}x` : pa > 0 ? "only" : "-";
-    console.log(`  ${k.padEnd(26)} ${`${pa.toFixed(1)} %`.padStart(15)} ${`${pb.toFixed(1)} %`.padStart(15)} ${lift.padStart(7)}`);
+    console.log(
+      `  ${k.padEnd(26)} ${`${pa.toFixed(1)} %`.padStart(15)} ${`${pb.toFixed(1)} %`.padStart(15)} ${lift.padStart(7)}`,
+    );
   }
 }
 
@@ -198,7 +206,9 @@ for (const axis of axes) {
   it should own ~everything in atmospheres its siblings never appear in and little elsewhere.
 */
 console.log("\nshare of the genus this species holds, by atmosphere:");
-console.log(`  ${"atmosphere".padEnd(26) } ${"its bodies".padStart(11)} ${"genus total".padStart(12)} ${"share".padStart(8)}`);
+console.log(
+  `  ${"atmosphere".padEnd(26)} ${"its bodies".padStart(11)} ${"genus total".padStart(12)} ${"share".padStart(8)}`,
+);
 const atmOf = axes[0]!.of;
 const byAtm = new Map<string, { mine: number; total: number }>();
 for (const n of bodiesWithRecord) {

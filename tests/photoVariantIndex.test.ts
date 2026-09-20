@@ -24,13 +24,37 @@ const importer = readFileSync(path.resolve(__dirname, "../scripts/import-my-phot
 
 /** `variantColourOf`, transcribed — the module reads the species tree and cannot be imported here. */
 const VARIANT_COLOURS = [
-  "amethyst", "aquamarine", "blue", "cobalt", "cyan", "emerald", "gold", "green", "grey", "indigo",
-  "lime", "magenta", "maroon", "mauve", "mulberry", "ocher", "orange", "peach", "red", "sage",
-  "teal", "turquoise", "white", "yellow",
+  "amethyst",
+  "aquamarine",
+  "blue",
+  "cobalt",
+  "cyan",
+  "emerald",
+  "gold",
+  "green",
+  "grey",
+  "indigo",
+  "lime",
+  "magenta",
+  "maroon",
+  "mauve",
+  "mulberry",
+  "ocher",
+  "orange",
+  "peach",
+  "red",
+  "sage",
+  "teal",
+  "turquoise",
+  "white",
+  "yellow",
 ] as const;
 
 const normStem = (s: string) =>
-  s.toLowerCase().replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/g, "");
+  s
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[^a-z0-9]+/g, "");
 
 function variantColourOf(file: string, speciesStem: string): string | null {
   const n = normStem(file);
@@ -98,7 +122,7 @@ describe("a second photograph of the same colour", () => {
 
   it("gives the indexed file its own name, so the second does not overwrite the first", () => {
     expect(importer).toContain('const suffix = parsed.index ? `-${parsed.index}` : "";');
-    expect(importer).toContain("${canonicalColour.replace(/\\s+/g, \"_\")}${suffix}.${parsed.ext}");
+    expect(importer).toContain('${canonicalColour.replace(/\\s+/g, "_")}${suffix}.${parsed.ext}');
   });
 
   it("lets the unindexed photograph lead its colour, so the hero does not change under him", () => {

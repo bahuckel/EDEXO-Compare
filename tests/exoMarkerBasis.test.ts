@@ -92,7 +92,14 @@ describe("what the map is allowed to mark as carrying life", () => {
 
   it("does not mark a body that is only landable and described", () => {
     const b = body({
-      scan: { BodyName: "x", BodyID: 1, StarSystem: "s", SystemAddress: 1, Landable: true, PlanetClass: "Rocky body" },
+      scan: {
+        BodyName: "x",
+        BodyID: 1,
+        StarSystem: "s",
+        SystemAddress: 1,
+        Landable: true,
+        PlanetClass: "Rocky body",
+      },
     });
     // The candidate list still runs — it is the mark on the map that would be a claim.
     expect(bodyHasExoMarkers(b)).toBe(true);

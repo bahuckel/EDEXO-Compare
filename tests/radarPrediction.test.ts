@@ -40,7 +40,14 @@ function loadHud(): HudApi {
   return (window as unknown as { HUD: HudApi }).HUD;
 }
 
-type Mark = { kind: string; label: string; active?: boolean; northM: number; eastM: number; distanceM: number };
+type Mark = {
+  kind: string;
+  label: string;
+  active?: boolean;
+  northM: number;
+  eastM: number;
+  distanceM: number;
+};
 
 const mk = (label: string, northM: number, eastM = 0): Mark => ({
   kind: "sample",

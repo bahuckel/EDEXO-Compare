@@ -20,7 +20,11 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { resolveUserSettingsJsonPath } from "./paths.js";
 import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
-import { hasExomasteryProfileFile, loadExomasteryProfile, feederProfileBodyCount } from "./exomasteryProfile.js";
+import {
+  hasExomasteryProfileFile,
+  loadExomasteryProfile,
+  feederProfileBodyCount,
+} from "./exomasteryProfile.js";
 import type { BodyExoState, SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
 import type { CollectionFocusConfig } from "../shared/collectionFocus.js";
 
@@ -50,9 +54,15 @@ export function loadCollectionFocusConfig(): CollectionFocusConfig {
     return {
       formatVersion: 1,
       enabled: raw.enabled !== false,
-      targetScans: Number.isFinite(raw.targetScans) ? Math.max(1, Number(raw.targetScans)) : DEFAULT_COLLECTION_FOCUS.targetScans,
-      corpusFloor: Number.isFinite(raw.corpusFloor) ? Math.max(0, Number(raw.corpusFloor)) : DEFAULT_COLLECTION_FOCUS.corpusFloor,
-      dismissed: Array.isArray(raw.dismissed) ? raw.dismissed.filter((x): x is string => typeof x === "string") : [],
+      targetScans: Number.isFinite(raw.targetScans)
+        ? Math.max(1, Number(raw.targetScans))
+        : DEFAULT_COLLECTION_FOCUS.targetScans,
+      corpusFloor: Number.isFinite(raw.corpusFloor)
+        ? Math.max(0, Number(raw.corpusFloor))
+        : DEFAULT_COLLECTION_FOCUS.corpusFloor,
+      dismissed: Array.isArray(raw.dismissed)
+        ? raw.dismissed.filter((x): x is string => typeof x === "string")
+        : [],
     };
   } catch {
     // A malformed local file is not worth a failed snapshot; the defaults are all this needs.

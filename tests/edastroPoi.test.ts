@@ -156,9 +156,7 @@ describe("queryPoi", () => {
   });
 
   it("filters by group", () => {
-    expect(queryPoi({ origin, groups: ["nebulae"] }).map((r) => r.name)).toEqual([
-      "Athaip Wisteria Nebula",
-    ]);
+    expect(queryPoi({ origin, groups: ["nebulae"] }).map((r) => r.name)).toEqual(["Athaip Wisteria Nebula"]);
     // The secondary-organic row is filed under scenery by its first category, which is where a
     // commander browsing scenery would expect to meet it.
     expect(queryPoi({ origin, groups: ["scenery"] }).map((r) => r.name)).toEqual(["Quiet Meadow"]);
@@ -178,13 +176,9 @@ describe("queryPoi", () => {
   });
 
   it("searches name, system, region, type and summary", () => {
-    expect(queryPoi({ origin, search: "wisteria" }).map((r) => r.name)).toEqual([
-      "Athaip Wisteria Nebula",
-    ]);
+    expect(queryPoi({ origin, search: "wisteria" }).map((r) => r.name)).toEqual(["Athaip Wisteria Nebula"]);
     expect(queryPoi({ origin, search: "norma" }).map((r) => r.name)).toEqual(["Quiet Meadow"]);
-    expect(queryPoi({ origin, search: "bio signs" }).map((r) => r.name)).toEqual([
-      "Black Sage Fields",
-    ]);
+    expect(queryPoi({ origin, search: "bio signs" }).map((r) => r.name)).toEqual(["Black Sage Fields"]);
     // ANDed across fields, as everywhere else in the app.
     expect(queryPoi({ origin, search: "nebula athaip" })).toHaveLength(1);
     expect(queryPoi({ origin, search: "nebula colonia" })).toHaveLength(0);

@@ -162,7 +162,11 @@ describe("a sibling's own signal count", () => {
 
     // 4 c's own DSS: two genera, and the game is naming all of them.
     store.apply({
-      timestamp: T, event: "SAAScanComplete", BodyName: "Plio Aip NM-U d3-13 4 c", BodyID: 20, SystemAddress: SYS,
+      timestamp: T,
+      event: "SAAScanComplete",
+      BodyName: "Plio Aip NM-U d3-13 4 c",
+      BodyID: 20,
+      SystemAddress: SYS,
     } as unknown as JournalLine);
     store.apply(saaSignals(20, "Plio Aip NM-U d3-13 4 c", 2, ["Bacterial", "Tussocks"]));
     // The `Scan` the DSS emits immediately afterwards — the line that used to undo it.

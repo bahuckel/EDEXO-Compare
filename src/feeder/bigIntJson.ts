@@ -80,7 +80,10 @@ export function quoteBigIntFields(text: string, fields: readonly string[] = ID64
 }
 
 /** `JSON.parse`, with the named identifier fields preserved as strings rather than rounded. */
-export function parseJsonPreservingIds<T = unknown>(text: string, fields: readonly string[] = ID64_FIELDS): T {
+export function parseJsonPreservingIds<T = unknown>(
+  text: string,
+  fields: readonly string[] = ID64_FIELDS,
+): T {
   return JSON.parse(quoteBigIntFields(text, fields)) as T;
 }
 

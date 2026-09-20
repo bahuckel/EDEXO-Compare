@@ -37,7 +37,8 @@ if (!rowsPath || !cacheMapPath) {
   process.exit(1);
 }
 
-const feederDir = process.env.EXOMASTERY_FEEDER_DIR?.trim() || path.resolve(process.cwd(), "..", "exomastery-feeder");
+const feederDir =
+  process.env.EXOMASTERY_FEEDER_DIR?.trim() || path.resolve(process.cwd(), "..", "exomastery-feeder");
 const systemsDir = path.join(feederDir, "data", "raw", "systems");
 
 interface DumpRow {
@@ -193,22 +194,28 @@ console.log(`  dump has no hostStarBodyId  ${noDumpAnswer}`);
 console.log(`  parents chains differ       ${chainDiffers}   <- a data difference, not a rule one`);
 console.log(`  comparable on identical chains ${compared}`);
 console.log("");
-console.log(`agree                         ${agree} (${((agree / Math.max(1, compared)) * 100).toFixed(2)} %)`);
+console.log(
+  `agree                         ${agree} (${((agree / Math.max(1, compared)) * 100).toFixed(2)} %)`,
+);
 console.log(`disagree                      ${compared - agree}`);
 console.log("");
 console.log(`our rule returned null        ${ourNull}`);
 console.log(`answered by the fallback      ${fallbackUsed}   <- the chain named no star directly`);
 console.log(`host-star *set* larger than 1 ${setBiggerThanOne}`);
-console.log(`  chain itself names 2+ stars ${setFromChain}   <- ordered: the nearest is the host, the rest are its ancestors`);
-console.log(`  chain names none (designation) ${setFromDesignation}   <- genuinely ambiguous, the pluma case`);
+console.log(
+  `  chain itself names 2+ stars ${setFromChain}   <- ordered: the nearest is the host, the rest are its ancestors`,
+);
+console.log(
+  `  chain names none (designation) ${setFromDesignation}   <- genuinely ambiguous, the pluma case`,
+);
 console.log(`bodies whose chain names 2+ stars ${chainNamesTwoPlusStars}`);
 
 if (disagreements.length) {
   const byShape = new Map<string, number>();
   for (const d of disagreements) {
-    const shape = (d.parents as Record<string, number>[] | null ?? [])
-      .map((p) => Object.keys(p)[0])
-      .join(">") || "(no parents)";
+    const shape =
+      ((d.parents as Record<string, number>[] | null) ?? []).map((p) => Object.keys(p)[0]).join(">") ||
+      "(no parents)";
     byShape.set(shape, (byShape.get(shape) ?? 0) + 1);
   }
   console.log("\ndisagreements by parent-chain shape:");

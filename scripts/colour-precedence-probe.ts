@@ -213,7 +213,9 @@ console.log("1. is the material the variant names actually on the body?");
 console.log(`   present  ${namedPresent.length}`);
 console.log(`   absent   ${namedAbsent.length}`);
 for (const o of namedAbsent.slice(0, 10)) {
-  console.log(`     ${o.species.padEnd(24)} ${bodies.get(o.bodyKey)!.name.padEnd(30)} names ${o.variantMaterial}`);
+  console.log(
+    `     ${o.species.padEnd(24)} ${bodies.get(o.bodyKey)!.name.padEnd(30)} names ${o.variantMaterial}`,
+  );
 }
 
 /* ------------------------------------------------------------------ 2. the table, checked */
@@ -315,7 +317,10 @@ for (const [species, per] of [...pairsBySpecies].sort()) {
     parts.push(`${w}>${l}×${n}`);
     if ((per.get(`${l}|${w}`) ?? 0) > 0) bad.push(`${w}/${l}`);
   }
-  const flag = bad.length > 0 ? `   <- CONTRADICTS on ${[...new Set(bad.map((b) => b.split("/").sort().join("/")))].join(", ")}` : "";
+  const flag =
+    bad.length > 0
+      ? `   <- CONTRADICTS on ${[...new Set(bad.map((b) => b.split("/").sort().join("/")))].join(", ")}`
+      : "";
   console.log(`     ${species.padEnd(24)} ${parts.join("  ")}${flag}`);
 }
 
@@ -336,7 +341,9 @@ for (const c of contests) {
 const scored = contests.length - ties;
 
 console.log("\n4. if not a precedence, then what?");
-console.log(`   abundance decides:  most abundant wins ${mostRight}/${scored}, least abundant wins ${leastRight}/${scored} (chance ≈ ${(scored / 2).toFixed(1)})`);
+console.log(
+  `   abundance decides:  most abundant wins ${mostRight}/${scored}, least abundant wins ${leastRight}/${scored} (chance ≈ ${(scored / 2).toFixed(1)})`,
+);
 
 /*
   Abundance in raw per-cent is not comparable across materials — tungsten is scarcer than cadmium
@@ -365,7 +372,9 @@ for (const c of contests) {
   if (scoredBy[0]![0] === c.winner) enrichedRight += 1;
   if (scoredBy[scoredBy.length - 1]![0] === c.winner) depletedRight += 1;
 }
-console.log(`   enrichment decides: most enriched wins ${enrichedRight}/${contests.length}, least ${depletedRight}/${contests.length}`);
+console.log(
+  `   enrichment decides: most enriched wins ${enrichedRight}/${contests.length}, least ${depletedRight}/${contests.length}`,
+);
 
 /*
   The standing hypothesis, written out and scored. Same rank means the pair says nothing either way,
@@ -444,7 +453,9 @@ for (const [genus, per] of [...byGenus].sort()) {
     }
   }
   const vs = `  [vs the hypothesis: ${fitsG} hold, ${breaksG} break]`;
-  console.log(`     ${genus.padEnd(11)} ${parts.join("  ")}${selfContradiction ? "  <- CONTRADICTS ITSELF" : ""}${vs}`);
+  console.log(
+    `     ${genus.padEnd(11)} ${parts.join("  ")}${selfContradiction ? "  <- CONTRADICTS ITSELF" : ""}${vs}`,
+  );
 }
 
 /* Does the parent star's class split the contradictions? */
@@ -464,7 +475,9 @@ for (const [id, list] of byPair) {
   shown += 1;
   console.log(`     ${a} vs ${b}:`);
   for (const c of list) {
-    console.log(`       ${c.species.padEnd(22)} ${c.body.padEnd(34)} won ${c.winner.padEnd(11)} star ${c.star ?? "?"}`);
+    console.log(
+      `       ${c.species.padEnd(22)} ${c.body.padEnd(34)} won ${c.winner.padEnd(11)} star ${c.star ?? "?"}`,
+    );
   }
 }
 if (shown === 0) console.log("     none — no pair was won by both sides");
@@ -473,6 +486,8 @@ if (showRows) {
   console.log("\nevery contested body:");
   for (const c of contests) {
     const mats = [...c.percent].map(([m, p]) => `${m} ${p.toFixed(2)}%`).join(", ");
-    console.log(`  ${c.when.slice(0, 10)}  ${c.species.padEnd(24)} ${c.body.padEnd(34)} won ${c.winner.padEnd(11)} star ${(c.star ?? "?").padEnd(4)} [${mats}]`);
+    console.log(
+      `  ${c.when.slice(0, 10)}  ${c.species.padEnd(24)} ${c.body.padEnd(34)} won ${c.winner.padEnd(11)} star ${(c.star ?? "?").padEnd(4)} [${mats}]`,
+    );
   }
 }

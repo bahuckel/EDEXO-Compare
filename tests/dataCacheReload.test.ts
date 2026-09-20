@@ -84,7 +84,7 @@ describe("the photo-credits manifest", () => {
 describe("the region × species table", () => {
   const table = {
     regions: {
-      "7": { name: "Inner Orion Spur", bioSystems: 100000, species: { "stratum_stratum_tectonicas": 9000 } },
+      "7": { name: "Inner Orion Spur", bioSystems: 100000, species: { stratum_stratum_tectonicas: 9000 } },
     },
     speciesIds: ["stratum_stratum_tectonicas"],
   };
@@ -136,8 +136,22 @@ describe("surface marks written by an older build", () => {
     saveSurfaceMarks({
       formatVersion: 1,
       samples: [
-        { bodyKey: "1:22", bodyNameNorm: "body 22", latDeg: 1, lonDeg: 2, label: "Bacterium Acies", atIso: "x" },
-        { bodyKey: "1:23", bodyNameNorm: "smojai uj-f b13-0 b 4", latDeg: 3, lonDeg: 4, label: "Keep", atIso: "y" },
+        {
+          bodyKey: "1:22",
+          bodyNameNorm: "body 22",
+          latDeg: 1,
+          lonDeg: 2,
+          label: "Bacterium Acies",
+          atIso: "x",
+        },
+        {
+          bodyKey: "1:23",
+          bodyNameNorm: "smojai uj-f b13-0 b 4",
+          latDeg: 3,
+          lonDeg: 4,
+          label: "Keep",
+          atIso: "y",
+        },
       ],
       ship: null,
     });

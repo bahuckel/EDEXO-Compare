@@ -39,8 +39,7 @@ const PARKED =
 /** No coordinates: unplaceable, and must not reach the panel at all. */
 const NO_COORDS = 'CCC-333,GHOST,,"2026-01-01 00:00:00","2026-01-01 00:00:00",,,,,,0.00,,0,0,';
 /** Empty services cell — a real value, and a row that must survive parsing. */
-const BARE =
-  'DDD-444,,,"2026-09-19 00:00:00","2026-09-01 00:00:00",Sol,3,0,0,0,0,Inner Orion Spur,1,0,';
+const BARE = 'DDD-444,,,"2026-09-19 00:00:00","2026-09-01 00:00:00",Sol,3,0,0,0,0,Inner Orion Spur,1,0,';
 
 const FILE = [HEADER, MOVER, PARKED, NO_COORDS, BARE].join("\n");
 /** Fixed "now" so ages are arithmetic rather than a clock reading. */
@@ -201,9 +200,10 @@ describe("queryCarriers", () => {
   });
 
   it("filters on services, requiring all of them", () => {
-    expect(
-      queryCarriers({ origin, services: ["vistagenomics"] }, NOW).map((r) => r.callsign),
-    ).toEqual(["AAA-111", "BBB-222"]);
+    expect(queryCarriers({ origin, services: ["vistagenomics"] }, NOW).map((r) => r.callsign)).toEqual([
+      "AAA-111",
+      "BBB-222",
+    ]);
     expect(
       queryCarriers({ origin, services: ["vistagenomics", "exploration"] }, NOW).map((r) => r.callsign),
     ).toEqual(["BBB-222"]);

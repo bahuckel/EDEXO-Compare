@@ -92,7 +92,12 @@ describe("Stratum tectonicas' gravity ceiling", () => {
       The evidence, not a memory of it. If a profile rebuild ever finds tectonicas above the cap this
       goes red, and the cap should be revisited rather than quietly kept.
     */
-    const f = path.join(getSpeciesDataDir(root), "stratum", "exomastery", "stratum_tectonicas_exomastery.json");
+    const f = path.join(
+      getSpeciesDataDir(root),
+      "stratum",
+      "exomastery",
+      "stratum_tectonicas_exomastery.json",
+    );
     if (!existsSync(f)) return;
     const j = JSON.parse(readFileSync(f, "utf8")) as {
       sampleCount?: number;

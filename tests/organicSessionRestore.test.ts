@@ -84,12 +84,7 @@ describe("reading the run back out of the journal", () => {
 
   it("starts the count again when a different species is logged", () => {
     // Walking off a half-sampled plant for a better one is ordinary play.
-    const lines = [
-      touchdown(),
-      scan("Log"),
-      scan("Sample"),
-      scan("Log", "Osseus Pumice", "Osseus"),
-    ];
+    const lines = [touchdown(), scan("Log"), scan("Sample"), scan("Log", "Osseus Pumice", "Osseus")];
     const { ok, t } = restored(lines);
     expect(ok).toBe(true);
     expect(t!.speciesDisplay).toBe("Osseus Pumice");

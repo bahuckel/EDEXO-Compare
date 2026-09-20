@@ -143,9 +143,13 @@ function main(): void {
     .all() as { name: string }[];
 
   const todo = limit > 0 ? wanted.slice(0, limit) : wanted;
-  console.log(`${wanted.length} system(s) hold un-hydrated planets${limit > 0 ? ` — doing ${todo.length}` : ""}`);
+  console.log(
+    `${wanted.length} system(s) hold un-hydrated planets${limit > 0 ? ` — doing ${todo.length}` : ""}`,
+  );
 
-  const sysStmt = galaxy.prepare(`SELECT id64, name, x, y, z, body_count FROM systems WHERE name = ? LIMIT 1`);
+  const sysStmt = galaxy.prepare(
+    `SELECT id64, name, x, y, z, body_count FROM systems WHERE name = ? LIMIT 1`,
+  );
   const bodyStmt = galaxy.prepare(
     `SELECT id64, body_id, name, type, sub_type, distance_to_arrival, parents_json,
             is_landable, gravity, earth_masses, radius, surface_pressure, surface_temperature,
@@ -156,9 +160,15 @@ function main(): void {
        FROM bodies WHERE system_id64 = ? ORDER BY body_id`,
   );
   for (const st of [sysStmt, bodyStmt]) st.setReadBigInts(true);
-  const matStmt = galaxy.prepare(`SELECT material AS k, percent AS v FROM body_materials WHERE body_id64 = ?`);
-  const atmStmt = galaxy.prepare(`SELECT element AS k, percent AS v FROM body_atmosphere_composition WHERE body_id64 = ?`);
-  const solStmt = galaxy.prepare(`SELECT element AS k, percent AS v FROM body_solid_composition WHERE body_id64 = ?`);
+  const matStmt = galaxy.prepare(
+    `SELECT material AS k, percent AS v FROM body_materials WHERE body_id64 = ?`,
+  );
+  const atmStmt = galaxy.prepare(
+    `SELECT element AS k, percent AS v FROM body_atmosphere_composition WHERE body_id64 = ?`,
+  );
+  const solStmt = galaxy.prepare(
+    `SELECT element AS k, percent AS v FROM body_solid_composition WHERE body_id64 = ?`,
+  );
 
   if (!dry) mkdirSync(SYSTEMS_DIR, { recursive: true });
 
@@ -218,8 +228,7 @@ function main(): void {
         body.surfacePressure = num(b.surface_pressure);
         body.surfaceTemperature = num(b.surface_temperature);
         const subType = typeof b.sub_type === "string" ? b.sub_type : "";
-        body.atmosphereType =
-          b.atmosphere_type ?? (AIRLESS_WHEN_NULL.has(subType) ? "No atmosphere" : null);
+        body.atmosphereType = b.atmosphere_type ?? (AIRLESS_WHEN_NULL.has(subType) ? "No atmosphere" : null);
         // Omitted when NULL rather than called "No volcanism" — see the header.
         if (b.volcanism_type) body.volcanismType = b.volcanism_type;
         body.terraformingState = b.terraforming_state ?? null;

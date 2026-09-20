@@ -22,12 +22,7 @@
  */
 import { useMemo, useState } from "react";
 import { useLiveSnapshot } from "./useLiveSnapshot";
-import {
-  triageInputsFromBodies,
-  triageSystem,
-  type TriageRow,
-  type TriageSort,
-} from "@shared/systemTriage";
+import { triageInputsFromBodies, triageSystem, type TriageRow, type TriageSort } from "@shared/systemTriage";
 
 const SORT_STORAGE_KEY = "edexo.secondscreen.sort";
 

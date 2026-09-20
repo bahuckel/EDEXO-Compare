@@ -6,7 +6,12 @@
  * the app already had in its own data and never applied.
  */
 import { describe, expect, it } from "vitest";
-import { colourFromMaterials, colourFromStar, inferColour, normaliseMaterial } from "../src/shared/speciesColour.js";
+import {
+  colourFromMaterials,
+  colourFromStar,
+  inferColour,
+  normaliseMaterial,
+} from "../src/shared/speciesColour.js";
 
 /** Bacterium vesicula's real rule, from data/species/bacterium/bacterium_new.json. */
 const VESICULA = {

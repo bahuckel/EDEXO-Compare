@@ -239,7 +239,11 @@ describe("arrivalTripRanks", () => {
   });
 
   it("ignores bodies with no biology — the nearest body is rarely the nearest worth landing on", () => {
-    const dead = { state: { key: "x", biologicalSignals: 0 }, matches: [], mergedScan: { distanceFromArrivalLs: 5 } } as unknown as BodyComputed;
+    const dead = {
+      state: { key: "x", biologicalSignals: 0 },
+      matches: [],
+      mergedScan: { distanceFromArrivalLs: 5 },
+    } as unknown as BodyComputed;
     const ranks = arrivalTripRanks([dead, bioBody("a", 300)]);
     expect(ranks.has("x")).toBe(false);
     expect(ranks.get("a")).toMatchObject({ rank: 1, ranked: 1 });

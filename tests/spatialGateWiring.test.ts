@@ -46,7 +46,10 @@ const pending = (id: string): Pending => ({ entry: entry(id), reasons: [] });
 
 describe("demoting on a failed gate", () => {
   it("moves a gated species to the unlikely tier at the owner's home system", () => {
-    const strict: Pending[] = [pending("electricae_electricae_radialem"), pending("electricae_electricae_pluma")];
+    const strict: Pending[] = [
+      pending("electricae_electricae_radialem"),
+      pending("electricae_electricae_pluma"),
+    ];
     const unlikely: Pending[] = [];
 
     demoteFailedSpatialGates(strict, unlikely, { systemCoords: HOME }, cat);

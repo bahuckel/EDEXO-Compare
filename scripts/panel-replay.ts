@@ -107,7 +107,8 @@ for (const b of recent) {
   });
   const scale = (b.biologicalSignals ?? 1) > 0 ? b.biologicalSignals! : 1;
   for (const r of ranked) {
-    r.match.presenceProbabilityPercent = Math.round(Math.max(0, Math.min(1, r.probability * scale)) * 1000) / 10;
+    r.match.presenceProbabilityPercent =
+      Math.round(Math.max(0, Math.min(1, r.probability * scale)) * 1000) / 10;
   }
   const rows = ranked.map((r) => ({ genus: r.match.entry.genusDataDir, probability: r.probability, r }));
   const shares = genusShares(rows);
@@ -133,4 +134,6 @@ for (const b of recent) {
   );
 }
 
-console.log(`\ntarget shown on ${shownCount} of ${recent.length} (${((shownCount / Math.max(1, recent.length)) * 100).toFixed(0)} %)`);
+console.log(
+  `\ntarget shown on ${shownCount} of ${recent.length} (${((shownCount / Math.max(1, recent.length)) * 100).toFixed(0)} %)`,
+);

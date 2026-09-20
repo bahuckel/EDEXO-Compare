@@ -123,10 +123,18 @@ describe("the radar's own frame", () => {
       port: 7111,
       exoOverlayFocusBodyKey: "b1",
       exoOverlayFocusBody: {
-        state: { key: "b1", bodyName: "A 1 a", biologicalSignals: 3, dssComplete: true, organicGenusLocks: [] },
+        state: {
+          key: "b1",
+          bodyName: "A 1 a",
+          biologicalSignals: 3,
+          dssComplete: true,
+          organicGenusLocks: [],
+        },
         tabLabel: "A 1 a",
         genusLikelihoods: [{ genus: "Stratum" }],
-        matches: [{ entry: { genus: "Stratum", displayName: "Stratum tectonicas" }, priceCredits: 19_010_800 }],
+        matches: [
+          { entry: { genus: "Stratum", displayName: "Stratum tectonicas" }, priceCredits: 19_010_800 },
+        ],
       },
       exoOrganicOverlay: overlay(120),
       exoMinimap: minimap(120),
@@ -161,7 +169,9 @@ describe("the radar's own frame", () => {
     const HUD = loadHud();
     const root = HUD.mount(["distance"], { noTimers: true });
     const before = root.innerHTML;
-    expect(() => HUD.renderExoLive({ exoOrganicOverlay: overlay(340), exoMinimap: minimap(340) })).not.toThrow();
+    expect(() =>
+      HUD.renderExoLive({ exoOrganicOverlay: overlay(340), exoMinimap: minimap(340) }),
+    ).not.toThrow();
     expect(root.innerHTML).toBe(before);
   });
 });

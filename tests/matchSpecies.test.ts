@@ -112,7 +112,11 @@ describe("matchDatabaseToScan", () => {
       row is still behind "show unlikely" with its share in the reason.
       See tests/atmosphereUnfavoured.test.ts and tests/bacteriumTelaVolcanism.test.ts.
     */
-    expect(shown(r).map((m) => m.entry.id).sort()).toEqual(["bacterium_bacterium_aurasus"]);
+    expect(
+      shown(r)
+        .map((m) => m.entry.id)
+        .sort(),
+    ).toEqual(["bacterium_bacterium_aurasus"]);
     const telaRow = r.matches.find((m) => m.entry.id === "bacterium_bacterium_tela");
     expect(telaRow?.unlikely, "tela must be demoted, never dropped").toBe(true);
     expect(r.approximateMatchingUsed).toBe(false);

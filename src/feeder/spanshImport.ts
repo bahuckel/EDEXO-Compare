@@ -148,7 +148,11 @@ function findUnsafeIntegers(value: unknown, path: string, out: string[], warn: s
   }
 }
 
-function checkFields(row: Record<string, unknown>, expected: string[] | undefined, kind: string): string | null {
+function checkFields(
+  row: Record<string, unknown>,
+  expected: string[] | undefined,
+  kind: string,
+): string | null {
   if (!expected) return null;
   const got = Object.keys(row);
   if (got.length === expected.length && got.every((k, i) => k === expected[i])) return null;
@@ -328,7 +332,9 @@ export function formatImportReport(r: ImportReport, applied: boolean): string {
   out.push(
     `Manifest           schema ${m?.schemaVersion ?? "?"}, source ${m?.source ?? "?"}, exported ${m?.exported ?? "?"}`,
   );
-  out.push(`Read               ${r.linesRead.toLocaleString()} lines — ${r.systemRows.toLocaleString()} systems, ${r.bodyRows.toLocaleString()} bodies (${r.elapsedMs} ms)`);
+  out.push(
+    `Read               ${r.linesRead.toLocaleString()} lines — ${r.systemRows.toLocaleString()} systems, ${r.bodyRows.toLocaleString()} bodies (${r.elapsedMs} ms)`,
+  );
 
   if (r.failures.length > 0) {
     out.push("");
@@ -353,7 +359,9 @@ export function formatImportReport(r: ImportReport, applied: boolean): string {
   );
   out.push(`   new information ${r.changed.toLocaleString()}   (the rest the corpus already had)`);
   out.push(`   mapped          ${r.mappedTrue.toLocaleString()}   (a genus list proves a DSS)`);
-  out.push(`   no evidence     ${r.mappedFalse.toLocaleString()}   (signal count only — not proof of unmapped)`);
+  out.push(
+    `   no evidence     ${r.mappedFalse.toLocaleString()}   (signal count only — not proof of unmapped)`,
+  );
   out.push(
     applied
       ? `Written            ${r.planetsWritten.toLocaleString()} planet rows, ${r.systemsWithCoords.toLocaleString()} system coordinate rows`

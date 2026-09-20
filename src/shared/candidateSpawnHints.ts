@@ -33,9 +33,7 @@ export function candidateMorphColorShortLabel(
    */
   const rule = entry.colourVariant;
   if (rule) {
-    const label = colourVariantLabel(
-      resolveColourVariant(rule, { parentStarType: hostStarType, materials }),
-    );
+    const label = colourVariantLabel(resolveColourVariant(rule, { parentStarType: hostStarType, materials }));
     if (label) return label;
     return "(unknown)";
   }

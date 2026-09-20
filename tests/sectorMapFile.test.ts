@@ -108,7 +108,10 @@ describe("writing the file", () => {
     try {
       const { file } = writeSectorMapFile(
         dir,
-        { entries: aggregateBySector([ev(0, "b1", "x", "confirmed")]), sources: { confirmed: 1, genus: 0, signal: 0 } },
+        {
+          entries: aggregateBySector([ev(0, "b1", "x", "confirmed")]),
+          sources: { confirmed: 1, genus: 0, signal: 0 },
+        },
         path.join(dir, "missing.csv"),
       );
       expect(file.cells[0]!.name).toBeNull();

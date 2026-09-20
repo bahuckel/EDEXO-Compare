@@ -127,7 +127,11 @@ function requiredAtmosphereShare(
   const wanted = required.filter((r) => r?.trim());
   const scanKey = atmosphereCompositionKey(atmoNorm);
   for (const w of wanted) {
-    if (w === atmoNorm || w.toLowerCase() === atmoNorm.toLowerCase() || atmosphereCompositionKey(w) === scanKey) {
+    if (
+      w === atmoNorm ||
+      w.toLowerCase() === atmoNorm.toLowerCase() ||
+      atmosphereCompositionKey(w) === scanKey
+    ) {
       return { kind: "ok", pct: null, gas: w };
     }
   }

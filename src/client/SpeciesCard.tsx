@@ -10,14 +10,45 @@ import { settledMultiplier } from "@shared/footfallValue";
 import { PhotoCredit, isPlaceholderPhoto, photoCreditTitle } from "./photoCredit";
 import { PhotoGallery } from "./PhotoGallery";
 import { memo, Suspense, useEffect, useMemo, useRef, useState, CSSProperties } from "react";
-import type { AppSnapshot, BodyComputed, EstimatedSurfaceTempBand, FootScanMatchPayload, OtherMatchDetailCardDTO, PlanetScan } from "@shared/types";
+import type {
+  AppSnapshot,
+  BodyComputed,
+  EstimatedSurfaceTempBand,
+  FootScanMatchPayload,
+  OtherMatchDetailCardDTO,
+  PlanetScan,
+} from "@shared/types";
 import { formatGenusStarColorSoftOneLine } from "@shared/genusStarColorSoft";
-import { candidateMorphColorShortLabel, candidateMorphColorShortLabelForHosts } from "@shared/candidateSpawnHints";
+import {
+  candidateMorphColorShortLabel,
+  candidateMorphColorShortLabelForHosts,
+} from "@shared/candidateSpawnHints";
 import { createPortal } from "react-dom";
 import { pillLabelStyle, TempUnit } from "./planetDisplayUtils";
-import { EXO_PRESENCE_HELP, EXO_CODEX_VS_EXO_PROFILE_HELP, exomasteryDetailHasContent, footCatalogBadgeText, labelForReasonField, primaryMatchQuad, speciesCaptionParts, speciesMatchExtraReasons, titleCaseSpeciesWords, variantPhotoUrlFor } from "./speciesMatchHelpers";
+import {
+  EXO_PRESENCE_HELP,
+  EXO_CODEX_VS_EXO_PROFILE_HELP,
+  exomasteryDetailHasContent,
+  footCatalogBadgeText,
+  labelForReasonField,
+  primaryMatchQuad,
+  speciesCaptionParts,
+  speciesMatchExtraReasons,
+  titleCaseSpeciesWords,
+  variantPhotoUrlFor,
+} from "./speciesMatchHelpers";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
-import { EMPTY_REASONS, FootScanHitBlock, GenusSpeciesOdds, OtherMatchDetailCardsGrid, SpeciesProvenanceBadge, ThinSampleNote, hostHitsMorphSpectralChip, morphSpectralChipHeatClass, sortMorphSpectralKeys } from "./SpeciesCardBits";
+import {
+  EMPTY_REASONS,
+  FootScanHitBlock,
+  GenusSpeciesOdds,
+  OtherMatchDetailCardsGrid,
+  SpeciesProvenanceBadge,
+  ThinSampleNote,
+  hostHitsMorphSpectralChip,
+  morphSpectralChipHeatClass,
+  sortMorphSpectralKeys,
+} from "./SpeciesCardBits";
 import { readTempUnitFromLs, writeTempUnitToLs } from "./lsPrefs";
 
 function FootScanMatchCard({ payload }: { payload: FootScanMatchPayload }) {
@@ -267,8 +298,8 @@ export function ExoMissLogPanel({ outliers }: { outliers: AppSnapshot["exoOutlie
           {parts.length ? `: ${parts.join(", ")}` : ""}.
         </p>
         <p>
-          Each one is written to <code>edexo-outliers.jsonl</code> beside your settings, with the
-          body&apos;s parameters and the candidate list at the time — evidence for the next gate fix.
+          Each one is written to <code>edexo-outliers.jsonl</code> beside your settings, with the body&apos;s
+          parameters and the candidate list at the time — evidence for the next gate fix.
         </p>
         <p>It never leaves this machine.</p>
       </InfoPopover>
@@ -364,10 +395,7 @@ export const SpeciesCard = memo(function SpeciesCard({
    * inline here, which is how a row came to print "Cactoida Peperatis - Amethyst" beside a
    * photograph of the Teal one.
    */
-  const variantPhotoUrl = useMemo(
-    () => variantPhotoUrlFor(m, morphColorRaw),
-    [m, morphColorRaw],
-  );
+  const variantPhotoUrl = useMemo(() => variantPhotoUrlFor(m, morphColorRaw), [m, morphColorRaw]);
   const heroPhotoUrl = variantPhotoUrl ?? m.photoUrl;
   /**
    * Every photo of this species, the one you are going to see first.
@@ -507,10 +535,14 @@ export const SpeciesCard = memo(function SpeciesCard({
       <span className="species-compact-payout-label">Value here</span>
       <span className="species-compact-payout-amount" title={priceTitle}>
         {m.priceCredits != null ? `${fmtCrShort(m.priceCredits * priceMult)} CR` : "—"}
-        {m.priceCredits != null ? <span className={`price-tag price-tag--${footfall}`}>{priceTag}</span> : null}
+        {m.priceCredits != null ? (
+          <span className={`price-tag price-tag--${footfall}`}>{priceTag}</span>
+        ) : null}
       </span>
       {m.priceCredits != null && footfall === "unknown" ? (
-        <span className="species-compact-payout-alt">if first footfall: {fmtCrShort(m.priceCredits * 5)} CR</span>
+        <span className="species-compact-payout-alt">
+          if first footfall: {fmtCrShort(m.priceCredits * 5)} CR
+        </span>
       ) : null}
       {m.organicAnalysisComplete ? (
         <span
@@ -685,7 +717,10 @@ export const SpeciesCard = memo(function SpeciesCard({
             <span className="species-identity-sep"> · </span>
             <span className="species-identity-value-label">Value here:</span>{" "}
             {m.priceCredits != null ? (
-              <span className={`species-identity-value-amount${footfall === "unwalked" ? " is-unwalked" : ""}`} title={priceTitle}>
+              <span
+                className={`species-identity-value-amount${footfall === "unwalked" ? " is-unwalked" : ""}`}
+                title={priceTitle}
+              >
                 {fmtCrShort(m.priceCredits * priceMult)} CR
                 <span className={`price-tag price-tag--${footfall}`}>{priceTag}</span>
               </span>

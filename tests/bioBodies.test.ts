@@ -27,11 +27,7 @@ import {
   readBioBodiesSummary,
   type BioBodyRow,
 } from "../src/server/bioBodies.js";
-import {
-  atmosphereTypeFromDump,
-  galaxyBodyScan,
-  planetClassFromDump,
-} from "../src/server/galaxyBodyScan.js";
+import { atmosphereTypeFromDump, galaxyBodyScan, planetClassFromDump } from "../src/server/galaxyBodyScan.js";
 import { loadSpeciesDatabase } from "../src/server/snapshot.js";
 import type { SpeciesEntry } from "../src/shared/types.js";
 
@@ -110,10 +106,7 @@ function writeBioBodiesFile(file: string, systems: TestSystem[]): void {
       bodyTable.writeUInt8(id(subTypes, b.subType), bo + 6);
       bodyTable.writeUInt8(id(atmospheres, b.atmosphere), bo + 7);
       bodyTable.writeUInt8(id(volcanisms, b.volcanism), bo + 8);
-      bodyTable.writeUInt8(
-        (b.landable === false ? 0 : BODY_LANDABLE) | (b.dss ? BODY_DSS : 0),
-        bo + 9,
-      );
+      bodyTable.writeUInt8((b.landable === false ? 0 : BODY_LANDABLE) | (b.dss ? BODY_DSS : 0), bo + 9);
       bodyTable.writeFloatLE(b.temperatureK, bo + 10);
       bodyTable.writeFloatLE(b.gravityG, bo + 14);
       bodyTable.writeFloatLE(b.pressureAtm, bo + 18);
@@ -124,10 +117,7 @@ function writeBioBodiesFile(file: string, systems: TestSystem[]): void {
     firstBody += sys.bodies.length;
   });
 
-  const json = Buffer.from(
-    JSON.stringify({ subTypes, atmospheres, volcanisms, starTypes }),
-    "utf8",
-  );
+  const json = Buffer.from(JSON.stringify({ subTypes, atmospheres, volcanisms, starTypes }), "utf8");
   const header = Buffer.alloc(24);
   header.write("EDEXOBOD", 0, "ascii");
   header.writeUInt16LE(1, 8);
@@ -136,10 +126,7 @@ function writeBioBodiesFile(file: string, systems: TestSystem[]): void {
   header.writeUInt32LE(bodyCount, 16);
   header.writeUInt32LE(json.length, 20);
 
-  writeFileSync(
-    file,
-    Buffer.concat([header, json, sysTable, bodyTable, ...sysNames, ...bodyNames]),
-  );
+  writeFileSync(file, Buffer.concat([header, json, sysTable, bodyTable, ...sysNames, ...bodyNames]));
 }
 
 /**
@@ -246,11 +233,7 @@ describe("the galaxy body file", () => {
     f.forEachInRegion(7, (b) => {
       seen.push(f.bodyName(b.systemIndex, b.bodyIndex));
     });
-    expect(seen).toEqual([
-      "Testia AA-A a1-0 A 4",
-      "Testia AA-A a1-0 A 5",
-      "Testia AA-A a1-0 A 6",
-    ]);
+    expect(seen).toEqual(["Testia AA-A a1-0 A 4", "Testia AA-A a1-0 A 5", "Testia AA-A a1-0 A 6"]);
     const other: number[] = [];
     f.forEachInRegion(8, (b) => void other.push(b.bodyId));
     expect(other).toEqual([21, 22, 23]);

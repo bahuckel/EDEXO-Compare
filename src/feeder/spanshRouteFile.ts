@@ -108,8 +108,7 @@ interface RawJsonSystem {
 }
 
 const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
-const numOrNull = (v: unknown): number | null =>
-  typeof v === "number" && Number.isFinite(v) ? v : null;
+const numOrNull = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 function parseJsonExport(text: string): SpanshRouteFile {
   const doc = JSON.parse(text) as {
@@ -284,4 +283,3 @@ export function summariseSpanshRouteFile(file: SpanshRouteFile): SpanshRouteSumm
     warnings: file.warnings,
   };
 }
-

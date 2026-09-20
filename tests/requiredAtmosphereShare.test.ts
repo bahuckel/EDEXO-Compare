@@ -146,7 +146,13 @@ describe("a species-required gas, in a genus that cannot declare one", () => {
       .filter((e) => e.criteria?.atmosphereTypeRequiredAnyOf?.length)
       .flatMap((e) =>
         (e.criteria.atmosphereTypeRequiredAnyOf ?? [])
-          .filter((g) => UNCONFIRMABLE.has(String(g).toLowerCase().replace(/[^a-z]/g, "")))
+          .filter((g) =>
+            UNCONFIRMABLE.has(
+              String(g)
+                .toLowerCase()
+                .replace(/[^a-z]/g, ""),
+            ),
+          )
           .map((g) => `${e.id} requires ${g}`),
       );
     expect(offenders).toEqual([]);

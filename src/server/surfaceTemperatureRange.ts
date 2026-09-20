@@ -112,11 +112,7 @@ function heatingOrbit(
       break;
     }
     const nextId: number | null =
-      typeof first.Planet === "number"
-        ? first.Planet
-        : typeof first.Null === "number"
-          ? first.Null
-          : null;
+      typeof first.Planet === "number" ? first.Planet : typeof first.Null === "number" ? first.Null : null;
     if (nextId == null || seen.has(nextId)) break;
     seen.add(nextId);
     cur = byBodyId.get(nextId) ?? null;

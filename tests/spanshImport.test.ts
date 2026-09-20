@@ -75,11 +75,14 @@ function exportFile(rows: object[]): string {
 
 /** A corpus with one body that Phase 1 has already given an identity. */
 async function seedIdentifiedCorpus(): Promise<void> {
-  await importCsv(ctx, (() => {
-    const p = path.join(corpus, "in.csv");
-    writeFileSync(p, HEADER + ROW + "\n", "utf8");
-    return p;
-  })());
+  await importCsv(
+    ctx,
+    (() => {
+      const p = path.join(corpus, "in.csv");
+      writeFileSync(p, HEADER + ROW + "\n", "utf8");
+      return p;
+    })(),
+  );
   ctx.store.setSystemId64([{ normSystem: "18 andromedae", id64: SYS_ID64, edsmId: 15695809 }]);
   const rows = ctx.store.planetIdentityRows();
   ctx.store.setBodyIdentity([{ planetId: rows[0]!.planetId, bodyId: BODY_ID, edsmId: 10904346 }]);
@@ -212,7 +215,9 @@ describe("what it writes", () => {
     await importSpanshExport(ctx.store, exportFile([manifest(), systemRow(), bodyRow()]), { apply: true });
     expect(ctx.store.mappedCoverage().mapped).toBe(1);
 
-    const unmapped = bodyRow({ signals: { signals: { "$SAA_SignalType_Biological;": 1 }, updateTime: "2026-09-05 00:00:00+00" } });
+    const unmapped = bodyRow({
+      signals: { signals: { "$SAA_SignalType_Biological;": 1 }, updateTime: "2026-09-05 00:00:00+00" },
+    });
     await importSpanshExport(ctx.store, exportFile([manifest(), systemRow(), unmapped]), { apply: true });
     expect(ctx.store.mappedCoverage().mapped).toBe(1);
     expect(ctx.store.mappedCoverage().unmapped).toBe(0);
@@ -222,7 +227,9 @@ describe("what it writes", () => {
     await seedIdentifiedCorpus();
     const before = ctx.store.getStats().uniquePlanets;
     const other = bodyRow({ bodyId: 99, id64: bodyId64From(SYS_ID64, 99), name: "18 Andromedae 9" });
-    const r = await importSpanshExport(ctx.store, exportFile([manifest(), systemRow(), other]), { apply: true });
+    const r = await importSpanshExport(ctx.store, exportFile([manifest(), systemRow(), other]), {
+      apply: true,
+    });
     expect(r.matched).toBe(0);
     expect(ctx.store.getStats().uniquePlanets).toBe(before);
   });

@@ -114,7 +114,8 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     idIncludes: "anemone",
     gate: {
       allowed: ["O", "B", "A"],
-      evidence: "B 82.8 %, O 10.4 %, A 5.0 % of 27,232 Anemone sightings — 98.2 %; those three are 7 % of all life",
+      evidence:
+        "B 82.8 %, O 10.4 %, A 5.0 % of 27,232 Anemone sightings — 98.2 %; those three are 7 % of all life",
     },
   },
   {

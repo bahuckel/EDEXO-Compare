@@ -49,7 +49,7 @@ const TEMPERATURE_PATH = "body.surfaceTemperature";
  * from it bought decidability without costing recall. The full table and the one near-miss (the
  * atmosphere floor at 20) are in speciesAtmosphereObservations.ts; the runner is
  * scripts/floor-sweep.ts.
- */export const MIN_TEMPERATURE_OBSERVATIONS = observationFloor("TEMPERATURE", 20);
+ */ export const MIN_TEMPERATURE_OBSERVATIONS = observationFloor("TEMPERATURE", 20);
 
 export interface TemperatureObservation {
   /** Bodies observed in the bin containing this temperature. */

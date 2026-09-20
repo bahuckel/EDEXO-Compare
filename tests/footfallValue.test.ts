@@ -30,9 +30,7 @@ describe("reading the journal's answer", () => {
 
   it("lets this commander's own claim settle it", () => {
     // Already flagged for the bonus here: a stale scan saying otherwise does not take it away.
-    expect(
-      footfallCertainty({ journalWasFootfalled: true, commanderFirstFootfall: true }),
-    ).toBe("unwalked");
+    expect(footfallCertainty({ journalWasFootfalled: true, commanderFirstFootfall: true })).toBe("unwalked");
   });
 });
 

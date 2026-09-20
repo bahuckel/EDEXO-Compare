@@ -10,17 +10,53 @@ import { SpeciesRow, orderRows } from "./SpeciesRows";
 import { useRowContext } from "./rowContext";
 import { settledMultiplier } from "@shared/footfallValue";
 import { footfallCertainty, showsFootfallPrice, showsListPrice } from "@shared/footfallValue";
-import { Fragment, useCallback, memo, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, MouseEvent as ReactMouseEvent } from "react";
+import {
+  Fragment,
+  useCallback,
+  memo,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  MouseEvent as ReactMouseEvent,
+} from "react";
 import { ExoPayoutRangePanel, payoutHeadline } from "./ExoPayoutRangePanel";
 import { FoldPanel } from "./ui/Fold";
 import type { BodyComputed, EstimatedSurfaceTempBand, ExoPayoutRangeDTO, PlanetScan } from "@shared/types";
-import { atmospherePillStyle, formatPressurePill, formatTemperaturePillLine, gravHeatStyle, gravityFromScan, journalPressureToAtm, planetClassPillStyle, pressHeatStyle, tempHeatStyle, PressDisplay, TempUnit } from "./planetDisplayUtils";
-import { exomasteryDetailHasContent, groupedSortedMatches, safeGenusHeadId, uniqueOnFootScanLines } from "./speciesMatchHelpers";
+import {
+  atmospherePillStyle,
+  formatPressurePill,
+  formatTemperaturePillLine,
+  gravHeatStyle,
+  gravityFromScan,
+  journalPressureToAtm,
+  planetClassPillStyle,
+  pressHeatStyle,
+  tempHeatStyle,
+  PressDisplay,
+  TempUnit,
+} from "./planetDisplayUtils";
+import {
+  exomasteryDetailHasContent,
+  groupedSortedMatches,
+  safeGenusHeadId,
+  uniqueOnFootScanLines,
+} from "./speciesMatchHelpers";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
 import { SpeciesCard } from "./SpeciesCard";
 import { GenusSpeciesOdds } from "./SpeciesCardBits";
 import { candidateSpeciesDenomFromFss, genusHintIsDssOrphan, tripRankLabel } from "./bodyHelpers";
-import { EDEXO_COMPACT_CANDIDATE_VIEW_LS, readLsBool, readPressUnitFromLs, readTempUnitFromLs, writeLsBool, writePressUnitToLs, writeTempUnitToLs } from "./lsPrefs";
+import {
+  EDEXO_COMPACT_CANDIDATE_VIEW_LS,
+  readLsBool,
+  readPressUnitFromLs,
+  readTempUnitFromLs,
+  writeLsBool,
+  writePressUnitToLs,
+  writeTempUnitToLs,
+} from "./lsPrefs";
 
 /** Habitat fit (cross-genus) + deck match + optional same-genus rank — equal-width columns for available metrics only. */
 /**
@@ -39,11 +75,32 @@ function LandableBadge({ scan }: { scan: PlanetScan | null }) {
     <span className={`land-badge land-badge--${state}`} title={scan == null ? "No detailed scan yet" : word}>
       <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
         {state === "yes" ? (
-          <path d="M8 2v7M4.6 6.4 8 9.8l3.4-3.4M2.5 13h11" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M8 2v7M4.6 6.4 8 9.8l3.4-3.4M2.5 13h11"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         ) : state === "no" ? (
-          <path d="M8 2v5M2.5 13h11M3.5 3.5l9 9" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M8 2v5M2.5 13h11M3.5 3.5l9 9"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         ) : (
-          <path d="M5.5 5.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4V10M8 12.5v.2M2.5 13h11" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M5.5 5.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4V10M8 12.5v.2M2.5 13h11"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         )}
       </svg>
       {word}
@@ -218,7 +275,9 @@ function ExoPayoutRangeDetailModal({
                 <tr>
                   <th>Species</th>
                   <th className={`exo-payout-detail-num${listCls}`}>List / sell (×1)</th>
-                  <th className={`exo-payout-detail-num exo-payout-detail-footfall-col${ffCls}`}>Footfall (×5)</th>
+                  <th className={`exo-payout-detail-num exo-payout-detail-footfall-col${ffCls}`}>
+                    Footfall (×5)
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -227,8 +286,8 @@ function ExoPayoutRangeDetailModal({
                     <td>{row.displayName}</td>
                     <td className={`exo-payout-detail-num${listCls}`}>{row.listCredits.toLocaleString()}</td>
                     <td className={`exo-payout-detail-num exo-payout-detail-footfall-col${ffCls}`}>
-                        {(row.listCredits * 5).toLocaleString()}
-                      </td>
+                      {(row.listCredits * 5).toLocaleString()}
+                    </td>
                   </tr>
                 ))}
                 <tr className="exo-payout-detail-sum">
@@ -236,11 +295,11 @@ function ExoPayoutRangeDetailModal({
                     <strong>Total</strong>
                   </td>
                   <td className={`exo-payout-detail-num${listCls}`}>
-                      <strong>{minListTot.toLocaleString()}</strong>
-                    </td>
+                    <strong>{minListTot.toLocaleString()}</strong>
+                  </td>
                   <td className={`exo-payout-detail-num exo-payout-detail-footfall-col${ffCls}`}>
-                      <strong>{minFfTot.toLocaleString()}</strong>
-                    </td>
+                    <strong>{minFfTot.toLocaleString()}</strong>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -261,7 +320,9 @@ function ExoPayoutRangeDetailModal({
                 <tr>
                   <th>Species</th>
                   <th className={`exo-payout-detail-num${listCls}`}>List / sell (×1)</th>
-                  <th className={`exo-payout-detail-num exo-payout-detail-footfall-col${ffCls}`}>Footfall (×5)</th>
+                  <th className={`exo-payout-detail-num exo-payout-detail-footfall-col${ffCls}`}>
+                    Footfall (×5)
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -270,8 +331,8 @@ function ExoPayoutRangeDetailModal({
                     <td>{row.displayName}</td>
                     <td className={`exo-payout-detail-num${listCls}`}>{row.listCredits.toLocaleString()}</td>
                     <td className={`exo-payout-detail-num exo-payout-detail-footfall-col${ffCls}`}>
-                        {(row.listCredits * 5).toLocaleString()}
-                      </td>
+                      {(row.listCredits * 5).toLocaleString()}
+                    </td>
                   </tr>
                 ))}
                 <tr className="exo-payout-detail-sum">
@@ -279,11 +340,11 @@ function ExoPayoutRangeDetailModal({
                     <strong>Total</strong>
                   </td>
                   <td className={`exo-payout-detail-num${listCls}`}>
-                      <strong>{maxListTot.toLocaleString()}</strong>
-                    </td>
+                    <strong>{maxListTot.toLocaleString()}</strong>
+                  </td>
                   <td className={`exo-payout-detail-num exo-payout-detail-footfall-col${ffCls}`}>
-                      <strong>{maxFfTot.toLocaleString()}</strong>
-                    </td>
+                    <strong>{maxFfTot.toLocaleString()}</strong>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -412,7 +473,9 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
         </button>
       </div>
       {/* rows mode keeps the split in the header; the card wall shows it under each card's chance bar */}
-      {compactCandidateView ? <GenusSpeciesOdds items={group.items} confirmed={genusConfirmed === true} /> : null}
+      {compactCandidateView ? (
+        <GenusSpeciesOdds items={group.items} confirmed={genusConfirmed === true} />
+      ) : null}
       <div
         id={`${headId}-panel`}
         className={`genus-card-collapse-grid${open ? "" : " genus-card-collapse-grid--collapsed"}`}
@@ -454,7 +517,9 @@ const GenusMatchGroup = memo(function GenusMatchGroup({
                   hostStarType={hostStarType}
                   hostStarTypes={hostStarTypes}
                   compactCandidateView={false}
-                  genusOdds={group.items.length > 1 ? { items: group.items, confirmed: genusConfirmed === true } : null}
+                  genusOdds={
+                    group.items.length > 1 ? { items: group.items, confirmed: genusConfirmed === true } : null
+                  }
                 />
               ))}
             </div>
@@ -615,10 +680,7 @@ export const BodyPane = memo(function BodyPane({
       m.provenance != null && (m.provenance.firstHand || m.provenance.corpusInSystem > 0),
     [],
   );
-  const evidenceCount = useMemo(
-    () => body.matches.filter(hasEvidence).length,
-    [body.matches, hasEvidence],
-  );
+  const evidenceCount = useMemo(() => body.matches.filter(hasEvidence).length, [body.matches, hasEvidence]);
   const shownMatches = evidenceOnly ? body.matches.filter(hasEvidence) : body.matches;
   /*
     A species he has sampled here is listed with the candidates, banner and all.
@@ -656,209 +718,219 @@ export const BodyPane = memo(function BodyPane({
 
   return (
     <FootfallContext.Provider value={bodyFootfall}>
-    <RowContext.Provider value={{ locks: body.state.organicGenusLocks ?? [], live: liveRun }}>
-    <div className={`body-pane${compactCandidateView ? " body-pane--rows" : ""}`}>
-      {/* The glance bar (WEBUI-REDESIGN 5.1 / 5.2): what you look at on approach, and it stays put while
+      <RowContext.Provider value={{ locks: body.state.organicGenusLocks ?? [], live: liveRun }}>
+        <div className={`body-pane${compactCandidateView ? " body-pane--rows" : ""}`}>
+          {/* The glance bar (WEBUI-REDESIGN 5.1 / 5.2): what you look at on approach, and it stays put while
           the rest scrolls — body, price, candidates vs signals, DSS, distance, footfall. */}
-      <div className="glance" role="status">
-        <span className="glance-body">{body.tabLabel}</span>
-        <span className="glance-sep" aria-hidden="true" />
-        {body.exoPayoutRange
-          ? (() => {
-              const h = payoutHeadline(body.exoPayoutRange);
-              return (
-                <span className={`glance-price glance-price--${h.certainty}`} title={`${h.tag}`}>
-                  {fmtCrRangeShort(h.min, h.max)} <small>CR</small>
-                  <span className={`price-tag price-tag--${h.certainty}`}>{h.mult === 5 ? "×5" : h.certainty === "walked" ? "×1" : "×1 ?"}</span>
-                </span>
-              );
-            })()
-          : null}
-        <span className="glance-item">
-          {likelyMatches.length} <small>cand</small> / {body.state.biologicalSignals ?? "?"} <small>bio</small>
-        </span>
-        <span className="glance-item">
-          <small>DSS</small> {body.state.dssComplete ? "yes" : "no"}
-        </span>
-        {arrivalLs != null ? (
-          <span className="glance-item">
-            {arrivalLs === 0 ? "0" : arrivalLs.toLocaleString(undefined, { maximumFractionDigits: 0 })} <small>ls</small>
-          </span>
-        ) : null}
-      </div>
-      <div className="body-pane-left">
-      <FoldPanel
-        foldKey="body-info"
-        className="planetary-info-card"
-        title="Planetary body"
-        help={
-          <>
-            <p>
-              <strong>Facts</strong> come from the journal's detailed scan of this body. Temperature and pressure tiles
-              cycle their units when clicked; matching always uses the journal's Kelvin and pascals.
-            </p>
-            <p>
-              <strong>From arrival</strong> is the journal's DistanceFromArrivalLS, light-seconds from the system's entry
-              point. The rank compares it with the other bodies here that carry biology and a measured distance.
-              Supercruise minutes are not shown: timing that leg in the journals measures honking and deciding as much
-              as flying.
-            </p>
-            <p>
-              <strong>Exo-signals</strong> is the FSS count; the game places one genus per signal and never repeats a
-              genus on a body. The genus names arrive with a DSS. A <em>(!)</em> after a genus means the DSS reported it
-              but no candidate species uses that genus under the current scan and filters.
-            </p>
-            <p>
-              <strong>On-foot scan</strong> lists what your own ScanOrganic lines identified here: genus, species and,
-              when known, the colour variant.
-            </p>
-          </>
-        }
-        defaultOpen
-        summary={[planetType, atmosphereDisplay, `${body.state.biologicalSignals ?? "?"} bio`]
-          .filter((x) => x && x !== "—")
-          .join(" · ")}
-        aside={
-          <>
-            <LandableBadge scan={sc} />
-            <button
-              type="button"
-              className="planetary-info-copy-summary"
-              onClick={copyBodySummary}
-              title={bodySummaryCopied ? "Copied" : "Copy one-line body summary"}
-            >
-              {bodySummaryCopied ? "Copied" : "Copy"}
-            </button>
-          </>
-        }
-      >
-
-        <div className="facts">
-          <div className="fact" style={planetType !== "—" ? planetClassPillStyle(planetType) : undefined}>
-            <span className="fact-k">Type</span>
-            <span className="fact-v">{planetType}</span>
-          </div>
-          <div className="fact" style={atmospherePillStyle(atmoRaw || atmosphereDisplay)}>
-            <span className="fact-k">Atmosphere</span>
-            <span className="fact-v" title={atmosphereDisplay}>
-              {atmosphereDisplay}
+          <div className="glance" role="status">
+            <span className="glance-body">{body.tabLabel}</span>
+            <span className="glance-sep" aria-hidden="true" />
+            {body.exoPayoutRange
+              ? (() => {
+                  const h = payoutHeadline(body.exoPayoutRange);
+                  return (
+                    <span className={`glance-price glance-price--${h.certainty}`} title={`${h.tag}`}>
+                      {fmtCrRangeShort(h.min, h.max)} <small>CR</small>
+                      <span className={`price-tag price-tag--${h.certainty}`}>
+                        {h.mult === 5 ? "×5" : h.certainty === "walked" ? "×1" : "×1 ?"}
+                      </span>
+                    </span>
+                  );
+                })()
+              : null}
+            <span className="glance-item">
+              {likelyMatches.length} <small>cand</small> / {body.state.biologicalSignals ?? "?"}{" "}
+              <small>bio</small>
             </span>
+            <span className="glance-item">
+              <small>DSS</small> {body.state.dssComplete ? "yes" : "no"}
+            </span>
+            {arrivalLs != null ? (
+              <span className="glance-item">
+                {arrivalLs === 0 ? "0" : arrivalLs.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
+                <small>ls</small>
+              </span>
+            ) : null}
           </div>
-          <div className="fact" style={Number.isFinite(gEarth) ? gravHeatStyle(gEarth) : undefined}>
-            <span className="fact-k">Gravity</span>
-            <span className="fact-v">{gravLabel}</span>
-          </div>
-          <button
-            type="button"
-            className="fact fact--click"
-            style={Number.isFinite(tempStyleK) ? tempHeatStyle(tempStyleK) : undefined}
-            onClick={() => setTempUnit((u) => (u === "K" ? "C" : u === "C" ? "F" : "K"))}
-            title="Cycles Kelvin → Celsius → Fahrenheit (display only; matching still uses journal Kelvin)"
-          >
-            <span className="fact-k">Temperature</span>
-            <span className="fact-v">{tempLine}</span>
-          </button>
-          <button
-            type="button"
-            className="fact fact--click"
-            style={Number.isFinite(pressAtmForStyle) ? pressHeatStyle(pressAtmForStyle) : undefined}
-            onClick={() => setPressUnit((u) => (u === "atm" ? "pa" : "atm"))}
-            title="Toggle display: standard atmospheres vs raw journal pascals (values below ~40 journal units are treated as atm already)"
-          >
-            <span className="fact-k">Pressure</span>
-            <span className="fact-v">{pressLabel}</span>
-          </button>
-          {/*
+          <div className="body-pane-left">
+            <FoldPanel
+              foldKey="body-info"
+              className="planetary-info-card"
+              title="Planetary body"
+              help={
+                <>
+                  <p>
+                    <strong>Facts</strong> come from the journal's detailed scan of this body. Temperature and
+                    pressure tiles cycle their units when clicked; matching always uses the journal's Kelvin
+                    and pascals.
+                  </p>
+                  <p>
+                    <strong>From arrival</strong> is the journal's DistanceFromArrivalLS, light-seconds from
+                    the system's entry point. The rank compares it with the other bodies here that carry
+                    biology and a measured distance. Supercruise minutes are not shown: timing that leg in the
+                    journals measures honking and deciding as much as flying.
+                  </p>
+                  <p>
+                    <strong>Exo-signals</strong> is the FSS count; the game places one genus per signal and
+                    never repeats a genus on a body. The genus names arrive with a DSS. A <em>(!)</em> after a
+                    genus means the DSS reported it but no candidate species uses that genus under the current
+                    scan and filters.
+                  </p>
+                  <p>
+                    <strong>On-foot scan</strong> lists what your own ScanOrganic lines identified here:
+                    genus, species and, when known, the colour variant.
+                  </p>
+                </>
+              }
+              defaultOpen
+              summary={[planetType, atmosphereDisplay, `${body.state.biologicalSignals ?? "?"} bio`]
+                .filter((x) => x && x !== "—")
+                .join(" · ")}
+              aside={
+                <>
+                  <LandableBadge scan={sc} />
+                  <button
+                    type="button"
+                    className="planetary-info-copy-summary"
+                    onClick={copyBodySummary}
+                    title={bodySummaryCopied ? "Copied" : "Copy one-line body summary"}
+                  >
+                    {bodySummaryCopied ? "Copied" : "Copy"}
+                  </button>
+                </>
+              }
+            >
+              <div className="facts">
+                <div
+                  className="fact"
+                  style={planetType !== "—" ? planetClassPillStyle(planetType) : undefined}
+                >
+                  <span className="fact-k">Type</span>
+                  <span className="fact-v">{planetType}</span>
+                </div>
+                <div className="fact" style={atmospherePillStyle(atmoRaw || atmosphereDisplay)}>
+                  <span className="fact-k">Atmosphere</span>
+                  <span className="fact-v" title={atmosphereDisplay}>
+                    {atmosphereDisplay}
+                  </span>
+                </div>
+                <div className="fact" style={Number.isFinite(gEarth) ? gravHeatStyle(gEarth) : undefined}>
+                  <span className="fact-k">Gravity</span>
+                  <span className="fact-v">{gravLabel}</span>
+                </div>
+                <button
+                  type="button"
+                  className="fact fact--click"
+                  style={Number.isFinite(tempStyleK) ? tempHeatStyle(tempStyleK) : undefined}
+                  onClick={() => setTempUnit((u) => (u === "K" ? "C" : u === "C" ? "F" : "K"))}
+                  title="Cycles Kelvin → Celsius → Fahrenheit (display only; matching still uses journal Kelvin)"
+                >
+                  <span className="fact-k">Temperature</span>
+                  <span className="fact-v">{tempLine}</span>
+                </button>
+                <button
+                  type="button"
+                  className="fact fact--click"
+                  style={Number.isFinite(pressAtmForStyle) ? pressHeatStyle(pressAtmForStyle) : undefined}
+                  onClick={() => setPressUnit((u) => (u === "atm" ? "pa" : "atm"))}
+                  title="Toggle display: standard atmospheres vs raw journal pascals (values below ~40 journal units are treated as atm already)"
+                >
+                  <span className="fact-k">Pressure</span>
+                  <span className="fact-v">{pressLabel}</span>
+                </button>
+                {/*
             A2 — what replaced "Worth the trip?". That panel ranked bodies by expected credits per
             on-site minute; the owner's verdict was that it was not implemented as intended, and
             the flight is what actually decides whether to go. The journals cannot time a
             supercruise leg (see ON_SITE_ONLY), so the honest form is the distance the game states
             plus where this body sits among the others in the system worth landing on.
           */}
-          <div
-            className="fact"
-            title={
-              arrivalLs == null
-                ? "Needs a detailed scan of this body."
-                : trip && trip.rank != null && trip.ranked > 1
-                  ? `Light-seconds from the arrival point; ${tripRankLabel(trip.rank)} of ${trip.ranked} bio bodies here.`
-                  : "Light-seconds from the arrival point."
-            }
-          >
-            <span className="fact-k">From arrival</span>
-            <span className="fact-v">
-              {fromArrivalDisplay}
-              {trip && trip.rank != null && trip.ranked > 1 ? (
-                <small>
-                  {" "}
-                  · {tripRankLabel(trip.rank)} of {trip.ranked}
-                </small>
-              ) : null}
-            </span>
-          </div>
-        </div>
+                <div
+                  className="fact"
+                  title={
+                    arrivalLs == null
+                      ? "Needs a detailed scan of this body."
+                      : trip && trip.rank != null && trip.ranked > 1
+                        ? `Light-seconds from the arrival point; ${tripRankLabel(trip.rank)} of ${trip.ranked} bio bodies here.`
+                        : "Light-seconds from the arrival point."
+                  }
+                >
+                  <span className="fact-k">From arrival</span>
+                  <span className="fact-v">
+                    {fromArrivalDisplay}
+                    {trip && trip.rank != null && trip.ranked > 1 ? (
+                      <small>
+                        {" "}
+                        · {tripRankLabel(trip.rank)} of {trip.ranked}
+                      </small>
+                    ) : null}
+                  </span>
+                </div>
+              </div>
 
-        <div
-          className="facts-strip"
-          title={
-            s.genusHints?.length
-              ? "FSS signal count and the DSS genera; (!) = no candidate matches that genus."
-              : "FSS signal count; the genera fill in after a DSS."
-          }
-        >
-          <span className="fact-k">Exo-signals</span>
-          <strong className="facts-num">{s.biologicalSignals != null ? String(s.biologicalSignals) : "—"}</strong>
-          <span className="facts-genera">
-            {s.genusHints?.length ? (
-              s.genusHints.map((g, i) => (
-                <Fragment key={`${g.Genus}:${g.Genus_Localised}:${i}`}>
-                  {i > 0 ? ", " : null}
-                  {g.Genus_Localised}
-                  {genusHintIsDssOrphan(g, body.dssGenusOrphanHints) ? (
-                    <span
-                      className="dss-genus-orphan-mark"
-                      title="DSS lists this genus, but no candidate row matches it — check filters, bacterium toggle, or codex gates."
-                    >
-                      (!)
-                    </span>
-                  ) : null}
-                </Fragment>
-              ))
-            ) : (
-              <span className="facts-genera--none">genera after DSS</span>
-            )}
-          </span>
-          <button
-            type="button"
-            className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
-            disabled={!canOpenJournalScanModal}
-            title={
-              canOpenJournalScanModal
-                ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
-                : "Need merged detailed scan rows in loaded journals for breakdown"
-            }
-            onClick={() => {
-              if (canOpenJournalScanModal) setJournalScanModalOpen(true);
-            }}
-          >
-            DSS {s.dssComplete ? "✓" : "✗"}
-          </button>
-        </div>
+              <div
+                className="facts-strip"
+                title={
+                  s.genusHints?.length
+                    ? "FSS signal count and the DSS genera; (!) = no candidate matches that genus."
+                    : "FSS signal count; the genera fill in after a DSS."
+                }
+              >
+                <span className="fact-k">Exo-signals</span>
+                <strong className="facts-num">
+                  {s.biologicalSignals != null ? String(s.biologicalSignals) : "—"}
+                </strong>
+                <span className="facts-genera">
+                  {s.genusHints?.length ? (
+                    s.genusHints.map((g, i) => (
+                      <Fragment key={`${g.Genus}:${g.Genus_Localised}:${i}`}>
+                        {i > 0 ? ", " : null}
+                        {g.Genus_Localised}
+                        {genusHintIsDssOrphan(g, body.dssGenusOrphanHints) ? (
+                          <span
+                            className="dss-genus-orphan-mark"
+                            title="DSS lists this genus, but no candidate row matches it — check filters, bacterium toggle, or codex gates."
+                          >
+                            (!)
+                          </span>
+                        ) : null}
+                      </Fragment>
+                    ))
+                  ) : (
+                    <span className="facts-genera--none">genera after DSS</span>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
+                  disabled={!canOpenJournalScanModal}
+                  title={
+                    canOpenJournalScanModal
+                      ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
+                      : "Need merged detailed scan rows in loaded journals for breakdown"
+                  }
+                  onClick={() => {
+                    if (canOpenJournalScanModal) setJournalScanModalOpen(true);
+                  }}
+                >
+                  DSS {s.dssComplete ? "✓" : "✗"}
+                </button>
+              </div>
 
-        <div
-          className="facts-strip facts-strip--onfoot"
-          title={
-            onFootLines.length > 0 || onFootFallback.length > 0
-              ? "From journal ScanOrganic — genus, species, and variant colour when present."
-              : "No ScanOrganic confirmation merged for this body yet."
-          }
-        >
-          <span className="fact-k">On-foot scan</span>
-          <span className="facts-onfoot">{onFootPillBody}</span>
-        </div>
+              <div
+                className="facts-strip facts-strip--onfoot"
+                title={
+                  onFootLines.length > 0 || onFootFallback.length > 0
+                    ? "From journal ScanOrganic — genus, species, and variant colour when present."
+                    : "No ScanOrganic confirmation merged for this body yet."
+                }
+              >
+                <span className="fact-k">On-foot scan</span>
+                <span className="facts-onfoot">{onFootPillBody}</span>
+              </div>
 
-        {body.ambiguityNote ? <p className="warn tiny">{body.ambiguityNote}</p> : null}
-        {/*
+              {body.ambiguityNote ? <p className="warn tiny">{body.ambiguityNote}</p> : null}
+              {/*
           The weak case, said out loud.
 
           An auto scan describes a body completely and reports no organics at all: the game shows a
@@ -866,222 +938,227 @@ export const BodyPane = memo(function BodyPane({
           file. So this list is what the conditions suit, not what is known to be there — and without
           the notice a commander cannot tell it apart from a list backed by a real count.
         */}
-        {body.exoMarkerBasis === "conditions" ? (
-          <p className="warn tiny exo-conditions-only">
-            Auto scan only — the journal has no organic count for this body. These are the species
-            its conditions suit; run an FSS or a DSS to learn whether anything is actually here.
-          </p>
-        ) : null}
-      </FoldPanel>
+              {body.exoMarkerBasis === "conditions" ? (
+                <p className="warn tiny exo-conditions-only">
+                  Auto scan only — the journal has no organic count for this body. These are the species its
+                  conditions suit; run an FSS or a DSS to learn whether anything is actually here.
+                </p>
+              ) : null}
+            </FoldPanel>
 
-      {body.exoPayoutRange ? (
-        <>
-          <FoldPanel
-            foldKey="sell-range"
-            className="exo-payout-collapsible card-neon"
-            title="Organic sell range"
-            help={
+            {body.exoPayoutRange ? (
               <>
-                <p>
-                  <strong>One price, the right one.</strong> First footfall on a body pays five times the list price for
-                  every species there. When your journal shows the footfall is still open you see the ×5 figures; when
-                  the body has been walked, ×1; when it is unknown, ×1 with the ×5 as a second line.
-                </p>
-                <p>
-                  <strong>The band</strong> takes k = min(bio signals, priced candidates) and shows the k cheapest against
-                  the k priciest distinct list prices. The detail view (click the price) has the per-species table.
-                </p>
-                <p>
-                  <strong>Bio signals</strong> is the FSS or DSS count from the journal, falling back to the DSS genus list
-                  length. <strong>Candidates</strong> counts species after the same gates as the candidate list; only
-                  rows with a strict price-list match are priced. Fewer candidates than signals means a gate is too
-                  narrow: try Include Bacterium or narrow with a DSS or an on-foot confirmation.
-                </p>
-              </>
-            }
-            summary={(() => {
-              const h = payoutHeadline(body.exoPayoutRange);
-              return `${fmtCrRangeShort(h.min, h.max)} CR · ${h.tag}`;
-            })()}
-          >
-            <button
-                  type="button"
-                  className="exo-payout-range-panel exo-payout-range-panel--clickable exo-payout-inner-click"
-                  onClick={() => setExoPayoutDetailOpen(true)}
+                <FoldPanel
+                  foldKey="sell-range"
+                  className="exo-payout-collapsible card-neon"
+                  title="Organic sell range"
+                  help={
+                    <>
+                      <p>
+                        <strong>One price, the right one.</strong> First footfall on a body pays five times
+                        the list price for every species there. When your journal shows the footfall is still
+                        open you see the ×5 figures; when the body has been walked, ×1; when it is unknown, ×1
+                        with the ×5 as a second line.
+                      </p>
+                      <p>
+                        <strong>The band</strong> takes k = min(bio signals, priced candidates) and shows the
+                        k cheapest against the k priciest distinct list prices. The detail view (click the
+                        price) has the per-species table.
+                      </p>
+                      <p>
+                        <strong>Bio signals</strong> is the FSS or DSS count from the journal, falling back to
+                        the DSS genus list length. <strong>Candidates</strong> counts species after the same
+                        gates as the candidate list; only rows with a strict price-list match are priced.
+                        Fewer candidates than signals means a gate is too narrow: try Include Bacterium or
+                        narrow with a DSS or an on-foot confirmation.
+                      </p>
+                    </>
+                  }
+                  summary={(() => {
+                    const h = payoutHeadline(body.exoPayoutRange);
+                    return `${fmtCrRangeShort(h.min, h.max)} CR · ${h.tag}`;
+                  })()}
                 >
-                  <ExoPayoutRangePanel pr={body.exoPayoutRange} variant="main" />
-                </button>
-          </FoldPanel>
-          {exoPayoutDetailOpen ? (
-            <ExoPayoutRangeDetailModal
-              pr={body.exoPayoutRange}
-              bodyTabLabel={body.tabLabel}
-              includeBacteriumInSearch={includeBacteriumInSearch}
-              onClose={() => setExoPayoutDetailOpen(false)}
-            />
-          ) : null}
-        </>
-      ) : null}
-
-      </div>
-      <div className="body-pane-right">
-      <FoldPanel
-        foldKey="candidates"
-        className="panel--candidate-species"
-        help={
-          <>
-            <p>
-              <strong>Chance here</strong> is the one calibrated probability on a row: how likely this species is one of
-              the ones actually on this body. <strong>Fit</strong> is a similarity score against the bodies the species
-              was found on in the feeder corpus; it is not a probability. <strong>Gap</strong> is the minimum distance
-              between the three samples of that genus.
-            </p>
-            <p>
-              <strong>Compact</strong> shows one row per species; click a row for its full card. <strong>Bacterium</strong>{" "}
-              is off by default because it is low value on most routes; off means off, even for a bacterium the catalog
-              remembers from a similar body. <strong>Evidence</strong> keeps only rows something has actually observed:
-              scanned by you on this body, or confirmed in this system by Spansh. It filters on evidence, not on
-              likelihood.
-            </p>
-            <p>
-              <strong>Unlikely</strong> rows disagree with this body on one criterion: planet class, atmosphere, or a value
-              just outside its band. Codex lists are not walls; the planet-class list alone rejects 4.1 % of the bodies
-              where a species was really found.
-            </p>
-          </>
-        }
-        title={`Candidate species (${likelyMatches.length}/${candidateSpeciesDenomFromFss(s)})`}
-        summary={(() => {
-          const mult = settledMultiplier(bodyFootfall) ?? 1;
-          const best = likelyMatches.reduce((b, m) => Math.max(b, m.priceCredits ?? 0), 0) * mult;
-          return `${likelyMatches.length} candidate${likelyMatches.length === 1 ? "" : "s"}${best > 0 ? ` · best ${fmtCrShort(best)} CR${mult === 5 ? " ×5" : ""}` : ""}`;
-        })()}
-        aside={
-          <div className="candidate-species-toggles">
-            <button
-              type="button"
-              className={`candidate-species-compact-toggle btn-top-toggle${compactCandidateView ? " btn-top-toggle--on" : ""}`}
-              onClick={() => setCompactCandidateView((v) => !v)}
-              title="Compact rows; click a row for its full card."
-            >
-              {compactCandidateView ? "Compact ✓" : "Compact ✗"}
-            </button>
-            <button
-              type="button"
-              className={`candidate-species-bacterium-toggle btn-top-toggle${includeBacteriumInSearch ? " btn-top-toggle--on" : ""}`}
-              onClick={onToggleIncludeBacterium}
-              title="Include bacterium species (off by default: low value)."
-            >
-              {includeBacteriumInSearch ? "Bacterium ✓" : "Bacterium ✗"}
-            </button>
-            <button
-              type="button"
-              className={`candidate-species-evidence-toggle btn-top-toggle${evidenceOnly ? " btn-top-toggle--on" : ""}`}
-              onClick={() => setEvidenceOnly((v) => !v)}
-              disabled={evidenceCount === 0 && !evidenceOnly}
-              title={
-                evidenceCount === 0
-                  ? "Nothing confirmed here yet — every row is a prediction."
-                  : `Only the ${evidenceCount} row${evidenceCount === 1 ? "" : "s"} confirmed by you or by Spansh.`
+                  <button
+                    type="button"
+                    className="exo-payout-range-panel exo-payout-range-panel--clickable exo-payout-inner-click"
+                    onClick={() => setExoPayoutDetailOpen(true)}
+                  >
+                    <ExoPayoutRangePanel pr={body.exoPayoutRange} variant="main" />
+                  </button>
+                </FoldPanel>
+                {exoPayoutDetailOpen ? (
+                  <ExoPayoutRangeDetailModal
+                    pr={body.exoPayoutRange}
+                    bodyTabLabel={body.tabLabel}
+                    includeBacteriumInSearch={includeBacteriumInSearch}
+                    onClose={() => setExoPayoutDetailOpen(false)}
+                  />
+                ) : null}
+              </>
+            ) : null}
+          </div>
+          <div className="body-pane-right">
+            <FoldPanel
+              foldKey="candidates"
+              className="panel--candidate-species"
+              help={
+                <>
+                  <p>
+                    <strong>Chance here</strong> is the one calibrated probability on a row: how likely this
+                    species is one of the ones actually on this body. <strong>Fit</strong> is a similarity
+                    score against the bodies the species was found on in the feeder corpus; it is not a
+                    probability. <strong>Gap</strong> is the minimum distance between the three samples of
+                    that genus.
+                  </p>
+                  <p>
+                    <strong>Compact</strong> shows one row per species; click a row for its full card.{" "}
+                    <strong>Bacterium</strong> is off by default because it is low value on most routes; off
+                    means off, even for a bacterium the catalog remembers from a similar body.{" "}
+                    <strong>Evidence</strong> keeps only rows something has actually observed: scanned by you
+                    on this body, or confirmed in this system by Spansh. It filters on evidence, not on
+                    likelihood.
+                  </p>
+                  <p>
+                    <strong>Unlikely</strong> rows disagree with this body on one criterion: planet class,
+                    atmosphere, or a value just outside its band. Codex lists are not walls; the planet-class
+                    list alone rejects 4.1 % of the bodies where a species was really found.
+                  </p>
+                </>
+              }
+              title={`Candidate species (${likelyMatches.length}/${candidateSpeciesDenomFromFss(s)})`}
+              summary={(() => {
+                const mult = settledMultiplier(bodyFootfall) ?? 1;
+                const best = likelyMatches.reduce((b, m) => Math.max(b, m.priceCredits ?? 0), 0) * mult;
+                return `${likelyMatches.length} candidate${likelyMatches.length === 1 ? "" : "s"}${best > 0 ? ` · best ${fmtCrShort(best)} CR${mult === 5 ? " ×5" : ""}` : ""}`;
+              })()}
+              aside={
+                <div className="candidate-species-toggles">
+                  <button
+                    type="button"
+                    className={`candidate-species-compact-toggle btn-top-toggle${compactCandidateView ? " btn-top-toggle--on" : ""}`}
+                    onClick={() => setCompactCandidateView((v) => !v)}
+                    title="Compact rows; click a row for its full card."
+                  >
+                    {compactCandidateView ? "Compact ✓" : "Compact ✗"}
+                  </button>
+                  <button
+                    type="button"
+                    className={`candidate-species-bacterium-toggle btn-top-toggle${includeBacteriumInSearch ? " btn-top-toggle--on" : ""}`}
+                    onClick={onToggleIncludeBacterium}
+                    title="Include bacterium species (off by default: low value)."
+                  >
+                    {includeBacteriumInSearch ? "Bacterium ✓" : "Bacterium ✗"}
+                  </button>
+                  <button
+                    type="button"
+                    className={`candidate-species-evidence-toggle btn-top-toggle${evidenceOnly ? " btn-top-toggle--on" : ""}`}
+                    onClick={() => setEvidenceOnly((v) => !v)}
+                    disabled={evidenceCount === 0 && !evidenceOnly}
+                    title={
+                      evidenceCount === 0
+                        ? "Nothing confirmed here yet — every row is a prediction."
+                        : `Only the ${evidenceCount} row${evidenceCount === 1 ? "" : "s"} confirmed by you or by Spansh.`
+                    }
+                  >
+                    {evidenceOnly ? `Evidence ✓ (${evidenceCount})` : "Evidence ✗"}
+                  </button>
+                </div>
               }
             >
-              {evidenceOnly ? `Evidence ✓ (${evidenceCount})` : "Evidence ✗"}
-            </button>
-          </div>
-        }
-      >
-        {body.approximateMatchingUsed ? (
-          <p className="candidate-species-subhint dim tiny candidate-species-subhint--below-bar">
-            Includes a species confirmed on foot that the codex gates would have excluded.
-          </p>
-        ) : null}
-        {body.matches.length === 0 ? (
-          <p className="dim">
-            No matches — adjust per-species rows in your genus JSON under data/species/, or get journal scan
-            fields that satisfy those gates.
-          </p>
-        ) : (
-          <>
-            {likelyMatches.length === 0 ? (
-              <p className="dim tiny">
-                Nothing clears every criterion on this body — the {unlikelyMatches.length} candidate(s) below
-                each disagree on one term.
-              </p>
-            ) : (
-              <div className="species-list">
-                {groupedSortedMatches(likelyMatches, genusOrder).map((group) => (
-                  <GenusMatchGroup
-                    key={group.groupKey}
-                    group={group}
-                    scan={sc}
-                    estimatedSurfaceTempK={body.estimatedSurfaceTempK}
-                    comparisonBodySummary={comparisonBodySummary}
-                    hostStarType={body.speciesMatchContext?.parentStarType}
-                    hostStarTypes={body.speciesMatchContext?.hostStarClasses}
-                    compactCandidateView={compactCandidateView}
-                    genusConfirmed={body.genusFilterActive}
-                  />
-                ))}
-              </div>
-            )}
-            {unlikelyMatches.length > 0 ? (
-              <div className="candidate-species-unlikely">
-                <button
-                  type="button"
-                  className={`candidate-species-unlikely-toggle${showUnlikely ? " candidate-species-unlikely-toggle--on" : ""}`}
-                  onClick={() => setShowUnlikely((v) => !v)}
-                  title="One criterion off — unlikely, not impossible."
-                >
-                  {showUnlikely ? "▾" : "▸"} {showUnlikely ? "Hide" : "Show"} unlikely (
-                  {unlikelyMatches.length})
-                </button>
-                {showUnlikely ? (
-                  <>
-                    <p className="candidate-species-unlikely-note dim tiny">
-                      Each of these disagrees on one criterion, shown on the card. Codex lists are not walls:
-                      the planet-class list alone rejects 4.1% of the bodies where a species was really found.
+              {body.approximateMatchingUsed ? (
+                <p className="candidate-species-subhint dim tiny candidate-species-subhint--below-bar">
+                  Includes a species confirmed on foot that the codex gates would have excluded.
+                </p>
+              ) : null}
+              {body.matches.length === 0 ? (
+                <p className="dim">
+                  No matches — adjust per-species rows in your genus JSON under data/species/, or get journal
+                  scan fields that satisfy those gates.
+                </p>
+              ) : (
+                <>
+                  {likelyMatches.length === 0 ? (
+                    <p className="dim tiny">
+                      Nothing clears every criterion on this body — the {unlikelyMatches.length} candidate(s)
+                      below each disagree on one term.
                     </p>
-                    <div className="species-list species-list--unlikely">
-                      {groupedSortedMatches(unlikelyMatches, genusOrder).map((group) => (
+                  ) : (
+                    <div className="species-list">
+                      {groupedSortedMatches(likelyMatches, genusOrder).map((group) => (
                         <GenusMatchGroup
-                          key={`unlikely-${group.groupKey}`}
+                          key={group.groupKey}
                           group={group}
                           scan={sc}
                           estimatedSurfaceTempK={body.estimatedSurfaceTempK}
                           comparisonBodySummary={comparisonBodySummary}
                           hostStarType={body.speciesMatchContext?.parentStarType}
-                    hostStarTypes={body.speciesMatchContext?.hostStarClasses}
+                          hostStarTypes={body.speciesMatchContext?.hostStarClasses}
                           compactCandidateView={compactCandidateView}
+                          genusConfirmed={body.genusFilterActive}
                         />
                       ))}
                     </div>
-                  </>
-                ) : null}
-              </div>
-            ) : null}
-          </>
-        )}
-      </FoldPanel>
-      </div>
+                  )}
+                  {unlikelyMatches.length > 0 ? (
+                    <div className="candidate-species-unlikely">
+                      <button
+                        type="button"
+                        className={`candidate-species-unlikely-toggle${showUnlikely ? " candidate-species-unlikely-toggle--on" : ""}`}
+                        onClick={() => setShowUnlikely((v) => !v)}
+                        title="One criterion off — unlikely, not impossible."
+                      >
+                        {showUnlikely ? "▾" : "▸"} {showUnlikely ? "Hide" : "Show"} unlikely (
+                        {unlikelyMatches.length})
+                      </button>
+                      {showUnlikely ? (
+                        <>
+                          <p className="candidate-species-unlikely-note dim tiny">
+                            Each of these disagrees on one criterion, shown on the card. Codex lists are not
+                            walls: the planet-class list alone rejects 4.1% of the bodies where a species was
+                            really found.
+                          </p>
+                          <div className="species-list species-list--unlikely">
+                            {groupedSortedMatches(unlikelyMatches, genusOrder).map((group) => (
+                              <GenusMatchGroup
+                                key={`unlikely-${group.groupKey}`}
+                                group={group}
+                                scan={sc}
+                                estimatedSurfaceTempK={body.estimatedSurfaceTempK}
+                                comparisonBodySummary={comparisonBodySummary}
+                                hostStarType={body.speciesMatchContext?.parentStarType}
+                                hostStarTypes={body.speciesMatchContext?.hostStarClasses}
+                                compactCandidateView={compactCandidateView}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </FoldPanel>
+          </div>
 
-      {journalScanModalOpen &&
-      body.bodyScanDetail != null &&
-      exomasteryDetailHasContent(body.bodyScanDetail) ? (
-        <Suspense fallback={null}>
-          <ExomasteryHabitatMatchModal
-            variant="journal"
-            detail={body.bodyScanDetail}
-            varietyHints={null}
-            exportBasename={null}
-            genusDataDir=""
-            comparisonBodySummary={comparisonBodySummary}
-            onClose={() => setJournalScanModalOpen(false)}
-            title={`Scan detail · ${body.tabLabel}`}
-          />
-        </Suspense>
-      ) : null}
-    </div>
-    </RowContext.Provider>
+          {journalScanModalOpen &&
+          body.bodyScanDetail != null &&
+          exomasteryDetailHasContent(body.bodyScanDetail) ? (
+            <Suspense fallback={null}>
+              <ExomasteryHabitatMatchModal
+                variant="journal"
+                detail={body.bodyScanDetail}
+                varietyHints={null}
+                exportBasename={null}
+                genusDataDir=""
+                comparisonBodySummary={comparisonBodySummary}
+                onClose={() => setJournalScanModalOpen(false)}
+                title={`Scan detail · ${body.tabLabel}`}
+              />
+            </Suspense>
+          ) : null}
+        </div>
+      </RowContext.Provider>
     </FootfallContext.Provider>
   );
 });

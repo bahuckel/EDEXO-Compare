@@ -50,7 +50,9 @@ describe("pressing the hotkey with nothing on screen", () => {
   it("treats destroyed windows as nothing on screen", () => {
     // The stack keeps slots whose window has gone; counting those as visible is how a press
     // appeared to succeed while nothing happened.
-    expect(hotkeyAction({ hidden: true, live: [{ alive: false }, { alive: false }], remembered: 2 })).toBe("open");
+    expect(hotkeyAction({ hidden: true, live: [{ alive: false }, { alive: false }], remembered: 2 })).toBe(
+      "open",
+    );
   });
 
   it("does nothing special when there is nothing remembered either", () => {
@@ -90,10 +92,14 @@ describe("the wiring in main.cjs", () => {
   });
 
   it("does not record the stack as hidden when the restore opened nothing", () => {
-    expect(main).toMatch(/if \(hudOverlayStack\.some\(\(s\) => s\.win && !s\.win\.isDestroyed\(\)\)\) toggleHudVisibility\(true\);/);
+    expect(main).toMatch(
+      /if \(hudOverlayStack\.some\(\(s\) => s\.win && !s\.win\.isDestroyed\(\)\)\) toggleHudVisibility\(true\);/,
+    );
   });
 
   it("counts only live windows before deciding there is something to show", () => {
-    expect(main).toMatch(/const live = hudOverlayStack\.filter\(\(s\) => s\.win && !s\.win\.isDestroyed\(\)\);/);
+    expect(main).toMatch(
+      /const live = hudOverlayStack\.filter\(\(s\) => s\.win && !s\.win\.isDestroyed\(\)\);/,
+    );
   });
 });

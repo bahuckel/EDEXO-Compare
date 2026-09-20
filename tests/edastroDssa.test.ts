@@ -54,15 +54,14 @@ const ORDINARY =
 
 const CARRIERS = [CARRIER_HEADER, JOINED, ORDINARY].join("\n");
 
-const DSSA_HEADER =
-  "Num,Callsign,Name,Commander,Status,DeploymentLocation,LastSeenLocation,LastSeenDate";
+const DSSA_HEADER = "Num,Callsign,Name,Commander,Status,DeploymentLocation,LastSeenLocation,LastSeenDate";
 const DSSA = [
   DSSA_HEADER,
-  '1,TFF-34Z,DSSA Sleeper Service,Qohen Leth,Carrier Operational,Oorb Broae DF-A e6,' +
+  "1,TFF-34Z,DSSA Sleeper Service,Qohen Leth,Carrier Operational,Oorb Broae DF-A e6," +
     'Oorb Broae DF-A e6,"2026-09-18 16:50:19"',
   // Deliberately absent from the carrier file. Zero of these exist today; the two files come from
   // different pipelines, so it is the shape to be ready for rather than one to assume away.
-  '2,ORP-HAN,DSSA Orphan,Nobody,Carrier Operational,Far Away AB-C d1-2,Far Away AB-C d1-2,' +
+  "2,ORP-HAN,DSSA Orphan,Nobody,Carrier Operational,Far Away AB-C d1-2,Far Away AB-C d1-2," +
     '"2026-09-10 00:00:00"',
 ].join("\n");
 
@@ -253,12 +252,8 @@ describe("DSSA only", () => {
       deployment list, and both are on screen. Searching the raw row would show a commander's name in
       the table that typing it could not find.
     */
-    expect(queryCarriers({ origin, search: "sleeper" }, NOW).map((r) => r.callsign)).toEqual([
-      "TFF-34Z",
-    ]);
-    expect(queryCarriers({ origin, search: "qohen" }, NOW).map((r) => r.callsign)).toEqual([
-      "TFF-34Z",
-    ]);
+    expect(queryCarriers({ origin, search: "sleeper" }, NOW).map((r) => r.callsign)).toEqual(["TFF-34Z"]);
+    expect(queryCarriers({ origin, search: "qohen" }, NOW).map((r) => r.callsign)).toEqual(["TFF-34Z"]);
     expect(countCarriers({ origin, search: "qohen" }, NOW)).toBe(1);
   });
 

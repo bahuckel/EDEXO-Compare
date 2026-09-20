@@ -2,7 +2,12 @@
  * Small blocks the species card and the options modal share (7.3).
  */
 import type { BodyComputed } from "@shared/types";
-import type { FootScanMatchPayload, MatchReason, OtherMatchDetailCardDTO, SpeciesProvenance } from "@shared/types";
+import type {
+  FootScanMatchPayload,
+  MatchReason,
+  OtherMatchDetailCardDTO,
+  SpeciesProvenance,
+} from "@shared/types";
 
 export function FootScanHitBlock({ hit }: { hit: FootScanMatchPayload["hits"][number] }) {
   const src = hit.confirmationSource === "analyse" ? "FOOT CATALOG — Analyse" : "FOOT CATALOG — Sample";
@@ -117,7 +122,13 @@ const THIN_SAMPLE_BELOW = 50;
 
 const RARE_SAMPLE_BELOW = 10;
 
-export function ThinSampleNote({ sampleN, unlikely }: { sampleN: number | null | undefined; unlikely: boolean }) {
+export function ThinSampleNote({
+  sampleN,
+  unlikely,
+}: {
+  sampleN: number | null | undefined;
+  unlikely: boolean;
+}) {
   if (unlikely) return null;
   if (sampleN == null || !Number.isFinite(sampleN) || sampleN <= 0) return null;
   if (sampleN >= THIN_SAMPLE_BELOW) return null;
@@ -264,7 +275,6 @@ export function GenusSpeciesOdds({
     )
     .sort((a, b) => b.share - a.share);
   if (scored.length < 2) return null;
-
 
   if (ungateable.length > 0) {
     /**

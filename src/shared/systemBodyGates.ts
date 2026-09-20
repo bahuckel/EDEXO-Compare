@@ -50,7 +50,10 @@ const REQUIREMENT_SYNONYMS: Record<string, string[]> = {
 
 /** Flatten a class name from either side to one comparable token. */
 export function systemBodyClassKey(raw: string): string {
-  return raw.trim().toLowerCase().replace(/[\s_-]+/g, "");
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
 }
 
 /** Every journal-side key a requirement entry accepts. */

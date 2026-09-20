@@ -23,7 +23,15 @@ describe("Spansh as a galaxy source", () => {
         id64: 10477373803,
         name: "Sol",
         bodies: [
-          { type: "Star", name: "Sol", bodyId: 0, subType: "G (White-Yellow) Star", spectralClass: "G2", luminosity: "V", solarMasses: 1 },
+          {
+            type: "Star",
+            name: "Sol",
+            bodyId: 0,
+            subType: "G (White-Yellow) Star",
+            spectralClass: "G2",
+            luminosity: "V",
+            solarMasses: 1,
+          },
           { type: "Barycentre", name: "Sol A B", bodyId: 99 },
           {
             type: "Planet",

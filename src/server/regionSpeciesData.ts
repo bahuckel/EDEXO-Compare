@@ -141,7 +141,9 @@ const medianByRegion = new Map<number, number>();
 function medianCountFor(regionIndex: number, row: RegionRow): number {
   const hit = medianByRegion.get(regionIndex);
   if (hit != null) return hit;
-  const counts = Object.values(row.species).filter((n) => Number.isFinite(n) && n > 0).sort((a, b) => a - b);
+  const counts = Object.values(row.species)
+    .filter((n) => Number.isFinite(n) && n > 0)
+    .sort((a, b) => a - b);
   const med = counts.length ? counts[Math.floor(counts.length / 2)]! : 0;
   medianByRegion.set(regionIndex, med);
   return med;

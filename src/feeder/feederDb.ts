@@ -738,8 +738,14 @@ export class FeederStore {
    * that Phase 1 could not name are simply absent — an unidentified body cannot be joined by
    * identity, and joining it by name is the thing this replaces.
    */
-  planetsByIdentity(): Map<string, { planetId: number; isMapped: boolean | null; mappedSeenAt: string | null }> {
-    const out = new Map<string, { planetId: number; isMapped: boolean | null; mappedSeenAt: string | null }>();
+  planetsByIdentity(): Map<
+    string,
+    { planetId: number; isMapped: boolean | null; mappedSeenAt: string | null }
+  > {
+    const out = new Map<
+      string,
+      { planetId: number; isMapped: boolean | null; mappedSeenAt: string | null }
+    >();
     for (const [pid, sysId64, bodyId, isMapped, seenAt] of queryAll<
       [number, string, number, number | null, string | null]
     >(
@@ -768,7 +774,13 @@ export class FeederStore {
    * mapping are monotone (see `observedFlag.ts` for why that rule outranks recency).
    */
   setBodyMapped(
-    rows: { planetId: number; isMapped: boolean; seenAt: string | null; source: string; bodyId64: string | null }[],
+    rows: {
+      planetId: number;
+      isMapped: boolean;
+      seenAt: string | null;
+      source: string;
+      bodyId64: string | null;
+    }[],
   ): number {
     if (rows.length === 0) return 0;
     let written = 0;
@@ -866,12 +878,21 @@ export class FeederStore {
             is_footfalled, footfall_seen_at, is_mapped, mapped_seen_at, first_seen_at, last_seen_at)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
-          o.systemId64, o.bodyId, o.systemName, o.bodyName,
-          o.coords?.x ?? null, o.coords?.y ?? null, o.coords?.z ?? null,
-          o.bioSignalCount, genuses,
-          f, f === null ? null : o.seenAt,
-          m, m === null ? null : o.seenAt,
-          o.seenAt, o.seenAt,
+          o.systemId64,
+          o.bodyId,
+          o.systemName,
+          o.bodyName,
+          o.coords?.x ?? null,
+          o.coords?.y ?? null,
+          o.coords?.z ?? null,
+          o.bioSignalCount,
+          genuses,
+          f,
+          f === null ? null : o.seenAt,
+          m,
+          m === null ? null : o.seenAt,
+          o.seenAt,
+          o.seenAt,
         ],
       );
       return "created";
@@ -894,15 +915,26 @@ export class FeederStore {
          last_seen_at     = ?
        WHERE system_id64 = ? AND body_id = ?`,
       [
-        o.systemName, o.bodyName,
-        o.coords?.x ?? null, o.coords?.y ?? null, o.coords?.z ?? null,
-        o.bioSignalCount, genuses,
-        f, f, o.seenAt,
-        f, f,
-        m, m, o.seenAt,
-        m, m,
+        o.systemName,
+        o.bodyName,
+        o.coords?.x ?? null,
+        o.coords?.y ?? null,
+        o.coords?.z ?? null,
+        o.bioSignalCount,
+        genuses,
+        f,
+        f,
         o.seenAt,
-        o.systemId64, o.bodyId,
+        f,
+        f,
+        m,
+        m,
+        o.seenAt,
+        m,
+        m,
+        o.seenAt,
+        o.systemId64,
+        o.bodyId,
       ],
     );
     return "updated";
@@ -1111,7 +1143,12 @@ export class FeederStore {
   }
 
   /** How much of the corpus can now be addressed by identity rather than by name. */
-  identityCoverage(): { planets: number; planetsWithBodyId: number; systems: number; systemsWithEdsmId: number } {
+  identityCoverage(): {
+    planets: number;
+    planetsWithBodyId: number;
+    systems: number;
+    systemsWithEdsmId: number;
+  } {
     const one = (sql: string) => Number(queryOne<[number]>(this.db, sql, [])?.[0] ?? 0);
     return {
       planets: one("SELECT COUNT(*) FROM planets"),

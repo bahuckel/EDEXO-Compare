@@ -91,7 +91,9 @@ export type GravityBiologyOdds = {
 };
 
 function label(b: Band): string {
-  return b.maxG === Infinity ? `${b.minG.toFixed(2)} g and above` : `${b.minG.toFixed(2)}–${b.maxG.toFixed(2)} g`;
+  return b.maxG === Infinity
+    ? `${b.minG.toFixed(2)} g and above`
+    : `${b.minG.toFixed(2)}–${b.maxG.toFixed(2)} g`;
 }
 
 /**

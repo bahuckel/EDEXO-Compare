@@ -738,7 +738,9 @@ export function EncyclopediaModal({
           <button
             type="button"
             className="encyclopedia-thumb-btn"
-            onClick={() => setPhotoZoom({ urls: photoUrls?.length ? photoUrls : [photoUrl], note: photoNote })}
+            onClick={() =>
+              setPhotoZoom({ urls: photoUrls?.length ? photoUrls : [photoUrl], note: photoNote })
+            }
             aria-label={`Enlarge photo for ${entry.displayName}`}
             // Credit on the hover here and in full once opened: the grid cell is a thumbnail with
             // no room for a caption, and the photographs are not this project's to show unmarked.

@@ -265,9 +265,7 @@ export function writeSectorMapFile(
     })),
     // Only the taxa this file actually draws, so a shrinking map does not carry stale keys.
     taxonGenus: Object.fromEntries(
-      [...new Set(build.entries.map((e) => e.taxon))]
-        .sort()
-        .map((t) => [t, build.taxonGenus?.[t] ?? t]),
+      [...new Set(build.entries.map((e) => e.taxon))].sort().map((t) => [t, build.taxonGenus?.[t] ?? t]),
     ),
   };
 
@@ -408,7 +406,9 @@ export function buildSectorSystems(store: FeederStore, publishableOnly = true): 
 
   // Densest first, so a truncated view still shows the systems worth flying to.
   for (const list of Object.values(cells)) {
-    list.sort((a, b) => Object.keys(b.taxa).length - Object.keys(a.taxa).length || a.name.localeCompare(b.name));
+    list.sort(
+      (a, b) => Object.keys(b.taxa).length - Object.keys(a.taxa).length || a.name.localeCompare(b.name),
+    );
   }
 
   return { generatedAt: new Date().toISOString(), cells };

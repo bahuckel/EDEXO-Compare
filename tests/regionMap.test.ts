@@ -100,8 +100,16 @@ describe("normaliseRegionName", () => {
   });
 
   it("leaves the other possessive regions matching themselves", () => {
-    for (const n of ["Ryker's Hope", "Odin's Hold", "Hawking's Gap", "Dryman's Point",
-                     "Aquila's Halo", "Kepler's Crest", "Lyra's Song", "Newton's Vault"]) {
+    for (const n of [
+      "Ryker's Hope",
+      "Odin's Hold",
+      "Hawking's Gap",
+      "Dryman's Point",
+      "Aquila's Halo",
+      "Kepler's Crest",
+      "Lyra's Song",
+      "Newton's Vault",
+    ]) {
       expect(sameRegion(n, n)).toBe(true);
     }
   });

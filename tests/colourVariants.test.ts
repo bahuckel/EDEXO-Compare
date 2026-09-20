@@ -89,9 +89,7 @@ describe("other bodies the owner walked", () => {
 
   it("Osseus pumice reads a rare material, not the star", () => {
     // Col 359 Sector XY-Y c1-18 B 2 — tellurium, and the plant was Green.
-    expect(candidateMorphColorShortLabel(find("Osseus pumice"), "M", [{ Name: "tellurium" }])).toBe(
-      "Green",
-    );
+    expect(candidateMorphColorShortLabel(find("Osseus pumice"), "M", [{ Name: "tellurium" }])).toBe("Green");
   });
 });
 

@@ -67,7 +67,10 @@ test("launcher: the HUD menu warns when Elite is set to fullscreen", async ({ pa
   // Shot of the panel it lives in, not the whole page: on a first run the setup card sits over the
   // modal, and a full-page capture says nothing about how the line itself reads.
   await warn.scrollIntoViewIfNeeded();
-  await page.locator("#overlayPickModal .modal").first().screenshot({ path: `${OUT}/launcher-display-warning.png` });
+  await page
+    .locator("#overlayPickModal .modal")
+    .first()
+    .screenshot({ path: `${OUT}/launcher-display-warning.png` });
   expect(errors).toEqual([]);
 });
 
@@ -76,7 +79,9 @@ test("hud: the merged overlay shows every section", async ({ page }) => {
   await page.setViewportSize({ width: 420, height: 900 });
   await page.goto("/hud-overlay.html?s=jump,fss,candidates,distance,datavalue");
   await expect(page.locator(".hud-section")).toHaveCount(5);
-  await expect(page.locator('[data-section="fss"] [data-f="status"]')).not.toHaveText("Standby", { timeout: 30_000 });
+  await expect(page.locator('[data-section="fss"] [data-f="status"]')).not.toHaveText("Standby", {
+    timeout: 30_000,
+  });
   await page.screenshot({ path: `${OUT}/hud-merged.png`, fullPage: true });
   expect(errors).toEqual([]);
 });

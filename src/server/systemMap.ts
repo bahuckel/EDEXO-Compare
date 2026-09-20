@@ -413,9 +413,7 @@ export function bodyHasExoMarkers(b: BodyExoState): boolean {
   const organicLocks = b.organicGenusLocks.length > 0;
   // Landable and described: enough to say what could grow, never enough to say what does.
   const predictable =
-    b.scan?.Landable === true &&
-    typeof b.scan.PlanetClass === "string" &&
-    b.scan.PlanetClass.trim() !== "";
+    b.scan?.Landable === true && typeof b.scan.PlanetClass === "string" && b.scan.PlanetClass.trim() !== "";
   return hasBioCount || hasHints || confirmed || organicLocks || predictable;
 }
 
@@ -802,8 +800,7 @@ export function buildSystemMapSnapshot(
   recs = mergeExplorationRecordsWithInferredPlaceholders(store, focusSystemAddress, recs, starSystemName);
 
   /** The star a body falls back to when its own orbit cannot be resolved: the one you arrive at. */
-  const arrivalStarRecord =
-    recs.find((r) => r.starType && !((r.distanceFromArrivalLs ?? 0) > 0)) ?? null;
+  const arrivalStarRecord = recs.find((r) => r.starType && !((r.distanceFromArrivalLs ?? 0) > 0)) ?? null;
   const byId = new Map<number, ExplorationScanRecord>();
   for (const r of recs) byId.set(r.bodyId, r);
 

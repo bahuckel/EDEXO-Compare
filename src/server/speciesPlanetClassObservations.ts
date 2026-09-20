@@ -53,7 +53,7 @@ const PLANET_CLASS_PATH = "body.subType";
  * from it bought decidability without costing recall. The full table and the one near-miss (the
  * atmosphere floor at 20) are in speciesAtmosphereObservations.ts; the runner is
  * scripts/floor-sweep.ts.
- */export const MIN_CLASS_OBSERVATIONS = observationFloor("CLASS", 20);
+ */ export const MIN_CLASS_OBSERVATIONS = observationFloor("CLASS", 20);
 
 export interface PlanetClassObservations {
   /** Class key → bodies observed. */

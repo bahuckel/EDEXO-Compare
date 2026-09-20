@@ -193,7 +193,9 @@ describe("the reason a candidate was demoted", () => {
       body: body(),
       matches: [
         m("stratum_tectonicas", "Stratum", 97.4),
-        demoted("bacterium_aurasus", [{ field: "PlanetClass", detail: "High metal content body", soft: true }]),
+        demoted("bacterium_aurasus", [
+          { field: "PlanetClass", detail: "High metal content body", soft: true },
+        ]),
       ],
       db,
     });

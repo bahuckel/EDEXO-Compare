@@ -113,9 +113,7 @@ export function resolveFootFixForOrganicLine(
  * radar and made the "far enough now" cue fire again on the next good read, over and over.
  */
 export type FootFixRead =
-  | { kind: "fix"; fix: FootTravelFix }
-  | { kind: "off-surface" }
-  | { kind: "unreadable" };
+  { kind: "fix"; fix: FootTravelFix } | { kind: "off-surface" } | { kind: "unreadable" };
 
 export function readStatusJsonFootFixText(rawText: string): FootFixRead {
   let j: unknown;

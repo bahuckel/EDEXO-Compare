@@ -11,7 +11,11 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { setFeederDataDirForTests } from "../src/feeder/paths.js";
 import { importCsv, openFeeder, type FeederContext } from "../src/feeder/pipeline.js";
-import { buildSectorMapData, buildSectorSystems, writeSectorSystemsFile } from "../src/feeder/sectorMapData.js";
+import {
+  buildSectorMapData,
+  buildSectorSystems,
+  writeSectorSystemsFile,
+} from "../src/feeder/sectorMapData.js";
 import { cellTotals, systemTotals, type SectorMapFile } from "../src/shared/sectorMapFile.js";
 import { sectorCellFromCoords, sectorCellKey } from "../src/shared/sectorName.js";
 

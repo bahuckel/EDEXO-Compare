@@ -139,7 +139,8 @@ export class EdsmTransientTracker {
       // A jump leaves any station behind; `Location` names one only when docked.
       const docked = l.Docked === true;
       const station = l.StationName;
-      this.state.stationName = docked && typeof station === "string" && station.trim() ? station.trim() : null;
+      this.state.stationName =
+        docked && typeof station === "string" && station.trim() ? station.trim() : null;
       return;
     }
 
@@ -284,7 +285,13 @@ export async function postEdsmJournalBatch(
   try {
     body = (await res.json()) as typeof body;
   } catch {
-    return { ok: false, accepted: 0, rejected: 0, error: "EDSM sent a reply that was not JSON", fatal: false };
+    return {
+      ok: false,
+      accepted: 0,
+      rejected: 0,
+      error: "EDSM sent a reply that was not JSON",
+      fatal: false,
+    };
   }
 
   const top = typeof body.msgnum === "number" ? body.msgnum : 0;

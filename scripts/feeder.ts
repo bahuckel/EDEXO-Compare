@@ -55,10 +55,7 @@ import {
   type RunReport,
 } from "../src/feeder/pipeline.js";
 import { describeInstall, findSpeciesEntryForLabel } from "../src/feeder/install.js";
-import {
-  formatRehydrationReport,
-  rehydrateNumericsFromDump,
-} from "../src/feeder/numericRehydration.js";
+import { formatRehydrationReport, rehydrateNumericsFromDump } from "../src/feeder/numericRehydration.js";
 import { applyParameterImportance, formatImportanceReport } from "../src/feeder/applyImportance.js";
 import {
   buildCooccurrenceTable,
@@ -66,7 +63,12 @@ import {
   writeCooccurrenceTable,
   writeSpeciesPrevalence,
 } from "../src/feeder/cooccurrence.js";
-import { EDSM_COORDS_BATCH, fetchEdsmSystemCoords, fetchEdsmSystemIds, withEdsmGate } from "../src/feeder/edsm.js";
+import {
+  EDSM_COORDS_BATCH,
+  fetchEdsmSystemCoords,
+  fetchEdsmSystemIds,
+  withEdsmGate,
+} from "../src/feeder/edsm.js";
 import { speciesFileSlug } from "../src/feeder/profileBuilder.js";
 import { countHydratableSamples } from "../src/feeder/samplePacks.js";
 import { backfillBodyIdentity, formatBackfillReport } from "../src/feeder/bodyIdentityBackfill.js";
@@ -648,9 +650,15 @@ async function cmdEddn(): Promise<void> {
         `(+${(after.bodies - before.bodies).toLocaleString()})`,
     );
     console.log(`  with biology     ${after.withBio.toLocaleString()}`);
-    console.log(`  mapped           ${after.mapped.toLocaleString()}   unmapped ${after.unmapped.toLocaleString()}`);
-    console.log(`  walked           ${after.walked.toLocaleString()}   not walked ${after.unwalked.toLocaleString()}`);
-    console.log(`  UNOPENED         ${after.unopened.toLocaleString()}   (biology, nobody mapped, nobody landed)`);
+    console.log(
+      `  mapped           ${after.mapped.toLocaleString()}   unmapped ${after.unmapped.toLocaleString()}`,
+    );
+    console.log(
+      `  walked           ${after.walked.toLocaleString()}   not walked ${after.unwalked.toLocaleString()}`,
+    );
+    console.log(
+      `  UNOPENED         ${after.unopened.toLocaleString()}   (biology, nobody mapped, nobody landed)`,
+    );
     console.log("");
     process.exit(0);
   };
@@ -678,15 +686,21 @@ async function cmdSectorMap(): Promise<void> {
   const sum = summariseAggregate(entries);
 
   console.log("");
-  console.log(`evidence rows      confirmed ${sources.confirmed.toLocaleString()} · genus ${sources.genus.toLocaleString()} · signal ${sources.signal.toLocaleString()}`);
+  console.log(
+    `evidence rows      confirmed ${sources.confirmed.toLocaleString()} · genus ${sources.genus.toLocaleString()} · signal ${sources.signal.toLocaleString()}`,
+  );
   console.log(`aggregated to      ${sum.entries.toLocaleString()} (sector, taxon) markers`);
-  console.log(`                   ${sum.sectors.toLocaleString()} sectors · ${sum.taxa.toLocaleString()} taxa`);
+  console.log(
+    `                   ${sum.sectors.toLocaleString()} sectors · ${sum.taxa.toLocaleString()} taxa`,
+  );
   console.log("");
   console.log(`bodies behind them ${sum.totals.bodies.toLocaleString()}`);
   console.log(`  confirmed        ${sum.totals.confirmed.toLocaleString()}`);
   console.log(`  genus only       ${sum.totals.genus.toLocaleString()}`);
   console.log(`  signal only      ${sum.totals.signal.toLocaleString()}`);
-  console.log(`  predicted        ${sum.totals.predicted.toLocaleString()}   (not built yet - needs the Spansh export at scale)`);
+  console.log(
+    `  predicted        ${sum.totals.predicted.toLocaleString()}   (not built yet - needs the Spansh export at scale)`,
+  );
   console.log("");
   console.log("marker colour, by strongest evidence in that sector for that taxon:");
   for (const [k, v] of Object.entries(sum.byMarker)) {
@@ -695,27 +709,42 @@ async function cmdSectorMap(): Promise<void> {
 
   if (flags.has("--write")) {
     const D = String.fromCharCode(92);
-    const catalogue = ["C:", "Users", "FeraL", "Desktop", "Cursor Projects", "EDSM-targz-to-db", "docs", "sector-list.csv"].join(D);
+    const catalogue = [
+      "C:",
+      "Users",
+      "FeraL",
+      "Desktop",
+      "Cursor Projects",
+      "EDSM-targz-to-db",
+      "docs",
+      "sector-list.csv",
+    ].join(D);
     const w = writeSectorMapFile(root, { entries, sources, taxonGenus }, catalogue);
     const unnamed = unnamedCells(w.file);
     console.log("");
     console.log(`wrote              ${w.path}`);
     console.log(`                   ${(w.bytes / 1024).toFixed(1)} kB · ${w.file.cells.length} cells`);
-    console.log(`sector names       ${w.file.cells.length - unnamed.length} of ${w.file.cells.length}${unnamed.length ? `   (unnamed: ${unnamed.slice(0, 5).join(", ")})` : ""}`);
+    console.log(
+      `sector names       ${w.file.cells.length - unnamed.length} of ${w.file.cells.length}${unnamed.length ? `   (unnamed: ${unnamed.slice(0, 5).join(", ")})` : ""}`,
+    );
 
     // The drill-down is a second file on purpose: every session that opens the map pays for the
     // galaxy view, and almost none of them click a sector.
     const sysFile = buildSectorSystems(ctx.store);
     const sw = writeSectorSystemsFile(root, sysFile);
     console.log(`                   ${sw.path}`);
-    console.log(`                   ${(sw.bytes / 1024).toFixed(1)} kB · ${sw.systems.toLocaleString()} systems in ${Object.keys(sysFile.cells).length} cells`);
+    console.log(
+      `                   ${(sw.bytes / 1024).toFixed(1)} kB · ${sw.systems.toLocaleString()} systems in ${Object.keys(sysFile.cells).length} cells`,
+    );
   }
 
   const top = [...entries].sort((a, b) => b.counts.bodies - a.counts.bodies).slice(0, 8);
   console.log("");
   console.log("densest markers:");
   for (const e of top) {
-    console.log(`  ${e.cellKey.padEnd(12)} ${e.taxon.padEnd(30)} ${String(e.counts.bodies).padStart(4)} bodies  (${markerKind(e.counts)})`);
+    console.log(
+      `  ${e.cellKey.padEnd(12)} ${e.taxon.padEnd(30)} ${String(e.counts.bodies).padStart(4)} bodies  (${markerKind(e.counts)})`,
+    );
   }
   console.log("");
 }

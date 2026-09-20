@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import { EDSM_AUTO_MIN_GAP_MS, EdsmAutoFetcher } from "../src/server/edsmAutoFetch.js";
 
 /** A clock the test drives, so a throttle measured in seconds costs no wall time. */
-function harness(
-  opts: { enabled?: () => boolean; needs?: (a: number, arrived: boolean) => boolean } = {},
-) {
+function harness(opts: { enabled?: () => boolean; needs?: (a: number, arrived: boolean) => boolean } = {}) {
   const calls: { systemAddress: number; systemName: string; at: number }[] = [];
   let clock = 1_000_000;
   const fetcher = new EdsmAutoFetcher({

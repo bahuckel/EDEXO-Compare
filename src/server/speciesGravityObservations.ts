@@ -53,7 +53,7 @@ const GRAVITY_PATH = "body.gravity";
  * from it bought decidability without costing recall. The full table and the one near-miss (the
  * atmosphere floor at 20) are in speciesAtmosphereObservations.ts; the runner is
  * scripts/floor-sweep.ts.
- */export const MIN_GRAVITY_OBSERVATIONS = observationFloor("GRAVITY", 10);
+ */ export const MIN_GRAVITY_OBSERVATIONS = observationFloor("GRAVITY", 10);
 
 export interface GravityObservation {
   /** Bodies observed in the bin containing this reading. */

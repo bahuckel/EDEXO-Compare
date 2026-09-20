@@ -46,9 +46,7 @@ describe("payload round-trip", () => {
   });
 
   it("stamps the payload with the current format", () => {
-    expect(new GameStateStore().serializeJournalMergePayload().format).toBe(
-      JOURNAL_MERGE_CACHE_FORMAT,
-    );
+    expect(new GameStateStore().serializeJournalMergePayload().format).toBe(JOURNAL_MERGE_CACHE_FORMAT);
   });
 });
 

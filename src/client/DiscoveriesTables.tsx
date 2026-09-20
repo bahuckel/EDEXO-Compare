@@ -39,8 +39,7 @@ interface Column<T> {
   title?: string;
 }
 
-const cr = (n: number | null | undefined) =>
-  n == null ? "—" : `${Math.round(n).toLocaleString()} CR`;
+const cr = (n: number | null | undefined) => (n == null ? "—" : `${Math.round(n).toLocaleString()} CR`);
 const num = (n: number | null | undefined, digits = 0) =>
   n == null || !Number.isFinite(n) ? "—" : n.toLocaleString(undefined, { maximumFractionDigits: digits });
 const date = (iso: string | null) => (iso ? iso.slice(0, 10) : "—");
@@ -98,7 +97,8 @@ function Table<T extends Row>({
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
       if (bv == null) return -1;
-      const d = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv));
+      const d =
+        typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv));
       return d * sort.dir;
     });
     return out;
@@ -133,8 +133,8 @@ function Table<T extends Row>({
       </div>
       {sorted.length > PAGE ? (
         <p className="dim tiny disc-more">
-          Showing the first {PAGE.toLocaleString()} of {sorted.length.toLocaleString()} — narrow the
-          search or sort to bring the rest into view.
+          Showing the first {PAGE.toLocaleString()} of {sorted.length.toLocaleString()} — narrow the search or
+          sort to bring the rest into view.
         </p>
       ) : null}
     </>
@@ -265,7 +265,13 @@ export function DiscoveriesTables({
         title: "Type of the arrival star",
       },
       { key: "stars", label: "Stars", numeric: true, value: (r) => r.stars, render: (r) => count(r.stars) },
-      { key: "bodies", label: "Bodies", numeric: true, value: (r) => r.bodies, render: (r) => count(r.bodies) },
+      {
+        key: "bodies",
+        label: "Bodies",
+        numeric: true,
+        value: (r) => r.bodies,
+        render: (r) => count(r.bodies),
+      },
       {
         key: "landables",
         label: "Land",
@@ -361,7 +367,13 @@ export function DiscoveriesTables({
 
     return (
       <>
-        <Search query={query} setQuery={setQuery} n={filtered.length} of={data.systems.length} what="systems" />
+        <Search
+          query={query}
+          setQuery={setQuery}
+          n={filtered.length}
+          of={data.systems.length}
+          what="systems"
+        />
         <ChipRow label="Region" options={regions} picked={classFilter} onToggle={toggleClass} />
         <ChipRow
           label="Has"

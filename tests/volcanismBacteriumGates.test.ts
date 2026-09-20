@@ -122,7 +122,9 @@ describe("the three Bacterium whose wall was on the wrong axis", () => {
       const h = dig(j);
       if (!h) return null;
       const total = Object.values(h).reduce((n, v) => n + Number(v), 0);
-      const hit = Object.entries(h).filter(([k]) => re.test(k)).reduce((n, [, v]) => n + Number(v), 0);
+      const hit = Object.entries(h)
+        .filter(([k]) => re.test(k))
+        .reduce((n, [, v]) => n + Number(v), 0);
       return total > 0 ? hit / total : null;
     };
     // 95.5%, 100% and 100% when this was written. The claim is "nearly always", not the exact figure.

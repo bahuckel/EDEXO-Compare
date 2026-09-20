@@ -22,22 +22,6 @@ import { HeaderBar } from "./HeaderBar";
  * production build hoists correctly and was fine.
  */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * Modal-only code, split out of the initial bundle.
  *
@@ -83,7 +67,10 @@ function BioEmptyState({ snap }: { snap: AppSnapshot }) {
               : "FSS a world with biological signals, or DSS map one — bodies appear here on their own. You can also search a visited system above."}
           </p>
           {snap.jumpTarget && !snap.jumpTarget.arrived ? (
-            <div className="bio-empty-next" title="From the journal's StartJump: the system you are jumping to and its main star class">
+            <div
+              className="bio-empty-next"
+              title="From the journal's StartJump: the system you are jumping to and its main star class"
+            >
               <span className="fact-k">Next jump</span>
               <span>{snap.jumpTarget.starSystem}</span>
               <span className="bio-empty-next-class">{snap.jumpTarget.starClass}</span>
@@ -130,11 +117,7 @@ function AppLegalFooter() {
           still where privacy.html and terms.html live — those are served from the site root and
           moving this link must not quietly move them with it.
         */}
-        <a
-          href="https://bahuckel.com/projects/edexo-compare"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://bahuckel.com/projects/edexo-compare" target="_blank" rel="noopener noreferrer">
           bahuckel.com/projects/edexo-compare
         </a>
       </div>

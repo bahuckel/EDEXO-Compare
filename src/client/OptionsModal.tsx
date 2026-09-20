@@ -6,12 +6,23 @@ import { useModal } from "./ui/useModal";
 import { InfoPopover } from "./ui/Tooltip";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { AppSnapshot } from "@shared/types";
-import { journalHistoryPresetLabel, journalHistoryWindowPresetChoices, parseJournalHistoryPreset, JournalHistoryPreset } from "@shared/journalHistoryPreset";
+import {
+  journalHistoryPresetLabel,
+  journalHistoryWindowPresetChoices,
+  parseJournalHistoryPreset,
+  JournalHistoryPreset,
+} from "@shared/journalHistoryPreset";
 import { FoldPanel } from "./ui/Fold";
 import { useFeederStatus } from "./FeederStatusPanel";
 import type { CollectionFocusConfig } from "@shared/collectionFocus";
 import { ExoMissLogPanel } from "./SpeciesCard";
-import { EXO_MAP_CR_MAX, EXO_MAP_CR_MIN, EXO_MAP_CR_STEP, EXO_MAP_PLUS_SLIDER_MAX, secondScreenUrl } from "./lsPrefs";
+import {
+  EXO_MAP_CR_MAX,
+  EXO_MAP_CR_MIN,
+  EXO_MAP_CR_STEP,
+  EXO_MAP_PLUS_SLIDER_MAX,
+  secondScreenUrl,
+} from "./lsPrefs";
 
 /**
  * EDSM auto-fetch, in Options.
@@ -98,16 +109,16 @@ function CanonnUploadPanel({ state }: { state: AppSnapshot["canonnUpload"] }) {
       help={
         <>
           <p>
-            Canonn Research is the community science archive this app's matching rules came from.
-            Sending discoveries back is how the rules get better for everyone.
+            Canonn Research is the community science archive this app's matching rules came from. Sending
+            discoveries back is how the rules get better for everyone.
           </p>
           <p>
             <strong>What is sent</strong> — organic scans, the sales that date them, codex entries, and
             whatever else Canonn is currently asking for, as the game wrote them.
           </p>
           <p>
-            <strong>Only live events.</strong> Turning this on never uploads your existing journals; it
-            starts from the next thing you scan.
+            <strong>Only live events.</strong> Turning this on never uploads your existing journals; it starts
+            from the next thing you scan.
           </p>
           <p>
             <a href="https://canonn.science/" target="_blank" rel="noreferrer noopener">
@@ -118,8 +129,8 @@ function CanonnUploadPanel({ state }: { state: AppSnapshot["canonnUpload"] }) {
       }
     >
       <p className="dim options-canonn-privacy">
-        <strong>Your CMDR name is shared.</strong> Canonn's archive is keyed on it and there is no
-        anonymous form.
+        <strong>Your CMDR name is shared.</strong> Canonn's archive is keyed on it and there is no anonymous
+        form.
       </p>
 
       <label className="options-toggle">
@@ -221,13 +232,13 @@ function CollectionFocusPanel() {
       help={
         <>
           <p>
-            The ⌖ beside a species means the corpus is thin on it <em>and</em> you have confirmed it
-            few times — so a sample there teaches the app more than its credits are worth. The number
-            after it is how many of your own scans are still wanted.
+            The ⌖ beside a species means the corpus is thin on it <em>and</em> you have confirmed it few times
+            — so a sample there teaches the app more than its credits are worth. The number after it is how
+            many of your own scans are still wanted.
           </p>
           <p>
-            A <strong>Log</strong> counts, the same as a Sample or an Analyse. You do not have to
-            finish a run for it to stop asking.
+            A <strong>Log</strong> counts, the same as a Sample or an Analyse. You do not have to finish a run
+            for it to stop asking.
           </p>
         </>
       }
@@ -277,8 +288,7 @@ function CollectionFocusPanel() {
 
       {cfg.dismissed.length > 0 ? (
         <p className="dim options-focus-dismissed">
-          {cfg.dismissed.length} species dismissed by hand in{" "}
-          <code>edexo-collection-focus.json</code>.
+          {cfg.dismissed.length} species dismissed by hand in <code>edexo-collection-focus.json</code>.
         </p>
       ) : null}
 
@@ -329,18 +339,17 @@ function EdsmFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) {
       help={
         <>
           <p>
-            When you jump into a system this app has no scans for, it looks the system up on EDSM while
-            you travel, so it can be triaged before you arrive.
+            When you jump into a system this app has no scans for, it looks the system up on EDSM while you
+            travel, so it can be triaged before you arrive.
           </p>
           <p>
-            <strong>What is sent</strong> — the name of every system you enter, with your commander name
-            and key. Nothing else. Off until you turn it on.
+            <strong>What is sent</strong> — the name of every system you enter, with your commander name and
+            key. Nothing else. Off until you turn it on.
           </p>
           <p>
-            <strong>The key</strong> lives on this machine in its own file beside your settings, never in
-            the settings file and never in the repository. The app only ever shows its last four
-            characters back to you. <strong>Forget key</strong> deletes it and switches both EDSM
-            features off.
+            <strong>The key</strong> lives on this machine in its own file beside your settings, never in the
+            settings file and never in the repository. The app only ever shows its last four characters back
+            to you. <strong>Forget key</strong> deletes it and switches both EDSM features off.
           </p>
           <p>
             Get a key from{" "}
@@ -460,13 +469,7 @@ function EdsmFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] }) {
  * The one sentence that stays visible is the one a commander must not have to ask for: that this
  * sends the journal itself, not just system names. Consent is not a footnote.
  */
-function EdsmUploadPanel({
-  state,
-  hasKey,
-}: {
-  state: AppSnapshot["edsmUpload"];
-  hasKey: boolean;
-}) {
+function EdsmUploadPanel({ state, hasKey }: { state: AppSnapshot["edsmUpload"]; hasKey: boolean }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   /** A week, not everything: a four-year run should be chosen, not the default. */
@@ -497,23 +500,23 @@ function EdsmUploadPanel({
             commander profile. Uses the key from <em>Fetch from EDSM</em> above.
           </p>
           <p>
-            <strong>What is sent</strong> — the game's own journal lines: where you jumped, what you
-            scanned, when. EDSM publishes a list of event types it does not want and those are skipped.
-            Fetching above sends only system names; this is much more.
+            <strong>What is sent</strong> — the game's own journal lines: where you jumped, what you scanned,
+            when. EDSM publishes a list of event types it does not want and those are skipped. Fetching above
+            sends only system names; this is much more.
           </p>
           <p>
-            <strong>Catch up</strong> reads your journals oldest first and sends whatever EDSM has not
-            been given, as far back as you choose. It remembers how far it got, so stopping is safe and
-            running it again resumes. A short run does not stop a longer one later.
+            <strong>Catch up</strong> reads your journals oldest first and sends whatever EDSM has not been
+            given, as far back as you choose. It remembers how far it got, so stopping is safe and running it
+            again resumes. A short run does not stop a longer one later.
           </p>
           <p>
-            <strong>Keep sending</strong> repeats that every few minutes while you play, reaching back a
-            week so a few days with the app closed heal themselves. Gaps older than that are what the
-            button is for.
+            <strong>Keep sending</strong> repeats that every few minutes while you play, reaching back a week
+            so a few days with the app closed heal themselves. Gaps older than that are what the button is
+            for.
           </p>
           <p>
-            If EDMarketConnector is also running, you will both be uploading. EDSM ignores what it
-            already has, so it is redundant rather than harmful.
+            If EDMarketConnector is also running, you will both be uploading. EDSM ignores what it already
+            has, so it is redundant rather than harmful.
           </p>
         </>
       }
@@ -859,8 +862,8 @@ export function MapOptionsModal({
                   Second screen
                   <InfoPopover title="Second screen" label="What the second screen shows">
                     <p>
-                      The same server, one query parameter apart: read-only triage for this system, meant
-                      for a tablet or a spare monitor beside the game.
+                      The same server, one query parameter apart: read-only triage for this system, meant for
+                      a tablet or a spare monitor beside the game.
                     </p>
                     <p>
                       The link carries this machine&apos;s LAN access key, so bookmark it on the device once
@@ -941,54 +944,54 @@ export function MapOptionsModal({
                 </p>
               </InfoPopover>
             </p>
-          <div className="options-tier-field">
-            <label htmlFor="exo-tier-plus">Min. CR for +</label>
-            <input
-              id="exo-tier-plus"
-              type="range"
-              min={EXO_MAP_CR_MIN}
-              max={EXO_MAP_PLUS_SLIDER_MAX}
-              step={EXO_MAP_CR_STEP}
-              value={Math.min(optPlus, EXO_MAP_PLUS_SLIDER_MAX)}
-              onChange={(ev) => {
-                const plus = Number(ev.target.value);
-                let pp = optPlusPlus;
-                if (pp <= plus) {
-                  pp = Math.min(EXO_MAP_CR_MAX, plus + EXO_MAP_CR_STEP);
-                  if (pp <= plus) pp = plus + 1;
-                }
-                setOptPlus(plus);
-                setOptPlusPlus(pp);
-                queueSave(plus, pp);
-              }}
-            />
-            <div className="options-tier-value">
-              {Math.min(optPlus, EXO_MAP_PLUS_SLIDER_MAX).toLocaleString()} CR
+            <div className="options-tier-field">
+              <label htmlFor="exo-tier-plus">Min. CR for +</label>
+              <input
+                id="exo-tier-plus"
+                type="range"
+                min={EXO_MAP_CR_MIN}
+                max={EXO_MAP_PLUS_SLIDER_MAX}
+                step={EXO_MAP_CR_STEP}
+                value={Math.min(optPlus, EXO_MAP_PLUS_SLIDER_MAX)}
+                onChange={(ev) => {
+                  const plus = Number(ev.target.value);
+                  let pp = optPlusPlus;
+                  if (pp <= plus) {
+                    pp = Math.min(EXO_MAP_CR_MAX, plus + EXO_MAP_CR_STEP);
+                    if (pp <= plus) pp = plus + 1;
+                  }
+                  setOptPlus(plus);
+                  setOptPlusPlus(pp);
+                  queueSave(plus, pp);
+                }}
+              />
+              <div className="options-tier-value">
+                {Math.min(optPlus, EXO_MAP_PLUS_SLIDER_MAX).toLocaleString()} CR
+              </div>
             </div>
-          </div>
-          <div className="options-tier-field">
-            <label htmlFor="exo-tier-plusplus">Min. CR for ++</label>
-            <input
-              id="exo-tier-plusplus"
-              type="range"
-              min={plusPlusSliderMin}
-              max={EXO_MAP_CR_MAX}
-              step={EXO_MAP_CR_STEP}
-              value={Math.max(plusPlusSliderMin, optPlusPlus)}
-              onChange={(ev) => {
-                let pp = Number(ev.target.value);
-                pp = Math.round(pp / EXO_MAP_CR_STEP) * EXO_MAP_CR_STEP;
-                const minPP = plusPlusSliderMin;
-                pp = Math.max(minPP, Math.min(EXO_MAP_CR_MAX, pp));
-                setOptPlusPlus(pp);
-                queueSave(optPlus, pp);
-              }}
-            />
-            <div className="options-tier-value">
-              {Math.max(plusPlusSliderMin, optPlusPlus).toLocaleString()} CR (min{" "}
-              {plusPlusSliderMin.toLocaleString()} CR)
+            <div className="options-tier-field">
+              <label htmlFor="exo-tier-plusplus">Min. CR for ++</label>
+              <input
+                id="exo-tier-plusplus"
+                type="range"
+                min={plusPlusSliderMin}
+                max={EXO_MAP_CR_MAX}
+                step={EXO_MAP_CR_STEP}
+                value={Math.max(plusPlusSliderMin, optPlusPlus)}
+                onChange={(ev) => {
+                  let pp = Number(ev.target.value);
+                  pp = Math.round(pp / EXO_MAP_CR_STEP) * EXO_MAP_CR_STEP;
+                  const minPP = plusPlusSliderMin;
+                  pp = Math.max(minPP, Math.min(EXO_MAP_CR_MAX, pp));
+                  setOptPlusPlus(pp);
+                  queueSave(optPlus, pp);
+                }}
+              />
+              <div className="options-tier-value">
+                {Math.max(plusPlusSliderMin, optPlusPlus).toLocaleString()} CR (min{" "}
+                {plusPlusSliderMin.toLocaleString()} CR)
+              </div>
             </div>
-          </div>
           </section>
 
           <button type="button" className="btn-top-danger options-reset-exo" onClick={onResetExobiology}>

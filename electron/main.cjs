@@ -1,6 +1,17 @@
 "use strict";
 
-const { app, BrowserWindow, nativeImage, dialog, ipcMain, screen, globalShortcut, Tray, Menu, shell } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  nativeImage,
+  dialog,
+  ipcMain,
+  screen,
+  globalShortcut,
+  Tray,
+  Menu,
+  shell,
+} = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { execFileSync } = require("child_process");
@@ -159,22 +170,30 @@ function loadHudLayout() {
       if (Number.isFinite(Number(j.scale))) hudScale = Math.min(2, Math.max(0.5, Number(j.scale)));
       if (Array.isArray(j.lastOpen)) {
         hudRememberedOpen = j.lastOpen
-          .filter((o) => o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"))
+          .filter(
+            (o) => o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"),
+          )
           .slice(0, MAX_HUD_OVERLAYS)
           .map((o) => ({
             pathname: o.pathname,
-            width: Number.isFinite(Number(o.width)) && Number(o.width) > 0 ? Math.floor(Number(o.width)) : 404,
-            height: Number.isFinite(Number(o.height)) && Number(o.height) > 0 ? Math.floor(Number(o.height)) : 330,
+            width:
+              Number.isFinite(Number(o.width)) && Number(o.width) > 0 ? Math.floor(Number(o.width)) : 404,
+            height:
+              Number.isFinite(Number(o.height)) && Number(o.height) > 0 ? Math.floor(Number(o.height)) : 330,
           }));
       }
       if (Array.isArray(j.open)) {
         hudRestoreList = j.open
-          .filter((o) => o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"))
+          .filter(
+            (o) => o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"),
+          )
           .slice(0, MAX_HUD_OVERLAYS)
           .map((o) => ({
             pathname: o.pathname,
-            width: Number.isFinite(Number(o.width)) && Number(o.width) > 0 ? Math.floor(Number(o.width)) : 404,
-            height: Number.isFinite(Number(o.height)) && Number(o.height) > 0 ? Math.floor(Number(o.height)) : 330,
+            width:
+              Number.isFinite(Number(o.width)) && Number(o.width) > 0 ? Math.floor(Number(o.width)) : 404,
+            height:
+              Number.isFinite(Number(o.height)) && Number(o.height) > 0 ? Math.floor(Number(o.height)) : 330,
           }));
         if (hudRestoreList.length && !hudRememberedOpen.length) hudRememberedOpen = hudRestoreList.slice();
       }
@@ -202,8 +221,11 @@ function persistHudFile() {
   }
 }
 function setHudLayout(next, persist) {
-  const corner = typeof next.corner === "string" && /^(tl|tr|bl|br)$/.test(next.corner) ? next.corner : hudLayout.corner;
-  const order = Array.isArray(next.order) ? next.order.filter((k) => typeof k === "string").slice(0, 16) : hudLayout.order;
+  const corner =
+    typeof next.corner === "string" && /^(tl|tr|bl|br)$/.test(next.corner) ? next.corner : hudLayout.corner;
+  const order = Array.isArray(next.order)
+    ? next.order.filter((k) => typeof k === "string").slice(0, 16)
+    : hudLayout.order;
   hudLayout = { corner, order };
   if (persist) persistHudFile();
   relayoutHudStack();
@@ -793,7 +815,8 @@ function registerFootOverlayIpc(iconForChild) {
   */
   ipcMain.handle("edexo:set-hud-overlay", async (_evt, opts) => {
     const o = opts && typeof opts === "object" ? opts : {};
-    const pathname = typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : "/hud-overlay.html";
+    const pathname =
+      typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : "/hud-overlay.html";
     const pathNorm = pathname.startsWith("/") ? pathname : `/${pathname}`;
     const w = Number(o.width);
     const h = Number(o.height);
@@ -818,7 +841,11 @@ function registerFootOverlayIpc(iconForChild) {
     return { closed: true, paths: hudPathsFiltered() };
   });
 
-  ipcMain.handle("edexo:get-hud-layout", () => ({ ...hudLayout, hidden: hudHidden, shortcut: HUD_TOGGLE_SHORTCUT }));
+  ipcMain.handle("edexo:get-hud-layout", () => ({
+    ...hudLayout,
+    hidden: hudHidden,
+    shortcut: HUD_TOGGLE_SHORTCUT,
+  }));
   ipcMain.handle("edexo:set-hud-layout", (_evt, opts) => {
     const o = opts && typeof opts === "object" ? opts : {};
     return { ...setHudLayout(o, true), hidden: hudHidden, shortcut: HUD_TOGGLE_SHORTCUT };

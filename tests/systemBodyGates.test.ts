@@ -70,10 +70,7 @@ describe("the gate itself", () => {
   });
 
   it("knows the Brain Trees' list, which their own rows do not carry", () => {
-    expect(BRAIN_TREE_SYSTEM_REQUIREMENT).toEqual([
-      "Earth-Like World",
-      "Gas Giant with water-based life",
-    ]);
+    expect(BRAIN_TREE_SYSTEM_REQUIREMENT).toEqual(["Earth-Like World", "Gas Giant with water-based life"]);
     expect(evaluateSystemBodyGate(BRAIN_TREE_SYSTEM_REQUIREMENT, ["Water giant"], true)?.kind).toBe("fail");
   });
 });

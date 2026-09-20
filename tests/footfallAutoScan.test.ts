@@ -53,7 +53,14 @@ const disembark = (ts: string) =>
 
 function seeded(): GameStateStore {
   const st = new GameStateStore();
-  st.apply(j({ timestamp: "2026-09-09T11:54:00Z", event: "FSDJump", StarSystem: "Aucoks OG-E b18-3", SystemAddress: SYS }));
+  st.apply(
+    j({
+      timestamp: "2026-09-09T11:54:00Z",
+      event: "FSDJump",
+      StarSystem: "Aucoks OG-E b18-3",
+      SystemAddress: SYS,
+    }),
+  );
   return st;
 }
 

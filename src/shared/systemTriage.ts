@@ -27,7 +27,6 @@
  */
 import type { BodyComputed } from "./types.js";
 
-
 /**
  * Median minutes from dropping out of supercruise to touchdown. Measured, 299 landings.
  */

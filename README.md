@@ -52,7 +52,7 @@ actually be on a body like this one. It is the one percentage in the app that ha
 against real outcomes: on bodies where every species is known, the 90-100 % band comes in at 97.8 %
 and the 0-10 % band at 8.9 %.
 
-Candidates below **5 %** are moved behind *show unlikely* rather than listed. A row at 2.7 % beside a
+Candidates below **5 %** are moved behind _show unlikely_ rather than listed. A row at 2.7 % beside a
 row at 100 % is the model telling you it has already decided, and putting them on the same list asks
 you to do that arithmetic again.
 
@@ -62,7 +62,7 @@ foot yourself.
 
 To change it, edit `PRESENCE_FLOOR_PCT` in [`src/server/snapshot.ts`](src/server/snapshot.ts) and
 rebuild. Measured against 378 species the author later confirmed on foot, a 5 % floor moved exactly
-one of them behind *show unlikely*.
+one of them behind _show unlikely_.
 
 ## EDSM
 

@@ -61,7 +61,8 @@ export const CLAIM_ORIGIN_HELP: Record<ClaimOrigin, string> = {
     "A Spansh Exomastery export: another commander scanned this species here and it reached Spansh. Confirmed, but not by you.",
   "spansh-dump":
     "A Spansh galaxy dump or route export. The body is real and carries a biological signal; which species is there may be a prediction rather than an identification.",
-  journal: "Your own journal. You scanned this yourself — the only evidence in the corpus that is first-hand.",
+  journal:
+    "Your own journal. You scanned this yourself — the only evidence in the corpus that is first-hand.",
   edsm: "EDSM's API. Used to fill in a body's physical data; EDSM does not publish biological signals, so it is rarely a claim source.",
   eddn: "The live EDDN stream — another commander's scan, seen as it was uploaded.",
   unknown: "Imported before origin was recorded. Not a guess: the corpus genuinely does not know.",
@@ -89,9 +90,7 @@ export function asClaimOrigin(v: unknown): ClaimOrigin {
 }
 
 export function asBodyDataOrigin(v: unknown): BodyDataOrigin {
-  return (BODY_DATA_ORIGINS as readonly string[]).includes(v as string)
-    ? (v as BodyDataOrigin)
-    : "unknown";
+  return (BODY_DATA_ORIGINS as readonly string[]).includes(v as string) ? (v as BodyDataOrigin) : "unknown";
 }
 
 /**

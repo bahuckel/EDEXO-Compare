@@ -37,7 +37,11 @@ describe("records for a system", () => {
     const store = new GameStateStore();
     store.soldExplorationScans.set(`${ADDR}:0`, rec(0, { starType: "M" }));
     store.soldExplorationScans.set(`${ADDR}:9`, rec(9));
-    expect(explorationRecordsForSystem(store, ADDR).map((r) => r.bodyId).sort()).toEqual([0, 9]);
+    expect(
+      explorationRecordsForSystem(store, ADDR)
+        .map((r) => r.bodyId)
+        .sort(),
+    ).toEqual([0, 9]);
   });
 
   it("prefers the live row when a body appears in both", () => {

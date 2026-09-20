@@ -26,7 +26,8 @@ import type {
   GalaxyValueSearchDTO,
   FirstDiscoveryBacklogDTO,
   ExoDataAlertDTO,
-  DiscoveriesDTO,} from "../shared/types.js";
+  DiscoveriesDTO,
+} from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { isJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { getProjectRoot, getSpeciesDataDir, getWebRoot } from "./paths.js";
@@ -187,7 +188,10 @@ export function createHttpServer(opts: {
    * implementation clamps, so the reply is the accepted pair and the launcher shows that rather
    * than what it sent.
    */
-  setPollRates?: (statusPollMs: unknown, journalPollMs: unknown) => { statusPollMs: number; journalPollMs: number };
+  setPollRates?: (
+    statusPollMs: unknown,
+    journalPollMs: unknown,
+  ) => { statusPollMs: number; journalPollMs: number };
   /**
    * POST /api/settings/radar-radius — JSON `{ radiusM }`. Returns the accepted (clamped) value.
    *
@@ -554,7 +558,10 @@ export function createHttpServer(opts: {
     const list = (v: unknown): string[] | undefined => {
       const raw = String(v ?? "").trim();
       if (!raw) return undefined;
-      const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+      const parts = raw
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
       return parts.length ? parts : undefined;
     };
     // Absent means the default, so `fss=0` can turn the default off — `!== "0"` would read a
@@ -601,7 +608,10 @@ export function createHttpServer(opts: {
     const list = (v: unknown): string[] | undefined => {
       const raw = String(v ?? "").trim();
       if (!raw) return undefined;
-      const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+      const parts = raw
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
       return parts.length ? parts : undefined;
     };
     const tiers = Number(req.query.tiers ?? 0);
@@ -705,7 +715,9 @@ export function createHttpServer(opts: {
     }
     const file = path.join(getProjectRoot(), "data", "exomastery", "sector-systems.json");
     if (!existsSync(file)) {
-      res.status(404).json({ error: "no sector systems built yet — run: npm run feeder -- sector-map --write" });
+      res
+        .status(404)
+        .json({ error: "no sector systems built yet — run: npm run feeder -- sector-map --write" });
       return;
     }
     const mtimeMs = statSync(file).mtimeMs;
@@ -830,8 +842,7 @@ export function createHttpServer(opts: {
     // Compared case-insensitively on the trimmed name: the sources agree on spelling, but a stray
     // space would otherwise read as "it moved".
     const differsFrom = (system: string) =>
-      cachedSystem.trim().length > 0 &&
-      system.trim().toLowerCase() !== cachedSystem.trim().toLowerCase();
+      cachedSystem.trim().length > 0 && system.trim().toLowerCase() !== cachedSystem.trim().toLowerCase();
 
     try {
       /*
@@ -1125,14 +1136,18 @@ export function createHttpServer(opts: {
       return;
     }
     if (!feederDataDirExists()) {
-      res.status(409).json({ ok: false, error: "No corpus on this machine. Set its folder in Options first." });
+      res
+        .status(409)
+        .json({ ok: false, error: "No corpus on this machine. Set its folder in Options first." });
       return;
     }
     let summary;
     try {
       summary = summariseSpanshRouteFile(parseSpanshRouteFile(text));
     } catch (e) {
-      res.status(400).json({ ok: false, error: e instanceof Error ? e.message : "Could not read that file." });
+      res
+        .status(400)
+        .json({ ok: false, error: e instanceof Error ? e.message : "Could not read that file." });
       return;
     }
     if (summary.rows === 0) {
@@ -1151,7 +1166,9 @@ export function createHttpServer(opts: {
       writeFileSync(file, text, "utf8");
       res.json({ ok: true, queuedAs: file, summary });
     } catch (e) {
-      res.status(500).json({ ok: false, error: e instanceof Error ? e.message : "Could not queue the file." });
+      res
+        .status(500)
+        .json({ ok: false, error: e instanceof Error ? e.message : "Could not queue the file." });
     }
   });
 

@@ -19,7 +19,17 @@ const RECORD = 25;
 function writeIndex(
   file: string,
   species: string[],
-  rows: { id64: bigint; name: string; x: number; y: number; z: number; region: number; species: number[]; tiers?: number; bodyCount?: number }[],
+  rows: {
+    id64: bigint;
+    name: string;
+    x: number;
+    y: number;
+    z: number;
+    region: number;
+    species: number[];
+    tiers?: number;
+    bodyCount?: number;
+  }[],
 ) {
   const json = Buffer.from(JSON.stringify({ species }), "utf8");
   const head = Buffer.alloc(20);
@@ -81,7 +91,8 @@ async function search(
   writeIndex(file, [CHEAP, DEAR], rows);
   vi.resetModules();
   vi.doMock("../src/server/bioIndex.js", async () => {
-    const real = await vi.importActual<typeof import("../src/server/bioIndex.js")>("../src/server/bioIndex.js");
+    const real =
+      await vi.importActual<typeof import("../src/server/bioIndex.js")>("../src/server/bioIndex.js");
     return { ...real, loadBioIndex: () => real.loadBioIndex(file) };
   });
   const { loadSpeciesDatabase } = await import("../src/server/snapshot.js");
@@ -206,7 +217,9 @@ describe("filtering by evidence", () => {
   });
 
   it("carries the flags and body count through to the caller", async () => {
-    const rows = [{ id64: 10n, name: "A", x: 0, y: 0, z: 0, region: 1, species: [1], tiers: 4 | 8, bodyCount: 32 }];
+    const rows = [
+      { id64: 10n, name: "A", x: 0, y: 0, z: 0, region: 1, species: [1], tiers: 4 | 8, bodyCount: 32 },
+    ];
     const r = await search(rows, { minCr: 0, from: null });
     expect(r.hits[0]!.tiers & 8).toBeTruthy();
     expect(r.hits[0]!.bodyCount).toBe(32);

@@ -223,7 +223,9 @@ export function GalaxyMapScreen() {
         </div>
       ) : null}
 
-      {load.state === "error" ? <p className="galaxy-screen__empty">Could not load the map: {load.message}</p> : null}
+      {load.state === "error" ? (
+        <p className="galaxy-screen__empty">Could not load the map: {load.message}</p>
+      ) : null}
 
       {/*
         The panel opens its region picker on the region the ship is in. Both halves are already

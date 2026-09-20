@@ -68,8 +68,8 @@ export interface RegionMapData {
  * integers and never allocate a string — the corpus-wide passes do exactly that.
  */
 export function regionIndexForCoords(data: RegionMapData, x: number, z: number): number {
-  const px = Math.floor((x - REGION_MAP_X0) * 83 / 4096);
-  const pz = Math.floor((z - REGION_MAP_Z0) * 83 / 4096);
+  const px = Math.floor(((x - REGION_MAP_X0) * 83) / 4096);
+  const pz = Math.floor(((z - REGION_MAP_Z0) * 83) / 4096);
   // Beyond the grid is honestly nowhere, not region 0 by accident — but both read as "unnamed",
   // and a caller that needs to tell them apart should be checking the coordinates, not the map.
   if (pz < 0 || pz >= data.regionmap.length) return 0;
@@ -90,12 +90,7 @@ export function regionIndexForCoords(data: RegionMapData, x: number, z: number):
  * having to know the map is flat; dropping it at the call site would only move that knowledge
  * somewhere less obvious.
  */
-export function regionForCoords(
-  data: RegionMapData,
-  x: number,
-  _y: number,
-  z: number,
-): string | null {
+export function regionForCoords(data: RegionMapData, x: number, _y: number, z: number): string | null {
   return data.regions[regionIndexForCoords(data, x, z)] ?? null;
 }
 

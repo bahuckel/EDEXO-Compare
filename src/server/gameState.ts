@@ -695,8 +695,13 @@ export class GameStateStore {
    */
   fsdTarget: { starSystem: string; systemAddress: number; starClass: string; at: string } | null = null;
   /** Last hyperspace target from `StartJump`, for the HUD's next-jump card. See AppSnapshot.jumpTarget. */
-  lastJumpTarget: { starSystem: string; systemAddress: number; starClass: string; at: string; arrived: boolean } | null =
-    null;
+  lastJumpTarget: {
+    starSystem: string;
+    systemAddress: number;
+    starClass: string;
+    at: string;
+    arrived: boolean;
+  } | null = null;
 
   /** When the sampling run for this species on this body began (ms epoch), or undefined. */
   organicRunStartedAtMs(bodyKey: string, speciesKey: string): number | undefined {
@@ -853,9 +858,7 @@ export class GameStateStore {
     if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) return;
     const dup = this.surfaceSampleMarks.some(
       (m) =>
-        m.bodyKey === bodyKeyStr &&
-        Math.abs(m.latDeg - latDeg) < 1e-5 &&
-        Math.abs(m.lonDeg - lonDeg) < 1e-5,
+        m.bodyKey === bodyKeyStr && Math.abs(m.latDeg - latDeg) < 1e-5 && Math.abs(m.lonDeg - lonDeg) < 1e-5,
     );
     if (dup) return;
     const tK = conditions?.temperatureK;
@@ -979,8 +982,10 @@ export class GameStateStore {
       if (typeof t.text === "string" && /^#[0-9a-f]{6}$/i.test(t.text)) theme.text = t.text;
       out.theme = theme;
     }
-    if (typeof r.scale === "number" && Number.isFinite(r.scale)) out.scale = Math.min(2, Math.max(0.5, r.scale));
-    if (typeof r.opacity === "number" && Number.isFinite(r.opacity)) out.opacity = Math.min(1, Math.max(0.1, r.opacity));
+    if (typeof r.scale === "number" && Number.isFinite(r.scale))
+      out.scale = Math.min(2, Math.max(0.5, r.scale));
+    if (typeof r.opacity === "number" && Number.isFinite(r.opacity))
+      out.opacity = Math.min(1, Math.max(0.1, r.opacity));
     if (r.candOrder === "likelihood" || r.candOrder === "value") out.candOrder = r.candOrder;
     if (typeof r.region === "boolean") out.region = r.region;
     if (typeof r.audio === "boolean") out.audio = r.audio;
@@ -1767,7 +1772,10 @@ export class GameStateStore {
         const addr = line.SystemAddress as number;
         if (event === "FSDJump" && typeof addr === "number") {
           // The next-jump card: the target is reached (held for a minute), the nav lock is spent.
-          if (this.lastJumpTarget && (this.lastJumpTarget.systemAddress === addr || !this.lastJumpTarget.systemAddress)) {
+          if (
+            this.lastJumpTarget &&
+            (this.lastJumpTarget.systemAddress === addr || !this.lastJumpTarget.systemAddress)
+          ) {
             this.lastJumpTarget = { ...this.lastJumpTarget, arrived: true };
           }
           if (this.fsdTarget && this.fsdTarget.systemAddress === addr) this.fsdTarget = null;
@@ -1847,8 +1855,7 @@ export class GameStateStore {
         // A comp scan fires more than once for the same plant, and a foot scan of the same species
         // says strictly more. Either way one row per species on this body is enough.
         const already = codexBody.organicGenusLocks.some(
-          (l) =>
-            l.speciesLocalised.trim().toLowerCase() === lock.speciesLocalised.trim().toLowerCase(),
+          (l) => l.speciesLocalised.trim().toLowerCase() === lock.speciesLocalised.trim().toLowerCase(),
         );
         if (!already) codexBody.organicGenusLocks.push(lock);
         if (lock.variantLocalised && !codexBody.confirmedVariants.includes(lock.variantLocalised)) {
@@ -2059,7 +2066,8 @@ export class GameStateStore {
           const starSystem = typeof line.StarSystem === "string" ? line.StarSystem : "";
           const systemAddress = typeof line.SystemAddress === "number" ? line.SystemAddress : 0;
           const starClass = typeof line.StarClass === "string" ? line.StarClass : "";
-          if (starSystem) this.lastJumpTarget = { starSystem, systemAddress, starClass, at: ts, arrived: false };
+          if (starSystem)
+            this.lastJumpTarget = { starSystem, systemAddress, starClass, at: ts, arrived: false };
         }
         if (event === "FSDJump" && this.lastJumpTarget) {
           const addr = typeof line.SystemAddress === "number" ? line.SystemAddress : null;
@@ -2322,8 +2330,7 @@ export class GameStateStore {
          * was logged and then left alone: 85 of 352 observations, because skipping a low-value plant
          * after logging it is a normal way to play, not an incomplete action.
          */
-        const isOrganicConfirmation =
-          scanType === "Analyse" || scanType === "Sample" || scanType === "Log";
+        const isOrganicConfirmation = scanType === "Analyse" || scanType === "Sample" || scanType === "Log";
         if (isOrganicConfirmation && (genusLoc || genusSym)) {
           const rec = this.explorationScans.get(bk);
           const exo = this.bodies.get(bk);
@@ -2349,7 +2356,8 @@ export class GameStateStore {
                 lock,
                 ts,
                 includeBacterium: this.includeBacteriumInSearch,
-                confirmationSource: scanType === "Analyse" ? "analyse" : scanType === "Sample" ? "sample" : "log",
+                confirmationSource:
+                  scanType === "Analyse" ? "analyse" : scanType === "Sample" ? "sample" : "log",
               });
             } catch {
               /* non-fatal: catalog file may be read-only */
@@ -2450,8 +2458,7 @@ export class GameStateStore {
               */
               const value = Number(bio.Value);
               const bonus = Number(bio.Bonus);
-              const credits =
-                (Number.isFinite(value) ? value : 0) + (Number.isFinite(bonus) ? bonus : 0);
+              const credits = (Number.isFinite(value) ? value : 0) + (Number.isFinite(bonus) ? bonus : 0);
               const addr = Number(removed.bodyKey.split(":")[0]);
               if (credits > 0 && Number.isFinite(addr)) {
                 this.addSoldTally(this.soldOrganicBySystem, addr, credits, 1, ts);
@@ -2675,7 +2682,8 @@ export class GameStateStore {
       const sibOwnGenera = this.dssMappedBodyKeys.has(bodyKey(systemAddress, bid));
 
       if (mode === "fss_signals") {
-        if (sourceBody.biologicalSignals != null && !sibOwnCount) b.biologicalSignals = sourceBody.biologicalSignals;
+        if (sourceBody.biologicalSignals != null && !sibOwnCount)
+          b.biologicalSignals = sourceBody.biologicalSignals;
         if (sourceBody.genusHints?.length && !sibOwnGenera) {
           b.genusHints = mergeGenusHints(b.genusHints, sourceBody.genusHints);
         }
@@ -2684,7 +2692,8 @@ export class GameStateStore {
           b.signalHints = set.size ? [...set] : b.signalHints;
         }
       } else if (mode === "saas_signals") {
-        if (sourceBody.biologicalSignals != null && !sibOwnCount) b.biologicalSignals = sourceBody.biologicalSignals;
+        if (sourceBody.biologicalSignals != null && !sibOwnCount)
+          b.biologicalSignals = sourceBody.biologicalSignals;
         // Merge, never replace: the sibling's own DSS result is at least as authoritative as this
         // one's, and overwriting it deleted genera the commander went on to scan there. See the
         // `fss_signals` branch above, which has always merged.
@@ -2700,7 +2709,8 @@ export class GameStateStore {
         if (sourceBody.genusHints?.length && !sibOwnGenera) {
           b.genusHints = mergeGenusHints(b.genusHints, sourceBody.genusHints);
         }
-        if (sourceBody.biologicalSignals != null && !sibOwnCount) b.biologicalSignals = sourceBody.biologicalSignals;
+        if (sourceBody.biologicalSignals != null && !sibOwnCount)
+          b.biologicalSignals = sourceBody.biologicalSignals;
       } else if (mode === "detailed_scan") {
         const srcScan = sourceBody.scan;
         if (srcScan?.PlanetClass) {
@@ -2780,7 +2790,14 @@ export class GameStateStore {
     const cur = this.currentSystemAddress;
     const ft = this.fsdTarget;
     if (ft && ft.systemAddress !== cur) {
-      return { starSystem: ft.starSystem, systemAddress: ft.systemAddress, starClass: ft.starClass, at: ft.at, arrived: false, source: "target" };
+      return {
+        starSystem: ft.starSystem,
+        systemAddress: ft.systemAddress,
+        starClass: ft.starClass,
+        at: ft.at,
+        arrived: false,
+        source: "target",
+      };
     }
     const hop = this.navRouteNextHop();
     if (hop) return hop;
@@ -2795,7 +2812,14 @@ export class GameStateStore {
     const i = r.findIndex((w) => w.systemAddress === cur);
     const w = i >= 0 ? r[i + 1] : r[0] && r[0].systemAddress !== cur ? r[0] : r[1];
     if (!w) return null;
-    return { starSystem: w.starSystem, systemAddress: w.systemAddress, starClass: w.starClass ?? "", at: "", arrived: false, source: "route" };
+    return {
+      starSystem: w.starSystem,
+      systemAddress: w.systemAddress,
+      starClass: w.starClass ?? "",
+      at: "",
+      arrived: false,
+      source: "route",
+    };
   }
 
   /**

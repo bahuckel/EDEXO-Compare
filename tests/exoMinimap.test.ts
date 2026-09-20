@@ -116,28 +116,22 @@ describe("the minimap payload", () => {
   });
 
   it("puts south and west on the minus side", () => {
-    const mm = build(
-      host({ marks: [mark(-1, -1, "Southwest")] }),
-    )!.minimap!;
+    const mm = build(host({ marks: [mark(-1, -1, "Southwest")] }))!.minimap!;
     expect(mm.marks[0]!.northM).toBeLessThan(0);
     expect(mm.marks[0]!.eastM).toBeLessThan(0);
   });
 
   it("takes the short way round the antimeridian", () => {
     // Standing at 179.9°, a plant at -179.9° is 0.2° away, not 359.8°.
-    const mm = build(
-      host({ lon: 179.9, marks: [mark(0, -179.9, "Over there")] }),
-    )!.minimap!;
+    const mm = build(host({ lon: 179.9, marks: [mark(0, -179.9, "Over there")] }))!.minimap!;
     expect(mm.marks[0]!.eastM).toBeCloseTo(0.2 * M_PER_DEG, 0);
     // And the reported distance agrees with the offset rather than wrapping the long way.
     expect(mm.marks[0]!.distanceM).toBeCloseTo(0.2 * M_PER_DEG, 0);
   });
 
   it("shrinks east-west distance near the pole, where a degree of longitude is short", () => {
-    const atEquator = build(host({ lat: 0, marks: [mark(0, 1, "e")] }))!
-      .minimap!.marks[0]!.eastM;
-    const atSixty = build(host({ lat: 60, marks: [mark(60, 1, "e")] }))!
-      .minimap!.marks[0]!.eastM;
+    const atEquator = build(host({ lat: 0, marks: [mark(0, 1, "e")] }))!.minimap!.marks[0]!.eastM;
+    const atSixty = build(host({ lat: 60, marks: [mark(60, 1, "e")] }))!.minimap!.marks[0]!.eastM;
     // cos(60°) = 0.5, so the same degree of longitude is half the distance.
     expect(atSixty).toBeCloseTo(atEquator * 0.5, 0);
   });
@@ -575,11 +569,7 @@ describe("telling the run in progress from what was left behind", () => {
   });
 
   it("never calls the ship active", () => {
-    const dto = buildExoMinimapDto(
-      host({ marks: [], ship: mark(near(30), 0, "ship") }),
-      "1:2",
-      500,
-    )!;
+    const dto = buildExoMinimapDto(host({ marks: [], ship: mark(near(30), 0, "ship") }), "1:2", 500)!;
     expect(dto.marks.find((m) => m.kind === "ship")!.active).toBeFalsy();
   });
 });

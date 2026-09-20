@@ -105,9 +105,7 @@ body {
   inset: 0;
   z-index: -1;
   /* the fill's own alpha already follows the slider (hud.js); no second fade here */
-  background:
-    linear-gradient(180deg, var(--hud-bg-2), transparent 38%),
-    var(--hud-bg);
+  background: linear-gradient(180deg, var(--hud-bg-2), transparent 38%), var(--hud-bg);
   pointer-events: none;
 }
 /* scanlines + a slow sweep, both on the fill so text stays crisp above them */
@@ -163,7 +161,8 @@ body {
 .hud-section + .hud-section {
   margin-top: 0.55rem;
   padding-top: 0.45rem;
-  background: linear-gradient(90deg, var(--hud-dim), var(--hud-faint) 60%, transparent) top left / 100% 1px no-repeat;
+  background: linear-gradient(90deg, var(--hud-dim), var(--hud-faint) 60%, transparent) top left / 100% 1px
+    no-repeat;
 }
 /* a section's own state, without retinting the frame (the merged HUD) */
 .hud-section--ok {
@@ -267,7 +266,8 @@ body {
 .row--rule {
   margin-top: 0.38rem;
   padding-top: 0.3rem;
-  background: linear-gradient(90deg, var(--hud-faint), var(--hud-dim) 50%, var(--hud-faint)) top left / 100% 1px no-repeat;
+  background: linear-gradient(90deg, var(--hud-faint), var(--hud-dim) 50%, var(--hud-faint)) top left / 100%
+    1px no-repeat;
 }
 .row--total .v {
   font-size: 0.92rem;
@@ -597,7 +597,11 @@ body {
 .hud-bar__ticks {
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0, 0, 0, 0.45) calc(10% - 1px) 10%);
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(10% - 1px),
+    rgba(0, 0, 0, 0.45) calc(10% - 1px) 10%
+  );
 }
 
 /* ---- whole-panel state variants (single-section pages): the cockpit retints everything ---------- */

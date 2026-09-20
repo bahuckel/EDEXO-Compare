@@ -41,12 +41,7 @@ export function loadRegionMap(projectRoot: string): RegionMapData | null {
 }
 
 /** Region name for a system's coordinates, or null when the map is missing or the point is outside it. */
-export function regionForSystem(
-  projectRoot: string,
-  x: number,
-  y: number,
-  z: number,
-): string | null {
+export function regionForSystem(projectRoot: string, x: number, y: number, z: number): string | null {
   const data = loadRegionMap(projectRoot);
   return data ? regionForCoords(data, x, y, z) : null;
 }

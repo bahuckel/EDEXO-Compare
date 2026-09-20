@@ -51,9 +51,11 @@ function FeederRouteImport() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, filename: file.name }),
         });
-        const j = (await r.json().catch(() => null)) as
-          | { error?: string; queuedAs?: string; summary?: SpanshRouteSummaryDTO }
-          | null;
+        const j = (await r.json().catch(() => null)) as {
+          error?: string;
+          queuedAs?: string;
+          summary?: SpanshRouteSummaryDTO;
+        } | null;
         if (!r.ok) throw new Error(j?.error || r.statusText);
         setSummary(j?.summary ?? null);
         setQueuedAs(j?.queuedAs ?? null);
@@ -74,8 +76,8 @@ function FeederRouteImport() {
     <section className="options-block">
       <h4 className="options-block-title">Feed a Spansh route export</h4>
       <p className="options-journal-line dim">
-        A confirmed find on a named body is the best data the corpus takes. Prefer the{" "}
-        <strong>JSON</strong> export: it carries system coordinates and body ids that the CSV does not.
+        A confirmed find on a named body is the best data the corpus takes. Prefer the <strong>JSON</strong>{" "}
+        export: it carries system coordinates and body ids that the CSV does not.
       </p>
       <div className="options-row">
         <input
@@ -93,8 +95,8 @@ function FeederRouteImport() {
       {summary ? (
         <div className="feeder-route-summary">
           <p className="options-journal-line">
-            <strong>{summary.format.toUpperCase()}</strong> · {summary.rows} rows · {summary.bodies} bodies
-            · {summary.systems} systems · {summary.species} species in {summary.genera} genera
+            <strong>{summary.format.toUpperCase()}</strong> · {summary.rows} rows · {summary.bodies} bodies ·{" "}
+            {summary.systems} systems · {summary.species} species in {summary.genera} genera
             {summary.source && summary.destination ? (
               <span className="dim">
                 {" "}
@@ -103,8 +105,8 @@ function FeederRouteImport() {
             ) : null}
           </p>
           <p className="options-journal-line dim">
-            {summary.systemsWithCoords} system(s) placed · {summary.bodiesWithId} body id(s) — these need
-            no EDSM lookup.
+            {summary.systemsWithCoords} system(s) placed · {summary.bodiesWithId} body id(s) — these need no
+            EDSM lookup.
           </p>
           {summary.topSpecies.length > 0 ? (
             <p className="options-journal-line dim">
@@ -118,8 +120,8 @@ function FeederRouteImport() {
           ))}
           {queuedAs ? (
             <p className="options-journal-line dim">
-              Queued at <code>{queuedAs}</code>. Run <code>npm run feeder -- import</code> to ingest it —
-              the app cannot write to the corpus itself.
+              Queued at <code>{queuedAs}</code>. Run <code>npm run feeder -- import</code> to ingest it — the
+              app cannot write to the corpus itself.
             </p>
           ) : null}
         </div>
@@ -315,121 +317,124 @@ export function MyExobiologyModal({
               <DiscoveriesTables data={discoveries} tab={view} onNavigateSystem={onNavigateSystem} />
             )
           ) : (
-          <>
-          <div className="my-exo-search">
-            <input
-              ref={searchRef}
-              type="search"
-              className="my-exo-search-input"
-              value={query}
-              placeholder="Search system, planet, genus or species…"
-              aria-label="Search your foot scans"
-              onChange={(ev) => setQuery(ev.target.value)}
-            />
-            <span className="my-exo-search-count dim tiny">
-              {query.trim() ? `${shown.length} of ${entries.length}` : `${entries.length}`}
-            </span>
-            <InfoPopover title="My exobiology" label="Where these records come from">
-              <p>
-                From your merged journals: a <code>ScanOrganic</code> Sample or Analyse, paired with the
-                detailed <code>Scan</code> of the body it happened on.
-              </p>
-              <p>
-                Stored in <code>data/foot_scanned.json</code>, on this machine.
-              </p>
-            </InfoPopover>
-          </div>
-          {entries.length === 0 ? (
-            <p className="dim">No foot-catalog entries yet.</p>
-          ) : shown.length === 0 ? (
-            <p className="dim">Nothing here matches “{query.trim()}”.</p>
-          ) : (
-            <ul className="my-exo-card-list">
-              {shown.map((e) => (
-                <li key={e.id} className="my-exo-card">
-                  <div className="my-exo-card-top">
-                    <div className="my-exo-card-loc">
-                      {onNavigateEntry ? (
-                        <button
-                          type="button"
-                          className="my-exo-nav-icon"
-                          title="Show this system in the app (journal view)"
-                          aria-label={`Focus journal view: ${e.starSystem ?? "system"} — ${e.bodyName}`}
-                          onClick={() => {
-                            onNavigateEntry(e);
-                            onClose();
-                          }}
-                        >
-                          <svg
-                            className="my-exo-nav-icon-svg"
-                            viewBox="0 0 16 16"
-                            width="15"
-                            height="15"
-                            aria-hidden
-                          >
-                            <circle
-                              cx="8"
-                              cy="8"
-                              r="6.25"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.35"
-                            />
-                            <path d="M8 1.5v13M1.5 8h13" stroke="currentColor" strokeWidth="1.15" />
-                            <circle cx="8" cy="8" r="1.4" fill="currentColor" />
-                          </svg>
-                        </button>
-                      ) : null}
-                      <span className="my-exo-body">{e.bodyName}</span>
-                    </div>
-                    <time className="my-exo-card-time tab" dateTime={e.recordedAt}>
-                      {e.recordedAt.slice(0, 19).replace("T", " ")}
-                    </time>
-                  </div>
-                  <div
-                    className={`my-exo-card-sub dim tiny${onNavigateEntry ? " my-exo-card-sub--indented" : ""}`}
-                  >
-                    {e.starSystem || "—"}
-                  </div>
-                  <dl className="my-exo-card-facts">
-                    <div className="my-exo-card-fact">
-                      <dt>Species</dt>
-                      <dd>
-                        {e.variantLocalised ||
-                          [e.genusLocalised, e.speciesLocalised].filter(Boolean).join(" ") ||
-                          "—"}
-                        {e.dbProbableDisagreed ? (
-                          <span className="dim tiny tab" title="Top strict DB guess at record time differed">
-                            {" "}
-                            (DB note)
-                          </span>
-                        ) : null}
-                      </dd>
-                    </div>
-                    <div className="my-exo-card-fact">
-                      <dt>From</dt>
-                      <dd>{e.confirmationSource === "sample" ? "Sample" : "Analyse"}</dd>
-                    </div>
-                    <div className="my-exo-card-fact">
-                      <dt>Planet</dt>
-                      <dd>{e.planetClass}</dd>
-                    </div>
-                    <div className="my-exo-card-fact">
-                      <dt>Atmosphere</dt>
-                      <dd>{e.atmosphereNorm || "—"}</dd>
-                    </div>
-                    <div className="my-exo-card-fact my-exo-card-fact--wide">
-                      <dt>Temperature (K)</dt>
-                      <dd className="tab">
-                        {e.tempBandMinK.toFixed(0)} · {e.tempBandMaxK.toFixed(0)}
-                      </dd>
-                    </div>
-                  </dl>
-                </li>
-              ))}
-            </ul>
-          )}
-          </>
+            <>
+              <div className="my-exo-search">
+                <input
+                  ref={searchRef}
+                  type="search"
+                  className="my-exo-search-input"
+                  value={query}
+                  placeholder="Search system, planet, genus or species…"
+                  aria-label="Search your foot scans"
+                  onChange={(ev) => setQuery(ev.target.value)}
+                />
+                <span className="my-exo-search-count dim tiny">
+                  {query.trim() ? `${shown.length} of ${entries.length}` : `${entries.length}`}
+                </span>
+                <InfoPopover title="My exobiology" label="Where these records come from">
+                  <p>
+                    From your merged journals: a <code>ScanOrganic</code> Sample or Analyse, paired with the
+                    detailed <code>Scan</code> of the body it happened on.
+                  </p>
+                  <p>
+                    Stored in <code>data/foot_scanned.json</code>, on this machine.
+                  </p>
+                </InfoPopover>
+              </div>
+              {entries.length === 0 ? (
+                <p className="dim">No foot-catalog entries yet.</p>
+              ) : shown.length === 0 ? (
+                <p className="dim">Nothing here matches “{query.trim()}”.</p>
+              ) : (
+                <ul className="my-exo-card-list">
+                  {shown.map((e) => (
+                    <li key={e.id} className="my-exo-card">
+                      <div className="my-exo-card-top">
+                        <div className="my-exo-card-loc">
+                          {onNavigateEntry ? (
+                            <button
+                              type="button"
+                              className="my-exo-nav-icon"
+                              title="Show this system in the app (journal view)"
+                              aria-label={`Focus journal view: ${e.starSystem ?? "system"} — ${e.bodyName}`}
+                              onClick={() => {
+                                onNavigateEntry(e);
+                                onClose();
+                              }}
+                            >
+                              <svg
+                                className="my-exo-nav-icon-svg"
+                                viewBox="0 0 16 16"
+                                width="15"
+                                height="15"
+                                aria-hidden
+                              >
+                                <circle
+                                  cx="8"
+                                  cy="8"
+                                  r="6.25"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.35"
+                                />
+                                <path d="M8 1.5v13M1.5 8h13" stroke="currentColor" strokeWidth="1.15" />
+                                <circle cx="8" cy="8" r="1.4" fill="currentColor" />
+                              </svg>
+                            </button>
+                          ) : null}
+                          <span className="my-exo-body">{e.bodyName}</span>
+                        </div>
+                        <time className="my-exo-card-time tab" dateTime={e.recordedAt}>
+                          {e.recordedAt.slice(0, 19).replace("T", " ")}
+                        </time>
+                      </div>
+                      <div
+                        className={`my-exo-card-sub dim tiny${onNavigateEntry ? " my-exo-card-sub--indented" : ""}`}
+                      >
+                        {e.starSystem || "—"}
+                      </div>
+                      <dl className="my-exo-card-facts">
+                        <div className="my-exo-card-fact">
+                          <dt>Species</dt>
+                          <dd>
+                            {e.variantLocalised ||
+                              [e.genusLocalised, e.speciesLocalised].filter(Boolean).join(" ") ||
+                              "—"}
+                            {e.dbProbableDisagreed ? (
+                              <span
+                                className="dim tiny tab"
+                                title="Top strict DB guess at record time differed"
+                              >
+                                {" "}
+                                (DB note)
+                              </span>
+                            ) : null}
+                          </dd>
+                        </div>
+                        <div className="my-exo-card-fact">
+                          <dt>From</dt>
+                          <dd>{e.confirmationSource === "sample" ? "Sample" : "Analyse"}</dd>
+                        </div>
+                        <div className="my-exo-card-fact">
+                          <dt>Planet</dt>
+                          <dd>{e.planetClass}</dd>
+                        </div>
+                        <div className="my-exo-card-fact">
+                          <dt>Atmosphere</dt>
+                          <dd>{e.atmosphereNorm || "—"}</dd>
+                        </div>
+                        <div className="my-exo-card-fact my-exo-card-fact--wide">
+                          <dt>Temperature (K)</dt>
+                          <dd className="tab">
+                            {e.tempBandMinK.toFixed(0)} · {e.tempBandMaxK.toFixed(0)}
+                          </dd>
+                        </div>
+                      </dl>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -521,9 +526,7 @@ export function DataValueBreakdownModal({
             >
               <span className="data-value-summary-count">{exobioScanCount}</span>
               <span className="data-value-summary-label">Exobio scans</span>
-              <span className="data-value-summary-value">
-                {exobioValueCredits.toLocaleString()} CR
-              </span>
+              <span className="data-value-summary-value">{exobioValueCredits.toLocaleString()} CR</span>
             </li>
           </ul>
           {lines.length === 0 ? (
@@ -595,17 +598,21 @@ function sessionLogMarkdown(log: SessionLogDTO): string {
   );
   if (log.systems.length) {
     lines.push("", "## Systems", "");
-    for (const s of log.systems) lines.push(`- ${t(s.at)} ${s.name}${s.jumpLy != null ? ` (${s.jumpLy.toFixed(1)} ly)` : ""}`);
+    for (const s of log.systems)
+      lines.push(`- ${t(s.at)} ${s.name}${s.jumpLy != null ? ` (${s.jumpLy.toFixed(1)} ly)` : ""}`);
   }
   if (log.landings.length) {
     lines.push("", "## Landings", "");
-    for (const l of log.landings) lines.push(`- ${t(l.at)} ${l.body}${l.firstFootfall ? " — **first footfall**" : ""}`);
+    for (const l of log.landings)
+      lines.push(`- ${t(l.at)} ${l.body}${l.firstFootfall ? " — **first footfall**" : ""}`);
   }
   if (log.samples.length) {
     lines.push("", "## Species analysed", "");
     lines.push("| time | species | body | value |", "|---|---|---|---|");
     for (const s of log.samples) {
-      lines.push(`| ${t(s.at)} | ${s.species} | ${s.body} | ${cr(s.credits)}${s.mult === 5 ? " (×5)" : ""} |`);
+      lines.push(
+        `| ${t(s.at)} | ${s.species} | ${s.body} | ${cr(s.credits)}${s.mult === 5 ? " (×5)" : ""} |`,
+      );
     }
   }
   if (log.sales.length) {
@@ -633,7 +640,12 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
       toast.error("Clipboard blocked — select the text and copy it instead.");
     }
   };
-  const empty = !log || (log.systems.length === 0 && log.landings.length === 0 && log.samples.length === 0 && log.sales.length === 0);
+  const empty =
+    !log ||
+    (log.systems.length === 0 &&
+      log.landings.length === 0 &&
+      log.samples.length === 0 &&
+      log.sales.length === 0);
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div
@@ -646,7 +658,12 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
       >
         <div className="modal-head">
           <h3 id="session-log-title">Session log</h3>
-          <button type="button" className="btn-top-neutral session-copy" onClick={() => void copy()} disabled={empty}>
+          <button
+            type="button"
+            className="btn-top-neutral session-copy"
+            onClick={() => void copy()}
+            disabled={empty}
+          >
             {copied ? "Copied" : "Copy as Markdown"}
           </button>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
@@ -659,15 +676,40 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
           ) : (
             <>
               <div className="facts facts--session">
-                <div className="fact"><span className="fact-k">Since</span><span className="fact-v">{fmtT(log.startedIso)}</span></div>
-                <div className="fact"><span className="fact-k">Systems</span><span className="fact-v">{log.systems.length}</span></div>
-                <div className="fact"><span className="fact-k">Landings</span><span className="fact-v">{log.landings.length}</span></div>
-                <div className="fact fact--tone-open"><span className="fact-k">First footfalls</span><span className="fact-v">{log.firstFootfalls}</span></div>
-                <div className="fact"><span className="fact-k">Species analysed</span><span className="fact-v">{log.samples.length}</span></div>
-                <div className="fact"><span className="fact-k">Analysed value</span><span className="fact-v">{fmtCrShort(log.creditsAnalysed)} CR</span></div>
-                <div className="fact"><span className="fact-k">Sold</span><span className="fact-v">{fmtCrShort(log.creditsSold)} CR</span></div>
+                <div className="fact">
+                  <span className="fact-k">Since</span>
+                  <span className="fact-v">{fmtT(log.startedIso)}</span>
+                </div>
+                <div className="fact">
+                  <span className="fact-k">Systems</span>
+                  <span className="fact-v">{log.systems.length}</span>
+                </div>
+                <div className="fact">
+                  <span className="fact-k">Landings</span>
+                  <span className="fact-v">{log.landings.length}</span>
+                </div>
+                <div className="fact fact--tone-open">
+                  <span className="fact-k">First footfalls</span>
+                  <span className="fact-v">{log.firstFootfalls}</span>
+                </div>
+                <div className="fact">
+                  <span className="fact-k">Species analysed</span>
+                  <span className="fact-v">{log.samples.length}</span>
+                </div>
+                <div className="fact">
+                  <span className="fact-k">Analysed value</span>
+                  <span className="fact-v">{fmtCrShort(log.creditsAnalysed)} CR</span>
+                </div>
+                <div className="fact">
+                  <span className="fact-k">Sold</span>
+                  <span className="fact-v">{fmtCrShort(log.creditsSold)} CR</span>
+                </div>
               </div>
-              {empty ? <p className="dim" style={{ marginTop: "0.8rem" }}>Nothing yet tonight — jump, land or scan and it lands here.</p> : null}
+              {empty ? (
+                <p className="dim" style={{ marginTop: "0.8rem" }}>
+                  Nothing yet tonight — jump, land or scan and it lands here.
+                </p>
+              ) : null}
               {log.samples.length ? (
                 <section className="session-block">
                   <h4 className="session-h">Species analysed</h4>
@@ -696,7 +738,9 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
                       <li key={`l-${i}`} className="session-row">
                         <span className="session-t">{fmtT(l.at)}</span>
                         <span className="session-main">{l.body}</span>
-                        {l.firstFootfall ? <span className="price-tag price-tag--unwalked">first footfall</span> : null}
+                        {l.firstFootfall ? (
+                          <span className="price-tag price-tag--unwalked">first footfall</span>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
@@ -710,7 +754,9 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
                       <li key={`y-${i}`} className="session-row">
                         <span className="session-t">{fmtT(s.at)}</span>
                         <span className="session-main">{s.name}</span>
-                        <span className="dim tiny">{s.jumpLy != null ? `${s.jumpLy.toFixed(1)} ly` : ""}</span>
+                        <span className="dim tiny">
+                          {s.jumpLy != null ? `${s.jumpLy.toFixed(1)} ly` : ""}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -723,7 +769,9 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
                     {log.sales.map((s, i) => (
                       <li key={`x-${i}`} className="session-row">
                         <span className="session-t">{fmtT(s.at)}</span>
-                        <span className="session-main">{s.items} item{s.items === 1 ? "" : "s"}</span>
+                        <span className="session-main">
+                          {s.items} item{s.items === 1 ? "" : "s"}
+                        </span>
                         <span className="session-cr">{fmtCrShort(s.credits)} CR</span>
                       </li>
                     ))}

@@ -124,11 +124,13 @@ export function ExoPayoutRangePanel({
       : "DSS genus count (no bio signal count in the journal yet).";
   const candidateHint = "Priced species passing the same gates as the candidate list.";
   const candidateShortfall = pr.pricedCandidateCount < pr.slotCount;
-  const candidateShortfallHint = "Fewer candidates than signals — try Include Bacterium, or narrow with a DSS.";
+  const candidateShortfallHint =
+    "Fewer candidates than signals — try Include Bacterium, or narrow with a DSS.";
   const candidatesPillTitle = candidateShortfall
     ? `${candidateHint} ${candidateShortfallHint}`
     : candidateHint;
-  const bandHint = "Band: k cheapest vs k priciest list prices, k = min(signals, candidates). Click for the table.";
+  const bandHint =
+    "Band: k cheapest vs k priciest list prices, k = min(signals, candidates). Click for the table.";
 
   const ff = footfallMeta(pr);
 
@@ -147,7 +149,10 @@ export function ExoPayoutRangePanel({
             <span className={`price-tag price-tag--${head.certainty}`}>{head.tag}</span>
           </span>
           {head.alt ? (
-            <span className="body-detail-callout-value dim tiny price-alt" style={{ display: "block", marginTop: "0.35rem" }}>
+            <span
+              className="body-detail-callout-value dim tiny price-alt"
+              style={{ display: "block", marginTop: "0.35rem" }}
+            >
               {head.alt.label}: {fmtCrRangeShort(head.alt.min, head.alt.max)} CR
             </span>
           ) : null}
@@ -250,9 +255,7 @@ export function ExoPayoutRangePanel({
           {rung ? <KvRow label="Target" value={rung.text} hint={rung.hint} /> : null}
         </div>
       ) : null}
-      {variant === "popup" ? (
-        <p className="dim tiny body-detail-callout-note">{note}</p>
-      ) : null}
+      {variant === "popup" ? <p className="dim tiny body-detail-callout-note">{note}</p> : null}
     </div>
   );
 }

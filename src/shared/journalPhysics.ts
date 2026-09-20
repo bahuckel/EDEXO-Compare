@@ -47,7 +47,11 @@ export function elevationFromGravity(
   bodyRadiusM: number | null | undefined,
 ): number | null {
   if (localGravityG == null || bodySurfaceGravityMs2 == null || bodyRadiusM == null) return null;
-  if (!Number.isFinite(localGravityG) || !Number.isFinite(bodySurfaceGravityMs2) || !Number.isFinite(bodyRadiusM)) {
+  if (
+    !Number.isFinite(localGravityG) ||
+    !Number.isFinite(bodySurfaceGravityMs2) ||
+    !Number.isFinite(bodyRadiusM)
+  ) {
     return null;
   }
   if (!(localGravityG > 0) || !(bodySurfaceGravityMs2 > 0) || !(bodyRadiusM > 0)) return null;

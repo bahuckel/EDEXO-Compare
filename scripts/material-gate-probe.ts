@@ -194,7 +194,9 @@ const slugOf = (displayName: string) => displayName.toLowerCase().replace(/[^a-z
 
 console.log("");
 console.log("the corpus, per material-ruled species:");
-console.log(`  ${"species".padEnd(26)} ${"bodies".padStart(7)} ${"no crust".padStart(9)} ${"none of its six".padStart(16)}`);
+console.log(
+  `  ${"species".padEnd(26)} ${"bodies".padStart(7)} ${"no crust".padStart(9)} ${"none of its six".padStart(16)}`,
+);
 
 let corpusChecked = 0;
 let corpusViolations = 0;
@@ -245,9 +247,13 @@ for (const [id, wanted] of ruled) {
   }
   corpusChecked += n - noCrust;
   corpusViolations += missing;
-  console.log(`  ${e.displayName.padEnd(26)} ${String(n).padStart(7)} ${String(noCrust).padStart(9)} ${String(missing).padStart(16)}`);
+  console.log(
+    `  ${e.displayName.padEnd(26)} ${String(n).padStart(7)} ${String(noCrust).padStart(9)} ${String(missing).padStart(16)}`,
+  );
 }
 
 console.log("");
 console.log(`corpus bodies with a crust list           ${corpusChecked}`);
-console.log(`  growing where none of its materials are ${corpusViolations} (${((corpusViolations / Math.max(1, corpusChecked)) * 100).toFixed(2)} %)`);
+console.log(
+  `  growing where none of its materials are ${corpusViolations} (${((corpusViolations / Math.max(1, corpusChecked)) * 100).toFixed(2)} %)`,
+);

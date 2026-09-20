@@ -379,11 +379,7 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
    * the genera the genus rule cannot reach.
    */
   const reqAtmoRaw = toStringArray(
-    firstDefined(src, [
-      "required_atmosphere_type",
-      "requiredAtmosphereType",
-      "atmosphereTypeRequiredAnyOf",
-    ]),
+    firstDefined(src, ["required_atmosphere_type", "requiredAtmosphereType", "atmosphereTypeRequiredAnyOf"]),
   );
   if (reqAtmoRaw?.length) {
     c.atmosphereTypeRequiredAnyOf = normalizeAtmosphereToJournal(reqAtmoRaw);

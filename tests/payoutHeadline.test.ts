@@ -8,7 +8,8 @@ import { payoutHeadline } from "../src/client/ExoPayoutRangePanel";
 import { fmtCrRangeShort, fmtCrShort } from "../src/client/credits";
 
 function pr(over: Partial<ExoPayoutRangeDTO>): ExoPayoutRangeDTO {
-  const rows = (cr: number[]) => cr.map((c, i) => ({ id: `s${i}`, displayName: `Species ${i}`, listCredits: c }));
+  const rows = (cr: number[]) =>
+    cr.map((c, i) => ({ id: `s${i}`, displayName: `Species ${i}`, listCredits: c }));
   return {
     minCr: 0,
     maxCr: 0,

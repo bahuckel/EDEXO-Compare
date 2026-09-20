@@ -131,8 +131,7 @@ describe("what it sends", () => {
 
 describe("when Spansh misbehaves", () => {
   it("reports a non-200 rather than throwing", async () => {
-    globalThis.fetch = (async () =>
-      new Response("", { status: 503 })) as unknown as typeof globalThis.fetch;
+    globalThis.fetch = (async () => new Response("", { status: 503 })) as unknown as typeof globalThis.fetch;
     const result = await lookupCarrierOnSpansh("K2Y-GKT");
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain("503");

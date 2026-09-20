@@ -155,8 +155,8 @@ export function FirstDiscoveryBacklogModal({
           <div>
             <h2 className="fdb-title">Unfinished business</h2>
             <p className="dim fdb-sub">
-              Biology you found first and never collected. Every figure already includes the 5×
-              first-footfall bonus, because nobody has walked these yet.
+              Biology you found first and never collected. Every figure already includes the 5× first-footfall
+              bonus, because nobody has walked these yet.
             </p>
           </div>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
@@ -173,8 +173,8 @@ export function FirstDiscoveryBacklogModal({
               it. "A few seconds" was true of the first-discovery subset and is now a small lie that
               makes a working panel look hung.
             */}
-            Predicting species for every body you have scanned. This takes up to a minute the first
-            time; afterwards it is instant until you fly somewhere new.
+            Predicting species for every body you have scanned. This takes up to a minute the first time;
+            afterwards it is instant until you fly somewhere new.
           </p>
         ) : null}
 

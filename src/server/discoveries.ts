@@ -196,7 +196,7 @@ export function buildDiscoveries(store: GameStateStore, projectRoot: string): Di
         surfaceTemperatureK: rec.surfaceTemperature ?? null,
         distanceLs: rec.distanceFromArrivalLs ?? null,
         firstDiscoverer,
-      firstDiscoveredSystem,
+        firstDiscoveredSystem,
         estimatedCredits: Math.round(v.value),
         scannedAt: at || null,
       });

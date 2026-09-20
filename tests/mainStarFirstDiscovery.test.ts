@@ -58,7 +58,12 @@ const distantStar = (bodyId: number, wasDiscovered: boolean, ls: number) =>
 
 /** A planet: carries the same flag, about itself. */
 const planet = (bodyId: number, wasDiscovered: boolean) =>
-  scan({ BodyID: bodyId, BodyName: `Probe ${bodyId}`, PlanetClass: "Icy body", WasDiscovered: wasDiscovered });
+  scan({
+    BodyID: bodyId,
+    BodyName: `Probe ${bodyId}`,
+    PlanetClass: "Icy body",
+    WasDiscovered: wasDiscovered,
+  });
 
 const verdict = (store: GameStateStore) => store.mainStarWasDiscoveredBySystem.get(SYS);
 

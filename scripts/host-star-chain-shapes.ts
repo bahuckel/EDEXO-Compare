@@ -111,9 +111,7 @@ for (const r of all) {
     if (a !== b) {
       singleChangedClass += 1;
       if (isBio && examples.length < 12) {
-        examples.push(
-          `${(r.bodyName ?? "").padEnd(30)} ${a} -> ${b}   chain ${JSON.stringify(r.parents)}`,
-        );
+        examples.push(`${(r.bodyName ?? "").padEnd(30)} ${a} -> ${b}   chain ${JSON.stringify(r.parents)}`);
       }
     }
   }

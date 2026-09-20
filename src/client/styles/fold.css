@@ -19,7 +19,8 @@
   align-items: center;
   gap: var(--s-6);
   padding: 0.7rem 1rem 0.65rem;
-  background: linear-gradient(90deg, var(--accent) 0 34%, var(--accent-a22) 70%, transparent) bottom left / 100% 1px no-repeat;
+  background: linear-gradient(90deg, var(--accent) 0 34%, var(--accent-a22) 70%, transparent) bottom left /
+    100% 1px no-repeat;
 }
 .fold--closed .fold-head {
   background-size: 100% 0;

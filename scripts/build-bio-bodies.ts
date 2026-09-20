@@ -96,12 +96,13 @@ const EXPORT = positional[0];
   whole of `data/` into the installer, so a hundred-odd megabytes dropped there rides into the exe
   without anybody deciding to put it there.
 */
-const OUT =
-  flag("out") ?? path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-bio-bodies.bin");
+const OUT = flag("out") ?? path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-bio-bodies.bin");
 const LIMIT = Number(flag("limit") ?? "0") || 0;
 
 if (!EXPORT) {
-  console.error("Usage: npx tsx scripts/build-bio-bodies.ts <galaxy_bio.jsonl.gz> [--out <file>] [--limit N]");
+  console.error(
+    "Usage: npx tsx scripts/build-bio-bodies.ts <galaxy_bio.jsonl.gz> [--out <file>] [--limit N]",
+  );
   process.exit(1);
 }
 

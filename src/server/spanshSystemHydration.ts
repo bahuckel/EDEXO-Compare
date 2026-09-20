@@ -24,8 +24,7 @@ function pickNum(v: unknown): number | undefined {
 }
 
 export type SpanshSearchResult =
-  | { ok: true; systems: { systemAddress: number; starSystem: string }[] }
-  | { ok: false; error: string };
+  { ok: true; systems: { systemAddress: number; starSystem: string }[] } | { ok: false; error: string };
 
 export async function searchSpanshSystemsByName(query: string, maxResults = 25): Promise<SpanshSearchResult> {
   const q = query.trim();
@@ -37,7 +36,10 @@ export async function searchSpanshSystemsByName(query: string, maxResults = 25):
       signal: AbortSignal.timeout(15_000),
     });
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Spansh request failed (network or timeout)." };
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Spansh request failed (network or timeout).",
+    };
   }
   if (!res.ok) return { ok: false, error: `Spansh HTTP ${res.status}` };
   let data: unknown;
@@ -50,7 +52,10 @@ export async function searchSpanshSystemsByName(query: string, maxResults = 25):
 }
 
 /** Exported for tests: the completion payload is `{ min_max: [{ id64, name, x, y, z }] }`. */
-export function parseSpanshNameHits(data: unknown, maxResults = 25): { systemAddress: number; starSystem: string }[] {
+export function parseSpanshNameHits(
+  data: unknown,
+  maxResults = 25,
+): { systemAddress: number; starSystem: string }[] {
   const rows = data && typeof data === "object" ? (data as Record<string, unknown>).min_max : null;
   if (!Array.isArray(rows)) return [];
   const out: { systemAddress: number; starSystem: string }[] = [];
@@ -67,14 +72,14 @@ export function parseSpanshNameHits(data: unknown, maxResults = 25): { systemAdd
 }
 
 export type FetchSpanshBodiesResult =
-  | { ok: true; records: ExplorationScanRecord[]; starSystem: string }
-  | { ok: false; error: string };
+  { ok: true; records: ExplorationScanRecord[]; starSystem: string } | { ok: false; error: string };
 
 export async function fetchSpanshBodiesAsExplorationRecords(
   systemAddress: number,
   systemNameHint: string,
 ): Promise<FetchSpanshBodiesResult> {
-  if (!Number.isFinite(systemAddress) || systemAddress <= 0) return { ok: false, error: "System address is required." };
+  if (!Number.isFinite(systemAddress) || systemAddress <= 0)
+    return { ok: false, error: "System address is required." };
   let res: Response;
   try {
     res = await fetch(`${SPANSH_DUMP_URL}/${Math.trunc(systemAddress)}`, {
@@ -82,7 +87,10 @@ export async function fetchSpanshBodiesAsExplorationRecords(
       signal: AbortSignal.timeout(22_000),
     });
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Spansh request failed (network or timeout)." };
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Spansh request failed (network or timeout).",
+    };
   }
   if (res.status === 404) return { ok: false, error: "Spansh has no record of this system." };
   if (!res.ok) return { ok: false, error: `Spansh HTTP ${res.status}` };
@@ -102,7 +110,8 @@ export function spanshDumpToExplorationRecords(
   systemNameHint: string,
 ): FetchSpanshBodiesResult {
   const root = data && typeof data === "object" ? (data as Record<string, unknown>) : null;
-  const sys = root && root.system && typeof root.system === "object" ? (root.system as Record<string, unknown>) : root;
+  const sys =
+    root && root.system && typeof root.system === "object" ? (root.system as Record<string, unknown>) : root;
   if (!sys) return { ok: false, error: "Spansh returned an empty response." };
   const bodies = sys.bodies;
   if (!Array.isArray(bodies) || bodies.length === 0) {

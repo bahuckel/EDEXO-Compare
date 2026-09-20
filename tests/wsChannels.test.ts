@@ -8,7 +8,14 @@ function body(key: string): BodyComputed {
     tabLabel: key,
     matches: [
       {
-        entry: { id: "x_1", displayName: "Tubus compagibus", genus: "Tubus", genusDataDir: "tubus", criteria: {}, notes: "long" },
+        entry: {
+          id: "x_1",
+          displayName: "Tubus compagibus",
+          genus: "Tubus",
+          genusDataDir: "tubus",
+          criteria: {},
+          notes: "long",
+        },
         priceCredits: 2_000_000,
         presenceProbabilityPercent: 80,
         unlikely: false,
@@ -34,7 +41,14 @@ function snap(): AppSnapshot {
     journalFileCount: 3,
     lastJournalEventIso: "2026-09-13T00:00:00Z",
     currentRegion: { name: "Inner Orion Spur", index: 18 },
-    jumpTarget: { starSystem: "A", systemAddress: 1, starClass: "K", at: "", arrived: false, source: "route" },
+    jumpTarget: {
+      starSystem: "A",
+      systemAddress: 1,
+      starClass: "K",
+      at: "",
+      arrived: false,
+      source: "route",
+    },
     bodies: [body("1:2"), body("1:3")],
     exoOverlayFocusBodyKey: "1:2",
     exoOverlayFocusBody: body("1:2"),
@@ -62,7 +76,14 @@ describe("socket channels: slim snapshots per client kind", () => {
   it("gives the launcher its five fields and nothing heavy", () => {
     const out = slimSnapshotForChannel(snap(), "launcher") as unknown as Record<string, unknown>;
     expect(Object.keys(out).sort()).toEqual(
-      ["journalBoot", "journalDir", "journalDirConfiguredOk", "journalFileCount", "lastJournalEventIso", "port"].sort(),
+      [
+        "journalBoot",
+        "journalDir",
+        "journalDirConfiguredOk",
+        "journalFileCount",
+        "lastJournalEventIso",
+        "port",
+      ].sort(),
     );
     expect(out.bodies).toBeUndefined();
     expect(out.journalSystems).toBeUndefined();

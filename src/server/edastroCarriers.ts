@@ -541,9 +541,7 @@ export function queryCarriers(q: CarrierQuery, nowMs: number = Date.now()): Carr
       dssa: network
         ? { commander: network.commander, status: network.status, deploymentSystem: network.deploymentSystem }
         : null,
-      network: member
-        ? { key: member.network.key, label: member.network.label, name: member.name }
-        : null,
+      network: member ? { key: member.network.key, label: member.network.label, name: member.name } : null,
     });
   }
 

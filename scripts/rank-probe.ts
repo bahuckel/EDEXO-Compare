@@ -101,7 +101,8 @@ function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
     const star = starId == null ? null : byId.get(starId);
     if (star?.starType?.trim()) {
       ctx.parentStarType = star.starType;
-      if (typeof star.subclass === "number" && Number.isFinite(star.subclass)) ctx.parentStarSubclass = star.subclass;
+      if (typeof star.subclass === "number" && Number.isFinite(star.subclass))
+        ctx.parentStarSubclass = star.subclass;
       if (star.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity;
     }
   }

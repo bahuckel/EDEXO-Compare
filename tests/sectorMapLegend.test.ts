@@ -10,7 +10,12 @@
  *    which is the absence-of-evidence trap the whole project keeps having to avoid.
  */
 import { describe, expect, it } from "vitest";
-import { cellTotals, systemTotals, type SectorMapCell, type SectorSystem } from "../src/shared/sectorMapFile.js";
+import {
+  cellTotals,
+  systemTotals,
+  type SectorMapCell,
+  type SectorSystem,
+} from "../src/shared/sectorMapFile.js";
 
 /**
  * The summary the tooltip renders. Kept in step with `GalaxySectorMap.tsx` — if that formatting

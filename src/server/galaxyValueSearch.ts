@@ -220,7 +220,12 @@ export function galaxyValueSearch(query: GalaxyValueQuery): GalaxyValueSearchDTO
         // the system cleared the threshold as a whole, so listing only its dearest plant would
         // misrepresent why.
         return p && (explicitSpecies ? wanted.has(id) : true)
-          ? { speciesId: id, displayName: p.displayName, baseCr: p.price, firstFootfallCr: p.price * FIRST_FOOTFALL }
+          ? {
+              speciesId: id,
+              displayName: p.displayName,
+              baseCr: p.price,
+              firstFootfallCr: p.price * FIRST_FOOTFALL,
+            }
           : null;
       })
       .filter((v): v is NonNullable<typeof v> => v !== null)

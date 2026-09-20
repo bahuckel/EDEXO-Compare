@@ -146,7 +146,9 @@ describe("barycentres, whose orbit the game reports separately", () => {
     const planet = rec(6, { parents: [{ Star: 1 }], semiMajorAxis: 3100 * C });
     const bary = rec(barycentreSyntheticBodyId(8), { semiMajorAxis: 0.002 * AU });
     const moon = rec(9, { parents: [{ Null: 8 }, { Planet: 6 }, { Star: 1 }], semiMajorAxis: 0.0004 * AU });
-    expect(Math.round(starDistanceLs(moon, null, index([arrivalStar, farStar, planet, bary, moon]))!)).toBe(3100);
+    expect(Math.round(starDistanceLs(moon, null, index([arrivalStar, farStar, planet, bary, moon]))!)).toBe(
+      3100,
+    );
   });
 
   it("does not mistake the barycentre id for a real body id", () => {
@@ -154,7 +156,9 @@ describe("barycentres, whose orbit the game reports separately", () => {
     const decoy = rec(8, { parents: [{ Star: 1 }], semiMajorAxis: 12 * C });
     const bary = rec(barycentreSyntheticBodyId(8), { semiMajorAxis: 2700 * C });
     const moon = rec(9, { parents: [{ Null: 8 }, { Star: 1 }], semiMajorAxis: 0.001 * AU });
-    expect(Math.round(starDistanceLs(moon, null, index([arrivalStar, farStar, decoy, bary, moon]))!)).toBe(2700);
+    expect(Math.round(starDistanceLs(moon, null, index([arrivalStar, farStar, decoy, bary, moon]))!)).toBe(
+      2700,
+    );
   });
 });
 

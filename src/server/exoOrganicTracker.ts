@@ -203,7 +203,12 @@ export function restoreOrganicSessionFromJournal(
       started *next* was then ignored — the counter below takes the first Log it sees and treats
       later ones as noise. The owner reported exactly this: nothing picked up after the last Analyse.
     */
-    if (String(lines[i]!.ScanType ?? "").trim().toLowerCase() === "analyse") break;
+    if (
+      String(lines[i]!.ScanType ?? "")
+        .trim()
+        .toLowerCase() === "analyse"
+    )
+      break;
     recent.push(lines[i]!);
   }
   if (recent.length === 0) return false;
@@ -220,7 +225,9 @@ export function restoreOrganicSessionFromJournal(
   let counted: JournalLine[] = [];
   let runSpeciesKey = "";
   for (const l of recent) {
-    const kind = String(l.ScanType ?? "").trim().toLowerCase();
+    const kind = String(l.ScanType ?? "")
+      .trim()
+      .toLowerCase();
     if (kind !== "sample" && kind !== "log") continue;
     const key = speciesKeyFromOrganicJournal(l);
     /*
@@ -412,7 +419,15 @@ export function ingestExoOrganicJournalLine(
       };
       // The anchors are this species' own and are wiped when the next one starts; the map wants
       // every plant taken on this body, so it keeps its own list.
-      store.addSurfaceSampleMark(bk, bodyNameNormEarly, fix.latDeg, fix.lonDeg, speciesDisplay, lineIso, conditionsAtPlant);
+      store.addSurfaceSampleMark(
+        bk,
+        bodyNameNormEarly,
+        fix.latDeg,
+        fix.lonDeg,
+        speciesDisplay,
+        lineIso,
+        conditionsAtPlant,
+      );
       store.footSessionBodyKey = bk;
       store.footSessionBodyNameNorm = bodyNameNormEarly;
       if (store.footTravelOdometerEnabled) {
@@ -450,7 +465,15 @@ export function ingestExoOrganicJournalLine(
       };
       // The anchors are this species' own and are wiped when the next one starts; the map wants
       // every plant taken on this body, so it keeps its own list.
-      store.addSurfaceSampleMark(bk, bodyNameNormEarly, fix.latDeg, fix.lonDeg, speciesDisplay, lineIso, conditionsAtPlant);
+      store.addSurfaceSampleMark(
+        bk,
+        bodyNameNormEarly,
+        fix.latDeg,
+        fix.lonDeg,
+        speciesDisplay,
+        lineIso,
+        conditionsAtPlant,
+      );
       store.footSessionBodyKey = bk;
       store.footSessionBodyNameNorm = bodyNameNormEarly;
       if (store.footTravelOdometerEnabled) {
@@ -740,13 +763,16 @@ export function buildExoOrganicOverlayDto(
     t.phase === "celebrate" ? Math.max(0, Math.ceil((t.celebrationUntil - Date.now()) / 1000)) : 0;
 
   const runStartedMs =
-    typeof store.organicRunStartedAtMs === "function" ? store.organicRunStartedAtMs(t.bodyKey, t.speciesKey) : undefined;
+    typeof store.organicRunStartedAtMs === "function"
+      ? store.organicRunStartedAtMs(t.bodyKey, t.speciesKey)
+      : undefined;
 
   return {
     visible: true,
     phase: t.phase,
     celebrationRemainSec,
-    runStartedIso: runStartedMs != null && Number.isFinite(runStartedMs) ? new Date(runStartedMs).toISOString() : null,
+    runStartedIso:
+      runStartedMs != null && Number.isFinite(runStartedMs) ? new Date(runStartedMs).toISOString() : null,
     speciesDisplay: label,
     minSampleDistanceM: minG,
     distToFirstM: distFirstM != null ? Math.round(distFirstM) : null,

@@ -158,7 +158,8 @@ export async function backfillSystemId64(
     const v = BigInt(found.id64);
     if (largest === null || v > largest) largest = v;
     if (v > 9007199254740991n) beyond += 1;
-    if (row.id64 === null) updates.push({ normSystem: row.normSystem, id64: found.id64, edsmId: found.edsmId });
+    if (row.id64 === null)
+      updates.push({ normSystem: row.normSystem, id64: found.id64, edsmId: found.edsmId });
   }
 
   let written = 0;
@@ -186,7 +187,9 @@ const pct = (n: number, d: number) => (d === 0 ? "0.0" : ((n / d) * 100).toFixed
 
 export function formatSystemId64Report(r: SystemId64Report, applied: boolean): string {
   const out: string[] = [];
-  out.push(`Cache files        ${r.filesRead.toLocaleString()} read, ${r.filesUnparsed} unreadable (${r.elapsedMs} ms)`);
+  out.push(
+    `Cache files        ${r.filesRead.toLocaleString()} read, ${r.filesUnparsed} unreadable (${r.elapsedMs} ms)`,
+  );
   out.push(
     `From cache         ${r.fromCache.toLocaleString()} of ${r.coverage.systems.toLocaleString()} systems ` +
       `(${pct(r.fromCache, r.coverage.systems)} %) — no network`,

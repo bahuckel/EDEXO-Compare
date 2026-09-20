@@ -17,7 +17,14 @@ import {
 import { genusKeyFromCodex, taxonFromSpeciesLabel } from "../src/feeder/sectorMapData.js";
 import { sectorCellFromCoords } from "../src/shared/sectorName.js";
 
-const at = (x: number, y: number, z: number, bodyKey: string, taxon: string, kind: BodyEvidence["kind"]): BodyEvidence => ({
+const at = (
+  x: number,
+  y: number,
+  z: number,
+  bodyKey: string,
+  taxon: string,
+  kind: BodyEvidence["kind"],
+): BodyEvidence => ({
   x,
   y,
   z,

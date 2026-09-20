@@ -32,7 +32,14 @@ function csv(rows: string[]): string {
 /** Write a species archive in the shape hydration leaves behind. */
 function archive(
   slug: string,
-  records: { i: number; systemName: string; bodyName: string; systemId?: number; bodyId?: number; edsmId?: number }[],
+  records: {
+    i: number;
+    systemName: string;
+    bodyName: string;
+    systemId?: number;
+    bodyId?: number;
+    edsmId?: number;
+  }[],
 ): void {
   const dir = path.join(rawPlanetsDir(), slug);
   mkdirSync(dir, { recursive: true });
@@ -94,8 +101,22 @@ describe("backfill from the archives", () => {
   it("writes body_id and edsm_id, and reports coverage", async () => {
     await importCsv(ctx, csv([ROW_A, ROW_B]));
     archive("osseus_discus", [
-      { i: 0, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 a", systemId: 15695809, bodyId: 23, edsmId: 10904346 },
-      { i: 1, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 b", systemId: 15695809, bodyId: 24, edsmId: 10904347 },
+      {
+        i: 0,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 a",
+        systemId: 15695809,
+        bodyId: 23,
+        edsmId: 10904346,
+      },
+      {
+        i: 1,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 b",
+        systemId: 15695809,
+        bodyId: 24,
+        edsmId: 10904347,
+      },
     ]);
 
     const report = await backfillBodyIdentity(ctx.store, { apply: true });
@@ -109,7 +130,14 @@ describe("backfill from the archives", () => {
   it("a dry run writes nothing", async () => {
     await importCsv(ctx, csv([ROW_A]));
     archive("osseus_discus", [
-      { i: 0, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 a", systemId: 15695809, bodyId: 23, edsmId: 1 },
+      {
+        i: 0,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 a",
+        systemId: 15695809,
+        bodyId: 23,
+        edsmId: 1,
+      },
     ]);
     const report = await backfillBodyIdentity(ctx.store, { apply: false });
     expect(report.planetsMatched).toBe(1);
@@ -120,7 +148,14 @@ describe("backfill from the archives", () => {
   it("is idempotent — a second apply writes nothing", async () => {
     await importCsv(ctx, csv([ROW_A]));
     archive("osseus_discus", [
-      { i: 0, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 a", systemId: 15695809, bodyId: 23, edsmId: 1 },
+      {
+        i: 0,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 a",
+        systemId: 15695809,
+        bodyId: 23,
+        edsmId: 1,
+      },
     ]);
     await backfillBodyIdentity(ctx.store, { apply: true });
     const again = await backfillBodyIdentity(ctx.store, { apply: true });
@@ -139,7 +174,14 @@ describe("backfill from the archives", () => {
   it("counts a row the archives never named as unmatched", async () => {
     await importCsv(ctx, csv([ROW_A, ROW_B]));
     archive("osseus_discus", [
-      { i: 0, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 a", systemId: 15695809, bodyId: 23, edsmId: 1 },
+      {
+        i: 0,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 a",
+        systemId: 15695809,
+        bodyId: 23,
+        edsmId: 1,
+      },
     ]);
     const report = await backfillBodyIdentity(ctx.store, { apply: true });
     expect(report.planetsMatched).toBe(1);
@@ -161,8 +203,22 @@ describe("acceptance rule 4 — one body, one row, whatever it is called", () =>
     expect(ctx.store.getStats().uniquePlanets).toBe(2);
 
     archive("osseus_discus", [
-      { i: 0, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 a", systemId: 15695809, bodyId: 23, edsmId: 1 },
-      { i: 1, systemName: "18 Andromedae", bodyName: "18 Andromedae 8a", systemId: 15695809, bodyId: 23, edsmId: 1 },
+      {
+        i: 0,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 a",
+        systemId: 15695809,
+        bodyId: 23,
+        edsmId: 1,
+      },
+      {
+        i: 1,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8a",
+        systemId: 15695809,
+        bodyId: 23,
+        edsmId: 1,
+      },
     ]);
 
     const report = await backfillBodyIdentity(ctx.store, { apply: false });
@@ -179,8 +235,22 @@ describe("acceptance rule 4 — one body, one row, whatever it is called", () =>
   it("one name resolving to two BodyIDs is reported as a collision", async () => {
     await importCsv(ctx, csv([ROW_A]));
     archive("osseus_discus", [
-      { i: 0, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 a", systemId: 15695809, bodyId: 23, edsmId: 1 },
-      { i: 1, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 a", systemId: 15695809, bodyId: 99, edsmId: 2 },
+      {
+        i: 0,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 a",
+        systemId: 15695809,
+        bodyId: 23,
+        edsmId: 1,
+      },
+      {
+        i: 1,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 a",
+        systemId: 15695809,
+        bodyId: 99,
+        edsmId: 2,
+      },
     ]);
     const report = await backfillBodyIdentity(ctx.store, { apply: false });
     expect(report.nameCollisions).toHaveLength(1);
@@ -196,8 +266,22 @@ describe("acceptance rule 4 — one body, one row, whatever it is called", () =>
   it("the identity index exists on a clean corpus and refuses a duplicate", async () => {
     await importCsv(ctx, csv([ROW_A, ROW_B]));
     archive("osseus_discus", [
-      { i: 0, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 a", systemId: 15695809, bodyId: 23, edsmId: 1 },
-      { i: 1, systemName: "18 Andromedae", bodyName: "18 Andromedae 8 b", systemId: 15695809, bodyId: 24, edsmId: 2 },
+      {
+        i: 0,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 a",
+        systemId: 15695809,
+        bodyId: 23,
+        edsmId: 1,
+      },
+      {
+        i: 1,
+        systemName: "18 Andromedae",
+        bodyName: "18 Andromedae 8 b",
+        systemId: 15695809,
+        bodyId: 24,
+        edsmId: 2,
+      },
     ]);
     await backfillBodyIdentity(ctx.store, { apply: true });
     ctx.store.close();

@@ -402,7 +402,12 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
    * When the tree has no photograph under the species' own name, one that names the species *and* a
    * colour still shows the right organism — and it is the owner's own, taken on a body he walked.
    */
-  if (variantFiles.length > 0 && !candidateFilenames(entry).some((c) => imageFiles.some((f) => f.toLowerCase() === basename(c).toLowerCase()))) {
+  if (
+    variantFiles.length > 0 &&
+    !candidateFilenames(entry).some((c) =>
+      imageFiles.some((f) => f.toLowerCase() === basename(c).toLowerCase()),
+    )
+  ) {
     return withCredits(entry, projectRoot, variantFiles[0]!, null, variantFiles, variantFiles);
   }
 
@@ -419,7 +424,8 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
      * from in a Linux container. It has always been latent; it surfaces here because the gallery
      * compares the primary against the directory listing to find its siblings.
      */
-    const primary = imageFiles.find((f) => f.toLowerCase() === basename(name).toLowerCase()) ?? basename(name);
+    const primary =
+      imageFiles.find((f) => f.toLowerCase() === basename(name).toLowerCase()) ?? basename(name);
     const wanted = entry.photoFile ? basename(entry.photoFile) : null;
     const note =
       wanted && primary !== wanted
@@ -433,7 +439,14 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
   if (fuzzy) {
     // No siblings collected here on purpose: the species was matched by similarity rather than by
     // name, so a numbered neighbour of *that* file is not evidence of anything about this species.
-    return withCredits(entry, projectRoot, fuzzy.name, fuzzy.note, [fuzzy.name, ...variantFiles], variantFiles);
+    return withCredits(
+      entry,
+      projectRoot,
+      fuzzy.name,
+      fuzzy.note,
+      [fuzzy.name, ...variantFiles],
+      variantFiles,
+    );
   }
 
   const fallback = imageFiles[0];

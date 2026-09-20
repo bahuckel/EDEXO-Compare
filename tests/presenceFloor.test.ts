@@ -7,7 +7,11 @@
  * showing rows its own model had already judged.
  */
 import { describe, expect, it } from "vitest";
-import { GENUS_SHARE_FLOOR_PCT, PRESENCE_FLOOR_PCT, demoteBelowPresenceFloor } from "../src/server/snapshot.js";
+import {
+  GENUS_SHARE_FLOOR_PCT,
+  PRESENCE_FLOOR_PCT,
+  demoteBelowPresenceFloor,
+} from "../src/server/snapshot.js";
 import type { BodyExoState, SpeciesDatabase, SpeciesMatch } from "../src/shared/types.js";
 
 const db: SpeciesDatabase = { species: [] };
@@ -191,10 +195,7 @@ describe("after a DSS", () => {
       20 % are well clear of 5 % — and the second is still only 4 % of its genus. If this function
       ever goes back to reading `presenceProbabilityPercent` here, this is the test that says so.
     */
-    const ms = [
-      match("a_one", 40, { genusSharePercent: 96 }),
-      match("a_two", 20, { genusSharePercent: 4 }),
-    ];
+    const ms = [match("a_one", 40, { genusSharePercent: 96 }), match("a_two", 20, { genusSharePercent: 4 })];
     demoteBelowPresenceFloor(ms, withDss(), db);
     expect(shownIds(ms)).toEqual(["a_one"]);
   });

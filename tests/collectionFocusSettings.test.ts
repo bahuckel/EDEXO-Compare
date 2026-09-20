@@ -40,7 +40,11 @@ describe("editing one field", () => {
   it("leaves the others alone", () => {
     // The panel sends `{ targetScans }` on its own. A merge that rebuilt from defaults would quietly
     // reset a corpus floor the commander had moved.
-    const current: CollectionFocusConfig = { ...DEFAULT_COLLECTION_FOCUS, corpusFloor: 400, dismissed: ["x"] };
+    const current: CollectionFocusConfig = {
+      ...DEFAULT_COLLECTION_FOCUS,
+      corpusFloor: 400,
+      dismissed: ["x"],
+    };
     const next = mergeCollectionFocus(current, { targetScans: 5 });
     expect(next.targetScans).toBe(5);
     expect(next.corpusFloor).toBe(400);

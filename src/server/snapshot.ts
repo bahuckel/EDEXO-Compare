@@ -1,7 +1,5 @@
 import { speciesProvenance } from "./speciesProvenance.js";
-import type { AppStatusDTO,
-  SessionLogDTO,
-} from "../shared/types.js";
+import type { AppStatusDTO, SessionLogDTO } from "../shared/types.js";
 import { existsSync, statSync } from "node:fs";
 import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { UNOBSERVED } from "../shared/observedFlag.js";
@@ -536,7 +534,10 @@ export function buildEncyclopediaPayload(): EncyclopediaSpeciesRowDTO[] {
     cachedDb = loadSpeciesDatabaseFromTree(root);
   }
   return cachedDb.species.map((entry) => {
-    const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(entry, root);
+    const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(
+      entry,
+      root,
+    );
     const exomasteryEdsmSampleCount = countEdsmPlanetRows(root, entry);
     const exomasteryProfile = loadExomasteryProfile(root, entry);
     const exomasteryProfileFilePresent = exomasteryProfile != null;
@@ -696,11 +697,7 @@ function genusLikelihoodsForBody(
  * flown away from, and scoring it against wherever they happen to be standing would be worse
  * than not scoring it at all.
  */
-function regionIndexForBody(
-  store: GameStateStore,
-  b: BodyExoState,
-  projectRoot: string,
-): number | null {
+function regionIndexForBody(store: GameStateStore, b: BodyExoState, projectRoot: string): number | null {
   const pos = store.systemPositions.get(b.systemAddress);
   if (!pos) return null;
   const index = regionIndexForSystem(projectRoot, pos.x, pos.z);
@@ -794,7 +791,11 @@ export const PRESENCE_FLOOR_PCT = 5;
  *  - **Argue with the commander's own boots.** A species he has sampled on this body stays, whatever
  *    the model thinks of it.
  */
-export function demoteBelowPresenceFloor(matches: SpeciesMatch[], b: BodyExoState, db: SpeciesDatabase): void {
+export function demoteBelowPresenceFloor(
+  matches: SpeciesMatch[],
+  b: BodyExoState,
+  db: SpeciesDatabase,
+): void {
   const confirmed = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
 
   // Probes have named the genera, so "is Bacterium here" is settled and the presence floor has
@@ -1126,7 +1127,10 @@ function computeBodyUncached(
     compScanOnly.delete(id);
   }
   let matches: SpeciesMatch[] = raw.map((m) => {
-    const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(m.entry, root);
+    const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(
+      m.entry,
+      root,
+    );
     const priceCredits = lookupPrice(prices, m.entry.displayName, m.entry.id);
     const hasFile = hasExomasteryProfileFile(root, m.entry);
     const profile = loadExomasteryProfile(root, m.entry);
@@ -1197,7 +1201,11 @@ function computeBodyUncached(
         const r = focus.get(m.entry.id);
         if (!r) continue;
         m.collectionFocus = true;
-        m.collectionFocusNote = { ownScans: r.ownScans, corpusBodies: r.corpusBodies, remaining: r.remaining };
+        m.collectionFocusNote = {
+          ownScans: r.ownScans,
+          corpusBodies: r.corpusBodies,
+          remaining: r.remaining,
+        };
       }
     }
   }
@@ -1363,7 +1371,8 @@ function regionForFocusedSystem(
  */
 export function organicLiveSummary(store: GameStateStore): NonNullable<AppStatusDTO["live"]> {
   const { credits, pendingSamples } = organicDataValuation(store, cachedPrices);
-  const bodyKey = store.exoOrganicTracker?.bodyKey ?? store.overlayTouchdownBodyKey ?? store.uiSelectedBodyKey;
+  const bodyKey =
+    store.exoOrganicTracker?.bodyKey ?? store.overlayTouchdownBodyKey ?? store.uiSelectedBodyKey;
   const body = bodyKey ? store.bodies.get(bodyKey) : undefined;
   const jt = store.nextJumpTarget();
   return {
@@ -1372,7 +1381,9 @@ export function organicLiveSummary(store: GameStateStore): NonNullable<AppStatus
     bioSignals: body?.biologicalSignals ?? null,
     organicDataValueCredits: credits,
     organicPendingSampleCount: pendingSamples,
-    jumpTarget: jt ? { starSystem: jt.starSystem, starClass: jt.starClass, arrived: jt.arrived, source: jt.source } : null,
+    jumpTarget: jt
+      ? { starSystem: jt.starSystem, starClass: jt.starClass, arrived: jt.arrived, source: jt.source }
+      : null,
   };
 }
 
@@ -1431,7 +1442,14 @@ export function buildSnapshot(
     bootLoading || focusAddr == null
       ? null
       : perfTime("snap.systemMap", () =>
-          buildSystemMapSnapshot(store, focusAddr, db, cachedStarRoles!, cachedPrices, loadSpatialCatalogue(projectRoot)),
+          buildSystemMapSnapshot(
+            store,
+            focusAddr,
+            db,
+            cachedStarRoles!,
+            cachedPrices,
+            loadSpatialCatalogue(projectRoot),
+          ),
         );
   const dScanBodies = bootLoading
     ? null

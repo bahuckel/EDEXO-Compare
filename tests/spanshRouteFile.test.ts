@@ -20,12 +20,7 @@ import {
   summariseSpanshRouteFile,
 } from "../src/feeder/spanshRouteFile.js";
 
-const dumps = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "data",
-  "spansh-dump-tests",
-);
+const dumps = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "data", "spansh-dump-tests");
 const read = (name: string) => readFileSync(path.join(dumps, name), "utf8");
 
 const COLONIA_CSV = "exobiology-home-to-colonia.csv";

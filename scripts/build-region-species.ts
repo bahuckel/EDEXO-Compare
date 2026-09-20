@@ -78,7 +78,10 @@ function main(): void {
     builtAt: string;
     source: Record<string, string>;
     speciesIds: string[];
-    regions: Record<string, { name: string; systems: number; bioSystems: number; species: Record<string, number> }>;
+    regions: Record<
+      string,
+      { name: string; systems: number; bioSystems: number; species: Record<string, number> }
+    >;
   } = {
     formatVersion: 1,
     builtAt: new Date().toISOString(),
