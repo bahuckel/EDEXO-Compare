@@ -22,6 +22,32 @@
   font-size: 0.82rem;
 }
 
+/*
+  The credit link back to EDAstro.
+
+  It had no colour rule, so it fell through to the browser's default link blue on a near-black panel:
+  #0000ee against #0e0b0a measures **2.09:1**, under the 3:1 floor for even large text, and the owner
+  reported it as unreadable before any checker did.
+
+  --ok-bright is the app's own bright blue and measures **14.02:1** there. Blue rather than the amber
+  --accent-bright the legal footer uses (10.86:1, also fine) because a link that is the same colour as
+  every heading and chip in an amber UI stops reading as a link at all -- and this one is the
+  attribution, which should be obviously clickable.
+
+  Underlined always, not just on hover: colour alone is not a link affordance for anyone who cannot
+  separate these two hues.
+*/
+.carriers-source-link {
+  color: var(--ok-bright, #9fe4ff);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.carriers-source-link:hover,
+.carriers-source-link:focus-visible {
+  color: var(--ok-soft, #d2f1ff);
+}
+
 .carriers-search {
   display: flex;
   flex-wrap: wrap;

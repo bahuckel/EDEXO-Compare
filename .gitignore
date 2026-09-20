@@ -116,3 +116,4 @@ photo-contributions.txt
 
 # Local dev-harness launch config (Browser pane); not part of the app.
 /.claude/launch.json
+/.claude/dev-isolated.cmd

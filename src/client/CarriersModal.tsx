@@ -178,7 +178,12 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
             <h2 className="fdb-title">Carriers</h2>
             <p className="dim fdb-sub">
               Fleet carriers near you, from{" "}
-              <a href="https://edastro.com" target="_blank" rel="noreferrer">
+              <a
+                className="carriers-source-link"
+                href="https://edastro.com"
+                target="_blank"
+                rel="noreferrer"
+              >
                 EDAstro
               </a>
               . Positions are <strong>last sightings</strong>, not live — a carrier is only reported
