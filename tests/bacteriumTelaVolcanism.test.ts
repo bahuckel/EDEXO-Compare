@@ -10,8 +10,9 @@
  * The corpus settles it: **706 of the 833 observed bodies for this species have no volcanism**, so
  * the gate was hiding it on 85% of the worlds it actually grows on. Every other volcanism-gated
  * species sits at 0-4.5% no-volcanism, which is why this was one bad row rather than a rule worth
- * softening — the row's own description, "linked to multiple volcanism types", reads like a list of
- * where it has *also* been seen, transcribed as a condition.
+ * softening — the row's own description read "linked to multiple volcanism types", which is a list of
+ * where it has *also* been seen, transcribed as a condition. That sentence was replaced on
+ * 2026-09-20, once the two branches below said the same thing properly.
  *
  * The evidence is pinned here as well as the fix. A number that came out of the corpus is the only
  * thing standing between this row and somebody restoring it from the codex again.

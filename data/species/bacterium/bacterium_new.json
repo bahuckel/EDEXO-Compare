@@ -231,7 +231,7 @@
     {
       "id": "bacterium_bacterium_tela",
       "displayName": "Bacterium tela",
-      "description": "Web-like bacteria linked to multiple volcanism types.",
+      "description": "Web-like bacteria. Grows where there is volcanism, or where the surface reaches 300 K.",
       "conditions": {
         "atmosphere": "Any thin atmosphere",
         "atmospherePressureCategory": "thin",
