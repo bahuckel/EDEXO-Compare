@@ -49,6 +49,8 @@ import { countPoi, fetchPoiData, queryPoi, readPoiStatus } from "./edastroPoi.js
 import { lookupCarrierOnSpansh } from "./spanshCarrier.js";
 import { EDASTRO_USER_AGENT } from "./edastroCarriers.js";
 import { lookupCarrierOnGalmap } from "./edastroGalmap.js";
+import type { JournalScan } from "./statisticsScan.js";
+import { summariseStatistics } from "./statistics.js";
 import { isEdsmCatchUpScope, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 
 export function getLanIPv4s(port: number): string[] {
@@ -267,6 +269,13 @@ export function createHttpServer(opts: {
   ) => Promise<
     { ok: true; systems: { systemAddress: number; starSystem: string }[] } | { ok: false; error: string }
   >;
+  /**
+   * The statistics scan: three years of journals reduced to totals.
+   *
+   * A callback rather than a path, because the http layer has no business listing the commander's
+   * journal folder — the bootstrap already knows where it is and which files count.
+   */
+  getStatisticsScan?: () => Promise<JournalScan>;
   /** POST /api/system/hydrate-from-spansh — bodies from Spansh's dump for a system the journal never scanned. */
   hydrateSystemFromSpansh?: (
     systemAddress: number,
@@ -783,6 +792,26 @@ export function createHttpServer(opts: {
     routes, same rule: the commander presses a button, the fetch happens on their machine, and it
     never goes through a server of ours.
   */
+  /*
+    Statistics: income by source, activity and balances, over a window.
+
+    The scan behind it reads 303 MB of journals and is cached on a manifest of the folder, so the
+    first call after a new journal costs a few seconds and the rest are arithmetic.
+  */
+  app.get("/api/statistics", async (req, res) => {
+    if (typeof opts.getStatisticsScan !== "function") {
+      res.status(501).json({ error: "Not available" });
+      return;
+    }
+    const window = typeof req.query?.window === "string" ? req.query.window : "all";
+    try {
+      const scan = await opts.getStatisticsScan();
+      res.json(summariseStatistics(scan, window));
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
   app.get("/api/poi/status", (_req, res) => {
     res.json(readPoiStatus());
   });

@@ -1,0 +1,161 @@
+/*
+  Statistics.
+
+  The income chart is a base-five log scale, so the gridlines are evenly spaced on screen while each
+  is five times the value of the last. Everything here is positioned as a percentage of the track so
+  the bar and its gridline agree no matter how wide the panel is.
+*/
+
+.stats-chart {
+  position: relative;
+  margin: 0.4rem 0 0.9rem;
+  padding-top: 1.1rem;
+}
+
+.stats-chart__grid {
+  position: absolute;
+  /* Aligned to the track, not the panel: the label column sits to the left of both. */
+  left: 9.5rem;
+  right: 5.5rem;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.stats-chart__gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--line, rgba(255, 255, 255, 0.14));
+}
+
+.stats-chart__gridline span {
+  position: absolute;
+  top: 0;
+  left: 0.15rem;
+  font-size: 0.66rem;
+  color: var(--dim, rgba(255, 255, 255, 0.5));
+  white-space: nowrap;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr 5.5rem;
+  align-items: center;
+  gap: 0;
+  height: 1.55rem;
+}
+
+.stats-row__label {
+  font-size: 0.82rem;
+  padding-right: 0.5rem;
+}
+
+.stats-row__track {
+  position: relative;
+  height: 0.85rem;
+  background: var(--panel-2, rgba(255, 255, 255, 0.04));
+}
+
+.stats-row__bar {
+  display: block;
+  height: 100%;
+  background: var(--accent, #ff8a1f);
+  /*
+    A zero-width bar would be invisible, and the row is meant to read as "none" rather than as a
+    missing category. The minimum keeps a sliver of the bar's own colour on the baseline.
+  */
+  min-width: 2px;
+}
+
+.stats-row__value {
+  text-align: right;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-row--empty .stats-row__value {
+  color: var(--dim, rgba(255, 255, 255, 0.45));
+}
+
+.stats-row--empty .stats-row__bar {
+  opacity: 0.35;
+}
+
+/* One colour per source, so a row keeps its identity as the window changes and the order moves. */
+.stats-bar--exobiology {
+  background: var(--ok, #4fd0ff);
+}
+.stats-bar--exploration {
+  background: var(--accent-bright, #ffb060);
+}
+.stats-bar--trading {
+  background: var(--warn, #ffd23f);
+}
+.stats-bar--missions {
+  background: #b98cff;
+}
+.stats-bar--combatBonds {
+  background: #ff7a6b;
+}
+.stats-bar--bounties {
+  background: #ff9f43;
+}
+.stats-bar--other {
+  background: var(--dim, rgba(255, 255, 255, 0.4));
+}
+
+.stats-h3 {
+  margin: 0.9rem 0 0.35rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent, #ff8a1f);
+}
+
+.stats-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+  font-size: 0.82rem;
+}
+
+.stats-tiles strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-note {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  max-width: 52rem;
+}
+
+/* The carrier's available balance goes negative when upkeep is not covered. It should look it. */
+.stats-negative {
+  color: var(--warn, #ffd23f);
+}
+
+.stats-balance {
+  margin-top: 0.2rem;
+}
+
+.stats-balance svg {
+  width: 100%;
+  height: 7rem;
+  display: block;
+  background: var(--panel-2, rgba(255, 255, 255, 0.03));
+}
+
+.stats-balance__line {
+  fill: none;
+  stroke: var(--ok-bright, #9fe4ff);
+  stroke-width: 1.5px;
+}
+
+.stats-balance__ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  margin-top: 0.15rem;
+}

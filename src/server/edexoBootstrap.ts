@@ -38,6 +38,7 @@ import {
   type JournalListFilterOpts,
   type JournalWatcherHandle,
 } from "./journalWatcher.js";
+import { scanJournalsForStatistics } from "./statisticsScan.js";
 import { createHttpServer, getLanIPv4s } from "./httpServer.js";
 import { describeUserDataMigration, migrateLegacyUserData } from "./userDataMigration.js";
 import {
@@ -1459,6 +1460,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       pushFlush();
     },
     searchEdsmSystems: (query) => searchEdsmSystemsByName(query),
+    getStatisticsScan: async () =>
+      scanJournalsForStatistics(await listJournalFilesChronological(journalDir, getJournalListFilterOpts())),
     searchSpanshSystems: (query) => searchSpanshSystemsByName(query),
     hydrateSystemFromEdsm: async (systemAddress, systemName) => {
       const gate = hydrateGate(systemAddress, "EDSM");

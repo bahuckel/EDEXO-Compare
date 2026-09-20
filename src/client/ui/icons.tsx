@@ -148,6 +148,26 @@ export function IconCarrier({ className }: { className?: string }) {
   );
 }
 
+/** Statistics: three bars of different heights. */
+export function IconStats({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 20V13M10 20V6M16 20V10M22 20H3" />
+    </svg>
+  );
+}
+
 /** Points of interest: a map pin over a horizon line. */
 export function IconPoi({ className }: { className?: string }) {
   return (

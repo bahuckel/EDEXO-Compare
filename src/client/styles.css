@@ -34,5 +34,6 @@
 @import "./styles/layout.css";
 @import "./styles/backlog.css";
 @import "./styles/carriers.css";
+@import "./styles/statistics.css";
 @import "./styles/cockpit.css";
 @import "./styles/bridge.css";

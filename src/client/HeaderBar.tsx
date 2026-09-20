@@ -14,6 +14,7 @@ import {
   IconBacklog,
   IconCarrier,
   IconPoi,
+  IconStats,
   IconSession,
 } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
@@ -44,6 +45,7 @@ import {
   CarriersModal,
   EncyclopediaModal,
   PoiModal,
+  StatisticsModal,
   FirstDiscoveryBacklogModal,
   InlineSpinner,
   ModalLoading,
@@ -508,6 +510,7 @@ export const HeaderBar = memo(function HeaderBar({
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [carriersOpen, setCarriersOpen] = useState(false);
   const [poiOpen, setPoiOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [notableQuick, setNotableQuick] = useState<{
     notable: NotableBodyInfo;
     x: number;
@@ -730,7 +733,7 @@ export const HeaderBar = memo(function HeaderBar({
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 aria-label="Menu"
-                title="Menu: my exobiology, unfinished business, carriers, points of interest, feeder, galaxy map, encyclopedia, options"
+                title="Menu: my exobiology, unfinished business, carriers, points of interest, statistics, feeder, galaxy map, encyclopedia, options"
               >
                 <span className="appbar-menu-glyph" aria-hidden="true" />
               </button>
@@ -788,6 +791,16 @@ export const HeaderBar = memo(function HeaderBar({
                     aria-label="Points of interest"
                   >
                     <IconPoi />
+                  </button>
+                </Tooltip>
+                <Tooltip text="Statistics — income by source, activity and balances, over 24 h to all time.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setStatsOpen(true)}
+                    aria-label="Statistics"
+                  >
+                    <IconStats />
                   </button>
                 </Tooltip>
                 {feeder.available ? (
@@ -1089,6 +1102,12 @@ export const HeaderBar = memo(function HeaderBar({
       snap.currentSystemAddress != null &&
       snap.viewingSystemAddress !== snap.currentSystemAddress ? (
         <p className="sub-live dim header-commander-away">Commander: {snap.currentSystem ?? "—"}</p>
+      ) : null}
+
+      {statsOpen ? (
+        <Suspense fallback={<ModalLoading />}>
+          <StatisticsModal onClose={() => setStatsOpen(false)} />
+        </Suspense>
       ) : null}
 
       {poiOpen ? (
