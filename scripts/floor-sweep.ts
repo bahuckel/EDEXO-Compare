@@ -76,7 +76,7 @@ function parse(out: string): Omit<Result, "dimension" | "floor"> {
 
 function run(env: Record<string, string>): string {
   // Relative, not absolute: `shell: true` is needed on Windows to find npx, and the shell splits an
-  // unquoted absolute path at the space in "Cursor Projects". `cwd` already points at the repo.
+  // unquoted absolute path at the first space in it. `cwd` already points at the repo.
   const r = spawnSync("npx", ["tsx", "scripts/accuracy-probe.ts"], {
     cwd: root,
     env: { ...process.env, ...env },

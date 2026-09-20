@@ -19,6 +19,7 @@
  *   npm run feeder -- import-dump <file>      validate and import a Spansh JSONL export
  *   npm run feeder -- eddn [--seconds=N]      consume EDDN into the body register (consumer only)
  *   npm run feeder -- sector-map [--write]    what the sector heat map would draw; --write ships it
+ *                    [--catalogue=<csv>]      sector-name list; also EDEXO_SECTOR_CATALOGUE_CSV
  *
  * Flags: `--allow-downgrade` to overwrite a profile with one built from fewer samples (refused by
  * default), `--dry-run` on `rebuild` to report what would change without writing.
@@ -708,17 +709,22 @@ async function cmdSectorMap(): Promise<void> {
   }
 
   if (flags.has("--write")) {
-    const D = String.fromCharCode(92);
-    const catalogue = [
-      "C:",
-      "Users",
-      "FeraL",
-      "Desktop",
-      "Cursor Projects",
-      "EDSM-targz-to-db",
-      "docs",
-      "sector-list.csv",
-    ].join(D);
+    /*
+      The sector-name catalogue is somebody's local file, so it is asked for rather than assumed.
+
+      This used to be one developer's absolute path, spelled as an array joined by a character code
+      — which read as a way past a check for machine paths, and put a home directory in a public
+      repository. `readSectorNames` already returns nothing for a file it cannot open, so the only
+      cost of leaving it out is unnamed sectors, and the line below reports exactly how many.
+    */
+    const catalogueArg = argv.find((a) => a.startsWith("--catalogue="));
+    const catalogue =
+      catalogueArg?.slice("--catalogue=".length) ?? process.env.EDEXO_SECTOR_CATALOGUE_CSV ?? "";
+    if (!catalogue) {
+      console.log("");
+      console.log("no sector-name catalogue given — sectors will be written unnamed.");
+      console.log("  pass --catalogue=<sector-list.csv> or set EDEXO_SECTOR_CATALOGUE_CSV");
+    }
     const w = writeSectorMapFile(root, { entries, sources, taxonGenus }, catalogue);
     const unnamed = unnamedCells(w.file);
     console.log("");
