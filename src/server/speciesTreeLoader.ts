@@ -605,6 +605,22 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
     c.volcanismActiveRequired = true;
   }
 
+  /*
+    Presence branches — the one "or" the condition format has. Each is a criterion object in its own
+    right and goes through this same function, so a branch can say anything a top-level row can and
+    the spellings stay identical. Empty branches are dropped rather than kept as "a branch with no
+    requirements", which would pass on every body and silently disable the rule it was added for.
+  */
+  const branchesRaw = firstDefined(src, ["presence_any_of", "presenceAnyOf"]);
+  if (Array.isArray(branchesRaw)) {
+    const branches = branchesRaw
+      .map((b) => asRecord(b))
+      .filter((b): b is Record<string, unknown> => b != null)
+      .map((b) => buildCriterionFromRecord(b))
+      .filter((b) => Object.keys(b).length > 0);
+    if (branches.length > 0) c.presenceAnyOf = branches;
+  }
+
   const mnotes = toStringArray(
     firstDefined(src, ["matchContextNotes", "habitatConditionNotes", "conditionNotes", "codexNotes"]),
   );

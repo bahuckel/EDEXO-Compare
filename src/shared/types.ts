@@ -200,6 +200,31 @@ export interface SpeciesMatchContext {
 
 export interface SpeciesCriterion {
   /**
+   * Presence branches: the body must satisfy **at least one** of them, or the species is not there.
+   *
+   * Every other field on this interface is ANDed. This is the one place the data can say "or", and
+   * it exists because Bacterium tela needs it: measured across three datasets it grows where there
+   * is **volcanism, or a surface at 300 K or more**, and on neither condition alone. The cold branch
+   * is a hard requirement and the hot branch makes volcanism irrelevant, which is why both earlier
+   * readings of the codex row — "requires volcanism" and "volcanism is never required" — were each
+   * half right. See `docs/tela-decision-20092026.md`.
+   *
+   * Each branch is a full criterion object, parsed by the same loader, and evaluated with **plain
+   * comparisons**: no observation rescue and no numeric tolerance. Both matter. The corpus has seen
+   * tela between 20 K and 698 K, so routing a 300 K branch through the ordinary temperature gate
+   * would let `observedAtTemperature` re-admit every cold body and the rule would quietly become
+   * "always"; and the 300 K edge is measured (0 tela of 149 non-volcanic bodies between 240 K and
+   * 300 K), not a rounded codex band, so 2 % of slack would be slack against a fact.
+   *
+   * Failing every branch is a **hard** failure. A soft one lands in the unlikely tier, where
+   * `restoreDemotionsBelowSignalCount` can lift it back whenever a body reports more signals than
+   * shown genera — putting the row back exactly where three datasets say it never is.
+   *
+   * Only the fields in `PRESENCE_BRANCH_FIELDS` are understood inside a branch; `tests/presenceAnyOf.test.ts`
+   * fails if a shipped branch carries anything else, rather than letting it be ignored.
+   */
+  presenceAnyOf?: SpeciesCriterion[];
+  /**
    * Body classes that must exist **elsewhere in the same system** for this species to spawn.
    *
    * Amphora plant and the Brain Trees are the only rows that carry it. Read by

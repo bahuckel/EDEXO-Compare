@@ -102,15 +102,21 @@ describe("matchDatabaseToScan", () => {
   it("predicts the right species on a thin-CO₂ high metal content body", () => {
     const r = matchDatabaseToScan(db, HMC_THIN_CO2, null, null, { includeBacterium: true });
     /*
-      Bacterium tela used to be shown here too. It joined the list when its volcanism requirement was
-      removed — that codex row demanded Helium/Iron/Silicate/Ammonia volcanism while 706 of 833
-      observed bodies have none — and the removal was right, but nothing then narrowed it.
+      Bacterium tela is **absent from both tiers** on this body, and that is the whole point of it.
 
-      It is demoted on this body now, on the owner's call, because carbon dioxide is one of the four
-      atmospheres where tela almost never wins its own genus: **20 bodies of 6,904**, against 47 % of
-      the water ones and 58 % of the neon-rich. Demoted, not excluded — those twenty exist, and the
-      row is still behind "show unlikely" with its share in the reason.
-      See tests/atmosphereUnfavoured.test.ts and tests/bacteriumTelaVolcanism.test.ts.
+      This scan is `Volcanism: ""` at 163.069 K: cold and non-volcanic. Tela grows where there is
+      volcanism, or where the surface reaches 300 K, and on neither condition alone — 687 of 687
+      corpus bodies, 33 of 33 in an independent EDDN sample, and **0 of 10,630** cold non-volcanic
+      Bacterium bodies. So this is not a low-probability body for tela; it is a body tela is not on,
+      and `presence_any_of` fails hard rather than demoting. See docs/tela-decision-20092026.md.
+
+      The history is worth keeping because it was wrong twice in opposite directions. The codex row
+      demanded Helium/Iron/Silicate/Ammonia volcanism and 706 of 833 observed bodies had none, so the
+      requirement was removed — correctly — and nothing replaced it. This row was then demoted here
+      by an atmosphere preference, on the argument that carbon dioxide is where tela almost never
+      wins its genus (20 bodies of 6,904). That figure is still true and is no longer the reason:
+      CO₂ is perfectly good for tela when the body is hot, 14 of 24 above 300 K. The temperature was
+      doing the work all along.
     */
     expect(
       shown(r)
@@ -118,7 +124,7 @@ describe("matchDatabaseToScan", () => {
         .sort(),
     ).toEqual(["bacterium_bacterium_aurasus"]);
     const telaRow = r.matches.find((m) => m.entry.id === "bacterium_bacterium_tela");
-    expect(telaRow?.unlikely, "tela must be demoted, never dropped").toBe(true);
+    expect(telaRow, "cold and non-volcanic: tela is not on this body at all").toBeUndefined();
     expect(r.approximateMatchingUsed).toBe(false);
     expect(r.genusFilterActive).toBe(false);
 

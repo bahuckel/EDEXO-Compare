@@ -130,21 +130,27 @@ describe("the shipped row", () => {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const db = loadSpeciesDatabaseFromTree(root);
 
-  it("carries the five atmospheres the owner chose, and only tela does", () => {
-    const tela = db.species.find((e) => e.displayName === "Bacterium tela");
-    expect(tela?.criteria.atmosphereUnfavouredAnyOf).toEqual(TELA_UNFAVOURED);
+  it("is carried by no species at all — the mechanism outlived its only user", () => {
+    /*
+      Tela carried the five atmospheres until 2026-09-20 and no longer does. The demotion was an
+      approximation of a rule nobody had found yet: carbon dioxide, ammonia, nitrogen, argon and neon
+      are where tela almost never wins its genus, and the reason turned out to be temperature —
+      every one of them is cold on the bodies tela is missing from, and CO₂ above 300 K is 14 of 24.
+      `presence_any_of` says that directly, so the proxy came off the row. See
+      docs/tela-decision-20092026.md.
 
-    const others = db.species.filter(
-      (e) => e.displayName !== "Bacterium tela" && e.criteria.atmosphereUnfavouredAnyOf?.length,
-    );
-    expect(others.map((e) => e.displayName)).toEqual([]);
+      Everything above this line still runs, because the mechanism is generic and correct and the
+      next species that needs it should find it working. This case is what stops it being deleted as
+      dead code without someone noticing it is no longer wired to anything.
+    */
+    const carriers = db.species.filter((e) => e.criteria.atmosphereUnfavouredAnyOf?.length);
+    expect(carriers.map((e) => e.displayName)).toEqual([]);
   });
 
-  it("does not list the atmospheres tela is known for", () => {
-    // Water and neon-rich are where it takes roughly half its genus. Listing either would be a typo
-    // with a large blast radius, and nothing else in the file would catch it.
-    const tela = db.species.find((e) => e.displayName === "Bacterium tela");
-    const keys = (tela?.criteria.atmosphereUnfavouredAnyOf ?? []).map(atmospherePreferenceKey);
+  it("would still refuse to list the atmospheres tela is known for, if it were used again", () => {
+    // Water and neon-rich are where tela takes roughly half its genus. This is the shape of typo the
+    // key invites, kept against the helper now that no row carries it.
+    const keys = TELA_UNFAVOURED.map(atmospherePreferenceKey);
     expect(keys).not.toContain("water");
     expect(keys).not.toContain("neonrich");
     expect(keys).not.toContain("sulphurdioxide");

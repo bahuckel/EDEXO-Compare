@@ -31,6 +31,10 @@
  * spellings that accumulated. Breadth here is not the problem; silence about what falls outside was.
  */
 const PARSED_CRITERION_KEYS: readonly string[] = [
+  // presence branches — the one "or" in the format. Each entry is itself a conditions object and is
+  // parsed by the same builder, so nothing inside one needs its own key here.
+  "presence_any_of",
+  "presenceAnyOf",
   // planet class
   "planetClassAnyOf",
   "planetClasses",

@@ -99,6 +99,71 @@ describe("Bacterium tela on a body with no volcanism", () => {
     expect(none / total).toBeGreaterThan(0.7);
   });
 
+  /*
+    The two branches, on real bodies.
+
+    The row above says volcanism is not a *requirement*; these say what replaced the gap it left.
+    Tela is on a body with volcanism, or on a body at 300 K or more, and on nothing else: 687 of 687
+    corpus bodies, 33 of 33 in an independent EDDN sample, 0 of 10,630 cold non-volcanic Bacterium
+    bodies. Each case below is one of those bodies. See docs/tela-decision-20092026.md.
+  */
+  const ICY_NEON_COLD: PlanetScan = {
+    BodyName: "cold icy neon, from the relay sample",
+    BodyID: 3,
+    StarSystem: "test",
+    SystemAddress: 2,
+    PlanetClass: "Icy body",
+    AtmosphereType: "Neon",
+    SurfaceGravity: 5.0,
+    SurfaceTemperature: 40,
+    SurfacePressure: 180,
+    Landable: true,
+    Volcanism: "",
+  };
+
+  it("is not on a cold body with no volcanism — neither tier, not a demotion", () => {
+    const r = verdict(ICY_NEON_COLD);
+    expect(r.ok).toBe(false);
+    const presence = r.reasons.find((x) => x.field === "Presence");
+    expect(presence, "the failure has to name Presence, or the panel cannot explain it").toBeTruthy();
+    // Hard. A soft failure is liftable by restoreDemotionsBelowSignalCount, which would put the row
+    // back on exactly the bodies three datasets say it is never on.
+    expect(presence!.soft).not.toBe(true);
+    expect(r.softOnly).toBe(false);
+  });
+
+  it("is on that same cold body once it has volcanism", () => {
+    const volcanic: PlanetScan = { ...ICY_NEON_COLD, Volcanism: "major water magma volcanism" };
+    const r = verdict(volcanic);
+    expect(r.ok, "the cold branch is volcanism, any type").toBe(true);
+  });
+
+  it("is on a hot body with no volcanism — the branch the old CO₂ demotion got wrong", () => {
+    /*
+      `Floawns BF-L b14-8 3` in the relay sample: HMC, thin CO₂, 347 K, no volcanism. Carbon dioxide
+      used to demote tela outright; above 300 K the corpus has it on 14 of 24 such bodies.
+    */
+    const hotCo2: PlanetScan = {
+      ...ICY_NEON_COLD,
+      PlanetClass: "High metal content body",
+      AtmosphereType: "CarbonDioxide",
+      SurfaceTemperature: 347,
+      Volcanism: "",
+    };
+    expect(verdict(hotCo2).ok).toBe(true);
+  });
+
+  it("does not let the estimator sneak a cold body into the hot branch", () => {
+    /*
+      With no thermometer the branch falls back to the estimated band, which is wide — a mean 137 K
+      and a p90 of 291 K. That is deliberate, so an unscanned body is not hidden from the FSS list,
+      but it must still be an overlap test and not a pass. An icy body's estimate does not reach
+      300 K, so the branch fails and the row is gone.
+    */
+    const noReading: PlanetScan = { ...ICY_NEON_COLD, SurfaceTemperature: undefined };
+    expect(verdict(noReading).ok).toBe(false);
+  });
+
   it("leaves the genuinely volcanism-bound species alone", () => {
     /*
       Fifteen other species carry this gate and every one of them checks out at 0-4.5% no-volcanism
