@@ -442,6 +442,52 @@ function days(fromMs: number | null, toMs: number): number | null {
  * a confidence score would hide the nearest answer behind a more reliable but distant one. The two
  * ages go on the row so the choice is visible; the sort stays the one that was asked for.
  */
+/**
+ * Turn the panel's query string into a {@link CarrierQuery}.
+ *
+ * Lives here rather than inline in the route because the route is the one layer nothing tested. The
+ * OASIS filter shipped broken for exactly that reason: the client sent `?network=oasis`, the route
+ * never read it, and every test passed because they all called {@link queryCarriers} directly — a
+ * suite asserting something production never does.
+ *
+ * So the rule this encodes: **every filter the panel can send is parsed in one place, and that place
+ * has a test.** Adding a filter to the client and forgetting the server is now a failing test rather
+ * than a chip that does nothing.
+ */
+export function parseCarrierQueryParams(
+  query: Record<string, unknown> | undefined,
+  origin: { x: number; y: number; z: number } | null,
+): CarrierQuery {
+  const servicesRaw = query?.services;
+  const services =
+    typeof servicesRaw === "string" && servicesRaw.trim()
+      ? servicesRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+  /*
+    `Number("")` is 0 and `Number.isFinite(0)` is true, so an absent-but-present parameter reads as a
+    deliberate zero. On `limit` that clamps to one row; on `maxLastSeenDays` it happens to mean "any"
+    and is harmless, which is exactly how the bug hides. Third time this project has met it — see the
+    poll rates, the radar radius and the collection focus floor.
+  */
+  const num = (v: unknown): number | null => {
+    if (typeof v !== "string" || v.trim() === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+  return {
+    origin,
+    services,
+    maxLastSeenDays: num(query?.maxLastSeenDays) ?? 0,
+    dssaOnly: query?.dssaOnly === "1",
+    networkKey: typeof query?.network === "string" ? query.network : "",
+    search: typeof query?.q === "string" ? query.q : "",
+    limit: num(query?.limit) ?? 100,
+  };
+}
+
 export function queryCarriers(q: CarrierQuery, nowMs: number = Date.now()): CarrierRowDTO[] {
   const rows = loadRows();
   const dssa = readDssaByCallsign();

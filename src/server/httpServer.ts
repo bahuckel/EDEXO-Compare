@@ -40,6 +40,7 @@ import { EDSM_USER_AGENT } from "./edsmSystemHydration.js";
 import {
   countCarriers,
   fetchCarrierData,
+  parseCarrierQueryParams,
   queryCarriers,
   readCarrierStatus,
 } from "./edastroCarriers.js";
@@ -852,25 +853,10 @@ export function createHttpServer(opts: {
   });
 
   app.get("/api/carriers/query", (req, res) => {
-    const servicesRaw = req.query?.services;
-    const services =
-      typeof servicesRaw === "string" && servicesRaw.trim()
-        ? servicesRaw
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [];
-    const maxLastSeenDays = Number(req.query?.maxLastSeenDays);
-    const limit = Number(req.query?.limit);
     const origin = opts.getCommanderPosition();
-    const query = {
-      origin,
-      services,
-      maxLastSeenDays: Number.isFinite(maxLastSeenDays) ? maxLastSeenDays : 0,
-      dssaOnly: req.query?.dssaOnly === "1",
-      search: typeof req.query?.q === "string" ? req.query.q : "",
-      limit: Number.isFinite(limit) ? limit : 100,
-    };
+    // One parser, tested: see parseCarrierQueryParams. Inlining this is how the OASIS filter shipped
+    // as a chip that did nothing.
+    const query = parseCarrierQueryParams(req.query as Record<string, unknown>, origin);
     res.json({
       rows: queryCarriers(query),
       matchCount: countCarriers(query),
