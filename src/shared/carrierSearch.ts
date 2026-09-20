@@ -49,23 +49,42 @@ export function parseCarrierQuery(raw: string | null | undefined): string[] {
     .filter((t) => t.length > 0);
 }
 
-/** Does this carrier match every term, each in any field? */
-export function carrierMatchesQuery(row: CarrierSearchable, terms: readonly string[]): boolean {
+/**
+ * Does every term appear somewhere in these fields?
+ *
+ * The general form, used by the carrier list and the POI catalogue alike. `identifier` is the one
+ * field also compared with its separators stripped — a callsign for a carrier — because that is the
+ * kind of value people read off a screen and retype without the punctuation.
+ */
+export function textMatchesQuery(
+  fields: readonly (string | null | undefined)[],
+  terms: readonly string[],
+  identifier?: string | null,
+): boolean {
   if (terms.length === 0) return true;
-  const haystack = [row.callsign, row.name, row.system, row.region, row.dssa?.commander ?? ""]
-    .filter((s) => s.length > 0)
+  const haystack = fields
+    .filter((s): s is string => typeof s === "string" && s.length > 0)
     .join(" ")
     .toLowerCase();
   // Built once per row rather than per term: a 90,000-row scan runs this for every keystroke.
-  const squashedCallsign = squash(row.callsign);
+  const squashedIdentifier = identifier ? squash(identifier) : "";
 
   for (const term of terms) {
     if (haystack.includes(term)) continue;
-    // "t9jl2n" should find T9J-L2N. Only worth trying when the term has no separators of its own,
-    // so an ordinary word does not get mangled into a false match against a callsign.
+    // "t9jl2n" should find T9J-L2N. The three-character floor stops a one- or two-letter query from
+    // matching a large share of all callsigns, which would read as an unfiltered list.
     const squashedTerm = squash(term);
-    if (squashedTerm.length >= 3 && squashedCallsign.includes(squashedTerm)) continue;
+    if (squashedTerm.length >= 3 && squashedIdentifier.includes(squashedTerm)) continue;
     return false;
   }
   return true;
+}
+
+/** Does this carrier match every term, each in any field? */
+export function carrierMatchesQuery(row: CarrierSearchable, terms: readonly string[]): boolean {
+  return textMatchesQuery(
+    [row.callsign, row.name, row.system, row.region, row.dssa?.commander],
+    terms,
+    row.callsign,
+  );
 }

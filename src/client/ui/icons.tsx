@@ -137,6 +137,16 @@ export function IconCarrier({ className }: { className?: string }) {
   );
 }
 
+/** Points of interest: a map pin over a horizon line. */
+export function IconPoi({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 21s6-5.3 6-10a6 6 0 1 0-12 0c0 4.7 6 10 6 10z" />
+      <circle cx="12" cy="11" r="2.2" />
+    </svg>
+  );
+}
+
 /** The session log: a page with lines, the last one a check. */
 export function IconSession({ className }: { className?: string }) {
   return (

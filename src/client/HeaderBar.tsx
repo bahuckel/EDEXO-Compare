@@ -4,7 +4,7 @@
 import { useLastStateAt } from "./useLiveSnapshot";
 import { useConfirm, useToast } from "./ui/feedback";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
-import { IconChevronDown, IconEncyclopedia, IconExobiology, IconFeeder, IconGalaxy, IconOptions, IconBacklog, IconCarrier, IconSession } from "./ui/icons";
+import { IconChevronDown, IconEncyclopedia, IconExobiology, IconFeeder, IconGalaxy, IconOptions, IconBacklog, IconCarrier, IconPoi, IconSession } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useCallback, lazy, memo, Suspense, useEffect, useId, useRef, useState, MouseEvent as ReactMouseEvent, ReactNode } from "react";
@@ -18,7 +18,7 @@ import { DataValueBreakdownModal, FeederModal, MyExobiologyModal, SessionLogModa
 import { ExoDataAlertsHeaderHub } from "./ExoDataAlertsHub";
 import { measurePopoverSide, type PopoverSide } from "./ui/popoverSide";
 import { MapOptionsModal } from "./OptionsModal";
-import { CarriersModal, EncyclopediaModal, FirstDiscoveryBacklogModal, InlineSpinner, ModalLoading } from "./SharedModals";
+import { CarriersModal, EncyclopediaModal, PoiModal, FirstDiscoveryBacklogModal, InlineSpinner, ModalLoading } from "./SharedModals";
 import { EDEXO_HEADER_TRAY_LS, readLsBool, writeLsBool } from "./lsPrefs";
 import { readRouteHeaderMetricMode, routeHeaderBarAria, routeHeaderBarModel, routeHeaderToggleTitleHint, routeNavCardTitle, writeRouteHeaderMetricMode } from "./routeHeader";
 import type { RouteHeaderMetricMode } from "./routeHeader";
@@ -462,6 +462,7 @@ export const HeaderBar = memo(function HeaderBar({
   const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [carriersOpen, setCarriersOpen] = useState(false);
+  const [poiOpen, setPoiOpen] = useState(false);
   const [notableQuick, setNotableQuick] = useState<{
     notable: NotableBodyInfo;
     x: number;
@@ -684,7 +685,7 @@ export const HeaderBar = memo(function HeaderBar({
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               aria-label="Menu"
-              title="Menu: my exobiology, unfinished business, carriers, feeder, galaxy map, encyclopedia, options"
+              title="Menu: my exobiology, unfinished business, carriers, points of interest, feeder, galaxy map, encyclopedia, options"
             >
               <span className="appbar-menu-glyph" aria-hidden="true" />
             </button>
@@ -732,6 +733,16 @@ export const HeaderBar = memo(function HeaderBar({
               aria-label="Carriers"
             >
               <IconCarrier />
+            </button>
+          </Tooltip>
+          <Tooltip text="Points of interest — the Galactic Exploration Catalog near you, from EDAstro. Downloads on request.">
+            <button
+              type="button"
+              className="appbar-icon-btn"
+              onClick={() => setPoiOpen(true)}
+              aria-label="Points of interest"
+            >
+              <IconPoi />
             </button>
           </Tooltip>
           {feeder.available ? (
@@ -1032,6 +1043,12 @@ export const HeaderBar = memo(function HeaderBar({
       snap.currentSystemAddress != null &&
       snap.viewingSystemAddress !== snap.currentSystemAddress ? (
         <p className="sub-live dim header-commander-away">Commander: {snap.currentSystem ?? "—"}</p>
+      ) : null}
+
+      {poiOpen ? (
+        <Suspense fallback={<ModalLoading />}>
+          <PoiModal onClose={() => setPoiOpen(false)} />
+        </Suspense>
       ) : null}
 
       {carriersOpen ? (

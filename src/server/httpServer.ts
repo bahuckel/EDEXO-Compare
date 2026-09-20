@@ -43,6 +43,8 @@ import {
   queryCarriers,
   readCarrierStatus,
 } from "./edastroCarriers.js";
+import { countPoi, fetchPoiData, queryPoi, readPoiStatus } from "./edastroPoi.js";
+import { lookupCarrierOnSpansh } from "./spanshCarrier.js";
 import { isEdsmCatchUpScope, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 
 export function getLanIPv4s(port: number): string[] {
@@ -756,6 +758,94 @@ export function createHttpServer(opts: {
         return;
       }
       res.json({ ok: true, unchanged: result.unchanged === true, status: result.status });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  /*
+    Points of interest, from EDAstro's Galactic Exploration Catalog. Same shape as the carrier
+    routes, same rule: the commander presses a button, the fetch happens on their machine, and it
+    never goes through a server of ours.
+  */
+  app.get("/api/poi/status", (_req, res) => {
+    res.json(readPoiStatus());
+  });
+
+  app.post("/api/poi/fetch", async (req, res) => {
+    const force = req.body?.force === true;
+    try {
+      const result = await fetchPoiData({ force });
+      if (!result.ok) {
+        res.status(409).json({ ok: false, error: result.error, status: result.status });
+        return;
+      }
+      res.json({ ok: true, status: result.status });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.get("/api/poi/query", (req, res) => {
+    const groupsRaw = req.query?.groups;
+    const groups =
+      typeof groupsRaw === "string" && groupsRaw.trim()
+        ? groupsRaw
+            .split(",")
+            .map((g) => g.trim())
+            .filter(Boolean)
+        : [];
+    const minRating = Number(req.query?.minRating);
+    const limit = Number(req.query?.limit);
+    const origin = opts.getCommanderPosition();
+    const query = {
+      origin,
+      groups,
+      organicOnly: req.query?.organicOnly === "1",
+      minRating: Number.isFinite(minRating) ? minRating : 0,
+      search: typeof req.query?.q === "string" ? req.query.q : "",
+      limit: Number.isFinite(limit) ? limit : 100,
+    };
+    res.json({ rows: queryPoi(query), matchCount: countPoi(query), status: readPoiStatus(), origin });
+  });
+
+  /*
+    One carrier, checked against Spansh on the commander's own press.
+
+    Deliberately not automatic and deliberately not a correction: the two sources disagree in both
+    directions (Spansh newer on 9 of 16 sampled, EDAstro newer on 3), so this answers "does anyone
+    else know something" for a single row rather than quietly rewriting the list.
+  */
+  app.get("/api/carriers/live", async (req, res) => {
+    const callsign = typeof req.query?.callsign === "string" ? req.query.callsign : "";
+    const cachedSystem = typeof req.query?.system === "string" ? req.query.system : "";
+    try {
+      const result = await lookupCarrierOnSpansh(callsign);
+      if (!result.ok) {
+        res.status(result.notFound ? 404 : 502).json({ ok: false, error: result.error });
+        return;
+      }
+      const origin = opts.getCommanderPosition();
+      const { fix } = result;
+      const distanceLy =
+        origin && fix.x != null && fix.y != null && fix.z != null
+          ? Math.sqrt((fix.x - origin.x) ** 2 + (fix.y - origin.y) ** 2 + (fix.z - origin.z) ** 2)
+          : null;
+      res.json({
+        ok: true,
+        fix: {
+          callsign: fix.callsign,
+          system: fix.system,
+          updatedAt: fix.updatedAt,
+          distanceLy,
+          // Compared case-insensitively on the trimmed name: the two sources spell system names the
+          // same way, but a stray space would otherwise read as "it moved".
+          differs:
+            cachedSystem.trim().length > 0 &&
+            fix.system.trim().toLowerCase() !== cachedSystem.trim().toLowerCase(),
+          marketId: fix.marketId,
+        },
+      });
     } catch (e) {
       res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
     }

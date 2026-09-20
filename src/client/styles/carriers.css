@@ -88,6 +88,70 @@
 }
 
 /*
+  Points of interest reuse the carriers shell; only the two things unique to a catalogue row live
+  here. The summary is a second line under the name rather than a column, because 200 characters in
+  a table cell either wraps a row to four lines or gets clipped to uselessness.
+*/
+/*
+  The per-row Spansh check, under the stability verdict it is a second opinion on.
+
+  Muted until it has something to say, and only loud when the two sources name different systems —
+  that disagreement is the whole reason to press it, and on a sample of 16 it happened once.
+*/
+.carriers-live {
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+.carriers-live--differs {
+  color: var(--warn, #ffd23f);
+}
+
+.carriers-live__btn {
+  padding: 0 0.3rem;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.22));
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ok-bright, #9fe4ff);
+  font: inherit;
+  cursor: pointer;
+}
+
+.carriers-live__btn:hover,
+.carriers-live__btn:focus-visible {
+  border-color: var(--ok-bright, #9fe4ff);
+}
+
+.poi-summary {
+  margin-top: 0.15rem;
+  max-width: 46rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+/*
+  53 rows of 2,766, and the only ones this app is actually about. Green rather than the amber accent
+  so it reads as a find rather than as another label in an amber interface.
+*/
+.poi-organic-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  vertical-align: 1px;
+  color: var(--ok, #4fd0ff);
+}
+
+.poi-table td:first-child {
+  white-space: nowrap;
+}
+
+/*
   The stability column is the panel's one opinion, so it is the one place colour is spent.
 
   Green is not "fresh" and amber is not "stale" — they are the opposite of the instinct. Green means

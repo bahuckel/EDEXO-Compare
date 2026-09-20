@@ -20,6 +20,8 @@ export const CarriersModal = lazy(() =>
   import("./CarriersModal").then((m) => ({ default: m.CarriersModal })),
 );
 
+export const PoiModal = lazy(() => import("./PoiModal").then((m) => ({ default: m.PoiModal })));
+
 export function InlineSpinner({ className }: { className?: string }) {
   return <span className={`inline-spinner${className ? ` ${className}` : ""}`} aria-hidden />;
 }

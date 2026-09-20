@@ -1544,6 +1544,65 @@ export interface CarrierDataStatusDTO {
   dssaCount: number;
 }
 
+/**
+ * One point of interest from EDAstro's combined catalogue.
+ *
+ * Two catalogues behind it and the thinner one shows: the 2,123 Galactic Mapping Project rows carry
+ * no `rating`, no `region` and no `summary`, so those read blank rather than zero. `key` is
+ * `source:id` because `id` alone collides on 551 rows.
+ */
+export interface PoiRowDTO {
+  key: string;
+  name: string;
+  /** The system as the galaxy map spells it. Blank on 94 of 2,766. */
+  system: string;
+  region: string;
+  typeLabel: string;
+  group: string;
+  organic: boolean;
+  distanceLy: number | null;
+  /** At most 200 characters. The full description stays on EDAstro's own page — see `url`. */
+  summary: string;
+  /** 1.07 to 9.3 where the catalogue has one; null for every GMP row. */
+  rating: number | null;
+  url: string;
+  source: string;
+}
+
+export interface PoiDataStatusDTO {
+  haveData: boolean;
+  rowCount: number;
+  fetchedAtMs: number | null;
+  cooldownMsRemaining: number;
+  sourceUrl: string;
+}
+
+export interface PoiQueryResultDTO {
+  rows: PoiRowDTO[];
+  matchCount: number;
+  status: PoiDataStatusDTO;
+  origin: { x: number; y: number; z: number } | null;
+}
+
+/**
+ * What Spansh says about one carrier, fetched on a row's own button.
+ *
+ * A second opinion, not a correction. Measured on 16 carriers: Spansh newer on 9, EDAstro newer on
+ * 3, same on 3, absent on 1 — so the panel shows both and overwrites nothing.
+ */
+export interface CarrierLiveFixDTO {
+  callsign: string;
+  system: string;
+  /** Spansh's last-seen timestamp, ISO, or null when it carries none. */
+  updatedAt: string | null;
+  /** From the commander, when a position is known. */
+  distanceLy: number | null;
+  /** True when Spansh names a different system from the cached row — the reason to press the button. */
+  differs: boolean;
+  /** Stable game id; the name match that found it is fuzzy, this is not. */
+  marketId: number | null;
+}
+
 export interface CarrierQueryResultDTO {
   rows: CarrierRowDTO[];
   /** Matches before the row limit, so the panel can say "100 of 19,541". */

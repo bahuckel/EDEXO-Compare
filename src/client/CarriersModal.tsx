@@ -26,7 +26,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CARRIER_SERVICE_OPTIONS, carrierServiceLabel } from "@shared/carrierServices";
 import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
-import type { CarrierQueryResultDTO, CarrierRowDTO } from "@shared/types";
+import type { CarrierLiveFixDTO, CarrierQueryResultDTO, CarrierRowDTO } from "@shared/types";
 
 /** Light years at a precision matching how far away the thing is. Mirrors the backlog panel's. */
 function ly(d: number | null): string {
@@ -63,6 +63,65 @@ function dwellVerdict(row: CarrierRowDTO): { text: string; tone: "good" | "warn"
   return { text: `sat ${ageLabel(row.dwellDays)}`, tone: "dim" };
 }
 
+/**
+ * The second opinion, under the row's own stability verdict.
+ *
+ * Deliberately nothing until pressed. One press is one small POST to Spansh for one carrier, which
+ * is a different bargain from the 21 MB catalogue and does not want a cooldown — but it is also not
+ * something to fire for two hundred rows because a panel opened.
+ *
+ * When the two sources name the same system, saying so is the useful answer: it is the only way the
+ * commander gets to treat a month-old sighting as probably still true.
+ */
+function CarrierLive({
+  state,
+  onCheck,
+}: {
+  state: CarrierLiveFixDTO | { error: string } | "loading" | undefined;
+  onCheck: () => void;
+}) {
+  if (state === "loading") return <div className="dim carriers-live">checking Spansh…</div>;
+
+  if (state && "error" in state) {
+    return (
+      <div className="carriers-live">
+        <span className="dim">{state.error}</span>{" "}
+        <button type="button" className="carriers-live__btn" onClick={onCheck}>
+          retry
+        </button>
+      </div>
+    );
+  }
+
+  if (state) {
+    const seen = state.updatedAt ? state.updatedAt.slice(0, 10) : "unknown";
+    return (
+      <div className={`carriers-live${state.differs ? " carriers-live--differs" : ""}`}>
+        {state.differs ? (
+          <>
+            <strong>Spansh: {state.system || "unknown"}</strong>
+            <span className="dim">
+              {" "}
+              seen {seen}
+              {state.distanceLy != null ? ` · ${Math.round(state.distanceLy).toLocaleString("en-US")} ly` : ""}
+            </span>
+          </>
+        ) : (
+          <span className="dim">Spansh agrees · seen {seen}</span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="carriers-live">
+      <button type="button" className="carriers-live__btn" onClick={onCheck}>
+        Check Spansh
+      </button>
+    </div>
+  );
+}
+
 /** Sighting ages, as chips. 0 means "any", which is the honest default for deep space. */
 /**
  * The sighting age as a phrase.
@@ -89,6 +148,16 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
   const [services, setServices] = useState<string[]>([]);
   const [maxSeen, setMaxSeen] = useState<number>(0);
   const [dssaOnly, setDssaOnly] = useState(false);
+  /*
+    Per-row Spansh answers, keyed by callsign.
+
+    Kept beside the list rather than merged into it, because the two sources disagree in both
+    directions -- measured on 16 carriers, Spansh was newer on 9 and EDAstro on 3 -- so this is a
+    second opinion shown next to the first, never a correction applied over it.
+  */
+  const [live, setLive] = useState<Record<string, CarrierLiveFixDTO | { error: string } | "loading">>(
+    {},
+  );
   const [searchInput, setSearchInput] = useState("");
   /*
     The query the server actually sees, a beat behind the box.
@@ -152,6 +221,24 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const checkSpansh = async (row: CarrierRowDTO) => {
+    setLive((prev) => ({ ...prev, [row.callsign]: "loading" }));
+    const params = new URLSearchParams({ callsign: row.callsign, system: row.system });
+    try {
+      const res = await fetch(`/api/carriers/live?${params.toString()}`);
+      const body = (await res.json()) as { ok?: boolean; fix?: CarrierLiveFixDTO; error?: string };
+      setLive((prev) => ({
+        ...prev,
+        [row.callsign]: body.ok && body.fix ? body.fix : { error: body.error ?? "Lookup failed." },
+      }));
+    } catch (e) {
+      setLive((prev) => ({
+        ...prev,
+        [row.callsign]: { error: e instanceof Error ? e.message : String(e) },
+      }));
     }
   };
 
@@ -360,6 +447,7 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
                       <td>{lastSeenPhrase(r.lastSeenDays)}</td>
                       <td className={`carriers-dwell carriers-dwell--${verdict.tone}`}>
                         {verdict.text}
+                        <CarrierLive state={live[r.callsign]} onCheck={() => void checkSpansh(r)} />
                       </td>
                       <td className="dim">
                         {r.services
