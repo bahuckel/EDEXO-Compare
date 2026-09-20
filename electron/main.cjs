@@ -9,6 +9,8 @@ const MAX_HUD_OVERLAYS = 8; // was 3; the owner wants every HUD selectable at on
 const HUD_STACK_GAP = 6;
 /** Ctrl+Alt+H hides and shows every HUD window at once (menus, screenshots), checked free by the owner. */
 const HUD_TOGGLE_SHORTCUT = "Control+Alt+H";
+/** How often the visible HUDs re-assert the top of the z-order. See {@link keepHudsOnTop}. */
+const HUD_KEEP_ON_TOP_MS = 4000;
 
 /*
   An overlay window is transparent, so any height it has beyond its content reads as empty space
@@ -235,6 +237,78 @@ async function restoreHudOverlays(iconForChild) {
  * Every HUD in the stack gets the same width — the widest one asked for — so the panels line up
  * as one column instead of four different boxes. The pages fill whatever width they are given.
  */
+/**
+ * Put one HUD back on top, and keep it there.
+ *
+ * Always-on-top is not a property Windows guarantees for the rest of a window's life. A game taking
+ * the foreground -- Elite does it on every alt-tab, and borderless with Fullscreen Optimizations
+ * behaves the same way as exclusive here -- can push every other topmost window below it. The flag
+ * is still set; the z-order says otherwise.
+ *
+ * This was asserted exactly once, at `ready-to-show`, so the first time Elite came forward the HUDs
+ * went behind it and nothing ever put them back. The commander's report reads as the hotkey failing
+ * ("does not appear"), and the tell that it is not the hotkey is that the same press works with the
+ * game minimised: the window is created, shown and positioned, and is simply underneath.
+ */
+function raiseHudWindow(win) {
+  if (!win || win.isDestroyed()) return;
+  try {
+    win.showInactive();
+  } catch {
+    try {
+      win.show();
+    } catch {
+      return;
+    }
+  }
+  // `screen-saver` is the highest level Electron offers; `floating` is the fallback for a platform
+  // that refuses it. Re-set rather than assumed: the level travels with the assertion.
+  try {
+    win.setAlwaysOnTop(true, "screen-saver");
+  } catch {
+    try {
+      win.setAlwaysOnTop(true, "floating");
+    } catch {
+      /* ignore */
+    }
+  }
+  try {
+    win.moveTop();
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Re-assert the whole visible stack, on a timer.
+ *
+ * Nothing tells an application that it has been pushed down the z-order, so the only way to hold the
+ * top is to ask for it again. Every few seconds is enough to be back before the commander looks, and
+ * cheap: three calls per window, none of which move focus -- `showInactive`, `setAlwaysOnTop` and
+ * `moveTop` all leave the foreground window alone, which matters when the foreground window is a
+ * game that would notice losing it.
+ *
+ * Stops itself whenever the HUDs are hidden or the stack empties, so an idle app runs no timer.
+ */
+let hudKeepOnTopTimer = null;
+function keepHudsOnTop() {
+  if (hudKeepOnTopTimer) return;
+  hudKeepOnTopTimer = setInterval(() => {
+    const live = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
+    if (hudHidden || live.length === 0) {
+      stopKeepingHudsOnTop();
+      return;
+    }
+    for (const s of live) raiseHudWindow(s.win);
+  }, HUD_KEEP_ON_TOP_MS);
+  if (typeof hudKeepOnTopTimer.unref === "function") hudKeepOnTopTimer.unref();
+}
+function stopKeepingHudsOnTop() {
+  if (!hudKeepOnTopTimer) return;
+  clearInterval(hudKeepOnTopTimer);
+  hudKeepOnTopTimer = null;
+}
+
 function relayoutHudStack() {
   const d = screen.getPrimaryDisplay();
   const wa = d.workArea;
@@ -398,14 +472,8 @@ async function reopenRememberedHuds() {
     }
   }
   relayoutHudStack();
-  for (const s of hudOverlayStack) {
-    if (!s.win || s.win.isDestroyed()) continue;
-    try {
-      s.win.showInactive();
-    } catch {
-      /* ignore */
-    }
-  }
+  for (const s of hudOverlayStack) raiseHudWindow(s.win);
+  keepHudsOnTop();
 }
 
 /** Hide or show every HUD window (the global shortcut). Windows keep their state; only visibility changes. */
@@ -433,13 +501,20 @@ function toggleHudVisibility(force) {
 
   for (const s of hudOverlayStack) {
     if (!s.win || s.win.isDestroyed()) continue;
-    try {
-      if (hudHidden) s.win.hide();
-      else s.win.showInactive();
-    } catch {
-      /* ignore */
+    if (hudHidden) {
+      try {
+        s.win.hide();
+      } catch {
+        /* ignore */
+      }
+      continue;
     }
+    // Showing is the moment the game most likely owns the top of the z-order, so this asks for it
+    // back rather than only making the window visible underneath.
+    raiseHudWindow(s.win);
   }
+  if (hudHidden) stopKeepingHudsOnTop();
+  else keepHudsOnTop();
   /*
     Showing is also a rescue, so it repositions.
 
@@ -508,21 +583,8 @@ function createHudOverlayWindow(width, height, iconForChild, parentWin) {
 
   win.once("ready-to-show", () => {
     relayoutHudStack();
-    try {
-      win.showInactive();
-    } catch {
-      win.show();
-    }
-    try {
-      win.setAlwaysOnTop(true, "screen-saver");
-    } catch {
-      win.setAlwaysOnTop(true, "floating");
-    }
-    try {
-      win.moveTop();
-    } catch {
-      /* ignore */
-    }
+    raiseHudWindow(win);
+    keepHudsOnTop();
   });
 
   win.on("closed", () => {
