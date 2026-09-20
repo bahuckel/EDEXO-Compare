@@ -1238,6 +1238,16 @@
         opacity: 0.3;
         cursor: default;
       }
+      .hud-warn {
+        margin: 6px 0 0;
+        padding: 7px 9px;
+        font-size: 0.72rem;
+        line-height: 1.45;
+        color: var(--hud-hi);
+        border: 1px solid var(--warn, #d9822b);
+        border-left-width: 3px;
+        background: rgba(217, 130, 43, 0.09);
+      }
       .hud-hint {
         margin: 6px 0 0;
         font-size: 0.72rem;
@@ -1733,6 +1743,12 @@
             </div>
             <ul class="hud-order" id="hudOrderList" aria-label="Order of the HUDs in the stack"></ul>
             <p class="hud-hint"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>H</kbd> hides and shows every HUD.</p>
+            <!--
+              Shown only when the game's own settings file says overlays cannot be drawn. A permanent
+              notice about a mode he is not in would be a wall of text on every open; this stays out
+              of the way until it is the answer to "why can I not see the HUD".
+            -->
+            <p class="hud-warn" id="hudDisplayWarn" hidden></p>
           </div>
           <button type="button" class="btn secondary" id="overlayPickClose">
             <span class="btn-lines"><strong>Close</strong></span>
@@ -2942,10 +2958,38 @@
           });
         }
 
+        /*
+          Elite's display mode decides whether a HUD can be seen at all: an always-on-top window
+          draws over a borderless game and cannot draw over an exclusive fullscreen one, which is a
+          Windows rule and not something this app can work around. The server reads the game's own
+          DisplaySettings.xml, so this says nothing unless the file actually says Fullscreen -- a
+          commander whose Elite lives somewhere this cannot find is not warned on a guess.
+
+          Asked on every open rather than once at boot: he changes the setting mid-session, and that
+          is exactly when he comes looking for this menu.
+        */
+        function refreshDisplayModeWarning() {
+          var el = document.getElementById("hudDisplayWarn");
+          if (!el) return;
+          fetch("/api/elite-display-mode")
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .then(function (j) {
+              var msg = j && typeof j.warning === "string" ? j.warning : "";
+              el.textContent = msg;
+              el.hidden = !msg;
+            })
+            .catch(function () {
+              el.hidden = true;
+            });
+        }
+
         if (btnOverlayMenu && overlayPickModal) {
           btnOverlayMenu.addEventListener("click", function () {
             overlayPickModal.classList.add("on");
             void refreshOverlayMenuChecks();
+            refreshDisplayModeWarning();
           });
         }
         if (overlayPickClose && overlayPickModal) {

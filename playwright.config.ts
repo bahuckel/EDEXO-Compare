@@ -12,6 +12,12 @@ import { defineConfig } from "@playwright/test";
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixtureJournal = path.resolve(here, "tests", "fixtures", "journal-smoke");
+/*
+  A fake Elite Options tree whose DisplaySettings.xml says Fullscreen, so the HUD menu's
+  "switch to Borderless" warning has something real to react to. Pointing at the commander's own
+  settings would make the assertion depend on how he happens to have the game configured tonight.
+*/
+const fixtureEliteOptions = path.resolve(here, "tests", "fixtures", "elite-options-fullscreen");
 
 export default defineConfig({
   testDir: "e2e",
@@ -42,6 +48,7 @@ export default defineConfig({
       EDEXO_DEV_PORT: "5199",
       EDEXO_DEV_API_PORT: "7119",
       ED_JOURNAL_DIR: fixtureJournal,
+      EDEXO_ELITE_OPTIONS_DIR: fixtureEliteOptions,
       EDEXO_DISABLE_JOURNAL_CACHE: "1",
     },
   },

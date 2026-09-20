@@ -1,4 +1,5 @@
 import { parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
+import { eliteDisplayWarning, readEliteDisplayMode } from "./eliteDisplayMode.js";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -723,6 +724,18 @@ export function createHttpServer(opts: {
   app.get("/api/status", (_req, res) => {
     perfCount("http.apiStatus");
     res.json(opts.getStatus());
+  });
+
+  /**
+   * Whether Elite is in a display mode the HUDs can be drawn over.
+   *
+   * Read fresh on every call rather than cached at boot: the commander changes this while the app is
+   * running, and a cached "borderless" would keep telling him everything is fine while he stares at
+   * a screen with no overlay on it.
+   */
+  app.get("/api/elite-display-mode", (_req, res) => {
+    const status = readEliteDisplayMode();
+    res.json({ ...status, warning: eliteDisplayWarning(status) });
   });
 
   app.get("/api/state", (req, res) => {
