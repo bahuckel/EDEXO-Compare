@@ -11,6 +11,18 @@ import { spectralKeysFromJournalStarType } from "./starSpectralKeys.js";
 import { isBacteriumSpeciesEntry } from "./speciesBacterium.js";
 import { formatGenusStarColorSoftOneLine } from "./genusStarColorSoft.js";
 import { volcanismJournalMatchesFragments, expandVolcanismCriterionFragments } from "./volcanismMatch.js";
+import {
+  describePresenceBranches,
+  evaluatePresenceBranch,
+  describeBodyForPresence,
+} from "./presenceBranches.js";
+import {
+  REQUIRED_GAS_MIN_SHARE_PCT,
+  describeGasBand,
+  gasBandVerdict,
+  requiredAtmosphereShare,
+} from "./atmosphereGasShare.js";
+import { keysForRequirement } from "./systemBodyGates.js";
 
 const OPEN_LO = -1e15;
 const OPEN_HI = 1e15;
@@ -202,6 +214,109 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     });
   }
 
+  /*
+    Presence branches — the species is here only if one of them holds.
+
+    Placed straight after atmosphere because it is an exclusion, not a preference: when it fails the
+    matcher does not demote the row, it removes the species from the body entirely. It is drawn for
+    bacterium too, unlike the atmosphere and pressure cards above, because "clutter" is a judgement
+    about a preference and this is the rule that decides the answer.
+  */
+  if (c.presenceAnyOf?.length) {
+    const lines = [`Needs one of: ${describePresenceBranches(c.presenceAnyOf)}`];
+    let tier: EncyclopediaSpawnTier = "yellow";
+    let caption = "No body scan";
+    if (scan) {
+      let passed: string | null = null;
+      for (const branch of c.presenceAnyOf) {
+        passed = evaluatePresenceBranch(branch, scan, planetBand);
+        if (passed) break;
+      }
+      tier = passed ? "blue" : "red";
+      caption = passed ?? `Not satisfied — ${describeBodyForPresence(scan)}`;
+    }
+    out.push({ id: "presence", label: "Presence", lines, caption, tier });
+  }
+
+  /*
+    How much of the air has to be one gas — the axis `AtmosphereType` cannot express.
+
+    Without this card Fonticulua campestris and upupam render identically ("Allowed: Argon") while
+    the model separates them on 51.97-100 % against 0.36-49.68 %. Drawn for bacterium as well, for
+    the same reason: Bacterium acies keys on 85-100 % neon and its card was otherwise "Any".
+  */
+  if (c.atmosphereGasSharePct?.length) {
+    const lines = c.atmosphereGasSharePct.map(
+      (band) => `${describeGasBand(band)} of the atmosphere, by composition`,
+    );
+    let tier: EncyclopediaSpawnTier = "yellow";
+    let caption = "No body scan";
+    if (scan) {
+      const verdicts = c.atmosphereGasSharePct.map((band) => ({ band, v: gasBandVerdict(scan, band) }));
+      if (verdicts.every((x) => x.v.pct === null)) {
+        tier = "yellow";
+        caption = "No AtmosphereComposition on this scan";
+      } else {
+        const bad = verdicts.find((x) => !x.v.ok);
+        tier = bad ? "red" : "blue";
+        const shown = bad ?? verdicts[0]!;
+        caption = `${shown.band.gas} ${(shown.v.pct ?? 0).toFixed(2)} %`;
+      }
+    }
+    out.push({ id: "gas-share", label: "Gas share", lines, caption, tier });
+  }
+
+  /*
+    A gas the genus cannot live without, measured against how much of it is actually there.
+
+    `atmosphereTypeAnyOf` above lists what the codex mentions and is soft, because the corpus may
+    know better. This one is the genus saying "no sulphur dioxide, no Recepta", and a trace is not a
+    habitat — hence the floor.
+  */
+  if (c.atmosphereTypeRequiredAnyOf?.length) {
+    const required = c.atmosphereTypeRequiredAnyOf;
+    const lines = [
+      `Needs ${required.join(" / ")} — at least ${REQUIRED_GAS_MIN_SHARE_PCT} % of the atmosphere.`,
+    ];
+    let tier: EncyclopediaSpawnTier = "yellow";
+    let caption = "No body scan";
+    if (scan) {
+      const share = requiredAtmosphereShare(scan, normalizeScanAtmosphereForMatch(scan), required);
+      if (share.kind === "ok") {
+        tier = "blue";
+        caption = share.pct === null ? `${share.gas} atmosphere` : `${share.gas} ${share.pct.toFixed(2)} %`;
+      } else if (share.kind === "trace") {
+        tier = "red";
+        caption = `${share.gas} only ${(share.pct ?? 0).toFixed(2)} % — a trace`;
+      } else {
+        tier = "red";
+        caption = "Not in the composition";
+      }
+    }
+    out.push({ id: "required-gas", label: "Required gas", lines, caption, tier });
+  }
+
+  /*
+    Bodies that must exist elsewhere in the system.
+
+    Stated, never judged here: this builder is given one scan and the gate needs the whole system's
+    bodies, so a verdict would be a guess. Amphora plant and the Brain Trees are the rows that carry
+    it, and until now the encyclopedia said nothing about it at all.
+  */
+  if (c.systemBodyClassesAnyOf?.length) {
+    const wanted = c.systemBodyClassesAnyOf;
+    out.push({
+      id: "system-bodies",
+      label: "Elsewhere in the system",
+      lines: [
+        `The system must also hold: ${wanted.join(" / ")}`,
+        keysForRequirement(wanted[0] ?? "").length > 1 ? "Matched loosely — related body classes count." : "",
+      ].filter(Boolean),
+      caption: "Checked against the whole system, not this body",
+      tier: "neutral",
+    });
+  }
+
   /* Landable */
   if (c.landable === true) {
     const lines = ["Landable bodies only."];
@@ -306,10 +421,22 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     out.push({ id: "surface-temperature", label: "Surface temperature", lines, caption, tier });
   }
 
-  /* Codex-linked max temperature when atmosphere subset matches — skip bacterium encyclopedia clutter. */
+  /*
+    Codex-linked temperature when the atmosphere subset matches — skipped for bacterium clutter.
+
+    Both halves are drawn. Concha renibus reads 180-195 K *for carbon dioxide only*, and the card
+    said "cap ≤ 195 K" — half a rule, which reads as "anything colder is fine" when the floor is the
+    part that excludes. The verdict below still tests the cap, because the cap is what the matcher
+    gates on; the floor is stated so the reader sees the band the data actually carries.
+  */
   if (!bac && c.whenAtmosphereLinkedMaxTempK !== undefined) {
     const cap = c.whenAtmosphereLinkedMaxTempK;
-    const lines = [`Atmosphere-linked band cap ≤ ${cap} K`];
+    const floor = c.whenAtmosphereLinkedMinTempK;
+    const lines = [
+      floor !== undefined
+        ? `Atmosphere-linked band ${floor}–${cap} K`
+        : `Atmosphere-linked band cap ≤ ${cap} K`,
+    ];
     let tier: EncyclopediaSpawnTier = "neutral";
     let caption = "";
 
@@ -331,7 +458,13 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       caption = `Band max ${planetBand.maxK} K ≤ ${cap} K`;
     }
 
-    out.push({ id: "linked-temp-cap", label: "Atmosphere-linked temperature cap", lines, caption, tier });
+    out.push({
+      id: "linked-temp-cap",
+      label: floor !== undefined ? "Atmosphere-linked temperature band" : "Atmosphere-linked temperature cap",
+      lines,
+      caption,
+      tier,
+    });
   }
 
   /* Journal numeric pressure gate — hidden for bacterium (spawn cards stay minimal). */

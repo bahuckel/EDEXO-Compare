@@ -11,6 +11,18 @@ import type {
   OrganicGenusLock,
 } from "../shared/types.js";
 import { describeSystemBodyVerdict, evaluateSystemBodyGate } from "../shared/systemBodyGates.js";
+import {
+  REQUIRED_GAS_MIN_SHARE_PCT,
+  requiredAtmosphereShare,
+  gasSharePercent,
+} from "../shared/atmosphereGasShare.js";
+export { REQUIRED_GAS_MIN_SHARE_PCT } from "../shared/atmosphereGasShare.js";
+import {
+  describePresenceBranches,
+  evaluatePresenceBranch,
+  describeBodyForPresence,
+} from "../shared/presenceBranches.js";
+export { PRESENCE_BRANCH_FIELDS } from "../shared/presenceBranches.js";
 import { atmosphereIsUnfavoured } from "../shared/atmospherePreference.js";
 import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "../shared/journalPhysics.js";
 import {
@@ -106,56 +118,6 @@ const GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE = new Set<string>(["brain-tree"]);
  * line and it is the only number in this file that came from playing the game rather than from
  * measuring the corpus, which is why it is named rather than inlined.
  */
-export const REQUIRED_GAS_MIN_SHARE_PCT = 5;
-
-/**
- * Is the required gas present in usable quantity?
- *
- * Three answers, because they read differently to a commander: the gas is the atmosphere (`ok`), it
- * is in the mix but a trace (`trace`, with the number), or it is not there at all (`absent`).
- *
- * `AtmosphereType` naming the gas is enough on its own — that is the game saying this *is* a sulphur
- * dioxide world — and it is the only path open for a scan that predates `AtmosphereComposition` or
- * arrived from a cache that dropped it. Without composition we cannot measure a trace, and inventing
- * a rejection from missing data is worse than letting a rare body through.
- */
-function requiredAtmosphereShare(
-  scan: PlanetScan,
-  atmoNorm: string,
-  required: readonly string[],
-): { kind: "ok" | "trace" | "absent"; pct: number | null; gas: string } {
-  const wanted = required.filter((r) => r?.trim());
-  const scanKey = atmosphereCompositionKey(atmoNorm);
-  for (const w of wanted) {
-    if (
-      w === atmoNorm ||
-      w.toLowerCase() === atmoNorm.toLowerCase() ||
-      atmosphereCompositionKey(w) === scanKey
-    ) {
-      return { kind: "ok", pct: null, gas: w };
-    }
-  }
-  const comp = scan.atmosphereComposition;
-  if (!Array.isArray(comp) || comp.length === 0) return { kind: "absent", pct: null, gas: wanted[0] ?? "" };
-  let best: { pct: number; gas: string } | null = null;
-  for (const row of comp) {
-    const name = String(row?.Name ?? row?.name ?? "").trim();
-    if (!name) continue;
-    const key = atmosphereCompositionKey(name);
-    const hit = wanted.find(
-      (w) => w.toLowerCase() === name.toLowerCase() || atmosphereCompositionKey(w) === key,
-    );
-    if (!hit) continue;
-    const pctRaw = row?.Percent ?? row?.percent;
-    const pct = typeof pctRaw === "number" && Number.isFinite(pctRaw) ? pctRaw : 0;
-    if (!best || pct > best.pct) best = { pct, gas: name };
-  }
-  if (!best) return { kind: "absent", pct: null, gas: wanted[0] ?? "" };
-  return best.pct >= REQUIRED_GAS_MIN_SHARE_PCT
-    ? { kind: "ok", pct: best.pct, gas: best.gas }
-    : { kind: "trace", pct: best.pct, gas: best.gas };
-}
-
 /** Codex list entry `ALL` means any allowed value for that gate (match any scan). */
 function codexListMeansAll(values: string[] | undefined): boolean {
   return !!values?.some((v) => (v ?? "").trim().toUpperCase() === "ALL");
@@ -470,14 +432,7 @@ export function speciesMatchesExcludingTempPressure(
     // may not, and a rejection invented from missing data is worse than a rare body let through.
     if (Array.isArray(comp) && comp.length > 0) {
       for (const band of gasBands) {
-        const wantKey = atmosphereCompositionKey(band.gas);
-        let pct = 0;
-        for (const row of comp) {
-          const name = String(row?.Name ?? row?.name ?? "").trim();
-          if (!name || atmosphereCompositionKey(name) !== wantKey) continue;
-          const raw = row?.Percent ?? row?.percent;
-          if (typeof raw === "number" && Number.isFinite(raw)) pct = Math.max(pct, raw);
-        }
+        const pct = gasSharePercent(scan, band.gas) ?? 0;
         const belowMin = band.min !== undefined && pct < band.min;
         const aboveMax = band.max !== undefined && pct > band.max;
         if (!belowMin && !aboveMax) {
@@ -832,123 +787,6 @@ export function speciesMatchesExcludingTempPressure(
 /**
  * Strict match: temp/pressure are hard gates using estimated surface band vs species range.
  */
-/**
- * The fields a presence branch may carry.
- *
- * Anything outside this list would be **ignored** by {@link evaluatePresenceBranch}, and a branch
- * whose only requirement is ignored passes on every body — the rule would disappear without a test
- * failing. `tests/presenceAnyOf.test.ts` walks every shipped branch against this list so that
- * cannot happen quietly; extend both together.
- *
- * Atmosphere is deliberately **not** here. The main path's atmosphere verdict is not a comparison —
- * it folds `…Rich` suffixes, reads composition rather than the type label, consults the thin-pressure
- * category and lets observation argue — and a plain-comparison copy of it inside a branch would
- * agree with it on most bodies and disagree on exactly the awkward ones. A branch that needs an
- * atmosphere should wait until that logic can be shared rather than approximated.
- */
-export const PRESENCE_BRANCH_FIELDS = [
-  "volcanismActiveRequired",
-  "surfaceTemperatureK",
-  "planetClassAnyOf",
-  "surfaceGravity",
-  "surfacePressure",
-  "landable",
-] as const satisfies readonly (keyof SpeciesCriterion)[];
-
-/**
- * One branch against one body: every field it carries has to pass, in plain comparisons.
- *
- * Returns the reason it passed, or null. No tolerance and no observation rescue anywhere in here —
- * see {@link SpeciesCriterion.presenceAnyOf} for why both would defeat the purpose.
- */
-function evaluatePresenceBranch(
-  b: SpeciesCriterion,
-  scan: PlanetScan,
-  planetTempBand: PlanetTemperatureBand | null,
-): string | null {
-  const parts: string[] = [];
-
-  if (b.volcanismActiveRequired === true) {
-    if (!journalReportsAnyVolcanism(scan)) return null;
-    parts.push(`volcanism present (${scan.Volcanism})`);
-  }
-
-  if (b.surfaceTemperatureK) {
-    const { min, max } = b.surfaceTemperatureK;
-    const measured = scan.SurfaceTemperature;
-    if (typeof measured === "number" && Number.isFinite(measured)) {
-      if (!inRange(measured, min, max)) return null;
-      parts.push(`${measured.toFixed(1)} K`);
-    } else if (planetTempBand) {
-      /*
-        No thermometer. The estimated band is allowed to answer, because refusing every unscanned
-        body would hide the species from the FSS list where it is most useful — but it answers on
-        overlap, which is the weakest reading that is still honest.
-      */
-      if (!tempBandsOverlap(planetTempBand, { lo: min ?? -Infinity, hi: max ?? Infinity })) return null;
-      parts.push(`estimated ${planetTempBand.minK.toFixed(0)}–${planetTempBand.maxK.toFixed(0)} K`);
-    } else {
-      return null;
-    }
-  }
-
-  if (b.planetClassAnyOf?.length) {
-    if (!scan.PlanetClass || !b.planetClassAnyOf.includes(scan.PlanetClass)) return null;
-    parts.push(scan.PlanetClass);
-  }
-
-  if (b.surfaceGravity && (b.surfaceGravity.min !== undefined || b.surfaceGravity.max !== undefined)) {
-    const gRaw = scan.SurfaceGravity;
-    if (gRaw === undefined || gRaw === null) return null;
-    const g = journalSurfaceGravityToG(gRaw);
-    if (!inRange(g, b.surfaceGravity.min, b.surfaceGravity.max)) return null;
-    parts.push(`${g.toFixed(3)} g`);
-  }
-
-  if (b.surfacePressure && (b.surfacePressure.min !== undefined || b.surfacePressure.max !== undefined)) {
-    const p = scan.SurfacePressure;
-    if (
-      typeof p !== "number" ||
-      !Number.isFinite(p) ||
-      !inRange(p, b.surfacePressure.min, b.surfacePressure.max)
-    )
-      return null;
-    parts.push(`${p.toFixed(3)} atm`);
-  }
-
-  if (b.landable !== undefined) {
-    if (scan.Landable !== b.landable) return null;
-    parts.push(b.landable ? "landable" : "not landable");
-  }
-
-  return parts.length ? parts.join(", ") : null;
-}
-
-/** How a branch reads in a failure message, before the body is compared to it. */
-function describePresenceBranch(b: SpeciesCriterion): string {
-  const parts: string[] = [];
-  if (b.volcanismActiveRequired === true) parts.push("volcanism present");
-  if (b.surfaceTemperatureK) {
-    const { min, max } = b.surfaceTemperatureK;
-    if (min !== undefined && max !== undefined) parts.push(`surface temperature ${min}–${max} K`);
-    else if (min !== undefined) parts.push(`surface temperature ≥ ${min} K`);
-    else if (max !== undefined) parts.push(`surface temperature ≤ ${max} K`);
-  }
-  if (b.planetClassAnyOf?.length) parts.push(b.planetClassAnyOf.join(" / "));
-  if (b.surfaceGravity) parts.push(`${b.surfaceGravity.min ?? "−∞"}…${b.surfaceGravity.max ?? "∞"} g`);
-  if (b.surfacePressure) parts.push(`${b.surfacePressure.min ?? "−∞"}…${b.surfacePressure.max ?? "∞"} atm`);
-  if (b.landable !== undefined) parts.push(b.landable ? "landable" : "not landable");
-  return parts.join(" and ") || "no requirement";
-}
-
-/** What the body actually has, for the other half of the failure sentence. */
-function describeBodyForPresence(scan: PlanetScan): string {
-  const volc = journalReportsAnyVolcanism(scan) ? scan.Volcanism : "No volcanism";
-  const t = scan.SurfaceTemperature;
-  const temp = typeof t === "number" && Number.isFinite(t) ? `${t.toFixed(1)} K` : "no temperature reading";
-  return `${volc}, ${temp}`;
-}
-
 export function speciesMatchesCriteria(
   entry: SpeciesEntry,
   scan: PlanetScan,
@@ -984,7 +822,7 @@ export function speciesMatchesCriteria(
     } else {
       failures.push({
         field: "Presence",
-        detail: `${c.presenceAnyOf.map(describePresenceBranch).join(", or ")} — none satisfied: ${describeBodyForPresence(scan)}`,
+        detail: `${describePresenceBranches(c.presenceAnyOf)} — none satisfied: ${describeBodyForPresence(scan)}`,
       });
     }
   }
