@@ -57,7 +57,17 @@ export function allStarParentIds(parents: unknown): number[] {
 
 /**
  * Resolve the host star `BodyID` for exobiology context: walk `Parents[0]` planet-chain until `Star`,
- * else smallest star id listed anywhere in `Parents`.
+ * else the **nearest** star listed in `Parents`.
+ *
+ * `Parents` is ordered nearest-first, so when the walk stops at a barycentre the first `Star` entry
+ * behind it is the body's stellar ancestor and any later one is that star's own ancestor. This used
+ * to take the *smallest* id instead, which is the system primary rather than the host.
+ *
+ * Measured against Spansh's independent `hostStarBodyId` over 17,487 corpus bodies whose parent
+ * chains match exactly: 99.51 % agreement, and **all 86 disagreements were this**. Their shapes say
+ * it plainly — 70 `Null>Star>Star`, 11 `Null>Star>Null>Star` — for example
+ * `HIP 104435 7 e`, `[{Null:56},{Star:50},{Null:49},{Star:0}]`, where 56 orbits star 50 and we
+ * answered 0. Since the fix the two derivations agree on every comparable body.
  */
 export function resolveHostStarBodyId(
   rec: ExplorationScanRecord,
@@ -81,7 +91,8 @@ export function resolveHostStarBodyId(
   }
   const stars = allStarParentIds(rec.parents);
   if (!stars.length) return null;
-  return stars.reduce((a, b) => Math.min(a, b));
+  // Nearest-first: the first star behind the barycentre is the host, the rest are its ancestors.
+  return stars[0]!;
 }
 
 /**
@@ -107,8 +118,24 @@ export function hostStarBodyIdsForExobiology(
   const visitedPlanets = new Set<number>();
   let cur: ExplorationScanRecord | null = rec;
   for (let d = 0; d < 24 && cur; d++) {
-    for (const id of allStarParentIds(cur.parents)) found.add(id);
-    if (found.size > 0) break;
+    /*
+      Only the nearest star in the chain, not every star in it.
+
+      Same ordering argument as {@link resolveHostStarBodyId}: `Parents` runs nearest-first, so a
+      chain like `[{Null:56},{Star:50},{Null:49},{Star:0}]` says the body's barycentre orbits star 50
+      and star 50 in turn orbits barycentre 49 with star 0. Star 0 is the host's ancestor, not a
+      possible host, and returning both made the set a claim about two stars that may be nothing
+      alike. On the corpus this narrows 1,265 bodies to their real host.
+
+      The genuinely ambiguous case is the one below — a chain naming *no* star, which is the shape
+      that put an M-dwarf host on Electricae pluma — and it is untouched: 1,987 corpus bodies still
+      resolve through the designation.
+    */
+    const inChain = allStarParentIds(cur.parents);
+    if (inChain.length > 0) {
+      found.add(inChain[0]!);
+      break;
+    }
     const parents = cur.parents;
     if (!Array.isArray(parents) || parents.length === 0) break;
     const im = parseJournalParentEntry(parents[0]);

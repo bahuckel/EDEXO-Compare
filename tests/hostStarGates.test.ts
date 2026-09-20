@@ -133,9 +133,22 @@ describe("resolving which stars a body could be orbiting", () => {
     expect(hostStarBodyIdsForExobiology(rows[2]!, index(rows))).toEqual([0]);
   });
 
-  it("keeps both stars when the chain names a pair", () => {
+  /**
+   * A chain naming two stars is not a pair — it is a hierarchy.
+   *
+   * This expected `[0, 48]`, on the reading that either star might be the host. `Parents` is ordered
+   * nearest-first, so `[{Star:48},{Star:0}]` says the body orbits star 48 and star 48 orbits star 0:
+   * 48 is the host and 0 is the host's ancestor, which may be nothing like it.
+   *
+   * The correction is measured, not argued. Our answer was checked against Spansh's independent
+   * `hostStarBodyId` over 17,487 corpus bodies with identical parent chains: 99.51 % agreement, and
+   * every one of the 86 disagreements was this shape. Reading the order took it to 100.00 %.
+   *
+   * The genuinely ambiguous case — a chain naming **no** star — is below and is untouched.
+   */
+  it("takes the nearest star when the chain names a hierarchy", () => {
     const rows = [rec(0, [], "A"), rec(48, [{ Star: 0 }], "Y"), rec(50, [{ Star: 48 }, { Star: 0 }])];
-    expect(hostStarBodyIdsForExobiology(rows[2]!, index(rows)).sort()).toEqual([0, 48]);
+    expect(hostStarBodyIdsForExobiology(rows[2]!, index(rows))).toEqual([48]);
   });
 
   /**
