@@ -1,0 +1,47 @@
+/*
+  Carriers panel.
+
+  Deliberately thin: the panel reuses the backlog modal's shell, chips and table (`.fdb-*`), which
+  are already themed for both the default and cockpit skins. Only the two things that are genuinely
+  new live here — the fetch bar, and the stability column.
+*/
+
+.carriers-fetch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  margin: 0 0 0.6rem;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  background: var(--panel-2, rgba(255, 255, 255, 0.03));
+}
+
+.carriers-fetch .dim {
+  font-size: 0.82rem;
+}
+
+.carriers-table td {
+  vertical-align: top;
+}
+
+/*
+  The stability column is the panel's one opinion, so it is the one place colour is spent.
+
+  Green is not "fresh" and amber is not "stale" — they are the opposite of the instinct. Green means
+  the carrier had sat still for a month or more when last seen, so it is probably still there. Amber
+  means the sighting may be hours old and still tells you nothing, because the carrier was moving.
+  See the panel's own header comment for the measurement.
+*/
+.carriers-dwell--good {
+  color: var(--ok, #7ddc9a);
+}
+
+.carriers-dwell--warn {
+  color: var(--warn, #e0b062);
+}
+
+.carriers-dwell--dim {
+  color: var(--dim, rgba(255, 255, 255, 0.55));
+}

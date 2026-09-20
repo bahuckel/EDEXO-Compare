@@ -4,7 +4,7 @@
 import { useLastStateAt } from "./useLiveSnapshot";
 import { useConfirm, useToast } from "./ui/feedback";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
-import { IconChevronDown, IconEncyclopedia, IconExobiology, IconFeeder, IconGalaxy, IconOptions, IconBacklog, IconSession } from "./ui/icons";
+import { IconChevronDown, IconEncyclopedia, IconExobiology, IconFeeder, IconGalaxy, IconOptions, IconBacklog, IconCarrier, IconSession } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useCallback, lazy, memo, Suspense, useEffect, useId, useRef, useState, MouseEvent as ReactMouseEvent, ReactNode } from "react";
@@ -18,7 +18,7 @@ import { DataValueBreakdownModal, FeederModal, MyExobiologyModal, SessionLogModa
 import { ExoDataAlertsHeaderHub } from "./ExoDataAlertsHub";
 import { measurePopoverSide, type PopoverSide } from "./ui/popoverSide";
 import { MapOptionsModal } from "./OptionsModal";
-import { EncyclopediaModal, FirstDiscoveryBacklogModal, InlineSpinner, ModalLoading } from "./SharedModals";
+import { CarriersModal, EncyclopediaModal, FirstDiscoveryBacklogModal, InlineSpinner, ModalLoading } from "./SharedModals";
 import { EDEXO_HEADER_TRAY_LS, readLsBool, writeLsBool } from "./lsPrefs";
 import { readRouteHeaderMetricMode, routeHeaderBarAria, routeHeaderBarModel, routeHeaderToggleTitleHint, routeNavCardTitle, writeRouteHeaderMetricMode } from "./routeHeader";
 import type { RouteHeaderMetricMode } from "./routeHeader";
@@ -461,6 +461,7 @@ export const HeaderBar = memo(function HeaderBar({
   const [myExoOpen, setMyExoOpen] = useState(false);
   const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
   const [backlogOpen, setBacklogOpen] = useState(false);
+  const [carriersOpen, setCarriersOpen] = useState(false);
   const [notableQuick, setNotableQuick] = useState<{
     notable: NotableBodyInfo;
     x: number;
@@ -683,7 +684,7 @@ export const HeaderBar = memo(function HeaderBar({
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               aria-label="Menu"
-              title="Menu: my exobiology, unfinished business, feeder, galaxy map, encyclopedia, options"
+              title="Menu: my exobiology, unfinished business, carriers, feeder, galaxy map, encyclopedia, options"
             >
               <span className="appbar-menu-glyph" aria-hidden="true" />
             </button>
@@ -716,6 +717,21 @@ export const HeaderBar = memo(function HeaderBar({
               aria-label="Unfinished business"
             >
               <IconBacklog />
+            </button>
+          </Tooltip>
+          {/*
+            Carriers is in the menu rather than the app bar because it is a thing the commander goes
+            looking for — where do I sell a full sample bag — not something they watch. The panel
+            holds no data until they press its button.
+          */}
+          <Tooltip text="Carriers — fleet carriers near you, from EDAstro. Downloads on request; positions are last sightings.">
+            <button
+              type="button"
+              className="appbar-icon-btn"
+              onClick={() => setCarriersOpen(true)}
+              aria-label="Carriers"
+            >
+              <IconCarrier />
             </button>
           </Tooltip>
           {feeder.available ? (
@@ -1016,6 +1032,12 @@ export const HeaderBar = memo(function HeaderBar({
       snap.currentSystemAddress != null &&
       snap.viewingSystemAddress !== snap.currentSystemAddress ? (
         <p className="sub-live dim header-commander-away">Commander: {snap.currentSystem ?? "—"}</p>
+      ) : null}
+
+      {carriersOpen ? (
+        <Suspense fallback={<ModalLoading />}>
+          <CarriersModal onClose={() => setCarriersOpen(false)} />
+        </Suspense>
       ) : null}
 
       {backlogOpen ? (

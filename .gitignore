@@ -113,3 +113,6 @@ photo-contributions.txt
 # with the inputs can produce it; whether the artifact itself ships is the owner's call and needs a
 # line in NOTICE.md when it does.
 /data/galaxy/
+
+# Local dev-harness launch config (Browser pane); not part of the app.
+/.claude/launch.json

@@ -16,6 +16,10 @@ export const FirstDiscoveryBacklogModal = lazy(() =>
   import("./FirstDiscoveryBacklogModal").then((m) => ({ default: m.FirstDiscoveryBacklogModal })),
 );
 
+export const CarriersModal = lazy(() =>
+  import("./CarriersModal").then((m) => ({ default: m.CarriersModal })),
+);
+
 export function InlineSpinner({ className }: { className?: string }) {
   return <span className={`inline-spinner${className ? ` ${className}` : ""}`} aria-hidden />;
 }

@@ -126,6 +126,17 @@ export function IconChevronDown({ className }: { className?: string }) {
   );
 }
 
+/** Carriers: the flat disc and central tower a Drake-Class reads as from the side. */
+export function IconCarrier({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 14h18l-3 3H6z" />
+      <path d="M9 14V9h6v5" />
+      <path d="M12 9V4M9.5 6.5h5" />
+    </svg>
+  );
+}
+
 /** The session log: a page with lines, the last one a check. */
 export function IconSession({ className }: { className?: string }) {
   return (

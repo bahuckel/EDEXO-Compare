@@ -1495,6 +1495,51 @@ export interface FirstDiscoveryBacklogDTO {
   computedAt: string;
 }
 
+/**
+ * One fleet carrier as EDAstro last saw it.
+ *
+ * **Two ages, and they answer different questions.** `lastSeenDays` is how old the record is;
+ * `dwellDays` is how long the carrier had already sat still at the moment of that sighting, and it
+ * is the one that predicts whether it is still there. Measured across the whole file, carriers are
+ * bimodal — median dwell 1 day, p90 180 — so a long-parked carrier on a stale record is a better bet
+ * than a mover on a fresh one. Both go on the row; neither is presented as a position.
+ */
+export interface CarrierRowDTO {
+  callsign: string;
+  /** Often empty: EDAstro only learns the name from events that carry it. */
+  name: string;
+  system: string;
+  systemAddress: number | null;
+  region: string;
+  /** Null when the app has not seen the commander jump yet, which is a real state on a cold start. */
+  distanceLy: number | null;
+  lastSeenDays: number | null;
+  dwellDays: number | null;
+  /** Raw EDAstro service keys; `carrierServices.ts` turns them into names. */
+  services: string[];
+}
+
+/** Whether the commander has a carrier file yet, how old it is, and whether the button is armed. */
+export interface CarrierDataStatusDTO {
+  haveData: boolean;
+  rowCount: number;
+  /** When we last asked EDAstro — what the cooldown counts. */
+  fetchedAtMs: number | null;
+  /** `Last-Modified` as EDAstro reported it: how old the data is, rather than the request. */
+  sourceLastModified: string | null;
+  cooldownMsRemaining: number;
+  sourceUrl: string;
+}
+
+export interface CarrierQueryResultDTO {
+  rows: CarrierRowDTO[];
+  /** Matches before the row limit, so the panel can say "100 of 19,541". */
+  matchCount: number;
+  status: CarrierDataStatusDTO;
+  /** Null when no jump has been seen; the panel then lists without distances. */
+  origin: { x: number; y: number; z: number } | null;
+}
+
 export interface ExoPayoutRangeDTO {
   minCr: number;
   maxCr: number;

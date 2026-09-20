@@ -37,6 +37,12 @@ import { findGenusPhotosFolder, findGenusNotesFile } from "./speciesTreeLoader.j
 import { perfBytes, perfCount, perfTime } from "./perf.js";
 import { createLanAuthGuard, isLoopbackAddress, requestIsAuthorized } from "./lanAuth.js";
 import { EDSM_USER_AGENT } from "./edsmSystemHydration.js";
+import {
+  countCarriers,
+  fetchCarrierData,
+  queryCarriers,
+  readCarrierStatus,
+} from "./edastroCarriers.js";
 import { isEdsmCatchUpScope, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 
 export function getLanIPv4s(port: number): string[] {
@@ -724,6 +730,61 @@ export function createHttpServer(opts: {
   app.get("/api/status", (_req, res) => {
     perfCount("http.apiStatus");
     res.json(opts.getStatus());
+  });
+
+  /*
+    Fleet carriers, from EDAstro. Three routes, and none of them runs by itself.
+
+    The commander presses a button, `fetch` downloads a 21 MB CSV to their own machine, and `query`
+    answers from that file forever after. There is no background poll and no per-jump call: the
+    source rebuilds about daily. See `docs/edastro-integration.md` for the licence position — the
+    short version is that we ship the endpoint and never the data, so the fetch must stay on the
+    commander's machine and must never be proxied through here.
+  */
+  app.get("/api/carriers/status", (_req, res) => {
+    res.json(readCarrierStatus());
+  });
+
+  app.post("/api/carriers/fetch", async (req, res) => {
+    const force = req.body?.force === true;
+    try {
+      const result = await fetchCarrierData({ force });
+      if (!result.ok) {
+        // 409 rather than 500: a cooldown is the server working, not failing, and the panel shows
+        // the message beside a button it leaves enabled.
+        res.status(409).json({ ok: false, error: result.error, status: result.status });
+        return;
+      }
+      res.json({ ok: true, unchanged: result.unchanged === true, status: result.status });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.get("/api/carriers/query", (req, res) => {
+    const servicesRaw = req.query?.services;
+    const services =
+      typeof servicesRaw === "string" && servicesRaw.trim()
+        ? servicesRaw
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
+    const maxLastSeenDays = Number(req.query?.maxLastSeenDays);
+    const limit = Number(req.query?.limit);
+    const origin = opts.getCommanderPosition();
+    const query = {
+      origin,
+      services,
+      maxLastSeenDays: Number.isFinite(maxLastSeenDays) ? maxLastSeenDays : 0,
+      limit: Number.isFinite(limit) ? limit : 100,
+    };
+    res.json({
+      rows: queryCarriers(query),
+      matchCount: countCarriers(query),
+      status: readCarrierStatus(),
+      origin,
+    });
   });
 
   /**
