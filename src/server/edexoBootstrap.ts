@@ -88,6 +88,7 @@ import {
   reapplySpeciesDataDirDiscoveryFromDisk,
   resolveImportDumpLedgerPath,
 } from "./paths.js";
+import { persistJournalDirPreference, resolveInitialJournalDir } from "./journalDirPreference.js";
 import {
   buildExoMinimapDto,
   buildExoOrganicOverlayDto,
@@ -156,13 +157,6 @@ export async function backfillCommanderPosition(store: GameStateStore, files: st
     }
   }
 }
-
-const DEFAULT_JOURNAL =
-  process.platform === "win32"
-    ? path.join(process.env.USERPROFILE || "", "Saved Games", "Frontier Developments", "Elite Dangerous")
-    : path.join(process.env.HOME || "", ".local/share/Frontier Developments/Elite Dangerous");
-
-const PATHS_FILE = "edexo-compare-paths.json";
 
 function showEdexoNativeFixInfo(message: string): boolean {
   if (process.env.EDEXO_ELECTRON !== "1") return false;
@@ -273,39 +267,6 @@ export function parseCli(argv: string[]): CliOptions {
     quietConsole: process.env.EDEXO_ELECTRON === "1" || argv.includes("--quiet") || argv.includes("--gui"),
     useShellLauncher: process.env.EDEXO_USE_SHELL_LAUNCHER === "1" || argv.includes("--shell-launcher"),
   };
-}
-
-function loadPersistedJournalDir(projectRoot: string): string | null {
-  try {
-    const p = path.join(projectRoot, PATHS_FILE);
-    if (!existsSync(p)) return null;
-    const j = JSON.parse(readFileSync(p, "utf8")) as { journalDir?: string };
-    if (typeof j.journalDir === "string" && j.journalDir.trim()) return path.normalize(j.journalDir.trim());
-  } catch {
-    /* ignore */
-  }
-  return null;
-}
-
-function persistJournalDirPreference(projectRoot: string, journalDir: string): void {
-  try {
-    const p = path.join(projectRoot, PATHS_FILE);
-    writeFileSync(
-      p,
-      `${JSON.stringify({ journalDir: path.normalize(journalDir.trim()) }, null, 2)}\n`,
-      "utf8",
-    );
-  } catch {
-    /* optional */
-  }
-}
-
-function resolveInitialJournalDir(projectRoot: string): string {
-  const env = process.env.ED_JOURNAL_DIR?.trim();
-  if (env) return path.normalize(env);
-  const persisted = loadPersistedJournalDir(projectRoot);
-  if (persisted) return persisted;
-  return DEFAULT_JOURNAL;
 }
 
 export type EdexoRuntime = {
@@ -1247,7 +1208,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     }
 
     journalDir = next;
-    persistJournalDirPreference(projectRoot, next);
+    persistJournalDirPreference(next);
     process.env.ED_JOURNAL_DIR = next;
 
     await restartJournalPipeline();

@@ -9,6 +9,21 @@ species encyclopedia.
 
 Made by Bahuckel (CMDR FALrenica). Not affiliated with Frontier Developments.
 
+## Download
+
+Windows x64, no installer. Nothing is written to Program Files and nothing is registered with
+Windows; everything the app saves lives in `%LOCALAPPDATA%\ED Exo Compare\`.
+
+|                                                                                                                |                                                                       |
+| -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **[Portable — one file](https://github.com/bahuckel/EDEXO-Compare/releases/download/v1.1.0/EDExoCompare.exe)** | Download and run. Unpacks itself somewhere temporary each time.       |
+| **[Program folder — .zip](https://github.com/bahuckel/EDEXO-Compare/releases/tag/v1.1.0-zip)**                 | Extract and keep. Starts faster, and includes the two console builds. |
+
+Both are the same version and the same code — [all releases](https://github.com/bahuckel/EDEXO-Compare/releases).
+
+Windows will say the publisher is unrecognised: the executable is signed, but with a self-signed
+certificate that SmartScreen does not trust. "More info" → "Run anyway".
+
 ## What it tells you
 
 **Which body to fly to.** _Worth the trip?_ ranks every body in the system by expected value —

@@ -108,6 +108,22 @@ export function resolveFootScannedPath(): string {
 }
 
 /**
+ * Where this commander keeps their journals, when it is not the default Saved Games folder.
+ *
+ * Beside the user settings, and for the same reason {@link resolveFootScannedPath} is: it used to be
+ * written to `<projectRoot>/edexo-compare-paths.json`, and a packaged app's project root is the
+ * install tree. Anyone who pointed the app at journals somewhere unusual — a second drive, a copied
+ * folder, a linked install — had that preference thrown away by the next update, and the app went
+ * quietly back to reading Saved Games.
+ *
+ * It never shipped in a release, unlike the on-foot catalog: nothing writes it until the commander
+ * changes the folder themselves. This is a persistence bug, not a privacy one.
+ */
+export function resolveJournalPathsPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "edexo-compare-paths.json");
+}
+
+/**
  * Why the app suggested what it suggested, body by body.
  *
  * Beside the outlier log and for the same reason: it is an observation the commander made, it never
