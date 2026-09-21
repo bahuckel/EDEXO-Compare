@@ -21,6 +21,7 @@ function scanOf(
     activity: {},
     balances: [],
     sessions,
+    carrierBreaks: [],
     filesRead: 1,
     linesRead: lines.length,
   };
@@ -194,6 +195,46 @@ describe("activity, bucketed by day", () => {
       { timestamp: ago(1), event: "ScanOrganic", ScanType: "Analyse" },
     ]);
     expect(summariseStatistics(scan, "all", NOW).activity.organicSamples).toBe(3);
+  });
+});
+
+describe("what the upkeep estimate needs the scan to record", () => {
+  /*
+    The estimator measures the weekly charge from the gap between two balance readings, which is only
+    honest when nothing else touched the account in between. It is handed those moments by the scan,
+    and nothing else in the suite exercises that wiring — remove either push and every unit test of
+    `estimateCarrierUpkeep` still passes, because they supply the breaks themselves.
+  */
+  it("marks a bank transfer, because it moves the balance for a reason that is not upkeep", () => {
+    const scan = scanOf([
+      {
+        timestamp: ago(1),
+        event: "CarrierBankTransfer",
+        CarrierBalance: 500,
+        PlayerBalance: 900,
+        Deposit: 100,
+      },
+    ]);
+    expect(scan.carrierBreaks).toEqual([{ at: ago(1), kind: "transfer" }]);
+  });
+
+  it("marks a service change, because it changes what the weekly charge is", () => {
+    const scan = scanOf([
+      { timestamp: ago(2), event: "CarrierCrewServices", CrewRole: "Rearm", Operation: "Pause" },
+    ]);
+    expect(scan.carrierBreaks).toEqual([{ at: ago(2), kind: "service" }]);
+  });
+
+  it("does not mark an ordinary carrier reading", () => {
+    // CarrierStats is the measurement, not a disturbance to it.
+    const scan = scanOf([
+      {
+        timestamp: ago(3),
+        event: "CarrierStats",
+        Finance: { CarrierBalance: 1, ReserveBalance: 2, AvailableBalance: -1 },
+      },
+    ]);
+    expect(scan.carrierBreaks).toEqual([]);
   });
 });
 

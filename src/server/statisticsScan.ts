@@ -27,6 +27,7 @@ import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
 import { dirname, join } from "node:path";
 import { incomeFromJournalLine, INCOME_EVENT_NAMES, type IncomeEvent } from "../shared/incomeCategories.js";
+import type { CarrierLedgerBreak } from "../shared/carrierUpkeep.js";
 import { resolveUserSettingsJsonPath } from "./paths.js";
 
 /** Counted rather than listed: the panel wants "how many", never "which". */
@@ -69,14 +70,26 @@ export interface JournalScan {
   balances: BalanceSample[];
   /** Session spans, for the credits-per-hour denominator. */
   sessions: { from: string; to: string }[];
+  /**
+   * Moments the carrier account moved for a reason that is not upkeep.
+   *
+   * `estimateCarrierUpkeep` measures the weekly charge from the gap between two balance readings,
+   * which only works when nothing else touched the account in between. A transfer spoils the pair;
+   * a service change spoils every pair before it, because it changes what the charge *is*.
+   */
+  carrierBreaks: CarrierLedgerBreak[];
   filesRead: number;
   linesRead: number;
 }
 
 const ACTIVITY_EVENTS = ["Scan", "FSDJump", "FSSDiscoveryScan", "SAAScanComplete", "ScanOrganic"];
 const BALANCE_EVENTS = ["LoadGame", "CarrierStats", "CarrierFinance", "CarrierBankTransfer"];
+/** Not balances themselves — they say when a balance moved for a reason other than upkeep. */
+const CARRIER_BREAK_EVENTS = ["CarrierCrewServices"];
 /** Every event name worth parsing. Tested as a substring against the raw line first. */
-const WANTED = [...INCOME_EVENT_NAMES, ...ACTIVITY_EVENTS, ...BALANCE_EVENTS].map((e) => `"${e}"`);
+const WANTED = [...INCOME_EVENT_NAMES, ...ACTIVITY_EVENTS, ...BALANCE_EVENTS, ...CARRIER_BREAK_EVENTS].map(
+  (e) => `"${e}"`,
+);
 
 function emptyScan(): JournalScan {
   return {
@@ -84,6 +97,7 @@ function emptyScan(): JournalScan {
     activity: {},
     balances: [],
     sessions: [],
+    carrierBreaks: [],
     filesRead: 0,
     linesRead: 0,
   };
@@ -160,9 +174,15 @@ export function applyScanLine(scan: JournalScan, line: Record<string, unknown>):
       });
       return;
     }
+    case "CarrierCrewServices": {
+      // Activating, pausing or dismissing a service changes the weekly charge from here on.
+      if (at) scan.carrierBreaks.push({ at, kind: "service" });
+      return;
+    }
     case "CarrierBankTransfer": {
       // States both sides at once, so it samples two series from one line.
       if (!at) return;
+      scan.carrierBreaks.push({ at, kind: "transfer" });
       scan.balances.push({
         at,
         commander: num(line.PlayerBalance),
@@ -234,7 +254,14 @@ interface CacheFile {
 }
 
 /** Bumped when the shape or the counting rules change, so a stale cache is discarded not trusted. */
-const CACHE_VERSION = 1;
+/**
+ * Bumped to 2 on 2026-09-21, when `carrierBreaks` joined the scan.
+ *
+ * A version 1 cache holds a scan with no break list at all, and reading it would measure the weekly
+ * upkeep across transfers as if they were upkeep — a wrong number rather than a missing one. The
+ * bump discards those caches and rescans, which costs three seconds.
+ */
+const CACHE_VERSION = 2;
 
 export async function scanJournalsForStatistics(files: readonly string[]): Promise<JournalScan> {
   const manifest = manifestOf(files);

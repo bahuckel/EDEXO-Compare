@@ -82,6 +82,8 @@ export interface CategoryTotal {
   events: number;
 }
 
+import type { CarrierUpkeepEstimate } from "./carrierUpkeep.js";
+
 export interface StatisticsDTO {
   window: StatsWindowKey;
   /** Totals by heading, largest first, zero rows kept so the chart can draw them flat. */
@@ -107,6 +109,14 @@ export interface StatisticsDTO {
   carrierBalance: { at: string; balance: number; reserve: number | null; available: number | null }[];
   /** The newest carrier sample of all time, even when it predates the window. */
   carrierLatest: { at: string; balance: number; reserve: number | null; available: number | null } | null;
+  /**
+   * What the carrier costs each week, measured from the commander's own balance history, and how
+   * long the balance lasts at that rate. Nulls when the journals cannot say — see `carrierUpkeep.ts`.
+   *
+   * Measured over all of history rather than the window: upkeep is a property of the carrier, not of
+   * the last 24 hours, and the readings are sparse enough that a window would usually hold none.
+   */
+  carrierUpkeep: CarrierUpkeepEstimate;
   /** Journals the scan read, so the panel can say what it is speaking for. */
   filesRead: number;
 }

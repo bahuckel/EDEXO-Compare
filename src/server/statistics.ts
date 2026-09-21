@@ -14,6 +14,7 @@ import {
   type StatisticsDTO,
 } from "../shared/statisticsWindows.js";
 import type { JournalScan } from "./statisticsScan.js";
+import { estimateCarrierUpkeep } from "../shared/carrierUpkeep.js";
 
 const ALL_CATEGORIES = Object.keys(INCOME_CATEGORY_LABEL) as IncomeCategory[];
 
@@ -92,6 +93,18 @@ export function summariseStatistics(
     commanderBalance,
     carrierBalance,
     carrierLatest,
+    /*
+      Measured over every reading, not the window's. The charge is a property of the carrier and the
+      readings are sparse — `CarrierStats` fires only when the management panel is opened — so a
+      24-hour window would almost always hold too few to divide.
+    */
+    carrierUpkeep: estimateCarrierUpkeep(
+      scan.balances
+        .filter((b): b is typeof b & { carrier: number } => b.carrier != null)
+        .map((b) => ({ at: b.at, balance: b.carrier })),
+      scan.carrierBreaks,
+      carrierLatest?.balance ?? null,
+    ),
     filesRead: scan.filesRead,
   };
 }

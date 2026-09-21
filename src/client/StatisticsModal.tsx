@@ -23,6 +23,7 @@ import { buildLogFiveAxis, formatCredits, logFiveFraction } from "@shared/logFiv
 import { STATS_WINDOWS, type StatisticsDTO } from "@shared/statisticsWindows";
 import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
+import { formatWeeks } from "@shared/carrierUpkeep";
 
 type Measure = "credits" | "perHour";
 
@@ -169,6 +170,13 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
 
   const a = data?.activity;
   const carrier = data?.carrierLatest;
+  const upkeep = data?.carrierUpkeep ?? {
+    perWeek: null,
+    samples: 0,
+    daysObserved: 0,
+    weeksOfRunway: null,
+    disagreed: false,
+  };
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -279,18 +287,30 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
               <>
                 <div className="stats-tiles">
                   <span>
-                    <strong>{formatCredits(carrier.balance)}</strong> balance
+                    <strong>{formatCredits(carrier.balance)}</strong> in the carrier
                   </span>
                   {carrier.reserve != null ? (
                     <span>
-                      <strong>{formatCredits(carrier.reserve)}</strong> reserved for upkeep
+                      <strong>{formatCredits(carrier.reserve)}</strong> reserve target
                     </span>
                   ) : null}
-                  {carrier.available != null ? (
-                    <span className={carrier.available < 0 ? "stats-negative" : undefined}>
-                      <strong>{formatCredits(carrier.available)}</strong> available
-                    </span>
-                  ) : null}
+                  {/*
+                    Weekly upkeep and runway are the two numbers that answer "is my carrier all
+                    right", and neither was on this panel. A dash rather than a figure when the
+                    journals hold no clean pair of readings — the rule creditsPerHour follows.
+                  */}
+                  <span>
+                    <strong>{upkeep.perWeek != null ? formatCredits(upkeep.perWeek) : "—"}</strong> per week
+                    upkeep
+                  </span>
+                  <span
+                    className={
+                      upkeep.weeksOfRunway != null && upkeep.weeksOfRunway < 4 ? "stats-negative" : undefined
+                    }
+                  >
+                    <strong>{upkeep.weeksOfRunway != null ? formatWeeks(upkeep.weeksOfRunway) : "—"}</strong>{" "}
+                    of runway
+                  </span>
                 </div>
                 {/*
                   The reading is dated because CarrierStats only fires when the carrier management
@@ -299,11 +319,34 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
                 <p className="dim stats-note">
                   As of <strong>{carrier.at.slice(0, 10)}</strong> — the game reports this only when you open
                   the carrier management panel.
-                  {carrier.available != null && carrier.available < 0 ? (
+                  {upkeep.perWeek != null ? (
                     <>
                       {" "}
-                      <strong>Available is negative:</strong> the upkeep reserve is larger than the balance,
-                      so the carrier is short of its own commitment.
+                      Upkeep is measured from your own balance history — {upkeep.samples}{" "}
+                      {upkeep.samples === 1 ? "reading pair" : "reading pairs"} over{" "}
+                      {Math.round(upkeep.daysObserved)} days, with transfers and service changes excluded.
+                      {upkeep.disagreed ? (
+                        <>
+                          {" "}
+                          <strong>The pairs disagree</strong>, which usually means a service was activated or
+                          paused — the newest reading is the one to trust.
+                        </>
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
+                      {" "}
+                      Weekly upkeep needs two carrier readings with nothing spent between them. Open the
+                      carrier management panel now and again and it will appear.
+                    </>
+                  )}
+                  {carrier.reserve != null && carrier.balance < carrier.reserve ? (
+                    <>
+                      {" "}
+                      Your <strong>reserve target</strong> is higher than the balance. That is a savings
+                      target set by the reserve slider, frozen at whatever the balance was when it was last
+                      moved — it is not money owed and it is not being spent. The runway above is what
+                      matters.
                     </>
                   ) : null}
                 </p>
