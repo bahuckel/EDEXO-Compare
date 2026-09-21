@@ -32,6 +32,7 @@ import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
 import { exomasteryHabitatQualityPercent, loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
+import { BODY_TYPE_PRIOR_WEIGHT, MIN_CELL } from "../src/server/bodyTypePrior.js";
 import {
   rankSpeciesOnBody,
   TERM_DAMPING,
@@ -208,13 +209,15 @@ const ADAPTIVE = (() => {
 })();
 /** §C1e. `--bodytype=<w>` blends the body-type-conditional prior in; `--bt-mincell=<n>` sets the floor. */
 const BODY_TYPE_W = Number(
-  (process.argv.find((a) => a.startsWith("--bodytype=")) ?? "--bodytype=0").split("=")[1],
+  (process.argv.find((a) => a.startsWith("--bodytype=")) ?? `--bodytype=${BODY_TYPE_PRIOR_WEIGHT}`).split(
+    "=",
+  )[1],
 );
 const BT_VARIANT = (process.argv.find((a) => a.startsWith("--bt-variant=")) ?? "--bt-variant=").split(
   "=",
 )[1]!;
 const BT_MIN_CELL = Number(
-  (process.argv.find((a) => a.startsWith("--bt-mincell=")) ?? "--bt-mincell=20").split("=")[1],
+  (process.argv.find((a) => a.startsWith("--bt-mincell=")) ?? `--bt-mincell=${MIN_CELL}`).split("=")[1],
 );
 
 /** `--spread-stats` prints the distribution of body spreads instead of sweeping anything. */

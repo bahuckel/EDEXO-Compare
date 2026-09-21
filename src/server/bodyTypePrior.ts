@@ -1,84 +1,104 @@
 /**
- * Probe seam (C1e): P(species | this *kind* of body), counted jointly instead of assembled.
+ * P(species | this *kind* of body), counted jointly instead of assembled.
  *
- * The model's prior is galaxy-wide — "how much of all recorded biology is this species" — and three
- * field misses on 2026-09-21 were all the same shape: the corpus knows the answer **for that body
- * type** and the model reaches for it through a galaxy-wide number instead. Tela is 52 % of hot thin
- * sulphur dioxide bodies; verrata is 43-48 % of water-magma ones; both lost to a species that is more
- * common overall.
- *
- * Three earlier attempts (§C1, §C1d) all moved the *balance* between prior and likelihood and all
- * failed. This moves neither: it replaces the prior with a count conditioned on the body, leaving the
- * likelihood exactly as it is.
+ * The model's other prior is galaxy-wide — "how much of all recorded biology is this species" — and
+ * three field misses on 2026-09-21 were the same shape: the corpus knows the answer **for that kind
+ * of body** and the model reached for it through a galaxy-wide number instead. Bacterium tela is
+ * 52 % of hot thin-sulphur-dioxide bodies and verrata 43-48 % of water-magma ones; both lost to a
+ * species more common overall.
  *
  * ### Why a joint count rather than more likelihood terms
  *
- * The likelihood already multiplies ~7-27 damped terms that assume independence, which is why it has
- * to be damped at all. A joint count over a coarse key assumes nothing: the corpus is asked "on
- * bodies like this one, what grew" and answers with one number per species.
+ * The likelihood multiplies seven to twenty-seven damped terms that assume independence, which is
+ * the reason it has to be damped at all. A joint count over a coarse key assumes nothing: the corpus
+ * is asked "on bodies like this one, what grew", and answers with one number per species.
  *
- * ### The key, and the backoff
+ * Four earlier ideas moved the *balance* between prior and likelihood — per-species informativeness,
+ * ambient normalisation, adaptive damping, per-genus bands — and all four failed. This changes what
+ * the prior **is**, and was the first to gain on every headline at once.
  *
- * `planet class | atmosphere | volcanism family | temperature band`, each coarse enough to have
- * counts: five classes, folded atmosphere (`NeonRich` → `neon`), the volcanism family with its
- * intensity stripped (`Major Water Magma` → `watermagma`), and four temperature bands. A cell with
- * fewer than {@link MIN_CELL} bodies is not trusted; the reader falls back through successively
- * coarser keys and finally returns null, at which point the caller keeps the galaxy-wide prior.
+ * ### The backoff
  *
- * Built by a throwaway script from `exomastery-feeder/data/raw/planets` — 51,272 bodies over 99
- * species, each a body record with the species that was actually found on it. Not shipped: the table
- * lives in `build-artifacts/` and this module returns null when it is absent.
+ * The key is `planet class | atmosphere | volcanism family | temperature band` (see
+ * `shared/bodyTypeKey.ts`, which the builder shares so the two cannot drift). A cell holding fewer
+ * than {@link MIN_CELL} bodies is not trusted and the reader falls through to a coarser level; when
+ * none answers it returns null and the caller keeps the galaxy-wide prior. Null is "this corpus has
+ * nothing to say about bodies like this", never "the species is absent".
+ *
+ * ### What it is worth
+ *
+ * Measured on the owner's cache, 659 ranked species over 2,056 candidate rows, against the model as
+ * it shipped:
+ *
+ * ```
+ *   without   mean 2.965   top-1 215 (32.6 %)   top-3 454   calibration 0.0112
+ *   with      mean 2.971   top-1 227 (34.4 %)   top-3 459   calibration 0.0096
+ * ```
+ *
+ * Twelve more bodies where the panel's first row is right, five more where the answer is visible
+ * without scrolling, and a calibration gap a seventh smaller. It costs six Bacterium first places
+ * and returns seventeen across Tussock, Fungoida, Frutexa, Cactoida, Fonticulua and Clypeus.
+ *
+ * The table is built by `scripts/build-body-type-prior.ts` from a corpus that does not ship, and the
+ * 57 KB result does. When it is missing every lookup returns null and the app ranks as it did
+ * before — which is what happens in a checkout that has never run the builder.
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { getProjectRoot } from "./paths.js";
 import type { PlanetScan } from "../shared/types.js";
+import { BODY_TYPE_T_EDGES, bodyTypeKeyParts } from "../shared/bodyTypeKey.js";
 
-/** Bodies a cell needs before its shares are believed rather than backed off. */
-export const MIN_CELL = 20;
+/**
+ * How far to move from the galaxy-wide prior toward the share among bodies of this kind, 0…1.
+ *
+ * One. The two are shares on the same scale so the blend is a plain mixture, and the sweep is flat
+ * between 0.25 and 1.0 — the conditional prior agrees with the galaxy-wide one nearly everywhere and
+ * differs where the body type is distinctive, which is the whole point. Full weight takes the most
+ * top-1 and the most top-3, and the calibration column does not punish it.
+ */
+export const BODY_TYPE_PRIOR_WEIGHT = 1;
+
+/**
+ * Bodies a cell needs before its shares are believed rather than backed off.
+ *
+ * Ten. Swept at 10, 20, 50 and 100 — the headline barely moves, and the smaller floor keeps the
+ * finest level answering on body types the corpus has only met a few dozen times, which is where a
+ * conditional prior earns its keep.
+ */
+export const MIN_CELL = 10;
 
 /** Half a body of smoothing, so a species absent from a cell is rare there rather than impossible. */
 const CELL_SMOOTHING = 0.5;
 
 interface PriorFile {
+  formatVersion?: number;
+  builtAt?: string;
+  /** Temperature band edges the table was built with. Absent means {@link BODY_TYPE_T_EDGES}. */
+  tEdges?: number[];
   levels: Record<string, Record<string, number>>[];
 }
 
-interface PriorFileV2 extends PriorFile {
-  /** Which key scheme built it — the reader must produce keys in the same order. */
-  scheme?: "B" | "C" | "D";
-  /** Gravity band edges in g, ascending. Absent on the scheme with no gravity in the key. */
-  edges?: number[];
-  /** Temperature band edges in K, ascending. Absent means the original [100, 200, 300]. */
-  tEdges?: number[];
-  /**
-   * Two-stage mode (§C1h): `P(genus | body) x P(species | genus, body)`.
-   *
-   * Per-genus temperature bands cannot be used on a single global table — two species in different
-   * genera would be scored against different partitions of the same body and their shares would not
-   * be comparable. Factorised, each stage is coherent on its own: the genus stage uses one global
-   * band set, and each genus's species stage uses bands cut from that genus's own bodies.
-   */
-  mode?: "per-genus";
-  genusTables?: Record<string, Record<string, number>>[];
-  speciesTables?: Record<string, Record<string, Record<string, number>>[]>;
-  /** Per-genus temperature edges, keyed by `genusDataDir`. */
-  genusEdges?: Record<string, number[]>;
-}
-
-const cache = new Map<string, PriorFileV2 | null>();
+const cache = new Map<string, PriorFile | null>();
 
 /**
- * Load a prior table. `variant` picks a `build-artifacts/body-type-prior-<variant>.json`; the default
- * is the original no-gravity table.
+ * Load a prior table. `variant` reads a `build-artifacts/body-type-prior-<variant>.json` instead of
+ * the shipped one — the seam the band sets were swept through, and absent from a shipped build.
  */
-export function loadBodyTypePrior(root = getProjectRoot(), variant = ""): PriorFileV2 | null {
+export function loadBodyTypePrior(root = getProjectRoot(), variant = ""): PriorFile | null {
   const key = `${root}::${variant}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
-  const name = variant ? `body-type-prior-${variant}.json` : "body-type-prior.json";
-  const file = path.join(root, "build-artifacts", name);
-  const loaded = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as PriorFileV2) : null;
+  const file = variant
+    ? path.join(root, "build-artifacts", `body-type-prior-${variant}.json`)
+    : path.join(root, "data", "exomastery", "body-type-prior.json");
+  let loaded: PriorFile | null = null;
+  try {
+    loaded = existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as PriorFile) : null;
+  } catch {
+    // A truncated or hand-edited table must not stop the app starting; rank without it.
+    loaded = null;
+  }
   cache.set(key, loaded);
   return loaded;
 }
@@ -87,90 +107,25 @@ export function clearBodyTypePriorCache(): void {
   cache.clear();
 }
 
-function gravityBand(scan: PlanetScan, edges: number[] | undefined): string {
-  if (!edges?.length) return "?";
-  const raw = scan.SurfaceGravity;
-  if (typeof raw !== "number" || !Number.isFinite(raw)) return "?";
-  // The journal reports m/s^2; the corpus records Earth g. 9.80665 is the same constant
-  // `journalSurfaceGravityToG` uses, kept local so this module stays dependency-free.
-  const g = raw > 3 ? raw / 9.80665 : raw;
-  let i = 0;
-  while (i < edges.length && g >= edges[i]!) i++;
-  return String.fromCharCode(97 + i);
-}
-
-function planetClassKey(s: string | undefined): string {
-  const t = (s ?? "").toLowerCase();
-  if (t.includes("rocky ice")) return "rockyice";
-  if (t.includes("high metal")) return "hmc";
-  if (t.includes("metal rich")) return "metalrich";
-  if (t.startsWith("icy")) return "icy";
-  if (t.startsWith("rocky")) return "rocky";
-  if (t.includes("water world")) return "water";
-  if (t.includes("earth")) return "earthlike";
-  if (t.includes("ammonia")) return "ammoniaworld";
-  return t.replace(/\s+/g, "").slice(0, 14) || "?";
-}
-
-function atmosphereKey(scan: PlanetScan): string {
-  const raw = (scan.AtmosphereType ?? scan.Atmosphere ?? "") as string;
-  return (
-    raw
-      .toLowerCase()
-      .replace(/thin |hot |-rich| rich|atmosphere/g, "")
-      .trim()
-      .replace(/[^a-z]/g, "") || "none"
+/** The keys this body matches, finest first — the same order the table's levels were built in. */
+export function bodyTypeKeys(scan: PlanetScan, file?: PriorFile | null): string[] {
+  const { planetClass, atmosphere, volcanism, temperature } = bodyTypeKeyParts(
+    {
+      subType: scan.PlanetClass,
+      atmosphereType: (scan.AtmosphereType ?? scan.Atmosphere) as string | undefined,
+      volcanismType: scan.Volcanism as string | undefined,
+      temperatureK: scan.SurfaceTemperature,
+    },
+    file?.tEdges ?? BODY_TYPE_T_EDGES,
   );
-}
-
-function volcanismKey(scan: PlanetScan): string {
-  const t = String(scan.Volcanism ?? "").toLowerCase();
-  if (!t.trim() || t.includes("no volcanism")) return "none";
-  return (
-    t
-      .replace(/^(minor|major)\s+/, "")
-      .replace(/\s*volcanism\s*$/, "")
-      .trim()
-      .replace(/[^a-z]/g, "") || "volc"
-  );
-}
-
-/** The original bands. Three quarters of the corpus falls in the middle one — see §C1g. */
-const DEFAULT_T_EDGES = [100, 200, 300];
-
-function temperatureKey(scan: PlanetScan, edges: number[] = DEFAULT_T_EDGES): string {
-  const t = scan.SurfaceTemperature;
-  if (typeof t !== "number" || !Number.isFinite(t)) return "?";
-  let i = 0;
-  while (i < edges.length && t >= edges[i]!) i++;
-  return String.fromCharCode(97 + i);
-}
-
-/**
- * The keys this body matches, finest first — the same order the table's levels were built in.
- *
- * The scheme letter comes from the file, so the reader cannot drift from the builder: `B` keeps the
- * temperature band one level longer than gravity, `D` keeps gravity longer, `C` drops temperature
- * from the key entirely. Absent, the original no-gravity chain.
- */
-export function bodyTypeKeys(scan: PlanetScan, file?: PriorFileV2 | null): string[] {
-  const c = planetClassKey(scan.PlanetClass);
-  const a = atmosphereKey(scan);
-  const v = volcanismKey(scan);
-  const t = temperatureKey(scan, file?.tEdges);
-  const vb = v === "none" ? "none" : "volc";
-  const g = gravityBand(scan, file?.edges);
-  const tail = [`${c}|${a}|${v}`, `${c}|${a}|${vb}`, `${c}|${a}`, a];
-  switch (file?.scheme) {
-    case "B":
-      return [`${c}|${a}|${v}|${t}|${g}`, `${c}|${a}|${v}|${t}`, ...tail];
-    case "C":
-      return [`${c}|${a}|${v}|${g}`, ...tail];
-    case "D":
-      return [`${c}|${a}|${v}|${t}|${g}`, `${c}|${a}|${v}|${g}`, ...tail];
-    default:
-      return [`${c}|${a}|${v}|${t}`, ...tail];
-  }
+  const vb = volcanism === "none" ? "none" : "volc";
+  return [
+    `${planetClass}|${atmosphere}|${volcanism}|${temperature}`,
+    `${planetClass}|${atmosphere}|${volcanism}`,
+    `${planetClass}|${atmosphere}|${vb}`,
+    `${planetClass}|${atmosphere}`,
+    atmosphere,
+  ];
 }
 
 export interface BodyTypePriorHit {
@@ -189,79 +144,31 @@ export interface BodyTypePriorHit {
  * Null means "this corpus has nothing to say about bodies like this", and the caller must keep
  * whatever prior it would otherwise have used. It is not an opinion that the species is absent.
  */
-/** One backoff walk over one level stack. Returns the matching cell, or null if none is big enough. */
-function walk(
-  levels: Record<string, Record<string, number>>[] | undefined,
-  keys: string[],
-  minCell: number,
-): { cell: Record<string, number>; level: number; total: number } | null {
-  if (!levels) return null;
-  for (const [level, key] of keys.entries()) {
-    const cell = levels[level]?.[key];
-    if (!cell) continue;
-    let total = 0;
-    for (const n of Object.values(cell)) total += n;
-    if (total < minCell) continue;
-    return { cell, level, total };
-  }
-  return null;
-}
-
-function shareOf(cell: Record<string, number>, total: number, id: string): number {
-  const n = cell[id] ?? 0;
-  return (n + CELL_SMOOTHING) / (total + CELL_SMOOTHING * Math.max(1, Object.keys(cell).length));
-}
-
 export function bodyTypeLogPrior(
   scan: PlanetScan,
   speciesId: string,
   root = getProjectRoot(),
   minCell = MIN_CELL,
   variant = "",
-  genusId?: string,
 ): BodyTypePriorHit | null {
   const table = loadBodyTypePrior(root, variant);
-  if (!table) return null;
-
-  if (table.mode === "per-genus") {
-    if (!genusId) return null;
-    const genusKeys = bodyTypeKeys(scan, table);
-    const g = walk(table.genusTables, genusKeys, minCell);
-    if (!g) return null;
-    const speciesKeys = bodyTypeKeys(scan, {
-      ...table,
-      tEdges: table.genusEdges?.[genusId] ?? [],
-    } as PriorFileV2);
-    const sp = walk(table.speciesTables?.[genusId], speciesKeys, minCell);
-    // Genus known, species not: the genus stage still says something and the within-genus part falls
-    // back to uniform, which is honest rather than a refusal.
-    const pGenus = shareOf(g.cell, g.total, genusId);
-    const pSpecies = sp ? shareOf(sp.cell, sp.total, speciesId) : null;
-    return {
-      logShare: Math.log(pGenus) + (pSpecies === null ? 0 : Math.log(pSpecies)),
-      level: g.level,
-      cellSize: g.total,
-      count: g.cell[genusId] ?? 0,
-    };
-  }
-
+  if (!table?.levels) return null;
   const keys = bodyTypeKeys(scan, table);
   for (const [level, key] of keys.entries()) {
     const cell = table.levels[level]?.[key];
     if (!cell) continue;
     let total = 0;
     let species = 0;
+    let categories = 0;
     for (const [id, n] of Object.entries(cell)) {
+      if (!Number.isFinite(n) || n <= 0) continue;
       total += n;
+      categories++;
       if (id === speciesId) species = n;
     }
     if (total < minCell) continue;
-    const share = (species + CELL_SMOOTHING) / (total + CELL_SMOOTHING * species_count(cell));
+    const share = (species + CELL_SMOOTHING) / (total + CELL_SMOOTHING * Math.max(1, categories));
     return { logShare: Math.log(share), level, cellSize: total, count: species };
   }
   return null;
-}
-
-function species_count(cell: Record<string, number>): number {
-  return Math.max(1, Object.keys(cell).length);
 }

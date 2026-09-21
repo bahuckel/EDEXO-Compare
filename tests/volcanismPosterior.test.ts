@@ -78,7 +78,16 @@ const CANDIDATES = [
   "Bacterium verrata",
 ] as const;
 
-const score = (name: string, scan: PlanetScan) => speciesLogScore(find(name), scan, null, null, {});
+/*
+  Scored with the body-type prior **off**.
+
+  This file is about what one term — volcanism — is worth, and the conditional prior added in §C1e
+  moves the same `logScore` for an entirely different reason. Leaving it on would mean these numbers
+  measured the two together and moved whenever either changed. `bodyTypePriorWeight: 0` is the same
+  arm every sweep of that prior compares against.
+*/
+const score = (name: string, scan: PlanetScan) =>
+  speciesLogScore(find(name), scan, null, null, { bodyTypePriorWeight: 0 });
 
 /** The candidates in posterior order, best first, stripped of the genus for readability. */
 function order(scan: PlanetScan): string[] {
@@ -213,7 +222,10 @@ describe("volcanism in the posterior", () => {
     expect(VOLCANISM_TERM_WEIGHT).toBe(3);
 
     const at = (w: number, scan: PlanetScan) =>
-      speciesLogScore(find("Bacterium omentum"), scan, null, null, { volcanismWeight: w })!.logScore;
+      speciesLogScore(find("Bacterium omentum"), scan, null, null, {
+        volcanismWeight: w,
+        bodyTypePriorWeight: 0,
+      })!.logScore;
 
     // Zero drops the term: the quiet body and the volcanic one become indistinguishable.
     expect(at(0, NITROGEN)).toBe(at(0, QUIET));
@@ -223,6 +235,39 @@ describe("volcanism in the posterior", () => {
     expect(d1).toBeGreaterThan(0);
     expect(d4).toBeGreaterThan(d1);
     expect(d4 / d1).toBeCloseTo(4, 5);
+  });
+
+  it("records where the conditional prior disagrees with the owner's own landing", () => {
+    /*
+      **A known divergence, kept visible on purpose.**
+
+      Every assertion above scores with `bodyTypePriorWeight: 0`, because this file is about one
+      term. The app does not: since §C1e it blends in `P(species | this kind of body)`, and on this
+      body the two sources disagree.
+
+        the owner's landing   neon 100 %, nitrogen volcanism -> he found **acies**
+        the corpus cell       icy|neon|nitrogenmagma, n=14   -> tela 50 %, omentum 36 %, acies 14 %
+        one level coarser     icy|neon|volc, n=51            -> omentum 22 %, acies 12 %
+        atmosphere alone      icy|neon, n=165                -> acies 64 %, omentum 7 %
+
+      Acies is a neon specialist — 213 corpus bodies at 85-100 % neon — and conditioning on volcanism
+      is what turns it over. Fourteen bodies against one landing is thin on both sides.
+
+      This test asserts nothing about who *should* win. It pins what the app currently does, so the
+      day the corpus is rebuilt or the weight is changed, the change is visible here rather than
+      discovered in the cockpit.
+    */
+    const appOrder = CANDIDATES.map((name) => ({
+      name,
+      r: speciesLogScore(find(name), NITROGEN, null, null, {}),
+    }))
+      .filter((x) => x.r)
+      .sort((a, b) => b.r!.logScore - a.r!.logScore)
+      .map((x) => x.name.replace(/^\S+\s+/, ""));
+    expect(appOrder[0], "the app follows the corpus cell here, not the landing").toBe("omentum");
+    // Acies is not dismissed — it stays in the list, which is the difference between a prior and a
+    // gate. The owner's report is one body and it is not being called wrong.
+    expect(appOrder).toContain("acies");
   });
 
   it("leaves no volcanism gate behind in the data", () => {

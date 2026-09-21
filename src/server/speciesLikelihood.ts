@@ -44,7 +44,7 @@ import {
 import { shouldOmitExomasterySciencePath } from "./exomasteryPathHygiene.js";
 import { loadHistogramEdges, loadSpeciesPrevalence } from "./likelihoodData.js";
 import { getProjectRoot } from "./paths.js";
-import { bodyTypeLogPrior } from "./bodyTypePrior.js";
+import { bodyTypeLogPrior, BODY_TYPE_PRIOR_WEIGHT, MIN_CELL } from "./bodyTypePrior.js";
 
 /**
  * How hard each parameter is allowed to pull.
@@ -334,8 +334,9 @@ export function speciesLogScore(
      */
     claimWeight?: number;
     /**
-     * Probe seam (C1e): how far to move the prior from the galaxy-wide share toward the share among
-     * bodies of this kind, 0…1. See `bodyTypePrior.ts`.
+     * How far to move the prior from the galaxy-wide share toward the share among bodies of this
+     * kind, 0…1. Defaults to {@link BODY_TYPE_PRIOR_WEIGHT}; 0 turns it off, which is the arm the
+     * sweeps compare against. See `bodyTypePrior.ts`.
      */
     bodyTypePriorWeight?: number;
     /** Probe seam (C1e): bodies a cell needs before it is believed. Default {@link MIN_CELL}. */
@@ -495,17 +496,10 @@ export function speciesLogScore(
     same scale and the blend is a plain mixture — unlike the regional prior, which is a log *count*
     and needs its own weight for that reason.
   */
-  const btWeight = Math.min(1, Math.max(0, opts?.bodyTypePriorWeight ?? 0));
+  const btWeight = Math.min(1, Math.max(0, opts?.bodyTypePriorWeight ?? BODY_TYPE_PRIOR_WEIGHT));
   const bodyTypeHit =
     btWeight > 0
-      ? bodyTypeLogPrior(
-          scan,
-          entry.id,
-          root,
-          opts?.bodyTypeMinCell,
-          opts?.bodyTypeVariant,
-          entry.genusDataDir,
-        )
+      ? bodyTypeLogPrior(scan, entry.id, root, opts?.bodyTypeMinCell ?? MIN_CELL, opts?.bodyTypeVariant)
       : null;
   const regionWeight = Math.min(1, Math.max(0, opts?.regionPriorWeight ?? 1));
   const basePrior =
