@@ -17,20 +17,36 @@
 import { cpSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-/** Names directly under `data/` that must never reach a packaged build. */
+/**
+ * Runtime state: the commander's own, and a privacy failure if it ships.
+ *
+ * `foot_scanned.json` is the learned on-foot catalog. It has moved beside the user settings, so a
+ * current build does not write one here any more — this stays because a developer tree still has the
+ * old file sitting in it, and the exclusion is what keeps that out of a release.
+ */
 export const RUNTIME_STATE = Object.freeze(["foot_scanned.json"]);
 
 /**
- * Copy the data tree to `destDataDir`, minus {@link RUNTIME_STATE}.
+ * Shipped by accident rather than by decision: real content, but nothing in `src/` reads it.
+ *
+ * `spansh-dump-tests` is four Spansh route exports the tests and probes run against. Public data and
+ * harmless, but 368 KB of fixtures in every download, and a release should carry what the app uses.
+ */
+export const NOT_SHIPPED = Object.freeze(["spansh-dump-tests"]);
+
+const EXCLUDED = Object.freeze([...RUNTIME_STATE, ...NOT_SHIPPED]);
+
+/**
+ * Copy the data tree to `destDataDir`, minus {@link RUNTIME_STATE} and {@link NOT_SHIPPED}.
  *
  * Throws rather than returning quietly if anything excluded still lands there — a silent leak here
  * is a privacy failure that ships, so the build must stop instead.
  */
 export function copyDataTree(destDataDir) {
-  const excluded = new Set(RUNTIME_STATE.map((name) => join("data", name)));
+  const excluded = new Set(EXCLUDED.map((name) => join("data", name)));
   cpSync("data", destDataDir, { recursive: true, filter: (src) => !excluded.has(src) });
 
-  for (const name of RUNTIME_STATE) {
+  for (const name of EXCLUDED) {
     const leaked = join(destDataDir, name);
     if (existsSync(leaked)) {
       throw new Error(`data/${name} reached the packaged tree at ${leaked} — refusing to package it.`);
