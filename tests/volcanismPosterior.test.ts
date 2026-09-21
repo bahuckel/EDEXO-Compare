@@ -200,12 +200,17 @@ describe("volcanism in the posterior", () => {
 
   it("carries the weight the sweep chose, and can be swept again", () => {
     /*
-      `VOLCANISM_TERM_WEIGHT` is 2, picked on `rank-probe --model` over 585 species: top-3 is at its
-      maximum there and mean rank within 0.004 of anything the curve ever reaches, so the smaller
-      weight wins a flat comparison. The seam is what made that measurable, and it has to keep
-      working or the next person re-tunes by editing a constant and guessing.
+      `VOLCANISM_TERM_WEIGHT` is 3, re-swept 2026-09-21 over 642 species. It was 2, and what moved it
+      was not a better search but a bug: an empty `Volcanism` — what the journal writes on a quiet
+      body, which is most of the galaxy — fell out on the empty-string guard in
+      `bucketCategoricalValue` and matched nothing. Half this term could not fire, and the weight was
+      tuned around that. With it alive, top-3 reaches its maximum at 3 and everything past it is
+      drift of a body or two, so the smaller weight still wins a flat comparison.
+
+      The seam is what made that measurable, and it has to keep working or the next person re-tunes
+      by editing a constant and guessing.
     */
-    expect(VOLCANISM_TERM_WEIGHT).toBe(2);
+    expect(VOLCANISM_TERM_WEIGHT).toBe(3);
 
     const at = (w: number, scan: PlanetScan) =>
       speciesLogScore(find("Bacterium omentum"), scan, null, null, { volcanismWeight: w })!.logScore;

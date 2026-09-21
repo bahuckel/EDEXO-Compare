@@ -31,7 +31,7 @@ import type {
   PlanetScan,
   SpeciesEntry,
 } from "../shared/types.js";
-import { histogramBin, type HistogramEdgesFile } from "../shared/likelihoodBins.js";
+import { histogramBin, type HistogramEdgesFile, type SpeciesHistograms } from "../shared/likelihoodBins.js";
 import { speciesPrior, type SpeciesPrevalenceFile } from "../shared/speciesPrior.js";
 import { regionalSpeciesCount } from "./regionSpeciesData.js";
 import { bucketCategoricalValue } from "../feeder/parameterImportance.js";
@@ -44,38 +44,44 @@ import {
 import { shouldOmitExomasterySciencePath } from "./exomasteryPathHygiene.js";
 import { loadHistogramEdges, loadSpeciesPrevalence } from "./likelihoodData.js";
 import { getProjectRoot } from "./paths.js";
+import { bodyTypeLogPrior } from "./bodyTypePrior.js";
 
 /**
  * How hard each parameter is allowed to pull.
  *
  * 1.0 is textbook naive Bayes and it overclaims here, because twenty-seven numeric parameters are
  * nowhere near independent — radius, mass and gravity are three views of one fact — so the product
- * lets a body's size vote three times. The exponent applies to every log term, so 0.15 leaves the
- * likelihood weighing about a sixth of what it would unchecked, which is enough to move the ranking
- * without letting it overrule the prior.
+ * lets a body's size vote three times. The exponent applies to every log term.
  *
- * Re-swept 2026-09-17 on the current model — after the volcanism term landed and the regional prior
- * moved to 0.25, either of which could have moved the optimum. 585 species over 2,126 candidate
- * rows:
+ * **Re-swept 2026-09-21, and this time the model underneath it changed.** Three categorical terms
+ * had never matched between the journal's spelling and the corpus's (§C1j, and see
+ * `bucketCategoricalValue`), so every earlier sweep on this page tuned a model that was missing the
+ * planet class on most bodies, carbon dioxide and sulphur dioxide entirely, and volcanism on every
+ * quiet body. With those terms alive the likelihood carries more weight per unit and the optimum
+ * moves down. 642 ranked species over 1,991 candidate rows, at atmosphere 2 / volcanism 3:
  *
  * | damping | mean rank | top-1 | top-3 | calibration |
  * |---|---|---|---|---|
- * | 0.05 | 3.328 | 174 (29.7 %) | 371 (63.4 %) | 0.0084 |
- * | 0.10 | 3.070 | 187 (32.0 %) | 383 (65.5 %) | 0.0047 |
- * | **0.15** | **3.094** | **202 (34.5 %)** | **386 (66.0 %)** | **0.0069** |
- * | 0.20 | 3.137 | 207 (35.4 %) | 379 (64.8 %) | 0.0103 |
- * | 0.25 | 3.193 | 211 (36.1 %) | 365 (62.4 %) | 0.0155 |
- * | 0.40 | 3.332 | 203 (34.7 %) | 365 (62.4 %) | 0.0307 |
+ * | 0.08 | 3.097 | 191 (29.8 %) | 427 | 0.0111 |
+ * | 0.10 | 3.009 | 202 (31.5 %) | **439** | 0.0108 |
+ * | **0.11** | **2.995** | **208 (32.4 %)** | **438** | **0.0110** |
+ * | 0.12 | 2.997 | 208 (32.4 %) | 434 | 0.0126 |
+ * | 0.15 | 3.000 | 215 (33.5 %) | 427 | 0.0161 |
+ * | 0.18 | 3.023 | 219 (34.1 %) | 430 | 0.0159 |
+ * | 0.22 | 3.044 | 225 (35.0 %) | 429 | 0.0175 |
  *
- * It held. Top-3 peaks here and nowhere else; 0.10 takes mean rank by 0.024 and gives up fifteen
- * bodies of top-1 for it; and every step above buys top-1 by letting the likelihood shout, with the
- * calibration gap climbing monotonically — 0.0069 here against 0.0307 at 0.40, which is what
- * over-trusting twenty-seven correlated parameters looks like from the outside.
+ * Top-1 still climbs monotonically with damping and calibration still degrades with it — the same
+ * trade the old sweep found, moved. 0.11 takes mean rank and sits one body off the top-3 maximum
+ * with the best calibration in the table.
  *
- * Undamped still beats the similarity scorer it replaces; the damping is worth about three points
- * of top-1 on top of that.
+ * Against the model as it shipped before the fix (damping 0.15, atmosphere 3, volcanism 2:
+ * 3.037 / 215 / 432 / 0.0125): mean rank and calibration improve, top-3 gains six, and the two
+ * genera the dead terms hurt most recover — Stratum 95 → 101, Bacterium 45 → 51. **Top-1 gives up
+ * seven.** `damping 0.13, atmosphere 2, volcanism 4` was the alternative on the table and holds
+ * top-1 at 213 with top-3 and calibration level; it was not taken because the calibration of
+ * "Chance here" is the one number on the card that has been checked against reality.
  */
-export const TERM_DAMPING = 0.15;
+export const TERM_DAMPING = 0.11;
 
 /**
  * What the atmosphere is worth, in terms.
@@ -83,69 +89,58 @@ export const TERM_DAMPING = 0.15;
  * Its gases are fractions of one envelope summing to a hundred, so a term per gas lets a single fact
  * vote as many times as the game happened to name gases — and on a two-gas body most of those terms
  * are "0 % of something neither species uses", which agrees with nearly every candidate. Pooled to
- * the mean and then given this many terms' weight, swept on the probe like {@link TERM_DAMPING}:
+ * the mean and then given this many terms' weight.
  *
- * Re-swept 2026-09-17 on the current model, 585 species over 2,126 candidate rows:
+ * **Re-swept 2026-09-21 after the bucketing fix (§C1j), which is what moved it.** `CarbonDioxide`
+ * and `SulphurDioxide` never once matched the corpus's `Thin Carbon dioxide` and `Thin Sulphur
+ * dioxide`, so this term was dead on two of the commonest bio atmospheres and the old weight of 3
+ * was compensating for a term that fired on a fraction of the bodies it should have. At damping
+ * 0.12, 642 species over 1,991 rows:
  *
- * | weight | mean rank | top-1 | top-3 | calibration | B3 |
- * |---|---|---|---|---|---|
- * | 0, dead | 3.116 | 175 (29.9 %) | 377 (64.4 %) | 0.0071 | 0.0073 |
- * | 1 | 3.058 | 191 (32.6 %) | 382 (65.3 %) | 0.0070 | 0.0069 |
- * | 2 | 3.067 | 197 (33.7 %) | 383 (65.5 %) | 0.0039 | 0.0092 |
- * | **3** | **3.094** | **202 (34.5 %)** | **386 (66.0 %)** | **0.0069** | **0.0111** |
- * | 4 | 3.161 | 200 (34.2 %) | 379 (64.8 %) | 0.0157 | 0.0100 |
- * | 5 | 3.186 | 199 (34.0 %) | 376 (64.3 %) | 0.0085 | 0.0092 |
- * | 6 | 3.226 | 198 (33.8 %) | 375 (64.1 %) | 0.0102 | 0.0113 |
+ * | weight | mean rank | top-1 | top-3 | calibration |
+ * |---|---|---|---|---|
+ * | 0, dead | 3.106 | 187 (29.1 %) | 414 | 0.0099 |
+ * | 1 | 3.033 | 199 (31.0 %) | 425 | 0.0099 |
+ * | **2** | **3.011** | **207 (32.2 %)** | **432** | **0.0118** |
+ * | 3 (was) | 3.020 | 208 (32.4 %) | 430 | 0.0135 |
+ * | 4 | 3.031 | 216 (33.6 %) | 427 | 0.0165 |
+ * | 5 | 3.079 | 213 (33.2 %) | 426 | 0.0186 |
  *
- * Three held. It takes both top-1 and top-3 outright, and past it every column gives way at once,
- * which is the shape of a term being asked to carry more than it knows. Two has the best
- * calibration in the table at 0.0039 and it was not taken: the column reads 0.0071, 0.0070, 0.0039,
- * 0.0069, 0.0157, 0.0085, 0.0102 — it bounces rather than trends, so 0.0039 is a low draw and not a
- * property of that weight. Compare the regional prior, where the same column climbs monotonically
- * across five points and the trade is real.
- *
- * **The term is worth 27 bodies of top-1** — 175 dead against 202 — which is the largest single
- * contribution in this file.
+ * Two takes mean rank and top-3 and calibrates better than three; top-1 is a single body apart. The
+ * term is still worth a great deal — **45 bodies of top-1 between dead and 2** — it simply needs
+ * less weight now that it works.
  */
-export const ATMOSPHERE_TERM_WEIGHT = 3;
+export const ATMOSPHERE_TERM_WEIGHT = 2;
 
 /**
  * What volcanism is worth, in terms.
  *
  * It is one fact, not eight like the atmosphere, so the question here is only how hard it should
- * pull. Swept on `npx tsx scripts/rank-probe.ts --model` — **on the posterior**, which matters:
- * without `--model` the probe ranks by habitat similarity, a score the panel does not use, and this
- * term was first reported against that one. Over 585 species on 2,126 scored candidate rows:
+ * pull.
  *
- * | weight | mean rank | top-1 | top-3 | calibration | B3 |
- * |---|---|---|---|---|---|
- * | 0, dead | 3.326 | 195 (33.3 %) | 362 (61.9 %) | 0.0026 | 0.0097 |
- * | 0.5 | 3.320 | 196 (33.5 %) | 363 (62.1 %) | 0.0024 | 0.0096 |
- * | 1 | 3.311 | 198 (33.8 %) | 363 (62.1 %) | 0.0028 | 0.0099 |
- * | **2** | **3.303** | **199 (34.0 %)** | **363 (62.1 %)** | **0.0024** | **0.0107** |
- * | 3 | 3.304 | 200 (34.2 %) | 362 (61.9 %) | 0.0024 | 0.0107 |
- * | 4 | 3.304 | 200 (34.2 %) | 362 (61.9 %) | 0.0019 | 0.0103 |
- * | 5 | 3.301 | 200 (34.2 %) | 362 (61.9 %) | 0.0025 | 0.0093 |
- * | 8 | 3.299 | 200 (34.2 %) | 361 (61.7 %) | 0.0023 | 0.0085 |
+ * **Re-swept 2026-09-21, and it is worth far more than it was.** An empty `Volcanism` — what the
+ * journal writes on a quiet body, which is most of the galaxy — fell out on the empty-string guard
+ * in `bucketCategoricalValue` and matched nothing, so this term was dead on exactly the bodies where
+ * "this species is only ever found on quiet ground" is the most common thing it could say. At
+ * damping 0.12, atmosphere 2:
  *
- * Two is the knee, and a modest one. Top-3 is at its maximum there and does not reach it again;
- * mean rank is within 0.004 of the floor the whole curve ever finds; and everything past 3 is drift
- * of one or two bodies, which on 585 is not a result. Where the curve is this flat the smaller
- * weight is the honest choice, because it claims less for the same answer.
+ * | weight | mean rank | top-1 | top-3 | calibration |
+ * |---|---|---|---|---|
+ * | 0, dead | 3.039 | 203 (31.6 %) | 430 | 0.0120 |
+ * | 1 | 3.025 | 205 (31.9 %) | 431 | 0.0123 |
+ * | 2 (was) | 3.011 | 207 (32.2 %) | 432 | 0.0118 |
+ * | **3** | **2.997** | **208 (32.4 %)** | **434** | **0.0126** |
+ * | 4 | 2.994 | 209 (32.6 %) | 434 | 0.0127 |
+ * | 6 | 2.989 | 211 (32.9 %) | 434 | 0.0134 |
  *
- * **The whole term is worth about four bodies of top-1** — 195 to 199 — and roughly 0.02 of mean
- * rank. Real, in the right direction, and small. It is worth having because the bodies it moves are
- * the ones the commander cannot resolve any other way: volcanism is on 5.7 % of landable bio bodies
- * galaxy-wide, so most of this corpus never asks the question, and on the bodies that do ask it the
- * corpus separates the species sharply — Bacterium verrata is 26 of 26 volcanic against a 19.1 %
- * ambient, aurasus 6,889 of 6,889 quiet.
+ * Top-3 reaches its maximum at three and does not improve again; mean rank and top-1 keep creeping
+ * by a body or two while calibration slowly gives way, which is drift rather than a result. Where
+ * the curve is this flat the smaller weight is the honest choice, as it was when this was 2.
  *
- * The B3 column wobbles by 0.001 with no pattern; its top bins hold 19 and 68 rows and that is
- * noise, not a signal about the weight. The overall calibration does not degrade at any weight,
- * which corrects what was reported when this term first landed: the 0.0572 → 0.0641 drift seen then
- * was measured on the habitat scorer, not on the posterior.
+ * The whole term is now worth **five bodies of top-1 and four of top-3** between dead and 3, against
+ * "about four bodies of top-1" when half of it could not fire.
  */
-export const VOLCANISM_TERM_WEIGHT = 2;
+export const VOLCANISM_TERM_WEIGHT = 3;
 
 /**
  * How far the region is allowed to speak, against the corpus-wide prior it replaces.
@@ -211,10 +206,35 @@ export interface SpeciesLikelihood {
   terms: number;
   /** log P(species) — the corpus prior, before any of the body's physics. */
   logPrior: number;
+  /**
+   * The likelihood **before** damping, after any per-term shaping.
+   *
+   * `logScore` is `logPrior + damping * logLik`. Exposed because the damping cannot be chosen from
+   * one candidate alone: how far apart the candidates on a body are is a property of the body, and
+   * only {@link rankSpeciesOnBody} can see all of them. See its `adaptive` seam.
+   */
+  logLik: number;
 }
 
 function logSmoothed(count: number, total: number, categories: number): number {
   return Math.log((count + BIN_SMOOTHING) / (total + BIN_SMOOTHING * categories));
+}
+
+/**
+ * How peaked one histogram is, 0 (perfectly flat) to 1 (every observation in one bin).
+ *
+ * `1 − H/log(bins)`, the same normalised entropy the §C1 measurements report as "flatness" inverted:
+ * Stratum paleas reads 0.031 against araneamus's 1.000. Probe seam only — see `informativeness`.
+ */
+function histogramInformativeness(counts: number[], total: number, bins: number): number {
+  if (total <= 0 || bins <= 1) return 0;
+  let entropy = 0;
+  for (const c of counts) {
+    if (c <= 0) continue;
+    const p = c / total;
+    entropy -= p * Math.log(p);
+  }
+  return Math.min(1, Math.max(0, 1 - entropy / Math.log(bins)));
 }
 
 /**
@@ -283,6 +303,45 @@ export function speciesLogScore(
      * moves nothing — so the species with more data is fined for having it.
      */
     perTerm?: boolean;
+    /**
+     * Probe seam (C1): score each term against an ambient instead of in absolute terms.
+     *
+     * A term today is `log P(value | species)`, which is near `log(1/16)` everywhere for a species
+     * whose histogram is flat. That is not "no evidence" — it is a moderate, *constant* score that a
+     * species with a large prior can coast on, which is exactly Stratum paleas. Subtracting the
+     * ambient's own log-probability for the same bin turns the term into a log ratio: a flat species
+     * lands at zero, and a peaked sibling claiming the bin scores positively against it.
+     *
+     * The ambient is supplied rather than assumed, because which one is right is the question. The
+     * genus is the candidate here — the rival species on a body are siblings, and "does this body
+     * look more like paleas than like a generic Stratum" is the question the panel is really asking.
+     */
+    ambient?: { histograms?: SpeciesHistograms; categorical?: Record<string, Record<string, number>> } | null;
+    /**
+     * Probe seam (C1): the literal proposal in BACKLOG §C1 — weight a species' evidence by how
+     * peaked its own histogram is, so a flat one cannot outvote a confident sibling.
+     *
+     * Kept separate from {@link ambient} because it is a different claim, and measuring it was the
+     * point: every term here is a negative log, so scaling a flat species' terms *down* makes its
+     * total *less* negative. See the sweep in `docs/archive/BACKLOG.md` §C1.
+     */
+    informativeness?: boolean;
+    /**
+     * Probe seam (C1): how hard a peaked species' claim on this body is amplified, 0 = off.
+     *
+     * Needs {@link ambient}. `lpAbs + k · informativeness · (lpAbs − lpAmbient)` — see the numeric
+     * loop for why the sign matters and why replacing the term outright does the reverse.
+     */
+    claimWeight?: number;
+    /**
+     * Probe seam (C1e): how far to move the prior from the galaxy-wide share toward the share among
+     * bodies of this kind, 0…1. See `bodyTypePrior.ts`.
+     */
+    bodyTypePriorWeight?: number;
+    /** Probe seam (C1e): bodies a cell needs before it is believed. Default {@link MIN_CELL}. */
+    bodyTypeMinCell?: number;
+    /** Probe seam (C1f): which prior table to read — a `build-artifacts/body-type-prior-<v>.json`. */
+    bodyTypeVariant?: string;
   },
 ): SpeciesLikelihood | null {
   const root = opts?.root ?? getProjectRoot();
@@ -325,14 +384,39 @@ export function speciesLogScore(
       if (v == null) continue;
       const total = counts.reduce((a, b) => a + b, 0);
       if (total <= 0) continue;
-      const lp = logSmoothed(counts[histogramBin(edges, v)] ?? 0, total, edgesFile.bins);
+      const bin = histogramBin(edges, v);
+      const lpAbs = logSmoothed(counts[bin] ?? 0, total, edgesFile.bins);
+      let lpAmbient: number | null = null;
+      const ambientCounts = opts?.ambient?.histograms?.[path];
+      if (ambientCounts && ambientCounts.length === edgesFile.bins) {
+        const ambientTotal = ambientCounts.reduce((a, b) => a + b, 0);
+        if (ambientTotal > 0) {
+          lpAmbient = logSmoothed(ambientCounts[bin] ?? 0, ambientTotal, edgesFile.bins);
+        }
+      }
+      let lp = lpAbs;
+      const claim = opts?.claimWeight ?? 0;
+      if (claim > 0 && lpAmbient != null) {
+        /*
+          The correctly-signed form of §C1. The log ratio is *added* to the absolute term rather than
+          replacing it, and scaled by how peaked the species' own histogram is. A flat species has
+          informativeness near zero, so nothing is added and it keeps the floor it already pays; a
+          peaked sibling standing on its own peak is amplified, and amplified against it off-peak.
+          Replacing the term instead — `--ambient` — cancels that floor, which is the opposite.
+        */
+        lp = lpAbs + claim * histogramInformativeness(counts, total, edgesFile.bins) * (lpAbs - lpAmbient);
+      } else if (lpAmbient != null) {
+        lp = lpAbs - lpAmbient;
+      }
+      let weight = 1;
+      if (opts?.informativeness) weight = histogramInformativeness(counts, total, edgesFile.bins);
       if (/^body\.atmosphereComposition\./i.test(path)) {
-        atmoLog += lp;
+        atmoLog += weight * lp;
         atmoTerms++;
         continue;
       }
-      logLik += lp;
-      terms++;
+      logLik += weight * lp;
+      terms += weight;
     }
   }
   const atmoWeight = opts?.atmosphereWeight ?? ATMOSPHERE_TERM_WEIGHT;
@@ -361,7 +445,22 @@ export function speciesLogScore(
       if (bucketCategoricalValue(path, label) === want) hit += n;
     }
     if (total <= 0 || categories < 1) continue;
-    const lp = logSmoothed(hit, total, categories);
+    let lp = logSmoothed(hit, total, categories);
+    const ambientCat = opts?.ambient?.categorical?.[path];
+    if (ambientCat) {
+      let ambientTotal = 0;
+      let ambientHit = 0;
+      let ambientCategories = 0;
+      for (const [label, n] of Object.entries(ambientCat)) {
+        if (!Number.isFinite(n) || n <= 0) continue;
+        ambientTotal += n;
+        ambientCategories++;
+        if (bucketCategoricalValue(path, label) === want) ambientHit += n;
+      }
+      if (ambientTotal > 0 && ambientCategories > 0) {
+        lp -= logSmoothed(ambientHit, ambientTotal, ambientCategories);
+      }
+    }
     if (/volcanism/i.test(path)) {
       const w = opts?.volcanismWeight ?? VOLCANISM_TERM_WEIGHT;
       if (w <= 0) continue;
@@ -388,18 +487,40 @@ export function speciesLogScore(
       ? regionalSpeciesCount(root, opts.regionIndex, entry.id)
       : null;
   const corpusLogPrior = Math.log(speciesPrior(prevalence, entry.id, 1 / 108));
+  /*
+    Probe seam (C1e): the prior, conditioned on what kind of body this is.
+
+    Blended rather than swapped so the weight can be swept: 0 is today's galaxy-wide prior, 1 is the
+    joint count alone. The cell is a share like the corpus prior is a share, so the two are on the
+    same scale and the blend is a plain mixture — unlike the regional prior, which is a log *count*
+    and needs its own weight for that reason.
+  */
+  const btWeight = Math.min(1, Math.max(0, opts?.bodyTypePriorWeight ?? 0));
+  const bodyTypeHit =
+    btWeight > 0
+      ? bodyTypeLogPrior(
+          scan,
+          entry.id,
+          root,
+          opts?.bodyTypeMinCell,
+          opts?.bodyTypeVariant,
+          entry.genusDataDir,
+        )
+      : null;
   const regionWeight = Math.min(1, Math.max(0, opts?.regionPriorWeight ?? 1));
+  const basePrior =
+    bodyTypeHit != null ? btWeight * bodyTypeHit.logShare + (1 - btWeight) * corpusLogPrior : corpusLogPrior;
   const logPrior = opts?.noPrior
     ? 0
     : regionalCount != null
       ? // Half a system of smoothing: a species not yet recorded here is rare, not impossible.
-        regionWeight * Math.log(regionalCount + 0.5) + (1 - regionWeight) * corpusLogPrior
-      : corpusLogPrior;
+        regionWeight * Math.log(regionalCount + 0.5) + (1 - regionWeight) * basePrior
+      : basePrior;
   // Averaging rescales the likelihood, so multiply back by a typical term count to keep it on the
   // same footing as the prior and leave `damping` meaning what it meant before.
   const TYPICAL_TERMS = 14;
   const shaped = opts?.perTerm && terms > 0 ? (logLik / terms) * TYPICAL_TERMS : logLik;
-  return { logScore: logPrior + damping * shaped, terms, logPrior };
+  return { logScore: logPrior + damping * shaped, terms, logPrior, logLik: shaped };
 }
 
 export interface RankedSpecies<T> {
@@ -434,17 +555,84 @@ export function rankSpeciesOnBody<T extends { entry: SpeciesEntry }>(
     regionPriorWeight?: number;
     dropPaths?: Set<string>;
     perTerm?: boolean;
+    /** Probe seam (C1). Per *candidate*, because the right ambient is the candidate's own genus. */
+    ambientFor?: (
+      entry: SpeciesEntry,
+    ) => { histograms?: SpeciesHistograms; categorical?: Record<string, Record<string, number>> } | null;
+    informativeness?: boolean;
+    bodyTypePriorWeight?: number;
+    bodyTypeMinCell?: number;
+    bodyTypeVariant?: string;
+    /**
+     * Probe seam (C1c): choose the damping from **how far apart the candidates are on this body**.
+     *
+     * `TERM_DAMPING` is one constant serving two opposite cases, and the field reports of 2026-09-21
+     * caught it failing both ways. Stratum paleas is the truth where its own evidence is flat, so the
+     * prior is the only thing getting it right and the likelihood should be damped *harder*; verrata
+     * is the truth on a water-magma body where the evidence alone gives it 68.4 %, and the prior
+     * drags it to third, so there the likelihood should be damped *less*.
+     *
+     * What separates the two is not a property of a species. It is a property of the body: whether
+     * the candidates' evidence actually disagrees. Spread is the range of `logLik` across the
+     * candidates, and damping ramps from `lo` at no disagreement to `hi` once the spread reaches
+     * `scale`.
+     *
+     * Deliberately not per-species: `informativeness` was that idea and §C1 measured it failing for a
+     * sign reason. This scales one number for the whole body, so it cannot hand a flat species an
+     * advantage.
+     */
+    adaptive?: { lo: number; hi: number; scale: number; perTerm?: boolean; stat?: "range" | "topgap" };
   },
 ): { ranked: RankedSpecies<T>[]; unscored: T[] } {
   const ranked: RankedSpecies<T>[] = [];
   const unscored: T[] = [];
 
   for (const m of matches) {
-    const likelihood = speciesLogScore(m.entry, scan, rec, journalHost, opts);
+    const likelihood = speciesLogScore(m.entry, scan, rec, journalHost, {
+      ...opts,
+      // With adaptive on, the per-species damping is irrelevant — the score is rebuilt below from a
+      // spread only this function can see. Pass 1 so `logLik` comes back unshrunk either way.
+      damping: opts?.adaptive ? 1 : opts?.damping,
+      ambient: opts?.ambientFor?.(m.entry) ?? null,
+    });
     if (!likelihood) unscored.push(m);
     else ranked.push({ match: m, likelihood, probability: 0 });
   }
   if (ranked.length === 0) return { ranked, unscored };
+
+  /*
+    Adaptive damping (probe seam). Re-derive every logScore from the spread this body actually shows.
+
+    `speciesLogScore` already folded `damping` in, so the score is rebuilt rather than adjusted:
+    logPrior + d * logLik, with one `d` for the whole body.
+  */
+  if (opts?.adaptive && ranked.length > 1) {
+    const liks = ranked.map((r) => r.likelihood.logLik);
+    /*
+      Which spread. `range` is max − min and it disappointed for a reason worth keeping: it grows
+      with the number of candidates and with how badly the *worst* one fits, neither of which is the
+      question. A body with twelve candidates looks "decisive" because something on it is hopeless.
+
+      `topgap` is the distance between the best and second-best likelihood — decisiveness measured
+      where the decision actually happens.
+    */
+    const sorted = [...liks].sort((a, b) => b - a);
+    let spread =
+      opts.adaptive.stat === "topgap"
+        ? (sorted[0] ?? 0) - (sorted[1] ?? sorted[0] ?? 0)
+        : Math.max(...liks) - Math.min(...liks);
+    if (opts.adaptive.perTerm) {
+      // Per term, so a body scored on twenty parameters is not automatically "decisive" against one
+      // scored on six. The term counts differ between candidates; the mean is the honest divisor.
+      const meanTerms = ranked.reduce((n, r) => n + r.likelihood.terms, 0) / ranked.length;
+      if (meanTerms > 0) spread /= meanTerms;
+    }
+    const { lo, hi, scale } = opts.adaptive;
+    const d = scale > 0 ? lo + (hi - lo) * Math.min(1, spread / scale) : hi;
+    for (const r of ranked) {
+      r.likelihood.logScore = r.likelihood.logPrior + d * r.likelihood.logLik;
+    }
+  }
 
   // Softmax in log space: subtract the maximum before exponentiating, or a body with twenty terms
   // underflows to zero everywhere and the ranking becomes the order of the input array.

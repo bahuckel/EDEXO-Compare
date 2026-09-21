@@ -33,7 +33,54 @@ describe("bucketCategoricalValue", () => {
       "Thick Carbon dioxide",
       "Carbon dioxide-rich",
     ]) {
-      expect(bucketCategoricalValue("body.atmosphereType", v), v).toBe("carbon dioxide");
+      expect(bucketCategoricalValue("body.atmosphereType", v), v).toBe("carbondioxide");
+    }
+  });
+
+  it("lands the journal's spelling and the corpus's on the same token", () => {
+    /*
+      THE ONE THAT MATTERS. This function is called twice per comparison — once on what the journal
+      wrote, once on what the corpus stored — and the two sources have never spelled anything the
+      same way. Measured 2026-09-21, eight values could never meet, including the most common bio
+      planet class and the two most common atmospheres.
+
+      A term that never matches is worse than a term that is absent: `logSmoothed(0, total, ...)`
+      scales with the species' own sample count, so it becomes a penalty proportional to how much
+      corpus data a species has. Stratum tectonicas scored -8.97 on its own home class.
+    */
+    const pairs: [string, string, string][] = [
+      ["body.subType", "High metal content body", "High metal content world"],
+      ["body.subType", "Rocky ice body", "Rocky Ice world"],
+      ["body.subType", "Metal rich body", "Metal-rich body"],
+      ["body.subType", "Rocky body", "Rocky body"],
+      ["body.subType", "Icy body", "Icy body"],
+      ["body.atmosphereType", "CarbonDioxide", "Thin Carbon dioxide"],
+      ["body.atmosphereType", "SulphurDioxide", "Hot thin Sulphur dioxide"],
+      ["body.atmosphereType", "NeonRich", "Thin Neon-rich"],
+      ["body.atmosphereType", "Ammonia", "Thin Ammonia"],
+      ["body.volcanismType", "", "No volcanism"],
+      ["body.volcanismType", "major water magma volcanism", "Major Water Magma"],
+    ];
+    for (const [path, journal, corpus] of pairs) {
+      expect(bucketCategoricalValue(path, journal), `${journal} vs ${corpus}`).toBe(
+        bucketCategoricalValue(path, corpus),
+      );
+    }
+  });
+
+  it("does not fold two facts that are genuinely different", () => {
+    // The other half of the sabotage check: a fold loose enough to make everything match would pass
+    // the case above and destroy the term.
+    const distinct: [string, string, string][] = [
+      ["body.subType", "Rocky body", "Rocky ice body"],
+      ["body.subType", "Icy body", "Rocky ice body"],
+      ["body.subType", "High metal content body", "Metal rich body"],
+      ["body.atmosphereType", "CarbonDioxide", "SulphurDioxide"],
+      ["body.atmosphereType", "Neon", "Nitrogen"],
+      ["body.volcanismType", "Major Water Magma", "Minor Nitrogen Magma"],
+    ];
+    for (const [path, a, b] of distinct) {
+      expect(bucketCategoricalValue(path, a), `${a} vs ${b}`).not.toBe(bucketCategoricalValue(path, b));
     }
   });
 
@@ -49,9 +96,21 @@ describe("bucketCategoricalValue", () => {
     expect(bucketCategoricalValue("body.volcanismType", "Minor Rocky Magma")).toBe("rocky magma");
   });
 
-  it("leaves anything it has no rule for alone", () => {
-    expect(bucketCategoricalValue("body.subType", "High metal content body")).toBe("High metal content body");
+  it("folds a planet class onto its bare name, whichever noun the source used", () => {
+    expect(bucketCategoricalValue("body.subType", "High metal content body")).toBe("highmetalcontent");
+    expect(bucketCategoricalValue("body.subType", "High metal content world")).toBe("highmetalcontent");
     expect(bucketCategoricalValue("body.subType", "  ")).toBe("");
+  });
+
+  it("reads an empty volcanism as no volcanism, which is what the journal means by it", () => {
+    // It used to fall out on the empty-string guard and match nothing, so every quiet body — most of
+    // the galaxy — scored a dead term against every candidate.
+    expect(bucketCategoricalValue("body.volcanismType", "")).toBe("none");
+    expect(bucketCategoricalValue("body.volcanismType", "No volcanism")).toBe("none");
+  });
+
+  it("leaves a path it has no rule for alone", () => {
+    expect(bucketCategoricalValue("body.terraformingState", "Terraformable")).toBe("Terraformable");
   });
 });
 
@@ -114,7 +173,7 @@ describe("poolBackground and buildParameterImportance", () => {
     const bg = poolBackground(tables);
     // "Thin Carbon dioxide" and "Carbon dioxide-rich" are the same gas.
     expect(bg["body.atmosphereType"]).toEqual({
-      "carbon dioxide": 110,
+      carbondioxide: 110,
       ammonia: 40,
       water: 50,
     });
@@ -139,7 +198,7 @@ describe("poolBackground and buildParameterImportance", () => {
   });
 
   it("bucketCounts drops empty values rather than making a bucket for them", () => {
-    expect(bucketCounts("body.subType", { "": 5, Icy: 3, Rocky: 0 })).toEqual({ Icy: 3 });
+    expect(bucketCounts("body.subType", { "": 5, Icy: 3, Rocky: 0 })).toEqual({ icy: 3 });
   });
 });
 

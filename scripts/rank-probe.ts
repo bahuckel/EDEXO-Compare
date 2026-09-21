@@ -178,6 +178,105 @@ const MIN_SAMPLES = Number(
 const DAMPING = Number(
   (process.argv.find((a) => a.startsWith("--damping=")) ?? `--damping=${TERM_DAMPING}`).split("=")[1],
 );
+
+/**
+ * §C1. `--ambient=genus|genus-loo|corpus` scores every term as a ratio against an ambient instead of
+ * in absolute terms, and `--informativeness` is the literal proposal in the backlog.
+ *
+ * `genus` sums every sibling's histograms, the species itself included; `genus-loo` leaves the
+ * species out, which is the honest comparison when one species is most of its own genus — paleas is
+ * 2,446 of Stratum's bodies, so with itself in the ambient it is largely being compared to itself.
+ */
+const AMBIENT = (process.argv.find((a) => a.startsWith("--ambient=")) ?? "--ambient=").split("=")[1]!;
+const INFORMATIVENESS = process.argv.includes("--informativeness");
+/** `--claim=<k>` amplifies a peaked species' claim instead of cancelling its floor. Needs --ambient. */
+/**
+ * §C1c. `--adaptive=lo,hi,scale` picks the damping per body from how far apart the candidates are.
+ * Append `,perterm` to divide the spread by the mean term count first.
+ */
+const ADAPTIVE = (() => {
+  const raw = process.argv.find((a) => a.startsWith("--adaptive="));
+  if (!raw) return undefined;
+  const parts = raw.split("=")[1]!.split(",");
+  return {
+    lo: Number(parts[0]),
+    hi: Number(parts[1]),
+    scale: Number(parts[2]),
+    perTerm: parts.includes("perterm"),
+    stat: (parts.includes("topgap") ? "topgap" : "range") as "range" | "topgap",
+  };
+})();
+/** §C1e. `--bodytype=<w>` blends the body-type-conditional prior in; `--bt-mincell=<n>` sets the floor. */
+const BODY_TYPE_W = Number(
+  (process.argv.find((a) => a.startsWith("--bodytype=")) ?? "--bodytype=0").split("=")[1],
+);
+const BT_VARIANT = (process.argv.find((a) => a.startsWith("--bt-variant=")) ?? "--bt-variant=").split(
+  "=",
+)[1]!;
+const BT_MIN_CELL = Number(
+  (process.argv.find((a) => a.startsWith("--bt-mincell=")) ?? "--bt-mincell=20").split("=")[1],
+);
+
+/** `--spread-stats` prints the distribution of body spreads instead of sweeping anything. */
+const SPREAD_STATS = process.argv.includes("--spread-stats");
+const spreads: { spread: number; perTerm: number; truthRank: number }[] = [];
+
+const CLAIM_WEIGHT = Number(
+  (process.argv.find((a) => a.startsWith("--claim=")) ?? "--claim=0").split("=")[1],
+);
+
+/**
+ * Ambient histograms, summed over a set of species profiles.
+ *
+ * Counts add across species because they are counts of bodies on the same shared bin edges, which is
+ * the whole reason the edges are global.
+ */
+function sumProfiles(ids: string[]): {
+  histograms: Record<string, number[]>;
+  categorical: Record<string, Record<string, number>>;
+} {
+  const histograms: Record<string, number[]> = {};
+  const categorical: Record<string, Record<string, number>> = {};
+  for (const id of ids) {
+    const entry = db.species.find((e) => e.id === id);
+    const prof = entry ? loadExomasteryProfile(root, entry) : null;
+    if (!prof) continue;
+    for (const [path, counts] of Object.entries(prof.histograms ?? {})) {
+      const into = (histograms[path] ??= new Array(counts.length).fill(0));
+      for (const [i, c] of counts.entries()) if (Number.isFinite(c)) into[i] = (into[i] ?? 0) + c;
+    }
+    for (const [path, labels] of Object.entries(prof.categorical ?? {})) {
+      const into = (categorical[path] ??= {});
+      for (const [label, n] of Object.entries(labels)) {
+        if (Number.isFinite(n) && n > 0) into[label] = (into[label] ?? 0) + n;
+      }
+    }
+  }
+  return { histograms, categorical };
+}
+
+const speciesByGenus = new Map<string, string[]>();
+for (const e of db.species) {
+  const g = e.genusDataDir;
+  if (!g) continue;
+  speciesByGenus.set(g, [...(speciesByGenus.get(g) ?? []), e.id]);
+}
+
+const ambientCache = new Map<string, ReturnType<typeof sumProfiles> | null>();
+const corpusAmbient = AMBIENT === "corpus" ? sumProfiles(db.species.map((e) => e.id)) : null;
+
+function ambientFor(entry: { id: string; genusDataDir?: string }) {
+  if (!AMBIENT) return null;
+  if (AMBIENT === "corpus") return corpusAmbient;
+  const genus = entry.genusDataDir;
+  if (!genus) return null;
+  const key = AMBIENT === "genus-loo" ? `loo:${entry.id}` : `g:${genus}`;
+  if (!ambientCache.has(key)) {
+    const ids = (speciesByGenus.get(genus) ?? []).filter((id) => AMBIENT !== "genus-loo" || id !== entry.id);
+    ambientCache.set(key, ids.length ? sumProfiles(ids) : null);
+  }
+  return ambientCache.get(key) ?? null;
+}
 /** `--atmosphere-weight=<x>` sweeps `ATMOSPHERE_TERM_WEIGHT`; 0 drops the pooled gas term. */
 const ATMOSPHERE_WEIGHT = Number(
   (
@@ -214,6 +313,29 @@ const calibration = Array.from({ length: CALIB_BINS }, () => ({ n: 0, hit: 0, pr
  */
 const genusCalibration = Array.from({ length: CALIB_BINS }, () => ({ n: 0, hit: 0, predicted: 0 }));
 
+/** Per-genus ordering, so a change can be attributed instead of averaged away. §C1 is one genus. */
+const genusStats = new Map<string, { n: number; top1: number; rankSum: number }>();
+
+/**
+ * `--focus=stratum` — per-species inside one genus, and which species took first place when the
+ * truth did not. A genus mean cannot answer §C1, whose whole claim is about one species stealing
+ * from its siblings; it can improve while the named defect gets worse.
+ */
+const FOCUS = (process.argv.find((a) => a.startsWith("--focus=")) ?? "--focus=stratum").split("=")[1]!;
+const focusStats = new Map<
+  string,
+  {
+    n: number;
+    top1: number;
+    rankSum: number;
+    /** The same three, counted over same-genus candidates only — the §C1 question. */
+    inN: number;
+    inTop1: number;
+    inRankSum: number;
+    stolenBy: Map<string, number>;
+  }
+>();
+
 let rankSum = 0;
 let top1 = 0;
 let top3 = 0;
@@ -246,6 +368,16 @@ for (const b of bodies) {
    * whatever it can reach would compare them on different corpora — the model would look better for
    * having been asked fewer questions. Same rows, same species, one difference.
    */
+  const rankedForSpread = SPREAD_STATS
+    ? rankSpeciesOnBody(matches, b.scan, rec, host, { root, damping: 1 }).ranked
+    : null;
+  if (rankedForSpread && rankedForSpread.length > 1) {
+    const liks = rankedForSpread.map((r) => r.likelihood.logLik);
+    const mt = rankedForSpread.reduce((n, r) => n + r.likelihood.terms, 0) / rankedForSpread.length;
+    const sp = Math.max(...liks) - Math.min(...liks);
+    spreads.push({ spread: sp, perTerm: mt > 0 ? sp / mt : 0, truthRank: 0 });
+  }
+
   const posterior = new Map(
     rankSpeciesOnBody(matches, b.scan, rec, host, {
       root,
@@ -259,6 +391,13 @@ for (const b of bodies) {
       regionPriorWeight: REGION_WEIGHT,
       dropPaths: DROP_PATHS,
       perTerm: PER_TERM,
+      ambientFor: AMBIENT ? ambientFor : undefined,
+      informativeness: INFORMATIVENESS,
+      claimWeight: CLAIM_WEIGHT,
+      adaptive: ADAPTIVE,
+      bodyTypePriorWeight: BODY_TYPE_W,
+      bodyTypeMinCell: BT_MIN_CELL,
+      bodyTypeVariant: BT_VARIANT,
     }).ranked.map((r) => [r.match.entry.id, r.probability]),
   );
   const scored = matches
@@ -320,6 +459,47 @@ for (const b of bodies) {
     rankSum += i + 1;
     if (i === 0) top1++;
     if (i < 3) top3++;
+    if (truthGenus) {
+      const g = genusStats.get(truthGenus) ?? { n: 0, top1: 0, rankSum: 0 };
+      g.n++;
+      g.rankSum += i + 1;
+      if (i === 0) g.top1++;
+      genusStats.set(truthGenus, g);
+      if (truthGenus === FOCUS) {
+        const f = focusStats.get(t) ?? {
+          n: 0,
+          top1: 0,
+          rankSum: 0,
+          inN: 0,
+          inTop1: 0,
+          inRankSum: 0,
+          stolenBy: new Map<string, number>(),
+        };
+        f.n++;
+        f.rankSum += i + 1;
+        if (i === 0) f.top1++;
+        /*
+          The rank that answers §C1 is the one *inside the genus*.
+
+          A body carries several genera and the probe counts each truth species on its own, so a
+          Bacterium standing above a Stratum is usually not an error at all — the body holds both.
+          Measuring paleas against its siblings is the only way to see whether it is being stolen
+          from or doing the stealing, and it is also the question the panel asks after a DSS names
+          the genus.
+        */
+        const siblings = scored.filter(
+          (x) => db.species.find((e) => e.id === x.id)?.genusDataDir === truthGenus,
+        );
+        const j = siblings.findIndex((x) => x.id === t);
+        if (siblings.length > 1 && j >= 0) {
+          f.inN++;
+          f.inRankSum += j + 1;
+          if (j === 0) f.inTop1++;
+          else f.stolenBy.set(siblings[0]!.id, (f.stolenBy.get(siblings[0]!.id) ?? 0) + 1);
+        }
+        focusStats.set(t, f);
+      }
+    }
     worst.push({ rank: i + 1, of: scored.length, id: t, body: b.bodyName });
   }
 }
@@ -336,6 +516,56 @@ console.log(`ranked species     ${ranked}   over ${scoredRows} scored candidate 
 console.log(`mean rank          ${(rankSum / ranked).toFixed(3)}`);
 console.log(`top-1              ${top1} (${((top1 / ranked) * 100).toFixed(1)}%)`);
 console.log(`top-3              ${top3} (${((top3 / ranked) * 100).toFixed(1)}%)`);
+if (AMBIENT || INFORMATIVENESS || CLAIM_WEIGHT) {
+  console.log(
+    `evidence           ${AMBIENT ? `ambient=${AMBIENT}` : ""}${AMBIENT && INFORMATIVENESS ? " + " : ""}${INFORMATIVENESS ? "informativeness-weighted" : ""}${CLAIM_WEIGHT ? ` claim=${CLAIM_WEIGHT}` : ""}`,
+  );
+}
+
+if (focusStats.size) {
+  console.log(`\ninside ${FOCUS}, per species — and who took first place when it was not the truth:`);
+  const thiefTotal = new Map<string, number>();
+  for (const [id, s] of [...focusStats.entries()].sort((a, b) => b[1].n - a[1].n)) {
+    const thieves = [...s.stolenBy.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(([t, n]) => `${t.split("_").pop()} ${n}`)
+      .join(", ");
+    for (const [t, n] of s.stolenBy) thiefTotal.set(t, (thiefTotal.get(t) ?? 0) + n);
+    console.log(
+      `  ${id.split("_").pop()!.padEnd(12)} ${String(s.n).padStart(3)} rows   all: mean ${(s.rankSum / s.n).toFixed(2).padStart(5)} top-1 ${String(s.top1).padStart(3)}   within ${FOCUS}: ${String(s.inN).padStart(3)} rows mean ${(s.inN ? s.inRankSum / s.inN : 0).toFixed(2).padStart(4)} top-1 ${String(s.inTop1).padStart(3)}   lost to: ${thieves || "-"}`,
+    );
+  }
+  const misses = [...thiefTotal.values()].reduce((a, b) => a + b, 0);
+  console.log(
+    `  misses ${misses}, taken by: ${[...thiefTotal.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([t, n]) => `${t.split("_").pop()} ${n}`)
+      .join(", ")}`,
+  );
+}
+
+if (SPREAD_STATS && spreads.length) {
+  const xs = spreads.map((x) => x.spread).sort((a, b) => a - b);
+  const ps = spreads.map((x) => x.perTerm).sort((a, b) => a - b);
+  const q = (arr: number[], f: number) => arr[Math.min(arr.length - 1, Math.floor(arr.length * f))]!;
+  console.log(`\nspread across candidates, ${spreads.length} bodies`);
+  for (const f of [0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99])
+    console.log(
+      `  p${String(f * 100).padStart(3)}  raw ${q(xs, f).toFixed(2).padStart(7)}   per-term ${q(ps, f).toFixed(3)}`,
+    );
+  console.log(`  max   raw ${xs[xs.length - 1]!.toFixed(2)}   per-term ${ps[ps.length - 1]!.toFixed(3)}`);
+}
+
+console.log("\nby genus (10+ ranked):");
+for (const [genus, s] of [...genusStats.entries()]
+  .filter(([, s]) => s.n >= 10)
+  .sort((a, b) => b[1].n - a[1].n)) {
+  console.log(
+    `  ${genus.padEnd(14)} ${String(s.n).padStart(4)} ranked   mean ${(s.rankSum / s.n).toFixed(3).padStart(6)}   top-1 ${String(s.top1).padStart(3)} (${((s.top1 / s.n) * 100).toFixed(1).padStart(5)} %)`,
+  );
+}
 
 if (USE_MODEL) {
   const rows = genusCalibration.reduce((n, c) => n + c.n, 0);

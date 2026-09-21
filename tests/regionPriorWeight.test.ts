@@ -77,7 +77,9 @@ describe("the probe measures the app, not a configuration nobody runs", () => {
     expect(probe).toContain("--volcanism-weight=${VOLCANISM_TERM_WEIGHT}");
     // And it imports them rather than restating them.
     expect(probe).toContain("REGION_PRIOR_WEIGHT");
-    expect(TERM_DAMPING).toBe(0.15);
-    expect(VOLCANISM_TERM_WEIGHT).toBe(2);
+    // The values themselves, so a re-tune is a deliberate edit here as well as there. Re-swept
+    // 2026-09-21 after the bucketing fix (§C1j) woke three dead terms and moved every optimum.
+    expect(TERM_DAMPING).toBe(0.11);
+    expect(VOLCANISM_TERM_WEIGHT).toBe(3);
   });
 });

@@ -53,25 +53,47 @@ export const NO_VOLCANISM = "No volcanism";
  * M L T Y plus N for neutron and D for white dwarf — because that is the resolution at which the
  * question "does star type matter for this species" has an answer.
  */
+/**
+ * Collapse a value to the bucket the game plausibly keys on.
+ *
+ * Anything finer is noise that flattens the measurement: 88 spectral classes make a species that
+ * only ever grows on F-type stars look undecided. The buckets are deliberately coarse — O B A F G K
+ * M L T Y plus N for neutron and D for white dwarf — because that is the resolution at which the
+ * question "does star type matter for this species" has an answer.
+ *
+ * ### Both sides must land on the same token, and for a long time three fields did not
+ *
+ * This function is called twice for every comparison: once on what the journal wrote and once on
+ * what the corpus stored, and the two sources have never spelled anything the same way. Measured
+ * 2026-09-21, eight values could never match:
+ *
+ * ```
+ *   journal                      corpus                       before
+ *   High metal content body      High metal content world     never matched
+ *   Rocky ice body               Rocky Ice world              never matched
+ *   Metal rich body              Metal-rich body              never matched
+ *   CarbonDioxide                Thin Carbon dioxide          never matched
+ *   SulphurDioxide               Thin Sulphur dioxide         never matched
+ *   NeonRich / ArgonRich / …     Thin Neon-rich               never matched
+ *   "" (a quiet body)            No volcanism                 never matched
+ * ```
+ *
+ * Single-word gases matched and multi-word ones did not; `Rocky` and `Icy` matched and the other
+ * three classes did not, **High metal content among them, the most common bio class of all**. This is
+ * §42's volcanism bug in three more places, and it is worse than a silent term: `logSmoothed(0,
+ * total, …)` scales with the species' own sample count, so a term that never matches is a penalty
+ * **proportional to how much corpus data the species has**. On an HMC body Stratum tectonicas scored
+ * −8.97 on its own home class against a thinner-sampled rival's −7.09.
+ *
+ * So every branch now squashes to letters and digits before comparing, and the nouns and suffixes
+ * that only one side writes — `world` against `body`, `-rich` against `Rich` — come off. The fold is
+ * pinned in `tests/parameterImportance.test.ts` from both directions: the pairs that must meet, and
+ * the pairs that must stay apart.
+ */
 export function bucketCategoricalValue(path: string, value: string): string {
   const low = path.toLowerCase();
   const v = value.trim();
-  if (!v) return "";
-
-  if (low.includes("host_star") || low.includes("spectral") || low.includes("startype")) {
-    // EDSM spells the exotic hosts out — "White Dwarf (DA) Star", "Black Hole" — and reading the
-    // first letter put every white dwarf in "other" and every black hole among the B-type stars.
-    return hostStarClassKey(v) ?? "other";
-  }
-
-  if (low.includes("atmosphere") && !low.includes("composition")) {
-    // "Thin Carbon dioxide", "Hot thin Carbon dioxide" and "Carbon dioxide-rich" are one gas to the
-    // question being asked here; pressure is measured separately and far better as a number.
-    let t = v.toLowerCase();
-    t = t.replace(/^(hot\s+)?(thin|thick)\s+/, "");
-    t = t.replace(/-rich$/, "").replace(/\s+atmosphere$/, "");
-    return t.trim() || "none";
-  }
+  const squash = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "");
 
   if (low.includes("volcanism")) {
     /*
@@ -81,13 +103,39 @@ export function bucketCategoricalValue(path: string, value: string): string {
       `minor nitrogen magma volcanism` and the corpus profile says `Minor Nitrogen Magma`. Stripping
       only the intensity left `nitrogen magma volcanism` against `nitrogen magma`, so the buckets
       never once matched and the volcanism term contributed nothing to any posterior, on any body.
-      The trailing word goes too, and `No volcanism` joins the empty string on one token so that a
-      quiet body can agree with a species that is only ever found on quiet bodies.
+
+      An empty `Volcanism` is the journal's way of writing "No volcanism" and belongs on `none` with
+      it — it used to fall out on the empty-string guard above this branch and match nothing.
     */
+    if (!v) return "none";
     let t = v.toLowerCase().replace(/^(minor|major)\s+/, "");
     t = t.replace(/\s*volcanism\s*$/, "").trim();
     if (!t || t === "no" || t === "none") return "none";
     return t;
+  }
+
+  if (!v) return "";
+
+  if (low.includes("host_star") || low.includes("spectral") || low.includes("startype")) {
+    // EDSM spells the exotic hosts out — "White Dwarf (DA) Star", "Black Hole" — and reading the
+    // first letter put every white dwarf in "other" and every black hole among the B-type stars.
+    return hostStarClassKey(v) ?? "other";
+  }
+
+  if (low.includes("subtype") || low.includes("planetclass")) {
+    // The journal says "High metal content body", the corpus "High metal content world"; one writes
+    // "Metal rich", the other "Metal-rich". Same rock, and the trailing noun carries no information.
+    return squash(v).replace(/(world|body)$/, "");
+  }
+
+  if (low.includes("atmosphere") && !low.includes("composition")) {
+    // "Thin Carbon dioxide", "Hot thin Carbon dioxide", "Carbon dioxide-rich" and the journal's
+    // "CarbonDioxide" are one gas to the question being asked here; pressure is measured separately
+    // and far better as a number. `-rich` and the journal's glued `Rich` both come off, as the
+    // corpus spelling's already did.
+    let t = v.toLowerCase().replace(/^(hot\s+)?(thin|thick)\s+/, "");
+    t = t.replace(/\s+atmosphere$/, "");
+    return squash(t).replace(/rich$/, "") || "none";
   }
 
   return v;
