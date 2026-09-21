@@ -237,13 +237,13 @@ describe("volcanism in the posterior", () => {
     expect(d4 / d1).toBeCloseTo(4, 5);
   });
 
-  it("records where the conditional prior disagrees with the owner's own landing", () => {
+  it("agrees with the owner's own landing once the conditional prior is blended in", () => {
     /*
-      **A known divergence, kept visible on purpose.**
+      **This is the test the weight was chosen against.**
 
       Every assertion above scores with `bodyTypePriorWeight: 0`, because this file is about one
       term. The app does not: since §C1e it blends in `P(species | this kind of body)`, and on this
-      body the two sources disagree.
+      body the corpus cell pulls the other way.
 
         the owner's landing   neon 100 %, nitrogen volcanism -> he found **acies**
         the corpus cell       icy|neon|nitrogenmagma, n=14   -> tela 50 %, omentum 36 %, acies 14 %
@@ -251,11 +251,14 @@ describe("volcanism in the posterior", () => {
         atmosphere alone      icy|neon, n=165                -> acies 64 %, omentum 7 %
 
       Acies is a neon specialist — 213 corpus bodies at 85-100 % neon — and conditioning on volcanism
-      is what turns it over. Fourteen bodies against one landing is thin on both sides.
+      is what turns it over. Fourteen bodies against one landing is thin on both sides, and the
+      weight is what decides which of the two wins:
 
-      This test asserts nothing about who *should* win. It pins what the app currently does, so the
-      day the corpus is rebuilt or the weight is changed, the change is visible here rather than
-      discovered in the cockpit.
+        w <= 0.4   acies > tela > omentum      w >= 0.5   omentum > acies > tela
+
+      `BODY_TYPE_PRIOR_WEIGHT` shipped at 1 for one day, when the app contradicted him here. It is
+      0.4 now. **Raising it past 0.4 breaks this test, and that is the point** — the failure is the
+      warning, not a stale fixture to be updated.
     */
     const appOrder = CANDIDATES.map((name) => ({
       name,
@@ -264,10 +267,28 @@ describe("volcanism in the posterior", () => {
       .filter((x) => x.r)
       .sort((a, b) => b.r!.logScore - a.r!.logScore)
       .map((x) => x.name.replace(/^\S+\s+/, ""));
-    expect(appOrder[0], "the app follows the corpus cell here, not the landing").toBe("omentum");
-    // Acies is not dismissed — it stays in the list, which is the difference between a prior and a
-    // gate. The owner's report is one body and it is not being called wrong.
-    expect(appOrder).toContain("acies");
+    expect(appOrder[0], "raise BODY_TYPE_PRIOR_WEIGHT past 0.4 and the corpus cell takes this").toBe("acies");
+  });
+
+  it("still gets verrata first on water magma, which is the other end of the same dial", () => {
+    /*
+      The reason the weight is 0.4 rather than lower. Verrata is 43-48 % of water-magma bodies in the
+      corpus and it was losing to a species more common overall — one of the three field misses that
+      §C1e was built for. At 0.25 the conditional prior is too quiet to fix it; at 0.4 it is not.
+
+      So 0.4 is not a midpoint anyone liked the look of. It is the only value measured that satisfies
+      both of the owner's landings at once.
+    */
+    const appOrder = CANDIDATES.map((name) => ({
+      name,
+      r: speciesLogScore(find(name), WATER, null, null, {}),
+    }))
+      .filter((x) => x.r)
+      .sort((a, b) => b.r!.logScore - a.r!.logScore)
+      .map((x) => x.name.replace(/^\S+\s+/, ""));
+    expect(appOrder[0], "lower BODY_TYPE_PRIOR_WEIGHT below 0.4 and verrata loses this again").toBe(
+      "verrata",
+    );
   });
 
   it("leaves no volcanism gate behind in the data", () => {

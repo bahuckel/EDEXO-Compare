@@ -27,17 +27,36 @@
  *
  * ### What it is worth
  *
- * Measured on the owner's cache, 659 ranked species over 2,056 candidate rows, against the model as
- * it shipped:
+ * Re-measured 2026-09-21 on the owner's cache, 664 ranked species over 2,066 candidate rows. Every
+ * row below is the same cache and the same run, so the columns are comparable to each other and not
+ * to the first sweep, which had five fewer bodies in it.
  *
  * ```
- *   without   mean 2.965   top-1 215 (32.6 %)   top-3 454   calibration 0.0112
- *   with      mean 2.971   top-1 227 (34.4 %)   top-3 459   calibration 0.0096
+ *   weight   mean rank   top-1          top-3          B3 gap   complete gap
+ *   0        2.956       217 (32.7 %)   459 (69.1 %)   0.0082   0.0114
+ *   0.25     2.950       222 (33.4 %)   455 (68.5 %)   0.0061   0.0108
+ *   0.4      2.973       224 (33.7 %)   445 (67.0 %)   0.0044   0.0105   <- shipped
+ *   0.5      2.949       227 (34.2 %)   450 (67.8 %)   0.0061   0.0115
+ *   0.75     2.953       231 (34.8 %)   455 (68.5 %)   0.0120   0.0093
+ *   1        2.961       230 (34.6 %)   464 (69.9 %)   0.0096   0.0101
  * ```
  *
- * Twelve more bodies where the panel's first row is right, five more where the answer is visible
- * without scrolling, and a calibration gap a seventh smaller. It costs six Bacterium first places
- * and returns seventeen across Tussock, Fungoida, Frutexa, Cactoida, Fonticulua and Clypeus.
+ * Full weight takes the most top-3 and 0.75 the most top-1, and **0.4 is shipped anyway**, on the
+ * owner's instruction and for a reason the headline columns cannot see: it is the largest weight at
+ * which the model still agrees with both of his own landings.
+ *
+ * ```
+ *   icy, 100 % neon, minor nitrogen magma, 52 K   he found acies
+ *     w <= 0.4   acies > tela > omentum          w >= 0.5   omentum > acies > tela
+ *   the same moon with major water magma          he found verrata
+ *     w = 0.25   tela > acies > verrata          w >= 0.4   verrata > tela > acies
+ * ```
+ *
+ * 0.4 is the only setting that clears both. It costs six top-1 and nineteen top-3 against full
+ * weight and it halves the within-genus calibration gap, which is the column that says how much to
+ * believe the percentage printed beside a species. A field report is one body and a probe column is
+ * hundreds; the owner's standing rule is that when the app and his landing disagree, the app is the
+ * thing on trial.
  *
  * The table is built by `scripts/build-body-type-prior.ts` from a corpus that does not ship, and the
  * 57 KB result does. When it is missing every lookup returns null and the app ranks as it did
@@ -52,12 +71,16 @@ import { BODY_TYPE_T_EDGES, bodyTypeKeyParts } from "../shared/bodyTypeKey.js";
 /**
  * How far to move from the galaxy-wide prior toward the share among bodies of this kind, 0…1.
  *
- * One. The two are shares on the same scale so the blend is a plain mixture, and the sweep is flat
- * between 0.25 and 1.0 — the conditional prior agrees with the galaxy-wide one nearly everywhere and
- * differs where the body type is distinctive, which is the whole point. Full weight takes the most
- * top-1 and the most top-3, and the calibration column does not punish it.
+ * **0.4, chosen by the owner 2026-09-21**, and not the top of the probe. The sweep in the header is
+ * flat between 0.25 and 1.0 on mean rank — the conditional prior agrees with the galaxy-wide one
+ * nearly everywhere and differs only where the body type is distinctive — so the headline columns
+ * are not what decides this. 0.4 is the largest weight that still puts acies first on his neon
+ * moon and verrata first on water magma; at 0.5 the corpus cell takes the neon one over.
+ *
+ * It costs six top-1 and nineteen top-3 against full weight, and it has the best within-genus
+ * calibration of any setting measured.
  */
-export const BODY_TYPE_PRIOR_WEIGHT = 1;
+export const BODY_TYPE_PRIOR_WEIGHT = 0.4;
 
 /**
  * Bodies a cell needs before its shares are believed rather than backed off.

@@ -145,13 +145,18 @@ describe("the shipped table", () => {
 describe("the settings the sweep chose", () => {
   it("pins the weight and the cell floor", () => {
     /*
-      Both were swept on the owner's cache, 659 ranked species over 2,056 rows. Full weight took the
-      most top-1 and top-3; the floor barely moved the headline, and the smaller one keeps the finest
-      level answering on body types the corpus has met only a few dozen times.
+      Both were swept on the owner's cache, 664 ranked species over 2,066 rows. The floor barely
+      moved the headline, and the smaller one keeps the finest level answering on body types the
+      corpus has met only a few dozen times.
+
+      The weight is **not** the top of that sweep. Full weight takes the most top-3 and 0.75 the most
+      top-1; 0.4 is the largest value at which the model still agrees with both of the owner's own
+      landings — acies on his neon moon, verrata on water magma — and it is his call, 2026-09-21.
+      Raising it is a decision about whose evidence wins, not a tuning step.
 
       A re-tune is a deliberate edit here as well as there.
     */
-    expect(BODY_TYPE_PRIOR_WEIGHT).toBe(1);
+    expect(BODY_TYPE_PRIOR_WEIGHT).toBe(0.4);
     expect(MIN_CELL).toBe(10);
   });
 });
