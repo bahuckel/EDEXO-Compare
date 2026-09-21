@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { mergeDataOverlays } from "./mergeDataOverlay.mjs";
+import { copyDataTree } from "./packagedData.mjs";
 import { signWindowsArtifactsIfConfigured } from "./sign-windows-artifacts.mjs";
 
 const require = createRequire(import.meta.url);
