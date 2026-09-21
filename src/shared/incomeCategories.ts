@@ -77,6 +77,14 @@ const VOUCHER_CATEGORY: Readonly<Record<string, IncomeCategory>> = {
   // A codex or scan voucher is exploration money by any reading.
   codex: "exploration",
   scannable: "exploration",
+  /*
+    Trade and settlement vouchers stay under Other rather than folding into Trading and Missions.
+
+    The owner's call after seeing the shipped panel, 2026-09-21: "Other stays, works fine from what
+    I can tell." They are 6.9 M of his 12 bn, and keeping them separate means the Trading row is
+    market buying and selling only, which is the thing its cost line nets against. Do not tidy this
+    away.
+  */
   trade: "other",
   settlement: "other",
 };
