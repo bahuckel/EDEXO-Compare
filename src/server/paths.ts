@@ -87,6 +87,27 @@ export function resolveExoOutlierLogPath(): string {
 }
 
 /**
+ * The learned on-foot catalog: every `ScanOrganic` analyse the commander has completed.
+ *
+ * Beside the outlier log, and it took a public release to notice it was not. It used to live at
+ * `<projectRoot>/data/foot_scanned.json`, and a packaged app's project root is the **install tree**,
+ * which made it two different kinds of wrong at once:
+ *
+ * - it shipped, so a release carried the builder's own landings and seeded them into every
+ *   installer's catalog as bodies they had scanned themselves (fixed in the packagers too), and
+ * - it did not survive, because a portable build extracts per version and `npm run dist:win` wipes
+ *   `dist/electron-out` before it writes — the commander's own scan history was deleted by the next
+ *   build every time.
+ *
+ * It is first-hand observation that cannot be rebuilt from anything else, which is the same argument
+ * the outlier log makes for its own location. {@link footScannedCatalog} carries the old file across
+ * on first read.
+ */
+export function resolveFootScannedPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "edexo-foot-scanned.json");
+}
+
+/**
  * Why the app suggested what it suggested, body by body.
  *
  * Beside the outlier log and for the same reason: it is an observation the commander made, it never

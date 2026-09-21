@@ -1,5 +1,6 @@
-import { readFileSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { resolveFootScannedPath } from "./paths.js";
 import { FOOT_CONFIRMATION_RANK } from "../shared/types.js";
 import type {
   BodyExoState,
@@ -38,8 +39,45 @@ import { resolveSpeciesPhoto } from "./speciesPhotos.js";
 import { isBacteriumSpeciesEntry } from "../shared/speciesBacterium.js";
 import { lookupPrice } from "./priceList.js";
 
-const REL_PATH = join("data", "foot_scanned.json");
+/** Where the catalog used to live, relative to the project root. See {@link catalogPath}. */
+const LEGACY_REL_PATH = join("data", "foot_scanned.json");
 const REL_TOLERANCE = 0.1;
+
+/** Project roots already checked for a legacy file this process — the carry-over runs once each. */
+const carriedOver = new Set<string>();
+
+/**
+ * Where the catalog lives, carrying the old file across the first time it is asked.
+ *
+ * It used to be `<projectRoot>/data/foot_scanned.json`, and in a packaged app the project root is
+ * the install tree — so the file shipped inside releases and was deleted by the next build. It is
+ * beside the user settings now; see {@link resolveFootScannedPath} for the whole argument.
+ *
+ * The old file is **copied, not moved**: the install tree it sits in is often read-only, and a
+ * failed delete must not look like a failed migration. Everything here is best-effort — a catalog
+ * that cannot be carried over is an empty one, never an error that stops the app.
+ */
+function catalogPath(projectRoot: string): string {
+  const live = resolveFootScannedPath();
+  if (carriedOver.has(projectRoot)) return live;
+  carriedOver.add(projectRoot);
+  try {
+    const legacy = join(projectRoot, LEGACY_REL_PATH);
+    if (!existsSync(live) && existsSync(legacy)) {
+      mkdirSync(dirname(live), { recursive: true });
+      copyFileSync(legacy, live);
+      console.info(`[edexo-compare] carried the on-foot catalog over from ${legacy}`);
+    }
+  } catch {
+    /* an unreadable or unwritable location leaves the catalog empty, which the reader handles */
+  }
+  return live;
+}
+
+/** Forget the carry-over bookkeeping. Tests only, alongside {@link clearFootScannedCatalogCache}. */
+export function resetFootScannedCarryOver(): void {
+  carriedOver.clear();
+}
 
 /**
  * True when a journal line (e.g. `ScanOrganic`) carries planetary fields that should fold into
@@ -302,7 +340,7 @@ const EMPTY_FOOT_CATALOG: FootScannedFile = { formatVersion: 1, entries: [] };
 /** Cheap identity of the catalog file (mtime + size) for cache keys; "0:0" when absent. */
 export function footScannedCatalogSignature(projectRoot: string): string {
   try {
-    const st = statSync(join(projectRoot, REL_PATH));
+    const st = statSync(catalogPath(projectRoot));
     return `${st.mtimeMs}:${st.size}`;
   } catch {
     return "0:0";
@@ -314,7 +352,7 @@ export function clearFootScannedCatalogCache(): void {
 }
 
 export function loadFootScannedCatalog(projectRoot: string): FootScannedFile {
-  const path = join(projectRoot, REL_PATH);
+  const path = catalogPath(projectRoot);
   let stat;
   try {
     stat = statSync(path);
@@ -343,9 +381,10 @@ export function loadFootScannedCatalog(projectRoot: string): FootScannedFile {
 }
 
 function persistFootScanned(projectRoot: string, file: FootScannedFile): void {
-  const path = join(projectRoot, REL_PATH);
+  const path = catalogPath(projectRoot);
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(file, null, 2)}\n`, "utf8");
-  footCatalogCache.delete(join(projectRoot, REL_PATH));
+  footCatalogCache.delete(path);
 }
 
 type FootScanAspect = "planetClass" | "atmosphere" | "temperature" | "pressure" | "gravity";

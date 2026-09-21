@@ -30,6 +30,9 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.{ts,tsx}"],
+    // Every test file gets a throwaway EDEXO_USER_DATA_DIR before it runs. Without it a test that
+    // resolves a user-data path touches the real one on the machine running the suite; see the file.
+    setupFiles: ["tests/setup/userDataDir.ts"],
     environment: "node",
     // The species-database tests read data/species/**; keep them off the same worker clock as the
     // pure-function suites so a slow first read cannot fail an unrelated file.
