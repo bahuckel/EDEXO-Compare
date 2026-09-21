@@ -49,6 +49,8 @@ export interface CarrierLedgerBreak {
   at: string;
   /** `transfer` invalidates the pair; `service` also makes every earlier pair stale. */
   kind: "transfer" | "service";
+  /** Which carrier it happened to. A break on one carrier says nothing about the other. */
+  carrierId: number | null;
 }
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;

@@ -84,6 +84,26 @@ export interface CategoryTotal {
 
 import type { CarrierUpkeepEstimate } from "./carrierUpkeep.js";
 
+/** One carrier's account, its identity, and what it costs to run. */
+export interface CarrierAccountDTO {
+  carrierId: number;
+  /** As the commander named it; empty when no event has said. */
+  name: string;
+  callsign: string;
+  /** Raw `CarrierType` from the journal, e.g. `FleetCarrier`. Rendered, never switched on. */
+  type: string;
+  /** Readings inside the window, for this carrier's chart. */
+  balance: { at: string; balance: number; reserve: number | null; available: number | null }[];
+  /** The newest reading of all time, even when it predates the window. */
+  latest: { at: string; balance: number; reserve: number | null; available: number | null } | null;
+  /**
+   * What it costs each week and how long the balance lasts, measured from this carrier's own
+   * readings over all of history — upkeep is a property of the carrier, not of the last 24 hours,
+   * and the readings are sparse enough that a window would usually hold none.
+   */
+  upkeep: CarrierUpkeepEstimate;
+}
+
 export interface StatisticsDTO {
   window: StatsWindowKey;
   /** Totals by heading, largest first, zero rows kept so the chart can draw them flat. */
@@ -105,18 +125,15 @@ export interface StatisticsDTO {
   };
   /** Commander credits over time, as stated by the journal. Steps, never interpolated. */
   commanderBalance: { at: string; credits: number }[];
-  /** The owned carrier's account, where the journal has sampled it. */
-  carrierBalance: { at: string; balance: number; reserve: number | null; available: number | null }[];
-  /** The newest carrier sample of all time, even when it predates the window. */
-  carrierLatest: { at: string; balance: number; reserve: number | null; available: number | null } | null;
   /**
-   * What the carrier costs each week, measured from the commander's own balance history, and how
-   * long the balance lasts at that rate. Nulls when the journals cannot say — see `carrierUpkeep.ts`.
+   * One entry per carrier the journals have seen, newest reading first.
    *
-   * Measured over all of history rather than the window: upkeep is a property of the carrier, not of
-   * the last 24 hours, and the readings are sparse enough that a window would usually hold none.
+   * A commander can own a fleet carrier and a squadron carrier at once, and each keeps its own
+   * account, its own reserve target and its own weekly charge. They were pooled into one series
+   * until 2026-09-21, which measured the upkeep across the gap between two accounts.
    */
-  carrierUpkeep: CarrierUpkeepEstimate;
+  carriers: CarrierAccountDTO[];
+
   /** Journals the scan read, so the panel can say what it is speaking for. */
   filesRead: number;
 }

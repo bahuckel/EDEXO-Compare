@@ -20,7 +20,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { INCOME_CATEGORY_LABEL, type IncomeCategory } from "@shared/incomeCategories";
 import { buildLogFiveAxis, formatCredits, logFiveFraction } from "@shared/logFiveAxis";
-import { STATS_WINDOWS, type StatisticsDTO } from "@shared/statisticsWindows";
+import { STATS_WINDOWS, type CarrierAccountDTO, type StatisticsDTO } from "@shared/statisticsWindows";
 import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
 import { formatWeeks } from "@shared/carrierUpkeep";
@@ -137,6 +137,101 @@ function BalanceChart({ points }: { points: { at: string; credits: number }[] })
   );
 }
 
+/** How a raw `CarrierType` reads to a commander: `FleetCarrier` becomes `Fleet carrier`. */
+function carrierTypeLabel(type: string): string {
+  const spaced = type.replace(/([a-z0-9])([A-Z])/g, "$1 $2").trim();
+  if (!spaced) return "Carrier";
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
+}
+
+/**
+ * One carrier: what it is called, what it holds, and how long that lasts.
+ *
+ * A commander can own a fleet carrier and a squadron carrier at once, so the panel renders a block
+ * each rather than pooling them — their accounts, reserve targets and weekly charges are separate
+ * and averaging them would describe neither.
+ */
+function CarrierBlock({ c }: { c: CarrierAccountDTO }) {
+  const latest = c.latest;
+  const upkeep = c.upkeep;
+  if (!latest) return null;
+  return (
+    <section className="stats-carrier">
+      <h4 className="stats-carrier__name">
+        {c.name || carrierTypeLabel(c.type)}
+        {c.callsign ? <span className="stats-carrier__callsign">{c.callsign}</span> : null}
+        {c.type ? <span className="stats-carrier__type">{carrierTypeLabel(c.type)}</span> : null}
+      </h4>
+      <div className="stats-tiles">
+        <span>
+          <strong>{formatCredits(latest.balance)}</strong> in the carrier
+        </span>
+        {latest.reserve != null ? (
+          <span>
+            <strong>{formatCredits(latest.reserve)}</strong> reserve target
+          </span>
+        ) : null}
+        {/*
+          Weekly upkeep and runway are the two numbers that answer "is my carrier all right", and
+          neither was on this panel. A dash rather than a figure when the journals hold no clean pair
+          of readings — the rule creditsPerHour follows.
+        */}
+        <span>
+          <strong>{upkeep.perWeek != null ? formatCredits(upkeep.perWeek) : "—"}</strong> per week upkeep
+        </span>
+        <span
+          className={upkeep.weeksOfRunway != null && upkeep.weeksOfRunway < 4 ? "stats-negative" : undefined}
+        >
+          <strong>{upkeep.weeksOfRunway != null ? formatWeeks(upkeep.weeksOfRunway) : "—"}</strong> of runway
+        </span>
+      </div>
+      <BalanceChart
+        points={c.balance.map((b: CarrierAccountDTO["balance"][number]) => ({
+          at: b.at,
+          credits: b.balance,
+        }))}
+      />
+      {/*
+        The reading is dated because CarrierStats only fires when the carrier management panel is
+        opened. Presenting it as "now" would be wrong by months.
+      */}
+      <p className="dim stats-note">
+        As of <strong>{latest.at.slice(0, 10)}</strong> — the game reports this only when you open the carrier
+        management panel.
+        {upkeep.perWeek != null ? (
+          <>
+            {" "}
+            Upkeep is measured from this carrier's own balance history — {upkeep.samples}{" "}
+            {upkeep.samples === 1 ? "reading pair" : "reading pairs"} over {Math.round(upkeep.daysObserved)}{" "}
+            days, with transfers and service changes excluded.
+            {upkeep.disagreed ? (
+              <>
+                {" "}
+                <strong>The pairs disagree</strong>, which usually means a service was activated or paused —
+                the newest reading is the one to trust.
+              </>
+            ) : null}
+          </>
+        ) : (
+          <>
+            {" "}
+            Weekly upkeep needs two readings of this carrier with nothing spent between them. Open its
+            management panel now and again and it will appear.
+          </>
+        )}
+        {latest.reserve != null && latest.balance < latest.reserve ? (
+          <>
+            {" "}
+            Its <strong>reserve target</strong> is higher than the balance. That is a savings target set by
+            the reserve slider, frozen at whatever the balance was when it was last moved — it is not money
+            owed and it is not being spent. The runway above is what matters.
+          </>
+        ) : null}
+      </p>
+    </section>
+  );
+}
+
 export function StatisticsModal({ onClose }: { onClose: () => void }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
   const [data, setData] = useState<StatisticsDTO | null>(null);
@@ -169,14 +264,7 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
   }, [load]);
 
   const a = data?.activity;
-  const carrier = data?.carrierLatest;
-  const upkeep = data?.carrierUpkeep ?? {
-    perWeek: null,
-    samples: 0,
-    daysObserved: 0,
-    weeksOfRunway: null,
-    disagreed: false,
-  };
+  const carriers = data?.carriers ?? [];
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -282,80 +370,14 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
             <h3 className="stats-h3">Commander balance</h3>
             <BalanceChart points={data.commanderBalance} />
 
-            <h3 className="stats-h3">Carrier</h3>
-            {carrier ? (
-              <>
-                <div className="stats-tiles">
-                  <span>
-                    <strong>{formatCredits(carrier.balance)}</strong> in the carrier
-                  </span>
-                  {carrier.reserve != null ? (
-                    <span>
-                      <strong>{formatCredits(carrier.reserve)}</strong> reserve target
-                    </span>
-                  ) : null}
-                  {/*
-                    Weekly upkeep and runway are the two numbers that answer "is my carrier all
-                    right", and neither was on this panel. A dash rather than a figure when the
-                    journals hold no clean pair of readings — the rule creditsPerHour follows.
-                  */}
-                  <span>
-                    <strong>{upkeep.perWeek != null ? formatCredits(upkeep.perWeek) : "—"}</strong> per week
-                    upkeep
-                  </span>
-                  <span
-                    className={
-                      upkeep.weeksOfRunway != null && upkeep.weeksOfRunway < 4 ? "stats-negative" : undefined
-                    }
-                  >
-                    <strong>{upkeep.weeksOfRunway != null ? formatWeeks(upkeep.weeksOfRunway) : "—"}</strong>{" "}
-                    of runway
-                  </span>
-                </div>
-                {/*
-                  The reading is dated because CarrierStats only fires when the carrier management
-                  panel is opened. Presenting it as "now" would be wrong by months.
-                */}
-                <p className="dim stats-note">
-                  As of <strong>{carrier.at.slice(0, 10)}</strong> — the game reports this only when you open
-                  the carrier management panel.
-                  {upkeep.perWeek != null ? (
-                    <>
-                      {" "}
-                      Upkeep is measured from your own balance history — {upkeep.samples}{" "}
-                      {upkeep.samples === 1 ? "reading pair" : "reading pairs"} over{" "}
-                      {Math.round(upkeep.daysObserved)} days, with transfers and service changes excluded.
-                      {upkeep.disagreed ? (
-                        <>
-                          {" "}
-                          <strong>The pairs disagree</strong>, which usually means a service was activated or
-                          paused — the newest reading is the one to trust.
-                        </>
-                      ) : null}
-                    </>
-                  ) : (
-                    <>
-                      {" "}
-                      Weekly upkeep needs two carrier readings with nothing spent between them. Open the
-                      carrier management panel now and again and it will appear.
-                    </>
-                  )}
-                  {carrier.reserve != null && carrier.balance < carrier.reserve ? (
-                    <>
-                      {" "}
-                      Your <strong>reserve target</strong> is higher than the balance. That is a savings
-                      target set by the reserve slider, frozen at whatever the balance was when it was last
-                      moved — it is not money owed and it is not being spent. The runway above is what
-                      matters.
-                    </>
-                  ) : null}
-                </p>
-              </>
-            ) : (
+            <h3 className="stats-h3">{carriers.length > 1 ? `Carriers (${carriers.length})` : "Carrier"}</h3>
+            {carriers.length === 0 ? (
               <p className="dim stats-note">
                 No carrier reading in your journals. It appears once you open the carrier management panel in
                 game.
               </p>
+            ) : (
+              carriers.map((c) => <CarrierBlock key={c.carrierId} c={c} />)
             )}
           </div>
         ) : null}

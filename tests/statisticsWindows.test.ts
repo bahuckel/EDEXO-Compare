@@ -22,6 +22,7 @@ function scanOf(
     balances: [],
     sessions,
     carrierBreaks: [],
+    carrierIdentities: {},
     filesRead: 1,
     linesRead: lines.length,
   };
@@ -210,19 +211,26 @@ describe("what the upkeep estimate needs the scan to record", () => {
       {
         timestamp: ago(1),
         event: "CarrierBankTransfer",
+        CarrierID: 3713878016,
         CarrierBalance: 500,
         PlayerBalance: 900,
         Deposit: 100,
       },
     ]);
-    expect(scan.carrierBreaks).toEqual([{ at: ago(1), kind: "transfer" }]);
+    expect(scan.carrierBreaks).toEqual([{ at: ago(1), kind: "transfer", carrierId: 3713878016 }]);
   });
 
   it("marks a service change, because it changes what the weekly charge is", () => {
     const scan = scanOf([
-      { timestamp: ago(2), event: "CarrierCrewServices", CrewRole: "Rearm", Operation: "Pause" },
+      {
+        timestamp: ago(2),
+        event: "CarrierCrewServices",
+        CarrierID: 3713878016,
+        CrewRole: "Rearm",
+        Operation: "Pause",
+      },
     ]);
-    expect(scan.carrierBreaks).toEqual([{ at: ago(2), kind: "service" }]);
+    expect(scan.carrierBreaks).toEqual([{ at: ago(2), kind: "service", carrierId: 3713878016 }]);
   });
 
   it("does not mark an ordinary carrier reading", () => {
@@ -238,6 +246,66 @@ describe("what the upkeep estimate needs the scan to record", () => {
   });
 });
 
+describe("two carriers", () => {
+  it("keeps their accounts apart, because a commander can own a fleet and a squadron carrier", () => {
+    /*
+      THE ONE THAT MATTERS HERE. Pooled into one series, consecutive readings of *different* accounts
+      look like one account falling by the difference between them, and `estimateCarrierUpkeep`
+      reports a confident weekly charge that describes neither carrier.
+    */
+    const scan = scanOf([
+      {
+        timestamp: ago(48),
+        event: "CarrierStats",
+        CarrierID: 1,
+        Name: "FIRST",
+        CarrierType: "FleetCarrier",
+        Finance: { CarrierBalance: 900_000_000, ReserveBalance: 0, AvailableBalance: 900_000_000 },
+      },
+      {
+        timestamp: ago(47),
+        event: "CarrierStats",
+        CarrierID: 2,
+        Name: "SECOND",
+        CarrierType: "SquadronCarrier",
+        Finance: { CarrierBalance: 10_000_000, ReserveBalance: 0, AvailableBalance: 10_000_000 },
+      },
+    ]);
+    const s = summariseStatistics(scan, "all", NOW);
+    expect(s.carriers).toHaveLength(2);
+    const byName = Object.fromEntries(s.carriers.map((c) => [c.name, c]));
+    expect(byName.FIRST!.latest!.balance).toBe(900_000_000);
+    expect(byName.SECOND!.latest!.balance).toBe(10_000_000);
+    expect(byName.SECOND!.type).toBe("SquadronCarrier");
+    // One reading each: neither can have a weekly charge, and neither may borrow the other's.
+    expect(byName.FIRST!.upkeep.perWeek).toBeNull();
+    expect(byName.SECOND!.upkeep.perWeek).toBeNull();
+  });
+
+  it("does not let a service change on one carrier spoil the other's estimate", () => {
+    const rows: Record<string, unknown>[] = [];
+    for (const [i, bal] of [100_000_000, 92_750_000, 85_500_000].entries()) {
+      rows.push({
+        timestamp: ago(24 * (21 - i * 7)),
+        event: "CarrierStats",
+        CarrierID: 1,
+        Name: "FIRST",
+        Finance: { CarrierBalance: bal, ReserveBalance: 0, AvailableBalance: bal },
+      });
+    }
+    rows.push({
+      timestamp: ago(24 * 15),
+      event: "CarrierCrewServices",
+      CarrierID: 2,
+      CrewRole: "Rearm",
+      Operation: "Pause",
+    });
+    const s = summariseStatistics(scanOf(rows), "all", NOW);
+    const first = s.carriers.find((c) => c.name === "FIRST")!;
+    expect(first.upkeep.perWeek).toBeCloseTo(7_250_000, 0);
+  });
+});
+
 describe("balances", () => {
   it("reads the carrier's three figures, and keeps the newest even outside the window", () => {
     /*
@@ -249,12 +317,22 @@ describe("balances", () => {
       {
         timestamp: ago(24 * 120),
         event: "CarrierStats",
+        CarrierID: 3713878016,
+        Name: "NO MONEY FOR SQUADRON",
+        Callsign: "KBX-05T",
+        CarrierType: "FleetCarrier",
         Finance: { CarrierBalance: 516_270_136, ReserveBalance: 591_393_873, AvailableBalance: -75_123_737 },
       },
     ]);
     const s = summariseStatistics(scan, "24h", NOW);
-    expect(s.carrierBalance).toHaveLength(0);
-    expect(s.carrierLatest).toMatchObject({ balance: 516_270_136, available: -75_123_737 });
+    expect(s.carriers).toHaveLength(1);
+    const c = s.carriers[0]!;
+    expect(c.balance).toHaveLength(0);
+    expect(c.latest).toMatchObject({ balance: 516_270_136, available: -75_123_737 });
+    // The identity rides along, so the panel can title the block with the carrier's own name.
+    expect(c.name).toBe("NO MONEY FOR SQUADRON");
+    expect(c.callsign).toBe("KBX-05T");
+    expect(c.type).toBe("FleetCarrier");
   });
 
   it("takes both sides from a bank transfer", () => {
@@ -262,13 +340,14 @@ describe("balances", () => {
       {
         timestamp: ago(1),
         event: "CarrierBankTransfer",
+        CarrierID: 3713878016,
         CarrierBalance: 500,
         PlayerBalance: 900,
         Deposit: 100,
       },
     ]);
     const s = summariseStatistics(scan, "24h", NOW);
-    expect(s.carrierLatest!.balance).toBe(500);
+    expect(s.carriers[0]!.latest!.balance).toBe(500);
     expect(s.commanderBalance[0]!.credits).toBe(900);
   });
 

@@ -62,6 +62,24 @@ export interface BalanceSample {
   carrierReserve: number | null;
   /** `carrier - carrierReserve`. Negative means the reserve is not covered. */
   carrierAvailable: number | null;
+  /**
+   * Which carrier this reading is about, from the event's `CarrierID`.
+   *
+   * A commander can own a fleet carrier and a squadron carrier at once, and every carrier event
+   * names its own. Without this the two accounts interleave into one series and the weekly upkeep is
+   * measured across the gap between them — a confident, wrong number.
+   */
+  carrierId: number | null;
+}
+
+/** What the journals know about a carrier besides its money. */
+export interface CarrierIdentity {
+  carrierId: number;
+  /** As the commander named it. Empty when no event has said. */
+  name: string;
+  callsign: string;
+  /** Raw `CarrierType`, e.g. `FleetCarrier`. Kept verbatim rather than mapped to an enum here. */
+  type: string;
 }
 
 export interface JournalScan {
@@ -78,18 +96,42 @@ export interface JournalScan {
    * a service change spoils every pair before it, because it changes what the charge *is*.
    */
   carrierBreaks: CarrierLedgerBreak[];
+  /** Name, callsign and type per `CarrierID`, newest wins. */
+  carrierIdentities: Record<string, CarrierIdentity>;
   filesRead: number;
   linesRead: number;
 }
 
 const ACTIVITY_EVENTS = ["Scan", "FSDJump", "FSSDiscoveryScan", "SAAScanComplete", "ScanOrganic"];
 const BALANCE_EVENTS = ["LoadGame", "CarrierStats", "CarrierFinance", "CarrierBankTransfer"];
+/** Names a carrier the moment it is bought, before any stats event has been opened. */
+const CARRIER_ID_EVENTS = ["CarrierBuy"];
 /** Not balances themselves — they say when a balance moved for a reason other than upkeep. */
 const CARRIER_BREAK_EVENTS = ["CarrierCrewServices"];
 /** Every event name worth parsing. Tested as a substring against the raw line first. */
-const WANTED = [...INCOME_EVENT_NAMES, ...ACTIVITY_EVENTS, ...BALANCE_EVENTS, ...CARRIER_BREAK_EVENTS].map(
-  (e) => `"${e}"`,
-);
+const WANTED = [
+  ...INCOME_EVENT_NAMES,
+  ...ACTIVITY_EVENTS,
+  ...BALANCE_EVENTS,
+  ...CARRIER_BREAK_EVENTS,
+  ...CARRIER_ID_EVENTS,
+].map((e) => `"${e}"`);
+
+/**
+ * Remember what a carrier is called, from any event that says.
+ *
+ * `CarrierStats` carries the name and callsign; `CarrierBuy` names it at purchase; the rest carry
+ * only the id. Newest wins, because a carrier can be renamed.
+ */
+function noteCarrierIdentity(scan: JournalScan, line: Record<string, unknown>, id: number | null): void {
+  if (id == null) return;
+  const key = String(id);
+  const prev = scan.carrierIdentities[key];
+  const name = typeof line.Name === "string" ? line.Name : (prev?.name ?? "");
+  const callsign = typeof line.Callsign === "string" ? line.Callsign : (prev?.callsign ?? "");
+  const type = typeof line.CarrierType === "string" ? line.CarrierType : (prev?.type ?? "");
+  scan.carrierIdentities[key] = { carrierId: id, name, callsign, type };
+}
 
 function emptyScan(): JournalScan {
   return {
@@ -98,6 +140,7 @@ function emptyScan(): JournalScan {
     balances: [],
     sessions: [],
     carrierBreaks: [],
+    carrierIdentities: {},
     filesRead: 0,
     linesRead: 0,
   };
@@ -156,6 +199,7 @@ export function applyScanLine(scan: JournalScan, line: Record<string, unknown>):
           carrier: null,
           carrierReserve: null,
           carrierAvailable: null,
+          carrierId: null,
         });
       }
       return;
@@ -164,6 +208,8 @@ export function applyScanLine(scan: JournalScan, line: Record<string, unknown>):
       const f = (event === "CarrierStats" ? line.Finance : line) as Record<string, unknown> | undefined;
       if (!at || !f) return;
       const carrier = num(f.CarrierBalance);
+      const carrierId = num(line.CarrierID);
+      noteCarrierIdentity(scan, line, carrierId);
       if (carrier == null) return;
       scan.balances.push({
         at,
@@ -171,24 +217,31 @@ export function applyScanLine(scan: JournalScan, line: Record<string, unknown>):
         carrier,
         carrierReserve: num(f.ReserveBalance),
         carrierAvailable: num(f.AvailableBalance),
+        carrierId,
       });
       return;
     }
+    case "CarrierBuy":
+      noteCarrierIdentity(scan, line, num(line.CarrierID));
+      return;
     case "CarrierCrewServices": {
       // Activating, pausing or dismissing a service changes the weekly charge from here on.
-      if (at) scan.carrierBreaks.push({ at, kind: "service" });
+      if (at) scan.carrierBreaks.push({ at, kind: "service", carrierId: num(line.CarrierID) });
       return;
     }
     case "CarrierBankTransfer": {
       // States both sides at once, so it samples two series from one line.
       if (!at) return;
-      scan.carrierBreaks.push({ at, kind: "transfer" });
+      const transferId = num(line.CarrierID);
+      noteCarrierIdentity(scan, line, transferId);
+      scan.carrierBreaks.push({ at, kind: "transfer", carrierId: transferId });
       scan.balances.push({
         at,
         commander: num(line.PlayerBalance),
         carrier: num(line.CarrierBalance),
         carrierReserve: null,
         carrierAvailable: null,
+        carrierId: transferId,
       });
       return;
     }
@@ -261,7 +314,7 @@ interface CacheFile {
  * upkeep across transfers as if they were upkeep — a wrong number rather than a missing one. The
  * bump discards those caches and rescans, which costs three seconds.
  */
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 export async function scanJournalsForStatistics(files: readonly string[]): Promise<JournalScan> {
   const manifest = manifestOf(files);

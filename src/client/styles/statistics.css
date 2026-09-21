@@ -124,6 +124,47 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+  One carrier, boxed.
+
+  A commander with two carriers gets two of these, and without a rule the second block's tiles run
+  straight on from the first one's note and the two accounts read as one. The left border is what
+  says "this is a separate ledger".
+*/
+.stats-carrier {
+  margin: 0.55rem 0 0;
+  padding: 0 0 0 0.7rem;
+  border-left: 2px solid var(--faint, rgba(255, 255, 255, 0.16));
+}
+
+.stats-carrier + .stats-carrier {
+  margin-top: 1rem;
+}
+
+.stats-carrier__name {
+  margin: 0 0 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.5rem;
+}
+
+/* The callsign is the carrier's address — dimmer than the name, but the part people type. */
+.stats-carrier__callsign {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent, #ff8a1f);
+}
+
+.stats-carrier__type {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--dim, rgba(255, 255, 255, 0.45));
+}
+
 .stats-note {
   margin: 0.3rem 0 0;
   font-size: 0.78rem;

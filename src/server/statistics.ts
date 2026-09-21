@@ -15,6 +15,7 @@ import {
 } from "../shared/statisticsWindows.js";
 import type { JournalScan } from "./statisticsScan.js";
 import { estimateCarrierUpkeep } from "../shared/carrierUpkeep.js";
+import type { CarrierAccountDTO } from "../shared/statisticsWindows.js";
 
 const ALL_CATEGORIES = Object.keys(INCOME_CATEGORY_LABEL) as IncomeCategory[];
 
@@ -56,8 +57,25 @@ export function summariseStatistics(
   const playedHours = playedHoursInWindow(scan.sessions, startMs, nowMs);
 
   const commanderBalance: StatisticsDTO["commanderBalance"] = [];
-  const carrierBalance: StatisticsDTO["carrierBalance"] = [];
-  let carrierLatest: StatisticsDTO["carrierLatest"] = null;
+  /*
+    One bucket per carrier.
+
+    Two carriers pooled into one series is not merely untidy: `estimateCarrierUpkeep` measures the
+    weekly charge from the fall between consecutive readings, and consecutive readings of *different*
+    accounts have no relationship at all. The result would be a confident, wrong number.
+  */
+  const byCarrier = new Map<
+    number,
+    { all: { at: string; balance: number }[]; window: CarrierAccountDTO["balance"] }
+  >();
+  const bucket = (id: number) => {
+    let b = byCarrier.get(id);
+    if (!b) {
+      b = { all: [], window: [] };
+      byCarrier.set(id, b);
+    }
+    return b;
+  };
   for (const b of scan.balances) {
     /*
       The latest carrier reading is tracked across all of history, not just the window.
@@ -66,20 +84,60 @@ export function summariseStatistics(
       is sparse and can easily have no point inside 24 hours. "What does my carrier hold" still has
       an answer then; it is just an old one, and the panel dates it rather than hiding it.
     */
-    if (b.carrier != null) {
+    if (b.carrier != null && b.carrierId != null) {
       const row = {
         at: b.at,
         balance: b.carrier,
         reserve: b.carrierReserve,
         available: b.carrierAvailable,
       };
-      if (!carrierLatest || b.at > carrierLatest.at) carrierLatest = row;
-      if (inWindow(b.at)) carrierBalance.push(row);
+      const into = bucket(b.carrierId);
+      into.all.push({ at: b.at, balance: b.carrier });
+      if (inWindow(b.at)) into.window.push(row);
     }
     if (b.commander != null && inWindow(b.at)) {
       commanderBalance.push({ at: b.at, credits: b.commander });
     }
   }
+
+  /*
+    One summary per carrier: its identity, its readings, and its own weekly charge. Sorted newest
+    reading first so the carrier the commander last looked at leads the panel.
+  */
+  const carriers: CarrierAccountDTO[] = [...byCarrier.entries()]
+    .map(([carrierId, rows]) => {
+      const ident = scan.carrierIdentities?.[String(carrierId)];
+      const sorted = [...rows.all].sort((x, y) => Date.parse(x.at) - Date.parse(y.at));
+      const newest = sorted.at(-1) ?? null;
+      const latestRow = rows.window.at(-1) ?? null;
+      // The newest reading of all time, which may sit outside the window.
+      const latest =
+        newest == null
+          ? null
+          : (scan.balances
+              .filter((b) => b.carrierId === carrierId && b.carrier != null && b.at === newest.at)
+              .map((b) => ({
+                at: b.at,
+                balance: b.carrier!,
+                reserve: b.carrierReserve,
+                available: b.carrierAvailable,
+              }))
+              .at(-1) ?? latestRow);
+      return {
+        carrierId,
+        name: ident?.name ?? "",
+        callsign: ident?.callsign ?? "",
+        type: ident?.type ?? "",
+        balance: rows.window,
+        latest,
+        upkeep: estimateCarrierUpkeep(
+          sorted,
+          scan.carrierBreaks.filter((k) => k.carrierId == null || k.carrierId === carrierId),
+          latest?.balance ?? null,
+        ),
+      };
+    })
+    .sort((a, b) => Date.parse(b.latest?.at ?? "") - Date.parse(a.latest?.at ?? ""));
 
   return {
     window: w.key,
@@ -91,20 +149,7 @@ export function summariseStatistics(
     creditsPerHour: playedHours >= 0.05 ? totalCredits / playedHours : null,
     activity: countActivityInWindow(scan, startMs),
     commanderBalance,
-    carrierBalance,
-    carrierLatest,
-    /*
-      Measured over every reading, not the window's. The charge is a property of the carrier and the
-      readings are sparse — `CarrierStats` fires only when the management panel is opened — so a
-      24-hour window would almost always hold too few to divide.
-    */
-    carrierUpkeep: estimateCarrierUpkeep(
-      scan.balances
-        .filter((b): b is typeof b & { carrier: number } => b.carrier != null)
-        .map((b) => ({ at: b.at, balance: b.carrier })),
-      scan.carrierBreaks,
-      carrierLatest?.balance ?? null,
-    ),
+    carriers,
     filesRead: scan.filesRead,
   };
 }

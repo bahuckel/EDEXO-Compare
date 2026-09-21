@@ -70,7 +70,7 @@ describe("what spoils a pair", () => {
       A deposit makes the balance rise and a withdrawal makes it fall faster than upkeep; either way
       the pair is measuring the commander, not the carrier.
     */
-    const breaks: CarrierLedgerBreak[] = [{ at: day(14), kind: "transfer" }];
+    const breaks: CarrierLedgerBreak[] = [{ at: day(14), kind: "transfer", carrierId: null }];
     const e = estimateCarrierUpkeep(samples([0, 100_000_000], [28, 20_000_000]), breaks, 20_000_000);
     expect(e.perWeek).toBeNull();
   });
@@ -82,7 +82,7 @@ describe("what spoils a pair", () => {
       may be reported.
     */
     const rows = samples([0, 200_000_000], [7, 186_000_000], [21, 179_000_000], [28, 172_000_000]);
-    const breaks: CarrierLedgerBreak[] = [{ at: day(10), kind: "service" }];
+    const breaks: CarrierLedgerBreak[] = [{ at: day(10), kind: "service", carrierId: null }];
     const e = estimateCarrierUpkeep(rows, breaks, 172_000_000);
     expect(e.perWeek).toBeCloseTo(7_000_000, 0);
   });
@@ -145,8 +145,8 @@ describe("the owner's own carrier, 2026-09-21", () => {
       { at: "2026-09-20T15:23:20Z", balance: 395_470_099 },
     ];
     const breaks: CarrierLedgerBreak[] = [
-      { at: "2025-10-30T01:36:19Z", kind: "service" },
-      { at: "2026-05-17T22:06:39Z", kind: "transfer" },
+      { at: "2025-10-30T01:36:19Z", kind: "service", carrierId: null },
+      { at: "2026-05-17T22:06:39Z", kind: "transfer", carrierId: null },
     ];
     const e = estimateCarrierUpkeep(real, breaks, 395_470_099);
     expect(e.perWeek).not.toBeNull();
