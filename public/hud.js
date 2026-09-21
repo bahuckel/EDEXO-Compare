@@ -479,10 +479,19 @@
     One row, no wrapping (owner, 2026-09-14): drop hops off the end until the strip fits its width.
     If the pump's hop is cut, a "+N" with the pump takes the last place so the scoop is never lost.
   */
+  /**
+   * Trim the strip to the width it has, and report how many hops survived.
+   *
+   * The count is the row's own answer to "how many are on screen", which depends on the HUD's width
+   * and scale and on how long the star classes are — it is not a constant and cannot be assumed. It
+   * is written back to the element so anything downstream reads the number that was actually drawn
+   * rather than the number that was sent.
+   */
   function fitRouteStrip(el, hops, nav) {
     var pumpIdx = -1;
     for (var i = 0; i < hops.length; i++) if (hops[i].refuel && hops[i].refuel !== "none") pumpIdx = i;
     var guard = 0;
+    var shown = el.querySelectorAll(".hop:not(.hop--beyond)").length;
     while (el.scrollWidth > el.clientWidth + 1 && guard++ < 60) {
       var kids = el.children;
       if (kids.length < 3) break;
@@ -490,7 +499,7 @@
       el.removeChild(kids[kids.length - 1]);
       if (el.lastElementChild && el.lastElementChild.classList.contains("hop__sep"))
         el.removeChild(el.lastElementChild);
-      var shown = el.querySelectorAll(".hop:not(.hop--beyond)").length;
+      shown = el.querySelectorAll(".hop:not(.hop--beyond)").length;
       if (pumpIdx >= shown && !el.querySelector(".hop--beyond")) {
         var tail = document.createElement("span");
         tail.className = "hop hop--beyond";
@@ -504,6 +513,15 @@
         el.appendChild(tail);
       }
     }
+    shown = el.querySelectorAll(".hop:not(.hop--beyond)").length;
+    el.dataset.shown = String(shown);
+    el.dataset.of = String(hops.length);
+    /*
+      The whole plot is rarely on screen. Saying which part of it this is costs nothing and stops the
+      strip reading as the entire route when it is the first thirteen hops of forty.
+    */
+    el.title = shown >= hops.length ? shown + " jumps ahead" : shown + " of " + hops.length + " jumps ahead";
+    return shown;
   }
 
   /* ============================================================== Discovery scan (FSS honk) ==== */
@@ -1018,6 +1036,23 @@
     `prefers-reduced-motion` disables all of it and draws each fix exactly, which is also what
     happens before two fixes have been seen.
   */
+  /**
+   * Whether the radar continues the commander's motion between fixes.
+   *
+   * **Off, on the owner's report after flying it (2026-09-21): "the radar dots keep drifting away
+   * when I move — make them fixed in place and updated dynamically without drifting."**
+   *
+   * The reasoning below still holds for walking in a straight line, and the machinery is left intact
+   * because that case is real. What it cannot handle is the ordinary one: position is predicted and
+   * heading deliberately is not, so a commander who turns while walking has the dots pushed along
+   * his *old* bearing while the world layer stays put. Every fix then snaps them back. Smooth,
+   * wrong, and it reads exactly as the drift he described.
+   *
+   * With this off each fix is drawn exactly as it arrives: the marks hold their world positions and
+   * step when `Status.json` says they moved, about once every three seconds. That is the behaviour
+   * he asked for, and it is what `prefers-reduced-motion` has always done.
+   */
+  var PREDICT_ENABLED = false;
   var PREDICT_MAX_GAPS = 1.5;
   var PREDICT_MIN_GAP_MS = 200;
   var PREDICT_MAX_GAP_MS = 8000;
@@ -1161,7 +1196,13 @@
     }
 
     var gap = st.last ? now - st.at : 0;
-    if (reduceMotion || !st.last || gap < PREDICT_MIN_GAP_MS || gap > PREDICT_MAX_GAP_MS) {
+    if (
+      !PREDICT_ENABLED ||
+      reduceMotion ||
+      !st.last ||
+      gap < PREDICT_MIN_GAP_MS ||
+      gap > PREDICT_MAX_GAP_MS
+    ) {
       st.motion = null;
     } else {
       var motion = motionBetween(st.last, next);

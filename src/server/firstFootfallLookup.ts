@@ -42,13 +42,16 @@ const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
 /**
  * How many hops ahead are looked up.
  *
- * Every hop the snapshot carries, because **how many are visible cannot be known here**. The strip
- * renders all of them and then removes hops from the end until the row fits, so the count depends on
- * the HUD's width and scale — at ten the last few arrows on a wide HUD had no verdict and stayed
- * grey, which is what the owner saw.
+ * Every hop the snapshot carries. The strip renders all of them and then removes hops from the end
+ * until the row fits, so how many are on screen depends on the HUD's width and scale — the owner
+ * counted thirteen where an earlier guess here assumed eight, and at a cap of ten the last arrows had
+ * no verdict and stayed grey.
  *
- * It costs nothing to cover them all: `api-v1/systems` answers a list in one request, so forty names
- * and ten names are the same single call. Matches `ROUTE_AHEAD_HOPS` in `navRouteFuel.ts`.
+ * `fitRouteStrip` does know the drawn count and writes it to the element, but the server is not the
+ * place to consult it: a round trip to shrink a list costs a message and saves nothing, because
+ * `api-v1/systems` answers a list in one request either way. Covering every hop makes the drawn
+ * count irrelevant to correctness — whatever the strip decides to show already has an answer.
+ * Matches `ROUTE_AHEAD_HOPS` in `navRouteFuel.ts`.
  */
 export const LOOKUP_HOPS_AHEAD = 40;
 
@@ -135,13 +138,25 @@ export class FirstFootfallLookup {
         headers: { Accept: "application/json", "User-Agent": EDSM_USER_AGENT },
       });
       if (!res.ok) return; // leave them pending; the next route change tries again
-      const rows = (await res.json()) as { name?: unknown }[];
+      const rows = (await res.json()) as unknown;
+      /*
+        A body that is not a list is not an empty answer.
+
+        Absence from the reply is the entire signal here, so anything that reduces to "nothing came
+        back" marks every name as unvisited and paints the whole route blue. An empty **array** is a
+        real answer — a route through unexplored space returns exactly that — but an error object, a
+        string, or a 200 carrying `{}` is EDSM failing to answer, and treating it as "nobody has been
+        anywhere" is the one wrong direction this feature can fail in. Leave them pending instead.
+      */
+      if (!Array.isArray(rows)) return;
       const returned = new Set(
-        (Array.isArray(rows) ? rows : []).map((r) => key(String(r?.name ?? ""))).filter(Boolean),
+        rows.map((r) => key(String((r as { name?: unknown })?.name ?? ""))).filter(Boolean),
       );
       /*
-        Absence from the reply is the whole signal. EDSM answers only the systems it knows, so a name
-        that went out and did not come back is one nobody has uploaded.
+        EDSM answers only the systems it knows, so a name that went out and did not come back is one
+        nobody has uploaded. Checked against a forty-name request on 2026-09-21: all eight real
+        systems came back and none of the thirty-two invented ones did, so the list is not truncated
+        at the length a route asks for.
       */
       for (const n of batch) {
         this.known.set(key(n), returned.has(key(n)));

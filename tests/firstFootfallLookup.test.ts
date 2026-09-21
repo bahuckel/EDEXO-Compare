@@ -131,6 +131,40 @@ describe("when it cannot reach EDSM", () => {
     expect(lookup.verdict("Somewhere")).toBeNull();
   });
 
+  it("treats a reply that is not a list as no answer, not as an empty one", async () => {
+    /*
+      THE ONE THAT MATTERS IN THIS BLOCK. Absence from the reply is the whole signal, so a 200
+      carrying an error object rather than a list would mark every system as unvisited and paint the
+      entire route blue — the one direction this feature must never fail in.
+
+      An empty *array* stays a real answer: a route through unexplored space returns exactly that.
+    */
+    const lookup = new FirstFootfallLookup({
+      hasVisited: () => false,
+      identity: () => null,
+      fetchImpl: (async () => ({
+        ok: true,
+        json: async () => ({ error: "nope" }),
+      })) as unknown as typeof fetch,
+    });
+    lookup.request(["A", "B", "C"]);
+    await new Promise((r) => setTimeout(r, 5));
+    expect(lookup.verdict("A")).toBeNull();
+    expect(lookup.verdict("B")).toBeNull();
+  });
+
+  it("an empty list is a real answer — everything on the route is unexplored", async () => {
+    const lookup = new FirstFootfallLookup({
+      hasVisited: () => false,
+      identity: () => null,
+      fetchImpl: (async () => ({ ok: true, json: async () => [] })) as unknown as typeof fetch,
+    });
+    lookup.request(["A", "B"]);
+    await new Promise((r) => setTimeout(r, 5));
+    expect(lookup.verdict("A")).toBe(true);
+    expect(lookup.verdict("B")).toBe(true);
+  });
+
   it("leaves it unknown on a non-200 as well", async () => {
     const lookup = new FirstFootfallLookup({
       hasVisited: () => false,

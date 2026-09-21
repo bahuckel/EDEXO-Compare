@@ -106,12 +106,17 @@ beforeEach(() => {
   root = HUD.mount(["distance"], { noTimers: true });
 });
 
-describe("predicting forward", () => {
-  it("keeps closing on a plant the commander is walking toward", async () => {
+describe("the marks hold still between fixes", () => {
+  it("draws each fix exactly and then leaves it alone", async () => {
     /*
-      Two fixes 300 ms apart, the plant 40 m nearer on the second: he is walking at it. After the
-      second fix the dot must continue inward. A tween would leave it short of 160 m; a snap would
-      park it exactly at 160 m and wait.
+      THE OWNER'S REPORT, 2026-09-21: "the radar dots keep drifting away when I move — make them
+      fixed in place and updated dynamically without drifting."
+
+      The radar used to continue his motion between fixes. That is right while he walks in a straight
+      line and wrong the rest of the time: position was predicted and heading deliberately was not,
+      so turning while walking pushed the dots along his old bearing and every fix snapped them back.
+
+      Now a fix is drawn where it says and stays there until the next one.
     */
     HUD.render({ port: 7111, ...payload([mk("Scan 1", 200)]) });
     await wait(300);
@@ -120,12 +125,20 @@ describe("predicting forward", () => {
     const atFix = markY(root, "Scan 1")!;
     expect(atFix).toBeCloseTo(-32, 1); // 160 m of a 500 m radius, drawn exactly on arrival
     await wait(120);
-
-    const later = markY(root, "Scan 1")!;
-    expect(later, "the dot should have kept closing").toBeGreaterThan(atFix);
+    expect(markY(root, "Scan 1"), "the dot must not move between fixes").toBeCloseTo(atFix, 3);
   });
 
-  it("keeps predicting while the panel re-renders the same fix", async () => {
+  it("moves the moment a new fix says so", async () => {
+    // Fixed in place is not frozen: each fix updates the marks exactly.
+    HUD.render({ port: 7111, ...payload([mk("Scan 1", 200)]) });
+    await wait(300);
+    HUD.renderExoLive(payload([mk("Scan 1", 160)]));
+    const near = markY(root, "Scan 1")!;
+    HUD.renderExoLive(payload([mk("Scan 1", 120)]));
+    expect(markY(root, "Scan 1"), "a new fix must be drawn at once").toBeGreaterThan(near);
+  });
+
+  it("does not move when the panel re-renders the same fix", async () => {
     /*
       The bug the first version shipped with, and the reason it did nothing in the real app while
       every other test here passed.
@@ -147,24 +160,21 @@ describe("predicting forward", () => {
       HUD.renderExoLive(payload([mk("Scan 1", 160)]));
     }
 
-    expect(markY(root, "Scan 1"), "re-renders of one fix must not stop the prediction").toBeGreaterThan(
-      atFix,
-    );
+    expect(markY(root, "Scan 1"), "a repeat of one fix is not new information").toBeCloseTo(atFix, 3);
   });
 
-  it("stops predicting once the game has gone quiet for too long", async () => {
+  it("holds the last fix however long the game stays quiet", async () => {
     /*
-      Bounded at 1.5 gaps. Walk, stop, and the dots settle a beat later instead of sailing off the
-      map on a velocity the commander abandoned two seconds ago.
+      `Status.json` can go quiet for a long time — a menu, a pause, a cutscene. The marks stay where
+      the last fix put them for as long as that lasts, rather than sailing off the map.
     */
     HUD.render({ port: 7111, ...payload([mk("Scan 1", 200)]) });
     await wait(250);
     HUD.renderExoLive(payload([mk("Scan 1", 160)]));
 
-    await wait(500); // well past 1.5 x 250 ms
     const settled = markY(root, "Scan 1")!;
-    await wait(200);
-    expect(markY(root, "Scan 1"), "prediction must stop at the cap").toBeCloseTo(settled, 3);
+    await wait(700);
+    expect(markY(root, "Scan 1"), "silence must not move anything").toBeCloseTo(settled, 3);
   });
 
   it("does not drift when the commander is standing still", async () => {
@@ -179,19 +189,16 @@ describe("predicting forward", () => {
     expect(markY(root, "Scan 1")).toBeCloseTo(atFix, 3);
   });
 
-  it("carries a newly sampled plant along with the rest", async () => {
-    /*
-      Every mark is world-fixed, so they all shift by the same amount; that is why the velocity is a
-      median over them and why a mark seen for the first time can still be moved. A frozen dot among
-      moving ones would look like the new plant was chasing him.
-    */
+  it("draws a newly sampled plant where the fix puts it, and leaves it there too", async () => {
+    // Every mark is world-fixed and none of them is animated, so a plant seen for the first time
+    // behaves exactly like the ones already on screen.
     HUD.render({ port: 7111, ...payload([mk("Scan 1", 200)]) });
     await wait(300);
     HUD.renderExoLive(payload([mk("Scan 1", 160), mk("Scan 2", 300)]));
 
     const atFix = markY(root, "Scan 2")!;
     await wait(120);
-    expect(markY(root, "Scan 2"), "the new mark should move with the ground").toBeGreaterThan(atFix);
+    expect(markY(root, "Scan 2")).toBeCloseTo(atFix, 3);
   });
 
   it("never predicts the heading, so the radar stops turning when the commander does", async () => {
@@ -216,8 +223,13 @@ describe("predicting forward", () => {
     expect(worldRotation(root), "the radar kept turning after the fix").toBeCloseTo(-20, 2);
   });
 
-  it("still holds the heading steady while it predicts position", async () => {
-    // The two are independent: dots keep closing, the compass does not creep.
+  it("holds the compass as still as the marks", async () => {
+    /*
+      Heading was never predicted even when position was, and the reason it was not is now the reason
+      position is not either: a turn between two fixes is a flick that already finished, and carrying
+      it forward keeps the radar rotating after the commander has stopped. Both are simply drawn as
+      they arrive.
+    */
     HUD.render({ port: 7111, ...payload([mk("Scan 1", 200)], 45) });
     await wait(300);
     HUD.renderExoLive(payload([mk("Scan 1", 160)], 60));
@@ -226,7 +238,7 @@ describe("predicting forward", () => {
     const atFix = markY(root, "Scan 1")!;
     await wait(150);
     expect(worldRotation(root)).toBeCloseTo(rot, 2);
-    expect(markY(root, "Scan 1")).toBeGreaterThan(atFix);
+    expect(markY(root, "Scan 1")).toBeCloseTo(atFix, 3);
   });
 
   it("takes no velocity from a gap that is not a walking cadence", async () => {
