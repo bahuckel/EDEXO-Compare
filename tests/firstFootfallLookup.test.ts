@@ -75,12 +75,18 @@ describe("how much it asks for", () => {
     expect(calls[0]).toHaveLength(LOOKUP_HOPS_AHEAD);
   });
 
-  it("looks only as far ahead as the strip shows", () => {
-    // A forty-hop route is forty systems nobody is looking at. The cap is the visible part.
+  it("covers every hop the snapshot carries, because how many are visible is not knowable here", () => {
+    /*
+      The strip renders all the hops and then removes them from the end until the row fits, so the
+      visible count depends on the HUD's width and scale. Looking up ten left the last few arrows on
+      a wide HUD with no verdict, which is what the owner reported. Covering them all costs nothing:
+      EDSM answers a list in one request either way.
+    */
     const names = Array.from({ length: 40 }, (_, i) => `Sys ${i}`);
-    const { lookup, calls } = make({});
+    const { lookup, calls, impl } = make({});
     lookup.request(names);
-    expect(calls[0]!.length).toBeLessThanOrEqual(LOOKUP_HOPS_AHEAD);
+    expect(impl).toHaveBeenCalledTimes(1);
+    expect(calls[0]).toHaveLength(40);
   });
 
   it("does not ask twice for the same system", async () => {

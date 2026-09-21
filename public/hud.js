@@ -393,19 +393,12 @@
               ? "Arrived"
               : "Jumping";
       /*
-        Blue triangle when nobody appears to have been to the system ahead.
-
-        It sits alongside the star-class colouring rather than replacing it — the class says whether
-        there is fuel there, this says whether anyone has been, and a commander needs both. Only
-        `true` changes anything: `null` means the lookup has not answered.
+        The triangle keeps its star-class colour. An earlier version turned it blue for an unvisited
+        system and the owner asked for it back: the colour there already answers "is there fuel",
+        which is the question the triangle exists for. The note below carries the other fact in
+        words.
       */
-      box.className =
-        "jump jump--" +
-        k.kind +
-        (jt.arrived ? " jump--arrived" : "") +
-        " jump--src-" +
-        src +
-        (jt.likelyFirstFootfall === true && !jt.arrived ? " jump--first" : "");
+      box.className = "jump jump--" + k.kind + (jt.arrived ? " jump--arrived" : "") + " jump--src-" + src;
       q(root, "sys").textContent = jt.starSystem;
       q(root, "star").textContent = k.label;
       q(root, "note").textContent =
@@ -442,9 +435,11 @@
       /*
         Blue arrow when nobody appears to have been to the system it points at.
 
-        The flag is asymmetric on purpose (see server/firstFootfallLookup.ts): false means someone
-        has certainly been and uploaded it, true means nobody who uploads has, and null means the
-        lookup has not answered — which keeps the ordinary colour rather than guessing either way.
+        The arrow only — the hop itself keeps the star-class colour it has always had, which is the
+        fuel question and is not this one. The flag is asymmetric on purpose (see
+        server/firstFootfallLookup.ts): false means someone has certainly been and uploaded it, true
+        means nobody who uploads has, and null means the lookup has not answered, which keeps the
+        ordinary colour rather than guessing either way.
       */
       var firstHere = h.likelyFirstFootfall === true;
       html +=
@@ -453,7 +448,6 @@
           : "") +
         '<span class="hop hop--' +
         k.kind +
-        (firstHere ? " hop--first" : "") +
         '" title="' +
         esc(h.starSystem + " — " + k.label + (firstHere ? " — nobody has been here" : "")) +
         '">' +

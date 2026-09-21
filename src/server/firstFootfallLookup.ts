@@ -42,10 +42,15 @@ const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
 /**
  * How many hops ahead are looked up.
  *
- * The route can be forty hops and the HUD strip shows far fewer; asking about systems nobody is
- * looking at is traffic spent on nothing. Ten covers the strip at every width it renders.
+ * Every hop the snapshot carries, because **how many are visible cannot be known here**. The strip
+ * renders all of them and then removes hops from the end until the row fits, so the count depends on
+ * the HUD's width and scale — at ten the last few arrows on a wide HUD had no verdict and stayed
+ * grey, which is what the owner saw.
+ *
+ * It costs nothing to cover them all: `api-v1/systems` answers a list in one request, so forty names
+ * and ten names are the same single call. Matches `ROUTE_AHEAD_HOPS` in `navRouteFuel.ts`.
  */
-export const LOOKUP_HOPS_AHEAD = 10;
+export const LOOKUP_HOPS_AHEAD = 40;
 
 /** Names per request. EDSM answers a list in one call; this is politeness, not a documented cap. */
 const MAX_NAMES_PER_REQUEST = 40;
