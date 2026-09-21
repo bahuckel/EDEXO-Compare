@@ -61,6 +61,21 @@ beforeEach(() => {
   process.env.EDEXO_USER_DATA_DIR = userDir;
   resetFootScannedCarryOver();
   clearFootScannedCatalogCache();
+
+  /*
+    Refuse to run if the path under test is not inside this temp directory.
+
+    These cases write a catalog to wherever `resolveFootScannedPath` points, so a change that sends
+    it somewhere real — a sabotage check on that very function, which is how this was learned —
+    makes the suite overwrite a live catalog instead of failing. It cost seven of the owner's rows,
+    recovered from a packaged build that was about to be wiped. A guard here turns that into a red
+    test.
+  */
+  if (!resolveFootScannedPath().startsWith(userDir)) {
+    throw new Error(
+      `refusing to run: resolveFootScannedPath() is ${resolveFootScannedPath()}, outside ${userDir}`,
+    );
+  }
 });
 
 afterEach(() => {
