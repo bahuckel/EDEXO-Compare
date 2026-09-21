@@ -795,6 +795,19 @@ body {
 .jump--arrived .jump__tri {
   animation: none;
 }
+/*
+  Nobody has been to the system ahead.
+
+  Last among the triangle rules so it wins over the star-class colour: the class is still readable in
+  the text beside it ("K class · Scoopable"), and on the one jump in a thousand that is both
+  unexplored and a black hole, "nobody has been here" is the thing worth seeing from the cockpit.
+  Steady rather than blinking — this is an invitation, not a warning.
+*/
+.jump--first .jump__tri {
+  color: var(--ok);
+  filter: drop-shadow(0 0 7px rgba(79, 208, 255, 0.85));
+  animation: none;
+}
 .jump--scoop .jump__star {
   color: var(--bio);
 }
@@ -965,6 +978,18 @@ body {
   font-size: 0.7rem;
   letter-spacing: 0;
   color: var(--hud-dim);
+}
+/*
+  The arrow pointing at a system nobody has visited. Brighter than the ordinary separator on purpose:
+  it is the only thing in the strip that says "go there".
+*/
+.hop__sep--first {
+  color: var(--ok);
+  text-shadow: 0 0 6px rgba(79, 208, 255, 0.7);
+}
+.hop--first {
+  color: var(--ok);
+  border-color: rgba(79, 208, 255, 0.55);
 }
 .hop__fuel {
   width: 0.95rem;

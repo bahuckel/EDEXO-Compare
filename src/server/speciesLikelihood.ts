@@ -563,6 +563,8 @@ export function rankSpeciesOnBody<T extends { entry: SpeciesEntry }>(
     bodyTypePriorWeight?: number;
     bodyTypeMinCell?: number;
     bodyTypeVariant?: string;
+    /** Probe seam (C1). Mirrors the scorer option of the same name. */
+    claimWeight?: number;
     /**
      * Probe seam (C1c): choose the damping from **how far apart the candidates are on this body**.
      *

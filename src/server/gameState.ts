@@ -448,6 +448,25 @@ export class GameStateStore {
   viewingSystemAddress: number | null = null;
   /** Systems seen in the merged journal (jumps, Location, FSS complete) for picker / search. */
   readonly visitedSystems = new Map<number, string>();
+
+  /**
+   * Has the commander already been to this system, by name?
+   *
+   * `visitedSystems` is keyed by address, which the NavRoute does not carry for the hops ahead — it
+   * has names and star classes only. The first-footfall lookup needs the name form so it can settle
+   * "not first" from the journals rather than asking EDSM about a system he has already flown to.
+   */
+  hasVisitedSystemNamed(systemName: string): boolean {
+    const want = systemName.trim().toLowerCase();
+    if (!want) return false;
+    if (this.visitedSystemNames === null) {
+      this.visitedSystemNames = new Set([...this.visitedSystems.values()].map((n) => n.toLowerCase()));
+    }
+    return this.visitedSystemNames.has(want);
+  }
+
+  /** Lazily built from {@link visitedSystems}; invalidated whenever that map changes. */
+  private visitedSystemNames: Set<string> | null = null;
   readonly bodies = new Map<string, BodyExoState>();
   /**
    * Merged `Scan` rows for bodies in-system (basic + detailed) for system map / exploration estimates.
@@ -1225,6 +1244,7 @@ export class GameStateStore {
     this.commanderPos = null;
     this.viewingSystemAddress = null;
     this.visitedSystems.clear();
+    this.visitedSystemNames = null;
     this.lastEventIso = null;
     this.organicAnalyseByKey.clear();
     this.bodyDetailedFootfallState.clear();
@@ -1276,6 +1296,7 @@ export class GameStateStore {
     const n = starSystem.trim();
     if (!n) return;
     this.visitedSystems.set(systemAddress, n);
+    this.visitedSystemNames = null;
   }
 
   setViewingSystemAddress(systemAddress: number | null): void {
@@ -2786,7 +2807,7 @@ export class GameStateStore {
    */
   nextJumpTarget(): NonNullable<AppSnapshot["jumpTarget"]> | null {
     const jt = this.lastJumpTarget;
-    if (jt && !jt.arrived) return { ...jt, source: "jump" };
+    if (jt && !jt.arrived) return { ...jt, source: "jump", likelyFirstFootfall: null };
     const cur = this.currentSystemAddress;
     const ft = this.fsdTarget;
     if (ft && ft.systemAddress !== cur) {
@@ -2797,11 +2818,12 @@ export class GameStateStore {
         at: ft.at,
         arrived: false,
         source: "target",
+        likelyFirstFootfall: null,
       };
     }
     const hop = this.navRouteNextHop();
     if (hop) return hop;
-    return jt ? { ...jt, source: "jump" } : null;
+    return jt ? { ...jt, source: "jump", likelyFirstFootfall: null } : null;
   }
 
   /** The hop after the current system in the live route; the first hop when the route starts elsewhere. */
@@ -2819,6 +2841,7 @@ export class GameStateStore {
       at: "",
       arrived: false,
       source: "route",
+      likelyFirstFootfall: null,
     };
   }
 
@@ -2920,6 +2943,7 @@ export class GameStateStore {
     this.viewingSystemAddress = data.viewingSystemAddress;
     this.lastEventIso = data.lastEventIso;
     for (const [addr, name] of data.visitedSystems) this.visitedSystems.set(addr, name);
+    this.visitedSystemNames = null;
     for (const [k, v] of data.bodies) this.bodies.set(k, v);
     for (const [k, v] of data.explorationScans) this.explorationScans.set(k, v);
     for (const [k, v] of data.soldExplorationScans ?? []) this.soldExplorationScans.set(k, v);

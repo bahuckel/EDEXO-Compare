@@ -1969,6 +1969,16 @@ export interface RouteAheadHopDTO {
   starClass: string;
   scoopable: boolean;
   refuel: "none" | "yellow" | "red";
+  /**
+   * Would the commander probably be the first here? `null` while nothing is known yet.
+   *
+   * The game says whether a system was discovered only on arrival, so before the jump the only
+   * source is EDSM. That makes the answer asymmetric and the HUD renders it that way: `false` is
+   * certain — someone has been and uploaded — while `true` is a good bet, because a commander who
+   * never uploads leaves no trace. `null` means the lookup has not answered and the arrow keeps its
+   * ordinary colour rather than guessing. See `server/firstFootfallLookup.ts`.
+   */
+  likelyFirstFootfall: boolean | null;
 }
 
 /** Live ship fuel from `Status.json` + jump calibration from merged `Loadout` / `FSDJump`. */
@@ -2367,6 +2377,14 @@ export interface AppSnapshot {
     at: string;
     arrived: boolean;
     source: JumpTargetSource;
+    /**
+     * Would the commander probably be the first here? `null` while the lookup has not answered.
+     *
+     * Same asymmetry as {@link RouteAheadHopDTO.likelyFirstFootfall}: `false` is certain and `true`
+     * is a good bet. Never set once `arrived` is true — by then the journal knows the answer and a
+     * guess from EDSM would be the weaker source.
+     */
+    likelyFirstFootfall: boolean | null;
   } | null;
 }
 

@@ -76,6 +76,8 @@ export interface RouteAheadHop {
   starClass: string;
   scoopable: boolean;
   refuel: RouteRefuelAlertDTO;
+  /** See `RouteAheadHopDTO.likelyFirstFootfall`. Null when the lookup has not answered. */
+  likelyFirstFootfall: boolean | null;
 }
 
 export interface NavRouteFuelAnalysis {
@@ -224,6 +226,13 @@ export function analyzeNavRouteFuel(opts: {
   lastFsdDistLy: number | null;
   loadoutMaxJumpLy: number | null;
   starRoles: StarRolesConfig;
+  /**
+   * Whether the commander would probably be first in a system, or null when unknown.
+   *
+   * Passed in rather than looked up here: this module is arithmetic over a route file and has no
+   * business making network calls. See `firstFootfallLookup.ts`.
+   */
+  firstFootfallVerdict?: (systemName: string) => boolean | null;
 }): NavRouteFuelAnalysis | null {
   const {
     route,
@@ -377,6 +386,7 @@ export function analyzeNavRouteFuel(opts: {
       starClass: w.starClass ?? "",
       scoopable: scoop[j]!,
       refuel: j === refuelIdx ? refuelLevel : "none",
+      likelyFirstFootfall: opts.firstFootfallVerdict?.(w.starSystem) ?? null,
     });
   }
 

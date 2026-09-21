@@ -99,6 +99,45 @@ import { recordPredictionForBody } from "./predictionAuditLog.js";
 import { collectionFocusCached } from "./collectionFocus.js";
 import { edsmUploadLedgerSummary } from "./edsmUploadLedger.js";
 import { edsmCredentialsStatus } from "./edsmCredentials.js";
+import { FirstFootfallLookup } from "./firstFootfallLookup.js";
+import { readEdsmCredentials } from "./edsmCredentials.js";
+
+/**
+ * One lookup for the life of the process, bound to whichever store is building the snapshot.
+ *
+ * It caches verdicts and rate-limits itself, so it has to outlive a single snapshot; the store
+ * reference is refreshed rather than the object rebuilt, or every snapshot would start with an empty
+ * cache and ask EDSM again.
+ */
+let firstFootfallLookup: FirstFootfallLookup | null = null;
+let firstFootfallStore: { hasVisitedSystemNamed: (name: string) => boolean } | null = null;
+
+function firstFootfallLookupFor(store: {
+  hasVisitedSystemNamed: (name: string) => boolean;
+}): FirstFootfallLookup {
+  firstFootfallStore = store;
+  firstFootfallLookup ??= new FirstFootfallLookup({
+    hasVisited: (name) => firstFootfallStore?.hasVisitedSystemNamed(name) ?? false,
+    identity: () => readEdsmCredentials(),
+  });
+  return firstFootfallLookup;
+}
+
+/**
+ * Attach the first-footfall verdict to the next-jump card.
+ *
+ * Skipped once `arrived` is true: the commander is there, the journal's own `WasDiscovered` on the
+ * arrival star is the better source, and a guess from EDSM would overwrite a fact with an opinion.
+ */
+function withFirstFootfall(
+  jt: NonNullable<AppSnapshot["jumpTarget"]> | null,
+  store: { hasVisitedSystemNamed: (name: string) => boolean },
+): NonNullable<AppSnapshot["jumpTarget"]> | null {
+  if (!jt || jt.arrived || !jt.starSystem) return jt;
+  const lookup = firstFootfallLookupFor(store);
+  lookup.request([jt.starSystem]);
+  return { ...jt, likelyFirstFootfall: lookup.verdict(jt.starSystem) };
+}
 
 let cachedStarRoles: ReturnType<typeof loadStarRolesConfig> | null = null;
 
@@ -325,6 +364,14 @@ function buildLiveShipFuelRangeDTO(
   const fuelRes = res != null && Number.isFinite(res) ? Math.max(0, res) : 0;
   const fuelTotalTForNav = hasLiveStatusFuel ? fuelMain + fuelRes : null;
 
+  /*
+    Ask about the systems ahead before the route is analysed, so the verdicts are in the cache by the
+    time this snapshot or the next one reads them. The call is fire-and-forget and rate-limited
+    inside the lookup; nothing here waits on the network.
+  */
+  const lookup = firstFootfallLookupFor(store);
+  lookup.request((store.liveNavRoute ?? []).map((w) => w.starSystem));
+
   const navRoute = analyzeNavRouteFuel({
     route: store.liveNavRoute,
     currentSystemAddress: store.currentSystemAddress,
@@ -334,6 +381,7 @@ function buildLiveShipFuelRangeDTO(
     lastFsdDistLy: store.lastFsdJumpDistLy,
     loadoutMaxJumpLy: store.loadoutMaxJumpRangeLy,
     starRoles,
+    firstFootfallVerdict: (name) => lookup.verdict(name),
   });
 
   if (!hasLiveStatusFuel && !navRoute) return null;
@@ -1568,7 +1616,7 @@ export function buildSnapshot(
     exoOverlayFocusBodyKey,
     exoOverlayFocusBody,
     statusDestination: bootLoading ? null : store.statusDestination,
-    jumpTarget: bootLoading ? null : store.nextJumpTarget(),
+    jumpTarget: bootLoading ? null : withFirstFootfall(store.nextJumpTarget(), store),
     focusedSystemUndiscovered:
       !bootLoading && focusAddr != null && store.mainStarWasDiscoveredBySystem.get(focusAddr) === false,
     remainingJumpsInRoute: bootLoading ? null : store.remainingJumpsInRoute,
