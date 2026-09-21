@@ -49,7 +49,7 @@ signWindowsArtifactsIfConfigured([
 ]);
 
 cpSync(join("dist", "web"), join(outDir, "web"), { recursive: true });
-cpSync("data", join(outDir, "data"), { recursive: true });
+copyDataTree(join(outDir, "data"));
 mergeDataOverlays(join(outDir, "data"));
 
 const readme = `ED Exo Compare — Windows CLI build (no Electron, console stays open)

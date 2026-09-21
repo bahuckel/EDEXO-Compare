@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { mergeDataOverlays } from "./mergeDataOverlay.mjs";
+import { copyDataTree } from "./packagedData.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -72,7 +73,7 @@ mkdirSync(join(staging, "web"), { recursive: true });
 mkdirSync(join(staging, "data"), { recursive: true });
 
 cpSync(join("dist", "web"), join(staging, "web"), { recursive: true });
-cpSync("data", join(staging, "data"), { recursive: true });
+copyDataTree(join(staging, "data"));
 mergeDataOverlays(join(staging, "data"));
 
 const readme = `ED Exo Compare — Windows Electron build (single portable + unpacked folder)
