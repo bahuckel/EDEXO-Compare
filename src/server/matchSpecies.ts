@@ -1083,15 +1083,68 @@ type PendingMatch = Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits"
  * it. Restoring by ascending determinism means the species whose host star matters least gives way
  * first, which is the same ordering the demotion itself was decided on.
  */
+/**
+ * A genus the DSS named keeps at least one row on the shown list.
+ *
+ * The surface scan is the game telling us what is down there. Every gate in this file is an
+ * inference from a corpus of a few thousand bodies, so when the two disagree the corpus is what is
+ * wrong — and a genus with every row demoted is the app quietly contradicting the scanner while
+ * showing no sign of it.
+ *
+ * Found on Myiesue CH-L d8-10 body 45: 7 signals, 7 genera named, 5 shown. Concha and Tubus had
+ * every row demoted by a 190 K codex ceiling on a 193 K body, 1.6 % over. The commander then landed
+ * and found Concha labiata exactly where the scanner said it was.
+ *
+ * {@link restoreDemotionsBelowSignalCount}'s count rule could not help: it only ever restored rows
+ * demoted **solely** for `ObservedTemperature` or `StarType`, and these were `SurfaceTemperature`
+ * codex-range demotions, several carrying a second soft reason as well. A count also cannot see
+ * *which* genus is missing — it would happily restore a sixth row of a genus already shown.
+ *
+ * One row per named genus, the least-objected-to first. Everything else stays demoted: this is a
+ * floor under the shown list, not a reprieve for the whole genus.
+ */
+function restoreNamedGenera(
+  strict: PendingMatch[],
+  unlikely: PendingMatch[],
+  dssGenera: ReadonlySet<string> | null,
+  generaOf: (rows: PendingMatch[]) => Set<string>,
+): void {
+  if (!dssGenera?.size) return;
+  const shown = generaOf(strict);
+  const missing = [...dssGenera].filter((g) => !shown.has(g));
+  if (!missing.length) return;
+
+  const restored = new Set<number>();
+  for (const genus of missing) {
+    const candidates = unlikely
+      .map((m, i) => ({ m, i }))
+      .filter(({ m }) => m.entry.genusDataDir === genus && !m.entry.predictionUnsupported)
+      // Fewest objections first; a row the corpus merely has not seen beats one that disagrees on
+      // three axes at once.
+      .sort((a, b) => (a.m.unlikelyReasons?.length ?? 0) - (b.m.unlikelyReasons?.length ?? 0));
+    const best = candidates[0];
+    if (!best) continue;
+    strict.push({ entry: best.m.entry, reasons: best.m.reasons });
+    restored.add(best.i);
+  }
+  if (!restored.size) return;
+  const keep = unlikely.filter((_, i) => !restored.has(i));
+  unlikely.length = 0;
+  unlikely.push(...keep);
+}
+
 function restoreDemotionsBelowSignalCount(
   strict: PendingMatch[],
   unlikely: PendingMatch[],
   signalCount: number | null,
+  dssGenera: ReadonlySet<string> | null,
 ): void {
-  if (signalCount == null || !Number.isFinite(signalCount) || signalCount <= 0) return;
-
   const generaOf = (rows: PendingMatch[]) =>
     new Set(rows.filter((m) => !m.entry.predictionUnsupported).map((m) => m.entry.genusDataDir));
+
+  restoreNamedGenera(strict, unlikely, dssGenera, generaOf);
+
+  if (signalCount == null || !Number.isFinite(signalCount) || signalCount <= 0) return;
   if (generaOf(strict).size >= signalCount) return;
 
   /*
@@ -1430,7 +1483,12 @@ export function matchDatabaseToScan(
   demoteFailedSystemBodyGates(strict, unlikely, matchContext);
   demoteUnfavouredAtmospheres(strict, unlikely, scan);
 
-  restoreDemotionsBelowSignalCount(strict, unlikely, options?.biologicalSignals ?? null);
+  restoreDemotionsBelowSignalCount(
+    strict,
+    unlikely,
+    options?.biologicalSignals ?? null,
+    genusFilterActive ? new Set(narrowed.map((e) => e.genusDataDir)) : null,
+  );
 
   if (strict.length > 0 || unlikely.length > 0) {
     const { matches, injected } = injectOrganicLockConfirmedSpecies(
