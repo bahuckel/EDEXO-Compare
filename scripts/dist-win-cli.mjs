@@ -19,9 +19,22 @@ function rimrafSync(p) {
 rimrafSync(outDir);
 mkdirSync(outDir, { recursive: true });
 
-/** Thin argv wrappers so @yao-pkg/pkg can build two entrypoints from one bundle. */
-const launchServer = `process.argv.push("--host","0.0.0.0","--port","7111");\nrequire("./app.cjs");\n`;
-const launchClient = `process.argv.push("--host","127.0.0.1","--port","7111","--open");\nrequire("./app.cjs");\n`;
+/**
+ * Thin argv wrappers so @yao-pkg/pkg can build two entrypoints from one bundle.
+ *
+ * These supply **defaults**, and it matters that they are not overrides. They used to push
+ * `--host` unconditionally, and `parseHost` only looks at `--local` / `--lan` when no `--host` is
+ * present — so `EDExoCompare-Server-CLI.exe --local` bound `0.0.0.0` anyway, minted a LAN key and
+ * printed "On your phone" links, having been asked for loopback only. A flag that is silently
+ * ignored is worse than one that is rejected. Found by running the packaged exe, which nothing had
+ * done before the first release.
+ */
+const hostDefault = (host) =>
+  `if (!process.argv.some((a) => a === "--host" || a === "--lan" || a === "--local")) process.argv.push("--host", "${host}");\n`;
+const portDefault = `if (!process.argv.includes("--port")) process.argv.push("--port", "7111");\n`;
+
+const launchServer = `${hostDefault("0.0.0.0")}${portDefault}require("./app.cjs");\n`;
+const launchClient = `${hostDefault("127.0.0.1")}${portDefault}if (!process.argv.includes("--open")) process.argv.push("--open");\nrequire("./app.cjs");\n`;
 
 writeFileSync(join("build", "launch-server.cjs"), launchServer, "utf8");
 writeFileSync(join("build", "launch-client.cjs"), launchClient, "utf8");
