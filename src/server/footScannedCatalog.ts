@@ -575,6 +575,28 @@ function orderedConfirmations(rows: FootScannedEntry[]): FootCatalogConfirmation
  * Persist one confirmed exobiology species from `ScanOrganic` (`Analyse` and/or `Sample`) plus planet stats.
  * Runs for **all** merged journal systems when a detailed `Scan` row exists for that body key.
  */
+/**
+ * The smallest `SystemAddress` the game could plausibly issue.
+ *
+ * ED packs sector coordinates and a body-count seed into a 64-bit value, so a real one is enormous:
+ * Sol is 10,477,373,803 and the smallest in the owner's own catalog is 117,415,220,979. A fixture
+ * writes `1`.
+ *
+ * That matters because the catalog is **first-hand evidence** — "you scanned this species, on this
+ * exact body" — and a row keyed on a made-up address claims a landing that never happened. One got
+ * in: `Tubus Compagibus` in a system called "A", at address 1, with no temperature, no atmosphere
+ * and no codex symbols. It survived every other check because a made-up row can still name a real
+ * genus on a real planet class.
+ *
+ * A million is far below anything the game emits and far above anything a fixture types, so it
+ * rejects the fixtures without ever being close to a real call.
+ */
+const MIN_SYSTEM_ADDRESS = 1_000_000;
+
+function isPlausibleSystemAddress(address: number): boolean {
+  return Number.isFinite(address) && address >= MIN_SYSTEM_ADDRESS;
+}
+
 export function recordFootScanned(
   projectRoot: string,
   meta: {
@@ -602,6 +624,7 @@ export function recordFootScanned(
   if (!scan.PlanetClass?.trim()) return;
   if (!lock.genusLocalised?.trim() && !lock.genusSymbol?.trim()) return;
   if (!lock.speciesLocalised?.trim() && !lock.variantLocalised?.trim() && !lock.speciesSymbol?.trim()) return;
+  if (!isPlausibleSystemAddress(meta.systemAddress)) return;
 
   const est = estimatedTemperatureRangeForScan(scan);
   let tempBandMinK: number;
