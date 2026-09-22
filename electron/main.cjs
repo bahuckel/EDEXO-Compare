@@ -774,6 +774,47 @@ function killSiblingEdexoProcesses() {
   }
 }
 
+/*
+  One reading of an overlay request, shared by the IPC handlers and the HTTP bridge.
+
+  Both doors take the same `{ pathname, width, height }` and must agree on every default, so they
+  call these rather than each repeating the coercion. Two copies of a default is how one of them
+  quietly stops matching the other.
+*/
+const HUD_DEFAULT_PATH = "/distance-overlay.html";
+const HUD_DEFAULT_WIDTH = 404;
+const HUD_DEFAULT_HEIGHT = 330;
+
+function hudPathFrom(opts, fallback = HUD_DEFAULT_PATH) {
+  const o = opts && typeof opts === "object" ? opts : {};
+  const raw = typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : fallback;
+  return raw.startsWith("/") ? raw : `/${raw}`;
+}
+
+function hudWidthFrom(opts) {
+  const n = Number(opts && typeof opts === "object" ? opts.width : NaN);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : HUD_DEFAULT_WIDTH;
+}
+
+function hudHeightFrom(opts) {
+  const n = Number(opts && typeof opts === "object" ? opts.height : NaN);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : HUD_DEFAULT_HEIGHT;
+}
+
+/** Close one overlay by page. Returns the same shape the IPC channel always returned. */
+function closeHudOverlayByPath(pathname) {
+  const key = hudSlotKey(pathname);
+  const idx = hudOverlayStack.findIndex((s) => s.key === key);
+  if (idx < 0) return { closed: false, paths: hudPathsFiltered() };
+  const slot = hudOverlayStack[idx];
+  hudOverlayStack.splice(idx, 1);
+  destroyHudWindow(slot.win);
+  relayoutHudStack();
+  persistHudFile();
+  refreshTrayMenu();
+  return { closed: true, paths: hudPathsFiltered() };
+}
+
 function registerFootOverlayIpc(iconForChild) {
   if (footOverlayIpcRegistered) return;
   footOverlayIpcRegistered = true;
@@ -785,60 +826,34 @@ function registerFootOverlayIpc(iconForChild) {
 
   ipcMain.handle("edexo:hud-overlay-state", () => ({ paths: hudPathsFiltered() }));
 
-  ipcMain.handle("edexo:open-hud-overlay", async (_evt, opts) => {
-    const o = opts && typeof opts === "object" ? opts : {};
-    const pathname =
-      typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : "/distance-overlay.html";
-    const pathNorm = pathname.startsWith("/") ? pathname : `/${pathname}`;
-    const w = Number(o.width);
-    const h = Number(o.height);
-    const width = Number.isFinite(w) && w > 0 ? Math.floor(w) : 404;
-    const height = Number.isFinite(h) && h > 0 ? Math.floor(h) : 330;
-    return requestHudOverlaySlot(pathNorm, width, height, iconForChild, "open");
-  });
+  ipcMain.handle("edexo:open-hud-overlay", async (_evt, opts) =>
+    requestHudOverlaySlot(hudPathFrom(opts), hudWidthFrom(opts), hudHeightFrom(opts), iconForChild, "open"),
+  );
 
-  ipcMain.handle("edexo:toggle-hud-overlay", async (_evt, opts) => {
-    const o = opts && typeof opts === "object" ? opts : {};
-    const pathname =
-      typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : "/distance-overlay.html";
-    const pathNorm = pathname.startsWith("/") ? pathname : `/${pathname}`;
-    const w = Number(o.width);
-    const h = Number(o.height);
-    const width = Number.isFinite(w) && w > 0 ? Math.floor(w) : 404;
-    const height = Number.isFinite(h) && h > 0 ? Math.floor(h) : 330;
-    return requestHudOverlaySlot(pathNorm, width, height, iconForChild, "toggle");
-  });
+  ipcMain.handle("edexo:toggle-hud-overlay", async (_evt, opts) =>
+    requestHudOverlaySlot(hudPathFrom(opts), hudWidthFrom(opts), hudHeightFrom(opts), iconForChild, "toggle"),
+  );
 
   /*
     The merged HUD. One window, its sections chosen by the query string; changing the sections is
     a `set` (the open window navigates) rather than a close-and-reopen, so it does not blink.
   */
-  ipcMain.handle("edexo:set-hud-overlay", async (_evt, opts) => {
-    const o = opts && typeof opts === "object" ? opts : {};
-    const pathname =
-      typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : "/hud-overlay.html";
-    const pathNorm = pathname.startsWith("/") ? pathname : `/${pathname}`;
-    const w = Number(o.width);
-    const h = Number(o.height);
-    const width = Number.isFinite(w) && w > 0 ? Math.floor(w) : 404;
-    const height = Number.isFinite(h) && h > 0 ? Math.floor(h) : 330;
-    return requestHudOverlaySlot(pathNorm, width, height, iconForChild, "set");
-  });
+  ipcMain.handle("edexo:set-hud-overlay", async (_evt, opts) =>
+    requestHudOverlaySlot(
+      hudPathFrom(opts, "/hud-overlay.html"),
+      hudWidthFrom(opts),
+      hudHeightFrom(opts),
+      iconForChild,
+      "set",
+    ),
+  );
 
   ipcMain.handle("edexo:close-hud-overlay", async (_evt, opts) => {
     const o = opts && typeof opts === "object" ? opts : {};
-    const pathname = typeof o.pathname === "string" ? o.pathname.trim() : "";
-    if (!pathname) return { closed: false, paths: hudPathsFiltered() };
-    const key = hudSlotKey(pathname.startsWith("/") ? pathname : `/${pathname}`);
-    const idx = hudOverlayStack.findIndex((s) => s.key === key);
-    if (idx < 0) return { closed: false, paths: hudPathsFiltered() };
-    const slot = hudOverlayStack[idx];
-    hudOverlayStack.splice(idx, 1);
-    destroyHudWindow(slot.win);
-    relayoutHudStack();
-    persistHudFile();
-    refreshTrayMenu();
-    return { closed: true, paths: hudPathsFiltered() };
+    if (typeof o.pathname !== "string" || !o.pathname.trim()) {
+      return { closed: false, paths: hudPathsFiltered() };
+    }
+    return closeHudOverlayByPath(hudPathFrom(o));
   });
 
   ipcMain.handle("edexo:get-hud-layout", () => ({
@@ -937,7 +952,7 @@ async function start() {
 
   process.env.EDEXO_SKIP_DEVENTRY_AUTOSTART = "1";
 
-  const { startEdexoFromElectronMode } = require(bundle);
+  const { startEdexoFromElectronMode, setHudBridge } = require(bundle);
   const mode = detectMode();
   runtime = await startEdexoFromElectronMode(mode);
 
@@ -977,6 +992,43 @@ async function start() {
 
   hudChildIcon = winIcon;
   registerFootOverlayIpc(winIcon);
+
+  /*
+    Hand the HTTP layer a way into these windows.
+
+    The overlay controls were `ipcMain` channels only, which the app's own UI can invoke and nothing
+    else can — so a console build, a phone, or a second terminal had no way to open a HUD. Registered
+    here rather than passed into the server, because the server is already listening by the time
+    these windows exist. See `src/server/hudBridge.ts`.
+  */
+  if (typeof setHudBridge === "function") {
+    setHudBridge({
+      state: () => ({ paths: hudPathsFiltered() }),
+      open: (o) =>
+        requestHudOverlaySlot(hudPathFrom(o), hudWidthFrom(o), hudHeightFrom(o), hudChildIcon, "open"),
+      toggle: (o) =>
+        requestHudOverlaySlot(hudPathFrom(o), hudWidthFrom(o), hudHeightFrom(o), hudChildIcon, "toggle"),
+      set: (o) =>
+        requestHudOverlaySlot(
+          hudPathFrom(o, "/hud-overlay.html"),
+          hudWidthFrom(o),
+          hudHeightFrom(o),
+          hudChildIcon,
+          "set",
+        ),
+      close: (o) => closeHudOverlayByPath(hudPathFrom(o)),
+      getLayout: () => ({ ...hudLayout, hidden: hudHidden, shortcut: HUD_TOGGLE_SHORTCUT }),
+      setLayout: (o) => ({
+        ...setHudLayout(o || {}, true),
+        hidden: hudHidden,
+        shortcut: HUD_TOGGLE_SHORTCUT,
+      }),
+      toggleVisibility: (o) => ({
+        hidden: toggleHudVisibility(o && typeof o.hidden === "boolean" ? o.hidden : undefined),
+      }),
+    });
+  }
+
   loadHudLayout();
   watchDisplaysForHudRelayout();
   try {

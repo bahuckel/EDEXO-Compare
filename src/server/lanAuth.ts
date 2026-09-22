@@ -2,7 +2,8 @@
  * Access key for LAN-bound instances.
  *
  * The default bind is `0.0.0.0`, so every device on the network could reach the mutating endpoints
- * — `POST /api/exobiology/reset`, `/api/settings/*`, `/api/ui/view-system`, `/api/exomastery/reload`
+ * — `POST /api/exobiology/reset`, `/api/settings/*`, `/api/ui/view-system`, `/api/exomastery/reload`,
+ * `/api/hud/*`
  * — with no credential at all. On a home LAN that is mostly a nuisance rather than a breach, but
  * "mostly" is not a security model, and the reset endpoint destroys journal-derived state.
  *

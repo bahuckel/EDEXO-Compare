@@ -4,6 +4,7 @@ import { writeFileSync } from "node:fs";
 // `electron/main.cjs` destructures it off this bundle, so the export is load-bearing while the
 // import would be dead weight. Only `node scripts/bundle.mjs` catches breaking that.
 import { startEdexo, parseCli } from "./edexoBootstrap.js";
+import { shouldStartRepl, startRepl } from "../cli/repl.js";
 
 export {
   startEdexo,
@@ -12,6 +13,9 @@ export {
   logFatal,
   assertResourceLayout,
 } from "./edexoBootstrap.js";
+// `electron/main.cjs` destructures this off the bundle to hand the HTTP layer a way into its overlay
+// windows. Load-bearing export with no importer here, exactly like `startEdexoFromElectronMode`.
+export { setHudBridge } from "./hudBridge.js";
 
 /** Electron main `require()`s this bundle; it must not also run the CLI auto-boot or we bind HTTP twice and exit. */
 function shouldRunCliAutoStart(): boolean {
@@ -21,11 +25,24 @@ function shouldRunCliAutoStart(): boolean {
 }
 
 if (shouldRunCliAutoStart()) {
-  void startEdexo(parseCli(process.argv.slice(2)))
+  const cli = parseCli(process.argv.slice(2));
+  void startEdexo(cli)
     .then((rt) => {
       const onShutdown = () => void rt.shutdown().then(() => process.exit(0));
       process.on("SIGINT", onShutdown);
       process.on("SIGTERM", onShutdown);
+
+      /*
+        The prompt, on an interactive console only.
+
+        A piped or redirected run keeps exactly the behaviour it had before there was a REPL — the
+        console builds are used as a background server too, and writing "edexo> " into a log file
+        would be a regression for anyone doing that.
+      */
+      if (shouldStartRepl()) {
+        const host = cli.bindHost === "0.0.0.0" ? "127.0.0.1" : cli.bindHost;
+        startRepl({ ownBase: `http://${host}:${cli.port}`, onExit: onShutdown });
+      }
     })
     .catch((e) => {
       console.error(e);
