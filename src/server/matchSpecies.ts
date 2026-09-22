@@ -70,6 +70,23 @@ export { isBacteriumSpeciesEntry };
 const OPEN_LO = -1e15;
 const OPEN_HI = 1e15;
 
+/**
+ * A species' temperature band as a person would read it: `≤190 K`, `160–190 K`, `≥300 K`.
+ *
+ * Built by hand inline once, and the open-low case printed the ceiling twice — a commander looking
+ * at why Tubus was demoted on a 193 K body was told "species range is ≤190190 K". The number was
+ * right and unreadable, which is the worst way for an explanation to fail: it looks like the app is
+ * confused rather than the sentence.
+ */
+export function describeTempBand(band: { lo: number; hi: number }): string {
+  const openLo = band.lo === OPEN_LO;
+  const openHi = band.hi === OPEN_HI;
+  if (openLo && openHi) return "any temperature";
+  if (openLo) return `≤${band.hi} K`;
+  if (openHi) return `≥${band.lo} K`;
+  return `${band.lo}–${band.hi} K`;
+}
+
 function injectOrganicLockConfirmedSpecies(
   matches: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
   organicGenusLocks: OrganicGenusLock[] | null | undefined,
@@ -839,7 +856,7 @@ export function speciesMatchesCriteria(
       // Our surface temperature is frequently an estimate, not a measurement; a 2% gap is inside the
       // estimator's own error, never mind the codex rounding.
       const near = tempBandsOverlapWithinTolerance(planetTempBand, band);
-      const speciesRange = `${band.lo === OPEN_LO ? "≤" : ""}${band.lo === OPEN_LO ? band.hi : band.lo}${band.lo !== OPEN_LO && band.hi !== OPEN_HI ? "–" : ""}${band.hi === OPEN_HI ? "" : band.hi} K`;
+      const speciesRange = describeTempBand(band);
       const measured = scan.SurfaceTemperature != null && !Number.isNaN(scan.SurfaceTemperature);
       const estNote = measured
         ? `Journal reads ${planetTempBand.minK.toFixed(1)} K; species range is ${speciesRange}.`
