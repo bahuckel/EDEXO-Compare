@@ -22,10 +22,22 @@ import { atmosphereCompositionKey } from "./scanAtmosphereMatch.js";
 /**
  * How much of the air a required gas has to be before it counts as habitat rather than a trace.
  *
- * Five per cent. Below it the gas is in the mix by accident of chemistry, not as the thing living
- * there feeds on.
+ * **One per cent, measured.** It was five, reasoned rather than counted — "below it the gas is in the
+ * mix by accident of chemistry". The corpus disagrees: across 418 Recepta bodies the sulphur dioxide
+ * share is sharply bimodal, 347 of them at 100 % and 56 below five, of which 44 sit in the one-per-cent
+ * bucket. The lowest Recepta has ever been recorded on is **1.07 %**. A five per cent floor therefore
+ * demoted 13.4 % of its own records.
+ *
+ * One per cent keeps the original intent intact. The body that argued for a floor in the first place —
+ * Blu Thua EM-D d12-25 A 1 a, 99.01 % CO₂ carrying 0.99 % SO₂ — is still below it, and is not a
+ * recorded Recepta body.
+ *
+ * Only species that name a required gas *without* their own share band are affected, which is Recepta
+ * alone: Bacterium acies, Bacterium vesicula and Fonticulua campestris all specify `min 50`
+ * themselves, and Frutexa collum and Tussock stigmasis are 100 % sulphur dioxide on every one of
+ * their 157 and 275 recorded bodies.
  */
-export const REQUIRED_GAS_MIN_SHARE_PCT = 5;
+export const REQUIRED_GAS_MIN_SHARE_PCT = 1;
 
 type CompositionRow = { Name?: unknown; name?: unknown; Percent?: unknown; percent?: unknown };
 

@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { buildEncyclopediaSpawnConditionCards } from "../src/shared/speciesSpawnConditionCards.js";
 import { speciesMatchesCriteria } from "../src/server/matchSpecies.js";
+import { REQUIRED_GAS_MIN_SHARE_PCT } from "../src/shared/atmosphereGasShare.js";
 import { estimatedTemperatureRangeForScan } from "../src/server/planetTemperature.js";
 import type { PlanetScan, SpeciesCriterion, SpeciesEntry } from "../src/shared/types.js";
 
@@ -149,9 +150,11 @@ describe("the Gas share card", () => {
 
 describe("the Required gas card", () => {
   it("states the floor, not just the gas", () => {
+    // Read from the constant rather than written out: the floor moved from 5 % to 1 % once the
+    // corpus was counted, and a literal here would have to be edited every time it moves again.
     const c = card(species("Recepta umbrux"), "required-gas")!;
     expect(c.lines.join(" ")).toContain("SulphurDioxide");
-    expect(c.lines.join(" ")).toContain("5 %");
+    expect(c.lines.join(" ")).toContain(`${REQUIRED_GAS_MIN_SHARE_PCT} %`);
   });
 
   it("calls a trace a trace", () => {
