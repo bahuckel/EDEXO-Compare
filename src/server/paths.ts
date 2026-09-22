@@ -257,20 +257,39 @@ export function reapplySpeciesDataDirDiscoveryFromDisk(): void {
       /* ignore */
     }
   }
-  try {
-    const cfg = join(dirname(resolveUserSettingsJsonPath()), "species-data-dir.json");
-    if (!existsSync(cfg)) return;
-    const raw = readFileSync(cfg, "utf8");
-    const j = JSON.parse(raw) as { speciesDataDir?: unknown };
-    const p = typeof j.speciesDataDir === "string" ? j.speciesDataDir.trim() : "";
-    if (!p) return;
-    const resolved = pathResolve(p);
-    if (existsSync(resolved) && statSync(resolved).isDirectory()) {
-      process.env.EDEXO_SPECIES_DATA_DIR = resolved;
+  /*
+    Beside the user settings first, then the directory Electron used to keep it in.
+
+    `migrateLegacyUserData` copies this file across, but it runs inside `startEdexo` — after this
+    discovery has already decided. Without the fallback the first launch after an upgrade would find
+    no config and silently read the shipped species tree instead of the commander's own.
+  */
+  const legacy = process.env.EDEXO_LEGACY_USER_DATA_DIR?.trim();
+  const candidates = [join(dirname(resolveUserSettingsJsonPath()), SPECIES_DATA_DIR_CONFIG)];
+  if (legacy) candidates.push(join(legacy, SPECIES_DATA_DIR_CONFIG));
+
+  for (const cfg of candidates) {
+    try {
+      if (!existsSync(cfg)) continue;
+      const j = JSON.parse(readFileSync(cfg, "utf8")) as { speciesDataDir?: unknown };
+      const p = typeof j.speciesDataDir === "string" ? j.speciesDataDir.trim() : "";
+      if (!p) continue;
+      const resolved = pathResolve(p);
+      if (existsSync(resolved) && statSync(resolved).isDirectory()) {
+        process.env.EDEXO_SPECIES_DATA_DIR = resolved;
+        return;
+      }
+    } catch {
+      /* invalid JSON or an unreadable file: try the next candidate */
     }
-  } catch {
-    /* invalid JSON or missing file */
   }
+}
+
+/** Where a chosen species tree is remembered. Beside the user settings, like everything else. */
+export const SPECIES_DATA_DIR_CONFIG = "species-data-dir.json";
+
+export function resolveSpeciesDataDirConfigPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), SPECIES_DATA_DIR_CONFIG);
 }
 
 /**

@@ -48,39 +48,6 @@ function applyPackagedResourcesEnv() {
   }
 }
 
-/**
- * Species JSON + exomastery live under a writable tree. Packaged builds read bundled resources as
- * project root, so point this at your clone's data/species (or keep data/species next to the .exe).
- */
-function applySpeciesDataDirFromElectron() {
-  if (process.env.EDEXO_SPECIES_DATA_DIR?.trim()) return;
-  try {
-    const exeDir = path.dirname(app.getPath("exe"));
-    const portable = path.join(exeDir, "data", "species");
-    if (fs.existsSync(portable) && fs.statSync(portable).isDirectory()) {
-      process.env.EDEXO_SPECIES_DATA_DIR = portable;
-      return;
-    }
-  } catch {
-    /* ignore */
-  }
-  try {
-    const ud = app.getPath("userData");
-    const cfg = path.join(ud, "species-data-dir.json");
-    if (!fs.existsSync(cfg)) return;
-    const raw = fs.readFileSync(cfg, "utf8");
-    const j = JSON.parse(raw);
-    const p = typeof j.speciesDataDir === "string" ? j.speciesDataDir.trim() : "";
-    if (!p) return;
-    const resolved = path.resolve(p);
-    if (fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()) {
-      process.env.EDEXO_SPECIES_DATA_DIR = resolved;
-    }
-  } catch {
-    /* ignore invalid JSON or missing file */
-  }
-}
-
 function serverBundlePath() {
   const res = process.resourcesPath;
   const fromResources = res ? path.join(res, "edexo", "app.cjs") : null;
@@ -990,7 +957,6 @@ async function start() {
   }
 
   applyPackagedResourcesEnv();
-  applySpeciesDataDirFromElectron();
 
   const bundle = serverBundlePath();
   if (!fs.existsSync(bundle)) {
@@ -1011,8 +977,28 @@ async function start() {
 
   process.env.EDEXO_SKIP_DEVENTRY_AUTOSTART = "1";
 
-  const { startEdexoFromElectronMode, setHudBridge, resolveHudLayoutPath } = require(bundle);
+  const {
+    startEdexoFromElectronMode,
+    setHudBridge,
+    resolveHudLayoutPath,
+    reapplySpeciesDataDirDiscoveryFromDisk,
+  } = require(bundle);
   if (typeof resolveHudLayoutPath === "function") resolveHudLayoutPathFromBundle = resolveHudLayoutPath;
+
+  /*
+    Where the species tree lives, decided by the server's own discovery rather than a copy of it.
+
+    This file used to carry its own version — portable `<exeDir>/data/species`, then
+    `species-data-dir.json` in Electron's userData — and `paths.ts` carried the same walk against the
+    directory everything else uses. Two implementations of one rule, and only the Electron one looked
+    in a directory `EDEXO_USER_DATA_DIR` does not cover, so an isolated instance read the real
+    profile's species tree.
+
+    It must run before the server starts, because it works by setting `EDEXO_SPECIES_DATA_DIR`.
+  */
+  if (typeof reapplySpeciesDataDirDiscoveryFromDisk === "function") {
+    reapplySpeciesDataDirDiscoveryFromDisk();
+  }
   const mode = detectMode();
   runtime = await startEdexoFromElectronMode(mode);
 

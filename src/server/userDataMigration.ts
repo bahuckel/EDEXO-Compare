@@ -31,6 +31,8 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
+  SPECIES_DATA_DIR_CONFIG,
+  resolveSpeciesDataDirConfigPath,
   USER_SETTINGS_FILENAME,
   resolveExoOutlierLogPath,
   resolveLanKeyPath,
@@ -38,7 +40,7 @@ import {
 } from "./paths.js";
 
 /** Files carried over when the new location does not have them. Order is report order. */
-const COPY_IF_MISSING = [USER_SETTINGS_FILENAME, "edexo-compare-lan-key.txt", "species-data-dir.json"];
+const COPY_IF_MISSING = [USER_SETTINGS_FILENAME, "edexo-compare-lan-key.txt", SPECIES_DATA_DIR_CONFIG];
 
 export interface UserDataMigration {
   legacyDir: string | null;
@@ -149,7 +151,7 @@ export function migrateLegacyUserData(): UserDataMigration {
   const targets: Record<string, string> = {
     [USER_SETTINGS_FILENAME]: resolveUserSettingsJsonPath(),
     "edexo-compare-lan-key.txt": resolveLanKeyPath(),
-    "species-data-dir.json": join(currentDir, "species-data-dir.json"),
+    [SPECIES_DATA_DIR_CONFIG]: resolveSpeciesDataDirConfigPath(),
   };
 
   for (const name of COPY_IF_MISSING) {
