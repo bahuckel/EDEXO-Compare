@@ -159,12 +159,71 @@ let hudRestoreList = [];
 let hudRememberedOpen = [];
 /** The icon child windows are created with, stashed at boot so the hotkey can open one later. */
 let hudChildIcon;
+/**
+ * Set by {@link startEdexo}'s bundle once it is loaded; see `src/server/paths.ts`.
+ *
+ * Held in a variable rather than required at call time because this file is loaded before the server
+ * bundle is, and a HUD path resolved too early would silently disagree with the one everything else
+ * uses.
+ */
+let resolveHudLayoutPathFromBundle = null;
+
+/**
+ * Where the HUD layout lives.
+ *
+ * It used to be Electron's own `app.getPath("userData")` — the one piece of app state that
+ * `EDEXO_USER_DATA_DIR` did not cover, so an "isolated" second instance rewrote the real app's
+ * overlay set. It sits beside the rest of the user data now.
+ *
+ * The Electron directory is still the fallback for the moment before the bundle is loaded, and
+ * {@link carryHudLayoutOver} moves an existing file across once.
+ */
 function hudLayoutPath() {
+  if (resolveHudLayoutPathFromBundle) {
+    try {
+      return resolveHudLayoutPathFromBundle();
+    } catch {
+      /* fall through to the Electron directory */
+    }
+  }
+  return legacyHudLayoutPath();
+}
+
+function legacyHudLayoutPath() {
   return path.join(app.getPath("userData"), "hud-layout.json");
+}
+
+/**
+ * Carry a layout written before the move, once.
+ *
+ * Copied rather than moved: a failed delete must not look like a failed migration, and the old file
+ * costs nothing once nothing reads it. Never over an existing layout — on an upgrade the commander's
+ * current one wins.
+ */
+function carryHudLayoutOver() {
+  try {
+    const live = hudLayoutPath();
+    const legacy = legacyHudLayoutPath();
+    if (live === legacy) return;
+    if (fs.existsSync(live) || !fs.existsSync(legacy)) return;
+    fs.mkdirSync(path.dirname(live), { recursive: true });
+    fs.copyFileSync(legacy, live);
+    console.info("[edexo-compare] carried the HUD layout over from", legacy);
+  } catch {
+    /* an unreadable or unwritable location just means the defaults */
+  }
 }
 function loadHudLayout() {
   try {
-    const j = JSON.parse(fs.readFileSync(hudLayoutPath(), "utf8"));
+    /*
+      Strip a byte-order mark before parsing.
+
+      `JSON.parse` throws on a leading BOM, and every Windows tool that might touch this file writes
+      one — Notepad, and PowerShell's own `Set-Content -Encoding utf8`. The throw is caught below and
+      looks exactly like "no layout saved", so a commander who opened the file to look at it would
+      silently lose their overlay arrangement with nothing to explain it.
+    */
+    const j = JSON.parse(fs.readFileSync(hudLayoutPath(), "utf8").replace(/^\uFEFF/, ""));
     if (j && typeof j === "object") {
       setHudLayout(j, false);
       if (Number.isFinite(Number(j.scale))) hudScale = Math.min(2, Math.max(0.5, Number(j.scale)));
@@ -952,7 +1011,8 @@ async function start() {
 
   process.env.EDEXO_SKIP_DEVENTRY_AUTOSTART = "1";
 
-  const { startEdexoFromElectronMode, setHudBridge } = require(bundle);
+  const { startEdexoFromElectronMode, setHudBridge, resolveHudLayoutPath } = require(bundle);
+  if (typeof resolveHudLayoutPath === "function") resolveHudLayoutPathFromBundle = resolveHudLayoutPath;
   const mode = detectMode();
   runtime = await startEdexoFromElectronMode(mode);
 
@@ -1029,6 +1089,7 @@ async function start() {
     });
   }
 
+  carryHudLayoutOver();
   loadHudLayout();
   watchDisplaysForHudRelayout();
   try {

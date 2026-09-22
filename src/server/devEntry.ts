@@ -16,6 +16,9 @@ export {
 // `electron/main.cjs` destructures this off the bundle to hand the HTTP layer a way into its overlay
 // windows. Load-bearing export with no importer here, exactly like `startEdexoFromElectronMode`.
 export { setHudBridge } from "./hudBridge.js";
+// Also destructured by `electron/main.cjs`, so its HUD layout lands in the same directory as the
+// rest of the user data and honours EDEXO_USER_DATA_DIR.
+export { resolveHudLayoutPath } from "./paths.js";
 
 /** Electron main `require()`s this bundle; it must not also run the CLI auto-boot or we bind HTTP twice and exit. */
 function shouldRunCliAutoStart(): boolean {

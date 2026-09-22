@@ -124,6 +124,22 @@ export function resolveJournalPathsPath(): string {
 }
 
 /**
+ * The HUD overlay layout: which overlays are open, where, and at what scale.
+ *
+ * Electron wrote this to its own `app.getPath("userData")`, which is the one piece of app state
+ * `EDEXO_USER_DATA_DIR` did not cover. That override exists so a test run, or a second instance,
+ * cannot touch the commander's real profile — and it quietly did not hold here: driving the CLI
+ * overlay commands at an "isolated" instance rewrote the HUD sections of the real app, and the
+ * cold-test recipe written the day before was wrong because of it.
+ *
+ * It belongs beside the rest of the user data for the same reason everything else moved there: one
+ * directory to isolate, one to back up, one to delete.
+ */
+export function resolveHudLayoutPath(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "hud-layout.json");
+}
+
+/**
  * Why the app suggested what it suggested, body by body.
  *
  * Beside the outlier log and for the same reason: it is an observation the commander made, it never
