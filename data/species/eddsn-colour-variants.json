@@ -8,7 +8,7 @@
  },
  "verification": {
   "againstOwnerJournals": "235 star-table predictions correct, 0 wrong, 23 classes blank; 47 of 47 material rows had the observed colour among the candidates.",
-  "materialTieBreak": "The rarest material on the body decides, where checked: 14 of 15 of the owner's own Fungoida finds (2026-09-22), against 10 of 15 for the most abundant. Marked with tieBreak on gelata (3/3), bullarum (4/4) and setisis (5/5). Stabitis is NOT marked: its 76 Leonis 6 a find came out White where its own table predicts Magenta, and the rarest material on that body (antimony 1.183 %) belongs to the other element set."
+  "materialTieBreak": "Withdrawn 2026-09-22. An EDDN capture of 25,858 bodies carries 14,502 codex entries whose variant suffix names the deciding material outright; on the 907 bodies where more than one of a species' own materials was present, the rarest won 445 and lost 462. A fixed per-species priority fails too — every species shows contradictory pairs. It is not a ranking of the materials at all, so both candidates are offered again. The earlier 14-of-15 came from a single commander's 15 finds."
  },
  "corpusFills": {
   "note": "Star classes ED-DSN leaves blank that the owner has scanned himself. Listed separately so a later ED-DSN update can overwrite them without touching the transcription.",
@@ -414,8 +414,7 @@
     "technetium": "Peach",
     "tellurium": "Gold",
     "yttrium": "Orange"
-   },
-   "tieBreak": "rarest"
+   }
   },
   "fungoida gelata": {
    "source": "material",
@@ -426,8 +425,7 @@
     "niobium": "Green",
     "tungsten": "Orange",
     "tin": "Red"
-   },
-   "tieBreak": "rarest"
+   }
   },
   "fungoida setisis": {
    "source": "material",
@@ -438,8 +436,7 @@
     "technetium": "Lime",
     "tellurium": "Yellow",
     "yttrium": "Orange"
-   },
-   "tieBreak": "rarest"
+   }
   },
   "fungoida stabitis": {
    "source": "material",

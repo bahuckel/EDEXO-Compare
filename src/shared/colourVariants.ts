@@ -22,28 +22,27 @@
  * and none wrong**, and in all 47 material rows the colour the commander actually found was among
  * the candidates.
  *
- * ## Two materials, two answers — and, for some species, one
+ * ## Two materials, two answers
  *
- * A material table lists six materials and a body carries two of them about a third of the time. For
- * years both were returned and the caller said "Cyan or Orange", because an earlier pass found that
- * percentage did not decide it — 11 of 20 went to the lower one.
+ * A material table lists six materials and a body carries two of them about a third of the time, and
+ * **nothing decides which one drives the colour**. Both are returned and the caller says "Cyan or
+ * Orange".
  *
- * **That pass was reading the wrong tables.** Fungoida bullarum and setisis take their colour from a
- * completely different set of six elements than gelata and stabitis, so the material credited with
- * each colour was often not the one the game had used, and the resulting coin-flip was an artefact.
- * With the owner's four corrected Fungoida tables the rule is plain: **the rarest of the species'
- * materials present on the body decides**, at 14 of his own 15 finds against 10 for the most
- * abundant.
+ * That was the answer, then briefly was not, and is again. A rule — the rarest of the species' own
+ * materials — held on 14 of the owner's 15 Fungoida finds and shipped in 1.1.2. An EDDN capture of
+ * 25,858 bodies then settled it properly: 14,502 codex entries whose variant suffix **names the
+ * deciding material outright**, and on the 907 bodies carrying more than one of a species' own
+ * materials the rarest won 445 and lost 462. A coin flip. A fixed per-species priority fails as
+ * well — every species shows contradictory pairs, `Conchas_01` preferring tin over cadmium 13:3
+ * while preferring cadmium over molybdenum 7:3. It is not a ranking of the materials at all.
  *
- * It is opt-in per species (`tieBreak: "rarest"` in the table) rather than global, because it has
- * only been checked on three of them. Fungoida stabitis is deliberately unmarked: on 76 Leonis 6 a
- * it came out White where its own table says Magenta, and the rarest material there belonged to the
- * other element set entirely. Everything unmarked keeps returning every candidate, which stays the
- * honest answer for a rule nobody has verified.
+ * The `tieBreak` field survives, unused by any table. If a rule is ever found, this is where it goes
+ * and it stays opt-in per species — fifteen observations were enough to convince, and not nearly
+ * enough to be right.
  *
- * The old counter-example survives and is not a counter-example: on Eorgh Prou WH-G c25-4 A 1 a the
- * same pair of materials gave Fumerola aquatis its molybdenum colour and Bacterium tela its tin
- * colour. Two species, two tables — exactly what per-species tables predict.
+ * Which costs the commander nothing: **colour decides which photograph is shown, not what the plant
+ * is worth**, and every variant of a species sells for the same. "White or Peach" is a fine answer.
+ * A species being *listed at all* is what matters, and that is the gates' business, not this file's.
  */
 import { normaliseMaterial } from "./speciesColour.js";
 import { spectralKeysFromJournalStarType } from "./starSpectralKeys.js";

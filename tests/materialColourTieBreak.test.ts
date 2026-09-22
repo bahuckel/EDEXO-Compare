@@ -5,13 +5,13 @@
  * as long as this feature has existed the answer in that case was both — "Cyan or Orange" — because
  * nothing in the data picked one, and an earlier pass concluded percentage did not decide it.
  *
- * That pass was run against tables we now know were wrong: Fungoida bullarum and setisis read an
- * entirely different set of six elements from gelata and stabitis, so the material credited with a
- * colour was often not the one the game had used. With the commander's four corrected tables the
- * rule is plain — **the rarest material on the body decides** — at 14 of his own 15 Fungoida finds,
- * against 10 for the most abundant.
+ * A rule was found and withdrawn. "The rarest of the species' own materials decides" held on 14 of
+ * the owner's 15 Fungoida finds and shipped in 1.1.2; an EDDN capture of 25,858 bodies then gave
+ * 14,502 codex entries whose variant suffix **names the deciding material outright**, and across the
+ * 907 contested bodies the rarest won 445 and lost 462. A fixed per-species priority fails too.
  *
- * Every case below is one of those finds, materials and percentages straight from his journal.
+ * So both candidates are offered again, and that is the state these cases pin. It costs the
+ * commander nothing: colour decides which photograph is shown, not what the plant is worth.
  */
 import { describe, expect, it } from "vitest";
 import path from "node:path";
@@ -52,28 +52,25 @@ describe("the tables the commander corrected", () => {
   });
 });
 
-describe("a contested body, on the species where the rule was checked", () => {
-  it("takes the rarest material — Myiesue CH-L d8-10 body 45, where he found Red", () => {
+describe("a contested body", () => {
+  it("offers both colours rather than naming one — Myiesue CH-L d8-10 body 45", () => {
     /*
-      THE ONE THAT MATTERS, and the body that started it. Niobium is the more abundant and maps to
-      Green; tin is rarer and maps to Red. The game gave Red.
+      THE ONE THAT MATTERS. This body found the rule and then the EDDN capture unfound it: the
+      commander's plant was Red and tin is the rarer material here, which is exactly the coincidence
+      that made fifteen observations look conclusive.
     */
     const answer = colourFromBodyMaterials(
       ruleFor("fungoida gelata"),
       mats(["niobium", 1.318841], ["tin", 1.150448], ["iron", 19.296915]),
     );
-    expect(answer.colour).toBe("Red");
-    expect(answer.reason).toContain("tin");
+    expect(answer.colour, "no single colour claimed").toBeNull();
+    expect(answer.candidates.sort()).toEqual(["Green", "Red"]);
   });
 
-  it("holds on his two earlier gelata finds as well", () => {
-    // 2026-09-13: tin 1.53 beats cadmium 1.84. 2026-09-18: niobium 1.38 beats cadmium 1.57.
-    expect(
-      colourFromBodyMaterials(ruleFor("fungoida gelata"), mats(["cadmium", 1.84], ["tin", 1.53])).colour,
-    ).toBe("Red");
-    expect(
-      colourFromBodyMaterials(ruleFor("fungoida gelata"), mats(["cadmium", 1.57], ["niobium", 1.38])).colour,
-    ).toBe("Green");
+  it("keeps no table marked with a tie-break, so nothing names a colour by rank", () => {
+    for (const sp of ["fungoida gelata", "fungoida bullarum", "fungoida setisis", "fungoida stabitis"]) {
+      expect(ruleFor(sp)!.tieBreak, sp).toBeUndefined();
+    }
   });
 
   it("still answers when only one material is present, as it always did", () => {
@@ -130,14 +127,14 @@ describe("where the rule has not been earned", () => {
 describe("however the source spells it", () => {
   it("reads lower-case name and percent, which is how some records arrive", () => {
     /*
-      `PlanetScan.materials` permits Name/Percent and name/percent. Reading only the journal's
-      spelling would leave the tie-break silently inert on every record that had been through a
-      Spansh or EDSM shape — the failure mode with no symptom.
+      `PlanetScan.materials` permits Name/Percent and name/percent. The colour still comes back as a
+      pair, but both materials must be *seen* — reading one spelling only would drop a candidate and
+      turn an honest "Green or Red" into a confident "Red".
     */
     const answer = colourFromBodyMaterials(ruleFor("fungoida gelata"), [
       { name: "niobium", percent: 1.32 },
       { name: "tin", percent: 1.15 },
     ]);
-    expect(answer.colour).toBe("Red");
+    expect(answer.candidates.sort()).toEqual(["Green", "Red"]);
   });
 });
