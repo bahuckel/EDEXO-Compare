@@ -1722,12 +1722,37 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   };
 }
 
-export async function startEdexoFromElectronMode(mode: "server" | "client"): Promise<EdexoRuntime> {
-  const bindHost = mode === "server" ? "0.0.0.0" : "127.0.0.1";
+/**
+ * Where the desktop app listens, given the launch mode and whatever was typed after the exe.
+ *
+ * The port used to be hard-coded at 7111 and `--port` was simply dropped — so a second instance
+ * could not be started beside a running one, which is the first thing anyone tries, and the flag
+ * looked accepted because nothing complained. Same shape as `--local` being ignored by the console
+ * wrappers: a flag that is silently discarded is worse than one that is rejected.
+ *
+ * The **mode** still decides the address, because that is what `--local` and `--client` mean to
+ * `electron/main.cjs`. `--host` and `--lan` override it only when actually present: `parseHost`
+ * answers `0.0.0.0` for an empty argv, and taking that unconditionally would put a client-mode
+ * window on the network.
+ */
+export function electronRuntimeOptions(
+  mode: "server" | "client",
+  argv: readonly string[],
+): { bindHost: string; port: number } {
+  const explicitHost = argv.includes("--host") || argv.includes("--lan");
+  return {
+    bindHost: explicitHost ? parseHost([...argv]) : mode === "server" ? "0.0.0.0" : "127.0.0.1",
+    port: parsePort([...argv]),
+  };
+}
+
+export async function startEdexoFromElectronMode(
+  mode: "server" | "client",
+  argv: readonly string[] = process.argv,
+): Promise<EdexoRuntime> {
   process.env.EDEXO_ELECTRON = "1";
   return startEdexo({
-    bindHost,
-    port: 7111,
+    ...electronRuntimeOptions(mode, argv),
     shouldOpenMainUI: false,
     quietConsole: true,
     useShellLauncher: false,

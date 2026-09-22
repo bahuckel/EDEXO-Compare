@@ -116,9 +116,10 @@ export const TOPICS: TopicSpec[] = [
     name: "network",
     summary: "Which address it serves on, who may reach it, EDSM and Canonn",
     intro:
-      "The bind address is chosen at launch, not at runtime: --local for this PC only, --lan or " +
-      "--host for the network, --port to move it. network status prints what the running instance " +
-      "actually did, which is the thing worth checking.",
+      "The bind address and port are chosen at launch, not at runtime: --local for this PC only, " +
+      "--lan or --host for the network, --port to move it off 7111 so a second instance can run " +
+      "beside the first. network prints what the running instance actually did, which is the thing " +
+      "worth checking.",
     commands: [
       {
         name: "network",

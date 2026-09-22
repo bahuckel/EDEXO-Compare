@@ -1097,8 +1097,16 @@ app.whenReady().then(() => {
     try {
       let msg = e instanceof Error ? e.message : String(e);
       if (/EADDRINUSE|already in use/i.test(msg)) {
+        /*
+          Name the port that is actually taken. It was hard-coded at 7111, which was true for as
+          long as --port was being ignored; now that the flag works, a commander who moved the port
+          and hit a clash would be sent to look at the wrong one.
+        */
+        const i = process.argv.indexOf("--port");
+        const port = i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : "7111";
         msg +=
-          "\n\nPort 7111 is in use — often EDExoCompare-*-CLI.exe or a second Electron build. Close that copy or set PORT in the environment.";
+          `\n\nPort ${port} is in use — often EDExoCompare-*-CLI.exe or another copy of this app. ` +
+          `Close that copy, or start this one on a different port with --port <number>.`;
       }
       dialog.showErrorBox("ED Exo Compare — startup failed", msg);
     } catch {
