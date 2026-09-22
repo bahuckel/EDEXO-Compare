@@ -22,14 +22,28 @@
  * and none wrong**, and in all 47 material rows the colour the commander actually found was among
  * the candidates.
  *
- * ## Two materials, two answers
+ * ## Two materials, two answers — and, for some species, one
  *
- * A material table lists six materials; a body carries two of them about a third of the time, and
- * nothing in the data decides which one drives the colour. Percentage does not (11 of 20 go to the
- * lower one), and neither does a fixed precedence — on Eorgh Prou WH-G c25-4 A 1 a the same pair of
- * materials gave Fumerola aquatis its molybdenum colour and Bacterium tela its tin colour. So both
- * are returned and the caller says "Cyan or Orange". Naming one would be a guess wearing the clothes
- * of a derivation, and the honest form is the one that has never yet been wrong.
+ * A material table lists six materials and a body carries two of them about a third of the time. For
+ * years both were returned and the caller said "Cyan or Orange", because an earlier pass found that
+ * percentage did not decide it — 11 of 20 went to the lower one.
+ *
+ * **That pass was reading the wrong tables.** Fungoida bullarum and setisis take their colour from a
+ * completely different set of six elements than gelata and stabitis, so the material credited with
+ * each colour was often not the one the game had used, and the resulting coin-flip was an artefact.
+ * With the owner's four corrected Fungoida tables the rule is plain: **the rarest of the species'
+ * materials present on the body decides**, at 14 of his own 15 finds against 10 for the most
+ * abundant.
+ *
+ * It is opt-in per species (`tieBreak: "rarest"` in the table) rather than global, because it has
+ * only been checked on three of them. Fungoida stabitis is deliberately unmarked: on 76 Leonis 6 a
+ * it came out White where its own table says Magenta, and the rarest material there belonged to the
+ * other element set entirely. Everything unmarked keeps returning every candidate, which stays the
+ * honest answer for a rule nobody has verified.
+ *
+ * The old counter-example survives and is not a counter-example: on Eorgh Prou WH-G c25-4 A 1 a the
+ * same pair of materials gave Fumerola aquatis its molybdenum colour and Bacterium tela its tin
+ * colour. Two species, two tables — exactly what per-species tables predict.
  */
 import { normaliseMaterial } from "./speciesColour.js";
 import { spectralKeysFromJournalStarType } from "./starSpectralKeys.js";
@@ -38,6 +52,15 @@ export interface ColourVariantRule {
   source: "star" | "material";
   /** Star class key (`F`, `TTS`, `AEBE`) or lower-case material name, to a colour name. */
   map: Record<string, string>;
+  /**
+   * How to choose when a body carries several of this species' materials.
+   *
+   * `"rarest"` — the one with the lowest percentage on the body decides. Set only on species where
+   * that has been checked against real finds; everything else keeps returning every candidate,
+   * which is the honest answer for a rule nobody has verified. See
+   * {@link colourFromBodyMaterials}.
+   */
+  tieBreak?: "rarest";
 }
 
 export type ColourVariantBasis = "star" | "material" | "none";
@@ -51,6 +74,29 @@ export interface ColourVariantAnswer {
   /** What matched, so the commander can check our working. */
   reason: string | null;
 }
+
+/**
+ * One entry of a body's `Materials`, however the source spells it.
+ *
+ * The journal writes `Name` / `Percent`; records that have been through a Spansh or EDSM shape can
+ * arrive lower-case. `PlanetScan.materials` allows all four, so reading only one pair would drop the
+ * tie-break on half the callers without any sign that it had.
+ */
+export interface MaterialReading {
+  Name?: string;
+  name?: string;
+  Percent?: number;
+  percent?: number;
+}
+
+const materialName = (m: MaterialReading | null | undefined): string => String(m?.Name ?? m?.name ?? "");
+
+const materialPercent = (m: MaterialReading | null | undefined): number => {
+  for (const v of [m?.Percent, m?.percent]) {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+  }
+  return Number.NaN;
+};
 
 const NONE: ColourVariantAnswer = { colour: null, candidates: [], basis: "none", reason: null };
 
@@ -86,22 +132,55 @@ export function colourFromStarClass(
  */
 export function colourFromBodyMaterials(
   rule: ColourVariantRule | null | undefined,
-  materials: readonly { Name?: string }[] | null | undefined,
+  materials: readonly MaterialReading[] | null | undefined,
 ): ColourVariantAnswer {
   if (rule?.source !== "material") return NONE;
   if (!materials?.length) return NONE;
-  const present = new Set(materials.map((m) => normaliseMaterial(String(m?.Name ?? ""))).filter(Boolean));
-  const hits: { material: string; colour: string }[] = [];
+
+  const percentOf = new Map<string, number>();
+  for (const m of materials) {
+    const name = normaliseMaterial(materialName(m));
+    if (!name) continue;
+    const pct = materialPercent(m);
+    if (!percentOf.has(name) || Number.isNaN(percentOf.get(name)!)) percentOf.set(name, pct);
+  }
+
+  const hits: { material: string; colour: string; percent: number }[] = [];
   for (const [material, colour] of Object.entries(rule.map)) {
-    if (present.has(normaliseMaterial(material)) && colour?.trim()) {
-      hits.push({ material, colour: colour.trim() });
+    const key = normaliseMaterial(material);
+    if (percentOf.has(key) && colour?.trim()) {
+      hits.push({ material, colour: colour.trim(), percent: percentOf.get(key)! });
     }
   }
   if (hits.length === 0) return NONE;
+
   const candidates = [...new Set(hits.map((h) => h.colour))];
   if (candidates.length === 1) {
     return one(candidates[0]!, "material", `${hits.map((h) => h.material).join(", ")} on this body`);
   }
+
+  /*
+    The tie-break, where it has been earned.
+
+    A body carries two of a species' six materials about a third of the time, and for years this
+    returned both — "Cyan or Orange" — because nothing in the data picked one. The commander's four
+    Fungoida tables settled it for three of those species: **the rarest material on the body decides**,
+    14 of 15 of his own finds, against 10 of 15 for the most abundant.
+
+    It is opt-in per species rather than global on purpose. The one find it does not explain is
+    Fungoida stabitis, whose body carried a rarer material from the *other* element set than anything
+    in its own table — so stabitis, and every species nobody has checked, keeps the honest list.
+  */
+  if (rule.tieBreak === "rarest" && hits.every((h) => Number.isFinite(h.percent))) {
+    const rarest = hits.reduce((a, b) => (b.percent < a.percent ? b : a));
+    return one(
+      rarest.colour,
+      "material",
+      `${rarest.material} at ${rarest.percent.toFixed(2)} %, the rarest of ` +
+        `${hits.map((h) => h.material).join(", ")} on this body`,
+    );
+  }
+
   return {
     colour: null,
     candidates,
@@ -113,7 +192,7 @@ export function colourFromBodyMaterials(
 /** Whichever rule this species uses. */
 export function resolveColourVariant(
   rule: ColourVariantRule | null | undefined,
-  input: { parentStarType?: string | null; materials?: readonly { Name?: string }[] | null },
+  input: { parentStarType?: string | null; materials?: readonly MaterialReading[] | null },
 ): ColourVariantAnswer {
   if (!rule) return NONE;
   return rule.source === "star"

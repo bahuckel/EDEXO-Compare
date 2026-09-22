@@ -1,7 +1,7 @@
 import type { SpeciesEntry } from "./types.js";
 import { normalizeStellarMappingKey, spectralKeysFromJournalStarType } from "./starSpectralKeys.js";
 import { colourFromMaterials } from "./speciesColour.js";
-import { colourVariantLabel, resolveColourVariant } from "./colourVariants.js";
+import { colourVariantLabel, resolveColourVariant, type MaterialReading } from "./colourVariants.js";
 
 /**
  * Short morph colour for candidate title line from host star + genus `meta.color_variants` stellar map.
@@ -21,7 +21,7 @@ import { colourVariantLabel, resolveColourVariant } from "./colourVariants.js";
 export function candidateMorphColorShortLabel(
   entry: SpeciesEntry,
   hostStarType?: string | null,
-  materials?: readonly { Name?: string }[] | null,
+  materials?: readonly MaterialReading[] | null,
 ): string {
   /*
    * The species' own table decides, when we have one.
@@ -79,7 +79,7 @@ export function candidateMorphColorShortLabel(
 export function candidateMorphColorShortLabelForHosts(
   entry: SpeciesEntry,
   hostStarTypes: readonly (string | null | undefined)[] | null | undefined,
-  materials?: readonly { Name?: string }[] | null,
+  materials?: readonly MaterialReading[] | null,
 ): string {
   const hosts = (hostStarTypes ?? []).map((h) => (h ?? "").trim()).filter(Boolean);
   if (hosts.length === 0) return candidateMorphColorShortLabel(entry, null, materials);
