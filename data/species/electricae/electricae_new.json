@@ -15,7 +15,7 @@
           "Neon (thin)",
           "Argon (thin)"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": "Extremely low (implicit, ice worlds only)"
       },
       "environmental_context": [
@@ -34,7 +34,7 @@
         "Neon (thin)",
         "Argon (thin)"
       ],
-      "max_gravity": 0.27,
+      "max_gravity": 0.275,
       "temperature_K": "Extremely low (implicit, ice worlds only)"
     },
     "environmental_context": [
@@ -56,7 +56,7 @@
         "planet_types": [
           "Icy"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "parent_star": {
           "required_types": [
             "A (luminosity class V or higher)",
@@ -96,7 +96,7 @@
         "planet_types": [
           "Icy"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "location_requirement": "Near nebulae",
         "atmospherePressureCategory": "thin"
       },

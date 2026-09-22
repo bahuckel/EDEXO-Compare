@@ -13,7 +13,7 @@
           "Rocky Ice"
         ],
         "atmosphere": "Thin atmosphere (required for all species)",
-        "max_gravity": 0.27
+        "max_gravity": 0.275
       },
       "environmental_context": [
         "Primarily found on rocky outcrops and ridge formations",
@@ -30,7 +30,7 @@
         "Rocky Ice"
       ],
       "atmosphere": "Thin atmosphere (required for all species)",
-      "max_gravity": 0.27
+      "max_gravity": 0.275
     },
     "environmental_context": [
       "Primarily found on rocky outcrops and ridge formations",
@@ -74,7 +74,7 @@
           180,
           195
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin",
         "matchContextNotes": [
           "Codex: almost always on rocky outcrops, ridges, and exposed stone — not a hard planet-class filter.",
@@ -95,7 +95,7 @@
           "Rocky",
           "Rocky Ice"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin",
         "matchContextNotes": [
           "Codex: almost always on rocky outcrops, ridges, and exposed stone — not a hard planet-class filter.",
@@ -120,7 +120,7 @@
           180,
           190
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin",
         "matchContextNotes": [
           "Codex: almost always on rocky outcrops, ridges, and exposed stone — not a hard planet-class filter.",
@@ -145,7 +145,7 @@
           190,
           195
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin",
         "matchContextNotes": [
           "Codex: almost always on rocky outcrops, ridges, and exposed stone — not a hard planet-class filter.",
@@ -168,7 +168,7 @@
           "High Metal Content",
           "Rocky Ice"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin",
         "matchContextNotes": [
           "Codex: almost always on rocky outcrops, ridges, and exposed stone — not a hard planet-class filter.",
@@ -188,7 +188,7 @@
           "Rocky",
           "Rocky Ice"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin",
         "matchContextNotes": [
           "Codex: almost always on rocky outcrops, ridges, and exposed stone — not a hard planet-class filter.",

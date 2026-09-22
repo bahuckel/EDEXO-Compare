@@ -18,7 +18,7 @@
           "Carbon dioxide (thin)",
           "Carbon dioxide rich (thin)"
         ],
-        "max_gravity": 0.27
+        "max_gravity": 0.275
       }
     },
     "summary": "Highly specialised extremophiles with protective shell-like structures that open and close depending on environmental conditions. Their inorganic-coated shells help regulate internal stability, exposing the organism only when conditions are suitable.",
@@ -35,7 +35,7 @@
         "Carbon dioxide (thin)",
         "Carbon dioxide rich (thin)"
       ],
-      "max_gravity": 0.27
+      "max_gravity": 0.275
     }
   },
   "species": [
@@ -45,7 +45,7 @@
       "description": "Rounded rock-like organism that splits open to extend long stalks with looped tips.",
       "conditions": {
         "atmosphere": "Ammonia (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": null,
         "atmospherePressureCategory": "thin"
       },
@@ -75,7 +75,7 @@
       "description": "Ridged egg-like structure that splits to reveal a stalk with donut-shaped chemical exchange pods.",
       "conditions": {
         "atmosphere": "Nitrogen (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": null,
         "atmospherePressureCategory": "thin"
       },
@@ -100,7 +100,7 @@
           "Carbon dioxide (thin)",
           "Carbon dioxide rich (thin)"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": {
           "max": 195
         },
@@ -136,7 +136,7 @@
           "Water (thin)",
           "Water-rich (thin)"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin",
         "whenAtmosphereLinkedMinTempK": 180,
         "whenAtmosphereLinkedMaxTempK": 195,

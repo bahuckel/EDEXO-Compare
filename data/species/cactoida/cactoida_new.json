@@ -17,7 +17,7 @@
           "Ammonia (thin)",
           "Water (thin)"
         ],
-        "max_gravity": 0.27
+        "max_gravity": 0.275
       }
     },
     "summary": "Photosynthetic organisms adapted to extreme environments by minimizing surface area to protect internal tissues. Their outer layer consists of light-transmitting cells with hydrophobic insulation, allowing temperature stability and fluid retention. They anchor via deep root systems and may reproduce through explosive seed dispersal.",
@@ -33,7 +33,7 @@
         "Ammonia (thin)",
         "Water (thin)"
       ],
-      "max_gravity": 0.27
+      "max_gravity": 0.275
     },
     "color_variants": {
       "rule": "Color depends on parent star type (applies to all species)",
@@ -62,7 +62,7 @@
       "description": "Tall species with multiple growths and sealed pods that open to disperse seeds.",
       "conditions": {
         "atmosphere": "Carbon dioxide (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": {
           "min": 180,
           "max": 195
@@ -76,7 +76,7 @@
       "description": "Globular base with tall cylindrical growths bearing clustered seed pods.",
       "conditions": {
         "atmosphere": "Carbon dioxide (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": {
           "min": 180,
           "max": 195
@@ -90,7 +90,7 @@
       "description": "Squat structure with lattice-like surface and clustered seed pods.",
       "conditions": {
         "atmosphere": "Ammonia (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": null,
         "atmospherePressureCategory": "thin"
       }
@@ -101,7 +101,7 @@
       "description": "Swollen five-sided structure topped with an intersecting crown.",
       "conditions": {
         "atmosphere": "Ammonia (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": null,
         "atmospherePressureCategory": "thin"
       }
@@ -112,7 +112,7 @@
       "description": "Tall cylindrical clusters connected by membrane with a spiked crown; possible symbiotic relationship with attached organisms.",
       "conditions": {
         "atmosphere": "Water (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": null,
         "atmospherePressureCategory": "thin"
       }

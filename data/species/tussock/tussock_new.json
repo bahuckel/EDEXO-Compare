@@ -11,7 +11,7 @@
           "Rocky"
         ],
         "atmosphere": "Thin atmosphere (required for all species)",
-        "max_gravity": 0.27
+        "max_gravity": 0.275
       },
       "environmental_context": [
         "Common on plains, open flats, and low mountain slopes",
@@ -27,7 +27,7 @@
         "Rocky"
       ],
       "atmosphere": "Thin atmosphere (required for all species)",
-      "max_gravity": 0.27
+      "max_gravity": 0.275
     },
     "environmental_context": [
       "Common on plains, open flats, and low mountain slopes",
@@ -72,7 +72,7 @@
           175,
           180
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -88,7 +88,7 @@
         "planet_types": [
           "Rocky"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -108,7 +108,7 @@
           180,
           190
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -123,7 +123,7 @@
         "planet_types": [
           "Rocky"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -139,7 +139,7 @@
           "Rocky",
 		  "High Metal Content"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -154,7 +154,7 @@
         "planet_types": [
           "Rocky"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -173,7 +173,7 @@
           160,
           170
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -192,7 +192,7 @@
           145,
           155
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -211,7 +211,7 @@
           0,
           195
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -231,7 +231,7 @@
           0,
           195
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -250,7 +250,7 @@
           170,
           175
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -266,7 +266,7 @@
         "planet_types": [
           "Rocky"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -286,7 +286,7 @@
           190,
           195
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -305,7 +305,7 @@
           155,
           160
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -320,7 +320,7 @@
         "planet_types": [
           "Rocky"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     }

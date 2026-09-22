@@ -15,7 +15,7 @@
           "Carbon dioxide (thin)",
           "Ammonia (thin)"
         ],
-        "max_gravity": 0.27
+        "max_gravity": 0.275
       }
     },
     "summary": "Extremely hardy photosynthetic organisms adapted to arid environments. They use waxy leaves for protection, can enter hibernation by sealing off atmospheric exchange, and funnel precipitation to internal storage via specialized cells.",
@@ -29,7 +29,7 @@
         "Carbon dioxide (thin)",
         "Ammonia (thin)"
       ],
-      "max_gravity": 0.27
+      "max_gravity": 0.275
     },
     "color_variants": {
       "rule": "Color depends on parent star type",
@@ -58,7 +58,7 @@
       "description": "Upright clumps of long serrated leaves that open to reveal seed-containing reproductive organs.",
       "conditions": {
         "atmosphere": "Carbon dioxide (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": {
           "min": 175,
           "max": 180
@@ -72,7 +72,7 @@
       "description": "Interleaved crown of mottled leaves with explosive seed pods on protruding stalks.",
       "conditions": {
         "atmosphere": "Carbon dioxide (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": {
           "min": 180,
           "max": 190
@@ -86,7 +86,7 @@
       "description": "Large organism with wide flat leaves on a heavy base and a dome-shaped reproductive organ.",
       "conditions": {
         "atmosphere": "Carbon dioxide (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": {
           "min": 190,
           "max": 195
@@ -100,7 +100,7 @@
       "description": "Circular arrangement of patterned leaves around a central fleshy pod.",
       "conditions": {
         "atmosphere": "Ammonia (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": null,
         "atmospherePressureCategory": "thin"
       }
@@ -111,7 +111,7 @@
       "description": "Tall spiky leaves surrounding a central reproductive stalk.",
       "conditions": {
         "atmosphere": "Ammonia (thin)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "temperature_K": null,
         "atmospherePressureCategory": "thin"
       }

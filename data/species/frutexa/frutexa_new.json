@@ -12,7 +12,7 @@
           "High Metal Content"
         ],
         "atmosphere": "Thin atmosphere (required for all species)",
-        "max_gravity": 0.27
+        "max_gravity": 0.275
       },
       "environmental_context": [
         "Found on rocky surfaces with exposed terrain",
@@ -28,7 +28,7 @@
         "High Metal Content"
       ],
       "atmosphere": "Thin atmosphere (required for all species)",
-      "max_gravity": 0.27
+      "max_gravity": 0.275
     },
     "environmental_context": [
       "Found on rocky surfaces with exposed terrain",
@@ -59,7 +59,7 @@
         "atmosphere": [
           "Ammonia"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "planet_types": [
           "Rocky"
         ],
@@ -79,7 +79,7 @@
         "atmosphere": [
           "Ammonia"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "planet_types": [
           "Rocky"
         ],
@@ -100,7 +100,7 @@
           "Ammonia",
           "Carbon Dioxide"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "planet_types": [
           "Rocky",
           "High Metal Content"
@@ -125,7 +125,7 @@
         "atmosphere": [
           "Carbon Dioxide"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "planet_types": [
           "Rocky"
         ],
@@ -146,7 +146,7 @@
         "atmosphere": [
           "Carbon Dioxide"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "planet_types": [
           "Rocky"
         ],
@@ -168,7 +168,7 @@
           "Sulphur Dioxide"
         ],
         "required_atmosphere_type": "Sulphur Dioxide",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "planet_types": [
           "Rocky"
         ],
@@ -188,7 +188,7 @@
         "atmosphere": [
           "Water"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "planet_types": [
           "Rocky"
         ],

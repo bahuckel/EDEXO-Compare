@@ -14,7 +14,7 @@
           "High Metal Content"
         ],
         "atmosphere": "Thin atmosphere (required for all species)",
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "required_atmosphere_type": "Sulphur Dioxide"
       },
       "environmental_context": [
@@ -34,7 +34,7 @@
         "High Metal Content"
       ],
       "atmosphere": "Thin atmosphere (required for all species)",
-      "max_gravity": 0.27,
+      "max_gravity": 0.275,
       "required_atmosphere_type": "Sulphur Dioxide"
     },
     "environmental_context": [
@@ -74,7 +74,7 @@
           "Icy",
           "Rocky Ice"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -91,7 +91,7 @@
           "High Metal Content",
 		  "Icy"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     },
@@ -108,7 +108,7 @@
           "Rocky Ice",
 		  "Rocky body"
         ],
-        "max_gravity": 0.27,
+        "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
       }
     }
