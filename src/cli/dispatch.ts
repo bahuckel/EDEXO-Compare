@@ -30,6 +30,9 @@ export function parsePairs(args: string[]): Record<string, unknown> {
   return out;
 }
 
+/** The HUD's own section names, from `public/hud.js`. */
+export const HUD_SECTIONS = ["jump", "fss", "candidates", "distance", "datavalue"];
+
 const onOff = (args: string[]): boolean | null =>
   args[0] === "on" ? true : args[0] === "off" ? false : null;
 
@@ -116,7 +119,17 @@ export async function dispatch(line: string, ctx: DispatchContext): Promise<stri
         width: w ? Number(w) : undefined,
         height: h ? Number(h) : undefined,
       });
-      return r.ok ? [`${verb === "open" ? "Opened" : "Toggled"} ${overlayPage(page ?? "")}`] : fail(r);
+      if (!r.ok) return fail(r);
+      /*
+        Report what is on screen now rather than what was asked for. Opening a HUD that is already
+        open reuses its window — the right behaviour, and "Opened" on its own made it look as though
+        a second one had appeared.
+      */
+      const paths = (r.body as { result?: { paths?: string[] } }).result?.paths ?? [];
+      return [
+        `${verb === "open" ? "Opened" : "Toggled"} ${overlayPage(page ?? "")}`,
+        paths.length ? `now open: ${paths.join(", ")}` : "nothing is open now",
+      ];
     }
 
     case "overlay close": {
@@ -128,12 +141,32 @@ export async function dispatch(line: string, ctx: DispatchContext): Promise<stri
     }
 
     case "overlay sections": {
-      if (!args[0]) return ["Which sections? e.g. /overlay sections radar,route,body"];
-      const sections = args.join(",").replace(/\s+/g, "");
+      if (!args[0])
+        return [`Which sections? e.g. /overlay sections fss,jump`, `Known: ${HUD_SECTIONS.join(", ")}`];
+      const asked = args
+        .join(",")
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+      /*
+        Check the names here rather than letting the page do it.
+
+        `HUD.sectionsFromUrl` keeps only names it recognises, so one typo silently drops a section
+        and a whole line of typos leaves the HUD blank with nothing to say why.
+      */
+      const unknown = asked.filter((s) => !HUD_SECTIONS.includes(s));
+      if (unknown.length) {
+        return [`No such section: ${unknown.join(", ")}`, `Known: ${HUD_SECTIONS.join(", ")}`];
+      }
+      /*
+        The key is `s`, and it is the one the page actually reads — `?sections=` was ignored, and an
+        unreadable query is not an error to `sectionsFromUrl`: it falls back to showing everything,
+        so the command appeared to work while doing the opposite of what was asked.
+      */
       const r = await client.post("/api/hud/overlay/set", {
-        pathname: `/hud-overlay.html?sections=${encodeURIComponent(sections)}`,
+        pathname: `/hud-overlay.html?s=${asked.join(",")}`,
       });
-      return r.ok ? [`HUD now showing: ${sections}`] : fail(r);
+      return r.ok ? [`HUD now showing: ${asked.join(", ")}`] : fail(r);
     }
 
     case "overlay hide":
@@ -153,16 +186,30 @@ export async function dispatch(line: string, ctx: DispatchContext): Promise<stri
     }
 
     case "overlay radar": {
+      // `radarRadius` on the snapshot, not a HUD preference — it carries its own bounds so the
+      // launcher cannot offer a value the server would clamp, and this prints them for the same reason.
+      const readRadius = async () => {
+        // `/api/status`, not `/api/state`: the snapshot the launcher polls is where the DTO lives.
+        const r = await client.get("/api/status");
+        if (!r.ok) return { lines: fail(r), dto: null };
+        const dto = (r.body as { radarRadius?: { radiusM?: number; minM?: number; maxM?: number } })
+          .radarRadius;
+        return { lines: null, dto: dto ?? null };
+      };
+
       if (!args.length) {
-        const r = await client.get("/api/state");
-        if (!r.ok) return fail(r);
-        const prefs = (r.body as { hudPrefs?: Record<string, unknown> }).hudPrefs ?? {};
-        return [`radar radius: ${String(prefs.radarRadiusM ?? "—")} m`];
+        const { lines, dto } = await readRadius();
+        if (lines) return lines;
+        if (!dto) return ["This instance does not report a radar radius."];
+        return [`radar radius: ${dto.radiusM} m   (${dto.minM}–${dto.maxM} m allowed)`];
       }
       const radiusM = Number(args[0]);
       if (!Number.isFinite(radiusM)) return ["Radius must be a number of metres."];
       const r = await client.post("/api/settings/radar-radius", { radiusM });
-      return r.ok ? [`radar radius: ${String((r.body as { radiusM?: number }).radiusM)} m`] : fail(r);
+      if (!r.ok) return fail(r);
+      const applied = (r.body as { radiusM?: number }).radiusM;
+      const note = applied !== radiusM ? `   (asked for ${radiusM}, clamped)` : "";
+      return [`radar radius: ${String(applied)} m${note}`];
     }
 
     case "overlay prefs": {

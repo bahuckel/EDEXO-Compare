@@ -139,3 +139,60 @@ describe("attaching to another instance", () => {
     expect(client.current).toMatchObject({ base: "http://127.0.0.1:7111", own: true });
   });
 });
+
+describe("the overlay commands, as the app actually reads them", () => {
+  it("sets HUD sections with the key the page reads", async () => {
+    /*
+      THE ONE THAT MATTERS HERE. `hud.js` reads `?s=`; `?sections=` is not an error to it — with no
+      `s` in the query `sectionsFromUrl` falls back to **every** section. So the wrong key made the
+      command report success while doing the opposite of what was asked, on a real HUD window.
+    */
+    const { text, seen } = await run("/overlay sections fss,jump", {
+      "POST /api/hud/overlay/set": [200, { ok: true, result: { paths: [] } }],
+    });
+    expect(seen[0]!.body).toMatchObject({ pathname: "/hud-overlay.html?s=fss,jump" });
+    expect(text).toContain("fss, jump");
+  });
+
+  it("refuses a section the HUD does not know, rather than letting the page drop it", async () => {
+    const { text, seen } = await run("/overlay sections wibble", {});
+    expect(text).toContain("No such section");
+    expect(text).toContain("datavalue");
+    expect(seen, "nothing sent").toHaveLength(0);
+  });
+
+  it("reads the radar radius from the snapshot that carries it", async () => {
+    // `/api/status`, not `/api/state`: the field was invented on the wrong payload and always
+    // printed an em dash, while setting it worked — the reading half was silently useless.
+    const { text, seen } = await run("/overlay radar", {
+      "GET /api/status": [200, { radarRadius: { radiusM: 750, minM: 250, maxM: 2000 } }],
+    });
+    expect(seen[0]!.path).toBe("/api/status");
+    expect(text).toContain("750 m");
+    expect(text, "the bounds, so nobody asks for a value the server will clamp").toContain("250–2000");
+  });
+
+  it("says so when the server clamped what was asked for", async () => {
+    const { text } = await run("/overlay radar 99999", {
+      "POST /api/settings/radar-radius": [200, { ok: true, radiusM: 2000 }],
+    });
+    expect(text).toContain("2000 m");
+    expect(text).toContain("clamped");
+  });
+
+  it("reports what is open after opening, not what was requested", async () => {
+    // Opening a HUD that is already open reuses its window. "Opened" alone read as though a second
+    // one had appeared.
+    const { text } = await run("/overlay open distance", {
+      "POST /api/hud/overlay/open": [
+        200,
+        {
+          ok: true,
+          result: { opened: true, paths: ["/hud-overlay.html?s=fss,jump", "/distance-overlay.html"] },
+        },
+      ],
+    });
+    expect(text).toContain("now open:");
+    expect(text).toContain("/hud-overlay.html?s=fss,jump");
+  });
+});

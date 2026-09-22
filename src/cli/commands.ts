@@ -64,7 +64,11 @@ export const TOPICS: TopicSpec[] = [
         name: "overlay sections",
         args: "<a,b,c>",
         summary: "Choose what the merged HUD shows, without reopening it.",
-        detail: ["The open window navigates rather than closing and reopening, so it does not blink."],
+        detail: [
+          "jump, fss, candidates, distance, datavalue. A name the HUD does not know is refused here " +
+            "rather than dropped silently by the page.",
+          "The open window navigates rather than closing and reopening, so it does not blink.",
+        ],
         needsDesktop: true,
       },
       { name: "overlay hide", summary: "Hide every overlay, keeping them open.", needsDesktop: true },
