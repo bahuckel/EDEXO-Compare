@@ -104,6 +104,9 @@
         "temperature_K": {
           "max": 195
         },
+        "soft_temperature_K": {
+          "max": 190
+        },
         "atmospherePressureCategory": "thin"
       },
       "color_rules": {

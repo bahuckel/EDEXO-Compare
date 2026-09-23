@@ -467,6 +467,27 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     });
   }
 
+  /*
+    The measured band inside the codex one (`soft_temperature_K`). Yellow, never red, outside it:
+    the matcher demotes there rather than excluding, and the card must not claim more than it does.
+  */
+  if (c.softTemperatureK && (c.softTemperatureK.min !== undefined || c.softTemperatureK.max !== undefined)) {
+    const { min, max } = c.softTemperatureK;
+    const band = min !== undefined && max !== undefined ? `${min}–${max} K` : min !== undefined ? `≥ ${min} K` : `≤ ${max} K`;
+    const t = scan?.SurfaceTemperature;
+    let tier: EncyclopediaSpawnTier = "neutral";
+    let caption = "No scan";
+    if (scan && (t == null || Number.isNaN(t))) {
+      tier = "yellow";
+      caption = "SurfaceTemperature missing";
+    } else if (scan && t != null) {
+      const outside = (min !== undefined && t < min) || (max !== undefined && t > max);
+      tier = outside ? "yellow" : "blue";
+      caption = outside ? `${t.toFixed(1)} K — rarely recorded here; listed as unlikely` : `${t.toFixed(1)} K inside`;
+    }
+    out.push({ id: "soft-temp", label: "Where it is usually found", lines: [`Usually ${band}`], caption, tier });
+  }
+
   /* Journal numeric pressure gate — hidden for bacterium (spawn cards stay minimal). */
   if (!bac) {
     const pb = speciesPressureBand(c);
