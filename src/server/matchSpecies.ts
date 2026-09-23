@@ -37,8 +37,8 @@ import {
   hostStarGateForSpeciesId,
 } from "../shared/hostStarGates.js";
 import { observedAtGravity } from "./speciesGravityObservations.js";
-import { regionalPresence } from "./regionSpeciesData.js";
-import { regionPresenceDetail } from "../shared/regionAbsence.js";
+import { regionalGenusShare, regionalPresence } from "./regionSpeciesData.js";
+import { regionPresenceDetail, regionGenusShareDetail } from "../shared/regionAbsence.js";
 import { getProjectRoot } from "./paths.js";
 import { observedUnderAtmosphere } from "./speciesAtmosphereObservations.js";
 import {
@@ -1409,6 +1409,59 @@ export function demoteUnfavouredAtmospheres(
   }
 }
 
+/**
+ * Of two or more species of one genus shown together, demote the one the region barely records.
+ *
+ * The absence rule judges a species against the galaxy's biology as a whole and cannot see "12
+ * divisa against thousands of cultro" — divisa clears it in Galactic Centre at 0.022 %. Given that
+ * the genus is on the body, the record's answer to *which species* is each one's share of its genus
+ * in the region; under `REGION_GENUS_SHARE_MIN` it is the rare one. See `shared/regionAbsence.ts`.
+ *
+ * **A tie-breaker, never an eviction.** It only acts between siblings that are shown together, and
+ * never demotes the last one standing. Run as a per-species gate it demoted Fonticulua fluctus in
+ * Inner Orion Spur — the commander's rarest find, 20 M — on bodies where it was the only Fonticulua
+ * shown, and `restoreNamedGenera` then put back a *different* species to fill the named genus. A
+ * rare species alone in its slot is still the best answer the body has.
+ */
+export function demoteRegionallyRareSiblings(
+  strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  matchContext: SpeciesMatchContext | null | undefined,
+): void {
+  const regionIndex = matchContext?.regionIndex;
+  if (!regionIndex) return;
+  const root = getProjectRoot();
+  const byGenus = new Map<string, number[]>();
+  strict.forEach((m, i) => {
+    const g = m.entry.genusDataDir;
+    byGenus.set(g, [...(byGenus.get(g) ?? []), i]);
+  });
+  const demote: { i: number; reason: MatchReason }[] = [];
+  for (const idxs of byGenus.values()) {
+    if (idxs.length < 2) continue;
+    const rare = idxs
+      .map((i) => ({ i, v: regionalGenusShare(root, regionIndex, strict[i]!.entry.id) }))
+      .filter((x) => x.v?.rare);
+    if (rare.length === 0 || rare.length === idxs.length) continue;
+    for (const { i, v } of rare) {
+      demote.push({
+        i,
+        reason: { field: "Region", soft: true, detail: regionGenusShareDetail(v!.regionName, strict[i]!.entry.genus, v!) },
+      });
+    }
+  }
+  for (const { i, reason } of demote.sort((a, b) => b.i - a.i)) {
+    const m = strict[i]!;
+    strict.splice(i, 1);
+    unlikely.push({
+      ...m,
+      reasons: [...m.reasons, reason],
+      unlikely: true,
+      unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
+    });
+  }
+}
+
 export function matchDatabaseToScan(
   db: SpeciesDatabase,
   scan: PlanetScan,
@@ -1498,6 +1551,7 @@ export function matchDatabaseToScan(
   demoteFailedHostStarGates(strict, unlikely, matchContext);
   demoteFailedSystemBodyGates(strict, unlikely, matchContext);
   demoteUnfavouredAtmospheres(strict, unlikely, scan);
+  demoteRegionallyRareSiblings(strict, unlikely, matchContext);
 
   restoreDemotionsBelowSignalCount(
     strict,

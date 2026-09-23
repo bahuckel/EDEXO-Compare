@@ -9,11 +9,17 @@ import { describe, expect, it } from "vitest";
 import {
   REGION_ABSENCE_MAX_SHARE,
   REGION_ABSENCE_MIN_BIO_SYSTEMS,
+  REGION_GENUS_MIN_RECORDS,
+  REGION_GENUS_SHARE_MIN,
+  judgeRegionalGenusShare,
   judgeRegionalPresence,
   regionPresenceDetail,
 } from "../src/shared/regionAbsence.js";
 import { getProjectRoot } from "../src/server/paths.js";
-import { regionalPresence } from "../src/server/regionSpeciesData.js";
+import { demoteRegionallyRareSiblings } from "../src/server/matchSpecies.js";
+import { loadSpeciesDatabase } from "../src/server/snapshot.js";
+import type { SpeciesEntry } from "../src/shared/types.js";
+import { regionalGenusShare, regionalPresence } from "../src/server/regionSpeciesData.js";
 
 /** Inner Orion Spur — where the owner was, and the best-sampled region in the corpus. */
 const INNER_ORION_SPUR = 18;
@@ -84,5 +90,70 @@ describe("the shipped table, on the body that prompted it", () => {
   it("makes no claim without a region", () => {
     expect(regionalPresence(root, null, "tussock_tussock_caputus")).toBeNull();
     expect(regionalPresence(root, 0, "tussock_tussock_caputus")).toBeNull();
+  });
+});
+
+/** Galactic Centre in the klightspeed map. */
+const GALACTIC_CENTRE = 1;
+
+describe("the rare one of its genus", () => {
+  it("is rare under the cut, where the genus has records enough to say so", () => {
+    expect(judgeRegionalGenusShare(12, 20_000).rare).toBe(true);
+    expect(judgeRegionalGenusShare(Math.ceil(20_000 * REGION_GENUS_SHARE_MIN), 20_000).rare).toBe(false);
+    // Too few records of the genus in the region: silence, not a verdict.
+    expect(judgeRegionalGenusShare(0, REGION_GENUS_MIN_RECORDS - 1).rare).toBe(false);
+  });
+
+  const root = getProjectRoot();
+  it("sees divisa beside cultro in Galactic Centre, which the absolute rule could not", () => {
+    // Galaxy-wide, divisa is "present" there — 0.022 % of bio systems, just over the absence cut.
+    expect(regionalPresence(root, GALACTIC_CENTRE, "tussock_tussock_divisa")?.presence).toBe("present");
+    expect(regionalGenusShare(root, GALACTIC_CENTRE, "tussock_tussock_divisa")?.rare).toBe(true);
+    expect(regionalGenusShare(root, GALACTIC_CENTRE, "tussock_tussock_cultro")?.rare).toBe(false);
+  });
+
+  it("leaves every species the owner walked on Blu Thua alone", () => {
+    for (const id of [
+      "bacterium_bacterium_aurasus",
+      "fungoida_fungoida_stabitis",
+      "aleoida_aleoida_coronamus",
+      "cactoida_cactoida_cortexum",
+      "stratum_stratum_excutitus",
+      "concha_concha_renibus",
+      "osseus_osseus_fractus",
+      "frutexa_frutexa_acus",
+      "tussock_tussock_caputus",
+    ]) {
+      expect(regionalGenusShare(root, INNER_ORION_SPUR, id)?.rare, id).toBe(false);
+    }
+  });
+
+  it("abstains for a species outside the rollup", () => {
+    expect(regionalGenusShare(root, INNER_ORION_SPUR, "brain_trees_brain_tree_roseum")).toBeNull();
+  });
+});
+
+describe("the rare sibling, in the matcher", () => {
+  const db = loadSpeciesDatabase() as unknown as { species: SpeciesEntry[] };
+  const entry = (id: string) => db.species.find((e) => e.id === id)!;
+  const shown = (...ids: string[]) => ids.map((id) => ({ entry: entry(id), reasons: [] as never[] }));
+  const ctx = { regionIndex: GALACTIC_CENTRE, regionName: "Galactic Centre" };
+
+  it("demotes the rare one when a sibling is shown beside it", () => {
+    const strict = shown("tussock_tussock_divisa", "tussock_tussock_cultro");
+    const unlikely: typeof strict = [];
+    demoteRegionallyRareSiblings(strict as never, unlikely as never, ctx);
+    expect(strict.map((m) => m.entry.id)).toEqual(["tussock_tussock_cultro"]);
+    expect(unlikely.map((m) => m.entry.id)).toEqual(["tussock_tussock_divisa"]);
+  });
+
+  it("never demotes the last one standing", () => {
+    // Alone, a rare species is still the best answer the body has — and demoting it would only
+    // invite restoreNamedGenera to put back a different one.
+    const strict = shown("tussock_tussock_divisa");
+    const unlikely: typeof strict = [];
+    demoteRegionallyRareSiblings(strict as never, unlikely as never, ctx);
+    expect(strict.map((m) => m.entry.id)).toEqual(["tussock_tussock_divisa"]);
+    expect(unlikely).toHaveLength(0);
   });
 });

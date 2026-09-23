@@ -89,6 +89,73 @@ export function judgeRegionalPresence(count: number, bioSystems: number): Region
   };
 }
 
+/**
+ * Below this share of **its own genus'** records in a region, a species is the rare one there.
+ *
+ * The absence rule above asks about the galaxy's biology as a whole, and it cannot see two species
+ * of one genus living in different places while the minority is rare but not absent. Tussock divisa
+ * in Galactic Centre is 12 of 53,631 systems — 0.022 %, "present" — beside thousands of cultro.
+ * Given that the genus is on the body, the question is which of its species, and the record's
+ * answer is the species' share of the genus there.
+ *
+ * Calibrated over 78,343 genus slots from the Spansh corpus, an EDDN capture and the commander's
+ * journals (`scripts/precision-region-share.ts`):
+ *
+ * ```
+ *   cut      truth lost   species per slot   exactly one     journal truth
+ *   none          —            1.289            76.7 %          99.57 %
+ *   0.10 %        0            1.217            80.4 %          99.57 %
+ *   0.25 %        1            1.189            82.9 %          99.57 %
+ *   0.50 %       21            1.163            85.4 %          99.57 %
+ *   1.00 %      147            1.153            86.1 %          98.27 %
+ * ```
+ *
+ * 0.25 % is the knee: one truth slot in 78,343 — a Bacterium nebulus — for six points of slots that
+ * name exactly one species. Above it the losses are the genuinely rare Bacteria (scopulum, omentum,
+ * verrata), whose whole existence is being the minority.
+ *
+ * It is applied **only between siblings shown together** (`demoteRegionallyRareSiblings`), never to
+ * the last one of a genus. As a per-species gate it demoted Fonticulua fluctus in Inner Orion Spur
+ * — the owner's rarest find — where it was the only Fonticulua on the body, and a different species
+ * was restored in its place. Measured as shipped: 1.19 species per slot, one species on 82.9 %, two
+ * or fewer on 98.2 %, truth shown 99.5 %, and the owner's own recall unchanged at 98.0 %.
+ */
+export const REGION_GENUS_SHARE_MIN = 0.0025;
+
+/**
+ * Records of the genus a region needs before its split between species means anything.
+ *
+ * Measured to matter little — 50 and 200 give the same table, 1,000 slightly less — so the middle
+ * one: two hundred records is enough that a share of 0.25 % is not a single stray system.
+ */
+export const REGION_GENUS_MIN_RECORDS = 200;
+
+export interface RegionGenusShareVerdict {
+  /** True when the species is under the cut and the genus has enough records to say so. */
+  rare: boolean;
+  count: number;
+  genusRecords: number;
+  share: number;
+}
+
+/** Judge one species against the rest of its genus in one region. */
+export function judgeRegionalGenusShare(count: number, genusRecords: number): RegionGenusShareVerdict {
+  const n = Number.isFinite(count) && count > 0 ? count : 0;
+  const g = Number.isFinite(genusRecords) && genusRecords > 0 ? genusRecords : 0;
+  const share = g > 0 ? n / g : 0;
+  return { rare: g >= REGION_GENUS_MIN_RECORDS && share < REGION_GENUS_SHARE_MIN, count: n, genusRecords: g, share };
+}
+
+/** The line a commander sees when the relative test demotes a row. */
+export function regionGenusShareDetail(regionName: string, genusName: string, v: RegionGenusShareVerdict): string {
+  const pct = (v.share * 100).toFixed(v.share < 0.001 ? 3 : 2);
+  return (
+    `The rare one of its genus in ${regionName}: ${v.count.toLocaleString()} of ` +
+    `${v.genusRecords.toLocaleString()} ${genusName} records there (${pct} %). ` +
+    `Listed as a low-probability find rather than excluded.`
+  );
+}
+
 /** One line a commander can check our working against. */
 export function regionPresenceDetail(
   regionName: string,

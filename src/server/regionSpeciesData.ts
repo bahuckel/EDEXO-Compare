@@ -12,7 +12,12 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { judgeRegionalPresence, type RegionPresenceVerdict } from "../shared/regionAbsence.js";
+import {
+  judgeRegionalGenusShare,
+  judgeRegionalPresence,
+  type RegionGenusShareVerdict,
+  type RegionPresenceVerdict,
+} from "../shared/regionAbsence.js";
 
 interface RegionRow {
   name: string;
@@ -101,6 +106,7 @@ export function clearRegionSpeciesCache(): void {
   cachedVocabulary = null;
   // Derived from the same file, so it goes with it for the same reason.
   medianByRegion.clear();
+  genusTotals.clear();
 }
 
 /** Test seam — the file is process-wide, so a test that swaps it must be able to put it back. */
@@ -147,4 +153,41 @@ function medianCountFor(regionIndex: number, row: RegionRow): number {
   const med = counts.length ? counts[Math.floor(counts.length / 2)]! : 0;
   medianByRegion.set(regionIndex, med);
   return med;
+}
+
+/** `tussock_tussock_divisa` → `tussock_tussock`: the genus, as every rollup species id spells it. */
+const genusKeyOf = (speciesId: string) => speciesId.slice(0, speciesId.lastIndexOf("_"));
+
+/** region index → genus key → records of that genus there, summed over its species. */
+const genusTotals = new Map<number, Map<string, number>>();
+
+/**
+ * This species' share of its own genus' records in one region — see `REGION_GENUS_SHARE_MIN`.
+ *
+ * Null when there is nothing to judge: no region, a region the rollup does not hold, or a species
+ * outside its vocabulary (the Brain Trees and their kind), which abstain rather than read as zero.
+ */
+export function regionalGenusShare(
+  projectRoot: string,
+  regionIndex: number | null | undefined,
+  speciesId: string,
+): (RegionGenusShareVerdict & { regionName: string }) | null {
+  if (regionIndex == null || regionIndex <= 0) return null;
+  const data = loadRegionSpecies(projectRoot);
+  const row = data?.regions?.[String(regionIndex)];
+  if (!row) return null;
+  if (!cachedVocabulary?.has(speciesId)) return null;
+  let totals = genusTotals.get(regionIndex);
+  if (!totals) {
+    totals = new Map();
+    for (const [id, n] of Object.entries(row.species)) {
+      if (!Number.isFinite(n) || n <= 0) continue;
+      const g = genusKeyOf(id);
+      totals.set(g, (totals.get(g) ?? 0) + n);
+    }
+    genusTotals.set(regionIndex, totals);
+  }
+  const genusRecords = totals.get(genusKeyOf(speciesId)) ?? 0;
+  if (!genusRecords) return null;
+  return { ...judgeRegionalGenusShare(row.species[speciesId] ?? 0, genusRecords), regionName: row.name };
 }
