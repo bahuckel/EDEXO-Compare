@@ -1251,14 +1251,19 @@ function restoreNamedGenera(
   const missing = [...dssGenera].filter((g) => !shown.has(g));
   if (!missing.length) return;
 
+  const objections = (m: PendingMatch) =>
+    (m.unlikelyReasons ?? []).filter((r) => r.field !== "ObservedTemperature").length;
   const restored = new Set<number>();
   for (const genus of missing) {
     const candidates = unlikely
       .map((m, i) => ({ m, i }))
       .filter(({ m }) => m.entry.genusDataDir === genus && !m.entry.predictionUnsupported)
       // Fewest objections first; a row the corpus merely has not seen beats one that disagrees on
-      // three axes at once.
-      .sort((a, b) => (a.m.unlikelyReasons?.length ?? 0) - (b.m.unlikelyReasons?.length ?? 0));
+      // three axes at once. And the observed-temperature envelope counts after every other kind —
+      // it is the weakest evidence we hold (see below). Counted alike, a volu at 213 K, outside a
+      // 68-body envelope, tied with an ammonia species on an oxygen world, and the ammonia species
+      // won on list order: twice in the commander's own journals.
+      .sort((a, b) => objections(a.m) - objections(b.m) || (a.m.unlikelyReasons?.length ?? 0) - (b.m.unlikelyReasons?.length ?? 0));
     const best = candidates[0];
     if (!best) continue;
     strict.push({ entry: best.m.entry, reasons: best.m.reasons });
