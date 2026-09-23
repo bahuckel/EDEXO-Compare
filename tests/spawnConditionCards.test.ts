@@ -287,6 +287,7 @@ describe("the audit — every gate the matcher applies is drawn somewhere", () =
           softMaxSemiMajorAxisLs: ["soft-orbit"],
           softNoVolcanism: ["soft-volcanism"],
           offListAtmosphereNeedsVolcanism: ["soft-volcanism"],
+          volcanicOnlyAtmospheres: ["soft-volcanism"],
           surfacePressure: ["pressure"],
           volcanismIncludes: ["volcanism"],
           volcanismActiveRequired: ["volcanism", "presence"],

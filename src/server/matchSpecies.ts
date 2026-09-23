@@ -439,7 +439,28 @@ export function speciesMatchesExcludingTempPressure(
               if (a.toLowerCase() === atmoNorm.toLowerCase()) return true;
               return atmosphereCompositionKey(a) === scanKey;
             }));
-        if (!matches) {
+        // Listed only with volcanism (SpeciesCriterion.volcanicOnlyAtmospheres).
+        const volcanicOnly =
+          !matches &&
+          atmoNorm !== "" &&
+          (c.volcanicOnlyAtmospheres ?? []).some((a) => atmosphereCompositionKey(a) === scanKey);
+        // Volcanism must be reported, not merely unknown: every truth body on these atmospheres carries
+        // a reading, and letting an unknown one through put gelata beside setisis on ~250 more slots.
+        const volcanismKnownHere = scan.Volcanism !== undefined && scan.Volcanism !== null;
+        if (volcanicOnly && !presenceReportsAnyVolcanism(scan)) {
+          failures.push({
+            field: "AtmosphereType",
+            soft: true,
+            detail: volcanismKnownHere
+              ? `${atmoNorm} — this species grows on it only with volcanism, and this body has none. ${DEMOTED_NOTE}`
+              : `${atmoNorm} — this species grows on it only with volcanism, and none is reported here. ${DEMOTED_NOTE}`,
+          });
+        } else if (volcanicOnly) {
+          reasons.push({
+            field: "AtmosphereType",
+            detail: `${atmoNorm} — off the codex list, where this species grows only with volcanism: ${String(scan.Volcanism).trim()}.`,
+          });
+        } else if (!matches) {
           const allowedStr = allowed.map((a) => (a === "" ? "(no atmosphere)" : a)).join(", ");
           /**
            * Not a wall either. This list rejects only 0.33% of observed habitats (103 of 30,803), so

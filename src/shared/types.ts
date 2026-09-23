@@ -373,6 +373,15 @@ export interface SpeciesCriterion {
    * volcanic body demotes it. Never hides. Osseus spiralis: 1,763 of 1,765 bodies have none.
    */
   softNoVolcanism?: boolean;
+  /**
+   * Atmospheres outside the codex list that the species grows on **only with volcanism** — journal
+   * spelling, like `atmosphereTypeAnyOf`. On a volcanic body they count as listed; otherwise — no
+   * volcanism, or none reported — they demote like any off-list atmosphere. Fungoida gelata and
+   * stabitis: every recorded body on methane (79–106 K) or ammonia (168–176 K) has silicate vapour
+   * geysers or magma, while setisis, which owns those atmospheres, is volcanism-free on 99.9 % of
+   * 2,083 ammonia bodies.
+   */
+  volcanicOnlyAtmospheres?: string[];
   /** Appended to match reasons when a row passes (terrain / codex wording — not a hard planet-class gate). */
   matchContextNotes?: string[];
 }

@@ -131,6 +131,8 @@ const PARSED_CRITERION_KEYS: readonly string[] = [
   "offListAtmosphereNeedsVolcanism",
   "soft_no_volcanism",
   "softNoVolcanism",
+  "volcanic_only_atmospheres",
+  "volcanicOnlyAtmospheres",
   // host star (codex fragment list)
   "parentStarTypeIncludesAnyOf",
   "parentStarTypeIncludes",

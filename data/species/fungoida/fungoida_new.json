@@ -94,9 +94,14 @@
           "Icy",
           "Rocky Ice"
         ],
-        "temperature_K": [
-          180,
-          195
+        "whenAtmosphereLinkedMinTempK": 180,
+        "whenAtmosphereLinkedMaxTempK": 195,
+        "whenAtmosphereLinkedAtmosphereAnyOf": [
+          "Carbon Dioxide"
+        ],
+        "volcanic_only_atmospheres": [
+          "Methane",
+          "Ammonia"
         ],
         "max_gravity": 0.28,
         "atmospherePressureCategory": "thin",
@@ -142,9 +147,14 @@
           "Icy",
           "Rocky Ice"
         ],
-        "temperature_K": [
-          180,
-          195
+        "whenAtmosphereLinkedMinTempK": 180,
+        "whenAtmosphereLinkedMaxTempK": 195,
+        "whenAtmosphereLinkedAtmosphereAnyOf": [
+          "Carbon Dioxide"
+        ],
+        "volcanic_only_atmospheres": [
+          "Methane",
+          "Ammonia"
         ],
         "max_gravity": 0.28,
         "atmospherePressureCategory": "thin",

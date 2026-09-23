@@ -378,11 +378,12 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   }
 
   /* Measured volcanism facts — both demote only, so yellow is the worst they draw. */
-  if (c.softNoVolcanism || c.offListAtmosphereNeedsVolcanism) {
+  if (c.softNoVolcanism || c.offListAtmosphereNeedsVolcanism || c.volcanicOnlyAtmospheres?.length) {
     const volcanic = scan ? journalReportsAnyVolcanism(scan) : null;
     const lines = [
       ...(c.softNoVolcanism ? ["Usually on bodies with no volcanism"] : []),
       ...(c.offListAtmosphereNeedsVolcanism ? ["Off its listed atmospheres: volcanic bodies only"] : []),
+      ...(c.volcanicOnlyAtmospheres?.length ? [`Also ${c.volcanicOnlyAtmospheres.join(" / ")}, volcanic bodies only`] : []),
     ];
     let tier: EncyclopediaSpawnTier = "neutral";
     let caption = "No scan";

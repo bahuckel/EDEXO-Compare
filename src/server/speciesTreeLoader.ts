@@ -621,6 +621,8 @@ export function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesC
     c.offListAtmosphereNeedsVolcanism = true;
   }
   if (toBool(src.soft_no_volcanism ?? src.softNoVolcanism) === true) c.softNoVolcanism = true;
+  const volcAtm = toStringArray(firstDefined(src, ["volcanic_only_atmospheres", "volcanicOnlyAtmospheres"]));
+  if (volcAtm?.length) c.volcanicOnlyAtmospheres = normalizeAtmosphereToJournal(volcAtm);
 
   /*
     Presence branches — the one "or" the condition format has. Each is a criterion object in its own

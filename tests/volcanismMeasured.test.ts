@@ -39,10 +39,11 @@ const judge = (id: string, scan: PlanetScan) => {
 
 describe("the loader and the audit", () => {
   it("read both keys", () => {
-    const raw = { off_list_atmosphere_needs_volcanism: true, soft_no_volcanism: true };
+    const raw = { off_list_atmosphere_needs_volcanism: true, soft_no_volcanism: true, volcanic_only_atmospheres: ["Methane"] };
     const c = buildCriterionFromRecord(raw);
     expect(c.offListAtmosphereNeedsVolcanism).toBe(true);
     expect(c.softNoVolcanism).toBe(true);
+    expect(c.volcanicOnlyAtmospheres).toEqual(["Methane"]);
     expect(unrecognisedConditionKeys(raw)).toEqual([]);
   });
 });
@@ -72,5 +73,33 @@ describe("Osseus spiralis", () => {
     const r = judge("osseus_osseus_spiralis", at165("minor rocky magma volcanism"));
     expect(r.ok).toBe(false);
     expect(r.softOnly).toBe(true);
+  });
+});
+
+/**
+ * Fungoida gelata and stabitis: codex carbon dioxide and water, and every recorded body on methane
+ * (79–106 K) or ammonia (168–176 K) volcanic, where setisis — which owns those atmospheres — is
+ * volcanism-free on 99.9 % of 2,083 ammonia bodies. Their 180–195 K band now binds carbon dioxide only;
+ * as a flat band it hid them on methane outright.
+ */
+describe("Fungoida gelata on methane", () => {
+  const methane = (v: string | undefined) => ({ ...body("Methane", v), SurfaceTemperature: 92, PlanetClass: "Icy body" });
+
+  it("is shown on a volcanic methane world", () => {
+    const r = judge("fungoida_fungoida_gelata", methane("major silicate vapour geysers volcanism"));
+    expect(r.ok).toBe(true);
+  });
+
+  it("is demoted — listed, not hidden — without volcanism, known or not", () => {
+    for (const v of ["", undefined]) {
+      const r = judge("fungoida_fungoida_gelata", methane(v));
+      expect(r.ok).toBe(false);
+      expect(r.softOnly).toBe(true);
+    }
+  });
+
+  it("still keeps its 180–195 K band on carbon dioxide", () => {
+    const r = judge("fungoida_fungoida_gelata", { ...body("CarbonDioxide", ""), SurfaceTemperature: 230 });
+    expect(r.ok).toBe(false);
   });
 });
