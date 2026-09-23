@@ -64,6 +64,13 @@ export interface HostStarGate {
   allowed: string[];
   /** What the measurement says, for the tooltip. */
   evidence: string;
+  /**
+   * `"main"` when the rule was measured on — and is judged on — the system's main star rather than
+   * the star the body orbits. The codex CSV records the main star, and for most species the two
+   * agree; where they do not (a body orbiting a brown dwarf in an A-star system), judging a
+   * main-star rule on the body's host would demote the species on its own bodies.
+   */
+  judgedOn?: "main";
 }
 
 /**
@@ -119,6 +126,28 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     },
   },
   {
+    /**
+     * Stratum araneamus — measured on the **main** star, and judged on it.
+     *
+     * edastro's codex CSV, 13,732 sightings of `codex_ent_stratum_04`: A 74.2 %, neutron 16.8 %,
+     * B 6.7 %, black hole 1.2 % — 98.9 %, where those four are 9.4 % of all life; F 0.4 %, G and K
+     * 0.0 %. Its own bodies agree at body level, across three sources: every one of the 66 with a
+     * known main star is under A, N, B or H (capture 29, Spansh corpus 34, the commander's journals 3).
+     *
+     * A third of those bodies orbit a Y or T dwarf, which is why this gate reads the main star: judged
+     * on the body's host it would demote araneamus on its own ground. The profile's host-star
+     * determinism (0.154, from 35 bodies) sits just under the observation term's floor, so nothing
+     * else said this.
+     */
+    idIncludes: "stratum_araneamus",
+    gate: {
+      allowed: ["A", "N", "B", "H"],
+      judgedOn: "main",
+      evidence:
+        "main star of 13,732 araneamus sightings: A 74.2 %, neutron 16.8 %, B 6.7 %, black hole 1.2 % — 98.9 %; those four are 9.4 % of all life",
+    },
+  },
+  {
     idIncludes: "electricae_pluma",
     gate: {
       allowed: ["A", "N", "D", "H"],
@@ -157,6 +186,8 @@ export interface HostStarVerdictGate {
   classes: string[];
   allowed: string[];
   evidence: string;
+  /** Set when the gate was judged on the system's main star rather than the body's host. */
+  judgedOn?: "main";
 }
 
 /**
@@ -169,9 +200,22 @@ export interface HostStarVerdictGate {
 export function evaluateHostStarGate(
   speciesId: string,
   starClasses: readonly string[] | null | undefined,
+  mainStarClass?: string | null,
 ): HostStarVerdictGate | null {
   const gate = hostStarGateForSpeciesId(speciesId);
-  if (!gate || !starClasses || starClasses.length === 0) return null;
+  if (!gate) return null;
+  if (gate.judgedOn === "main") {
+    // An unknown main star abstains, exactly as an unknown host does below.
+    if (!mainStarClass) return null;
+    return {
+      passes: gate.allowed.includes(mainStarClass),
+      classes: [mainStarClass],
+      allowed: gate.allowed,
+      evidence: gate.evidence,
+      judgedOn: "main",
+    };
+  }
+  if (!starClasses || starClasses.length === 0) return null;
   return {
     passes: starClasses.some((c) => gate.allowed.includes(c)),
     classes: [...starClasses],
@@ -198,5 +242,7 @@ export function hostStarClassLabel(key: string): string {
 export function describeHostStarVerdict(v: HostStarVerdictGate): string {
   const seen = v.classes.map(hostStarClassLabel).join(" / ");
   const want = v.allowed.map(hostStarClassLabel).join(", ");
-  return `Host star ${seen} — recorded only under ${want}.`;
+  return v.judgedOn === "main"
+    ? `Main star ${seen} — recorded only in systems whose main star is ${want}.`
+    : `Host star ${seen} — recorded only under ${want}.`;
 }

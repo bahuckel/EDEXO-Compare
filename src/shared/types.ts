@@ -162,6 +162,13 @@ export interface SpeciesMatchContext {
    */
   hostStarClasses?: string[];
   /**
+   * Host-class key of the system's **main** star — the arrival star — which is not always the body's
+   * host. Some species follow it rather than the star the body orbits: Stratum araneamus is under an
+   * A, neutron, B or black-hole main star on 98.9 % of its codex sightings while a third of its bodies
+   * orbit a brown dwarf. Read by host-star gates measured on the main star.
+   */
+  systemMainStarClass?: string;
+  /**
    * Journal `PlanetClass` of every other body the FSS has found in this system.
    *
    * The wire for the companion-body conditions: Amphora plant and the Brain Trees spawn on what else

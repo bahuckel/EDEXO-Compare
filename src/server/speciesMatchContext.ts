@@ -13,6 +13,7 @@ import {
   resolveHostStarBodyId,
 } from "./orbitUtils.js";
 import { hostStarClassKeys } from "../shared/hostStarGates.js";
+import { hostStarClassKey } from "../shared/hostStarClass.js";
 import { getProjectRoot } from "./paths.js";
 import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
@@ -125,6 +126,21 @@ function arrivalStarBodyId(byId: Map<number, ExplorationScanRecord>): number | n
     if (r.distanceFromArrivalLs === 0 && (zero == null || bodyId < zero)) zero = bodyId;
   }
   return zero ?? lowest;
+}
+
+/**
+ * The class of the system's main star — the one you arrive at — as a host-class key.
+ *
+ * Not the body's host. For most species the two agree; for some they do not, and the difference is
+ * the whole finding. Stratum araneamus is recorded under an A, neutron, B or black-hole **main**
+ * star on 98.9 % of 13,732 codex sightings, yet a third of its bodies orbit a Y or T dwarf in those
+ * systems — and the colour tokens say the same of every Y-dwarf host: the colour follows the main
+ * star. A gate measured on the main star has to be judged on it.
+ */
+export function mainStarClassOf(byId: Map<number, ExplorationScanRecord>): string | undefined {
+  const id = arrivalStarBodyId(byId);
+  const key = id == null ? null : hostStarClassKey(byId.get(id)?.starType);
+  return key ?? undefined;
 }
 
 export function starDistanceLs(
@@ -262,6 +278,8 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
     ctx.orbitDistanceFromParentStarLs = orbitDistanceFromParentStarLs;
   if (signalHints?.length) ctx.signalHints = signalHints;
   if (hostStarClasses?.length) ctx.hostStarClasses = hostStarClasses;
+  const mainStar = mainStarClassOf(byId);
+  if (mainStar) ctx.systemMainStarClass = mainStar;
   /**
    * The system's position (Phase 7).
    *

@@ -18,7 +18,7 @@ import { mergeScanForExomastery } from "../src/server/footScannedCatalog.js";
 import { mapEdsmBodyToExplorationRecord } from "../src/server/edsmSystemHydration.js";
 import { resolveHostStarBodyId, hostStarBodyIdsForExobiology } from "../src/server/orbitUtils.js";
 import { hostStarClassKeys } from "../src/shared/hostStarGates.js";
-import { starDistanceLs } from "../src/server/speciesMatchContext.js";
+import { mainStarClassOf, starDistanceLs } from "../src/server/speciesMatchContext.js";
 import { journalPressureToAtm } from "../src/shared/journalPhysics.js";
 import { regionForSystem, regionIndexForSystem } from "../src/server/regionMapData.js";
 import { loadSpatialCatalogue } from "../src/server/spatialCatalogue.js";
@@ -175,6 +175,8 @@ export async function createReplay(db: SpeciesDatabase): Promise<Replay> {
     if (star?.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity.trim();
     const keys = hostStarClassKeys(hostStarBodyIdsForExobiology(rec, recs).map((id) => recs.get(id)?.starType));
     if (keys.length) ctx.hostStarClasses = keys;
+    const mainStar = mainStarClassOf(recs);
+    if (mainStar) ctx.systemMainStarClass = mainStar;
     const orbit = starDistanceLs(rec, scan, recs);
     if (orbit !== undefined) ctx.orbitDistanceFromParentStarLs = orbit;
     if (coords) {

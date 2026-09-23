@@ -165,6 +165,8 @@ function features(p: Prepared): { num: Map<string, number>; cat: Map<string, str
   cat.set("atmosphere", atmosphereCompositionKey(normalizeScanAtmosphereForMatch(s)) || "none");
   cat.set("volcanism", (s.Volcanism ?? "").toLowerCase().replace(/\s*volcanism$/, "").trim() || "none");
   cat.set("host star", hostStarClassKey(p.ctx.parentStarType) ?? "?");
+  // The system's main star — not always the host, and for some species the one that decides.
+  if (p.ctx.systemMainStarClass) cat.set("main star", p.ctx.systemMainStarClass);
   if (p.ctx.parentStarLuminosity) cat.set("host luminosity", p.ctx.parentStarLuminosity);
   cat.set("tidally locked", s.TidalLock ? "yes" : "no");
   if (p.ctx.regionName) cat.set("region", p.ctx.regionName);

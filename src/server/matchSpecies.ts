@@ -1359,8 +1359,9 @@ export function demoteFailedHostStarGates(
   matchContext: SpeciesMatchContext | null | undefined,
 ): void {
   const classes = matchContext?.hostStarClasses;
+  const mainStar = matchContext?.systemMainStarClass ?? null;
 
-  if (!classes || classes.length === 0) {
+  if ((!classes || classes.length === 0) && !mainStar) {
     // No star scanned yet. Not a pass — mark it, so the split does not put a number on it.
     for (const m of strict) {
       if (hostStarGateForSpeciesId(m.entry.id)) m.spatialGateUnresolved = true;
@@ -1370,7 +1371,7 @@ export function demoteFailedHostStarGates(
 
   for (let i = strict.length - 1; i >= 0; i--) {
     const m = strict[i]!;
-    const verdict = evaluateHostStarGate(m.entry.id, classes);
+    const verdict = evaluateHostStarGate(m.entry.id, classes, mainStar);
     if (!verdict || verdict.passes) continue;
     const reason: MatchReason = {
       field: "StarType",

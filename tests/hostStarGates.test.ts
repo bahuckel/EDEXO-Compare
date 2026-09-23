@@ -58,7 +58,7 @@ describe("which species carry a host-star gate", () => {
    * what a genus with no star rule is supposed to look like — and why they carry no gate.
    */
   it("keeps a measured count beside every threshold", () => {
-    expect(HOST_STAR_GATES).toHaveLength(3);
+    expect(HOST_STAR_GATES).toHaveLength(4);
     for (const { idIncludes, gate } of HOST_STAR_GATES) {
       expect(gate.evidence, idIncludes).toMatch(/\d,\d{3}/); // a sighting count
       expect(gate.evidence, idIncludes).toMatch(/%/);
@@ -246,5 +246,27 @@ describe("the body that reported the bug", () => {
     expect(pluma.unlikely).toBeFalsy();
     // …but it is marked, so the genus split withholds its percentage.
     expect(pluma.spatialGateUnresolved).toBe(true);
+  });
+});
+
+describe("a gate measured on the main star", () => {
+  const ARANEAMUS = "stratum_stratum_araneamus";
+
+  it("is judged on the main star, not the star the body orbits", () => {
+    // A third of araneamus's bodies orbit a Y or T dwarf in an A-star system.
+    expect(evaluateHostStarGate(ARANEAMUS, ["Y"], "A")!.passes).toBe(true);
+    expect(evaluateHostStarGate(ARANEAMUS, ["T"], "N")!.passes).toBe(true);
+    // And an A-class host does not rescue a system whose main star is F.
+    expect(evaluateHostStarGate(ARANEAMUS, ["A"], "F")!.passes).toBe(false);
+  });
+
+  it("abstains when the main star is not known, however the host reads", () => {
+    expect(evaluateHostStarGate(ARANEAMUS, ["F"], null)).toBeNull();
+    expect(evaluateHostStarGate(ARANEAMUS, ["F"], undefined)).toBeNull();
+  });
+
+  it("says so in its own words", () => {
+    const v = evaluateHostStarGate(ARANEAMUS, ["K"], "K")!;
+    expect(describeHostStarVerdict(v)).toMatch(/^Main star K-class/);
   });
 });
