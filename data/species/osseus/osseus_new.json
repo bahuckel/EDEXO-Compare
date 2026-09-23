@@ -97,6 +97,7 @@
         ],
         "max_gravity": 0.275,
         "atmospherePressureCategory": "thin",
+        "minPressure": 0.009,
         "matchContextNotes": [
           "Codex: almost always on rocky outcrops, ridges, and exposed stone — not a hard planet-class filter.",
           "Morph colour follows host star type (genus meta.color_variants)."
