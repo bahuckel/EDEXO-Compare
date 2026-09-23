@@ -170,7 +170,8 @@
         "required_atmosphere_type": "Sulphur Dioxide",
         "max_gravity": 0.275,
         "planet_types": [
-          "Rocky"
+          "Rocky",
+          "High Metal Content"
         ],
         "temperature_K": null,
         "atmospherePressureCategory": "thin",
