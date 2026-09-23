@@ -77,6 +77,8 @@ const PARSED_CRITERION_KEYS: readonly string[] = [
   "when_atmosphere_max_temp_k",
   "atmosphereLinkedMaxTempK",
   "whenAtmosphereLinkedMinTempK",
+  "soft_temperature_K",
+  "softTemperatureK",
   "when_atmosphere_min_temp_k",
   "atmosphereLinkedMinTempK",
   "co2MaxTempK",

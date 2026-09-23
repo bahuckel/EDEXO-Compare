@@ -306,7 +306,7 @@ function mergeRange(
   return out;
 }
 
-function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterion {
+export function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterion {
   const c: SpeciesCriterion = {};
 
   const pcTypes = toStringArray(firstDefined(src, ["planet_types", "planetTypes", "worldTypes"]));
@@ -490,6 +490,14 @@ function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesCriterio
       const t = mergeRange(undefined, tMin, tMax);
       if (t) c.surfaceTemperatureK = t;
     }
+  }
+
+  // A measured band inside the codex one, which demotes and never hides — see SpeciesCriterion.
+  const softT = asRecord(firstDefined(src, ["soft_temperature_K", "softTemperatureK"]));
+  if (softT) {
+    const lo = toNumber(softT.min);
+    const hi = toNumber(softT.max);
+    if (lo !== undefined || hi !== undefined) c.softTemperatureK = { min: lo, max: hi };
   }
 
   const sp = asRecord(src.surfacePressure ?? src.SurfacePressure);

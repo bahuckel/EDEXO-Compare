@@ -950,6 +950,26 @@ export function speciesMatchesCriteria(
     });
   }
 
+  /*
+    The measured band: where the species actually lives, inside the codex band. Soft always — it is
+    the record, and the record's edges are not impossibilities. See SpeciesCriterion.softTemperatureK.
+  */
+  const softBand = c.softTemperatureK;
+  const tMeasured = scan.SurfaceTemperature;
+  if (softBand && typeof tMeasured === "number" && Number.isFinite(tMeasured)) {
+    const below = softBand.min !== undefined && tMeasured < softBand.min;
+    const above = softBand.max !== undefined && tMeasured > softBand.max;
+    if (below || above) {
+      failures.push({
+        field: "SurfaceTemperature",
+        soft: true,
+        detail:
+          `${tMeasured.toFixed(1)} K is ${above ? `above ${softBand.max}` : `below ${softBand.min}`} K, ` +
+          `where this species is rarely recorded even though the codex allows it. ${DEMOTED_NOTE}`,
+      });
+    }
+  }
+
   const linkedMax = c.whenAtmosphereLinkedMaxTempK;
   const linkedMin = c.whenAtmosphereLinkedMinTempK;
   const linkedAtmo = c.whenAtmosphereLinkedAtmosphereAnyOf;

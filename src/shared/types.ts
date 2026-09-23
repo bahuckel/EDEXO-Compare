@@ -304,6 +304,15 @@ export interface SpeciesCriterion {
   /** Earth **g** (compared after converting journal m/s² → g). */
   surfaceGravity?: { min?: number; max?: number };
   surfaceTemperatureK?: { min?: number; max?: number };
+  /**
+   * A **measured** temperature band, inside the codex one, that only ever demotes.
+   *
+   * The codex band stays the wall. This says where the species actually lives: Concha labiata's
+   * codex ceiling is 195 K, but 99 % of its 1,928 bodies sit at or below 190 K, while 365 of Concha
+   * renibus's bodies sit at 190–195 K and labiata was offered on every one. Writing the ceiling as
+   * a codex 190 would hide the 1 % above it; written here it demotes them, with the reason shown.
+   */
+  softTemperatureK?: { min?: number; max?: number };
   /** Journal SurfacePressure (official docs: atmospheres for landables) */
   surfacePressure?: { min?: number; max?: number };
   landable?: boolean;
