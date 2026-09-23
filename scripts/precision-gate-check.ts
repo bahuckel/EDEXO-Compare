@@ -126,13 +126,14 @@ const tierCount = (list: GenusSlot[], which: "base" | "patched") => {
   for (const s of list) c[tierOf(which === "base" ? s.base : s.patched, speciesId)] += 1;
   return c;
 };
-say(`## 1. Its own bodies`, ``, `| source | bodies | shown | unlikely | not listed |${patch ? " shown after patch |" : ""}`, `|---|---:|---:|---:|---:|${patch ? "---:|" : ""}`);
+say(`## 1. Its own bodies`, ``, `| source | bodies | shown | unlikely | not listed |${patch ? " after patch: shown · unlikely · not listed |" : ""}`, `|---|---:|---:|---:|---:|${patch ? "---:|" : ""}`);
 for (const src of [...SOURCES, "all"] as const) {
   const l = src === "all" ? own : own.filter((s) => s.source === src);
   if (!l.length) continue;
   const b = tierCount(l, "base");
   const a = patch ? tierCount(l, "patched") : null;
-  say(`| ${src} | ${l.length} | ${pc(b.shown, l.length)} | ${b.unlikely} | ${b.absent} |${a ? ` ${pc(a.shown, l.length)} |` : ""}`);
+  // "Not listed" after a patch is a wall — the row is gone, not demoted — and has to be seen as one.
+  say(`| ${src} | ${l.length} | ${pc(b.shown, l.length)} | ${b.unlikely} | ${b.absent} |${a ? ` ${pc(a.shown, l.length)} · ${a.unlikely} · ${a.absent} |` : ""}`);
 }
 const failures = new Map<string, number>();
 for (const s of own) {
