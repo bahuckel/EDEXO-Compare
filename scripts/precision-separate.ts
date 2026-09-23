@@ -206,21 +206,24 @@ for (const [key, rows] of truthByBody) {
 }
 
 // `--where "distance to parent star ls>=2460"` narrows both sides to the bodies where they still
-// collide, once a first rule has done its work. Numeric `>=`/`<=`, categorical `=`; a body with no
-// reading on the axis is left out, not let through.
+// collide, once a first rule has done its work. Numeric `>=`/`<=`, categorical `=`, clauses joined by
+// `&&`; a body with no reading on the axis is left out, not let through.
 const where = argOf("where");
 if (where) {
-  const m = /^(.+?)\s*(>=|<=|=)\s*(.+)$/.exec(where);
-  if (!m) {
-    console.error(`--where: cannot read "${where}" (feature>=n, feature<=n or feature=value)`);
-    process.exit(1);
-  }
-  const [, feature, op, raw] = m as unknown as [string, string, string, string];
-  const keepBody = (b: Body): boolean => {
-    if (op === "=") return b.cat.get(feature) === raw;
-    const v = b.num.get(feature);
-    return v !== undefined && (op === ">=" ? v >= Number(raw) : v <= Number(raw));
-  };
+  const tests = where.split("&&").map((clause) => {
+    const m = /^(.+?)\s*(>=|<=|=)\s*(.+)$/.exec(clause.trim());
+    if (!m) {
+      console.error(`--where: cannot read "${clause.trim()}" (feature>=n, feature<=n or feature=value, joined by &&)`);
+      process.exit(1);
+    }
+    const [, feature, op, raw] = m as unknown as [string, string, string, string];
+    return (b: Body): boolean => {
+      if (op === "=") return b.cat.get(feature) === raw;
+      const v = b.num.get(feature);
+      return v !== undefined && (op === ">=" ? v >= Number(raw) : v <= Number(raw));
+    };
+  });
+  const keepBody = (b: Body) => tests.every((t) => t(b));
   for (const [k, l] of bodiesOf) bodiesOf.set(k, l.filter(keepBody));
 }
 
