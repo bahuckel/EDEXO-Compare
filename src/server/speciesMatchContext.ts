@@ -199,8 +199,51 @@ export function starDistanceLs(
     }
   }
 
-  // 3. A chain that names no star at all: the stars are where we arrived.
-  if (starIds.length === 0 && arrivalLs !== undefined) return arrivalLs;
+  // 3. A chain that names no star at all: the body's stars are a pair (or more) round a barycentre.
+  if (starIds.length === 0) {
+    /**
+     * Which barycentre holds the stars is written on the stars: a star whose own `Parents` starts
+     * `{Null: n}` orbits barycentre n. The body's host group is the nearest such barycentre in its
+     * chain, and whatever sits immediately below it — the body, its planet, or a pair barycentre —
+     * is what orbits the stars.
+     *
+     * The arrival distance is right only when that group is the arrival star's. In a system laid
+     * out as A + (B + C), a moon in the BC group has no `Star` in its chain either, and the arrival
+     * distance there is the distance from A — measured on the corpus at 3,500 to 409,000 ls for
+     * Clypeus lacrimam moons that sit a few hundred ls from their own stars, which put lacrimam out
+     * where only speculumi grows.
+     */
+    const stellarBarycentres = new Set<number>();
+    for (const r of byId.values()) {
+      if (!r.starType?.trim()) continue;
+      const p0 = Array.isArray(r.parents) ? parseJournalParentEntry(r.parents[0]) : null;
+      if (p0?.kind === "Null") stellarBarycentres.add(p0.id);
+    }
+    // Every barycentre the arrival star sits inside, however deep: in (A + B) + C, a body round the
+    // outer barycentre has A among its stars too.
+    const arrivalId = arrivalStarBodyId(byId);
+    const arrivalParents = arrivalId != null ? byId.get(arrivalId)?.parents : undefined;
+    const holdsArrival = new Set(
+      (Array.isArray(arrivalParents) ? arrivalParents : [])
+        .map((e) => parseJournalParentEntry(e))
+        .filter((e) => e?.kind === "Null")
+        .map((e) => e!.id),
+    );
+    const groupIndex = chain.findIndex((e) => e?.kind === "Null" && stellarBarycentres.has(e.id));
+    if (groupIndex < 0) return arrivalLs; // no star says where it sits: the old reading, the stars are where we arrived
+    if (holdsArrival.has(chain[groupIndex]!.id)) return arrivalLs;
+    // A group the arrival star is not in: the orbit around that group's barycentre.
+    const orbiter = groupIndex === 0 ? null : chain[groupIndex - 1];
+    const sma =
+      orbiter == null
+        ? rec?.semiMajorAxis
+        : orbiter.kind === "Planet"
+          ? byId.get(orbiter.id)?.semiMajorAxis
+          : orbiter.kind === "Null"
+            ? byId.get(barycentreSyntheticBodyId(orbiter.id))?.semiMajorAxis
+            : undefined;
+    return typeof sma === "number" && Number.isFinite(sma) && sma > 0 ? sma / LIGHT_SECOND_METERS : undefined;
+  }
 
   // 4. A non-arrival host reached only through a barycentre or a ring. Not measurable — say so.
   return undefined;

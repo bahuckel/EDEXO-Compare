@@ -4,6 +4,7 @@
  *   npx tsx scripts/precision-separate.ts --pair frutexa_frutexa_acus frutexa_frutexa_metallicum
  *   npx tsx scripts/precision-separate.ts --top 8          # the phase-1 confusion pairs, by credits at stake
  *   npx tsx scripts/precision-separate.ts --genus stratum --top 10
+ *   npx tsx scripts/precision-separate.ts --pair A B --where "distance to parent star ls>=2460"
  *
  * ## The question, shaped the way a gate is used
  *
@@ -204,6 +205,25 @@ for (const [key, rows] of truthByBody) {
   }
 }
 
+// `--where "distance to parent star ls>=2460"` narrows both sides to the bodies where they still
+// collide, once a first rule has done its work. Numeric `>=`/`<=`, categorical `=`; a body with no
+// reading on the axis is left out, not let through.
+const where = argOf("where");
+if (where) {
+  const m = /^(.+?)\s*(>=|<=|=)\s*(.+)$/.exec(where);
+  if (!m) {
+    console.error(`--where: cannot read "${where}" (feature>=n, feature<=n or feature=value)`);
+    process.exit(1);
+  }
+  const [, feature, op, raw] = m as unknown as [string, string, string, string];
+  const keepBody = (b: Body): boolean => {
+    if (op === "=") return b.cat.get(feature) === raw;
+    const v = b.num.get(feature);
+    return v !== undefined && (op === ">=" ? v >= Number(raw) : v <= Number(raw));
+  };
+  for (const [k, l] of bodiesOf) bodiesOf.set(k, l.filter(keepBody));
+}
+
 /* ------------------------------------------------------------------ rules */
 
 /**
@@ -349,7 +369,7 @@ for (const [x, y] of pairs) {
   const X = bodiesOf.get(x) ?? [];
   const Y = bodiesOf.get(y) ?? [];
   say(`# ${short(x)} vs ${short(y)}`, ``, `Generated ${new Date().toISOString()} by \`scripts/precision-separate.ts\`. Local only.`, ``);
-  say(`${short(x)}: ${X.length} bodies (${M(priceOf(x))}) · ${short(y)}: ${Y.length} bodies (${M(priceOf(y))}).`, ``);
+  say(`${short(x)}: ${X.length} bodies (${M(priceOf(x))}) · ${short(y)}: ${Y.length} bodies (${M(priceOf(y))}).${where ? ` Only where \`${where}\`.` : ""}`, ``);
 
   for (const [a, b, A, B] of [
     [x, y, X, Y],
@@ -426,7 +446,7 @@ for (const [x, y] of pairs) {
       `| ${short(a)} | ${short(b)} | \`${describe(r)}\` | ${pc(cv.drop)} | ${pc(cv.keep)} | ${second ? `\`${describe(second.rule)}\`` : "—"} | ${pc(both)} | ${sp ? `${spatialBest!.rule.feature} ${pc(sp.drop)}` : "—"} |`,
     );
   }
-  const file = path.join(precisionDir, `separate-${x}-vs-${y}.md`);
+  const file = path.join(precisionDir, `separate-${x}-vs-${y}${where ? "-where" : ""}.md`);
   writeFileSync(file, out.join("\n") + "\n");
   process.stderr.write(`→ ${path.relative(root, file)}\n`);
 }

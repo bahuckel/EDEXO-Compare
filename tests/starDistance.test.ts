@@ -195,3 +195,42 @@ describe("a system whose chain names no star at all", () => {
     expect(starDistanceLs(moon, null, index([arrivalStar, moon]))).toBe(2900);
   });
 });
+
+/**
+ * A + (B + C): the stars of the BC pair orbit barycentre 1, which with A orbits the root. A moon in
+ * the BC group has no `Star` in its chain, and the arrival distance is measured from A — on the
+ * corpus, 3,500 to 409,000 ls for Clypeus lacrimam moons a few hundred ls from their own stars.
+ */
+describe("a star group the arrival star is not in", () => {
+  const a = rec(0, { starType: "F", distanceFromArrivalLs: 0, parents: [{ Null: 9 }] });
+  const b = rec(2, { starType: "M", distanceFromArrivalLs: 150_000, parents: [{ Null: 1 }, { Null: 9 }] });
+  const c = rec(3, { starType: "M", distanceFromArrivalLs: 150_020, parents: [{ Null: 1 }, { Null: 9 }] });
+
+  it("reads the planet's orbit round that group's barycentre, not the distance from the arrival star", () => {
+    const planet = rec(4, { parents: [{ Null: 1 }, { Null: 9 }], semiMajorAxis: 300 * C });
+    const moon = rec(5, {
+      parents: [{ Planet: 4 }, { Null: 1 }, { Null: 9 }],
+      distanceFromArrivalLs: 150_300,
+      semiMajorAxis: 0.001 * AU,
+    });
+    expect(Math.round(starDistanceLs(moon, null, index([a, b, c, planet, moon]))!)).toBe(300);
+  });
+
+  it("reads a planet's own orbit when it circles the group itself", () => {
+    const planet = rec(4, { parents: [{ Null: 1 }, { Null: 9 }], distanceFromArrivalLs: 152_600, semiMajorAxis: 2600 * C });
+    expect(Math.round(starDistanceLs(planet, null, index([a, b, c, planet]))!)).toBe(2600);
+  });
+
+  it("abstains when the planet it rides on was never scanned", () => {
+    const moon = rec(5, { parents: [{ Planet: 4 }, { Null: 1 }, { Null: 9 }], distanceFromArrivalLs: 150_300 });
+    expect(starDistanceLs(moon, null, index([a, b, c, moon]))).toBeUndefined();
+  });
+
+  it("keeps the arrival distance for a group the arrival star sits in, however deep", () => {
+    // (A + B) + C: A and B orbit barycentre 1, C and barycentre 1 orbit the root 9.
+    const a2 = rec(0, { starType: "F", distanceFromArrivalLs: 0, parents: [{ Null: 1 }, { Null: 9 }] });
+    const c2 = rec(3, { starType: "M", distanceFromArrivalLs: 90_000, parents: [{ Null: 9 }] });
+    const planet = rec(4, { parents: [{ Null: 9 }], distanceFromArrivalLs: 120_000, semiMajorAxis: 110_000 * C });
+    expect(starDistanceLs(planet, null, index([a2, c2, planet]))).toBe(120_000);
+  });
+});
