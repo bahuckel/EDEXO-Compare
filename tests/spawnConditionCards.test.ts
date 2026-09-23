@@ -201,7 +201,9 @@ describe("the atmosphere-linked temperature card", () => {
 describe("the measured temperature band card", () => {
   it("states the band, and is yellow — a demotion, not an exclusion — outside it", () => {
     const hot = { SurfaceTemperature: 193, PlanetClass: "Rocky body", AtmosphereType: "CarbonDioxide" } as unknown as PlanetScan;
-    const c = card(species("Concha labiata"), "soft-temp", hot)!;
+    const labiata = species("Concha labiata");
+    const banded = { ...labiata, criteria: { ...labiata.criteria, softTemperatureK: { max: 190 } } };
+    const c = card(banded, "soft-temp", hot)!;
     expect(c.lines.join(" ")).toContain("190");
     expect(c.tier).toBe("yellow");
   });
