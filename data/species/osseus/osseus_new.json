@@ -68,7 +68,8 @@
         ],
         "planet_types": [
           "Rocky",
-          "Rocky Ice"
+          "Rocky Ice",
+          "High Metal Content"
         ],
         "temperature_K": [
           180,
