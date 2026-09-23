@@ -115,6 +115,21 @@ describe("Spansh as a galaxy source", () => {
     expect(gasSharePercent(planetScanFromExplorationRecord(co2)!, "CarbonDioxide")).toBe(99);
   });
 
+  /**
+   * "No volcanism" is a reading, not a gap. It used to be dropped, so a hydrated body with none looked
+   * exactly like one nobody had scanned — 1,753 of the corpus' Osseus spiralis bodies read "unknown".
+   * The journal writes none as an empty string; so does the mapper now.
+   */
+  it("keeps No volcanism as the journal's empty reading, apart from an unknown one", () => {
+    const body = (volcanismType?: string) =>
+      planetScanFromExplorationRecord(
+        mapEdsmBodyToExplorationRecord({ type: "Planet", name: "B 3", bodyId: 3, subType: "Rocky body", volcanismType }, 1, "B")!,
+      )!;
+    expect(body("No volcanism").Volcanism).toBe("");
+    expect(body(undefined).Volcanism).toBeUndefined();
+    expect(body("Minor Rocky Magma").Volcanism).toBe("Minor Rocky Magma");
+  });
+
   it("writes planet classes the way the journal does, so the species gates can match them", () => {
     const cls = (subType: string) =>
       mapEdsmBodyToExplorationRecord({ type: "Planet", name: "P", bodyId: 1, subType }, 1, "S")!.planetClass;

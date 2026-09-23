@@ -174,7 +174,10 @@ export function mapEdsmBodyToExplorationRecord(
     rec.atmosphere = atm;
   }
   const vol = pickStr(body.volcanismType);
-  if (vol && vol.toLowerCase() !== "no volcanism") rec.volcanism = vol;
+  // "No volcanism" is a reading, and the journal writes it as an empty string. Dropping the field
+  // made it indistinguishable from a body nobody had looked at: 1,753 of the corpus' Osseus spiralis
+  // bodies read "unknown" rather than "none".
+  if (vol) rec.volcanism = vol.toLowerCase() === "no volcanism" ? "" : vol;
   if (body.tidalLock === true || body.rotationalPeriodTidallyLocked === true) rec.tidalLock = true;
 
   rec.semiMajorAxis = edsmSemiMajorAxisToM(pickNum(body.semiMajorAxis));
