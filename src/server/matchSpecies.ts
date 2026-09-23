@@ -37,8 +37,13 @@ import {
   hostStarGateForSpeciesId,
 } from "../shared/hostStarGates.js";
 import { observedAtGravity } from "./speciesGravityObservations.js";
-import { regionalGenusShare, regionalPresence } from "./regionSpeciesData.js";
-import { regionPresenceDetail, regionGenusShareDetail } from "../shared/regionAbsence.js";
+import { regionalGenusEnrichment, regionalGenusShare, regionalPresence } from "./regionSpeciesData.js";
+import {
+  REGION_SIBLING_DEPLETION,
+  regionGenusShareDetail,
+  regionPresenceDetail,
+  regionSiblingDepletionDetail,
+} from "../shared/regionAbsence.js";
 import { getProjectRoot } from "./paths.js";
 import { observedUnderAtmosphere } from "./speciesAtmosphereObservations.js";
 import {
@@ -1510,6 +1515,12 @@ export function demoteUnfavouredAtmospheres(
  * the genus is on the body, the record's answer to *which species* is each one's share of its genus
  * in the region; under `REGION_GENUS_SHARE_MIN` it is the rare one. See `shared/regionAbsence.ts`.
  *
+ * A share cut alone cannot tell a species that is out of place from one that is a minority
+ * everywhere, so a second test compares siblings directly: each one's regional share over its
+ * galaxy-wide share, against the favourite's. Under `REGION_SIBLING_DEPLETION` of the favourite, it
+ * is out of place — Tubus compagibus beside cavas in the Trojan Belt — while Bacterium scopulum,
+ * rare everywhere, stays beside verrata.
+ *
  * **A tie-breaker, never an eviction.** It only acts between siblings that are shown together, and
  * never demotes the last one standing. Run as a per-species gate it demoted Fonticulua fluctus in
  * Inner Orion Spur — the commander's rarest find, 20 M — on bodies where it was the only Fonticulua
@@ -1532,15 +1543,24 @@ export function demoteRegionallyRareSiblings(
   const demote: { i: number; reason: MatchReason }[] = [];
   for (const idxs of byGenus.values()) {
     if (idxs.length < 2) continue;
-    const rare = idxs
-      .map((i) => ({ i, v: regionalGenusShare(root, regionIndex, strict[i]!.entry.id) }))
-      .filter((x) => x.v?.rare);
+    const judged = idxs.map((i) => ({
+      i,
+      v: regionalGenusShare(root, regionIndex, strict[i]!.entry.id),
+      e: regionalGenusEnrichment(root, regionIndex, strict[i]!.entry.id),
+    }));
+    // The sibling the region favours most, as the yardstick for the others.
+    const top = judged.reduce<(typeof judged)[number] | null>((b, x) => (x.e != null && (b?.e == null || x.e > b.e) ? x : b), null);
+    const rare = judged.filter(
+      (x) =>
+        x.v?.rare ||
+        (x !== top && x.e != null && top?.e != null && top.e > 0 && x.e / top.e < REGION_SIBLING_DEPLETION),
+    );
     if (rare.length === 0 || rare.length === idxs.length) continue;
-    for (const { i, v } of rare) {
-      demote.push({
-        i,
-        reason: { field: "Region", soft: true, detail: regionGenusShareDetail(v!.regionName, strict[i]!.entry.genus, v!) },
-      });
+    for (const { i, v, e } of rare) {
+      const detail = v!.rare
+        ? regionGenusShareDetail(v!.regionName, strict[i]!.entry.genus, v!)
+        : regionSiblingDepletionDetail(v!.regionName, strict[i]!.entry.displayName, strict[top!.i]!.entry.displayName, e! / top!.e!);
+      demote.push({ i, reason: { field: "Region", soft: true, detail } });
     }
   }
   for (const { i, reason } of demote.sort((a, b) => b.i - a.i)) {

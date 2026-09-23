@@ -138,6 +138,43 @@ export interface RegionGenusShareVerdict {
   share: number;
 }
 
+/**
+ * How far below the region's favourite sibling a species' enrichment may fall before it is demoted.
+ *
+ * Enrichment is the species' share of its genus in the region over its share galaxy-wide
+ * (`regionalGenusEnrichment`). Compared between siblings shown together, it asks "is this one
+ * depleted here relative to that one" — which a species that is rare everywhere is not. Raising
+ * `REGION_GENUS_SHARE_MIN` to 0.5 % instead would have taken Tubus compagibus out of the Trojan Belt
+ * (0.3 % of Tubus there) and 15 of 36 Bacterium scopulum bodies with it (0.6 % of Bacterium in Inner
+ * Orion Spur, and 1.2× its galaxy-wide share — exactly where it belongs).
+ *
+ * Calibrated over the 78,343 genus slots of the replay (`scripts/precision-phase1.ts`) and the
+ * owner's journals (`scripts/accuracy-probe.ts`), on top of the 0.25 % share cut:
+ *
+ * ```
+ *   K       truth lost   species per slot   exactly one   his recall / precision
+ *   none         —            1.17             84.1 %       98.0 % / 54.2 %
+ *   0.01         0            1.15             86.1 %       98.0 % / 54.4 %
+ *   0.02         0            1.14             86.9 %       98.0 % / 54.6 %
+ *   0.05         0            1.14             87.2 %       98.0 % / 54.6 %
+ *   0.10         0            1.14             87.2 %       98.0 % / 54.6 %
+ *   0.20       303            1.13             88.0 %       (Stratum paleas starts to go)
+ * ```
+ *
+ * 0.05 — a sibling twenty times more out of place than the favourite — takes everything the curve
+ * offers before the knee, with four times the headroom below it.
+ */
+export const REGION_SIBLING_DEPLETION = 0.05;
+
+/** The line a commander sees when the sibling test demotes a row. */
+export function regionSiblingDepletionDetail(regionName: string, name: string, favourite: string, ratio: number): string {
+  const times = ratio > 0 ? Math.round(1 / ratio) : Infinity;
+  return (
+    `Out of place in ${regionName}: relative to ${favourite}, ${name} is ${Number.isFinite(times) ? `${times.toLocaleString()}×` : "far"} ` +
+    `rarer here than it is across the galaxy. Listed as a low-probability find rather than excluded.`
+  );
+}
+
 /** Judge one species against the rest of its genus in one region. */
 export function judgeRegionalGenusShare(count: number, genusRecords: number): RegionGenusShareVerdict {
   const n = Number.isFinite(count) && count > 0 ? count : 0;

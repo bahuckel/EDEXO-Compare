@@ -15,6 +15,7 @@ import path from "node:path";
 import {
   judgeRegionalGenusShare,
   judgeRegionalPresence,
+  REGION_GENUS_MIN_RECORDS,
   type RegionGenusShareVerdict,
   type RegionPresenceVerdict,
 } from "../shared/regionAbsence.js";
@@ -107,12 +108,16 @@ export function clearRegionSpeciesCache(): void {
   // Derived from the same file, so it goes with it for the same reason.
   medianByRegion.clear();
   genusTotals.clear();
+  galaxyTotals = null;
 }
 
 /** Test seam — the file is process-wide, so a test that swaps it must be able to put it back. */
 export function setRegionSpeciesForTests(v: RegionSpeciesFile | null | undefined): void {
   cached = v;
   cachedVocabulary = v?.speciesIds ? new Set(v.speciesIds) : null;
+  medianByRegion.clear();
+  genusTotals.clear();
+  galaxyTotals = null;
 }
 
 /**
@@ -190,4 +195,40 @@ export function regionalGenusShare(
   const genusRecords = totals.get(genusKeyOf(speciesId)) ?? 0;
   if (!genusRecords) return null;
   return { ...judgeRegionalGenusShare(row.species[speciesId] ?? 0, genusRecords), regionName: row.name };
+}
+
+/** Galaxy-wide: species id → records, genus key → records. Summed once over every region. */
+let galaxyTotals: { species: Map<string, number>; genus: Map<string, number> } | null = null;
+
+/**
+ * This species' share of its genus in the region, divided by its share of the genus galaxy-wide.
+ *
+ * 1 is its usual place in the genus; 0.004 is Tubus compagibus in the Trojan Belt (0.3 % of Tubus
+ * records there, against a third of them across the galaxy). The share alone cannot tell that apart
+ * from a species that is a small minority everywhere because its conditions are rare — Bacterium
+ * scopulum is under 0.5 % of Bacterium in most regions and exactly as common as it always is.
+ */
+export function regionalGenusEnrichment(
+  projectRoot: string,
+  regionIndex: number | null | undefined,
+  speciesId: string,
+): number | null {
+  const v = regionalGenusShare(projectRoot, regionIndex, speciesId);
+  if (!v || v.genusRecords < REGION_GENUS_MIN_RECORDS) return null;
+  if (!galaxyTotals) {
+    const species = new Map<string, number>();
+    const genus = new Map<string, number>();
+    for (const row of Object.values(loadRegionSpecies(projectRoot)?.regions ?? {})) {
+      for (const [id, n] of Object.entries(row.species)) {
+        if (!Number.isFinite(n) || n <= 0) continue;
+        species.set(id, (species.get(id) ?? 0) + n);
+        genus.set(genusKeyOf(id), (genus.get(genusKeyOf(id)) ?? 0) + n);
+      }
+    }
+    galaxyTotals = { species, genus };
+  }
+  const g = galaxyTotals.genus.get(genusKeyOf(speciesId)) ?? 0;
+  const s = galaxyTotals.species.get(speciesId) ?? 0;
+  if (!g || !s) return null;
+  return v.share / (s / g);
 }

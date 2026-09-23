@@ -11,6 +11,7 @@ import {
   REGION_ABSENCE_MIN_BIO_SYSTEMS,
   REGION_GENUS_MIN_RECORDS,
   REGION_GENUS_SHARE_MIN,
+  REGION_SIBLING_DEPLETION,
   judgeRegionalGenusShare,
   judgeRegionalPresence,
   regionPresenceDetail,
@@ -19,7 +20,7 @@ import { getProjectRoot } from "../src/server/paths.js";
 import { demoteRegionallyRareSiblings } from "../src/server/matchSpecies.js";
 import { loadSpeciesDatabase } from "../src/server/snapshot.js";
 import type { SpeciesEntry } from "../src/shared/types.js";
-import { regionalGenusShare, regionalPresence } from "../src/server/regionSpeciesData.js";
+import { regionalGenusEnrichment, regionalGenusShare, regionalPresence } from "../src/server/regionSpeciesData.js";
 
 /** Inner Orion Spur — where the owner was, and the best-sampled region in the corpus. */
 const INNER_ORION_SPUR = 18;
@@ -154,6 +155,49 @@ describe("the rare sibling, in the matcher", () => {
     const unlikely: typeof strict = [];
     demoteRegionallyRareSiblings(strict as never, unlikely as never, ctx);
     expect(strict.map((m) => m.entry.id)).toEqual(["tussock_tussock_divisa"]);
+    expect(unlikely).toHaveLength(0);
+  });
+});
+
+/** Trojan Belt: a cavas region, where compagibus is 0.3 % of Tubus records — over the share cut. */
+const TROJAN_BELT = 11;
+
+describe("the sibling out of place", () => {
+  const root = getProjectRoot();
+  const db = loadSpeciesDatabase() as unknown as { species: SpeciesEntry[] };
+  const entry = (id: string) => db.species.find((e) => e.id === id)!;
+  const shown = (...ids: string[]) => ids.map((id) => ({ entry: entry(id), reasons: [] as never[] }));
+
+  it("reads compagibus as hundreds of times depleted beside cavas in the Trojan Belt", () => {
+    const cavas = regionalGenusEnrichment(root, TROJAN_BELT, "tubus_tubus_cavas")!;
+    const compagibus = regionalGenusEnrichment(root, TROJAN_BELT, "tubus_tubus_compagibus")!;
+    expect(regionalGenusShare(root, TROJAN_BELT, "tubus_tubus_compagibus")?.rare).toBe(false);
+    expect(compagibus / cavas).toBeLessThan(REGION_SIBLING_DEPLETION);
+  });
+
+  it("reads a species that is rare everywhere as in its usual place", () => {
+    // Bacterium scopulum is under 1 % of Bacterium in Inner Orion Spur — and about as common as it
+    // is anywhere. A share cut of 0.5 % would have demoted it; the enrichment does not.
+    const e = regionalGenusEnrichment(root, INNER_ORION_SPUR, "bacterium_bacterium_scopulum")!;
+    expect(regionalGenusShare(root, INNER_ORION_SPUR, "bacterium_bacterium_scopulum")!.share).toBeLessThan(0.01);
+    expect(e).toBeGreaterThan(0.5);
+  });
+
+  it("demotes compagibus beside cavas, and says why", () => {
+    const strict = shown("tubus_tubus_cavas", "tubus_tubus_compagibus");
+    const unlikely: typeof strict = [];
+    demoteRegionallyRareSiblings(strict as never, unlikely as never, { regionIndex: TROJAN_BELT, regionName: "Trojan Belt" });
+    expect(strict.map((m) => m.entry.id)).toEqual(["tubus_tubus_cavas"]);
+    expect(unlikely.map((m) => m.entry.id)).toEqual(["tubus_tubus_compagibus"]);
+    const why = (unlikely[0] as unknown as { unlikelyReasons: { detail: string }[] }).unlikelyReasons[0]!.detail;
+    expect(why).toMatch(/Out of place in Trojan Belt: relative to Tubus cavas, Tubus compagibus is [\d,]+× rarer/);
+  });
+
+  it("leaves scopulum beside verrata alone in Inner Orion Spur", () => {
+    const strict = shown("bacterium_bacterium_verrata", "bacterium_bacterium_scopulum");
+    const unlikely: typeof strict = [];
+    demoteRegionallyRareSiblings(strict as never, unlikely as never, { regionIndex: INNER_ORION_SPUR, regionName: "Inner Orion Spur" });
+    expect(strict).toHaveLength(2);
     expect(unlikely).toHaveLength(0);
   });
 });
