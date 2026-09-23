@@ -162,9 +162,16 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     },
   },
   {
+    /**
+     * Electricae pluma — measured on the codex CSV's main star, so judged on it, like araneamus.
+     * Judged on the host it demoted 12 of the 69 pluma bodies in the corpus, every one orbiting an
+     * M, L, Y or T dwarf in a system whose main star is neutron or A. The owner's original report
+     * (Swoilz KI-E b4-9 10 b, a single M3 star) still fails: its main star is that M3.
+     */
     idIncludes: "electricae_pluma",
     gate: {
       allowed: ["A", "N", "D", "H"],
+      judgedOn: "main",
       evidence:
         "10,139 pluma sightings: neutron 46.0 %, white dwarf 30.6 %, A 14.2 %, black hole 8.3 % — 99.1 %; B 0.2 %, O 0.0 %",
     },

@@ -70,25 +70,29 @@ describe("which species carry a host-star gate", () => {
 describe("evaluating the gate", () => {
   it("passes on every class the measurement found", () => {
     for (const c of ["A", "N", "D", "H"]) {
-      expect(evaluateHostStarGate(PLUMA, [c])!.passes, c).toBe(true);
+      expect(evaluateHostStarGate(PLUMA, [c], c)!.passes, c).toBe(true);
     }
   });
 
   it("fails on the classes it did not — including the owner's M dwarf", () => {
     for (const c of ["M", "K", "G", "F", "L", "T", "Y", "O", "B"]) {
-      expect(evaluateHostStarGate(PLUMA, [c])!.passes, c).toBe(false);
+      expect(evaluateHostStarGate(PLUMA, [c], c)!.passes, c).toBe(false);
     }
   });
 
   /**
-   * The barycentre rule, in the form that matters: a body orbiting an M + L pair in a neutron-star
-   * system must pass, because one of the stars it could be orbiting is on the list. The set only has
-   * to intersect — a body whose host is ambiguous keeps its candidate rather than losing it to a
-   * coin flip.
+   * Judged on the system's **main** star, which is what the codex CSV measured. A body orbiting an
+   * M + L pair — or a lone M, Y or T dwarf — in a neutron-star or A-star system passes: 12 of the
+   * corpus' 69 pluma bodies orbit such a dwarf, and every one of them was demoted while the gate read
+   * the host. A single-star M system still fails.
    */
-  it("passes when any star of an ambiguous host set is on the list", () => {
-    expect(evaluateHostStarGate(PLUMA, ["N", "M", "L"])!.passes).toBe(true);
-    expect(evaluateHostStarGate(PLUMA, ["M", "L"])!.passes).toBe(false);
+  it("reads the main star, not the dwarf the body happens to orbit", () => {
+    expect(evaluateHostStarGate(PLUMA, ["N", "M", "L"], "N")!.passes).toBe(true);
+    expect(evaluateHostStarGate(PLUMA, ["M", "L"], "N")!.passes).toBe(true);
+    expect(evaluateHostStarGate(PLUMA, ["Y"], "A")!.passes).toBe(true);
+    expect(evaluateHostStarGate(PLUMA, ["M"], "M")!.passes).toBe(false);
+    // No main star known: abstain rather than fall back to the host.
+    expect(evaluateHostStarGate(PLUMA, ["M"])).toBeNull();
   });
 
   it("returns null when there is nothing to judge, never a failure", () => {
@@ -98,7 +102,7 @@ describe("evaluating the gate", () => {
   });
 
   it("names the star and the rule for the reader", () => {
-    const v = evaluateHostStarGate(PLUMA, ["M"])!;
+    const v = evaluateHostStarGate(PLUMA, ["M"], "M")!;
     const line = describeHostStarVerdict(v);
     expect(line).toMatch(/M-class/);
     expect(line).toMatch(/neutron star/);
@@ -194,6 +198,8 @@ describe("the body that reported the bug", () => {
     parentStarSubclass: 3,
     parentStarLuminosity: "Va",
     hostStarClasses: ["M"],
+    // A single-star system: the M3 is also the main star, which is what the pluma gate reads.
+    systemMainStarClass: "M",
     systemCoords: { x: 137, y: -88.84375, z: 298.09375 },
   };
 
