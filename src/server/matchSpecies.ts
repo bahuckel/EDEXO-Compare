@@ -1157,8 +1157,9 @@ export function speciesMatchesCriteria(
   */
   const envelope = entry.observedTemperatureK;
   const tHere = scan.SurfaceTemperature;
+  // See OBSERVED_TEMP_TOLERANCE_K: an envelope edge is a recorded body, not a wall.
   if (envelope && typeof tHere === "number" && Number.isFinite(tHere) && failures.length === 0) {
-    if (tHere < envelope.min || tHere > envelope.max) {
+    if (tHere < envelope.min - OBSERVED_TEMP_TOLERANCE_K || tHere > envelope.max + OBSERVED_TEMP_TOLERANCE_K) {
       failures.push({
         // Its own field name, not "SurfaceTemperature": the signal-count rescue has to be able to
         // tell this from a codex-gate near miss, and it reads better in the tooltip besides.
@@ -1556,6 +1557,21 @@ export function demoteUnfavouredAtmospheres(
  * shown, and `restoreNamedGenera` then put back a *different* species to fill the named genus. A
  * rare species alone in its slot is still the best answer the body has.
  */
+/**
+ * Kelvin either side of a species' observed temperature envelope still read as inside it.
+ *
+ * The envelope's edges are the coldest and hottest bodies a profile happens to hold, to the decimal.
+ * Cactoida peperatis' profile starts a hair above 160 K, and 17 of its corpus bodies read exactly
+ * 160.0 K — each one demoted, and lapis (0.3-0.5 % of Cactoida in those regions) shown alone in its
+ * place. The codex gate beside it allows 2 %; this allows half a kelvin.
+ *
+ * Replayed over 78,343 slots: 92 truth slots come back and none is lost (Tubus cavas +45, peperatis
+ * +17, Aleoida spica +13, Osseus cornibus +8); 247 slots gain a second species, 171 of them Aleoida
+ * pairs at a shared envelope edge. The commander's journals do not move. 1 K and 0.5 K are the same
+ * to within two slots; 2 K starts to cost Tussock 174 slots for 7 more truths.
+ */
+export const OBSERVED_TEMP_TOLERANCE_K = 0.5;
+
 export function demoteRegionallyRareSiblings(
   strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
   unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],

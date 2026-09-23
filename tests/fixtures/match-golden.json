@@ -165,6 +165,7 @@
       ],
       "candidates": [
         "bacterium_bacterium_vesicula",
+        "electricae_electricae_radialem",
         "fonticulua_fonticulua_campestris"
       ],
       "unlikely": [
@@ -188,7 +189,6 @@
         "concha_concha_labiata",
         "concha_concha_renibus",
         "electricae_electricae_pluma",
-        "electricae_electricae_radialem",
         "fonticulua_fonticulua_digitos",
         "fonticulua_fonticulua_fluctus",
         "fonticulua_fonticulua_lapida",
@@ -510,6 +510,7 @@
         "concha_concha_labiata",
         "frutexa_frutexa_acus",
         "frutexa_frutexa_fera",
+        "tussock_tussock_pennata",
         "tussock_tussock_pennatis",
         "tussock_tussock_propagito"
       ],
@@ -556,7 +557,6 @@
         "tussock_tussock_catena",
         "tussock_tussock_cultro",
         "tussock_tussock_divisa",
-        "tussock_tussock_pennata",
         "tussock_tussock_stigmasis",
         "tussock_tussock_ventusa",
         "tussock_tussock_virgam"
