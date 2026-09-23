@@ -146,6 +146,25 @@ export function observedNearTemperature(
     const bHi = i === edges.length ? (numeric?.max ?? edges[edges.length - 1]!) : edges[i]!;
     const width = bHi - bLo;
     if (!(width > 0)) continue;
+    /*
+      A fine bin that itself straddles the codex edge says nothing about which side its bodies are
+      on. The global edges fall exactly on a codex edge only at 165 K; 170, 175, 180, 190 and 195 K
+      each sit inside a bin. Tussock ignis (codex 160–170 K) has 55 bodies in 169–171.7 K and none at
+      170 K or above in any source, and spreading those 55 evenly credited ~34 sightings beyond the
+      edge — enough to show ignis beside serrati on 472 serrati bodies at 171–173 K.
+
+      So a straddling bin is credited only when the next bin, wholly beyond the edge, holds at least
+      one sighting: the species demonstrably grows past the edge and the straddling bin's share is
+      believable. Concha renibus passes (4 bodies at 174–177.5 K, below its 180 K carbon-dioxide
+      edge — the commander's own renibus sits at 178 K); ignis does not (none at 171.7–174 K).
+    */
+    const straddles =
+      (edge.below !== undefined && bHi > edge.below && bLo < edge.below) ||
+      (edge.above !== undefined && bLo < edge.above && bHi > edge.above);
+    if (straddles) {
+      const beyond = edge.below !== undefined ? counts[i - 1] : counts[i + 1];
+      if (!beyond) continue;
+    }
     const overlap = Math.min(hi, bHi) - Math.max(lo, bLo);
     if (overlap > 0) credited += (n * overlap) / width;
   }

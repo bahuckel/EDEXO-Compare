@@ -69,3 +69,27 @@ describe("the matcher, on a straddling bin", () => {
     expect(judge("fungoida_fungoida_stabitis", body(430, "Water")).ok).toBe(true);
   });
 });
+
+/**
+ * A fine bin can straddle the codex edge too: the global edges land on one only at 165 K. Tussock
+ * ignis (160–170 K) has 55 bodies in 169–171.7 K and none past 170 K; spread evenly they rescued it
+ * beside serrati on 472 serrati bodies at 171–173 K. A straddling bin now counts only when the next
+ * bin wholly beyond the edge holds a sighting — which Concha renibus has below 180 K on carbon
+ * dioxide (4 at 174–177.5 K), and the commander's own renibus sits at 178 K.
+ */
+describe("a fine bin that straddles the edge", () => {
+  it("credits ignis nothing above 170 K", () => {
+    expect(observedNearTemperature(species("tussock_tussock_ignis"), 171.7, { above: 170 })).toBe(0);
+  });
+
+  it("demotes ignis at 171.7 K, where serrati grows", () => {
+    const r = judge("tussock_tussock_ignis", body(171.7, "CarbonDioxide"));
+    expect(r.ok).toBe(false);
+    expect(r.softOnly).toBe(true);
+  });
+
+  it("still credits renibus just under its carbon-dioxide floor", () => {
+    const near = observedNearTemperature(species("concha_concha_renibus"), 178, { below: 180 });
+    expect(near!).toBeGreaterThanOrEqual(MIN_TEMPERATURE_OBSERVATIONS);
+  });
+});
