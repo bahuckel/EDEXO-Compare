@@ -145,16 +145,22 @@ describe("matchDatabaseToScan", () => {
   });
 
   /**
-   * Volcanism is still a wall, so only the two genera that require it can be shown here. Brain trees
-   * then fall out on their own terms: this body reads 198.7 K, and the ones with a temperature range
-   * start at 200 K or 300 K. Under the estimator its 140–273 K band covered both, so brain trees
-   * were listed as confident matches on a body 1.3 K too cold for the nearest of them.
+   * Volcanism is still a wall, so the genera that require it can be shown here. Brain trees then fall
+   * out on their own terms: this body reads 198.7 K, and the ones with a temperature range start at
+   * 200 K or 300 K. Under the estimator its 140–273 K band covered both, so brain trees were listed
+   * as confident matches on a body 1.3 K too cold for the nearest of them.
+   *
+   * Sinuous Tubers joined this list once their volcanism gate was written as
+   * `volcanismActiveRequired` instead of the literal fragment `"Any"`, which no journal ever
+   * contains — before that every one of the eight was refused on every body in the galaxy. Anemone
+   * joined when its planet-class list stopped being empty, for the same reason. Both belong on an
+   * airless volcanic body; this is what the genus list is supposed to look like.
    */
   it("only offers volcanism-gated genera on a volcanic airless body", () => {
     const r = matchDatabaseToScan(db, ROCKY_AIRLESS_VOLCANIC, null, null, { includeBacterium: true });
     expect(shown(r).length).toBeGreaterThan(0);
     const genera = new Set(shown(r).map((m) => m.entry.genusDataDir));
-    expect([...genera].sort()).toEqual(["fumerola"]);
+    expect([...genera].sort()).toEqual(["anemone", "fumerola", "sinuous-tubers"]);
 
     const gypseeum = r.matches.find((m) => m.entry.displayName === "Brain Tree Gypseeum");
     expect(gypseeum?.unlikely).toBe(true);
@@ -290,7 +296,17 @@ describe("matchDatabaseToScan", () => {
     expect(a.matches.map((m) => m.entry.id)).toEqual(b.matches.map((m) => m.entry.id));
   });
 
-  it("finds nothing on a body that is too hot for anything in the database", () => {
+  it("offers only the species with no temperature gate on a body at 900 K", () => {
+    /*
+      This used to expect an empty shown tier, and did so only because Anemone could never be
+      listed anywhere: its `planet_types` said "Airless", which is not a planet class, so the list
+      loaded empty and the matcher refused it outright on every body.
+
+      Anemone genuinely belongs here. The owner's own extraction notes say its temperature and
+      gravity are "wide tolerance — keep as null, don't infer", and the corpus has it between 295 K
+      and 1,288 K. A species with no temperature gate surviving onto a 900 K body is the same
+      characterisation the Amphora Plant case below records, not a new defect.
+    */
     const scorched = {
       ...ROCKY_AIRLESS_VOLCANIC,
       Volcanism: "",
@@ -298,11 +314,12 @@ describe("matchDatabaseToScan", () => {
       SurfaceGravity: 2,
     } as unknown as PlanetScan;
     const r = matchDatabaseToScan(db, scorched, null, null, { includeBacterium: true });
-    expect(shown(r)).toHaveLength(0);
+    expect(shown(r).map((m) => m.entry.id)).toEqual(["anemone_anemone"]);
+    expect(db.species.find((e) => e.id === "anemone_anemone")!.criteria.surfaceTemperatureK).toBeUndefined();
     // Whatever survives into the demoted tier must say what demoted it - a low-probability row with
-    // no reason attached is noise the reader has to take on trust.
-    for (const m of r.matches) {
-      expect(m.unlikely).toBe(true);
+    // no reason attached is noise the reader has to take on trust. Shown rows are exempt: they were
+    // not demoted, so there is nothing for them to explain.
+    for (const m of r.matches.filter((x) => x.unlikely)) {
       expect(m.unlikelyReasons?.length).toBeGreaterThan(0);
     }
   });
@@ -323,7 +340,13 @@ describe("matchDatabaseToScan", () => {
       Landable: false,
     } as unknown as PlanetScan;
     const r = matchDatabaseToScan(db, inferno, null, null, { includeBacterium: true });
-    expect(shown(r).map((m) => m.entry.id)).toEqual(["amphora_amphora_plant"]);
+    // Anemone keeps it company for the same reason: metal-rich is on its class list and its row
+    // carries no temperature gate either.
+    expect(
+      shown(r)
+        .map((m) => m.entry.id)
+        .sort(),
+    ).toEqual(["amphora_amphora_plant", "anemone_anemone"]);
     expect(
       db.species.find((e) => e.id === "amphora_amphora_plant")!.criteria.surfaceTemperatureK,
     ).toBeUndefined();
