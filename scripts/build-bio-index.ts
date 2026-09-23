@@ -69,6 +69,44 @@ const VERSION = 3;
 const RECORD = 25;
 
 /**
+ * Codex numbers checked against the game before the build runs.
+ *
+ * The bridge learns "which species is `Codex_Ent_Tussocks_11`" from the Bioforge stats files, and a
+ * bridge that resolves every species while naming some of them wrongly passes the count check and
+ * produces an index nothing downstream can tell is broken. Tussock is where that is easiest to get
+ * wrong: its numbering is not alphabetical, not in discovery order, and `_06` sits apart from the
+ * run it belongs to, so a hand-typed list drifts by one and still looks plausible.
+ *
+ * **It has already happened once, in the other direction.** An EDDN collector named its captures
+ * from a hand-typed ordinal list with Divisa at `_06` and everything from Caputus on one place
+ * early. EDDN strips every `_Localised` field, so a capture's names are only ever the collector's
+ * table, never the game's — and comparing this index against that capture "proved" the index had a
+ * seven-cycle of wrong labels. It did not; the capture did.
+ *
+ * The names on the right are the game's own: `Species_Localised` on `ScanOrganic` and
+ * `Name_Localised` on `CodexEntry`, read from the owner's journals, where `_02`–`_05`, `_07`–`_09`
+ * and `_11`–`_15` each appear under exactly one name. `_01`, `_06` and `_10` were not in them;
+ * those three are Bioforge's, and the cycle closes only one way given the other twelve.
+ */
+const CODEX_TRUTH: Readonly<Record<string, string>> = {
+  codex_ent_tussocks_01: "Tussock Pennata",
+  codex_ent_tussocks_02: "Tussock Ventusa",
+  codex_ent_tussocks_03: "Tussock Ignis",
+  codex_ent_tussocks_04: "Tussock Cultro",
+  codex_ent_tussocks_05: "Tussock Catena",
+  codex_ent_tussocks_06: "Tussock Pennatis",
+  codex_ent_tussocks_07: "Tussock Serrati",
+  codex_ent_tussocks_08: "Tussock Albata",
+  codex_ent_tussocks_09: "Tussock Propagito",
+  codex_ent_tussocks_10: "Tussock Divisa",
+  codex_ent_tussocks_11: "Tussock Caputus",
+  codex_ent_tussocks_12: "Tussock Triticum",
+  codex_ent_tussocks_13: "Tussock Stigmasis",
+  codex_ent_tussocks_14: "Tussock Virgam",
+  codex_ent_tussocks_15: "Tussock Capillum",
+};
+
+/**
  * Evidence tiers as bit flags. A system can carry several at once — a confirmed species on one body
  * and only a signal count on another — so this is a set, not a ladder position. Collapsing to "the
  * strongest" here would discard the system a commander most wants: a known plant beside unexplored
@@ -174,6 +212,25 @@ const bridge = loadCodexBridge(BIOFORGE, tree);
 console.log(`species tree ${tree.size}   codex ids bridged ${bridge.size}`);
 if (bridge.size < 80) {
   console.error("Bridge resolved too few species — the join is wrong, refusing to write a bad index.");
+  process.exit(1);
+}
+
+/*
+  A bridge that resolves every species and names seven of them wrongly passes the count check above
+  and produces an index nothing downstream can tell is broken. Check the numbers we know.
+*/
+const wrong: string[] = [];
+for (const [token, gameName] of Object.entries(CODEX_TRUTH)) {
+  const got = bridge.get(token);
+  const want = tree.get(bag(gameName));
+  if (!want) continue; // the tree does not carry it; not this check's business
+  if (got && got !== want) wrong.push(`  ${token}: bridged to ${got}, the game calls it ${gameName}`);
+}
+if (wrong.length) {
+  console.error(
+    `The codex bridge disagrees with the game on ${wrong.length} species. ` +
+      `Refusing to write an index that would mislabel them:\n${wrong.join("\n")}`,
+  );
   process.exit(1);
 }
 
