@@ -21,6 +21,7 @@ import {
   describePresenceBranches,
   evaluatePresenceBranch,
   describeBodyForPresence,
+  presenceReportsAnyVolcanism,
 } from "../shared/presenceBranches.js";
 export { PRESENCE_BRANCH_FIELDS } from "../shared/presenceBranches.js";
 import { atmosphereIsUnfavoured } from "../shared/atmospherePreference.js";
@@ -452,7 +453,19 @@ export function speciesMatchesExcludingTempPressure(
            * rather than weighing a distribution.
            */
           const observedHere = observedUnderAtmosphere(entry, atmoNorm);
-          if (observedHere) {
+          // A species that leaves its codex list only on volcanic ground: no volcanism, no rescue.
+          const volcanismKnown = scan.Volcanism !== undefined && scan.Volcanism !== null;
+          const rescueBarred =
+            !!observedHere && c.offListAtmosphereNeedsVolcanism === true && volcanismKnown && !presenceReportsAnyVolcanism(scan);
+          if (observedHere && rescueBarred) {
+            failures.push({
+              field: "AtmosphereType",
+              soft: true,
+              detail:
+                `${atmoNorm} — outside the codex list; this species is recorded off its list only on volcanic ` +
+                `bodies, and this one has none. ${DEMOTED_NOTE}`,
+            });
+          } else if (observedHere) {
             reasons.push({
               field: "AtmosphereType",
               detail: `${atmoNorm} — outside the codex list, but ${observedHere.observations} of ${observedHere.total} observed bodies for this species are ${observedHere.label}.`,
@@ -1008,6 +1021,15 @@ export function speciesMatchesCriteria(
           `recorded beyond ${smaMax} ls — it grows on close moons. ${DEMOTED_NOTE}`,
       });
     }
+  }
+
+  // Measured absence of volcanism (SpeciesCriterion.softNoVolcanism). Abstains without a volcanism field.
+  if (c.softNoVolcanism && scan.Volcanism !== undefined && scan.Volcanism !== null && presenceReportsAnyVolcanism(scan)) {
+    failures.push({
+      field: "Volcanism",
+      soft: true,
+      detail: `${String(scan.Volcanism).trim()} — this species is almost never recorded on a volcanic body. ${DEMOTED_NOTE}`,
+    });
   }
 
   const linkedMax = c.whenAtmosphereLinkedMaxTempK;

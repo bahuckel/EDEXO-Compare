@@ -377,6 +377,30 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     out.push({ id: "volcanism", label: "Volcanism", lines, caption, tier });
   }
 
+  /* Measured volcanism facts — both demote only, so yellow is the worst they draw. */
+  if (c.softNoVolcanism || c.offListAtmosphereNeedsVolcanism) {
+    const volcanic = scan ? journalReportsAnyVolcanism(scan) : null;
+    const lines = [
+      ...(c.softNoVolcanism ? ["Usually on bodies with no volcanism"] : []),
+      ...(c.offListAtmosphereNeedsVolcanism ? ["Off its listed atmospheres: volcanic bodies only"] : []),
+    ];
+    let tier: EncyclopediaSpawnTier = "neutral";
+    let caption = "No scan";
+    if (scan) {
+      if (scan.Volcanism === undefined || scan.Volcanism === null) {
+        tier = "yellow";
+        caption = "Volcanism unknown";
+      } else if (c.softNoVolcanism && volcanic) {
+        tier = "yellow";
+        caption = `${volcanoCaption(scan.Volcanism)} — rarely recorded here; listed as unlikely`;
+      } else {
+        tier = "blue";
+        caption = volcanic ? volcanoCaption(scan.Volcanism) : "No volcanism";
+      }
+    }
+    out.push({ id: "soft-volcanism", label: "Volcanism, as recorded", lines, caption, tier });
+  }
+
   /* Gravity (criteria in Earth g after journal conversion) */
   if (c.surfaceGravity && (c.surfaceGravity.min !== undefined || c.surfaceGravity.max !== undefined)) {
     const sg = c.surfaceGravity;

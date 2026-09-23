@@ -361,6 +361,18 @@ export interface SpeciesCriterion {
   geologicalSignalIncludes?: string[];
   /** If true, require journal volcanism text (same as brain-tree rule) even without `volcanismIncludes`. */
   volcanismActiveRequired?: boolean;
+  /**
+   * Off its codex atmosphere list, this species grows only on volcanic bodies. Qualifies the
+   * "observed under this atmosphere anyway" rescue: without volcanism the rescue does not fire and the
+   * atmosphere miss demotes as usual. Osseus discus: away from water, 62 of 62 bodies are volcanic
+   * (methane 44, ammonia 15, argon 3); on water, 1,193 of 1,199 are not.
+   */
+  offListAtmosphereNeedsVolcanism?: boolean;
+  /**
+   * A **measured** absence: the species is recorded almost only on bodies with no volcanism, so a
+   * volcanic body demotes it. Never hides. Osseus spiralis: 1,763 of 1,765 bodies have none.
+   */
+  softNoVolcanism?: boolean;
   /** Appended to match reasons when a row passes (terrain / codex wording — not a hard planet-class gate). */
   matchContextNotes?: string[];
 }

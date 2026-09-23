@@ -616,6 +616,11 @@ export function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesC
   if (toBool(src.volcanismActiveRequired ?? src.requires_active_volcanism) === true) {
     c.volcanismActiveRequired = true;
   }
+  // Measured volcanism facts that demote and never hide — see SpeciesCriterion.
+  if (toBool(src.off_list_atmosphere_needs_volcanism ?? src.offListAtmosphereNeedsVolcanism) === true) {
+    c.offListAtmosphereNeedsVolcanism = true;
+  }
+  if (toBool(src.soft_no_volcanism ?? src.softNoVolcanism) === true) c.softNoVolcanism = true;
 
   /*
     Presence branches — the one "or" the condition format has. Each is a criterion object in its own

@@ -285,6 +285,8 @@ describe("the audit — every gate the matcher applies is drawn somewhere", () =
           surfaceTemperatureK: ["temp", "linked-temp-cap"],
           softTemperatureK: ["soft-temp"],
           softMaxSemiMajorAxisLs: ["soft-orbit"],
+          softNoVolcanism: ["soft-volcanism"],
+          offListAtmosphereNeedsVolcanism: ["soft-volcanism"],
           surfacePressure: ["pressure"],
           volcanismIncludes: ["volcanism"],
           volcanismActiveRequired: ["volcanism", "presence"],
