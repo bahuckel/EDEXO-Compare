@@ -3,6 +3,7 @@
  *
  *   npx tsx scripts/precision-separate.ts --pair frutexa_frutexa_acus frutexa_frutexa_metallicum
  *   npx tsx scripts/precision-separate.ts --top 8          # the phase-1 confusion pairs, by credits at stake
+ *   npx tsx scripts/precision-separate.ts --genus stratum --top 10
  *
  * ## The question, shaped the way a gate is used
  *
@@ -77,7 +78,13 @@ else {
       tally.set(k, t);
     }
   }
-  pairs = [...tally.values()].sort((x, y) => y.stake - x.stake).slice(0, top).map((t) => [t.a, t.b]);
+  // `--genus stratum` keeps the pairs of one genus: a round works through a genus at a time.
+  const genus = argOf("genus");
+  pairs = [...tally.values()]
+    .filter((t) => !genus || byId.get(t.a)?.genusDataDir === genus)
+    .sort((x, y) => y.stake - x.stake)
+    .slice(0, top)
+    .map((t) => [t.a, t.b]);
 }
 for (const [a, b] of pairs) {
   if (!byId.has(a) || !byId.has(b)) {

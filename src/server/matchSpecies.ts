@@ -56,7 +56,12 @@ import {
 } from "./organicLocks.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
 import { observedOnPlanetClass } from "./speciesPlanetClassObservations.js";
-import { observedAtTemperature } from "./speciesTemperatureObservations.js";
+import {
+  MIN_TEMPERATURE_OBSERVATIONS,
+  NEAR_TEMPERATURE_WINDOW_K,
+  observedAtTemperature,
+  observedNearTemperature,
+} from "./speciesTemperatureObservations.js";
 import { observedWithVolcanism } from "./speciesVolcanismObservations.js";
 import {
   hostStarVerdict,
@@ -220,6 +225,39 @@ function speciesTempBand(c: SpeciesCriterion): { lo: number; hi: number } | null
   if (!st) return null;
   if (st.min === undefined && st.max === undefined) return null;
   return { lo: st.min ?? OPEN_LO, hi: st.max ?? OPEN_HI };
+}
+
+/**
+ * Does the corpus place this species on the body's side of a codex temperature edge?
+ *
+ * `observedAtTemperature` answers from a display bin, and a display bin is wide — 18 K for Stratum
+ * cucumisis. Where that bin lies wholly beyond the codex band (Fungoida stabitis above 424 K, the
+ * case the rescue was built for) its observations are on the body's side, and it answers as before.
+ * Where it **straddles** the edge it cannot: cucumisis's bin 180-198 K held 175 sightings, its own
+ * bodies sit at 191 K and above on 99.7 % of 312, and the bin was admitting it on every 180-189 K
+ * body — exactly where Stratum excutitus and limaxus live.
+ *
+ * So a straddling bin hands the question to the fine histogram: sightings within
+ * `NEAR_TEMPERATURE_WINDOW_K` of the body and beyond the edge, measured against the same floor.
+ * Paleas at 162.1 K finds the 33 bodies recorded at 162.6-165 K and is rescued; cucumisis at 184 K
+ * finds none and is demoted — softly, since a thin record is not an impossibility.
+ */
+function sightingsBeyondEdge(
+  entry: SpeciesEntry,
+  obs: { binLowK: number; binHighK: number },
+  kelvin: number,
+  lo: number | undefined,
+  hi: number | undefined,
+): { straddles: boolean; near: number | null } {
+  if (lo !== undefined && kelvin < lo) {
+    if (obs.binHighK <= lo) return { straddles: false, near: null };
+    return { straddles: true, near: observedNearTemperature(entry, kelvin, { below: lo }) };
+  }
+  if (hi !== undefined && kelvin > hi) {
+    if (obs.binLowK >= hi) return { straddles: false, near: null };
+    return { straddles: true, near: observedNearTemperature(entry, kelvin, { above: hi }) };
+  }
+  return { straddles: false, near: null };
 }
 
 function speciesNeedsTemperatureGate(c: SpeciesCriterion): boolean {
@@ -869,10 +907,26 @@ export function speciesMatchesCriteria(
        * and the corpus holds 945 bodies for it spanning 79–467 K.
        */
       const observedHere = observedAtTemperature(entry, scan.SurfaceTemperature);
-      if (observedHere) {
+      const edgeCheck = observedHere
+        ? sightingsBeyondEdge(entry, observedHere, scan.SurfaceTemperature!, c.surfaceTemperatureK?.min, c.surfaceTemperatureK?.max)
+        : null;
+      // No fine histogram to ask: the display bin answers, as it always did.
+      const beyond =
+        !!edgeCheck &&
+        (!edgeCheck.straddles || edgeCheck.near === null || edgeCheck.near >= MIN_TEMPERATURE_OBSERVATIONS);
+      if (observedHere && beyond) {
         extraOkReasons.push({
           field: "SurfaceTemperature",
           detail: `${scan.SurfaceTemperature!.toFixed(1)} K — outside the codex ${speciesRange}, but ${observedHere.observations} of ${observedHere.total} observed bodies sit between ${observedHere.binLowK.toFixed(0)} and ${observedHere.binHighK.toFixed(0)} K.`,
+        });
+      } else if (observedHere) {
+        failures.push({
+          field: "SurfaceTemperature",
+          soft: true,
+          detail:
+            `${scan.SurfaceTemperature!.toFixed(1)} K — outside the codex ${speciesRange}, and only ` +
+            `${Math.round(edgeCheck?.near ?? 0)} of ${observedHere.total} observed bodies sit within ` +
+            `${NEAR_TEMPERATURE_WINDOW_K} K of it on this side of the edge. ${DEMOTED_NOTE}`,
         });
       } else {
         failures.push({
@@ -938,8 +992,26 @@ export function speciesMatchesCriteria(
          * So the owner's codex band is the default and measured reality still wins over it. Anything
          * else would make the correct rule score worse than the wrong one.
          */
-        const observedLinked = observedAtTemperature(entry, scan.SurfaceTemperature);
-        if (observedLinked) {
+        const observedLinkedRaw = observedAtTemperature(entry, scan.SurfaceTemperature);
+        // Same rule as the flat band: a bin straddling the linked edge is not evidence for this side.
+        const linkedCheck = observedLinkedRaw
+          ? sightingsBeyondEdge(entry, observedLinkedRaw, scan.SurfaceTemperature!, linkedMin, linkedMax)
+          : null;
+        const observedLinked =
+          observedLinkedRaw &&
+          linkedCheck &&
+          (!linkedCheck.straddles || linkedCheck.near === null || linkedCheck.near >= MIN_TEMPERATURE_OBSERVATIONS)
+            ? observedLinkedRaw
+            : null;
+        if (observedLinkedRaw && !observedLinked) {
+          failures.push({
+            field: "SurfaceTemperature",
+            soft: true,
+            detail:
+              `${(scan.SurfaceTemperature ?? 0).toFixed(0)} K is outside the codex band for this atmosphere, and only ` +
+              `${Math.round(linkedCheck?.near ?? 0)} observed bodies sit within ${NEAR_TEMPERATURE_WINDOW_K} K of it on this side of the edge. ${DEMOTED_NOTE}`,
+          });
+        } else if (observedLinked) {
           extraOkReasons.push({
             field: "SurfaceTemperature",
             detail: `${(scan.SurfaceTemperature ?? 0).toFixed(0)} K is outside the codex band for this atmosphere, but ${observedLinked.observations} of ${observedLinked.total} observed bodies for this species sit at this temperature.`,

@@ -365,6 +365,13 @@ function runScenario(name: string, useHints: boolean): ScenarioResult {
     const allIds = new Set(all.map((m) => m.entry.id));
     for (const id of truth) {
       if (!shownIds.has(id) && allIds.has(id)) r.rescued++;
+      // `LIST_MISSES=1`: every find the shown tier loses, with the matcher's own reason — the list a
+      // recall change has to be read against, not just the count.
+      if (process.env.LIST_MISSES && !shownIds.has(id)) {
+        const m = all.find((x) => x.entry.id === id);
+        const why = m ? m.reasons.filter((x) => x.soft).map((x) => `${x.field}: ${x.detail}`).join(" | ") : "not listed";
+        console.log(`  MISS [${name}] ${id} on ${b.bodyName} — ${why}`);
+      }
     }
   }
   return r;

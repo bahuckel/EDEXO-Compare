@@ -22,6 +22,7 @@ import type { SpeciesEntry } from "../shared/types.js";
 import { loadExomasteryProfile } from "./exomasteryProfile.js";
 import { getProjectRoot } from "./paths.js";
 import { observationFloor } from "./observationFloors.js";
+import { loadHistogramEdges } from "./likelihoodData.js";
 
 const TEMPERATURE_PATH = "body.surfaceTemperature";
 
@@ -94,4 +95,59 @@ export function observedAtTemperature(
     binLowK: hist.min + step * i,
     binHighK: hist.min + step * (i + 1),
   };
+}
+
+/**
+ * Kelvin either side of the body within which a sighting counts as "at this temperature".
+ *
+ * The scale of the codex's own rounding and of the 2 % tolerance the flat gate already allows
+ * (3.8 K at 190 K). Wide enough that Stratum paleas at 162.1 K finds the 33 bodies recorded at
+ * 162.6-165 K; narrow enough that Stratum cucumisis at 184 K finds none of its bodies, which sit at
+ * 191 K and above.
+ */
+export const NEAR_TEMPERATURE_WINDOW_K = 3;
+
+/**
+ * Sightings of this species within {@link NEAR_TEMPERATURE_WINDOW_K} of `kelvin` **and on the far
+ * side of a codex edge** — the question to ask when the display bin straddles that edge.
+ *
+ * Read from the profile's fine histogram, cut on the global edges in `histogram-edges.json`, which
+ * are dense exactly where the codex edges sit (159-195 K). Each bin's count is spread evenly across
+ * its width and only the part inside the window and beyond the edge is credited. Null when the
+ * profile carries no fine histogram, so the caller falls back rather than reading silence as zero.
+ */
+export function observedNearTemperature(
+  entry: SpeciesEntry,
+  kelvin: number,
+  edge: { below?: number; above?: number },
+  rootArg?: string,
+): number | null {
+  if (!Number.isFinite(kelvin)) return null;
+  const root = rootArg ?? rootOverride ?? getProjectRoot();
+  const profile = loadExomasteryProfile(root, entry);
+  const counts = profile?.histograms?.[TEMPERATURE_PATH];
+  const edges = loadHistogramEdges(root)?.edges?.[TEMPERATURE_PATH];
+  if (!counts || !edges || counts.length !== edges.length + 1) return null;
+  const numeric = profile?.numerics?.[TEMPERATURE_PATH] as { min?: number; max?: number } | undefined;
+
+  // The side of the edge the body is on, and the window around it.
+  let lo = kelvin - NEAR_TEMPERATURE_WINDOW_K;
+  let hi = kelvin + NEAR_TEMPERATURE_WINDOW_K;
+  if (edge.below !== undefined) hi = Math.min(hi, edge.below);
+  if (edge.above !== undefined) lo = Math.max(lo, edge.above);
+  if (!(hi > lo)) return 0;
+
+  let credited = 0;
+  for (let i = 0; i < counts.length; i++) {
+    const n = counts[i] ?? 0;
+    if (!n) continue;
+    // Open end bins are bounded by the species' own observed extremes.
+    const bLo = i === 0 ? (numeric?.min ?? edges[0]!) : edges[i - 1]!;
+    const bHi = i === edges.length ? (numeric?.max ?? edges[edges.length - 1]!) : edges[i]!;
+    const width = bHi - bLo;
+    if (!(width > 0)) continue;
+    const overlap = Math.min(hi, bHi) - Math.max(lo, bLo);
+    if (overlap > 0) credited += (n * overlap) / width;
+  }
+  return credited;
 }
