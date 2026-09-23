@@ -24,7 +24,7 @@ import {
 } from "../shared/presenceBranches.js";
 export { PRESENCE_BRANCH_FIELDS } from "../shared/presenceBranches.js";
 import { atmosphereIsUnfavoured } from "../shared/atmospherePreference.js";
-import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "../shared/journalPhysics.js";
+import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM, journalPressureToAtm } from "../shared/journalPhysics.js";
 import {
   describeVerdict,
   evaluateSpatialGate,
@@ -982,22 +982,38 @@ export function speciesMatchesCriteria(
     }
   }
 
-  const p = scan.SurfacePressure;
+  /*
+    A pressure range, in atmospheres — the unit the species rows write.
+
+    The scan does not always speak it: a journal `Scan` writes **pascals** and a body hydrated from
+    EDSM or Spansh arrives in atmospheres. Compared raw, a 0.005 atm body read from the journal is
+    "506" and clears any minimum a row could write, so the gate could only ever fire on hydrated
+    data. `journalPressureToAtm` is the conversion the rest of the app already uses.
+
+    **Soft, on every miss.** A pressure band is a measured separator, not an impossibility: Osseus
+    discus lives above ~0.01 atm on 99 % of its bodies and spiralis below it on 99 %, and the 1 % on
+    the wrong side are real plants. A hard gate hid them; this demotes them with the reason shown.
+  */
+  const rawP = scan.SurfacePressure;
   if (c.surfacePressure && (c.surfacePressure.min !== undefined || c.surfacePressure.max !== undefined)) {
-    if (p === undefined || p === null) {
+    if (rawP === undefined || rawP === null) {
       failures.push({
         field: "SurfacePressure",
         detail: "This species defines a pressure range — need SurfacePressure from the detailed scan.",
       });
-    } else if (rangeFit(p, c.surfacePressure.min, c.surfacePressure.max) !== "in") {
-      const near = rangeFit(p, c.surfacePressure.min, c.surfacePressure.max) === "near";
-      failures.push({
-        field: "SurfacePressure",
-        ...(near ? { soft: true } : {}),
-        detail: `${p.toFixed(2)} atm outside allowed ${c.surfacePressure.min ?? "−∞"}…${c.surfacePressure.max ?? "∞"}${near ? `, by under ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
-      });
     } else {
-      extraOkReasons.push({ field: "SurfacePressure", detail: `${p.toFixed(2)} atm` });
+      const p = journalPressureToAtm(rawP);
+      const fit = rangeFit(p, c.surfacePressure.min, c.surfacePressure.max);
+      const shown = p < 0.01 ? p.toFixed(4) : p.toFixed(3);
+      if (fit !== "in") {
+        failures.push({
+          field: "SurfacePressure",
+          soft: true,
+          detail: `${shown} atm outside ${c.surfacePressure.min ?? "−∞"}–${c.surfacePressure.max ?? "∞"} atm${fit === "near" ? `, by under ${NUMERIC_GATE_TOLERANCE * 100}%` : ""}. ${DEMOTED_NOTE}`,
+        });
+      } else {
+        extraOkReasons.push({ field: "SurfacePressure", detail: `${shown} atm` });
+      }
     }
   }
 
