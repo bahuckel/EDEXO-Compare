@@ -122,7 +122,17 @@ export function mapEdsmBodyToExplorationRecord(
 
   if (isStar) {
     rec.bodyType = "Star";
-    rec.starType = pickStr(body.spectralClass) ?? (subType ? subType.split(/\s+/)[0] : undefined);
+    /*
+      Journal vocabulary, as a `Scan` would write it: `StarType` "K" and `Subclass` 2, where EDSM and
+      Spansh write `spectralClass` "K2". Keeping "K2" as the type left every consumer that keys on the
+      class — the colour tables, the genus colour-null gate — with no class at all on a hydrated
+      system: `spectralKeysFromJournalStarType("K2")` names nothing. The suffix is always the subclass
+      (`DAB5`, `TTS5`, `M_RedGiant8`, `N0`), so splitting it off is exact.
+    */
+    const spectral = pickStr(body.spectralClass);
+    const split = spectral ? /^(.*?)(\d+)$/.exec(spectral) : null;
+    rec.starType = (split ? split[1] : spectral) || (subType ? subType.split(/\s+/)[0] : undefined);
+    if (split) rec.subclass = Number(split[2]);
     rec.luminosity = pickStr(body.luminosity);
     const sm = pickNum(body.solarMasses);
     if (sm !== undefined) rec.stellarMass = sm;
@@ -175,9 +185,17 @@ export function mapEdsmBodyToExplorationRecord(
   const comp = body.solidComposition;
   if (comp && typeof comp === "object") rec.composition = comp;
 
-  if (body.atmosphereComposition && typeof body.atmosphereComposition === "object") {
-    rec.atmosphereComposition = body.atmosphereComposition;
-  }
+  /*
+    EDSM and Spansh send `{"Carbon dioxide": 99.01}`; everything downstream reads the journal's list
+    of `{Name, Percent}`. Stored as the map, it was dropped by `planetScanFromExplorationRecord` — an
+    array check — and every hydrated body reached the matcher with no composition, so the gas-share
+    bands (argon for Fonticulua campestris against upupam) had no opinion on any of them. Gas names
+    stay as sent: `atmosphereCompositionKey` folds "Carbon dioxide" and "CarbonDioxide" together.
+  */
+  const atmoComp = Array.isArray(body.atmosphereComposition)
+    ? (body.atmosphereComposition as ExplorationScanRecord["atmosphereComposition"])
+    : mapMaterialsToJournal(body.atmosphereComposition);
+  if (atmoComp && (atmoComp as unknown[]).length) rec.atmosphereComposition = atmoComp;
 
   return rec;
 }

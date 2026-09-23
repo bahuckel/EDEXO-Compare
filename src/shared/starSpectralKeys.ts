@@ -110,8 +110,13 @@ export function spectralKeysFromJournalStarType(starType: string): string[] {
     Only strings carrying an underscore are affected, and in this vocabulary those are exactly the
     giant and supergiant forms.
   */
+  /*
+    A trailing subclass is the class too: `K2`, `DAB5`, `Y2`. The journal writes the class and the
+    subclass apart, but EDSM and Spansh write them together, and without the digit in the lookahead
+    this named nothing for any of them.
+  */
   if (keys.size === 0) {
-    const head = s.match(/^([A-Z]{1,3})(?=\s|[/:_]|\s*Star|\s*dwarf|$)/i);
+    const head = s.match(/^([A-Z]{1,3})(?=\s|[/:_\d]|\s*Star|\s*dwarf|$)/i);
     if (head) keys.add(head[1]!.toUpperCase());
   }
 

@@ -39,10 +39,9 @@ export function normalizeScanAtmosphereForMatch(scan: PlanetScan): string {
   if (!t) return "";
   const lo = t.toLowerCase().replace(/_/g, " ");
   if (lo === "none" || lo.includes("no atmosphere")) return "";
-  t = t
-    .replace(/^thin\s+/i, "")
-    .replace(/^thick\s+/i, "")
-    .trim();
+  // Spansh and EDSM write the density into the type — `Hot thin Sulphur dioxide` — where the journal
+  // keeps it in `Atmosphere`. Every leading density word goes, `hot` included, in any order.
+  t = t.replace(/^(?:(?:hot|thin|thick)\s+)+/i, "").trim();
   return t;
 }
 
@@ -54,7 +53,13 @@ export function atmosphereCompositionKey(token: string): string {
   let t = token
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "");
+    .replace(/[^a-z0-9]+/g, "")
+    /*
+      The game spells it both ways — `sulfur dioxide` in a scan's `Atmosphere` text, `SulphurDioxide`
+      in its `AtmosphereType` — and anything built from the text inherits the American one. An EDDN
+      export writing "Thin Sulfur dioxide" demoted Bacterium cerbrus on 464 bodies it grows on.
+    */
+    .replace(/sulfur/g, "sulphur");
   if (t.endsWith("rich")) t = t.slice(0, -4);
   return t;
 }
