@@ -167,6 +167,15 @@ function features(p: Prepared): { num: Map<string, number>; cat: Map<string, str
   cat.set("host star", hostStarClassKey(p.ctx.parentStarType) ?? "?");
   // The system's main star — not always the host, and for some species the one that decides.
   if (p.ctx.systemMainStarClass) cat.set("main star", p.ctx.systemMainStarClass);
+  // Where the body sits: a moon, a planet, or round a barycentre.
+  if (p.parentKind) cat.set("orbits", p.parentKind);
+  // What else the system holds — only where the body list is complete, or absence means nothing.
+  if (p.ctx.systemBodyListComplete) {
+    num.set("bodies in system", p.systemBodies);
+    const held = new Set((p.ctx.systemBodyClasses ?? []).map((c) => c.toLowerCase()));
+    for (const k of ["earthlike body", "water world", "ammonia world", "gas giant with water based life", "gas giant with ammonia based life", "sudarsky class i gas giant", "sudarsky class ii gas giant", "sudarsky class iii gas giant", "sudarsky class iv gas giant", "metal rich body", "icy body"])
+      cat.set(`system has ${k}`, held.has(k) ? "yes" : "no");
+  }
   if (p.ctx.parentStarLuminosity) cat.set("host luminosity", p.ctx.parentStarLuminosity);
   cat.set("tidally locked", s.TidalLock ? "yes" : "no");
   if (p.ctx.regionName) cat.set("region", p.ctx.regionName);

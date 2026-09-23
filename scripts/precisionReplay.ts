@@ -56,6 +56,13 @@ export interface Prepared {
   source: Source;
   scan: PlanetScan;
   ctx: SpeciesMatchContext;
+  /**
+   * What the body orbits directly: a star, a planet (a moon), or a barycentre. The scan does not
+   * carry `Parents`; the record does. For the separator search, not the matcher.
+   */
+  parentKind: "star" | "planet" | "barycentre" | null;
+  /** Bodies the source knows in the system, this one included. */
+  systemBodies: number;
   /** Genus hints: the journal's own DSS list where there is one, else the genera the truth knows. */
   hints: GenusHint[] | null;
   biologicalSignals: number | null;
@@ -80,6 +87,17 @@ export async function loadTruthByBody(): Promise<Map<string, TruthRow[]>> {
     out.set(k, list);
   }
   return out;
+}
+
+
+/** The first entry of a `Parents` chain, named. */
+function parentKindOf(rec: ExplorationScanRecord): Prepared["parentKind"] {
+  const first = (Array.isArray(rec.parents) ? rec.parents[0] : null) as Record<string, unknown> | null | undefined;
+  if (!first || typeof first !== "object") return null;
+  if ("Star" in first) return "star";
+  if ("Planet" in first) return "planet";
+  if ("Null" in first) return "barycentre";
+  return null;
 }
 
 /* ------------------------------------------------------------------ the three physics sources */
@@ -242,6 +260,8 @@ export async function createReplay(db: SpeciesDatabase): Promise<Replay> {
         return {
           source: "journal",
           scan,
+          parentKind: parentKindOf(rec),
+          systemBodies: recs.size,
           ctx: contextFor(rec, recs, scan, journalPos.get(jb.systemAddress) ?? null, journalComplete.has(jb.systemAddress)),
           hints: jb.genusHints?.length ? jb.genusHints : truthHints,
           biologicalSignals: jb.biologicalSignals ?? null,
@@ -261,6 +281,8 @@ export async function createReplay(db: SpeciesDatabase): Promise<Replay> {
         return {
           source: "capture",
           scan: built.scan,
+          parentKind: parentKindOf(built.rec),
+          systemBodies: built.recs.size,
           ctx: contextFor(built.rec, built.recs, built.scan, c ?? null, false),
           hints: truthHints,
           biologicalSignals: typeof bio === "number" ? bio : null,
@@ -278,6 +300,8 @@ export async function createReplay(db: SpeciesDatabase): Promise<Replay> {
         return {
           source: "corpus",
           scan: built.scan,
+          parentKind: parentKindOf(built.rec),
+          systemBodies: built.recs.size,
           ctx: contextFor(built.rec, built.recs, built.scan, corpusCoords.get(sysName.toLowerCase()) ?? null, complete),
           hints: truthHints,
           biologicalSignals: null,
