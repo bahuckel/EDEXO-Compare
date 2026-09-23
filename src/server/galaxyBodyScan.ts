@@ -92,6 +92,7 @@ import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { lookupPrice } from "./priceList.js";
 import { EARTH_G_MS2 } from "../shared/journalPhysics.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
+import { journalPlanetClass } from "../shared/spanshPlanetClass.js";
 import { sectorCellFromCoords, sectorCellKey } from "../shared/sectorName.js";
 import { getProjectRoot } from "./paths.js";
 import { readFileSync } from "node:fs";
@@ -303,17 +304,14 @@ function passesCheapGate(b: BioBodyCursor, g: CheapGate): boolean {
  * which is exactly why this was invisible: Stratum tectonicas came back with High metal content
  * worlds throughout, through the escape hatch rather than through the gate.
  *
- * The other four classes the file holds (`Icy body`, `Rocky body`, `Metal-rich body`, and a lone
- * `Class III gas giant`) are already spelled the journal's way and pass through untouched.
+ * `Icy body` and `Rocky body` are spelled the same on both sides. `Metal-rich body` was once listed
+ * here as one of them; it is not — the journal writes `Metal rich body` — and neither are Spansh's
+ * gas giants. All of them now go through one shared table.
  */
-const PLANET_CLASS_FROM_DUMP: Record<string, string> = {
-  "high metal content world": "High metal content body",
-  "rocky ice world": "Rocky ice body",
-};
-
 export function planetClassFromDump(subType: string): string | undefined {
-  if (!subType) return undefined;
-  return PLANET_CLASS_FROM_DUMP[subType.toLowerCase()] ?? subType;
+  // One table for every Spansh/EDSM path — see `shared/spanshPlanetClass.ts`, which also corrects
+  // `Metal-rich body`: the journal writes it without the hyphen.
+  return journalPlanetClass(subType);
 }
 
 /**

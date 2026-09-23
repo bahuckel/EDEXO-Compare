@@ -311,10 +311,14 @@ describe("the dump's vocabulary against the journal's", () => {
     expect(planetClassFromDump("Rocky Ice world")).toBe("Rocky ice body");
   });
 
-  it("leaves the four it already spells the journal's way", () => {
-    for (const same of ["Icy body", "Rocky body", "Metal-rich body", "Class III gas giant"]) {
+  it("leaves the classes both sides spell alike, and renames the rest", () => {
+    for (const same of ["Icy body", "Rocky body", "Metal rich body", "Sudarsky class III gas giant"]) {
       expect(planetClassFromDump(same)).toBe(same);
     }
+    // Once listed here as already the journal's spelling. The journal writes it without the hyphen.
+    expect(planetClassFromDump("Metal-rich body")).toBe("Metal rich body");
+    expect(planetClassFromDump("Class III gas giant")).toBe("Sudarsky class III gas giant");
+    expect(planetClassFromDump("Earth-like world")).toBe("Earthlike body");
     // A body the dump never classified stays unset rather than becoming an empty class name.
     expect(planetClassFromDump("")).toBeUndefined();
   });

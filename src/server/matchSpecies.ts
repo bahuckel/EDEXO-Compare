@@ -249,7 +249,7 @@ function tempBandsOverlap(planet: PlanetTemperatureBand, species: { lo: number; 
  * The estimator is still computed and still shown: `estimatedSurfaceTempK` rides the snapshot for
  * display, and it is the only band available on a body the commander has not scanned in detail.
  */
-function resolvePlanetTemperatureBand(
+export function resolvePlanetTemperatureBand(
   scan: PlanetScan,
   est: { tMin: number; tMax: number } | null,
 ): PlanetTemperatureBand | null {

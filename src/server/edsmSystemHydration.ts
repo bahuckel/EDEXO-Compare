@@ -1,3 +1,5 @@
+import { journalPlanetClass } from "../shared/spanshPlanetClass.js";
+import { journalStarTypeFromSubType } from "../shared/spanshStarType.js";
 import type { ExplorationScanRecord } from "../shared/types.js";
 
 const EDSM_BODIES_URL = "https://www.edsm.net/api-system-v1/bodies";
@@ -131,7 +133,9 @@ export function mapEdsmBodyToExplorationRecord(
     */
     const spectral = pickStr(body.spectralClass);
     const split = spectral ? /^(.*?)(\d+)$/.exec(spectral) : null;
-    rec.starType = (split ? split[1] : spectral) || (subType ? subType.split(/\s+/)[0] : undefined);
+    // Without a spectral class only the words say what the star is — see `shared/spanshStarType.ts`
+    // for what taking the first word did to white dwarfs and black holes.
+    rec.starType = (split ? split[1] : spectral) || journalStarTypeFromSubType(subType);
     if (split) rec.subclass = Number(split[2]);
     rec.luminosity = pickStr(body.luminosity);
     const sm = pickNum(body.solarMasses);
@@ -147,7 +151,10 @@ export function mapEdsmBodyToExplorationRecord(
   }
 
   rec.bodyType = "Planet";
-  if (subType) rec.planetClass = subType;
+  // The journal's spelling: the species data matches planet classes exactly, and Spansh writes
+  // `High metal content world` where the journal writes `High metal content body`.
+  const planetClass = journalPlanetClass(subType);
+  if (planetClass) rec.planetClass = planetClass;
   const em = pickNum(body.earthMasses);
   if (em !== undefined) rec.massEM = em;
   const rad = edsmRadiusToMetres(pickNum(body.radius));
