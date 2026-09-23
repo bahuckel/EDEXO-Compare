@@ -951,7 +951,18 @@ export function speciesMatchesCriteria(
         surf != null && !Number.isNaN(surf)
           ? `${surf.toFixed(1)} K (journal) is inside the species range`
           : `Estimated band ${planetTempBand.minK}–${planetTempBand.maxK} K overlaps the species range (no journal reading)`;
-      extraOkReasons.push({ field: "SurfaceTemperature", detail: bandTxt });
+      // Exactly on a ceiling a sibling starts at: the edge is the sibling's (attachSharedTemperatureEdges).
+      if (entry.temperatureCeilingSharedWith && surf != null && surf === band.hi) {
+        failures.push({
+          field: "SurfaceTemperature",
+          soft: true,
+          detail:
+            `${surf.toFixed(1)} K is exactly where ${entry.temperatureCeilingSharedWith}'s range begins; recorded bodies ` +
+            `at a shared edge are the species that starts there. ${DEMOTED_NOTE}`,
+        });
+      } else {
+        extraOkReasons.push({ field: "SurfaceTemperature", detail: bandTxt });
+      }
     }
   } else if (scan.SurfaceTemperature != null) {
     extraOkReasons.push({

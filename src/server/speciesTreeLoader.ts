@@ -1138,6 +1138,34 @@ export const OBSERVED_TEMP_MIN_SAMPLES = 50;
  * Only the range, and only when the profile has enough bodies behind it. A species with no profile,
  * or a thin one, simply gets no envelope and is never demoted for being outside it.
  */
+/**
+ * Mark every codex temperature ceiling that a sibling's floor shares.
+ *
+ * Codex bands are written inclusive at both ends, and many corpus temperatures are whole kelvin, so a
+ * body reading exactly 180.0 K sat inside both Aleoida arcus (175–180) and coronamus (180–190). Across
+ * every truth source the edge belongs to the species that **starts** there: on the shared edges
+ * (155/160, 160, 165, 170, 175, 180, 190 K) hundreds of truth bodies sit exactly on a species'
+ * floor — coronamus 72 at 180 K, gravis 95 at 190 K, Osseus fractus 132 at 180 K — and not one on
+ * the lower species' ceiling. The only truths exactly on a ceiling are at 195 K and on Tubus
+ * sororibus' 190 K, which no sibling starts at, so those ceilings stay inclusive.
+ */
+function attachSharedTemperatureEdges(species: SpeciesEntry[]): void {
+  const floors = new Map<string, Map<number, string>>(); // genus -> floor K -> a sibling starting there
+  for (const e of species) {
+    const lo = e.criteria.surfaceTemperatureK?.min;
+    if (lo === undefined || !Number.isFinite(lo)) continue;
+    const m = floors.get(e.genusDataDir) ?? new Map<number, string>();
+    if (!m.has(lo)) m.set(lo, e.displayName);
+    floors.set(e.genusDataDir, m);
+  }
+  for (const e of species) {
+    const hi = e.criteria.surfaceTemperatureK?.max;
+    if (hi === undefined || !Number.isFinite(hi)) continue;
+    const sibling = floors.get(e.genusDataDir)?.get(hi);
+    if (sibling && sibling !== e.displayName) e.temperatureCeilingSharedWith = sibling;
+  }
+}
+
 function attachObservedTemperatureEnvelopes(projectRoot: string, species: SpeciesEntry[]): void {
   for (const entry of species) {
     try {
@@ -1200,5 +1228,6 @@ export function loadSpeciesDatabaseFromTree(projectRoot: string): SpeciesDatabas
   }
 
   attachObservedTemperatureEnvelopes(projectRoot, species);
+  attachSharedTemperatureEdges(species);
   return { species };
 }

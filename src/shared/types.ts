@@ -417,6 +417,12 @@ export interface SpeciesEntry {
    */
   observedTemperatureK?: { min: number; max: number; count: number };
   /**
+   * Set when a sibling of the same genus starts its codex temperature band exactly where this
+   * species' band ends — the display name of that sibling. The shared edge belongs to the one that
+   * starts there: see `attachSharedTemperatureEdges`.
+   */
+  temperatureCeilingSharedWith?: string;
+  /**
    * From genus `meta.color_variants.mapping`: spectral keys (e.g. `O`, `A`) whose value is JSON `null`
    * — codex assigns no colour for that host star class, so the matcher rejects the body when host `StarType` resolves to that key.
    */
