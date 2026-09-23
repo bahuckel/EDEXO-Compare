@@ -148,6 +148,20 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     },
   },
   {
+    /**
+     * Concha labiata — every class but M. The codex CSV has it under an M main star on 1.2 % of
+     * 86,565 sightings, where M is 22.7 % of all life and 8.5 % of Concha renibus, its rival on
+     * carbon dioxide at 180–190 K. At body level the host is M on 3 of 1,923 labiata bodies (Spansh
+     * corpus, EDDN capture, the commander's journals) against 64 of about 1,030 renibus. Written as
+     * an allow-list of everything else, so an unknown class or a mixed M + K pair still passes.
+     */
+    idIncludes: "concha_labiata",
+    gate: {
+      allowed: ["O", "B", "A", "F", "G", "K", "L", "T", "Y", "TTS", "D", "W", "N", "H", "other"],
+      evidence: "main star of 86,565 labiata sightings is M on 1.2 %, against 22.7 % of all life; host M on 3 of 1,923 labiata bodies",
+    },
+  },
+  {
     idIncludes: "electricae_pluma",
     gate: {
       allowed: ["A", "N", "D", "H"],

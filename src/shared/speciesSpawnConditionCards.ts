@@ -5,7 +5,12 @@ import type {
   SpeciesEntry,
   SpeciesMatchContext,
 } from "./types.js";
-import { journalPressureToAtm, journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM } from "./journalPhysics.js";
+import {
+  journalPressureToAtm,
+  journalSurfaceGravityToG,
+  LIGHT_SECOND_METERS,
+  THIN_ATMOSPHERE_MAX_ATM,
+} from "./journalPhysics.js";
 import { normalizeScanAtmosphereForMatch, atmosphereCompositionKey } from "./scanAtmosphereMatch.js";
 import { spectralKeysFromJournalStarType } from "./starSpectralKeys.js";
 import { isBacteriumSpeciesEntry } from "./speciesBacterium.js";
@@ -486,6 +491,24 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       caption = outside ? `${t.toFixed(1)} K — rarely recorded here; listed as unlikely` : `${t.toFixed(1)} K inside`;
     }
     out.push({ id: "soft-temp", label: "Where it is usually found", lines: [`Usually ${band}`], caption, tier });
+  }
+
+  /* The measured orbit ceiling (`soft_max_semi_major_axis_ls`). Yellow outside, like the band above. */
+  if (c.softMaxSemiMajorAxisLs !== undefined) {
+    const max = c.softMaxSemiMajorAxisLs;
+    const sma = scan?.SemiMajorAxis;
+    let tier: EncyclopediaSpawnTier = "neutral";
+    let caption = "No scan";
+    if (scan && (sma == null || !Number.isFinite(sma))) {
+      tier = "yellow";
+      caption = "SemiMajorAxis missing";
+    } else if (scan && sma != null) {
+      const ls = sma / LIGHT_SECOND_METERS;
+      const shown = ls >= 100 ? Math.round(ls).toLocaleString() : ls.toFixed(1);
+      tier = ls > max ? "yellow" : "blue";
+      caption = ls > max ? `${shown} ls — rarely recorded this wide; listed as unlikely` : `${shown} ls inside`;
+    }
+    out.push({ id: "soft-orbit", label: "Orbit round its parent", lines: [`Usually ≤ ${max} ls (close moons)`], caption, tier });
   }
 
   /* Journal numeric pressure gate — hidden for bacterium (spawn cards stay minimal). */

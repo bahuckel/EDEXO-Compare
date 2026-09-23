@@ -500,6 +500,10 @@ export function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesC
     if (lo !== undefined || hi !== undefined) c.softTemperatureK = { min: lo, max: hi };
   }
 
+  // A measured ceiling on the body's own orbit, which demotes and never hides — see SpeciesCriterion.
+  const softSma = toNumber(firstDefined(src, ["soft_max_semi_major_axis_ls", "softMaxSemiMajorAxisLs"]));
+  if (softSma !== undefined) c.softMaxSemiMajorAxisLs = softSma;
+
   const sp = asRecord(src.surfacePressure ?? src.SurfacePressure);
   if (sp) {
     c.surfacePressure = {

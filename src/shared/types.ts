@@ -313,6 +313,17 @@ export interface SpeciesCriterion {
    * a codex 190 would hide the 1 % above it; written here it demotes them, with the reason shown.
    */
   softTemperatureK?: { min?: number; max?: number };
+  /**
+   * A **measured** ceiling on the body's own orbit — its `SemiMajorAxis`, in light-seconds, around
+   * whatever it orbits. Demotes only.
+   *
+   * Concha labiata grows on tight moons: 97 % of its 1,927 carbon-dioxide bodies are moons, their
+   * orbits round the planet at a median 4.1 ls and 98.3 % within 12.6 ls, and only 11 orbit a star
+   * directly. Concha renibus, in the same climate, is a star-orbiting planet on 22 % of its bodies
+   * (176 of them round Y dwarfs) and its moons sit at a median 9.6 ls. A planet round a star reads
+   * thousands of light-seconds here, so the one number covers both.
+   */
+  softMaxSemiMajorAxisLs?: number;
   /** Journal SurfacePressure (official docs: atmospheres for landables) */
   surfacePressure?: { min?: number; max?: number };
   landable?: boolean;

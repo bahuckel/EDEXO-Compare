@@ -207,6 +207,17 @@ describe("the measured temperature band card", () => {
   });
 });
 
+describe("the measured orbit card", () => {
+  it("states the ceiling, blue on a close moon and yellow on a planet round a star", () => {
+    const moon = { SemiMajorAxis: 4 * 299_792_458, PlanetClass: "Rocky body", AtmosphereType: "CarbonDioxide" } as unknown as PlanetScan;
+    const planet = { SemiMajorAxis: 900 * 299_792_458, PlanetClass: "Rocky body", AtmosphereType: "CarbonDioxide" } as unknown as PlanetScan;
+    const near = card(species("Concha labiata"), "soft-orbit", moon)!;
+    expect(near.lines.join(" ")).toContain("20 ls");
+    expect(near.tier).toBe("blue");
+    expect(card(species("Concha labiata"), "soft-orbit", planet)!.tier).toBe("yellow");
+  });
+});
+
 describe("the audit — every gate the matcher applies is drawn somewhere", () => {
   it("leaves no criterion field unrendered", () => {
     /*
@@ -271,6 +282,7 @@ describe("the audit — every gate the matcher applies is drawn somewhere", () =
           surfaceGravity: ["gravity"],
           surfaceTemperatureK: ["temp", "linked-temp-cap"],
           softTemperatureK: ["soft-temp"],
+          softMaxSemiMajorAxisLs: ["soft-orbit"],
           surfacePressure: ["pressure"],
           volcanismIncludes: ["volcanism"],
           volcanismActiveRequired: ["volcanism", "presence"],

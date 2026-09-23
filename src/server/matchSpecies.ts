@@ -24,7 +24,12 @@ import {
 } from "../shared/presenceBranches.js";
 export { PRESENCE_BRANCH_FIELDS } from "../shared/presenceBranches.js";
 import { atmosphereIsUnfavoured } from "../shared/atmospherePreference.js";
-import { journalSurfaceGravityToG, THIN_ATMOSPHERE_MAX_ATM, journalPressureToAtm } from "../shared/journalPhysics.js";
+import {
+  journalSurfaceGravityToG,
+  LIGHT_SECOND_METERS,
+  THIN_ATMOSPHERE_MAX_ATM,
+  journalPressureToAtm,
+} from "../shared/journalPhysics.js";
 import {
   describeVerdict,
   evaluateSpatialGate,
@@ -971,6 +976,25 @@ export function speciesMatchesCriteria(
         detail:
           `${tMeasured.toFixed(1)} K is ${above ? `above ${softBand.max}` : `below ${softBand.min}`} K, ` +
           `where this species is rarely recorded even though the codex allows it. ${DEMOTED_NOTE}`,
+      });
+    }
+  }
+
+  /*
+    The measured orbit ceiling: how wide an orbit round its parent the species is recorded on. Soft
+    always, for the same reason as the measured temperature band. See SpeciesCriterion.softMaxSemiMajorAxisLs.
+  */
+  const smaMax = c.softMaxSemiMajorAxisLs;
+  const sma = scan.SemiMajorAxis;
+  if (smaMax !== undefined && typeof sma === "number" && Number.isFinite(sma) && sma > 0) {
+    const ls = sma / LIGHT_SECOND_METERS;
+    if (ls > smaMax) {
+      failures.push({
+        field: "Orbit",
+        soft: true,
+        detail:
+          `Orbits its parent at ${ls >= 100 ? Math.round(ls).toLocaleString() : ls.toFixed(1)} ls; this species is rarely ` +
+          `recorded beyond ${smaMax} ls — it grows on close moons. ${DEMOTED_NOTE}`,
       });
     }
   }

@@ -58,7 +58,7 @@ describe("which species carry a host-star gate", () => {
    * what a genus with no star rule is supposed to look like — and why they carry no gate.
    */
   it("keeps a measured count beside every threshold", () => {
-    expect(HOST_STAR_GATES).toHaveLength(4);
+    expect(HOST_STAR_GATES).toHaveLength(5);
     for (const { idIncludes, gate } of HOST_STAR_GATES) {
       expect(gate.evidence, idIncludes).toMatch(/\d,\d{3}/); // a sighting count
       expect(gate.evidence, idIncludes).toMatch(/%/);
