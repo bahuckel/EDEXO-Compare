@@ -70,6 +70,9 @@
           "Water (thin)"
         ],
         "max_gravity": 0.275,
+        "planet_types": [
+          "Rocky"
+        ],
         "temperature_K": {
           "min": 190,
           "max": null
@@ -88,6 +91,9 @@
           "Water (thin)"
         ],
         "max_gravity": 0.275,
+        "planet_types": [
+          "High Metal Content"
+        ],
         "temperature_K": {
           "min": 190,
           "max": null
@@ -106,6 +112,9 @@
           "Water (thin)"
         ],
         "max_gravity": 0.275,
+        "planet_types": [
+          "Rocky"
+        ],
         "temperature_K": {
           "min": 190,
           "max": null

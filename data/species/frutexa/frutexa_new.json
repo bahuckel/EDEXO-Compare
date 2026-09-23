@@ -102,7 +102,6 @@
         ],
         "max_gravity": 0.275,
         "planet_types": [
-          "Rocky",
           "High Metal Content"
         ],
         "atmospherePressureCategory": "thin",
