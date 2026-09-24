@@ -165,7 +165,84 @@ function CanonnUploadPanel({ state }: { state: AppSnapshot["canonnUpload"] }) {
 }
 
 /**
- * One settings POST, shared by the three contribution panels.
+ * Sending live events to EDDN, the relay every other community tool listens to (owner, 2026-09-24).
+ *
+ * Off by default, and like Canonn the switch is the whole consent — so what leaves the machine is
+ * said in the panel, not only behind the `?`. Unlike Canonn, EDDN scrambles the name before anyone
+ * downstream sees it, and the panel says that too.
+ */
+export function EddnUploadPanel({ state }: { state: AppSnapshot["eddnUpload"] }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  return (
+    <FoldPanel
+      foldKey="options-eddn"
+      className="options-meta-block"
+      title="Send to EDDN"
+      summary={state.enabled ? "on" : "off"}
+      help={
+        <>
+          <p>
+            EDDN is the Elite Dangerous Data Network: EDSM, Spansh, Inara and the other community tools build
+            their galaxy maps from what players' apps send there. This app reports as
+            &ldquo;EDEXO-Compare&rdquo;.
+          </p>
+          <p>
+            <strong>What is sent</strong> — jumps, body scans, surface and FSS signals, organic scans (log and
+            sample), codex entries, your plotted route, and the stations you dock at. Fuel, fines, reputation
+            and anything else about you are removed first, as EDDN requires.
+          </p>
+          <p>
+            <strong>Only live events.</strong> Turning this on never uploads your existing journals; it starts
+            from the next thing you do in game.
+          </p>
+          <p>
+            <a href="https://github.com/EDCD/EDDN" target="_blank" rel="noreferrer noopener">
+              github.com/EDCD/EDDN
+            </a>
+          </p>
+        </>
+      }
+    >
+      <p className="dim options-canonn-privacy">
+        <strong>Your CMDR name is sent to EDDN</strong>, which scrambles it before passing the data on — the
+        tools that receive it never see it.
+      </p>
+
+      <label className="options-toggle">
+        <input
+          type="checkbox"
+          checked={state.enabled}
+          disabled={busy}
+          onChange={(ev) => {
+            const enabled = ev.target.checked;
+            setBusy(true);
+            setMsg(null);
+            void postSetting("/api/settings/eddn-upload", { enabled })
+              .then((r) => {
+                if (!r.ok) setMsg(r.error ?? "Could not change the setting.");
+              })
+              .finally(() => setBusy(false));
+          }}
+        />
+        <span>Send my live events to EDDN</span>
+      </label>
+
+      {state.enabled && state.sent + state.failed > 0 ? (
+        <p className="dim options-canonn-tally">
+          This session: {state.sent.toLocaleString()} sent
+          {state.failed > 0 ? `, ${state.failed.toLocaleString()} not accepted` : ""}.
+        </p>
+      ) : null}
+
+      {msg ? <p className="warn tiny">{msg}</p> : null}
+    </FoldPanel>
+  );
+}
+
+/**
+ * One settings POST, shared by the contribution panels.
  *
  * Lifted out of the EDSM fetch panel when the others arrived: three copies of "post JSON, read
  * `{ok, error}` back, turn a thrown fetch into an error object" drift, and the one that drifts is
@@ -891,6 +968,7 @@ export function MapOptionsModal({
           <EdsmFetchPanel state={snap.edsmAutoFetch} />
           <EdsmUploadPanel state={snap.edsmUpload} hasKey={snap.edsmAutoFetch.hasKey} />
           <CanonnUploadPanel state={snap.canonnUpload} />
+          <EddnUploadPanel state={snap.eddnUpload} />
 
           <section className="options-journal-history options-meta-block options-oneline">
             <label className="options-oneline-label" htmlFor="journal-history-window">

@@ -2251,6 +2251,8 @@ export interface AppSnapshot {
    * rather than only what it is set to.
    */
   canonnUpload: { enabled: boolean; sent: number; failed: number };
+  /** Sending live events to EDDN. `sent` / `failed` are this session's tally. See `eddnUpload.ts`. */
+  eddnUpload: { enabled: boolean; sent: number; failed: number };
   edsmAutoFetch: {
     enabled: boolean;
     commanderName: string | null;

@@ -49,6 +49,7 @@ import {
 } from "./edsmCredentials.js";
 import { EdsmAutoFetcher } from "./edsmAutoFetch.js";
 import { CANONN_CLIENT_VERSION, CanonnUploader } from "./canonnUpload.js";
+import { EddnUploader } from "./eddnUpload.js";
 import { lanUrlWithKey, loadOrCreateLanKey } from "./lanAuth.js";
 import { buildEncyclopediaExomasteryPlanetsPayload } from "./exomasteryEdsmEncyclopedia.js";
 import {
@@ -342,6 +343,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             // it never lands in a settings JSON that gets pasted into bug reports.
             edsmAutoFetchEnabled: store.edsmAutoFetchEnabled,
             canonnUploadEnabled: store.canonnUploadEnabled,
+            eddnUploadEnabled: store.eddnUploadEnabled,
             edsmUploadEnabled: store.edsmUploadEnabled,
             edsmLiveUploadEnabled: store.edsmLiveUploadEnabled,
             statusPollMs: store.statusPollMs,
@@ -368,6 +370,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     journalHistoryPreset?: string;
     edsmAutoFetchEnabled?: boolean;
     canonnUploadEnabled?: boolean;
+    eddnUploadEnabled?: boolean;
     edsmUploadEnabled?: boolean;
     edsmLiveUploadEnabled?: boolean;
     statusPollMs?: number;
@@ -408,6 +411,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     // Restored as written. There is no second factor to check the way the EDSM key is checked —
     // the switch is the whole consent — so a settings file that says on means the commander said on.
     if (j.canonnUploadEnabled === true) store.setCanonnUploadEnabled(true);
+    if (j.eddnUploadEnabled === true) store.setEddnUploadEnabled(true);
     if (j.edsmUploadEnabled === true) store.setEdsmUploadEnabled(true);
     // Only meaningful with the upload on; a settings file saying otherwise is a file that was edited.
     if (j.edsmLiveUploadEnabled === true && store.edsmUploadEnabled) store.setEdsmLiveUploadEnabled(true);
@@ -907,6 +911,47 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   if (store.canonnUploadEnabled) void canonnUploader.loadWhitelist();
 
   /**
+   * Sending live events to EDDN, when the commander has asked for it. Same live-only arrangement as
+   * Canonn: `offer` is called from the live tail only. After every re-merge the sender re-learns the
+   * session (game version, expansion flags, current system) from the newest journal file through
+   * `observe` — see `primeEddnFromNewestJournal` — and that path never sends.
+   */
+  const eddnUploader = new EddnUploader({
+    isEnabled: () => store.eddnUploadEnabled,
+    cmdrName: () => store.commanderName,
+    onResult: (ok) => store.recordEddnUploadResult(ok),
+    testMode: process.env.EDEXO_EDDN_TEST === "1",
+    readStatus: () => {
+      try {
+        return JSON.parse(readFileSync(path.join(journalDir, "Status.json"), "utf8")) as Record<
+          string,
+          unknown
+        >;
+      } catch {
+        return null;
+      }
+    },
+    readNavRoute: () => {
+      try {
+        return JSON.parse(readFileSync(path.join(journalDir, "NavRoute.json"), "utf8")) as unknown;
+      } catch {
+        return null;
+      }
+    },
+  });
+
+  /** Re-learn the session from the newest log without sending anything. */
+  async function primeEddnFromNewestJournal(): Promise<void> {
+    eddnUploader.resetSession();
+    if (!journalPath) return;
+    try {
+      await readJournalFull(journalPath, (line) => eddnUploader.observe(line));
+    } catch {
+      /* the sender stays unprimed, which means it sends nothing until the next Fileheader */
+    }
+  }
+
+  /**
    * `StartJump` is the countdown and names the destination; the rest are arrivals.
    *
    * Asking at the countdown spends the hyperspace transit on the request instead of making the
@@ -935,6 +980,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         // first run from asking EDSM about every system the commander has ever visited.
         maybeAutoFetchOnArrival(line);
         canonnUploader.offer(line);
+        eddnUploader.offer(line);
         store.applyLiveNavRoute(readLiveNavRouteWaypoints());
         let statusRaw: string | null = null;
         try {
@@ -995,9 +1041,13 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
 
   function resyncAllJournalFiles(): Promise<void> {
     if (resyncInFlight) return resyncInFlight;
-    const run = resyncAllJournalFilesInner().finally(() => {
-      resyncInFlight = null;
-    });
+    // The EDDN sender learns the session from the newest file after every re-merge: a rotation
+    // replays the new file's Fileheader and LoadGame here, where the live tail never sees them.
+    const run = resyncAllJournalFilesInner()
+      .then(primeEddnFromNewestJournal)
+      .finally(() => {
+        resyncInFlight = null;
+      });
     resyncInFlight = run;
     return run;
   }
@@ -1494,6 +1544,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       // Asked for the first time it is switched on, not at boot: a commander who never turns this
       // on should not cost Canonn a request.
       if (enabled) void canonnUploader.loadWhitelist();
+      return { ok: true };
+    },
+    setEddnUploadEnabled: (enabled) => {
+      store.setEddnUploadEnabled(enabled);
+      persistUserPreferences();
       return { ok: true };
     },
     scheduleBroadcast: push,

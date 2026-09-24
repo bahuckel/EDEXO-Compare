@@ -768,6 +768,15 @@ export class GameStateStore {
   canonnUploadEnabled = false;
 
   /**
+   * Send live exploration and exobiology events to EDDN (owner, 2026-09-24).
+   *
+   * **Default off**, like Canonn: the switch is the whole consent. EDDN takes the commander name as
+   * `uploaderID` and hashes it before relaying; everything else personal is stripped. See
+   * `eddnUpload.ts`.
+   */
+  eddnUploadEnabled = false;
+
+  /**
    * Contributing the journal itself to EDSM, the way EDMC and EDDiscovery do.
    *
    * **Default off, and gated on the API key like auto-fetch** — but this one sends far more than the
@@ -803,6 +812,10 @@ export class GameStateStore {
    */
   canonnUploadSent = 0;
   canonnUploadFailed = 0;
+
+  /** This session's tally of what EDDN accepted and refused. Not persisted, for the same reason. */
+  eddnUploadSent = 0;
+  eddnUploadFailed = 0;
 
   /**
    * How much journal history to merge: all logs in the folder, or a rolling window from “now”.
@@ -1043,6 +1056,10 @@ export class GameStateStore {
     this.canonnUploadEnabled = value;
   }
 
+  setEddnUploadEnabled(value: boolean): void {
+    this.eddnUploadEnabled = value;
+  }
+
   setEdsmUploadEnabled(value: boolean): void {
     this.edsmUploadEnabled = value;
   }
@@ -1058,6 +1075,11 @@ export class GameStateStore {
   recordCanonnUploadResult(ok: boolean): void {
     if (ok) this.canonnUploadSent++;
     else this.canonnUploadFailed++;
+  }
+
+  recordEddnUploadResult(ok: boolean): void {
+    if (ok) this.eddnUploadSent++;
+    else this.eddnUploadFailed++;
   }
 
   setJournalHistoryPreset(value: JournalHistoryPreset): void {

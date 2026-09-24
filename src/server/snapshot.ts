@@ -1586,6 +1586,11 @@ export function buildSnapshot(
       sent: store.canonnUploadSent,
       failed: store.canonnUploadFailed,
     },
+    eddnUpload: {
+      enabled: store.eddnUploadEnabled,
+      sent: store.eddnUploadSent,
+      failed: store.eddnUploadFailed,
+    },
     edsmAutoFetch: {
       enabled: store.edsmAutoFetchEnabled,
       ...edsmCredentialsStatus(),

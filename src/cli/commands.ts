@@ -114,7 +114,7 @@ export const TOPICS: TopicSpec[] = [
   },
   {
     name: "network",
-    summary: "Which address it serves on, who may reach it, EDSM and Canonn",
+    summary: "Which address it serves on, who may reach it, EDSM, Canonn and EDDN",
     intro:
       "The bind address and port are chosen at launch, not at runtime: --local for this PC only, " +
       "--lan or --host for the network, --port to move it off 7111 so a second instance can run " +
@@ -145,6 +145,7 @@ export const TOPICS: TopicSpec[] = [
         summary: "Print or switch uploading your scans to EDSM.",
       },
       { name: "network canonn", args: "[on|off]", summary: "Print or switch uploading to Canonn Research." },
+      { name: "network eddn", args: "[on|off]", summary: "Print or switch sending live events to EDDN." },
     ],
   },
   {

@@ -258,6 +258,8 @@ export function createHttpServer(opts: {
   setEdsmAutoFetchEnabled?: (enabled: boolean) => { ok: boolean; error?: string };
   /** POST /api/settings/canonn-upload — JSON { enabled }. The switch is the whole consent. */
   setCanonnUploadEnabled?: (enabled: boolean) => { ok: boolean; error?: string };
+  /** POST /api/settings/eddn-upload — JSON { enabled }. The switch is the whole consent. */
+  setEddnUploadEnabled?: (enabled: boolean) => { ok: boolean; error?: string };
   /** GET /api/system/edsm-search?q= — galaxy name prefix via EDSM (returns id64 as systemAddress). */
   searchEdsmSystems?: (
     query: string,
@@ -1565,6 +1567,21 @@ export function createHttpServer(opts: {
       return;
     }
     const r = opts.setCanonnUploadEnabled(enabled);
+    if (r.ok) opts.scheduleBroadcast?.();
+    res.status(r.ok ? 200 : 400).json(r);
+  });
+
+  app.post("/api/settings/eddn-upload", (req, res) => {
+    if (typeof opts.setEddnUploadEnabled !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const enabled = req.body?.enabled;
+    if (typeof enabled !== "boolean") {
+      res.status(400).json({ ok: false, error: "enabled must be a boolean." });
+      return;
+    }
+    const r = opts.setEddnUploadEnabled(enabled);
     if (r.ok) opts.scheduleBroadcast?.();
     res.status(r.ok ? 200 : 400).json(r);
   });

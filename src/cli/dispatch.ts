@@ -285,13 +285,16 @@ export async function dispatch(line: string, ctx: DispatchContext): Promise<stri
 
     case "network edsm":
     case "network edsm-upload":
-    case "network canonn": {
+    case "network canonn":
+    case "network eddn": {
       const path =
         command.name === "network edsm"
           ? "/api/settings/edsm-auto-fetch"
           : command.name === "network edsm-upload"
             ? "/api/settings/edsm-upload"
-            : "/api/settings/canonn-upload";
+            : command.name === "network eddn"
+              ? "/api/settings/eddn-upload"
+              : "/api/settings/canonn-upload";
       const want = onOff(args);
       if (want === null) {
         const r = await client.get("/api/state");
@@ -302,7 +305,9 @@ export async function dispatch(line: string, ctx: DispatchContext): Promise<stri
             ? "edsmAutoFetch"
             : command.name === "network edsm-upload"
               ? "edsmUpload"
-              : "canonnUpload";
+              : command.name === "network eddn"
+                ? "eddnUpload"
+                : "canonnUpload";
         const v = s[key];
         const enabled = typeof v === "object" && v ? v.enabled : v;
         return [`${key}: ${enabled ? "on" : "off"}`];
