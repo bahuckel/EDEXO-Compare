@@ -69,7 +69,7 @@ import { feederDataDirExists } from "../feeder/paths.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
 import { buildDiscoveries } from "./discoveries.js";
-import { clearFootScannedCatalogCache } from "./footScannedCatalog.js";
+import { clearFootScannedCatalogCache, flushFootScannedCatalog } from "./footScannedCatalog.js";
 import { clearGenusPhotosFolderCache, getSpeciesDataWarnings } from "./speciesTreeLoader.js";
 import {
   parseStatusJsonDestination,
@@ -1746,6 +1746,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   await ready;
 
   const shutdown = async () => {
+    // The foot catalog writes at most once a second; closing must not drop the last second.
+    flushFootScannedCatalog();
     if (footStatusPollTimer != null) {
       clearInterval(footStatusPollTimer);
       footStatusPollTimer = null;

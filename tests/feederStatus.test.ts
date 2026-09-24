@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { SpeciesDatabase } from "../src/shared/types.js";
 import { setFeederDataDirForTests } from "../src/feeder/paths.js";
 import { writeFeederStatusSnapshot } from "../src/feeder/statusSnapshot.js";
-import { buildFeederStatus } from "../src/server/feederStatus.js";
+import { buildFeederStatus, clearFeederPackCountMemo } from "../src/server/feederStatus.js";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -55,6 +55,7 @@ function writePacks(slug: string, hydratable: number): void {
 }
 
 beforeEach(() => {
+  clearFeederPackCountMemo();
   corpus = mkdtempSync(path.join(tmpdir(), "edexo-corpus-"));
   appRoot = mkdtempSync(path.join(tmpdir(), "edexo-app-"));
   setFeederDataDirForTests(corpus);
@@ -76,18 +77,18 @@ afterEach(() => {
 });
 
 describe("buildFeederStatus", () => {
-  it("reports itself unavailable when there is no corpus, so the panel hides", () => {
+  it("reports itself unavailable when there is no corpus, so the panel hides", async () => {
     setFeederDataDirForTests(path.join(corpus, "does-not-exist"));
-    const s = buildFeederStatus(appRoot, db);
+    const s = await buildFeederStatus(appRoot, db);
     expect(s.available).toBe(false);
     expect(s.behind).toEqual([]);
   });
 
-  it("counts installed profiles from the app's own tree, without opening the store", () => {
+  it("counts installed profiles from the app's own tree, without opening the store", async () => {
     writeProfile("stratum", "stratum_tectonicas_exomastery.json", "Stratum tectonicas", 1280);
     writeProfile("bacterium", "bacterium_aurasus_exomastery.json", "Bacterium aurasus", 2797);
 
-    const s = buildFeederStatus(appRoot, db);
+    const s = await buildFeederStatus(appRoot, db);
     expect(s.available).toBe(true);
     expect(s.speciesRowsWithProfile).toBe(2);
     expect(s.speciesRows).toBe(db.species.length);
@@ -97,7 +98,7 @@ describe("buildFeederStatus", () => {
     expect(s.behind).toEqual([]);
   });
 
-  it("names the profiles built from fewer bodies than the corpus holds", () => {
+  it("names the profiles built from fewer bodies than the corpus holds", async () => {
     writeProfile("stratum", "stratum_tectonicas_exomastery.json", "Stratum tectonicas", 1280);
     writeProfile("bacterium", "bacterium_aurasus_exomastery.json", "Bacterium aurasus", 2797);
     writeFeederStatusSnapshot({
@@ -116,7 +117,7 @@ describe("buildFeederStatus", () => {
     writePacks("bacterium_aurasus", 3900);
     writePacks("stratum_tectonicas", 1280);
 
-    const s = buildFeederStatus(appRoot, db);
+    const s = await buildFeederStatus(appRoot, db);
     expect(s.snapshot?.uniqueSightings).toBe(39088);
     expect(s.behindCount).toBe(1);
     expect(s.behind[0]).toEqual({
@@ -128,7 +129,7 @@ describe("buildFeederStatus", () => {
     expect(s.behindOccurrences).toBe(3900 - 2797);
   });
 
-  it("finds the corpus entry by species row, whatever the profile calls itself", () => {
+  it("finds the corpus entry by species row, whatever the profile calls itself", async () => {
     // The installer rewrites `speciesLabel` to the app's spelling, and the corpus keeps the Spansh
     // one. Matching those strings to each other is what a first version does, and it fails in the
     // one direction that matters: a profile whose name drifts looks up-to-date. Both sides resolve
@@ -164,12 +165,12 @@ describe("buildFeederStatus", () => {
     // describes a state that cannot exist on disk.
     writePacks("stratum_tectonicas", 1280);
 
-    const s = buildFeederStatus(appRoot, db);
+    const s = await buildFeederStatus(appRoot, db);
     expect(s.behindCount).toBe(1);
     expect(s.behind[0]?.corpusOccurrences).toBe(1280);
   });
 
-  it("lists corpus species the app has no row for rather than attaching them to a near match", () => {
+  it("lists corpus species the app has no row for rather than attaching them to a near match", async () => {
     writeFeederStatusSnapshot({
       lastCommand: "status",
       uniqueSystems: 1,
@@ -183,7 +184,7 @@ describe("buildFeederStatus", () => {
         "Bark Mounds": 18,
       },
     });
-    const s = buildFeederStatus(appRoot, db);
+    const s = await buildFeederStatus(appRoot, db);
     expect(s.unmatchedCorpusLabels).toEqual(["Bark Mounds", "Croceum Anemone"]);
   });
 });

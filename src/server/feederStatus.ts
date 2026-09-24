@@ -13,7 +13,7 @@
  */
 import { readdirSync, statSync } from "node:fs";
 import { speciesFileSlug } from "../feeder/profileBuilder.js";
-import { countHydratableSamplesSync } from "../feeder/samplePacks.js";
+import { countHydratableSamples, packedSamplesPath } from "../feeder/samplePacks.js";
 import { join } from "node:path";
 import type { FeederStatusDTO, SpeciesDatabase } from "../shared/types.js";
 import {
@@ -41,8 +41,44 @@ import {
  * than the corpus could supply. `scripts/feeder.ts` had already been fixed for exactly this (§C3);
  * the HTTP path had not.
  */
-function packCount(slug: string): number {
-  return countHydratableSamplesSync(join(rawPlanetsDir(), slug));
+/*
+  Async, and remembered (owner, 2026-09-25: the launcher went "Not Responding" for ~10 s after a long
+  break). The app's header asks for this at start-up, and counting meant gunzipping and parsing every
+  species' archive synchronously — 4.6 s on the thread the launcher window shares, caught by the
+  diagnostic build's CPU profile, most of it reading files the OS had long since dropped from its
+  cache. Now the reads are async, so the window keeps drawing, and each count is kept until the
+  archive or the folder changes, so asking again costs a stat per species.
+*/
+const packCountMemo = new Map<string, { sig: string; n: number }>();
+
+function packSignature(dir: string): string {
+  let dirSig = "missing";
+  try {
+    dirSig = String(statSync(dir).mtimeMs);
+  } catch {
+    return dirSig;
+  }
+  try {
+    const a = statSync(packedSamplesPath(dir));
+    return `${a.mtimeMs}:${a.size}:${dirSig}`;
+  } catch {
+    return `none:${dirSig}`;
+  }
+}
+
+async function packCount(slug: string): Promise<number> {
+  const dir = join(rawPlanetsDir(), slug);
+  const sig = packSignature(dir);
+  const hit = packCountMemo.get(dir);
+  if (hit && hit.sig === sig) return hit.n;
+  const n = await countHydratableSamples(dir);
+  packCountMemo.set(dir, { sig, n });
+  return n;
+}
+
+/** Test seam: forget the remembered counts. */
+export function clearFeederPackCountMemo(): void {
+  packCountMemo.clear();
 }
 
 function hydratedSlugs(): string[] {
@@ -53,7 +89,7 @@ function hydratedSlugs(): string[] {
   }
 }
 
-export function buildFeederStatus(projectRoot: string, db: SpeciesDatabase): FeederStatusDTO {
+export async function buildFeederStatus(projectRoot: string, db: SpeciesDatabase): Promise<FeederStatusDTO> {
   if (!feederDataDirExists()) {
     return {
       available: false,
@@ -105,9 +141,12 @@ export function buildFeederStatus(projectRoot: string, db: SpeciesDatabase): Fee
   for (const label of Object.keys(snapshot?.occurrencesBySpecies ?? {})) {
     const entry = findSpeciesEntryForLabel(db, label);
     if (!entry) continue;
-    const n = packCount(speciesFileSlug(label));
+    const n = await packCount(speciesFileSlug(label));
     hydratableByEntryId.set(entry.id, Math.max(hydratableByEntryId.get(entry.id) ?? 0, n));
   }
+
+  let hydratedSpecies = 0;
+  for (const slug of slugs) if ((await packCount(slug)) > 0) hydratedSpecies++;
 
   let speciesRowsWithProfile = 0;
   let profileBytes = 0;
@@ -157,7 +196,7 @@ export function buildFeederStatus(projectRoot: string, db: SpeciesDatabase): Fee
           cumulativeCsvRows: snapshot.cumulativeCsvRows,
         }
       : null,
-    hydratedSpecies: slugs.filter((s) => packCount(s) > 0).length,
+    hydratedSpecies,
     speciesRows: db.species.length,
     speciesRowsWithProfile,
     profileBytes,

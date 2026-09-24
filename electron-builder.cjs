@@ -70,7 +70,17 @@ module.exports = {
     output: "dist/electron-out",
     buildResources: "build",
   },
-  files: ["electron/main.cjs", "electron/preload.cjs", "package.json"],
+  /*
+    `electron/diag.cjs` (the stall logger + boot CPU profile) goes into the diagnostic build only —
+    `npm run dist:win:diag` sets EDEXO_DIAG=1. A public release must never carry it (owner,
+    2026-09-25); `tests/electronBuilderConfig.test.ts` holds the default build to that.
+  */
+  files: [
+    "electron/main.cjs",
+    "electron/preload.cjs",
+    ...(process.env.EDEXO_DIAG === "1" ? ["electron/diag.cjs"] : []),
+    "package.json",
+  ],
   extraResources: [
     { from: "build/app.cjs", to: "edexo/app.cjs" },
     { from: "dist/eb-staging/web", to: "web" },

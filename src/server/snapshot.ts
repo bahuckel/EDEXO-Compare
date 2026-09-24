@@ -51,6 +51,7 @@ import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exo
 import { countEdsmPlanetRows } from "./exomasteryEdsmEncyclopedia.js";
 import {
   augmentMatchesWithFootCatalog,
+  clearFootCatalogSpeciesDb,
   footScannedCatalogSignature,
   loadFootScannedCatalog,
   mergeScanForExomastery,
@@ -556,6 +557,8 @@ export function loadSpeciesDatabase(): SpeciesDatabase {
   const root = getProjectRoot();
   clearExoOrganicGenusMinDistCache();
   cachedDb = loadSpeciesDatabaseFromTree(root);
+  // The foot catalog keeps its own copy of the tree; a reload has to reach it too.
+  clearFootCatalogSpeciesDb();
   speciesDataGeneration += 1;
   computeBodyCache.clear();
   cachedPrices = loadPriceList(root);
@@ -1274,14 +1277,9 @@ function computeBodyUncached(
   if (matches.length > 0 && scanForExo) {
     matches = attachOtherMatchDetailCardsToMatches(matches, scanForExo, explorationRec, root, journalHost);
   }
-  let note = ambiguityForBody(b);
-  if (approximateMatchingUsed && matches.length > 0) {
-    // The only remaining source of approximate rows is an on-foot ScanOrganic naming a species the
-    // gates rejected — evidence from the commander's own boots, not a distance guess.
-    const extra =
-      "Includes at least one species confirmed by an on-foot scan that the codex gates would have excluded.";
-    note = note ? `${note} ${extra}` : extra;
-  }
+  // `approximateMatchingUsed` (an on-foot scan named a species the gates rejected) is no longer
+  // appended here: the owner moved that sentence behind the candidate list's [?] (2026-09-25).
+  const note = ambiguityForBody(b);
 
   const { count: slots, source: slotSource } = resolveOrganicSlotCount(b);
   const wf = store.bodyDetailedFootfallState.get(b.key);

@@ -16,6 +16,25 @@ const path = require("path");
 const fs = require("fs");
 const { execFileSync } = require("child_process");
 
+/*
+  Diagnostics, in the diagnostic build only (`npm run dist:win:diag`; owner, 2026-09-25). A public
+  build does not pack `diag.cjs`, so the require fails and this stays null. See `diag.cjs`.
+*/
+let diag = null;
+function startDiagnostics() {
+  try {
+    const outDir = path.join(
+      process.env.EDEXO_USER_DATA_DIR ||
+        path.join(process.env.LOCALAPPDATA || app.getPath("appData"), "ED Exo Compare"),
+      "diag",
+    );
+    diag = require("./diag.cjs").start({ outDir });
+  } catch (e) {
+    if (!e || e.code !== "MODULE_NOT_FOUND") console.warn("[edexo-compare] diagnostics failed to start:", e);
+    diag = null;
+  }
+}
+
 const MAX_HUD_OVERLAYS = 8; // was 3; the owner wants every HUD selectable at once
 const HUD_STACK_GAP = 6;
 /** Ctrl+Alt+H hides and shows every HUD window at once (menus, screenshots), checked free by the owner. */
@@ -618,6 +637,7 @@ function createHudOverlayWindow(width, height, iconForChild, parentWin) {
       sandbox: false,
     },
   });
+  diag?.watchWindow(win, "hud");
 
   try {
     win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -943,6 +963,7 @@ function registerFootOverlayIpc(iconForChild) {
 }
 
 async function start() {
+  startDiagnostics();
   try {
     // Electron's userData is %APPDATA%\edexo-compare on Windows, while the dev server, the CLI and
     // every probe use %LOCALAPPDATA%\ED Exo Compare. Forcing this one made the packaged app keep a
@@ -1001,6 +1022,7 @@ async function start() {
   }
   const mode = detectMode();
   runtime = await startEdexoFromElectronMode(mode);
+  diag?.mark("server started");
 
   const res = process.resourcesPath;
   let winIcon;
@@ -1101,6 +1123,7 @@ async function start() {
       preload: fs.existsSync(preloadPath) ? preloadPath : undefined,
     },
   });
+  diag?.watchWindow(mainWindow, "launcher");
   mainWindow.loadURL(url);
   createTray(winIcon);
   void restoreHudOverlays(winIcon);
@@ -1168,6 +1191,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
+  diag?.stop("quit");
   try {
     globalShortcut.unregisterAll();
   } catch {

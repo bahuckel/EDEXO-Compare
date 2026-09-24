@@ -337,22 +337,65 @@ const footCatalogCache = new Map<string, { mtimeMs: number; size: number; file: 
 
 const EMPTY_FOOT_CATALOG: FootScannedFile = { formatVersion: 1, entries: [] };
 
-/** Cheap identity of the catalog file (mtime + size) for cache keys; "0:0" when absent. */
+/*
+  Writes are batched (owner, 2026-09-25 — the launcher froze after a long break).
+
+  `recordFootScanned` runs for every ScanOrganic line, and a journal replay feeds it hundreds in a
+  row. Each one used to re-read the 0.5 MB catalog and write it back, pretty-printed, and reload the
+  whole species tree on top: most of a full re-merge's 28 s on the owner's journals, all of it on
+  the thread the launcher window shares. Now the catalog lives in memory once changed, and reaches
+  disk at most once a second — plus on shutdown and on process exit, so nothing is lost by closing.
+*/
+const FOOT_CATALOG_FLUSH_MS = 1_000;
+const pendingCatalogWrites = new Map<string, FootScannedFile>();
+let catalogFlushTimer: ReturnType<typeof setTimeout> | null = null;
+/** Bumped on every change, so a signature moves the moment the catalog does, not when it is written. */
+let catalogGeneration = 0;
+let flushOnExitHooked = false;
+
+/** Write whatever is pending now. Called on shutdown and exit; tests call it to reach the disk. */
+export function flushFootScannedCatalog(): void {
+  if (catalogFlushTimer) {
+    clearTimeout(catalogFlushTimer);
+    catalogFlushTimer = null;
+  }
+  for (const [path, file] of pendingCatalogWrites) {
+    try {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, `${JSON.stringify(file, null, 2)}\n`, "utf8");
+      const st = statSync(path);
+      footCatalogCache.set(path, { mtimeMs: st.mtimeMs, size: st.size, file });
+    } catch {
+      footCatalogCache.delete(path);
+    }
+  }
+  pendingCatalogWrites.clear();
+}
+
+/** Cheap identity of the catalog for cache keys: file mtime + size + in-memory generation. */
 export function footScannedCatalogSignature(projectRoot: string): string {
   try {
     const st = statSync(catalogPath(projectRoot));
-    return `${st.mtimeMs}:${st.size}`;
+    return `${st.mtimeMs}:${st.size}:${catalogGeneration}`;
   } catch {
-    return "0:0";
+    return `0:0:${catalogGeneration}`;
   }
 }
 
 export function clearFootScannedCatalogCache(): void {
   footCatalogCache.clear();
+  pendingCatalogWrites.clear();
+  if (catalogFlushTimer) {
+    clearTimeout(catalogFlushTimer);
+    catalogFlushTimer = null;
+  }
 }
 
 export function loadFootScannedCatalog(projectRoot: string): FootScannedFile {
   const path = catalogPath(projectRoot);
+  // A change not yet on disk is still the catalog.
+  const pending = pendingCatalogWrites.get(path);
+  if (pending) return pending;
   let stat;
   try {
     stat = statSync(path);
@@ -381,10 +424,38 @@ export function loadFootScannedCatalog(projectRoot: string): FootScannedFile {
 }
 
 function persistFootScanned(projectRoot: string, file: FootScannedFile): void {
-  const path = catalogPath(projectRoot);
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(file, null, 2)}\n`, "utf8");
-  footCatalogCache.delete(path);
+  pendingCatalogWrites.set(catalogPath(projectRoot), file);
+  catalogGeneration += 1;
+  if (!flushOnExitHooked) {
+    flushOnExitHooked = true;
+    process.once("exit", flushFootScannedCatalog);
+  }
+  if (!catalogFlushTimer) {
+    catalogFlushTimer = setTimeout(() => {
+      catalogFlushTimer = null;
+      flushFootScannedCatalog();
+    }, FOOT_CATALOG_FLUSH_MS);
+    catalogFlushTimer.unref?.();
+  }
+}
+
+/**
+ * The species tree, loaded once per project root rather than once per ScanOrganic line. The app
+ * drops it with {@link clearFootCatalogSpeciesDb} whenever it reloads its own copy.
+ */
+const catalogSpeciesDb = new Map<string, SpeciesDatabase>();
+
+function speciesDbForCatalog(projectRoot: string): SpeciesDatabase {
+  let db = catalogSpeciesDb.get(projectRoot);
+  if (!db) {
+    db = loadSpeciesDatabaseFromTree(projectRoot);
+    catalogSpeciesDb.set(projectRoot, db);
+  }
+  return db;
+}
+
+export function clearFootCatalogSpeciesDb(): void {
+  catalogSpeciesDb.clear();
 }
 
 type FootScanAspect = "planetClass" | "atmosphere" | "temperature" | "pressure" | "gravity";
@@ -643,7 +714,7 @@ export function recordFootScanned(
     return;
   }
 
-  const db = loadSpeciesDatabaseFromTree(projectRoot);
+  const db = speciesDbForCatalog(projectRoot);
   const speciesEntryId = resolveSpeciesIdFromLock(lock, db);
 
   const genusHint: GenusHint = {

@@ -173,7 +173,7 @@ export function createHttpServer(opts: {
    * Absent on a build with no feeder corpus, which is every normal install; the panel hides itself
    * rather than showing empty numbers.
    */
-  getFeederStatus?: () => FeederStatusDTO;
+  getFeederStatus?: () => Promise<FeederStatusDTO>;
   /**
    * POST /api/feeder/import-dump — start a Spansh JSONL export import into the feeder corpus
    * (`{ file, apply }`); GET /api/feeder/import-dump/status — its progress and last report.
@@ -1053,13 +1053,13 @@ export function createHttpServer(opts: {
    * Whether the data the app ranks with is the data the corpus holds. Before the feeder merge the
    * answer was no on 72 of 79 profiles and nothing in the app said so.
    */
-  app.get("/api/feeder/status", (_req, res) => {
+  app.get("/api/feeder/status", async (_req, res) => {
     if (typeof opts.getFeederStatus !== "function") {
       res.status(501).json({ error: "Not available" });
       return;
     }
     try {
-      res.json(opts.getFeederStatus());
+      res.json(await opts.getFeederStatus());
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
     }

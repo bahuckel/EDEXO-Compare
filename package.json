@@ -18,6 +18,7 @@
     "electron:dev": "npm run build && npm run bundle && electron .",
     "dist:win": "npm run build && npm run bundle && node scripts/dist-win.mjs && node scripts/dist-win-cli.mjs",
     "dist:win:signed": "cross-env EDEXO_WIN_CODESIGN=1 npm run dist:win",
+    "dist:win:diag": "cross-env EDEXO_DIAG=1 npm run dist:win",
     "dist:win:electron": "npm run build && npm run bundle && node scripts/dist-win.mjs",
     "dist:win:cli": "npm run build && npm run bundle && node scripts/dist-win-cli.mjs",
     "codesign:self-signed": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/create-self-signed-codesign-cert.ps1",

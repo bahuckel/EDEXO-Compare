@@ -19,7 +19,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { countHydratableSamplesSync } from "../src/feeder/samplePacks.js";
+import { countHydratableSamples } from "../src/feeder/samplePacks.js";
 import { setFeederDataDirForTests } from "../src/feeder/paths.js";
 
 let dir: string;
@@ -51,13 +51,13 @@ afterEach(() => {
 });
 
 describe("counting hydrated samples synchronously", () => {
-  it("counts records inside a packed archive — the case that read as zero", () => {
+  it("counts records inside a packed archive — the case that read as zero", async () => {
     const d = packed("osseus_discus", [
       { i: 0, hasBody: true },
       { i: 1, hasBody: true },
       { i: 2, hasBody: true },
     ]);
-    expect(countHydratableSamplesSync(d)).toBe(3);
+    expect(await countHydratableSamples(d)).toBe(3);
   });
 
   /**
@@ -65,30 +65,30 @@ describe("counting hydrated samples synchronously", () => {
    * made 63 profiles look stale: the corpus holds the occurrence, but no run can turn it into a
    * sample.
    */
-  it("does not count a record with no body — the corpus holds it, no run can supply it", () => {
+  it("does not count a record with no body — the corpus holds it, no run can supply it", async () => {
     const d = packed("bacterium_aurasus", [
       { i: 0, hasBody: true },
       { i: 1, hasBody: false },
       { i: 2, hasBody: false },
     ]);
-    expect(countHydratableSamplesSync(d)).toBe(1);
+    expect(await countHydratableSamples(d)).toBe(1);
   });
 
-  it("counts loose files too, and a loose file wins over the same index in the archive", () => {
+  it("counts loose files too, and a loose file wins over the same index in the archive", async () => {
     const d = packed("frutexa_acus", [{ i: 0, hasBody: true }]);
     writeFileSync(
       path.join(d, "sample_1.json"),
       JSON.stringify({ context: { targetBody: { id: 9 } } }),
       "utf8",
     );
-    expect(countHydratableSamplesSync(d)).toBe(2);
+    expect(await countHydratableSamples(d)).toBe(2);
   });
 
-  it("returns zero for a species with nothing on disk rather than throwing", () => {
-    expect(countHydratableSamplesSync(path.join(dir, "never_hydrated"))).toBe(0);
+  it("returns zero for a species with nothing on disk rather than throwing", async () => {
+    expect(await countHydratableSamples(path.join(dir, "never_hydrated"))).toBe(0);
   });
 
-  it("survives a corrupt archive line without losing the rest", () => {
+  it("survives a corrupt archive line without losing the rest", async () => {
     const d = path.join(dir, "tussock_ignis");
     mkdirSync(d, { recursive: true });
     const good = JSON.stringify({ i: 0, context: { targetBody: { id: 1 } } });
@@ -101,6 +101,6 @@ describe("counting hydrated samples synchronously", () => {
         ),
       ),
     );
-    expect(countHydratableSamplesSync(d)).toBe(2);
+    expect(await countHydratableSamples(d)).toBe(2);
   });
 });

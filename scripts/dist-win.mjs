@@ -120,6 +120,12 @@ function runBuilder(label) {
     hasPwd &&
     (process.env.BAHUCKEL_CODESIGN_PFX || process.env.CSC_LINK || existsSync(defaultSelfPfx)),
   );
+  if (process.env.EDEXO_DIAG === "1") {
+    console.warn(
+      "\n[dist:win] DIAGNOSTIC BUILD — packs electron/diag.cjs (stall log + boot CPU profile).\n" +
+        "[dist:win] For testing only. Never publish this exe as a release.\n",
+    );
+  }
   if (wantsSign) {
     const selfMsg = existsSync(defaultSelfPfx) ? " (PFX path includes dev self-signed if present)" : "";
     console.info(
