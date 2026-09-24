@@ -187,7 +187,8 @@
           "Carbon Dioxide"
         ],
         "planet_types": [
-          "Rocky"
+          "Rocky",
+          "High Metal Content"
         ],
         "temperature_K": [
           145,
@@ -301,7 +302,8 @@
           "Carbon Dioxide"
         ],
         "planet_types": [
-          "Rocky"
+          "Rocky",
+          "High Metal Content"
         ],
         "temperature_K": [
           155,
