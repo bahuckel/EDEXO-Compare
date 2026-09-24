@@ -1607,17 +1607,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         } else {
           store.exoOrganicLastFix = null;
         }
-        // The targeted body, for the HUD's candidate list. Pushed only when it actually changes.
-        const dest = parseStatusJsonDestination(raw);
-        const prevDest = store.statusDestination;
-        const destChanged =
-          (dest == null) !== (prevDest == null) ||
-          (dest != null &&
-            prevDest != null &&
-            (dest.systemAddress !== prevDest.systemAddress ||
-              dest.bodyId !== prevDest.bodyId ||
-              dest.name !== prevDest.name));
-        if (destChanged) store.statusDestination = dest;
+        // The targeted body: the HUD's candidate list, and a one-shot jump to its Body tab. Pushed
+        // only when it actually changes — see `applyStatusDestination`.
+        const destChanged = store.applyStatusDestination(parseStatusJsonDestination(raw));
         const fuel = parseStatusJsonFuel(raw);
         const fuelChanged = store.applyLiveShipFuel(
           fuel != null ? fuel.fuelMain : null,

@@ -931,6 +931,29 @@ export class GameStateStore {
     this.pendingUiAutoSelectBodyKey = null;
   }
 
+  /**
+   * Take a fresh `Status.json` `Destination`, and follow a newly targeted body to its Body tab.
+   *
+   * Owner, 2026-09-24: when he targets a body the app has a tab for, switch to it — once. The switch
+   * rides the existing one-shot (`requestUiAutoSelectBody` → `uiAutoSelectBodyKey`, consumed by the
+   * broadcast, applied by the client only when the key changes), so it fires on a change of target
+   * and never again for the same one: he can click any other tab without being pulled back. Same
+   * system and tabbed bodies only, which that method already enforces. Returns whether the
+   * destination changed, for the caller's push.
+   */
+  applyStatusDestination(dest: StatusDestination | null): boolean {
+    const prev = this.statusDestination;
+    const changed =
+      (dest == null) !== (prev == null) ||
+      (dest != null &&
+        prev != null &&
+        (dest.systemAddress !== prev.systemAddress || dest.bodyId !== prev.bodyId || dest.name !== prev.name));
+    if (!changed) return false;
+    this.statusDestination = dest;
+    if (dest) this.requestUiAutoSelectBody(dest.systemAddress, dest.bodyId);
+    return true;
+  }
+
   /** Queue a one-shot tab focus when the body is already in the focused system's bio list. */
   requestUiAutoSelectBody(systemAddress: number, bodyId: number): void {
     const focus = this.viewingSystemAddress ?? this.currentSystemAddress;
