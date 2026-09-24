@@ -523,6 +523,33 @@ export class FeederStore {
     });
   }
 
+  /**
+   * Sightings seen on EDDN (the bio-collector export), attributed `eddn`.
+   *
+   * Not `applyCsvRows`: that also counts Spansh CSV lines per species, which feed a profile's
+   * `csvRows` provenance, and an EDDN scan is not a CSV line. Returns how many were new.
+   */
+  applyEddnSightings(
+    rows: {
+      systemName: string;
+      bodyName: string;
+      bodySubtype: string;
+      distanceLs: number | null;
+      speciesLabel: string;
+      genus: string;
+    }[],
+  ): number {
+    if (rows.length === 0) return 0;
+    let added = 0;
+    this.transaction(() => {
+      for (const r of rows) {
+        if (this.upsertSightingRow(r.systemName, r.bodyName, r.bodySubtype, r.distanceLs, r.speciesLabel, r.genus, null, "eddn"))
+          added++;
+      }
+    });
+    return added;
+  }
+
   private ensureSystem(norm: string, display: string): number {
     runExec(
       this.db,

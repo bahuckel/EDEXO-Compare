@@ -78,6 +78,13 @@ export async function openFeeder(): Promise<FeederContext> {
 }
 
 /** JSON mirror of the index, kept only because the old feeder UI and its migration path read it. */
+/** Re-read the species index from the store after sightings were added outside `importCsv`. */
+export async function refreshSpeciesIndex(ctx: FeederContext): Promise<void> {
+  ctx.speciesIndex = ctx.store.rebuildSpeciesIndex();
+  ctx.cumulativeCsvRows = ctx.store.getCumulativeCsvRows();
+  await saveIndexMirror(ctx);
+}
+
 async function saveIndexMirror(ctx: FeederContext): Promise<void> {
   await writeFile(
     indexPath(),

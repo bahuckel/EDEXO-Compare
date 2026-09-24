@@ -17,6 +17,7 @@
  *   npm run feeder -- identity [--apply]      recover body IDs from the archives; reports by default
  *   npm run feeder -- system-ids [--apply]    fill system id64 from the cache; --fetch-missing for the rest
  *   npm run feeder -- import-dump <file>      validate and import a Spansh JSONL export
+ *   npm run feeder -- import-capture <file>   species seen on EDDN (bio-collector export); --apply writes
  *   npm run feeder -- eddn [--seconds=N]      consume EDDN into the body register (consumer only)
  *   npm run feeder -- sector-map [--write]    what the sector heat map would draw; --write ships it
  *                    [--catalogue=<csv>]      sector-name list; also EDEXO_SECTOR_CATALOGUE_CSV
@@ -42,6 +43,7 @@ import {
   feederInboxDir,
   listFeederInboxFiles,
   rawPlanetsDir,
+  feederDbPath,
 } from "../src/feeder/paths.js";
 import {
   analyseAndInstallSpecies,
@@ -49,6 +51,7 @@ import {
   importCsv,
   openFeeder,
   recordStatusSnapshot,
+  refreshSpeciesIndex,
   packSamples,
   runPipeline,
   speciesWithSamples,
@@ -57,6 +60,7 @@ import {
 } from "../src/feeder/pipeline.js";
 import { describeInstall, findSpeciesEntryForLabel } from "../src/feeder/install.js";
 import { formatRehydrationReport, rehydrateNumericsFromDump } from "../src/feeder/numericRehydration.js";
+import { formatCaptureReport, importCapture } from "../src/feeder/captureImport.js";
 import { applyParameterImportance, formatImportanceReport } from "../src/feeder/applyImportance.js";
 import {
   buildCooccurrenceTable,
@@ -568,6 +572,28 @@ async function cmdSystemIds(): Promise<void> {
  * Four gates run before anything is written, and a single failure aborts the whole file: a
  * partially-imported corpus is worse than none, because it looks finished.
  */
+async function cmdImportCapture(): Promise<void> {
+  requireCorpus();
+  const file = positional[0];
+  if (!file || !existsSync(file)) {
+    console.error("Usage: npm run feeder -- import-capture <eddn-bio-*.jsonl> [--apply]");
+    process.exit(1);
+  }
+  const apply = flags.has("--apply");
+  const ctx = await openFeeder();
+  console.log(apply ? `\nimporting ${file}…\n` : `\nreading ${file} (dry run)…\n`);
+  const report = await importCapture(ctx, file, { apply, storePath: feederDbPath() });
+  console.log(formatCaptureReport(report, apply));
+  if (apply && report.packsWritten > 0) {
+    await refreshSpeciesIndex(ctx);
+    recordStatusSnapshot(ctx, "import-capture");
+    console.log(`\n  Now run: npm run feeder -- rebuild ${[...report.newBySpecies.keys()].length} species touched`);
+  } else if (!apply) {
+    console.log("\nNothing was written. Re-run with --apply.");
+  }
+  console.log("");
+}
+
 async function cmdImportDump(): Promise<void> {
   requireCorpus();
   const file = positional[0];
@@ -785,6 +811,9 @@ switch (command) {
     break;
   case "import-dump":
     await cmdImportDump();
+    break;
+  case "import-capture":
+    await cmdImportCapture();
     break;
   case "rehydrate-numerics":
     await cmdRehydrateNumerics();
