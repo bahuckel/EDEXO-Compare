@@ -99,6 +99,11 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
  * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
  * feature that reads it stays dark with nothing logged anywhere.
  *
+ * 11 — `organicGenusLocks` holds one lock per species per body (a foot scan updates it rather than
+ *     pushing a copy per `ScanOrganic`, and replaces a comp-scan or sibling lock for the same
+ *     species), with `samples` / `analysed` for the genus progress card and `fromSibling` on locks
+ *     copied from a neighbouring moon. An old cache holds four copies per sampled species and no
+ *     progress at all.
  * 10 — `organicGenusLocks` now also carries locks built from `CodexEntry`, so a species the
  *     composition scanner named on a body counts as confirmed there (`source: "codex"`). A cache
  *     written by the old code holds foot scans only, and no replay would add the rest.
@@ -137,7 +142,7 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   Anything derived from the journal that the UI reads has to be either in this payload or
   deliberately transient. Bump the format when you add one.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 10;
+export const JOURNAL_MERGE_CACHE_FORMAT = 11;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -359,6 +364,45 @@ function explorationRecordsSimilarForSharedExo(a: ExplorationScanRecord, b: Expl
   }
 
   return true;
+}
+
+/**
+ * Record one `ScanOrganic` on a body's locks: one lock per species, carrying how far it got.
+ *
+ * Every `ScanOrganic` used to push its own lock, so a sampled species sat on the body four times
+ * (Log, Sample, Sample, Analyse), and a comp-scanned one that was then walked up to showed twice —
+ * once from the codex line, with no symbols, and once from the foot scan. The guild's report:
+ * "Stratum Limaxus - Green, Bacterium Aurasus - Teal, Stratum Limaxus - Green". A foot scan now
+ * updates its species' lock, and replaces a comp-scan or sibling-moon lock for the same species.
+ *
+ * `Log` opens a run at 1 (re-logging an abandoned plant starts it again); each `Sample` adds one, up
+ * to 3; `Analyse` completes it. Exported for its test.
+ */
+export function upsertFootOrganicLock(locks: OrganicGenusLock[], lock: OrganicGenusLock, scanType: string): void {
+  const sp = lock.speciesLocalised.trim().toLowerCase();
+  const gk = organicLockGenusKey(lock);
+  const idx = locks.findIndex((l) =>
+    sp ? l.speciesLocalised.trim().toLowerCase() === sp : organicLockGenusKey(l) === gk,
+  );
+  const prev = idx >= 0 ? locks[idx]! : null;
+  const prevFoot = prev && prev.source !== "codex" && !prev.fromSibling ? prev : null;
+  const analysed = prevFoot?.analysed === true || scanType === "Analyse";
+  const prevSamples = prevFoot?.samples ?? 0;
+  const samples = analysed
+    ? 3
+    : scanType === "Log"
+      ? 1
+      : scanType === "Sample"
+        ? Math.min(3, prevSamples + 1)
+        : Math.max(1, prevSamples);
+  const next: OrganicGenusLock = {
+    ...lock,
+    variantLocalised: lock.variantLocalised || prevFoot?.variantLocalised || "",
+    samples,
+    ...(analysed ? { analysed: true } : {}),
+  };
+  if (idx >= 0) locks[idx] = next;
+  else locks.push(next);
 }
 
 function organicLockGenusKey(lock: OrganicGenusLock): string {
@@ -1920,10 +1964,12 @@ export class GameStateStore {
         );
         // A comp scan fires more than once for the same plant, and a foot scan of the same species
         // says strictly more. Either way one row per species on this body is enough.
-        const already = codexBody.organicGenusLocks.some(
-          (l) => l.speciesLocalised.trim().toLowerCase() === lock.speciesLocalised.trim().toLowerCase(),
-        );
-        if (!already) codexBody.organicGenusLocks.push(lock);
+        // A lock copied from a sibling moon is only a hint, and gives way to this body's own scan.
+        const sameSpecies = (l: OrganicGenusLock) =>
+          l.speciesLocalised.trim().toLowerCase() === lock.speciesLocalised.trim().toLowerCase();
+        const siblingIdx = codexBody.organicGenusLocks.findIndex((l) => sameSpecies(l) && l.fromSibling);
+        if (siblingIdx >= 0) codexBody.organicGenusLocks[siblingIdx] = lock;
+        else if (!codexBody.organicGenusLocks.some(sameSpecies)) codexBody.organicGenusLocks.push(lock);
         if (lock.variantLocalised && !codexBody.confirmedVariants.includes(lock.variantLocalised)) {
           codexBody.confirmedVariants.push(lock.variantLocalised);
         }
@@ -2444,7 +2490,7 @@ export class GameStateStore {
         const b = ensureBody(this.bodies, systemAddress, bodyId, nameHint, starSystem, ts);
 
         if (genusLoc || genusSym) {
-          b.organicGenusLocks.push(lock);
+          upsertFootOrganicLock(b.organicGenusLocks, lock, scanType ?? "");
         }
 
         if (variant && !b.confirmedVariants.includes(variant)) b.confirmedVariants.push(variant);
@@ -2788,7 +2834,11 @@ export class GameStateStore {
           const gk = organicLockGenusKey(lock);
           if (gk && seen.has(gk)) continue;
           if (gk) seen.add(gk);
-          b.organicGenusLocks.push({ ...lock });
+          // A hint for the match here, not progress: nobody sampled anything on this moon.
+          const copy: OrganicGenusLock = { ...lock, fromSibling: true };
+          delete copy.samples;
+          delete copy.analysed;
+          b.organicGenusLocks.push(copy);
         }
         for (const v of sourceBody.confirmedVariants) {
           if (!b.confirmedVariants.includes(v)) b.confirmedVariants.push(v);

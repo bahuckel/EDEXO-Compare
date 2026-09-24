@@ -106,6 +106,19 @@ export interface OrganicGenusLock {
    * Absent means `foot`. Caches written before this field existed hold nothing but foot scans.
    */
   source?: "foot" | "codex";
+  /**
+   * Foot locks only: how far the sampling of this species on this body got — `Log` is 1, each
+   * `Sample` adds one, up to 3. The game writes `Log, Sample, Sample, Analyse`; the third sample and
+   * the Analyse land seconds apart.
+   */
+  samples?: number;
+  /** Foot locks only: an `Analyse` was written for this species on this body. */
+  analysed?: boolean;
+  /**
+   * Copied from a sibling moon the commander scanned (see `propagateExoAmongSimilarMoons`). Counts as
+   * a hint for the match, never as progress on this body.
+   */
+  fromSibling?: boolean;
 }
 
 export interface BodyExoState {

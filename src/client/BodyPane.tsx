@@ -11,7 +11,6 @@ import { useRowContext } from "./rowContext";
 import { settledMultiplier } from "@shared/footfallValue";
 import { footfallCertainty, showsFootfallPrice, showsListPrice } from "@shared/footfallValue";
 import {
-  Fragment,
   useCallback,
   memo,
   Suspense,
@@ -40,10 +39,16 @@ import {
 } from "./planetDisplayUtils";
 import {
   exomasteryDetailHasContent,
+  formatOrganicLockDisplay,
   groupedSortedMatches,
   safeGenusHeadId,
-  uniqueOnFootScanLines,
 } from "./speciesMatchHelpers";
+import {
+  bodyGenusProgress,
+  GENUS_PROGRESS_TITLE,
+  genusProgressTag,
+  type GenusProgressRow,
+} from "@shared/genusProgress";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
 import { SpeciesCard } from "./SpeciesCard";
 import { GenusSpeciesOdds } from "./SpeciesCardBits";
@@ -68,6 +73,32 @@ import {
  * are fewer, one of our gates is wrong.
  */
 /** Landable as one glance: a pad glyph and the word, in the cockpit's state colour. */
+/**
+ * `[CS]`, `[SEEN]`, `[2/3]` after a genus or a species (guild request, 2026-09-24). Nothing for a
+ * genus the DSS named and nobody has scanned. See `shared/genusProgress.ts`.
+ */
+function GenusTag({ row }: { row: Pick<GenusProgressRow, "status" | "samples"> }) {
+  const tag = genusProgressTag(row);
+  if (!tag) return null;
+  return (
+    <span className={`genus-tag genus-tag--${row.status}`} title={GENUS_PROGRESS_TITLE[row.status]}>
+      {tag}
+    </span>
+  );
+}
+
+/** "Stratum Limaxus - Green" from a progress row, with the journal's repetitions folded away. */
+function genusRowSpecies(row: GenusProgressRow): string {
+  if (!row.species && !row.variant) return "";
+  return formatOrganicLockDisplay({
+    genusLocalised: row.genus,
+    genusSymbol: "",
+    speciesLocalised: row.species ?? "",
+    speciesSymbol: "",
+    variantLocalised: row.variant ?? "",
+  });
+}
+
 function LandableBadge({ scan }: { scan: PlanetScan | null }) {
   const state = scan == null ? "unknown" : scan.Landable === true ? "yes" : "no";
   const word = state === "unknown" ? "Unscanned" : state === "yes" ? "Landable" : "Not landable";
@@ -651,14 +682,16 @@ export const BodyPane = memo(function BodyPane({
     })();
   }, [bodySummaryOneLine]);
 
-  const onFootLines = uniqueOnFootScanLines(s.organicGenusLocks);
+  /*
+    One row per genus with what has been done to it (guild request, 2026-09-24): the glance bar, the
+    Exo-signals card and the on-foot list all read these, so the three can never disagree.
+  */
+  const genusRows = bodyGenusProgress(s.genusHints, s.organicGenusLocks, liveRun);
+  // One line per species — the old list printed a sampled species once per ScanOrganic.
+  const onFootRows = genusRows.filter((r) => r.status !== "dss" && (r.species || r.variant));
   const onFootFallback = s.confirmedVariants.filter(Boolean);
-  const onFootPillBody =
-    onFootLines.length > 0
-      ? onFootLines.join(", ")
-      : onFootFallback.length > 0
-        ? onFootFallback.join(", ")
-        : "No footfall species confirmation";
+  const signalCount = s.biologicalSignals;
+  const unnamedSignals = signalCount != null ? Math.max(0, signalCount - genusRows.length) : 0;
   const comparisonBodySummary =
     [body.tabLabel, s.starSystem].filter((x) => (x ?? "").trim().length > 0).join(" · ") || "—";
 
@@ -745,6 +778,16 @@ export const BodyPane = memo(function BodyPane({
             <span className="glance-item">
               <small>DSS</small> {body.state.dssComplete ? "yes" : "no"}
             </span>
+            {genusRows.length > 0 ? (
+              <span className="glance-item glance-genera" aria-label="What has been scanned, per genus">
+                {genusRows.map((r) => (
+                  <span key={r.genus} className={`glance-genus glance-genus--${r.status}`}>
+                    {r.genus}
+                    <GenusTag row={r} />
+                  </span>
+                ))}
+              </span>
+            ) : null}
             {arrivalLs != null ? (
               <span className="glance-item">
                 {arrivalLs === 0 ? "0" : arrivalLs.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
@@ -771,14 +814,10 @@ export const BodyPane = memo(function BodyPane({
                     journals measures honking and deciding as much as flying.
                   </p>
                   <p>
-                    <strong>Exo-signals</strong> is the FSS count; the game places one genus per signal and
-                    never repeats a genus on a body. The genus names arrive with a DSS. A <em>(!)</em> after a
-                    genus means the DSS reported it but no candidate species uses that genus under the current
-                    scan and filters.
-                  </p>
-                  <p>
-                    <strong>On-foot scan</strong> lists what your own ScanOrganic lines identified here:
-                    genus, species and, when known, the colour variant.
+                    <strong>On-foot scan</strong> lists what your own scans identified here, one line per
+                    species with the colour when known: <em>[1/3]</em>–<em>[3/3]</em> the samples taken,{" "}
+                    <em>[SEEN]</em> sampled but never analysed, <em>[CS]</em> named by the composition
+                    scanner. The signal count and the DSS genera are in the Exo-signals card.
                   </p>
                 </>
               }
@@ -869,64 +908,30 @@ export const BodyPane = memo(function BodyPane({
               </div>
 
               <div
-                className="facts-strip"
-                title={
-                  s.genusHints?.length
-                    ? "FSS signal count and the DSS genera; (!) = no candidate matches that genus."
-                    : "FSS signal count; the genera fill in after a DSS."
-                }
-              >
-                <span className="fact-k">Exo-signals</span>
-                <strong className="facts-num">
-                  {s.biologicalSignals != null ? String(s.biologicalSignals) : "—"}
-                </strong>
-                <span className="facts-genera">
-                  {s.genusHints?.length ? (
-                    s.genusHints.map((g, i) => (
-                      <Fragment key={`${g.Genus}:${g.Genus_Localised}:${i}`}>
-                        {i > 0 ? ", " : null}
-                        {g.Genus_Localised}
-                        {genusHintIsDssOrphan(g, body.dssGenusOrphanHints) ? (
-                          <span
-                            className="dss-genus-orphan-mark"
-                            title="DSS lists this genus, but no candidate row matches it — check filters, bacterium toggle, or codex gates."
-                          >
-                            (!)
-                          </span>
-                        ) : null}
-                      </Fragment>
-                    ))
-                  ) : (
-                    <span className="facts-genera--none">genera after DSS</span>
-                  )}
-                </span>
-                <button
-                  type="button"
-                  className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
-                  disabled={!canOpenJournalScanModal}
-                  title={
-                    canOpenJournalScanModal
-                      ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
-                      : "Need merged detailed scan rows in loaded journals for breakdown"
-                  }
-                  onClick={() => {
-                    if (canOpenJournalScanModal) setJournalScanModalOpen(true);
-                  }}
-                >
-                  DSS {s.dssComplete ? "✓" : "✗"}
-                </button>
-              </div>
-
-              <div
                 className="facts-strip facts-strip--onfoot"
                 title={
-                  onFootLines.length > 0 || onFootFallback.length > 0
-                    ? "From journal ScanOrganic — genus, species, and variant colour when present."
-                    : "No ScanOrganic confirmation merged for this body yet."
+                  onFootRows.length > 0 || onFootFallback.length > 0
+                    ? "One line per species: your foot scans and composition scans on this body."
+                    : "No scan has named a species on this body yet."
                 }
               >
                 <span className="fact-k">On-foot scan</span>
-                <span className="facts-onfoot">{onFootPillBody}</span>
+                {onFootRows.length > 0 ? (
+                  <ul className="onfoot-list">
+                    {onFootRows.map((r) => (
+                      <li key={r.genus} className={`onfoot-row onfoot-row--${r.status}`}>
+                        <span className="onfoot-species">{genusRowSpecies(r)}</span>
+                        <GenusTag row={r} />
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="facts-onfoot">
+                    {onFootFallback.length > 0
+                      ? onFootFallback.join(", ")
+                      : "No footfall species confirmation"}
+                  </span>
+                )}
               </div>
 
               {body.ambiguityNote ? <p className="warn tiny">{body.ambiguityNote}</p> : null}
@@ -996,6 +1001,103 @@ export const BodyPane = memo(function BodyPane({
                   />
                 ) : null}
               </>
+            ) : null}
+
+            {/*
+              Exo-signals, on its own (guild request, 2026-09-24): one row per genus with what has been
+              done to it, so "what is left to scan here" is a glance, not a read through the candidate
+              cards. Replaces the one-line strip that used to sit in the planetary card.
+            */}
+            {genusRows.length > 0 || (signalCount ?? 0) > 0 ? (
+              <FoldPanel
+                foldKey="exo-signals"
+                className="exo-signals-card"
+                title="Exo-signals"
+                help={
+                  <>
+                    <p>
+                      <strong>One row per genus.</strong> The count is the FSS signal count; the game places
+                      one genus per signal and never repeats a genus on a body. The genus names arrive with a
+                      DSS.
+                    </p>
+                    <p>
+                      <strong>Tags</strong> — none: the DSS named it and nothing is scanned yet. <em>[CS]</em>
+                      : the ship's composition scanner named the species. <em>[SEEN]</em>: sampled on foot but
+                      never analysed, and not the plant you are sampling now. <em>[1/3]</em>–<em>[3/3]</em>:
+                      the samples taken, live while you sample and kept once analysed.
+                    </p>
+                    <p>
+                      A <em>(!)</em> after a genus means the DSS reported it but no candidate species uses
+                      that genus under the current scan and filters.
+                    </p>
+                  </>
+                }
+                defaultOpen
+                summary={
+                  <>
+                    {signalCount != null ? `${signalCount} bio` : "? bio"}
+                    {genusRows.length > 0
+                      ? ` · ${genusRows.map((r) => `${r.genus}${genusProgressTag(r) ? ` ${genusProgressTag(r)}` : ""}`).join(", ")}`
+                      : ""}
+                  </>
+                }
+                aside={
+                  <button
+                    type="button"
+                    className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
+                    disabled={!canOpenJournalScanModal}
+                    title={
+                      canOpenJournalScanModal
+                        ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
+                        : "Need merged detailed scan rows in loaded journals for breakdown"
+                    }
+                    onClick={() => {
+                      if (canOpenJournalScanModal) setJournalScanModalOpen(true);
+                    }}
+                  >
+                    DSS {s.dssComplete ? "✓" : "✗"}
+                  </button>
+                }
+              >
+                <div className="genus-progress" role="table" aria-label="Genera on this body">
+                  {genusRows.map((r) => (
+                    <div
+                      key={r.genus}
+                      className={`genus-progress-row genus-progress-row--${r.status}`}
+                      role="row"
+                    >
+                      <span className="genus-progress-genus" role="cell">
+                        {r.genus}
+                        {r.hint && genusHintIsDssOrphan(r.hint, body.dssGenusOrphanHints) ? (
+                          <span
+                            className="dss-genus-orphan-mark"
+                            title="DSS lists this genus, but no candidate row matches it — check filters, bacterium toggle, or codex gates."
+                          >
+                            (!)
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="genus-progress-species" role="cell">
+                        {genusRowSpecies(r) || <span className="genus-progress-none">not scanned</span>}
+                      </span>
+                      <span className="genus-progress-tag" role="cell">
+                        <GenusTag row={r} />
+                      </span>
+                    </div>
+                  ))}
+                  {unnamedSignals > 0 ? (
+                    <div className="genus-progress-row genus-progress-row--unnamed" role="row">
+                      <span className="genus-progress-genus" role="cell">
+                        {unnamedSignals === 1 ? "1 more signal" : `${unnamedSignals} more signals`}
+                      </span>
+                      <span className="genus-progress-species" role="cell">
+                        <span className="genus-progress-none">genus named after a DSS</span>
+                      </span>
+                      <span className="genus-progress-tag" role="cell" />
+                    </div>
+                  ) : null}
+                </div>
+              </FoldPanel>
             ) : null}
           </div>
           <div className="body-pane-right">

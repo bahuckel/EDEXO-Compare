@@ -367,3 +367,113 @@
   opacity: 0.9;
   pointer-events: none;
 }
+
+/* ---- genus progress: [CS] / [SEEN] / [1/3]…[3/3] (guild request, 2026-09-24) ----------------- */
+.genus-tag {
+  margin-left: 0.3rem;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.genus-tag--cs {
+  color: var(--info-soft);
+}
+.genus-tag--seen {
+  color: var(--warn);
+}
+.genus-tag--active {
+  color: var(--live);
+}
+.genus-tag--done {
+  color: var(--ok);
+}
+
+/* glance bar: the chips wrap onto their own line rather than pushing the bar wide */
+.glance-genera {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.8rem;
+  white-space: normal;
+  color: var(--text);
+}
+.glance-genus {
+  white-space: nowrap;
+}
+.glance-genus--dss {
+  color: var(--text-faint);
+}
+
+/* the Exo-signals card: genus · species · tag, one row each */
+.genus-progress {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, auto) 1fr auto;
+  font-size: var(--fs-sm);
+}
+.genus-progress-row {
+  display: contents;
+}
+.genus-progress-row > span {
+  padding: 0.32rem 0.5rem;
+  border-bottom: 1px solid var(--accent-a12);
+  min-width: 0;
+}
+.genus-progress-row:last-child > span {
+  border-bottom: none;
+}
+.genus-progress-genus {
+  font-weight: 700;
+  color: var(--text);
+}
+.genus-progress-species {
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+.genus-progress-tag {
+  text-align: right;
+}
+.genus-progress-tag .genus-tag {
+  margin-left: 0;
+}
+.genus-progress-none {
+  color: var(--text-faint);
+  font-style: italic;
+}
+.genus-progress-row--unnamed .genus-progress-genus {
+  font-weight: 400;
+  color: var(--text-faint);
+}
+.genus-progress .dss-genus-orphan-mark {
+  color: var(--warn);
+  margin-left: 0.15rem;
+}
+
+/* on-foot scan: one species per line */
+.facts-strip--onfoot {
+  align-items: flex-start;
+}
+.onfoot-list {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+.onfoot-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.15rem 0;
+  border-bottom: 1px solid var(--accent-a10);
+}
+.onfoot-row:last-child {
+  border-bottom: none;
+}
+.onfoot-species {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
