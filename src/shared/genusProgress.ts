@@ -28,6 +28,8 @@ export interface GenusProgressRow {
   samples: number | null;
   /** The raw DSS hint, for callers that mark DSS genera with no candidate. */
   hint: GenusHint | null;
+  /** Journal time of the latest scan on this genus here; null when never scanned (or unknown). */
+  at: string | null;
 }
 
 /** The sampling run happening right now, if it is on this body. */
@@ -100,6 +102,7 @@ export function bodyGenusProgress(
       status: "dss",
       samples: null,
       hint: h,
+      at: null,
     };
     byGenus.set(key, row);
     rows.push(row);
@@ -112,12 +115,13 @@ export function bodyGenusProgress(
     const { status, samples } = statusOf(lock, live);
     let row = byGenus.get(key);
     if (!row) {
-      row = { genus, species: null, variant: null, status: "dss", samples: null, hint: null };
+      row = { genus, species: null, variant: null, status: "dss", samples: null, hint: null, at: null };
       byGenus.set(key, row);
       rows.push(row);
     }
     // A sibling moon's scan suggests the genus, never names this body's species.
     if (lock.fromSibling) continue;
+    if (lock.at && (!row.at || lock.at > row.at)) row.at = lock.at;
     // One species per genus on a body; the lock that got furthest names the row.
     if (row.species === null || RANK[status] > RANK[row.status]) {
       row.species = (lock.speciesLocalised || "").trim() || null;
@@ -127,6 +131,27 @@ export function bodyGenusProgress(
     }
   }
   return rows;
+}
+
+/**
+ * The genera scanned here, oldest first, newest last — the glance bar shows the last three.
+ *
+ * "Scanned" is anything with a tag: a comp scan, a foot scan, the run in progress. The live run is
+ * always newest, whatever the clock says. Rows with no time (older data) keep their list order and
+ * sort before the timed ones.
+ */
+export function scannedGenusRowsByTime(rows: readonly GenusProgressRow[]): GenusProgressRow[] {
+  return rows
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => r.status !== "dss")
+    .sort((a, b) => {
+      if ((a.r.status === "active") !== (b.r.status === "active")) return a.r.status === "active" ? 1 : -1;
+      const ta = a.r.at ?? "";
+      const tb = b.r.at ?? "";
+      if (ta !== tb) return ta < tb ? -1 : 1;
+      return a.i - b.i;
+    })
+    .map(({ r }) => r);
 }
 
 /** The tag after a genus: `[CS]`, `[SEEN]`, `[2/3]` — or nothing for a genus only the DSS has named. */

@@ -194,19 +194,20 @@
   .body-pane-left {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    /* the planetary card spans both rows; any height it has spare goes below the Exo-signals card */
-    grid-template-rows: auto 1fr;
-    align-items: start;
+    /* both columns run to the same line: the planet card on the left, sell range + Exo-signals
+       on the right; whichever side is shorter stretches (owner, 2026-09-25) */
+    align-items: stretch;
     gap: 0.8rem;
   }
   .body-pane-left > .planetary-info-card {
     grid-column: 1;
-    grid-row: 1 / span 2;
   }
-  /* Exo-signals sits under the sell range (guild request, 2026-09-24), not under the planet card */
-  .body-pane-left > .exo-payout-collapsible,
-  .body-pane-left > .exo-signals-card {
+  .body-pane-left > .dossier-side {
     grid-column: 2;
+  }
+  /* the last card in the right-hand stack takes up whatever height the planet card leaves over */
+  .dossier-side > section:last-of-type {
+    flex: 1 1 auto;
   }
 }
 /* facts: three tiles across when the panel has 32 rem, two below that; the sell range's three

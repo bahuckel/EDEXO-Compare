@@ -3,7 +3,7 @@
  * and one on-foot line per species instead of one per ScanOrganic.
  */
 import { describe, expect, it } from "vitest";
-import { bodyGenusProgress, genusProgressTag } from "../src/shared/genusProgress.js";
+import { bodyGenusProgress, genusProgressTag, scannedGenusRowsByTime } from "../src/shared/genusProgress.js";
 import { GameStateStore, upsertFootOrganicLock } from "../src/server/gameState.js";
 import type { GenusHint, JournalLine, OrganicGenusLock } from "../src/shared/types.js";
 
@@ -151,5 +151,34 @@ describe("genus rows and their tags", () => {
     );
     expect(rows).toHaveLength(1);
     expect(genusProgressTag(rows[0]!)).toBe("[3/3]");
+  });
+});
+
+describe("the last things scanned", () => {
+  it("stamps each lock with its latest scan, foot or comp", () => {
+    const store = new GameStateStore();
+    const at = (t: string, line: JournalLine) => ({ ...line, timestamp: t }) as unknown as JournalLine;
+    store.apply(at("2026-09-24T12:00:00Z", organic("Log", "Limaxus", "Stratum")));
+    store.apply(at("2026-09-24T12:05:00Z", organic("Log", "Aurasus", "Bacterium", "Teal")));
+    store.apply(at("2026-09-24T12:09:00Z", organic("Sample", "Limaxus", "Stratum")));
+    const locks = store.bodies.get(`${SA}:${BODY}`)!.organicGenusLocks;
+    expect(Object.fromEntries(locks.map((l) => [l.speciesLocalised, l.at]))).toEqual({
+      "Stratum Limaxus": "2026-09-24T12:09:00Z",
+      "Bacterium Aurasus": "2026-09-24T12:05:00Z",
+    });
+  });
+
+  it("orders scanned genera oldest first, the live run last, and leaves out the untouched", () => {
+    const rows = bodyGenusProgress(
+      [hint("Stratum"), hint("Bacterium"), hint("Tussock"), hint("Osseus")],
+      [
+        footLock("Stratum", "Limaxus", { samples: 3, analysed: true, at: "2026-09-24T12:30:00Z" }),
+        footLock("Bacterium", "Aurasus", { samples: 1, at: "2026-09-24T12:40:00Z" }),
+        { ...footLock("Tussock", "Pennata"), source: "codex", at: "2026-09-24T12:10:00Z" },
+      ],
+      { speciesDisplay: "Stratum Limaxus", sampleCount: 1 },
+    );
+    // Stratum is analysed, so it is not the live run; Bacterium, newest, goes last.
+    expect(scannedGenusRowsByTime(rows).map((r) => r.genus)).toEqual(["Tussock", "Stratum", "Bacterium"]);
   });
 });

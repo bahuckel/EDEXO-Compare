@@ -616,12 +616,6 @@
   max-height: min(72vh, 720px);
 }
 
-.candidate-species-subhint--below-bar {
-  text-align: center;
-  width: 100%;
-  margin: 0 0 0.35rem;
-}
-
 .species-other-match-cards-grid--balanced {
   display: flex;
   flex-wrap: wrap;

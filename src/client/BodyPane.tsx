@@ -47,6 +47,7 @@ import {
   bodyGenusProgress,
   GENUS_PROGRESS_TITLE,
   genusProgressTag,
+  scannedGenusRowsByTime,
   type GenusProgressRow,
 } from "@shared/genusProgress";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
@@ -83,6 +84,72 @@ function GenusTag({ row }: { row: Pick<GenusProgressRow, "status" | "samples"> }
   return (
     <span className={`genus-tag genus-tag--${row.status}`} title={GENUS_PROGRESS_TITLE[row.status]}>
       {tag}
+    </span>
+  );
+}
+
+/** How many scanned genera the glance bar shows at once (owner, 2026-09-25). */
+const GLANCE_GENUS_WINDOW = 3;
+
+/**
+ * The glance bar's genus chips: the last three things scanned here, newest on the right, with
+ * arrows to step back through older ones (owner, 2026-09-25 — "max of 3, like the last 3 things you
+ * scanned"). A new scan snaps back to the newest. Genera the DSS named and nothing has touched are
+ * a count after the chips; the Exo-signals card lists them.
+ */
+export function GlanceGenera({ rows }: { rows: GenusProgressRow[] }) {
+  const scanned = scannedGenusRowsByTime(rows);
+  const untouched = rows.length - scanned.length;
+  const [back, setBack] = useState(0);
+  const newest = scanned.length
+    ? `${scanned[scanned.length - 1]!.genus}|${genusProgressTag(scanned[scanned.length - 1]!)}`
+    : "";
+  useEffect(() => setBack(0), [newest]);
+
+  const maxBack = Math.max(0, scanned.length - GLANCE_GENUS_WINDOW);
+  const step = Math.min(back, maxBack);
+  const end = scanned.length - step;
+  const shown = scanned.slice(Math.max(0, end - GLANCE_GENUS_WINDOW), end);
+  if (scanned.length === 0 && untouched === 0) return null;
+
+  return (
+    <span className="glance-item glance-genera" aria-label="Last genera scanned on this body">
+      {scanned.length > GLANCE_GENUS_WINDOW ? (
+        <button
+          type="button"
+          className="glance-genus-step"
+          disabled={step >= maxBack}
+          onClick={() => setBack((b) => Math.min(maxBack, b + 1))}
+          title="Earlier scans"
+          aria-label="Earlier scans"
+        >
+          ‹
+        </button>
+      ) : null}
+      {shown.map((r) => (
+        <span key={r.genus} className={`glance-genus glance-genus--${r.status}`}>
+          {r.genus}
+          <GenusTag row={r} />
+        </span>
+      ))}
+      {scanned.length > GLANCE_GENUS_WINDOW ? (
+        <button
+          type="button"
+          className="glance-genus-step"
+          disabled={step <= 0}
+          onClick={() => setBack((b) => Math.max(0, b - 1))}
+          title="Later scans"
+          aria-label="Later scans"
+        >
+          ›
+        </button>
+      ) : null}
+      {untouched > 0 ? (
+        <span className="glance-genus-left" title="Genera the DSS named that nothing has scanned yet">
+          {scanned.length > 0 ? "+" : ""}
+          {untouched} <small>to scan</small>
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -687,9 +754,6 @@ export const BodyPane = memo(function BodyPane({
     Exo-signals card and the on-foot list all read these, so the three can never disagree.
   */
   const genusRows = bodyGenusProgress(s.genusHints, s.organicGenusLocks, liveRun);
-  // One line per species — the old list printed a sampled species once per ScanOrganic.
-  const onFootRows = genusRows.filter((r) => r.status !== "dss" && (r.species || r.variant));
-  const onFootFallback = s.confirmedVariants.filter(Boolean);
   const signalCount = s.biologicalSignals;
   const unnamedSignals = signalCount != null ? Math.max(0, signalCount - genusRows.length) : 0;
   const comparisonBodySummary =
@@ -778,16 +842,7 @@ export const BodyPane = memo(function BodyPane({
             <span className="glance-item">
               <small>DSS</small> {body.state.dssComplete ? "yes" : "no"}
             </span>
-            {genusRows.length > 0 ? (
-              <span className="glance-item glance-genera" aria-label="What has been scanned, per genus">
-                {genusRows.map((r) => (
-                  <span key={r.genus} className={`glance-genus glance-genus--${r.status}`}>
-                    {r.genus}
-                    <GenusTag row={r} />
-                  </span>
-                ))}
-              </span>
-            ) : null}
+            <GlanceGenera rows={genusRows} />
             {arrivalLs != null ? (
               <span className="glance-item">
                 {arrivalLs === 0 ? "0" : arrivalLs.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
@@ -812,12 +867,6 @@ export const BodyPane = memo(function BodyPane({
                     the system's entry point. The rank compares it with the other bodies here that carry
                     biology and a measured distance. Supercruise minutes are not shown: timing that leg in the
                     journals measures honking and deciding as much as flying.
-                  </p>
-                  <p>
-                    <strong>On-foot scan</strong> lists what your own scans identified here, one line per
-                    species with the colour when known: <em>[1/3]</em>–<em>[3/3]</em> the samples taken,{" "}
-                    <em>[SEEN]</em> sampled but never analysed, <em>[CS]</em> named by the composition
-                    scanner. The signal count and the DSS genera are in the Exo-signals card.
                   </p>
                 </>
               }
@@ -907,33 +956,6 @@ export const BodyPane = memo(function BodyPane({
                 </div>
               </div>
 
-              <div
-                className="facts-strip facts-strip--onfoot"
-                title={
-                  onFootRows.length > 0 || onFootFallback.length > 0
-                    ? "One line per species: your foot scans and composition scans on this body."
-                    : "No scan has named a species on this body yet."
-                }
-              >
-                <span className="fact-k">On-foot scan</span>
-                {onFootRows.length > 0 ? (
-                  <ul className="onfoot-list">
-                    {onFootRows.map((r) => (
-                      <li key={r.genus} className={`onfoot-row onfoot-row--${r.status}`}>
-                        <span className="onfoot-species">{genusRowSpecies(r)}</span>
-                        <GenusTag row={r} />
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <span className="facts-onfoot">
-                    {onFootFallback.length > 0
-                      ? onFootFallback.join(", ")
-                      : "No footfall species confirmation"}
-                  </span>
-                )}
-              </div>
-
               {body.ambiguityNote ? <p className="warn tiny">{body.ambiguityNote}</p> : null}
               {/*
           The weak case, said out loud.
@@ -951,154 +973,162 @@ export const BodyPane = memo(function BodyPane({
               ) : null}
             </FoldPanel>
 
-            {body.exoPayoutRange ? (
-              <>
-                <FoldPanel
-                  foldKey="sell-range"
-                  className="exo-payout-collapsible card-neon"
-                  title="Organic sell range"
-                  help={
-                    <>
-                      <p>
-                        <strong>One price, the right one.</strong> First footfall on a body pays five times
-                        the list price for every species there. When your journal shows the footfall is still
-                        open you see the ×5 figures; when the body has been walked, ×1; when it is unknown, ×1
-                        with the ×5 as a second line.
-                      </p>
-                      <p>
-                        <strong>The band</strong> takes k = min(bio signals, priced candidates) and shows the
-                        k cheapest against the k priciest distinct list prices. The detail view (click the
-                        price) has the per-species table.
-                      </p>
-                      <p>
-                        <strong>Bio signals</strong> is the FSS or DSS count from the journal, falling back to
-                        the DSS genus list length. <strong>Candidates</strong> counts species after the same
-                        gates as the candidate list; only rows with a strict price-list match are priced.
-                        Fewer candidates than signals means a gate is too narrow: try Include Bacterium or
-                        narrow with a DSS or an on-foot confirmation.
-                      </p>
-                    </>
-                  }
-                  summary={(() => {
-                    const h = payoutHeadline(body.exoPayoutRange);
-                    return `${fmtCrRangeShort(h.min, h.max)} CR · ${h.tag}`;
-                  })()}
-                >
-                  <button
-                    type="button"
-                    className="exo-payout-range-panel exo-payout-range-panel--clickable exo-payout-inner-click"
-                    onClick={() => setExoPayoutDetailOpen(true)}
-                  >
-                    <ExoPayoutRangePanel pr={body.exoPayoutRange} variant="main" />
-                  </button>
-                </FoldPanel>
-                {exoPayoutDetailOpen ? (
-                  <ExoPayoutRangeDetailModal
-                    pr={body.exoPayoutRange}
-                    bodyTabLabel={body.tabLabel}
-                    includeBacteriumInSearch={includeBacteriumInSearch}
-                    onClose={() => setExoPayoutDetailOpen(false)}
-                  />
-                ) : null}
-              </>
-            ) : null}
-
             {/*
+              Sell range and Exo-signals stack in one column beside the planet card, and the two
+              columns end on the same line whatever is in them (owner, 2026-09-25: "cards same
+              length, dynamically changing based on contents"). See bridge.css.
+            */}
+            <div className="dossier-side">
+              {body.exoPayoutRange ? (
+                <>
+                  <FoldPanel
+                    foldKey="sell-range"
+                    className="exo-payout-collapsible card-neon"
+                    title="Organic sell range"
+                    help={
+                      <>
+                        <p>
+                          <strong>One price, the right one.</strong> First footfall on a body pays five times
+                          the list price for every species there. When your journal shows the footfall is
+                          still open you see the ×5 figures; when the body has been walked, ×1; when it is
+                          unknown, ×1 with the ×5 as a second line.
+                        </p>
+                        <p>
+                          <strong>The band</strong> takes k = min(bio signals, priced candidates) and shows
+                          the k cheapest against the k priciest distinct list prices. The detail view (click
+                          the price) has the per-species table.
+                        </p>
+                        <p>
+                          <strong>Bio signals</strong> is the FSS or DSS count from the journal, falling back
+                          to the DSS genus list length. <strong>Candidates</strong> counts species after the
+                          same gates as the candidate list; only rows with a strict price-list match are
+                          priced. Fewer candidates than signals means a gate is too narrow: try Include
+                          Bacterium or narrow with a DSS or an on-foot confirmation.
+                        </p>
+                      </>
+                    }
+                    summary={(() => {
+                      const h = payoutHeadline(body.exoPayoutRange);
+                      return `${fmtCrRangeShort(h.min, h.max)} CR · ${h.tag}`;
+                    })()}
+                  >
+                    <button
+                      type="button"
+                      className="exo-payout-range-panel exo-payout-range-panel--clickable exo-payout-inner-click"
+                      onClick={() => setExoPayoutDetailOpen(true)}
+                    >
+                      <ExoPayoutRangePanel pr={body.exoPayoutRange} variant="main" />
+                    </button>
+                  </FoldPanel>
+                  {exoPayoutDetailOpen ? (
+                    <ExoPayoutRangeDetailModal
+                      pr={body.exoPayoutRange}
+                      bodyTabLabel={body.tabLabel}
+                      includeBacteriumInSearch={includeBacteriumInSearch}
+                      onClose={() => setExoPayoutDetailOpen(false)}
+                    />
+                  ) : null}
+                </>
+              ) : null}
+
+              {/*
               Exo-signals, on its own (guild request, 2026-09-24): one row per genus with what has been
               done to it, so "what is left to scan here" is a glance, not a read through the candidate
               cards. Replaces the one-line strip that used to sit in the planetary card.
             */}
-            {genusRows.length > 0 || (signalCount ?? 0) > 0 ? (
-              <FoldPanel
-                foldKey="exo-signals"
-                className="exo-signals-card"
-                title="Exo-signals"
-                help={
-                  <>
-                    <p>
-                      <strong>One row per genus.</strong> The count is the FSS signal count; the game places
-                      one genus per signal and never repeats a genus on a body. The genus names arrive with a
-                      DSS.
-                    </p>
-                    <p>
-                      <strong>Tags</strong> — none: the DSS named it and nothing is scanned yet. <em>[CS]</em>
-                      : the ship's composition scanner named the species. <em>[SEEN]</em>: sampled on foot but
-                      never analysed, and not the plant you are sampling now. <em>[1/3]</em>–<em>[3/3]</em>:
-                      the samples taken, live while you sample and kept once analysed.
-                    </p>
-                    <p>
-                      A <em>(!)</em> after a genus means the DSS reported it but no candidate species uses
-                      that genus under the current scan and filters.
-                    </p>
-                  </>
-                }
-                defaultOpen
-                summary={
-                  <>
-                    {signalCount != null ? `${signalCount} bio` : "? bio"}
-                    {genusRows.length > 0
-                      ? ` · ${genusRows.map((r) => `${r.genus}${genusProgressTag(r) ? ` ${genusProgressTag(r)}` : ""}`).join(", ")}`
-                      : ""}
-                  </>
-                }
-                aside={
-                  <button
-                    type="button"
-                    className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
-                    disabled={!canOpenJournalScanModal}
-                    title={
-                      canOpenJournalScanModal
-                        ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
-                        : "Need merged detailed scan rows in loaded journals for breakdown"
-                    }
-                    onClick={() => {
-                      if (canOpenJournalScanModal) setJournalScanModalOpen(true);
-                    }}
-                  >
-                    DSS {s.dssComplete ? "✓" : "✗"}
-                  </button>
-                }
-              >
-                <div className="genus-progress" role="table" aria-label="Genera on this body">
-                  {genusRows.map((r) => (
-                    <div
-                      key={r.genus}
-                      className={`genus-progress-row genus-progress-row--${r.status}`}
-                      role="row"
+              {genusRows.length > 0 || (signalCount ?? 0) > 0 ? (
+                <FoldPanel
+                  foldKey="exo-signals"
+                  className="exo-signals-card"
+                  title="Exo-signals"
+                  help={
+                    <>
+                      <p>
+                        <strong>One row per genus.</strong> The count is the FSS signal count; the game places
+                        one genus per signal and never repeats a genus on a body. The genus names arrive with
+                        a DSS.
+                      </p>
+                      <p>
+                        <strong>Tags</strong> — none: the DSS named it and nothing is scanned yet.{" "}
+                        <em>[CS]</em>: the ship's composition scanner named the species. <em>[SEEN]</em>:
+                        sampled on foot but never analysed, and not the plant you are sampling now.{" "}
+                        <em>[1/3]</em>–<em>[3/3]</em>: the samples taken, live while you sample and kept once
+                        analysed.
+                      </p>
+                      <p>
+                        A <em>(!)</em> after a genus means the DSS reported it but no candidate species uses
+                        that genus under the current scan and filters.
+                      </p>
+                    </>
+                  }
+                  defaultOpen
+                  summary={
+                    <>
+                      {signalCount != null ? `${signalCount} bio` : "? bio"}
+                      {genusRows.length > 0
+                        ? ` · ${genusRows.map((r) => `${r.genus}${genusProgressTag(r) ? ` ${genusProgressTag(r)}` : ""}`).join(", ")}`
+                        : ""}
+                    </>
+                  }
+                  aside={
+                    <button
+                      type="button"
+                      className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
+                      disabled={!canOpenJournalScanModal}
+                      title={
+                        canOpenJournalScanModal
+                          ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
+                          : "Need merged detailed scan rows in loaded journals for breakdown"
+                      }
+                      onClick={() => {
+                        if (canOpenJournalScanModal) setJournalScanModalOpen(true);
+                      }}
                     >
-                      <span className="genus-progress-genus" role="cell">
-                        {r.genus}
-                        {r.hint && genusHintIsDssOrphan(r.hint, body.dssGenusOrphanHints) ? (
-                          <span
-                            className="dss-genus-orphan-mark"
-                            title="DSS lists this genus, but no candidate row matches it — check filters, bacterium toggle, or codex gates."
-                          >
-                            (!)
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="genus-progress-species" role="cell">
-                        {genusRowSpecies(r) || <span className="genus-progress-none">not scanned</span>}
-                      </span>
-                      <span className="genus-progress-tag" role="cell">
-                        <GenusTag row={r} />
-                      </span>
-                    </div>
-                  ))}
-                  {unnamedSignals > 0 ? (
-                    <div className="genus-progress-row genus-progress-row--unnamed" role="row">
-                      <span className="genus-progress-genus" role="cell">
-                        {unnamedSignals === 1 ? "1 more signal" : `${unnamedSignals} more signals`}
-                      </span>
-                      <span className="genus-progress-species" role="cell">
-                        <span className="genus-progress-none">genus named after a DSS</span>
-                      </span>
-                      <span className="genus-progress-tag" role="cell" />
-                    </div>
-                  ) : null}
-                </div>
-              </FoldPanel>
-            ) : null}
+                      DSS {s.dssComplete ? "✓" : "✗"}
+                    </button>
+                  }
+                >
+                  <div className="genus-progress" role="table" aria-label="Genera on this body">
+                    {genusRows.map((r) => (
+                      <div
+                        key={r.genus}
+                        className={`genus-progress-row genus-progress-row--${r.status}`}
+                        role="row"
+                      >
+                        <span className="genus-progress-genus" role="cell">
+                          {r.genus}
+                          {r.hint && genusHintIsDssOrphan(r.hint, body.dssGenusOrphanHints) ? (
+                            <span
+                              className="dss-genus-orphan-mark"
+                              title="DSS lists this genus, but no candidate row matches it — check filters, bacterium toggle, or codex gates."
+                            >
+                              (!)
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="genus-progress-species" role="cell">
+                          {genusRowSpecies(r) || <span className="genus-progress-none">not scanned</span>}
+                        </span>
+                        <span className="genus-progress-tag" role="cell">
+                          <GenusTag row={r} />
+                        </span>
+                      </div>
+                    ))}
+                    {unnamedSignals > 0 ? (
+                      <div className="genus-progress-row genus-progress-row--unnamed" role="row">
+                        <span className="genus-progress-genus" role="cell">
+                          {unnamedSignals === 1 ? "1 more signal" : `${unnamedSignals} more signals`}
+                        </span>
+                        <span className="genus-progress-species" role="cell">
+                          <span className="genus-progress-none">genus named after a DSS</span>
+                        </span>
+                        <span className="genus-progress-tag" role="cell" />
+                      </div>
+                    ) : null}
+                  </div>
+                </FoldPanel>
+              ) : null}
+            </div>
           </div>
           <div className="body-pane-right">
             <FoldPanel
@@ -1126,6 +1156,13 @@ export const BodyPane = memo(function BodyPane({
                     atmosphere, or a value just outside its band. Codex lists are not walls; the planet-class
                     list alone rejects 4.1 % of the bodies where a species was really found.
                   </p>
+                  {/* Behind the [?] rather than above the list (owner, 2026-09-25). */}
+                  {body.approximateMatchingUsed ? (
+                    <p>
+                      <strong>On this body:</strong> the list includes a species confirmed on foot that the
+                      codex gates would have excluded.
+                    </p>
+                  ) : null}
                 </>
               }
               title={`Candidate species (${likelyMatches.length}/${candidateSpeciesDenomFromFss(s)})`}
@@ -1168,11 +1205,6 @@ export const BodyPane = memo(function BodyPane({
                 </div>
               }
             >
-              {body.approximateMatchingUsed ? (
-                <p className="candidate-species-subhint dim tiny candidate-species-subhint--below-bar">
-                  Includes a species confirmed on foot that the codex gates would have excluded.
-                </p>
-              ) : null}
               {body.matches.length === 0 ? (
                 <p className="dim">
                   No matches — adjust per-species rows in your genus JSON under data/species/, or get journal

@@ -119,6 +119,11 @@ export interface OrganicGenusLock {
    * a hint for the match, never as progress on this body.
    */
   fromSibling?: boolean;
+  /**
+   * Journal time of the latest scan of this species on this body — foot or composition scanner. The
+   * glance bar shows the last three things scanned, newest last. Absent on sibling copies.
+   */
+  at?: string;
 }
 
 export interface BodyExoState {

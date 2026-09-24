@@ -275,21 +275,6 @@
   color: var(--accent-bright);
   text-shadow: 0 0 8px var(--accent-glow);
 }
-.facts-genera {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: var(--fs-sm);
-  color: var(--text);
-  overflow-wrap: anywhere;
-}
-.facts-genera--none {
-  color: var(--text-faint);
-  font-style: italic;
-}
-.facts-genera .dss-genus-orphan-mark {
-  color: var(--warn);
-  margin-left: 0.15rem;
-}
 .facts-dss {
   flex: 0 0 auto;
   margin: 0 0 0 auto;
@@ -317,17 +302,6 @@
 }
 .facts-dss:not(:disabled):hover {
   background: var(--accent-a12);
-}
-.facts-strip--onfoot {
-  justify-content: flex-start;
-}
-.facts-onfoot {
-  flex: 1 1 auto;
-  min-width: 0;
-  text-align: left;
-  font-size: var(--fs-sm);
-  color: var(--text);
-  overflow-wrap: anywhere;
 }
 
 /* landable, in the fold head: glyph + word in the state colour */
@@ -390,19 +364,49 @@
   color: var(--ok);
 }
 
-/* glance bar: the chips wrap onto their own line rather than pushing the bar wide */
+/* glance bar: the last three genera scanned, arrows for older ones */
 .glance-genera {
   display: inline-flex;
+  align-items: baseline;
   flex-wrap: wrap;
   gap: 0.15rem 0.8rem;
   white-space: normal;
   color: var(--text);
+}
+.glance-genus-step {
+  align-self: center;
+  padding: 0 0.35rem;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--accent-bright);
+  background: none;
+  border: 1px solid var(--accent-a30);
+  cursor: pointer;
+}
+.glance-genus-step:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.glance-genus-step:not(:disabled):hover {
+  background: var(--accent-a12);
+}
+.glance-genus-left {
+  color: var(--text-faint);
 }
 .glance-genus {
   white-space: nowrap;
 }
 .glance-genus--dss {
   color: var(--text-faint);
+}
+
+/* sell range + Exo-signals, one stack (see bridge.css for the two-column layout) */
+.dossier-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  min-width: 0;
 }
 
 /* the Exo-signals card: genus · species · tag, one row each */
@@ -447,33 +451,4 @@
 .genus-progress .dss-genus-orphan-mark {
   color: var(--warn);
   margin-left: 0.15rem;
-}
-
-/* on-foot scan: one species per line */
-.facts-strip--onfoot {
-  align-items: flex-start;
-}
-.onfoot-list {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--fs-sm);
-  color: var(--text);
-}
-.onfoot-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.15rem 0;
-  border-bottom: 1px solid var(--accent-a10);
-}
-.onfoot-row:last-child {
-  border-bottom: none;
-}
-.onfoot-species {
-  min-width: 0;
-  overflow-wrap: anywhere;
 }

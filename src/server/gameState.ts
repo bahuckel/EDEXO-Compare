@@ -99,6 +99,8 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
  * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
  * feature that reads it stays dark with nothing logged anywhere.
  *
+ * 12 — organic locks carry `at`, the time of the latest scan of that species on that body, for the
+ *     glance bar's "last three scanned". An 11 cache has none, and would order every body by DSS.
  * 11 — `organicGenusLocks` holds one lock per species per body (a foot scan updates it rather than
  *     pushing a copy per `ScanOrganic`, and replaces a comp-scan or sibling lock for the same
  *     species), with `samples` / `analysed` for the genus progress card and `fromSibling` on locks
@@ -142,7 +144,7 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   Anything derived from the journal that the UI reads has to be either in this payload or
   deliberately transient. Bump the format when you add one.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 11;
+export const JOURNAL_MERGE_CACHE_FORMAT = 12;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -378,7 +380,12 @@ function explorationRecordsSimilarForSharedExo(a: ExplorationScanRecord, b: Expl
  * `Log` opens a run at 1 (re-logging an abandoned plant starts it again); each `Sample` adds one, up
  * to 3; `Analyse` completes it. Exported for its test.
  */
-export function upsertFootOrganicLock(locks: OrganicGenusLock[], lock: OrganicGenusLock, scanType: string): void {
+export function upsertFootOrganicLock(
+  locks: OrganicGenusLock[],
+  lock: OrganicGenusLock,
+  scanType: string,
+  at?: string,
+): void {
   const sp = lock.speciesLocalised.trim().toLowerCase();
   const gk = organicLockGenusKey(lock);
   const idx = locks.findIndex((l) =>
@@ -400,6 +407,7 @@ export function upsertFootOrganicLock(locks: OrganicGenusLock[], lock: OrganicGe
     variantLocalised: lock.variantLocalised || prevFoot?.variantLocalised || "",
     samples,
     ...(analysed ? { analysed: true } : {}),
+    ...(at ? { at } : prevFoot?.at ? { at: prevFoot.at } : {}),
   };
   if (idx >= 0) locks[idx] = next;
   else locks.push(next);
@@ -1967,9 +1975,13 @@ export class GameStateStore {
         // A lock copied from a sibling moon is only a hint, and gives way to this body's own scan.
         const sameSpecies = (l: OrganicGenusLock) =>
           l.speciesLocalised.trim().toLowerCase() === lock.speciesLocalised.trim().toLowerCase();
+        const codexLock: OrganicGenusLock = { ...lock, at: ts };
         const siblingIdx = codexBody.organicGenusLocks.findIndex((l) => sameSpecies(l) && l.fromSibling);
-        if (siblingIdx >= 0) codexBody.organicGenusLocks[siblingIdx] = lock;
-        else if (!codexBody.organicGenusLocks.some(sameSpecies)) codexBody.organicGenusLocks.push(lock);
+        const existing = codexBody.organicGenusLocks.find((l) => sameSpecies(l) && !l.fromSibling);
+        if (siblingIdx >= 0) codexBody.organicGenusLocks[siblingIdx] = codexLock;
+        else if (!existing) codexBody.organicGenusLocks.push(codexLock);
+        // Scanned again with the ship: still a comp scan, but the most recent thing scanned.
+        else if (existing.source === "codex") existing.at = ts;
         if (lock.variantLocalised && !codexBody.confirmedVariants.includes(lock.variantLocalised)) {
           codexBody.confirmedVariants.push(lock.variantLocalised);
         }
@@ -2490,7 +2502,7 @@ export class GameStateStore {
         const b = ensureBody(this.bodies, systemAddress, bodyId, nameHint, starSystem, ts);
 
         if (genusLoc || genusSym) {
-          upsertFootOrganicLock(b.organicGenusLocks, lock, scanType ?? "");
+          upsertFootOrganicLock(b.organicGenusLocks, lock, scanType ?? "", ts);
         }
 
         if (variant && !b.confirmedVariants.includes(variant)) b.confirmedVariants.push(variant);
@@ -2838,6 +2850,7 @@ export class GameStateStore {
           const copy: OrganicGenusLock = { ...lock, fromSibling: true };
           delete copy.samples;
           delete copy.analysed;
+          delete copy.at;
           b.organicGenusLocks.push(copy);
         }
         for (const v of sourceBody.confirmedVariants) {
