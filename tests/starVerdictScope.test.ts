@@ -36,21 +36,25 @@ const neverSeen = (id: string, host: string, main?: string) =>
   }).reasons.some((r) => r.field === "StarType" && /none of the/.test(r.detail));
 
 describe("the observed-host-star term", () => {
-  it("still has something to say about these species on their own (the profiles are unchanged)", () => {
-    expect(hostStarVerdict(species("bacterium_bacterium_omentum"), "K").kind).toBe("never");
-    expect(hostStarVerdict(species("fonticulua_fonticulua_lapida"), "Y").kind).toBe("never");
+  // Examples from the profiles rebuilt on 2026-09-24 — every hydrated body read once. (Omentum and
+  // lapida, the cases that exposed this, turned out to have been seen under K and Y all along: their
+  // "never" came from samples the profile builder was not reading.)
+  it("still has something to say about these species on their own", () => {
+    expect(hostStarVerdict(species("concha_concha_biconcavis"), "A").kind).toBe("never");
+    expect(hostStarVerdict(species("fonticulua_fonticulua_digitos"), "Y").kind).toBe("never");
+    expect(hostStarVerdict(species("fonticulua_fonticulua_digitos"), "K").kind).toBe("observed");
   });
 
   it("stays silent for a species whose colour comes from a crust material", () => {
-    expect(neverSeen("bacterium_bacterium_omentum", "K", "K")).toBe(false);
+    expect(neverSeen("concha_concha_biconcavis", "A", "A")).toBe(false);
   });
 
   it("accepts a class seen as the main star when the body orbits a dwarf", () => {
-    expect(neverSeen("fonticulua_fonticulua_lapida", "Y", "K")).toBe(false);
+    expect(neverSeen("fonticulua_fonticulua_digitos", "Y", "K")).toBe(false);
   });
 
   it("still demotes when neither the host nor the main star has been seen", () => {
-    expect(neverSeen("fonticulua_fonticulua_lapida", "Y", "Y")).toBe(true);
+    expect(neverSeen("fonticulua_fonticulua_digitos", "Y", "Y")).toBe(true);
   });
 });
 

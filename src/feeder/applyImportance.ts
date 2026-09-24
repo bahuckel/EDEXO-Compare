@@ -126,7 +126,23 @@ export async function applyParameterImportance(db: SpeciesDatabase): Promise<Imp
    * 31,990 sample packs twice to compute two views of the same numbers would be silly. Edges are
    * written once, beside the co-occurrence table; the counts ride in each profile.
    */
-  const edges = buildGlobalEdges(pooledNumerics);
+  // Every temperature limit a species row states — the codex band, the atmosphere-linked band and the
+  // measured one — so the temperature rescue can always tell which side of a limit a body is on.
+  const codexTemperatures: number[] = [];
+  for (const e of db.species) {
+    const c = e.criteria;
+    for (const v of [
+      c.surfaceTemperatureK?.min,
+      c.surfaceTemperatureK?.max,
+      c.whenAtmosphereLinkedMinTempK,
+      c.whenAtmosphereLinkedMaxTempK,
+      c.softTemperatureK?.min,
+      c.softTemperatureK?.max,
+    ]) {
+      if (typeof v === "number" && Number.isFinite(v) && v > 0) codexTemperatures.push(v);
+    }
+  }
+  const edges = buildGlobalEdges(pooledNumerics, { "body.surfaceTemperature": codexTemperatures });
   const edgesFile: HistogramEdgesFile = {
     formatVersion: 1,
     builtAt: new Date().toISOString(),

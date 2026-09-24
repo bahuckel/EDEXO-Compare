@@ -128,12 +128,56 @@ function isExcludedCompositionPath(path: string): boolean {
   return /^body\.solidComposition\.ice$/i.test(path);
 }
 
-/** Edges for every parameter the pooled corpus can support. */
-export function buildGlobalEdges(pooled: Map<string, number[]>): HistogramEdges {
+/** How far a quantile edge may move to land on a codex value. */
+export const SNAP_TO_CODEX_K = 2;
+
+/**
+ * Move the nearest edge onto each codex value within {@link SNAP_TO_CODEX_K}, keeping the bin count.
+ *
+ * The temperature rescue at a codex edge asks the fine histogram which side of the edge a species'
+ * bodies are on, and a bin that straddles the edge cannot say. Quantile edges land wherever the
+ * corpus puts them: on 2026-09-18 they fell exactly on 165, 167 and 169 K — corpus temperatures
+ * cluster on whole kelvin — and the rescue worked by that luck. A rebuild on 2026-09-24 moved the 165
+ * edge to 165.16 K, the paleas bin became 162.9-165.2 K, and the commander's own paleas at 162.1 K
+ * lost its rescue. Snapping makes the edges the rescue needs part of the ruler, not an accident of it.
+ */
+export function snapEdgesToValues(edges: number[], values: readonly number[], within = SNAP_TO_CODEX_K): number[] {
+  const out = [...edges];
+  const taken = new Set<number>();
+  for (const v of [...new Set(values)].sort((a, b) => a - b)) {
+    let best = -1;
+    for (let i = 0; i < out.length; i++) {
+      if (taken.has(i)) continue;
+      if (best < 0 || Math.abs(out[i]! - v) < Math.abs(out[best]! - v)) best = i;
+    }
+    if (best < 0 || Math.abs(out[best]! - v) > within) continue;
+    const trial = [...out];
+    trial[best] = v;
+    // Only if the edges stay strictly increasing — a snap may never merge or reorder bins.
+    if (trial.every((e, i) => i === 0 || e > trial[i - 1]!)) {
+      out[best] = v;
+      taken.add(best);
+    }
+  }
+  return out;
+}
+
+/**
+ * Edges for every parameter the pooled corpus can support.
+ *
+ * `snapTo` names codex values per path (the species rows' temperature limits) that an edge should
+ * sit on exactly — see {@link snapEdgesToValues}.
+ */
+export function buildGlobalEdges(
+  pooled: Map<string, number[]>,
+  snapTo?: Readonly<Record<string, readonly number[]>>,
+): HistogramEdges {
   const out: HistogramEdges = {};
   for (const [path, values] of pooled) {
     if (isExcludedCompositionPath(path)) continue;
-    const edges = usesEqualWidthEdges(path) ? equalWidthEdges(values) : globalEdges(values);
+    let edges = usesEqualWidthEdges(path) ? equalWidthEdges(values) : globalEdges(values);
+    const snap = snapTo?.[path];
+    if (edges.length && snap?.length) edges = snapEdgesToValues(edges, snap);
     if (edges.length) out[path] = edges;
   }
   return out;

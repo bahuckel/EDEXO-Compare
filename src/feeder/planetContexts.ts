@@ -5,13 +5,13 @@
  * host-star resolution that differed between "analyze in the UI" and "rebuild everything" would be
  * invisible, showing up only as unexplained profile churn.
  */
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { FeederStarSummary } from "./feederStarHost.js";
 import type { PlanetSampleContext } from "./profileBuilder.js";
 import type { EdsmBody } from "./edsm.js";
 import { rawSystemsDir } from "./paths.js";
-import { looseSampleIndex, readPackedSamples, type SamplePackRecord } from "./samplePacks.js";
+import { readSamplesByIdentity, type SamplePackRecord } from "./samplePacks.js";
 import { readNumericOverlay } from "./numericRehydration.js";
 
 const systemStarCache = new Map<string, FeederStarSummary[] | null>();
@@ -92,35 +92,24 @@ function pickSystemPrimary(stars: FeederStarSummary[] | null): FeederStarSummary
 }
 
 /**
- * Every sighting for one species: the packed archive plus any loose packs written since.
+ * Every sighting for one species, once per body: the archive, the old `sample_N` files and the
+ * `body_<hash>` files the hydrator has written since packs were keyed by identity.
  *
- * Loose wins on collision — a species hydrated after its last `feeder pack` has newer records on
- * disk than in the archive, and a rebuild has to see them. Sorted by occurrence index so the order
- * is the hydration order whichever side a record came from (`sample_10` before `sample_9`, as the
- * old name sort never managed).
+ * This used to read the archive and `sample_N` only, merged **by occurrence index**. Two things went
+ * wrong at once, and neither showed in any count. The index had been positional — an alphabetical
+ * occurrence list that shifted under every import — so the archive and the loose files describe the
+ * same body under several indices; and the `body_*` files, which is where every hydration since the
+ * identity change went, were never read at all. Measured across the corpus on 2026-09-24: 69,189
+ * records read, 46,029 distinct bodies among them, and 23,160 hydrated bodies left on disk. Bacterium
+ * volu's profile said 68 and described 38.
+ *
+ * `readSamplesByIdentity` is what the hydrator already uses to decide what is done; the builder now
+ * reads the same set. Sorted by identity so the order does not depend on which file a body is in.
  */
 async function loadSamplePackRecords(dir: string): Promise<SamplePackRecord[]> {
-  const merged = await readPackedSamples(dir);
-  let names: string[];
-  try {
-    names = await readdir(dir);
-  } catch {
-    if (merged.size === 0) throw new Error("No samples — run fetch first");
-    names = [];
-  }
-
-  for (const name of names) {
-    const i = looseSampleIndex(name);
-    if (i === null) continue;
-    try {
-      merged.set(i, { i, ...(JSON.parse(await readFile(join(dir, name), "utf8")) as object) });
-    } catch {
-      /* unreadable pack: the count in the rebuild report is what actually loaded */
-    }
-  }
-
-  if (merged.size === 0) throw new Error("No samples — run fetch first");
-  return [...merged.values()].sort((a, b) => a.i - b.i);
+  const byIdentity = await readSamplesByIdentity(dir);
+  if (byIdentity.size === 0) throw new Error("No samples — run fetch first");
+  return [...byIdentity.entries()].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).map(([, r]) => r);
 }
 
 /** Load every sighting for a species — archived or loose — as a context for the profile builder. */

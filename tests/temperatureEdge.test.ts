@@ -54,11 +54,17 @@ describe("sightings near a codex edge", () => {
 });
 
 describe("the matcher, on a straddling bin", () => {
-  it("demotes cucumisis at 184 K — softly, never hidden", () => {
+  /**
+   * Cucumisis is recorded at 191 K and above on 99.7 % of its bodies. Before the 2026-09-24 rebuild
+   * its display histogram reached down to 184 K — padded by duplicate samples — and the straddle
+   * check demoted it there. Rebuilt from every body once, nothing of it is recorded near 184 K, so
+   * no observation speaks for it and the codex band (≥ 190 K, 2 % tolerance) decides: not shown. No
+   * cucumisis truth in the replay is affected.
+   */
+  it("does not show cucumisis at 184 K, where nothing of it is recorded", () => {
     const r = judge("stratum_stratum_cucumisis", body(184, "SulphurDioxide"));
     expect(r.ok).toBe(false);
-    expect(r.softOnly).toBe(true);
-    expect(r.reasons.some((x) => x.field === "SurfaceTemperature" && x.soft)).toBe(true);
+    expect(r.reasons.some((x) => x.field === "SurfaceTemperature")).toBe(true);
   });
 
   it("keeps paleas at 162.1 K shown", () => {
