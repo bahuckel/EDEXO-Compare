@@ -43,6 +43,7 @@ import { resolveUserSettingsJsonPath } from "./paths.js";
 import { fetchDssaData, readDssaByCallsign } from "./edastroDssa.js";
 import { networkForCallsign } from "../shared/carrierNetworks.js";
 import type { CarrierDataStatusDTO, CarrierRowDTO } from "../shared/types.js";
+import { APP_USER_AGENT } from "./appVersion.js";
 
 const CARRIERS_URL = "https://edastro.com/mapcharts/files/fleetcarriers.csv";
 
@@ -54,7 +55,7 @@ const CARRIERS_URL = "https://edastro.com/mapcharts/files/fleetcarriers.csv";
  * a maintainer who can see who we are will send an email rather than firewall a subnet. Same shape
  * as `EDSM_USER_AGENT`, deliberately.
  */
-export const EDASTRO_USER_AGENT = "ED-Exo-Compare/1.1.0 (+https://github.com/bahuckel/EDEXO-Compare)";
+export const EDASTRO_USER_AGENT = APP_USER_AGENT;
 
 /**
  * How long before the button will fetch again.

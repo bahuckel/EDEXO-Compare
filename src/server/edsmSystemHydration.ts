@@ -1,6 +1,7 @@
 import { journalPlanetClass } from "../shared/spanshPlanetClass.js";
 import { journalStarTypeFromSubType } from "../shared/spanshStarType.js";
 import type { ExplorationScanRecord } from "../shared/types.js";
+import { APP_USER_AGENT } from "./appVersion.js";
 
 const EDSM_BODIES_URL = "https://www.edsm.net/api-system-v1/bodies";
 const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
@@ -13,8 +14,8 @@ const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
  * traffic makes that worse than untidy: a volunteer service seeing a rise in requests should be able
  * to find out whose they are.
  */
-/** Keep in step with `package.json`. A stale version here is worse than none: it tells EDSM a lie. */
-export const EDSM_USER_AGENT = "ED-Exo-Compare/1.1.0 (+https://github.com/bahuckel/EDEXO-Compare)";
+/** From `APP_VERSION`, which a test keeps equal to `package.json`. */
+export const EDSM_USER_AGENT = APP_USER_AGENT;
 
 /**
  * The commander's own EDSM identity, when auto-fetch is configured.

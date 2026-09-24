@@ -47,6 +47,7 @@
  * path, off by default.
  */
 import type { JournalLine } from "../shared/types.js";
+import { APP_VERSION } from "./appVersion.js";
 
 export const EDDN_UPLOAD_URL = "https://eddn.edcd.io:4430/upload/";
 
@@ -54,12 +55,12 @@ export const EDDN_UPLOAD_URL = "https://eddn.edcd.io:4430/upload/";
 export const EDDN_SOFTWARE_NAME = "EDEXO-Compare";
 
 /**
- * What EDDN sees in `softwareVersion` — kept equal to `package.json` by a test.
+ * What EDDN sees in `softwareVersion`: the app's version.
  *
  * EDDN asks for the version to change whenever the messages do, so listeners can tell a fixed
- * sender from a broken one. A release that forgets to bump this fails the suite.
+ * sender from a broken one. `APP_VERSION` is kept equal to `package.json` by a test.
  */
-export const EDDN_SOFTWARE_VERSION = "1.1.4";
+export const EDDN_SOFTWARE_VERSION = APP_VERSION;
 
 /** Between requests: a burst of FSS scans drains steadily instead of all at once. */
 export const EDDN_MIN_GAP_MS = 250;

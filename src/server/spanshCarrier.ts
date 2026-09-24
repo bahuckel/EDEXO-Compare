@@ -25,9 +25,10 @@
  * the galaxy. The exact, case-insensitive name match is what makes the answer trustworthy, and the
  * `Drake-Class Carrier` type filter keeps a station with a similar name out of it.
  */
+import { APP_USER_AGENT } from "./appVersion.js";
 
 const SPANSH_STATIONS_URL = "https://spansh.co.uk/api/stations/search";
-const USER_AGENT = "ED-Exo-Compare/1.1.0 (+https://github.com/bahuckel/EDEXO-Compare)";
+const USER_AGENT = APP_USER_AGENT;
 
 export interface SpanshCarrierFix {
   callsign: string;

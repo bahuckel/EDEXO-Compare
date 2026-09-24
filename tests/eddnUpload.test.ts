@@ -6,7 +6,6 @@
  * only when the event's system matches the last jump; body names follow EDDN's Status.json +
  * journal rule; and the retry rules EDDN spells out (never after 400/426, a minute between tries).
  */
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   buildEddnMessage,
@@ -442,12 +441,5 @@ describe("the uploader", () => {
     expect(sent).toHaveLength(3);
     expect(uploader.stats.failed).toBe(1);
     expect(uploader.pending).toBe(0);
-  });
-
-  it("keeps its version equal to package.json, as EDDN asks", () => {
-    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
-      version: string;
-    };
-    expect(EDDN_SOFTWARE_VERSION).toBe(pkg.version);
   });
 });

@@ -39,15 +39,15 @@
  *   the commander about or the endpoint about twice.
  */
 import type { JournalLine } from "../shared/types.js";
+import { APP_VERSION } from "./appVersion.js";
 
 /**
  * What Canonn sees in `clientVersion`.
  *
- * Keep in step with `package.json`, for the reason `EDSM_USER_AGENT` gives: a volunteer service
- * seeing traffic it did not expect should be able to find out whose it is, and a stale version is
- * worse than none because it tells them a lie.
+ * From `APP_VERSION`, which a test keeps equal to `package.json`: a volunteer service seeing
+ * traffic it did not expect should be able to find out whose it is.
  */
-export const CANONN_CLIENT_VERSION = "ED-Exo-Compare-1.1.0";
+export const CANONN_CLIENT_VERSION = `ED-Exo-Compare-${APP_VERSION}`;
 
 const WHITELIST_URL = "https://us-central1-canonn-api-236217.cloudfunctions.net/whitelist";
 const POST_URL = "https://us-central1-canonn-api-236217.cloudfunctions.net/postEvent";
