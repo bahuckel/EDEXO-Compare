@@ -51,6 +51,7 @@ import {
   regionSiblingDepletionDetail,
 } from "../shared/regionAbsence.js";
 import { getProjectRoot } from "./paths.js";
+import { colourVariantRuleFor } from "./eddsnColourVariants.js";
 import { observedUnderAtmosphere } from "./speciesAtmosphereObservations.js";
 import {
   normalizeScanAtmosphereForMatch,
@@ -708,9 +709,34 @@ export function speciesMatchesExcludingTempPressure(
    * Computed once for all three star rules below: the codex fragment list, the genus colour table
    * and the observation term itself. See {@link hostStarVerdict}.
    */
-  const starVerdict = ctx?.parentStarType?.trim()
+  let starVerdict = ctx?.parentStarType?.trim()
     ? hostStarVerdict(entry, ctx.parentStarType)
     : ({ kind: "unknown" } as HostStarVerdict);
+  /*
+    "Never seen under this host star" misfires twice, and both are measured.
+
+    A species whose colour comes from a crust material (ED-DSN's table, `eddsnColourVariants`) has
+    no star in its colour rule, and a thin profile's host list is sampling, not a rule: Bacterium
+    omentum and verrata were demoted under K hosts, Electricae radialem under several classes.
+    Every body in the data carries at least one material of each rare group, so the material never
+    rules a species out either — the star term is simply not evidence for these.
+
+    And a colour star follows the system's main star, not a brown or white dwarf the body happens to
+    orbit (araneamus, pluma): star-coloured species fit the main star on 96-99 % of their bodies and
+    the host on 76-94 %. A class observed as the main star counts as observed.
+
+    Replayed over 82,039 slots: 36 truth slots back for 15 single-species slots; on the 3,687 slots
+    from the 2026-09-24 capture — recorded after these rules were set — misses 21 -> 14 alone and
+    21 -> 9 with the restore ordering below.
+  */
+  if (starVerdict.kind === "never") {
+    const rule = colourVariantRuleFor(getProjectRoot(), entry.genusDataDir, entry.displayName);
+    if (rule?.source === "material") starVerdict = { kind: "unknown" };
+  }
+  if (starVerdict.kind === "never" && ctx?.systemMainStarClass) {
+    const viaMain = hostStarVerdict(entry, ctx.systemMainStarClass);
+    if (viaMain.kind === "observed") starVerdict = viaMain;
+  }
 
   const starFrags = c.parentStarTypeIncludesAnyOf;
   if (starFrags?.length && ctx?.parentStarType?.trim()) {
@@ -1306,6 +1332,7 @@ function restoreNamedGenera(
   const missing = [...dssGenera].filter((g) => !shown.has(g));
   if (!missing.length) return;
 
+  const atmObjections = (m: PendingMatch) => (m.unlikelyReasons ?? []).filter((r) => r.field === "AtmosphereType").length;
   const objections = (m: PendingMatch) =>
     (m.unlikelyReasons ?? []).filter((r) => r.field !== "ObservedTemperature").length;
   const restored = new Set<number>();
@@ -1318,7 +1345,17 @@ function restoreNamedGenera(
       // it is the weakest evidence we hold (see below). Counted alike, a volu at 213 K, outside a
       // 68-body envelope, tied with an ammonia species on an oxygen world, and the ammonia species
       // won on list order: twice in the commander's own journals.
-      .sort((a, b) => objections(a.m) - objections(b.m) || (a.m.unlikelyReasons?.length ?? 0) - (b.m.unlikelyReasons?.length ?? 0));
+      //
+      // An atmosphere the codex does not list outweighs every other objection. Counted alike, the
+      // ammonia-only Concha aureolas tied with labiata on carbon-dioxide bodies and won on list order
+      // (three of them in the 2026-09-24 capture). Replayed: +49 truth slots, -6 (Frutexa metallicum
+      // on water, which really does grow off its list), 2 more single-species slots.
+      .sort(
+        (a, b) =>
+          atmObjections(a.m) - atmObjections(b.m) ||
+          objections(a.m) - objections(b.m) ||
+          (a.m.unlikelyReasons?.length ?? 0) - (b.m.unlikelyReasons?.length ?? 0),
+      );
     const best = candidates[0];
     if (!best) continue;
     strict.push({ entry: best.m.entry, reasons: best.m.reasons });
