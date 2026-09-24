@@ -382,6 +382,7 @@ function buildLiveShipFuelRangeDTO(
     loadoutMaxJumpLy: store.loadoutMaxJumpRangeLy,
     starRoles,
     firstFootfallVerdict: (name) => lookup.verdict(name),
+    firstFootfallNote: (name) => lookup.note(name),
   });
 
   if (!hasLiveStatusFuel && !navRoute) return null;

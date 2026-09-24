@@ -433,23 +433,23 @@
       var h = hops[i];
       var k = starKind(h.starClass);
       /*
-        Blue arrow when nobody appears to have been to the system it points at.
+        The arrow's colour says what EDSM knows about the system it points at (owner, 2026-09-24):
+        orange = someone has been there, electric blue = no record at all, grey = no answer — still
+        waiting, or the request failed (no connection, rate limit, error, bad reply). Grey while
+        waiting too, so orange only ever means EDSM said yes.
 
         The arrow only — the hop itself keeps the star-class colour it has always had, which is the
-        fuel question and is not this one. The flag is asymmetric on purpose (see
-        server/firstFootfallLookup.ts): false means someone has certainly been and uploaded it, true
-        means nobody who uploads has, and null means the lookup has not answered, which keeps the
-        ordinary colour rather than guessing either way.
+        fuel question and is not this one. See server/firstFootfallLookup.ts.
       */
-      var firstHere = h.likelyFirstFootfall === true;
+      var ff = h.likelyFirstFootfall;
+      var sepClass = ff === true ? " hop__sep--first" : ff === false ? "" : " hop__sep--unknown";
+      var sepTitle = ff == null && h.firstFootfallNote ? ' title="' + esc(h.firstFootfallNote).replace(/"/g, "&quot;") + '"' : "";
       html +=
-        (i
-          ? '<span class="hop__sep' + (firstHere ? " hop__sep--first" : "") + '" aria-hidden="true">››</span>'
-          : "") +
+        (i ? '<span class="hop__sep' + sepClass + '"' + sepTitle + ' aria-hidden="true">››</span>' : "") +
         '<span class="hop hop--' +
         k.kind +
         '" title="' +
-        esc(h.starSystem + " — " + k.label + (firstHere ? " — nobody has been here" : "")) +
+        esc(h.starSystem + " — " + k.label + (ff === true ? " — nobody has been here" : "")) +
         '">' +
         esc(h.starClass || "?") +
         (h.refuel && h.refuel !== "none" ? fuelPump(h.refuel) : "") +

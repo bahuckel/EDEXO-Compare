@@ -2029,10 +2029,12 @@ export interface RouteAheadHopDTO {
    * The game says whether a system was discovered only on arrival, so before the jump the only
    * source is EDSM. That makes the answer asymmetric and the HUD renders it that way: `false` is
    * certain — someone has been and uploaded — while `true` is a good bet, because a commander who
-   * never uploads leaves no trace. `null` means the lookup has not answered and the arrow keeps its
-   * ordinary colour rather than guessing. See `server/firstFootfallLookup.ts`.
+   * never uploads leaves no trace. `null` means the lookup has not answered, and the arrow goes grey
+   * rather than guessing. See `server/firstFootfallLookup.ts`.
    */
   likelyFirstFootfall: boolean | null;
+  /** When `likelyFirstFootfall` is null: why — "Waiting for EDSM", "EDSM rate limit — will retry"… */
+  firstFootfallNote?: string | null;
 }
 
 /** Live ship fuel from `Status.json` + jump calibration from merged `Loadout` / `FSDJump`. */

@@ -78,6 +78,8 @@ export interface RouteAheadHop {
   refuel: RouteRefuelAlertDTO;
   /** See `RouteAheadHopDTO.likelyFirstFootfall`. Null when the lookup has not answered. */
   likelyFirstFootfall: boolean | null;
+  /** See `RouteAheadHopDTO.firstFootfallNote`. */
+  firstFootfallNote?: string | null;
 }
 
 export interface NavRouteFuelAnalysis {
@@ -233,6 +235,8 @@ export function analyzeNavRouteFuel(opts: {
    * business making network calls. See `firstFootfallLookup.ts`.
    */
   firstFootfallVerdict?: (systemName: string) => boolean | null;
+  /** Why a system has no verdict yet, for the HUD tooltip. See `FirstFootfallLookup.note`. */
+  firstFootfallNote?: (systemName: string) => string | null;
 }): NavRouteFuelAnalysis | null {
   const {
     route,
@@ -387,6 +391,7 @@ export function analyzeNavRouteFuel(opts: {
       scoopable: scoop[j]!,
       refuel: j === refuelIdx ? refuelLevel : "none",
       likelyFirstFootfall: opts.firstFootfallVerdict?.(w.starSystem) ?? null,
+      firstFootfallNote: opts.firstFootfallNote?.(w.starSystem) ?? null,
     });
   }
 

@@ -974,6 +974,10 @@ body {
   color: var(--ok);
   text-shadow: 0 0 6px rgba(79, 208, 255, 0.7);
 }
+/* No answer from EDSM yet, or it could not be reached — neither "visited" nor "unvisited". */
+.hop__sep--unknown {
+  color: var(--unknown);
+}
 .hop__fuel {
   width: 0.95rem;
   height: 0.95rem;

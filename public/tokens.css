@@ -35,6 +35,8 @@
   --info-soft: #9fe4ff;
   --bio: #7be07b;
   --live: #7be07b;
+  /* Not known — an answer we could not get (e.g. EDSM unreachable). Neutral on purpose. */
+  --unknown: rgba(176, 178, 188, 0.62);
 
   /* ---- type ------------------------------------------------------------------------------------ */
   --hud-font: "Bahnschrift", "Eurostile", "Square721 BT", "Segoe UI", system-ui, sans-serif;

@@ -61,6 +61,19 @@ const MAX_NAMES_PER_REQUEST = 40;
 /** Least time between two requests, so a route being replotted cannot become a burst. */
 const MIN_REQUEST_GAP_MS = 5_000;
 
+/** After EDSM says HTTP 429, wait this long before asking again. */
+export const RATE_LIMIT_BACKOFF_MS = 60_000;
+
+/** Why a name has no verdict. The HUD shows the arrow grey for all of them (owner, 2026-09-24). */
+export type LookupFailure = "rate-limit" | "http" | "network" | "bad-response";
+
+const FAILURE_NOTE: Record<LookupFailure, string> = {
+  "rate-limit": "EDSM rate limit — will retry",
+  http: "EDSM answered with an error — will retry",
+  network: "Could not reach EDSM — will retry",
+  "bad-response": "EDSM sent an unexpected reply — will retry",
+};
+
 export interface FirstFootfallDeps {
   /** True when the commander's own journals already place him in this system. */
   hasVisited: (systemName: string) => boolean;
@@ -85,6 +98,10 @@ export class FirstFootfallLookup {
    */
   private lastRequestAt = -Infinity;
   private inFlight = false;
+  /** name → why the last request for it failed. Cleared when a later one answers. */
+  private readonly failures = new Map<string, LookupFailure>();
+  /** No request before this time — set by a 429. */
+  private backoffUntil = -Infinity;
 
   constructor(private readonly deps: FirstFootfallDeps) {}
 
@@ -99,6 +116,22 @@ export class FirstFootfallLookup {
     if (this.deps.hasVisited(name)) return false;
     const hit = this.known.get(key(name));
     return hit === undefined ? null : !hit;
+  }
+
+  /**
+   * Why a system has no verdict, for the arrow's tooltip — or null when it has one.
+   *
+   * The owner's three colours: orange = EDSM knows the system, blue = EDSM has never heard of it,
+   * **grey = no answer**, whether because the request is still waiting or because it failed (no
+   * connection, rate limit, an error status, a reply that is not the list we asked for). Grey while
+   * waiting too, so orange only ever means "EDSM said yes".
+   */
+  note(systemName: string): string | null {
+    if (this.verdict(systemName) !== null) return null;
+    const name = systemName?.trim();
+    if (!name) return null;
+    const failure = this.failures.get(key(name));
+    return failure ? FAILURE_NOTE[failure] : "Waiting for EDSM";
   }
 
   /** Queue whatever is still unanswered, and send one request for the lot. Never throws. */
@@ -121,9 +154,13 @@ export class FirstFootfallLookup {
     if (this.inFlight || this.pending.size === 0) return;
     const now = (this.deps.now ?? Date.now)();
     if (now - this.lastRequestAt < MIN_REQUEST_GAP_MS) return;
+    if (now < this.backoffUntil) return;
     this.inFlight = true;
     this.lastRequestAt = now;
     const batch = [...this.pending].slice(0, MAX_NAMES_PER_REQUEST);
+    const fail = (why: LookupFailure) => {
+      for (const n of batch) this.failures.set(key(n), why);
+    };
     try {
       const params = new URLSearchParams();
       for (const n of batch) params.append("systemName[]", n);
@@ -137,7 +174,12 @@ export class FirstFootfallLookup {
       const res = await doFetch(`${EDSM_SYSTEMS_URL}?${params.toString()}`, {
         headers: { Accept: "application/json", "User-Agent": EDSM_USER_AGENT },
       });
-      if (!res.ok) return; // leave them pending; the next route change tries again
+      if (!res.ok) {
+        // Leave them pending; the next snapshot tries again — after a minute when EDSM said 429.
+        fail(res.status === 429 ? "rate-limit" : "http");
+        if (res.status === 429) this.backoffUntil = now + RATE_LIMIT_BACKOFF_MS;
+        return;
+      }
       const rows = (await res.json()) as unknown;
       /*
         A body that is not a list is not an empty answer.
@@ -148,7 +190,10 @@ export class FirstFootfallLookup {
         string, or a 200 carrying `{}` is EDSM failing to answer, and treating it as "nobody has been
         anywhere" is the one wrong direction this feature can fail in. Leave them pending instead.
       */
-      if (!Array.isArray(rows)) return;
+      if (!Array.isArray(rows)) {
+        fail("bad-response");
+        return;
+      }
       const returned = new Set(
         rows.map((r) => key(String((r as { name?: unknown })?.name ?? ""))).filter(Boolean),
       );
@@ -161,10 +206,12 @@ export class FirstFootfallLookup {
       for (const n of batch) {
         this.known.set(key(n), returned.has(key(n)));
         this.pending.delete(key(n));
+        this.failures.delete(key(n));
       }
     } catch {
-      // Offline, rate-limited, or EDSM down. The names stay pending and the arrows stay neutral,
-      // which is the honest rendering of "we do not know".
+      // Offline, or EDSM down. The names stay pending and the arrows go grey — the honest rendering
+      // of "we do not know" — with the reason in the tooltip.
+      fail("network");
     } finally {
       this.inFlight = false;
     }

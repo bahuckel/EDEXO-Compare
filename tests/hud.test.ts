@@ -363,6 +363,46 @@ describe("hud.js next jump", () => {
     });
     expect((document.querySelector('[data-f="route"]') as HTMLElement).hidden).toBe(true);
   });
+
+  it("colours each arrow by what EDSM knows: orange visited, blue unvisited, grey no answer", () => {
+    // Owner, 2026-09-24: grey while EDSM has not answered, and when it could not be reached.
+    const HUD = loadHud();
+    HUD.mount(["jump"], { noTimers: true });
+    const hop = (s: string, ff: boolean | null, note: string | null = null) => ({
+      starSystem: s,
+      starClass: "K",
+      scoopable: true,
+      refuel: "none",
+      likelyFirstFootfall: ff,
+      firstFootfallNote: note,
+    });
+    HUD.render({
+      jumpTarget: { starSystem: "A", starClass: "K", arrived: false, source: "route" },
+      liveShipFuelRange: {
+        navRoute: {
+          ahead: [
+            hop("A", false),
+            hop("B", false),
+            hop("C", true),
+            hop("D", null, "EDSM rate limit — will retry"),
+            hop("E", null, "Waiting for EDSM"),
+          ],
+          refuelInHops: null,
+          refuelLevel: "none",
+        },
+      },
+    });
+    // The arrow before a hop describes that hop: B visited, C unvisited, D and E unknown.
+    const seps = [...document.querySelectorAll(".hop__sep")];
+    expect(seps.map((e) => e.className)).toEqual([
+      "hop__sep",
+      "hop__sep hop__sep--first",
+      "hop__sep hop__sep--unknown",
+      "hop__sep hop__sep--unknown",
+    ]);
+    expect(seps[2]?.getAttribute("title")).toBe("EDSM rate limit — will retry");
+    expect(seps[0]?.getAttribute("title")).toBeNull();
+  });
 });
 
 describe("hud.js merged panel", () => {

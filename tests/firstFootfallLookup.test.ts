@@ -7,7 +7,7 @@
  * naive version would ask about forty systems, one request each, every time a route is replotted.
  */
 import { describe, expect, it, vi } from "vitest";
-import { FirstFootfallLookup, LOOKUP_HOPS_AHEAD } from "../src/server/firstFootfallLookup.js";
+import { FirstFootfallLookup, LOOKUP_HOPS_AHEAD, RATE_LIMIT_BACKOFF_MS } from "../src/server/firstFootfallLookup.js";
 
 /** A fetch that answers as EDSM does: only the systems it knows come back. */
 function edsmKnowing(known: string[]) {
@@ -174,5 +174,73 @@ describe("when it cannot reach EDSM", () => {
     lookup.request(["Somewhere"]);
     await new Promise((r) => setTimeout(r, 5));
     expect(lookup.verdict("Somewhere")).toBeNull();
+  });
+});
+
+/**
+ * Why there is no answer, for the grey arrow's tooltip (owner, 2026-09-24): grey while waiting and
+ * grey when EDSM could not be asked, so orange only ever means EDSM said someone has been.
+ */
+describe("the note behind a grey arrow", () => {
+  const settle = () => new Promise((r) => setTimeout(r, 5));
+  const lookupWith = (impl: () => Promise<unknown>, now?: () => number) =>
+    new FirstFootfallLookup({
+      hasVisited: () => false,
+      identity: () => null,
+      fetchImpl: impl as unknown as typeof fetch,
+      now,
+    });
+
+  it("says it is waiting before anything came back, and nothing once it has", async () => {
+    const { lookup } = make({ known: ["Sol"] });
+    expect(lookup.note("Sol")).toBe("Waiting for EDSM");
+    lookup.request(["Sol"]);
+    await settle();
+    expect(lookup.note("Sol")).toBeNull();
+  });
+
+  it("names the failure: no connection, an error status, a reply that is not a list", async () => {
+    const offline = lookupWith(async () => {
+      throw new Error("offline");
+    });
+    offline.request(["A"]);
+    await settle();
+    expect(offline.note("A")).toBe("Could not reach EDSM — will retry");
+
+    const error = lookupWith(async () => ({ ok: false, status: 500, json: async () => [] }));
+    error.request(["A"]);
+    await settle();
+    expect(error.note("A")).toBe("EDSM answered with an error — will retry");
+
+    const odd = lookupWith(async () => ({ ok: true, json: async () => ({ error: "nope" }) }));
+    odd.request(["A"]);
+    await settle();
+    expect(odd.note("A")).toBe("EDSM sent an unexpected reply — will retry");
+  });
+
+  it("backs off a full minute after a rate limit, then asks again and clears the note", async () => {
+    let t = 0;
+    let limited = true;
+    const impl = vi.fn(async () =>
+      limited ? { ok: false, status: 429, json: async () => [] } : { ok: true, json: async () => [] },
+    );
+    const lookup = lookupWith(impl, () => t);
+    lookup.request(["A"]);
+    await settle();
+    expect(lookup.note("A")).toBe("EDSM rate limit — will retry");
+    expect(impl).toHaveBeenCalledTimes(1);
+
+    t = 10_000; // past the ordinary gap, inside the back-off
+    lookup.request(["A"]);
+    await settle();
+    expect(impl).toHaveBeenCalledTimes(1);
+
+    t = RATE_LIMIT_BACKOFF_MS + 1;
+    limited = false;
+    lookup.request(["A"]);
+    await settle();
+    expect(impl).toHaveBeenCalledTimes(2);
+    expect(lookup.verdict("A")).toBe(true);
+    expect(lookup.note("A")).toBeNull();
   });
 });
