@@ -168,7 +168,8 @@
       "candidates": [
         "bacterium_bacterium_vesicula",
         "electricae_electricae_radialem",
-        "fonticulua_fonticulua_campestris"
+        "fonticulua_fonticulua_campestris",
+        "fungoida_fungoida_bullarum"
       ],
       "unlikely": [
         "aleoida_aleoida_laminiae",
@@ -203,7 +204,6 @@
         "frutexa_frutexa_flammasis",
         "frutexa_frutexa_metallicum",
         "frutexa_frutexa_sponsae",
-        "fungoida_fungoida_bullarum",
         "fungoida_fungoida_gelata",
         "fungoida_fungoida_setisis",
         "fungoida_fungoida_stabitis",
@@ -252,6 +252,7 @@
       ],
       "candidates": [
         "bacterium_bacterium_vesicula",
+        "electricae_electricae_pluma",
         "electricae_electricae_radialem",
         "fonticulua_fonticulua_campestris",
         "fungoida_fungoida_bullarum"
@@ -276,7 +277,6 @@
         "concha_concha_biconcavis",
         "concha_concha_labiata",
         "concha_concha_renibus",
-        "electricae_electricae_pluma",
         "fonticulua_fonticulua_digitos",
         "fonticulua_fonticulua_fluctus",
         "fonticulua_fonticulua_lapida",
@@ -1380,7 +1380,9 @@
       "confirmedSpecies": [
         "bacterium_bacterium_volu"
       ],
-      "candidates": [],
+      "candidates": [
+        "bacterium_bacterium_volu"
+      ],
       "unlikely": [
         "amphora_amphora_plant",
         "anemone_anemone",
@@ -1392,7 +1394,6 @@
         "bacterium_bacterium_informem",
         "bacterium_bacterium_nebulus",
         "bacterium_bacterium_vesicula",
-        "bacterium_bacterium_volu",
         "stratum_stratum_araneamus",
         "stratum_stratum_cucumisis",
         "stratum_stratum_frigus",
