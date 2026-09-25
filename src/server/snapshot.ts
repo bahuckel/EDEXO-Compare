@@ -687,23 +687,45 @@ function genusCertaintyForBody(b: BodyExoState, matches: SpeciesMatch[]): GenusC
   if (signalCount == null || !Number.isFinite(signalCount) || signalCount <= 0) return null;
 
   const byDir = new Map<string, string>();
+  /** Genera with at least one row that earned its place, rather than being put back to fill the count. */
+  const earned = new Set<string>();
   for (const m of matches) {
     if (m.entry.predictionUnsupported || m.unlikely) continue;
     const dir = m.entry.genusDataDir;
-    if (!dir || byDir.has(dir)) continue;
+    if (!dir) continue;
+    if (!m.restoredForSignalCount) earned.add(dir);
+    if (byDir.has(dir)) continue;
     byDir.set(dir, m.entry.genus?.trim() || dir);
   }
   const genera = [...byDir.values()].sort((x, y) => x.localeCompare(y));
   const candidateGenera = genera.length;
   if (candidateGenera === 0) return null;
 
+  /*
+    A count met only by putting demoted rows back is not a certainty. Tegnae HT-Z d13-1 1 a (owner,
+    2026-09-25): one signal, nothing passing the gates, so Anemone — never recorded under an F star —
+    was put back and the line read "confirmed from the signal count alone". The plant was Bark Mounds,
+    which the data did not have yet.
+  */
+  const restoredGenera = [...byDir.entries()]
+    .filter(([dir]) => !earned.has(dir))
+    .map(([, name]) => name)
+    .sort((x, y) => x.localeCompare(y));
   const status =
     candidateGenera === signalCount
-      ? "certain"
+      ? restoredGenera.length
+        ? "bestGuess"
+        : "certain"
       : candidateGenera < signalCount
         ? "underCovered"
         : "ambiguous";
-  return { status, signalCount, candidateGenera, genera };
+  return {
+    status,
+    signalCount,
+    candidateGenera,
+    genera,
+    ...(status === "bestGuess" ? { restoredGenera } : {}),
+  };
 }
 
 /**

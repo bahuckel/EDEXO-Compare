@@ -85,8 +85,11 @@ describe("findSpeciesEntryForLabel", () => {
     // The app carries one `Anemone` row; the corpus has six colour variants. Folding them together
     // would invent a habitat none of them has.
     expect(findSpeciesEntryForLabel(db, "Croceum Anemone")).toBeNull();
-    expect(findSpeciesEntryForLabel(db, "Bark Mounds")).toBeNull();
     expect(findSpeciesEntryForLabel(db, "")).toBeNull();
+  });
+
+  it("finds Bark Mounds, which has a row since 2026-09-25", () => {
+    expect(findSpeciesEntryForLabel(db, "Bark Mounds")?.displayName).toBe("Bark Mounds");
   });
 });
 

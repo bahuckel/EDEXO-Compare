@@ -185,6 +185,7 @@ describe("buildFeederStatus", () => {
       },
     });
     const s = await buildFeederStatus(appRoot, db);
-    expect(s.unmatchedCorpusLabels).toEqual(["Bark Mounds", "Croceum Anemone"]);
+    // Bark Mounds has had a row since 2026-09-25; the Anemone colour variants still have none.
+    expect(s.unmatchedCorpusLabels).toEqual(["Croceum Anemone"]);
   });
 });

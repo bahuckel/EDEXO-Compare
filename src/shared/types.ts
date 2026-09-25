@@ -1043,6 +1043,11 @@ export interface SpeciesMatch {
   entry: SpeciesEntry;
   reasons: MatchReason[];
   /**
+   * Demoted by a gate, then put back only because the shown list had fewer genera than the game's
+   * signal count. It fills the count; it is not a verdict that the gate was wrong.
+   */
+  restoredForSignalCount?: true;
+  /**
    * Who says this species is here — the read-time union of the shipped corpus and the commander's
    * own journal. See `server/speciesProvenance.ts`; it is evidence *about* the row, never an input
    * to whether the row is listed.
@@ -1908,13 +1913,20 @@ export interface EstimatedSurfaceTempBand {
  *                 defect in our data: a gate is excluding a genus that is really there.
  */
 export interface GenusCertaintyDTO {
-  status: "certain" | "ambiguous" | "underCovered";
+  /**
+   * `bestGuess`: the count only matches because rows the gates had demoted were put back to fill it
+   * (`SpeciesMatch.restoredForSignalCount`). The game says something is there; our data says these
+   * are the least-bad fits, not that they are right.
+   */
+  status: "certain" | "ambiguous" | "underCovered" | "bestGuess";
   /** Biological signals the game reports for this body. */
   signalCount: number;
   /** Distinct candidate genera the matcher offered. */
   candidateGenera: number;
   /** Display names of the candidate genera, sorted. */
   genera: string[];
+  /** With `bestGuess`: the genera that are on the list only because they were put back. */
+  restoredGenera?: string[];
 }
 
 export interface BodyComputed {

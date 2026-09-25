@@ -1,0 +1,52 @@
+{
+  "formatVersion": 1,
+  "genus": "Bark Mounds",
+  "meta": {
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
+    "general": {
+      "description": "Mound-shaped organic structures with a bark-like outer layer, found on airless volcanic worlds in and around nebulae.",
+      "min_sample_distance_m": 100,
+      "planet_requirements": {
+        "planet_types": ["Rocky", "High Metal Content", "Metal-Rich", "Icy", "Rocky Ice"],
+        "atmosphere": "None",
+        "volcanism_required": true,
+        "location_bias": ["Within 150 ly of a nebula"]
+      }
+    },
+    "summary": "Mound-shaped organic structures with a bark-like outer layer, found on airless volcanic worlds in and around nebulae.",
+    "minSampleDistanceM": 100,
+    "genusWideRequirements": {
+      "planet_types": ["Rocky", "High Metal Content", "Metal-Rich", "Icy", "Rocky Ice"],
+      "atmosphere": "None",
+      "volcanism_required": true
+    }
+  },
+  "species": [
+    {
+      "id": "bark_mounds_bark_mounds",
+      "displayName": "Bark Mounds",
+      "description": "Single-species genus. Grows on airless volcanic bodies close to a nebula; no star, gravity or planet-type preference.",
+      "conditions": {
+        "location_requirement": "Nebula: 93 % of 23,651 Bark Mound systems lie within 150 ly of a nebula, 100 % within 300 ly (edastro codex-data; background 4-7 %). Evaluated per body: a system beyond the radius is demoted to the unlikely tier rather than removed.",
+        "planet_types": ["Rocky", "High Metal Content", "Metal-Rich", "Icy", "Rocky Ice"],
+        "atmosphere": ["None"],
+        "volcanismActiveRequired": true,
+        "temperature_K": { "min": 89, "max": 440 },
+        "min_sample_distance_m": 100,
+        "matchContextNotes": [
+          "Measured: 4,551 Bioforge sightings at 89-440 K, up to 1.37 g, host stars spread F/A/M/K/G, 21 regions; no volcanism on 0.2 %.",
+          "About 5 % of sightings are on thin carbon dioxide or sulphur dioxide atmospheres; those are demoted, not excluded.",
+          "Added 2026-09-25 after Tegnae HT-Z d13-1 1 a (airless rocky, silicate vapour geysers) grew Bark Mounds and the app had no row for them."
+        ]
+      }
+    }
+  ],
+  "authorNotes": {
+    "species_count": 1,
+    "sources": [
+      "EDSM-targz-to-db/docs/ABSTRACT-COND.md §3.4 (ed-dsn rules, Spansh bench: 168 airless + 10 thin CO2/SO2)",
+      "EDSM-targz-to-db/docs/BIOFORGE-NOTES.md (4,551 sightings)",
+      "src/shared/spatialGates.ts (nebula < 150 ly gate, keyed on the species id)"
+    ]
+  }
+}

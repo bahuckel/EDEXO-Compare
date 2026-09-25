@@ -160,7 +160,8 @@ describe("matchDatabaseToScan", () => {
     const r = matchDatabaseToScan(db, ROCKY_AIRLESS_VOLCANIC, null, null, { includeBacterium: true });
     expect(shown(r).length).toBeGreaterThan(0);
     const genera = new Set(shown(r).map((m) => m.entry.genusDataDir));
-    expect([...genera].sort()).toEqual(["anemone", "fumerola", "sinuous-tubers"]);
+    // No pressure in this context, so the airless check on thin-only rows (Fumerola) abstains.
+    expect([...genera].sort()).toEqual(["anemone", "bark-mound", "fumerola", "sinuous-tubers"]);
 
     const gypseeum = r.matches.find((m) => m.entry.displayName === "Brain Tree Gypseeum");
     expect(gypseeum?.unlikely).toBe(true);

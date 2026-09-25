@@ -825,7 +825,20 @@ export function speciesMatchesExcludingTempPressure(
   const cat = c.atmospherePressureCategory;
   if (cat && ctx?.surfacePressureAtm != null && Number.isFinite(ctx.surfacePressureAtm)) {
     const p = ctx.surfacePressureAtm;
-    if (cat === "thin" && p > THIN_ATMOSPHERE_MAX_ATM) {
+    /*
+      "Thin" is a ceiling on pressure, and 0 atm is under every ceiling — so an airless body passed
+      it. A species with an atmosphere list is judged by that list (vacuum only where it says so);
+      one with no list had nothing else to stop it. Fumerola extremus was offered as the one
+      certain genus on an airless rock that grew Bark Mounds (owner, Tegnae HT-Z d13-1 1 a,
+      2026-09-25). Its 231 recorded sightings are all on thin atmospheres, lowest 0.001 atm.
+    */
+    const airless = p < 1e-6 && !atmoNorm;
+    if (cat === "thin" && airless && !c.atmosphereTypeAnyOf?.length) {
+      failures.push({
+        field: "SurfacePressure",
+        detail: "Needs a thin atmosphere; this body has none (0 atm).",
+      });
+    } else if (cat === "thin" && p > THIN_ATMOSPHERE_MAX_ATM) {
       const near = rangeFit(p, undefined, THIN_ATMOSPHERE_MAX_ATM) === "near";
       failures.push({
         field: "SurfacePressure",
@@ -1410,7 +1423,7 @@ function restoreDemotionsBelowSignalCount(
   const restored = new Set<number>();
   for (const { m, i } of eligible) {
     if (generaOf(strict).size >= signalCount) break;
-    strict.push({ entry: m.entry, reasons: m.reasons });
+    strict.push({ entry: m.entry, reasons: m.reasons, restoredForSignalCount: true });
     restored.add(i);
   }
   if (restored.size === 0) return;

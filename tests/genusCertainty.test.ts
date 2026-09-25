@@ -102,4 +102,25 @@ describe("genusCertaintyForBody", () => {
     expect(genusCertaintyForBodyForTests(body(0), [match("bacterium", "Bacterium")])).toBeNull();
     expect(genusCertaintyForBodyForTests(body(2), [])).toBeNull();
   });
+
+  /*
+    Tegnae HT-Z d13-1 1 a (2026-09-25): one signal, nothing passing the gates, Anemone put back to
+    fill the count — and the line read "confirmed from the signal count alone". It was Bark Mounds.
+  */
+  it("calls a count met only by put-back rows a best guess, not certain", () => {
+    const restored = { ...match("anemone", "Anemone"), restoredForSignalCount: true } as SpeciesMatch;
+    expect(genusCertaintyForBodyForTests(body(1), [restored])).toEqual({
+      status: "bestGuess",
+      signalCount: 1,
+      candidateGenera: 1,
+      genera: ["Anemone"],
+      restoredGenera: ["Anemone"],
+    });
+  });
+
+  it("stays certain when a put-back genus also has a row that passed on its own", () => {
+    const restored = { ...match("anemone", "Anemone"), restoredForSignalCount: true } as SpeciesMatch;
+    const c = genusCertaintyForBodyForTests(body(1), [restored, match("anemone", "Anemone")]);
+    expect(c?.status).toBe("certain");
+  });
 });

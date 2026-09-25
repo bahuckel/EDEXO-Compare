@@ -224,6 +224,19 @@ function GenusCertaintyLine({
       </p>
     );
   }
+  if (c.status === "bestGuess") {
+    const guessed = c.restoredGenera?.length ? c.restoredGenera : c.genera;
+    return (
+      <p
+        className="genus-certainty genus-certainty--guess"
+        title="Nothing in our data passed every check for this body, so the least-bad fit was put back to match the game's signal count. The game says something grows here; it may be a genus our data does not describe well."
+      >
+        Best guess for {c.signalCount === 1 ? "the signal" : `${c.signalCount} signals`}:{" "}
+        <strong>{guessed.join(", ")}</strong> — {guessed.length === 1 ? "it fails" : "they fail"} a check, so
+        this is not confirmed.
+      </p>
+    );
+  }
   if (c.status === "underCovered") {
     const short = c.signalCount - c.candidateGenera;
     return (
