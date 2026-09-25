@@ -150,4 +150,65 @@ describe("system kind and the first-footfall bonus", () => {
     );
     expect(t.systemKind(SA)).toBe("colonising");
   });
+
+  it("first in the system, but the planet's scan says someone walked it: still no ×5", () => {
+    // Somebody can land without selling the discovery data. WasFootfalled true always wins.
+    const s = new GameStateStore();
+    const star = line({
+      event: "Scan",
+      ScanType: "AutoScan",
+      StarSystem: "Test",
+      SystemAddress: SA,
+      BodyName: "Test A",
+      BodyID: 1,
+      StarType: "K",
+      DistanceFromArrivalLS: 0,
+      WasDiscovered: false,
+    });
+    for (const l of [
+      arrive({ Population: 0 }),
+      star,
+      { ...scan, WasFootfalled: true } as JournalLine,
+      disembark,
+    ])
+      s.apply(l);
+    expect(s.firstFootfallBodies.has(BK)).toBe(false);
+    expect(s.bodyDetailedFootfallState.get(BK)).toBe(true);
+  });
+
+  it("an empty system someone has walked is not ×5 just because you landed", () => {
+    const s = new GameStateStore();
+    for (const l of [arrive({ Population: 0 }), { ...scan, WasFootfalled: true } as JournalLine, disembark])
+      s.apply(l);
+    expect(s.systemKind(SA)).toBe("empty");
+    expect(s.firstFootfallBodies.has(BK)).toBe(false);
+  });
+
+  it("the reporter's case: samples taken in Tewi are held at ×1", () => {
+    setDeveloperPopulatedSystemsForTests([SA]);
+    const s = new GameStateStore();
+    const organic = (t: string) =>
+      line({
+        event: "ScanOrganic",
+        ScanType: t,
+        Genus: "$Codex_Ent_Stratum_Genus_Name;",
+        Genus_Localised: "Stratum",
+        Species: "$Codex_Ent_Stratum_07_Name;",
+        Species_Localised: "Stratum Tectonicas",
+        Variant: "$Codex_Ent_Stratum_07_K_Name;",
+        Variant_Localised: "Stratum Tectonicas - Green",
+        SystemAddress: SA,
+        Body: 21,
+      });
+    for (const l of [
+      arrive({ Population: 396557 }),
+      scan,
+      disembark,
+      ...["Log", "Sample", "Sample", "Analyse"].map(organic),
+    ])
+      s.apply(l);
+    expect(s.pendingOrganicSales.map((p) => p.bodyKey)).toEqual([BK]);
+    // Held samples are priced ×5 only for bodies in this set.
+    expect(s.firstFootfallBodies.has(BK)).toBe(false);
+  });
 });
