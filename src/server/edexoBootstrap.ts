@@ -115,6 +115,7 @@ import { galaxySpeciesCatalogue, galaxyValueSearch } from "./galaxyValueSearch.j
 import { galaxyBodyScan, galaxyRegions } from "./galaxyBodyScan.js";
 import { commanderSectorsDto } from "./galaxySectorTiers.js";
 import { runEdsmCatchUp, type EdsmCatchUpScope } from "./edsmCatchUp.js";
+import { createUpdateChecker } from "./updateCheck.js";
 
 /**
  * Recover the commander's galactic position when the merge cache did not carry one.
@@ -285,6 +286,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   for (const line of describeUserDataMigration(migrateLegacyUserData())) console.log(line);
 
   const projectRoot = getProjectRoot();
+  const updateChecker = createUpdateChecker();
 
   let journalDir = resolveInitialJournalDir(projectRoot);
   let journalPath: string | null = null;
@@ -1554,6 +1556,13 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     scheduleBroadcast: push,
     getEncyclopedia: buildEncyclopediaPayload,
     getFeederStatus: () => buildFeederStatus(projectRoot, getCachedSpeciesDatabase()),
+    getUpdateInfo: (force) => updateChecker.check(force),
+    openUpdatePage: () => {
+      const url = updateChecker.updatePageUrl();
+      if (!url) return { ok: false, error: "No newer version known." };
+      openUrlInBrowser(url);
+      return { ok: true };
+    },
     startImportDump,
     getImportDumpStatus: (file?: string | null) => importDumpStatusFor(file),
     getEncyclopediaExomastery: (genusDir, speciesEntryId, focusBodyKey) => {

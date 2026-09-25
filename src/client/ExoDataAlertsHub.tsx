@@ -200,7 +200,7 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
               <button
                 type="button"
                 className="exo-data-alert__btn"
-                title="Append a fixes_*.json stub next to the codex or exomastery file (never overwrites the original)."
+                title="Append a fixes_*.json stub in your user data folder, where an update cannot replace it (never overwrites the original codex or exomastery file)."
                 onClick={() => void fix(a)}
               >
                 Fix

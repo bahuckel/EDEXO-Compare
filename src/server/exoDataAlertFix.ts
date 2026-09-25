@@ -1,7 +1,7 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, relative } from "node:path";
 import type { ExoDataAlertDTO, SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
-import { getExoDataFixWriteRoots, getSpeciesDataDir } from "./paths.js";
+import { getExoDataFixWriteRoots, getSpeciesDataDir, resolveSpeciesFixesDir } from "./paths.js";
 import { resolveExomasteryProfileJsonPath } from "./exomasteryProfile.js";
 import {
   expandVolcanismCriterionFragments,
@@ -80,6 +80,14 @@ function mergeFixStub(
   base.entries = base.entries.filter((e) => e.alertId !== entry.alertId);
   base.entries.push(entry);
   return base;
+}
+
+/**
+ * The commander's own copy of a fix stub, in the user data folder: `species-fixes/<genus>/…` for a
+ * codex fix, `species-fixes/exomastery/…` for a profile fix. This is the copy that survives an update.
+ */
+function userFixPath(genusDir: string, fixName: string): string {
+  return join(resolveSpeciesFixesDir(), genusDir, fixName);
 }
 
 function writeMergedFixFile(absFixPath: string, merged: FixStubFileV1) {
@@ -181,11 +189,26 @@ export function applyCodexCriteriaPatchesFromFixesJson(
   entries: SpeciesEntry[],
 ): void {
   const leaf = codexJsonAbsPath.split(/[/\\]/).pop() ?? "";
-  const fixPath = join(dirname(codexJsonAbsPath), fixesBasenameFor(leaf));
-  if (!existsSync(fixPath)) return;
-  const data = readExistingStub(fixPath);
-  if (!data?.entries?.length) return;
-  for (const row of data.entries) {
+  const fixName = fixesBasenameFor(leaf);
+  const besideCodex = join(dirname(codexJsonAbsPath), fixName);
+  const userCopy = userFixPath(basename(dirname(codexJsonAbsPath)), fixName);
+  // A stub written by an older version sits only next to the codex, inside the program folder that
+  // the next update replaces. Copy it across once — never over a copy that is already there.
+  if (existsSync(besideCodex) && !existsSync(userCopy)) {
+    try {
+      mkdirSync(dirname(userCopy), { recursive: true });
+      copyFileSync(besideCodex, userCopy);
+    } catch {
+      /* read-only user data: the stub next to the codex still applies below */
+    }
+  }
+  const rows = [
+    ...(readExistingStub(userCopy)?.entries ?? []),
+    ...(readExistingStub(besideCodex)?.entries ?? []),
+  ];
+  if (!rows.length) return;
+  // Every patch only appends a fragment that is not there yet, so reading one row twice is harmless.
+  for (const row of rows) {
     const patch = row.criteriaPatch;
     if (!patch?.speciesEntryId) continue;
     const e = entries.find((s) => s.id === patch.speciesEntryId);
@@ -246,37 +269,75 @@ export function writeExoDataAlertFixFiles(
     ...(criteriaPatch ? { criteriaPatch } : {}),
   };
 
+  /*
+    The copy in the user data folder is the one that counts: it survives an update and the single
+    exe's wiped extraction folder. The copies next to the codex are for the dev tree, where the
+    maintainer merges them by hand; in a packaged app that folder is the install tree, which may not
+    be writable at all, so a failure there is not a failure of the fix.
+  */
+  let userTarget: {
+    fixName: string;
+    genusDir: string;
+    targetRel: string;
+    kind: FixStubFileV1["targetKind"];
+  } | null = null;
   for (const root of roots) {
+    let fixPath: string;
+    let targetRel: string;
+    let kind: FixStubFileV1["targetKind"];
+    let fixName: string;
+    let genusDir: string;
     if (alert.detectionSource === "journal") {
       const codexDir = join(getSpeciesDataDir(root), entry.genusDataDir);
       const codexName = `${entry.genusDataDir}_new.json`;
       const codexPath = join(codexDir, codexName);
       if (!existsSync(codexDir)) continue;
       if (!existsSync(codexPath)) continue;
-      const fixName = fixesBasenameFor(codexName);
-      const fixPath = join(codexDir, fixName);
-      const targetRel = safeRelative(root, codexPath);
-      const merged = mergeFixStub(readExistingStub(fixPath), targetRel, "codex_new_json", stubEntry);
-      writeMergedFixFile(fixPath, merged);
-      written.push({
-        root,
-        relativePath: safeRelative(root, fixPath),
-        absolutePath: fixPath,
-      });
+      fixName = fixesBasenameFor(codexName);
+      fixPath = join(codexDir, fixName);
+      targetRel = safeRelative(root, codexPath);
+      kind = "codex_new_json";
+      genusDir = entry.genusDataDir;
     } else {
       const profPath = resolveExomasteryProfileJsonPath(root, entry);
       if (!profPath) continue;
       const base = profPath.split(/[/\\]/).pop() ?? "profile.json";
-      const fixName = fixesBasenameFor(base);
-      const fixPath = join(dirname(profPath), fixName);
-      const targetRel = safeRelative(root, profPath);
-      const merged = mergeFixStub(readExistingStub(fixPath), targetRel, "exomastery_profile_json", stubEntry);
-      writeMergedFixFile(fixPath, merged);
-      written.push({
-        root,
-        relativePath: safeRelative(root, fixPath),
-        absolutePath: fixPath,
+      fixName = fixesBasenameFor(base);
+      fixPath = join(dirname(profPath), fixName);
+      targetRel = safeRelative(root, profPath);
+      kind = "exomastery_profile_json";
+      genusDir = "exomastery";
+    }
+    userTarget ??= { fixName, genusDir, targetRel, kind };
+    try {
+      writeMergedFixFile(fixPath, mergeFixStub(readExistingStub(fixPath), targetRel, kind, stubEntry));
+      written.push({ root, relativePath: safeRelative(root, fixPath), absolutePath: fixPath });
+    } catch {
+      /* install tree not writable — the user data copy below is the one that matters */
+    }
+  }
+
+  if (userTarget) {
+    const userPath = userFixPath(userTarget.genusDir, userTarget.fixName);
+    try {
+      writeMergedFixFile(
+        userPath,
+        mergeFixStub(readExistingStub(userPath), userTarget.targetRel, userTarget.kind, stubEntry),
+      );
+      const userRoot = resolveSpeciesFixesDir();
+      written.unshift({
+        root: userRoot,
+        relativePath: safeRelative(userRoot, userPath),
+        absolutePath: userPath,
       });
+    } catch (e) {
+      if (written.length === 0) {
+        return {
+          ok: false,
+          written,
+          error: `Could not write the fix: ${e instanceof Error ? e.message : String(e)}`,
+        };
+      }
     }
   }
 

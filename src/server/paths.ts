@@ -176,6 +176,19 @@ export function resolveOrganicSampleSessionPath(): string {
 }
 
 /**
+ * The header's "Fix" stubs (`fixes_<genus>_new.json`), one folder per genus, beside the user settings.
+ *
+ * They used to live only next to the codex file in `data/species/<genus>/` — which in a packaged app
+ * is the install tree. The zip lost them to the next update, and the single exe lost them at every
+ * quit, because its extraction folder is wiped. A fix is the commander's own correction, so it belongs
+ * here with the rest of their data; the copy next to the codex is still written where that folder is
+ * writable (the dev tree), and both are read.
+ */
+export function resolveSpeciesFixesDir(): string {
+  return join(dirname(resolveUserSettingsJsonPath()), "species-fixes");
+}
+
+/**
  * Writable journal merge cache (fast launcher / boot). Same tree as user settings — survives
  * `npm run build`, Electron `resources/` replacement, and unpackaged installs.
  */

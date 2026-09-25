@@ -137,6 +137,46 @@
         height: 1px;
         background: var(--hud);
       }
+      /* The version line (owner, 2026-09-25): the running version, the newest one when they differ,
+         and a link to its release page. Nothing is downloaded from here. */
+      .version-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.35rem 0.6rem;
+        margin-top: 8px;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        color: var(--hud-text);
+        opacity: 0.8;
+      }
+      .version-line.newer {
+        opacity: 1;
+        color: var(--hud-hi);
+      }
+      .version-line .version-btn {
+        font: inherit;
+        letter-spacing: 0.08em;
+        padding: 2px 8px;
+        color: var(--hud);
+        background: transparent;
+        border: 1px solid var(--hud-dim);
+        cursor: pointer;
+      }
+      .version-line .version-btn:hover,
+      .version-line .version-btn:focus-visible {
+        border-color: var(--hud);
+        color: var(--hud-hi);
+      }
+      .version-line .version-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .version-line.newer .version-btn {
+        color: #050507;
+        background: var(--hud);
+        border-color: var(--hud);
+      }
 
       /* ---- panels: the chamfered frame, hairline, scanlines ------------------------------------ */
       .panel {
@@ -1382,6 +1422,10 @@
         <div class="brand-titles">
           <h1>ED Exo Compare</h1>
           <div class="sub">Launcher · exobiology companion</div>
+          <div class="version-line" id="versionLine">
+            <span id="versionText">Version —</span>
+            <button type="button" class="version-btn" id="btnCheckUpdate">Check for updates</button>
+          </div>
         </div>
       </header>
 
@@ -2304,6 +2348,86 @@
           renderJournalHealth(data);
           maybeShowWizard(data);
         }
+
+        /*
+          The version line. Asked once when the launcher opens (the server remembers GitHub's answer
+          for an hour), and again on the button. When a newer release exists the button becomes its
+          download link: the server opens that release's page itself — the page, never a file, and
+          nothing on this PC is replaced by the app.
+        */
+        const versionLine = document.getElementById("versionLine");
+        const versionText = document.getElementById("versionText");
+        const btnCheckUpdate = document.getElementById("btnCheckUpdate");
+        var updateInfo = null;
+
+        function renderUpdateInfo(info, checking) {
+          updateInfo = info;
+          var cur = info && info.current ? "v" + info.current : "Version —";
+          versionLine.classList.toggle("newer", Boolean(info && info.newer));
+          btnCheckUpdate.disabled = Boolean(checking);
+          if (checking) {
+            versionText.textContent = cur + " · checking…";
+            btnCheckUpdate.textContent = "Check for updates";
+            return;
+          }
+          if (info && info.newer) {
+            versionText.textContent = "Installed " + cur + " · v" + info.latest + " available";
+            btnCheckUpdate.textContent = "Download v" + info.latest;
+            btnCheckUpdate.title = "Opens the release page on GitHub in your browser.";
+            return;
+          }
+          btnCheckUpdate.textContent = "Check for updates";
+          btnCheckUpdate.title = "";
+          if (info && info.error && !info.latest) {
+            versionText.textContent = cur + " · could not check";
+            versionText.title = info.error;
+          } else if (info && info.latest) {
+            versionText.textContent = cur + " · up to date";
+            versionText.title = "";
+          } else {
+            versionText.textContent = cur;
+          }
+        }
+
+        function checkForUpdates(force) {
+          renderUpdateInfo(updateInfo, true);
+          fetch(apiUrl("/api/app/update" + (force ? "?force=1" : "")), { cache: "no-store" })
+            .then(function (r) {
+              if (!r.ok) throw new Error("HTTP " + r.status);
+              return r.json();
+            })
+            .then(function (info) {
+              renderUpdateInfo(info, false);
+            })
+            .catch(function (e) {
+              var prev = updateInfo || {};
+              renderUpdateInfo(
+                { current: prev.current, latest: prev.latest, newer: prev.newer, pageUrl: prev.pageUrl, error: String(e && e.message ? e.message : e) },
+                false,
+              );
+            });
+        }
+
+        btnCheckUpdate.addEventListener("click", function () {
+          if (!(updateInfo && updateInfo.newer)) {
+            checkForUpdates(true);
+            return;
+          }
+          fetch(apiUrl("/api/app/open-update"), { method: "POST" })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (j) {
+              if (!j.ok) throw new Error(j.error || "Could not open the page");
+            })
+            .catch(function () {
+              // No browser could be started from here (or the route is missing): open the page in a
+              // window of this app instead, so the link still goes somewhere.
+              if (updateInfo && updateInfo.pageUrl) window.open(updateInfo.pageUrl, "_blank", "noopener");
+            });
+        });
+
+        checkForUpdates(false);
 
         async function poll() {
           try {

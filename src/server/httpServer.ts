@@ -16,6 +16,7 @@ import type {
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
+  UpdateInfoDTO,
   ImportDumpStatusDTO,
   BacklogMapDTO,
   CommanderSectorsDTO,
@@ -174,6 +175,13 @@ export function createHttpServer(opts: {
    * rather than showing empty numbers.
    */
   getFeederStatus?: () => Promise<FeederStatusDTO>;
+  /** GET /api/app/update (`?force=1` asks GitHub again) — running version vs newest release. */
+  getUpdateInfo?: (force: boolean) => Promise<UpdateInfoDTO>;
+  /**
+   * POST /api/app/open-update — open the newer release's page in the system browser. No URL is
+   * taken from the caller; the server opens the page it found itself, on github.com, or nothing.
+   */
+  openUpdatePage?: () => { ok: boolean; error?: string };
   /**
    * POST /api/feeder/import-dump — start a Spansh JSONL export import into the feeder corpus
    * (`{ file, apply }`); GET /api/feeder/import-dump/status — its progress and last report.
@@ -1053,6 +1061,29 @@ export function createHttpServer(opts: {
    * Whether the data the app ranks with is the data the corpus holds. Before the feeder merge the
    * answer was no on 72 of 79 profiles and nothing in the app said so.
    */
+  app.get("/api/app/update", async (req, res) => {
+    if (typeof opts.getUpdateInfo !== "function") {
+      res.status(501).json({ error: "Not available" });
+      return;
+    }
+    res.json(await opts.getUpdateInfo(req.query.force === "1"));
+  });
+
+  app.post("/api/app/open-update", (req, res) => {
+    if (typeof opts.openUpdatePage !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    if (!isLoopbackAddress(req.socket.remoteAddress)) {
+      res.status(403).json({
+        ok: false,
+        error: "A browser opens on the PC running the app, so it can only be opened from there.",
+      });
+      return;
+    }
+    res.json(opts.openUpdatePage());
+  });
+
   app.get("/api/feeder/status", async (_req, res) => {
     if (typeof opts.getFeederStatus !== "function") {
       res.status(501).json({ error: "Not available" });
@@ -1739,7 +1770,7 @@ export function createHttpServer(opts: {
       const lines =
         out.ok && out.written?.length
           ? [
-              "Wrote or updated fixes_*.json next to the codex (original JSON unchanged).",
+              "Wrote or updated fixes_*.json in your user data folder, and next to the codex where that folder is writable (original JSON unchanged).",
               "Species data was reloaded — criteriaPatch entries (e.g. volcanism) apply immediately.",
               "",
               ...out.written.map((w) => `${w.relativePath}\n  (${w.root})`),
