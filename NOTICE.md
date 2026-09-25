@@ -16,7 +16,9 @@ of which have endorsed it.
 The reason this project was started. Spansh's exobiology search showed that "which species can live
 on this body" is a question data can answer, and its route exports are the corpus every prediction in
 this app is measured against — 47,983 confirmed sightings across 13,789 bodies at the time of
-writing. Every calibration figure quoted in the README traces back to a Spansh export.
+writing. Every calibration figure quoted in the README traces back to a Spansh export. The list of
+systems Frontier populated, which the app ships to tell the Bubble from player colonies, comes from
+Spansh's system search (`is_colonised`); `scripts/build-developer-systems.mjs` rebuilds it.
 
 ### EDSM — [edsm.net](https://edsm.net)
 

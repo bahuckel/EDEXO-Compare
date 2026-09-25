@@ -13,7 +13,9 @@ export function DScanBodiesBadge({
   /** When true, typography matches header Data value / Route metrics. */
   headerMetrics?: boolean;
 }) {
-  const complete = d.complete || d.found >= d.total;
+  // Without a honk the total is only what was scanned by hand, so "found = total" proves nothing.
+  const honked = d.honked !== false;
+  const complete = d.complete || (honked && d.found >= d.total);
   const lbl = headerMetrics ? "d-scan-card__label header-metric-card-label" : "d-scan-card__label";
   const val = headerMetrics ? "header-metric-card-value" : "";
   return (
@@ -28,6 +30,15 @@ export function DScanBodiesBadge({
         {d.found} / {d.total}
       </span>
       <span className={`d-scan-card__suffix${val ? ` ${val}` : ""}`}> bodies</span>
+      <span
+        className={`d-scan-card__honk${honked ? "" : " d-scan-card__honk--no"}${val ? ` ${val}` : ""}`}
+        title={
+          honked ? "Discovery scan done in this system." : "No discovery scan (honk) in this system yet."
+        }
+      >
+        {" "}
+        · Honk: {honked ? "Yes" : "No"}
+      </span>
     </span>
   );
 }

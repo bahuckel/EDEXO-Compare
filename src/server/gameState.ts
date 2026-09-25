@@ -8,7 +8,10 @@ import type {
   SpeciesEntry,
   AppSnapshot,
   HudPrefsDTO,
+  SystemKind,
+  SystemLife,
 } from "../shared/types.js";
+import { isDeveloperPopulatedSystem } from "./developerPopulatedSystems.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import {
   JOURNAL_POLL_DEFAULT_MS,
@@ -99,6 +102,10 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
  * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
  * feature that reads it stays dark with nothing logged anywhere.
  *
+ * 13 — `systemLife`: bodies in a system with signs of life (population, security or government, a
+ *     controlling faction) or on the developer-populated list count as footfalled (no ×5), unless
+ *     this commander discovered the system. An old cache has the scans' `WasFootfalled: false` for
+ *     them and would keep promising the bonus.
  * 12 — organic locks carry `at`, the time of the latest scan of that species on that body, for the
  *     glance bar's "last three scanned". An 11 cache has none, and would order every body by DSS.
  * 11 — `organicGenusLocks` holds one lock per species per body (a foot scan updates it rather than
@@ -144,7 +151,7 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   Anything derived from the journal that the UI reads has to be either in this payload or
   deliberately transient. Bump the format when you add one.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 12;
+export const JOURNAL_MERGE_CACHE_FORMAT = 13;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -194,6 +201,8 @@ export type JournalMergeCachePayload = {
   /** Present when {@link format} >= 6 — the body the ship last touched down on. */
   overlayTouchdownBodyKey?: string | null;
   fssAllBodiesCompleteSystems: number[];
+  /** Present when {@link format} >= 13 — signs of life per system, from the arrival line. */
+  systemLife?: [number, SystemLife][];
   fssDiscoveryScanBySystem: [number, { systemName: string; bodyCount: number; progress: number }][];
   /** Optional — `FSSAllBodiesFound.Count` per system. */
   fssAllBodiesFoundCountBySystem?: [number, number][];
@@ -380,6 +389,27 @@ function explorationRecordsSimilarForSharedExo(a: ExplorationScanRecord, b: Expl
  * `Log` opens a run at 1 (re-logging an abandoned plant starts it again); each `Sample` adds one, up
  * to 3; `Analyse` completes it. Exported for its test.
  */
+const NO_SECURITY = new Set(["", "$GAlAXY_MAP_INFO_state_anarchy;", "$GALAXY_MAP_INFO_state_anarchy;"]);
+const NO_GOVERNMENT = new Set(["", "$government_None;", "$government_Anarchy;"]);
+
+/**
+ * The owner's signs of life on an arrival line (FSDJump / Location / CarrierJump), in his order:
+ * population, then security and government, then a controlling faction. `null` when the line shows
+ * none; `undefined` when it does not carry `Population` at all and so says nothing either way.
+ */
+export function signsOfLife(e: Record<string, unknown>): SystemLife | null | undefined {
+  const pop = e.Population;
+  if (typeof pop !== "number" || !Number.isFinite(pop)) return undefined;
+  if (pop > 0) return "populated";
+  const security = typeof e.SystemSecurity === "string" ? e.SystemSecurity : "";
+  const government = typeof e.SystemGovernment === "string" ? e.SystemGovernment : "";
+  const controller = e.SystemFaction != null && typeof e.SystemFaction === "object";
+  const factions = Array.isArray(e.Factions) ? e.Factions.length : 0;
+  if (!NO_SECURITY.has(security) || !NO_GOVERNMENT.has(government)) return "facility";
+  if (controller) return factions === 0 ? "claimed" : "facility";
+  return null;
+}
+
 export function upsertFootOrganicLock(
   locks: OrganicGenusLock[],
   lock: OrganicGenusLock,
@@ -632,6 +662,11 @@ export class GameStateStore {
    * the only place the app folds one in, which is what makes a journal re-scan idempotent.
    */
   observeFootfall(bk: string, value: boolean, source: ObservationSource, seenAt: string): void {
+    // A populated or colonising system has no unwalked ground: whatever the scan says, no bonus.
+    if (value === false && this.noFirstFootfallInSystem(Number(bk.split(":")[0]))) {
+      value = true;
+      source = "populated";
+    }
     const merged = mergeObservation(this.bodyFootfallFlag.get(bk) ?? UNOBSERVED, { value, source, seenAt });
     this.bodyFootfallFlag.set(bk, merged);
     if (merged.value !== null) this.bodyDetailedFootfallState.set(bk, merged.value);
@@ -646,6 +681,65 @@ export class GameStateStore {
   }
   /** Bodies where this commander gets first-footfall organic payout (1× + 4× bonus = 5× list in valuation). */
   readonly firstFootfallBodies = new Set<string>();
+
+  /**
+   * Signs of life per system, read off the arrival line (owner, 2026-09-25).
+   *
+   * Tewi C 5 — a 95M body in the Bubble — showed ×5 and paid ×1: planets in populated systems never
+   * show a first footfall, whatever a scan's `WasFootfalled` says. The owner's sales agree: no sale
+   * from a populated system (98) or a colony (10) needs a bonus to explain it.
+   *
+   * His order of checks, each one a sign that somebody is here:
+   *
+   *   0. `WasDiscovered: false` on the arrival star — this commander is the first in the system, so
+   *      none of the rest can apply and the planet's own scan decides. See
+   *      {@link noFirstFootfallInSystem}; the star's scan lands after the jump, so it is read there.
+   *   1. `Population` > 0 → `populated`.
+   *   2. Security or government other than anarchy / none → `facility` (a detention centre has no
+   *      people but a Prison government).
+   *   3. A controlling faction → `claimed` when that is all there is (a colonisation claim under
+   *      construction: Luyten 143-23 and Col 285 Sector AK-W b16-5 read like this and are colonies
+   *      now), `facility` otherwise.
+   *   4. Only when the journal shows none of these: the list of systems Frontier populated.
+   */
+  readonly systemLife = new Map<number, SystemLife>();
+
+  systemKind(systemAddress: number): SystemKind | null {
+    const life = this.systemLife.get(systemAddress);
+    if (life === "populated") return isDeveloperPopulatedSystem(systemAddress) ? "bubble" : "colony";
+    if (life === "claimed") return "colonising";
+    if (life === "facility") return "facility";
+    // The file is the last resort: nothing in the journal showed life.
+    if (isDeveloperPopulatedSystem(systemAddress)) return "bubble";
+    return this.visitedSystems.has(systemAddress) ? "empty" : null;
+  }
+
+  /** No first-footfall bonus anywhere in this system — unless this commander discovered it. */
+  noFirstFootfallInSystem(systemAddress: number): boolean {
+    if (this.mainStarWasDiscoveredBySystem.get(systemAddress) === false) return false;
+    const k = this.systemKind(systemAddress);
+    return k !== null && k !== "empty";
+  }
+
+  /** Read the signs of life off an arrival line; mark every known body walked if the system has any. */
+  private notePopulation(line: JournalLine, ts: string): void {
+    const e = line as Record<string, unknown>;
+    const addr = e.SystemAddress;
+    if (typeof addr !== "number") return;
+    const life = signsOfLife(e);
+    if (life === undefined) return; // the line does not say (an old or partial event)
+    const before = this.noFirstFootfallInSystem(addr);
+    if (life) this.systemLife.set(addr, life);
+    else this.systemLife.delete(addr);
+    if (before || !this.noFirstFootfallInSystem(addr)) return;
+    const prefix = `${addr}:`;
+    for (const bk of [...this.bodyFootfallFlag.keys()]) {
+      if (bk.startsWith(prefix)) this.observeFootfall(bk, false, "journal", ts);
+    }
+    for (const bk of [...this.firstFootfallBodies]) {
+      if (bk.startsWith(prefix)) this.firstFootfallBodies.delete(bk);
+    }
+  }
 
   /**
    * Species this commander has a codex page for, by `codexSpeciesKey` (B4).
@@ -1012,7 +1106,9 @@ export class GameStateStore {
       (dest == null) !== (prev == null) ||
       (dest != null &&
         prev != null &&
-        (dest.systemAddress !== prev.systemAddress || dest.bodyId !== prev.bodyId || dest.name !== prev.name));
+        (dest.systemAddress !== prev.systemAddress ||
+          dest.bodyId !== prev.bodyId ||
+          dest.name !== prev.name));
     if (!changed) return false;
     this.statusDestination = dest;
     if (dest) this.requestUiAutoSelectBody(dest.systemAddress, dest.bodyId);
@@ -1355,6 +1451,7 @@ export class GameStateStore {
     this.organicRunStartedAt.clear();
     this.pendingOrganicSales = [];
     this.fssAllBodiesCompleteSystems.clear();
+    this.systemLife.clear();
     this.fssAllBodiesFoundCountBySystem.clear();
     this.soldExplorationBySystem.clear();
     this.soldOrganicBySystem.clear();
@@ -1903,6 +2000,7 @@ export class GameStateStore {
           // `mainStarWasDiscoveredBySystem`, which is filled from `Scan` instead.
           this.viewingSystemAddress = null;
           this.setPositionFromLine(line);
+          this.notePopulation(line, ts);
           this.resetSystem(sys, addr);
         }
         return;
@@ -1925,6 +2023,7 @@ export class GameStateStore {
         const addr = line.SystemAddress as number;
         if (sys && typeof addr === "number") {
           this.setPositionFromLine(line);
+          this.notePopulation(line, ts);
           this.setLocation(sys, addr);
         }
         return;
@@ -3001,6 +3100,7 @@ export class GameStateStore {
       surfaceShipMark: this.surfaceShipMark ? { ...this.surfaceShipMark } : null,
       overlayTouchdownBodyKey: this.overlayTouchdownBodyKey,
       fssAllBodiesCompleteSystems: [...this.fssAllBodiesCompleteSystems],
+      systemLife: [...this.systemLife.entries()],
       fssDiscoveryScanBySystem: [...this.fssDiscoveryScanBySystem.entries()],
       fssAllBodiesFoundCountBySystem: [...this.fssAllBodiesFoundCountBySystem.entries()],
       soldExplorationBySystem: [...this.soldExplorationBySystem.entries()],
@@ -3089,6 +3189,7 @@ export class GameStateStore {
     }
     this.overlayTouchdownBodyKey = data.overlayTouchdownBodyKey ?? null;
     for (const addr of data.fssAllBodiesCompleteSystems) this.fssAllBodiesCompleteSystems.add(addr);
+    for (const [addr, life] of data.systemLife ?? []) this.systemLife.set(addr, life);
     for (const [addr, row] of data.fssDiscoveryScanBySystem) {
       this.fssDiscoveryScanBySystem.set(addr, { ...row });
     }

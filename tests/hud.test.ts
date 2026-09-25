@@ -416,4 +416,21 @@ describe("hud.js merged panel", () => {
     expect(document.querySelector('[data-section="distance"]')?.className).not.toContain("hud-section--ok");
     expect(document.getElementById("card")?.className).toBe("panel");
   });
+  it("says whether the system was honked, and does not call a hand-scanned star complete", () => {
+    const HUD = loadHud();
+    HUD.mount(["fss"], { noTimers: true });
+    // Scanned the star by hand, no honk: 1 / 1 is not a finished system.
+    HUD.render({
+      dScanBodies: { systemName: "X", found: 1, total: 1, complete: false, honked: false },
+      exoMinimap: null,
+    });
+    expect(document.querySelector('[data-section="fss"]')?.className).not.toContain("hud-section--ok");
+    expect(document.querySelector(".fss-line .honk")?.textContent).toBe("Honk: No");
+    HUD.render({
+      dScanBodies: { systemName: "X", found: 10, total: 10, complete: true, honked: true },
+      exoMinimap: null,
+    });
+    expect(document.querySelector('[data-section="fss"]')?.className).toContain("hud-section--ok");
+    expect(document.querySelector(".fss-line .honk")?.textContent).toBe("Honk: Yes");
+  });
 });

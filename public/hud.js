@@ -443,7 +443,10 @@
       */
       var ff = h.likelyFirstFootfall;
       var sepClass = ff === true ? " hop__sep--first" : ff === false ? "" : " hop__sep--unknown";
-      var sepTitle = ff == null && h.firstFootfallNote ? ' title="' + esc(h.firstFootfallNote).replace(/"/g, "&quot;") + '"' : "";
+      var sepTitle =
+        ff == null && h.firstFootfallNote
+          ? ' title="' + esc(h.firstFootfallNote).replace(/"/g, "&quot;") + '"'
+          : "";
       html +=
         (i ? '<span class="hop__sep' + sepClass + '"' + sepTitle + ' aria-hidden="true">››</span>' : "") +
         '<span class="hop hop--' +
@@ -546,7 +549,9 @@
           "<span class='sys'>—</span><span class='nums'>— / —<small>bodies</small></span>";
         return null;
       }
-      var complete = dscan.complete || dscan.found >= dscan.total;
+      // No honk: the total is only what was scanned by hand, so found = total proves nothing.
+      var honked = dscan.honked !== false;
+      var complete = dscan.complete || (honked && dscan.found >= dscan.total);
       var sys = dscan.systemName || "—";
       var pct = dscan.total > 0 ? Math.max(0, Math.min(100, (dscan.found / dscan.total) * 100)) : 0;
       bar.style.width = pct.toFixed(1) + "%";
@@ -560,7 +565,12 @@
         dscan.found +
         " / " +
         dscan.total +
-        "<small>bodies</small></span>";
+        "<small>bodies</small></span>" +
+        "<span class='honk" +
+        (honked ? "" : " honk--no") +
+        "'>Honk: " +
+        (honked ? "Yes" : "No") +
+        "</span>";
       return complete ? "ok" : null;
     },
   };

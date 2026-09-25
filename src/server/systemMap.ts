@@ -642,7 +642,7 @@ function buildExoPayoutRangeForRecord(
   const mult: 1 | 5 = store.firstFootfallBodies.has(bk) ? 5 : 1;
   const wf = store.bodyDetailedFootfallState.get(bk);
   const journalWasFootfalled = wf === undefined ? null : wf === true;
-  return computeExoPayoutRangeFromMatches(
+  const range = computeExoPayoutRangeFromMatches(
     run.shown,
     prices,
     slots,
@@ -651,6 +651,9 @@ function buildExoPayoutRangeForRecord(
     journalWasFootfalled,
     mult === 5,
   );
+  const kind = store.noFirstFootfallInSystem(r.systemAddress) ? store.systemKind(r.systemAddress) : null;
+  if (range && kind && kind !== "empty") range.noFootfallSystemKind = kind;
+  return range;
 }
 
 function scanForMatch(

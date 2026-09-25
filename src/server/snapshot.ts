@@ -345,13 +345,16 @@ function buildDScanBodiesSnapshot(
 
   const systemName = disc?.systemName.trim() || nameFallback?.trim() || `System ${focusAddr}`;
   const complete = store.fssAllBodiesCompleteSystems.has(focusAddr);
+  // Owner, 2026-09-25: say whether the system was honked. FSSAllBodiesFound counts as yes — a one-
+  // or two-star system is finished without one, and "no honk" there tells the commander nothing.
+  const honked = disc != null || fromAllFound != null || complete;
   if (complete) {
-    return { systemName, found: total, total, complete: true };
+    return { systemName, found: total, total, complete: true, honked };
   }
   const fromProgress = disc ? fssHonkProgressBodyCount(disc.progress, total) : 0;
   const fallbackFound = Math.min(total, Math.max(0, fromProgress, fromJournal));
   const found = Math.min(total, fromMapForFound != null ? fromMapForFound : fallbackFound);
-  return { systemName, found, total, complete: false };
+  return { systemName, found, total, complete: false, honked };
 }
 
 function buildLiveShipFuelRangeDTO(
@@ -1300,6 +1303,10 @@ function computeBodyUncached(
           store.bodyMappedFlag.get(b.key) ?? UNOBSERVED,
         )
       : null;
+  if (exoPayoutRange && store.noFirstFootfallInSystem(b.systemAddress)) {
+    const kind = store.systemKind(b.systemAddress);
+    if (kind && kind !== "empty") exoPayoutRange.noFootfallSystemKind = kind;
+  }
 
   // Evidence for the next gate fix: a species the commander confirmed here that we never offered.
   // Writes once per (body, species) and never throws.
@@ -1566,6 +1573,7 @@ export function buildSnapshot(
     currentSystem: store.currentSystem,
     currentSystemAddress: store.currentSystemAddress,
     currentRegion: regionForFocusedSystem(store, focusAddr, projectRoot),
+    currentSystemKind: focusAddr != null ? store.systemKind(focusAddr) : null,
     viewingSystemAddress: store.viewingSystemAddress,
     viewingSystemName,
     journalSystems,

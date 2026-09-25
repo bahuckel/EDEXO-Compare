@@ -1744,6 +1744,12 @@ export interface ExoPayoutRangeDTO {
   /** Latest detailed `Scan.WasFootfalled` if seen in merged journal; null if unknown. */
   journalWasFootfalled: boolean | null;
   /**
+   * Set when the system pays no first-footfall bonus: `bubble` (Frontier populated it), `colony`
+   * (players did), `colonising` (a claim under construction), `facility` (no people, but security or a
+   * controlling faction). See `GameStateStore.systemKind`.
+   */
+  noFootfallSystemKind?: "bubble" | "colony" | "colonising" | "facility";
+  /**
    * Phase 3 provenance for that flag: how old the claim is, in words.
    *
    * A `false` is a statement about a moment, not a property of the body — the ×5 was intact *then*.
@@ -1983,6 +1989,15 @@ export interface JournalSystemInfo {
 }
 
 /** Discovery scanner body tally from journal `FSSDiscoveryScan` + completion from `FSSAllBodiesFound`. */
+/**
+ * See `GameStateStore.systemKind`. All but `empty` pay no first-footfall bonus (unless this
+ * commander discovered the system).
+ */
+export type SystemKind = "bubble" | "colony" | "colonising" | "facility" | "empty";
+
+/** Signs of life read off an arrival line — see `signsOfLife` in `gameState.ts`. */
+export type SystemLife = "populated" | "claimed" | "facility";
+
 export interface DScanBodiesDTO {
   /** `SystemName` from the honk line (confirm against galaxy map). */
   systemName: string;
@@ -1992,6 +2007,12 @@ export interface DScanBodiesDTO {
   total: number;
   /** Journal reported `FSSAllBodiesFound` for this system. */
   complete: boolean;
+  /**
+   * The system has been honked: an `FSSDiscoveryScan`, or an `FSSAllBodiesFound` (a one- or two-star
+   * system can be complete without one). Without it `total` is only what was scanned by hand, so
+   * scanning the star alone read "1 / 1" (owner, 2026-09-25). Absent in old payloads — treat as yes.
+   */
+  honked?: boolean;
 }
 
 /** Parsed `NavRoute.json` + fuel reachability for the remaining plotted path. */
@@ -2224,6 +2245,11 @@ export interface AppSnapshot {
    * when the point falls outside every named region — which is most of the galaxy.
    */
   currentRegion: { name: string; index: number } | null;
+  /**
+   * What kind of system is on show: `bubble` (Frontier populated it), `colony`, `colonising` (a
+   * claim under construction), `empty`, or null when unknown. See `GameStateStore.systemKind`.
+   */
+  currentSystemKind?: SystemKind | null;
   /**
    * When non-null, the body list reflects this system (journal memory); null = follow commander (`currentSystemAddress`).
    */

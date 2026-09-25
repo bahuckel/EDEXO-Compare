@@ -58,6 +58,16 @@
   font-size: inherit;
 }
 
+.d-scan-card__honk {
+  font-weight: 600;
+  font-size: inherit;
+  opacity: 0.85;
+}
+.d-scan-card__honk--no {
+  color: var(--warn);
+  opacity: 1;
+}
+
 .d-scan-card.d-scan-card--placeholder {
   cursor: default;
   margin-top: 0.38rem;

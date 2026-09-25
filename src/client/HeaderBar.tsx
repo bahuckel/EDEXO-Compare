@@ -34,7 +34,13 @@ import {
 import { useFdevServerStatus } from "./useFdevServerStatus";
 import type { EncyclopediaSpawnCompare } from "./EncyclopediaModal";
 import { DScanBodiesBadge } from "./DScanBodiesBadge";
-import type { AppSnapshot, FootScannedEntry, JournalSystemInfo, NotableBodyInfo } from "@shared/types";
+import type {
+  AppSnapshot,
+  FootScannedEntry,
+  JournalSystemInfo,
+  NotableBodyInfo,
+  SystemKind,
+} from "@shared/types";
 import { primaryStarChipClass, primaryStarRoleTag, primaryStarRoleTooltip } from "./speciesMatchHelpers";
 import { useFeederStatus } from "./FeederStatusPanel";
 import { DataValueBreakdownModal, FeederModal, MyExobiologyModal, SessionLogModal } from "./AppModals";
@@ -64,6 +70,25 @@ import type { RouteHeaderMetricMode } from "./routeHeader";
 const PlanetQuickFactsPopup = lazy(() =>
   import("./PlanetQuickFactsPopup").then((m) => ({ default: m.PlanetQuickFactsPopup })),
 );
+
+const SYSTEM_KIND_LABEL: Record<SystemKind, string> = {
+  bubble: "Bubble",
+  colony: "Colony",
+  colonising: "Colonising",
+  facility: "Facility",
+  empty: "Empty",
+};
+
+const SYSTEM_KIND_TIP: Record<SystemKind, string> = {
+  bubble:
+    "Populated by Frontier (the Bubble and its outposts). Planets here were walked long ago: no first-footfall ×5.",
+  colony: "A player colony. Populated systems pay no first-footfall ×5.",
+  colonising:
+    "Claimed for colonisation and under construction. Builders have been on the ground: no first-footfall ×5 expected.",
+  facility:
+    "No residents, but something runs here — security or a controlling faction (e.g. a detention centre). No first-footfall ×5 expected.",
+  empty: "Nobody lives here. The first-footfall ×5 depends on the planet's own scan.",
+};
 
 function StarSystemMapIcon({ className }: { className?: string }) {
   const gid = useId().replace(/:/g, "");
@@ -677,6 +702,14 @@ export const HeaderBar = memo(function HeaderBar({
                   text={`${snap.currentRegion.name} — the galactic region this system sits in. Region is one of the strongest signals in exobiology; several species never appear outside particular ones.`}
                 >
                   <span className="appbar-region-chip">{snap.currentRegion.name}</span>
+                </Tooltip>
+              ) : null}
+              {snap.currentSystemKind ? (
+                /* Bubble / Colony / Colonising / Empty (owner, 2026-09-25). The first three pay no ×5. */
+                <Tooltip className="appbar-system-kind" text={SYSTEM_KIND_TIP[snap.currentSystemKind]}>
+                  <span className={`appbar-kind-chip appbar-kind-chip--${snap.currentSystemKind}`}>
+                    {SYSTEM_KIND_LABEL[snap.currentSystemKind]}
+                  </span>
                 </Tooltip>
               ) : null}
             </div>

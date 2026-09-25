@@ -621,6 +621,29 @@
   background: var(--panel-2, transparent);
 }
 
+/* Bubble / Colony / Colonising / Empty — the first three pay no first-footfall ×5 */
+.appbar-kind-chip {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.appbar-kind-chip--bubble,
+.appbar-kind-chip--colony,
+.appbar-kind-chip--colonising,
+.appbar-kind-chip--facility {
+  color: var(--warn);
+  border-color: currentColor;
+}
+.appbar-kind-chip--empty {
+  color: var(--ok);
+  border-color: currentColor;
+}
+
 /* ---- narrow: give the middle everything, and let the right shed its labels -------------------- */
 @media (max-width: 1000px) {
   .appbar-wordmark {

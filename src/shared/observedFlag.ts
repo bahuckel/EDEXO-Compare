@@ -31,7 +31,13 @@ export type ObservationSource =
   /** EDDN's live stream: `Scan.WasFootfalled` / `Scan.WasMapped` uploaded by someone else. */
   | "eddn"
   /** Derived from a Spansh dump — a genus list implies a DSS map (INCLUDE-BODY-IDS §8.9). */
-  | "spansh";
+  | "spansh"
+  /**
+   * The system is populated (`Population` > 0 on arrival), so every body counts as walked:
+   * settlers got there first, and the game pays no first-footfall bonus there whatever
+   * `WasFootfalled` says (owner's bug report, 2026-09-25 — Tewi C 5). See `GameStateStore`.
+   */
+  | "populated";
 
 export interface ObservedFlag {
   /** `true` / `false` / `null` — and `null` is a real answer, not a missing one. */

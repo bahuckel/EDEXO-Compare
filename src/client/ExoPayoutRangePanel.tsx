@@ -15,6 +15,25 @@ function footfallMeta(pr: ExoPayoutRangeDTO): {
       hint: "Your commander is flagged for first-footfall organic bonus here (disembark / journal).",
     };
   }
+  if (pr.noFootfallSystemKind) {
+    const k = pr.noFootfallSystemKind;
+    const text: Record<typeof k, string> = {
+      bubble: "FOOTFALL — BUBBLE",
+      colony: "FOOTFALL — COLONY",
+      colonising: "FOOTFALL — COLONISING",
+      facility: "FOOTFALL — FACILITY",
+    };
+    const hint: Record<typeof k, string> = {
+      bubble:
+        "A system Frontier populated: its planets were walked long ago, so no first-footfall bonus is paid here.",
+      colony: "A player colony: no first-footfall bonus is paid in populated systems.",
+      colonising:
+        "Being colonised: builders have been on the ground, so no first-footfall bonus is expected here.",
+      facility:
+        "No residents, but something runs here (security or a controlling faction, e.g. a detention centre): no first-footfall bonus expected.",
+    };
+    return { text: text[k], tone: "other", hint: hint[k] };
+  }
   if (pr.journalWasFootfalled === true) {
     return {
       text: "FOOTFALL — OTHER CMDR",

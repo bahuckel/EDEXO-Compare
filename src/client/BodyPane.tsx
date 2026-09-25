@@ -341,11 +341,13 @@ function ExoPayoutRangeDetailModal({
                 {pr.commanderFirstFootfall
                   ? "Your commander is flagged for first-footfall organic bonus on this body in the merged journal; the headline range on the card uses this ×5 total."
                   : "Standard ×1 totals match the price list for this commander on this body; the Footfall column shows what each row pays if you later qualify for the bonus."}{" "}
-                {pr.journalWasFootfalled === null
-                  ? "Detailed scan footfall flag not seen yet."
-                  : pr.journalWasFootfalled
-                    ? "Latest detailed scan reports the surface has been visited."
-                    : "Latest detailed scan reports the body was not yet footfalled."}
+                {pr.noFootfallSystemKind
+                  ? "No first-footfall bonus in this system (populated or being colonised), whatever the scan says."
+                  : pr.journalWasFootfalled === null
+                    ? "Detailed scan footfall flag not seen yet."
+                    : pr.journalWasFootfalled
+                      ? "Latest detailed scan reports the surface has been visited."
+                      : "Latest detailed scan reports the body was not yet footfalled."}
               </li>
               <li>
                 <strong>k = min(slots, {pr.pricedCandidateCount})</strong>— we sum the{" "}
