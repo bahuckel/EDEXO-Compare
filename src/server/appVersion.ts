@@ -9,7 +9,7 @@
  * So there is one, and `tests/appVersion.test.ts` fails when it differs from `package.json`. The
  * release commit bumps both.
  */
-export const APP_VERSION = "1.1.8";
+export const APP_VERSION = "1.1.9";
 
 /** The User-Agent the HTTP lookups send. */
 export const APP_USER_AGENT = `ED-Exo-Compare/${APP_VERSION} (+https://github.com/bahuckel/EDEXO-Compare)`;
