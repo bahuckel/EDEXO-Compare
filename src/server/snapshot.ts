@@ -1,5 +1,5 @@
 import { speciesProvenance } from "./speciesProvenance.js";
-import type { AppStatusDTO, SessionLogDTO } from "../shared/types.js";
+import type { AppStatusDTO, RemoteViewDTO, SessionLogDTO } from "../shared/types.js";
 import { existsSync, statSync } from "node:fs";
 import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { UNOBSERVED } from "../shared/observedFlag.js";
@@ -20,10 +20,12 @@ import type {
   SpeciesDatabase,
   SpeciesEntry,
   SpeciesMatch,
+  SpeciesMatchContext,
   SystemMapSnapshot,
 } from "../shared/types.js";
 import { getProjectRoot } from "./paths.js";
 import { perfTime } from "./perf.js";
+import { buildShipProximity } from "./shipProximity.js";
 import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
 import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
@@ -90,7 +92,8 @@ import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
 import { rankSpeciesOnBody, REGION_PRIOR_WEIGHT } from "./speciesLikelihood.js";
 import { genusShares, timingFromSamples } from "../shared/systemTriage.js";
-import { codexHasSpecies } from "../shared/codexLog.js";
+import { codexHasSpecies, codexNewColoursInRegion } from "../shared/codexLog.js";
+import { candidateMorphColorShortLabel } from "../shared/candidateSpawnHints.js";
 import type { JournalHostStarObservation } from "../shared/types.js";
 import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
@@ -300,7 +303,39 @@ function resolveViewingSystemName(store: GameStateStore, viewingAddr: number | n
   for (const b of store.bodies.values()) {
     if (b.systemAddress === viewingAddr && b.starSystem?.trim()) return b.starSystem.trim();
   }
-  return null;
+  // A looked-up system: its name comes with the lookup, never through the visited list.
+  return (
+    store.remoteSystems.get(viewingAddr)?.starSystem ??
+    store.remoteLookups.get(viewingAddr)?.starSystem ??
+    null
+  );
+}
+
+/** The looked-up system on screen, while it is one: fetching, failed, or showing Spansh's bodies. */
+function buildRemoteView(store: GameStateStore): RemoteViewDTO | null {
+  const addr = store.viewingSystemAddress;
+  if (addr == null) return null;
+  const pending = store.remoteLookups.get(addr);
+  if (pending) {
+    return {
+      systemAddress: addr,
+      starSystem: pending.starSystem,
+      state: pending.state,
+      ...(pending.error ? { error: pending.error } : {}),
+    };
+  }
+  if (!store.isShowingRemoteSystem(addr)) return null;
+  const sys = store.remoteSystems.get(addr)!;
+  return {
+    systemAddress: addr,
+    starSystem: sys.starSystem,
+    state: "ready",
+    fetchedAt: sys.fetchedAt,
+    sourceUpdatedAt: sys.sourceUpdatedAt,
+    bodyCount: sys.records.length,
+    bioBodyCount: sys.bio.length,
+    ...(typeof sys.signalBodyCount === "number" ? { signalBodyCount: sys.signalBodyCount } : {}),
+  };
 }
 
 function scanBodyKey(systemAddress: number, bodyId: number): string {
@@ -816,7 +851,7 @@ function attachPresenceProbability(
   const signals = b.biologicalSignals;
   const scale = signals != null && Number.isFinite(signals) && signals > 0 ? signals : 1;
   for (const r of ranked) {
-    const p = Math.max(0, Math.min(1, r.probability * scale));
+    const p = Math.max(0, Math.min(1, r.probability * scale * (r.match.presenceFactor ?? 1)));
     r.match.presenceProbabilityPercent = Math.round(p * 1000) / 10;
   }
 
@@ -1040,6 +1075,32 @@ function attachCodexNovelty(matches: SpeciesMatch[], store: GameStateStore): voi
   }
 }
 
+/**
+ * [CODEX]: the colour this body would grow is not yet in the commander's codex for this region
+ * (owner, 2026-09-26 — per colour, as the game's CODEX tab keeps it). The colour is the same label the
+ * species row shows, so the mark and the row never disagree. Silent until the journals have been
+ * merged by a build that collects the per-region record, and when the region is unknown.
+ */
+function attachCodexRegionNovelty(
+  matches: SpeciesMatch[],
+  store: GameStateStore,
+  ctx: SpeciesMatchContext | null,
+  scan: PlanetScan | null,
+): void {
+  if (store.codexRegionLogged.size === 0) return;
+  const region = ctx?.regionName?.trim();
+  if (!region) return;
+  for (const m of matches) {
+    const label = candidateMorphColorShortLabel(m.entry, ctx?.parentStarType, scan?.materials);
+    const fresh = codexNewColoursInRegion(store.codexRegionLogged, region, m.entry.displayName, label);
+    if (fresh) {
+      m.codexNew = true;
+      m.codexNewColours = fresh;
+      m.codexRegion = region;
+    }
+  }
+}
+
 function ambiguityForBody(b: BodyExoState): string | null {
   const sig = b.biologicalSignals;
   const genusN = b.genusHints?.length ?? 0;
@@ -1103,6 +1164,8 @@ function computeBodyCacheSignature(
     organic: organicProgressSignature(store, b.key),
     species: speciesDataGeneration,
     footCatalog: footScannedCatalogSignature(root),
+    // A new CodexEntry changes the "new to you" and [CODEX] marks without touching the body.
+    codex: `${store.codexLoggedSpecies.size}/${store.codexRegionLogged.size}`,
   });
 }
 
@@ -1198,11 +1261,27 @@ function computeBodyUncached(
     ),
   );
   for (const id of collectResolvedOrganicLockSpeciesIds(
-    (b.organicGenusLocks ?? []).filter((l) => l.source !== "codex"),
+    (b.organicGenusLocks ?? []).filter((l) => l.source !== "codex" && l.source !== "spansh"),
     db,
   )) {
     compScanOnly.delete(id);
   }
+  /*
+    Who logged each species here (owner, 2026-09-25): this commander's journal — a foot scan or the
+    composition scanner — or other commanders, via Spansh, for a system looked up remotely.
+  */
+  const loggedByYou = new Set(
+    collectResolvedOrganicLockSpeciesIds(
+      (b.organicGenusLocks ?? []).filter((l) => l.source !== "spansh"),
+      db,
+    ),
+  );
+  const loggedByOthers = new Set(
+    collectResolvedOrganicLockSpeciesIds(
+      (b.organicGenusLocks ?? []).filter((l) => l.source === "spansh"),
+      db,
+    ),
+  );
   let matches: SpeciesMatch[] = raw.map((m) => {
     const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(
       m.entry,
@@ -1225,6 +1304,11 @@ function computeBodyUncached(
       priceCredits,
       organicAnalysisComplete: store.isOrganicAnalysisCompleteForEntry(b.key, m.entry),
       ...(compScanOnly.has(m.entry.id) ? { confirmedByCompositionScan: true } : {}),
+      ...(loggedByYou.has(m.entry.id)
+        ? { loggedBy: "you" as const }
+        : loggedByOthers.has(m.entry.id)
+          ? { loggedBy: "others" as const }
+          : {}),
       ...(hasFile
         ? {
             exomasteryProfilePresent: true,
@@ -1297,6 +1381,7 @@ function computeBodyUncached(
     m.provenance = speciesProvenance(root, b.systemAddress, b.bodyId, m.entry);
   }
   attachCodexNovelty(matches, store);
+  attachCodexRegionNovelty(matches, store, speciesMatchCtx, scanForExo);
   attachOtherMatchCardScores(matches, scanForExo, explorationRec, root, journalHost);
   applyExomasteryGenusCompetitivePercent(matches);
   if (matches.length > 0 && scanForExo) {
@@ -1598,6 +1683,10 @@ export function buildSnapshot(
     currentSystemKind: focusAddr != null ? store.systemKind(focusAddr) : null,
     viewingSystemAddress: store.viewingSystemAddress,
     viewingSystemName,
+    remoteView: bootLoading ? null : buildRemoteView(store),
+    shipProximity: bootLoading
+      ? null
+      : buildShipProximity(store.currentBodyKey, focusAddr, recsForPrimary, bodies),
     journalSystems,
     bodies,
     speciesCount: db.species.length,
@@ -1652,7 +1741,7 @@ export function buildSnapshot(
     statusDestination: bootLoading ? null : store.statusDestination,
     jumpTarget: bootLoading ? null : withFirstFootfall(store.nextJumpTarget(), store),
     focusedSystemUndiscovered:
-      !bootLoading && focusAddr != null && store.mainStarWasDiscoveredBySystem.get(focusAddr) === false,
+      !bootLoading && focusAddr != null && store.commanderDiscoveredSystem(focusAddr) === true,
     remainingJumpsInRoute: bootLoading ? null : store.remainingJumpsInRoute,
     liveShipFuelRange: bootLoading ? null : buildLiveShipFuelRangeDTO(store, cachedStarRoles!),
     footTravelOdometerEnabled: store.footTravelOdometerEnabled,

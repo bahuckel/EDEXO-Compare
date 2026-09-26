@@ -1,6 +1,8 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { BodyComputed } from "@shared/types";
+import type { BodyComputed, ShipProximityDTO } from "@shared/types";
+import { BODY_SORT_OPTIONS, type BodySortMode } from "./bodySort";
 import { fmtCrShort } from "./credits";
+import { Select } from "./ui/Select";
 
 /**
  * One tab model at every width.
@@ -23,19 +25,44 @@ export type TabSection = {
 
 const SCROLL_STEP_PX = 260;
 
+/** "4.2 Ls", "318 Ls", "12.4k Ls" — the tab's distance in Closest; "~" when it is an orbit estimate. */
+export function fmtTabDistanceLs(ls: number, estimate: boolean): string {
+  const n = ls < 10 ? ls.toFixed(1) : ls < 10_000 ? String(Math.round(ls)) : `${(ls / 1000).toFixed(1)}k`;
+  return `${estimate ? "~" : ""}${n} Ls`;
+}
+
+function sortTitle(mode: BodySortMode, proximity: ShipProximityDTO | null): string {
+  if (mode === "system") return "Tab order: planets with their moons, as they orbit";
+  if (mode === "profit")
+    return "Tab order: most valuable first (×5 when a first footfall is expected). Re-sorts when a value changes, on a jump or a landing.";
+  if (mode === "alpha") return "Tab order: by name";
+  if (!proximity?.originLabel) return "Tab order: nearest first";
+  return proximity.basis === "arrival"
+    ? `Tab order: nearest to ${proximity.originLabel}, the arrival star — the game's own distances. After you land, nearest to that body.`
+    : `Tab order: nearest to ${proximity.originLabel}, where the ship is — estimated from the orbits (~). Re-sorts when you land somewhere else.`;
+}
+
 export const BodyTabStrip = memo(function BodyTabStrip({
   sections,
   selectedBodyKey,
   onSelect,
   onOpenJump,
   bodyCount,
+  sortMode,
+  onSortChange,
+  proximity,
 }: {
   sections: TabSection[];
   selectedBodyKey: string | null;
   onSelect: (bodyKey: string) => void;
   onOpenJump: () => void;
   bodyCount: number;
+  sortMode: BodySortMode;
+  onSortChange: (mode: BodySortMode) => void;
+  proximity: ShipProximityDTO | null;
 }) {
+  const distances = sortMode === "closest" ? (proximity?.distanceLsByBodyKey ?? null) : null;
+  const estimate = proximity?.basis === "orbits";
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [edges, setEdges] = useState({ left: false, right: false });
 
@@ -101,7 +128,17 @@ export const BodyTabStrip = memo(function BodyTabStrip({
   return (
     <nav className="tabs tabs-rework" aria-label="Bodies with biological signals">
       <div className="tabs-body-rail">
-        <span className="tabs-body-heading">BODY</span>
+        <div className="tabs-body-head" title={sortTitle(sortMode, proximity)}>
+          <span className="tabs-body-heading">BODY</span>
+          <Select
+            className="tabs-sort"
+            value={sortMode}
+            options={BODY_SORT_OPTIONS}
+            onChange={onSortChange}
+            ariaLabel="Order of the body tabs"
+            menuMinWidth={150}
+          />
+        </div>
         <button
           type="button"
           className={`tabs-chevron${edges.left ? "" : " tabs-chevron--idle"}`}
@@ -150,6 +187,9 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                     // Derived here rather than sent down: the strip already holds the matches, and a
                     // body is worth a detour exactly when something it might grow is worth sampling.
                     const focus = !done && b.matches.some((x) => !x.unlikely && x.collectionFocus === true);
+                    const dist = distances?.[b.state.key];
+                    // CX: something here would be a new codex entry for this region (owner, 2026-09-26).
+                    const cx = b.matches.some((x) => !x.unlikely && x.codexNew === true);
                     return (
                       <button
                         key={b.state.key}
@@ -160,13 +200,17 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         data-body-key={b.state.key}
                         className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}`}
                         onClick={() => onSelect(b.state.key)}
-                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}`}
+                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${cx ? ", a new codex entry for this region (CX)" : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`}
                       >
                         <span className="tab-label">{b.tabLabel}</span>
                         <span className="tab-meta">
                           {bio ?? "?"}
                           <small>bio</small>
                           {best > 0 ? <> · {fmtCrShort(best)}</> : null}
+                          {typeof dist === "number" ? (
+                            <span className="tab-dist"> · {fmtTabDistanceLs(dist, estimate)}</span>
+                          ) : null}
+                          {cx ? <span className="tab-cx"> · CX</span> : null}
                         </span>
                         {done ? <span className="tab-dot" aria-hidden="true" /> : null}
                         {focus ? (

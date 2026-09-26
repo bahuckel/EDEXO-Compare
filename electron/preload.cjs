@@ -33,6 +33,12 @@ contextBridge.exposeInMainWorld("edexoElectron", {
   setHudLayout: (opts) => ipcRenderer.invoke("edexo:set-hud-layout", opts),
   /** Hide/show every HUD window; same as the global shortcut. @param {{ hidden?: boolean }} [opts] */
   toggleHudVisibility: (opts) => ipcRenderer.invoke("edexo:toggle-hud-visibility", opts),
+  /**
+   * The exobiology UI in its own window; the launcher stays open. Brings it forward when it is open.
+   *
+   * @returns {Promise<{ opened: boolean; focused?: boolean; error?: string }>}
+   */
+  openAppWindow: () => ipcRenderer.invoke("edexo:open-app-window"),
   /** @returns {Promise<{ opened: boolean; paths?: string[] }>} */
   getFootOverlayOpen: () => ipcRenderer.invoke("edexo:foot-overlay-state"),
   /** @returns {Promise<{ paths: string[] }>} */
@@ -44,4 +50,10 @@ contextBridge.exposeInMainWorld("edexoElectron", {
    * @returns {Promise<{ ok: boolean }>}
    */
   resizeHudOverlay: (opts) => ipcRenderer.invoke("edexo:resize-hud-overlay", opts),
+  /** Launcher → every HUD window, as a setting changes (the HUDs have their own session). */
+  pushHudPrefs: (prefs) => ipcRenderer.send("edexo:push-hud-prefs", prefs),
+  /** HUD side of {@link pushHudPrefs}. */
+  onHudPrefs: (cb) => {
+    ipcRenderer.on("edexo:hud-prefs", (_evt, prefs) => cb(prefs));
+  },
 });

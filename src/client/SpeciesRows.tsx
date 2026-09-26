@@ -1,3 +1,4 @@
+import { codexMarkTitle } from "./codexMark";
 import { useState, type ReactNode } from "react";
 import type { BodyComputed, PlanetScan } from "@shared/types";
 import { settledMultiplier } from "@shared/footfallValue";
@@ -179,7 +180,11 @@ export function SpeciesRow({
             {" "}
             - {colourUnknown ? "colour unknown" : colourRaw}
           </span>
-          {m.notInCodex ? (
+          {m.codexNew ? (
+            <span className="srow-tag srow-tag--codex" title={codexMarkTitle(m)}>
+              [CODEX]
+            </span>
+          ) : m.notInCodex ? (
             <span
               className="srow-tag srow-tag--new"
               title="No codex entry for this species in your journals yet"
@@ -207,6 +212,21 @@ export function SpeciesRow({
             near"* — and the badge is what keeps the two apart afterwards: a comp scan settles what
             grows here and says nothing about whether you can get down to it.
           */}
+          {m.loggedBy === "others" ? (
+            <span
+              className="srow-tag srow-tag--others"
+              title="Logged on this body by other commanders (Spansh). Not from your journal."
+            >
+              logged by other commanders
+            </span>
+          ) : m.loggedBy === "you" ? (
+            <span
+              className="srow-tag srow-tag--you"
+              title="Logged on this body in your own journal: a foot scan or the composition scanner."
+            >
+              logged by you
+            </span>
+          ) : null}
           {m.confirmedByCompositionScan ? (
             <span
               className="srow-tag srow-tag--compscan"

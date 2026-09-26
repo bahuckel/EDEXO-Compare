@@ -22,6 +22,7 @@
 @import "./styles/body-info.css";
 @import "./styles/encyclopedia.css";
 @import "./styles/primitives.css";
+@import "./styles/select.css";
 @import "./styles/appbar.css";
 @import "./styles/species-cards.css";
 @import "./styles/triage.css";
@@ -37,3 +38,4 @@
 @import "./styles/statistics.css";
 @import "./styles/cockpit.css";
 @import "./styles/bridge.css";
+@import "./styles/system-card.css";

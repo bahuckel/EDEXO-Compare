@@ -1,4 +1,5 @@
 import type { DScanBodiesDTO } from "@shared/types";
+import { CopySystemButton } from "./CopySystemButton";
 
 const TITLE =
   "Total bodies = FSS honk BodyCount / FSSAllBodiesFound when present; otherwise from merged journal Scan rows, EDSM map data, and the drawn system map. Found = physical bodies on the system map when available, else Scan/Progress fallback.";
@@ -24,7 +25,10 @@ export function DScanBodiesBadge({
       title={`${d.systemName} — ${TITLE}`}
     >
       <span className={lbl}>D-Scan</span>
-      <span className={`d-scan-card__sys${val ? ` ${val}` : ""}`}>{d.systemName}</span>
+      <span className={`d-scan-card__sys${val ? ` ${val}` : ""}`}>
+        {d.systemName}
+        <CopySystemButton system={d.systemName} />
+      </span>
       <span className={`d-scan-card__sep${val ? ` ${val}` : ""}`}> - </span>
       <span className={`d-scan-card__nums${val ? ` ${val}` : ""}`}>
         {d.found} / {d.total}

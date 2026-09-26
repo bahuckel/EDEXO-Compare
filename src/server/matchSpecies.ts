@@ -1484,6 +1484,11 @@ export function demoteFailedSpatialGates(
       detail: `${describeVerdict(verdict)} ${verdict.evidence}.`,
       soft: true,
     };
+    // Inside the gate's soft band (Bark Mounds 150–300 ly): stays shown, at a lower chance.
+    if (verdict.softBand) {
+      strict[i] = { ...m, reasons: [...m.reasons, reason], presenceFactor: verdict.softBand.factor };
+      continue;
+    }
     strict.splice(i, 1);
     unlikely.push({
       ...m,

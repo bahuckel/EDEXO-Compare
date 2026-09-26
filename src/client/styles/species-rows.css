@@ -135,6 +135,14 @@
   color: var(--ok);
   cursor: help;
 }
+.srow-tag--you {
+  color: var(--ok);
+  cursor: help;
+}
+.srow-tag--others {
+  color: var(--accent-bright);
+  cursor: help;
+}
 .srow-prog {
   font-size: var(--fs-xs);
   font-weight: 700;
@@ -296,4 +304,28 @@
   color: var(--accent, var(--ok));
   opacity: 0.85;
   cursor: help;
+}
+
+/* [CODEX]: a new codex entry for this region, in this colour (owner, 2026-09-26). Cyan, like the
+   codex screen, so it never reads as the orange of value or the green of "done". */
+.srow-tag--codex,
+.species-codex-mark,
+.genus-tag--codex {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #5fe0ff;
+}
+.species-codex-mark {
+  margin-left: 0.35rem;
+  font-size: var(--fs-2xs);
+}
+.genus-tag--codex {
+  margin-left: 0.3rem;
+}
+.tab-cx {
+  font-weight: 800;
+  color: #5fe0ff;
+}
+.tab.on .tab-cx {
+  color: #063a4a;
 }

@@ -47,6 +47,23 @@ export function isDeveloperPopulatedSystem(systemAddress: number): boolean {
 }
 
 /** Test seam. */
+/**
+ * Did this commander discover this body? The game's `WasDiscovered: false`, unless the system is one
+ * Frontier populated.
+ *
+ * Bubble data says `false` far more often than anyone would guess: in the owner's journals 145 of 487
+ * planet scans in Frontier-populated systems, and the arrival stars of Barnard's Star, Alpha Centauri,
+ * Ross 775 and Procyon. Nobody discovers those — the game ships them charted — so a "first discovery"
+ * there was flying through the Bubble (Discord, 2026-09-25), and so is the first-discoverer bonus in
+ * the value estimates: the game does not pay it.
+ */
+export function commanderFirstDiscoveredBody(
+  systemAddress: number,
+  wasDiscovered: boolean | undefined,
+): boolean {
+  return wasDiscovered === false && !isDeveloperPopulatedSystem(systemAddress);
+}
+
 export function setDeveloperPopulatedSystemsForTests(addrs: Iterable<number> | null): void {
   cached = addrs ? new Set(addrs) : null;
 }

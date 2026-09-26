@@ -88,7 +88,6 @@ describe("system kind and the first-footfall bonus", () => {
   });
 
   it("0. first in the system (WasDiscovered false on the arrival star): no checks, the scan decides", () => {
-    setDeveloperPopulatedSystemsForTests([SA]); // even the file cannot override a first discovery
     const s = new GameStateStore();
     const star = line({
       event: "Scan",
@@ -105,6 +104,33 @@ describe("system kind and the first-footfall bonus", () => {
     for (const l of [arrive({ Population: 0 }), star, scan, disembark]) s.apply(l);
     expect(s.noFirstFootfallInSystem(SA)).toBe(false);
     expect(s.firstFootfallBodies.has(BK)).toBe(true);
+  });
+
+  /*
+    Barnard's Star, Alpha Centauri, Ross 775 and Procyon: Frontier-populated, and their arrival stars
+    still say WasDiscovered: false. That flag used to skip every check and bring the ×5 back. Nobody
+    discovers a Bubble system, so on Frontier's list the star's flag does not count (Discord batch,
+    2026-09-25).
+  */
+  it("0. a Bubble system whose arrival star says WasDiscovered false is still the Bubble: no ×5", () => {
+    setDeveloperPopulatedSystemsForTests([SA]);
+    const s = new GameStateStore();
+    const star = line({
+      event: "Scan",
+      ScanType: "AutoScan",
+      StarSystem: "Test",
+      SystemAddress: SA,
+      BodyName: "Test A",
+      BodyID: 1,
+      StarType: "K",
+      DistanceFromArrivalLS: 0,
+      WasDiscovered: false,
+      WasMapped: false,
+    });
+    for (const l of [arrive({ Population: 0 }), star, scan, disembark]) s.apply(l);
+    expect(s.commanderDiscoveredSystem(SA)).toBe(false);
+    expect(s.noFirstFootfallInSystem(SA)).toBe(true);
+    expect(s.firstFootfallBodies.has(BK)).toBe(false);
   });
 
   it("3. on Frontier's list without a visit: bubble, so a scan alone is not ×5", () => {

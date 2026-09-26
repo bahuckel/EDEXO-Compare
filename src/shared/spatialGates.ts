@@ -71,6 +71,13 @@ export interface SpatialGate {
   thresholdLy: number;
   /** What the measurement says, for the tooltip — the reader should see why the number is that. */
   evidence: string;
+  /**
+   * A second, wider radius (owner, 2026-09-26, for Bark Mounds): between `thresholdLy` and this the
+   * species stays in the main list with its chance multiplied by {@link softFactor}; only beyond it
+   * is it demoted. Bark Mounds: 93 % within 150 ly, 100 % within 300 — his FM-C b0 grew them at 169.
+   */
+  softBandLy?: number;
+  softFactor?: number;
 }
 
 /**
@@ -94,7 +101,10 @@ export const SPATIAL_GATES: { idIncludes: string; gate: SpatialGate }[] = [
     gate: {
       kind: "nebula",
       thresholdLy: 150,
-      evidence: "93 % of 23,651 Bark Mound systems are within 150 ly of a nebula; background 4–7 %",
+      evidence:
+        "93 % of 23,651 Bark Mound systems are within 150 ly of a nebula, 100 % within 300 ly; background 4–7 %",
+      softBandLy: 300,
+      softFactor: 0.5,
     },
   },
   {
@@ -102,7 +112,10 @@ export const SPATIAL_GATES: { idIncludes: string; gate: SpatialGate }[] = [
     gate: {
       kind: "nebula",
       thresholdLy: 150,
-      evidence: "93 % of 23,651 Bark Mound systems are within 150 ly of a nebula; background 4–7 %",
+      evidence:
+        "93 % of 23,651 Bark Mound systems are within 150 ly of a nebula, 100 % within 300 ly; background 4–7 %",
+      softBandLy: 300,
+      softFactor: 0.5,
     },
   },
   {
@@ -158,6 +171,8 @@ export interface SpatialVerdict {
   kind: SpatialGateKind;
   /** True when the system is inside the measured radius. */
   passes: boolean;
+  /** Outside the radius but inside the gate's soft band: kept, at `softFactor` of its chance. */
+  softBand?: { factor: number; bandLy: number };
   distanceLy: number;
   thresholdLy: number;
   /** The nebula / Guardian site / Sgr A* the distance is measured to. */
@@ -196,9 +211,12 @@ export function evaluateSpatialGate(
   const points = gate.kind === "nebula" ? catalogue.nebulae : catalogue.guardian;
   const near = nearestPoint(system, points);
   if (!near) return null;
+  const inBand =
+    gate.softBandLy != null && near.distanceLy > gate.thresholdLy && near.distanceLy <= gate.softBandLy;
   return {
     kind: gate.kind,
     passes: near.distanceLy <= gate.thresholdLy,
+    ...(inBand ? { softBand: { factor: gate.softFactor ?? 0.5, bandLy: gate.softBandLy! } } : {}),
     distanceLy: near.distanceLy,
     thresholdLy: gate.thresholdLy,
     nearestName: near.point.n,
@@ -217,7 +235,10 @@ export function describeVerdict(v: SpatialVerdict): string {
     v.kind === "core"
       ? v.nearestName
       : `nearest ${v.kind === "nebula" ? "nebula" : "Guardian site"} ${v.nearestName}`;
-  return v.passes
-    ? `${subject} is ${d} away — inside the ${rule} rule.`
-    : `${subject} is ${d} away; the rule is under ${rule}.`;
+  if (v.passes) return `${subject} is ${d} away — inside the ${rule} rule.`;
+  if (v.softBand) {
+    const pct = Math.round(v.softBand.factor * 100);
+    return `${subject} is ${d} away — past the ${rule} rule but inside ${v.softBand.bandLy} ly, so it stays listed at ${pct} % of its chance.`;
+  }
+  return `${subject} is ${d} away; the rule is under ${rule}.`;
 }

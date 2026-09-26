@@ -53,6 +53,7 @@ import { EDASTRO_USER_AGENT } from "./edastroCarriers.js";
 import { lookupCarrierOnGalmap } from "./edastroGalmap.js";
 import type { JournalScan } from "./statisticsScan.js";
 import { summariseStatistics } from "./statistics.js";
+import { isLauncherOpenMode, readLauncherOpenMode, writeLauncherOpenMode } from "./launcherPrefs.js";
 import { isEdsmCatchUpScope, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 
 export function getLanIPv4s(port: number): string[] {
@@ -296,6 +297,12 @@ export function createHttpServer(opts: {
   setViewingSystem?: (systemAddress: number | null) => void;
   /** Optional: remember system name when client provides it (journal row or EDSM pick). */
   rememberVisitedSystem?: (starSystem: string, systemAddress: number) => void;
+  /**
+   * A system chosen from the header search: when the journals know nothing about it, fetch it from
+   * Spansh (cache first, 30 days) — see `remoteSystems.ts`. Replaces writing the pasted name into the
+   * visited-systems list, which put systems he had never flown to into "My discoveries".
+   */
+  lookupSystem?: (systemAddress: number, starSystem: string) => void;
   /** POST /api/ui/selected-body — JSON { bodyKey: string | null } */
   setUiSelectedBodyKey?: (bodyKey: string | null) => boolean | void;
   /** POST /api/settings/journal-directory — JSON { journalDir: string } */
@@ -1061,6 +1068,25 @@ export function createHttpServer(opts: {
    * Whether the data the app ranks with is the data the corpus holds. Before the feeder merge the
    * answer was no on 72 of 79 profiles and nothing in the app said so.
    */
+  /** Where the launcher opens the UI — saved in user data so a rebuilt exe keeps it (launcherPrefs.ts). */
+  app.get("/api/launcher/open-mode", (_req, res) => {
+    res.json({ ok: true, mode: readLauncherOpenMode() });
+  });
+
+  app.post("/api/launcher/open-mode", (req, res) => {
+    const mode = (req.body as { mode?: unknown } | undefined)?.mode;
+    if (!isLauncherOpenMode(mode)) {
+      res.status(400).json({ ok: false, error: "mode must be browser, window or phone." });
+      return;
+    }
+    try {
+      writeLauncherOpenMode(mode);
+      res.json({ ok: true, mode });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
   app.get("/api/app/update", async (req, res) => {
     if (typeof opts.getUpdateInfo !== "function") {
       res.status(501).json({ error: "Not available" });
@@ -1668,7 +1694,7 @@ export function createHttpServer(opts: {
     if (typeof addrRaw === "number") {
       const starRaw = req.body?.starSystem;
       if (typeof starRaw === "string" && starRaw.trim()) {
-        opts.rememberVisitedSystem?.(starRaw.trim(), addrRaw);
+        opts.lookupSystem?.(addrRaw, starRaw.trim());
       }
     }
     opts.setViewingSystem(addrRaw as number | null);

@@ -7,6 +7,7 @@ import {
   clearEncyclopediaFilter,
   defaultEncyclopediaFilters,
   ENC_FILTERS_ALL,
+  ENC_VACUUM_ATMO,
   rankEncyclopediaRows,
   type EncyclopediaFiltersState,
 } from "../src/client/encyclopediaFilters.js";
@@ -66,6 +67,16 @@ describe("rankEncyclopediaRows", () => {
     const r = rankEncyclopediaRows(rows, { ...defaultEncyclopediaFilters(), search: "qqqzzz" });
     expect(r.rows).toHaveLength(0);
     expect(r.searching).toBe(true);
+  });
+});
+
+describe("the no-atmosphere filter", () => {
+  it("agrees with the matcher: thin-only rows are out, Bark Mounds and the Tubers are in", () => {
+    const f = { ...defaultEncyclopediaFilters(), atmosphere: ENC_VACUUM_ATMO };
+    const names = rankEncyclopediaRows(rows, f).rows.map((r) => r.entry.displayName);
+    expect(names).not.toContain("Fumerola extremus");
+    expect(names).toContain("Bark Mounds");
+    expect(names.some((n) => n.startsWith("Sinuous Tubers"))).toBe(true);
   });
 });
 

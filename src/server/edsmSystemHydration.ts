@@ -2,6 +2,7 @@ import { journalPlanetClass } from "../shared/spanshPlanetClass.js";
 import { journalStarTypeFromSubType } from "../shared/spanshStarType.js";
 import type { ExplorationScanRecord } from "../shared/types.js";
 import { APP_USER_AGENT } from "./appVersion.js";
+import { planetRingCount } from "./orbitUtils.js";
 
 const EDSM_BODIES_URL = "https://www.edsm.net/api-system-v1/bodies";
 const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
@@ -180,6 +181,9 @@ export function mapEdsmBodyToExplorationRecord(
   // bodies read "unknown" rather than "none".
   if (vol) rec.volcanism = vol.toLowerCase() === "no volcanism" ? "" : vol;
   if (body.tidalLock === true || body.rotationalPeriodTidallyLocked === true) rec.tidalLock = true;
+
+  const ringCount = planetRingCount(body.rings);
+  if (ringCount !== undefined) rec.ringCount = ringCount;
 
   rec.semiMajorAxis = edsmSemiMajorAxisToM(pickNum(body.semiMajorAxis));
   rec.eccentricity = pickNum(body.orbitalEccentricity);

@@ -14,6 +14,24 @@ export function isBarycentreSyntheticBodyId(bodyId: number): boolean {
   return bodyId >= JOURNAL_BARYCENTRE_ID_BASE && bodyId < JOURNAL_BARYCENTRE_ID_BASE + 1_000_000;
 }
 
+/**
+ * How many rings a planet wears, from a journal `Scan.Rings` or an EDSM/Spansh `rings` list. A
+ * star's entries in the same list are its belts ("A Belt"), so only names ending in "Ring" count.
+ * Undefined when the list is absent — "not scanned" is not "no rings".
+ */
+export function planetRingCount(rings: unknown): number | undefined {
+  if (!Array.isArray(rings)) return undefined;
+  let n = 0;
+  for (const r of rings) {
+    const name =
+      r && typeof r === "object"
+        ? ((r as Record<string, unknown>).Name ?? (r as Record<string, unknown>).name)
+        : null;
+    if (typeof name === "string" && /\bRing$/i.test(name.trim())) n++;
+  }
+  return n;
+}
+
 export type ParsedJournalParent = { kind: "Star" | "Planet" | "Null"; id: number };
 
 /** One entry from `Scan.Parents` — `Star`, `Planet`, or `Null` (barycentre). */

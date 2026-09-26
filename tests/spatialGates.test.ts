@@ -128,3 +128,42 @@ describe("geometry", () => {
     expect(describeVerdict(far)).toMatch(/kly/);
   });
 });
+
+/**
+ * Bark Mounds' two radii (owner, 2026-09-26): 93 % of their systems are within 150 ly of a nebula,
+ * 100 % within 300. His Flyai Flyuae FM-C b0 grew them at 169 ly while the app offered Anemone.
+ */
+describe("the Bark Mounds soft band", () => {
+  const one = { ...cat, nebulae: [{ n: "Test Nebula", x: 0, y: 0, z: 0 }] };
+  const at = (ly: number) => ({ x: ly, y: 0, z: 0 });
+
+  it("passes inside 150 ly, keeps 150–300 ly at half its chance, fails beyond 300", () => {
+    expect(evaluateSpatialGate("bark_mounds_bark_mounds", at(100), one)).toMatchObject({ passes: true });
+    const band = evaluateSpatialGate("bark_mounds_bark_mounds", at(169), one)!;
+    expect(band.passes).toBe(false);
+    expect(band.softBand).toEqual({ factor: 0.5, bandLy: 300 });
+    expect(describeVerdict(band)).toContain("inside 300 ly");
+    const out = evaluateSpatialGate("bark_mounds_bark_mounds", at(350), one)!;
+    expect(out.passes).toBe(false);
+    expect(out.softBand).toBeUndefined();
+  });
+
+  it("gives radialem no band: 82 % at 300 ly is not the same evidence", () => {
+    const v = evaluateSpatialGate("electricae_electricae_radialem", at(169), one)!;
+    expect(v.passes).toBe(false);
+    expect(v.softBand).toBeUndefined();
+  });
+
+  it("keeps a band row in the main list with the factor on it", async () => {
+    const { demoteFailedSpatialGates } = await import("../src/server/matchSpecies.js");
+    const row = { entry: { id: "bark_mounds_bark_mounds" }, reasons: [] } as never;
+    const strict = [row];
+    const unlikely: never[] = [];
+    demoteFailedSpatialGates(strict, unlikely, { systemCoords: at(169) } as never, one);
+    expect(unlikely).toHaveLength(0);
+    expect(strict[0]).toMatchObject({ presenceFactor: 0.5 });
+    demoteFailedSpatialGates(strict, unlikely, { systemCoords: at(350) } as never, one);
+    expect(strict).toHaveLength(0);
+    expect(unlikely).toHaveLength(1);
+  });
+});

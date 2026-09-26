@@ -68,6 +68,30 @@
   letter-spacing: 0.04em;
 }
 
+/* "BODY" with the tab-order switch under it (O-F). */
+.tabs-body-head {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+}
+.tabs-body-head .ui-select.tabs-sort {
+  width: auto;
+  min-width: 8.6rem;
+  padding: 0.16rem 0.4rem 0.18rem 0.45rem;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.02em;
+}
+.tab-dist {
+  color: var(--accent-bright);
+}
+/* On the selected (orange) tab the orange figure vanished — ink, like the rest of its line. */
+.tab.on .tab-dist {
+  color: var(--ink, #07060a);
+  font-weight: 700;
+}
+
 .tabs-rework .tabs-strip {
   flex: 1;
   min-width: 0;

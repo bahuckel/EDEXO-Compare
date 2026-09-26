@@ -28,6 +28,7 @@ import { CARRIER_NETWORKS } from "@shared/carrierNetworks";
 import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
 import type { CarrierLiveFixDTO, CarrierQueryResultDTO, CarrierRowDTO } from "@shared/types";
+import { CopySystemButton } from "./CopySystemButton";
 
 /** Light years at a precision matching how far away the thing is. Mirrors the backlog panel's. */
 function ly(d: number | null): string {
@@ -542,6 +543,7 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
                           {moved ? (
                             <>
                               <strong className="carriers-live--differs">{moved.system || "unknown"}</strong>
+                              <CopySystemButton system={moved.system} />
                               <div className="dim carriers-was">
                                 EDAstro had {r.system || "—"}
                                 {r.region ? ` · ${r.region}` : ""}
@@ -550,6 +552,7 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
                           ) : (
                             <>
                               {r.system || "—"}
+                              <CopySystemButton system={r.system} />
                               {r.region ? <span className="dim"> · {r.region}</span> : null}
                             </>
                           )}

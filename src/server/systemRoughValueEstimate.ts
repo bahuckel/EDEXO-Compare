@@ -7,6 +7,7 @@ import type { ExplorationScanRecord } from "../shared/types.js";
 import type { GameStateStore } from "./gameState.js";
 import { explorationRecordIsBeltClusterLike, explorationRecordIsStellar } from "./explorationStellar.js";
 import { starScanValueCredits } from "./explorationValue.js";
+import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
 
 const BASE_VALUES: Record<string, number> = {
   "Earthlike body": 1200000,
@@ -135,7 +136,7 @@ export function approximateSystemRoughFssDssTotals(
     if (explorationRecordIsBeltClusterLike(r)) continue;
     if (explorationRecordIsStellar(r)) {
       const sm = r.stellarMass ?? 1;
-      const fd = r.wasDiscovered === false;
+      const fd = commanderFirstDiscoveredBody(r.systemAddress, r.wasDiscovered);
       const sv = starScanValueCredits(sm, r.starType, fd);
       starsFss += sv.value;
       starsDss += sv.value;

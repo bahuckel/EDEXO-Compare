@@ -23,6 +23,7 @@
 import { useMemo, useState } from "react";
 import { useLiveSnapshot } from "./useLiveSnapshot";
 import { triageInputsFromBodies, triageSystem, type TriageRow, type TriageSort } from "@shared/systemTriage";
+import { CopySystemButton } from "./CopySystemButton";
 
 const SORT_STORAGE_KEY = "edexo.secondscreen.sort";
 
@@ -89,6 +90,7 @@ export function SecondScreen() {
       <header className="ss-head">
         <div className="ss-system" title={system}>
           {system}
+          <CopySystemButton system={system} />
         </div>
         <div className={`ss-verdict ss-verdict--${verdict.tone}`}>{verdict.text}</div>
         <a

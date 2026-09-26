@@ -105,7 +105,7 @@ export interface OrganicGenusLock {
    *
    * Absent means `foot`. Caches written before this field existed hold nothing but foot scans.
    */
-  source?: "foot" | "codex";
+  source?: "foot" | "codex" | "spansh";
   /**
    * Foot locks only: how far the sampling of this species on this body got — `Log` is 1, each
    * `Sample` adds one, up to 3. The game writes `Log, Sample, Sample, Analyse`; the third sample and
@@ -124,6 +124,55 @@ export interface OrganicGenusLock {
    * glance bar shows the last three things scanned, newest last. Absent on sibling copies.
    */
   at?: string;
+}
+
+/**
+ * A system nobody on this machine has flown to, fetched from Spansh when the commander looks it up
+ * (owner, 2026-09-25). Held apart from the journal-derived state — never merged into it, never
+ * counted as a discovery or as unsold data — and cached for 30 days in its own file.
+ */
+export interface RemoteBioBody {
+  bodyId: number;
+  bodyName: string;
+  /** Spansh `signals.signals["$SAA_SignalType_Biological;"]`, null when it lists none. */
+  biologicalSignals: number | null;
+  /** Genus tokens (`$Codex_Ent_*`) somebody's surface scan reported to EDDN. */
+  genuses: string[];
+  /** Every signal type Spansh lists for the body (geological, …) — the fumarole gate reads these. */
+  signalTypes: string[];
+  /** Species other commanders logged here (Spansh `landmarks`, biology only): genus and species names. */
+  loggedSpecies: { genus: string; species: string }[];
+}
+
+export interface RemoteSystemRecord {
+  systemAddress: number;
+  starSystem: string;
+  coords: { x: number; y: number; z: number } | null;
+  /** When this app fetched it (ISO). The cache keeps it 30 days. */
+  fetchedAt: string;
+  /** Spansh's own `updated_at` for the system, when it gave one. */
+  sourceUpdatedAt: string | null;
+  records: ExplorationScanRecord[];
+  bio: RemoteBioBody[];
+  /**
+   * Bodies Spansh holds any signal counts for (biological or not). Zero means nobody uploaded an FSS
+   * of the system, so "no biology" is unknown rather than known. Absent on records cached before it.
+   */
+  signalBodyCount?: number;
+}
+
+/** What the main screen shows about a looked-up system that is not in the journals. */
+export interface RemoteViewDTO {
+  systemAddress: number;
+  starSystem: string;
+  state: "loading" | "ready" | "error";
+  error?: string;
+  fetchedAt?: string;
+  sourceUpdatedAt?: string | null;
+  bodyCount?: number;
+  bioBodyCount?: number;
+  /** See {@link RemoteSystemRecord.signalBodyCount}. */
+  signalBodyCount?: number;
 }
 
 export interface BodyExoState {
@@ -148,6 +197,8 @@ export interface BodyExoState {
   /** From ScanOrganic / Variant_Localised (legacy list for UI) */
   confirmedVariants: string[];
   updatedAt: string;
+  /** Set on a body built from a Spansh lookup, not from this commander's journal. */
+  remote?: { source: "spansh"; fetchedAt: string };
 }
 
 /** Resolved host star MK fields for feeder vs journal comparisons (from parent `Scan`). */
@@ -1119,12 +1170,23 @@ export interface SpeciesMatch {
   /** Exobiology line complete on this body (two Sample + one Analyse in journal, per codex key). */
   organicAnalysisComplete?: boolean;
   /**
+   * Multiplies "Chance here" — set when a spatial gate's soft band keeps the row listed at a lower
+   * chance (Bark Mounds 150–300 ly from a nebula; `spatialGates.ts`).
+   */
+  presenceFactor?: number;
+  /**
    * Confirmed here by the composition scanner and not on foot — the `[Comp Scan]` badge.
    *
    * Set only when there is no `ScanOrganic` for this species on this body: a foot scan says
    * everything a comp scan does and also that the commander could get to it.
    */
   confirmedByCompositionScan?: boolean;
+  /**
+   * Who logged this species on this body (owner, 2026-09-25): "you" — a foot scan or the
+   * composition scanner in this commander's journal — or "others", from Spansh for a system
+   * looked up remotely. Absent when nobody has, which is the prediction case.
+   */
+  loggedBy?: "you" | "others";
   /**
    * Demoted by the gates, and sampled here anyway — so it is listed with the candidates, banner and
    * all, instead of being collapsed behind "show unlikely".
@@ -1190,6 +1252,16 @@ export interface SpeciesMatch {
    * "no badge" never silently means "already logged".
    */
   notInCodex?: boolean;
+  /**
+   * [CODEX]: not yet in the commander's codex for this galactic region, in the colour this body would
+   * grow (per colour, per region — as the game's CODEX tab keeps it; shared/codexLog.ts). Absent when
+   * already logged, when the region is unknown, or before the journals were merged with the record.
+   */
+  codexNew?: boolean;
+  /** The colours that would be new ("Green", or both of "Cyan or Orange"); empty when the colour is unknown. */
+  codexNewColours?: string[];
+  /** The region the mark is about, for the tooltip. */
+  codexRegion?: string;
   /**
    * Distinct feeder bodies behind {@link exomasteryHabitatQuality}. Null when no profile.
    * Small counts mean the habitat signal is weak, not that the habitat is wrong.
@@ -2131,6 +2203,8 @@ export interface PrimaryStarHeaderEntryDTO {
   starRole: StarRoleDTO;
   /** Journal `StarType` + `Subclass` + `Luminosity` when merged (MK-style shorthand). */
   fullSpectralNotation?: string | null;
+  /** A black hole: its role reads "useless" like any unscoopable star, but the card marks it apart. */
+  blackHole?: true;
 }
 
 export interface PrimaryStarsHeaderDTO {
@@ -2231,6 +2305,19 @@ export interface AppStatusDTO {
   radarRadius?: RadarRadiusDTO;
 }
 
+/**
+ * Distances from where the ship is to each bio body of the viewed system (Discord batch O-F).
+ * `arrival`: measured by the game, from the arrival star. `orbits`: estimated from the orbit tree
+ * because the ship is at another body.
+ */
+export interface ShipProximityDTO {
+  originBodyKey: string | null;
+  /** Short name of the body the distances are from ("A 2 a"). */
+  originLabel: string | null;
+  basis: "arrival" | "orbits";
+  distanceLsByBodyKey: Record<string, number>;
+}
+
 export interface AppSnapshot {
   journalPath: string | null;
   /** How many Journal.*.log files were merged (oldest → newest) */
@@ -2285,6 +2372,10 @@ export interface AppSnapshot {
   viewingSystemAddress: number | null;
   /** Friendly name for `viewingSystemAddress` when browsing; null if not browsing or unknown. */
   viewingSystemName: string | null;
+  /** Set while the viewed system is one looked up from Spansh rather than known from the journals. */
+  remoteView?: RemoteViewDTO | null;
+  /** How far each bio body is from the ship, for the "Closest" body sort (server/shipProximity.ts). */
+  shipProximity?: ShipProximityDTO | null;
   /** Distinct systems from merged journal (and any body rows) for search / picker. */
   journalSystems: JournalSystemInfo[];
   bodies: BodyComputed[];
@@ -2539,6 +2630,12 @@ export interface ExplorationScanRecord {
   /** When true, row was loaded from EDSM because the journal had no `Scan` for this system yet. */
   edsmHydrated?: boolean;
   scanType?: string;
+  /**
+   * False when every scan of this body so far was a `NavBeaconDetail`: data a nav beacon hands over
+   * cannot be sold, so it is worth nothing to the unsold total. Sticky once any other scan arrives.
+   * Absent on rows built outside the journal merge, which count as scanned.
+   */
+  playerScanned?: boolean;
   /** Journal `Scan.BodyType` (e.g. `AsteroidCluster` for belt clusters). */
   bodyType?: string;
   planetClass?: string;
@@ -2575,6 +2672,8 @@ export interface ExplorationScanRecord {
   wasMapped?: boolean;
   /** Journal `Scan.DistanceFromArrivalLS`. `0` marks the arrival / primary entry body in the system map. */
   distanceFromArrivalLs?: number;
+  /** Planetary rings from `Scan.Rings` (belts excluded); undefined when the scan listed none at all. */
+  ringCount?: number;
   /**
    * Journal `ScanBaryCentre` for `{ Null: journalBarycentreNullId }` in `Scan.Parents`.
    * Stored under `bodyId = barycentreSyntheticBodyId(nullId)` so it never collides with real `BodyID`s.
@@ -2631,6 +2730,16 @@ export interface SystemMapNodeDTO {
    * Journal classifies body as stellar (incl. YSO in a planet designation slot). Sun-column `isStar` can still be false.
    */
   journalStellar?: boolean;
+  /** Stars: belt clusters in this star's belt — the map draws the belt when there are any. */
+  beltClusters?: number;
+  /** Biological signal count (journal FSS / DSS, or a Spansh lookup) — the ring and its number. */
+  bioSignals?: number | null;
+  /** A ringed planet: the map draws its ring, as the game's map does. */
+  rings?: number;
+  /** Its organics would pay the first-footfall ×5 here. */
+  firstFootfallX5?: boolean;
+  /** The ship is at this body now (arrival body after a jump, then approach / drop / landing). */
+  youAreHere?: boolean;
 }
 
 export interface SystemMapBodyDetailDTO {

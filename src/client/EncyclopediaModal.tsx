@@ -32,6 +32,7 @@ import {
   type EncyclopediaFiltersState,
 } from "./encyclopediaFilters";
 import { EncyclopediaFilterBar } from "./EncyclopediaFilterBar";
+import { CopySystemButton } from "./CopySystemButton";
 
 const EXO_DRAWER_TRANSITION_MS = 380;
 
@@ -209,6 +210,7 @@ function ExomasteryPlanetsBody({ data }: { data: EncyclopediaExomasteryPlanetsRe
               <>
                 {" "}
                 <span className="dim">· {fb.starSystem}</span>
+                <CopySystemButton system={fb.starSystem} />
               </>
             ) : null}
           </p>
@@ -370,6 +372,7 @@ function FoundSpeciesPopup({
                   <div className="encyclopedia-found-planet">
                     <strong>{f.bodyName}</strong>
                     <span className="dim"> · {f.starSystem}</span>
+                    <CopySystemButton system={f.starSystem} />
                   </div>
                   <dl className="encyclopedia-found-facts">
                     <div>

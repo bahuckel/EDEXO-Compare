@@ -1,6 +1,7 @@
 /**
  * The body pane: glance bar, planetary facts, sell range, candidate species (7.3).
  */
+import { codexMarkTitle } from "./codexMark";
 import { useModal } from "./ui/useModal";
 import { ArrivalTrip } from "@shared/systemTriage";
 import { fmtCrRangeShort, fmtCrShort } from "./credits";
@@ -23,7 +24,13 @@ import {
 } from "react";
 import { ExoPayoutRangePanel, payoutHeadline } from "./ExoPayoutRangePanel";
 import { FoldPanel } from "./ui/Fold";
-import type { BodyComputed, EstimatedSurfaceTempBand, ExoPayoutRangeDTO, PlanetScan } from "@shared/types";
+import type {
+  BodyComputed,
+  EstimatedSurfaceTempBand,
+  ExoPayoutRangeDTO,
+  PlanetScan,
+  SpeciesMatch,
+} from "@shared/types";
 import {
   atmospherePillStyle,
   formatPressurePill,
@@ -769,6 +776,11 @@ export const BodyPane = memo(function BodyPane({
     Exo-signals card and the on-foot list all read these, so the three can never disagree.
   */
   const genusRows = bodyGenusProgress(s.genusHints, s.organicGenusLocks, liveRun);
+  // [CODEX] on a genus: one of its candidates here would be a new codex entry for this region.
+  const codexGenera = new Map<string, SpeciesMatch>();
+  for (const m of body.matches) {
+    if (!m.unlikely && m.codexNew) codexGenera.set(m.entry.genus.trim().toLowerCase(), m);
+  }
   const signalCount = s.biologicalSignals;
   const unnamedSignals = signalCount != null ? Math.max(0, signalCount - genusRows.length) : 0;
   const comparisonBodySummary =
@@ -1126,6 +1138,14 @@ export const BodyPane = memo(function BodyPane({
                         </span>
                         <span className="genus-progress-tag" role="cell">
                           <GenusTag row={r} />
+                          {codexGenera.has(r.genus.trim().toLowerCase()) ? (
+                            <span
+                              className="genus-tag genus-tag--codex"
+                              title={codexMarkTitle(codexGenera.get(r.genus.trim().toLowerCase())!)}
+                            >
+                              [CODEX]
+                            </span>
+                          ) : null}
                         </span>
                       </div>
                     ))}

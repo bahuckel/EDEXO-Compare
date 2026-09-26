@@ -370,8 +370,7 @@
   opacity: 0.85;
 }
 
-.gsx-field select {
-  font: inherit;
+.gsx-field .ui-select {
   text-transform: none;
   letter-spacing: normal;
   max-width: 22rem;

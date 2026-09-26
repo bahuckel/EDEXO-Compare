@@ -260,7 +260,7 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.03em;
-  color: rgba(180, 200, 235, 0.85);
+  color: var(--text-dim);
   list-style: none;
 }
 
@@ -269,7 +269,7 @@
 }
 
 .encyclopedia-filters__help-summary::before {
-  content: "B8";
+  content: "\25B8"; /* ▸ — was a control character and "B8": the escape lost its backslash */
   display: inline-block;
   margin-right: 0.3rem;
   transition: transform 0.14s ease;
@@ -279,8 +279,12 @@
   transform: rotate(90deg);
 }
 
+.encyclopedia-filters__help-summary::before {
+  color: var(--accent);
+}
+
 .encyclopedia-filters__help-summary:hover {
-  color: #fff;
+  color: var(--accent-bright);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -351,6 +355,9 @@
   font-size: var(--fs-xs);
   font-weight: 700;
   color: #6ee7b7;
+}
+.species-compact-payout-done--others {
+  color: var(--accent-bright);
 }
 
 /* Candidate whose feeder profile matches nothing about this body: ranked last, never removed. */

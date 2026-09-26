@@ -4,7 +4,8 @@ import {
   type EncyclopediaFacetOptions,
   type EncyclopediaFiltersState,
 } from "./encyclopediaFilters";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo } from "react";
+import { Select } from "./ui/Select";
 
 /**
  * The seven facet dropdowns.
@@ -19,6 +20,11 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 type SelectOption = { value: string; label: string };
 
+/**
+ * A labelled {@link Select}. The menu used to be this component's own absolutely-positioned list,
+ * which the cockpit theme's `clip-path` on the field cut away entirely (1b04f55): the dropdowns
+ * "stopped working" — they opened, invisibly. `Select` portals its menu out of every clipped box.
+ */
 function FilterSelect({
   fieldId,
   label,
@@ -26,9 +32,6 @@ function FilterSelect({
   options,
   onChange,
   disabled,
-  openId,
-  onOpenChange,
-  instanceId,
 }: {
   fieldId: string;
   label: string;
@@ -36,76 +39,13 @@ function FilterSelect({
   options: SelectOption[];
   onChange: (v: string) => void;
   disabled?: boolean;
-  openId: string | null;
-  onOpenChange: (id: string | null) => void;
-  instanceId: string;
 }) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const open = openId === instanceId;
-
-  const curLabel = useMemo(
-    () => options.find((o) => o.value === value)?.label ?? options[0]?.label ?? "—",
-    [options, value],
-  );
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) onOpenChange(null);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onOpenChange(null);
-    };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, onOpenChange]);
-
   return (
-    <div className="ency-filter-field" ref={rootRef}>
+    <div className="ency-filter-field">
       <label className="ency-filter-field__label" htmlFor={fieldId}>
         {label}
       </label>
-      <button
-        id={fieldId}
-        type="button"
-        className="ency-filter-field__control"
-        disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => !disabled && onOpenChange(open ? null : instanceId)}
-      >
-        <span className="ency-filter-field__value">{curLabel}</span>
-        <span className="ency-filter-field__chev" aria-hidden>
-          ▾
-        </span>
-      </button>
-      {open ? (
-        <ul className="ency-filter-field__menu" role="listbox">
-          {options.map((o) => (
-            <li key={o.value}>
-              <button
-                type="button"
-                role="option"
-                className={`ency-filter-field__opt${o.value === value ? " is-active" : ""}`}
-                aria-selected={o.value === value}
-                onClick={() => {
-                  onChange(o.value);
-                  onOpenChange(null);
-                }}
-              >
-                <span className="ency-filter-field__tick" aria-hidden>
-                  {o.value === value ? "✓" : ""}
-                </span>
-                {o.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <Select id={fieldId} value={value} options={options} onChange={onChange} disabled={disabled} />
     </div>
   );
 }
@@ -124,7 +64,6 @@ export function EncyclopediaFilterBar({
   bodyPlanetClass?: string | null;
 }) {
   const baseId = useId().replace(/:/g, "");
-  const [openSelect, setOpenSelect] = useState<string | null>(null);
 
   const patch = (p: Partial<EncyclopediaFiltersState>) => onFiltersChange({ ...filters, ...p });
 
@@ -203,76 +142,55 @@ export function EncyclopediaFilterBar({
       <div className="encyclopedia-filters__grid">
         <FilterSelect
           fieldId={`${baseId}-genus`}
-          instanceId={`${baseId}-genus`}
           label="Genus"
           value={filters.genusKey}
           options={genusOptions}
           onChange={(v) => patch({ genusKey: v })}
           disabled={genusOptions.length <= 1}
-          openId={openSelect}
-          onOpenChange={setOpenSelect}
         />
         <FilterSelect
           fieldId={`${baseId}-pc`}
-          instanceId={`${baseId}-pc`}
           label="Planet class"
           value={filters.planetClass}
           options={planetOptions}
           onChange={(v) => patch({ planetClass: v })}
-          openId={openSelect}
-          onOpenChange={setOpenSelect}
         />
         <FilterSelect
           fieldId={`${baseId}-at`}
-          instanceId={`${baseId}-at`}
           label="Atmosphere"
           value={filters.atmosphere}
           options={atmoOptions}
           onChange={(v) => patch({ atmosphere: v })}
-          openId={openSelect}
-          onOpenChange={setOpenSelect}
         />
         <FilterSelect
           fieldId={`${baseId}-volc`}
-          instanceId={`${baseId}-volc`}
           label="Volcanism"
           value={filters.volcanism}
           options={volcOpts}
           onChange={(v) => patch({ volcanism: v as EncyclopediaFiltersState["volcanism"] })}
-          openId={openSelect}
-          onOpenChange={setOpenSelect}
         />
         <FilterSelect
           fieldId={`${baseId}-star`}
-          instanceId={`${baseId}-star`}
           label="Host star class"
           value={filters.starType}
           options={starOpts}
           onChange={(v) => patch({ starType: v })}
           disabled={starOpts.length <= 1}
-          openId={openSelect}
-          onOpenChange={setOpenSelect}
         />
         <FilterSelect
           fieldId={`${baseId}-press`}
-          instanceId={`${baseId}-press`}
           label="Pressure class"
           value={filters.pressureCat}
           options={pressOpts}
           onChange={(v) => patch({ pressureCat: v as EncyclopediaFiltersState["pressureCat"] })}
-          openId={openSelect}
-          onOpenChange={setOpenSelect}
         />
         <FilterSelect
           fieldId={`${baseId}-geo`}
-          instanceId={`${baseId}-geo`}
           label="Geological signal"
           value={filters.geoSignal}
           options={geoOpts}
           onChange={(v) => patch({ geoSignal: v })}
           disabled={geoOpts.length <= 1}
-          openId={openSelect}
-          onOpenChange={setOpenSelect}
         />
       </div>
       {/* 144 px of explanation that most sessions never need — folded, it stops crowding the

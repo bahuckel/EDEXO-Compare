@@ -476,3 +476,35 @@
   width: min(520px, calc(100vw - 2rem));
   padding: var(--s-8);
 }
+
+/* The copy-system-name icon (CopySystemButton): right after the name, quiet until pointed at. */
+.sys-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.35em;
+  height: 1.35em;
+  margin: 0 0 0 0.3em;
+  padding: 0;
+  vertical-align: -0.2em;
+  font: inherit;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+.sys-copy svg {
+  width: 0.95em;
+  height: 0.95em;
+}
+.sys-copy:hover,
+.sys-copy:focus-visible {
+  outline: none;
+  color: var(--accent-bright);
+}
+.sys-copy.is-done {
+  color: var(--ok, #7be07b);
+}

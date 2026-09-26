@@ -203,7 +203,10 @@ export function FirstDiscoveryBacklogModal({
                   next that matches or exceeds it" — against whatever the filters currently say.
                 */}
                 <span className="fdb-next__label">Nearest that qualifies</span>
-                <strong className="fdb-next__sys">{nextTarget.starSystem}</strong>
+                <strong className="fdb-next__sys">
+                  {nextTarget.starSystem}
+                  <CopySystemButton system={nextTarget.starSystem} />
+                </strong>
                 <span className="dim">
                   {nextTarget.distanceLy != null && nextTarget.distanceLy < 1
                     ? "you are here"
@@ -213,7 +216,6 @@ export function FirstDiscoveryBacklogModal({
                   {nextTarget.biologicalSignals} signal{nextTarget.biologicalSignals === 1 ? "" : "s"} ·{" "}
                   {cr(nextTarget.minCr)} floor
                 </span>
-                <CopySystemButton system={nextTarget.starSystem} />
               </div>
             ) : null}
 
@@ -282,7 +284,6 @@ export function FirstDiscoveryBacklogModal({
                     <th className="fdb-num">Sig</th>
                     <th className="fdb-num">Floor</th>
                     <th className="fdb-num">Ceiling</th>
-                    <th />
                   </tr>
                 </thead>
                 <tbody>
@@ -294,6 +295,7 @@ export function FirstDiscoveryBacklogModal({
                     >
                       <td className="fdb-sys">
                         {r.starSystem}
+                        <CopySystemButton system={r.starSystem} />
                         {r.genusKnown ? (
                           <span className="fdb-dss" title="Genus known from your DSS">
                             DSS
@@ -323,9 +325,6 @@ export function FirstDiscoveryBacklogModal({
                       <td className="fdb-num">{r.biologicalSignals}</td>
                       <td className="fdb-num fdb-floor">{cr(r.minCr)}</td>
                       <td className="fdb-num dim">{cr(r.maxCr)}</td>
-                      <td>
-                        <CopySystemButton system={r.starSystem} />
-                      </td>
                     </tr>
                   ))}
                 </tbody>

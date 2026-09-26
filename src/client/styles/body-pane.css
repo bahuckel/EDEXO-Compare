@@ -293,7 +293,13 @@
 }
 
 .journal-system-search-results li {
+  display: flex;
+  align-items: center;
   margin: 0;
+}
+
+.journal-system-search-results li > .sys-copy {
+  margin-right: 0.45rem;
 }
 
 .journal-system-search-row {
@@ -338,6 +344,14 @@
 
 .journal-system-search-name {
   font-weight: 600;
+}
+
+/* The body a pasted body name points at: opened once the system is shown. */
+.journal-system-search-body {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--accent-bright);
+  white-space: nowrap;
 }
 
 .journal-system-search-addr {
@@ -646,4 +660,17 @@
   text-align: center;
   padding: 2rem 1rem;
   color: var(--muted);
+}
+
+/* A looked-up system: where its bodies came from, or why there are none (remoteSystems.ts). */
+.journal-system-remote {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.journal-system-remote--error {
+  color: var(--warn, #d9822b);
+  white-space: normal;
 }

@@ -42,6 +42,7 @@
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useModal } from "./ui/useModal";
+import { Select } from "./ui/Select";
 import type {
   GalaxyBodyScanDTO,
   GalaxyRegionsDTO,
@@ -251,7 +252,6 @@ function GalaxyPossibleModal({ result, onClose }: { result: GalaxyBodyScanDTO; o
                 <th className="fdb-num">Signals</th>
                 <th>Could be</th>
                 <th className="fdb-num">At 5×</th>
-                <th />
               </tr>
             </thead>
             <tbody>
@@ -260,6 +260,8 @@ function GalaxyPossibleModal({ result, onClose }: { result: GalaxyBodyScanDTO; o
                   <tr key={`${h.systemAddress}:${b.bodyId}`} className="fdb-row">
                     <td className="fdb-sys">
                       {b.bodyName}
+                      {/* The body name carries the system's; the icon copies the system. */}
+                      <CopySystemButton system={h.starSystem} />
                       {b.probed ? (
                         <span className="dim gsx-ff" title="Somebody has mapped this body with probes.">
                           {" "}
@@ -301,7 +303,6 @@ function GalaxyPossibleModal({ result, onClose }: { result: GalaxyBodyScanDTO; o
                     <td className="fdb-num fdb-floor">
                       {b.species[0] ? cr(b.species[0].firstFootfallCr) : "—"}
                     </td>
-                    <td>{i === 0 ? <CopySystemButton system={h.starSystem} /> : null}</td>
                   </tr>
                 )),
               )}
@@ -611,46 +612,50 @@ export function GalaxySearchPanel({
           <div className="gsx-controls">
             <label className="gsx-field">
               Genus
-              <select
+              <Select
                 value={genusDir}
-                onChange={(e) => {
-                  setGenusDir(e.target.value);
+                options={[
+                  { value: "", label: "Any genus" },
+                  ...genera.map(([dir, name]) => ({ value: dir, label: name })),
+                ]}
+                onChange={(v) => {
+                  setGenusDir(v);
                   setSpeciesId("");
                 }}
-              >
-                <option value="">Any genus</option>
-                {genera.map(([dir, name]) => (
-                  <option key={dir} value={dir}>
-                    {name}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
 
             <label className="gsx-field">
               Species
-              <select value={speciesId} onChange={(e) => setSpeciesId(e.target.value)}>
-                <option value="">Any species</option>
-                {speciesOfGenus.map((s) => (
-                  <option key={s.speciesId} value={s.speciesId}>
-                    {s.displayName} — {cr(s.baseCr)} ({crFmt.format(s.systemCount)} systems)
-                  </option>
-                ))}
-              </select>
+              <Select
+                value={speciesId}
+                options={[
+                  { value: "", label: "Any species" },
+                  ...speciesOfGenus.map((s) => ({
+                    value: s.speciesId,
+                    label: `${s.displayName} — ${cr(s.baseCr)} (${crFmt.format(s.systemCount)} systems)`,
+                  })),
+                ]}
+                onChange={setSpeciesId}
+                menuMinWidth={320}
+              />
             </label>
 
             {possible ? (
               <>
                 <label className="gsx-field">
                   Region
-                  <select value={regionId} onChange={(e) => setRegionId(Number(e.target.value))}>
-                    <option value={0}>Choose a region</option>
-                    {(regions?.regions ?? []).map((r) => (
-                      <option key={r.regionId} value={r.regionId}>
-                        {r.name} ({crFmt.format(r.systemCount)})
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    value={String(regionId)}
+                    options={[
+                      { value: "0", label: "Choose a region" },
+                      ...(regions?.regions ?? []).map((r) => ({
+                        value: String(r.regionId),
+                        label: `${r.name} (${crFmt.format(r.systemCount)})`,
+                      })),
+                    ]}
+                    onChange={(v) => setRegionId(Number(v))}
+                  />
                   {/*
                     The reason the search is scoped at all, said where the choice is made. A region
                     is seconds; the galaxy is forty-two of those and an answer nobody can act on.
@@ -888,7 +893,6 @@ export function GalaxySearchPanel({
                     <th className="fdb-num">Bodies</th>
                     <th>What is there</th>
                     <th className="fdb-num">System worth</th>
-                    <th />
                   </tr>
                 </thead>
                 <tbody>
@@ -896,7 +900,10 @@ export function GalaxySearchPanel({
                     const ev = evidence(h.tiers);
                     return (
                       <tr key={h.systemAddress} className="fdb-row">
-                        <td className="fdb-sys">{h.starSystem}</td>
+                        <td className="fdb-sys">
+                          {h.starSystem}
+                          <CopySystemButton system={h.starSystem} />
+                        </td>
                         <td className="fdb-num dim">{ly(h.distanceLy)}</td>
                         <td>
                           <span className={ev.className} title={ev.help}>
@@ -920,9 +927,6 @@ export function GalaxySearchPanel({
                         <td className="fdb-num fdb-floor">
                           {cr(h.systemCr)}
                           <span className="dim gsx-ff"> · {cr(h.systemFirstFootfallCr)} at 5×</span>
-                        </td>
-                        <td>
-                          <CopySystemButton system={h.starSystem} />
                         </td>
                       </tr>
                     );

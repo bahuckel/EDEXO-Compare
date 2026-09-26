@@ -1,4 +1,5 @@
 import type {
+  RemoteSystemRecord,
   BodyExoState,
   ExplorationScanRecord,
   JournalLine,
@@ -11,7 +12,7 @@ import type {
   SystemKind,
   SystemLife,
 } from "../shared/types.js";
-import { isDeveloperPopulatedSystem } from "./developerPopulatedSystems.js";
+import { commanderFirstDiscoveredBody, isDeveloperPopulatedSystem } from "./developerPopulatedSystems.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import {
   JOURNAL_POLL_DEFAULT_MS,
@@ -34,7 +35,7 @@ import {
   speciesEntryMatchesOrganicLabel,
   normOrganicToken,
 } from "./organicTracking.js";
-import { barycentreSyntheticBodyId, directParentPlanetId } from "./orbitUtils.js";
+import { barycentreSyntheticBodyId, directParentPlanetId, planetRingCount } from "./orbitUtils.js";
 import { getProjectRoot } from "./paths.js";
 import {
   journalLineCarriesPlanetMetrics,
@@ -56,8 +57,13 @@ import {
   type SurfaceMark,
 } from "./surfaceMarksFile.js";
 import { finalisePredictionsForSystem } from "./predictionAuditLog.js";
+import { remoteBodyStates } from "./remoteSystems.js";
 import type { NavRouteWaypointDTO } from "./navRouteFuel.js";
-import { codexOrganicLockFromLine, codexSpeciesFromLine } from "../shared/codexLog.js";
+import {
+  codexOrganicLockFromLine,
+  codexRegionKeysFromLine,
+  codexSpeciesFromLine,
+} from "../shared/codexLog.js";
 function bodyKey(systemAddress: number, bodyId: number): string {
   return `${systemAddress}:${bodyId}`;
 }
@@ -150,8 +156,12 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
 
   Anything derived from the journal that the UI reads has to be either in this payload or
   deliberately transient. Bump the format when you add one.
+
+  15: bio bodies kept a "Body 2" placeholder name from ScanOrganic/CodexEntry over the Scan's real
+  name; caches written before the fix carry those names.
+  16: `codexRegionLogged` — the [CODEX] tag's per-region, per-colour codex record.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 13;
+export const JOURNAL_MERGE_CACHE_FORMAT = 16;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -168,6 +178,8 @@ export type JournalMergeCachePayload = {
    * existed still loads — it simply has none, until the next rebuild recovers them from the logs.
    */
   soldExplorationScans?: [string, ExplorationScanRecord][];
+  /** Bodies whose data has been sold — see {@link GameStateStore.soldBodyKeys}. */
+  soldBodyKeys?: string[];
   fssBodySignalsBodyKeys: string[];
   dssMappedBodyKeys: string[];
   dssFirstMapperEligibleByBodyKey: [string, boolean][];
@@ -192,6 +204,8 @@ export type JournalMergeCachePayload = {
    * existed still loads — it simply has none until the next rebuild from the logs.
    */
   codexLoggedSpecies?: string[];
+  /** [CODEX] keys, see {@link GameStateStore.codexRegionLogged}. */
+  codexRegionLogged?: string[];
   /** Minutes per approach-and-landing and per sampling run, for the triage screen's own timing (B5). */
   landingMinutesSamples?: number[];
   samplingMinutesSamples?: number[];
@@ -200,6 +214,8 @@ export type JournalMergeCachePayload = {
   surfaceShipMark?: SurfaceMark | null;
   /** Present when {@link format} >= 6 — the body the ship last touched down on. */
   overlayTouchdownBodyKey?: string | null;
+  /** The body the ship is at — see {@link GameStateStore.currentBodyKey}. */
+  currentBodyKey?: string | null;
   fssAllBodiesCompleteSystems: number[];
   /** Present when {@link format} >= 13 — signs of life per system, from the arrival line. */
   systemLife?: [number, SystemLife][];
@@ -219,6 +235,9 @@ export type JournalMergeCachePayload = {
   lastFsdJumpFuelUsedT?: number | null;
   lastFsdJumpDistLy?: number | null;
 };
+
+/** `Body 7` — what a line that carries only a `BodyID` (ScanOrganic, CodexEntry) is named until something better is known. */
+const PLACEHOLDER_BODY_NAME = /^Body \d+$/;
 
 function ensureBody(
   map: Map<string, BodyExoState>,
@@ -248,7 +267,14 @@ function ensureBody(
     };
     map.set(key, b);
   } else {
-    if (bodyName) b.bodyName = bodyName;
+    /*
+      A placeholder never replaces a real name. ScanOrganic and CodexEntry carry no body name, and
+      they come after the Scan that named the body — landing follows scanning — so "Body 2" used to
+      win on 282 of his bio bodies (Tegnae HT-Z d13-1 1 a among them).
+    */
+    if (bodyName && !(PLACEHOLDER_BODY_NAME.test(bodyName) && !PLACEHOLDER_BODY_NAME.test(b.bodyName))) {
+      b.bodyName = bodyName;
+    }
     b.starSystem = starSystem;
     b.updatedAt = ts;
   }
@@ -573,6 +599,17 @@ export class GameStateStore {
   readonly soldExplorationScans = new Map<string, ExplorationScanRecord>();
 
   /**
+   * Every body whose cartographic data has been sold, for good.
+   *
+   * Scanning a sold body again moves its row back into {@link explorationScans} (the live copy is the
+   * better physics), and until now that also put its value back into the unsold total — the arrival
+   * star of a home system, every time he came back. Universal Cartographics does not buy the same
+   * body twice, so the value estimate skips these keys (owner, 2026-09-25: a re-scan after a sale
+   * does not count again). Data lost on death is *not* added here: it can be scanned and sold again.
+   */
+  readonly soldBodyKeys = new Set<string>();
+
+  /**
    * Bumped on every write to {@link explorationScans}. Consumers cache per-system indexes and
    * per-body computations keyed on this — records are replaced rather than mutated, so map size
    * alone is not a safe signature.
@@ -607,6 +644,18 @@ export class GameStateStore {
   readonly soldOrganicBySystem = new Map<number, SoldTally>();
 
   readonly edsmExplorationByKey = new Map<string, ExplorationScanRecord>();
+
+  /**
+   * Systems looked up from Spansh (see `remoteSystems.ts`). Not journal data: not in the merge cache,
+   * not cleared by a re-merge, not counted anywhere the commander's own record is. Read only when the
+   * journals have nothing on the system — a system he has flown to always shows his own data.
+   */
+  readonly remoteSystems = new Map<number, RemoteSystemRecord>();
+  /** A lookup in flight or failed, per system — transient, for the screen to say so. */
+  readonly remoteLookups = new Map<
+    number,
+    { starSystem: string; state: "loading" | "error"; error?: string }
+  >();
   /** Bodies with at least one journal `FSSBodySignals` line (FSS “scan” of that body); keyed globally, not current system only. */
   readonly fssBodySignalsBodyKeys = new Set<string>();
   /** Bodies that completed DSS probe mapping (`SAAScanComplete` in journal); keyed globally. */
@@ -714,9 +763,26 @@ export class GameStateStore {
     return this.visitedSystems.has(systemAddress) ? "empty" : null;
   }
 
-  /** No first-footfall bonus anywhere in this system — unless this commander discovered it. */
+  /**
+   * Did this commander discover this system? The arrival star's `WasDiscovered`, except in a system
+   * Frontier populated, where it is never true — see {@link commanderFirstDiscoveredBody}.
+   * Null when the arrival star has not been scanned.
+   */
+  commanderDiscoveredSystem(systemAddress: number): boolean | null {
+    const wd = this.mainStarWasDiscoveredBySystem.get(systemAddress);
+    if (typeof wd !== "boolean") return null;
+    return commanderFirstDiscoveredBody(systemAddress, wd);
+  }
+
+  /**
+   * No first-footfall bonus anywhere in this system — unless this commander discovered it.
+   *
+   * "Discovered it" goes through {@link commanderDiscoveredSystem}, not the raw star flag: Barnard's
+   * Star, Alpha Centauri, Ross 775 and Procyon have arrival stars that say `WasDiscovered: false`, and
+   * that alone used to skip every check below and bring the ×5 back in the Bubble.
+   */
   noFirstFootfallInSystem(systemAddress: number): boolean {
-    if (this.mainStarWasDiscoveredBySystem.get(systemAddress) === false) return false;
+    if (this.commanderDiscoveredSystem(systemAddress) === true) return false;
     const k = this.systemKind(systemAddress);
     return k !== null && k !== "empty";
   }
@@ -750,6 +816,8 @@ export class GameStateStore {
    * the one a codex hunter wants to fly to.
    */
   readonly codexLoggedSpecies = new Set<string>();
+  /** `region|species|colour` (and `region|species|*`) for every organic codex entry — [CODEX], shared/codexLog.ts. */
+  readonly codexRegionLogged = new Set<string>();
 
   /**
    * How long this commander's own trips actually take, in minutes (B5).
@@ -987,6 +1055,8 @@ export class GameStateStore {
 
   /** Last journal Touchdown on a planet (commander). */
   overlayTouchdownBodyKey: string | null = null;
+  /** The body the ship is at, as `system:body` — arrival body after a jump, then approach / drop / landing. */
+  currentBodyKey: string | null = null;
 
   /**
    * Where the ship is parked, from `Touchdown` (A-list: the overlay minimap).
@@ -1407,6 +1477,7 @@ export class GameStateStore {
     this.pendingOrganicSales = [];
     this.firstFootfallBodies.clear();
     this.codexLoggedSpecies.clear();
+    this.codexRegionLogged.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -1429,6 +1500,7 @@ export class GameStateStore {
     this.bodies.clear();
     this.explorationScans.clear();
     this.soldExplorationScans.clear();
+    this.soldBodyKeys.clear();
     this.explorationScansRevision += 1;
     this.edsmExplorationByKey.clear();
     this.commanderName = null;
@@ -1445,6 +1517,7 @@ export class GameStateStore {
     this.bodyMappedFlag.clear();
     this.firstFootfallBodies.clear();
     this.codexLoggedSpecies.clear();
+    this.codexRegionLogged.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -1465,6 +1538,7 @@ export class GameStateStore {
     this.pendingUiAutoSelectBodyKey = null;
     this.uiSelectedBodyKey = null;
     this.overlayTouchdownBodyKey = null;
+    this.currentBodyKey = null;
     this.mainStarWasDiscoveredBySystem.clear();
     this.mainStarSourceRankBySystem.clear();
     this.systemPositions.clear();
@@ -1690,6 +1764,7 @@ export class GameStateStore {
     };
 
     setStr("scanType", line.ScanType);
+    rec.playerScanned = prev?.playerScanned === true || line.ScanType !== "NavBeaconDetail";
     setStr("bodyType", line.BodyType);
     setStr("planetClass", line.PlanetClass);
     setStr("starType", line.StarType);
@@ -1761,6 +1836,8 @@ export class GameStateStore {
     setNum("axialTilt", (line as Record<string, unknown>).AxialTilt);
 
     if (line.Parents !== undefined) rec.parents = line.Parents;
+    const ringCount = planetRingCount((line as Record<string, unknown>).Rings);
+    if (ringCount !== undefined) rec.ringCount = ringCount;
 
     if (line.AtmosphereComposition !== undefined) {
       const incoming = line.AtmosphereComposition;
@@ -1966,6 +2043,27 @@ export class GameStateStore {
         return;
       }
 
+      /*
+        Which body the ship is at: the arrival body on a jump or a load, then whatever it approaches,
+        drops out of supercruise at, or lands on. The System card's "you are here" (Discord batch O-E2)
+        and, later, "closest first" in the body sort read it.
+      */
+      if (
+        (event === "FSDJump" ||
+          event === "CarrierJump" ||
+          event === "Location" ||
+          event === "ApproachBody" ||
+          event === "SupercruiseExit" ||
+          event === "Touchdown") &&
+        typeof line.SystemAddress === "number" &&
+        typeof (line as Record<string, unknown>).BodyID === "number"
+      ) {
+        this.currentBodyKey = bodyKey(
+          line.SystemAddress as number,
+          (line as Record<string, unknown>).BodyID as number,
+        );
+      }
+
       if (event === "FSDJump") {
         const fu = (line as Record<string, unknown>).FuelUsed;
         const jd = (line as Record<string, unknown>).JumpDist;
@@ -2039,6 +2137,9 @@ export class GameStateStore {
       if (event === "CodexEntry") {
         const species = codexSpeciesFromLine(line as Parameters<typeof codexSpeciesFromLine>[0]);
         if (species) this.codexLoggedSpecies.add(species);
+        for (const k of codexRegionKeysFromLine(line as Parameters<typeof codexRegionKeysFromLine>[0])) {
+          this.codexRegionLogged.add(k);
+        }
 
         /*
           The composition scanner confirms a species on a body without a landing, and the owner asked
@@ -2065,7 +2166,9 @@ export class GameStateStore {
           this.bodies,
           codexSystem,
           codexBodyId,
-          `Body ${codexBodyId}`,
+          this.explorationScans.get(bodyKey(codexSystem, codexBodyId))?.bodyName ??
+            this.findRecentJournalBodyName(codexSystem, codexBodyId) ??
+            `Body ${codexBodyId}`,
           codexStarSystem,
           ts,
         );
@@ -2562,7 +2665,7 @@ export class GameStateStore {
             const fromPriorJournal = this.findRecentJournalBodyName(systemAddress, bodyId);
             const lineBodyName =
               typeof line.BodyName === "string" && line.BodyName.trim() ? line.BodyName.trim() : "";
-            const bodyName = fromPriorJournal ?? lineBodyName ?? rec?.bodyName ?? `Body ${bodyId}`;
+            const bodyName = fromPriorJournal || lineBodyName || rec?.bodyName || `Body ${bodyId}`;
             const starSystem =
               (line.StarSystem as string | undefined)?.trim() ||
               this.findRecentJournalStarSystem(systemAddress) ||
@@ -2588,7 +2691,11 @@ export class GameStateStore {
           }
         }
 
-        const nameHint = (line.BodyName as string) || `Body ${bodyId}`;
+        const nameHint =
+          (line.BodyName as string) ||
+          this.explorationScans.get(bk)?.bodyName ||
+          this.findRecentJournalBodyName(systemAddress, bodyId) ||
+          `Body ${bodyId}`;
         const recForStar = this.explorationScans.get(bk);
         const starSystem =
           (line.StarSystem as string | undefined)?.trim() ||
@@ -2653,6 +2760,11 @@ export class GameStateStore {
       }
 
       if (event === "Died") {
+        // Unsold cartographic data is lost with the ship. The physics stays in the archive, and the
+        // bodies are not marked sold: scanning them again earns the data back.
+        for (const addr of new Set([...this.explorationScans.values()].map((r) => r.systemAddress))) {
+          this.clearExplorationDataForSystem(addr, false);
+        }
         this.organicAnalyseByKey.clear();
         this.pendingOrganicSales = [];
         this.exoOrganicLastFix = null;
@@ -2718,11 +2830,16 @@ export class GameStateStore {
     return null;
   }
 
-  /** Drop merged exploration / DSS state for a system after cartographic sale (journal replay order). */
-  private clearExplorationDataForSystem(systemAddress: number): void {
+  /**
+   * Drop merged exploration / DSS state for a system after a cartographic sale (journal replay order),
+   * or after death with `sold = false` — the data is gone either way, but only sold bodies stay out of
+   * the unsold total when scanned again.
+   */
+  private clearExplorationDataForSystem(systemAddress: number, sold = true): void {
     const prefix = `${systemAddress}:`;
     for (const [k, rec] of [...this.explorationScans.entries()]) {
       if (k.startsWith(prefix)) {
+        if (sold) this.soldBodyKeys.add(k);
         // The value is sold; the physics is not. See soldExplorationScans.
         this.soldExplorationScans.set(k, rec);
         this.explorationScans.delete(k);
@@ -2962,6 +3079,42 @@ export class GameStateStore {
   listBioBodies(): BodyExoState[] {
     const focus = this.viewingSystemAddress ?? this.currentSystemAddress;
     if (focus === null) return [];
+    const own = this.journalBioBodies(focus);
+    if (own.length > 0) return own;
+    return this.remoteBodies(focus);
+  }
+
+  private remoteBodyCache = new Map<number, { fetchedAt: string; bodies: BodyExoState[] }>();
+
+  /** The bodies of a Spansh lookup, built once per fetch. */
+  private remoteBodies(systemAddress: number): BodyExoState[] {
+    const sys = this.remoteSystems.get(systemAddress);
+    if (!sys) return [];
+    const hit = this.remoteBodyCache.get(systemAddress);
+    if (hit && hit.fetchedAt === sys.fetchedAt) return hit.bodies;
+    const bodies = remoteBodyStates(sys);
+    this.remoteBodyCache.set(systemAddress, { fetchedAt: sys.fetchedAt, bodies });
+    return bodies;
+  }
+
+  /**
+   * A bio body by key: the journal's, or — for a looked-up system the journals know nothing about —
+   * the Spansh one. For readers that go by key (the system map), so a remote system reads the same.
+   */
+  bioBodyState(key: string): BodyExoState | undefined {
+    const own = this.bodies.get(key);
+    if (own) return own;
+    const addr = Number(key.split(":")[0]);
+    if (!Number.isFinite(addr) || !this.isShowingRemoteSystem(addr)) return undefined;
+    return this.remoteBodies(addr).find((b) => b.key === key);
+  }
+
+  /** True when the journals hold no bio bodies for this system and a Spansh lookup is showing instead. */
+  isShowingRemoteSystem(systemAddress: number): boolean {
+    return this.remoteSystems.has(systemAddress) && this.journalBioBodies(systemAddress).length === 0;
+  }
+
+  private journalBioBodies(focus: number): BodyExoState[] {
     return [...this.bodies.values()].filter((b) => {
       if (b.systemAddress !== focus) return false;
       /** FSS `Biological` count 0: omit from bio body list even when DSS listed genera. */
@@ -3080,6 +3233,7 @@ export class GameStateStore {
       bodies: [...this.bodies.entries()],
       explorationScans: [...this.explorationScans.entries()],
       soldExplorationScans: [...this.soldExplorationScans.entries()],
+      soldBodyKeys: [...this.soldBodyKeys],
       fssBodySignalsBodyKeys: [...this.fssBodySignalsBodyKeys],
       dssMappedBodyKeys: [...this.dssMappedBodyKeys],
       dssFirstMapperEligibleByBodyKey: [...this.dssFirstMapperEligibleByBodyKey.entries()],
@@ -3094,11 +3248,13 @@ export class GameStateStore {
       bodyMappedFlag: [...this.bodyMappedFlag.entries()],
       firstFootfallBodies: [...this.firstFootfallBodies],
       codexLoggedSpecies: [...this.codexLoggedSpecies],
+      codexRegionLogged: [...this.codexRegionLogged],
       landingMinutesSamples: [...this.landingMinutesSamples],
       samplingMinutesSamples: [...this.samplingMinutesSamples],
       pendingOrganicSales: this.pendingOrganicSales.map((p) => ({ ...p })),
       surfaceShipMark: this.surfaceShipMark ? { ...this.surfaceShipMark } : null,
       overlayTouchdownBodyKey: this.overlayTouchdownBodyKey,
+      currentBodyKey: this.currentBodyKey,
       fssAllBodiesCompleteSystems: [...this.fssAllBodiesCompleteSystems],
       systemLife: [...this.systemLife.entries()],
       fssDiscoveryScanBySystem: [...this.fssDiscoveryScanBySystem.entries()],
@@ -3155,6 +3311,7 @@ export class GameStateStore {
     for (const [k, v] of data.bodies) this.bodies.set(k, v);
     for (const [k, v] of data.explorationScans) this.explorationScans.set(k, v);
     for (const [k, v] of data.soldExplorationScans ?? []) this.soldExplorationScans.set(k, v);
+    for (const k of data.soldBodyKeys ?? []) this.soldBodyKeys.add(k);
     this.explorationScansRevision += 1;
     for (const k of data.fssBodySignalsBodyKeys) this.fssBodySignalsBodyKeys.add(k);
     for (const k of data.dssMappedBodyKeys) this.dssMappedBodyKeys.add(k);
@@ -3170,6 +3327,7 @@ export class GameStateStore {
     for (const [k, v] of data.bodyMappedFlag ?? []) this.bodyMappedFlag.set(k, v);
     for (const k of data.firstFootfallBodies) this.firstFootfallBodies.add(k);
     for (const k of data.codexLoggedSpecies ?? []) this.codexLoggedSpecies.add(k);
+    for (const k of data.codexRegionLogged ?? []) this.codexRegionLogged.add(k);
     this.landingMinutesSamples.push(...(data.landingMinutesSamples ?? []));
     this.samplingMinutesSamples.push(...(data.samplingMinutesSamples ?? []));
     this.pendingOrganicSales = data.pendingOrganicSales.map((p) => ({ ...p }));
@@ -3188,6 +3346,7 @@ export class GameStateStore {
       if (!have || !have.atIso || (cachedShip.atIso ?? "") >= have.atIso) this.surfaceShipMark = cachedShip;
     }
     this.overlayTouchdownBodyKey = data.overlayTouchdownBodyKey ?? null;
+    this.currentBodyKey = data.currentBodyKey ?? null;
     for (const addr of data.fssAllBodiesCompleteSystems) this.fssAllBodiesCompleteSystems.add(addr);
     for (const [addr, life] of data.systemLife ?? []) this.systemLife.set(addr, life);
     for (const [addr, row] of data.fssDiscoveryScanBySystem) {

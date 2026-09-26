@@ -131,9 +131,12 @@
   font-size: 0.92em;
 }
 
-.brand-sys-copy-name {
+.sys-copy.brand-sys-copy-name {
   flex: 0 0 auto;
   align-self: stretch;
+  width: auto;
+  height: auto;
+  margin: 0;
   min-width: 2rem;
   padding: 0 0.4rem;
   font-size: var(--fs-xl);
@@ -145,7 +148,7 @@
   cursor: pointer;
 }
 
-.brand-sys-copy-name:hover {
+.sys-copy.brand-sys-copy-name:hover {
   color: var(--accent-bright);
   border-color: rgba(255, 170, 100, 0.55);
 }

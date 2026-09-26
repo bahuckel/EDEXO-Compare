@@ -8,7 +8,10 @@
   fallback), per-section rendering, the radar, the colour theme, and telling the Electron host how
   tall the window has to be.
 
-  Settings come from localStorage, which the launcher shares with these pages (same origin):
+  Settings come from localStorage when this page shares it with the launcher (a browser tab on the
+  same origin), and otherwise from the server's mirror of the launcher's (`hudPrefs` in each
+  snapshot) — the phone, and since 2026-09-26 the Electron overlays too, which have a session of
+  their own so the launcher's zoom stays off them:
     edexoHudTheme      {"preset":"orange"} or {"preset":"custom","accent":"#rrggbb","text":"#rrggbb"}
     edexoHudCandOrder  "likelihood" (default) | "value"
     edexoHudRegion     "1" (default) | "0"  — show the current region line in the candidates card
@@ -1574,6 +1577,23 @@
       });
     } catch (e) {
       /* no storage events outside a browser */
+    }
+    /*
+      The Electron overlays have a session of their own (so the launcher's zoom stays off them), and
+      with it no storage events: the launcher's settings arrive straight from the Electron process as
+      they change. The snapshot mirror still wins once it catches up — it carries the same values.
+    */
+    try {
+      if (!PHONE && window.edexoElectron && typeof window.edexoElectron.onHudPrefs === "function") {
+        window.edexoElectron.onHudPrefs(function (p) {
+          if (!p || typeof p !== "object") return;
+          HUD.serverPrefs = p;
+          applyTheme();
+          if (HUD.lastSnapshot) render(HUD.lastSnapshot);
+        });
+      }
+    } catch (e) {
+      /* the snapshot mirror still arrives */
     }
     root.innerHTML = list
       .map(function (n) {

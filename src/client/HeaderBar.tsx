@@ -19,29 +19,11 @@ import {
 } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
 import { fmtCrExact, fmtCrShort } from "./credits";
-import {
-  useCallback,
-  lazy,
-  memo,
-  Suspense,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  MouseEvent as ReactMouseEvent,
-  ReactNode,
-} from "react";
+import { lazy, memo, Suspense, useEffect, useRef, useState, ReactNode } from "react";
 import { useFdevServerStatus } from "./useFdevServerStatus";
 import type { EncyclopediaSpawnCompare } from "./EncyclopediaModal";
 import { DScanBodiesBadge } from "./DScanBodiesBadge";
-import type {
-  AppSnapshot,
-  FootScannedEntry,
-  JournalSystemInfo,
-  NotableBodyInfo,
-  SystemKind,
-} from "@shared/types";
-import { primaryStarChipClass, primaryStarRoleTag, primaryStarRoleTooltip } from "./speciesMatchHelpers";
+import type { AppSnapshot, FootScannedEntry, JournalSystemInfo, NotableBodyInfo } from "@shared/types";
 import { useFeederStatus } from "./FeederStatusPanel";
 import { DataValueBreakdownModal, FeederModal, MyExobiologyModal, SessionLogModal } from "./AppModals";
 import { ExoDataAlertsHeaderHub } from "./ExoDataAlertsHub";
@@ -66,100 +48,46 @@ import {
   writeRouteHeaderMetricMode,
 } from "./routeHeader";
 import type { RouteHeaderMetricMode } from "./routeHeader";
+import { CopySystemButton } from "./CopySystemButton";
+import { SystemCardRow } from "./SystemCard";
+import { bodyPartOfQuery, ownerFirst } from "./systemSearchMatch";
 
 const PlanetQuickFactsPopup = lazy(() =>
   import("./PlanetQuickFactsPopup").then((m) => ({ default: m.PlanetQuickFactsPopup })),
 );
 
-const SYSTEM_KIND_LABEL: Record<SystemKind, string> = {
-  bubble: "Bubble",
-  colony: "Colony",
-  colonising: "Colonising",
-  facility: "Facility",
-  empty: "Empty",
-};
-
-const SYSTEM_KIND_TIP: Record<SystemKind, string> = {
-  bubble:
-    "Populated by Frontier (the Bubble and its outposts). Planets here were walked long ago: no first-footfall ×5.",
-  colony: "A player colony. Populated systems pay no first-footfall ×5.",
-  colonising:
-    "Claimed for colonisation and under construction. Builders have been on the ground: no first-footfall ×5 expected.",
-  facility:
-    "No residents, but something runs here — security or a controlling faction (e.g. a detention centre). No first-footfall ×5 expected.",
-  empty: "Nobody lives here. The first-footfall ×5 depends on the planet's own scan.",
-};
-
-function StarSystemMapIcon({ className }: { className?: string }) {
-  const gid = useId().replace(/:/g, "");
-  const gradId = `starSysCore-${gid}`;
-  return (
-    <svg
-      className={className}
-      width={40}
-      height={40}
-      viewBox="0 0 72 72"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <defs>
-        <radialGradient id={gradId} cx="50%" cy="48%" r="55%">
-          <stop offset="0%" stopColor="#ffe6c9" />
-          <stop offset="45%" stopColor="#ffb86a" />
-          <stop offset="100%" stopColor="#cf5a24" />
-        </radialGradient>
-      </defs>
-      <circle cx="36" cy="36" r="31" stroke="rgba(255,148,92,0.35)" strokeWidth={1.2} opacity={0.95} />
-      <circle
-        cx="36"
-        cy="36"
-        r="21"
-        stroke="rgba(130,188,255,0.4)"
-        strokeWidth={0.9}
-        strokeDasharray="3 6"
-        opacity={0.9}
-      />
-      <circle
-        cx="36"
-        cy="36"
-        r="28"
-        stroke="rgba(110,228,215,0.18)"
-        strokeWidth={0.6}
-        strokeDasharray="1 9"
-        opacity={0.85}
-      />
-      <circle cx="24" cy="26" r={3.2} fill="rgba(200,226,255,0.9)" opacity={0.85} />
-      <circle cx="48" cy="30" r={2.6} fill="rgba(163,238,218,0.85)" opacity={0.8} />
-      <circle cx="44" cy="52" r={2.25} fill="rgba(205,216,238,0.75)" opacity={0.82} />
-      <circle cx="28" cy="48" r={2.05} fill="rgba(247,237,228,0.55)" opacity={0.82} />
-      <circle cx="36" cy="36" r={11} fill={`url(#${gradId})`} opacity={0.98} />
-    </svg>
-  );
-}
-
-function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
+/**
+ * The header's system search: the journals first, Spansh as you type (owner, 2026-09-25).
+ *
+ * Pasting a name copied from EDSM or Spansh used to show nothing unless you then pressed a "Search:
+ * EDSM / Spansh" button, and choosing a hit showed "no data" unless you pressed a "Load bodies"
+ * button too. Now a name of three letters or more is looked up on Spansh by itself, the hits join
+ * the dropdown — nothing is opened until you pick one — and picking a system the journals do not know
+ * fetches its bodies from Spansh (see `server/remoteSystems.ts`). When a name cannot be found, the
+ * list says so and says where it looked.
+ */
+function JournalSystemSearch({
+  snap,
+  onGoToBioBody,
+}: {
+  snap: AppSnapshot;
+  onGoToBioBody?: (bodyKey: string) => void;
+}) {
   const toast = useToast();
   const systems: JournalSystemInfo[] = snap.journalSystems ?? [];
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [edsmHits, setEdsmHits] = useState<JournalSystemInfo[]>([]);
-  const [edsmBusy, setEdsmBusy] = useState(false);
-  const [edsmErr, setEdsmErr] = useState<string | null>(null);
-  const [edsmSearchAttempted, setEdsmSearchAttempted] = useState(false);
-  const [mapHydrateBusy, setMapHydrateBusy] = useState(false);
+  const [remote, setRemote] = useState<{
+    q: string;
+    busy: boolean;
+    hits: JournalSystemInfo[];
+    error: string | null;
+  }>({ q: "", busy: false, hits: [], error: null });
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  /** A pasted body name: its tab opens once the chosen system's bodies are in. */
+  const [pendingBody, setPendingBody] = useState<{ name: string; at: number } | null>(null);
 
   const journalLoading = snap.journalBoot != null;
-
-  useEffect(() => {
-    if (!open || journalLoading) {
-      setEdsmHits([]);
-      setEdsmErr(null);
-      setEdsmBusy(false);
-      setEdsmSearchAttempted(false);
-    }
-  }, [open, journalLoading]);
 
   useEffect(() => {
     if (!open) return;
@@ -171,75 +99,77 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  const q = query.trim().toLowerCase();
+  const typed = query.trim();
+  const q = typed.toLowerCase();
   const filtered =
     q === ""
       ? systems
-      : systems.filter((s) => s.starSystem.toLowerCase().includes(q) || String(s.systemAddress).includes(q));
+      : ownerFirst(
+          systems.filter(
+            (s) =>
+              s.starSystem.toLowerCase().includes(q) ||
+              String(s.systemAddress).includes(q) ||
+              bodyPartOfQuery(typed, s.starSystem) !== null,
+          ),
+          typed,
+        );
 
-  /* Two galaxy sources behind the same list (owner, 2026-09-13): "Search: [EDSM] [Spansh]". */
-  const [galaxySource, setGalaxySource] = useState<"edsm" | "spansh">("edsm");
-  const runGalaxySearch = async (source: "edsm" | "spansh") => {
-    const q = query.trim();
-    if (q.length < 2) return;
-    setGalaxySource(source);
-    setEdsmBusy(true);
-    setEdsmErr(null);
-    setEdsmSearchAttempted(true);
-    try {
-      const r = await fetch(`/api/system/${source}-search?q=${encodeURIComponent(q)}`);
-      const j = (await r.json().catch(() => null)) as {
-        systems?: JournalSystemInfo[];
-        error?: string;
-      } | null;
-      if (!r.ok) throw new Error(j?.error || r.statusText);
-      setEdsmHits(j?.systems ?? []);
-    } catch (e) {
-      setEdsmErr(
-        e instanceof Error ? e.message : `Galaxy search (${source === "edsm" ? "EDSM" : "Spansh"}) failed.`,
-      );
-      setEdsmHits([]);
-    } finally {
-      setEdsmBusy(false);
-    }
-  };
-
-  const runHydrateForViewing = async (source: "edsm" | "spansh") => {
-    const addr = snap.viewingSystemAddress ?? snap.currentSystemAddress;
-    if (addr == null || journalLoading) return;
-    const name =
-      (snap.viewingSystemAddress != null ? snap.viewingSystemName?.trim() : snap.currentSystem?.trim()) ||
-      snap.primaryStarsHeader?.systemName?.trim() ||
-      snap.currentSystem?.trim() ||
-      systems.find((s) => s.systemAddress === addr)?.starSystem?.trim() ||
-      "";
-    if (!name) {
-      toast.error(
-        "Could not resolve the system name. Choose the system from search so a name is stored, then try again.",
-      );
+  useEffect(() => {
+    if (!pendingBody) return;
+    if (Date.now() - pendingBody.at > 30_000) {
+      setPendingBody(null);
       return;
     }
-    setMapHydrateBusy(true);
-    try {
-      const r = await fetch(`/api/system/hydrate-from-${source}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemAddress: addr, systemName: name }),
-      });
-      const j = (await r.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
-      if (!r.ok) toast.error(j?.error || r.statusText);
-    } catch (e) {
-      toast.error(
-        e instanceof Error
-          ? e.message
-          : `Could not load bodies from ${source === "edsm" ? "EDSM" : "Spansh"}.`,
-      );
-    } finally {
-      setMapHydrateBusy(false);
+    const want = pendingBody.name.toLowerCase();
+    const hit = (snap.bodies ?? []).find((b) => b.state.bodyName.trim().toLowerCase() === want);
+    if (hit) {
+      onGoToBioBody?.(hit.state.key);
+      setPendingBody(null);
     }
-  };
+  }, [pendingBody, snap.bodies, onGoToBioBody]);
+
+  // Spansh, by itself, a moment after the typing or the paste stops.
+  useEffect(() => {
+    if (!open || journalLoading || typed.length < 3) {
+      setRemote((r) => (r.q === "" && !r.busy ? r : { q: "", busy: false, hits: [], error: null }));
+      return;
+    }
+    let live = true;
+    setRemote({ q: typed, busy: true, hits: [], error: null });
+    const t = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const r = await fetch(`/api/system/spansh-search?q=${encodeURIComponent(typed)}`);
+          const j = (await r.json().catch(() => null)) as {
+            systems?: JournalSystemInfo[];
+            error?: string;
+          } | null;
+          if (!r.ok) throw new Error(j?.error || r.statusText);
+          if (live) setRemote({ q: typed, busy: false, hits: j?.systems ?? [], error: null });
+        } catch (e) {
+          if (live) {
+            setRemote({ q: typed, busy: false, hits: [], error: e instanceof Error ? e.message : String(e) });
+          }
+        }
+      })();
+    }, 450);
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+  }, [typed, open, journalLoading]);
+
+  // Anything the journals know is never offered again as a Spansh hit, matched or not.
+  const journalAddrs = new Set(systems.map((s) => s.systemAddress));
+  const spanshHits = ownerFirst(
+    remote.hits.filter((s) => !journalAddrs.has(s.systemAddress)),
+    typed,
+  );
+  const searched = remote.q === typed && typed.length >= 3;
 
   const applyView = (systemAddress: number | null, meta?: { starSystem?: string }) => {
+    const bodyPart = meta?.starSystem ? bodyPartOfQuery(typed, meta.starSystem) : null;
+    setPendingBody(bodyPart ? { name: typed, at: Date.now() } : null);
     void (async () => {
       try {
         const payload: { systemAddress: number | null; starSystem?: string } = {
@@ -269,28 +199,27 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
     setOpen(false);
   };
 
+  const rv = snap.remoteView ?? null;
+
   return (
     <div className="journal-system-search" ref={wrapRef}>
       <input
         type="search"
         className="journal-system-search-input"
         autoComplete="off"
-        placeholder={journalLoading ? "Loading journals…" : "Search journal or galaxy (EDSM)…"}
+        placeholder={journalLoading ? "Loading journals…" : "Search or paste a system name…"}
         value={query}
         disabled={journalLoading}
         onChange={(e) => {
           setQuery(e.target.value);
-          setEdsmHits([]);
-          setEdsmErr(null);
-          setEdsmSearchAttempted(false);
           setOpen(true);
         }}
         onFocus={() => !journalLoading && setOpen(true)}
-        aria-label="Search systems from journal or EDSM"
+        aria-label="Search systems in your journals and on Spansh"
         aria-expanded={open}
         aria-controls="journal-system-search-results"
       />
-      {(snap.viewingSystemAddress != null || snap.currentSystemAddress != null) && !journalLoading ? (
+      {(snap.viewingSystemAddress != null || rv) && !journalLoading ? (
         <div className="journal-system-view-actions">
           {snap.viewingSystemAddress != null ? (
             <button
@@ -302,27 +231,25 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
               Return to commander
             </button>
           ) : null}
-          <span className="journal-system-source-group" role="group" aria-label="Load bodies from">
-            <span className="journal-system-source-label">Load bodies:</span>
-            <button
-              type="button"
-              className="journal-system-edsm-load-btn"
-              disabled={mapHydrateBusy}
-              title="Fetch the body list from EDSM for the focused system. Manual only."
-              onClick={() => void runHydrateForViewing("edsm")}
+          {/* A looked-up system: say where its bodies came from, or why there are none. */}
+          {rv?.state === "loading" ? (
+            <span className="journal-system-remote dim">
+              <InlineSpinner /> Fetching {rv.starSystem} from Spansh…
+            </span>
+          ) : rv?.state === "error" ? (
+            <span className="journal-system-remote journal-system-remote--error">
+              {rv.starSystem}: {rv.error ?? "could not be fetched."}
+            </span>
+          ) : rv?.state === "ready" ? (
+            <span
+              className="journal-system-remote dim"
+              title="Not from your journals: bodies, signals and logged species from Spansh, kept 30 days. Species other commanders logged are marked; the rest is the app’s prediction."
             >
-              {mapHydrateBusy ? <InlineSpinner /> : null} EDSM
-            </button>
-            <button
-              type="button"
-              className="journal-system-edsm-load-btn journal-system-edsm-load-btn--spansh"
-              disabled={mapHydrateBusy}
-              title="Fetch the body list from Spansh for the focused system. Manual only."
-              onClick={() => void runHydrateForViewing("spansh")}
-            >
-              Spansh
-            </button>
-          </span>
+              From Spansh · {rv.bioBodyCount ?? 0} bio {(rv.bioBodyCount ?? 0) === 1 ? "body" : "bodies"} of{" "}
+              {rv.bodyCount ?? 0}
+              {rv.fetchedAt ? ` · fetched ${rv.fetchedAt.slice(0, 10)}` : ""}
+            </span>
+          ) : null}
         </div>
       ) : null}
       {open && !journalLoading ? (
@@ -332,75 +259,63 @@ function JournalSystemSearch({ snap }: { snap: AppSnapshot }) {
           role="listbox"
           aria-label="Matching systems"
         >
-          {filtered.length > 0
-            ? filtered.slice(0, 50).map((s) => (
-                <li key={s.systemAddress}>
-                  <button
-                    type="button"
-                    className="journal-system-search-row"
-                    role="option"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => applyView(s.systemAddress, { starSystem: s.starSystem })}
-                  >
-                    <span className="journal-system-search-name">{s.starSystem}</span>
-                    <span className="journal-system-search-addr dim tab">{s.systemAddress}</span>
-                  </button>
-                </li>
-              ))
-            : null}
-          {filtered.length === 0 && query.trim().length > 0 && q.length < 2 ? (
+          {filtered.slice(0, 50).map((s) => (
+            <li key={s.systemAddress}>
+              <button
+                type="button"
+                className="journal-system-search-row"
+                role="option"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyView(s.systemAddress, { starSystem: s.starSystem })}
+              >
+                <span className="journal-system-search-name">{s.starSystem}</span>
+                {bodyPartOfQuery(typed, s.starSystem) ? (
+                  <span className="journal-system-search-body">→ {bodyPartOfQuery(typed, s.starSystem)}</span>
+                ) : null}
+                <span className="journal-system-search-addr dim tab">{s.systemAddress}</span>
+              </button>
+              <CopySystemButton system={s.starSystem} />
+            </li>
+          ))}
+          {spanshHits.map((s) => (
+            <li key={`spansh-${s.systemAddress}`}>
+              <button
+                type="button"
+                className="journal-system-search-row journal-system-search-row--edsm"
+                role="option"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyView(s.systemAddress, { starSystem: s.starSystem })}
+              >
+                <span className="journal-system-search-name">{s.starSystem}</span>
+                {bodyPartOfQuery(typed, s.starSystem) ? (
+                  <span className="journal-system-search-body">→ {bodyPartOfQuery(typed, s.starSystem)}</span>
+                ) : null}
+                <span className="journal-system-search-addr dim tab">{s.systemAddress}</span>
+                <span className="journal-system-search-edsm-badge dim">Spansh</span>
+              </button>
+              <CopySystemButton system={s.starSystem} />
+            </li>
+          ))}
+          {typed.length >= 3 && (remote.busy || !searched) ? (
             <li className="journal-system-search-empty dim">
-              No journal matches — type at least 2 letters, then search EDSM below.
+              <InlineSpinner /> Searching Spansh…
             </li>
           ) : null}
-          {filtered.length === 0 && q.length >= 2 ? (
-            <>
-              <li className="journal-system-search-edsm-action">
-                <span className="journal-system-source-label">Search:</span>
-                <button
-                  type="button"
-                  className="journal-system-edsm-search-btn"
-                  disabled={edsmBusy}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => void runGalaxySearch("edsm")}
-                >
-                  {edsmBusy && galaxySource === "edsm" ? <InlineSpinner /> : null} EDSM
-                </button>
-                <button
-                  type="button"
-                  className="journal-system-edsm-search-btn journal-system-edsm-search-btn--spansh"
-                  disabled={edsmBusy}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => void runGalaxySearch("spansh")}
-                >
-                  {edsmBusy && galaxySource === "spansh" ? <InlineSpinner /> : null} Spansh
-                </button>
-              </li>
-              {!edsmBusy && edsmErr ? <li className="journal-system-search-empty">{edsmErr}</li> : null}
-              {!edsmBusy && !edsmErr && edsmSearchAttempted && edsmHits.length === 0 ? (
-                <li className="journal-system-search-empty dim">
-                  No {galaxySource === "edsm" ? "EDSM" : "Spansh"} matches for “{query.trim()}”.
-                </li>
-              ) : null}
-              {!edsmBusy &&
-                edsmHits.map((s) => (
-                  <li key={`edsm-${s.systemAddress}`}>
-                    <button
-                      type="button"
-                      className="journal-system-search-row journal-system-search-row--edsm"
-                      role="option"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => applyView(s.systemAddress, { starSystem: s.starSystem })}
-                    >
-                      <span className="journal-system-search-name">{s.starSystem}</span>
-                      <span className="journal-system-search-addr dim tab">{s.systemAddress}</span>
-                      <span className="journal-system-search-edsm-badge dim">
-                        {galaxySource === "edsm" ? "EDSM" : "Spansh"}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-            </>
+          {searched && !remote.busy && remote.error ? (
+            <li className="journal-system-search-empty">
+              Spansh could not be searched ({remote.error}).
+              {filtered.length === 0 ? ` “${typed}” is not in your journals.` : ""}
+            </li>
+          ) : null}
+          {searched && !remote.busy && !remote.error && filtered.length === 0 && spanshHits.length === 0 ? (
+            <li className="journal-system-search-empty dim">
+              “{typed}” is not in your journals or on Spansh.
+            </li>
+          ) : null}
+          {typed.length > 0 && typed.length < 3 && filtered.length === 0 ? (
+            <li className="journal-system-search-empty dim">
+              Not in your journals — type 3 letters or more to search Spansh.
+            </li>
           ) : null}
         </ul>
       ) : null}
@@ -433,37 +348,6 @@ function LiveSnapshotFreshness({ connected }: { connected: boolean }) {
       {" "}
       · {label}
     </span>
-  );
-}
-
-function CopySystemNameButton({ systemName }: { systemName: string }) {
-  const [copied, setCopied] = useState(false);
-  const onCopy = useCallback(
-    (e: ReactMouseEvent) => {
-      e.stopPropagation();
-      void (async () => {
-        try {
-          await navigator.clipboard.writeText(systemName);
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 1200);
-        } catch {
-          /* ignore */
-        }
-      })();
-    },
-    [systemName],
-  );
-
-  return (
-    <button
-      type="button"
-      className="brand-sys-copy-name"
-      onClick={onCopy}
-      title={copied ? "Copied" : "Copy system name"}
-      aria-label="Copy system name"
-    >
-      ⧉
-    </button>
   );
 }
 
@@ -652,9 +536,6 @@ export const HeaderBar = memo(function HeaderBar({
         ? "appbar-dot--ok"
         : "appbar-dot--err";
 
-  const hasStars = (snap.primaryStarsHeader?.stars.length ?? 0) > 0;
-  const hasNotable = (snap.notableBodies?.length ?? 0) > 0;
-
   return (
     <header className="top">
       {/*
@@ -676,47 +557,8 @@ export const HeaderBar = memo(function HeaderBar({
         </div>
 
         <div className="appbar-centre">
-          {snap.primaryStarsHeader ? (
-            <div className="appbar-system">
-              <button
-                type="button"
-                className="appbar-system-btn"
-                onClick={onOpenSystemMap}
-                title="Open system map (orbital view from merged journal)"
-              >
-                <StarSystemMapIcon className="appbar-system-icon" />
-                <span className="appbar-system-name">{snap.primaryStarsHeader.systemName}</span>
-              </button>
-              <CopySystemNameButton systemName={snap.primaryStarsHeader.systemName} />
-              {snap.currentRegion ? (
-                /*
-                 * Where in the galaxy this is, without opening the galaxy map.
-                 *
-                 * Region decides what can grow here — several species do not occur outside particular
-                 * ones — and a commander deep in the black checking a candidate list should not have
-                 * to open a second screen to learn which region they are reading it in. Follows the
-                 * system on show, so browsing somewhere else names *that* region.
-                 */
-                <Tooltip
-                  className="appbar-region"
-                  text={`${snap.currentRegion.name} — the galactic region this system sits in. Region is one of the strongest signals in exobiology; several species never appear outside particular ones.`}
-                >
-                  <span className="appbar-region-chip">{snap.currentRegion.name}</span>
-                </Tooltip>
-              ) : null}
-              {snap.currentSystemKind ? (
-                /* Bubble / Colony / Colonising / Empty (owner, 2026-09-25). The first three pay no ×5. */
-                <Tooltip className="appbar-system-kind" text={SYSTEM_KIND_TIP[snap.currentSystemKind]}>
-                  <span className={`appbar-kind-chip appbar-kind-chip--${snap.currentSystemKind}`}>
-                    {SYSTEM_KIND_LABEL[snap.currentSystemKind]}
-                  </span>
-                </Tooltip>
-              ) : null}
-            </div>
-          ) : null}
-
           <div className="appbar-search">
-            <JournalSystemSearch snap={snap} />
+            <JournalSystemSearch snap={snap} onGoToBioBody={onGoToBioBody} />
           </div>
         </div>
 
@@ -920,57 +762,15 @@ export const HeaderBar = memo(function HeaderBar({
         </p>
       ) : null}
 
-      {hasStars || hasNotable ? (
-        <div className="context-strip" aria-label="System context">
-          {hasStars ? (
-            <div className="context-group">
-              <span className="context-label">Stars</span>
-              {snap.primaryStarsHeader!.stars.map((st, i) => (
-                <span
-                  key={`${st.shortLabel}-${st.starRole}-${i}`}
-                  className={`brand-star-chip ${primaryStarChipClass(st.starRole)}`}
-                  title={primaryStarRoleTooltip(st.starRole) + (st.shortLabel ? ` · ${st.shortLabel}` : "")}
-                >
-                  <span className="brand-star-chip-letter">{st.letter ?? "★"}</span>
-                  <span className="brand-star-chip-role"> ({primaryStarRoleTag(st.starRole)})</span>
-                  {st.fullSpectralNotation ? (
-                    <span className="brand-star-chip-spectral"> {st.fullSpectralNotation}</span>
-                  ) : null}
-                  {st.shortLabel ? <span className="brand-star-chip-name"> · {st.shortLabel}</span> : null}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          {hasNotable ? (
-            <div className="context-group" role="list">
-              <span className="context-label">Notable</span>
-              {snap.notableBodies!.map((n, i) => (
-                <button
-                  type="button"
-                  role="listitem"
-                  key={`${n.systemAddress}-${n.bodyId}-${i}`}
-                  className={`brand-notable-pill${n.dssMapped ? " brand-notable-pill--dss" : " brand-notable-pill--fss"}`}
-                  title={
-                    (n.dssMapped
-                      ? "DSS complete in merged journal (SAAScanComplete)"
-                      : "Matched scan only — no DSS complete in merged journal for this body") +
-                    " — click for quick facts"
-                  }
-                  onClick={(ev) => {
-                    ev.stopPropagation();
-                    setNotableQuick({ notable: n, x: ev.clientX, y: ev.clientY });
-                  }}
-                >
-                  <span className="brand-notable-body">
-                    {n.bodyLabelShort}
-                    <span className="brand-notable-tag"> - {n.tag}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      {/* The System card, star cards and notable bodies — SystemCard.tsx (Discord batch O-E2). */}
+      <SystemCardRow
+        snap={snap}
+        onOpenSystemMap={onOpenSystemMap}
+        onNotableClick={(n, ev) => {
+          ev.stopPropagation();
+          setNotableQuick({ notable: n, x: ev.clientX, y: ev.clientY });
+        }}
+      />
 
       {trayOpen ? (
         <div className="header-data-value-row header-tray" id="header-tray">
@@ -1134,7 +934,10 @@ export const HeaderBar = memo(function HeaderBar({
       {snap.viewingSystemAddress != null &&
       snap.currentSystemAddress != null &&
       snap.viewingSystemAddress !== snap.currentSystemAddress ? (
-        <p className="sub-live dim header-commander-away">Commander: {snap.currentSystem ?? "—"}</p>
+        <p className="sub-live dim header-commander-away">
+          Commander: {snap.currentSystem ?? "—"}
+          <CopySystemButton system={snap.currentSystem} />
+        </p>
       ) : null}
 
       {statsOpen ? (

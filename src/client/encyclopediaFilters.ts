@@ -113,7 +113,11 @@ export function entryMatchesEncyclopediaFacets(entry: SpeciesEntry, f: Encyclope
 
   if (f.atmosphere !== ENC_FILTERS_ALL) {
     if (!c.atmosphereTypeAnyOf?.length) {
-      /* no atmosphere constraint — matches any atmosphere filter */
+      /*
+        No atmosphere list: any atmosphere — but a thin-only row needs *an* atmosphere, the same rule
+        the matcher applies on airless bodies (Fumerola, three Bacterium; Tegnae HT-Z d13-1, 2026-09-25).
+      */
+      if (f.atmosphere === ENC_VACUUM_ATMO && c.atmospherePressureCategory === "thin") return false;
     } else if (f.atmosphere === ENC_VACUUM_ATMO) {
       if (!atmosphereRowAllowsVacuum(c)) return false;
     } else {

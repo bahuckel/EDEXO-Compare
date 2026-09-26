@@ -22,13 +22,17 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { DiscoveriesDTO, DiscoveryBodyRow, DiscoveryStarRow, DiscoverySystemRow } from "@shared/types";
 import { fuzzyRankAny } from "./fuzzyMatch";
+import { CopySystemButton } from "./CopySystemButton";
+import { ScrollArea } from "./ui/ScrollArea";
+import { Select } from "./ui/Select";
 
 /** Rows rendered at once. Enough to scroll through, far short of what would stall the panel. */
 const PAGE = 300;
 
-type Row = DiscoverySystemRow | DiscoveryBodyRow | DiscoveryStarRow;
+/** List (a table, the default) or cards — owner, 2026-09-25; every tab offers both. */
+export type DiscoveriesLayout = "list" | "cards";
 
-interface Column<T> {
+export interface Column<T> {
   key: string;
   label: string;
   /** Right-aligned, tabular figures — every numeric column. */
@@ -71,13 +75,21 @@ function SortHeader<T>({
   );
 }
 
-function Table<T extends Row>({
+/**
+ * One set of rows, as a table or as cards. The cards are built from the same columns — the first
+ * column is the card's title, every other column one labelled fact — so a card can never show less
+ * than its row, and the copy icon rides along with the name (owner: "everything it currently has but
+ * in a card").
+ */
+export function Table<T>({
   rows,
   columns,
   sort,
   onSort,
   rowKey,
   empty,
+  layout = "list",
+  resetKey,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -85,6 +97,9 @@ function Table<T extends Row>({
   onSort: (key: string) => void;
   rowKey: (r: T) => string;
   empty: string;
+  layout?: DiscoveriesLayout;
+  /** Scrolls back to the top when it changes. */
+  resetKey?: unknown;
 }) {
   const sorted = useMemo(() => {
     const col = columns.find((c) => c.key === sort.key) ?? columns[0]!;
@@ -107,9 +122,62 @@ function Table<T extends Row>({
   const shown = sorted.slice(0, PAGE);
   if (rows.length === 0) return <p className="dim disc-empty">{empty}</p>;
 
+  const more =
+    sorted.length > PAGE ? (
+      <p className="dim tiny disc-more">
+        Showing the first {PAGE.toLocaleString()} of {sorted.length.toLocaleString()} — narrow the search or
+        sort to bring the rest into view.
+      </p>
+    ) : null;
+
+  if (layout === "cards") {
+    const [title, ...facts] = columns;
+    return (
+      <>
+        {/* No column headers to click in a card view, so the sort is a control of its own. */}
+        <div className="disc-card-sort">
+          <span className="small-caps dim">Sort</span>
+          <Select
+            ariaLabel="Sort by"
+            className="disc-card-sort__select"
+            value={sort.key}
+            options={columns.map((c) => ({ value: c.key, label: c.label }))}
+            onChange={onSort}
+          />
+          <button
+            type="button"
+            className="disc-card-sort__dir"
+            title={sort.dir === 1 ? "Ascending — click for descending" : "Descending — click for ascending"}
+            onClick={() => onSort(sort.key)}
+          >
+            {sort.dir === 1 ? "▲" : "▼"}
+          </button>
+        </div>
+        <ScrollArea className="disc-card-scroll" resetKey={resetKey}>
+          <ul className="disc-card-grid">
+            {shown.map((r) => (
+              <li key={rowKey(r)} className="disc-card">
+                <div className="disc-card__title">{title!.render(r)}</div>
+                <dl className="disc-card__facts">
+                  {facts.map((c) => (
+                    <div key={c.key} className="disc-card__fact">
+                      <dt>{c.label}</dt>
+                      <dd className={c.numeric ? "tab" : undefined}>{c.render(r)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </li>
+            ))}
+          </ul>
+        </ScrollArea>
+        {more}
+      </>
+    );
+  }
+
   return (
     <>
-      <div className="disc-table-wrap">
+      <ScrollArea className="disc-table-wrap" resetKey={resetKey}>
         <table className="disc-table">
           <thead>
             <tr>
@@ -130,13 +198,8 @@ function Table<T extends Row>({
             ))}
           </tbody>
         </table>
-      </div>
-      {sorted.length > PAGE ? (
-        <p className="dim tiny disc-more">
-          Showing the first {PAGE.toLocaleString()} of {sorted.length.toLocaleString()} — narrow the search or
-          sort to bring the rest into view.
-        </p>
-      ) : null}
+      </ScrollArea>
+      {more}
     </>
   );
 }
@@ -213,10 +276,12 @@ export type DiscoveriesTab = "systems" | "bodies" | "stars";
 export function DiscoveriesTables({
   data,
   tab,
+  layout = "list",
   onNavigateSystem,
 }: {
   data: DiscoveriesDTO;
   tab: DiscoveriesTab;
+  layout?: DiscoveriesLayout;
   onNavigateSystem?: (systemAddress: number, bodyName?: string) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -247,14 +312,18 @@ export function DiscoveriesTables({
         key: "name",
         label: "System",
         value: (r) => r.name,
-        render: (r) =>
-          onNavigateSystem ? (
-            <button type="button" className="disc-link" onClick={() => onNavigateSystem(r.systemAddress)}>
-              {r.name}
-            </button>
-          ) : (
-            r.name
-          ),
+        render: (r) => (
+          <>
+            {onNavigateSystem ? (
+              <button type="button" className="disc-link" onClick={() => onNavigateSystem(r.systemAddress)}>
+                {r.name}
+              </button>
+            ) : (
+              r.name
+            )}
+            <CopySystemButton system={r.name} />
+          </>
+        ),
       },
       { key: "region", label: "Region", value: (r) => r.region, render: (r) => r.region ?? "—" },
       {
@@ -401,6 +470,8 @@ export function DiscoveriesTables({
           onSort={onSort}
           rowKey={(r) => String(r.systemAddress)}
           empty="No systems match."
+          layout={layout}
+          resetKey={`${q}|${tab}`}
         />
       </>
     );
@@ -413,18 +484,23 @@ export function DiscoveriesTables({
         key: "name",
         label: "Body",
         value: (r) => r.bodyName,
-        render: (r) =>
-          onNavigateSystem ? (
-            <button
-              type="button"
-              className="disc-link"
-              onClick={() => onNavigateSystem(r.systemAddress, r.bodyName)}
-            >
-              {r.bodyName}
-            </button>
-          ) : (
-            r.bodyName
-          ),
+        // The icon after the body name copies the *system* (owner): the name to paste into the galaxy map.
+        render: (r) => (
+          <>
+            {onNavigateSystem ? (
+              <button
+                type="button"
+                className="disc-link"
+                onClick={() => onNavigateSystem(r.systemAddress, r.bodyName)}
+              >
+                {r.bodyName}
+              </button>
+            ) : (
+              r.bodyName
+            )}
+            <CopySystemButton system={r.system} />
+          </>
+        ),
       },
       { key: "class", label: "Type", value: (r) => r.planetClass, render: (r) => r.planetClass },
       { key: "atmo", label: "Atmosphere", value: (r) => r.atmosphere, render: (r) => r.atmosphere ?? "—" },
@@ -487,7 +563,17 @@ export function DiscoveriesTables({
         value: (r) => r.estimatedCredits,
         render: (r) => cr(r.estimatedCredits),
       },
-      { key: "system", label: "System", value: (r) => r.system, render: (r) => r.system },
+      {
+        key: "system",
+        label: "System",
+        value: (r) => r.system,
+        render: (r) => (
+          <>
+            {r.system}
+            <CopySystemButton system={r.system} />
+          </>
+        ),
+      },
       { key: "when", label: "Scanned", value: (r) => r.scannedAt, render: (r) => date(r.scannedAt) },
     ];
 
@@ -553,6 +639,8 @@ export function DiscoveriesTables({
           onSort={onSort}
           rowKey={(r) => r.key}
           empty="No bodies match."
+          layout={layout}
+          resetKey={`${q}|${tab}`}
         />
       </>
     );
@@ -564,18 +652,22 @@ export function DiscoveriesTables({
       key: "name",
       label: "Star",
       value: (r) => r.bodyName,
-      render: (r) =>
-        onNavigateSystem ? (
-          <button
-            type="button"
-            className="disc-link"
-            onClick={() => onNavigateSystem(r.systemAddress, r.bodyName)}
-          >
-            {r.bodyName}
-          </button>
-        ) : (
-          r.bodyName
-        ),
+      render: (r) => (
+        <>
+          {onNavigateSystem ? (
+            <button
+              type="button"
+              className="disc-link"
+              onClick={() => onNavigateSystem(r.systemAddress, r.bodyName)}
+            >
+              {r.bodyName}
+            </button>
+          ) : (
+            r.bodyName
+          )}
+          <CopySystemButton system={r.system} />
+        </>
+      ),
     },
     {
       key: "type",
@@ -614,7 +706,17 @@ export function DiscoveriesTables({
       render: (r) => cr(r.estimatedCredits),
     },
     { key: "region", label: "Region", value: (r) => r.region, render: (r) => r.region ?? "—" },
-    { key: "system", label: "System", value: (r) => r.system, render: (r) => r.system },
+    {
+      key: "system",
+      label: "System",
+      value: (r) => r.system,
+      render: (r) => (
+        <>
+          {r.system}
+          <CopySystemButton system={r.system} />
+        </>
+      ),
+    },
     { key: "when", label: "Scanned", value: (r) => r.scannedAt, render: (r) => date(r.scannedAt) },
   ];
 
@@ -657,6 +759,8 @@ export function DiscoveriesTables({
         onSort={onSort}
         rowKey={(r) => r.key}
         empty="No stars match."
+        layout={layout}
+        resetKey={`${q}|${tab}`}
       />
     </>
   );

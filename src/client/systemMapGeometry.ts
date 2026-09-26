@@ -5,11 +5,13 @@
  *    Inferred multi-letter ✕ (from “ABC n” designations) share the same ✕ column, stacked under the longest
  *    existing bary prefix (e.g. ABCD under journal AB) so they do not collide with planet-row ✕ markers.
  * 3) Planets in one horizontal row per hub (sun or stellar bary), Y = hub’s row; sorted by designation.
- * 4) World–world mutual bary markers sit between their two planets without extra column slots.
+ * 4) World–world barycentres: a bracket above the pair, the in-game way, with a small ✕ on it — always,
+ *    not only when a moon is involved (owner, 2026-09-26: "the pairs always have a barycentre"; 1,394 planet
+ *    pairs in his journals). A barycentre of a barycentre and a planet steps one level higher.
  * 5) Moons stack under their parent hub planet (vertical), sorted by designation; nested moons (sub-satellites) are
  *    flattened into that column in sort order with edges from their immediate parent moon (or planet). Moon–moon
- *    mutual barycentres (journal ✕, no star children) are not drawn; their moons are hoisted into this column and
- *    sorted by name like other moons, with edges from the hub planet as a failsafe if the parent disc is missing.
+ *    barycentres (471 in his journals) get a bracket on the right of the column with their ✕ on it.
+ * 6) A star with a belt shows it between the star and its first planet, as the game does.
  */
 import type { SystemMapNodeDTO } from "@shared/types";
 import {
@@ -44,6 +46,14 @@ const BARY_RIM_GAP = 11;
 /** Nudge ✕ away from star discs so labels/readout stay legible */
 const STELLAR_BARY_SHIFT_X = 2 * R_BARY;
 const LINE_OCCLUSION_PAD = 2.8;
+/** World–world barycentre brackets: first level above the disc tops, then one step per nesting level. */
+const BRACKET_RISE = 14;
+const BRACKET_STEP = 12;
+const R_BRACKET_BARY = 6;
+/** Moon–moon brackets: how far right of the moon column, then per nesting level. */
+const MOON_BRACKET_OUT = 12;
+/** Room between a star and its first planet for the belt glyph. */
+const BELT_GAP = 34;
 
 export type LayoutSegment = { x1: number; y1: number; x2: number; y2: number };
 
@@ -69,12 +79,26 @@ export type LayoutItem = {
   isBarycentre?: boolean;
   isArrivalBody?: boolean;
   wasDiscoveredFalse?: boolean;
+  /** A barycentre drawn on a pair bracket: its name goes above (planets) or to the right (moons). */
+  bracketBary?: "above" | "right";
+  /** Biological signal count — drawn as a ring with the number. */
+  bioSignals?: number | null;
+  /** Planetary rings — drawn as a tilted ring through the body. */
+  rings?: number;
+  /** Its organics would pay the first-footfall ×5. */
+  firstFootfallX5?: boolean;
+  /** The ship is at this body. */
+  youAreHere?: boolean;
 };
+
+/** A star's asteroid belt, drawn between the star and its first planet. */
+export type LayoutBelt = { cx: number; cy: number; h: number };
 
 export type LayoutResult = {
   items: LayoutItem[];
   segments: LayoutSegment[];
   bracketSegments: LayoutSegment[];
+  belts: LayoutBelt[];
   minX: number;
   minY: number;
   width: number;
@@ -170,11 +194,18 @@ function flattenWorldsUnderWorldBary(b: SystemMapNodeDTO): SystemMapNodeDTO[] {
   return out;
 }
 
-function worldOnlyBaryHasOrbitMoons(b: SystemMapNodeDTO): boolean {
-  for (const w of flattenWorldsUnderWorldBary(b)) {
-    if (countFlattenedMoonsUnderWorld(w) > 0) return true;
-  }
-  return false;
+/** 1 for a bracket over bodies, 2 when it also holds another bracket, and so on. */
+function worldBaryDepth(b: SystemMapNodeDTO): number {
+  let inner = 0;
+  for (const c of b.children) if (isWorldOnlyBary(c)) inner = Math.max(inner, worldBaryDepth(c));
+  return inner + 1;
+}
+
+/** Room a hub's planet row needs above it for its pair brackets (0 when it has none). */
+function bracketClearanceAbove(mutual: SystemMapNodeDTO[] | undefined): number {
+  if (!mutual?.length) return 0;
+  const depth = Math.max(...mutual.map(worldBaryDepth));
+  return BRACKET_RISE + (depth - 1) * BRACKET_STEP + R_BRACKET_BARY + 12;
 }
 
 function starColumnLetterRank(n: SystemMapNodeDTO, starSystemName: string): string {
@@ -297,44 +328,15 @@ function layoutItemFromNode(n: SystemMapNodeDTO, cx: number, cy: number, radius:
     isBarycentre: n.isBarycentre === true,
     isArrivalBody: n.isArrivalBody === true,
     wasDiscoveredFalse: n.isUnexplored === true,
+    ...(n.bioSignals != null ? { bioSignals: n.bioSignals } : {}),
+    ...((n.rings ?? 0) > 0 ? { rings: n.rings } : {}),
+    ...(n.firstFootfallX5 ? { firstFootfallX5: true } : {}),
+    ...(n.youAreHere ? { youAreHere: true } : {}),
   };
 }
 
 function effectiveLayoutRadius(it: LayoutItem): number {
   return Math.max(it.r, 2);
-}
-
-function layoutDiscsOverlap(
-  ax: number,
-  ay: number,
-  ar: number,
-  bx: number,
-  by: number,
-  br: number,
-  pad: number,
-): boolean {
-  const tr = ar + br + pad;
-  const dx = ax - bx;
-  const dy = ay - by;
-  return dx * dx + dy * dy < tr * tr;
-}
-
-/** Nudge a world–world ✕ downward until its disc does not intersect laid-out planets/moons (hub row shares Y with planets). */
-function resolveWorldBaryCyAvoidingItems(cx: number, baseCy: number, items: LayoutItem[]): number {
-  const pad = LINE_OCCLUSION_PAD;
-  let cy = baseCy;
-  for (let step = 0; step < 120; step++) {
-    let hit = false;
-    for (const it of items) {
-      if (layoutDiscsOverlap(cx, cy, R_BARY, it.cx, it.cy, it.r, pad)) {
-        hit = true;
-        break;
-      }
-    }
-    if (!hit) return cy;
-    cy += 6;
-  }
-  return baseCy + MOON_V;
 }
 
 function baryAnchorBetweenTwoDiscs(
@@ -411,6 +413,48 @@ function layoutMoonsUnderPlanet(
   }
   moonItems.sort((a, b) => a.cy - b.cy);
   pushVerticalMoonBracket(planetItem, moonItems, bracketSegments);
+
+  /*
+    Moon pairs: a bracket out to the right of the column with the barycentre's ✕ on it. The moons
+    themselves stay where the column put them (hoisted under the planet, sorted by name).
+  */
+  const colRight = planetItem.cx + R * 0.92;
+  const drawMoonBary = (b: SystemMapNodeDTO): { x: number; y: number } | null => {
+    const anchors: { x: number; y: number }[] = [];
+    for (const c of b.children) {
+      if (c.isStar) continue;
+      if (isWorldOnlyBary(c)) {
+        const a = drawMoonBary(c);
+        if (a) anchors.push(a);
+        continue;
+      }
+      if (c.isBarycentre) continue;
+      const it = itemByBodyId.get(c.bodyId);
+      if (it) anchors.push({ x: it.cx + it.r, y: it.cy });
+    }
+    if (anchors.length < 2) return anchors[0] ?? null;
+    const x = colRight + MOON_BRACKET_OUT + (worldBaryDepth(b) - 1) * BRACKET_STEP;
+    const ys = anchors.map((a) => a.y);
+    const lo = Math.min(...ys);
+    const hi = Math.max(...ys);
+    for (const a of anchors) bracketSegments.push({ x1: a.x, y1: a.y, x2: x, y2: a.y });
+    bracketSegments.push({ x1: x, y1: lo, x2: x, y2: hi });
+    const mid = (lo + hi) / 2;
+    const bit = { ...layoutItemFromNode(b, x, mid, R_BRACKET_BARY), bracketBary: "right" as const };
+    items.push(bit);
+    return { x: x + R_BRACKET_BARY, y: mid };
+  };
+  const walkMoonBaries = (n: SystemMapNodeDTO) => {
+    for (const c of n.children) {
+      if (c.isStar) continue;
+      if (isWorldOnlyBary(c)) {
+        drawMoonBary(c);
+        continue;
+      }
+      if (!c.isBarycentre) walkMoonBaries(c);
+    }
+  };
+  walkMoonBaries(planetNode);
   const labelPad = MAP_NAME_UNDER + MAP_LABEL_EXTRA_PAD;
   if (moonItems.length === 0) {
     lowest = Math.max(lowest, planetItem.cy + planetItem.r + labelPad);
@@ -678,21 +722,22 @@ function layoutHubPlanetRow(params: {
   edges: EdgePair[];
   bracketSegments: LayoutSegment[];
   starColumnCx: number;
+  /** The hub is a star with an asteroid belt: the belt goes between it and the first planet. */
+  belt?: { list: LayoutBelt[] };
 }): number {
-  const { hubItem, worlds, mutualBaries, starSystemName, items, edges, bracketSegments, starColumnCx } =
+  const { hubItem, worlds, mutualBaries, starSystemName, items, edges, bracketSegments, starColumnCx, belt } =
     params;
   const cy = hubItem.cy;
   const sorted = [...new Map(worlds.map((w) => [w.bodyId, w])).values()].sort((a, b) =>
     compareWorldDesignation(a, b, starSystemName),
   );
 
-  const worldIdsWithDrawableBary = new Set<number>();
-  for (const b of mutualBaries) {
-    if (!worldOnlyBaryHasOrbitMoons(b)) continue;
-    for (const w of flattenWorldsUnderWorldBary(b)) worldIdsWithDrawableBary.add(w.bodyId);
+  const x0 = starColumnCx + R + HUB_GAP_X + (belt ? BELT_GAP : 0);
+  if (belt) {
+    const left = hubItem.cx + hubItem.r;
+    const right = x0 - R;
+    belt.list.push({ cx: (left + right) / 2, cy: hubItem.cy, h: R * 1.7 });
   }
-
-  const x0 = starColumnCx + R + HUB_GAP_X;
   const labelPad = MAP_NAME_UNDER + MAP_LABEL_EXTRA_PAD;
   let bottom = cy + R + labelPad;
   if (sorted.length === 0) return bottom;
@@ -703,35 +748,45 @@ function layoutHubPlanetRow(params: {
     const pit = layoutItemFromNode(w, x0 + i * COL_PLANET, cy, R);
     items.push(pit);
     planetItems.push(pit);
-    if (!worldIdsWithDrawableBary.has(w.bodyId)) edges.push({ from: hubItem, to: pit });
+    // The row line runs to every planet; a pair's barycentre is the bracket above it, as in the game.
+    edges.push({ from: hubItem, to: pit });
     bottom = Math.max(bottom, layoutMoonsUnderPlanet(pit, w, items, edges, starSystemName, bracketSegments));
   }
 
   const idToItem = new Map<number, LayoutItem>();
   for (let i = 0; i < sorted.length; i++) idToItem.set(sorted[i]!.bodyId, planetItems[i]!);
 
-  for (const b of mutualBaries) {
-    const inner = flattenWorldsUnderWorldBary(b);
-    if (inner.length < 2) continue;
-    if (!worldOnlyBaryHasOrbitMoons(b)) continue;
-    const idx = inner.map((w) => sorted.findIndex((x) => x.bodyId === w.bodyId)).filter((j) => j >= 0);
-    if (idx.length < 2) continue;
-    const iLo = Math.min(...idx);
-    const iHi = Math.max(...idx);
-    const leftIt = planetItems[iLo]!;
-    const rightIdx = inner.length > 2 ? Math.min(iLo + 1, iHi) : iHi;
-    const rightIt = planetItems[rightIdx]!;
-    const raw = baryAnchorBetweenTwoDiscs(leftIt, rightIt, false);
-    const baryCy = resolveWorldBaryCyAvoidingItems(raw.cx, cy, items);
-    const bIt = layoutItemFromNode(b, raw.cx, baryCy, R_BARY);
-    items.push(bIt);
-    edges.push({ from: hubItem, to: bIt });
-    for (const w of inner) {
-      const pt = idToItem.get(w.bodyId);
-      if (pt) edges.push({ from: bIt, to: pt });
+  /*
+    Pair brackets above the row. Only the outermost barycentres start a drawing; nested ones are drawn
+    by their parent, one level lower, and hand it the top of their ✕ as the point to rise from.
+  */
+  const nestedIds = new Set<number>();
+  for (const b of mutualBaries) for (const c of b.children) if (isWorldOnlyBary(c)) nestedIds.add(c.bodyId);
+  const drawWorldBary = (b: SystemMapNodeDTO): { x: number; y: number } | null => {
+    const anchors: { x: number; y: number }[] = [];
+    for (const c of b.children) {
+      if (c.isStar) continue;
+      if (isWorldOnlyBary(c)) {
+        const a = drawWorldBary(c);
+        if (a) anchors.push(a);
+        continue;
+      }
+      if (c.isBarycentre) continue;
+      const it = idToItem.get(c.bodyId);
+      if (it) anchors.push({ x: it.cx, y: it.cy - it.r });
     }
-    bottom = Math.max(bottom, baryCy + R_BARY + 28 + MAP_LABEL_EXTRA_PAD);
-  }
+    if (anchors.length < 2) return anchors[0] ?? null;
+    const y = cy - R - BRACKET_RISE - (worldBaryDepth(b) - 1) * BRACKET_STEP;
+    const xs = anchors.map((a) => a.x);
+    const lo = Math.min(...xs);
+    const hi = Math.max(...xs);
+    for (const a of anchors) bracketSegments.push({ x1: a.x, y1: a.y, x2: a.x, y2: y });
+    bracketSegments.push({ x1: lo, y1: y, x2: hi, y2: y });
+    const mid = (lo + hi) / 2;
+    items.push({ ...layoutItemFromNode(b, mid, y, R_BRACKET_BARY), bracketBary: "above" });
+    return { x: mid, y: y - R_BRACKET_BARY };
+  };
+  for (const b of mutualBaries) if (!nestedIds.has(b.bodyId)) drawWorldBary(b);
 
   return Math.max(bottom, cy + R + labelPad);
 }
@@ -808,6 +863,7 @@ function computeFallbackSystemMapLayout(
     items,
     segments: [],
     bracketSegments: [],
+    belts: [],
     minX,
     minY,
     width: maxX - minX,
@@ -941,6 +997,8 @@ export function computeSystemMapLayout(roots: SystemMapNodeDTO[], starSystemName
     const dInferred = totalInferredStackDepthBelowStar(prevStar.bodyId);
     const dPrev = dPlanets + dInferred;
     const baryNode = baryBetweenAdjacentStars.get(i - 1);
+    // The next row's pair brackets rise above it; leave them room.
+    const clearStar = bracketClearanceAbove(hubToMutual.get(stars[i]!.bodyId));
 
     if (baryNode) {
       const dBaryBase = estimateHubMoonDepthBelow(hubToWorlds.get(baryNode.bodyId) ?? []);
@@ -952,14 +1010,19 @@ export function computeSystemMapLayout(roots: SystemMapNodeDTO[], starSystemName
       );
       const dBary = dBaryBase + dBaryNested;
       /** Clear only the upper star’s moon column; tight when that star has no moons. */
-      const baryCy = starY[i - 1]! + 2 * R + dPrev + VERTICAL_STACK_GAP;
+      const baryCy =
+        starY[i - 1]! +
+        2 * R +
+        dPrev +
+        VERTICAL_STACK_GAP +
+        bracketClearanceAbove(hubToMutual.get(baryNode.bodyId));
       stellarBaryCyById.set(baryNode.bodyId, baryCy);
       /** Lower star clears the bary’s moon column only. */
-      let nextStarY = baryCy + 2 * R + dBary + VERTICAL_STACK_GAP;
+      let nextStarY = baryCy + 2 * R + dBary + VERTICAL_STACK_GAP + clearStar;
       nextStarY = Math.max(nextStarY, starY[i - 1]! + ROW_STAR);
       starY[i] = nextStarY;
     } else {
-      let nextY = starY[i - 1]! + 2 * R + dPrev + VERTICAL_STACK_GAP;
+      let nextY = starY[i - 1]! + 2 * R + dPrev + VERTICAL_STACK_GAP + clearStar;
       nextY = Math.max(nextY, starY[i - 1]! + ROW_STAR);
       starY[i] = nextY;
     }
@@ -1075,6 +1138,7 @@ export function computeSystemMapLayout(roots: SystemMapNodeDTO[], starSystemName
   }
 
   let maxBottom = PAD;
+  const belts: LayoutBelt[] = [];
   for (const s of stars) {
     const it = itemById.get(s.bodyId);
     if (!it) continue;
@@ -1089,6 +1153,7 @@ export function computeSystemMapLayout(roots: SystemMapNodeDTO[], starSystemName
       edges,
       bracketSegments,
       starColumnCx,
+      ...((s.beltClusters ?? 0) > 0 ? { belt: { list: belts } } : {}),
     });
     maxBottom = Math.max(maxBottom, btm);
   }
@@ -1165,6 +1230,7 @@ export function computeSystemMapLayout(roots: SystemMapNodeDTO[], starSystemName
     items,
     segments,
     bracketSegments,
+    belts,
     minX,
     minY,
     width: maxX - minX,

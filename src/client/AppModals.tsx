@@ -15,8 +15,16 @@ import type {
   DiscoveriesDTO,
 } from "@shared/types";
 import { FeederStatusPanel } from "./FeederStatusPanel";
-import { DiscoveriesTables, type DiscoveriesTab } from "./DiscoveriesTables";
+import {
+  DiscoveriesTables,
+  Table,
+  type Column,
+  type DiscoveriesLayout,
+  type DiscoveriesTab,
+} from "./DiscoveriesTables";
+import { ScrollArea } from "./ui/ScrollArea";
 import type { SpanshRouteSummaryDTO } from "./bodyHelpers";
+import { CopySystemButton } from "./CopySystemButton";
 
 /**
  * Feed a Spansh exobiology route export.
@@ -197,6 +205,109 @@ export function FeederModal({
  */
 type DiscoveriesView = "species" | DiscoveriesTab;
 
+/*
+  The last tab and view, remembered per viewer (owner, 2026-09-25). A view preference, so browser
+  storage is the right home: it never has to reach another device. Guarded, because storage can be
+  missing or refuse (private window, blocked site data) and the panel must open regardless.
+*/
+const DISCOVERIES_PREF_KEY = "edexo.myDiscoveries";
+const DISCOVERIES_VIEWS: DiscoveriesView[] = ["species", "systems", "bodies", "stars"];
+
+function readDiscoveriesPref(): { view: DiscoveriesView; layout: DiscoveriesLayout } {
+  try {
+    const j = JSON.parse(localStorage.getItem(DISCOVERIES_PREF_KEY) ?? "{}") as Record<string, unknown>;
+    const view = DISCOVERIES_VIEWS.includes(j.view as DiscoveriesView)
+      ? (j.view as DiscoveriesView)
+      : "species";
+    const layout: DiscoveriesLayout = j.layout === "cards" ? "cards" : "list";
+    return { view, layout };
+  } catch {
+    return { view: "species", layout: "list" };
+  }
+}
+
+function writeDiscoveriesPref(pref: { view: DiscoveriesView; layout: DiscoveriesLayout }): void {
+  try {
+    localStorage.setItem(DISCOVERIES_PREF_KEY, JSON.stringify(pref));
+  } catch {
+    /* no storage: the choice lasts until the panel closes */
+  }
+}
+
+/** The Exobiology tab as a list — the same records as the cards, one row each. */
+function exobiologyColumns(
+  onNavigateEntry: ((e: FootScannedEntry) => void) | undefined,
+  onClose: () => void,
+): Column<FootScannedEntry>[] {
+  const species = (e: FootScannedEntry) =>
+    e.variantLocalised || [e.genusLocalised, e.speciesLocalised].filter(Boolean).join(" ") || "—";
+  return [
+    {
+      key: "body",
+      label: "Body",
+      value: (e) => e.bodyName,
+      render: (e) => (
+        <>
+          {onNavigateEntry ? (
+            <button
+              type="button"
+              className="disc-link"
+              title="Show this system in the app (journal view)"
+              onClick={() => {
+                onNavigateEntry(e);
+                onClose();
+              }}
+            >
+              {e.bodyName}
+            </button>
+          ) : (
+            e.bodyName
+          )}
+          <CopySystemButton system={e.starSystem} />
+        </>
+      ),
+    },
+    {
+      key: "system",
+      label: "System",
+      value: (e) => e.starSystem ?? null,
+      render: (e) => (
+        <>
+          {e.starSystem || "—"}
+          <CopySystemButton system={e.starSystem} />
+        </>
+      ),
+    },
+    { key: "species", label: "Species", value: species, render: species },
+    {
+      key: "from",
+      label: "From",
+      value: (e) => e.confirmationSource ?? null,
+      render: (e) => (e.confirmationSource === "sample" ? "Sample" : "Analyse"),
+    },
+    { key: "planet", label: "Planet", value: (e) => e.planetClass, render: (e) => e.planetClass },
+    {
+      key: "atmo",
+      label: "Atmosphere",
+      value: (e) => e.atmosphereNorm || null,
+      render: (e) => e.atmosphereNorm || "—",
+    },
+    {
+      key: "temp",
+      label: "Temperature (K)",
+      numeric: true,
+      value: (e) => e.tempBandMinK,
+      render: (e) => `${e.tempBandMinK.toFixed(0)} · ${e.tempBandMaxK.toFixed(0)}`,
+    },
+    {
+      key: "when",
+      label: "Recorded",
+      value: (e) => e.recordedAt,
+      render: (e) => e.recordedAt.slice(0, 19).replace("T", " "),
+    },
+  ];
+}
+
 export function MyExobiologyModal({
   entries,
   onClose,
@@ -216,7 +327,18 @@ export function MyExobiologyModal({
     as long as the dialog is. Reopening asks again, which is what makes a freshly scanned system
     appear without a restart.
   */
-  const [view, setView] = useState<DiscoveriesView>("species");
+  const [view, setViewState] = useState<DiscoveriesView>(() => readDiscoveriesPref().view);
+  const [layout, setLayoutState] = useState<DiscoveriesLayout>(() => readDiscoveriesPref().layout);
+  const setView = (v: DiscoveriesView) => {
+    setViewState(v);
+    writeDiscoveriesPref({ view: v, layout });
+  };
+  const setLayout = (l: DiscoveriesLayout) => {
+    setLayoutState(l);
+    writeDiscoveriesPref({ view, layout: l });
+  };
+  const [exoSort, setExoSort] = useState<{ key: string; dir: 1 | -1 }>({ key: "when", dir: -1 });
+  const exoColumns = useMemo(() => exobiologyColumns(onNavigateEntry, onClose), [onNavigateEntry, onClose]);
   const [discoveries, setDiscoveries] = useState<DiscoveriesDTO | null>(null);
   const [discoveriesError, setDiscoveriesError] = useState<string | null>(null);
   useEffect(() => {
@@ -274,7 +396,7 @@ export function MyExobiologyModal({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={`modal-panel modal-panel--my-exo${view !== "species" ? " modal-panel--discoveries" : ""}`}
+        className="modal-panel modal-panel--my-exo"
         role="dialog"
         aria-modal="true"
         aria-labelledby="my-exo-title"
@@ -303,6 +425,25 @@ export function MyExobiologyModal({
               </button>
             ))}
           </div>
+          {/* List by default everywhere; cards on request (owner, 2026-09-25). */}
+          <div className="disc-layout" role="group" aria-label="View">
+            {(
+              [
+                ["list", "List"],
+                ["cards", "Cards"],
+              ] as const
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                aria-pressed={layout === k}
+                className={`disc-layout__btn${layout === k ? " disc-layout__btn--on" : ""}`}
+                onClick={() => setLayout(k)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
@@ -314,7 +455,12 @@ export function MyExobiologyModal({
             ) : !discoveries ? (
               <p className="dim disc-empty">Reading your journals…</p>
             ) : (
-              <DiscoveriesTables data={discoveries} tab={view} onNavigateSystem={onNavigateSystem} />
+              <DiscoveriesTables
+                data={discoveries}
+                tab={view}
+                layout={layout}
+                onNavigateSystem={onNavigateSystem}
+              />
             )
           ) : (
             <>
@@ -345,94 +491,111 @@ export function MyExobiologyModal({
                 <p className="dim">No foot-catalog entries yet.</p>
               ) : shown.length === 0 ? (
                 <p className="dim">Nothing here matches “{query.trim()}”.</p>
+              ) : layout === "list" ? (
+                <Table
+                  rows={shown}
+                  columns={exoColumns}
+                  sort={exoSort}
+                  onSort={(key) =>
+                    setExoSort((s) =>
+                      s.key === key ? { key, dir: (s.dir === 1 ? -1 : 1) as 1 | -1 } : { key, dir: -1 },
+                    )
+                  }
+                  rowKey={(e) => e.id}
+                  empty="No foot-catalog entries yet."
+                  resetKey={query}
+                />
               ) : (
-                <ul className="my-exo-card-list">
-                  {shown.map((e) => (
-                    <li key={e.id} className="my-exo-card">
-                      <div className="my-exo-card-top">
-                        <div className="my-exo-card-loc">
-                          {onNavigateEntry ? (
-                            <button
-                              type="button"
-                              className="my-exo-nav-icon"
-                              title="Show this system in the app (journal view)"
-                              aria-label={`Focus journal view: ${e.starSystem ?? "system"} — ${e.bodyName}`}
-                              onClick={() => {
-                                onNavigateEntry(e);
-                                onClose();
-                              }}
-                            >
-                              <svg
-                                className="my-exo-nav-icon-svg"
-                                viewBox="0 0 16 16"
-                                width="15"
-                                height="15"
-                                aria-hidden
+                <ScrollArea className="my-exo-card-scroll" resetKey={query}>
+                  <ul className="my-exo-card-list">
+                    {shown.map((e) => (
+                      <li key={e.id} className="my-exo-card">
+                        <div className="my-exo-card-top">
+                          <div className="my-exo-card-loc">
+                            {onNavigateEntry ? (
+                              <button
+                                type="button"
+                                className="my-exo-nav-icon"
+                                title="Show this system in the app (journal view)"
+                                aria-label={`Focus journal view: ${e.starSystem ?? "system"} — ${e.bodyName}`}
+                                onClick={() => {
+                                  onNavigateEntry(e);
+                                  onClose();
+                                }}
                               >
-                                <circle
-                                  cx="8"
-                                  cy="8"
-                                  r="6.25"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.35"
-                                />
-                                <path d="M8 1.5v13M1.5 8h13" stroke="currentColor" strokeWidth="1.15" />
-                                <circle cx="8" cy="8" r="1.4" fill="currentColor" />
-                              </svg>
-                            </button>
-                          ) : null}
-                          <span className="my-exo-body">{e.bodyName}</span>
-                        </div>
-                        <time className="my-exo-card-time tab" dateTime={e.recordedAt}>
-                          {e.recordedAt.slice(0, 19).replace("T", " ")}
-                        </time>
-                      </div>
-                      <div
-                        className={`my-exo-card-sub dim tiny${onNavigateEntry ? " my-exo-card-sub--indented" : ""}`}
-                      >
-                        {e.starSystem || "—"}
-                      </div>
-                      <dl className="my-exo-card-facts">
-                        <div className="my-exo-card-fact">
-                          <dt>Species</dt>
-                          <dd>
-                            {e.variantLocalised ||
-                              [e.genusLocalised, e.speciesLocalised].filter(Boolean).join(" ") ||
-                              "—"}
-                            {e.dbProbableDisagreed ? (
-                              <span
-                                className="dim tiny tab"
-                                title="Top strict DB guess at record time differed"
-                              >
-                                {" "}
-                                (DB note)
-                              </span>
+                                <svg
+                                  className="my-exo-nav-icon-svg"
+                                  viewBox="0 0 16 16"
+                                  width="15"
+                                  height="15"
+                                  aria-hidden
+                                >
+                                  <circle
+                                    cx="8"
+                                    cy="8"
+                                    r="6.25"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.35"
+                                  />
+                                  <path d="M8 1.5v13M1.5 8h13" stroke="currentColor" strokeWidth="1.15" />
+                                  <circle cx="8" cy="8" r="1.4" fill="currentColor" />
+                                </svg>
+                              </button>
                             ) : null}
-                          </dd>
+                            <span className="my-exo-body">{e.bodyName}</span>
+                          </div>
+                          <time className="my-exo-card-time tab" dateTime={e.recordedAt}>
+                            {e.recordedAt.slice(0, 19).replace("T", " ")}
+                          </time>
                         </div>
-                        <div className="my-exo-card-fact">
-                          <dt>From</dt>
-                          <dd>{e.confirmationSource === "sample" ? "Sample" : "Analyse"}</dd>
+                        <div
+                          className={`my-exo-card-sub dim tiny${onNavigateEntry ? " my-exo-card-sub--indented" : ""}`}
+                        >
+                          {e.starSystem || "—"}
+                          <CopySystemButton system={e.starSystem} />
                         </div>
-                        <div className="my-exo-card-fact">
-                          <dt>Planet</dt>
-                          <dd>{e.planetClass}</dd>
-                        </div>
-                        <div className="my-exo-card-fact">
-                          <dt>Atmosphere</dt>
-                          <dd>{e.atmosphereNorm || "—"}</dd>
-                        </div>
-                        <div className="my-exo-card-fact my-exo-card-fact--wide">
-                          <dt>Temperature (K)</dt>
-                          <dd className="tab">
-                            {e.tempBandMinK.toFixed(0)} · {e.tempBandMaxK.toFixed(0)}
-                          </dd>
-                        </div>
-                      </dl>
-                    </li>
-                  ))}
-                </ul>
+                        <dl className="my-exo-card-facts">
+                          <div className="my-exo-card-fact">
+                            <dt>Species</dt>
+                            <dd>
+                              {e.variantLocalised ||
+                                [e.genusLocalised, e.speciesLocalised].filter(Boolean).join(" ") ||
+                                "—"}
+                              {e.dbProbableDisagreed ? (
+                                <span
+                                  className="dim tiny tab"
+                                  title="Top strict DB guess at record time differed"
+                                >
+                                  {" "}
+                                  (DB note)
+                                </span>
+                              ) : null}
+                            </dd>
+                          </div>
+                          <div className="my-exo-card-fact">
+                            <dt>From</dt>
+                            <dd>{e.confirmationSource === "sample" ? "Sample" : "Analyse"}</dd>
+                          </div>
+                          <div className="my-exo-card-fact">
+                            <dt>Planet</dt>
+                            <dd>{e.planetClass}</dd>
+                          </div>
+                          <div className="my-exo-card-fact">
+                            <dt>Atmosphere</dt>
+                            <dd>{e.atmosphereNorm || "—"}</dd>
+                          </div>
+                          <div className="my-exo-card-fact my-exo-card-fact--wide">
+                            <dt>Temperature (K)</dt>
+                            <dd className="tab">
+                              {e.tempBandMinK.toFixed(0)} · {e.tempBandMaxK.toFixed(0)}
+                            </dd>
+                          </div>
+                        </dl>
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollArea>
               )}
             </>
           )}
@@ -492,7 +655,7 @@ export function DataValueBreakdownModal({
           <ul className="data-value-summary">
             <li
               className="data-value-summary-row"
-              title="Journal event: FSSBodySignals — FSS-only estimate where a merged Scan exists"
+              title="Stars and bodies scanned but not mapped: discovery scan, FSS, arrival auto-scan. Nav-beacon data and bodies already sold are not counted."
             >
               <span className="data-value-summary-count">{explorationFssScanCount}</span>
               <span className="data-value-summary-label">
@@ -507,7 +670,7 @@ export function DataValueBreakdownModal({
             </li>
             <li
               className="data-value-summary-row"
-              title="Journal event: SAAScanComplete — full mapped estimate"
+              title="Planets mapped with the surface scanner, at their mapped value (which includes the scan)."
             >
               <span className="data-value-summary-count">{explorationDssScanCount}</span>
               <span className="data-value-summary-label">
@@ -544,6 +707,7 @@ export function DataValueBreakdownModal({
                     <div className="data-value-breakdown-planet">
                       <strong>{line.bodyName}</strong>
                       <span className="dim"> · {line.starSystem}</span>
+                      <CopySystemButton system={line.starSystem} />
                     </div>
                     <div className="data-value-breakdown-species">{line.speciesLabel}</div>
                     <div className="data-value-breakdown-value-row">
@@ -720,6 +884,7 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
                         <span className="session-main">
                           <strong>{s.species}</strong>
                           <span className="dim"> · {s.body || s.system}</span>
+                          <CopySystemButton system={s.system} />
                         </span>
                         <span className={`session-cr${s.mult === 5 ? " session-cr--ff" : ""}`}>
                           {s.credits != null ? `${fmtCrShort(s.credits)} CR` : "—"}
@@ -737,7 +902,10 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
                     {log.landings.map((l, i) => (
                       <li key={`l-${i}`} className="session-row">
                         <span className="session-t">{fmtT(l.at)}</span>
-                        <span className="session-main">{l.body}</span>
+                        <span className="session-main">
+                          {l.body}
+                          <CopySystemButton system={l.system} />
+                        </span>
                         {l.firstFootfall ? (
                           <span className="price-tag price-tag--unwalked">first footfall</span>
                         ) : null}
@@ -753,7 +921,10 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
                     {log.systems.map((s, i) => (
                       <li key={`y-${i}`} className="session-row">
                         <span className="session-t">{fmtT(s.at)}</span>
-                        <span className="session-main">{s.name}</span>
+                        <span className="session-main">
+                          {s.name}
+                          <CopySystemButton system={s.name} />
+                        </span>
                         <span className="dim tiny">
                           {s.jumpLy != null ? `${s.jumpLy.toFixed(1)} ly` : ""}
                         </span>

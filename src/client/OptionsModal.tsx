@@ -4,6 +4,7 @@
 import { useToast } from "./ui/feedback";
 import { useModal } from "./ui/useModal";
 import { InfoPopover } from "./ui/Tooltip";
+import { Select } from "./ui/Select";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { AppSnapshot } from "@shared/types";
 import {
@@ -621,18 +622,20 @@ function EdsmUploadPanel({ state, hasKey }: { state: AppSnapshot["edsmUpload"]; 
       </label>
 
       <div className="options-edsm-actions">
-        <select
-          aria-label="How far back to upload"
+        <Select
+          ariaLabel="How far back to upload"
+          className="options-inline-select"
           value={scope}
           disabled={busy || !state.enabled || running}
-          onChange={(ev) => setScope(ev.target.value as typeof scope)}
-        >
-          <option value="day">last day</option>
-          <option value="week">last week</option>
-          <option value="month">last month</option>
-          <option value="year">last year</option>
-          <option value="all">everything</option>
-        </select>
+          options={[
+            { value: "day", label: "last day" },
+            { value: "week", label: "last week" },
+            { value: "month", label: "last month" },
+            { value: "year", label: "last year" },
+            { value: "all", label: "everything" },
+          ]}
+          onChange={(v) => setScope(v as typeof scope)}
+        />
         <button
           type="button"
           className="btn secondary"
@@ -974,20 +977,21 @@ export function MapOptionsModal({
             <label className="options-oneline-label" htmlFor="journal-history-window">
               Journal history
             </label>
-            <select
+            <Select
               id="journal-history-window"
+              className="options-inline-select"
               value={serverJournalHistoryPreset}
-              onChange={(ev) => {
-                void persistJournalHistory(parseJournalHistoryPreset(ev.target.value));
+              options={[
+                { value: "all", label: journalHistoryPresetLabel("all") },
+                ...journalHistoryWindowPresetChoices().map((p) => ({
+                  value: p,
+                  label: journalHistoryPresetLabel(p),
+                })),
+              ]}
+              onChange={(v) => {
+                void persistJournalHistory(parseJournalHistoryPreset(v));
               }}
-            >
-              <option value="all">{journalHistoryPresetLabel("all")}</option>
-              {journalHistoryWindowPresetChoices().map((p) => (
-                <option key={p} value={p}>
-                  {journalHistoryPresetLabel(p)}
-                </option>
-              ))}
-            </select>
+            />
             <InfoPopover title="Journal history" label="What journal history changes">
               <p>
                 By default the app merges <strong>every</strong> <code>Journal.*.log</code> in your Elite

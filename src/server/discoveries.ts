@@ -39,6 +39,7 @@ import type { GameStateStore } from "./gameState.js";
 import { bodyScanValueCredits, starScanValueCredits } from "./explorationValue.js";
 import { regionForSystem } from "./regionMapData.js";
 import { journalSurfaceGravityToG } from "../shared/journalPhysics.js";
+import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
 
 /**
  * Radii are reported against the Sun and the Earth, never in kilometres.
@@ -133,10 +134,8 @@ export function buildDiscoveries(store: GameStateStore, projectRoot: string): Di
         speciesConfirmed: 0,
         firstDiscoveries: 0,
         // The game's own answer, straight from the main star. `false` means nobody had been here.
-        firstDiscoveredSystem: (() => {
-          const wd = store.mainStarWasDiscoveredBySystem.get(addr);
-          return typeof wd === "boolean" ? !wd : null;
-        })(),
+        // Not in a system Frontier populated, whatever the star says (commanderDiscoveredSystem).
+        firstDiscoveredSystem: store.commanderDiscoveredSystem(addr),
         firstFootfalls: 0,
         dssMapped: 0,
         primaryStarType: null,
@@ -164,14 +163,13 @@ export function buildDiscoveries(store: GameStateStore, projectRoot: string): Di
     if (at && (!sys.firstVisit || at < sys.firstVisit)) sys.firstVisit = at;
     if (at && (!sys.lastVisit || at > sys.lastVisit)) sys.lastVisit = at;
 
-    const firstDiscoverer = rec.wasDiscovered === false;
+    const firstDiscoverer = commanderFirstDiscoveredBody(addr, rec.wasDiscovered);
     /*
       The system's own verdict, carried onto each row so the Bodies and Stars tabs can ask the same
       question the Systems tab asks. Read from the store rather than recomputed: `gameState` decides
       it on the arrival star and that is the only definition the game itself uses.
     */
-    const wdSystem = store.mainStarWasDiscoveredBySystem.get(addr);
-    const firstDiscoveredSystem = typeof wdSystem === "boolean" ? !wdSystem : null;
+    const firstDiscoveredSystem = store.commanderDiscoveredSystem(addr);
     if (firstDiscoverer) sys.firstDiscoveries += 1;
 
     if (rec.starType?.trim()) {

@@ -1,6 +1,7 @@
 /**
  * The full species card and its sub-blocks, split out of App.tsx (7.3).
  */
+import { codexMarkTitle } from "./codexMark";
 import { useToast } from "./ui/feedback";
 import { InfoPopover } from "./ui/Tooltip";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
@@ -553,6 +554,22 @@ export const SpeciesCard = memo(function SpeciesCard({
         </span>
       ) : null}
       {/* Named by the composition scanner, never sampled on foot — so the value here is unclaimed. */}
+      {/* Who logged it here (owner, 2026-09-25): you, from your journal, or other commanders via Spansh. */}
+      {m.loggedBy === "others" ? (
+        <span
+          className="species-compact-payout-done species-compact-payout-done--others"
+          title="Logged on this body by other commanders (Spansh). Not from your journal."
+        >
+          Logged by other commanders
+        </span>
+      ) : m.loggedBy === "you" ? (
+        <span
+          className="species-compact-payout-done species-compact-payout-done--you"
+          title="Logged on this body in your own journal: a foot scan or the composition scanner."
+        >
+          Logged by you
+        </span>
+      ) : null}
       {m.confirmedByCompositionScan ? (
         <span
           className="species-compact-payout-done species-compact-payout-done--compscan"
@@ -677,7 +694,15 @@ export const SpeciesCard = memo(function SpeciesCard({
             ⌖
           </span>
         ) : null}
-        {m.notInCodex ? (
+        {m.codexNew ? (
+          <span
+            className="species-codex-mark"
+            title={codexMarkTitle(m)}
+            aria-label="New codex entry for this region"
+          >
+            [CODEX]
+          </span>
+        ) : m.notInCodex ? (
           <span
             className="species-codex-new"
             title="No codex entry for this species in your journals — you have never logged one. The first sample of a species is worth more than the ones after it, and this is the page that is still blank."

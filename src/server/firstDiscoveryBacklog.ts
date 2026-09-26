@@ -179,7 +179,7 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
       dssComplete: b.dssComplete,
       // Filled in per request by `withDistances`; see the field's own note.
       distanceLy: null,
-      firstDiscovery: store.mainStarWasDiscoveredBySystem.get(b.systemAddress) === false,
+      firstDiscovery: store.commanderDiscoveredSystem(b.systemAddress) === true,
       footfallObserved: footfallObserved(store, b.key),
     });
   }

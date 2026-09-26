@@ -30,6 +30,7 @@ import {
 } from "./regionBackdrop";
 import { regionIndexForCoords } from "@shared/regionMap.js";
 import type { BacklogMapDTO, CommanderSectorsDTO } from "@shared/types";
+import { CopySystemButton } from "./CopySystemButton";
 
 type Load =
   | { state: "loading" }
@@ -207,7 +208,13 @@ export function GalaxyMapScreen() {
         {load.state === "ready" ? (
           <p className="galaxy-screen__meta">
             {load.file.cells.length} sectors · built {new Date(load.file.generatedAt).toLocaleString()}
-            {commander?.system ? ` · you are in ${commander.system}` : ""}
+            {commander?.system ? (
+              <>
+                {" "}
+                · you are in {commander.system}
+                <CopySystemButton system={commander.system} />
+              </>
+            ) : null}
           </p>
         ) : null}
       </header>

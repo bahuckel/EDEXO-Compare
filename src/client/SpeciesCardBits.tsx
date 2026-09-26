@@ -8,6 +8,7 @@ import type {
   OtherMatchDetailCardDTO,
   SpeciesProvenance,
 } from "@shared/types";
+import { CopySystemButton } from "./CopySystemButton";
 
 export function FootScanHitBlock({ hit }: { hit: FootScanMatchPayload["hits"][number] }) {
   const src = hit.confirmationSource === "analyse" ? "FOOT CATALOG — Analyse" : "FOOT CATALOG — Sample";
@@ -16,7 +17,8 @@ export function FootScanHitBlock({ hit }: { hit: FootScanMatchPayload["hits"][nu
       <div className="foot-scan-hit-header">
         <span className="foot-scan-body-name">{hit.bodyName}</span>
         <span className="foot-scan-hit-meta dim tiny">
-          {hit.starSystem || "—"} · {hit.recordedAt.slice(0, 19).replace("T", " ")}
+          {hit.starSystem || "—"}
+          <CopySystemButton system={hit.starSystem} /> · {hit.recordedAt.slice(0, 19).replace("T", " ")}
         </span>
         <span className="foot-scan-hit-source">{src}</span>
       </div>

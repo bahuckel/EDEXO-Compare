@@ -22,6 +22,7 @@ import { POI_GROUP_OPTIONS } from "@shared/gecCategories";
 import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
 import type { PoiQueryResultDTO } from "@shared/types";
+import { CopySystemButton } from "./CopySystemButton";
 
 function ly(d: number | null): string {
   if (d == null) return "—";
@@ -269,6 +270,7 @@ export function PoiModal({ onClose }: { onClose: () => void }) {
                       </td>
                       <td>
                         {r.system || "—"}
+                        <CopySystemButton system={r.system} />
                         {r.region ? <span className="dim"> · {r.region}</span> : null}
                       </td>
                       <td className="dim">{r.typeLabel}</td>

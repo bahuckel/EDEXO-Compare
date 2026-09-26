@@ -126,3 +126,76 @@ export function codexHasSpecies(logged: ReadonlySet<string>, displayName: string
   if (!key || key.split(" ").length < 2) return false;
   return logged.has(key);
 }
+
+/*
+  [CODEX] — per region and per colour (owner, 2026-09-26).
+
+  The game's CODEX tab keeps a page per galactic region, and on it every colour variant is an entry of
+  its own: "Stratum Tectonicas - Green" logged in The Veils says nothing about Inner Orion Spur, nor
+  about "Stratum Tectonicas - Lime" in The Veils. `CodexEntry` carries all three — the variant in
+  `Name_Localised`, the region in `Region_Localised` — and `IsNewEntry` is the game saying "first in
+  this region for you": across the owner's journals the 326 IsNewEntry lines are exactly the 326
+  distinct (entry, region) pairs.
+
+  Keys are `region|species|colour`, plus `region|species|*` for "any colour of it here" (used when the
+  app cannot tell which colour a body will grow). Entries from journals the commander no longer has
+  are simply absent, and those species show as new — his call: "mark them as new".
+*/
+
+/** A region name as a key: "The Veils" and "the veils" are one region. */
+export function codexRegionKey(region: string): string {
+  return region
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** The keys one biology `CodexEntry` adds, or [] when it is not an organic with a region. */
+export function codexRegionKeysFromLine(line: {
+  event?: unknown;
+  Category?: unknown;
+  Category_Localised?: unknown;
+  Name_Localised?: unknown;
+  Region_Localised?: unknown;
+}): string[] {
+  const species = codexSpeciesFromLine(line as Parameters<typeof codexSpeciesFromLine>[0]);
+  const region = typeof line.Region_Localised === "string" ? codexRegionKey(line.Region_Localised) : "";
+  if (!species || !region) return [];
+  const name = typeof line.Name_Localised === "string" ? line.Name_Localised : "";
+  const dash = name.indexOf(" - ");
+  const colour =
+    dash >= 0
+      ? name
+          .slice(dash + 3)
+          .trim()
+          .toLowerCase()
+      : "";
+  return [`${region}|${species}|${colour}`, `${region}|${species}|*`];
+}
+
+/**
+ * The colours of this species not yet logged in this region, from the colour label the app shows
+ * ("Green", "Cyan or Orange", "(unknown)"). With no colour to go on the question becomes "any colour
+ * of it here?". Null when nothing is new.
+ */
+export function codexNewColoursInRegion(
+  logged: ReadonlySet<string>,
+  region: string,
+  displayName: string,
+  colourLabel: string | null | undefined,
+): string[] | null {
+  const r = codexRegionKey(region);
+  const species = codexSpeciesKey(displayName);
+  if (!r || !species) return null;
+  const label = (colourLabel ?? "").trim();
+  const colours =
+    !label || label.startsWith("(")
+      ? []
+      : label
+          .split(" or ")
+          .map((c) => c.trim())
+          .filter(Boolean);
+  if (colours.length === 0) return logged.has(`${r}|${species}|*`) ? null : [];
+  const fresh = colours.filter((c) => !logged.has(`${r}|${species}|${c.toLowerCase()}`));
+  return fresh.length ? fresh : null;
+}

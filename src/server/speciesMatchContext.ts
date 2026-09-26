@@ -39,9 +39,11 @@ export function systemExplorationScanIndex(
   store: GameStateStore,
   systemAddress: number,
 ): Map<number, ExplorationScanRecord> {
-  const signature = `${systemAddress}:${store.explorationScansRevision}`;
+  const signature = `${systemAddress}:${store.explorationScansRevision}:${store.remoteSystems.get(systemAddress)?.fetchedAt ?? ""}`;
   if (cachedScanIndex && cachedScanIndex.signature === signature) return cachedScanIndex.byId;
   const byId = new Map<number, ExplorationScanRecord>();
+  // A Spansh lookup is the weakest source, so it goes in first and anything of his own overwrites it.
+  for (const r of store.remoteSystems.get(systemAddress)?.records ?? []) byId.set(r.bodyId, r);
   for (const [, r] of store.soldExplorationScans) {
     if (r.systemAddress === systemAddress) byId.set(r.bodyId, r);
   }
@@ -302,7 +304,8 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   }
 
   const ctx: SpeciesMatchContext = {};
-  const pos = store.systemPositions.get(exo.systemAddress);
+  const pos =
+    store.systemPositions.get(exo.systemAddress) ?? store.remoteSystems.get(exo.systemAddress)?.coords;
   if (pos) {
     const root = getProjectRoot();
     const idx = regionIndexForSystem(root, pos.x, pos.z);
@@ -333,6 +336,10 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
    */
   if (store.commanderPos && exo.systemAddress === store.currentSystemAddress) {
     ctx.systemCoords = store.commanderPos;
+  } else {
+    // A looked-up system carries its own coordinates from Spansh, so the nebula / core gates can judge it.
+    const remoteCoords = store.remoteSystems.get(exo.systemAddress)?.coords;
+    if (remoteCoords) ctx.systemCoords = remoteCoords;
   }
   /**
    * What else is in this system, for the companion-body conditions (Amphora, the Brain Trees).

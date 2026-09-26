@@ -135,3 +135,119 @@ describe("computeSystemMapLayout", () => {
     expect(l.items.find((i) => i.bodyId === 9)!.ringClass).toBe("placeholder");
   });
 });
+
+/*
+ * Every pair orbits a barycentre, and barycentres nest (owner, 2026-09-26). Flyai Flyuae UO-Z b0 has
+ * A 4 + A 5 round barycentre 11 and A 6 + A 7 round 14 — neither pair has a moon, and the map used to
+ * draw a planet-pair barycentre only when one did. Its star also has a belt the map never showed.
+ */
+describe("barycentres and belts", () => {
+  const bary = (bodyId: number, children: SystemMapNodeDTO[]) =>
+    node({ bodyId, bodyName: "Mutual barycentre", label: "×", mapLabel: "×", isBarycentre: true, children });
+  const star = (children: SystemMapNodeDTO[], extra: Partial<SystemMapNodeDTO> = {}) =>
+    node({
+      bodyId: 1,
+      bodyName: `${SYSTEM} A`,
+      label: "M",
+      mapLabel: "M",
+      isStar: true,
+      orbitPrimaryKey: "",
+      children,
+      ...extra,
+    });
+  const at = (l: ReturnType<typeof computeSystemMapLayout>, id: number) =>
+    l.items.find((i) => i.bodyId === id)!;
+
+  it("draws a moonless planet pair as a bracket above the row with its barycentre on it", () => {
+    const l = computeSystemMapLayout(
+      [
+        star([
+          node({ bodyId: 7, bodyName: `${SYSTEM} A 1` }),
+          bary(-11, [
+            node({ bodyId: 12, bodyName: `${SYSTEM} A 4` }),
+            node({ bodyId: 13, bodyName: `${SYSTEM} A 5` }),
+          ]),
+        ]),
+      ],
+      SYSTEM,
+    );
+    const b = at(l, -11);
+    const p4 = at(l, 12);
+    const p5 = at(l, 13);
+    expect(b.bracketBary).toBe("above");
+    expect(b.cy).toBeLessThan(p4.cy - p4.r);
+    expect(b.cx).toBeCloseTo((p4.cx + p5.cx) / 2);
+    expect(l.bracketSegments.some((s) => s.y1 === s.y2 && s.x1 === p4.cx && s.x2 === p5.cx)).toBe(true);
+  });
+
+  it("steps a barycentre of a barycentre and a planet one level higher", () => {
+    const l = computeSystemMapLayout(
+      [
+        star([
+          bary(-20, [
+            node({ bodyId: 5, bodyName: `${SYSTEM} A 5` }),
+            bary(-21, [
+              node({ bodyId: 6, bodyName: `${SYSTEM} A 6` }),
+              node({ bodyId: 7, bodyName: `${SYSTEM} A 7` }),
+            ]),
+          ]),
+        ]),
+      ],
+      SYSTEM,
+    );
+    expect(at(l, -20).cy).toBeLessThan(at(l, -21).cy);
+  });
+
+  it("draws a moon pair's barycentre on a bracket to the right of the moon column", () => {
+    const l = computeSystemMapLayout(
+      [
+        star([
+          node({
+            bodyId: 2,
+            bodyName: `${SYSTEM} A 1`,
+            children: [
+              bary(-30, [
+                node({ bodyId: 3, bodyName: `${SYSTEM} A 1 a` }),
+                node({ bodyId: 4, bodyName: `${SYSTEM} A 1 b` }),
+              ]),
+            ],
+          }),
+        ]),
+      ],
+      SYSTEM,
+    );
+    const b = at(l, -30);
+    expect(b.bracketBary).toBe("right");
+    expect(b.cx).toBeGreaterThan(at(l, 3).cx + at(l, 3).r);
+  });
+
+  it("draws a star's belt between the star and its first planet", () => {
+    const l = computeSystemMapLayout(
+      [star([node({ bodyId: 7, bodyName: `${SYSTEM} A 1` })], { beltClusters: 3 })],
+      SYSTEM,
+    );
+    const s = at(l, 1);
+    const p = at(l, 7);
+    expect(l.belts).toHaveLength(1);
+    expect(l.belts[0]!.cx).toBeGreaterThan(s.cx + s.r);
+    expect(l.belts[0]!.cx).toBeLessThan(p.cx - p.r);
+  });
+
+  it("carries the bio count, the ×5 and where the ship is onto the drawn items", () => {
+    const l = computeSystemMapLayout(
+      [
+        star([
+          node({
+            bodyId: 7,
+            bodyName: `${SYSTEM} A 1`,
+            bioSignals: 3,
+            firstFootfallX5: true,
+            youAreHere: true,
+          }),
+        ]),
+      ],
+      SYSTEM,
+    );
+    expect(at(l, 7)).toMatchObject({ bioSignals: 3, firstFootfallX5: true, youAreHere: true });
+  });
+});

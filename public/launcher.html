@@ -1500,8 +1500,8 @@
                 <span>Your default browser, on this PC</span>
               </button>
               <button type="button" role="menuitem" data-open-mode="window">
-                <strong>This window</strong>
-                <span>Replaces the launcher until you close it</span>
+                <strong>App window</strong>
+                <span>Its own window — the launcher stays open</span>
               </button>
               <button type="button" role="menuitem" data-open-mode="phone">
                 <strong>Phone view</strong>
@@ -2755,8 +2755,9 @@
           Where "Open exobiology UI" opens (owner's launcher request).
 
           Three destinations, one remembered choice, browser by default. The old button navigated
-          this window to the app, which left no way back to the launcher short of restarting it —
-          that is still offered, as "This window", but it is no longer the only option.
+          this window to the app, which left no way back to the launcher short of restarting it. That
+          became "This window", and then (owner, 2026-09-26) "App window": the same app in a window of
+          its own, so closing it leaves the launcher where it was. The stored value is still "window".
 
           Opening the system browser needs the server: window.open inside Electron makes another
           Electron window, not a browser. The route takes a two-value enum rather than a URL, so it
@@ -2764,7 +2765,7 @@
         */
         var OPEN_MODES = {
           browser: { sub: "In your browser", view: "app" },
-          window: { sub: "In this window", view: null },
+          window: { sub: "In an app window", view: null },
           phone: { sub: "Phone view — read-only triage", view: "phone" },
         };
 
@@ -2793,6 +2794,40 @@
             /* the choice still applies for this session */
           }
           applyOpenMode(mode);
+          // And in user data, where a rebuilt or moved exe still finds it (localStorage lives in the
+          // Chromium profile, which is not the commander's data folder).
+          fetch(apiUrl("/api/launcher/open-mode"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: mode }),
+          }).catch(function () {
+            /* localStorage still has it */
+          });
+        }
+
+        /* The saved choice wins over this profile's localStorage; a launcher with no route keeps the local one. */
+        function loadSavedOpenMode() {
+          fetch(apiUrl("/api/launcher/open-mode"))
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .then(function (j) {
+              if (!j || !j.mode || !OPEN_MODES[j.mode]) {
+                // Nothing saved yet: carry this profile's choice over once, so an upgrade keeps it.
+                var local = readOpenMode();
+                if (j && j.ok && local !== "browser") setOpenMode(local);
+                return;
+              }
+              try {
+                localStorage.setItem(LS_OPEN_MODE, j.mode);
+              } catch (e) {
+                /* fine */
+              }
+              applyOpenMode(j.mode);
+            })
+            .catch(function () {
+              /* offline server: the local choice stands */
+            });
         }
 
         function closeOpenMenu() {
@@ -2803,7 +2838,23 @@
         function openChosenUi() {
           var mode = readOpenMode();
           if (mode === "window") {
-            location.href = location.origin + "/";
+            var bridge = window.edexoElectron;
+            if (bridge && typeof bridge.openAppWindow === "function") {
+              bridge.openAppWindow().then(
+                function (r) {
+                  if (r && r.opened) return;
+                  launcherActionMsg.className = "msg-launcher err";
+                  launcherActionMsg.textContent = "Could not open the app window" + (r && r.error ? ": " + r.error : ".");
+                },
+                function (e) {
+                  launcherActionMsg.className = "msg-launcher err";
+                  launcherActionMsg.textContent = "Could not open the app window: " + String(e && e.message ? e.message : e);
+                },
+              );
+            } else {
+              // The launcher in a browser (CLI server): a new tab is the nearest thing to a window.
+              window.open("/", "_blank", "noopener");
+            }
             return;
           }
           launcherActionMsg.className = "msg-launcher";
@@ -2834,6 +2885,7 @@
         }
 
         applyOpenMode(readOpenMode());
+        loadSavedOpenMode();
         btnMainUi.addEventListener("click", openChosenUi);
         btnMainUiMenu.addEventListener("click", function (ev) {
           ev.stopPropagation();
@@ -3233,17 +3285,34 @@
         }
         /* Mirror every HUD setting to the server, so a phone renders the HUD the same way (task 13). */
         var syncHudPrefsTimer = null;
+        function hudPrefsNow() {
+          var prefs = {};
+          try { prefs.theme = JSON.parse(localStorage.getItem(LS_HUD_THEME) || "{}") || {}; } catch (e) {}
+          try { var sc = parseFloat(localStorage.getItem(LS_HUD_SCALE) || ""); if (isFinite(sc)) prefs.scale = sc; } catch (e) {}
+          try { var op = parseFloat(localStorage.getItem(LS_HUD_ALPHA) || ""); if (isFinite(op)) prefs.opacity = op; } catch (e) {}
+          try { prefs.candOrder = localStorage.getItem(LS_HUD_CAND) || "likelihood"; } catch (e) {}
+          try { prefs.region = localStorage.getItem(LS_HUD_REGION) !== "0"; } catch (e) {}
+          try { prefs.audio = localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) {}
+          return prefs;
+        }
         function syncHudPrefs() {
+          /*
+            Live to the overlays first (owner, 2026-09-26). They have a session of their own now, so
+            the storage event that used to move them while a slider was dragged no longer reaches
+            them; the server mirror arrives ~1.5 s after the slider stops. The Electron process
+            forwards this to every HUD window at once.
+          */
+          try {
+            if (window.edexoElectron && typeof window.edexoElectron.pushHudPrefs === "function") {
+              window.edexoElectron.pushHudPrefs(hudPrefsNow());
+            }
+          } catch (e) {
+            /* the mirror below still gets there */
+          }
           if (syncHudPrefsTimer) clearTimeout(syncHudPrefsTimer);
           syncHudPrefsTimer = setTimeout(function () {
             syncHudPrefsTimer = null;
-            var prefs = {};
-            try { prefs.theme = JSON.parse(localStorage.getItem(LS_HUD_THEME) || "{}") || {}; } catch (e) {}
-            try { var sc = parseFloat(localStorage.getItem(LS_HUD_SCALE) || ""); if (isFinite(sc)) prefs.scale = sc; } catch (e) {}
-            try { var op = parseFloat(localStorage.getItem(LS_HUD_ALPHA) || ""); if (isFinite(op)) prefs.opacity = op; } catch (e) {}
-            try { prefs.candOrder = localStorage.getItem(LS_HUD_CAND) || "likelihood"; } catch (e) {}
-            try { prefs.region = localStorage.getItem(LS_HUD_REGION) !== "0"; } catch (e) {}
-            try { prefs.audio = localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) {}
+            var prefs = hudPrefsNow();
             fetch(apiUrl("/api/settings/hud-prefs"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },

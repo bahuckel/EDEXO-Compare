@@ -964,3 +964,21 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .system-map-goto:hover {
   filter: brightness(1.08);
 }
+
+/* Legend marks for the shared drawing (SystemMapDrawing): bio ring, ×5 ring, you-are-here. */
+.system-map-legend-ring {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  margin-right: 0.3em;
+  border-radius: 50%;
+  border: 2px solid #7be07b;
+  vertical-align: -0.1em;
+}
+.system-map-legend-ring--x5 {
+  border-color: #ffb060;
+}
+.system-map-legend-you {
+  color: #5fe0ff;
+  margin-right: 0.3em;
+}

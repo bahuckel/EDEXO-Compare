@@ -47,6 +47,8 @@ import {
 } from "../shared/eliteDesignation.js";
 import { explorationRecordHasPlanetSlotDesignation } from "../shared/planetSlotDesignation.js";
 import { explorationRecordIsBeltClusterLike, explorationRecordIsStellar } from "./explorationStellar.js";
+import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
+import { footfallCertainty } from "../shared/footfallValue.js";
 
 const isBeltClusterRecord = explorationRecordIsBeltClusterLike;
 
@@ -585,7 +587,7 @@ function exoMatchRun(
   r: ExplorationScanRecord,
   spatialCatalogue: SpatialCatalogue | null,
 ): ExoMatchRun | null {
-  const exo = store.bodies.get(bodyKey(r.systemAddress, r.bodyId));
+  const exo = store.bioBodyState(bodyKey(r.systemAddress, r.bodyId));
   if (!exo || !bodyHasExoMarkers(exo)) return null;
   const scan = scanForMatch(store, r, exo);
   if (!scan?.PlanetClass) return null;
@@ -712,6 +714,11 @@ export function buildPrimaryStarsHeader(
       shortLabel,
       starRole,
       fullSpectralNotation: formatFullSpectralNotation(s.starType, s.subclass, s.luminosity),
+      // `H`, and Sagittarius A*'s `SupermassiveBlackHole`, which no list entry names.
+      ...(cfg.blackHoleExact.some((x) => x.toUpperCase() === (s.starType ?? "").trim().toUpperCase()) ||
+      /blackhole/i.test(s.starType ?? "")
+        ? { blackHole: true as const }
+        : {}),
     };
   });
   const systemName = starSystemName.trim() || stars[0]?.starSystem?.trim() || "—";
@@ -774,7 +781,9 @@ export function explorationRecordsForSystem(
   for (const [key, r] of store.explorationScans) if (key.startsWith(prefix)) byBodyId.set(r.bodyId, r);
   if (byBodyId.size > 0) return [...byBodyId.values()];
   for (const [key, r] of store.edsmExplorationByKey) if (key.startsWith(prefix)) byBodyId.set(r.bodyId, r);
-  return [...byBodyId.values()];
+  if (byBodyId.size > 0) return [...byBodyId.values()];
+  // A system looked up from Spansh and never flown to (remoteSystems.ts).
+  return [...(store.remoteSystems.get(systemAddress)?.records ?? [])];
 }
 
 export function buildSystemMapSnapshot(
@@ -796,7 +805,23 @@ export function buildSystemMapSnapshot(
   if (focusSystemAddress == null) return null;
   /** Narrowed copy: the closures below lose the null-check on the captured parameter. */
   const focusAddr: number = focusSystemAddress;
-  let recs = explorationRecordsForSystem(store, focusSystemAddress).filter((r) => !isBeltClusterRecord(r));
+  const allRecs = explorationRecordsForSystem(store, focusSystemAddress);
+  /*
+    Belt clusters are not bodies on the map, but the belt is: the game draws it between the star and
+    its first planet. Counted per star from each cluster's `Parents` ({Ring} then {Star}).
+  */
+  const beltClustersByStar = new Map<number, number>();
+  for (const r of allRecs) {
+    if (!isBeltClusterRecord(r) || !Array.isArray(r.parents)) continue;
+    for (const p of r.parents as Record<string, unknown>[]) {
+      const star = p && typeof p === "object" ? p.Star : undefined;
+      if (typeof star === "number") {
+        beltClustersByStar.set(star, (beltClustersByStar.get(star) ?? 0) + 1);
+        break;
+      }
+    }
+  }
+  let recs = allRecs.filter((r) => !isBeltClusterRecord(r));
   if (recs.length === 0) return null;
 
   const starSystemName = canonicalStarSystemNameForMap(recs);
@@ -860,14 +885,14 @@ export function buildSystemMapSnapshot(
     }
 
     const bk = bodyKey(r.systemAddress, r.bodyId);
-    const exo = store.bodies.get(bk);
+    const exo = store.bioBodyState(bk);
     const hasExo = exo ? bodyHasJournalExoEvidence(exo) : false;
     const tf = terraformableFromRecord(r);
     const mass = r.massEM ?? 1;
     const isStar = isStarOnSystemMap(r, starSystemName);
     const journalStellar = explorationRecordIsStellar(r);
 
-    const fd = r.wasDiscovered === false;
+    const fd = commanderFirstDiscoveredBody(r.systemAddress, r.wasDiscovered);
 
     let dssVersusFssUplift: number | null = null;
     let dssProjected: number | null = null;
@@ -1153,7 +1178,7 @@ export function buildSystemMapSnapshot(
         }
       }
 
-      const isUnexplored = r.wasDiscovered === false;
+      const isUnexplored = commanderFirstDiscoveredBody(r.systemAddress, r.wasDiscovered);
 
       return {
         bodyId: r.bodyId,
@@ -1175,6 +1200,27 @@ export function buildSystemMapSnapshot(
           typeof r.semiMajorAxis === "number" && Number.isFinite(r.semiMajorAxis) ? r.semiMajorAxis : null,
         isArrivalBody: arrivalBodyId != null && r.bodyId === arrivalBodyId,
         isUnexplored,
+        ...(isHubStar && beltClustersByStar.get(r.bodyId)
+          ? { beltClusters: beltClustersByStar.get(r.bodyId) }
+          : {}),
+        ...(() => {
+          const bk = bodyKey(r.systemAddress, r.bodyId);
+          const bio = store.bioBodyState(bk)?.biologicalSignals ?? null;
+          const pr = d?.exoPayoutRange ?? null;
+          const x5 =
+            pr != null &&
+            footfallCertainty({
+              journalWasFootfalled: pr.journalWasFootfalled,
+              commanderFirstFootfall: pr.commanderFirstFootfall,
+            }) === "unwalked";
+          const ringed = !isHubStar && !journalStellarNode && (r.ringCount ?? 0) > 0;
+          return {
+            ...(bio != null && bio > 0 ? { bioSignals: bio } : {}),
+            ...(ringed ? { rings: r.ringCount } : {}),
+            ...(x5 ? { firstFootfallX5: true } : {}),
+            ...(store.currentBodyKey === bk ? { youAreHere: true } : {}),
+          };
+        })(),
       };
     } finally {
       visiting.delete(bodyId);

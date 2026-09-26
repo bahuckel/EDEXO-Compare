@@ -1,0 +1,193 @@
+/*
+ * The System card row (SystemCard.tsx) — Discord batch O-E2. Cockpit panels: square, cut corner,
+ * hairline; cards wrap onto a new line instead of fading out.
+ */
+.sys-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  margin: 0.35rem 0 0.2rem;
+}
+@media (min-width: 1500px) {
+  .top > .sys-row {
+    grid-area: context;
+    width: auto;
+    align-self: start;
+  }
+}
+.sys-row__cards {
+  display: flex;
+  flex-wrap: wrap;
+  /* Star cards keep their own one-line height instead of stretching to the System card's. */
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.cockpit-card {
+  position: relative;
+  padding: 0.4rem 0.6rem;
+  background: linear-gradient(180deg, rgba(48, 24, 8, 0.35), transparent 45%), #0d0907;
+  border: 1px solid var(--accent-a22);
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+}
+.sys-card__k {
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ---- the System card ---- */
+.sys-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  /*
+    As wide as its own line of chips and name, not squeezed to the minimum: the header gives this
+    row no width of its own, so a shrinking card wrapped the name and the chips onto extra lines.
+  */
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: 17rem;
+  max-width: 34rem;
+}
+.sys-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.6rem;
+}
+.sys-card__head .sys-card__btn {
+  flex: 0 0 auto;
+}
+.sys-card__btn {
+  font: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.5rem;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent-a22);
+  cursor: pointer;
+}
+.sys-card__btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+.sys-card__name {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.sys-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.sys-chip {
+  display: inline-block;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--accent-a22);
+  color: var(--text-dim);
+  cursor: help;
+}
+.sys-chip--ok {
+  color: var(--ok);
+  border-color: rgba(79, 208, 255, 0.35);
+}
+.sys-chip--warn,
+.sys-chip--kind-bubble,
+.sys-chip--kind-colony,
+.sys-chip--kind-colonising,
+.sys-chip--kind-facility {
+  color: var(--warn);
+  border-color: rgba(255, 210, 63, 0.35);
+}
+.sys-chip--kind-empty {
+  color: var(--ok);
+  border-color: rgba(79, 208, 255, 0.35);
+}
+.sys-chip--first {
+  color: #7be07b;
+  border-color: rgba(123, 224, 123, 0.35);
+}
+.sys-chip--src {
+  color: var(--accent-bright);
+  border-style: dashed;
+}
+
+/* ---- star and notable cards ---- */
+.sys-star-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: help;
+}
+.sys-star-card__cls {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--text);
+}
+.sys-star-dot {
+  flex: 0 0 auto;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+}
+/* His colours (2026-09-26). */
+.sys-star-dot--fuel {
+  background: #4fd46a;
+  box-shadow: 0 0 6px rgba(79, 212, 106, 0.6);
+}
+.sys-star-dot--none {
+  background: #a36bff;
+  box-shadow: 0 0 6px rgba(163, 107, 255, 0.55);
+}
+.sys-star-dot--neutron {
+  background: #4fe0ff;
+  box-shadow: 0 0 6px rgba(79, 224, 255, 0.6);
+}
+.sys-star-dot--hazard {
+  background: #ff4a4a;
+  box-shadow: 0 0 6px rgba(255, 74, 74, 0.6);
+}
+.sys-notable-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 11rem;
+}
+.sys-notable-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sys-notable-card__row {
+  font: inherit;
+  font-size: var(--fs-sm);
+  padding: 0.05rem 0;
+  color: var(--text-dim);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.sys-notable-card__row:hover {
+  color: var(--accent-bright);
+}
+.sys-notable-card__dot {
+  color: var(--accent);
+}
+.sys-notable-card__dot--dss {
+  color: var(--ok);
+}

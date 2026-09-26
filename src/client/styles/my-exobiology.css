@@ -354,24 +354,64 @@
   max-width: min(520px, 100%);
 }
 
-.modal-panel--my-exo {
-  max-width: min(520px, 100%);
-}
-
 /*
-  The table tabs need room the species list does not.
-
-  520px is right for a column of cards and hopeless for twelve columns of figures, so the width is a
-  modifier rather than a change to the shared panel — widening both would stretch the exobiology
-  list it was sized for. Tall as well as wide: the point of the tables is scanning down them.
+  One size for every tab (owner, 2026-09-25). The panel used to shrink to its content with a cap
+  that itself changed between tabs — 520 px for the cards, 1480 px for the tables — so switching
+  tabs resized the window every time. Now it is a fixed box and the lists scroll inside it; a
+  ScrollArea says when something is out of view.
 */
-.modal-panel--discoveries {
-  max-width: min(1480px, 97vw);
-  max-height: min(90vh, 900px);
+.modal-panel--my-exo {
+  width: min(1480px, 97vw);
+  height: min(90vh, 900px);
+  max-width: none;
+  max-height: none;
 }
 
 .modal-body--my-exo {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding-top: 0.5rem;
+}
+
+/* ScrollArea: the viewport scrolls, the hints sit over its right edge. */
+.scroll-area {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.scroll-area__viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) transparent;
+}
+.scroll-area__fade-right {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  width: 2.2rem;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(13, 9, 7, 0.9));
+}
+.scroll-area__more {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  background: rgba(13, 9, 7, 0.88);
+  border: 1px solid var(--accent-a22);
+  pointer-events: none;
 }
 
 /* The search that replaced the intro line (A1). Input, live count, and the ⓘ holding what the
@@ -416,11 +456,10 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: start;
   gap: var(--s-6);
-  max-height: min(58vh, 520px);
-  overflow-y: auto;
 }
 
 .my-exo-card {
@@ -789,8 +828,6 @@
 /* The table scrolls inside the dialog rather than growing it — the header row stays put, which is
    what makes a wide table with a dozen columns usable at all. */
 .disc-table-wrap {
-  overflow: auto;
-  max-height: min(58vh, 520px);
   border: 1px solid var(--accent-dim);
   border-radius: var(--radius-sm);
 }
@@ -869,6 +906,94 @@
 
 .disc-link:hover {
   text-decoration: underline;
+}
+
+.disc-layout {
+  display: flex;
+  margin-right: var(--s-4);
+}
+.disc-layout__btn {
+  background: transparent;
+  border: 1px solid var(--accent-dim);
+  color: var(--text-dim);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-sm);
+  padding: 0.2rem 0.6rem;
+}
+.disc-layout__btn + .disc-layout__btn {
+  border-left: 0;
+}
+.disc-layout__btn:hover {
+  color: var(--text);
+}
+.disc-layout__btn--on {
+  background: var(--accent-dim);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Cards: the same columns as the list, title first, the rest as labelled facts. */
+.disc-card-sort {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-3);
+}
+.disc-card-sort .ui-select.disc-card-sort__select {
+  width: auto;
+  min-width: 11rem;
+}
+.disc-card-sort__dir {
+  font: inherit;
+  font-size: var(--fs-2xs);
+  padding: 0.3rem 0.5rem;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent-a22);
+  cursor: pointer;
+}
+.disc-card-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 1.6rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-items: start;
+  gap: var(--s-6);
+}
+.disc-card {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--accent-a22);
+  background: linear-gradient(180deg, rgba(48, 24, 8, 0.22), transparent 30%), #0d0907;
+}
+.disc-card__title {
+  margin: 0 0 0.4rem;
+  font-weight: 700;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.disc-card__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+}
+.disc-card__fact {
+  min-width: 0;
+}
+.disc-card__fact dt {
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.disc-card__fact dd {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
 }
 
 .disc-more,

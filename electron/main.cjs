@@ -635,6 +635,14 @@ function createHudOverlayWindow(width, height, iconForChild, parentWin) {
       // headless run, and changing the packaged app on an untested assumption is how §31 happened.
       // Flip it, launch the app, and open the overlays before committing.
       sandbox: false,
+      /*
+        A session of their own (owner, 2026-09-26): Chromium keeps one zoom per site per session, and
+        the HUDs are the launcher's site, so zooming the launcher zoomed every overlay. Their
+        settings do not need the launcher's localStorage: with none of their own they read the
+        server's mirror of it (`hudPrefs` in each snapshot, pushed on every change — the phone HUD
+        has always worked that way).
+      */
+      partition: "persist:hud",
     },
   });
   diag?.watchWindow(win, "hud");
@@ -861,6 +869,217 @@ function closeHudOverlayByPath(pathname) {
   return { closed: true, paths: hudPathsFiltered() };
 }
 
+/*
+  Where the windows were (owner, 2026-09-26: "remember their last position… another monitor…
+  resolution, zoom level").
+
+  The launcher and the app window each keep their size, position and maximised state in
+  `window-state.json` beside the HUD layout (user data, so a rebuilt exe keeps it). They are saved as
+  they move — not only on close, which a crash or a killed process never reaches — and restored only
+  while the rectangle still lands on a connected screen, so an unplugged monitor cannot strand a
+  window off-screen. Positions are Electron's device-independent pixels, which is what makes the
+  same numbers right on a monitor with a different scaling.
+
+  Zoom is Chromium's: it remembers a zoom level per site and per session across restarts. That is
+  also why the app window has a session of its own (`persist:app-window`): the launcher, the HUDs
+  and the app are the same site, and in one session zooming the app zoomed the launcher too.
+*/
+const WINDOW_MIN = { launcher: { w: 380, h: 420 }, app: { w: 640, h: 420 } };
+
+function windowStatePath() {
+  return path.join(path.dirname(hudLayoutPath()), "window-state.json");
+}
+
+function readWindowStates() {
+  try {
+    const all = JSON.parse(fs.readFileSync(windowStatePath(), "utf8"));
+    return all && typeof all === "object" ? all : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Saved bounds for one window, or null when there are none or they no longer land on a screen. */
+function readWindowState(name) {
+  let b = readWindowStates()[name];
+  if (!b && name === "app") {
+    // Test builds of 2026-09-26 kept the app window alone in app-window.json.
+    try {
+      b = JSON.parse(fs.readFileSync(path.join(path.dirname(hudLayoutPath()), "app-window.json"), "utf8"));
+    } catch {
+      b = null;
+    }
+  }
+  if (!b || ![b.x, b.y, b.width, b.height].every((n) => Number.isFinite(n))) return null;
+  const min = WINDOW_MIN[name] ?? { w: 320, h: 240 };
+  if (b.width < min.w || b.height < min.h) return null;
+  const onScreen = screen
+    .getAllDisplays()
+    .some(
+      (d) =>
+        b.x < d.workArea.x + d.workArea.width - 80 &&
+        b.x + b.width > d.workArea.x + 80 &&
+        b.y >= d.workArea.y - 20 &&
+        b.y < d.workArea.y + d.workArea.height - 80,
+    );
+  return onScreen
+    ? { x: b.x, y: b.y, width: b.width, height: b.height, maximized: b.maximized === true }
+    : null;
+}
+
+function saveWindowState(name, win) {
+  if (!win || win.isDestroyed() || win.isMinimized()) return;
+  try {
+    const maximized = win.isMaximized();
+    const b = maximized ? win.getNormalBounds() : win.getBounds();
+    const all = readWindowStates();
+    all[name] = { ...b, maximized };
+    fs.mkdirSync(path.dirname(windowStatePath()), { recursive: true });
+    fs.writeFileSync(windowStatePath(), JSON.stringify(all, null, 2), "utf8");
+  } catch {
+    /* the next open uses the default size */
+  }
+}
+
+/** Keep a window's state on disk as it moves; half a second after the last move, and on close. */
+function trackWindowState(name, win) {
+  let t = null;
+  const soon = () => {
+    if (t) clearTimeout(t);
+    t = setTimeout(() => {
+      t = null;
+      saveWindowState(name, win);
+    }, 500);
+  };
+  for (const ev of ["resize", "move", "maximize", "unmaximize"]) win.on(ev, soon);
+  win.on("close", () => {
+    if (t) clearTimeout(t);
+    saveWindowState(name, win);
+  });
+}
+
+/*
+  Zoom with Ctrl + wheel and Ctrl +/−/0 (owner, 2026-09-26: "zoom does not work").
+
+  Electron reports a Ctrl + wheel as `zoom-changed` and leaves it there — nothing zooms unless the
+  app applies it — and with the menu bar hidden the keyboard shortcuts have no menu to come from.
+  Chromium then keeps the level per site and per session across restarts, which is what makes it
+  "remembered": the launcher (default session) and the app window (`persist:app-window`) each keep
+  their own.
+*/
+const ZOOM_STEP = 0.5;
+const ZOOM_MIN = -3;
+const ZOOM_MAX = 5;
+
+function enableZoom(win) {
+  const wc = win.webContents;
+  const step = (dir) => {
+    const next = dir === 0 ? 0 : Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, wc.getZoomLevel() + dir * ZOOM_STEP));
+    wc.setZoomLevel(next);
+  };
+  wc.on("zoom-changed", (_e, direction) => step(direction === "in" ? 1 : -1));
+  wc.on("before-input-event", (e, input) => {
+    if (input.type !== "keyDown" || !(input.control || input.meta) || input.alt) return;
+    const k = input.key;
+    if (k === "+" || k === "=" || input.code === "NumpadAdd") step(1);
+    else if (k === "-" || k === "_" || input.code === "NumpadSubtract") step(-1);
+    else if (k === "0" || input.code === "Numpad0") step(0);
+    else return;
+    e.preventDefault();
+  });
+}
+
+/*
+  "App window" (owner, 2026-09-26): the exobiology UI in its own window.
+
+  The launcher's old "This window" navigated the launcher itself to the app, so closing the app
+  closed the launcher with it. This is a second window instead: close it and the launcher is still
+  there. One at a time — asking again brings the open one forward.
+*/
+let appUiWindow = null;
+const APP_WINDOW_PARTITION = "persist:app-window";
+
+/**
+ * The app window's session is new, so its view settings (body sort, last tab, …) start empty. Copy
+ * the launcher session's localStorage across once — same site, so the launcher can read it — and
+ * reload. Marked done in window-state.json so it never runs again.
+ */
+async function carryAppStorageOver(win) {
+  const all = readWindowStates();
+  if (all.appStorageCarried === true) return;
+  try {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const dump = await mainWindow.webContents.executeJavaScript(
+      "JSON.stringify(Object.assign({}, window.localStorage))",
+    );
+    const n = await win.webContents.executeJavaScript(
+      `(() => { const o = JSON.parse(${JSON.stringify(dump)}); let n = 0;` +
+        ` for (const k of Object.keys(o)) { if (localStorage.getItem(k) === null) { localStorage.setItem(k, o[k]); n++; } }` +
+        ` return n; })()`,
+    );
+    const now = readWindowStates();
+    now.appStorageCarried = true;
+    fs.mkdirSync(path.dirname(windowStatePath()), { recursive: true });
+    fs.writeFileSync(windowStatePath(), JSON.stringify(now, null, 2), "utf8");
+    if (n > 0 && !win.isDestroyed()) win.webContents.reload();
+  } catch (e) {
+    console.warn("[edexo-compare] could not carry the app window's settings over:", e);
+  }
+}
+
+function openAppUiWindow(iconForChild) {
+  if (!runtime) return { opened: false, error: "Server not ready yet." };
+  if (appUiWindow && !appUiWindow.isDestroyed()) {
+    if (appUiWindow.isMinimized()) appUiWindow.restore();
+    appUiWindow.show();
+    appUiWindow.focus();
+    return { opened: true, focused: true };
+  }
+  const base = runtime.getLocalBaseUrl();
+  const saved = readWindowState("app");
+  const area = screen.getPrimaryDisplay().workArea;
+  const width = saved?.width ?? Math.min(1480, Math.round(area.width * 0.9));
+  const height = saved?.height ?? Math.min(940, Math.round(area.height * 0.9));
+  const preloadPath = path.join(__dirname, "preload.cjs");
+  const win = new BrowserWindow({
+    width,
+    height,
+    ...(saved ? { x: saved.x, y: saved.y } : {}),
+    minWidth: WINDOW_MIN.app.w,
+    minHeight: WINDOW_MIN.app.h,
+    backgroundColor: "#050507",
+    autoHideMenuBar: true,
+    title: "ED Exo Compare",
+    icon: iconForChild,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      partition: APP_WINDOW_PARTITION,
+      preload: fs.existsSync(preloadPath) ? preloadPath : undefined,
+    },
+  });
+  appUiWindow = win;
+  diag?.watchWindow(win, "app");
+  if (saved?.maximized) win.maximize();
+  trackWindowState("app", win);
+  enableZoom(win);
+  /*
+    Links out of the app (Spansh, EDSM, the site) go to the commander's browser; the app's own pages
+    may still open in a window of their own, as they did when the UI ran in the launcher.
+  */
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith(`${base}/`) || url === base) return { action: "allow" };
+    if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
+    return { action: "deny" };
+  });
+  win.webContents.once("did-finish-load", () => void carryAppStorageOver(win));
+  win.on("closed", () => {
+    if (appUiWindow === win) appUiWindow = null;
+  });
+  void win.loadURL(`${base}/`);
+  return { opened: true, focused: false };
+}
+
 function registerFootOverlayIpc(iconForChild) {
   if (footOverlayIpcRegistered) return;
   footOverlayIpcRegistered = true;
@@ -871,6 +1090,8 @@ function registerFootOverlayIpc(iconForChild) {
   }));
 
   ipcMain.handle("edexo:hud-overlay-state", () => ({ paths: hudPathsFiltered() }));
+
+  ipcMain.handle("edexo:open-app-window", () => openAppUiWindow(iconForChild));
 
   ipcMain.handle("edexo:open-hud-overlay", async (_evt, opts) =>
     requestHudOverlaySlot(hudPathFrom(opts), hudWidthFrom(opts), hudHeightFrom(opts), iconForChild, "open"),
@@ -923,6 +1144,19 @@ function registerFootOverlayIpc(iconForChild) {
    * in progress draws rows an idle one does not. Width is left alone, because that *is* a layout
    * choice and a HUD that changes width as data arrives would be unreadable.
    */
+  // The launcher's HUD settings, forwarded to every overlay as they change (see preload `pushHudPrefs`).
+  ipcMain.on("edexo:push-hud-prefs", (evt, prefs) => {
+    if (!mainWindow || evt.sender !== mainWindow.webContents) return;
+    if (!prefs || typeof prefs !== "object") return;
+    for (const slot of hudOverlayStack) {
+      try {
+        if (slot.win && !slot.win.isDestroyed()) slot.win.webContents.send("edexo:hud-prefs", prefs);
+      } catch {
+        /* a window closing mid-send */
+      }
+    }
+  });
+
   ipcMain.handle("edexo:resize-hud-overlay", (evt, opts) => {
     const win = BrowserWindow.fromWebContents(evt.sender);
     if (!win || win.isDestroyed()) return { ok: false };
@@ -1111,9 +1345,11 @@ async function start() {
   const preloadPath = path.join(__dirname, "preload.cjs");
   const url = `${runtime.getLocalBaseUrl()}/launcher.html`;
 
+  const launcherSaved = readWindowState("launcher");
   mainWindow = new BrowserWindow({
-    width: 548,
-    height: 768,
+    width: launcherSaved?.width ?? 548,
+    height: launcherSaved?.height ?? 768,
+    ...(launcherSaved ? { x: launcherSaved.x, y: launcherSaved.y } : {}),
     backgroundColor: "#050507",
     autoHideMenuBar: true,
     icon: winIcon,
@@ -1124,6 +1360,9 @@ async function start() {
     },
   });
   diag?.watchWindow(mainWindow, "launcher");
+  if (launcherSaved?.maximized) mainWindow.maximize();
+  trackWindowState("launcher", mainWindow);
+  enableZoom(mainWindow);
   mainWindow.loadURL(url);
   createTray(winIcon);
   void restoreHudOverlays(winIcon);
@@ -1135,6 +1374,8 @@ async function start() {
   mainWindow.on("close", () => {
     destroyAllHudOverlays();
     destroyTray();
+    // The launcher is still the app: closing it closes the app window too, as it always quit.
+    if (appUiWindow && !appUiWindow.isDestroyed()) appUiWindow.close();
   });
   mainWindow.on("closed", () => {
     mainWindow = null;

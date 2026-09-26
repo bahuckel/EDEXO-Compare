@@ -2,15 +2,17 @@
 
 exports[`the format constant > covers every key the store serializes 1`] = `
 {
-  "format": 13,
+  "format": 16,
   "keys": [
     "bodies",
     "bodyDetailedFootfallState",
     "bodyFootfallFlag",
     "bodyMappedFlag",
     "codexLoggedSpecies",
+    "codexRegionLogged",
     "commanderName",
     "commanderPos",
+    "currentBodyKey",
     "currentSystem",
     "currentSystemAddress",
     "dssFirstMapperEligibleByBodyKey",
@@ -38,6 +40,7 @@ exports[`the format constant > covers every key the store serializes 1`] = `
     "pendingOrganicSales",
     "remainingJumpsInRoute",
     "samplingMinutesSamples",
+    "soldBodyKeys",
     "soldExplorationBySystem",
     "soldExplorationScans",
     "soldOrganicBySystem",

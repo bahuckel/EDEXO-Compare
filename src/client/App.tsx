@@ -8,10 +8,12 @@ import { EliteTipRotator } from "./EliteTipRotator";
 import type { AppSnapshot, BodyComputed, FootScannedEntry } from "@shared/types";
 import { buildBodyOrbitGroups, groupTabBodiesIntoHostCards } from "./bodyTabGroups";
 import { useStableBioTabOrder } from "./useStableBioTabOrder";
+import { readBodySortPref, useSortedBodies, writeBodySortPref, type BodySortMode } from "./bodySort";
 import { BodyTabStrip, TabSection } from "./BodyTabStrip";
 import { BodyJumpPalette, bodyJumpItems } from "./BodyJumpPalette";
 import { BodyPane } from "./BodyPane";
 import { HeaderBar } from "./HeaderBar";
+import { CopySystemButton } from "./CopySystemButton";
 
 /*
  * React first, above the `lazy()` calls below.
@@ -47,8 +49,42 @@ function marketingSiteOrigin(): string {
  * to sit in the header on every screen, costing ~84 px of viewport during play, when the moment
  * they are actually worth reading is the moment there is nothing else on screen.
  */
+/**
+ * What to say for a system looked up on Spansh that shows no bio bodies (owner's test, 2026-09-26:
+ * "Spansh system bodies are still not present"). The bodies are there — the system map draws them —
+ * but Spansh often has no signal counts at all for a system: nobody uploaded an FSS of it. Saying
+ * "FSS a world" there read as if the app had lost them.
+ */
+function remoteEmptyText(snap: AppSnapshot): { hed: string; sub: string } | null {
+  const rv = snap.remoteView;
+  if (!rv) return null;
+  if (rv.state === "loading") return { hed: "Fetching from Spansh…", sub: `Looking up ${rv.starSystem}.` };
+  if (rv.state === "error") {
+    return { hed: "Spansh could not be reached", sub: `${rv.starSystem}: ${rv.error ?? "no answer."}` };
+  }
+  const n = rv.bodyCount ?? 0;
+  if (rv.signalBodyCount === 0) {
+    return {
+      hed: "No signal data on Spansh",
+      sub: `Spansh knows ${n} ${n === 1 ? "body" : "bodies"} here, but none has a signal count — nobody has uploaded an FSS scan of this system. The bodies are on the system map; whether anything grows here stays unknown until someone scans it.`,
+    };
+  }
+  if (rv.signalBodyCount === undefined) {
+    // Fetched before the app counted signal data (the 30-day cache).
+    return {
+      hed: "No biology on Spansh",
+      sub: `Spansh knows ${n} ${n === 1 ? "body" : "bodies"} here and reports no biological signals — either nobody has uploaded an FSS scan of this system, or nothing grows here. The bodies are on the system map.`,
+    };
+  }
+  return {
+    hed: "No biology on Spansh",
+    sub: `Spansh has signal counts for ${rv.signalBodyCount} of its ${n} bodies here, and none of them is biological.`,
+  };
+}
+
 function BioEmptyState({ snap }: { snap: AppSnapshot }) {
   const dead = snap.fssAllBodiesFoundNoBio === true;
+  const remote = remoteEmptyText(snap);
   return (
     <div className="bio-empty-wrap">
       <div
@@ -59,12 +95,14 @@ function BioEmptyState({ snap }: { snap: AppSnapshot }) {
           {/* the launcher's radar scope: sweeping while the FSS is still to come, still on a dead system */}
           <div className="bio-empty-scope" aria-hidden="true" />
           <p className="bio-empty-caption-hed">
-            {dead ? "No exobiology in this system" : "No bio signals yet"}
+            {remote ? remote.hed : dead ? "No exobiology in this system" : "No bio signals yet"}
           </p>
           <p className="bio-empty-caption-sub">
-            {dead
-              ? "Every body here has been scanned and none carry biological signals. Jump to another system, or search one above to browse it from your journal."
-              : "FSS a world with biological signals, or DSS map one — bodies appear here on their own. You can also search a visited system above."}
+            {remote
+              ? remote.sub
+              : dead
+                ? "Every body here has been scanned and none carry biological signals. Jump to another system, or search one above to browse it from your journal."
+                : "FSS a world with biological signals, or DSS map one — bodies appear here on their own. You can also search a visited system above."}
           </p>
           {snap.jumpTarget && !snap.jumpTarget.arrived ? (
             <div
@@ -72,7 +110,10 @@ function BioEmptyState({ snap }: { snap: AppSnapshot }) {
               title="From the journal's StartJump: the system you are jumping to and its main star class"
             >
               <span className="fact-k">Next jump</span>
-              <span>{snap.jumpTarget.starSystem}</span>
+              <span>
+                {snap.jumpTarget.starSystem}
+                <CopySystemButton system={snap.jumpTarget.starSystem} />
+              </span>
               <span className="bio-empty-next-class">{snap.jumpTarget.starClass}</span>
             </div>
           ) : null}
@@ -135,12 +176,19 @@ export function App() {
   // keyed on its identity treats "still nothing" as "something changed" (§49).
   const rawBodies = snapshot?.bodies ?? NO_BODIES;
   const systemFocusKey = snapshot?.viewingSystemAddress ?? snapshot?.currentSystemAddress ?? null;
-  const orderedBodies = useStableBioTabOrder(rawBodies, systemFocusKey);
+  const stableBodies = useStableBioTabOrder(rawBodies, systemFocusKey);
+  // The switch under "BODY" (O-F): system order keeps the orbit groups; the other three are a flat strip.
+  const [bodySort, setBodySortState] = useState<BodySortMode>(readBodySortPref);
+  const setBodySort = useCallback((m: BodySortMode) => {
+    setBodySortState(m);
+    writeBodySortPref(m);
+  }, []);
+  const orderedBodies = useSortedBodies(stableBodies, bodySort, snapshot?.shipProximity, systemFocusKey);
   const bodyGroups = useMemo(
     () => buildBodyOrbitGroups(orderedBodies, snapshot?.systemMap),
     [orderedBodies, snapshot?.systemMap],
   );
-  const multiOrbit = bodyGroups.length > 1;
+  const multiOrbit = bodySort === "system" && bodyGroups.length > 1;
   const [selectedBodyKey, setSelectedBodyKey] = useState<string | null>(null);
   const [systemMapOpen, setSystemMapOpen] = useState(false);
   const [jumpOpen, setJumpOpen] = useState(false);
@@ -156,15 +204,17 @@ export function App() {
    */
   const tabSections = useMemo<TabSection[]>(
     () =>
-      bodyGroups.map((g) => ({
-        key: g.key,
-        label: null,
-        hostCards: groupTabBodiesIntoHostCards(
-          orderedBodies.filter((b) => g.bodyKeys.has(b.state.key)),
-          snapshot?.systemMap,
-        ),
-      })),
-    [bodyGroups, orderedBodies, snapshot?.systemMap],
+      bodySort !== "system"
+        ? [{ key: "sorted", label: null, hostCards: orderedBodies.map((b) => [b]) }]
+        : bodyGroups.map((g) => ({
+            key: g.key,
+            label: null,
+            hostCards: groupTabBodiesIntoHostCards(
+              orderedBodies.filter((b) => g.bodyKeys.has(b.state.key)),
+              snapshot?.systemMap,
+            ),
+          })),
+    [bodySort, bodyGroups, orderedBodies, snapshot?.systemMap],
   );
 
   const jumpItems = useMemo(() => {
@@ -370,6 +420,9 @@ export function App() {
             onSelect={setSelectedBodyKey}
             onOpenJump={openJump}
             bodyCount={orderedBodies.length}
+            sortMode={bodySort}
+            onSortChange={setBodySort}
+            proximity={snapshot.shipProximity ?? null}
           />
           {selected ? (
             <BodyPane

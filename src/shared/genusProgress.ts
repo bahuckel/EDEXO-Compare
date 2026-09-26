@@ -71,7 +71,8 @@ function statusOf(
   lock: OrganicGenusLock,
   live: LiveSamplingRun | null,
 ): { status: GenusProgressStatus; samples: number | null } {
-  if (lock.fromSibling) return { status: "dss", samples: null };
+  // A sibling copy or another commander's log (Spansh): a hint about the body, never progress on it.
+  if (lock.fromSibling || lock.source === "spansh") return { status: "dss", samples: null };
   if (lock.source === "codex") return { status: "cs", samples: null };
   if (lock.analysed) return { status: "done", samples: 3 };
   if (isLiveFor(lock, live)) {

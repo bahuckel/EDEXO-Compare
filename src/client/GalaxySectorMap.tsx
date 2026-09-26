@@ -485,7 +485,10 @@ export function GalaxySectorMap({
       {nextTarget ? (
         <div className="galaxy-map__next">
           <span className="galaxy-map__next-label">Nearest that qualifies</span>
-          <strong>{nextTarget.starSystem}</strong>
+          <strong>
+            {nextTarget.starSystem}
+            <CopySystemButton system={nextTarget.starSystem} />
+          </strong>
           <span className="dim">
             {/*
               Under a light year is the same system: the commander is standing in it. "0 ly away"
@@ -503,7 +506,6 @@ export function GalaxySectorMap({
             {nextTarget.bodies} unfinished {nextTarget.bodies === 1 ? "body" : "bodies"} ·{" "}
             {Math.round(nextTarget.floorCr).toLocaleString("en-US")} CR floor
           </span>
-          <CopySystemButton system={nextTarget.starSystem} className="galaxy-map__copy" />
         </div>
       ) : null}
 
@@ -1416,7 +1418,10 @@ function SectorSystems({
         true and useless.
       */}
       {systems && shown.length === 0 && commander ? (
-        <p className="galaxy-map__more">You are here — {commander.system ?? "unknown system"}.</p>
+        <p className="galaxy-map__more">
+          You are here — {commander.system ?? "unknown system"}
+          <CopySystemButton system={commander.system} />.
+        </p>
       ) : null}
 
       {shown.length > 0 ? (
@@ -1512,6 +1517,8 @@ function SystemReadout({
     <div className="galaxy-map__readout">
       <h4>
         {system.name}
+        {/* Click a system in the sector to pin it; the name and its copy stay while you move off. */}
+        <CopySystemButton system={system.name} />
         {pinned ? <span className="galaxy-map__cellkey"> pinned — click another to change</span> : null}
       </h4>
       <p>

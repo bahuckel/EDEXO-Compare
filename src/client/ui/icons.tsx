@@ -209,3 +209,22 @@ export function IconSession({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/** Two offset sheets — copy to the clipboard. */
+export function IconCopy({ className }: { className?: string }) {
+  return (
+    <svg {...BASE} className={className}>
+      <rect x="5.5" y="5.5" width="8" height="8" rx="1" />
+      <path d="M10.5 5.5V3.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2" />
+    </svg>
+  );
+}
+
+/** A tick — the copy happened. */
+export function IconCheck({ className }: { className?: string }) {
+  return (
+    <svg {...BASE} className={className}>
+      <path d="M3 8.5 6.5 12 13 4.5" />
+    </svg>
+  );
+}
