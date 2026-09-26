@@ -146,3 +146,13 @@
     animation: none;
   }
 }
+/* Icons right before the "?" (Fold `tools`): on the title line, never pushed to the aside's row. */
+.fold-tools {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+.fold-aside + .fold-tools {
+  margin-left: 0;
+}

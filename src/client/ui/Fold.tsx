@@ -49,6 +49,7 @@ export function FoldPanel({
   title,
   summary,
   aside,
+  tools,
   help,
   defaultOpen = true,
   className = "",
@@ -62,6 +63,11 @@ export function FoldPanel({
   summary?: ReactNode;
   /** The panel's own controls (toggles, copy), kept out of the toggle button. */
   aside?: ReactNode;
+  /**
+   * Small icons that sit right before the "?" and stay on the title line when the aside wraps to a
+   * row of its own (the snapshot camera, owner 2026-09-26).
+   */
+  tools?: ReactNode;
   /**
    * The explanations that used to live in 300-character tooltips (WEBUI-REDESIGN 5.3): a "?" in
    * the head opens them as a drawer above the content. Tooltips stay one sentence.
@@ -101,6 +107,7 @@ export function FoldPanel({
           {summary != null ? <span className="fold-summary">{summary}</span> : null}
         </button>
         {aside ? <div className="fold-aside">{aside}</div> : null}
+        {tools ? <div className="fold-tools">{tools}</div> : null}
         {help ? (
           <button
             type="button"

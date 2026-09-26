@@ -1098,25 +1098,23 @@ export const BodyPane = memo(function BodyPane({
                         : ""}
                     </>
                   }
+                  tools={<SnapshotButton what="exo-signals" />}
                   aside={
-                    <>
-                      <SnapshotButton what="exo-signals" />
-                      <button
-                        type="button"
-                        className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
-                        disabled={!canOpenJournalScanModal}
-                        title={
-                          canOpenJournalScanModal
-                            ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
-                            : "Need merged detailed scan rows in loaded journals for breakdown"
-                        }
-                        onClick={() => {
-                          if (canOpenJournalScanModal) setJournalScanModalOpen(true);
-                        }}
-                      >
-                        DSS {s.dssComplete ? "✓" : "✗"}
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
+                      disabled={!canOpenJournalScanModal}
+                      title={
+                        canOpenJournalScanModal
+                          ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
+                          : "Need merged detailed scan rows in loaded journals for breakdown"
+                      }
+                      onClick={() => {
+                        if (canOpenJournalScanModal) setJournalScanModalOpen(true);
+                      }}
+                    >
+                      DSS {s.dssComplete ? "✓" : "✗"}
+                    </button>
                   }
                 >
                   <div className="genus-progress" role="table" aria-label="Genera on this body">
