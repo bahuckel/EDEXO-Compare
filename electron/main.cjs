@@ -1144,6 +1144,30 @@ function registerFootOverlayIpc(iconForChild) {
    * in progress draws rows an idle one does not. Width is left alone, because that *is* a layout
    * choice and a HUD that changes width as data arrives would be unreadable.
    */
+  /*
+    Exomastery downloads (§S): a Save dialog rather than Chromium's download shelf, starting in
+    Downloads with the name the server chose. Only the launcher may ask, and only for text.
+  */
+  ipcMain.handle("edexo:save-text-file", async (evt, opts) => {
+    if (!mainWindow || evt.sender !== mainWindow.webContents) return { saved: false, error: "Not allowed." };
+    const text = opts && typeof opts.text === "string" ? opts.text : null;
+    const rawName = opts && typeof opts.defaultName === "string" ? opts.defaultName : "EDEXO.json";
+    const name = path.basename(rawName).replace(/[<>:"|?*]/g, "_") || "EDEXO.json";
+    if (text == null) return { saved: false, error: "Nothing to save." };
+    const r = await dialog.showSaveDialog(mainWindow, {
+      title: "Save",
+      defaultPath: path.join(app.getPath("downloads"), name),
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
+    if (r.canceled || !r.filePath) return { saved: false };
+    try {
+      fs.writeFileSync(r.filePath, text, "utf8");
+      return { saved: true, path: r.filePath };
+    } catch (e) {
+      return { saved: false, error: e && e.message ? e.message : String(e) };
+    }
+  });
+
   // The launcher's HUD settings, forwarded to every overlay as they change (see preload `pushHudPrefs`).
   ipcMain.on("edexo:push-hud-prefs", (evt, prefs) => {
     if (!mainWindow || evt.sender !== mainWindow.webContents) return;

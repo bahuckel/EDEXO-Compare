@@ -220,6 +220,16 @@ export function IconCopy({ className }: { className?: string }) {
   );
 }
 
+/** A camera — take a branded snapshot of this panel. */
+export function IconCamera({ className }: { className?: string }) {
+  return (
+    <svg {...BASE} className={className}>
+      <path d="M2.5 5.5h2.2l1.2-1.8h4.2l1.2 1.8h2.2a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1z" />
+      <circle cx="8" cy="9.3" r="2.3" />
+    </svg>
+  );
+}
+
 /** A tick — the copy happened. */
 export function IconCheck({ className }: { className?: string }) {
   return (

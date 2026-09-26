@@ -120,6 +120,20 @@ export function colourFromStarClass(
     const hit = rule.map[key.toUpperCase()];
     if (hit?.trim()) return one(hit.trim(), "star", `${key}-class parent star`);
   }
+  /*
+   * White dwarfs and Wolf-Rayets come as subtypes (`DA`, `DAB`, `DC`, `WC`, `WN`) and the game's
+   * variants name the family, `D` and `W` (codex symbols `..._D_Name;`, `..._W_Name;`). Without this
+   * every star-coloured plant under one read "(unknown)".
+   */
+  const family = /^D[A-Z]*$/i.test(raw)
+    ? "D"
+    : /^W[A-Z]*$/i.test(raw)
+      ? "W"
+      : /blackhole/i.test(raw)
+        ? "H"
+        : null;
+  const hit = family ? rule.map[family] : undefined;
+  if (family && hit?.trim()) return one(hit.trim(), "star", `${raw} (${family}-class) parent star`);
   return NONE;
 }
 

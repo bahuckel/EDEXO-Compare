@@ -382,6 +382,16 @@
       .launcher-actions > .btn-split {
         grid-column: 1 / -1;
       }
+      /* A split button that stays one tile wide (Exomastery), so the tiles keep their pairs. */
+      .launcher-actions > .btn-split.btn-split--tile {
+        grid-column: auto;
+      }
+      .btn-split--tile .btn-split-main {
+        padding: 12px 12px;
+      }
+      .btn-split--tile .btn-split-menu {
+        min-width: 17rem;
+      }
 
       /* ---- buttons: primary (filled), tile (holo) ----------------------------------------------- */
       .btn {
@@ -1528,15 +1538,49 @@
               <span class="subline">Path to Journal.*.log — and how often it and Status.json are read</span>
             </span>
           </button>
-          <button type="button" class="btn btn-exomastery" id="btnExomasteryRefresh">
-            <span class="glyph" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9" /><path d="M20 4v5h-5" /></svg>
-            </span>
-            <span class="btn-lines">
-              <strong>Refresh exomastery</strong>
-              <span class="subline">Re-read the species tree and exomastery data from disk</span>
-            </span>
-          </button>
+          <!--
+            Exomastery (owner, 2026-09-26): refresh, download your exomastery or your codex (a backup
+            for a reinstall, or to share), and the shared folder other commanders' files go into.
+          -->
+          <div class="btn-split btn-split--tile" id="exomasterySplit">
+            <button type="button" class="btn btn-exomastery btn-split-main" id="btnExomasteryRefresh">
+              <span class="glyph" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9" /><path d="M20 4v5h-5" /></svg>
+              </span>
+              <span class="btn-lines">
+                <strong>Exomastery</strong>
+                <span class="subline" id="exomasterySub">Refresh, download yours, or share with other commanders</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-exomastery btn-split-arrow"
+              id="btnExomasteryMenu"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-label="Exomastery options"
+            >
+              <span aria-hidden="true">▾</span>
+            </button>
+            <div class="btn-split-menu" id="exomasteryMenu" role="menu" hidden>
+              <button type="button" role="menuitem" data-exo-action="refresh">
+                <strong>Refresh exomastery</strong>
+                <span>Re-read the species data and the shared folder</span>
+              </button>
+              <button type="button" role="menuitem" data-exo-action="export-exomastery">
+                <strong>Download my exomastery (.json)</strong>
+                <span>Every species you confirmed, with the body it grew on</span>
+              </button>
+              <button type="button" role="menuitem" data-exo-action="export-codex">
+                <strong>Download my codex (.json)</strong>
+                <span>Your codex per region and colour</span>
+              </button>
+              <button type="button" role="menuitem" data-exo-action="open-shared">
+                <strong>Open shared folder</strong>
+                <span>Drop other commanders' files here — or your own backup after a reinstall</span>
+              </button>
+            </div>
+          </div>
           <button type="button" class="btn secondary" id="btnNetworkSettings">
             <span class="glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" /></svg>
@@ -2908,6 +2952,139 @@
           if (ev.key === "Escape" && !mainUiMenu.hidden) closeOpenMenu();
         });
 
+        /*
+          Exomastery menu (owner, 2026-09-26): the main button still refreshes; the arrow offers the
+          downloads and the shared folder. The line under the title says what the shared folder holds.
+        */
+        var exomasteryMenu = document.getElementById("exomasteryMenu");
+        var btnExomasteryMenu = document.getElementById("btnExomasteryMenu");
+        var exomasterySplit = document.getElementById("exomasterySplit");
+        var exomasterySub = document.getElementById("exomasterySub");
+        var EXO_SUB_DEFAULT = exomasterySub ? exomasterySub.textContent : "";
+
+        function closeExomasteryMenu() {
+          exomasteryMenu.hidden = true;
+          btnExomasteryMenu.setAttribute("aria-expanded", "false");
+        }
+
+        function refreshSharedLine() {
+          fetch(apiUrl("/api/exomastery/shared"))
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .then(function (j) {
+              if (!j || !exomasterySub) return;
+              var used = (j.files || []).filter(function (f) {
+                return !f.skipped;
+              }).length;
+              var skipped = (j.files || []).length - used;
+              if (used === 0 && skipped === 0) {
+                exomasterySub.textContent = EXO_SUB_DEFAULT;
+                return;
+              }
+              var parts = ["Shared: " + used + " file" + (used === 1 ? "" : "s")];
+              if (j.finds > 0) {
+                parts.push(
+                  j.finds.toLocaleString() + " finds from " + j.commanders + " commander" + (j.commanders === 1 ? "" : "s"),
+                );
+              }
+              if (j.ownBackupFinds > 0) parts.push("your backup: " + j.ownBackupFinds.toLocaleString());
+              if (skipped > 0) parts.push(skipped + " skipped");
+              if (j.alerts > 0) parts.push(j.alerts + " gate notice" + (j.alerts === 1 ? "" : "s") + " (mail icon)");
+              exomasterySub.textContent = parts.join(" · ");
+              exomasterySub.title = (j.files || [])
+                .map(function (f) {
+                  return f.file + (f.skipped ? " — skipped: " + f.skipped : " — " + (f.commander || "?") + ", " + f.entries);
+                })
+                .join("\n");
+            })
+            .catch(function () {
+              /* the default line stays */
+            });
+        }
+
+        function exomasteryDownload(kind) {
+          launcherActionMsg.className = "msg-launcher";
+          launcherActionMsg.textContent = "";
+          var bridge = window.edexoElectron;
+          fetch(apiUrl("/api/exomastery/export?kind=" + kind))
+            .then(function (r) {
+              if (!r.ok) throw new Error(r.statusText);
+              var cd = r.headers.get("Content-Disposition") || "";
+              var m = /filename="([^"]+)"/.exec(cd);
+              var name = m ? m[1] : "EDEXO-" + kind + ".json";
+              return r.text().then(function (text) {
+                return { name: name, text: text };
+              });
+            })
+            .then(function (x) {
+              if (bridge && typeof bridge.saveTextFile === "function") {
+                return bridge.saveTextFile({ defaultName: x.name, text: x.text }).then(function (res) {
+                  if (res && res.saved) {
+                    launcherActionMsg.className = "msg-launcher ok";
+                    launcherActionMsg.textContent = "Saved " + res.path;
+                  }
+                });
+              }
+              // The launcher in a browser: an ordinary download.
+              var url = URL.createObjectURL(new Blob([x.text], { type: "application/json" }));
+              var a = document.createElement("a");
+              a.href = url;
+              a.download = x.name;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              setTimeout(function () {
+                URL.revokeObjectURL(url);
+              }, 5000);
+            })
+            .catch(function (e) {
+              launcherActionMsg.className = "msg-launcher err";
+              launcherActionMsg.textContent = "Could not download: " + String(e && e.message ? e.message : e);
+            });
+        }
+
+        function openSharedFolder() {
+          fetch(apiUrl("/api/exomastery/open-shared-folder"), { method: "POST" })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (j) {
+              if (!j || !j.ok) throw new Error((j && j.error) || "Could not open the folder.");
+              launcherActionMsg.className = "msg-launcher ok";
+              launcherActionMsg.textContent =
+                "Shared folder: " + j.folder + " — drop exomastery or codex files in, then Refresh exomastery.";
+            })
+            .catch(function (e) {
+              launcherActionMsg.className = "msg-launcher err";
+              launcherActionMsg.textContent = String(e && e.message ? e.message : e);
+            });
+        }
+
+        btnExomasteryMenu.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          var open = exomasteryMenu.hidden;
+          exomasteryMenu.hidden = !open;
+          btnExomasteryMenu.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        exomasteryMenu.addEventListener("click", function (ev) {
+          var item = ev.target.closest("button[data-exo-action]");
+          if (!item) return;
+          closeExomasteryMenu();
+          var act = item.dataset.exoAction;
+          if (act === "refresh") btnExomasteryRefresh.click();
+          else if (act === "export-exomastery") exomasteryDownload("exomastery");
+          else if (act === "export-codex") exomasteryDownload("codex");
+          else if (act === "open-shared") openSharedFolder();
+        });
+        document.addEventListener("click", function (ev) {
+          if (!exomasteryMenu.hidden && !exomasterySplit.contains(ev.target)) closeExomasteryMenu();
+        });
+        document.addEventListener("keydown", function (ev) {
+          if (ev.key === "Escape" && !exomasteryMenu.hidden) closeExomasteryMenu();
+        });
+        refreshSharedLine();
+
         btnExomasteryRefresh.addEventListener("click", function () {
           launcherActionMsg.className = "msg-launcher";
           launcherActionMsg.textContent = "";
@@ -2935,6 +3112,7 @@
             })
             .then(function () {
               btnExomasteryRefresh.disabled = false;
+              refreshSharedLine();
             });
         });
 

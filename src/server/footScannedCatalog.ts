@@ -1,4 +1,5 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { sharedFindsWithOwnership, sharedSignature } from "./sharedExomastery.js";
 import { dirname, join } from "node:path";
 import { resolveFootScannedPath } from "./paths.js";
 import { FOOT_CONFIRMATION_RANK } from "../shared/types.js";
@@ -854,7 +855,7 @@ export function needsFootCatalogAugment(body: BodyExoState, matches: SpeciesMatc
   return footGenusMode(body, matches).kind !== "none";
 }
 
-function resolveEntryForCatalogRow(e: FootScannedEntry, db: SpeciesDatabase): SpeciesEntry | null {
+export function resolveEntryForCatalogRow(e: FootScannedEntry, db: SpeciesDatabase): SpeciesEntry | null {
   if (e.speciesEntryId) {
     const hit = db.species.find((s) => s.id === e.speciesEntryId);
     if (hit) return hit;
@@ -885,6 +886,44 @@ function resolveEntryForCatalogRow(e: FootScannedEntry, db: SpeciesDatabase): Sp
  * Adds learned `SpeciesMatch` rows from `foot_scanned.json` when DSS/signals are under-satisfied vs the DB,
  * and a prior on-foot record is a **close** profile match (same `PlanetClass` + atmosphere; T/P within ±10%).
  */
+/**
+ * The rows learned candidates are drawn from: this commander's own catalog, plus every find in the
+ * shared-exomastery folder it does not already hold (§S — other commanders' finds count exactly like
+ * your own; your own backups bring back what the journals lost). A shared row carries who reported it.
+ */
+let footRowsMemo: { key: string; rows: FootScannedEntry[] } | null = null;
+
+export function footRowsWithShared(projectRoot: string): FootScannedEntry[] {
+  const own = loadFootScannedCatalog(projectRoot).entries;
+  const shared = sharedFindsWithOwnership();
+  if (shared.length === 0) return own;
+  const key = `${footScannedCatalogSignature(projectRoot)}#${sharedSignature()}`;
+  if (footRowsMemo?.key === key) return footRowsMemo.rows;
+  const have = new Set(own.map((e) => e.id));
+  const out = [...own];
+  for (const { find, own: mine, others } of shared) {
+    if (have.has(find.entry.id)) continue;
+    out.push(
+      mine && others.length === 0
+        ? find.entry
+        : { ...find.entry, sharedFrom: others.map((c) => c.name ?? "a commander") },
+    );
+  }
+  footRowsMemo = { key, rows: out };
+  return out;
+}
+
+/** This commander's catalog plus the finds only their own shared backups hold (§S): My exobiology, the export. */
+export function ownFootEntriesWithBackups(projectRoot: string): FootScannedEntry[] {
+  const own = loadFootScannedCatalog(projectRoot).entries;
+  const have = new Set(own.map((e) => e.id));
+  const out = [...own];
+  for (const { find, own: mine } of sharedFindsWithOwnership()) {
+    if (mine && !have.has(find.entry.id)) out.push(find.entry);
+  }
+  return out;
+}
+
 export function augmentMatchesWithFootCatalog(
   matches: SpeciesMatch[],
   body: BodyExoState,
@@ -927,7 +966,7 @@ export function augmentMatchesWithFootCatalog(
         ? { minK: mergedScan.SurfaceTemperature, maxK: mergedScan.SurfaceTemperature }
         : null;
 
-  const catalog = loadFootScannedCatalog(projectRoot);
+  const catalog = { entries: footRowsWithShared(projectRoot) };
   const matchedGenera = new Set(matches.map((m) => genusFold(m.entry.genus)));
   const haveIds = new Set(matches.map((m) => m.entry.id));
   const out: SpeciesMatch[] = [...matches];
@@ -982,6 +1021,11 @@ export function augmentMatchesWithFootCatalog(
     const disagreeRow = rows.find((r) => r.dbProbableDisagreed && r.dbProbableSpeciesId);
 
     const footScanMatch = buildFootScanMatchPayload(mergedScan, rows, entry);
+    // Rows from the shared-exomastery folder say whose they are.
+    const sharedBy = [...new Set(rows.flatMap((r) => r.sharedFrom ?? []))];
+    const sharedNote = sharedBy.length
+      ? ` Shared by ${sharedBy.map((n) => (n === "a commander" ? n : `CMDR ${n}`)).join(", ")}.`
+      : "";
 
     const hasFile = hasExomasteryProfileFile(projectRoot, entry);
     const profile = loadExomasteryProfile(projectRoot, entry);
@@ -1000,7 +1044,7 @@ export function augmentMatchesWithFootCatalog(
       reasons: [
         {
           field: "Foot scan match",
-          detail: `Prior on-foot confirmation(s) on ${rows.length} body record(s) match this profile (planet class + atmosphere exact; temperature midpoint and pressure within ±${Math.round(REL_TOLERANCE * 100)}% when known). Latest: ${primary.bodyName} (${primary.recordedAt.slice(0, 19)}).`,
+          detail: `Prior on-foot confirmation(s) on ${rows.length} body record(s) match this profile (planet class + atmosphere exact; temperature midpoint and pressure within ±${Math.round(REL_TOLERANCE * 100)}% when known). Latest: ${primary.bodyName} (${primary.recordedAt.slice(0, 19)}).${sharedNote}`,
         },
         ...(disagreeRow?.dbProbableSpeciesId
           ? [

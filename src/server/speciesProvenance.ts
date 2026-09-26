@@ -28,6 +28,7 @@
  * same identity `bodyId64 = systemId64 + (bodyId << 55)` was verified against earlier. No name
  * matching anywhere in this path, which is the bug class §23.4 cost 16 species rows to.
  */
+import { sharedFindsOnBody } from "./sharedExomastery.js";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { SectorSystemsFile } from "../shared/sectorMapFile.js";
@@ -134,6 +135,7 @@ export function speciesProvenance(
 
   let firstHand = false;
   let firstHandAt: string | undefined;
+  let sharedBy: string[] | undefined;
   if (systemAddress != null && bodyId != null) {
     for (const row of loadFootScannedCatalog(projectRoot).entries) {
       if (row.systemAddress === systemAddress && row.bodyId === bodyId && row.speciesEntryId === entry.id) {
@@ -142,7 +144,23 @@ export function speciesProvenance(
         break;
       }
     }
+    // The shared-exomastery folder (§S): your own backup is first-hand; anyone else's is theirs.
+    for (const { find, own, others } of sharedFindsOnBody(systemAddress, bodyId)) {
+      const row = find.entry;
+      if (row.speciesEntryId !== entry.id) continue;
+      if (own && !firstHand) {
+        firstHand = true;
+        firstHandAt = row.recordedAt;
+      }
+      if (others.length) sharedBy = others.map((c) => c.name ?? "a commander");
+    }
   }
 
-  return { firstHand, firstHandAt, corpusInSystem, systemInCorpus: counts !== undefined };
+  return {
+    firstHand,
+    firstHandAt,
+    corpusInSystem,
+    systemInCorpus: counts !== undefined,
+    ...(sharedBy?.length ? { sharedBy } : {}),
+  };
 }

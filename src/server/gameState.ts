@@ -11,6 +11,7 @@ import type {
   HudPrefsDTO,
   SystemKind,
   SystemLife,
+  PhotoStampPrefs,
 } from "../shared/types.js";
 import { commanderFirstDiscoveredBody, isDeveloperPopulatedSystem } from "./developerPopulatedSystems.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
@@ -160,13 +161,18 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   15: bio bodies kept a "Body 2" placeholder name from ScanOrganic/CodexEntry over the Scan's real
   name; caches written before the fix carry those names.
   16: `codexRegionLogged` — the [CODEX] tag's per-region, per-colour codex record.
+  17: `commanderFid` — tells the commander's own shared-exomastery backups from other people's.
+  18: sibling moons no longer inherit logged variants (their colours were read as their own).
+  19: star `absoluteMagnitude` (the colour rule's luminosity for catalogue stars).
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 16;
+export const JOURNAL_MERGE_CACHE_FORMAT = 19;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
   format: number;
   commanderName: string | null;
+  /** Frontier's commander id — tells your own shared-exomastery backups from other commanders'. */
+  commanderFid?: string | null;
   currentSystem: string | null;
   currentSystemAddress: number | null;
   viewingSystemAddress: number | null;
@@ -547,6 +553,8 @@ function buildSiblingPlanetScan(
 export class GameStateStore {
   /** From journal `LoadGame.Commander` (latest session in merged logs). */
   commanderName: string | null = null;
+  /** `LoadGame.FID` / `Commander.FID` — whose shared-exomastery files are this commander's own (§S). */
+  commanderFid: string | null = null;
   currentSystem: string | null = null;
   currentSystemAddress: number | null = null;
   /**
@@ -902,6 +910,8 @@ export class GameStateStore {
 
   /** User pref: show HUD + poll Status.json (launcher / settings). */
   footTravelOdometerEnabled = false;
+  /** User pref: extra lines on a branded panel snapshot (Options), all off by default. */
+  photoStamp: PhotoStampPrefs = { commander: false, system: false, timestamp: false };
   /** True while odometer accumulates distance for the persisted organic sample session body. */
   footTravelOdometerTracking = false;
   /** Metres accumulated while tracking (great-circle); cleared when a new tracking session starts or pref off. */
@@ -1372,6 +1382,14 @@ export class GameStateStore {
     }
   }
 
+  setPhotoStamp(p: Partial<PhotoStampPrefs>): void {
+    const next = { ...this.photoStamp };
+    for (const k of ["commander", "system", "timestamp"] as const) {
+      if (typeof p[k] === "boolean") next[k] = p[k]!;
+    }
+    this.photoStamp = next;
+  }
+
   setFootTravelOdometerEnabled(value: boolean): void {
     this.footTravelOdometerEnabled = value;
     if (!value) this.resetFootTravelRuntime({ clearPersistedFile: true });
@@ -1771,6 +1789,7 @@ export class GameStateStore {
     setNum("subclass", line.Subclass);
     setStr("luminosity", (line as Record<string, unknown>).Luminosity);
     setNum("stellarMass", line.StellarMass);
+    setNum("absoluteMagnitude", (line as Record<string, unknown>).AbsoluteMagnitude);
     setNum("massEM", line.MassEM);
     setStr("terraformState", line.TerraformState);
     setBool("landable", line.Landable);
@@ -2013,9 +2032,19 @@ export class GameStateStore {
     this.lastEventIso = ts;
 
     try {
+      if (event === "Commander") {
+        const fid = (line as Record<string, unknown>).FID;
+        if (typeof fid === "string" && fid.trim()) this.commanderFid = fid.trim();
+        const nm = (line as Record<string, unknown>).Name;
+        if (typeof nm === "string" && nm.trim()) this.commanderName = nm.trim();
+        return;
+      }
+
       if (event === "LoadGame") {
         const cmd = line.Commander as string | undefined;
         if (typeof cmd === "string" && cmd.trim()) this.commanderName = cmd.trim();
+        const fid = (line as Record<string, unknown>).FID;
+        if (typeof fid === "string" && fid.trim()) this.commanderFid = fid.trim();
         const fc = (line as Record<string, unknown>).FuelCapacity;
         if (typeof fc === "number" && Number.isFinite(fc) && fc > 0) {
           this.loadoutFuelMainCapacityT = fc;
@@ -3069,9 +3098,12 @@ export class GameStateStore {
           delete copy.at;
           b.organicGenusLocks.push(copy);
         }
-        for (const v of sourceBody.confirmedVariants) {
-          if (!b.confirmedVariants.includes(v)) b.confirmedVariants.push(v);
-        }
+        /*
+         * Logged variants are NOT copied (owner, 2026-09-26). A variant is what was logged on that
+         * moon; copied here it read as this moon's own colour: 76 Leonis 6 a, d, f and g all showed
+         * "Osseus Discus - Red" from one scan, overrode their own material prediction, and went in
+         * the outliers file as colour misses on moons nobody had set foot on.
+         */
       }
     }
   }
@@ -3226,6 +3258,7 @@ export class GameStateStore {
     return {
       format: JOURNAL_MERGE_CACHE_FORMAT,
       commanderName: this.commanderName,
+      commanderFid: this.commanderFid,
       currentSystem: this.currentSystem,
       currentSystemAddress: this.currentSystemAddress,
       viewingSystemAddress: this.viewingSystemAddress,
@@ -3302,6 +3335,7 @@ export class GameStateStore {
     }
     this.resetAll();
     this.commanderName = data.commanderName;
+    this.commanderFid = data.commanderFid ?? null;
     this.currentSystem = data.currentSystem;
     this.currentSystemAddress = data.currentSystemAddress;
     this.viewingSystemAddress = data.viewingSystemAddress;

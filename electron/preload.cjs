@@ -50,6 +50,13 @@ contextBridge.exposeInMainWorld("edexoElectron", {
    * @returns {Promise<{ ok: boolean }>}
    */
   resizeHudOverlay: (opts) => ipcRenderer.invoke("edexo:resize-hud-overlay", opts),
+  /**
+   * Save text to a file the commander picks (Exomastery downloads). Only the launcher may call it.
+   *
+   * @param {{ defaultName: string, text: string }} opts
+   * @returns {Promise<{ saved: boolean; path?: string; error?: string }>}
+   */
+  saveTextFile: (opts) => ipcRenderer.invoke("edexo:save-text-file", opts),
   /** Launcher → every HUD window, as a setting changes (the HUDs have their own session). */
   pushHudPrefs: (prefs) => ipcRenderer.send("edexo:push-hud-prefs", prefs),
   /** HUD side of {@link pushHudPrefs}. */

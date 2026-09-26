@@ -8,12 +8,19 @@ import { EliteTipRotator } from "./EliteTipRotator";
 import type { AppSnapshot, BodyComputed, FootScannedEntry } from "@shared/types";
 import { buildBodyOrbitGroups, groupTabBodiesIntoHostCards } from "./bodyTabGroups";
 import { useStableBioTabOrder } from "./useStableBioTabOrder";
-import { readBodySortPref, useSortedBodies, writeBodySortPref, type BodySortMode } from "./bodySort";
+import {
+  pickBodyTab,
+  readBodySortPref,
+  useSortedBodies,
+  writeBodySortPref,
+  type BodySortMode,
+} from "./bodySort";
 import { BodyTabStrip, TabSection } from "./BodyTabStrip";
 import { BodyJumpPalette, bodyJumpItems } from "./BodyJumpPalette";
 import { BodyPane } from "./BodyPane";
 import { HeaderBar } from "./HeaderBar";
 import { CopySystemButton } from "./CopySystemButton";
+import { setSnapshotStamp } from "./panelSnapshot";
 
 /*
  * React first, above the `lazy()` calls below.
@@ -232,17 +239,35 @@ export function App() {
    * — each calling setState, so a single snapshot could cost three commits. The strip shows every
    * body now, so one list decides; never write the key that is already set.
    */
+  /*
+   * Where a fresh page (or a new system) opens: the body the ship is at, then the targeted one,
+   * then the first in the sort. The tab-follow on landing / targeting is a one-shot the next
+   * broadcast clears, so a reload after landing opened on whatever sorted first (owner,
+   * 2026-09-26: landed on Tegnae ZK-Z c28-3 BC 1, reloaded, and read BC 4's Acies colour as BC 1's).
+   */
+  const shipBodyKey = snapshot?.shipProximity?.originBodyKey ?? null;
+  const dest = snapshot?.statusDestination;
+  const destBodyKey = dest ? `${dest.systemAddress}:${dest.bodyId}` : null;
   useEffect(() => {
     if (!orderedBodies.length) {
       setSelectedBodyKey((k) => (k === null ? k : null));
       return;
     }
-    setSelectedBodyKey((k) => {
-      if (k && orderedBodies.some((b) => b.state.key === k)) return k;
-      const next = orderedBodies[0]!.state.key;
-      return next === k ? k : next;
+    const keys = orderedBodies.map((b) => b.state.key);
+    setSelectedBodyKey((k) => pickBodyTab(keys, k, shipBodyKey, destBodyKey));
+  }, [orderedBodies, shipBodyKey, destBodyKey]);
+
+  // What a panel snapshot stamps beside the EDEXO mark (Options > Snapshot images).
+  const stampPrefs = snapshot?.photoStamp;
+  const stampCmdr = snapshot?.commanderName ?? null;
+  const stampSystem = snapshot?.viewingSystemName ?? snapshot?.currentSystem ?? null;
+  useEffect(() => {
+    setSnapshotStamp({
+      prefs: stampPrefs ?? { commander: false, system: false, timestamp: false },
+      commanderName: stampCmdr,
+      systemName: stampSystem,
     });
-  }, [orderedBodies]);
+  }, [stampPrefs, stampCmdr, stampSystem]);
 
   /** Ctrl+K anywhere opens the jump palette; the strip itself needs no measurement now. */
   useEffect(() => {

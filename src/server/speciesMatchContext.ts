@@ -13,6 +13,7 @@ import {
   resolveHostStarBodyId,
 } from "./orbitUtils.js";
 import { hostStarClassKeys } from "../shared/hostStarGates.js";
+import { explorationRecordHasPlanetSlotDesignation } from "../shared/planetSlotDesignation.js";
 import { hostStarClassKey } from "../shared/hostStarClass.js";
 import { getProjectRoot } from "./paths.js";
 import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
@@ -143,6 +144,288 @@ export function mainStarClassOf(byId: Map<number, ExplorationScanRecord>): strin
   const id = arrivalStarBodyId(byId);
   const key = id == null ? null : hostStarClassKey(byId.get(id)?.starType);
   return key ?? undefined;
+}
+
+/**
+ * The star whose class sets a star-coloured species' colour (bug report 2026-09-26, Hypao Flee MS-T
+ * d3-63 2 c: Stratum and Bacterium alcyoneum shown T-dwarf grey and red, really green and lime — the
+ * moon orbits a brown dwarf "2" that orbits an F).
+ *
+ * Measured on 26,000 EDDN codex entries, whose variant suffix names the class the game used
+ * (`$Codex_Ent_Stratum_07_TTS_Name;`), against each body's `Parents`:
+ *
+ * | host | above the host | the game used |
+ * |---|---|---|
+ * | any star with its own letter ("B", "C") | — | the host: L 663:24, T 221:7, normal ~99 % |
+ * | brown dwarf (L/T/Y/T Tauri) in a planet slot ("2", "11", "A 4", "AB 5") | a normal star | **that star**: Y 476/477, T 24/24 |
+ * | same | a black hole | the dwarf: T 6/6, Y 5/5 |
+ * | T dwarf in a planet slot | only a barycentre | the dwarf, 16/19 |
+ * | Y dwarf in a planet slot | only a barycentre | **the arrival star**, 88/90 |
+ *
+ * On the owner's own 507 confirmed star-coloured variants this is 507 right, where the host alone
+ * was 500. Colour only: the host-star gates keep reading the real host.
+ *
+ * ## The rule under that table: the brightest star in the body's sky (re-check, same day)
+ *
+ * The table is what the game's real rule looks like from the designations. Around one *lettered*
+ * dwarf the close planets keep its colour and the far ones take the arrival star's (Kyloaln HA-J
+ * c24-5 C 3 at 90 ls: L; C 8 at 373 ls: K), and planets round a dim M companion take a bright A's.
+ * The game colours a plant after the star that is brightest where the plant grows: luminosity
+ * (R² T⁴) over distance². Scored on 4,643 EDDN codex entries: the table 95.7 %, brightest star
+ * 99.5 %; on planets round a barycentre ("AB 1") 61 % against 100 %.
+ *
+ * So {@link brightestStarTypeFor} decides whenever the star the body orbits and the arrival star
+ * both have a radius and a temperature, and the table below is only the fallback for systems that
+ * lack them (an old Spansh lookup, a star never scanned).
+ */
+export function colourStarTypeFor(
+  rec: ExplorationScanRecord,
+  byId: Map<number, ExplorationScanRecord>,
+): string | undefined {
+  return brightestStarTypeFor(rec, byId) ?? colourStarTypeByDesignation(rec, byId);
+}
+
+const SOLAR_RADIUS_M = 695_700_000;
+const SUN_TEMPERATURE_K = 5772;
+
+/** Luminosity in suns from radius and temperature (R² T⁴). A black hole gives no light. */
+function starLuminosity(r: ExplorationScanRecord | undefined): number | undefined {
+  const type = r?.starType?.trim();
+  if (!r || !type) return undefined;
+  if (/^(H|SupermassiveBlackHole)$|blackhole/i.test(type)) return 0;
+  const R = r.radius;
+  const T = r.surfaceTemperature;
+  const fromSize =
+    typeof R === "number" && R > 0 && typeof T === "number" && T > 0
+      ? (R / SOLAR_RADIUS_M) ** 2 * (T / SUN_TEMPERATURE_K) ** 4
+      : undefined;
+  /*
+   * The brighter of the two readings (owner's HIP 36601 B 3, 2026-09-26). Catalogue stars keep the
+   * real star's absolute magnitude while the game generates radius and temperature: HIP 36601 A is a
+   * K0 V of 0.75 R☉ and 4,432 K (0.2 suns) at magnitude 1.1 (30 suns), and every commander who logged
+   * B 3 got the K colour, not the dwarf's. For ordinary stars the two agree to 1 %; for neutron stars
+   * the magnitude reads low, and radius and temperature are the ones the game follows there.
+   */
+  const M = r.absoluteMagnitude;
+  // Neutron stars: the magnitude reads up to 3,000× low and occasionally 8× high; the game follows
+  // radius and temperature (Myriesly RV-B d14-1839 1 a keeps its Y dwarf's colour).
+  const fromMagnitude =
+    !/^N$/i.test(type) && typeof M === "number" && Number.isFinite(M) ? 10 ** (-0.4 * (M - 4.83)) : undefined;
+  if (fromSize === undefined) return fromMagnitude;
+  return fromMagnitude === undefined ? fromSize : Math.max(fromSize, fromMagnitude);
+}
+
+type OrbitNode = { kind: "Star" | "Null"; id: number };
+const nodeKey = (n: OrbitNode) => `${n.kind}:${n.id}`;
+
+/**
+ * Where the brightest-star rule gets its distances: a star's own `Parents` and semi-major axis, and
+ * a barycentre's orbit from `ScanBaryCentre`. Built once per call from the system index.
+ */
+class StarTree {
+  private readonly ancestry = new Map<string, OrbitNode[]>();
+  private readonly mass = new Map<string, number>();
+  private readonly children = new Map<string, Set<string>>();
+
+  constructor(private readonly byId: Map<number, ExplorationScanRecord>) {
+    for (const [id, r] of byId) {
+      if (!r.starType?.trim()) continue;
+      const chain = (Array.isArray(r.parents) ? r.parents : [])
+        .map((e) => parseJournalParentEntry(e))
+        .filter((e): e is OrbitNode => e?.kind === "Star" || e?.kind === "Null");
+      const self: OrbitNode = { kind: "Star", id };
+      this.ancestry.set(nodeKey(self), chain);
+      const m = typeof r.stellarMass === "number" && r.stellarMass > 0 ? r.stellarMass : undefined;
+      const path = [self, ...chain];
+      for (let i = 0; i < path.length; i++) {
+        const k = nodeKey(path[i]!);
+        if (m !== undefined) this.mass.set(k, (this.mass.get(k) ?? 0) + m);
+        // A barycentre's own ancestry is the tail of any star's chain that passes through it.
+        if (path[i]!.kind === "Null" && !this.ancestry.has(k)) this.ancestry.set(k, path.slice(i + 1));
+        if (i + 1 < path.length) {
+          const pk = nodeKey(path[i + 1]!);
+          if (!this.children.has(pk)) this.children.set(pk, new Set());
+          this.children.get(pk)!.add(k);
+        }
+      }
+    }
+  }
+
+  /** Stars that sit inside this barycentre, at any depth. */
+  starsIn(bary: number): number[] {
+    const out: number[] = [];
+    for (const [k, chain] of this.ancestry) {
+      if (k.startsWith("Star:") && chain.some((n) => n.kind === "Null" && n.id === bary))
+        out.push(Number(k.slice(5)));
+    }
+    return out;
+  }
+
+  isStellarBarycentre(id: number): boolean {
+    return this.ancestry.has(`Null:${id}`);
+  }
+
+  /** A node's distance from the thing it orbits, in light seconds. */
+  private offsetLs(n: OrbitNode, depth = 0): number | undefined {
+    if (n.kind === "Star") {
+      const sma = this.byId.get(n.id)?.semiMajorAxis;
+      return typeof sma === "number" && sma > 0 ? sma / LIGHT_SECOND_METERS : undefined;
+    }
+    const sma = this.byId.get(barycentreSyntheticBodyId(n.id))?.semiMajorAxis;
+    if (typeof sma === "number" && sma > 0) return sma / LIGHT_SECOND_METERS;
+    // No `ScanBaryCentre`: the two sides of a pair balance, a₁m₁ = a₂m₂.
+    if (depth > 4) return undefined;
+    const parent = this.ancestry.get(nodeKey(n))?.[0];
+    if (!parent) return undefined;
+    const siblings = [...(this.children.get(nodeKey(parent)) ?? [])].filter((k) => k !== nodeKey(n));
+    if (siblings.length !== 1) return undefined;
+    const [kind, id] = siblings[0]!.split(":") as ["Star" | "Null", string];
+    const other: OrbitNode = { kind, id: Number(id) };
+    const a = this.offsetLs(other, depth + 1);
+    const mOther = this.mass.get(siblings[0]!);
+    const mSelf = this.mass.get(nodeKey(n));
+    if (a === undefined || !mOther || !mSelf) return undefined;
+    return (a * mOther) / mSelf;
+  }
+
+  /**
+   * Distance between two nodes through their lowest common barycentre (or star): the two sides of
+   * a pair are always on opposite sides of it, so the offsets add.
+   */
+  separationLs(a: OrbitNode, b: OrbitNode): number | undefined {
+    const pathA = [a, ...(this.ancestry.get(nodeKey(a)) ?? [])];
+    const pathB = [b, ...(this.ancestry.get(nodeKey(b)) ?? [])];
+    const keysB = pathB.map(nodeKey);
+    const iA = pathA.findIndex((n) => keysB.includes(nodeKey(n)));
+    if (iA < 0) return undefined;
+    const iB = keysB.indexOf(nodeKey(pathA[iA]!));
+    let sum = 0;
+    for (const n of [...pathA.slice(0, iA), ...pathB.slice(0, iB)]) {
+      const o = this.offsetLs(n);
+      if (o === undefined) return undefined;
+      sum += o;
+    }
+    return sum;
+  }
+}
+
+/**
+ * The class of the star that shines brightest on this body: luminosity / distance². Undefined
+ * when the star (or star group) the body orbits, or the arrival star, cannot be measured.
+ *
+ * Distances: to the star or barycentre the body orbits, its orbit (the planet's, for a moon); to the
+ * arrival star, the body's own arrival distance, which is exact; to any other star, the orbit tree
+ * (`StarTree`), combined with the body's orbit. A star the tree cannot place is left out.
+ */
+export function brightestStarTypeFor(
+  rec: ExplorationScanRecord,
+  byId: Map<number, ExplorationScanRecord>,
+): string | undefined {
+  const tree = new StarTree(byId);
+  const chain = (Array.isArray(rec.parents) ? rec.parents : []).map((e) => parseJournalParentEntry(e));
+  // What the body orbits: the nearest star, else the nearest barycentre that holds stars.
+  let anchorIndex = chain.findIndex((e) => e?.kind === "Star");
+  if (anchorIndex < 0)
+    anchorIndex = chain.findIndex((e) => e?.kind === "Null" && tree.isStellarBarycentre(e.id));
+  if (anchorIndex < 0) return undefined;
+  const anchor = chain[anchorIndex] as OrbitNode;
+  const orbiter = anchorIndex === 0 ? null : chain[anchorIndex - 1];
+  const orbitSma =
+    orbiter == null
+      ? rec.semiMajorAxis
+      : orbiter.kind === "Planet"
+        ? byId.get(orbiter.id)?.semiMajorAxis
+        : orbiter.kind === "Null"
+          ? byId.get(barycentreSyntheticBodyId(orbiter.id))?.semiMajorAxis
+          : undefined;
+  const arrivalId = arrivalStarBodyId(byId);
+  const arrivalLs =
+    typeof rec.distanceFromArrivalLs === "number" && Number.isFinite(rec.distanceFromArrivalLs)
+      ? rec.distanceFromArrivalLs
+      : undefined;
+  const members = anchor.kind === "Star" ? [anchor.id] : tree.starsIn(anchor.id);
+  let orbitLs = typeof orbitSma === "number" && orbitSma > 0 ? orbitSma / LIGHT_SECOND_METERS : undefined;
+  // A planet pair's barycentre with no `ScanBaryCentre` (EDSM and Spansh drop it): when the arrival
+  // star is in the group the body orbits, the arrival distance is that orbit, as in starDistanceLs.
+  if (orbitLs === undefined && arrivalId != null && members.includes(arrivalId)) orbitLs = arrivalLs;
+  if (orbitLs === undefined) return undefined;
+
+  // Every star the body orbits has to be measurable, or the missing one may be the bright one.
+  if (!members.length || members.some((id) => starLuminosity(byId.get(id)) === undefined)) return undefined;
+  let best: { type: string; flux: number } | null = null;
+  let anchorSeen = false;
+  let arrivalSeen = arrivalId == null;
+  for (const [id, r] of byId) {
+    const L = starLuminosity(r);
+    if (L === undefined) continue;
+    let d: number | undefined;
+    if (id === arrivalId && arrivalLs !== undefined && !(anchor.kind === "Star" && anchor.id === id)) {
+      d = Math.max(arrivalLs, 1);
+    } else if (members.includes(id)) {
+      const off = anchor.kind === "Star" ? 0 : tree.separationLs({ kind: "Star", id }, anchor);
+      d = Math.hypot(orbitLs, off ?? 0);
+    } else {
+      // Round the arrival star (or a group holding it), another star's own arrival distance is how
+      // far it is right now; the orbit tree only knows how far apart two orbits can be.
+      const ownArrival = r.distanceFromArrivalLs;
+      const hasOwn = typeof ownArrival === "number" && ownArrival > 0;
+      let sep =
+        arrivalId != null && members.includes(arrivalId) && hasOwn
+          ? ownArrival
+          : tree.separationLs({ kind: "Star", id }, anchor);
+      /*
+       * A star the tree cannot place (a barycentre with more than two members and no
+       * `ScanBaryCentre`): both distances from the arrival star are known, the angle between them is
+       * not, so take them at right angles — between the closest and farthest they can be.
+       * Drumbaae KX-U f2-427 ABC 1 e: a neutron star 1,160 ls out outshines the moon's T dwarf.
+       */
+      if (sep === undefined && hasOwn && arrivalLs !== undefined) {
+        sep = Math.hypot(ownArrival, arrivalLs);
+        d = sep;
+      }
+      if (d === undefined && sep !== undefined) d = Math.hypot(sep, orbitLs);
+    }
+    if (d === undefined || !(d > 0)) continue;
+    if (members.includes(id)) anchorSeen = true;
+    if (id === arrivalId) arrivalSeen = true;
+    const flux = L / (d * d);
+    if (!best || flux > best.flux) best = { type: r.starType!.trim(), flux };
+  }
+  // Nothing measured but black holes: no light to go by.
+  if (!best || !(best.flux > 0) || !anchorSeen || !arrivalSeen) return undefined;
+  return best.type;
+}
+
+/** The designation table above: the fallback when the stars cannot be measured. */
+export function colourStarTypeByDesignation(
+  rec: ExplorationScanRecord,
+  byId: Map<number, ExplorationScanRecord>,
+): string | undefined {
+  const hostId = resolveHostStarBodyId(rec, byId);
+  if (hostId == null) return undefined;
+  const host = byId.get(hostId);
+  const hostType = host?.starType?.trim() || undefined;
+  if (!host || !hostType) return hostType;
+  const system = rec.starSystem?.trim() || host.starSystem?.trim() || "";
+  const brownDwarf = /^(L|T|Y)/i.test(hostType); // T Tauri ("TTS") included, as the data has it
+  if (!brownDwarf || !explorationRecordHasPlanetSlotDesignation(host, system)) return hostType;
+
+  // The star the dwarf orbits: next in the body's own chain, else in the dwarf's scan.
+  const chain = allStarParentIds(rec.parents);
+  const at = chain.indexOf(hostId);
+  const aboveId = at >= 0 && at + 1 < chain.length ? chain[at + 1] : allStarParentIds(host.parents)[0];
+  if (aboveId !== undefined) {
+    const aboveType = byId.get(aboveId)?.starType?.trim();
+    if (!aboveType) return hostType;
+    if (/^H$|blackhole/i.test(aboveType)) return hostType; // a black hole colours nothing
+    return aboveType;
+  }
+  // Only a barycentre above: a Y dwarf defers to the arrival star, a T dwarf keeps its own colour.
+  if (/^Y/i.test(hostType)) {
+    const arrival = arrivalStarBodyId(byId);
+    return (arrival != null ? byId.get(arrival)?.starType?.trim() : undefined) || hostType;
+  }
+  return hostType;
 }
 
 export function starDistanceLs(
@@ -326,6 +609,8 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   if (hostStarClasses?.length) ctx.hostStarClasses = hostStarClasses;
   const mainStar = mainStarClassOf(byId);
   if (mainStar) ctx.systemMainStarClass = mainStar;
+  const colourStar = rec ? colourStarTypeFor(rec, byId) : undefined;
+  if (colourStar) ctx.colourStarType = colourStar;
   /**
    * The system's position (Phase 7).
    *

@@ -34,7 +34,7 @@ export interface ExoOutlierRecord {
    * UI shows, which is the same failure to the reader. That case will be recorded as `rankedLow`
    * with its position, so the log stays meaningful when nothing is ever strictly excluded any more.
    */
-  severity: "absent" | "unlikelyOnly" | "rankedLow";
+  severity: "absent" | "unlikelyOnly" | "rankedLow" | "colour";
   /** Position in the candidate list when `rankedLow`, else null. */
   rank: number | null;
   /** The criterion that rejected it, from the matcher's own reasons — usually the thing to fix. */
@@ -54,6 +54,13 @@ export interface ExoOutlierRecord {
   candidates: string[];
   /** Biological signals the game reported, when known. */
   biologicalSignals: number | null;
+  /**
+   * `colour` records (owner, 2026-09-26): the species was right, its colour was not. What the app
+   * predicted ("Green", "Cyan or Orange"), what was logged, and the star class the prediction read.
+   */
+  predictedColour?: string;
+  loggedColour?: string;
+  colourStarType?: string | null;
 }
 
 /**
@@ -73,18 +80,20 @@ export interface ExoOutlierTally {
   absent: number;
   unlikelyOnly: number;
   rankedLow: number;
+  colour: number;
 }
 
 let tally: ExoOutlierTally | null = null;
 
-function outlierKey(bodyKey: string, speciesId: string): string {
-  return `${bodyKey}|${speciesId}`;
+function outlierKey(bodyKey: string, speciesId: string, severity?: string): string {
+  // A colour miss is its own record: the same species can be both missed and mis-coloured.
+  return severity === "colour" ? `${bodyKey}|${speciesId}|colour` : `${bodyKey}|${speciesId}`;
 }
 
 function loadSeen(): Set<string> {
   if (seen) return seen;
   const set = new Set<string>();
-  const counts: ExoOutlierTally = { total: 0, absent: 0, unlikelyOnly: 0, rankedLow: 0 };
+  const counts: ExoOutlierTally = { total: 0, absent: 0, unlikelyOnly: 0, rankedLow: 0, colour: 0 };
   const p = resolveExoOutlierLogPath();
   if (existsSync(p)) {
     try {
@@ -94,11 +103,12 @@ function loadSeen(): Set<string> {
         try {
           const rec = JSON.parse(t) as Partial<ExoOutlierRecord>;
           if (!rec.bodyKey || !rec.speciesId) continue;
-          set.add(outlierKey(rec.bodyKey, rec.speciesId));
+          set.add(outlierKey(rec.bodyKey, rec.speciesId, rec.severity));
           counts.total++;
           if (rec.severity === "absent") counts.absent++;
           else if (rec.severity === "unlikelyOnly") counts.unlikelyOnly++;
           else if (rec.severity === "rankedLow") counts.rankedLow++;
+          else if (rec.severity === "colour") counts.colour++;
         } catch {
           /* a truncated final line is not worth failing over */
         }
@@ -115,7 +125,7 @@ function loadSeen(): Set<string> {
 /** What the log holds, for the Options panel. Reads the file once per run, then counts in memory. */
 export function exoOutlierTally(): ExoOutlierTally {
   loadSeen();
-  return { ...(tally ?? { total: 0, absent: 0, unlikelyOnly: 0, rankedLow: 0 }) };
+  return { ...(tally ?? { total: 0, absent: 0, unlikelyOnly: 0, rankedLow: 0, colour: 0 }) };
 }
 
 /** Which criterion rejected this species on this body, asked of the matcher rather than guessed. */
@@ -227,6 +237,68 @@ export function recordExoOutliersForBody(input: {
   }
   return lines.length;
 }
+
+/**
+ * Record species logged on this body in a colour the app did not predict (owner, 2026-09-26: a plant
+ * scanned in a colour that was not predicted is flagged and goes in the outliers file). Same file,
+ * same once-per-(body, species) rule as the misses above.
+ */
+export function recordColourOutliersForBody(input: {
+  body: BodyExoState;
+  misses: { speciesId: string; speciesName: string; predicted: string; logged: string }[];
+  colourStarType: string | null;
+  candidates: string[];
+}): number {
+  const { body, misses } = input;
+  if (!misses.length) return 0;
+  const set = loadSeen();
+  const lines: string[] = [];
+  for (const m of misses) {
+    const key = outlierKey(body.key, m.speciesId, "colour");
+    if (set.has(key)) continue;
+    const rec: ExoOutlierRecord = {
+      at: new Date().toISOString(),
+      bodyKey: body.key,
+      bodyName: body.bodyName,
+      starSystem: body.starSystem ?? "",
+      speciesId: m.speciesId,
+      speciesName: m.speciesName,
+      severity: "colour",
+      rank: null,
+      blockedBy: "Colour",
+      blockedDetail: `predicted ${m.predicted}, logged ${m.logged}`,
+      scan: {
+        planetClass: body.scan?.PlanetClass ?? null,
+        atmosphereType: body.scan?.AtmosphereType ?? null,
+        surfaceTemperatureK: body.scan?.SurfaceTemperature ?? null,
+        surfaceGravity: body.scan?.SurfaceGravity ?? null,
+        surfacePressure: body.scan?.SurfacePressure ?? null,
+        volcanism: body.scan?.Volcanism ?? null,
+      },
+      candidateCount: input.candidates.length,
+      candidates: input.candidates,
+      biologicalSignals: body.biologicalSignals ?? null,
+      predictedColour: m.predicted,
+      loggedColour: m.logged,
+      colourStarType: input.colourStarType,
+    };
+    set.add(key);
+    if (tally) {
+      tally.total++;
+      tally.colour++;
+    }
+    lines.push(JSON.stringify(rec));
+  }
+  if (!lines.length) return 0;
+  try {
+    appendFileSync(resolveExoOutlierLogPath(), `${lines.join(NL)}${NL}`, "utf8");
+  } catch {
+    /* best-effort, as above */
+  }
+  return lines.length;
+}
+
+const NL = String.fromCharCode(10);
 
 /** Test seam: forget what has been written so a fresh file can be exercised. */
 export function resetExoOutlierLogCacheForTests(): void {

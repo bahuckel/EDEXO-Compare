@@ -203,7 +203,7 @@ describe("rankedLow", () => {
 
 describe("exoOutlierTally", () => {
   it("counts nothing before anything is recorded", () => {
-    expect(exoOutlierTally()).toEqual({ total: 0, absent: 0, unlikelyOnly: 0, rankedLow: 0 });
+    expect(exoOutlierTally()).toEqual({ total: 0, absent: 0, unlikelyOnly: 0, rankedLow: 0, colour: 0 });
   });
 
   it("counts what has been written, and survives a restart by re-reading the file", () => {

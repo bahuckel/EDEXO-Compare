@@ -238,6 +238,10 @@
 .species-prov--corpus {
   color: var(--muted, #8b97a8);
 }
+/* Another commander's shared file has it on this body (§S). */
+.species-prov--shared {
+  color: #5fe0ff;
+}
 
 /* Measured distribution bars (B7) — counts the feeder observed, not a curve drawn over a mode. */
 .exo-dist-bar {

@@ -238,6 +238,12 @@ export interface SpeciesMatchContext {
    */
   systemMainStarClass?: string;
   /**
+   * Journal star type of the star that sets star-coloured species' colours — the host, unless the
+   * host is a brown dwarf in a planet slot, then the star that dwarf orbits (speciesMatchContext.ts
+   * `colourStarTypeFor`). Colour only: gates keep reading {@link parentStarType}.
+   */
+  colourStarType?: string;
+  /**
    * Journal `PlanetClass` of every other body the FSS has found in this system.
    *
    * The wire for the companion-body conditions: Amphora plant and the Brain Trees spawn on what else
@@ -958,6 +964,8 @@ export interface FootScannedEntry {
   dbProbableSpeciesId: string | null;
   /** True when `dbProbableSpeciesId` differs from `speciesEntryId` (both non-null). */
   dbProbableDisagreed: boolean;
+  /** Set on a row read from the shared-exomastery folder: the other commanders who reported it (§S). */
+  sharedFrom?: string[];
 }
 
 export interface FootScannedFile {
@@ -1088,6 +1096,8 @@ export interface SpeciesProvenance {
   corpusInSystem: number;
   /** Whether the corpus knows this system at all, so a 0 above can be told from silence. */
   systemInCorpus: boolean;
+  /** Other commanders whose shared exomastery file has this species on this exact body (§S). */
+  sharedBy?: string[];
 }
 
 export interface SpeciesMatch {
@@ -1258,6 +1268,16 @@ export interface SpeciesMatch {
    * already logged, when the region is unknown, or before the journals were merged with the record.
    */
   codexNew?: boolean;
+  /**
+   * The colour logged for this species on this body (a foot or composition scan's variant), which
+   * wins over the predicted one. Absent until it has been scanned here.
+   */
+  confirmedColour?: string;
+  /**
+   * Set when {@link confirmedColour} is not what the app predicted for this body: the prediction, for
+   * the flag on the row. Such a find is written to the outliers file as a `colour` record.
+   */
+  colourMismatchPredicted?: string;
   /** The colours that would be new ("Green", or both of "Cyan or Orange"); empty when the colour is unknown. */
   codexNewColours?: string[];
   /** The region the mark is about, for the tooltip. */
@@ -2310,6 +2330,34 @@ export interface AppStatusDTO {
  * `arrival`: measured by the game, from the arrival star. `orbits`: estimated from the orbit tree
  * because the ship is at another body.
  */
+/** See AppSnapshot.sharedExomastery. */
+export interface SharedExomasteryDTO {
+  folder: string;
+  files: {
+    file: string;
+    kind: "exomastery" | "codex" | null;
+    commander: string | null;
+    fid: string | null;
+    entries: number;
+    skipped?: string;
+  }[];
+  /** Finds from other commanders (merged, duplicates counted once). */
+  finds: number;
+  /** Finds your own backup files hold. */
+  ownBackupFinds: number;
+  /** Other commanders who contributed. */
+  commanders: number;
+  /** Other commanders' finds that break a species gate — shown under the mail icon. */
+  alerts: ExoDataAlertDTO[];
+}
+
+/** Options > Snapshot images: extra lines on a branded panel snapshot. */
+export interface PhotoStampPrefs {
+  commander: boolean;
+  system: boolean;
+  timestamp: boolean;
+}
+
 export interface ShipProximityDTO {
   originBodyKey: string | null;
   /** Short name of the body the distances are from ("A 2 a"). */
@@ -2374,6 +2422,8 @@ export interface AppSnapshot {
   viewingSystemName: string | null;
   /** Set while the viewed system is one looked up from Spansh rather than known from the journals. */
   remoteView?: RemoteViewDTO | null;
+  /** The shared-exomastery folder: files read, finds merged, gate notices (server/sharedExomastery.ts, §S). */
+  sharedExomastery?: SharedExomasteryDTO | null;
   /** How far each bio body is from the ship, for the "Closest" body sort (server/shipProximity.ts). */
   shipProximity?: ShipProximityDTO | null;
   /** Distinct systems from merged journal (and any body rows) for search / picker. */
@@ -2481,7 +2531,7 @@ export interface AppSnapshot {
    * `rankedLow` is the case the ranking model created: offered, but sorted below the genera the panel
    * names. Zero of everything is the honest reading of a fresh install, not a claim of accuracy.
    */
-  exoOutliers: { total: number; absent: number; unlikelyOnly: number; rankedLow: number };
+  exoOutliers: { total: number; absent: number; unlikelyOnly: number; rankedLow: number; colour: number };
   /** Sum of FSS-only estimates for those bodies with merged scan data (belts skipped). */
   explorationFssValueCredits: number;
   /** Planetary bodies with `SAAScanComplete` (stars & belts excluded). */
@@ -2535,6 +2585,11 @@ export interface AppSnapshot {
 
   /** User pref / launcher: HUD + Status.json polling for on-foot distance. */
   footTravelOdometerEnabled: boolean;
+  /**
+   * What the panel snapshots stamp beside the EDEXO branding (owner, 2026-09-26). All off by
+   * default; the EDEXO stamp itself has no option.
+   */
+  photoStamp: PhotoStampPrefs;
   /** True when the odometer is accumulating for the active `organic_sample_session` body (survives Embark). */
   footTravelOdometerTracking: boolean;
   /** Metres walked while tracking (great-circle on `PlanetRadius`); persisted in `data/organic_sample_session.json`. */
@@ -2644,6 +2699,12 @@ export interface ExplorationScanRecord {
   /** Journal detailed `Scan.Luminosity` (Yerkes class, e.g. `V`, `VI`). */
   luminosity?: string;
   stellarMass?: number;
+  /**
+   * Journal `Scan.AbsoluteMagnitude` (stars). For catalogue stars (HIP, HD, Gliese) it is the real
+   * star's brightness, which the game's radius and temperature can badly understate; the colour rule
+   * reads it (see `speciesMatchContext.ts`).
+   */
+  absoluteMagnitude?: number;
   massEM?: number;
   terraformState?: string;
   landable?: boolean;

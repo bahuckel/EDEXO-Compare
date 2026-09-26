@@ -1,3 +1,4 @@
+import { SnapshotButton } from "./SnapshotButton";
 import type { AppSnapshot, NotableBodyInfo } from "@shared/types";
 import { DScanBodiesBadge } from "./DScanBodiesBadge";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -278,6 +279,7 @@ export const SystemMapModal = memo(function SystemMapModal({
       >
         <div className="modal-head">
           <h3>{mapHeading}</h3>
+          <SnapshotButton what="system-map" className="system-map-snapshot" />
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>

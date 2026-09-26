@@ -1,5 +1,14 @@
 import path from "node:path";
 import {
+  buildCodexExport,
+  buildExomasteryExport,
+  clearSharedExomasteryCache,
+  commanderIdHash,
+  exportFileName,
+  ownCodexBackupKeys,
+} from "./sharedExomastery.js";
+import { ownFootEntriesWithBackups } from "./footScannedCatalog.js";
+import {
   existsSync,
   watchFile,
   unwatchFile,
@@ -17,6 +26,7 @@ import type {
   ImportDumpStatusDTO,
   JournalBootProgressDTO,
   JournalLine,
+  PhotoStampPrefs,
 } from "../shared/types.js";
 import { journalHistoryCutoffUtcMs, parseJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { clampStatusPollMs, pollRatesDto } from "../shared/pollRates.js";
@@ -353,6 +363,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             journalPollMs: store.journalPollMs,
             minimapRadiusM: store.minimapRadiusM,
             hudPrefs: store.hudPrefs,
+            photoStamp: store.photoStamp,
           },
           null,
           2,
@@ -380,10 +391,12 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     journalPollMs?: number;
     minimapRadiusM?: number;
     hudPrefs?: unknown;
+    photoStamp?: Partial<PhotoStampPrefs>;
   };
 
   function applyPersistedUserPrefs(j: PersistedUserPrefs): void {
     if (j.hudPrefs && typeof j.hudPrefs === "object") store.setHudPrefs(j.hudPrefs);
+    if (j.photoStamp && typeof j.photoStamp === "object") store.setPhotoStamp(j.photoStamp);
     if (typeof j.statusPollMs === "number" || typeof j.journalPollMs === "number") {
       // Read back through the same clamp that wrote them: a hand-edited settings file is the case
       // this exists for, and a 5 ms status poll would read the same file two hundred times a second.
@@ -1420,6 +1433,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       store.setFootTravelOdometerEnabled(v);
       persistUserPreferences();
     },
+    setPhotoStamp: (p) => {
+      store.setPhotoStamp(p);
+      persistUserPreferences();
+    },
     setExoMapTierThresholds: (plus, pp) => {
       store.setExoMapTierThresholds(plus, pp);
       persistUserPreferences();
@@ -1455,7 +1472,19 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       Anything that memoises a file under `data/` belongs on this list. There is no mechanism that
       enforces that, which is why it is written down.
     */
+    exportExomastery: (kind) => {
+      const commander = { name: store.commanderName, fid: commanderIdHash(store.commanderFid) };
+      if (kind === "codex") {
+        const keys = new Set([...store.codexRegionLogged, ...ownCodexBackupKeys()]);
+        return { fileName: exportFileName("codex", commander.name), body: buildCodexExport(keys, commander) };
+      }
+      return {
+        fileName: exportFileName("exomastery", commander.name),
+        body: buildExomasteryExport(ownFootEntriesWithBackups(getProjectRoot()), commander),
+      };
+    },
     reloadExomastery: () => {
+      clearSharedExomasteryCache();
       retargetSpeciesDataWatcherIfNeeded();
       clearExomasteryProfileCache();
       clearSpeciesPhotoCache();

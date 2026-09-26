@@ -329,3 +329,11 @@
 .tab.on .tab-cx {
   color: #063a4a;
 }
+
+/* A species logged here in a colour the app did not predict — in the miss log (owner, 2026-09-26). */
+.srow-tag--colour-miss,
+.species-colour-miss {
+  color: #ffb060;
+  font-weight: 800;
+  cursor: help;
+}

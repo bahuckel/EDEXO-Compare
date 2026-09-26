@@ -57,7 +57,7 @@ describe("colour-variant photographs", () => {
   });
 
   it("says nothing about a species nobody has photographed by variant", () => {
-    expect(resolveSpeciesPhoto(find("Bacterium tela"), root).photoVariants).toEqual([]);
+    expect(resolveSpeciesPhoto(find("Bacterium nebulus"), root).photoVariants).toEqual([]);
   });
 
   it("does not read a number or a stray suffix as a colour", () => {
@@ -84,7 +84,7 @@ describe("who took the photograph", () => {
       Checked on a species the owner has *not* photographed, since one he has no longer shows an
       ED-DSN image to credit.
     */
-    const p = resolveSpeciesPhoto(find("Bacterium tela"), root);
+    const p = resolveSpeciesPhoto(find("Bacterium nebulus"), root);
     expect(p.photoCreditByUrl?.[p.photoUrl]).toBeUndefined();
     expect(photoContributorFor(root, "Bacterium-vesicula.png")).toBeNull();
   });

@@ -77,6 +77,7 @@
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^17.12.0",
+    "html-to-image": "^1.11.13",
     "jsdom": "^29.1.1",
     "png-to-ico": "^2.1.8",
     "pngjs": "^6.0.0",

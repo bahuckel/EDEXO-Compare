@@ -90,9 +90,12 @@ export function SpeciesRow({
   const prog = rowProgress(m, ctx);
   const mult: 1 | 5 = settledMultiplier(footfall) ?? 1;
   const { genus, epithet } = splitName(m);
-  const colourRaw = hostStarType
-    ? candidateMorphColorShortLabel(m.entry, hostStarType, scan?.materials)
-    : candidateMorphColorShortLabelForHosts(m.entry, hostStarTypes, scan?.materials);
+  // What was actually logged here beats any prediction (bug report 2026-09-26: scanning did not fix it).
+  const colourRaw =
+    m.confirmedColour ??
+    (hostStarType
+      ? candidateMorphColorShortLabel(m.entry, hostStarType, scan?.materials)
+      : candidateMorphColorShortLabelForHosts(m.entry, hostStarTypes, scan?.materials));
   const colourUnknown = !colourRaw || colourRaw === "(unknown)";
   /*
     "We cannot tell you what you would find here."
@@ -180,6 +183,14 @@ export function SpeciesRow({
             {" "}
             - {colourUnknown ? "colour unknown" : colourRaw}
           </span>
+          {m.colourMismatchPredicted ? (
+            <span
+              className="srow-tag srow-tag--colour-miss"
+              title={`Logged ${m.confirmedColour}, predicted ${m.colourMismatchPredicted} — recorded in the miss log (edexo-outliers.jsonl).`}
+            >
+              ⚑
+            </span>
+          ) : null}
           {m.codexNew ? (
             <span className="srow-tag srow-tag--codex" title={codexMarkTitle(m)}>
               [CODEX]

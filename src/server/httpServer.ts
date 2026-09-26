@@ -1,4 +1,7 @@
 import { parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
+import { loadSharedExomastery, sharedExomasteryDir } from "./sharedExomastery.js";
+import { sharedExomasterySummary } from "./snapshot.js";
+import { openLocalFile } from "./openUrl.js";
 import { getHudBridge } from "./hudBridge.js";
 import { eliteDisplayWarning, readEliteDisplayMode } from "./eliteDisplayMode.js";
 import http from "node:http";
@@ -29,6 +32,7 @@ import type {
   FirstDiscoveryBacklogDTO,
   ExoDataAlertDTO,
   DiscoveriesDTO,
+  PhotoStampPrefs,
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { isJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
@@ -222,6 +226,8 @@ export function createHttpServer(opts: {
   setCollectionFocus?: (raw: unknown) => CollectionFocusConfig;
   setIncludeBacterium?: (value: boolean) => void;
   setIncludeExplorationScanData?: (value: boolean) => void;
+  /** POST /api/settings/photo-stamp — JSON { commander?, system?, timestamp?: boolean } */
+  setPhotoStamp?: (p: Partial<PhotoStampPrefs>) => void;
   /** POST /api/settings/foot-travel-odometer — JSON { value: boolean } */
   setFootTravelOdometer?: (value: boolean) => void;
   /** POST /api/settings/exo-map-tiers — JSON { plusMinCr: number, plusPlusMinCr: number } */
@@ -326,6 +332,8 @@ export function createHttpServer(opts: {
   ) => EncyclopediaExomasteryPlanetsResponseDTO | null;
   /** POST /api/exomastery/reload — re-read species DB + clear exomastery JSON cache; then call {@link scheduleBroadcast}. */
   reloadExomastery?: () => void;
+  /** The commander's own exomastery (on-foot finds) or codex record, as a download (§S). */
+  exportExomastery?: (kind: "exomastery" | "codex") => { fileName: string; body: unknown };
   /** Clear in-memory exomastery JSON cache only (used by encyclopedia `?force=1`). */
   clearExomasteryProfileCache?: () => void;
   /** POST /api/exo-data-alerts/fix — write fixes_*.json stubs next to codex / feeder JSON. */
@@ -1418,6 +1426,26 @@ export function createHttpServer(opts: {
     res.json({ ok: true });
   });
 
+  app.post("/api/settings/photo-stamp", (req, res) => {
+    if (typeof opts.setPhotoStamp !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const p: Partial<PhotoStampPrefs> = {};
+    for (const k of ["commander", "system", "timestamp"] as const) {
+      if (body[k] === undefined) continue;
+      if (typeof body[k] !== "boolean") {
+        res.status(400).json({ ok: false, error: `"${k}" must be a boolean.` });
+        return;
+      }
+      p[k] = body[k] as boolean;
+    }
+    opts.setPhotoStamp(p);
+    opts.scheduleBroadcast?.();
+    res.json({ ok: true });
+  });
+
   app.post("/api/settings/foot-travel-odometer", (req, res) => {
     if (typeof opts.setFootTravelOdometer !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
@@ -1922,6 +1950,51 @@ export function createHttpServer(opts: {
     } catch (e) {
       res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
     }
+  });
+
+  /** Download your exomastery or your codex as a file (§S). */
+  app.get("/api/exomastery/export", (req, res) => {
+    const kind = req.query.kind === "codex" ? "codex" : req.query.kind === "exomastery" ? "exomastery" : null;
+    if (!kind) {
+      res.status(400).json({ ok: false, error: "kind must be exomastery or codex." });
+      return;
+    }
+    if (typeof opts.exportExomastery !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const { fileName, body } = opts.exportExomastery(kind);
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.send(JSON.stringify(body, null, 2));
+  });
+
+  /** What the shared-exomastery folder holds, for the launcher (§S). */
+  app.get("/api/exomastery/shared", (_req, res) => {
+    const s = sharedExomasterySummary();
+    res.json({
+      ok: true,
+      folder: s.folder,
+      files: s.files,
+      finds: s.finds,
+      ownBackupFinds: s.ownBackupFinds,
+      commanders: s.commanders,
+      alerts: s.alerts.length,
+    });
+  });
+
+  /** Open the shared-exomastery folder in Explorer — on the PC running the app only. */
+  app.post("/api/exomastery/open-shared-folder", (req, res) => {
+    if (!isLoopbackAddress(req.socket.remoteAddress)) {
+      res
+        .status(403)
+        .json({ ok: false, error: "The folder opens on the PC running the app, so only from there." });
+      return;
+    }
+    loadSharedExomastery(); // creates the folder, so there is something to open
+    const dir = sharedExomasteryDir();
+    openLocalFile(dir);
+    res.json({ ok: true, folder: dir });
   });
 
   app.post("/api/exomastery/reload", (_req, res) => {

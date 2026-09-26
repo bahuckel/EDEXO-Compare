@@ -3,7 +3,7 @@
  * and the distances "Closest" reads from `shipProximity`.
  */
 import { describe, expect, it } from "vitest";
-import { sortBodies } from "../src/client/bodySort.js";
+import { pickBodyTab, sortBodies } from "../src/client/bodySort.js";
 import { buildShipProximity, meanSeparation, orbitDistanceLs } from "../src/server/shipProximity.js";
 import type { BodyComputed, ExplorationScanRecord, ShipProximityDTO } from "../src/shared/types.js";
 
@@ -149,5 +149,20 @@ describe("ship proximity", () => {
     expect(meanSeparation(5, 0)).toBe(5);
     // Same circle: 4r/π on average.
     expect(meanSeparation(1, 1)).toBeCloseTo(4 / Math.PI, 3);
+  });
+});
+
+describe("pickBodyTab (reload after landing, 2026-09-26)", () => {
+  const keys = ["1:40", "1:23", "1:30"];
+  it("keeps the tab the commander chose while it is listed", () => {
+    expect(pickBodyTab(keys, "1:30", "1:23", null)).toBe("1:30");
+  });
+  it("opens on the body the ship is at, not the first in the sort", () => {
+    expect(pickBodyTab(keys, null, "1:23", "1:30")).toBe("1:23");
+  });
+  it("then the targeted body, then the sort", () => {
+    expect(pickBodyTab(keys, null, "9:9", "1:30")).toBe("1:30");
+    expect(pickBodyTab(keys, null, null, null)).toBe("1:40");
+    expect(pickBodyTab([], null, "1:23", null)).toBeNull();
   });
 });

@@ -211,6 +211,17 @@ export function SpeciesProvenanceBadge({ p }: { p?: SpeciesProvenance }) {
       </span>
     );
   }
+  if (p.sharedBy?.length) {
+    const who = p.sharedBy.map((n) => (n === "a commander" ? n : `CMDR ${n}`)).join(", ");
+    return (
+      <span
+        className="species-prov species-prov--shared"
+        title={`${who} logged this species on this very body — from the shared-exomastery folder.`}
+      >
+        shared{p.sharedBy.length > 1 ? ` (${p.sharedBy.length})` : ""}
+      </span>
+    );
+  }
   if (p.corpusInSystem > 0) {
     return (
       <span

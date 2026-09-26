@@ -1,5 +1,21 @@
 import { speciesProvenance } from "./speciesProvenance.js";
-import type { AppStatusDTO, RemoteViewDTO, SessionLogDTO } from "../shared/types.js";
+import {
+  commanderIdHash,
+  loadSharedExomastery,
+  ownCodexBackupKeys,
+  setOwnCommander,
+  sharedExomasteryDir,
+  sharedFindsWithOwnership,
+  sharedGateAlerts,
+  sharedSignature,
+} from "./sharedExomastery.js";
+import type {
+  AppStatusDTO,
+  FootScannedEntry,
+  RemoteViewDTO,
+  SessionLogDTO,
+  SharedExomasteryDTO,
+} from "../shared/types.js";
 import { existsSync, statSync } from "node:fs";
 import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { UNOBSERVED } from "../shared/observedFlag.js";
@@ -28,7 +44,7 @@ import { perfTime } from "./perf.js";
 import { buildShipProximity } from "./shipProximity.js";
 import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
-import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
+import { matchDatabaseToScan, shownSpeciesMatches, speciesMatchesCriteria } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
 import { journalHostObservationFromSpeciesContext } from "./journalHostObservation.js";
 import { resolveSpeciesPhoto } from "./speciesPhotos.js";
@@ -55,6 +71,8 @@ import {
   augmentMatchesWithFootCatalog,
   clearFootCatalogSpeciesDb,
   footScannedCatalogSignature,
+  ownFootEntriesWithBackups,
+  resolveEntryForCatalogRow,
   loadFootScannedCatalog,
   mergeScanForExomastery,
   needsFootCatalogAugment,
@@ -92,13 +110,13 @@ import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
 import { rankSpeciesOnBody, REGION_PRIOR_WEIGHT } from "./speciesLikelihood.js";
 import { genusShares, timingFromSamples } from "../shared/systemTriage.js";
-import { codexHasSpecies, codexNewColoursInRegion } from "../shared/codexLog.js";
+import { codexHasSpecies, codexNewColoursInRegion, codexSpeciesKey } from "../shared/codexLog.js";
 import { candidateMorphColorShortLabel } from "../shared/candidateSpawnHints.js";
 import type { JournalHostStarObservation } from "../shared/types.js";
 import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
-import { exoOutlierTally, recordExoOutliersForBody } from "./exoOutlierLog.js";
+import { exoOutlierTally, recordColourOutliersForBody, recordExoOutliersForBody } from "./exoOutlierLog.js";
 import { recordPredictionForBody } from "./predictionAuditLog.js";
 import { collectionFocusCached } from "./collectionFocus.js";
 import { edsmUploadLedgerSummary } from "./edsmUploadLedger.js";
@@ -1076,6 +1094,111 @@ function attachCodexNovelty(matches: SpeciesMatch[], store: GameStateStore): voi
 }
 
 /**
+ * The colour each species was actually logged in on this body ("Stratum Tectonicas - Green" gives
+ * "Green"), and the ones that are not what the app predicted: flagged on the row and returned for the
+ * outliers file (owner, 2026-09-26).
+ */
+function attachConfirmedColours(
+  matches: SpeciesMatch[],
+  b: BodyExoState,
+  ctx: SpeciesMatchContext | null,
+  scan: PlanetScan | null,
+): { speciesId: string; speciesName: string; predicted: string; logged: string }[] {
+  const misses: { speciesId: string; speciesName: string; predicted: string; logged: string }[] = [];
+  if (!b.confirmedVariants?.length) return misses;
+  const byKey = new Map<string, string>();
+  for (const v of b.confirmedVariants) {
+    const dash = v.indexOf(" - ");
+    if (dash > 0) byKey.set(codexSpeciesKey(v.slice(0, dash)), v.slice(dash + 3).trim());
+  }
+  for (const m of matches) {
+    const c = byKey.get(codexSpeciesKey(m.entry.displayName));
+    if (!c) continue;
+    m.confirmedColour = c;
+    const predicted = colourPredictionMissed(m.entry, c, ctx, scan);
+    if (!predicted) continue;
+    m.colourMismatchPredicted = predicted;
+    misses.push({ speciesId: m.entry.id, speciesName: m.entry.displayName, predicted, logged: c });
+  }
+  return misses;
+}
+
+/**
+ * What the app predicted for this species here, when that was not the colour logged; null when the
+ * prediction was right or there was none. "(unknown)" is no prediction; "Cyan or Orange" is right
+ * when either is logged.
+ */
+function colourPredictionMissed(
+  entry: SpeciesEntry,
+  logged: string,
+  ctx: SpeciesMatchContext | null,
+  scan: PlanetScan | null,
+): string | null {
+  const predicted = candidateMorphColorShortLabel(
+    entry,
+    ctx?.colourStarType ?? ctx?.parentStarType,
+    scan?.materials,
+  );
+  if (!predicted || predicted.startsWith("(")) return null;
+  const options = predicted.split(" or ").map((x) => x.trim().toLowerCase());
+  return options.includes(logged.trim().toLowerCase()) ? null : predicted;
+}
+
+/**
+ * Every logged colour in the journals, checked against the prediction (owner, 2026-09-26: "run
+ * through my journals and add colours to outliers … needed for the codex").
+ *
+ * The snapshot only computes the bodies of the system in view, so a colour logged anywhere else
+ * never reached the outliers file. This walks every body with a logged variant, once: a body is
+ * checked again only when it gains a variant. Bodies go system by system, because the per-system
+ * scan index is rebuilt whenever the system changes. The file's own once-per-(body, species) key
+ * keeps a re-run from writing anything twice.
+ */
+const colourSweepSeen = new Map<string, number>();
+
+export function sweepColourOutliers(store: GameStateStore, db: SpeciesDatabase): number {
+  const pending = [...store.bodies.values()]
+    .filter((b) => (b.confirmedVariants?.length ?? 0) > (colourSweepSeen.get(b.key) ?? 0))
+    .sort((a, b) => a.systemAddress - b.systemAddress);
+  if (!pending.length) return 0;
+  const byName = new Map(db.species.map((e) => [codexSpeciesKey(e.displayName), e]));
+  let written = 0;
+  for (const b of pending) {
+    colourSweepSeen.set(b.key, b.confirmedVariants!.length);
+    const scan = mergeScanForExomastery(
+      b.scan,
+      store.physicsExplorationScan(scanBodyKey(b.systemAddress, b.bodyId)),
+    );
+    if (!scan) continue;
+    const ctx = buildSpeciesMatchContext(b, store);
+    const misses: { speciesId: string; speciesName: string; predicted: string; logged: string }[] = [];
+    for (const v of b.confirmedVariants!) {
+      const dash = v.indexOf(" - ");
+      if (dash <= 0) continue;
+      const entry = byName.get(codexSpeciesKey(v.slice(0, dash)));
+      const logged = v.slice(dash + 3).trim();
+      if (!entry || !logged) continue;
+      const predicted = colourPredictionMissed(entry, logged, ctx, scan);
+      if (predicted) misses.push({ speciesId: entry.id, speciesName: entry.displayName, predicted, logged });
+    }
+    if (misses.length) {
+      written += recordColourOutliersForBody({
+        body: b,
+        misses,
+        colourStarType: ctx.colourStarType ?? ctx.parentStarType ?? null,
+        candidates: misses.map((m) => m.speciesId),
+      });
+    }
+  }
+  return written;
+}
+
+/** Test seam. */
+export function resetColourSweepForTests(): void {
+  colourSweepSeen.clear();
+}
+
+/**
  * [CODEX]: the colour this body would grow is not yet in the commander's codex for this region
  * (owner, 2026-09-26 — per colour, as the game's CODEX tab keeps it). The colour is the same label the
  * species row shows, so the mark and the row never disagree. Silent until the journals have been
@@ -1087,18 +1210,55 @@ function attachCodexRegionNovelty(
   ctx: SpeciesMatchContext | null,
   scan: PlanetScan | null,
 ): void {
-  if (store.codexRegionLogged.size === 0) return;
+  // Your own codex backup (shared-exomastery, same FID) counts as logged: journals lost, codex not.
+  const backup = ownCodexBackupKeys();
+  const logged = backup.size ? new Set([...store.codexRegionLogged, ...backup]) : store.codexRegionLogged;
+  if (logged.size === 0) return;
   const region = ctx?.regionName?.trim();
   if (!region) return;
   for (const m of matches) {
-    const label = candidateMorphColorShortLabel(m.entry, ctx?.parentStarType, scan?.materials);
-    const fresh = codexNewColoursInRegion(store.codexRegionLogged, region, m.entry.displayName, label);
+    const label =
+      m.confirmedColour ??
+      candidateMorphColorShortLabel(m.entry, ctx?.colourStarType ?? ctx?.parentStarType, scan?.materials);
+    const fresh = codexNewColoursInRegion(logged, region, m.entry.displayName, label);
     if (fresh) {
       m.codexNew = true;
       m.codexNewColours = fresh;
       m.codexRegion = region;
     }
   }
+}
+
+let sharedSummaryMemo: { key: string; value: SharedExomasteryDTO } | null = null;
+
+/** The launcher's line about the shared folder (GET /api/exomastery/shared). */
+export function sharedExomasterySummary(): SharedExomasteryDTO {
+  return buildSharedExomasterySummary(cachedDb);
+}
+
+/**
+ * What the launcher and the mail icon show about the shared-exomastery folder. The gate check walks
+ * every shared find, so it runs once per change of the folder (or of the species data), not per push.
+ */
+function buildSharedExomasterySummary(db: SpeciesDatabase): SharedExomasteryDTO {
+  const key = `${sharedSignature()}#${speciesDataGeneration}`;
+  if (sharedSummaryMemo?.key === key) return sharedSummaryMemo.value;
+  const s = loadSharedExomastery();
+  const withOwner = sharedFindsWithOwnership(s);
+  const commanders = new Set<string>();
+  for (const { others } of withOwner) for (const c of others) commanders.add(c.fid ?? c.name ?? "?");
+  const value: SharedExomasteryDTO = {
+    folder: sharedExomasteryDir(),
+    files: s.files,
+    finds: withOwner.filter((x) => x.others.length > 0).length,
+    ownBackupFinds: withOwner.filter((x) => x.own).length,
+    commanders: commanders.size,
+    alerts: sharedGateAlerts(db, resolveEntryForCatalogRow, (entry, scan, band, range) =>
+      speciesMatchesCriteria(entry, scan, band, range, null),
+    ),
+  };
+  sharedSummaryMemo = { key, value };
+  return value;
 }
 
 function ambiguityForBody(b: BodyExoState): string | null {
@@ -1166,6 +1326,7 @@ function computeBodyCacheSignature(
     footCatalog: footScannedCatalogSignature(root),
     // A new CodexEntry changes the "new to you" and [CODEX] marks without touching the body.
     codex: `${store.codexLoggedSpecies.size}/${store.codexRegionLogged.size}`,
+    shared: sharedSignature(),
   });
 }
 
@@ -1379,6 +1540,17 @@ function computeBodyUncached(
    */
   for (const m of matches) {
     m.provenance = speciesProvenance(root, b.systemAddress, b.bodyId, m.entry);
+    // Another commander's shared file has it on this very body (§S).
+    if (m.provenance.sharedBy?.length && !m.loggedBy) m.loggedBy = "others";
+  }
+  const colourMisses = attachConfirmedColours(matches, b, speciesMatchCtx, scanForExo);
+  if (colourMisses.length) {
+    recordColourOutliersForBody({
+      body: b,
+      misses: colourMisses,
+      colourStarType: speciesMatchCtx?.colourStarType ?? speciesMatchCtx?.parentStarType ?? null,
+      candidates: matches.filter((m) => !m.unlikely).map((m) => m.entry.id),
+    });
   }
   attachCodexNovelty(matches, store);
   attachCodexRegionNovelty(matches, store, speciesMatchCtx, scanForExo);
@@ -1561,11 +1733,15 @@ export function buildSnapshot(
 ): AppSnapshot {
   const bootLoading = journalBoot != null;
   const db = cachedDb;
+  // Whose shared-exomastery files are this commander's own backups (§S), before any body is computed.
+  setOwnCommander({ name: store.commanderName, fid: commanderIdHash(store.commanderFid) });
   const { credits: organicDataValueCredits, pendingSamples: organicPendingSampleCount } =
     organicDataValuation(store, cachedPrices);
   const explorationScanDataValueCredits = estimateExplorationJournalDataCredits(store);
   const exploreBreakdown = explorationDataValueBreakdown(store);
   const organicPendingLines = bootLoading ? [] : buildOrganicPendingLines(store, db, cachedPrices);
+  // Logged colours anywhere in the journals, not only in the system in view (see the function).
+  if (!bootLoading) perfTime("snap.colourSweep", () => sweepColourOutliers(store, db));
   const bodies: BodyComputed[] = bootLoading
     ? []
     : perfTime("snap.bodies", () =>
@@ -1634,9 +1810,7 @@ export function buildSnapshot(
   const footScannedEntries = bootLoading
     ? []
     : perfTime("snap.footCatalog", () =>
-        [...loadFootScannedCatalog(projectRoot).entries].sort((a, b) =>
-          b.recordedAt.localeCompare(a.recordedAt),
-        ),
+        ownFootEntriesWithBackups(projectRoot).sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)),
       );
 
   const notableBodies = bootLoading
@@ -1684,6 +1858,7 @@ export function buildSnapshot(
     viewingSystemAddress: store.viewingSystemAddress,
     viewingSystemName,
     remoteView: bootLoading ? null : buildRemoteView(store),
+    sharedExomastery: bootLoading ? null : buildSharedExomasterySummary(db),
     shipProximity: bootLoading
       ? null
       : buildShipProximity(store.currentBodyKey, focusAddr, recsForPrimary, bodies),
@@ -1745,6 +1920,7 @@ export function buildSnapshot(
     remainingJumpsInRoute: bootLoading ? null : store.remainingJumpsInRoute,
     liveShipFuelRange: bootLoading ? null : buildLiveShipFuelRangeDTO(store, cachedStarRoles!),
     footTravelOdometerEnabled: store.footTravelOdometerEnabled,
+    photoStamp: store.photoStamp,
     footTravelOdometerTracking: bootLoading ? false : store.footTravelOdometerTracking,
     footTravelDistanceMeters: bootLoading ? 0 : store.footTravelDistanceMeters,
     exoOrganicOverlay: bootLoading ? null : buildExoOrganicOverlayDto(store, cachedPrices),

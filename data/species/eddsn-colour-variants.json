@@ -4,7 +4,8 @@
   "what": "Which colour variant each species takes, and whether it is set by the parent star class or by a material on the body.",
   "status": "Community knowledge, not a proprietary dataset — the same tables the codex teaches anyone who scans enough plants.",
   "transcribedFrom": "https://ed-dsn.net/en/exobiological-flora/ (retrieved 2026-09-11), to save typing several hundred rows by hand.",
-  "verifiedAgainst": "CMDR FALrenica's own journals: 235 star-table predictions correct and none wrong, and in all 47 material rows the colour he found was among the candidates."
+  "verifiedAgainst": "CMDR FALrenica's own journals: 235 star-table predictions correct and none wrong, and in all 47 material rows the colour he found was among the candidates.",
+  "gameCodex": "bySpecies rebuilt 2026-09-26 from the game's own codex list (every variant's symbol and English name, as published by Canonn's codex reference). ED-DSN had 3 wrong rows (Fumerola carbosis tin; Recepta deltahedronix mercury and molybdenum) and 36 missing; genus tables (byGenus) now only cover species the list does not name."
  },
  "verification": {
   "againstOwnerJournals": "235 star-table predictions correct, 0 wrong, 23 classes blank; 47 of 47 material rows had the observed colour among the candidates.",
@@ -138,6 +139,88 @@
   }
  },
  "bySpecies": {
+  "aleoida arcus": {
+   "source": "star",
+   "map": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "W": "Grey",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
+  "aleoida coronamus": {
+   "source": "star",
+   "map": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
+  "aleoida gravis": {
+   "source": "star",
+   "map": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
+  "aleoida laminiae": {
+   "source": "star",
+   "map": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "W": "Grey",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
+  "aleoida spica": {
+   "source": "star",
+   "map": {
+    "B": "Yellow",
+    "A": "Green",
+    "F": "Teal",
+    "K": "Turquoise",
+    "M": "Emerald",
+    "L": "Lime",
+    "T": "Sage",
+    "TTS": "Mauve",
+    "Y": "Amethyst",
+    "D": "Indigo",
+    "N": "Ocher"
+   }
+  },
   "bacterium acies": {
    "source": "material",
    "map": {
@@ -162,9 +245,11 @@
     "L": "Sage",
     "T": "Red",
     "TTS": "Maroon",
+    "Y": "Mauve",
     "W": "Amethyst",
     "D": "Ocher",
-    "N": "Indigo"
+    "N": "Indigo",
+    "AEBE": "Orange"
    }
   },
   "bacterium aurasus": {
@@ -180,9 +265,11 @@
     "L": "Sage",
     "T": "Red",
     "TTS": "Maroon",
+    "Y": "Mauve",
     "W": "Amethyst",
     "D": "Ocher",
-    "N": "Indigo"
+    "N": "Indigo",
+    "AEBE": "Orange"
    }
   },
   "bacterium bullaris": {
@@ -209,9 +296,11 @@
     "L": "Sage",
     "T": "Red",
     "TTS": "Maroon",
+    "Y": "Mauve",
     "W": "Amethyst",
     "D": "Ocher",
-    "N": "Indigo"
+    "N": "Indigo",
+    "AEBE": "Orange"
    }
   },
   "bacterium informem": {
@@ -231,6 +320,7 @@
     "antimony": "Magenta",
     "polonium": "Gold",
     "ruthenium": "Orange",
+    "technetium": "Cyan",
     "tellurium": "Green",
     "yttrium": "Cobalt"
    }
@@ -242,8 +332,8 @@
     "mercury": "White",
     "molybdenum": "Aquamarine",
     "niobium": "Peach",
-    "tungsten": "Blue",
-    "tin": "Red"
+    "tin": "Red",
+    "tungsten": "Blue"
    }
   },
   "bacterium scopulum": {
@@ -253,8 +343,8 @@
     "mercury": "Peach",
     "molybdenum": "Lime",
     "niobium": "Red",
-    "tungsten": "Aquamarine",
-    "tin": "Mulberry"
+    "tin": "Mulberry",
+    "tungsten": "Aquamarine"
    }
   },
   "bacterium tela": {
@@ -264,8 +354,8 @@
     "mercury": "Orange",
     "molybdenum": "Yellow",
     "niobium": "Magenta",
-    "tungsten": "Green",
-    "tin": "Cobalt"
+    "tin": "Cobalt",
+    "tungsten": "Green"
    }
   },
   "bacterium verrata": {
@@ -275,8 +365,8 @@
     "mercury": "Red",
     "molybdenum": "White",
     "niobium": "Mulberry",
-    "tungsten": "Lime",
-    "tin": "Blue"
+    "tin": "Blue",
+    "tungsten": "Lime"
    }
   },
   "bacterium vesicula": {
@@ -296,18 +386,142 @@
     "antimony": "Red",
     "polonium": "Aquamarine",
     "ruthenium": "Cobalt",
+    "technetium": "Lime",
     "tellurium": "Cyan",
     "yttrium": "Gold"
+   }
+  },
+  "cactoida cortexum": {
+   "source": "star",
+   "map": {
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "cactoida lapis": {
+   "source": "star",
+   "map": {
+    "O": "Grey",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "W": "Indigo",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "cactoida peperatis": {
+   "source": "star",
+   "map": {
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "cactoida pullulanta": {
+   "source": "star",
+   "map": {
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "cactoida vermis": {
+   "source": "star",
+   "map": {
+    "O": "Grey",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "clypeus lacrimam": {
+   "source": "star",
+   "map": {
+    "B": "Maroon",
+    "A": "Orange",
+    "F": "Mauve",
+    "G": "Amethyst",
+    "K": "Grey",
+    "M": "Turquoise",
+    "L": "Teal",
+    "Y": "Green",
+    "D": "Lime",
+    "N": "Yellow"
+   }
+  },
+  "clypeus margaritus": {
+   "source": "star",
+   "map": {
+    "B": "Maroon",
+    "A": "Orange",
+    "F": "Mauve",
+    "G": "Amethyst",
+    "K": "Grey",
+    "M": "Turquoise",
+    "L": "Teal",
+    "Y": "Green",
+    "D": "Lime",
+    "N": "Yellow"
+   }
+  },
+  "clypeus speculumi": {
+   "source": "star",
+   "map": {
+    "B": "Maroon",
+    "A": "Orange",
+    "F": "Mauve",
+    "G": "Amethyst",
+    "K": "Grey",
+    "M": "Turquoise",
+    "N": "Yellow"
    }
   },
   "concha aureolas": {
    "source": "star",
    "map": {
+    "B": "Indigo",
     "A": "Teal",
     "F": "Grey",
     "G": "Turquoise",
     "K": "Red",
     "L": "Orange",
+    "Y": "Yellow",
+    "D": "Green",
     "N": "Emerald"
    }
   },
@@ -315,17 +529,25 @@
    "source": "material",
    "map": {
     "antimony": "Peach",
-    "ruthenium": "Orange"
+    "polonium": "Red",
+    "ruthenium": "Orange",
+    "technetium": "White",
+    "tellurium": "Yellow",
+    "yttrium": "Gold"
    }
   },
   "concha labiata": {
    "source": "star",
    "map": {
+    "B": "Indigo",
     "A": "Teal",
     "F": "Grey",
     "G": "Turquoise",
     "K": "Red",
     "L": "Orange",
+    "Y": "Yellow",
+    "W": "Lime",
+    "D": "Green",
     "N": "Emerald"
    }
   },
@@ -336,8 +558,8 @@
     "mercury": "Mulberry",
     "molybdenum": "Peach",
     "niobium": "Blue",
-    "tungsten": "White",
-    "tin": "Aquamarine"
+    "tin": "Aquamarine",
+    "tungsten": "White"
    }
   },
   "electricae pluma": {
@@ -362,6 +584,208 @@
     "yttrium": "Green"
    }
   },
+  "fonticulua campestris": {
+   "source": "star",
+   "map": {
+    "O": "Grey",
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage",
+    "AEBE": "Maroon"
+   }
+  },
+  "fonticulua digitos": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage"
+   }
+  },
+  "fonticulua fluctus": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "N": "Sage"
+   }
+  },
+  "fonticulua lapida": {
+   "source": "star",
+   "map": {
+    "O": "Grey",
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage",
+    "AEBE": "Maroon"
+   }
+  },
+  "fonticulua segmentatus": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "D": "Turquoise",
+    "N": "Sage",
+    "AEBE": "Maroon"
+   }
+  },
+  "fonticulua upupam": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "A": "Green",
+    "F": "Yellow",
+    "G": "Teal",
+    "K": "Emerald",
+    "M": "Amethyst",
+    "L": "Mauve",
+    "T": "Orange",
+    "TTS": "Red",
+    "Y": "Ocher",
+    "W": "Indigo",
+    "D": "Turquoise",
+    "N": "Sage",
+    "AEBE": "Maroon"
+   }
+  },
+  "frutexa acus": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "W": "Orange",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "frutexa collum": {
+   "source": "star",
+   "map": {
+    "O": "Yellow",
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "frutexa fera": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "frutexa flabellum": {
+   "source": "star",
+   "map": {
+    "O": "Yellow",
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "W": "Orange",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "frutexa flammasis": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "frutexa metallicum": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
+  "frutexa sponsae": {
+   "source": "star",
+   "map": {
+    "B": "Lime",
+    "F": "Green",
+    "G": "Emerald",
+    "M": "Grey",
+    "L": "Teal",
+    "TTS": "Mauve",
+    "D": "Indigo",
+    "N": "Red"
+   }
+  },
   "fumerola aquatis": {
    "source": "material",
    "map": {
@@ -369,8 +793,8 @@
     "mercury": "Yellow",
     "molybdenum": "Cyan",
     "niobium": "Gold",
-    "tungsten": "Cobalt",
-    "tin": "Orange"
+    "tin": "Orange",
+    "tungsten": "Cobalt"
    }
   },
   "fumerola carbosis": {
@@ -380,18 +804,19 @@
     "mercury": "Magenta",
     "molybdenum": "Gold",
     "niobium": "Cobalt",
-    "tungsten": "Yellow",
-    "tin": "Teal"
+    "tin": "Cyan",
+    "tungsten": "Yellow"
    }
   },
   "fumerola extremus": {
    "source": "material",
    "map": {
+    "cadmium": "Aquamarine",
     "mercury": "Lime",
     "molybdenum": "Blue",
     "niobium": "White",
-    "tungsten": "Mulberry",
-    "tin": "Peach"
+    "tin": "Peach",
+    "tungsten": "Mulberry"
    }
   },
   "fumerola nitris": {
@@ -401,8 +826,8 @@
     "mercury": "Peach",
     "molybdenum": "Lime",
     "niobium": "Red",
-    "tungsten": "Aquamarine",
-    "tin": "Mulberry"
+    "tin": "Mulberry",
+    "tungsten": "Aquamarine"
    }
   },
   "fungoida bullarum": {
@@ -423,8 +848,8 @@
     "mercury": "Lime",
     "molybdenum": "Mulberry",
     "niobium": "Green",
-    "tungsten": "Orange",
-    "tin": "Red"
+    "tin": "Red",
+    "tungsten": "Orange"
    }
   },
   "fungoida setisis": {
@@ -445,8 +870,8 @@
     "mercury": "Green",
     "molybdenum": "Magenta",
     "niobium": "White",
-    "tungsten": "Peach",
-    "tin": "Orange"
+    "tin": "Orange",
+    "tungsten": "Peach"
    }
   },
   "osseus cornibus": {
@@ -457,7 +882,8 @@
     "G": "Grey",
     "K": "Indigo",
     "T": "Emerald",
-    "TTS": "Green"
+    "TTS": "Green",
+    "Y": "Maroon"
    }
   },
   "osseus discus": {
@@ -467,8 +893,8 @@
     "mercury": "Lime",
     "molybdenum": "Peach",
     "niobium": "Aquamarine",
-    "tungsten": "Red",
-    "tin": "Blue"
+    "tin": "Blue",
+    "tungsten": "Red"
    }
   },
   "osseus fractus": {
@@ -479,7 +905,8 @@
     "G": "Grey",
     "K": "Indigo",
     "T": "Emerald",
-    "TTS": "Green"
+    "TTS": "Green",
+    "Y": "Maroon"
    }
   },
   "osseus pellebantus": {
@@ -490,7 +917,8 @@
     "G": "Grey",
     "K": "Indigo",
     "T": "Emerald",
-    "TTS": "Green"
+    "TTS": "Green",
+    "Y": "Maroon"
    }
   },
   "osseus pumice": {
@@ -507,12 +935,14 @@
   "osseus spiralis": {
    "source": "star",
    "map": {
+    "O": "Yellow",
     "A": "Lime",
     "F": "Turquoise",
     "G": "Grey",
     "K": "Indigo",
     "T": "Emerald",
-    "TTS": "Green"
+    "TTS": "Green",
+    "Y": "Maroon"
    }
   },
   "recepta conditivus": {
@@ -520,6 +950,8 @@
    "map": {
     "antimony": "Lime",
     "polonium": "White",
+    "ruthenium": "Yellow",
+    "technetium": "Aquamarine",
     "tellurium": "Cyan",
     "yttrium": "Green"
    }
@@ -528,21 +960,421 @@
    "source": "material",
    "map": {
     "cadmium": "Lime",
-    "mercury": "Gold",
-    "molybdenum": "Orange",
+    "mercury": "Cyan",
+    "molybdenum": "Gold",
     "niobium": "Mulberry",
+    "tin": "Orange",
     "tungsten": "Red"
    }
   },
   "recepta umbrux": {
    "source": "star",
    "map": {
+    "O": "Indigo",
+    "B": "Turquoise",
     "A": "Amethyst",
     "F": "Mauve",
     "G": "Orange",
     "K": "Red",
     "M": "Maroon",
-    "T": "Teal"
+    "L": "Ocher",
+    "T": "Teal",
+    "TTS": "Sage",
+    "Y": "Lime",
+    "D": "Yellow",
+    "N": "Emerald",
+    "AEBE": "Grey"
+   }
+  },
+  "stratum araneamus": {
+   "source": "star",
+   "map": {
+    "F": "Emerald"
+   }
+  },
+  "stratum cucumisis": {
+   "source": "star",
+   "map": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve",
+    "AEBE": "Teal"
+   }
+  },
+  "stratum excutitus": {
+   "source": "star",
+   "map": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve",
+    "AEBE": "Teal"
+   }
+  },
+  "stratum frigus": {
+   "source": "star",
+   "map": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Y": "Indigo",
+    "D": "Mauve",
+    "AEBE": "Teal"
+   }
+  },
+  "stratum laminamus": {
+   "source": "star",
+   "map": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve"
+   }
+  },
+  "stratum limaxus": {
+   "source": "star",
+   "map": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Y": "Indigo",
+    "D": "Mauve",
+    "AEBE": "Teal"
+   }
+  },
+  "stratum paleas": {
+   "source": "star",
+   "map": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve",
+    "AEBE": "Teal"
+   }
+  },
+  "stratum tectonicas": {
+   "source": "star",
+   "map": {
+    "F": "Emerald",
+    "K": "Lime",
+    "M": "Green",
+    "L": "Turquoise",
+    "T": "Grey",
+    "TTS": "Amethyst",
+    "Y": "Indigo",
+    "W": "Red",
+    "D": "Mauve",
+    "AEBE": "Teal"
+   }
+  },
+  "tubus cavas": {
+   "source": "star",
+   "map": {
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "tubus compagibus": {
+   "source": "star",
+   "map": {
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "W": "Lime",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "tubus conifer": {
+   "source": "star",
+   "map": {
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "tubus rosarium": {
+   "source": "star",
+   "map": {
+    "O": "Green",
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "tubus sororibus": {
+   "source": "star",
+   "map": {
+    "B": "Emerald",
+    "A": "Indigo",
+    "F": "Grey",
+    "G": "Red",
+    "K": "Maroon",
+    "M": "Teal",
+    "L": "Turquoise",
+    "T": "Mauve",
+    "TTS": "Ocher",
+    "D": "Yellow",
+    "N": "Amethyst"
+   }
+  },
+  "tussock albata": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "tussock capillum": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "tussock caputus": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "tussock catena": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "tussock cultro": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "tussock divisa": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "tussock ignis": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "tussock pennata": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "tussock pennatis": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "tussock propagito": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "tussock serrati": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "tussock stigmasis": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon",
+    "AEBE": "Amethyst"
+   }
+  },
+  "tussock triticum": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
+   }
+  },
+  "tussock ventusa": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "W": "Orange",
+    "D": "Maroon"
+   }
+  },
+  "tussock virgam": {
+   "source": "star",
+   "map": {
+    "F": "Yellow",
+    "G": "Lime",
+    "K": "Green",
+    "M": "Emerald",
+    "L": "Sage",
+    "T": "Teal",
+    "Y": "Red",
+    "D": "Maroon"
    }
   }
  }

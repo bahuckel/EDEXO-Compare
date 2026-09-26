@@ -269,6 +269,7 @@ export function ExoMissLogPanel({ outliers }: { outliers: AppSnapshot["exoOutlie
     outliers.absent > 0 ? `${outliers.absent} not listed at all` : null,
     outliers.unlikelyOnly > 0 ? `${outliers.unlikelyOnly} only behind “show unlikely”` : null,
     outliers.rankedLow > 0 ? `${outliers.rankedLow} listed but ranked too low` : null,
+    outliers.colour > 0 ? `${outliers.colour} in a colour the app did not predict` : null,
   ].filter(Boolean);
 
   return (
@@ -381,10 +382,12 @@ export const SpeciesCard = memo(function SpeciesCard({
    */
   const morphColorRaw = useMemo(
     () =>
-      hostStarType
+      // What was actually logged here beats any prediction (bug report 2026-09-26).
+      m.confirmedColour ??
+      (hostStarType
         ? candidateMorphColorShortLabel(e, hostStarType, scan?.materials)
-        : candidateMorphColorShortLabelForHosts(e, hostStarTypes, scan?.materials),
-    [e, hostStarType, hostStarTypes, scan?.materials],
+        : candidateMorphColorShortLabelForHosts(e, hostStarTypes, scan?.materials)),
+    [m.confirmedColour, e, hostStarType, hostStarTypes, scan?.materials],
   );
   const morphColorDisplay =
     morphColorRaw === "(unknown)" ? morphColorRaw : titleCaseSpeciesWords(morphColorRaw);
@@ -731,6 +734,15 @@ export const SpeciesCard = memo(function SpeciesCard({
           {" "}
           - {morphColorDisplay}
         </span>
+        {m.colourMismatchPredicted ? (
+          <span
+            className="species-colour-miss"
+            title={`Logged ${m.confirmedColour}, predicted ${m.colourMismatchPredicted} — recorded in the miss log (edexo-outliers.jsonl).`}
+          >
+            {" "}
+            ⚑
+          </span>
+        ) : null}
         {m.unlikely ? (
           <span className="species-demoted-badge" title={demotedBy.map((r) => r.detail).join("\n\n")}>
             {" "}

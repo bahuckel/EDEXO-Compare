@@ -144,6 +144,11 @@ export function mapEdsmBodyToExplorationRecord(
     if (sm !== undefined) rec.stellarMass = sm;
     const st = pickNum(body.surfaceTemperature);
     if (st !== undefined) rec.surfaceTemperature = st;
+    // Journal unit (metres), for the brightest-star colour rule (`colourStarTypeFor`).
+    const sr = pickNum(body.solarRadius);
+    if (sr !== undefined && sr > 0) rec.radius = sr * 695_700_000;
+    const mag = pickNum(body.absoluteMagnitude);
+    if (mag !== undefined) rec.absoluteMagnitude = mag;
     const stSemi = edsmSemiMajorAxisToM(pickNum(body.semiMajorAxis));
     if (stSemi !== undefined) rec.semiMajorAxis = stSemi;
     rec.rotationPeriod = edsmPeriodToJournalSeconds(pickNum(body.rotationalPeriod));

@@ -120,3 +120,21 @@ export function useSortedBodies(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bodies, mode, sig]);
 }
+
+/**
+ * Which body tab is selected: the current one while it is still listed; otherwise the body the ship
+ * is at, then the targeted body, then the first in the sort. A reload after landing used to open
+ * on whatever sorted first, because the land-and-follow switch is a one-shot (owner, 2026-09-26).
+ */
+export function pickBodyTab(
+  orderedKeys: readonly string[],
+  current: string | null,
+  shipBodyKey: string | null,
+  destBodyKey: string | null,
+): string | null {
+  if (!orderedKeys.length) return null;
+  if (current && orderedKeys.includes(current)) return current;
+  if (shipBodyKey && orderedKeys.includes(shipBodyKey)) return shipBodyKey;
+  if (destBodyKey && orderedKeys.includes(destBodyKey)) return destBodyKey;
+  return orderedKeys[0]!;
+}

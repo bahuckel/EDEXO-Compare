@@ -24,6 +24,7 @@ import {
 } from "react";
 import { ExoPayoutRangePanel, payoutHeadline } from "./ExoPayoutRangePanel";
 import { FoldPanel } from "./ui/Fold";
+import { SnapshotButton } from "./SnapshotButton";
 import type {
   BodyComputed,
   EstimatedSurfaceTempBand,
@@ -1098,21 +1099,24 @@ export const BodyPane = memo(function BodyPane({
                     </>
                   }
                   aside={
-                    <button
-                      type="button"
-                      className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
-                      disabled={!canOpenJournalScanModal}
-                      title={
-                        canOpenJournalScanModal
-                          ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
-                          : "Need merged detailed scan rows in loaded journals for breakdown"
-                      }
-                      onClick={() => {
-                        if (canOpenJournalScanModal) setJournalScanModalOpen(true);
-                      }}
-                    >
-                      DSS {s.dssComplete ? "✓" : "✗"}
-                    </button>
+                    <>
+                      <SnapshotButton what="exo-signals" />
+                      <button
+                        type="button"
+                        className={`facts-dss${s.dssComplete ? " facts-dss--yes" : " facts-dss--no"}`}
+                        disabled={!canOpenJournalScanModal}
+                        title={
+                          canOpenJournalScanModal
+                            ? "Open merged journal / DSS breakdown for this body (same layout as similarity index)"
+                            : "Need merged detailed scan rows in loaded journals for breakdown"
+                        }
+                        onClick={() => {
+                          if (canOpenJournalScanModal) setJournalScanModalOpen(true);
+                        }}
+                      >
+                        DSS {s.dssComplete ? "✓" : "✗"}
+                      </button>
+                    </>
                   }
                 >
                   <div className="genus-progress" role="table" aria-label="Genera on this body">
@@ -1208,6 +1212,7 @@ export const BodyPane = memo(function BodyPane({
               })()}
               aside={
                 <div className="candidate-species-toggles">
+                  <SnapshotButton what="candidates" />
                   <button
                     type="button"
                     className={`candidate-species-compact-toggle btn-top-toggle${compactCandidateView ? " btn-top-toggle--on" : ""}`}
@@ -1261,7 +1266,10 @@ export const BodyPane = memo(function BodyPane({
                           scan={sc}
                           estimatedSurfaceTempK={body.estimatedSurfaceTempK}
                           comparisonBodySummary={comparisonBodySummary}
-                          hostStarType={body.speciesMatchContext?.parentStarType}
+                          hostStarType={
+                            body.speciesMatchContext?.colourStarType ??
+                            body.speciesMatchContext?.parentStarType
+                          }
                           hostStarTypes={body.speciesMatchContext?.hostStarClasses}
                           compactCandidateView={compactCandidateView}
                           genusConfirmed={body.genusFilterActive}
@@ -1295,7 +1303,10 @@ export const BodyPane = memo(function BodyPane({
                                 scan={sc}
                                 estimatedSurfaceTempK={body.estimatedSurfaceTempK}
                                 comparisonBodySummary={comparisonBodySummary}
-                                hostStarType={body.speciesMatchContext?.parentStarType}
+                                hostStarType={
+                                  body.speciesMatchContext?.colourStarType ??
+                                  body.speciesMatchContext?.parentStarType
+                                }
                                 hostStarTypes={body.speciesMatchContext?.hostStarClasses}
                                 compactCandidateView={compactCandidateView}
                               />

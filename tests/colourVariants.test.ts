@@ -135,3 +135,26 @@ describe("the antimony spelling", () => {
     );
   });
 });
+
+describe("star families and the game's own codex list (2026-09-26)", () => {
+  const byName = (n: string) => loadSpeciesDatabase().species.find((e) => e.displayName.toLowerCase() === n)!;
+
+  it("a white dwarf subtype or a Wolf-Rayet reads its family's variant", () => {
+    // The codex names the family (`..._D_Name;`, `..._W_Name;`); the journal writes DA, DAB, WC.
+    const labiata = byName("concha labiata");
+    for (const t of ["DA", "DAB", "DC"])
+      expect(candidateMorphColorShortLabel(labiata, t, null)).toBe("Green");
+    for (const t of ["WC", "WN"]) expect(candidateMorphColorShortLabel(labiata, t, null)).toBe("Lime");
+  });
+
+  it("reads the rows ED-DSN had wrong or missing", () => {
+    const tin = [{ Name: "tin", Percent: 1 }];
+    expect(candidateMorphColorShortLabel(byName("recepta deltahedronix"), null, tin)).toBe("Orange");
+    expect(
+      candidateMorphColorShortLabel(byName("recepta deltahedronix"), null, [{ Name: "mercury", Percent: 1 }]),
+    ).toBe("Cyan");
+    expect(candidateMorphColorShortLabel(byName("fumerola carbosis"), null, tin)).toBe("Cyan");
+    // Aleoida under a Y dwarf: Amethyst for every species, where the genus table said Teal.
+    expect(candidateMorphColorShortLabel(byName("aleoida gravis"), "Y", null)).toBe("Amethyst");
+  });
+});

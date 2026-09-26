@@ -91,5 +91,9 @@ export function collectExoDataAlertsFromSnapshot(snap: AppSnapshot): ExoDataAler
   };
   for (const b of snap.bodies) ingest(b);
   if (snap.exoOverlayFocusBody) ingest(snap.exoOverlayFocusBody);
+  // Other commanders' shared finds that break a gate (§S) — not about a body you have open.
+  for (const a of snap.sharedExomastery?.alerts ?? []) {
+    if (!byId.has(a.id)) byId.set(a.id, { ...a, bodyTabLabel: "Shared exomastery", bodyKey: "" });
+  }
   return [...byId.values()];
 }
