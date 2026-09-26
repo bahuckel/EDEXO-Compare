@@ -145,7 +145,7 @@ export async function renderBrandedSnapshot(el: HTMLElement, stamp: SnapshotStam
   g.fillText("ED EXO COMPARE", x, midY - 8 * scale);
   g.fillStyle = dim;
   g.font = `400 ${11 * scale}px ${font}`;
-  g.fillText("by CMDR FALrenica · edexo.bahuckel.com", x, midY + 9 * scale);
+  g.fillText("by CMDR FALrenica · bahuckel.com/projects/edexo-compare", x, midY + 9 * scale);
 
   // The optional lines, right-aligned, one under the other.
   g.textAlign = "right";
