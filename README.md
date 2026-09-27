@@ -16,8 +16,8 @@ Windows; everything the app saves lives in `%LOCALAPPDATA%\ED Exo Compare\`.
 
 |                                                                                                                |                                                                       |
 | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| **[Portable — one file](https://github.com/bahuckel/EDEXO-Compare/releases/download/v1.2.1/EDExoCompare.exe)** | Download and run. Unpacks itself somewhere temporary each time.       |
-| **[Program folder — .zip](https://github.com/bahuckel/EDEXO-Compare/releases/tag/v1.2.1-zip)**                 | Extract and keep. Starts faster, and includes the two console builds. |
+| **[Portable — one file](https://github.com/bahuckel/EDEXO-Compare/releases/download/v1.2.2/EDExoCompare.exe)** | Download and run. Unpacks itself somewhere temporary each time.       |
+| **[Program folder — .zip](https://github.com/bahuckel/EDEXO-Compare/releases/tag/v1.2.2-zip)**                 | Extract and keep. Starts faster, and includes the two console builds. |
 
 Both are the same version and the same code — [all releases](https://github.com/bahuckel/EDEXO-Compare/releases).
 
@@ -41,6 +41,10 @@ up 97.8 % of the time.
 renormalises inside that genus to say which of its species you are looking at.
 
 **What you have not logged before.** A badge marks species new to your codex.
+
+**What is left to find.** Achievements count every colour variant you have sampled, galaxy-wide and
+region by region, with Bronze, Silver and Gold steps — plus stars, worlds and points of interest to
+visit in each region. Track one and its plants are marked in the app and in the HUD.
 
 **Where it was wrong.** Every species you find that the app failed to offer is written to a local
 miss log. That log is the reason recall went from 93.2 % to 97.1 %: it is read, not just recorded.
@@ -75,7 +79,7 @@ The floor never empties a panel — if nothing clears it, the single best candid
 touches a row the model has no opinion about, and never argues with a species you have scanned on
 foot yourself.
 
-To change it, edit `PRESENCE_FLOOR_PCT` in [`src/server/snapshot.ts`](src/server/snapshot.ts) and
+To change it, edit `PRESENCE_FLOOR_PCT` in [`src/server/presenceFloors.ts`](src/server/presenceFloors.ts) and
 rebuild. Measured against 378 species the author later confirmed on foot, a 5 % floor moved exactly
 one of them behind _show unlikely_.
 
