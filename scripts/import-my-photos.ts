@@ -59,6 +59,13 @@
  * The credit reads `Bahuckel — CMDR <name>`, because the contributors so far are all of the owner's
  * clan and that is how he asked for them to be named. Somebody outside it would need a line here
  * rather than a folder rename — which is the right amount of friction for a claim about authorship.
+ *
+ * A group hands its photographs over the same way, under its own name and without the clan prefix:
+ *
+ *   Images/By Stellar Exobiologists Guild/Bacterium Nebulus - Cobalt.jpg  -> Stellar Exobiologists Guild
+ *
+ * A species with no colour variants (Bark Mounds, Sinuous Tubers, Brain Trees) needs no colour in
+ * its name: `Bark Mounds 2.jpg`, `Caeruleum Sinuous Tubers.jpg`, either word order.
  */
 import {
   copyFileSync,
@@ -89,6 +96,8 @@ const OWNER_ID = "falrenica";
 
 /** A folder that reassigns everything beneath it to somebody else. */
 const BY_CMDR_RE = /^By\s+CMDR\s+(.+)$/i;
+/** The same for a group: `By Stellar Exobiologists Guild`. */
+const BY_GROUP_RE = /^By\s+(.+)$/i;
 
 interface Contributor {
   id: string;
@@ -111,7 +120,20 @@ const OWNER: Contributor = {
  */
 function contributorFromFolder(folder: string): Contributor | null {
   const m = BY_CMDR_RE.exec(folder.trim());
-  if (!m) return null;
+  if (!m) {
+    /*
+      A group rather than a commander: `By Stellar Exobiologists Guild` (owner, 2026-09-27). Credited
+      under its own name, without the clan prefix, since the photographs are the group's.
+    */
+    const g = BY_GROUP_RE.exec(folder.trim());
+    const group = g?.[1]?.trim();
+    if (!group) return null;
+    return {
+      id: group.toLowerCase().replace(/[^a-z0-9]+/g, ""),
+      name: group,
+      licence: `Contributed to this project by ${group}.`,
+    };
+  }
   const cmdr = m[1]!.trim();
   if (!cmdr) return null;
   return {
@@ -154,6 +176,26 @@ function parseName(file: string): { species: string; colour: string; index: stri
     index: (m[3] ?? "").trim(),
     ext: m[4]!.toLowerCase(),
   };
+}
+
+/** `Bark Mounds 2.jpg` → species "Bark Mounds", index "2": a name with no colour in it. */
+function parseBareName(file: string): { species: string; index: string; ext: string } | null {
+  const m = /^(.*?)(?:[\s_-]*\(?(\d+)\)?)?\.(jpe?g|png|webp)$/i.exec(file);
+  if (!m || !m[1]!.trim()) return null;
+  return { species: m[1]!.trim(), index: (m[2] ?? "").trim(), ext: m[3]!.toLowerCase() };
+}
+
+/**
+ * A species by name, in either word order: the codex writes "Caeruleum Sinuous Tubers" and
+ * "Roseum Brain Tree" where the database says "Sinuous Tubers Caeruleum", "Brain Tree Roseum".
+ */
+function findSpecies(bySpecies: Map<string, SpeciesEntry>, name: string): SpeciesEntry | undefined {
+  const words = name.toLowerCase().split(/\s+/).filter(Boolean);
+  for (let i = 0; i < words.length; i++) {
+    const hit = bySpecies.get([...words.slice(i), ...words.slice(0, i)].join(" "));
+    if (hit) return hit;
+  }
+  return undefined;
 }
 
 /** Every colour this species can actually be, from its own table. Empty when it has none. */
@@ -250,7 +292,44 @@ function main(): void {
     for (const { genusFolder, dir, file, by } of files) {
       const parsed = parseName(file);
       if (!parsed) {
-        problems.push(`${genusFolder}/${file} — cannot read "Genus Species - Colour.ext" from the name`);
+        /*
+          No colour in the name. Fine for a species with no colour variants — Bark Mounds, the
+          Sinuous Tubers, the Brain Trees — whose file is just the species, maybe with an index:
+          `Bark Mounds 2.jpg`, `Caeruleum Sinuous Tubers.jpg` (the codex's word order).
+        */
+        const bare = parseBareName(file);
+        const entry = bare ? findSpecies(bySpecies, bare.species) : undefined;
+        if (!bare || !entry) {
+          problems.push(`${genusFolder}/${file} — cannot read "Genus Species - Colour.ext" from the name`);
+          continue;
+        }
+        if (coloursFor(root, entry).size > 0) {
+          problems.push(`${genusFolder}/${file} — ${entry.displayName} has colour variants; name the colour`);
+          continue;
+        }
+        const genusPath = path.join(getSpeciesDataDir(root), entry.genusDataDir);
+        const photosDir = findGenusPhotosFolder(genusPath, entry.genusDataDir);
+        if (!photosDir) {
+          problems.push(`${genusFolder}/${file} — no photos folder under data/species/${entry.genusDataDir}/`);
+          continue;
+        }
+        // <Display-Name>[-n].<ext>: `Bark-Mounds-2.jpg` beside `Bark-Mounds.jpg` joins its gallery.
+        const target = `${entry.displayName.trim().split(/\s+/).join("-")}${bare.index ? `-${bare.index}` : ""}.${bare.ext}`;
+        const abs = path.join(photosDir, target);
+        const src = path.join(dir, file);
+        if (existsSync(abs) && statSync(abs).size === statSync(src).size) {
+          skipped++;
+        } else {
+          copyFileSync(src, abs);
+          copied++;
+          console.log(
+            `  ${entry.displayName.padEnd(24)} ${(bare.index ? `#${bare.index}` : "").padEnd(11)} -> ${entry.genusDataDir}/${target}` +
+              (by.id === OWNER.id ? "" : `  (${by.name})`),
+          );
+        }
+        if (by.id !== OWNER.id) credits.contributors[by.id] = { name: by.name, licence: by.licence };
+        credits.byFile[target] = by.id;
+        byContributor.set(by.name, (byContributor.get(by.name) ?? 0) + 1);
         continue;
       }
       const entry = bySpecies.get(parsed.species.toLowerCase());

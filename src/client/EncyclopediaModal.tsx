@@ -438,7 +438,11 @@ export function EncyclopediaModal({
     defaultEncyclopediaFilters(ENC_FILTERS_ALL),
   );
   const [foundFor, setFoundFor] = useState<SpeciesEntry | null>(null);
-  const [photoZoom, setPhotoZoom] = useState<{ urls: string[]; note: string | null } | null>(null);
+  const [photoZoom, setPhotoZoom] = useState<{
+    urls: string[];
+    note: string | null;
+    creditByUrl?: EncyclopediaSpeciesRowDTO["photoCreditByUrl"];
+  } | null>(null);
   /** The Codex map, opened from the header (owner, 2026-09-27). */
   const [codexOpen, setCodexOpen] = useState(false);
   /** Inline exomastery planetary cards inside the encyclopedia list (not a nested modal). */
@@ -704,6 +708,7 @@ export function EncyclopediaModal({
     photoUrl,
     photoUrls,
     photoNote,
+    photoCreditByUrl,
     exomasteryFeederBodyCount = 0,
     exomasteryProfileFilePresent = false,
     exomasteryEncyclopediaAvailable = false,
@@ -748,12 +753,16 @@ export function EncyclopediaModal({
             type="button"
             className="encyclopedia-thumb-btn"
             onClick={() =>
-              setPhotoZoom({ urls: photoUrls?.length ? photoUrls : [photoUrl], note: photoNote })
+              setPhotoZoom({
+                urls: photoUrls?.length ? photoUrls : [photoUrl],
+                note: photoNote,
+                creditByUrl: photoCreditByUrl,
+              })
             }
             aria-label={`Enlarge photo for ${entry.displayName}`}
             // Credit on the hover here and in full once opened: the grid cell is a thumbnail with
             // no room for a caption, and the photographs are not this project's to show unmarked.
-            title={[photoCreditTitle(photoUrl), "Click for full-size illustration"]
+            title={[photoCreditTitle(photoUrl, photoCreditByUrl?.[photoUrl]), "Click for full-size illustration"]
               .filter(Boolean)
               .join(" — ")}
           >
@@ -1007,7 +1016,12 @@ export function EncyclopediaModal({
         </div>
       </div>
       {photoZoom ? (
-        <PhotoGallery urls={photoZoom.urls} note={photoZoom.note} onClose={() => setPhotoZoom(null)} />
+        <PhotoGallery
+          urls={photoZoom.urls}
+          note={photoZoom.note}
+          creditByUrl={photoZoom.creditByUrl}
+          onClose={() => setPhotoZoom(null)}
+        />
       ) : null}
       {foundFor ? (
         <FoundSpeciesPopup

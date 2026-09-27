@@ -57,7 +57,7 @@ describe("colour-variant photographs", () => {
   });
 
   it("says nothing about a species nobody has photographed by variant", () => {
-    expect(resolveSpeciesPhoto(find("Bacterium nebulus"), root).photoVariants).toEqual([]);
+    expect(resolveSpeciesPhoto(find("Concha biconcavis"), root).photoVariants).toEqual([]);
   });
 
   it("does not read a number or a stray suffix as a colour", () => {
@@ -84,7 +84,7 @@ describe("who took the photograph", () => {
       Checked on a species the owner has *not* photographed, since one he has no longer shows an
       ED-DSN image to credit.
     */
-    const p = resolveSpeciesPhoto(find("Bacterium nebulus"), root);
+    const p = resolveSpeciesPhoto(find("Concha biconcavis"), root);
     expect(p.photoCreditByUrl?.[p.photoUrl]).toBeUndefined();
     expect(photoContributorFor(root, "Bacterium-vesicula.png")).toBeNull();
   });
@@ -195,5 +195,14 @@ describe("a photograph contributed by somebody else", () => {
     clearPhotoCreditsCache();
     // Absent from the manifest means ED-DSN's — the default that keeps every unlisted image correct.
     expect(photoContributorFor(root, "Aleoida-arcus.jpg")).toBeNull();
+  });
+});
+
+describe("a group's photographs", () => {
+  it("carry the group's own name (By Stellar Exobiologists Guild)", () => {
+    expect(photoContributorFor(root, "Bark-Mounds-2.jpg")?.name).toBe("Stellar Exobiologists Guild");
+    const p = resolveSpeciesPhoto(find("Bacterium nebulus"), root);
+    expect(p.photoVariants.map((v) => v.colour)).toEqual(["Cobalt", "Magenta"]);
+    expect(p.photoCreditByUrl?.[p.photoUrl]?.name).toBe("Stellar Exobiologists Guild");
   });
 });

@@ -435,6 +435,17 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
     return withCredits(entry, projectRoot, primary, note, all, variantFiles);
   }
 
+  /*
+   * The species' own name with other punctuation — `Bark-Mounds.jpg`, `Sinuous-Tubers-Caeruleum.jpg`
+   * — is the species by name, not by similarity: no "matched by normalized name" note, and its
+   * numbered photographs (`Bark-Mounds-2.jpg`, the guild's) join the gallery.
+   */
+  const sameName = imageFiles.find((f) => normStem(f) === speciesStem);
+  if (sameName) {
+    const all = [sameName, ...numberedSiblings(imageFiles, sameName), ...variantFiles];
+    return withCredits(entry, projectRoot, sameName, null, all, variantFiles);
+  }
+
   const fuzzy = bestFuzzyPhoto(imageFiles, entry);
   if (fuzzy) {
     // No siblings collected here on purpose: the species was matched by similarity rather than by

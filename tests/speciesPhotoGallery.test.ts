@@ -97,3 +97,12 @@ describe("numbered siblings", () => {
     expect(r.photoNote).toBeTruthy();
   });
 });
+
+describe("the species' own name with other punctuation", () => {
+  // Bark Mounds (2026-09-27): the owner's `Bark-Mounds.jpg` and the guild's `Bark-Mounds-2.jpg`.
+  it("is a name match: no note, and its numbered photographs join the gallery", () => {
+    const r = resolve(["Aleoida-Arcus.jpg", "Aleoida-Arcus-2.jpg", "Aleoida-gravis.png"]);
+    expect(r.names).toEqual(["Aleoida-Arcus.jpg", "Aleoida-Arcus-2.jpg"]);
+    expect(r.photoNote).toBeNull();
+  });
+});

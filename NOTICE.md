@@ -69,9 +69,9 @@ longer be reached, so naming some and not others would be worse than naming none
 
 ## Species photographs
 
-`data/species/<genus>/<genus>_photos/` holds 178 images of Elite Dangerous exobiology (each also
-present as a cropped card and thumbnail, so 534 files). **128 of them were contributed by commanders
-of the Bahuckel clan**; the remaining 50 are sourced from the ED-DSN community, are **not covered by
+`data/species/<genus>/<genus>_photos/` holds 182 images of Elite Dangerous exobiology (each also
+present as a cropped card and thumbnail, so 546 files). **135 of them were contributed by commanders
+of the Bahuckel clan and by the Stellar Exobiologists Guild**; the remaining 47 are sourced from the ED-DSN community, are **not covered by
 this project's MIT licence** and are not this project's to sublicense.
 
 ### Telling them apart, in the app and on disk
@@ -82,6 +82,7 @@ There is no unlabelled image.
 | what you see under the photograph                              | what it means                                                                                                                                                                                                                                      |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`Photo by Bahuckel — CMDR <name>`**                          | Contributed. That commander took it themselves, in their own game, and gave it to this project knowingly — either the project owner's own, or a commander who photographed a species for the project or offered an existing shot in support of it. |
+| **`Photo by Stellar Exobiologists Guild`**                     | Contributed by the guild, whose commanders took them in their own game and gave them to this project knowingly.                                                                                                                                    |
 | **`Photo from: https://ed-dsn.net/ and its respective owner`** | Sourced from the ED-DSN community. Not this project's, not MIT, and here with ED-DSN's agreement while replacements are photographed.                                                                                                              |
 
 A named commander under an image is therefore a positive statement about where it came from and that
@@ -93,8 +94,9 @@ commander against each file:
 
 | commander                                     | images |
 | --------------------------------------------- | ------ |
-| Bahuckel — CMDR FALrenica (the project owner) | 102    |
-| Bahuckel — CMDR PhoEniXDFA                    | 4      |
+| Bahuckel — CMDR FALrenica (the project owner) | 125    |
+| Bahuckel — CMDR PhoEniXDFA                    | 5      |
+| Stellar Exobiologists Guild                   | 5      |
 
 Each contributor took the photographs themselves and gave them to this project knowingly. That is
 the difference from the ED-DSN set below, and it is the whole reason the manifest exists: an image
@@ -102,7 +104,7 @@ credited to the wrong person is the one mistake this area of the project cannot 
 
 These replace the ED-DSN images, which are there mainly as placeholders. Anything not listed in the
 manifest is ED-DSN's and carries the standing credit below. **Once a species has a contributed
-photograph, ED-DSN's of that same species is removed from the tree** — 46 were retired this way — so
+photograph, ED-DSN's of that same species is removed from the tree** — 49 were retired this way — so
 the borrowed images shrink as contributed ones arrive. They are also **variant** photographs — the
 exact colour a body grows — which is what lets a card show the plant you are about to walk up to
 rather than one of its siblings.
