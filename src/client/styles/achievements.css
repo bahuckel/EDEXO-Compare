@@ -261,3 +261,107 @@
   opacity: 0.4;
   cursor: default;
 }
+.ach-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0.45rem;
+}
+.ach-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--surface-2);
+  border: 1px solid var(--accent-a15);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ach-card:hover,
+.ach-card:focus-visible {
+  border-color: var(--accent);
+}
+.ach-card--here {
+  border-color: var(--accent-a45);
+}
+.ach-card--tracking {
+  border-color: var(--ach-gold);
+}
+.ach-card__name {
+  font-weight: 700;
+}
+.ach-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  min-height: 0;
+}
+.ach-card__tags:empty {
+  display: none;
+}
+.ach-card__tag {
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+.ach-card__tag--here {
+  color: var(--accent-bright);
+}
+.ach-card__tag--track {
+  color: var(--ach-gold);
+}
+.ach-card__count {
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.ach-card__bar {
+  display: block;
+  margin-top: 0;
+}
+.ach-card__bar .ach-bar__fill {
+  display: block;
+}
+.ach-card__medals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+}
+.ach-crumb {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-bottom: 0.3rem;
+}
+.ach-crumb .ach-link {
+  margin: 0;
+}
+.ach-crumb__h {
+  margin: 0;
+}
+.ach-sub {
+  margin: 0 0 0.35rem;
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+.ach-tracked__name {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text);
+}
+@media (max-width: 480px) {
+  .ach-cards {
+    grid-template-columns: 1fr;
+  }
+}

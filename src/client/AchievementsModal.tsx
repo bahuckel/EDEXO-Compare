@@ -195,12 +195,99 @@ function Row({
   );
 }
 
+/** One category on the overview: the galaxy, or one region. */
+interface Category {
+  key: string;
+  name: string;
+  sets: AchievementDTO[];
+  /** The set the card's bar shows: End Game, or the region's "Complete". */
+  head: AchievementDTO | null;
+}
+
+/** Groups inside a category view, in reading order. */
+const SECTION_OF: Record<AchievementDTO["kind"], string> = {
+  galaxy: "Everything",
+  region: "Overview",
+  regionSampler: "Overview",
+  regionStars: "Overview",
+  regionWorlds: "Overview",
+  regionSights: "Overview",
+  genus: "By genus",
+  regionGenus: "By genus",
+  rarity: "By rarity",
+  regionRarity: "By rarity",
+};
+const SECTION_ORDER = ["Everything", "Overview", "By genus", "By rarity"];
+
+function medalCounts(sets: readonly AchievementDTO[]): [number, number, number] {
+  const n: [number, number, number] = [0, 0, 0];
+  for (const a of sets) if (a.step > 0) n[a.step - 1]! += 1;
+  return n;
+}
+
+function CategoryCard({
+  c,
+  here,
+  tracking,
+  matches,
+  onOpen,
+}: {
+  c: Category;
+  here: boolean;
+  tracking: boolean;
+  matches: number | null;
+  onOpen: () => void;
+}) {
+  const [bronze, silver, gold] = medalCounts(c.sets);
+  const h = c.head;
+  const pct = h && h.total > 0 ? (100 * h.done) / h.total : 0;
+  return (
+    <li>
+      <button
+        type="button"
+        className={`ach-card${here ? " ach-card--here" : ""}${tracking ? " ach-card--tracking" : ""}`}
+        onClick={onOpen}
+      >
+        <span className="ach-card__name">{c.name}</span>
+        <span className="ach-card__tags">
+          {here ? <span className="ach-card__tag ach-card__tag--here">You are here</span> : null}
+          {tracking ? <span className="ach-card__tag ach-card__tag--track">★ Tracking</span> : null}
+          {matches != null ? <span className="ach-card__tag">{matches} matching</span> : null}
+        </span>
+        {h ? (
+          <>
+            <span className="ach-card__count">
+              {h.done}/{h.total} {c.key === "galaxy" ? "variants" : "here"}
+            </span>
+            <span className="ach-bar ach-card__bar" aria-hidden="true">
+              <span className={`ach-bar__fill ach-bar__fill--s${h.step}`} style={{ width: `${pct}%` }} />
+            </span>
+          </>
+        ) : null}
+        <span className="ach-card__medals">
+          <span className="ach-medal--s3" title="Gold">
+            {gold} gold
+          </span>
+          <span className="ach-medal--s2" title="Silver">
+            {silver} silver
+          </span>
+          <span className="ach-medal--s1" title="Bronze">
+            {bronze} bronze
+          </span>
+          <span className="dim">of {c.sets.length}</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
 export function AchievementsModal({ onClose }: { onClose: () => void }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
   const toast = useToast();
   const [data, setData] = useState<AchievementsDTO | null>(null);
   const [failed, setFailed] = useState(false);
-  const [region, setRegion] = useState<string | null>(null);
+  /** The category open, or null for the overview of cards. */
+  const [category, setCategory] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
@@ -209,20 +296,34 @@ export function AchievementsModal({ onClose }: { onClose: () => void }) {
       .then((r) =>
         r.ok ? (r.json() as Promise<AchievementsDTO>) : Promise.reject(new Error(String(r.status))),
       )
-      .then((j) => {
-        setData(j);
-        setRegion((cur) => cur ?? j.currentRegion);
-      })
+      .then((j) => setData(j))
       .catch(() => setFailed(true));
   }, []);
   useEffect(load, [load]);
 
-  const regions = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const a of data?.achievements ?? []) {
-      if (a.kind === "region" && a.region) m.set(a.id.slice("region:".length), a.region);
+  /** Galaxy first, then the region the commander is in, then the rest by name. */
+  const categories = useMemo<Category[]>(() => {
+    const all = data?.achievements ?? [];
+    const galaxy: Category = {
+      key: "galaxy",
+      name: "Galaxy",
+      sets: all.filter((a) => !a.region),
+      head: all.find((a) => a.id === "galaxy") ?? null,
+    };
+    const byRegion = new Map<string, Category>();
+    for (const a of all) {
+      if (!a.region) continue;
+      const rk = a.id.split(":")[1] ?? "";
+      const c = byRegion.get(rk) ?? { key: rk, name: a.region, sets: [], head: null };
+      c.sets.push(a);
+      if (a.kind === "region") c.head = a;
+      byRegion.set(rk, c);
     }
-    return [...m].sort((x, y) => x[1].localeCompare(y[1]));
+    const here = data?.currentRegion ?? null;
+    const regions = [...byRegion.values()].sort(
+      (x, y) => Number(y.key === here) - Number(x.key === here) || x.name.localeCompare(y.name),
+    );
+    return [galaxy, ...regions];
   }, [data]);
 
   const track = async (id: string | null) => {
@@ -240,13 +341,18 @@ export function AchievementsModal({ onClose }: { onClose: () => void }) {
   };
 
   const q = query.trim().toLowerCase();
-  const match = (a: AchievementDTO) => !q || a.name.toLowerCase().includes(q);
-  const galaxy = (data?.achievements ?? []).filter((a) => !a.region && match(a));
-  const regionPrefix = region ? `region:${region}` : null;
-  const inRegion = (data?.achievements ?? []).filter(
-    (a) => regionPrefix && (a.id === regionPrefix || a.id.startsWith(`${regionPrefix}:`)) && match(a),
-  );
+  const nameMatches = (a: AchievementDTO) => !q || a.name.toLowerCase().includes(q);
+  // A card stays when its name matches, or when any of its sets does (then it says how many).
+  const cards = categories
+    .map((c) => {
+      if (!q || c.name.toLowerCase().includes(q)) return { c, matches: null as number | null };
+      const n = c.sets.filter(nameMatches).length;
+      return n ? { c, matches: n } : null;
+    })
+    .filter((x): x is { c: Category; matches: number | null } => x !== null);
+  const current = category ? (categories.find((c) => c.key === category) ?? null) : null;
   const tracked = data?.achievements.find((a) => a.id === data.trackedId) ?? null;
+  const trackedCategory = tracked ? (tracked.region ? tracked.id.split(":")[1] : "galaxy") : null;
 
   const rows = (list: AchievementDTO[]) => (
     <ul className="ach-list">
@@ -262,6 +368,34 @@ export function AchievementsModal({ onClose }: { onClose: () => void }) {
       ))}
     </ul>
   );
+
+  const categoryView = (c: Category) => {
+    // The card's name matched, or nothing is typed: show everything in it.
+    const list = !q || c.name.toLowerCase().includes(q) ? c.sets : c.sets.filter(nameMatches);
+    return (
+      <>
+        <div className="ach-crumb">
+          <button type="button" className="ach-link" onClick={() => setCategory(null)}>
+            ← All categories
+          </button>
+          <h4 className="ach-h ach-crumb__h">{c.name}</h4>
+        </div>
+        {c.key !== "galaxy" && !data?.poiData ? (
+          <p className="ach-poi-card">{POI_NOTE.replace("Needs", "The Sights set needs")}</p>
+        ) : null}
+        {SECTION_ORDER.map((sec) => {
+          const part = list.filter((a) => SECTION_OF[a.kind] === sec);
+          return part.length ? (
+            <section key={sec} className="ach-section">
+              <h5 className="ach-sub">{sec}</h5>
+              {rows(part)}
+            </section>
+          ) : null;
+        })}
+        {list.length === 0 ? <p className="dim">Nothing matches.</p> : null}
+      </>
+    );
+  };
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -288,17 +422,20 @@ export function AchievementsModal({ onClose }: { onClose: () => void }) {
             <p className="dim">This build has no codex catalogue, so there is nothing to count against.</p>
           ) : (
             <>
-              <p className="dim ach-intro">
-                Every colour variant counts once per set: a plant counts on its third sample, a legacy plant
-                (Anemone, Brain Tree, Sinuous Tubers, Shards, Amphora, Bark Mounds) on its codex entry. Each
-                region also has Stars and Worlds (codex entries), a Sampler (one plant of each rarity) and
-                Sights (points of interest to fly to). From your journals only. Bronze at 25 %, Silver at 50
-                %, Gold at all of it.
-              </p>
               {tracked ? (
                 <div className="ach-tracked">
                   <span className="ach-tracked__k">Tracking</span>
-                  <strong>{tracked.name}</strong>
+                  <button
+                    type="button"
+                    className="ach-link ach-tracked__name"
+                    onClick={() => {
+                      setCategory(trackedCategory);
+                      setOpen(tracked.id);
+                    }}
+                    title="Open it"
+                  >
+                    {tracked.name}
+                  </button>
                   <span>
                     {tracked.done}/{tracked.total}
                   </span>
@@ -312,49 +449,49 @@ export function AchievementsModal({ onClose }: { onClose: () => void }) {
                 <input
                   type="search"
                   className="ach-search"
-                  placeholder="Filter by name"
+                  placeholder={current ? `Filter ${current.name}` : "Search regions and achievements"}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  aria-label="Filter achievements by name"
+                  aria-label="Search achievements"
                 />
               </div>
-              <section className="ach-section">
-                <h4 className="ach-h">Galaxy</h4>
-                {!data.poiData ? (
-                  <p className="ach-poi-card">
-                    {POI_NOTE.replace("Needs", "Each region's Sights set needs")}
+              {current ? (
+                categoryView(current)
+              ) : (
+                <>
+                  <p className="dim ach-intro">
+                    Every colour variant counts once per set: a plant counts on its third sample, a legacy
+                    plant (Anemone, Brain Tree, Sinuous Tubers, Shards, Amphora, Bark Mounds) on its codex
+                    entry. Each region also has Stars and Worlds (codex entries), a Sampler (one plant of each
+                    rarity) and Sights (points of interest to fly to). From your journals only. Bronze at 25
+                    %, Silver at 50 %, Gold at all of it.
                   </p>
-                ) : null}
-                {rows(galaxy)}
-              </section>
-              <section className="ach-section">
-                <h4 className="ach-h">
-                  Region{" "}
-                  <select
-                    className="ach-region"
-                    value={region ?? ""}
-                    onChange={(e) => setRegion(e.target.value || null)}
-                    aria-label="Region"
-                  >
-                    <option value="">Pick a region</option>
-                    {regions.map(([k, name]) => (
-                      <option key={k} value={k}>
-                        {name}
-                        {k === data.currentRegion ? " (you are here)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </h4>
-                {region ? (
-                  inRegion.length ? (
-                    rows(inRegion)
+                  {!data.poiData ? (
+                    <p className="ach-poi-card">
+                      {POI_NOTE.replace("Needs", "Each region's Sights set needs")}
+                    </p>
+                  ) : null}
+                  {cards.length ? (
+                    <ul className="ach-cards">
+                      {cards.map(({ c, matches }) => (
+                        <CategoryCard
+                          key={c.key}
+                          c={c}
+                          here={c.key === data.currentRegion}
+                          tracking={c.key === trackedCategory}
+                          matches={matches}
+                          onOpen={() => {
+                            setCategory(c.key);
+                            setOpen(null);
+                          }}
+                        />
+                      ))}
+                    </ul>
                   ) : (
                     <p className="dim">Nothing matches.</p>
-                  )
-                ) : (
-                  <p className="dim">Pick a region to see its sets.</p>
-                )}
-              </section>
+                  )}
+                </>
+              )}
               <p className="dim ach-source">{data.source}</p>
             </>
           )}
