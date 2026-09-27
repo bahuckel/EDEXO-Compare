@@ -229,13 +229,6 @@ function saveSoon(): void {
   pending.unref?.();
 }
 
-/** Test seam — a debounce that outlives a test leaks into the next one. */
-export function flushPredictionAuditForTests(): void {
-  if (pending) clearTimeout(pending);
-  pending = null;
-  saveNow();
-}
-
 /** Test seam — the module holds the file in memory for the life of the process. */
 export function resetPredictionAuditForTests(): void {
   if (pending) clearTimeout(pending);
@@ -500,18 +493,6 @@ function evict(m: Map<string, PredictionRecord>): void {
     if (m.size <= MAX_RECORDS) break;
     m.delete(r.bodyKey);
   }
-}
-
-/** What the file holds, for the Options panel and for anyone asking whether it is working. */
-export function predictionAuditTally(): { bodies: number; final: number; withOutcome: number } {
-  const m = load();
-  let final = 0;
-  let withOutcome = 0;
-  for (const r of m.values()) {
-    if (r.final) final++;
-    if (r.outcomes.length > 0) withOutcome++;
-  }
-  return { bodies: m.size, final, withOutcome };
 }
 
 /** Read access for tests and for anything that wants to report on the file. */

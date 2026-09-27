@@ -1,0 +1,148 @@
+/**
+ * What the unsold data is worth, line by line. Split out of AppModals.tsx (code review D, 2026-09-27).
+ */
+import { CopySystemButton } from "./CopySystemButton";
+import { useModal } from "./ui/useModal";
+import type { OrganicPendingLineItem } from "@shared/types";
+
+export function DataValueBreakdownModal({
+  lines,
+  includeExplorationScanDataInDataValue,
+  explorationFssScanCount,
+  explorationFssValueCredits,
+  explorationDssScanCount,
+  explorationDssValueCredits,
+  exobioScanCount,
+  exobioValueCredits,
+  onClose,
+}: {
+  lines: OrganicPendingLineItem[];
+  includeExplorationScanDataInDataValue: boolean;
+  explorationFssScanCount: number;
+  explorationFssValueCredits: number;
+  explorationDssScanCount: number;
+  explorationDssValueCredits: number;
+  /** Completed samples waiting to sell, and their value — the header pill's own two numbers. */
+  exobioScanCount: number;
+  exobioValueCredits: number;
+  onClose: () => void;
+}) {
+  const dialogRef = useModal<HTMLDivElement>(true, onClose);
+  return (
+    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="modal-panel modal-panel--data-value"
+        role="dialog"
+        aria-modal="true"
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        <div className="modal-head">
+          <h3>Unsold data value</h3>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div className="modal-body modal-body--data-value">
+          {/*
+            The three things worth selling, on three lines, before the per-sample list.
+
+            Exploration is counted in the header total only while the ⊕ toggle is on, so the two
+            exploration rows say when they are not — the alternative is three rows that look like
+            they add up to the pill and do not.
+          */}
+          <ul className="data-value-summary">
+            <li
+              className="data-value-summary-row"
+              title="Stars and bodies scanned but not mapped: discovery scan, FSS, arrival auto-scan. Nav-beacon data and bodies already sold are not counted."
+            >
+              <span className="data-value-summary-count">{explorationFssScanCount}</span>
+              <span className="data-value-summary-label">
+                FSS scans
+                {!includeExplorationScanDataInDataValue ? (
+                  <span className="dim tiny"> · not in total</span>
+                ) : null}
+              </span>
+              <span className="data-value-summary-value">
+                {explorationFssValueCredits.toLocaleString()} CR
+              </span>
+            </li>
+            <li
+              className="data-value-summary-row"
+              title="Planets mapped with the surface scanner, at their mapped value (which includes the scan)."
+            >
+              <span className="data-value-summary-count">{explorationDssScanCount}</span>
+              <span className="data-value-summary-label">
+                DSS scans
+                {!includeExplorationScanDataInDataValue ? (
+                  <span className="dim tiny"> · not in total</span>
+                ) : null}
+              </span>
+              <span className="data-value-summary-value">
+                {explorationDssValueCredits.toLocaleString()} CR
+              </span>
+            </li>
+            <li
+              className="data-value-summary-row"
+              title="Completed samples (3x Analyse) not yet sold; first footfall pays 5x"
+            >
+              <span className="data-value-summary-count">{exobioScanCount}</span>
+              <span className="data-value-summary-label">Exobio scans</span>
+              <span className="data-value-summary-value">{exobioValueCredits.toLocaleString()} CR</span>
+            </li>
+          </ul>
+          {lines.length === 0 ? (
+            <p className="dim">
+              {includeExplorationScanDataInDataValue
+                ? "No completed exobiology samples waiting to sell in the merged journal replay."
+                : "No completed samples waiting to sell in the merged journal replay."}
+            </p>
+          ) : (
+            <ul className="data-value-breakdown-list">
+              {lines.map((line, i) => (
+                <li key={`${line.bodyKey}-${i}`} className="data-value-breakdown-row">
+                  <img src={line.photoUrl} alt="" className="data-value-breakdown-thumb" />
+                  <div className="data-value-breakdown-main">
+                    <div className="data-value-breakdown-planet">
+                      <strong>{line.bodyName}</strong>
+                      <span className="dim"> · {line.starSystem}</span>
+                      <CopySystemButton system={line.starSystem} />
+                    </div>
+                    <div className="data-value-breakdown-species">{line.speciesLabel}</div>
+                    <div className="data-value-breakdown-value-row">
+                      {line.baseCredits != null ? (
+                        <>
+                          <span className="data-value-breakdown-credits">
+                            {line.valueCredits.toLocaleString()} CR
+                          </span>
+                          {line.firstFootfall ? (
+                            <span
+                              className="data-value-footfall-badge"
+                              title="First footfall: 1× list payout plus 4× bonus in-game (5× total)"
+                            >
+                              First footfall 5× total
+                            </span>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="dim">No price in price list — not counted in total</span>
+                      )}
+                    </div>
+                    {line.baseCredits != null && line.firstFootfall ? (
+                      <div className="data-value-footfall-detail dim">
+                        {line.baseCredits.toLocaleString()} CR base +{" "}
+                        {(line.baseCredits * 4).toLocaleString()} CR first-footfall bonus ={" "}
+                        {line.valueCredits.toLocaleString()} CR
+                      </div>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

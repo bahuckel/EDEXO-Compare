@@ -31,7 +31,8 @@ import path from "node:path";
 import { REGION_PRIOR_WEIGHT, TERM_DAMPING, VOLCANISM_TERM_WEIGHT } from "../src/server/speciesLikelihood.js";
 
 const probe = readFileSync(path.resolve(__dirname, "../scripts/rank-probe.ts"), "utf8");
-const snapshot = readFileSync(path.resolve(__dirname, "../src/server/snapshot.ts"), "utf8");
+// The panel's presence probability: `attachPresenceProbability`, in presenceFloors.ts since the snapshot split.
+const snapshot = readFileSync(path.resolve(__dirname, "../src/server/presenceFloors.ts"), "utf8");
 
 describe("the regional prior's weight", () => {
   it("is the value the sweep chose", () => {

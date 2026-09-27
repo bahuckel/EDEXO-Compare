@@ -242,7 +242,7 @@ export function writeSectorMapFile(
     row.taxa[e.taxon] = [e.counts.confirmed, e.counts.genus, e.counts.signal, e.counts.predicted];
   }
 
-  const { names, catalogueCells } = readSectorNames(catalogueCsvPath, new Set(cells.keys()));
+  const { names } = readSectorNames(catalogueCsvPath, new Set(cells.keys()));
 
   const file: SectorMapFile = {
     generatedAt: new Date().toISOString(),

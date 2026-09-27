@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
@@ -30,6 +30,12 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.{ts,tsx}"],
+    // The known-spawn suite takes ~5 minutes (two full snapshots for each of 439 bodies): it runs
+    // when named — `npm run test:spawn` — and stays out of the everyday `npm test`.
+    exclude: [
+      ...configDefaults.exclude,
+      ...(process.argv.some((a) => a.includes("speciesSpawnBodies")) ? [] : ["tests/speciesSpawnBodies.test.ts"]),
+    ],
     // Every test file gets a throwaway EDEXO_USER_DATA_DIR before it runs. Without it a test that
     // resolves a user-data path touches the real one on the machine running the suite; see the file.
     setupFiles: ["tests/setup/userDataDir.ts"],

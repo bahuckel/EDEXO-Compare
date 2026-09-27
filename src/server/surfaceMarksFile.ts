@@ -155,15 +155,6 @@ export function scheduleSaveSurfaceMarks(data: SurfaceMarksFile): void {
   pending.unref?.();
 }
 
-/** Test seam — a debounce that outlives a test leaks into the next one. */
-export function flushSurfaceMarksForTests(): void {
-  if (pending) clearTimeout(pending);
-  pending = null;
-  const d = pendingData;
-  pendingData = null;
-  if (d) saveSurfaceMarks(d);
-}
-
 export function saveSurfaceMarks(data: SurfaceMarksFile): void {
   const file = resolveSurfaceMarksPath();
   try {

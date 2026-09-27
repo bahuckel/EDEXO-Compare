@@ -27,6 +27,8 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
   const [ackEpoch, setAckEpoch] = useState(0);
   const [scanBusy, setScanBusy] = useState(false);
 
+  // `ackEpoch` is the re-read trigger: the ids live in localStorage, and bumping it re-reads them.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const ackIds = useMemo(() => readExoAlertAckIds(), [ackEpoch]);
 
   const collected = useMemo(() => {

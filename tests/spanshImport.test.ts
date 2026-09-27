@@ -131,6 +131,7 @@ describe("the four gates", () => {
   it("gate 1 — a probe that did not survive the trip aborts the whole file", async () => {
     await seedIdentifiedCorpus();
     // The probe as a number is exactly what a JSON.parse somewhere upstream would produce.
+    // eslint-disable-next-line no-loss-of-precision -- the lossy number is what this gate must refuse
     const f = exportFile([manifest({ probe: { id64: 6160925022241180003 } }), systemRow(), bodyRow()]);
     const r = await importSpanshExport(ctx.store, f, { apply: true });
     expect(r.failures.join(" ")).toMatch(/probe id64/);
@@ -157,6 +158,7 @@ describe("the four gates", () => {
 
   it("gate 4 — an id-shaped field carrying a bare big integer fails", async () => {
     await seedIdentifiedCorpus();
+    // eslint-disable-next-line no-loss-of-precision -- the lossy number is what this gate must refuse
     const f = exportFile([manifest(), systemRow(), bodyRow({ id64: 6160925022241180003 })]);
     const r = await importSpanshExport(ctx.store, f, { apply: true });
     expect(r.failures.join(" ")).toMatch(/expected a decimal string/);

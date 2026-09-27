@@ -306,10 +306,7 @@
 
 /* ---- controls: tabs, pills, chips, buttons ------------------------------- */
 .tab,
-.brand-star-chip,
-.brand-notable-pill,
 .btn-top-neutral,
-.info-pill,
 .modal-close,
 .encyclopedia-thumb-btn,
 .species-thumb-btn {
@@ -322,13 +319,11 @@
 }
 
 .tab:hover,
-.brand-notable-pill:hover,
 .btn-top-neutral:hover {
   transform: translateY(-1px);
 }
 
 .tab:active,
-.brand-notable-pill:active,
 .btn-top-neutral:active {
   transform: translateY(0);
 }
@@ -446,10 +441,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tab,
-  .brand-star-chip,
-  .brand-notable-pill,
   .btn-top-neutral,
-  .info-pill,
   .modal-close,
   .encyclopedia-thumb-btn,
   .species-thumb-btn {
@@ -457,7 +449,6 @@
   }
 
   .tab:hover,
-  .brand-notable-pill:hover,
   .btn-top-neutral:hover {
     transform: none;
   }

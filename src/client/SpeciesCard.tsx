@@ -2,24 +2,19 @@
  * The full species card and its sub-blocks, split out of App.tsx (7.3).
  */
 import { codexMarkTitle } from "./codexMark";
-import { useToast } from "./ui/feedback";
-import { InfoPopover } from "./ui/Tooltip";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useFootfallCertainty } from "./footfallContext";
 import { settledMultiplier } from "@shared/footfallValue";
 import { PhotoCredit, isPlaceholderPhoto, photoCreditTitle } from "./photoCredit";
 import { PhotoGallery } from "./PhotoGallery";
-import { memo, Suspense, useEffect, useMemo, useRef, useState, CSSProperties } from "react";
+import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type {
-  AppSnapshot,
   BodyComputed,
   EstimatedSurfaceTempBand,
-  FootScanMatchPayload,
   OtherMatchDetailCardDTO,
   PlanetScan,
 } from "@shared/types";
-import { formatGenusStarColorSoftOneLine } from "@shared/genusStarColorSoft";
 import {
   candidateMorphColorShortLabel,
   candidateMorphColorShortLabelForHosts,
@@ -41,274 +36,18 @@ import {
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
 import {
   EMPTY_REASONS,
-  FootScanHitBlock,
   GenusSpeciesOdds,
   OtherMatchDetailCardsGrid,
   SpeciesProvenanceBadge,
-  ThinSampleNote,
-  hostHitsMorphSpectralChip,
-  morphSpectralChipHeatClass,
-  sortMorphSpectralKeys,
 } from "./SpeciesCardBits";
 import { readTempUnitFromLs, writeTempUnitToLs } from "./lsPrefs";
 import { RarityGem } from "./RarityGem";
-
-function FootScanMatchCard({ payload }: { payload: FootScanMatchPayload }) {
-  const [expanded, setExpanded] = useState(false);
-  const hits = payload.hits;
-  if (!hits.length) return null;
-  const [primary, ...more] = hits;
-
-  return (
-    <div className="foot-scan-match-card">
-      <h4 className="foot-scan-match-title">Foot scan match</h4>
-      <FootScanHitBlock hit={primary} />
-      {more.length > 0 ? (
-        <div className="foot-scan-match-more-wrap">
-          <button
-            type="button"
-            className="foot-scan-match-more-btn"
-            onClick={() => setExpanded((v) => !v)}
-            aria-expanded={expanded}
-          >
-            <span
-              className={`foot-scan-match-chevron${expanded ? " foot-scan-match-chevron--open" : ""}`}
-              aria-hidden
-            >
-              ^
-            </span>
-            <span>
-              {more.length} other catalog bod{more.length === 1 ? "y" : "ies"} (same planet class, atmosphere;
-              T/P within ±10%)
-            </span>
-          </button>
-          {expanded ? (
-            <div className="foot-scan-match-more-list">
-              {more.map((h) => (
-                <FootScanHitBlock key={`${h.bodyName}-${h.recordedAt}-${h.starSystem}`} hit={h} />
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/** Genus `meta.color_variants` spectral keys vs host — compact “main-sequence rail” + host pin. */
-function SpeciesStarColourSoftBadge({
-  entry,
-  hostStarType,
-  compactLayout,
-}: {
-  entry: BodyComputed["matches"][0]["entry"];
-  hostStarType?: string;
-  compactLayout?: boolean;
-}) {
-  const v = formatGenusStarColorSoftOneLine(entry, hostStarType);
-  if (!v.show) return null;
-  const chips = sortMorphSpectralKeys(v.supportedSpectralList);
-  const host = v.hostSpectralSummary.trim() || "—";
-  const title =
-    "Codex morph colours cover these spectral classes for this genus. Host shows your resolved journal primary class (soft check — matcher can still hard-null some keys).";
-
-  return (
-    <div
-      className={`species-spectral-fit species-spectral-fit--${v.tone}${compactLayout ? " species-spectral-fit--compact" : ""}`}
-      title={title}
-    >
-      <span className="visually-hidden">{title}</span>
-      <div className="species-spectral-fit-row">
-        <div className="species-spectral-host-pin" aria-label="Primary host class">
-          <span className="species-spectral-host-pin-ic" aria-hidden>
-            ◉
-          </span>
-          <div className="species-spectral-host-pin-text">
-            <span className="species-spectral-host-pin-k">Host</span>
-            <span className="species-spectral-host-pin-v">{host}</span>
-          </div>
-        </div>
-        <div className="species-spectral-rail-wrap">
-          <div className="species-spectral-rail-glow" aria-hidden />
-          <div className="species-spectral-rail" aria-label="Spectral classes with codex morph entries">
-            {chips.map((k) => (
-              <span
-                key={k}
-                className={`species-spectral-chip ${morphSpectralChipHeatClass(k)}${
-                  hostHitsMorphSpectralChip(host, k) ? " species-spectral-chip--host-here" : ""
-                }`}
-              >
-                {k}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * One bar, and it is the one that has been checked.
- *
- * This used to show four: "Chance here" beside habitat fit, deck match and a within-genus rank.
- * The owner asked for the other three to go, and measuring them settled it — they feed **nothing**.
- * "Chance here" is `presenceProbabilityPercent`, written by `attachPresenceProbability` from
- * `rankSpeciesOnBody` -> `speciesLogScore`, which reads the exomastery profile, the scan, the
- * exploration record and the host star. The three that were beside it were computed separately in
- * this file and consumed by nobody: deleting them cannot move a prediction by a thousandth.
- *
- * What they cost was attention. They say how close this body is to the species' own average on
- * scales nothing has calibrated, and they sat at equal width next to the one number with a
- * reliability table behind it — measured on complete-label bodies, the 90-100 % bin comes in at
- * 97.8 % and the 0-10 % bin at 8.9 %. Three uncalibrated bars beside one calibrated one invites
- * exactly the wrong reading, which is why a "Chance here" under 5 % looked like a defect rather
- * than what it is: an honest split across a lot of candidates.
- */
-function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["matches"][0] }) {
-  type SimCol = {
-    key: string;
-    shortLabel: string;
-    help: string;
-    pct: number;
-    barOpacity: number;
-    barExtraStyle?: CSSProperties;
-  };
-  const cols: SimCol[] = [];
-  /**
-   * The one number here that has been checked against reality.
-   *
-   * Habitat fit, deck match and the genus rank all say how close this body is to the species' own
-   * average, on scales nothing has calibrated. This says how often the species turns out to be here
-   * — measured, on complete-label bodies: the 90-100 % bin comes in at 97.8 %, the 0-10 % bin at
-   * 8.9 %. So it leads, and the rest keep their places behind it.
-   */
-  const presence = m.presenceProbabilityPercent;
-  if (presence != null && Number.isFinite(presence))
-    cols.push({
-      key: "presence",
-      shortLabel: "Chance here",
-      help: EXO_PRESENCE_HELP,
-      pct: Math.max(0, Math.min(100, presence)),
-      barOpacity: 1,
-      barExtraStyle: { filter: "hue-rotate(-35deg)" },
-    });
-  if (cols.length === 0) {
-    return (
-      <div className="species-similarity-index-empty dim" style={{ fontSize: "0.72rem" }}>
-        No indexed metrics for this match.
-      </div>
-    );
-  }
-
-  const unlikely = m.exomasteryHabitatUnlikely === true;
-  const sampleN = m.exomasteryProfileSampleCount;
-
-  return (
-    <div className="species-similarity-index-wrap">
-      {unlikely ? (
-        <div
-          className="species-habitat-unlikely"
-          title={
-            "This body resembles none of the " +
-            (sampleN != null ? `${sampleN} ` : "") +
-            "bodies where this species has been observed. It is still a possible find — a profile " +
-            "records where a species has been seen, not where it cannot grow — but it is ranked last."
-          }
-        >
-          Unlikely habitat{sampleN != null ? ` · 0 of ${sampleN} observed bodies resemble this one` : ""}
-        </div>
-      ) : null}
-      <ThinSampleNote sampleN={sampleN} unlikely={unlikely} />
-      <div className="species-similarity-index-cols">
-        {cols.map((c) => (
-          <div key={c.key} className="species-similarity-index-col" title={c.help}>
-            <div className="species-similarity-index-label">
-              {c.shortLabel}{" "}
-              <span className="species-similarity-index-pct">
-                <strong>{c.pct}%</strong>
-              </span>
-            </div>
-            <div className="species-similarity-index-bar" aria-hidden>
-              <div
-                className="species-similarity-index-fill species-similarity-index-fill--graded"
-                style={{
-                  width: `${c.pct}%`,
-                  opacity: c.barOpacity,
-                  ...c.barExtraStyle,
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * The miss log, in the Options panel (B6).
- *
- * The accuracy probe can only re-measure the bodies already in the journal, and it will only ever
- * describe the past. This grows every time the app is wrong about a body the commander actually
- * landed on, wherever they are flying — the one feedback channel that does not go stale as the
- * harness is tuned against.
- *
- * A count rather than a list: the records carry body parameters and the whole candidate list, which
- * belongs in a file to diff, not in a modal. Silent at zero, because "no misses recorded" on a fresh
- * install reads as a claim about accuracy that nothing has earned.
- *
- * **Shape (A5).** This was a five-line paragraph for a number and a filename. The number is the
- * thing being reported and the file is the thing to do about it, so it is now a number, a button,
- * and an ⓘ holding the explanation — which is read once and then never again.
- */
-export function ExoMissLogPanel({ outliers }: { outliers: AppSnapshot["exoOutliers"] }) {
-  const toast = useToast();
-  const [opening, setOpening] = useState(false);
-  if (!outliers || outliers.total <= 0) return null;
-  const parts = [
-    outliers.absent > 0 ? `${outliers.absent} not listed at all` : null,
-    outliers.unlikelyOnly > 0 ? `${outliers.unlikelyOnly} only behind “show unlikely”` : null,
-    outliers.rankedLow > 0 ? `${outliers.rankedLow} listed but ranked too low` : null,
-    outliers.colour > 0 ? `${outliers.colour} in a colour the app did not predict` : null,
-  ].filter(Boolean);
-
-  return (
-    <section className="options-meta-block options-oneline">
-      <span className="options-oneline-label">Misses recorded</span>
-      <strong className="options-oneline-value">{outliers.total}</strong>
-      <button
-        type="button"
-        className="btn secondary tiny"
-        disabled={opening}
-        onClick={() => {
-          setOpening(true);
-          void fetch("/api/settings/open-miss-log", { method: "POST" })
-            .then((r) => r.json() as Promise<{ ok: boolean; error?: string }>)
-            .then((r) => {
-              if (!r.ok) toast.error(r.error ?? "Could not open the miss log.");
-            })
-            .catch(() => toast.error("Could not open the miss log."))
-            .finally(() => setOpening(false));
-        }}
-      >
-        Open JSON
-      </button>
-      <InfoPopover title="Misses recorded" label="What the miss log holds">
-        <p>
-          {outliers.total} {outliers.total === 1 ? "species" : "species"} you found where this app did not
-          point at {outliers.total === 1 ? "it" : "them"}
-          {parts.length ? `: ${parts.join(", ")}` : ""}.
-        </p>
-        <p>
-          Each one is written to <code>edexo-outliers.jsonl</code> beside your settings, with the body&apos;s
-          parameters and the candidate list at the time — evidence for the next gate fix.
-        </p>
-        <p>It never leaves this machine.</p>
-      </InfoPopover>
-    </section>
-  );
-}
+import {
+  FootScanMatchCard,
+  SpeciesStarColourSoftBadge,
+  SpeciesExomasterySimilarityContent,
+} from "./SpeciesCardParts";
+export { ExoMissLogPanel } from "./ExoMissLogPanel";
 
 export const SpeciesCard = memo(function SpeciesCard({
   m,

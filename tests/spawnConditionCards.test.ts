@@ -18,7 +18,7 @@ import { buildEncyclopediaSpawnConditionCards } from "../src/shared/speciesSpawn
 import { speciesMatchesCriteria } from "../src/server/matchSpecies.js";
 import { REQUIRED_GAS_MIN_SHARE_PCT } from "../src/shared/atmosphereGasShare.js";
 import { estimatedTemperatureRangeForScan } from "../src/server/planetTemperature.js";
-import type { PlanetScan, SpeciesCriterion, SpeciesEntry } from "../src/shared/types.js";
+import type { PlanetScan, SpeciesEntry } from "../src/shared/types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = loadSpeciesDatabaseFromTree(root);
@@ -307,5 +307,39 @@ describe("the audit — every gate the matcher applies is drawn somewhere", () =
       }
     }
     expect([...new Set(offenders.map((o) => o.split(": ")[1]))].sort()).toEqual([]);
+  });
+});
+
+describe("the cards judge temperature the way the matcher does (code review A7, 2026-09-27)", () => {
+  const entry = {
+    id: "t",
+    displayName: "Test",
+    genus: "Test",
+    genusDataDir: "test",
+    criteria: {
+      planetClassAnyOf: ["Rocky body"],
+      surfaceTemperatureK: { min: 170, max: 180 },
+      atmosphereTypeAnyOf: ["Carbon dioxide (thin)"],
+      whenAtmosphereLinkedMinTempK: 175,
+    },
+  } as unknown as import("../src/shared/types.js").SpeciesEntry;
+  const cards = (T: number) =>
+    buildEncyclopediaSpawnConditionCards({
+      entry,
+      scan: { PlanetClass: "Rocky body", AtmosphereType: "CarbonDioxide", SurfaceTemperature: T } as never,
+      // An estimate wide enough to overlap anything — the journal reading must win over it.
+      estimatedSurfaceTempK: { minK: 100, maxK: 300, midK: 200 },
+      speciesMatchContext: null,
+    });
+
+  it("uses the journal's own surface temperature, not the wide estimate", () => {
+    expect(cards(250).find((c) => c.id === "surface-temperature")?.tier).toBe("red");
+    expect(cards(176).find((c) => c.id === "surface-temperature")?.tier).toBe("blue");
+  });
+
+  it("shows and tests an atmosphere-linked floor on its own", () => {
+    const linked = cards(172).find((c) => c.id === "linked-temp-cap");
+    expect(linked?.tier).toBe("red");
+    expect(linked?.label).toBe("Atmosphere-linked temperature floor");
   });
 });

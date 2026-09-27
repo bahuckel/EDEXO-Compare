@@ -78,19 +78,6 @@ function journalMergeSingleFilePathInDir(cacheDir: string): string {
   return path.join(cacheDir, "journal-merge.json");
 }
 
-/** @deprecated Use {@link resolveJournalMergeCacheRoot} — kept for external callers/tests. */
-export function journalMergeCacheDir(projectRoot: string): string {
-  return projectLocalJournalMergeCacheDir(projectRoot);
-}
-
-export function journalMergeMetaPath(projectRoot: string): string {
-  return journalMergeMetaPathInDir(projectLocalJournalMergeCacheDir(projectRoot));
-}
-
-export function journalMergePayloadPath(projectRoot: string): string {
-  return journalMergePayloadPathInDir(projectLocalJournalMergeCacheDir(projectRoot));
-}
-
 export async function buildJournalFileManifest(fullPaths: string[]): Promise<JournalFileFingerprint[]> {
   const out: JournalFileFingerprint[] = [];
   for (const p of fullPaths) {

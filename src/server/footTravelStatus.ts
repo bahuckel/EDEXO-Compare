@@ -1,7 +1,6 @@
 /**
  * Elite Dangerous `Status.json` (same folder as journal): lat/lon on body + planet radius for surface odometer.
  */
-import { readFileSync } from "node:fs";
 import type { JournalLine } from "../shared/types.js";
 
 export type FootTravelFix = {
@@ -202,14 +201,4 @@ export function parseStatusJsonFuel(rawText: string): StatusJsonFuelTons | null 
   if (!Number.isFinite(main) || !Number.isFinite(res)) return null;
   if (main < 0 || res < 0) return null;
   return { fuelMain: main, fuelReserve: res };
-}
-
-export function readStatusJsonFootFix(statusJsonPath: string): FootTravelFix | null {
-  let raw: string;
-  try {
-    raw = readFileSync(statusJsonPath, "utf8");
-  } catch {
-    return null;
-  }
-  return parseStatusJsonFootFix(raw);
 }

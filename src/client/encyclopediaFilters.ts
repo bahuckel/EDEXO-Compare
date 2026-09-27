@@ -233,13 +233,6 @@ export function buildEncyclopediaFacetOptions(rows: EncyclopediaSpeciesRowDTO[])
   };
 }
 
-export function filterEncyclopediaRows(
-  rows: EncyclopediaSpeciesRowDTO[],
-  f: EncyclopediaFiltersState,
-): EncyclopediaSpeciesRowDTO[] {
-  return rows.filter((r) => entryMatchesEncyclopediaFilters(r.entry, f));
-}
-
 /**
  * Facet-filtered rows, ordered by search rank when there is a query.
  *
@@ -316,17 +309,4 @@ export function clearEncyclopediaFilter(
 ): EncyclopediaFiltersState {
   const base = defaultEncyclopediaFilters(ENC_FILTERS_ALL);
   return { ...f, [key]: base[key] };
-}
-
-export function countActiveEncyclopediaFilters(f: EncyclopediaFiltersState): number {
-  let n = 0;
-  if (f.genusKey !== ENC_FILTERS_ALL) n++;
-  if (f.planetClass !== ENC_FILTERS_ALL) n++;
-  if (f.atmosphere !== ENC_FILTERS_ALL) n++;
-  if (f.volcanism !== ENC_FILTERS_ALL) n++;
-  if (f.starType !== ENC_FILTERS_ALL) n++;
-  if (f.pressureCat !== ENC_FILTERS_ALL) n++;
-  if (f.geoSignal !== ENC_FILTERS_ALL) n++;
-  if (f.search.trim()) n++;
-  return n;
 }

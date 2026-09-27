@@ -81,11 +81,6 @@ function systemTaxa(projectRoot: string): Map<string, Record<string, number>> | 
   return cached;
 }
 
-/** Test seam — the table is process-wide, so a test that swaps it must be able to put it back. */
-export function setSectorSystemsForTests(m: Map<string, Record<string, number>> | null | undefined): void {
-  cached = m;
-}
-
 /**
  * A species name reduced to a key both sides agree on: its words, sorted.
  *

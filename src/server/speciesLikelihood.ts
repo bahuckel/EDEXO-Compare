@@ -35,12 +35,8 @@ import { histogramBin, type HistogramEdgesFile, type SpeciesHistograms } from ".
 import { speciesPrior, type SpeciesPrevalenceFile } from "../shared/speciesPrior.js";
 import { regionalSpeciesCount } from "./regionSpeciesData.js";
 import { bucketCategoricalValue } from "../feeder/parameterImportance.js";
-import {
-  loadExomasteryProfile,
-  valueForCategoricalPath,
-  valueForNumericPath,
-  type ExomasteryProfileV1,
-} from "./exomasteryProfile.js";
+import { loadExomasteryProfile, type ExomasteryProfileV1 } from "./exomasteryProfile.js";
+import { valueForCategoricalPath, valueForNumericPath } from "./exomasteryBodyValues.js";
 import { shouldOmitExomasterySciencePath } from "./exomasteryPathHygiene.js";
 import { loadHistogramEdges, loadSpeciesPrevalence } from "./likelihoodData.js";
 import { getProjectRoot } from "./paths.js";

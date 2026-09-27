@@ -49,53 +49,6 @@
   z-index: 2;
 }
 
-.encyclopedia-filters__summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem 0.65rem;
-  margin-bottom: 0.55rem;
-}
-
-.encyclopedia-filters__hint {
-  font-size: var(--fs-md);
-  color: var(--text-dim);
-}
-
-.encyclopedia-filters__hint strong {
-  color: var(--accent-bright);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.encyclopedia-filters__pill {
-  font-size: var(--fs-2xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 0.22rem 0.45rem;
-  border-radius: 0;
-  background: var(--accent-a12);
-  color: var(--accent-bright);
-  border: 1px solid var(--accent-a35);
-}
-
-.encyclopedia-filters__clear {
-  font: inherit;
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  padding: 0.2rem 0.55rem;
-  border-radius: var(--r-md);
-  border: 1px solid rgba(255, 140, 90, 0.4);
-  background: rgba(80, 40, 20, 0.35);
-  color: rgba(255, 200, 170, 0.92);
-  cursor: pointer;
-}
-
-.encyclopedia-filters__clear:hover {
-  background: rgba(100, 50, 28, 0.5);
-}
-
 .encyclopedia-filters__chip {
   font: inherit;
   font-size: var(--fs-sm);
@@ -137,29 +90,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-faint);
-}
-
-.ency-filter-field--search .ency-filter-field__search {
-  width: 100%;
-  margin: 0;
-  padding: 0.36rem 0.55rem;
-  font: inherit;
-  font-size: var(--fs-sm);
-  color: var(--text);
-  background: var(--panel);
-  border: 1px solid var(--accent-a22);
-  border-radius: 0;
-  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
-}
-
-.ency-filter-field--search .ency-filter-field__search::placeholder {
-  color: var(--muted);
-}
-
-.ency-filter-field--search .ency-filter-field__search:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: inset 0 0 12px var(--accent-a12);
 }
 
 .encyclopedia-scroll {
@@ -345,10 +275,6 @@
   display: block;
 }
 
-.encyclopedia-species-hero {
-  margin-bottom: 0.5rem;
-}
-
 .encyclopedia-species-img {
   width: 100%;
   max-height: 200px;
@@ -396,11 +322,6 @@
 .encyclopedia-spawn-compare-line {
   margin: 0.35rem 0 0.55rem;
   line-height: 1.45;
-}
-
-.ency-spawn-card-line {
-  display: block;
-  line-height: 1.35;
 }
 
 .encyclopedia-species-actions {
@@ -496,27 +417,6 @@
   border-color: rgba(140, 220, 255, 0.75);
 }
 
-.encyclopedia-exomastery-backdrop {
-  z-index: 1120;
-}
-
-.encyclopedia-exomastery-inline {
-  margin-top: 0.5rem;
-  padding: 0.55rem 0.6rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(100, 200, 255, 0.22);
-  background: var(--shadow-a35);
-  max-height: min(55vh, 520px);
-  overflow-y: auto;
-}
-
-.encyclopedia-exomastery-inline--full {
-  flex: 1 1 100%;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-
 .encyclopedia-exomastery-inline-head {
   display: flex;
   align-items: flex-start;
@@ -565,20 +465,10 @@
   color: var(--info);
 }
 
-.encyclopedia-exomastery-panel {
-  max-width: min(1100px, 100%);
-  width: min(1100px, 100%);
-}
-
 .encyclopedia-exomastery-body {
   max-height: min(78vh, 720px);
   overflow-y: auto;
   padding-top: 0.25rem;
-}
-
-.encyclopedia-exomastery-lede {
-  margin: 0 0 0.65rem;
-  line-height: 1.4;
 }
 
 .encyclopedia-exomastery-scroll {
@@ -618,14 +508,6 @@
   color: rgba(255, 138, 31, 0.85);
 }
 
-.encyclopedia-exomastery-subsection-title {
-  margin: 0.4rem 0 0.25rem;
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: rgba(200, 200, 200, 0.78);
-  letter-spacing: 0.02em;
-}
-
 .encyclopedia-exomastery-fields {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -662,35 +544,6 @@
 
 .encyclopedia-exomastery-stat-card .species-other-match-mini-legend {
   font-size: var(--fs-2xs);
-}
-
-.encyclopedia-exomastery-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.35rem 0.45rem;
-  border-radius: var(--r-xs);
-  border-left: 3px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.encyclopedia-exomastery-field-label {
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: none;
-  line-height: 1.25;
-  word-break: break-word;
-}
-
-.encyclopedia-exomastery-field-value {
-  font-size: var(--fs-md);
-  color: #e4e0d9;
-  word-break: break-word;
-}
-
-.encyclopedia-exomastery-field-pct {
-  font-size: var(--fs-xs);
 }
 
 /* Encyclopedia exomastery deviation tiers (match server `deviationToTier`) */

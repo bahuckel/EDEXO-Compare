@@ -1,7 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type {
-  EncyclopediaExomasteryFieldTier,
   ExomasteryCompositionGroupDTO,
   ExomasteryCompositionSummaryDTO,
   ExomasteryDetailDTO,
@@ -10,20 +9,15 @@ import type {
   ExomasteryVarietyItemDTO,
   ExplorationScanRecord,
   JournalHostStarObservation,
-  OtherMatchDetailCardDTO,
   PlanetScan,
   SpeciesEntry,
 } from "../shared/types.js";
 import { journalPressureToAtm, journalSurfaceGravityToG } from "../shared/journalPhysics.js";
-import { journalStarPrimarySpectralLetter } from "../shared/genusStarColorSoft.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
 import { hostStarClassKey, hostStarClassSimilarity } from "../shared/hostStarClass.js";
 import {
   classifyHostMkPath,
   computeMkAxisStepDistance,
-  isFeederHostStarLuminosityPath,
-  isFeederHostStarSpectralPath,
-  isFeederHostStarSubclassPath,
   harvardSpectralSlot,
   parseLooseSpectralMk,
   harvardSpectralStepDistance,
@@ -39,23 +33,45 @@ import {
 import { exomasteryHabitatTierWeight } from "./exomasteryHabitatTiers.js";
 import type { SpeciesHistograms } from "../shared/likelihoodBins.js";
 import { loadHistogramEdges } from "./likelihoodData.js";
-import { NO_VOLCANISM } from "../feeder/parameterImportance.js";
 import { getProjectRoot } from "./paths.js";
 import { shouldOmitExomasterySciencePath } from "./exomasteryPathHygiene.js";
 import { getSpeciesDataDir } from "./paths.js";
-
-/** Astronomical unit in metres — journal `SemiMajorAxis` is in metres; exomastery numerics use AU. */
-const AU_METERS = 149_597_870_700;
-
-/** Journal `OrbitalPeriod` / `RotationPeriod` are seconds; feeder / EDSM rollups use days. */
-const SECONDS_PER_DAY = 86_400;
-
-/** Journal `Composition` Ice / Metal / Rock are 0–1 fractions; feeder rollups use 0–100%. */
-const SOLID_FRACTION_ELEMENT_KEYS = new Set(["ice", "metal", "rock"]);
-
-function journalSolidPercentFromRaw(elementKey: string, raw: number): number {
-  return SOLID_FRACTION_ELEMENT_KEYS.has(elementKey.toLowerCase()) ? raw * 100 : raw;
-}
+import {
+  AU_METERS,
+  SECONDS_PER_DAY,
+  journalSolidPercentFromRaw,
+  valueForNumericPath,
+  normalizeAtmosphereType,
+  journalPercentNumber,
+  crustMaterialValue,
+  journalAtmosphereCompositionArray,
+  atmoGasValue,
+  journalCompositionObject,
+  collectJournalMaterialElementNames,
+  collectJournalAtmosphereGasNames,
+  collectJournalSolidKeys,
+  solidValue,
+  valueForCategoricalPath,
+} from "./exomasteryBodyValues.js";
+import {
+  modeCategoricalLabel,
+  formatPathLabel,
+  exomasteryPathTailLower,
+  formatExomasteryValueForPath,
+  formatExomasteryNum,
+  relativePercentDisplay,
+} from "./exomasteryFormat.js";
+import { inferHostSpectralCohortMode } from "./exomasteryOtherMatch.js";
+export { exomasteryOtherMatchCardDeckScore, buildOtherMatchDetailCards } from "./exomasteryOtherMatch.js";
+export {
+  formatPathLabel,
+  exomasteryPathTailLower,
+  exomasteryRollupValueDisplay,
+  formatExomasteryValueForPath,
+  exomasteryCompositionRollupDisplay,
+  formatExomasteryNum,
+} from "./exomasteryFormat.js";
+export { valueForNumericPath, valueForCategoricalPath } from "./exomasteryBodyValues.js";
 
 /** One numeric/material rollup from feeder (mode = most common bucket after rounding). */
 export interface ExomasteryNumericRollup {
@@ -461,18 +477,6 @@ function similarityToRollupComposition(v: number, r: ExomasteryNumericRollup): n
   return Math.max(0, Math.min(1, 1 - d / span));
 }
 
-function modeCategoricalLabel(counts: Record<string, number>): string | null {
-  let best: string | null = null;
-  let n = -1;
-  for (const [k, c] of Object.entries(counts)) {
-    if (c > n) {
-      n = c;
-      best = k;
-    }
-  }
-  return best;
-}
-
 function normalizeCategoricalValueForCompare(path: string, val: string): string {
   const low = path.toLowerCase();
   const t = val.trim();
@@ -488,15 +492,21 @@ function normalizeAtmosphereCompareKey(path: string, val: string): string {
     return normalizeCategoricalValueForCompare(path, val).toLowerCase().trim();
   }
   let t = normalizeCategoricalValueForCompare(path, val).toLowerCase().trim();
+  t = t.replace(/^hot\s+/, "");
   t = t.replace(/^thin\s+/, "");
   t = t.replace(/^thick\s+/, "");
   t = t.replace(/\s+atmosphere$/, "");
-  t = t.replace(/carbondioxide/g, "carbon dioxide");
   t = t.replace(/\bco2\b/g, "carbon dioxide");
   t = t.trim();
   /** Ammonia is the gas; "thin"/"thick" only describe pressure (handled separately via pressure stat). */
   if (t === "ammonia" || /^ammonia(\s|$)/.test(t)) t = "ammonia";
-  return t.trim();
+  /*
+    Letters only, one spelling of sulphur. The journal writes `SulphurDioxide` and `ArgonRich`, the
+    profiles "Thin Sulphur dioxide" and "Thin Argon-rich": compared with their spaces and hyphens,
+    sulphur dioxide and every "-rich" atmosphere never matched, and that axis of the habitat score read
+    0 on all of them (code review B7, 2026-09-27). "-rich" stays: Argon and Argon-rich are different.
+  */
+  return t.replace(/sulfur/g, "sulphur").replace(/[^a-z]/g, "");
 }
 
 /** Atmosphere *type* compare key for EDSM/CSV rows (thin/thick stripped; ammonia normalized). */
@@ -594,265 +604,6 @@ function rollupImportance(r: ExomasteryNumericRollup): number {
   return Math.max(0.06, 1 / (1 + span));
 }
 
-export function formatPathLabel(path: string): string {
-  const tail = path.includes(".") ? (path.split(".").pop() ?? path) : path;
-  return tail
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/_/g, " ")
-    .trim();
-}
-
-export function exomasteryPathTailLower(path: string): string {
-  return (path.includes(".") ? (path.split(".").pop() ?? path) : path).toLowerCase().trim();
-}
-
-/**
- * Convert a feeder rollup value to display units (atm, g, AU, …) for the given EDSM-style path.
- */
-export function exomasteryRollupValueDisplay(
-  path: string,
-  raw: number,
-): { displayNumber: number; suffix: string } {
-  if (!Number.isFinite(raw)) return { displayNumber: raw, suffix: "" };
-  const low = path.toLowerCase();
-  if (
-    low.includes("surfacepressure") ||
-    (low.includes("pressure") &&
-      !low.includes("composition") &&
-      !low.includes("percent") &&
-      !low.includes("%"))
-  ) {
-    return { displayNumber: journalPressureToAtm(raw), suffix: " atm" };
-  }
-  if (low.includes("gravity") && !low.includes("tidal")) {
-    const v = Math.abs(raw) > 50 ? journalSurfaceGravityToG(raw) : raw;
-    return { displayNumber: v, suffix: " g" };
-  }
-  if (low.includes("semimajoraxis") || low.includes("semimajor")) {
-    const v = Math.abs(raw) > 1e8 ? raw / AU_METERS : raw;
-    return { displayNumber: v, suffix: " AU" };
-  }
-  if (low.includes("distancefromarrival") || low.includes("distancetoarrival")) {
-    return { displayNumber: raw, suffix: " LS" };
-  }
-  if (low.includes("orbitalperiod")) {
-    return { displayNumber: raw, suffix: " d" };
-  }
-  if (low.includes("rotationperiod") || low.includes("rotationalperiod")) {
-    return { displayNumber: raw, suffix: " d" };
-  }
-  if (low.includes("radius") && !low.includes("semimajor")) {
-    return { displayNumber: raw, suffix: " km" };
-  }
-  if (low.includes("surfacetemperature") || low.includes("surfacetemp")) {
-    return { displayNumber: raw, suffix: " K" };
-  }
-  return { displayNumber: raw, suffix: "" };
-}
-
-/** Normalized display using path units (atm, g, AU to 3 dp, axial tilt °, …). */
-export function formatExomasteryValueForPath(path: string, raw: number): string {
-  if (!Number.isFinite(raw)) return "—";
-  const low = path.toLowerCase();
-  if (low.includes("semimajoraxis") || low.includes("semimajor")) {
-    const { displayNumber } = exomasteryRollupValueDisplay(path, raw);
-    return `${displayNumber.toFixed(3)} AU`;
-  }
-  if (low.includes("axialtilt") || low.includes("axial_tilt")) {
-    const deg = (raw * 180) / Math.PI;
-    return `${deg.toFixed(2)}°`;
-  }
-  const { displayNumber, suffix } = exomasteryRollupValueDisplay(path, raw);
-  return `${formatExomasteryNum(displayNumber)}${suffix}`;
-}
-
-/** Composition rollups (crust / atmosphere / solid) are percentages. */
-export function exomasteryCompositionRollupDisplay(raw: number): { displayNumber: number; suffix: string } {
-  return { displayNumber: raw, suffix: " %" };
-}
-
-/** en-US grouping: comma thousands, dot decimal — `1,234,567.89` for large values; preserves precision for small magnitudes. */
-export function formatExomasteryNum(n: number): string {
-  if (!Number.isFinite(n)) return "—";
-  const abs = Math.abs(n);
-  if (abs === 0) return "0.00";
-  if (abs >= 1) {
-    return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  if (abs >= 0.01) {
-    return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-  }
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
-}
-
-function relativePercentDisplay(v: number, mode: number): { pct: number | null; huge: boolean } {
-  const den = Math.max(Math.abs(mode), 1e-9);
-  const raw = (Math.abs(v - mode) / den) * 100;
-  if (!Number.isFinite(raw)) return { pct: null, huge: false };
-  if (raw > 200) return { pct: null, huge: true };
-  return { pct: Math.round(raw * 10) / 10, huge: false };
-}
-
-/** Map EDSM-style profile paths to values from journal scan / exploration record (SI + AU as stored in profile). */
-/** Exported for the ranking model, which reads the same paths out of the same scan. */
-export function valueForNumericPath(
-  path: string,
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-): number | null {
-  const low = path.toLowerCase();
-  /**
-   * `body.solidComposition.Rock|Metal|Ice` — the crust split, read before anything else.
-   *
-   * The profiles have carried these two histograms since the feeder was built and the ranking model
-   * never scored either, because this function had no branch for them and every caller reads the
-   * value through here. For the pair it separates best that is not a small loss: Frutexa acus lives
-   * on 85.31-97.28 % rock and metallicum on 64.25-72 %, ranges that do not touch, and the model was
-   * ordering the two on temperature and gravity alone. {@link solidValue} already does the lookup
-   * and the fraction-to-percent conversion for the habitat scorer; the same call keeps both scorers
-   * on one set of units.
-   */
-  const solid = /^body\.solidComposition\.(.+)$/i.exec(path);
-  if (solid) {
-    const { v, known } = solidValue(scan, rec, solid[1]!);
-    return known ? v : null;
-  }
-  /**
-   * `body.atmosphereComposition.*` — which gases, and how much of each.
-   *
-   * Dead here for the same reason the crust was, and it costs more than either. Fonticulua splits on
-   * this axis and on almost nothing else: campestris lives on 52-100 % argon, upupam on 50-100 %
-   * nitrogen with 0.4-50 % argon beside it, and the two ranges do not touch across 761 and 56 rows.
-   * The model could not see either number, so it separated them on the corpus prior — campestris has
-   * thirteen times the rows — and upupam sat at 15-17 % on bodies that were unambiguously its own.
-   *
-   * The atmosphere *type* does not rescue it. The commander's upupam body is `ArgonRich` by name and
-   * 64 % nitrogen by composition; matching on the label alone leaves both species plausible, which is
-   * exactly what the panel showed.
-   */
-  const atmo = /^body\.atmosphereComposition\.(.+)$/i.exec(path);
-  if (atmo) {
-    const { v, known } = atmoGasValue(scan, rec, atmo[1]!);
-    return known ? v : null;
-  }
-  /**
-   * `body.materials.*` is deliberately **not** answered here, and the model is better for it.
-   *
-   * Fourteen of these paths carry histograms in every profile and none of them has ever been scored,
-   * for the same reason the crust split was not: no branch, so null, so no term. That is also why
-   * the note in `speciesLogScore` about "dropping any one of the seventeen material paths moves
-   * nothing" held — dropping all fourteen at once moved nothing either.
-   *
-   * Wiring them through {@link crustMaterialValue} was measured rather than assumed, and it is a
-   * loss on every axis: mean rank 3.260 -> 3.294, top-1 165 -> 164, top-3 310 -> 303, and the
-   * reliability of "Chance here" within a genus more than doubled its error, 0.0050 -> 0.0107.
-   * Averaging the terms instead of summing them (`--per-term`) does not rescue it, so it is not the
-   * term count: fourteen percentages that sum to a hundred over the same crust are one fact counted
-   * fourteen times, and each repeat makes the posterior more certain without making it more right.
-   * Crust materials stay where they are useful — the habitat similarity, which weights them by
-   * measured importance instead of multiplying them.
-   */
-  if (low.endsWith(".gravity") || low === "body.gravity" || low.includes("surfacegravity")) {
-    const raw = scan.SurfaceGravity ?? rec?.surfaceGravity;
-    if (raw != null && Number.isFinite(raw)) return journalSurfaceGravityToG(raw);
-    return null;
-  }
-  if (
-    low.includes("surfacetemperature") ||
-    low.endsWith(".surfacetemperature") ||
-    low.includes("surfacetemp")
-  ) {
-    const t = scan.SurfaceTemperature ?? rec?.surfaceTemperature;
-    if (t != null && Number.isFinite(t)) return t;
-    return null;
-  }
-  if (low.includes("surfacepressure") || low.endsWith(".surfacepressure")) {
-    const p = scan.SurfacePressure ?? rec?.surfacePressure;
-    if (p != null && Number.isFinite(p)) return journalPressureToAtm(p);
-    return null;
-  }
-  if (low.includes("earthmass") || low.includes("earthmasses")) {
-    const m = scan.MassEM ?? rec?.massEM;
-    if (m != null && Number.isFinite(m)) return m;
-    return null;
-  }
-  if (low.includes("radius") && !low.includes("semimajor")) {
-    const rad = scan.radius ?? rec?.radius;
-    if (rad != null && Number.isFinite(rad)) return rad / 1000;
-    return null;
-  }
-  if (low.includes("semimajoraxis") || low.includes("semimajor")) {
-    const meters = rec?.semiMajorAxis ?? scan.SemiMajorAxis;
-    if (meters != null && Number.isFinite(meters)) return meters / AU_METERS;
-    return null;
-  }
-  if (low.includes("orbitalperiod")) {
-    const o = scan.OrbitalPeriod ?? rec?.orbitalPeriod;
-    if (o != null && Number.isFinite(o)) return o / SECONDS_PER_DAY;
-    return null;
-  }
-  if (low.includes("eccentricity") || low.includes("orbitaleccentricity")) {
-    const e = scan.Eccentricity ?? rec?.eccentricity;
-    if (e != null && Number.isFinite(e)) return e;
-  }
-  if (low.includes("orbitalinclination") || low.includes("orbitalincline")) {
-    const i = scan.OrbitalInclination ?? rec?.orbitalInclination;
-    if (i != null && Number.isFinite(i)) return i;
-  }
-  if (low.includes("periapsis") || low.includes("argofperiapsis")) {
-    const p = scan.Periapsis ?? rec?.periapsis;
-    if (p != null && Number.isFinite(p)) return p;
-  }
-  if (low.includes("ascendingnode") || low.includes("longitudeofascendingnode")) {
-    const p = scan.AscendingNode ?? rec?.ascendingNode;
-    if (p != null && Number.isFinite(p)) return p;
-  }
-  if (low.includes("meananomaly")) {
-    const p = scan.MeanAnomaly ?? rec?.meanAnomaly;
-    if (p != null && Number.isFinite(p)) return p;
-  }
-  if (low.includes("distancefromarrival") || low.includes("distancetoarrival")) {
-    const d = rec?.distanceFromArrivalLs;
-    if (d != null && Number.isFinite(d)) return d;
-  }
-  if (low.includes("rotationperiod") || low.includes("rotationalperiod")) {
-    const rp = scan.RotationPeriod ?? rec?.rotationPeriod;
-    if (rp != null && Number.isFinite(rp)) return rp / SECONDS_PER_DAY;
-    return null;
-  }
-  if (low.includes("axialtilt") || low.includes("axial_tilt")) {
-    const ax = scan.AxialTilt ?? rec?.axialTilt;
-    if (ax != null && Number.isFinite(ax)) return ax;
-  }
-  if (low.includes("systemaddress")) {
-    const a = scan.SystemAddress;
-    if (typeof a === "number" && Number.isFinite(a)) return a;
-  }
-  if ((low.includes("bodyid") || low.endsWith(".bodyid")) && !low.includes("parent")) {
-    const id = scan.BodyID;
-    if (typeof id === "number" && Number.isFinite(id)) return id;
-  }
-  return null;
-}
-
-/** Journal / DSS atmosphere summary; "No atmosphere" when explicitly airless (supports categorical + composition). */
-function normalizeAtmosphereType(
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-): string | null {
-  const raw = (scan.AtmosphereType ?? rec?.atmosphereType ?? "").trim();
-  const atm = (scan.Atmosphere ?? rec?.atmosphere ?? "").trim();
-  const t = raw || atm;
-  if (!t) return null;
-  if (/^no atmosphere$/i.test(t) || /^none$/i.test(t)) return "No atmosphere";
-  if (/^no atmosphere$/i.test(atm)) return "No atmosphere";
-  return t;
-}
-
-function isNoAtmosphereScan(scan: PlanetScan, rec: ExplorationScanRecord | null | undefined): boolean {
-  return normalizeAtmosphereType(scan, rec) === "No atmosphere";
-}
-
 function compositionChevron(
   current: number,
   mode: number,
@@ -862,211 +613,6 @@ function compositionChevron(
   const d = Math.abs(current - mode);
   if (d <= 1) return "dash";
   return current > mode ? "up" : "down";
-}
-
-/** Journal `Percent` is usually a float; coerce strings from some parsers / exports. */
-function journalPercentNumber(v: unknown): number | null {
-  if (typeof v === "number" && Number.isFinite(v)) return v;
-  if (typeof v === "string") {
-    const n = Number(v.trim());
-    if (Number.isFinite(n)) return n;
-  }
-  return null;
-}
-
-function journalMaterialsArray(
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-): unknown[] | null {
-  const fromRec = rec?.materials;
-  if (Array.isArray(fromRec) && fromRec.length > 0) return fromRec;
-  const fromScan = scan.materials;
-  if (Array.isArray(fromScan) && fromScan.length > 0) return fromScan as unknown[];
-  return null;
-}
-
-/** Crust materials %: journal detailed `Materials` or exploration merge; known + absent element ⇒ 0%. */
-function crustMaterialValue(
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-  sym: string,
-): { v: number | null; known: boolean } {
-  const raw = journalMaterialsArray(scan, rec);
-  if (raw == null) return { v: null, known: false };
-  const want = sym.toLowerCase();
-  for (const m of raw) {
-    if (!m || typeof m !== "object") continue;
-    const o = m as Record<string, unknown>;
-    const name = String(o.Name ?? o.name ?? "").toLowerCase();
-    const pct = journalPercentNumber(o.Percent ?? o.percent);
-    if (name === want && pct != null) return { v: pct, known: true };
-  }
-  return { v: 0, known: true };
-}
-
-function journalAtmosphereCompositionArray(
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-): unknown[] | null {
-  const fromRec = rec?.atmosphereComposition;
-  if (Array.isArray(fromRec) && fromRec.length > 0) return fromRec as unknown[];
-  const fromScan = scan.atmosphereComposition;
-  if (Array.isArray(fromScan) && fromScan.length > 0) return fromScan as unknown[];
-  return null;
-}
-
-/** Atmosphere constituent %: explicit airless ⇒ 0% for every gas; else journal or DSS composition array. */
-function atmoGasValue(
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-  sym: string,
-): { v: number | null; known: boolean } {
-  if (isNoAtmosphereScan(scan, rec)) return { v: 0, known: true };
-  const raw = journalAtmosphereCompositionArray(scan, rec);
-  if (raw == null) return { v: null, known: false };
-  const want = sym.toLowerCase();
-  for (const m of raw) {
-    if (!m || typeof m !== "object") continue;
-    const o = m as Record<string, unknown>;
-    const name = String(o.Name ?? o.name ?? "").toLowerCase();
-    const pct = journalPercentNumber(o.Percent ?? o.percent);
-    if (name === want && pct != null) return { v: pct, known: true };
-  }
-  return { v: 0, known: true };
-}
-
-function journalCompositionObject(
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-): Record<string, unknown> | null {
-  const c = (rec?.composition ?? scan.composition) as Record<string, unknown> | undefined;
-  if (!c || typeof c !== "object") return null;
-  if (Object.keys(c).length === 0) return null;
-  return c;
-}
-
-/** Distinct material element names present in merged journal with a numeric percent. */
-function collectJournalMaterialElementNames(
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-): string[] {
-  const raw = journalMaterialsArray(scan, rec);
-  if (!raw) return [];
-  const names: string[] = [];
-  for (const m of raw) {
-    if (!m || typeof m !== "object") continue;
-    const o = m as Record<string, unknown>;
-    const name = String(o.Name ?? o.name ?? "").trim();
-    const pct = journalPercentNumber(o.Percent ?? o.percent);
-    if (!name || pct == null) continue;
-    names.push(name);
-  }
-  return names;
-}
-
-/** Atmosphere constituent names present in merged journal with a numeric percent. */
-function collectJournalAtmosphereGasNames(
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-): string[] {
-  const raw = journalAtmosphereCompositionArray(scan, rec);
-  if (!raw) return [];
-  const names: string[] = [];
-  for (const m of raw) {
-    if (!m || typeof m !== "object") continue;
-    const o = m as Record<string, unknown>;
-    const name = String(o.Name ?? o.name ?? "").trim();
-    const pct = journalPercentNumber(o.Percent ?? o.percent);
-    if (!name || pct == null) continue;
-    names.push(name);
-  }
-  return names;
-}
-
-/** Solid composition keys present in merged journal with a numeric value. */
-function collectJournalSolidKeys(scan: PlanetScan, rec: ExplorationScanRecord | null | undefined): string[] {
-  const comp = journalCompositionObject(scan, rec);
-  if (!comp) return [];
-  return Object.keys(comp).filter((k) => {
-    const v = comp[k];
-    return typeof v === "number" && Number.isFinite(v);
-  });
-}
-
-function solidValue(
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-  el: string,
-): { v: number | null; known: boolean } {
-  const comp = journalCompositionObject(scan, rec);
-  if (!comp) return { v: null, known: false };
-  const key = Object.keys(comp).find((k) => k.toLowerCase() === el.toLowerCase());
-  if (key == null) return { v: 0, known: true };
-  const v = comp[key];
-  if (typeof v !== "number" || !Number.isFinite(v)) return { v: null, known: false };
-  return { v: journalSolidPercentFromRaw(el, v), known: true };
-}
-
-/** String fields from scan/rec for profile categorical paths (EDSM/journal wording). */
-/** Exported for the ranking model, which reads the same paths out of the same scan. */
-export function valueForCategoricalPath(
-  path: string,
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-  journalHost?: JournalHostStarObservation | null,
-): string | null {
-  const low = path.toLowerCase();
-
-  if (isFeederHostStarSubclassPath(path)) {
-    const sc = journalHost?.subclass;
-    return sc != null && Number.isFinite(sc) ? String(Math.round(sc)) : null;
-  }
-  if (isFeederHostStarLuminosityPath(path)) {
-    const lum = journalHost?.luminosity?.trim();
-    return lum?.length ? lum : null;
-  }
-  if (
-    /(\bhost\b.*\bstar\b.*(class|letter|spectral))|(\bexo\.host\b)|(\bfeeder\b.*host.*star)|(primary[_.\s]*stellar)/i.test(
-      low,
-    ) ||
-    isFeederHostStarSpectralPath(path)
-  ) {
-    const letter = journalHost?.spectralLetter?.trim();
-    if (letter) return letter;
-    const h = journalHost?.starTypeRaw?.trim();
-    if (!h) return null;
-    const x = journalStarPrimarySpectralLetter(h);
-    return x === "—" ? null : x;
-  }
-  if (low.includes("atmosphere") && !low.includes("composition")) {
-    return normalizeAtmosphereType(scan, rec);
-  }
-  if (low.includes("planetclass") || low.includes("bodytype") || low.includes("subtype")) {
-    const s = (scan.PlanetClass ?? rec?.planetClass ?? rec?.bodyType ?? "").trim();
-    return s || null;
-  }
-  if (low.includes("volcanism")) {
-    /*
-      A quiet body is an observation, not a missing one.
-
-      The journal writes `"Volcanism": ""` on a body with none, and returning null for that made the
-      likelihood skip the term on the 94 % of bodies where it has the most to say. The corpus is
-      emphatic about it — Bacterium aurasus is 6,889 of 6,889 on quiet bodies and Bacterium verrata
-      26 of 26 on volcanic ones — and none of that could reach the posterior.
-
-      The distinction that matters is *absent* against *empty*: a scan that never carried the field
-      still knows nothing, and `??` keeps the two apart because an empty string is not nullish.
-    */
-    const raw = scan.Volcanism ?? rec?.volcanism;
-    if (raw == null) return null;
-    const s = String(raw).trim();
-    return s || NO_VOLCANISM;
-  }
-  if (low.includes("terraform")) {
-    const s = (scan.TerraformState ?? rec?.terraformState ?? "").trim();
-    return s || null;
-  }
-  return null;
 }
 
 /**
@@ -1361,15 +907,6 @@ function summarizeCompositionMatch(
     best: { label: best.label, matchPercent: Math.round(best.score * 10) / 10 },
     worst: { label: worst.label, matchPercent: Math.round(worst.score * 10) / 10 },
   };
-}
-
-function inferHostSpectralCohortMode(profile: ExomasteryProfileV1): string | null {
-  for (const [p, c] of Object.entries(profile.categorical ?? {})) {
-    if (!isFeederHostStarSpectralPath(p)) continue;
-    const m = modeCategoricalLabel(c);
-    if (m) return m;
-  }
-  return null;
 }
 
 function statsHaveMkAxis(
@@ -2191,356 +1728,4 @@ export function buildBodyScanExomasteryDetail(
     compositionGroups,
     atmosphereClimateStats,
   };
-}
-
-function rollupRelativeBandPercent(r: ExomasteryNumericRollup): number {
-  const mode = r.mode ?? r.mean;
-  const den = Math.max(Math.abs(mode), 1e-12);
-  return ((r.max - r.min) / den) * 100;
-}
-
-function rollupBodyVsModePercent(v: number, r: ExomasteryNumericRollup): number {
-  const mode = r.mode ?? r.mean;
-  const den = Math.max(Math.abs(mode), 1e-12);
-  return (Math.abs(v - mode) / den) * 100;
-}
-
-/** Same basis as encyclopedia `diffRelativePercent` for numerics (|v−mode|/|mode|×100). */
-function deviationPercentVsRollupMode(v: number, r: ExomasteryNumericRollup): number {
-  return rollupBodyVsModePercent(v, r);
-}
-
-function bodyInsideTrainingRange(v: number, r: ExomasteryNumericRollup): boolean {
-  if (!Number.isFinite(r.min) || !Number.isFinite(r.max)) return true;
-  const lo = Math.min(r.min, r.max);
-  const hi = Math.max(r.min, r.max);
-  return v >= lo && v <= hi;
-}
-
-/**
- * Same breakpoints as client `deviationToTier` in exomasteryHabitatDetailInner (habitat / encyclopedia).
- * Lower deviation from mode → blue/green; larger → orange/red.
- */
-function otherMatchHighlightFromDeviation(
-  devPct: number,
-  v: number | null,
-  r: ExomasteryNumericRollup,
-): EncyclopediaExomasteryFieldTier | "neutral" {
-  if (v == null || !Number.isFinite(v)) return "neutral";
-  let driver = devPct;
-  if (!bodyInsideTrainingRange(v, r)) {
-    driver = Math.max(driver, 11);
-  }
-  if (driver < 1) return "blue";
-  if (driver <= 5) return "green";
-  if (driver <= 7.5) return "yellow";
-  if (driver <= 10) return "orange";
-  return "red";
-}
-
-function otherMatchPriorityFromHighlight(
-  h: EncyclopediaExomasteryFieldTier | "neutral",
-  tightBand: boolean,
-): number {
-  const bandBoost = tightBand ? -3 : 0;
-  switch (h) {
-    case "blue":
-      return 3 + bandBoost;
-    case "green":
-      return 14 + bandBoost;
-    case "yellow":
-      return 48 + bandBoost;
-    case "orange":
-      return 125 + bandBoost;
-    case "red":
-      return 230 + bandBoost;
-    default:
-      return 305 + bandBoost;
-  }
-}
-
-function hostMkStepsToHighlight(steps: number | null): EncyclopediaExomasteryFieldTier | "neutral" {
-  if (steps == null) return "neutral";
-  if (steps <= 0) return "blue";
-  if (steps === 1) return "green";
-  if (steps === 2) return "yellow";
-  if (steps === 3) return "orange";
-  return "red";
-}
-
-function pushHostStarOtherMatchDeckCards(
-  out: OtherMatchDetailCardDTO[],
-  profile: ExomasteryProfileV1,
-  journalHost: JournalHostStarObservation | null | undefined,
-): void {
-  if (!journalHost) return;
-  const cohort = inferHostSpectralCohortMode(profile);
-  if (!cohort) return;
-  const parsed = parseLooseSpectralMk(cohort);
-  let id = 0;
-  const add = (
-    shortTitle: string,
-    top: string,
-    bottom: string,
-    steps: number | null,
-    tooltip: string,
-  ): void => {
-    const highlight = hostMkStepsToHighlight(steps);
-    const priority = otherMatchPriorityFromHighlight(highlight, false);
-    out.push({
-      id: `exo-host-deck-${id++}`,
-      priority,
-      shortTitle,
-      topLegend: "Feeder cohort",
-      topValue: top,
-      bottomLegend: "Journal host",
-      bottomValue: bottom,
-      tooltip,
-      highlight,
-    });
-  };
-  if (journalHost.spectralLetter && parsed.spectralSlot) {
-    const st = harvardSpectralStepDistance(parsed.spectralSlot, journalHost.spectralLetter);
-    if (st != null) {
-      add(
-        "Host · spectral class",
-        String(parsed.spectralSlot),
-        journalHost.spectralLetter,
-        st,
-        "Harvard coarse class steps vs exomastery feeder mode (same-genus similarity).",
-      );
-    }
-  }
-  if (parsed.subclass != null && journalHost.subclass != null) {
-    const st = stellarSubclassStepDistance(parsed.subclass, journalHost.subclass);
-    if (st != null) {
-      add(
-        "Host · subclass",
-        String(parsed.subclass),
-        String(journalHost.subclass),
-        st,
-        "Subclass digit (0–9) distance — same-genus similarity.",
-      );
-    }
-  }
-  if (parsed.luminosity && journalHost.luminosity) {
-    const st = yerkesLuminosityStepDistance(parsed.luminosity, journalHost.luminosity);
-    if (st != null) {
-      add(
-        "Host · luminosity (Yerkes)",
-        parsed.luminosity,
-        journalHost.luminosity,
-        st,
-        "Yerkes luminosity class distance — weighted strongly in the similarity index.",
-      );
-    }
-  }
-}
-
-/** Per-chip colour weight for similarity “deck” score (blue strongest; red none). */
-const OTHER_MATCH_HIGHLIGHT_UNIT: Record<EncyclopediaExomasteryFieldTier | "neutral", number> = {
-  blue: 1,
-  green: 0.28,
-  yellow: 0.06,
-  orange: 0.012,
-  red: 0,
-  neutral: 0.08,
-};
-
-/** Tier multiplier: 1 = genus-_new style primary body fields; 2 = solid fractions; 3 = crust; 4 = other numerics / misc. */
-const OTHER_MATCH_TIER_UNIT: Record<1 | 2 | 3 | 4, number> = {
-  1: 1,
-  2: 0.5,
-  3: 0.35,
-  4: 0.18,
-};
-
-/**
- * Orbital geometry, recognised by chip title rather than by feeder path. Same demotion the habitat
- * scorer applies through its `background` tier; checked before anything else so a loose keyword
- * cannot promote an orbital chip back into tier 1.
- */
-const ORBITAL_GEOMETRY_CHIP =
-  /(semi[- ]?major|orbital period|rotation(al)? period|tidal|eccentric|inclination|periapsis|ascending node|mean anomaly)/i;
-
-function otherMatchCardTierFromTitle(shortTitle: string): 1 | 2 | 3 | 4 {
-  const t = shortTitle.trim();
-  if (ORBITAL_GEOMETRY_CHIP.test(t)) return 4;
-  if (t.startsWith("Host ·")) return 1;
-  if (t.startsWith("Solid ·")) return 2;
-  if (t.startsWith("Crust ·")) return 3;
-  if (t.startsWith("Atmosphere ·")) return 1;
-  const low = t.toLowerCase();
-  if (
-    /\bplanet\b/.test(low) ||
-    low.includes("atmosphere") ||
-    low.includes("gravity") ||
-    low.includes("temperature") ||
-    low.includes("pressure") ||
-    low.includes("terraform") ||
-    low.includes("landable") ||
-    low.includes("volcan") ||
-    (low.includes("mass") && (low.includes("earth") || low.includes("em"))) ||
-    low.includes("radius")
-  ) {
-    return 1;
-  }
-  return 4;
-}
-
-/**
- * Single scalar “deck strength” from other-match chips: tier (primary vs solid vs crust vs other) × highlight colour.
- * Used for same-genus deck share (sum-normalized vs siblings in {@link applyExomasteryGenusCompetitivePercent}), not habitat quality.
- */
-export function exomasteryOtherMatchCardDeckScore(cards: OtherMatchDetailCardDTO[]): number {
-  let sum = 0;
-  for (const c of cards) {
-    const tier = otherMatchCardTierFromTitle(c.shortTitle);
-    const hi = (c.highlight ?? "neutral") as keyof typeof OTHER_MATCH_HIGHLIGHT_UNIT;
-    const hw = OTHER_MATCH_HIGHLIGHT_UNIT[hi] ?? OTHER_MATCH_HIGHLIGHT_UNIT.neutral;
-    let hostBoost = 1;
-    if (c.shortTitle.startsWith("Host · luminosity")) hostBoost = 1.58;
-    else if (c.shortTitle.startsWith("Host ·")) hostBoost = 1.14;
-    sum += OTHER_MATCH_TIER_UNIT[tier] * hw * hostBoost;
-  }
-  return Math.round(sum * 1000) / 1000;
-}
-
-/**
- * Candidate species — “Other match details”: compact feeder vs body chips (priority + colors align with encyclopedia deviation tiers).
- */
-export function buildOtherMatchDetailCards(
-  profile: ExomasteryProfileV1,
-  scan: PlanetScan,
-  rec: ExplorationScanRecord | null | undefined,
-  similarityPercent: number | null | undefined,
-  journalHost?: JournalHostStarObservation | null,
-): OtherMatchDetailCardDTO[] {
-  const out: OtherMatchDetailCardDTO[] = [];
-  pushHostStarOtherMatchDeckCards(out, profile, journalHost ?? null);
-  const materialKeysLower = new Set(Object.keys(profile.materials).map((k) => k.toLowerCase()));
-  const atmoKeysLower = new Set(Object.keys(profile.atmosphereComposition).map((k) => k.toLowerCase()));
-  const solidKeysLower = new Set(Object.keys(profile.solidComposition ?? {}).map((k) => k.toLowerCase()));
-  const hasSim = similarityPercent != null && Number.isFinite(similarityPercent) && similarityPercent >= 0;
-
-  for (const [path, r] of Object.entries(profile.numerics)) {
-    if (shouldOmitExomasterySciencePath(path)) continue;
-    if (/solidcomposition/i.test(path)) continue;
-    const tail = exomasteryPathTailLower(path);
-    if (materialKeysLower.has(tail) || atmoKeysLower.has(tail) || solidKeysLower.has(tail)) continue;
-    const v = valueForNumericPath(path, scan, rec);
-    const mode = r.mode ?? r.mean;
-    const tightBand = rollupRelativeBandPercent(r) < 0.1;
-    const hasValue = v != null && Number.isFinite(v);
-    if (hasSim) {
-      if (!(tightBand || hasValue)) continue;
-    } else if (v == null && !tightBand) continue;
-
-    const devPct = hasValue ? deviationPercentVsRollupMode(v!, r) : 100;
-    const highlight = hasValue ? otherMatchHighlightFromDeviation(devPct, v!, r) : "neutral";
-    const priority = otherMatchPriorityFromHighlight(highlight, tightBand);
-    const label = formatPathLabel(path);
-    const dispMode = formatExomasteryValueForPath(path, mode);
-    const dispCur = hasValue ? formatExomasteryValueForPath(path, v!) : "—";
-    const spanNote = `${formatExomasteryValueForPath(path, r.min)} … ${formatExomasteryValueForPath(path, r.max)}`;
-    out.push({
-      id: `exo-${tail}-${Math.abs(hashStringSimple(path))}`.replace(/[^a-z0-9_-]/gi, "-"),
-      priority,
-      shortTitle: label,
-      topLegend: "Typical (mode)",
-      topValue: dispMode,
-      bottomLegend: "This body",
-      bottomValue: dispCur,
-      tooltip: `Exomastery sample (${r.count ?? "?"} bodies): min–max ${spanNote}. Band vs mode: ${rollupRelativeBandPercent(r).toFixed(4)}%. Δ vs mode: ${hasValue ? `${devPct.toFixed(2)}%` : "—"}.`,
-      highlight,
-    });
-  }
-
-  for (const [el, r] of Object.entries(profile.materials)) {
-    const cur = crustMaterialValue(scan, rec, el);
-    if (!cur.known) continue;
-    const curN = cur.v ?? 0;
-    const mode = r.mode ?? r.mean;
-    const tightBand = rollupRelativeBandPercent(r) < 0.1;
-    const devPct = deviationPercentVsRollupMode(curN, r);
-    const highlight = otherMatchHighlightFromDeviation(devPct, curN, r);
-    const priority = otherMatchPriorityFromHighlight(highlight, tightBand);
-    const dpp = Number.isFinite(mode) ? Math.round(Math.abs(curN - mode) * 10) / 10 : null;
-    out.push({
-      id: `exo-mat-${el.replace(/[^a-z0-9]+/gi, "-")}`,
-      priority,
-      shortTitle: `Crust · ${el}`,
-      topLegend: "Typical (mode %)",
-      topValue: `${formatExomasteryNum(mode)}%`,
-      bottomLegend: "This body",
-      bottomValue: `${formatExomasteryNum(curN)}%`,
-      tooltip: `Crust element ${el}: feeder ${formatExomasteryNum(r.min)}–${formatExomasteryNum(r.max)}% · n=${r.count ?? "?"}. Δ vs mode: ${dpp ?? "—"} pp · ${devPct.toFixed(2)}% rel.`,
-      highlight,
-    });
-  }
-
-  for (const [el, r] of Object.entries(profile.atmosphereComposition)) {
-    const cur = atmoGasValue(scan, rec, el);
-    if (!cur.known) continue;
-    const curN = cur.v ?? 0;
-    const mode = r.mode ?? r.mean;
-    const tightBand = rollupRelativeBandPercent(r) < 0.1;
-    const devPct = deviationPercentVsRollupMode(curN, r);
-    const highlight = otherMatchHighlightFromDeviation(devPct, curN, r);
-    const priority = otherMatchPriorityFromHighlight(highlight, tightBand);
-    const dpp = Number.isFinite(mode) ? Math.round(Math.abs(curN - mode) * 10) / 10 : null;
-    out.push({
-      id: `exo-atmo-${el.replace(/[^a-z0-9]+/gi, "-")}`,
-      priority,
-      shortTitle: `Atmosphere · ${el}`,
-      topLegend: "Typical (mode %)",
-      topValue: `${formatExomasteryNum(mode)}%`,
-      bottomLegend: "This body",
-      bottomValue: `${formatExomasteryNum(curN)}%`,
-      tooltip: `Atmosphere gas ${el}: feeder ${formatExomasteryNum(r.min)}–${formatExomasteryNum(r.max)}% · n=${r.count ?? "?"}. Δ vs mode: ${dpp ?? "—"} pp · ${devPct.toFixed(2)}% rel.`,
-      highlight,
-    });
-  }
-
-  const seenSolidKeys = new Set<string>();
-  for (const [el, r] of Object.entries(profile.solidComposition ?? {})) {
-    const elK = el.toLowerCase();
-    if (seenSolidKeys.has(elK)) continue;
-    seenSolidKeys.add(elK);
-    const cur = solidValue(scan, rec, el);
-    if (!cur.known) continue;
-    const curN = cur.v ?? 0;
-    const mode = r.mode ?? r.mean;
-    const tightBand = rollupRelativeBandPercent(r) < 0.1;
-    const devPct = deviationPercentVsRollupMode(curN, r);
-    const highlight = otherMatchHighlightFromDeviation(devPct, curN, r);
-    const priority = otherMatchPriorityFromHighlight(highlight, tightBand);
-    const dpp = Number.isFinite(mode) ? Math.round(Math.abs(curN - mode) * 10) / 10 : null;
-    out.push({
-      id: `exo-solid-${el.replace(/[^a-z0-9]+/gi, "-")}`,
-      priority,
-      shortTitle: `Solid · ${el}`,
-      topLegend: "Typical (mode %)",
-      topValue: `${formatExomasteryNum(mode)}%`,
-      bottomLegend: "This body",
-      bottomValue: `${formatExomasteryNum(curN)}%`,
-      tooltip: `Solid fraction ${el}: feeder ${formatExomasteryNum(r.min)}–${formatExomasteryNum(r.max)}% · n=${r.count ?? "?"}. Δ vs mode: ${dpp ?? "—"} pp · ${devPct.toFixed(2)}% rel.`,
-      highlight,
-    });
-  }
-
-  const dedup = new Map<string, OtherMatchDetailCardDTO>();
-  for (const c of out) {
-    const k = `${c.shortTitle.toLowerCase()}|${c.topValue}|${c.bottomValue}`;
-    if (!dedup.has(k)) dedup.set(k, c);
-  }
-  const merged = [...dedup.values()];
-  merged.sort((a, b) => a.priority - b.priority || a.shortTitle.localeCompare(b.shortTitle));
-  return merged.slice(0, 120);
-}
-
-function hashStringSimple(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-  return h;
 }

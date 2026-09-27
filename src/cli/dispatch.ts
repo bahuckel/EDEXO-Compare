@@ -4,15 +4,31 @@
  * Kept apart from the readline loop so it can be tested without a terminal: every handler takes the
  * parsed arguments and a client, and returns lines to print. Nothing here writes to stdout.
  */
+import { readFileSync } from "node:fs";
+import { basename } from "node:path";
 import { CliClient, describeFailure, normalizeTarget, type CliTarget } from "./client.js";
 import { renderHelpIndex, renderHelpTopic, resolveCommand } from "./commands.js";
 
-/** `hud` → `/hud-overlay.html`; a full path is taken as given. */
+/**
+ * The HUD's section names and the words people use for them, as the overlay files are actually
+ * called. `foot` and `radar` were in the help but no `foot-overlay.html` or `radar-overlay.html` ever
+ * existed — the sample radar lives in the distance overlay.
+ */
+const OVERLAY_ALIASES: Record<string, string> = {
+  foot: "distance",
+  radar: "distance",
+  candidates: "exo-candidates",
+  fss: "fss-scan",
+  datavalue: "data-value",
+};
+
+/** `hud` → `/hud-overlay.html`, `radar` → `/distance-overlay.html`; a full path is taken as given. */
 export function overlayPage(name: string): string {
   const raw = name.trim();
   if (!raw) return "/hud-overlay.html";
   if (raw.endsWith(".html")) return raw.startsWith("/") ? raw : `/${raw}`;
-  return `/${raw.replace(/^\//, "").replace(/-overlay$/, "")}-overlay.html`;
+  const base = raw.replace(/^\//, "").replace(/-overlay$/, "");
+  return `/${OVERLAY_ALIASES[base.toLowerCase()] ?? base}-overlay.html`;
 }
 
 /** `key=value key2=value2` into an object, with numbers and booleans read as themselves. */
@@ -241,7 +257,15 @@ export async function dispatch(line: string, ctx: DispatchContext): Promise<stri
 
     case "import routes": {
       if (!args.length) return ["Which file? /import routes <path>"];
-      const r = await client.post("/api/feeder/import", { file: args.join(" ") });
+      // The server takes the file's text, not a path: it may be another machine (--connect).
+      const file = args.join(" ").replace(/^"(.*)"$/, "$1");
+      let text: string;
+      try {
+        text = readFileSync(file, "utf8");
+      } catch (e) {
+        return [`Could not read ${file}: ${e instanceof Error ? e.message : String(e)}`];
+      }
+      const r = await client.post("/api/feeder/import", { text, filename: basename(file) });
       return r.ok ? ["Route import started."] : fail(r);
     }
 

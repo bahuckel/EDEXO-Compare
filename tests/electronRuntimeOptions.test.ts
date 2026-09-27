@@ -9,7 +9,8 @@
 import { describe, expect, it } from "vitest";
 import { electronRuntimeOptions } from "../src/server/edexoBootstrap.js";
 
-const exe = ["C:\app\EDExoCompare.exe"];
+// Escaped: as `"C:\app\…"` the backslashes vanished and the "path" was `C:appEDExoCompare.exe`.
+const exe = ["C:\\app\\EDExoCompare.exe"];
 
 describe("the port", () => {
   it("is taken from --port, which is the whole point of this file", () => {

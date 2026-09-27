@@ -3,7 +3,7 @@ import { journalStarTypeFromSubType } from "../shared/spanshStarType.js";
 import type { ExplorationScanRecord } from "../shared/types.js";
 import { APP_USER_AGENT } from "./appVersion.js";
 import { planetRingCount } from "./orbitUtils.js";
-import { ATM_TO_PA } from "../shared/journalPhysics.js";
+import { ATM_TO_PA, AU_METERS, SOLAR_RADIUS_METERS } from "../shared/journalPhysics.js";
 
 const EDSM_BODIES_URL = "https://www.edsm.net/api-system-v1/bodies";
 const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
@@ -40,7 +40,7 @@ function withIdentity(url: string, identity?: EdsmRequestIdentity | null): strin
   });
   return `${url}&${q.toString()}`;
 }
-const AU_TO_M = 149597870700;
+const AU_TO_M = AU_METERS;
 const DAY_TO_SEC = 86400;
 
 type EdsmParent = Record<string, number>;
@@ -147,7 +147,7 @@ export function mapEdsmBodyToExplorationRecord(
     if (st !== undefined) rec.surfaceTemperature = st;
     // Journal unit (metres), for the brightest-star colour rule (`colourStarTypeFor`).
     const sr = pickNum(body.solarRadius);
-    if (sr !== undefined && sr > 0) rec.radius = sr * 695_700_000;
+    if (sr !== undefined && sr > 0) rec.radius = sr * SOLAR_RADIUS_METERS;
     const mag = pickNum(body.absoluteMagnitude);
     if (mag !== undefined) rec.absoluteMagnitude = mag;
     const stSemi = edsmSemiMajorAxisToM(pickNum(body.semiMajorAxis));

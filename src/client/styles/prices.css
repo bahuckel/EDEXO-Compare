@@ -5,42 +5,6 @@
  * conditional "if first footfall" line, and the ×5 / ×1 tags on species cards. Cockpit colours:
  * orange = list price, analysis blue = the first-footfall bonus is yours, yellow = unknown.
  */
-.price-hero {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.6rem;
-  margin-bottom: 0.5rem;
-  padding: 0.45rem 0.7rem 0.5rem;
-  border-left: 3px solid var(--accent);
-  background: linear-gradient(90deg, var(--accent-a12), transparent 70%);
-}
-.price-hero--unwalked {
-  border-left-color: var(--ok);
-  background: linear-gradient(90deg, rgba(79, 208, 255, 0.14), transparent 70%);
-}
-.price-hero--unknown {
-  border-left-color: var(--warn);
-  background: linear-gradient(90deg, rgba(255, 210, 63, 0.1), transparent 70%);
-}
-.price-hero-cr {
-  font-size: var(--fs-2xl);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-bright);
-  text-shadow: 0 0 10px var(--accent-glow);
-}
-.price-hero--unwalked .price-hero-cr {
-  color: var(--ok-soft);
-  text-shadow: 0 0 10px rgba(79, 208, 255, 0.35);
-}
-.price-hero-unit {
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  color: var(--text-faint);
-}
 .price-alt {
   flex-basis: 100%;
   font-size: var(--fs-xs);

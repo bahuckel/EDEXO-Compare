@@ -39,12 +39,8 @@
  * Nothing from this feeds the scorer. The script stays as the record of why, and because the
  * negatives are still the right way to ask the question if a better normalisation is found.
  */
-import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import v8 from "node:v8";
 import { fileURLToPath } from "node:url";
-import { gunzipSync } from "node:zlib";
-import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";

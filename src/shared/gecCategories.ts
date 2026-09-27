@@ -183,8 +183,3 @@ export function poiTypeLabel(type: string | null | undefined): string {
   }
   return raw;
 }
-
-export const POI_GROUP_LABEL: Readonly<Record<PoiGroup, string>> = {
-  ...Object.fromEntries(POI_GROUP_OPTIONS.map((o) => [o.key, o.label])),
-  other: "Other",
-} as Record<PoiGroup, string>;

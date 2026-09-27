@@ -26,7 +26,7 @@
  * join is still listed — it just cannot be ranked — because dropping a curated deep-space service
  * carrier for want of a coordinate is a worse answer than showing it without a distance.
  */
-import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { resolveUserSettingsJsonPath } from "./paths.js";
 import { EDASTRO_USER_AGENT, parseEdastroDate, splitCsvLine } from "./edastroCarriers.js";
@@ -111,10 +111,6 @@ export function readDssaByCallsign(): Map<string, DssaRecord> {
 
 export function resetDssaMemo(): void {
   memo = null;
-}
-
-export function haveDssaData(): boolean {
-  return existsSync(resolveDssaCachePath());
 }
 
 /**

@@ -79,7 +79,15 @@ import { feederDataDirExists } from "../feeder/paths.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
 import { buildDiscoveries } from "./discoveries.js";
-import { clearFootScannedCatalogCache, flushFootScannedCatalog } from "./footScannedCatalog.js";
+import {
+  clearFootCatalogSpeciesDb,
+  clearFootScannedCatalogCache,
+  flushFootScannedCatalog,
+} from "./footScannedCatalog.js";
+import { clearHostStarObservationsCache } from "./speciesHostStarObservations.js";
+import { clearPlanetClassObservationsCache } from "./speciesPlanetClassObservations.js";
+import { clearStarlightRangesCache } from "./starlightRanges.js";
+import { clearBodyTypePriorCache } from "./bodyTypePrior.js";
 import { clearGenusPhotosFolderCache, getSpeciesDataWarnings } from "./speciesTreeLoader.js";
 import {
   parseStatusJsonDestination,
@@ -288,6 +296,31 @@ export type EdexoRuntime = {
   getLocalBaseUrl: () => string;
   openMainAppInBrowser: () => void;
 };
+
+/**
+ * Everything read from the species tree and the exomastery profiles, forgotten in one place.
+ *
+ * Three reload paths (the species-tree watcher, "Refresh exomastery", and the Fix dialog's clear)
+ * each kept their own list and the lists had drifted: after a refresh the host-star and planet-class
+ * observations — built from the profiles — kept answering from the old ones until a restart, and the
+ * watcher path dropped the foot catalog's unwritten rows (code review A8, 2026-09-27). The catalog is
+ * written first now, so clearing its cache cannot lose a find.
+ */
+function reloadSpeciesDerivedCaches(): void {
+  flushFootScannedCatalog();
+  clearFootScannedCatalogCache();
+  clearFootCatalogSpeciesDb();
+  clearExomasteryProfileCache();
+  clearSpeciesPhotoCache();
+  clearGenusPhotosFolderCache();
+  clearEddsnColourVariantsCache();
+  clearPhotoCreditsCache();
+  clearRegionSpeciesCache();
+  clearHostStarObservationsCache();
+  clearPlanetClassObservationsCache();
+  clearStarlightRangesCache();
+  clearBodyTypePriorCache();
+}
 
 export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   assertResourceLayout();
@@ -1327,10 +1360,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     if (speciesReloadTimer) clearTimeout(speciesReloadTimer);
     speciesReloadTimer = setTimeout(() => {
       speciesReloadTimer = null;
-      clearExomasteryProfileCache();
-      clearSpeciesPhotoCache();
-      clearGenusPhotosFolderCache();
-      clearFootScannedCatalogCache();
+      reloadSpeciesDerivedCaches();
       loadSpeciesDatabase();
       push();
     }, SPECIES_RELOAD_DEBOUNCE_MS);
@@ -1487,12 +1517,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     reloadExomastery: () => {
       clearSharedExomasteryCache();
       retargetSpeciesDataWatcherIfNeeded();
-      clearExomasteryProfileCache();
-      clearSpeciesPhotoCache();
-      clearGenusPhotosFolderCache();
-      clearEddsnColourVariantsCache();
-      clearPhotoCreditsCache();
-      clearRegionSpeciesCache();
+      reloadSpeciesDerivedCaches();
       loadSpeciesDatabase();
       pushFlush();
     },
@@ -1506,9 +1531,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
     showFixStubNativeDialog: showEdexoNativeFixInfo,
     clearExomasteryProfileCache: () => {
-      clearExomasteryProfileCache();
-      clearSpeciesPhotoCache();
-      clearGenusPhotosFolderCache();
+      reloadSpeciesDerivedCaches();
     },
     resetExobiology: () => {
       store.resetExobiologyTracking();

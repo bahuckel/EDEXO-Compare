@@ -1,4 +1,12 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { sharedFindsWithOwnership, sharedSignature } from "./sharedExomastery.js";
 import { dirname, join } from "node:path";
 import { resolveFootScannedPath } from "./paths.js";
@@ -10,14 +18,10 @@ import type {
   FootCatalogConfirmation,
   FootScannedEntry,
   FootScannedFile,
-  FootScanFieldRow,
-  FootScanHitDetail,
-  FootScanMatchPayload,
   GenusHint,
   JournalHostStarObservation,
   OrganicGenusLock,
   PlanetScan,
-  SpeciesCriterion,
   SpeciesDatabase,
   SpeciesEntry,
   SpeciesMatch,
@@ -39,10 +43,11 @@ import { filterByGenusHints } from "./genusMatchUtils.js";
 import { resolveSpeciesPhoto } from "./speciesPhotos.js";
 import { isBacteriumSpeciesEntry } from "../shared/speciesBacterium.js";
 import { lookupPrice } from "./priceList.js";
+import { REL_TOLERANCE, withinRelative, buildFootScanMatchPayload } from "./footScanCompare.js";
+export { buildFootScanMatchPayload } from "./footScanCompare.js";
 
 /** Where the catalog used to live, relative to the project root. See {@link catalogPath}. */
 const LEGACY_REL_PATH = join("data", "foot_scanned.json");
-const REL_TOLERANCE = 0.1;
 
 /** Project roots already checked for a legacy file this process — the carry-over runs once each. */
 const carriedOver = new Set<string>();
@@ -287,12 +292,6 @@ function entryIdFor(systemAddress: number, bodyId: number, lock: OrganicGenusLoc
   return `${systemAddress}:${bodyId}:${g}|${s}|${v}`;
 }
 
-function withinRelative(a: number, b: number, frac: number): boolean {
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
-  const denom = Math.max(Math.abs(b), 1e-6);
-  return Math.abs(a - b) / denom <= frac;
-}
-
 function bandMid(minK: number, maxK: number): number {
   return (minK + maxK) / 2;
 }
@@ -360,17 +359,32 @@ export function flushFootScannedCatalog(): void {
     clearTimeout(catalogFlushTimer);
     catalogFlushTimer = null;
   }
-  for (const [path, file] of pendingCatalogWrites) {
+  let failed = false;
+  for (const [path, file] of [...pendingCatalogWrites]) {
     try {
       mkdirSync(dirname(path), { recursive: true });
-      writeFileSync(path, `${JSON.stringify(file, null, 2)}\n`, "utf8");
+      // Temp file and rename: a crash mid-write must not leave half a catalog of his finds.
+      const tmp = `${path}.tmp`;
+      writeFileSync(tmp, `${JSON.stringify(file, null, 2)}\n`, "utf8");
+      renameSync(tmp, path);
       const st = statSync(path);
       footCatalogCache.set(path, { mtimeMs: st.mtimeMs, size: st.size, file });
+      pendingCatalogWrites.delete(path);
     } catch {
-      footCatalogCache.delete(path);
+      /*
+        Kept pending, and tried again shortly. Dropping it here — the old behaviour — lost the rows:
+        the next read went back to the file on disk, which never got them (code review A14).
+      */
+      failed = true;
     }
   }
-  pendingCatalogWrites.clear();
+  if (failed && !catalogFlushTimer) {
+    catalogFlushTimer = setTimeout(() => {
+      catalogFlushTimer = null;
+      flushFootScannedCatalog();
+    }, FOOT_CATALOG_FLUSH_MS * 5);
+    catalogFlushTimer.unref?.();
+  }
 }
 
 /** Cheap identity of the catalog for cache keys: file mtime + size + in-memory generation. */
@@ -459,164 +473,6 @@ export function clearFootCatalogSpeciesDb(): void {
   catalogSpeciesDb.clear();
 }
 
-type FootScanAspect = "planetClass" | "atmosphere" | "temperature" | "pressure" | "gravity";
-
-function criterionSpecifiesAspect(c: SpeciesCriterion, aspect: FootScanAspect): boolean {
-  switch (aspect) {
-    case "planetClass":
-      return !!c.planetClassAnyOf?.length;
-    case "atmosphere":
-      return !!c.atmosphereTypeAnyOf?.length;
-    case "temperature":
-      return !!(
-        c.surfaceTemperatureK &&
-        (c.surfaceTemperatureK.min != null || c.surfaceTemperatureK.max != null)
-      );
-    case "pressure":
-      return !!(c.surfacePressure && (c.surfacePressure.min != null || c.surfacePressure.max != null));
-    case "gravity":
-      return !!(c.surfaceGravity && (c.surfaceGravity.min != null || c.surfaceGravity.max != null));
-    default:
-      return false;
-  }
-}
-
-function formatTemperatureScanDisplay(scan: PlanetScan): string {
-  const est = estimatedTemperatureRangeForScan(scan);
-  if (est) {
-    return `${Math.round(est.tMin)} · ${Math.round(est.tMax)} K (mid ${Math.round(est.tMid)})`;
-  }
-  if (scan.SurfaceTemperature != null && Number.isFinite(scan.SurfaceTemperature)) {
-    return `${Math.round(scan.SurfaceTemperature)} K`;
-  }
-  return "—";
-}
-
-function formatTemperatureRowDisplay(row: FootScannedEntry): string {
-  return `${Math.round(row.tempBandMinK)} · ${Math.round(row.tempBandMaxK)} K (mid ${Math.round(row.tempMidK)})`;
-}
-
-function atmosphereScanDisplay(scan: PlanetScan): string {
-  const raw = (scan.AtmosphereType || scan.Atmosphere || "").trim();
-  return raw || "—";
-}
-
-function atmosphereNormDisplay(norm: string): string {
-  const t = norm.trim();
-  return t === "" ? "None / vacuum" : t;
-}
-
-function footComparePlanetClass(scan: PlanetScan, row: FootScannedEntry): boolean {
-  return (scan.PlanetClass ?? "").trim() === row.planetClass.trim();
-}
-
-function footCompareAtmosphere(scan: PlanetScan, row: FootScannedEntry): boolean {
-  return normalizeScanAtmosphereForMatch(scan) === row.atmosphereNorm;
-}
-
-function footCompareTempMid(scan: PlanetScan, row: FootScannedEntry): boolean {
-  const est = estimatedTemperatureRangeForScan(scan);
-  let curMid: number | null = null;
-  if (est) curMid = est.tMid;
-  else if (scan.SurfaceTemperature != null && Number.isFinite(scan.SurfaceTemperature))
-    curMid = scan.SurfaceTemperature;
-  if (curMid == null) return false;
-  return withinRelative(curMid, row.tempMidK, REL_TOLERANCE);
-}
-
-function footComparePressure(scan: PlanetScan, row: FootScannedEntry): boolean {
-  const pScan = scan.SurfacePressure;
-  const pEntry = row.surfacePressure;
-  if (pScan == null || !Number.isFinite(pScan) || pEntry == null || !Number.isFinite(pEntry)) return true;
-  return withinRelative(pScan, pEntry, REL_TOLERANCE);
-}
-
-function footCompareGravity(scan: PlanetScan, row: FootScannedEntry): boolean {
-  const gScan = scan.SurfaceGravity;
-  const gRow = row.surfaceGravityMs2;
-  if (gScan == null || !Number.isFinite(gScan) || gRow == null || !Number.isFinite(gRow)) return true;
-  return withinRelative(gScan, gRow, REL_TOLERANCE);
-}
-
-function buildFootScanFieldRows(
-  scan: PlanetScan,
-  row: FootScannedEntry,
-  criteria: SpeciesCriterion,
-): FootScanFieldRow[] {
-  return [
-    {
-      key: "planetClass",
-      label: "Planet class",
-      currentDisplay: (scan.PlanetClass ?? "").trim() || "—",
-      catalogDisplay: row.planetClass.trim() || "—",
-      matches: footComparePlanetClass(scan, row),
-      speciesCriteriaIncludes: criterionSpecifiesAspect(criteria, "planetClass"),
-    },
-    {
-      key: "atmosphere",
-      label: "Atmosphere type",
-      currentDisplay: atmosphereScanDisplay(scan),
-      catalogDisplay: atmosphereNormDisplay(row.atmosphereNorm),
-      matches: footCompareAtmosphere(scan, row),
-      speciesCriteriaIncludes: criterionSpecifiesAspect(criteria, "atmosphere"),
-    },
-    {
-      key: "temperature",
-      label: "Surface temperature",
-      currentDisplay: formatTemperatureScanDisplay(scan),
-      catalogDisplay: formatTemperatureRowDisplay(row),
-      matches: footCompareTempMid(scan, row),
-      speciesCriteriaIncludes: criterionSpecifiesAspect(criteria, "temperature"),
-    },
-    {
-      key: "pressure",
-      label: "Surface pressure",
-      currentDisplay:
-        scan.SurfacePressure != null && Number.isFinite(scan.SurfacePressure)
-          ? `${scan.SurfacePressure.toPrecision(4)} atm`
-          : "—",
-      catalogDisplay:
-        row.surfacePressure != null && Number.isFinite(row.surfacePressure)
-          ? `${row.surfacePressure.toPrecision(4)} atm`
-          : "—",
-      matches: footComparePressure(scan, row),
-      speciesCriteriaIncludes: criterionSpecifiesAspect(criteria, "pressure"),
-    },
-    {
-      key: "gravity",
-      label: "Surface gravity",
-      currentDisplay:
-        scan.SurfaceGravity != null && Number.isFinite(scan.SurfaceGravity)
-          ? `${scan.SurfaceGravity.toFixed(3)} m/s²`
-          : "—",
-      catalogDisplay:
-        row.surfaceGravityMs2 != null && Number.isFinite(row.surfaceGravityMs2)
-          ? `${row.surfaceGravityMs2.toFixed(3)} m/s²`
-          : "—",
-      matches: footCompareGravity(scan, row),
-      speciesCriteriaIncludes: criterionSpecifiesAspect(criteria, "gravity"),
-    },
-  ];
-}
-
-/** Build structured comparison rows for the UI (this body's scan vs each matching catalog snapshot). */
-export function buildFootScanMatchPayload(
-  scan: PlanetScan,
-  catalogRows: FootScannedEntry[],
-  entry: SpeciesEntry,
-): FootScanMatchPayload {
-  const sorted = [...catalogRows].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt));
-  const criteria = entry.criteria;
-  const hits: FootScanHitDetail[] = sorted.map((row) => ({
-    bodyName: row.bodyName,
-    starSystem: row.starSystem,
-    recordedAt: row.recordedAt,
-    confirmationSource: row.confirmationSource ?? "analyse",
-    fieldRows: buildFootScanFieldRows(scan, row, criteria),
-  }));
-  return { hits };
-}
-
 function dedupeFootRowsById(rows: FootScannedEntry[]): FootScannedEntry[] {
   const seen = new Set<string>();
   const out: FootScannedEntry[] = [];
@@ -626,14 +482,6 @@ function dedupeFootRowsById(rows: FootScannedEntry[]): FootScannedEntry[] {
     out.push(r);
   }
   return out;
-}
-
-/** Deduped foot-catalog rows attributed to this species id (journal-resolved at record time). */
-export function footCatalogEntriesForSpecies(
-  catalog: FootScannedFile,
-  speciesEntryId: string,
-): FootScannedEntry[] {
-  return dedupeFootRowsById(catalog.entries.filter((e) => e.speciesEntryId === speciesEntryId));
 }
 
 function orderedConfirmations(rows: FootScannedEntry[]): FootCatalogConfirmation[] {
@@ -790,23 +638,6 @@ export function recordFootScanned(
     file.entries.push(row);
   }
   persistFootScanned(projectRoot, file);
-}
-
-/** @deprecated Use `recordFootScanned` with `confirmationSource: "analyse"`. */
-export function recordFootScannedOnAnalyse(
-  projectRoot: string,
-  meta: {
-    systemAddress: number;
-    bodyId: number;
-    bodyName: string;
-    starSystem: string;
-    scan: PlanetScan;
-    lock: OrganicGenusLock;
-    ts: string;
-    includeBacterium: boolean;
-  },
-): void {
-  recordFootScanned(projectRoot, { ...meta, confirmationSource: "analyse" });
 }
 
 function hintedGeneraMissingFromMatches(hints: GenusHint[], matches: SpeciesMatch[]): GenusHint[] {

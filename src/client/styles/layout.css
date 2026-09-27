@@ -62,15 +62,6 @@
   margin-left: 0.3rem;
   font-size: var(--fs-2xs);
 }
-.glance-footfall--unwalked {
-  color: var(--ok);
-}
-.glance-footfall--unknown {
-  color: var(--warn);
-}
-.glance-footfall--walked {
-  color: var(--text-faint);
-}
 
 /* ---- dossier (facts + price) above the species at every width (owner, 2026-09-14 round three);
  * the two dossier panels sit side by side from 900 px — see bridge.css ------------------------------ */
@@ -251,29 +242,6 @@
   font-size: var(--fs-xs);
   font-weight: 500;
   opacity: 0.75;
-}
-
-.facts-strip {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  margin-top: 0.5rem;
-  padding: 0.45rem 0.65rem;
-  text-align: left;
-  border: 1px solid var(--accent-a22);
-  background: var(--accent-a06);
-  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
-}
-.facts-strip .fact-k {
-  color: var(--accent);
-  opacity: 0.9;
-}
-.facts-num {
-  font-size: var(--fs-lg);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-bright);
-  text-shadow: 0 0 8px var(--accent-glow);
 }
 .facts-dss {
   flex: 0 0 auto;

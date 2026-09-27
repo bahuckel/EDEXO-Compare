@@ -197,11 +197,6 @@ export function isRecognisedConditionKey(key: string): boolean {
   return RECOGNISED.has(key);
 }
 
-/** Every declared key, for a test that wants to check the inventory itself. */
-export function recognisedConditionKeys(): string[] {
-  return [...RECOGNISED].sort();
-}
-
 /**
  * Keys on a `conditions` record that nothing in the app knows about.
  *

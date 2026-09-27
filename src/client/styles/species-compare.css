@@ -222,26 +222,11 @@
   background: rgba(50, 30, 15, 0.35);
 }
 
-.stats-grid .stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.35rem 0.75rem;
-}
-
 .stat {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
   font-size: var(--fs-md);
-}
-.stat-label {
-  color: var(--muted);
-  text-transform: uppercase;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.06em;
-}
-.stat-value {
-  color: var(--text);
 }
 
 .species-list {
@@ -471,62 +456,6 @@
   margin-bottom: 0.35rem;
 }
 
-.species-spawn-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--s-5);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: rgba(255, 220, 150, 0.92);
-  margin-bottom: 0.3rem;
-}
-
-.species-spawn-head-values strong {
-  font-variant-numeric: tabular-nums;
-  color: rgba(255, 236, 200, 1);
-}
-
-.species-spawn-track {
-  position: relative;
-  height: 7px;
-  border-radius: var(--r-xs);
-  background: rgba(18, 22, 30, 0.95);
-  overflow: hidden;
-  box-shadow: inset 0 1px 2px var(--shadow-a45);
-}
-
-.species-spawn-yellow {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  background: linear-gradient(180deg, rgba(255, 210, 90, 0.88), rgba(190, 140, 45, 0.8));
-  border-radius: 4px 0 0 4px;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.species-spawn-blue {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  z-index: 2;
-  background: linear-gradient(180deg, rgba(130, 200, 255, 0.95), rgba(60, 130, 255, 0.88));
-  box-shadow: 0 0 8px rgba(80, 160, 255, 0.35);
-  pointer-events: none;
-}
-
-.species-spawn-red {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  z-index: 2;
-  background: linear-gradient(180deg, rgba(255, 130, 110, 0.92), rgba(200, 60, 55, 0.88));
-  pointer-events: none;
-}
-
 .species-similarity-index-cols {
   display: flex;
   flex-direction: row;
@@ -725,13 +654,4 @@
 
 .species-similarity-index--clickable:focus:not(:focus-visible) {
   outline: none;
-}
-
-.species-similarity-index-hint {
-  display: block;
-  margin-top: 0.35rem;
-  text-align: center;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(160, 210, 255, 0.75);
 }

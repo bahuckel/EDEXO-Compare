@@ -16,7 +16,7 @@
  * both Fonticulua campestris and upupam, which is the same sentence for two species the model
  * separates. One reader, both surfaces.
  */
-import type { PlanetScan, SpeciesCriterion } from "./types.js";
+import type { PlanetScan } from "./types.js";
 import { atmosphereCompositionKey } from "./scanAtmosphereMatch.js";
 
 /**
@@ -129,9 +129,4 @@ export function requiredAtmosphereShare(
   return best.pct >= REQUIRED_GAS_MIN_SHARE_PCT
     ? { kind: "ok", pct: best.pct, gas: best.gas }
     : { kind: "trace", pct: best.pct, gas: best.gas };
-}
-
-/** Does this criterion say anything about composition at all? */
-export function hasCompositionRule(c: SpeciesCriterion): boolean {
-  return !!(c.atmosphereGasSharePct?.length || c.atmosphereTypeRequiredAnyOf?.length);
 }

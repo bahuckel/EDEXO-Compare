@@ -212,21 +212,6 @@
   color: var(--muted);
 }
 
-.fdb-copy {
-  font: inherit;
-  font-size: var(--fs-xs);
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--r-sm);
-  border: 1px solid rgba(150, 190, 230, 0.4);
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-
-.fdb-copy:hover {
-  border-color: rgba(180, 215, 255, 0.8);
-}
-
 .fdb-empty {
   padding: 1.4rem 0.6rem;
   opacity: 0.75;
@@ -274,9 +259,6 @@
 
 /* The results list is one panel among several on a scrolling page, so it caps its own height
    rather than growing until the map is below the fold. */
-.gsx-scroll {
-  max-height: 40vh;
-}
 
 .gsx-controls {
   display: flex;

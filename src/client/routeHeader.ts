@@ -1,7 +1,6 @@
 /**
  * The route header's models and aria strings, pure functions (7.3).
  */
-import { Tooltip } from "./ui/Tooltip";
 import type { AppSnapshot } from "@shared/types";
 
 /** Tooltip for header route row — NavRoute.json, Status.json, journal FSD. */

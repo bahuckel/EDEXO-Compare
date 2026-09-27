@@ -63,8 +63,7 @@
         ],
         "atmosphere": [
           "None"
-        ],
-        "atmospherePressureCategory": "thin"
+        ]
       }
     },
     {
@@ -79,8 +78,7 @@
         ],
         "atmosphere": [
           "None"
-        ],
-        "atmospherePressureCategory": "thin"
+        ]
       }
     },
     {
@@ -95,8 +93,7 @@
         ],
         "atmosphere": [
           "None"
-        ],
-        "atmospherePressureCategory": "thin"
+        ]
       }
     },
     {
@@ -111,8 +108,7 @@
         ],
         "atmosphere": [
           "None"
-        ],
-        "atmospherePressureCategory": "thin"
+        ]
       }
     },
     {
@@ -127,8 +123,7 @@
         ],
         "atmosphere": [
           "None"
-        ],
-        "atmospherePressureCategory": "thin"
+        ]
       }
     },
     {
@@ -144,7 +139,6 @@
         "atmosphere": [
           "None"
         ],
-        "atmospherePressureCategory": "thin",
         "matchContextNotes": [
           "Volcanism is not used to tell the colour variants apart. The codex records Roseum against 'Silicate Magma', which is the in-game display label and appears in no dataset the app reads: not in the journal's Volcanism field (21 distinct values), not on any of the 6,979 Sinuous Tuber bodies in the Spansh galaxy dump, and not among the 22 values carried by the 7.3 million bodies that hold any genus at all. Silicate exists only as Vapour Geysers. Since every Tuber variant sells for the same 1,514,500 credits, the distinction would cost recall and buy nothing."
         ]
@@ -162,8 +156,7 @@
         ],
         "atmosphere": [
           "None"
-        ],
-        "atmospherePressureCategory": "thin"
+        ]
       }
     },
     {
@@ -178,8 +171,7 @@
         ],
         "atmosphere": [
           "None"
-        ],
-        "atmospherePressureCategory": "thin"
+        ]
       }
     }
   ],

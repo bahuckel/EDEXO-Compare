@@ -108,15 +108,6 @@
   }
 }
 
-.species-match-heading {
-  margin: 0.5rem 0 0.4rem;
-  font-size: var(--fs-sm);
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--accent-bright);
-}
-
 .species-title-line {
   margin: 0 0 0.55rem;
   font-size: var(--fs-lg);
@@ -129,108 +120,12 @@
   gap: 0.35rem 0.5rem;
 }
 
-.species-scan-ok {
-  color: #5fd88a;
-  font-weight: 800;
-  text-shadow: 0 0 8px rgba(95, 216, 138, 0.55);
-}
-
-.species-scan-ok--identity {
-  margin-right: 0.12rem;
-}
-
-.species-title-name {
-  color: var(--text);
-}
-
-.species-title-sep {
-  color: var(--muted);
-  font-weight: 400;
-}
-
-.species-title-cr {
-  color: var(--accent-bright);
-  text-shadow: 0 0 12px var(--accent-glow);
-}
-
-.species-facts-list--match {
-  margin-top: 0;
-}
-
 /* Compact vertical facts (secondary / overflow rows) */
-.species-facts-list {
-  list-style: none;
-  margin: 0.55rem 0 0.45rem;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid var(--accent-dim);
-  border-radius: var(--radius-sm);
-  background: rgba(8, 8, 12, 0.92);
-  box-shadow:
-    inset 0 0 0 1px var(--accent-a06),
-    0 1px 8px var(--shadow-a35);
-}
-
-.species-fact-row {
-  display: grid;
-  grid-template-columns: minmax(6.5rem, 32%) 1fr;
-  gap: 0.2rem 0.65rem;
-  padding: 0.22rem 0;
-  align-items: start;
-  border-bottom: 1px solid var(--accent-a12);
-}
-
-.species-fact-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.species-fact-row:first-child {
-  padding-top: 0;
-}
-
-.species-fact-row--source .species-fact-value {
-  font-size: var(--fs-sm);
-  font-family: ui-monospace, "Cascadia Code", monospace;
-  word-break: break-all;
-  color: #d4cfc7;
-}
-
-.species-fact-label {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.055em;
-  color: var(--accent-bright);
-  line-height: 1.35;
-}
-
-.species-fact-value {
-  font-size: var(--fs-md);
-  font-weight: 500;
-  color: #f7f4ef;
-  line-height: 1.4;
-  word-break: break-word;
-}
-
-@media (max-width: 480px) {
-  .species-fact-row {
-    grid-template-columns: 1fr;
-    gap: 0.1rem;
-  }
-  .species-fact-label {
-    margin-bottom: 0.05rem;
-  }
-}
 
 .species-body h3 {
   margin: 0;
   color: var(--text);
   font-size: var(--fs-xl);
-}
-
-.genus-path-only {
-  font-size: var(--fs-sm);
-  margin: 0.2rem 0 0;
 }
 
 .genus {
@@ -265,32 +160,6 @@
   font-size: var(--fs-sm);
   font-style: italic;
   color: var(--muted);
-}
-
-.species-price {
-  margin: 0.25rem 0 0.5rem;
-  font-size: var(--fs-lg);
-  color: var(--text);
-}
-
-.species-actions {
-  margin: 0.65rem 0 0.35rem;
-  flex-shrink: 0;
-}
-
-.btn-notes {
-  font: inherit;
-  font-size: var(--fs-md);
-  padding: 0.35rem 0.65rem;
-  border-radius: var(--r-xs);
-  border: var(--border);
-  background: #14141a;
-  color: var(--accent);
-  cursor: pointer;
-}
-
-.btn-notes:hover {
-  background: rgba(255, 106, 26, 0.12);
 }
 
 .modal-backdrop {
@@ -706,24 +575,6 @@
 
 .tiny {
   font-size: var(--fs-sm);
-}
-
-.btn.system-map-launch--solo {
-  font: inherit;
-  font-weight: 700;
-  font-size: var(--fs-md);
-  padding: 0.45rem 0.85rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--accent-bright);
-  background: var(--accent-a12);
-  color: var(--accent-bright);
-  cursor: pointer;
-  box-shadow: 0 0 12px var(--accent-glow);
-}
-
-.tab.system-map-launch {
-  border: 1px dashed var(--accent);
-  color: var(--accent-bright);
 }
 
 .system-map-panel {

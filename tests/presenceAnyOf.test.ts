@@ -170,3 +170,12 @@ describe("the audit", () => {
     expect(verdict(entry, BODY).ok).toBe(false);
   });
 });
+
+describe("a pressure branch reads the journal's pascals as atmospheres (code review A16, 2026-09-27)", () => {
+  it("0.02 atm on the scan (2,026.5 Pa) sits inside a 0.01–0.05 atm branch", async () => {
+    const { evaluatePresenceBranch } = await import("../src/shared/presenceBranches.js");
+    const branch = { surfacePressure: { min: 0.01, max: 0.05 } } as never;
+    expect(evaluatePresenceBranch(branch, { SurfacePressure: 2026.5 } as never, null)).toMatch(/0\.020 atm/);
+    expect(evaluatePresenceBranch(branch, { SurfacePressure: 0.02 } as never, null)).toBeNull();
+  });
+});

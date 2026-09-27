@@ -38,7 +38,7 @@ import type {
 import type { GameStateStore } from "./gameState.js";
 import { bodyScanValueCredits, starScanValueCredits } from "./explorationValue.js";
 import { regionForSystem } from "./regionMapData.js";
-import { journalSurfaceGravityToG } from "../shared/journalPhysics.js";
+import { journalSurfaceGravityToG, SOLAR_RADIUS_METERS } from "../shared/journalPhysics.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
 import { isTerraformableState } from "../shared/terraformState.js";
 
@@ -49,7 +49,7 @@ import { isTerraformableState } from "../shared/terraformState.js";
  * setting, so a column in kilometres is one the commander has to convert depending on how his game
  * is configured. A ratio has no such setting.
  */
-const SOLAR_RADIUS_M = 695_700_000;
+const SOLAR_RADIUS_M = SOLAR_RADIUS_METERS;
 const EARTH_RADIUS_M = 6_371_000;
 
 /** Metres to a ratio of some reference radius, or null when the scan carried none. */

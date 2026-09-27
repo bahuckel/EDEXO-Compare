@@ -30,13 +30,17 @@ export function reuseUnchanged<T>(prev: T, next: T): T {
       const grown = n.map((v, i) => (i < p.length ? reuseUnchanged(p[i], v) : v));
       return grown as unknown as T;
     }
-    let identical = true;
-    const merged = n.map((v, i) => {
-      const m = reuseUnchanged(p[i], v);
-      if (!Object.is(m, p[i])) identical = false;
-      return m;
-    });
-    return (identical ? prev : (merged as unknown as T)) as T;
+    // Nothing is allocated until the first element that differs (the comment above promised as much).
+    let merged: unknown[] | null = null;
+    for (let i = 0; i < n.length; i++) {
+      const m = reuseUnchanged(p[i], n[i]);
+      if (merged) merged[i] = m;
+      else if (!Object.is(m, p[i])) {
+        merged = p.slice(0, i);
+        merged[i] = m;
+      }
+    }
+    return (merged ?? prev) as T;
   }
 
   const p = prev as Record<string, unknown>;
@@ -44,13 +48,18 @@ export function reuseUnchanged<T>(prev: T, next: T): T {
   const prevKeys = Object.keys(p);
   const nextKeys = Object.keys(n);
 
-  let identical = prevKeys.length === nextKeys.length;
-  const merged: Record<string, unknown> = {};
-  for (const k of nextKeys) {
+  // A key added or dropped means a new object; otherwise one is built only at the first difference.
+  let merged: Record<string, unknown> | null = null;
+  if (prevKeys.length !== nextKeys.length) merged = {};
+  for (let i = 0; i < nextKeys.length; i++) {
+    const k = nextKeys[i]!;
     const m = reuseUnchanged(p[k], n[k]);
-    merged[k] = m;
-    if (identical && !(k in p)) identical = false;
-    else if (identical && !Object.is(m, p[k])) identical = false;
+    if (merged) merged[k] = m;
+    else if (!(k in p) || !Object.is(m, p[k])) {
+      merged = {};
+      for (let j = 0; j < i; j++) merged[nextKeys[j]!] = p[nextKeys[j]!];
+      merged[k] = m;
+    }
   }
-  return (identical ? prev : (merged as unknown as T)) as T;
+  return (merged ?? prev) as T;
 }

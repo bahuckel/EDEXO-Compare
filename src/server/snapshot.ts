@@ -9,13 +9,7 @@ import {
   sharedGateAlerts,
   sharedSignature,
 } from "./sharedExomastery.js";
-import type {
-  AppStatusDTO,
-  FootScannedEntry,
-  RemoteViewDTO,
-  SessionLogDTO,
-  SharedExomasteryDTO,
-} from "../shared/types.js";
+import type { AppStatusDTO, SessionLogDTO, SharedExomasteryDTO } from "../shared/types.js";
 import { existsSync, statSync } from "node:fs";
 import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { UNOBSERVED } from "../shared/observedFlag.js";
@@ -24,20 +18,15 @@ import type {
   BodyComputed,
   GenusCertaintyDTO,
   BodyExoState,
-  DScanBodiesDTO,
   EncyclopediaSpeciesRowDTO,
   ExplorationScanRecord,
   JournalBootProgressDTO,
-  JournalSystemInfo,
-  LiveShipFuelRangeDTO,
-  NotableBodyInfo,
   OrganicPendingLineItem,
   PlanetScan,
   SpeciesDatabase,
   SpeciesEntry,
   SpeciesMatch,
   SpeciesMatchContext,
-  SystemMapSnapshot,
 } from "../shared/types.js";
 import { getProjectRoot } from "./paths.js";
 import { perfTime } from "./perf.js";
@@ -46,6 +35,7 @@ import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
 import { matchDatabaseToScan, shownSpeciesMatches, speciesMatchesCriteria } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
+import { bumpMatchCacheEpoch } from "./matchCacheEpoch.js";
 import { clearStarlightRangesCache, starlightRangeFor } from "./starlightRanges.js";
 import { journalHostObservationFromSpeciesContext } from "./journalHostObservation.js";
 import { resolveSpeciesPhoto } from "./speciesPhotos.js";
@@ -53,7 +43,6 @@ import { loadSpeciesDatabaseFromTree } from "./speciesTreeLoader.js";
 import { loadPriceList, lookupPrice, type PriceIndex } from "./priceList.js";
 import { speciesEntryMatchesOrganicLabel } from "./organicTracking.js";
 import {
-  estimateExplorationJournalDataCredits,
   explorationDataValueBreakdown,
 } from "./explorationDataEstimate.js";
 import {
@@ -62,9 +51,7 @@ import {
   explorationRecordsForSystem,
   bodyHasExoMarkers,
   exoMarkerBasis,
-  countPhysicalBodiesInSystemMapTree,
   loadStarRolesConfig,
-  type StarRolesConfig,
 } from "./systemMap.js";
 import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exoPayoutRange.js";
 import { countEdsmPlanetRows } from "./exomasteryEdsmEncyclopedia.js";
@@ -74,7 +61,6 @@ import {
   footScannedCatalogSignature,
   ownFootEntriesWithBackups,
   resolveEntryForCatalogRow,
-  loadFootScannedCatalog,
   mergeScanForExomastery,
   needsFootCatalogAugment,
 } from "./footScannedCatalog.js";
@@ -101,52 +87,40 @@ import {
   buildExoOrganicOverlayDto,
 } from "./exoOrganicTracker.js";
 import { shortBodyLabel } from "../shared/systemMapLabels.js";
-import {
-  explorationRecordIsBeltClusterLike,
-  explorationRecordIsClearlyWorld,
-  explorationRecordIsStellar,
-} from "./explorationStellar.js";
-import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
-import { rankSpeciesOnBody, REGION_PRIOR_WEIGHT } from "./speciesLikelihood.js";
-import { genusShares, timingFromSamples } from "../shared/systemTriage.js";
+import { timingFromSamples } from "../shared/systemTriage.js";
 import { codexHasSpecies, codexNewColoursInRegion, codexSpeciesKey } from "../shared/codexLog.js";
 import { candidateMorphColorShortLabel } from "../shared/candidateSpawnHints.js";
-import type { JournalHostStarObservation } from "../shared/types.js";
 import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
-import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
 import { exoOutlierTally, recordColourOutliersForBody, recordExoOutliersForBody } from "./exoOutlierLog.js";
 import { recordPredictionForBody } from "./predictionAuditLog.js";
 import { collectionFocusCached } from "./collectionFocus.js";
 import { edsmUploadLedgerSummary } from "./edsmUploadLedger.js";
 import { edsmCredentialsStatus } from "./edsmCredentials.js";
-import { FirstFootfallLookup } from "./firstFootfallLookup.js";
-import { readEdsmCredentials } from "./edsmCredentials.js";
-import { isTerraformableState } from "../shared/terraformState.js";
-import { clearSpeciesRarityCache, regionalRarity, speciesRarity, syncRaritySightings } from "./speciesRarityData.js";
-
-/**
- * One lookup for the life of the process, bound to whichever store is building the snapshot.
- *
- * It caches verdicts and rate-limits itself, so it has to outlive a single snapshot; the store
- * reference is refreshed rather than the object rebuilt, or every snapshot would start with an empty
- * cache and ask EDSM again.
- */
-let firstFootfallLookup: FirstFootfallLookup | null = null;
-let firstFootfallStore: { hasVisitedSystemNamed: (name: string) => boolean } | null = null;
-
-function firstFootfallLookupFor(store: {
-  hasVisitedSystemNamed: (name: string) => boolean;
-}): FirstFootfallLookup {
-  firstFootfallStore = store;
-  firstFootfallLookup ??= new FirstFootfallLookup({
-    hasVisited: (name) => firstFootfallStore?.hasVisitedSystemNamed(name) ?? false,
-    identity: () => readEdsmCredentials(),
-  });
-  return firstFootfallLookup;
-}
+import {
+  clearSpeciesRarityCache,
+  regionalRarity,
+  speciesRarity,
+  syncRaritySightings,
+} from "./speciesRarityData.js";
+import {
+  attachPresenceProbability,
+  demoteBelowPresenceFloor,
+  markSampledDespiteUnlikely,
+} from "./presenceFloors.js";
+import {
+  firstFootfallLookupFor,
+  buildJournalSystems,
+  resolveViewingSystemName,
+  buildRemoteView,
+  scanBodyKey,
+  buildDScanBodiesSnapshot,
+  buildLiveShipFuelRangeDTO,
+  buildNotableBodiesForFocusedSystem,
+} from "./snapshotSystemInfo.js";
+export { PRESENCE_FLOOR_PCT, demoteBelowPresenceFloor, GENUS_SHARE_FLOOR_PCT } from "./presenceFloors.js";
 
 /**
  * Attach the first-footfall verdict to the next-jump card.
@@ -236,382 +210,6 @@ function attachOtherMatchDetailCardsToMatches(
   });
 }
 
-/**
- * Journal-system list, memoized.
- *
- * Building it walks every visited system, body, journal scan, EDSM record and FSS map in the store
- * (hundreds of thousands of entries after a long play history) and then sorts the result. It was
- * 116 ms of the 186 ms snapshot build — 62% — and it was redone on every push.
- *
- * The signature is the sizes of every collection the build reads. All of them only grow, and a name
- * is only ever filled in for an address that has none, so equal sizes mean an identical result.
- */
-let cachedJournalSystems: { signature: string; value: JournalSystemInfo[] } | null = null;
-
-/** One collator; `localeCompare` with options builds a new one per comparison. */
-const systemNameCollator = new Intl.Collator(undefined, { sensitivity: "base" });
-
-function journalSystemsSignature(store: GameStateStore): string {
-  return [
-    store.visitedSystems.size,
-    store.bodies.size,
-    store.explorationScans.size,
-    store.edsmExplorationByKey.size,
-    store.fssDiscoveryScanBySystem.size,
-    store.fssAllBodiesFoundCountBySystem.size,
-    store.fssAllBodiesCompleteSystems.size,
-  ].join(":");
-}
-
-function buildJournalSystems(store: GameStateStore): JournalSystemInfo[] {
-  const signature = journalSystemsSignature(store);
-  if (cachedJournalSystems && cachedJournalSystems.signature === signature) {
-    return cachedJournalSystems.value;
-  }
-  const value = buildJournalSystemsUncached(store);
-  cachedJournalSystems = { signature, value };
-  return value;
-}
-
-function buildJournalSystemsUncached(store: GameStateStore): JournalSystemInfo[] {
-  const byAddr = new Map<number, string>();
-  for (const [addr, name] of store.visitedSystems) {
-    byAddr.set(addr, name);
-  }
-  for (const b of store.bodies.values()) {
-    const prev = byAddr.get(b.systemAddress);
-    const fromBody = b.starSystem?.trim();
-    if (!prev && fromBody) byAddr.set(b.systemAddress, fromBody);
-  }
-  const ensureAddrName = (addr: number, name: string | null | undefined) => {
-    const n = name?.trim();
-    if (!n) return;
-    const prev = byAddr.get(addr);
-    if (!prev) byAddr.set(addr, n);
-  };
-  for (const r of store.explorationScans.values()) {
-    ensureAddrName(r.systemAddress, r.starSystem);
-  }
-  for (const r of store.edsmExplorationByKey.values()) {
-    ensureAddrName(r.systemAddress, r.starSystem);
-  }
-  for (const [addr, disc] of store.fssDiscoveryScanBySystem) {
-    ensureAddrName(addr, disc.systemName);
-  }
-  for (const addr of store.fssAllBodiesFoundCountBySystem.keys()) {
-    const disc = store.fssDiscoveryScanBySystem.get(addr);
-    ensureAddrName(addr, disc?.systemName ?? null);
-    if (!byAddr.has(addr)) byAddr.set(addr, disc?.systemName?.trim() || `System ${addr}`);
-  }
-  for (const addr of store.fssAllBodiesCompleteSystems) {
-    if (!byAddr.has(addr)) {
-      const disc = store.fssDiscoveryScanBySystem.get(addr);
-      byAddr.set(addr, disc?.systemName?.trim() || `System ${addr}`);
-    }
-  }
-  const out: JournalSystemInfo[] = [];
-  for (const [systemAddress, starSystem] of byAddr) {
-    out.push({ systemAddress, starSystem });
-  }
-  out.sort((a, b) => systemNameCollator.compare(a.starSystem, b.starSystem));
-  return out;
-}
-
-function resolveViewingSystemName(store: GameStateStore, viewingAddr: number | null): string | null {
-  if (viewingAddr == null) return null;
-  const fromVisit = store.visitedSystems.get(viewingAddr);
-  if (fromVisit?.trim()) return fromVisit.trim();
-  for (const b of store.bodies.values()) {
-    if (b.systemAddress === viewingAddr && b.starSystem?.trim()) return b.starSystem.trim();
-  }
-  // A looked-up system: its name comes with the lookup, never through the visited list.
-  return (
-    store.remoteSystems.get(viewingAddr)?.starSystem ??
-    store.remoteLookups.get(viewingAddr)?.starSystem ??
-    null
-  );
-}
-
-/** The looked-up system on screen, while it is one: fetching, failed, or showing Spansh's bodies. */
-function buildRemoteView(store: GameStateStore): RemoteViewDTO | null {
-  const addr = store.viewingSystemAddress;
-  if (addr == null) return null;
-  const pending = store.remoteLookups.get(addr);
-  if (pending) {
-    return {
-      systemAddress: addr,
-      starSystem: pending.starSystem,
-      state: pending.state,
-      ...(pending.error ? { error: pending.error } : {}),
-    };
-  }
-  if (!store.isShowingRemoteSystem(addr)) return null;
-  const sys = store.remoteSystems.get(addr)!;
-  return {
-    systemAddress: addr,
-    starSystem: sys.starSystem,
-    state: "ready",
-    fetchedAt: sys.fetchedAt,
-    sourceUpdatedAt: sys.sourceUpdatedAt,
-    bodyCount: sys.records.length,
-    bioBodyCount: sys.bio.length,
-    ...(typeof sys.signalBodyCount === "number" ? { signalBodyCount: sys.signalBodyCount } : {}),
-  };
-}
-
-function scanBodyKey(systemAddress: number, bodyId: number): string {
-  return `${systemAddress}:${bodyId}`;
-}
-
-/**
- * Journal progress is 0–1; converting with round() often overshoots (e.g. one body in an 8-body system).
- * Use a conservative integer body count from Progress alone.
- */
-function fssHonkProgressBodyCount(progress: number, total: number): number {
-  if (total <= 0) return 0;
-  if (progress >= 1 - 1e-9) return total;
-  const x = progress * total;
-  return Math.min(total, Math.max(0, Math.floor(x + 1e-9)));
-}
-
-function buildDScanBodiesSnapshot(
-  store: GameStateStore,
-  focusAddr: number | null,
-  nameFallback: string | null,
-  systemMap: SystemMapSnapshot | null,
-): DScanBodiesDTO | null {
-  if (focusAddr == null) return null;
-  const disc = store.fssDiscoveryScanBySystem.get(focusAddr);
-  const fromAllFound = store.fssAllBodiesFoundCountBySystem.get(focusAddr);
-  const mapOk = systemMap != null && systemMap.systemAddress === focusAddr;
-  const fromMapForFound = mapOk ? countPhysicalBodiesInSystemMapTree(systemMap.tree) : null;
-  const fromMapInt = fromMapForFound ?? 0;
-
-  const fromJournal = countMergedExplorationBodiesTowardDScanFound(store, focusAddr);
-
-  /** FSS honk lines are absent for many pre-FSS / old journals — derive totals from Scan merge + map + EDSM. */
-  let total = Math.max(disc?.bodyCount ?? 0, fromAllFound ?? 0);
-  if (total <= 0) {
-    total = Math.max(fromJournal, fromMapInt);
-  } else {
-    total = Math.max(total, fromJournal, fromMapInt);
-  }
-
-  if (total <= 0) return null;
-
-  const systemName = disc?.systemName.trim() || nameFallback?.trim() || `System ${focusAddr}`;
-  const complete = store.fssAllBodiesCompleteSystems.has(focusAddr);
-  // Owner, 2026-09-25: say whether the system was honked. FSSAllBodiesFound counts as yes — a one-
-  // or two-star system is finished without one, and "no honk" there tells the commander nothing.
-  const honked = disc != null || fromAllFound != null || complete;
-  if (complete) {
-    return { systemName, found: total, total, complete: true, honked };
-  }
-  const fromProgress = disc ? fssHonkProgressBodyCount(disc.progress, total) : 0;
-  const fallbackFound = Math.min(total, Math.max(0, fromProgress, fromJournal));
-  const found = Math.min(total, fromMapForFound != null ? fromMapForFound : fallbackFound);
-  return { systemName, found, total, complete: false, honked };
-}
-
-function buildLiveShipFuelRangeDTO(
-  store: GameStateStore,
-  starRoles: StarRolesConfig,
-): LiveShipFuelRangeDTO | null {
-  const main = store.liveStatusFuelMainT;
-  const res = store.liveStatusFuelReserveT;
-  const hasLiveStatusFuel = (main != null && Number.isFinite(main)) || (res != null && Number.isFinite(res));
-  const fuelMain = main != null && Number.isFinite(main) ? Math.max(0, main) : 0;
-  const fuelRes = res != null && Number.isFinite(res) ? Math.max(0, res) : 0;
-  const fuelTotalTForNav = hasLiveStatusFuel ? fuelMain + fuelRes : null;
-
-  /*
-    Ask about the systems ahead before the route is analysed, so the verdicts are in the cache by the
-    time this snapshot or the next one reads them. The call is fire-and-forget and rate-limited
-    inside the lookup; nothing here waits on the network.
-  */
-  const lookup = firstFootfallLookupFor(store);
-  lookup.request((store.liveNavRoute ?? []).map((w) => w.starSystem));
-
-  const navRoute = analyzeNavRouteFuel({
-    route: store.liveNavRoute,
-    currentSystemAddress: store.currentSystemAddress,
-    currentSystemName: store.currentSystem,
-    fuelTotalT: fuelTotalTForNav,
-    lastFsdFuelT: store.lastFsdJumpFuelUsedT,
-    lastFsdDistLy: store.lastFsdJumpDistLy,
-    loadoutMaxJumpLy: store.loadoutMaxJumpRangeLy,
-    starRoles,
-    firstFootfallVerdict: (name) => lookup.verdict(name),
-    firstFootfallNote: (name) => lookup.note(name),
-  });
-
-  if (!hasLiveStatusFuel && !navRoute) return null;
-
-  const fuelTotal = hasLiveStatusFuel ? fuelMain + fuelRes : 0;
-  const maxR = store.loadoutMaxJumpRangeLy;
-  const fu = store.lastFsdJumpFuelUsedT;
-  const jd = store.lastFsdJumpDistLy;
-  let estFuelPerMaxJump: number | null = null;
-  let calibration: LiveShipFuelRangeDTO["calibration"] = "none";
-  if (maxR != null && maxR > 0 && fu != null && fu > 0 && jd != null && jd > 0) {
-    estFuelPerMaxJump = fu * (maxR / jd);
-    calibration = "fsd_sample";
-  }
-  const safetyT = 0.08;
-  let estJumps: number | null = null;
-  if (
-    hasLiveStatusFuel &&
-    estFuelPerMaxJump != null &&
-    estFuelPerMaxJump > 1e-6 &&
-    !(navRoute?.onPlot && typeof navRoute.routeJumpsRemaining === "number")
-  ) {
-    estJumps = Math.max(0, Math.floor(Math.max(0, fuelTotal - safetyT) / estFuelPerMaxJump));
-  }
-
-  return {
-    hasLiveStatusFuel,
-    fuelMainT: fuelMain,
-    fuelReserveT: fuelRes,
-    fuelTotalT: fuelTotal,
-    maxJumpRangeLy: maxR,
-    estFuelPerMaxJumpT: estFuelPerMaxJump,
-    estJumpsRemaining: estJumps,
-    calibration,
-    navRoute,
-  };
-}
-
-function isPlanetLikeExplorationRecord(rec: ExplorationScanRecord): boolean {
-  if (explorationRecordIsStellar(rec)) return false;
-  const bt = (rec.bodyType ?? "").trim().toLowerCase();
-  if (bt === "star") return false;
-  if (bt.includes("belt cluster")) return false;
-  if (bt.includes("planetaryring")) return false;
-  return !!(rec.planetClass?.trim() || (rec.terraformState ?? "").trim());
-}
-
-/** Bodies that count toward D-scan “found” as journal `Scan` rows merge (stars + worlds; not belts/rings/bary rows). */
-function explorationRecordCountsTowardDScanFound(rec: ExplorationScanRecord): boolean {
-  if (rec.isBarycentreJournal === true) return false;
-  if (isBarycentreSyntheticBodyId(rec.bodyId)) return false;
-  if (rec.isSynthetic === true) return false;
-  if (explorationRecordIsBeltClusterLike(rec)) return false;
-  const bt = (rec.bodyType ?? "").replace(/\s+/g, " ").trim().toLowerCase();
-  if (bt.includes("belt cluster")) return false;
-  if (bt.includes("planetary ring") || bt.replace(/\s+/g, "") === "planetaryring") return false;
-  if (explorationRecordIsStellar(rec)) return true;
-  if (isPlanetLikeExplorationRecord(rec)) return true;
-  if (explorationRecordIsClearlyWorld(rec)) return true;
-  return false;
-}
-
-function countMergedExplorationBodiesTowardDScanFound(store: GameStateStore, systemAddress: number): number {
-  const prefix = `${systemAddress}:`;
-  const seenBodyIds = new Set<number>();
-  const consider = (rec: ExplorationScanRecord) => {
-    if (!explorationRecordCountsTowardDScanFound(rec)) return;
-    seenBodyIds.add(rec.bodyId);
-  };
-  for (const [k, rec] of store.explorationScans) {
-    if (!k.startsWith(prefix)) continue;
-    consider(rec);
-  }
-  for (const [k, rec] of store.edsmExplorationByKey) {
-    if (!k.startsWith(prefix)) continue;
-    consider(rec);
-  }
-  return seenBodyIds.size;
-}
-
-function shortNotableBodyLabel(bodyName: string, candidates: (string | null | undefined)[]): string {
-  const bn = bodyName.trim();
-  if (!bn) return bn;
-  const ordered = [...new Set(candidates.map((c) => (c ?? "").trim()).filter(Boolean))];
-  for (const s of ordered) {
-    const bnLow = bn.toLowerCase();
-    const sLow = s.toLowerCase();
-    if (bnLow.startsWith(sLow + " ")) return bn.slice(s.length).trim();
-  }
-  return bn;
-}
-
-function explorationRecordIsTerraformable(rec: ExplorationScanRecord): boolean {
-  return isTerraformableState(rec.terraformState);
-}
-
-function abbreviateNotablePlanetClass(pc: string): string {
-  const n = pc.trim();
-  const low = n.toLowerCase();
-  if (!n) return "";
-  if (low.includes("high metal content")) return "HMC";
-  if (low.includes("metal rich")) return "Metal-rich";
-  if (low === "rocky body" || (low.startsWith("rocky") && low.includes("body"))) return "Rocky";
-  if (low === "icy body" || (low.startsWith("icy") && low.includes("body"))) return "Icy";
-  if (low.includes("gas giant")) return "Gas giant";
-  if (n.length <= 18) return n;
-  return n.split(/\s+/).slice(0, 3).join(" ");
-}
-
-function notableTagForRecord(rec: ExplorationScanRecord): string | null {
-  const pc = (rec.planetClass ?? "").trim();
-  const norm = pc.toLowerCase().replace(/\s+/g, " ");
-  const tf = explorationRecordIsTerraformable(rec);
-  const tfSuffix = tf ? " - Terraformable" : "";
-
-  if (pc === "Earthlike body" || (norm.includes("earth") && norm.includes("like"))) {
-    return `Earth-like${tfSuffix}`;
-  }
-  if (pc === "Ammonia world" || norm.includes("ammonia world")) {
-    return `Ammonia world${tfSuffix}`;
-  }
-  if (pc === "Water world" || (norm.includes("water") && norm.includes("world"))) {
-    return `Water world${tfSuffix}`;
-  }
-
-  if (!tf) return null;
-
-  const abbr = abbreviateNotablePlanetClass(pc);
-  return abbr ? `${abbr} - Terraformable` : "Terraformable";
-}
-
-function buildNotableBodiesForFocusedSystem(
-  store: GameStateStore,
-  focusedSystemName: string | null,
-): NotableBodyInfo[] {
-  const focusAddr = store.viewingSystemAddress ?? store.currentSystemAddress;
-  if (focusAddr == null) return [];
-
-  const byBodyId = new Map<number, ExplorationScanRecord>();
-  for (const [k, rec] of store.explorationScans.entries()) {
-    if (!k.startsWith(`${focusAddr}:`)) continue;
-    if (!isPlanetLikeExplorationRecord(rec)) continue;
-    byBodyId.set(rec.bodyId, rec);
-  }
-
-  const out: NotableBodyInfo[] = [];
-  for (const rec of byBodyId.values()) {
-    const tag = notableTagForRecord(rec);
-    if (!tag) continue;
-    const bk = scanBodyKey(rec.systemAddress, rec.bodyId);
-    const fullName = rec.bodyName?.trim() || `Body ${rec.bodyId}`;
-    const bodyLabelShort = shortNotableBodyLabel(fullName, [
-      rec.starSystem,
-      focusedSystemName,
-      store.currentSystem,
-    ]);
-    out.push({
-      bodyName: fullName,
-      bodyLabelShort,
-      systemAddress: rec.systemAddress,
-      bodyId: rec.bodyId,
-      tag,
-      dssMapped: store.dssMappedBodyKeys.has(bk),
-    });
-  }
-  out.sort((a, b) => a.bodyId - b.bodyId);
-  return out;
-}
-
 /** Tag every species with its rarity tier (EDSM codex + extras + own new sightings) — the DNA badge reads it. */
 function tagRarity(db: SpeciesDatabase, root: string): void {
   for (const e of db.species) {
@@ -644,6 +242,7 @@ function syncRarity(store: GameStateStore, db: SpeciesDatabase): void {
   if (!syncRaritySightings(root, store.codexSightings, db.species)) return;
   tagRarity(db, root);
   computeBodyCache.clear();
+  bumpMatchCacheEpoch();
 }
 
 export function loadSpeciesDatabase(): SpeciesDatabase {
@@ -654,6 +253,7 @@ export function loadSpeciesDatabase(): SpeciesDatabase {
   clearFootCatalogSpeciesDb();
   speciesDataGeneration += 1;
   computeBodyCache.clear();
+  bumpMatchCacheEpoch();
   cachedPrices = loadPriceList(root);
   if (!cachedDb.species.length) {
     console.warn("ED Exo Compare — no species loaded; add data/species/<genus>/… (*_new.json or *.json)");
@@ -853,267 +453,6 @@ function genusLikelihoodsForBody(
   ].filter((g) => candidates.includes(g));
 
   return genusLikelihoods(table, candidates, signalCount, known)?.likelihoods ?? null;
-}
-
-/* The region-prior weight now lives with the other model constants; see REGION_PRIOR_WEIGHT. */
-
-/**
- * klightspeed region index for the body's own system, or null when its position is not known.
- *
- * The body's system, not the focused one: the panel can be showing a body the commander has
- * flown away from, and scoring it against wherever they happen to be standing would be worse
- * than not scoring it at all.
- */
-function regionIndexForBody(store: GameStateStore, b: BodyExoState, projectRoot: string): number | null {
-  const pos = store.systemPositions.get(b.systemAddress);
-  if (!pos) return null;
-  const index = regionIndexForSystem(projectRoot, pos.x, pos.z);
-  return index != null && index > 0 ? index : null;
-}
-
-/**
- * The ranking model's answer, written onto the matches.
- *
- * `rankSpeciesOnBody` normalises across the candidates, which answers "which one species is this".
- * The game places one genus per biological signal, so a candidate's chance of being *present* is
- * that share times the count — the same constraint step 7 applies at genus level, and the reason the
- * number calibrates. Without a signal count the share is left as it is, which under-reads on a
- * multi-signal body and is the honest thing to do when the game has not said how many are down there.
- *
- * Only the shown tier is ranked. A demoted row disagreed with a gate, and normalising it alongside
- * the others would hand it a share of a probability the panel does not offer it.
- */
-function attachPresenceProbability(
-  matches: SpeciesMatch[],
-  b: BodyExoState,
-  scan: PlanetScan | null,
-  rec: ExplorationScanRecord | null,
-  journalHost: JournalHostStarObservation | null,
-  root: string,
-  store: GameStateStore,
-): void {
-  if (!scan) return;
-  const shown = matches.filter((m) => !m.unlikely);
-  if (shown.length === 0) return;
-  const { ranked } = rankSpeciesOnBody(shown, scan, rec, journalHost, {
-    root,
-    regionPrior: true,
-    regionIndex: regionIndexForBody(store, b, root),
-    regionPriorWeight: REGION_PRIOR_WEIGHT,
-  });
-  if (ranked.length === 0) return;
-
-  const signals = b.biologicalSignals;
-  const scale = signals != null && Number.isFinite(signals) && signals > 0 ? signals : 1;
-  for (const r of ranked) {
-    const p = Math.max(0, Math.min(1, r.probability * scale * (r.match.presenceFactor ?? 1)));
-    r.match.presenceProbabilityPercent = Math.round(p * 1000) / 10;
-  }
-
-  /**
-   * The same posterior, normalised inside each genus instead of across the body (B3).
-   *
-   * After a DSS the game has named the genera, so "is Bacterium here" is settled and the only open
-   * question is which Bacterium. That is this number, and it is worth computing before the DSS too —
-   * it is what the answer becomes the moment the genus is confirmed.
-   */
-  const rows = ranked.map((r) => ({ genus: r.match.entry.genusDataDir, probability: r.probability, r }));
-  const shares = genusShares(rows);
-  for (const row of rows) {
-    const share = shares.get(row);
-    row.r.match.genusSharePercent = share == null ? null : Math.round(share * 1000) / 10;
-  }
-}
-
-/**
- * How likely a candidate has to be before the panel offers it as a candidate.
- *
- * The commander's line, and the same five per cent he set for a trace gas. It is defensible here
- * because this is the one number on the card that has been calibrated against reality: on
- * complete-label bodies the 0-10 % bin comes in at 8.9 % observed. A row at 2.6 % is not a
- * borderline call, it is the model saying *probably not*, and printing it beside rows at 40 % asks
- * the reader to do arithmetic the app has already done.
- */
-export const PRESENCE_FLOOR_PCT = 5;
-
-/**
- * Push the long shots behind "show unlikely".
- *
- * Reported from the field twice: an icy moon offering Fonticulua upupam at 2.6 % and a Fungoida at
- * 1.5 %, on a body where other candidates were well clear of the floor. Nothing was wrong with the
- * numbers — the panel was simply showing rows its own model had already judged.
- *
- * Three things it will not do:
- *
- *  - **Empty the list.** If nothing at all clears the floor, the single best row stays. A body where
- *    the answer is spread that thin still deserves a best guess, and an empty panel over a body the
- *    game says has life on it reads as a broken app rather than as an honest shrug.
- *
- *    Deliberately *one* row and not one per biological signal. Two signals mean two genera are down
- *    there, so keeping the runner-up looks defensible — but it puts a row the model scored at 4.7 %
- *    on the same list as one it scored at 100 %, which is the thing being complained about. The
- *    second genus is not unknown, it is unnamed, and the ambiguity note already says so.
- *  - **Touch an unmeasured row.** `presenceProbabilityPercent` is null when the model has no opinion
- *    — no profile, too few observed bodies. Null is "unmeasured", never "unlikely".
- *  - **Argue with the commander's own boots.** A species he has sampled on this body stays, whatever
- *    the model thinks of it.
- */
-export function demoteBelowPresenceFloor(
-  matches: SpeciesMatch[],
-  b: BodyExoState,
-  db: SpeciesDatabase,
-): void {
-  const confirmed = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
-
-  // Probes have named the genera, so "is Bacterium here" is settled and the presence floor has
-  // nothing left to judge. "Which Bacterium" is wide open, and that is a different floor.
-  if (b.genusHints?.length) {
-    demoteBelowGenusShareFloor(matches, confirmed);
-    return;
-  }
-
-  const shown = matches.filter((m) => !m.unlikely);
-  if (shown.length === 0) return;
-
-  const keepAtLeast = 1;
-  // Highest chance first, so the one row that survives an all-below-floor body is the best of them.
-  // An unmeasured row sorts with the survivors rather than the casualties: it is not a weak claim,
-  // it is no claim.
-  const order = [...shown].sort(
-    (x, y) => (y.presenceProbabilityPercent ?? Infinity) - (x.presenceProbabilityPercent ?? Infinity),
-  );
-
-  let kept = 0;
-  for (const m of order) {
-    const pct = m.presenceProbabilityPercent;
-    const immune =
-      pct == null ||
-      !Number.isFinite(pct) ||
-      m.organicAnalysisComplete === true ||
-      m.approximateMatch === true ||
-      confirmed.has(m.entry.id);
-    if (immune || pct >= PRESENCE_FLOOR_PCT || kept < keepAtLeast) {
-      kept++;
-      continue;
-    }
-    m.unlikely = true;
-    m.unlikelyReasons = [
-      ...(m.unlikelyReasons ?? []),
-      {
-        field: "Chance here",
-        detail: `${pct.toFixed(1)} % — under the ${PRESENCE_FLOOR_PCT} % this panel shows. Listed as a low-probability find rather than excluded.`,
-      },
-    ];
-  }
-}
-
-/**
- * How large a share of its own genus a candidate needs after a DSS.
- *
- * The same five per cent as {@link PRESENCE_FLOOR_PCT}, and measured the same way rather than
- * assumed to match: across the 609 species the commander has confirmed on probed bodies, a 5 % floor
- * on this number would have hidden **two** of them beforehand (Bacterium omentum at 0.81 %, Osseus
- * discus at 4.78 %), and both come straight back the moment he samples them, because a confirmed
- * species is immune below. 2 % hides one, 10 % hides three.
- */
-export const GENUS_SHARE_FLOOR_PCT = 5;
-
-/**
- * The same idea as the presence floor, for the list after a DSS.
- *
- * Reported from the field: *"I shouldn't be getting Tela as a suggestion for every single body with
- * 1 bio signal."* He was right, and the cause was this function returning early on any probed body.
- * The early return reasoned that the probes had named the genera so nothing left was a guess — true
- * of the **genus** and not of the **species**, and the panel lists species. On his own cache
- * Bacterium tela sat on 546 of 574 probed bodies (95.1 %) at a median share of its own genus of
- * **1.9 %**, while the never-probed bodies, where the floor did run, showed it on 13.7 %. One early
- * return, one species on almost every body he had actually flown to.
- *
- * `genusSharePercent` is the right number here and `presenceProbabilityPercent` is not: after a DSS
- * the genus is settled, so a species' chance of being the one down there is its share within that
- * genus. On the two bodies where tela really did grow, that share was 39.4 % and 98.0 % — the floor
- * never came near them.
- *
- * The three exemptions of the presence floor hold here for the same reasons: never empty a genus
- * (the best row in each hinted genus stays, whatever its share), never touch an unmeasured row, and
- * never argue with the commander's own boots.
- */
-function demoteBelowGenusShareFloor(matches: SpeciesMatch[], confirmed: Set<string>): void {
-  const shown = matches.filter((m) => !m.unlikely);
-  if (shown.length === 0) return;
-
-  const byGenus = new Map<string, SpeciesMatch[]>();
-  for (const m of shown) {
-    const genus = m.entry.genusDataDir;
-    byGenus.set(genus, [...(byGenus.get(genus) ?? []), m]);
-  }
-
-  for (const rows of byGenus.values()) {
-    // Best share first, so the row that survives a genus where nothing clears is the best of them.
-    // Unmeasured sorts with the survivors: it is not a weak claim, it is no claim.
-    const order = [...rows].sort(
-      (x, y) => (y.genusSharePercent ?? Infinity) - (x.genusSharePercent ?? Infinity),
-    );
-    let kept = 0;
-    for (const m of order) {
-      const pct = m.genusSharePercent;
-      const immune =
-        pct == null ||
-        !Number.isFinite(pct) ||
-        m.organicAnalysisComplete === true ||
-        m.approximateMatch === true ||
-        confirmed.has(m.entry.id);
-      if (immune || pct >= GENUS_SHARE_FLOOR_PCT || kept < 1) {
-        kept++;
-        continue;
-      }
-      m.unlikely = true;
-      m.unlikelyReasons = [
-        ...(m.unlikelyReasons ?? []),
-        {
-          field: "Share of its genus",
-          detail:
-            `${pct.toFixed(1)} % of ${m.entry.genus || m.entry.genusDataDir} here — under the ` +
-            `${GENUS_SHARE_FLOOR_PCT} % this panel shows once the genus is confirmed. Listed as a ` +
-            `low-probability find rather than excluded.`,
-        },
-      ];
-    }
-  }
-}
-
-/**
- * A species the commander has sampled on this body belongs in the list, banner and all.
- *
- * The owner, on Bacterium omentum at `Synookooe WW-F b55-0 A 2 a`: *"keep the [unlikely] banner
- * after the name. But do not continue to hide it in the unlikely list if the user scans it, it
- * should go into candidate species with the [unlikely] banner."*
- *
- * He is right, and the reason is that the two facts are not in competition. "Unlikely" is the app's
- * opinion about a body it has never stood on; a sample is the commander's own boots. Collapsing the
- * row behind "show unlikely (N)" after he has proved it is there makes the panel argue with him —
- * and the species he has to hunt for hardest is exactly the one worth not hiding.
- *
- * So the demotion is **kept**: `unlikely` stays true, `unlikelyReasons` stays, and the banner still
- * says which gate it failed. Only where the row is *filed* changes. That is deliberate — the reason
- * it was demoted is usually the interesting part. Omentum's codex row lists Neon and this body is
- * Methane, which the corpus says happens in 1 of 22 observed bodies; the banner is how he finds out
- * the codex is narrow rather than the app being broken.
- *
- * Runs after every demotion pass, because it is about the final verdict rather than any one gate.
- * `exoDataConsistencyAlerts` still reports the mismatch: the row being visible does not make the
- * codex list right.
- */
-function markSampledDespiteUnlikely(matches: SpeciesMatch[], b: BodyExoState, db: SpeciesDatabase): void {
-  const sampled = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
-  if (sampled.size === 0) return;
-  for (const m of matches) {
-    // A Log already resolves the species, so `organicAnalysisComplete` is too strict a test here:
-    // one sample is proof the plant is on the body, whatever the remaining two would add.
-    if (m.unlikely && (sampled.has(m.entry.id) || m.organicAnalysisComplete === true)) {
-      m.sampledHere = true;
-    }
-  }
 }
 
 /**
@@ -1686,6 +1025,23 @@ function organicDataValuation(
   return { credits, pendingSamples: store.pendingOrganicSales.length };
 }
 
+/*
+  Label → species, per database. The pending list is re-read on every snapshot and each line searched
+  all 109 species with the organic-label matcher: 17 % of a live refresh (code review §E, 2026-09-27).
+*/
+const pendingLabelEntries = new WeakMap<SpeciesDatabase, Map<string, SpeciesEntry | null>>();
+
+function speciesForPendingLabel(db: SpeciesDatabase, label: string): SpeciesEntry | null {
+  let byLabel = pendingLabelEntries.get(db);
+  if (!byLabel) pendingLabelEntries.set(db, (byLabel = new Map()));
+  let hit = byLabel.get(label);
+  if (hit === undefined) {
+    hit = db.species.find((e) => speciesEntryMatchesOrganicLabel(e, label)) ?? null;
+    byLabel.set(label, hit);
+  }
+  return hit;
+}
+
 function buildOrganicPendingLines(
   store: GameStateStore,
   db: SpeciesDatabase,
@@ -1703,7 +1059,7 @@ function buildOrganicPendingLines(
     const firstFootfall = store.firstFootfallBodies.has(p.bodyKey);
     const mult: 1 | 5 = firstFootfall ? 5 : 1;
     const valueCredits = base != null ? base * mult : 0;
-    const entry = db.species.find((e) => speciesEntryMatchesOrganicLabel(e, p.label));
+    const entry = speciesForPendingLabel(db, p.label);
     const photoUrl = entry ? resolveSpeciesPhoto(entry, root).photoUrl : "/photos/__builtin_placeholder.svg";
     out.push({
       bodyKey: p.bodyKey,
@@ -1782,8 +1138,9 @@ export function buildSnapshot(
   if (!bootLoading) syncRarity(store, db);
   const { credits: organicDataValueCredits, pendingSamples: organicPendingSampleCount } =
     organicDataValuation(store, cachedPrices);
-  const explorationScanDataValueCredits = estimateExplorationJournalDataCredits(store);
+  // One walk of every scan, not two: the total is the breakdown's own total (code review §E).
   const exploreBreakdown = explorationDataValueBreakdown(store);
+  const explorationScanDataValueCredits = exploreBreakdown.totalCredits;
   const organicPendingLines = bootLoading ? [] : buildOrganicPendingLines(store, db, cachedPrices);
   // Logged colours anywhere in the journals, not only in the system in view (see the function).
   if (!bootLoading) perfTime("snap.colourSweep", () => sweepColourOutliers(store, db));

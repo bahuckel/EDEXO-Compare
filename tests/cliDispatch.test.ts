@@ -196,3 +196,27 @@ describe("the overlay commands, as the app actually reads them", () => {
     expect(text).toContain("/hud-overlay.html?s=fss,jump");
   });
 });
+
+describe("overlay names and route import (code review A4/A5, 2026-09-27)", () => {
+  it("resolves the section names to overlay files that exist", async () => {
+    const { overlayPage } = await import("../src/cli/dispatch.js");
+    const { existsSync } = await import("node:fs");
+    for (const n of ["hud", "distance", "radar", "foot", "jump", "candidates", "fss", "datavalue"]) {
+      const page = overlayPage(n);
+      expect(existsSync(`public${page}`), `${n} → ${page}`).toBe(true);
+    }
+  });
+});
+
+describe("/import routes", () => {
+  it("reads the file here and sends its text, the shape the server asks for", async () => {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
+    const file = join(mkdtempSync(join(tmpdir(), "edexo-cli-")), "route.json");
+    writeFileSync(file, '{"result":[]}');
+    const { text, seen } = await run(`/import routes ${file}`, { "POST /api/feeder/import": [200, { ok: true }] });
+    expect(text).toContain("Route import started.");
+    expect(seen[0]?.body).toEqual({ text: '{"result":[]}', filename: "route.json" });
+  });
+});

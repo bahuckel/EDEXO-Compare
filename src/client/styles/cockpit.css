@@ -64,7 +64,6 @@
 .btn-top-toggle,
 .btn-confirm-cancel,
 .btn-confirm-go,
-.candidate-species-toggle,
 .planetary-info-copy-summary,
 .tabs-jump-btn {
   border-radius: 0 !important;
@@ -93,7 +92,6 @@
 }
 
 /* ---- chips and pills: square the corners, keep the colours ---------------------------------------- */
-.info-pill,
 .exo-pill,
 .tab {
   border-radius: 0 !important;
@@ -224,13 +222,6 @@ input[type="text"]:focus {
 .tabs-strip-host-card,
 .appbar-icon-btn {
   border-radius: 0 !important;
-}
-.price-hero {
-  align-items: center;
-}
-.price-hero .price-tag {
-  align-self: center;
-  line-height: 1.5;
 }
 
 /* ---- scrollbars: the standard properties (Chromium 121+, Firefox); inherited from the root ------ */
@@ -471,14 +462,6 @@ input[type="text"]:focus {
 .species-identity-epithet {
   letter-spacing: 0.04em;
 }
-.species-identity-neon--done .species-identity-neon-inner {
-  border-color: rgba(79, 208, 255, 0.55);
-  background: linear-gradient(135deg, rgba(79, 208, 255, 0.14), transparent 60%), rgba(10, 16, 20, 0.8);
-}
-.species-scan-ok {
-  color: var(--ok);
-  text-shadow: 0 0 8px rgba(79, 208, 255, 0.5);
-}
 .species-identity-value-label {
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -702,16 +685,9 @@ input[type="text"]:focus {
 }
 
 /* header tray and context strip: chips square, route bar a hairline track */
-.brand-star-chip,
-.brand-notable-pill,
 .system-map-notable-pill,
-.context-group,
 .appbar-dot {
   border-radius: 0 !important;
-}
-.brand-star-chip {
-  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
-  letter-spacing: 0.04em;
 }
 .header-route-bar-track {
   border-radius: 0;
@@ -720,7 +696,6 @@ input[type="text"]:focus {
 .header-route-num {
   color: var(--accent-bright);
 }
-.top-data-value-block .exo-pill,
 .header-tray .exo-pill {
   clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
 }
@@ -729,7 +704,6 @@ input[type="text"]:focus {
 .fdb-table thead th,
 .exo-payout-detail-table th,
 .encyclopedia-criteria-label,
-.species-fact-label,
 .my-exo-card-fact > small,
 .data-value-breakdown-list > .data-value-breakdown-row:first-child {
   font-size: var(--fs-2xs);
@@ -750,7 +724,6 @@ input[type="text"]:focus {
 .encyclopedia-found-card,
 .fdb-panel,
 .gsx-panel,
-.encyclopedia-exomastery-panel,
 .encyclopedia-focus-body-panel {
   border-radius: 0 !important;
   border: 1px solid var(--accent-a22);
@@ -762,7 +735,6 @@ input[type="text"]:focus {
 .gsx-ff,
 .btn-ency-exomastery,
 .btn-ency-found,
-.btn-notes,
 .my-exo-nav-icon {
   border-radius: 0 !important;
   clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
@@ -983,32 +955,6 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
 }
 
 /* ---- galaxy sources (task 15): "Search: [EDSM] [Spansh]" and "Load bodies: [EDSM] [Spansh]" ---- */
-.journal-system-source-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.journal-system-source-label {
-  font-size: var(--fs-2xs);
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent);
-  opacity: 0.85;
-  margin-right: 0.2rem;
-}
-.journal-system-search-edsm-action {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.journal-system-edsm-search-btn,
-.journal-system-edsm-load-btn {
-  border-radius: 0 !important;
-  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
 
 /* ---- session log modal (NEXT-TASKS 11) --------------------------------------------------------- */
 .modal-panel--session {

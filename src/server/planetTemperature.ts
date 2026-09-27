@@ -1,4 +1,5 @@
 import type { PlanetScan } from "../shared/types.js";
+import { AU_METERS } from "../shared/journalPhysics.js";
 import {
   estimateTemperatureRange,
   type BodyClass,
@@ -6,7 +7,7 @@ import {
   type TemperatureRange,
 } from "../shared/temperatureRangeEstimator.js";
 
-const AU_M = 149_597_870_700;
+const AU_M = AU_METERS;
 
 export function journalSemiMajorAxisToAU(meters: number | undefined): number | undefined {
   if (meters == null || meters <= 0) return undefined;

@@ -68,3 +68,29 @@ describe("the format constant", () => {
     expect({ format: JOURNAL_MERGE_CACHE_FORMAT, keys }).toMatchSnapshot();
   });
 });
+
+describe("first discovery survives a restart and a return visit (code review A3, 2026-09-27)", () => {
+  const arrival = (wd: boolean) =>
+    ({ ...starScan(333, wd), DistanceFromArrivalLS: 0 }) as unknown as JournalLine;
+
+  it("keeps the first answer after the cache round trip", () => {
+    const a = new GameStateStore();
+    a.mergeExplorationScan(arrival(false), TS); // his discovery
+    const b = new GameStateStore();
+    expect(b.hydrateJournalMergePayload(a.serializeJournalMergePayload())).toBe(true);
+    b.mergeExplorationScan(arrival(true), TS); // the return visit reports it as discovered
+    expect(b.mainStarWasDiscoveredBySystem.get(333)).toBe(false);
+  });
+
+  it("treats a cache written before the ranks were saved as 'answer already taken'", () => {
+    // No format bump for this field on purpose: the fallback below is exactly what an old cache needs.
+    const a = new GameStateStore();
+    a.mergeExplorationScan(arrival(false), TS);
+    const payload = a.serializeJournalMergePayload();
+    delete (payload as { mainStarSourceRankBySystem?: unknown }).mainStarSourceRankBySystem;
+    const b = new GameStateStore();
+    expect(b.hydrateJournalMergePayload(payload)).toBe(true);
+    b.mergeExplorationScan(arrival(true), TS);
+    expect(b.mainStarWasDiscoveredBySystem.get(333)).toBe(false);
+  });
+});

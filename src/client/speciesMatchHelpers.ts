@@ -23,25 +23,11 @@ import {
 } from "./planetDisplayUtils";
 import { journalPressureToAtm } from "@shared/journalPhysics";
 
-export function primaryStarRoleTag(role: StarRoleDTO): string {
-  if (role === "fuel") return "Fuel";
-  if (role === "neutron_boost") return "Neutron";
-  if (role === "wd_boost") return "Boost";
-  return "Useless";
-}
-
 export function primaryStarRoleTooltip(role: StarRoleDTO): string {
   if (role === "fuel") return "Main-sequence scoopable star — refuel with a fuel scoop.";
   if (role === "neutron_boost") return "Neutron star — strong FSD supercharge through the jet cone.";
   if (role === "wd_boost") return "White dwarf — smaller FSD supercharge; very tight jet cone.";
   return "Not practical for fuel scooping or common FSD supercharge routes.";
-}
-
-export function primaryStarChipClass(role: StarRoleDTO): string {
-  if (role === "fuel") return "brand-star-chip--fuel";
-  if (role === "neutron_boost") return "brand-star-chip--neutron";
-  if (role === "wd_boost") return "brand-star-chip--boost";
-  return "brand-star-chip--useless";
 }
 
 export function formatOrganicLockDisplay(l: OrganicGenusLock): string {
@@ -87,25 +73,6 @@ export function formatOrganicLockDisplay(l: OrganicGenusLock): string {
     return `${speciesBody} - ${vTrim}`;
   }
   return speciesBody;
-}
-
-export function uniqueOnFootScanLines(locks: OrganicGenusLock[]): string[] {
-  const seen = new Set<string>();
-  const lines: string[] = [];
-  for (const l of locks) {
-    const key = [
-      l.genusSymbol,
-      l.genusLocalised,
-      l.speciesSymbol,
-      l.speciesLocalised,
-      l.variantLocalised,
-    ].join("\0");
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const line = formatOrganicLockDisplay(l);
-    if (line) lines.push(line);
-  }
-  return lines;
 }
 
 export function safeGenusHeadId(groupKey: string): string {
@@ -379,25 +346,8 @@ export function footCatalogBadgeText(confirmations: FootCatalogConfirmation[] | 
   return "FOOT CATALOG — Sample";
 }
 
-/**
- * Written for a commander, not for whoever maintains the scorer.
- *
- * These used to name the constant to tune and the folder to drop a JSON into — a code comment shown
- * to a user. Worse, a bare "%" implied the number was odds when it is a **similarity score**, sitting
- * beside "Chance here", which is the one calibrated probability on the row. Each now says what it
- * measures and points at the number to trust instead.
- */
-export const EXO_SIMILARITY_INDEX_HELP =
-  "Deck match: how many of this species’ usual signs this body shows, from the matching details listed below — higher means more of them line up. It compares across every genus, so it is a family resemblance, not odds. For the chance this species is actually here, read “Chance here”, the only calibrated number on this row.";
-
-export const EXO_HABITAT_FIT_HELP =
-  "Habitat fit: how close this body is to the kind of world this species has actually been found on, weighted towards the conditions that matter most for it. A resemblance score, not odds — for the chance this species is here, read “Chance here”. Blank until enough bodies have been recorded for this species.";
-
 export const EXO_PRESENCE_HELP =
   "Chance here %: the probability this species is one of the ones actually on this body. Bayes over the feeder profiles — how often the species has been seen at this gravity, temperature, pressure, planet class, atmosphere and host star, weighted by how common it is — normalised across the candidates and multiplied by the biological signal count. It is the one number on this row that has been calibrated: on bodies where every genus was sampled, rows it calls 90-100% turn up 97.8% of the time and rows it calls 0-10% turn up 8.9% of the time. Blank when the species has no profile or fewer than 20 observed bodies: unmeasured, not unlikely.";
-
-export const EXO_GENUS_RANK_HELP =
-  "Same genus on this body: how this species compares with its siblings on resemblance alone. The rows add up to about 100%, so this says which of them fits best — not how likely the genus is to be here at all. Hidden when the genus has only one candidate.";
 
 export const EXO_CODEX_VS_EXO_PROFILE_HELP =
   "This species is listed because the body meets its codex conditions. Habitat fit and deck match also need observed bodies for it, and stay blank until enough have been recorded.";

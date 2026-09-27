@@ -64,7 +64,43 @@ function unsoldValueCounts(store: GameStateStore, key: string, r: ExplorationSca
  * the pill and not in the modal — "unsold data" on the main screen, 0 in the breakdown (Discord,
  * 2026-09-25). Now the pill is the sum of these rows.
  */
-export function explorationDataValueBreakdown(
+type ExplorationBreakdown = ReturnType<typeof explorationDataValueBreakdownUncached>;
+
+/*
+  The whole-history total is walked on every snapshot — every scan the commander ever made, with the
+  value formula for each — and was a quarter of a live refresh (code review §E, 2026-09-27). Kept until
+  anything it reads moves: the scans (revision), what was sold, and the three DSS maps (sizes and how
+  many are true, so a flip without a size change still counts).
+*/
+// Per store: two stores with the same counts are still two histories (tests hold several at once).
+const wholeHistoryMemo = new WeakMap<GameStateStore, { sig: string; value: ExplorationBreakdown }>();
+
+function trueCount(m: Map<string, boolean>): number {
+  let n = 0;
+  for (const v of m.values()) if (v) n++;
+  return n;
+}
+
+export function explorationDataValueBreakdown(store: GameStateStore, systemAddress?: number): ExplorationBreakdown {
+  if (systemAddress != null) return explorationDataValueBreakdownUncached(store, systemAddress);
+  const sig = [
+    store.explorationScansRevision,
+    store.explorationScans.size,
+    store.soldBodyKeys.size,
+    store.dssMappedBodyKeys.size,
+    store.dssFirstMapperEligibleByBodyKey.size,
+    trueCount(store.dssFirstMapperEligibleByBodyKey),
+    store.dssMappingEfficientByBodyKey.size,
+    trueCount(store.dssMappingEfficientByBodyKey),
+  ].join("|");
+  const hit = wholeHistoryMemo.get(store);
+  if (hit?.sig === sig) return hit.value;
+  const value = explorationDataValueBreakdownUncached(store);
+  wholeHistoryMemo.set(store, { sig, value });
+  return value;
+}
+
+function explorationDataValueBreakdownUncached(
   store: GameStateStore,
   systemAddress?: number,
 ): {
@@ -117,18 +153,6 @@ export function explorationDataValueBreakdown(
 /** Unsold exploration data value — the header pill and HUD. The sum of {@link explorationDataValueBreakdown}. */
 export function estimateExplorationJournalDataCredits(store: GameStateStore): number {
   return explorationDataValueBreakdown(store).totalCredits;
-}
-
-/** Moons/planets with `SAAScanComplete` in journal (excludes stars and asteroid belts). */
-export function countDssMappedPlanetaryBodies(store: GameStateStore): number {
-  let n = 0;
-  for (const bk of store.dssMappedBodyKeys) {
-    const r = store.explorationScans.get(bk);
-    if (!r || isBeltExplorationRecord(r)) continue;
-    const isStar = isExplorationStarRecord(r);
-    if (!isStar && r.planetClass) n++;
-  }
-  return n;
 }
 
 /** {@link estimateExplorationJournalDataCredits} limited to one `systemAddress` (the focused system). */

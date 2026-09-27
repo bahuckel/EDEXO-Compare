@@ -194,7 +194,7 @@ export async function rehydrateNumericsFromDump(
   opts: { apply: boolean; planetsDir?: string; outFile?: string },
 ): Promise<RehydrationReport> {
   const startedAt = Date.now();
-  const { wanted, packsRead, bodyCount, packsUnjoinable } = collectIntegerTemperatureBodies(opts.planetsDir);
+  const { wanted, packsRead, bodyCount } = collectIntegerTemperatureBodies(opts.planetsDir);
 
   /** systemId64 of a wanted system → its bodies. Filled as the walk meets each system row. */
   const activeSystems = new Map<string, Map<number, WantedBody>>();

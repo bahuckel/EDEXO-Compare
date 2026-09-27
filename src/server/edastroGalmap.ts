@@ -179,20 +179,6 @@ export interface GalmapIndex {
 let index: GalmapIndex | null = null;
 let loading: Promise<GalmapIndex | null> | null = null;
 
-export function resetGalmapForTests(): void {
-  index = null;
-  loading = null;
-}
-
-/** What the panel knows without asking for a download. */
-export function galmapStatus(): { loaded: boolean; carriers: number; timestamp: string | null } {
-  return {
-    loaded: index !== null,
-    carriers: index?.byCallsign.size ?? 0,
-    timestamp: index?.timestamp ?? null,
-  };
-}
-
 async function fetchGalmapIndex(userAgent: string): Promise<GalmapIndex | null> {
   let timestamp: string | null = null;
   try {

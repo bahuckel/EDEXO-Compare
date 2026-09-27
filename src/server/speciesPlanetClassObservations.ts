@@ -63,6 +63,11 @@ export interface PlanetClassObservations {
 
 const cache = new Map<string, PlanetClassObservations | null>();
 
+/** Forget what the profiles said: after "Refresh exomastery" the next read must see the new ones. */
+export function clearPlanetClassObservationsCache(): void {
+  cache.clear();
+}
+
 let rootOverride: string | null = null;
 
 /** Test seam — the matcher has no project root to pass down, so it asks {@link getProjectRoot}. */

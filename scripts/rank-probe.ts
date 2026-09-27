@@ -20,17 +20,13 @@
  * After:
  *   mean rank 6.149, top-1 24.0%, top-3 49.4%
  */
-import { readFileSync, existsSync } from "node:fs";
-import { gunzipSync } from "node:zlib";
-import v8 from "node:v8";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { matchDatabaseToScan, shownSpeciesMatches } from "../src/server/matchSpecies.js";
-import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
-import { loadJournalMergeCacheForTool } from "./probeCache.js";
-import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
+import { loadJournalMergeCacheForTool, probeMatchContexts } from "./probeCache.js";
+import { regionIndexForSystem } from "../src/server/regionMapData.js";
 import { exomasteryHabitatQualityPercent, loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
 import { BODY_TYPE_PRIOR_WEIGHT, MIN_CELL } from "../src/server/bodyTypePrior.js";
 import {
@@ -92,33 +88,10 @@ function regionIndexFor(b: BodyExoState): number | null {
   return idx != null && idx > 0 ? idx : null;
 }
 
-/** Star and region, the two things the app knows about a body that the rock itself does not say. */
+/** The app's own context for the body (probeCache.ts `probeMatchContexts`, code review B1). */
+const appContexts = probeMatchContexts(payload);
 function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
-  const ctx: SpeciesMatchContext = {};
-  const byId = scansBySystem.get(b.systemAddress);
-  const rec = byId?.get(b.bodyId);
-  if (byId && rec) {
-    const starId = resolveHostStarBodyId(rec, byId);
-    const star = starId == null ? null : byId.get(starId);
-    if (star?.starType?.trim()) {
-      ctx.parentStarType = star.starType;
-      if (typeof star.subclass === "number" && Number.isFinite(star.subclass))
-        ctx.parentStarSubclass = star.subclass;
-      if (star.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity;
-    }
-  }
-  const pos = systemPositions.get(b.systemAddress);
-  if (pos) {
-    const idx = regionIndexForSystem(root, pos.x, pos.z);
-    if (idx != null && idx > 0) {
-      const name = regionForSystem(root, pos.x, pos.y, pos.z);
-      if (name) {
-        ctx.regionName = name;
-        ctx.regionIndex = idx;
-      }
-    }
-  }
-  return Object.keys(ctx).length ? ctx : undefined;
+  return appContexts.contextFor(b);
 }
 
 function hostStarFor(b: BodyExoState): JournalHostStarObservation | null {

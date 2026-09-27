@@ -67,6 +67,20 @@ import {
   codexMapKeyFromLine,
   codexSpeciesFromLine,
 } from "../shared/codexLog.js";
+import { JOURNAL_MERGE_CACHE_FORMAT } from "./journalMergePayload.js";
+import type {
+  PendingOrganicSample,
+  OrganicAnalyseProgress,
+  SoldTally,
+  JournalMergeCachePayload,
+} from "./journalMergePayload.js";
+export { JOURNAL_MERGE_CACHE_FORMAT } from "./journalMergePayload.js";
+export type {
+  PendingOrganicSample,
+  OrganicAnalyseProgress,
+  SoldTally,
+  JournalMergeCachePayload,
+} from "./journalMergePayload.js";
 function bodyKey(systemAddress: number, bodyId: number): string {
   return `${systemAddress}:${bodyId}`;
 }
@@ -92,163 +106,6 @@ function journalLineBodyDisplayName(line: JournalLine): string | null {
   if (typeof bn === "string" && bn.trim()) return bn.trim();
   return null;
 }
-export type PendingOrganicSample = {
-  fullKey: string;
-  bodyKey: string;
-  speciesKey: string;
-  label: string;
-};
-
-export type OrganicAnalyseProgress = { count: number; label: string };
-
-/** Credits a system has actually paid out, and how many things were sold to get them. */
-export type SoldTally = { credits: number; items: number; sales: number; lastAt: string };
-
-/**
- * Increment when journal-derived snapshot shape changes — invalidates on-disk merge cache.
- *
- * "Shape" includes *adding* a field, not only changing one. Every field here is optional on decode,
- * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
- * feature that reads it stays dark with nothing logged anywhere.
- *
- * 13 — `systemLife`: bodies in a system with signs of life (population, security or government, a
- *     controlling faction) or on the developer-populated list count as footfalled (no ×5), unless
- *     this commander discovered the system. An old cache has the scans' `WasFootfalled: false` for
- *     them and would keep promising the bonus.
- * 12 — organic locks carry `at`, the time of the latest scan of that species on that body, for the
- *     glance bar's "last three scanned". An 11 cache has none, and would order every body by DSS.
- * 11 — `organicGenusLocks` holds one lock per species per body (a foot scan updates it rather than
- *     pushing a copy per `ScanOrganic`, and replaces a comp-scan or sibling lock for the same
- *     species), with `samples` / `analysed` for the genus progress card and `fromSibling` on locks
- *     copied from a neighbouring moon. An old cache holds four copies per sampled species and no
- *     progress at all.
- * 10 — `organicGenusLocks` now also carries locks built from `CodexEntry`, so a species the
- *     composition scanner named on a body counts as confirmed there (`source: "codex"`). A cache
- *     written by the old code holds foot scans only, and no replay would add the rest.
- * 9 — no new field. `mainStarWasDiscoveredBySystem` is now derived from the **arrival star**
- *     (`DistanceFromArrivalLS === 0`) rather than from `BodyID 0`, which does not exist in every
- *     system: `Pru Aihm BL-U b33-2` starts at body 2 and the owner's own discovery was missing from
- *     the first-discovery filter because of it. The map's shape is unchanged and its contents are
- *     not, which is exactly the case note 5 below is about.
- * 6 — `soldExplorationBySystem` and `soldOrganicBySystem`, so "my discoveries" can rank a system by
- *     what it actually paid instead of by an estimate of what it might.
- * 5 — no new field. `WasFootfalled` is now read from every scan type and the physics gate tests
- *     content rather than the `Detailed` label, so a cache built by the old code carries wrong
- *     `firstFootfallBodies` and missing body scans. **A change in how the payload is derived
- *     invalidates it exactly as much as a change in its shape** — the owner's Stratum Tectonicas
- *     stayed flagged as a first footfall through a fix that had already landed, because the shape
- *     had not changed and the old answer was restored verbatim.
- * 4 — `systemPositions`, so the galaxy map can place the backlog.
- * 3 — `mainStarWasDiscoveredBySystem`. It was added to the payload without bumping this, so caches
- * written before 2026-09-08 replayed nothing and the FIRST chip could never light for anyone holding
- * one. Bumping forces a single rebuild per user, which is the whole cost.
- */
-/*
-  Bumped to 6 for `surfaceShipMark` / `overlayTouchdownBodyKey`, and to 7 when that mark grew a
-  `bodyNameNorm` — the field the radar matches against. Worth noting how *that* one got through:
-  the format had already moved, and the guard test snapshots the payload's **keys**, not the shape
-  of what is inside them. A cache written minutes earlier was still admitted and restored a ship
-  with no body name, which silently stopped matching the surface it was parked on.
-
-  So: a change to a field's *contents* needs the bump as much as a new field does.
-
-  A cache is a replay's *result*, not the journal, so a field added to the store is simply absent
-  from every cache already on disk — and the next start restores a store with a hole in it rather
-  than replaying the lines that would fill it. That is how the minimap came up with no ship on a
-  body the commander was standing on: the Touchdown was inside the cached span.
-
-  Anything derived from the journal that the UI reads has to be either in this payload or
-  deliberately transient. Bump the format when you add one.
-
-  15: bio bodies kept a "Body 2" placeholder name from ScanOrganic/CodexEntry over the Scan's real
-  name; caches written before the fix carry those names.
-  16: `codexRegionLogged` — the [CODEX] tag's per-region, per-colour codex record.
-  17: `commanderFid` — tells the commander's own shared-exomastery backups from other people's.
-  18: sibling moons no longer inherit logged variants (their colours were read as their own).
-  19: star `absoluteMagnitude` (the colour rule's luminosity for catalogue stars).
-  20: `codexMapLogged` — every codex entry, any category, per region (the Codex map).
-  21: `codexSightings` — biological codex entries with system and time (dynamic species rarity).
-*/
-export const JOURNAL_MERGE_CACHE_FORMAT = 21;
-
-/** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
-export type JournalMergeCachePayload = {
-  format: number;
-  commanderName: string | null;
-  /** Frontier's commander id — tells your own shared-exomastery backups from other commanders'. */
-  commanderFid?: string | null;
-  currentSystem: string | null;
-  currentSystemAddress: number | null;
-  viewingSystemAddress: number | null;
-  visitedSystems: [number, string][];
-  bodies: [string, BodyExoState][];
-  explorationScans: [string, ExplorationScanRecord][];
-  /**
-   * Physics-only archive of scans whose system was sold. Optional so a cache written before this
-   * existed still loads — it simply has none, until the next rebuild recovers them from the logs.
-   */
-  soldExplorationScans?: [string, ExplorationScanRecord][];
-  /** Bodies whose data has been sold — see {@link GameStateStore.soldBodyKeys}. */
-  soldBodyKeys?: string[];
-  fssBodySignalsBodyKeys: string[];
-  dssMappedBodyKeys: string[];
-  dssFirstMapperEligibleByBodyKey: [string, boolean][];
-  dssMappingEfficientByBodyKey: [string, boolean][];
-  orbitParentPlanetByBody: [string, number][];
-  lastEventIso: string | null;
-  footJournalContextBuffer: JournalLine[];
-  organicAnalyseByKey: [string, OrganicAnalyseProgress][];
-  bodyDetailedFootfallState: [string, boolean][];
-  /**
-   * Phase 3 provenance. Optional so a cache written before this existed still loads — it simply has
-   * no ages until the next rebuild from the logs, and an absent flag reads as unknown, which is the
-   * honest answer rather than a silent `false`.
-   */
-  /** §10.3. Optional so a cache written before this loads; absent simply means "not drawn yet". */
-  commanderPos?: { x: number; y: number; z: number } | null;
-  bodyFootfallFlag?: [string, ObservedFlag][];
-  bodyMappedFlag?: [string, ObservedFlag][];
-  firstFootfallBodies: string[];
-  /**
-   * Codex keys for species this commander has logged (B4). Optional so a cache written before this
-   * existed still loads — it simply has none until the next rebuild from the logs.
-   */
-  codexLoggedSpecies?: string[];
-  /** [CODEX] keys, see {@link GameStateStore.codexRegionLogged}. */
-  codexRegionLogged?: string[];
-  /** Codex map keys, see {@link GameStateStore.codexMapLogged}. */
-  codexMapLogged?: string[];
-  /** Codex sightings, see {@link GameStateStore.codexSightings}. */
-  codexSightings?: [string, string][];
-  /** Minutes per approach-and-landing and per sampling run, for the triage screen's own timing (B5). */
-  landingMinutesSamples?: number[];
-  samplingMinutesSamples?: number[];
-  pendingOrganicSales: PendingOrganicSample[];
-  /** Present when {@link format} >= 6 — where the ship is parked, and on which body. */
-  surfaceShipMark?: SurfaceMark | null;
-  /** Present when {@link format} >= 6 — the body the ship last touched down on. */
-  overlayTouchdownBodyKey?: string | null;
-  /** The body the ship is at — see {@link GameStateStore.currentBodyKey}. */
-  currentBodyKey?: string | null;
-  fssAllBodiesCompleteSystems: number[];
-  /** Present when {@link format} >= 13 — signs of life per system, from the arrival line. */
-  systemLife?: [number, SystemLife][];
-  fssDiscoveryScanBySystem: [number, { systemName: string; bodyCount: number; progress: number }][];
-  /** Optional — `FSSAllBodiesFound.Count` per system. */
-  fssAllBodiesFoundCountBySystem?: [number, number][];
-  /** What selling actually paid, per system. See the maps of the same names. */
-  soldExplorationBySystem?: [number, SoldTally][];
-  soldOrganicBySystem?: [number, SoldTally][];
-  /** Present when {@link format} >= 2. */
-  mainStarWasDiscoveredBySystem?: [number, boolean][];
-  systemPositions?: [number, { x: number; y: number; z: number }][];
-  remainingJumpsInRoute?: number | null;
-  loadoutMaxJumpRangeLy?: number | null;
-  loadoutFuelMainCapacityT?: number | null;
-  loadoutFuelReserveCapacityT?: number | null;
-  lastFsdJumpFuelUsedT?: number | null;
-  lastFsdJumpDistLy?: number | null;
-};
 
 /** `Body 7` — what a line that carries only a `BodyID` (ScanOrganic, CodexEntry) is named until something better is known. */
 const PLACEHOLDER_BODY_NAME = /^Body \d+$/;
@@ -1363,7 +1220,19 @@ export class GameStateStore {
    * for the matcher and the habitat scorer, which want to know what the body is.
    */
   physicsExplorationScan(key: string): ExplorationScanRecord | null {
-    return this.explorationScans.get(key) ?? this.soldExplorationScans.get(key) ?? null;
+    const own = this.explorationScans.get(key) ?? this.soldExplorationScans.get(key);
+    if (own) return own;
+    /*
+      A looked-up system (Spansh): its record, the one the body's scan was built from. Without it the
+      match context had no `Parents` for any looked-up body — no host star, no star classes, no colour
+      star, no starlight — and the orbit fell back to the arrival distance: NGC 2546 Sector SU-L c22-9
+      BC 3 a read 92,738 ls from its BC pair instead of 439 and lost Clypeus lacrimam (known-spawn
+      tests, 2026-09-27). Physics only: nothing here counts as his scan, value or discovery.
+    */
+    const sep = key.indexOf(":");
+    const sys = sep > 0 ? this.remoteSystems.get(Number(key.slice(0, sep))) : undefined;
+    const bodyId = Number(key.slice(sep + 1));
+    return sys?.records.find((r) => r.bodyId === bodyId) ?? null;
   }
 
   hasEdsmExplorationForSystem(systemAddress: number): boolean {
@@ -2501,8 +2370,6 @@ export class GameStateStore {
           }
         }
 
-        const scanType = line.ScanType as string | undefined;
-
         /*
          * `WasFootfalled` and `WasMapped` are read from **every** scan that carries them, not only
          * the detailed one — and that placement is the whole bug this block exists to prevent.
@@ -2574,7 +2441,6 @@ export class GameStateStore {
 
         const starSystem = line.StarSystem as string;
 
-        const scanTs = (line.timestamp as string) ?? new Date().toISOString();
         const wfRaw = line.WasFootfalled;
 
         if (this.currentSystemAddress === null || systemAddress !== this.currentSystemAddress) return;
@@ -3328,6 +3194,7 @@ export class GameStateStore {
       soldExplorationBySystem: [...this.soldExplorationBySystem.entries()],
       soldOrganicBySystem: [...this.soldOrganicBySystem.entries()],
       mainStarWasDiscoveredBySystem: [...this.mainStarWasDiscoveredBySystem.entries()],
+      mainStarSourceRankBySystem: [...this.mainStarSourceRankBySystem.entries()],
       systemPositions: [...this.systemPositions.entries()],
       remainingJumpsInRoute: this.remainingJumpsInRoute,
       loadoutMaxJumpRangeLy: this.loadoutMaxJumpRangeLy,
@@ -3453,6 +3320,14 @@ export class GameStateStore {
     this.mainStarWasDiscoveredBySystem.clear();
     for (const [a, w] of data.mainStarWasDiscoveredBySystem ?? []) {
       if (typeof a === "number" && typeof w === "boolean") this.mainStarWasDiscoveredBySystem.set(a, w);
+    }
+    this.mainStarSourceRankBySystem.clear();
+    for (const [a, r] of data.mainStarSourceRankBySystem ?? []) {
+      if (typeof a === "number" && typeof r === "number") this.mainStarSourceRankBySystem.set(a, r);
+    }
+    // A cache from before the ranks were saved: every stored answer counts as already taken.
+    for (const a of this.mainStarWasDiscoveredBySystem.keys()) {
+      if (!this.mainStarSourceRankBySystem.has(a)) this.mainStarSourceRankBySystem.set(a, 0);
     }
     const rj = data.remainingJumpsInRoute;
     this.remainingJumpsInRoute =

@@ -363,10 +363,6 @@ export function setOwnCommander(c: SharedCommander): void {
   own = c;
 }
 
-export function ownCommander(): SharedCommander {
-  return own;
-}
-
 export function isOwnCommander(c: SharedCommander): boolean {
   if (own.fid && c.fid) return own.fid === c.fid;
   return !!own.name && !!c.name && own.name.toLowerCase() === c.name.toLowerCase() && !c.fid;

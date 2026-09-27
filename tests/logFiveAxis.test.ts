@@ -116,10 +116,10 @@ describe("formatCredits", () => {
     expect(formatCredits(25e6)).toBe("25.0 M");
     expect(formatCredits(125e6)).toBe("125 M");
     expect(formatCredits(625e6)).toBe("625 M");
-    expect(formatCredits(3.125e9)).toBe("3.13 bn");
+    expect(formatCredits(3.125e9)).toBe("3.13 B");
   });
 
   it("keeps a sign on the trading cost line", () => {
-    expect(formatCredits(-1_853_077_159)).toBe("-1.85 bn");
+    expect(formatCredits(-1_853_077_159)).toBe("-1.85 B");
   });
 });

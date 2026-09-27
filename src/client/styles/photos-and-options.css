@@ -331,9 +331,6 @@
   color: var(--muted);
 }
 
-@media (max-width: 620px) {
-}
-
 /* ---- options form controls ---------------------------------------------------------------------
    Every field in this modal was browser default: white box, blue focus ring, system font, in a panel
    that is otherwise dark and orange. `input[type="text"]` had picked up the cockpit clip-path and

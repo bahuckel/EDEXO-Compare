@@ -23,12 +23,8 @@
  *
  *   npx tsx scripts/cooccurrence-probe.ts
  */
-import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import v8 from "node:v8";
 import { fileURLToPath } from "node:url";
-import { gunzipSync } from "node:zlib";
-import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { loadGenusCooccurrenceTable } from "../src/server/genusCooccurrenceTable.js";
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";

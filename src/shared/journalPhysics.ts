@@ -4,6 +4,15 @@ export const EARTH_G_MS2 = 9.80665;
 /** Distance light travels in one second (m); journal `SemiMajorAxis` is in metres → divide by this for LS. */
 export const LIGHT_SECOND_METERS = 299_792_458;
 
+/** The astronomical unit (IAU 2012), and the Sun's radius (IAU 2015 nominal) — the journal's metres. */
+export const AU_METERS = 149_597_870_700;
+export const SOLAR_RADIUS_METERS = 695_700_000;
+/**
+ * Light-seconds in an AU, exactly (499.00478…). Two files carried their own — 499.004784 and 499.005 —
+ * and one light-second in 2,000 is enough to move an edge (code review B18, 2026-09-27).
+ */
+export const LS_PER_AU = AU_METERS / LIGHT_SECOND_METERS;
+
 /**
  * For sources whose pressure unit is unknown (a spreadsheet column): at or above this it is read as
  * pascals, below it as atmospheres. Never for `SurfacePressure` — see {@link journalPressureToAtm}.

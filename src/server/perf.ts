@@ -122,9 +122,3 @@ export function startPerfReporter(): void {
   reporter.unref();
   console.log(`[perf] instrumentation ON (EDEXO_PERF=1) — reporting every ${PERF_REPORT_MS / 1000}s`);
 }
-
-export function stopPerfReporter(): void {
-  if (!reporter) return;
-  clearInterval(reporter);
-  reporter = null;
-}

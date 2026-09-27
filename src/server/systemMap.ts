@@ -1,14 +1,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type {
-  BodyExoState,
-  ExoPayoutRangeDTO,
   ExplorationScanRecord,
-  PlanetScan,
   PrimaryStarHeaderEntryDTO,
   PrimaryStarsHeaderDTO,
   SpeciesDatabase,
-  SpeciesMatch,
   StarRoleDTO,
   SystemMapBodyDetailDTO,
   SystemMapNodeDTO,
@@ -19,406 +15,44 @@ import { shortBodyLabel } from "../shared/systemMapLabels.js";
 import { formatFullSpectralNotation, spectralDiscGlyph } from "../shared/spectralNotation.js";
 import type { GameStateStore } from "./gameState.js";
 import { bodyScanValueCredits, referenceFssAt1EarthMass, starScanValueCredits } from "./explorationValue.js";
-import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
-import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
 import type { SpatialCatalogue } from "../shared/spatialGates.js";
 import { estimatedTemperatureRangeForScan } from "./planetTemperature.js";
-import { lookupPriceStrict, type PriceIndex } from "./priceList.js";
-import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exoPayoutRange.js";
-import type { ParsedJournalParent } from "./orbitUtils.js";
-import {
-  allStarParentIds,
-  barycentreSyntheticBodyId,
-  directParentBodyId,
-  directParentPlanetId,
-  isBarycentreSyntheticBodyId,
-  parseJournalParentEntry,
-} from "./orbitUtils.js";
+import { type PriceIndex } from "./priceList.js";
+import { allStarParentIds, directParentBodyId, isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import {
   estimateExplorationJournalDataCreditsForSystem,
   firstMapperForDssPayout,
 } from "./explorationDataEstimate.js";
 import { approximateSystemRoughFssDssTotals } from "./systemRoughValueEstimate.js";
 import { mergeExplorationRecordsWithInferredPlaceholders } from "./inferredSystemMapPlaceholders.js";
-import {
-  compareByParsedDesignationOrBodyId,
-  parseDesignationTailFromFullBodyName,
-  parseShortDesignation,
-} from "../shared/eliteDesignation.js";
-import { explorationRecordHasPlanetSlotDesignation } from "../shared/planetSlotDesignation.js";
-import { explorationRecordIsBeltClusterLike, explorationRecordIsStellar } from "./explorationStellar.js";
+import { explorationRecordIsStellar } from "./explorationStellar.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
 import { footfallCertainty } from "../shared/footfallValue.js";
 import { isTerraformableState } from "../shared/terraformState.js";
-
-const isBeltClusterRecord = explorationRecordIsBeltClusterLike;
-
-/** Bodies that act as sun nodes / primary column in the map: stellar but not planet-designation slots. */
-function isStarOnSystemMap(r: ExplorationScanRecord, starSystemName: string): boolean {
-  return explorationRecordIsStellar(r) && !explorationRecordHasPlanetSlotDesignation(r, starSystemName);
-}
-
-function bodyKey(systemAddress: number, bodyId: number): string {
-  return `${systemAddress}:${bodyId}`;
-}
-
-/**
- * Order siblings like the in-game system map: by designation (major index, then moon a…z), not raw
- * `semiMajorAxis` (journal vs synthetic scales differ, so “planet 7 discovered first” wrongly sat beside the star).
- */
-function compareExplorationScanSiblingOrder(
-  a: ExplorationScanRecord,
-  b: ExplorationScanRecord,
-  starSystemName: string,
-): number {
-  const sa = shortBodyLabel(a.bodyName, starSystemName);
-  const sb = shortBodyLabel(b.bodyName, starSystemName);
-  const pa = parseShortDesignation(sa) ?? parseDesignationTailFromFullBodyName(a.bodyName);
-  const pb = parseShortDesignation(sb) ?? parseDesignationTailFromFullBodyName(b.bodyName);
-  if (!pa && !pb) {
-    const semiA = a.semiMajorAxis;
-    const semiB = b.semiMajorAxis;
-    const finiteA = typeof semiA === "number" && Number.isFinite(semiA);
-    const finiteB = typeof semiB === "number" && Number.isFinite(semiB);
-    if (finiteA && finiteB && semiA !== semiB) return semiA - semiB;
-    return a.bodyId - b.bodyId;
-  }
-  return compareByParsedDesignationOrBodyId(sa, sb, a.bodyId, b.bodyId);
-}
-
-const isStarRecord = explorationRecordIsStellar;
-
-/**
- * Journal `BodyName` is `"<StarSystem> <designation>"`. Using `recs[0]` is unsafe: `explorationScans`
- * iteration order is arbitrary, so the first row can be a world with an empty/wrong `StarSystem` while
- * the primary star row has the real name — then prefixes never strip ("System_Name A 1" stays unparsed)
- * and orbit inference can leave worlds disconnected from the star.
- */
-function canonicalStarSystemNameForMap(recs: ExplorationScanRecord[]): string {
-  const stellar = recs
-    .filter((r) => isStarRecord(r) && !r.isBarycentreJournal)
-    .sort((a, b) => a.bodyId - b.bodyId);
-  for (const s of stellar) {
-    const n = s.starSystem?.trim();
-    if (n) return n;
-  }
-  for (const r of recs) {
-    const n = r.starSystem?.trim();
-    if (n) return n;
-  }
-  return "";
-}
-
-function resolveJournalOrbitLinkTarget(
-  parsed: ParsedJournalParent,
-  byId: Map<number, ExplorationScanRecord>,
-  solePrimaryStar: ExplorationScanRecord | null,
-): number | null {
-  if (parsed.kind === "Null") return barycentreSyntheticBodyId(parsed.id);
-  if (byId.has(parsed.id)) return parsed.id;
-  if (parsed.kind === "Star" && solePrimaryStar) return solePrimaryStar.bodyId;
-  if (parsed.kind === "Planet" && solePrimaryStar) return solePrimaryStar.bodyId;
-  return null;
-}
-
-/**
- * Build `child → parent` edges from journal `Scan.Parents` (Stellar Forge: index 0 is immediate parent;
- * each subsequent entry is further out). `{ Null: n }` → synthetic barycentre node id.
- */
-function buildOrbitChildMapFromJournalChains(
-  recs: ExplorationScanRecord[],
-  byId: Map<number, ExplorationScanRecord>,
-  starSystemName: string,
-): Map<number, number> {
-  const stars = recs.filter((r) => isStarOnSystemMap(r, starSystemName)).sort((a, b) => a.bodyId - b.bodyId);
-  const solePrimary = stars.length === 1 ? stars[0]! : null;
-  const orbitChild = new Map<number, number>();
-
-  for (const r of recs) {
-    const parents = r.parents;
-    if (!Array.isArray(parents) || parents.length === 0) continue;
-    let currentChild = r.bodyId;
-    for (const entry of parents) {
-      const parsed = parseJournalParentEntry(entry);
-      if (parsed == null) break;
-      const parentId = resolveJournalOrbitLinkTarget(parsed, byId, solePrimary);
-      if (parentId == null) break;
-      orbitChild.set(currentChild, parentId);
-      currentChild = parentId;
-    }
-  }
-
-  for (const r of recs) {
-    if (orbitChild.has(r.bodyId)) continue;
-    if (isStarOnSystemMap(r, starSystemName)) continue;
-    if (solePrimary && !isBeltClusterRecord(r)) orbitChild.set(r.bodyId, solePrimary.bodyId);
-  }
-
-  const sys = starSystemName.trim();
-  if (sys && stars.length > 0) {
-    for (const r of recs) {
-      if (orbitChild.has(r.bodyId)) continue;
-      if (isStarOnSystemMap(r, starSystemName) || isBeltClusterRecord(r) || r.isBarycentreJournal) continue;
-      const short = shortBodyLabel(r.bodyName, sys);
-      const p = parseShortDesignation(short) ?? parseDesignationTailFromFullBodyName(r.bodyName);
-      if (!p || p.moon) continue;
-      let targetId: number | null = null;
-      if (p.starLetters === "") {
-        if (stars.length === 1) targetId = stars[0]!.bodyId;
-      } else {
-        const letter = p.starLetters[0]!;
-        if (letter >= "A" && letter <= "Z") {
-          const idx = letter.charCodeAt(0) - 65;
-          if (idx >= 0 && idx < stars.length) targetId = stars[idx]!.bodyId;
-        }
-      }
-      if (targetId != null) orbitChild.set(r.bodyId, targetId);
-    }
-  }
-
-  return orbitChild;
-}
-
-function parentToChildrenFromOrbitChild(orbitChild: Map<number, number>): Map<number, number[]> {
-  const m = new Map<number, number[]>();
-  for (const [child, parent] of orbitChild) {
-    let list = m.get(parent);
-    if (!list) {
-      list = [];
-      m.set(parent, list);
-    }
-    list.push(child);
-  }
-  return m;
-}
-
-function allIdsInOrbitGraph(recs: ExplorationScanRecord[], orbitChild: Map<number, number>): Set<number> {
-  const s = new Set<number>();
-  for (const r of recs) s.add(r.bodyId);
-  for (const [c, p] of orbitChild) {
-    s.add(c);
-    s.add(p);
-  }
-  return s;
-}
-
-function rootBodyIdsFromOrbitGraph(allIds: Set<number>, orbitChild: Map<number, number>): number[] {
-  return [...allIds].filter((id) => !orbitChild.has(id)).sort((a, b) => a - b);
-}
-
-function sortChildIdsForSystemMap(
-  ids: number[],
-  byId: Map<number, ExplorationScanRecord>,
-  starSystemName: string,
-): number[] {
-  return [...ids].sort((a, b) => {
-    const ra = byId.get(a);
-    const rb = byId.get(b);
-    if (ra && rb) return compareExplorationScanSiblingOrder(ra, rb, starSystemName);
-    if (ra && !rb) return -1;
-    if (!ra && rb) return 1;
-    return a - b;
-  });
-}
-
-/** Match `inferredSystemMapPlaceholders.designationKey` planet slot: `starLetters|major|` (no moon). */
-function orbitPlanetSlotKey(starLetters: string, major: number): string {
-  return `${starLetters}|${major}|`;
-}
-
-/**
- * Map "A|4|" → bodyId for the **planet** row (no moon letter in the designation).
- * Prefer journal (non-synthetic) over placeholders when both share the same slot.
- */
-function buildPlanetSlotToBodyId(
-  recs: ExplorationScanRecord[],
-  starSystemName: string,
-  byId: Map<number, ExplorationScanRecord>,
-): Map<string, number> {
-  const m = new Map<string, number>();
-  for (const r of recs) {
-    if (isStarOnSystemMap(r, starSystemName) || isBeltClusterRecord(r)) continue;
-    const short = shortBodyLabel(r.bodyName, starSystemName);
-    const p = parseShortDesignation(short) ?? parseDesignationTailFromFullBodyName(r.bodyName);
-    if (!p || p.moon) continue;
-    const key = orbitPlanetSlotKey(p.starLetters, p.major);
-    const prev = m.get(key);
-    if (prev == null) {
-      m.set(key, r.bodyId);
-      continue;
-    }
-    const prevRec = byId.get(prev);
-    if (!prevRec) {
-      m.set(key, r.bodyId);
-      continue;
-    }
-    if (!r.isSynthetic && prevRec.isSynthetic) m.set(key, r.bodyId);
-  }
-  return m;
-}
-
-/**
- * Moons whose journal `Parents` are missing or not merged yet were parented to the star and drawn as planets.
- * Re-parent from parsed names (`A 4 b` → planet slot `A|4|`) when a planet row exists for that slot.
- */
-function attachMoonsByParsedDesignation(
-  recs: ExplorationScanRecord[],
-  orbitChild: Map<number, number>,
-  starSystemName: string,
-  byId: Map<number, ExplorationScanRecord>,
-): void {
-  const slotToPlanet = buildPlanetSlotToBodyId(recs, starSystemName, byId);
-  for (const r of recs) {
-    if (isStarOnSystemMap(r, starSystemName) || isBeltClusterRecord(r)) continue;
-    const short = shortBodyLabel(r.bodyName, starSystemName);
-    const p = parseShortDesignation(short) ?? parseDesignationTailFromFullBodyName(r.bodyName);
-    if (!p?.moon) continue;
-    const planetId = slotToPlanet.get(orbitPlanetSlotKey(p.starLetters, p.major));
-    if (planetId == null || !byId.has(planetId)) continue;
-    const jp = directParentPlanetId(r.parents);
-    if (jp != null && byId.has(jp) && jp !== planetId) {
-      orbitChild.set(r.bodyId, jp);
-      continue;
-    }
-    orbitChild.set(r.bodyId, planetId);
-  }
-}
-
-/**
- * Stable key for grouping multi-star “belt” bodies on separate map rows: which primaries the body orbits.
- * Prefers journal `Parents` Star ids; otherwise parses `AB 1`-style letters (A → lowest bodyId star, …).
- */
-function orbitPrimaryKeyFromRecord(
-  r: ExplorationScanRecord,
-  starsOrderedByBodyId: ExplorationScanRecord[],
-  starSystemName: string,
-): string {
-  if (isStarOnSystemMap(r, starSystemName)) return "";
-  const allowed = new Set(starsOrderedByBodyId.map((s) => s.bodyId));
-  const fromParents = [...new Set(allStarParentIds(r.parents))].filter((id) => allowed.has(id));
-  if (fromParents.length > 0) {
-    return [...new Set(fromParents)].sort((a, b) => a - b).join(",");
-  }
-  const short = shortBodyLabel(r.bodyName, starSystemName).trim();
-  const m = short.match(/^([A-Z]+)\s+\d+/);
-  if (m) {
-    const letters = m[1]!.toUpperCase();
-    const ids: number[] = [];
-    for (const ch of letters) {
-      if (ch < "A" || ch > "Z") continue;
-      const idx = ch.charCodeAt(0) - 0x41;
-      if (idx >= 0 && idx < starsOrderedByBodyId.length) {
-        ids.push(starsOrderedByBodyId[idx]!.bodyId);
-      }
-    }
-    const joined = [...new Set(ids)].sort((a, b) => a - b).join(",");
-    if (joined) return joined;
-  }
-  const tail = parseDesignationTailFromFullBodyName(r.bodyName);
-  if (tail?.starLetters) {
-    const letters = tail.starLetters;
-    const ids: number[] = [];
-    for (const ch of letters) {
-      if (ch < "A" || ch > "Z") continue;
-      const idx = ch.charCodeAt(0) - 0x41;
-      if (idx >= 0 && idx < starsOrderedByBodyId.length) {
-        ids.push(starsOrderedByBodyId[idx]!.bodyId);
-      }
-    }
-    const joined = [...new Set(ids)].sort((a, b) => a - b).join(",");
-    if (joined) return joined;
-  }
-  // Single primary: designations are often "1", "2", "1 a" without an A/B prefix — treat as orbiting A implicitly.
-  if (starsOrderedByBodyId.length === 1) {
-    return String(starsOrderedByBodyId[0]!.bodyId);
-  }
-  return "";
-}
-
-/** Short tag for a mutual barycentre node (star letters `AB`, or planet majors `1·2`). */
-function inferBarycentreDisplayTag(
-  children: SystemMapNodeDTO[],
-  starLettersByBodyId: Map<number, string>,
-  starSystemName: string,
-): string {
-  const st = children.filter((c) => c.isStar).sort((a, b) => a.bodyId - b.bodyId);
-  if (st.length >= 2) {
-    return st.map((s) => starLettersByBodyId.get(s.bodyId) ?? "?").join("");
-  }
-  const worlds = children.filter((c) => !c.isBarycentre);
-  if (worlds.length >= 2 && worlds.every((c) => !c.isStar)) {
-    const keys = worlds
-      .map((p) => {
-        const sh = shortBodyLabel(p.bodyName, starSystemName);
-        const d = parseShortDesignation(sh) ?? parseDesignationTailFromFullBodyName(p.bodyName);
-        return d ? d.major : p.bodyId;
-      })
-      .sort((a, b) => Number(a) - Number(b));
-    return keys.join("·");
-  }
-  if (children.some((c) => c.isBarycentre)) return "···";
-  return "";
-}
-
-/**
- * Is there anything to say about biology on this body?
- *
- * Four of these are evidence that life *is* there. The fifth is different and was missing: a
- * landable body whose conditions are known at all. Flying to a body writes a complete `AutoScan`
- * and no signal count — the count only arrives from an FSS or a DSS — so a commander who flew out
- * saw nothing at all, reported on Blu Thua VH-G b38-1 1 where the journal has no `FSSBodySignals`
- * anywhere and the first count came at DSS two minutes later.
- *
- * Predicting from conditions alone is a weaker claim than a signal count and must be shown as one:
- * "these species could live here", not "these species are here". But it is the claim the app exists
- * to make, and withholding it until the commander has already probed the body answers the question
- * after it stopped mattering.
- */
-/**
- * *Why* this body is showing candidates — which is not the same as whether it should.
- *
- * `conditions` is the weak case and the one that needs saying out loud. An auto scan describes the
- * body completely and reports no organics at all: the game shows a signal count on screen, the
- * journal never writes one, and only an FSS or a DSS puts it in a file. So the app can say what the
- * conditions suit and cannot say whether anything is there, and a commander reading a candidate list
- * has no way to tell those apart unless it is on the page.
- */
-export type ExoMarkerBasis = "scanned" | "genus" | "signals" | "conditions" | "none";
-
-export function exoMarkerBasis(b: BodyExoState): ExoMarkerBasis {
-  if (b.organicGenusLocks.length > 0 || b.confirmedVariants.length > 0) return "scanned";
-  if (b.genusHints && b.genusHints.length) return "genus";
-  if (b.biologicalSignals !== null && b.biologicalSignals > 0) return "signals";
-  if (b.scan?.Landable === true && typeof b.scan.PlanetClass === "string" && b.scan.PlanetClass.trim()) {
-    return "conditions";
-  }
-  return "none";
-}
-
-/**
- * Does the **journal** say there is life here — as opposed to "could there be".
- *
- * The map's bio filter, its bio-body count and the glow on a node all answer the first question, and
- * they went wrong the moment {@link bodyHasExoMarkers} learned to include auto-scanned bodies: on
- * Blu Thua ML-P b47-2 every landable rock in the system came back `hasExobiology`, so the mark that
- * used to pick out the nine bodies carrying signals picked out nineteen and meant nothing. Candidate
- * lists still want the wide test — saying what the conditions suit is the whole point of it — but a
- * map legend that reads "biological signals" must only ever mark bodies that have them.
- */
-export function bodyHasJournalExoEvidence(b: BodyExoState): boolean {
-  return exoMarkerBasis(b) !== "conditions" && exoMarkerBasis(b) !== "none";
-}
-
-export function bodyHasExoMarkers(b: BodyExoState): boolean {
-  const hasBioCount = b.biologicalSignals !== null && b.biologicalSignals > 0;
-  const hasHints = !!(b.genusHints && b.genusHints.length);
-  const confirmed = b.confirmedVariants.length > 0;
-  const organicLocks = b.organicGenusLocks.length > 0;
-  // Landable and described: enough to say what could grow, never enough to say what does.
-  const predictable =
-    b.scan?.Landable === true && typeof b.scan.PlanetClass === "string" && b.scan.PlanetClass.trim() !== "";
-  return hasBioCount || hasHints || confirmed || organicLocks || predictable;
-}
+import {
+  isBeltClusterRecord,
+  isStarOnSystemMap,
+  bodyKey,
+  canonicalStarSystemNameForMap,
+  buildOrbitChildMapFromJournalChains,
+  parentToChildrenFromOrbitChild,
+  allIdsInOrbitGraph,
+  rootBodyIdsFromOrbitGraph,
+  sortChildIdsForSystemMap,
+  attachMoonsByParsedDesignation,
+  orbitPrimaryKeyFromRecord,
+  inferBarycentreDisplayTag,
+} from "./systemMapOrbitGraph.js";
+import {
+  bodyHasJournalExoEvidence,
+  exoMatchRun,
+  maxExoHeuristicPair,
+  buildExoPayoutRangeForRecord,
+  scanForMatch,
+  exoMatchSummaries,
+} from "./systemMapExo.js";
+export { exoMarkerBasis, bodyHasJournalExoEvidence, bodyHasExoMarkers } from "./systemMapExo.js";
+export type { ExoMarkerBasis } from "./systemMapExo.js";
 
 export type StarRolesConfig = {
   fuelPrefixes: string[];
@@ -550,144 +184,6 @@ function exoValueTierFromHeuristic(credits: number, plusMin: number, plusPlusMin
   if (credits >= plusPlusMin) return 2;
   if (credits >= plusMin) return 1;
   return 0;
-}
-
-/**
- * Everything the map needs to know about what could grow on one body, worked out once.
- *
- * The value tier, the payout range and the candidate list are three questions with one answer, and
- * they used to ask it separately: three `matchDatabaseToScan` calls per body over identical inputs,
- * each rebuilding the same match context and walking the same 108 species. On a 27-body system that
- * is 81 runs of the matcher to produce 27 results.
- *
- * Computed in the caller's loop and handed down. Null means the body has nothing to say — no exo
- * markers, or no scan that names a planet class — which all three consumers used to decide for
- * themselves, in the same words.
- */
-interface ExoMatchRun {
-  exo: BodyExoState;
-  scan: PlanetScan;
-  /**
-   * The matcher's own rows, which are not yet `SpeciesMatch`.
-   *
-   * Photos, notes and prices are attached later by the snapshot path; the map wants names and ids
-   * and never looks at those, so this takes the matcher's output as it comes rather than paying to
-   * decorate 108 rows per body for three fields nobody here reads.
-   */
-  matches: MatcherRow[];
-  /** `shownSpeciesMatches(matches)`, since all three consumers want the shown tier and not the rest. */
-  shown: MatcherRow[];
-  approximateMatchingUsed: boolean;
-}
-
-type MatcherRow = Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">;
-
-function exoMatchRun(
-  store: GameStateStore,
-  db: SpeciesDatabase,
-  r: ExplorationScanRecord,
-  spatialCatalogue: SpatialCatalogue | null,
-): ExoMatchRun | null {
-  const exo = store.bioBodyState(bodyKey(r.systemAddress, r.bodyId));
-  if (!exo || !bodyHasExoMarkers(exo)) return null;
-  const scan = scanForMatch(store, r, exo);
-  if (!scan?.PlanetClass) return null;
-  const run = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
-    includeBacterium: store.includeBacteriumInSearch,
-    matchContext: buildSpeciesMatchContext(exo, store),
-    spatialCatalogue,
-  });
-  return {
-    exo,
-    scan,
-    matches: run.matches,
-    shown: shownSpeciesMatches(run.matches),
-    approximateMatchingUsed: run.approximateMatchingUsed,
-  };
-}
-
-/**
- * `displayMax`: best single-species payout heuristic for map tiers (list × 5 only when this commander has
- * first-footfall on the body, else × 1 — same rule as pending organic valuation).
- * `tierValue`: conservative basis for `+` / `++` when matching is approximate-only (minimum among tied ×vals).
- */
-function maxExoHeuristicPair(
-  store: GameStateStore,
-  prices: PriceIndex,
-  r: ExplorationScanRecord,
-  run: ExoMatchRun | null,
-): { displayMax: number; tierValue: number } {
-  if (!run) return { displayMax: 0, tierValue: 0 };
-  const bk = bodyKey(r.systemAddress, r.bodyId);
-  const mult: 1 | 5 = store.firstFootfallBodies.has(bk) ? 5 : 1;
-  const vals: number[] = [];
-  // Value tiers colour the map. A demoted candidate must not make a body look rich.
-  for (const m of run.shown) {
-    const p = lookupPriceStrict(prices, m.entry.displayName, m.entry.id);
-    if (p != null) vals.push(p * mult);
-  }
-  if (vals.length === 0) return { displayMax: 0, tierValue: 0 };
-  const displayMax = Math.max(...vals);
-  const tierValue = run.approximateMatchingUsed ? Math.min(...vals) : displayMax;
-  return { displayMax, tierValue };
-}
-
-function buildExoPayoutRangeForRecord(
-  store: GameStateStore,
-  prices: PriceIndex,
-  r: ExplorationScanRecord,
-  run: ExoMatchRun | null,
-): ExoPayoutRangeDTO | null {
-  if (!run) return null;
-  const bk = bodyKey(r.systemAddress, r.bodyId);
-  const { count: slots, source: slotSource } = resolveOrganicSlotCount(run.exo);
-  if (slots <= 0 || slotSource === "none") return null;
-  const mult: 1 | 5 = store.firstFootfallBodies.has(bk) ? 5 : 1;
-  const wf = store.bodyDetailedFootfallState.get(bk);
-  const journalWasFootfalled = wf === undefined ? null : wf === true;
-  const range = computeExoPayoutRangeFromMatches(
-    run.shown,
-    prices,
-    slots,
-    slotSource,
-    mult,
-    journalWasFootfalled,
-    mult === 5,
-  );
-  const kind = store.noFirstFootfallInSystem(r.systemAddress) ? store.systemKind(r.systemAddress) : null;
-  if (range && kind && kind !== "empty") range.noFootfallSystemKind = kind;
-  return range;
-}
-
-function scanForMatch(
-  store: GameStateStore,
-  r: ExplorationScanRecord,
-  exo: BodyExoState | undefined,
-): PlanetScan | null {
-  if (exo?.scan) return exo.scan;
-  if (!r.planetClass && !r.atmosphereType && !r.atmosphere) return null;
-  return {
-    BodyName: r.bodyName,
-    BodyID: r.bodyId,
-    StarSystem: r.starSystem,
-    SystemAddress: r.systemAddress,
-    PlanetClass: r.planetClass,
-    Atmosphere: r.atmosphere,
-    AtmosphereType: r.atmosphereType,
-    SurfaceGravity: r.surfaceGravity,
-    SurfaceTemperature: r.surfaceTemperature,
-    SurfacePressure: r.surfacePressure,
-    SemiMajorAxis: r.semiMajorAxis,
-    TidalLock: r.tidalLock,
-    Volcanism: r.volcanism,
-    Landable: r.landable,
-    TerraformState: r.terraformState,
-  };
-}
-
-function exoMatchSummaries(run: ExoMatchRun | null): { displayName: string; id: string }[] {
-  if (!run) return [];
-  return run.shown.slice(0, 48).map((m) => ({ displayName: m.entry.displayName, id: m.entry.id }));
 }
 
 export function buildPrimaryStarsHeader(

@@ -44,11 +44,6 @@ function applyNumericOverlayToBody(body: EdsmBody | null): EdsmBody | null {
   return { ...(body as object), surfaceTemperature: fix.surfaceTemperature } as EdsmBody;
 }
 
-/** Test seam: forget the cached overlay so a test can write one and see it applied. */
-export function clearNumericOverlayCache(): void {
-  overlayCache = undefined;
-}
-
 async function loadSystemStarSummaries(cacheFile: string): Promise<FeederStarSummary[] | null> {
   const key = cacheFile.trim();
   if (!key) return null;

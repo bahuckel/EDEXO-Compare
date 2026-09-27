@@ -19,6 +19,8 @@ import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding
 import { JOURNAL_MERGE_CACHE_FORMAT } from "../src/server/gameState.js";
 import type { JournalMergeCachePayload } from "../src/server/gameState.js";
 import { resolveJournalMergeCacheRoot } from "../src/server/paths.js";
+import { buildSpeciesMatchContextFromRecords } from "../src/server/speciesMatchContext.js";
+import type { BodyExoState, ExplorationScanRecord, SpeciesMatchContext } from "../src/shared/types.js";
 
 export function journalMergeCachePath(): string {
   return path.join(resolveJournalMergeCacheRoot(), "journal-merge.payload.v8gz");
@@ -96,4 +98,41 @@ export function loadJournalMergeCacheForTool(quiet = false): JournalMergeCachePa
     process.exit(1);
   }
   return payload;
+}
+
+/**
+ * The app's match context for a cached body, from the app's own builder (code review B1, 2026-09-27).
+ *
+ * Every probe used to build its own, each missing different gates, so each measured a slightly
+ * different matcher from the one the app runs. The records index is the app's order (sold, then live
+ * on top); the system's position stands in for the commander's, since the body was in the system he
+ * was in when he scanned it — so the spatial gates judge it the way they did live.
+ */
+export function probeMatchContexts(payload: JournalMergeCachePayload): {
+  contextFor: (b: BodyExoState) => SpeciesMatchContext | undefined;
+  scansBySystem: Map<number, Map<number, ExplorationScanRecord>>;
+  systemPositions: Map<number, { x: number; y: number; z: number }>;
+} {
+  const systemPositions = new Map<number, { x: number; y: number; z: number }>(payload.systemPositions ?? []);
+  const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
+  for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explorationScans]) {
+    const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
+    byId.set(r.bodyId, r);
+    scansBySystem.set(r.systemAddress, byId);
+  }
+  const complete = new Set<number>(payload.fssAllBodiesCompleteSystems ?? []);
+  const contextFor = (b: BodyExoState): SpeciesMatchContext | undefined => {
+    const byId = scansBySystem.get(b.systemAddress) ?? new Map<number, ExplorationScanRecord>();
+    const pos = systemPositions.get(b.systemAddress) ?? null;
+    const ctx = buildSpeciesMatchContextFromRecords({
+      exo: b,
+      rec: byId.get(b.bodyId) ?? null,
+      byId,
+      regionCoords: pos,
+      spatialCoords: pos,
+      systemBodyListComplete: complete.has(b.systemAddress),
+    });
+    return Object.keys(ctx).length ? ctx : undefined;
+  };
+  return { contextFor, scansBySystem, systemPositions };
 }

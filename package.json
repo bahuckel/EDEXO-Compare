@@ -34,6 +34,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:spawn": "vitest run tests/speciesSpawnBodies.test.ts",
     "feeder": "tsx scripts/feeder.ts",
     "probe": "tsx scripts/accuracy-probe.ts",
     "rank-probe": "tsx scripts/rank-probe.ts",

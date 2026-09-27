@@ -210,7 +210,7 @@ describe("the discoveries tables", () => {
     expect(r.rows()).toHaveLength(300);
     // Locale-agnostic on purpose: jsdom groups digits differently from a browser, and the claim
     // here is that the count is stated at all, not how it is punctuated.
-    expect(r.host.textContent?.replace(/[  ,]/g, "")).toContain("1200");
+    expect(r.host.textContent?.replace(/[\u202f\u00a0,]/g, "")).toContain("1200");
     r.unmount();
   });
 
@@ -440,5 +440,25 @@ describe("the Bodies type chips", () => {
     const eden = labels.findIndex((t) => t.includes("Earth-like world"));
     expect(icy).toBeGreaterThanOrEqual(0);
     expect(icy).toBeLessThan(eden);
+  });
+});
+
+describe("clicking a body opens it (code review A13, 2026-09-27)", () => {
+  it("passes the body key, so the app can open that body's tab, not only its system", () => {
+    const calls: unknown[][] = [];
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    act(() =>
+      root.render(
+        <DiscoveriesTables data={DATA} tab="bodies" onNavigateSystem={(...a) => calls.push(a)} />,
+      ),
+    );
+    const link = [...host.querySelectorAll<HTMLButtonElement>("button.disc-link")].find(
+      (b) => b.textContent === "Beta 1",
+    );
+    act(() => link?.click());
+    expect(calls).toEqual([[1, "2:1"]]); // bod() keeps systemAddress 1; the key is what opens the tab
+    act(() => root.unmount());
   });
 });

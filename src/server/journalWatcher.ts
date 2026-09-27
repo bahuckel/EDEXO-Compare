@@ -71,14 +71,6 @@ export async function listJournalFilesChronological(
   }
 }
 
-export async function resolveLatestJournal(
-  journalDir: string,
-  filter: JournalListFilterOpts = { minFileStartUtcMs: null },
-): Promise<string | null> {
-  const all = await listJournalFilesChronological(journalDir, filter);
-  return all.length ? all[all.length - 1]! : null;
-}
-
 async function processLines(
   chunk: string,
   leftover: { buf: string },

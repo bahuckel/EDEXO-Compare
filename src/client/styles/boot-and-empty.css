@@ -283,15 +283,6 @@
   margin-bottom: 0.65rem;
 }
 
-.tabs-label {
-  display: block;
-  font-size: var(--fs-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin-bottom: 0.25rem;
-}
-
 .tabs-strip {
   display: flex;
   flex-wrap: wrap;

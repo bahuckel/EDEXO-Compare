@@ -96,6 +96,8 @@ module.exports = {
       artwork, so Windows picks instead of resampling.
     */
     { from: "build/icon.ico", to: "edexo/icon.ico" },
+    // sql.js's WebAssembly for the feeder database (in-app dump import); feederDb.ts `wasmPath`.
+    { from: "node_modules/sql.js/dist/sql-wasm.wasm", to: "sql-wasm/sql-wasm.wasm" },
   ],
   win,
   portable: {

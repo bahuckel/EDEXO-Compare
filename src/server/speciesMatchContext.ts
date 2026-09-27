@@ -4,7 +4,12 @@ import type {
   PlanetScan,
   SpeciesMatchContext,
 } from "../shared/types.js";
-import { journalPressureToAtm, LIGHT_SECOND_METERS } from "../shared/journalPhysics.js";
+import {
+  journalPressureToAtm,
+  LIGHT_SECOND_METERS,
+  LS_PER_AU,
+  SOLAR_RADIUS_METERS,
+} from "../shared/journalPhysics.js";
 import {
   allStarParentIds,
   barycentreSyntheticBodyId,
@@ -185,7 +190,7 @@ export function colourStarTypeFor(
   return brightestStarTypeFor(rec, byId) ?? colourStarTypeByDesignation(rec, byId);
 }
 
-const SOLAR_RADIUS_M = 695_700_000;
+const SOLAR_RADIUS_M = SOLAR_RADIUS_METERS;
 
 /** Which reading of a star's brightness: radius and temperature, absolute magnitude, or the brighter. */
 export type LuminosityReading = "brighter" | "size" | "magnitude";
@@ -346,7 +351,6 @@ export function brightestStarTypeFor(
 export const STARLIGHT_READING: LuminosityReading = "magnitude";
 
 /** Light-seconds in an astronomical unit: the irradiance unit below is the Sun's at 1 AU (Earth = 1). */
-const LS_PER_AU = 499.004784;
 
 /**
  * Starlight reaching the body: the sum of every measured star's luminosity over distance², in the
@@ -603,11 +607,54 @@ export function starDistanceLs(
 
 /** Build optional matching context from merged exploration scans + scanner signal hints on the body. */
 export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStore): SpeciesMatchContext {
-  const sk = bodyKey(exo.systemAddress, exo.bodyId);
-  const rec = store.physicsExplorationScan(sk);
-  const scan = exo.scan;
+  return buildSpeciesMatchContextFromRecords({
+    exo,
+    rec: store.physicsExplorationScan(bodyKey(exo.systemAddress, exo.bodyId)),
+    byId: systemExplorationScanIndex(store, exo.systemAddress),
+    regionCoords:
+      store.systemPositions.get(exo.systemAddress) ?? store.remoteSystems.get(exo.systemAddress)?.coords ?? null,
+    /**
+     * The system's position for the spatial gates (Phase 7).
+     *
+     * `commanderPos` is where the commander last jumped to, so it is the right coordinate for bodies
+     * in the *current* system and the wrong one for a system being viewed remotely. Only attach it
+     * when the body actually belongs to the commander's current system — a wrong coordinate would
+     * demote candidates for a reason that has nothing to do with them. A looked-up system carries its
+     * own coordinates from Spansh, so the nebula / core gates can judge it.
+     */
+    spatialCoords:
+      store.commanderPos && exo.systemAddress === store.currentSystemAddress
+        ? store.commanderPos
+        : (store.remoteSystems.get(exo.systemAddress)?.coords ?? null),
+    systemBodyListComplete: store.fssAllBodiesCompleteSystems.has(exo.systemAddress),
+  });
+}
 
-  const byId = systemExplorationScanIndex(store, exo.systemAddress);
+/** What {@link buildSpeciesMatchContextFromRecords} needs: the body, its system's records, positions. */
+export interface MatchContextInputs {
+  exo: Pick<BodyExoState, "systemAddress" | "bodyId" | "scan" | "signalHints">;
+  /** The body's own merged record (physics), when there is one. */
+  rec: ExplorationScanRecord | null | undefined;
+  /** Every record in the body's system, by body id. */
+  byId: Map<number, ExplorationScanRecord>;
+  /** The system's position for the region lookup. */
+  regionCoords: { x: number; y: number; z: number } | null | undefined;
+  /** The system's position for the spatial gates (nebula, core, Guardian sites). */
+  spatialCoords: { x: number; y: number; z: number } | null | undefined;
+  /** The FSS honk found every body, so a missing companion body is really missing. */
+  systemBodyListComplete: boolean;
+}
+
+/**
+ * The match context from records alone — no store. The app's builder above is a thin wrapper, and the
+ * probes call this directly, so what they measure is the matcher the app runs (code review B1,
+ * 2026-09-27: six hand-built copies in scripts had drifted — the accuracy probe had no host-star
+ * classes, orbit distance, colour star, spatial or companion-body gates at all).
+ */
+export function buildSpeciesMatchContextFromRecords(i: MatchContextInputs): SpeciesMatchContext {
+  const { exo, byId } = i;
+  const rec = i.rec ?? null;
+  const scan = exo.scan;
 
   let parentStarType: string | undefined;
   let parentStarSubclass: number | undefined;
@@ -654,8 +701,7 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   }
 
   const ctx: SpeciesMatchContext = {};
-  const pos =
-    store.systemPositions.get(exo.systemAddress) ?? store.remoteSystems.get(exo.systemAddress)?.coords;
+  const pos = i.regionCoords;
   if (pos) {
     const root = getProjectRoot();
     const idx = regionIndexForSystem(root, pos.x, pos.z);
@@ -678,23 +724,15 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   if (mainStar) ctx.systemMainStarClass = mainStar;
   const colourStar = rec ? colourStarTypeFor(rec, byId) : undefined;
   if (colourStar) ctx.colourStarType = colourStar;
+  // Host-star gates read the brightest star (the colour star) over the orbital host: known-spawn FSS
+  // 2 better / 0 worse (Anemone under Y-dwarf hosts), post-DSS and journals identical (2026-09-27).
+  if (colourStar) {
+    const k = hostStarClassKeys([colourStar]);
+    if (k.length) ctx.hostStarClasses = k;
+  }
   const light = rec ? stellarIrradianceFor(rec, byId, STARLIGHT_READING) : undefined;
   if (light !== undefined) ctx.stellarIrradiance = light;
-  /**
-   * The system's position (Phase 7).
-   *
-   * `commanderPos` is where the commander last jumped to, so it is the right coordinate for bodies
-   * in the *current* system and the wrong one for a system being viewed remotely. Only attach it
-   * when the body actually belongs to the commander's current system — a wrong coordinate would
-   * demote candidates for a reason that has nothing to do with them.
-   */
-  if (store.commanderPos && exo.systemAddress === store.currentSystemAddress) {
-    ctx.systemCoords = store.commanderPos;
-  } else {
-    // A looked-up system carries its own coordinates from Spansh, so the nebula / core gates can judge it.
-    const remoteCoords = store.remoteSystems.get(exo.systemAddress)?.coords;
-    if (remoteCoords) ctx.systemCoords = remoteCoords;
-  }
+  if (i.spatialCoords) ctx.systemCoords = i.spatialCoords;
   /**
    * What else is in this system, for the companion-body conditions (Amphora, the Brain Trees).
    *
@@ -709,7 +747,7 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
     if (pc) classes.push(pc);
   }
   if (classes.length) ctx.systemBodyClasses = [...new Set(classes)];
-  ctx.systemBodyListComplete = store.fssAllBodiesCompleteSystems.has(exo.systemAddress);
+  ctx.systemBodyListComplete = i.systemBodyListComplete;
 
   const rawP = scan?.SurfacePressure ?? rec?.surfacePressure;
   if (rawP != null && Number.isFinite(rawP)) ctx.surfacePressureAtm = journalPressureToAtm(rawP);

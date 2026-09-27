@@ -47,8 +47,8 @@ export const TOPICS: TopicSpec[] = [
         args: "<page> [width] [height]",
         summary: "Open an overlay window.",
         detail: [
-          "Pages are the overlay HTML files: hud, distance, foot, radar — a bare name is resolved to " +
-            "/<name>-overlay.html, and a full /path.html is taken as given.",
+          "Pages are the overlay HTML files: hud, distance (also radar, foot), jump, candidates, fss, " +
+            "datavalue — a bare name is resolved to /<name>-overlay.html, and a full /path.html is taken as given.",
           "Size defaults to 404x330, the same defaults the app's own buttons use.",
         ],
         needsDesktop: true,
@@ -108,6 +108,7 @@ export const TOPICS: TopicSpec[] = [
         name: "import routes",
         args: "<file>",
         summary: "Import a Spansh route export (the exobiology CSV/JSON).",
+        detail: ["Read here and sent to the server, so the path is on this machine."],
       },
       { name: "import feeder-dir", args: "[path]", summary: "Print or set where feeder data is kept." },
     ],

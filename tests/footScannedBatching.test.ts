@@ -88,3 +88,18 @@ describe("batched foot catalog writes", () => {
     expect(loadFootScannedCatalog(root).entries).toHaveLength(2);
   });
 });
+
+describe("a write that fails (code review A14, 2026-09-27)", () => {
+  it("keeps the rows pending and writes them on the next flush, instead of dropping them", async () => {
+    const { mkdirSync } = await import("node:fs");
+    record(1);
+    // The temp file's name taken by a folder: the write fails the way a locked or full disk would.
+    mkdirSync(`${resolveFootScannedPath()}.tmp`);
+    flushFootScannedCatalog();
+    expect(loadFootScannedCatalog(root).entries).toHaveLength(1);
+    expect(onDisk()).toBe(0);
+    rmSync(`${resolveFootScannedPath()}.tmp`, { recursive: true, force: true });
+    flushFootScannedCatalog();
+    expect(onDisk()).toBe(1);
+  });
+});

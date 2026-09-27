@@ -283,7 +283,7 @@ export function DiscoveriesTables({
   data: DiscoveriesDTO;
   tab: DiscoveriesTab;
   layout?: DiscoveriesLayout;
-  onNavigateSystem?: (systemAddress: number, bodyName?: string) => void;
+  onNavigateSystem?: (systemAddress: number, bodyKey?: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const deferred = useDeferredValue(query);
@@ -492,7 +492,7 @@ export function DiscoveriesTables({
               <button
                 type="button"
                 className="disc-link"
-                onClick={() => onNavigateSystem(r.systemAddress, r.bodyName)}
+                onClick={() => onNavigateSystem(r.systemAddress, r.key)}
               >
                 {r.bodyName}
               </button>
@@ -659,7 +659,7 @@ export function DiscoveriesTables({
             <button
               type="button"
               className="disc-link"
-              onClick={() => onNavigateSystem(r.systemAddress, r.bodyName)}
+              onClick={() => onNavigateSystem(r.systemAddress)}
             >
               {r.bodyName}
             </button>

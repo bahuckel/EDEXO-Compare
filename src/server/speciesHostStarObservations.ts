@@ -119,8 +119,8 @@ export function speciesHostStarObservations(
   return out;
 }
 
-/** Test seam — profiles are cached per root, and a test that writes one needs the next read to see it. */
-export function clearHostStarObservationsCacheForTests(): void {
+/** Forget what the profiles said: after "Refresh exomastery" the next read must see the new ones. */
+export function clearHostStarObservationsCache(): void {
   cache.clear();
 }
 

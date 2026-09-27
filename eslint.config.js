@@ -17,6 +17,8 @@ export default tseslint.config(
       ".edexo-cache/**",
       "public/launcher.html",
       "scripts/**",
+      // Local screenshots, backups and one-off probes; never shipped, never imported.
+      "build-artifacts/**",
     ],
   },
   js.configs.recommended,
@@ -59,6 +61,22 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
     rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
+  {
+    // The HUD overlays' plain browser script (no bundler): browser globals, plus the `module` check
+    // it does at the bottom so tests can require it. Same leniency as src for throwaway catches.
+    files: ["public/**/*.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: { ...globals.browser, module: "readonly" },
+    },
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
+      ],
+      "no-empty": ["warn", { allowEmptyCatch: true }],
+    },
   },
   prettier,
 );

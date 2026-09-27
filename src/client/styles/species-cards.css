@@ -313,7 +313,6 @@
  *
  * No `aspect-ratio` here on purpose: the height comes from the column, so the crop is whatever the
  * detail column's height makes it. */
-.body-pane--compact-candidates .species-card--compact .species-img--compact,
 .species-img--compact {
   flex: 1 1 auto;
   width: 100%;
@@ -398,39 +397,6 @@
 }
 
 /* Signal-count verdict: candidate genera vs the count the game reports. */
-.genus-certainty {
-  margin: 0.2rem 0 0.35rem;
-  padding: 0.22rem 0.45rem;
-  border-left: 2px solid transparent;
-  border-radius: 2px;
-  font-size: 0.74rem;
-  line-height: 1.35;
-  cursor: help;
-}
-
-.genus-certainty--certain {
-  border-left-color: rgba(120, 230, 160, 0.7);
-  background: rgba(80, 200, 130, 0.1);
-  color: rgba(190, 245, 210, 0.94);
-}
-
-.genus-certainty--short {
-  border-left-color: rgba(255, 170, 90, 0.7);
-  background: rgba(255, 150, 60, 0.09);
-  color: rgba(255, 205, 155, 0.92);
-}
-
-.genus-certainty--guess {
-  border-left-color: rgba(255, 170, 90, 0.7);
-  background: rgba(255, 150, 60, 0.07);
-  color: rgba(255, 215, 170, 0.92);
-}
-
-.genus-certainty--ambiguous {
-  border-left-color: rgba(150, 165, 200, 0.5);
-  background: rgba(120, 135, 170, 0.09);
-  color: rgba(200, 210, 230, 0.85);
-}
 
 /* ------------------------------------------------------------------------------------------------
  * The unlikely tier.

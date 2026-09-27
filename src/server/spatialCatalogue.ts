@@ -34,8 +34,3 @@ export function loadSpatialCatalogue(projectRoot: string): SpatialCatalogue | nu
   }
   return cached;
 }
-
-/** Test seam — the catalogue is process-wide, so a test that swaps it must be able to put it back. */
-export function setSpatialCatalogueForTests(c: SpatialCatalogue | null | undefined): void {
-  cached = c;
-}

@@ -493,7 +493,7 @@
    * is written back to the element so anything downstream reads the number that was actually drawn
    * rather than the number that was sent.
    */
-  function fitRouteStrip(el, hops, nav) {
+  function fitRouteStrip(el, hops, _nav) {
     var pumpIdx = -1;
     for (var i = 0; i < hops.length; i++) if (hops[i].refuel && hops[i].refuel !== "none") pumpIdx = i;
     var guard = 0;
@@ -734,7 +734,7 @@
       rows.forEach(function (r, idx) {
         r.idx = idx;
         var g = norm((r.m.entry || {}).genus);
-        r.rank = rank.hasOwnProperty(g) ? rank[g] : 9999;
+        r.rank = Object.prototype.hasOwnProperty.call(rank, g) ? rank[g] : 9999;
         r.cr = r.m.priceCredits != null && isFinite(r.m.priceCredits) ? Number(r.m.priceCredits) : -1;
       });
       rows.sort(function (a, b) {

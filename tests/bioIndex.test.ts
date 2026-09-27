@@ -7,7 +7,7 @@
  * index by hand, with known contents, and assert the bytes come back as what went in.
  */
 import { describe, expect, it, beforeEach } from "vitest";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadBioIndex, clearBioIndexCache } from "../src/server/bioIndex.js";

@@ -9,7 +9,7 @@ export type TempUnit = "K" | "C" | "F";
 export type PressDisplay = "atm" | "pa";
 
 export function formatTempScalar(k: number, u: TempUnit): string {
-  if (u === "K") return `${k.toFixed(0)}°K`;
+  if (u === "K") return `${k.toFixed(0)} K`;
   if (u === "C") return `${(k - 273.15).toFixed(0)}°C`;
   const c = k - 273.15;
   return `${((c * 9) / 5 + 32).toFixed(0)}°F`;

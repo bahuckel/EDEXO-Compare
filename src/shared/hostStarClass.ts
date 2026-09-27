@@ -54,8 +54,9 @@ export function hostStarClassKey(value: string | null | undefined): string | nul
 
   const first = upper.charAt(0);
   if (HARVARD.includes(first)) return first;
-  // `AeBe`, `C`, `MS`, `S` and the proto-stellar oddities land here rather than being forced into a
-  // Harvard letter they do not belong to.
+  // `C`, `S` and the proto-stellar oddities land here rather than being forced into a Harvard letter
+  // they do not belong to. (`AeBe` and `MS` never reach this line: their first letter is on the
+  // Harvard sequence, so they read as A and M above — the same A that EDSM's "Herbig Ae/Be" maps to.)
   return "other";
 }
 

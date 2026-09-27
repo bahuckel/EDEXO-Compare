@@ -93,12 +93,6 @@ export function stellarSubclassStepDistance(a: number | null, b: number | null):
   return Math.abs(ai - bi);
 }
 
-/** UI tier: compare step distance capped at 4 (red). */
-export function proximityTierFromSteps(steps: number | null): number | null {
-  if (steps == null || !Number.isFinite(steps)) return null;
-  return Math.min(4, Math.max(0, Math.floor(steps)));
-}
-
 /** Parse loose MK-ish labels: "G2V", "F (IV)", "M5", "Ae". */
 export function parseLooseSpectralMk(raw: string | null | undefined): {
   spectralSlot: string | null;

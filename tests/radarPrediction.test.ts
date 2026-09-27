@@ -30,7 +30,7 @@ function loadHud(): HudApi {
   document.body.innerHTML =
     '<div class="shell" id="shell"><div class="panel" id="card"><div class="panel__body" id="hud"></div></div></div>';
   const src = readFileSync(path.resolve(__dirname, "../public/hud.js"), "utf8");
-  // eslint-disable-next-line no-new-func
+   
   new Function("window", "document", "localStorage", "location", src)(
     window,
     document,

@@ -36,6 +36,7 @@ exports[`the format constant > covers every key the store serializes 1`] = `
     "loadoutFuelMainCapacityT",
     "loadoutFuelReserveCapacityT",
     "loadoutMaxJumpRangeLy",
+    "mainStarSourceRankBySystem",
     "mainStarWasDiscoveredBySystem",
     "orbitParentPlanetByBody",
     "organicAnalyseByKey",

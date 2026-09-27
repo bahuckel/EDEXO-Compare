@@ -39,13 +39,14 @@
  * reader can trust it.
  */
 import type { ExplorationScanRecord } from "../shared/types.js";
+import { AU_METERS, LS_PER_AU, SOLAR_RADIUS_METERS } from "../shared/journalPhysics.js";
 
 /** Metres in an astronomical unit, and in a solar radius — journal `Radius` is metres. */
-const AU_M = 149_597_870_700;
-const SOLAR_RADIUS_M = 695_700_000;
+const AU_M = AU_METERS;
+const SOLAR_RADIUS_M = SOLAR_RADIUS_METERS;
 const SOLAR_RADIUS_AU = SOLAR_RADIUS_M / AU_M;
 /** Journal `DistanceFromArrivalLs` → AU. */
-const LS_PER_AU = 499.005;
+// LS_PER_AU from journalPhysics: exact, where this file had 499.005.
 
 /** Reflectivity, by planet class. Composition plays no part — see the header. */
 export const REFLECTIVITY_ICY = 0.7982;

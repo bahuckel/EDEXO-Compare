@@ -13,14 +13,11 @@
  *
  * Re-run it deliberately when a change is *meant* to move predictions, and review the diff.
  */
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { gunzipSync } from "node:zlib";
-import v8 from "node:v8";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
-import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import type { BodyExoState, PlanetScan } from "../src/shared/types.js";

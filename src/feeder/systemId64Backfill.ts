@@ -86,7 +86,9 @@ export async function readSystemIdsFromCache(): Promise<SystemCacheScan> {
   const byName = new Map<string, SystemCacheIds>();
   let filesRead = 0;
   let filesUnparsed = 0;
-  let untrusted = 0;
+  // Always 0: a refused id64 makes `parseSystemCacheHeader` return null, so it lands in
+  // `filesUnparsed`. Kept in the report shape for its readers (code review lint pass, 2026-09-27).
+  const untrusted = 0;
 
   let files: string[];
   try {

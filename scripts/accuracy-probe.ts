@@ -39,20 +39,16 @@
  * Run the app once first if the cache does not exist yet.
  */
 import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { gunzipSync } from "node:zlib";
-import v8 from "node:v8";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
-import { decodeJournalMergeCache } from "../src/server/journalMergeCacheEncoding.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
-import { loadJournalMergeCacheForTool } from "./probeCache.js";
+import { loadJournalMergeCacheForTool, probeMatchContexts } from "./probeCache.js";
 import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
 import { loadPriceList, lookupPrice } from "../src/server/priceList.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
 import { STARLIGHT_READING, stellarIrradianceFor } from "../src/server/speciesMatchContext.js";
-import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
 import type {
   BodyExoState,
   ExplorationScanRecord,
@@ -183,7 +179,29 @@ for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explora
   scansBySystem.set(r.systemAddress, byId);
 }
 
+const appContexts = probeMatchContexts(payload);
+
+/**
+ * The app's own context, from the app's own builder (code review B1, 2026-09-27).
+ *
+ * This probe used to build a context by hand — parent star, region, later starlight — and nothing
+ * else, so it measured a matcher without the host-star-class, orbit-distance, colour-star, spatial
+ * and companion-body gates the app runs. `buildSpeciesMatchContextFromRecords` is the function the
+ * app's builder wraps. The system's position stands in for the commander's (the body was in the
+ * system he was in when he scanned it), so the spatial gates judge it as they did live.
+ *
+ *   APP_CONTEXT=0   the old hand-built context, to reproduce numbers from before this change
+ *   NO_STARLIGHT=1  without the starlight term
+ */
 function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
+  if (process.env.APP_CONTEXT === "0") return legacyMatchContextFor(b);
+  const ctx = appContexts.contextFor(b);
+  if (ctx && process.env.NO_STARLIGHT === "1") delete ctx.stellarIrradiance;
+  return ctx;
+}
+
+/** The context this probe built before B1 — kept only so old numbers can be reproduced. */
+function legacyMatchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
   const byId = scansBySystem.get(b.systemAddress);
   const rec = byId?.get(b.bodyId);
   const ctx: SpeciesMatchContext = {};
@@ -220,12 +238,6 @@ function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
   const light = process.env.NO_STARLIGHT === "1" ? undefined : stellarIrradianceFor(rec, byId, STARLIGHT_READING);
   if (light !== undefined) ctx.stellarIrradiance = light;
   return Object.keys(ctx).length ? ctx : undefined;
-}
-
-/** The host-star observation the habitat scorer reads, for the same body. */
-function hostFor(b: BodyExoState) {
-  const ctx = matchContextFor(b);
-  return ctx ? journalHostObservationFromSpeciesContext(ctx) : null;
 }
 
 /** Payout for a species, used to weight recall. Unknown prices weigh 1 so they neither dominate nor vanish. */

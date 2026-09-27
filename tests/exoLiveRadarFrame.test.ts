@@ -34,7 +34,7 @@ function loadHud(): HudApi {
   document.body.innerHTML =
     '<div class="shell" id="shell"><div class="panel" id="card"><div class="panel__body" id="hud"></div></div></div>';
   const src = readFileSync(path.resolve(__dirname, "../public/hud.js"), "utf8");
-  // eslint-disable-next-line no-new-func
+   
   new Function("window", "document", "localStorage", "location", src)(
     window,
     document,
@@ -118,7 +118,7 @@ describe("the radar's own frame", () => {
       frame does not even contain.
     */
     const HUD = loadHud();
-    const root = HUD.mount(["candidates", "distance"], { noTimers: true });
+    HUD.mount(["candidates", "distance"], { noTimers: true });
     HUD.render({
       port: 7111,
       exoOverlayFocusBodyKey: "b1",

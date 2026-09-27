@@ -116,7 +116,9 @@ describe("argument reading", () => {
     expect(overlayPage("hud")).toBe("/hud-overlay.html");
     expect(overlayPage("distance")).toBe("/distance-overlay.html");
     // Already-suffixed and full paths must not be doubled up.
-    expect(overlayPage("radar-overlay")).toBe("/radar-overlay.html");
+    expect(overlayPage("jump-overlay")).toBe("/jump-overlay.html");
+    // The sample radar lives in the distance overlay; there never was a radar-overlay.html.
+    expect(overlayPage("radar-overlay")).toBe("/distance-overlay.html");
     expect(overlayPage("/hud-overlay.html")).toBe("/hud-overlay.html");
   });
 

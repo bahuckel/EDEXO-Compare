@@ -59,8 +59,7 @@
           "Gas Giant with ammonia-based life",
           "Water Giant"
         ],
-        "min_sample_distance_m": 100,
-        "atmospherePressureCategory": "thin"
+        "min_sample_distance_m": 100
       }
     }
   ],

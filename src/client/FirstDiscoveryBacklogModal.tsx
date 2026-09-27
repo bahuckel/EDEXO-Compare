@@ -28,7 +28,7 @@ const cr = (n: number) => `${crFmt.format(Math.round(n))} CR`;
 
 /** Short form for the summary line, where exact credits are noise. */
 function compactCr(n: number): string {
-  if (n >= 1e9) return `${(n / 1e9).toFixed(2)} bn CR`;
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)} B CR`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)} M CR`;
   return cr(n);
 }

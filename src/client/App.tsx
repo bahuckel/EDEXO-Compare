@@ -1,7 +1,7 @@
 import { useLiveSnapshot } from "./useLiveSnapshot";
 import { useToast } from "./ui/feedback";
 import { arrivalTripRanks } from "@shared/systemTriage";
-import { useCallback, lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
+import { useCallback, lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { JournalBootScreen } from "./JournalBootScreen";
 import type { EncyclopediaSpawnCompare } from "./EncyclopediaModal";
 import { EliteTipRotator } from "./EliteTipRotator";
@@ -307,6 +307,23 @@ export function App() {
   */
   const tripRanks = useMemo(() => arrivalTripRanks(orderedBodies), [orderedBodies]);
 
+  /*
+    The tracker line for the selected body, as a value that only changes when it does. Written inline
+    in the JSX it was a new object on every snapshot, and `memo(BodyPane)` re-rendered the whole
+    candidate list ten times a second while scanning (code review §E, 2026-09-27).
+  */
+  const overlay = snapshot?.exoOrganicOverlay;
+  const liveKey =
+    overlay && overlay.visible === true && selected && overlay.trackingBodyKey === selected.state.key
+      ? overlay.trackingBodyKey
+      : null;
+  const liveSpecies = liveKey ? overlay!.speciesDisplay : null;
+  const liveCount = liveKey ? overlay!.sampleCount : null;
+  const liveRun = useMemo(
+    () => (liveKey ? { speciesDisplay: liveSpecies!, sampleCount: liveCount! } : null),
+    [liveKey, liveSpecies, liveCount],
+  );
+
   /** Memoized: a fresh object literal here would defeat <HeaderBar>'s memo on every render. */
   const encyclopediaSpawnCompare: EncyclopediaSpawnCompare | null = useMemo(
     () =>
@@ -322,10 +339,11 @@ export function App() {
     [orderedBodies.length, selected],
   );
 
+  const bacteriumOnNow = snapshot?.includeBacteriumInSearch === true;
+  const bootingNow = !snapshot || !!snapshot.journalBoot;
   const toggleIncludeBacteriumInSearch = useCallback(() => {
-    const snap = snapshot;
-    if (!snap || snap.journalBoot) return;
-    const bacteriumOn = snap.includeBacteriumInSearch === true;
+    if (bootingNow) return;
+    const bacteriumOn = bacteriumOnNow;
     void (async () => {
       try {
         const r = await fetch("/api/settings/include-bacterium", {
@@ -341,7 +359,8 @@ export function App() {
         toast.error(e instanceof Error ? e.message : "Could not update setting.");
       }
     })();
-  }, [snapshot, toast]);
+    // The two fields it reads: on `[snapshot]` it was a new function every push and broke memo(BodyPane).
+  }, [bacteriumOnNow, bootingNow, toast]);
 
   const focusBodyKey = useCallback((bk: string) => setSelectedBodyKey(bk), []);
 
@@ -383,11 +402,12 @@ export function App() {
   /**
    * Jump the app to a system from "My discoveries".
    *
-   * The same `view-system` call the foot catalog makes, without a body to focus: those tables list
-   * systems and stars as well as bodies, and a star has no exobiology panel to open.
+   * The same `view-system` call the foot catalog makes. A body row also opens that body's tab (its
+   * key is the body key); system and star rows only switch the system — a star has no exobiology
+   * panel to open.
    */
   const discoveriesNavigate = useCallback(
-    (systemAddress: number, bodyName?: string) => {
+    (systemAddress: number, bodyKey?: string) => {
       void (async () => {
         try {
           const r = await fetch("/api/ui/view-system", {
@@ -401,9 +421,9 @@ export function App() {
           toast.error(err instanceof Error ? err.message : "Could not switch system view.");
         }
       })();
-      void bodyName;
+      if (bodyKey) focusBodyKey(bodyKey);
     },
-    [toast],
+    [focusBodyKey, toast],
   );
 
   if (!snapshot) {
@@ -453,16 +473,7 @@ export function App() {
             <BodyPane
               key={selected.state.key}
               body={selected}
-              liveRun={
-                snapshot.exoOrganicOverlay &&
-                snapshot.exoOrganicOverlay.visible === true &&
-                snapshot.exoOrganicOverlay.trackingBodyKey === selected.state.key
-                  ? {
-                      speciesDisplay: snapshot.exoOrganicOverlay.speciesDisplay,
-                      sampleCount: snapshot.exoOrganicOverlay.sampleCount,
-                    }
-                  : null
-              }
+              liveRun={liveRun}
               trip={tripRanks.get(selected.state.key) ?? null}
               includeBacteriumInSearch={snapshot.includeBacteriumInSearch === true}
               onToggleIncludeBacterium={toggleIncludeBacteriumInSearch}

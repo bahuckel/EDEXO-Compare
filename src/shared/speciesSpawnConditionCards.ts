@@ -148,7 +148,16 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   const scan = args.scan ?? null;
   const ctx = args.speciesMatchContext;
   const c = entry.criteria;
-  const planetBand = planetTemperatureBandFromSnapshot(args.estimatedSurfaceTempK);
+  /*
+    The matcher's band: the journal's own SurfaceTemperature when the scan has it, the estimate only
+    when it does not (`resolvePlanetTemperatureBand`). The cards used the estimate — about 137 K wide on
+    average — and showed blue where the matcher had already rejected the body (code review A7).
+  */
+  const journalT = scan?.SurfaceTemperature;
+  const planetBand: PlanetTemperatureBand | null =
+    journalT != null && Number.isFinite(journalT)
+      ? { minK: journalT, maxK: journalT }
+      : planetTemperatureBandFromSnapshot(args.estimatedSurfaceTempK);
   const midK = args.estimatedSurfaceTempK?.midK;
   const out: EncyclopediaSpawnConditionCard[] = [];
 
@@ -460,13 +469,15 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     part that excludes. The verdict below still tests the cap, because the cap is what the matcher
     gates on; the floor is stated so the reader sees the band the data actually carries.
   */
-  if (!bac && c.whenAtmosphereLinkedMaxTempK !== undefined) {
+  if (!bac && (c.whenAtmosphereLinkedMaxTempK !== undefined || c.whenAtmosphereLinkedMinTempK !== undefined)) {
     const cap = c.whenAtmosphereLinkedMaxTempK;
     const floor = c.whenAtmosphereLinkedMinTempK;
     const lines = [
-      floor !== undefined
+      floor !== undefined && cap !== undefined
         ? `Atmosphere-linked band ${floor}–${cap} K`
-        : `Atmosphere-linked band cap ≤ ${cap} K`,
+        : cap !== undefined
+          ? `Atmosphere-linked band cap ≤ ${cap} K`
+          : `Atmosphere-linked band floor ≥ ${floor} K`,
     ];
     let tier: EncyclopediaSpawnTier = "neutral";
     let caption = "";
@@ -481,17 +492,27 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     } else if (!planetBand) {
       tier = "yellow";
       caption = "Need SurfaceTemperature / heuristic band";
-    } else if (planetBand.maxK > cap) {
+    } else if (cap !== undefined && planetBand.maxK > cap) {
       tier = "red";
       caption = `Band max ${planetBand.maxK} K exceeds cap`;
+    } else if (floor !== undefined && planetBand.minK < floor) {
+      // The matcher gates on the floor too (matchSpecies.ts, linked band).
+      tier = "red";
+      caption = `Band min ${planetBand.minK} K under floor ${floor} K`;
     } else {
       tier = "blue";
-      caption = `Band max ${planetBand.maxK} K ≤ ${cap} K`;
+      caption =
+        cap !== undefined ? `Band max ${planetBand.maxK} K ≤ ${cap} K` : `Band min ${planetBand.minK} K ≥ ${floor} K`;
     }
 
     out.push({
       id: "linked-temp-cap",
-      label: floor !== undefined ? "Atmosphere-linked temperature band" : "Atmosphere-linked temperature cap",
+      label:
+        floor !== undefined && cap !== undefined
+          ? "Atmosphere-linked temperature band"
+          : cap !== undefined
+            ? "Atmosphere-linked temperature cap"
+            : "Atmosphere-linked temperature floor",
       lines,
       caption,
       tier,

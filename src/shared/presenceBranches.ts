@@ -12,7 +12,7 @@
  * had just been excluded from. One module, both callers, no drift.
  */
 import type { PlanetScan, SpeciesCriterion } from "./types.js";
-import { journalSurfaceGravityToG } from "./journalPhysics.js";
+import { journalPressureToAtm, journalSurfaceGravityToG } from "./journalPhysics.js";
 
 export interface PresenceTemperatureBand {
   minK: number;
@@ -112,13 +112,12 @@ export function evaluatePresenceBranch(
   }
 
   if (b.surfacePressure && (b.surfacePressure.min !== undefined || b.surfacePressure.max !== undefined)) {
-    const p = scan.SurfacePressure;
-    if (
-      typeof p !== "number" ||
-      !Number.isFinite(p) ||
-      !inRange(p, b.surfacePressure.min, b.surfacePressure.max)
-    )
-      return null;
+    // The journal writes pascals; species bands are atmospheres (the matcher and the cards convert
+    // too). Compared raw, a 0.02 atm band would have needed 0.02 Pa (code review A16, 2026-09-27).
+    const raw = scan.SurfacePressure;
+    if (typeof raw !== "number" || !Number.isFinite(raw)) return null;
+    const p = journalPressureToAtm(raw);
+    if (!inRange(p, b.surfacePressure.min, b.surfacePressure.max)) return null;
     parts.push(`${p.toFixed(3)} atm`);
   }
 
