@@ -62,11 +62,14 @@ import { remoteBodyStates } from "./remoteSystems.js";
 import type { NavRouteWaypointDTO } from "./navRouteFuel.js";
 import { regionJoinKey } from "../shared/regionMap.js";
 import {
+  codexEntryKey,
   codexOrganicLockFromLine,
   codexRegionKeysFromLine,
   codexMapKeyFromLine,
   codexSpeciesFromLine,
 } from "../shared/codexLog.js";
+import { isLegacyPlantKey } from "../shared/achievements.js";
+import { regionForSystem } from "./regionMapData.js";
 import { JOURNAL_MERGE_CACHE_FORMAT } from "./journalMergePayload.js";
 import type {
   PendingOrganicSample,
@@ -702,6 +705,15 @@ export class GameStateStore {
    * with what the commander logs (owner, 2026-09-27: "make it dynamic").
    */
   readonly codexSightings = new Map<string, string>();
+  /**
+   * Achievements (owner, 2026-09-27): `regionJoinKey|entryKey` → earliest time the plant counted —
+   * the third sample of a sampled genus, the codex line of a legacy one. Journals only.
+   */
+  readonly achievementDone = new Map<string, string>();
+  /** Region of each system from its `CodexEntry` lines (the only journal event naming one). */
+  private readonly codexRegionBySystem = new Map<number, string>();
+  /** The achievement the commander tracks (a user preference, not journal state). */
+  trackedAchievementId: string | null = null;
 
   /**
    * How long this commander's own trips actually take, in minutes (B5).
@@ -1270,6 +1282,30 @@ export class GameStateStore {
     }
   }
 
+  private noteAchievementDone(key: string, ts: string): void {
+    const prev = this.achievementDone.get(key);
+    if (prev === undefined || (ts && ts < prev)) this.achievementDone.set(key, ts);
+  }
+
+  /**
+   * The third sample of a variant: it counts for the region it was taken in. `ScanOrganic` names no
+   * region, so it is the one the system's codex line gave, or else where the commander is standing.
+   */
+  private noteSampledAchievement(line: JournalLine, systemAddress: number, ts: string): void {
+    const entry = codexEntryKey(typeof line.Variant === "string" ? line.Variant : "");
+    if (!entry || isLegacyPlantKey(entry)) return;
+    let rk = this.codexRegionBySystem.get(systemAddress) ?? "";
+    if (!rk && this.commanderPos && this.currentSystemAddress === systemAddress) {
+      const p = this.commanderPos;
+      rk = regionJoinKey(regionForSystem(getProjectRoot(), p.x, p.y, p.z));
+    }
+    if (rk) this.noteAchievementDone(`${rk}|${entry}`, ts);
+  }
+
+  setTrackedAchievement(id: string | null): void {
+    this.trackedAchievementId = id && id.trim() ? id.trim().slice(0, 200) : null;
+  }
+
   setPhotoStamp(p: Partial<PhotoStampPrefs>): void {
     const next = { ...this.photoStamp };
     for (const k of ["commander", "system", "timestamp"] as const) {
@@ -1386,6 +1422,8 @@ export class GameStateStore {
     this.codexRegionLogged.clear();
     this.codexMapLogged.clear();
     this.codexSightings.clear();
+    this.achievementDone.clear();
+    this.codexRegionBySystem.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -1428,6 +1466,8 @@ export class GameStateStore {
     this.codexRegionLogged.clear();
     this.codexMapLogged.clear();
     this.codexSightings.clear();
+    this.achievementDone.clear();
+    this.codexRegionBySystem.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -2063,6 +2103,13 @@ export class GameStateStore {
         }
         const mapKey = codexMapKeyFromLine(line as Parameters<typeof codexMapKeyFromLine>[0]);
         if (mapKey) this.codexMapLogged.add(mapKey);
+        {
+          const rk = typeof line.Region_Localised === "string" ? regionJoinKey(line.Region_Localised) : "";
+          if (rk && typeof line.SystemAddress === "number") this.codexRegionBySystem.set(line.SystemAddress, rk);
+          // A legacy plant is never sampled three times: its codex line is what counts.
+          const entry = codexEntryKey(typeof line.Name === "string" ? line.Name : "");
+          if (rk && entry && isLegacyPlantKey(entry)) this.noteAchievementDone(`${rk}|${entry}`, ts);
+        }
         const sightingRegion = typeof line.Region_Localised === "string" ? regionJoinKey(line.Region_Localised) : "";
         if (species && sightingRegion && typeof line.SystemAddress === "number") {
           const k = `${species}|${sightingRegion}|${line.SystemAddress}`;
@@ -2562,6 +2609,7 @@ export class GameStateStore {
           const nextCount = Math.max(prevProg.count, nextCountRaw);
           const nextLabel = label || prevProg.label;
           this.organicAnalyseByKey.set(fullKey, { count: nextCount, label: nextLabel });
+          if (nextCount >= 3 && prevProg.count < 3) this.noteSampledAchievement(line, systemAddress, ts);
           if (nextCount >= 3 && !this.pendingOrganicSales.some((p) => p.fullKey === fullKey)) {
             this.pendingOrganicSales.push({
               fullKey,
@@ -3181,6 +3229,7 @@ export class GameStateStore {
       codexRegionLogged: [...this.codexRegionLogged],
       codexMapLogged: [...this.codexMapLogged],
       codexSightings: [...this.codexSightings],
+      achievementDone: [...this.achievementDone],
       landingMinutesSamples: [...this.landingMinutesSamples],
       samplingMinutesSamples: [...this.samplingMinutesSamples],
       pendingOrganicSales: this.pendingOrganicSales.map((p) => ({ ...p })),
@@ -3264,6 +3313,7 @@ export class GameStateStore {
     for (const k of data.codexRegionLogged ?? []) this.codexRegionLogged.add(k);
     for (const k of data.codexMapLogged ?? []) this.codexMapLogged.add(k);
     for (const [k, t] of data.codexSightings ?? []) this.codexSightings.set(k, t);
+    for (const [k, t] of data.achievementDone ?? []) this.achievementDone.set(k, t);
     this.landingMinutesSamples.push(...(data.landingMinutesSamples ?? []));
     this.samplingMinutesSamples.push(...(data.samplingMinutesSamples ?? []));
     this.pendingOrganicSales = data.pendingOrganicSales.map((p) => ({ ...p }));

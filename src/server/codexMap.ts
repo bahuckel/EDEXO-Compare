@@ -23,7 +23,7 @@ import type {
 } from "../shared/types.js";
 import { regionJoinKey } from "../shared/regionMap.js";
 
-interface CodexRegionsFile {
+export interface CodexRegionsFile {
   source: { note: string };
   types: [string, string, CodexMapKind][];
   regions: Record<string, Partial<Record<CodexMapKind, [string, string, number, number, number[]][]>>>;
@@ -49,6 +49,11 @@ function load(projectRoot: string): CodexRegionsFile | null {
   }
   cached = { file, data };
   return data;
+}
+
+/** The catalogue itself, for the achievements (null when this build has no file). */
+export function codexRegionsData(projectRoot: string): CodexRegionsFile | null {
+  return load(projectRoot);
 }
 
 /** Test seam. */

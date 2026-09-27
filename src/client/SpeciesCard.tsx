@@ -1,7 +1,7 @@
 /**
  * The full species card and its sub-blocks, split out of App.tsx (7.3).
  */
-import { codexMarkTitle } from "./codexMark";
+import { achievementMarkTitle, codexMarkTitle } from "./codexMark";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useFootfallCertainty } from "./footfallContext";
@@ -445,6 +445,15 @@ export const SpeciesCard = memo(function SpeciesCard({
             aria-label="Not yet in your codex"
           >
             new to you
+          </span>
+        ) : null}
+        {m.achievementAdvance ? (
+          <span
+            className="species-ach-mark"
+            title={achievementMarkTitle(m.achievementAdvance)}
+            aria-label="Advances the tracked achievement"
+          >
+            ★
           </span>
         ) : null}
         <SpeciesProvenanceBadge p={m.provenance} />

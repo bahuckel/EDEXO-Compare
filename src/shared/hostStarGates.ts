@@ -163,6 +163,21 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
   },
   {
     /**
+     * Crystalline Shards (added 2026-09-28). The owner's notes say "A, F, G, K, M or S"; the Spansh
+     * dump's 5,932 Shards bodies with a known host are K 2,101, M 1,730, G 481, F 269, brown dwarf 206,
+     * A 43, T Tauri 2 — never O, B, a white dwarf, a neutron star or a black hole. Bioforge's 4,450
+     * sightings agree (local star: neutron once). Judged on the body's own star: Shards sit ≥ 12,000
+     * Ls from the arrival star, often beside a secondary, and the main star says nothing there.
+     */
+    idIncludes: "crystalline_shards",
+    gate: {
+      allowed: ["A", "F", "G", "K", "M", "L", "T", "Y", "TTS", "other"],
+      evidence:
+        "host of 4,832 Shards bodies: K 43 %, M 36 %, G 10 %, F 6 %, brown dwarf 4 %, A 1 % — never O, B, D, N or H",
+    },
+  },
+  {
+    /**
      * Electricae pluma — measured on the codex CSV's main star, so judged on it, like araneamus.
      * Judged on the host it demoted 12 of the 69 pluma bodies in the corpus, every one orbiting an
      * M, L, Y or T dwarf in a system whose main star is neutron or A. The owner's original report

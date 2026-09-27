@@ -1,5 +1,11 @@
 import path from "node:path";
 import {
+  achievementDetail,
+  achievementExists,
+  achievementsList,
+  clearAchievementsCache,
+} from "./achievements.js";
+import {
   buildCodexExport,
   buildExomasteryExport,
   clearSharedExomasteryCache,
@@ -320,6 +326,7 @@ function reloadSpeciesDerivedCaches(): void {
   clearPlanetClassObservationsCache();
   clearStarlightRangesCache();
   clearBodyTypePriorCache();
+  clearAchievementsCache();
 }
 
 export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
@@ -397,6 +404,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             minimapRadiusM: store.minimapRadiusM,
             hudPrefs: store.hudPrefs,
             photoStamp: store.photoStamp,
+            trackedAchievementId: store.trackedAchievementId,
           },
           null,
           2,
@@ -425,11 +433,13 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     minimapRadiusM?: number;
     hudPrefs?: unknown;
     photoStamp?: Partial<PhotoStampPrefs>;
+    trackedAchievementId?: string | null;
   };
 
   function applyPersistedUserPrefs(j: PersistedUserPrefs): void {
     if (j.hudPrefs && typeof j.hudPrefs === "object") store.setHudPrefs(j.hudPrefs);
     if (j.photoStamp && typeof j.photoStamp === "object") store.setPhotoStamp(j.photoStamp);
+    if (typeof j.trackedAchievementId === "string") store.setTrackedAchievement(j.trackedAchievementId);
     if (typeof j.statusPollMs === "number" || typeof j.journalPollMs === "number") {
       // Read back through the same clamp that wrote them: a hand-edited settings file is the case
       // this exists for, and a 5 ms status poll would read the same file two hundred times a second.
@@ -1414,6 +1424,20 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     scanGalaxyBodies: (query, limit) => galaxyBodyScan({ ...query, from: store.commanderPos, limit }),
     getCommanderSectors: () => commanderSectorsDto(store),
     getCodexMapLogged: () => store.codexMapLogged,
+    getAchievements: () => achievementsList(getProjectRoot(), store, getCachedSpeciesDatabase().species),
+    getAchievementDetail: (id) =>
+      achievementDetail(getProjectRoot(), store, getCachedSpeciesDatabase().species, id),
+    trackAchievement: (id) => {
+      if (
+        id !== null &&
+        !achievementExists(getProjectRoot(), store, getCachedSpeciesDatabase().species, id)
+      ) {
+        return false;
+      }
+      store.setTrackedAchievement(id);
+      persistUserPreferences();
+      return true;
+    },
     getCommanderSystem: () => store.currentSystem,
     setHudPrefs: (raw) => {
       store.setHudPrefs(raw);

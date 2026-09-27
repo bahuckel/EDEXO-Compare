@@ -189,6 +189,28 @@ export function IconPoi({ className }: { className?: string }) {
   );
 }
 
+/** Achievements: a laurel-less medal — a ribbon and a star in a ring. */
+export function IconAchievements({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 3l2.5 6M16 3l-2.5 6" />
+      <circle cx="12" cy="15" r="6" />
+      <path d="M12 12l.9 1.9 2 .2-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.2z" />
+    </svg>
+  );
+}
+
 /** The session log: a page with lines, the last one a check. */
 export function IconSession({ className }: { className?: string }) {
   return (

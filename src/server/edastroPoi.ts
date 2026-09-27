@@ -163,6 +163,11 @@ function loadRows(): PoiRecord[] {
   }
 }
 
+/** Every row of the downloaded file (empty when there is none) — the achievements' Sights sets. */
+export function poiRecords(): readonly PoiRecord[] {
+  return loadRows();
+}
+
 export function resetPoiMemo(): void {
   memo = null;
 }

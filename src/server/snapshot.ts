@@ -27,6 +27,7 @@ import type {
   SpeciesEntry,
   SpeciesMatch,
   SpeciesMatchContext,
+  TrackedAchievementDTO,
 } from "../shared/types.js";
 import { getProjectRoot } from "./paths.js";
 import { perfTime } from "./perf.js";
@@ -36,6 +37,7 @@ import type { GameStateStore } from "./gameState.js";
 import { matchDatabaseToScan, shownSpeciesMatches, speciesMatchesCriteria } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
 import { bumpMatchCacheEpoch } from "./matchCacheEpoch.js";
+import { achievementAdvanceFor, trackedAchievementSummary, trackedSet } from "./achievements.js";
 import { clearStarlightRangesCache, starlightRangeFor } from "./starlightRanges.js";
 import { journalHostObservationFromSpeciesContext } from "./journalHostObservation.js";
 import { resolveSpeciesPhoto } from "./speciesPhotos.js";
@@ -605,6 +607,53 @@ function attachCodexRegionNovelty(
   }
 }
 
+/**
+ * The tracked achievement (owner, 2026-09-27): mark the rows whose plant, here, would advance it —
+ * the colour the row shows, in the body's region, not yet done. Same colour label as [CODEX].
+ */
+function attachAchievementAdvance(
+  matches: SpeciesMatch[],
+  store: GameStateStore,
+  ctx: SpeciesMatchContext | null,
+  scan: PlanetScan | null,
+): void {
+  if (!store.trackedAchievementId) return;
+  const root = getProjectRoot();
+  const tracked = trackedSet(root, store, cachedDb.species);
+  if (!tracked) return;
+  for (const m of matches) {
+    if (m.unlikely) continue;
+    const label =
+      m.confirmedColour ??
+      candidateMorphColorShortLabel(m.entry, ctx?.colourStarType ?? ctx?.parentStarType, scan?.materials);
+    const adv = achievementAdvanceFor(root, store, cachedDb.species, tracked, m.entry.id, ctx?.regionName, label);
+    if (adv) m.achievementAdvance = adv;
+  }
+}
+
+/** The tracked achievement for the app bar and the HUD, with what in the system in view advances it. */
+function trackedAchievementForSnapshot(
+  store: GameStateStore,
+  bodies: readonly BodyComputed[],
+): TrackedAchievementDTO | null {
+  const summary = trackedAchievementSummary(getProjectRoot(), store, cachedDb.species);
+  if (!summary) return null;
+  const here: TrackedAchievementDTO["here"] = [];
+  for (const b of bodies) {
+    for (const m of b.matches) {
+      const a = m.achievementAdvance;
+      if (!a || m.unlikely) continue;
+      here.push({
+        bodyKey: b.state.key,
+        body: b.tabLabel || b.state.bodyName,
+        species: m.entry.displayName,
+        colours: a.variants.map((v) => v.split(" - ")[1] ?? v),
+      });
+    }
+  }
+  return { ...summary, here };
+}
+
 let sharedSummaryMemo: { key: string; value: SharedExomasteryDTO } | null = null;
 
 /** The launcher's line about the shared folder (GET /api/exomastery/shared). */
@@ -702,6 +751,8 @@ function computeBodyCacheSignature(
     footCatalog: footScannedCatalogSignature(root),
     // A new CodexEntry changes the "new to you" and [CODEX] marks without touching the body.
     codex: `${store.codexLoggedSpecies.size}/${store.codexRegionLogged.size}`,
+    // The tracked achievement's marks move with what is tracked and with every completion.
+    achievement: `${store.trackedAchievementId ?? ""}/${store.achievementDone.size}`,
     shared: sharedSignature(),
   });
 }
@@ -930,6 +981,7 @@ function computeBodyUncached(
   }
   attachCodexNovelty(matches, store);
   attachCodexRegionNovelty(matches, store, speciesMatchCtx, scanForExo);
+  attachAchievementAdvance(matches, store, speciesMatchCtx, scanForExo);
   // Rarity where the body is (owner, 2026-09-27): a species can be common here and rare elsewhere.
   if (speciesMatchCtx?.regionName) {
     for (const m of matches) {
@@ -1274,6 +1326,7 @@ export function buildSnapshot(
     fssAllBodiesFoundNoBio,
     includeBacteriumInSearch: store.includeBacteriumInSearch,
     hudPrefs: store.hudPrefs,
+    trackedAchievement: bootLoading ? null : trackedAchievementForSnapshot(store, bodies),
     sessionLog,
     canonnUpload: {
       enabled: store.canonnUploadEnabled,

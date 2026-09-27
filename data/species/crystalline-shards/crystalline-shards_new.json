@@ -1,0 +1,65 @@
+{
+  "formatVersion": 1,
+  "genus": "Crystalline Shards",
+  "meta": {
+    "temperature_K_convention": "Pair is [min_K, max_K]. Use null for max to mean no upper bound. A number always means that number — there is no magic threshold. (999 is still read as no-bound for older files, but is deprecated: write null.)",
+    "general": {
+      "description": "Clusters of crystalline shards on cold, airless worlds far from the system's main star, in systems holding a life-bearing or water world.",
+      "min_sample_distance_m": 100,
+      "planet_requirements": {
+        "planet_types": ["Icy", "Rocky", "High Metal Content", "Rocky Ice"],
+        "atmosphere": "None (thin allowed)",
+        "system_requirements": [
+          "Earth-Like World",
+          "Ammoniac World",
+          "Gas Giant with water-based life",
+          "Gas Giant with ammonia-based life",
+          "Water Giant"
+        ]
+      }
+    },
+    "summary": "Clusters of crystalline shards on cold, airless worlds far from the system's main star, in systems holding a life-bearing or water world.",
+    "minSampleDistanceM": 100,
+    "genusWideRequirements": {
+      "planet_types": ["Icy", "Rocky", "High Metal Content", "Rocky Ice"],
+      "atmosphere": "None (thin allowed)"
+    }
+  },
+  "species": [
+    {
+      "id": "crystalline_shards_crystalline_shards",
+      "displayName": "Crystalline Shards",
+      "description": "Single-species genus, logged with the composition scanner. Cold (20-273 K), at least 12,000 Ls from the arrival star, in a system with an Earth-like, ammonia or water giant, or a gas giant with life.",
+      "conditions": {
+        "planet_types": ["Icy", "Rocky", "High Metal Content", "Rocky Ice"],
+        "atmosphere": ["None", "Neon", "Neon-rich", "Carbon dioxide", "Helium", "Methane", "Argon", "Argon-rich"],
+        "temperature_K": { "min": 20, "max": 273 },
+        "distance_from_arrival": { "min_ls": 12000 },
+        "system_requirements": [
+          "Earth-Like World",
+          "Ammoniac World",
+          "Gas Giant with water-based life",
+          "Gas Giant with ammonia-based life",
+          "Water Giant",
+          "Water World"
+        ],
+        "parent_star": "A, F, G, K, M, S or a brown dwarf (hostStarGates.ts)",
+        "min_sample_distance_m": 100,
+        "matchContextNotes": [
+          "Measured 2026-09-28 on the Spansh dump's 5,932 Shards bodies (DSS genus $Codex_Ent_Ground_Struct_Ice_Name;): every one is ≥ 12,004 Ls from the arrival star (the owner's 12,000 Ls rule, measured from the arrival star, not the body's own), 20-267 K, Icy 61 % / Rocky 23 % / HMC 14 % / Rocky Ice 2 %, never Metal-rich.",
+          "81 % airless; the rest thin Carbon dioxide, Neon, Neon-rich, Helium, Methane or Argon — listed, so those are not demoted.",
+          "Companion body: 245 of 259 systems the dump holds whole (94.6 %) have one of the listed classes; 4 of the 14 without have a Water World, which is added. Demote-only, and only once the system's FSS is complete.",
+          "Host star: K, M, G, F, brown dwarfs and A — never O, B, white dwarf, neutron or black hole (hostStarGates.ts)."
+        ]
+      }
+    }
+  ],
+  "authorNotes": {
+    "species_count": 1,
+    "sources": [
+      "data/species/crystalline-shards/crystaline-shards-notes.txt (the owner's conditions)",
+      "Bioforge Stats, Crystalline Shards.json (4,450 sightings)",
+      "Spansh galaxy dump, every body whose DSS genus list carries $Codex_Ent_Ground_Struct_Ice_Name;"
+    ]
+  }
+}

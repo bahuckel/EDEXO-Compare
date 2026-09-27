@@ -32,6 +32,20 @@ function regionIndexForBody(store: GameStateStore, b: BodyExoState, projectRoot:
 }
 
 /**
+ * Measured presence rates for species the ranking model has no profile for, so the floor can judge
+ * them too instead of treating them as "unmeasured" forever.
+ *
+ * Crystalline Shards (2026-09-28): over the Spansh dump, of the bio bodies meeting every Shards rule
+ * (class, 20-273 K, airless or its thin atmospheres, ≥ 12,000 Ls from arrival, a companion body, no
+ * O/B/remnant host), Shards is on 4,426 of 134,646 one-signal bodies (3.3 %) and 255 of 203,234 with
+ * more signals (0.13 %). Under the 5 % floor either way: before a DSS it waits behind "show unlikely",
+ * and once a DSS names the genus it is shown like any confirmed genus.
+ */
+const FIXED_PRESENCE_PCT: Record<string, { oneSignal: number; more: number }> = {
+  crystalline_shards_crystalline_shards: { oneSignal: 3.3, more: 0.13 },
+};
+
+/**
  * The ranking model's answer, written onto the matches.
  *
  * `rankSpeciesOnBody` normalises across the candidates, which answers "which one species is this".
@@ -55,6 +69,10 @@ export function attachPresenceProbability(
   if (!scan) return;
   const shown = matches.filter((m) => !m.unlikely);
   if (shown.length === 0) return;
+  for (const m of shown) {
+    const fixed = FIXED_PRESENCE_PCT[m.entry.id];
+    if (fixed) m.presenceProbabilityPercent = (b.biologicalSignals ?? 1) > 1 ? fixed.more : fixed.oneSignal;
+  }
   const { ranked } = rankSpeciesOnBody(shown, scan, rec, journalHost, {
     root,
     regionPrior: true,

@@ -146,6 +146,10 @@ const PARSED_CRITERION_KEYS: readonly string[] = [
   "orbit_from_star_ls",
   "distance_from_star",
   "distanceFromStar",
+  // distance from the arrival star
+  "distanceFromArrivalLs",
+  "distance_from_arrival",
+  "distance_from_arrival_ls",
   // geological signals
   "geologicalSignalIncludes",
   "geological_signals",

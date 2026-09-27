@@ -701,6 +701,21 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     out.push({ id: "orbit-distance", label: "Orbit distance", lines, caption, tier });
   }
 
+  /* Distance from the arrival star (Crystalline Shards) */
+  if (c.distanceFromArrivalLs?.min !== undefined || c.distanceFromArrivalLs?.max !== undefined) {
+    const arr = c.distanceFromArrivalLs!;
+    const lines = [`Arrival (${arr.min ?? "—"} … ${arr.max ?? "—"} LS from the arrival star)`];
+    const v = ctx?.distanceFromArrivalLs ?? null;
+    let tier: EncyclopediaSpawnTier = "yellow";
+    let caption = "Distance from arrival missing";
+    if (v != null && Number.isFinite(v)) {
+      const ok = inRange(v, arr.min, arr.max);
+      tier = ok ? "blue" : "red";
+      caption = ok ? `${Math.round(v)} LS satisfies gate` : `${Math.round(v)} LS outside the band`;
+    }
+    out.push({ id: "arrival-distance", label: "Distance from arrival", lines, caption, tier });
+  }
+
   /* DSS / FSS geological signal hints */
   if (c.geologicalSignalIncludes?.length) {
     const lines = [`Signals must contain: ${c.geologicalSignalIncludes.join(" / ")}`];

@@ -47,7 +47,7 @@ export function parsePairs(args: string[]): Record<string, unknown> {
 }
 
 /** The HUD's own section names, from `public/hud.js`. */
-export const HUD_SECTIONS = ["jump", "fss", "candidates", "distance", "datavalue"];
+export const HUD_SECTIONS = ["jump", "fss", "candidates", "distance", "datavalue", "achievement"];
 
 const onOff = (args: string[]): boolean | null =>
   args[0] === "on" ? true : args[0] === "off" ? false : null;

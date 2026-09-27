@@ -1,4 +1,13 @@
-import type { SpeciesMatch } from "@shared/types";
+import type { AchievementAdvanceDTO, SpeciesMatch } from "@shared/types";
+
+/** The tracked achievement's mark (★): which variants, here, would count toward it. */
+export function achievementMarkTitle(a: AchievementAdvanceDTO): string {
+  const list =
+    a.variants.length > 4
+      ? `${a.variants.slice(0, 4).join(", ")} and ${a.variants.length - 4} more`
+      : a.variants.join(", ");
+  return `Advances “${a.name}” — ${list} ${a.variants.length === 1 ? "is" : "are"} not done yet.`;
+}
 
 /**
  * The [CODEX] mark's tooltip (owner, 2026-09-26): which colour would be a new codex entry, and where.

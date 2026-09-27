@@ -1,4 +1,4 @@
-import { codexMarkTitle } from "./codexMark";
+import { achievementMarkTitle, codexMarkTitle } from "./codexMark";
 import { useState, type ReactNode } from "react";
 import type { BodyComputed, PlanetScan } from "@shared/types";
 import { settledMultiplier } from "@shared/footfallValue";
@@ -203,6 +203,11 @@ export function SpeciesRow({
               title="No codex entry for this species in your journals yet"
             >
               new to you
+            </span>
+          ) : null}
+          {m.achievementAdvance ? (
+            <span className="srow-tag srow-tag--ach" title={achievementMarkTitle(m.achievementAdvance)}>
+              ★
             </span>
           ) : null}
           {m.entry.predictionUnsupported ? (

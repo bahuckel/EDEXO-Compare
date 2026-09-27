@@ -13,6 +13,8 @@ import { gzip as gzipCb } from "node:zlib";
 import express from "express";
 import { WebSocketServer } from "ws";
 import type {
+  AchievementDetailDTO,
+  AchievementsDTO,
   AppSnapshot,
   AppStatusDTO,
   ExoLiveDTO,
@@ -176,6 +178,10 @@ export function createHttpServer(opts: {
   getCommanderSectors?: () => CommanderSectorsDTO;
   /** Codex map: the commander's codex entries, `regionJoinKey|entryKey` (see codexMap.ts). */
   getCodexMapLogged?: () => ReadonlySet<string>;
+  /** Achievements: the list, one set's entries, and which one is tracked (false = no such id). */
+  getAchievements?: () => AchievementsDTO;
+  getAchievementDetail?: (id: string) => AchievementDetailDTO | null;
+  trackAchievement?: (id: string | null) => boolean;
   /**
    * GET /api/feeder/status — feeder corpus vs installed profiles.
    *
@@ -682,6 +688,44 @@ export function createHttpServer(opts: {
       return;
     }
     res.json(opts.getBacklogMap());
+  });
+
+  app.get("/api/achievements", (_req, res) => {
+    perfCount("http.achievements");
+    if (!opts.getAchievements) {
+      res.status(501).json({ error: "Not available" });
+      return;
+    }
+    res.json(opts.getAchievements());
+  });
+
+  app.get("/api/achievements/detail", (req, res) => {
+    const id = typeof req.query.id === "string" ? req.query.id : "";
+    const out = id && opts.getAchievementDetail ? opts.getAchievementDetail(id) : null;
+    if (!out) {
+      res.status(404).json({ error: "no such achievement" });
+      return;
+    }
+    res.json(out);
+  });
+
+  /** POST { id: string | null } — track one achievement, or none. */
+  app.post("/api/achievements/track", (req, res) => {
+    if (!opts.trackAchievement) {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const id = (req.body as { id?: unknown } | undefined)?.id;
+    if (id !== null && typeof id !== "string") {
+      res.status(400).json({ ok: false, error: 'JSON body must include "id": string or null.' });
+      return;
+    }
+    if (!opts.trackAchievement(id)) {
+      res.status(404).json({ ok: false, error: "no such achievement" });
+      return;
+    }
+    opts.scheduleBroadcast?.();
+    res.json({ ok: true });
   });
 
   app.get("/api/codex/regions", (_req, res) => {

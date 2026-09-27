@@ -832,6 +832,35 @@ export function speciesMatchesExcludingTempPressure(
     }
   }
 
+  /*
+   * Distance from the arrival star — a wall, unlike the orbit range. Crystalline Shards, the one species
+   * carrying it: all 5,932 Spansh-dump bodies are ≥ 12,004 Ls from arrival, so a body well inside the
+   * rule is not a place they grow. Just inside it (the numeric tolerance) demotes; an unknown distance
+   * demotes too, since a cold rock anywhere would otherwise list them.
+   */
+  const arr = c.distanceFromArrivalLs;
+  if (arr && (arr.min !== undefined || arr.max !== undefined)) {
+    const v = ctx?.distanceFromArrivalLs;
+    if (v == null || !Number.isFinite(v)) {
+      failures.push({
+        field: "Arrival",
+        soft: true,
+        detail: `Distance from the arrival star unknown — species needs ${arr.min ?? "−∞"}…${arr.max ?? "∞"} LS. ${DEMOTED_NOTE}`,
+      });
+    } else {
+      const fit = rangeFit(v, arr.min, arr.max);
+      if (fit !== "in") {
+        failures.push({
+          field: "Arrival",
+          ...(fit === "near" ? { soft: true } : {}),
+          detail: `${v.toFixed(0)} LS from the arrival star — species needs ${arr.min ?? "−∞"}…${arr.max ?? "∞"} LS.${fit === "near" ? ` Within ${NUMERIC_GATE_TOLERANCE * 100}%. ${DEMOTED_NOTE}` : ""}`,
+        });
+      } else {
+        reasons.push({ field: "Arrival", detail: `${v.toFixed(0)} LS from arrival` });
+      }
+    }
+  }
+
   const cat = c.atmospherePressureCategory;
   if (cat && ctx?.surfacePressureAtm != null && Number.isFinite(ctx.surfacePressureAtm)) {
     const p = ctx.surfacePressureAtm;

@@ -2,8 +2,9 @@
 
 exports[`the format constant > covers every key the store serializes 1`] = `
 {
-  "format": 21,
+  "format": 22,
   "keys": [
+    "achievementDone",
     "bodies",
     "bodyDetailedFootfallState",
     "bodyFootfallFlag",

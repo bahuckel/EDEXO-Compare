@@ -5,6 +5,7 @@ import { useLastStateAt } from "./useLiveSnapshot";
 import { useConfirm, useToast } from "./ui/feedback";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
 import {
+  IconAchievements,
   IconChevronDown,
   IconEncyclopedia,
   IconExobiology,
@@ -38,6 +39,7 @@ import {
   ModalLoading,
 } from "./SharedModals";
 import { EDEXO_HEADER_TRAY_LS, readLsBool, writeLsBool } from "./lsPrefs";
+import { AchievementsModal } from "./AchievementsModal";
 import {
   readRouteHeaderMetricMode,
   routeHeaderBarAria,
@@ -148,6 +150,7 @@ export const HeaderBar = memo(function HeaderBar({
   const feeder = useFeederStatus();
   const [myExoOpen, setMyExoOpen] = useState(false);
   const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [carriersOpen, setCarriersOpen] = useState(false);
   const [poiOpen, setPoiOpen] = useState(false);
@@ -443,6 +446,16 @@ export const HeaderBar = memo(function HeaderBar({
                     <IconEncyclopedia />
                   </button>
                 </Tooltip>
+                <Tooltip text="Achievements — every plant variant by galaxy, genus, rarity and region, Bronze / Silver / Gold; track one to mark its plants.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setAchievementsOpen(true)}
+                    aria-label="Achievements"
+                  >
+                    <IconAchievements />
+                  </button>
+                </Tooltip>
                 <Tooltip text="Session log — tonight's systems, landings, species analysed and sales; copy as Markdown.">
                   <button
                     type="button"
@@ -696,6 +709,7 @@ export const HeaderBar = memo(function HeaderBar({
         </Suspense>
       ) : null}
 
+      {achievementsOpen ? <AchievementsModal onClose={() => setAchievementsOpen(false)} /> : null}
       {encyclopediaOpen ? (
         <Suspense fallback={<ModalLoading />}>
           <EncyclopediaModal

@@ -81,8 +81,9 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   19: star `absoluteMagnitude` (the colour rule's luminosity for catalogue stars).
   20: `codexMapLogged` — every codex entry, any category, per region (the Codex map).
   21: `codexSightings` — biological codex entries with system and time (dynamic species rarity).
+  22: `achievementDone` — plants that count for achievements, per region.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 21;
+export const JOURNAL_MERGE_CACHE_FORMAT = 22;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -133,6 +134,8 @@ export type JournalMergeCachePayload = {
   codexMapLogged?: string[];
   /** Codex sightings, see {@link GameStateStore.codexSightings}. */
   codexSightings?: [string, string][];
+  /** Achievement completions, see {@link GameStateStore.achievementDone}. */
+  achievementDone?: [string, string][];
   /** Minutes per approach-and-landing and per sampling run, for the triage screen's own timing (B5). */
   landingMinutesSamples?: number[];
   samplingMinutesSamples?: number[];

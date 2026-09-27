@@ -109,7 +109,7 @@
  },
  "anemone_anemone (Croceum Anemone) @ Preou Airgh PM-W e1-14 C 2 b a": {
   "dss": "shown",
-  "fss": "shown"
+  "fss": "unlikely"
  },
  "anemone_anemone (Luteolum Anemone) @ HIP 27510 9 a": {
   "dss": "shown",
@@ -684,6 +684,38 @@
   "fss": "shown"
  },
  "concha_concha_renibus @ Synuefou AW-T d4-18 C 2": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "crystalline_shards_crystalline_shards @ Cheia Eohn EI-H d11-2 B 8": {
+  "dss": "shown",
+  "fss": "unlikely"
+ },
+ "crystalline_shards_crystalline_shards @ Chua Dryoae ER-Y c3-0 B 1 a": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "crystalline_shards_crystalline_shards @ Flyoo Bloae JS-I d10-3 C 5": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "crystalline_shards_crystalline_shards @ Gludgaa PM-U c16-9 D 1 a": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "crystalline_shards_crystalline_shards @ Hacho ZA-F d11-1 C 5 a": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "crystalline_shards_crystalline_shards @ Phloing KT-Y d1-1 B 6": {
+  "dss": "shown",
+  "fss": "unlikely"
+ },
+ "crystalline_shards_crystalline_shards @ Phrua Hypooe SU-M d8-34 CDE 1 c": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "crystalline_shards_crystalline_shards @ Thuechaei SG-W c18-21 B 5 a": {
   "dss": "shown",
   "fss": "shown"
  },

@@ -32,6 +32,7 @@ const HUD_KEYS = [
   "explorationScanDataValueCredits",
   "includeExplorationScanDataInDataValue",
   "hudPrefs",
+  "trackedAchievement",
 ] as const satisfies readonly (keyof AppSnapshot)[];
 
 /** What the launcher's `applyLauncherSnapshotData` reads; its live strip polls `/api/status` on its own. */

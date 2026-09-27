@@ -1115,3 +1115,25 @@ body.phone .jump__body {
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* ---- Achievement: the tracked achievement's bar (bronze / silver / gold once a step is reached) --- */
+.ach-hud-bar {
+  height: 5px;
+  margin: 4px 0 2px;
+  background: var(--hud-bg-2);
+  border: 1px solid var(--hud-faint);
+}
+.ach-hud-bar__fill {
+  height: 100%;
+  width: 0;
+  background: var(--hud-hi);
+}
+.ach-hud-bar__fill--s1 {
+  background: #d08a4a;
+}
+.ach-hud-bar__fill--s2 {
+  background: #c9ccd6;
+}
+.ach-hud-bar__fill--s3 {
+  background: #ffd23f;
+}

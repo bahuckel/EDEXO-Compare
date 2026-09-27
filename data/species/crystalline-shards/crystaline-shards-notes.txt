@@ -11,3 +11,7 @@ Gas Giant with water based life
 Gas Giant with ammonia based life
 Water Giant
 They are located only on planets at least 12 000 Ls from the nearest star.
+2026-09-28: crystalline-shards_new.json added on the owner's request (achievements, the ★ marks and
+predictions need a species row). Conditions above measured on 5,932 Spansh-dump Shards bodies: the
+12,000 Ls is from the ARRIVAL star; thin atmospheres (19 %) and brown-dwarf hosts (4 %) allowed;
+Water World added to the companion list. See the json's matchContextNotes.

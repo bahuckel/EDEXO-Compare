@@ -1766,6 +1766,15 @@
                 </span>
               </span>
             </button>
+            <button type="button" class="btn secondary" id="ovAchievement" data-overlay-path="/achievement-overlay.html">
+              <span class="overlay-pick-row">
+                <span class="overlay-check" aria-hidden="true"></span>
+                <span class="btn-lines">
+                  <strong>Achievement</strong>
+                  <span class="subline">The tracked achievement's progress and which plants here count toward it</span>
+                </span>
+              </span>
+            </button>
             <button type="button" class="btn secondary" id="ovJump" data-overlay-path="/jump-overlay.html">
               <span class="overlay-pick-row">
                 <span class="overlay-check" aria-hidden="true"></span>
@@ -3136,14 +3145,16 @@
           "/exo-candidates-overlay.html": "candidates",
           "/distance-overlay.html": "distance",
           "/data-value-overlay.html": "datavalue",
+          "/achievement-overlay.html": "achievement",
         };
-        var HUD_SECTION_ORDER = ["jump", "fss", "candidates", "distance", "datavalue"];
+        var HUD_SECTION_ORDER = ["jump", "fss", "candidates", "distance", "datavalue", "achievement"];
         var HUD_SECTION_LABEL = {
           jump: "Next jump",
           fss: "Discovery scan",
           candidates: "Exo candidates",
           distance: "Exo-distance tracker",
           datavalue: "Data value",
+          achievement: "Achievement",
         };
         var HUD_PATH_BY_SECTION = {};
         Object.keys(HUD_SECTION_BY_PATH).forEach(function (p) {
@@ -3668,6 +3679,12 @@
         if (btnOverlayMenu) btnOverlayMenu.addEventListener("click", function () { void loadHudSettingsIntoModal(); });
         var ovJump = document.getElementById("ovJump");
         if (ovJump) ovJump.addEventListener("click", function () { void pickOverlay("/jump-overlay.html", HUD_W, 160); });
+        var ovAchievement = document.getElementById("ovAchievement");
+        if (ovAchievement) {
+          ovAchievement.addEventListener("click", function () {
+            void pickOverlay("/achievement-overlay.html", HUD_W, 220);
+          });
+        }
 
         /* ------------------------------------------------------------------ import Spansh export */
         var importModal = document.getElementById("importModal");

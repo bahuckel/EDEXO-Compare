@@ -721,6 +721,8 @@ export function buildSpeciesMatchContextFromRecords(i: MatchContextInputs): Spec
   if (signalHints?.length) ctx.signalHints = signalHints;
   if (hostStarClasses?.length) ctx.hostStarClasses = hostStarClasses;
   const mainStar = mainStarClassOf(byId);
+  const arrivalLs = rec?.distanceFromArrivalLs ?? scan?.distanceFromArrivalLs;
+  if (typeof arrivalLs === "number" && Number.isFinite(arrivalLs)) ctx.distanceFromArrivalLs = arrivalLs;
   if (mainStar) ctx.systemMainStarClass = mainStar;
   const colourStar = rec ? colourStarTypeFor(rec, byId) : undefined;
   if (colourStar) ctx.colourStarType = colourStar;

@@ -294,6 +294,7 @@ describe("the audit — every gate the matcher applies is drawn somewhere", () =
           landable: ["landable"],
           parentStarTypeIncludesAnyOf: ["star"],
           orbitDistanceFromParentStarLs: ["orbit"],
+          distanceFromArrivalLs: ["arrival"],
           geologicalSignalIncludes: ["geo"],
         };
         const wanted = hints[field];

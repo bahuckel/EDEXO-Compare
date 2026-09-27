@@ -1,0 +1,263 @@
+/* Achievements window and the tracked achievement's ★ on species rows (owner, 2026-09-27). */
+:root {
+  --ach-bronze: #d08a4a;
+  --ach-silver: #c9ccd6;
+  --ach-gold: var(--warn);
+}
+
+.srow-tag--ach,
+.species-ach-mark {
+  color: var(--ach-gold);
+  font-weight: 800;
+}
+.species-ach-mark {
+  margin-left: 0.35rem;
+  font-size: var(--fs-2xs);
+}
+
+.modal-panel--achievements {
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(88vh, 900px);
+  display: flex;
+  flex-direction: column;
+}
+.modal-body--achievements {
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+.ach-intro {
+  margin: 0 0 0.7rem;
+  font-size: var(--fs-xs);
+}
+.ach-tracked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.65rem;
+  margin-bottom: 0.7rem;
+  border: 1px solid var(--ach-gold);
+  background: rgba(255, 210, 63, 0.06);
+}
+.ach-tracked__k {
+  color: var(--ach-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+}
+.ach-tools {
+  margin-bottom: 0.5rem;
+}
+.ach-search {
+  width: 100%;
+  max-width: 320px;
+  background: var(--surface-3);
+  color: var(--text);
+  border: var(--border);
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+}
+.ach-section {
+  margin-top: 0.9rem;
+}
+.ach-h {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.4rem;
+  color: var(--accent-bright);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--fs-xs);
+}
+.ach-region {
+  background: var(--surface-3);
+  color: var(--text);
+  border: var(--border);
+  padding: 0.15rem 0.35rem;
+  font: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.ach-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.ach-row {
+  padding: 0.4rem 0.55rem 0.45rem;
+  background: var(--surface-2);
+  border: 1px solid var(--accent-a15);
+}
+.ach-row--tracked {
+  border-color: var(--ach-gold);
+}
+.ach-row--gold {
+  background: rgba(255, 210, 63, 0.05);
+}
+.ach-row__main {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.ach-row__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ach-row__caret {
+  color: var(--muted);
+  width: 0.8em;
+}
+.ach-row__kind {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ach-row__count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  min-width: 4.5em;
+  text-align: right;
+}
+.ach-row__note {
+  font-size: var(--fs-2xs);
+  margin-top: 0.15rem;
+}
+.ach-medal {
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 4.2em;
+  text-align: center;
+}
+.ach-medal--none {
+  color: var(--muted);
+}
+.ach-medal--s1 {
+  color: var(--ach-bronze);
+}
+.ach-medal--s2 {
+  color: var(--ach-silver);
+}
+.ach-medal--s3 {
+  color: var(--ach-gold);
+}
+.ach-track {
+  background: none;
+  border: 1px solid var(--accent-a30);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--fs-2xs);
+  padding: 0.1rem 0.45rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ach-track:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.ach-track--on {
+  border-color: var(--ach-gold);
+  color: var(--ach-gold);
+}
+.ach-bar {
+  position: relative;
+  height: 6px;
+  margin-top: 0.35rem;
+  background: var(--surface-3);
+  border: 1px solid var(--accent-a12);
+}
+.ach-bar__fill {
+  height: 100%;
+  background: var(--accent-dim);
+}
+.ach-bar__fill--s1 {
+  background: var(--ach-bronze);
+}
+.ach-bar__fill--s2 {
+  background: var(--ach-silver);
+}
+.ach-bar__fill--s3 {
+  background: var(--ach-gold);
+}
+.ach-bar__tick {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--text-faint);
+}
+.ach-detail {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--accent-a12);
+}
+.ach-detail__h {
+  margin: 0 0 0.3rem;
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+.ach-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 2 16rem;
+  column-gap: 1rem;
+  font-size: var(--fs-xs);
+}
+.ach-entry {
+  break-inside: avoid;
+  padding: 0.05rem 0;
+}
+.ach-entry--done {
+  color: var(--text-dim);
+}
+.ach-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0.4rem 0 0.2rem;
+  color: var(--accent-bright);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.ach-source {
+  margin-top: 1rem;
+  font-size: var(--fs-2xs);
+}
+.ach-poi-card {
+  margin: 0 0 0.6rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px dashed var(--accent-a45);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+.ach-track:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

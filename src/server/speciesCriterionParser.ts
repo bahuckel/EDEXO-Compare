@@ -396,6 +396,15 @@ export function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesC
       "distanceFromStar",
     ]),
   );
+  const arrivalRec = asRecord(
+    firstDefined(src, ["distanceFromArrivalLs", "distance_from_arrival", "distance_from_arrival_ls"]),
+  );
+  if (arrivalRec) {
+    c.distanceFromArrivalLs = {
+      min: toNumber(arrivalRec.min ?? arrivalRec.min_ls ?? arrivalRec.minLs),
+      max: toNumber(arrivalRec.max ?? arrivalRec.max_ls ?? arrivalRec.maxLs),
+    };
+  }
   if (orbitRec) {
     c.orbitDistanceFromParentStarLs = {
       min: toNumber(orbitRec.min ?? orbitRec.min_ls ?? orbitRec.minLs),

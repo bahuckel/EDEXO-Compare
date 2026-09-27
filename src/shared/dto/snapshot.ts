@@ -107,6 +107,8 @@ export interface AppSnapshot {
    * localStorage) renders the HUD in the same colours and order (owner, 2026-09-13, task 13).
    */
   hudPrefs: HudPrefsDTO | null;
+  /** The achievement the commander tracks, with what in this system would advance it; null when none. */
+  trackedAchievement?: import("./achievements.js").TrackedAchievementDTO | null;
   /** Tonight's play, from live journal lines since the app started (NEXT-TASKS 11). App channel only. */
   sessionLog: SessionLogDTO | null;
   /**

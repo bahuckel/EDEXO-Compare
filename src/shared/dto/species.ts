@@ -20,6 +20,8 @@ export interface SpeciesMatchContext {
   parentStarLuminosity?: string;
   /** Orbit distance from host star: `SemiMajorAxis` (m) / c in LS (not cumulative for nested moons). */
   orbitDistanceFromParentStarLs?: number;
+  /** The body's `DistanceFromArrivalLS`: how far it is from the system's arrival (main) star. */
+  distanceFromArrivalLs?: number;
   /**
    * Host-star class keys for this body — one star, both stars of a pair, or every star in the
    * system when the body orbits a barycentre that names none.
@@ -233,6 +235,11 @@ export interface SpeciesCriterion {
   parentStarTypeIncludesAnyOf?: string[];
   /** Orbit distance from host star in light-seconds; only when context provides it. */
   orbitDistanceFromParentStarLs?: { min?: number; max?: number };
+  /**
+   * Distance from the system's arrival star in light-seconds, soft. Crystalline Shards: every one of
+   * 4,450 Bioforge sightings is ≥ 10,369 Ls from arrival, while many sit right beside a secondary star.
+   */
+  distanceFromArrivalLs?: { min?: number; max?: number };
   /**
    * Atmosphere pressure class using shared thin threshold (`THIN_ATMOSPHERE_MAX_ATM`, default 0.1 atm after journal conversion).
    * Gate runs only when context exposes surface pressure.
@@ -573,6 +580,8 @@ export interface SpeciesMatch {
   codexNewColours?: string[];
   /** The region the mark is about, for the tooltip. */
   codexRegion?: string;
+  /** This plant, here, would advance the tracked achievement (`server/achievements.ts`). */
+  achievementAdvance?: import("./achievements.js").AchievementAdvanceDTO;
   /** This species' rarity in the body's region (`shared/speciesRarity.ts`); the DNA badge shows it. */
   regionRarity?: import("../speciesRarity.js").RegionalRarity;
   /**

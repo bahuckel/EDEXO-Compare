@@ -24,3 +24,4 @@ export * from "./dto/hud.js";
 export * from "./dto/snapshot.js";
 export * from "./dto/systemMap.js";
 export * from "./dto/codexMap.js";
+export * from "./dto/achievements.js";
