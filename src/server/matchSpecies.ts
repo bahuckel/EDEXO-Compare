@@ -50,6 +50,9 @@ import {
   regionPresenceDetail,
   regionSiblingDepletionDetail,
 } from "../shared/regionAbsence.js";
+import { tierRegionalPresence } from "./speciesRarityData.js";
+import { evaluateStarlightGate, formatStarlight } from "./starlightRanges.js";
+import { tierRegionDetail } from "../shared/speciesRarity.js";
 import { getProjectRoot } from "./paths.js";
 import { colourVariantRuleFor } from "./eddsnColourVariants.js";
 import { observedUnderAtmosphere } from "./speciesAtmosphereObservations.js";
@@ -887,7 +890,19 @@ export function speciesMatchesExcludingTempPressure(
    * touched, and somebody has to be the first to record a species somewhere. See
    * `shared/regionAbsence.ts` for the two thresholds and how they were measured.
    */
-  if (ctx?.regionIndex) {
+  /*
+    The rarity-tier rule (owner, 2026-09-27) first: EDSM's codex, and a region limit that scales with
+    how rare the species is (Common 50 systems … Legendary 1) instead of one share for everything.
+    The EDAstro share gate below stays as the fallback for anything the tier data does not know.
+  */
+  const tierVerdict = ctx?.regionName ? tierRegionalPresence(getProjectRoot(), ctx.regionName, entry.id) : null;
+  if (tierVerdict && ctx?.regionName) {
+    if (tierVerdict.presence === "absent") {
+      failures.push({ field: "Region", soft: true, detail: tierRegionDetail(ctx.regionName, tierVerdict, true) });
+    } else if (tierVerdict.presence === "present") {
+      reasons.push({ field: "Region", detail: tierRegionDetail(ctx.regionName, tierVerdict, false) });
+    }
+  } else if (ctx?.regionIndex) {
     const region = regionalPresence(getProjectRoot(), ctx.regionIndex, entry.id);
     if (region?.presence === "absent") {
       failures.push({
@@ -1647,6 +1662,44 @@ export function demoteUnfavouredAtmospheres(
 }
 
 /**
+ * Demote a species when the body gets less or more starlight than it is ever seen under.
+ *
+ * The owner's idea (2026-09-27), measured before it was built: a range for every species, gated only
+ * where it adds to temperature and planet type — see `starlightRanges.ts` for the six species and
+ * why the rest are not. A demotion rather than an exclusion: the ranges hold 99 % of the clean
+ * sightings, not all of them, and a star the FSS has not resolved yet leaves the light short.
+ * Unknown light (a star the body orbits never scanned) says nothing.
+ */
+export function demoteOutsideStarlight(
+  strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  matchContext: SpeciesMatchContext | null | undefined,
+): void {
+  const light = matchContext?.stellarIrradiance;
+  if (light === undefined) return;
+  for (let i = strict.length - 1; i >= 0; i--) {
+    const m = strict[i]!;
+    const verdict = evaluateStarlightGate(m.entry.id, light);
+    if (!verdict || verdict.passes) continue;
+    const { lo, hi } = verdict.range;
+    const reason: MatchReason = {
+      field: "Starlight",
+      detail:
+        `${formatStarlight(light)}× Earth's starlight here; ${m.entry.displayName} grows under ` +
+        `${formatStarlight(lo)}–${formatStarlight(hi)}× (99 % of its sightings). ${DEMOTED_NOTE}`,
+      soft: true,
+    };
+    strict.splice(i, 1);
+    unlikely.push({
+      ...m,
+      reasons: [...m.reasons, reason],
+      unlikely: true,
+      unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
+    });
+  }
+}
+
+/**
  * Of two or more species of one genus shown together, demote the one the region barely records.
  *
  * The absence rule judges a species against the galaxy's biology as a whole and cannot see "12
@@ -1818,6 +1871,7 @@ export function matchDatabaseToScan(
   demoteFailedHostStarGates(strict, unlikely, matchContext);
   demoteFailedSystemBodyGates(strict, unlikely, matchContext);
   demoteUnfavouredAtmospheres(strict, unlikely, scan);
+  demoteOutsideStarlight(strict, unlikely, matchContext);
   demoteRegionallyRareSiblings(strict, unlikely, matchContext);
 
   restoreDemotionsBelowSignalCount(

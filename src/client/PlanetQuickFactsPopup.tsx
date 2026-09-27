@@ -441,7 +441,8 @@ function WorldDetailBody({
   );
 }
 
-function DetailBody({
+/** A body's facts, as the popup shows them — also the system map's side panel. */
+export function DetailBody({
   detail,
   onGoToBioBody,
 }: {

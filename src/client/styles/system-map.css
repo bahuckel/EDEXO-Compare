@@ -116,11 +116,6 @@
   font-size: var(--fs-sm);
 }
 
-.system-map-bracket {
-  stroke: rgba(34, 211, 238, 0.55);
-  stroke-width: 1.25;
-}
-
 .system-map-total-val {
   font-size: var(--fs-xl);
   font-weight: 800;
@@ -153,11 +148,6 @@
   width: 100%;
   height: 100%;
   max-height: min(68vh, 640px);
-}
-
-.system-map-line {
-  stroke: rgba(255, 138, 31, 0.42);
-  stroke-width: 1.35;
 }
 
 .system-map-svg-text,
@@ -981,4 +971,284 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .system-map-legend-you {
   color: #5fe0ff;
   margin-right: 0.3em;
+}
+
+/* ---- System map, rebuilt like the game's (2026-09-27): map on the left, the body's data on the right. ---- */
+.system-map-panel--wide {
+  height: min(94vh, 60rem);
+  max-height: min(94vh, 60rem);
+}
+
+.system-map-panel--wide > * {
+  flex-shrink: 0;
+}
+
+/* The map takes whatever height the header, filters and legend leave. */
+.system-map-panel--wide > .system-map-body {
+  display: flex;
+  gap: var(--s-4, 0.75rem);
+  min-height: 240px;
+  flex: 1 1 0;
+}
+
+.system-map-body .system-map-svg-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  padding: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 138, 31, 0.28);
+}
+
+.system-map-body .system-map-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  user-select: none;
+}
+
+.system-map-side {
+  flex: 0 0 min(22rem, 34%);
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.75rem 0.9rem;
+}
+
+.system-map-side-hint {
+  margin: 0.25rem 0;
+}
+
+@media (max-width: 900px) {
+  .system-map-body {
+    flex-direction: column;
+  }
+  .system-map-side {
+    flex-basis: auto;
+    height: auto;
+    max-height: 40vh;
+  }
+}
+
+.system-map-notable-pill.is-selected {
+  outline: 2px solid #ffb347;
+  outline-offset: 1px;
+}
+
+.system-map-legend-svg {
+  flex: 0 0 auto;
+}
+
+.system-map-legend-badge {
+  display: inline-block;
+  padding: 0 0.28em;
+  border-radius: 2px;
+  background: #5fcf6a;
+  color: #07060a;
+  font-weight: 800;
+  font-size: 0.78em;
+  line-height: 1.35;
+}
+
+.system-map-legend-badge--x5 {
+  background: #ff8a1f;
+}
+
+/* ---- Codex map (Encyclopedia → Codex, 2026-09-27) ---- */
+.ency-codex-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  margin-right: 0.5rem;
+  padding: 0.2rem 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.codex-map-backdrop {
+  z-index: 5300;
+}
+
+.codex-map-panel {
+  width: min(92rem, 98vw);
+  max-width: min(92rem, 98vw);
+  height: min(94vh, 60rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.codex-map-body {
+  display: flex;
+  gap: var(--s-4, 0.75rem);
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 0.5rem;
+}
+
+.codex-map-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 138, 31, 0.28);
+  overflow: hidden;
+  background: #05060a;
+  touch-action: none;
+}
+
+.codex-map-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+.codex-map-zoom {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.codex-map-zoom button {
+  min-width: 2rem;
+}
+
+.codex-map-side {
+  flex: 0 0 min(22rem, 34%);
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.codex-map-region-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.codex-map-region-list button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.codex-map-region-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.codex-map-kinds {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.codex-map-kinds button {
+  flex: 1 1 0;
+  font-weight: 700;
+}
+
+.codex-map-kinds button.is-on {
+  outline: 2px solid #ffb347;
+  outline-offset: 1px;
+}
+
+.codex-map-dot {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 1px solid #05060a;
+  vertical-align: -0.05em;
+}
+
+.codex-map-system-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.codex-map-entries {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  font-size: var(--fs-sm);
+}
+
+.codex-map-entries li {
+  padding: 1px 0;
+}
+
+.codex-map-entries li.is-logged {
+  color: #86efac;
+}
+
+.codex-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.9rem;
+  margin-top: auto;
+}
+
+.codex-map-error {
+  color: #fca5a5;
+}
+
+@media (max-width: 900px) {
+  .codex-map-body {
+    flex-direction: column;
+  }
+  .codex-map-side {
+    flex-basis: auto;
+    max-height: 40vh;
+  }
+}
+
+.codex-map-region-list button,
+.codex-map-kinds button,
+.codex-map-zoom button,
+.codex-map-region-head button,
+.ency-codex-btn {
+  background: rgba(255, 138, 31, 0.06);
+  color: var(--text, #e8e2d6);
+  border: 1px solid rgba(255, 138, 31, 0.3);
+  border-radius: var(--radius-sm, 3px);
+  padding: 0.25rem 0.55rem;
+  cursor: pointer;
+}
+
+.codex-map-region-list button:hover:not(:disabled),
+.codex-map-kinds button:hover:not(:disabled),
+.codex-map-zoom button:hover,
+.codex-map-region-head button:hover,
+.ency-codex-btn:hover {
+  background: rgba(255, 138, 31, 0.18);
+  border-color: rgba(255, 138, 31, 0.6);
+}
+
+.codex-map-region-list button:disabled,
+.codex-map-kinds button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.codex-map-zoom button {
+  background: rgba(5, 6, 10, 0.8);
 }

@@ -414,6 +414,15 @@ export async function hydrateSpecies(
 
       let cacheFile = seen.get(o.systemName) ?? (await cachedSystemFileFor(o.systemName));
       let sysJson: unknown;
+      /*
+        Offline: never ask EDSM (owner, 2026-09-27: "Why isn't it using the galaxy dump we have on
+        disk?"). Fill raw/systems from the dump first (docs/perf/prefill_feeder_systems_from_dump.py or
+        scripts/hydrate-from-galaxy-db.ts); anything still missing is counted as unmatched, not fetched.
+      */
+      if (!cacheFile && process.env.EDEXO_FEEDER_OFFLINE === "1") {
+        result.unmatched++;
+        continue;
+      }
       if (cacheFile) {
         seen.set(o.systemName, cacheFile);
         sysJson = JSON.parse(await readFile(join(rawSystemsDir(), cacheFile), "utf8"));

@@ -25,6 +25,7 @@ import { fuzzyRankAny } from "./fuzzyMatch";
 import { CopySystemButton } from "./CopySystemButton";
 import { ScrollArea } from "./ui/ScrollArea";
 import { Select } from "./ui/Select";
+import { isTerraformableState } from "@shared/terraformState";
 
 /** Rows rendered at once. Enough to scroll through, far short of what would stall the panel. */
 const PAGE = 300;
@@ -599,7 +600,7 @@ export function DiscoveriesTables({
       if (flagFilter.has("first") && r.firstDiscoveredSystem !== true) return false;
       if (flagFilter.has("bodyfirst") && !r.firstDiscoverer) return false;
       if (flagFilter.has("footfall") && !r.firstFootfall) return false;
-      if (flagFilter.has("terra") && !/terraformable/i.test(r.terraformState ?? "")) return false;
+      if (flagFilter.has("terra") && !isTerraformableState(r.terraformState)) return false;
       if (flagFilter.has("volcanic") && !r.volcanism) return false;
       if (flagFilter.has("atmo") && !r.atmosphere) return false;
       if (!q) return true;

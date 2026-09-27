@@ -3,6 +3,7 @@ import { journalStarTypeFromSubType } from "../shared/spanshStarType.js";
 import type { ExplorationScanRecord } from "../shared/types.js";
 import { APP_USER_AGENT } from "./appVersion.js";
 import { planetRingCount } from "./orbitUtils.js";
+import { ATM_TO_PA } from "../shared/journalPhysics.js";
 
 const EDSM_BODIES_URL = "https://www.edsm.net/api-system-v1/bodies";
 const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
@@ -170,8 +171,9 @@ export function mapEdsmBodyToExplorationRecord(
   if (sg !== undefined) rec.surfaceGravity = sg;
   const t = pickNum(body.surfaceTemperature);
   if (t !== undefined) rec.surfaceTemperature = t;
+  // EDSM and Spansh give atmospheres; the app keeps the journal's pascals (journalPressureToAtm).
   const press = pickNum(body.surfacePressure);
-  if (press !== undefined) rec.surfacePressure = press;
+  if (press !== undefined) rec.surfacePressure = press * ATM_TO_PA;
   if (typeof body.isLandable === "boolean") rec.landable = body.isLandable;
   const tf = pickStr(body.terraformingState);
   if (tf) rec.terraformState = tf;

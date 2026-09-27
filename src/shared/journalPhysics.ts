@@ -4,8 +4,11 @@ export const EARTH_G_MS2 = 9.80665;
 /** Distance light travels in one second (m); journal `SemiMajorAxis` is in metres → divide by this for LS. */
 export const LIGHT_SECOND_METERS = 299_792_458;
 
-/** Journal `SurfacePressure`: values above this are treated as pascals; at or below as atmospheres (client + matcher). */
-export const JOURNAL_PRESSURE_PA_THRESHOLD = 40;
+/**
+ * For sources whose pressure unit is unknown (a spreadsheet column): at or above this it is read as
+ * pascals, below it as atmospheres. Never for `SurfacePressure` — see {@link journalPressureToAtm}.
+ */
+export const MIXED_PRESSURE_PA_THRESHOLD = 40;
 
 export const ATM_TO_PA = 101_325;
 
@@ -20,11 +23,23 @@ export function journalSurfaceGravityToG(mPerS2: number): number {
   return mPerS2 / EARTH_G_MS2;
 }
 
-/** Normalise journal `SurfacePressure` to atmospheres (large values Pa → atm). */
-export function journalPressureToAtm(raw: number): number {
+/**
+ * `SurfacePressure` in pascals → atmospheres.
+ *
+ * Inside the app `SurfacePressure` is always pascals, the journal's unit: EDSM and Spansh (which
+ * send atmospheres) are converted on the way in. It used to guess — under 40 read as atmospheres —
+ * and an airless moon with a trace 17.875 Pa showed as 17.875 atm (owner, Tegnae IJ-A b58-0 ABC 2 a,
+ * 2026-09-27), and was matched against species as a 17-atmosphere world.
+ */
+export function journalPressureToAtm(pa: number): number {
+  if (!Number.isFinite(pa)) return pa;
+  return pa / ATM_TO_PA;
+}
+
+/** A pressure of unknown unit (see {@link MIXED_PRESSURE_PA_THRESHOLD}) → atmospheres. */
+export function mixedPressureToAtm(raw: number): number {
   if (!Number.isFinite(raw)) return raw;
-  if (raw >= JOURNAL_PRESSURE_PA_THRESHOLD) return raw / ATM_TO_PA;
-  return raw;
+  return raw >= MIXED_PRESSURE_PA_THRESHOLD ? raw / ATM_TO_PA : raw;
 }
 
 /**

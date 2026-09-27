@@ -1383,6 +1383,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getGalaxyRegions: () => galaxyRegions(),
     scanGalaxyBodies: (query, limit) => galaxyBodyScan({ ...query, from: store.commanderPos, limit }),
     getCommanderSectors: () => commanderSectorsDto(store),
+    getCodexMapLogged: () => store.codexMapLogged,
     getCommanderSystem: () => store.currentSystem,
     setHudPrefs: (raw) => {
       store.setHudPrefs(raw);

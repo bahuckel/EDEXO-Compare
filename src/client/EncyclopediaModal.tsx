@@ -33,6 +33,9 @@ import {
 } from "./encyclopediaFilters";
 import { EncyclopediaFilterBar } from "./EncyclopediaFilterBar";
 import { CopySystemButton } from "./CopySystemButton";
+import { CodexMapModal } from "./CodexMapModal";
+import { IconEncyclopedia } from "./ui/icons";
+import { RarityGem } from "./RarityGem";
 
 const EXO_DRAWER_TRANSITION_MS = 380;
 
@@ -436,6 +439,8 @@ export function EncyclopediaModal({
   );
   const [foundFor, setFoundFor] = useState<SpeciesEntry | null>(null);
   const [photoZoom, setPhotoZoom] = useState<{ urls: string[]; note: string | null } | null>(null);
+  /** The Codex map, opened from the header (owner, 2026-09-27). */
+  const [codexOpen, setCodexOpen] = useState(false);
   /** Inline exomastery planetary cards inside the encyclopedia list (not a nested modal). */
   const [inlineExo, setInlineExo] = useState<{
     speciesEntryId: string;
@@ -627,11 +632,12 @@ export function EncyclopediaModal({
    * that the hand-rolled listener never had.
    */
   const closeTopLayer = useCallback(() => {
+    if (codexOpen) return; // the codex map closes itself first
     if (photoZoom) setPhotoZoom(null);
     else if (inlineExo && !exoClosing) scheduleCloseExo();
     else if (foundFor) setFoundFor(null);
     else onClose();
-  }, [onClose, foundFor, photoZoom, inlineExo, exoClosing, scheduleCloseExo]);
+  }, [onClose, foundFor, photoZoom, inlineExo, exoClosing, scheduleCloseExo, codexOpen]);
 
   const dialogRef = useModal<HTMLDivElement>(true, closeTopLayer);
 
@@ -755,7 +761,10 @@ export function EncyclopediaModal({
           </button>
           <div className="encyclopedia-species-col">
             <div className="encyclopedia-species-head">
-              <h4 className="encyclopedia-species-title">{entry.displayName}</h4>
+              <h4 className="encyclopedia-species-title">
+                <RarityGem rarity={entry.rarity} className="rarity-gem--ency" />
+                {entry.displayName}
+              </h4>
               <span className="encyclopedia-species-genus dim tiny">{entry.genus || entry.genusDataDir}</span>
             </div>
             {photoNote ? <p className="encyclopedia-photo-note dim tiny">{photoNote}</p> : null}
@@ -852,6 +861,14 @@ export function EncyclopediaModal({
       >
         <div className="modal-head">
           <h3 id="encyclopedia-title">Encyclopedia</h3>
+          <button
+            type="button"
+            className="ency-codex-btn"
+            onClick={() => setCodexOpen(true)}
+            title="Codex: the galaxy's regions and what is left to log in each — bodies or biological"
+          >
+            <IconEncyclopedia /> Codex
+          </button>
           <button
             type="button"
             className="modal-close"
@@ -999,6 +1016,7 @@ export function EncyclopediaModal({
           onClose={() => setFoundFor(null)}
         />
       ) : null}
+      {codexOpen ? <CodexMapModal onClose={() => setCodexOpen(false)} /> : null}
     </div>
   );
 }

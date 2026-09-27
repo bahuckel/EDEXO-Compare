@@ -12,6 +12,7 @@ import { useFootfallCertainty } from "./footfallContext";
 import { useRowContext, type LiveRun, type RowContextValue } from "./rowContext";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { heroPhotoUrlFor, titleCaseSpeciesWords } from "./speciesMatchHelpers";
+import { RarityGem } from "./RarityGem";
 
 type Match = BodyComputed["matches"][number];
 
@@ -177,6 +178,7 @@ export function SpeciesRow({
           onError={() => setThumbMissing(true)}
         />
         <span className="srow-name">
+          <RarityGem rarity={m.entry.rarity} regional={m.regionRarity} className="rarity-gem--row" />
           {genus ? <em>{genus} </em> : null}
           {epithet}
           <span className={`srow-colour${colourUnknown ? " srow-colour--unknown" : ""}`}>

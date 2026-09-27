@@ -1,0 +1,1069 @@
+{
+ "formatVersion": 1,
+ "builtAt": "2026-09-27",
+ "source": "Spansh galaxy_bio dump (DSS-mapped bio bodies) x EDSM codex dump + EDAstro codex-data.csv; docs/perf/star-flux-ranges.mts + star-flux-analyse.py",
+ "reading": "magnitude",
+ "unit": "Sun's flux at 1 AU (Earth = 1)",
+ "species": {
+  "aleoida_aleoida_arcus": {
+   "gate": false,
+   "lo": 0.005019,
+   "hi": 5.878,
+   "n": 16136,
+   "genusCut": 0.0073,
+   "beyondT": 0.0068,
+   "beyondTOf": 881,
+   "ownLoss": 0.0091
+  },
+  "aleoida_aleoida_coronamus": {
+   "gate": false,
+   "lo": 0.005401,
+   "hi": 5.36,
+   "n": 20950,
+   "genusCut": 0.0084,
+   "beyondT": 0.0038,
+   "beyondTOf": 526,
+   "ownLoss": 0.0088
+  },
+  "aleoida_aleoida_gravis": {
+   "gate": false,
+   "lo": 0.005718,
+   "hi": 3.717,
+   "n": 10330,
+   "genusCut": 0.0099,
+   "beyondT": 0.0,
+   "beyondTOf": 47,
+   "ownLoss": 0.01
+  },
+  "aleoida_aleoida_laminiae": {
+   "gate": false,
+   "lo": 0.009166,
+   "hi": 11.96,
+   "n": 18758,
+   "genusCut": 0.0162,
+   "beyondT": 0.0056,
+   "beyondTOf": 13132,
+   "ownLoss": 0.0094
+  },
+  "aleoida_aleoida_spica": {
+   "gate": false,
+   "lo": 0.01206,
+   "hi": 7.197,
+   "n": 11676,
+   "genusCut": 0.028,
+   "beyondT": 0.0114,
+   "beyondTOf": 10152,
+   "ownLoss": 0.0104
+  },
+  "amphora_amphora_plant": {
+   "gate": false,
+   "lo": 56.15,
+   "hi": 2109.0,
+   "n": 437,
+   "genusCut": null,
+   "beyondT": null,
+   "beyondTOf": 0,
+   "ownLoss": 0.0221
+  },
+  "anemone_anemone": {
+   "gate": false,
+   "lo": 0.1519,
+   "hi": 141400.0,
+   "n": 4199,
+   "genusCut": null,
+   "beyondT": null,
+   "beyondTOf": 0,
+   "ownLoss": 0.0152
+  },
+  "bacterium_bacterium_acies": {
+   "gate": false,
+   "lo": 1.671e-09,
+   "hi": 0.02059,
+   "n": 32406,
+   "genusCut": 0.6912,
+   "beyondT": 0.0114,
+   "beyondTOf": 78443,
+   "ownLoss": 0.0238
+  },
+  "bacterium_bacterium_alcyoneum": {
+   "gate": false,
+   "lo": 0.01002,
+   "hi": 2.803,
+   "n": 60287,
+   "genusCut": 0.3526,
+   "beyondT": 0.0164,
+   "beyondTOf": 182105,
+   "ownLoss": 0.0272
+  },
+  "bacterium_bacterium_aurasus": {
+   "gate": false,
+   "lo": 0.005359,
+   "hi": 2.616,
+   "n": 81646,
+   "genusCut": 0.322,
+   "beyondT": 0.0278,
+   "beyondTOf": 258699,
+   "ownLoss": 0.016
+  },
+  "bacterium_bacterium_bullaris": {
+   "gate": false,
+   "lo": 0.0008206,
+   "hi": 0.5347,
+   "n": 14172,
+   "genusCut": 0.1785,
+   "beyondT": 0.0144,
+   "beyondTOf": 46077,
+   "ownLoss": 0.0154
+  },
+  "bacterium_bacterium_cerbrus": {
+   "gate": false,
+   "lo": 0.0182,
+   "hi": 15.71,
+   "n": 66009,
+   "genusCut": 0.4105,
+   "beyondT": 0.047,
+   "beyondTOf": 444153,
+   "ownLoss": 0.0285
+  },
+  "bacterium_bacterium_informem": {
+   "gate": false,
+   "lo": 0.0006068,
+   "hi": 0.4376,
+   "n": 44597,
+   "genusCut": 0.1853,
+   "beyondT": 0.019,
+   "beyondTOf": 152246,
+   "ownLoss": 0.038
+  },
+  "bacterium_bacterium_nebulus": {
+   "gate": false,
+   "lo": 7.124e-10,
+   "hi": 0.0005649,
+   "n": 2185,
+   "genusCut": 0.9411,
+   "beyondT": 0.0173,
+   "beyondTOf": 927,
+   "ownLoss": 0.0394
+  },
+  "bacterium_bacterium_omentum": {
+   "gate": false,
+   "lo": 2.689e-09,
+   "hi": 0.3901,
+   "n": 3325,
+   "genusCut": 0.1195,
+   "beyondT": 0.0065,
+   "beyondTOf": 271660,
+   "ownLoss": 0.0206
+  },
+  "bacterium_bacterium_scopulum": {
+   "gate": false,
+   "lo": 9.409e-09,
+   "hi": 0.2657,
+   "n": 2322,
+   "genusCut": 0.1504,
+   "beyondT": 0.0087,
+   "beyondTOf": 277679,
+   "ownLoss": 0.0195
+  },
+  "bacterium_bacterium_tela": {
+   "gate": false,
+   "lo": 5.033e-08,
+   "hi": 27.21,
+   "n": 25909,
+   "genusCut": 0.0048,
+   "beyondT": 0.0034,
+   "beyondTOf": 749037,
+   "ownLoss": 0.0089
+  },
+  "bacterium_bacterium_verrata": {
+   "gate": false,
+   "lo": 9.02e-09,
+   "hi": 0.5579,
+   "n": 3305,
+   "genusCut": 0.0956,
+   "beyondT": 0.0062,
+   "beyondTOf": 454315,
+   "ownLoss": 0.0147
+  },
+  "bacterium_bacterium_vesicula": {
+   "gate": false,
+   "lo": 0.000446,
+   "hi": 0.8353,
+   "n": 58940,
+   "genusCut": 0.1452,
+   "beyondT": 0.0077,
+   "beyondTOf": 218932,
+   "ownLoss": 0.0175
+  },
+  "bacterium_bacterium_volu": {
+   "gate": true,
+   "lo": 0.0277,
+   "hi": 5.395,
+   "n": 5529,
+   "genusCut": 0.4066,
+   "beyondT": 0.1043,
+   "beyondTOf": 418399,
+   "ownLoss": 0.0462
+  },
+  "bark_mounds_bark_mounds": {
+   "gate": false,
+   "lo": 0.009574,
+   "hi": 30.63,
+   "n": 2078,
+   "genusCut": null,
+   "beyondT": null,
+   "beyondTOf": 0,
+   "ownLoss": 0.0211
+  },
+  "brain_trees_brain_tree_aureum": {
+   "gate": false,
+   "lo": 2.345,
+   "hi": 49.93,
+   "n": 51,
+   "genusCut": 0.659,
+   "beyondT": 0.268,
+   "beyondTOf": 2373,
+   "ownLoss": 0.1798
+  },
+  "brain_trees_brain_tree_gypseeum": {
+   "gate": false,
+   "lo": 0.00464,
+   "hi": 2.414,
+   "n": 54,
+   "genusCut": 0.5152,
+   "beyondT": 0.0443,
+   "beyondTOf": 2417,
+   "ownLoss": 0.0625
+  },
+  "brain_trees_brain_tree_lividum": {
+   "gate": false,
+   "lo": 0.3041,
+   "hi": 46.22,
+   "n": 120,
+   "genusCut": 0.3914,
+   "beyondT": 0.0742,
+   "beyondTOf": 3031,
+   "ownLoss": 0.0691
+  },
+  "brain_trees_brain_tree_ostrinum": {
+   "gate": false,
+   "lo": 2.87e-05,
+   "hi": 1862.0,
+   "n": 1018,
+   "genusCut": 0.0031,
+   "beyondT": 0.0022,
+   "beyondTOf": 5546,
+   "ownLoss": 0.0137
+  },
+  "brain_trees_brain_tree_puniceum": {
+   "gate": false,
+   "lo": 1.545e-05,
+   "hi": 2375.0,
+   "n": 206,
+   "genusCut": 0.0027,
+   "beyondT": 0.0023,
+   "beyondTOf": 6845,
+   "ownLoss": 0.0222
+  },
+  "brain_trees_brain_tree_roseum": {
+   "gate": false,
+   "lo": 0.008129,
+   "hi": 88.02,
+   "n": 2538,
+   "genusCut": 0.3261,
+   "beyondT": 0.0089,
+   "beyondTOf": 560,
+   "ownLoss": 0.0167
+  },
+  "brain_trees_brain_tree_viride": {
+   "gate": true,
+   "lo": 0.002151,
+   "hi": 0.5787,
+   "n": 117,
+   "genusCut": 0.7051,
+   "beyondT": 0.12,
+   "beyondTOf": 100,
+   "ownLoss": 0.0291
+  },
+  "cactoida_cactoida_cortexum": {
+   "gate": false,
+   "lo": 0.006494,
+   "hi": 2.569,
+   "n": 15605,
+   "genusCut": 0.0089,
+   "beyondT": 0.009,
+   "beyondTOf": 11769,
+   "ownLoss": 0.0088
+  },
+  "cactoida_cactoida_lapis": {
+   "gate": false,
+   "lo": 0.01078,
+   "hi": 2.988,
+   "n": 24253,
+   "genusCut": 0.0161,
+   "beyondT": 0.0099,
+   "beyondTOf": 18034,
+   "ownLoss": 0.0098
+  },
+  "cactoida_cactoida_peperatis": {
+   "gate": false,
+   "lo": 0.01074,
+   "hi": 2.329,
+   "n": 10762,
+   "genusCut": 0.0156,
+   "beyondT": 0.0106,
+   "beyondTOf": 37751,
+   "ownLoss": 0.0096
+  },
+  "cactoida_cactoida_pullulanta": {
+   "gate": false,
+   "lo": 0.006271,
+   "hi": 1.669,
+   "n": 8123,
+   "genusCut": 0.0108,
+   "beyondT": 0.0091,
+   "beyondTOf": 23731,
+   "ownLoss": 0.01
+  },
+  "cactoida_cactoida_vermis": {
+   "gate": false,
+   "lo": 0.05487,
+   "hi": 29.01,
+   "n": 9767,
+   "genusCut": 0.343,
+   "beyondT": 0.0,
+   "beyondTOf": 39,
+   "ownLoss": 0.0158
+  },
+  "clypeus_clypeus_lacrimam": {
+   "gate": false,
+   "lo": 0.007959,
+   "hi": 23.93,
+   "n": 17262,
+   "genusCut": 0.0103,
+   "beyondT": 0.0184,
+   "beyondTOf": 7785,
+   "ownLoss": 0.009
+  },
+  "clypeus_clypeus_margaritus": {
+   "gate": false,
+   "lo": 0.008853,
+   "hi": 1.716,
+   "n": 13018,
+   "genusCut": 0.028,
+   "beyondT": 0.0,
+   "beyondTOf": 9,
+   "ownLoss": 0.0137
+  },
+  "clypeus_clypeus_speculumi": {
+   "gate": false,
+   "lo": 0.004322,
+   "hi": 1.704,
+   "n": 5866,
+   "genusCut": 0.0178,
+   "beyondT": 0.0227,
+   "beyondTOf": 22189,
+   "ownLoss": 0.0158
+  },
+  "concha_concha_aureolas": {
+   "gate": false,
+   "lo": 0.02216,
+   "hi": 3.305,
+   "n": 15946,
+   "genusCut": 0.0547,
+   "beyondT": 0.0178,
+   "beyondTOf": 64712,
+   "ownLoss": 0.0102
+  },
+  "concha_concha_biconcavis": {
+   "gate": false,
+   "lo": 5.016e-05,
+   "hi": 0.0019,
+   "n": 844,
+   "genusCut": 0.9996,
+   "beyondT": 0.0,
+   "beyondTOf": 1,
+   "ownLoss": 0.0196
+  },
+  "concha_concha_labiata": {
+   "gate": true,
+   "lo": 0.01101,
+   "hi": 0.9919,
+   "n": 30207,
+   "genusCut": 0.1386,
+   "beyondT": 0.0311,
+   "beyondTOf": 27117,
+   "ownLoss": 0.0091
+  },
+  "concha_concha_renibus": {
+   "gate": false,
+   "lo": 0.004934,
+   "hi": 7.665,
+   "n": 32903,
+   "genusCut": 0.0133,
+   "beyondT": 0.0018,
+   "beyondTOf": 3352,
+   "ownLoss": 0.0095
+  },
+  "electricae_electricae_pluma": {
+   "gate": false,
+   "lo": 1.348e-09,
+   "hi": 0.1963,
+   "n": 4516,
+   "genusCut": 0.0088,
+   "beyondT": 0.0089,
+   "beyondTOf": 13992,
+   "ownLoss": 0.0077
+  },
+  "electricae_electricae_radialem": {
+   "gate": true,
+   "lo": 0.0003614,
+   "hi": 0.8839,
+   "n": 7684,
+   "genusCut": 0.0665,
+   "beyondT": 0.066,
+   "beyondTOf": 6726,
+   "ownLoss": 0.0078
+  },
+  "fonticulua_fonticulua_campestris": {
+   "gate": false,
+   "lo": 0.0003991,
+   "hi": 0.7228,
+   "n": 75658,
+   "genusCut": 0.0082,
+   "beyondT": 0.0091,
+   "beyondTOf": 3073,
+   "ownLoss": 0.0089
+  },
+  "fonticulua_fonticulua_digitos": {
+   "gate": false,
+   "lo": 0.000864,
+   "hi": 0.6668,
+   "n": 16470,
+   "genusCut": 0.0278,
+   "beyondT": 0.012,
+   "beyondTOf": 24253,
+   "ownLoss": 0.0106
+  },
+  "fonticulua_fonticulua_fluctus": {
+   "gate": false,
+   "lo": 0.007005,
+   "hi": 1.911,
+   "n": 664,
+   "genusCut": 0.5535,
+   "beyondT": 0.0127,
+   "beyondTOf": 79,
+   "ownLoss": 0.0175
+  },
+  "fonticulua_fonticulua_lapida": {
+   "gate": false,
+   "lo": 0.0004232,
+   "hi": 0.7812,
+   "n": 25254,
+   "genusCut": 0.0086,
+   "beyondT": 0.0094,
+   "beyondTOf": 85284,
+   "ownLoss": 0.0112
+  },
+  "fonticulua_fonticulua_segmentatus": {
+   "gate": false,
+   "lo": 0.0005637,
+   "hi": 4.696,
+   "n": 2229,
+   "genusCut": 0.0105,
+   "beyondT": 0.0172,
+   "beyondTOf": 57924,
+   "ownLoss": 0.0106
+  },
+  "fonticulua_fonticulua_upupam": {
+   "gate": false,
+   "lo": 0.0009648,
+   "hi": 0.67,
+   "n": 10618,
+   "genusCut": 0.0308,
+   "beyondT": 0.0184,
+   "beyondTOf": 56984,
+   "ownLoss": 0.011
+  },
+  "frutexa_frutexa_acus": {
+   "gate": false,
+   "lo": 0.004701,
+   "hi": 4.892,
+   "n": 16911,
+   "genusCut": 0.0067,
+   "beyondT": 0.0053,
+   "beyondTOf": 85495,
+   "ownLoss": 0.0036
+  },
+  "frutexa_frutexa_collum": {
+   "gate": false,
+   "lo": 0.004923,
+   "hi": 1.518,
+   "n": 1379,
+   "genusCut": 0.0097,
+   "beyondT": 0.0068,
+   "beyondTOf": 86642,
+   "ownLoss": 0.0089
+  },
+  "frutexa_frutexa_fera": {
+   "gate": false,
+   "lo": 0.004902,
+   "hi": 3.798,
+   "n": 5588,
+   "genusCut": 0.0065,
+   "beyondT": 0.0051,
+   "beyondTOf": 143580,
+   "ownLoss": 0.005
+  },
+  "frutexa_frutexa_flabellum": {
+   "gate": false,
+   "lo": 0.01051,
+   "hi": 8.049,
+   "n": 23104,
+   "genusCut": 0.0138,
+   "beyondT": 0.0083,
+   "beyondTOf": 86872,
+   "ownLoss": 0.0077
+  },
+  "frutexa_frutexa_flammasis": {
+   "gate": false,
+   "lo": 0.01011,
+   "hi": 11.52,
+   "n": 11579,
+   "genusCut": 0.0116,
+   "beyondT": 0.0068,
+   "beyondTOf": 106594,
+   "ownLoss": 0.0081
+  },
+  "frutexa_frutexa_metallicum": {
+   "gate": false,
+   "lo": 0.008013,
+   "hi": 0.5549,
+   "n": 29615,
+   "genusCut": 0.0515,
+   "beyondT": 0.0211,
+   "beyondTOf": 1231,
+   "ownLoss": 0.0237
+  },
+  "frutexa_frutexa_sponsae": {
+   "gate": false,
+   "lo": 0.09818,
+   "hi": 65.69,
+   "n": 3221,
+   "genusCut": 0.7026,
+   "beyondT": 0.0,
+   "beyondTOf": 84,
+   "ownLoss": 0.0627
+  },
+  "fumerola_fumerola_aquatis": {
+   "gate": false,
+   "lo": 5.559e-09,
+   "hi": 1.957,
+   "n": 4985,
+   "genusCut": 0.0046,
+   "beyondT": 0.0095,
+   "beyondTOf": 2200,
+   "ownLoss": 0.0109
+  },
+  "fumerola_fumerola_carbosis": {
+   "gate": false,
+   "lo": 3.53e-05,
+   "hi": 4.97,
+   "n": 4297,
+   "genusCut": 0.0101,
+   "beyondT": 0.0127,
+   "beyondTOf": 8009,
+   "ownLoss": 0.0102
+  },
+  "fumerola_fumerola_extremus": {
+   "gate": false,
+   "lo": 5.873e-05,
+   "hi": 2.297,
+   "n": 1775,
+   "genusCut": 0.0124,
+   "beyondT": 0.0103,
+   "beyondTOf": 97,
+   "ownLoss": 0.0096
+  },
+  "fumerola_fumerola_nitris": {
+   "gate": false,
+   "lo": 0.0003598,
+   "hi": 1.044,
+   "n": 5911,
+   "genusCut": 0.0356,
+   "beyondT": 0.0289,
+   "beyondTOf": 8326,
+   "ownLoss": 0.01
+  },
+  "fungoida_fungoida_bullarum": {
+   "gate": false,
+   "lo": 0.001068,
+   "hi": 0.3173,
+   "n": 13338,
+   "genusCut": 0.0924,
+   "beyondT": 0.0282,
+   "beyondTOf": 177,
+   "ownLoss": 0.0107
+  },
+  "fungoida_fungoida_gelata": {
+   "gate": false,
+   "lo": 0.004524,
+   "hi": 6.346,
+   "n": 23519,
+   "genusCut": 0.0338,
+   "beyondT": 0.0066,
+   "beyondTOf": 51427,
+   "ownLoss": 0.0104
+  },
+  "fungoida_fungoida_setisis": {
+   "gate": false,
+   "lo": 0.002381,
+   "hi": 4.086,
+   "n": 61529,
+   "genusCut": 0.0121,
+   "beyondT": 0.0165,
+   "beyondTOf": 7822,
+   "ownLoss": 0.0133
+  },
+  "fungoida_fungoida_stabitis": {
+   "gate": false,
+   "lo": 0.00441,
+   "hi": 5.353,
+   "n": 17363,
+   "genusCut": 0.0316,
+   "beyondT": 0.0072,
+   "beyondTOf": 76574,
+   "ownLoss": 0.0103
+  },
+  "osseus_osseus_cornibus": {
+   "gate": false,
+   "lo": 0.005921,
+   "hi": 0.6435,
+   "n": 6512,
+   "genusCut": 0.1242,
+   "beyondT": 0.0096,
+   "beyondTOf": 39661,
+   "ownLoss": 0.0095
+  },
+  "osseus_osseus_discus": {
+   "gate": false,
+   "lo": 0.000974,
+   "hi": 22.8,
+   "n": 7167,
+   "genusCut": 0.0047,
+   "beyondT": 0.0029,
+   "beyondTOf": 110909,
+   "ownLoss": 0.0101
+  },
+  "osseus_osseus_fractus": {
+   "gate": false,
+   "lo": 0.00571,
+   "hi": 0.7553,
+   "n": 19122,
+   "genusCut": 0.1296,
+   "beyondT": 0.0078,
+   "beyondTOf": 11011,
+   "ownLoss": 0.0098
+  },
+  "osseus_osseus_pellebantus": {
+   "gate": false,
+   "lo": 0.005978,
+   "hi": 1.407,
+   "n": 6067,
+   "genusCut": 0.0702,
+   "beyondT": 0.0065,
+   "beyondTOf": 2005,
+   "ownLoss": 0.0082
+  },
+  "osseus_osseus_pumice": {
+   "gate": false,
+   "lo": 0.0005813,
+   "hi": 0.3377,
+   "n": 22796,
+   "genusCut": 0.0842,
+   "beyondT": 0.0231,
+   "beyondTOf": 821,
+   "ownLoss": 0.0127
+  },
+  "osseus_osseus_spiralis": {
+   "gate": false,
+   "lo": 0.009467,
+   "hi": 1.874,
+   "n": 56514,
+   "genusCut": 0.1827,
+   "beyondT": 0.012,
+   "beyondTOf": 4744,
+   "ownLoss": 0.0094
+  },
+  "recepta_recepta_conditivus": {
+   "gate": false,
+   "lo": 0.009303,
+   "hi": 6.863,
+   "n": 4795,
+   "genusCut": 0.0201,
+   "beyondT": 0.0197,
+   "beyondTOf": 11542,
+   "ownLoss": 0.0097
+  },
+  "recepta_recepta_deltahedronix": {
+   "gate": false,
+   "lo": 0.003256,
+   "hi": 2.031,
+   "n": 3175,
+   "genusCut": 0.0105,
+   "beyondT": 0.0094,
+   "beyondTOf": 13107,
+   "ownLoss": 0.0099
+  },
+  "recepta_recepta_umbrux": {
+   "gate": false,
+   "lo": 0.006489,
+   "hi": 4.388,
+   "n": 8350,
+   "genusCut": 0.0132,
+   "beyondT": 0.0129,
+   "beyondTOf": 8045,
+   "ownLoss": 0.0101
+  },
+  "sinuous_tuber_sinuous_tubers_blatteum": {
+   "gate": false,
+   "lo": 0.109,
+   "hi": 28.3,
+   "n": 53,
+   "genusCut": 0.109,
+   "beyondT": 0.0965,
+   "beyondTOf": 3751,
+   "ownLoss": 0.0233
+  },
+  "sinuous_tuber_sinuous_tubers_caeruleum": {
+   "gate": false,
+   "lo": 0.008483,
+   "hi": 125.1,
+   "n": 612,
+   "genusCut": 0.0159,
+   "beyondT": 0.0067,
+   "beyondTOf": 447,
+   "ownLoss": 0.0068
+  },
+  "sinuous_tuber_sinuous_tubers_lindigoticum": {
+   "gate": false,
+   "lo": 0.005345,
+   "hi": 13.18,
+   "n": 95,
+   "genusCut": 0.1219,
+   "beyondT": 0.0158,
+   "beyondTOf": 1326,
+   "ownLoss": 0.0081
+  },
+  "sinuous_tuber_sinuous_tubers_prasinum": {
+   "gate": true,
+   "lo": 0.04186,
+   "hi": 817.3,
+   "n": 1538,
+   "genusCut": 0.0573,
+   "beyondT": 0.0503,
+   "beyondTOf": 1907,
+   "ownLoss": 0.0197
+  },
+  "sinuous_tuber_sinuous_tubers_roseum": {
+   "gate": false,
+   "lo": 0.02494,
+   "hi": 1269.0,
+   "n": 303,
+   "genusCut": 0.0194,
+   "beyondT": 0.0195,
+   "beyondTOf": 3637,
+   "ownLoss": 0.0111
+  },
+  "sinuous_tuber_sinuous_tubers_viride": {
+   "gate": false,
+   "lo": 0.04856,
+   "hi": 24.38,
+   "n": 31,
+   "genusCut": 0.0692,
+   "beyondT": 0.0665,
+   "beyondTOf": 3757,
+   "ownLoss": 0.0606
+  },
+  "stratum_stratum_araneamus": {
+   "gate": true,
+   "lo": 0.03343,
+   "hi": 4.802,
+   "n": 7493,
+   "genusCut": 0.1579,
+   "beyondT": 0.0332,
+   "beyondTOf": 11595,
+   "ownLoss": 0.013
+  },
+  "stratum_stratum_cucumisis": {
+   "gate": false,
+   "lo": 0.00999,
+   "hi": 54.21,
+   "n": 9522,
+   "genusCut": 0.0148,
+   "beyondT": 0.0099,
+   "beyondTOf": 16176,
+   "ownLoss": 0.01
+  },
+  "stratum_stratum_excutitus": {
+   "gate": false,
+   "lo": 0.003991,
+   "hi": 4.132,
+   "n": 12245,
+   "genusCut": 0.0154,
+   "beyondT": 0.0076,
+   "beyondTOf": 137655,
+   "ownLoss": 0.0077
+  },
+  "stratum_stratum_frigus": {
+   "gate": false,
+   "lo": 0.01532,
+   "hi": 49.74,
+   "n": 2220,
+   "genusCut": 0.0383,
+   "beyondT": 0.0177,
+   "beyondTOf": 24420,
+   "ownLoss": 0.0164
+  },
+  "stratum_stratum_laminamus": {
+   "gate": false,
+   "lo": 0.009631,
+   "hi": 12.25,
+   "n": 6727,
+   "genusCut": 0.0161,
+   "beyondT": 0.0227,
+   "beyondTOf": 107032,
+   "ownLoss": 0.0107
+  },
+  "stratum_stratum_limaxus": {
+   "gate": false,
+   "lo": 0.004002,
+   "hi": 5.224,
+   "n": 5057,
+   "genusCut": 0.0112,
+   "beyondT": 0.0071,
+   "beyondTOf": 119387,
+   "ownLoss": 0.0078
+  },
+  "stratum_stratum_paleas": {
+   "gate": false,
+   "lo": 0.004787,
+   "hi": 12.72,
+   "n": 54600,
+   "genusCut": 0.0061,
+   "beyondT": 0.0072,
+   "beyondTOf": 44976,
+   "ownLoss": 0.0072
+  },
+  "stratum_stratum_tectonicas": {
+   "gate": false,
+   "lo": 0.008961,
+   "hi": 7.929,
+   "n": 137076,
+   "genusCut": 0.019,
+   "beyondT": 0.0153,
+   "beyondTOf": 3327,
+   "ownLoss": 0.0129
+  },
+  "tubus_tubus_cavas": {
+   "gate": false,
+   "lo": 0.005545,
+   "hi": 1.772,
+   "n": 12753,
+   "genusCut": 0.0077,
+   "beyondT": 0.007,
+   "beyondTOf": 91373,
+   "ownLoss": 0.0086
+  },
+  "tubus_tubus_compagibus": {
+   "gate": false,
+   "lo": 0.005408,
+   "hi": 2.473,
+   "n": 27812,
+   "genusCut": 0.0073,
+   "beyondT": 0.0066,
+   "beyondTOf": 52958,
+   "ownLoss": 0.0061
+  },
+  "tubus_tubus_conifer": {
+   "gate": false,
+   "lo": 0.006076,
+   "hi": 2.254,
+   "n": 10089,
+   "genusCut": 0.0083,
+   "beyondT": 0.0077,
+   "beyondTOf": 98133,
+   "ownLoss": 0.0062
+  },
+  "tubus_tubus_rosarium": {
+   "gate": false,
+   "lo": 0.009416,
+   "hi": 1.551,
+   "n": 16039,
+   "genusCut": 0.017,
+   "beyondT": 0.0139,
+   "beyondTOf": 106740,
+   "ownLoss": 0.0099
+  },
+  "tubus_tubus_sororibus": {
+   "gate": false,
+   "lo": 0.00559,
+   "hi": 1.017,
+   "n": 13442,
+   "genusCut": 0.0086,
+   "beyondT": 0.0,
+   "beyondTOf": 18,
+   "ownLoss": 0.0175
+  },
+  "tussock_tussock_albata": {
+   "gate": false,
+   "lo": 0.004546,
+   "hi": 2.043,
+   "n": 13095,
+   "genusCut": 0.0109,
+   "beyondT": 0.009,
+   "beyondTOf": 18075,
+   "ownLoss": 0.0096
+  },
+  "tussock_tussock_capillum": {
+   "gate": false,
+   "lo": 0.0009619,
+   "hi": 0.3768,
+   "n": 12172,
+   "genusCut": 0.0425,
+   "beyondT": 0.0162,
+   "beyondTOf": 185,
+   "ownLoss": 0.0104
+  },
+  "tussock_tussock_caputus": {
+   "gate": false,
+   "lo": 0.004815,
+   "hi": 3.354,
+   "n": 15172,
+   "genusCut": 0.01,
+   "beyondT": 0.0081,
+   "beyondTOf": 21620,
+   "ownLoss": 0.008
+  },
+  "tussock_tussock_catena": {
+   "gate": false,
+   "lo": 0.008786,
+   "hi": 11.7,
+   "n": 11980,
+   "genusCut": 0.0201,
+   "beyondT": 0.0118,
+   "beyondTOf": 231214,
+   "ownLoss": 0.0098
+  },
+  "tussock_tussock_cultro": {
+   "gate": false,
+   "lo": 0.009082,
+   "hi": 5.171,
+   "n": 34509,
+   "genusCut": 0.024,
+   "beyondT": 0.0146,
+   "beyondTOf": 194965,
+   "ownLoss": 0.0107
+  },
+  "tussock_tussock_divisa": {
+   "gate": false,
+   "lo": 0.01042,
+   "hi": 3.227,
+   "n": 14494,
+   "genusCut": 0.0299,
+   "beyondT": 0.0195,
+   "beyondTOf": 225624,
+   "ownLoss": 0.0113
+  },
+  "tussock_tussock_ignis": {
+   "gate": false,
+   "lo": 0.005043,
+   "hi": 1.622,
+   "n": 19376,
+   "genusCut": 0.0132,
+   "beyondT": 0.0095,
+   "beyondTOf": 93007,
+   "ownLoss": 0.0088
+  },
+  "tussock_tussock_pennata": {
+   "gate": false,
+   "lo": 0.006771,
+   "hi": 2.051,
+   "n": 3308,
+   "genusCut": 0.0166,
+   "beyondT": 0.0089,
+   "beyondTOf": 5845,
+   "ownLoss": 0.0071
+  },
+  "tussock_tussock_pennatis": {
+   "gate": false,
+   "lo": 0.004934,
+   "hi": 2.976,
+   "n": 14921,
+   "genusCut": 0.0107,
+   "beyondT": 0.0075,
+   "beyondTOf": 210127,
+   "ownLoss": 0.0076
+  },
+  "tussock_tussock_propagito": {
+   "gate": false,
+   "lo": 0.004924,
+   "hi": 2.732,
+   "n": 21148,
+   "genusCut": 0.0112,
+   "beyondT": 0.0078,
+   "beyondTOf": 283369,
+   "ownLoss": 0.0083
+  },
+  "tussock_tussock_serrati": {
+   "gate": false,
+   "lo": 0.004718,
+   "hi": 1.149,
+   "n": 8358,
+   "genusCut": 0.0204,
+   "beyondT": 0.0114,
+   "beyondTOf": 32002,
+   "ownLoss": 0.0092
+  },
+  "tussock_tussock_stigmasis": {
+   "gate": false,
+   "lo": 0.003903,
+   "hi": 2.855,
+   "n": 2782,
+   "genusCut": 0.0087,
+   "beyondT": 0.0056,
+   "beyondTOf": 106211,
+   "ownLoss": 0.0097
+  },
+  "tussock_tussock_triticum": {
+   "gate": false,
+   "lo": 0.006411,
+   "hi": 2.005,
+   "n": 6411,
+   "genusCut": 0.0155,
+   "beyondT": 0.0138,
+   "beyondTOf": 4912,
+   "ownLoss": 0.0111
+  },
+  "tussock_tussock_ventusa": {
+   "gate": false,
+   "lo": 0.005935,
+   "hi": 1.005,
+   "n": 5443,
+   "genusCut": 0.0296,
+   "beyondT": 0.01,
+   "beyondTOf": 20858,
+   "ownLoss": 0.0068
+  },
+  "tussock_tussock_virgam": {
+   "gate": false,
+   "lo": 0.05952,
+   "hi": 42.44,
+   "n": 9270,
+   "genusCut": 0.4681,
+   "beyondT": 0.0,
+   "beyondTOf": 154,
+   "ownLoss": 0.0418
+  }
+ }
+}

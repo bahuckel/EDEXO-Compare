@@ -2,14 +2,16 @@
 
 exports[`the format constant > covers every key the store serializes 1`] = `
 {
-  "format": 19,
+  "format": 21,
   "keys": [
     "bodies",
     "bodyDetailedFootfallState",
     "bodyFootfallFlag",
     "bodyMappedFlag",
     "codexLoggedSpecies",
+    "codexMapLogged",
     "codexRegionLogged",
+    "codexSightings",
     "commanderFid",
     "commanderName",
     "commanderPos",

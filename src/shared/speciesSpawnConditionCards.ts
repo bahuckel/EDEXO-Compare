@@ -28,6 +28,7 @@ import {
   requiredAtmosphereShare,
 } from "./atmosphereGasShare.js";
 import { keysForRequirement } from "./systemBodyGates.js";
+import { formatStarlight } from "./starlight.js";
 
 const OPEN_LO = -1e15;
 const OPEN_HI = 1e15;
@@ -534,6 +535,28 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       caption = ls > max ? `${shown} ls — rarely recorded this wide; listed as unlikely` : `${shown} ls inside`;
     }
     out.push({ id: "soft-orbit", label: "Orbit round its parent", lines: [`Usually ≤ ${max} ls (close moons)`], caption, tier });
+  }
+
+  /*
+    Starlight on the body (owner, 2026-09-27), measured from the galaxy dump for every species. Only
+    the gated few act on it, and only by demoting, so yellow is the worst it draws; for the rest the
+    temperature already carries the same information and the range is shown for reference.
+  */
+  if (entry.starlight) {
+    const s = entry.starlight;
+    const lines = [
+      `${formatStarlight(s.lo)}–${formatStarlight(s.hi)}× Earth's (99 % of ${s.n.toLocaleString("en-GB")} sightings)`,
+      s.gate ? "Outside it: listed as unlikely" : "For reference: temperature already covers it",
+    ];
+    const light = ctx?.stellarIrradiance;
+    let tier: EncyclopediaSpawnTier = "neutral";
+    let caption = "Stars not measured yet";
+    if (light !== undefined && Number.isFinite(light)) {
+      const inside = light >= s.lo && light <= s.hi;
+      tier = inside ? "blue" : s.gate ? "yellow" : "neutral";
+      caption = `${formatStarlight(light)}× Earth's${inside ? " inside" : light < s.lo ? " — dimmer than seen" : " — brighter than seen"}`;
+    }
+    out.push({ id: "starlight", label: "Starlight", lines, caption, tier });
   }
 
   /* Journal numeric pressure gate — hidden for bacterium (spawn cards stay minimal). */

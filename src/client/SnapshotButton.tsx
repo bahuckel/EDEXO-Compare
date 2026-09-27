@@ -20,12 +20,18 @@ export function SnapshotButton({
   what,
   target = "section.fold, [role='dialog']",
   className,
+  prepare,
 }: {
   /** What the panel is, for the file name ("exo-signals", "candidates", "system-map"). */
   what: string;
   /** CSS selector for the element to capture, searched upward from the button. */
   target?: string;
   className?: string;
+  /**
+   * Called before the capture; returns how to put things back. The system map uses it to show the
+   * whole map (fit to the window) whatever the commander had zoomed into.
+   */
+  prepare?: () => Promise<() => void>;
 }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -44,9 +50,13 @@ export function SnapshotButton({
         const save = ev.shiftKey;
         setBusy(true);
         void (async () => {
+          let restore: (() => void) | null = null;
           try {
+            if (prepare) restore = await prepare();
             const stamp = snapshotStamp();
             const blob = await renderBrandedSnapshot(el, stamp);
+            restore?.();
+            restore = null;
             const how = await copyOrSave(blob, snapshotFileName(what, stamp.systemName, new Date()), save);
             setDone(true);
             setTimeout(() => setDone(false), 1400);
@@ -56,6 +66,7 @@ export function SnapshotButton({
           } catch (e) {
             toast.error(e instanceof Error ? `Snapshot failed: ${e.message}` : "Snapshot failed.");
           } finally {
+            restore?.();
             setBusy(false);
           }
         })();

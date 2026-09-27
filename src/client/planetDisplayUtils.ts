@@ -1,14 +1,9 @@
 import type { CSSProperties } from "react";
 import type { EstimatedSurfaceTempBand } from "@shared/types";
-import {
-  journalSurfaceGravityToG,
-  journalPressureToAtm,
-  JOURNAL_PRESSURE_PA_THRESHOLD,
-  ATM_TO_PA,
-} from "@shared/journalPhysics";
+import { journalSurfaceGravityToG, journalPressureToAtm, ATM_TO_PA } from "@shared/journalPhysics";
 
 export const EARTH_TEMP_REF_K = 288;
-export { JOURNAL_PRESSURE_PA_THRESHOLD, ATM_TO_PA, journalPressureToAtm };
+export { ATM_TO_PA, journalPressureToAtm };
 
 export type TempUnit = "K" | "C" | "F";
 export type PressDisplay = "atm" | "pa";
@@ -43,8 +38,7 @@ export function formatPressurePill(rawJournal: number | null | undefined, displa
   if (rawJournal == null || Number.isNaN(rawJournal)) return "—";
   const atm = journalPressureToAtm(rawJournal);
   if (display === "atm") return `${atm.toFixed(3)} atm`;
-  const pa = rawJournal >= JOURNAL_PRESSURE_PA_THRESHOLD ? rawJournal : rawJournal * ATM_TO_PA;
-  return `${Math.round(pa).toLocaleString()} Pa`;
+  return `${Math.round(rawJournal).toLocaleString()} Pa`;
 }
 
 export function gravHeatStyle(gEarth: number): CSSProperties {
@@ -155,7 +149,7 @@ export function pressHeatStyle(atm: number): CSSProperties {
   };
 }
 
-/** Map node palette: must stay aligned with `systemMapNodeAppearance` in SystemMapModal. */
+/** Map node palette: the system map draws these with `bodyColours` in SystemMapDrawing. */
 export function planetClassToMapBaseLabel(planetClass: string): string {
   const pc = planetClass.trim();
   if (!pc) return "";

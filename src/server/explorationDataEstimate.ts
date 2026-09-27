@@ -3,6 +3,7 @@ import type { GameStateStore } from "./gameState.js";
 import { bodyScanValueCredits, starScanValueCredits } from "./explorationValue.js";
 import { explorationRecordIsStellar } from "./explorationStellar.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
+import { isTerraformableState } from "../shared/terraformState.js";
 
 /** DSS first-mapper multiplier: use value frozen at `SAAScanComplete` when present (see `dssFirstMapperEligibleByBodyKey`). */
 export function firstMapperForDssPayout(
@@ -20,7 +21,7 @@ export function firstMapperForDssPayout(
 const isExplorationStarRecord = explorationRecordIsStellar;
 
 function terraformableFromExplorationRecord(r: ExplorationScanRecord): boolean {
-  return (r.terraformState ?? "").toLowerCase().includes("terraformable");
+  return isTerraformableState(r.terraformState);
 }
 
 /** Belt clusters — skip for UC-style exploration totals (same as system map). */

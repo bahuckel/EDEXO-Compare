@@ -40,6 +40,7 @@ import { bodyScanValueCredits, starScanValueCredits } from "./explorationValue.j
 import { regionForSystem } from "./regionMapData.js";
 import { journalSurfaceGravityToG } from "../shared/journalPhysics.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
+import { isTerraformableState } from "../shared/terraformState.js";
 
 /**
  * Radii are reported against the Sun and the Earth, never in kilometres.
@@ -204,7 +205,7 @@ export function buildDiscoveries(store: GameStateStore, projectRoot: string): Di
     const planetClass = rec.planetClass?.trim();
     if (!planetClass) continue;
 
-    const terraformable = /terraformable/i.test(rec.terraformState ?? "");
+    const terraformable = isTerraformableState(rec.terraformState);
     const massEM = Number(rec.massEM);
     const firstMapper = store.dssFirstMapperEligibleByBodyKey.get(key) === true;
     const dssComplete = store.dssMappedBodyKeys.has(key);

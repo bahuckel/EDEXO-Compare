@@ -186,10 +186,16 @@ export function colourStarTypeFor(
 }
 
 const SOLAR_RADIUS_M = 695_700_000;
+
+/** Which reading of a star's brightness: radius and temperature, absolute magnitude, or the brighter. */
+export type LuminosityReading = "brighter" | "size" | "magnitude";
 const SUN_TEMPERATURE_K = 5772;
 
 /** Luminosity in suns from radius and temperature (R² T⁴). A black hole gives no light. */
-function starLuminosity(r: ExplorationScanRecord | undefined): number | undefined {
+function starLuminosity(
+  r: ExplorationScanRecord | undefined,
+  reading: LuminosityReading = "brighter",
+): number | undefined {
   const type = r?.starType?.trim();
   if (!r || !type) return undefined;
   if (/^(H|SupermassiveBlackHole)$|blackhole/i.test(type)) return 0;
@@ -211,6 +217,8 @@ function starLuminosity(r: ExplorationScanRecord | undefined): number | undefine
   // radius and temperature (Myriesly RV-B d14-1839 1 a keeps its Y dwarf's colour).
   const fromMagnitude =
     !/^N$/i.test(type) && typeof M === "number" && Number.isFinite(M) ? 10 ** (-0.4 * (M - 4.83)) : undefined;
+  if (reading === "size") return fromSize;
+  if (reading === "magnitude") return fromMagnitude ?? fromSize;
   if (fromSize === undefined) return fromMagnitude;
   return fromMagnitude === undefined ? fromSize : Math.max(fromSize, fromMagnitude);
 }
@@ -321,6 +329,54 @@ export function brightestStarTypeFor(
   rec: ExplorationScanRecord,
   byId: Map<number, ExplorationScanRecord>,
 ): string | undefined {
+  const lit = starLightOn(rec, byId);
+  if (!lit) return undefined;
+  let best: StarLight | null = null;
+  for (const s of lit) if (!best || s.flux > best.flux) best = s;
+  // Nothing measured but black holes: no light to go by.
+  return best && best.flux > 0 ? best.type : undefined;
+}
+
+/**
+ * The reading the starlight gate measures with. Absolute magnitude: on airless bodies in the Spansh
+ * dump it tracks the game's surface temperature better than radius × temperature (22,485 bodies:
+ * r = 0.931 against 0.921, median error 9.4 % against 11.4 %), which reads some hot stars thousands
+ * of times too bright — HIP 49706 A's 19 AU moons sit at 170 K "under" 97× Earth's light.
+ */
+export const STARLIGHT_READING: LuminosityReading = "magnitude";
+
+/** Light-seconds in an astronomical unit: the irradiance unit below is the Sun's at 1 AU (Earth = 1). */
+const LS_PER_AU = 499.004784;
+
+/**
+ * Starlight reaching the body: the sum of every measured star's luminosity over distance², in the
+ * Sun's flux at 1 AU (Earth = 1). The same stars and distances the colour rule weighs, so it is
+ * undefined exactly where that rule gives up (a star the body orbits, or the arrival star, cannot
+ * be measured). A moon counts its planet's orbit, as the colour rule does.
+ */
+export function stellarIrradianceFor(
+  rec: ExplorationScanRecord,
+  byId: Map<number, ExplorationScanRecord>,
+  reading: LuminosityReading = "brighter",
+): number | undefined {
+  const lit = starLightOn(rec, byId, reading);
+  if (!lit) return undefined;
+  let sum = 0;
+  for (const s of lit) sum += s.flux;
+  return sum > 0 ? sum * LS_PER_AU * LS_PER_AU : undefined;
+}
+
+type StarLight = { id: number; type: string; flux: number };
+
+/**
+ * Each measurable star's light on the body, luminosity (suns) / distance² (ls). Undefined when the
+ * star (or star group) the body orbits, or the arrival star, cannot be measured.
+ */
+function starLightOn(
+  rec: ExplorationScanRecord,
+  byId: Map<number, ExplorationScanRecord>,
+  reading: LuminosityReading = "brighter",
+): StarLight[] | undefined {
   const tree = new StarTree(byId);
   const chain = (Array.isArray(rec.parents) ? rec.parents : []).map((e) => parseJournalParentEntry(e));
   // What the body orbits: the nearest star, else the nearest barycentre that holds stars.
@@ -348,15 +404,28 @@ export function brightestStarTypeFor(
   // A planet pair's barycentre with no `ScanBaryCentre` (EDSM and Spansh drop it): when the arrival
   // star is in the group the body orbits, the arrival distance is that orbit, as in starDistanceLs.
   if (orbitLs === undefined && arrivalId != null && members.includes(arrivalId)) orbitLs = arrivalLs;
+  /*
+   * The body it orbits was never scanned (a moon whose planet is missing): the two arrival distances
+   * still say roughly how far out it is — at least their difference. EDSM codex × Spansh, 2026-09-27:
+   * most of the rule's misses were bodies it gave up on for this reason, and the game's pick was the
+   * bright star the measurement would have found (a neutron star 22,000 ls out over a dim M dwarf).
+   */
+  if (orbitLs === undefined && anchor.kind === "Star" && arrivalLs !== undefined) {
+    const starArrival = byId.get(anchor.id)?.distanceFromArrivalLs;
+    if (typeof starArrival === "number" && Number.isFinite(starArrival)) {
+      const gap = Math.abs(arrivalLs - starArrival);
+      if (gap > 0) orbitLs = gap;
+    }
+  }
   if (orbitLs === undefined) return undefined;
 
   // Every star the body orbits has to be measurable, or the missing one may be the bright one.
-  if (!members.length || members.some((id) => starLuminosity(byId.get(id)) === undefined)) return undefined;
-  let best: { type: string; flux: number } | null = null;
+  if (!members.length || members.some((id) => starLuminosity(byId.get(id), reading) === undefined)) return undefined;
+  const out: StarLight[] = [];
   let anchorSeen = false;
   let arrivalSeen = arrivalId == null;
   for (const [id, r] of byId) {
-    const L = starLuminosity(r);
+    const L = starLuminosity(r, reading);
     if (L === undefined) continue;
     let d: number | undefined;
     if (id === arrivalId && arrivalLs !== undefined && !(anchor.kind === "Star" && anchor.id === id)) {
@@ -388,12 +457,10 @@ export function brightestStarTypeFor(
     if (d === undefined || !(d > 0)) continue;
     if (members.includes(id)) anchorSeen = true;
     if (id === arrivalId) arrivalSeen = true;
-    const flux = L / (d * d);
-    if (!best || flux > best.flux) best = { type: r.starType!.trim(), flux };
+    out.push({ id, type: r.starType!.trim(), flux: L / (d * d) });
   }
-  // Nothing measured but black holes: no light to go by.
-  if (!best || !(best.flux > 0) || !anchorSeen || !arrivalSeen) return undefined;
-  return best.type;
+  if (!out.length || !anchorSeen || !arrivalSeen) return undefined;
+  return out;
 }
 
 /** The designation table above: the fallback when the stars cannot be measured. */
@@ -611,6 +678,8 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
   if (mainStar) ctx.systemMainStarClass = mainStar;
   const colourStar = rec ? colourStarTypeFor(rec, byId) : undefined;
   if (colourStar) ctx.colourStarType = colourStar;
+  const light = rec ? stellarIrradianceFor(rec, byId, STARLIGHT_READING) : undefined;
+  if (light !== undefined) ctx.stellarIrradiance = light;
   /**
    * The system's position (Phase 7).
    *

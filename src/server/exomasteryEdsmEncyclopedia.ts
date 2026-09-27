@@ -12,7 +12,7 @@ import type {
   PlanetScan,
   SpeciesEntry,
 } from "../shared/types.js";
-import { journalPressureToAtm, journalSurfaceGravityToG } from "../shared/journalPhysics.js";
+import { journalSurfaceGravityToG, mixedPressureToAtm } from "../shared/journalPhysics.js";
 import {
   exomasteryAtmosphereTypeCompareKey,
   exomasteryCompositionRollupDisplay,
@@ -455,7 +455,7 @@ function parseNumericCell(header: string, raw: string): number | null {
   if (!s) return null;
   const n = Number(s);
   if (!Number.isFinite(n)) return null;
-  if (isPressureColumn(header)) return journalPressureToAtm(n);
+  if (isPressureColumn(header)) return mixedPressureToAtm(n);
   if (isGravityColumn(header)) {
     if (Math.abs(n) > 50) return journalSurfaceGravityToG(n);
     return n;

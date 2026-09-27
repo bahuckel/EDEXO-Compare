@@ -59,6 +59,7 @@ import type { JournalScan } from "./statisticsScan.js";
 import { summariseStatistics } from "./statistics.js";
 import { isLauncherOpenMode, readLauncherOpenMode, writeLauncherOpenMode } from "./launcherPrefs.js";
 import { isEdsmCatchUpScope, type EdsmCatchUpScope } from "./edsmCatchUp.js";
+import { codexMapRegion, codexMapRegions } from "./codexMap.js";
 
 export function getLanIPv4s(port: number): string[] {
   const nets = os.networkInterfaces();
@@ -173,6 +174,8 @@ export function createHttpServer(opts: {
   scanGalaxyBodies?: (query: GalaxyBodyScanQueryDTO, limit: number) => Promise<GalaxyBodyScanDTO>;
   /** GET /api/galaxy/my-sectors — this commander's own state per sector, for colouring the map. */
   getCommanderSectors?: () => CommanderSectorsDTO;
+  /** Codex map: the commander's codex entries, `regionJoinKey|entryKey` (see codexMap.ts). */
+  getCodexMapLogged?: () => ReadonlySet<string>;
   /**
    * GET /api/feeder/status — feeder corpus vs installed profiles.
    *
@@ -679,6 +682,27 @@ export function createHttpServer(opts: {
       return;
     }
     res.json(opts.getBacklogMap());
+  });
+
+  app.get("/api/codex/regions", (_req, res) => {
+    perfCount("http.codexRegions");
+    res.json(codexMapRegions(getProjectRoot(), opts.getCodexMapLogged?.() ?? new Set()));
+  });
+
+  app.get("/api/codex/region", (req, res) => {
+    perfCount("http.codexRegion");
+    const name = typeof req.query.name === "string" ? req.query.name : "";
+    const kind = req.query.kind === "bodies" || req.query.kind === "bio" ? req.query.kind : null;
+    if (!name || !kind) {
+      res.status(400).json({ error: "name and kind (bodies|bio) are required" });
+      return;
+    }
+    const out = codexMapRegion(getProjectRoot(), opts.getCodexMapLogged?.() ?? new Set(), name, kind);
+    if (!out) {
+      res.status(404).json({ error: "no codex data for that region" });
+      return;
+    }
+    res.json(out);
   });
 
   app.get("/api/region-map", (_req, res) => {

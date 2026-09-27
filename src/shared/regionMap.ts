@@ -122,6 +122,14 @@ export function normaliseRegionName(name: string | null | undefined): string {
     .replace(/[^a-z0-9]+/g, "");
 }
 
+/**
+ * A region name for joining EDSM's codex dump to the region map: {@link normaliseRegionName}, and a
+ * leading "the" dropped — EDSM writes "The Formidine Rift", the map "Formidine Rift".
+ */
+export function regionJoinKey(name: string | null | undefined): string {
+  return normaliseRegionName(name).replace(/^the/, "");
+}
+
 /** True when two names mean the same region, ignoring punctuation and possessive spelling. */
 export function sameRegion(a: string | null | undefined, b: string | null | undefined): boolean {
   const na = normaliseRegionName(a);

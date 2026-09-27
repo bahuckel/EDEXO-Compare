@@ -16,6 +16,7 @@
  * The point of keeping this is the badge: for a codex hunter, the species they have *never* seen is
  * the one worth flying to, and the app knows which those are without asking anyone.
  */
+import { regionJoinKey } from "./regionMap.js";
 
 /** `$Codex_Category_Biology;` — the localised form is "Biological and Geological". */
 const BIOLOGY_CATEGORY = /biolog/i;
@@ -148,6 +149,25 @@ export function codexRegionKey(region: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+/**
+ * A codex entry's own key, from the journal's `Name` ("$Codex_Ent_Stratum_07_M_Name;") — the same
+ * string EDSM's codex dump calls its `type` ("codex_ent_stratum_07_m"). Empty when it is not one.
+ */
+export function codexEntryKey(name: string | null | undefined): string {
+  const m = /^\$?(codex_ent_[a-z0-9_]+?)_name;?$/i.exec((name ?? "").trim());
+  return m ? m[1]!.toLowerCase() : "";
+}
+
+/**
+ * The Codex map's key for one `CodexEntry`, any category: `regionJoinKey|entryKey`. The game's codex
+ * is kept per region, so an entry logged anywhere in a region counts for every system there.
+ */
+export function codexMapKeyFromLine(line: { Name?: unknown; Region_Localised?: unknown }): string | null {
+  const entry = codexEntryKey(typeof line.Name === "string" ? line.Name : "");
+  const region = regionJoinKey(typeof line.Region_Localised === "string" ? line.Region_Localised : "");
+  return entry && region ? `${region}|${entry}` : null;
 }
 
 /** The keys one biology `CodexEntry` adds, or [] when it is not an organic with a region. */

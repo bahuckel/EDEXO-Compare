@@ -19,7 +19,7 @@
  * dots.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Camera } from "./galaxyProjection";
+import { CAMERA_TOP, type Camera } from "./galaxyProjection";
 
 export interface Viewport {
   scale: number;
@@ -32,6 +32,17 @@ export const IDENTITY: Viewport = { scale: 1, tx: 0, ty: 0 };
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 60;
+
+export interface MapViewportOptions {
+  /** Smallest scale; 1 = the viewBox as fitted. */
+  minScale?: number;
+  maxScale?: number;
+  /**
+   * Re-bind the wheel when this changes: the `<svg>` may mount after the hook first runs (a map
+   * window that opens on "no data" and gets its layout later).
+   */
+  bindKey?: string;
+}
 
 export interface MapViewport {
   view: Viewport;
@@ -51,6 +62,8 @@ export interface MapViewport {
   /** Divide a pixel size by this to keep it constant on screen. */
   pixel: number;
   reset: () => void;
+  /** Put the view somewhere exact (the snapshot fits the map, then puts it back). */
+  setView: (v: Viewport) => void;
   zoomBy: (factor: number, at?: { x: number; y: number }) => void;
   handlers: {
     onPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void;
@@ -62,31 +75,67 @@ export interface MapViewport {
   panning: boolean;
 }
 
-/** Where the pointer is in the SVG's own viewBox units, not CSS pixels. */
+/**
+ * Where the pointer is in the SVG's own user units, not CSS pixels.
+ *
+ * Read through the screen matrix, so it stays right when the viewBox does not start at 0,0 or does
+ * not share the element's aspect ratio (the system map fits a layout box of any shape, letterboxed).
+ */
 function svgPoint(e: { clientX: number; clientY: number }, svg: SVGSVGElement): { x: number; y: number } {
+  const m = typeof svg.getScreenCTM === "function" ? svg.getScreenCTM() : null;
+  if (m && typeof svg.createSVGPoint === "function") {
+    const p = svg.createSVGPoint();
+    p.x = e.clientX;
+    p.y = e.clientY;
+    const q = p.matrixTransform(m.inverse());
+    return { x: q.x, y: q.y };
+  }
   const r = svg.getBoundingClientRect();
   const vb = svg.viewBox.baseVal;
   const w = vb && vb.width ? vb.width : r.width;
   const h = vb && vb.height ? vb.height : r.height;
-  return { x: ((e.clientX - r.left) / r.width) * w, y: ((e.clientY - r.top) / r.height) * h };
+  return {
+    x: (vb?.x ?? 0) + ((e.clientX - r.left) / r.width) * w,
+    y: (vb?.y ?? 0) + ((e.clientY - r.top) / r.height) * h,
+  };
 }
 
-export function useMapViewport(initialCamera: Camera): MapViewport {
+/** User units per CSS pixel along x and y. */
+function unitsPerPixel(svg: SVGSVGElement): { kx: number; ky: number } {
+  const m = typeof svg.getScreenCTM === "function" ? svg.getScreenCTM() : null;
+  if (m && m.a && m.d) return { kx: 1 / m.a, ky: 1 / m.d };
+  const r = svg.getBoundingClientRect();
+  const vb = svg.viewBox.baseVal;
+  return {
+    kx: (vb && vb.width ? vb.width : r.width) / r.width,
+    ky: (vb && vb.height ? vb.height : r.height) / r.height,
+  };
+}
+
+export function useMapViewport(
+  initialCamera: Camera = CAMERA_TOP,
+  opts: MapViewportOptions = {},
+): MapViewport {
+  const minScale = opts.minScale ?? MIN_SCALE;
+  const maxScale = opts.maxScale ?? MAX_SCALE;
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [view, setView] = useState<Viewport>(IDENTITY);
   const [camera, setCamera] = useState<Camera>(initialCamera);
   const [panning, setPanning] = useState(false);
   const drag = useRef<{ id: number; x: number; y: number; moved: boolean } | null>(null);
 
-  const zoomAt = useCallback((factor: number, at: { x: number; y: number }) => {
-    setView((v) => {
-      const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.scale * factor));
-      if (next === v.scale) return v;
-      // Keep the point under the cursor fixed: solve for the translation that leaves it in place.
-      const k = next / v.scale;
-      return { scale: next, tx: at.x - (at.x - v.tx) * k, ty: at.y - (at.y - v.ty) * k };
-    });
-  }, []);
+  const zoomAt = useCallback(
+    (factor: number, at: { x: number; y: number }) => {
+      setView((v) => {
+        const next = Math.min(maxScale, Math.max(minScale, v.scale * factor));
+        if (next === v.scale) return v;
+        // Keep the point under the cursor fixed: solve for the translation that leaves it in place.
+        const k = next / v.scale;
+        return { scale: next, tx: at.x - (at.x - v.tx) * k, ty: at.y - (at.y - v.ty) * k };
+      });
+    },
+    [minScale, maxScale],
+  );
 
   const zoomBy = useCallback(
     (factor: number, at?: { x: number; y: number }) => {
@@ -115,7 +164,7 @@ export function useMapViewport(initialCamera: Camera): MapViewport {
     };
     svg.addEventListener("wheel", onWheel, { passive: false });
     return () => svg.removeEventListener("wheel", onWheel);
-  }, [zoomAt]);
+  }, [zoomAt, opts.bindKey]);
 
   const onPointerDown = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0) return;
@@ -134,11 +183,7 @@ export function useMapViewport(initialCamera: Camera): MapViewport {
       setPanning(true);
       e.currentTarget.setPointerCapture(e.pointerId);
     }
-    const svg = e.currentTarget;
-    const r = svg.getBoundingClientRect();
-    const vb = svg.viewBox.baseVal;
-    const kx = (vb && vb.width ? vb.width : r.width) / r.width;
-    const ky = (vb && vb.height ? vb.height : r.height) / r.height;
+    const { kx, ky } = unitsPerPixel(e.currentTarget);
     d.x = e.clientX;
     d.y = e.clientY;
     setView((v) => ({ ...v, tx: v.tx + dx * kx, ty: v.ty + dy * ky }));
@@ -167,6 +212,7 @@ export function useMapViewport(initialCamera: Camera): MapViewport {
     transform: `translate(${view.tx} ${view.ty}) scale(${view.scale})`,
     pixel: 1 / view.scale,
     reset,
+    setView,
     zoomBy,
     panning,
     handlers: { onPointerDown, onPointerMove, onPointerUp, onDoubleClick: reset },

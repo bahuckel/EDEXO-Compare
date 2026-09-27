@@ -1419,3 +1419,40 @@ button.exo-duplex-typical-mode-hit:disabled {
   object-position: center;
   display: block;
 }
+
+/* ---- Rarity DNA (2026-09-27): Common gray · Uncommon green · Rare blue · Epic purple · Legendary gold ---- */
+.rarity-dna {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 0.8em;
+  height: 1.28em;
+  margin-right: 0.4em;
+  vertical-align: -0.26em;
+  overflow: visible;
+  filter: drop-shadow(0 0 1.5px var(--rarity)) drop-shadow(0 0 4px color-mix(in srgb, var(--rarity) 55%, transparent));
+}
+
+.rarity-dna--common {
+  filter: drop-shadow(0 0 1.5px color-mix(in srgb, var(--rarity) 60%, transparent));
+}
+
+.rarity-dna--legendary {
+  filter: drop-shadow(0 0 1.5px var(--rarity)) drop-shadow(0 0 5px var(--rarity))
+    drop-shadow(0 0 9px color-mix(in srgb, var(--rarity) 45%, transparent));
+}
+
+.rarity-dna--absent {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.rarity-gem--card.rarity-dna {
+  width: 0.8em;
+  height: 1.3em;
+  margin-right: 0.5em;
+}
+
+.rarity-gem--ency.rarity-dna {
+  width: 0.7em;
+  height: 1.1em;
+}

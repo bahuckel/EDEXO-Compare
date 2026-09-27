@@ -63,11 +63,9 @@
  * matcher's first move is to divide it again — pass the gees straight through and a 2.5 g world
  * reads as 0.255 g, which is not an error, just a different planet.
  *
- * Pressure goes in as **atmospheres**, which looks wrong and is not. The two gates that read it
- * both want atm: one compares `scan.SurfacePressure` directly against the criteria's atm range, and
- * the other reads `matchContext.surfacePressureAtm`, which is set here explicitly. Neither calls
- * `journalPressureToAtm` — the function that guesses pascals-or-atm from a threshold of 40 — so the
- * guess never runs and a 50 atm body is not quietly reinterpreted as half a pascal.
+ * Pressure goes back to the journal's pascals the same way: the matcher reads `SurfacePressure`
+ * through `journalPressureToAtm`, which divides by one atmosphere (it no longer guesses the unit).
+ * `matchContext.surfacePressureAtm` is set here in atmospheres, explicitly.
  */
 import {
   BODY_DSS,
@@ -90,7 +88,7 @@ import { estimatedTemperatureRangeForScan } from "./planetTemperature.js";
 import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { lookupPrice } from "./priceList.js";
-import { EARTH_G_MS2 } from "../shared/journalPhysics.js";
+import { ATM_TO_PA, EARTH_G_MS2 } from "../shared/journalPhysics.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
 import { journalPlanetClass } from "../shared/spanshPlanetClass.js";
 import { sectorCellFromCoords, sectorCellKey } from "../shared/sectorName.js";
@@ -363,8 +361,8 @@ function scanFromBody(
     // The dump's gees back into the journal's m/s², because that is what the matcher converts from.
     SurfaceGravity: row.gravityG > 0 ? row.gravityG * EARTH_G_MS2 : undefined,
     SurfaceTemperature: row.temperatureK > 0 ? row.temperatureK : undefined,
-    // Atmospheres, matching the criteria's own unit; see the note at the top of this file.
-    SurfacePressure: row.pressureAtm > 0 ? row.pressureAtm : undefined,
+    // The dump's atmospheres back into the journal's pascals; see the note at the top of this file.
+    SurfacePressure: row.pressureAtm > 0 ? row.pressureAtm * ATM_TO_PA : undefined,
     Volcanism: row.volcanism || undefined,
     Landable: (row.flags & 1) !== 0,
   };

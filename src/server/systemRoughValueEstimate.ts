@@ -8,6 +8,7 @@ import type { GameStateStore } from "./gameState.js";
 import { explorationRecordIsBeltClusterLike, explorationRecordIsStellar } from "./explorationStellar.js";
 import { starScanValueCredits } from "./explorationValue.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
+import { isTerraformableState } from "../shared/terraformState.js";
 
 const BASE_VALUES: Record<string, number> = {
   "Earthlike body": 1200000,
@@ -27,7 +28,7 @@ const MULTIPLIERS = {
 };
 
 function terraformableFromExplorationRecord(r: ExplorationScanRecord): boolean {
-  return (r.terraformState ?? "").toLowerCase().includes("terraformable");
+  return isTerraformableState(r.terraformState);
 }
 
 /** Map Elite `PlanetClass` to coarse bucket used by the attachment script. */

@@ -60,9 +60,11 @@ import {
 import { finalisePredictionsForSystem } from "./predictionAuditLog.js";
 import { remoteBodyStates } from "./remoteSystems.js";
 import type { NavRouteWaypointDTO } from "./navRouteFuel.js";
+import { regionJoinKey } from "../shared/regionMap.js";
 import {
   codexOrganicLockFromLine,
   codexRegionKeysFromLine,
+  codexMapKeyFromLine,
   codexSpeciesFromLine,
 } from "../shared/codexLog.js";
 function bodyKey(systemAddress: number, bodyId: number): string {
@@ -164,8 +166,10 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   17: `commanderFid` — tells the commander's own shared-exomastery backups from other people's.
   18: sibling moons no longer inherit logged variants (their colours were read as their own).
   19: star `absoluteMagnitude` (the colour rule's luminosity for catalogue stars).
+  20: `codexMapLogged` — every codex entry, any category, per region (the Codex map).
+  21: `codexSightings` — biological codex entries with system and time (dynamic species rarity).
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 19;
+export const JOURNAL_MERGE_CACHE_FORMAT = 21;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -212,6 +216,10 @@ export type JournalMergeCachePayload = {
   codexLoggedSpecies?: string[];
   /** [CODEX] keys, see {@link GameStateStore.codexRegionLogged}. */
   codexRegionLogged?: string[];
+  /** Codex map keys, see {@link GameStateStore.codexMapLogged}. */
+  codexMapLogged?: string[];
+  /** Codex sightings, see {@link GameStateStore.codexSightings}. */
+  codexSightings?: [string, string][];
   /** Minutes per approach-and-landing and per sampling run, for the triage screen's own timing (B5). */
   landingMinutesSamples?: number[];
   samplingMinutesSamples?: number[];
@@ -826,6 +834,17 @@ export class GameStateStore {
   readonly codexLoggedSpecies = new Set<string>();
   /** `region|species|colour` (and `region|species|*`) for every organic codex entry — [CODEX], shared/codexLog.ts. */
   readonly codexRegionLogged = new Set<string>();
+  /**
+   * `regionJoinKey|entryKey` for every `CodexEntry`, any category (stars, planets, geology, plants,
+   * space life) — the Codex map colours EDSM's systems by these (owner, 2026-09-27).
+   */
+  readonly codexMapLogged = new Set<string>();
+  /**
+   * `speciesKey|regionJoinKey|systemAddress` → earliest timestamp, for every biological `CodexEntry`.
+   * The species rarity adds the ones newer than its EDSM dump, so the tiers and region counts move
+   * with what the commander logs (owner, 2026-09-27: "make it dynamic").
+   */
+  readonly codexSightings = new Map<string, string>();
 
   /**
    * How long this commander's own trips actually take, in minutes (B5).
@@ -1496,6 +1515,8 @@ export class GameStateStore {
     this.firstFootfallBodies.clear();
     this.codexLoggedSpecies.clear();
     this.codexRegionLogged.clear();
+    this.codexMapLogged.clear();
+    this.codexSightings.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -1536,6 +1557,8 @@ export class GameStateStore {
     this.firstFootfallBodies.clear();
     this.codexLoggedSpecies.clear();
     this.codexRegionLogged.clear();
+    this.codexMapLogged.clear();
+    this.codexSightings.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -2168,6 +2191,14 @@ export class GameStateStore {
         if (species) this.codexLoggedSpecies.add(species);
         for (const k of codexRegionKeysFromLine(line as Parameters<typeof codexRegionKeysFromLine>[0])) {
           this.codexRegionLogged.add(k);
+        }
+        const mapKey = codexMapKeyFromLine(line as Parameters<typeof codexMapKeyFromLine>[0]);
+        if (mapKey) this.codexMapLogged.add(mapKey);
+        const sightingRegion = typeof line.Region_Localised === "string" ? regionJoinKey(line.Region_Localised) : "";
+        if (species && sightingRegion && typeof line.SystemAddress === "number") {
+          const k = `${species}|${sightingRegion}|${line.SystemAddress}`;
+          const prev = this.codexSightings.get(k);
+          if (!prev || ts < prev) this.codexSightings.set(k, ts);
         }
 
         /*
@@ -3282,6 +3313,8 @@ export class GameStateStore {
       firstFootfallBodies: [...this.firstFootfallBodies],
       codexLoggedSpecies: [...this.codexLoggedSpecies],
       codexRegionLogged: [...this.codexRegionLogged],
+      codexMapLogged: [...this.codexMapLogged],
+      codexSightings: [...this.codexSightings],
       landingMinutesSamples: [...this.landingMinutesSamples],
       samplingMinutesSamples: [...this.samplingMinutesSamples],
       pendingOrganicSales: this.pendingOrganicSales.map((p) => ({ ...p })),
@@ -3362,6 +3395,8 @@ export class GameStateStore {
     for (const k of data.firstFootfallBodies) this.firstFootfallBodies.add(k);
     for (const k of data.codexLoggedSpecies ?? []) this.codexLoggedSpecies.add(k);
     for (const k of data.codexRegionLogged ?? []) this.codexRegionLogged.add(k);
+    for (const k of data.codexMapLogged ?? []) this.codexMapLogged.add(k);
+    for (const [k, t] of data.codexSightings ?? []) this.codexSightings.set(k, t);
     this.landingMinutesSamples.push(...(data.landingMinutesSamples ?? []));
     this.samplingMinutesSamples.push(...(data.samplingMinutesSamples ?? []));
     this.pendingOrganicSales = data.pendingOrganicSales.map((p) => ({ ...p }));

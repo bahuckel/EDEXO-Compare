@@ -1,94 +1,166 @@
 import { SnapshotButton } from "./SnapshotButton";
 import type { AppSnapshot, NotableBodyInfo } from "@shared/types";
 import { DScanBodiesBadge } from "./DScanBodiesBadge";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PlanetQuickFactsPopup } from "./PlanetQuickFactsPopup";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { DetailBody } from "./PlanetQuickFactsPopup";
 import { useModal } from "./ui/useModal";
-import { computeSystemMapLayout, type LayoutItem } from "./systemMapGeometry";
-import { SystemMapDefs, SystemMapDrawing, systemMapNodeAppearance } from "./SystemMapDrawing";
+import {
+  computeSystemMapLayout,
+  neighbourInDirection,
+  orbitChain,
+  type MapItem,
+  type MapLayout,
+} from "./systemMapLayout";
+import {
+  MAP_BG,
+  MAP_BLUE,
+  STAR_COLOURS,
+  SystemMapDefs,
+  SystemMapDrawing,
+  SystemMapGrid,
+  bodyColours,
+} from "./SystemMapDrawing";
 import { CopySystemButton } from "./CopySystemButton";
+import { IDENTITY, useMapViewport, type MapViewport } from "./useMapViewport";
 
 function notableBodyIsTerraformable(n: NotableBodyInfo): boolean {
   return n.tag.toLowerCase().includes("terraformable");
 }
 
+/** A tiny drawing for the legend, in the map's own colours. */
+function Swatch({ children }: { children: React.ReactNode }) {
+  return (
+    <svg className="system-map-legend-svg" viewBox="-9 -9 18 18" width="18" height="18" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
+
+function BodySwatch({ label }: { label: string }) {
+  const c = bodyColours(label);
+  return (
+    <Swatch>
+      <circle r={6.5} fill={c.fill} stroke={c.stroke} strokeWidth={1.4} />
+    </Swatch>
+  );
+}
+
 /**
- * What the map draws, said in words.
- *
- * The map has a full colour vocabulary — nine body kinds, each with its own stroke — and three
- * suffix marks, and it explained none of them. A commander could see that some rings are cyan and
- * some orange, and that some names end in `+`, without anything on screen saying which is which.
- * The colours are read from {@link systemMapNodeAppearance} rather than restated, so a change to a
- * body's colour cannot leave this describing the old one.
- *
- * `++` and `+` are the exobiology value tiers the owner sets in Options, which is why they are
- * spelled out with the setting that drives them rather than as bare symbols.
+ * What the map draws, said in words — in the map's own colours, so a change to one cannot leave
+ * the other describing the old look.
  */
 function SystemMapLegend({ plusMinCr, plusPlusMinCr }: { plusMinCr: number; plusPlusMinCr: number }) {
-  const swatch = (label: string, it: Partial<LayoutItem>) => {
-    const a = systemMapNodeAppearance(it as LayoutItem);
-    return (
-      <span className="system-map-legend-item" key={label}>
-        <span
-          className="system-map-legend-dot"
-          style={{ background: a.fill, borderColor: a.stroke }}
-          aria-hidden="true"
-        />
-        {label}
-      </span>
-    );
-  };
-
+  const stars: [string, keyof typeof STAR_COLOURS][] = [
+    ["O B A", "B"],
+    ["F G", "G"],
+    ["K", "K"],
+    ["M", "M"],
+    ["L", "L"],
+    ["T Y", "T"],
+    ["White dwarf", "D"],
+    ["Neutron", "N"],
+    ["Black hole", "H"],
+  ];
   return (
     <div className="system-map-legend">
       <div className="system-map-legend-row">
-        {swatch("Star", { isStar: true })}
-        {swatch("Neutron", { isStar: true, starVisual: "neutron" })}
-        {swatch("Earth-like", { baseLabel: "ELW" })}
-        {swatch("Water", { baseLabel: "WW" })}
-        {swatch("Ammonia", { baseLabel: "AW" })}
-        {swatch("Icy", { baseLabel: "I" })}
-        {swatch("Rocky / HMC", { baseLabel: "R" })}
-        {swatch("Gas giant", { baseLabel: "GG" })}
-        {swatch("Barycentre", { isBarycentre: true })}
-        {swatch("Not yet scanned", { isPlaceholder: true })}
+        <span className="dim small-caps">Stars</span>
+        {stars.map(([label, k]) => (
+          <span className="system-map-legend-item" key={label}>
+            <Swatch>
+              <circle r={7} fill={STAR_COLOURS[k].core} stroke={STAR_COLOURS[k].edge} strokeWidth={2} />
+            </Swatch>
+            {label}
+          </span>
+        ))}
+      </div>
+      <div className="system-map-legend-row">
+        <span className="dim small-caps">Bodies</span>
+        {(
+          [
+            ["Earth-like", "ELW"],
+            ["Water", "WW"],
+            ["Ammonia", "AW"],
+            ["Icy (I, RI)", "I"],
+            ["Rocky / metal (R, HMC, MR)", "HMC"],
+            ["Gas giant", "GG"],
+            ["Not yet scanned", "?"],
+          ] as const
+        ).map(([label, k]) => (
+          <span className="system-map-legend-item" key={label}>
+            <BodySwatch label={k} />
+            {label}
+          </span>
+        ))}
       </div>
       <div className="system-map-legend-row system-map-legend-row--marks">
         <span className="system-map-legend-item">
-          <b>*</b> terraformable
+          <Swatch>
+            <circle r={4.5} fill="#123a44" />
+            <circle r={6.8} fill="none" stroke={MAP_BLUE} strokeWidth={1.5} />
+          </Swatch>
+          atmosphere
         </span>
         <span className="system-map-legend-item">
-          <b>+</b> exobiology worth ≥ {plusMinCr.toLocaleString()} CR
+          <Swatch>
+            <circle r={4.5} fill="#123a44" />
+            <path
+              d="M 3.4 5.9 A 6.8 6.8 0 1 1 3.4 -5.9"
+              fill="none"
+              stroke={MAP_BLUE}
+              strokeWidth={1.8}
+              strokeLinecap="round"
+            />
+          </Swatch>
+          landable
         </span>
         <span className="system-map-legend-item">
-          <b>++</b> ≥ {plusPlusMinCr.toLocaleString()} CR
+          <span className="system-map-legend-badge">3</span> biological signals
         </span>
         <span className="system-map-legend-item">
-          <b>+</b> on a star: scoopable
-        </span>
-        <span className="system-map-legend-item">
-          <span className="system-map-legend-ring system-map-legend-ring--bio" aria-hidden="true" />{" "}
-          biological signals (count)
-        </span>
-        <span className="system-map-legend-item">
-          <span className="system-map-legend-ring system-map-legend-ring--x5" aria-hidden="true" /> first
-          footfall ×5
+          <span className="system-map-legend-badge system-map-legend-badge--x5">3 ×5</span> first footfall
+          pays ×5
         </span>
         <span className="system-map-legend-item">
           <span className="system-map-legend-you" aria-hidden="true">
             ▼
-          </span>{" "}
+          </span>
           you are here
         </span>
         <span className="system-map-legend-item">
-          <b>×</b> on a bracket: the pair's barycentre
+          <b>×</b> barycentre (a pair's shared centre)
         </span>
-        <span className="system-map-legend-item dim">
-          Scroll to zoom · drag to pan · double-click to reset
+        <span className="system-map-legend-item">
+          <b>*</b> terraformable
         </span>
+        <span className="system-map-legend-item">
+          <b>+</b> / <b>++</b> exobiology ≥ {plusMinCr.toLocaleString()} / {plusPlusMinCr.toLocaleString()} CR
+          · <b>+</b> on a star: scoopable
+        </span>
+      </div>
+      <div className="system-map-legend-row dim">
+        Scroll to zoom at the cursor · drag to pan · click a body for its data · arrow keys move between
+        bodies · + / − zoom · 0 or double-click fits the map
       </div>
     </div>
   );
+}
+
+/** Put a body back in view when the keyboard moved to one off the screen. */
+function keepInView(vp: MapViewport, layout: MapLayout, it: MapItem): void {
+  const s = vp.view.scale;
+  const x = s * it.cx + vp.view.tx;
+  const y = s * it.cy + vp.view.ty;
+  const mx = layout.width * 0.08;
+  const my = layout.height * 0.08;
+  const inX = x > layout.minX + mx && x < layout.minX + layout.width - mx;
+  const inY = y > layout.minY + my && y < layout.minY + layout.height - my;
+  if (inX && inY) return;
+  vp.setView({
+    scale: s,
+    tx: inX ? vp.view.tx : layout.minX + layout.width / 2 - s * it.cx,
+    ty: inY ? vp.view.ty : layout.minY + layout.height / 2 - s * it.cy,
+  });
 }
 
 export const SystemMapModal = memo(function SystemMapModal({
@@ -116,86 +188,114 @@ export const SystemMapModal = memo(function SystemMapModal({
     ) : (
       "System map"
     );
-  const layout = useMemo(() => (map ? computeSystemMapLayout(map.tree, map.starSystem ?? "") : null), [map]);
-  const layoutKey = layout != null ? `${layout.minX},${layout.minY},${layout.width},${layout.height}` : "";
-
-  /** How many bodies the map draws that carry biology — the count beside the toggle. */
-  const bioCount = useMemo(
-    () => layout?.items.filter((it) => map?.detailsByBodyId[String(it.bodyId)]?.hasExobiology).length ?? null,
-    [layout, map],
+  const layout = useMemo(
+    () => (map ? computeSystemMapLayout(map.tree, map.starSystem ?? "", map.detailsByBodyId) : null),
+    [map],
   );
+  const layoutKey = layout != null ? `${map?.systemAddress}:${layout.width}x${layout.height}` : "";
+  const vp = useMapViewport(undefined, { maxScale: 40, bindKey: layoutKey });
+
+  const detailOf = useCallback((id: number) => map?.detailsByBodyId[String(id)], [map]);
+
+  /** How many drawn bodies carry biology / can be landed on — the counts beside the filters. */
+  const counts = useMemo(() => {
+    let bio = 0;
+    let land = 0;
+    for (const it of layout?.items ?? []) {
+      const d = detailOf(it.id);
+      if (d?.hasExobiology) bio++;
+      if (d?.landable) land++;
+    }
+    return { bio, land };
+  }, [layout, detailOf]);
 
   /**
-   * The body the main panel is showing, so the map and the panel visibly agree.
-   *
-   * `uiSelectedBodyKey` is `${systemAddress}:${bodyId}`; the map only knows body ids, so the id is
-   * taken off the end. Comparing the whole key would need the address threaded in for no gain — the
-   * map only ever draws one system.
+   * Fade what a filter leaves out rather than removing it: the tree keeps its shape, so a bio moon
+   * under a barren planet is still found where it belongs. Stars and barycentres never fade — they
+   * are the scaffolding.
    */
-  const selectedBodyId = useMemo(() => {
+  const [bioOnly, setBioOnly] = useState(false);
+  const [landOnly, setLandOnly] = useState(false);
+  const dimmed = useCallback(
+    (it: MapItem) => {
+      if (it.kind === "star" || it.kind === "hub" || it.kind === "bary") return false;
+      const d = detailOf(it.id);
+      return (bioOnly && !d?.hasExobiology) || (landOnly && !d?.landable);
+    },
+    [bioOnly, landOnly, detailOf],
+  );
+
+  /** The selected body opens where the ship is, else on the body the main panel shows. */
+  const initialId = useMemo(() => {
+    const here = layout?.items.find((it) => it.node.youAreHere);
+    if (here) return here.id;
     const key = snap.uiSelectedBodyKey;
     if (!key) return null;
     const id = Number(key.slice(key.lastIndexOf(":") + 1));
-    return Number.isFinite(id) ? id : null;
-  }, [snap.uiSelectedBodyKey]);
-  /**
-   * Fade everything that is not carrying biology, rather than removing it.
-   *
-   * Measured on the owner's home system: 39 nodes, 2 with biology, and **both are moons whose
-   * parent planet has none**. Deleting barren bodies would therefore orphan the only two worth
-   * flying to, and rebuilding the tree around that is a layout problem where this is a reading
-   * problem. Dimming keeps every orbit where it was, so the eye still finds the pair by their
-   * position under the planet they belong to.
-   */
-  const [bioOnly, setBioOnly] = useState(false);
-  const [mapZoom, setMapZoom] = useState(1);
-  const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
-  const mapWheelRef = useRef<HTMLDivElement | null>(null);
-  const mapSvgRef = useRef<SVGSVGElement | null>(null);
-  const mapDragRef = useRef<{ lastClientX: number; lastClientY: number; total: number } | null>(null);
-  const suppressNextMapNodeClickRef = useRef(false);
-
-  const [popup, setPopup] = useState<{ bodyId: number; x: number; y: number } | null>(null);
-
-  const detail = useMemo(() => {
-    if (!map || popup == null) return null;
-    return map.detailsByBodyId[String(popup.bodyId)] ?? null;
-  }, [map, popup]);
-
-  const clickedMapItem = useMemo(() => {
-    if (popup == null || layout == null) return null;
-    return layout.items.find((it) => it.bodyId === popup.bodyId) ?? null;
-  }, [popup, layout]);
-
-  const closePopup = useCallback(() => setPopup(null), []);
-
+    return Number.isFinite(id) && layout?.items.some((it) => it.id === id) ? id : null;
+    // Only when the system changes — a new snapshot of the same system keeps the commander's pick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map?.systemAddress]);
+  const [selectedId, setSelectedId] = useState<number | null>(initialId);
+  const [hoverId, setHoverId] = useState<number | null>(null);
   useEffect(() => {
-    setMapZoom(1);
-    setMapPan({ x: 0, y: 0 });
-  }, [layoutKey]);
+    setSelectedId(initialId);
+    vp.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map?.systemAddress]);
 
-  useEffect(() => {
-    const el = mapWheelRef.current;
-    if (!el || !layout) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const dir = e.deltaY < 0 ? 1 : -1;
-      const factor = Math.exp(dir * 0.11);
-      setMapZoom((z) => Math.min(220, Math.max(0.012, z * factor)));
+  const chain = useMemo(
+    () => (layout ? orbitChain(layout, hoverId ?? selectedId) : new Set<number>()),
+    [layout, hoverId, selectedId],
+  );
+  const selectedItem = layout?.items.find((it) => it.id === selectedId) ?? null;
+  const selectedDetail = selectedId != null ? detailOf(selectedId) : undefined;
+
+  const dialogRef = useModal<HTMLDivElement>(true, onClose);
+
+  const onKeyDown = useCallback(
+    (ev: React.KeyboardEvent) => {
+      if (!layout) return;
+      const t = ev.target as HTMLElement;
+      if (t.closest("input, textarea, select")) return;
+      const centre = { x: layout.minX + layout.width / 2, y: layout.minY + layout.height / 2 };
+      if (ev.key === "+" || ev.key === "=") vp.zoomBy(1.3, centre);
+      else if (ev.key === "-" || ev.key === "_") vp.zoomBy(1 / 1.3, centre);
+      else if (ev.key === "0") vp.reset();
+      else if (ev.key.startsWith("Arrow")) {
+        const dir = ev.key.slice(5).toLowerCase() as "left" | "right" | "up" | "down";
+        const from =
+          selectedItem ??
+          [...layout.items]
+            .filter((it) => it.kind !== "bary")
+            .sort((a, b) => a.cy - b.cy || a.cx - b.cx)[0] ??
+          null;
+        if (!from) return;
+        const next = selectedItem ? neighbourInDirection(layout.items, from, dir) : from;
+        if (next) {
+          setSelectedId(next.id);
+          keepInView(vp, layout, next);
+        }
+      } else return;
+      ev.preventDefault();
+    },
+    [layout, vp, selectedItem],
+  );
+
+  const prepareSnapshot = useCallback(async () => {
+    const prev = vp.view;
+    const hovered = hoverId;
+    vp.setView(IDENTITY);
+    setHoverId(null);
+    // Let React paint the fitted map before the camera clones it (no rAF: it stalls in a hidden window).
+    await new Promise((res) => setTimeout(res, 60));
+    return () => {
+      vp.setView(prev);
+      setHoverId(hovered);
     };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
-  }, [layout]);
+  }, [vp, hoverId]);
 
-  /** Escape closes the body popup first, then the map; useModal adds trap, restore and scroll lock. */
-  const closeTopLayer = useCallback(() => {
-    if (popup) closePopup();
-    else onClose();
-  }, [onClose, popup, closePopup]);
-
-  const dialogRef = useModal<HTMLDivElement>(true, closeTopLayer);
-
-  if (!map) {
+  if (!map || !layout || layout.width <= 0) {
     return (
       <div className="modal-backdrop" role="presentation" onClick={onClose}>
         <div
@@ -213,12 +313,16 @@ export const SystemMapModal = memo(function SystemMapModal({
             </button>
           </div>
           <div className="modal-body">
-            <div
-              key={`system-map-fss-prompt-${snap.viewingSystemAddress ?? snap.currentSystemAddress ?? "na"}`}
-              className="system-map-fss-required"
-              role="img"
-              aria-label="No merged Scan data for this system yet. FSS the system so journal lines populate bodies."
-            />
+            {!map ? (
+              <div
+                key={`system-map-fss-prompt-${snap.viewingSystemAddress ?? snap.currentSystemAddress ?? "na"}`}
+                className="system-map-fss-required"
+                role="img"
+                aria-label="No merged Scan data for this system yet. FSS the system so journal lines populate bodies."
+              />
+            ) : (
+              <p className="dim">No layout data.</p>
+            )}
             {snap.dScanBodies ? (
               <div className="system-map-dscan-wrap">
                 <DScanBodiesBadge d={snap.dScanBodies} />
@@ -230,42 +334,7 @@ export const SystemMapModal = memo(function SystemMapModal({
     );
   }
 
-  if (!layout || layout.width <= 0) {
-    return (
-      <div className="modal-backdrop" role="presentation" onClick={onClose}>
-        <div
-          ref={dialogRef}
-          tabIndex={-1}
-          className="modal-panel system-map-panel"
-          role="dialog"
-          aria-modal="true"
-          onClick={(ev) => ev.stopPropagation()}
-        >
-          <div className="modal-head">
-            <h3>{mapHeading}</h3>
-            <button type="button" className="modal-close" onClick={onClose}>
-              ×
-            </button>
-          </div>
-          <div className="modal-body">
-            {snap.dScanBodies ? (
-              <div className="system-map-dscan-wrap system-map-dscan-wrap--head">
-                <DScanBodiesBadge d={snap.dScanBodies} />
-              </div>
-            ) : null}
-            <p className="dim">No layout data.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const lc = layout.minX + layout.width / 2;
-  const lcy = layout.minY + layout.height / 2;
-  const vw = layout.width / mapZoom;
-  const vh = layout.height / mapZoom;
-  const rq = (n: number) => Math.round(n * 1000) / 1000;
-  const vb = `${rq(lc + mapPan.x - vw / 2)} ${rq(lcy + mapPan.y - vh / 2)} ${rq(vw)} ${rq(vh)}`;
+  const vb = `${layout.minX} ${layout.minY} ${layout.width} ${layout.height}`;
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -276,10 +345,11 @@ export const SystemMapModal = memo(function SystemMapModal({
         role="dialog"
         aria-modal="true"
         onClick={(ev) => ev.stopPropagation()}
+        onKeyDown={onKeyDown}
       >
         <div className="modal-head">
           <h3>{mapHeading}</h3>
-          <SnapshotButton what="system-map" className="system-map-snapshot" />
+          <SnapshotButton what="system-map" className="system-map-snapshot" prepare={prepareSnapshot} />
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
@@ -317,7 +387,9 @@ export const SystemMapModal = memo(function SystemMapModal({
                   type="button"
                   role="listitem"
                   key={`${n.systemAddress}-${n.bodyId}-${i}`}
-                  className={`system-map-notable-pill${n.dssMapped ? " system-map-notable-pill--dss" : " system-map-notable-pill--fss"}`}
+                  className={`system-map-notable-pill${n.dssMapped ? " system-map-notable-pill--dss" : " system-map-notable-pill--fss"}${
+                    n.bodyId === selectedId ? " is-selected" : ""
+                  }`}
                   title={
                     n.dssMapped
                       ? "DSS complete in merged journal (SAAScanComplete)"
@@ -325,7 +397,9 @@ export const SystemMapModal = memo(function SystemMapModal({
                   }
                   onClick={(ev) => {
                     ev.stopPropagation();
-                    setPopup({ bodyId: n.bodyId, x: ev.clientX, y: ev.clientY });
+                    setSelectedId(n.bodyId);
+                    const it = layout.items.find((x) => x.id === n.bodyId);
+                    if (it) keepInView(vp, layout, it);
                   }}
                 >
                   <span className="system-map-notable-body">
@@ -341,144 +415,99 @@ export const SystemMapModal = memo(function SystemMapModal({
           </div>
         ) : null}
 
-        {/*
-          The zoom existed and was invisible: wheel to scale, double-click to reset, and nothing on
-          screen saying so. Buttons make it discoverable and give a keyboard and touch route to the
-          same state, and the readout doubles as the hint that the map is zoomable at all.
-        */}
-        <div className="system-map-zoom" role="group" aria-label="Map zoom">
+        <div className="system-map-zoom" role="group" aria-label="Map zoom and filters">
           <button
             type="button"
-            onClick={() => setMapZoom((z) => Math.max(0.012, z / 1.3))}
+            onClick={() =>
+              vp.zoomBy(1 / 1.3, { x: layout.minX + layout.width / 2, y: layout.minY + layout.height / 2 })
+            }
             aria-label="Zoom out"
           >
             −
           </button>
-          <span className="system-map-zoom-val">{Math.round(mapZoom * 100)}%</span>
+          <span className="system-map-zoom-val">{Math.round(vp.view.scale * 100)}%</span>
           <button
             type="button"
-            onClick={() => setMapZoom((z) => Math.min(220, z * 1.3))}
+            onClick={() =>
+              vp.zoomBy(1.3, { x: layout.minX + layout.width / 2, y: layout.minY + layout.height / 2 })
+            }
             aria-label="Zoom in"
           >
             +
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMapZoom(1);
-              setMapPan({ x: 0, y: 0 });
-            }}
-          >
-            Reset
+          <button type="button" onClick={() => vp.reset()} title="Fit the whole map in the window">
+            Fit
           </button>
           <label className="system-map-bioonly">
             <input type="checkbox" checked={bioOnly} onChange={(e) => setBioOnly(e.target.checked)} />
             <span>
-              Biology only
-              {bioCount != null ? <span className="dim"> ({bioCount})</span> : null}
+              Biology only <span className="dim">({counts.bio})</span>
+            </span>
+          </label>
+          <label className="system-map-bioonly">
+            <input type="checkbox" checked={landOnly} onChange={(e) => setLandOnly(e.target.checked)} />
+            <span>
+              Landable only <span className="dim">({counts.land})</span>
             </span>
           </label>
         </div>
 
-        <div
-          ref={mapWheelRef}
-          className="system-map-svg-wrap card-neon"
-          onClick={() => closePopup()}
-          onDoubleClick={(ev) => {
-            ev.stopPropagation();
-            setMapZoom(1);
-            setMapPan({ x: 0, y: 0 });
-          }}
-          role="presentation"
-        >
-          <svg
-            ref={mapSvgRef}
-            className="system-map-svg"
-            viewBox={vb}
-            preserveAspectRatio="xMidYMid meet"
-            onPointerDown={(ev) => {
-              if (ev.pointerType === "mouse" && ev.button !== 0) return;
-              const el = ev.target as Element | null;
-              if (el && typeof el.closest === "function" && el.closest(".system-map-node-g")) {
-                /** Let clicks reach map node groups — preventDefault + capture would suppress `click`. */
-                return;
-              }
-              ev.preventDefault();
-              const svg = mapSvgRef.current;
-              if (!svg) return;
-              svg.setPointerCapture(ev.pointerId);
-              mapDragRef.current = { lastClientX: ev.clientX, lastClientY: ev.clientY, total: 0 };
-            }}
-            onPointerMove={(ev) => {
-              const d = mapDragRef.current;
-              if (!d) return;
-              const svg = mapSvgRef.current;
-              if (!svg) return;
-              const rect = svg.getBoundingClientRect();
-              const pw = rect.width;
-              const ph = rect.height;
-              if (pw < 1 || ph < 1) return;
-              const dcx = ev.clientX - d.lastClientX;
-              const dcy = ev.clientY - d.lastClientY;
-              d.lastClientX = ev.clientX;
-              d.lastClientY = ev.clientY;
-              d.total += Math.hypot(dcx, dcy);
-              const vw = layout.width / mapZoom;
-              const vh = layout.height / mapZoom;
-              const ix = (dcx * vw) / pw;
-              const iy = (dcy * vh) / ph;
-              setMapPan((prev) => ({ x: prev.x - ix, y: prev.y - iy }));
-            }}
-            onPointerUp={(ev) => {
-              const d = mapDragRef.current;
-              if (d && d.total > 8) suppressNextMapNodeClickRef.current = true;
-              mapDragRef.current = null;
-              try {
-                mapSvgRef.current?.releasePointerCapture(ev.pointerId);
-              } catch {
-                /* not captured */
-              }
-            }}
-            onPointerCancel={(ev) => {
-              mapDragRef.current = null;
-              try {
-                mapSvgRef.current?.releasePointerCapture(ev.pointerId);
-              } catch {
-                /* not captured */
-              }
-            }}
-          >
-            <SystemMapDefs />
-            <SystemMapDrawing
-              layout={layout}
-              map={map}
-              bioOnly={bioOnly}
-              selectedBodyId={selectedBodyId}
-              onNodeClick={(it, ev) => {
-                if (suppressNextMapNodeClickRef.current) {
-                  suppressNextMapNodeClickRef.current = false;
-                  return;
-                }
-                setPopup({ bodyId: it.bodyId, x: ev.clientX, y: ev.clientY });
+        <div className="system-map-body">
+          <div className="system-map-svg-wrap" style={{ background: MAP_BG }}>
+            <svg
+              ref={vp.svgRef}
+              className="system-map-svg"
+              viewBox={vb}
+              preserveAspectRatio="xMidYMid meet"
+              onPointerDown={vp.handlers.onPointerDown}
+              onPointerMove={vp.handlers.onPointerMove}
+              onPointerUp={vp.handlers.onPointerUp}
+              onDoubleClick={vp.handlers.onDoubleClick}
+              onClick={() => {
+                if (!vp.panning) setSelectedId(null);
               }}
-            />
-          </svg>
+              style={{ cursor: vp.panning ? "grabbing" : "grab" }}
+              role="img"
+              aria-label={`System map of ${systemTitleName}`}
+            >
+              <SystemMapDefs />
+              <g transform={vp.transform}>
+                <SystemMapGrid layout={layout} />
+                <SystemMapDrawing
+                  layout={layout}
+                  map={map}
+                  dimmed={dimmed}
+                  selectedId={selectedId}
+                  chain={chain}
+                  onSelect={(it) => {
+                    if (!vp.panning) setSelectedId(it.id);
+                  }}
+                  onHover={(it) => setHoverId(it?.id ?? null)}
+                />
+              </g>
+            </svg>
+          </div>
+          <aside className="system-map-side card-neon" aria-label="Selected body">
+            {selectedDetail ? (
+              <DetailBody detail={selectedDetail} onGoToBioBody={onGoToBioBody} />
+            ) : selectedItem ? (
+              <div className="body-detail-stack">
+                <h4 className="body-detail-title">{selectedItem.node.bodyName || "Barycentre"}</h4>
+                <p className="dim small">
+                  {selectedItem.inferred
+                    ? "A barycentre worked out from the body names — the journal has not placed these bodies yet."
+                    : "No journal detail for this body yet: FSS or DSS it and its data appears here."}
+                </p>
+              </div>
+            ) : (
+              <p className="dim small system-map-side-hint">
+                Click a body — or move with the arrow keys — to see its data here.
+              </p>
+            )}
+          </aside>
         </div>
 
         <SystemMapLegend plusMinCr={snap.exoMapTierPlusMinCr} plusPlusMinCr={snap.exoMapTierPlusPlusMinCr} />
-
-        {popup ? (
-          <PlanetQuickFactsPopup
-            detail={detail}
-            fallbackTitle={
-              clickedMapItem?.displayBodyName ?? clickedMapItem?.bodyName ?? `Body ${popup.bodyId}`
-            }
-            bodyId={popup.bodyId}
-            onClose={closePopup}
-            onGoToBioBody={onGoToBioBody}
-            pos={{ left: popup.x, top: popup.y }}
-          />
-        ) : null}
       </div>
     </div>
   );

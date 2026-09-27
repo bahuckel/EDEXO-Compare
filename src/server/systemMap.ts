@@ -49,6 +49,7 @@ import { explorationRecordHasPlanetSlotDesignation } from "../shared/planetSlotD
 import { explorationRecordIsBeltClusterLike, explorationRecordIsStellar } from "./explorationStellar.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
 import { footfallCertainty } from "../shared/footfallValue.js";
+import { isTerraformableState } from "../shared/terraformState.js";
 
 const isBeltClusterRecord = explorationRecordIsBeltClusterLike;
 
@@ -503,7 +504,7 @@ function formatCompositionList(raw: unknown): string {
 }
 
 function terraformableFromRecord(r: ExplorationScanRecord): boolean {
-  return (r.terraformState ?? "").toLowerCase().includes("terraformable");
+  return isTerraformableState(r.terraformState);
 }
 
 function acronymFromWords(text: string, maxLen: number): string {

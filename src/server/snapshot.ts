@@ -46,6 +46,7 @@ import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
 import { matchDatabaseToScan, shownSpeciesMatches, speciesMatchesCriteria } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
+import { clearStarlightRangesCache, starlightRangeFor } from "./starlightRanges.js";
 import { journalHostObservationFromSpeciesContext } from "./journalHostObservation.js";
 import { resolveSpeciesPhoto } from "./speciesPhotos.js";
 import { loadSpeciesDatabaseFromTree } from "./speciesTreeLoader.js";
@@ -123,6 +124,8 @@ import { edsmUploadLedgerSummary } from "./edsmUploadLedger.js";
 import { edsmCredentialsStatus } from "./edsmCredentials.js";
 import { FirstFootfallLookup } from "./firstFootfallLookup.js";
 import { readEdsmCredentials } from "./edsmCredentials.js";
+import { isTerraformableState } from "../shared/terraformState.js";
+import { clearSpeciesRarityCache, regionalRarity, speciesRarity, syncRaritySightings } from "./speciesRarityData.js";
 
 /**
  * One lookup for the life of the process, bound to whichever store is building the snapshot.
@@ -533,7 +536,7 @@ function shortNotableBodyLabel(bodyName: string, candidates: (string | null | un
 }
 
 function explorationRecordIsTerraformable(rec: ExplorationScanRecord): boolean {
-  return (rec.terraformState ?? "").trim().toLowerCase().includes("terraformable");
+  return isTerraformableState(rec.terraformState);
 }
 
 function abbreviateNotablePlanetClass(pc: string): string {
@@ -609,10 +612,44 @@ function buildNotableBodiesForFocusedSystem(
   return out;
 }
 
+/** Tag every species with its rarity tier (EDSM codex + extras + own new sightings) — the DNA badge reads it. */
+function tagRarity(db: SpeciesDatabase, root: string): void {
+  for (const e of db.species) {
+    const r = speciesRarity(root, e.id);
+    if (r) e.rarity = r;
+    else delete e.rarity;
+  }
+}
+
+/** A fresh database starts from the files again (Refresh exomastery re-reads them). */
+function withRarity(db: SpeciesDatabase, root: string): SpeciesDatabase {
+  clearSpeciesRarityCache();
+  tagRarity(db, root);
+  // The starlight ranges ride along for the Encyclopedia card; the gate reads them server-side.
+  clearStarlightRangesCache();
+  for (const e of db.species) {
+    const s = starlightRangeFor(e.id);
+    if (s) e.starlight = { gate: s.gate, lo: s.lo, hi: s.hi, n: s.n };
+  }
+  return db;
+}
+
+/**
+ * Rarity is dynamic (owner, 2026-09-27): the commander's codex entries newer than the EDSM dump add to
+ * the counts, so tiers and region verdicts can move. Only when they did are the tags redone and the
+ * cached matches dropped.
+ */
+function syncRarity(store: GameStateStore, db: SpeciesDatabase): void {
+  const root = getProjectRoot();
+  if (!syncRaritySightings(root, store.codexSightings, db.species)) return;
+  tagRarity(db, root);
+  computeBodyCache.clear();
+}
+
 export function loadSpeciesDatabase(): SpeciesDatabase {
   const root = getProjectRoot();
   clearExoOrganicGenusMinDistCache();
-  cachedDb = loadSpeciesDatabaseFromTree(root);
+  cachedDb = withRarity(loadSpeciesDatabaseFromTree(root), root);
   // The foot catalog keeps its own copy of the tree; a reload has to reach it too.
   clearFootCatalogSpeciesDb();
   speciesDataGeneration += 1;
@@ -639,7 +676,7 @@ export function getCachedPriceIndex(): PriceIndex {
 export function buildEncyclopediaPayload(): EncyclopediaSpeciesRowDTO[] {
   const root = getProjectRoot();
   if (!cachedDb.species.length) {
-    cachedDb = loadSpeciesDatabaseFromTree(root);
+    cachedDb = withRarity(loadSpeciesDatabaseFromTree(root), root);
   }
   return cachedDb.species.map((entry) => {
     const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(
@@ -1554,6 +1591,13 @@ function computeBodyUncached(
   }
   attachCodexNovelty(matches, store);
   attachCodexRegionNovelty(matches, store, speciesMatchCtx, scanForExo);
+  // Rarity where the body is (owner, 2026-09-27): a species can be common here and rare elsewhere.
+  if (speciesMatchCtx?.regionName) {
+    for (const m of matches) {
+      const r = regionalRarity(getProjectRoot(), speciesMatchCtx.regionName, m.entry.id);
+      if (r) m.regionRarity = r;
+    }
+  }
   attachOtherMatchCardScores(matches, scanForExo, explorationRec, root, journalHost);
   applyExomasteryGenusCompetitivePercent(matches);
   if (matches.length > 0 && scanForExo) {
@@ -1735,6 +1779,7 @@ export function buildSnapshot(
   const db = cachedDb;
   // Whose shared-exomastery files are this commander's own backups (§S), before any body is computed.
   setOwnCommander({ name: store.commanderName, fid: commanderIdHash(store.commanderFid) });
+  if (!bootLoading) syncRarity(store, db);
   const { credits: organicDataValueCredits, pendingSamples: organicPendingSampleCount } =
     organicDataValuation(store, cachedPrices);
   const explorationScanDataValueCredits = estimateExplorationJournalDataCredits(store);

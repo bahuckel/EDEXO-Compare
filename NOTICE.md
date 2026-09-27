@@ -8,7 +8,7 @@ game content.** See "Species photographs" below, which is the part still being r
 
 ## Standing on other people's work
 
-This project would not exist without four communities, none of which are affiliated with it and none
+This project would not exist without five communities, none of which are affiliated with it and none
 of which have endorsed it.
 
 ### Spansh — [spansh.co.uk](https://spansh.co.uk)
@@ -25,6 +25,22 @@ Spansh's system search (`is_colonised`); `scripts/build-developer-systems.mjs` r
 Body records: gravity, temperature, pressure, atmosphere, volcanism and orbital geometry for the
 bodies in the corpus, plus the system coordinates that place them. Queried through the public API at
 one request per 1.5 s and cached, so a re-run costs EDSM nothing.
+
+Codex data provided by EDSM: `data/codex/edsm-codex-regions.json` (the Encyclopedia's Codex map) is
+drawn from EDSM's nightly codex dump (16.2 million sightings, 2018–2026) — per galactic region, a few
+systems covering every codex entry EDSM has there, with the entries it has for each. The same dump,
+matched against Spansh's bodies, is how the plant colour rules were checked on 119,657 bodies.
+`data/rarity/species-rarity.json` is from the same dump: per species, how many systems EDSM's codex
+has it in, galaxy-wide and per region — the rarity tiers and the region check read it.
+
+### EDAstro — [edastro.com](https://edastro.com)
+
+The codex sightings in `codex-data.csv`: which species has been logged in which system, galaxy-wide.
+`data/exomastery/region-species.json` (how often each species is recorded per region) is rolled up from
+it, and `data/rarity/extra/edastro-codex-2026-09-06.json` adds its species-system pairs that EDSM's
+dump does not have to the rarity counts. `data/rarity/body-share.json` — the rarity tiers, as the share
+of bio bodies of a species' planet types that carry it, per region — combines the Spansh galaxy dump's
+bodies with EDSM's and EDAstro's codex.
 
 ### Canonn Research Group — [canonn.science](https://canonn.science)
 

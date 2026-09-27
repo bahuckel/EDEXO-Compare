@@ -51,6 +51,7 @@ import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
 import { loadPriceList, lookupPrice } from "../src/server/priceList.js";
 import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
+import { STARLIGHT_READING, stellarIrradianceFor } from "../src/server/speciesMatchContext.js";
 import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
 import type {
   BodyExoState,
@@ -215,6 +216,9 @@ function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
       ctx.parentStarSubclass = star.subclass;
     if (star.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity;
   }
+  // The starlight gate's input, as the app builds it (speciesMatchContext.ts).
+  const light = process.env.NO_STARLIGHT === "1" ? undefined : stellarIrradianceFor(rec, byId, STARLIGHT_READING);
+  if (light !== undefined) ctx.stellarIrradiance = light;
   return Object.keys(ctx).length ? ctx : undefined;
 }
 

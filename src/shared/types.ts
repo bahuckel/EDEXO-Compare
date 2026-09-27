@@ -244,6 +244,12 @@ export interface SpeciesMatchContext {
    */
   colourStarType?: string;
   /**
+   * Starlight reaching the body, in the Sun's flux at 1 AU (Earth = 1): every scanned star's
+   * luminosity over distance², the colour rule's stars and distances (speciesMatchContext.ts
+   * `stellarIrradianceFor`). Read by the starlight gate (matchSpecies.ts `demoteOutsideStarlight`).
+   */
+  stellarIrradiance?: number;
+  /**
    * Journal `PlanetClass` of every other body the FSS has found in this system.
    *
    * The wire for the companion-body conditions: Amphora plant and the Brain Trees spawn on what else
@@ -465,6 +471,10 @@ export interface SpeciesEntry {
   id: string;
   displayName: string;
   genus: string;
+  /** Rarity tier from EDSM's codex (all colours), set when the database loads — `shared/speciesRarity.ts`. */
+  rarity?: import("./speciesRarity.js").SpeciesRarity;
+  /** Starlight range from the galaxy dump, set when the database loads — server `starlightRanges.ts`. */
+  starlight?: import("./starlight.js").SpeciesStarlight;
   /**
    * How this **species** gets its colour variant, and the table.
    *
@@ -1282,6 +1292,8 @@ export interface SpeciesMatch {
   codexNewColours?: string[];
   /** The region the mark is about, for the tooltip. */
   codexRegion?: string;
+  /** This species' rarity in the body's region (`shared/speciesRarity.ts`); the DNA badge shows it. */
+  regionRarity?: import("./speciesRarity.js").RegionalRarity;
   /**
    * Distinct feeder bodies behind {@link exomasteryHabitatQuality}. Null when no profile.
    * Small counts mean the habitat signal is weak, not that the habitat is wrong.
@@ -2963,4 +2975,63 @@ export interface SessionLogDTO {
   firstFootfalls: number;
   creditsAnalysed: number;
   creditsSold: number;
+}
+
+/* ------------------------------------------------------------------ Codex map (owner, 2026-09-27) */
+
+/** The game's codex categories the Codex map offers: Astronomical Bodies, Biological and Geological. */
+export type CodexMapKind = "bodies" | "bio";
+
+/** How much of a system's codex entries this commander already has in its region. */
+export type CodexMapStatus = "todo" | "partial" | "done";
+
+export interface CodexMapKindSummaryDTO {
+  /** EDSM systems the map has for this region and kind. */
+  systems: number;
+  /** Distinct codex entries among them. */
+  entries: number;
+  /** …of which this commander has logged in the region. */
+  logged: number;
+  todo: number;
+  partial: number;
+  done: number;
+}
+
+export interface CodexMapRegionSummaryDTO {
+  /** The region as EDSM names it ("The Formidine Rift"). */
+  name: string;
+  /** `regionJoinKey`, to match the region map's own spelling. */
+  joinKey: string;
+  kinds: Record<CodexMapKind, CodexMapKindSummaryDTO>;
+}
+
+export interface CodexMapRegionsDTO {
+  available: boolean;
+  /** Attribution line for the screen: the data is EDSM's. */
+  source: string;
+  regions: CodexMapRegionSummaryDTO[];
+}
+
+export interface CodexMapEntryDTO {
+  /** EDSM type / journal Name key, e.g. `codex_ent_stratum_07_m`. */
+  key: string;
+  name: string;
+  logged: boolean;
+}
+
+export interface CodexMapSystemDTO {
+  /** id64 as a string: it can exceed 2^53. */
+  systemAddress: string;
+  name: string;
+  /** Approximate galactic x and z (boxel centre), ly. */
+  x: number;
+  z: number;
+  status: CodexMapStatus;
+  entries: CodexMapEntryDTO[];
+}
+
+export interface CodexMapRegionDTO {
+  region: string;
+  kind: CodexMapKind;
+  systems: CodexMapSystemDTO[];
 }

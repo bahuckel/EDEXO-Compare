@@ -1,169 +1,134 @@
 /**
- * The system map drawing, shared by the System map window and the System card (Discord batch O-E2).
+ * The system map drawing: the layout from `systemMapLayout.ts`, drawn to look like the game's map
+ * (owner, 2026-09-27). No rendered planets or backdrops — a schematic with the game's language:
+ * - stars coloured and sized by class, the class letter inside, their full class under the name;
+ * - planets and moons tinted by type with the type letter inside (I, RI, HMC…);
+ * - a **full ring = atmosphere**, a **⅔ arc = landable** (the game's two blue marks);
+ * - a badge with the biological signal count, orange with ×5 when first footfall pays;
+ * - ▼ where the ship is, the planet's rings, and a faint grid behind it all.
  *
- * The window adds zoom, pan and the body popup around it; the card draws it small and sends a click
- * on a bio body to that body's tab. One drawing, so the two can never disagree about a system — and
- * everything added here (pair brackets, belts, the bio ring with its count, the ×5 ring, "you are
- * here") shows in both.
+ * Every colour and stroke is an SVG attribute, never a CSS class: the snapshot camera clones the
+ * SVG without its stylesheet, and a class-only stroke is why snapshots used to lose every line.
  */
-import type { SystemMapSnapshot } from "@shared/types";
-import type { LayoutItem, LayoutResult } from "./systemMapGeometry";
+import type { SystemMapBodyDetailDTO, SystemMapSnapshot } from "@shared/types";
+import { MARK_PAD, NAME_FONT, type MapItem, type MapLayout, type StarClassKey } from "./systemMapLayout";
 import { atmosphereRingColor } from "./planetDisplayUtils";
 
-export function systemMapNodeAppearance(it: LayoutItem): {
-  fill: string;
-  stroke: string;
-  filter?: string;
-  textFill: string;
-  mapLabelFontSize?: number;
-  strokeWidth?: number;
-} {
-  if (it.isBarycentre) {
-    return {
-      fill: "rgba(226, 232, 240, 0.12)",
-      stroke: "#cbd5e1",
-      filter: "url(#neonGray)",
-      textFill: "#f8fafc",
-      mapLabelFontSize: 12,
-      strokeWidth: 1.5,
-    };
-  }
-  if (it.isPlaceholder) {
-    return {
-      fill: "rgba(130, 135, 150, 0.16)",
-      stroke: "#9ca3af",
-      filter: "url(#neonGray)",
-      textFill: "#e5e7eb",
-      mapLabelFontSize: 13,
-    };
-  }
-  const starLike = it.isStar || it.journalStellar === true;
-  if (starLike) {
-    if (it.starVisual === "neutron") {
-      return {
-        fill: "rgba(56,189,248,0.14)",
-        stroke: "#38bdf8",
-        filter: "url(#neonBlue)",
-        textFill: "#7ddbfe",
-      };
-    }
-    return {
-      fill: "rgba(253, 224, 71, 0.16)",
-      stroke: "#facc15",
-      filter: "url(#neonSun)",
-      textFill: "#fef9c3",
-    };
-  }
+/** The game's blue for the landable arc (and the atmosphere ring when its gas has no colour). */
+export const MAP_BLUE = "#4aa3ff";
+const LINE = "#7b8496";
+const LINE_LIT = "#ffb347";
+const NAME = "#a9a6b8";
+const HALO = "#07080c";
+export const MAP_BG = "#07080c";
 
-  const bl = it.baseLabel;
-  if (bl === "ELW") {
-    return {
-      fill: "rgba(52,211,153,0.22)",
-      stroke: "#4fd0ff",
-      filter: "url(#neonElw)",
-      textFill: "#9fe4ff",
-    };
-  }
-  if (bl === "WW") {
-    return {
-      fill: "rgba(37, 99, 235, 0.22)",
-      stroke: "#60a5fa",
-      filter: "url(#neonWw)",
-      textFill: "#93c5fd",
-    };
-  }
-  if (bl === "AW") {
-    return {
-      fill: "rgba(234,179,8,0.24)",
-      stroke: "#facc15",
-      filter: "url(#neonAw)",
-      textFill: "#fde047",
-    };
-  }
-  if (bl === "I" || bl === "RI") {
-    return {
-      fill: "rgba(34, 211, 238, 0.2)",
-      stroke: "#22d3ee",
-      filter: "url(#neonIcy)",
-      textFill: "#a5f3fc",
-    };
-  }
-  if (bl === "R" || bl === "HMC" || bl === "MR") {
-    return {
-      fill: "rgba(255,122,36,0.12)",
-      stroke: "#ff8a1f",
-      filter: "url(#neonOrange)",
-      textFill: "#ff9a4d",
-    };
-  }
-  if (bl === "GG" || /^GG[1-5]$/.test(bl)) {
-    return {
-      fill: "rgba(196, 165, 116, 0.26)",
-      stroke: "#c4a574",
-      filter: "url(#neonGas)",
-      textFill: "#e8d5b8",
-    };
-  }
+export const STAR_COLOURS: Record<StarClassKey, { core: string; edge: string; label: string }> = {
+  O: { core: "#e2e8ff", edge: "#7f9cff", label: "O" },
+  B: { core: "#e8eeff", edge: "#9fb4ff", label: "B" },
+  A: { core: "#ffffff", edge: "#c9d6ff", label: "A" },
+  F: { core: "#fffbe8", edge: "#f3e2a0", label: "F" },
+  G: { core: "#fff3b0", edge: "#f0c23c", label: "G" },
+  K: { core: "#ffd9a0", edge: "#f0923a", label: "K" },
+  M: { core: "#ffc27e", edge: "#e8672c", label: "M" },
+  L: { core: "#ff6d80", edge: "#c21a40", label: "L" },
+  T: { core: "#e27ab8", edge: "#8e2a74", label: "T" },
+  Y: { core: "#a2649a", edge: "#4c2049", label: "Y" },
+  TTS: { core: "#ffcf8a", edge: "#c9782e", label: "TT" },
+  AeBe: { core: "#eaf0ff", edge: "#9fb4ff", label: "Ae" },
+  W: { core: "#dcf2ff", edge: "#5fb4ff", label: "W" },
+  C: { core: "#ff9070", edge: "#b8321e", label: "C" },
+  S: { core: "#ffab80", edge: "#c2552e", label: "S" },
+  D: { core: "#ffffff", edge: "#b8c8e8", label: "D" },
+  N: { core: "#dcf7ff", edge: "#38bdf8", label: "N" },
+  H: { core: "#0c0b14", edge: "#a78bfa", label: "BH" },
+  X: { core: "#fff0b0", edge: "#e0b040", label: "?" },
+};
 
-  return {
-    fill: "rgba(251, 146, 60, 0.1)",
-    stroke: "#fb923c",
-    filter: "url(#neonOrange)",
-    textFill: "#fdba74",
-  };
+/** Dark text on bright stars, light text on dark ones. */
+function starText(core: string): string {
+  const n = parseInt(core.slice(1), 16);
+  const lum = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+  return lum > 150 ? "#1a1420" : "#f4f0ff";
 }
 
-export function mapNodeNameLine(it: LayoutItem): string {
-  const base = it.displayBodyName ?? it.bodyName;
-  const starLike = it.isStar || it.journalStellar === true;
-  if (starLike && it.namePlus) return `${base}+`;
-  if (!starLike && !it.isBarycentre) {
-    if (it.exoValueTier === 2) return `${base}++`;
-    if (it.exoValueTier === 1) return `${base}+`;
-  }
-  return base;
+/** Body tints by type — the colours the old map and the body pills already use. */
+export function bodyColours(label: string): { fill: string; stroke: string; text: string } {
+  const bl = label.replace(/[*+]/g, "");
+  if (bl === "ELW") return { fill: "#123d1f", stroke: "#4ade80", text: "#c6f6d5" };
+  if (bl === "WW") return { fill: "#14305e", stroke: "#60a5fa", text: "#cfe2ff" };
+  if (bl === "AW") return { fill: "#40340c", stroke: "#facc15", text: "#fff0a0" };
+  if (bl === "I" || bl === "RI") return { fill: "#123a44", stroke: "#22d3ee", text: "#c9f6ff" };
+  if (bl === "R" || bl === "HMC" || bl === "MR")
+    return { fill: "#3a2412", stroke: "#ff8a1f", text: "#ffc58f" };
+  if (/GG/.test(bl)) return { fill: "#3a3022", stroke: "#c4a574", text: "#f0e0c4" };
+  if (bl === "?") return { fill: "#1c1d24", stroke: "#8b909c", text: "#d4d6dc" };
+  return { fill: "#33240f", stroke: "#fb923c", text: "#fdba74" };
 }
 
-/** The glow filters the node rings use. Put once inside each <svg> that draws a map. */
+function hasAtmosphere(det: SystemMapBodyDetailDTO | undefined): string | null {
+  if (!det) return null;
+  const raw = det.atmosphereType || det.atmosphere;
+  const s = (raw ?? "").trim();
+  if (!s || /^no\s*atmosphere/i.test(s) || s.toLowerCase() === "none") return null;
+  return atmosphereRingColor(s) ?? MAP_BLUE;
+}
+
+/** The ⅔ arc, open on the right like the game's. */
+function arcPath(cx: number, cy: number, r: number): string {
+  const a0 = (60 * Math.PI) / 180;
+  const a1 = (300 * Math.PI) / 180;
+  const x0 = cx + r * Math.cos(a0);
+  const y0 = cy + r * Math.sin(a0);
+  const x1 = cx + r * Math.cos(a1);
+  const y1 = cy + r * Math.sin(a1);
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 1 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+
+/** Gradients for every star class and the grid. Put once inside each <svg> that draws a map. */
 export function SystemMapDefs() {
   return (
     <defs>
-      <filter id="neonOrange" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor="#ff8a1f" floodOpacity="0.55" />
-      </filter>
-      <filter id="neonGreen" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor="#4fd0ff" floodOpacity="0.55" />
-      </filter>
-      <filter id="neonBlue" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.4" floodColor="#38bdf8" floodOpacity="0.65" />
-      </filter>
-      <filter id="neonElw" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.35" floodColor="#4fd0ff" floodOpacity="0.72" />
-      </filter>
-      <filter id="neonWw" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.45" floodColor="#3b82f6" floodOpacity="0.72" />
-      </filter>
-      <filter id="neonAw" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.25" floodColor="#facc15" floodOpacity="0.68" />
-      </filter>
-      <filter id="neonGray" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.35" floodColor="#9ca3af" floodOpacity="0.65" />
-      </filter>
-      <filter id="neonSun" x="-45%" y="-45%" width="190%" height="190%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.35" floodColor="#facc15" floodOpacity="0.72" />
-      </filter>
-      <filter id="neonIcy" x="-45%" y="-45%" width="190%" height="190%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.4" floodColor="#22d3ee" floodOpacity="0.78" />
-      </filter>
-      <filter id="neonGas" x="-40%" y="-40%" width="180%" height="180%">
-        <feDropShadow dx="0" dy="0" stdDeviation="1.2" floodColor="#c4a574" floodOpacity="0.62" />
-      </filter>
+      {(Object.keys(STAR_COLOURS) as StarClassKey[]).map((k) => (
+        <radialGradient key={k} id={`smStar-${k}`} cx="40%" cy="38%" r="65%">
+          <stop offset="0%" stopColor={STAR_COLOURS[k].core} />
+          <stop offset="100%" stopColor={STAR_COLOURS[k].edge} />
+        </radialGradient>
+      ))}
+      <radialGradient id="smStarGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="55%" stopColor="#ffffff" stopOpacity="0.28" />
+        <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+      </radialGradient>
+      <pattern id="smGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#5a7aa8" strokeOpacity="0.16" strokeWidth="1" />
+      </pattern>
     </defs>
   );
 }
 
-/** Scattered rubble between a star and its first planet, the way the game draws a belt. */
-function BeltGlyph({ cx, cy, h }: { cx: number; cy: number; h: number }) {
+/** The dark backdrop and its grid, reaching well past the map so panning never shows an edge. */
+export function SystemMapGrid({ layout }: { layout: MapLayout }) {
+  const m = Math.max(layout.width, layout.height) * 3 + 400;
+  return (
+    <g pointerEvents="none">
+      <rect
+        x={layout.minX - m}
+        y={layout.minY - m}
+        width={layout.width + 2 * m}
+        height={layout.height + 2 * m}
+        fill={MAP_BG}
+      />
+      <rect
+        x={layout.minX - m}
+        y={layout.minY - m}
+        width={layout.width + 2 * m}
+        height={layout.height + 2 * m}
+        fill="url(#smGrid)"
+      />
+    </g>
+  );
+}
+
+function BeltGlyph({ cx, cy, w }: { cx: number; cy: number; w: number }) {
   const pts: [number, number, number][] = [];
   // Fixed pseudo-random scatter: the same belt draws the same way on every render.
   let seed = Math.round(cx * 7 + cy * 13);
@@ -171,259 +136,376 @@ function BeltGlyph({ cx, cy, h }: { cx: number; cy: number; h: number }) {
     seed = (seed * 9301 + 49297) % 233280;
     return seed / 233280;
   };
-  for (let i = 0; i < 26; i++) {
-    const y = cy - h / 2 + rnd() * h;
-    const x = cx + (rnd() - 0.5) * 9;
-    pts.push([x, y, 0.8 + rnd() * 1.4]);
-  }
+  for (let i = 0; i < 22; i++)
+    pts.push([cx + (rnd() - 0.5) * w * 0.5, cy + (rnd() - 0.5) * 24, 0.8 + rnd() * 1.3]);
   return (
-    <g className="system-map-belt" pointerEvents="none">
+    <g pointerEvents="none">
       {pts.map(([x, y, r], i) => (
         <circle key={i} cx={x} cy={y} r={r} fill="#c9b27a" opacity={0.85} />
       ))}
+      <title>Asteroid belt</title>
     </g>
   );
+}
+
+function Cross({
+  cx,
+  cy,
+  r,
+  stroke,
+  width,
+}: {
+  cx: number;
+  cy: number;
+  r: number;
+  stroke: string;
+  width: number;
+}) {
+  const d = r * 0.72;
+  return (
+    <>
+      <line
+        x1={cx - d}
+        y1={cy - d}
+        x2={cx + d}
+        y2={cy + d}
+        stroke={stroke}
+        strokeWidth={width}
+        strokeLinecap="round"
+      />
+      <line
+        x1={cx - d}
+        y1={cy + d}
+        x2={cx + d}
+        y2={cy - d}
+        stroke={stroke}
+        strokeWidth={width}
+        strokeLinecap="round"
+      />
+    </>
+  );
+}
+
+export function itemTitle(it: MapItem, det: SystemMapBodyDetailDTO | undefined): string {
+  const n = it.node;
+  if (it.kind === "bary" || it.kind === "hub") {
+    return it.inferred
+      ? `Barycentre ${n.bodyName} (from the body names)`
+      : `Barycentre${n.bodyName ? ` ${n.bodyName}` : ""}`;
+  }
+  const parts = [n.bodyName];
+  if (it.starClass) parts.push(det?.fullSpectralNotation || det?.starType || "star");
+  else if (det?.planetClass) parts.push(det.planetClass);
+  if (det?.landable) parts.push("landable");
+  const atmo = det?.atmosphereType || det?.atmosphere;
+  if (atmo && !/^no\s*atmosphere/i.test(atmo))
+    parts.push(`${atmo} atmosphere`.replace(/atmosphere atmosphere/i, "atmosphere"));
+  const bio = n.bioSignals ?? 0;
+  if (bio > 0)
+    parts.push(
+      `${bio} biological signal${bio === 1 ? "" : "s"}${n.firstFootfallX5 ? ", first footfall ×5" : ""}`,
+    );
+  if ((n.rings ?? 0) > 0) parts.push(`${n.rings} ring${n.rings === 1 ? "" : "s"}`);
+  if (n.youAreHere) parts.push("you are here");
+  return parts.join(" — ");
 }
 
 export function SystemMapDrawing({
   layout,
   map,
-  bioOnly = false,
-  selectedBodyId = null,
-  onNodeClick,
+  dimmed,
+  selectedId = null,
+  chain,
+  onSelect,
+  onHover,
 }: {
-  layout: LayoutResult;
+  layout: MapLayout;
   map: SystemMapSnapshot;
-  bioOnly?: boolean;
-  selectedBodyId?: number | null;
-  onNodeClick?: (it: LayoutItem, ev: React.MouseEvent) => void;
+  /** Bodies a filter fades (they stay in place so the tree still reads). */
+  dimmed?: (it: MapItem) => boolean;
+  selectedId?: number | null;
+  /** The hovered or selected body's chain to the top: its lines are lit. */
+  chain?: Set<number>;
+  onSelect?: (it: MapItem) => void;
+  onHover?: (it: MapItem | null) => void;
 }) {
+  const lit = (ids: number[]) => chain != null && chain.size > 0 && ids.some((id) => chain.has(id));
+  const sorted = [...layout.lines].sort((a, b) => Number(lit(a.ids)) - Number(lit(b.ids)));
   return (
     <>
-      <g className="system-map-edges">
-        {layout.segments.map((s, i) => (
-          <line
-            key={`e-${i}-${s.x1}-${s.y1}`}
-            x1={s.x1}
-            y1={s.y1}
-            x2={s.x2}
-            y2={s.y2}
-            className="system-map-line"
-          />
-        ))}
-        {layout.bracketSegments.map((s, i) => (
-          <line
-            key={`b-${i}-${s.x1}-${s.y1}`}
-            x1={s.x1}
-            y1={s.y1}
-            x2={s.x2}
-            y2={s.y2}
-            className="system-map-line system-map-bracket"
-          />
-        ))}
+      <g>
+        {sorted.map((s, i) => {
+          const on = lit(s.ids);
+          return (
+            <line
+              key={`l-${i}-${s.x1}-${s.y1}-${s.x2}-${s.y2}`}
+              x1={s.x1}
+              y1={s.y1}
+              x2={s.x2}
+              y2={s.y2}
+              stroke={on ? LINE_LIT : LINE}
+              strokeOpacity={on ? 1 : s.kind === "bracket" ? 0.9 : 0.75}
+              strokeWidth={on ? 1.9 : 1.25}
+              strokeLinecap="square"
+            />
+          );
+        })}
       </g>
       {layout.belts.map((b, i) => (
-        <BeltGlyph key={`belt-${i}`} cx={b.cx} cy={b.cy} h={b.h} />
+        <BeltGlyph key={`belt-${i}`} cx={b.cx} cy={b.cy} w={b.w} />
       ))}
-      {layout.items.map((it) => {
-        let neo = systemMapNodeAppearance(it);
-        if (it.isArrivalBody) {
-          neo = { ...neo, stroke: "#ffd23f", strokeWidth: Math.max(neo.strokeWidth ?? 2, 2.6) };
-        }
-        const sw = neo.strokeWidth ?? 2;
-        const fs = neo.mapLabelFontSize ?? (it.mapLabel.length > 5 ? 8.5 : 10);
-        const nameDy = it.r + (it.isBarycentre ? 17 : 13);
-        // A barycentre on a pair bracket names itself above the bracket (planets) or beside it (moons).
-        const namePos =
-          it.bracketBary === "above"
-            ? { x: it.cx, y: it.cy - it.r - 4, anchor: "middle" as const }
-            : it.bracketBary === "right"
-              ? { x: it.cx + it.r + 4, y: it.cy + 3, anchor: "start" as const }
-              : { x: it.cx, y: it.cy + nameDy, anchor: "middle" as const };
-        const bio = it.bioSignals ?? 0;
-        const bioRingR = it.r + 6;
-        // A ringed planet: a flat ring tilted like the game map's, reaching past the bio ring.
-        const ringed = (it.rings ?? 0) > 0;
-        const ringRx = it.r + 11;
-        const ringRy = Math.max(3, ringRx * 0.3);
-        const ringTilt = `rotate(-18 ${it.cx} ${it.cy})`;
-        const det = map?.detailsByBodyId[String(it.bodyId)];
-        const atmoRing =
-          det && !it.isStar && it.journalStellar !== true && !it.isBarycentre && !it.isPlaceholder
-            ? atmosphereRingColor(det.atmosphereType || det.atmosphere)
-            : null;
-        const starRays = it.isStar || it.journalStellar === true;
-        const rayStroke = neo.stroke;
-        const rayOpacity = it.starVisual === "neutron" ? 0.44 : 0.36;
-        // Stars and barycentres stay lit under the filter: they are the scaffolding that makes
-        // the tree readable, and fading them would leave the survivors floating.
-        const structural = starRays || it.isBarycentre;
-        const dimmed = bioOnly && !structural && !det?.hasExobiology;
-        const isSelected = selectedBodyId != null && it.bodyId === selectedBodyId;
-        return (
-          <g
-            key={it.bodyId}
-            className={`system-map-node-g${dimmed ? " system-map-node-g--dim" : ""}${
-              isSelected ? " system-map-node-g--selected" : ""
-            }`}
-            style={{ cursor: "pointer" }}
-            onClick={(ev) => {
-              ev.stopPropagation();
-              onNodeClick?.(it, ev);
-            }}
-          >
-            {starRays ? (
-              <g className="system-map-star-rays" pointerEvents="none">
-                {Array.from({ length: 12 }, (_, i) => {
-                  const a = (Math.PI * 2 * i) / 12 - Math.PI / 2;
-                  const r0 = it.r * 1.05;
-                  const r1 = it.r * 1.78;
-                  return (
-                    <line
-                      key={i}
-                      x1={it.cx + Math.cos(a) * r0}
-                      y1={it.cy + Math.sin(a) * r0}
-                      x2={it.cx + Math.cos(a) * r1}
-                      y2={it.cy + Math.sin(a) * r1}
-                      stroke={rayStroke}
-                      strokeWidth={1.2}
-                      strokeLinecap="round"
-                      opacity={rayOpacity}
-                    />
-                  );
-                })}
-              </g>
-            ) : null}
-            {/* The ring's far half, behind the planet. */}
-            {ringed ? (
-              <ellipse
-                className="system-map-ring"
-                cx={it.cx}
-                cy={it.cy}
-                rx={ringRx}
-                ry={ringRy}
-                transform={ringTilt}
-                fill="none"
-                stroke="#d8c39a"
-                strokeWidth={2.2}
-                opacity={0.55}
-                pointerEvents="none"
-              />
-            ) : null}
-            <circle
-              cx={it.cx}
-              cy={it.cy}
-              r={it.r}
-              fill={neo.fill}
-              stroke={neo.stroke}
-              strokeWidth={sw}
-              filter={neo.filter}
-            />
-            {/* …and its near half, across the planet's face. */}
-            {ringed ? (
-              <path
-                className="system-map-ring"
-                d={`M ${it.cx - ringRx} ${it.cy} A ${ringRx} ${ringRy} 0 0 0 ${it.cx + ringRx} ${it.cy}`}
-                transform={ringTilt}
-                fill="none"
-                stroke="#e8d6ae"
-                strokeWidth={2.2}
-                opacity={0.95}
-                pointerEvents="none"
-              >
-                <title>{`${it.rings} ring${it.rings === 1 ? "" : "s"}`}</title>
-              </path>
-            ) : null}
-            {atmoRing ? (
-              <circle
-                cx={it.cx}
-                cy={it.cy}
-                r={it.r + Math.max(3, sw * 1.1)}
-                fill="none"
-                stroke={atmoRing}
-                strokeWidth={1.15}
-                strokeDasharray="3 5"
-                strokeLinecap="round"
-                opacity={0.95}
-                style={{ filter: `drop-shadow(0 0 5px ${atmoRing})` }}
-                pointerEvents="none"
-              />
-            ) : null}
-            {/*
-              Biology: a ring round the body with the signal count on it — orange when the samples
-              would pay the first-footfall ×5, green otherwise.
-            */}
-            {bio > 0 ? (
-              <g className="system-map-bio" pointerEvents="none">
-                <circle
-                  cx={it.cx}
-                  cy={it.cy}
-                  r={bioRingR}
-                  fill="none"
-                  stroke={it.firstFootfallX5 ? "#ffb060" : "#7be07b"}
-                  strokeWidth={2.4}
-                  opacity={0.95}
-                />
-                <rect
-                  x={it.cx + bioRingR * 0.62}
-                  y={it.cy - bioRingR - 3}
-                  width={it.firstFootfallX5 ? 27 : 13}
-                  height={12}
-                  fill={it.firstFootfallX5 ? "#ff8a1f" : "#7be07b"}
-                />
-                <text
-                  x={it.cx + bioRingR * 0.62 + (it.firstFootfallX5 ? 13.5 : 6.5)}
-                  y={it.cy - bioRingR + 6.5}
-                  textAnchor="middle"
-                  fontSize={9.5}
-                  fontWeight={800}
-                  fill="#07060a"
-                >
-                  {it.firstFootfallX5 ? `${bio} ×5` : bio}
-                </text>
-              </g>
-            ) : null}
-            {/* Where the ship is: the game's marker, pointing down at the body. */}
-            {it.youAreHere ? (
-              <path
-                className="system-map-you"
-                d={`M ${it.cx - 6} ${it.cy - it.r - 16} L ${it.cx + 6} ${it.cy - it.r - 16} L ${it.cx} ${it.cy - it.r - 5} Z`}
-                fill="#5fe0ff"
-                stroke="#10333c"
-                strokeWidth={1}
-                pointerEvents="none"
-              >
-                <title>You are here</title>
-              </path>
-            ) : null}
-            {it.mapLabel ? (
-              <text
-                x={it.cx}
-                y={it.cy}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                className="system-map-svg-text"
-                fill={neo.textFill}
-                fontSize={it.bracketBary ? 8 : fs}
-                fontWeight={800}
-              >
-                {it.mapLabel}
-              </text>
-            ) : null}
-            <text
-              x={namePos.x}
-              y={namePos.y}
-              textAnchor={namePos.anchor}
-              className="system-map-svg-name"
-              fill="#a8a4b8"
-              fontSize={it.bracketBary ? 8 : 9}
-            >
-              {mapNodeNameLine(it)}
-            </text>
-            <title>{`${mapNodeNameLine(it)}${bio > 0 ? ` — ${bio} biological signal${bio === 1 ? "" : "s"}${it.firstFootfallX5 ? ", first footfall ×5" : ""}` : ""}${ringed ? ` — ${it.rings} ring${it.rings === 1 ? "" : "s"}` : ""}${it.youAreHere ? " — you are here" : ""}`}</title>
-          </g>
-        );
-      })}
+      {layout.items.map((it) => (
+        <MapNode
+          key={it.id}
+          it={it}
+          det={map.detailsByBodyId[String(it.id)]}
+          dim={dimmed?.(it) ?? false}
+          selected={selectedId != null && it.id === selectedId}
+          onSelect={onSelect}
+          onHover={onHover}
+        />
+      ))}
     </>
+  );
+}
+
+function MapNode({
+  it,
+  det,
+  dim,
+  selected,
+  onSelect,
+  onHover,
+}: {
+  it: MapItem;
+  det: SystemMapBodyDetailDTO | undefined;
+  dim: boolean;
+  selected: boolean;
+  onSelect?: (it: MapItem) => void;
+  onHover?: (it: MapItem | null) => void;
+}) {
+  const n = it.node;
+  const { cx, cy, r } = it;
+  const handlers = {
+    onClick: (ev: React.MouseEvent) => {
+      ev.stopPropagation();
+      onSelect?.(it);
+    },
+    onMouseEnter: () => onHover?.(it),
+    onMouseLeave: () => onHover?.(null),
+  };
+  const title = <title>{itemTitle(it, det)}</title>;
+
+  if (it.kind === "bary" || it.kind === "hub") {
+    const big = it.kind === "hub";
+    return (
+      <g className="system-map-node-g" style={{ cursor: "pointer" }} opacity={dim ? 0.3 : 1} {...handlers}>
+        <circle cx={cx} cy={cy} r={r + 5} fill="#000000" fillOpacity={0.01} />
+        {it.inferred ? (
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r + 3}
+            fill="none"
+            stroke="#9aa3b5"
+            strokeWidth={1}
+            strokeDasharray="2 2.5"
+          />
+        ) : null}
+        {selected ? (
+          <circle cx={cx} cy={cy} r={r + 5} fill="none" stroke={LINE_LIT} strokeWidth={1.6} />
+        ) : null}
+        <Cross cx={cx} cy={cy} r={r} stroke={big ? "#e2e8f0" : "#b8c0cf"} width={big ? 2.2 : 1.6} />
+        {title}
+      </g>
+    );
+  }
+
+  const starLike = it.starClass != null;
+  const sc = starLike ? STAR_COLOURS[it.starClass!] : null;
+  const bc = starLike ? null : bodyColours(n.isInferredPlaceholder ? "?" : n.label);
+  const atmo = starLike || n.isInferredPlaceholder ? null : hasAtmosphere(det);
+  const landable = !starLike && det?.landable === true;
+  const bio = n.bioSignals ?? 0;
+  const ringed = (n.rings ?? 0) > 0;
+  const ringRx = r + 9;
+  const ringRy = Math.max(3, ringRx * 0.3);
+  const ringTilt = `rotate(-18 ${cx} ${cy})`;
+  const letter = starLike
+    ? STAR_COLOURS[it.starClass!].label
+    : n.isInferredPlaceholder
+      ? "?"
+      : n.label.replace(/[*+]/g, "");
+  const letterSize = Math.min(r * 0.95, (r * 1.45) / Math.max(1, letter.length * 0.62));
+  const name =
+    (!n.isStar && !n.isInferredPlaceholder && n.mapLabel.includes("*") ? "*" : "") +
+    n.bodyName +
+    (starLike && n.namePlus
+      ? "+"
+      : !starLike
+        ? n.exoValueTier === 2
+          ? "++"
+          : n.exoValueTier === 1
+            ? "+"
+            : ""
+        : "");
+  const nameSize = it.kind === "moon" ? NAME_FONT - 0.5 : NAME_FONT;
+  const arcR = r + (atmo ? 5.5 : 3);
+
+  return (
+    <g className="system-map-node-g" style={{ cursor: "pointer" }} opacity={dim ? 0.25 : 1} {...handlers}>
+      {starLike ? <circle cx={cx} cy={cy} r={r * 1.45} fill="url(#smStarGlow)" pointerEvents="none" /> : null}
+      {ringed ? (
+        <ellipse
+          cx={cx}
+          cy={cy}
+          rx={ringRx}
+          ry={ringRy}
+          transform={ringTilt}
+          fill="none"
+          stroke="#d8c39a"
+          strokeWidth={2}
+          opacity={0.5}
+          pointerEvents="none"
+        />
+      ) : null}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill={starLike ? `url(#smStar-${it.starClass})` : bc!.fill}
+        stroke={starLike ? sc!.edge : bc!.stroke}
+        strokeWidth={starLike ? 1 : 1.6}
+        strokeDasharray={n.isInferredPlaceholder ? "3 2.5" : undefined}
+      />
+      {ringed ? (
+        <path
+          d={`M ${cx - ringRx} ${cy} A ${ringRx} ${ringRy} 0 0 0 ${cx + ringRx} ${cy}`}
+          transform={ringTilt}
+          fill="none"
+          stroke="#e8d6ae"
+          strokeWidth={2}
+          opacity={0.95}
+          pointerEvents="none"
+        />
+      ) : null}
+      {atmo ? (
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r + 3}
+          fill="none"
+          stroke={atmo}
+          strokeWidth={1.6}
+          opacity={0.95}
+          pointerEvents="none"
+        />
+      ) : null}
+      {landable ? (
+        <path
+          d={arcPath(cx, cy, arcR)}
+          fill="none"
+          stroke={MAP_BLUE}
+          strokeWidth={2}
+          strokeLinecap="round"
+          pointerEvents="none"
+        />
+      ) : null}
+      {selected ? (
+        <>
+          <path
+            d={`M ${cx - (r + MARK_PAD + 2)} ${cy - 4} A ${r + MARK_PAD + 2} ${r + MARK_PAD + 2} 0 0 1 ${cx + r + MARK_PAD + 2} ${cy - 4}`}
+            fill="none"
+            stroke={LINE_LIT}
+            strokeWidth={2}
+            pointerEvents="none"
+          />
+          <path
+            d={`M ${cx - (r + MARK_PAD + 2)} ${cy + 4} A ${r + MARK_PAD + 2} ${r + MARK_PAD + 2} 0 0 0 ${cx + r + MARK_PAD + 2} ${cy + 4}`}
+            fill="none"
+            stroke={LINE_LIT}
+            strokeWidth={2}
+            pointerEvents="none"
+          />
+        </>
+      ) : null}
+      <text
+        x={cx}
+        y={cy}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill={starLike ? starText(sc!.core) : bc!.text}
+        fontSize={letterSize}
+        fontWeight={800}
+        pointerEvents="none"
+      >
+        {letter}
+      </text>
+      {bio > 0 ? (
+        <g pointerEvents="none">
+          <rect
+            x={cx + r * 0.45}
+            y={cy - r - 11}
+            width={n.firstFootfallX5 ? 25 : 12}
+            height={11}
+            rx={2}
+            fill={n.firstFootfallX5 ? "#ff8a1f" : "#5fcf6a"}
+            stroke={HALO}
+            strokeWidth={1}
+          />
+          <text
+            x={cx + r * 0.45 + (n.firstFootfallX5 ? 12.5 : 6)}
+            y={cy - r - 5.5}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={8.5}
+            fontWeight={800}
+            fill="#07060a"
+          >
+            {n.firstFootfallX5 ? `${bio} ×5` : bio}
+          </text>
+        </g>
+      ) : null}
+      {n.youAreHere ? (
+        <path
+          d={`M ${cx - 5.5} ${cy - r - 15} L ${cx + 5.5} ${cy - r - 15} L ${cx} ${cy - r - 5} Z`}
+          fill="#5fe0ff"
+          stroke="#10333c"
+          strokeWidth={1}
+          pointerEvents="none"
+        />
+      ) : null}
+      <text
+        x={it.nameX}
+        y={it.nameY}
+        textAnchor={it.nameAnchor}
+        fill={NAME}
+        fontSize={nameSize}
+        fontWeight={600}
+        stroke={HALO}
+        strokeWidth={3}
+        paintOrder="stroke"
+        pointerEvents="none"
+      >
+        {name}
+      </text>
+      {it.subName ? (
+        <text
+          x={it.nameX}
+          y={it.nameY + 11}
+          textAnchor="middle"
+          fill={sc?.edge ?? NAME}
+          fontSize={NAME_FONT - 1}
+          fontWeight={700}
+          stroke={HALO}
+          strokeWidth={3}
+          paintOrder="stroke"
+          pointerEvents="none"
+        >
+          {it.subName}
+        </text>
+      ) : null}
+      {title}
+    </g>
   );
 }

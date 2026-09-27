@@ -51,6 +51,7 @@ import {
   sortMorphSpectralKeys,
 } from "./SpeciesCardBits";
 import { readTempUnitFromLs, writeTempUnitToLs } from "./lsPrefs";
+import { RarityGem } from "./RarityGem";
 
 function FootScanMatchCard({ payload }: { payload: FootScanMatchPayload }) {
   const [expanded, setExpanded] = useState(false);
@@ -669,15 +670,8 @@ export const SpeciesCard = memo(function SpeciesCard({
       aria-label="Genus, species, and typical value"
     >
       <div className="species-identity-neon-inner">
-        {m.organicAnalysisComplete ? (
-          <span
-            className="species-scan-ok species-scan-ok--identity"
-            title="Journal shows a completed exobiology line for this species on this body (two Sample + one Analyse, or an Analyse line alone)."
-            aria-label="Analysis complete"
-          >
-            ✓{" "}
-          </span>
-        ) : null}
+        {/* The rarity gem sits where the "analysed" tick was (owner, 2026-09-27); the green frame still says analysed. */}
+        <RarityGem rarity={e.rarity} regional={m.regionRarity} className="rarity-gem--card" />
         {genusDisplay ? (
           <>
             <span className="species-identity-genus">{genusDisplay}</span>{" "}

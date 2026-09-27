@@ -1,0 +1,471 @@
+{
+ "formatVersion": 1,
+ "builtAt": "2026-09-27",
+ "source": "Spansh exobiology route exports (rt1, rt2, rt3, rt4, rt5): species-system pairs not already in EDSM's codex dump.",
+ "species": {
+  "aleoida_aleoida_arcus": {
+   "systems": 5,
+   "regions": {
+    "Empyrean Straits": 1,
+    "Inner Scutum-Centaurus Arm": 4
+   }
+  },
+  "aleoida_aleoida_coronamus": {
+   "systems": 10,
+   "regions": {
+    "Galactic Centre": 2,
+    "Empyrean Straits": 2,
+    "Odin's Hold": 1,
+    "Norma Arm": 1,
+    "Inner Scutum-Centaurus Arm": 4
+   }
+  },
+  "aleoida_aleoida_gravis": {
+   "systems": 2,
+   "regions": {
+    "Galactic Centre": 1,
+    "Empyrean Straits": 1
+   }
+  },
+  "aleoida_aleoida_laminiae": {
+   "systems": 3,
+   "regions": {
+    "Inner Scutum-Centaurus Arm": 3
+   }
+  },
+  "aleoida_aleoida_spica": {
+   "systems": 3,
+   "regions": {
+    "Empyrean Straits": 2,
+    "Galactic Centre": 1
+   }
+  },
+  "anemone_anemone": {
+   "systems": 2,
+   "regions": {
+    "The Veils": 1,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "bacterium_bacterium_alcyoneum": {
+   "systems": 14,
+   "regions": {
+    "Empyrean Straits": 6,
+    "Galactic Centre": 6,
+    "Inner Scutum-Centaurus Arm": 2
+   }
+  },
+  "bacterium_bacterium_aurasus": {
+   "systems": 16,
+   "regions": {
+    "Empyrean Straits": 3,
+    "Galactic Centre": 10,
+    "Norma Arm": 1,
+    "Inner Scutum-Centaurus Arm": 2
+   }
+  },
+  "bacterium_bacterium_cerbrus": {
+   "systems": 8,
+   "regions": {
+    "Empyrean Straits": 5,
+    "Galactic Centre": 2,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "bacterium_bacterium_informem": {
+   "systems": 1,
+   "regions": {
+    "Empyrean Straits": 1
+   }
+  },
+  "bacterium_bacterium_tela": {
+   "systems": 4,
+   "regions": {
+    "Empyrean Straits": 2,
+    "Odin's Hold": 1,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "bacterium_bacterium_vesicula": {
+   "systems": 2,
+   "regions": {
+    "Empyrean Straits": 2
+   }
+  },
+  "bark_mounds_bark_mounds": {
+   "systems": 3,
+   "regions": {
+    "Inner Scutum-Centaurus Arm": 3
+   }
+  },
+  "cactoida_cactoida_cortexum": {
+   "systems": 3,
+   "regions": {
+    "Galactic Centre": 3
+   }
+  },
+  "cactoida_cactoida_lapis": {
+   "systems": 6,
+   "regions": {
+    "Galactic Centre": 3,
+    "Inner Scutum-Centaurus Arm": 3
+   }
+  },
+  "cactoida_cactoida_peperatis": {
+   "systems": 7,
+   "regions": {
+    "Trojan Belt": 1,
+    "Galactic Centre": 3,
+    "Inner Scutum-Centaurus Arm": 3
+   }
+  },
+  "cactoida_cactoida_pullulanta": {
+   "systems": 2,
+   "regions": {
+    "Galactic Centre": 2
+   }
+  },
+  "cactoida_cactoida_vermis": {
+   "systems": 5,
+   "regions": {
+    "Galactic Centre": 1,
+    "Odin's Hold": 1,
+    "Inner Scutum-Centaurus Arm": 2,
+    "Empyrean Straits": 1
+   }
+  },
+  "clypeus_clypeus_lacrimam": {
+   "systems": 11,
+   "regions": {
+    "Galactic Centre": 3,
+    "Odin's Hold": 1,
+    "Inner Scutum-Centaurus Arm": 4,
+    "Empyrean Straits": 3
+   }
+  },
+  "clypeus_clypeus_speculumi": {
+   "systems": 2,
+   "regions": {
+    "Galactic Centre": 1,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "concha_concha_aureolas": {
+   "systems": 5,
+   "regions": {
+    "Trojan Belt": 1,
+    "Galactic Centre": 2,
+    "Inner Scutum-Centaurus Arm": 1,
+    "Norma Arm": 1
+   }
+  },
+  "concha_concha_labiata": {
+   "systems": 6,
+   "regions": {
+    "Empyrean Straits": 1,
+    "Galactic Centre": 2,
+    "Inner Scutum-Centaurus Arm": 3
+   }
+  },
+  "concha_concha_renibus": {
+   "systems": 16,
+   "regions": {
+    "Galactic Centre": 3,
+    "Odin's Hold": 2,
+    "Inner Scutum-Centaurus Arm": 6,
+    "Empyrean Straits": 4,
+    "Norma Arm": 1
+   }
+  },
+  "electricae_electricae_pluma": {
+   "systems": 1,
+   "regions": {
+    "Empyrean Straits": 1
+   }
+  },
+  "electricae_electricae_radialem": {
+   "systems": 6,
+   "regions": {
+    "Inner Scutum-Centaurus Arm": 6
+   }
+  },
+  "fonticulua_fonticulua_campestris": {
+   "systems": 5,
+   "regions": {
+    "Empyrean Straits": 2,
+    "Inner Scutum-Centaurus Arm": 3
+   }
+  },
+  "fonticulua_fonticulua_lapida": {
+   "systems": 1,
+   "regions": {
+    "Galactic Centre": 1
+   }
+  },
+  "fonticulua_fonticulua_segmentatus": {
+   "systems": 1,
+   "regions": {
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "fonticulua_fonticulua_upupam": {
+   "systems": 1,
+   "regions": {
+    "Empyrean Straits": 1
+   }
+  },
+  "frutexa_frutexa_acus": {
+   "systems": 6,
+   "regions": {
+    "Galactic Centre": 6
+   }
+  },
+  "frutexa_frutexa_fera": {
+   "systems": 8,
+   "regions": {
+    "Empyrean Straits": 2,
+    "Galactic Centre": 5,
+    "Norma Arm": 1
+   }
+  },
+  "frutexa_frutexa_flabellum": {
+   "systems": 2,
+   "regions": {
+    "Empyrean Straits": 1,
+    "Norma Arm": 1
+   }
+  },
+  "frutexa_frutexa_flammasis": {
+   "systems": 8,
+   "regions": {
+    "Trojan Belt": 1,
+    "Galactic Centre": 3,
+    "Inner Scutum-Centaurus Arm": 4
+   }
+  },
+  "frutexa_frutexa_metallicum": {
+   "systems": 2,
+   "regions": {
+    "Empyrean Straits": 1,
+    "Galactic Centre": 1
+   }
+  },
+  "frutexa_frutexa_sponsae": {
+   "systems": 4,
+   "regions": {
+    "Galactic Centre": 1,
+    "Odin's Hold": 1,
+    "Empyrean Straits": 1,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "fumerola_fumerola_extremus": {
+   "systems": 1,
+   "regions": {
+    "Galactic Centre": 1
+   }
+  },
+  "fungoida_fungoida_bullarum": {
+   "systems": 1,
+   "regions": {
+    "Empyrean Straits": 1
+   }
+  },
+  "fungoida_fungoida_gelata": {
+   "systems": 23,
+   "regions": {
+    "Empyrean Straits": 5,
+    "Galactic Centre": 5,
+    "Inner Scutum-Centaurus Arm": 11,
+    "Odin's Hold": 1,
+    "Norma Arm": 1
+   }
+  },
+  "fungoida_fungoida_setisis": {
+   "systems": 17,
+   "regions": {
+    "Empyrean Straits": 3,
+    "Galactic Centre": 4,
+    "Norma Arm": 2,
+    "Inner Scutum-Centaurus Arm": 8
+   }
+  },
+  "fungoida_fungoida_stabitis": {
+   "systems": 6,
+   "regions": {
+    "Galactic Centre": 5,
+    "Odin's Hold": 1
+   }
+  },
+  "osseus_osseus_cornibus": {
+   "systems": 8,
+   "regions": {
+    "Galactic Centre": 8
+   }
+  },
+  "osseus_osseus_discus": {
+   "systems": 2,
+   "regions": {
+    "Galactic Centre": 1,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "osseus_osseus_pellebantus": {
+   "systems": 2,
+   "regions": {
+    "Empyrean Straits": 1,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "osseus_osseus_pumice": {
+   "systems": 2,
+   "regions": {
+    "Trojan Belt": 1,
+    "Empyrean Straits": 1
+   }
+  },
+  "osseus_osseus_spiralis": {
+   "systems": 10,
+   "regions": {
+    "Empyrean Straits": 2,
+    "Galactic Centre": 3,
+    "Inner Scutum-Centaurus Arm": 4,
+    "Norma Arm": 1
+   }
+  },
+  "recepta_recepta_deltahedronix": {
+   "systems": 2,
+   "regions": {
+    "Galactic Centre": 1,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "sinuous_tuber_sinuous_tubers_caeruleum": {
+   "systems": 7,
+   "regions": {
+    "Galactic Centre": 7
+   }
+  },
+  "sinuous_tuber_sinuous_tubers_prasinum": {
+   "systems": 4,
+   "regions": {
+    "Empyrean Straits": 4
+   }
+  },
+  "sinuous_tuber_sinuous_tubers_roseum": {
+   "systems": 2,
+   "regions": {
+    "Galactic Centre": 2
+   }
+  },
+  "stratum_stratum_cucumisis": {
+   "systems": 3,
+   "regions": {
+    "Galactic Centre": 2,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  },
+  "stratum_stratum_excutitus": {
+   "systems": 8,
+   "regions": {
+    "Galactic Centre": 8
+   }
+  },
+  "stratum_stratum_laminamus": {
+   "systems": 3,
+   "regions": {
+    "Galactic Centre": 3
+   }
+  },
+  "stratum_stratum_limaxus": {
+   "systems": 9,
+   "regions": {
+    "Inner Scutum-Centaurus Arm": 9
+   }
+  },
+  "stratum_stratum_paleas": {
+   "systems": 19,
+   "regions": {
+    "Empyrean Straits": 3,
+    "Galactic Centre": 9,
+    "Odin's Hold": 1,
+    "Inner Scutum-Centaurus Arm": 6
+   }
+  },
+  "stratum_stratum_tectonicas": {
+   "systems": 10,
+   "regions": {
+    "Empyrean Straits": 5,
+    "Galactic Centre": 2,
+    "Inner Scutum-Centaurus Arm": 3
+   }
+  },
+  "tubus_tubus_cavas": {
+   "systems": 13,
+   "regions": {
+    "Trojan Belt": 1,
+    "Galactic Centre": 6,
+    "Inner Scutum-Centaurus Arm": 6
+   }
+  },
+  "tubus_tubus_compagibus": {
+   "systems": 15,
+   "regions": {
+    "Galactic Centre": 6,
+    "Inner Scutum-Centaurus Arm": 9
+   }
+  },
+  "tubus_tubus_conifer": {
+   "systems": 3,
+   "regions": {
+    "Galactic Centre": 3
+   }
+  },
+  "tubus_tubus_rosarium": {
+   "systems": 2,
+   "regions": {
+    "Empyrean Straits": 1,
+    "Galactic Centre": 1
+   }
+  },
+  "tussock_tussock_catena": {
+   "systems": 9,
+   "regions": {
+    "Trojan Belt": 1,
+    "Inner Scutum-Centaurus Arm": 8
+   }
+  },
+  "tussock_tussock_cultro": {
+   "systems": 5,
+   "regions": {
+    "Galactic Centre": 5
+   }
+  },
+  "tussock_tussock_pennatis": {
+   "systems": 22,
+   "regions": {
+    "Empyrean Straits": 5,
+    "Galactic Centre": 16,
+    "Norma Arm": 1
+   }
+  },
+  "tussock_tussock_propagito": {
+   "systems": 26,
+   "regions": {
+    "Trojan Belt": 2,
+    "Galactic Centre": 9,
+    "Odin's Hold": 1,
+    "Inner Scutum-Centaurus Arm": 14
+   }
+  },
+  "tussock_tussock_virgam": {
+   "systems": 7,
+   "regions": {
+    "Empyrean Straits": 2,
+    "Galactic Centre": 3,
+    "Odin's Hold": 1,
+    "Inner Scutum-Centaurus Arm": 1
+   }
+  }
+ }
+}

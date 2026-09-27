@@ -48,6 +48,40 @@ describe("colour star", () => {
     expect(colourStarTypeFor(byId.get(9)!, byId)).toBe("T");
   });
 
+  it("a moon whose planet was never scanned is placed by the arrival distances", () => {
+    // Eod Prou VD-B e0 C 2 a (EDSM codex × Spansh, 2026-09-27): its planet C 2 is missing, so the
+    // orbit is read as the gap between its arrival distance and C's. The game used the neutron
+    // star's colour: 65 suns 22,000 ls out outshine the 0.006-sun M dwarf ~470 ls away.
+    const R = 695_700_000;
+    const byId = new Map(
+      [
+        rec(2, "A", [{ Null: 1 }, { Null: 0 }], {
+          starType: "N",
+          distanceFromArrivalLs: 0,
+          radius: 1.3238e-5 * R,
+          surfaceTemperature: 4_502_550,
+        }),
+        rec(3, "B", [{ Null: 1 }, { Null: 0 }], {
+          starType: "M",
+          distanceFromArrivalLs: 53.4,
+          radius: 0.677 * R,
+          surfaceTemperature: 3594,
+        }),
+        rec(4, "C", [{ Null: 0 }], {
+          starType: "M",
+          distanceFromArrivalLs: 21_964,
+          radius: 0.4537 * R,
+          surfaceTemperature: 2421,
+        }),
+        rec(7, "C 2 a", [{ Planet: 6 }, { Star: 4 }, { Null: 0 }], {
+          planetClass: "Rocky body",
+          distanceFromArrivalLs: 22_432,
+        }),
+      ].map((r) => [r.bodyId, r]),
+    );
+    expect(brightestStarTypeFor(byId.get(7)!, byId)).toBe("N");
+  });
+
   it("an ordinary host is the colour star", () => {
     const byId = new Map(
       [
