@@ -1,4 +1,5 @@
 import type { OrganicGenusLock, SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
+import { gameOrderSpeciesName } from "../shared/codexLog.js";
 import { filterByGenusHints } from "./genusMatchUtils.js";
 
 function normOrganicLabel(s: string): string {
@@ -10,7 +11,8 @@ function normOrganicLabel(s: string): string {
 }
 
 function speciesMatchesOrganicLabels(entry: SpeciesEntry, lock: OrganicGenusLock): boolean {
-  const nd = normOrganicLabel(entry.displayName);
+  // The game writes "Aureum Brain Tree" where the tree has "Brain Tree Aureum".
+  const nd = normOrganicLabel(gameOrderSpeciesName(entry.displayName));
   const labels = [lock.variantLocalised, lock.speciesLocalised].filter((s): s is string => !!s?.trim());
   for (const lab of labels) {
     const nl = normOrganicLabel(lab);

@@ -65,15 +65,85 @@
    "beyondTOf": 0,
    "ownLoss": 0.0221
   },
-  "anemone_anemone": {
+  "anemone_blatteum_bioluminescent": {
    "gate": false,
-   "lo": 0.1519,
-   "hi": 141400.0,
-   "n": 4199,
-   "genusCut": null,
+   "lo": 0.1413,
+   "hi": 61010.0,
+   "n": 1493,
+   "genusCut": 0.0267,
+   "beyondT": 0.0178,
+   "beyondTOf": 6744,
+   "ownLoss": 0.0073
+  },
+  "anemone_croceum": {
+   "gate": false,
+   "lo": 0.121,
+   "hi": 6.096,
+   "n": 52,
+   "genusCut": 0.8793,
+   "beyondT": 0.1349,
+   "beyondTOf": 1268,
+   "ownLoss": 0.0947
+  },
+  "anemone_luteolum": {
+   "gate": false,
+   "lo": 0.2149,
+   "hi": 572.3,
+   "n": 204,
+   "genusCut": 0.1391,
+   "beyondT": 0.0444,
+   "beyondTOf": 7766,
+   "ownLoss": 0.0515
+  },
+  "anemone_prasinum_bioluminescent": {
+   "gate": false,
+   "lo": 0.3144,
+   "hi": 1115000.0,
+   "n": 546,
+   "genusCut": 0.0148,
+   "beyondT": 0.009,
+   "beyondTOf": 9600,
+   "ownLoss": 0.0449
+  },
+  "anemone_puniceum": {
+   "gate": false,
+   "lo": 2.228,
+   "hi": 109700.0,
+   "n": 34,
+   "genusCut": 0.1015,
    "beyondT": null,
    "beyondTOf": 0,
-   "ownLoss": 0.0152
+   "ownLoss": 0.0588
+  },
+  "anemone_roseum": {
+   "gate": false,
+   "lo": 0.1253,
+   "hi": 459.7,
+   "n": 35,
+   "genusCut": 0.1448,
+   "beyondT": 0.0428,
+   "beyondTOf": 8532,
+   "ownLoss": 0.0736
+  },
+  "anemone_roseum_bioluminescent": {
+   "gate": false,
+   "lo": 0.1891,
+   "hi": 57940.0,
+   "n": 834,
+   "genusCut": 0.0263,
+   "beyondT": 0.0143,
+   "beyondTOf": 6999,
+   "ownLoss": 0.0054
+  },
+  "anemone_rubeum_bioluminescent": {
+   "gate": true,
+   "lo": 0.1288,
+   "hi": 2548.0,
+   "n": 842,
+   "genusCut": 0.0572,
+   "beyondT": 0.0463,
+   "beyondTOf": 7122,
+   "ownLoss": 0.0131
   },
   "bacterium_bacterium_acies": {
    "gate": false,

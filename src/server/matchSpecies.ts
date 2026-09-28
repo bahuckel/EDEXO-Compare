@@ -69,7 +69,6 @@ import {
   demoteFailedSpatialGates,
   demoteFailedHostStarGates,
   demoteFailedSystemBodyGates,
-  demoteUnfavouredAtmospheres,
   demoteOutsideStarlight,
   OBSERVED_TEMP_TOLERANCE_K,
   demoteRegionallyRareSiblings,
@@ -78,7 +77,6 @@ export {
   demoteFailedSpatialGates,
   demoteFailedHostStarGates,
   demoteFailedSystemBodyGates,
-  demoteUnfavouredAtmospheres,
   demoteOutsideStarlight,
   OBSERVED_TEMP_TOLERANCE_K,
   demoteRegionallyRareSiblings,
@@ -832,6 +830,17 @@ export function speciesMatchesExcludingTempPressure(
     }
   }
 
+  /* Known from these systems only (Ingensradices unicus: HIP 87621). A wall, and an unknown system fails. */
+  const known = c.systemAddressAnyOf;
+  if (known?.length) {
+    const sys = ctx?.systemAddress;
+    if (sys == null || !known.includes(sys)) {
+      failures.push({ field: "Location", detail: "Known from one system only, and this is not it." });
+    } else {
+      reasons.push({ field: "Location", detail: "The system it is known from" });
+    }
+  }
+
   /*
    * Distance from the arrival star — a wall, unlike the orbit range. Crystalline Shards, the one species
    * carrying it: all 5,932 Spansh-dump bodies are ≥ 12,004 Ls from arrival, so a body well inside the
@@ -1397,6 +1406,11 @@ export function matchDatabaseToScan(
   ) {
     narrowed = narrowed.filter((e) => !isBacteriumSpeciesEntry(e));
   }
+  // Species the game leaves out of the signal count are never named by a DSS, so no genus filter
+  // or lock may remove them; their own gates (a known system) decide.
+  for (const e of species) {
+    if (e.criteria?.outsideSignalCount && !narrowed.some((x) => x.id === e.id)) narrowed.push(e);
+  }
   const genusFilterActive = !!(genusHints && genusHints.length);
   const dssGenusNarrowing = genusFilterActive;
 
@@ -1437,7 +1451,6 @@ export function matchDatabaseToScan(
   demoteFailedSpatialGates(strict, unlikely, matchContext, options?.spatialCatalogue ?? null);
   demoteFailedHostStarGates(strict, unlikely, matchContext);
   demoteFailedSystemBodyGates(strict, unlikely, matchContext);
-  demoteUnfavouredAtmospheres(strict, unlikely, scan);
   demoteOutsideStarlight(strict, unlikely, matchContext);
   demoteRegionallyRareSiblings(strict, unlikely, matchContext);
 

@@ -869,11 +869,62 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 .system-map-side {
+  position: relative;
   flex: 0 0 min(22rem, 34%);
   min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  transition: flex-basis 0.28s ease;
+}
+/* Folded: a strip just wide enough for the arrow, and the map takes the room. */
+.system-map-side--closed {
+  flex-basis: 1.9rem;
+}
+.system-map-side-toggle {
+  flex: 0 0 1.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  border-right: 1px solid var(--accent-a15);
+  color: var(--accent-bright);
+  cursor: pointer;
+  padding: 0;
+}
+.system-map-side-toggle:hover,
+.system-map-side-toggle:focus-visible {
+  background: var(--accent-a08);
+}
+.system-map-side-arrow {
+  display: inline-block;
+  font-size: 1rem;
+  transition: transform 0.28s ease;
+}
+/* Open: the arrow points right (fold away); closed: left (bring it back). */
+.system-map-side--closed .system-map-side-arrow {
+  transform: rotate(180deg);
+}
+.system-map-side-content {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0.75rem 0.9rem;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+.system-map-side--closed .system-map-side-content {
+  opacity: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .system-map-side,
+  .system-map-side-arrow,
+  .system-map-side-content {
+    transition: none;
+  }
 }
 
 .system-map-side-hint {
@@ -888,6 +939,20 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
     flex-basis: auto;
     height: auto;
     max-height: 40vh;
+    transition: max-height 0.28s ease;
+  }
+  .system-map-side--closed {
+    max-height: 1.9rem;
+  }
+  .system-map-side-toggle {
+    border-right: 0;
+    border-bottom: 1px solid var(--accent-a15);
+  }
+  .system-map-side-arrow {
+    transform: rotate(90deg);
+  }
+  .system-map-side--closed .system-map-side-arrow {
+    transform: rotate(-90deg);
   }
 }
 

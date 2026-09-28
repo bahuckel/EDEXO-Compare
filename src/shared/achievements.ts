@@ -17,7 +17,7 @@ import type { RarityTier } from "./speciesRarity.js";
 
 /** The sampled genera, by the codex key's first word. Their genus is the variant name's first word. */
 const SAMPLED =
-  /^codex_ent_(aleoids|bacterial|cactoid|clypeus|conchas|electricae|fonticulus|fumerolas|fungoids|osseus|recepta|shrubs|stratum|tubus|tussocks)_/;
+  /^codex_ent_(aleoids|bacterial|cactoid|clypeus|conchas|electricae|fonticulus|fumerolas|fungoids|ingensradices|osseus|recepta|shrubs|stratum|tubus|tussocks)_/;
 
 /** The legacy surface plants — logged by the composition scanner, never sampled three times. */
 const LEGACY: [RegExp, string][] = [

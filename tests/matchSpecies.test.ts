@@ -161,11 +161,13 @@ describe("matchDatabaseToScan", () => {
     expect(shown(r).length).toBeGreaterThan(0);
     const genera = new Set(shown(r).map((m) => m.entry.genusDataDir));
     // No pressure in this context, so the airless check on thin-only rows (Fumerola) abstains.
-    expect([...genera].sort()).toEqual(["anemone", "bark-mound", "fumerola", "sinuous-tubers"]);
+    // Sinuous Tubers left when they got their measured 200-500 K (2026-09-28): this body is 198.7 K,
+    // and none of the 8,000+ Tubers bodies measured is under 200 K.
+    expect([...genera].sort()).toEqual(["anemone", "bark-mound", "fumerola"]);
 
     const gypseeum = r.matches.find((m) => m.entry.displayName === "Brain Tree Gypseeum");
     expect(gypseeum?.unlikely).toBe(true);
-    expect(gypseeum!.unlikelyReasons![0]!.detail).toContain("200–300 K");
+    expect(gypseeum!.unlikelyReasons![0]!.detail).toContain("200–330 K");
   });
 
   /**
@@ -315,8 +317,17 @@ describe("matchDatabaseToScan", () => {
       SurfaceGravity: 2,
     } as unknown as PlanetScan;
     const r = matchDatabaseToScan(db, scorched, null, null, { includeBacterium: true });
-    expect(shown(r).map((m) => m.entry.id)).toEqual(["anemone_anemone"]);
-    expect(db.species.find((e) => e.id === "anemone_anemone")!.criteria.surfaceTemperatureK).toBeUndefined();
+    // One row per Anemone colour since 2026-09-28. With no star to judge, the two colours that grow
+    // on hot rocky bodies stay: Luteolum (measured to 1,096 K) and Prasinum Bioluminescent (no limit).
+    // Croceum and Roseum stop at 450 K.
+    expect(
+      shown(r)
+        .map((m) => m.entry.id)
+        .sort(),
+    ).toEqual(["anemone_luteolum", "anemone_prasinum_bioluminescent"]);
+    expect(
+      db.species.find((e) => e.id === "anemone_blatteum_bioluminescent")!.criteria.surfaceTemperatureK,
+    ).toBeUndefined();
     // Whatever survives into the demoted tier must say what demoted it - a low-probability row with
     // no reason attached is noise the reader has to take on trust. Shown rows are exempt: they were
     // not demoted, so there is nothing for them to explain.
@@ -341,13 +352,20 @@ describe("matchDatabaseToScan", () => {
       Landable: false,
     } as unknown as PlanetScan;
     const r = matchDatabaseToScan(db, inferno, null, null, { includeBacterium: true });
-    // Anemone keeps it company for the same reason: metal-rich is on its class list and its row
-    // carries no temperature gate either.
+    // The four glowing Anemones keep it company for the same reason: metal-rich is on their class
+    // list and none carries a temperature gate (measured to 3,000-10,000 K). With no star scanned,
+    // nothing picks between them.
     expect(
       shown(r)
         .map((m) => m.entry.id)
         .sort(),
-    ).toEqual(["amphora_amphora_plant", "anemone_anemone"]);
+    ).toEqual([
+      "amphora_amphora_plant",
+      "anemone_blatteum_bioluminescent",
+      "anemone_prasinum_bioluminescent",
+      "anemone_roseum_bioluminescent",
+      "anemone_rubeum_bioluminescent",
+    ]);
     expect(
       db.species.find((e) => e.id === "amphora_amphora_plant")!.criteria.surfaceTemperatureK,
     ).toBeUndefined();

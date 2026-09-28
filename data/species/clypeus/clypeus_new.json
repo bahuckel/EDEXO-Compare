@@ -77,9 +77,6 @@
           "min": 190,
           "max": null
         },
-        "distance_from_star": {
-          "max_ls": 2600
-        },
         "atmospherePressureCategory": "thin"
       }
     },

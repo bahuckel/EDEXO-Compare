@@ -190,13 +190,6 @@ export function MyExobiologyModal({
   useEffect(() => {
     (searchRef.current ?? dialogRef.current)?.focus({ preventScroll: true });
   }, [dialogRef]);
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   const shown = useMemo(() => {
     const q = query.trim();

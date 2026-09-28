@@ -21,11 +21,11 @@ let root: string;
  */
 describe("planetClassKey", () => {
   it("collapses the three spellings of one class", () => {
-    expect(planetClassKey("High metal content body")).toBe("high metal content");
-    expect(planetClassKey("High metal content world")).toBe("high metal content");
-    expect(planetClassKey("High Metal Content")).toBe("high metal content");
-    expect(planetClassKey("Rocky Ice world")).toBe("rocky ice");
-    expect(planetClassKey("Rocky ice body")).toBe("rocky ice");
+    expect(planetClassKey("High metal content body")).toBe("hmc");
+    expect(planetClassKey("High metal content world")).toBe("hmc");
+    expect(planetClassKey("High Metal Content")).toBe("hmc");
+    expect(planetClassKey("Rocky Ice world")).toBe("rockyice");
+    expect(planetClassKey("Rocky ice body")).toBe("rockyice");
   });
 
   it("keeps different classes apart", () => {

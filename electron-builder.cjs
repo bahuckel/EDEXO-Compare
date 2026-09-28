@@ -78,6 +78,7 @@ module.exports = {
   files: [
     "electron/main.cjs",
     "electron/preload.cjs",
+    "electron/windowState.cjs",
     ...(process.env.EDEXO_DIAG === "1" ? ["electron/diag.cjs"] : []),
     "package.json",
   ],

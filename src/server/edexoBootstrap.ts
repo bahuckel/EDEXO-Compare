@@ -14,27 +14,9 @@ import {
   ownCodexBackupKeys,
 } from "./sharedExomastery.js";
 import { ownFootEntriesWithBackups } from "./footScannedCatalog.js";
-import {
-  existsSync,
-  watchFile,
-  unwatchFile,
-  writeFileSync,
-  readFileSync,
-  promises as fsp,
-  watch,
-  statSync,
-  readdirSync,
-} from "node:fs";
-import type {
-  AppSnapshot,
-  AppStatusDTO,
-  ExoLiveDTO,
-  ImportDumpStatusDTO,
-  JournalBootProgressDTO,
-  JournalLine,
-  PhotoStampPrefs,
-} from "../shared/types.js";
-import { journalHistoryCutoffUtcMs, parseJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
+import { existsSync, watchFile, unwatchFile, writeFileSync, readFileSync, promises as fsp, watch, statSync } from "node:fs";
+import type { AppSnapshot, AppStatusDTO, ExoLiveDTO, ImportDumpStatusDTO, JournalBootProgressDTO, JournalLine } from "../shared/types.js";
+import { journalHistoryCutoffUtcMs } from "../shared/journalHistoryPreset.js";
 import { clampStatusPollMs, pollRatesDto } from "../shared/pollRates.js";
 import { radarRadiusDto } from "../shared/radarRadius.js";
 import { mergeCollectionFocus } from "../shared/collectionFocus.js";
@@ -102,17 +84,7 @@ import {
   readStatusJsonFootFixText,
 } from "./footTravelStatus.js";
 import { parseNavRouteJson } from "./navRouteFuel.js";
-import {
-  getProjectRoot,
-  getWebRoot,
-  resolveLanKeyPath,
-  resolveUserSettingsJsonPath,
-  resolveExoOutlierLogPath,
-  USER_SETTINGS_FILENAME,
-  getSpeciesDataDir,
-  reapplySpeciesDataDirDiscoveryFromDisk,
-  resolveImportDumpLedgerPath,
-} from "./paths.js";
+import { getProjectRoot, resolveLanKeyPath, resolveUserSettingsJsonPath, resolveExoOutlierLogPath, USER_SETTINGS_FILENAME, getSpeciesDataDir, reapplySpeciesDataDirDiscoveryFromDisk, resolveImportDumpLedgerPath } from "./paths.js";
 import { persistJournalDirPreference, resolveInitialJournalDir } from "./journalDirPreference.js";
 import {
   buildExoMinimapDto,
@@ -141,160 +113,20 @@ import { commanderSectorsDto } from "./galaxySectorTiers.js";
 import { runEdsmCatchUp, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 import { createUpdateChecker } from "./updateCheck.js";
 import { fetchRemoteSystem, readRemoteSystemsCache, writeRemoteSystemToCache } from "./remoteSystems.js";
-
-/**
- * Recover the commander's galactic position when the merge cache did not carry one.
- *
- * `commanderPos` (§10.3) is read off `StarPos` on `FSDJump` / `Location`, and the merge cache stores
- * it — but every cache written before that field existed restores as `null`, and the fast path then
- * never replays a line that could fill it. The commander is left with no position until their next
- * jump, which silently disables **every** Phase 7 spatial gate: `demoteFailedSpatialGates` treats a
- * missing coordinate as "no verdict", so radialem, Bark Mounds, Brain Trees and Sinuous Tubers all
- * stay in the strict list no matter where the ship is.
- *
- * Rather than bump the cache format — which would force a full replay of every log for one field —
- * read the position back out of the newest logs. Newest first, stop at the first `StarPos` found,
- * and give up after a handful of files: a commander whose last twelve logs contain no jump and no
- * `Location` has no position to recover.
- */
-export async function backfillCommanderPosition(store: GameStateStore, files: string[]): Promise<void> {
-  if (store.commanderPos) return;
-  const MAX_FILES = 12;
-  for (let i = files.length - 1; i >= 0 && i >= files.length - MAX_FILES; i--) {
-    // A holder rather than a plain `let`: TypeScript does not track assignments made inside a
-    // callback, so a narrowed local would read as `null` after the loop and the branch below would
-    // be dead code as far as the compiler is concerned.
-    const hit: { pos: { x: number; y: number; z: number } | null } = { pos: null };
-    try {
-      // Keep the last hit in the file, not the first — the newest line wins.
-      await readJournalFull(files[i]!, (line) => {
-        const p = (line as Record<string, unknown>).StarPos;
-        if (!Array.isArray(p) || p.length < 3) return;
-        const [x, y, z] = p as unknown[];
-        if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") return;
-        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
-        hit.pos = { x, y, z };
-      });
-    } catch {
-      continue; // An unreadable log is not a reason to abandon the search.
-    }
-    if (hit.pos) {
-      store.commanderPos = hit.pos;
-      return;
-    }
-  }
-}
-
-function showEdexoNativeFixInfo(message: string): boolean {
-  if (process.env.EDEXO_ELECTRON !== "1") return false;
-  try {
-    const electron = require("electron") as typeof import("electron");
-    electron.dialog.showMessageBoxSync({
-      type: "info",
-      title: "ED Exo Compare — Fix",
-      message,
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function logFatal(lines: string[]): never {
-  const text = lines.join("\n");
-  console.error(text);
-  try {
-    const logPath = path.join(path.dirname(process.execPath), "edexo-compare-startup-error.log");
-    writeFileSync(logPath, `${text}\n`, "utf8");
-  } catch {
-    /* ignore */
-  }
-  if (process.env.EDEXO_ELECTRON === "1") {
-    throw new Error(text);
-  }
-  process.exit(1);
-}
-
-export function assertResourceLayout(): void {
-  const root = getProjectRoot();
-  const webRoot = getWebRoot(root);
-  const indexHtml = path.join(webRoot, "index.html");
-  const speciesTree = getSpeciesDataDir(root);
-  const missing: string[] = [];
-  if (!existsSync(indexHtml)) {
-    missing.push(`UI not found: ${indexHtml}`);
-  }
-  if (!existsSync(speciesTree) || !statSync(speciesTree).isDirectory()) {
-    missing.push(`Species data folder not found: ${speciesTree}`);
-  } else {
-    let hasGenusJson = false;
-    try {
-      for (const name of readdirSync(speciesTree)) {
-        const p = path.join(speciesTree, name);
-        if (!statSync(p).isDirectory()) continue;
-        for (const f of readdirSync(p)) {
-          if (f.toLowerCase().endsWith(".json") && f.toLowerCase() !== "package.json") {
-            hasGenusJson = true;
-            break;
-          }
-        }
-        if (hasGenusJson) break;
-      }
-    } catch {
-      hasGenusJson = false;
-    }
-    if (!hasGenusJson) {
-      missing.push(
-        `No genus .json under: ${speciesTree} — add data/species/<Genus>/<genus>.json (and optional <Genus>-notes.txt, <Genus>_photos/).`,
-      );
-    }
-  }
-  if (missing.length) {
-    const lines = [
-      "ED Exo Compare — cannot start.",
-      ...missing,
-      "",
-      'Keep "web" and "data" next to the app; species live in data/species/<genus>/.',
-      "(Development: npm run build)",
-    ];
-    if (process.env.EDEXO_ELECTRON === "1") {
-      throw new Error(lines.join("\n"));
-    }
-    logFatal(lines);
-  }
-}
-
-export function parseHost(argv: string[]): string {
-  const i = argv.indexOf("--host");
-  if (i >= 0 && argv[i + 1]) return argv[i + 1]!;
-  if (argv.includes("--lan")) return "0.0.0.0";
-  if (argv.includes("--local")) return "127.0.0.1";
-  return "0.0.0.0";
-}
-
-export function parsePort(argv: string[]): number {
-  const i = argv.indexOf("--port");
-  if (i >= 0 && argv[i + 1]) return Number(argv[i + 1]) || 7111;
-  return 7111;
-}
-
-export type CliOptions = {
-  bindHost: string;
-  port: number;
-  shouldOpenMainUI: boolean;
-  quietConsole: boolean;
-  useShellLauncher: boolean;
-};
-
-export function parseCli(argv: string[]): CliOptions {
-  return {
-    bindHost: parseHost(argv),
-    port: parsePort(argv),
-    shouldOpenMainUI: argv.includes("--open"),
-    quietConsole: process.env.EDEXO_ELECTRON === "1" || argv.includes("--quiet") || argv.includes("--gui"),
-    useShellLauncher: process.env.EDEXO_USE_SHELL_LAUNCHER === "1" || argv.includes("--shell-launcher"),
-  };
-}
+import { parseHost, parsePort } from "./cliOptions.js";
+import type { CliOptions } from "./cliOptions.js";
+import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startupChecks.js";
+import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
+import {
+  applyPersistedUserPrefs as applyUserPrefs,
+  persistUserPreferences as writeUserPrefs,
+  tryReadUserPrefs,
+  type PersistedUserPrefs,
+} from "./userPrefsFile.js";
+export { backfillCommanderPosition } from "./commanderPositionBackfill.js";
+export { logFatal, assertResourceLayout } from "./startupChecks.js";
+export { parseHost, parsePort, parseCli } from "./cliOptions.js";
+export type { CliOptions } from "./cliOptions.js";
 
 export type EdexoRuntime = {
   ready: Promise<void>;
@@ -380,110 +212,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const userSettingsPath = resolveUserSettingsJsonPath();
   const legacyUserSettingsPath = path.join(projectRoot, USER_SETTINGS_FILENAME);
 
-  function persistUserPreferences(): void {
-    try {
-      writeFileSync(
-        userSettingsPath,
-        `${JSON.stringify(
-          {
-            includeBacteriumInSearch: store.includeBacteriumInSearch,
-            includeExplorationScanDataInDataValue: store.includeExplorationScanDataInDataValue,
-            exoMapTierPlusMinCr: store.exoMapTierPlusMinCr,
-            exoMapTierPlusPlusMinCr: store.exoMapTierPlusPlusMinCr,
-            footTravelOdometerEnabled: store.footTravelOdometerEnabled,
-            journalHistoryPreset: store.journalHistoryPreset,
-            // The toggle only. The EDSM key lives in its own file (edsmCredentials.ts) precisely so
-            // it never lands in a settings JSON that gets pasted into bug reports.
-            edsmAutoFetchEnabled: store.edsmAutoFetchEnabled,
-            canonnUploadEnabled: store.canonnUploadEnabled,
-            eddnUploadEnabled: store.eddnUploadEnabled,
-            edsmUploadEnabled: store.edsmUploadEnabled,
-            edsmLiveUploadEnabled: store.edsmLiveUploadEnabled,
-            statusPollMs: store.statusPollMs,
-            journalPollMs: store.journalPollMs,
-            minimapRadiusM: store.minimapRadiusM,
-            hudPrefs: store.hudPrefs,
-            photoStamp: store.photoStamp,
-            trackedAchievementId: store.trackedAchievementId,
-          },
-          null,
-          2,
-        )}\n`,
-        "utf8",
-      );
-    } catch {
-      /* optional */
-    }
-  }
-
-  type PersistedUserPrefs = {
-    includeBacteriumInSearch?: boolean;
-    includeExplorationScanDataInDataValue?: boolean;
-    exoMapTierPlusMinCr?: number;
-    exoMapTierPlusPlusMinCr?: number;
-    footTravelOdometerEnabled?: boolean;
-    journalHistoryPreset?: string;
-    edsmAutoFetchEnabled?: boolean;
-    canonnUploadEnabled?: boolean;
-    eddnUploadEnabled?: boolean;
-    edsmUploadEnabled?: boolean;
-    edsmLiveUploadEnabled?: boolean;
-    statusPollMs?: number;
-    journalPollMs?: number;
-    minimapRadiusM?: number;
-    hudPrefs?: unknown;
-    photoStamp?: Partial<PhotoStampPrefs>;
-    trackedAchievementId?: string | null;
-  };
-
-  function applyPersistedUserPrefs(j: PersistedUserPrefs): void {
-    if (j.hudPrefs && typeof j.hudPrefs === "object") store.setHudPrefs(j.hudPrefs);
-    if (j.photoStamp && typeof j.photoStamp === "object") store.setPhotoStamp(j.photoStamp);
-    if (typeof j.trackedAchievementId === "string") store.setTrackedAchievement(j.trackedAchievementId);
-    if (typeof j.statusPollMs === "number" || typeof j.journalPollMs === "number") {
-      // Read back through the same clamp that wrote them: a hand-edited settings file is the case
-      // this exists for, and a 5 ms status poll would read the same file two hundred times a second.
-      store.setPollRates(j.statusPollMs ?? store.statusPollMs, j.journalPollMs ?? store.journalPollMs);
-    }
-    if (typeof j.minimapRadiusM === "number") store.setMinimapRadiusM(j.minimapRadiusM);
-    if (typeof j.includeBacteriumInSearch === "boolean") {
-      store.setIncludeBacteriumInSearch(j.includeBacteriumInSearch);
-    }
-    if (typeof j.includeExplorationScanDataInDataValue === "boolean") {
-      store.setIncludeExplorationScanDataInDataValue(j.includeExplorationScanDataInDataValue);
-    }
-    if (typeof j.exoMapTierPlusMinCr === "number" && typeof j.exoMapTierPlusPlusMinCr === "number") {
-      store.setExoMapTierThresholds(j.exoMapTierPlusMinCr, j.exoMapTierPlusPlusMinCr);
-    }
-    if (typeof j.footTravelOdometerEnabled === "boolean") {
-      store.setFootTravelOdometerEnabled(j.footTravelOdometerEnabled);
-    }
-    // dssSlack* keys from older preference files are ignored: the mechanism they tuned is gone.
-    if (typeof j.journalHistoryPreset === "string") {
-      store.setJournalHistoryPreset(parseJournalHistoryPreset(j.journalHistoryPreset));
-    }
-    // Restored only alongside a stored key: a settings file carried to a machine without one must
-    // not switch outbound traffic back on by itself.
-    if (j.edsmAutoFetchEnabled === true && readEdsmCredentials()) {
-      store.setEdsmAutoFetchEnabled(true);
-    }
-    // Restored as written. There is no second factor to check the way the EDSM key is checked —
-    // the switch is the whole consent — so a settings file that says on means the commander said on.
-    if (j.canonnUploadEnabled === true) store.setCanonnUploadEnabled(true);
-    if (j.eddnUploadEnabled === true) store.setEddnUploadEnabled(true);
-    if (j.edsmUploadEnabled === true) store.setEdsmUploadEnabled(true);
-    // Only meaningful with the upload on; a settings file saying otherwise is a file that was edited.
-    if (j.edsmLiveUploadEnabled === true && store.edsmUploadEnabled) store.setEdsmLiveUploadEnabled(true);
-  }
-
-  function tryReadUserPrefs(file: string): PersistedUserPrefs | null {
-    try {
-      const raw = readFileSync(file, "utf8");
-      return JSON.parse(raw) as PersistedUserPrefs;
-    } catch {
-      return null;
-    }
-  }
+  // The settings file lives in userPrefsFile.ts; these keep the old names for the wiring below.
+  const persistUserPreferences = (): void => writeUserPrefs(store, userSettingsPath);
+  const applyPersistedUserPrefs = (j: PersistedUserPrefs): void => applyUserPrefs(store, j);
 
   {
     const primary = tryReadUserPrefs(userSettingsPath);

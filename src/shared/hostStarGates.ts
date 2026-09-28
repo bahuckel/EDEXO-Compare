@@ -71,7 +71,60 @@ export interface HostStarGate {
    * main-star rule on the body's host would demote the species on its own bodies.
    */
   judgedOn?: "main";
+  /**
+   * Yerkes luminosity classes allowed per star class, judged on the system's main star (so only on
+   * `judgedOn: "main"` gates) — the Anemone colours split on it: a B dwarf makes Luteolum, a B giant
+   * Roseum. Keyed by {@link hostStarClassKey}, or `AeBe` for a Herbig star, which that key folds into
+   * A. An empty list refuses the class outright; a class with no entry, or a star with no luminosity
+   * reading, is judged on its class alone.
+   */
+  luminosity?: Record<string, readonly YerkesClass[]>;
 }
+
+export type YerkesClass = "I" | "II" | "III" | "IV" | "V" | "VI" | "VII";
+const ALL_LUMINOSITIES: readonly YerkesClass[] = ["I", "II", "III", "IV", "V", "VI", "VII"];
+
+/** The Roman class of a journal `Luminosity` ("Vz", "IIIab", "Ia0", "0") — null when unreadable. */
+export function yerkesClass(value: string | null | undefined): YerkesClass | null {
+  const v = (value ?? "").trim().toUpperCase();
+  if (v === "0") return "I";
+  const m = /^(VII|VI|V|IV|III|II|I)/.exec(v);
+  return m ? (m[1] as YerkesClass) : null;
+}
+
+const isHerbig = (type: string) => /^aebe$|herbig/i.test(type.trim());
+
+/*
+ * The Anemone colours (split 2026-09-28, owner's yes). Measured on the Spansh dump's bodies where
+ * the codex (EDSM + EDAstro) logs exactly one Anemone in the system — 4,090 of them — with the main
+ * star's class and luminosity, and on Bioforge's 15,178 sightings (main star class only). The colour
+ * follows the system's main star and its luminosity class; the body class picks which of each pair:
+ *
+ * | star | rocky | metal-rich / HMC | dump bodies with that main star |
+ * |---|---|---|---|
+ * | O (Wolf-Rayet, Herbig Ae/Be) | Puniceum (icy) | Prasinum Bioluminescent (also rocky) | 30/34, 548/552 |
+ * | B IV-V | Luteolum | Blatteum Bioluminescent | 202/204, 1,465/1,499 |
+ * | B I-III | Roseum | Roseum Bioluminescent | 35/35, 821/838 |
+ * | B VI, A I-III | Croceum | Rubeum Bioluminescent | 51/52, 719/857 (B IV 84) |
+ *
+ * Bioforge agrees on the classes: main star B 99.2 % of Luteolum, O 91 % of Puniceum, O 93.5 % +
+ * Herbig 5.3 % of Prasinum, A (giant or supergiant) 29-34 % of Croceum and Rubeum and under 1 % of the
+ * others.
+ *
+ * **Judged on the main star**, not the body's host nor the brightest star in its sky. Read on the
+ * brightest star (the colour rule other genera follow) each colour's own gate passed on only 76-92 %
+ * of its bodies: the misses were bodies lit most by a nearby A, F or K dwarf, or a B dwarf in an O
+ * system, whose colour was still the main star's. A third of Luteolum bodies orbit a Y or T dwarf.
+ * Main star a black hole or neutron star (under 2 %) fails.
+ */
+const B_DWARF: Record<string, readonly YerkesClass[]> = { B: ["IV", "V"] };
+const B_GIANT: Record<string, readonly YerkesClass[]> = { B: ["I", "II", "III"] };
+const B_SUBDWARF_A_GIANT: Record<string, readonly YerkesClass[]> = {
+  B: ["VI"],
+  A: ["I", "II", "III"],
+  AeBe: [],
+};
+const O_STAR: Record<string, readonly YerkesClass[]> = { A: [], AeBe: ALL_LUMINOSITIES };
 
 /**
  * The gates, keyed by the species-id fragment they apply to.
@@ -111,18 +164,75 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
       evidence: "A-class hosts 97.4 % of 1,484 Amphora sightings (B a further 1.8 %); A is 6.2 % of all life",
     },
   },
+  /*
+   * Anemone, one gate per colour pair (table above). Before the split one row carried
+   * {O, B, A}: B 82.8 %, O 10.4 %, A 5.0 % of 27,232 Anemone sightings.
+   */
   {
-    /**
-     * Anemone. `conditions.parent_star_types: ["O","B","A (rare)"]`, also unread. Measured across
-     * **27,232 sightings**: B 82.8 %, O 10.4 %, A 5.0 % — 98.2 % inside the set ed-dsn names, and
-     * the ordering it gives ("O, B, more rarely A") is wrong only in that B leads. Herbig Ae/Be adds
-     * 0.9 % and folds into A through {@link hostStarClassKey}, taking the set to 99.1 %.
-     */
-    idIncludes: "anemone",
+    idIncludes: "anemone_luteolum",
     gate: {
-      allowed: ["O", "B", "A"],
+      judgedOn: "main",
+      allowed: ["B"],
+      luminosity: B_DWARF,
+      evidence: "main star B IV-V on 202 of 204 Luteolum bodies (Bioforge: B 99.2 % of 1,682)",
+    },
+  },
+  {
+    idIncludes: "anemone_blatteum_bioluminescent",
+    gate: {
+      judgedOn: "main",
+      allowed: ["B"],
+      luminosity: B_DWARF,
+      evidence: "main star B IV-V on 1,465 of 1,499 Blatteum bodies (Bioforge: B 97.7 % of 5,446)",
+    },
+  },
+  {
+    // Also covers anemone_roseum_bioluminescent: the same stars.
+    idIncludes: "anemone_roseum",
+    gate: {
+      judgedOn: "main",
+      allowed: ["B"],
+      luminosity: B_GIANT,
       evidence:
-        "B 82.8 %, O 10.4 %, A 5.0 % of 27,232 Anemone sightings — 98.2 %; those three are 7 % of all life",
+        "main star a B giant or supergiant (I-III) on 35 of 35 Roseum and 821 of 838 Roseum Bioluminescent bodies (98 %)",
+    },
+  },
+  {
+    idIncludes: "anemone_croceum",
+    gate: {
+      judgedOn: "main",
+      allowed: ["B", "A"],
+      luminosity: B_SUBDWARF_A_GIANT,
+      evidence:
+        "main star B VI or an A giant / supergiant on 51 of 52 Croceum bodies (Bioforge: B 66 %, A 34 %)",
+    },
+  },
+  {
+    idIncludes: "anemone_rubeum_bioluminescent",
+    gate: {
+      judgedOn: "main",
+      allowed: ["B", "A"],
+      luminosity: { ...B_SUBDWARF_A_GIANT, B: ["IV", "VI"] },
+      evidence:
+        "main star B VI 523, A giant / supergiant 196, B IV 84 of 857 Rubeum bodies (Bioforge: B 70 %, A 27 %)",
+    },
+  },
+  {
+    idIncludes: "anemone_puniceum",
+    gate: {
+      judgedOn: "main",
+      allowed: ["O", "W"],
+      evidence: "main star O on 30 of 34 Puniceum bodies (Bioforge: O 91 %, Wolf-Rayet 4 %)",
+    },
+  },
+  {
+    idIncludes: "anemone_prasinum_bioluminescent",
+    gate: {
+      judgedOn: "main",
+      allowed: ["O", "W", "A"],
+      luminosity: O_STAR,
+      evidence:
+        "main star O 505, Herbig Ae/Be 29, Wolf-Rayet 8 of 552 Prasinum bodies (Bioforge: O 93.5 %, Herbig 5.3 %)",
     },
   },
   {
@@ -224,6 +334,36 @@ export interface HostStarVerdictGate {
   evidence: string;
   /** Set when the gate was judged on the system's main star rather than the body's host. */
   judgedOn?: "main";
+  /** Set when the star's luminosity class decided it, as the journal writes the star. */
+  luminosity?: { star: string; allowed: string };
+}
+
+/** A star as the journal writes it, for the luminosity half of a gate: `StarType`, `Luminosity`. */
+export interface StarReading {
+  type?: string | null;
+  luminosity?: string | null;
+}
+
+/**
+ * The luminosity half: null when not judged (no rule for this class, no luminosity reading), else
+ * whether the colour star's class is allowed.
+ */
+function luminosityVerdict(
+  gate: HostStarGate,
+  star: StarReading | null | undefined,
+): { passes: boolean; star: string; allowed: string } | null {
+  const type = star?.type?.trim();
+  if (!gate.luminosity || !type) return null;
+  const herbig = isHerbig(type);
+  const cls = hostStarClassKey(type);
+  const rule = herbig ? (gate.luminosity.AeBe ?? gate.luminosity.A) : cls ? gate.luminosity[cls] : undefined;
+  if (!rule) return null;
+  const name = herbig ? "Herbig Ae/Be" : `${cls}-class`;
+  const allowed = rule.length ? `${name} ${rule.join(", ")}` : `no ${name} star`;
+  if (!rule.length) return { passes: false, star: name, allowed };
+  const lum = yerkesClass(star?.luminosity);
+  if (!lum) return null;
+  return { passes: rule.includes(lum), star: `${name} ${star!.luminosity!.trim()}`, allowed };
 }
 
 /**
@@ -237,18 +377,22 @@ export function evaluateHostStarGate(
   speciesId: string,
   starClasses: readonly string[] | null | undefined,
   mainStarClass?: string | null,
+  mainStar?: StarReading | null,
 ): HostStarVerdictGate | null {
   const gate = hostStarGateForSpeciesId(speciesId);
   if (!gate) return null;
   if (gate.judgedOn === "main") {
     // An unknown main star abstains, exactly as an unknown host does below.
     if (!mainStarClass) return null;
+    const classPasses = gate.allowed.includes(mainStarClass);
+    const lum = classPasses ? luminosityVerdict(gate, mainStar) : null;
     return {
-      passes: gate.allowed.includes(mainStarClass),
+      passes: classPasses && (lum?.passes ?? true),
       classes: [mainStarClass],
       allowed: gate.allowed,
       evidence: gate.evidence,
       judgedOn: "main",
+      ...(lum && !lum.passes ? { luminosity: { star: lum.star, allowed: lum.allowed } } : {}),
     };
   }
   if (!starClasses || starClasses.length === 0) return null;
@@ -278,6 +422,7 @@ export function hostStarClassLabel(key: string): string {
 export function describeHostStarVerdict(v: HostStarVerdictGate): string {
   const seen = v.classes.map(hostStarClassLabel).join(" / ");
   const want = v.allowed.map(hostStarClassLabel).join(", ");
+  if (v.luminosity) return `Main star ${v.luminosity.star} — recorded only under ${v.luminosity.allowed}.`;
   return v.judgedOn === "main"
     ? `Main star ${seen} — recorded only in systems whose main star is ${want}.`
     : `Host star ${seen} — recorded only under ${want}.`;

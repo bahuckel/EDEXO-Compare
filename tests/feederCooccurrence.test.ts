@@ -77,19 +77,19 @@ describe("buildCooccurrenceTable", () => {
   });
 
   /**
-   * The Anemone colour variants and Bark Mounds have no species row to resolve to. Dropping them
+   * A label with no species row to resolve to (the Anemone colours were such until 2026-09-28). Dropping them
    * silently would leave a table that quietly disagrees with the corpus about how many bodies it saw.
    */
   it("names the labels it could not map instead of dropping them quietly", async () => {
     await importCsv(
       ctx,
       csv([
-        "Sol,Sol 7 a,Rocky body,10,Croceum Anemone,2000,1",
+        "Sol,Sol 7 a,Rocky body,10,Frutexa Imaginaria,2000,1",
         "Sol,Sol 7 a,Rocky body,10,Bacterium Aurasus,1000,1",
       ]),
     );
     const r = buildCooccurrenceTable(ctx.store.db, db);
-    expect(r.table.unmappedLabels).toContain("Croceum Anemone");
+    expect(r.table.unmappedLabels).toContain("Frutexa Imaginaria");
     expect(r.unmappedSightings).toBe(1);
     expect(r.table.genera.bacterium!.bodies).toBe(1);
   });

@@ -46,6 +46,8 @@ export function hostStarClassKey(value: string | null | undefined): string | nul
 
   const upper = v.toUpperCase();
   if (upper.startsWith("TTS")) return "TTS";
+  // The journal's code for Sgr A* — spelled out ("Supermassive Black Hole") it was already H above.
+  if (upper === "SUPERMASSIVEBLACKHOLE") return "H";
   // Journal white dwarfs are DA/DAB/DQ/DC…; neutron stars N; black holes H; Wolf-Rayet W/WN/WC.
   if (upper.startsWith("D")) return "D";
   if (upper.startsWith("N")) return "N";

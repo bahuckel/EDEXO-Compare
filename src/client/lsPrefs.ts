@@ -64,6 +64,9 @@ export function writePressUnitToLs(u: PressDisplay) {
   }
 }
 
+/** The system map's body panel: open, or folded to a strip (owner, 2026-09-28). */
+export const EDEXO_SYSMAP_SIDE_LS = "edexo.systemMapSideOpen";
+
 /** Route / fuel / data-value cards matter while travelling, not while sampling — so they fold. */
 export const EDEXO_HEADER_TRAY_LS = "edexo.headerTrayOpen";
 

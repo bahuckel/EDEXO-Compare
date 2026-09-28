@@ -23,9 +23,8 @@ import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js"
 import { matchDatabaseToScan, shownSpeciesMatches } from "../src/server/matchSpecies.js";
 import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "../src/server/exoPayoutRange.js";
 import { loadPriceList } from "../src/server/priceList.js";
-import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
-import { loadJournalMergeCacheForTool } from "./probeCache.js";
-import type { BodyExoState, ExplorationScanRecord, SpeciesMatchContext } from "../src/shared/types.js";
+import { loadJournalMergeCacheForTool, probeMatchContexts } from "./probeCache.js";
+import type { BodyExoState, SpeciesMatchContext } from "../src/shared/types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const limitArg = process.argv.indexOf("--limit");
@@ -47,27 +46,12 @@ const footfalled = new Set(
 );
 const detailedFootfall = new Map(payload.bodyDetailedFootfallState ?? []);
 
-const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
-for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explorationScans]) {
-  const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
-  byId.set(r.bodyId, r);
-  scansBySystem.set(r.systemAddress, byId);
-}
-
+// The app's own match context (probeCache.ts `probeMatchContexts`, code review B1, 2026-09-28): every
+// gate the app applies — host classes, orbit, colour star, starlight, spatial, companion bodies.
+const appContexts = probeMatchContexts(payload);
+const scansBySystem = appContexts.scansBySystem;
 function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
-  const byId = scansBySystem.get(b.systemAddress);
-  const rec = byId?.get(b.bodyId);
-  if (!byId || !rec) return undefined;
-  const ctx: SpeciesMatchContext = {};
-  const starId = resolveHostStarBodyId(rec, byId);
-  const star = starId == null ? null : byId.get(starId);
-  if (star?.starType?.trim()) {
-    ctx.parentStarType = star.starType;
-    if (typeof star.subclass === "number" && Number.isFinite(star.subclass))
-      ctx.parentStarSubclass = star.subclass;
-    if (star.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity;
-  }
-  return Object.keys(ctx).length ? ctx : undefined;
+  return appContexts.contextFor(b);
 }
 
 interface Row {

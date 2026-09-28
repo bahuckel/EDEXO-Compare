@@ -55,7 +55,7 @@ describe("predictionUnsupported", () => {
   it("does not flag star-type requirements, which are resolvable from the journal", () => {
     // The parent star is available via Scan.Parents, so Anemone and Electricae pluma are a wiring
     // job, not an unknowable. Calling them unpredictable would hide work worth doing.
-    for (const name of ["Anemone", "Electricae pluma"]) {
+    for (const name of ["Luteolum Anemone", "Electricae pluma"]) {
       const e = db.species.find((x) => x.displayName === name);
       expect(e, name).toBeDefined();
       expect(e!.predictionUnsupported, name).toBeUndefined();
@@ -77,7 +77,7 @@ describe("predictionUnsupported", () => {
    * carrying an abstract condition; on inspection the app can already evaluate most of them, and
    * marking those would lose predictions rather than gain honesty:
    *
-   * - Anemone's `parent_star_types: [O, B, A]` — encoded, and the context has `parentStarType`.
+   * - Anemone's host star per colour — encoded in hostStarGates, and the context has the star.
    * - Clypeus speculumi's `distance_from_star.min_ls: 2500` — encoded, context has the orbit distance.
    * - Fumerola's `geologicalSignalIncludes` — encoded, context has `signalHints`.
    *
@@ -103,7 +103,7 @@ describe("predictionUnsupported", () => {
   });
 
   it("does not flag conditions the matcher can already evaluate", () => {
-    for (const name of ["Clypeus speculumi", "Fumerola aquatis", "Anemone"]) {
+    for (const name of ["Clypeus speculumi", "Fumerola aquatis", "Puniceum Anemone"]) {
       const e = db.species.find((x) => x.displayName === name);
       expect(e, name).toBeDefined();
       expect(e!.predictionUnsupported, name).toBeUndefined();

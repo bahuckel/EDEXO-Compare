@@ -1,7 +1,7 @@
 /**
  * Credit formatting for chips and cards (WEBUI-REDESIGN 1.4).
  *
- * Short scale on anything read at a glance — `7.94 M`, `612 M`, `23.4 k` — with the exact figure
+ * Short scale on anything read at a glance — `7.94 M`, `612 M`, `612 k` — with the exact figure
  * one hover away (`title`). Tables keep `toLocaleString()`; a table is where exact belongs.
  */
 export function fmtCrShort(n: number | null | undefined): string {
@@ -10,7 +10,8 @@ export function fmtCrShort(n: number | null | undefined): string {
   const sig = (v: number) => (v < 10 ? v.toFixed(2) : v < 100 ? v.toFixed(1) : v.toFixed(0));
   if (abs >= 1e9) return `${sig(n / 1e9)} B`;
   if (abs >= 1e6) return `${sig(n / 1e6)} M`;
-  if (abs >= 1e4) return `${sig(n / 1e3)} k`;
+  // "k" only from 100,000 (owner, 2026-09-28): below that the whole figure is short enough to read.
+  if (abs >= 1e5) return `${sig(n / 1e3)} k`;
   return n.toLocaleString();
 }
 

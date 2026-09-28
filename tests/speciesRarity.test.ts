@@ -79,14 +79,18 @@ describe("dynamic rarity", () => {
       ["bacterium vesicula", "bacterium_bacterium_vesicula"],
       ["brain tree roseum", "brain_trees_brain_tree_roseum"],
       ["sinuous tubers viride", "sinuous_tuber_sinuous_tubers_viride"],
-      ["anemone", "anemone_anemone"],
+      ["luteolum anemone", "anemone_luteolum"],
+      ["roseum bioluminescent anemone", "anemone_roseum_bioluminescent"],
       ["amphora plant", "amphora_amphora_plant"],
     ]);
     expect(speciesIdForCodexKey("stratum tectonicas", byName)).toBe("stratum_stratum_tectonicas");
     expect(speciesIdForCodexKey("bacteria vesicula", byName)).toBe("bacterium_bacterium_vesicula");
     expect(speciesIdForCodexKey("roseum brain tree", byName)).toBe("brain_trees_brain_tree_roseum");
     expect(speciesIdForCodexKey("viride sinuous tubers", byName)).toBe("sinuous_tuber_sinuous_tubers_viride");
-    expect(speciesIdForCodexKey("luteolum anemone", byName)).toBe("anemone_anemone");
+    expect(speciesIdForCodexKey("luteolum anemone", byName)).toBe("anemone_luteolum");
+    expect(speciesIdForCodexKey("roseum bioluminescent anemone", byName)).toBe(
+      "anemone_roseum_bioluminescent",
+    );
     expect(speciesIdForCodexKey("amphora plants", byName)).toBe("amphora_amphora_plant");
     expect(speciesIdForCodexKey("sulphur dioxide fumarole", byName)).toBeNull();
   });

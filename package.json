@@ -46,6 +46,7 @@
     "fixture": "tsx scripts/gen-match-fixture.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:variety": "playwright test -c playwright.variety.config.ts",
     "typecheck": "npm run typecheck:client && npm run typecheck:server && npm run typecheck:tests",
     "typecheck:server": "tsc --noEmit -p tsconfig.server.json",
     "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",

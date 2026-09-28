@@ -1,16 +1,15 @@
 import type { SystemMapBodyDetailDTO } from "@shared/types";
 import type { ReactNode } from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { DetailCard, KvList, KvRow } from "./bodyDetailKv";
+import { nextTempUnit, usePressUnit, useTempUnit } from "./useUnits";
 import { ExoPayoutRangePanel } from "./ExoPayoutRangePanel";
 import {
   formatPressurePill,
   formatTemperaturePillLine,
   formatTempScalar,
   gravityFromScan,
-  type PressDisplay,
-  type TempUnit,
 } from "./planetDisplayUtils";
 
 function roleLabel(role: SystemMapBodyDetailDTO["starRole"]): string {
@@ -164,8 +163,9 @@ function WorldDetailBody({
   detail: SystemMapBodyDetailDTO;
   onGoToBioBody?: (bodyKey: string) => void;
 }) {
-  const [tempUnit, setTempUnit] = useState<TempUnit>("K");
-  const [pressUnit, setPressUnit] = useState<PressDisplay>("atm");
+  // The app's units, not a private K / atm that ignored the saved choice (code review B17).
+  const [tempUnit, setTempUnit] = useTempUnit();
+  const [pressUnit, setPressUnit] = usePressUnit();
 
   const hasOverviewBits =
     detail.isStar ||
@@ -265,7 +265,7 @@ function WorldDetailBody({
                 type="button"
                 className="body-detail-kv-value body-detail-kv-interactive"
                 title="Tap to cycle Kelvin → °C → °F (display only; matching uses journal Kelvin)."
-                onClick={() => setTempUnit((u) => (u === "K" ? "C" : u === "C" ? "F" : "K"))}
+                onClick={() => setTempUnit(nextTempUnit)}
               >
                 {formatTemperaturePillLine(
                   detail.surfaceTemperature != null && Number.isFinite(detail.surfaceTemperature)

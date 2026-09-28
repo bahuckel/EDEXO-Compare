@@ -96,9 +96,10 @@ function systemTaxa(projectRoot: string): Map<string, Record<string, number>> | 
  *
  * Sorting the words makes the order irrelevant. Measured against the shipped file: **100 of the 110
  * corpus taxa resolve to a species entry, with zero collisions** across all 108 entries. The other
- * ten are taxa with no species row at all — `*`, `bacterial` and `stratum` are signal-level rows,
- * and `bark mounds` plus the six Anemone colour variants have sightings but no entry in the tree.
- * Those fall through to the genus lookup below, which is the honest answer for them.
+ * ten were taxa with no species row at all — `*`, `bacterial` and `stratum` are signal-level rows,
+ * and `bark mounds` plus the Anemone colours had sightings but no entry in the tree (both have rows
+ * now: Bark Mounds since 2026-09-25, one row per Anemone colour since 2026-09-28). Taxa without a
+ * row fall through to the genus lookup below, which is the honest answer for them.
  */
 function wordBag(name: string): string {
   return name.trim().toLowerCase().replace(/-/g, " ").split(/\s+/).filter(Boolean).sort().join(" ");

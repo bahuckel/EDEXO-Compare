@@ -156,7 +156,6 @@ export function speciesIdForCodexKey(key: string, byName: ReadonlyMap<string, st
   if (direct) return direct;
   const m = /^(\w+) (brain tree|sinuous tubers)$/.exec(k);
   if (m) return byName.get(`${m[2]} ${m[1]}`) ?? null;
-  if (/ anemone$/.test(k)) return byName.get("anemone") ?? null;
   if (k === "amphora plants") return byName.get("amphora plant") ?? null;
   return null;
 }

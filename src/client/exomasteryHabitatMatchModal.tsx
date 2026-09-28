@@ -1,6 +1,6 @@
 import type { ExomasteryDetailDTO, ExomasteryVarietyItemDTO } from "@shared/types";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 
 import { ExomasteryHabitatDetailInner } from "./exomasteryHabitatDetailInner";
@@ -43,13 +43,6 @@ export function ExomasteryHabitatMatchModal({
     }
   };
 
-  useEffect(() => {
-    const k = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", k);
-    return () => window.removeEventListener("keydown", k);
-  }, [onClose]);
 
   const exportHref =
     variant === "profile" && exportBasename && genusDataDir

@@ -1,3 +1,5 @@
+import { mkdirSync, rmSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "@playwright/test";
@@ -18,6 +20,15 @@ const fixtureJournal = path.resolve(here, "tests", "fixtures", "journal-smoke");
   settings would make the assertion depend on how he happens to have the game configured tonight.
 */
 const fixtureEliteOptions = path.resolve(here, "tests", "fixtures", "elite-options-fullscreen");
+/*
+  Its own user-data folder, emptied each run (code review, 2026-09-28). Without it the dev server wrote
+  into the commander's real profile: one fixture body ("Smoke Test 1") had sat in his predictions log
+  since 2026-09-13, and every run overwrote his journal cache with the fixture's. Uploads are off in a
+  fresh profile, so nothing the fixture does can reach EDSM, EDDN or Canonn either.
+*/
+const e2eUserData = path.join(os.tmpdir(), "edexo-e2e-profile");
+rmSync(e2eUserData, { recursive: true, force: true });
+mkdirSync(e2eUserData, { recursive: true });
 
 export default defineConfig({
   testDir: "e2e",
@@ -50,6 +61,7 @@ export default defineConfig({
       ED_JOURNAL_DIR: fixtureJournal,
       EDEXO_ELITE_OPTIONS_DIR: fixtureEliteOptions,
       EDEXO_DISABLE_JOURNAL_CACHE: "1",
+      EDEXO_USER_DATA_DIR: e2eUserData,
     },
   },
 });

@@ -35,6 +35,19 @@ export function codexSpeciesKey(name: string): string {
     .trim();
 }
 
+/**
+ * A species name in the game's word order.
+ *
+ * The species tree lists the colour-named structures genus first — "Brain Tree Aureum", "Sinuous
+ * Tubers Albidum" — and the game writes them colour first everywhere: `ScanOrganic`, `CodexEntry`,
+ * the codex dumps ("Aureum Brain Tree"). Compared as written, a sampled Brain Tree never matched its
+ * row, and the codex badge called every one unlogged (2026-09-28). Anything else comes back as is.
+ */
+export function gameOrderSpeciesName(name: string): string {
+  const m = /^\s*(brain tree|sinuous tubers)\s+(\S+)\s*$/i.exec(name);
+  return m ? `${m[2]} ${m[1]}` : name;
+}
+
 /** The species a `CodexEntry` line records, or null when it is not about biology. */
 export function codexSpeciesFromLine(line: {
   event?: unknown;
@@ -123,7 +136,7 @@ export function codexOrganicLockFromLine(line: {
  * a genus-level key would mark every Bacterium as seen the moment one of them was.
  */
 export function codexHasSpecies(logged: ReadonlySet<string>, displayName: string): boolean {
-  const key = codexSpeciesKey(displayName);
+  const key = codexSpeciesKey(gameOrderSpeciesName(displayName));
   if (!key || key.split(" ").length < 2) return false;
   return logged.has(key);
 }
@@ -205,7 +218,7 @@ export function codexNewColoursInRegion(
   colourLabel: string | null | undefined,
 ): string[] | null {
   const r = codexRegionKey(region);
-  const species = codexSpeciesKey(displayName);
+  const species = codexSpeciesKey(gameOrderSpeciesName(displayName));
   if (!r || !species) return null;
   const label = (colourLabel ?? "").trim();
   const colours =

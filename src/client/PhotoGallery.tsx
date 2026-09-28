@@ -13,6 +13,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { PhotoCredit, type PhotoContributor } from "./photoCredit";
+import { useModal } from "./ui/useModal";
 
 export function PhotoGallery({
   urls,
@@ -38,6 +39,8 @@ export function PhotoGallery({
   variantByUrl?: Record<string, string>;
   onClose: () => void;
 }) {
+  // Modal in its own right: Escape closes the photo, not the Encyclopedia or card under it.
+  const dialogRef = useModal<HTMLDivElement>(true, onClose, { lockScroll: false });
   const count = urls.length;
   const [i, setI] = useState(() => Math.min(Math.max(startIndex, 0), Math.max(count - 1, 0)));
 
@@ -71,7 +74,7 @@ export function PhotoGallery({
   if (!url) return null;
 
   return (
-    <div className="photo-lightbox-backdrop" role="presentation" onClick={onClose}>
+    <div ref={dialogRef} className="photo-lightbox-backdrop" role="presentation" onClick={onClose}>
       <button type="button" className="photo-lightbox-close" aria-label="Close" onClick={onClose}>
         ×
       </button>

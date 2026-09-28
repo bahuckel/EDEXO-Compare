@@ -31,8 +31,8 @@
  *
  * **Species name → our tree.** Bioforge names structures colour-first (`Gypseeum Brain Tree`), the
  * tree genus-first (`Brain Tree Gypseeum`). A positional compare resolves 90 of 108 and looks like
- * honest absence; a sorted word bag resolves 102. The remaining six are real — Bioforge splits
- * Anemone into six colour species where this project models one.
+ * honest absence; a sorted word bag resolves 102. The remaining six were real — Bioforge splits
+ * Anemone into colour species, which this project modelled as one row until 2026-09-28.
  *
  * **Region.** Not from the CSV's Region column: edastro writes it per *codex report* and its reports
  * disagree with each other, so whichever row loads first would decide. The export's `regionId` is the

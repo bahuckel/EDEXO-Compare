@@ -62,10 +62,9 @@ function wordBag(label: string): string {
  * samples sat in the corpus. Word-order-insensitive matching is only accepted when exactly one row
  * matches — an ambiguous bag is a naming problem to look at, not one to guess at.
  *
- * Deliberately *not* matched: "Croceum Anemone", "Roseum Bioluminescent Anemone" and their
- * siblings, because the app carries a single `Anemone` row and folding six observed variants into
- * it would invent a habitat none of them has. Same for "Bark Mounds", which has no species row at
- * all. Both are reported by `feeder status` rather than papered over.
+ * A label with no row at all is reported by `feeder status` rather than attached to a near
+ * neighbour. (The eight Anemone colours were such labels until 2026-09-28, when each got its own
+ * row under the codex's name — "Croceum Anemone" — so they now match on the slug.)
  */
 export function findSpeciesEntryForLabel(db: SpeciesDatabase, speciesLabel: string): SpeciesEntry | null {
   const want = speciesSlug(speciesLabel);

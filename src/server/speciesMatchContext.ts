@@ -50,12 +50,8 @@ export function systemExplorationScanIndex(
   const byId = new Map<number, ExplorationScanRecord>();
   // A Spansh lookup is the weakest source, so it goes in first and anything of his own overwrites it.
   for (const r of store.remoteSystems.get(systemAddress)?.records ?? []) byId.set(r.bodyId, r);
-  for (const [, r] of store.soldExplorationScans) {
-    if (r.systemAddress === systemAddress) byId.set(r.bodyId, r);
-  }
-  for (const [, r] of store.explorationScans) {
-    if (r.systemAddress === systemAddress) byId.set(r.bodyId, r);
-  }
+  for (const r of store.soldScansInSystem(systemAddress)) byId.set(r.bodyId, r);
+  for (const r of store.liveScansInSystem(systemAddress)) byId.set(r.bodyId, r);
   cachedScanIndex = { signature, byId };
   return byId;
 }
@@ -146,9 +142,14 @@ function arrivalStarBodyId(byId: Map<number, ExplorationScanRecord>): number | n
  * star. A gate measured on the main star has to be judged on it.
  */
 export function mainStarClassOf(byId: Map<number, ExplorationScanRecord>): string | undefined {
-  const id = arrivalStarBodyId(byId);
-  const key = id == null ? null : hostStarClassKey(byId.get(id)?.starType);
+  const key = hostStarClassKey(mainStarOf(byId)?.starType);
   return key ?? undefined;
+}
+
+/** The main (arrival) star's own record: its luminosity class sets the Anemone colour. */
+export function mainStarOf(byId: Map<number, ExplorationScanRecord>): ExplorationScanRecord | undefined {
+  const id = arrivalStarBodyId(byId);
+  return id == null ? undefined : byId.get(id);
 }
 
 /**
@@ -330,6 +331,19 @@ class StarTree {
  * arrival star, the body's own arrival distance, which is exact; to any other star, the orbit tree
  * (`StarTree`), combined with the body's orbit. A star the tree cannot place is left out.
  */
+/** Every lit star's type, brightest on the body first (black holes and unmeasured stars left out). */
+export function starTypesByLightFor(
+  rec: ExplorationScanRecord,
+  byId: Map<number, ExplorationScanRecord>,
+): string[] {
+  const lit = starLightOn(rec, byId);
+  if (!lit) return [];
+  return lit
+    .filter((s) => s.flux > 0)
+    .sort((a, b) => b.flux - a.flux)
+    .map((s) => s.type);
+}
+
 export function brightestStarTypeFor(
   rec: ExplorationScanRecord,
   byId: Map<number, ExplorationScanRecord>,
@@ -721,11 +735,20 @@ export function buildSpeciesMatchContextFromRecords(i: MatchContextInputs): Spec
   if (signalHints?.length) ctx.signalHints = signalHints;
   if (hostStarClasses?.length) ctx.hostStarClasses = hostStarClasses;
   const mainStar = mainStarClassOf(byId);
+  if (Number.isFinite(exo.systemAddress)) ctx.systemAddress = exo.systemAddress;
   const arrivalLs = rec?.distanceFromArrivalLs ?? scan?.distanceFromArrivalLs;
   if (typeof arrivalLs === "number" && Number.isFinite(arrivalLs)) ctx.distanceFromArrivalLs = arrivalLs;
   if (mainStar) ctx.systemMainStarClass = mainStar;
+  const mainRec = mainStarOf(byId);
+  if (mainRec?.starType?.trim()) ctx.systemMainStarType = mainRec.starType.trim();
+  if (mainRec?.luminosity?.trim()) ctx.systemMainStarLuminosity = mainRec.luminosity.trim();
   const colourStar = rec ? colourStarTypeFor(rec, byId) : undefined;
   if (colourStar) ctx.colourStarType = colourStar;
+
+  if (rec) {
+    const byLight = starTypesByLightFor(rec, byId);
+    if (byLight.length > 1) ctx.colourStarTypes = byLight;
+  }
   // Host-star gates read the brightest star (the colour star) over the orbital host: known-spawn FSS
   // 2 better / 0 worse (Anemone under Y-dwarf hosts), post-DSS and journals identical (2026-09-27).
   if (colourStar) {

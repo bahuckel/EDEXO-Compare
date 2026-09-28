@@ -47,9 +47,7 @@
  * never uploaded — so it writes `false` under the same age-and-provenance rule as footfall, and
  * never overwrites a `true`.
  */
-import { createReadStream } from "node:fs";
-import { createInterface } from "node:readline";
-import { createGunzip } from "node:zlib";
+import { dumpLines } from "./dumpStream.js";
 import { bodyId64Matches } from "./bigIntJson.js";
 import type { FeederStore } from "./feederDb.js";
 
@@ -200,10 +198,7 @@ export async function importSpanshExport(
   const bodyUpdates: Parameters<FeederStore["setBodyMapped"]>[0] = [];
   const coordUpdates: Parameters<FeederStore["setSystemCoordsById64"]>[0] = [];
 
-  const rl = createInterface({
-    input: createReadStream(path).pipe(createGunzip()),
-    crlfDelay: Infinity,
-  });
+  const rl = dumpLines(path);
 
   for await (const raw of rl) {
     const line = raw.trim();

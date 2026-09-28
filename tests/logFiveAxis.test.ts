@@ -119,6 +119,13 @@ describe("formatCredits", () => {
     expect(formatCredits(3.125e9)).toBe("3.13 B");
   });
 
+  it("shortens to k only from 100,000 (owner, 2026-09-28)", () => {
+    expect(formatCredits(99_999)).toBe("99,999");
+    expect(formatCredits(12_000)).toBe("12,000");
+    expect(formatCredits(100_000)).toBe("100 k");
+    expect(formatCredits(250_400)).toBe("250 k");
+  });
+
   it("keeps a sign on the trading cost line", () => {
     expect(formatCredits(-1_853_077_159)).toBe("-1.85 B");
   });

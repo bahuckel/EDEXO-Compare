@@ -4,6 +4,7 @@
 import { achievementMarkTitle, codexMarkTitle } from "./codexMark";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { fmtCrExact, fmtCrShort } from "./credits";
+import { useModal } from "./ui/useModal";
 import { useFootfallCertainty } from "./footfallContext";
 import { settledMultiplier } from "@shared/footfallValue";
 import { PhotoCredit, isPlaceholderPhoto, photoCreditTitle } from "./photoCredit";
@@ -20,7 +21,7 @@ import {
   candidateMorphColorShortLabelForHosts,
 } from "@shared/candidateSpawnHints";
 import { createPortal } from "react-dom";
-import { pillLabelStyle, TempUnit } from "./planetDisplayUtils";
+import { pillLabelStyle } from "./planetDisplayUtils";
 import {
   EXO_PRESENCE_HELP,
   EXO_CODEX_VS_EXO_PROFILE_HELP,
@@ -40,7 +41,7 @@ import {
   OtherMatchDetailCardsGrid,
   SpeciesProvenanceBadge,
 } from "./SpeciesCardBits";
-import { readTempUnitFromLs, writeTempUnitToLs } from "./lsPrefs";
+import { nextTempUnit, useTempUnit } from "./useUnits";
 import { RarityGem } from "./RarityGem";
 import {
   FootScanMatchCard,
@@ -87,7 +88,7 @@ export const SpeciesCard = memo(function SpeciesCard({
         : footfall === "walked"
           ? `${fmtCrExact(m.priceCredits)} — list price; this body has been walked, the ×5 is gone`
           : `${fmtCrExact(m.priceCredits)} list; ${fmtCrExact(m.priceCredits * 5)} if you take first footfall here (unknown yet)`;
-  const [tempUnit, setTempUnit] = useState<TempUnit>(() => readTempUnitFromLs());
+  const [tempUnit, setTempUnit] = useTempUnit();
   const quadCells = useMemo(() => {
     const base = primaryMatchQuad(m, scan, estimatedSurfaceTempK, tempUnit);
     const exo = m.exomasteryProfilePresent && exomasteryDetailHasContent(m.exomasteryDetail);
@@ -124,10 +125,11 @@ export const SpeciesCard = memo(function SpeciesCard({
     () =>
       // What was actually logged here beats any prediction (bug report 2026-09-26).
       m.confirmedColour ??
+      m.predictedColour ??
       (hostStarType
         ? candidateMorphColorShortLabel(e, hostStarType, scan?.materials)
         : candidateMorphColorShortLabelForHosts(e, hostStarTypes, scan?.materials)),
-    [m.confirmedColour, e, hostStarType, hostStarTypes, scan?.materials],
+    [m.confirmedColour, m.predictedColour, e, hostStarType, hostStarTypes, scan?.materials],
   );
   const morphColorDisplay =
     morphColorRaw === "(unknown)" ? morphColorRaw : titleCaseSpeciesWords(morphColorRaw);
@@ -185,14 +187,9 @@ export const SpeciesCard = memo(function SpeciesCard({
     if (!compact) setOtherMatchModalOpen(false);
   }, [compact]);
 
-  useEffect(() => {
-    if (!otherMatchModalOpen) return;
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") setOtherMatchModalOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [otherMatchModalOpen]);
+  const otherMatchDialogRef = useModal<HTMLDivElement>(otherMatchModalOpen && compact, () =>
+    setOtherMatchModalOpen(false),
+  );
 
   useEffect(() => {
     if (!otherDetailsOpen) return;
@@ -202,14 +199,6 @@ export const SpeciesCard = memo(function SpeciesCard({
     return () => window.cancelAnimationFrame(id);
   }, [otherDetailsOpen]);
 
-  useEffect(() => {
-    if (!photoLightbox) return;
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") setPhotoLightbox(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [photoLightbox]);
 
   const { genusShow, epithet } = speciesCaptionParts(e.genus, e.displayName);
   const genusDisplay = genusShow ? titleCaseSpeciesWords(genusShow) : "";
@@ -346,13 +335,7 @@ export const SpeciesCard = memo(function SpeciesCard({
               className="species-quad-cell species-quad-cell--click"
               style={cell.pillStyle}
               title={cell.pillTitle}
-              onClick={() =>
-                setTempUnit((u) => {
-                  const next = u === "K" ? "C" : u === "C" ? "F" : "K";
-                  writeTempUnitToLs(next);
-                  return next;
-                })
-              }
+              onClick={() => setTempUnit(nextTempUnit)}
             >
               {inner}
             </button>
@@ -466,16 +449,18 @@ export const SpeciesCard = memo(function SpeciesCard({
             not predicted
           </span>
         ) : null}
-        <span
-          className={
-            morphColorRaw === "(unknown)"
-              ? "species-identity-morph-colour species-identity-morph-colour--unknown"
-              : "species-identity-morph-colour"
-          }
-        >
-          {" "}
-          - {morphColorDisplay}
-        </span>
+        {morphColorRaw ? (
+          <span
+            className={
+              morphColorRaw === "(unknown)"
+                ? "species-identity-morph-colour species-identity-morph-colour--unknown"
+                : "species-identity-morph-colour"
+            }
+          >
+            {" "}
+            - {morphColorDisplay}
+          </span>
+        ) : null}
         {m.colourMismatchPredicted ? (
           <span
             className="species-colour-miss"
@@ -693,6 +678,7 @@ export const SpeciesCard = memo(function SpeciesCard({
         ? createPortal(
             <div className="modal-backdrop" role="presentation" onClick={() => setOtherMatchModalOpen(false)}>
               <div
+                ref={otherMatchDialogRef}
                 className="modal-panel other-matching-details-modal"
                 role="dialog"
                 aria-modal="true"

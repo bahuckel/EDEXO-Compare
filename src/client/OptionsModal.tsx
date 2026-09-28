@@ -178,13 +178,6 @@ export function MapOptionsModal({
     [toast],
   );
 
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   const queueSave = (p: number, pp: number) => {
     pendingTiersRef.current = { p, pp };

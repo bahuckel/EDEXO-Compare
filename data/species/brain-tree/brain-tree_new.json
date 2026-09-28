@@ -49,6 +49,15 @@
         "planet_types": [
           "Metal-Rich",
           "High Metal Content"
+        ],
+        "atmosphere": [
+          "None",
+          "Sulphur dioxide",
+          "Carbon dioxide",
+          "Helium"
+        ],
+        "matchContextNotes": [
+          "Measured 2026-09-28 on Spansh dump single-species bodies and Bioforge: airless or thin (sulphur dioxide, carbon dioxide, helium); 315-496 K."
         ]
       }
     },
@@ -62,6 +71,15 @@
         "planet_types": [
           "Metal-Rich",
           "High Metal Content"
+        ],
+        "atmosphere": [
+          "None",
+          "Sulphur dioxide",
+          "Carbon dioxide",
+          "Helium"
+        ],
+        "matchContextNotes": [
+          "Measured 2026-09-28 on Spansh dump single-species bodies and Bioforge: airless or thin (sulphur dioxide, carbon dioxide, helium); 20-1,780 K, no temperature rule; a gas giant with water-based life in 50 of 58 whole systems."
         ]
       }
     },
@@ -75,6 +93,15 @@
         "planet_types": [
           "Metal-Rich",
           "High Metal Content"
+        ],
+        "atmosphere": [
+          "None",
+          "Sulphur dioxide",
+          "Carbon dioxide",
+          "Helium"
+        ],
+        "matchContextNotes": [
+          "Measured 2026-09-28 on Spansh dump single-species bodies and Bioforge: airless or thin (sulphur dioxide, carbon dioxide, helium); 20-1,810 K, no temperature rule; a gas giant with water-based life in 23 of 29 whole systems."
         ]
       }
     },
@@ -91,6 +118,15 @@
         "planet_types": [
           "High Metal Content",
           "Rocky"
+        ],
+        "atmosphere": [
+          "None",
+          "Sulphur dioxide",
+          "Carbon dioxide",
+          "Helium"
+        ],
+        "matchContextNotes": [
+          "Measured 2026-09-28 on Spansh dump single-species bodies and Bioforge: airless or thin (sulphur dioxide, carbon dioxide, helium); 320-473 K."
         ]
       }
     },
@@ -101,11 +137,20 @@
       "conditions": {
         "temperature_K": {
           "min": 200,
-          "max": 300
+          "max": 330
         },
         "requires_system_bodies": true,
         "planet_types": [
           "Rocky"
+        ],
+        "atmosphere": [
+          "None",
+          "Sulphur dioxide",
+          "Carbon dioxide",
+          "Helium"
+        ],
+        "matchContextNotes": [
+          "Measured 2026-09-28 on Spansh dump single-species bodies and Bioforge: airless or thin (sulphur dioxide, carbon dioxide, helium); 201-326 K."
         ]
       }
     },
@@ -115,12 +160,21 @@
       "description": "Higher temperature rocky planet variant.",
       "conditions": {
         "temperature_K": {
-          "min": 300,
+          "min": 225,
           "max": 500
         },
-        "requires_system_bodies": true,
+        "requires_system_bodies": false,
         "planet_types": [
           "Rocky"
+        ],
+        "atmosphere": [
+          "None",
+          "Sulphur dioxide",
+          "Carbon dioxide",
+          "Helium"
+        ],
+        "matchContextNotes": [
+          "Measured 2026-09-28 on Spansh dump single-species bodies and Bioforge: airless or thin (sulphur dioxide, carbon dioxide, helium); 277-499 K (Bioforge from 231 K); a companion body in only 2 of 19 whole systems, so the companion rule is off."
         ]
       }
     },
@@ -131,12 +185,21 @@
       "conditions": {
         "temperature_K": {
           "min": 100,
-          "max": 270
+          "max": 220
         },
         "requires_system_bodies": true,
         "planet_types": [
           "Rocky Ice",
           "Icy"
+        ],
+        "atmosphere": [
+          "None",
+          "Sulphur dioxide",
+          "Carbon dioxide",
+          "Helium"
+        ],
+        "matchContextNotes": [
+          "Measured 2026-09-28 on Spansh dump single-species bodies and Bioforge: airless or thin (sulphur dioxide, carbon dioxide, helium); 101-219 K."
         ]
       }
     },
@@ -156,6 +219,15 @@
           "Rocky",
           "Rocky Ice",
           "Icy"
+        ],
+        "atmosphere": [
+          "None",
+          "Sulphur dioxide",
+          "Carbon dioxide",
+          "Helium"
+        ],
+        "matchContextNotes": [
+          "Measured 2026-09-28 on Spansh dump single-species bodies and Bioforge: airless or thin (sulphur dioxide, carbon dioxide, helium); 200-500 K; companion rule off (about 30 of 313 whole systems)."
         ]
       }
     }

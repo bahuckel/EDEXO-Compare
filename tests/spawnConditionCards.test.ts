@@ -233,9 +233,6 @@ describe("the audit — every gate the matcher applies is drawn somewhere", () =
       When this fails, the fix is a card — not an entry in the allowlist below.
     */
     const KNOWN_UNDRAWN: Readonly<Record<string, string>> = {
-      // Read by shared/atmospherePreference.ts as a demotion. No species carries it since tela's row
-      // changed on 2026-09-20; if one ever does again, it needs a card and this line goes.
-      atmosphereUnfavouredAnyOf: "no species carries it",
       // Prose, rendered by the species card itself rather than as a condition.
       matchContextNotes: "shown as terrain notes",
     };
@@ -295,6 +292,8 @@ describe("the audit — every gate the matcher applies is drawn somewhere", () =
           parentStarTypeIncludesAnyOf: ["star"],
           orbitDistanceFromParentStarLs: ["orbit"],
           distanceFromArrivalLs: ["arrival"],
+          systemAddressAnyOf: ["known-systems"],
+          outsideSignalCount: ["outside-signal-count"],
           geologicalSignalIncludes: ["geo"],
         };
         const wanted = hints[field];

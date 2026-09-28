@@ -11,9 +11,9 @@
  *     Tree" a genus called `Aureum`, and there are eleven of those colour words against two real
  *     genera. Every label is resolved through the same `findSpeciesEntryForLabel` the installer
  *     uses, so the table speaks `genusDataDir` and joins to the matcher without a second mapping.
- *  2. **Say what was dropped.** Labels with no species row — the Anemone colour variants, Bark
- *     Mounds — are listed in the file rather than silently discarded, because a body whose only
- *     genus is unmapped still counted as a body until it did not.
+ *  2. **Say what was dropped.** Labels with no species row (the Anemone colours and Bark Mounds
+ *     were, until they got rows) are listed in the file rather than silently discarded, because a
+ *     body whose only genus is unmapped still counted as a body until it did not.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";

@@ -10,6 +10,7 @@ import {
 import { sharedFindsWithOwnership, sharedSignature } from "./sharedExomastery.js";
 import { dirname, join } from "node:path";
 import { resolveFootScannedPath } from "./paths.js";
+import { gameOrderSpeciesName } from "../shared/codexLog.js";
 import { FOOT_CONFIRMATION_RANK } from "../shared/types.js";
 import type {
   BodyExoState,
@@ -242,7 +243,8 @@ function normOrganicLabel(s: string): string {
 }
 
 function speciesMatchesOrganicLabels(entry: SpeciesEntry, lock: OrganicGenusLock): boolean {
-  const nd = normOrganicLabel(entry.displayName);
+  // The game writes "Aureum Brain Tree" where the tree has "Brain Tree Aureum".
+  const nd = normOrganicLabel(gameOrderSpeciesName(entry.displayName));
   const labels = [lock.variantLocalised, lock.speciesLocalised].filter((x): x is string => !!x?.trim());
   for (const lab of labels) {
     const nl = normOrganicLabel(lab);

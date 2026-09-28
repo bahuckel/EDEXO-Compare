@@ -2,6 +2,7 @@
  * A species row from the genus JSON, read into the matcher's criteria. Split out of speciesTreeLoader.ts (code review D, 2026-09-27).
  */
 import { isCodexAnyThinAtmospherePhrase } from "../shared/scanAtmosphereMatch.js";
+import { JOURNAL_PLANET_CLASS, planetClassId } from "../shared/normalise/planetClass.js";
 import type { SpeciesCriterion } from "../shared/types.js";
 
 export function asRecord(v: unknown): Record<string, unknown> | null {
@@ -12,19 +13,14 @@ export function asRecord(v: unknown): Record<string, unknown> | null {
 export function expandPlanetTypesToJournalClasses(labels: string[]): string[] {
   const out = new Set<string>();
   for (const raw of labels) {
-    const t = raw.trim().toLowerCase();
+    const t = raw.trim();
     if (!t) continue;
-    if (t.includes("rocky ice")) out.add("Rocky ice body");
-    else if (t.includes("high metal")) out.add("High metal content body");
-    else if (t === "metal rich" || t.includes("metal rich")) out.add("Metal rich body");
-    else if (t === "icy" || t === "icy body" || t.startsWith("icy ")) out.add("Icy body");
-    else if (t === "rocky" || t === "rocky body") out.add("Rocky body");
-    else if (t.includes("water world")) out.add("Water world");
-    else if (t.includes("earth") && t.includes("like")) out.add("Earth-like world");
-    else if (t.endsWith(" body") && t.length > 5) {
-      out.add(raw.trim().replace(/\s+/g, " "));
-    }
-    /** Unknown short label — skip rather than inventing a wrong PlanetClass. */
+    // One normaliser for every spelling (code review B7): this used to miss "Metal-Rich" (hyphen) and
+    // wrote "Earth-like world" where the journal writes "Earthlike body".
+    const id = planetClassId(t);
+    if (id) out.add(JOURNAL_PLANET_CLASS[id]);
+    else if (/ body$/i.test(t) && t.length > 5) out.add(t.replace(/\s+/g, " "));
+    /** Unknown short label ("Airless") — skip rather than inventing a wrong PlanetClass. */
   }
   return [...out];
 }
@@ -257,6 +253,12 @@ export function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesC
 
   const land = toBool(src.landable ?? src.Landable);
   if (land !== undefined) c.landable = land;
+  const known = src.known_systems ?? src.knownSystems;
+  if (Array.isArray(known)) {
+    const ids = known.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+    if (ids.length) c.systemAddressAnyOf = ids;
+  }
+  if (toBool(src.outside_signal_count ?? src.outsideSignalCount) === true) c.outsideSignalCount = true;
 
   const sg = asRecord(src.surfaceGravity ?? src.SurfaceGravity);
   if (sg) {

@@ -701,6 +701,28 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     out.push({ id: "orbit-distance", label: "Orbit distance", lines, caption, tier });
   }
 
+  /* Known systems (Ingensradices) */
+  if (c.systemAddressAnyOf?.length) {
+    const sys = ctx?.systemAddress ?? null;
+    const ok = sys != null && c.systemAddressAnyOf.includes(sys);
+    out.push({
+      id: "known-systems",
+      label: "Known location",
+      lines: [`Only in system${c.systemAddressAnyOf.length > 1 ? "s" : ""} ${c.systemAddressAnyOf.join(", ")}`],
+      caption: sys == null ? "System unknown" : ok ? "This is the system" : "Not this system",
+      tier: sys == null ? "yellow" : ok ? "blue" : "red",
+    });
+  }
+  if (c.outsideSignalCount) {
+    out.push({
+      id: "outside-signal-count",
+      label: "Signal count",
+      lines: ["Not counted in the biological signals, never named by a DSS"],
+      caption: "Listed whatever the DSS says",
+      tier: "neutral",
+    });
+  }
+
   /* Distance from the arrival star (Crystalline Shards) */
   if (c.distanceFromArrivalLs?.min !== undefined || c.distanceFromArrivalLs?.max !== undefined) {
     const arr = c.distanceFromArrivalLs!;

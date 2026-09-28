@@ -42,6 +42,12 @@ describe("which codex entries are plants", () => {
     expect(plantEntry("codex_ent_cone", "Bark Mounds")?.legacy).toBe(true);
     expect(plantEntry("codex_ent_ground_struct_ice", "Crystalline Shards")?.legacy).toBe(true);
   });
+  it("takes Ingensradices unicus (HIP 87621, not in EDSM's dump yet) as a sampled plant of its own genus", () => {
+    expect(plantEntry("codex_ent_ingensradices_unicus", "Ingensradices Unicus")).toMatchObject({
+      genus: "Ingensradices",
+      legacy: false,
+    });
+  });
   it("does not mistake Tubus for Sinuous Tubers", () => {
     expect(plantEntry("codex_ent_tubus_01_a", "Tubus Conifer - Indigo")).toMatchObject({
       genus: "Tubus",

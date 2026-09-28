@@ -61,12 +61,20 @@ describe("credit formatting", () => {
   it("uses the short scale with the exact figure left to the title", () => {
     expect(fmtCrShort(7_942_100)).toBe("7.94 M");
     expect(fmtCrShort(612_440_386)).toBe("612 M");
-    expect(fmtCrShort(23_410)).toBe("23.4 k");
+    expect(fmtCrShort(23_410)).toBe((23_410).toLocaleString()); // under 100,000: whole (owner, 2026-09-28)
     expect(fmtCrShort(950)).toBe("950");
     expect(fmtCrShort(1_260_000_000)).toBe("1.26 B");
   });
   it("collapses a range to one figure when the ends meet", () => {
     expect(fmtCrRangeShort(5_000_000, 5_000_000)).toBe("5.00 M");
     expect(fmtCrRangeShort(5_000_000, 7_000_000)).toBe("5.00 M – 7.00 M");
+  });
+});
+
+describe("fmtCrShort thresholds (owner, 2026-09-28: k only from 100,000)", () => {
+  it("keeps figures under 100,000 whole and shortens from there", () => {
+    expect(fmtCrShort(99_999)).toBe((99_999).toLocaleString());
+    expect(fmtCrShort(100_000)).toBe("100 k");
+    expect(fmtCrShort(1_250_000)).toBe("1.25 M");
   });
 });

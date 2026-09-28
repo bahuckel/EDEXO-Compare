@@ -10,16 +10,16 @@
         "planet_types": [
           "High Metal Content",
           "Metal Rich",
-          "Rocky"
+          "Rocky",
+          "Icy"
         ],
         "atmosphere": [
-          "None",
-          "Thin (rare, confirmed Sulfur Dioxide)"
+          "None"
         ],
         "parent_star_types": [
           "O",
           "B",
-          "A (rare)"
+          "A (giant)"
         ]
       }
     },
@@ -29,127 +29,281 @@
       "planet_types": [
         "High Metal Content",
         "Metal Rich",
-        "Rocky"
+        "Rocky",
+        "Icy"
       ],
       "atmosphere": [
-        "None",
-        "Thin (rare, confirmed Sulfur Dioxide)"
+        "None"
       ],
       "parent_star_types": [
         "O",
         "B",
-        "A (rare)"
-      ]
-    },
-    "color_variants": {
-      "rule": "Variant depends on star class, luminosity class, and planet type",
-      "matrix": {
-        "O": {
-          "Metal-Rich/HMC": [
-            "Prasinus",
-            "Prasinum Bioluminescent"
-          ],
-          "Rocky": [
-            "Prasinus",
-            "Prasinum Bioluminescent"
-          ],
-          "Rocky Ice/Icy": [
-            "Puniceus",
-            "Puniceum"
-          ]
-        },
-        "B_I_II_III": {
-          "Metal-Rich/HMC": [
-            "Roseus",
-            "Roseum Bioluminescent"
-          ],
-          "Rocky": [
-            "Roseus",
-            "Roseum"
-          ],
-          "Rocky Ice/Icy": null
-        },
-        "B_IV_V": {
-          "Metal-Rich/HMC": [
-            "Blattinus",
-            "Blatteum Bioluminescent"
-          ],
-          "Rocky": [
-            "Luteus",
-            "Luteolum"
-          ],
-          "Rocky Ice/Icy": null
-        },
-        "B_VI_A_III": {
-          "Metal-Rich/HMC": [
-            "Rubens",
-            "Rubeum Bioluminescent"
-          ],
-          "Rocky": [
-            "Croceus",
-            "Croceum"
-          ],
-          "Rocky Ice/Icy": null
-        }
-      },
-      "known_variants": [
-        "Rubeum Bioluminescent",
-        "Roseum Bioluminescent",
-        "Prasinum Bioluminescent",
-        "Blatteum Bioluminescent",
-        "Luteolum",
-        "Croceum",
-        "Puniceum",
-        "Roseum"
-      ]
-    },
-    "variant_distribution_rules": {
-      "depends_on": [
-        "Star class",
-        "Star luminosity class",
-        "Planet surface type"
-      ],
-      "notes": [
-        "Different variants are NOT separate species but determined by environmental factors",
-        "Bioluminescent variants appear tied to specific stellar/luminosity combinations",
-        "Rocky Ice/Icy variants only appear in O-class star systems (Puniceus/Puniceum)"
+        "A (giant)"
       ]
     }
   },
   "species": [
     {
-      "id": "anemone_anemone",
-      "displayName": "Anemone",
-      "description": "Single genus grouping with multiple visual/bioluminescent variants rather than distinct biological species.",
+      "id": "anemone_luteolum",
+      "displayName": "Luteolum Anemone",
+      "description": "Yellow Anemone of rocky bodies in systems lit by a main-sequence or subgiant B star.",
       "conditions": {
-        "atmosphere": [
-          "None",
-          "Thin (rare, Sulfur Dioxide confirmed)"
-        ],
         "planet_types": [
-          "High Metal Content",
-          "Metal Rich",
           "Rocky"
+        ],
+        "atmosphere": [
+          "None"
+        ],
+        "parent_star_types": [
+          "B (luminosity IV-V)"
+        ],
+        "min_sample_distance_m": 100,
+        "temperature_K": {
+          "min": 200,
+          "max": 1100
+        },
+        "gravity_constraints": null,
+        "matchContextNotes": [
+          "Measured 2026-09-28 on 204 dump bodies, 1,682 Bioforge sightings. Rocky 97 % (dump) / 99.9 % (Bioforge); main star B IV or V on 100 % of 202 dump bodies with one; 200-440 K for 95 %, a thin tail to 1,096 K.",
+          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+        ]
+      }
+    },
+    {
+      "id": "anemone_croceum",
+      "displayName": "Croceum Anemone",
+      "description": "Saffron Anemone of rocky bodies under a B subdwarf, an A giant or an A supergiant.",
+      "conditions": {
+        "planet_types": [
+          "Rocky"
+        ],
+        "atmosphere": [
+          "None"
+        ],
+        "parent_star_types": [
+          "B (luminosity VI)",
+          "A (luminosity I-III)"
+        ],
+        "min_sample_distance_m": 100,
+        "temperature_K": {
+          "min": 200,
+          "max": 450
+        },
+        "gravity_constraints": null,
+        "matchContextNotes": [
+          "Measured 2026-09-28 on 53 dump bodies, 425 Bioforge sightings. Rocky 100 %; main star B VI 33, A III 13, A supergiant 5, B IVab 1; 201-440 K in both sources.",
+          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+        ]
+      }
+    },
+    {
+      "id": "anemone_puniceum",
+      "displayName": "Puniceum Anemone",
+      "description": "Crimson Anemone of icy bodies in O-star systems.",
+      "conditions": {
+        "planet_types": [
+          "Icy"
+        ],
+        "atmosphere": [
+          "None"
         ],
         "parent_star_types": [
           "O",
-          "B",
-          "A (rare)"
+          "Wolf-Rayet",
+          "B supergiant (rare)"
+        ],
+        "min_sample_distance_m": 100,
+        "temperature_K": {
+          "min": 65,
+          "max": 870
+        },
+        "gravity_constraints": null,
+        "matchContextNotes": [
+          "Measured 2026-09-28 on 34 dump bodies, 46 Bioforge sightings. Icy 100 %; main star O on 30 of 34 (Wolf-Rayet, black hole, B supergiant one each); 66-866 K.",
+          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+        ]
+      }
+    },
+    {
+      "id": "anemone_roseum",
+      "displayName": "Roseum Anemone",
+      "description": "Pink Anemone of rocky bodies in systems whose B star is a giant or supergiant.",
+      "conditions": {
+        "planet_types": [
+          "Rocky"
+        ],
+        "atmosphere": [
+          "None"
+        ],
+        "parent_star_types": [
+          "B (luminosity I-III)"
+        ],
+        "min_sample_distance_m": 100,
+        "temperature_K": {
+          "min": 200,
+          "max": 450
+        },
+        "gravity_constraints": null,
+        "matchContextNotes": [
+          "Measured 2026-09-28 on 37 dump bodies, 369 Bioforge sightings. Rocky 95 %; main star B III or B supergiant on 35 of 35 with one; 202-440 K in Bioforge.",
+          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+        ]
+      }
+    },
+    {
+      "id": "anemone_blatteum_bioluminescent",
+      "displayName": "Blatteum Bioluminescent Anemone",
+      "description": "Violet glowing Anemone of metal-rich and high metal content bodies under a main-sequence or subgiant B star.",
+      "conditions": {
+        "planet_types": [
+          "High Metal Content",
+          "Metal Rich"
+        ],
+        "atmosphere": [
+          "None"
+        ],
+        "parent_star_types": [
+          "B (luminosity IV-V)"
         ],
         "min_sample_distance_m": 100,
         "temperature_K": null,
-        "gravity_constraints": null
+        "gravity_constraints": null,
+        "matchContextNotes": [
+          "Measured 2026-09-28 on 1,509 dump bodies, 5,446 Bioforge sightings. HMC/metal-rich 99.5 %; main star B IV or V on 1,465 of 1,499 with one (black hole 13, Herbig 12); no temperature limit (47-5,500 K).",
+          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+        ]
+      }
+    },
+    {
+      "id": "anemone_rubeum_bioluminescent",
+      "displayName": "Rubeum Bioluminescent Anemone",
+      "description": "Red glowing Anemone of metal-rich and high metal content bodies under a B subdwarf, an A giant or an A supergiant.",
+      "conditions": {
+        "planet_types": [
+          "High Metal Content",
+          "Metal Rich"
+        ],
+        "atmosphere": [
+          "None"
+        ],
+        "parent_star_types": [
+          "B (luminosity VI)",
+          "A (luminosity I-III)",
+          "B IV (some)"
+        ],
+        "min_sample_distance_m": 100,
+        "temperature_K": null,
+        "gravity_constraints": null,
+        "matchContextNotes": [
+          "Measured 2026-09-28 on 857 dump bodies, 2,622 Bioforge sightings. HMC/metal-rich 99.9 %; main star B VI 523, A supergiant 170, A III 26, B IV 84; no temperature limit.",
+          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+        ]
+      }
+    },
+    {
+      "id": "anemone_prasinum_bioluminescent",
+      "displayName": "Prasinum Bioluminescent Anemone",
+      "description": "Green glowing Anemone of O-star systems, on metal-rich, rocky and high metal content bodies.",
+      "conditions": {
+        "planet_types": [
+          "Metal Rich",
+          "Rocky",
+          "High Metal Content"
+        ],
+        "atmosphere": [
+          "None"
+        ],
+        "parent_star_types": [
+          "O",
+          "Herbig Ae/Be",
+          "Wolf-Rayet"
+        ],
+        "min_sample_distance_m": 100,
+        "temperature_K": null,
+        "gravity_constraints": null,
+        "matchContextNotes": [
+          "Measured 2026-09-28 on 552 dump bodies, 1,777 Bioforge sightings. Metal-rich 63 %, rocky 22 %, HMC 16 %; main star O on 505 of 550, Herbig Ae/Be 29, Wolf-Rayet 8; no temperature limit.",
+          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+        ]
+      }
+    },
+    {
+      "id": "anemone_roseum_bioluminescent",
+      "displayName": "Roseum Bioluminescent Anemone",
+      "description": "Pink glowing Anemone of metal-rich and high metal content bodies in systems whose B star is a giant or supergiant.",
+      "conditions": {
+        "planet_types": [
+          "High Metal Content",
+          "Metal Rich"
+        ],
+        "atmosphere": [
+          "None"
+        ],
+        "parent_star_types": [
+          "B (luminosity I-III)"
+        ],
+        "min_sample_distance_m": 100,
+        "temperature_K": null,
+        "gravity_constraints": null,
+        "matchContextNotes": [
+          "Measured 2026-09-28 on 844 dump bodies, 2,811 Bioforge sightings. HMC/metal-rich 100 %; main star B III or B supergiant on 821 of 838 with one; no temperature limit.",
+          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+        ]
       }
     }
   ],
   "authorNotes": {
-    "species_count": 1,
-    "temperature_constraints": "Wide tolerance (no explicit limits defined)",
-    "gravity_constraints": null,
-    "special_rules": [
-      "Can spawn on rare thin atmospheres (confirmed Sulfur Dioxide), but primarily airless bodies",
-      "Strong dependency on star class AND luminosity (important for filtering)",
-      "Variant system is more complex than most genera (matrix-based instead of simple rules)"
-    ]
+    "species_count": 8,
+    "split": "2026-09-28 (owner's yes): one row per colour. The game logs each colour as its own codex entry (codex_ent_sphere, sphereabcd_01-03, sphereefgh, sphereefgh_01-03) and each has its own habitat, so one 'Anemone' row described a habitat none of them has.",
+    "rule": "Colour = the star lighting the system (the brightest on the body; in practice the main star) and its luminosity class, times the body: O -> Puniceum (icy) / Prasinum Bioluminescent (rocky, metal); B IV-V -> Luteolum (rocky) / Blatteum Bioluminescent (metal); B I-III -> Roseum (rocky) / Roseum Bioluminescent (metal); B VI or A giant -> Croceum (rocky) / Rubeum Bioluminescent (metal). Enforced by src/shared/hostStarGates.ts.",
+    "earlier_matrix": {
+      "O": {
+        "Metal-Rich/HMC": [
+          "Prasinus",
+          "Prasinum Bioluminescent"
+        ],
+        "Rocky": [
+          "Prasinus",
+          "Prasinum Bioluminescent"
+        ],
+        "Rocky Ice/Icy": [
+          "Puniceus",
+          "Puniceum"
+        ]
+      },
+      "B_I_II_III": {
+        "Metal-Rich/HMC": [
+          "Roseus",
+          "Roseum Bioluminescent"
+        ],
+        "Rocky": [
+          "Roseus",
+          "Roseum"
+        ],
+        "Rocky Ice/Icy": null
+      },
+      "B_IV_V": {
+        "Metal-Rich/HMC": [
+          "Blattinus",
+          "Blatteum Bioluminescent"
+        ],
+        "Rocky": [
+          "Luteus",
+          "Luteolum"
+        ],
+        "Rocky Ice/Icy": null
+      },
+      "B_VI_A_III": {
+        "Metal-Rich/HMC": [
+          "Rubens",
+          "Rubeum Bioluminescent"
+        ],
+        "Rocky": [
+          "Croceus",
+          "Croceum"
+        ],
+        "Rocky Ice/Icy": null
+      }
+    }
   }
 }

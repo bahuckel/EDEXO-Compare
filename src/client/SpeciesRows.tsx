@@ -5,6 +5,7 @@ import { settledMultiplier } from "@shared/footfallValue";
 import {
   candidateMorphColorShortLabel,
   candidateMorphColorShortLabelForHosts,
+  speciesHasColourVariants,
 } from "@shared/candidateSpawnHints";
 import { infoGatherReasons } from "@shared/infoGather";
 import { fmtCrExact, fmtCrShort } from "./credits";
@@ -94,10 +95,12 @@ export function SpeciesRow({
   // What was actually logged here beats any prediction (bug report 2026-09-26: scanning did not fix it).
   const colourRaw =
     m.confirmedColour ??
+    m.predictedColour ??
     (hostStarType
       ? candidateMorphColorShortLabel(m.entry, hostStarType, scan?.materials)
       : candidateMorphColorShortLabelForHosts(m.entry, hostStarTypes, scan?.materials));
-  const colourUnknown = !colourRaw || colourRaw === "(unknown)";
+  const hasColour = speciesHasColourVariants(m.entry);
+  const colourUnknown = hasColour && (!colourRaw || colourRaw === "(unknown)");
   /*
     "We cannot tell you what you would find here."
 
@@ -109,7 +112,11 @@ export function SpeciesRow({
 
     Sampling any of these teaches the app something, which is the whole point of marking them.
   */
-  const gatherReasons = infoGatherReasons({ collectionFocus: m.collectionFocus, colourLabel: colourRaw });
+  const gatherReasons = infoGatherReasons({
+    collectionFocus: m.collectionFocus,
+    colourLabel: colourRaw,
+    hasColourVariants: hasColour,
+  });
   const infoGather = gatherReasons.length > 0;
   const gatherRemaining = gatherReasons.includes("thin-data") ? m.collectionFocusNote?.remaining : null;
   const gatherWhy = [
@@ -181,10 +188,12 @@ export function SpeciesRow({
           <RarityGem rarity={m.entry.rarity} regional={m.regionRarity} className="rarity-gem--row" />
           {genus ? <em>{genus} </em> : null}
           {epithet}
-          <span className={`srow-colour${colourUnknown ? " srow-colour--unknown" : ""}`}>
-            {" "}
-            - {colourUnknown ? "colour unknown" : colourRaw}
-          </span>
+          {hasColour ? (
+            <span className={`srow-colour${colourUnknown ? " srow-colour--unknown" : ""}`}>
+              {" "}
+              - {colourUnknown ? "colour unknown" : colourRaw}
+            </span>
+          ) : null}
           {m.colourMismatchPredicted ? (
             <span
               className="srow-tag srow-tag--colour-miss"

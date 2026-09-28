@@ -88,6 +88,16 @@ function resolveJournalOrbitLinkTarget(
   return null;
 }
 
+/** Does following parents up from `from` arrive at `target` (or is it `target`)? */
+function orbitReaches(orbitChild: Map<number, number>, from: number, target: number): boolean {
+  const seen = new Set<number>();
+  for (let id: number | undefined = from; id !== undefined && !seen.has(id); id = orbitChild.get(id)) {
+    if (id === target) return true;
+    seen.add(id);
+  }
+  return false;
+}
+
 /**
  * Build `child → parent` edges from journal `Scan.Parents` (Stellar Forge: index 0 is immediate parent;
  * each subsequent entry is further out). `{ Null: n }` → synthetic barycentre node id.
@@ -105,11 +115,26 @@ export function buildOrbitChildMapFromJournalChains(
     const parents = r.parents;
     if (!Array.isArray(parents) || parents.length === 0) continue;
     let currentChild = r.bodyId;
-    for (const entry of parents) {
+    for (let i = 0; i < parents.length; i++) {
+      const entry = parents[i];
       const parsed = parseJournalParentEntry(entry);
       if (parsed == null) break;
+      /*
+        A planet we hold no record of (a partial EDSM / Spansh system, a gas giant never scanned) is
+        stepped over: the body hangs on the next ancestor we do have. It used to stand in as the sole
+        star, and the chain then carried on *from the star* — HIP 87621 6 b ({Planet 39}, {Null 38},
+        {Null 32}, {Star 0}) made the star orbit barycentre 38, closed a loop 0 → 38 → 32 → 0, and the
+        map came out empty (e2e variety run, 2026-09-28).
+      */
+      if (parsed.kind === "Planet" && !byId.has(parsed.id)) continue;
+      // The same for a star we never scanned, unless it is the last link: a companion star in the
+      // middle (HIP 37068 7 d: {Null 50}, {Star 45}, {Null 44}, {Star 0}) stood in for the primary and
+      // put the primary inside its own barycentre.
+      if (parsed.kind === "Star" && !byId.has(parsed.id) && i < parents.length - 1) continue;
       const parentId = resolveJournalOrbitLinkTarget(parsed, byId, solePrimary);
       if (parentId == null) break;
+      // Never close a loop: one bad chain must not take every root, and with it the whole map.
+      if (orbitReaches(orbitChild, parentId, currentChild)) break;
       orbitChild.set(currentChild, parentId);
       currentChild = parentId;
     }
@@ -118,7 +143,8 @@ export function buildOrbitChildMapFromJournalChains(
   for (const r of recs) {
     if (orbitChild.has(r.bodyId)) continue;
     if (isStarOnSystemMap(r, starSystemName)) continue;
-    if (solePrimary && !isBeltClusterRecord(r)) orbitChild.set(r.bodyId, solePrimary.bodyId);
+    if (solePrimary && !isBeltClusterRecord(r) && !orbitReaches(orbitChild, solePrimary.bodyId, r.bodyId))
+      orbitChild.set(r.bodyId, solePrimary.bodyId);
   }
 
   const sys = starSystemName.trim();
@@ -139,7 +165,7 @@ export function buildOrbitChildMapFromJournalChains(
           if (idx >= 0 && idx < stars.length) targetId = stars[idx]!.bodyId;
         }
       }
-      if (targetId != null) orbitChild.set(r.bodyId, targetId);
+      if (targetId != null && !orbitReaches(orbitChild, targetId, r.bodyId)) orbitChild.set(r.bodyId, targetId);
     }
   }
 
@@ -244,10 +270,10 @@ export function attachMoonsByParsedDesignation(
     if (planetId == null || !byId.has(planetId)) continue;
     const jp = directParentPlanetId(r.parents);
     if (jp != null && byId.has(jp) && jp !== planetId) {
-      orbitChild.set(r.bodyId, jp);
+      if (!orbitReaches(orbitChild, jp, r.bodyId)) orbitChild.set(r.bodyId, jp);
       continue;
     }
-    orbitChild.set(r.bodyId, planetId);
+    if (!orbitReaches(orbitChild, planetId, r.bodyId)) orbitChild.set(r.bodyId, planetId);
   }
 }
 

@@ -126,12 +126,54 @@ export const SPATIAL_GATES: { idIncludes: string; gate: SpatialGate }[] = [
       evidence: "99 % of 16,062 Brain Tree systems are within 1,000 ly of a Guardian site; controls 15–27 %",
     },
   },
+  /*
+   * Sinuous Tubers are two families (owner, 2026-09-28: "base it on data"; EDAstro codex-data of that
+   * day, 42,000 systems). Roseum, Prasinum, Albidum and Caeruleum hug the core: 91-96 % within 10 kly,
+   * 99 % within 15-19.5 kly. Blatteum, Lindigoticum, Violaceum and Viride live in a ring around it —
+   * median 12-15 kly, 6-21 kly across the lot, only 15-25 % inside 10 kly — so the old 10 kly wall
+   * hid them where they actually grow. Specific ids first: the first match wins.
+   */
+  {
+    idIncludes: "sinuous_tubers_blatteum",
+    gate: {
+      kind: "core",
+      thresholdLy: 21000,
+      evidence: "466 Blatteum Sinuous Tubers systems: median 14.5 kly from Sgr A*, 100 % within 21 kly",
+    },
+  },
+  {
+    idIncludes: "sinuous_tubers_lindigoticum",
+    gate: {
+      kind: "core",
+      thresholdLy: 21000,
+      evidence: "550 Lindigoticum Sinuous Tubers systems: median 14.6 kly from Sgr A*, 100 % within 21 kly",
+    },
+  },
+  {
+    idIncludes: "sinuous_tubers_violaceum",
+    gate: {
+      kind: "core",
+      thresholdLy: 21000,
+      evidence: "314 Violaceum Sinuous Tubers systems: median 12.3 kly from Sgr A*, 100 % within 21 kly",
+    },
+  },
+  {
+    idIncludes: "sinuous_tubers_viride",
+    gate: {
+      kind: "core",
+      thresholdLy: 21000,
+      evidence: "248 Viride Sinuous Tubers systems: median 12.3 kly from Sgr A*, 100 % within 21 kly",
+    },
+  },
   {
     idIncludes: "sinuous_tuber",
     gate: {
       kind: "core",
       thresholdLy: 10000,
-      evidence: "94 % of 5,139 Sinuous Tuber systems are within 10,000 ly of Sgr A*; controls 0–20 %",
+      evidence:
+        "Roseum, Prasinum, Albidum, Caeruleum: 91–96 % of 14,907 systems within 10,000 ly of Sgr A*, 99 % within 15–19.5 kly",
+      softBandLy: 20000,
+      softFactor: 0.5,
     },
   },
 ];

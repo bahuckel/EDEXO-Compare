@@ -95,67 +95,67 @@
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Blatteum Bioluminescent Anemone) @ Aiphaitt AF-A e7122 5": {
+ "anemone_blatteum_bioluminescent @ Aiphaitt AF-A e7122 5": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Blatteum Bioluminescent Anemone) @ HIP 34326 D 2": {
-  "dss": "shown",
+ "anemone_blatteum_bioluminescent @ HIP 34326 D 2": {
+  "dss": "unlikely",
   "fss": "unlikely"
  },
- "anemone_anemone (Croceum Anemone) @ Oochoxt LT-Q e5-0 F 1 a": {
-  "dss": "shown",
-  "fss": "unlikely"
- },
- "anemone_anemone (Croceum Anemone) @ Preou Airgh PM-W e1-14 C 2 b a": {
-  "dss": "shown",
-  "fss": "unlikely"
- },
- "anemone_anemone (Luteolum Anemone) @ HIP 27510 9 a": {
+ "anemone_croceum @ Oochoxt LT-Q e5-0 F 1 a": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Luteolum Anemone) @ Kasu LM-W e1-0 6 c a": {
+ "anemone_croceum @ Preou Airgh PM-W e1-14 C 2 b a": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Prasinum Bioluminescent Anemone) @ Eocs Brue AA-A h2 A 4": {
+ "anemone_luteolum @ HIP 27510 9 a": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Prasinum Bioluminescent Anemone) @ Spoijio CL-Y g2293 ABC 7": {
+ "anemone_luteolum @ Kasu LM-W e1-0 6 c a": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Puniceum Anemone) @ Oob Brai FG-Y g42 ABC 1": {
-  "dss": "shown",
-  "fss": "unlikely"
- },
- "anemone_anemone (Puniceum Anemone) @ Prooe Hypa ZE-A g3 1": {
-  "dss": "shown",
-  "fss": "unlikely"
- },
- "anemone_anemone (Roseum Anemone) @ HR 6244 3 a": {
+ "anemone_prasinum_bioluminescent @ Eocs Brue AA-A h2 A 4": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Roseum Anemone) @ Nyeajeou EL-X e1-10 8 a": {
+ "anemone_prasinum_bioluminescent @ Spoijio CL-Y g2293 ABC 7": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Roseum Bioluminescent Anemone) @ Eos Phyloea UO-Z e72 2": {
+ "anemone_puniceum @ Oob Brai FG-Y g42 ABC 1": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Roseum Bioluminescent Anemone) @ Floagh DW-N e6-0 C 1": {
+ "anemone_puniceum @ Prooe Hypa ZE-A g3 1": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Rubeum Bioluminescent Anemone) @ Eorgh Prou SI-T e3-137 1": {
+ "anemone_roseum @ HR 6244 3 a": {
   "dss": "shown",
   "fss": "shown"
  },
- "anemone_anemone (Rubeum Bioluminescent Anemone) @ Schienau VZ-O e6-1377 6": {
+ "anemone_roseum @ Nyeajeou EL-X e1-10 8 a": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "anemone_roseum_bioluminescent @ Eos Phyloea UO-Z e72 2": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "anemone_roseum_bioluminescent @ Floagh DW-N e6-0 C 1": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "anemone_rubeum_bioluminescent @ Eorgh Prou SI-T e3-137 1": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "anemone_rubeum_bioluminescent @ Schienau VZ-O e6-1377 6": {
   "dss": "shown",
   "fss": "shown"
  },
@@ -389,7 +389,7 @@
  },
  "brain_trees_brain_tree_aureum @ Eorl Auwsy HC-A c28-659 C 1": {
   "dss": "shown",
-  "fss": "shown"
+  "fss": "unlikely"
  },
  "brain_trees_brain_tree_aureum @ Puekee SM-W d1-201 1": {
   "dss": "shown",
@@ -461,7 +461,7 @@
  },
  "brain_trees_brain_tree_puniceum @ Nuekau IA-F c12-36 A 1": {
   "dss": "shown",
-  "fss": "unlikely"
+  "fss": "shown"
  },
  "brain_trees_brain_tree_roseum @ Col 173 Sector HA-P b22-2 C 1": {
   "dss": "shown",
@@ -484,7 +484,7 @@
   "fss": "shown"
  },
  "brain_trees_brain_tree_viride @ Graea Hypue YA-V b3-0 A 1 b": {
-  "dss": "unlikely",
+  "dss": "shown",
   "fss": "unlikely"
  },
  "brain_trees_brain_tree_viride @ Skaudai HZ-A c29-2 2 a": {
@@ -1087,6 +1087,14 @@
   "dss": "shown",
   "fss": "shown"
  },
+ "ingensradices_ingensradices_unicus @ HIP 87621 1": {
+  "dss": "shown",
+  "fss": "shown"
+ },
+ "ingensradices_ingensradices_unicus @ HIP 87621 2 a": {
+  "dss": "shown",
+  "fss": "shown"
+ },
  "osseus_osseus_cornibus @ Blie Phlue SE-G c24-11 2 e": {
   "dss": "shown",
   "fss": "shown"
@@ -1244,20 +1252,20 @@
   "fss": "unlikely"
  },
  "sinuous_tuber_sinuous_tubers_blatteum @ Clooku VL-K d9-187 1": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_blatteum @ Lysoosms JQ-G b26-1 C 2": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_blatteum @ Moihie PO-O d7-843 5 b a": {
   "dss": "shown",
-  "fss": "unlikely"
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_blatteum @ Qeajo HA-A d67 1": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_caeruleum @ Eimbaith UX-T d3-821 4 a": {
   "dss": "shown",
@@ -1276,20 +1284,20 @@
   "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_lindigoticum @ Blau Aed CL-P d5-53 1 a": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_lindigoticum @ Dryio Flyi JX-I d10-713 3 a": {
   "dss": "shown",
   "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_lindigoticum @ Eodgorsts DM-Y b33 B 2 a": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_lindigoticum @ Plieluae MH-C d33 2 d a": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_prasinum @ Blua Hypa IJ-S c20-276 4": {
   "dss": "unlikely",
@@ -1324,20 +1332,20 @@
   "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_violaceum @ Greae Phoea FQ-Z a54-28 B 1": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_viride @ Aishaink TP-O d6-416 4 a a": {
   "dss": "unlikely",
   "fss": "unlikely"
  },
  "sinuous_tuber_sinuous_tubers_viride @ Dryu Brue MA-A d328 2": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_viride @ Phaa Briae IL-V c16-647 3": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "stratum_stratum_araneamus @ 11 Lyncis 5 d": {
   "dss": "shown",

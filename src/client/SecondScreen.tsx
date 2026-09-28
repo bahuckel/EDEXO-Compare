@@ -37,10 +37,12 @@ function storedSort(): TriageSort {
   return "value";
 }
 
+/** Same scale as the app: B, M, and "k" only from 100,000 (owner, 2026-09-28). */
 function credits(n: number): string {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1)}B`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
-  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
-  return String(Math.round(n));
+  if (n >= 100_000) return `${Math.round(n / 1_000)}k`;
+  return Math.round(n).toLocaleString("en-US");
 }
 
 function distance(ls: number | null): string {

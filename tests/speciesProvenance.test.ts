@@ -93,15 +93,16 @@ describe("corpus side, at system resolution", () => {
       }
     }
 
-    // 100 of the corpus's 110 taxa carry a species row; the other ten are signal-level rows and the
-    // Anemone variants the tree has no entry for. Anything far below this means the key broke.
+    // Most of the corpus's taxa carry a species row (the Anemone colours since 2026-09-28); the rest
+    // are signal-level rows. Anything far below this means the key broke.
     expect(placed.size).toBeGreaterThanOrEqual(95);
 
     const tuber = db.species.find((e) => /sinuous tubers/i.test(e.displayName));
     const brain = db.species.find((e) => /brain tree/i.test(e.displayName));
     expect(tuber && placed.has(tuber.id), "a Sinuous Tuber should be placed").toBe(true);
     expect(brain && placed.has(brain.id), "a Brain Tree should be placed").toBe(true);
-  });
+    // Every system in the file against every species: ~15 s alone, past the default under a full run.
+  }, 60_000);
 });
 
 describe("journal side, at body resolution", () => {

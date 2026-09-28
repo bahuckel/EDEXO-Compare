@@ -67,9 +67,6 @@ const PARSED_CRITERION_KEYS: readonly string[] = [
   "atmosphere_gas_share_pct",
   "atmosphereGasSharePct",
   "gas_share_pct",
-  "atmosphere_unfavoured",
-  "atmosphereUnfavoured",
-  "atmosphereUnfavouredAnyOf",
   "whenAtmosphereLinkedAtmosphereAnyOf",
   "when_atmosphere_linked_atmosphere_any_of",
   "atmosphereLinkedAtmosphereAnyOf",
@@ -146,6 +143,11 @@ const PARSED_CRITERION_KEYS: readonly string[] = [
   "orbit_from_star_ls",
   "distance_from_star",
   "distanceFromStar",
+  // known systems, and species outside the signal count (Ingensradices)
+  "known_systems",
+  "knownSystems",
+  "outside_signal_count",
+  "outsideSignalCount",
   // distance from the arrival star
   "distanceFromArrivalLs",
   "distance_from_arrival",
@@ -177,7 +179,8 @@ const HANDLED_ELSEWHERE: Readonly<Record<string, string>> = {
   system_requirements: "Raises predictionUnsupported — depends on other bodies in the system.",
   min_sample_distance_m: "Sampling range, shown in the UI rather than used for matching.",
   parent_star: "hostStarGates — Electricae pluma {A,N,D,H} on 10,139 sightings, Amphora {A,B} on 1,484.",
-  parent_star_types: "hostStarGates — Anemone {O,B,A} on 27,232 sightings.",
+  parent_star_types:
+    "hostStarGates — the eight Anemone colours, on the main star's class and luminosity (4,090 dump bodies).",
 };
 
 /**

@@ -4,7 +4,6 @@
 import { useModal } from "./ui/useModal";
 import { footfallCertainty, showsFootfallPrice, showsListPrice } from "@shared/footfallValue";
 import type { ExoPayoutRangeDTO } from "@shared/types";
-import { useEffect } from "react";
 
 export function ExoPayoutRangeDetailModal({
   pr,
@@ -18,13 +17,6 @@ export function ExoPayoutRangeDetailModal({
   onClose: () => void;
 }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   const slotSrcLabel =
     pr.slotSource === "bio_signals"

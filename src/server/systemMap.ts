@@ -274,8 +274,8 @@ export function explorationRecordsForSystem(
 ): ExplorationScanRecord[] {
   const prefix = `${systemAddress}:`;
   const byBodyId = new Map<number, ExplorationScanRecord>();
-  for (const [key, r] of store.soldExplorationScans) if (key.startsWith(prefix)) byBodyId.set(r.bodyId, r);
-  for (const [key, r] of store.explorationScans) if (key.startsWith(prefix)) byBodyId.set(r.bodyId, r);
+  for (const r of store.soldScansInSystem(systemAddress)) byBodyId.set(r.bodyId, r);
+  for (const r of store.liveScansInSystem(systemAddress)) byBodyId.set(r.bodyId, r);
   if (byBodyId.size > 0) return [...byBodyId.values()];
   for (const [key, r] of store.edsmExplorationByKey) if (key.startsWith(prefix)) byBodyId.set(r.bodyId, r);
   if (byBodyId.size > 0) return [...byBodyId.values()];

@@ -42,10 +42,11 @@ const PLUMA = "electricae_electricae_pluma";
 const RADIALEM = "electricae_electricae_radialem";
 
 describe("which species carry a host-star gate", () => {
-  it("gates the three species whose host star was measured, and nothing else", () => {
+  it("gates the species whose host star was measured, and nothing else", () => {
     expect(hostStarGateForSpeciesId(PLUMA)?.allowed).toEqual(["A", "N", "D", "H"]);
     expect(hostStarGateForSpeciesId("amphora_amphora_plant")?.allowed).toEqual(["A", "B"]);
-    expect(hostStarGateForSpeciesId("anemone_anemone")?.allowed).toEqual(["O", "B", "A"]);
+    expect(hostStarGateForSpeciesId("anemone_luteolum")?.allowed).toEqual(["B"]);
+    expect(hostStarGateForSpeciesId("anemone_puniceum")?.allowed).toEqual(["O", "W"]);
     for (const id of [RADIALEM, "bacterium_bacterium_aurasus", "cone_bark_mounds", "osseus_osseus_discus"]) {
       expect(hostStarGateForSpeciesId(id), id).toBeNull();
     }
@@ -58,12 +59,59 @@ describe("which species carry a host-star gate", () => {
    * what a genus with no star rule is supposed to look like — and why they carry no gate.
    */
   it("keeps a measured count beside every threshold", () => {
-    expect(HOST_STAR_GATES).toHaveLength(6);
+    expect(HOST_STAR_GATES).toHaveLength(12);
     for (const { idIncludes, gate } of HOST_STAR_GATES) {
-      expect(gate.evidence, idIncludes).toMatch(/\d,\d{3}/); // a sighting count
+      expect(gate.evidence, idIncludes).toMatch(/\d{2,}/); // a sighting count
       expect(gate.evidence, idIncludes).toMatch(/%/);
       expect(gate.allowed.length, idIncludes).toBeGreaterThan(0);
     }
+  });
+});
+
+/**
+ * The Anemone colours (split 2026-09-28): the class of the star lighting the body and its luminosity
+ * class pick the colour, the body class picks which of each pair. Measured on 4,090 Spansh dump bodies
+ * where the codex logs exactly one Anemone in the system (hostStarGates.ts has the table).
+ */
+describe("the Anemone colours", () => {
+  // Judged on the system's main star: its class key, and the star as the journal writes it.
+  const pass = (id: string, type: string, luminosity?: string) =>
+    evaluateHostStarGate(id, ["Y"], hostStarClassKeys([type])[0], { type, luminosity })!.passes;
+
+  it("splits the B stars on their luminosity class", () => {
+    expect(pass("anemone_luteolum", "B", "Vz")).toBe(true);
+    expect(pass("anemone_luteolum", "B", "IVab")).toBe(true);
+    expect(pass("anemone_luteolum", "B", "IIIab")).toBe(false);
+    expect(pass("anemone_roseum", "B", "IIIab")).toBe(true);
+    expect(pass("anemone_roseum_bioluminescent", "B_BlueWhiteSuperGiant", "Ib")).toBe(true);
+    expect(pass("anemone_roseum", "B", "V")).toBe(false);
+    expect(pass("anemone_croceum", "B", "VI")).toBe(true);
+    expect(pass("anemone_croceum", "B", "V")).toBe(false);
+    expect(pass("anemone_blatteum_bioluminescent", "B", "VI")).toBe(false);
+  });
+
+  it("takes A giants for Croceum and Rubeum, and Herbig stars only for Prasinum", () => {
+    expect(pass("anemone_croceum", "A", "III")).toBe(true);
+    expect(pass("anemone_rubeum_bioluminescent", "A_BlueWhiteSuperGiant", "Ib")).toBe(true);
+    expect(pass("anemone_croceum", "A", "Va")).toBe(false);
+    expect(pass("anemone_croceum", "AeBe", "VI")).toBe(false);
+    expect(pass("anemone_prasinum_bioluminescent", "AeBe", "VI")).toBe(true);
+    expect(pass("anemone_prasinum_bioluminescent", "A", "III")).toBe(false);
+    expect(pass("anemone_prasinum_bioluminescent", "O", "Vz")).toBe(true);
+    expect(pass("anemone_puniceum", "O", "Vz")).toBe(true);
+    expect(pass("anemone_puniceum", "B", "V")).toBe(false);
+  });
+
+  it("judges the class alone when the luminosity is unknown, and abstains with no main star", () => {
+    expect(pass("anemone_luteolum", "B")).toBe(true);
+    expect(pass("anemone_roseum", "B")).toBe(true);
+    expect(pass("anemone_luteolum", "K", "V")).toBe(false);
+    expect(evaluateHostStarGate("anemone_luteolum", ["B"], null, null)).toBeNull();
+  });
+
+  it("names the luminosity when it decided", () => {
+    const v = evaluateHostStarGate("anemone_luteolum", ["T"], "B", { type: "B", luminosity: "IIIab" })!;
+    expect(describeHostStarVerdict(v)).toMatch(/^Main star B-class IIIab .* B-class IV, V/);
   });
 });
 

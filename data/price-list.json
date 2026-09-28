@@ -14,6 +14,14 @@
 
     "Amphora Plant": 1628800,
     "Anemone": 1499900,
+    "Luteolum Anemone": 1499900,
+    "Croceum Anemone": 1499900,
+    "Puniceum Anemone": 1499900,
+    "Roseum Anemone": 1499900,
+    "Blatteum Bioluminescent Anemone": 1499900,
+    "Rubeum Bioluminescent Anemone": 1499900,
+    "Prasinum Bioluminescent Anemone": 1499900,
+    "Roseum Bioluminescent Anemone": 1499900,
 
     "Bacterium Acies": 1000000,
     "Bacterium Alcyoneum": 1658500,
@@ -76,6 +84,8 @@
     "Fungoida Gelata": 3330300,
     "Fungoida Setisis": 1670100,
     "Fungoida Stabitis": 2680300,
+
+    "Ingensradices Unicus": 119037,
 
     "Osseus Cornibus": 1483000,
     "Osseus Discus": 12934900,

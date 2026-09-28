@@ -157,8 +157,8 @@ export function FeederStatusPanel({ status }: { status: FeederStatusDTO | null }
             </p>
             <p className="options-feeder-species">{unmatchedCorpusLabels.join(", ")}</p>
             <p>
-              Left alone deliberately. The Anemone colour variants would have to be folded into a single{" "}
-              <code>Anemone</code> row, and that row would describe a habitat none of them actually has.
+              Left alone deliberately: attaching a label to a near neighbour would give that row a habitat it
+              does not have.
             </p>
           </InfoPopover>
         </p>

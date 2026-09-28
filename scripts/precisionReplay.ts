@@ -16,11 +16,7 @@ import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js"
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
 import { mergeScanForExomastery } from "../src/server/footScannedCatalog.js";
 import { mapEdsmBodyToExplorationRecord } from "../src/server/edsmSystemHydration.js";
-import { resolveHostStarBodyId, hostStarBodyIdsForExobiology } from "../src/server/orbitUtils.js";
-import { hostStarClassKeys } from "../src/shared/hostStarGates.js";
-import { mainStarClassOf, starDistanceLs } from "../src/server/speciesMatchContext.js";
-import { journalPressureToAtm } from "../src/shared/journalPhysics.js";
-import { regionForSystem, regionIndexForSystem } from "../src/server/regionMapData.js";
+import { buildSpeciesMatchContextFromRecords } from "../src/server/speciesMatchContext.js";
 import { loadSpatialCatalogue } from "../src/server/spatialCatalogue.js";
 import { loadJournalMergeCacheForTool } from "./probeCache.js";
 import type {
@@ -177,7 +173,10 @@ export async function createReplay(db: SpeciesDatabase): Promise<Replay> {
     f.close();
   }
 
-  /** The app's `buildSpeciesMatchContext`, over records instead of a live store. */
+  /**
+   * The app's own builder over records (code review B1, 2026-09-28) — this used to be a hand copy that
+   * had drifted: no colour star, starlight or arrival distance.
+   */
   function contextFor(
     rec: ExplorationScanRecord,
     recs: Map<number, ExplorationScanRecord>,
@@ -185,36 +184,14 @@ export async function createReplay(db: SpeciesDatabase): Promise<Replay> {
     coords: { x: number; y: number; z: number } | null,
     complete: boolean,
   ): SpeciesMatchContext {
-    const ctx: SpeciesMatchContext = {};
-    const starId = resolveHostStarBodyId(rec, recs);
-    const star = starId == null ? undefined : recs.get(starId);
-    if (star?.starType?.trim()) ctx.parentStarType = star.starType.trim();
-    if (typeof star?.subclass === "number" && Number.isFinite(star.subclass)) ctx.parentStarSubclass = star.subclass;
-    if (star?.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity.trim();
-    const keys = hostStarClassKeys(hostStarBodyIdsForExobiology(rec, recs).map((id) => recs.get(id)?.starType));
-    if (keys.length) ctx.hostStarClasses = keys;
-    const mainStar = mainStarClassOf(recs);
-    if (mainStar) ctx.systemMainStarClass = mainStar;
-    const orbit = starDistanceLs(rec, scan, recs);
-    if (orbit !== undefined) ctx.orbitDistanceFromParentStarLs = orbit;
-    if (coords) {
-      ctx.systemCoords = coords;
-      const idx = regionIndexForSystem(root, coords.x, coords.z);
-      if (idx != null && idx > 0) {
-        const name = regionForSystem(root, coords.x, coords.y, coords.z);
-        if (name) {
-          ctx.regionName = name;
-          ctx.regionIndex = idx;
-        }
-      }
-    }
-    const classes = new Set<string>();
-    for (const [id, r] of recs) if (id !== rec.bodyId && r.planetClass?.trim()) classes.add(r.planetClass.trim());
-    if (classes.size) ctx.systemBodyClasses = [...classes];
-    ctx.systemBodyListComplete = complete;
-    const p = scan.SurfacePressure ?? rec.surfacePressure;
-    if (p != null && Number.isFinite(p)) ctx.surfacePressureAtm = journalPressureToAtm(p);
-    return ctx;
+    return buildSpeciesMatchContextFromRecords({
+      exo: { systemAddress: rec.systemAddress, bodyId: rec.bodyId, scan, signalHints: undefined },
+      rec,
+      byId: recs,
+      regionCoords: coords,
+      spatialCoords: coords,
+      systemBodyListComplete: complete,
+    });
   }
 
   function hintsFromTruth(rows: TruthRow[]): GenusHint[] {

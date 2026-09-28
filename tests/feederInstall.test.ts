@@ -82,10 +82,16 @@ describe("findSpeciesEntryForLabel", () => {
   });
 
   it("refuses to guess when a label has no row, rather than attaching it to a near neighbour", () => {
-    // The app carries one `Anemone` row; the corpus has six colour variants. Folding them together
-    // would invent a habitat none of them has.
-    expect(findSpeciesEntryForLabel(db, "Croceum Anemone")).toBeNull();
+    expect(findSpeciesEntryForLabel(db, "Frutexa Imaginaria")).toBeNull();
     expect(findSpeciesEntryForLabel(db, "")).toBeNull();
+  });
+
+  it("finds each Anemone colour, one row per colour since 2026-09-28", () => {
+    expect(findSpeciesEntryForLabel(db, "Croceum Anemone")?.id).toBe("anemone_croceum");
+    expect(findSpeciesEntryForLabel(db, "Roseum Bioluminescent Anemone")?.id).toBe(
+      "anemone_roseum_bioluminescent",
+    );
+    expect(findSpeciesEntryForLabel(db, "Roseum Anemone")?.id).toBe("anemone_roseum");
   });
 
   it("finds Bark Mounds, which has a row since 2026-09-25", () => {
@@ -167,7 +173,7 @@ describe("installProfile", () => {
   });
 
   it("reports a label the app has no row for instead of writing it somewhere", () => {
-    const r = installProfile(db, profile("Croceum Anemone", 4));
+    const r = installProfile(db, profile("Frutexa Imaginaria", 4));
     expect(r.outcome.kind).toBe("no-species-row");
   });
 });

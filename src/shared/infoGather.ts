@@ -34,9 +34,12 @@ const AMBIGUOUS = " or ";
 export function infoGatherReasons(args: {
   collectionFocus?: boolean;
   colourLabel?: string | null;
+  /** False for a species with no colour variants (Anemone, Brain Tree …): no colour to learn. */
+  hasColourVariants?: boolean;
 }): InfoGatherReason[] {
   const out: InfoGatherReason[] = [];
   if (args.collectionFocus === true) out.push("thin-data");
+  if (args.hasColourVariants === false) return out;
 
   const label = (args.colourLabel ?? "").trim();
   if (!label || label === "(unknown)") out.push("colour-unknown");

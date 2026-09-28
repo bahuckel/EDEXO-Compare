@@ -21,6 +21,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { CopySystemButton } from "./CopySystemButton";
+import { useModal } from "./ui/useModal";
 import type { FirstDiscoveryBacklogDTO, FirstDiscoveryBacklogRowDTO } from "@shared/types";
 
 const crFmt = new Intl.NumberFormat("en-US");
@@ -64,6 +65,7 @@ export function FirstDiscoveryBacklogModal({
   /** Focus the system in the main view, when the host can. */
   onSelectSystem?: (systemAddress: number, starSystem: string) => void;
 }) {
+  const dialogRef = useModal<HTMLDivElement>(true, onClose);
   const [data, setData] = useState<FirstDiscoveryBacklogDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [minCr, setMinCr] = useState<number>(0);
@@ -96,13 +98,6 @@ export function FirstDiscoveryBacklogModal({
     };
   }, []);
 
-  useEffect(() => {
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   const rows: FirstDiscoveryBacklogRowDTO[] = useMemo(() => {
     const all = data?.rows ?? [];
@@ -145,6 +140,7 @@ export function FirstDiscoveryBacklogModal({
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div
+        ref={dialogRef}
         className="modal-panel fdb-panel"
         role="dialog"
         aria-modal="true"

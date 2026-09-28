@@ -91,12 +91,15 @@ export function logFiveFraction(value: number, axis: LogFiveAxis): number {
   return Math.min(1, at / span);
 }
 
-/** Compact credits for a tick label: 1.2 B, 625 M, 4.0 M, 12 k (billions are "B" everywhere: owner, 2026-09-27). */
+/**
+ * Compact credits for a tick label: 1.2 B, 625 M, 4.0 M, 250 k, 12,000 (billions are "B" everywhere:
+ * owner, 2026-09-27; "k" only from 100,000: owner, 2026-09-28).
+ */
 export function formatCredits(v: number): string {
   const n = Math.abs(v);
   const sign = v < 0 ? "-" : "";
   if (n >= 1e9) return `${sign}${(n / 1e9).toFixed(n >= 1e10 ? 0 : 2)} B`;
   if (n >= 1e6) return `${sign}${(n / 1e6).toFixed(n >= 1e8 ? 0 : 1)} M`;
-  if (n >= 1e3) return `${sign}${Math.round(n / 1e3)} k`;
-  return `${sign}${Math.round(n)}`;
+  if (n >= 1e5) return `${sign}${Math.round(n / 1e3)} k`;
+  return `${sign}${Math.round(n).toLocaleString("en-US")}`;
 }

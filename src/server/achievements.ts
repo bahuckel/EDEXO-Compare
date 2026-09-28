@@ -104,6 +104,15 @@ function decodeEntities(t: string): string {
     .replace(/&amp;/g, "&");
 }
 
+/**
+ * Plants the EDSM codex dump does not have yet (built 2026-09-27), with the regions they are known in.
+ * Ingensradices unicus: HIP 87621 only, first logged 2025-11-13 (EDAstro codex), sampled Log → Sample
+ * → Sample on HIP 87621 2 a (EDDN, 2026-09-20). It is its own genus.
+ */
+const EXTRA_PLANT_ENTRIES: { key: string; name: string; regions: string[] }[] = [
+  { key: "codex_ent_ingensradices_unicus", name: "Ingensradices Unicus", regions: ["Inner Orion Spur"] },
+];
+
 /** How many sights a region's set holds (owner: "4-5 in every galactic region"). */
 export const SIGHTS_PER_REGION = 5;
 
@@ -170,6 +179,15 @@ function catalogue(
     bodyIndex.push(kind === "bodies" ? key.toLowerCase() : null);
   }
 
+  // Entries newer than the EDSM dump the catalogue was built from, and the regions they are known in.
+  const extraByRegion = new Map<string, string[]>();
+  for (const x of EXTRA_PLANT_ENTRIES) {
+    const e = plantEntry(x.key, x.name);
+    if (!e || entries.has(e.key)) continue;
+    entries.set(e.key, e);
+    for (const r of x.regions) extraByRegion.set(regionJoinKey(r), [...(extraByRegion.get(regionJoinKey(r)) ?? []), e.key]);
+  }
+
   const byName = new Map(species.map((s) => [codexSpeciesKey(s.displayName), s.id]));
   const speciesOf = new Map<string, string | null>();
   const bySpecies = new Map<string, PlantEntry[]>();
@@ -196,6 +214,7 @@ function catalogue(
           if (k) found.add(k);
         }
       }
+      for (const k of extraByRegion.get(key) ?? []) found.add(k);
       const bodies = new Set<string>();
       for (const row of data.regions[name]?.bodies ?? []) {
         for (const i of row[4]) {

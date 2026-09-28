@@ -320,10 +320,7 @@ function countMergedExplorationBodiesTowardDScanFound(store: GameStateStore, sys
     if (!explorationRecordCountsTowardDScanFound(rec)) return;
     seenBodyIds.add(rec.bodyId);
   };
-  for (const [k, rec] of store.explorationScans) {
-    if (!k.startsWith(prefix)) continue;
-    consider(rec);
-  }
+  for (const rec of store.liveScansInSystem(systemAddress)) consider(rec);
   for (const [k, rec] of store.edsmExplorationByKey) {
     if (!k.startsWith(prefix)) continue;
     consider(rec);
@@ -390,8 +387,7 @@ export function buildNotableBodiesForFocusedSystem(
   if (focusAddr == null) return [];
 
   const byBodyId = new Map<number, ExplorationScanRecord>();
-  for (const [k, rec] of store.explorationScans.entries()) {
-    if (!k.startsWith(`${focusAddr}:`)) continue;
+  for (const rec of store.liveScansInSystem(focusAddr)) {
     if (!isPlanetLikeExplorationRecord(rec)) continue;
     byBodyId.set(rec.bodyId, rec);
   }

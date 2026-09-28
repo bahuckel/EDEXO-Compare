@@ -180,12 +180,12 @@ describe("buildFeederStatus", () => {
       cumulativeCsvRows: 1,
       occurrencesBySpecies: {
         "Stratum Tectonicas": 10,
-        "Croceum Anemone": 4,
+        "Frutexa Imaginaria": 4,
         "Bark Mounds": 18,
       },
     });
     const s = await buildFeederStatus(appRoot, db);
-    // Bark Mounds has had a row since 2026-09-25; the Anemone colour variants still have none.
-    expect(s.unmatchedCorpusLabels).toEqual(["Croceum Anemone"]);
+    // Bark Mounds has had a row since 2026-09-25, the Anemone colours since 2026-09-28.
+    expect(s.unmatchedCorpusLabels).toEqual(["Frutexa Imaginaria"]);
   });
 });

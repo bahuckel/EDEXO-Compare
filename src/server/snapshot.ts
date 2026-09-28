@@ -92,8 +92,13 @@ import { shortBodyLabel } from "../shared/systemMapLabels.js";
 import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
 import { timingFromSamples } from "../shared/systemTriage.js";
-import { codexHasSpecies, codexNewColoursInRegion, codexSpeciesKey } from "../shared/codexLog.js";
-import { candidateMorphColorShortLabel } from "../shared/candidateSpawnHints.js";
+import {
+  codexHasSpecies,
+  codexNewColoursInRegion,
+  codexSpeciesKey,
+  gameOrderSpeciesName,
+} from "../shared/codexLog.js";
+import { candidateMorphColorLabelByLight } from "../shared/candidateSpawnHints.js";
 import { genusLikelihoods, type GenusLikelihood } from "../shared/genusCooccurrence.js";
 import { computeExoDataAlertsForBody } from "./exoDataConsistencyAlerts.js";
 import { exoOutlierTally, recordColourOutliersForBody, recordExoOutliersForBody } from "./exoOutlierLog.js";
@@ -490,7 +495,7 @@ function attachConfirmedColours(
     if (dash > 0) byKey.set(codexSpeciesKey(v.slice(0, dash)), v.slice(dash + 3).trim());
   }
   for (const m of matches) {
-    const c = byKey.get(codexSpeciesKey(m.entry.displayName));
+    const c = byKey.get(codexSpeciesKey(gameOrderSpeciesName(m.entry.displayName)));
     if (!c) continue;
     m.confirmedColour = c;
     const predicted = colourPredictionMissed(m.entry, c, ctx, scan);
@@ -512,11 +517,7 @@ function colourPredictionMissed(
   ctx: SpeciesMatchContext | null,
   scan: PlanetScan | null,
 ): string | null {
-  const predicted = candidateMorphColorShortLabel(
-    entry,
-    ctx?.colourStarType ?? ctx?.parentStarType,
-    scan?.materials,
-  );
+  const predicted = predictedColourFor(entry, ctx, scan);
   if (!predicted || predicted.startsWith("(")) return null;
   const options = predicted.split(" or ").map((x) => x.trim().toLowerCase());
   return options.includes(logged.trim().toLowerCase()) ? null : predicted;
@@ -539,7 +540,7 @@ export function sweepColourOutliers(store: GameStateStore, db: SpeciesDatabase):
     .filter((b) => (b.confirmedVariants?.length ?? 0) > (colourSweepSeen.get(b.key) ?? 0))
     .sort((a, b) => a.systemAddress - b.systemAddress);
   if (!pending.length) return 0;
-  const byName = new Map(db.species.map((e) => [codexSpeciesKey(e.displayName), e]));
+  const byName = new Map(db.species.map((e) => [codexSpeciesKey(gameOrderSpeciesName(e.displayName)), e]));
   let written = 0;
   for (const b of pending) {
     colourSweepSeen.set(b.key, b.confirmedVariants!.length);
@@ -597,7 +598,7 @@ function attachCodexRegionNovelty(
   for (const m of matches) {
     const label =
       m.confirmedColour ??
-      candidateMorphColorShortLabel(m.entry, ctx?.colourStarType ?? ctx?.parentStarType, scan?.materials);
+      m.predictedColour ?? predictedColourFor(m.entry, ctx, scan);
     const fresh = codexNewColoursInRegion(logged, region, m.entry.displayName, label);
     if (fresh) {
       m.codexNew = true;
@@ -605,6 +606,16 @@ function attachCodexRegionNovelty(
       m.codexRegion = region;
     }
   }
+}
+
+/**
+ * The colour predicted for a species on this body: its own table or materials first, then the stars by
+ * their light on the body, brightest first — a star whose class has no colour row hands over to the
+ * next, and with none left it is "(unknown)", never a guessed class (owner, 2026-09-28).
+ */
+function predictedColourFor(entry: SpeciesEntry, ctx: SpeciesMatchContext | null, scan: PlanetScan | null): string {
+  const stars = ctx?.colourStarTypes?.length ? ctx.colourStarTypes : [ctx?.colourStarType ?? ctx?.parentStarType];
+  return candidateMorphColorLabelByLight(entry, stars, scan?.materials);
 }
 
 /**
@@ -625,7 +636,7 @@ function attachAchievementAdvance(
     if (m.unlikely) continue;
     const label =
       m.confirmedColour ??
-      candidateMorphColorShortLabel(m.entry, ctx?.colourStarType ?? ctx?.parentStarType, scan?.materials);
+      m.predictedColour ?? predictedColourFor(m.entry, ctx, scan);
     const adv = achievementAdvanceFor(root, store, cachedDb.species, tracked, m.entry.id, ctx?.regionName, label);
     if (adv) m.achievementAdvance = adv;
   }
@@ -979,6 +990,7 @@ function computeBodyUncached(
       candidates: matches.filter((m) => !m.unlikely).map((m) => m.entry.id),
     });
   }
+  for (const m of matches) m.predictedColour = predictedColourFor(m.entry, speciesMatchCtx, scanForExo);
   attachCodexNovelty(matches, store);
   attachCodexRegionNovelty(matches, store, speciesMatchCtx, scanForExo);
   attachAchievementAdvance(matches, store, speciesMatchCtx, scanForExo);

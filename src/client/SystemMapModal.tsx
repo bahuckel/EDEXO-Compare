@@ -21,6 +21,7 @@ import {
   bodyColours,
 } from "./SystemMapDrawing";
 import { CopySystemButton } from "./CopySystemButton";
+import { EDEXO_SYSMAP_SIDE_LS, readLsBool, writeLsBool } from "./lsPrefs";
 import { IDENTITY, useMapViewport, type MapViewport } from "./useMapViewport";
 
 function notableBodyIsTerraformable(n: NotableBodyInfo): boolean {
@@ -216,6 +217,14 @@ export const SystemMapModal = memo(function SystemMapModal({
    */
   const [bioOnly, setBioOnly] = useState(false);
   const [landOnly, setLandOnly] = useState(false);
+  /** The body panel folds to a strip with an arrow, so the map can take the whole width. */
+  const [sideOpen, setSideOpen] = useState(() => readLsBool(EDEXO_SYSMAP_SIDE_LS, true));
+  const toggleSide = useCallback(() => {
+    setSideOpen((o) => {
+      writeLsBool(EDEXO_SYSMAP_SIDE_LS, !o);
+      return !o;
+    });
+  }, []);
   const dimmed = useCallback(
     (it: MapItem) => {
       if (it.kind === "star" || it.kind === "hub" || it.kind === "bary") return false;
@@ -487,23 +496,40 @@ export const SystemMapModal = memo(function SystemMapModal({
               </g>
             </svg>
           </div>
-          <aside className="system-map-side card-neon" aria-label="Selected body">
-            {selectedDetail ? (
-              <DetailBody detail={selectedDetail} onGoToBioBody={onGoToBioBody} />
-            ) : selectedItem ? (
-              <div className="body-detail-stack">
-                <h4 className="body-detail-title">{selectedItem.node.bodyName || "Barycentre"}</h4>
-                <p className="dim small">
-                  {selectedItem.inferred
-                    ? "A barycentre worked out from the body names — the journal has not placed these bodies yet."
-                    : "No journal detail for this body yet: FSS or DSS it and its data appears here."}
+          <aside
+            className={`system-map-side card-neon${sideOpen ? "" : " system-map-side--closed"}`}
+            aria-label="Selected body"
+          >
+            <button
+              type="button"
+              className="system-map-side-toggle"
+              onClick={toggleSide}
+              aria-expanded={sideOpen}
+              aria-label={sideOpen ? "Hide the body panel" : "Show the body panel"}
+              title={sideOpen ? "Hide the body panel" : "Show the body panel"}
+            >
+              <span className="system-map-side-arrow" aria-hidden="true">
+                ❯
+              </span>
+            </button>
+            <div className="system-map-side-content" aria-hidden={!sideOpen}>
+              {selectedDetail ? (
+                <DetailBody detail={selectedDetail} onGoToBioBody={onGoToBioBody} />
+              ) : selectedItem ? (
+                <div className="body-detail-stack">
+                  <h4 className="body-detail-title">{selectedItem.node.bodyName || "Barycentre"}</h4>
+                  <p className="dim small">
+                    {selectedItem.inferred
+                      ? "A barycentre worked out from the body names — the journal has not placed these bodies yet."
+                      : "No journal detail for this body yet: FSS or DSS it and its data appears here."}
+                  </p>
+                </div>
+              ) : (
+                <p className="dim small system-map-side-hint">
+                  Click a body — or move with the arrow keys — to see its data here.
                 </p>
-              </div>
-            ) : (
-              <p className="dim small system-map-side-hint">
-                Click a body — or move with the arrow keys — to see its data here.
-              </p>
-            )}
+              )}
+            </div>
           </aside>
         </div>
 

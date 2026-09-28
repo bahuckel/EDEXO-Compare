@@ -1,6 +1,7 @@
 /**
  * The body pane: glance bar, planetary facts, sell range, candidate species (7.3).
  */
+import { nextTempUnit, usePressUnit, useTempUnit } from "./useUnits";
 import { codexMarkTitle } from "./codexMark";
 import { ArrivalTrip } from "@shared/systemTriage";
 import { fmtCrRangeShort, fmtCrShort } from "./credits";
@@ -23,22 +24,12 @@ import {
   planetClassPillStyle,
   pressHeatStyle,
   tempHeatStyle,
-  PressDisplay,
-  TempUnit,
 } from "./planetDisplayUtils";
 import { exomasteryDetailHasContent, groupedSortedMatches } from "./speciesMatchHelpers";
 import { bodyGenusProgress, genusProgressTag } from "@shared/genusProgress";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
 import { candidateSpeciesDenomFromFss, genusHintIsDssOrphan, tripRankLabel } from "./bodyHelpers";
-import {
-  EDEXO_COMPACT_CANDIDATE_VIEW_LS,
-  readLsBool,
-  readPressUnitFromLs,
-  readTempUnitFromLs,
-  writeLsBool,
-  writePressUnitToLs,
-  writeTempUnitToLs,
-} from "./lsPrefs";
+import { EDEXO_COMPACT_CANDIDATE_VIEW_LS, readLsBool, writeLsBool } from "./lsPrefs";
 import { GenusTag, GlanceGenera, genusRowSpecies, LandableBadge } from "./BodyGlance";
 import { ExoPayoutRangeDetailModal } from "./ExoPayoutRangeDetailModal";
 import { GenusMatchGroup } from "./GenusMatchGroup";
@@ -77,8 +68,8 @@ export const BodyPane = memo(function BodyPane({
   const [compactCandidateView, setCompactCandidateView] = useState(() =>
     readLsBool(EDEXO_COMPACT_CANDIDATE_VIEW_LS, false),
   );
-  const [tempUnit, setTempUnit] = useState<TempUnit>(() => readTempUnitFromLs());
-  const [pressUnit, setPressUnit] = useState<PressDisplay>(() => readPressUnitFromLs());
+  const [tempUnit, setTempUnit] = useTempUnit();
+  const [pressUnit, setPressUnit] = usePressUnit();
   const [bodySummaryCopied, setBodySummaryCopied] = useState(false);
   const s = body.state;
   const sc = body.mergedScan?.PlanetClass?.trim()
@@ -200,14 +191,6 @@ export const BodyPane = memo(function BodyPane({
     : "unknown";
 
   useEffect(() => {
-    writeTempUnitToLs(tempUnit);
-  }, [tempUnit]);
-
-  useEffect(() => {
-    writePressUnitToLs(pressUnit);
-  }, [pressUnit]);
-
-  useEffect(() => {
     writeLsBool(EDEXO_COMPACT_CANDIDATE_VIEW_LS, compactCandidateView);
   }, [compactCandidateView]);
 
@@ -308,7 +291,7 @@ export const BodyPane = memo(function BodyPane({
                   type="button"
                   className="fact fact--click"
                   style={Number.isFinite(tempStyleK) ? tempHeatStyle(tempStyleK) : undefined}
-                  onClick={() => setTempUnit((u) => (u === "K" ? "C" : u === "C" ? "F" : "K"))}
+                  onClick={() => setTempUnit(nextTempUnit)}
                   title="Cycles Kelvin → Celsius → Fahrenheit (display only; matching still uses journal Kelvin)"
                 >
                   <span className="fact-k">Temperature</span>

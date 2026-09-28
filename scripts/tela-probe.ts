@@ -36,19 +36,12 @@ import { fileURLToPath } from "node:url";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
 import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
-import { loadJournalMergeCacheForTool } from "./probeCache.js";
-import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
-import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
+import { loadJournalMergeCacheForTool, probeMatchContexts } from "./probeCache.js";
 import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
 import { rankSpeciesOnBody, REGION_PRIOR_WEIGHT } from "../src/server/speciesLikelihood.js";
 import { demoteBelowPresenceFloor, PRESENCE_FLOOR_PCT } from "../src/server/snapshot.js";
 import { genusShares } from "../src/shared/systemTriage.js";
-import type {
-  BodyExoState,
-  ExplorationScanRecord,
-  SpeciesEntry,
-  SpeciesMatchContext,
-} from "../src/shared/types.js";
+import type { BodyExoState, SpeciesEntry, SpeciesMatchContext } from "../src/shared/types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
@@ -102,39 +95,12 @@ const payload = loadJournalMergeCacheForTool();
 const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
 const systemPositions = new Map<number, { x: number; y: number; z: number }>(payload.systemPositions ?? []);
 
-const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
-for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explorationScans]) {
-  const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
-  byId.set(r.bodyId, r);
-  scansBySystem.set(r.systemAddress, byId);
-}
-
-/** The same context the app builds; without it every star and region term measures as absent. */
+// The app's own match context (probeCache.ts `probeMatchContexts`, code review B1, 2026-09-28): every
+// gate the app applies — host classes, orbit, colour star, starlight, spatial, companion bodies.
+const appContexts = probeMatchContexts(payload);
+const scansBySystem = appContexts.scansBySystem;
 function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
-  const byId = scansBySystem.get(b.systemAddress);
-  const rec = byId?.get(b.bodyId);
-  const ctx: SpeciesMatchContext = {};
-  const pos = systemPositions.get(b.systemAddress);
-  if (pos) {
-    const idx = regionIndexForSystem(root, pos.x, pos.z);
-    if (idx != null && idx > 0) {
-      const name = regionForSystem(root, pos.x, pos.y, pos.z);
-      if (name) {
-        ctx.regionName = name;
-        ctx.regionIndex = idx;
-      }
-    }
-  }
-  if (!byId || !rec) return Object.keys(ctx).length ? ctx : undefined;
-  const starId = resolveHostStarBodyId(rec, byId);
-  const star = starId == null ? null : byId.get(starId);
-  if (star?.starType?.trim()) {
-    ctx.parentStarType = star.starType;
-    if (typeof star.subclass === "number" && Number.isFinite(star.subclass))
-      ctx.parentStarSubclass = star.subclass;
-    if (star.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity;
-  }
-  return Object.keys(ctx).length ? ctx : undefined;
+  return appContexts.contextFor(b);
 }
 
 /* ------------------------------------------------------------------ pass one: who is offered where */

@@ -22,6 +22,8 @@ export interface SpeciesMatchContext {
   orbitDistanceFromParentStarLs?: number;
   /** The body's `DistanceFromArrivalLS`: how far it is from the system's arrival (main) star. */
   distanceFromArrivalLs?: number;
+  /** The body's system (id64), for species known from one system only. */
+  systemAddress?: number;
   /**
    * Host-star class keys for this body — one star, both stars of a pair, or every star in the
    * system when the body orbits a barycentre that names none.
@@ -40,11 +42,23 @@ export interface SpeciesMatchContext {
    */
   systemMainStarClass?: string;
   /**
+   * The main star as the journal writes it — `StarType` ("B", "AeBe") and `Luminosity` ("Vz",
+   * "IIIab"). Read by the host-star gates that split on luminosity: the Anemone colours.
+   */
+  systemMainStarType?: string;
+  systemMainStarLuminosity?: string;
+  /**
    * Journal star type of the star that sets star-coloured species' colours — the host, unless the
    * host is a brown dwarf in a planet slot, then the star that dwarf orbits (speciesMatchContext.ts
    * `colourStarTypeFor`). Colour only: gates keep reading {@link parentStarType}.
    */
   colourStarType?: string;
+  /**
+   * Every star lighting the body, brightest first (the first is {@link colourStarType}). When the
+   * brightest star's class has no colour row for a species, the next one is tried; with none left the
+   * colour is "(unknown)" — never a guessed class (owner, 2026-09-28).
+   */
+  colourStarTypes?: string[];
   /**
    * Starlight reaching the body, in the Sun's flux at 1 AU (Earth = 1): every scanned star's
    * luminosity over distance², the colour rule's stars and distances (speciesMatchContext.ts
@@ -122,13 +136,6 @@ export interface SpeciesCriterion {
    * finished — an absence in a half-scanned system is not an absence.
    */
   systemBodyClassesAnyOf?: string[];
-  /**
-   * Atmospheres the species is recorded on but rarely wins, measured against its own genus.
-   *
-   * Demotes, never excludes: `shared/atmospherePreference.ts` carries the numbers. A species row
-   * without it behaves exactly as before.
-   */
-  atmosphereUnfavouredAnyOf?: string[];
   planetClassAnyOf?: string[];
   atmosphereTypeAnyOf?: string[];
   /**
@@ -210,6 +217,16 @@ export interface SpeciesCriterion {
   /** Journal SurfacePressure (official docs: atmospheres for landables) */
   surfacePressure?: { min?: number; max?: number };
   landable?: boolean;
+  /**
+   * Known only from these systems (id64). A wall: Ingensradices unicus, found in HIP 87621 alone
+   * (2026-09-28). Unknown system → not offered.
+   */
+  systemAddressAnyOf?: number[];
+  /**
+   * Not counted in the game's biological signals and not named by a DSS (Ingensradices unicus:
+   * HIP 87621 2 a reports three genera and grows it as a fourth). The DSS genus filter lets it through.
+   */
+  outsideSignalCount?: boolean;
   /** Substring match on Volcanism journal field */
   volcanismIncludes?: string[];
   /**
@@ -571,6 +588,12 @@ export interface SpeciesMatch {
    * wins over the predicted one. Absent until it has been scanned here.
    */
   confirmedColour?: string;
+  /**
+   * The colour the app predicts for this row on this body (server-side, one rule for every panel):
+   * the species' own table or materials, else the stars by their light on the body. "(unknown)" when
+   * nothing decides.
+   */
+  predictedColour?: string;
   /**
    * Set when {@link confirmedColour} is not what the app predicted for this body: the prediction, for
    * the flag on the row. Such a find is written to the outliers file as a `colour` record.

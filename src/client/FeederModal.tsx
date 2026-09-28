@@ -4,6 +4,7 @@
 import { FeederStatusPanel } from "./FeederStatusPanel";
 import type { SpanshRouteSummaryDTO } from "./bodyHelpers";
 import { useToast } from "./ui/feedback";
+import { useModal } from "./ui/useModal";
 import type { FeederStatusDTO } from "@shared/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -128,20 +129,12 @@ export function FeederModal({
   onRefresh: () => void;
   onClose: () => void;
 }) {
-  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useModal<HTMLDivElement>(true, onClose);
   // The status is read once at app start, so anything the feeder CLI did since then is invisible
   // until asked for again. Opening this panel is exactly when the answer needs to be current.
   useEffect(() => {
     onRefresh();
   }, [onRefresh]);
-  useEffect(() => {
-    dialogRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>

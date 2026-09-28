@@ -1,3 +1,5 @@
+import { planetClassId } from "./normalise/planetClass.js";
+
 /**
  * One key for a planet class, whoever is spelling it.
  *
@@ -10,6 +12,11 @@
  * a "body" are the same thing, and the class is everything before it.
  */
 export function planetClassKey(value: string | null | undefined): string {
+  // One id per class whatever the spelling (code review B7): "Earthlike body" and "Earth-like world",
+  // "Sudarsky class I gas giant" and "Class I gas giant" used to key apart. Unknown labels keep the
+  // old fold so they still compare with themselves.
+  const id = planetClassId(value);
+  if (id) return id;
   return (value ?? "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")

@@ -53,9 +53,8 @@
  * and none of those are this module's business. They are counted and reported rather than dropped
  * quietly, because the count is how anyone would find out the hypothesis was wrong.
  */
-import { createReadStream, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { createInterface } from "node:readline";
-import { createGunzip } from "node:zlib";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { dumpLines } from "./dumpStream.js";
 import path from "node:path";
 import { rawPlanetsDir } from "./paths.js";
 
@@ -208,10 +207,7 @@ export async function rehydrateNumericsFromDump(
   let rejectedNameMismatch = 0;
   let dumpRows = 0;
 
-  const rl = createInterface({
-    input: createReadStream(dumpFile).pipe(createGunzip()),
-    crlfDelay: Infinity,
-  });
+  const rl = dumpLines(dumpFile);
 
   for await (const line of rl) {
     if (line.length < 2) continue;

@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { hostStarBodyIdsForExobiology, starLettersFromDesignation } from "../src/server/orbitUtils.js";
-import { candidateMorphColorShortLabelForHosts } from "../src/shared/candidateSpawnHints.js";
+import { candidateMorphColorLabelByLight, candidateMorphColorShortLabelForHosts } from "../src/shared/candidateSpawnHints.js";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { getProjectRoot } from "../src/server/paths.js";
 import type { ExplorationScanRecord } from "../src/shared/types.js";
@@ -101,5 +101,22 @@ describe("the colour when the host is a set of stars", () => {
 
   it("says unknown when there are no hosts at all", () => {
     expect(candidateMorphColorShortLabelForHosts(aurasus, [])).toBe("(unknown)");
+  });
+});
+
+describe("the colour when the brightest star has none (owner, 2026-09-28)", () => {
+  const db = loadSpeciesDatabaseFromTree(getProjectRoot());
+  const aurasus = db.species.find((s) => s.id === "bacterium_bacterium_aurasus")!;
+
+  it("hands over to the next star by light when the brightest star's class has no colour", () => {
+    expect(candidateMorphColorLabelByLight(aurasus, ["ZZZ", "F"])).toBe(candidateMorphColorShortLabelForHosts(aurasus, ["F"]));
+  });
+
+  it("keeps the brightest star's colour when it has one", () => {
+    expect(candidateMorphColorLabelByLight(aurasus, ["M", "F"])).toBe(candidateMorphColorShortLabelForHosts(aurasus, ["M"]));
+  });
+
+  it("says (unknown) when no star in the system has a colour — never a guessed class", () => {
+    expect(candidateMorphColorLabelByLight(aurasus, ["ZZZ", "QQQ"])).toBe("(unknown)");
   });
 });

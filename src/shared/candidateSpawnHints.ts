@@ -18,11 +18,35 @@ import { colourVariantLabel, resolveColourVariant, type MaterialReading } from "
  * `materials` is the body's scan list. Without it the material rule cannot run and the answer is
  * honestly unknown rather than guessed from the star, which decides a different set of species.
  */
+/**
+ * Genera whose species are one colour each: the colour is in the name ("Luteolum Anemone", "Brain
+ * Tree Aureum", "Sinuous Tubers Roseum") or there is only one (Bark Mounds, Amphora Plant, Crystalline
+ * Shards, Ingensradices). The codex logs them without a colour, so there is nothing to predict, and
+ * "(unknown)" on their cards read as a gap the commander could fill (owner, 2026-09-28: "drop the
+ * color on legacy cards").
+ */
+const ONE_COLOUR_GENERA = new Set([
+  "anemone",
+  "brain-tree",
+  "sinuous-tubers",
+  "bark-mound",
+  "amphora",
+  "crystalline-shards",
+  "ingensradices",
+]);
+
+/** False for a species whose colour is fixed — its card shows no colour at all. */
+export function speciesHasColourVariants(entry: Pick<SpeciesEntry, "genusDataDir">): boolean {
+  return !ONE_COLOUR_GENERA.has(entry.genusDataDir);
+}
+
+/** A colour label, "(unknown)", or "" for a species with no colour variants. */
 export function candidateMorphColorShortLabel(
   entry: SpeciesEntry,
   hostStarType?: string | null,
   materials?: readonly MaterialReading[] | null,
 ): string {
+  if (!speciesHasColourVariants(entry)) return "";
   /*
    * The species' own table decides, when we have one.
    *
@@ -76,11 +100,32 @@ export function candidateMorphColorShortLabel(
  * The `" or "` form is already understood downstream, where it suppresses the variant photograph —
  * the app must not pick a picture the rule declined to pick.
  */
+/**
+ * The colour for a body lit by several stars, brightest first (owner, 2026-09-28: "if a star has no
+ * color, check for other bodies with luminosity in the system for color, if not, fallback to
+ * (unknown) color, do not assume F"). The first star whose class has a colour row decides.
+ */
+export function candidateMorphColorLabelByLight(
+  entry: SpeciesEntry,
+  starsByLight: readonly (string | null | undefined)[] | null | undefined,
+  materials?: readonly MaterialReading[] | null,
+): string {
+  if (!speciesHasColourVariants(entry)) return "";
+  const stars = (starsByLight ?? []).map((s) => (s ?? "").trim()).filter(Boolean);
+  if (stars.length === 0) return candidateMorphColorShortLabel(entry, null, materials);
+  for (const s of stars) {
+    const label = candidateMorphColorShortLabel(entry, s, materials);
+    if (label !== "(unknown)") return label;
+  }
+  return "(unknown)";
+}
+
 export function candidateMorphColorShortLabelForHosts(
   entry: SpeciesEntry,
   hostStarTypes: readonly (string | null | undefined)[] | null | undefined,
   materials?: readonly MaterialReading[] | null,
 ): string {
+  if (!speciesHasColourVariants(entry)) return "";
   const hosts = (hostStarTypes ?? []).map((h) => (h ?? "").trim()).filter(Boolean);
   if (hosts.length === 0) return candidateMorphColorShortLabel(entry, null, materials);
   const labels: string[] = [];

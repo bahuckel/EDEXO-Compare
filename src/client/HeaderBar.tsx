@@ -206,14 +206,6 @@ export const HeaderBar = memo(function HeaderBar({
     return "";
   })();
 
-  useEffect(() => {
-    if (!dataBreakdownOpen) return;
-    const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") setDataBreakdownOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [dataBreakdownOpen]);
 
   const toggleExplorationScanData = () => {
     void (async () => {

@@ -1,7 +1,6 @@
 /**
  * The passes that run after the per-species criteria: gates judged on the system or the region (spatial, host star, companion bodies, atmosphere preference, starlight, regional siblings), each demoting rather than deleting, and the restores that undo a demotion the game's own signal count contradicts. Split out of matchSpecies.ts (code review D, 2026-09-27).
  */
-import { atmosphereIsUnfavoured } from "../shared/atmospherePreference.js";
 import {
   describeHostStarVerdict,
   evaluateHostStarGate,
@@ -19,13 +18,7 @@ import {
   gateForSpeciesId,
 } from "../shared/spatialGates.js";
 import { describeSystemBodyVerdict, evaluateSystemBodyGate } from "../shared/systemBodyGates.js";
-import type {
-  MatchReason,
-  PlanetScan,
-  SpeciesEntry,
-  SpeciesMatch,
-  SpeciesMatchContext,
-} from "../shared/types.js";
+import type { MatchReason, SpeciesEntry, SpeciesMatch, SpeciesMatchContext } from "../shared/types.js";
 import { getProjectRoot } from "./paths.js";
 import { regionalGenusEnrichment, regionalGenusShare } from "./regionSpeciesData.js";
 import { speciesHostStarObservations } from "./speciesHostStarObservations.js";
@@ -81,7 +74,12 @@ function restoreNamedGenera(
   const missing = [...dssGenera].filter((g) => !shown.has(g));
   if (!missing.length) return;
 
-  const atmObjections = (m: PendingMatch) => (m.unlikelyReasons ?? []).filter((r) => r.field === "AtmosphereType").length;
+  // The body's own class counts with its atmosphere: a row demoted on class never reaches the later
+  // gates, so it carries fewer objections than it deserves. HIP 34326 D 2 (2026-09-28, the Anemone
+  // split): rocky-only Luteolum, one class objection, tied with Blatteum's one star objection on a
+  // high metal content body and won on list order.
+  const atmObjections = (m: PendingMatch) =>
+    (m.unlikelyReasons ?? []).filter((r) => r.field === "AtmosphereType" || r.field === "PlanetClass").length;
   const objections = (m: PendingMatch) =>
     (m.unlikelyReasons ?? []).filter((r) => r.field !== "ObservedTemperature").length;
   const restored = new Set<number>();
@@ -271,7 +269,10 @@ export function demoteFailedHostStarGates(
 
   for (let i = strict.length - 1; i >= 0; i--) {
     const m = strict[i]!;
-    const verdict = evaluateHostStarGate(m.entry.id, classes, mainStar);
+    const verdict = evaluateHostStarGate(m.entry.id, classes, mainStar, {
+      type: matchContext?.systemMainStarType,
+      luminosity: matchContext?.systemMainStarLuminosity,
+    });
     if (!verdict || verdict.passes) continue;
     const reason: MatchReason = {
       field: "StarType",
@@ -326,50 +327,6 @@ export function demoteFailedSystemBodyGates(
     const reason: MatchReason = {
       field: "System bodies",
       detail: `${describeSystemBodyVerdict(verdict)}. ${DEMOTED_NOTE}`,
-      soft: true,
-    };
-    strict.splice(i, 1);
-    unlikely.push({
-      ...m,
-      reasons: [...m.reasons, reason],
-      unlikely: true,
-      unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
-    });
-  }
-}
-
-/**
- * Demote a species on an atmosphere it is recorded on but rarely wins.
- *
- * The owner's call, after the genus comparison: *"demote tela on CO2, ammonia, nitrogen and argon."*
- * Those are the four where tela takes between 0.3 % and 1.8 % of the bodies its own genus holds,
- * against 47 % on water and 58 % on neon-rich.
- *
- * A demotion rather than an exclusion, for the usual reason: the corpus does record twenty tela
- * bodies on carbon dioxide, and a rule that removed them would be claiming something the data does
- * not say. The row keeps its place behind "show unlikely" and carries the share with it.
- *
- * Runs beside the spatial, host-star and system-body gates and reads the same way: a species with no
- * such list is untouched, and an unknown atmosphere says nothing.
- */
-export function demoteUnfavouredAtmospheres(
-  strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
-  unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
-  scan: PlanetScan,
-): void {
-  const atmosphere = scan.AtmosphereType ?? scan.Atmosphere ?? null;
-  if (!atmosphere) return;
-
-  for (let i = strict.length - 1; i >= 0; i--) {
-    const m = strict[i]!;
-    const verdict = atmosphereIsUnfavoured(m.entry.criteria?.atmosphereUnfavouredAnyOf, atmosphere);
-    if (!verdict) continue;
-
-    const reason: MatchReason = {
-      field: "Atmosphere",
-      detail:
-        `${m.entry.displayName} is recorded on ${verdict.matched} atmospheres but rarely wins one: ` +
-        `its own genus holds far more of them. ${DEMOTED_NOTE}`,
       soft: true,
     };
     strict.splice(i, 1);

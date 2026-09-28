@@ -53,6 +53,8 @@ data/species_backup_*/
 .DS_Store
 Thumbs.db
 *.log
+# Test fixture journals (synthetic / public data only) are part of the tests.
+!tests/fixtures/journal-*/*.log
 # The e2e smoke fixture is a hand-written journal, not a commander's: it ships.
 !/tests/fixtures/journal-smoke/*.log
 

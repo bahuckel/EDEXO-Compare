@@ -17,14 +17,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
-import { loadJournalMergeCacheForTool } from "./probeCache.js";
-import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
-import { resolveHostStarBodyId } from "../src/server/orbitUtils.js";
+import { loadJournalMergeCacheForTool, probeMatchContexts } from "./probeCache.js";
 import { journalHostObservationFromSpeciesContext } from "../src/server/journalHostObservation.js";
 import { rankSpeciesOnBody, REGION_PRIOR_WEIGHT } from "../src/server/speciesLikelihood.js";
 import { demoteBelowPresenceFloor } from "../src/server/snapshot.js";
 import { genusShares } from "../src/shared/systemTriage.js";
-import type { BodyExoState, ExplorationScanRecord, SpeciesMatchContext } from "../src/shared/types.js";
+import type { BodyExoState, SpeciesMatchContext } from "../src/shared/types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
@@ -39,42 +37,12 @@ const db = loadSpeciesDatabaseFromTree(root);
 const payload = loadJournalMergeCacheForTool();
 const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
 
-const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
-for (const [, r] of [...(payload.soldExplorationScans ?? []), ...payload.explorationScans]) {
-  const m = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
-  m.set(r.bodyId, r);
-  scansBySystem.set(r.systemAddress, m);
-}
-const systemPositions = new Map<number, { x: number; y: number; z: number }>(payload.systemPositions ?? []);
-
+// The app's own match context (probeCache.ts `probeMatchContexts`, code review B1, 2026-09-28): every
+// gate the app applies — host classes, orbit, colour star, starlight, spatial, companion bodies.
+const appContexts = probeMatchContexts(payload);
+const scansBySystem = appContexts.scansBySystem;
 function contextFor(b: BodyExoState): SpeciesMatchContext | undefined {
-  const byId = scansBySystem.get(b.systemAddress);
-  const rec = byId?.get(b.bodyId);
-  const ctx: SpeciesMatchContext = {};
-  const pos = systemPositions.get(b.systemAddress);
-  if (pos) {
-    const idx = regionIndexForSystem(root, pos.x, pos.z);
-    if (idx != null && idx > 0) {
-      const name = regionForSystem(root, pos.x, pos.y, pos.z);
-      if (name) {
-        ctx.regionName = name;
-        ctx.regionIndex = idx;
-      }
-    }
-  }
-  if (byId && rec) {
-    const starId = resolveHostStarBodyId(rec, byId);
-    const star = starId == null ? null : byId.get(starId);
-    if (star?.starType?.trim()) ctx.parentStarType = star.starType;
-  }
-  const classes: string[] = [];
-  for (const [bodyId, r] of byId ?? []) {
-    if (bodyId === b.bodyId) continue;
-    const pc = r.planetClass?.trim();
-    if (pc) classes.push(pc);
-  }
-  if (classes.length) ctx.systemBodyClasses = [...new Set(classes)];
-  return Object.keys(ctx).length ? ctx : undefined;
+  return appContexts.contextFor(b);
 }
 
 const recent = bodies

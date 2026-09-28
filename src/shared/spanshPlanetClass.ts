@@ -1,3 +1,5 @@
+import { toJournalPlanetClass } from "./normalise/planetClass.js";
+
 /**
  * A planet class in the journal's words, whoever wrote it.
  *
@@ -33,5 +35,5 @@ const TO_JOURNAL: Record<string, string> = {
 export function journalPlanetClass(value: string | null | undefined): string | undefined {
   const v = (value ?? "").trim();
   if (!v) return undefined;
-  return TO_JOURNAL[v.toLowerCase()] ?? v;
+  return TO_JOURNAL[v.toLowerCase()] ?? toJournalPlanetClass(v);
 }

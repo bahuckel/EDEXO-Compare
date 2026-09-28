@@ -82,9 +82,9 @@ export interface SectorMapBuild {
  *  1. **The species database.** `findSpeciesEntryForLabel` already handles the word-order difference
  *     — its word-bag fallback matches `Roseum Brain Tree` to `Brain Tree Roseum` — and `entry.genus`
  *     is the display name the app uses everywhere else.
- *  2. **The database's genus vocabulary.** Six Anemone colour variants and Bark Mounds have sightings
- *     but no species row, so step 1 cannot place them. `Roseum Bioluminescent Anemone` still contains
- *     `Anemone`, which is one of the 19 genus names the tree defines, so it is placed by that.
+ *  2. **The database's genus vocabulary.** For a label with no species row (the Anemone colours were
+ *     such until 2026-09-28): `Roseum Bioluminescent Anemone` still contains `Anemone`, which is one
+ *     of the genus names the tree defines, so it is placed by that.
  *  3. **Itself.** Anything left is its own genus, which is the honest answer for `Bark Mounds` and
  *     avoids inventing a name for anything else.
  */
