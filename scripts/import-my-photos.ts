@@ -290,14 +290,22 @@ function main(): void {
 
   {
     for (const { genusFolder, dir, file, by } of files) {
-      const parsed = parseName(file);
+      let parsed = parseName(file);
+      /*
+        `Sinuous Tubers - Roseum.png` (PhoEniXDFA, 2026-09-28): for a species whose colour is its name
+        the part after the dash is the rest of the name, not a colour. Read it as a bare name.
+      */
+      if (parsed && !bySpecies.get(parsed.species.toLowerCase())) {
+        const joined = findSpecies(bySpecies, `${parsed.species} ${parsed.colour}`);
+        if (joined && coloursFor(root, joined).size === 0) parsed = null;
+      }
       if (!parsed) {
         /*
           No colour in the name. Fine for a species with no colour variants — Bark Mounds, the
           Sinuous Tubers, the Brain Trees — whose file is just the species, maybe with an index:
           `Bark Mounds 2.jpg`, `Caeruleum Sinuous Tubers.jpg` (the codex's word order).
         */
-        const bare = parseBareName(file);
+        const bare = parseBareName(file.replace(/\s*-\s*/, " "));
         const entry = bare ? findSpecies(bySpecies, bare.species) : undefined;
         if (!bare || !entry) {
           problems.push(`${genusFolder}/${file} — cannot read "Genus Species - Colour.ext" from the name`);

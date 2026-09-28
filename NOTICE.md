@@ -69,8 +69,8 @@ longer be reached, so naming some and not others would be worse than naming none
 
 ## Species photographs
 
-`data/species/<genus>/<genus>_photos/` holds 182 images of Elite Dangerous exobiology (each also
-present as a cropped card and thumbnail, so 546 files). **135 of them were contributed by commanders
+`data/species/<genus>/<genus>_photos/` holds 185 images of Elite Dangerous exobiology (each also
+present as a cropped card and thumbnail, so 555 files). **138 of them were contributed by commanders
 of the Bahuckel clan and by the Stellar Exobiologists Guild**; the remaining 47 are sourced from the ED-DSN community, are **not covered by
 this project's MIT licence** and are not this project's to sublicense.
 
