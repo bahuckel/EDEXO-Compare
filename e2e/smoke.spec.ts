@@ -74,6 +74,168 @@ test("launcher: the HUD menu warns when Elite is set to fullscreen", async ({ pa
   expect(errors).toEqual([]);
 });
 
+/*
+  Show / Hide every HUD from the launcher (owner, 2026-09-28). A browser has no Electron, so the
+  bridge is faked: the modal must read the saved state, the buttons must ask for the right one, and
+  a change made elsewhere (the hotkey, the tray) must reach the buttons.
+*/
+test("launcher: the HUDs' Show / Hide switch follows the saved state and the hotkey", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown>;
+    const state = {
+      hidden: true,
+      count: 2,
+      calls: [] as unknown[],
+      push: null as null | ((v: unknown) => void),
+    };
+    w.__hudVis = state;
+    w.edexoElectron = {
+      getHudLayout: async () => ({ corner: "tr", order: [], hidden: state.hidden, count: state.count }),
+      setHudLayout: async () => ({}),
+      toggleHudVisibility: async (o: { hidden: boolean }) => {
+        state.calls.push(o);
+        state.hidden = o.hidden;
+        return { hidden: state.hidden };
+      },
+      onHudVisibility: (cb: (v: unknown) => void) => {
+        state.push = cb;
+      },
+    };
+  });
+  await page.goto("/launcher.html");
+  await page.locator("#btnOverlayMenu").dispatchEvent("click");
+  await expect(page.locator("#overlayPickModal")).toHaveClass(/on/);
+  const show = page.locator("#hudVisShow");
+  const hide = page.locator("#hudVisHide");
+  await expect(hide).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#hudVisSummary")).toHaveText("HUDs are hidden (2 open)");
+
+  await show.dispatchEvent("click");
+  await expect(show).toHaveAttribute("aria-pressed", "true");
+  expect(
+    await page.evaluate(() => (window as unknown as { __hudVis: { calls: unknown[] } }).__hudVis.calls),
+  ).toEqual([{ hidden: false }]);
+
+  // The hotkey pressed in game: Electron tells the launcher.
+  await page.evaluate(() =>
+    (window as unknown as { __hudVis: { push: (v: unknown) => void } }).__hudVis.push({
+      hidden: true,
+      count: 2,
+    }),
+  );
+  await expect(hide).toHaveAttribute("aria-pressed", "true");
+  await page
+    .locator("#overlayPickModal .modal")
+    .first()
+    .screenshot({ path: `${OUT}/launcher-hud-visibility.png` });
+  expect(errors).toEqual([]);
+});
+
+/*
+  Linux setup card and the tray option (owner, 2026-09-28). This machine is not Linux, so the check's
+  answer is faked at the network layer, and the Electron bridge in the page.
+*/
+test("launcher: the Linux setup card lists what is missing, and the tray option greys out", async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  let items = [
+    {
+      id: "compositor",
+      severity: "warning",
+      title: "No compositor running",
+      detail: "Without a compositor the HUD cannot be see-through.",
+      packages: ["picom"],
+      command: "sudo pacman -S --needed picom",
+      then: "Start it with `picom -b`.",
+    },
+    {
+      id: "xwayland",
+      severity: "blocker",
+      title: "XWayland is not available",
+      detail: "The HUDs cannot be positioned or kept on top.",
+      packages: ["xorg-xwayland"],
+      command: "sudo pacman -S --needed xorg-xwayland",
+    },
+  ];
+  await page.route("**/api/system/linux-check", (route) =>
+    route.fulfill({
+      json: {
+        applicable: true,
+        distro: { id: "cachyos", name: "CachyOS", version: null, family: "arch" },
+        session: "wayland",
+        desktop: "Hyprland",
+        items,
+      },
+    }),
+  );
+  await page.addInitScript(() => {
+    // Past the first-run card, which would otherwise come first and hold this one back.
+    localStorage.setItem("edexo.launcher.wizardDone", "1");
+    (window as unknown as Record<string, unknown>).edexoElectron = {
+      getTrayPref: async () => ({
+        enabled: true,
+        available: false,
+        reason: "Your desktop shows no tray icons (GNOME needs the AppIndicator extension).",
+      }),
+      setTrayPref: async () => ({ enabled: true, available: false }),
+      getHotkeyStatus: async () => ({ shortcut: "Control+Alt+H", registered: false }),
+    };
+  });
+  await page.goto("/launcher.html");
+  const modal = page.locator("#linuxSetupModal");
+  await expect(modal).toHaveClass(/on/);
+  await expect(page.locator("#linuxSetupIntro")).toContainText("CachyOS · wayland · Hyprland — 3 things");
+  await expect(page.locator("#linuxSetupList li")).toHaveCount(3);
+  await expect(page.locator("#linuxSetupList li.blocker code")).toHaveText(
+    "sudo pacman -S --needed xorg-xwayland",
+  );
+  await expect(page.locator("#linuxSetupList li").nth(2)).toContainText("Control+Alt+H is taken");
+
+  const tray = page.locator("#trayPrefRow");
+  await expect(tray).toBeVisible();
+  await expect(page.locator("#trayPref")).toBeDisabled();
+  await expect(tray).toHaveAttribute("title", /AppIndicator/);
+  await page.locator("#linuxSetupList").screenshot({ path: `${OUT}/launcher-linux-setup.png` });
+
+  // Closed: remembered for this set of problems...
+  await page.locator("#linuxSetupClose").dispatchEvent("click");
+  await expect(modal).not.toHaveClass(/on/);
+  await page.reload();
+  await page.waitForTimeout(800);
+  await expect(modal).not.toHaveClass(/on/);
+  // ...and shown again when a new one appears.
+  items = [...items, { ...items[0]!, id: "tray", title: "GNOME has no tray", command: "x" }];
+  await page.reload();
+  await expect(modal).toHaveClass(/on/);
+  expect(errors).toEqual([]);
+});
+
+/*
+  A Proton journal path is one unbroken word far wider than the launcher. On the first Linux run
+  (Ubuntu, 2026-09-28) it pushed the first-run card sideways and gave the window a scrollbar.
+*/
+test("launcher: a long Proton journal path wraps inside the first-run card", async ({ page }) => {
+  const errors = watchErrors(page);
+  const longDir =
+    "/home/commander/.local/share/Steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous";
+  await page.setViewportSize({ width: 548, height: 768 });
+  await page.goto("/launcher.html");
+  await expect(page.locator("#wizardModal")).toHaveClass(/on/);
+  // The state arrives over the socket; the card is what is under test, so the path goes straight in.
+  await expect(page.locator("#wzJournalDir")).not.toBeEmpty();
+  await page.locator("#wzJournalDir").evaluate((el, d) => (el.textContent = d), longDir);
+  const overflow = await page.evaluate(() =>
+    [document.scrollingElement!, document.getElementById("wizardModal")!, ...document.querySelectorAll("#wizardModal .modal")]
+      .map((el) => el.scrollWidth - el.clientWidth)
+      .filter((d) => d > 0),
+  );
+  expect(overflow).toEqual([]);
+  await page.locator("#wizardModal .modal").first().screenshot({ path: `${OUT}/launcher-wizard-long-path.png` });
+  expect(errors).toEqual([]);
+});
+
 test("hud: the merged overlay shows every section", async ({ page }) => {
   const errors = watchErrors(page);
   await page.setViewportSize({ width: 420, height: 900 });

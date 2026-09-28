@@ -1,7 +1,8 @@
 /**
  * A HUD asked for from the launcher has to be visible.
  *
- * `electron/main.cjs` cannot be imported here — it reaches for `app` on load — so this pins the rule
+ * This code lived in `electron/main.cjs`, which cannot be imported here (it reaches for `app` on
+ * load); since 2026-09-28 it is `electron/hudWindows.cjs` (see tests/hudWindows.test.ts). So this pins the rule
  * against a transcription of the decision rather than the module. That is worth having anyway: the
  * bug was not in the hiding, which is deliberate, but in the fact that **nothing ever un-hid**.
  *
@@ -35,10 +36,10 @@ describe("asking for a HUD is asking to see it", () => {
     for (const mode of Object.keys(EXPLICIT)) expect(shouldUnhide(mode, false)).toBe(false);
   });
 
-  it("is actually wired into main.cjs, in front of the slot lookup", () => {
+  it("is actually wired into hudWindows.cjs, in front of the slot lookup", () => {
     // A rule nobody calls is a rule that does not hold. This is the one line that fixes the report,
     // and it has to run before the early returns further down the function.
-    const src = readFileSync(path.resolve(__dirname, "../electron/main.cjs"), "utf8");
+    const src = readFileSync(path.resolve(__dirname, "../electron/hudWindows.cjs"), "utf8");
     const guard = src.indexOf('if (mode !== "open" && hudHidden) toggleHudVisibility(false);');
     const lookup = src.indexOf("const existing = hudOverlayStack.findIndex");
     expect(guard).toBeGreaterThan(-1);
@@ -47,7 +48,7 @@ describe("asking for a HUD is asking to see it", () => {
 
   it("still hides a window that arrives while the stack is hidden", () => {
     // The restore path depends on it: reopened HUDs must not flash onto the screen at launch.
-    const src = readFileSync(path.resolve(__dirname, "../electron/main.cjs"), "utf8");
+    const src = readFileSync(path.resolve(__dirname, "../electron/hudWindows.cjs"), "utf8");
     expect(src).toContain("if (hudHidden) win.hide();");
   });
 });

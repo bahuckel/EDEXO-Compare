@@ -143,7 +143,7 @@ describe("attaching to another instance", () => {
 describe("the overlay commands, as the app actually reads them", () => {
   it("sets HUD sections with the key the page reads", async () => {
     /*
-      THE ONE THAT MATTERS HERE. `hud.js` reads `?s=`; `?sections=` is not an error to it — with no
+      THE ONE THAT MATTERS HERE. The HUD (public/hud/main.js) reads `?s=`; `?sections=` is not an error to it — with no
       `s` in the query `sectionsFromUrl` falls back to **every** section. So the wrong key made the
       command report success while doing the opposite of what was asked, on a real HUD window.
     */

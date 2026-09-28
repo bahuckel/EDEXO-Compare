@@ -21,6 +21,7 @@
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { optionsDirForJournalDir } from "./protonJournals.js";
 
 export type EliteDisplayMode = "windowed" | "fullscreen" | "borderless" | "unknown";
 
@@ -39,10 +40,17 @@ const MODE_BY_VALUE: Record<string, EliteDisplayMode> = {
   "2": "borderless",
 };
 
-export function eliteDisplaySettingsPath(): string {
+/**
+ * On Windows `%LOCALAPPDATA%`. Elsewhere the game runs in a Proton / Wine prefix, and the file sits in
+ * the same prefix user as the journals (`optionsDirForJournalDir`), so it follows the journal folder —
+ * including one the commander picked by hand.
+ */
+export function eliteDisplaySettingsPath(journalDir?: string | null, platform = process.platform): string {
   const override = process.env.EDEXO_ELITE_OPTIONS_DIR?.trim();
+  const fromJournal = platform !== "win32" && journalDir ? optionsDirForJournalDir(journalDir) : null;
   const base =
     override ||
+    fromJournal ||
     path.join(process.env.LOCALAPPDATA || "", "Frontier Developments", "Elite Dangerous", "Options");
   return path.join(base, "Graphics", "DisplaySettings.xml");
 }
@@ -71,7 +79,7 @@ export function readEliteDisplayMode(file = eliteDisplaySettingsPath()): EliteDi
 export function eliteDisplayWarning(status: EliteDisplayStatus): string | null {
   if (!status.overlaysBlocked) return null;
   return (
-    "Elite is set to Fullscreen. Windows does not let any overlay draw over an exclusive " +
-    "fullscreen game, so the HUDs will not appear. Switch the game to Borderless."
+    "Elite is set to Fullscreen. No overlay can draw over an exclusive fullscreen game — on " +
+    "Windows or on Linux — so the HUDs will not appear. Switch the game to Borderless."
   );
 }

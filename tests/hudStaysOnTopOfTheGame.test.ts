@@ -12,7 +12,8 @@
  * true afterwards. `main.cjs` asserted the level exactly once, in `ready-to-show`, so the first time
  * Elite took the foreground the HUDs went behind it and nothing in the app ever asked again.
  *
- * `electron/main.cjs` cannot be imported here — it reaches for `app` on load — so the rule is pinned
+ * This code lived in `electron/main.cjs`, which cannot be imported here (it reaches for `app` on
+ * load); since 2026-09-28 it is `electron/hudWindows.cjs` (see tests/hudWindows.test.ts). So the rule is pinned
  * against a transcription and the wiring is then checked in the source, the same way
  * `hudHotkeyReopens.test.ts` does. A rule nobody calls is a rule that does not hold.
  */
@@ -20,7 +21,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-const main = readFileSync(path.resolve(__dirname, "../electron/main.cjs"), "utf8");
+const main = readFileSync(path.resolve(__dirname, "../electron/hudWindows.cjs"), "utf8");
 
 interface FakeWindow {
   destroyed: boolean;
@@ -89,7 +90,7 @@ describe("the keep-on-top tick", () => {
   });
 });
 
-describe("the wiring in electron/main.cjs", () => {
+describe("the wiring in electron/hudWindows.cjs", () => {
   it("has a single place that raises a window, and uses the highest level", () => {
     expect(main).toContain("function raiseHudWindow(win)");
     expect(main).toContain('win.setAlwaysOnTop(true, "screen-saver")');
@@ -98,7 +99,7 @@ describe("the wiring in electron/main.cjs", () => {
   it("raises on every path that puts a HUD on screen", () => {
     // Creating one, reopening the remembered set from the hotkey, and un-hiding the stack. Miss any
     // one of them and the HUD is on screen but under the game, which is the reported symptom.
-    expect(main).toContain("raiseHudWindow(win);\n    keepHudsOnTop();");
+    expect(main).toMatch(/raiseHudWindow\(win\);\s*\n\s*keepHudsOnTop\(\);/);
     expect(main).toContain("for (const s of hudOverlayStack) raiseHudWindow(s.win);");
     expect(main).toMatch(/if \(hudHidden\) stopKeepingHudsOnTop\(\);\s*\n\s*else keepHudsOnTop\(\);/);
   });

@@ -1,5 +1,6 @@
 import { parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
-import { eliteDisplayWarning, readEliteDisplayMode } from "./eliteDisplayMode.js";
+import { eliteDisplaySettingsPath, eliteDisplayWarning, readEliteDisplayMode } from "./eliteDisplayMode.js";
+import { linuxCheckForThisMachine } from "./linuxProbes.js";
 import http from "node:http";
 import os from "node:os";
 import express from "express";
@@ -373,8 +374,17 @@ export function createHttpServer(opts: HttpServerOptions): {
    * running, and a cached "borderless" would keep telling him everything is fine while he stares at
    * a screen with no overlay on it.
    */
+  /**
+   * The Linux start-up check (linuxCheck.ts): what is missing here and the command to install it on
+   * this distro. `{ applicable: false }` off Linux. The HUD rows only for the Electron app.
+   */
+  app.get("/api/system/linux-check", (_req, res) => {
+    const r = linuxCheckForThisMachine(process.env.EDEXO_ELECTRON === "1");
+    res.json(r ? { applicable: true, ...r } : { applicable: false });
+  });
+
   app.get("/api/elite-display-mode", (_req, res) => {
-    const status = readEliteDisplayMode();
+    const status = readEliteDisplayMode(eliteDisplaySettingsPath(opts.getSnapshot().journalDir));
     res.json({ ...status, warning: eliteDisplayWarning(status) });
   });
 

@@ -236,6 +236,88 @@ for (const s of picked) {
   push({ event: "FSSAllBodiesFound", SystemName: s.system.name, SystemAddress: addr, Count: recs.length });
 }
 
+/*
+ * One made-up lifeless system, last so the commander is still in it: a star and two bare planets,
+ * honked and every body found, not a biological signal anywhere — the lifeless empty state
+ * (LifelessEmblem.tsx, 2026-09-28).
+ */
+const LIFELESS = { name: "E2E Lifeless", addr: 9_999_999_999, pos: [10, -5, 20] };
+push({
+  event: "FSDJump",
+  StarSystem: LIFELESS.name,
+  SystemAddress: LIFELESS.addr,
+  StarPos: LIFELESS.pos,
+  Body: LIFELESS.name,
+  BodyID: 0,
+  BodyType: "Star",
+  Population: 0,
+  JumpDist: 12.4,
+  FuelUsed: 0.8,
+  FuelLevel: 27.6,
+});
+push({
+  event: "FSSDiscoveryScan",
+  Progress: 1.0,
+  BodyCount: 3,
+  NonBodyCount: 0,
+  SystemName: LIFELESS.name,
+  SystemAddress: LIFELESS.addr,
+});
+push({
+  event: "Scan",
+  ScanType: "AutoScan",
+  BodyName: LIFELESS.name,
+  BodyID: 0,
+  StarSystem: LIFELESS.name,
+  SystemAddress: LIFELESS.addr,
+  DistanceFromArrivalLS: 0,
+  StarType: "M",
+  Subclass: 4,
+  StellarMass: 0.4,
+  Radius: 280_000_000,
+  AbsoluteMagnitude: 9.1,
+  Luminosity: "Va",
+  SurfaceTemperature: 3100,
+  WasDiscovered: true,
+  WasMapped: false,
+});
+for (const [id, cls, dist, temp] of [
+  [1, "Icy body", 412.5, 88],
+  [2, "Rocky body", 95.2, 402],
+] as const) {
+  push({
+    event: "Scan",
+    ScanType: "Detailed",
+    BodyName: `${LIFELESS.name} ${id}`,
+    BodyID: id,
+    Parents: [{ Star: 0 }],
+    StarSystem: LIFELESS.name,
+    SystemAddress: LIFELESS.addr,
+    DistanceFromArrivalLS: dist,
+    PlanetClass: cls,
+    TerraformState: "",
+    Atmosphere: "",
+    AtmosphereType: "None",
+    Volcanism: "",
+    MassEM: 0.05,
+    Radius: 1_900_000,
+    SurfaceGravity: 1.6,
+    SurfaceTemperature: temp,
+    SurfacePressure: 0,
+    Landable: true,
+    SemiMajorAxis: dist * 299_792_458,
+    Eccentricity: 0.01,
+    OrbitalInclination: 0.2,
+    Periapsis: 12,
+    OrbitalPeriod: 8_000_000,
+    RotationPeriod: 90_000,
+    TidalLock: false,
+    WasDiscovered: true,
+    WasMapped: false,
+  });
+}
+push({ event: "FSSAllBodiesFound", SystemName: LIFELESS.name, SystemAddress: LIFELESS.addr, Count: 3 });
+
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 writeFileSync(path.join(OUT, "Journal.2026-09-01T100000.01.log"), lines.join("\r\n") + "\r\n", "utf8");

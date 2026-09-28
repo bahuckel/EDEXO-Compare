@@ -18,8 +18,7 @@
  *    and everything else on screen is still being read from it.
  */
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import path from "node:path";
+import { loadHudModule } from "./helpers/loadHud.js";
 
 type HudApi = {
   mount: (names: string[], opts?: { noTimers?: boolean }) => HTMLElement;
@@ -30,19 +29,7 @@ type HudApi = {
   sectionImpls?: Record<string, { render: (d: unknown, el: HTMLElement) => unknown }>;
 };
 
-function loadHud(): HudApi {
-  document.body.innerHTML =
-    '<div class="shell" id="shell"><div class="panel" id="card"><div class="panel__body" id="hud"></div></div></div>';
-  const src = readFileSync(path.resolve(__dirname, "../public/hud.js"), "utf8");
-   
-  new Function("window", "document", "localStorage", "location", src)(
-    window,
-    document,
-    window.localStorage,
-    window.location,
-  );
-  return (window as unknown as { HUD: HudApi }).HUD;
-}
+const loadHud = () => loadHudModule<HudApi>();
 
 /**
  * A surface position with one plant already taken, which is all the radar needs to draw.
@@ -78,8 +65,8 @@ const overlay = (distToFirstM: number) => ({
 });
 
 describe("the radar's own frame", () => {
-  it("redraws the radar from a frame that carries no snapshot", () => {
-    const HUD = loadHud();
+  it("redraws the radar from a frame that carries no snapshot", async () => {
+    const HUD = await loadHud();
     const root = HUD.mount(["distance"], { noTimers: true });
     HUD.render({ port: 7111, exoOrganicOverlay: overlay(120), exoMinimap: minimap(120) });
     const first = root.innerHTML;
@@ -90,12 +77,12 @@ describe("the radar's own frame", () => {
     expect(sampleY(root)).toBeCloseTo(-68, 1);
   });
 
-  it("leaves the rest of the last snapshot alone", () => {
+  it("leaves the rest of the last snapshot alone", async () => {
     /*
       The next full push may be a quarter of a second away and every other section is still reading
       the snapshot this frame is being merged into. Replacing it wholesale would blank them.
     */
-    const HUD = loadHud();
+    const HUD = await loadHud();
     HUD.mount(["distance"], { noTimers: true });
     HUD.render({
       port: 7111,
@@ -111,13 +98,13 @@ describe("the radar's own frame", () => {
     expect(HUD.lastSnapshot?.port).toBe(7111);
   });
 
-  it("only touches the section that draws the radar", () => {
+  it("only touches the section that draws the radar", async () => {
     /*
       Mounted with the candidate list beside the tracker: at a 100 ms poll this runs ten times a
       second, and re-rendering every section would rebuild that whole table each time for data the
       frame does not even contain.
     */
-    const HUD = loadHud();
+    const HUD = await loadHud();
     HUD.mount(["candidates", "distance"], { noTimers: true });
     HUD.render({
       port: 7111,
@@ -160,13 +147,13 @@ describe("the radar's own frame", () => {
     expect(calls, "a radar frame re-rendered the candidate list").toBe(0);
   });
 
-  it("does nothing before the first snapshot, rather than rendering half a HUD", () => {
+  it("does nothing before the first snapshot, rather than rendering half a HUD", async () => {
     /*
       A socket can deliver one of these before the first state frame — the poll that produces them
       runs on its own clock. There is nothing to merge into yet, and guessing an empty snapshot
       would blank every other section.
     */
-    const HUD = loadHud();
+    const HUD = await loadHud();
     const root = HUD.mount(["distance"], { noTimers: true });
     const before = root.innerHTML;
     expect(() =>

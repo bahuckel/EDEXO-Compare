@@ -220,6 +220,14 @@
   cursor: help;
 }
 
+/* The ⓘ, drawn: the same size the character had, centred in the button. */
+.info-affordance-icon {
+  display: block;
+  width: 1em;
+  height: 1em;
+  margin: auto;
+}
+
 .info-affordance:hover,
 .info-affordance--on {
   color: var(--accent-bright);

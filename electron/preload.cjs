@@ -33,6 +33,16 @@ contextBridge.exposeInMainWorld("edexoElectron", {
   setHudLayout: (opts) => ipcRenderer.invoke("edexo:set-hud-layout", opts),
   /** Hide/show every HUD window; same as the global shortcut. @param {{ hidden?: boolean }} [opts] */
   toggleHudVisibility: (opts) => ipcRenderer.invoke("edexo:toggle-hud-visibility", opts),
+  /** Minimise to tray: `{ enabled, available, reason? }` (owner, 2026-09-28). */
+  getTrayPref: () => ipcRenderer.invoke("edexo:get-tray-pref"),
+  /** @param {{ enabled: boolean }} opts */
+  setTrayPref: (opts) => ipcRenderer.invoke("edexo:set-tray-pref", opts),
+  /** Whether the HUD hotkey could be registered: `{ shortcut, registered }`. */
+  getHotkeyStatus: () => ipcRenderer.invoke("edexo:hotkey-status"),
+  /** HUDs shown or hidden, however it was changed (hotkey, tray, launcher): `{ hidden, count }`. */
+  onHudVisibility: (cb) => {
+    ipcRenderer.on("edexo:hud-visibility", (_evt, v) => cb(v));
+  },
   /**
    * The exobiology UI in its own window; the launcher stays open. Brings it forward when it is open.
    *

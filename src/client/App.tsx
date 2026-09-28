@@ -20,6 +20,7 @@ import { BodyJumpPalette, bodyJumpItems } from "./BodyJumpPalette";
 import { BodyPane } from "./BodyPane";
 import { HeaderBar } from "./HeaderBar";
 import { CopySystemButton } from "./CopySystemButton";
+import { LifelessEmblem } from "./LifelessEmblem";
 import { setSnapshotStamp } from "./panelSnapshot";
 
 /*
@@ -99,16 +100,34 @@ function BioEmptyState({ snap }: { snap: AppSnapshot }) {
         className={`panel empty${dead ? " panel-empty--dead-system" : " panel-empty--fss-required"}`}
       >
         <div className="bio-empty-caption">
-          {/* the launcher's radar scope: sweeping while the FSS is still to come, still on a dead system */}
-          <div className="bio-empty-scope" aria-hidden="true" />
+          {/* Still looking: the launcher's radar scope, sweeping. Done and empty: the lifeless emblem. */}
+          {dead && !remote ? <LifelessEmblem /> : <div className="bio-empty-scope" aria-hidden="true" />}
           <p className="bio-empty-caption-hed">
-            {remote ? remote.hed : dead ? "No exobiology in this system" : "No bio signals yet"}
+            {remote ? remote.hed : dead ? "System scan complete" : "No bio signals yet"}
           </p>
+          {dead && !remote ? (
+            <>
+              <p className="bio-empty-verdict">No biological life detected</p>
+              <ul className="bio-empty-readout">
+                {snap.dScanBodies?.total ? (
+                  <li>
+                    <b>{snap.dScanBodies.total}</b> {snap.dScanBodies.total === 1 ? "body" : "bodies"} found
+                  </li>
+                ) : null}
+                <li>
+                  <b>0</b> biological signals
+                </li>
+                <li>
+                  Status <span className="bio-empty-readout__status">Lifeless</span>
+                </li>
+              </ul>
+            </>
+          ) : null}
           <p className="bio-empty-caption-sub">
             {remote
               ? remote.sub
               : dead
-                ? "Every body here has been scanned and none carry biological signals. Jump to another system, or search one above to browse it from your journal."
+                ? "Every body here has been found and none carries a biological signal. Jump on, or search a system above to browse it from your journal."
                 : "FSS a world with biological signals, or DSS map one — bodies appear here on their own. You can also search a visited system above."}
           </p>
           {snap.jumpTarget && !snap.jumpTarget.arrived ? (

@@ -15,7 +15,9 @@
  * changed; and a restore that opened nothing used to hide the stack anyway, recording "hidden" when
  * there was nothing to hide.
  *
- * `electron/main.cjs` cannot be imported here — it reaches for `app` on load — so the rules are
+ * This code lived in `electron/main.cjs`, which cannot be imported here (it reaches for `app` on
+ * load); since 2026-09-28 it is `electron/hudWindows.cjs`, driven with a fake Electron in
+ * tests/hudWindows.test.ts. The source pins below stay as they were written — so the rules are
  * pinned against a transcription, and then the wiring is checked in the source, because a rule
  * nobody calls is a rule that does not hold.
  */
@@ -23,7 +25,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-const main = readFileSync(path.resolve(__dirname, "../electron/main.cjs"), "utf8");
+const main = readFileSync(path.resolve(__dirname, "../electron/hudWindows.cjs"), "utf8");
 
 type Slot = { alive: boolean };
 
@@ -80,7 +82,7 @@ describe("remembering what was open", () => {
   });
 });
 
-describe("the wiring in main.cjs", () => {
+describe("the wiring in hudWindows.cjs", () => {
   it("reopens from the hotkey when the stack is empty", () => {
     expect(main).toContain("reopenRememberedHuds");
     expect(main).toMatch(/if \(!hudHidden && live\.length === 0 && hudRememberedOpen\.length\)/);
@@ -92,8 +94,10 @@ describe("the wiring in main.cjs", () => {
   });
 
   it("does not record the stack as hidden when the restore opened nothing", () => {
+    // Since 2026-09-28 the restore keeps the last chosen state instead of always hiding; the rule is
+    // the same, and tests/hudWindows.test.ts drives it ("does not record 'hidden' over a restore…").
     expect(main).toMatch(
-      /if \(hudOverlayStack\.some\(\(s\) => s\.win && !s\.win\.isDestroyed\(\)\)\) toggleHudVisibility\(true\);/,
+      /if \(hudHidden && !hudOverlayStack\.some\(\(s\) => s\.win && !s\.win\.isDestroyed\(\)\)\) \{\s*hudHidden = false;/,
     );
   });
 

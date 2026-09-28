@@ -17,8 +17,7 @@
  * that stop an estimate becoming a fiction.
  */
 import { describe, expect, it, beforeEach } from "vitest";
-import { readFileSync } from "node:fs";
-import path from "node:path";
+import { loadHudModule } from "./helpers/loadHud.js";
 
 type HudApi = {
   mount: (names: string[], opts?: { noTimers?: boolean }) => HTMLElement;
@@ -26,19 +25,7 @@ type HudApi = {
   renderExoLive: (live: unknown) => void;
 };
 
-function loadHud(): HudApi {
-  document.body.innerHTML =
-    '<div class="shell" id="shell"><div class="panel" id="card"><div class="panel__body" id="hud"></div></div></div>';
-  const src = readFileSync(path.resolve(__dirname, "../public/hud.js"), "utf8");
-   
-  new Function("window", "document", "localStorage", "location", src)(
-    window,
-    document,
-    window.localStorage,
-    window.location,
-  );
-  return (window as unknown as { HUD: HudApi }).HUD;
-}
+const loadHud = () => loadHudModule<HudApi>();
 
 type Mark = {
   kind: string;
@@ -101,8 +88,8 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let HUD: HudApi;
 let root: HTMLElement;
 
-beforeEach(() => {
-  HUD = loadHud();
+beforeEach(async () => {
+  HUD = await loadHud();
   root = HUD.mount(["distance"], { noTimers: true });
 });
 

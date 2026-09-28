@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Data value</title>
-    <!-- One HUD section on its own. The look is hud.css, the section and its data feed are hud.js. -->
+    <!-- One HUD section on its own. The look is hud.css, the section and its data feed are hud/ (main.js mounts it). -->
     <link rel="stylesheet" href="hud.css?v=11" />
   </head>
   <body>
@@ -13,8 +13,8 @@
         <div class="panel__body" id="hud"></div>
       </div>
     </div>
-    <script src="hud.js?v=11"></script>
-    <script>
+    <script type="module">
+      import { HUD } from "./hud/main.js";
       HUD.mount(["datavalue"]);
     </script>
   </body>

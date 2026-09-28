@@ -14,14 +14,15 @@
  * does not move a window. Unticking "merge into one panel" and re-ticking it helped because it
  * builds a *new* window, and a new window is laid out against the current work area.
  *
- * `electron/main.cjs` reaches for `app` on load and cannot be imported here, so the geometry is
+ * This code lived in `electron/main.cjs`, which reaches for `app` on load and cannot be imported
+ * here; since 2026-09-28 it is `electron/hudWindows.cjs` (see tests/hudWindows.test.ts). So the geometry is
  * tested against a transcription of it and the wiring is asserted against the file.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-const SRC = readFileSync(path.resolve(__dirname, "../electron/main.cjs"), "utf8");
+const SRC = readFileSync(path.resolve(__dirname, "../electron/hudWindows.cjs"), "utf8");
 
 interface Rect {
   x: number;
@@ -111,7 +112,10 @@ describe("the wiring that makes the fix real", () => {
     for (const ev of ["display-metrics-changed", "display-added", "display-removed"]) {
       expect(SRC).toContain(ev);
     }
-    expect(SRC).toContain("watchDisplaysForHudRelayout();");
+    // Exposed by the factory, and called at boot by main.cjs.
+    expect(SRC).toContain("watchDisplays: watchDisplaysForHudRelayout,");
+    const main = readFileSync(path.resolve(__dirname, "../electron/main.cjs"), "utf8");
+    expect(main).toContain("huds.watchDisplays();");
   });
 
   it("coalesces the burst Windows sends for one resolution change", () => {

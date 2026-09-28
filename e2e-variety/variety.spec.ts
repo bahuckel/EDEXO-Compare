@@ -103,6 +103,47 @@ test("achievements: region cards, a region's sets, and the POI note with no POI 
   expect(errors).toEqual([]);
 });
 
+test("a finished system with no life shows the lifeless emblem, not the radar", async ({ page, request }) => {
+  const errors = watchErrors(page);
+  await view(request, await systemByName(request, "E2E Lifeless"));
+  await page.goto("/");
+  await expect(page.locator(".lifeless-emblem")).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator(".bio-empty-scope")).toHaveCount(0);
+  await expect(page.getByText("System scan complete")).toBeVisible();
+  await expect(page.locator(".bio-empty-readout")).toContainText("3 bodies found");
+  await page.waitForTimeout(2600); // the arrival animation, so the screenshot is the resting frame
+  await page.locator(".bio-empty-wrap").screenshot({ path: `${OUT}/lifeless.png` });
+  expect(errors).toEqual([]);
+});
+
+test("every HUD overlay page mounts its sections from the hud/ modules", async ({ page, request }) => {
+  await view(request, HIP_87621);
+  const pages: [string, number][] = [
+    ["/distance-overlay.html", 1],
+    ["/fss-scan-overlay.html", 1],
+    ["/exo-candidates-overlay.html", 1],
+    ["/data-value-overlay.html", 1],
+    ["/achievement-overlay.html", 1],
+    ["/jump-overlay.html", 1],
+    ["/hud-overlay.html", 6],
+  ];
+  for (const [url, sections] of pages) {
+    const errors = watchErrors(page);
+    const failed: string[] = [];
+    page.on("requestfailed", (r) => failed.push(r.url()));
+    await page.goto(url);
+    await expect(page.locator("#hud > *").first(), url).toBeVisible({ timeout: 30_000 });
+    expect(await page.locator("#hud > *").count(), url).toBeGreaterThanOrEqual(sections);
+    expect(errors, url).toEqual([]);
+    expect(failed, url).toEqual([]);
+    page.removeAllListeners("pageerror");
+    page.removeAllListeners("requestfailed");
+  }
+  await page.goto("/hud-overlay.html");
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${OUT}/hud-merged.png`, fullPage: true });
+});
+
 test("encyclopedia: lists the two species added in 1.2.x", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");

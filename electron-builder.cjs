@@ -79,6 +79,8 @@ module.exports = {
     "electron/main.cjs",
     "electron/preload.cjs",
     "electron/windowState.cjs",
+    "electron/hudWindows.cjs",
+    "electron/tray.cjs",
     ...(process.env.EDEXO_DIAG === "1" ? ["electron/diag.cjs"] : []),
     "package.json",
   ],
@@ -101,6 +103,20 @@ module.exports = {
     { from: "node_modules/sql.js/dist/sql-wasm.wasm", to: "sql-wasm/sql-wasm.wasm" },
   ],
   win,
+  /*
+    Linux (owner, 2026-09-28; docs/linux-plan-28092026.md Phase B): an AppImage, built in WSL by
+    scripts/dist-linux-appimage.mjs. `executableName` lower-case, as Linux expects; main.cjs runs it
+    under XWayland so the HUD stack can be placed and kept on top.
+  */
+  linux: {
+    target: [{ target: "AppImage", arch: ["x64"] }],
+    category: "Game",
+    icon: "public/edexo-icon.png",
+    executableName: "edexo-compare",
+    artifactName: "EDExoCompare-${version}-x86_64.${ext}",
+    synopsis: "Exobiology companion for Elite Dangerous: journal-linked predictions and HUD overlays",
+    desktop: { entry: { StartupWMClass: "EDExoCompare" } },
+  },
   portable: {
     artifactName: "${productName}.exe",
     unpackDirName: "EDExoPortable",

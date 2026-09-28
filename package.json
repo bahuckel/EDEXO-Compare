@@ -21,6 +21,8 @@
     "dist:win:diag": "cross-env EDEXO_DIAG=1 npm run dist:win",
     "dist:win:electron": "npm run build && npm run bundle && node scripts/dist-win.mjs",
     "dist:win:cli": "npm run build && npm run bundle && node scripts/dist-win-cli.mjs",
+    "dist:linux": "npm run build && npm run bundle && node scripts/dist-linux.mjs",
+    "dist:linux:appimage": "npm run build && npm run bundle && node scripts/dist-linux-appimage.mjs",
     "codesign:self-signed": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/create-self-signed-codesign-cert.ps1",
     "debug:handles": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/list-handles-build.ps1",
     "debug:handles:dist": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/list-handles-build.ps1 -IncludeElectronOut",

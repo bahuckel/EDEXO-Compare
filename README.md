@@ -24,6 +24,48 @@ Both are the same version and the same code — [all releases](https://github.co
 Windows will say the publisher is unrecognised: the executable is signed, but with a self-signed
 certificate that SmartScreen does not trust. "More info" → "Run anyway".
 
+### Linux — ![Untested](https://img.shields.io/badge/Linux-untested-orange)
+
+**First Linux release, not yet tried on a real Linux desktop with the game running.** It starts,
+finds a Proton journal folder and serves the app on Ubuntu 24.04; the HUD windows themselves have
+not been seen over the game yet. If you try it, an issue saying what worked and what did not —
+distro, desktop, X11 or Wayland — is the most useful thing you can send.
+
+|                                                                                                                                         |                                                                                          |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **[AppImage — launcher + HUD](https://github.com/bahuckel/EDEXO-Compare/releases/download/v1.2.4-zip/EDExoCompare-1.2.4-x86_64.AppImage)** | The same app as on Windows: launcher window, tray, HUD overlays. One file, x86_64.       |
+| **[Browser build — .tar.gz](https://github.com/bahuckel/EDEXO-Compare/releases/download/v1.2.4-zip/EDExoCompare-1.2.4-linux-x64.tar.gz)** | No Electron. The app and the HUD pages open in your browser. For anything the AppImage cannot run on. |
+
+**AppImage:** `chmod +x EDExoCompare-1.2.4-x86_64.AppImage`, then run it. It needs FUSE 2:
+
+| Distro                                            | Command                                   |
+| ------------------------------------------------- | ----------------------------------------- |
+| Ubuntu 24.04+, Mint 22+, Debian 13+               | `sudo apt install libfuse2t64`            |
+| Ubuntu 22.04, Mint 21, Pop!\_OS 22.04, Debian 12  | `sudo apt install libfuse2`               |
+| Fedora, Nobara                                    | `sudo dnf install fuse-libs`              |
+| Bazzite, Silverblue (read-only)                   | `rpm-ostree install fuse-libs`, reboot    |
+| openSUSE                                          | `sudo zypper install libfuse2`            |
+| Arch, CachyOS, Manjaro                            | `sudo pacman -S --needed fuse2`           |
+
+Without FUSE, `./EDExoCompare-1.2.4-x86_64.AppImage --appimage-extract-and-run` works too.
+
+On start the launcher checks your desktop and lists anything the HUD needs that is missing, with the
+install command for your distro: XWayland on a Wayland session, a compositor on a bare window
+manager (the HUD is see-through only with one), the AppIndicator extension for the tray on GNOME.
+
+**Browser build:** `tar xzf EDExoCompare-1.2.4-linux-x64.tar.gz`, then `./edexo-client.sh` in the
+folder it makes. Its `README.txt` has the rest.
+
+**Both:** the journals are found inside the game's Proton or Wine prefix — every Steam library
+(native, Flatpak, Snap), Heroic and Lutris. Settings live in `~/.config/edexo-compare`. Run Elite
+in **Borderless**: nothing can draw over an exclusive fullscreen game.
+
+**Steam Deck:** in Gaming Mode the Deck's compositor (gamescope) shows one window, the game, so the
+HUD windows cannot appear over it. Open the HUD in a browser on a phone or a second screen instead:
+start the app in server mode (`./edexo-server.sh` in the browser build) and open
+`/hud-overlay.html` at the address the launcher lists under **Network settings → LAN**. In Desktop
+Mode it behaves like any Linux desktop.
+
 ## What it tells you
 
 **Which body to fly to.** _Worth the trip?_ ranks every body in the system by expected value —

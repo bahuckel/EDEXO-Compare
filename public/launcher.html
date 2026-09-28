@@ -708,6 +708,65 @@
       .poll-applied.on {
         opacity: 0.9;
       }
+      .tray-pref {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 16px;
+        font-size: 0.66rem;
+        letter-spacing: 0.08em;
+        color: var(--hud-dim);
+        cursor: pointer;
+        width: fit-content;
+      }
+      .tray-pref input {
+        accent-color: var(--hud);
+        margin: 0;
+      }
+      .tray-pref.is-off {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .linux-setup-list {
+        list-style: none;
+        margin: 8px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 10px;
+      }
+      .linux-setup-list li {
+        padding: 8px 10px;
+        border: 1px solid var(--hud-dim);
+        background: rgba(0, 0, 0, 0.35);
+        font-size: 0.78rem;
+        color: var(--hud-text);
+      }
+      .linux-setup-list li.blocker {
+        border-color: #ff6b4a;
+      }
+      .linux-setup-list strong {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--hud-hi);
+      }
+      .linux-setup-list li.blocker strong {
+        color: #ff8b70;
+      }
+      .linux-setup-cmd {
+        display: flex;
+        gap: 6px;
+        align-items: stretch;
+        margin-top: 6px;
+      }
+      .linux-setup-cmd code {
+        flex: 1 1 auto;
+        padding: 5px 7px;
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid var(--hud-dim);
+        font-size: 0.74rem;
+        overflow-wrap: anywhere;
+        user-select: all;
+      }
       .foot {
         margin-top: 22px;
         display: flex;
@@ -1208,6 +1267,30 @@
         clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
         cursor: pointer;
       }
+      /* Show / Hide: a two-way switch, the current state lit (owner, 2026-09-28). */
+      .hud-vis {
+        display: inline-flex;
+        gap: 4px;
+      }
+      .hud-vis-btn {
+        padding: 5px 12px;
+        font-family: inherit;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--hud-text);
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid var(--hud-dim);
+        clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+        cursor: pointer;
+      }
+      .hud-vis-btn[aria-pressed="true"] {
+        color: var(--ink);
+        background: linear-gradient(180deg, #ffe07a, #ffd23f 60%, #e6b800);
+        border-color: transparent;
+        cursor: default;
+      }
       .btn.btn--attn {
         box-shadow: 0 0 0 1px rgba(255, 210, 63, 0.6), 0 0 14px rgba(255, 210, 63, 0.35);
       }
@@ -1358,6 +1441,12 @@
         color: var(--ink);
         background: var(--hud);
         clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+      }
+      /* A Proton journal path is one long word (…/steamapps/compatdata/359320/pfx/drive_c/…): without
+         these it pushed the card wider than the window and gave the launcher a sideways scrollbar. */
+      .wizard-steps li > div {
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
       .wizard-steps .st {
         display: block;
@@ -1599,6 +1688,13 @@
         </div>
         <div class="msg-launcher" id="launcherActionMsg" aria-live="polite"></div>
 
+        <!-- Minimise to tray (owner, 2026-09-28): a quiet option, not a button; greyed out with the reason
+             when this system has no tray. Electron only — hidden in a browser. -->
+        <label class="tray-pref" id="trayPrefRow" hidden>
+          <input type="checkbox" id="trayPref" />
+          <span>Minimise to tray</span>
+        </label>
+
         <div class="foot">
           <span>EDEXO · exobiology routing</span>
           <span>Local server · WebSocket live link</span>
@@ -1786,6 +1882,14 @@
             </button>
           </div>
           <div class="hud-settings">
+            <h4>On screen</h4>
+            <div class="hud-set-row">
+              <span id="hudVisSummary">HUDs are shown</span>
+              <span class="hud-vis" role="group" aria-label="Show or hide every HUD">
+                <button type="button" class="hud-vis-btn" id="hudVisShow" aria-pressed="true">Show</button>
+                <button type="button" class="hud-vis-btn" id="hudVisHide" aria-pressed="false">Hide</button>
+              </span>
+            </div>
             <h4>HUD colour</h4>
             <div class="hud-swatches" id="hudSwatches" role="radiogroup" aria-label="HUD colour preset"></div>
             <div class="hud-set-row">
@@ -1839,7 +1943,10 @@
               <button type="button" class="btn-mini" id="btnPollFromOverlay">Change polling</button>
             </div>
             <ul class="hud-order" id="hudOrderList" aria-label="Order of the HUDs in the stack"></ul>
-            <p class="hud-hint"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>H</kbd> hides and shows every HUD.</p>
+            <p class="hud-hint">
+              <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>H</kbd> switches between Show and Hide. The choice is kept for the
+              next start.
+            </p>
             <!--
               Shown only when the game's own settings file says overlays cannot be drawn. A permanent
               notice about a mode he is not in would be a wall of text on every open; this stays out
@@ -1873,6 +1980,22 @@
           <div class="row">
             <button type="button" class="btn secondary" id="importClose"><span class="btn-lines"><strong>Close</strong></span></button>
             <button type="button" class="btn" id="importStart"><span class="btn-lines"><strong>Start</strong></span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Linux setup (owner, 2026-09-28): what is missing here and the command for this distro. Shown at
+         start only when something fails, until closed for that set of problems. -->
+    <div class="modal-bg" id="linuxSetupModal">
+      <div class="modal">
+        <div class="modal-in">
+          <h3>Linux setup</h3>
+          <p class="hint" style="margin-top: 0" id="linuxSetupIntro"></p>
+          <ul class="linux-setup-list" id="linuxSetupList"></ul>
+          <div class="row" style="margin-top: 10px">
+            <button type="button" class="btn secondary" id="linuxSetupRecheck"><span class="btn-lines"><strong>Check again</strong></span></button>
+            <button type="button" class="btn" id="linuxSetupClose"><span class="btn-lines"><strong>Close</strong></span></button>
           </div>
         </div>
       </div>
@@ -3655,6 +3778,38 @@
           });
         }
         if (hudCorner) hudCorner.addEventListener("change", pushLayout);
+
+        /*
+          Show / Hide every HUD (owner, 2026-09-28). The state lives in Electron (hud-layout.json), so
+          it survives a restart, and the hotkey and the tray change it too: Electron tells this page
+          on every change (`onHudVisibility`), and the modal asks again whenever it opens.
+        */
+        var hudVisShow = document.getElementById("hudVisShow");
+        var hudVisHide = document.getElementById("hudVisHide");
+        var hudVisSummary = document.getElementById("hudVisSummary");
+        function renderHudVisibility(v) {
+          var hidden = !!(v && v.hidden);
+          if (hudVisShow) hudVisShow.setAttribute("aria-pressed", hidden ? "false" : "true");
+          if (hudVisHide) hudVisHide.setAttribute("aria-pressed", hidden ? "true" : "false");
+          if (hudVisSummary) {
+            var n = v && typeof v.count === "number" ? v.count : null;
+            hudVisSummary.textContent =
+              (hidden ? "HUDs are hidden" : "HUDs are shown") +
+              (n === 0 ? " (none open)" : n ? " (" + n + " open)" : "");
+          }
+        }
+        function setHudVisibility(hidden) {
+          var ee = window.edexoElectron;
+          if (!ee || typeof ee.toggleHudVisibility !== "function") return;
+          ee.toggleHudVisibility({ hidden: hidden }).then(function (r) {
+            renderHudVisibility({ hidden: r && r.hidden });
+          }).catch(function () {});
+        }
+        if (hudVisShow) hudVisShow.addEventListener("click", function () { setHudVisibility(false); });
+        if (hudVisHide) hudVisHide.addEventListener("click", function () { setHudVisibility(true); });
+        if (window.edexoElectron && typeof window.edexoElectron.onHudVisibility === "function") {
+          window.edexoElectron.onHudVisibility(renderHudVisibility);
+        }
         async function loadHudSettingsIntoModal() {
           renderSwatches();
           if (hudCandOrder) hudCandOrder.value = (function () { try { return localStorage.getItem(LS_HUD_CAND) || "likelihood"; } catch (e) { return "likelihood"; } })();
@@ -3668,6 +3823,7 @@
             try {
               var lay = await ee.getHudLayout();
               if (lay && hudCorner && lay.corner) hudCorner.value = lay.corner;
+              if (lay) renderHudVisibility({ hidden: lay.hidden, count: lay.count });
               if (lay && Array.isArray(lay.order) && lay.order.length) {
                 var secs = lay.order.map(function (k) { return HUD_SECTION_BY_PATH[k]; }).filter(Boolean);
                 hudOrder = secs.concat(HUD_SECTION_ORDER.filter(function (s) { return secs.indexOf(s) < 0; }));
@@ -3790,6 +3946,147 @@
         /* One silent check at start-up, so the button glows when there is something to import. */
         if (rememberedImportFile()) setTimeout(pollImport, 4000);
 
+        /* ------------------------------------------------------------------ Linux setup */
+        /*
+          The Linux start-up check (server: linuxCheck.ts). Only failures come back, each with the install
+          command for this distro. Shown once per set of problems: closing it remembers that set, and a
+          new problem shows it again. Ctrl+Alt+H being taken is Electron's to know, so it is added here.
+        */
+        var LS_LINUX_SEEN = "edexo.launcher.linuxSetupSeen";
+        var linuxSetupModal = document.getElementById("linuxSetupModal");
+        var linuxSetupList = document.getElementById("linuxSetupList");
+        var linuxSetupIntro = document.getElementById("linuxSetupIntro");
+        var linuxSetupSig = "";
+        // The first-run card goes first (the journal folder matters most); this one waits for it.
+        var linuxSetupPending = false;
+        function wizardIsOpen() {
+          var wz = document.getElementById("wizardModal");
+          return !!(wz && wz.classList.contains("on"));
+        }
+        function linuxSetupItemEl(it) {
+          var li = document.createElement("li");
+          li.className = it.severity || "warning";
+          var t = document.createElement("strong");
+          t.textContent = it.title;
+          var d = document.createElement("div");
+          d.textContent = it.detail;
+          li.appendChild(t);
+          li.appendChild(d);
+          if (it.command) {
+            var row = document.createElement("div");
+            row.className = "linux-setup-cmd";
+            var code = document.createElement("code");
+            code.textContent = it.command;
+            var copy = document.createElement("button");
+            copy.type = "button";
+            copy.className = "btn-mini";
+            copy.textContent = "Copy";
+            copy.addEventListener("click", function () {
+              try {
+                void navigator.clipboard.writeText(it.command).then(function () { copy.textContent = "Copied"; });
+              } catch (e) {}
+            });
+            row.appendChild(code);
+            row.appendChild(copy);
+            li.appendChild(row);
+          } else if (it.packages && it.packages.length) {
+            var p = document.createElement("div");
+            p.className = "hint";
+            p.textContent = "Install with your package manager: " + it.packages.join(", ");
+            li.appendChild(p);
+          }
+          if (it.then) {
+            var th = document.createElement("div");
+            th.className = "hint";
+            th.textContent = "Then: " + it.then.replace(/`/g, "");
+            li.appendChild(th);
+          }
+          return li;
+        }
+        async function loadLinuxSetup(force) {
+          var r;
+          try {
+            r = await (await fetch(apiUrl("/api/system/linux-check"), { cache: "no-store" })).json();
+          } catch (e) {
+            return;
+          }
+          if (!r || !r.applicable) return;
+          var items = (r.items || []).slice();
+          var ee = window.edexoElectron;
+          if (ee && typeof ee.getHotkeyStatus === "function") {
+            try {
+              var hk = await ee.getHotkeyStatus();
+              if (hk && hk.registered === false) {
+                items.push({
+                  id: "hotkey",
+                  severity: "warning",
+                  title: hk.shortcut + " is taken",
+                  detail:
+                    "Your desktop (or another app) already uses " + hk.shortcut + ", so it cannot show and hide the HUDs. " +
+                    "Free it in your desktop's keyboard shortcuts and restart, or use Show / Hide in the Overlays menu.",
+                });
+              }
+            } catch (e) {}
+          }
+          var sig = items.map(function (i) { return i.id; }).sort().join(",");
+          if (!items.length) { if (linuxSetupModal) linuxSetupModal.classList.remove("on"); return; }
+          if (!force) {
+            var seen = null;
+            try { seen = localStorage.getItem(LS_LINUX_SEEN); } catch (e) {}
+            if (seen === sig) return;
+          }
+          linuxSetupSig = sig;
+          if (linuxSetupIntro) {
+            linuxSetupIntro.textContent =
+              (r.distro && r.distro.name ? r.distro.name : "Linux") +
+              (r.session ? " · " + r.session : "") +
+              (r.desktop ? " · " + r.desktop : "") +
+              " — " + items.length + (items.length === 1 ? " thing" : " things") + " to sort out:";
+          }
+          if (linuxSetupList) {
+            linuxSetupList.innerHTML = "";
+            items.forEach(function (it) { linuxSetupList.appendChild(linuxSetupItemEl(it)); });
+          }
+          if (wizardIsOpen()) {
+            linuxSetupPending = true;
+            return;
+          }
+          if (linuxSetupModal) linuxSetupModal.classList.add("on");
+        }
+        function closeLinuxSetup() {
+          try { localStorage.setItem(LS_LINUX_SEEN, linuxSetupSig); } catch (e) {}
+          if (linuxSetupModal) linuxSetupModal.classList.remove("on");
+        }
+        var linuxSetupClose = document.getElementById("linuxSetupClose");
+        var linuxSetupRecheck = document.getElementById("linuxSetupRecheck");
+        if (linuxSetupClose) linuxSetupClose.addEventListener("click", closeLinuxSetup);
+        if (linuxSetupRecheck) linuxSetupRecheck.addEventListener("click", function () { void loadLinuxSetup(true); });
+        void loadLinuxSetup(false);
+
+        /* ------------------------------------------------------------------ minimise to tray */
+        var trayPrefRow = document.getElementById("trayPrefRow");
+        var trayPref = document.getElementById("trayPref");
+        function renderTrayPref(p) {
+          if (!trayPrefRow || !trayPref || !p) return;
+          trayPrefRow.hidden = false;
+          trayPref.checked = !!p.enabled && !!p.available;
+          trayPref.disabled = !p.available;
+          trayPrefRow.classList.toggle("is-off", !p.available);
+          trayPrefRow.title = p.available
+            ? "Minimising the launcher hides it in the system tray; the tray icon brings it back."
+            : p.reason || "This system has no tray.";
+        }
+        (function () {
+          var ee = window.edexoElectron;
+          if (!ee || typeof ee.getTrayPref !== "function") return;
+          ee.getTrayPref().then(renderTrayPref).catch(function () {});
+          if (trayPref) {
+            trayPref.addEventListener("change", function () {
+              ee.setTrayPref({ enabled: trayPref.checked }).then(renderTrayPref).catch(function () {});
+            });
+          }
+        })();
+
         /* ------------------------------------------------------------------ first-run wizard */
         var LS_WIZARD = "edexo.launcher.wizardDone";
         var wizardModal = document.getElementById("wizardModal");
@@ -3803,10 +4100,19 @@
           var dir = document.getElementById("wzJournalDir");
           if (st) { st.textContent = ok ? "found, " + data.journalFileCount + " log file(s)" : data.journalDirConfiguredOk ? "folder found, no logs yet" : "not found — set it"; st.className = "st " + (ok ? "ok" : "bad"); }
           if (dir) dir.textContent = data.journalDir || "";
+          // A Linux setup card already up steps aside and comes back when this one closes.
+          if (linuxSetupModal && linuxSetupModal.classList.contains("on")) {
+            linuxSetupModal.classList.remove("on");
+            linuxSetupPending = true;
+          }
           wizardModal.classList.add("on");
         }
         function closeWizard() {
           if (wizardModal) wizardModal.classList.remove("on");
+          if (linuxSetupPending) {
+            linuxSetupPending = false;
+            void loadLinuxSetup(true);
+          }
         }
         var wzDone = document.getElementById("wzDone");
         var wzSetJournal = document.getElementById("wzSetJournal");

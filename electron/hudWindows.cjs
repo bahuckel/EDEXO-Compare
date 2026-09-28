@@ -1,0 +1,884 @@
+"use strict";
+
+/*
+  The HUD overlay windows (split out of main.cjs, owner 2026-09-28): the stack in its corner, the
+  layout file, hide and show (the hotkey), keeping them above the game, putting them back when the
+  display changes, opening / navigating / closing one, and the pages' own height reports.
+
+  All of the state lives inside `createHudWindows`. main.cjs passes in what it owns — Electron's
+  `app`, `BrowserWindow` and `screen`, the running server, the diagnostics hook, the preload path —
+  and wires the IPC channels and the HTTP bridge to the object this returns. Passing Electron in is
+  also what lets tests/hudWindows.test.ts drive the stack with fakes.
+*/
+const path = require("path");
+const fs = require("fs");
+
+const MAX_HUD_OVERLAYS = 8; // was 3; the owner wants every HUD selectable at once
+const HUD_STACK_GAP = 6;
+/** Ctrl+Alt+H hides and shows every HUD window at once (menus, screenshots), checked free by the owner. */
+const HUD_TOGGLE_SHORTCUT = "Control+Alt+H";
+/** How often the visible HUDs re-assert the top of the z-order. See {@link keepHudsOnTop}. */
+const HUD_KEEP_ON_TOP_MS = 4000;
+
+/*
+  An overlay window is transparent, so any height it has beyond its content reads as empty space
+  between it and the next one — the owner's "spacing between them is too large" was mostly windows
+  bigger than what they were drawing. They ask to be resized to their own content instead, which
+  also fixes the opposite failure: the distance HUD grew a radar and was being cut off by a window
+  sized before the radar existed.
+*/
+const HUD_MIN_HEIGHT = 90;
+const HUD_MAX_HEIGHT = 900;
+
+/*
+  One reading of an overlay request, shared by the IPC handlers and the HTTP bridge.
+
+  Both doors take the same `{ pathname, width, height }` and must agree on every default, so they
+  call these rather than each repeating the coercion. Two copies of a default is how one of them
+  quietly stops matching the other.
+*/
+const HUD_DEFAULT_PATH = "/distance-overlay.html";
+const HUD_DEFAULT_WIDTH = 404;
+const HUD_DEFAULT_HEIGHT = 330;
+
+function hudPathFrom(opts, fallback = HUD_DEFAULT_PATH) {
+  const o = opts && typeof opts === "object" ? opts : {};
+  const raw = typeof o.pathname === "string" && o.pathname.trim() ? o.pathname.trim() : fallback;
+  return raw.startsWith("/") ? raw : `/${raw}`;
+}
+
+function hudWidthFrom(opts) {
+  const n = Number(opts && typeof opts === "object" ? opts.width : NaN);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : HUD_DEFAULT_WIDTH;
+}
+
+function hudHeightFrom(opts) {
+  const n = Number(opts && typeof opts === "object" ? opts.height : NaN);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : HUD_DEFAULT_HEIGHT;
+}
+
+/** The slot identity: the page, not its query string (the merged HUD changes sections via the query). */
+function hudSlotKey(pathNorm) {
+  return String(pathNorm).split("?")[0];
+}
+
+/**
+ * @param {{
+ *   electron: { app: any, BrowserWindow: any, screen: any },
+ *   getRuntime: () => ({ getLocalBaseUrl: () => string } | null),
+ *   getDiag?: () => ({ watchWindow: (win: any, kind: string) => void } | null),
+ *   preloadPath: string,
+ *   onChange?: () => void,
+ * }} deps
+ */
+function createHudWindows(deps) {
+  const { app, BrowserWindow, screen } = deps.electron;
+  if (!deps.getDiag) deps.getDiag = () => null;
+  if (!deps.onChange) deps.onChange = () => {};
+
+  /** @type {{ win: Electron.BrowserWindow, pathname: string }[]} */
+  let hudOverlayStack = [];
+
+  /*
+    Where the stack lives and in what order — the owner's choice, remembered across launches in
+    userData/hud-layout.json. `corner` is tl / tr / bl / br; `order` lists page keys (query string
+    aside), first = outermost (top of a top-anchored stack, bottom of a bottom-anchored one). Pages not
+    in the list follow in the order they were opened.
+  */
+  let hudLayout = { corner: "tr", order: [] };
+  let hudHidden = false;
+  /** The HUD size multiplier from the launcher's slider; the pages report it, the stack width follows. */
+  let hudScale = 1;
+
+  /**
+   * The HUDs that were open when the app last ran, restored on the next launch in the state they
+   * were left in — shown or hidden (owner, 2026-09-28; until then always hidden, 2026-09-13). Same
+   * file as the layout.
+   */
+  let hudRestoreList = [];
+  /**
+   * The last set of HUDs the commander actually had open.
+   *
+   * Kept apart from `hudRestoreList`, which `restoreHudOverlays` consumes, and never overwritten with
+   * an empty list: the stack is pruned as windows are destroyed, so a shutdown can leave it empty
+   * while the commander's intent — "these four HUDs" — has not changed at all. This is what the
+   * hotkey reopens when it is pressed and there is nothing on screen to show.
+   */
+  let hudRememberedOpen = [];
+  /** The icon child windows are created with, stashed at boot so the hotkey can open one later. */
+  let hudChildIcon;
+  /**
+   * Set by {@link startEdexo}'s bundle once it is loaded; see `src/server/paths.ts`.
+   *
+   * Held in a variable rather than required at call time because this file is loaded before the server
+   * bundle is, and a HUD path resolved too early would silently disagree with the one everything else
+   * uses.
+   */
+  let resolveHudLayoutPathFromBundle = null;
+
+  function hudPathsFiltered() {
+    return hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed()).map((s) => s.pathname);
+  }
+
+  function destroyHudWindow(win) {
+    if (!win || win.isDestroyed()) return;
+    try {
+      win.destroy();
+    } catch {
+      try {
+        win.close();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  function removeHudSlotForWindow(win) {
+    const next = hudOverlayStack.filter((s) => s.win !== win);
+    if (next.length === hudOverlayStack.length) return;
+    hudOverlayStack = next;
+    relayoutHudStack();
+  }
+
+  function destroyAllHudOverlays() {
+    for (const s of hudOverlayStack) destroyHudWindow(s.win);
+    hudOverlayStack = [];
+  }
+
+  /**
+   * Where the HUD layout lives.
+   *
+   * It used to be Electron's own `app.getPath("userData")` — the one piece of app state that
+   * `EDEXO_USER_DATA_DIR` did not cover, so an "isolated" second instance rewrote the real app's
+   * overlay set. It sits beside the rest of the user data now.
+   *
+   * The Electron directory is still the fallback for the moment before the bundle is loaded, and
+   * {@link carryHudLayoutOver} moves an existing file across once.
+   */
+  function hudLayoutPath() {
+    if (resolveHudLayoutPathFromBundle) {
+      try {
+        return resolveHudLayoutPathFromBundle();
+      } catch {
+        /* fall through to the Electron directory */
+      }
+    }
+    return legacyHudLayoutPath();
+  }
+
+  function legacyHudLayoutPath() {
+    return path.join(app.getPath("userData"), "hud-layout.json");
+  }
+
+  /**
+   * Carry a layout written before the move, once.
+   *
+   * Copied rather than moved: a failed delete must not look like a failed migration, and the old file
+   * costs nothing once nothing reads it. Never over an existing layout — on an upgrade the commander's
+   * current one wins.
+   */
+  function carryHudLayoutOver() {
+    try {
+      const live = hudLayoutPath();
+      const legacy = legacyHudLayoutPath();
+      if (live === legacy) return;
+      if (fs.existsSync(live) || !fs.existsSync(legacy)) return;
+      fs.mkdirSync(path.dirname(live), { recursive: true });
+      fs.copyFileSync(legacy, live);
+      console.info("[edexo-compare] carried the HUD layout over from", legacy);
+    } catch {
+      /* an unreadable or unwritable location just means the defaults */
+    }
+  }
+  function loadHudLayout() {
+    try {
+      /*
+        Strip a byte-order mark before parsing.
+
+        `JSON.parse` throws on a leading BOM, and every Windows tool that might touch this file writes
+        one — Notepad, and PowerShell's own `Set-Content -Encoding utf8`. The throw is caught below and
+        looks exactly like "no layout saved", so a commander who opened the file to look at it would
+        silently lose their overlay arrangement with nothing to explain it.
+      */
+      const j = JSON.parse(fs.readFileSync(hudLayoutPath(), "utf8").replace(/^\uFEFF/, ""));
+      if (j && typeof j === "object") {
+        setHudLayout(j, false);
+        // The commander's last choice, shown or hidden: restored as it was (owner, 2026-09-28).
+        hudHidden = j.hidden === true;
+        if (Number.isFinite(Number(j.scale))) hudScale = Math.min(2, Math.max(0.5, Number(j.scale)));
+        if (Array.isArray(j.lastOpen)) {
+          hudRememberedOpen = j.lastOpen
+            .filter(
+              (o) =>
+                o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"),
+            )
+            .slice(0, MAX_HUD_OVERLAYS)
+            .map((o) => ({
+              pathname: o.pathname,
+              width:
+                Number.isFinite(Number(o.width)) && Number(o.width) > 0 ? Math.floor(Number(o.width)) : 404,
+              height:
+                Number.isFinite(Number(o.height)) && Number(o.height) > 0
+                  ? Math.floor(Number(o.height))
+                  : 330,
+            }));
+        }
+        if (Array.isArray(j.open)) {
+          hudRestoreList = j.open
+            .filter(
+              (o) =>
+                o && typeof o === "object" && typeof o.pathname === "string" && o.pathname.startsWith("/"),
+            )
+            .slice(0, MAX_HUD_OVERLAYS)
+            .map((o) => ({
+              pathname: o.pathname,
+              width:
+                Number.isFinite(Number(o.width)) && Number(o.width) > 0 ? Math.floor(Number(o.width)) : 404,
+              height:
+                Number.isFinite(Number(o.height)) && Number(o.height) > 0
+                  ? Math.floor(Number(o.height))
+                  : 330,
+            }));
+          if (hudRestoreList.length && !hudRememberedOpen.length) hudRememberedOpen = hudRestoreList.slice();
+        }
+      }
+    } catch {
+      /* first run, or unreadable: defaults */
+    }
+  }
+  function persistHudFile() {
+    try {
+      const open = hudOverlayStack
+        .filter((s) => s.win && !s.win.isDestroyed())
+        .map((s) => ({ pathname: s.pathname, width: s.width, height: s.height }));
+      // Only ever remember a real set. An empty `open` is usually windows going away at shutdown, not
+      // the commander deciding he wants no HUDs, and forgetting on every quit is how the hotkey ended
+      // up with nothing to show.
+      if (open.length) hudRememberedOpen = open;
+      fs.writeFileSync(
+        hudLayoutPath(),
+        JSON.stringify({
+          ...hudLayout,
+          open,
+          lastOpen: hudRememberedOpen,
+          hidden: hudHidden,
+          scale: hudScale,
+        }),
+        "utf8",
+      );
+    } catch {
+      /* ignore */
+    }
+  }
+  function setHudLayout(next, persist) {
+    const corner =
+      typeof next.corner === "string" && /^(tl|tr|bl|br)$/.test(next.corner) ? next.corner : hudLayout.corner;
+    const order = Array.isArray(next.order)
+      ? next.order.filter((k) => typeof k === "string").slice(0, 16)
+      : hudLayout.order;
+    hudLayout = { corner, order };
+    if (persist) persistHudFile();
+    relayoutHudStack();
+    return hudLayout;
+  }
+  /**
+   * Reopen last session's HUDs in the state they were left in (`hidden`, read by `loadHudLayout`).
+   *
+   * Until 2026-09-28 this always hid them afterwards, and the hide lost a race: a window shows
+   * itself at `ready-to-show`, which can come after the load this waited for. The HUDs were then on
+   * screen while `hudHidden` said hidden, so the first press of the hotkey "showed" what was already
+   * showing and looked like the keys doing nothing — the owner's "sometimes does not work". Now the
+   * flag is set before any window opens, and every window consults it when it first paints.
+   */
+  async function restoreHudOverlays(iconForChild) {
+    const list = hudRestoreList;
+    hudRestoreList = [];
+    if (!list.length) return;
+    for (const o of list) {
+      try {
+        await requestHudOverlaySlot(o.pathname, o.width, o.height, iconForChild, "open");
+      } catch {
+        /* a page that no longer exists: skip it */
+      }
+    }
+    /*
+      A restore that opened none of its set leaves nothing hidden: recording "hidden" over an empty
+      stack spends the next press of the hotkey un-hiding nothing.
+    */
+    if (hudHidden && !hudOverlayStack.some((s) => s.win && !s.win.isDestroyed())) {
+      hudHidden = false;
+      persistHudFile();
+      deps.onChange();
+    }
+  }
+
+  /**
+   * Stack the HUD windows in the chosen corner, in the chosen order.
+   *
+   * Every HUD in the stack gets the same width — the widest one asked for — so the panels line up
+   * as one column instead of four different boxes. The pages fill whatever width they are given.
+   */
+  /**
+   * Put one HUD back on top, and keep it there.
+   *
+   * Always-on-top is not a property Windows guarantees for the rest of a window's life. A game taking
+   * the foreground -- Elite does it on every alt-tab, and borderless with Fullscreen Optimizations
+   * behaves the same way as exclusive here -- can push every other topmost window below it. The flag
+   * is still set; the z-order says otherwise.
+   *
+   * This was asserted exactly once, at `ready-to-show`, so the first time Elite came forward the HUDs
+   * went behind it and nothing ever put them back. The commander's report reads as the hotkey failing
+   * ("does not appear"), and the tell that it is not the hotkey is that the same press works with the
+   * game minimised: the window is created, shown and positioned, and is simply underneath.
+   */
+  function raiseHudWindow(win) {
+    if (!win || win.isDestroyed()) return;
+    try {
+      win.showInactive();
+    } catch {
+      try {
+        win.show();
+      } catch {
+        return;
+      }
+    }
+    // `screen-saver` is the highest level Electron offers; `floating` is the fallback for a platform
+    // that refuses it. Re-set rather than assumed: the level travels with the assertion.
+    try {
+      win.setAlwaysOnTop(true, "screen-saver");
+    } catch {
+      try {
+        win.setAlwaysOnTop(true, "floating");
+      } catch {
+        /* ignore */
+      }
+    }
+    try {
+      win.moveTop();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
+   * Re-assert the whole visible stack, on a timer.
+   *
+   * Nothing tells an application that it has been pushed down the z-order, so the only way to hold the
+   * top is to ask for it again. Every few seconds is enough to be back before the commander looks, and
+   * cheap: three calls per window, none of which move focus -- `showInactive`, `setAlwaysOnTop` and
+   * `moveTop` all leave the foreground window alone, which matters when the foreground window is a
+   * game that would notice losing it.
+   *
+   * Stops itself whenever the HUDs are hidden or the stack empties, so an idle app runs no timer.
+   */
+  let hudKeepOnTopTimer = null;
+  function keepHudsOnTop() {
+    if (hudKeepOnTopTimer) return;
+    hudKeepOnTopTimer = setInterval(() => {
+      const live = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
+      if (hudHidden || live.length === 0) {
+        stopKeepingHudsOnTop();
+        return;
+      }
+      for (const s of live) raiseHudWindow(s.win);
+    }, HUD_KEEP_ON_TOP_MS);
+    if (typeof hudKeepOnTopTimer.unref === "function") hudKeepOnTopTimer.unref();
+  }
+  function stopKeepingHudsOnTop() {
+    if (!hudKeepOnTopTimer) return;
+    clearInterval(hudKeepOnTopTimer);
+    hudKeepOnTopTimer = null;
+  }
+
+  function relayoutHudStack() {
+    const d = screen.getPrimaryDisplay();
+    const wa = d.workArea;
+    const margin = 14;
+    hudOverlayStack = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
+    const rank = (s) => {
+      const i = hudLayout.order.indexOf(s.key);
+      return i < 0 ? 1000 + hudOverlayStack.indexOf(s) : i;
+    };
+    const ordered = hudOverlayStack.slice().sort((a, b) => rank(a) - rank(b));
+    const w = Math.round((Math.max(0, ...hudOverlayStack.map((s) => s.width || 0)) || 404) * hudScale);
+    const atBottom = hudLayout.corner.startsWith("b");
+    const atRight = hudLayout.corner.endsWith("r");
+    const x = atRight ? Math.floor(wa.x + wa.width - margin - w) : wa.x + margin;
+    let y = atBottom ? wa.y + wa.height - margin : wa.y + margin;
+    /*
+      Clamped into the work area, always.
+
+      A stack taller than the screen used to run off the bottom (or off the top, anchored at a bottom
+      corner) and the windows down there are simply gone — click-through, frameless, no taskbar entry,
+      nothing to drag back. The same arithmetic put every window off the side when the work area
+      shrank under it, which is the failure this clamp exists for: see the display listener below.
+    */
+    const fit = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    for (const slot of ordered) {
+      let sz;
+      try {
+        sz = slot.win.getSize();
+      } catch {
+        continue;
+      }
+      const h = sz[1];
+      if (atBottom) y -= h;
+      try {
+        slot.win.setBounds({
+          x: fit(x, wa.x, Math.max(wa.x, wa.x + wa.width - w)),
+          y: fit(y, wa.y, Math.max(wa.y, wa.y + wa.height - h)),
+          width: w,
+          height: h,
+          animate: false,
+        });
+      } catch {
+        /* ignore */
+      }
+      y = atBottom ? y - HUD_STACK_GAP : y + h + HUD_STACK_GAP;
+    }
+  }
+
+  /**
+   * Put the stack back on the screen when the screen changes underneath it.
+   *
+   * The HUDs are positioned from `screen.getPrimaryDisplay().workArea` and were only ever repositioned
+   * when something in the app happened to call {@link relayoutHudStack}. Nothing listened to the
+   * display itself — so when the work area changed, the windows stayed at coordinates computed for a
+   * screen that no longer existed, which on a shrink means **off the edge and unreachable**.
+   *
+   * Elite does this routinely: it changes resolution going fullscreen, changes it back on exit, and a
+   * monitor waking or sleeping does the same. That is the "now and again" in the owner's report — the
+   * overlay disappears, the hotkey cannot bring it back because hiding and showing does not move
+   * anything, and the only way out is to make a *new* window, which is what unticking "merge into one
+   * panel" and re-ticking it does.
+   *
+   * Coalesced, because Windows emits several of these for one resolution change.
+   */
+  let relayoutTimer = null;
+  function scheduleHudRelayout() {
+    if (relayoutTimer) clearTimeout(relayoutTimer);
+    relayoutTimer = setTimeout(() => {
+      relayoutTimer = null;
+      relayoutHudStack();
+    }, 250);
+  }
+
+  function watchDisplaysForHudRelayout() {
+    for (const ev of ["display-metrics-changed", "display-added", "display-removed"]) {
+      try {
+        screen.on(ev, scheduleHudRelayout);
+      } catch {
+        /* a platform without it: the stack simply keeps its position */
+      }
+    }
+  }
+
+  /**
+   * Reopen the remembered HUDs, for a hotkey press that has nothing to show.
+   *
+   * Deliberately not `restoreHudOverlays`: that one consumes its list and hides the stack afterwards,
+   * which is right at boot and exactly wrong here — this is somebody asking to see them now.
+   */
+  async function reopenRememberedHuds() {
+    const list = hudRememberedOpen.slice();
+    for (const o of list) {
+      try {
+        await requestHudOverlaySlot(o.pathname, o.width, o.height, hudChildIcon, "open");
+      } catch {
+        /* a page that no longer exists: skip it, the others still come back */
+      }
+    }
+    relayoutHudStack();
+    for (const s of hudOverlayStack) raiseHudWindow(s.win);
+    keepHudsOnTop();
+  }
+
+  /** Hide or show every HUD window (the global shortcut). Windows keep their state; only visibility changes. */
+  function toggleHudVisibility(force) {
+    hudHidden = typeof force === "boolean" ? force : !hudHidden;
+    persistHudFile();
+    deps.onChange();
+
+    /*
+      Showing when there is nothing on screen has to *open* something.
+
+      The hotkey only ever flipped a flag and looped over `hudOverlayStack`. When that stack is empty
+      the loop does nothing, so the commander presses the keys, sees no HUD, presses again, and the
+      flag simply flips back — forever. Nothing else in the app reopens them, which is why the only
+      way out was toggling a HUD off and on in the picker until one got created.
+
+      The stack is empty more often than it looks: it is pruned as windows are destroyed, and a
+      restore that failed leaves it empty while `hudHidden` says the HUDs are merely hidden.
+    */
+    const live = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
+    if (!hudHidden && live.length === 0 && hudRememberedOpen.length) {
+      void reopenRememberedHuds();
+      return hudHidden;
+    }
+
+    for (const s of hudOverlayStack) {
+      if (!s.win || s.win.isDestroyed()) continue;
+      if (hudHidden) {
+        try {
+          s.win.hide();
+        } catch {
+          /* ignore */
+        }
+        continue;
+      }
+      // Showing is the moment the game most likely owns the top of the z-order, so this asks for it
+      // back rather than only making the window visible underneath.
+      raiseHudWindow(s.win);
+    }
+    if (hudHidden) stopKeepingHudsOnTop();
+    else keepHudsOnTop();
+    /*
+      Showing is also a rescue, so it repositions.
+
+      The hotkey is what a commander reaches for when a HUD is not where it should be, and hiding and
+      showing a window parked off the edge of a changed work area brings back exactly nothing — which
+      is what the owner reported. One relayout here means the reflex works.
+    */
+    if (!hudHidden) relayoutHudStack();
+    return hudHidden;
+  }
+
+  /** @param {number} width @param {number} height */
+  function createHudOverlayWindow(width, height, iconForChild) {
+    // No `parent`: a child window is minimised together with its parent on Windows, which took every
+    // HUD off the screen whenever the launcher was minimised (owner, 2026-09-12). The HUDs are
+    // always-on-top, click-through windows of their own; the launcher closing still closes them
+    // through the app's own shutdown path.
+    const win = new BrowserWindow({
+      width,
+      height,
+      frame: false,
+      transparent: true,
+      hasShadow: false,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      resizable: false,
+      minimizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      show: false,
+      focusable: false,
+      thickFrame: false,
+      icon: iconForChild ?? undefined,
+      titleBarStyle: "hidden",
+      backgroundColor: "#00000000",
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        // The same bridge the launcher gets. Without it `window.edexoElectron` is undefined in the
+        // overlay pages, `resizeHudOverlay` silently no-ops, and every HUD stays at the size it was
+        // opened with — which is why the tracker's radar was cut off at the bottom.
+        preload: deps.preloadPath,
+        // `sandbox: false` is the only explicit opt-out in the app. The overlays are frameless,
+        // transparent, always-on-top windows whose rendering cannot be verified from a test or a
+        // headless run, and changing the packaged app on an untested assumption is how §31 happened.
+        // Flip it, launch the app, and open the overlays before committing.
+        sandbox: false,
+        /*
+          A session of their own (owner, 2026-09-26): Chromium keeps one zoom per site per session, and
+          the HUDs are the launcher's site, so zooming the launcher zoomed every overlay. Their
+          settings do not need the launcher's localStorage: with none of their own they read the
+          server's mirror of it (`hudPrefs` in each snapshot, pushed on every change — the phone HUD
+          has always worked that way).
+        */
+        partition: "persist:hud",
+      },
+    });
+    deps.getDiag()?.watchWindow(win, "hud");
+
+    try {
+      win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+    } catch {
+      try {
+        win.setVisibleOnAllWorkspaces(true);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    /*
+      A window paints when it is ready, which may be after the stack was hidden (a restore, or the
+      hotkey pressed while pages load). Raising it then put a HUD on screen behind the flag's back.
+    */
+    win.once("ready-to-show", () => {
+      relayoutHudStack();
+      if (hudHidden) {
+        try {
+          win.hide();
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+      raiseHudWindow(win);
+      keepHudsOnTop();
+    });
+
+    win.on("closed", () => {
+      removeHudSlotForWindow(win);
+    });
+
+    win.webContents.on("did-finish-load", () => {
+      if (!win || win.isDestroyed()) return;
+      try {
+        win.setIgnoreMouseEvents(true);
+      } catch {
+        /* ignore */
+      }
+    });
+
+    return win;
+  }
+
+  /**
+   * Load a HUD overlay's page, retrying a couple of times before giving up.
+   *
+   * The owner hit `ERR_FAILED (-2) loading 'http://127.0.0.1:7111/fss-scan-overlay.html'` on a server
+   * that serves that page perfectly well a second later. `runtime` being set means the HTTP server
+   * has been created, not that the listening socket is answering yet, and opening the merged stack
+   * fires several `loadURL` calls at once — so the first one through can lose a race it would win on
+   * any later attempt.
+   *
+   * One failed load used to destroy the window and report the raw Chromium string, which put the
+   * commander in front of an error for something that had not actually gone wrong. Three attempts
+   * over roughly half a second; a page that is genuinely missing still fails, just three times.
+   *
+   * @param {import("electron").BrowserWindow} win
+   * @param {string} url
+   */
+  async function loadHudUrlWithRetry(win, url) {
+    const ATTEMPTS = 3;
+    const BACKOFF_MS = 200;
+    let last;
+    for (let i = 0; i < ATTEMPTS; i += 1) {
+      if (win.isDestroyed()) throw last ?? new Error("Overlay window closed while loading.");
+      try {
+        await win.loadURL(url);
+        return;
+      } catch (e) {
+        last = e;
+        if (i < ATTEMPTS - 1) {
+          console.warn(`[edexo-compare] HUD overlay load attempt ${i + 1} failed, retrying:`, url, String(e));
+          await new Promise((r) => setTimeout(r, BACKOFF_MS * (i + 1)));
+        }
+      }
+    }
+    throw last ?? new Error("Overlay failed to load.");
+  }
+
+  /**
+   * @param {string} pathNorm
+   * @param {number} width
+   * @param {number} height
+   * @param {"toggle" | "open" | "set"} mode toggle: same page closes; open: already-open page is a
+   *   no-op; set: an already-open page is pointed at the new URL (query string changes)
+   */
+  async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode) {
+    const runtime = deps.getRuntime();
+    if (!runtime) return { opened: false, paths: hudPathsFiltered(), error: "Server not ready yet." };
+
+    /*
+      Asking for a HUD is asking to see it.
+
+      `restoreHudOverlays` reopens last session's set and then hides the stack, so the hotkey brings
+      back exactly what the commander left. That leaves `hudHidden` true for the rest of the run, and
+      nothing in the launcher ever cleared it — the launcher has no visibility control at all. So every
+      overlay opened from the picker was hidden the instant it loaded (see the `hudHidden` check further
+      down), the picker ticked it as on, and the commander saw nothing. Toggling anything else in the
+      picker only opened more invisible windows.
+
+      `open` is exempt because that *is* the restore path, and un-hiding there would defeat the point of
+      restoring quietly. A `toggle` or a `set` is somebody clicking.
+    */
+    if (mode !== "open" && hudHidden) toggleHudVisibility(false);
+
+    const key = hudSlotKey(pathNorm);
+    /*
+      A dead window must not answer for a live one.
+
+      `closed` prunes the slot when a window is destroyed normally, but a renderer that goes away some
+      other way leaves the slot behind — and then `set` finds it, sees the pathname already matches,
+      and returns `opened: true` having done nothing at all. The launcher ticks the row, the commander
+      sees nothing, and no amount of clicking helps because every click takes the same early return.
+    */
+    hudOverlayStack = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
+    const existing = hudOverlayStack.findIndex((s) => s.key === key);
+    if (existing >= 0) {
+      const slot = hudOverlayStack[existing];
+      if (mode === "toggle") {
+        hudOverlayStack.splice(existing, 1);
+        destroyHudWindow(slot.win);
+        relayoutHudStack();
+        persistHudFile();
+        deps.onChange();
+        return { opened: false, paths: hudPathsFiltered() };
+      }
+      if (mode === "set" && slot.pathname !== pathNorm) {
+        slot.pathname = pathNorm;
+        slot.width = Math.max(slot.width || 0, width);
+        slot.height = Math.max(slot.height || 0, height);
+        try {
+          await loadHudUrlWithRetry(slot.win, `${runtime.getLocalBaseUrl()}${pathNorm}`);
+          relayoutHudStack();
+          persistHudFile();
+        } catch (e) {
+          return {
+            opened: true,
+            paths: hudPathsFiltered(),
+            error: e instanceof Error ? e.message : String(e),
+          };
+        }
+      }
+      return { opened: true, paths: hudPathsFiltered() };
+    }
+
+    while (hudOverlayStack.length >= MAX_HUD_OVERLAYS) {
+      const drop = hudOverlayStack.shift();
+      if (drop) destroyHudWindow(drop.win);
+    }
+
+    const url = `${runtime.getLocalBaseUrl()}${pathNorm}`;
+    const win = createHudOverlayWindow(width, height, iconForChild);
+    hudOverlayStack.push({ win, pathname: pathNorm, key, width, height });
+    deps.onChange();
+
+    win.webContents.on("did-fail-load", (_e, code, desc) => {
+      // Logged at every attempt, not just the first: a retry that succeeds leaves one of these behind
+      // and it should not read like the failure that was reported to the commander.
+      console.error("[edexo-compare] HUD overlay failed to load:", url, code, desc);
+    });
+
+    try {
+      await loadHudUrlWithRetry(win, url);
+      relayoutHudStack();
+      if (hudHidden) win.hide();
+      persistHudFile();
+      return { opened: true, paths: hudPathsFiltered() };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const idx = hudOverlayStack.findIndex((s) => s.win === win);
+      if (idx >= 0) hudOverlayStack.splice(idx, 1);
+      destroyHudWindow(win);
+      relayoutHudStack();
+      return { opened: false, paths: hudPathsFiltered(), error: msg };
+    }
+  }
+
+  /** Close one overlay by page. Returns the same shape the IPC channel always returned. */
+  function closeHudOverlayByPath(pathname) {
+    const key = hudSlotKey(pathname);
+    const idx = hudOverlayStack.findIndex((s) => s.key === key);
+    if (idx < 0) return { closed: false, paths: hudPathsFiltered() };
+    const slot = hudOverlayStack[idx];
+    hudOverlayStack.splice(idx, 1);
+    destroyHudWindow(slot.win);
+    relayoutHudStack();
+    persistHudFile();
+    deps.onChange();
+    return { closed: true, paths: hudPathsFiltered() };
+  }
+
+  function pushPrefs(prefs) {
+    if (!prefs || typeof prefs !== "object") return;
+    for (const slot of hudOverlayStack) {
+      try {
+        if (slot.win && !slot.win.isDestroyed()) slot.win.webContents.send("edexo:hud-prefs", prefs);
+      } catch {
+        /* a window closing mid-send */
+      }
+    }
+  }
+
+  /**
+   * An overlay reporting how tall it actually is.
+   *
+   * The page is the only thing that knows: its height depends on what the game is doing — a sample
+   * in progress draws rows an idle one does not. Width is left alone, because that *is* a layout
+   * choice and a HUD that changes width as data arrives would be unreadable.
+   */
+  function resizeFromPage(win, opts) {
+    if (!win || win.isDestroyed()) return { ok: false };
+    const raw = Number(opts && typeof opts === "object" ? opts.height : NaN);
+    if (!Number.isFinite(raw)) return { ok: false };
+    const height = Math.max(HUD_MIN_HEIGHT, Math.min(HUD_MAX_HEIGHT, Math.ceil(raw)));
+    // The page's scale rides along; a change widens every window in the stack together.
+    const sc = Number(opts && typeof opts === "object" ? opts.scale : NaN);
+    let scaleChanged = false;
+    if (Number.isFinite(sc)) {
+      const next = Math.min(2, Math.max(0.5, sc));
+      if (Math.abs(next - hudScale) > 0.004) {
+        hudScale = next;
+        scaleChanged = true;
+        persistHudFile();
+      }
+    }
+    try {
+      const [w, h] = win.getSize();
+      // A pixel or two of jitter from a font metric must not start a resize loop.
+      if (!scaleChanged && Math.abs(h - height) <= 2) return { ok: true };
+      win.setBounds({ ...win.getBounds(), width: w, height }, false);
+      relayoutHudStack();
+      return { ok: true };
+    } catch {
+      return { ok: false };
+    }
+  }
+
+  return {
+    /** Pages of the open overlays, in stack order. */
+    paths: hudPathsFiltered,
+    count: () => hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed()).length,
+    isHidden: () => hudHidden,
+    layout: () => ({
+      ...hudLayout,
+      hidden: hudHidden,
+      count: hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed()).length,
+      shortcut: HUD_TOGGLE_SHORTCUT,
+    }),
+    setLayout: (next) => ({
+      ...setHudLayout(next || {}, true),
+      hidden: hudHidden,
+      shortcut: HUD_TOGGLE_SHORTCUT,
+    }),
+    request: requestHudOverlaySlot,
+    close: closeHudOverlayByPath,
+    toggleVisibility: toggleHudVisibility,
+    restore: restoreHudOverlays,
+    destroyAll: destroyAllHudOverlays,
+    pushPrefs,
+    resizeFromPage,
+    /** Boot: where the layout file lives once the server bundle is loaded, then read it. */
+    setLayoutPathResolver(fn) {
+      resolveHudLayoutPathFromBundle = typeof fn === "function" ? fn : null;
+    },
+    layoutPath: hudLayoutPath,
+    loadLayout() {
+      carryHudLayoutOver();
+      loadHudLayout();
+    },
+    watchDisplays: watchDisplaysForHudRelayout,
+    setChildIcon(icon) {
+      hudChildIcon = icon;
+    },
+    childIcon: () => hudChildIcon,
+    /** For tests: lay the stack out now. */
+    relayout: relayoutHudStack,
+  };
+}
+
+module.exports = {
+  createHudWindows,
+  hudPathFrom,
+  hudWidthFrom,
+  hudHeightFrom,
+  hudSlotKey,
+  HUD_TOGGLE_SHORTCUT,
+  HUD_MIN_HEIGHT,
+  HUD_MAX_HEIGHT,
+  MAX_HUD_OVERLAYS,
+};

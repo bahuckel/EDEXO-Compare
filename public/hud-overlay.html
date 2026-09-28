@@ -23,8 +23,8 @@
         <div class="panel__body" id="hud"></div>
       </div>
     </div>
-    <script src="hud.js?v=11"></script>
-    <script>
+    <script type="module">
+      import { HUD } from "./hud/main.js";
       HUD.mount(HUD.sectionsFromUrl());
     </script>
   </body>

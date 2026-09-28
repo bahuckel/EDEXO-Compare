@@ -164,7 +164,12 @@ export function InfoPopover({
           setOpen((v) => !v);
         }}
       >
-        ⓘ
+        {/* Drawn, not the ⓘ character: Linux's default fonts do not carry it and showed an empty box. */}
+        <svg className="info-affordance-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <circle cx="8" cy="8" r="6.9" fill="none" stroke="currentColor" strokeWidth="1.3" />
+          <circle cx="8" cy="4.9" r="1" fill="currentColor" />
+          <rect x="7.25" y="6.8" width="1.5" height="5" rx="0.6" fill="currentColor" />
+        </svg>
       </button>
       {open
         ? createPortal(

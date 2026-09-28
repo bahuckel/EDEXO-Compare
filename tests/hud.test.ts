@@ -1,16 +1,15 @@
 // @vitest-environment jsdom
 /**
- * The HUD overlay logic (public/hud.js) against fake snapshots.
+ * The HUD overlay logic (public/hud/) against fake snapshots.
  *
- * hud.js is a plain browser script with all the rendering of the five overlay sections. It is
- * loaded into jsdom here and driven through `HUD.mount` / `HUD.render` with `noTimers`, so nothing
+ * public/hud/ holds the rendering of the overlay sections as plain browser modules, no build step.
+ * They are loaded into jsdom here (tests/helpers/loadHud.ts) and driven through `HUD.mount` / `HUD.render` with `noTimers`, so nothing
  * polls or opens sockets. These are the rules the owner asked for and the bugs he reported: the
  * unlikely tier hidden unless confirmed, scan progress after the species, the targeted body winning
  * over the current one, the tracker folding away from a surface, the star-class verdicts.
  */
 import { describe, expect, it, beforeEach } from "vitest";
-import { readFileSync } from "node:fs";
-import path from "node:path";
+import { loadHudModule } from "./helpers/loadHud.js";
 
 type HudApi = {
   mount: (names: string[], opts?: { noTimers?: boolean }) => HTMLElement;
@@ -18,8 +17,8 @@ type HudApi = {
   starKind: (cls: string) => { kind: string; label: string };
   SECTIONS: string[];
   /*
-    The rest of `public/hud.js`'s surface, as the newer tests drive it. This type is hand-written —
-    `hud.js` is a plain browser script loaded through `new Function`, so nothing generates it — and
+    The rest of the HUD's surface, as the newer tests drive it. This type is hand-written —
+    public/hud/ is plain browser JavaScript, so nothing generates it — and
     it had fallen behind what the file exports, which typechecks as an error while the tests
     themselves pass. Kept loose on purpose: it describes what the tests need, not the whole API.
   */
@@ -27,25 +26,13 @@ type HudApi = {
   readOpacity: () => number;
   readAlpha?: () => number;
   audioOn: () => boolean;
-  /** A hook the page assigns, not a registrar: `hud.js` calls `HUD.onCue(kind)` if it is set. */
+  /** A hook the page assigns, not a registrar: the HUD calls `HUD.onCue(kind)` if it is set. */
   onCue?: (kind: string) => unknown;
   /** Fed the overlay payload each frame; it decides whether a cue has just become due. */
   cueFromOverlay: (eo: unknown) => void;
 };
 
-function loadHud(): HudApi {
-  document.body.innerHTML =
-    '<div class="shell" id="shell"><div class="panel" id="card"><div class="panel__body" id="hud"></div></div></div>';
-  const src = readFileSync(path.resolve(__dirname, "../public/hud.js"), "utf8");
-   
-  new Function("window", "document", "localStorage", "location", src)(
-    window,
-    document,
-    window.localStorage,
-    window.location,
-  );
-  return (window as unknown as { HUD: HudApi }).HUD;
-}
+const loadHud = () => loadHudModule<HudApi>();
 
 const body = (key: string, name: string, matches: unknown[], extra: Record<string, unknown> = {}) => ({
   state: { key, bodyName: name, biologicalSignals: 4, dssComplete: true, organicGenusLocks: [], ...extra },
@@ -59,11 +46,11 @@ const match = (genus: string, species: string, cr: number, extra: Record<string,
   ...extra,
 });
 
-describe("hud.js candidates", () => {
+describe("HUD candidates", () => {
   let HUD: HudApi;
-  beforeEach(() => {
+  beforeEach(async () => {
     window.localStorage.clear();
-    HUD = loadHud();
+    HUD = await loadHud();
     HUD.mount(["candidates"], { noTimers: true });
   });
 
@@ -133,11 +120,11 @@ describe("hud.js candidates", () => {
   });
 });
 
-describe("hud.js tracker", () => {
+describe("HUD tracker", () => {
   let HUD: HudApi;
-  beforeEach(() => {
+  beforeEach(async () => {
     window.localStorage.clear();
-    HUD = loadHud();
+    HUD = await loadHud();
     HUD.mount(["distance"], { noTimers: true });
   });
 
@@ -258,11 +245,11 @@ describe("hud.js tracker", () => {
   });
 });
 
-describe("hud.js size and opacity", () => {
-  it("scales the root font and the panel alpha from the launcher's keys", () => {
+describe("HUD size and opacity", () => {
+  it("scales the root font and the panel alpha from the launcher's keys", async () => {
     localStorage.setItem("edexoHudScale", "1.5");
     localStorage.setItem("edexoHudOpacity", "0.6");
-    const HUD = loadHud();
+    const HUD = await loadHud();
     HUD.mount(["jump"], { noTimers: true });
     expect(document.documentElement.style.fontSize).toBe("150%");
     // the slider fades the box's own layers (frame + fill) through one variable; the text above stays solid
@@ -278,9 +265,9 @@ describe("hud.js size and opacity", () => {
   });
 });
 
-describe("hud.js audio cues", () => {
-  it("fires once on the ring clearing and once on the third sample, and stays silent when off", () => {
-    const HUD = loadHud();
+describe("HUD audio cues", () => {
+  it("fires once on the ring clearing and once on the third sample, and stays silent when off", async () => {
+    const HUD = await loadHud();
     const cues: string[] = [];
     HUD.onCue = (k: string) => cues.push(k);
     const eo = (sampleCount: number, meets: boolean | null) => ({
@@ -312,9 +299,9 @@ describe("hud.js audio cues", () => {
   });
 });
 
-describe("hud.js next jump", () => {
-  it("classifies star classes the way the owner asked", () => {
-    const HUD = loadHud();
+describe("HUD next jump", () => {
+  it("classifies star classes the way the owner asked", async () => {
+    const HUD = await loadHud();
     expect(HUD.starKind("G").kind).toBe("scoop");
     expect(HUD.starKind("M").kind).toBe("scoop");
     expect(HUD.starKind("DA").kind).toBe("noscoop");
@@ -324,8 +311,8 @@ describe("hud.js next jump", () => {
     expect(HUD.starKind("").kind).toBe("unknown");
   });
 
-  it("renders the target and flips to arrived", () => {
-    const HUD = loadHud();
+  it("renders the target and flips to arrived", async () => {
+    const HUD = await loadHud();
     HUD.mount(["jump"], { noTimers: true });
     HUD.render({ jumpTarget: { starSystem: "Traikee GL-S c6-0", starClass: "G", arrived: false } });
     expect(document.querySelector('[data-f="sys"]')?.textContent).toBe("Traikee GL-S c6-0");
@@ -336,8 +323,8 @@ describe("hud.js next jump", () => {
     expect(document.querySelector('[data-f="status"]')?.textContent).toBe("Arrived");
   });
 
-  it("draws the route strip with the refuel pump on the nearest scoop", () => {
-    const HUD = loadHud();
+  it("draws the route strip with the refuel pump on the nearest scoop", async () => {
+    const HUD = await loadHud();
     HUD.mount(["jump"], { noTimers: true });
     const ahead = [
       { starSystem: "A", starClass: "K", scoopable: true, refuel: "none" },
@@ -364,9 +351,9 @@ describe("hud.js next jump", () => {
     expect((document.querySelector('[data-f="route"]') as HTMLElement).hidden).toBe(true);
   });
 
-  it("colours each arrow by what EDSM knows: orange visited, blue unvisited, grey no answer", () => {
+  it("colours each arrow by what EDSM knows: orange visited, blue unvisited, grey no answer", async () => {
     // Owner, 2026-09-24: grey while EDSM has not answered, and when it could not be reached.
-    const HUD = loadHud();
+    const HUD = await loadHud();
     HUD.mount(["jump"], { noTimers: true });
     const hop = (s: string, ff: boolean | null, note: string | null = null) => ({
       starSystem: s,
@@ -405,9 +392,9 @@ describe("hud.js next jump", () => {
   });
 });
 
-describe("hud.js merged panel", () => {
-  it("mounts sections in the order given (the owner's stack order) and retints only the finished one", () => {
-    const HUD = loadHud();
+describe("HUD merged panel", () => {
+  it("mounts sections in the order given (the owner's stack order) and retints only the finished one", async () => {
+    const HUD = await loadHud();
     HUD.mount(["distance", "jump", "fss", "jump", "bogus"], { noTimers: true });
     const secs = [...document.querySelectorAll(".hud-section")].map((s) => s.getAttribute("data-section"));
     expect(secs).toEqual(["distance", "jump", "fss"]);
@@ -416,8 +403,8 @@ describe("hud.js merged panel", () => {
     expect(document.querySelector('[data-section="distance"]')?.className).not.toContain("hud-section--ok");
     expect(document.getElementById("card")?.className).toBe("panel");
   });
-  it("says whether the system was honked, and does not call a hand-scanned star complete", () => {
-    const HUD = loadHud();
+  it("says whether the system was honked, and does not call a hand-scanned star complete", async () => {
+    const HUD = await loadHud();
     HUD.mount(["fss"], { noTimers: true });
     // Scanned the star by hand, no honk: 1 / 1 is not a finished system.
     HUD.render({

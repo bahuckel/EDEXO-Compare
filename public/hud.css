@@ -10,7 +10,7 @@
   behind a transparent Electron window to blur), no web fonts (the pages must work offline and
   from file://). Bahnschrift ships with Windows 10+ and is the closest stock face to Eurostile.
 
-  Tunables live in :root. Section markup comes from hud.js; the page only supplies the shell.
+  Tunables live in :root. Section markup comes from hud/ (one module per section); the page only supplies the shell.
 */
 @import url("tokens.css?v=5");
 :root {
@@ -104,7 +104,7 @@ body {
   position: absolute;
   inset: 0;
   z-index: -1;
-  /* the fill's own alpha already follows the slider (hud.js); no second fade here */
+  /* the fill's own alpha already follows the slider (hud/theme.js); no second fade here */
   background: linear-gradient(180deg, var(--hud-bg-2), transparent 38%), var(--hud-bg);
   pointer-events: none;
 }
@@ -932,7 +932,7 @@ body {
   flex-wrap: nowrap;
   align-items: center;
   gap: 0.2rem 0.32rem;
-  /* one row: hud.js drops hops off the end until it fits */
+  /* one row: hud/sections/jump.js drops hops off the end until it fits */
   white-space: nowrap;
   overflow: hidden;
   margin-top: 0.5rem;
