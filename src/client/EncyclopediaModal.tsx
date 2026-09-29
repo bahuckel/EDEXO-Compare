@@ -1,4 +1,4 @@
-import { usePersistedState } from "./usePersistedState";
+import { isBool, isStr, usePersistedState } from "./usePersistedState";
 import type {
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
@@ -31,6 +31,7 @@ import {
   type EncyclopediaFiltersState,
 } from "./encyclopediaFilters";
 import { EDEXO_ENCY_NOT_FOUND_LS, readLsBool, writeLsBool } from "./lsPrefs";
+import { rarityTierInfo, type RegionalRarity } from "@shared/speciesRarity";
 import { EncyclopediaFilterBar } from "./EncyclopediaFilterBar";
 import { RarityGem } from "./RarityGem";
 import { ExomasteryPlanetsBody, FoundSpeciesPopup } from "./EncyclopediaPanels";
@@ -45,6 +46,24 @@ import type { FieldGuideDTO, GuideGenus, GuideSpecies } from "@shared/fieldGuide
 
 const EXO_DRAWER_TRANSITION_MS = 380;
 
+/** Whether the species is recorded in the commander's region, and how rare it is there. */
+function RegionMark({ region, r }: { region: string; r: RegionalRarity | null }) {
+  if (!r) return null;
+  if (!r.found)
+    return <span className="ency-region-mark ency-region-mark--none">Not recorded in {region}</span>;
+  const t = r.tier ? rarityTierInfo(r.tier) : null;
+  return (
+    <span
+      className="ency-region-mark"
+      style={t ? { color: t.colour } : undefined}
+      title={`Recorded in ${r.count.toLocaleString()} system${r.count === 1 ? "" : "s"} of ${region}`}
+    >
+      In {region}
+      {t ? ` · ${t.label}` : ""}
+    </span>
+  );
+}
+
 type GuideMaps = { species: Map<string, GuideSpecies>; genera: Map<string, GuideGenus> };
 
 /*
@@ -57,7 +76,10 @@ let guideCache: GuideMaps | null = null;
 
 async function loadRows(): Promise<EncyclopediaSpeciesRowDTO[]> {
   const r = await fetch("/api/species-encyclopedia");
-  const j = (await r.json().catch(() => null)) as { species?: EncyclopediaSpeciesRowDTO[]; error?: string } | null;
+  const j = (await r.json().catch(() => null)) as {
+    species?: EncyclopediaSpeciesRowDTO[];
+    error?: string;
+  } | null;
   if (!r.ok) throw new Error(j?.error || r.statusText);
   if (!j?.species) throw new Error("Invalid response");
   rowsCache = j.species;
@@ -262,10 +284,13 @@ function EncyclopediaThumb({
 export function EncyclopediaModal({
   footScannedEntries,
   spawnCompare,
+  currentRegion = null,
   onClose,
 }: {
   footScannedEntries: FootScannedEntry[];
   spawnCompare: EncyclopediaSpawnCompare | null;
+  /** The commander's region: each card says whether the species grows there, and a toggle keeps those. */
+  currentRegion?: string | null;
   onClose: () => void;
 }) {
   const [rows, setRows] = useState<EncyclopediaSpeciesRowDTO[] | null>(rowsCache);
@@ -537,12 +562,60 @@ export function EncyclopediaModal({
     setNotFoundOnlyState(v);
     writeLsBool(EDEXO_ENCY_NOT_FOUND_LS, v);
   };
+  /*
+    The current region (guild tester report, 2026-09-30: "default to or at least highlight the current
+    region"): every species' standing there, a mark on each card, and a toggle that keeps the ones
+    recorded there. Remembered like the other filters.
+  */
+  const [regionInfo, setRegionInfo] = useState<{
+    region: string;
+    species: Record<string, RegionalRarity | null>;
+  } | null>(null);
+  useEffect(() => {
+    if (!currentRegion) {
+      setRegionInfo(null);
+      return;
+    }
+    let live = true;
+    void fetch(`/api/encyclopedia-region?name=${encodeURIComponent(currentRegion)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { region: string; species: Record<string, RegionalRarity | null> } | null) => {
+        if (live && j?.species) setRegionInfo(j);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [currentRegion]);
+  const [inRegionOnly, setInRegionOnly] = usePersistedState("encyclopedia.inRegion", false, isBool);
+  const inRegion = useCallback((id: string) => regionInfo?.species[id]?.found === true, [regionInfo]);
+
+  /* Colour variants, from the field guide's colour tables (the species' own, else its genus'). */
+  const [colour, setColour] = usePersistedState("encyclopedia.colour", "", isStr);
+  const coloursOf = useCallback(
+    (entry: SpeciesEntry): string[] => {
+      const table =
+        guide?.species.get(entry.id)?.colours ?? guide?.genera.get(entry.genusDataDir)?.colours ?? null;
+      return table ? table.map.map(([, name]) => name.trim()) : [];
+    },
+    [guide],
+  );
+  const colourOptions = useMemo(() => {
+    const all = new Set<string>();
+    for (const r of rows ?? []) for (const c of coloursOf(r.entry)) all.add(c);
+    return [...all].sort((a, b) => a.localeCompare(b));
+  }, [rows, coloursOf]);
+
   const { rows: filtered, searching } = useMemo(() => {
     const ranked = rows ? rankEncyclopediaRows(rows, filters) : { rows: [], searching: false };
-    return notFoundOnly
-      ? { ...ranked, rows: ranked.rows.filter((r) => (footHitCounts.get(r.entry.id) ?? 0) === 0) }
+    const keep = (r: EncyclopediaSpeciesRowDTO) =>
+      (!notFoundOnly || (footHitCounts.get(r.entry.id) ?? 0) === 0) &&
+      (!inRegionOnly || !regionInfo || inRegion(r.entry.id)) &&
+      (!colour || coloursOf(r.entry).includes(colour));
+    return notFoundOnly || (inRegionOnly && regionInfo) || colour
+      ? { ...ranked, rows: ranked.rows.filter(keep) }
       : ranked;
-  }, [rows, filters, notFoundOnly, footHitCounts]);
+  }, [rows, filters, notFoundOnly, footHitCounts, inRegionOnly, regionInfo, inRegion, colour, coloursOf]);
   const notFoundCount = useMemo(
     () => (rows ?? []).filter((r) => (footHitCounts.get(r.entry.id) ?? 0) === 0).length,
     [rows, footHitCounts],
@@ -677,8 +750,15 @@ export function EncyclopediaModal({
             .filter(Boolean)
             .join(" — ")}
         >
-          <EncyclopediaThumb photoUrl={photoUrl} displayName={entry.displayName} className="fg-photo-img" size="card" />
-          {(photoUrls?.length ?? 0) > 1 ? <span className="fg-photo-count">{photoUrls!.length} photos</span> : null}
+          <EncyclopediaThumb
+            photoUrl={photoUrl}
+            displayName={entry.displayName}
+            className="fg-photo-img"
+            size="card"
+          />
+          {(photoUrls?.length ?? 0) > 1 ? (
+            <span className="fg-photo-count">{photoUrls!.length} photos</span>
+          ) : null}
         </button>
         <div className="encyclopedia-species-col">
           <header className="fg-head">
@@ -688,10 +768,15 @@ export function EncyclopediaModal({
                 {entry.displayName}
               </h4>
               <span className="encyclopedia-species-genus dim tiny">{entry.genus || entry.genusDataDir}</span>
+              {regionInfo ? (
+                <RegionMark region={regionInfo.region} r={regionInfo.species[entry.id] ?? null} />
+              ) : null}
             </div>
             {priceCredits ? (
               <div className="fg-value">
-                <strong title={`${priceCredits.toLocaleString("en-US")} cr`}>{fmtGuideCredits(priceCredits)} cr</strong>
+                <strong title={`${priceCredits.toLocaleString("en-US")} cr`}>
+                  {fmtGuideCredits(priceCredits)} cr
+                </strong>
                 <span title={`${(priceCredits * 5).toLocaleString("en-US")} cr`}>
                   {fmtGuideCredits(priceCredits * 5)} first footfall
                 </span>
@@ -704,7 +789,9 @@ export function EncyclopediaModal({
             <span className="fg-chip">Clonal range {g.sampleDistanceM.toLocaleString("en-US")} m</span>
           ) : null}
           <div className="encyclopedia-criteria">
-            <span className="fg-h">Conditions{spawnCompare ? ` · vs ${spawnCompare.bodyTabLabel ?? "this body"}` : ""}</span>
+            <span className="fg-h">
+              Conditions{spawnCompare ? ` · vs ${spawnCompare.bodyTabLabel ?? "this body"}` : ""}
+            </span>
             <EncyclopediaSpeciesConditions entry={entry} spawnCompare={spawnCompare} />
           </div>
           {g?.measured ? (
@@ -717,32 +804,32 @@ export function EncyclopediaModal({
           ) : null}
           <GuideColoursBlock c={g?.colours ?? null} />
           <div className="encyclopedia-species-actions">
+            <button
+              type="button"
+              className="btn-ency-found"
+              title="Show matching rows from your foot catalog for this species"
+              onClick={() => setFoundFor(entry)}
+            >
+              Found ({foundN})
+            </button>
+            {exoEnabled ? (
               <button
                 type="button"
-                className="btn-ency-found"
-                title="Show matching rows from your foot catalog for this species"
-                onClick={() => setFoundFor(entry)}
+                className="btn-ency-exomastery"
+                title={
+                  exoExpanded
+                    ? "Hide exomastery data for this species"
+                    : exomasteryProfileFilePresent
+                      ? "Show Exomastery profile (mode vs mean) from feeder JSON"
+                      : "Show EDSM / per-body exomastery rows for this species"
+                }
+                onClick={() => toggleInlineExomastery(entry)}
               >
-                Found ({foundN})
+                {exoExpanded
+                  ? `Hide exomastery (${exomasteryFeederBodyCount})`
+                  : `Exomastery (${exomasteryFeederBodyCount})`}
               </button>
-              {exoEnabled ? (
-                <button
-                  type="button"
-                  className="btn-ency-exomastery"
-                  title={
-                    exoExpanded
-                      ? "Hide exomastery data for this species"
-                      : exomasteryProfileFilePresent
-                        ? "Show Exomastery profile (mode vs mean) from feeder JSON"
-                        : "Show EDSM / per-body exomastery rows for this species"
-                  }
-                  onClick={() => toggleInlineExomastery(entry)}
-                >
-                  {exoExpanded
-                    ? `Hide exomastery (${exomasteryFeederBodyCount})`
-                    : `Exomastery (${exomasteryFeederBodyCount})`}
-                </button>
-              ) : null}
+            ) : null}
           </div>
         </div>
         {hasExoDrawer ? (
@@ -864,6 +951,32 @@ export function EncyclopediaModal({
                 >
                   {notFoundOnly ? `Not found yet ✓ (${notFoundCount})` : "Not found yet ✗"}
                 </button>
+                {regionInfo ? (
+                  <button
+                    type="button"
+                    className={`btn-top-toggle ency-region-toggle${inRegionOnly ? " btn-top-toggle--on" : ""}`}
+                    onClick={() => setInRegionOnly(!inRegionOnly)}
+                    title={`Only species recorded in ${regionInfo.region}, where you are now.`}
+                  >
+                    {inRegionOnly ? `In ${regionInfo.region} ✓` : `In ${regionInfo.region} ✗`}
+                  </button>
+                ) : null}
+                {colourOptions.length ? (
+                  <label className="ency-colour-pick" title="Only species that come in this colour">
+                    <span className="dim tiny">Colour</span>
+                    <select
+                      value={colourOptions.includes(colour) ? colour : ""}
+                      onChange={(e) => setColour(e.target.value)}
+                    >
+                      <option value="">any</option>
+                      {colourOptions.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
                 {chips.length ? (
                   <>
                     <span className="ency-chips">
@@ -908,9 +1021,10 @@ export function EncyclopediaModal({
                   )}
                   . Conditions: <span className="fg-key fg-key--ok">blue</span> matches,{" "}
                   <span className="fg-key fg-key--warn">yellow</span> not known yet,{" "}
-                  <span className="fg-key fg-key--bad">red</span> does not match. Charts: the bodies each species
-                  was confirmed on, the <span className="fg-key fg-key--mode">orange</span> bar and line the most
-                  common value, the <span className="fg-key fg-key--ok">blue</span> line this body.
+                  <span className="fg-key fg-key--bad">red</span> does not match. Charts: the bodies each
+                  species was confirmed on, the <span className="fg-key fg-key--mode">orange</span> bar and
+                  line the most common value, the <span className="fg-key fg-key--ok">blue</span> line this
+                  body.
                 </p>
               ) : (
                 <p className="encyclopedia-spawn-compare-line dim tiny">

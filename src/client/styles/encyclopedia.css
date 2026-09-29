@@ -1021,3 +1021,28 @@
 .fg-key--mode {
   color: var(--accent-bright);
 }
+
+/* ---- the current region (guild tester, 2026-09-30) and the colour picker ---- */
+.ency-region-mark {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ok-bright);
+}
+.ency-region-mark--none {
+  font-weight: 400;
+  color: var(--muted);
+}
+.ency-colour-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.ency-colour-pick select {
+  font: inherit;
+  font-size: var(--fs-xs);
+  background: #0d0907;
+  color: var(--text);
+  border: 1px solid var(--accent-a35);
+  padding: 0.15rem 0.3rem;
+}

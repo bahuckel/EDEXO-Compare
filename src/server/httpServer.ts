@@ -1,4 +1,5 @@
 import type { FieldGuideDTO } from "../shared/fieldGuide.js";
+import type { RegionalRarity } from "../shared/speciesRarity.js";
 import { findMatchDetail, parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
 import { eliteDisplaySettingsPath, eliteDisplayWarning, readEliteDisplayMode } from "./eliteDisplayMode.js";
 import { linuxCheckForThisMachine } from "./linuxProbes.js";
@@ -87,6 +88,8 @@ export interface HttpServerOptions {
   getEncyclopedia?: () => EncyclopediaSpeciesRowDTO[];
   /** GET /api/field-guide — published conditions + measured charts per species (shared/fieldGuide.ts). */
   getFieldGuide?: () => FieldGuideDTO;
+  /** GET /api/encyclopedia-region?name= — every species' rarity in one region (null = no data). */
+  getEncyclopediaRegion?: (name: string) => Record<string, RegionalRarity | null>;
   /**
    * GET /api/first-discovery-backlog — biology left uncollected in systems this commander found.
    *
@@ -464,6 +467,19 @@ export function createHttpServer(opts: HttpServerOptions): {
     } catch {
       res.status(500).json({ error: "Could not load species database." });
     }
+  });
+
+  /*
+    Every species' standing in one region, for the Encyclopedia's region marks and filter (guild tester
+    report, 2026-09-30: "have it default to or at least highlight the current region").
+  */
+  app.get("/api/encyclopedia-region", (req, res) => {
+    const name = typeof req.query.name === "string" ? req.query.name.trim().slice(0, 80) : "";
+    if (!name || typeof opts.getEncyclopediaRegion !== "function") {
+      res.status(400).json({ error: "name is required" });
+      return;
+    }
+    res.json({ region: name, species: opts.getEncyclopediaRegion(name) });
   });
 
   app.get("/api/field-guide", (req, res) => {

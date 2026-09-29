@@ -720,6 +720,7 @@ export const HeaderBar = memo(function HeaderBar({
           <EncyclopediaModal
             footScannedEntries={snap.footScannedEntries ?? []}
             spawnCompare={encyclopediaSpawnCompare}
+            currentRegion={snap.currentRegion?.name ?? null}
             onClose={() => setEncyclopediaOpen(false)}
           />
         </Suspense>

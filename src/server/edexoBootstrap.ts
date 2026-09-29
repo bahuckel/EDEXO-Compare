@@ -69,6 +69,7 @@ import { openFeeder } from "../feeder/pipeline.js";
 import { formatImportReport, importSpanshExport } from "../feeder/spanshImport.js";
 import { feederDataDirExists } from "../feeder/paths.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
+import { regionalRarity } from "./speciesRarityData.js";
 import { createGamePresence } from "./gamePresence.js";
 import { buildFieldGuide, clearFieldGuideCache } from "./fieldGuide.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
@@ -1470,6 +1471,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     scheduleBroadcast: push,
     getEncyclopedia: buildEncyclopediaPayload,
     getFieldGuide: () => buildFieldGuide(projectRoot, getCachedSpeciesDatabase()),
+    getEncyclopediaRegion: (name) =>
+      Object.fromEntries(
+        getCachedSpeciesDatabase().species.map((e) => [e.id, regionalRarity(projectRoot, name, e.id)] as const),
+      ),
     getFeederStatus: () => buildFeederStatus(projectRoot, getCachedSpeciesDatabase()),
     getUpdateInfo: (force) => updateChecker.check(force),
     openUpdatePage: () => {
