@@ -558,10 +558,18 @@ export function PlanetQuickFactsPopup({
       if (ev.target instanceof Node && el.contains(ev.target)) return;
       onClose();
     };
+    // Escape closes the popup alone, not a window it was opened over.
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key !== "Escape") return;
+      ev.stopPropagation();
+      onClose();
+    };
     const t = window.setTimeout(() => document.addEventListener("mousedown", onDoc), 80);
+    document.addEventListener("keydown", onKey, true);
     return () => {
       window.clearTimeout(t);
       document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey, true);
     };
   }, [onClose, bodyId]);
 
