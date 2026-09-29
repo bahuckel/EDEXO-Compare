@@ -59,6 +59,15 @@ export interface NoticesContext {
   nearbyPois?(origin: Vec3, radiusLy: number, groups: readonly string[]): NearbyPoi[];
   /** EDAstro carriers within the radius, nearest first. */
   nearbyCarriers?(origin: Vec3, radiusLy: number): NearbyCarrier[];
+  /** Notable stellar phenomena (EDAstro's codex file) within the radius, by system, nearest first. */
+  nearbyNsps?(origin: Vec3, radiusLy: number): NearbyNsp[];
+}
+
+export interface NearbyNsp {
+  system: string;
+  systemAddress: number | null;
+  distanceLy: number;
+  names: string[];
 }
 
 export interface Vec3 {
@@ -205,6 +214,29 @@ export function createNoticesService(opts: {
             text: `${poi.typeLabel}${poi.system ? ` in ${poi.system}` : ""} — ${ly(poi.distanceLy)} from ${here}`,
             system: poi.system || here,
             systemAddress: null,
+            body: null,
+            bodyKey: null,
+          }) || added;
+      }
+    }
+
+    if (nearby.nsp && ctx.nearbyNsps) {
+      let n = 0;
+      for (const s of ctx.nearbyNsps(origin, radius)) {
+        if (n >= NEARBY_PER_JUMP) break;
+        const id = `nspnear:${s.systemAddress ?? s.system}`;
+        if (seen.has(id) || s.systemAddress === num(line.SystemAddress)) continue;
+        n++;
+        const shown = s.names.slice(0, 3).join(", ") + (s.names.length > 3 ? ` and ${s.names.length - 3} more` : "");
+        added =
+          add({
+            id,
+            at,
+            kind: "nsp",
+            title: `Nearby phenomenon: ${shown}`,
+            text: `In ${s.system} — ${ly(s.distanceLy)} from ${here}`,
+            system: s.system,
+            systemAddress: s.systemAddress,
             body: null,
             bodyKey: null,
           }) || added;

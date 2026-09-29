@@ -475,6 +475,12 @@ export function NotifyPanel() {
           <option value="services">only carriers with a service below</option>
         </select>
       </div>
+      <p className="dim tiny options-notify-sub">Notable stellar phenomena, from EDAstro&apos;s codex</p>
+      <NspDownload
+        on={nb.nsp}
+        busy={busy}
+        onToggle={(v) => save({ nearby: { nsp: v } })}
+      />
       {nb.carriers === "services" ? (
         <div className="options-notify-grid">
           {CARRIER_SERVICE_OPTIONS.map((o) => (
@@ -500,6 +506,88 @@ export function NotifyPanel() {
       ) : null}
       {msg ? <p className="options-error">{msg}</p> : null}
     </FoldPanel>
+  );
+}
+
+interface NspStatus {
+  haveData: boolean;
+  rowCount: number;
+  systemCount: number;
+  fetchedAtMs: number | null;
+  running: boolean;
+  bytesDone: number;
+  bytesTotal: number | null;
+  error: string | null;
+  cooldownMsRemaining: number;
+  sizeLabel: string;
+}
+
+/*
+  The NSP list is EDAstro's whole codex file, 855 MB, read as it arrives and kept as a few MB of
+  phenomena (server/edastroNsp.ts). Opt-in and said up front (owner, 2026-09-30): the button names
+  the size, and nothing downloads until it is pressed.
+*/
+function NspDownload({ on, busy, onToggle }: { on: boolean; busy: boolean; onToggle: (v: boolean) => void }) {
+  const [st, setSt] = useState<NspStatus | null>(null);
+  const load = useCallback(() => {
+    void fetch("/api/nsp/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.status) setSt(j.status as NspStatus);
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(load, [load]);
+  useEffect(() => {
+    if (!st?.running) return;
+    const t = window.setInterval(load, 1000);
+    return () => window.clearInterval(t);
+  }, [st?.running, load]);
+  const start = (force: boolean) => {
+    void fetch("/api/nsp/fetch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ force }),
+    })
+      .then((r) => r.json())
+      .then((j) => {
+        if (j?.status) setSt(j.status as NspStatus);
+      })
+      .catch(() => {});
+  };
+  if (!st) return null;
+  const mb = (b: number) => `${Math.round(b / 1_000_000).toLocaleString()} MB`;
+  return (
+    <div className="options-nsp">
+      <label className="options-toggle">
+        <input type="checkbox" checked={on} disabled={busy || !st.haveData} onChange={(ev) => onToggle(ev.target.checked)} />
+        <span>
+          Phenomena nearby
+          {st.haveData
+            ? ` — ${st.systemCount.toLocaleString()} systems known`
+            : " — download the list first"}
+        </span>
+      </label>
+      {st.running ? (
+        <p className="dim tiny">
+          Downloading and sorting: {mb(st.bytesDone)}
+          {st.bytesTotal ? ` of ${mb(st.bytesTotal)} (${Math.floor((100 * st.bytesDone) / st.bytesTotal)} %)` : ""}. Only the
+          phenomena are kept.
+        </p>
+      ) : (
+        <p className="options-nsp__row">
+          <button type="button" className="btn-top-toggle" onClick={() => start(st.haveData && st.cooldownMsRemaining > 0)}>
+            {st.haveData ? "Refresh" : "Download"} NSP data ({st.sizeLabel})
+          </button>
+          <span className="dim tiny">
+            {st.haveData && st.fetchedAtMs
+              ? `Last fetched ${new Date(st.fetchedAtMs).toLocaleDateString()}. A refresh only downloads again if EDAstro changed the file.`
+              : `EDAstro's whole codex file, straight from EDAstro. Kept on this PC: only the phenomena, a few MB.`}
+          </span>
+        </p>
+      )}
+      {st.error ? <p className="options-error">{st.error}</p> : null}
+    </div>
   );
 }
 

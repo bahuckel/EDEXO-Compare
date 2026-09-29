@@ -236,6 +236,28 @@ describe("nearby: points of interest and carriers", () => {
   });
 });
 
+describe("nearby phenomena (EDAstro codex file)", () => {
+  it("opt-in; one notice per system, not the one you are in", () => {
+    const n = createNoticesService({ filePath: null });
+    const c: NoticesContext = {
+      ...ctx(),
+      loadoutJumpLy: () => 50,
+      nearbyNsps: () => [
+        { system: "Sys 7", systemAddress: 7, distanceLy: 0, names: ["Here Cloud"] },
+        { system: "Beyond", systemAddress: 99, distanceLy: 42.4, names: ["Proto-Lagrange Cloud", "Albens Bell Mollusc"] },
+      ],
+    };
+    const jump = { timestamp: "2026-09-30T12:00:00Z", event: "FSDJump", StarSystem: "Sys 7", SystemAddress: 7, StarPos: [7, 0, 0], JumpDist: 50 };
+    expect(n.observe(jump, c)).toBe(false);
+    n.setPrefs({ nearby: { nsp: true } });
+    expect(n.observe(jump, c)).toBe(true);
+    expect(n.list().map((x) => [x.title, x.text])).toEqual([
+      ["Nearby phenomenon: Proto-Lagrange Cloud, Albens Bell Mollusc", "In Beyond — 42 ly from Sys 7"],
+    ]);
+    expect(n.observe(jump, c)).toBe(false);
+  });
+});
+
 describe("prefs and wording", () => {
   it("nearby: jumps clamped to 1–10, unknown services dropped", () => {
     const p = mergeNotifyPrefs(DEFAULT_NOTIFY_PREFS, { nearby: { jumps: 40, carrierServices: ["refuel", "nope"], carriers: "sometimes" } });

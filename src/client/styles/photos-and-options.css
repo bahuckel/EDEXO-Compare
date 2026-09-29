@@ -509,3 +509,10 @@
 .options-notify-sub {
   margin: 0.55rem 0 0.2rem;
 }
+.options-nsp__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.7rem;
+  margin: 0.2rem 0 0;
+}

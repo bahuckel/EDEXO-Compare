@@ -1,3 +1,4 @@
+import { readNspStatus, startNspDownload } from "../edastroNsp.js";
 import express from "express";
 import {
   countCarriers,
@@ -72,6 +73,18 @@ export function registerCarriersPoiRoutes(
 
   app.get("/api/poi/status", (_req, res) => {
     res.json(readPoiStatus());
+  });
+
+  /*
+    Notable stellar phenomena from EDAstro's codex file (edastroNsp.ts): an opt-in 855 MB download that
+    runs in the background, so the fetch answers at once and the panel polls the status.
+  */
+  app.get("/api/nsp/status", (_req, res) => {
+    res.json({ ok: true, status: readNspStatus() });
+  });
+
+  app.post("/api/nsp/fetch", (req, res) => {
+    res.json({ ok: true, status: startNspDownload({ force: req.body?.force === true }) });
   });
 
   app.post("/api/poi/fetch", async (req, res) => {

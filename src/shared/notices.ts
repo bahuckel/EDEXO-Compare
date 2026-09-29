@@ -62,6 +62,8 @@ export interface NearbyPrefsDTO {
   carriers: CarrierNoticeMode;
   /** EDAstro service keys; a carrier offering any one of them counts. */
   carrierServices: string[];
+  /** Notable stellar phenomena from EDAstro's codex file (an 855 MB opt-in download). Off until chosen. */
+  nsp: boolean;
 }
 
 /** Carriers are news only out in the black (owner: "over 2000 ly from the bubble"). */
@@ -81,6 +83,7 @@ export const DEFAULT_NOTIFY_PREFS: NotifyPrefsDTO = {
     poiGroups: { ...ALL_POI_OFF },
     carriers: "off",
     carrierServices: ["vistagenomics", "exploration", "refuel"],
+    nsp: false,
   },
 };
 
@@ -110,6 +113,7 @@ export function mergeNotifyPrefs(prev: NotifyPrefsDTO, raw: unknown): NotifyPref
       carrierServices: Array.isArray(nr.carrierServices)
         ? nr.carrierServices.filter((s): s is string => typeof s === "string" && known.has(s))
         : [...pn.carrierServices],
+      nsp: bool(nr.nsp, pn.nsp ?? false),
     },
   };
 }

@@ -130,6 +130,7 @@ import { createNoticesService, type NoticesContext } from "./notices.js";
 import type { NotifySettingsDTO } from "../shared/notices.js";
 import { queryPoi, readPoiStatus } from "./edastroPoi.js";
 import { queryCarriers, readCarrierStatus } from "./edastroCarriers.js";
+import { nearbyNsp } from "./edastroNsp.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
   persistUserPreferences as writeUserPrefs,
@@ -309,6 +310,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           lastSeenDays: r.lastSeenDays,
           services: r.services,
         })),
+    nearbyNsps: (origin, radiusLy) => nearbyNsp(origin, radiusLy),
   };
   const notifySettings = (): NotifySettingsDTO => ({
     prefs: notices.prefs(),
