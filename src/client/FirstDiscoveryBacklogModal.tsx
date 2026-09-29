@@ -19,6 +19,7 @@
  * The list is computed on the server and takes ~45 s the first time (~53 ms of species matching per
  * body). It is memoised there until the store changes, so re-opening this is instant.
  */
+import { PAGE } from "./DiscoveriesTables";
 import { useEffect, useMemo, useState } from "react";
 import { CopySystemButton } from "./CopySystemButton";
 import { useModal } from "./ui/useModal";
@@ -283,7 +284,9 @@ export function FirstDiscoveryBacklogModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
+                  {/* Capped like every table (PAGE rows): all of them was ~15,000 page elements. The
+                      totals above count every row; sorted, the first few hundred are the ones that matter. */}
+                  {rows.slice(0, PAGE).map((r) => (
                     <tr
                       key={r.bodyKey}
                       className={onSelectSystem ? "fdb-row fdb-row--clickable" : "fdb-row"}
@@ -326,6 +329,12 @@ export function FirstDiscoveryBacklogModal({
                 </tbody>
               </table>
 
+              {rows.length > PAGE ? (
+                <p className="dim tiny disc-more">
+                  Showing the first {PAGE.toLocaleString()} of {rows.length.toLocaleString()} — raise the floor or
+                  turn on a filter to bring the rest into view.
+                </p>
+              ) : null}
               {rows.length === 0 ? (
                 <p className="fdb-empty">
                   Nothing at this threshold. Lower it, or you have genuinely finished them.

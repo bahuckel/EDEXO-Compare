@@ -42,6 +42,44 @@ import type { FieldGuideDTO, GuideGenus, GuideSpecies } from "@shared/fieldGuide
 
 const EXO_DRAWER_TRANSITION_MS = 380;
 
+type GuideMaps = { species: Map<string, GuideSpecies>; genera: Map<string, GuideGenus> };
+
+/*
+  The Encyclopedia's two requests, made when this chunk loads — which is the idle prefetch a moment
+  after start (SharedModals `prefetchMenuModals`) — so the first open draws at once instead of
+  waiting ~100 ms for its data. Every open asks again and updates the list if anything changed.
+*/
+let rowsCache: EncyclopediaSpeciesRowDTO[] | null = null;
+let guideCache: GuideMaps | null = null;
+
+async function loadRows(): Promise<EncyclopediaSpeciesRowDTO[]> {
+  const r = await fetch("/api/species-encyclopedia");
+  const j = (await r.json().catch(() => null)) as { species?: EncyclopediaSpeciesRowDTO[]; error?: string } | null;
+  if (!r.ok) throw new Error(j?.error || r.statusText);
+  if (!j?.species) throw new Error("Invalid response");
+  rowsCache = j.species;
+  return j.species;
+}
+
+async function loadGuide(): Promise<GuideMaps | null> {
+  const r = await fetch("/api/field-guide");
+  if (!r.ok) return null;
+  const j = (await r.json()) as FieldGuideDTO;
+  if (!j?.genera) return null;
+  guideCache = {
+    species: new Map(j.genera.flatMap((g) => g.species.map((s) => [s.id, s] as const))),
+    genera: new Map(j.genera.map((g) => [g.id, g] as const)),
+  };
+  return guideCache;
+}
+
+if (typeof window !== "undefined") {
+  void loadRows().catch(() => {});
+  void loadGuide().catch(() => {});
+}
+/** Field-guide cards drawn on the first render; the rest follow right after paint. */
+const FIRST_CHARTS = 12;
+
 function spawnTierCssSuffix(tier: EncyclopediaSpawnTier): string {
   switch (tier) {
     case "blue":
@@ -124,22 +162,40 @@ function encyclopediaExomasteryFetchPath(
 // The placeholder URL is shared with the server, which writes it — see shared/photoPlaceholder.
 const BUILTIN_PLACEHOLDER = BUILTIN_PLACEHOLDER_URL;
 
-function footHitsForEntry(entry: SpeciesEntry, catalog: FootScannedEntry[]): FootScannedEntry[] {
+/** A catalogue row with its labels normalised once (they were normalised again for every species). */
+interface NormFoot {
+  f: FootScannedEntry;
+  variant: string;
+  genus: string;
+  label: string;
+}
+
+function normFoot(catalog: FootScannedEntry[]): NormFoot[] {
+  return catalog.map((f) => ({
+    f,
+    variant: normLabel(f.variantLocalised || ""),
+    genus: (f.genusLocalised ?? "").trim().toLowerCase(),
+    label: normLabel(f.variantLocalised || f.speciesLocalised || ""),
+  }));
+}
+
+function footHitsForEntry(entry: SpeciesEntry, catalog: NormFoot[]): FootScannedEntry[] {
   const nid = entry.id;
   const ns = normLabel(entry.displayName);
-  return catalog.filter((f) => {
-    if (f.speciesEntryId === nid || f.dbProbableSpeciesId === nid) return true;
-    if (normLabel(f.variantLocalised || "") === ns && ns.length > 2) return true;
+  const genus = entry.genus?.trim().toLowerCase() ?? "";
+  const out: FootScannedEntry[] = [];
+  for (const n of catalog) {
+    const f = n.f;
     if (
-      f.genusLocalised &&
-      entry.genus &&
-      f.genusLocalised.trim().toLowerCase() === entry.genus.trim().toLowerCase()
+      f.speciesEntryId === nid ||
+      f.dbProbableSpeciesId === nid ||
+      (n.variant === ns && ns.length > 2) ||
+      (genus && n.genus === genus && n.label && (ns.includes(n.label) || n.label.includes(ns)))
     ) {
-      const vl = normLabel(f.variantLocalised || f.speciesLocalised || "");
-      if (vl && (ns.includes(vl) || vl.includes(ns))) return true;
+      out.push(f);
     }
-    return false;
-  });
+  }
+  return out;
 }
 
 /**
@@ -206,7 +262,7 @@ export function EncyclopediaModal({
   spawnCompare: EncyclopediaSpawnCompare | null;
   onClose: () => void;
 }) {
-  const [rows, setRows] = useState<EncyclopediaSpeciesRowDTO[] | null>(null);
+  const [rows, setRows] = useState<EncyclopediaSpeciesRowDTO[] | null>(rowsCache);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [filters, setFilters] = useState<EncyclopediaFiltersState>(() =>
     defaultEncyclopediaFilters(ENC_FILTERS_ALL),
@@ -393,18 +449,11 @@ export function EncyclopediaModal({
   }, []);
 
   /* The field guide (published conditions + measured charts), by species id and genus folder. */
-  const [guide, setGuide] = useState<{ species: Map<string, GuideSpecies>; genera: Map<string, GuideGenus> } | null>(
-    null,
-  );
+  const [guide, setGuide] = useState<GuideMaps | null>(guideCache);
   useEffect(() => {
-    void fetch("/api/field-guide")
-      .then((r) => (r.ok ? (r.json() as Promise<FieldGuideDTO>) : null))
-      .then((j) => {
-        if (!j?.genera) return;
-        setGuide({
-          species: new Map(j.genera.flatMap((g) => g.species.map((s) => [s.id, s] as const))),
-          genera: new Map(j.genera.map((g) => [g.id, g] as const)),
-        });
+    void loadGuide()
+      .then((g) => {
+        if (g) setGuide(g);
       })
       .catch(() => {
         /* the cards still show everything else */
@@ -424,17 +473,12 @@ export function EncyclopediaModal({
   );
 
   useEffect(() => {
-    void fetch("/api/species-encyclopedia")
-      .then(async (r) => {
-        const j = (await r.json().catch(() => null)) as {
-          species?: EncyclopediaSpeciesRowDTO[];
-          error?: string;
-        } | null;
-        if (!r.ok) throw new Error(j?.error || r.statusText);
-        if (!j?.species) throw new Error("Invalid response");
-        setRows(j.species);
-      })
-      .catch((e) => setLoadErr(e instanceof Error ? e.message : String(e)));
+    void loadRows()
+      .then(setRows)
+      .catch((e) => {
+        // A list already on screen stays; only a first load that fails says so.
+        if (!rowsCache) setLoadErr(e instanceof Error ? e.message : String(e));
+      });
   }, []);
 
   /**
@@ -456,12 +500,13 @@ export function EncyclopediaModal({
    * Foot-catalog hit count per species, computed once per (rows, catalog) instead of scanning the
    * whole catalog for every row on every render — that was O(rows x catalog) over a 231 KB file.
    */
+  const normCatalog = useMemo(() => normFoot(footScannedEntries), [footScannedEntries]);
   const footHitCounts = useMemo(() => {
     const m = new Map<string, number>();
     if (!rows?.length) return m;
-    for (const r of rows) m.set(r.entry.id, footHitsForEntry(r.entry, footScannedEntries).length);
+    for (const r of rows) m.set(r.entry.id, footHitsForEntry(r.entry, normCatalog).length);
     return m;
-  }, [rows, footScannedEntries]);
+  }, [rows, normCatalog]);
 
   const genusLabels = useMemo(() => {
     if (!rows?.length) return [];
@@ -496,6 +541,31 @@ export function EncyclopediaModal({
 
   const chips = useMemo(() => activeEncyclopediaFilterChips(filters), [filters]);
 
+  /*
+    Two passes (UI review, 2026-09-30): all 118 field-guide cards are ~22,000 page elements, which
+    doubled the Encyclopedia's open time. The first pass draws the first cards only, so the panel
+    shows at once; the second draws the rest right after it has painted. (A dozen per frame was
+    tried: every step re-rendered the whole list and cost more in total.)
+  */
+  const displayOrder = useMemo(() => {
+    const ids = searching
+      ? filtered.map((r) => r.entry.id)
+      : genusSections.flatMap((s) => s.rows.map((r) => r.entry.id));
+    return new Map(ids.map((id, i) => [id, i]));
+  }, [searching, filtered, genusSections]);
+  const [allCharts, setAllCharts] = useState(false);
+  useEffect(() => {
+    if (!rows || allCharts) return;
+    let t = 0;
+    const id = requestAnimationFrame(() => {
+      t = window.setTimeout(() => setAllCharts(true), 0);
+    });
+    return () => {
+      cancelAnimationFrame(id);
+      window.clearTimeout(t);
+    };
+  }, [rows, allCharts]);
+
   const [railOpen, setRailOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
 
@@ -527,6 +597,8 @@ export function EncyclopediaModal({
     const exoExpanded = inlineExo?.speciesEntryId === entry.id && !exoClosing;
     const hasExoDrawer = inlineExo?.speciesEntryId === entry.id;
     const g = guide?.species.get(entry.id);
+    // Before the second pass only the first cards exist (see allCharts).
+    if (!allCharts && (displayOrder.get(entry.id) ?? 0) >= FIRST_CHARTS) return null;
     return (
       <article key={entry.id} className="encyclopedia-species-card fg-card">
         {exoEnabled && exomasteryDataInsufficient ? (
@@ -857,7 +929,7 @@ export function EncyclopediaModal({
       {foundFor ? (
         <FoundSpeciesPopup
           entry={foundFor}
-          hits={footHitsForEntry(foundFor, footScannedEntries)}
+          hits={footHitsForEntry(foundFor, normCatalog)}
           onClose={() => setFoundFor(null)}
         />
       ) : null}

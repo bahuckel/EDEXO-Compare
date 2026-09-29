@@ -47,11 +47,24 @@ function unlockPageScroll(): void {
   if (scrollLockDepth === 0) document.body.style.overflow = scrollLockPrevious;
 }
 
-function visibleFocusables(root: HTMLElement | null): HTMLElement[] {
-  if (!root) return [];
-  return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-    (el) => el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement,
-  );
+const isVisible = (el: HTMLElement) => el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement;
+
+/*
+  The first and last focusable element that is visible, scanning in from each end (2026-09-30).
+
+  It used to filter *every* focusable element by its size. Reading an element's size lays it out,
+  and inside a card skipped by `content-visibility` that means laying the card out — so opening the
+  Encyclopedia laid out all 118 cards and its focus trap alone took ~260 ms. Tab only needs the two
+  ends, and opening only the first.
+*/
+function focusEnds(root: HTMLElement | null): { first: HTMLElement | null; last: HTMLElement | null } {
+  if (!root) return { first: null, last: null };
+  const all = root.querySelectorAll<HTMLElement>(FOCUSABLE);
+  let first: HTMLElement | null = null;
+  for (let i = 0; i < all.length && !first; i++) if (isVisible(all[i]!)) first = all[i]!;
+  let last: HTMLElement | null = null;
+  for (let i = all.length - 1; i >= 0 && !last; i--) if (isVisible(all[i]!)) last = all[i]!;
+  return { first, last };
 }
 
 export function useModal<T extends HTMLElement = HTMLDivElement>(
@@ -75,7 +88,7 @@ export function useModal<T extends HTMLElement = HTMLDivElement>(
     const restoreFocusTo = document.activeElement as HTMLElement | null;
     if (lockScroll) lockPageScroll();
     if (autoFocus) {
-      const target = visibleFocusables(root)[0] ?? root;
+      const target = focusEnds(root).first ?? root;
       target?.focus?.({ preventScroll: true });
     }
 
@@ -87,21 +100,21 @@ export function useModal<T extends HTMLElement = HTMLDivElement>(
         return;
       }
       if (ev.key !== "Tab" || !root) return;
-      const items = visibleFocusables(root);
-      if (items.length === 0) {
+      const { first, last } = focusEnds(root);
+      if (!first || !last) {
         ev.preventDefault();
         root.focus?.({ preventScroll: true });
         return;
       }
       const current = document.activeElement as HTMLElement | null;
-      const index = current ? items.indexOf(current) : -1;
+      const outside = !current || !root.contains(current);
       // Wrap at both ends, and pull focus back in if it escaped the dialog entirely.
-      if (ev.shiftKey && (index <= 0 || index === -1)) {
+      if (ev.shiftKey && (current === first || outside)) {
         ev.preventDefault();
-        items[items.length - 1]!.focus({ preventScroll: true });
-      } else if (!ev.shiftKey && (index === items.length - 1 || index === -1)) {
+        last.focus({ preventScroll: true });
+      } else if (!ev.shiftKey && (current === last || outside)) {
         ev.preventDefault();
-        items[0]!.focus({ preventScroll: true });
+        first.focus({ preventScroll: true });
       }
     };
 

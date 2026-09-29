@@ -25,10 +25,13 @@ import {
 import { journalPressureToAtm } from "@shared/journalPhysics";
 import { useState, type ReactNode } from "react";
 
+/** One formatter for every chart label: `toLocaleString` per call was a tenth of the Encyclopedia's open. */
+const GROUPED = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+
 /** A number the way a commander reads it: no false precision, thousands grouped. */
 export function fmtGuide(v: number): string {
   const a = Math.abs(v);
-  if (a >= 100) return Math.round(v).toLocaleString("en-US");
+  if (a >= 100) return GROUPED.format(Math.round(v));
   if (a >= 10) return String(Number(v.toFixed(1)));
   if (a >= 1) return String(Number(v.toFixed(2)));
   if (a === 0) return "0";
@@ -178,7 +181,7 @@ function GuideChart({ id, h, bodyValue }: { id: string; h: GuideHist; bodyValue:
         />
       );
   }
-  const label = `${def.label}: from ${withUnit(h.min, def.unit)} to ${withUnit(h.max, def.unit)}, mode ${withUnit(h.mode, def.unit)}, measured on ${h.n.toLocaleString("en-US")} bodies`;
+  const label = `${def.label}: from ${withUnit(h.min, def.unit)} to ${withUnit(h.max, def.unit)}, mode ${withUnit(h.mode, def.unit)}, measured on ${GROUPED.format(h.n)} bodies`;
   return (
     <figure className="fg-chart">
       <figcaption>
@@ -365,7 +368,7 @@ export function GuideMeasuredBlock({ m, body }: { m: GuideMeasured; body: GuideB
     <>
       <div className="fg-found">
         <p className="fg-sub">
-          Measured on <b>{m.bodies.toLocaleString("en-US")}</b> bodies where it was confirmed
+          Measured on <b>{GROUPED.format(m.bodies)}</b> bodies where it was confirmed
         </p>
         <dl className="fg-shares">
           <ShareRow label="Body" items={m.planet} colour={seg} mine={body?.planet ?? null} />
