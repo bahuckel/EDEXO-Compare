@@ -770,6 +770,7 @@ export const HeaderBar = memo(function HeaderBar({
             fallbackTitle={notableQuick.notable.bodyName}
             fallbackSubtitle={`${notableQuick.notable.tag}${notableQuick.notable.dssMapped ? " · DSS mapped" : " · FSS / scan only"}`}
             bodyId={notableQuick.notable.bodyId}
+            records={snap.notices?.recordMarks.filter((m) => m.bodyId === notableQuick.notable.bodyId)}
             onClose={() => setNotableQuick(null)}
             onGoToBioBody={
               onGoToBioBody

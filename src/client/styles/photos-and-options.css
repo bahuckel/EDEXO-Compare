@@ -492,3 +492,10 @@
   line-height: 1.25;
   padding: 0 2px;
 }
+
+/* Notify me (2026-09-30): the switches in two columns where there is room. */
+.options-notify-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.25rem 1rem;
+}

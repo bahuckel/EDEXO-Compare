@@ -208,6 +208,44 @@ export function registerSettingsRoutes(
     res.json({ ok: true, config: opts.setCollectionFocus(body) });
   });
 
+  /* "Notify me" (shared/notices.ts). The reply is the stored settings, after the allow-list. */
+  app.get("/api/settings/notify", (_req, res) => {
+    if (typeof opts.getNotifyPrefs !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    res.json({ ok: true, prefs: opts.getNotifyPrefs() });
+  });
+
+  app.post("/api/settings/notify", (req, res) => {
+    if (typeof opts.setNotifyPrefs !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    if (!req.body || typeof req.body !== "object") {
+      res.status(400).json({ ok: false, error: "JSON body must be an object." });
+      return;
+    }
+    res.json({ ok: true, prefs: opts.setNotifyPrefs(req.body) });
+  });
+
+  app.post("/api/notices/read", (req, res) => {
+    if (typeof opts.markNoticesRead !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const b = (req.body ?? {}) as { ids?: unknown; all?: unknown };
+    if (b.all === true) {
+      res.json({ ok: true, removed: opts.markNoticesRead("all") });
+      return;
+    }
+    if (!Array.isArray(b.ids) || !b.ids.every((x) => typeof x === "string")) {
+      res.status(400).json({ ok: false, error: 'JSON body must be { "ids": string[] } or { "all": true }.' });
+      return;
+    }
+    res.json({ ok: true, removed: opts.markNoticesRead(b.ids as string[]) });
+  });
+
   /** How far the sample radar draws. See `shared/radarRadius.ts` for the bounds and the reason. */
   app.post("/api/settings/radar-radius", (req, res) => {
     if (typeof opts.setRadarRadiusM !== "function") {

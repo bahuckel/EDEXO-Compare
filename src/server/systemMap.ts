@@ -210,6 +210,7 @@ export function buildPrimaryStarsHeader(
       letter,
       shortLabel,
       starRole,
+      bodyId: s.bodyId,
       fullSpectralNotation: formatFullSpectralNotation(s.starType, s.subclass, s.luminosity),
       // `H`, and Sagittarius A*'s `SupermassiveBlackHole`, which no list entry names.
       ...(cfg.blackHoleExact.some((x) => x.toUpperCase() === (s.starType ?? "").trim().toUpperCase()) ||

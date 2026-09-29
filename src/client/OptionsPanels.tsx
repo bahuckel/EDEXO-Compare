@@ -6,6 +6,7 @@ import { FoldPanel } from "./ui/Fold";
 import { Select } from "./ui/Select";
 import { useToast } from "./ui/feedback";
 import type { CollectionFocusConfig } from "@shared/collectionFocus";
+import { NOTABLE_KINDS, type NotifyPrefsDTO } from "@shared/notices";
 import type { AppSnapshot } from "@shared/types";
 import { useCallback, useEffect, useState } from "react";
 
@@ -291,6 +292,105 @@ export function CollectionFocusPanel() {
         </p>
       ) : null}
 
+      {msg ? <p className="options-error">{msg}</p> : null}
+    </FoldPanel>
+  );
+}
+
+/**
+ * "Notify me" (guild tester report, 2026-09-30). What lands in the mail icon's list: notable bodies,
+ * personal records and notable stellar phenomena. Stored on the server, so the phone and this window
+ * follow the same switches. No system notifications and no sound, apart from the opt-in record chime.
+ */
+export function NotifyPanel() {
+  const [p, setP] = useState<NotifyPrefsDTO | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void fetch("/api/settings/notify")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (alive && j?.prefs) setP(j.prefs as NotifyPrefsDTO);
+      })
+      .catch(() => {
+        /* the panel stays empty */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const save = useCallback((patch: Partial<Omit<NotifyPrefsDTO, "notable">> & { notable?: Partial<NotifyPrefsDTO["notable"]> }) => {
+    setBusy(true);
+    setMsg(null);
+    void postSetting("/api/settings/notify", patch)
+      .then((r) => {
+        if (!r.ok) {
+          setMsg(r.error ?? "Could not change the setting.");
+          return;
+        }
+        const next = (r as unknown as { prefs?: NotifyPrefsDTO }).prefs;
+        if (next) setP(next);
+      })
+      .finally(() => setBusy(false));
+  }, []);
+
+  if (!p) return null;
+  const onCount = NOTABLE_KINDS.filter((k) => p.notable[k.key]).length + (p.records ? 1 : 0) + (p.nsp ? 1 : 0);
+
+  return (
+    <FoldPanel
+      foldKey="options-notify"
+      className="options-meta-block"
+      title="Notify me"
+      summary={`${onCount} on${p.chime ? " · chime" : ""}`}
+      help={
+        <>
+          <p>
+            Finds go to the <strong>mail icon</strong> in the top bar and stay there until you mark them read. Each
+            one names the system and the body, so you can find it again several jumps later.
+          </p>
+          <p>
+            <strong>Personal records</strong>: the largest and the smallest radius of every star type and planet class
+            you have scanned. Your journals set the starting records quietly; only a record you break from now on is
+            announced. A star that broke one glows gold on the system card, and a planet gets a medal.
+          </p>
+          <p>Never a Windows notification. The chime is the only sound, and it is off unless you turn it on.</p>
+        </>
+      }
+    >
+      <div className="options-notify-grid">
+        {NOTABLE_KINDS.map((k) => (
+          <label key={k.key} className="options-toggle">
+            <input
+              type="checkbox"
+              checked={p.notable[k.key]}
+              disabled={busy}
+              onChange={(ev) => save({ notable: { [k.key]: ev.target.checked } })}
+            />
+            <span>{k.label}</span>
+          </label>
+        ))}
+        <label className="options-toggle">
+          <input type="checkbox" checked={p.records} disabled={busy} onChange={(ev) => save({ records: ev.target.checked })} />
+          <span>Personal records (largest / smallest)</span>
+        </label>
+        <label className="options-toggle">
+          <input type="checkbox" checked={p.nsp} disabled={busy} onChange={(ev) => save({ nsp: ev.target.checked })} />
+          <span>Notable stellar phenomena</span>
+        </label>
+        <label className="options-toggle">
+          <input
+            type="checkbox"
+            checked={p.chime}
+            disabled={busy || !p.records}
+            onChange={(ev) => save({ chime: ev.target.checked })}
+          />
+          <span>Chime when a record falls (this PC only)</span>
+        </label>
+      </div>
       {msg ? <p className="options-error">{msg}</p> : null}
     </FoldPanel>
   );

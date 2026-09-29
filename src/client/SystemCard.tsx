@@ -18,6 +18,7 @@ import type { AppSnapshot, NotableBodyInfo, PrimaryStarHeaderEntryDTO, SystemKin
 import { CopySystemButton } from "./CopySystemButton";
 import { primaryStarRoleTooltip } from "./speciesMatchHelpers";
 import { Tooltip } from "./ui/Tooltip";
+import { RecordMedal, recordMarksByBodyId, recordMarksTitle } from "./noticesClient";
 
 const KIND_LABEL: Record<SystemKind, string> = {
   bubble: "Bubble",
@@ -62,6 +63,8 @@ export function SystemCardRow({
   const rv = snap.remoteView?.state === "ready" ? snap.remoteView : null;
   const stars = header?.stars ?? [];
   const notable = snap.notableBodies ?? [];
+  // Records broken here (owner, 2026-09-30): a gold border on a star, a medal on a notable planet.
+  const records = recordMarksByBodyId(snap);
 
   return (
     <div className="sys-row" aria-label="System">
@@ -122,11 +125,16 @@ export function SystemCardRow({
           </div>
         </section>
 
-        {stars.map((st, i) => (
+        {stars.map((st, i) => {
+          const rec = st.bodyId != null ? (records.get(st.bodyId) ?? []) : [];
+          return (
           <section
             key={`${st.letter ?? "p"}-${i}`}
-            className="sys-star-card cockpit-card"
-            title={`${i === 0 ? "Main star · " : ""}${starDot(st).words} — ${primaryStarRoleTooltip(st.starRole)}`}
+            className={`sys-star-card cockpit-card${rec.length ? " sys-star-card--record" : ""}`}
+            title={
+              `${i === 0 ? "Main star · " : ""}${starDot(st).words} — ${primaryStarRoleTooltip(st.starRole)}` +
+              (rec.length ? `\n${recordMarksTitle(rec)}` : "")
+            }
           >
             <span className="sys-card__k">{st.letter ?? "★"}</span>
             <span className="sys-star-card__cls">{st.fullSpectralNotation || st.shortLabel || "—"}</span>
@@ -135,7 +143,8 @@ export function SystemCardRow({
               aria-label={starDot(st).words}
             />
           </section>
-        ))}
+          );
+        })}
 
         {notable.length > 0 ? (
           <section className="sys-notable-card cockpit-card">
@@ -147,7 +156,9 @@ export function SystemCardRow({
                     type="button"
                     className="sys-notable-card__row"
                     title={
-                      (n.dssMapped ? "Mapped (DSS)" : "Scanned, not mapped") + " — click for quick facts"
+                      (n.dssMapped ? "Mapped (DSS)" : "Scanned, not mapped") +
+                      " — click for quick facts" +
+                      (records.has(n.bodyId) ? `\n${recordMarksTitle(records.get(n.bodyId)!)}` : "")
                     }
                     onClick={(ev) => onNotableClick(n, ev)}
                   >
@@ -155,6 +166,7 @@ export function SystemCardRow({
                       ●
                     </span>{" "}
                     {n.bodyLabelShort} <span className="dim">— {n.tag}</span>
+                    {records.has(n.bodyId) ? <RecordMedal marks={records.get(n.bodyId)!} /> : null}
                   </button>
                 </li>
               ))}

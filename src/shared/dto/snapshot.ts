@@ -23,6 +23,7 @@ import type {
 import type { RemoteViewDTO } from "./remote.js";
 import type { JumpTargetSource } from "./scan.js";
 import type { SystemMapSnapshot } from "./systemMap.js";
+import type { NoticesSnapshotDTO } from "../notices.js";
 
 export interface AppSnapshot {
   journalPath: string | null;
@@ -206,6 +207,8 @@ export interface AppSnapshot {
    * Earth-like, water world, ammonia world, or terraformable worlds. UI uses FSS-orange vs DSS-green.
    */
   notableBodies: NotableBodyInfo[];
+  /** "Notify me": unread notices for the mail icon, and records broken in this system (shared/notices.ts). */
+  notices?: NoticesSnapshotDTO;
   /**
    * System map exobiology node suffixes: min estimated sell heuristic (price-list × 5) for `+` and `++`.
    * `++` threshold is always kept strictly greater than `+` (CR, integer).

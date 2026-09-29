@@ -1025,3 +1025,32 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 .system-map-legend-badge--x5 {
   background: #ff8a1f;
 }
+
+/* A record this body broke, in gold under its name (popup and the map's side panel). */
+.body-record-lines {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgba(245, 184, 61, 0.55);
+  background: linear-gradient(90deg, rgba(245, 184, 61, 0.14), transparent 85%);
+  box-shadow: 0 0 10px rgba(245, 184, 61, 0.18);
+}
+.body-record-lines .record-medal {
+  width: 1rem;
+  height: 1.35rem;
+  margin: 0;
+  flex: 0 0 auto;
+}
+.body-record-lines ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #f5c96a;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+.system-map-record-ring {
+  filter: drop-shadow(0 0 4px rgba(245, 184, 61, 0.8));
+}

@@ -370,6 +370,8 @@ function notableTagForRecord(rec: ExplorationScanRecord): string | null {
   if (pc === "Water world" || (norm.includes("water") && norm.includes("world"))) {
     return `Water world${tfSuffix}`;
   }
+  // Rare (owner, 2026-09-30: a couple of dozen in EDSM) — and not the common "Helium rich gas giant".
+  if (norm === "helium gas giant") return `Helium gas giant${tfSuffix}`;
 
   if (!tf) return null;
 

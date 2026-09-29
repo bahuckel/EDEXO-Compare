@@ -126,6 +126,7 @@ import { parseHost, parsePort } from "./cliOptions.js";
 import type { CliOptions } from "./cliOptions.js";
 import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startupChecks.js";
 import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
+import { createNoticesService, type NoticesContext } from "./notices.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
   persistUserPreferences as writeUserPrefs,
@@ -276,9 +277,21 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   };
 
   const sessionLog = new SessionLog();
+  /* "Notify me" (guild tester report, 2026-09-30): the mail icon's notices and the record marks. */
+  const notices = createNoticesService({
+    filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-notices.json"),
+  });
+  const noticesContext: NoticesContext = {
+    isKnownBody: (k) => store.explorationScans.has(k) || store.soldExplorationScans.has(k),
+    allScans: function* () {
+      yield* store.explorationScans.values();
+      yield* store.soldExplorationScans.values();
+    },
+    currentSystem: () => ({ name: store.currentSystem ?? "", address: store.currentSystemAddress ?? null }),
+  };
   const getSnapshot = () =>
-    perfTime("buildSnapshot", () =>
-      buildSnapshot(
+    perfTime("buildSnapshot", () => {
+      const snap = buildSnapshot(
         store,
         journalPath,
         journalDir,
@@ -288,8 +301,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         journalFilesMerged,
         journalBootProgress,
         sessionLog.toDto(),
-      ),
-    );
+      );
+      snap.notices = notices.snapshot(store.viewingSystemAddress ?? store.currentSystemAddress ?? null);
+      return snap;
+    });
 
   /**
    * Launcher-sized status. Reads store fields directly — no snapshot build, no one-shot state.
@@ -820,6 +835,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   function createLiveJournalLine(): (line: JournalLine) => void {
     return (line: JournalLine) => {
       try {
+        // Before the store applies it: a body the store already has is a re-scan, not a find.
+        notices.observe(line, noticesContext);
         store.apply(line);
         // Live lines only. The historical replay calls store.apply directly, which is what keeps a
         // first run from asking EDSM about every system the commander has ever visited.
@@ -902,6 +919,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   async function resyncAllJournalFilesInner(): Promise<void> {
     bootStart();
     store.resetAll();
+    notices.invalidate();
     journalBootProgress = {
       percent: 4,
       phase: "listing",
@@ -1262,6 +1280,17 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
     setPollRates: (statusMs, journalMs) => applyPollRates(statusMs, journalMs),
     getCollectionFocus: () => loadCollectionFocusConfig(),
+    getNotifyPrefs: () => notices.prefs(),
+    setNotifyPrefs: (raw) => {
+      const next = notices.setPrefs(raw);
+      push();
+      return next;
+    },
+    markNoticesRead: (ids) => {
+      const n = notices.markRead(ids);
+      if (n) push();
+      return n;
+    },
     /*
       Clamped on the way in and the stored config handed straight back, so a figure the server
       refused shows up in the panel as the figure that will actually be used.

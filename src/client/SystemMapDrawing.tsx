@@ -11,6 +11,7 @@
  * SVG without its stylesheet, and a class-only stroke is why snapshots used to lose every line.
  */
 import type { SystemMapBodyDetailDTO, SystemMapSnapshot } from "@shared/types";
+import { RECORD_GOLD } from "./noticesClient";
 import { MARK_PAD, NAME_FONT, type MapItem, type MapLayout, type StarClassKey } from "./systemMapLayout";
 import { atmosphereRingColor } from "./planetDisplayUtils";
 
@@ -215,12 +216,15 @@ export function SystemMapDrawing({
   map,
   dimmed,
   selectedId = null,
+  recordIds,
   chain,
   onSelect,
   onHover,
 }: {
   layout: MapLayout;
   map: SystemMapSnapshot;
+  /** Bodies that broke a personal record: a gold ring (shared/notices.ts). */
+  recordIds?: ReadonlyMap<number, unknown>;
   /** Bodies a filter fades (they stay in place so the tree still reads). */
   dimmed?: (it: MapItem) => boolean;
   selectedId?: number | null;
@@ -261,6 +265,7 @@ export function SystemMapDrawing({
           det={map.detailsByBodyId[String(it.id)]}
           dim={dimmed?.(it) ?? false}
           selected={selectedId != null && it.id === selectedId}
+          record={recordIds?.has(it.id) === true}
           onSelect={onSelect}
           onHover={onHover}
         />
@@ -274,6 +279,7 @@ function MapNode({
   det,
   dim,
   selected,
+  record = false,
   onSelect,
   onHover,
 }: {
@@ -281,6 +287,7 @@ function MapNode({
   det: SystemMapBodyDetailDTO | undefined;
   dim: boolean;
   selected: boolean;
+  record?: boolean;
   onSelect?: (it: MapItem) => void;
   onHover?: (it: MapItem | null) => void;
 }) {
@@ -355,6 +362,18 @@ function MapNode({
   return (
     <g className="system-map-node-g" style={{ cursor: "pointer" }} opacity={dim ? 0.25 : 1} {...handlers}>
       {starLike ? <circle cx={cx} cy={cy} r={r * 1.45} fill="url(#smStarGlow)" pointerEvents="none" /> : null}
+      {record ? (
+        <circle
+          className="system-map-record-ring"
+          cx={cx}
+          cy={cy}
+          r={r + 7}
+          fill="none"
+          stroke={RECORD_GOLD}
+          strokeWidth={2}
+          pointerEvents="none"
+        />
+      ) : null}
       {ringed ? (
         <ellipse
           cx={cx}

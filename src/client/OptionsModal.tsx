@@ -25,6 +25,7 @@ import {
   CanonnUploadPanel,
   EddnUploadPanel,
   CollectionFocusPanel,
+  NotifyPanel,
   SnapshotStampPanel,
   EdsmFetchPanel,
   EdsmUploadPanel,
@@ -272,6 +273,8 @@ export function MapOptionsModal({
               </p>
             )}
           </section>
+
+          <NotifyPanel />
 
           <ExoMissLogPanel outliers={snap.exoOutliers} />
 

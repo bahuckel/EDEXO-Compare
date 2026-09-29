@@ -16,6 +16,80 @@ import {
   writeExoAlertAckIds,
 } from "./exoAlertsStore";
 import { readLsBool, writeLsBool } from "./lsPrefs";
+import type { NoticeDTO } from "@shared/notices";
+import { useRecordChime } from "./noticesClient";
+
+function ago(iso: string): string {
+  const ms = Date.now() - Date.parse(iso);
+  if (!Number.isFinite(ms)) return "";
+  const min = Math.round(ms / 60_000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const h = Math.round(min / 60);
+  if (h < 48) return `${h} h ago`;
+  return `${Math.round(h / 24)} days ago`;
+}
+
+const NOTICE_ICON: Record<NoticeDTO["kind"], string> = { notable: "★", record: "🏅", nsp: "✦" };
+
+/*
+  The "Notify me" notices (shared/notices.ts), above the codex checks in the same list (owner,
+  2026-09-30: "same list, own group"). They stay until marked read, on the server, so the phone and
+  this window agree; each names system and body because he may be jumps away by the time he looks.
+*/
+function NoticesGroup({ items, onRead, onShow }: {
+  items: NoticeDTO[];
+  onRead: (ids: string[] | "all") => void;
+  onShow: (n: NoticeDTO) => void;
+}) {
+  if (!items.length) return null;
+  return (
+    <section className="notices-group" aria-label="Notices">
+      <div className="notices-group__head">
+        <span className="notices-group__title">Notices ({items.length})</span>
+        <button type="button" className="exo-data-alert__btn exo-data-alert__btn--secondary" onClick={() => onRead("all")}>
+          Mark all read
+        </button>
+      </div>
+      <div className="exo-data-alerts exo-data-alerts--in-popover" role="list">
+        {items.map((n) => (
+          <div key={n.id} className={`exo-data-alert notice notice--${n.kind}`} role="listitem">
+            <span className={`exo-data-alert__icon notice__icon notice__icon--${n.kind}`} aria-hidden>
+              {NOTICE_ICON[n.kind]}
+            </span>
+            <div className="exo-data-alert__text">
+              <div className="exo-data-alert__meta">
+                {n.body ? `${n.body} · ` : ""}
+                {n.system} · {ago(n.at)}
+              </div>
+              <div className="exo-data-alert__title">{n.title}</div>
+              <div className="exo-data-alert__detail">{n.text}</div>
+            </div>
+            <div className="exo-data-alert__actions">
+              {n.systemAddress != null ? (
+                <button
+                  type="button"
+                  className="exo-data-alert__btn"
+                  title={`Show ${n.body ? `${n.body} in ` : ""}${n.system}`}
+                  onClick={() => onShow(n)}
+                >
+                  Show
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="exo-data-alert__btn exo-data-alert__btn--secondary"
+                onClick={() => onRead([n.id])}
+              >
+                Read
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
   const toast = useToast();
@@ -26,6 +100,49 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
   const [dismissed, setDismissed] = useState(() => readExoAlertDismissals());
   const [ackEpoch, setAckEpoch] = useState(0);
   const [scanBusy, setScanBusy] = useState(false);
+
+  useRecordChime(snap);
+  // Read ones leave at once; the server's next push agrees.
+  const [readIds, setReadIds] = useState<ReadonlySet<string>>(() => new Set());
+  const notices = useMemo(
+    () => (snap.notices?.items ?? []).filter((n) => !readIds.has(n.id)),
+    [snap.notices?.items, readIds],
+  );
+  const markRead = useCallback(
+    (ids: string[] | "all") => {
+      const gone = ids === "all" ? notices.map((n) => n.id) : ids;
+      setReadIds((prev) => new Set([...prev, ...gone]));
+      void fetch("/api/notices/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ids === "all" ? { all: true } : { ids }),
+      }).catch(() => {
+        toast.error("Could not mark the notice read.");
+      });
+    },
+    [notices, toast],
+  );
+  const showNotice = useCallback(
+    (n: NoticeDTO) => {
+      const here = n.systemAddress === snap.currentSystemAddress;
+      void (async () => {
+        await fetch("/api/ui/view-system", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ systemAddress: here ? null : n.systemAddress }),
+        });
+        if (n.bodyKey) {
+          await fetch("/api/ui/selected-body", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bodyKey: n.bodyKey }),
+          });
+        }
+      })().catch(() => toast.error("Could not open that system."));
+      setOpen(false);
+    },
+    [snap.currentSystemAddress, toast],
+  );
 
   // `ackEpoch` is the re-read trigger: the ids live in localStorage, and bumping it re-reads them.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,7 +294,8 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
       : topSeverity === "warning"
         ? " exo-data-alerts-trigger--warn"
         : " exo-data-alerts-trigger--idle"
-  }${hasUnread ? " exo-data-alerts-trigger--unread" : ""}`;
+  }${hasUnread ? " exo-data-alerts-trigger--unread" : ""}${notices.length ? " exo-data-alerts-trigger--notice" : ""}`;
+  const badgeCount = visible.length + notices.length;
 
   let panelBody: ReactNode;
   if (snap.journalBoot) {
@@ -241,7 +359,7 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
         className={triggerClass}
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label="Codex consistency alerts: journal and exo-feeder checks"
+        aria-label={`Messages: ${notices.length} notice${notices.length === 1 ? "" : "s"}, and codex consistency alerts`}
         onClick={() => {
           setOpen((prev) => {
             const next = !prev;
@@ -254,7 +372,10 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
             return next;
           });
         }}
-        title="Codex consistency: journal vs genus_new.json, and exo-feeder profiles vs codex (toggle sources inside)."
+        title={
+          (notices.length ? `${notices.length} unread notice${notices.length === 1 ? "" : "s"} — ` : "") +
+          "Notices (Options → Notify me), and codex consistency: journal vs genus_new.json, and exo-feeder profiles vs codex."
+        }
       >
         <svg
           className="exo-data-alerts-trigger__mail"
@@ -280,14 +401,16 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
             ⚠
           </span>
         ) : null}
-        {visible.length > 0 ? <span className="exo-data-alerts-trigger__badge">{visible.length}</span> : null}
+        {badgeCount > 0 ? <span className="exo-data-alerts-trigger__badge">{badgeCount}</span> : null}
       </button>
       {open ? (
         <div
           className={`exo-data-alerts-popover exo-data-alerts-popover--${side}`}
           role="dialog"
-          aria-label="Codex consistency alerts"
+          aria-label="Notices and codex consistency alerts"
         >
+          <NoticesGroup items={notices} onRead={markRead} onShow={showNotice} />
+          {notices.length ? <div className="notices-group__title notices-group__title--codex">Codex checks</div> : null}
           <div className="exo-data-alerts-popover__detect">
             <span className="exo-data-alerts-popover__detect-label">Detect from:</span>
             <button

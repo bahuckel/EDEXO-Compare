@@ -5,6 +5,7 @@ import type { AppSnapshot, NotableBodyInfo } from "@shared/types";
 import { DScanBodiesBadge } from "./DScanBodiesBadge";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { DetailBody } from "./PlanetQuickFactsPopup";
+import { recordMarksByBodyId } from "./noticesClient";
 import { useModal } from "./ui/useModal";
 import {
   computeSystemMapLayout,
@@ -264,6 +265,8 @@ export const SystemMapModal = memo(function SystemMapModal({
   );
   const selectedItem = layout?.items.find((it) => it.id === selectedId) ?? null;
   const selectedDetail = selectedId != null ? detailOf(selectedId) : undefined;
+  // Records broken in this system: a gold ring on the map, the record in gold in the side panel.
+  const records = useMemo(() => recordMarksByBodyId(snap), [snap]);
 
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
 
@@ -492,6 +495,7 @@ export const SystemMapModal = memo(function SystemMapModal({
                   map={map}
                   dimmed={dimmed}
                   selectedId={selectedId}
+                  recordIds={records}
                   chain={chain}
                   onSelect={(it) => {
                     if (!vp.panning) setSelectedId(it.id);
@@ -519,7 +523,11 @@ export const SystemMapModal = memo(function SystemMapModal({
             </button>
             <div className="system-map-side-content" aria-hidden={!sideOpen}>
               {selectedDetail ? (
-                <DetailBody detail={selectedDetail} onGoToBioBody={onGoToBioBody} />
+                <DetailBody
+                  detail={selectedDetail}
+                  onGoToBioBody={onGoToBioBody}
+                  records={selectedId != null ? records.get(selectedId) : undefined}
+                />
               ) : selectedItem ? (
                 <div className="body-detail-stack">
                   <h4 className="body-detail-title">{selectedItem.node.bodyName || "Barycentre"}</h4>

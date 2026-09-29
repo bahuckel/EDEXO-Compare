@@ -212,6 +212,8 @@ export interface PrimaryStarHeaderEntryDTO {
   fullSpectralNotation?: string | null;
   /** A black hole: its role reads "useless" like any unscoopable star, but the card marks it apart. */
   blackHole?: true;
+  /** Journal BodyID, so a record this star broke can mark its card. */
+  bodyId?: number;
 }
 
 export interface PrimaryStarsHeaderDTO {

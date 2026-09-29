@@ -553,3 +553,42 @@ button.data-value-pill.data-value-pill--clickable:active {
   letter-spacing: 0.1em;
   margin-right: 0.35rem;
 }
+
+/* ---- Notices in the mail icon (shared/notices.ts, 2026-09-30) ---- */
+.exo-data-alerts-trigger--notice.exo-data-alerts-trigger--idle .exo-data-alerts-trigger__mail {
+  color: #f5b83d;
+  filter: drop-shadow(0 0 4px rgba(245, 184, 61, 0.55));
+}
+.exo-data-alerts-trigger--notice .exo-data-alerts-trigger__badge {
+  background: #b7791f;
+  box-shadow: 0 0 8px rgba(245, 184, 61, 0.55);
+}
+.notices-group {
+  margin-bottom: 0.6rem;
+}
+.notices-group__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.1rem 0 0.35rem;
+}
+.notices-group__title {
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f5b83d;
+}
+.notices-group__title--codex {
+  color: var(--muted);
+  margin: 0.2rem 0 0.35rem;
+}
+.notice .notice__icon {
+  color: #f5b83d;
+  border-color: rgba(245, 184, 61, 0.55);
+}
+.notice--nsp .notice__icon {
+  color: #7dd3fc;
+  border-color: rgba(125, 211, 252, 0.5);
+}

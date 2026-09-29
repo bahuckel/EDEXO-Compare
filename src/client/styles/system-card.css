@@ -216,3 +216,28 @@
     min-width: 5.5rem;
   }
 }
+
+/* ---- personal records (2026-09-30): a star that broke one glows gold; a notable planet gets a medal ---- */
+/* The card is clipped to its chamfer, which cuts an outer glow off: the gold glows inward instead. */
+.sys-star-card--record {
+  border-color: #f5b83d;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(245, 184, 61, 0.2), transparent 75%),
+    linear-gradient(180deg, rgba(48, 24, 8, 0.35), transparent 45%),
+    #0d0907;
+  box-shadow:
+    inset 0 0 0 1px #f5b83d,
+    inset 0 0 12px rgba(245, 184, 61, 0.55);
+}
+.sys-star-card--record .sys-star-card__cls {
+  color: #ffd98a;
+  text-shadow: 0 0 8px rgba(245, 184, 61, 0.7);
+}
+.record-medal {
+  display: inline-block;
+  width: 0.75em;
+  height: 1em;
+  margin-left: 0.35em;
+  vertical-align: -0.12em;
+  filter: drop-shadow(0 0 3px rgba(245, 184, 61, 0.6));
+}

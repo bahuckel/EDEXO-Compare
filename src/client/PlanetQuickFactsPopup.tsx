@@ -2,6 +2,8 @@ import type { SystemMapBodyDetailDTO } from "@shared/types";
 import type { ReactNode } from "react";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { recordText, type RecordMarkDTO } from "@shared/notices";
+import { RecordMedal } from "./noticesClient";
 import { DetailCard, KvList, KvRow } from "./bodyDetailKv";
 import { nextTempUnit, usePressUnit, useTempUnit } from "./useUnits";
 import { ExoPayoutRangePanel } from "./ExoPayoutRangePanel";
@@ -484,9 +486,12 @@ function ScanMapValues({ detail }: { detail: SystemMapBodyDetailDTO }) {
 export function DetailBody({
   detail,
   onGoToBioBody,
+  records,
 }: {
   detail: SystemMapBodyDetailDTO;
   onGoToBioBody?: (bodyKey: string) => void;
+  /** Personal records this body broke (shared/notices.ts), said in gold under its name. */
+  records?: readonly RecordMarkDTO[];
 }) {
   return (
     <div className="body-detail-stack">
@@ -501,6 +506,16 @@ export function DetailBody({
           <DetailHeaderChips detail={detail} />
         </div>
       </header>
+      {records?.length ? (
+        <div className="body-record-lines" role="note">
+          <RecordMedal marks={records} />
+          <ul>
+            {records.map((m) => (
+              <li key={`${m.which}-${m.type}`}>Record: {recordText(m)}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <ScanMapValues detail={detail} />
 
       {detail.isMutualBarycentre ? (
@@ -524,7 +539,9 @@ export function PlanetQuickFactsPopup({
   onClose,
   onGoToBioBody,
   pos,
+  records,
 }: {
+  records?: readonly RecordMarkDTO[];
   detail: SystemMapBodyDetailDTO | null;
   fallbackTitle: string;
   /** e.g. notable strip tag line */
@@ -593,7 +610,7 @@ export function PlanetQuickFactsPopup({
         ×
       </button>
       {detail ? (
-        <DetailBody detail={detail} onGoToBioBody={onGoToBioBody} />
+        <DetailBody detail={detail} onGoToBioBody={onGoToBioBody} records={records} />
       ) : (
         <div className="body-detail-stack">
           <header className="body-detail-header">
