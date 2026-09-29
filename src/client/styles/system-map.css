@@ -723,6 +723,50 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   color: var(--ok-soft);
 }
 
+/* Scan value, map value below it — top of the body popup and the map's side panel. */
+.body-value-lines {
+  margin: 0;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.4rem 0.6rem;
+  border-left: 2px solid var(--accent);
+  background: linear-gradient(90deg, var(--accent-a12), transparent 80%);
+}
+.body-value-line {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.body-value-line dt {
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.body-value-line dd {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-bright);
+}
+.body-value-num {
+  white-space: nowrap;
+}
+.body-value-line--done dd {
+  color: var(--ok-bright);
+}
+.body-value-note {
+  margin-left: 0.5rem;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .body-detail-credits-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -377,7 +377,11 @@ function WorldDetailBody({
             >
               <div className="body-detail-mini-card-label">DSS · mapped</div>
               <div className="body-detail-mini-card-value">
-                {detail.dssCredits != null ? `${detail.dssCredits.toLocaleString()} CR` : "—"}
+                {detail.dssProjectedCredits != null
+                  ? "not mapped yet"
+                  : detail.dssCredits != null
+                    ? `${detail.dssCredits.toLocaleString()} CR`
+                    : "—"}
               </div>
               {detail.dssVersusFssUpliftCredits != null && detail.dssVersusFssUpliftCredits > 0 ? (
                 <p className="dim tiny body-detail-mini-card-meta">
@@ -441,6 +445,41 @@ function WorldDetailBody({
   );
 }
 
+/*
+  What the body pays for exploration, first thing under its name (guild tester report, 2026-09-30):
+  the scan value, and the map value below it — the estimate until the body is mapped. The breakdown
+  stays in the Exploration value card further down. Stars have no map value.
+*/
+function ScanMapValues({ detail }: { detail: SystemMapBodyDetailDTO }) {
+  if (detail.isMutualBarycentre || detail.fssCredits == null) return null;
+  const star = detail.isStar || detail.journalStellar === true;
+  const mapped = !star && detail.dssProjectedCredits == null && detail.dssCredits != null;
+  const map = star ? null : mapped ? detail.dssCredits : detail.dssProjectedCredits;
+  return (
+    <dl
+      className="body-value-lines"
+      title="Estimates from the scan and body type, first-discovery bonus included when it is yours. What Universal Cartographics pays can differ a little."
+    >
+      <div className="body-value-line">
+        <dt>Scan value</dt>
+        <dd>{detail.fssCredits.toLocaleString()} CR</dd>
+      </div>
+      {map != null ? (
+        <div className={`body-value-line${mapped ? " body-value-line--done" : ""}`}>
+          <dt>Map value</dt>
+          <dd>
+            <span className="body-value-num">
+              {mapped ? "" : "~"}
+              {map.toLocaleString()} CR
+            </span>
+            <span className="body-value-note">{mapped ? "✓ mapped" : "not mapped yet"}</span>
+          </dd>
+        </div>
+      ) : null}
+    </dl>
+  );
+}
+
 /** A body's facts, as the popup shows them — also the system map's side panel. */
 export function DetailBody({
   detail,
@@ -462,6 +501,7 @@ export function DetailBody({
           <DetailHeaderChips detail={detail} />
         </div>
       </header>
+      <ScanMapValues detail={detail} />
 
       {detail.isMutualBarycentre ? (
         <BaryDetailCard detail={detail} />
