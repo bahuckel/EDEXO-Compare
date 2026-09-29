@@ -201,6 +201,8 @@ function openAppUiWindow(iconForChild) {
     title: "ED Exo Compare",
     icon: iconForChild,
     webPreferences: {
+      // No spell-check: Electron can fetch its dictionaries from Google (owner, 2026-09-29).
+      spellcheck: false,
       contextIsolation: true,
       nodeIntegration: false,
       partition: APP_WINDOW_PARTITION,
@@ -591,6 +593,8 @@ async function start() {
     autoHideMenuBar: true,
     icon: winIcon,
     webPreferences: {
+      // No spell-check: Electron can fetch its dictionaries from Google (owner, 2026-09-29).
+      spellcheck: false,
       contextIsolation: true,
       nodeIntegration: false,
       preload: fs.existsSync(preloadPath) ? preloadPath : undefined,

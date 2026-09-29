@@ -43,9 +43,6 @@ const SystemMapModal = lazy(() => import("./SystemMapModal").then((m) => ({ defa
 
 const BRAND_AUTHOR = "FALrenica";
 
-function marketingSiteOrigin(): string {
-  return import.meta.env.DEV ? "http://127.0.0.1:8082" : "https://edexo.bahuckel.com";
-}
 
 /**
  * Idle state: nothing to sample yet.
@@ -162,7 +159,11 @@ function BioEmptyState({ snap }: { snap: AppSnapshot }) {
 }
 
 function AppLegalFooter() {
-  const origin = marketingSiteOrigin();
+  /*
+    The privacy policy and terms ship with the app (public/legal/) and are served by its own server
+    (owner, 2026-09-29): they were on edexo.bahuckel.com, served from this PC, and went dead (530) with
+    it. Same-origin links work offline, over the LAN and on a phone, and always match this version.
+  */
   return (
     <footer className="app-legal-footer">
       <p className="app-legal-footer-note dim">
@@ -171,18 +172,16 @@ function AppLegalFooter() {
         related marks belong to Frontier; all rights reserved by their owners.
       </p>
       <div className="app-legal-footer-links">
-        <a href={`${origin}/privacy.html`} target="_blank" rel="noopener noreferrer">
+        <a href="/legal/privacy.html" target="_blank" rel="noopener noreferrer">
           Privacy Policy
         </a>
         <span className="app-legal-footer-sep dim">·</span>
-        <a href={`${origin}/terms.html`} target="_blank" rel="noopener noreferrer">
+        <a href="/legal/terms.html" target="_blank" rel="noopener noreferrer">
           Terms of Service
         </a>
         <span className="app-legal-footer-sep dim">·</span>
         {/*
-          The project's page on the owner's site. Deliberately not `marketingSiteOrigin()`, which is
-          still where privacy.html and terms.html live — those are served from the site root and
-          moving this link must not quietly move them with it.
+          The project's page on the owner's site.
         */}
         <a href="https://bahuckel.com/projects/edexo-compare" target="_blank" rel="noopener noreferrer">
           bahuckel.com/projects/edexo-compare

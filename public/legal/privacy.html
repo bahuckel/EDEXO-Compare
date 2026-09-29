@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#060608" />
+    <title>Privacy Policy — ED Exo Compare</title>
+    <link rel="stylesheet" href="legal.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <p class="site-brand">ED Exo Compare</p>
+        <p class="site-tag">Privacy Policy</p>
+        <nav class="site-nav" aria-label="Legal">
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+          <a href="https://github.com/bahuckel/EDEXO-Compare" target="_blank" rel="noopener noreferrer">Project on GitHub</a>
+        </nav>
+      </header>
+
+      <main class="site-main">
+        <h1 class="legal-hed">Privacy Policy</h1>
+        <p class="legal-updated">Last updated: 29 September 2026 · applies to version 1.2.7 and later</p>
+
+        <div class="legal-box">
+          <p>
+            <strong>Operator.</strong> ED Exo Compare (the application and its downloads) is owned and operated
+            by Bahuckel&trade; as an independent, single-developer project. Frontier Developments plc and its
+            affiliates are not responsible for this software.
+          </p>
+          <p>
+            <strong>Game rights.</strong> Elite Dangerous and related names and assets are trademarks or
+            intellectual property of Frontier Developments (or their licensors). This policy does not grant any
+            licence to game content; all rights remain with their owners.
+          </p>
+        </div>
+
+        <h2>What stays on your computer</h2>
+        <p>
+          ED Exo Compare reads the journal files Elite Dangerous writes on your computer and works on them there:
+          merging scans, listing candidate species, estimating values. It never changes your journal files.
+        </p>
+        <p>
+          Its own data &mdash; settings, the species you scanned on foot, surface marks, statistics, the miss log,
+          looked-up systems, your HUD layout &mdash; lives in its data folder
+          (<code>%LOCALAPPDATA%\ED Exo Compare</code> on Windows, <code>~/.config/edexo-compare</code> on Linux).
+          <strong>Backups</strong> are written only to the folder you choose and are never sent anywhere.
+          The exomastery and codex downloads are saved only where you save them.
+        </p>
+        <p>
+          There are <strong>no analytics, no telemetry, no crash reports and no advertising</strong>, and no
+          personal data is sold or shared for marketing.
+        </p>
+
+        <h2>What leaves your computer</h2>
+        <p>
+          Every service is named here, with when and what, so you can read what leaves your machine without
+          running it. Any request also shows that service your IP address, as every internet request does.
+        </p>
+
+        <h3>Always, with no setting</h3>
+        <ul>
+          <li>
+            <strong>Update check &mdash; GitHub</strong> (api.github.com). When the launcher opens, at most
+            once an hour (and when you press <em>Check for updates</em>), the app asks GitHub for the list of
+            this project's releases. It sends nothing about you; the app's version is in the request's
+            <em>User-Agent</em>. Nothing is downloaded: if a newer version exists, the button opens the release
+            page in your browser.
+          </li>
+          <li>
+            <strong>Game server status &mdash; ed-server-status.orerve.net</strong>, and EDSM if that does
+            not answer. While the app's window is open, about every 15 seconds, to show whether the game's
+            servers are up. Nothing about you is sent.
+          </li>
+          <li>
+            <strong>Route check &mdash; EDSM</strong> (www.edsm.net). When you have a route plotted, the names
+            of the systems on it (up to 40 per request, at least 5 seconds apart) are sent to EDSM to see which
+            it already knows &mdash; how the app tells whether a first footfall may still be possible.
+            Only the system names are sent: never your commander name or your EDSM key.
+          </li>
+        </ul>
+
+        <h3>When you do something</h3>
+        <ul>
+          <li>
+            <strong>System search &mdash; Spansh</strong> (spansh.co.uk). Typing three or more letters in the
+            system search sends what you typed. Opening a result for a system you have not scanned yourself
+            fetches that system's data by its number; it is kept on your computer for 30 days. The carrier
+            check in the Carriers screen sends a carrier's callsign when you press it.
+          </li>
+          <li>
+            <strong>Carriers and points of interest &mdash; EDAstro</strong> (edastro.com). The download buttons
+            in the Carriers and Points of Interest screens fetch EDAstro's public lists. Nothing about you is
+            sent.
+          </li>
+          <li>
+            <strong>Your public address &mdash; ipify</strong> (api.ipify.org). Only when you click the eye icon
+            beside <em>Public internet</em> in the launcher's network settings, to show the address a device
+            outside your home network would use. The address is kept on your computer; <em>Forget</em> deletes it.
+          </li>
+        </ul>
+
+        <h3>Only if you switch it on (all off by default)</h3>
+        <ul>
+          <li>
+            <strong>Look up systems when I jump &mdash; EDSM.</strong> Needs your EDSM API key. As you jump, the
+            name of a system you have no scans of is sent to EDSM with your EDSM commander name and key, so the
+            app can show what is there.
+          </li>
+          <li>
+            <strong>Send my journal to EDSM.</strong> Needs your EDSM API key. Your journal events (without the
+            kinds EDSM asks clients to leave out), with your EDSM commander name, key and the game's version,
+            are sent to EDSM &mdash; when you press <em>Catch up</em>, or every few minutes if you choose
+            <em>Keep sending as I play</em>. The app remembers what it has sent so nothing is sent twice.
+          </li>
+          <li>
+            <strong>Send my discoveries to Canonn</strong> (Canonn's research API). While you play, organic scans,
+            sales of organic data, codex entries and the other events Canonn asks for are sent as the full journal
+            line, with your <strong>commander name</strong>, the system's name and coordinates, and the app's
+            version.
+          </li>
+          <li>
+            <strong>Send my live events to EDDN</strong> (eddn.edcd.io, the community data network). While you
+            play: jumps, locations, docking, body scans and signals, organic scans (log and sample), codex entries,
+            and your plotted route, with personal fields such as fuel and fines removed and, for organic scans and
+            codex entries, the position on the surface. EDDN's <em>uploader</em> field carries your
+            <strong>commander name</strong>. EDDN passes this on publicly to anyone listening.
+          </li>
+        </ul>
+        <p>
+          Your use of these services is also subject to their own terms and privacy policies &mdash; for example
+          <a href="https://www.edsm.net/en/legal/privacy" target="_blank" rel="noopener noreferrer">EDSM&rsquo;s privacy policy</a>
+          and
+          <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub&rsquo;s privacy statement</a>.
+        </p>
+
+        <h2>Your keys</h2>
+        <p>
+          Your <strong>EDSM API key</strong> is kept in its own file in the app's data folder, never in the
+          settings file, and is only ever sent to edsm.net over HTTPS. You can delete it in Options at any time,
+          which also switches off everything that needs it. The <strong>LAN key</strong> protects the app's pages
+          when you open them to other devices in <em>Network settings</em>; it stays on your computer. Neither key
+          goes into a backup unless you tick <em>Your EDSM and LAN keys</em>.
+        </p>
+
+        <h2>Links</h2>
+        <p>
+          Links in the app (to EDSM, EDAstro, Canonn, GitHub, photo credits and others) open in your web browser
+          and are subject to those sites&rsquo; own policies.
+        </p>
+
+        <h2>Children</h2>
+        <p>The software is not directed at children under 13. Parental or guardian discretion applies.</p>
+
+        <h2>Changes</h2>
+        <p>
+          This policy ships with the app and changes with it; the date at the top changes when it does. If the app
+          ever starts sending something new, it will be listed here first.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          Questions:
+          <a href="https://github.com/bahuckel/EDEXO-Compare/issues" target="_blank" rel="noopener noreferrer">GitHub issues</a>
+          or the project page on <a href="https://bahuckel.com/projects/edexo-compare" target="_blank" rel="noopener noreferrer">bahuckel.com</a>.
+        </p>
+      </main>
+
+      <footer class="site-footer">
+        <a href="privacy.html">Privacy Policy</a>
+        <span class="sep">&middot;</span>
+        <a href="terms.html">Terms of Service</a>
+        <span class="sep">&middot;</span>
+        <a href="https://bahuckel.com" target="_blank" rel="noopener noreferrer">bahuckel.com</a>
+      </footer>
+    </div>
+  </body>
+</html>

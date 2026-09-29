@@ -35,7 +35,7 @@
  * Nothing here blocks the snapshot. A name with no answer yet reads `null`, the HUD leaves the arrow
  * in its default colour, and the next snapshot after the reply carries the verdict.
  */
-import { EDSM_USER_AGENT, type EdsmRequestIdentity } from "./edsmSystemHydration.js";
+import { EDSM_USER_AGENT } from "./edsmSystemHydration.js";
 
 const EDSM_SYSTEMS_URL = "https://www.edsm.net/api-v1/systems";
 
@@ -77,7 +77,6 @@ const FAILURE_NOTE: Record<LookupFailure, string> = {
 export interface FirstFootfallDeps {
   /** True when the commander's own journals already place him in this system. */
   hasVisited: (systemName: string) => boolean;
-  identity: () => EdsmRequestIdentity | null;
   /** Seam for tests. Defaults to `fetch`. */
   fetchImpl?: typeof fetch;
   now?: () => number;
@@ -165,11 +164,12 @@ export class FirstFootfallLookup {
       const params = new URLSearchParams();
       for (const n of batch) params.append("systemName[]", n);
       params.set("showId", "1");
-      const identity = this.deps.identity();
-      if (identity?.apiKey && identity.commanderName) {
-        params.set("commanderName", identity.commanderName);
-        params.set("apiKey", identity.apiKey);
-      }
+      /*
+        Anonymous on purpose (owner, 2026-09-29): this lookup runs on every plotted route with no switch,
+        and it used to carry the commander's EDSM name and API key in the URL whenever a key was saved.
+        EDSM answers it without them, so they stay home; only the features the commander switches on
+        (look-up on jump, journal upload) send them.
+      */
       const doFetch = this.deps.fetchImpl ?? fetch;
       const res = await doFetch(`${EDSM_SYSTEMS_URL}?${params.toString()}`, {
         headers: { Accept: "application/json", "User-Agent": EDSM_USER_AGENT },

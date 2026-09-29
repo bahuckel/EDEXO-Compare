@@ -11,7 +11,6 @@ import type {
   RemoteViewDTO,
   SystemMapSnapshot,
 } from "../shared/types.js";
-import { readEdsmCredentials } from "./edsmCredentials.js";
 import {
   explorationRecordIsBeltClusterLike,
   explorationRecordIsClearlyWorld,
@@ -39,7 +38,6 @@ export function firstFootfallLookupFor(store: {
   firstFootfallStore = store;
   firstFootfallLookup ??= new FirstFootfallLookup({
     hasVisited: (name) => firstFootfallStore?.hasVisitedSystemNamed(name) ?? false,
-    identity: () => readEdsmCredentials(),
   });
   return firstFootfallLookup;
 }

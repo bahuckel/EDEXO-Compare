@@ -7,10 +7,7 @@
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
-    "dev": "concurrently -k -n app,api,site \"vite\" \"tsx watch src/server/devEntry.ts --host 127.0.0.1 --port 7111\" \"vite --config site/vite.config.ts\"",
-    "site": "vite --config site/vite.config.ts",
-    "site:preview": "vite build --config site/vite.config.ts && vite preview --config site/vite.config.ts",
-    "build:site": "vite build --config site/vite.config.ts",
+    "dev": "concurrently -k -n app,api \"vite\" \"tsx watch src/server/devEntry.ts --host 127.0.0.1 --port 7111\"",
     "build": "vite build",
     "bundle": "node scripts/bundle.mjs",
     "icon": "node scripts/make-ico.mjs",

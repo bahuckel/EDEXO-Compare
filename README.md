@@ -164,10 +164,11 @@ entries and whatever else Canonn is currently asking for — **with your CMDR na
 their archive is keyed on it, and with the journal line exactly as the game wrote it. There is no
 anonymous form of it. Only live events go: switching it on never uploads journals you already have.
 
-There is no telemetry and no analytics. The one request nobody switches on is the update check:
-each time the launcher opens (at most once an hour) it asks GitHub for this project's list of
-releases, so it can say when a newer version exists. That request carries the app's version in its
-user agent and nothing about you or your game. See [site/privacy.html](site/privacy.html).
+There is no telemetry and no analytics. Three requests run without a switch, and none carries
+anything about you: the update check (each time the launcher opens, at most once an hour, GitHub is
+asked for this project's releases; the app's version is in the user agent), the game server status,
+and EDSM's answer to which systems on your plotted route it already knows (the system names only).
+Every request is listed in the [privacy policy](public/legal/privacy.html), which ships with the app.
 
 ## Running it
 
@@ -175,7 +176,7 @@ The packaged app is a small launcher window; the app itself opens in your browse
 
 ```
 npm install
-npm run dev            # Vite (5173) + API/WS (7111) + the marketing site
+npm run dev            # Vite (5173) + API/WS (7111)
 npm run electron:dev   # build, bundle and launch the Electron launcher
 npm run dist:win       # portable .exe + CLI build into dist/
 ```
@@ -255,9 +256,8 @@ src/shared/     types and pure helpers used by both
 src/feeder/     corpus → shipped species profiles
 scripts/        the feeder CLI and the accuracy probes
 data/species/   the species database, one folder per genus
-public/         launcher and the transparent HUD overlays
+public/         launcher, the transparent HUD overlays, and the privacy policy and terms (legal/)
 electron/       launcher window
-site/           the marketing/legal pages (separate Vite build)
 tests/          vitest suites
 docs/archive/   internal planning notes — not tracked, see .gitignore
 ```
@@ -303,4 +303,4 @@ prefer theirs removed can ask and it will be, with no justification needed — s
 [NOTICE.md](NOTICE.md).
 
 Elite Dangerous, its artwork and game content remain the property of Frontier Developments; see
-[site/terms.html](site/terms.html).
+the [terms](public/legal/terms.html).

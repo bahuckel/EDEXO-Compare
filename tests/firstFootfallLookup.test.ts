@@ -27,12 +27,29 @@ const make = (opts: { known?: string[]; visited?: string[]; now?: () => number }
   const f = edsmKnowing(opts.known ?? []);
   const lookup = new FirstFootfallLookup({
     hasVisited: (n) => (opts.visited ?? []).some((v) => v.toLowerCase() === n.toLowerCase()),
-    identity: () => null,
     fetchImpl: f.impl,
     now: opts.now,
   });
   return { lookup, calls: f.calls, impl: f.impl };
 };
+
+describe("what is sent", () => {
+  it("only system names: never the commander's EDSM name or key (owner, 2026-09-29)", async () => {
+    const urls: string[] = [];
+    const lookup = new FirstFootfallLookup({
+      hasVisited: () => false,
+      fetchImpl: (async (url: string | URL) => {
+        urls.push(String(url));
+        return { ok: true, json: async () => [] } as unknown as Response;
+      }) as unknown as typeof fetch,
+    });
+    lookup.request(["Sol", "Nowhere AA-A z0-0"]);
+    await vi.waitFor(() => expect(urls).toHaveLength(1));
+    const q = new URL(urls[0]!).searchParams;
+    expect([...q.keys()].sort()).toEqual(["showId", "systemName[]", "systemName[]"]);
+    expect(urls[0]).not.toMatch(/apiKey|commanderName/);
+  });
+});
 
 describe("the verdict", () => {
   it("says nothing before the lookup has answered", () => {
@@ -121,7 +138,6 @@ describe("when it cannot reach EDSM", () => {
     */
     const lookup = new FirstFootfallLookup({
       hasVisited: () => false,
-      identity: () => null,
       fetchImpl: (async () => {
         throw new Error("offline");
       }) as unknown as typeof fetch,
@@ -141,7 +157,6 @@ describe("when it cannot reach EDSM", () => {
     */
     const lookup = new FirstFootfallLookup({
       hasVisited: () => false,
-      identity: () => null,
       fetchImpl: (async () => ({
         ok: true,
         json: async () => ({ error: "nope" }),
@@ -156,7 +171,6 @@ describe("when it cannot reach EDSM", () => {
   it("an empty list is a real answer — everything on the route is unexplored", async () => {
     const lookup = new FirstFootfallLookup({
       hasVisited: () => false,
-      identity: () => null,
       fetchImpl: (async () => ({ ok: true, json: async () => [] })) as unknown as typeof fetch,
     });
     lookup.request(["A", "B"]);
@@ -168,7 +182,6 @@ describe("when it cannot reach EDSM", () => {
   it("leaves it unknown on a non-200 as well", async () => {
     const lookup = new FirstFootfallLookup({
       hasVisited: () => false,
-      identity: () => null,
       fetchImpl: (async () => ({ ok: false, status: 429 })) as unknown as typeof fetch,
     });
     lookup.request(["Somewhere"]);
@@ -186,7 +199,6 @@ describe("the note behind a grey arrow", () => {
   const lookupWith = (impl: () => Promise<unknown>, now?: () => number) =>
     new FirstFootfallLookup({
       hasVisited: () => false,
-      identity: () => null,
       fetchImpl: impl as unknown as typeof fetch,
       now,
     });

@@ -36,6 +36,24 @@ test("app: the fixture body appears with its candidate species", async ({ page }
   expect(errors).toEqual([]);
 });
 
+test("app: the Privacy Policy and Terms open from the footer, served by the app itself", async ({ page, context }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  for (const [name, h1] of [
+    ["Privacy Policy", "Privacy Policy"],
+    ["Terms of Service", "Terms of Service"],
+  ] as const) {
+    const link = page.locator(".app-legal-footer-links a", { hasText: name });
+    await expect(link).toHaveAttribute("href", /^\/legal\/(privacy|terms)\.html$/);
+    const [tab] = await Promise.all([context.waitForEvent("page"), link.click()]);
+    await expect(tab.locator("h1")).toHaveText(h1);
+    await expect(tab.locator("link[rel=stylesheet]")).toHaveCount(1);
+    await tab.close();
+  }
+  expect(errors).toEqual([]);
+});
+
 test("launcher: renders with the live strip", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/launcher.html");

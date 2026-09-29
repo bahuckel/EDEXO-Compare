@@ -568,6 +568,8 @@ function createHudWindows(deps) {
       titleBarStyle: "hidden",
       backgroundColor: "#00000000",
       webPreferences: {
+      // No spell-check: Electron can fetch its dictionaries from Google (owner, 2026-09-29).
+      spellcheck: false,
         nodeIntegration: false,
         contextIsolation: true,
         // The same bridge the launcher gets. Without it `window.edexoElectron` is undefined in the
