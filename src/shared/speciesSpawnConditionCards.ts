@@ -584,7 +584,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     const s = entry.starlight;
     const lines = [
       `${formatStarlight(s.lo)}–${formatStarlight(s.hi)}× Earth's (99 % of ${s.n.toLocaleString("en-GB")} sightings)`,
-      s.gate ? "Outside it: listed as unlikely" : "For reference: temperature already covers it",
+      s.gate ? "Outside it: listed as unlikely" : "For reference only; the temperature decides",
     ];
     const light = ctx?.stellarIrradiance;
     let tier: EncyclopediaSpawnTier = "neutral";
@@ -645,7 +645,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   /* Thin/thick pressure category gate */
   if (!bac && c.atmospherePressureCategory) {
     const cat = c.atmospherePressureCategory;
-    const lines = [`Atmosphere pressure class · ${cat} (threshold ${THIN_ATMOSPHERE_MAX_ATM} atm)`];
+    const lines = [`${cat} atmosphere (thin is under ${THIN_ATMOSPHERE_MAX_ATM} atm)`];
     const pAtm = ctx?.surfacePressureAtm ?? null;
 
     let tier: EncyclopediaSpawnTier;
@@ -785,18 +785,18 @@ export function buildEncyclopediaSpawnConditionCards(args: {
         pack.tone === "green" ? "blue" : pack.tone === "red" ? "red" : "yellow";
       const caption =
         pack.tone === "green"
-          ? "Host spectral class matches a genus colour-variant row"
+          ? "This body's star has a colour for this species"
           : pack.tone === "red"
-            ? "No colour row for parsed class, or genus null-mapping hit"
-            : "Resolve host StarType from exploration lineage";
+            ? "No colour for this body's star class"
+            : "Host star not known yet — scan the stars";
       const hostLabel =
         pack.tone === "green" ? "Supported" : pack.tone === "red" ? "Not supported" : "Unknown";
       out.push({
         id: "supported-star-types",
         label: "Supported star types",
         lines: [
-          `Supported Star Types: ${pack.supportedSpectralList}`,
-          `Host Star: Type ${pack.hostSpectralSummary} — ${hostLabel}`,
+          pack.supportedSpectralList,
+          `This body's star: ${pack.hostSpectralSummary} — ${hostLabel.toLowerCase()}`,
         ],
         caption,
         tier,

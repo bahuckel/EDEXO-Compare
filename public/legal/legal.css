@@ -13,7 +13,7 @@
   --glow: 0 0 16px var(--accent-glow);
   --radius-md: 12px;
   --blue-glow: rgba(86, 185, 255, 0.12);
-  --hex-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 55.42562584220407 56'%3E%3Cg fill='none' stroke='%23ff7a24' stroke-opacity='0.14' stroke-width='0.85'%3E%3Cpath d='M13.856406460551017 0L27.712812921102035 8L27.712812921102035 24L13.856406460551017 32L0 24L0 8Z'/%3E%3Cpath d='M41.56821838165305 0L55.42462484220407 8L55.42462484220407 24L41.56821838165305 32L27.712812921102035 24L27.712812921102035 8Z'/%3E%3Cpath d='M27.712812921102035 24L41.56821838165305 32L41.56821838165305 48L27.712812921102035 56L13.856406460551017 48L13.856406460551017 32Z'/%3E%3C/g%3E%3C/svg%3E");
+  --hex-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 27.7128 48'%3E%3Cpath d='M13.8564 0L27.7128 8L27.7128 24L13.8564 32L0 24L0 8ZM13.8564 32L13.8564 48' fill='none' stroke='%23ff7a24' stroke-opacity='0.16' stroke-width='0.75'/%3E%3C/svg%3E");
 }
 
 *,
@@ -33,7 +33,7 @@ body {
   background-size:
     auto,
     auto,
-    55.425626px 56px;
+    27.7128px 48px;
   background-position:
     0 0,
     0 0,
