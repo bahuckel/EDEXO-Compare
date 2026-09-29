@@ -2,6 +2,13 @@ import { esc, head, q } from "../core.js";
 
 /* ============================================================== Discovery scan (FSS honk) ==== */
 export var fss = {
+  /* "Only when relevant": the system still has bodies to find. */
+  relevant: function (d) {
+    var s = d.dScanBodies;
+    if (!s || s.total == null) return false;
+    var honked = s.honked !== false;
+    return !(s.complete || (honked && s.found >= s.total));
+  },
   title: "Discovery scan",
   html: function () {
     return (

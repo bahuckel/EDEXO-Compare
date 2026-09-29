@@ -40,6 +40,7 @@ type Huds = {
   toggleVisibility: (force?: boolean) => boolean;
   setGameAway: (away: boolean) => void;
   isGameAway: () => boolean;
+  idlePaths: () => string[];
   restore: (icon: unknown) => Promise<void>;
   destroyAll: () => void;
   pushPrefs: (p: unknown) => void;
@@ -365,6 +366,40 @@ describe("what the pages report", () => {
     expect(win.bounds.width).toBe(505);
     expect(JSON.parse(readFileSync(layoutFile, "utf8")).scale).toBe(1.25);
     expect(huds.resizeFromPage(null, { height: 200 })).toEqual({ ok: false });
+  });
+
+  it("an idle page steps out of the stack and stays out through the hotkey and the game; it returns on its own", async () => {
+    const huds = make();
+    await huds.request("/fss-scan-overlay.html", 404, 100, null, "open");
+    await huds.request("/distance-overlay.html", 404, 200, null, "open");
+    const [fssWin, distWin] = live() as [FakeWindow, FakeWindow];
+    huds.relayout();
+    const topY = fssWin.bounds.y;
+    expect(distWin.bounds.y).toBeGreaterThan(topY);
+
+    expect(huds.resizeFromPage(fssWin, { idle: true })).toEqual({ ok: true });
+    expect(fssWin.visible).toBe(false);
+    expect(distWin.bounds.y).toBe(topY); // the others close up
+    expect(huds.idlePaths()).toEqual(["/fss-scan-overlay.html"]);
+
+    huds.toggleVisibility(true);
+    huds.toggleVisibility(false);
+    expect(fssWin.visible).toBe(false);
+    expect(distWin.visible).toBe(true);
+    huds.setGameAway(true);
+    huds.setGameAway(false);
+    expect(fssWin.visible).toBe(false);
+
+    huds.resizeFromPage(fssWin, { idle: false });
+    expect(fssWin.visible).toBe(true);
+    expect(fssWin.bounds.y).toBe(topY);
+    expect(distWin.bounds.y).toBeGreaterThan(topY);
+    // While the stack is hidden a page that wakes up stays hidden.
+    huds.resizeFromPage(fssWin, { idle: true });
+    huds.toggleVisibility(true);
+    huds.resizeFromPage(fssWin, { idle: false });
+    expect(fssWin.visible).toBe(false);
+    huds.toggleVisibility(true);
   });
 
   it("passes the launcher's HUD settings to every open overlay", async () => {

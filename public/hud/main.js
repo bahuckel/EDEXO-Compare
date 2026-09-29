@@ -15,6 +15,8 @@
     edexoHudCandOrder  "likelihood" (default) | "value"
     edexoHudRegion     "1" (default) | "0"  — show the current region line in the candidates card
     edexoHudCompact    "0" (default) | "1"  — compact: hide the explanatory lines (.hud-explain)
+    edexoHudRelevant   "0" (default) | "1"  — only when relevant: a section with nothing to say
+                                               steps aside (see `relevantNow` below)
 
   Plain browser modules, no build step, served by the local server (a module does not load from
   file://). Split out of the single public/hud.js on 2026-09-28:
@@ -31,7 +33,9 @@ import { datavalue } from "./sections/datavalue.js";
 import { distance } from "./sections/distance.js";
 import { fss } from "./sections/fss.js";
 import { jump, starKind } from "./sections/jump.js";
-import { PHONE, PRESETS, applyTheme, readOpacity, readScale } from "./theme.js";
+import { notable } from "./sections/notable.js";
+import { notices } from "./sections/notices.js";
+import { PHONE, PRESETS, applyTheme, pref, readOpacity, readScale } from "./theme.js";
 
 export var SECTIONS = {
   jump: jump,
@@ -40,8 +44,22 @@ export var SECTIONS = {
   distance: distance,
   datavalue: datavalue,
   achievement: achievement,
+  notable: notable,
+  notices: notices,
 };
-export var ORDER = ["jump", "fss", "candidates", "distance", "datavalue", "achievement"];
+export var ORDER = ["jump", "fss", "candidates", "distance", "datavalue", "achievement", "notable", "notices"];
+
+/*
+  "Only when relevant" (guild tester report, 2026-09-30; opt-in). A section with a `relevant(d)` rule
+  steps aside while the rule says no, and comes back the moment it says yes. It waits five seconds
+  before stepping aside, so a value that flickers for a frame does not make the HUD blink. Sections
+  without a rule (next jump, data value, achievement) always stay. The phone picks its sections with
+  its chips and ignores this.
+*/
+export var RELEVANT_HOLD_MS = 5000;
+export function relevantOn() {
+  return !PHONE && pref("edexoHudRelevant", "0") === "1";
+}
 
 /* ============================================================== mount + feed ================ */
 HUD.SECTIONS = ORDER.slice();
@@ -216,6 +234,57 @@ HUD.mount = function (names, opts) {
     els[n] = root.querySelector('[data-section="' + n + '"]');
   });
 
+  /* Per section: when its rule last said yes. A section starts shown until its rule has been asked. */
+  var lastRelevantAt = {};
+  var idleReported = null;
+  function relevantNow(d, now) {
+    var on = relevantOn();
+    var shown = {};
+    list.forEach(function (n) {
+      var rule = SECTIONS[n].relevant;
+      if (!on || typeof rule !== "function" || !d) {
+        shown[n] = true;
+        return;
+      }
+      var yes = false;
+      try {
+        yes = !!rule(d);
+      } catch (e) {
+        yes = true;
+      }
+      if (yes || lastRelevantAt[n] === undefined) lastRelevantAt[n] = yes ? now : now - RELEVANT_HOLD_MS;
+      shown[n] = yes || now - lastRelevantAt[n] < RELEVANT_HOLD_MS;
+    });
+    return shown;
+  }
+  function applyRelevance() {
+    var shown = relevantNow(HUD.lastSnapshot, Date.now());
+    var any = false;
+    list.forEach(function (n) {
+      els[n].classList.toggle("hud-section--idle", !shown[n]);
+      if (shown[n]) any = true;
+    });
+    // Nothing on this page to show: ask the host to take the window out of the stack.
+    var idle = !any;
+    if (idle !== idleReported) {
+      idleReported = idle;
+      shell.classList.toggle("shell--idle", idle);
+      var ee = window.edexoElectron;
+      if (!PHONE && ee && typeof ee.resizeHudOverlay === "function") {
+        try {
+          void ee.resizeHudOverlay({ idle: idle });
+        } catch (e) {
+          /* not in Electron */
+        }
+      }
+      if (!idle) {
+        lastReportedHeight = 0;
+        requestAnimationFrame(reportHeight);
+      }
+    }
+  }
+  HUD.applyRelevance = applyRelevance;
+
   function applyState(el, state) {
     el.className =
       el.className.replace(/\s*hud-section--(ok|warn)/g, "") + (state ? " hud-section--" + state : "");
@@ -270,6 +339,7 @@ HUD.mount = function (names, opts) {
       }
       applyState(els[n], state);
     });
+    applyRelevance();
     requestAnimationFrame(reportHeight);
   }
 
@@ -284,7 +354,7 @@ HUD.mount = function (names, opts) {
   var lastReportedHeight = 0;
   var lastReportedScale = 0;
   function reportHeight() {
-    if (PHONE) return;
+    if (PHONE || idleReported) return;
     var ee = window.edexoElectron;
     if (!ee || typeof ee.resizeHudOverlay !== "function") return;
     var h = Math.ceil(shell.getBoundingClientRect().height) + 2;
@@ -305,6 +375,8 @@ HUD.mount = function (names, opts) {
       list.forEach(function (n) {
         if (typeof SECTIONS[n].tick === "function") SECTIONS[n].tick(els[n]);
       });
+      // The rules read data that may not change for a while; the hold still has to run out.
+      applyRelevance();
     }, 1000);
   }
 

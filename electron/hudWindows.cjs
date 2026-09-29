@@ -95,6 +95,20 @@ function createHudWindows(deps) {
   */
   let gameAway = false;
   const hiddenNow = () => hudHidden || gameAway;
+  /*
+    A window whose page has nothing to show right now ("Only when relevant", guild tester report,
+    2026-09-30): hidden and left out of the stack, so the others close up. The page says so through
+    `resizeFromPage` (`idle`); the hotkey and the game-away state never show an idle window, and it
+    comes back on its own the moment its page has something again.
+  */
+  const isIdle = (s) => s.idle === true;
+  function hideWin(win) {
+    try {
+      win.hide();
+    } catch {
+      /* ignore */
+    }
+  }
   /** The HUD size multiplier from the launcher's slider; the pages report it, the stack width follows. */
   let hudScale = 1;
 
@@ -388,7 +402,7 @@ function createHudWindows(deps) {
         stopKeepingHudsOnTop();
         return;
       }
-      for (const s of live) raiseHudWindow(s.win);
+      for (const s of live) if (!isIdle(s)) raiseHudWindow(s.win);
     }, HUD_KEEP_ON_TOP_MS);
     if (typeof hudKeepOnTopTimer.unref === "function") hudKeepOnTopTimer.unref();
   }
@@ -407,7 +421,9 @@ function createHudWindows(deps) {
       const i = hudLayout.order.indexOf(s.key);
       return i < 0 ? 1000 + hudOverlayStack.indexOf(s) : i;
     };
-    const ordered = hudOverlayStack.slice().sort((a, b) => rank(a) - rank(b));
+    const ordered = hudOverlayStack
+      .filter((s) => !isIdle(s))
+      .sort((a, b) => rank(a) - rank(b));
     const w = Math.round((Math.max(0, ...hudOverlayStack.map((s) => s.width || 0)) || 404) * hudScale);
     const atBottom = hudLayout.corner.startsWith("b");
     const atRight = hudLayout.corner.endsWith("r");
@@ -529,12 +545,8 @@ function createHudWindows(deps) {
 
     for (const s of hudOverlayStack) {
       if (!s.win || s.win.isDestroyed()) continue;
-      if (hudHidden) {
-        try {
-          s.win.hide();
-        } catch {
-          /* ignore */
-        }
+      if (hudHidden || isIdle(s)) {
+        hideWin(s.win);
         continue;
       }
       // Showing is the moment the game most likely owns the top of the z-order, so this asks for it
@@ -565,15 +577,8 @@ function createHudWindows(deps) {
     deps.onChange();
     for (const s of hudOverlayStack) {
       if (!s.win || s.win.isDestroyed()) continue;
-      if (hiddenNow()) {
-        try {
-          s.win.hide();
-        } catch {
-          /* ignore */
-        }
-      } else {
-        raiseHudWindow(s.win);
-      }
+      if (hiddenNow() || isIdle(s)) hideWin(s.win);
+      else raiseHudWindow(s.win);
     }
     if (hiddenNow()) stopKeepingHudsOnTop();
     else {
@@ -648,7 +653,7 @@ function createHudWindows(deps) {
     */
     win.once("ready-to-show", () => {
       relayoutHudStack();
-      if (hiddenNow()) {
+      if (hiddenNow() || hudOverlayStack.some((s) => s.win === win && isIdle(s))) {
         try {
           win.hide();
         } catch {
@@ -844,6 +849,18 @@ function createHudWindows(deps) {
    */
   function resizeFromPage(win, opts) {
     if (!win || win.isDestroyed()) return { ok: false };
+    const idle = opts && typeof opts === "object" ? opts.idle : undefined;
+    if (typeof idle === "boolean") {
+      const slot = hudOverlayStack.find((s) => s.win === win);
+      if (slot && isIdle(slot) !== idle) {
+        slot.idle = idle;
+        if (idle) hideWin(win);
+        else if (!hiddenNow()) raiseHudWindow(win);
+        relayoutHudStack();
+        deps.onChange();
+      }
+      if (idle) return { ok: true };
+    }
     const raw = Number(opts && typeof opts === "object" ? opts.height : NaN);
     if (!Number.isFinite(raw)) return { ok: false };
     const height = Math.max(HUD_MIN_HEIGHT, Math.min(HUD_MAX_HEIGHT, Math.ceil(raw)));
@@ -892,6 +909,8 @@ function createHudWindows(deps) {
     toggleVisibility: toggleHudVisibility,
     setGameAway,
     isGameAway: () => gameAway,
+    /** Pages of the overlays their page has declared idle ("only when relevant"). */
+    idlePaths: () => hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed() && isIdle(s)).map((s) => s.pathname),
     restore: restoreHudOverlays,
     destroyAll: destroyAllHudOverlays,
     pushPrefs,

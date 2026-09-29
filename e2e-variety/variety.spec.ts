@@ -124,6 +124,8 @@ test("every HUD overlay page mounts its sections from the hud/ modules", async (
     ["/exo-candidates-overlay.html", 1],
     ["/data-value-overlay.html", 1],
     ["/achievement-overlay.html", 1],
+    ["/notable-overlay.html", 1],
+    ["/notices-overlay.html", 1],
     ["/jump-overlay.html", 1],
     ["/hud-overlay.html", 6],
   ];

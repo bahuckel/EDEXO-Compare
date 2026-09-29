@@ -12,4 +12,10 @@ describe("HUD settings on the server", () => {
     expect(s.setHudPrefs({ compact: true, region: false, nonsense: 1 })).toEqual({ compact: true, region: false });
     expect(s.setHudPrefs({ compact: "yes" })).toEqual({});
   });
+
+  it("keeps 'only when relevant' (2026-09-30)", () => {
+    const s = new GameStateStore();
+    expect(s.setHudPrefs({ relevant: true, compact: false })).toEqual({ relevant: true, compact: false });
+    expect(s.setHudPrefs({ relevant: 1 })).toEqual({});
+  });
 });

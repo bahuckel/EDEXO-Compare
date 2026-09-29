@@ -211,6 +211,8 @@ export interface NotifySettingsDTO {
 export interface NoticesSnapshotDTO {
   /** Unread notices, newest first. */
   items: NoticeDTO[];
+  /** The HUD channel sends only the newest few items; this is how many are unread in all. */
+  unread?: number;
   chime: boolean;
   /** Records broken by bodies of the system on screen. */
   recordMarks: RecordMarkDTO[];

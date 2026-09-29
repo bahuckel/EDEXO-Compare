@@ -77,6 +77,12 @@ var RARITY = {
   common: ["C", "#9aa0a8", "Common"],
 };
 export var candidates = {
+  /* "Only when relevant": a body with biological signals is in focus. */
+  relevant: function (d) {
+    var pick = resolveListBody(d);
+    var sig = pick && pick.body && pick.body.state ? pick.body.state.biologicalSignals : null;
+    return typeof sig === "number" && sig > 0;
+  },
   title: "Exo candidates",
   html: function () {
     return (

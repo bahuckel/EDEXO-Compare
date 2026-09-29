@@ -60,6 +60,7 @@ export function serverPref(key) {
   if (key === "edexoHudRegion") return typeof p.region === "boolean" ? (p.region ? "1" : "0") : null;
   if (key === "edexoHudAudio") return typeof p.audio === "boolean" ? (p.audio ? "1" : "0") : null;
   if (key === "edexoHudCompact") return typeof p.compact === "boolean" ? (p.compact ? "1" : "0") : null;
+  if (key === "edexoHudRelevant") return typeof p.relevant === "boolean" ? (p.relevant ? "1" : "0") : null;
   return null;
 }
 export function pref(key, def) {

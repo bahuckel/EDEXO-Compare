@@ -200,6 +200,8 @@ export interface HudPrefsDTO {
   audio?: boolean;
   /** Compact overlays: no explanatory lines, only the readings (guild tester, 2026-09-30). */
   compact?: boolean;
+  /** Only when relevant: HUD sections with nothing to show step aside (guild tester, 2026-09-30). */
+  relevant?: boolean;
 }
 
 /** The session log: what happened since the app started, for the modal and the Markdown copy. */

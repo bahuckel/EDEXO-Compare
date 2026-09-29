@@ -1160,6 +1160,7 @@ export class GameStateStore {
     if (typeof r.region === "boolean") out.region = r.region;
     if (typeof r.audio === "boolean") out.audio = r.audio;
     if (typeof r.compact === "boolean") out.compact = r.compact;
+    if (typeof r.relevant === "boolean") out.relevant = r.relevant;
     this.hudPrefs = out;
     return out;
   }

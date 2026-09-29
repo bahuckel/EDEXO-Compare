@@ -2000,6 +2000,24 @@
                 </span>
               </span>
             </button>
+            <button type="button" class="btn secondary" id="ovNotable" data-overlay-path="/notable-overlay.html">
+              <span class="overlay-pick-row">
+                <span class="overlay-check" aria-hidden="true"></span>
+                <span class="btn-lines">
+                  <strong>Notable planets</strong>
+                  <span class="subline">This system's Earth-likes, water and ammonia worlds, terraformables, with your unread notices</span>
+                </span>
+              </span>
+            </button>
+            <button type="button" class="btn secondary" id="ovNotices" data-overlay-path="/notices-overlay.html">
+              <span class="overlay-pick-row">
+                <span class="overlay-check" aria-hidden="true"></span>
+                <span class="btn-lines">
+                  <strong>Notices</strong>
+                  <span class="subline">What the app's mail icon collects (Options → Notify me), for 20 seconds as it arrives</span>
+                </span>
+              </span>
+            </button>
             <button type="button" class="btn secondary" id="ovJump" data-overlay-path="/jump-overlay.html">
               <span class="overlay-pick-row">
                 <span class="overlay-check" aria-hidden="true"></span>
@@ -2047,6 +2065,7 @@
             </div>
             <div class="hud-set-row">
               <label><input type="checkbox" id="hudCompact" /> Compact: hide the explanations, keep the readings</label>
+              <label title="Exo candidates only for a body with biological signals, the distance tracker only near a surface, the discovery scan only while bodies are left to find, notable planets only where there are some, notices only while one is new. A HUD with nothing to show steps out of the stack and comes back by itself."><input type="checkbox" id="hudRelevant" /> Only when relevant: HUDs step aside while they have nothing to show</label>
             </div>
             <h4>Sound</h4>
             <div class="hud-set-row">
@@ -3504,8 +3523,10 @@
           "/distance-overlay.html": "distance",
           "/data-value-overlay.html": "datavalue",
           "/achievement-overlay.html": "achievement",
+          "/notable-overlay.html": "notable",
+          "/notices-overlay.html": "notices",
         };
-        var HUD_SECTION_ORDER = ["jump", "fss", "candidates", "distance", "datavalue", "achievement"];
+        var HUD_SECTION_ORDER = ["jump", "fss", "candidates", "distance", "datavalue", "achievement", "notable", "notices"];
         var HUD_SECTION_LABEL = {
           jump: "Next jump",
           fss: "Discovery scan",
@@ -3513,6 +3534,8 @@
           distance: "Exo-distance tracker",
           datavalue: "Data value",
           achievement: "Achievement",
+          notable: "Notable planets",
+          notices: "Notices",
         };
         var HUD_PATH_BY_SECTION = {};
         Object.keys(HUD_SECTION_BY_PATH).forEach(function (p) {
@@ -3820,6 +3843,7 @@
         var LS_HUD_ALPHA = "edexoHudOpacity";
         var LS_HUD_AUDIO = "edexoHudAudio";
         var LS_HUD_COMPACT = "edexoHudCompact";
+        var LS_HUD_RELEVANT = "edexoHudRelevant";
         var HUD_PRESETS = {
           orange: "#ff8a1f", amber: "#ffb020", red: "#ff4a3a", magenta: "#ff4fd8", purple: "#b46bff",
           blue: "#4fa8ff", cyan: "#3fe0e0", green: "#5fe07a", lime: "#c8f04a", white: "#e8e8f0",
@@ -3842,6 +3866,7 @@
           try { prefs.region = localStorage.getItem(LS_HUD_REGION) !== "0"; } catch (e) {}
           try { prefs.audio = localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) {}
           try { prefs.compact = localStorage.getItem(LS_HUD_COMPACT) === "1"; } catch (e) {}
+          try { prefs.relevant = localStorage.getItem(LS_HUD_RELEVANT) === "1"; } catch (e) {}
           return prefs;
         }
         function syncHudPrefs() {
@@ -3933,6 +3958,13 @@
         if (hudCompact) {
           hudCompact.addEventListener("change", function () {
             try { localStorage.setItem(LS_HUD_COMPACT, hudCompact.checked ? "1" : "0"); } catch (e) {}
+            syncHudPrefs();
+          });
+        }
+        var hudRelevant = document.getElementById("hudRelevant");
+        if (hudRelevant) {
+          hudRelevant.addEventListener("change", function () {
+            try { localStorage.setItem(LS_HUD_RELEVANT, hudRelevant.checked ? "1" : "0"); } catch (e) {}
             syncHudPrefs();
           });
         }
@@ -4060,6 +4092,7 @@
           if (hudRegion) hudRegion.checked = (function () { try { return localStorage.getItem(LS_HUD_REGION) !== "0"; } catch (e) { return true; } })();
           if (hudAudio) hudAudio.checked = (function () { try { return localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) { return false; } })();
           if (hudCompact) hudCompact.checked = (function () { try { return localStorage.getItem(LS_HUD_COMPACT) === "1"; } catch (e) { return false; } })();
+          if (hudRelevant) hudRelevant.checked = (function () { try { return localStorage.getItem(LS_HUD_RELEVANT) === "1"; } catch (e) { return false; } })();
           if (hudScale) hudScale.value = String(Math.round((function () { try { return parseFloat(localStorage.getItem(LS_HUD_SCALE) || "1") || 1; } catch (e) { return 1; } })() * 100));
           if (hudAlpha) hudAlpha.value = String(Math.round((function () { try { var v = parseFloat(localStorage.getItem(LS_HUD_ALPHA) || "0.45"); return isFinite(v) ? v : 0.45; } catch (e) { return 0.45; } })() * 100));
           showSizeOutputs();
@@ -4086,6 +4119,10 @@
             void pickOverlay("/achievement-overlay.html", HUD_W, 220);
           });
         }
+        var ovNotable = document.getElementById("ovNotable");
+        if (ovNotable) ovNotable.addEventListener("click", function () { void pickOverlay("/notable-overlay.html", HUD_W, 160); });
+        var ovNotices = document.getElementById("ovNotices");
+        if (ovNotices) ovNotices.addEventListener("click", function () { void pickOverlay("/notices-overlay.html", HUD_W, 140); });
 
         /* ------------------------------------------------------------------------------ backups */
         var backupModal = document.getElementById("backupModal");

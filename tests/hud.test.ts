@@ -8,7 +8,7 @@
  * unlikely tier hidden unless confirmed, scan progress after the species, the targeted body winning
  * over the current one, the tracker folding away from a surface, the star-class verdicts.
  */
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { loadHudModule } from "./helpers/loadHud.js";
 
 type HudApi = {
@@ -419,5 +419,77 @@ describe("HUD merged panel", () => {
     });
     expect(document.querySelector('[data-section="fss"]')?.className).toContain("hud-section--ok");
     expect(document.querySelector(".fss-line .honk")?.textContent).toBe("Honk: Yes");
+  });
+});
+
+describe("only when relevant (guild tester report, 2026-09-30)", () => {
+  const idle = (n: string) => document.querySelector(`[data-section="${n}"]`)!.classList.contains("hud-section--idle");
+  const snap = (extra: Record<string, unknown> = {}) => ({
+    dScanBodies: { systemName: "X", found: 10, total: 10, complete: true, honked: true },
+    exoMinimap: null,
+    bodies: [],
+    notableBodies: [],
+    notices: { items: [{ id: "old", kind: "notable", title: "Old", text: "a", system: "X", at: "" }], chime: false, recordMarks: [] },
+    ...extra,
+  });
+
+  it("off by default: every section stays", async () => {
+    window.localStorage.clear();
+    const HUD = await loadHud();
+    HUD.mount(["jump", "fss", "candidates", "notable", "notices"], { noTimers: true });
+    HUD.render(snap());
+    expect(["jump", "fss", "candidates", "notable", "notices"].some(idle)).toBe(false);
+  });
+
+  it("on: sections with nothing to say step aside, the rest stay, and a new notice comes in", async () => {
+    window.localStorage.clear();
+    window.localStorage.setItem("edexoHudRelevant", "1");
+    const HUD = await loadHud();
+    HUD.mount(["jump", "fss", "candidates", "notable", "notices"], { noTimers: true });
+    HUD.render(snap());
+    expect(idle("jump")).toBe(false); // no rule: always shown
+    expect(idle("fss")).toBe(true); // system finished
+    expect(idle("candidates")).toBe(true); // no body in focus
+    expect(idle("notable")).toBe(true);
+    expect(idle("notices")).toBe(true); // "old" was there when the page opened
+    HUD.render(
+      snap({
+        dScanBodies: { systemName: "X", found: 3, total: 10, complete: false, honked: true },
+        notableBodies: [{ bodyLabelShort: "3", tag: "Water world", bodyId: 3, dssMapped: false }],
+        notices: {
+          items: [{ id: "new", kind: "record", title: "Record: largest Icy body", text: "b", system: "X", at: "" }],
+          unread: 4,
+          chime: false,
+          recordMarks: [],
+        },
+      }),
+    );
+    expect(idle("fss")).toBe(false);
+    expect(idle("notable")).toBe(false);
+    expect(idle("notices")).toBe(false);
+    expect(document.querySelector('[data-section="notable"] .hud-mail')?.textContent).toContain("4");
+  });
+
+  it("waits five seconds before stepping aside", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      window.localStorage.clear();
+      window.localStorage.setItem("edexoHudRelevant", "1");
+      const HUD = (await loadHud()) as HudApi & { applyRelevance: () => void };
+      HUD.mount(["fss"], { noTimers: true });
+      HUD.render(snap({ dScanBodies: { systemName: "X", found: 3, total: 10, complete: false, honked: true } }));
+      expect(idle("fss")).toBe(false);
+      HUD.render(snap());
+      expect(idle("fss")).toBe(false);
+      vi.advanceTimersByTime(4000);
+      HUD.applyRelevance();
+      expect(idle("fss")).toBe(false);
+      vi.advanceTimersByTime(1500);
+      HUD.applyRelevance();
+      expect(idle("fss")).toBe(true);
+      expect(document.querySelector(".shell")?.classList.contains("shell--idle")).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

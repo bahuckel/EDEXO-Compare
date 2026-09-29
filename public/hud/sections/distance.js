@@ -8,6 +8,10 @@ import { drawMinimap } from "../radar.js";
   so leaving a planet is a closing animation rather than a jump-cut.
 */
 export var distance = {
+  /* "Only when relevant": on or near a surface, where the tracker is live. */
+  relevant: function (d) {
+    return !d.journalBoot && !!d.exoOrganicOverlay && d.exoOrganicOverlay.visible === true;
+  },
   title: "Exo-distance tracker",
   html: function () {
     return (

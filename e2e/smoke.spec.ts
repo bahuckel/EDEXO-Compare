@@ -605,7 +605,7 @@ test("phone hud: chips and the portrait layout", async ({ page }) => {
   const errors = watchErrors(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/hud-overlay.html?phone=1");
-  await expect(page.locator(".phone-chip:not(.phone-chip--fs)")).toHaveCount(6);
+  await expect(page.locator(".phone-chip:not(.phone-chip--fs)")).toHaveCount(8);
   await expect(page.locator(".phone-chip--fs")).toHaveCount(1);
   await expect(page.locator("body")).toHaveClass(/phone/);
   await page.screenshot({ path: `${OUT}/hud-phone.png`, fullPage: true });

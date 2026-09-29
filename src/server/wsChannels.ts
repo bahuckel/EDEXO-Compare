@@ -35,6 +35,9 @@ const HUD_KEYS = [
   "includeExplorationScanDataInDataValue",
   "hudPrefs",
   "trackedAchievement",
+  // The Notable and Notices overlays (2026-09-30); notices are cut down below.
+  "notableBodies",
+  "notices",
 ] as const satisfies readonly (keyof AppSnapshot)[];
 
 /** What the launcher's `applyLauncherSnapshotData` reads; its live strip polls `/api/status` on its own. */
@@ -147,6 +150,8 @@ export function slimSnapshotForChannel(snap: AppSnapshot, channel: WsChannel): P
   if (channel === "hud") {
     out.bodies = (snap.bodies ?? []).map(slimBodyForHud);
     if (snap.exoOverlayFocusBody) out.exoOverlayFocusBody = slimBodyForHud(snap.exoOverlayFocusBody);
+    // The HUD shows the newest few and a count; the whole unread list stays with the app.
+    if (snap.notices) out.notices = { ...snap.notices, items: snap.notices.items.slice(0, 5), unread: snap.notices.items.length };
   }
   return out as Partial<AppSnapshot>;
 }
