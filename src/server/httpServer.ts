@@ -28,8 +28,12 @@ import type {
   ExoDataAlertDTO,
   DiscoveriesDTO,
   PhotoStampPrefs,
+  GalaxyMineDTO,
+  GalaxyMySystemDTO,
+  GalaxyRouteDTO,
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
+import type { GameStateStore } from "./gameState.js";
 import { getProjectRoot, getWebRoot } from "./paths.js";
 import type { CollectionFocusConfig } from "./collectionFocus.js";
 import { perfBytes, perfCount, perfTime } from "./perf.js";
@@ -115,6 +119,12 @@ export interface HttpServerOptions {
   scanGalaxyBodies?: (query: GalaxyBodyScanQueryDTO, limit: number) => Promise<GalaxyBodyScanDTO>;
   /** GET /api/galaxy/my-sectors — this commander's own state per sector, for colouring the map. */
   getCommanderSectors?: () => CommanderSectorsDTO;
+  /** The 3D map's "your systems" layer, its detail panel, and this session's route (galaxyMine.ts). */
+  getMySystems?: () => GalaxyMineDTO;
+  getMySystem?: (addr: number) => GalaxyMySystemDTO | null;
+  getSessionRoute?: () => GalaxyRouteDTO;
+  /** The journal store itself, for the map's Find box (the commander's own system names). */
+  getJournalStore?: () => GameStateStore;
   /** Codex map: the commander's codex entries, `regionJoinKey|entryKey` (see codexMap.ts). */
   getCodexMapLogged?: () => ReadonlySet<string>;
   /** Achievements: the list, one set's entries, and which one is tracked (false = no such id). */

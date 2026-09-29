@@ -384,3 +384,125 @@ export interface FirstDiscoveryBacklogDTO {
   totalMaxCr: number;
   computedAt: string;
 }
+
+/** One system from the galaxy index, for the 3D map's panel (`/api/galaxy/system?i=`). */
+export interface GalaxySystemDTO {
+  /** Position in the bio index; what the map's tiles and picking carry. */
+  ordinal: number;
+  id64: string;
+  name: string;
+  x: number;
+  y: number;
+  z: number;
+  region: string | null;
+  /** Spansh's body count; null when unknown (not the same as none). */
+  bodyCount: number | null;
+  /** How the system's biology is known: signals seen, mapped, codex-logged, bodies catalogued. */
+  evidence: { fss: boolean; dss: boolean; codex: boolean; bodiesKnown: boolean };
+  /** Recorded species, 1× prices (null where the price list has none). */
+  species: { speciesId: string; displayName: string; genusDir: string; baseCr: number | null }[];
+  /** Sum of the recorded species at 1× — other commanders' records, so first footfall is mostly taken. */
+  valueCr: number;
+  distanceFromSolLy: number;
+}
+
+/** The commander's systems for the 3D map (`/api/galaxy/mine`); flags are MINE_* in galaxyMine.ts. */
+export interface GalaxyMineDTO {
+  available: boolean;
+  systems: {
+    addr: number;
+    name: string;
+    x: number;
+    y: number;
+    z: number;
+    flags: number;
+    bioBodies: number;
+    /** Species this commander scanned on foot here. */
+    speciesScanned: number;
+    /** Set when bio bodies here still wait for them (the backlog), with its floor value. */
+    unfinishedFloorCr: number | null;
+  }[];
+  /** Systems in the journals with no StarPos, so nothing can place them. */
+  unplaceable: number;
+}
+
+/** One of the commander's systems, body by body (`/api/galaxy/mine/system?addr=`). */
+export interface GalaxyMySystemDTO {
+  addr: number;
+  name: string;
+  x: number | null;
+  y: number | null;
+  z: number | null;
+  flags: number;
+  unfinishedFloorCr: number | null;
+  bodies: {
+    name: string;
+    signals: number;
+    dss: boolean;
+    firstFootfall: boolean;
+    species: { name: string; analysed: boolean }[];
+  }[];
+  /** The galaxy index's ordinal for the same system, when it has one (then its record can be shown too). */
+  indexOrdinal: number | null;
+}
+
+/** This session's jumps with positions, and where the ship is (`/api/galaxy/route`). */
+export interface GalaxyRouteDTO {
+  position: { x: number; y: number; z: number } | null;
+  system: string | null;
+  route: { name: string; at: string; x: number; y: number; z: number }[];
+}
+
+/** The 3D map's Find box (`/api/galaxy/find?q=`). */
+export interface GalaxyFindDTO {
+  query: string;
+  /** Sector columns (every height merged) whose name matches, with their centroid and size. */
+  sectors: { name: string; x: number; y: number; z: number; systems: number }[];
+  /** The commander's systems first (`mine`, by `addr`), then the galaxy index's (by `ordinal`). */
+  systems: { name: string; x: number; y: number; z: number; ordinal: number | null; addr: string | null; mine: boolean }[];
+  /** The index scan stopped at its time budget: there may be more. */
+  partial: boolean;
+}
+
+/** One sector column's panel (`/api/galaxy/sector?c=cx:cz`): its size and most valuable systems. */
+export interface GalaxySectorDTO {
+  name: string | null;
+  systems: number;
+  top: { ordinal: number; name: string; valueCr: number; species: number; x: number; y: number; z: number }[];
+}
+
+/** Next target (`/api/galaxy/next`): the nearest system worth at least X that the commander has not done. */
+export interface GalaxyNextDTO {
+  /** Where the distances are measured from (the ship); null when unknown, and then nothing is picked. */
+  from: { x: number; y: number; z: number } | null;
+  /** Systems that clear the value and are not excluded, galaxy-wide. */
+  qualifying: number;
+  target: GalaxyNextRow | null;
+  /** The next nearest after the target (for Skip without a round trip, and a short list). */
+  next: GalaxyNextRow[];
+  /**
+   * G5.3, when asked for (`plan=N`): a greedy chain from the ship — the target first, then each time
+   * the nearest qualifying system to the last stop. Absent when not asked or nothing qualifies.
+   */
+  plan?: {
+    stops: (GalaxyNextRow & { legLy: number })[];
+    /** Sum of the legs, ship to the last stop. */
+    totalLy: number;
+    /** Sum of the stops' recorded species at 1×. */
+    totalValueCr: number;
+    /** Hops that needed a pass over the whole index (diagnostics; 0 in a dense neighbourhood). */
+    fullPasses: number;
+  };
+}
+
+export interface GalaxyNextRow {
+  ordinal: number;
+  name: string;
+  x: number;
+  y: number;
+  z: number;
+  /** Recorded species at 1×. */
+  valueCr: number;
+  species: number;
+  distanceLy: number;
+}

@@ -1,0 +1,678 @@
+/* ---- 3D galaxy map (?screen=galaxy, G1) ------------------------------------------------------- */
+
+.g3d-screen {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #05040a;
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+
+.g3d-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* Region names, placed by labelPlacement.ts; never catch the mouse. */
+.g3d-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.g3d-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  line-height: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  will-change: transform;
+}
+.g3d-label--region {
+  padding: 0 5px;
+  color: rgba(255, 186, 112, 0.92);
+  background: rgba(5, 4, 10, 0.62);
+}
+
+.g3d-bar,
+.g3d-status {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 6px 10px;
+  background: rgba(10, 8, 12, 0.82);
+  border: 1px solid var(--accent-a25);
+  backdrop-filter: blur(3px);
+}
+.g3d-bar {
+  top: 12px;
+}
+.g3d-status {
+  bottom: 12px;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+
+.g3d-title {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.g3d-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.g3d-btn {
+  padding: 3px 10px;
+  border: 1px solid var(--accent-a35);
+  background: var(--accent-a06);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.g3d-btn:hover,
+.g3d-btn:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-a15);
+}
+.g3d-btn--on {
+  border-color: var(--accent);
+  background: var(--accent-a25);
+  color: var(--accent-bright);
+}
+.g3d-btn--primary {
+  display: inline-block;
+  margin-top: 12px;
+  border-color: var(--accent);
+}
+.g3d-classic {
+  margin-left: auto;
+}
+
+.g3d-slider,
+.g3d-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+}
+.g3d-slider input {
+  width: 110px;
+  accent-color: var(--accent);
+}
+.g3d-check input {
+  accent-color: var(--accent);
+}
+
+.g3d-badge {
+  padding: 1px 8px;
+  border: 1px solid var(--accent-a45);
+  color: var(--accent-bright);
+}
+.g3d-error {
+  color: #ff7a6a;
+}
+.g3d-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.g3d-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.g3d-dot--dss {
+  background: rgb(64, 217, 204);
+}
+.g3d-dot--codex {
+  background: rgb(255, 158, 51);
+}
+.g3d-dot--signal {
+  background: rgb(140, 115, 242);
+}
+.g3d-hint {
+  margin-left: auto;
+  color: var(--text-faint);
+}
+
+.g3d-screen--fallback {
+  display: grid;
+  place-items: center;
+}
+.g3d-fallback {
+  max-width: 460px;
+  padding: 20px 24px;
+  border: 1px solid var(--accent-a35);
+  background: var(--surface-1);
+}
+.g3d-fallback h1 {
+  margin: 0 0 8px;
+  font-size: var(--fs-xl);
+  color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .g3d-hint,
+  .g3d-legend {
+    display: none;
+  }
+}
+
+/* The Classic map's way to the 3D one, while both exist. */
+.galaxy-screen__to3d {
+  display: inline-block;
+  margin: 2px 0 6px;
+  padding: 2px 10px;
+  border: 1px solid var(--accent-a45);
+  color: var(--accent-bright);
+  text-decoration: none;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.galaxy-screen__to3d:hover {
+  background: var(--accent-a15);
+}
+
+/* ---- G2: more label kinds, the hover card, the system panel ----------------------------------- */
+.g3d-label--sector {
+  padding: 0 4px;
+  color: rgba(255, 230, 207, 0.86);
+  background: rgba(5, 4, 10, 0.55);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.g3d-label--count {
+  padding: 0 4px;
+  color: rgba(255, 230, 207, 0.9);
+  background: rgba(5, 4, 10, 0.55);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.g3d-label--system {
+  padding: 0 4px;
+  color: var(--text);
+  background: rgba(5, 4, 10, 0.5);
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+.g3d-tip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 280px;
+  padding: 6px 9px;
+  pointer-events: none;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  background: rgba(10, 8, 12, 0.92);
+  border: 1px solid var(--accent-a45);
+}
+.g3d-tip strong {
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+.g3d-tip em {
+  color: var(--text-faint);
+  font-style: normal;
+}
+
+.g3d-panel {
+  position: absolute;
+  top: var(--g3d-top, 64px);
+  right: 12px;
+  bottom: 60px;
+  z-index: 2;
+  width: min(360px, calc(100vw - 24px));
+  overflow-y: auto;
+  padding: 12px 14px;
+  background: rgba(10, 8, 12, 0.9);
+  border: 1px solid var(--accent-a35);
+  backdrop-filter: blur(3px);
+}
+.g3d-panel__close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: var(--fs-lg);
+  cursor: pointer;
+}
+.g3d-panel__close:hover {
+  color: var(--accent-bright);
+}
+.g3d-panel__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 24px 4px 0;
+  font-size: var(--fs-lg);
+  color: var(--accent-bright);
+  overflow-wrap: anywhere;
+}
+.g3d-panel__meta,
+.g3d-panel__note {
+  margin: 0 0 8px;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+.g3d-panel__note {
+  color: var(--text-faint);
+}
+.g3d-panel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 10px;
+}
+.g3d-chip {
+  padding: 0 6px;
+  font-size: var(--fs-2xs);
+  border: 1px solid rgba(140, 115, 242, 0.6);
+  color: #c9bdfb;
+}
+.g3d-chip--dss {
+  border-color: rgba(64, 217, 204, 0.6);
+  color: #9ff0e8;
+}
+.g3d-chip--codex {
+  border-color: rgba(255, 158, 51, 0.6);
+  color: #ffc98c;
+}
+.g3d-species {
+  width: 100%;
+  margin-bottom: 8px;
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+}
+.g3d-species td {
+  padding: 3px 0;
+  border-bottom: 1px solid var(--accent-a10);
+}
+.g3d-species tfoot td {
+  padding-top: 6px;
+  border-bottom: none;
+  color: var(--accent-bright);
+  font-weight: 700;
+}
+.g3d-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.g3d-panel__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.g3d-ramp {
+  display: inline-block;
+  width: 60px;
+  height: 8px;
+  background: linear-gradient(90deg, rgb(41, 51, 128), rgb(64, 217, 204), rgb(255, 204, 102));
+}
+.g3d-ramp--species {
+  background: linear-gradient(90deg, rgb(51, 77, 191), rgb(255, 237, 204));
+}
+
+/* ---- G3: the commander's layer, the Codex mode ------------------------------------------------- */
+.g3d-dot--waiting {
+  background: rgb(255, 158, 41);
+}
+.g3d-dot--done {
+  background: rgb(92, 230, 117);
+}
+.g3d-dot--visited {
+  background: rgb(158, 173, 204);
+}
+.g3d-dot--todo {
+  background: rgb(255, 92, 77);
+}
+.g3d-dot--partial {
+  background: rgb(255, 204, 66);
+}
+.g3d-chip--you {
+  border-color: rgba(92, 230, 117, 0.6);
+  color: #b6f5c3;
+}
+.g3d-panel__todo {
+  margin: 0 0 10px;
+  padding: 4px 8px;
+  border-left: 2px solid rgb(255, 158, 41);
+  color: #ffd29e;
+  font-size: var(--fs-xs);
+}
+.g3d-panel__sub {
+  margin: 14px 0 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--accent-a20);
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+}
+.g3d-bodies,
+.g3d-bodies ul,
+.g3d-entries {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-xs);
+}
+.g3d-bodies > li {
+  margin-bottom: 8px;
+}
+.g3d-bodies__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-dim);
+}
+.g3d-bodies__head strong {
+  color: var(--text);
+}
+.g3d-bodies ul {
+  margin: 2px 0 0 10px;
+}
+.g3d-done {
+  color: #b6f5c3;
+}
+.g3d-partial {
+  color: #ffe08a;
+}
+.g3d-todo {
+  color: var(--text-dim);
+}
+
+.g3d-drawer,
+.g3d-codex {
+  position: absolute;
+  top: var(--g3d-top, 64px);
+  left: 12px;
+  bottom: 60px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(280px, calc(100vw - 24px));
+  padding: 10px 12px;
+  background: rgba(10, 8, 12, 0.9);
+  border: 1px solid var(--accent-a35);
+  backdrop-filter: blur(3px);
+}
+.g3d-codex__regions {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.g3d-codex__region {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--fs-xs);
+  text-align: left;
+  cursor: pointer;
+}
+.g3d-codex__region:hover {
+  color: var(--text);
+  background: var(--accent-a08);
+}
+.g3d-codex__region--on {
+  color: var(--accent-bright);
+  border-color: var(--accent-a45);
+  background: var(--accent-a12);
+}
+.g3d-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---- G4: the Search drawer, the Find box, the nearest-waiting banner --------------------------- */
+.g3d-drawer--search {
+  width: min(430px, calc(100vw - 24px));
+  overflow-y: auto;
+}
+.g3d-find {
+  position: relative;
+}
+.g3d-find__input {
+  width: 240px;
+  padding: 3px 8px;
+  border: 1px solid var(--accent-a35);
+  background: rgba(5, 4, 10, 0.7);
+  color: var(--text);
+  font: inherit;
+}
+.g3d-find__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.g3d-find__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 5;
+  width: 320px;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: rgba(10, 8, 12, 0.96);
+  border: 1px solid var(--accent-a45);
+}
+.g3d-find__list button {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.g3d-find__list button:hover,
+.g3d-find__list button:focus-visible {
+  background: var(--accent-a15);
+}
+.g3d-find__list em {
+  color: var(--text-faint);
+  font-style: normal;
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.g3d-find__more {
+  padding: 4px 10px;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+.g3d-banner {
+  position: absolute;
+  top: var(--g3d-top, 60px);
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 40px);
+  padding: 5px 10px;
+  transform: translateX(-50%);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  background: rgba(10, 8, 12, 0.9);
+  border: 1px solid rgba(255, 158, 41, 0.55);
+}
+.g3d-banner strong {
+  color: #ffd29e;
+}
+.g3d-species--pick tr {
+  cursor: pointer;
+}
+.g3d-species--pick tr:hover td {
+  color: var(--accent-bright);
+}
+.g3d-dot--search {
+  background: rgb(179, 128, 255);
+}
+
+/* ---- G4: a toolbar that fits one line at 1280 px ------------------------------------------------ */
+.g3d-bar {
+  gap: 6px 10px;
+}
+.g3d-select {
+  padding: 2px 4px;
+  border: 1px solid var(--accent-a35);
+  background: rgba(5, 4, 10, 0.8);
+  color: var(--text);
+  font: inherit;
+}
+.g3d-pop {
+  position: relative;
+}
+.g3d-pop__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+  padding: 8px 10px;
+  background: rgba(10, 8, 12, 0.96);
+  border: 1px solid var(--accent-a45);
+}
+.g3d-find__input {
+  width: 210px;
+}
+.g3d-bar .g3d-slider input {
+  width: 90px;
+}
+
+/* ---- G5: Next target ----------------------------------------------------------------------------- */
+.g3d-btn--primary-small {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+  font-weight: 700;
+}
+.g3d-banner--target {
+  border-color: rgba(179, 128, 255, 0.7);
+  padding-right: 30px;
+}
+.g3d-banner--target strong {
+  color: #e2d2ff;
+}
+.g3d-banner__close {
+  top: 3px;
+  right: 6px;
+  font-size: var(--fs-sm);
+}
+
+/* ---- G5.3: the plan -------------------------------------------------------------------------------- */
+.g3d-label--plan {
+  padding: 0 5px;
+  color: #1a1024;
+  background: rgba(214, 178, 255, 0.95);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.g3d-plan {
+  width: min(360px, calc(100vw - 24px));
+  overflow-y: auto;
+}
+.g3d-plan__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.g3d-plan__head strong {
+  flex: 1;
+  color: #e2d2ff;
+  font-size: var(--fs-sm);
+}
+.g3d-plan__head .g3d-panel__close {
+  position: static;
+}
+.g3d-plan__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.g3d-plan__list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.g3d-plan__stop {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 20px 1fr;
+  min-width: 0;
+  padding: 3px 4px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.g3d-plan__stop:hover {
+  border-color: var(--accent-a35);
+}
+.g3d-plan__n {
+  grid-row: span 2;
+  color: #d6b2ff;
+  font-weight: 700;
+}
+.g3d-plan__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.g3d-plan__stop em {
+  color: var(--text-dim);
+  font-size: var(--fs-2xs);
+  font-style: normal;
+}
+.g3d-plan__skip {
+  font-size: var(--fs-2xs);
+}
+.g3d-plan__total {
+  margin: 0;
+  color: #e2d2ff;
+  font-weight: 700;
+}

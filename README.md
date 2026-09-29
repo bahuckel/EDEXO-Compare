@@ -88,6 +88,14 @@ renormalises inside that genus to say which of its species you are looking at.
 region by region, with Bronze, Silver and Gold steps — plus stars, worlds and points of interest to
 visit in each region. Track one and its plants are marked in the app and in the HUD.
 
+**Where to go next.** The galaxy map (the galaxy icon in the top bar) draws all 5.3 million systems
+with recorded biology in 3D, grouped by region, sector and neighbourhood, with your own systems on
+top. Set a floor — _Worth ≥_ 50 M, say — and **Next target** flies to the nearest system above it that
+you have not mapped or sampled, and copies its name to paste into the game's galaxy map; **Plan**
+chains the next few, each the nearest to the last. Values there are the recorded species at 1×: those
+systems come from other commanders' records, so first footfall is most likely gone. Without WebGL the
+2D Classic map opens instead.
+
 **Where it was wrong.** Every species you find that the app failed to offer is written to a local
 miss log. That log is the reason recall went from 93.2 % to 97.1 %: it is read, not just recorded.
 
@@ -148,7 +156,10 @@ entries and whatever else Canonn is currently asking for — **with your CMDR na
 their archive is keyed on it, and with the journal line exactly as the game wrote it. There is no
 anonymous form of it. Only live events go: switching it on never uploads journals you already have.
 
-There is no telemetry, no analytics and no update check. See [site/privacy.html](site/privacy.html).
+There is no telemetry and no analytics. The one request nobody switches on is the update check:
+each time the launcher opens (at most once an hour) it asks GitHub for this project's list of
+releases, so it can say when a newer version exists. That request carries the app's version in its
+user agent and nothing about you or your game. See [site/privacy.html](site/privacy.html).
 
 ## Running it
 

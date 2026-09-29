@@ -417,13 +417,13 @@ export const HeaderBar = memo(function HeaderBar({
                     </button>
                   </Tooltip>
                 ) : null}
-                <Tooltip text="Galaxy map — every sector where a species is known, confirmed or merely signalled. Opens in a new tab.">
+                <Tooltip text="Galaxy map — 5.3 million systems with recorded biology, your own travels, search and codex, in 3D. Opens in its own window.">
                   <a
                     className="appbar-icon-btn"
-                    href="?screen=map"
+                    href="?screen=galaxy"
                     target="_blank"
                     rel="noreferrer"
-                    aria-label="Galaxy sector map"
+                    aria-label="Galaxy map"
                   >
                     <IconGalaxy />
                   </a>

@@ -248,6 +248,256 @@ test("hud: the merged overlay shows every section", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+/*
+  The 3D galaxy map (G1, docs/galaxy-plan-28092026.md): the whole index loads, region names are
+  placed, and moving close to Sol swaps the overview for precise tiles there.
+*/
+test("galaxy 3D: loads every system, names the regions, fetches close-up tiles near Sol", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 1400, height: 820 });
+  await page.goto("/?screen=galaxy");
+  type G = { stats: () => { phase: string; overviewPoints: number; tilesLoaded: number } };
+  const stats = () => page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.stats());
+  await expect
+    .poll(async () => page.evaluate(() => (window as unknown as { __galaxy?: G }).__galaxy?.stats().phase), {
+      timeout: 60_000,
+    })
+    .toBe("ready");
+  expect((await stats()).overviewPoints).toBeGreaterThan(1_000_000);
+  await expect(page.locator(".g3d-label").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("g3d-status")).toContainText("systems");
+  await page.screenshot({ path: `${OUT}/galaxy-3d-top.png` });
+
+  await page.evaluate(() =>
+    (window as unknown as { __galaxy: { lookAt: (x: number, y: number, z: number, d: number) => void } }).__galaxy.lookAt(
+      0,
+      0,
+      0,
+      2500,
+    ),
+  );
+  await expect.poll(async () => (await stats()).tilesLoaded, { timeout: 30_000 }).toBeGreaterThan(0);
+  await expect(page.getByTestId("g3d-status")).toContainText("close-up");
+  await page.screenshot({ path: `${OUT}/galaxy-3d-sol.png` });
+  expect(errors).toEqual([]);
+});
+
+/*
+  G2: the groups and the systems answer the mouse. A ring names its group and flies into it; a system
+  under the cursor gets a card, and a click opens its panel with the name from the index.
+*/
+test("galaxy 3D: a group ring zooms in, a clicked system opens its panel", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 1400, height: 820 });
+  await page.goto("/?screen=galaxy");
+  type T = { x: number; y: number; ordinal?: number } | null;
+  type G = {
+    stats: () => { phase: string; level: number; groups: number; distanceLy: number; tilesLoaded: number };
+    targets: () => { group: T; system: T };
+    lookAt: (x: number, y: number, z: number, d: number) => void;
+  };
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __galaxy?: G }).__galaxy?.stats().phase), { timeout: 60_000 }).toBe("ready");
+
+  await page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.lookAt(0, 0, 8000, 30000));
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.stats().groups), { timeout: 15_000 }).toBeGreaterThan(5);
+  const ring = await page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.targets().group);
+  expect(ring).not.toBeNull();
+  await page.mouse.move(ring!.x, ring!.y);
+  await expect(page.locator(".g3d-tip")).toContainText(/zoom in/);
+  await page.mouse.click(ring!.x, ring!.y);
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.stats().distanceLy), { timeout: 10_000 })
+    .toBeLessThan(12_000);
+
+  // Colonia, close: systems are pickable.
+  await page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.lookAt(-9530, -910, 19808, 700));
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.stats().tilesLoaded), { timeout: 30_000 }).toBeGreaterThan(0);
+  await expect(page.locator(".g3d-label--system").first()).toBeVisible({ timeout: 15_000 });
+  const sys = await page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.targets().system);
+  expect(sys).not.toBeNull();
+  await page.mouse.move(sys!.x, sys!.y);
+  await expect(page.locator(".g3d-tip")).toContainText("Click for details");
+  await page.mouse.click(sys!.x, sys!.y);
+  const panel = page.getByTestId("g3d-panel");
+  await expect(panel.locator("h2")).not.toBeEmpty({ timeout: 10_000 });
+  await expect(panel).toContainText("ly from Sol");
+  await panel.screenshot({ path: `${OUT}/galaxy-3d-panel.png` });
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+/*
+  G3: the commander's own systems are on the map and answer the mouse (the fixture journal has one,
+  "Smoke Test", at 1200 / 60 / 4100), and the Codex mode lists regions and opens a codex dot.
+*/
+test("galaxy 3D: your system opens your panel; the Codex mode opens a region and a dot", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 1400, height: 820 });
+  await page.goto("/?screen=galaxy");
+  type M = { x: number; y: number; id: string } | null;
+  type G = {
+    stats: () => { phase: string };
+    marker: (layer: string) => M;
+    lookAt: (x: number, y: number, z: number, d: number) => void;
+  };
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __galaxy?: G }).__galaxy?.stats().phase), { timeout: 60_000 }).toBe("ready");
+
+  await page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.lookAt(1200, 60, 4100, 1500));
+  let mine: M = null;
+  await expect
+    .poll(async () => (mine = await page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.marker("you"))), { timeout: 15_000 })
+    .not.toBeNull();
+  await page.mouse.move(mine!.x, mine!.y);
+  await expect(page.locator(".g3d-tip")).toContainText("Smoke Test");
+  await page.mouse.click(mine!.x, mine!.y);
+  const panel = page.getByTestId("g3d-panel");
+  await expect(panel.locator("h2")).toContainText("Smoke Test");
+  await expect(panel).toContainText("Visited");
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("button", { name: "Codex" }).click();
+  const codex = page.getByTestId("g3d-codex");
+  await expect(codex.locator(".g3d-codex__region").first()).toBeVisible({ timeout: 15_000 });
+  await codex.getByRole("button", { name: /Inner Orion Spur/ }).click();
+  // Picking a region glides the camera over it (0.7 s); a dot's screen position is only final after.
+  await page.waitForTimeout(1500);
+  let dot: M = null;
+  await expect
+    .poll(async () => (dot = await page.evaluate(() => (window as unknown as { __galaxy: G }).__galaxy.marker("codex"))), { timeout: 20_000 })
+    .not.toBeNull();
+  await page.mouse.click(dot!.x, dot!.y);
+  await expect(panel).toContainText("codex entries logged in this region");
+  await page.screenshot({ path: `${OUT}/galaxy-3d-codex.png` });
+  expect(errors).toEqual([]);
+});
+
+/*
+  G4: what the Classic map did, in the 3D one — Find (region, sector, system), a sector ring's panel
+  of its best systems, and the galaxy search with its hits on the map.
+*/
+test("galaxy 3D: Find, a sector's best systems, and the search on the map", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto("/?screen=galaxy");
+  type G = {
+    stats: () => { phase: string; distanceLy: number };
+    targets: () => { group: { x: number; y: number } | null };
+    marker: (layer: string) => { x: number; y: number; id: string } | null;
+    lookAt: (x: number, y: number, z: number, d: number) => void;
+  };
+  const G = <R,>(f: (g: G) => R) => page.evaluate(`(${f.toString()})(window.__galaxy)`) as Promise<R>;
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __galaxy?: G }).__galaxy?.stats().phase), { timeout: 60_000 }).toBe("ready");
+
+  // Find: a region flies out to it; a system in a named sector flies in and opens it.
+  const find = page.getByRole("searchbox", { name: "Find" });
+  await find.fill("Norma");
+  const list = page.getByTestId("g3d-find");
+  await expect(list).toContainText("Norma Expanse");
+  await list.getByRole("button", { name: /Norma Expanse/ }).click();
+  await expect.poll(() => G((g) => g.stats().distanceLy), { timeout: 10_000 }).toBeGreaterThan(30_000);
+  await find.fill("Eol Prou IW");
+  await expect(list.getByRole("button").first()).toContainText("Eol Prou IW", { timeout: 15_000 });
+  await list.getByRole("button").first().click();
+  const panel = page.getByTestId("g3d-panel");
+  await expect(panel.locator("h2")).toContainText("Eol Prou IW", { timeout: 10_000 });
+  await page.keyboard.press("Escape");
+
+  // A sector ring: its best systems, most valuable first.
+  await G((g) => g.lookAt(0, 0, 8000, 30000));
+  await page.waitForTimeout(2500);
+  const ring = await G((g) => g.targets().group);
+  expect(ring).not.toBeNull();
+  await page.mouse.click(ring!.x, ring!.y);
+  await expect(panel).toContainText("Most valuable here", { timeout: 15_000 });
+  await expect(panel.locator("tbody tr").first()).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // The galaxy search in its drawer: Stratum, one mark per sector on the map.
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  const drawer = page.getByTestId("g3d-search");
+  await expect(drawer.locator(".gsx-go")).toBeVisible({ timeout: 60_000 });
+  await drawer.locator(".gsx-field").first().locator("button").first().click();
+  await page.getByRole("option", { name: /Stratum/ }).first().click();
+  await drawer.locator(".gsx-go").click();
+  await expect(drawer).toContainText("the map shows one per sector", { timeout: 60_000 });
+  await G((g) => g.lookAt(0, 0, 20000, 90000));
+  await page.waitForTimeout(1500);
+  const hit = await G((g) => g.marker("search"));
+  expect(hit).not.toBeNull();
+  await page.mouse.move(hit!.x, hit!.y);
+  await expect(page.locator(".g3d-tip")).toContainText("Search result");
+  await page.screenshot({ path: `${OUT}/galaxy-3d-search.png` });
+  expect(errors).toEqual([]);
+});
+
+/*
+  G5: the galaxy-wide value floor and Next target — the nearest system worth at least X that the
+  commander has not done, flown to and opened, and Skip moving on. The fixture ship sits at
+  1200 / 60 / 4100.
+*/
+test("galaxy 3D: worth at least X, Next target and Skip", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 1700, height: 900 });
+  await page.goto("/?screen=galaxy");
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __galaxy?: { stats: () => { phase: string } } }).__galaxy?.stats().phase), { timeout: 60_000 })
+    .toBe("ready");
+  const worth = page.getByRole("slider", { name: "Worth at least (million CR)", exact: true });
+  await worth.fill("8"); // 50 M
+  await expect(page.locator(".g3d-slider", { has: worth })).toContainText(/Worth ≥ 50M \(\d/);
+
+  await page.getByRole("button", { name: "Next target" }).click();
+  const banner = page.getByTestId("g3d-target");
+  await expect(banner).toContainText("Next target ≥ 50M", { timeout: 60_000 });
+  const first = await banner.locator("strong").innerText();
+  await expect(page.getByTestId("g3d-panel").locator("h2")).toContainText(first, { timeout: 15_000 });
+  await banner.getByRole("button", { name: "Skip" }).click();
+  await expect(banner.locator("strong")).not.toHaveText(first, { timeout: 30_000 });
+  await page.screenshot({ path: `${OUT}/galaxy-3d-next-target.png` });
+  expect(errors).toEqual([]);
+});
+
+test("galaxy 3D: the plan chains the next targets, and a skipped stop leaves it", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 1700, height: 900 });
+  await page.goto("/?screen=galaxy");
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __galaxy?: { stats: () => { phase: string } } }).__galaxy?.stats().phase), { timeout: 60_000 })
+    .toBe("ready");
+  await page.getByRole("slider", { name: "Worth at least (million CR)", exact: true }).fill("8"); // 50 M
+  await page.getByRole("button", { name: "Next target" }).click();
+  const banner = page.getByTestId("g3d-target");
+  await expect(banner).toContainText("Next target ≥ 50M", { timeout: 60_000 });
+  const first = await banner.locator("strong").innerText();
+
+  await banner.getByRole("button", { name: /^Plan/ }).click();
+  const plan = page.getByTestId("g3d-plan");
+  await expect(page.getByTestId("g3d-plan-total")).toContainText(/^5 stops · [\d,]+ ly · /, { timeout: 30_000 });
+  const names = plan.locator(".g3d-plan__name");
+  await expect(names.first()).toHaveText(first);
+  const before = await names.allInnerTexts();
+  expect(new Set(before).size).toBe(5);
+  // Numbered on the map, and hover/click on a stop answer as a plan stop.
+  await expect(page.locator(".g3d-label--plan").first()).toBeAttached();
+
+  await plan.getByRole("button", { name: `Skip ${before[2]}` }).click();
+  await expect(names.nth(2)).not.toHaveText(before[2]!, { timeout: 30_000 });
+  expect(await names.allInnerTexts()).not.toContain(before[2]);
+  await expect(names.first()).toHaveText(first); // the stops before it stay
+
+  await page.getByLabel("Stops in the plan").selectOption("8");
+  await expect(names).toHaveCount(8, { timeout: 30_000 });
+  await page.screenshot({ path: `${OUT}/galaxy-3d-plan.png` });
+
+  await plan.getByRole("button", { name: "Close the plan" }).click();
+  await expect(plan).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __galaxy: { marker: (l: string) => unknown } }).__galaxy.marker("plan")))
+    .toBeNull();
+  expect(errors).toEqual([]);
+});
+
 test("phone hud: chips and the portrait layout", async ({ page }) => {
   const errors = watchErrors(page);
   await page.setViewportSize({ width: 390, height: 844 });

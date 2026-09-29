@@ -323,6 +323,54 @@ export function galaxySpeciesCatalogue(): GalaxySpeciesCatalogueDTO {
 }
 
 /** Test seam. */
+/**
+ * Every system's recorded value at 1× (owner 2026-09-28: the index is other commanders' records, so
+ * first footfall is mostly gone there), in units of 100,000 CR, saturating at 65,535 (6.5 bn).
+ * The 3D map carries it per point so the value filter and the colouring run on the GPU. One
+ * allocation-free pass over the index's species runs, held until the map goes idle.
+ */
+let values: { index: BioIndex; values: Uint16Array } | null = null;
+
+export const VALUE_UNIT_CR = 100_000;
+
+export function galaxySystemValues(index: BioIndex): Uint16Array {
+  if (values?.index === index) return values.values;
+  const priced = pricedSpecies(index);
+  const priceByIndex = new Float64Array(index.species.length);
+  index.species.forEach((id, k) => (priceByIndex[k] = priced.get(id)?.price ?? 0));
+  const sums = new Float64Array(index.systemCount);
+  index.forEachRegionSpecies((i, _region, k) => {
+    if (k >= 0) sums[i]! += priceByIndex[k]!;
+  });
+  const out = new Uint16Array(index.systemCount);
+  for (let i = 0; i < out.length; i++) out[i] = Math.min(65535, Math.round(sums[i]! / VALUE_UNIT_CR));
+  values = { index, values: out };
+  return out;
+}
+
+/** A system's species with their names and prices, for the map's detail panel. */
+export function galaxySystemSpecies(
+  index: BioIndex,
+  speciesIds: readonly string[],
+): { speciesId: string; displayName: string; genusDir: string; baseCr: number | null }[] {
+  const priced = pricedSpecies(index);
+  const names = new Map(getCachedSpeciesDatabase().species.map((e) => [e.id, e]));
+  return speciesIds.map((id) => {
+    const p = priced.get(id);
+    const e = names.get(id);
+    return {
+      speciesId: id,
+      displayName: p?.displayName ?? e?.displayName ?? id,
+      genusDir: p?.genusDir ?? e?.genusDataDir ?? "",
+      baseCr: p?.price ?? null,
+    };
+  });
+}
+
+export function clearGalaxySystemValues(): void {
+  values = null;
+}
+
 export function clearGalaxyCatalogueCache(): void {
   catalogue = null;
 }

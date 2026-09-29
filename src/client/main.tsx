@@ -14,12 +14,23 @@ const SecondScreen = lazy(() => import("./SecondScreen").then((m) => ({ default:
 /** `?screen=map` gets the galaxy sector map (Phase 10). Lazy for the same reason. */
 const GalaxyMapScreen = lazy(() => import("./GalaxyMapScreen").then((m) => ({ default: m.GalaxyMapScreen })));
 
+/**
+ * `?screen=galaxy`: the 3D galaxy map (docs/galaxy-plan-28092026.md). Lazy like the others, and it
+ * carries three.js, so the main app never downloads it.
+ */
+const GalaxyMap3D = lazy(() => import("./GalaxyMap3D").then((m) => ({ default: m.GalaxyMap3D })));
+
 const screen = new URLSearchParams(window.location.search).get("screen");
 const wantsSecondScreen = screen === "triage";
 const wantsMap = screen === "map";
+const wants3d = screen === "galaxy";
 
 createRoot(document.getElementById("root")!).render(
-  wantsMap ? (
+  wants3d ? (
+    <Suspense fallback={null}>
+      <GalaxyMap3D />
+    </Suspense>
+  ) : wantsMap ? (
     <Suspense fallback={null}>
       <GalaxyMapScreen />
     </Suspense>

@@ -205,6 +205,10 @@ export function GalaxyMapScreen() {
     <main className="galaxy-screen">
       <header>
         <h1>Where the plants are known to be</h1>
+        {/* The 3D map is being built beside this one (docs/galaxy-plan-28092026.md, G1–G4). */}
+        <a className="galaxy-screen__to3d" href="?screen=galaxy">
+          3D map (preview)
+        </a>
         {load.state === "ready" ? (
           <p className="galaxy-screen__meta">
             {load.file.cells.length} sectors · built {new Date(load.file.generatedAt).toLocaleString()}

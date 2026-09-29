@@ -4,6 +4,27 @@ import express from "express";
 import { getProjectRoot } from "../paths.js";
 import { perfCount } from "../perf.js";
 import { codexMapRegion, codexMapRegions } from "../codexMap.js";
+import { clearGalaxyPoints, galaxyPoints } from "../galaxyPoints.js";
+import { clearTileIndex, encodeCells, encodeTile, parseCellParam, sectorNames, tileIndex } from "../galaxyTiles.js";
+import { registerGalaxyCache, touchGalaxyMemory } from "../galaxyMemory.js";
+import {
+  clearBioIndexCache,
+  loadBioIndex,
+  TIER_BODIES_KNOWN,
+  TIER_CODEX,
+  TIER_DSS,
+  TIER_FSS,
+} from "../bioIndex.js";
+import {
+  clearGalaxyCatalogueCache,
+  clearGalaxySystemValues,
+  galaxySystemSpecies,
+  galaxySystemValues,
+} from "../galaxyValueSearch.js";
+import { loadRegionMap } from "../regionMapData.js";
+import { galaxyFind, galaxySector } from "../galaxyFind.js";
+import { doneAddresses, MAX_PLAN_STOPS, nextTarget, ordinalsOf } from "../galaxyNext.js";
+import type { GalaxySystemDTO } from "../../shared/dto/galaxy.js";
 
 import type { HttpServerOptions, RouteContext } from "../httpServer.js";
 
@@ -35,6 +56,186 @@ export function registerGalaxyRoutes(
    * when the file is replaced, and the client paints it once into a canvas. Sent from disk rather
    * than through the decoder so the bytes on the wire are the bytes in the repo, notice and all.
    */
+  /*
+    Everything under /api/galaxy keeps the map's memory alive; five idle minutes lets it go
+    (galaxyMemory.ts — the map is its own window, loaded fresh each time, owner 2026-09-28).
+  */
+  registerGalaxyCache("bio-index", clearBioIndexCache);
+  registerGalaxyCache("species-catalogue", clearGalaxyCatalogueCache);
+  registerGalaxyCache("points", clearGalaxyPoints);
+  registerGalaxyCache("tiles", clearTileIndex);
+  registerGalaxyCache("system-values", clearGalaxySystemValues);
+  app.use("/api/galaxy", (_req, _res, next) => {
+    touchGalaxyMemory();
+    next();
+  });
+
+  const sendBinary = (res: express.Response, buf: Buffer) => {
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.send(buf);
+  };
+  const noIndex = (res: express.Response) =>
+    res.status(404).json({ ok: false, error: "No galaxy index in this build." });
+
+  /**
+   * Every bio-index system as quantised points: the 3D map's overview (layout in galaxyPoints.ts).
+   * `?stride=4|16` thins it for a machine drawing WebGL in software.
+   */
+  app.get("/api/galaxy/points", (req, res) => {
+    const stride = [1, 4, 16].includes(Number(req.query.stride)) ? Number(req.query.stride) : 1;
+    const buf = galaxyPoints(stride);
+    if (!buf) return void noIndex(res);
+    sendBinary(res, buf);
+  });
+
+  /** The non-empty 1,280 ly cells and their system counts (layout in galaxyTiles.ts). */
+  app.get("/api/galaxy/cells", (_req, res) => {
+    const t = tileIndex();
+    if (!t) return void noIndex(res);
+    sendBinary(res, encodeCells(t));
+  });
+
+  /** Each cell's sector name, same order as `/api/galaxy/cells` ("" where none). */
+  app.get("/api/galaxy/sector-names", (_req, res) => {
+    const t = tileIndex();
+    if (!t) return void noIndex(res);
+    res.json(sectorNames(t));
+  });
+
+  /** Names by system ordinal, for the map's labels: `?i=1,2,3` (at most 400). */
+  app.get("/api/galaxy/names", (req, res) => {
+    const index = loadBioIndex();
+    if (!index) return void noIndex(res);
+    const ids = String(req.query.i ?? "")
+      .split(",")
+      .slice(0, 400)
+      .map(Number)
+      .filter((i) => Number.isInteger(i) && i >= 0 && i < index.systemCount);
+    const out: Record<number, string> = {};
+    for (const i of ids) out[i] = index.nameOf(i);
+    res.json(out);
+  });
+
+  /** One system for the map's panel: `?i=<ordinal>`, or `?addr=<id64>` (a search hit, a journal system). */
+  app.get("/api/galaxy/system", (req, res) => {
+    const index = loadBioIndex();
+    if (!index) return void noIndex(res);
+    let i = Number(req.query.i);
+    if (req.query.addr != null) {
+      try {
+        i = index.ordinalOf(BigInt(String(req.query.addr)));
+      } catch {
+        i = -1;
+      }
+      if (i < 0) return void res.status(404).json({ ok: false, error: "not in the galaxy index" });
+    }
+    if (!Number.isInteger(i) || i < 0 || i >= index.systemCount) {
+      return void res.status(400).json({ ok: false, error: "i must be a system ordinal" });
+    }
+    const s = index.systemAt(i);
+    const species = galaxySystemSpecies(index, s.species);
+    const regions = loadRegionMap(getProjectRoot())?.regions;
+    const dto: GalaxySystemDTO = {
+      ordinal: i,
+      id64: s.id64.toString(),
+      name: s.name,
+      x: s.x,
+      y: s.y,
+      z: s.z,
+      region: (s.regionId && regions?.[s.regionId]) || null,
+      bodyCount: s.bodyCount || null,
+      evidence: {
+        fss: (s.tiers & TIER_FSS) !== 0,
+        dss: (s.tiers & TIER_DSS) !== 0,
+        codex: (s.tiers & TIER_CODEX) !== 0,
+        bodiesKnown: (s.tiers & TIER_BODIES_KNOWN) !== 0,
+      },
+      species,
+      valueCr: species.reduce((a, sp) => a + (sp.baseCr ?? 0), 0),
+      distanceFromSolLy: Math.hypot(s.x, s.y, s.z),
+    };
+    res.json(dto);
+  });
+
+  /**
+   * Next target: the nearest system to the ship worth at least `min` (100 k CR units, 1×) that the
+   * commander has not analysed (DSS or foot scans; `skipVisited=1` also skips anything visited), not
+   * counting `exclude` (ordinals skipped this session, at most 2,000). `plan=N` (≤ 10) adds a greedy
+   * chain of N stops from the ship (G5.3).
+   */
+  app.get("/api/galaxy/next", (req, res) => {
+    const index = loadBioIndex();
+    if (!index) return void noIndex(res);
+    const store = opts.getJournalStore?.() ?? null;
+    const exclude = new Set(
+      String(req.query.exclude ?? "")
+        .split(",")
+        .slice(0, 2000)
+        .map(Number)
+        .filter((i) => Number.isInteger(i) && i >= 0),
+    );
+    if (store) {
+      const done = doneAddresses(store);
+      for (const i of ordinalsOf(index, done.analysed)) exclude.add(i);
+      if (req.query.skipVisited === "1") for (const i of ordinalsOf(index, done.visited)) exclude.add(i);
+    }
+    const min = Math.max(0, Math.min(65535, Number(req.query.min) || 0));
+    const plan = Math.max(0, Math.min(MAX_PLAN_STOPS, Math.floor(Number(req.query.plan) || 0)));
+    const from = store?.commanderPos ?? opts.getCommanderPosition?.() ?? null;
+    res.json(nextTarget(index, galaxySystemValues(index), from, min, exclude, 6, plan));
+  });
+
+  /** Regions are the client's; this finds sectors and systems by name: `?q=`. */
+  app.get("/api/galaxy/find", (req, res) => {
+    const t = tileIndex();
+    if (!t) return void noIndex(res);
+    res.json(galaxyFind(t, opts.getJournalStore?.() ?? null, String(req.query.q ?? "").slice(0, 80)));
+  });
+
+  /** A sector column's panel: `?c=cx:cz` (every height together, as the map's rings are). */
+  app.get("/api/galaxy/sector", (req, res) => {
+    const m = /^(-?\d{1,3}):(-?\d{1,3})$/.exec(String(req.query.c ?? ""));
+    if (!m) return void res.status(400).json({ ok: false, error: "c must be cx:cz" });
+    const t = tileIndex();
+    if (!t) return void noIndex(res);
+    const dto = galaxySector(t, Number(m[1]), Number(m[2]));
+    if (!dto) return void res.status(404).json({ ok: false, error: "empty sector" });
+    res.json(dto);
+  });
+
+  /** One cell's systems at 0.02 ly: `?c=cx:cy:cz`. An empty cell is a 404, not an error. */
+  app.get("/api/galaxy/tile", (req, res) => {
+    const c = parseCellParam(req.query.c);
+    if (!c) return void res.status(400).json({ ok: false, error: "c must be cx:cy:cz" });
+    const t = tileIndex();
+    if (!t) return void noIndex(res);
+    const buf = encodeTile(t, c);
+    if (!buf) return void res.status(404).json({ ok: false, error: "empty cell" });
+    sendBinary(res, buf);
+  });
+
+  /** The commander's own systems with what they did there (G3; flags in galaxyMine.ts). */
+  app.get("/api/galaxy/mine", (_req, res) => {
+    if (!opts.getMySystems) return void res.status(404).json({ error: "no journal store behind this build" });
+    res.json(opts.getMySystems());
+  });
+
+  /** One of them, body by body: `?addr=<SystemAddress>`. */
+  app.get("/api/galaxy/mine/system", (req, res) => {
+    const addr = Number(req.query.addr);
+    if (!Number.isFinite(addr)) return void res.status(400).json({ error: "addr must be a SystemAddress" });
+    const dto = opts.getMySystem?.(addr) ?? null;
+    if (!dto) return void res.status(404).json({ error: "not one of your systems" });
+    res.json(dto);
+  });
+
+  /** Where the ship is and this session's jumps with positions. */
+  app.get("/api/galaxy/route", (_req, res) => {
+    if (!opts.getSessionRoute) return void res.status(404).json({ error: "no journal store behind this build" });
+    res.json(opts.getSessionRoute());
+  });
+
   app.get("/api/galaxy/my-sectors", (_req, res) => {
     perfCount("http.commanderSectors");
     if (!opts.getCommanderSectors) {

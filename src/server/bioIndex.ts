@@ -55,8 +55,18 @@ export interface BioIndex {
   species: string[];
   /** Species present in a system, or null when the index has never heard of it. */
   lookup(id64: bigint): BioIndexSystem | null;
+  /** A system's position in the file (the map's ordinal), or -1 when absent. */
+  ordinalOf(id64: bigint): number;
   /** Every system holding at least one of `speciesIds`. */
   systemsWithAny(speciesIds: Iterable<string>): BioIndexSystem[];
+  /** Allocation-free pass over every system's position and summary, in file order (the galaxy map). */
+  forEachPoint(cb: (i: number, x: number, y: number, z: number, tiers: number, speciesCount: number) => void): void;
+  /** One system's position and summary by ordinal: [x, y, z, tiers, speciesCount]. */
+  pointAt(i: number): [number, number, number, number, number];
+  /** One whole system by ordinal (the galaxy map's picking and its detail panel). */
+  systemAt(i: number): BioIndexSystem;
+  /** Just the name, for labels. */
+  nameOf(i: number): string;
   /** Allocation-free pass over every (region, species) pair; see the implementation for why. */
   forEachRegionSpecies(
     cb: (systemIndex: number, regionId: number, speciesIndex: number, tiers: number) => void,
@@ -141,16 +151,21 @@ class Index implements BioIndex {
 
   /** Binary search — the file is written ascending by id64 precisely so this needs no index. */
   lookup(id64: bigint): BioIndexSystem | null {
+    const i = this.ordinalOf(id64);
+    return i < 0 ? null : this.at(i);
+  }
+
+  ordinalOf(id64: bigint): number {
     let lo = 0;
     let hi = this.systemCount - 1;
     while (lo <= hi) {
       const mid = (lo + hi) >>> 1;
       const at = this.view.getBigUint64(this.tableAt + mid * RECORD, true);
-      if (at === id64) return this.at(mid);
+      if (at === id64) return mid;
       if (at < id64) lo = mid + 1;
       else hi = mid - 1;
     }
-    return null;
+    return -1;
   }
 
   /**
@@ -165,6 +180,39 @@ class Index implements BioIndex {
    * `speciesIndex` of -1, so a caller can count regional coverage as well as regional finds, and the
    * system ordinal comes along so a caller can tell where one system's run ends and the next begins.
    */
+  forEachPoint(cb: (i: number, x: number, y: number, z: number, tiers: number, speciesCount: number) => void): void {
+    for (let i = 0; i < this.systemCount; i++) {
+      const o = this.tableAt + i * RECORD;
+      cb(
+        i,
+        this.view.getFloat32(o + 8, true),
+        this.view.getFloat32(o + 12, true),
+        this.view.getFloat32(o + 16, true),
+        this.view.getUint8(o + 22),
+        this.view.getUint8(o + 21),
+      );
+    }
+  }
+
+  systemAt(i: number): BioIndexSystem {
+    return this.at(i);
+  }
+
+  nameOf(i: number): string {
+    return this.nameAt(i);
+  }
+
+  pointAt(i: number): [number, number, number, number, number] {
+    const o = this.tableAt + i * RECORD;
+    return [
+      this.view.getFloat32(o + 8, true),
+      this.view.getFloat32(o + 12, true),
+      this.view.getFloat32(o + 16, true),
+      this.view.getUint8(o + 22),
+      this.view.getUint8(o + 21),
+    ];
+  }
+
   forEachRegionSpecies(
     cb: (systemIndex: number, regionId: number, speciesIndex: number, tiers: number) => void,
   ): void {
