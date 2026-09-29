@@ -127,9 +127,11 @@ export async function createReplay(db: SpeciesDatabase): Promise<Replay> {
   const captureBodiesBySystem = new Map<string, Record<string, unknown>[]>();
   const captureSystems = new Map<string, Record<string, unknown>>();
   const docs = path.join(root, "docs");
-  const captures = readdirSync(docs).filter((f) => /^eddn-bio-.*\.jsonl$/.test(f)).sort();
+  // The newest export in docs/, or EDEXO_CAPTURE (a file name there or a path) to compare two exports.
+  const pinned = process.env.EDEXO_CAPTURE?.trim();
+  const captures = pinned ? [pinned] : readdirSync(docs).filter((f) => /^eddn-bio-.*\.jsonl$/.test(f)).sort();
   if (captures.length) {
-    const rl = createInterface({ input: createReadStream(path.join(docs, captures[captures.length - 1]!)), crlfDelay: Infinity });
+    const rl = createInterface({ input: createReadStream(path.resolve(docs, captures[captures.length - 1]!)), crlfDelay: Infinity });
     for await (const line of rl) {
       if (line.includes('"kind":"system"')) {
         const o = JSON.parse(line) as Record<string, unknown>;

@@ -81,6 +81,16 @@ export function observedAtTemperature(
   const root = rootArg ?? rootOverride ?? getProjectRoot();
   const hist = loadExomasteryProfile(root, entry)?.displayHistograms?.[TEMPERATURE_PATH];
   if (!hist || hist.counts.length === 0 || !(hist.max > hist.min)) return null;
+  /*
+    Known edge, left as it is (owner, 2026-09-29): Spansh cuts temperatures down to whole kelvin, the
+    journal and EDDN do not. When a species' hottest or coldest recorded body came from Spansh, the
+    histogram ends on that whole number and the same body read with its decimals falls just outside.
+    HIP 87621 2 b a is 467 K in Spansh and 467.999969 K on EDDN; 467 K is the observed maximum of both
+    Concha renibus and Fungoida stabitis, and from EDDN's reading both species drop off that body's
+    list; HIP 87621 1 does the same to Clypeus lacrimam at 698 K. Three slots in 112,372 replayed, so
+    no slack is added here. The precision replay's report (scripts/precision-phase1.ts, section "Less
+    than 1 K past a recorded temperature edge") lists every case, so a recurrence shows up there.
+  */
   if (kelvin < hist.min || kelvin > hist.max) return null;
 
   const bins = hist.counts.length;

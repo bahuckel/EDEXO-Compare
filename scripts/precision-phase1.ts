@@ -45,6 +45,7 @@ import path from "node:path";
 import { writeFileSync } from "node:fs";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { loadPriceList, lookupPrice } from "../src/server/priceList.js";
+import { loadExomasteryProfile } from "../src/server/exomasteryProfile.js";
 import { createReplay, loadTruthByBody, precisionDir as outDir, root, runMatcher, type Prepared, type RunMatch } from "./precisionReplay.js";
 
 const db = loadSpeciesDatabaseFromTree(root);
@@ -71,6 +72,8 @@ interface Slot {
   fss: { shown: string[]; all: string[] };
   /** Why the truth landed in the unlikely tier, post-DSS: the soft failure fields. */
   truthDemotedBy: string[];
+  /** The surface temperature the replay used (for the whole-kelvin edge check below). */
+  kelvin: number | null;
 }
 
 const slots: Slot[] = [];
@@ -106,6 +109,7 @@ for (const [bodyKey, rows] of truthByBody) {
       truthDemotedBy: truthMatch?.unlikely
         ? [...new Set(truthMatch.reasons.filter((x) => x.soft).map((x) => x.field))]
         : [],
+      kelvin: p.scan.SurfaceTemperature ?? null,
     });
   }
   if (bodiesReplayed % 2000 === 0) process.stderr.write(`  ${bodiesReplayed} bodies…\n`);
@@ -234,6 +238,39 @@ for (const s of lost) lostBy.set(s.truth, (lostBy.get(s.truth) ?? 0) + 1);
 r.push(`## Truth not listed at all (post-DSS) — ${lost.length} slots`, ``);
 r.push(
   [...lostBy].sort((a, b) => b[1] - a[1]).slice(0, 40).map(([id, n]) => `- ${id}: ${n} of ${slots.filter((s) => s.truth === id).length}`).join("\n") || "_none_",
+  ``,
+);
+
+/*
+  Whole-kelvin edges. Spansh stores temperatures cut down to whole kelvin; the journal and EDDN carry
+  the decimals. So a species whose hottest (or coldest) recorded body came from Spansh has its
+  observed histogram end on a whole number, and the same body read from EDDN can land a fraction past
+  it — outside every bin, so observedAtTemperature() (speciesTemperatureObservations.ts) gives no
+  rescue and the species drops off the list. First seen 2026-09-29: HIP 87621 2 b a, thin CO2,
+  Spansh 467 K, EDDN 467.999969 K; Concha renibus and Fungoida stabitis both have 467 K as their
+  observed maximum from that very body; HIP 87621 1 (698 K, Clypeus lacrimam) is the same story in the
+  same system. Left as it is by the owner's choice; this section says whether it has happened again.
+*/
+const edgeCases: string[] = [];
+for (const s of lost) {
+  const e = byId.get(s.truth);
+  if (!e || s.kelvin == null) continue;
+  const h = loadExomasteryProfile(root, e)?.displayHistograms?.["body.surfaceTemperature"];
+  if (!h) continue;
+  const past = s.kelvin > h.max ? s.kelvin - h.max : s.kelvin < h.min ? h.min - s.kelvin : null;
+  if (past !== null && past < 1) {
+    edgeCases.push(
+      `- ${s.body} — ${s.truth}: ${s.kelvin} K, recorded ${h.min}–${h.max} K (${past.toPrecision(3)} K past), physics from ${s.source}`,
+    );
+  }
+}
+r.push(`### Less than 1 K past a recorded temperature edge — ${edgeCases.length} slots`, ``);
+r.push(
+  edgeCases.length
+    ? "Spansh's whole-kelvin temperatures against the decimals of the journal and EDDN (see the comment in " +
+        "scripts/precision-phase1.ts). Known since 2026-09-29: HIP 87621 1 and 2 b a.\n\n" +
+        edgeCases.join("\n")
+    : "_none_",
   ``,
 );
 
