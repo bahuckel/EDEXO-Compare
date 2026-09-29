@@ -241,6 +241,22 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
   const [measure, setMeasure] = useState<Measure>("credits");
   const seq = useRef(0);
 
+  /* While the scan runs, how many journals are read (UI review F3). */
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  useEffect(() => {
+    if (!busy || data) {
+      setProgress(null);
+      return;
+    }
+    const t = window.setInterval(() => {
+      void fetch("/api/statistics/progress", { cache: "no-store" })
+        .then((r) => r.json() as Promise<{ progress: { done: number; total: number } | null }>)
+        .then((j) => setProgress(j.progress))
+        .catch(() => {});
+    }, 300);
+    return () => window.clearInterval(t);
+  }, [busy, data]);
+
   const load = useCallback(async () => {
     const mine = (seq.current += 1);
     setBusy(true);
@@ -327,7 +343,11 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
 
         {error ? <p className="fdb-empty">{error}</p> : null}
         {busy && !data ? (
-          <p className="fdb-empty">Reading your journals. The first time takes a few seconds.</p>
+          <p className="fdb-empty">
+            {progress
+              ? `Reading your journals… ${progress.done} of ${progress.total}`
+              : "Reading your journals. The first time takes a few seconds."}
+          </p>
         ) : null}
 
         {data ? (

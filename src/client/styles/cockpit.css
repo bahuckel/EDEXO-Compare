@@ -42,6 +42,34 @@
   box-shadow: 0 0 6px var(--accent-glow);
   vertical-align: middle;
 }
+/* One header style for every modal (UI review V2, 2026-09-29): Carriers, Statistics, Points of
+   interest and Unfinished business use `.fdb-head` / `.fdb-title` and had a plain title. */
+.fdb-head {
+  padding-bottom: 0.55rem;
+  margin-bottom: 0.6rem;
+  background: linear-gradient(90deg, var(--accent) 0 34%, var(--accent-a22) 70%, transparent) bottom left /
+    100% 1px no-repeat;
+}
+.fdb-head .fdb-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent-glow);
+  margin-bottom: 0.4rem;
+}
+.fdb-head .fdb-title::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 0.5rem 1px 0;
+  background: var(--accent);
+  transform: rotate(45deg);
+  box-shadow: 0 0 6px var(--accent-glow);
+  vertical-align: middle;
+}
 .modal-close {
   color: var(--accent);
   opacity: 0.75;

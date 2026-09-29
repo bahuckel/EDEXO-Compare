@@ -2,12 +2,20 @@
  * My exobiology: the finds table and the discoveries views. Split out of AppModals.tsx (code review D, 2026-09-27).
  */
 import { CopySystemButton } from "./CopySystemButton";
-import { Column, DiscoveriesLayout, DiscoveriesTab, DiscoveriesTables, PAGE, Table } from "./DiscoveriesTables";
+import {
+  Column,
+  DiscoveriesLayout,
+  DiscoveriesTab,
+  DiscoveriesTables,
+  PAGE,
+  Table,
+} from "./DiscoveriesTables";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { ScrollArea } from "./ui/ScrollArea";
 import { InfoPopover } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
 import type { DiscoveriesDTO, FootScannedEntry } from "@shared/types";
+import { readableAtmosphereType } from "@shared/atmosphereLabel";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
@@ -108,8 +116,8 @@ function exobiologyColumns(
     {
       key: "atmo",
       label: "Atmosphere",
-      value: (e) => e.atmosphereNorm || null,
-      render: (e) => e.atmosphereNorm || "—",
+      value: (e) => readableAtmosphereType(e.atmosphereNorm) || null,
+      render: (e) => readableAtmosphereType(e.atmosphereNorm) || "—",
     },
     {
       key: "temp",
@@ -396,7 +404,7 @@ export function MyExobiologyModal({
                           </div>
                           <div className="my-exo-card-fact">
                             <dt>Atmosphere</dt>
-                            <dd>{e.atmosphereNorm || "—"}</dd>
+                            <dd>{readableAtmosphereType(e.atmosphereNorm) || "—"}</dd>
                           </div>
                           <div className="my-exo-card-fact my-exo-card-fact--wide">
                             <dt>Temperature (K)</dt>
@@ -410,8 +418,8 @@ export function MyExobiologyModal({
                   </ul>
                   {shown.length > PAGE ? (
                     <p className="dim tiny disc-more">
-                      Showing the newest {PAGE.toLocaleString()} of {shown.length.toLocaleString()} — narrow the
-                      search to bring the rest into view.
+                      Showing the newest {PAGE.toLocaleString()} of {shown.length.toLocaleString()} — narrow
+                      the search to bring the rest into view.
                     </p>
                   ) : null}
                 </ScrollArea>

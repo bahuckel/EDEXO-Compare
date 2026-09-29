@@ -278,7 +278,9 @@ body::before {
   box-shadow:
     0 0 14px rgba(220, 60, 60, 0.3),
     inset 0 1px 0 rgba(255, 160, 140, 0.08);
-  animation: exo-data-alert-pulse-error 1.15s ease-in-out infinite;
+  /* A few pulses to catch the eye, then the steady red glow (UI review V5: it pulsed for as long as
+     the alert stood, repainting the header all the time). A new alert restarts it. */
+  animation: exo-data-alert-pulse-error 1.15s ease-in-out 6;
 }
 
 .exo-data-alerts-trigger__mail {
@@ -298,7 +300,7 @@ body::before {
 
 .exo-data-alerts-trigger__glyph--warn {
   color: var(--warn-soft);
-  animation: exo-data-alert-pulse-warn 1.35s ease-in-out infinite;
+  animation: exo-data-alert-pulse-warn 1.35s ease-in-out 5;
 }
 
 .exo-data-alerts-trigger__badge {
@@ -319,7 +321,20 @@ body::before {
 }
 
 .exo-data-alerts-trigger--unread .exo-data-alerts-trigger__mail {
-  animation: exo-data-alerts-unread-blink 0.85s ease-in-out infinite;
+  animation: exo-data-alerts-unread-blink 0.85s ease-in-out 8;
+}
+
+/* Windows' "reduce motion": no pulsing, blinking or shimmering anywhere in the header (V5). */
+@media (prefers-reduced-motion: reduce) {
+  .exo-data-alerts-trigger--error,
+  .exo-data-alerts-trigger__glyph--warn,
+  .exo-data-alerts-trigger--unread .exo-data-alerts-trigger__mail,
+  .exo-data-alert__icon--error,
+  .exo-data-alert__icon--warning,
+  .header-route-mini.header-route--refuel-red.d-scan-card--route,
+  .header-route-mini.header-route--refuel-yellow.d-scan-card--route {
+    animation: none;
+  }
 }
 
 @keyframes exo-data-alerts-unread-blink {

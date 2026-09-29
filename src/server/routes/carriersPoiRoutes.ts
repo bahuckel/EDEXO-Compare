@@ -11,6 +11,7 @@ import { lookupCarrierOnSpansh } from "../spanshCarrier.js";
 import { EDASTRO_USER_AGENT } from "../edastroCarriers.js";
 import { lookupCarrierOnGalmap } from "../edastroGalmap.js";
 import { summariseStatistics } from "../statistics.js";
+import { statisticsScanProgress } from "../statisticsScan.js";
 
 import type { HttpServerOptions, RouteContext } from "../httpServer.js";
 
@@ -50,6 +51,11 @@ export function registerCarriersPoiRoutes(
     The scan behind it reads 303 MB of journals and is cached on a manifest of the folder, so the
     first call after a new journal costs a few seconds and the rest are arithmetic.
   */
+  /** How far the journal scan behind Statistics is, while one runs (null otherwise). */
+  app.get("/api/statistics/progress", (_req, res) => {
+    res.json({ progress: statisticsScanProgress() });
+  });
+
   app.get("/api/statistics", async (req, res) => {
     if (typeof opts.getStatisticsScan !== "function") {
       res.status(501).json({ error: "Not available" });

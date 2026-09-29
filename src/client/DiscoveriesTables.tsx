@@ -26,6 +26,7 @@ import { CopySystemButton } from "./CopySystemButton";
 import { ScrollArea } from "./ui/ScrollArea";
 import { Select } from "./ui/Select";
 import { isTerraformableState } from "@shared/terraformState";
+import { readableAtmosphereType } from "@shared/atmosphereLabel";
 
 /** Rows rendered at once. Enough to scroll through, far short of what would stall the panel. */
 export const PAGE = 300;
@@ -504,7 +505,12 @@ export function DiscoveriesTables({
         ),
       },
       { key: "class", label: "Type", value: (r) => r.planetClass, render: (r) => r.planetClass },
-      { key: "atmo", label: "Atmosphere", value: (r) => r.atmosphere, render: (r) => r.atmosphere ?? "—" },
+      {
+        key: "atmo",
+        label: "Atmosphere",
+        value: (r) => readableAtmosphereType(r.atmosphere),
+        render: (r) => readableAtmosphereType(r.atmosphere) ?? "—",
+      },
       {
         key: "grav",
         label: "Gravity",
@@ -606,7 +612,15 @@ export function DiscoveriesTables({
       if (!q) return true;
       return (
         fuzzyRankAny(
-          [r.bodyName, r.system, r.planetClass, r.atmosphere ?? "", r.volcanism ?? "", ...r.speciesConfirmed],
+          [
+            r.bodyName,
+            r.system,
+            r.planetClass,
+            r.atmosphere ?? "",
+            readableAtmosphereType(r.atmosphere) ?? "",
+            r.volcanism ?? "",
+            ...r.speciesConfirmed,
+          ],
           q,
         ) != null
       );
@@ -656,11 +670,7 @@ export function DiscoveriesTables({
       render: (r) => (
         <>
           {onNavigateSystem ? (
-            <button
-              type="button"
-              className="disc-link"
-              onClick={() => onNavigateSystem(r.systemAddress)}
-            >
+            <button type="button" className="disc-link" onClick={() => onNavigateSystem(r.systemAddress)}>
               {r.bodyName}
             </button>
           ) : (

@@ -127,7 +127,7 @@ describe("the Gas share card", () => {
     // missing data is worse than letting a rare body through, and the matcher abstains here too.
     const c = card(species("Bacterium acies"), "gas-share", ICY)!;
     expect(c.tier).toBe("yellow");
-    expect(c.caption).toContain("No AtmosphereComposition");
+    expect(c.caption).toContain("no gas breakdown");
   });
 
   it("reads the share and judges it when the scan does carry composition", () => {

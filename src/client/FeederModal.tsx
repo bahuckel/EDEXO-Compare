@@ -149,7 +149,7 @@ export function FeederModal({
       >
         <div className="modal-head">
           <h3 id="feeder-modal-title">Data feeder</h3>
-          <button type="button" className="feeder-refresh" onClick={onRefresh}>
+          <button type="button" className="feeder-refresh btn-top-toggle" onClick={onRefresh}>
             Refresh
           </button>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">

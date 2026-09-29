@@ -99,6 +99,19 @@
     row-gap: 0.35rem;
     overflow: visible;
   }
+  /* Row 1 on a phone: the mark and the buttons; the search gets a full-width row of its own
+     instead of being squeezed to four letters beside "Return to commander". */
+  .top > .appbar {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+  }
+  .top > .appbar > .appbar-centre {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  .top > .appbar .appbar-search {
+    max-width: none;
+  }
 }
 .top > .header-tray > * {
   flex: 0 0 auto;
@@ -290,4 +303,14 @@
   width: 100%;
   max-width: 80rem;
   margin: 0 auto;
+}
+
+/* The D-scan and Route cards wrap on a phone too (UI review V1: Route ran off the screen). After the
+   header-row-3 rules above, which set the cluster to one line. */
+@media (max-width: 699px) {
+  .top > .header-tray .header-dscan-cluster {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+    max-width: 100%;
+  }
 }

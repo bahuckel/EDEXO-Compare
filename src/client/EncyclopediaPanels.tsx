@@ -1,6 +1,7 @@
 /**
  * The Encyclopedia's exomastery planets table and the found-species popup. Split out of EncyclopediaModal.tsx (code review D, 2026-09-27).
  */
+import { readableAtmosphereType } from "@shared/atmosphereLabel";
 import { CopySystemButton } from "./CopySystemButton";
 import { ExomasteryDistributionPanel } from "./exomasteryDistributionPanel";
 import { ExomasteryHabitatDetailInner } from "./exomasteryHabitatDetailInner";
@@ -202,7 +203,7 @@ export function FoundSpeciesPopup({
                     </div>
                     <div>
                       <dt>Atmosphere</dt>
-                      <dd>{f.atmosphereNorm || "—"}</dd>
+                      <dd>{readableAtmosphereType(f.atmosphereNorm) || "—"}</dd>
                     </div>
                     <div>
                       <dt>Temperature</dt>

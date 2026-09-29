@@ -342,7 +342,13 @@ function readParts(path: string): Record<string, CachedPart> {
 function mergePart(into: JournalScan, part: JournalScan): void {
   into.income.push(...part.income);
   for (const [day, c] of Object.entries(part.activity)) {
-    const b = (into.activity[day] ??= { bodiesScanned: 0, jumps: 0, systemsHonked: 0, bodiesMapped: 0, organicSamples: 0 });
+    const b = (into.activity[day] ??= {
+      bodiesScanned: 0,
+      jumps: 0,
+      systemsHonked: 0,
+      bodiesMapped: 0,
+      organicSamples: 0,
+    });
     b.bodiesScanned += c.bodiesScanned;
     b.jumps += c.jumps;
     b.systemsHonked += c.systemsHonked;
@@ -366,6 +372,13 @@ function mergePart(into: JournalScan, part: JournalScan): void {
   into.linesRead += part.linesRead;
 }
 
+/** Journals read so far in the scan running now, for the panel's progress line (UI review F3). */
+let progress: { done: number; total: number } | null = null;
+
+export function statisticsScanProgress(): { done: number; total: number } | null {
+  return progress;
+}
+
 /** One scan at a time: an open during the background warm-up waits for it, then reads the parts. */
 let running: Promise<unknown> | null = null;
 
@@ -385,21 +398,30 @@ async function scanParts(files: readonly string[]): Promise<JournalScan> {
   const old = readParts(path);
   const parts: Record<string, CachedPart> = {};
   let changed = Object.keys(old).length !== files.length;
-  for (const f of files) {
-    const sig = fileSig(f);
-    const hit = old[f];
-    if (hit && hit.sig === sig) {
-      parts[f] = hit;
-      continue;
+  const sigs = files.map(fileSig);
+  const toRead = files.filter((f, i) => !(old[f] && old[f]!.sig === sigs[i])).length;
+  progress = toRead > 1 ? { done: 0, total: toRead } : null;
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i]!;
+      const sig = sigs[i]!;
+      const hit = old[f];
+      if (hit && hit.sig === sig) {
+        parts[f] = hit;
+        continue;
+      }
+      changed = true;
+      const part = emptyScan();
+      try {
+        await scanOneFile(f, part);
+      } catch {
+        /* one unreadable journal must not lose the other 276 */
+      }
+      parts[f] = { sig, part };
+      if (progress) progress = { done: progress.done + 1, total: progress.total };
     }
-    changed = true;
-    const part = emptyScan();
-    try {
-      await scanOneFile(f, part);
-    } catch {
-      /* one unreadable journal must not lose the other 276 */
-    }
-    parts[f] = { sig, part };
+  } finally {
+    progress = null;
   }
   memo = { path, parts };
 

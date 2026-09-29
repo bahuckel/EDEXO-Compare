@@ -33,6 +33,9 @@ import { formatStarlight } from "./starlight.js";
 const OPEN_LO = -1e15;
 const OPEN_HI = 1e15;
 
+/** A kelvin figure for a caption: whole numbers as they are, anything else to one decimal. */
+const fmtK = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+
 const GENUS_DATA_DIR_REQUIRING_VOLCANISM = new Set<string>(["brain-tree"]);
 const GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE = new Set<string>(["brain-tree"]);
 
@@ -167,26 +170,26 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   {
     const hasList = !!(c.planetClassAnyOf?.length ?? false);
     const lines = hasList
-      ? [`Types: ${c.planetClassAnyOf!.join(", ")}`]
+      ? [c.planetClassAnyOf!.join(", ")]
       : bac
         ? ["Any"]
         : ["Matcher rejects non-bacterium rows missing planetClassAnyOf — malformed JSON."];
 
     let tier: EncyclopediaSpawnTier = "neutral";
-    let caption = "Codex criterion";
+    let caption = "Condition";
     if (hasList) {
       if (!scan?.PlanetClass) {
         tier = "yellow";
-        caption = "Need planet class in scan";
+        caption = "Needs a detailed scan";
       } else if (!c.planetClassAnyOf!.includes(scan.PlanetClass)) {
         tier = "red";
-        caption = `Journal · ${scan.PlanetClass}`;
+        caption = `This body: ${scan.PlanetClass} — not listed`;
       } else {
         tier = "blue";
-        caption = `Match · ${scan.PlanetClass}`;
+        caption = `This body: ${scan.PlanetClass}`;
       }
     } else if (bac) {
-      caption = "Matcher ignores planet type for bacterium (atmosphere gates only)";
+      caption = "Any body type; only the atmosphere counts for bacteria";
     }
     out.push({ id: "planet-class", label: "Planet class", lines, caption, tier });
   }
@@ -194,27 +197,27 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   /* Atmosphere types (+ brain-tree genus airless) — encyclopedia skips for bacterium (still matched server-side). */
   if (!bac && c.atmosphereTypeAnyOf?.length) {
     const lines = [
-      `Allowed: ${c.atmosphereTypeAnyOf.map((a) => (!a?.trim() ? "(no atmosphere)" : a)).join(", ")}`,
+      c.atmosphereTypeAnyOf.map((a) => (!a?.trim() ? "no atmosphere" : a)).join(", "),
     ];
     let tier: EncyclopediaSpawnTier;
     let caption: string;
     if (!scan) {
       tier = "yellow";
-      caption = "No body scan";
+      caption = "Needs a detailed scan";
     } else {
       const atmoNorm = normalizeScanAtmosphereForMatch(scan);
       if (GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE.has(entry.genusDataDir) && atmoNorm !== "") {
         tier = "red";
-        caption = "Brain-tree: airless only";
+        caption = "Brain trees: airless bodies only";
       } else if (!atmoNorm && !(c.atmosphereTypeAnyOf ?? []).some((a) => !a?.trim())) {
         tier = "red";
-        caption = "Need AtmosphereType scan";
+        caption = "Needs a detailed scan";
       } else if (atmospheresMatchSpeciesList(scan, c.atmosphereTypeAnyOf!)) {
         tier = "blue";
-        caption = atmoNorm === "" ? "(vacuum OK)" : atmoNorm;
+        caption = atmoNorm === "" ? "This body: no atmosphere — allowed" : `This body: ${atmoNorm}`;
       } else {
         tier = "red";
-        caption = atmoNorm === "" ? "Vacuum" : atmoNorm;
+        caption = atmoNorm === "" ? "This body: no atmosphere" : `This body: ${atmoNorm} — not listed`;
       }
     }
     out.push({ id: "atmosphere-type", label: "Atmosphere types", lines, caption, tier });
@@ -224,7 +227,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       id: "genus-airless",
       label: "Brain-tree airless gate",
       lines: ["Brain trees only appear on airless worlds."],
-      caption: atmoNorm === "" ? "Vacuum OK" : `Journal: ${atmoNorm || "(atmosphere)"}`,
+      caption: atmoNorm === "" ? "No atmosphere — allowed" : `This body: ${atmoNorm || "an atmosphere"}`,
       tier: atmoNorm === "" ? "blue" : "red",
     });
   }
@@ -240,7 +243,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   if (c.presenceAnyOf?.length) {
     const lines = [`Needs one of: ${describePresenceBranches(c.presenceAnyOf)}`];
     let tier: EncyclopediaSpawnTier = "yellow";
-    let caption = "No body scan";
+    let caption = "Needs a detailed scan";
     if (scan) {
       let passed: string | null = null;
       for (const branch of c.presenceAnyOf) {
@@ -265,12 +268,12 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       (band) => `${describeGasBand(band)} of the atmosphere, by composition`,
     );
     let tier: EncyclopediaSpawnTier = "yellow";
-    let caption = "No body scan";
+    let caption = "Needs a detailed scan";
     if (scan) {
       const verdicts = c.atmosphereGasSharePct.map((band) => ({ band, v: gasBandVerdict(scan, band) }));
       if (verdicts.every((x) => x.v.pct === null)) {
         tier = "yellow";
-        caption = "No AtmosphereComposition on this scan";
+        caption = "The scan has no gas breakdown";
       } else {
         const bad = verdicts.find((x) => !x.v.ok);
         tier = bad ? "red" : "blue";
@@ -294,7 +297,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       `Needs ${required.join(" / ")} — at least ${REQUIRED_GAS_MIN_SHARE_PCT} % of the atmosphere.`,
     ];
     let tier: EncyclopediaSpawnTier = "yellow";
-    let caption = "No body scan";
+    let caption = "Needs a detailed scan";
     if (scan) {
       const share = requiredAtmosphereShare(scan, normalizeScanAtmosphereForMatch(scan), required);
       if (share.kind === "ok") {
@@ -336,13 +339,13 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   if (c.landable === true) {
     const lines = ["Landable bodies only."];
     let tier: EncyclopediaSpawnTier = "yellow";
-    let caption = "Landable absent in journal";
+    let caption = "Not known if landable";
     if (scan?.Landable === false) {
       tier = "red";
       caption = "Not landable";
     } else if (scan?.Landable === true) {
       tier = "blue";
-      caption = "Landable OK";
+      caption = "Landable";
     } else if (!scan) tier = "yellow";
     out.push({ id: "landable-yes", label: "Landable", lines, caption, tier });
   } else if (c.landable === false) {
@@ -350,7 +353,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       id: "landable-flag-false",
       label: "Landable",
       lines: ["JSON landable:false — informational (matcher ignores)."],
-      caption: "Not a gate",
+      caption: "For information",
       tier: "neutral",
     });
   }
@@ -369,16 +372,16 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     if (explicitVolcano && !volcanoFragments)
       lines.push("volcanismActiveRequired — volcanism field must exist.");
     let tier: EncyclopediaSpawnTier = "yellow";
-    let caption = "No body scan";
+    let caption = "Needs a detailed scan";
 
     if (scan) {
       if (!journalReportsAnyVolcanism(scan)) {
         tier = "red";
-        caption = scan.Volcanism ? `"${String(scan.Volcanism).slice(0, 48)}"` : "No volcanism line";
+        caption = scan.Volcanism ? `This body: ${String(scan.Volcanism).slice(0, 48)}` : "No volcanism";
       } else if (volcanoFragments) {
         const okV = volcanismJournalMatchesFragments(scan.Volcanism, c.volcanismIncludes!);
         tier = okV ? "blue" : "red";
-        caption = okV ? "Fragment OK" : "Fragment mismatch";
+        caption = okV ? "Matches" : "Does not match";
       } else {
         tier = "blue";
         caption = volcanoCaption(scan.Volcanism);
@@ -396,7 +399,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       ...(c.volcanicOnlyAtmospheres?.length ? [`Also ${c.volcanicOnlyAtmospheres.join(" / ")}, volcanic bodies only`] : []),
     ];
     let tier: EncyclopediaSpawnTier = "neutral";
-    let caption = "No scan";
+    let caption = "Needs a detailed scan";
     if (scan) {
       if (scan.Volcanism === undefined || scan.Volcanism === null) {
         tier = "yellow";
@@ -415,22 +418,28 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   /* Gravity (criteria in Earth g after journal conversion) */
   if (c.surfaceGravity && (c.surfaceGravity.min !== undefined || c.surfaceGravity.max !== undefined)) {
     const sg = c.surfaceGravity;
-    const lines = [`${sg.min ?? "—"} … ${sg.max ?? "—"} g`];
+    const lines = [
+      sg.min !== undefined && sg.max !== undefined
+        ? `${sg.min}–${sg.max} g`
+        : sg.max !== undefined
+          ? `up to ${sg.max} g`
+          : `at least ${sg.min} g`,
+    ];
     let tier: EncyclopediaSpawnTier = "yellow";
-    let caption = "No SurfaceGravity";
+    let caption = "Gravity not in the scan";
 
     const gRaw = scan?.SurfaceGravity;
     if (scan && gRaw != null && gRaw !== undefined && Number.isFinite(gRaw)) {
       const g = journalSurfaceGravityToG(gRaw);
       if (inRange(g, sg.min, sg.max)) {
         tier = "blue";
-        caption = `${g.toFixed(3)} g satisfies gate`;
+        caption = `This body ${g.toFixed(3)} g — within`;
       } else {
         tier = "red";
-        caption = `${g.toFixed(3)} g out of species band`;
+        caption = `This body ${g.toFixed(3)} g — outside`;
       }
     } else if (!scan) {
-      caption = "No body scan";
+      caption = "Needs a detailed scan";
     }
     out.push({ id: "surface-gravity", label: "Surface gravity", lines, caption, tier });
   }
@@ -438,24 +447,30 @@ export function buildEncyclopediaSpawnConditionCards(args: {
   /* Species surface temperature overlap */
   if (speciesNeedsTemperatureGate(c)) {
     const band = speciesTempBand(c)!;
-    const lines = [`Species: ${formatSpeciesTempRequirement(band)}`];
+    const lines = [formatSpeciesTempRequirement(band)];
     let tier: EncyclopediaSpawnTier;
     let caption: string;
 
+    // What the body is, in words (UI review V3): the scanned temperature when there is one, else the
+    // estimate the matcher used.
+    const surf = scan?.SurfaceTemperature;
+    const bodyT =
+      surf != null && Number.isFinite(surf)
+        ? `${surf.toFixed(1)} K`
+        : planetBand
+          ? planetBand.minK === planetBand.maxK
+            ? `${fmtK(planetBand.minK)} K`
+            : `about ${fmtK(planetBand.minK)}–${fmtK(planetBand.maxK)} K${midK != null ? ` (~${Math.round(midK)} K)` : ""}`
+          : "";
     if (!planetBand) {
       tier = "yellow";
-      caption = "Cannot build surface band — need Temperature + mappable PlanetClass heuristic";
+      caption = "Needs a detailed scan of the planet";
     } else if (!tempBandsOverlap(planetBand, band)) {
       tier = "red";
-      caption = `Body band ${planetBand.minK}–${planetBand.maxK} K has no overlap`;
+      caption = `This body ${bodyT} — outside`;
     } else {
       tier = "blue";
-      const surf = scan?.SurfaceTemperature;
-      caption =
-        midK != null
-          ? `Band ${planetBand.minK}–${planetBand.maxK} K overlaps (mid ~${Math.round(midK)} K)`
-          : `Band ${planetBand.minK}–${planetBand.maxK} K overlaps species gate`;
-      if (surf != null && Number.isFinite(surf)) caption = `${caption} · journal ${surf.toFixed(1)} K`;
+      caption = `This body ${bodyT} — within`;
     }
 
     out.push({ id: "surface-temperature", label: "Surface temperature", lines, caption, tier });
@@ -474,10 +489,10 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     const floor = c.whenAtmosphereLinkedMinTempK;
     const lines = [
       floor !== undefined && cap !== undefined
-        ? `Atmosphere-linked band ${floor}–${cap} K`
+        ? `${floor}–${cap} K in this atmosphere`
         : cap !== undefined
-          ? `Atmosphere-linked band cap ≤ ${cap} K`
-          : `Atmosphere-linked band floor ≥ ${floor} K`,
+          ? `up to ${cap} K in this atmosphere`
+          : `at least ${floor} K in this atmosphere`,
     ];
     let tier: EncyclopediaSpawnTier = "neutral";
     let caption = "";
@@ -485,24 +500,26 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     const applies = scan ? linkedTempCapApplies(scan, c) : false;
     if (!scan) {
       tier = "yellow";
-      caption = "No scan";
+      caption = "Needs a detailed scan";
     } else if (!applies) {
       tier = "neutral";
-      caption = "Caps not enforced for this body's atmosphere subset";
+      caption = "Does not apply to this body's atmosphere";
     } else if (!planetBand) {
       tier = "yellow";
-      caption = "Need SurfaceTemperature / heuristic band";
+      caption = "Needs the surface temperature";
     } else if (cap !== undefined && planetBand.maxK > cap) {
       tier = "red";
-      caption = `Band max ${planetBand.maxK} K exceeds cap`;
+      caption = `This body up to ${fmtK(planetBand.maxK)} K — above ${cap} K`;
     } else if (floor !== undefined && planetBand.minK < floor) {
       // The matcher gates on the floor too (matchSpecies.ts, linked band).
       tier = "red";
-      caption = `Band min ${planetBand.minK} K under floor ${floor} K`;
+      caption = `This body from ${fmtK(planetBand.minK)} K — below ${floor} K`;
     } else {
       tier = "blue";
       caption =
-        cap !== undefined ? `Band max ${planetBand.maxK} K ≤ ${cap} K` : `Band min ${planetBand.minK} K ≥ ${floor} K`;
+        cap !== undefined
+          ? `This body up to ${fmtK(planetBand.maxK)} K — within`
+          : `This body from ${fmtK(planetBand.minK)} K — within`;
     }
 
     out.push({
@@ -528,14 +545,14 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     const band = min !== undefined && max !== undefined ? `${min}–${max} K` : min !== undefined ? `≥ ${min} K` : `≤ ${max} K`;
     const t = scan?.SurfaceTemperature;
     let tier: EncyclopediaSpawnTier = "neutral";
-    let caption = "No scan";
+    let caption = "Needs a detailed scan";
     if (scan && (t == null || Number.isNaN(t))) {
       tier = "yellow";
-      caption = "SurfaceTemperature missing";
+      caption = "Temperature not in the scan";
     } else if (scan && t != null) {
       const outside = (min !== undefined && t < min) || (max !== undefined && t > max);
       tier = outside ? "yellow" : "blue";
-      caption = outside ? `${t.toFixed(1)} K — rarely recorded here; listed as unlikely` : `${t.toFixed(1)} K inside`;
+      caption = outside ? `${t.toFixed(1)} K — rarely recorded here; listed as unlikely` : `${t.toFixed(1)} K — within`;
     }
     out.push({ id: "soft-temp", label: "Where it is usually found", lines: [`Usually ${band}`], caption, tier });
   }
@@ -545,15 +562,15 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     const max = c.softMaxSemiMajorAxisLs;
     const sma = scan?.SemiMajorAxis;
     let tier: EncyclopediaSpawnTier = "neutral";
-    let caption = "No scan";
+    let caption = "Needs a detailed scan";
     if (scan && (sma == null || !Number.isFinite(sma))) {
       tier = "yellow";
-      caption = "SemiMajorAxis missing";
+      caption = "Orbit not in the scan";
     } else if (scan && sma != null) {
       const ls = sma / LIGHT_SECOND_METERS;
       const shown = ls >= 100 ? Math.round(ls).toLocaleString() : ls.toFixed(1);
       tier = ls > max ? "yellow" : "blue";
-      caption = ls > max ? `${shown} ls — rarely recorded this wide; listed as unlikely` : `${shown} ls inside`;
+      caption = ls > max ? `${shown} ls — rarely recorded this wide; listed as unlikely` : `${shown} ls — within`;
     }
     out.push({ id: "soft-orbit", label: "Orbit round its parent", lines: [`Usually ≤ ${max} ls (close moons)`], caption, tier });
   }
@@ -593,7 +610,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       ];
       const rawP = scan.SurfacePressure;
       let tier: EncyclopediaSpawnTier = "yellow";
-      let caption = "SurfacePressure missing";
+      let caption = "Pressure not in the scan";
       const pAtm =
         rawP != null && rawP !== undefined && !Number.isNaN(rawP as number)
           ? journalPressureToAtm(rawP as number)
@@ -601,10 +618,10 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       if (pAtm != null && Number.isFinite(pAtm)) {
         if (inRange(pAtm, c.surfacePressure!.min, c.surfacePressure!.max)) {
           tier = "blue";
-          caption = `${pAtm.toFixed(3)} atm OK`;
+          caption = `This body ${pAtm.toFixed(3)} atm — within`;
         } else {
           tier = "red";
-          caption = `${pAtm.toFixed(3)} atm out of gate`;
+          caption = `This body ${pAtm.toFixed(3)} atm — outside`;
         }
       }
       out.push({ id: "surface-pressure", label: "Surface pressure", lines, caption, tier });
@@ -619,7 +636,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
               ? `≥ ${pb.lo} atm`
               : `${pb.lo}–${pb.hi} atm`,
         ],
-        caption: "No body scan",
+        caption: "Needs a detailed scan",
         tier: "yellow",
       });
     }
@@ -636,14 +653,14 @@ export function buildEncyclopediaSpawnConditionCards(args: {
 
     if (pAtm == null || !Number.isFinite(pAtm)) {
       tier = "yellow";
-      caption = "Converted SurfacePressure unavailable";
+      caption = "Pressure not in the scan";
     } else if (cat === "thin") {
       if (pAtm <= THIN_ATMOSPHERE_MAX_ATM) {
         tier = "blue";
         caption = `${pAtm.toFixed(3)} atm is thin`;
       } else {
         tier = "red";
-        caption = `${pAtm.toFixed(3)} atm exceeds thin cutoff`;
+        caption = `${pAtm.toFixed(3)} atm — thicker than thin`;
       }
     } else {
       if (pAtm > THIN_ATMOSPHERE_MAX_ATM) {
@@ -651,7 +668,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
         caption = `${pAtm.toFixed(3)} atm is thick`;
       } else {
         tier = "red";
-        caption = `${pAtm.toFixed(3)} atm not thick`;
+        caption = `${pAtm.toFixed(3)} atm — not thick`;
       }
     }
     out.push({ id: "pressure-category", label: "Pressure category", lines, caption, tier });
@@ -666,13 +683,13 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     let caption: string;
     if (!host) {
       tier = "yellow";
-      caption = "Host StarType unresolved (needs exploration lineage)";
+      caption = "Host star not known yet — scan the stars";
     } else {
       const ok = c.parentStarTypeIncludesAnyOf!.some((f) =>
         host.toLowerCase().includes((f ?? "").trim().toLowerCase()),
       );
       tier = ok ? "blue" : "red";
-      caption = ok ? `"${host}" matched` : `"${host}" missing fragment`;
+      caption = ok ? `This body's star: ${host}` : `This body's star: ${host} — not listed`;
     }
     out.push({ id: "parent-star-type", label: "Host star type", lines, caption, tier });
   }
@@ -687,15 +704,15 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     const v = ctx?.orbitDistanceFromParentStarLs ?? null;
 
     let tier: EncyclopediaSpawnTier = "yellow";
-    let caption = "Semi-major axis / lineage missing";
+    let caption = "Orbit not known yet";
 
     if (v != null && Number.isFinite(v)) {
       if (inRange(v, orb.min, orb.max)) {
         tier = "blue";
-        caption = `${Math.round(v)} LS satisfies gate`;
+        caption = `This body ${Math.round(v)} ls — within`;
       } else {
         tier = "red";
-        caption = `${Math.round(v)} LS out of codex orbit band`;
+        caption = `This body ${Math.round(v)} ls — outside`;
       }
     }
     out.push({ id: "orbit-distance", label: "Orbit distance", lines, caption, tier });
@@ -729,11 +746,11 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     const lines = [`Arrival (${arr.min ?? "—"} … ${arr.max ?? "—"} LS from the arrival star)`];
     const v = ctx?.distanceFromArrivalLs ?? null;
     let tier: EncyclopediaSpawnTier = "yellow";
-    let caption = "Distance from arrival missing";
+    let caption = "Distance not in the scan";
     if (v != null && Number.isFinite(v)) {
       const ok = inRange(v, arr.min, arr.max);
       tier = ok ? "blue" : "red";
-      caption = ok ? `${Math.round(v)} LS satisfies gate` : `${Math.round(v)} LS outside the band`;
+      caption = ok ? `This body ${Math.round(v)} ls — within` : `This body ${Math.round(v)} ls — outside`;
     }
     out.push({ id: "arrival-distance", label: "Distance from arrival", lines, caption, tier });
   }
@@ -748,13 +765,13 @@ export function buildEncyclopediaSpawnConditionCards(args: {
 
     if (!hints.length) {
       tier = "neutral";
-      caption = "Matcher skips gate without merged signal hints";
+      caption = "Not checked without the body's FSS signals";
     } else {
       const okGeo = c.geologicalSignalIncludes!.some((frag) =>
         hints.some((h) => h.includes((frag ?? "").trim().toLowerCase())),
       );
       tier = okGeo ? "blue" : "red";
-      caption = okGeo ? "Signals matched gate" : "No matching signal token";
+      caption = okGeo ? "Matches" : "No matching signal";
     }
     out.push({ id: "geological-signals", label: "Geological signals", lines, caption, tier });
   }
@@ -788,20 +805,20 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       const host = ctx.parentStarType!;
       const specKeys = spectralKeysFromJournalStarType(host);
       let tier: EncyclopediaSpawnTier = "neutral";
-      let caption = "Spectral class resolvable";
+      let caption = "Star class known";
 
       if (specKeys.length) {
         const excluded = specKeys.some((k) => nulls.some((n) => n.toUpperCase() === k.toUpperCase()));
         if (excluded) {
           tier = "red";
-          caption = `Host class ${specKeys.join("/")} has no genus colour`;
+          caption = `No colour listed for class ${specKeys.join("/")}`;
         } else {
           tier = "blue";
-          caption = `${specKeys.join("/")} not in null mapping`;
+          caption = `${specKeys.join("/")} not in the colour table`;
         }
       } else {
         tier = "yellow";
-        caption = "Could not parse spectral key from journal star type";
+        caption = "Star class not readable";
       }
 
       const lines = [`Colour-table excludes: ${nulls.join(", ")}`, `Host string: ${host}`];
@@ -816,7 +833,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       id: "codex-notes",
       label: "Codex terrain notes",
       lines: trimmed,
-      caption: "Informational · not gated",
+      caption: "For information",
       tier: "neutral",
     });
   }

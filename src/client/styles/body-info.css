@@ -181,14 +181,14 @@
   color: #ffb0b0;
   background: rgba(180, 40, 40, 0.55);
   border: 1px solid rgba(255, 120, 120, 0.55);
-  animation: exo-data-alert-pulse-error 1.1s ease-in-out infinite;
+  animation: exo-data-alert-pulse-error 1.1s ease-in-out 4;
 }
 
 .exo-data-alert__icon--warning {
   color: #ffe8a0;
   background: rgba(140, 110, 20, 0.45);
   border: 1px solid rgba(220, 180, 60, 0.5);
-  animation: exo-data-alert-pulse-warn 1.4s ease-in-out infinite;
+  animation: exo-data-alert-pulse-warn 1.4s ease-in-out 4;
 }
 
 @keyframes exo-data-alert-pulse-error {

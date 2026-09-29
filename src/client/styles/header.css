@@ -281,12 +281,13 @@
   }
 }
 
+/* A few breaths when the refuel state appears, then steady (UI review V5). */
 .header-route-mini.header-route--refuel-red.d-scan-card--route {
-  animation: route-refuel-breathe-red 1.6s ease-in-out infinite;
+  animation: route-refuel-breathe-red 1.6s ease-in-out 5;
 }
 
 .header-route-mini.header-route--refuel-yellow.d-scan-card--route {
-  animation: route-refuel-breathe-yellow 1.6s ease-in-out infinite;
+  animation: route-refuel-breathe-yellow 1.6s ease-in-out 5;
 }
 
 .d-scan-card.d-scan-card--route.header-route-mini,
@@ -365,6 +366,12 @@
   );
   background-size: 200% 100%;
   animation: route-bar-unknown-shimmer 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-route-bar-track--unknown {
+    animation: none;
+  }
 }
 
 @keyframes route-bar-unknown-shimmer {

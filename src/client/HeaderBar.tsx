@@ -208,7 +208,6 @@ export const HeaderBar = memo(function HeaderBar({
     return "";
   })();
 
-
   const toggleExplorationScanData = () => {
     void (async () => {
       try {
@@ -337,7 +336,8 @@ export const HeaderBar = memo(function HeaderBar({
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 aria-label="Menu"
-                title="Menu: my exobiology, unfinished business, carriers, points of interest, statistics, feeder, galaxy map, encyclopedia, options"
+                // Same names and order as the entries (UI review F2).
+                title="Menu: My discoveries, Unfinished business, Carriers, Points of interest, Statistics, Data feeder, Galaxy map, Encyclopedia, Achievements, Session log, Options"
               >
                 <span className="appbar-menu-glyph" aria-hidden="true" />
               </button>
@@ -525,10 +525,17 @@ export const HeaderBar = memo(function HeaderBar({
           <button
             type="button"
             className="data-value-pill data-value-pill--clickable"
-            title="Unsold exobiology value — click for a per-sample breakdown"
+            title={
+              scanDataOn
+                ? "Unsold exobiology plus your unsold planetary scans — click for a breakdown"
+                : "Unsold exobiology — click for a per-sample breakdown. ⊕ adds your unsold planetary scans."
+            }
             onClick={() => setDataBreakdownOpen(true)}
           >
-            <span className="data-value-label header-metric-card-label">Data value</span>
+            {/* Says what the number is (UI review F1): it used to read "Data value" either way. */}
+            <span className="data-value-label header-metric-card-label">
+              {scanDataOn ? "Exobiology + scans" : "Exobiology"}
+            </span>
             <span
               className={`data-value-amount header-metric-card-value ${dataValueFlash}`.trim()}
               title={fmtCrExact(totalDataCr)}
