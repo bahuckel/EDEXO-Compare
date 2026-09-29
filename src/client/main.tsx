@@ -1,3 +1,4 @@
+import { HexSignals } from "./HexSignals";
 import { createRoot } from "react-dom/client";
 import { lazy, Suspense } from "react";
 import "./styles.css";
@@ -40,6 +41,7 @@ createRoot(document.getElementById("root")!).render(
     </Suspense>
   ) : (
     <UiFeedbackProvider>
+      <HexSignals />
       <App />
     </UiFeedbackProvider>
   ),

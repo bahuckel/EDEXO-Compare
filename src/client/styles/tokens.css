@@ -117,7 +117,7 @@
   --fs-3xl: 26px;
   --fs-4xl: 32px;
   /* Match launcher honeycomb math; stroke uses UI accent */
-  --hex-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 55.42562584220407 56'%3E%3Cg fill='none' stroke='%23ff8a1f' stroke-opacity='0.14' stroke-width='0.85'%3E%3Cpath d='M13.856406460551017 0L27.712812921102035 8L27.712812921102035 24L13.856406460551017 32L0 24L0 8Z'/%3E%3Cpath d='M41.56821838165305 0L55.42462484220407 8L55.42462484220407 24L41.56821838165305 32L27.712812921102035 24L27.712812921102035 8Z'/%3E%3Cpath d='M27.712812921102035 24L41.56821838165305 32L41.56821838165305 48L27.712812921102035 56L13.856406460551017 48L13.856406460551017 32Z'/%3E%3C/g%3E%3C/svg%3E");
+  --hex-grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 27.7128 48'%3E%3Cpath d='M13.8564 0L27.7128 8L27.7128 24L13.8564 32L0 24L0 8ZM13.8564 32L13.8564 48' fill='none' stroke='%23ff8a1f' stroke-opacity='0.16' stroke-width='0.75'/%3E%3C/svg%3E");
   /* Bahnschrift ships with Windows 10+ and is the closest stock face to the game's Eurostile;
    * the launcher and the HUD use the same stack. */
   font-family:

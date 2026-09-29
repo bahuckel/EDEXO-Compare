@@ -27,13 +27,26 @@ body::before {
   background-color: var(--bg);
   background-image:
     radial-gradient(ellipse 120% 80% at 50% -15%, var(--accent-a06), transparent 55%), var(--hex-grid);
+  /* A true honeycomb (2026-09-29): pointy-top hexagons of side 16, one hexagon + one edge per tile.
+     The old 55.4 × 56 tile stacked its rows 24 and 32 px apart and doubled some edges. HexSignals.tsx
+     lines its signals up with this tile — change both together. */
   background-size:
     auto,
-    55.425626px 56px;
+    27.7128px 48px;
   background-position:
     0 0,
     center top;
   background-repeat: no-repeat, repeat;
+}
+
+/* Signals travelling the grid (HexSignals.tsx): above the static grid, below everything else. */
+.hex-signals {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .app-shell {
