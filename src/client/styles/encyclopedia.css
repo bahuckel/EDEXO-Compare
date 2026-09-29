@@ -121,6 +121,14 @@
   border-radius: var(--radius-sm);
   padding: 0.65rem 0.75rem;
   background: rgba(12, 12, 18, 0.65);
+  /*
+    Off-screen cards skip layout and paint until scrolled near (UI review P5, 2026-09-29): 118 cards
+    with full condition grids are ~9,000 elements. Pure CSS on purpose — an IntersectionObserver did
+    not fire in a freshly mounted scroll pane in the Electron window (see EncyclopediaThumb). The
+    size is a first guess the browser replaces with the real one once a card has been drawn.
+  */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 360px;
 }
 
 /* Was a bare "(!)" with a title attribute: a symbol with no legend, no keyboard access and no

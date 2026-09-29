@@ -28,7 +28,7 @@ import { Select } from "./ui/Select";
 import { isTerraformableState } from "@shared/terraformState";
 
 /** Rows rendered at once. Enough to scroll through, far short of what would stall the panel. */
-const PAGE = 300;
+export const PAGE = 300;
 
 /** List (a table, the default) or cards — owner, 2026-09-25; every tab offers both. */
 export type DiscoveriesLayout = "list" | "cards";

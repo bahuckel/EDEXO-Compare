@@ -6,11 +6,14 @@
  * list of event names before `JSON.parse` — the same trick that made the Spansh dump pass tractable
  * — and what comes out is small enough to cache whole.
  *
- * The cache lives beside the user's settings and is keyed on a manifest of file name, size and
- * mtime. A finished journal never changes, so a re-open re-reads only the file being written to.
- * There is no incremental-offset cleverness here on purpose: the whole scan is a few seconds, and
- * §3 of `docs/archive/session-notes-19092026-opus.md` is what happens when this app gets clever
- * about partial journal reads.
+ * The cache lives beside the user's settings and holds one part per journal, keyed on the file's
+ * size and mtime (UI review P7, 2026-09-29: it used to be one manifest for the whole folder, so any
+ * line written while playing meant rescanning all 300 MB — three seconds on every open). A finished
+ * journal never changes, so a re-open re-reads only the file being written to, whole. The parts are
+ * merged in file order, which gives exactly the scan a single pass would (everything is a sum, an
+ * append, or "newest wins", and the sorts at the end are stable). There is still no
+ * incremental-offset cleverness on purpose: §3 of `docs/archive/session-notes-19092026-opus.md` is
+ * what happens when this app gets clever about partial journal reads.
  *
  * ### What it keeps, and what it deliberately drops
  *
@@ -282,28 +285,29 @@ async function scanOneFile(path: string, scan: JournalScan): Promise<void> {
   scan.filesRead += 1;
 }
 
-/** File name, size and mtime for every journal, so a cache knows when it is stale. */
-function manifestOf(files: readonly string[]): string {
-  const parts: string[] = [];
-  for (const f of files) {
-    try {
-      const st = statSync(f);
-      parts.push(`${f}:${st.size}:${Math.trunc(st.mtimeMs)}`);
-    } catch {
-      parts.push(`${f}:missing`);
-    }
+/** Size and mtime of one journal, so its cached part knows when it is stale. */
+function fileSig(f: string): string {
+  try {
+    const st = statSync(f);
+    return `${st.size}:${Math.trunc(st.mtimeMs)}`;
+  } catch {
+    return "missing";
   }
-  return parts.join("|");
 }
 
 function cachePath(): string {
   return join(dirname(resolveUserSettingsJsonPath()), "edexo-compare-statistics.json");
 }
 
+interface CachedPart {
+  sig: string;
+  part: JournalScan;
+}
+
 interface CacheFile {
   version: number;
-  manifest: string;
-  scan: JournalScan;
+  /** One scan per journal path, merged in file order on every call. */
+  parts: Record<string, CachedPart>;
 }
 
 /** Bumped when the shape or the counting rules change, so a stale cache is discarded not trusted. */
@@ -313,51 +317,113 @@ interface CacheFile {
  * A version 1 cache holds a scan with no break list at all, and reading it would measure the weekly
  * upkeep across transfers as if they were upkeep — a wrong number rather than a missing one. The
  * bump discards those caches and rescans, which costs three seconds.
+ *
+ * 4 (2026-09-29): one part per journal instead of one scan for the folder.
  */
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 
-export async function scanJournalsForStatistics(files: readonly string[]): Promise<JournalScan> {
-  const manifest = manifestOf(files);
-  const path = cachePath();
+/** The parts in memory, so a re-open does not re-read the cache file either. */
+let memo: { path: string; parts: Record<string, CachedPart> } | null = null;
+
+function readParts(path: string): Record<string, CachedPart> {
+  if (memo?.path === path) return memo.parts;
   if (existsSync(path)) {
     try {
       const cached = JSON.parse(readFileSync(path, "utf8")) as CacheFile;
-      if (cached.version === CACHE_VERSION && cached.manifest === manifest && cached.scan) {
-        return cached.scan;
-      }
+      if (cached.version === CACHE_VERSION && cached.parts) return cached.parts;
     } catch {
       /* a corrupt cache is a rescan, never an error */
     }
   }
+  return {};
+}
 
-  const scan = emptyScan();
+/** Add one file's part to the running scan, as if its lines had been applied here. */
+function mergePart(into: JournalScan, part: JournalScan): void {
+  into.income.push(...part.income);
+  for (const [day, c] of Object.entries(part.activity)) {
+    const b = (into.activity[day] ??= { bodiesScanned: 0, jumps: 0, systemsHonked: 0, bodiesMapped: 0, organicSamples: 0 });
+    b.bodiesScanned += c.bodiesScanned;
+    b.jumps += c.jumps;
+    b.systemsHonked += c.systemsHonked;
+    b.bodiesMapped += c.bodiesMapped;
+    b.organicSamples += c.organicSamples;
+  }
+  into.balances.push(...part.balances);
+  into.sessions.push(...part.sessions);
+  into.carrierBreaks.push(...part.carrierBreaks);
+  // Newest wins per field, and a file that never named a field leaves the older value (noteCarrierIdentity).
+  for (const [key, id] of Object.entries(part.carrierIdentities)) {
+    const prev = into.carrierIdentities[key];
+    into.carrierIdentities[key] = {
+      carrierId: id.carrierId,
+      name: id.name || (prev?.name ?? ""),
+      callsign: id.callsign || (prev?.callsign ?? ""),
+      type: id.type || (prev?.type ?? ""),
+    };
+  }
+  into.filesRead += part.filesRead;
+  into.linesRead += part.linesRead;
+}
+
+/** One scan at a time: an open during the background warm-up waits for it, then reads the parts. */
+let running: Promise<unknown> | null = null;
+
+export async function scanJournalsForStatistics(files: readonly string[]): Promise<JournalScan> {
+  while (running) await running.catch(() => {});
+  const p = scanParts(files);
+  running = p;
+  try {
+    return await p;
+  } finally {
+    if (running === p) running = null;
+  }
+}
+
+async function scanParts(files: readonly string[]): Promise<JournalScan> {
+  const path = cachePath();
+  const old = readParts(path);
+  const parts: Record<string, CachedPart> = {};
+  let changed = Object.keys(old).length !== files.length;
   for (const f of files) {
+    const sig = fileSig(f);
+    const hit = old[f];
+    if (hit && hit.sig === sig) {
+      parts[f] = hit;
+      continue;
+    }
+    changed = true;
+    const part = emptyScan();
     try {
-      await scanOneFile(f, scan);
+      await scanOneFile(f, part);
     } catch {
       /* one unreadable journal must not lose the other 276 */
     }
+    parts[f] = { sig, part };
   }
+  memo = { path, parts };
+
+  const scan = emptyScan();
+  for (const f of files) mergePart(scan, parts[f]!.part);
   scan.income.sort((a, b) => a.at.localeCompare(b.at));
   scan.balances.sort((a, b) => a.at.localeCompare(b.at));
   scan.sessions.sort((a, b) => a.from.localeCompare(b.from));
 
-  try {
-    const tmp = `${path}.part`;
-    writeFileSync(
-      tmp,
-      JSON.stringify({ version: CACHE_VERSION, manifest, scan } satisfies CacheFile),
-      "utf8",
-    );
-    renameSync(tmp, path);
-  } catch {
-    /* a cache that cannot be written costs seconds on the next open, not correctness */
+  if (changed) {
+    try {
+      const tmp = `${path}.part`;
+      writeFileSync(tmp, JSON.stringify({ version: CACHE_VERSION, parts } satisfies CacheFile), "utf8");
+      renameSync(tmp, path);
+    } catch {
+      /* a cache that cannot be written costs seconds on the next open, not correctness */
+    }
   }
   return scan;
 }
 
 /** Drop the cache. Used by tests, and by a version bump that wants a clean rescan. */
 export function clearStatisticsCache(): void {
+  memo = null;
   try {
     const p = cachePath();
     if (existsSync(p)) writeFileSync(p, "", "utf8");

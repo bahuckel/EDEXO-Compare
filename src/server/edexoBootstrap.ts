@@ -55,6 +55,7 @@ import { lanUrlWithKey, loadOrCreateLanKey } from "./lanAuth.js";
 import { buildEncyclopediaExomasteryPlanetsPayload } from "./exomasteryEdsmEncyclopedia.js";
 import {
   buildEncyclopediaPayload,
+  clearEncyclopediaPayloadCache,
   buildSnapshot,
   organicLiveSummary,
   findSpeciesEntryForEncyclopedia,
@@ -157,6 +158,7 @@ function reloadSpeciesDerivedCaches(): void {
   clearFootScannedCatalogCache();
   clearFootCatalogSpeciesDb();
   clearExomasteryProfileCache();
+  clearEncyclopediaPayloadCache();
   clearSpeciesPhotoCache();
   clearGenusPhotosFolderCache();
   clearEddsnColourVariantsCache();
@@ -1163,6 +1165,33 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     };
   };
 
+  const getStatisticsScan = async () =>
+    scanJournalsForStatistics(await listJournalFilesChronological(journalDir, getJournalListFilterOpts()));
+
+  /*
+    Prepared in the background a while after start (UI review P7, 2026-09-29), so the first open of
+    Statistics and the Encyclopedia is instant instead of "Reading your journals…" for seconds: the
+    statistics parts for every journal but the one being written to, and the Encyclopedia's rows.
+    Late enough not to compete with the journal boot and the first pushes.
+  */
+  const WARM_UP_AFTER_BOOT_MS = 20_000;
+  let warmUpTimer: ReturnType<typeof setTimeout> | null = null;
+  const scheduleWarmUp = () => {
+    if (warmUpTimer != null) clearTimeout(warmUpTimer);
+    warmUpTimer = setTimeout(() => {
+      warmUpTimer = null;
+      try {
+        buildEncyclopediaPayload();
+      } catch {
+        /* the Encyclopedia builds on open instead */
+      }
+      void getStatisticsScan().catch(() => {
+        /* Statistics scans on open instead */
+      });
+    }, WARM_UP_AFTER_BOOT_MS);
+    warmUpTimer.unref?.();
+  };
+
   const backupService = createBackupService({
     appDataDir: path.dirname(userSettingsPath),
     getJournalDir: () => journalDir,
@@ -1345,8 +1374,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       pushFlush();
     },
     searchEdsmSystems: (query) => searchEdsmSystemsByName(query),
-    getStatisticsScan: async () =>
-      scanJournalsForStatistics(await listJournalFilesChronological(journalDir, getJournalListFilterOpts())),
+    getStatisticsScan,
     searchSpanshSystems: (query) => searchSpanshSystemsByName(query),
     hydrateSystemFromEdsm: async (systemAddress, systemName) => {
       const gate = hydrateGate(systemAddress, "EDSM");
@@ -1595,6 +1623,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       if (!quietConsole) {
         console.info(`Merged ${journalFilesMerged} journal log file(s) (oldest → newest), tailing latest.`);
       }
+      scheduleWarmUp();
     } catch (e) {
       if (!listeningSettled) {
         readyReject(e);
@@ -1627,6 +1656,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   await ready;
 
   const shutdown = async () => {
+    if (warmUpTimer != null) clearTimeout(warmUpTimer);
     // The foot catalog writes at most once a second; closing must not drop the last second.
     flushFootScannedCatalog();
     backupService.dispose();

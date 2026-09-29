@@ -153,7 +153,8 @@ describe("backup service", () => {
     expect((await gone.svc.status()).last).not.toBeNull();
     // Nothing new since: the next start does nothing.
     const j = path.join(gone.journals, "Journal.2026-09-29T100000.01.log");
-    const past = new Date(Date.now() - 3_600_000);
+    // An hour before the backup, on the test's clock (the real one made this fail after 11:00 UTC).
+    const past = new Date(gone.now() - 3_600_000);
     utimesSync(j, past, past);
     await gone.svc.catchUp();
     await settle(gone.svc);

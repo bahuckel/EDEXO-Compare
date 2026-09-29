@@ -2,7 +2,7 @@
  * My exobiology: the finds table and the discoveries views. Split out of AppModals.tsx (code review D, 2026-09-27).
  */
 import { CopySystemButton } from "./CopySystemButton";
-import { Column, DiscoveriesLayout, DiscoveriesTab, DiscoveriesTables, Table } from "./DiscoveriesTables";
+import { Column, DiscoveriesLayout, DiscoveriesTab, DiscoveriesTables, PAGE, Table } from "./DiscoveriesTables";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { ScrollArea } from "./ui/ScrollArea";
 import { InfoPopover } from "./ui/Tooltip";
@@ -319,8 +319,9 @@ export function MyExobiologyModal({
                 />
               ) : (
                 <ScrollArea className="my-exo-card-scroll" resetKey={query}>
+                  {/* Capped like the list (UI review P6): every card for a long history was thousands of elements. */}
                   <ul className="my-exo-card-list">
-                    {shown.map((e) => (
+                    {shown.slice(0, PAGE).map((e) => (
                       <li key={e.id} className="my-exo-card">
                         <div className="my-exo-card-top">
                           <div className="my-exo-card-loc">
@@ -407,6 +408,12 @@ export function MyExobiologyModal({
                       </li>
                     ))}
                   </ul>
+                  {shown.length > PAGE ? (
+                    <p className="dim tiny disc-more">
+                      Showing the newest {PAGE.toLocaleString()} of {shown.length.toLocaleString()} — narrow the
+                      search to bring the rest into view.
+                    </p>
+                  ) : null}
                 </ScrollArea>
               )}
             </>

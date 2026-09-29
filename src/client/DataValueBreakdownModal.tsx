@@ -2,6 +2,7 @@
  * What the unsold data is worth, line by line. Split out of AppModals.tsx (code review D, 2026-09-27).
  */
 import { CopySystemButton } from "./CopySystemButton";
+import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { useModal } from "./ui/useModal";
 import type { OrganicPendingLineItem } from "@shared/types";
 
@@ -102,7 +103,13 @@ export function DataValueBreakdownModal({
             <ul className="data-value-breakdown-list">
               {lines.map((line, i) => (
                 <li key={`${line.bodyKey}-${i}`} className="data-value-breakdown-row">
-                  <img src={line.photoUrl} alt="" className="data-value-breakdown-thumb" />
+                  {/* The 320 px thumbnail, not the original (~600 KB each, 116 rows) — UI review P8. */}
+                  <img
+                    src={speciesPhotoVariant(line.photoUrl, "thumb")}
+                    alt=""
+                    decoding="async"
+                    className="data-value-breakdown-thumb"
+                  />
                   <div className="data-value-breakdown-main">
                     <div className="data-value-breakdown-planet">
                       <strong>{line.bodyName}</strong>

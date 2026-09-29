@@ -280,11 +280,30 @@ export function getCachedPriceIndex(): PriceIndex {
   return cachedPrices;
 }
 
+/*
+  The Encyclopedia's rows, built once per species database (UI review P5, 2026-09-29). Building them
+  re-read and re-parsed every species' sample files (`countEdsmPlanetRows`, ~220 ms) on every open of
+  the Encyclopedia; the files only change when the feeder or a photo refresh reloads the species
+  caches, which clears this one too (edexoBootstrap `reloadSpeciesDerivedCaches`).
+*/
+let encyclopediaCache: { db: SpeciesDatabase; rows: EncyclopediaSpeciesRowDTO[] } | null = null;
+
+export function clearEncyclopediaPayloadCache(): void {
+  encyclopediaCache = null;
+}
+
 export function buildEncyclopediaPayload(): EncyclopediaSpeciesRowDTO[] {
   const root = getProjectRoot();
   if (!cachedDb.species.length) {
     cachedDb = withRarity(loadSpeciesDatabaseFromTree(root), root);
   }
+  if (encyclopediaCache?.db === cachedDb) return encyclopediaCache.rows;
+  const rows = buildEncyclopediaRows(root);
+  encyclopediaCache = { db: cachedDb, rows };
+  return rows;
+}
+
+function buildEncyclopediaRows(root: string): EncyclopediaSpeciesRowDTO[] {
   return cachedDb.species.map((entry) => {
     const { photoUrl, photoNote, photoUrls, photoVariants, photoCreditByUrl } = resolveSpeciesPhoto(
       entry,

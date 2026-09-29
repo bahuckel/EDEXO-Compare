@@ -29,8 +29,10 @@ import { useFeederStatus } from "./FeederStatusPanel";
 import { DataValueBreakdownModal, FeederModal, MyExobiologyModal, SessionLogModal } from "./AppModals";
 import { ExoDataAlertsHeaderHub } from "./ExoDataAlertsHub";
 import { measurePopoverSide, type PopoverSide } from "./ui/popoverSide";
-import { MapOptionsModal } from "./OptionsModal";
 import {
+  AchievementsModal,
+  MapOptionsModal,
+  prefetchMenuModals,
   CarriersModal,
   EncyclopediaModal,
   PoiModal,
@@ -39,7 +41,6 @@ import {
   ModalLoading,
 } from "./SharedModals";
 import { EDEXO_HEADER_TRAY_LS, readLsBool, writeLsBool } from "./lsPrefs";
-import { AchievementsModal } from "./AchievementsModal";
 import {
   readRouteHeaderMetricMode,
   routeHeaderBarAria,
@@ -170,6 +171,7 @@ export const HeaderBar = memo(function HeaderBar({
   */
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => prefetchMenuModals(), []);
   /** Which way the menu opens; the rule is shared with the alerts popover. */
   const [menuSide, setMenuSide] = useState<PopoverSide>("left");
   useEffect(() => {
@@ -701,7 +703,11 @@ export const HeaderBar = memo(function HeaderBar({
         </Suspense>
       ) : null}
 
-      {achievementsOpen ? <AchievementsModal onClose={() => setAchievementsOpen(false)} /> : null}
+      {achievementsOpen ? (
+        <Suspense fallback={<ModalLoading />}>
+          <AchievementsModal onClose={() => setAchievementsOpen(false)} />
+        </Suspense>
+      ) : null}
       {encyclopediaOpen ? (
         <Suspense fallback={<ModalLoading />}>
           <EncyclopediaModal
@@ -736,13 +742,15 @@ export const HeaderBar = memo(function HeaderBar({
         <SessionLogModal log={snap.sessionLog ?? null} onClose={() => setSessionOpen(false)} />
       ) : null}
       {optionsOpen ? (
-        <MapOptionsModal
-          snap={snap}
-          plusMinCr={snap.exoMapTierPlusMinCr}
-          plusPlusMinCr={snap.exoMapTierPlusPlusMinCr}
-          onResetExobiology={resetExobiology}
-          onClose={() => setOptionsOpen(false)}
-        />
+        <Suspense fallback={<ModalLoading />}>
+          <MapOptionsModal
+            snap={snap}
+            plusMinCr={snap.exoMapTierPlusMinCr}
+            plusPlusMinCr={snap.exoMapTierPlusPlusMinCr}
+            onResetExobiology={resetExobiology}
+            onClose={() => setOptionsOpen(false)}
+          />
+        </Suspense>
       ) : null}
       {feederOpen ? (
         <FeederModal status={feeder.status} onRefresh={feeder.refresh} onClose={() => setFeederOpen(false)} />
