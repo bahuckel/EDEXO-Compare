@@ -449,7 +449,8 @@ for (const [genus, per] of [...byGenus].sort()) {
       const w = HYPOTHESIS[c.winner];
       const l = HYPOTHESIS[loser];
       if (w === undefined || l === undefined || w === l) continue;
-      w > l ? (fitsG += 1) : (breaksG += 1);
+      if (w > l) fitsG += 1;
+      else breaksG += 1;
     }
   }
   const vs = `  [vs the hypothesis: ${fitsG} hold, ${breaksG} break]`;

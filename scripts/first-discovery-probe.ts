@@ -49,7 +49,6 @@ const detailedFootfall = new Map(payload.bodyDetailedFootfallState ?? []);
 // The app's own match context (probeCache.ts `probeMatchContexts`, code review B1, 2026-09-28): every
 // gate the app applies — host classes, orbit, colour star, starlight, spatial, companion bodies.
 const appContexts = probeMatchContexts(payload);
-const scansBySystem = appContexts.scansBySystem;
 function matchContextFor(b: BodyExoState): SpeciesMatchContext | undefined {
   return appContexts.contextFor(b);
 }

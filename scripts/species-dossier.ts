@@ -85,7 +85,7 @@ interface Row {
 
 const rows: Row[] = [];
 
-const SPLIT_LINES = new RegExp("\r?\n");
+const SPLIT_LINES = /\r?\n/;
 const GRADE3 = ["cadmium", "mercury", "molybdenum", "niobium", "tin", "tungsten"];
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const clean = (v: unknown): string => String(v ?? "").trim();

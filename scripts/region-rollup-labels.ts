@@ -65,6 +65,8 @@ let missing = 0;
 
 const rl = readline.createInterface({ input: fs.createReadStream(path.resolve(capture)) });
 for await (const line of rl) {
+  // A capture row: its shape is read field by field below, as the exporter wrote it.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const o = JSON.parse(line) as Record<string, any>;
   if (o.kind === "system" || o.kind === "manifest") continue;
   /** `Tussock Caputus [Tussocks_10]` — the capture's name, then the token number it was given for. */

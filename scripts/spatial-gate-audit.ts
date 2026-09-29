@@ -170,6 +170,8 @@ function note(id: string, systemId: string, speciesLevel: boolean): void {
 
 const rl = readline.createInterface({ input: fs.createReadStream(path.resolve(capture)) });
 for await (const line of rl) {
+  // A capture row: its shape is read field by field below, as the exporter wrote it.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const o = JSON.parse(line) as Record<string, any>;
   if (o.kind === "manifest") continue;
   if (o.kind === "system") {

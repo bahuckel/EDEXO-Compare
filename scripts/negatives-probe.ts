@@ -229,7 +229,7 @@ for (const s of noBio) {
   if (shown.length >= 6)
     worst.push({ name: s.body.bodyName ?? "?", n: shown.length, klass: classKey(s.scan) });
   for (const m of shown) offenders.set(m.entry.id, (offenders.get(m.entry.id) ?? 0) + 1);
-  for (const m of shown) offenderClass.set(classKey(s.scan), (offenderClass.get(classKey(s.scan)) ?? 0) + 1);
+  offenderClass.set(classKey(s.scan), (offenderClass.get(classKey(s.scan)) ?? 0) + shown.length);
 }
 console.log(
   `  ${noBio.length} bodies with zero biological signals: ${anyShown} would list at least one candidate` +

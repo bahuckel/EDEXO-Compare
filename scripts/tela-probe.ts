@@ -93,7 +93,6 @@ const profile = loadProfile(target);
 
 const payload = loadJournalMergeCacheForTool();
 const bodies: BodyExoState[] = payload.bodies.map(([, b]) => b);
-const systemPositions = new Map<number, { x: number; y: number; z: number }>(payload.systemPositions ?? []);
 
 // The app's own match context (probeCache.ts `probeMatchContexts`, code review B1, 2026-09-28): every
 // gate the app applies — host classes, orbit, colour star, starlight, spatial, companion bodies.

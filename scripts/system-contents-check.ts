@@ -100,7 +100,8 @@ for (const b of bodies) {
   }
   if (known) {
     systemsKnown += 1;
-    hit ? (wouldPass += 1) : (wouldFail += 1);
+    if (hit) wouldPass += 1;
+    else wouldFail += 1;
   }
 }
 

@@ -16,7 +16,6 @@ export default tseslint.config(
       "docs/**",
       ".edexo-cache/**",
       "public/launcher.html",
-      "scripts/**",
       // Local screenshots, backups and one-off probes; never shipped, never imported.
       "build-artifacts/**",
     ],
@@ -61,6 +60,27 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
     rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
+  {
+    /*
+      The build, release and probe scripts (linted since 2026-09-29; they were ignored, and 114 errors
+      had piled up — 105 of them only Node's globals, undeclared for .mjs). Node globals; for .ts the
+      same leniency as src, since TypeScript already resolves identifiers there.
+    */
+    files: ["scripts/**/*.{mjs,js,ts}"],
+    languageOptions: { globals: { ...globals.node } },
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
+      ],
+      "@typescript-eslint/no-explicit-any": "warn",
+      "no-empty": ["warn", { allowEmptyCatch: true }],
+    },
+  },
+  {
+    files: ["scripts/**/*.ts"],
+    rules: { "no-undef": "off" },
   },
   {
     // The HUD overlays' plain browser script (no bundler): browser globals, plus the `module` check
