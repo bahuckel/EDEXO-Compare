@@ -5,9 +5,10 @@
 const { screen } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const { GALAXY_MIN } = require("./childWindows.cjs");
 
 /** The smallest a saved window may come back; a smaller saved size is ignored. */
-const WINDOW_MIN = { launcher: { w: 380, h: 420 }, app: { w: 640, h: 420 } };
+const WINDOW_MIN = { launcher: { w: 380, h: 420 }, app: { w: 640, h: 420 }, galaxy: GALAXY_MIN };
 
 /** @param {() => string} stateDir the folder window-state.json lives in */
 function createWindowState(stateDir) {

@@ -14,6 +14,7 @@ const path = require("path");
 const fs = require("fs");
 const { execFileSync } = require("child_process");
 const { WINDOW_MIN, createWindowState, enableZoom } = require("./windowState.cjs");
+const { childWindowKind, galaxyWindowBounds } = require("./childWindows.cjs");
 const {
   createHudWindows,
   hudPathFrom,
@@ -172,6 +173,9 @@ async function carryAppStorageOver(win) {
   }
 }
 
+/** The galaxy map's window while it is open (one at a time; see childWindows.cjs). */
+let galaxyWindow = null;
+
 function openAppUiWindow(iconForChild) {
   if (!runtime) return { opened: false, error: "Server not ready yet." };
   if (appUiWindow && !appUiWindow.isDestroyed()) {
@@ -213,9 +217,42 @@ function openAppUiWindow(iconForChild) {
     may still open in a window of their own, as they did when the UI ran in the launcher.
   */
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith(`${base}/`) || url === base) return { action: "allow" };
+    if (url.startsWith(`${base}/`) || url === base) {
+      if (childWindowKind(url) !== "galaxy") return { action: "allow" };
+      // One map window: a second click brings the open one forward instead of loading another.
+      if (galaxyWindow && !galaxyWindow.isDestroyed()) {
+        if (galaxyWindow.isMinimized()) galaxyWindow.restore();
+        galaxyWindow.show();
+        galaxyWindow.focus();
+        return { action: "deny" };
+      }
+      const saved = readWindowState("galaxy");
+      const area = screen.getDisplayMatching(win.getBounds()).workArea;
+      return {
+        action: "allow",
+        overrideBrowserWindowOptions: {
+          ...galaxyWindowBounds(saved, area),
+          minWidth: WINDOW_MIN.galaxy.w,
+          minHeight: WINDOW_MIN.galaxy.h,
+          backgroundColor: "#050507",
+          autoHideMenuBar: true,
+          title: "Galaxy map — ED Exo Compare",
+          icon: iconForChild,
+        },
+      };
+    }
     if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
     return { action: "deny" };
+  });
+  win.webContents.on("did-create-window", (child, { url }) => {
+    if (childWindowKind(url) !== "galaxy") return;
+    galaxyWindow = child;
+    if (readWindowState("galaxy")?.maximized) child.maximize();
+    trackWindowState("galaxy", child);
+    enableZoom(child);
+    child.on("closed", () => {
+      if (galaxyWindow === child) galaxyWindow = null;
+    });
   });
   win.webContents.once("did-finish-load", () => void carryAppStorageOver(win));
   win.on("closed", () => {

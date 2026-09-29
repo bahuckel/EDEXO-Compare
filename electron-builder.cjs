@@ -81,6 +81,7 @@ module.exports = {
     "electron/windowState.cjs",
     "electron/hudWindows.cjs",
     "electron/tray.cjs",
+    "electron/childWindows.cjs",
     ...(process.env.EDEXO_DIAG === "1" ? ["electron/diag.cjs"] : []),
     "package.json",
   ],
