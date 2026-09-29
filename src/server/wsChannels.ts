@@ -58,7 +58,13 @@ export function slimBodyForHud(b: BodyComputed): Partial<BodyComputed> {
         displayName: m.entry.displayName,
         genus: m.entry.genus,
         genusDataDir: m.entry.genusDataDir,
+        // Rarity and new-codex marks for the candidate rows (guild tester, 2026-09-30): the tier only.
+        ...(m.entry.rarity ? { rarity: { tier: m.entry.rarity.tier } } : {}),
       },
+      ...(m.regionRarity?.found && m.regionRarity.tier
+        ? { regionRarity: { region: m.regionRarity.region, found: true, tier: m.regionRarity.tier } }
+        : {}),
+      ...(m.codexNew ? { codexNew: true } : {}),
       priceCredits: m.priceCredits,
       presenceProbabilityPercent: m.presenceProbabilityPercent,
       unlikely: m.unlikely,

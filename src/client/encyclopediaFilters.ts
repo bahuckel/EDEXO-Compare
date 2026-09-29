@@ -17,6 +17,22 @@ export type EncyclopediaFiltersState = {
   search: string;
 };
 
+/** A remembered filter set read back from storage: every field a string, as the type has it. */
+export function isEncyclopediaFilters(v: unknown): v is EncyclopediaFiltersState {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return [
+    "genusKey",
+    "planetClass",
+    "atmosphere",
+    "volcanism",
+    "starType",
+    "pressureCat",
+    "geoSignal",
+    "search",
+  ].every((k) => typeof o[k] === "string");
+}
+
 export function defaultEncyclopediaFilters(genusKey: string = ENC_FILTERS_ALL): EncyclopediaFiltersState {
   return {
     genusKey,

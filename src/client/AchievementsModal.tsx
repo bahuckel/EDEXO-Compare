@@ -6,6 +6,7 @@
  * is picked. A row opens to its entries, done and not. Tracking one marks its plants on the species
  * rows and in the HUD's Achievement section.
  */
+import { isStrOrNull, usePersistedState } from "./usePersistedState";
 import { useModal } from "./ui/useModal";
 import { useToast } from "./ui/feedback";
 import type { AchievementDetailDTO, AchievementDTO, AchievementsDTO } from "@shared/types";
@@ -287,7 +288,7 @@ export function AchievementsModal({ onClose }: { onClose: () => void }) {
   const [data, setData] = useState<AchievementsDTO | null>(null);
   const [failed, setFailed] = useState(false);
   /** The category open, or null for the overview of cards. */
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = usePersistedState<string | null>("achievements.category", null, isStrOrNull);
   const [open, setOpen] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 

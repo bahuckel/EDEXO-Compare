@@ -1,3 +1,4 @@
+import { isBool, usePersistedState } from "./usePersistedState";
 import { SNAPSHOT_SYSTEM_CLASS } from "./panelSnapshot";
 import { SnapshotButton } from "./SnapshotButton";
 import type { AppSnapshot, NotableBodyInfo } from "@shared/types";
@@ -219,8 +220,8 @@ export const SystemMapModal = memo(function SystemMapModal({
    * under a barren planet is still found where it belongs. Stars and barycentres never fade — they
    * are the scaffolding.
    */
-  const [bioOnly, setBioOnly] = useState(false);
-  const [landOnly, setLandOnly] = useState(false);
+  const [bioOnly, setBioOnly] = usePersistedState("systemMap.bioOnly", false, isBool);
+  const [landOnly, setLandOnly] = usePersistedState("systemMap.landOnly", false, isBool);
   /** The body panel folds to a strip with an arrow, so the map can take the whole width. */
   const [sideOpen, setSideOpen] = useState(() => readLsBool(EDEXO_SYSMAP_SIDE_LS, true));
   const toggleSide = useCallback(() => {

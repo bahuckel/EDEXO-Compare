@@ -19,6 +19,7 @@
  * The list is computed on the server and takes ~45 s the first time (~53 ms of species matching per
  * body). It is memoised there until the store changes, so re-opening this is instant.
  */
+import { isBool, isNum, oneOf, usePersistedState } from "./usePersistedState";
 import { PAGE } from "./DiscoveriesTables";
 import { useEffect, useMemo, useState } from "react";
 import { CopySystemButton } from "./CopySystemButton";
@@ -69,15 +70,16 @@ export function FirstDiscoveryBacklogModal({
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
   const [data, setData] = useState<FirstDiscoveryBacklogDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [minCr, setMinCr] = useState<number>(0);
-  const [dssOnly, setDssOnly] = useState(false);
-  const [firstOnly, setFirstOnly] = useState(false);
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  // Remembered between opens (usePersistedState).
+  const [minCr, setMinCr] = usePersistedState<number>("backlog.minCr", 0, isNum);
+  const [dssOnly, setDssOnly] = usePersistedState("backlog.dssOnly", false, isBool);
+  const [firstOnly, setFirstOnly] = usePersistedState("backlog.firstOnly", false, isBool);
+  const [verifiedOnly, setVerifiedOnly] = usePersistedState("backlog.verifiedOnly", false, isBool);
   /**
    * Value or distance. Both are honest answers to different questions, and neither is a default that
    * suits every trip: the richest body in the list is often thousands of light years away.
    */
-  const [sort, setSort] = useState<"value" | "distance">("value");
+  const [sort, setSort] = usePersistedState<"value" | "distance">("backlog.sort", "value", oneOf("value", "distance"));
 
   useEffect(() => {
     let cancelled = false;

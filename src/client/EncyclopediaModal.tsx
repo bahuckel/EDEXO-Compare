@@ -1,3 +1,4 @@
+import { usePersistedState } from "./usePersistedState";
 import type {
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
@@ -24,10 +25,12 @@ import {
   activeEncyclopediaFilterChips,
   clearEncyclopediaFilter,
   defaultEncyclopediaFilters,
+  isEncyclopediaFilters,
   ENC_FILTERS_ALL,
   rankEncyclopediaRows,
   type EncyclopediaFiltersState,
 } from "./encyclopediaFilters";
+import { EDEXO_ENCY_NOT_FOUND_LS, readLsBool, writeLsBool } from "./lsPrefs";
 import { EncyclopediaFilterBar } from "./EncyclopediaFilterBar";
 import { RarityGem } from "./RarityGem";
 import { ExomasteryPlanetsBody, FoundSpeciesPopup } from "./EncyclopediaPanels";
@@ -267,8 +270,12 @@ export function EncyclopediaModal({
 }) {
   const [rows, setRows] = useState<EncyclopediaSpeciesRowDTO[] | null>(rowsCache);
   const [loadErr, setLoadErr] = useState<string | null>(null);
-  const [filters, setFilters] = useState<EncyclopediaFiltersState>(() =>
-    defaultEncyclopediaFilters(ENC_FILTERS_ALL),
+  // Remembered between opens, all but the search text (usePersistedState).
+  const [filters, setFilters] = usePersistedState<EncyclopediaFiltersState>(
+    "encyclopedia.filters",
+    () => defaultEncyclopediaFilters(ENC_FILTERS_ALL),
+    isEncyclopediaFilters,
+    (f) => ({ ...f, search: "" }),
   );
   const [foundFor, setFoundFor] = useState<SpeciesEntry | null>(null);
   const [photoZoom, setPhotoZoom] = useState<{
@@ -520,9 +527,25 @@ export function EncyclopediaModal({
     return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
   }, [rows]);
 
-  const { rows: filtered, searching } = useMemo(
-    () => (rows ? rankEncyclopediaRows(rows, filters) : { rows: [], searching: false }),
-    [rows, filters],
+  /*
+    "Not found yet": species with no find in your foot catalog (guild tester report, 2026-09-30: "what
+    you've found vs what is still out there"). Per colour variant, that list is Achievements' "Still to
+    find". Remembered between opens.
+  */
+  const [notFoundOnly, setNotFoundOnlyState] = useState(() => readLsBool(EDEXO_ENCY_NOT_FOUND_LS, false));
+  const setNotFoundOnly = (v: boolean) => {
+    setNotFoundOnlyState(v);
+    writeLsBool(EDEXO_ENCY_NOT_FOUND_LS, v);
+  };
+  const { rows: filtered, searching } = useMemo(() => {
+    const ranked = rows ? rankEncyclopediaRows(rows, filters) : { rows: [], searching: false };
+    return notFoundOnly
+      ? { ...ranked, rows: ranked.rows.filter((r) => (footHitCounts.get(r.entry.id) ?? 0) === 0) }
+      : ranked;
+  }, [rows, filters, notFoundOnly, footHitCounts]);
+  const notFoundCount = useMemo(
+    () => (rows ?? []).filter((r) => (footHitCounts.get(r.entry.id) ?? 0) === 0).length,
+    [rows, footHitCounts],
   );
 
   /** Genus is how players think about exobiology, and it makes 108 rows navigable without
@@ -833,6 +856,14 @@ export function EncyclopediaModal({
                   <strong>{filtered.length}</strong>
                   {rows ? <> of {rows.length}</> : null} species
                 </span>
+                <button
+                  type="button"
+                  className={`btn-top-toggle ency-notfound-toggle${notFoundOnly ? " btn-top-toggle--on" : ""}`}
+                  onClick={() => setNotFoundOnly(!notFoundOnly)}
+                  title="Only species you have not found yet (no Log, Sample or Analyse in your journals). Per colour variant: Achievements → Still to find."
+                >
+                  {notFoundOnly ? `Not found yet ✓ (${notFoundCount})` : "Not found yet ✗"}
+                </button>
                 {chips.length ? (
                   <>
                     <span className="ency-chips">

@@ -1159,6 +1159,7 @@ export class GameStateStore {
     if (r.candOrder === "likelihood" || r.candOrder === "value") out.candOrder = r.candOrder;
     if (typeof r.region === "boolean") out.region = r.region;
     if (typeof r.audio === "boolean") out.audio = r.audio;
+    if (typeof r.compact === "boolean") out.compact = r.compact;
     this.hudPrefs = out;
     return out;
   }

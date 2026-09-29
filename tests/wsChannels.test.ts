@@ -133,6 +133,18 @@ describe("socket channels: slim snapshots per client kind", () => {
     expect(out.exoOverlayFocusBody?.matches[0]?.entry.displayName).toBe("Tubus compagibus");
   });
 
+  it("carries the rarity tier and the new-codex mark to the HUD rows, and no more of them", () => {
+    const b = body("1:2");
+    const m = b.matches[0] as unknown as Record<string, unknown>;
+    (m.entry as Record<string, unknown>).rarity = { tier: "epic", systems: 3000, share: 0.004 };
+    m.regionRarity = { region: "Inner Orion Spur", found: true, tier: "rare", count: 12, share: 0.02 };
+    m.codexNew = true;
+    const slim = slimBodyForHud(b).matches![0]! as unknown as Record<string, unknown>;
+    expect((slim.entry as Record<string, unknown>).rarity).toEqual({ tier: "epic" });
+    expect(slim.regionRarity).toEqual({ region: "Inner Orion Spur", found: true, tier: "rare" });
+    expect(slim.codexNew).toBe(true);
+  });
+
   it("slims a body far below its full size", () => {
     const full = JSON.stringify(body("1:2")).length;
     const slim = JSON.stringify(slimBodyForHud(body("1:2"))).length;

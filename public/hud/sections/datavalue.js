@@ -9,7 +9,7 @@ export var datavalue = {
       '<div class="row"><span class="k">Organic</span><span class="v" data-f="org">—</span></div>' +
       '<div class="row"><span class="k">Exploration scans</span><span class="v" data-f="scan">—</span></div>' +
       '<div class="row row--rule row--total"><span class="k">Total</span><span class="v" data-f="tot">—</span></div>' +
-      '<p class="hud-note" data-f="hint">Loading…</p>'
+      '<p class="hud-note hud-explain" data-f="hint">Loading…</p>'
     );
   },
   render: function (d, root) {

@@ -77,6 +77,7 @@ export var distance = {
       q(root, "pill3").innerHTML = "";
       pay.innerHTML = "<span class='row--muted'>—</span>";
       note.textContent = "The radar shows your ship and any plants taken here while this app was running.";
+      note.classList.add("hud-explain");
       cele.style.display = "none";
       return null;
     }
@@ -121,6 +122,7 @@ export var distance = {
               ? " <span style='opacity:0.7'>(logged)</span>"
               : " <span style='opacity:0.85'>(new codex 5×)</span>")
           : fmtCr(null);
+      note.classList.add("hud-explain");
       note.textContent =
         eo.analyseWasLogged === true
           ? eo.footfallMult === 5
@@ -142,10 +144,13 @@ export var distance = {
           fmtCr(a).replace(" CR", "") +
           "<small>logged</small></span>";
       } else pay.textContent = "—";
+      note.classList.add("hud-explain");
       note.textContent =
         "Estimates: new codex = 5× list; logged codex = list × footfall (×1 or ×5). These are not multiplied together.";
     } else {
       pay.innerHTML = "<span class='row--muted'>—</span>";
+      // Walk-distance guidance is a reading, not an explanation: it stays in compact mode.
+      note.classList.remove("hud-explain");
       note.textContent =
         eo.sampleCount === 1
           ? tooClose

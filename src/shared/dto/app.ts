@@ -198,6 +198,8 @@ export interface HudPrefsDTO {
   candOrder?: "likelihood" | "value";
   region?: boolean;
   audio?: boolean;
+  /** Compact overlays: no explanatory lines, only the readings (guild tester, 2026-09-30). */
+  compact?: boolean;
 }
 
 /** The session log: what happened since the app started, for the modal and the Markdown copy. */

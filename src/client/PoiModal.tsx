@@ -17,6 +17,7 @@
  * - **No claim of freshness.** The catalogue is curated by hand and changes slowly, so unlike the
  *   carrier list there is no sighting age to report and none is implied.
  */
+import { isBool, isNum, isStrArr, usePersistedState } from "./usePersistedState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { POI_GROUP_OPTIONS } from "@shared/gecCategories";
 import { Tooltip } from "./ui/Tooltip";
@@ -46,9 +47,10 @@ export function PoiModal({ onClose }: { onClose: () => void }) {
   const [data, setData] = useState<PoiQueryResultDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [groups, setGroups] = useState<string[]>([]);
-  const [organicOnly, setOrganicOnly] = useState(false);
-  const [minRating, setMinRating] = useState(0);
+  // Remembered between opens (usePersistedState); the search box is not.
+  const [groups, setGroups] = usePersistedState<string[]>("poi.groups", [], isStrArr);
+  const [organicOnly, setOrganicOnly] = usePersistedState("poi.organicOnly", false, isBool);
+  const [minRating, setMinRating] = usePersistedState<number>("poi.minRating", 0, isNum);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   useEffect(() => {

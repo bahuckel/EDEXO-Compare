@@ -2045,6 +2045,9 @@
             <div class="hud-set-row">
               <label><input type="checkbox" id="hudRegion" checked /> Show the current region</label>
             </div>
+            <div class="hud-set-row">
+              <label><input type="checkbox" id="hudCompact" /> Compact: hide the explanations, keep the readings</label>
+            </div>
             <h4>Sound</h4>
             <div class="hud-set-row">
               <label><input type="checkbox" id="hudAudio" /> Audio cues: ring cleared, third sample (off by default)</label>
@@ -3816,6 +3819,7 @@
         var LS_HUD_SCALE = "edexoHudScale";
         var LS_HUD_ALPHA = "edexoHudOpacity";
         var LS_HUD_AUDIO = "edexoHudAudio";
+        var LS_HUD_COMPACT = "edexoHudCompact";
         var HUD_PRESETS = {
           orange: "#ff8a1f", amber: "#ffb020", red: "#ff4a3a", magenta: "#ff4fd8", purple: "#b46bff",
           blue: "#4fa8ff", cyan: "#3fe0e0", green: "#5fe07a", lime: "#c8f04a", white: "#e8e8f0",
@@ -3837,6 +3841,7 @@
           try { prefs.candOrder = localStorage.getItem(LS_HUD_CAND) || "likelihood"; } catch (e) {}
           try { prefs.region = localStorage.getItem(LS_HUD_REGION) !== "0"; } catch (e) {}
           try { prefs.audio = localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) {}
+          try { prefs.compact = localStorage.getItem(LS_HUD_COMPACT) === "1"; } catch (e) {}
           return prefs;
         }
         function syncHudPrefs() {
@@ -3921,6 +3926,13 @@
           hudAlpha.addEventListener("input", function () {
             showSizeOutputs();
             try { localStorage.setItem(LS_HUD_ALPHA, String(Number(hudAlpha.value) / 100)); } catch (e) {}
+            syncHudPrefs();
+          });
+        }
+        var hudCompact = document.getElementById("hudCompact");
+        if (hudCompact) {
+          hudCompact.addEventListener("change", function () {
+            try { localStorage.setItem(LS_HUD_COMPACT, hudCompact.checked ? "1" : "0"); } catch (e) {}
             syncHudPrefs();
           });
         }
@@ -4047,6 +4059,7 @@
           if (hudCandOrder) hudCandOrder.value = (function () { try { return localStorage.getItem(LS_HUD_CAND) || "likelihood"; } catch (e) { return "likelihood"; } })();
           if (hudRegion) hudRegion.checked = (function () { try { return localStorage.getItem(LS_HUD_REGION) !== "0"; } catch (e) { return true; } })();
           if (hudAudio) hudAudio.checked = (function () { try { return localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) { return false; } })();
+          if (hudCompact) hudCompact.checked = (function () { try { return localStorage.getItem(LS_HUD_COMPACT) === "1"; } catch (e) { return false; } })();
           if (hudScale) hudScale.value = String(Math.round((function () { try { return parseFloat(localStorage.getItem(LS_HUD_SCALE) || "1") || 1; } catch (e) { return 1; } })() * 100));
           if (hudAlpha) hudAlpha.value = String(Math.round((function () { try { var v = parseFloat(localStorage.getItem(LS_HUD_ALPHA) || "0.45"); return isFinite(v) ? v : 0.45; } catch (e) { return 0.45; } })() * 100));
           showSizeOutputs();

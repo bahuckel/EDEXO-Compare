@@ -14,6 +14,7 @@
     edexoHudTheme      {"preset":"orange"} or {"preset":"custom","accent":"#rrggbb","text":"#rrggbb"}
     edexoHudCandOrder  "likelihood" (default) | "value"
     edexoHudRegion     "1" (default) | "0"  — show the current region line in the candidates card
+    edexoHudCompact    "0" (default) | "1"  — compact: hide the explanatory lines (.hud-explain)
 
   Plain browser modules, no build step, served by the local server (a module does not load from
   file://). Split out of the single public/hud.js on 2026-09-28:

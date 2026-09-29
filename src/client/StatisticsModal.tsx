@@ -17,6 +17,7 @@
  * They are drawn as steps between known points because the journal states a balance only at login:
  * a smooth line across the owner's 9,045-hour gap would invent a year of steady earning.
  */
+import { isStr, oneOf, usePersistedState } from "./usePersistedState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { INCOME_CATEGORY_LABEL, type IncomeCategory } from "@shared/incomeCategories";
 import { buildLogFiveAxis, formatCredits, logFiveFraction } from "@shared/logFiveAxis";
@@ -237,8 +238,8 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
   const [data, setData] = useState<StatisticsDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
-  const [window_, setWindow] = useState("all");
-  const [measure, setMeasure] = useState<Measure>("credits");
+  const [window_, setWindow] = usePersistedState("statistics.window", "all", isStr);
+  const [measure, setMeasure] = usePersistedState<Measure>("statistics.measure", "credits", oneOf("credits", "perHour"));
   const seq = useRef(0);
 
   /* While the scan runs, how many journals are read (UI review F3). */

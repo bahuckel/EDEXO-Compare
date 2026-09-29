@@ -22,6 +22,7 @@
  * A staler record on a long-parked carrier beats a fresher one on a mover. That is backwards from
  * instinct, which is exactly why both numbers are on screen instead of one confidence score.
  */
+import { isBool, isNum, isStr, isStrArr, usePersistedState } from "./usePersistedState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CARRIER_SERVICE_OPTIONS, carrierServiceLabel } from "@shared/carrierServices";
 import { CARRIER_NETWORKS } from "@shared/carrierNetworks";
@@ -198,10 +199,11 @@ export function CarriersModal({ onClose }: { onClose: () => void }) {
   const [data, setData] = useState<CarrierQueryResultDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [services, setServices] = useState<string[]>([]);
-  const [maxSeen, setMaxSeen] = useState<number>(0);
-  const [dssaOnly, setDssaOnly] = useState(false);
-  const [networkKey, setNetworkKey] = useState("");
+  // Remembered between opens (usePersistedState); the search box is not.
+  const [services, setServices] = usePersistedState<string[]>("carriers.services", [], isStrArr);
+  const [maxSeen, setMaxSeen] = usePersistedState<number>("carriers.maxSeen", 0, isNum);
+  const [dssaOnly, setDssaOnly] = usePersistedState("carriers.dssaOnly", false, isBool);
+  const [networkKey, setNetworkKey] = usePersistedState("carriers.network", "", isStr);
   /*
     Per-row Spansh answers, keyed by callsign.
 

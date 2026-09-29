@@ -68,6 +68,14 @@ export function speciesProgress(m, st, eo, bodyKey) {
   }
   return null;
 }
+/** Rarity tier → [mark, colour, name]; the colours are the app's (shared/speciesRarity.ts). */
+var RARITY = {
+  legendary: ["L", "#f5b83d", "Legendary"],
+  epic: ["E", "#b77cf2", "Epic"],
+  rare: ["R", "#4f9cf5", "Rare"],
+  uncommon: ["U", "#4cc46a", "Uncommon"],
+  common: ["C", "#9aa0a8", "Common"],
+};
 export var candidates = {
   title: "Exo candidates",
   html: function () {
@@ -188,6 +196,27 @@ export var candidates = {
       em.textContent = genus + " ";
       name.appendChild(em);
       name.appendChild(document.createTextNode(sp));
+      /*
+        Rarity and new-codex (guild tester report, 2026-09-30: "overlays showing the codex rarity").
+        The region's tier when the species grows there, else the galaxy-wide one; the app's colours.
+      */
+      var tier = (m.regionRarity && m.regionRarity.found && m.regionRarity.tier) || (e.rarity && e.rarity.tier);
+      if (tier && RARITY[tier]) {
+        var rar = document.createElement("span");
+        rar.className = "rar";
+        rar.style.color = RARITY[tier][1];
+        rar.textContent = RARITY[tier][0];
+        rar.title =
+          RARITY[tier][2] + (m.regionRarity && m.regionRarity.found ? " in " + m.regionRarity.region : " galaxy-wide");
+        name.appendChild(rar);
+      }
+      if (m.codexNew) {
+        var cx = document.createElement("span");
+        cx.className = "cxnew";
+        cx.textContent = "CX";
+        cx.title = "A new entry in your codex here";
+        name.appendChild(cx);
+      }
       if (r.prog) {
         var pg = document.createElement("span");
         pg.className = "prog prog--" + r.prog.cls;

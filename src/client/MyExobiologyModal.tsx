@@ -1,6 +1,7 @@
 /**
  * My exobiology: the finds table and the discoveries views. Split out of AppModals.tsx (code review D, 2026-09-27).
  */
+import { usePersistedState } from "./usePersistedState";
 import { footConfirmationLabel } from "@shared/footConfirmationLabel";
 import { CopySystemButton } from "./CopySystemButton";
 import {
@@ -165,7 +166,15 @@ export function MyExobiologyModal({
     setLayoutState(l);
     writeDiscoveriesPref({ view, layout: l });
   };
-  const [exoSort, setExoSort] = useState<{ key: string; dir: 1 | -1 }>({ key: "when", dir: -1 });
+  const [exoSort, setExoSort] = usePersistedState<{ key: string; dir: 1 | -1 }>(
+    "discoveries.exoSort",
+    { key: "when", dir: -1 },
+    (v): v is { key: string; dir: 1 | -1 } =>
+      !!v &&
+      typeof v === "object" &&
+      typeof (v as { key?: unknown }).key === "string" &&
+      ((v as { dir?: unknown }).dir === 1 || (v as { dir?: unknown }).dir === -1),
+  );
   const exoColumns = useMemo(() => exobiologyColumns(onNavigateEntry, onClose), [onNavigateEntry, onClose]);
   const [discoveries, setDiscoveries] = useState<DiscoveriesDTO | null>(null);
   const [discoveriesError, setDiscoveriesError] = useState<string | null>(null);

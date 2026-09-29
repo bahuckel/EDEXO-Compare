@@ -29,7 +29,7 @@ import { exomasteryDetailHasContent, groupedSortedMatches } from "./speciesMatch
 import { bodyGenusProgress, genusProgressTag } from "@shared/genusProgress";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
 import { candidateSpeciesDenomFromFss, genusHintIsDssOrphan, tripRankLabel } from "./bodyHelpers";
-import { EDEXO_COMPACT_CANDIDATE_VIEW_LS, readLsBool, writeLsBool } from "./lsPrefs";
+import { EDEXO_CODEX_NEW_ONLY_LS, EDEXO_COMPACT_CANDIDATE_VIEW_LS, readLsBool, writeLsBool } from "./lsPrefs";
 import { GenusTag, GlanceGenera, genusRowSpecies, LandableBadge } from "./BodyGlance";
 import { ExoPayoutRangeDetailModal } from "./ExoPayoutRangeDetailModal";
 import { GenusMatchGroup } from "./GenusMatchGroup";
@@ -161,6 +161,17 @@ export const BodyPane = memo(function BodyPane({
    * below — a demoted row that you personally scanned still passes.
    */
   const [evidenceOnly, setEvidenceOnly] = useState(false);
+  /*
+    Only what would be a new codex entry (guild tester report, 2026-09-30: "for people who money isn't
+    a factor and just want to complete the Codex"). Remembered, like Compact. Filters on the same
+    `codexNew` mark the [CODEX] tags come from, and on nothing else.
+  */
+  const [codexNewOnly, setCodexNewOnlyState] = useState(() => readLsBool(EDEXO_CODEX_NEW_ONLY_LS, false));
+  const setCodexNewOnly = (v: boolean) => {
+    setCodexNewOnlyState(v);
+    writeLsBool(EDEXO_CODEX_NEW_ONLY_LS, v);
+  };
+  const codexNewCount = useMemo(() => body.matches.filter((m) => m.codexNew === true).length, [body.matches]);
   const hasEvidence = useCallback(
     (m: BodyComputed["matches"][0]) =>
       m.provenance != null && (m.provenance.firstHand || m.provenance.corpusInSystem > 0),
@@ -168,8 +179,9 @@ export const BodyPane = memo(function BodyPane({
   );
   const evidenceCount = useMemo(() => body.matches.filter(hasEvidence).length, [body.matches, hasEvidence]);
   const shownMatches = useMemo(
-    () => (evidenceOnly ? body.matches.filter(hasEvidence) : body.matches),
-    [evidenceOnly, body.matches, hasEvidence],
+    () =>
+      body.matches.filter((m) => (!evidenceOnly || hasEvidence(m)) && (!codexNewOnly || m.codexNew === true)),
+    [evidenceOnly, codexNewOnly, body.matches, hasEvidence],
   );
   /*
     A species he has sampled here is listed with the candidates, banner and all.
@@ -546,7 +558,8 @@ export const BodyPane = memo(function BodyPane({
                     means off, even for a bacterium the catalog remembers from a similar body.{" "}
                     <strong>Evidence</strong> keeps only rows something has actually observed: scanned by you
                     on this body, or confirmed in this system by Spansh. It filters on evidence, not on
-                    likelihood.
+                    likelihood. <strong>Codex new</strong> keeps only species that would be a new entry in
+                    your codex (the ones tagged [CODEX]).
                   </p>
                   <p>
                     <strong>Unlikely</strong> rows disagree with this body on one criterion: planet class,
@@ -599,6 +612,19 @@ export const BodyPane = memo(function BodyPane({
                     }
                   >
                     {evidenceOnly ? `Evidence ✓ (${evidenceCount})` : "Evidence ✗"}
+                  </button>
+                  <button
+                    type="button"
+                    className={`candidate-species-codex-toggle btn-top-toggle${codexNewOnly ? " btn-top-toggle--on" : ""}`}
+                    onClick={() => setCodexNewOnly(!codexNewOnly)}
+                    disabled={codexNewCount === 0 && !codexNewOnly}
+                    title={
+                      codexNewCount === 0
+                        ? "No candidate here would be a new codex entry for you (or your codex log is not known yet)."
+                        : `Only the ${codexNewCount} species that would be new in your codex here.`
+                    }
+                  >
+                    {codexNewOnly ? `Codex new ✓ (${codexNewCount})` : "Codex new ✗"}
                   </button>
                 </div>
               }

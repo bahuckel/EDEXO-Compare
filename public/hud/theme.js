@@ -59,6 +59,7 @@ export function serverPref(key) {
   if (key === "edexoHudCandOrder") return p.candOrder || null;
   if (key === "edexoHudRegion") return typeof p.region === "boolean" ? (p.region ? "1" : "0") : null;
   if (key === "edexoHudAudio") return typeof p.audio === "boolean" ? (p.audio ? "1" : "0") : null;
+  if (key === "edexoHudCompact") return typeof p.compact === "boolean" ? (p.compact ? "1" : "0") : null;
   return null;
 }
 export function pref(key, def) {
@@ -127,4 +128,6 @@ export function applyTheme() {
   st.setProperty("--hud-bg", rgba(mix(a, [0, 0, 0], 0.9), Math.round(92 * t) / 100));
   st.setProperty("--hud-bg-2", rgba(mix(a, [0, 0, 0], 0.8), Math.round(35 * t) / 100));
   st.setProperty("--hud-glow", "0 0 6px " + rgba(a, 0.45));
+  // Compact (guild tester, 2026-09-30): the explanatory lines (`.hud-explain`) are hidden.
+  document.documentElement.classList.toggle("hud-compact", pref("edexoHudCompact", "0") === "1");
 }

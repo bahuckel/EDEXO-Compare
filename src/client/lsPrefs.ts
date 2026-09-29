@@ -23,6 +23,10 @@ export function secondScreenUrl(lanUrl: string): string {
 }
 
 export const EDEXO_COMPACT_CANDIDATE_VIEW_LS = "edexo.compactCandidateView";
+/** Candidate species: only species that would be new in the commander's codex (guild tester, 2026-09-30). */
+export const EDEXO_CODEX_NEW_ONLY_LS = "edexo.candidatesCodexNewOnly";
+/** Encyclopedia: only species with no finds in the foot catalog yet (guild tester, 2026-09-30). */
+export const EDEXO_ENCY_NOT_FOUND_LS = "edexo.encyclopediaNotFoundOnly";
 
 const EDEXO_TEMP_UNIT_LS = "edexo.bodyTempUnit";
 

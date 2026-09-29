@@ -8,7 +8,7 @@ export var fss = {
       head("Discovery scan") +
       '<div class="fss-line" data-f="dline"><span class="sys">—</span><span class="nums">— / —<small>bodies</small></span></div>' +
       '<div class="hud-bar" aria-hidden="true"><div class="hud-bar__fill" data-f="bar"></div><div class="hud-bar__ticks"></div></div>' +
-      '<div class="hud-note">Honk progress against bodies found, same as the main D-Scan readout.</div>'
+      '<div class="hud-note hud-explain">Honk progress against bodies found, same as the main D-Scan readout.</div>'
     );
   },
   render: function (d, root) {
