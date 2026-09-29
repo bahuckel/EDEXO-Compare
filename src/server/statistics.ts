@@ -15,6 +15,7 @@ import {
 } from "../shared/statisticsWindows.js";
 import type { JournalScan } from "./statisticsScan.js";
 import { estimateCarrierUpkeep } from "../shared/carrierUpkeep.js";
+import { estimateRank } from "../shared/rankProgress.js";
 import type { CarrierAccountDTO } from "../shared/statisticsWindows.js";
 
 const ALL_CATEGORIES = Object.keys(INCOME_CATEGORY_LABEL) as IncomeCategory[];
@@ -150,6 +151,10 @@ export function summariseStatistics(
     activity: countActivityInWindow(scan, startMs),
     commanderBalance,
     carriers,
+    ranks: {
+      explore: estimateRank(scan.ranks ?? [], scan.income, "explore"),
+      exobio: estimateRank(scan.ranks ?? [], scan.income, "exobio"),
+    },
     filesRead: scan.filesRead,
   };
 }

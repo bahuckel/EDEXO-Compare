@@ -200,3 +200,70 @@
   font-size: 0.72rem;
   margin-top: 0.15rem;
 }
+
+/* ---- Ranks: name → next, the game's reading with the estimate on top, credits to go ---- */
+.stats-ranks {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.4rem;
+}
+.stats-rank {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(9rem, auto) minmax(8rem, 1fr) 3rem;
+  grid-template-areas:
+    "k name bar pct"
+    ". to to to";
+  align-items: center;
+  gap: 0.15rem 0.7rem;
+  font-size: 0.82rem;
+}
+.stats-rank__k {
+  grid-area: k;
+  color: var(--muted);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.stats-rank__name {
+  grid-area: name;
+  color: var(--text);
+  font-weight: 600;
+}
+.stats-rank__bar {
+  grid-area: bar;
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.stats-rank__bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+}
+.stats-rank__est {
+  background: var(--accent-a35);
+}
+.stats-rank__read {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+.stats-rank__pct {
+  grid-area: pct;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-bright);
+}
+.stats-rank__to {
+  grid-area: to;
+  font-size: var(--fs-xs);
+}
+@media (max-width: 560px) {
+  .stats-rank {
+    grid-template-columns: minmax(0, 1fr) 3rem;
+    grid-template-areas:
+      "k pct"
+      "name name"
+      "bar bar"
+      "to to";
+  }
+}

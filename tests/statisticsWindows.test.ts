@@ -23,6 +23,7 @@ function scanOf(
     sessions,
     carrierBreaks: [],
     carrierIdentities: {},
+    ranks: [],
     filesRead: 1,
     linesRead: lines.length,
   };

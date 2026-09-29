@@ -104,6 +104,8 @@ export interface CarrierAccountDTO {
   upkeep: CarrierUpkeepEstimate;
 }
 
+import type { RankEstimateDTO } from "./rankProgress.js";
+
 export interface StatisticsDTO {
   window: StatsWindowKey;
   /** Totals by heading, largest first, zero rows kept so the chart can draw them flat. */
@@ -133,6 +135,12 @@ export interface StatisticsDTO {
    * until 2026-09-21, which measured the upkeep across the gap between two accounts.
    */
   carriers: CarrierAccountDTO[];
+
+  /**
+   * Exploration and Exobiology rank with about how many credits to the next (shared/rankProgress.ts).
+   * Whole history, whatever the window: a rank is not a property of the last week.
+   */
+  ranks: { explore: RankEstimateDTO | null; exobio: RankEstimateDTO | null };
 
   /** Journals the scan read, so the panel can say what it is speaking for. */
   filesRead: number;

@@ -25,6 +25,54 @@ import { STATS_WINDOWS, type CarrierAccountDTO, type StatisticsDTO } from "@shar
 import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
 import { formatWeeks } from "@shared/carrierUpkeep";
+import type { RankEstimateDTO } from "@shared/rankProgress";
+
+/*
+  A rank with about how many credits to the next one (shared/rankProgress.ts). The bar is the game's
+  own reading, with what was sold since drawn on top of it as the estimate.
+*/
+function RankRow({ label, e }: { label: string; e: RankEstimateDTO | null }) {
+  if (!e) return null;
+  const read = e.progressPct ?? 0;
+  const est = e.estimatedPct ?? read;
+  const basis =
+    e.basis === "promotion"
+      ? `Measured from your promotion to ${e.name} (${e.basisAt?.slice(0, 10)}): the credits you sold since, against the game's progress reading.`
+      : e.basis === "readings"
+        ? `Measured between two of the game's progress readings of this rank (from ${e.basisAt?.slice(0, 10)}), against the credits you sold in between.`
+        : "";
+  const text = !e.next
+    ? "Highest rank."
+    : e.creditsToNext != null
+      ? `about ${formatCredits(e.creditsToNext)} CR to ${e.next}`
+      : read === 0
+        ? `to ${e.next}: sell some data first — the estimate needs progress to measure`
+        : `to ${e.next}: not enough progress in your journals yet to measure`;
+  return (
+    <div
+      className="stats-rank"
+      title={[
+        basis,
+        e.progressAt ? `The game's last reading: ${read} % (${e.progressAt.slice(0, 10)}).` : "",
+        "Frontier does not publish the thresholds; this is measured from your own journals.",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <span className="stats-rank__k">{label}</span>
+      <span className="stats-rank__name">
+        {e.name}
+        {e.next ? <span className="dim"> → {e.next}</span> : null}
+      </span>
+      <span className="stats-rank__bar" aria-hidden="true">
+        <i className="stats-rank__est" style={{ width: `${Math.min(100, est)}%` }} />
+        <i className="stats-rank__read" style={{ width: `${Math.min(100, read)}%` }} />
+      </span>
+      <span className="stats-rank__pct">{Math.floor(est)} %</span>
+      <span className="stats-rank__to dim">{text}</span>
+    </div>
+  );
+}
 
 type Measure = "credits" | "perHour";
 
@@ -365,6 +413,17 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
               )}
               <span className="dim">{data.filesRead} journals read</span>
             </div>
+
+            {/* Guild tester report, 2026-09-30: the game's rank bar gives no numbers. */}
+            {data.ranks && (data.ranks.explore || data.ranks.exobio) ? (
+              <>
+                <h3 className="stats-h3">Ranks</h3>
+                <div className="stats-ranks">
+                  <RankRow label="Exobiologist" e={data.ranks.exobio} />
+                  <RankRow label="Explorer" e={data.ranks.explore} />
+                </div>
+              </>
+            ) : null}
 
             <IncomeChart data={data} measure={measure} />
 

@@ -31,6 +31,7 @@ import { createInterface } from "node:readline";
 import { dirname, join } from "node:path";
 import { incomeFromJournalLine, INCOME_EVENT_NAMES, type IncomeEvent } from "../shared/incomeCategories.js";
 import type { CarrierLedgerBreak } from "../shared/carrierUpkeep.js";
+import type { RankLine } from "../shared/rankProgress.js";
 import { resolveUserSettingsJsonPath } from "./paths.js";
 
 /** Counted rather than listed: the panel wants "how many", never "which". */
@@ -101,6 +102,8 @@ export interface JournalScan {
   carrierBreaks: CarrierLedgerBreak[];
   /** Name, callsign and type per `CarrierID`, newest wins. */
   carrierIdentities: Record<string, CarrierIdentity>;
+  /** `Rank`, `Progress` and `Promotion`, Exploration and Exobiology only (shared/rankProgress.ts). */
+  ranks: RankLine[];
   filesRead: number;
   linesRead: number;
 }
@@ -111,6 +114,7 @@ const BALANCE_EVENTS = ["LoadGame", "CarrierStats", "CarrierFinance", "CarrierBa
 const CARRIER_ID_EVENTS = ["CarrierBuy"];
 /** Not balances themselves — they say when a balance moved for a reason other than upkeep. */
 const CARRIER_BREAK_EVENTS = ["CarrierCrewServices"];
+const RANK_EVENTS = ["Rank", "Progress", "Promotion"];
 /** Every event name worth parsing. Tested as a substring against the raw line first. */
 const WANTED = [
   ...INCOME_EVENT_NAMES,
@@ -118,6 +122,7 @@ const WANTED = [
   ...BALANCE_EVENTS,
   ...CARRIER_BREAK_EVENTS,
   ...CARRIER_ID_EVENTS,
+  ...RANK_EVENTS,
 ].map((e) => `"${e}"`);
 
 /**
@@ -144,6 +149,7 @@ function emptyScan(): JournalScan {
     sessions: [],
     carrierBreaks: [],
     carrierIdentities: {},
+    ranks: [],
     filesRead: 0,
     linesRead: 0,
   };
@@ -227,6 +233,20 @@ export function applyScanLine(scan: JournalScan, line: Record<string, unknown>):
     case "CarrierBuy":
       noteCarrierIdentity(scan, line, num(line.CarrierID));
       return;
+    case "Rank":
+    case "Progress":
+    case "Promotion": {
+      const explore = num(line.Explore);
+      const exobio = num(line.Exobiologist);
+      if (!at || (explore == null && exobio == null)) return;
+      scan.ranks.push({
+        at,
+        event,
+        ...(explore != null ? { explore } : {}),
+        ...(exobio != null ? { exobio } : {}),
+      });
+      return;
+    }
     case "CarrierCrewServices": {
       // Activating, pausing or dismissing a service changes the weekly charge from here on.
       if (at) scan.carrierBreaks.push({ at, kind: "service", carrierId: num(line.CarrierID) });
@@ -319,8 +339,9 @@ interface CacheFile {
  * bump discards those caches and rescans, which costs three seconds.
  *
  * 4 (2026-09-29): one part per journal instead of one scan for the folder.
+ * 5 (2026-09-30): `Rank` / `Progress` / `Promotion` lines, for the rank estimates.
  */
-const CACHE_VERSION = 4;
+const CACHE_VERSION = 5;
 
 /** The parts in memory, so a re-open does not re-read the cache file either. */
 let memo: { path: string; parts: Record<string, CachedPart> } | null = null;
@@ -358,6 +379,7 @@ function mergePart(into: JournalScan, part: JournalScan): void {
   into.balances.push(...part.balances);
   into.sessions.push(...part.sessions);
   into.carrierBreaks.push(...part.carrierBreaks);
+  into.ranks.push(...(part.ranks ?? []));
   // Newest wins per field, and a file that never named a field leaves the older value (noteCarrierIdentity).
   for (const [key, id] of Object.entries(part.carrierIdentities)) {
     const prev = into.carrierIdentities[key];
@@ -430,6 +452,7 @@ async function scanParts(files: readonly string[]): Promise<JournalScan> {
   scan.income.sort((a, b) => a.at.localeCompare(b.at));
   scan.balances.sort((a, b) => a.at.localeCompare(b.at));
   scan.sessions.sort((a, b) => a.from.localeCompare(b.from));
+  scan.ranks.sort((a, b) => a.at.localeCompare(b.at));
 
   if (changed) {
     try {
