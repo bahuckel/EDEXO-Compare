@@ -50,6 +50,8 @@ import { registerServerStatusRoutes } from "./routes/serverStatusRoutes.js";
 import { registerSettingsRoutes } from "./routes/settingsRoutes.js";
 import { registerHudRoutes } from "./routes/hudRoutes.js";
 import { registerExomasteryRoutes } from "./routes/exomasteryRoutes.js";
+import { registerBackupRoutes } from "./routes/backupRoutes.js";
+import type { BackupService } from "./backupService.js";
 export function getLanIPv4s(port: number): string[] {
   const nets = os.networkInterfaces();
   const out: string[] = [];
@@ -292,6 +294,8 @@ export interface HttpServerOptions {
   reloadExomastery?: () => void;
   /** The commander's own exomastery (on-foot finds) or codex record, as a download (§S). */
   exportExomastery?: (kind: "exomastery" | "codex") => { fileName: string; body: unknown };
+  /** The launcher's Backups row (backupService.ts); absent where backups are not wired. */
+  backup?: BackupService;
   /** Clear in-memory exomastery JSON cache only (used by encyclopedia `?force=1`). */
   clearExomasteryProfileCache?: () => void;
   /** POST /api/exo-data-alerts/fix — write fixes_*.json stubs next to codex / feeder JSON. */
@@ -604,6 +608,8 @@ export function createHttpServer(opts: HttpServerOptions): {
     A build with no windows answers 501 rather than pretending — the CLI prints that reason as-is.
   */
   registerHudRoutes(app, opts, routeCtx);
+
+  registerBackupRoutes(app, opts, routeCtx);
 
   registerExomasteryRoutes(app, opts, routeCtx);
 

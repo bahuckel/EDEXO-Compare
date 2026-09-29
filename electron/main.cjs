@@ -383,6 +383,30 @@ function registerFootOverlayIpc(iconForChild) {
     }
   });
 
+  /*
+    Backups (owner, 2026-09-28): a folder picker for where they go and where journals are restored,
+    and a restart that finishes a restore (it is applied at start, before anything reads the data).
+    The portable exe runs from a temporary copy; relaunching that copy would start an exe the
+    wrapper is about to delete, so the restart goes through the original file when there is one.
+  */
+  ipcMain.handle("edexo:pick-folder", async (evt, opts) => {
+    if (!mainWindow || evt.sender !== mainWindow.webContents) return { path: null };
+    const start = opts && typeof opts.defaultPath === "string" && opts.defaultPath ? opts.defaultPath : app.getPath("documents");
+    const r = await dialog.showOpenDialog(mainWindow, {
+      title: "Choose a folder",
+      defaultPath: start,
+      properties: ["openDirectory", "createDirectory"],
+    });
+    return { path: r.canceled || !r.filePaths[0] ? null : r.filePaths[0] };
+  });
+  ipcMain.handle("edexo:relaunch", (evt) => {
+    if (!mainWindow || evt.sender !== mainWindow.webContents) return { ok: false };
+    const portable = process.env.PORTABLE_EXECUTABLE_FILE;
+    app.relaunch(portable ? { execPath: portable, args: process.argv.slice(1) } : undefined);
+    app.quit();
+    return { ok: true };
+  });
+
   // The launcher's HUD settings, forwarded to every overlay as they change (see preload `pushHudPrefs`).
   ipcMain.on("edexo:push-hud-prefs", (evt, prefs) => {
     if (!mainWindow || evt.sender !== mainWindow.webContents) return;
@@ -586,7 +610,9 @@ async function start() {
     e.preventDefault();
     mainWindow.hide();
   });
-  mainWindow.on("close", () => {
+  mainWindow.on("close", (e) => {
+    // A backup being written would be thrown away (owner, 2026-09-29): ask first.
+    if (holdExitForBackup(e)) return;
     huds.destroyAll();
     trayControl.destroy();
     // The launcher is still the app: closing it closes the app window too, as it always quit.
@@ -662,7 +688,55 @@ app.on("window-all-closed", () => {
   app.quit();
 });
 
-app.on("before-quit", () => {
+/*
+  Exit while a backup is being written (owner, 2026-09-29): a red warning, not a silent loss. The
+  launcher's close and every other way out (tray Quit, the restart after a restore) pass through here.
+  "Wait, then close" lets the backup finish and closes by itself; "Exit now" throws the backup away
+  (its half-written file is cleared at the next start).
+*/
+let exitAllowed = false;
+let exitAsking = false;
+let exitWhenBackupDone = false;
+
+function holdExitForBackup(e) {
+  if (exitAllowed || !runtime || typeof runtime.backupRunning !== "function" || !runtime.backupRunning()) return false;
+  e.preventDefault();
+  if (exitAsking || exitWhenBackupDone) return true;
+  exitAsking = true;
+  const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined;
+  if (parent) {
+    if (parent.isMinimized()) parent.restore();
+    parent.show();
+  }
+  const opts = {
+    type: "error",
+    title: "Backup in progress",
+    message: "A backup is being written right now.",
+    detail:
+      "If you exit now, this backup will be lost. Please wait — it usually takes a few seconds, and the app can close by itself when it is done.",
+    buttons: ["Wait, then close", "Keep the app open", "Exit now — lose this backup"],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true,
+  };
+  void (parent ? dialog.showMessageBox(parent, opts) : dialog.showMessageBox(opts)).then(({ response }) => {
+    exitAsking = false;
+    if (response === 2) {
+      exitAllowed = true;
+      app.quit();
+    } else if (response === 0) {
+      exitWhenBackupDone = true;
+      void runtime.whenBackupDone().then(() => {
+        exitAllowed = true;
+        app.quit();
+      });
+    }
+  });
+  return true;
+}
+
+app.on("before-quit", (e) => {
+  if (holdExitForBackup(e)) return;
   diag?.stop("quit");
   try {
     globalShortcut.unregisterAll();

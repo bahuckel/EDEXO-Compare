@@ -102,6 +102,14 @@ miss log. That log is the reason recall went from 93.2 % to 97.1 %: it is read, 
 **On a second screen.** Open `?screen=triage` on a phone or tablet for a read-only triage view that
 updates as you jump.
 
+**Backups.** The launcher's Backups tile zips your journals, the app's own data (settings, on-foot
+scans, surface marks, the miss log) and your exomastery and codex downloads — when you leave the game,
+on a timer, or when you ask. Every backup is complete; unchanged files are copied from the one before,
+so it stays quick. Choose a folder on another drive, a USB drive or a synced folder: the launcher warns
+in red when the folder shares a partition with your journals, and in yellow when it shares the physical
+drive. A restore never overwrites: app data goes back at the next start with the replaced files set
+aside, and journals go into a folder you pick.
+
 ## Where the predictions come from
 
 Two sources, and the app tells them apart.

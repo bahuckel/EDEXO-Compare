@@ -39,6 +39,9 @@ import {
 import { scanJournalsForStatistics } from "./statisticsScan.js";
 import { createHttpServer, getLanIPv4s } from "./httpServer.js";
 import { describeUserDataMigration, migrateLegacyUserData } from "./userDataMigration.js";
+import { applyPendingRestore } from "./backup.js";
+import { createBackupService } from "./backupService.js";
+import { APP_VERSION } from "./appVersion.js";
 import {
   edsmCredentialsStatus,
   forgetEdsmCredentials,
@@ -133,6 +136,9 @@ export type { CliOptions } from "./cliOptions.js";
 export type EdexoRuntime = {
   ready: Promise<void>;
   shutdown: () => Promise<void>;
+  /** A backup is being written: Electron asks before an exit throws it away (backupService.ts). */
+  backupRunning: () => boolean;
+  whenBackupDone: () => Promise<void>;
   getLocalBaseUrl: () => string;
   openMainAppInBrowser: () => void;
 };
@@ -169,6 +175,13 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
 
   // Before anything reads user data: fold in whatever the old Electron directory still holds (§47).
   for (const line of describeUserDataMigration(migrateLegacyUserData())) console.log(line);
+  // A restore chosen in the launcher is staged, not applied, while the app runs: it lands here, at the
+  // next start, before anything below reads the app data (backup.ts).
+  try {
+    for (const line of applyPendingRestore(path.dirname(resolveUserSettingsJsonPath()))) console.log(line);
+  } catch (e) {
+    console.error("restore: could not apply the staged restore:", e);
+  }
 
   const projectRoot = getProjectRoot();
   const updateChecker = createUpdateChecker();
@@ -811,6 +824,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         const footFix = statusRaw ? parseStatusJsonFootFix(statusRaw) : null;
         ingestExoOrganicJournalLine(store, line, footFix, projectRoot, getCachedSpeciesDatabase());
         sessionLog.record(line, store, getCachedPrices());
+        backupService.onJournalLine(typeof line.event === "string" ? line.event : undefined);
         push();
       } catch (e) {
         console.error("Journal live line failed (skipped line):", e);
@@ -1136,12 +1150,34 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     }
   }
 
+  /** The launcher's Exomastery downloads; the backups put the same two files in every zip. */
+  const exportOwn = (kind: "exomastery" | "codex") => {
+    const commander = { name: store.commanderName, fid: commanderIdHash(store.commanderFid) };
+    if (kind === "codex") {
+      const keys = new Set([...store.codexRegionLogged, ...ownCodexBackupKeys()]);
+      return { fileName: exportFileName("codex", commander.name), body: buildCodexExport(keys, commander) };
+    }
+    return {
+      fileName: exportFileName("exomastery", commander.name),
+      body: buildExomasteryExport(ownFootEntriesWithBackups(getProjectRoot()), commander),
+    };
+  };
+
+  const backupService = createBackupService({
+    appDataDir: path.dirname(userSettingsPath),
+    getJournalDir: () => journalDir,
+    getCommander: () => store.commanderName,
+    appVersion: APP_VERSION,
+    exports: () => [exportOwn("exomastery"), exportOwn("codex")],
+  });
+
   const {
     server,
     broadcast: broadcastFn,
     broadcastExoLive,
     listening,
   } = createHttpServer({
+    backup: backupService,
     port,
     bindHost,
     lanKey,
@@ -1264,17 +1300,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       Anything that memoises a file under `data/` belongs on this list. There is no mechanism that
       enforces that, which is why it is written down.
     */
-    exportExomastery: (kind) => {
-      const commander = { name: store.commanderName, fid: commanderIdHash(store.commanderFid) };
-      if (kind === "codex") {
-        const keys = new Set([...store.codexRegionLogged, ...ownCodexBackupKeys()]);
-        return { fileName: exportFileName("codex", commander.name), body: buildCodexExport(keys, commander) };
-      }
-      return {
-        fileName: exportFileName("exomastery", commander.name),
-        body: buildExomasteryExport(ownFootEntriesWithBackups(getProjectRoot()), commander),
-      };
-    },
+    exportExomastery: exportOwn,
     reloadExomastery: () => {
       clearSharedExomasteryCache();
       retargetSpeciesDataWatcherIfNeeded();
@@ -1603,6 +1629,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const shutdown = async () => {
     // The foot catalog writes at most once a second; closing must not drop the last second.
     flushFootScannedCatalog();
+    backupService.dispose();
     if (footStatusPollTimer != null) {
       clearInterval(footStatusPollTimer);
       footStatusPollTimer = null;
@@ -1623,6 +1650,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     shutdown,
     getLocalBaseUrl: () => `http://127.0.0.1:${port}`,
     openMainAppInBrowser: () => openUrlInBrowser(`http://127.0.0.1:${port}/`),
+    backupRunning: () => backupService.isRunning(),
+    whenBackupDone: () => backupService.whenIdle(),
   };
 }
 

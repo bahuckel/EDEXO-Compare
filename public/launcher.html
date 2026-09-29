@@ -630,6 +630,16 @@
       .btn-split-menu button[aria-current="true"] {
         border-left-color: var(--hud);
       }
+      /* Import Spansh export when a newer export is on disk (the arrow glows too; owner, 2026-09-29). */
+      .btn-split-menu button.btn--attn {
+        border-left-color: #ffd23f;
+      }
+      .btn-split-menu button.btn--attn strong::after {
+        content: " · newer export on disk";
+        color: #ffd23f;
+        letter-spacing: 0.04em;
+        text-transform: none;
+      }
       .btn-split-menu button[aria-current="true"] strong::after {
         content: " ◆";
         color: var(--hud);
@@ -1253,6 +1263,12 @@
         background: rgba(255, 210, 63, 0.08);
         clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
       }
+      /* "display: flex" above would otherwise beat the hidden attribute: the Import panel's
+         "newer export" notice and the Backups "restore is ready" row showed even when hidden. */
+      .import-newer[hidden],
+      .backup-state[hidden] {
+        display: none;
+      }
       .btn-mini {
         flex: 0 0 auto;
         padding: 5px 10px;
@@ -1266,6 +1282,105 @@
         border: 0;
         clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
         cursor: pointer;
+      }
+      /* Backups (owner, 2026-09-28): the list of zips in the Backups panel. */
+      .backup-state {
+        margin: 4px 0 10px;
+        font-size: 0.8rem;
+        color: var(--hud-text);
+      }
+      .backup-state.err {
+        color: var(--ed-bad);
+      }
+      .backup-state.busy {
+        color: #ffd23f;
+      }
+      .backup-folder {
+        display: flex;
+        gap: 6px;
+        margin: 6px 0;
+      }
+      .backup-folder input {
+        flex: 1;
+        min-width: 0;
+      }
+      /* Where the backups go, against where the originals are (owner, 2026-09-29). */
+      .backup-risk {
+        margin: 8px 0 4px;
+        padding: 8px 10px;
+        font-size: 0.78rem;
+        line-height: 1.45;
+        clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+      }
+      .backup-risk[hidden] {
+        display: none;
+      }
+      .backup-risk--red {
+        color: #ffd9d6;
+        border: 1px solid rgba(255, 77, 64, 0.8);
+        background: rgba(255, 60, 48, 0.2);
+      }
+      .backup-risk--yellow {
+        color: #ffd23f;
+        border: 1px solid rgba(255, 210, 63, 0.55);
+        background: rgba(255, 210, 63, 0.1);
+      }
+      .backup-risk--ok {
+        color: var(--ed-ok);
+        border: 1px solid rgba(90, 220, 120, 0.4);
+        background: rgba(90, 220, 120, 0.07);
+      }
+      .backup-risk strong {
+        font-weight: 700;
+      }
+      /* The Backups tile's line in the colour of the folder warning (owner, 2026-09-29). */
+      #backupSub.backup-sub--red {
+        color: var(--ed-bad);
+        opacity: 1;
+      }
+      #backupSub.backup-sub--yellow {
+        color: #ffd23f;
+        opacity: 1;
+      }
+      .backup-list {
+        max-height: 220px;
+        margin: 8px 0 0;
+        padding: 0;
+        overflow-y: auto;
+        list-style: none;
+        border: 1px solid var(--hud-dim);
+      }
+      .backup-list li {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2px 8px;
+        align-items: center;
+        padding: 6px 8px;
+        font-size: 0.74rem;
+        color: var(--hud-text);
+        border-bottom: 1px solid var(--hud-dim);
+      }
+      .backup-list li:last-child {
+        border-bottom: 0;
+      }
+      .backup-list li > span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+      .backup-list li em {
+        grid-column: 1;
+        font-style: normal;
+        opacity: 0.7;
+      }
+      .backup-list li .backup-actions {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        display: flex;
+        gap: 4px;
+      }
+      .backup-list .btn-mini {
+        padding: 4px 8px;
+        font-size: 0.64rem;
       }
       /* Show / Hide: a two-way switch, the current state lit (owner, 2026-09-28). */
       .hud-vis {
@@ -1668,21 +1783,30 @@
                 <strong>Open shared folder</strong>
                 <span>Drop other commanders' files here — or your own backup after a reinstall</span>
               </button>
+              <!-- Moved here from its own launcher button (owner, 2026-09-29). -->
+              <button type="button" role="menuitem" data-exo-action="import-dump" id="btnImportDump">
+                <strong>Import Spansh export</strong>
+                <span>Feed a galaxy_bio.jsonl.gz into the corpus — validate first, then apply</span>
+              </button>
             </div>
           </div>
-          <button type="button" class="btn secondary" id="btnNetworkSettings">
+          <!-- Backups (owner, 2026-09-28): journals, the app's data and the two exports, as zips. -->
+          <button type="button" class="btn secondary" id="btnBackups">
+            <span class="glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 7h16v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" /><path d="M3 4h18v3H3zM10 11h4" /></svg>
+            </span>
+            <span class="btn-lines">
+              <strong>Backups</strong>
+              <span class="subline" id="backupSub">Journals, your data and codex — kept as zips</span>
+            </span>
+          </button>
+          <button type="button" class="btn secondary btn--wide" id="btnNetworkSettings">
             <span class="glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" /></svg>
             </span>
             <span class="btn-lines">
               <strong>Network settings</strong>
               <span class="subline">This computer, LAN and public URLs — visibility and toggles</span>
-            </span>
-          </button>
-          <button type="button" class="btn secondary btn--wide" id="btnImportDump">
-            <span class="btn-lines">
-              <strong>Import Spansh export</strong>
-              <span class="subline">Feed a galaxy_bio.jsonl.gz into the corpus — validate first, then apply</span>
             </span>
           </button>
         </div>
@@ -1957,6 +2081,108 @@
           <button type="button" class="btn secondary" id="overlayPickClose">
             <span class="btn-lines"><strong>Close</strong></span>
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Backups (owner, 2026-09-28; src/server/backup.ts). Settings apply as they change. -->
+    <div class="modal-bg" id="backupModal">
+      <div class="modal">
+        <div class="modal-in">
+          <h3>Backups</h3>
+          <p class="hint" style="margin-top: 0">
+            Your journals, this app's data (settings, on-foot scans, surface marks, statistics, the miss
+            log) and your exomastery and codex downloads, in one zip each time.
+          </p>
+          <div class="backup-state" id="backupState">…</div>
+          <div class="row">
+            <button type="button" class="btn secondary" id="backupOpenFolder"><span class="btn-lines"><strong>Open folder</strong></span></button>
+            <button type="button" class="btn" id="backupNow"><span class="btn-lines"><strong>Back up now</strong></span></button>
+          </div>
+          <div class="backup-state" id="backupMsg" hidden></div>
+          <div class="import-newer" id="backupRestartRow" hidden>
+            <span>A restore is ready. It is applied when the app starts again.</span>
+            <button type="button" class="btn-mini" id="backupRestart">Restart now</button>
+          </div>
+
+          <div class="modal-section">
+            <h4>When</h4>
+            <div class="hud-set-row">
+              <label><input type="checkbox" id="backupOnLeave" /> When I leave the game</label>
+            </div>
+            <div class="import-newer" id="backupNeedsFolder" hidden>
+              <span>
+                <strong>Confirm a folder first.</strong> Nothing is backed up on its own until you do. Any
+                folder works — the one below, another drive, or a USB drive.
+              </span>
+              <button type="button" class="btn-mini" id="backupUseFolder">Use this folder</button>
+            </div>
+            <div class="hud-set-row">
+              <label for="backupEvery">And while the app runs</label>
+              <select id="backupEvery">
+                <option value="0">Not on a timer</option>
+                <option value="6">Every 6 hours</option>
+                <option value="12">Every 12 hours</option>
+                <option value="24">Every 24 hours</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-section">
+            <h4>Where</h4>
+            <div class="backup-folder hud-set-row">
+              <input type="text" id="backupFolder" autocomplete="off" aria-label="Backup folder" />
+              <button type="button" class="btn-mini" id="backupBrowse">Browse…</button>
+            </div>
+            <div class="backup-risk" id="backupRisk" role="status" hidden></div>
+            <p class="hint">
+              A folder on another drive, or one OneDrive or Dropbox keeps, survives a failed disk or a
+              reinstall. The app data folder itself does not.
+            </p>
+            <p class="hint">
+              <strong>USB drives work</strong>, and are the best choice when the computer has only one
+              drive (most laptops). If it is not plugged in when a backup is due, the launcher says so,
+              and the next backup after you plug it in catches up.
+            </p>
+            <div class="hud-set-row">
+              <label for="backupKeep">Keep at least</label>
+              <span><input type="number" id="backupKeep" min="1" max="100" step="1" /> backups</span>
+            </div>
+            <p class="hint">
+              Every backup holds everything, so keeping 5 means 5 complete copies; the oldest goes when a
+              new one is made. Files that have not changed are copied from the backup before instead of
+              compressed again, which keeps it quick.
+            </p>
+          </div>
+
+          <div class="modal-section">
+            <h4>Also include</h4>
+            <div class="hud-set-row">
+              <label><input type="checkbox" id="backupKeys" /> Your EDSM and LAN keys</label>
+            </div>
+            <div class="hud-set-row">
+              <label><input type="checkbox" id="backupBio" /> The bio-bodies file (about 0.5 GB)</label>
+            </div>
+            <p class="hint">
+              Keys are off by default: a backup gets copied around, and a key in it goes with it. The
+              bio-bodies file comes back by importing the Spansh export again.
+            </p>
+          </div>
+
+          <div class="modal-section">
+            <h4>Restore</h4>
+            <p class="hint" style="margin-top: 6px">
+              <strong>App data</strong> is put back when the app next starts; every file it replaces is
+              kept in a <em>before-restore</em> folder. <strong>Journals</strong> go into a folder you
+              choose, and never replace a file that is already there.
+            </p>
+            <ul class="backup-list" id="backupList"></ul>
+          </div>
+
+          <div class="err-msg" id="backupErr" style="display: none"></div>
+          <div class="row">
+            <button type="button" class="btn secondary" id="backupClose"><span class="btn-lines"><strong>Close</strong></span></button>
+          </div>
         </div>
       </div>
     </div>
@@ -3208,6 +3434,7 @@
           else if (act === "export-exomastery") exomasteryDownload("exomastery");
           else if (act === "export-codex") exomasteryDownload("codex");
           else if (act === "open-shared") openSharedFolder();
+          // "import-dump" opens its panel from its own listener (the import section below).
         });
         document.addEventListener("click", function (ev) {
           if (!exomasteryMenu.hidden && !exomasterySplit.contains(ev.target)) closeExomasteryMenu();
@@ -3842,6 +4069,330 @@
           });
         }
 
+        /* ------------------------------------------------------------------------------ backups */
+        var backupModal = document.getElementById("backupModal");
+        var btnBackups = document.getElementById("btnBackups");
+        var backupSub = document.getElementById("backupSub");
+        var backupState = document.getElementById("backupState");
+        var backupErr = document.getElementById("backupErr");
+        var backupList = document.getElementById("backupList");
+        var backupFields = {
+          onLeaveGame: document.getElementById("backupOnLeave"),
+          everyHours: document.getElementById("backupEvery"),
+          folder: document.getElementById("backupFolder"),
+          keep: document.getElementById("backupKeep"),
+          includeKeys: document.getElementById("backupKeys"),
+          includeBioBodies: document.getElementById("backupBio"),
+        };
+        var backupPoll = null;
+        /** The last folder check ({level, against, …}), for the tile's line. */
+        var backupRiskLast = null;
+        /** From the last status: a folder was chosen (then saving keeps it). */
+        var backupFolderChosen = false;
+
+        function backupMb(bytes) {
+          return bytes >= 1e9 ? (bytes / 1e9).toFixed(2) + " GB" : (bytes / 1e6).toFixed(1) + " MB";
+        }
+        function backupWhen(iso) {
+          var d = new Date(iso);
+          var mins = Math.round((Date.now() - d.getTime()) / 60000);
+          var ago =
+            mins < 1 ? "just now" : mins < 60 ? mins + " min ago" : mins < 2880 ? Math.round(mins / 60) + " h ago" : Math.round(mins / 1440) + " days ago";
+          return d.toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " (" + ago + ")";
+        }
+        /** The outcome of a restore: its own line, so the status refresh does not overwrite it. */
+        function backupNote(msg) {
+          var el = document.getElementById("backupMsg");
+          if (!el) return;
+          el.textContent = msg || "";
+          el.hidden = !msg;
+        }
+        function backupShowErr(msg) {
+          if (!backupErr) return;
+          backupErr.textContent = msg || "";
+          backupErr.style.display = msg ? "" : "none";
+        }
+        function backupJson(path, body) {
+          return fetch(apiUrl(path), body === undefined ? undefined : {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }).then(function (r) {
+            return r.json().then(function (j) {
+              if (!r.ok || !j || j.ok === false) throw new Error((j && j.error) || r.statusText);
+              return j;
+            });
+          });
+        }
+
+        /** The tile's line and, when the panel is open, its state and fields. */
+        function backupRefresh(fillFields) {
+          return backupJson("/api/backup/status")
+            .then(function (s) {
+              var line;
+              var tone = "";
+              var risk = backupRiskLast && backupRiskLast.folder === s.folder ? backupRiskLast : null;
+              var what = risk && risk.against === "app data" ? "the app's data" : "your journals";
+              if (s.running) { line = "Backing up… — please don't close the app"; tone = "yellow"; }
+              else if (s.lastError) { line = "Last backup failed — open for details"; tone = "red"; }
+              else if (!s.folderChosen) { line = "Choose a backup folder to start automatic backups"; tone = "yellow"; }
+              else if (risk && risk.level === "same-volume") { line = "Backups share a drive with " + what + " — a USB drive is safer"; tone = "red"; }
+              else if (risk && risk.level === "same-disk") { line = "Same physical drive as " + what + " — a drive failure loses both"; tone = "yellow"; }
+              else if (s.last) line = "Last: " + backupWhen(s.last.at) + " · " + backupMb(s.last.bytes);
+              else line = "Not backed up yet — journals, your data and codex";
+              if (backupSub) {
+                backupSub.textContent = line;
+                backupSub.className = "subline" + (tone ? " backup-sub--" + tone : "");
+              }
+              backupFolderChosen = !!s.folderChosen;
+              var needs = document.getElementById("backupNeedsFolder");
+              if (needs) needs.hidden = !!s.folderChosen;
+              if (!risk || Date.now() - (backupRiskLast.at || 0) > 60000) backupCheckFolder(s.folder, true);
+              if (backupState) {
+                backupState.className = "backup-state" + (s.running ? " busy" : s.lastError ? " err" : "");
+                var parts = [];
+                if (s.running) parts.push("Backing up (" + (s.reason || "now") + ")…");
+                else if (s.last) parts.push("Last backup " + backupWhen(s.last.at) + " · " + backupMb(s.last.bytes) + " · " + (s.last.kind === "full" ? "everything" : "new journals and your data"));
+                else parts.push("No backup yet.");
+                if (s.pendingAt) parts.push("The game has closed: a backup starts in about a minute.");
+                if (!s.folderChosen) parts.push("Automatic backups start once you choose a folder.");
+                if (s.lastError) parts.push("Problem: " + s.lastError.message);
+                parts.push(s.count + " in " + s.folder);
+                backupState.textContent = parts.join("  ·  ");
+              }
+              var restartRow = document.getElementById("backupRestartRow");
+              if (restartRow) restartRow.hidden = !s.restorePending;
+              var nowBtn = document.getElementById("backupNow");
+              if (nowBtn) nowBtn.disabled = !!s.running;
+              if (fillFields) {
+                backupFields.onLeaveGame.checked = !!s.settings.onLeaveGame;
+                backupFields.everyHours.value = String(s.settings.everyHours);
+                backupFields.folder.value = s.folder;
+                backupFields.keep.value = String(s.settings.keep);
+                backupFields.includeKeys.checked = !!s.settings.includeKeys;
+                backupFields.includeBioBodies.checked = !!s.settings.includeBioBodies;
+                backupCheckFolder(s.folder);
+              }
+              return s;
+            })
+            .catch(function () {
+              if (backupSub) backupSub.textContent = "Journals, your data and codex — kept as zips";
+            });
+        }
+
+        function backupLoadList() {
+          if (!backupList) return;
+          backupJson("/api/backup/list")
+            .then(function (j) {
+              backupList.innerHTML = "";
+              if (!j.backups.length) {
+                var li = document.createElement("li");
+                li.textContent = "No backups in this folder yet.";
+                backupList.appendChild(li);
+                return;
+              }
+              j.backups.forEach(function (b) {
+                var li = document.createElement("li");
+                var name = document.createElement("span");
+                name.textContent = backupWhen(b.created) + " · " + backupMb(b.bytes);
+                var meta = document.createElement("em");
+                meta.textContent =
+                  (b.kind === "full" ? "All " + b.journals + " journal files" : b.journals + (b.journals === 1 ? " new journal file" : " new journal files") + " (needs the backup before it)") +
+                  ", " + b.appDataFiles + " app files" + (b.errors ? " · " + b.errors + " problem(s)" : "") + " — " + b.file;
+                var actions = document.createElement("span");
+                actions.className = "backup-actions";
+                var ra = document.createElement("button");
+                ra.type = "button";
+                ra.className = "btn-mini";
+                ra.textContent = "App data";
+                ra.title = "Put this backup's app data back when the app next starts";
+                ra.addEventListener("click", function () { backupRestoreAppData(b.file); });
+                var rj = document.createElement("button");
+                rj.type = "button";
+                rj.className = "btn-mini";
+                rj.textContent = "Journals";
+                rj.title = "Write this backup's journals into a folder you choose";
+                rj.addEventListener("click", function () { backupRestoreJournals(b.file); });
+                actions.appendChild(ra);
+                actions.appendChild(rj);
+                li.appendChild(name);
+                li.appendChild(actions);
+                li.appendChild(meta);
+                backupList.appendChild(li);
+              });
+            })
+            .catch(function (e) { backupShowErr("Could not list the backups: " + (e && e.message ? e.message : e)); });
+        }
+
+        /** Red: same partition as the journals or app data. Yellow: same physical drive. */
+        function backupCheckFolder(folder, forTile) {
+          var box = document.getElementById("backupRisk");
+          if (!box) return;
+          var q = folder ? "?folder=" + encodeURIComponent(folder) : "";
+          backupJson("/api/backup/folder-check" + q)
+            .then(function (r) {
+              var had = backupRiskLast && backupRiskLast.folder === r.folder && backupRiskLast.level === r.level;
+              r.at = Date.now();
+              backupRiskLast = r;
+              if (forTile && !had) backupRefresh(false);
+              var what = r.against === "journals" ? "your journals" : "the app's data";
+              var here = r.folderVolume ? " (" + r.folderVolume + ")" : "";
+              var there = r.dataVolume ? " (" + r.dataVolume + ")" : "";
+              var usb = r.usb ? " It is on a USB drive." : "";
+              box.hidden = false;
+              if (r.level === "same-volume") {
+                box.className = "backup-risk backup-risk--red";
+                box.innerHTML = "";
+                var b = document.createElement("strong");
+                b.textContent = "Same partition as " + what + there + ". ";
+                box.appendChild(b);
+                box.appendChild(document.createTextNode(
+                  "Backups here still bring back deleted or damaged files, but if the drive fails, is wiped or Windows is " +
+                  "reinstalled, they are lost together with the originals. Another drive, a USB drive or a synced folder is safer. " +
+                  "If this is the only drive you have, backing up here is still better than no backup."
+                ));
+              } else if (r.level === "same-disk") {
+                box.className = "backup-risk backup-risk--yellow";
+                box.innerHTML = "";
+                var y = document.createElement("strong");
+                y.textContent = "Same physical drive. ";
+                box.appendChild(y);
+                box.appendChild(document.createTextNode(
+                  "This folder" + here + " is on another partition of the drive that holds " + what + there + ". It survives a wiped " +
+                  "partition, but if the drive itself fails, the data and its backups are lost for good. Another drive or a USB drive is safer."
+                ));
+              } else if (r.level === "separate") {
+                box.className = "backup-risk backup-risk--ok";
+                box.textContent = r.network
+                  ? "A network folder: separate from your journals and the app's data."
+                  : "A separate drive from your journals and the app's data." + usb;
+              } else {
+                box.hidden = true;
+              }
+            })
+            .catch(function () { box.hidden = true; });
+        }
+
+        /**
+         * Save the panel. The folder counts as chosen only when the commander touched it (typed, Browse…,
+         * Use this folder) or had chosen one before — ticking another box must not confirm the suggestion.
+         */
+        function backupSave(confirmFolder) {
+          backupShowErr("");
+          var typed = backupFields.folder.value.trim();
+          return backupJson("/api/backup/settings", {
+            onLeaveGame: backupFields.onLeaveGame.checked,
+            everyHours: Number(backupFields.everyHours.value),
+            folder: typed && (confirmFolder === true || backupFolderChosen) ? typed : null,
+            keep: Number(backupFields.keep.value),
+            includeKeys: backupFields.includeKeys.checked,
+            includeBioBodies: backupFields.includeBioBodies.checked,
+          })
+            .then(function () { return backupRefresh(true); })
+            .then(backupLoadList)
+            .catch(function (e) { backupShowErr("Could not save: " + (e && e.message ? e.message : e)); });
+        }
+
+        function backupPickFolder(start) {
+          var bridge = window.edexoElectron;
+          if (bridge && typeof bridge.pickFolder === "function") {
+            return bridge.pickFolder({ defaultPath: start || "" }).then(function (r) { return r && r.path ? r.path : null; });
+          }
+          var typed = window.prompt("Folder (full path):", start || "");
+          return Promise.resolve(typed && typed.trim() ? typed.trim() : null);
+        }
+
+        function backupRestoreAppData(file) {
+          if (!window.confirm(
+            "Restore your app data from " + file + "?\n\nIt is put back the next time the app starts. Every file it replaces is moved into a before-restore folder, not deleted."
+          )) return;
+          backupShowErr("");
+          backupJson("/api/backup/restore", { file: file, what: "app-data" })
+            .then(function (r) {
+              backupNote(r.staged + " files are ready. Restart the app to finish the restore.");
+              return backupRefresh(false);
+            })
+            .catch(function (e) { backupShowErr("Could not restore: " + (e && e.message ? e.message : e)); });
+        }
+
+        function backupRestoreJournals(file) {
+          backupPickFolder("").then(function (target) {
+            if (!target) return;
+            var send = function (allowGameFolder) {
+              return backupJson("/api/backup/restore", { file: file, what: "journals", target: target, allowGameFolder: allowGameFolder });
+            };
+            backupShowErr("");
+            send(false)
+              .catch(function (e) {
+                var msg = e && e.message ? e.message : String(e);
+                if (/second confirmation/.test(msg) && window.confirm(
+                  "That is the game's own journal folder.\n\nFiles already there are never replaced — only missing journals are written. Restore into it anyway?"
+                )) return send(true);
+                throw e;
+              })
+              .then(function (r) {
+                if (!r) return;
+                backupNote(
+                  r.written + " journal files written to " + r.target + (r.skippedExisting ? "; " + r.skippedExisting + " were already there and were left alone." : "."),
+                );
+              })
+              .catch(function (e) { backupShowErr("Could not restore the journals: " + (e && e.message ? e.message : e)); });
+          });
+        }
+
+        if (btnBackups && backupModal) {
+          btnBackups.addEventListener("click", function () {
+            backupShowErr("");
+            backupNote("");
+            backupModal.classList.add("on");
+            backupRefresh(true);
+            backupLoadList();
+            if (backupPoll) clearInterval(backupPoll);
+            backupPoll = setInterval(function () { backupRefresh(false); }, 3000);
+          });
+          var closeBackups = function () {
+            backupModal.classList.remove("on");
+            if (backupPoll) clearInterval(backupPoll);
+            backupPoll = null;
+          };
+          document.getElementById("backupClose").addEventListener("click", closeBackups);
+          backupModal.addEventListener("click", function (e) { if (e.target === backupModal) closeBackups(); });
+          ["onLeaveGame", "everyHours", "keep", "includeKeys", "includeBioBodies"].forEach(function (k) {
+            backupFields[k].addEventListener("change", function () { backupSave(false); });
+          });
+          backupFields.folder.addEventListener("change", function () { backupSave(true); });
+          // Keeping the suggested folder is a choice too (one-drive PCs): confirm it as it stands.
+          document.getElementById("backupUseFolder").addEventListener("click", function () {
+            if (!backupFields.folder.value.trim()) return;
+            backupSave(true);
+          });
+          document.getElementById("backupBrowse").addEventListener("click", function () {
+            backupPickFolder(backupFields.folder.value).then(function (p) {
+              if (!p) return;
+              backupFields.folder.value = p;
+              backupSave(true);
+            });
+          });
+          document.getElementById("backupNow").addEventListener("click", function () {
+            backupShowErr("");
+            var p = backupJson("/api/backup/run", {});
+            setTimeout(function () { backupRefresh(false); }, 150);
+            p.then(function () { return backupRefresh(false); })
+              .then(backupLoadList)
+              .catch(function (e) { backupShowErr("Backup failed: " + (e && e.message ? e.message : e)); backupRefresh(false); });
+          });
+          document.getElementById("backupOpenFolder").addEventListener("click", function () {
+            backupJson("/api/backup/open-folder", {}).catch(function (e) { backupShowErr(String(e && e.message ? e.message : e)); });
+          });
+          document.getElementById("backupRestart").addEventListener("click", function () {
+            var bridge = window.edexoElectron;
+            if (bridge && typeof bridge.relaunch === "function") bridge.relaunch();
+            else backupShowErr("Close the app and start it again to finish the restore.");
+          });
+        }
+        backupRefresh(false);
+        setInterval(function () { if (!backupModal || !backupModal.classList.contains("on")) backupRefresh(false); }, 60000);
+
         /* ------------------------------------------------------------------ import Spansh export */
         var importModal = document.getElementById("importModal");
         var btnImportDump = document.getElementById("btnImportDump");
@@ -3862,6 +4413,12 @@
           var show = !!(st && st.newerOnDisk && !st.running);
           if (importNewer) importNewer.hidden = !show;
           if (btnImportDump) btnImportDump.classList.toggle("btn--attn", show);
+          // The item sits in a closed menu: the menu's arrow carries the glow where it can be seen.
+          var exoArrow = document.getElementById("btnExomasteryMenu");
+          if (exoArrow) {
+            exoArrow.classList.toggle("btn--attn", show);
+            exoArrow.title = show ? "A newer Spansh export is on disk — Import Spansh export" : "";
+          }
           if (show && importNewerText) {
             var when = st.fileMtimeIso ? new Date(st.fileMtimeIso).toLocaleString() : "";
             importNewerText.textContent = "Newer export on disk" + (when ? " (" + when + ")" : "") + " — last imported " + (st.lastImport && st.lastImport.finishedAt ? new Date(st.lastImport.finishedAt).toLocaleString() : "before") + ".";

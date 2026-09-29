@@ -1,4 +1,6 @@
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -496,6 +498,88 @@ test("galaxy 3D: the plan chains the next targets, and a skipped stop leaves it"
     .poll(() => page.evaluate(() => (window as unknown as { __galaxy: { marker: (l: string) => unknown } }).__galaxy.marker("plan")))
     .toBeNull();
   expect(errors).toEqual([]);
+});
+
+test("launcher: Import Spansh export lives in the Exomastery menu", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.addInitScript(() => localStorage.setItem("edexo.launcher.wizardDone", "1"));
+  await page.goto("/launcher.html");
+  await page.waitForTimeout(1500); // the tiles fade in
+  await page.screenshot({ path: `${OUT}/launcher-no-wizard.png`, fullPage: true });
+  // Its own launcher button is gone (owner, 2026-09-29) …
+  await expect(page.locator(".btn#btnImportDump")).toHaveCount(0);
+  // … and the menu item opens the same panel.
+  await page.locator("#btnExomasteryMenu").click();
+  const item = page.locator("#exomasteryMenu").getByRole("menuitem", { name: /Import Spansh export/ });
+  await expect(item).toBeVisible();
+  await page.locator("#exomasteryMenu").screenshot({ path: `${OUT}/launcher-exomastery-menu.png` });
+  await item.click();
+  await expect(page.locator("#importModal")).toHaveClass(/on/);
+  await expect(page.locator("#exomasteryMenu")).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test("launcher: Backups backs up into the chosen folder and lists it for restore", async ({ page, request }) => {
+  const errors = watchErrors(page);
+  // Never the default (the commander's Documents): a temporary folder, set before anything runs.
+  const folder = mkdtempSync(path.join(tmpdir(), "edexo-e2e-backups-"));
+  try {
+    await page.addInitScript(() => localStorage.setItem("edexo.launcher.wizardDone", "1"));
+    // A fresh profile has no folder chosen: the tile asks for one before anything runs on its own.
+    await page.goto("/launcher.html");
+    await expect(page.locator("#backupSub")).toHaveText("Choose a backup folder to start automatic backups");
+    await expect(page.locator("#backupSub")).toHaveClass(/backup-sub--yellow/);
+
+    await page.locator("#btnBackups").click();
+    await expect(page.locator("#backupModal")).toHaveClass(/on/);
+    await expect(page.locator("#backupNeedsFolder")).toBeVisible();
+    const status = async () => (await (await request.get("/api/backup/status")).json()) as { folderChosen: boolean; folder: string };
+    // Another setting saved does not quietly confirm the suggested folder.
+    await page.locator("#backupKeys").check();
+    await expect.poll(async () => (await status()).folderChosen).toBe(false);
+    await page.locator("#backupKeys").uncheck();
+    // "Use this folder" confirms whatever the field holds — a one-drive PC can keep a same-drive folder.
+    await page.locator("#backupFolder").fill(folder);
+    await page.locator("#backupUseFolder").click();
+    await expect.poll(async () => (await status()).folderChosen).toBe(true);
+    expect((await status()).folder).toBe(folder);
+    await expect(page.locator("#backupNeedsFolder")).toBeHidden();
+    // Chosen, but in the temp folder beside the test's app data: the tile turns red without opening the panel.
+    await expect(page.locator("#backupSub")).toHaveText(/Backups share a drive with the app's data/, { timeout: 30_000 });
+    await expect(page.locator("#backupSub")).toHaveClass(/backup-sub--red/);
+    await expect(page.locator("#backupFolder")).toHaveValue(folder);
+    await expect(page.locator("#backupOnLeave")).toBeChecked();
+    await expect(page.locator("#backupRestartRow")).toBeHidden(); // no restore staged in a fresh profile
+    // The temp folder shares a partition with the test's app data (also in the temp folder): red.
+    await expect(page.locator("#backupRisk")).toHaveClass(/backup-risk--red/, { timeout: 30_000 });
+    await expect(page.locator("#backupRisk")).toContainText("Same partition as the app's data");
+    await expect(page.locator("#backupRisk")).toContainText("still better than no backup");
+
+    await page.locator("#backupNow").click();
+    await expect(page.locator("#backupState")).toContainText("Last backup", { timeout: 60_000 });
+    await expect(page.locator("#backupList li")).toHaveCount(1);
+    await expect(page.locator("#backupList li").first()).toContainText(/All \d+ journal files/);
+    const zips = readdirSync(folder).filter((f) => f.endsWith(".zip"));
+    expect(zips).toHaveLength(1);
+    expect(zips[0]).toMatch(/^EDExoCompare-backup-.+-\d{4}-\d{2}-\d{2}_\d{4}\.zip$/);
+
+    // A setting saved from the panel reaches the server.
+    await page.locator("#backupKeep").fill("4");
+    await page.locator("#backupKeep").dispatchEvent("change");
+    await expect.poll(async () => (await (await request.get("/api/backup/status")).json()).settings.keep).toBe(4);
+    await page.locator("#backupModal .modal").first().screenshot({ path: `${OUT}/launcher-backups.png` });
+
+    // Journals restored into another folder, through the panel.
+    const target = path.join(folder, "restored");
+    page.once("dialog", (d) => void d.accept(target));
+    await page.locator("#backupList li").first().getByRole("button", { name: "Journals" }).click();
+    await expect(page.locator("#backupMsg")).toContainText("journal files written", { timeout: 30_000 });
+    expect(readdirSync(target).some((f) => /^Journal\..+\.log$/.test(f))).toBe(true);
+    expect(errors).toEqual([]);
+  } finally {
+    await request.post("/api/backup/settings", { data: { folder: null, keep: 10 } });
+    if (existsSync(folder)) rmSync(folder, { recursive: true, force: true });
+  }
 });
 
 test("phone hud: chips and the portrait layout", async ({ page }) => {

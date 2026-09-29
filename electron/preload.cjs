@@ -67,6 +67,15 @@ contextBridge.exposeInMainWorld("edexoElectron", {
    * @returns {Promise<{ saved: boolean; path?: string; error?: string }>}
    */
   saveTextFile: (opts) => ipcRenderer.invoke("edexo:save-text-file", opts),
+  /**
+   * Choose a folder (the backups' folder, where to restore journals). Only the launcher may call it.
+   *
+   * @param {{ defaultPath?: string }} [opts]
+   * @returns {Promise<{ path: string | null }>}
+   */
+  pickFolder: (opts) => ipcRenderer.invoke("edexo:pick-folder", opts),
+  /** Close and start the app again (a staged restore is applied at start). Launcher only. */
+  relaunch: () => ipcRenderer.invoke("edexo:relaunch"),
   /** Launcher → every HUD window, as a setting changes (the HUDs have their own session). */
   pushHudPrefs: (prefs) => ipcRenderer.send("edexo:push-hud-prefs", prefs),
   /** HUD side of {@link pushHudPrefs}. */
