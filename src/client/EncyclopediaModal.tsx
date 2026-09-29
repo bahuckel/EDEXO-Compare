@@ -31,6 +31,14 @@ import {
 import { EncyclopediaFilterBar } from "./EncyclopediaFilterBar";
 import { RarityGem } from "./RarityGem";
 import { ExomasteryPlanetsBody, FoundSpeciesPopup } from "./EncyclopediaPanels";
+import {
+  GuideColoursBlock,
+  GuideGenusIntro,
+  GuideMeasuredBlock,
+  fmtGuideCredits,
+  guideBodyFrom,
+} from "./FieldGuide";
+import type { FieldGuideDTO, GuideGenus, GuideSpecies } from "@shared/fieldGuide";
 
 const EXO_DRAWER_TRANSITION_MS = 380;
 
@@ -82,26 +90,22 @@ function EncyclopediaSpeciesConditions({
     [entry, spawnCompare?.scan, spawnCompare?.estimatedSurfaceTempK, spawnCompare?.speciesMatchContext],
   );
 
+  // The field-guide layout (owner, 2026-09-29): one row per condition — what the species needs, and
+  // how the body being compared fares, coloured blue (matches) / yellow (unsure) / red (fails).
   return (
-    <div className="exo-neon-duplex-fields encyclopedia-spawn-fields">
+    <dl className="fg-req fg-req--conditions">
       {cards.map((card) => (
         <div
           key={card.id}
-          className={`exo-neon-duplex exo-neon-duplex--tier-${spawnTierCssSuffix(card.tier)}`}
+          className={`fg-req-row fg-req-row--${spawnTierCssSuffix(card.tier)}`}
           title={card.lines.join("\n")}
         >
-          <span className="species-other-match-mini-title">{card.label}</span>
-          <div className="species-other-match-mini-line">
-            <span className="species-other-match-mini-legend">Species JSON</span>
-            <span>{card.lines.filter(Boolean).join(" · ") || "—"}</span>
-          </div>
-          <div className="species-other-match-mini-line">
-            <span className="species-other-match-mini-legend">vs BODY tab</span>
-            <strong>{card.caption}</strong>
-          </div>
+          <dt>{card.label}</dt>
+          <dd>{card.lines.filter(Boolean).join(" · ") || "—"}</dd>
+          {spawnCompare ? <dd className="fg-req-body">{card.caption}</dd> : null}
         </div>
       ))}
-    </div>
+    </dl>
   );
 }
 
@@ -154,7 +158,15 @@ function footHitsForEntry(entry: SpeciesEntry, catalog: FootScannedEntry[]): Foo
  * A failed load is retried once with a cache-busting query before falling back to the placeholder,
  * so a transient hiccup does not leave "no photo on disk" artwork behind.
  */
-function EncyclopediaThumb({ photoUrl, displayName }: { photoUrl: string; displayName: string }) {
+function EncyclopediaThumb({
+  photoUrl,
+  displayName,
+  className = "encyclopedia-species-img encyclopedia-species-img--thumb",
+}: {
+  photoUrl: string;
+  displayName: string;
+  className?: string;
+}) {
   const retriedRef = useRef(false);
   useEffect(() => {
     retriedRef.current = false;
@@ -170,7 +182,7 @@ function EncyclopediaThumb({ photoUrl, displayName }: { photoUrl: string; displa
       width={104}
       height={88}
       decoding="async"
-      className="encyclopedia-species-img encyclopedia-species-img--thumb"
+      className={className}
       onError={(ev) => {
         const el = ev.target as HTMLImageElement;
         if (!retriedRef.current && !photoUrl.includes(BUILTIN_PLACEHOLDER)) {
@@ -380,6 +392,37 @@ export function EncyclopediaModal({
     };
   }, []);
 
+  /* The field guide (published conditions + measured charts), by species id and genus folder. */
+  const [guide, setGuide] = useState<{ species: Map<string, GuideSpecies>; genera: Map<string, GuideGenus> } | null>(
+    null,
+  );
+  useEffect(() => {
+    void fetch("/api/field-guide")
+      .then((r) => (r.ok ? (r.json() as Promise<FieldGuideDTO>) : null))
+      .then((j) => {
+        if (!j?.genera) return;
+        setGuide({
+          species: new Map(j.genera.flatMap((g) => g.species.map((s) => [s.id, s] as const))),
+          genera: new Map(j.genera.map((g) => [g.id, g] as const)),
+        });
+      })
+      .catch(() => {
+        /* the cards still show everything else */
+      });
+  }, []);
+  const guideBody = useMemo(
+    () =>
+      spawnCompare
+        ? guideBodyFrom(
+            spawnCompare.scan,
+            spawnCompare.estimatedSurfaceTempK,
+            spawnCompare.speciesMatchContext,
+            spawnCompare.bodyTabLabel ?? "this body",
+          )
+        : null,
+    [spawnCompare],
+  );
+
   useEffect(() => {
     void fetch("/api/species-encyclopedia")
       .then(async (r) => {
@@ -438,14 +481,16 @@ export function EncyclopediaModal({
    *  virtualisation: ~25 headers instead of one undifferentiated column. */
   const genusSections = useMemo(() => {
     const byGenus = new Map<string, EncyclopediaSpeciesRowDTO[]>();
+    const dirOf = new Map<string, string>();
     for (const r of filtered) {
+      dirOf.set(r.entry.genus?.trim() || r.entry.genusDataDir, r.entry.genusDataDir);
       const g = r.entry.genus?.trim() || r.entry.genusDataDir;
       const arr = byGenus.get(g);
       if (arr) arr.push(r);
       else byGenus.set(g, [r]);
     }
     return [...byGenus.entries()]
-      .map(([genus, rs]) => ({ genus, rows: rs }))
+      .map(([genus, rs]) => ({ genus, dir: dirOf.get(genus) ?? genus, rows: rs }))
       .sort((x, y) => x.genus.localeCompare(y.genus, undefined, { sensitivity: "base" }));
   }, [filtered]);
 
@@ -467,6 +512,7 @@ export function EncyclopediaModal({
    */
   const renderSpeciesRow = ({
     entry,
+    priceCredits,
     photoUrl,
     photoUrls,
     photoNote,
@@ -480,8 +526,9 @@ export function EncyclopediaModal({
     const foundN = footHitCounts.get(entry.id) ?? 0;
     const exoExpanded = inlineExo?.speciesEntryId === entry.id && !exoClosing;
     const hasExoDrawer = inlineExo?.speciesEntryId === entry.id;
+    const g = guide?.species.get(entry.id);
     return (
-      <article key={entry.id} className="encyclopedia-species-card encyclopedia-species-card--row">
+      <article key={entry.id} className="encyclopedia-species-card fg-card">
         {exoEnabled && exomasteryDataInsufficient ? (
           <Tooltip
             className="ency-low-sample-anchor"
@@ -510,41 +557,68 @@ export function EncyclopediaModal({
             </span>
           </Tooltip>
         ) : null}
-        <div className="encyclopedia-species-card-main">
-          <button
-            type="button"
-            className="encyclopedia-thumb-btn"
-            onClick={() =>
-              setPhotoZoom({
-                urls: photoUrls?.length ? photoUrls : [photoUrl],
-                note: photoNote,
-                creditByUrl: photoCreditByUrl,
-              })
-            }
-            aria-label={`Enlarge photo for ${entry.displayName}`}
-            // Credit on the hover here and in full once opened: the grid cell is a thumbnail with
-            // no room for a caption, and the photographs are not this project's to show unmarked.
-            title={[photoCreditTitle(photoUrl, photoCreditByUrl?.[photoUrl]), "Click for full-size illustration"]
-              .filter(Boolean)
-              .join(" — ")}
-          >
-            <EncyclopediaThumb photoUrl={photoUrl} displayName={entry.displayName} />
-          </button>
-          <div className="encyclopedia-species-col">
-            <div className="encyclopedia-species-head">
+        {/*
+          The field-guide card (owner, 2026-09-29, after the website's species page): the photo on
+          top, then the description, the conditions checked against the body, where the species was
+          actually found, and mode charts with the body marked on each.
+        */}
+        <button
+          type="button"
+          className="fg-photo"
+          onClick={() =>
+            setPhotoZoom({
+              urls: photoUrls?.length ? photoUrls : [photoUrl],
+              note: photoNote,
+              creditByUrl: photoCreditByUrl,
+            })
+          }
+          aria-label={`Enlarge photo for ${entry.displayName}`}
+          // Credit on the hover here and in full once opened: the photographs are not this
+          // project's to show unmarked.
+          title={[photoCreditTitle(photoUrl, photoCreditByUrl?.[photoUrl]), "Click for the full-size photos"]
+            .filter(Boolean)
+            .join(" — ")}
+        >
+          <EncyclopediaThumb photoUrl={photoUrl} displayName={entry.displayName} className="fg-photo-img" />
+          {(photoUrls?.length ?? 0) > 1 ? <span className="fg-photo-count">{photoUrls!.length} photos</span> : null}
+        </button>
+        <div className="encyclopedia-species-col">
+          <header className="fg-head">
+            <div className="fg-head-name">
               <h4 className="encyclopedia-species-title">
                 <RarityGem rarity={entry.rarity} className="rarity-gem--ency" />
                 {entry.displayName}
               </h4>
               <span className="encyclopedia-species-genus dim tiny">{entry.genus || entry.genusDataDir}</span>
             </div>
-            {photoNote ? <p className="encyclopedia-photo-note dim tiny">{photoNote}</p> : null}
-            {entry.description ? <p className="encyclopedia-desc">{entry.description}</p> : null}
-            <div className="encyclopedia-criteria">
-              <span className="encyclopedia-criteria-label">Conditions</span>
-              <EncyclopediaSpeciesConditions entry={entry} spawnCompare={spawnCompare} />
-            </div>
-            <div className="encyclopedia-species-actions">
+            {priceCredits ? (
+              <div className="fg-value">
+                <strong title={`${priceCredits.toLocaleString("en-US")} cr`}>{fmtGuideCredits(priceCredits)} cr</strong>
+                <span title={`${(priceCredits * 5).toLocaleString("en-US")} cr`}>
+                  {fmtGuideCredits(priceCredits * 5)} first footfall
+                </span>
+              </div>
+            ) : null}
+          </header>
+          {photoNote ? <p className="encyclopedia-photo-note dim tiny">{photoNote}</p> : null}
+          {entry.description ? <p className="encyclopedia-desc">{entry.description}</p> : null}
+          {g?.sampleDistanceM ? (
+            <span className="fg-chip">Clonal range {g.sampleDistanceM.toLocaleString("en-US")} m</span>
+          ) : null}
+          <div className="encyclopedia-criteria">
+            <span className="fg-h">Conditions{spawnCompare ? ` · vs ${spawnCompare.bodyTabLabel ?? "this body"}` : ""}</span>
+            <EncyclopediaSpeciesConditions entry={entry} spawnCompare={spawnCompare} />
+          </div>
+          {g?.measured ? (
+            <GuideMeasuredBlock m={g.measured} body={guideBody} />
+          ) : guide ? (
+            <p className="fg-none">
+              Not measured yet: the corpus has not confirmed this species on enough bodies to chart. The
+              conditions above are what the app predicts from.
+            </p>
+          ) : null}
+          <GuideColoursBlock c={g?.colours ?? null} />
+          <div className="encyclopedia-species-actions">
               <button
                 type="button"
                 className="btn-ency-found"
@@ -571,7 +645,6 @@ export function EncyclopediaModal({
                     : `Exomastery (${exomasteryFeederBodyCount})`}
                 </button>
               ) : null}
-            </div>
           </div>
         </div>
         {hasExoDrawer ? (
@@ -716,25 +789,28 @@ export function EncyclopediaModal({
               </div>
               {spawnCompare ? (
                 <p className="encyclopedia-spawn-compare-line dim tiny">
-                  Spawn card colors mirror strict matcher vs{" "}
-                  <strong>BODY: {spawnCompare.bodyTabLabel ?? "—"}</strong>
+                  Compared with <strong>{spawnCompare.bodyTabLabel ?? "the selected body"}</strong>
                   {spawnCompare.scan?.PlanetClass ? (
                     <>
                       {" "}
                       (<span className="ency-spawn-scan-class">{spawnCompare.scan.PlanetClass}</span>)
                     </>
                   ) : spawnCompare.scan ? (
-                    <> (detailed scan — some fields incomplete)</>
+                    <> (detailed scan incomplete)</>
                   ) : (
-                    <> — no merged journal Scan on this bio tab row yet</>
+                    <> — no detailed scan of it yet</>
                   )}
-                  . Blue = criterion satisfied for that planet; yellow = uncertain/missing telemetry; red =
-                  gate fail; pale = informational.
+                  . Conditions: <span className="fg-key fg-key--ok">blue</span> matches,{" "}
+                  <span className="fg-key fg-key--warn">yellow</span> not known yet,{" "}
+                  <span className="fg-key fg-key--bad">red</span> does not match. Charts: the bodies each species
+                  was confirmed on, the <span className="fg-key fg-key--mode">orange</span> bar and line the most
+                  common value, the <span className="fg-key fg-key--ok">blue</span> line this body.
                 </p>
               ) : (
                 <p className="encyclopedia-spawn-compare-line dim tiny">
-                  Open Encyclopedia while a BODY: bio tab exists to compare codex gates vs selected planet.
-                  Without that context cards stay neutral/warning-only where scan data is absent.
+                  Charts: the bodies each species was confirmed on; the{" "}
+                  <span className="fg-key fg-key--mode">orange</span> bar and line mark the most common value.
+                  Open the Encyclopedia with a body selected to see how that body compares.
                 </p>
               )}
               {loadErr ? <p className="warn">{loadErr}</p> : null}
@@ -751,7 +827,7 @@ export function EncyclopediaModal({
                       atmosphere, or other criteria.
                     </p>
                   ) : searching ? (
-                    filtered.map(renderSpeciesRow)
+                    <div className="fg-grid">{filtered.map(renderSpeciesRow)}</div>
                   ) : (
                     genusSections.map((sec) => (
                       <section key={sec.genus} className="ency-genus-section">
@@ -759,7 +835,8 @@ export function EncyclopediaModal({
                           <span className="ency-genus-name">{sec.genus}</span>
                           <span className="ency-genus-count">{sec.rows.length}</span>
                         </h4>
-                        {sec.rows.map(renderSpeciesRow)}
+                        <GuideGenusIntro g={guide?.genera.get(sec.dir)} />
+                        <div className="fg-grid">{sec.rows.map(renderSpeciesRow)}</div>
                       </section>
                     ))
                   )}

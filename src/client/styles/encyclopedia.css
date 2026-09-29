@@ -584,3 +584,440 @@
   border-left-color: rgba(255, 255, 255, 0.15);
   background: rgba(0, 0, 0, 0.18);
 }
+
+/* ==== field-guide cards (owner, 2026-09-29: after the website's species page) =====================
+   Photo on top, description, conditions vs the body, where it was found, mode charts with the body
+   marked. FieldGuide.tsx + EncyclopediaModal.tsx. */
+.fg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+.fg-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(48, 24, 8, 0.28), transparent 38%),
+    #0c0a09;
+  border: 1px solid var(--accent-a25);
+  contain-intrinsic-size: auto 720px;
+}
+.fg-card:hover {
+  border-color: var(--accent-a45);
+}
+.fg-card > .encyclopedia-species-col {
+  padding: 0 0.8rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+.fg-photo {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 168px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--accent-a25);
+  background: #050404;
+  cursor: zoom-in;
+}
+.fg-photo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fg-photo::after {
+  /* the photo fades into the card */
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 40%;
+  background: linear-gradient(180deg, transparent, rgba(12, 10, 9, 0.85));
+  pointer-events: none;
+}
+.fg-photo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.fg-photo-count {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.4rem;
+  z-index: 1;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: rgba(0, 0, 0, 0.55);
+  padding: 0.1rem 0.4rem;
+}
+.fg-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.fg-head-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.fg-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: none;
+  line-height: 1.2;
+}
+.fg-value strong {
+  color: var(--accent-bright);
+  font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
+}
+.fg-value span {
+  color: var(--muted);
+  font-size: var(--fs-2xs);
+}
+.fg-chip {
+  align-self: flex-start;
+  font-size: var(--fs-2xs);
+  color: var(--text-dim);
+  border: 1px solid var(--accent-a25);
+  padding: 0.1rem 0.45rem;
+}
+.fg-h {
+  display: block;
+  margin: 0;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.fg-sub {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fg-sub b {
+  color: var(--text-dim);
+}
+.fg-none {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  border-left: 2px solid var(--accent-a25);
+  padding-left: 0.5rem;
+}
+
+/* conditions: one row each, the body's verdict under it */
+.fg-req {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.3rem 0 0;
+}
+.fg-req > div {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 0 0.5rem;
+  font-size: var(--fs-xs);
+  padding: 0.12rem 0 0.12rem 0.45rem;
+  border-left: 2px solid var(--accent-a20);
+}
+.fg-req dt {
+  color: var(--muted);
+}
+.fg-req dd {
+  margin: 0;
+  color: var(--text-dim);
+  min-width: 0;
+}
+.fg-req .fg-req-body {
+  grid-column: 2;
+  font-size: var(--fs-2xs);
+  color: var(--muted);
+}
+.fg-req > .fg-req-row--blue {
+  border-left-color: var(--ok);
+}
+.fg-req-row--blue .fg-req-body {
+  color: var(--ok-bright);
+}
+.fg-req > .fg-req-row--yellow {
+  border-left-color: var(--warn);
+}
+.fg-req-row--yellow .fg-req-body {
+  color: var(--warn-soft);
+}
+.fg-req > .fg-req-row--red {
+  border-left-color: var(--danger);
+}
+.fg-req-row--red .fg-req-body {
+  color: var(--danger-soft);
+}
+
+/* where it was found */
+.fg-found {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--accent-a15);
+}
+.fg-shares {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+.fg-share {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: start;
+  font-size: var(--fs-xs);
+}
+.fg-share dt {
+  color: var(--muted);
+  padding-top: 0.05rem;
+}
+.fg-share dd {
+  margin: 0;
+  min-width: 0;
+}
+.fg-stack {
+  display: flex;
+  height: 7px;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.fg-stack i {
+  display: block;
+  min-width: 2px;
+}
+.fg-legend {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.7rem;
+  color: var(--text-dim);
+  font-size: var(--fs-2xs);
+}
+.fg-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.fg-legend i {
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+}
+.fg-legend b {
+  color: var(--text);
+  font-weight: 600;
+}
+.fg-legend .fg-legend--mine {
+  outline: 1px solid var(--ok);
+  outline-offset: 1px;
+}
+.fg-legend .fg-legend-body {
+  color: var(--ok-bright);
+}
+.fg-legend .fg-legend-body--none {
+  color: var(--warn-soft);
+}
+
+/* mode charts */
+.fg-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.6rem 0.8rem;
+}
+.fg-chart {
+  margin: 0;
+  min-width: 0;
+}
+.fg-chart figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  font-size: var(--fs-2xs);
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+.fg-chart-k {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fg-mode {
+  white-space: nowrap;
+}
+.fg-mode b {
+  color: var(--accent-bright);
+  font-weight: 600;
+}
+.fg-chart svg {
+  display: block;
+  width: 100%;
+  height: 46px;
+  overflow: visible;
+  border-bottom: 1px solid var(--accent-a20);
+}
+.fg-bars {
+  fill: var(--accent-a35);
+}
+.fg-bars-mode {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 3px var(--accent-glow));
+}
+.fg-mode-line {
+  stroke: var(--accent-bright);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+  vector-effect: non-scaling-stroke;
+}
+.fg-body-line {
+  stroke: var(--ok);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 3px rgba(79, 208, 255, 0.7));
+}
+.fg-body-edge {
+  fill: var(--warn);
+}
+.fg-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+  font-size: var(--fs-2xs);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fg-body-val {
+  margin-top: 0.1rem;
+  font-size: var(--fs-2xs);
+  color: var(--ok-bright);
+}
+.fg-body-val b {
+  font-weight: 600;
+}
+.fg-body-val--below,
+.fg-body-val--above {
+  color: var(--warn-soft);
+}
+
+.fg-more > summary {
+  cursor: pointer;
+  font-size: var(--fs-xs);
+  color: var(--accent);
+  width: fit-content;
+}
+.fg-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.fg-mats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.15rem 0.8rem;
+  font-size: var(--fs-2xs);
+}
+.fg-mats li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 0.35rem;
+  color: var(--text-dim);
+}
+.fg-mats b {
+  color: var(--accent-bright);
+  font-weight: 600;
+}
+.fg-mats small {
+  color: var(--muted);
+}
+.fg-mats em {
+  font-style: normal;
+  color: var(--ok-bright);
+}
+.fg-mats em.fg-mat-none {
+  color: var(--muted);
+}
+
+/* colour tables */
+.fg-colours {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.fg-swatches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.7rem;
+  font-size: var(--fs-2xs);
+  color: var(--text-dim);
+}
+.fg-swatches li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.fg-swatches i {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.fg-sw-k {
+  color: var(--muted);
+}
+
+/* genus heading: its description, genus-wide conditions and colour table */
+.fg-genus-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+  padding: 0.1rem 0 0.5rem 0.6rem;
+  border-left: 2px solid var(--accent-a35);
+  max-width: 78ch;
+}
+.fg-gdesc {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.fg-key {
+  font-weight: 600;
+}
+.fg-key--ok {
+  color: var(--ok-bright);
+}
+.fg-key--warn {
+  color: var(--warn);
+}
+.fg-key--bad {
+  color: var(--danger-soft);
+}
+.fg-key--mode {
+  color: var(--accent-bright);
+}

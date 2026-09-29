@@ -3,6 +3,8 @@ import type { SpeciesEntry } from "./species.js";
 /** One row for the Encyclopedia UI (resolved photo URL on the server). */
 export interface EncyclopediaSpeciesRowDTO {
   entry: SpeciesEntry;
+  /** Vista Genomics list price (CR) from `data/price-list.json`; first footfall pays five times it. */
+  priceCredits?: number | null;
   photoUrl: string;
   photoNote: string | null;
   /**

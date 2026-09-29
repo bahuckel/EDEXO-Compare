@@ -1,3 +1,4 @@
+import type { FieldGuideDTO } from "../shared/fieldGuide.js";
 import { findMatchDetail, parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
 import { eliteDisplaySettingsPath, eliteDisplayWarning, readEliteDisplayMode } from "./eliteDisplayMode.js";
 import { linuxCheckForThisMachine } from "./linuxProbes.js";
@@ -84,6 +85,8 @@ export interface HttpServerOptions {
   getCommanderSystem: () => string | null;
   /** GET /api/species-encyclopedia — species rows including exomastery flags */
   getEncyclopedia?: () => EncyclopediaSpeciesRowDTO[];
+  /** GET /api/field-guide — published conditions + measured charts per species (shared/fieldGuide.ts). */
+  getFieldGuide?: () => FieldGuideDTO;
   /**
    * GET /api/first-discovery-backlog — biology left uncollected in systems this commander found.
    *
@@ -460,6 +463,21 @@ export function createHttpServer(opts: HttpServerOptions): {
       });
     } catch {
       res.status(500).json({ error: "Could not load species database." });
+    }
+  });
+
+  app.get("/api/field-guide", (req, res) => {
+    if (typeof opts.getFieldGuide !== "function") {
+      res.status(501).json({ error: "Not available" });
+      return;
+    }
+    try {
+      sendJson(req, res, JSON.stringify(opts.getFieldGuide()), (raw, sent) => {
+        perfBytes("http.fieldGuide.bytes", raw);
+        perfBytes("http.fieldGuide.sent", sent);
+      });
+    } catch {
+      res.status(500).json({ error: "Could not build the field guide." });
     }
   });
 

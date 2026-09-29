@@ -69,6 +69,7 @@ import { openFeeder } from "../feeder/pipeline.js";
 import { formatImportReport, importSpanshExport } from "../feeder/spanshImport.js";
 import { feederDataDirExists } from "../feeder/paths.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
+import { buildFieldGuide, clearFieldGuideCache } from "./fieldGuide.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
 import { buildDiscoveries } from "./discoveries.js";
 import {
@@ -159,6 +160,7 @@ function reloadSpeciesDerivedCaches(): void {
   clearFootCatalogSpeciesDb();
   clearExomasteryProfileCache();
   clearEncyclopediaPayloadCache();
+  clearFieldGuideCache();
   clearSpeciesPhotoCache();
   clearGenusPhotosFolderCache();
   clearEddsnColourVariantsCache();
@@ -1182,6 +1184,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       warmUpTimer = null;
       try {
         buildEncyclopediaPayload();
+        buildFieldGuide(projectRoot, getCachedSpeciesDatabase());
       } catch {
         /* the Encyclopedia builds on open instead */
       }
@@ -1455,6 +1458,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
     scheduleBroadcast: push,
     getEncyclopedia: buildEncyclopediaPayload,
+    getFieldGuide: () => buildFieldGuide(projectRoot, getCachedSpeciesDatabase()),
     getFeederStatus: () => buildFeederStatus(projectRoot, getCachedSpeciesDatabase()),
     getUpdateInfo: (force) => updateChecker.check(force),
     openUpdatePage: () => {

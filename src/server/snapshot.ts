@@ -324,6 +324,7 @@ function buildEncyclopediaRows(root: string): EncyclopediaSpeciesRowDTO[] {
       : exomasteryEdsmSampleCount;
     return {
       entry,
+      priceCredits: lookupPrice(cachedPrices, entry.displayName, entry.id),
       photoUrl,
       photoNote,
       photoUrls,
