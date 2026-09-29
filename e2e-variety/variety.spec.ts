@@ -56,7 +56,7 @@ test("Ingensradices: offered on HIP 87621 2 a beside the three genera the DSS na
   await page.goto("/");
   await expect(page.getByText("HIP 87621", { exact: true }).first()).toBeVisible({ timeout: 60_000 });
   await page.locator(".tab", { hasText: "2 a" }).first().click();
-  await expect(page.getByText("Ingensradices Unicus").first()).toBeVisible();
+  await expect(page.getByText("Ingensradices Unicus").filter({ visible: true }).first()).toBeVisible();
   await page.screenshot({ path: `${OUT}/hip87621.png`, fullPage: true });
   expect(errors).toEqual([]);
 });
@@ -66,7 +66,7 @@ test("Crystalline Shards: offered on a cold body far from the arrival star", asy
   await view(request, await systemByName(request, "Phrua Hypooe SU-M d8-34"));
   await page.goto("/");
   await page.locator(".tab", { hasText: "CDE 1 c" }).first().click();
-  await expect(page.getByText("Crystalline Shards").first()).toBeVisible();
+  await expect(page.getByText("Crystalline Shards").filter({ visible: true }).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -149,8 +149,8 @@ test("encyclopedia: lists the two species added in 1.2.x", async ({ page }) => {
   await page.goto("/");
   await page.locator(".appbar-menu-btn").click();
   await page.getByRole("button", { name: "Encyclopedia" }).click();
-  await expect(page.getByText("Ingensradices Unicus").first()).toBeVisible();
-  await expect(page.getByText("Crystalline Shards").first()).toBeVisible();
+  await expect(page.getByText("Ingensradices Unicus").filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByText("Crystalline Shards").filter({ visible: true }).first()).toBeVisible();
   // The Codex map left the Encyclopedia (owner, 2026-09-29): it lives in the galaxy map's Codex mode.
   const head = page.locator(".encyclopedia-panel .modal-head");
   await expect(head.getByRole("button")).toHaveCount(1); // Close only

@@ -1046,6 +1046,15 @@ button.exo-duplex-typical-mode-hit:disabled {
   margin-right: 0.5em;
 }
 
+/* The body card's badge, right of the body name in the glance bar. */
+.rarity-gem--glance.rarity-dna {
+  width: 0.95em;
+  height: 1.5em;
+  margin: 0 0 0 -0.7rem;
+  align-self: center;
+  font-size: var(--fs-xl);
+}
+
 .rarity-gem--ency.rarity-dna {
   width: 0.7em;
   height: 1.1em;

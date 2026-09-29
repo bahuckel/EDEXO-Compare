@@ -7,7 +7,7 @@
  *
  * The strokes are SVG attributes, so the snapshot camera keeps them.
  */
-import { rarityTierInfo, type RegionalRarity, type SpeciesRarity } from "@shared/speciesRarity";
+import { rarityTierInfo, type RarityTier, type RegionalRarity, type SpeciesRarity } from "@shared/speciesRarity";
 
 const pct = (s: number) => `${(s * 100).toFixed(s < 0.01 ? 2 : 1)} %`;
 
@@ -61,19 +61,27 @@ function regionalTitle(g: SpeciesRarity, r: RegionalRarity): string {
   return `${rarityTierInfo(r.tier).label} in ${r.region} — ${here}. ${galaxy}`;
 }
 
+/** The tier the badge shows: the region's when the species is found there with a tier, else galaxy-wide. */
+export function shownRarityTier(rarity: SpeciesRarity, regional?: RegionalRarity): RarityTier {
+  return regional?.found && regional.tier ? regional.tier : rarity.tier;
+}
+
 export function RarityGem({
   rarity,
   regional,
   className,
+  title,
 }: {
   rarity: SpeciesRarity | undefined;
   /** The body's region: the badge shows this tier when given (a species can be common here, rare there). */
   regional?: RegionalRarity;
   className?: string;
+  /** Replaces the tooltip (the body card's badge names the species). */
+  title?: string;
 }) {
   if (!rarity) return null;
   const notHere = regional != null && !regional.found;
-  const tier = regional?.found && regional.tier ? regional.tier : rarity.tier;
+  const tier = shownRarityTier(rarity, regional);
   const t = rarityTierInfo(tier);
   return (
     <svg
@@ -87,7 +95,7 @@ export function RarityGem({
           : `${t.label} species${regional ? ` in ${regional.region}` : ""}`
       }
     >
-      <title>{regional ? regionalTitle(rarity, regional) : rarityTitle(rarity)}</title>
+      <title>{title ?? (regional ? regionalTitle(rarity, regional) : rarityTitle(rarity))}</title>
       <g transform="rotate(22 5 8)" fill="none" strokeLinecap="round">
         {HELIX.rungs.map(([x1, x2, y], i) => (
           <line
