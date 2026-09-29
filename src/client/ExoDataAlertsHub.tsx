@@ -30,7 +30,7 @@ function ago(iso: string): string {
   return `${Math.round(h / 24)} days ago`;
 }
 
-const NOTICE_ICON: Record<NoticeDTO["kind"], string> = { notable: "★", record: "🏅", nsp: "✦" };
+const NOTICE_ICON: Record<NoticeDTO["kind"], string> = { notable: "★", record: "🏅", nsp: "✦", poi: "◈", carrier: "▣" };
 
 /*
   The "Notify me" notices (shared/notices.ts), above the codex checks in the same list (owner,

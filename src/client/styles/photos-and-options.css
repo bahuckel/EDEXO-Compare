@@ -499,3 +499,13 @@
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: 0.25rem 1rem;
 }
+.options-notify-h {
+  margin: 0.8rem 0 0.3rem;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.options-notify-sub {
+  margin: 0.55rem 0 0.2rem;
+}

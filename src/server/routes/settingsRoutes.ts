@@ -210,11 +210,11 @@ export function registerSettingsRoutes(
 
   /* "Notify me" (shared/notices.ts). The reply is the stored settings, after the allow-list. */
   app.get("/api/settings/notify", (_req, res) => {
-    if (typeof opts.getNotifyPrefs !== "function") {
+    if (typeof opts.getNotifySettings !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
     }
-    res.json({ ok: true, prefs: opts.getNotifyPrefs() });
+    res.json({ ok: true, ...opts.getNotifySettings() });
   });
 
   app.post("/api/settings/notify", (req, res) => {
@@ -226,7 +226,7 @@ export function registerSettingsRoutes(
       res.status(400).json({ ok: false, error: "JSON body must be an object." });
       return;
     }
-    res.json({ ok: true, prefs: opts.setNotifyPrefs(req.body) });
+    res.json({ ok: true, ...opts.setNotifyPrefs(req.body) });
   });
 
   app.post("/api/notices/read", (req, res) => {

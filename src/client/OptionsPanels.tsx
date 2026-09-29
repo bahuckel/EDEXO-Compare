@@ -6,7 +6,18 @@ import { FoldPanel } from "./ui/Fold";
 import { Select } from "./ui/Select";
 import { useToast } from "./ui/feedback";
 import type { CollectionFocusConfig } from "@shared/collectionFocus";
-import { NOTABLE_KINDS, type NotifyPrefsDTO } from "@shared/notices";
+import {
+  CARRIER_NOTICE_MIN_FROM_SOL_LY,
+  NEARBY_JUMPS_MAX,
+  NEARBY_JUMPS_MIN,
+  NOTABLE_KINDS,
+  type CarrierNoticeMode,
+  type NearbyPrefsDTO,
+  type NotifyPrefsDTO,
+  type NotifySettingsDTO,
+} from "@shared/notices";
+import { POI_GROUP_OPTIONS } from "@shared/gecCategories";
+import { CARRIER_SERVICE_OPTIONS } from "@shared/carrierServices";
 import type { AppSnapshot } from "@shared/types";
 import { useCallback, useEffect, useState } from "react";
 
@@ -303,7 +314,8 @@ export function CollectionFocusPanel() {
  * follow the same switches. No system notifications and no sound, apart from the opt-in record chime.
  */
 export function NotifyPanel() {
-  const [p, setP] = useState<NotifyPrefsDTO | null>(null);
+  const [st, setSt] = useState<NotifySettingsDTO | null>(null);
+  const p = st?.prefs ?? null;
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -312,7 +324,7 @@ export function NotifyPanel() {
     void fetch("/api/settings/notify")
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        if (alive && j?.prefs) setP(j.prefs as NotifyPrefsDTO);
+        if (alive && j?.prefs) setSt(j as NotifySettingsDTO);
       })
       .catch(() => {
         /* the panel stays empty */
@@ -322,7 +334,10 @@ export function NotifyPanel() {
     };
   }, []);
 
-  const save = useCallback((patch: Partial<Omit<NotifyPrefsDTO, "notable">> & { notable?: Partial<NotifyPrefsDTO["notable"]> }) => {
+  const save = useCallback((patch: Partial<Omit<NotifyPrefsDTO, "notable" | "nearby">> & {
+    notable?: Partial<NotifyPrefsDTO["notable"]>;
+    nearby?: Partial<Omit<NearbyPrefsDTO, "poiGroups">> & { poiGroups?: Partial<NearbyPrefsDTO["poiGroups"]> };
+  }) => {
     setBusy(true);
     setMsg(null);
     void postSetting("/api/settings/notify", patch)
@@ -331,14 +346,22 @@ export function NotifyPanel() {
           setMsg(r.error ?? "Could not change the setting.");
           return;
         }
-        const next = (r as unknown as { prefs?: NotifyPrefsDTO }).prefs;
-        if (next) setP(next);
+        const next = r as unknown as NotifySettingsDTO;
+        if (next.prefs) setSt(next);
       })
       .finally(() => setBusy(false));
   }, []);
 
-  if (!p) return null;
-  const onCount = NOTABLE_KINDS.filter((k) => p.notable[k.key]).length + (p.records ? 1 : 0) + (p.nsp ? 1 : 0);
+  if (!st || !p) return null;
+  const nb = p.nearby;
+  const poiOn = POI_GROUP_OPTIONS.filter((g) => nb.poiGroups[g.key]).length;
+  const onCount =
+    NOTABLE_KINDS.filter((k) => p.notable[k.key]).length +
+    (p.records ? 1 : 0) +
+    (p.nsp ? 1 : 0) +
+    poiOn +
+    (nb.carriers !== "off" ? 1 : 0);
+  const radiusLy = st.jumpLy != null ? Math.round(nb.jumps * st.jumpLy) : null;
 
   return (
     <FoldPanel
@@ -356,6 +379,14 @@ export function NotifyPanel() {
             <strong>Personal records</strong>: the largest and the smallest radius of every star type and planet class
             you have scanned. Your journals set the starting records quietly; only a record you break from now on is
             announced. A star that broke one glows gold on the system card, and a planet gets a medal.
+          </p>
+          <p>
+            <strong>Nearby</strong>: after each jump, points of interest and carriers within that many of your
+            average jumps (your last twenty, or the ship&apos;s range until you have flown a few). Each point of
+            interest is announced once. Carriers only count out in the black, over{" "}
+            {CARRIER_NOTICE_MIN_FROM_SOL_LY.toLocaleString()} ly from Sol, and their position is only as fresh as
+            EDAstro&apos;s last sighting — the notice says how old it is. Both use the lists you downloaded in the
+            Points of interest and Carriers panels.
           </p>
           <p>Never a Windows notification. The chime is the only sound, and it is off unless you turn it on.</p>
         </>
@@ -391,6 +422,82 @@ export function NotifyPanel() {
           <span>Chime when a record falls (this PC only)</span>
         </label>
       </div>
+
+      <h4 className="options-notify-h">Nearby</h4>
+      <div className="options-focus-grid">
+        <label htmlFor="notify-jumps">Within</label>
+        <span>
+          <input
+            id="notify-jumps"
+            type="number"
+            min={NEARBY_JUMPS_MIN}
+            max={NEARBY_JUMPS_MAX}
+            value={nb.jumps}
+            disabled={busy}
+            onChange={(ev) => save({ nearby: { jumps: Number(ev.target.value) } })}
+          />{" "}
+          <span className="dim">
+            jumps{radiusLy != null ? ` ≈ ${radiusLy.toLocaleString()} ly` : " (range known after your first jump)"}
+          </span>
+        </span>
+      </div>
+      <p className="dim tiny options-notify-sub">
+        Points of interest{st.poiDataReady ? "" : " — download the list in Points of interest first"}
+      </p>
+      <div className="options-notify-grid">
+        {POI_GROUP_OPTIONS.map((g) => (
+          <label key={g.key} className="options-toggle" title={g.hint}>
+            <input
+              type="checkbox"
+              checked={nb.poiGroups[g.key]}
+              disabled={busy}
+              onChange={(ev) => save({ nearby: { poiGroups: { [g.key]: ev.target.checked } } })}
+            />
+            <span>{g.label}</span>
+          </label>
+        ))}
+      </div>
+      <p className="dim tiny options-notify-sub">
+        Carriers, beyond {CARRIER_NOTICE_MIN_FROM_SOL_LY.toLocaleString()} ly from Sol
+        {st.carrierDataReady ? "" : " — download the list in Carriers first"}
+      </p>
+      <div className="options-focus-grid">
+        <label htmlFor="notify-carriers">Announce</label>
+        <select
+          id="notify-carriers"
+          className="options-inline-select"
+          value={nb.carriers}
+          disabled={busy}
+          onChange={(ev) => save({ nearby: { carriers: ev.target.value as CarrierNoticeMode } })}
+        >
+          <option value="off">no carriers</option>
+          <option value="every">every carrier</option>
+          <option value="services">only carriers with a service below</option>
+        </select>
+      </div>
+      {nb.carriers === "services" ? (
+        <div className="options-notify-grid">
+          {CARRIER_SERVICE_OPTIONS.map((o) => (
+            <label key={o.key} className="options-toggle" title={o.hint}>
+              <input
+                type="checkbox"
+                checked={nb.carrierServices.includes(o.key)}
+                disabled={busy}
+                onChange={(ev) =>
+                  save({
+                    nearby: {
+                      carrierServices: ev.target.checked
+                        ? [...nb.carrierServices, o.key]
+                        : nb.carrierServices.filter((k) => k !== o.key),
+                    },
+                  })
+                }
+              />
+              <span>{o.label}</span>
+            </label>
+          ))}
+        </div>
+      ) : null}
       {msg ? <p className="options-error">{msg}</p> : null}
     </FoldPanel>
   );

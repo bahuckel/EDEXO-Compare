@@ -167,7 +167,85 @@ describe("notices", () => {
   });
 });
 
+describe("nearby: points of interest and carriers", () => {
+  const jump = (x: number, dist = 50, extra: Record<string, unknown> = {}) => ({
+    timestamp: "2026-09-30T12:00:00Z",
+    event: "FSDJump",
+    StarSystem: `Sys ${x}`,
+    SystemAddress: x,
+    StarPos: [x, 0, 0],
+    JumpDist: dist,
+    ...extra,
+  });
+  function nearCtx(pois: { key: string; d: number }[], carriers: { cs: string; d: number; services: string[] }[] = []) {
+    const asked: number[] = [];
+    const c: NoticesContext = {
+      ...ctx(),
+      loadoutJumpLy: () => 60,
+      nearbyPois: (_o, r) => {
+        asked.push(r);
+        return pois.filter((p) => p.d <= r).map((p) => ({ key: p.key, name: `POI ${p.key}`, system: "There", typeLabel: "Nebula", distanceLy: p.d }));
+      },
+      nearbyCarriers: (_o, r) =>
+        carriers
+          .filter((k) => k.d <= r)
+          .map((k) => ({ callsign: k.cs, name: "", system: "Park", systemAddress: 9, distanceLy: k.d, lastSeenDays: 12, services: k.services })),
+    };
+    return { c, asked };
+  }
+
+  it("radius is N average jumps: the loadout's range until three jumps are flown", () => {
+    const n = createNoticesService({ filePath: null });
+    n.setPrefs({ nearby: { jumps: 5, poiGroups: { nebulae: true } } });
+    const { c, asked } = nearCtx([]);
+    n.observe(jump(1, 40), c);
+    n.observe(jump(2, 40), c);
+    n.observe(jump(3, 40), c);
+    expect(asked).toEqual([300, 300, 200]);
+    expect(n.jumpLy(c)).toBe(40);
+  });
+
+  it("announces each POI once, at most three a jump, nearest first; all groups off does nothing", () => {
+    const n = createNoticesService({ filePath: null });
+    const pois = [1, 2, 3, 4, 5].map((i) => ({ key: `gec:${i}`, d: i * 10 }));
+    const { c } = nearCtx(pois);
+    expect(n.observe(jump(1), c)).toBe(false); // opt-in: nothing chosen yet
+    n.setPrefs({ nearby: { poiGroups: { nebulae: true } } });
+    n.observe(jump(2), c);
+    expect(n.list().map((x) => x.id).reverse()).toEqual(["poi:gec:1", "poi:gec:2", "poi:gec:3"]);
+    n.observe(jump(3), c);
+    n.observe(jump(4), c);
+    expect(n.list()).toHaveLength(5);
+    expect(n.list()[0]!.text).toBe("Nebula in There — 50 ly from Sys 3");
+  });
+
+  it("carriers only beyond 2,000 ly of Sol, filtered by service, with how old the sighting is", () => {
+    const n = createNoticesService({ filePath: null });
+    n.setPrefs({ nearby: { carriers: "services", carrierServices: ["vistagenomics"] } });
+    const { c } = nearCtx([], [
+      { cs: "AAA-111", d: 20, services: ["refuel"] },
+      { cs: "BBB-222", d: 30, services: ["vistagenomics", "refuel"] },
+    ]);
+    expect(n.observe(jump(1500), c)).toBe(false);
+    expect(n.observe(jump(2500), c)).toBe(true);
+    expect(n.list().map((x) => x.title)).toEqual(["Carrier nearby: BBB-222"]);
+    expect(n.list()[0]!.text).toBe("In Park — 30 ly from Sys 2500 · Vista Genomics · last seen 12 days ago");
+    n.setPrefs({ nearby: { carriers: "every" } });
+    n.observe(jump(2600), c);
+    expect(n.list().map((x) => x.title)).toContain("Carrier nearby: AAA-111");
+  });
+});
+
 describe("prefs and wording", () => {
+  it("nearby: jumps clamped to 1–10, unknown services dropped", () => {
+    const p = mergeNotifyPrefs(DEFAULT_NOTIFY_PREFS, { nearby: { jumps: 40, carrierServices: ["refuel", "nope"], carriers: "sometimes" } });
+    expect(p.nearby.jumps).toBe(10);
+    expect(p.nearby.carrierServices).toEqual(["refuel"]);
+    expect(p.nearby.carriers).toBe("off");
+    expect(mergeNotifyPrefs(DEFAULT_NOTIFY_PREFS, { nearby: { jumps: 0 } }).nearby.jumps).toBe(1);
+    expect(Object.values(DEFAULT_NOTIFY_PREFS.nearby.poiGroups).some(Boolean)).toBe(false);
+  });
+
   it("merges only known booleans", () => {
     const p = mergeNotifyPrefs(DEFAULT_NOTIFY_PREFS, { chime: "yes", nsp: false, notable: { water: false, bogus: true } });
     expect(p.chime).toBe(false);

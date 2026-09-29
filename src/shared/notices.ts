@@ -7,8 +7,10 @@
  * he looks. Never an OS notification; the one sound is an opt-in chime for records.
  */
 import { isTerraformableState } from "./terraformState.js";
+import { POI_GROUP_OPTIONS, type PoiGroup } from "./gecCategories.js";
+import { CARRIER_SERVICE_OPTIONS } from "./carrierServices.js";
 
-export type NoticeKind = "notable" | "record" | "nsp";
+export type NoticeKind = "notable" | "record" | "nsp" | "poi" | "carrier";
 
 export interface NoticeDTO {
   id: string;
@@ -45,13 +47,41 @@ export interface NotifyPrefsDTO {
   chime: boolean;
   /** A notable stellar phenomenon in the system (FSS signal, then its type from the codex). */
   nsp: boolean;
+  /** Points of interest and carriers within a few jumps (owner, 2026-09-30). */
+  nearby: NearbyPrefsDTO;
 }
+
+export type CarrierNoticeMode = "off" | "every" | "services";
+
+export interface NearbyPrefsDTO {
+  /** The radius, in the ship's average jumps: 1 to 10. */
+  jumps: number;
+  /** EDAstro POI groups to announce. All off until chosen ("opt-in for everything"). */
+  poiGroups: Record<PoiGroup, boolean>;
+  /** Carriers, only beyond {@link CARRIER_NOTICE_MIN_FROM_SOL_LY} of Sol: none, every one, or those with a service below. */
+  carriers: CarrierNoticeMode;
+  /** EDAstro service keys; a carrier offering any one of them counts. */
+  carrierServices: string[];
+}
+
+/** Carriers are news only out in the black (owner: "over 2000 ly from the bubble"). */
+export const CARRIER_NOTICE_MIN_FROM_SOL_LY = 2000;
+export const NEARBY_JUMPS_MIN = 1;
+export const NEARBY_JUMPS_MAX = 10;
+
+const ALL_POI_OFF = Object.fromEntries(POI_GROUP_OPTIONS.map((g) => [g.key, false])) as Record<PoiGroup, boolean>;
 
 export const DEFAULT_NOTIFY_PREFS: NotifyPrefsDTO = {
   notable: { earthlike: true, water: true, ammonia: true, terraformable: true, helium: true },
   records: true,
   chime: false,
   nsp: true,
+  nearby: {
+    jumps: 5,
+    poiGroups: { ...ALL_POI_OFF },
+    carriers: "off",
+    carrierServices: ["vistagenomics", "exploration", "refuel"],
+  },
 };
 
 /** Only known keys and booleans get through; anything else keeps its current value. */
@@ -61,11 +91,26 @@ export function mergeNotifyPrefs(prev: NotifyPrefsDTO, raw: unknown): NotifyPref
   const n = r.notable && typeof r.notable === "object" ? (r.notable as Record<string, unknown>) : {};
   const notable = { ...prev.notable };
   for (const { key } of NOTABLE_KINDS) notable[key] = bool(n[key], prev.notable[key]);
+  const nr = r.nearby && typeof r.nearby === "object" ? (r.nearby as Record<string, unknown>) : {};
+  const pn = prev.nearby ?? DEFAULT_NOTIFY_PREFS.nearby;
+  const pg = nr.poiGroups && typeof nr.poiGroups === "object" ? (nr.poiGroups as Record<string, unknown>) : {};
+  const poiGroups = { ...ALL_POI_OFF, ...pn.poiGroups };
+  for (const g of POI_GROUP_OPTIONS) poiGroups[g.key] = bool(pg[g.key], poiGroups[g.key]);
+  const jumpsRaw = typeof nr.jumps === "number" && Number.isFinite(nr.jumps) ? Math.round(nr.jumps) : pn.jumps;
+  const known = new Set(CARRIER_SERVICE_OPTIONS.map((o) => o.key));
   return {
     notable,
     records: bool(r.records, prev.records),
     chime: bool(r.chime, prev.chime),
     nsp: bool(r.nsp, prev.nsp),
+    nearby: {
+      jumps: Math.min(NEARBY_JUMPS_MAX, Math.max(NEARBY_JUMPS_MIN, jumpsRaw)),
+      poiGroups,
+      carriers: nr.carriers === "off" || nr.carriers === "every" || nr.carriers === "services" ? nr.carriers : pn.carriers,
+      carrierServices: Array.isArray(nr.carrierServices)
+        ? nr.carrierServices.filter((s): s is string => typeof s === "string" && known.has(s))
+        : [...pn.carrierServices],
+    },
   };
 }
 
@@ -151,6 +196,15 @@ export function recordText(m: Pick<RecordMarkDTO, "subject" | "type" | "which" |
     `${m.which === "largest" ? "Largest" : "Smallest"} ${recordTypeLabel(m.subject, m.type)} you have found — ` +
     `${formatRadius(m.radius, m.subject)} (was ${formatRadius(m.previous, m.subject)})`
   );
+}
+
+/** GET /api/settings/notify: the settings, plus what the radius works out to right now. */
+export interface NotifySettingsDTO {
+  prefs: NotifyPrefsDTO;
+  /** The ship's average jump, ly (recent jumps, else the loadout's range); null before either is known. */
+  jumpLy: number | null;
+  poiDataReady: boolean;
+  carrierDataReady: boolean;
 }
 
 /** What the mail icon's list and the body marks need from the server. */

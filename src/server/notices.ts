@@ -10,13 +10,19 @@
  *   the first time a scan needs them, silently; only a record broken live is announced and marked.
  * - A notable stellar phenomenon: the FSS signal (`$Fixed_Event_Life_…`, type Codex) says one is in
  *   the system, and the `CodexEntry` that follows a drop at it names it.
+ * - `FSDJump`: points of interest (EDAstro's catalogue, if fetched) and, beyond 2,000 ly of Sol,
+ *   carriers, within N of the ship's average jumps. Each POI is announced once, ever; a carrier once
+ *   per system it is parked in. At most three of each per jump, nearest first, so switching a group
+ *   on in a crowded area does not bury the list.
  *
  * Kept in `edexo-notices.json` beside the user settings: the unread list, the ids already announced
  * (so the same body never comes back after being read), the records, and the settings.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { ExplorationScanRecord } from "../shared/types.js";
+import { carrierServiceLabel } from "../shared/carrierServices.js";
 import {
+  CARRIER_NOTICE_MIN_FROM_SOL_LY,
   DEFAULT_NOTIFY_PREFS,
   mergeNotifyPrefs,
   formatRadius,
@@ -47,7 +53,41 @@ export interface NoticesContext {
   /** Every scan the commander made, for seeding the records. */
   allScans(): Iterable<ExplorationScanRecord>;
   currentSystem(): { name: string; address: number | null };
+  /** Loadout `MaxJumpRange`, the fallback until a few jumps have been flown. */
+  loadoutJumpLy?(): number | null;
+  /** EDAstro POIs in the given groups within the radius, nearest first. */
+  nearbyPois?(origin: Vec3, radiusLy: number, groups: readonly string[]): NearbyPoi[];
+  /** EDAstro carriers within the radius, nearest first. */
+  nearbyCarriers?(origin: Vec3, radiusLy: number): NearbyCarrier[];
 }
+
+export interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
+export interface NearbyPoi {
+  key: string;
+  name: string;
+  system: string;
+  typeLabel: string;
+  distanceLy: number;
+}
+export interface NearbyCarrier {
+  callsign: string;
+  name: string;
+  system: string;
+  systemAddress: number | null;
+  distanceLy: number;
+  lastSeenDays: number | null;
+  services: readonly string[];
+}
+
+/** The last this many jumps make the average. */
+const JUMP_SAMPLES = 20;
+/** Fewer than this, and the loadout's range stands in. */
+const JUMP_SAMPLES_MIN = 3;
+const NEARBY_PER_JUMP = 3;
 
 const MAX_ITEMS = 200;
 const MAX_SEEN = 20_000;
@@ -111,6 +151,8 @@ export interface NoticesService {
   observe(line: Line, ctx: NoticesContext): boolean;
   /** The store was rebuilt: seed the records again on the next scan. */
   invalidate(): void;
+  /** The ship's average jump in ly: recent jumps, else the loadout's range. */
+  jumpLy(ctx: Pick<NoticesContext, "loadoutJumpLy">): number | null;
 }
 
 export function createNoticesService(opts: {
@@ -122,6 +164,83 @@ export function createNoticesService(opts: {
   const seen = new Set(state.seen);
   let bests: Map<string, Best> | null = null;
   let nspDrop: { systemAddress: number | null; system: string; atMs: number } | null = null;
+  const jumps: number[] = [];
+
+  function jumpLy(ctx: Pick<NoticesContext, "loadoutJumpLy">): number | null {
+    if (jumps.length >= JUMP_SAMPLES_MIN) return jumps.reduce((a, b) => a + b, 0) / jumps.length;
+    const l = ctx.loadoutJumpLy?.() ?? null;
+    return l != null && l > 0 ? l : null;
+  }
+
+  function onJump(line: Line, ctx: NoticesContext): boolean {
+    const dist = num(line.JumpDist);
+    if (line.event === "FSDJump" && dist != null && dist > 0) {
+      jumps.push(dist);
+      if (jumps.length > JUMP_SAMPLES) jumps.shift();
+    }
+    const p = Array.isArray(line.StarPos) ? (line.StarPos as unknown[]) : null;
+    const origin = p && p.length >= 3 && p.every((v) => typeof v === "number") ? { x: p[0] as number, y: p[1] as number, z: p[2] as number } : null;
+    const perJump = jumpLy(ctx);
+    if (!origin || perJump == null) return false;
+    const nearby = state.prefs.nearby ?? DEFAULT_NOTIFY_PREFS.nearby;
+    const radius = nearby.jumps * perJump;
+    const here = str(line.StarSystem) || ctx.currentSystem().name;
+    const at = str(line.timestamp) || new Date(now()).toISOString();
+    const ly = (d: number) => `${Math.round(d).toLocaleString("en-US")} ly`;
+    let added = false;
+
+    const groups = Object.entries(nearby.poiGroups).filter(([, on]) => on).map(([g]) => g);
+    if (groups.length && ctx.nearbyPois) {
+      let n = 0;
+      for (const poi of ctx.nearbyPois(origin, radius, groups)) {
+        if (n >= NEARBY_PER_JUMP) break;
+        if (seen.has(`poi:${poi.key}`)) continue;
+        n++;
+        added =
+          add({
+            id: `poi:${poi.key}`,
+            at,
+            kind: "poi",
+            title: `Nearby: ${poi.name}`,
+            text: `${poi.typeLabel}${poi.system ? ` in ${poi.system}` : ""} — ${ly(poi.distanceLy)} from ${here}`,
+            system: poi.system || here,
+            systemAddress: null,
+            body: null,
+            bodyKey: null,
+          }) || added;
+      }
+    }
+
+    const fromSol = Math.hypot(origin.x, origin.y, origin.z);
+    if (nearby.carriers !== "off" && fromSol > CARRIER_NOTICE_MIN_FROM_SOL_LY && ctx.nearbyCarriers) {
+      const wanted = new Set(nearby.carrierServices);
+      let n = 0;
+      for (const c of ctx.nearbyCarriers(origin, radius)) {
+        if (n >= NEARBY_PER_JUMP) break;
+        if (nearby.carriers === "services" && !c.services.some((s) => wanted.has(s))) continue;
+        const id = `carrier:${c.callsign}@${c.systemAddress ?? c.system}`;
+        if (seen.has(id)) continue;
+        n++;
+        const offers = c.services.filter((s) => wanted.has(s));
+        added =
+          add({
+            id,
+            at,
+            kind: "carrier",
+            title: `Carrier nearby: ${c.name || c.callsign}${c.name ? ` (${c.callsign})` : ""}`,
+            text:
+              `In ${c.system} — ${ly(c.distanceLy)} from ${here}` +
+              (offers.length ? ` · ${offers.map(carrierServiceLabel).join(", ")}` : "") +
+              (c.lastSeenDays != null ? ` · last seen ${c.lastSeenDays === 0 ? "today" : `${c.lastSeenDays} day${c.lastSeenDays === 1 ? "" : "s"} ago`}` : ""),
+            system: c.system,
+            systemAddress: c.systemAddress,
+            body: null,
+            bodyKey: null,
+          }) || added;
+      }
+    }
+    return added;
+  }
 
   function save(): void {
     if (!opts.filePath) return;
@@ -332,6 +451,7 @@ export function createNoticesService(opts: {
         case "FSDJump":
         case "CarrierJump":
           nspDrop = null;
+          changed = onJump(line, ctx);
           break;
       }
       if (changed) save();
@@ -340,6 +460,7 @@ export function createNoticesService(opts: {
     invalidate() {
       bests = null;
     },
+    jumpLy,
   };
 }
 

@@ -127,6 +127,9 @@ import type { CliOptions } from "./cliOptions.js";
 import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startupChecks.js";
 import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
 import { createNoticesService, type NoticesContext } from "./notices.js";
+import type { NotifySettingsDTO } from "../shared/notices.js";
+import { queryPoi, readPoiStatus } from "./edastroPoi.js";
+import { queryCarriers, readCarrierStatus } from "./edastroCarriers.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
   persistUserPreferences as writeUserPrefs,
@@ -288,7 +291,31 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       yield* store.soldExplorationScans.values();
     },
     currentSystem: () => ({ name: store.currentSystem ?? "", address: store.currentSystemAddress ?? null }),
+    loadoutJumpLy: () => store.loadoutMaxJumpRangeLy,
+    // Both read the commander's own EDAstro downloads; with none fetched they find nothing.
+    nearbyPois: (origin, radiusLy, groups) =>
+      queryPoi({ origin, groups, limit: 50 })
+        .filter((r) => r.distanceLy != null && r.distanceLy <= radiusLy)
+        .map((r) => ({ key: r.key, name: r.name, system: r.system, typeLabel: r.typeLabel, distanceLy: r.distanceLy! })),
+    nearbyCarriers: (origin, radiusLy) =>
+      queryCarriers({ origin, limit: 100 })
+        .filter((r) => r.distanceLy != null && r.distanceLy <= radiusLy)
+        .map((r) => ({
+          callsign: r.callsign,
+          name: r.name,
+          system: r.system,
+          systemAddress: r.systemAddress,
+          distanceLy: r.distanceLy!,
+          lastSeenDays: r.lastSeenDays,
+          services: r.services,
+        })),
   };
+  const notifySettings = (): NotifySettingsDTO => ({
+    prefs: notices.prefs(),
+    jumpLy: notices.jumpLy(noticesContext),
+    poiDataReady: readPoiStatus().haveData,
+    carrierDataReady: readCarrierStatus().haveData,
+  });
   const getSnapshot = () =>
     perfTime("buildSnapshot", () => {
       const snap = buildSnapshot(
@@ -1280,11 +1307,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
     setPollRates: (statusMs, journalMs) => applyPollRates(statusMs, journalMs),
     getCollectionFocus: () => loadCollectionFocusConfig(),
-    getNotifyPrefs: () => notices.prefs(),
+    getNotifySettings: notifySettings,
     setNotifyPrefs: (raw) => {
-      const next = notices.setPrefs(raw);
+      notices.setPrefs(raw);
       push();
-      return next;
+      return notifySettings();
     },
     markNoticesRead: (ids) => {
       const n = notices.markRead(ids);
