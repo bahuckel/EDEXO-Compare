@@ -57,7 +57,9 @@ export function SnapshotButton({
             const blob = await renderBrandedSnapshot(el, stamp);
             restore?.();
             restore = null;
-            const how = await copyOrSave(blob, snapshotFileName(what, stamp.systemName, new Date()), save);
+            // The file name keeps the system only when the stamp does.
+            const fileSystem = stamp.prefs.system ? stamp.systemName : null;
+            const how = await copyOrSave(blob, snapshotFileName(what, fileSystem, new Date()), save);
             setDone(true);
             setTimeout(() => setDone(false), 1400);
             toast.success(

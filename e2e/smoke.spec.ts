@@ -465,7 +465,8 @@ test("galaxy 3D: worth at least X, Next target and Skip", async ({ page }) => {
     .toBe("ready");
   const worth = page.getByRole("slider", { name: "Worth at least (million CR)", exact: true });
   await worth.fill("8"); // 50 M
-  await expect(page.locator(".g3d-slider", { has: worth })).toContainText(/Worth ≥ 50M \(\d/);
+  // The value sits after the track in a fixed-width span (it used to shift the slider as it changed).
+  await expect(page.locator(".g3d-slider", { has: worth }).locator(".g3d-slider-val")).toContainText(/^50M \(\d/);
 
   await page.getByRole("button", { name: "Next target" }).click();
   const banner = page.getByTestId("g3d-target");

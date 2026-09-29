@@ -113,6 +113,16 @@
   width: 110px;
   accent-color: var(--accent);
 }
+/* The slider's value: a fixed width and tabular digits, so dragging moves nothing else. */
+.g3d-slider-val {
+  display: inline-block;
+  min-width: 11ch;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.g3d-slider-val--short {
+  min-width: 4.5ch;
+}
 .g3d-check input {
   accent-color: var(--accent);
 }

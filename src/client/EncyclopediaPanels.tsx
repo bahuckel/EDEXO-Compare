@@ -162,7 +162,15 @@ export function FoundSpeciesPopup({
   onClose: () => void;
 }) {
   return (
-    <div className="modal-backdrop encyclopedia-found-backdrop" role="presentation" onClick={onClose}>
+    // Sits inside the Encyclopedia's backdrop: its closing click must not bubble on and close that too.
+    <div
+      className="modal-backdrop encyclopedia-found-backdrop"
+      role="presentation"
+      onClick={(ev) => {
+        ev.stopPropagation();
+        onClose();
+      }}
+    >
       <div
         className="modal-panel encyclopedia-found-panel"
         role="dialog"
@@ -175,7 +183,10 @@ export function FoundSpeciesPopup({
           <button
             type="button"
             className="modal-close"
-            onClick={onClose}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onClose();
+            }}
             aria-label="Close"
             title="Close found list"
           >

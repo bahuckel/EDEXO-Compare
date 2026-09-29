@@ -305,12 +305,57 @@
   margin: 0 auto;
 }
 
-/* The D-scan and Route cards wrap on a phone too (UI review V1: Route ran off the screen). After the
-   header-row-3 rules above, which set the cluster to one line. */
-@media (max-width: 699px) {
-  .top > .header-tray .header-dscan-cluster {
+/* ---- row 3 below 1500 px: two rows of cards rather than a sideways scroll that cropped Route at
+   tablet widths (owner, 2026-09-30). ------------------------------------------------------------- */
+@media (min-width: 700px) and (max-width: 1499px) {
+  .top > .header-tray {
     flex-wrap: wrap;
     row-gap: 0.35rem;
+    overflow: visible;
+  }
+}
+
+/* ---- row 3 on a phone (< 700 px): a grid of whole-width rows instead of cards of every width.
+     [⊕][ Exobiology ………… ][ⓘ]
+     [ D-scan ……………………………… ]
+     [ Route ………………………………… ]
+   The FIRST card is not repeated here: the System card already carries a "First discovery" chip. */
+@media (max-width: 699px) {
+  .top > .header-tray {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+  .top > .header-tray .data-value-pill {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .top > .header-tray > .info-anchor {
+    align-self: center;
+  }
+  .top > .header-tray .header-dscan-cluster {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
     max-width: 100%;
+  }
+  .top > .header-tray .header-dscan-cluster > *,
+  .top > .header-tray .header-dscan-pill > .d-scan-card,
+  .top > .header-tray .header-route-mini.d-scan-card.d-scan-card--route {
+    width: 100%;
+    min-width: 0;
+  }
+  .top > .header-tray .header-dscan-cluster > .d-scan-card--label-only {
+    display: none;
+  }
+  /* On the narrowest phones a card's words wrap inside it rather than running out of it. */
+  .top > .header-tray .data-value-pill,
+  .top > .header-tray .header-dscan-pill > .d-scan-card {
+    flex-wrap: wrap;
+    white-space: normal;
+    row-gap: 0.1rem;
+    min-width: 0;
   }
 }

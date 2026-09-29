@@ -218,18 +218,21 @@ function EncyclopediaThumb({
   photoUrl,
   displayName,
   className = "encyclopedia-species-img encyclopedia-species-img--thumb",
+  size = "thumb",
 }: {
   photoUrl: string;
   displayName: string;
   className?: string;
+  /** "card" for the field-guide banner: 1024 px (~44 KB) — the 320 px thumbnail looked dull there. */
+  size?: "thumb" | "card";
 }) {
   const retriedRef = useRef(false);
   useEffect(() => {
     retriedRef.current = false;
   }, [photoUrl]);
 
-  /** 320 px WebP (~6 KB) rather than the original (~600 KB average). */
-  const thumbUrl = speciesPhotoVariant(photoUrl, "thumb");
+  /** A WebP variant (320 px ~6 KB, 1024 px ~44 KB) rather than the original (~600 KB average). */
+  const thumbUrl = speciesPhotoVariant(photoUrl, size);
 
   return (
     <img
@@ -651,7 +654,7 @@ export function EncyclopediaModal({
             .filter(Boolean)
             .join(" — ")}
         >
-          <EncyclopediaThumb photoUrl={photoUrl} displayName={entry.displayName} className="fg-photo-img" />
+          <EncyclopediaThumb photoUrl={photoUrl} displayName={entry.displayName} className="fg-photo-img" size="card" />
           {(photoUrls?.length ?? 0) > 1 ? <span className="fg-photo-count">{photoUrls!.length} photos</span> : null}
         </button>
         <div className="encyclopedia-species-col">

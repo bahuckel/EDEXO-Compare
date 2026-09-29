@@ -191,3 +191,28 @@
 .sys-notable-card__dot--dss {
   color: var(--ok);
 }
+
+/* ---- phone (< 700 px): the System card is a full-width row and may shrink; its name line and chips
+   wrap; the star cards share one row equally (owner, 2026-09-30: the card ran off his phone's
+   screen, and the header looked "thrown together"). ---------------------------------------------- */
+@media (max-width: 699px) {
+  .top .sys-row__cards {
+    align-items: stretch;
+  }
+  .top .sys-row__cards > .sys-card {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .top .sys-card__head {
+    flex-wrap: wrap;
+    row-gap: 0.2rem;
+  }
+  .top .sys-card__name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .top .sys-row__cards > .sys-star-card {
+    flex: 1 1 0;
+    min-width: 5.5rem;
+  }
+}

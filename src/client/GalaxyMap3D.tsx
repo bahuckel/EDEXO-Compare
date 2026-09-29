@@ -141,7 +141,10 @@ export function GalaxyMap3D() {
         const data = regionData.current;
         if (!data) return;
         const name = data.regions[regionIndexForCoords(data, g.x, g.z)];
-        if (name) setCodexRegion(name);
+        // Same region, other spelling ("The Formidine Rift" from the list, "Formidine Rift" from the
+        // map): keep the current one, or a missed marker refetched and re-framed the region (tester
+        // report, 2026-09-30: "if you miss a dot everything resets").
+        if (name) setCodexRegion((cur) => (cur && regionJoinKey(cur) === regionJoinKey(name) ? cur : name));
       },
       // Names: placed without overlaps, written straight into the DOM (every rendered frame).
       onLabels: (labels) => {
@@ -1000,7 +1003,7 @@ export function GalaxyMap3D() {
         </div>
         {layers.you ? (
           <label className="g3d-slider" title="Your systems still waiting, worth at least this much">
-            Waiting ≥ {waitMinM ? `${waitMinM}M` : "any"}
+            Waiting ≥
             <input
               type="range"
               min={0}
@@ -1010,11 +1013,13 @@ export function GalaxyMap3D() {
               aria-label="Waiting worth at least (million CR)"
               onChange={(ev) => setWaitMinM(Number(ev.target.value))}
             />
+            {/* After the track, in a fixed width: the changing value moved the slider under the cursor
+                and pushed every control to its right (tester report, 2026-09-30). */}
+            <span className="g3d-slider-val g3d-slider-val--short">{waitMinM ? `${waitMinM}M` : "any"}</span>
           </label>
         ) : null}
         <label className="g3d-slider" title="Only systems whose recorded species add up to at least this (1×)">
-          Worth ≥ {worthM ? `${worthM}M` : "any"}
-          {worthCount != null && worthM ? ` (${formatCount(worthCount)})` : ""}
+          Worth ≥
           <input
             type="range"
             min={0}
@@ -1024,6 +1029,10 @@ export function GalaxyMap3D() {
             aria-label="Worth at least (million CR)"
             onChange={(ev) => setWorthStep(Number(ev.target.value))}
           />
+          <span className="g3d-slider-val">
+            {worthM ? `${worthM}M` : "any"}
+            {worthCount != null && worthM ? ` (${formatCount(worthCount)})` : ""}
+          </span>
         </label>
         <button
           type="button"

@@ -1,3 +1,4 @@
+import { SNAPSHOT_SYSTEM_CLASS } from "./panelSnapshot";
 import { SnapshotButton } from "./SnapshotButton";
 import type { AppSnapshot, NotableBodyInfo } from "@shared/types";
 import { DScanBodiesBadge } from "./DScanBodiesBadge";
@@ -181,10 +182,13 @@ export const SystemMapModal = memo(function SystemMapModal({
   const mapHeading =
     systemTitleName.length > 0 ? (
       <>
-        System map - {systemTitleName}
-        {map?.starSystem?.trim() || snap.viewingSystemName?.trim() ? (
-          <CopySystemButton system={systemTitleName} />
-        ) : null}
+        System map
+        <span className={SNAPSHOT_SYSTEM_CLASS}>
+          {" "}- {systemTitleName}
+          {map?.starSystem?.trim() || snap.viewingSystemName?.trim() ? (
+            <CopySystemButton system={systemTitleName} />
+          ) : null}
+        </span>
       </>
     ) : (
       "System map"

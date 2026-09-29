@@ -1,6 +1,13 @@
 /**
- * The signals that travel the hex grid (HexSignals.tsx). Runs in a worker on an OffscreenCanvas when
- * the browser can, so the page's main thread never paints them; on the main thread otherwise.
+ * The life in the hex grid behind the app (HexSignals.tsx). Runs in a worker on an OffscreenCanvas
+ * when the browser can, so the page's main thread never paints it; on the main thread otherwise.
+ *
+ * Two layers (owner, 2026-09-30: the first version's bright travelling lights were "a bit
+ * distracting"; he wanted "a dull shimmer … that just adds some liveliness"):
+ * - the **glimmer**, the main effect: now and then a hexagon's outline brightens very faintly and
+ *   fades out again over a few seconds, scattered at random — the grid breathing, not moving;
+ * - a few **signals**: dim, slow, short trails running along the edges, no bright head.
+ * On a phone only the glimmer runs, at a lower frame rate.
  *
  * Lined up with the CSS tile in shell.css: a true honeycomb of pointy-top hexagons, side 16 px, tile
  * 27.7128 × 48 px at `background-position: center top`. Change both together.
@@ -11,17 +18,35 @@ const HALF_W = (SIDE * Math.sqrt(3)) / 2;
 const TILE_W = 2 * HALF_W;
 const ROW_H = 24;
 
+/** How strong the whole effect is; the owner picks between the two (`?backdrop=soft|faint`). */
+export type BackdropLevel = "soft" | "faint";
+// 2026-09-30: the first cut (0.2 / 0.3) was too faint to notice behind the panels; the original
+// signals peaked at 0.8 with glowing heads, which was too much.
+const LEVEL = {
+  soft: { glimmer: 0.34, signal: 0.45 },
+  faint: { glimmer: 0.2, signal: 0.28 },
+} as const;
+
+export interface BackdropOptions {
+  level: BackdropLevel;
+  /** Travelling signals as well as the glimmer (off on phones). */
+  signals: boolean;
+  fps: number;
+}
+
 /** px per second along an edge. */
-const SPEED = 70;
-const TRAIL = 26;
+const SPEED = 34;
+const TRAIL = 16;
 /** One signal per this many square pixels of window, within bounds. */
-const AREA_PER_SIGNAL = 140_000;
-const MIN_SIGNALS = 5;
-const MAX_SIGNALS = 18;
-const FRAME_MS = 1000 / 30;
+const AREA_PER_SIGNAL = 450_000;
+const MIN_SIGNALS = 2;
+const MAX_SIGNALS = 7;
+/** Glimmering hexagons at any moment: one per this many square pixels, within bounds. */
+const AREA_PER_GLIMMER = 80_000;
+const MIN_GLIMMER = 4;
+const MAX_GLIMMER = 26;
 /** The trail in this many strokes, each fainter towards the tail. */
-const BANDS = 4;
-const GLOW = 4.5;
+const BANDS = 3;
 const RGB = { accent: "255, 150, 60", info: "79, 208, 255" } as const;
 type Hue = keyof typeof RGB;
 
@@ -37,6 +62,15 @@ const DOWN_EDGES: Dir[] = [
   [-HALF_W, -SIDE / 2],
   [HALF_W, -SIDE / 2],
 ];
+/** The six corners of a hexagon around its centre. */
+const CORNERS: Dir[] = [
+  [0, -SIDE],
+  [HALF_W, -SIDE / 2],
+  [HALF_W, SIDE / 2],
+  [0, SIDE],
+  [-HALF_W, SIDE / 2],
+  [-HALF_W, -SIDE / 2],
+];
 
 interface Signal {
   x: number;
@@ -51,6 +85,15 @@ interface Signal {
   hue: Hue;
 }
 
+interface Glimmer {
+  cx: number;
+  cy: number;
+  age: number;
+  life: number;
+  /** 0.5..1 of the level's strength, so they are not all alike */
+  peak: number;
+}
+
 type AnyCanvas = HTMLCanvasElement | OffscreenCanvas;
 type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
@@ -62,31 +105,38 @@ export interface HexSignalsHandle {
 export function runHexSignals(
   canvas: AnyCanvas,
   size: { w: number; h: number; dpr: number },
-  makeCanvas: (w: number, h: number) => AnyCanvas,
+  opts: BackdropOptions,
 ): HexSignalsHandle | null {
   const ctx = canvas.getContext("2d") as Ctx | null;
   if (!ctx) return null;
+  const strength = LEVEL[opts.level] ?? LEVEL.soft;
+  const frameMs = 1000 / Math.max(5, Math.min(60, opts.fps));
 
   let w = 0;
   let h = 0;
   let x0 = 0;
   let signals: Signal[] = [];
+  let glimmers: Glimmer[] = [];
+  let wantGlimmer = 0;
   let raf = 0;
   let last = -1;
   let stopped = false;
 
   const pick = <T>(xs: T[]): T => xs[Math.floor(Math.random() * xs.length)]!;
 
-  /** A signal at the top vertex of a random hexagon on screen. */
-  const spawn = (anyAge = false): Signal => {
-    const rows = Math.ceil(h / ROW_H) + 1;
-    const cols = Math.ceil(w / TILE_W) + 2;
-    const r = Math.floor(Math.random() * rows);
-    const c = Math.floor(Math.random() * cols);
-    const life = 5 + Math.random() * 7;
+  /** The centre of a random hexagon on screen (row r, column c of the CSS tile). */
+  const randomCell = () => {
+    const r = Math.floor(Math.random() * (Math.ceil(h / ROW_H) + 1));
+    const c = Math.floor(Math.random() * (Math.ceil(w / TILE_W) + 2));
+    return { x: x0 + HALF_W + c * TILE_W + (r % 2 ? HALF_W : 0), y: SIDE + r * ROW_H };
+  };
+
+  const spawnSignal = (anyAge = false): Signal => {
+    const cell = randomCell();
+    const life = 6 + Math.random() * 6;
     return {
-      x: x0 + HALF_W + c * TILE_W + (r % 2 ? HALF_W : 0),
-      y: r * ROW_H,
+      x: cell.x,
+      y: cell.y - SIDE,
       up: true,
       dir: pick(UP_EDGES),
       t: 0,
@@ -95,6 +145,12 @@ export function runHexSignals(
       life,
       hue: Math.random() < 0.15 ? "info" : "accent",
     };
+  };
+
+  const spawnGlimmer = (anyAge = false): Glimmer => {
+    const cell = randomCell();
+    const life = 3 + Math.random() * 2.5;
+    return { cx: cell.x, cy: cell.y, age: anyAge ? Math.random() * life : 0, life, peak: 0.5 + Math.random() * 0.5 };
   };
 
   const resize = (nw: number, nh: number, dpr: number) => {
@@ -106,26 +162,18 @@ export function runHexSignals(
     ctx.setTransform(d, 0, 0, d, 0, 0);
     // Where the CSS tile starts: `center top`, repeated.
     x0 = (((w - TILE_W) / 2) % TILE_W) - TILE_W;
-    const want = Math.max(MIN_SIGNALS, Math.min(MAX_SIGNALS, Math.round((w * h) / AREA_PER_SIGNAL)));
-    signals = signals.slice(0, want);
-    while (signals.length < want) signals.push(spawn(true));
+    const area = w * h;
+    wantGlimmer = Math.max(MIN_GLIMMER, Math.min(MAX_GLIMMER, Math.round(area / AREA_PER_GLIMMER)));
+    glimmers = glimmers.slice(0, wantGlimmer);
+    while (glimmers.length < wantGlimmer) glimmers.push(spawnGlimmer(true));
+    const wantSignals = opts.signals
+      ? Math.max(MIN_SIGNALS, Math.min(MAX_SIGNALS, Math.round(area / AREA_PER_SIGNAL)))
+      : 0;
+    signals = signals.slice(0, wantSignals);
+    while (signals.length < wantSignals) signals.push(spawnSignal(true));
   };
 
-  /* The glow of a signal's head, drawn once per colour and stamped each frame. */
-  const sprites = {} as Record<Hue, AnyCanvas>;
-  for (const k of Object.keys(RGB) as Hue[]) {
-    const c = makeCanvas(GLOW * 4, GLOW * 4);
-    const g = c.getContext("2d") as Ctx;
-    const grad = g.createRadialGradient(GLOW * 2, GLOW * 2, 0, GLOW * 2, GLOW * 2, GLOW * 2);
-    grad.addColorStop(0, `rgba(${RGB[k]}, 0.95)`);
-    grad.addColorStop(0.35, `rgba(${RGB[k]}, 0.35)`);
-    grad.addColorStop(1, `rgba(${RGB[k]}, 0)`);
-    g.fillStyle = grad;
-    g.fillRect(0, 0, GLOW * 4, GLOW * 4);
-    sprites[k] = c;
-  }
-
-  const step = (s: Signal, dt: number) => {
+  const stepSignal = (s: Signal, dt: number) => {
     s.age += dt;
     s.t += (SPEED * dt) / SIDE;
     while (s.t >= 1) {
@@ -149,28 +197,39 @@ export function runHexSignals(
     ctx.clearRect(0, 0, w, h);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.lineWidth = 1.3;
+
+    // The glimmer: a hexagon outline that swells in and fades out (a sine over its life).
+    ctx.lineWidth = 1;
+    for (const g of glimmers) {
+      const a = Math.sin(Math.PI * Math.min(1, g.age / g.life)) * strength.glimmer * g.peak;
+      if (a <= 0.004) continue;
+      ctx.strokeStyle = `rgba(${RGB.accent}, ${a.toFixed(3)})`;
+      ctx.beginPath();
+      ctx.moveTo(g.cx + CORNERS[0]![0], g.cy + CORNERS[0]![1]);
+      for (let i = 1; i < 6; i++) ctx.lineTo(g.cx + CORNERS[i]![0], g.cy + CORNERS[i]![1]);
+      ctx.closePath();
+      ctx.stroke();
+    }
+
+    // The signals: dim, with the tail fading out; no glowing head.
+    ctx.lineWidth = 1.1;
     for (const s of signals) {
       const n = s.trail.length;
       if (n < 2) continue;
-      // Fade in over the first second, out over the last two.
-      const fade = Math.min(1, s.age, (s.life - s.age) / 2);
+      // Fade in over the first two seconds, out over the last two.
+      const fade = Math.min(1, s.age / 2, (s.life - s.age) / 2);
       if (fade <= 0) continue;
       const per = Math.ceil((n - 1) / BANDS);
       for (let band = 0; band < BANDS; band++) {
         const from = band * per;
         const to = Math.min(n - 1, from + per);
         if (to <= from) break;
-        ctx.strokeStyle = `rgba(${RGB[s.hue]}, ${(((band + 1) / BANDS) ** 1.5 * 0.8 * fade).toFixed(3)})`;
+        ctx.strokeStyle = `rgba(${RGB[s.hue]}, ${(((band + 1) / BANDS) * strength.signal * fade).toFixed(3)})`;
         ctx.beginPath();
         ctx.moveTo(s.trail[from]!.x, s.trail[from]!.y);
         for (let i = from + 1; i <= to; i++) ctx.lineTo(s.trail[i]!.x, s.trail[i]!.y);
         ctx.stroke();
       }
-      const head = s.trail[n - 1]!;
-      ctx.globalAlpha = fade;
-      ctx.drawImage(sprites[s.hue], head.x - GLOW * 2, head.y - GLOW * 2);
-      ctx.globalAlpha = 1;
     }
   };
 
@@ -178,13 +237,19 @@ export function runHexSignals(
     if (stopped) return;
     raf = requestAnimationFrame(frame);
     if (last < 0) last = now;
-    if (now - last < FRAME_MS) return;
-    const dt = Math.min((now - last) / 1000, 0.1);
+    if (now - last < frameMs) return;
+    const dt = Math.min((now - last) / 1000, 0.2);
     last = now;
+    for (let i = 0; i < glimmers.length; i++) {
+      const g = glimmers[i]!;
+      g.age += dt;
+      // A short random pause between glimmers keeps them from reading as a pattern.
+      if (g.age >= g.life + Math.random() * 1.5) glimmers[i] = spawnGlimmer();
+    }
     for (let i = 0; i < signals.length; i++) {
       const s = signals[i]!;
-      step(s, dt);
-      if (s.age >= s.life || s.x < -40 || s.x > w + 40 || s.y < -40 || s.y > h + 40) signals[i] = spawn();
+      stepSignal(s, dt);
+      if (s.age >= s.life || s.x < -40 || s.x > w + 40 || s.y < -40 || s.y > h + 40) signals[i] = spawnSignal();
     }
     draw();
   };

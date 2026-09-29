@@ -802,6 +802,11 @@
         overflow-y: auto;
         background: rgba(3, 2, 2, 0.8);
       }
+      /* A section open on top scrolls on its own; the page behind it does not (two scrollbars side by
+         side confused people — tester report, 2026-09-30). */
+      body:has(.modal-bg.on) {
+        overflow: hidden;
+      }
       .modal-bg.on {
         display: flex;
       }

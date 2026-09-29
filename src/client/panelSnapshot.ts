@@ -40,6 +40,12 @@ export function snapshotStamp(): SnapshotStamp {
 
 /** Elements with this class are left out of the image (the camera itself, open popovers). */
 export const SNAPSHOT_SKIP_CLASS = "snapshot-skip";
+/**
+ * The system's name where a panel prints it (the system map's title). Left out of the picture when
+ * the "system name" stamp option is off (tester report, 2026-09-30: the option only removed the
+ * stamp line, and the map's own title still said which system it was).
+ */
+export const SNAPSHOT_SYSTEM_CLASS = "snapshot-system";
 
 const ICON_URL = "/edexo-icon-124.webp";
 
@@ -101,7 +107,12 @@ export async function renderBrandedSnapshot(el: HTMLElement, stamp: SnapshotStam
     // The copy is drawn as it finally looks: a dialog caught mid fade-in would otherwise come out blank.
     style: { opacity: "1", transform: "none", animation: "none" },
     // Leave the camera and anything marked out of the picture.
-    filter: (node) => !(node instanceof HTMLElement && node.classList.contains(SNAPSHOT_SKIP_CLASS)),
+    filter: (node) =>
+      !(
+        node instanceof HTMLElement &&
+        (node.classList.contains(SNAPSHOT_SKIP_CLASS) ||
+          (!stamp.prefs.system && node.classList.contains(SNAPSHOT_SYSTEM_CLASS)))
+      ),
   });
   const svgImg = await loadImage(svg);
   if (!svgImg || !svgImg.naturalWidth) throw new Error("Could not draw the panel.");

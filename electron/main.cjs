@@ -585,10 +585,27 @@ async function start() {
   const url = `${runtime.getLocalBaseUrl()}/launcher.html`;
 
   const launcherSaved = readWindowState("launcher");
+  // First run (no saved size): as tall as the screen allows, within reason, instead of a fixed 768 px
+  // that left most of a 1440p screen empty and put the page behind a scrollbar (tester, 2026-09-30).
+  const launcherArea = screen.getPrimaryDisplay().workArea;
+  const launcherDefaultH = Math.max(768, Math.min(1000, launcherArea.height - 80));
+  // A saved 548 × 768 is the old default nobody chose: treat it as "never resized".
+  const launcherUntouched = !launcherSaved || (launcherSaved.width === 548 && launcherSaved.height === 768);
   mainWindow = new BrowserWindow({
     width: launcherSaved?.width ?? 548,
-    height: launcherSaved?.height ?? 768,
-    ...(launcherSaved ? { x: launcherSaved.x, y: launcherSaved.y } : {}),
+    height: launcherUntouched ? launcherDefaultH : launcherSaved.height,
+    ...(launcherSaved
+      ? {
+          x: launcherSaved.x,
+          // Taller than it was saved: keep its bottom on the screen.
+          y: launcherUntouched
+            ? Math.max(
+                launcherArea.y,
+                Math.min(launcherSaved.y, launcherArea.y + launcherArea.height - launcherDefaultH),
+              )
+            : launcherSaved.y,
+        }
+      : {}),
     backgroundColor: "#050507",
     autoHideMenuBar: true,
     icon: winIcon,

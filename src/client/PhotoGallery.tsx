@@ -73,9 +73,19 @@ export function PhotoGallery({
   const url = urls[i] ?? urls[0];
   if (!url) return null;
 
+  /*
+    The gallery opens over other panels (the Encyclopedia, a species card), inside their backdrop. A
+    click that closes it must stop here: bubbling on, it reached the Encyclopedia's backdrop and
+    closed that too (tester report + owner, 2026-09-30).
+  */
+  const close = (ev: { stopPropagation(): void }) => {
+    ev.stopPropagation();
+    onClose();
+  };
+
   return (
-    <div ref={dialogRef} className="photo-lightbox-backdrop" role="presentation" onClick={onClose}>
-      <button type="button" className="photo-lightbox-close" aria-label="Close" onClick={onClose}>
+    <div ref={dialogRef} className="photo-lightbox-backdrop" role="presentation" onClick={close}>
+      <button type="button" className="photo-lightbox-close" aria-label="Close" onClick={close}>
         ×
       </button>
 
