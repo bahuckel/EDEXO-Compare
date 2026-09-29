@@ -129,18 +129,15 @@ body::before {
   z-index: 0;
   border-radius: inherit;
   pointer-events: none;
+  /* The Vista Genomics artwork that sat under this gradient is gone (owner, 2026-09-29); a new header
+     image will replace it. */
   background-color: #0c0a08;
-  background-image:
-    linear-gradient(165deg, rgba(12, 7, 4, 0.97) 0%, rgba(16, 9, 5, 0.93) 38%, rgba(12, 7, 4, 0.97) 100%),
-    url("../../../vista.webp");
-  /* Full width inside the card; height follows aspect ratio — top/bottom crop when taller */
-  background-size:
-    100% 100%,
-    100% auto;
-  background-position:
-    center,
-    center center;
-  background-repeat: no-repeat;
+  background-image: linear-gradient(
+    165deg,
+    rgba(12, 7, 4, 0.97) 0%,
+    rgba(16, 9, 5, 0.93) 38%,
+    rgba(12, 7, 4, 0.97) 100%
+  );
 }
 
 .top > *:not(.modal-backdrop) {

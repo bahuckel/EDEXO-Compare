@@ -9,6 +9,8 @@ import { useFootfallCertainty } from "./footfallContext";
 import { settledMultiplier } from "@shared/footfallValue";
 import { PhotoCredit, isPlaceholderPhoto, photoCreditTitle } from "./photoCredit";
 import { PhotoGallery } from "./PhotoGallery";
+import { matchHasDetail, matchOtherCardCount, useMatchDetail } from "./useMatchDetail";
+import { useToast } from "./ui/feedback";
 import { memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type {
   BodyComputed,
@@ -25,7 +27,6 @@ import { pillLabelStyle } from "./planetDisplayUtils";
 import {
   EXO_PRESENCE_HELP,
   EXO_CODEX_VS_EXO_PROFILE_HELP,
-  exomasteryDetailHasContent,
   footCatalogBadgeText,
   labelForReasonField,
   primaryMatchQuad,
@@ -91,12 +92,18 @@ export const SpeciesCard = memo(function SpeciesCard({
   const [tempUnit, setTempUnit] = useTempUnit();
   const quadCells = useMemo(() => {
     const base = primaryMatchQuad(m, scan, estimatedSurfaceTempK, tempUnit);
-    const exo = m.exomasteryProfilePresent && exomasteryDetailHasContent(m.exomasteryDetail);
+    const exo = m.exomasteryProfilePresent && matchHasDetail(m);
     return base.map((c) => (exo && c.key !== "SurfaceTemperature" ? { ...c, openExomasteryModal: true } : c));
   }, [m, scan, estimatedSurfaceTempK, tempUnit]);
   const extras = useMemo(() => speciesMatchExtraReasons(m), [m]);
+  const [exoDetailOpen, setExoDetailOpen] = useState(false);
+  const [otherDetailsOpen, setOtherDetailsOpen] = useState(false);
+  const [otherMatchModalOpen, setOtherMatchModalOpen] = useState(false);
+  // Fetched on first open of the modal or the drawer (UI review P1b); see useMatchDetail.
+  const lazyDetail = useMatchDetail(m, exoDetailOpen || otherDetailsOpen || otherMatchModalOpen);
+  const lazyCards = lazyDetail.data?.otherCards;
   const otherDetailCards = useMemo((): OtherMatchDetailCardDTO[] => {
-    const xs = m.otherMatchDetailCards ?? [];
+    const xs = lazyCards ?? [];
     const fromReasons: OtherMatchDetailCardDTO[] = extras.map((r, i) => ({
       id: `reas-${r.field}-${i}`,
       priority: 920 + i,
@@ -114,7 +121,7 @@ export const SpeciesCard = memo(function SpeciesCard({
     return [...xs, ...fromReasons].sort(
       (a, b) => a.priority - b.priority || a.shortTitle.localeCompare(b.shortTitle),
     );
-  }, [m.otherMatchDetailCards, extras]);
+  }, [lazyCards, extras]);
 
   /*
    * The body's own materials decide the colour for material-driven species, and the card already
@@ -175,12 +182,17 @@ export const SpeciesCard = memo(function SpeciesCard({
    */
   const heroSrc = speciesPhotoVariant(heroPhotoUrl, "card");
   const [photoLightbox, setPhotoLightbox] = useState(false);
-  const [exoDetailOpen, setExoDetailOpen] = useState(false);
-  const [otherDetailsOpen, setOtherDetailsOpen] = useState(false);
-  const [otherMatchModalOpen, setOtherMatchModalOpen] = useState(false);
+  const toast = useToast();
+  useEffect(() => {
+    if (!lazyDetail.error) return;
+    toast.error(lazyDetail.error);
+    setExoDetailOpen(false);
+    setOtherDetailsOpen(false);
+    setOtherMatchModalOpen(false);
+  }, [lazyDetail.error, toast]);
   const otherDetailsFocusRef = useRef<HTMLDivElement>(null);
 
-  const otherMatchBlock = otherDetailCards.length > 0;
+  const otherMatchBlock = matchOtherCardCount(m) > 0 || otherDetailCards.length > 0;
   const compact = compactCandidateView === true;
 
   useEffect(() => {
@@ -504,7 +516,7 @@ export const SpeciesCard = memo(function SpeciesCard({
       ) : null}
 
       {m.exomasteryProfilePresent ? (
-        exomasteryDetailHasContent(m.exomasteryDetail) ? (
+        matchHasDetail(m) ? (
           <button
             type="button"
             className="species-similarity-index species-similarity-index--clickable"
@@ -659,12 +671,12 @@ export const SpeciesCard = memo(function SpeciesCard({
         </div>
       </div>
 
-      {exoDetailOpen && exomasteryDetailHasContent(m.exomasteryDetail) && m.exomasteryDetail ? (
+      {exoDetailOpen && lazyDetail.data?.detail ? (
         <Suspense fallback={null}>
           <ExomasteryHabitatMatchModal
             variant="profile"
-            detail={m.exomasteryDetail}
-            varietyHints={m.exomasteryVarietyHints}
+            detail={lazyDetail.data.detail}
+            varietyHints={lazyDetail.data.varietyHints}
             exportBasename={m.exomasteryExportBasename}
             genusDataDir={m.entry.genusDataDir}
             comparisonBodySummary={comparisonBodySummary}

@@ -73,22 +73,40 @@ export function useLiveSnapshot(): {
       message is always complete, so there is one to take them from — if there somehow is not, the
       full snapshot is fetched.
     */
-    const applyPayload = (payload: AppSnapshot, unchanged?: string[]) => {
-      let missing = false;
-      setSnapshot((prev) => {
-        if (unchanged?.length) {
-          if (!prev) {
-            missing = true;
-            return prev;
-          }
-          const p = payload as unknown as Record<string, unknown>;
-          const old = prev as unknown as Record<string, unknown>;
-          for (const k of unchanged) p[k] = old[k];
+    /*
+      A push may also carry `bodiesDelta` instead of `bodies` (P1b): every body key in order and only
+      the bodies that changed; the others come from the held copy by key. The merge is done here, on
+      the snapshot this effect last applied, not inside a state updater (React may run those later).
+    */
+    let held: AppSnapshot | null = null;
+    const applyPayload = (
+      payload: AppSnapshot,
+      unchanged?: string[],
+      bodiesDelta?: { keys: string[]; changed: AppSnapshot["bodies"] },
+    ) => {
+      const p = payload as unknown as Record<string, unknown>;
+      if (unchanged?.length || bodiesDelta) {
+        if (!held) {
+          fetchFull();
+          return;
         }
-        return prev ? reuseUnchanged(prev, payload) : payload;
-      });
-      if (missing) fetchFull();
-      else setLastStateAtValue(Date.now());
+        const old = held as unknown as Record<string, unknown>;
+        for (const k of unchanged ?? []) p[k] = old[k];
+        if (bodiesDelta) {
+          const byKey = new Map((held.bodies ?? []).map((b) => [b.state.key, b]));
+          for (const b of bodiesDelta.changed) byKey.set(b.state.key, b);
+          const bodies = bodiesDelta.keys.map((k) => byKey.get(k));
+          if (bodies.some((b) => b === undefined)) {
+            fetchFull();
+            return;
+          }
+          payload.bodies = bodies as AppSnapshot["bodies"];
+        }
+      }
+      const next: AppSnapshot = held ? reuseUnchanged(held, payload) : payload;
+      held = next;
+      setSnapshot(next);
+      setLastStateAtValue(Date.now());
     };
 
     const fetchFull = () =>
@@ -128,7 +146,11 @@ export function useLiveSnapshot(): {
           if (msg.type === "state") {
             perfSnapshotReceived(raw.length);
             if (typeof msg.rev === "number") lastRev = msg.rev;
-            applyPayload(msg.payload as AppSnapshot, Array.isArray(msg.unchanged) ? (msg.unchanged as string[]) : undefined);
+            applyPayload(
+              msg.payload as AppSnapshot,
+              Array.isArray(msg.unchanged) ? (msg.unchanged as string[]) : undefined,
+              msg.bodiesDelta && Array.isArray(msg.bodiesDelta.keys) ? msg.bodiesDelta : undefined,
+            );
           }
         } catch {
           /* ignore */

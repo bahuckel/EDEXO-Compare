@@ -632,6 +632,13 @@ export interface SpeciesMatch {
   exomasteryOtherMatchCardScore?: number | null;
   /** Per-field typical vs current (for modal); omitted when no profile or scan. */
   exomasteryDetail?: ExomasteryDetailDTO | null;
+  /**
+   * Set on the app channel instead of `exomasteryDetail`, `exomasteryVarietyHints` and
+   * `otherMatchDetailCards` (UI review P1b): the body key to ask `/api/match-detail` with when the
+   * habitat modal or the other-details drawer opens, whether there is a habitat breakdown, and how
+   * many detail cards there are; `v` changes whenever what was left out does.
+   */
+  lazyDetail?: { body: string; habitat: boolean; otherCards: number; v: string };
 }
 
 /** One species row contributing to organic sell-range min or max totals. */

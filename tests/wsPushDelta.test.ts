@@ -101,4 +101,63 @@ describe("snapshot pushes", () => {
     expect(full.headers.get("x-edexo-rev")).toBe(String(p2.rev));
     expect(((await full.json()) as { journalSystems: unknown[] }).journalSystems).toHaveLength(400);
   });
+
+  it("sends only the bodies that changed, with every key in order", async () => {
+    const body = (key: string, n: number) => ({
+      state: { key, bodyName: `B ${key}`, n },
+      matches: [],
+      pad: "x".repeat(3000),
+    });
+    const t = await start({ bodies: [body("1", 0), body("2", 0), body("3", 0)] });
+    await t.next(1);
+    t.set({ bodies: [body("1", 0), body("2", 0), body("3", 0)], tick: 1 });
+    await t.next(2);
+    // One body changes and one is added: the others stay home.
+    t.set({ bodies: [body("1", 0), body("2", 1), body("3", 0), body("4", 0)], tick: 1 });
+    const p = await t.next(3);
+    expect((p.payload as Record<string, unknown>).bodies).toBeUndefined();
+    const d = p.bodiesDelta as { keys: string[]; changed: { state: { key: string; n: number } }[] };
+    expect(d.keys).toEqual(["1", "2", "3", "4"]);
+    expect(d.changed.map((b) => [b.state.key, b.state.n])).toEqual([
+      ["2", 1],
+      ["4", 0],
+    ]);
+    // Every body changes (a jump): the field goes out whole.
+    t.set({ bodies: [body("9", 0), body("8", 0)], tick: 1 });
+    const q = await t.next(4);
+    expect(q.bodiesDelta).toBeUndefined();
+    expect(((q.payload as Record<string, unknown>).bodies as unknown[]).length).toBe(2);
+  });
+
+  it("serves a candidate's habitat detail that the pushes leave out", async () => {
+    const detail = { stats: [{ id: "s" }], atmosphereClimateStats: [], compositionGroups: [] };
+    const bodies = [
+      {
+        state: { key: "7:1", bodyName: "B 1" },
+        matches: [
+          {
+            entry: { id: "tubus_1" },
+            exomasteryDetail: detail,
+            exomasteryVarietyHints: [{ h: 1 }],
+            otherMatchDetailCards: [{ id: "c" }],
+          },
+        ],
+      },
+    ];
+    const t = await start({ bodies });
+    const first = await t.next(1);
+    const pushed = ((first.payload as { bodies: { matches: Record<string, unknown>[] }[] }).bodies[0]!.matches[0])!;
+    expect(pushed.exomasteryDetail).toBeUndefined();
+    expect(pushed.lazyDetail).toMatchObject({ body: "7:1", habitat: true, otherCards: 1 });
+    const ask = (q: string) => fetch(`http://127.0.0.1:${t.port}/api/match-detail?${q}`);
+    const ok = await ask("body=7%3A1&species=tubus_1");
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toEqual({
+      exomasteryDetail: detail,
+      exomasteryVarietyHints: [{ h: 1 }],
+      otherMatchDetailCards: [{ id: "c" }],
+    });
+    expect((await ask("body=7%3A1&species=other")).status).toBe(404);
+    expect((await ask("body=7%3A1")).status).toBe(400);
+  });
 });

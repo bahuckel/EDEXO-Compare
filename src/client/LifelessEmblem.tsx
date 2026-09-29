@@ -4,7 +4,7 @@
  * this replaces it once the scan is complete, so the two read differently at a glance — the most
  * common screen in the app, a dead system, should say "done, nothing here" and not "still looking".
  *
- * After the owner's old art (no-exo.png): a leaf struck through inside corner brackets. On arrival
+ * After the owner's old art (no-exo.png, since removed): a leaf struck through inside corner brackets. On arrival
  * the radar makes one last pass and powers down, the brackets close in, the sprout draws itself and
  * a line is struck through it; then it rests with a slow glow and a faint scan line now and then.
  * Pure SVG + CSS (cockpit.css, "lifeless emblem"); reduced motion shows the final frame.

@@ -9,7 +9,7 @@
  * Output (committed, shipped with the app; originals are never modified):
  *   data/species/<genus>/<genus>_photos/_thumbs/<name>.webp   320 px — encyclopedia rows
  *   data/species/<genus>/<genus>_photos/_cards/<name>.webp   1024 px — species card artwork
- *   vista.webp / no-exo.webp / fss-required.webp                     — CSS backdrops
+ *   fss-required.webp                                                — CSS backdrop
  *   public/edexo-icon-124.webp                                       — 62 px header mark at 2x
  *
  * The server falls back to the original whenever a derivative is missing, so photos a commander
@@ -85,8 +85,6 @@ async function speciesPhotos() {
 
 async function uiArt() {
   const jobs = [
-    ["vista.png", "vista.webp", 1600, 72],
-    ["no-exo.png", "no-exo.webp", 1400, 74],
     ["fss-required.png", "fss-required.webp", 1400, 74],
     ["public/edexo-icon.png", "public/edexo-icon-124.webp", 124, 88],
   ];

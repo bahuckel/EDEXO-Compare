@@ -205,8 +205,8 @@
 }
 
 /**
- * FSS: all bodies scanned, zero biology — custom art only (no overlay copy).
- * Asset: no-exo.png at repo root (paths relative to this CSS under src/client).
+ * FSS: all bodies scanned, zero biology. The old no-exo art is gone (owner, 2026-09-29): the lifeless
+ * emblem (LifelessEmblem.tsx) replaced it.
  */
 .panel-empty--dead-system {
   min-height: clamp(14rem, 40vh, 26rem);
@@ -218,11 +218,6 @@
     inset 0 0 0 1px var(--shadow-a45),
     0 0 28px var(--accent-a10);
   background-color: #0a0908;
-  background-image: url("../../../no-exo.webp");
-  background-position: center;
-  /* Scale up until the card is covered (no side letterboxing); crop top/bottom or sides as needed. */
-  background-size: cover;
-  background-repeat: no-repeat;
 }
 
 /** No bio bodies yet — need FSS/DSS; art only (fss-required.png at repo root). */

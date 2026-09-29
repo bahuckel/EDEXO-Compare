@@ -1,4 +1,4 @@
-import { parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
+import { findMatchDetail, parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
 import { eliteDisplaySettingsPath, eliteDisplayWarning, readEliteDisplayMode } from "./eliteDisplayMode.js";
 import { linuxCheckForThisMachine } from "./linuxProbes.js";
 import http from "node:http";
@@ -411,13 +411,35 @@ export function createHttpServer(opts: HttpServerOptions): {
     res.json({ rev: pushRev });
   });
 
+  /**
+   * A candidate's habitat detail, variety hints and other-details cards, which the app channel leaves
+   * out of every push (UI review P1b): the species card asks for them when its modal or drawer opens.
+   */
+  app.get("/api/match-detail", (req, res) => {
+    const body = typeof req.query.body === "string" ? req.query.body : "";
+    const species = typeof req.query.species === "string" ? req.query.species : "";
+    if (!body || !species) {
+      res.status(400).json({ error: "body and species are required" });
+      return;
+    }
+    const hit = findMatchDetail(lastAppSnap ?? opts.getSnapshot(), body, species);
+    if (!hit) {
+      res.status(404).json({ error: "That candidate is no longer on this body." });
+      return;
+    }
+    res.json(hit);
+  });
+
+  /** The last full snapshot pushed or served, for `/api/match-detail` (building one is not free). */
+  let lastAppSnap: AppSnapshot | null = null;
+
   app.get("/api/state", (req, res) => {
     perfCount("http.apiState");
     res.setHeader("X-Edexo-Rev", String(pushRev));
     const chq = parseWsChannel(req.query?.channel) ?? "app";
-    const body = perfTime("http.apiState.serialize", () =>
-      JSON.stringify(slimSnapshotForChannel(opts.getSnapshot(), chq)),
-    );
+    const snap = opts.getSnapshot();
+    if (chq === "app") lastAppSnap = snap;
+    const body = perfTime("http.apiState.serialize", () => JSON.stringify(slimSnapshotForChannel(snap, chq)));
     sendJson(req, res, body, (raw, sent) => {
       perfBytes("http.apiState.bytes", raw);
       perfBytes("http.apiState.sent", sent);
@@ -672,25 +694,49 @@ export function createHttpServer(opts: HttpServerOptions): {
   const lastFieldJson = new Map<WsChannel, Map<string, string>>();
   /** Counts pushes that went out on the app channel; `/api/state/rev` lets a client check it cheaply (P2). */
   let pushRev = 0;
+  /*
+    `bodies` one level deeper (UI review P1b): a scan or a sample changes one body, but the field went
+    out whole — MBs in a rich system. When some bodies are unchanged, the push carries `bodiesDelta`
+    instead: every body key in order, and only the bodies that changed; the client takes the rest
+    from its copy. Each body is serialized once either way (the field's JSON is built from them).
+  */
+  let lastBodyJson = new Map<string, string>();
   const pushMessage = (snap: AppSnapshot, channel: WsChannel): string => {
     if (channel !== "app") return stateMessage(snap, channel);
     const prev = lastFieldJson.get(channel);
     const next = new Map<string, string>();
     const parts: string[] = [];
     const unchanged: string[] = [];
+    let bodiesDelta = "";
+    let bodyJson: Map<string, string> | null = null;
     for (const [k, v] of Object.entries(slimSnapshotForChannel(snap, channel))) {
-      const j = v === undefined ? undefined : JSON.stringify(v);
+      let items: { key: string; json: string }[] | null = null;
+      let j: string | undefined;
+      if (k === "bodies" && Array.isArray(v)) {
+        items = (v as AppSnapshot["bodies"]).map((b) => ({ key: b.state.key, json: JSON.stringify(b) }));
+        j = `[${items.map((i) => i.json).join(",")}]`;
+      } else j = v === undefined ? undefined : JSON.stringify(v);
       if (j === undefined) continue;
       next.set(k, j);
+      if (items) bodyJson = new Map(items.map((i) => [i.key, i.json]));
       if (j.length >= OMIT_UNCHANGED_MIN_BYTES && prev?.get(k) === j) unchanged.push(k);
-      else parts.push(`${JSON.stringify(k)}:${j}`);
+      else if (items && prev?.has(k) && new Set(items.map((i) => i.key)).size === items.length) {
+        const changed = items.filter((i) => lastBodyJson.get(i.key) !== i.json);
+        const changedBytes = changed.reduce((n, i) => n + i.json.length, 0);
+        if (changed.length < items.length && changedBytes < j.length / 2) {
+          bodiesDelta = `,"bodiesDelta":{"keys":${JSON.stringify(items.map((i) => i.key))},"changed":[${changed
+            .map((i) => i.json)
+            .join(",")}]}`;
+        } else parts.push(`${JSON.stringify(k)}:${j}`);
+      } else parts.push(`${JSON.stringify(k)}:${j}`);
     }
     // Nothing at all changed since the last push (same fields, same content): no frame.
     if (prev && prev.size === next.size && [...next].every(([k, j]) => prev.get(k) === j)) return "";
     lastFieldJson.set(channel, next);
+    lastBodyJson = bodyJson ?? new Map();
     return `{"type":"state","channel":"app","rev":__REV__,"payload":{${parts.join(",")}}${
       unchanged.length ? `,"unchanged":${JSON.stringify(unchanged)}` : ""
-    }}`;
+    }${bodiesDelta}}`;
   };
 
   /** Keep connections warm (NAT / middleboxes); helps clients detect half-open TCP. */
@@ -716,7 +762,8 @@ export function createHttpServer(opts: HttpServerOptions): {
     channelOf.set(ws, "app");
     perfCount("ws.connect");
     try {
-      ws.send(stateMessage(opts.getSnapshot(), "app"));
+      lastAppSnap = opts.getSnapshot();
+      ws.send(stateMessage(lastAppSnap, "app"));
     } catch {
       /* ignore */
     }
@@ -742,6 +789,7 @@ export function createHttpServer(opts: HttpServerOptions): {
   const lastBroadcastMsg = new Map<WsChannel, string>();
 
   const broadcast = (snap: AppSnapshot) => {
+    lastAppSnap = snap;
     // One serialization per channel per push; null marks "identical to the last frame, skip".
     const built = new Map<WsChannel, string | null>();
     for (const ws of clients) {

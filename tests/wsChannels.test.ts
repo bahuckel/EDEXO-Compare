@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AppSnapshot, BodyComputed } from "../src/shared/types.js";
-import { parseWsChannel, slimBodyForHud, slimSnapshotForChannel } from "../src/server/wsChannels.js";
+import { findMatchDetail, parseWsChannel, slimBodyForHud, slimSnapshotForChannel } from "../src/server/wsChannels.js";
 
 function body(key: string): BodyComputed {
   return {
@@ -68,9 +68,33 @@ describe("socket channels: slim snapshots per client kind", () => {
     expect(parseWsChannel(undefined)).toBeNull();
   });
 
-  it("gives the app the whole state, untouched", () => {
+  it("gives the app every field, with each candidate's habitat detail left out and a ref to fetch it", () => {
     const s = snap();
-    expect(slimSnapshotForChannel(s, "app")).toBe(s);
+    const withDetail = { stats: [{ id: "a" }], atmosphereClimateStats: [], compositionGroups: [] };
+    (s.bodies[0]!.matches[0] as unknown as Record<string, unknown>).exomasteryDetail = withDetail;
+    (s.bodies[0]!.matches[0] as unknown as Record<string, unknown>).exomasteryVarietyHints = [{ big: 1 }];
+    const out = slimSnapshotForChannel(s, "app") as AppSnapshot;
+    expect(Object.keys(out).sort()).toEqual(Object.keys(s).sort());
+    expect(out.journalSystems).toBe(s.journalSystems);
+    const m = out.bodies[0]!.matches[0]! as unknown as Record<string, unknown>;
+    expect(m.exomasteryDetail).toBeUndefined();
+    expect(m.exomasteryVarietyHints).toBeUndefined();
+    expect(m.lazyDetail).toMatchObject({ body: "1:2", habitat: true, otherCards: 0 });
+    expect(m.priceCredits).toBe(2_000_000);
+    // A detail with nothing to draw is dropped without a marker (the card shows no modal button).
+    const m2 = out.bodies[1]!.matches[0]! as unknown as Record<string, unknown>;
+    expect(m2.exomasteryDetail).toBeUndefined();
+    expect(m2.lazyDetail).toBeUndefined();
+    // The marker changes when only the left-out detail does.
+    (s.bodies[0]!.matches[0] as unknown as Record<string, unknown>).exomasteryVarietyHints = [{ big: 2 }];
+    const again = slimSnapshotForChannel(s, "app") as AppSnapshot;
+    const v = (x: AppSnapshot) => (x.bodies[0]!.matches[0]!.lazyDetail as { v: string }).v;
+    expect(v(again)).not.toBe(v(out));
+    // The snapshot itself is not touched: the endpoint reads the detail from it.
+    expect(s.bodies[0]!.matches[0]!.exomasteryDetail).toBe(withDetail);
+    expect(findMatchDetail(s, "1:2", "x_1")?.exomasteryDetail).toBe(withDetail);
+    expect(findMatchDetail(s, "1:2", "nope")).toBeNull();
+    expect(findMatchDetail(s, "9:9", "x_1")).toBeNull();
   });
 
   it("gives the launcher its five fields and nothing heavy", () => {
