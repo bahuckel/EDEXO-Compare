@@ -1,6 +1,7 @@
 /**
  * The Encyclopedia's exomastery planets table and the found-species popup. Split out of EncyclopediaModal.tsx (code review D, 2026-09-27).
  */
+import { footConfirmationLabel } from "@shared/footConfirmationLabel";
 import { readableAtmosphereType } from "@shared/atmosphereLabel";
 import { CopySystemButton } from "./CopySystemButton";
 import { ExomasteryDistributionPanel } from "./exomasteryDistributionPanel";
@@ -229,7 +230,7 @@ export function FoundSpeciesPopup({
                     </div>
                     <div>
                       <dt>Source</dt>
-                      <dd>{f.confirmationSource === "sample" ? "Sample" : "Analyse"}</dd>
+                      <dd>{footConfirmationLabel(f.confirmationSource)}</dd>
                     </div>
                   </dl>
                 </li>

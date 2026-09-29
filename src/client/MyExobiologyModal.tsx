@@ -1,6 +1,7 @@
 /**
  * My exobiology: the finds table and the discoveries views. Split out of AppModals.tsx (code review D, 2026-09-27).
  */
+import { footConfirmationLabel } from "@shared/footConfirmationLabel";
 import { CopySystemButton } from "./CopySystemButton";
 import {
   Column,
@@ -110,7 +111,7 @@ function exobiologyColumns(
       key: "from",
       label: "From",
       value: (e) => e.confirmationSource ?? null,
-      render: (e) => (e.confirmationSource === "sample" ? "Sample" : "Analyse"),
+      render: (e) => footConfirmationLabel(e.confirmationSource),
     },
     { key: "planet", label: "Planet", value: (e) => e.planetClass, render: (e) => e.planetClass },
     {
@@ -396,7 +397,7 @@ export function MyExobiologyModal({
                           </div>
                           <div className="my-exo-card-fact">
                             <dt>From</dt>
-                            <dd>{e.confirmationSource === "sample" ? "Sample" : "Analyse"}</dd>
+                            <dd>{footConfirmationLabel(e.confirmationSource)}</dd>
                           </div>
                           <div className="my-exo-card-fact">
                             <dt>Planet</dt>
