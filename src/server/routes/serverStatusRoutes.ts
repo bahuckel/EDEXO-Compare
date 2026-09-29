@@ -21,8 +21,22 @@ export function registerServerStatusRoutes(
     }
   };
 
+  /*
+    One answer shared by every window for STATUS_CACHE_MS (UI review P4): each open window used to
+    cause its own outbound request every 15 s. The game's server status does not change that fast.
+  */
+  const STATUS_CACHE_MS = 45_000;
+  const cached = new Map<string, { at: number; body: unknown }>();
+  const fromCache = (key: string, res: express.Response): boolean => {
+    const c = cached.get(key);
+    if (!c || Date.now() - c.at > STATUS_CACHE_MS) return false;
+    res.json(c.body);
+    return true;
+  };
+
   /** Proxies FDev / Frontier status (browser-safe; avoids CORS). */
   app.get("/api/elite-server-status/orerve", async (_req, res) => {
+    if (fromCache("orerve", res)) return;
     const url = "https://ed-server-status.orerve.net/";
     try {
       const r = await fetchWithTimeout(url, 12_000);
@@ -41,11 +55,9 @@ export function registerServerStatusRoutes(
               ? "Good"
               : "Unknown";
       const healthy = code === 1 || /^good$/i.test(statusText) || /^good$/i.test(String(j.message ?? ""));
-      res.json({
-        ok: true as const,
-        healthy,
-        statusText,
-      });
+      const body = { ok: true as const, healthy, statusText };
+      cached.set("orerve", { at: Date.now(), body });
+      res.json(body);
     } catch {
       res.status(502).json({ ok: false });
     }

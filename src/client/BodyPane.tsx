@@ -167,7 +167,10 @@ export const BodyPane = memo(function BodyPane({
     [],
   );
   const evidenceCount = useMemo(() => body.matches.filter(hasEvidence).length, [body.matches, hasEvidence]);
-  const shownMatches = evidenceOnly ? body.matches.filter(hasEvidence) : body.matches;
+  const shownMatches = useMemo(
+    () => (evidenceOnly ? body.matches.filter(hasEvidence) : body.matches),
+    [evidenceOnly, body.matches, hasEvidence],
+  );
   /*
     A species he has sampled here is listed with the candidates, banner and all.
 
@@ -176,11 +179,15 @@ export const BodyPane = memo(function BodyPane({
     shown — `m.unlikely` is untouched, so the card keeps its banner and its reasons — but a row he
     has proved is on this body does not belong behind "show unlikely (N)".
   */
-  const likelyMatches = shownMatches.filter((m) => !m.unlikely || m.sampledHere === true);
-  const unlikelyMatches = shownMatches.filter((m) => m.unlikely && m.sampledHere !== true);
+  const likelyMatches = useMemo(() => shownMatches.filter((m) => !m.unlikely || m.sampledHere === true), [shownMatches]);
+  const unlikelyMatches = useMemo(() => shownMatches.filter((m) => m.unlikely && m.sampledHere !== true), [shownMatches]);
   // Genus order from the co-occurrence solver, most likely first. Ordering only — the probabilities
   // behind it are not calibrated, so nothing here renders a number.
-  const genusOrder = body.genusLikelihoods?.map((l) => l.genus) ?? null;
+  const genusOrder = useMemo(() => body.genusLikelihoods?.map((l) => l.genus) ?? null, [body.genusLikelihoods]);
+  // Grouped once per change, not in the JSX on every render (UI review P3) — the groups are new objects
+  // each time, which also made memo(GenusMatchGroup) never skip.
+  const likelyGroups = useMemo(() => groupedSortedMatches(likelyMatches, genusOrder), [likelyMatches, genusOrder]);
+  const unlikelyGroups = useMemo(() => groupedSortedMatches(unlikelyMatches, genusOrder), [unlikelyMatches, genusOrder]);
 
   // The body's first-footfall answer, shared with every species card below (WEBUI-REDESIGN 1.2).
   const bodyFootfall = body.exoPayoutRange
@@ -610,7 +617,7 @@ export const BodyPane = memo(function BodyPane({
                     </p>
                   ) : (
                     <div className="species-list">
-                      {groupedSortedMatches(likelyMatches, genusOrder).map((group) => (
+                      {likelyGroups.map((group) => (
                         <GenusMatchGroup
                           key={group.groupKey}
                           group={group}
@@ -647,7 +654,7 @@ export const BodyPane = memo(function BodyPane({
                             really found.
                           </p>
                           <div className="species-list species-list--unlikely">
-                            {groupedSortedMatches(unlikelyMatches, genusOrder).map((group) => (
+                            {unlikelyGroups.map((group) => (
                               <GenusMatchGroup
                                 key={`unlikely-${group.groupKey}`}
                                 group={group}

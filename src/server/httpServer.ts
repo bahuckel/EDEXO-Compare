@@ -402,8 +402,18 @@ export function createHttpServer(opts: HttpServerOptions): {
     res.json({ ...status, warning: eliteDisplayWarning(status) });
   });
 
+  /**
+   * The revision of the last push on the app channel — a few bytes the client asks for every 10 s
+   * instead of the whole snapshot (UI review P2). A different number than the last push it saw means a
+   * push was missed (a half-open socket), and only then does it fetch `/api/state`.
+   */
+  app.get("/api/state/rev", (_req, res) => {
+    res.json({ rev: pushRev });
+  });
+
   app.get("/api/state", (req, res) => {
     perfCount("http.apiState");
+    res.setHeader("X-Edexo-Rev", String(pushRev));
     const chq = parseWsChannel(req.query?.channel) ?? "app";
     const body = perfTime("http.apiState.serialize", () =>
       JSON.stringify(slimSnapshotForChannel(opts.getSnapshot(), chq)),
@@ -648,7 +658,40 @@ export function createHttpServer(opts: HttpServerOptions): {
   /** What each socket asked for with its hello; "app" (the full state) until it says otherwise. */
   const channelOf = new WeakMap<import("ws").WebSocket, WsChannel>();
   const stateMessage = (snap: AppSnapshot, channel: WsChannel): string =>
-    JSON.stringify({ type: "state", channel, payload: slimSnapshotForChannel(snap, channel) });
+    JSON.stringify({ type: "state", channel, rev: pushRev, payload: slimSnapshotForChannel(snap, channel) });
+
+  /*
+    Pushes carry only what changed (UI review P1, owner 2026-09-29). A snapshot is ~0.8 MB and, in a
+    system full of bio bodies, ~10 MB — and while the commander plays, most pushes change nothing but
+    the fuel. So on the app channel every field of at least OMIT_UNCHANGED_MIN_BYTES that is identical
+    to the one in the previous push is left out and named in `unchanged`; the client keeps its copy.
+    A socket always gets the full snapshot first (on connect, and on a channel change), so it has
+    every field before a push can leave one out. The launcher and HUD channels are small and unchanged.
+  */
+  const OMIT_UNCHANGED_MIN_BYTES = 2048;
+  const lastFieldJson = new Map<WsChannel, Map<string, string>>();
+  /** Counts pushes that went out on the app channel; `/api/state/rev` lets a client check it cheaply (P2). */
+  let pushRev = 0;
+  const pushMessage = (snap: AppSnapshot, channel: WsChannel): string => {
+    if (channel !== "app") return stateMessage(snap, channel);
+    const prev = lastFieldJson.get(channel);
+    const next = new Map<string, string>();
+    const parts: string[] = [];
+    const unchanged: string[] = [];
+    for (const [k, v] of Object.entries(slimSnapshotForChannel(snap, channel))) {
+      const j = v === undefined ? undefined : JSON.stringify(v);
+      if (j === undefined) continue;
+      next.set(k, j);
+      if (j.length >= OMIT_UNCHANGED_MIN_BYTES && prev?.get(k) === j) unchanged.push(k);
+      else parts.push(`${JSON.stringify(k)}:${j}`);
+    }
+    // Nothing at all changed since the last push (same fields, same content): no frame.
+    if (prev && prev.size === next.size && [...next].every(([k, j]) => prev.get(k) === j)) return "";
+    lastFieldJson.set(channel, next);
+    return `{"type":"state","channel":"app","rev":__REV__,"payload":{${parts.join(",")}}${
+      unchanged.length ? `,"unchanged":${JSON.stringify(unchanged)}` : ""
+    }}`;
+  };
 
   /** Keep connections warm (NAT / middleboxes); helps clients detect half-open TCP. */
   const wsKeepAlive = setInterval(() => {
@@ -705,12 +748,15 @@ export function createHttpServer(opts: HttpServerOptions): {
       if (ws.readyState !== ws.OPEN) continue;
       const ch = channelOf.get(ws) ?? "app";
       if (!built.has(ch)) {
-        const msg = perfTime("ws.serialize", () => stateMessage(snap, ch));
-        if (msg === lastBroadcastMsg.get(ch)) {
+        // The revision is filled in after the identical-frame check, so it cannot make every frame differ.
+        const draft = perfTime("ws.serialize", () => pushMessage(snap, ch));
+        if (draft === "" || draft === lastBroadcastMsg.get(ch)) {
           perfCount("ws.push.skippedIdentical");
           built.set(ch, null);
         } else {
-          lastBroadcastMsg.set(ch, msg);
+          lastBroadcastMsg.set(ch, draft);
+          if (ch === "app") pushRev++;
+          const msg = draft.replace("__REV__", String(pushRev));
           perfCount("ws.push");
           perfBytes("ws.push.bytes", Buffer.byteLength(msg));
           built.set(ch, msg);

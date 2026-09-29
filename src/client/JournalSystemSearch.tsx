@@ -6,7 +6,7 @@ import { InlineSpinner } from "./SharedModals";
 import { bodyPartOfQuery, ownerFirst } from "./systemSearchMatch";
 import { useToast } from "./ui/feedback";
 import type { AppSnapshot, JournalSystemInfo } from "@shared/types";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * The header's system search: the journals first, Spansh as you type (owner, 2026-09-25).
@@ -18,6 +18,9 @@ import { useEffect, useRef, useState } from "react";
  * fetches its bodies from Spansh (see `server/remoteSystems.ts`). When a name cannot be found, the
  * list says so and says where it looked.
  */
+/** One empty list, so a snapshot without systems does not bust the memos below on every render. */
+const NO_SYSTEMS: JournalSystemInfo[] = [];
+
 export function JournalSystemSearch({
   snap,
   onGoToBioBody,
@@ -26,7 +29,7 @@ export function JournalSystemSearch({
   onGoToBioBody?: (bodyKey: string) => void;
 }) {
   const toast = useToast();
-  const systems: JournalSystemInfo[] = snap.journalSystems ?? [];
+  const systems: JournalSystemInfo[] = snap.journalSystems ?? NO_SYSTEMS;
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [remote, setRemote] = useState<{
@@ -53,18 +56,23 @@ export function JournalSystemSearch({
 
   const typed = query.trim();
   const q = typed.toLowerCase();
-  const filtered =
-    q === ""
-      ? systems
-      : ownerFirst(
-          systems.filter(
-            (s) =>
-              s.starSystem.toLowerCase().includes(q) ||
-              String(s.systemAddress).includes(q) ||
-              bodyPartOfQuery(typed, s.starSystem) !== null,
+  // Memoised on the list and the query (UI review P3): the header re-renders on every push, and this
+  // walked every system the commander has visited each time.
+  const filtered = useMemo(
+    () =>
+      q === ""
+        ? systems
+        : ownerFirst(
+            systems.filter(
+              (s) =>
+                s.starSystem.toLowerCase().includes(q) ||
+                String(s.systemAddress).includes(q) ||
+                bodyPartOfQuery(typed, s.starSystem) !== null,
+            ),
+            typed,
           ),
-          typed,
-        );
+    [systems, q, typed],
+  );
 
   useEffect(() => {
     if (!pendingBody) return;
@@ -112,7 +120,7 @@ export function JournalSystemSearch({
   }, [typed, open, journalLoading]);
 
   // Anything the journals know is never offered again as a Spansh hit, matched or not.
-  const journalAddrs = new Set(systems.map((s) => s.systemAddress));
+  const journalAddrs = useMemo(() => new Set(systems.map((s) => s.systemAddress)), [systems]);
   const spanshHits = ownerFirst(
     remote.hits.filter((s) => !journalAddrs.has(s.systemAddress)),
     typed,

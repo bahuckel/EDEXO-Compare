@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-const POLL_MS = 15_000;
+/** Once a minute (UI review P4); the server shares one answer between windows for 45 s. */
+const POLL_MS = 60_000;
 const STALE_MS = 60_000;
 
 export type FdevServerStatusDisplay = {

@@ -31,10 +31,13 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const ackIds = useMemo(() => readExoAlertAckIds(), [ackEpoch]);
 
+  // Keyed on the fields it reads, not the whole snapshot (UI review P3): a fuel-only push used to
+  // re-collect the alerts from every body. Unchanged fields keep their identity (reuseUnchanged).
   const collected = useMemo(() => {
     if (snap.journalBoot) return [];
     return collectExoDataAlertsFromSnapshot(snap);
-  }, [snap]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snap.journalBoot, snap.bodies, snap.exoOverlayFocusBody, snap.sharedExomastery]);
 
   const filteredBySource = useMemo(
     () => collected.filter((a) => (a.detectionSource === "exomastery" ? detectFeeder : detectJournal)),
