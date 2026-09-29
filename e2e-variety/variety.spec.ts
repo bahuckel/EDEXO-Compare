@@ -151,5 +151,9 @@ test("encyclopedia: lists the two species added in 1.2.x", async ({ page }) => {
   await page.getByRole("button", { name: "Encyclopedia" }).click();
   await expect(page.getByText("Ingensradices Unicus").first()).toBeVisible();
   await expect(page.getByText("Crystalline Shards").first()).toBeVisible();
+  // The Codex map left the Encyclopedia (owner, 2026-09-29): it lives in the galaxy map's Codex mode.
+  const head = page.locator(".encyclopedia-panel .modal-head");
+  await expect(head.getByRole("button")).toHaveCount(1); // Close only
+  await head.screenshot({ path: "build-artifacts/webui-preview/encyclopedia-head.png" });
   expect(errors).toEqual([]);
 });

@@ -29,8 +29,6 @@ import {
   type EncyclopediaFiltersState,
 } from "./encyclopediaFilters";
 import { EncyclopediaFilterBar } from "./EncyclopediaFilterBar";
-import { CodexMapModal } from "./CodexMapModal";
-import { IconEncyclopedia } from "./ui/icons";
 import { RarityGem } from "./RarityGem";
 import { ExomasteryPlanetsBody, FoundSpeciesPopup } from "./EncyclopediaPanels";
 
@@ -207,8 +205,6 @@ export function EncyclopediaModal({
     note: string | null;
     creditByUrl?: EncyclopediaSpeciesRowDTO["photoCreditByUrl"];
   } | null>(null);
-  /** The Codex map, opened from the header (owner, 2026-09-27). */
-  const [codexOpen, setCodexOpen] = useState(false);
   /** Inline exomastery planetary cards inside the encyclopedia list (not a nested modal). */
   const [inlineExo, setInlineExo] = useState<{
     speciesEntryId: string;
@@ -403,12 +399,11 @@ export function EncyclopediaModal({
    * that the hand-rolled listener never had.
    */
   const closeTopLayer = useCallback(() => {
-    if (codexOpen) return; // the codex map closes itself first
     if (photoZoom) setPhotoZoom(null);
     else if (inlineExo && !exoClosing) scheduleCloseExo();
     else if (foundFor) setFoundFor(null);
     else onClose();
-  }, [onClose, foundFor, photoZoom, inlineExo, exoClosing, scheduleCloseExo, codexOpen]);
+  }, [onClose, foundFor, photoZoom, inlineExo, exoClosing, scheduleCloseExo]);
 
   const dialogRef = useModal<HTMLDivElement>(true, closeTopLayer);
 
@@ -639,14 +634,6 @@ export function EncyclopediaModal({
           <h3 id="encyclopedia-title">Encyclopedia</h3>
           <button
             type="button"
-            className="ency-codex-btn"
-            onClick={() => setCodexOpen(true)}
-            title="Codex: the galaxy's regions and what is left to log in each — bodies or biological"
-          >
-            <IconEncyclopedia /> Codex
-          </button>
-          <button
-            type="button"
             className="modal-close"
             onClick={onClose}
             aria-label="Close"
@@ -797,7 +784,6 @@ export function EncyclopediaModal({
           onClose={() => setFoundFor(null)}
         />
       ) : null}
-      {codexOpen ? <CodexMapModal onClose={() => setCodexOpen(false)} /> : null}
     </div>
   );
 }
