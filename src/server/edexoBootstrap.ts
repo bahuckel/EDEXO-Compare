@@ -69,6 +69,7 @@ import { openFeeder } from "../feeder/pipeline.js";
 import { formatImportReport, importSpanshExport } from "../feeder/spanshImport.js";
 import { feederDataDirExists } from "../feeder/paths.js";
 import { clearExomasteryProfileCache } from "./exomasteryProfile.js";
+import { createGamePresence } from "./gamePresence.js";
 import { buildFieldGuide, clearFieldGuideCache } from "./fieldGuide.js";
 import { clearSpeciesPhotoCache } from "./speciesPhotos.js";
 import { buildDiscoveries } from "./discoveries.js";
@@ -141,6 +142,12 @@ export type EdexoRuntime = {
   /** A backup is being written: Electron asks before an exit throws it away (backupService.ts). */
   backupRunning: () => boolean;
   whenBackupDone: () => Promise<void>;
+  /**
+   * Whether Elite is running, for the HUD overlays (hidden while it is not; gamePresence.ts).
+   * The callback runs on every change; returns an unsubscribe.
+   */
+  onGameRunning: (cb: (running: boolean) => void) => () => void;
+  gameRunning: () => boolean | null;
   getLocalBaseUrl: () => string;
   openMainAppInBrowser: () => void;
 };
@@ -829,6 +836,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         ingestExoOrganicJournalLine(store, line, footFix, projectRoot, getCachedSpeciesDatabase());
         sessionLog.record(line, store, getCachedPrices());
         backupService.onJournalLine(typeof line.event === "string" ? line.event : undefined);
+        gamePresence.onJournalLine(typeof line.event === "string" ? line.event : undefined);
         push();
       } catch (e) {
         console.error("Journal live line failed (skipped line):", e);
@@ -1194,6 +1202,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     }, WARM_UP_AFTER_BOOT_MS);
     warmUpTimer.unref?.();
   };
+
+  // The process check only matters to the desktop app's overlays; a plain server does not poll.
+  const gamePresence = createGamePresence({ autoStart: process.env.EDEXO_ELECTRON === "1" });
 
   const backupService = createBackupService({
     appDataDir: path.dirname(userSettingsPath),
@@ -1664,6 +1675,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     // The foot catalog writes at most once a second; closing must not drop the last second.
     flushFootScannedCatalog();
     backupService.dispose();
+    gamePresence.dispose();
     if (footStatusPollTimer != null) {
       clearInterval(footStatusPollTimer);
       footStatusPollTimer = null;
@@ -1686,6 +1698,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     openMainAppInBrowser: () => openUrlInBrowser(`http://127.0.0.1:${port}/`),
     backupRunning: () => backupService.isRunning(),
     whenBackupDone: () => backupService.whenIdle(),
+    onGameRunning: (cb) => gamePresence.onChange(cb),
+    gameRunning: () => gamePresence.running(),
   };
 }
 

@@ -623,6 +623,12 @@ async function start() {
   enableZoom(mainWindow);
   mainWindow.loadURL(url);
   trayControl.create(winIcon);
+  // Overlays step aside while Elite is not running and come back with it (server gamePresence.ts;
+  // guild tester report, 2026-09-30). The hotkey still shows them on demand.
+  if (runtime && typeof runtime.onGameRunning === "function") {
+    if (runtime.gameRunning() === false) huds.setGameAway(true);
+    runtime.onGameRunning((running) => huds.setGameAway(!running));
+  }
   void huds.restore(winIcon);
   mainWindow.on("minimize", (e) => {
     // With "Minimise to tray" on (and a tray to come back from), the window goes to the tray and the

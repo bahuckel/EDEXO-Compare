@@ -87,6 +87,14 @@ function createHudWindows(deps) {
   */
   let hudLayout = { corner: "tr", order: [] };
   let hudHidden = false;
+  /*
+    The game is not running (journal Shutdown, or no EliteDangerous64 process): the overlays step
+    aside. Kept apart from `hudHidden`, which is the commander's own choice (the hotkey) and is saved;
+    this is not saved and is never written into it. Guild tester report, 2026-09-30: the overlays
+    stayed on top of the desktop after the game closed.
+  */
+  let gameAway = false;
+  const hiddenNow = () => hudHidden || gameAway;
   /** The HUD size multiplier from the launcher's slider; the pages report it, the stack width follows. */
   let hudScale = 1;
 
@@ -376,7 +384,7 @@ function createHudWindows(deps) {
     if (hudKeepOnTopTimer) return;
     hudKeepOnTopTimer = setInterval(() => {
       const live = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
-      if (hudHidden || live.length === 0) {
+      if (hiddenNow() || live.length === 0) {
         stopKeepingHudsOnTop();
         return;
       }
@@ -495,7 +503,10 @@ function createHudWindows(deps) {
 
   /** Hide or show every HUD window (the global shortcut). Windows keep their state; only visibility changes. */
   function toggleHudVisibility(force) {
-    hudHidden = typeof force === "boolean" ? force : !hudHidden;
+    // The hotkey toggles what the commander sees: overlays hidden because the game is away count as
+    // hidden, so the press shows them — and a show overrides the game-away state until it changes.
+    hudHidden = typeof force === "boolean" ? force : !hiddenNow();
+    if (!hudHidden) gameAway = false;
     persistHudFile();
     deps.onChange();
 
@@ -541,6 +552,34 @@ function createHudWindows(deps) {
     */
     if (!hudHidden) relayoutHudStack();
     return hudHidden;
+  }
+
+  /**
+   * The game has gone (true) or is back (false). Hides every overlay without touching the commander's
+   * own hidden/shown choice, and brings them back — raised and laid out — when the game returns.
+   */
+  function setGameAway(away) {
+    const next = away === true;
+    if (gameAway === next) return;
+    gameAway = next;
+    deps.onChange();
+    for (const s of hudOverlayStack) {
+      if (!s.win || s.win.isDestroyed()) continue;
+      if (hiddenNow()) {
+        try {
+          s.win.hide();
+        } catch {
+          /* ignore */
+        }
+      } else {
+        raiseHudWindow(s.win);
+      }
+    }
+    if (hiddenNow()) stopKeepingHudsOnTop();
+    else {
+      keepHudsOnTop();
+      relayoutHudStack();
+    }
   }
 
   /** @param {number} width @param {number} height */
@@ -609,7 +648,7 @@ function createHudWindows(deps) {
     */
     win.once("ready-to-show", () => {
       relayoutHudStack();
-      if (hudHidden) {
+      if (hiddenNow()) {
         try {
           win.hide();
         } catch {
@@ -697,7 +736,7 @@ function createHudWindows(deps) {
       `open` is exempt because that *is* the restore path, and un-hiding there would defeat the point of
       restoring quietly. A `toggle` or a `set` is somebody clicking.
     */
-    if (mode !== "open" && hudHidden) toggleHudVisibility(false);
+    if (mode !== "open" && hiddenNow()) toggleHudVisibility(false);
 
     const key = hudSlotKey(pathNorm);
     /*
@@ -758,7 +797,7 @@ function createHudWindows(deps) {
     try {
       await loadHudUrlWithRetry(win, url);
       relayoutHudStack();
-      if (hudHidden) win.hide();
+      if (hiddenNow()) win.hide();
       persistHudFile();
       return { opened: true, paths: hudPathsFiltered() };
     } catch (e) {
@@ -839,6 +878,7 @@ function createHudWindows(deps) {
     layout: () => ({
       ...hudLayout,
       hidden: hudHidden,
+      gameAway,
       count: hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed()).length,
       shortcut: HUD_TOGGLE_SHORTCUT,
     }),
@@ -850,6 +890,8 @@ function createHudWindows(deps) {
     request: requestHudOverlaySlot,
     close: closeHudOverlayByPath,
     toggleVisibility: toggleHudVisibility,
+    setGameAway,
+    isGameAway: () => gameAway,
     restore: restoreHudOverlays,
     destroyAll: destroyAllHudOverlays,
     pushPrefs,

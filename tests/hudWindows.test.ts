@@ -38,6 +38,8 @@ type Huds = {
   ) => Promise<{ opened: boolean; paths: string[]; error?: string }>;
   close: (p: string) => { closed: boolean; paths: string[] };
   toggleVisibility: (force?: boolean) => boolean;
+  setGameAway: (away: boolean) => void;
+  isGameAway: () => boolean;
   restore: (icon: unknown) => Promise<void>;
   destroyAll: () => void;
   pushPrefs: (p: unknown) => void;
@@ -248,6 +250,33 @@ describe("hiding and showing (the hotkey)", () => {
     huds.toggleVisibility(false);
     await new Promise((r) => setTimeout(r, 0));
     expect(huds.paths()).toEqual(["/distance-overlay.html"]);
+    huds.toggleVisibility(true);
+  });
+
+  it("steps aside while the game is away and comes back with it, without touching the saved choice", async () => {
+    const huds = make();
+    await huds.request("/distance-overlay.html", 404, 330, null, "open");
+    huds.setGameAway(true);
+    expect(live()[0]!.visible).toBe(false);
+    expect(huds.isHidden()).toBe(false); // the commander's own choice is unchanged
+    expect(JSON.parse(readFileSync(layoutFile, "utf8")).hidden).toBe(false);
+    huds.setGameAway(false);
+    expect(live()[0]!.visible).toBe(true);
+    // Hidden by the hotkey stays hidden when the game comes back.
+    huds.toggleVisibility(true);
+    huds.setGameAway(true);
+    huds.setGameAway(false);
+    expect(live()[0]!.visible).toBe(false);
+    huds.toggleVisibility(true);
+  });
+
+  it("shows on the hotkey while the game is away (and forgets the away state)", async () => {
+    const huds = make();
+    await huds.request("/distance-overlay.html", 404, 330, null, "open");
+    huds.setGameAway(true);
+    expect(huds.toggleVisibility()).toBe(false);
+    expect(live()[0]!.visible).toBe(true);
+    expect(huds.isGameAway()).toBe(false);
     huds.toggleVisibility(true);
   });
 
