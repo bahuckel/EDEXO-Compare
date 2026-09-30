@@ -19,8 +19,8 @@
  * not the scrollbar. Sorting happens before the cut, so "most valuable" means most valuable of
  * everything rather than of the first few hundred.
  */
-import { greenGiantLabel } from "@shared/greenGasGiant";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { greenGiantLabel, type GreenGiantMark, type GreenGiantVerdict } from "@shared/greenGasGiant";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { DiscoveriesDTO, DiscoveryBodyRow, DiscoveryStarRow, DiscoverySystemRow } from "@shared/types";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { CopySystemButton } from "./CopySystemButton";
@@ -276,6 +276,49 @@ function topValues<T>(rows: T[], read: (r: T) => string | null, limit = 12) {
 
 export type DiscoveriesTab = "systems" | "bodies" | "stars";
 
+interface GreenEdit {
+  verdict: GreenGiantVerdict | null;
+  mark: GreenGiantMark | null;
+}
+
+/**
+ * "Green? Yes / No" on a gas giant of a class that can be green. Always shown on a candidate or a body
+ * already marked; on the others it appears on hover or keyboard focus, so 2,000 gas giants do not
+ * each carry two buttons. Pressing the chosen answer again clears it.
+ */
+function GreenMarkControl({
+  row,
+  state,
+  onMark,
+}: {
+  row: DiscoveryBodyRow;
+  state: GreenEdit;
+  onMark: (r: DiscoveryBodyRow, mark: GreenGiantMark | null) => void;
+}) {
+  const quiet = !state.verdict && !state.mark;
+  return (
+    <span className={`disc-ggg-mark${quiet ? " disc-ggg-mark--quiet" : ""}`} role="group" aria-label="Is it a green gas giant?">
+      <span className="dim">green?</span>
+      <button
+        type="button"
+        aria-pressed={state.mark === "yes"}
+        title="You saw it green: confirmed"
+        onClick={() => onMark(row, state.mark === "yes" ? null : "yes")}
+      >
+        Yes
+      </button>
+      <button
+        type="button"
+        aria-pressed={state.mark === "no"}
+        title="Not green: drops a guess (never a codex entry or the edGGG catalogue)"
+        onClick={() => onMark(row, state.mark === "no" ? null : "no")}
+      >
+        No
+      </button>
+    </span>
+  );
+}
+
 export function DiscoveriesTables({
   data,
   tab,
@@ -291,6 +334,31 @@ export function DiscoveriesTables({
   const deferred = useDeferredValue(query);
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 }>({ key: "estimated", dir: -1 });
   const [classFilter, toggleClass, clearClass] = useToggleSet();
+  /*
+    The commander's green gas giant calls made in this window (owner, 2026-09-30: "a True/False for
+    the commander to mark them"). The server answers with the new verdict; it is shown at once and the
+    list is not fetched again.
+  */
+  const [greenEdits, setGreenEdits] = useState<Map<string, GreenEdit>>(new Map());
+  const greenOf = useCallback(
+    (r: DiscoveryBodyRow): GreenEdit =>
+      greenEdits.get(r.key) ?? { verdict: r.greenGiant ?? null, mark: r.greenMark ?? null },
+    [greenEdits],
+  );
+  const markGreen = useCallback((r: DiscoveryBodyRow, mark: GreenGiantMark | null) => {
+    const bodyId = Number(r.key.slice(r.key.indexOf(":") + 1));
+    void fetch("/api/ggg/mark", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ systemAddress: r.systemAddress, bodyId, mark }),
+    })
+      .then((res) => (res.ok ? (res.json() as Promise<{ verdict: GreenGiantVerdict | null }>) : null))
+      .then((j) => {
+        if (!j) return;
+        setGreenEdits((prev) => new Map(prev).set(r.key, { verdict: j.verdict, mark }));
+      })
+      .catch(() => {});
+  }, []);
   const [flagFilter, toggleFlag, clearFlags] = useToggleSet();
 
   // Each tab has its own natural ordering and its own filter vocabulary; carrying one tab's sort
@@ -512,14 +580,18 @@ export function DiscoveriesTables({
         render: (r) => (
           <>
             {r.planetClass}
-            {r.greenGiant ? (
-              <span
-                className={`disc-ggg disc-ggg--${r.greenGiant.level}`}
-                title={`${greenGiantLabel(r.greenGiant)}: ${r.greenGiant.why}`}
-              >
-                {r.greenGiant.gggNumber ? `green #${r.greenGiant.gggNumber}` : `green · ${r.greenGiant.level}`}
-              </span>
-            ) : null}
+            {(() => {
+              const g = greenOf(r);
+              return g.verdict ? (
+                <span
+                  className={`disc-ggg disc-ggg--${g.verdict.level}`}
+                  title={`${greenGiantLabel(g.verdict)}: ${g.verdict.why}`}
+                >
+                  {g.verdict.gggNumber ? `green #${g.verdict.gggNumber}` : `green · ${g.verdict.level}`}
+                </span>
+              ) : null;
+            })()}
+            {r.greenMark !== undefined ? <GreenMarkControl row={r} state={greenOf(r)} onMark={markGreen} /> : null}
           </>
         ),
       },
@@ -627,7 +699,7 @@ export function DiscoveriesTables({
       if (flagFilter.has("terra") && !isTerraformableState(r.terraformState)) return false;
       if (flagFilter.has("volcanic") && !r.volcanism) return false;
       if (flagFilter.has("atmo") && !r.atmosphere) return false;
-      if (flagFilter.has("green") && !r.greenGiant) return false;
+      if (flagFilter.has("green") && !greenOf(r).verdict) return false;
       if (!q) return true;
       return (
         fuzzyRankAny(
@@ -639,7 +711,7 @@ export function DiscoveriesTables({
             readableAtmosphereType(r.atmosphere) ?? "",
             r.volcanism ?? "",
             ...r.speciesConfirmed,
-            r.greenGiant ? `green gas giant ggg ${r.greenGiant.level}` : "",
+            greenOf(r).verdict ? `green gas giant ggg ${greenOf(r).verdict!.level}` : "",
             ...(r.features ?? []),
           ],
           q,

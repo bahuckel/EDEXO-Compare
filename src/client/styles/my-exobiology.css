@@ -872,3 +872,38 @@
   border-style: dashed;
   opacity: 0.8;
 }
+
+/* The commander's own call on a gas giant that can be green (2026-09-30). */
+.disc-ggg-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: 0.4rem;
+  font-size: var(--fs-2xs);
+  white-space: nowrap;
+}
+.disc-ggg-mark button {
+  padding: 0 0.3rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid rgba(111, 227, 138, 0.35);
+  cursor: pointer;
+}
+.disc-ggg-mark button[aria-pressed="true"] {
+  color: #0d0907;
+  background: #6fe38a;
+  border-color: #6fe38a;
+}
+.disc-ggg-mark button:hover {
+  color: #6fe38a;
+}
+.disc-ggg-mark--quiet {
+  opacity: 0;
+}
+tr:hover .disc-ggg-mark--quiet,
+.disc-card:hover .disc-ggg-mark--quiet,
+.disc-ggg-mark--quiet:focus-within {
+  opacity: 1;
+}

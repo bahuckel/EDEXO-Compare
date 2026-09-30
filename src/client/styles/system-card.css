@@ -263,3 +263,34 @@
   vertical-align: -0.12em;
   filter: drop-shadow(0 0 3px rgba(245, 184, 61, 0.6));
 }
+
+/* ---- phenomena card (2026-09-30): seen, logged, or the chance of one ---- */
+.nsp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 11rem;
+  max-width: 20rem;
+  font-size: var(--fs-sm);
+  cursor: help;
+}
+.nsp-card__known {
+  color: #c89bff;
+  font-weight: 700;
+}
+.nsp-card__chance {
+  font-weight: 700;
+}
+.nsp-card__chance--low {
+  color: var(--text-dim);
+}
+.nsp-card__chance--medium {
+  color: #b58be0;
+}
+.nsp-card__chance--high {
+  color: #d9a8ff;
+}
+.nsp-card__near {
+  font-size: var(--fs-xs);
+}
+

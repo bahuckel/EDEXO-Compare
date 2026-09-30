@@ -20,6 +20,7 @@ import { BookmarkStar } from "./Bookmarks";
 import { primaryStarRoleTooltip } from "./speciesMatchHelpers";
 import { Tooltip } from "./ui/Tooltip";
 import { RecordMedal, recordMarksByBodyId, recordMarksTitle } from "./noticesClient";
+import { NspCard } from "./NspCard";
 
 const KIND_LABEL: Record<SystemKind, string> = {
   bubble: "Bubble",
@@ -147,6 +148,8 @@ export function SystemCardRow({
           </section>
           );
         })}
+
+        <NspCard o={snap.nspOutlook} />
 
         {notable.length > 0 ? (
           <section className="sys-notable-card cockpit-card">

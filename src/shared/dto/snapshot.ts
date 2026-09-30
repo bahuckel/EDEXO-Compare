@@ -1,3 +1,4 @@
+import type { NspOutlookDTO } from "../nspOutlook.js";
 import type { JournalHistoryPreset } from "../journalHistoryPreset.js";
 import type { TriageTiming } from "../systemTriage.js";
 import type {
@@ -212,6 +213,8 @@ export interface AppSnapshot {
   notices?: NoticesSnapshotDTO;
   /** Bookmarks for the system on screen (shared/bookmarks.ts), for its card's star. */
   bookmarksHere?: BookmarkDTO[];
+  /** Notable stellar phenomena for the viewed system: seen, logged, or a guess (shared/nspOutlook.ts). */
+  nspOutlook?: NspOutlookDTO | null;
   /**
    * System map exobiology node suffixes: min estimated sell heuristic (price-list × 5) for `+` and `++`.
    * `++` threshold is always kept strictly greater than `+` (CR, integer).

@@ -83,8 +83,9 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   21: `codexSightings` — biological codex entries with system and time (dynamic species rarity).
   22: `achievementDone` — plants that count for achievements, per region.
   23: scan `rings` + `ageMy`, `greenCodexBodies`, `k10Systems` — green gas giants and the body features.
+  24: `nspSeen` — notable stellar phenomena met per system (FSS signal, codex name).
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 23;
+export const JOURNAL_MERGE_CACHE_FORMAT = 24;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -141,6 +142,8 @@ export type JournalMergeCachePayload = {
   greenCodexBodies?: [string, string][];
   /** K10 anomaly systems, see {@link GameStateStore.k10Systems}. */
   k10Systems?: number[];
+  /** Phenomena met, see {@link GameStateStore.nspSeen}. */
+  nspSeen?: [number, string[]][];
   /** Minutes per approach-and-landing and per sampling run, for the triage screen's own timing (B5). */
   landingMinutesSamples?: number[];
   samplingMinutesSamples?: number[];

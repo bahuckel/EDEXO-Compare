@@ -39,6 +39,7 @@ import {
 import { barycentreSyntheticBodyId, directParentPlanetId, planetRingCount } from "./orbitUtils.js";
 import { scanRings } from "../shared/bodyFeatures.js";
 import { greenCodexId, isK10CodexName } from "../shared/greenGasGiant.js";
+import { isNspCodexName } from "../shared/nspOutlook.js";
 import { getProjectRoot } from "./paths.js";
 import {
   journalLineCarriesPlanetMetrics,
@@ -720,6 +721,12 @@ export class GameStateStore {
   readonly greenCodexBodies = new Map<string, string>();
   /** Systems where the codex logged a K10-Type Anomaly — an NSP that only spawns around green gas giants. */
   readonly k10Systems = new Set<number>();
+  /**
+   * Notable stellar phenomena this commander met, per system (owner, 2026-09-30: "check how they are
+   * reported"): the FSS says one is there on arrival (`$Fixed_Event_Life_…`, type Codex), and a
+   * `CodexEntry` of a phenomenon family names it once he drops in. Names, or "" for a signal not yet named.
+   */
+  readonly nspSeen = new Map<number, string[]>();
   /** The achievement the commander tracks (a user preference, not journal state). */
   trackedAchievementId: string | null = null;
 
@@ -1467,6 +1474,7 @@ export class GameStateStore {
     this.codexRegionBySystem.clear();
     this.greenCodexBodies.clear();
     this.k10Systems.clear();
+    this.nspSeen.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -1513,6 +1521,7 @@ export class GameStateStore {
     this.codexRegionBySystem.clear();
     this.greenCodexBodies.clear();
     this.k10Systems.clear();
+    this.nspSeen.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -2065,6 +2074,8 @@ export class GameStateStore {
 
       if (event === "CodexEntry") return this.onCodexEntry(line, ts);
 
+      if (event === "FSSSignalDiscovered") return this.onFssSignalNsp(line);
+
       if (event === "FSSDiscoveryScan") return this.onFSSDiscoveryScan(line);
 
       if (event === "FSSAllBodiesFound") return this.onFSSAllBodiesFound(line);
@@ -2245,6 +2256,11 @@ export class GameStateStore {
         this.greenCodexBodies.set(bodyKey(line.SystemAddress, line.BodyID), green);
       }
       if (isK10CodexName(name)) this.k10Systems.add(line.SystemAddress);
+      // A phenomenon named by the codex (same families as the EDAstro NSP list).
+      if (isNspCodexName(name)) {
+        const label = (typeof line.Name_Localised === "string" && line.Name_Localised.trim()) || "Notable stellar phenomenon";
+        this.noteNsp(line.SystemAddress, label);
+      }
     }
     {
       const rk = typeof line.Region_Localised === "string" ? regionJoinKey(line.Region_Localised) : "";
@@ -2307,6 +2323,23 @@ export class GameStateStore {
       codexBody.confirmedVariants.push(lock.variantLocalised);
     }
     return;
+  }
+
+  /** A phenomenon in a system: a name, or "" for the FSS signal before it is named. */
+  private noteNsp(systemAddress: number, name: string): void {
+    const list = this.nspSeen.get(systemAddress) ?? [];
+    if (name && !list.includes(name)) list.push(name);
+    if (!name && !list.length) list.push("");
+    // A named one replaces the placeholder.
+    this.nspSeen.set(systemAddress, list.length > 1 ? list.filter(Boolean) : list);
+  }
+
+  /** `FSSSignalDiscovered` of a notable stellar phenomenon (`$Fixed_Event_Life_…`). */
+  private onFssSignalNsp(line: JournalLine): void {
+    const addr = line.SystemAddress;
+    const name = typeof line.SignalName === "string" ? line.SignalName : "";
+    if (typeof addr !== "number" || !Number.isFinite(addr) || !/^\$fixed_event_life_/i.test(name)) return;
+    this.noteNsp(addr, "");
   }
 
   /** `FSSDiscoveryScan` — one of apply()'s event handlers. */
@@ -3359,6 +3392,7 @@ export class GameStateStore {
       achievementDone: [...this.achievementDone],
       greenCodexBodies: [...this.greenCodexBodies],
       k10Systems: [...this.k10Systems],
+      nspSeen: [...this.nspSeen],
       landingMinutesSamples: [...this.landingMinutesSamples],
       samplingMinutesSamples: [...this.samplingMinutesSamples],
       pendingOrganicSales: this.pendingOrganicSales.map((p) => ({ ...p })),
@@ -3445,6 +3479,7 @@ export class GameStateStore {
     for (const [k, t] of data.achievementDone ?? []) this.achievementDone.set(k, t);
     for (const [k, id] of data.greenCodexBodies ?? []) this.greenCodexBodies.set(k, id);
     for (const a of data.k10Systems ?? []) this.k10Systems.add(a);
+    for (const [a, names] of data.nspSeen ?? []) this.nspSeen.set(a, [...names]);
     this.landingMinutesSamples.push(...(data.landingMinutesSamples ?? []));
     this.samplingMinutesSamples.push(...(data.samplingMinutesSamples ?? []));
     this.pendingOrganicSales = data.pendingOrganicSales.map((p) => ({ ...p }));

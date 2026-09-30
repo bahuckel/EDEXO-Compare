@@ -40,7 +40,7 @@ export const NSP_SOURCE_SIZE_LABEL = "855 MB";
 /** The codex file is rebuilt weekly; asking more often than daily wastes nobody's time but EDAstro's. */
 export const NSP_FETCH_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
-const NSP_ID = /^codex_ent_(gas_clds|small_org|l_|s_|spoi|green_)/i;
+const NSP_ID = /^codex_ent_(gas_clds|small_org|l_(?!type)|s_|spoi|green_)/i;
 /** Green gas giant reports ride in the same file but are not phenomena. */
 const GREEN_ID = /^codex_ent_green_/;
 
@@ -306,18 +306,33 @@ export function nearbyNsp(
 }
 
 /** Every system with a phenomenon, with the phenomena's names (the galaxy map's layer). */
-export function nspBySystem(): { system: string; x: number; y: number; z: number; names: string[] }[] {
+export interface NspSystem {
+  system: string;
+  systemAddress: number | null;
+  x: number;
+  y: number;
+  z: number;
+  names: string[];
+  /** The codex ids behind the names. */
+  ids: string[];
+}
+
+let bySystemMemo: { file: NspFile; list: NspSystem[] } | null = null;
+export function nspBySystem(): readonly NspSystem[] {
   const f = loadFile();
   if (!f) return [];
-  const by = new Map<string, { system: string; x: number; y: number; z: number; names: string[] }>();
-  for (const [, name, system, addr, x, y, z] of f.nsp) {
+  if (bySystemMemo?.file === f.file) return bySystemMemo.list;
+  const by = new Map<string, NspSystem>();
+  for (const [id, name, system, addr, x, y, z] of f.nsp) {
     const k = String(addr ?? system);
     const g = by.get(k);
     if (g) {
       if (!g.names.includes(name)) g.names.push(name);
-    } else by.set(k, { system, x, y, z, names: [name] });
+      if (!g.ids.includes(id)) g.ids.push(id);
+    } else by.set(k, { system, systemAddress: addr, x, y, z, names: [name], ids: [id] });
   }
-  return [...by.values()];
+  bySystemMemo = { file: f.file, list: [...by.values()] };
+  return bySystemMemo.list;
 }
 
 /**

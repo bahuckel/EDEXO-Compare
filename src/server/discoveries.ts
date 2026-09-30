@@ -29,6 +29,7 @@
  */
 import { bodyFeatures, directParent } from "../shared/bodyFeatures.js";
 import { greenGiantForRecord, type GreenGiantSources } from "./greenGiants.js";
+import { isGggClass } from "../shared/greenGasGiant.js";
 import type {
   BodyExoState,
   DiscoveriesDTO,
@@ -258,6 +259,7 @@ export function buildDiscoveries(
     bodies.push({
       key,
       greenGiant: greenGiantForRecord(rec, greenSrc),
+      ...(isGggClass(rec.planetClass) ? { greenMark: greenSrc.marks.get(key) } : {}),
       ...(features.length ? { features } : {}),
       systemAddress: addr,
       system: sys.name,

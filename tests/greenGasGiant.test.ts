@@ -283,3 +283,34 @@ describe("the Notable card", () => {
     ]);
   });
 });
+
+describe("My discoveries", () => {
+  it("carries the verdict and the commander's call on gas giants that can be green, and only those", async () => {
+    const { GameStateStore } = await import("../src/server/gameState.js");
+    const { buildDiscoveries } = await import("../src/server/discoveries.js");
+    const store = new GameStateStore();
+    const t = "2026-09-30T12:00:00Z";
+    store.apply({ timestamp: t, event: "FSDJump", StarSystem: "Disc", SystemAddress: 55, StarPos: [0, 0, 0] } as never);
+    const scan = (bodyId: number, planetClass: string, temp: number) =>
+      ({
+        timestamp: t,
+        event: "Scan",
+        StarSystem: "Disc",
+        SystemAddress: 55,
+        BodyID: bodyId,
+        BodyName: `Disc ${bodyId}`,
+        PlanetClass: planetClass,
+        SurfaceTemperature: temp,
+      }) as never;
+    store.mergeExplorationScan(scan(1, "Sudarsky class III gas giant", 370), t);
+    store.mergeExplorationScan(scan(2, "Sudarsky class I gas giant", 99), t);
+    store.mergeExplorationScan(scan(3, "Icy body", 99), t);
+    const marks = { get: (k: string) => (k === "55:2" ? ("yes" as const) : null) };
+    const d = buildDiscoveries(store, process.cwd(), { marks });
+    const by = new Map(d.bodies.map((b) => [b.key, b]));
+    expect(by.get("55:1")).toMatchObject({ greenGiant: { level: "likely" }, greenMark: null });
+    expect(by.get("55:2")).toMatchObject({ greenGiant: { level: "confirmed" }, greenMark: "yes" });
+    expect(by.get("55:3")!.greenGiant).toBeNull();
+    expect("greenMark" in by.get("55:3")!).toBe(false);
+  });
+});

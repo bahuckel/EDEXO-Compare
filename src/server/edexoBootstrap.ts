@@ -136,6 +136,7 @@ import type { NotifySettingsDTO } from "../shared/notices.js";
 import { queryPoi, readPoiStatus } from "./edastroPoi.js";
 import { queryCarriers, readCarrierStatus } from "./edastroCarriers.js";
 import { edastroGreenFor, nearbyNsp, nspK10Systems } from "./edastroNsp.js";
+import { nspOutlook } from "./nspOutlook.js";
 import { fetchGalacticRecords, galacticRecords, readGalacticRecordsStatus } from "./galacticRecords.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
@@ -370,6 +371,21 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         sessionLog.toDto(),
       );
       snap.notices = notices.snapshot(store.viewingSystemAddress ?? store.currentSystemAddress ?? null);
+      {
+        // The NSP card (2026-09-30): what he saw, what EDAstro has, else a guess from the neighbourhood.
+        const addr = store.viewingSystemAddress ?? store.currentSystemAddress ?? null;
+        snap.nspOutlook =
+          addr == null
+            ? null
+            : perfTime("snap.nspOutlook", () =>
+                nspOutlook({
+                  systemAddress: addr,
+                  position: store.systemPositions.get(addr) ?? null,
+                  seen: store.nspSeen.get(addr) ?? [],
+                  region: snap.currentRegion?.name ?? null,
+                }),
+              );
+      }
       snap.bookmarksHere = bookmarks.forSystem(
         store.viewingSystemAddress ?? store.currentSystemAddress ?? null,
         snap.viewingSystemName ?? store.currentSystem ?? null,
