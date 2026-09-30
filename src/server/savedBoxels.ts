@@ -10,7 +10,7 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { boxelIndexOf, parseBoxel, type SavedBoxelDTO } from "../shared/boxel.js";
-import { BOXEL_MAX_ROWS } from "./boxel.js";
+import { BOXEL_MAX_ROWS, visitedEntry, type SystemStats, type VisitedSystem } from "./boxel.js";
 
 interface Stored {
   id: string;
@@ -20,7 +20,11 @@ interface Stored {
 }
 
 export interface SavedBoxelsService {
-  list(visited: Iterable<string>): SavedBoxelDTO[];
+  /**
+   * Every saved boxel with its progress. `current` is the system the commander is in: its boxel
+   * comes first and is marked current; the rest follow, newest first.
+   */
+  list(visited: Iterable<VisitedSystem>, stats?: SystemStats, current?: string | null): SavedBoxelDTO[];
   /** Adds a boxel by its last system, or moves the end of one already saved. Null: not a boxel system name. */
   add(lastSystem: string): { id: string } | null;
   remove(id: string): boolean;
@@ -51,18 +55,22 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
   };
 
   return {
-    list(visited) {
+    list(visited, stats, current) {
       const parsed = items
         .map((s) => ({ s, e: endOf(s) }))
         .filter((x): x is { s: Stored; e: NonNullable<ReturnType<typeof endOf>> } => x.e != null);
       const flownBy = new Map(parsed.map((x) => [x.s.id, new Set<number>()]));
-      for (const name of visited) {
+      const addrsBy = new Map(parsed.map((x) => [x.s.id, [] as { n: number; addr: number }[]]));
+      for (const v of visited) {
+        const { name, addr } = visitedEntry(v);
         for (const { s, e } of parsed) {
           const n = boxelIndexOf(name, e.b.prefix);
-          if (n != null) flownBy.get(s.id)!.add(n);
+          if (n == null) continue;
+          flownBy.get(s.id)!.add(n);
+          if (addr != null) addrsBy.get(s.id)!.push({ n, addr });
         }
       }
-      return parsed.map(({ s, e }) => {
+      const out = parsed.map(({ s, e }) => {
         const { b, end } = e;
         const flownAll = flownBy.get(s.id)!;
         const skipped = (s.skipped ?? []).filter((n) => n <= end && !flownAll.has(n)).sort((x, y) => x - y);
@@ -74,9 +82,23 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
             break;
           }
         }
+        let bodiesScanned = 0;
+        let bodiesTotal: number | null = 0;
+        let notable = 0;
+        for (const { n, addr } of addrsBy.get(s.id)!) {
+          if (n > end || !stats) continue;
+          const st = stats(addr);
+          bodiesScanned += st.bodies.scanned;
+          notable += st.notable;
+          bodiesTotal = bodiesTotal != null && st.bodies.total != null ? bodiesTotal + st.bodies.total : null;
+        }
         return {
           id: s.id,
           lastSystem: s.lastSystem,
+          bodiesScanned,
+          bodiesTotal: stats ? bodiesTotal : null,
+          notable,
+          current: !!current && boxelIndexOf(current, b.prefix) != null,
           sector: b.sector,
           boxel: b.boxel,
           prefix: b.prefix,
@@ -89,6 +111,8 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
           next: next == null ? null : `${b.prefix}${next}`,
         };
       });
+      // The boxel he is in first; the rest keep their order (newest first).
+      return [...out.filter((b) => b.current), ...out.filter((b) => !b.current)];
     },
     add(lastSystem) {
       const name = lastSystem.trim().replace(/\s+/g, " ").slice(0, 80);

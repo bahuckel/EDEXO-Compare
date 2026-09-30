@@ -665,7 +665,7 @@
 }
 .boxel-saved__item {
   display: grid;
-  grid-template-columns: minmax(14rem, 1fr) 8rem 8.5rem minmax(12rem, 1.4fr) 11rem;
+  grid-template-columns: minmax(13rem, 1fr) 7rem minmax(19rem, auto) minmax(12rem, 1.2fr) minmax(7rem, auto);
   align-items: center;
   gap: 0.6rem;
   padding: 0.3rem 0.5rem;
@@ -697,6 +697,7 @@
 }
 .boxel-saved__actions {
   display: flex;
+  white-space: nowrap;
   gap: 0.3rem;
   justify-content: flex-end;
 }
@@ -712,11 +713,41 @@
     grid-column: 1 / -1;
   }
 }
-.boxel-saved__extend {
-  margin-right: 0.4rem;
-}
+
+/* Actions hug the right edge and take only their own width. */
 .boxel-row__actions {
+  width: 1%;
   white-space: nowrap;
+  text-align: right;
+}
+.boxel-lookup {
+  padding-inline: 0.45rem;
+  font-size: var(--fs-2xs);
+}
+.boxel-saved__notable {
+  color: var(--accent-bright);
+  font-weight: 700;
+}
+.boxel-saved__label {
+  margin: 0.2rem 0 0;
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.boxel-saved__toggle {
+  justify-self: start;
+  padding: 0.1rem 0;
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.boxel-saved__toggle:hover {
+  color: var(--accent-bright);
 }
 .boxel-row__actions .fdb-chip + .fdb-chip {
   margin-left: 0.3rem;
@@ -749,6 +780,7 @@
   opacity: 0.7;
 }
 .boxel-known {
+  padding-left: 1rem;
   font-size: var(--fs-xs);
   max-width: 34rem;
 }

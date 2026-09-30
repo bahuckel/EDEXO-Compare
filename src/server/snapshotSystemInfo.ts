@@ -389,6 +389,32 @@ export function buildNotableBodiesForFocusedSystem(
 ): NotableBodyInfo[] {
   const focusAddr = store.viewingSystemAddress ?? store.currentSystemAddress;
   if (focusAddr == null) return [];
+  return notableBodiesForSystem(store, focusAddr, focusedSystemName);
+}
+
+/**
+ * What the commander scanned in one system (owner, 2026-09-30, for the boxel list: "15/15 scanned"):
+ * his own scans, live or sold, of stars and worlds (no belts, rings or barycentres), against the
+ * system's body count when the FSS told him one.
+ */
+export function systemBodyTally(store: GameStateStore, systemAddress: number): { scanned: number; total: number | null } {
+  const ids = new Set<number>();
+  for (const rec of [...store.liveScansInSystem(systemAddress), ...store.soldScansInSystem(systemAddress)]) {
+    if (rec.edsmHydrated || rec.isSynthetic || !explorationRecordCountsTowardDScanFound(rec)) continue;
+    ids.add(rec.bodyId);
+  }
+  const disc = store.fssDiscoveryScanBySystem.get(systemAddress);
+  const known = Math.max(disc?.bodyCount ?? 0, store.fssAllBodiesFoundCountBySystem.get(systemAddress) ?? 0);
+  const total = known > 0 ? Math.max(known, ids.size) : null;
+  return { scanned: ids.size, total };
+}
+
+/** The Notable card's list for any system (the focused one, or each system of a boxel). */
+export function notableBodiesForSystem(
+  store: GameStateStore,
+  focusAddr: number,
+  focusedSystemName: string | null,
+): NotableBodyInfo[] {
   const opts = notableOptions();
   const greenSrc: GreenGiantSources | null = opts.green
     ? { ...opts.green, greenCodexBodies: store.greenCodexBodies, k10Systems: store.k10Systems }

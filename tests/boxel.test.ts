@@ -90,6 +90,19 @@ describe("saved boxels (owner, 2026-09-30)", () => {
     // Back to -9 for the rest.
     s.add("Eol Prou AB-C d1-9");
     s.setSkipped(id, 1, false);
+    // Bodies and notable ones across its flown systems (addresses known), and which boxel he is in.
+    const stats = (addr: number) => ({ bodies: { scanned: addr, total: addr === 2 ? null : addr + 1 }, notable: 1 });
+    const withAddr: [number, string][] = [
+      [1, "Eol Prou AB-C d1-0"],
+      [3, "Eol Prou AB-C d1-4"],
+    ];
+    expect(s.list(withAddr, stats, "Eol Prou AB-C d1-4")[0]).toMatchObject({
+      bodiesScanned: 4,
+      bodiesTotal: 6,
+      notable: 2,
+      current: true,
+    });
+    expect(s.list([...withAddr, [2, "Eol Prou AB-C d1-5"]], stats, "Sol")[0]).toMatchObject({ bodiesTotal: null, current: false });
     // Survives a restart; deletes.
     const again = createSavedBoxels({ filePath: file });
     expect(again.list([])).toHaveLength(1);

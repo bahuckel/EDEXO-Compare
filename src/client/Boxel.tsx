@@ -34,27 +34,30 @@ export function BoxelModal({
 
   // What the table shows, so a jump can re-read it (the ticks follow him).
   const shown = useRef<{ name: string; end: string } | null>(null);
-  const load = useCallback((nameArg?: string, endArg?: string) => {
-    const n = (nameArg ?? name).trim();
-    const e = (endArg ?? end).trim();
-    if (!n) return;
-    setBusy(true);
-    setError(null);
-    shown.current = { name: n, end: e };
-    const q = new URLSearchParams({ name: n });
-    if (e) q.set("end", e);
-    void fetch(`/api/boxel?${q}`)
-      .then(async (r) => {
-        const j = (await r.json()) as BoxelDTO & { error?: string };
-        if (!r.ok) throw new Error(j.error ?? r.statusText);
-        setData(j);
-      })
-      .catch((e: unknown) => {
-        setData(null);
-        setError(e instanceof Error ? e.message : String(e));
-      })
-      .finally(() => setBusy(false));
-  }, [name, end]);
+  const load = useCallback(
+    (nameArg?: string, endArg?: string) => {
+      const n = (nameArg ?? name).trim();
+      const e = (endArg ?? end).trim();
+      if (!n) return;
+      setBusy(true);
+      setError(null);
+      shown.current = { name: n, end: e };
+      const q = new URLSearchParams({ name: n });
+      if (e) q.set("end", e);
+      void fetch(`/api/boxel?${q}`)
+        .then(async (r) => {
+          const j = (await r.json()) as BoxelDTO & { error?: string };
+          if (!r.ok) throw new Error(j.error ?? r.statusText);
+          setData(j);
+        })
+        .catch((e: unknown) => {
+          setData(null);
+          setError(e instanceof Error ? e.message : String(e));
+        })
+        .finally(() => setBusy(false));
+    },
+    [name, end],
+  );
 
   // The current system's boxel opens straight away.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,6 +67,7 @@ export function BoxelModal({
   const [lastInput, setLastInput] = useState("");
   const [savedError, setSavedError] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [showPrevious, setShowPrevious] = usePersistedState("boxel.showPrevious", false, isBool);
   const savedCall = useCallback(async (init?: RequestInit, path = "/api/boxels") => {
     try {
       const r = await fetch(path, init);
@@ -96,7 +100,8 @@ export function BoxelModal({
   };
 
   // The saved boxel the table is showing, if any: its rows get Skip and a cut (owner, 2026-09-30).
-  const savedHere = data && saved ? (saved.find((b) => b.prefix.toLowerCase() === data.prefix.toLowerCase()) ?? null) : null;
+  const savedHere =
+    data && saved ? (saved.find((b) => b.prefix.toLowerCase() === data.prefix.toLowerCase()) ?? null) : null;
   const skipSet = new Set(savedHere?.skipped ?? []);
   const [cutAsk, setCutAsk] = useState<number | null>(null);
   const patchSaved = (b: SavedBoxelDTO, body: Record<string, unknown>) =>
@@ -130,6 +135,94 @@ export function BoxelModal({
       setEnd(String(n));
       load(last, String(n));
     });
+  };
+
+  const savedItem = (b: SavedBoxelDTO) => {
+    const done = b.next == null;
+    return (
+      <li key={b.id} className={`boxel-saved__item${done ? " boxel-saved__item--done" : ""}`}>
+        <span className="boxel-saved__name">
+          <strong>{b.boxel}</strong>{" "}
+          <span className="dim">
+            {b.sector} · -0 to -{b.end}
+          </span>
+        </span>
+        <span
+          className="boxel-saved__bar"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={b.total}
+          aria-valuenow={b.flown}
+          aria-label={`${b.flown} of ${b.total} flown`}
+        >
+          <span style={{ width: `${(b.flown / b.total) * 100}%` }} />
+        </span>
+        <span className="boxel-saved__count">
+          {b.flown} / {b.total} systems
+          {b.skipped.length ? <span className="dim"> · {b.skipped.length} skipped</span> : null}
+          <span className="dim">
+            {" · "}
+            {b.bodiesScanned.toLocaleString()}
+            {b.bodiesTotal != null ? ` / ${b.bodiesTotal.toLocaleString()}` : ""} bodies
+            {" · "}
+          </span>
+          <span className={b.notable ? "boxel-saved__notable" : "dim"}>{b.notable} notable</span>
+        </span>
+        <span className="boxel-saved__next">
+          {done ? (
+            <span className="fdb-dss">{b.skipped.length ? "done" : "all flown"}</span>
+          ) : (
+            <>
+              <span className="dim">next </span>
+              {b.next}
+              <CopySystemButton system={b.next!} />
+            </>
+          )}
+        </span>
+        <span className="boxel-saved__actions">
+          {b.flownBeyond.length ? (
+            <button
+              type="button"
+              className="fdb-chip boxel-saved__extend"
+              title={`You have flown -${b.flownBeyond.join(", -")} too: the boxel goes further than -${b.end}.`}
+              onClick={() => extendTo(b, b.flownBeyond[b.flownBeyond.length - 1]!)}
+            >
+              Extend to -{b.flownBeyond[b.flownBeyond.length - 1]}
+            </button>
+          ) : null}
+          <button type="button" className="fdb-chip" onClick={() => showSaved(b)}>
+            Show
+          </button>
+          {confirmId === b.id ? (
+            <>
+              <button
+                type="button"
+                className="fdb-chip boxel-saved__del"
+                onClick={() => {
+                  setConfirmId(null);
+                  void savedCall({ method: "DELETE" }, `/api/boxels/${encodeURIComponent(b.id)}`);
+                }}
+              >
+                Delete
+              </button>
+              <button type="button" className="fdb-chip" onClick={() => setConfirmId(null)}>
+                Keep
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="fdb-chip boxel-saved__x"
+              aria-label={`Delete ${b.boxel} from your boxels`}
+              title="Delete from your boxels"
+              onClick={() => setConfirmId(b.id)}
+            >
+              ×
+            </button>
+          )}
+        </span>
+      </li>
+    );
   };
 
   const addSaved = () => {
@@ -219,87 +312,36 @@ export function BoxelModal({
             </button>
           </form>
           {savedError ? <p className="fdb-empty">{savedError}</p> : null}
-          {saved?.length ? (
-            <ul className="boxel-saved__list">
-              {saved.map((b) => {
-                const done = b.next == null;
-                return (
-                  <li key={b.id} className={`boxel-saved__item${done ? " boxel-saved__item--done" : ""}`}>
-                    <span className="boxel-saved__name">
-                      <strong>{b.boxel}</strong> <span className="dim">{b.sector} · -0 to -{b.end}</span>
-                    </span>
-                    <span
-                      className="boxel-saved__bar"
-                      role="progressbar"
-                      aria-valuemin={0}
-                      aria-valuemax={b.total}
-                      aria-valuenow={b.flown}
-                      aria-label={`${b.flown} of ${b.total} flown`}
-                    >
-                      <span style={{ width: `${(b.flown / b.total) * 100}%` }} />
-                    </span>
-                    <span className="boxel-saved__count">
-                      {b.flown} / {b.total} flown
-                      {b.skipped.length ? <span className="dim"> · {b.skipped.length} skipped</span> : null}
-                    </span>
-                    <span className="boxel-saved__next">
-                      {b.flownBeyond.length ? (
-                        <button
-                          type="button"
-                          className="fdb-chip boxel-saved__extend"
-                          title={`You have flown -${b.flownBeyond.join(", -")} too: the boxel goes further than -${b.end}.`}
-                          onClick={() => extendTo(b, b.flownBeyond[b.flownBeyond.length - 1]!)}
-                        >
-                          Extend to -{b.flownBeyond[b.flownBeyond.length - 1]}
-                        </button>
-                      ) : null}{" "}
-                      {done ? (
-                        <span className="fdb-dss">{b.skipped.length ? "done" : "all flown"}</span>
-                      ) : (
-                        <>
-                          <span className="dim">next </span>
-                          {b.next}
-                          <CopySystemButton system={b.next!} />
-                        </>
-                      )}
-                    </span>
-                    <span className="boxel-saved__actions">
-                      <button type="button" className="fdb-chip" onClick={() => showSaved(b)}>
-                        Show
-                      </button>
-                      {confirmId === b.id ? (
-                        <>
-                          <button
-                            type="button"
-                            className="fdb-chip boxel-saved__del"
-                            onClick={() => {
-                              setConfirmId(null);
-                              void savedCall({ method: "DELETE" }, `/api/boxels/${encodeURIComponent(b.id)}`);
-                            }}
-                          >
-                            Delete
-                          </button>
-                          <button type="button" className="fdb-chip" onClick={() => setConfirmId(null)}>
-                            Keep
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          className="fdb-chip boxel-saved__x"
-                          aria-label={`Delete ${b.boxel} from your boxels`}
-                          title="Delete from your boxels"
-                          onClick={() => setConfirmId(b.id)}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </span>
-                  </li>
+          {saved?.length
+            ? (() => {
+                // The boxel he is in now; else the newest. The others fold away behind an arrow.
+                const current = saved.filter((b) => b.current);
+                const head = current.length ? current : saved.slice(0, 1);
+                const previous = saved.filter((b) => !head.includes(b));
+                const list = (items: SavedBoxelDTO[]) => (
+                  <ul className="boxel-saved__list">{items.map(savedItem)}</ul>
                 );
-              })}
-            </ul>
-          ) : null}
+                return (
+                  <>
+                    <p className="boxel-saved__label">{current.length ? "Current" : "Latest"}</p>
+                    {list(head)}
+                    {previous.length ? (
+                      <>
+                        <button
+                          type="button"
+                          className="boxel-saved__toggle"
+                          aria-expanded={showPrevious}
+                          onClick={() => setShowPrevious(!showPrevious)}
+                        >
+                          <span aria-hidden>{showPrevious ? "▾" : "▸"}</span> Previous ({previous.length})
+                        </button>
+                        {showPrevious ? list(previous) : null}
+                      </>
+                    ) : null}
+                  </>
+                );
+              })()
+            : null}
         </section>
 
         <form
@@ -381,43 +423,53 @@ export function BoxelModal({
             {data.noIndex ? (
               <p className="dim tiny">No galaxy index on this machine: only your own journals were read.</p>
             ) : null}
-            {savedHere && cutAsk != null ? (
-              (() => {
-                const n = cutAsk;
-                const after = savedHere.end - n;
-                const flownFrom = data.rows.filter((r) => r.n >= n && r.visited).length + savedHere.flownBeyond.length;
-                return (
-                  <div className="boxel-cut" role="alertdialog" aria-label="Delete from here">
-                    <span>
-                      Delete <strong>-{n}</strong>
-                      {after > 0 ? ` and the ${after.toLocaleString()} after it` : ""} from this saved boxel? It will end at -{n - 1}.
-                      {flownFrom > 0 ? (
-                        <>
-                          {" "}
-                          <strong className="warn">
-                            {flownFrom} of the systems from -{n} on {flownFrom === 1 ? "is" : "are"} flown
-                          </strong>{" "}
-                          — the boxel goes on past it. To finish it without flying -{n}, skip it instead.
-                        </>
-                      ) : null}
-                    </span>
-                    <span className="boxel-cut__actions">
-                      {flownFrom > 0 && !skipSet.has(n) ? (
-                        <button type="button" className="fdb-chip fdb-chip--on" onClick={() => skip(savedHere, n, true)}>
-                          Skip -{n} instead
+            {savedHere && cutAsk != null
+              ? (() => {
+                  const n = cutAsk;
+                  const after = savedHere.end - n;
+                  const flownFrom =
+                    data.rows.filter((r) => r.n >= n && r.visited).length + savedHere.flownBeyond.length;
+                  return (
+                    <div className="boxel-cut" role="alertdialog" aria-label="Delete from here">
+                      <span>
+                        Delete <strong>-{n}</strong>
+                        {after > 0 ? ` and the ${after.toLocaleString()} after it` : ""} from this saved
+                        boxel? It will end at -{n - 1}.
+                        {flownFrom > 0 ? (
+                          <>
+                            {" "}
+                            <strong className="warn">
+                              {flownFrom} of the systems from -{n} on {flownFrom === 1 ? "is" : "are"} flown
+                            </strong>{" "}
+                            — the boxel goes on past it. To finish it without flying -{n}, skip it instead.
+                          </>
+                        ) : null}
+                      </span>
+                      <span className="boxel-cut__actions">
+                        {flownFrom > 0 && !skipSet.has(n) ? (
+                          <button
+                            type="button"
+                            className="fdb-chip fdb-chip--on"
+                            onClick={() => skip(savedHere, n, true)}
+                          >
+                            Skip -{n} instead
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="fdb-chip boxel-saved__del"
+                          onClick={() => cutFrom(savedHere, n)}
+                        >
+                          Delete from -{n}
                         </button>
-                      ) : null}
-                      <button type="button" className="fdb-chip boxel-saved__del" onClick={() => cutFrom(savedHere, n)}>
-                        Delete from -{n}
-                      </button>
-                      <button type="button" className="fdb-chip" onClick={() => setCutAsk(null)}>
-                        Keep
-                      </button>
-                    </span>
-                  </div>
-                );
-              })()
-            ) : null}
+                        <button type="button" className="fdb-chip" onClick={() => setCutAsk(null)}>
+                          Keep
+                        </button>
+                      </span>
+                    </div>
+                  );
+                })()
+              : null}
             <div className="fdb-scroll">
               <table className="fdb-table">
                 <thead>
@@ -425,10 +477,16 @@ export function BoxelModal({
                     <th className="fdb-num">#</th>
                     <th>System</th>
                     <th>You</th>
+                    <th className="fdb-num" title="Bodies you scanned there, of the count the FSS gave">
+                      Bodies
+                    </th>
+                    <th className="fdb-num" title="Notable bodies there (as on the Notable card)">
+                      Notable
+                    </th>
                     <th title="EDSM and Spansh records in the galaxy index: species logged, biology signals, bodies catalogued">
                       Galaxy index
                     </th>
-                    <th />
+                    <th className="boxel-row__actions" />
                   </tr>
                 </thead>
                 <tbody>
@@ -437,9 +495,7 @@ export function BoxelModal({
                     .map((r) => (
                       <tr
                         key={r.n}
-                        className={
-                          r.visited || skipSet.has(r.n) ? "boxel-row boxel-row--done" : "boxel-row"
-                        }
+                        className={r.visited || skipSet.has(r.n) ? "boxel-row boxel-row--done" : "boxel-row"}
                       >
                         <td className="fdb-num dim">{r.n}</td>
                         <td className="fdb-sys">
@@ -451,6 +507,29 @@ export function BoxelModal({
                             <span className="fdb-dss">flown</span>
                           ) : skipSet.has(r.n) ? (
                             <span className="boxel-skipped">skipped</span>
+                          ) : (
+                            <span className="dim">—</span>
+                          )}
+                        </td>
+                        <td className="fdb-num">
+                          {r.bodies ? (
+                            <span
+                              className={
+                                r.bodies.total != null && r.bodies.scanned >= r.bodies.total
+                                  ? "fdb-dss"
+                                  : undefined
+                              }
+                            >
+                              {r.bodies.scanned}
+                              {r.bodies.total != null ? `/${r.bodies.total}` : ""}
+                            </span>
+                          ) : (
+                            <span className="dim">—</span>
+                          )}
+                        </td>
+                        <td className="fdb-num">
+                          {r.notable ? (
+                            <span className="boxel-saved__notable">{r.notable}</span>
                           ) : (
                             <span className="dim">—</span>
                           )}
@@ -476,7 +555,12 @@ export function BoxelModal({
                           )}
                         </td>
                         <td className="boxel-row__actions">
-                          <button type="button" className="fdb-chip" onClick={() => void lookUp(r.name)}>
+                          <button
+                            type="button"
+                            className="fdb-chip boxel-lookup"
+                            title="Look it up on Spansh and open it"
+                            onClick={() => void lookUp(r.name)}
+                          >
                             Look up
                           </button>
                           {savedHere && r.n <= savedHere.end && !r.visited ? (

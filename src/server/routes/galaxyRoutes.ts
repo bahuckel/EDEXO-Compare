@@ -1,4 +1,11 @@
-import { boxelSystems } from "../boxel.js";
+import { boxelSystems, type SystemStats } from "../boxel.js";
+import { notableBodiesForSystem, systemBodyTally } from "../snapshotSystemInfo.js";
+import type { GameStateStore } from "../gameState.js";
+
+/** Bodies scanned and notable bodies per visited system, for the boxel lists (owner, 2026-09-30). */
+function boxelStats(store: GameStateStore): SystemStats {
+  return (addr) => ({ bodies: systemBodyTally(store, addr), notable: notableBodiesForSystem(store, addr, null).length });
+}
 import { getCachedSpeciesDatabase } from "../snapshot.js";
 import path from "node:path";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -214,8 +221,9 @@ export function registerGalaxyRoutes(
       query: name,
       end,
       index: tileIndex(),
-      visited: store ? store.visitedSystems.values() : [],
+      visited: store ? store.visitedSystems.entries() : [],
       speciesName: (id) => byId.get(id) ?? id,
+      stats: store ? boxelStats(store) : undefined,
     });
     if (!dto) {
       res.status(400).json({ ok: false, error: "Not a boxel name: type a system such as Eol Prou AB-C d1-23." });
@@ -230,7 +238,14 @@ export function registerGalaxyRoutes(
   */
   const savedList = () => {
     const store = opts.getJournalStore?.() ?? null;
-    return { ok: true, items: opts.savedBoxels!.list(store ? store.visitedSystems.values() : []) };
+    return {
+      ok: true,
+      items: opts.savedBoxels!.list(
+        store ? store.visitedSystems.entries() : [],
+        store ? boxelStats(store) : undefined,
+        store?.currentSystem ?? null,
+      ),
+    };
   };
   app.get("/api/boxels", (_req, res) => {
     if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });

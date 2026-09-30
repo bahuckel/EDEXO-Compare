@@ -66,6 +66,10 @@ export interface BoxelRowDTO {
   name: string;
   /** In the commander's journals. */
   visited: boolean;
+  /** Visited: bodies he scanned there, of the FSS body count when known ("15/15"). */
+  bodies?: { scanned: number; total: number | null };
+  /** Visited: how many notable bodies the Notable card finds there. */
+  notable?: number;
   /** In the galaxy index (EDSM / Spansh records): what grows there, as far as anyone logged. */
   known: {
     species: string[];
@@ -116,6 +120,13 @@ export interface SavedBoxelDTO {
   skipped: number[];
   /** Systems past `end` that he has flown: the boxel goes further than the end he typed. */
   flownBeyond: number[];
+  /** Bodies he scanned across its flown systems, and the FSS totals of those systems when known. */
+  bodiesScanned: number;
+  bodiesTotal: number | null;
+  /** Notable bodies found across its flown systems. */
+  notable: number;
+  /** The commander is in this boxel now. */
+  current: boolean;
   total: number;
   /** The lowest system number neither flown nor skipped; null when the boxel is done. */
   next: string | null;

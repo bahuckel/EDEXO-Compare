@@ -10,19 +10,35 @@ import { TIER_DSS, TIER_FSS } from "./bioIndex.js";
 /** Listing more than this is not a boxel anyone flies by hand. */
 export const BOXEL_MAX_ROWS = 2000;
 
+/** A visited system: its name, or `[systemAddress, name]` when the address is known (for the stats). */
+export type VisitedSystem = string | readonly [number, string];
+
+/** What the commander found in one system he visited: bodies scanned and notable ones. */
+export type SystemStats = (systemAddress: number) => { bodies: { scanned: number; total: number | null }; notable: number };
+
+/** name, address (or null) of a visited entry. */
+export function visitedEntry(v: VisitedSystem): { name: string; addr: number | null } {
+  return typeof v === "string" ? { name: v, addr: null } : { name: v[1], addr: v[0] };
+}
+
 export function boxelSystems(opts: {
   query: string;
   end: number | null;
   index: TileIndex | null;
-  visited: Iterable<string>;
+  visited: Iterable<VisitedSystem>;
   speciesName: (id: string) => string;
+  stats?: SystemStats;
 }): BoxelDTO | null {
   const b = parseBoxel(opts.query);
   if (!b) return null;
   const mine = new Set<number>();
-  for (const name of opts.visited) {
+  const addrOf = new Map<number, number>();
+  for (const v of opts.visited) {
+    const { name, addr } = visitedEntry(v);
     const n = boxelIndexOf(name, b.prefix);
-    if (n != null) mine.add(n);
+    if (n == null) continue;
+    mine.add(n);
+    if (addr != null) addrOf.set(n, addr);
   }
   const known = new Map<number, NonNullable<BoxelRowDTO["known"]>>();
   if (opts.index) {
@@ -41,7 +57,15 @@ export function boxelSystems(opts: {
   const end = Math.min(BOXEL_MAX_ROWS - 1, Math.max(0, opts.end ?? highest));
   const rows: BoxelRowDTO[] = [];
   for (let n = 0; n <= end; n++) {
-    rows.push({ n, name: `${b.prefix}${n}`, visited: mine.has(n), known: known.get(n) ?? null });
+    const addr = addrOf.get(n);
+    const st = addr != null && opts.stats ? opts.stats(addr) : null;
+    rows.push({
+      n,
+      name: `${b.prefix}${n}`,
+      visited: mine.has(n),
+      known: known.get(n) ?? null,
+      ...(st ? { bodies: st.bodies, notable: st.notable } : {}),
+    });
   }
   const tally = new Map<string, number>();
   for (const k of known.values())
