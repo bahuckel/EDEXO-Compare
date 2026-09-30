@@ -2,10 +2,10 @@
  * Notable stellar phenomena from EDAstro's codex file (src/server/edastroNsp.ts): the opt-in 855 MB
  * download, read as it streams, keeping only the phenomena (owner, 2026-09-30).
  */
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   nearbyNsp,
   nspColumns,
@@ -149,5 +149,23 @@ describe("green gas giant reports (owner, 2026-09-30)", () => {
     expect([...edastroGreenFor(444)].sort()).toEqual(["codex_ent_green_giant_with_water_life", "codex_ent_green_sudarsky_class_ii"]);
     expect(edastroGreenFor(111)).toEqual([]);
     expect(edastroGreenReports()).toEqual([expect.objectContaining({ system: "Green One", x: 5 })]);
+  });
+});
+
+describe("the cache file is looked at once a second, not on every question", () => {
+  it("sees a file written by hand after a second; nothing before", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-10-01T10:00:00Z"));
+      expect(readNspStatus().haveData).toBe(false);
+      const file = { formatVersion: 1, filterVersion: 3, fetchedAtMs: Date.now(), etag: null, sourceBytes: null, rows: [["codex_ent_gas_clds_light", "Proto-Lagrange Cloud", "Near One", 111, 10, 0, 0]] };
+      writeFileSync(resolveNspCachePath(), JSON.stringify(file));
+      vi.setSystemTime(new Date("2026-10-01T10:00:00.500Z"));
+      expect(readNspStatus().haveData).toBe(false);
+      vi.setSystemTime(new Date("2026-10-01T10:00:01.100Z"));
+      expect(readNspStatus()).toMatchObject({ haveData: true, rowCount: 1 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

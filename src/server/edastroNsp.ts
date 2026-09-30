@@ -151,8 +151,26 @@ export function nspColumns(header: string) {
 type NspRow = NspFile["rows"][number];
 let memo: { mtimeMs: number; file: NspFile; systems: number; nsp: NspRow[]; green: NspRow[] } | null = null;
 
-function loadFile(): { file: NspFile; systems: number; nsp: NspRow[]; green: NspRow[] } | null {
+type Loaded = { file: NspFile; systems: number; nsp: NspRow[]; green: NspRow[] };
+/*
+  The last answer, reused for a second: every gas giant asks twice per snapshot (K10 anomaly, green
+  reports), and a stat per ask — a throw when nothing was ever downloaded, the usual case — was a
+  measurable part of each refresh (profiled 2026-10-01). Our own writes clear it at once; a file
+  changed by hand is seen within a second.
+*/
+let checked: { at: number; path: string; result: Loaded | null } | null = null;
+const RECHECK_MS = 1000;
+
+function loadFile(): Loaded | null {
   const p = resolveNspCachePath();
+  const now = Date.now();
+  if (checked && checked.path === p && now - checked.at < RECHECK_MS) return checked.result;
+  const result = loadFileNow(p);
+  checked = { at: now, path: p, result };
+  return result;
+}
+
+function loadFileNow(p: string): Loaded | null {
   let st;
   try {
     st = statSync(p);
@@ -193,6 +211,7 @@ function loadFile(): { file: NspFile; systems: number; nsp: NspRow[]; green: Nsp
 
 export function resetNspMemo(): void {
   memo = null;
+  checked = null;
 }
 
 const job = { running: false, bytesDone: 0, bytesTotal: null as number | null, error: null as string | null };
@@ -297,6 +316,7 @@ function writeNspFile(file: NspFile): void {
   writeFileSync(tmp, JSON.stringify(file), "utf8");
   renameSync(tmp, p);
   memo = null;
+  checked = null;
 }
 
 /** Phenomena within the radius, grouped by system, nearest system first. */
