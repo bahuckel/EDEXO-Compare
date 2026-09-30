@@ -82,6 +82,7 @@ module.exports = {
     "electron/hudWindows.cjs",
     "electron/tray.cjs",
     "electron/childWindows.cjs",
+    "electron/foregroundWatch.cjs",
     ...(process.env.EDEXO_DIAG === "1" ? ["electron/diag.cjs"] : []),
     "package.json",
   ],

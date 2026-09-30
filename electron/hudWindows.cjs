@@ -94,7 +94,14 @@ function createHudWindows(deps) {
     stayed on top of the desktop after the game closed.
   */
   let gameAway = false;
-  const hiddenNow = () => hudHidden || gameAway;
+  /*
+    Elite is running but another window is in front (owner, 2026-09-30: "hide the HUD when the game
+    is not running or not in focus"). Only counts while `hideUnfocused` is on — a saved launcher
+    option, on by default. Like `gameAway`, never written into `hudHidden`.
+  */
+  let focusAway = false;
+  let hideUnfocused = true;
+  const hiddenNow = () => hudHidden || gameAway || (hideUnfocused && focusAway);
   /*
     A window whose page has nothing to show right now ("Only when relevant", guild tester report,
     2026-09-30): hidden and left out of the stack, so the others close up. The page says so through
@@ -227,6 +234,7 @@ function createHudWindows(deps) {
         setHudLayout(j, false);
         // The commander's last choice, shown or hidden: restored as it was (owner, 2026-09-28).
         hudHidden = j.hidden === true;
+        hideUnfocused = j.hideUnfocused !== false;
         if (Number.isFinite(Number(j.scale))) hudScale = Math.min(2, Math.max(0.5, Number(j.scale)));
         if (Array.isArray(j.lastOpen)) {
           hudRememberedOpen = j.lastOpen
@@ -284,6 +292,7 @@ function createHudWindows(deps) {
           open,
           lastOpen: hudRememberedOpen,
           hidden: hudHidden,
+          hideUnfocused,
           scale: hudScale,
         }),
         "utf8",
@@ -299,6 +308,10 @@ function createHudWindows(deps) {
       ? next.order.filter((k) => typeof k === "string").slice(0, 16)
       : hudLayout.order;
     hudLayout = { corner, order };
+    if (typeof next.hideUnfocused === "boolean" && next.hideUnfocused !== hideUnfocused) {
+      hideUnfocused = next.hideUnfocused;
+      applyAway();
+    }
     if (persist) persistHudFile();
     relayoutHudStack();
     return hudLayout;
@@ -522,7 +535,10 @@ function createHudWindows(deps) {
     // The hotkey toggles what the commander sees: overlays hidden because the game is away count as
     // hidden, so the press shows them — and a show overrides the game-away state until it changes.
     hudHidden = typeof force === "boolean" ? force : !hiddenNow();
-    if (!hudHidden) gameAway = false;
+    if (!hudHidden) {
+      gameAway = false;
+      focusAway = false;
+    }
     persistHudFile();
     deps.onChange();
 
@@ -574,6 +590,20 @@ function createHudWindows(deps) {
     const next = away === true;
     if (gameAway === next) return;
     gameAway = next;
+    applyAway();
+  }
+
+  /** Elite has lost (true) or regained (false) the foreground; hides only while `hideUnfocused` is on. */
+  function setFocusAway(away) {
+    const next = away === true;
+    if (focusAway === next) return;
+    const before = hiddenNow();
+    focusAway = next;
+    if (hiddenNow() !== before) applyAway();
+  }
+
+  /** Brings the windows in line with the away states: hidden, or raised and laid out. */
+  function applyAway() {
     deps.onChange();
     for (const s of hudOverlayStack) {
       if (!s.win || s.win.isDestroyed()) continue;
@@ -896,6 +926,8 @@ function createHudWindows(deps) {
       ...hudLayout,
       hidden: hudHidden,
       gameAway,
+      focusAway,
+      hideUnfocused,
       count: hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed()).length,
       shortcut: HUD_TOGGLE_SHORTCUT,
     }),
@@ -909,6 +941,8 @@ function createHudWindows(deps) {
     toggleVisibility: toggleHudVisibility,
     setGameAway,
     isGameAway: () => gameAway,
+    setFocusAway,
+    isFocusAway: () => focusAway,
     /** Pages of the overlays their page has declared idle ("only when relevant"). */
     idlePaths: () => hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed() && isIdle(s)).map((s) => s.pathname),
     restore: restoreHudOverlays,

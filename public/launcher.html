@@ -2068,6 +2068,9 @@
                 <button type="button" class="hud-vis-btn" id="hudVisHide" aria-pressed="false">Hide</button>
               </span>
             </div>
+            <div class="hud-set-row">
+              <label title="While Elite runs but another window is in front, the HUDs step aside, and come back when you return to the game. This app's own windows do not count. Without the game running they are always hidden; the hotkey still shows them."><input type="checkbox" id="hudHideUnfocused" /> Hide when Elite is not in front</label>
+            </div>
             <h4>HUD colour</h4>
             <div class="hud-swatches" id="hudSwatches" role="radiogroup" aria-label="HUD colour preset"></div>
             <div class="hud-set-row">
@@ -4169,7 +4172,7 @@
           if (hudVisSummary) {
             var n = v && typeof v.count === "number" ? v.count : null;
             hudVisSummary.textContent =
-              (hidden ? "HUDs are hidden" : "HUDs are shown") +
+              (hidden ? "HUDs are hidden" : v && v.gameAway ? "HUDs wait for Elite" : v && v.focusAway ? "HUDs wait for Elite in front" : "HUDs are shown") +
               (n === 0 ? " (none open)" : n ? " (" + n + " open)" : "");
           }
         }
@@ -4179,6 +4182,21 @@
           ee.toggleHudVisibility({ hidden: hidden }).then(function (r) {
             renderHudVisibility({ hidden: r && r.hidden });
           }).catch(function () {});
+        }
+        // Hide when Elite is not in front (owner, 2026-09-30): saved by the app with the HUD layout, on by default.
+        var hudHideUnfocused = document.getElementById("hudHideUnfocused");
+        if (hudHideUnfocused && window.edexoElectron && typeof window.edexoElectron.getHudLayout === "function") {
+          window.edexoElectron.getHudLayout().then(function (l) {
+            hudHideUnfocused.checked = !l || l.hideUnfocused !== false;
+          }).catch(function () {});
+          hudHideUnfocused.addEventListener("change", function () {
+            var ee = window.edexoElectron;
+            if (ee && typeof ee.setHudLayout === "function") {
+              void ee.setHudLayout({ hideUnfocused: hudHideUnfocused.checked });
+            }
+          });
+        } else if (hudHideUnfocused) {
+          hudHideUnfocused.closest(".hud-set-row").hidden = true;
         }
         if (hudVisShow) hudVisShow.addEventListener("click", function () { setHudVisibility(false); });
         if (hudVisHide) hudVisHide.addEventListener("click", function () { setHudVisibility(true); });

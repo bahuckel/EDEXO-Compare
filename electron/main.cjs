@@ -23,6 +23,9 @@ const {
   HUD_TOGGLE_SHORTCUT,
 } = require("./hudWindows.cjs");
 const { createTrayControl } = require("./tray.cjs");
+const { watchForeground, isGameOrOwn } = require("./foregroundWatch.cjs");
+/** The foreground watcher (foregroundWatch.cjs), started with the HUDs. */
+let foreground = null;
 
 /*
   Diagnostics, in the diagnostic build only (`npm run dist:win:diag`; owner, 2026-09-25). A public
@@ -89,7 +92,13 @@ const huds = createHudWindows({
     // The launcher's Shown / Hidden buttons follow the hotkey and the tray as well as their own clicks.
     if (mainWindow && !mainWindow.isDestroyed()) {
       try {
-        mainWindow.webContents.send("edexo:hud-visibility", { hidden: huds.isHidden(), count: huds.count() });
+        const l = huds.layout();
+        mainWindow.webContents.send("edexo:hud-visibility", {
+          hidden: huds.isHidden(),
+          count: huds.count(),
+          gameAway: l.gameAway,
+          focusAway: l.focusAway && l.hideUnfocused,
+        });
       } catch {
         /* the launcher reloading */
       }
@@ -627,7 +636,32 @@ async function start() {
   // guild tester report, 2026-09-30). The hotkey still shows them on demand.
   if (runtime && typeof runtime.onGameRunning === "function") {
     if (runtime.gameRunning() === false) huds.setGameAway(true);
-    runtime.onGameRunning((running) => huds.setGameAway(!running));
+    runtime.onGameRunning((running) => {
+      console.log(`[edexo-compare] Elite ${running ? "running" : "not running"}: overlays ${running ? "back" : "hidden"}`);
+      huds.setGameAway(!running);
+    });
+  }
+  /*
+    ...and while it runs but another program is in front (owner, 2026-09-30). A short wait before
+    hiding, so alt-tabbing past something does not flicker them; back at once with the game. This
+    app's own windows count as the game's side: the app on a second screen keeps the overlays.
+  */
+  {
+    const own = [path.basename(process.execPath, ".exe").toLowerCase(), "electron"];
+    let hideTimer = null;
+    foreground = watchForeground((name) => {
+      if (isGameOrOwn(name, own)) {
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = null;
+        huds.setFocusAway(false);
+        return;
+      }
+      if (hideTimer) return;
+      hideTimer = setTimeout(() => {
+        hideTimer = null;
+        huds.setFocusAway(true);
+      }, 1500);
+    });
   }
   void huds.restore(winIcon);
   mainWindow.on("minimize", (e) => {
@@ -771,6 +805,7 @@ app.on("before-quit", (e) => {
     /* ignore */
   }
   huds.destroyAll();
+  foreground?.stop();
   trayControl.destroy();
   if (runtime && typeof runtime.shutdown === "function") {
     void runtime.shutdown();

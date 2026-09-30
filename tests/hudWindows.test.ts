@@ -40,6 +40,8 @@ type Huds = {
   toggleVisibility: (force?: boolean) => boolean;
   setGameAway: (away: boolean) => void;
   isGameAway: () => boolean;
+  setFocusAway: (away: boolean) => void;
+  isFocusAway: () => boolean;
   idlePaths: () => string[];
   restore: (icon: unknown) => Promise<void>;
   destroyAll: () => void;
@@ -271,6 +273,29 @@ describe("hiding and showing (the hotkey)", () => {
     huds.toggleVisibility(true);
   });
 
+  it("steps aside while another window is in front, unless that option is off (owner, 2026-09-30)", async () => {
+    const huds = make();
+    await huds.request("/distance-overlay.html", 404, 330, null, "open");
+    const win = live()[0]!;
+    huds.setFocusAway(true);
+    expect(win.visible).toBe(false);
+    huds.setFocusAway(false);
+    expect(win.visible).toBe(true);
+    // Off: the game losing focus changes nothing; the option is saved with the layout.
+    huds.setLayout({ hideUnfocused: false });
+    expect(JSON.parse(readFileSync(layoutFile, "utf8")).hideUnfocused).toBe(false);
+    huds.setFocusAway(true);
+    expect(win.visible).toBe(true);
+    // Turning it back on while away hides at once.
+    huds.setLayout({ hideUnfocused: true });
+    expect(win.visible).toBe(false);
+    // The hotkey shows them anyway, and forgets the away state.
+    expect(huds.toggleVisibility()).toBe(false);
+    expect(win.visible).toBe(true);
+    expect(huds.isFocusAway()).toBe(false);
+    huds.toggleVisibility(true);
+  });
+
   it("shows on the hotkey while the game is away (and forgets the away state)", async () => {
     const huds = make();
     await huds.request("/distance-overlay.html", 404, 330, null, "open");
@@ -341,6 +366,27 @@ describe("the layout file", () => {
     expect(JSON.parse(readFileSync(layoutFile, "utf8")).hidden).toBe(true);
   });
 
+  /*
+    The owner's report (2026-09-30): with the game closed the overlays still came up. The process
+    check answers before the restore, so the restore is what has to respect "the game is away".
+  */
+  it("keeps restored HUDs hidden while the game is away, through paint, page reports and relayout", async () => {
+    saved({ hidden: false });
+    const huds = make();
+    huds.loadLayout();
+    huds.setGameAway(true);
+    await huds.restore(null);
+    const win = live()[0]!;
+    win.paint();
+    huds.resizeFromPage(win, { height: 200, idle: false });
+    huds.resizeFromPage(win, { height: 220 });
+    huds.relayout();
+    expect(win.visible).toBe(false);
+    huds.setGameAway(false);
+    expect(win.visible).toBe(true);
+    huds.toggleVisibility(true);
+  });
+
   it("does not record 'hidden' over a restore that brought nothing back", async () => {
     saved({ hidden: true, open: [{ pathname: "/missing-overlay.html", width: 404, height: 330 }] });
     const huds = make();
@@ -409,5 +455,17 @@ describe("what the pages report", () => {
     huds.pushPrefs({ scale: 1.1 });
     huds.pushPrefs("nonsense");
     for (const w of live()) expect(w.sent).toEqual([["edexo:hud-prefs", { scale: 1.1 }]]);
+  });
+});
+
+describe("the foreground check (electron/foregroundWatch.cjs)", () => {
+  const fg = require("../electron/foregroundWatch.cjs") as { isGameOrOwn: (n: string, own: string[]) => boolean };
+  it("the game and this app keep the overlays; anything else does not; unreadable never hides", () => {
+    const own = ["edexocompare", "electron"];
+    expect(fg.isGameOrOwn("EliteDangerous64", own)).toBe(true);
+    expect(fg.isGameOrOwn("EDExoCompare", own)).toBe(true);
+    expect(fg.isGameOrOwn("", own)).toBe(true);
+    expect(fg.isGameOrOwn("Discord", own)).toBe(false);
+    expect(fg.isGameOrOwn("chrome", own)).toBe(false);
   });
 });
