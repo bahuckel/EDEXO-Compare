@@ -127,6 +127,7 @@ import type { CliOptions } from "./cliOptions.js";
 import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startupChecks.js";
 import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
 import { createNoticesService, type NoticesContext } from "./notices.js";
+import { createBookmarksService } from "./bookmarks.js";
 import type { NotifySettingsDTO } from "../shared/notices.js";
 import { queryPoi, readPoiStatus } from "./edastroPoi.js";
 import { queryCarriers, readCarrierStatus } from "./edastroCarriers.js";
@@ -285,6 +286,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const notices = createNoticesService({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-notices.json"),
   });
+  const bookmarks = createBookmarksService({
+    filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-bookmarks.json"),
+  });
   const noticesContext: NoticesContext = {
     isKnownBody: (k) => store.explorationScans.has(k) || store.soldExplorationScans.has(k),
     allScans: function* () {
@@ -332,6 +336,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         sessionLog.toDto(),
       );
       snap.notices = notices.snapshot(store.viewingSystemAddress ?? store.currentSystemAddress ?? null);
+      snap.bookmarksHere = bookmarks.forSystem(
+        store.viewingSystemAddress ?? store.currentSystemAddress ?? null,
+        snap.viewingSystemName ?? store.currentSystem ?? null,
+      );
       return snap;
     });
 
@@ -1310,6 +1318,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     setPollRates: (statusMs, journalMs) => applyPollRates(statusMs, journalMs),
     getCollectionFocus: () => loadCollectionFocusConfig(),
     getNotifySettings: notifySettings,
+    bookmarks,
+    systemPositionOf: (addr) => store.systemPositions.get(addr) ?? null,
     setNotifyPrefs: (raw) => {
       notices.setPrefs(raw);
       push();

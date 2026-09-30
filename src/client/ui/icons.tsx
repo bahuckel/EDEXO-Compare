@@ -189,6 +189,26 @@ export function IconPoi({ className }: { className?: string }) {
   );
 }
 
+/** Bookmarks: a ribbon bookmark. */
+export function IconBookmark({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 3h12v18l-6-4.5L6 21z" />
+    </svg>
+  );
+}
+
 /** Achievements: a laurel-less medal — a ribbon and a star in a ring. */
 export function IconAchievements({ className }: { className?: string }) {
   return (

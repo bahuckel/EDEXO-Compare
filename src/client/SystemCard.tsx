@@ -16,6 +16,7 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { AppSnapshot, NotableBodyInfo, PrimaryStarHeaderEntryDTO, SystemKind } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
+import { BookmarkStar } from "./Bookmarks";
 import { primaryStarRoleTooltip } from "./speciesMatchHelpers";
 import { Tooltip } from "./ui/Tooltip";
 import { RecordMedal, recordMarksByBodyId, recordMarksTitle } from "./noticesClient";
@@ -74,6 +75,7 @@ export function SystemCardRow({
             <span className="sys-card__name">
               {name}
               <CopySystemButton system={name} />
+              <BookmarkStar snap={snap} system={name} />
             </span>
             <button
               type="button"

@@ -43,6 +43,8 @@ export const CarriersModal = lazyModal(() => import("./CarriersModal").then((m) 
 
 export const PoiModal = lazyModal(() => import("./PoiModal").then((m) => m.PoiModal));
 
+export const BookmarksModal = lazyModal(() => import("./Bookmarks").then((m) => m.BookmarksModal));
+
 export const StatisticsModal = lazyModal(() => import("./StatisticsModal").then((m) => m.StatisticsModal));
 
 /* Achievements and Options were in the main bundle though only the menu opens them (P8). */
@@ -54,6 +56,7 @@ export const MapOptionsModal = lazyModal(() => import("./OptionsModal").then((m)
 export function prefetchMenuModals(): void {
   const go = () => {
     for (const m of [
+      BookmarksModal,
       StatisticsModal,
       EncyclopediaModal,
       FirstDiscoveryBacklogModal,

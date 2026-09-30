@@ -514,3 +514,107 @@
 .gsx-list-open:hover {
   background: var(--accent-a12);
 }
+
+/* ---- Bookmarks (2026-09-30): the star on the system card, its editor, the list ---- */
+.bm-star-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.bm-star {
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 0.2rem;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+}
+.bm-star:hover,
+.bm-star--on {
+  color: #f5b83d;
+}
+.bm-star::before {
+  content: "\2606";
+}
+.bm-star--on::before {
+  content: "\2605";
+}
+.bm-popover {
+  position: fixed;
+  z-index: 60;
+  width: min(26rem, calc(100vw - 32px));
+  padding: 0.6rem;
+  background: #0d0907;
+  border: 1px solid var(--accent-a35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.bm-editor {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+.bm-editor__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.bm-editor__head select,
+.bm-tag-input,
+.bm-note {
+  font: inherit;
+  font-size: var(--fs-xs);
+  background: #120d0a;
+  color: var(--text);
+  border: 1px solid var(--accent-a22);
+  padding: 0.2rem 0.35rem;
+}
+.bm-note {
+  width: 100%;
+  resize: vertical;
+}
+.bm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.bm-tag-input {
+  width: 9rem;
+}
+.bm-editor__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+.bm-remove {
+  font: inherit;
+  font-size: var(--fs-xs);
+  background: transparent;
+  border: 0;
+  color: var(--warn-soft, #f59e0b);
+  cursor: pointer;
+  padding: 0;
+}
+.bm-tag {
+  display: inline-block;
+  margin: 0 0.25rem 0.2rem 0;
+  padding: 0 0.35rem;
+  font-size: var(--fs-2xs);
+  border: 1px solid var(--accent-a35);
+  color: var(--accent-bright);
+}
+.bm-note-cell {
+  max-width: 22rem;
+  white-space: pre-wrap;
+  font-size: var(--fs-xs);
+}
+.bm-actions {
+  white-space: nowrap;
+}
+.bm-actions .fdb-chip {
+  margin-left: 0.25rem;
+}

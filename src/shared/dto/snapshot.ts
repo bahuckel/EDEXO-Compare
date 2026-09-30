@@ -24,6 +24,7 @@ import type { RemoteViewDTO } from "./remote.js";
 import type { JumpTargetSource } from "./scan.js";
 import type { SystemMapSnapshot } from "./systemMap.js";
 import type { NoticesSnapshotDTO } from "../notices.js";
+import type { BookmarkDTO } from "../bookmarks.js";
 
 export interface AppSnapshot {
   journalPath: string | null;
@@ -209,6 +210,8 @@ export interface AppSnapshot {
   notableBodies: NotableBodyInfo[];
   /** "Notify me": unread notices for the mail icon, and records broken in this system (shared/notices.ts). */
   notices?: NoticesSnapshotDTO;
+  /** Bookmarks for the system on screen (shared/bookmarks.ts), for its card's star. */
+  bookmarksHere?: BookmarkDTO[];
   /**
    * System map exobiology node suffixes: min estimated sell heuristic (price-list × 5) for `+` and `++`.
    * `++` threshold is always kept strictly greater than `+` (CR, integer).

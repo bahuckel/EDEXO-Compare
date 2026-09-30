@@ -54,6 +54,8 @@ import { registerHudRoutes } from "./routes/hudRoutes.js";
 import { registerExomasteryRoutes } from "./routes/exomasteryRoutes.js";
 import { registerBackupRoutes } from "./routes/backupRoutes.js";
 import type { BackupService } from "./backupService.js";
+import type { BookmarksService } from "./bookmarks.js";
+import { registerBookmarksRoutes } from "./routes/bookmarksRoutes.js";
 import type { NotifySettingsDTO } from "../shared/notices.js";
 export function getLanIPv4s(port: number): string[] {
   const nets = os.networkInterfaces();
@@ -192,6 +194,10 @@ export interface HttpServerOptions {
   getCollectionFocus?: () => CollectionFocusConfig;
   /** GET/POST `/api/settings/notify` — the "Notify me" toggles and what the radius works out to (shared/notices.ts). */
   getNotifySettings?: () => NotifySettingsDTO;
+  /** The commander's bookmarks (`/api/bookmarks`, server/bookmarks.ts). */
+  bookmarks?: BookmarksService;
+  /** Where a system is, from the journals' StarPos, for a new bookmark. */
+  systemPositionOf?: (systemAddress: number) => { x: number; y: number; z: number } | null;
   setNotifyPrefs?: (raw: unknown) => NotifySettingsDTO;
   /** POST `/api/notices/read` — `{ ids: string[] }` or `{ all: true }`; returns how many went. */
   markNoticesRead?: (ids: readonly string[] | "all") => number;
@@ -682,6 +688,7 @@ export function createHttpServer(opts: HttpServerOptions): {
   registerHudRoutes(app, opts, routeCtx);
 
   registerBackupRoutes(app, opts, routeCtx);
+  registerBookmarksRoutes(app, opts, routeCtx);
 
   registerExomasteryRoutes(app, opts, routeCtx);
 

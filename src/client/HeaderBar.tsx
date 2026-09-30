@@ -14,7 +14,7 @@ import {
   IconOptions,
   IconBacklog,
   IconCarrier,
-  IconPoi,
+  IconPoi, IconBookmark,
   IconStats,
   IconSession,
 } from "./ui/icons";
@@ -36,6 +36,7 @@ import {
   CarriersModal,
   EncyclopediaModal,
   PoiModal,
+  BookmarksModal,
   StatisticsModal,
   FirstDiscoveryBacklogModal,
   ModalLoading,
@@ -155,6 +156,7 @@ export const HeaderBar = memo(function HeaderBar({
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [carriersOpen, setCarriersOpen] = useState(false);
   const [poiOpen, setPoiOpen] = useState(false);
+  const [bookmarksOpen, setBookmarksOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [notableQuick, setNotableQuick] = useState<{
     notable: NotableBodyInfo;
@@ -395,6 +397,16 @@ export const HeaderBar = memo(function HeaderBar({
                     aria-label="Points of interest"
                   >
                     <IconPoi />
+                  </button>
+                </Tooltip>
+                <Tooltip text="Bookmarks — systems you marked with the ☆ beside a system's name, with tags and notes.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setBookmarksOpen(true)}
+                    aria-label="Bookmarks"
+                  >
+                    <IconBookmark />
                   </button>
                 </Tooltip>
                 <Tooltip text="Statistics — income by source, activity and balances, over 24 h to all time.">
@@ -692,6 +704,14 @@ export const HeaderBar = memo(function HeaderBar({
         </Suspense>
       ) : null}
 
+      {bookmarksOpen ? (
+        <Suspense fallback={null}>
+          <BookmarksModal
+            onClose={() => setBookmarksOpen(false)}
+            currentSystemAddress={snap.currentSystemAddress ?? null}
+          />
+        </Suspense>
+      ) : null}
       {poiOpen ? (
         <Suspense fallback={<ModalLoading />}>
           <PoiModal onClose={() => setPoiOpen(false)} />
