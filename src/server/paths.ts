@@ -5,6 +5,9 @@ import { basename, dirname, join, resolve as pathResolve } from "node:path";
 /** File name only; full path from {@link resolveUserSettingsJsonPath}. */
 export const USER_SETTINGS_FILENAME = "edexo-compare-user-settings.json";
 
+/** Folders already made this run (see resolveUserSettingsJsonPath). */
+const ensuredDirs = new Set<string>();
+
 /**
  * Writable JSON for user preferences (bacterium, map +/++ CR, exploration scan in data value).
  *
@@ -30,10 +33,19 @@ export function resolveUserSettingsJsonPath(): string {
     const xdg = process.env.XDG_CONFIG_HOME;
     dir = join(xdg && xdg.length > 0 ? xdg : join(homedir(), ".config"), "edexo-compare");
   }
-  try {
-    mkdirSync(dir, { recursive: true });
-  } catch {
-    /* write may still fail; persistence is best-effort */
+  /*
+    Once per folder, not per call: this runs for every gas giant and every body on each snapshot
+    (the phenomena cache, the footfall catalogue), and a mkdir each time was ~5 ms of a refresh
+    (profiled 2026-10-01). A folder deleted while the app runs is made again by the next write's
+    own error path, as before this memo.
+  */
+  if (!ensuredDirs.has(dir)) {
+    try {
+      mkdirSync(dir, { recursive: true });
+      ensuredDirs.add(dir);
+    } catch {
+      /* write may still fail; persistence is best-effort */
+    }
   }
   return join(dir, USER_SETTINGS_FILENAME);
 }
