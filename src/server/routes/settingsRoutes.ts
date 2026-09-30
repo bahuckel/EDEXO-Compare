@@ -246,6 +246,21 @@ export function registerSettingsRoutes(
     res.json({ ok: true, removed: opts.markNoticesRead(b.ids as string[]) });
   });
 
+  app.post("/api/notices/unread", (req, res) => {
+    const b = (req.body ?? {}) as { ids?: unknown };
+    if (typeof opts.markNoticesUnread !== "function") return void res.status(501).json({ ok: false, error: "Not available" });
+    if (!Array.isArray(b.ids) || !b.ids.every((x) => typeof x === "string")) {
+      res.status(400).json({ ok: false, error: 'JSON body must be { "ids": string[] }.' });
+      return;
+    }
+    res.json({ ok: true, changed: opts.markNoticesUnread(b.ids as string[]) });
+  });
+
+  app.post("/api/notices/clear-read", (_req, res) => {
+    if (typeof opts.clearReadNotices !== "function") return void res.status(501).json({ ok: false, error: "Not available" });
+    res.json({ ok: true, removed: opts.clearReadNotices() });
+  });
+
   /** How far the sample radar draws. See `shared/radarRadius.ts` for the bounds and the reason. */
   app.post("/api/settings/radar-radius", (req, res) => {
     if (typeof opts.setRadarRadiusM !== "function") {

@@ -21,6 +21,7 @@ import { placeLabels } from "./galaxy3d/labelPlacement";
 import { formatCount, formatValue } from "./galaxy3d/clusters";
 import { CodexRecord, IndexRecord, MySystemRecord, SectorRecord } from "./galaxy3d/GalaxyPanels";
 import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
+import { SystemBookmarkButton } from "./Bookmarks";
 import { CopySystemButton } from "./CopySystemButton";
 import { galaxyImageRect, loadGalaxyImage, REGION_MAP_SIZE, xForRegionPx, zForRegionPz } from "./regionBackdrop";
 import { regionOutlines, type RegionOutlines } from "@shared/regionBorders.js";
@@ -707,9 +708,14 @@ export function GalaxyMap3D() {
           <p className="g3d-panel__meta">{xs.meta.label}</p>
           {xs.detail ? <p className="g3d-panel__note">{xs.detail}</p> : null}
           {xs.system ? (
-            <p>
-              {xs.system} <CopySystemButton system={xs.system} />
-            </p>
+            <>
+              <p>
+                {xs.system} <CopySystemButton system={xs.system} />
+              </p>
+              <p className="g3d-panel__bm">
+                <SystemBookmarkButton system={xs.system} systemAddress={null} pos={{ x: xs.p[0], y: xs.p[1], z: xs.p[2] }} />
+              </p>
+            </>
           ) : null}
           {route?.position ? (
             <p className="dim">

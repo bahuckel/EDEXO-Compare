@@ -1,7 +1,8 @@
 /**
- * Bookmarks (shared/bookmarks.ts): the ☆ on the system card with its editor, and the list.
+ * Bookmarks (shared/bookmarks.ts): the ☆ on the system card and the galaxy map's Bookmark button, both
+ * with the same editor, and the list.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
 import type { AppSnapshot } from "@shared/types";
 import {
@@ -23,11 +24,13 @@ async function saveBookmark(b: Partial<BookmarkDTO> & { system: string }): Promi
     body: JSON.stringify(b),
   });
   const j = (await r.json().catch(() => null)) as { ok?: boolean; bookmark?: BookmarkDTO } | null;
+  if (j?.ok) window.dispatchEvent(new Event(BOOKMARKS_CHANGED));
   return j?.ok && j.bookmark ? j.bookmark : null;
 }
 
 async function removeBookmark(id: string): Promise<boolean> {
   const r = await fetch(`/api/bookmarks/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (r.ok) window.dispatchEvent(new Event(BOOKMARKS_CHANGED));
   return r.ok;
 }
 
@@ -104,11 +107,13 @@ function TagPicker({
 function BookmarkEditor({
   initial,
   bodies,
+  pos = null,
   onSaved,
   onCancel,
 }: {
   initial: Partial<BookmarkDTO> & { system: string; systemAddress: number | null };
   bodies: { key: string; label: string }[];
+  pos?: { x: number; y: number; z: number } | null;
   onSaved: () => void;
   onCancel: () => void;
 }) {
@@ -134,6 +139,7 @@ function BookmarkEditor({
       body: bodyKey ? (body?.label.split(" — ")[0] ?? initial.body ?? null) : null,
       tags,
       note,
+      pos,
     });
     setBusy(false);
     if (ok) onSaved();
@@ -175,16 +181,30 @@ function BookmarkEditor({
 }
 
 /**
- * The ☆ beside the system name: filled when the system has a bookmark. Opens the editor for the
- * first one here (the list holds the rest).
+ * A bookmark button with its editor (owner, 2026-09-30: "the galaxy map should bookmark a system and
+ * take notes, and the star on the main screen should work the same"). The editor opens on the page,
+ * not inside the (clipped) card. `existing` is the system's first bookmark, when there is one.
  */
-export function BookmarkStar({ snap, system }: { snap: AppSnapshot; system: string }) {
+export function BookmarkButton({
+  system,
+  systemAddress,
+  pos,
+  existing,
+  bodies = [],
+  variant = "star",
+}: {
+  system: string;
+  systemAddress: number | null;
+  pos?: { x: number; y: number; z: number } | null;
+  existing: BookmarkDTO | null;
+  bodies?: { key: string; label: string }[];
+  /** "star": the ☆ drawn by CSS (system card); "button": a labelled button (galaxy map). */
+  variant?: "star" | "button";
+}) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLSpanElement>(null);
   const pop = useRef<HTMLDivElement>(null);
   const [at, setAt] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
-  const here = snap.bookmarksHere ?? [];
-  const addr = snap.viewingSystemAddress ?? snap.currentSystemAddress ?? null;
   useEffect(() => {
     if (!open) return;
     const onDoc = (ev: MouseEvent) => {
@@ -202,48 +222,55 @@ export function BookmarkStar({ snap, system }: { snap: AppSnapshot; system: stri
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
-  const first = here[0];
-  const title = here.length
-    ? `Bookmarked: ${here.map((b) => [b.body, b.tags.join(", ")].filter(Boolean).join(" · ") || "no tags").join(" | ")}`
-    : "Bookmark this system";
+  const title = existing
+    ? `Bookmarked: ${[existing.body, existing.tags.join(", "), existing.note].filter(Boolean).join(" · ") || "no tags"} — click to edit`
+    : "Bookmark this system: tags and a note";
+  const onClick = (ev: ReactMouseEvent<HTMLButtonElement>) => {
+    const r = ev.currentTarget.getBoundingClientRect();
+    const width = Math.min(416, window.innerWidth - 32);
+    const top = r.bottom + 6 + 360 > window.innerHeight ? Math.max(16, r.top - 366) : r.bottom + 6;
+    setAt({ left: Math.max(16, Math.min(r.left, window.innerWidth - width - 16)), top });
+    setOpen((v) => !v);
+  };
   return (
     <span className="bm-star-wrap" ref={wrap}>
-      <button
-        type="button"
-        className={`bm-star${here.length ? " bm-star--on" : ""}`}
-        onClick={(ev) => {
-          // The card is clipped to its chamfer, so the editor opens on the page, under the star.
-          const r = ev.currentTarget.getBoundingClientRect();
-          const width = Math.min(416, window.innerWidth - 32);
-          setAt({ left: Math.max(16, Math.min(r.left, window.innerWidth - width - 16)), top: r.bottom + 6 });
-          setOpen((v) => !v);
-        }}
-        title={title}
-        aria-label={title}
-        aria-expanded={open}
-      >
-        {/* The glyph is drawn by CSS, so the system name's text stays just the name. */}
-      </button>
+      {variant === "star" ? (
+        <button
+          type="button"
+          className={`bm-star${existing ? " bm-star--on" : ""}`}
+          onClick={onClick}
+          title={title}
+          aria-label={title}
+          aria-expanded={open}
+        >
+          {/* The glyph is drawn by CSS, so the system name's text stays just the name. */}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={`g3d-btn bm-btn${existing ? " bm-btn--on" : ""}`}
+          onClick={onClick}
+          title={title}
+          aria-expanded={open}
+        >
+          {existing ? "★ Bookmarked" : "☆ Bookmark"}
+        </button>
+      )}
       {open
         ? createPortal(
-            <div
-              ref={pop}
-              className="bm-popover"
-              role="dialog"
-              aria-label="Bookmark"
-              style={{ left: at.left, top: at.top }}
-            >
+            <div ref={pop} className="bm-popover" role="dialog" aria-label="Bookmark" style={{ left: at.left, top: at.top }}>
               <BookmarkEditor
-                initial={first ?? { system, systemAddress: addr }}
-                bodies={bodyChoices(snap)}
+                initial={existing ?? { system, systemAddress }}
+                bodies={bodies}
+                pos={pos ?? null}
                 onSaved={() => setOpen(false)}
                 onCancel={() => setOpen(false)}
               />
-              {first ? (
+              {existing ? (
                 <button
                   type="button"
                   className="bm-remove"
-                  onClick={() => void removeBookmark(first.id).then(() => setOpen(false))}
+                  onClick={() => void removeBookmark(existing.id).then(() => setOpen(false))}
                 >
                   Remove bookmark
                 </button>
@@ -255,6 +282,64 @@ export function BookmarkStar({ snap, system }: { snap: AppSnapshot; system: stri
     </span>
   );
 }
+
+/** The ☆ beside the system name: filled when the system has a bookmark (the list holds the rest). */
+export function BookmarkStar({ snap, system }: { snap: AppSnapshot; system: string }) {
+  const here = snap.bookmarksHere ?? [];
+  return (
+    <BookmarkButton
+      system={system}
+      systemAddress={snap.viewingSystemAddress ?? snap.currentSystemAddress ?? null}
+      existing={here[0] ?? null}
+      bodies={bodyChoices(snap)}
+    />
+  );
+}
+
+/**
+ * The same button for a system that is not on screen (the galaxy map): it looks its bookmark up
+ * itself, and again after a save, so the label follows.
+ */
+export function SystemBookmarkButton({
+  system,
+  systemAddress,
+  pos,
+}: {
+  system: string;
+  systemAddress: number | null;
+  pos?: { x: number; y: number; z: number } | null;
+}) {
+  const [existing, setExisting] = useState<BookmarkDTO | null>(null);
+  const [rev, setRev] = useState(0);
+  useEffect(() => {
+    let live = true;
+    void fetch("/api/bookmarks")
+      .then((r) => r.json())
+      .then((j: BookmarksListDTO) => {
+        if (!live) return;
+        const hit = (j.items ?? []).find((b) =>
+          systemAddress != null && b.systemAddress != null
+            ? b.systemAddress === systemAddress
+            : b.system.toLowerCase() === system.toLowerCase(),
+        );
+        setExisting(hit ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [system, systemAddress, rev]);
+  // Re-read once the editor has saved or removed (bookmarks changed elsewhere reach it on reopen).
+  useEffect(() => {
+    const onChange = () => setRev((v) => v + 1);
+    window.addEventListener(BOOKMARKS_CHANGED, onChange);
+    return () => window.removeEventListener(BOOKMARKS_CHANGED, onChange);
+  }, []);
+  return <BookmarkButton system={system} systemAddress={systemAddress} pos={pos} existing={existing} variant="button" />;
+}
+
+/** Fired after a bookmark is saved or removed, so a button off the snapshot can re-read. */
+const BOOKMARKS_CHANGED = "edexo:bookmarks-changed";
 
 function ly(d: number | null): string {
   if (d == null) return "—";

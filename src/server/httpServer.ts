@@ -223,8 +223,12 @@ export interface HttpServerOptions {
   /** Where a system is, from the journals' StarPos, for a new bookmark. */
   systemPositionOf?: (systemAddress: number) => { x: number; y: number; z: number } | null;
   setNotifyPrefs?: (raw: unknown) => NotifySettingsDTO;
-  /** POST `/api/notices/read` — `{ ids: string[] }` or `{ all: true }`; returns how many went. */
+  /** POST `/api/notices/read` — `{ ids: string[] }` or `{ all: true }`; returns how many changed. */
   markNoticesRead?: (ids: readonly string[] | "all") => number;
+  /** POST `/api/notices/unread` — `{ ids: string[] }`. */
+  markNoticesUnread?: (ids: readonly string[]) => number;
+  /** POST `/api/notices/clear-read` — deletes the read ones. */
+  clearReadNotices?: () => number;
   setCollectionFocus?: (raw: unknown) => CollectionFocusConfig;
   setIncludeBacterium?: (value: boolean) => void;
   setIncludeExplorationScanData?: (value: boolean) => void;

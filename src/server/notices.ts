@@ -168,10 +168,14 @@ function scanSubject(r: {
 export interface NoticesService {
   prefs(): NotifyPrefsDTO;
   setPrefs(raw: unknown): NotifyPrefsDTO;
-  /** Unread notices, newest first. */
+  /** Notices, newest first, read ones included. */
   list(): NoticeDTO[];
-  /** Marks read (removes) the given ids, or all of them. Returns how many went. */
+  /** Marks the given ids read, or all of them; they stay, to be read again. Returns how many changed. */
   markRead(ids: readonly string[] | "all"): number;
+  /** Marks the given ids unread again. Returns how many changed. */
+  markUnread(ids: readonly string[]): number;
+  /** Deletes the read ones. Returns how many went. */
+  clearRead(): number;
   snapshot(systemAddress: number | null): NoticesSnapshotDTO;
   /** Call with each live journal line **before** the store applies it. True when a notice was added. */
   observe(line: Line, ctx: NoticesContext): boolean;
@@ -329,7 +333,12 @@ export function createNoticesService(opts: {
     if (seen.has(n.id)) return false;
     seen.add(n.id);
     state.items.unshift(n);
-    if (state.items.length > MAX_ITEMS) state.items.length = MAX_ITEMS;
+    // Over the limit: the oldest read ones go first, then the oldest.
+    while (state.items.length > MAX_ITEMS) {
+      let i = -1;
+      for (let k = state.items.length - 1; k >= 0; k--) if (state.items[k]!.read) { i = k; break; }
+      state.items.splice(i >= 0 ? i : state.items.length - 1, 1);
+    }
     return true;
   }
 
@@ -579,12 +588,30 @@ export function createNoticesService(opts: {
     },
     list: () => state.items,
     markRead(ids) {
-      const before = state.items.length;
-      if (ids === "all") state.items = [];
-      else {
-        const drop = new Set(ids);
-        state.items = state.items.filter((n) => !drop.has(n.id));
+      const pick = ids === "all" ? null : new Set(ids);
+      let changed = 0;
+      for (const n of state.items) {
+        if (n.read || (pick && !pick.has(n.id))) continue;
+        n.read = true;
+        changed++;
       }
+      if (changed) save();
+      return changed;
+    },
+    markUnread(ids) {
+      const pick = new Set(ids);
+      let changed = 0;
+      for (const n of state.items) {
+        if (!n.read || !pick.has(n.id)) continue;
+        delete n.read;
+        changed++;
+      }
+      if (changed) save();
+      return changed;
+    },
+    clearRead() {
+      const before = state.items.length;
+      state.items = state.items.filter((n) => !n.read);
       const gone = before - state.items.length;
       if (gone) save();
       return gone;
@@ -592,6 +619,7 @@ export function createNoticesService(opts: {
     snapshot(systemAddress) {
       return {
         items: state.items,
+        unread: state.items.filter((n) => !n.read).length,
         chime: state.prefs.chime,
         recordMarks:
           systemAddress == null || !state.prefs.records

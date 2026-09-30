@@ -699,3 +699,12 @@
   vertical-align: middle;
   box-shadow: 0 0 5px currentColor;
 }
+
+/* Bookmark from the map (2026-09-30): the same editor as the system card's star. */
+.g3d-panel__bm {
+  margin: 0.2rem 0 0.4rem;
+}
+.bm-btn--on {
+  color: #f5b83d;
+  border-color: rgba(245, 184, 61, 0.6);
+}

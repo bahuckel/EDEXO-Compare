@@ -137,6 +137,7 @@ import { queryPoi, readPoiStatus } from "./edastroPoi.js";
 import { queryCarriers, readCarrierStatus } from "./edastroCarriers.js";
 import { edastroGreenFor, nearbyNsp, nspK10Systems } from "./edastroNsp.js";
 import { nspOutlook } from "./nspOutlook.js";
+import { regionForSystem } from "./regionMapData.js";
 import { fetchGalacticRecords, galacticRecords, readGalacticRecordsStatus } from "./galacticRecords.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
@@ -313,6 +314,18 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     k10Systems: store.k10Systems,
   });
   const scanOf = (k: string) => store.explorationScans.get(k) ?? store.soldExplorationScans.get(k) ?? null;
+  /** The arrival star's type (distance 0), else the lowest-numbered star scanned: the phenomena model's main star. */
+  const mainStarTypeOf = (addr: number): string | null => {
+    let best: { id: number; type: string; arrival: boolean } | null = null;
+    for (const r of [...store.liveScansInSystem(addr), ...store.soldScansInSystem(addr)]) {
+      if (!r.starType) continue;
+      const arrival = r.distanceFromArrivalLs === 0;
+      if (!best || (arrival && !best.arrival) || (arrival === best.arrival && r.bodyId < best.id)) {
+        best = { id: r.bodyId, type: r.starType, arrival };
+      }
+    }
+    return best?.type ?? null;
+  };
   // The Notable card: green gas giants always (they are notable like an Earth-like), features as chosen.
   setNotableOptionsProvider(() => {
     const on = notices.prefs().features;
@@ -382,7 +395,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
                   systemAddress: addr,
                   position: store.systemPositions.get(addr) ?? null,
                   seen: store.nspSeen.get(addr) ?? [],
-                  region: snap.currentRegion?.name ?? null,
+                  region: (() => {
+                    const pos = store.systemPositions.get(addr);
+                    return pos ? regionForSystem(getProjectRoot(), pos.x, pos.y, pos.z) : (snap.currentRegion?.name ?? null);
+                  })(),
+                  starType: mainStarTypeOf(addr),
                 }),
               );
       }
@@ -1402,6 +1419,16 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
     markNoticesRead: (ids) => {
       const n = notices.markRead(ids);
+      if (n) push();
+      return n;
+    },
+    markNoticesUnread: (ids) => {
+      const n = notices.markUnread(ids);
+      if (n) push();
+      return n;
+    },
+    clearReadNotices: () => {
+      const n = notices.clearRead();
       if (n) push();
       return n;
     },

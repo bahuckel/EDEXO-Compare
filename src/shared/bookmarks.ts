@@ -79,6 +79,8 @@ export interface BookmarkInput {
   bodyKey: string | null;
   tags: string[];
   note: string;
+  /** Where it is, when the journals do not know (a system picked on the galaxy map). */
+  pos?: { x: number; y: number; z: number } | null;
 }
 
 export function parseBookmarkInput(raw: unknown): BookmarkInput | null {
@@ -95,5 +97,10 @@ export function parseBookmarkInput(raw: unknown): BookmarkInput | null {
     bodyKey: str(r.bodyKey),
     tags: normaliseTags(r.tags),
     note: typeof r.note === "string" ? r.note.slice(0, MAX_NOTE_LENGTH) : "",
+    pos: (() => {
+      const p = r.pos as Record<string, unknown> | null | undefined;
+      const ok = (v: unknown) => typeof v === "number" && Number.isFinite(v);
+      return p && ok(p.x) && ok(p.y) && ok(p.z) ? { x: p.x as number, y: p.y as number, z: p.z as number } : null;
+    })(),
   };
 }

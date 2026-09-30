@@ -151,7 +151,10 @@ export function slimSnapshotForChannel(snap: AppSnapshot, channel: WsChannel): P
     out.bodies = (snap.bodies ?? []).map(slimBodyForHud);
     if (snap.exoOverlayFocusBody) out.exoOverlayFocusBody = slimBodyForHud(snap.exoOverlayFocusBody);
     // The HUD shows the newest few and a count; the whole unread list stays with the app.
-    if (snap.notices) out.notices = { ...snap.notices, items: snap.notices.items.slice(0, 5), unread: snap.notices.items.length };
+    if (snap.notices) {
+      const unread = snap.notices.items.filter((n) => !n.read);
+      out.notices = { ...snap.notices, items: unread.slice(0, 5), unread: unread.length };
+    }
   }
   return out as Partial<AppSnapshot>;
 }

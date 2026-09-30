@@ -151,19 +151,28 @@ describe("notices", () => {
     expect(n.list()[0]!.codexNew).toBe(true);
   });
 
-  it("read removes; the same find does not come back; state survives a restart", () => {
+  it("read ones stay to be read again (owner, 2026-09-30); the same find does not come back; state survives a restart", () => {
     const file = join(mkdtempSync(join(tmpdir(), "edexo-notices-")), "edexo-notices.json");
     const a = createNoticesService({ filePath: file });
     a.observe(scan(3, { PlanetClass: "Earthlike body" }), ctx());
     a.observe(scan(4, { PlanetClass: "Ammonia world" }), ctx());
     a.setPrefs({ chime: true });
     expect(a.markRead([a.list()[0]!.id])).toBe(1);
+    expect(a.snapshot(null).unread).toBe(1);
     const b = createNoticesService({ filePath: file });
-    expect(b.list().map((x) => x.title)).toEqual(["Earth-like world"]);
+    expect(b.list().map((x) => [x.title, x.read ?? false])).toEqual([
+      ["Ammonia world", true],
+      ["Earth-like world", false],
+    ]);
     expect(b.prefs().chime).toBe(true);
     expect(b.observe(scan(4, { PlanetClass: "Ammonia world" }), ctx())).toBe(false);
     expect(b.markRead("all")).toBe(1);
-    expect(JSON.parse(readFileSync(file, "utf8")).items).toEqual([]);
+    expect(b.snapshot(null)).toMatchObject({ unread: 0 });
+    expect(b.list()).toHaveLength(2);
+    expect(b.markUnread([b.list()[1]!.id])).toBe(1);
+    expect(b.snapshot(null).unread).toBe(1);
+    expect(b.clearRead()).toBe(1);
+    expect(JSON.parse(readFileSync(file, "utf8")).items.map((x: { title: string }) => x.title)).toEqual(["Earth-like world"]);
   });
 });
 

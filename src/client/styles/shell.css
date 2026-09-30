@@ -584,6 +584,23 @@ button.data-value-pill.data-value-pill--clickable:active {
   color: var(--muted);
   margin: 0.2rem 0 0.35rem;
 }
+/* The bell's read notices (2026-09-30): kept, dimmed, under their own heading. */
+.notices-group__head--read {
+  margin-top: 0.7rem;
+}
+.notices-group__head--read .notices-group__title {
+  color: var(--muted);
+}
+.notice--read {
+  opacity: 0.6;
+}
+.notice--read:hover,
+.notice--read:focus-within {
+  opacity: 1;
+}
+.notices-bell {
+  margin-right: 0.3rem;
+}
 .notice .notice__icon {
   color: #f5b83d;
   border-color: rgba(245, 184, 61, 0.55);

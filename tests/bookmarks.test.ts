@@ -33,6 +33,7 @@ describe("tags and input", () => {
       bodyKey: null,
       tags: ["Fuel"],
       note: "",
+      pos: null,
     });
   });
 });
@@ -73,5 +74,14 @@ describe("the list", () => {
     const a = createBookmarksService({ filePath: null });
     a.save({ system: "X", systemAddress: 1, body: null, bodyKey: null, tags: ["Nice view", "Fuel"], note: "" }, null);
     expect(a.list(null).customTags).toEqual(["Nice view"]);
+  });
+});
+
+describe("a system picked on the galaxy map (owner, 2026-09-30)", () => {
+  it("carries its position when the journals do not know it", async () => {
+    const { parseBookmarkInput } = await import("../src/shared/bookmarks.js");
+    expect(parseBookmarkInput({ system: "Far Away", pos: { x: 1, y: 2, z: 3 } })?.pos).toEqual({ x: 1, y: 2, z: 3 });
+    expect(parseBookmarkInput({ system: "Far Away", pos: { x: "1", y: 2, z: 3 } })?.pos).toBeNull();
+    expect(parseBookmarkInput({ system: "Far Away" })?.pos).toBeNull();
   });
 });

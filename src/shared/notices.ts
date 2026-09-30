@@ -27,6 +27,8 @@ export interface NoticeDTO {
   bodyKey: string | null;
   /** A notable stellar phenomenon that was a new codex entry. */
   codexNew?: boolean;
+  /** Read: kept to be read again (owner, 2026-09-30), shown dimmed; unread ones count on the bell. */
+  read?: boolean;
 }
 
 /** The body types the Notable card flags, plus Helium gas giants (owner, 2026-09-30). */
@@ -236,9 +238,9 @@ export interface RecordRowDTO {
 
 /** What the mail icon's list and the body marks need from the server. */
 export interface NoticesSnapshotDTO {
-  /** Unread notices, newest first. */
+  /** Notices, newest first: unread and read (read ones carry `read: true`). */
   items: NoticeDTO[];
-  /** The HUD channel sends only the newest few items; this is how many are unread in all. */
+  /** How many are unread (the HUD channel sends only the newest few unread items). */
   unread?: number;
   chime: boolean;
   /** Records broken by bodies of the system on screen. */

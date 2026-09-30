@@ -7,6 +7,7 @@ import type { GalaxyMySystemDTO, GalaxySectorDTO, GalaxySystemDTO } from "@share
 import { formatCount, formatValue } from "./clusters";
 import type { CodexMapSystemDTO } from "@shared/dto/codexMap.js";
 import { CopySystemButton } from "../CopySystemButton";
+import { SystemBookmarkButton } from "../Bookmarks";
 
 const cr = (n: number | null) => (n == null ? "—" : `${Math.round(n).toLocaleString()} CR`);
 
@@ -62,10 +63,15 @@ export function IndexRecord({
   return (
     <>
       {heading ? (
-        <h2 className="g3d-panel__name">
-          {d.name}
-          <CopySystemButton system={d.name} />
-        </h2>
+        <>
+          <h2 className="g3d-panel__name">
+            {d.name}
+            <CopySystemButton system={d.name} />
+          </h2>
+          <p className="g3d-panel__bm">
+            <SystemBookmarkButton system={d.name} systemAddress={Number(d.id64)} pos={{ x: d.x, y: d.y, z: d.z }} />
+          </p>
+        </>
       ) : null}
       <p className="g3d-panel__meta">
         {d.region ?? "Outside the named regions"} · {Math.round(d.distanceFromSolLy).toLocaleString()} ly from Sol
@@ -119,6 +125,13 @@ export function MySystemRecord({ addr }: { addr: string }) {
         {d.name}
         <CopySystemButton system={d.name} />
       </h2>
+      <p className="g3d-panel__bm">
+        <SystemBookmarkButton
+          system={d.name}
+          systemAddress={d.addr}
+          pos={d.x != null && d.y != null && d.z != null ? { x: d.x, y: d.y, z: d.z } : null}
+        />
+      </p>
       <p className="g3d-panel__chips">
         <span className="g3d-chip g3d-chip--you">Visited</span>
         {f & 2 ? <span className="g3d-chip">All bodies found</span> : null}

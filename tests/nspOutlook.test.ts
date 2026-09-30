@@ -1,12 +1,19 @@
 /**
  * The phenomena card (src/shared/nspOutlook.ts, src/server/nspOutlook.ts; owner 2026-09-30): what the
- * journals saw, what EDAstro logged, and the neighbourhood guess.
+ * journals saw, what EDAstro logged, and the prediction from region, main star and phenomena nearby.
  */
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { isNspCodexName, nspChanceFor } from "../src/shared/nspOutlook.js";
+import {
+  isNspCodexName,
+  nspCardWorthShowing,
+  nspChanceWord,
+  nspOdds,
+  nspPredict,
+  nspStarKey,
+} from "../src/shared/nspOutlook.js";
 import { readNspStatus, resetNspMemo, startNspDownload } from "../src/server/edastroNsp.js";
 import { nspOutlook } from "../src/server/nspOutlook.js";
 import { GameStateStore } from "../src/server/gameState.js";
@@ -19,10 +26,45 @@ describe("which codex entries are phenomena", () => {
     expect(isNspCodexName("$Codex_Ent_L_Type_Name;")).toBe(false);
     expect(isNspCodexName("$Codex_Ent_Standard_Rocky_No_Atmos_Name;")).toBe(false);
   });
-  it("chance levels follow the tested buckets", () => {
-    expect(nspChanceFor(0.01)).toBe("low");
-    expect(nspChanceFor(0.05)).toBe("medium");
-    expect(nspChanceFor(0.2)).toBe("high");
+});
+
+describe("the prediction", () => {
+  it("maps journal star types onto the model's names", () => {
+    expect(nspStarKey("H")).toBe("Black Hole");
+    expect(nspStarKey("N")).toBe("Neutron Star");
+    expect(nspStarKey("DA")).toBe("White Dwarf");
+    expect(nspStarKey("M_RedGiant")).toBe("M");
+    expect(nspStarKey("A_BlueWhiteSuperGiant")).toBe("A");
+    expect(nspStarKey("WNC")).toBe("Wolf-Rayet NC Star");
+    expect(nspStarKey("")).toBeNull();
+  });
+
+  it("region leads: Dryman's Point likely, Ryker's Hope not worth a card", () => {
+    const dry = nspPredict({ region: "Dryman's Point", starType: "K", nearby: null });
+    expect(dry.p).toBeGreaterThan(0.3);
+    expect(dry.reasons[0]).toMatch(/Dryman's Point is rich in phenomena/);
+    expect(nspChanceWord(dry.p)).toBe("Likely");
+    const ryk = nspPredict({ region: "Ryker's Hope", starType: "A", nearby: null });
+    expect(ryk.p).toBeLessThan(0.03);
+    // A reason that raises the chance leads, even when a lowering one weighs more.
+    const mixed = nspPredict({ region: "Inner Orion Spur", starType: "A", nearby: 0 });
+    expect(mixed.reasons[0]).toMatch(/rich in phenomena|A-type/);
+    // A black hole lifts, a neutron star lowers.
+    const inner = (st: string) => nspPredict({ region: "Inner Orion Spur", starType: st, nearby: null }).p;
+    expect(inner("H")).toBeGreaterThan(inner("K"));
+    expect(inner("N")).toBeLessThan(inner("K"));
+  });
+
+  it("phenomena nearby move it, and the card only shows from 10 %", () => {
+    const none = nspPredict({ region: "Inner Orion Spur", starType: "M", nearby: 0 }).p;
+    const many = nspPredict({ region: "Inner Orion Spur", starType: "M", nearby: 150 }).p;
+    expect(many).toBeGreaterThan(none * 5);
+    const base = { systemAddress: 1, seen: [], logged: [], loggedDetail: [], nearest: [], region: null };
+    expect(nspCardWorthShowing({ ...base, guess: { p: 0.06, reasons: [] } })).toBe(false);
+    expect(nspCardWorthShowing({ ...base, guess: { p: 0.12, reasons: [] } })).toBe(true);
+    expect(nspCardWorthShowing({ ...base, guess: null, seen: [""] })).toBe(true);
+    expect(nspOdds(0.08)).toBe("about 1 in 13");
+    expect(nspOdds(0.7)).toBe("about 2 in 3");
   });
 });
 
@@ -66,12 +108,14 @@ describe("the outlook", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it("without the EDAstro list: only his own sightings", () => {
-    expect(nspOutlook({ systemAddress: 1, position: { x: 0, y: 0, z: 0 }, seen: [], region: null })).toBeNull();
-    expect(nspOutlook({ systemAddress: 1, position: null, seen: [""], region: "R" })).toMatchObject({ seen: [""], guess: null });
+  it("without the EDAstro list: his own sightings and the region-and-star prediction", () => {
+    const o = nspOutlook({ systemAddress: 1, position: { x: 0, y: 0, z: 0 }, seen: [], region: "Dryman's Point", starType: "M" });
+    expect(o.guess!.p).toBeGreaterThan(0.3);
+    expect(o.nearest).toEqual([]);
+    expect(nspOutlook({ systemAddress: 2, position: null, seen: [""], region: null, starType: null })).toMatchObject({ seen: [""], guess: null });
   });
 
-  it("with it: logged here, and the nearest kinds", async () => {
+  it("with it: logged here, the nearest kinds, and the nearby count in the prediction", async () => {
     const csv = [
       'Codex Entry,Codex ID,First Reported,Odyssey,Region,System,X,Y,Z,Main Star Type,"System Address / ID64"',
       'Proto-Lagrange Cloud,codex_ent_gas_clds_light,"2025",0,R,Here,0,0,0,"K",1',
@@ -84,15 +128,15 @@ describe("the outlook", () => {
         new Response(new Blob([body]).stream(), { status: 200, headers: { "content-length": String(body.length) } })) as typeof fetch,
     });
     for (let i = 0; i < 400 && readNspStatus().running; i++) await new Promise((r) => setTimeout(r, 5));
-    const here = nspOutlook({ systemAddress: 1, position: { x: 0, y: 0, z: 0 }, seen: [], region: "R" })!;
+    const here = nspOutlook({ systemAddress: 1, position: { x: 0, y: 0, z: 0 }, seen: [], region: "Inner Orion Spur", starType: "K" });
     expect(here.logged).toEqual(["Lagrange cloud"]);
     expect(here.loggedDetail).toEqual(["Proto-Lagrange Cloud"]);
     expect(here.nearest.map((n) => [n.name, n.distanceLy])).toEqual([
       ["Space mollusc", 30],
       ["Metallic crystals", 400],
     ]);
-    const empty = nspOutlook({ systemAddress: 7, position: { x: 10, y: 0, z: 0 }, seen: [], region: "R" })!;
-    expect(empty.logged).toEqual([]);
+    const empty = nspOutlook({ systemAddress: 7, position: { x: 10, y: 0, z: 0 }, seen: [], region: "Inner Orion Spur", starType: "K" });
     expect(empty.nearest[0]).toMatchObject({ name: "Lagrange cloud", distanceLy: 10 });
+    expect(empty.guess!.reasons.join(" ")).toMatch(/2 known within 100 ly/);
   });
 });

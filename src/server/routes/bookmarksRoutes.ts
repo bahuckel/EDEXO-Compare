@@ -26,7 +26,8 @@ export function registerBookmarksRoutes(app: express.Express, opts: HttpServerOp
       res.status(400).json({ ok: false, error: "A bookmark needs a system name." });
       return;
     }
-    const pos = input.systemAddress != null ? (opts.systemPositionOf?.(input.systemAddress) ?? null) : null;
+    // The journals' position first; else the one the page sent (a system picked on the galaxy map).
+    const pos = (input.systemAddress != null ? (opts.systemPositionOf?.(input.systemAddress) ?? null) : null) ?? input.pos ?? null;
     const saved = service!.save(input, pos);
     opts.scheduleBroadcast?.();
     res.json({ ok: true, bookmark: saved });

@@ -1,20 +1,16 @@
 /**
  * The phenomena card on the system row (shared/nspOutlook.ts): what the commander met here, what
- * EDAstro has logged here, or — when neither knows — the chance of one, from how many its
- * neighbourhood has, with the nearest kinds. Shown only when there is something to say, which needs
- * his own sightings or the EDAstro phenomena download.
+ * EDAstro has logged here, or a prediction from the region, the main star and the phenomena nearby.
+ * Shown only when one of those says there could be one (owner, 2026-09-30).
  */
 import type { ReactNode } from "react";
 import type { NspOutlookDTO } from "@shared/nspOutlook";
-import { NSP_CHANCE_WORDS } from "@shared/nspOutlook";
-
-const CHANCE_LABEL = { low: "Low", medium: "Medium", high: "High" } as const;
+import { nspCardWorthShowing, nspChanceWord, nspOdds } from "@shared/nspOutlook";
 
 export function NspCard({ o }: { o: NspOutlookDTO | null | undefined }) {
-  if (!o) return null;
+  if (!o || !nspCardWorthShowing(o)) return null;
   const named = o.seen.filter(Boolean);
   const signalOnly = o.seen.length > 0 && named.length === 0;
-  if (!o.seen.length && !o.logged.length && !o.guess && !o.nearest.length) return null;
   const nearTitle = o.nearest.length
     ? "\nNearest known: " + o.nearest.map((n) => `${n.name} — ${n.system}, ${n.distanceLy} ly`).join("; ")
     : "";
@@ -28,6 +24,7 @@ export function NspCard({ o }: { o: NspOutlookDTO | null | undefined }) {
 
   let title: string;
   let body: ReactNode;
+  let why: string | null = null;
   if (named.length) {
     title = "You met these here (your journals)." + loggedTitle + nearTitle;
     body = families(named);
@@ -50,40 +47,29 @@ export function NspCard({ o }: { o: NspOutlookDTO | null | undefined }) {
         <span className="dim"> · on EDAstro</span>
       </>
     );
-  } else if (o.guess && !o.guess.thin) {
-    const g = o.guess;
+  } else {
+    const g = o.guess!;
+    const pct = Math.round(g.p * 100);
     title =
-      `A guess from the neighbourhood: ${g.nspSystems.toLocaleString()} of ${g.knownSystems.toLocaleString()} known systems within ${g.radiusLy} ly have a phenomenon.` +
-      ` "${CHANCE_LABEL[g.chance]}" meant ${NSP_CHANCE_WORDS[g.chance]} in a test on EDAstro's data. The FSS says for sure on arrival.` +
+      `A prediction from what this system is: ${pct} %, ${nspOdds(g.p)}.` +
+      (g.reasons.length ? `\nWhy: ${g.reasons.join("; ")}.` : "") +
+      "\nMeasured on EDAstro's codex file (1.9 M systems). The FSS says for sure on arrival." +
       nearTitle;
     body = (
       <>
-        <span className={`nsp-card__chance nsp-card__chance--${g.chance}`}>{CHANCE_LABEL[g.chance]} chance</span>
-        <span className="dim">
-          {" "}
-          · {g.nspSystems.toLocaleString()} within {g.radiusLy} ly
+        <span className={`nsp-card__chance nsp-card__chance--${g.p >= 0.3 ? "high" : g.p >= 0.1 ? "medium" : "low"}`}>
+          {nspChanceWord(g.p)}
         </span>
+        <span className="dim"> · {nspOdds(g.p)}</span>
       </>
     );
-  } else if (o.guess?.thin) {
-    title =
-      `Only ${o.guess.knownSystems} known systems within ${o.guess.radiusLy} ly: too few to guess from. The FSS says for sure on arrival.` +
-      nearTitle;
-    body = <span className="dim">Too little explored around here</span>;
-  } else {
-    title = "Nothing known here." + nearTitle;
-    body = <span className="dim">None known here</span>;
+    why = g.reasons[0] ?? null;
   }
-  const near = o.nearest[0];
   return (
     <section className="nsp-card cockpit-card" title={title}>
       <span className="sys-card__k">Phenomena</span>
       <span className="nsp-card__line">{body}</span>
-      {near && !o.seen.length && !o.logged.length ? (
-        <span className="nsp-card__near dim">
-          nearest: {near.name}, {near.distanceLy} ly
-        </span>
-      ) : null}
+      {why ? <span className="nsp-card__near dim">{why}</span> : null}
     </section>
   );
 }

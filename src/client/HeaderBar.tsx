@@ -28,6 +28,7 @@ import type { AppSnapshot, FootScannedEntry, NotableBodyInfo } from "@shared/typ
 import { useFeederStatus } from "./FeederStatusPanel";
 import { DataValueBreakdownModal, FeederModal, MyExobiologyModal, SessionLogModal } from "./AppModals";
 import { ExoDataAlertsHeaderHub } from "./ExoDataAlertsHub";
+import { NoticesBell } from "./NoticesBell";
 import { measurePopoverSide, type PopoverSide } from "./ui/popoverSide";
 import {
   AchievementsModal,
@@ -342,6 +343,7 @@ export const HeaderBar = memo(function HeaderBar({
           ) : null}
 
           <div className="appbar-actions">
+            <NoticesBell snap={snap} />
             <ExoDataAlertsHeaderHub snap={snap} />
             <div className="appbar-menu-wrap" ref={menuRef}>
               <button
@@ -567,10 +569,8 @@ export const HeaderBar = memo(function HeaderBar({
             }
             onClick={() => setDataBreakdownOpen(true)}
           >
-            {/* Says what the number is (UI review F1): it used to read "Data value" either way. */}
-            <span className="data-value-label header-metric-card-label">
-              {scanDataOn ? "Exobiology + scans" : "Exobiology"}
-            </span>
+            {/* "Data value" either way (owner, 2026-09-30); the tooltip says what it holds. */}
+            <span className="data-value-label header-metric-card-label">Data value</span>
             <span
               className={`data-value-amount header-metric-card-value ${dataValueFlash}`.trim()}
               title={fmtCrExact(totalDataCr)}
