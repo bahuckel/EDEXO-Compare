@@ -22,7 +22,10 @@
  * Also kept, apart from the phenomena: `codex_ent_green_*`, green gas giant reports (owner,
  * 2026-09-30: "add them"). The file has no body column, so a report says which system has a green
  * gas giant of which class, not which body (shared/greenGasGiant.ts, `edastroReport`).
- * Surface biology, geology, Guardian and Thargoid sites are left out.
+ * Surface biology is not kept as rows, but which plants were logged in which region is (owner,
+ * 2026-10-01): one `region|codex id` key per pair, ~22,000 of them, for [CODEX FIRST] — a plant nobody
+ * logged in the region counts as a first only if EDAstro has not seen it there either (codexFirst.ts).
+ * Geology, Guardian and Thargoid sites are left out.
  *
  * Same rule as the carrier and POI lists: the file lands on the commander's machine from EDAstro
  * directly; nothing of it is in this repository or the installer.
@@ -33,6 +36,7 @@ import { dirname, join } from "node:path";
 import { resolveUserSettingsJsonPath } from "./paths.js";
 import { splitCsvLine } from "./edastroCarriers.js";
 import { APP_USER_AGENT } from "./appVersion.js";
+import { regionJoinKey } from "../shared/regionMap.js";
 
 export const NSP_URL = "https://edastro.com/mapcharts/files/codex-data.csv";
 /** What the button says; the real figure comes from the server's Content-Length once it starts. */
@@ -57,7 +61,16 @@ export interface NspRecord {
 }
 
 /** Bumped whenever the rows kept change: an older file is fetched again in full, not "unchanged". */
-const NSP_FILTER_VERSION = 3;
+const NSP_FILTER_VERSION = 4;
+
+/*
+  Which codex ids are plants (surface biology), for the region keys: everything that is not a
+  phenomenon, a green gas giant, an astronomical body or a Guardian / Thargoid site — the same split
+  as EDSM's codex extract (docs/perf/codex_region_extract.py). Geology lands here too and is harmless:
+  it never matches a candidate species.
+*/
+const NOT_PLANT =
+  /^codex_ent_(guardian_|relic_tower|thargoid_|tg_|wrecked_|cyclops|basilisk|medusa|hydra|orthrus|marauder|inciter|regenerator|berserker|scavengers|glaive|scythe|neutron_stars|black_holes|supermassiveblack_holes|standard_|trf_|earth_likes|green_)|_type(giant|supergiant|hypergiant)?$/;
 
 interface NspFile {
   formatVersion: 1;
@@ -68,6 +81,8 @@ interface NspFile {
   sourceBytes: number | null;
   /** [id, name, system, address, x, y, z] — short, because there are tens of thousands. */
   rows: [string, string, string, number | null, number, number, number][];
+  /** From filterVersion 4: every plant logged per region, as `regionJoinKey|codex id`. */
+  bioRegionIds?: string[];
 }
 
 export interface NspStatusDTO {
@@ -81,6 +96,8 @@ export interface NspStatusDTO {
   error: string | null;
   cooldownMsRemaining: number;
   sizeLabel: string;
+  /** The downloaded file carries the plants per region (filterVersion 4) — else a refresh adds them. */
+  plantRegions: boolean;
 }
 
 export function resolveNspCachePath(): string {
@@ -145,7 +162,18 @@ export function nspColumns(header: string) {
     y: at((c) => c === "y"),
     z: at((c) => c === "z"),
     addr: at((c) => c.includes("id64") || c.includes("system address")),
+    region: at((c) => c === "region"),
   };
+}
+
+/** The `region|codex id` key of a plant row, or null when the row is not a plant. Exported for tests. */
+export function parseBioRegionLine(line: string, col: { id: number; region: number }): string | null {
+  if (col.region < 0 || !line.includes("codex_ent_")) return null;
+  const f = splitCsvLine(line);
+  const id = (f[col.id] ?? "").trim().toLowerCase();
+  if (!id.startsWith("codex_ent_") || NSP_ID.test(id) || NOT_PLANT.test(id)) return null;
+  const region = regionJoinKey(f[col.region] ?? "");
+  return region ? `${region}|${id}` : null;
 }
 
 type NspRow = NspFile["rows"][number];
@@ -230,6 +258,7 @@ export function readNspStatus(nowMs: number = Date.now()): NspStatusDTO {
     error: job.error,
     cooldownMsRemaining: Number.isFinite(since) ? Math.max(0, NSP_FETCH_COOLDOWN_MS - since) : 0,
     sizeLabel: NSP_SOURCE_SIZE_LABEL,
+    plantRegions: !!f?.file.bioRegionIds,
   };
 }
 
@@ -240,7 +269,8 @@ export function readNspStatus(nowMs: number = Date.now()): NspStatusDTO {
 export function startNspDownload(opts: { force?: boolean; fetchImpl?: typeof fetch } = {}): NspStatusDTO {
   const st = readNspStatus();
   if (job.running) return st;
-  if (!opts.force && st.haveData && st.cooldownMsRemaining > 0) return st;
+  // An older file (no plant keys) may be refreshed at once: the cooldown is for asking about the same file.
+  if (!opts.force && st.haveData && st.plantRegions && st.cooldownMsRemaining > 0) return st;
   job.running = true;
   job.bytesDone = 0;
   job.bytesTotal = null;
@@ -271,6 +301,7 @@ async function downloadNsp(fetchImpl: typeof fetch): Promise<void> {
 
   const seen = new Set<string>();
   const rows: NspFile["rows"] = [];
+  const bio = new Set<string>();
   let col: ReturnType<typeof nspColumns> | null = null;
   let rest = "";
   const decoder = new TextDecoder();
@@ -281,7 +312,11 @@ async function downloadNsp(fetchImpl: typeof fetch): Promise<void> {
       return;
     }
     const r = parseNspLine(line, col);
-    if (!r) return;
+    if (!r) {
+      const k = parseBioRegionLine(line, col);
+      if (k) bio.add(k);
+      return;
+    }
     const key = `${r.id}@${r.systemAddress ?? r.system}`;
     if (seen.has(key)) return;
     seen.add(key);
@@ -307,7 +342,21 @@ async function downloadNsp(fetchImpl: typeof fetch): Promise<void> {
     etag: res.headers.get("etag"),
     sourceBytes: job.bytesDone,
     rows,
+    bioRegionIds: [...bio].sort(),
   });
+}
+
+let bioMemo: { file: NspFile; ids: ReadonlySet<string> } | null = null;
+
+/**
+ * Every plant EDAstro has logged, per region (`regionJoinKey|codex id`), and when the file was
+ * fetched; null when the phenomena data is not downloaded or predates the plant keys (filterVersion 4).
+ */
+export function edastroBioRegionIds(): { ids: ReadonlySet<string>; fetchedAtMs: number } | null {
+  const f = loadFile();
+  if (!f?.file.bioRegionIds) return null;
+  if (bioMemo?.file !== f.file) bioMemo = { file: f.file, ids: new Set(f.file.bioRegionIds) };
+  return { ids: bioMemo.ids, fetchedAtMs: f.file.fetchedAtMs };
 }
 
 function writeNspFile(file: NspFile): void {

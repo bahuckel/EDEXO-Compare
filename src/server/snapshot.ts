@@ -1,4 +1,5 @@
-import { codexFirstColours, codexFirstDataDate } from "./codexFirst.js";
+import { codexFirstCheck, codexFirstDataDate } from "./codexFirst.js";
+import { edastroBioRegionIds } from "./edastroNsp.js";
 import { speciesProvenance } from "./speciesProvenance.js";
 import {
   commanderIdHash,
@@ -610,6 +611,7 @@ function attachCodexRegionNovelty(
   ctx: SpeciesMatchContext | null,
   scan: PlanetScan | null,
 ): void {
+  const edastroBio = edastroBioRegionIds();
   // Your own codex backup (shared-exomastery, same FID) counts as logged: journals lost, codex not.
   const backup = ownCodexBackupKeys();
   const logged = backup.size ? new Set([...store.codexRegionLogged, ...backup]) : store.codexRegionLogged;
@@ -625,13 +627,20 @@ function attachCodexRegionNovelty(
       m.codexNew = true;
       m.codexNewColours = fresh;
       m.codexRegion = region;
-      // Nobody else has it here either (EDSM's dump): the commander would be the first (owner, 2026-09-30).
-      const first = codexFirstColours(getProjectRoot(), region, m.entry.displayName, label);
+      // Nobody else has it here either (EDSM's dump, and EDAstro's when downloaded): the commander
+      // would be the first (owner, 2026-09-30 / 2026-10-01).
+      const first = codexFirstCheck(getProjectRoot(), region, m.entry.displayName, label, edastroBio);
       if (first) {
         m.codexFirst = true;
-        m.codexFirstColours = first;
+        m.codexFirstColours = first.colours;
         const asOf = codexFirstDataDate(getProjectRoot());
         if (asOf) m.codexFirstAsOf = asOf;
+        if (first.edastro && edastroBio) {
+          // The local date, like the EDSM dump's (codex_region_extract.py: date.today()).
+          const d = new Date(edastroBio.fetchedAtMs);
+          m.codexFirstEdastroAsOf = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          if (first.edastroSpeciesOnly) m.codexFirstEdastroSpeciesOnly = true;
+        }
       }
     }
   }
@@ -791,6 +800,8 @@ function computeBodyCacheSignature(
     footCatalog: footScannedCatalogSignature(root),
     // A new CodexEntry changes the "new to you" and [CODEX] marks without touching the body.
     codex: `${store.codexLoggedSpecies.size}/${store.codexRegionLogged.size}`,
+    // [CODEX FIRST] also reads EDAstro's plants: a download mid-session re-marks the bodies.
+    edastroBio: edastroBioRegionIds()?.fetchedAtMs ?? 0,
     // The tracked achievement's marks move with what is tracked and with every completion.
     achievement: `${store.trackedAchievementId ?? ""}/${store.achievementDone.size}`,
     shared: sharedSignature(),

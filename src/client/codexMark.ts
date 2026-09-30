@@ -15,7 +15,10 @@ export function achievementMarkTitle(a: AchievementAdvanceDTO): string {
  */
 /** The tooltip for [CODEX FIRST]. */
 export function codexFirstTitle(
-  m: Pick<SpeciesMatch, "codexFirstColours" | "codexRegion" | "codexFirstAsOf">,
+  m: Pick<
+    SpeciesMatch,
+    "codexFirstColours" | "codexRegion" | "codexFirstAsOf" | "codexFirstEdastroAsOf" | "codexFirstEdastroSpeciesOnly"
+  >,
 ): string {
   const where = m.codexRegion ? ` in ${m.codexRegion}` : " in this region";
   const colours = m.codexFirstColours ?? [];
@@ -25,8 +28,15 @@ export function codexFirstTitle(
       : colours.length === 1
         ? `${colours[0]} has not been logged`
         : `Neither ${colours.join(" nor ")} has been logged`;
-  const asOf = m.codexFirstAsOf ? ` (EDSM's codex, ${m.codexFirstAsOf})` : " (EDSM's codex)";
-  return `${what}${where} by anyone yet${asOf} — logging it could make you its first discoverer here. Commanders who do not send to EDSM, and finds since then, are not counted.`;
+  const edsm = m.codexFirstAsOf ? `EDSM's codex, ${m.codexFirstAsOf}` : "EDSM's codex";
+  const sources = m.codexFirstEdastroAsOf ? `${edsm}, and EDAstro's, fetched ${m.codexFirstEdastroAsOf}` : edsm;
+  const note = m.codexFirstEdastroSpeciesOnly
+    ? " Note: EDAstro has this species logged here without its colour, so this colour may already be taken."
+    : "";
+  const missing = m.codexFirstEdastroAsOf
+    ? "Commanders who send to neither, and finds since then, are not counted."
+    : "Commanders who do not send to EDSM, and finds since then, are not counted (Options → Notify me → NSP data adds EDAstro's).";
+  return `${what}${where} by anyone yet (${sources}) — logging it could make you its first discoverer here.${note} ${missing}`;
 }
 
 export function codexMarkTitle(

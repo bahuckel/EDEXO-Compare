@@ -690,6 +690,7 @@ interface NspStatus {
   error: string | null;
   cooldownMsRemaining: number;
   sizeLabel: string;
+  plantRegions?: boolean;
 }
 
 /*
@@ -742,7 +743,7 @@ function NspDownload({ on, busy, onToggle }: { on: boolean; busy: boolean; onTog
         <p className="dim tiny">
           Downloading and sorting: {mb(st.bytesDone)}
           {st.bytesTotal ? ` of ${mb(st.bytesTotal)} (${Math.floor((100 * st.bytesDone) / st.bytesTotal)} %)` : ""}. Only the
-          phenomena and green gas giant reports are kept.
+          phenomena, green gas giant reports and which plants were logged in which region are kept.
         </p>
       ) : (
         <p className="options-nsp__row">
@@ -750,9 +751,11 @@ function NspDownload({ on, busy, onToggle }: { on: boolean; busy: boolean; onTog
             {st.haveData ? "Refresh" : "Download"} NSP data ({st.sizeLabel})
           </button>
           <span className="dim tiny">
-            {st.haveData && st.fetchedAtMs
-              ? `Last fetched ${new Date(st.fetchedAtMs).toLocaleDateString()}. A refresh only downloads again if EDAstro changed the file.`
-              : `EDAstro's whole codex file, straight from EDAstro. Kept on this PC: only the phenomena and green gas giant reports, a few MB.`}
+            {st.haveData && st.plantRegions === false
+              ? "Refresh once to also check [CODEX FIRST] against EDAstro's plant finds (this one download is in full)."
+              : st.haveData && st.fetchedAtMs
+                ? `Last fetched ${new Date(st.fetchedAtMs).toLocaleDateString()}. A refresh only downloads again if EDAstro changed the file.`
+                : `EDAstro's whole codex file, straight from EDAstro. Kept on this PC: the phenomena, green gas giant reports and which plants each region has, a few MB.`}
           </span>
         </p>
       )}

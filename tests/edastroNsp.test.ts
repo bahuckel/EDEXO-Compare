@@ -17,6 +17,8 @@ import {
   startNspDownload,
   edastroGreenFor,
   edastroGreenReports,
+  edastroBioRegionIds,
+  parseBioRegionLine,
 } from "../src/server/edastroNsp.js";
 
 const HEADER = 'Codex Entry,Codex ID,First Reported,Odyssey,Region,System,X,Y,Z,Main Star Type,"System Address / ID64"';
@@ -167,5 +169,36 @@ describe("the cache file is looked at once a second, not on every question", () 
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("plants per region, for [CODEX FIRST] (owner, 2026-10-01)", () => {
+  const col = nspColumns(HEADER);
+  const line = (id: string, region: string) => `,${id},,,${region},Sys,1,2,3,"M",99`;
+  it("keeps plants as region|id, with the region normalised; never phenomena, bodies, sites or green giants", () => {
+    expect(parseBioRegionLine(line("codex_ent_stratum_02_y", "Trojan Belt"), col)).toBe("trojanbelt|codex_ent_stratum_02_y");
+    expect(parseBioRegionLine(line("codex_ent_tussocks_13_ae", `"Achilles' Altar"`), col)).toBe("achillesaltar|codex_ent_tussocks_13_ae");
+    expect(parseBioRegionLine(line("codex_ent_fonticulus_02", "The Formidine Rift"), col)).toBe("formidinerift|codex_ent_fonticulus_02");
+    for (const id of ["codex_ent_gas_clds_light", "codex_ent_green_sudarsky_class_i", "codex_ent_standard_ter_ice", "codex_ent_m_type", "codex_ent_guardian_data_logs", "codex_ent_thargoid_barnacle_01"]) {
+      expect(parseBioRegionLine(line(id, "Trojan Belt"), col)).toBeNull();
+    }
+  });
+  it("the download stores them, and an older file says it lacks them (and may refresh at once)", async () => {
+    const csv = [HEADER, line("codex_ent_stratum_02_y", "Trojan Belt"), line("codex_ent_stratum_02_y", "Trojan Belt"), 'Proto-Lagrange Cloud,codex_ent_gas_clds_light,"2025",0,Inner Orion Spur,Near One,10,0,0,"K",111'].join("\n");
+    startNspDownload({ force: true, fetchImpl: fakeFetch(csv) });
+    await waitDone();
+    expect(readNspStatus()).toMatchObject({ haveData: true, rowCount: 1, plantRegions: true });
+    expect([...edastroBioRegionIds()!.ids]).toEqual(["trojanbelt|codex_ent_stratum_02_y"]);
+    const f = JSON.parse(readFileSync(resolveNspCachePath(), "utf8"));
+    delete f.bioRegionIds;
+    f.filterVersion = 3;
+    writeFileSync(resolveNspCachePath(), JSON.stringify(f));
+    resetNspMemo();
+    expect(readNspStatus()).toMatchObject({ haveData: true, plantRegions: false });
+    expect(edastroBioRegionIds()).toBeNull();
+    // Within the daily cooldown, and not forced: an older file is fetched again anyway.
+    startNspDownload({ fetchImpl: fakeFetch(csv) });
+    await waitDone();
+    expect(readNspStatus().plantRegions).toBe(true);
   });
 });

@@ -612,6 +612,10 @@ export interface SpeciesMatch {
   codexFirstColours?: string[];
   /** The EDSM dump date the mark is from. */
   codexFirstAsOf?: string;
+  /** EDAstro's codex file was checked too (fetch date), when the phenomena data is downloaded. */
+  codexFirstEdastroAsOf?: string;
+  /** EDAstro has this species in the region but not which colour: still gold, with a note. */
+  codexFirstEdastroSpeciesOnly?: boolean;
   /** This plant, here, would advance the tracked achievement (`server/achievements.ts`). */
   achievementAdvance?: import("./achievements.js").AchievementAdvanceDTO;
   /** This species' rarity in the body's region (`shared/speciesRarity.ts`); the DNA badge shows it. */

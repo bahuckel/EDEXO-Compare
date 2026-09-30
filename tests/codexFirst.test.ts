@@ -3,7 +3,7 @@
  * region, per EDSM's codex dump shipped in data/codex/edsm-codex-regions.json.
  */
 import { describe, expect, it } from "vitest";
-import { codexFirstColours, codexFirstDataDate } from "../src/server/codexFirst.js";
+import { codexFirstCheck, codexFirstColours, codexFirstDataDate } from "../src/server/codexFirst.js";
 import { createNoticesService } from "../src/server/notices.js";
 import { DEFAULT_NOTIFY_PREFS, mergeNotifyPrefs } from "../src/shared/notices.js";
 
@@ -27,6 +27,31 @@ describe("who has logged it in the region", () => {
     expect(logged).toBeNull();
     const mixed = codexFirstColours(root, "Inner Orion Spur", "Bacterium Cerbrus", "Teal or Nonsense");
     expect(mixed).toEqual(["Nonsense"]);
+  });
+});
+
+describe("EDAstro's plants per region too (owner, 2026-10-01)", () => {
+  // Stratum Paleas - Indigo is not in EDSM's Trojan Belt (the owner's own first); its id is _02_y.
+  const ed = (...keys: string[]) => ({ ids: new Set(keys), fetchedAtMs: Date.parse("2026-10-01T10:00:00Z") });
+  const check = (label: string, e: ReturnType<typeof ed> | null) =>
+    codexFirstCheck(root, "Trojan Belt", "Stratum Paleas", label, e);
+
+  it("without EDAstro's list: EDSM alone, as before", () => {
+    expect(check("Indigo", null)).toEqual({ colours: ["Indigo"], edastro: false, edastroSpeciesOnly: false });
+  });
+  it("EDAstro has the colour there: not a first", () => {
+    expect(check("Indigo", ed("trojanbelt|codex_ent_stratum_02_y"))).toBeNull();
+    // Another region's Indigo says nothing about the Trojan Belt.
+    expect(check("Indigo", ed("veils|codex_ent_stratum_02_y"))).toEqual({ colours: ["Indigo"], edastro: true, edastroSpeciesOnly: false });
+  });
+  it("EDAstro has only the species there: still gold, with the note; with no colour to go on, not a first", () => {
+    for (const id of ["codex_ent_stratum_02", "codex_ent_stratum_02_zz"]) {
+      expect(check("Indigo", ed(`trojanbelt|${id}`))).toEqual({ colours: ["Indigo"], edastro: true, edastroSpeciesOnly: true });
+      expect(check("(unknown)", ed(`trojanbelt|${id}`))).toBeNull();
+    }
+  });
+  it("an id neither EDSM nor its base knows is ignored", () => {
+    expect(check("Indigo", ed("trojanbelt|codex_ent_nothing_99_q"))).toEqual({ colours: ["Indigo"], edastro: true, edastroSpeciesOnly: false });
   });
 });
 
