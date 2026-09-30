@@ -15,6 +15,8 @@ import {
   resetNspMemo,
   resolveNspCachePath,
   startNspDownload,
+  edastroGreenFor,
+  edastroGreenReports,
 } from "../src/server/edastroNsp.js";
 
 const HEADER = 'Codex Entry,Codex ID,First Reported,Odyssey,Region,System,X,Y,Z,Main Star Type,"System Address / ID64"';
@@ -128,5 +130,24 @@ describe("the download", () => {
     await waitDone();
     expect(readNspStatus().error).toContain("503");
     expect(readNspStatus().haveData).toBe(false);
+  });
+});
+
+describe("green gas giant reports (owner, 2026-09-30)", () => {
+  it("are kept apart from the phenomena: not counted, not nearby, found by system", async () => {
+    const csv = [
+      CSV,
+      'Green Gas Giant,codex_ent_green_sudarsky_class_ii,"2024",0,Inner Orion Spur,Green One,5,0,0,"K",444',
+      ',codex_ent_green_giant_with_water_life,"2024",0,Inner Orion Spur,Green One,5,0,0,"K",444',
+    ].join("\r\n");
+    startNspDownload({ fetchImpl: fakeFetch(csv, { etag: '"v2"' }) });
+    await waitDone();
+    const st = readNspStatus();
+    expect(st.rowCount).toBe(4);
+    expect(st.systemCount).toBe(3);
+    expect(nearbyNsp({ x: 0, y: 0, z: 0 }, 100).map((n) => n.system)).not.toContain("Green One");
+    expect([...edastroGreenFor(444)].sort()).toEqual(["codex_ent_green_giant_with_water_life", "codex_ent_green_sudarsky_class_ii"]);
+    expect(edastroGreenFor(111)).toEqual([]);
+    expect(edastroGreenReports()).toEqual([expect.objectContaining({ system: "Green One", x: 5 })]);
   });
 });

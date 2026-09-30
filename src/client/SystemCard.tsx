@@ -158,6 +158,7 @@ export function SystemCardRow({
                     type="button"
                     className={`sys-notable-card__row${n.green ? ` sys-notable-card__row--ggg sys-notable-card__row--ggg-${n.green.level}` : ""}`}
                     title={
+                      (n.sold ? "Data sold — " : "") +
                       (n.dssMapped ? "Mapped (DSS)" : "Scanned, not mapped") +
                       " — click for quick facts" +
                       (n.green ? `\n${n.green.why}` : "") +
@@ -173,6 +174,7 @@ export function SystemCardRow({
                     {n.features?.length && !n.tag.includes(n.features[0]!.label) ? (
                       <span className="sys-notable-card__features"> · {n.features.map((f) => f.label).join(" · ")}</span>
                     ) : null}
+                    {n.sold ? <span className="sys-notable-card__sold">sold</span> : null}
                     {records.has(n.bodyId) ? <RecordMedal marks={records.get(n.bodyId)!} /> : null}
                   </button>
                 </li>

@@ -8,6 +8,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import type { ExplorationScanRecord } from "../shared/types.js";
 import {
   classifyGreenGiant,
+  greenCodexFits,
   isGggClass,
   type GreenGiantMark,
   type GreenGiantVerdict,
@@ -78,6 +79,10 @@ export interface GreenGiantSources {
   k10Systems: ReadonlySet<number>;
   /** Systems with a K10 anomaly in EDAstro's codex file (empty until downloaded). */
   k10FromEdastro?: () => ReadonlySet<number>;
+  /** EDAstro's green codex ids for a system (empty until downloaded). */
+  edastroGreenFor?: (systemAddress: number) => readonly string[];
+  /** Every body scanned in a system, to tell which body an EDAstro report means. */
+  bodiesInSystem?: (systemAddress: number) => Iterable<{ bodyId: number; planetClass?: string }>;
   marks: Pick<GreenGiantMarksService, "get">;
 }
 
@@ -88,6 +93,19 @@ export function greenGiantForRecord(
 ): GreenGiantVerdict | null {
   if (!isGggClass(rec.planetClass)) return null;
   const key = `${rec.systemAddress}:${rec.bodyId}`;
+  let edastroReport: "only" | "shared" | null = null;
+  const ids = (src.edastroGreenFor?.(rec.systemAddress) ?? []).filter((id) => greenCodexFits(id, rec.planetClass));
+  if (ids.length) {
+    // Pinned to this body only when no other body of the class is known there.
+    let others = 1;
+    if (src.bodiesInSystem) {
+      others = 0;
+      for (const b of src.bodiesInSystem(rec.systemAddress)) {
+        if (b.bodyId !== rec.bodyId && ids.some((id) => greenCodexFits(id, b.planetClass))) others++;
+      }
+    }
+    edastroReport = others === 0 ? "only" : "shared";
+  }
   return classifyGreenGiant({
     planetClass: rec.planetClass,
     surfaceTemperatureK: rec.surfaceTemperature,
@@ -95,5 +113,6 @@ export function greenGiantForRecord(
     codex: src.greenCodexBodies.has(key),
     k10InSystem: src.k10Systems.has(rec.systemAddress) || (src.k10FromEdastro?.().has(rec.systemAddress) ?? false),
     mark: src.marks.get(key),
+    edastroReport,
   });
 }

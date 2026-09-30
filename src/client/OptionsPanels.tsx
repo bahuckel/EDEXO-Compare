@@ -713,7 +713,7 @@ function NspDownload({ on, busy, onToggle }: { on: boolean; busy: boolean; onTog
         <p className="dim tiny">
           Downloading and sorting: {mb(st.bytesDone)}
           {st.bytesTotal ? ` of ${mb(st.bytesTotal)} (${Math.floor((100 * st.bytesDone) / st.bytesTotal)} %)` : ""}. Only the
-          phenomena are kept.
+          phenomena and green gas giant reports are kept.
         </p>
       ) : (
         <p className="options-nsp__row">
@@ -723,7 +723,7 @@ function NspDownload({ on, busy, onToggle }: { on: boolean; busy: boolean; onTog
           <span className="dim tiny">
             {st.haveData && st.fetchedAtMs
               ? `Last fetched ${new Date(st.fetchedAtMs).toLocaleDateString()}. A refresh only downloads again if EDAstro changed the file.`
-              : `EDAstro's whole codex file, straight from EDAstro. Kept on this PC: only the phenomena, a few MB.`}
+              : `EDAstro's whole codex file, straight from EDAstro. Kept on this PC: only the phenomena and green gas giant reports, a few MB.`}
           </span>
         </p>
       )}

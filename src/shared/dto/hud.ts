@@ -239,6 +239,8 @@ export interface NotableBodyInfo {
   green?: GreenGiantVerdict;
   /** The body features the commander switched on that this body has (shared/bodyFeatures.ts). */
   features?: BodyFeatureHit[];
+  /** Its scan data was sold: still notable, marked so on the card. */
+  sold?: boolean;
 }
 
 /**

@@ -135,7 +135,7 @@ import { BODY_FEATURES } from "../shared/bodyFeatures.js";
 import type { NotifySettingsDTO } from "../shared/notices.js";
 import { queryPoi, readPoiStatus } from "./edastroPoi.js";
 import { queryCarriers, readCarrierStatus } from "./edastroCarriers.js";
-import { nearbyNsp, nspK10Systems } from "./edastroNsp.js";
+import { edastroGreenFor, nearbyNsp, nspK10Systems } from "./edastroNsp.js";
 import { fetchGalacticRecords, galacticRecords, readGalacticRecordsStatus } from "./galacticRecords.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
@@ -301,18 +301,22 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const greenMarks = createGreenGiantMarks({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-ggg-marks.json"),
   });
+  const bodiesInSystem = function* (addr: number) {
+    yield* store.liveScansInSystem(addr);
+    yield* store.soldScansInSystem(addr);
+  };
+  const greenExtras = { k10FromEdastro: nspK10Systems, edastroGreenFor, bodiesInSystem, marks: greenMarks };
   const greenSources = (): GreenGiantSources => ({
+    ...greenExtras,
     greenCodexBodies: store.greenCodexBodies,
     k10Systems: store.k10Systems,
-    k10FromEdastro: nspK10Systems,
-    marks: greenMarks,
   });
   const scanOf = (k: string) => store.explorationScans.get(k) ?? store.soldExplorationScans.get(k) ?? null;
   // The Notable card: green gas giants always (they are notable like an Earth-like), features as chosen.
   setNotableOptionsProvider(() => {
     const on = notices.prefs().features;
     return {
-      green: { marks: greenMarks, k10FromEdastro: nspK10Systems },
+      green: greenExtras,
       features: new Set(BODY_FEATURES.filter((f) => on[f.key]).map((f) => f.key)),
     };
   });
@@ -1315,7 +1319,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getCommanderPosition: () => store.commanderPos,
     getFirstDiscoveryBacklog: () => firstDiscoveryBacklogWithDistance(store),
     getBacklogMap: () => backlogMap(store),
-    getDiscoveries: () => buildDiscoveries(store, getProjectRoot(), { marks: greenMarks, k10FromEdastro: nspK10Systems }),
+    getDiscoveries: () => buildDiscoveries(store, getProjectRoot(), greenExtras),
     searchGalaxyByValue: (query, limit) => galaxyValueSearch({ ...query, from: store.commanderPos, limit }),
     getGalaxySpecies: () => galaxySpeciesCatalogue(),
     getGalaxyRegions: () => galaxyRegions(),

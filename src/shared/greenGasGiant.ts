@@ -13,8 +13,11 @@
  * The verdict, strongest first — one per body, and the card says why:
  * - `confirmed`  the codex logged a green gas giant for this body, or the commander marked it green;
  * - `catalogued` the body is in the edGGG catalogue;
- * - `likely`     its surface temperature is a catalogued GGG's, for the same class (±0.001 K);
- * - `possible`   a class III on the 30 K grid, or any gas giant in a system with a K10-Type Anomaly
+ * - `likely`     EDAstro's codex file has a green report of its class in its system and it is the
+ *                only body of that class scanned there; or its surface temperature is a catalogued
+ *                GGG's, for the same class (±0.001 K);
+ * - `possible`   such a report with more than one body of the class; a class III on the 30 K grid;
+ *                or any gas giant in a system with a K10-Type Anomaly
  *                (an NSP that only spawns around GGGs: 8 of 8 K10 systems in EDAstro's codex file are
  *                catalogued GGG systems, checked 2026-09-30).
  *
@@ -103,6 +106,13 @@ export function greenCodexId(codexName: string | null | undefined): string | nul
   return k.startsWith("codex_ent_green_") ? k : null;
 }
 
+/** A green codex id in words: `codex_ent_green_sudarsky_class_ii` → "class II". */
+export function greenCodexClassLabel(codexId: string): string {
+  const cls = CODEX_CLASSES[codexId];
+  if (!cls) return "green gas giant";
+  return cls.length > 1 ? "water- or ammonia-based-life giant" : shortClass(cls[0]!);
+}
+
 /** Whether a green codex entry can be this class of gas giant. */
 export function greenCodexFits(codexId: string, planetClass: string | null | undefined): boolean {
   const classes = CODEX_CLASSES[codexId];
@@ -124,6 +134,11 @@ export interface GreenGiantInput {
   codex?: boolean;
   /** The system has a K10-Type Anomaly. */
   k10InSystem?: boolean;
+  /**
+   * EDAstro has a green codex report of this body's class in its system (the file names no body):
+   * `only` when this is the one body of that class scanned there, `shared` when there are more.
+   */
+  edastroReport?: "only" | "shared" | null;
   /** The commander's own call. "no" silences a guess, never a codex entry or a catalogue listing. */
   mark?: GreenGiantMark | null;
 }
@@ -136,6 +151,9 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
   if (i.mark === "yes") return { level: "confirmed", why: "You marked it green", ...(n ? { gggNumber: n } : {}) };
   if (n) return { level: "catalogued", why: `edGGG catalogue #${n}`, gggNumber: n };
   if (i.mark === "no") return null;
+  if (i.edastroReport === "only") {
+    return { level: "likely", why: `EDAstro: a green ${shortClass(pc)} is reported in this system, and this is its only ${shortClass(pc)}` };
+  }
   const t = i.surfaceTemperatureK;
   if (t != null && Number.isFinite(t)) {
     const hit = (tempsByClass.get(pc) ?? []).find((k) => Math.abs(k - t) <= DELTA_K);
@@ -143,6 +161,9 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
     if (pc === CLASS_III && onClassIIIGrid(t)) {
       return { level: "possible", why: `${fmtK(t)} — on the class III green temperature grid (every 30 K from 310)` };
     }
+  }
+  if (i.edastroReport === "shared") {
+    return { level: "possible", why: `EDAstro: a green ${shortClass(pc)} is reported in this system — one of its ${shortClass(pc)}s` };
   }
   if (i.k10InSystem) return { level: "possible", why: "K10-Type Anomaly in this system — they spawn only around green gas giants" };
   return null;

@@ -246,6 +246,20 @@ export function registerGalaxyRoutes(
     }
     res.json({ ...savedList(), id: added.id });
   });
+  // A correction on one system: `{ cutFrom: n }` drops n and everything after; `{ skip: n, on }`.
+  app.patch("/api/boxels/:id", (req, res) => {
+    if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
+    const id = String(req.params.id ?? "");
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    let done = false;
+    if (typeof body.cutFrom === "number") done = opts.savedBoxels.cutFrom(id, body.cutFrom);
+    else if (typeof body.skip === "number") done = opts.savedBoxels.setSkipped(id, body.skip, body.on !== false);
+    if (!done) {
+      res.status(400).json({ ...savedList(), ok: false, error: "That system is not in this saved boxel." });
+      return;
+    }
+    res.json(savedList());
+  });
   app.delete("/api/boxels/:id", (req, res) => {
     if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
     const gone = opts.savedBoxels.remove(String(req.params.id ?? ""));

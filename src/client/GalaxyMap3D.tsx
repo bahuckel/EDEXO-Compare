@@ -308,7 +308,7 @@ export function GalaxyMap3D() {
         .catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poiOn, nspOn, carriersOn, bookmarksOn, extraData]);
+  }, [poiOn, nspOn, carriersOn, bookmarksOn, gggOn, extraData]);
   useEffect(() => {
     const e = engine.current;
     if (!e) return;
@@ -326,7 +326,7 @@ export function GalaxyMap3D() {
       e.setMarkerLayerVisible(name, extraOn[l.kind]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [extraData, poiOn, nspOn, carriersOn, bookmarksOn, stats?.phase]);
+  }, [extraData, poiOn, nspOn, carriersOn, bookmarksOn, gggOn, stats?.phase]);
   const extraPoint = (layer: string, id: string) => {
     if (!layer.startsWith("x-")) return null;
     const kind = layer.slice(2) as GalaxyLayerKind;

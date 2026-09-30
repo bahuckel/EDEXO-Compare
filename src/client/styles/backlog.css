@@ -712,6 +712,35 @@
     grid-column: 1 / -1;
   }
 }
+.boxel-saved__extend {
+  margin-right: 0.4rem;
+}
+.boxel-row__actions {
+  white-space: nowrap;
+}
+.boxel-row__actions .fdb-chip + .fdb-chip {
+  margin-left: 0.3rem;
+}
+.boxel-skipped {
+  color: var(--text-dim);
+  font-style: italic;
+}
+/* The "delete from here" question, above the table. */
+.boxel-cut {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  font-size: var(--fs-sm);
+  border: 1px solid rgba(255, 138, 122, 0.55);
+  background: rgba(255, 138, 122, 0.07);
+}
+.boxel-cut__actions {
+  display: flex;
+  gap: 0.3rem;
+}
 .boxel-common {
   margin: 0;
   font-size: var(--fs-xs);

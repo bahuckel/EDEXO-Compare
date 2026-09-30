@@ -18,6 +18,10 @@
  * - `codex_ent_s_*`          pods (Peduncle, Aster, Chalice …)
  * - `codex_ent_spoi_*`       mineral spheres, Stolon pods, Gyre trees, Void hearts
  * (The same families the bundled EDSM codex lists under "biological" that are not plants.)
+ *
+ * Also kept, apart from the phenomena: `codex_ent_green_*`, green gas giant reports (owner,
+ * 2026-09-30: "add them"). The file has no body column, so a report says which system has a green
+ * gas giant of which class, not which body (shared/greenGasGiant.ts, `edastroReport`).
  * Surface biology, geology, Guardian and Thargoid sites are left out.
  *
  * Same rule as the carrier and POI lists: the file lands on the commander's machine from EDAstro
@@ -36,7 +40,9 @@ export const NSP_SOURCE_SIZE_LABEL = "855 MB";
 /** The codex file is rebuilt weekly; asking more often than daily wastes nobody's time but EDAstro's. */
 export const NSP_FETCH_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
-const NSP_ID = /^codex_ent_(gas_clds|small_org|l_|s_|spoi)/i;
+const NSP_ID = /^codex_ent_(gas_clds|small_org|l_|s_|spoi|green_)/i;
+/** Green gas giant reports ride in the same file but are not phenomena. */
+const GREEN_ID = /^codex_ent_green_/;
 
 /** One phenomenon type logged in one system. */
 export interface NspRecord {
@@ -51,7 +57,7 @@ export interface NspRecord {
 }
 
 /** Bumped whenever the rows kept change: an older file is fetched again in full, not "unchanged". */
-const NSP_FILTER_VERSION = 2;
+const NSP_FILTER_VERSION = 3;
 
 interface NspFile {
   formatVersion: 1;
@@ -107,7 +113,7 @@ export function parseNspLine(
   line: string,
   col: { name: number; id: number; system: number; x: number; y: number; z: number; addr: number },
 ): NspRecord | null {
-  if (!/codex_ent_(gas_clds|small_org|l_|s_|spoi)/i.test(line)) return null;
+  if (!/codex_ent_(gas_clds|small_org|l_|s_|spoi|green_)/i.test(line)) return null;
   const f = splitCsvLine(line);
   const id = (f[col.id] ?? "").trim().toLowerCase();
   if (!NSP_ID.test(id)) return null;
@@ -142,9 +148,10 @@ export function nspColumns(header: string) {
   };
 }
 
-let memo: { mtimeMs: number; file: NspFile; systems: number } | null = null;
+type NspRow = NspFile["rows"][number];
+let memo: { mtimeMs: number; file: NspFile; systems: number; nsp: NspRow[]; green: NspRow[] } | null = null;
 
-function loadFile(): { file: NspFile; systems: number } | null {
+function loadFile(): { file: NspFile; systems: number; nsp: NspRow[]; green: NspRow[] } | null {
   const p = resolveNspCachePath();
   let st;
   try {
@@ -157,8 +164,11 @@ function loadFile(): { file: NspFile; systems: number } | null {
   try {
     const file = JSON.parse(readFileSync(p, "utf8")) as NspFile;
     if (!Array.isArray(file.rows)) return null;
-    const systems = new Set(file.rows.map((r) => r[3] ?? r[2])).size;
-    memo = { mtimeMs: st.mtimeMs, file, systems };
+    const nsp: NspRow[] = [];
+    const green: NspRow[] = [];
+    for (const r of file.rows) (GREEN_ID.test(r[0]) ? green : nsp).push(r);
+    const systems = new Set(nsp.map((r) => r[3] ?? r[2])).size;
+    memo = { mtimeMs: st.mtimeMs, file, systems, nsp, green };
     return memo;
   } catch {
     memo = null;
@@ -177,7 +187,7 @@ export function readNspStatus(nowMs: number = Date.now()): NspStatusDTO {
   const since = f ? nowMs - f.file.fetchedAtMs : Number.POSITIVE_INFINITY;
   return {
     haveData: f != null,
-    rowCount: f?.file.rows.length ?? 0,
+    rowCount: f?.nsp.length ?? 0,
     systemCount: f?.systems ?? 0,
     fetchedAtMs: f?.file.fetchedAtMs ?? null,
     running: job.running,
@@ -283,7 +293,7 @@ export function nearbyNsp(
   if (!f) return [];
   const bySys = new Map<string, { system: string; systemAddress: number | null; distanceLy: number; names: string[] }>();
   const r2 = radiusLy * radiusLy;
-  for (const [, name, system, addr, x, y, z] of f.file.rows) {
+  for (const [, name, system, addr, x, y, z] of f.nsp) {
     const d2 = (x - origin.x) ** 2 + (y - origin.y) ** 2 + (z - origin.z) ** 2;
     if (d2 > r2) continue;
     const key = String(addr ?? system);
@@ -300,7 +310,7 @@ export function nspBySystem(): { system: string; x: number; y: number; z: number
   const f = loadFile();
   if (!f) return [];
   const by = new Map<string, { system: string; x: number; y: number; z: number; names: string[] }>();
-  for (const [, name, system, addr, x, y, z] of f.file.rows) {
+  for (const [, name, system, addr, x, y, z] of f.nsp) {
     const k = String(addr ?? system);
     const g = by.get(k);
     if (g) {
@@ -320,9 +330,49 @@ export function nspK10Systems(): ReadonlySet<number> {
   if (!f) return new Set();
   if (k10Memo?.file === f.file) return k10Memo.addrs;
   const addrs = new Set<number>();
-  for (const [id, , , addr] of f.file.rows) if (id === K10_CODEX_ID && typeof addr === "number") addrs.add(addr);
+  for (const [id, , , addr] of f.nsp) if (id === K10_CODEX_ID && typeof addr === "number") addrs.add(addr);
   k10Memo = { file: f.file, addrs };
   return addrs;
+}
+
+/** A green gas giant report in EDAstro's codex file: which system, which codex class, where. */
+export interface EdastroGreenReport {
+  system: string;
+  systemAddress: number | null;
+  codexIds: string[];
+  x: number;
+  y: number;
+  z: number;
+}
+
+let greenMemo: { file: NspFile; list: EdastroGreenReport[]; byAddr: Map<number, EdastroGreenReport> } | null = null;
+function greenReports() {
+  const f = loadFile();
+  if (!f) return null;
+  if (greenMemo?.file === f.file) return greenMemo;
+  const by = new Map<string, EdastroGreenReport>();
+  for (const [id, , system, addr, x, y, z] of f.green) {
+    const k = String(addr ?? system.toLowerCase());
+    const g = by.get(k);
+    if (g) {
+      if (!g.codexIds.includes(id)) g.codexIds.push(id);
+    } else by.set(k, { system, systemAddress: addr, codexIds: [id], x, y, z });
+  }
+  const list = [...by.values()];
+  const byAddr = new Map<number, EdastroGreenReport>();
+  for (const g of list) if (g.systemAddress != null) byAddr.set(g.systemAddress, g);
+  greenMemo = { file: f.file, list, byAddr };
+  return greenMemo;
+}
+
+/** Every system EDAstro has a green gas giant codex report for (empty until the file is downloaded). */
+export function edastroGreenReports(): readonly EdastroGreenReport[] {
+  return greenReports()?.list ?? [];
+}
+
+/** The green codex ids EDAstro has for one system, by address. */
+export function edastroGreenFor(systemAddress: number): readonly string[] {
+  return greenReports()?.byAddr.get(systemAddress)?.codexIds ?? [];
 }
 
 /** For tests: whether a cache file is present. */

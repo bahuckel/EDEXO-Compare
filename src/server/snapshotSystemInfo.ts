@@ -396,7 +396,16 @@ export function buildNotableBodiesForFocusedSystem(
 
   const all = new Map<number, ExplorationScanRecord>();
   const byBodyId = new Map<number, ExplorationScanRecord>();
-  for (const rec of store.liveScansInSystem(focusAddr)) {
+  /*
+    Sold bodies too, marked (owner, 2026-09-30: "include sold but mark them"): a system he already
+    cashed in still has its green gas giant and its shepherd moon. A live scan of the same body wins.
+  */
+  const soldIds = new Set<number>();
+  const live = store.liveScansInSystem(focusAddr);
+  const liveIds = new Set(live.map((r) => r.bodyId));
+  const sold = store.soldScansInSystem(focusAddr).filter((r) => !liveIds.has(r.bodyId));
+  for (const r of sold) soldIds.add(r.bodyId);
+  for (const rec of [...live, ...sold]) {
     all.set(rec.bodyId, rec);
     // Stars only count through a feature (ancient, ringed); planets through anything.
     const star = explorationRecordIsStellar(rec) && !rec.isSynthetic && !!rec.starType;
@@ -433,6 +442,7 @@ export function buildNotableBodiesForFocusedSystem(
       dssMapped: store.dssMappedBodyKeys.has(bk),
       ...(green ? { green } : {}),
       ...(features ? { features } : {}),
+      ...(soldIds.has(rec.bodyId) ? { sold: true } : {}),
     });
   }
   out.sort((a, b) => a.bodyId - b.bodyId);

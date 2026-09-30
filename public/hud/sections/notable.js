@@ -43,6 +43,7 @@ export var notable = {
               esc(n.bodyLabelShort) +
               " <small>" +
               esc(n.tag) +
+              (n.sold ? " · sold" : "") +
               "</small></span>" +
               (rec.length ? '<span class="notable-medal" title="Personal record">' + MEDAL + "</span>" : "") +
               "</li>"

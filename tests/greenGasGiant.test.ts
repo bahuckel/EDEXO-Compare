@@ -239,3 +239,47 @@ describe("the store", () => {
     expect(star.rings).toEqual([{ name: "Gree A Ring", ringClass: "eRingClass_Icy", massMt: 5, innerRadM: 10, outerRadM: 20 }]);
   });
 });
+
+describe("EDAstro reports", () => {
+  const C2 = "Sudarsky class II gas giant";
+  const src = (bodies: { bodyId: number; planetClass?: string }[]) => ({
+    greenCodexBodies: new Map<string, string>(),
+    k10Systems: new Set<number>(),
+    marks: { get: () => null },
+    edastroGreenFor: (a: number) => (a === 9 ? ["codex_ent_green_sudarsky_class_ii"] : []),
+    bodiesInSystem: () => bodies,
+  });
+  const rec = { systemAddress: 9, bodyId: 3, bodyName: "Nine 3", planetClass: C2, surfaceTemperature: 150 };
+  it("likely when it is the only body of the reported class, possible when there are more", () => {
+    expect(greenGiantForRecord(rec, src([{ bodyId: 3, planetClass: C2 }, { bodyId: 4, planetClass: C1 }]))?.level).toBe("likely");
+    expect(greenGiantForRecord(rec, src([{ bodyId: 3, planetClass: C2 }, { bodyId: 5, planetClass: C2 }]))?.level).toBe("possible");
+    // Another class in the report says nothing about this one; neither does another system.
+    expect(greenGiantForRecord({ ...rec, planetClass: C1 }, src([]))).toBeNull();
+    expect(greenGiantForRecord({ ...rec, systemAddress: 8 }, src([]))).toBeNull();
+    // Without the other bodies it is only possible.
+    const noBodies = { ...src([]), bodiesInSystem: undefined };
+    expect(greenGiantForRecord(rec, noBodies)?.level).toBe("possible");
+  });
+});
+
+describe("the Notable card", () => {
+  it("lists a sold body, marked sold, and a live scan of the same body wins", async () => {
+    const { GameStateStore } = await import("../src/server/gameState.js");
+    const { buildNotableBodiesForFocusedSystem } = await import("../src/server/snapshotSystemInfo.js");
+    const store = new GameStateStore();
+    const t = "2026-09-30T12:00:00Z";
+    const scan = (bodyId: number, planetClass: string) =>
+      ({ timestamp: t, event: "Scan", StarSystem: "Sold", SystemAddress: 77, BodyID: bodyId, BodyName: `Sold ${bodyId}`, PlanetClass: planetClass }) as never;
+    store.apply({ timestamp: t, event: "FSDJump", StarSystem: "Sold", SystemAddress: 77, StarPos: [0, 0, 0] } as never);
+    store.mergeExplorationScan(scan(1, "Earthlike body"), t);
+    store.mergeExplorationScan(scan(2, "Water world"), t);
+    // Body 1 sold: moved to the archive, body 2 still live.
+    store.soldExplorationScans.set("77:1", store.explorationScans.get("77:1")!);
+    store.explorationScans.delete("77:1");
+    const list = buildNotableBodiesForFocusedSystem(store, "Sold");
+    expect(list.map((n) => [n.bodyId, n.sold ?? false])).toEqual([
+      [1, true],
+      [2, false],
+    ]);
+  });
+});

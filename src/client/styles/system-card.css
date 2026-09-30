@@ -202,6 +202,17 @@
 .sys-notable-card__features {
   color: var(--accent);
 }
+/* A body whose data was sold: still listed, marked (2026-09-30). */
+.sys-notable-card__sold {
+  margin-left: 0.4rem;
+  padding: 0 0.25rem;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border: 1px solid currentColor;
+  opacity: 0.8;
+}
 
 /* ---- phone (< 700 px): the System card is a full-width row and may shrink; its name line and chips
    wrap; the star cards share one row equally (owner, 2026-09-30: the card ran off his phone's

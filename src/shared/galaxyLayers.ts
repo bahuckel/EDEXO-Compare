@@ -35,7 +35,8 @@ export const GALAXY_LAYERS: readonly {
   size: number;
 }[] = [
   { kind: "poi", label: "Points of interest", needs: "Download them in Points of interest", colour: [0.3, 0.85, 1], size: 6 },
-  { kind: "nsp", label: "Phenomena (NSP)", needs: "Download them in Options → Notify me", colour: [0.75, 0.42, 0.85], size: 3 },
+  // 30 % dimmer than the others (owner, 2026-09-30): 97,000 systems, so it lies under the other layers.
+  { kind: "nsp", label: "Phenomena (NSP)", needs: "Download them in Options → Notify me", colour: [0.53, 0.29, 0.6], size: 3 },
   { kind: "carriers", label: "Carriers", needs: "Download them in Carriers", colour: [1, 0.85, 0.3], size: 5 },
   { kind: "bookmarks", label: "Bookmarks", needs: "Bookmark a system with the ☆ beside its name", colour: [0.96, 0.72, 0.24], size: 9 },
   { kind: "ggg", label: "Green gas giants", needs: "", colour: [0.62, 1, 0.18], size: 11 },

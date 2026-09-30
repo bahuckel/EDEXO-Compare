@@ -408,9 +408,10 @@ export const SystemMapModal = memo(function SystemMapModal({
                     n.bodyId === selectedId ? " is-selected" : ""
                   }`}
                   title={
-                    n.dssMapped
+                    (n.sold ? "Data sold — " : "") +
+                    (n.dssMapped
                       ? "DSS complete in merged journal (SAAScanComplete)"
-                      : "Scan in journal — DSS not complete for this body"
+                      : "Scan in journal — DSS not complete for this body")
                   }
                   onClick={(ev) => {
                     ev.stopPropagation();

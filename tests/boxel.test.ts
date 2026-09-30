@@ -74,6 +74,22 @@ describe("saved boxels (owner, 2026-09-30)", () => {
     // All flown: no next.
     const all = Array.from({ length: 10 }, (_, n) => `Eol Prou AB-C d1-${n}`);
     expect(s.list(all)[0]).toMatchObject({ flown: 10, next: null });
+    // Skip: counts as done without being flown; next moves past it.
+    expect(s.setSkipped(id, 1, true)).toBe(true);
+    expect(s.list(visited)[0]).toMatchObject({ skipped: [1], next: "Eol Prou AB-C d1-3" });
+    expect(s.setSkipped(id, 42, true)).toBe(false);
+    // Cut from -7: ends at -6; the flown -9 is now past the end and says so.
+    expect(s.cutFrom(id, 7)).toBe(true);
+    expect(s.list(visited)[0]).toMatchObject({ end: 6, lastSystem: "Eol Prou AB-C d1-6", flownBeyond: [9] });
+    expect(s.cutFrom(id, 0)).toBe(false);
+    expect(s.cutFrom(id, 7)).toBe(false);
+    // A skip beyond a cut goes with it.
+    s.setSkipped(id, 5, true);
+    s.cutFrom(id, 5);
+    expect(s.list(visited)[0]).toMatchObject({ end: 4, skipped: [1] });
+    // Back to -9 for the rest.
+    s.add("Eol Prou AB-C d1-9");
+    s.setSkipped(id, 1, false);
     // Survives a restart; deletes.
     const again = createSavedBoxels({ filePath: file });
     expect(again.list([])).toHaveLength(1);

@@ -95,6 +95,43 @@ export function BoxelModal({
     load(b.lastSystem, String(b.end));
   };
 
+  // The saved boxel the table is showing, if any: its rows get Skip and a cut (owner, 2026-09-30).
+  const savedHere = data && saved ? (saved.find((b) => b.prefix.toLowerCase() === data.prefix.toLowerCase()) ?? null) : null;
+  const skipSet = new Set(savedHere?.skipped ?? []);
+  const [cutAsk, setCutAsk] = useState<number | null>(null);
+  const patchSaved = (b: SavedBoxelDTO, body: Record<string, unknown>) =>
+    savedCall(
+      { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+      `/api/boxels/${encodeURIComponent(b.id)}`,
+    );
+  const cutFrom = (b: SavedBoxelDTO, n: number) => {
+    setCutAsk(null);
+    void patchSaved(b, { cutFrom: n }).then((ok) => {
+      if (!ok) return;
+      const last = `${b.prefix}${n - 1}`;
+      setName(last);
+      setEnd(String(n - 1));
+      load(last, String(n - 1));
+    });
+  };
+  const skip = (b: SavedBoxelDTO, n: number, on: boolean) => {
+    setCutAsk(null);
+    void patchSaved(b, { skip: n, on });
+  };
+  const extendTo = (b: SavedBoxelDTO, n: number) => {
+    const last = `${b.prefix}${n}`;
+    void savedCall({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lastSystem: last }),
+    }).then((ok) => {
+      if (!ok) return;
+      setName(last);
+      setEnd(String(n));
+      load(last, String(n));
+    });
+  };
+
   const addSaved = () => {
     const typed = lastInput.trim();
     if (!typed) return;
@@ -203,10 +240,21 @@ export function BoxelModal({
                     </span>
                     <span className="boxel-saved__count">
                       {b.flown} / {b.total} flown
+                      {b.skipped.length ? <span className="dim"> · {b.skipped.length} skipped</span> : null}
                     </span>
                     <span className="boxel-saved__next">
+                      {b.flownBeyond.length ? (
+                        <button
+                          type="button"
+                          className="fdb-chip boxel-saved__extend"
+                          title={`You have flown -${b.flownBeyond.join(", -")} too: the boxel goes further than -${b.end}.`}
+                          onClick={() => extendTo(b, b.flownBeyond[b.flownBeyond.length - 1]!)}
+                        >
+                          Extend to -{b.flownBeyond[b.flownBeyond.length - 1]}
+                        </button>
+                      ) : null}{" "}
                       {done ? (
-                        <span className="fdb-dss">all flown</span>
+                        <span className="fdb-dss">{b.skipped.length ? "done" : "all flown"}</span>
                       ) : (
                         <>
                           <span className="dim">next </span>
@@ -333,6 +381,43 @@ export function BoxelModal({
             {data.noIndex ? (
               <p className="dim tiny">No galaxy index on this machine: only your own journals were read.</p>
             ) : null}
+            {savedHere && cutAsk != null ? (
+              (() => {
+                const n = cutAsk;
+                const after = savedHere.end - n;
+                const flownFrom = data.rows.filter((r) => r.n >= n && r.visited).length + savedHere.flownBeyond.length;
+                return (
+                  <div className="boxel-cut" role="alertdialog" aria-label="Delete from here">
+                    <span>
+                      Delete <strong>-{n}</strong>
+                      {after > 0 ? ` and the ${after.toLocaleString()} after it` : ""} from this saved boxel? It will end at -{n - 1}.
+                      {flownFrom > 0 ? (
+                        <>
+                          {" "}
+                          <strong className="warn">
+                            {flownFrom} of the systems from -{n} on {flownFrom === 1 ? "is" : "are"} flown
+                          </strong>{" "}
+                          — the boxel goes on past it. To finish it without flying -{n}, skip it instead.
+                        </>
+                      ) : null}
+                    </span>
+                    <span className="boxel-cut__actions">
+                      {flownFrom > 0 && !skipSet.has(n) ? (
+                        <button type="button" className="fdb-chip fdb-chip--on" onClick={() => skip(savedHere, n, true)}>
+                          Skip -{n} instead
+                        </button>
+                      ) : null}
+                      <button type="button" className="fdb-chip boxel-saved__del" onClick={() => cutFrom(savedHere, n)}>
+                        Delete from -{n}
+                      </button>
+                      <button type="button" className="fdb-chip" onClick={() => setCutAsk(null)}>
+                        Keep
+                      </button>
+                    </span>
+                  </div>
+                );
+              })()
+            ) : null}
             <div className="fdb-scroll">
               <table className="fdb-table">
                 <thead>
@@ -350,7 +435,12 @@ export function BoxelModal({
                   {data.rows
                     .filter((r) => !onlyKnown || r.visited || r.known)
                     .map((r) => (
-                      <tr key={r.n} className={r.visited ? "boxel-row boxel-row--done" : "boxel-row"}>
+                      <tr
+                        key={r.n}
+                        className={
+                          r.visited || skipSet.has(r.n) ? "boxel-row boxel-row--done" : "boxel-row"
+                        }
+                      >
                         <td className="fdb-num dim">{r.n}</td>
                         <td className="fdb-sys">
                           {r.name}
@@ -359,6 +449,8 @@ export function BoxelModal({
                         <td>
                           {r.visited ? (
                             <span className="fdb-dss">flown</span>
+                          ) : skipSet.has(r.n) ? (
+                            <span className="boxel-skipped">skipped</span>
                           ) : (
                             <span className="dim">—</span>
                           )}
@@ -383,10 +475,32 @@ export function BoxelModal({
                             <span className="dim">—</span>
                           )}
                         </td>
-                        <td>
+                        <td className="boxel-row__actions">
                           <button type="button" className="fdb-chip" onClick={() => void lookUp(r.name)}>
                             Look up
                           </button>
+                          {savedHere && r.n <= savedHere.end && !r.visited ? (
+                            <button
+                              type="button"
+                              className={`fdb-chip${skipSet.has(r.n) ? " fdb-chip--on" : ""}`}
+                              aria-pressed={skipSet.has(r.n)}
+                              title="Skipped: not flown, but it counts as done for this boxel"
+                              onClick={() => skip(savedHere, r.n, !skipSet.has(r.n))}
+                            >
+                              {skipSet.has(r.n) ? "Unskip" : "Skip"}
+                            </button>
+                          ) : null}
+                          {savedHere && r.n >= 1 && r.n <= savedHere.end ? (
+                            <button
+                              type="button"
+                              className="fdb-chip boxel-saved__x"
+                              aria-label={`Delete -${r.n} and every system after it`}
+                              title="Delete this system and every one after it (a last number typed too high)"
+                              onClick={() => setCutAsk(r.n)}
+                            >
+                              ×
+                            </button>
+                          ) : null}
                         </td>
                       </tr>
                     ))}

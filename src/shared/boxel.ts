@@ -112,7 +112,11 @@ export interface SavedBoxelDTO {
   addedAt: string;
   /** Systems -0..end in his journals. */
   flown: number;
+  /** System numbers he marked skipped (not flown, still counted as done). */
+  skipped: number[];
+  /** Systems past `end` that he has flown: the boxel goes further than the end he typed. */
+  flownBeyond: number[];
   total: number;
-  /** The lowest system number not flown yet; null when all are. */
+  /** The lowest system number neither flown nor skipped; null when the boxel is done. */
   next: string | null;
 }

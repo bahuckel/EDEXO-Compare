@@ -8,10 +8,10 @@
  */
 import { poiRecords, readPoiStatus } from "./edastroPoi.js";
 import { carrierRecords, readCarrierStatus } from "./edastroCarriers.js";
-import { nspBySystem, readNspStatus } from "./edastroNsp.js";
+import { edastroGreenReports, nspBySystem, readNspStatus } from "./edastroNsp.js";
 import type { BookmarksService } from "./bookmarks.js";
 import { GGG_CATALOGUE } from "../shared/gggCatalogue.js";
-import { shortClass } from "../shared/greenGasGiant.js";
+import { greenCodexClassLabel, shortClass } from "../shared/greenGasGiant.js";
 import type { GalaxyLayerDTO, GalaxyLayerKind } from "../shared/galaxyLayers.js";
 
 export type { GalaxyLayerDTO, GalaxyLayerKind } from "../shared/galaxyLayers.js";
@@ -55,9 +55,16 @@ export function galaxyLayer(
   const out = builder();
   if (kind === "ggg") {
     // The edGGG catalogue (shipped with the app), then the commander's own confirmed finds.
+    const catalogued = new Set<string>();
     for (const [n, body, cls, t, x, y, z] of GGG_CATALOGUE) {
       const system = body.replace(/\s+(?:[A-Z]+\s+)?\d+(?:\s+[a-z])*$/, "");
+      catalogued.add(system.toLowerCase());
       out.add(x, y, z, body, `GGG #${n} · ${shortClass(cls)} · ${Number(t.toFixed(3))} K`, system);
+    }
+    // EDAstro's codex reports (when the phenomena file is downloaded): systems, not bodies.
+    for (const g of edastroGreenReports()) {
+      if (catalogued.has(g.system.toLowerCase())) continue;
+      out.add(g.x, g.y, g.z, g.system, `EDAstro codex report · ${g.codexIds.map(greenCodexClassLabel).join(", ")} · not in the edGGG catalogue`, g.system);
     }
     for (const g of ownGreen?.() ?? []) out.add(g.x, g.y, g.z, g.body, "Your find — not in the edGGG catalogue", g.system);
     return out.done(kind);
