@@ -2,6 +2,7 @@
  * The app bar and its tray, split out of App.tsx (WEBUI-REDESIGN 7.3). No logic changed.
  */
 import { useLastStateAt } from "./useLiveSnapshot";
+import { HeaderArt } from "./HeaderArt";
 import { useConfirm, useToast } from "./ui/feedback";
 import { InfoPopover, Tooltip } from "./ui/Tooltip";
 import {
@@ -282,6 +283,7 @@ export const HeaderBar = memo(function HeaderBar({
 
   return (
     <header className="top">
+      <HeaderArt />
       {/*
         Three zones, not one wrapping row.
 
