@@ -48,12 +48,24 @@ describe("the verdict", () => {
     expect(classifyGreenGiant(base)).toBeNull();
   });
 
-  it("likely at a catalogued temperature of the same class, within the journal's precision", () => {
-    expect(classifyGreenGiant({ planetClass: C1, surfaceTemperatureK: 91.617615 })?.level).toBe("likely");
-    expect(classifyGreenGiant({ planetClass: C1, surfaceTemperatureK: 91.6181 })?.level).toBe("likely");
-    expect(classifyGreenGiant({ planetClass: C1, surfaceTemperatureK: 91.62 })).toBeNull();
+  it("likely at a temperature catalogued GGGs share, for a class seen there, within the journal's precision", () => {
+    // 130 K: two class I GGGs.
+    expect(classifyGreenGiant({ planetClass: C1, surfaceTemperatureK: 130 })?.level).toBe("likely");
+    expect(classifyGreenGiant({ planetClass: C1, surfaceTemperatureK: 130.0009 })?.level).toBe("likely");
+    expect(classifyGreenGiant({ planetClass: C1, surfaceTemperatureK: 130.002 })).toBeNull();
     // The same temperature on another class says nothing.
-    expect(classifyGreenGiant({ planetClass: "Sudarsky class II gas giant", surfaceTemperatureK: 91.617615 })).toBeNull();
+    expect(classifyGreenGiant({ planetClass: "Sudarsky class II gas giant", surfaceTemperatureK: 130 })).toBeNull();
+    // 158 K: water-life GGGs and the water giant, so both classes.
+    expect(classifyGreenGiant({ planetClass: "Water giant", surfaceTemperatureK: 158 })?.level).toBe("likely");
+    expect(classifyGreenGiant({ planetClass: "Gas giant with water based life", surfaceTemperatureK: 176.666687 })?.level).toBe("likely");
+  });
+
+  it("nothing at a temperature only one GGG has: those matches are chance", () => {
+    // Ammonia-life GGG #4 and class I #66: each alone at its value.
+    expect(classifyGreenGiant({ planetClass: "Gas giant with ammonia based life", surfaceTemperatureK: 133.510468 })).toBeNull();
+    expect(classifyGreenGiant({ planetClass: C1, surfaceTemperatureK: 91.617615 })).toBeNull();
+    // The catalogued body itself is still catalogued, by name.
+    expect(classifyGreenGiant({ planetClass: "Gas giant with ammonia based life", surfaceTemperatureK: 133.510468, bodyName: "Col 285 Sector VU-M c8-1 4" })?.level).toBe("catalogued");
   });
 
   it("possible on the class III 30 K grid, and not between its steps", () => {

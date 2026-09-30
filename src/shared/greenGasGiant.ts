@@ -14,8 +14,9 @@
  * - `confirmed`  the codex logged a green gas giant for this body, or the commander marked it green;
  * - `catalogued` the body is in the edGGG catalogue;
  * - `likely`     EDAstro's codex file has a green report of its class in its system and it is the
- *                only body of that class scanned there; or its surface temperature is a catalogued
- *                GGG's, for the same class (±0.001 K);
+ *                only body of that class scanned there; or its surface temperature is one that at
+ *                least two catalogued GGGs share, for a class seen there (±0.001 K) — or a catalogued
+ *                class III temperature, which sits on the grid;
  * - `possible`   such a report with more than one body of the class; a class III on the 30 K grid;
  *                or any gas giant in a system with a K10-Type Anomaly
  *                (an NSP that only spawns around GGGs: 8 of 8 K10 systems in EDAstro's codex file are
@@ -23,6 +24,14 @@
  *
  * Checked against the owner's 2,394 gas giants on 2026-09-30: nothing fires below `confirmed`, as it
  * should for something this rare (70 known).
+ *
+ * Why only shared temperatures (checked 2026-09-30 on Spansh's 1.14 M life-bearing and water giants):
+ * where temperature decides, GGGs repeat it — 12 water-life GGGs sit on just 3 values (158 K ×3 with
+ * the water giant, 176.667 K ×8), class III on its grid, class IV at 1150 K ×2, class I at 130 K ×2.
+ * Where it does not, every GGG has its own value (ammonia-life 5 of 5, class II 15 of 15), and a match
+ * is chance: giants within 0.001 K of the ammonia GGGs' temperatures were as common as within 0.001 K
+ * of shifted control values (83 vs 75). Leaving each GGG out in turn, the shared rule still finds 25
+ * of 70 by temperature, the same as matching every catalogued value, and 91 chance hits go.
  */
 import { codexEntryKey } from "./codexLog.js";
 import { GGG_CATALOGUE } from "./gggCatalogue.js";
@@ -58,13 +67,25 @@ const CLASS_III = "Sudarsky class III gas giant";
 const GRID_MIN_K = 310;
 const GRID_MAX_K = 790;
 
+function onClassIIIGrid(t: number): boolean {
+  if (t < GRID_MIN_K - DELTA_K || t > GRID_MAX_K + DELTA_K) return false;
+  const k = Math.round((t - GRID_MIN_K) / 30);
+  return Math.abs(GRID_MIN_K + 30 * k - t) <= DELTA_K;
+}
+
 const byName = new Map<string, number>();
+for (const [n, body] of GGG_CATALOGUE) byName.set(body.toLowerCase(), n);
+
+/** The temperatures that count, per class: shared by two or more GGGs (any class), or class III on the grid. */
 const tempsByClass = new Map<string, number[]>();
-for (const [n, body, cls, t] of GGG_CATALOGUE) {
-  byName.set(body.toLowerCase(), n);
-  const list = tempsByClass.get(cls) ?? [];
-  list.push(t);
-  tempsByClass.set(cls, list);
+for (const [, , cls, t] of GGG_CATALOGUE) {
+  const shared = GGG_CATALOGUE.filter((r) => Math.abs(r[3] - t) <= DELTA_K);
+  if (shared.length < 2 && !(cls === CLASS_III && onClassIIIGrid(t))) continue;
+  for (const r of shared) {
+    const list = tempsByClass.get(r[2]) ?? [];
+    if (!list.some((k) => Math.abs(k - t) <= DELTA_K)) list.push(t);
+    tempsByClass.set(r[2], list);
+  }
 }
 
 export function isGggClass(planetClass: string | null | undefined): boolean {
@@ -75,12 +96,6 @@ export function isGggClass(planetClass: string | null | undefined): boolean {
 export function gggCatalogueNumber(bodyName: string | null | undefined): number | null {
   if (!bodyName) return null;
   return byName.get(bodyName.trim().toLowerCase()) ?? null;
-}
-
-function onClassIIIGrid(t: number): boolean {
-  if (t < GRID_MIN_K - DELTA_K || t > GRID_MAX_K + DELTA_K) return false;
-  const k = Math.round((t - GRID_MIN_K) / 30);
-  return Math.abs(GRID_MIN_K + 30 * k - t) <= DELTA_K;
 }
 
 const fmtK = (t: number) => `${Number(t.toFixed(6))} K`;
@@ -157,7 +172,7 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
   const t = i.surfaceTemperatureK;
   if (t != null && Number.isFinite(t)) {
     const hit = (tempsByClass.get(pc) ?? []).find((k) => Math.abs(k - t) <= DELTA_K);
-    if (hit != null) return { level: "likely", why: `${fmtK(t)} — a catalogued green ${shortClass(pc)} temperature` };
+    if (hit != null) return { level: "likely", why: `${fmtK(t)} — a temperature catalogued green ${shortClass(pc)}s share` };
     if (pc === CLASS_III && onClassIIIGrid(t)) {
       return { level: "possible", why: `${fmtK(t)} — on the class III green temperature grid (every 30 K from 310)` };
     }
