@@ -1,6 +1,7 @@
 /**
  * The Options dialog's panels: uploads (Canonn, EDDN, EDSM), EDSM fetching, collection focus, snapshot stamp, feeder corpus. Split out of OptionsModal.tsx (code review D, 2026-09-27).
  */
+import { readBackdropOn, setBackdropOn } from "./HexSignals";
 import { useFeederStatus } from "./FeederStatusPanel";
 import { FoldPanel } from "./ui/Fold";
 import { Select } from "./ui/Select";
@@ -567,6 +568,7 @@ export function NotifyPanel() {
  */
 export function ColourSchemePanel() {
   const [choice, setChoice] = useState<AppThemeChoice>(() => readAppTheme());
+  const [backdrop, setBackdrop] = useState(readBackdropOn);
   const [saved, setSaved] = useState<SavedAppTheme[]>(() => readSavedThemes());
   const [name, setName] = useState("");
   const current = resolveAppTheme(choice);
@@ -659,6 +661,20 @@ export function ColourSchemePanel() {
           Save scheme
         </button>
       </div>
+      <label
+        className="options-toggle"
+        title="The slow glimmer and signals over the hexagon grid behind the app. Off leaves the grid still. Kept on this device."
+      >
+        <input
+          type="checkbox"
+          checked={backdrop}
+          onChange={(ev) => {
+            setBackdrop(ev.target.checked);
+            setBackdropOn(ev.target.checked);
+          }}
+        />
+        <span>Animated background</span>
+      </label>
     </FoldPanel>
   );
 }

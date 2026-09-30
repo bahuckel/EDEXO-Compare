@@ -11,16 +11,37 @@
  * nothing at all with "reduce motion" on.
  *
  * Strength: `?backdrop=soft` (default) or `?backdrop=faint`, remembered in this browser — two levels
- * for the owner to choose between.
+ * for the owner to choose between. Options → Colour scheme → "Animated background" turns it off and
+ * on again at once (owner, 2026-09-30); the static grid stays either way. Per device, on by default.
  *
  * The canvas is made inside the effect, not rendered: a canvas hands its drawing to a worker once,
  * and a remount (StrictMode in development) needs a fresh one.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { APP_THEME_EVENT, backdropAccentRgb } from "./appTheme";
 import { runHexSignals, type BackdropLevel, type BackdropOptions } from "./hexSignalsEngine";
 
 const LEVEL_KEY = "edexo.backdrop";
+const OFF_KEY = "edexo.backdropOff";
+const BACKDROP_EVENT = "edexo-backdrop";
+
+export function readBackdropOn(): boolean {
+  try {
+    return localStorage.getItem(OFF_KEY) !== "1";
+  } catch {
+    return true;
+  }
+}
+
+export function setBackdropOn(on: boolean): void {
+  try {
+    if (on) localStorage.removeItem(OFF_KEY);
+    else localStorage.setItem(OFF_KEY, "1");
+  } catch {
+    /* applied for this session anyway */
+  }
+  window.dispatchEvent(new CustomEvent(BACKDROP_EVENT, { detail: on }));
+}
 
 function backdropLevel(): BackdropLevel {
   try {
@@ -38,10 +59,21 @@ function backdropLevel(): BackdropLevel {
 
 export function HexSignals() {
   const host = useRef<HTMLDivElement | null>(null);
+  const [on, setOn] = useState(readBackdropOn);
+
+  useEffect(() => {
+    const onToggle = (ev: Event) => setOn((ev as CustomEvent<boolean>).detail !== false);
+    window.addEventListener(BACKDROP_EVENT, onToggle);
+    return () => window.removeEventListener(BACKDROP_EVENT, onToggle);
+  }, []);
 
   useEffect(() => {
     const el = host.current;
     if (!el) return;
+    if (!on) {
+      el.setAttribute("data-backdrop", "off: option");
+      return;
+    }
     const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     // Which way it runs, readable in devtools (`data-backdrop` on this element) when it seems missing.
     const mark = (state: string) => el.setAttribute("data-backdrop", state);
@@ -132,7 +164,7 @@ export function HexSignals() {
       stop();
       canvas.remove();
     };
-  }, []);
+  }, [on]);
 
   return <div ref={host} aria-hidden="true" />;
 }
