@@ -420,3 +420,28 @@
   color: var(--warn);
   margin-left: 0.15rem;
 }
+
+/* ---- Notable bodies in the tab strip (2026-09-30; off unless "+ Notable" is on) ---- */
+.tabs-notable-toggle {
+  font: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.4rem;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--accent-a22);
+  cursor: pointer;
+}
+.tabs-notable-toggle--on {
+  color: var(--accent-bright);
+  border-color: var(--accent);
+}
+.tab-n {
+  font-weight: 800;
+  color: #7ac8ff;
+}
+.tab--notable .tab-label {
+  color: var(--text-dim);
+}

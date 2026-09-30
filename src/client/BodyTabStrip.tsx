@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { BodyComputed, ShipProximityDTO } from "@shared/types";
+import type { MouseEvent as ReactMouseEvent } from "react";
+import type { BodyComputed, NotableBodyInfo, ShipProximityDTO } from "@shared/types";
 import { BODY_SORT_OPTIONS, type BodySortMode } from "./bodySort";
 import { fmtCrShort } from "./credits";
 import { Select } from "./ui/Select";
@@ -51,6 +52,11 @@ export const BodyTabStrip = memo(function BodyTabStrip({
   sortMode,
   onSortChange,
   proximity,
+  notables = [],
+  notableTabs = false,
+  onToggleNotableTabs,
+  onNotableClick,
+  notableValue,
 }: {
   sections: TabSection[];
   selectedBodyKey: string | null;
@@ -60,7 +66,22 @@ export const BodyTabStrip = memo(function BodyTabStrip({
   sortMode: BodySortMode;
   onSortChange: (mode: BodySortMode) => void;
   proximity: ShipProximityDTO | null;
+  /*
+    Notable bodies in the strip (guild tester report, 2026-09-30: "expand the notable bodies in the
+    same manner as the exobio planets … indicate notable, bio, or both"). Off by default. A bio tab
+    that is also notable gets an N; the notable bodies without biology follow in a section of their
+    own and open the same quick facts as the Notable card.
+  */
+  notables?: NotableBodyInfo[];
+  notableTabs?: boolean;
+  onToggleNotableTabs?: () => void;
+  onNotableClick?: (n: NotableBodyInfo, ev: ReactMouseEvent) => void;
+  /** A notable body's scan value, when the system map has it. */
+  notableValue?: (bodyId: number) => number | null;
 }) {
+  const notableByKey = new Map(notables.map((n) => [`${n.systemAddress}:${n.bodyId}`, n]));
+  const bioKeys = new Set(sections.flatMap((s) => s.hostCards.flat().map((b) => b.state.key)));
+  const notableOnly = notableTabs ? notables.filter((n) => !bioKeys.has(`${n.systemAddress}:${n.bodyId}`)) : [];
   const distances = sortMode === "closest" ? (proximity?.distanceLsByBodyKey ?? null) : null;
   const estimate = proximity?.basis === "orbits";
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -138,6 +159,21 @@ export const BodyTabStrip = memo(function BodyTabStrip({
             ariaLabel="Order of the body tabs"
             menuMinWidth={150}
           />
+          {notables.length > 0 && onToggleNotableTabs ? (
+            <button
+              type="button"
+              className={`tabs-notable-toggle${notableTabs ? " tabs-notable-toggle--on" : ""}`}
+              aria-pressed={notableTabs}
+              onClick={onToggleNotableTabs}
+              title={
+                notableTabs
+                  ? "Hide the notable bodies from the tabs"
+                  : "Show the notable bodies here too (N): Earth-likes, water and ammonia worlds, terraformables, Helium gas giants"
+              }
+            >
+              + Notable
+            </button>
+          ) : null}
         </div>
         <button
           type="button"
@@ -190,6 +226,7 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                     const dist = distances?.[b.state.key];
                     // CX: something here would be a new codex entry for this region (owner, 2026-09-26).
                     const cx = b.matches.some((x) => !x.unlikely && x.codexNew === true);
+                    const nb = notableTabs ? notableByKey.get(b.state.key) : undefined;
                     return (
                       <button
                         key={b.state.key}
@@ -200,7 +237,7 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         data-body-key={b.state.key}
                         className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}`}
                         onClick={() => onSelect(b.state.key)}
-                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${cx ? ", a new codex entry for this region (CX)" : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`}
+                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`}
                       >
                         <span className="tab-label">{b.tabLabel}</span>
                         <span className="tab-meta">
@@ -211,6 +248,7 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                             <span className="tab-dist"> · {fmtTabDistanceLs(dist, estimate)}</span>
                           ) : null}
                           {cx ? <span className="tab-cx"> · CX</span> : null}
+                          {nb ? <span className="tab-n"> · N</span> : null}
                         </span>
                         {done ? <span className="tab-dot" aria-hidden="true" /> : null}
                         {focus ? (
@@ -225,6 +263,32 @@ export const BodyTabStrip = memo(function BodyTabStrip({
               ))}
             </div>
           ))}
+          {notableOnly.length ? (
+            <div className="tabs-orbit-section tabs-notable-section">
+              <span className="tabs-orbit-label">Notable</span>
+              <div className="tabs-strip-host-card" role="presentation">
+                {notableOnly.map((n) => {
+                  const v = notableValue?.(n.bodyId) ?? null;
+                  return (
+                    <button
+                      key={`n-${n.bodyId}`}
+                      type="button"
+                      className={`tab tab--notable${n.dssMapped ? " tab--done" : ""}`}
+                      tabIndex={-1}
+                      onClick={(ev) => onNotableClick?.(n, ev)}
+                      title={`${n.bodyLabelShort}: ${n.tag} — ${n.dssMapped ? "mapped" : "not mapped yet"}; no biology. Click for quick facts.`}
+                    >
+                      <span className="tab-label">{n.bodyLabelShort}</span>
+                      <span className="tab-meta">
+                        <span className="tab-n">N</span>
+                        {v != null ? <> · {fmtCrShort(v)}</> : null}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
         <button
           type="button"

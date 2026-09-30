@@ -1,3 +1,7 @@
+import type { MouseEvent as ReactMouseEvent } from "react";
+import type { NotableBodyInfo } from "@shared/types";
+import { isBool, usePersistedState } from "./usePersistedState";
+import { NOTABLE_QUICK_EVENT } from "./HeaderBar";
 import { useLiveSnapshot } from "./useLiveSnapshot";
 import { useToast } from "./ui/feedback";
 import { arrivalTripRanks } from "@shared/systemTriage";
@@ -227,6 +231,20 @@ export function App() {
    * says — commanders read the ancestry straight off the name, which is what the name is for. The
    * grouping itself stays: it is what puts a moon next to its planet.
    */
+  // Notable bodies in the tab strip (off by default; BodyTabStrip.tsx).
+  const [notableTabs, setNotableTabs] = usePersistedState("tabs.notable", false, isBool);
+  const toggleNotableTabs = useCallback(() => setNotableTabs(!notableTabs), [notableTabs, setNotableTabs]);
+  const openNotableQuick = useCallback((n: NotableBodyInfo, ev: ReactMouseEvent) => {
+    ev.stopPropagation();
+    // The quick-facts popup belongs to the header, as the Notable card's does.
+    window.dispatchEvent(new CustomEvent(NOTABLE_QUICK_EVENT, { detail: { notable: n, x: ev.clientX, y: ev.clientY } }));
+  }, []);
+  const detailsByBodyId = snapshot?.systemMap?.detailsByBodyId;
+  const notableValue = useCallback(
+    (bodyId: number) => detailsByBodyId?.[String(bodyId)]?.fssCredits ?? null,
+    [detailsByBodyId],
+  );
+
   const tabSections = useMemo<TabSection[]>(
     () =>
       bodySort !== "system"
@@ -486,6 +504,11 @@ export function App() {
             sortMode={bodySort}
             onSortChange={setBodySort}
             proximity={snapshot.shipProximity ?? null}
+            notables={snapshot.notableBodies ?? []}
+            notableTabs={notableTabs}
+            onToggleNotableTabs={toggleNotableTabs}
+            onNotableClick={openNotableQuick}
+            notableValue={notableValue}
           />
           {selected ? (
             <BodyPane

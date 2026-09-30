@@ -53,6 +53,9 @@ import {
 import type { RouteHeaderMetricMode } from "./routeHeader";
 import { CopySystemButton } from "./CopySystemButton";
 import { SystemCardRow } from "./SystemCard";
+
+/** A notable body's quick facts, asked for from outside the header (the body strip's notable tabs). */
+export const NOTABLE_QUICK_EVENT = "edexo-notable-quick";
 import { JournalSystemSearch } from "./JournalSystemSearch";
 
 const PlanetQuickFactsPopup = lazy(() =>
@@ -163,6 +166,15 @@ export const HeaderBar = memo(function HeaderBar({
     x: number;
     y: number;
   } | null>(null);
+  // Notable tabs in the body strip open the same quick facts (App.tsx, BodyTabStrip.tsx).
+  useEffect(() => {
+    const on = (ev: Event) => {
+      const d = (ev as CustomEvent<{ notable: NotableBodyInfo; x: number; y: number }>).detail;
+      if (d?.notable) setNotableQuick(d);
+    };
+    window.addEventListener(NOTABLE_QUICK_EVENT, on);
+    return () => window.removeEventListener(NOTABLE_QUICK_EVENT, on);
+  }, []);
   const [routeHeaderMetricMode, setRouteHeaderMetricMode] = useState<RouteHeaderMetricMode>(() =>
     readRouteHeaderMetricMode(),
   );
