@@ -28,7 +28,11 @@ export type AchievementKind =
   /** Codex entries for the curated world classes, in the region. */
   | "regionWorlds"
   /** Visit a handful of EDAstro points of interest in the region (needs the POI download). */
-  | "regionSights";
+  | "regionSights"
+  /** Codex entries for the surface geology found in the region: fumaroles, vents, geysers, lava spouts. */
+  | "regionGeology"
+  /** Codex entries for the space-borne phenomena found in the region: clouds, molluscs, pods, trees, crystals. */
+  | "regionSpace";
 
 /** 0 = none yet, 1 = bronze, 2 = silver, 3 = gold. */
 export type AchievementStep = 0 | 1 | 2 | 3;

@@ -99,7 +99,18 @@ export interface AchievementInputs {
    * has not downloaded the EDAstro file. `key` is the system name ({@link systemNameKey}).
    */
   regionPois?: ReadonlyMap<string, readonly { key: string; label: string; hint: string }[]> | null;
+  /**
+   * Region join key → the codex entries EDSM files under "biological" that are not plants: geology
+   * and space-borne phenomena, with their names (guild tester report, 2026-09-30: "include geological
+   * features in codex tracking").
+   */
+  regionOther?: ReadonlyMap<string, readonly { key: string; name: string }[]>;
 }
+
+/** Surface geology codex keys: fumaroles, ice fumaroles, gas vents, geysers, ice geysers, lava spouts. */
+export const GEOLOGY_KEY = /^codex_ent_(fumarole|icefumarole|gas_vents|geysers|icegeysers|lava)/;
+/** Space-borne phenomena codex keys: Lagrange clouds, molluscs, pods, trees, crystals, mineral spheres. */
+export const SPACE_KEY = /^codex_ent_(gas_clds|small_org|l_|s_|spoi)/;
 
 /** One set: which entries it holds and, for region sets, the region they have to be done in. */
 export interface AchievementSet {
@@ -200,6 +211,28 @@ export function buildAchievementSets(i: AchievementInputs): AchievementSet[] {
       ["regionWorlds", "worlds", "Worlds", WORLD_GROUPS],
     ] as const) {
       const groups = bodies ? groupCodexKeys(table, bodies) : [];
+      if (!groups.length) continue;
+      const id = `${rid}:${suffix}`;
+      out.push({
+        id,
+        kind,
+        name: name(id, `${label} — ${r.name}`),
+        region,
+        source: "codex",
+        entries: groups.map((g) => g.key),
+        groups,
+      });
+    }
+    const other = i.regionOther?.get(r.key) ?? [];
+    for (const [kind, suffix, label, re] of [
+      ["regionGeology", "geology", "Geology", GEOLOGY_KEY],
+      ["regionSpace", "space", "Space-borne", SPACE_KEY],
+    ] as const) {
+      // One slot per codex entry: the codex counts each one on its own.
+      const groups: AchievementGroup[] = other
+        .filter((e) => re.test(e.key))
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((e) => ({ key: e.key, label: e.name, anyOf: [e.key] }));
       if (!groups.length) continue;
       const id = `${rid}:${suffix}`;
       out.push({

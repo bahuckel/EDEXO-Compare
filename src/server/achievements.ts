@@ -172,11 +172,14 @@ function catalogue(
   const entries = new Map<string, PlantEntry>();
   const typeIndex: (string | null)[] = [];
   const bodyIndex: (string | null)[] = [];
+  const otherIndex: ({ key: string; name: string } | null)[] = [];
   for (const [key, name, kind] of data.types) {
     const e = kind === "bio" ? plantEntry(key, name) : null;
     if (e) entries.set(e.key, e);
     typeIndex.push(e ? e.key : null);
     bodyIndex.push(kind === "bodies" ? key.toLowerCase() : null);
+    // EDSM's "biological" that is not a plant: geology and space-borne phenomena.
+    otherIndex.push(kind === "bio" && !e ? { key: key.toLowerCase(), name } : null);
   }
 
   // Entries newer than the EDSM dump the catalogue was built from, and the regions they are known in.
@@ -202,18 +205,23 @@ function catalogue(
 
   const regionNames = new Map<string, string>();
   const regionBodies = new Map<string, Set<string>>();
+  const regionOther = new Map<string, { key: string; name: string }[]>();
   const regions = Object.keys(data.regions)
     .sort()
     .map((name) => {
       const key = regionJoinKey(name);
       regionNames.set(key, name);
       const found = new Set<string>();
+      const other = new Map<string, { key: string; name: string }>();
       for (const row of data.regions[name]?.bio ?? []) {
         for (const i of row[4]) {
           const k = typeIndex[i];
           if (k) found.add(k);
+          const o = otherIndex[i];
+          if (o) other.set(o.key, o);
         }
       }
+      regionOther.set(key, [...other.values()]);
       for (const k of extraByRegion.get(key) ?? []) found.add(k);
       const bodies = new Set<string>();
       for (const row of data.regions[name]?.bodies ?? []) {
@@ -251,6 +259,7 @@ function catalogue(
     done,
     names: loadNames(projectRoot),
     regionBodies,
+    regionOther,
     regionPois,
     galaxyTier: (k) => {
       const id = speciesOf.get(k);

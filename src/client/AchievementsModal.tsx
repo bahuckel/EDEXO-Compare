@@ -24,11 +24,13 @@ const KIND_LABEL: Record<AchievementDTO["kind"], string> = {
   regionStars: "Stars",
   regionWorlds: "Worlds",
   regionSights: "Sights",
+  regionGeology: "Geology",
+  regionSpace: "Space-borne",
 };
 
 /** What makes one entry count, for the tooltip. */
 function howItCounts(kind: AchievementDTO["kind"], legacy: boolean): string {
-  if (kind === "regionStars" || kind === "regionWorlds")
+  if (kind === "regionStars" || kind === "regionWorlds" || kind === "regionGeology" || kind === "regionSpace")
     return "Counts once its codex entry is logged in this region";
   if (kind === "regionSights") return "Counts once you arrive in the system";
   if (kind === "regionSampler") return "Any plant of this tier, third sample done in this region";
@@ -181,7 +183,11 @@ function Row({
           title={
             tracked
               ? "Stop tracking"
-              : a.kind === "regionStars" || a.kind === "regionWorlds" || a.kind === "regionSights"
+              : a.kind === "regionStars" ||
+                  a.kind === "regionWorlds" ||
+                  a.kind === "regionSights" ||
+                  a.kind === "regionGeology" ||
+                  a.kind === "regionSpace"
                 ? "Track — the HUD lists what is still to find, nearest sights first"
                 : "Track — mark its plants in the app and the HUD"
           }
@@ -213,12 +219,14 @@ const SECTION_OF: Record<AchievementDTO["kind"], string> = {
   regionStars: "Overview",
   regionWorlds: "Overview",
   regionSights: "Overview",
+  regionGeology: "Geology and phenomena",
+  regionSpace: "Geology and phenomena",
   genus: "By genus",
   regionGenus: "By genus",
   rarity: "By rarity",
   regionRarity: "By rarity",
 };
-const SECTION_ORDER = ["Everything", "Overview", "By genus", "By rarity"];
+const SECTION_ORDER = ["Everything", "Overview", "Geology and phenomena", "By genus", "By rarity"];
 
 function medalCounts(sets: readonly AchievementDTO[]): [number, number, number] {
   const n: [number, number, number] = [0, 0, 0];

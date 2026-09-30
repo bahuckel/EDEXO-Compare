@@ -207,6 +207,35 @@ describe("the non-exobiology sets (2026-09-28)", () => {
     expect(achievementDto(set, p)).toMatchObject({ done: 1, total: 4 });
   });
 
+  it("geology and space-borne phenomena: one slot per codex entry found in the region (2026-09-30)", () => {
+    const sets = buildAchievementSets({
+      entries,
+      regions: [{ name: "The Veils", key: "veils", entries: new Set(entries.keys()) }],
+      done: new Map(),
+      galaxyTier: (k) => tiers[k] ?? null,
+      regionTier: (_r, k) => ({ found: true, tier: tiers[k] }),
+      regionOther: new Map([
+        [
+          "veils",
+          [
+            { key: "codex_ent_icefumarole_ammoniageysers", name: "Ammonia Ice Fumarole" },
+            { key: "codex_ent_lava_spout_silicatemagma", name: "Silicate Magma Lava Spout" },
+            { key: "codex_ent_gas_clds_light", name: "Proto-Lagrange Cloud" },
+            { key: "codex_ent_s_seed_sdtp01_bl", name: "Caeruleum peduncle Pod" },
+            { key: "codex_ent_thargoid_tower", name: "Thargoid tower" },
+          ],
+        ],
+      ]),
+    });
+    const geo = sets.find((s) => s.id === "region:veils:geology")!;
+    expect(geo).toMatchObject({ kind: "regionGeology", source: "codex", name: "Geology — The Veils" });
+    expect(geo.groups!.map((g) => g.label)).toEqual(["Ammonia Ice Fumarole", "Silicate Magma Lava Spout"]);
+    const space = sets.find((s) => s.id === "region:veils:space")!;
+    expect(space.groups!.map((g) => g.label)).toEqual(["Caeruleum peduncle Pod", "Proto-Lagrange Cloud"]);
+    const p = achievementProgress(new Map(), new Set(["veils|codex_ent_gas_clds_light"]));
+    expect(achievementDto(space, p)).toMatchObject({ done: 1, total: 2 });
+  });
+
   it("the sampler wants one plant of each tier found in the region", () => {
     const set = build(null).find((s) => s.id === "region:veils:sampler")!;
     expect(set.entries).toEqual(["common", "rare"]);
