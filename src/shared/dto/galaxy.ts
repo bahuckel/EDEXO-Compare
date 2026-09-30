@@ -338,6 +338,17 @@ export interface FirstDiscoveryBacklogRowDTO {
    * though the bonus were confirmed.
    */
   footfallObserved: boolean;
+  /**
+   * Likely species here that would be new to the commander's codex in this body's region (guild
+   * tester report, 2026-09-30: "codex entries you missed"). Predictions from the candidate list —
+   * the colour is not judged, only whether the species was ever logged in the region.
+   */
+  codexNew?: string[];
+  /**
+   * Someone has walked this body: no 5x, priced at 1x. Listed only for its codex entries — the rows
+   * the "Codex missed" filter adds — and never in the totals.
+   */
+  footfallLost?: boolean;
 }
 
 /**

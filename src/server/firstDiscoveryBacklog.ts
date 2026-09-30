@@ -43,6 +43,10 @@ import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { resolveHostStarBodyId } from "./orbitUtils.js";
 import { footOrganicLocks } from "./organicLocks.js";
 import { perfTime } from "./perf.js";
+import { getProjectRoot } from "./paths.js";
+import { regionForSystem } from "./regionMapData.js";
+import { ownCodexBackupKeys } from "./sharedExomastery.js";
+import { codexNewColoursInRegion } from "../shared/codexLog.js";
 
 /**
  * Is the 5x still there, as far as anything has ever told us?
@@ -81,11 +85,14 @@ function footfallObserved(store: GameStateStore, key: string): boolean {
 function matchContextFor(
   b: BodyExoState,
   scansBySystem: Map<number, Map<number, ExplorationScanRecord>>,
+  regionName: string | null,
 ): SpeciesMatchContext | undefined {
   const byId = scansBySystem.get(b.systemAddress);
   const rec = byId?.get(b.bodyId);
   if (!byId || !rec) return undefined;
   const ctx: SpeciesMatchContext = {};
+  // The region, from where the journals placed the system: the codex is kept per region.
+  if (regionName) ctx.regionName = regionName;
   const starId = resolveHostStarBodyId(rec, byId);
   const star = starId == null ? null : byId.get(starId);
   if (star?.starType?.trim()) {
@@ -111,7 +118,7 @@ function matchContextFor(
  * the same as having collected the plants, and a system cashed in at a station is still full of
  * biology nobody has sampled. See tests/sellKeepsBiology.test.ts.
  */
-function candidates(store: GameStateStore): BodyExoState[] {
+function candidates(store: GameStateStore, withLost = false): BodyExoState[] {
   const out: BodyExoState[] = [];
   for (const b of store.bodies.values()) {
     if (!b.biologicalSignals || b.biologicalSignals <= 0) continue;
@@ -121,7 +128,7 @@ function candidates(store: GameStateStore): BodyExoState[] {
     // A composition scan is not that. It names the species from the ship, pays nothing, and leaves
     // the footfall unclaimed, so a body he comp-scanned is still worth the trip and stays in.
     if (footOrganicLocks(b.organicGenusLocks).length > 0) continue;
-    if (footfallLost(store, b.key)) continue;
+    if (!withLost && footfallLost(store, b.key)) continue;
     // `Landable`, capitalised: PlanetScan mirrors the journal's field names and carries an index
     // signature, so a lower-case guess type-checks and silently reads undefined.
     if (b.scan?.Landable !== true) continue;
@@ -141,12 +148,27 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
     scansBySystem.set(r.systemAddress, byId);
   }
 
+  const root = getProjectRoot();
+  const backup = ownCodexBackupKeys();
+  const logged = backup.size ? new Set([...store.codexRegionLogged, ...backup]) : store.codexRegionLogged;
+  const regionOf = new Map<number, string | null>();
+  const regionFor = (addr: number): string | null => {
+    if (!regionOf.has(addr)) {
+      const p = store.systemPositions.get(addr);
+      regionOf.set(addr, p ? regionForSystem(root, p.x, p.y, p.z) : null);
+    }
+    return regionOf.get(addr)!;
+  };
+
   const rows: FirstDiscoveryBacklogRowDTO[] = [];
-  for (const b of candidates(store)) {
+  // Bodies someone else walked are matched too, for their codex entries alone (see `footfallLost`).
+  for (const b of candidates(store, true)) {
     if (!b.scan) continue;
+    const lost = footfallLost(store, b.key);
+    const region = regionFor(b.systemAddress);
     const run = matchDatabaseToScan(db, b.scan, b.genusHints, b.organicGenusLocks, {
       includeBacterium: true,
-      matchContext: matchContextFor(b, scansBySystem) ?? null,
+      matchContext: matchContextFor(b, scansBySystem, region) ?? null,
       biologicalSignals: b.biologicalSignals,
     });
     const { count: slots, source } = resolveOrganicSlotCount(b);
@@ -158,13 +180,28 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
       prices,
       slots,
       source,
-      5,
+      lost ? 1 : 5,
       seen ?? null,
       true,
       store.bodyFootfallFlag.get(b.key),
       store.bodyMappedFlag.get(b.key),
     );
     if (!range) continue;
+
+    // Codex entries this body could add: likely species never logged in the region (any colour).
+    const codexNew =
+      region && logged.size
+        ? [
+            ...new Set(
+              shownSpeciesMatches(run.matches)
+                .filter(
+                  (m) => !m.unlikely && codexNewColoursInRegion(logged, region, m.entry.displayName, null),
+                )
+                .map((m) => m.entry.displayName),
+            ),
+          ]
+        : [];
+    if (lost && !codexNew.length) continue;
 
     rows.push({
       bodyKey: b.key,
@@ -181,6 +218,8 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
       distanceLy: null,
       firstDiscovery: store.commanderDiscoveredSystem(b.systemAddress) === true,
       footfallObserved: footfallObserved(store, b.key),
+      ...(codexNew.length ? { codexNew } : {}),
+      ...(lost ? { footfallLost: true } : {}),
     });
   }
 
@@ -188,13 +227,15 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
   // ceiling would put a body with one wild outlier candidate above a body that always pays well.
   rows.sort((a, b) => b.minCr - a.minCr || b.maxCr - a.maxCr || a.bodyKey.localeCompare(b.bodyKey));
 
+  // The totals are the 5x backlog: the codex-only rows are not worth a trip for their money.
+  const open = rows.filter((r) => !r.footfallLost);
   return {
     rows,
-    systemCount: new Set(rows.map((r) => r.systemAddress)).size,
-    firstDiscoveryCount: rows.filter((r) => r.firstDiscovery).length,
-    footfallObservedCount: rows.filter((r) => r.footfallObserved).length,
-    totalMinCr: rows.reduce((a, r) => a + r.minCr, 0),
-    totalMaxCr: rows.reduce((a, r) => a + r.maxCr, 0),
+    systemCount: new Set(open.map((r) => r.systemAddress)).size,
+    firstDiscoveryCount: open.filter((r) => r.firstDiscovery).length,
+    footfallObservedCount: open.filter((r) => r.footfallObserved).length,
+    totalMinCr: open.reduce((a, r) => a + r.minCr, 0),
+    totalMaxCr: open.reduce((a, r) => a + r.maxCr, 0),
     computedAt: new Date().toISOString(),
   };
 }
@@ -275,7 +316,8 @@ export function clearFirstDiscoveryBacklogCache(): void {
  * would quietly shrink the backlog every time the map is consulted.
  */
 export function backlogMap(store: GameStateStore): BacklogMapDTO {
-  const rows = firstDiscoveryBacklog(store).rows;
+  // Waiting systems only: a body someone else walked is listed for its codex entries, not a 5x.
+  const rows = firstDiscoveryBacklog(store).rows.filter((r) => !r.footfallLost);
   const bySystem = new Map<number, BacklogSystemDTO>();
   // A set, not a counter: an unplaceable system never reaches `bySystem`, so testing that map to
   // dedupe counted every *body* instead of every system and reported three where one was meant.

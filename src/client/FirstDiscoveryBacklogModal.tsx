@@ -75,11 +75,16 @@ export function FirstDiscoveryBacklogModal({
   const [dssOnly, setDssOnly] = usePersistedState("backlog.dssOnly", false, isBool);
   const [firstOnly, setFirstOnly] = usePersistedState("backlog.firstOnly", false, isBool);
   const [verifiedOnly, setVerifiedOnly] = usePersistedState("backlog.verifiedOnly", false, isBool);
+  const [codexOnly, setCodexOnly] = usePersistedState("backlog.codexOnly", false, isBool);
   /**
    * Value or distance. Both are honest answers to different questions, and neither is a default that
    * suits every trip: the richest body in the list is often thousands of light years away.
    */
-  const [sort, setSort] = usePersistedState<"value" | "distance">("backlog.sort", "value", oneOf("value", "distance"));
+  const [sort, setSort] = usePersistedState<"value" | "distance">(
+    "backlog.sort",
+    "value",
+    oneOf("value", "distance"),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -101,7 +106,6 @@ export function FirstDiscoveryBacklogModal({
     };
   }, []);
 
-
   const rows: FirstDiscoveryBacklogRowDTO[] = useMemo(() => {
     const all = data?.rows ?? [];
     const kept = all.filter(
@@ -109,7 +113,10 @@ export function FirstDiscoveryBacklogModal({
         r.minCr >= minCr &&
         (!dssOnly || r.genusKnown) &&
         (!firstOnly || r.firstDiscovery) &&
-        (!verifiedOnly || r.footfallObserved),
+        (!verifiedOnly || r.footfallObserved) &&
+        (!codexOnly || (r.codexNew?.length ?? 0) > 0) &&
+        // Bodies someone else walked are here only for their codex entries.
+        (codexOnly || !r.footfallLost),
     );
     if (sort === "value") return kept;
     /*
@@ -124,7 +131,7 @@ export function FirstDiscoveryBacklogModal({
       if (b.distanceLy == null) return -1;
       return a.distanceLy - b.distanceLy || b.minCr - a.minCr;
     });
-  }, [data, minCr, dssOnly, firstOnly, verifiedOnly, sort]);
+  }, [data, minCr, dssOnly, firstOnly, verifiedOnly, codexOnly, sort]);
 
   /** The answer to "take me to the next one": nearest row that clears the current filters. */
   const nextTarget = useMemo(
@@ -138,6 +145,8 @@ export function FirstDiscoveryBacklogModal({
   );
 
   const shownFloor = rows.reduce((a, r) => a + r.minCr, 0);
+  // Walked bodies count only while the codex filter is showing them.
+  const listedTotal = (data?.rows ?? []).filter((r) => codexOnly || !r.footfallLost).length;
   const systems = new Set(rows.map((r) => r.systemAddress)).size;
 
   return (
@@ -189,9 +198,7 @@ export function FirstDiscoveryBacklogModal({
               <span>
                 floor <strong>{compactCr(shownFloor)}</strong>
               </span>
-              {rows.length !== data.rows.length ? (
-                <span className="dim">of {data.rows.length} total</span>
-              ) : null}
+              {rows.length !== listedTotal ? <span className="dim">of {listedTotal} total</span> : null}
             </div>
 
             {nextTarget ? (
@@ -253,6 +260,15 @@ export function FirstDiscoveryBacklogModal({
                 title="Only bodies the journal has actually reported as unwalked. The rest are plausible, not confirmed."
               >
                 Verified 5×
+              </button>
+              <button
+                type="button"
+                className={`fdb-chip${codexOnly ? " fdb-chip--on" : ""}`}
+                onClick={() => setCodexOnly((v) => !v)}
+                title="Only bodies where a likely species was never logged in your codex for that region. Predictions: the species may not be there, and the colour is not judged."
+              >
+                Codex missed (
+                {(data?.rows ?? []).filter((r) => (r.codexNew?.length ?? 0) > 0).length.toLocaleString()})
               </button>
               <span className="fdb-filters__gap" />
               <span className="dim">Sort</span>
@@ -321,6 +337,22 @@ export function FirstDiscoveryBacklogModal({
                         {r.bodyName.startsWith(r.starSystem)
                           ? r.bodyName.slice(r.starSystem.length).trim() || r.bodyName
                           : r.bodyName}
+                        {r.footfallLost ? (
+                          <span
+                            className="fdb-unverified"
+                            title="Someone has walked this body: no 5×, priced at 1×. Listed for its codex entries."
+                          >
+                            walked · 1×
+                          </span>
+                        ) : null}
+                        {r.codexNew?.length ? (
+                          <span
+                            className="fdb-codex"
+                            title={`Likely here and never logged in your codex for this region (a prediction): ${r.codexNew.join(", ")}`}
+                          >
+                            CODEX {r.codexNew.length}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="fdb-num dim">{ly(r.distanceLy)}</td>
                       <td className="fdb-num">{r.biologicalSignals}</td>
@@ -333,8 +365,8 @@ export function FirstDiscoveryBacklogModal({
 
               {rows.length > PAGE ? (
                 <p className="dim tiny disc-more">
-                  Showing the first {PAGE.toLocaleString()} of {rows.length.toLocaleString()} — raise the floor or
-                  turn on a filter to bring the rest into view.
+                  Showing the first {PAGE.toLocaleString()} of {rows.length.toLocaleString()} — raise the
+                  floor or turn on a filter to bring the rest into view.
                 </p>
               ) : null}
               {rows.length === 0 ? (

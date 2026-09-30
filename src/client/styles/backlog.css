@@ -618,3 +618,14 @@
 .bm-actions .fdb-chip {
   margin-left: 0.25rem;
 }
+
+/* Codex entries this body could add (2026-09-30): a prediction, so a tag rather than a claim. */
+.fdb-codex {
+  margin-left: 0.4rem;
+  padding: 0 0.25rem;
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #4fd0ff;
+  border: 1px solid currentColor;
+}

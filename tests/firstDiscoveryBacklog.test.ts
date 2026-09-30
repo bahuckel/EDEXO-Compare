@@ -176,6 +176,24 @@ describe("what must never appear", () => {
     expect(keys(st)).toHaveLength(0);
   });
 
+  it("lists a walked body only for the codex entries it could add, at 1x and outside the totals (2026-09-30)", () => {
+    const st = new GameStateStore();
+    const name = "Walked Codex AB-C d1-2";
+    // Placed near Sol, in the Inner Orion Spur, so the codex region is known.
+    st.apply(j({ timestamp: TS, event: "FSDJump", StarSystem: name, SystemAddress: SYS, StarPos: [10, 0, 10] }));
+    st.apply(star(SYS, false, name));
+    st.apply(planet(SYS, 3, name, true));
+    st.apply(bioSignals(SYS, 3, name));
+    // Something is logged in the codex, just not what grows here.
+    st.codexRegionLogged.add("somewhere|nothing|*");
+    const b = computeFirstDiscoveryBacklog(st);
+    expect(b.rows).toHaveLength(1);
+    expect(b.rows[0]).toMatchObject({ footfallLost: true });
+    expect(b.rows[0]!.codexNew?.length).toBeGreaterThan(0);
+    expect(b.totalMinCr).toBe(0);
+    expect(b.systemCount).toBe(0);
+  });
+
   it("drops a body with no biological signal", () => {
     const st = new GameStateStore();
     const name = "Barren AB-C d1-2";
