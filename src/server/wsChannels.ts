@@ -105,11 +105,30 @@ function slimMatchForApp(m: Match, bodyKey: string): Match {
   const habitat = detailHasContent(exomasteryDetail);
   const otherCards = otherMatchDetailCards?.length ?? 0;
   if (!habitat && otherCards === 0) return rest;
-  const v = createHash("sha1")
-    .update(JSON.stringify([exomasteryDetail, _hints, otherMatchDetailCards]))
-    .digest("base64")
-    .slice(0, 10);
-  return { ...rest, lazyDetail: { body: bodyKey, habitat, otherCards, v } };
+  return { ...rest, lazyDetail: { body: bodyKey, habitat, otherCards, v: detailHash(exomasteryDetail, _hints, otherMatchDetailCards) } };
+}
+
+/*
+  The version stamp of what was left out, once per set of detail objects. Serialising and hashing
+  the detail of every candidate on every push was the biggest part of a refresh (profiled
+  2026-10-01, ~19 ms a push on his journals); the body cache hands back the same objects while a
+  body is unchanged, so the stamp is kept against them and made again only when one is new.
+*/
+const NONE = {};
+const hashMemo = new WeakMap<object, WeakMap<object, WeakMap<object, string>>>();
+function detailHash(detail: unknown, hints: unknown, cards: unknown): string {
+  const k = (x: unknown): object => (x !== null && typeof x === "object" ? x : NONE);
+  let byHints = hashMemo.get(k(detail));
+  if (!byHints) hashMemo.set(k(detail), (byHints = new WeakMap()));
+  let byCards = byHints.get(k(hints));
+  if (!byCards) byHints.set(k(hints), (byCards = new WeakMap()));
+  let v = byCards.get(k(cards));
+  if (v === undefined) {
+    v = createHash("sha1").update(JSON.stringify([detail, hints, cards])).digest("base64").slice(0, 10);
+    // Only object keys are safe to remember: a missing part shares NONE with every other body.
+    if (k(detail) !== NONE || k(hints) !== NONE || k(cards) !== NONE) byCards.set(k(cards), v);
+  }
+  return v;
 }
 
 export function slimBodyForApp(b: BodyComputed): BodyComputed {

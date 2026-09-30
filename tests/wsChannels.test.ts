@@ -97,6 +97,25 @@ describe("socket channels: slim snapshots per client kind", () => {
     expect(findMatchDetail(s, "9:9", "x_1")).toBeNull();
   });
 
+  it("stamps the left-out detail once per set of objects, the same as hashing it afresh", async () => {
+    const { createHash } = await import("node:crypto");
+    const s = snap();
+    const detail = { stats: [{ id: "a" }], atmosphereClimateStats: [], compositionGroups: [] };
+    const hints = [{ big: 1 }];
+    const m0 = s.bodies[0]!.matches[0] as unknown as Record<string, unknown>;
+    m0.exomasteryDetail = detail;
+    m0.exomasteryVarietyHints = hints;
+    const v = () => ((slimSnapshotForChannel(s, "app") as AppSnapshot).bodies[0]!.matches[0]!.lazyDetail as { v: string }).v;
+    const fresh = createHash("sha1").update(JSON.stringify([detail, hints, undefined])).digest("base64").slice(0, 10);
+    expect(v()).toBe(fresh);
+    expect(v()).toBe(fresh);
+    // New objects with the same content: the same stamp; new content: a new one.
+    m0.exomasteryDetail = structuredClone(detail);
+    expect(v()).toBe(fresh);
+    m0.exomasteryDetail = { ...detail, stats: [{ id: "b" }] };
+    expect(v()).not.toBe(fresh);
+  });
+
   it("gives the launcher its five fields and nothing heavy", () => {
     const out = slimSnapshotForChannel(snap(), "launcher") as unknown as Record<string, unknown>;
     expect(Object.keys(out).sort()).toEqual(
