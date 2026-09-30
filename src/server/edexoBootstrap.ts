@@ -132,6 +132,7 @@ import type { NotifySettingsDTO } from "../shared/notices.js";
 import { queryPoi, readPoiStatus } from "./edastroPoi.js";
 import { queryCarriers, readCarrierStatus } from "./edastroCarriers.js";
 import { nearbyNsp } from "./edastroNsp.js";
+import { fetchGalacticRecords, galacticRecords, readGalacticRecordsStatus } from "./galacticRecords.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
   persistUserPreferences as writeUserPrefs,
@@ -315,6 +316,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           services: r.services,
         })),
     nearbyNsps: (origin, radiusLy) => nearbyNsp(origin, radiusLy),
+    galacticRecord: (key) => galacticRecords().get(key) ?? null,
   };
   const notifySettings = (): NotifySettingsDTO => ({
     prefs: notices.prefs(),
@@ -1319,6 +1321,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getCollectionFocus: () => loadCollectionFocusConfig(),
     getNotifySettings: notifySettings,
     bookmarks,
+    getRecords: () => ({ rows: notices.records(noticesContext), galactic: readGalacticRecordsStatus() }),
+    fetchGalacticRecords: async (force) => {
+      await fetchGalacticRecords({ force });
+      return { rows: notices.records(noticesContext), galactic: readGalacticRecordsStatus() };
+    },
     systemPositionOf: (addr) => store.systemPositions.get(addr) ?? null,
     setNotifyPrefs: (raw) => {
       notices.setPrefs(raw);

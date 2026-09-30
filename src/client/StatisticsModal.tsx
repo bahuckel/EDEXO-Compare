@@ -17,6 +17,7 @@
  * They are drawn as steps between known points because the journal states a balance only at login:
  * a smooth line across the owner's 9,045-hour gap would invent a year of steady earning.
  */
+import { formatRadius, type RecordRowDTO } from "@shared/notices";
 import { isStr, oneOf, usePersistedState } from "./usePersistedState";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { INCOME_CATEGORY_LABEL, type IncomeCategory } from "@shared/incomeCategories";
@@ -77,6 +78,115 @@ function RankRow({ label, e }: { label: string; e: RankEstimateDTO | null }) {
 type Measure = "credits" | "perHour";
 
 const n = (v: number) => Math.round(v).toLocaleString("en-US");
+
+interface RecordsResponse {
+  rows: RecordRowDTO[];
+  galactic: {
+    haveData: boolean;
+    count: number;
+    fetchedAtMs: number | null;
+    cooldownMsRemaining: number;
+    sizeLabel: string;
+  };
+}
+
+/*
+  Your largest and smallest of every star type and planet class you have scanned, beside EDAstro's
+  galactic records (guild tester report, 2026-09-30: "track personal bests, compare discoveries vs the
+  galactic records"). The galactic ones download only when asked.
+*/
+function RecordsSection() {
+  const [data, setData] = useState<RecordsResponse | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    void fetch("/api/records")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: RecordsResponse | null) => {
+        if (j?.rows) setData(j);
+      })
+      .catch(() => {});
+  }, []);
+  const download = () => {
+    setBusy(true);
+    setError(null);
+    void fetch("/api/records/fetch-galactic", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ force: true }),
+    })
+      .then((r) => r.json())
+      .then((j: RecordsResponse & { ok?: boolean; error?: string }) => {
+        if (j.ok) setData(j);
+        else setError(j.error ?? "EDAstro could not be reached.");
+      })
+      .catch(() => setError("EDAstro could not be reached."))
+      .finally(() => setBusy(false));
+  };
+  if (!data || !data.rows.length) return null;
+  const g = data.galactic;
+  const cell = (
+    r: { radius: number; body: string } | undefined,
+    subject: RecordRowDTO["subject"],
+    mine?: boolean,
+  ) =>
+    r ? (
+      <td className={`stats-rec__v${mine ? " stats-rec__v--mine" : ""}`} title={r.body}>
+        {formatRadius(r.radius, subject)}
+        <small>{r.body}</small>
+      </td>
+    ) : (
+      <td className="dim">—</td>
+    );
+  return (
+    <>
+      <h3 className="stats-h3">Records</h3>
+      <div className="stats-rec__bar">
+        <span className="dim">
+          Your largest and smallest of every type you have scanned
+          {g.haveData ? ", beside EDAstro's galactic records" : ""}.
+        </span>
+        <button type="button" className="btn-top-toggle" disabled={busy} onClick={download}>
+          {busy
+            ? "Downloading…"
+            : g.haveData
+              ? "Refresh galactic records"
+              : `Download galactic records (${g.sizeLabel})`}
+        </button>
+        {g.fetchedAtMs ? (
+          <span className="dim tiny">EDAstro, {new Date(g.fetchedAtMs).toLocaleDateString()}</span>
+        ) : null}
+      </div>
+      {error ? <p className="options-error">{error}</p> : null}
+      <div className="stats-rec__scroll">
+        <table className="stats-rec">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th className="stats-rec__n">Scanned</th>
+              <th>Your largest</th>
+              {g.haveData ? <th>Galactic largest</th> : null}
+              <th>Your smallest</th>
+              {g.haveData ? <th>Galactic smallest</th> : null}
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.map((r) => (
+              <tr key={r.key}>
+                <td>{r.label}</td>
+                <td className="stats-rec__n">{r.count.toLocaleString()}</td>
+                {cell(r.largest, r.subject, true)}
+                {g.haveData ? cell(r.galactic?.largest, r.subject) : null}
+                {cell(r.smallest, r.subject, true)}
+                {g.haveData ? cell(r.galactic?.smallest, r.subject) : null}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
 
 function hours(h: number): string {
   if (h < 1) return `${Math.round(h * 60)} min`;
@@ -287,7 +397,11 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
   const [window_, setWindow] = usePersistedState("statistics.window", "all", isStr);
-  const [measure, setMeasure] = usePersistedState<Measure>("statistics.measure", "credits", oneOf("credits", "perHour"));
+  const [measure, setMeasure] = usePersistedState<Measure>(
+    "statistics.measure",
+    "credits",
+    oneOf("credits", "perHour"),
+  );
   const seq = useRef(0);
 
   /* While the scan runs, how many journals are read (UI review F3). */
@@ -446,6 +560,8 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
                 <strong>{n(a?.organicSamples ?? 0)}</strong> organic scans
               </span>
             </div>
+
+            <RecordsSection />
 
             <h3 className="stats-h3">Commander balance</h3>
             <BalanceChart points={data.commanderBalance} />

@@ -211,6 +211,20 @@ export interface NotifySettingsDTO {
   carrierDataReady: boolean;
 }
 
+/** One type's records: the commander's own and, when downloaded, EDAstro's (Statistics → Records). */
+export interface RecordRowDTO {
+  key: string;
+  subject: RecordSubject;
+  /** Journal StarType or PlanetClass. */
+  type: string;
+  label: string;
+  /** How many of this type the commander has scanned. */
+  count: number;
+  largest: { radius: number; body: string };
+  smallest: { radius: number; body: string };
+  galactic: { largest: { radius: number; body: string }; smallest: { radius: number; body: string } } | null;
+}
+
 /** What the mail icon's list and the body marks need from the server. */
 export interface NoticesSnapshotDTO {
   /** Unread notices, newest first. */

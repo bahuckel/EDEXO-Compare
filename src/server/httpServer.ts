@@ -56,7 +56,14 @@ import { registerBackupRoutes } from "./routes/backupRoutes.js";
 import type { BackupService } from "./backupService.js";
 import type { BookmarksService } from "./bookmarks.js";
 import { registerBookmarksRoutes } from "./routes/bookmarksRoutes.js";
-import type { NotifySettingsDTO } from "../shared/notices.js";
+import { registerRecordsRoutes } from "./routes/recordsRoutes.js";
+import type { NotifySettingsDTO, RecordRowDTO } from "../shared/notices.js";
+import type { GalacticRecordsStatusDTO } from "./galacticRecords.js";
+
+export interface RecordsDTO {
+  rows: RecordRowDTO[];
+  galactic: GalacticRecordsStatusDTO;
+}
 export function getLanIPv4s(port: number): string[] {
   const nets = os.networkInterfaces();
   const out: string[] = [];
@@ -194,6 +201,10 @@ export interface HttpServerOptions {
   getCollectionFocus?: () => CollectionFocusConfig;
   /** GET/POST `/api/settings/notify` — the "Notify me" toggles and what the radius works out to (shared/notices.ts). */
   getNotifySettings?: () => NotifySettingsDTO;
+  /** GET `/api/records` — every type's records, his and EDAstro's (Statistics → Records). */
+  getRecords?: () => RecordsDTO;
+  /** POST `/api/records/fetch-galactic` — download EDAstro's records pages (galacticRecords.ts). */
+  fetchGalacticRecords?: (force: boolean) => Promise<RecordsDTO>;
   /** The commander's bookmarks (`/api/bookmarks`, server/bookmarks.ts). */
   bookmarks?: BookmarksService;
   /** Where a system is, from the journals' StarPos, for a new bookmark. */
@@ -689,6 +700,7 @@ export function createHttpServer(opts: HttpServerOptions): {
 
   registerBackupRoutes(app, opts, routeCtx);
   registerBookmarksRoutes(app, opts, routeCtx);
+  registerRecordsRoutes(app, opts, routeCtx);
 
   registerExomasteryRoutes(app, opts, routeCtx);
 

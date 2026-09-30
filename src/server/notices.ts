@@ -31,6 +31,7 @@ import {
   type NotableKind,
   type NoticeDTO,
   type NoticesSnapshotDTO,
+  type RecordRowDTO,
   type NotifyPrefsDTO,
   type RecordMarkDTO,
   type RecordSubject,
@@ -59,6 +60,8 @@ export interface NoticesContext {
   nearbyPois?(origin: Vec3, radiusLy: number, groups: readonly string[]): NearbyPoi[];
   /** EDAstro carriers within the radius, nearest first. */
   nearbyCarriers?(origin: Vec3, radiusLy: number): NearbyCarrier[];
+  /** EDAstro's galactic record for a record key, when downloaded (galacticRecords.ts). */
+  galacticRecord?(key: string): { largest: { radius: number; body: string }; smallest: { radius: number; body: string } } | null;
   /** Notable stellar phenomena (EDAstro's codex file) within the radius, by system, nearest first. */
   nearbyNsps?(origin: Vec3, radiusLy: number): NearbyNsp[];
 }
@@ -114,6 +117,9 @@ const NOTABLE_TITLE: Partial<Record<NotableKind, string>> = {
 interface Best {
   largest: number;
   smallest: number;
+  largestBody: string;
+  smallestBody: string;
+  count: number;
 }
 
 function num(v: unknown): number | null {
@@ -130,6 +136,8 @@ export function shortBodyName(bodyName: string, system: string): string {
   if (s && b.toLowerCase().startsWith(s.toLowerCase() + " ")) return b.slice(s.length).trim();
   return b;
 }
+
+const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function recordKey(subject: RecordSubject, type: string): string {
   return `${subject}:${type}`;
@@ -162,6 +170,8 @@ export interface NoticesService {
   invalidate(): void;
   /** The ship's average jump in ly: recent jumps, else the loadout's range. */
   jumpLy(ctx: Pick<NoticesContext, "loadoutJumpLy">): number | null;
+  /** Every type's records, the commander's and EDAstro's (Statistics → Records). */
+  records(ctx: NoticesContext): RecordRowDTO[];
 }
 
 export function createNoticesService(opts: {
@@ -299,11 +309,19 @@ export function createNoticesService(opts: {
       const s = scanSubject(r);
       if (!s) continue;
       const k = recordKey(s.subject, s.type);
+      const name = r.bodyName || r.starSystem || "";
       const b = m.get(k);
-      if (!b) m.set(k, { largest: s.radius, smallest: s.radius });
+      if (!b) m.set(k, { largest: s.radius, smallest: s.radius, largestBody: name, smallestBody: name, count: 1 });
       else {
-        if (s.radius > b.largest) b.largest = s.radius;
-        if (s.radius < b.smallest) b.smallest = s.radius;
+        b.count++;
+        if (s.radius > b.largest) {
+          b.largest = s.radius;
+          b.largestBody = name;
+        }
+        if (s.radius < b.smallest) {
+          b.smallest = s.radius;
+          b.smallestBody = name;
+        }
       }
     }
     return m;
@@ -345,8 +363,10 @@ export function createNoticesService(opts: {
       bests ??= seed(ctx);
       const k = recordKey(s.subject, s.type);
       const b = bests.get(k);
-      if (!b) bests.set(k, { largest: s.radius, smallest: s.radius });
+      const fullName = str(line.BodyName) || system;
+      if (!b) bests.set(k, { largest: s.radius, smallest: s.radius, largestBody: fullName, smallestBody: fullName, count: 1 });
       else {
+        b.count++;
         for (const which of ["largest", "smallest"] as const) {
           const beats = which === "largest" ? s.radius > b.largest : s.radius < b.smallest;
           if (!beats) continue;
@@ -363,16 +383,28 @@ export function createNoticesService(opts: {
             previous: which === "largest" ? b.largest : b.smallest,
             at,
           };
-          if (which === "largest") b.largest = s.radius;
-          else b.smallest = s.radius;
+          if (which === "largest") {
+            b.largest = s.radius;
+            b.largestBody = fullName;
+          } else {
+            b.smallest = s.radius;
+            b.smallestBody = fullName;
+          }
           state.records.push(mark);
+          // EDAstro's galactic record, when downloaded: how this one compares.
+          const g = ctx.galacticRecord?.(k)?.[which] ?? null;
+          const beatsGalaxy = g != null && (which === "largest" ? s.radius > g.radius : s.radius < g.radius);
           added =
             add({
               ...base,
               id: `record:${which}:${k}:${bodyKey}`,
               kind: "record",
-              title: `Record: ${which} ${recordTypeLabel(s.subject, s.type)}`,
-              text: `${body} in ${system} — ${formatRadius(mark.radius, mark.subject)} (was ${formatRadius(mark.previous, mark.subject)})`,
+              title: beatsGalaxy
+                ? `Beyond EDAstro's galactic record: ${which} ${recordTypeLabel(s.subject, s.type)}`
+                : `Record: ${which} ${recordTypeLabel(s.subject, s.type)}`,
+              text:
+                `${body} in ${system} — ${formatRadius(mark.radius, mark.subject)} (was ${formatRadius(mark.previous, mark.subject)})` +
+                (g ? ` · galactic ${formatRadius(g.radius, mark.subject)}` : ""),
             }) || added;
         }
       }
@@ -380,8 +412,16 @@ export function createNoticesService(opts: {
       // Records off: keep the bests honest so turning them back on does not announce old news.
       const b = bests.get(recordKey(s.subject, s.type));
       if (b) {
-        b.largest = Math.max(b.largest, s.radius);
-        b.smallest = Math.min(b.smallest, s.radius);
+        b.count++;
+        const fullName = str(line.BodyName) || system;
+        if (s.radius > b.largest) {
+          b.largest = s.radius;
+          b.largestBody = fullName;
+        }
+        if (s.radius < b.smallest) {
+          b.smallest = s.radius;
+          b.smallestBody = fullName;
+        }
       }
     }
     return added;
@@ -493,6 +533,26 @@ export function createNoticesService(opts: {
       bests = null;
     },
     jumpLy,
+    records(ctx) {
+      bests ??= seed(ctx);
+      const rows: RecordRowDTO[] = [];
+      for (const [key, b] of bests) {
+        const colon = key.indexOf(":");
+        const subject = key.slice(0, colon) as RecordSubject;
+        const type = key.slice(colon + 1);
+        rows.push({
+          key,
+          subject,
+          type,
+          label: capitalise(recordTypeLabel(subject, type)),
+          count: b.count,
+          largest: { radius: b.largest, body: b.largestBody },
+          smallest: { radius: b.smallest, body: b.smallestBody },
+          galactic: ctx.galacticRecord?.(key) ?? null,
+        });
+      }
+      return rows.sort((a, b) => (a.subject === b.subject ? a.label.localeCompare(b.label) : a.subject === "star" ? -1 : 1));
+    },
   };
 }
 

@@ -267,3 +267,57 @@
       "to to";
   }
 }
+
+/* ---- Records: yours beside EDAstro's (2026-09-30) ---- */
+.stats-rec__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-bottom: 0.4rem;
+  font-size: var(--fs-xs);
+}
+.stats-rec__scroll {
+  max-height: 22rem;
+  overflow: auto;
+  border: 1px solid var(--accent-a15);
+}
+.stats-rec {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+}
+.stats-rec th {
+  position: sticky;
+  top: 0;
+  background: #0e0b0a;
+  text-align: left;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0.3rem 0.5rem;
+}
+.stats-rec td {
+  padding: 0.25rem 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: top;
+}
+.stats-rec__n {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.stats-rec__v {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.stats-rec__v small {
+  display: block;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+.stats-rec__v--mine {
+  color: var(--accent-bright);
+}
