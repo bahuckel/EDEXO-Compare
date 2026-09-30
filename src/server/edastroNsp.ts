@@ -166,7 +166,22 @@ function loadFile(): { file: NspFile; systems: number; nsp: NspRow[]; green: Nsp
     if (!Array.isArray(file.rows)) return null;
     const nsp: NspRow[] = [];
     const green: NspRow[] = [];
-    for (const r of file.rows) (GREEN_ID.test(r[0]) ? green : nsp).push(r);
+    /*
+      JSON.parse gives every row its own copy of the codex id and name — a few hundred distinct
+      strings over 236,721 rows. Sharing one copy each: 70 → 50 MB of heap, +14 ms (2026-09-30).
+    */
+    const pool = new Map<string, string>();
+    const intern = (s: string): string => {
+      const v = pool.get(s);
+      if (v !== undefined) return v;
+      pool.set(s, s);
+      return s;
+    };
+    for (const r of file.rows) {
+      r[0] = intern(r[0]);
+      r[1] = intern(r[1]);
+      (GREEN_ID.test(r[0]) ? green : nsp).push(r);
+    }
     const systems = new Set(nsp.map((r) => r[3] ?? r[2])).size;
     memo = { mtimeMs: st.mtimeMs, file, systems, nsp, green };
     return memo;
