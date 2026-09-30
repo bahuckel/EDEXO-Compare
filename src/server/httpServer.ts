@@ -1,5 +1,6 @@
 import type { GreenGiantVerdict } from "../shared/greenGasGiant.js";
 import type { OwnGreenGiant } from "./galaxyLayers.js";
+import type { SavedBoxelsService } from "./savedBoxels.js";
 import type { FieldGuideDTO } from "../shared/fieldGuide.js";
 import type { RegionalRarity } from "../shared/speciesRarity.js";
 import { findMatchDetail, parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
@@ -215,6 +216,8 @@ export interface HttpServerOptions {
    * Returns the body's verdict after the call, or false when there is no scan of that body.
    */
   setGreenGiantMark?: (systemAddress: number, bodyId: number, mark: "yes" | "no" | null) => GreenGiantVerdict | null | false;
+  /** Boxels the commander is scanning (`/api/boxels`, server/savedBoxels.ts). */
+  savedBoxels?: SavedBoxelsService;
   /** Green gas giants the commander confirmed that edGGG does not list, for the galaxy map's layer. */
   ownGreenGiants?: () => readonly OwnGreenGiant[];
   /** Where a system is, from the journals' StarPos, for a new bookmark. */

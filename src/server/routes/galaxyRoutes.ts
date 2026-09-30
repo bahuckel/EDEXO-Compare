@@ -224,6 +224,34 @@ export function registerGalaxyRoutes(
     res.json(dto);
   });
 
+  /*
+    Saved boxels (server/savedBoxels.ts): the commander types a boxel's last system, the list keeps it,
+    and each read ticks off what the journals say he has flown.
+  */
+  const savedList = () => {
+    const store = opts.getJournalStore?.() ?? null;
+    return { ok: true, items: opts.savedBoxels!.list(store ? store.visitedSystems.values() : []) };
+  };
+  app.get("/api/boxels", (_req, res) => {
+    if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
+    res.json(savedList());
+  });
+  app.post("/api/boxels", (req, res) => {
+    if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
+    const last = typeof req.body?.lastSystem === "string" ? req.body.lastSystem : "";
+    const added = opts.savedBoxels.add(last);
+    if (!added) {
+      res.status(400).json({ ok: false, error: "Type the boxel's last system in full, such as Eol Prou AB-C d1-57." });
+      return;
+    }
+    res.json({ ...savedList(), id: added.id });
+  });
+  app.delete("/api/boxels/:id", (req, res) => {
+    if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
+    const gone = opts.savedBoxels.remove(String(req.params.id ?? ""));
+    res.status(gone ? 200 : 404).json({ ...savedList(), ok: gone });
+  });
+
   /** Regions are the client's; this finds sectors and systems by name: `?q=`. */
   app.get("/api/galaxy/find", (req, res) => {
     const t = tileIndex();

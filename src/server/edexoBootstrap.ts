@@ -128,6 +128,7 @@ import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startu
 import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
 import { createNoticesService, type NoticesContext } from "./notices.js";
 import { createBookmarksService } from "./bookmarks.js";
+import { createSavedBoxels } from "./savedBoxels.js";
 import { createGreenGiantMarks, greenGiantForRecord, type GreenGiantSources } from "./greenGiants.js";
 import { setNotableOptionsProvider } from "./notableOptions.js";
 import { BODY_FEATURES } from "../shared/bodyFeatures.js";
@@ -289,6 +290,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   /* "Notify me" (guild tester report, 2026-09-30): the mail icon's notices and the record marks. */
   const notices = createNoticesService({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-notices.json"),
+  });
+  const savedBoxels = createSavedBoxels({
+    filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-boxels.json"),
   });
   const bookmarks = createBookmarksService({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-bookmarks.json"),
@@ -1345,6 +1349,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getCollectionFocus: () => loadCollectionFocusConfig(),
     getNotifySettings: notifySettings,
     bookmarks,
+    savedBoxels,
     ownGreenGiants: () => {
       const out: { x: number; y: number; z: number; body: string; system: string }[] = [];
       const src = greenSources();

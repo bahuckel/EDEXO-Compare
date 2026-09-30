@@ -3,9 +3,12 @@
  * which you have flown, which the galaxy index knows and what grows there, what the boxel tends to
  * grow, and the next one to fly. Any row looks the system up on Spansh and opens it, as the header's
  * search does.
+ *
+ * Saved boxels (owner, 2026-09-30): type a boxel's last system and it is kept, listed -0 up to it,
+ * and ticked off as he flies — the list and the open table re-read the journals after every jump.
  */
-import { useCallback, useEffect, useState } from "react";
-import type { BoxelDTO } from "@shared/boxel";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { BoxelDTO, SavedBoxelDTO } from "@shared/boxel";
 import { parseBoxel } from "@shared/boxel";
 import { useModal } from "./ui/useModal";
 import { CopySystemButton } from "./CopySystemButton";
@@ -29,12 +32,17 @@ export function BoxelModal({
   // A d-boxel runs to hundreds of systems: the rows with something to say, when asked.
   const [onlyKnown, setOnlyKnown] = usePersistedState("boxel.onlyKnown", false, isBool);
 
-  const load = useCallback(() => {
-    if (!name.trim()) return;
+  // What the table shows, so a jump can re-read it (the ticks follow him).
+  const shown = useRef<{ name: string; end: string } | null>(null);
+  const load = useCallback((nameArg?: string, endArg?: string) => {
+    const n = (nameArg ?? name).trim();
+    const e = (endArg ?? end).trim();
+    if (!n) return;
     setBusy(true);
     setError(null);
-    const q = new URLSearchParams({ name: name.trim() });
-    if (end.trim()) q.set("end", end.trim());
+    shown.current = { name: n, end: e };
+    const q = new URLSearchParams({ name: n });
+    if (e) q.set("end", e);
     void fetch(`/api/boxel?${q}`)
       .then(async (r) => {
         const j = (await r.json()) as BoxelDTO & { error?: string };
@@ -51,6 +59,60 @@ export function BoxelModal({
   // The current system's boxel opens straight away.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => load(), []);
+
+  const [saved, setSaved] = useState<SavedBoxelDTO[] | null>(null);
+  const [lastInput, setLastInput] = useState("");
+  const [savedError, setSavedError] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const savedCall = useCallback(async (init?: RequestInit, path = "/api/boxels") => {
+    try {
+      const r = await fetch(path, init);
+      const j = (await r.json()) as { items?: SavedBoxelDTO[]; error?: string };
+      if (j.items) setSaved(j.items);
+      setSavedError(r.ok ? null : (j.error ?? r.statusText));
+      return r.ok;
+    } catch {
+      setSavedError("The app's server could not be reached.");
+      return false;
+    }
+  }, []);
+
+  // After every jump: the saved list and the open table tick off what was just flown.
+  const firstJump = useRef(true);
+  useEffect(() => {
+    void savedCall();
+    if (firstJump.current) {
+      firstJump.current = false;
+      return;
+    }
+    if (shown.current) load(shown.current.name, shown.current.end);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSystem, savedCall]);
+
+  const showSaved = (b: SavedBoxelDTO) => {
+    setName(b.lastSystem);
+    setEnd(String(b.end));
+    load(b.lastSystem, String(b.end));
+  };
+
+  const addSaved = () => {
+    const typed = lastInput.trim();
+    if (!typed) return;
+    void savedCall({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lastSystem: typed }),
+    }).then((ok) => {
+      if (!ok) return;
+      setLastInput("");
+      const b = parseBoxel(typed);
+      if (b?.index != null) {
+        setName(typed);
+        setEnd(String(b.index));
+        load(typed, String(b.index));
+      }
+    });
+  };
 
   const lookUp = async (system: string) => {
     try {
@@ -97,6 +159,100 @@ export function BoxelModal({
             ×
           </button>
         </header>
+
+        <section className="boxel-saved" aria-label="Your boxels">
+          <form
+            className="boxel-form"
+            onSubmit={(ev) => {
+              ev.preventDefault();
+              addSaved();
+            }}
+          >
+            <label>
+              <span className="dim">Last system of a boxel — lists every system before it and keeps it</span>
+              <input
+                className="carriers-search__input"
+                value={lastInput}
+                placeholder="Eol Prou AB-C d1-57"
+                onChange={(ev) => setLastInput(ev.target.value)}
+              />
+            </label>
+            <button type="submit" className="fdb-chip fdb-chip--on" disabled={!lastInput.trim()}>
+              Add
+            </button>
+          </form>
+          {savedError ? <p className="fdb-empty">{savedError}</p> : null}
+          {saved?.length ? (
+            <ul className="boxel-saved__list">
+              {saved.map((b) => {
+                const done = b.next == null;
+                return (
+                  <li key={b.id} className={`boxel-saved__item${done ? " boxel-saved__item--done" : ""}`}>
+                    <span className="boxel-saved__name">
+                      <strong>{b.boxel}</strong> <span className="dim">{b.sector} · -0 to -{b.end}</span>
+                    </span>
+                    <span
+                      className="boxel-saved__bar"
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={b.total}
+                      aria-valuenow={b.flown}
+                      aria-label={`${b.flown} of ${b.total} flown`}
+                    >
+                      <span style={{ width: `${(b.flown / b.total) * 100}%` }} />
+                    </span>
+                    <span className="boxel-saved__count">
+                      {b.flown} / {b.total} flown
+                    </span>
+                    <span className="boxel-saved__next">
+                      {done ? (
+                        <span className="fdb-dss">all flown</span>
+                      ) : (
+                        <>
+                          <span className="dim">next </span>
+                          {b.next}
+                          <CopySystemButton system={b.next!} />
+                        </>
+                      )}
+                    </span>
+                    <span className="boxel-saved__actions">
+                      <button type="button" className="fdb-chip" onClick={() => showSaved(b)}>
+                        Show
+                      </button>
+                      {confirmId === b.id ? (
+                        <>
+                          <button
+                            type="button"
+                            className="fdb-chip boxel-saved__del"
+                            onClick={() => {
+                              setConfirmId(null);
+                              void savedCall({ method: "DELETE" }, `/api/boxels/${encodeURIComponent(b.id)}`);
+                            }}
+                          >
+                            Delete
+                          </button>
+                          <button type="button" className="fdb-chip" onClick={() => setConfirmId(null)}>
+                            Keep
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="fdb-chip boxel-saved__x"
+                          aria-label={`Delete ${b.boxel} from your boxels`}
+                          title="Delete from your boxels"
+                          onClick={() => setConfirmId(b.id)}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </section>
 
         <form
           className="boxel-form"

@@ -649,6 +649,69 @@
   min-width: 0;
   width: 7rem;
 }
+/* Saved boxels (2026-09-30): one line each, progress and the next system to fly. */
+.boxel-saved {
+  display: grid;
+  gap: 0.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.18);
+}
+.boxel-saved__list {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.boxel-saved__item {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) 8rem 8.5rem minmax(12rem, 1.4fr) 11rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.5rem;
+  font-size: var(--fs-sm);
+  background: rgba(var(--accent-rgb), 0.05);
+}
+.boxel-saved__item--done {
+  opacity: 0.75;
+}
+.boxel-saved__bar {
+  height: 0.35rem;
+  background: rgba(var(--accent-rgb), 0.15);
+}
+.boxel-saved__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.boxel-saved__item--done .boxel-saved__bar > span {
+  background: var(--ok);
+}
+.boxel-saved__count {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.boxel-saved__next {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.boxel-saved__actions {
+  display: flex;
+  gap: 0.3rem;
+  justify-content: flex-end;
+}
+.boxel-saved__del {
+  color: #ff8a7a;
+  border-color: rgba(255, 138, 122, 0.6);
+}
+@media (max-width: 699px) {
+  .boxel-saved__item {
+    grid-template-columns: 1fr auto;
+  }
+  .boxel-saved__bar {
+    grid-column: 1 / -1;
+  }
+}
 .boxel-common {
   margin: 0;
   font-size: var(--fs-xs);

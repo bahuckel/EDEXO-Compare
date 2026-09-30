@@ -95,3 +95,24 @@ export interface BoxelDTO {
   /** The galaxy index is not loaded on this machine (no galaxy data): only the journals were read. */
   noIndex: boolean;
 }
+
+/**
+ * A boxel the commander is scanning (owner, 2026-09-30): he types its last system, the app lists -0
+ * up to it and ticks off the ones he has flown as he goes. Kept in `edexo-boxels.json`.
+ */
+export interface SavedBoxelDTO {
+  id: string;
+  /** The name he typed, e.g. `Eol Prou AB-C d1-57`. */
+  lastSystem: string;
+  sector: string;
+  boxel: string;
+  prefix: string;
+  /** The last system number: -0 to this. */
+  end: number;
+  addedAt: string;
+  /** Systems -0..end in his journals. */
+  flown: number;
+  total: number;
+  /** The lowest system number not flown yet; null when all are. */
+  next: string | null;
+}

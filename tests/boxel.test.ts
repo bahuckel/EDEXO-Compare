@@ -53,3 +53,33 @@ describe("the listing", () => {
     expect(boxelSystems({ query: "Eol Prou AB-C d1-2", end: 9, index: null, visited: [], speciesName: (i) => i })!.rows).toHaveLength(10);
   });
 });
+
+describe("saved boxels (owner, 2026-09-30)", () => {
+  it("keeps a boxel by its last system, lists -0 up to it and ticks off what was flown", async () => {
+    const { mkdtempSync, readFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { createSavedBoxels } = await import("../src/server/savedBoxels.js");
+    const file = join(mkdtempSync(join(tmpdir(), "edexo-boxels-")), "edexo-boxels.json");
+    const s = createSavedBoxels({ filePath: file });
+    expect(s.add("Eol Prou")).toBeNull();
+    const { id } = s.add("  Eol Prou AB-C d1-5 ")!;
+    const visited = ["Eol Prou AB-C d1-0", "eol prou ab-c d1-2", "Eol Prou AB-C d1-9", "Eol Prou AB-C d2-1", "Sol"];
+    expect(s.list(visited)).toEqual([
+      expect.objectContaining({ id, boxel: "AB-C d1", sector: "Eol Prou", end: 5, total: 6, flown: 2, next: "Eol Prou AB-C d1-1" }),
+    ]);
+    // The same boxel again moves its end instead of adding a second one.
+    expect(s.add("Eol Prou AB-C d1-9")!.id).toBe(id);
+    expect(s.list(visited)[0]).toMatchObject({ end: 9, flown: 3 });
+    // All flown: no next.
+    const all = Array.from({ length: 10 }, (_, n) => `Eol Prou AB-C d1-${n}`);
+    expect(s.list(all)[0]).toMatchObject({ flown: 10, next: null });
+    // Survives a restart; deletes.
+    const again = createSavedBoxels({ filePath: file });
+    expect(again.list([])).toHaveLength(1);
+    expect(JSON.parse(readFileSync(file, "utf8")).items[0].lastSystem).toBe("Eol Prou AB-C d1-9");
+    expect(again.remove(id)).toBe(true);
+    expect(again.remove(id)).toBe(false);
+    expect(createSavedBoxels({ filePath: file }).list([])).toEqual([]);
+  });
+});
