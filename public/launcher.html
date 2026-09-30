@@ -1454,6 +1454,37 @@
         outline: 2px solid #fff;
         outline-offset: 1px;
       }
+      /* Saved schemes (2026-09-30): accent and text split across the swatch, the name beside it. */
+      .hud-scheme {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.72rem;
+      }
+      .hud-scheme__x {
+        font: inherit;
+        padding: 0 3px;
+        background: transparent;
+        border: 0;
+        color: #8f8378;
+        cursor: pointer;
+      }
+      #hudSchemeName {
+        flex: 1 1 auto;
+        min-width: 0;
+        font: inherit;
+        font-size: 0.78rem;
+        background: #120d0a;
+        color: #ffe6cf;
+        border: 1px solid rgba(255, 138, 31, 0.3);
+        padding: 3px 6px;
+      }
+      #hudSchemeSave {
+        flex: 0 0 auto;
+        width: auto;
+        min-height: 0;
+        padding: 4px 12px;
+      }
       .hud-order {
         list-style: none;
         margin: 4px 0 6px;
@@ -2042,6 +2073,10 @@
             <div class="hud-set-row">
               <label for="hudThemeAccent">Custom accent <input type="color" id="hudThemeAccent" value="#ff8a1f" /></label>
               <label for="hudThemeText">Custom text <input type="color" id="hudThemeText" value="#ffe6cf" /></label>
+            </div>
+            <div class="hud-set-row">
+              <input type="text" id="hudSchemeName" maxlength="24" placeholder="Name your colours to keep them" aria-label="Scheme name" />
+              <button type="button" class="btn secondary" id="hudSchemeSave">Save scheme</button>
             </div>
             <h4>HUD size</h4>
             <div class="hud-set-row">
@@ -3903,6 +3938,23 @@
           syncHudPrefs();
         }
         var hudSwatches = document.getElementById("hudSwatches");
+        /* Saved HUD colours (guild tester report, 2026-09-30: "allow people to save their own"). */
+        var LS_HUD_SCHEMES = "edexoHudSchemes";
+        function readSchemes() {
+          try {
+            var v = JSON.parse(localStorage.getItem(LS_HUD_SCHEMES) || "[]");
+            return Array.isArray(v)
+              ? v.filter(function (x) {
+                  return x && typeof x.name === "string" && /^#[0-9a-f]{6}$/i.test(x.accent || "") && /^#[0-9a-f]{6}$/i.test(x.text || "");
+                })
+              : [];
+          } catch (e) {
+            return [];
+          }
+        }
+        function writeSchemes(list) {
+          try { localStorage.setItem(LS_HUD_SCHEMES, JSON.stringify(list.slice(0, 20))); } catch (e) {}
+        }
         var hudThemeAccent = document.getElementById("hudThemeAccent");
         var hudThemeText = document.getElementById("hudThemeText");
         function renderSwatches() {
@@ -3923,6 +3975,36 @@
             });
             hudSwatches.appendChild(b);
           });
+          readSchemes().forEach(function (sc) {
+            var wrap = document.createElement("span");
+            wrap.className = "hud-scheme";
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "hud-swatch";
+            b.title = sc.name;
+            b.style.background = "linear-gradient(135deg, " + sc.accent + " 58%, " + sc.text + " 58%)";
+            b.setAttribute("role", "radio");
+            var on = t.preset === "custom" && t.accent === sc.accent && t.text === sc.text;
+            b.setAttribute("aria-pressed", on ? "true" : "false");
+            b.addEventListener("click", function () {
+              writeTheme({ preset: "custom", accent: sc.accent, text: sc.text });
+            });
+            var label = document.createElement("span");
+            label.textContent = sc.name;
+            var x = document.createElement("button");
+            x.type = "button";
+            x.className = "hud-scheme__x";
+            x.title = "Forget " + sc.name;
+            x.textContent = "\u00d7";
+            x.addEventListener("click", function () {
+              writeSchemes(readSchemes().filter(function (o) { return o.name !== sc.name; }));
+              renderSwatches();
+            });
+            wrap.appendChild(b);
+            wrap.appendChild(label);
+            wrap.appendChild(x);
+            hudSwatches.appendChild(wrap);
+          });
           if (hudThemeAccent && t.preset === "custom" && t.accent) hudThemeAccent.value = t.accent;
           if (hudThemeText && t.preset === "custom" && t.text) hudThemeText.value = t.text;
         }
@@ -3930,6 +4012,23 @@
           writeTheme({ preset: "custom", accent: hudThemeAccent.value, text: hudThemeText.value });
         }
         if (hudThemeAccent) hudThemeAccent.addEventListener("input", customTheme);
+        var hudSchemeName = document.getElementById("hudSchemeName");
+        var hudSchemeSave = document.getElementById("hudSchemeSave");
+        function saveScheme() {
+          var n = ((hudSchemeName && hudSchemeName.value) || "").trim().slice(0, 24);
+          if (!n || !hudThemeAccent || !hudThemeText) return;
+          var list = readSchemes().filter(function (o) { return o.name.toLowerCase() !== n.toLowerCase(); });
+          list.push({ name: n, accent: hudThemeAccent.value, text: hudThemeText.value });
+          writeSchemes(list);
+          hudSchemeName.value = "";
+          writeTheme({ preset: "custom", accent: hudThemeAccent.value, text: hudThemeText.value });
+        }
+        if (hudSchemeSave) hudSchemeSave.addEventListener("click", saveScheme);
+        if (hudSchemeName) {
+          hudSchemeName.addEventListener("keydown", function (ev) {
+            if (ev.key === "Enter") saveScheme();
+          });
+        }
         if (hudThemeText) hudThemeText.addEventListener("input", customTheme);
         /* size + opacity: the HUD pages read the same keys and re-apply on the storage event */
         var hudScale = document.getElementById("hudScale");

@@ -17,6 +17,7 @@
  * and a remount (StrictMode in development) needs a fresh one.
  */
 import { useEffect, useRef } from "react";
+import { APP_THEME_EVENT, backdropAccentRgb } from "./appTheme";
 import { runHexSignals, type BackdropLevel, type BackdropOptions } from "./hexSignalsEngine";
 
 const LEVEL_KEY = "edexo.backdrop";
@@ -50,7 +51,12 @@ export function HexSignals() {
     }
     // A phone on the LAN link: the glimmer only, at half the frame rate.
     const phone = window.matchMedia?.("(pointer: coarse)").matches === true;
-    const opts: BackdropOptions = { level: backdropLevel(), signals: !phone, fps: phone ? 15 : 30 };
+    const opts: BackdropOptions = {
+      level: backdropLevel(),
+      signals: !phone,
+      fps: phone ? 15 : 30,
+      accentRgb: backdropAccentRgb(),
+    };
 
     let canvas = document.createElement("canvas");
     canvas.className = "hex-signals";
@@ -65,6 +71,7 @@ export function HexSignals() {
 
     let stop: () => void = () => {};
     let resize: () => void = () => {};
+    let setAccent: (rgb: string | null) => void = () => {};
     /* On the page's own thread: browsers without OffscreenCanvas, or a worker that failed to start. */
     const runHere = () => {
       const handle = runHexSignals(canvas, size(), opts);
@@ -78,6 +85,7 @@ export function HexSignals() {
         handle.resize(n.w, n.h, n.dpr);
       };
       stop = () => handle.stop();
+      setAccent = (rgb) => handle.setAccent(rgb);
     };
     if (typeof canvas.transferControlToOffscreen === "function" && typeof Worker === "function") {
       try {
@@ -86,6 +94,7 @@ export function HexSignals() {
         worker.postMessage({ type: "start", canvas: off, ...size(), opts }, [off]);
         mark(`worker · ${opts.level}${opts.signals ? "" : " · glimmer only"}`);
         resize = () => worker.postMessage({ type: "resize", ...size() });
+        setAccent = (rgb) => worker.postMessage({ type: "accent", rgb });
         stop = () => worker.terminate();
         // A worker that cannot load (an older phone browser, a blocked file) would leave the canvas it
         // was handed blank for good: start again on the page's own thread with a fresh canvas.
@@ -107,6 +116,8 @@ export function HexSignals() {
     // Through a wrapper: a fallback start replaces `resize`.
     const onResize = () => resize();
     window.addEventListener("resize", onResize);
+    const onTheme = () => setAccent(backdropAccentRgb());
+    window.addEventListener(APP_THEME_EVENT, onTheme);
     const onMotion = () => {
       if (motion?.matches) {
         stop();
@@ -116,6 +127,7 @@ export function HexSignals() {
     motion?.addEventListener?.("change", onMotion);
     return () => {
       window.removeEventListener("resize", onResize);
+      window.removeEventListener(APP_THEME_EVENT, onTheme);
       motion?.removeEventListener?.("change", onMotion);
       stop();
       canvas.remove();

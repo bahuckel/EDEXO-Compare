@@ -32,6 +32,8 @@ export interface BackdropOptions {
   /** Travelling signals as well as the glimmer (off on phones). */
   signals: boolean;
   fps: number;
+  /** The app's colour scheme, "r, g, b"; absent = the backdrop's own orange. */
+  accentRgb?: string | null;
 }
 
 /** px per second along an edge. */
@@ -99,6 +101,8 @@ type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
 export interface HexSignalsHandle {
   resize(w: number, h: number, dpr: number): void;
+  /** Follow a colour-scheme change without restarting. */
+  setAccent(rgb: string | null): void;
   stop(): void;
 }
 
@@ -110,6 +114,7 @@ export function runHexSignals(
   const ctx = canvas.getContext("2d") as Ctx | null;
   if (!ctx) return null;
   const strength = LEVEL[opts.level] ?? LEVEL.soft;
+  let accent: string = opts.accentRgb || RGB.accent;
   const frameMs = 1000 / Math.max(5, Math.min(60, opts.fps));
 
   let w = 0;
@@ -203,7 +208,7 @@ export function runHexSignals(
     for (const g of glimmers) {
       const a = Math.sin(Math.PI * Math.min(1, g.age / g.life)) * strength.glimmer * g.peak;
       if (a <= 0.004) continue;
-      ctx.strokeStyle = `rgba(${RGB.accent}, ${a.toFixed(3)})`;
+      ctx.strokeStyle = `rgba(${accent}, ${a.toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(g.cx + CORNERS[0]![0], g.cy + CORNERS[0]![1]);
       for (let i = 1; i < 6; i++) ctx.lineTo(g.cx + CORNERS[i]![0], g.cy + CORNERS[i]![1]);
@@ -224,7 +229,7 @@ export function runHexSignals(
         const from = band * per;
         const to = Math.min(n - 1, from + per);
         if (to <= from) break;
-        ctx.strokeStyle = `rgba(${RGB[s.hue]}, ${(((band + 1) / BANDS) * strength.signal * fade).toFixed(3)})`;
+        ctx.strokeStyle = `rgba(${s.hue === "accent" ? accent : RGB[s.hue]}, ${(((band + 1) / BANDS) * strength.signal * fade).toFixed(3)})`;
         ctx.beginPath();
         ctx.moveTo(s.trail[from]!.x, s.trail[from]!.y);
         for (let i = from + 1; i <= to; i++) ctx.lineTo(s.trail[i]!.x, s.trail[i]!.y);
@@ -258,6 +263,9 @@ export function runHexSignals(
   raf = requestAnimationFrame(frame);
   return {
     resize,
+    setAccent(rgb) {
+      accent = rgb || RGB.accent;
+    },
     stop() {
       stopped = true;
       cancelAnimationFrame(raf);

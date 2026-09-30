@@ -15,7 +15,7 @@
   margin: 0 0 0.5rem;
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 1px solid rgba(255, 138, 31, 0.32);
+  border: 1px solid rgba(var(--accent-rgb), 0.32);
   background-color: #0a0908;
   background-image: url("../../../fss-required.webp");
   background-position: center;
@@ -50,8 +50,8 @@
   cursor: pointer;
   border-radius: var(--r-lg);
   padding: 0.32rem 0.6rem;
-  border: 1.5px solid rgba(255, 138, 31, 0.92);
-  background: rgba(255, 138, 31, 0.09);
+  border: 1.5px solid rgba(var(--accent-rgb), 0.92);
+  background: rgba(var(--accent-rgb), 0.09);
   color: var(--text);
   box-shadow:
     0 0 14px var(--accent-dim),
@@ -63,7 +63,7 @@
 .system-map-notable-pill:hover {
   border-color: #ffb060;
   box-shadow:
-    0 0 18px rgba(255, 138, 31, 0.55),
+    0 0 18px rgba(var(--accent-rgb), 0.55),
     inset 0 0 12px var(--accent-a08);
 }
 
@@ -71,7 +71,7 @@
   border-color: rgba(255, 154, 77, 0.95);
   box-shadow:
     0 0 16px var(--accent-a45),
-    inset 0 0 10px rgba(255, 138, 31, 0.07);
+    inset 0 0 10px rgba(var(--accent-rgb), 0.07);
 }
 
 .system-map-notable-pill--dss {
@@ -151,7 +151,7 @@
 .planet-quick-popup {
   background: rgba(7, 8, 12, 0.88) !important;
   backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 138, 31, 0.52) !important;
+  border: 1px solid rgba(var(--accent-rgb), 0.52) !important;
   box-shadow:
     0 4px 32px var(--shadow-a45),
     0 0 28px rgba(255, 106, 26, 0.28),
@@ -271,7 +271,7 @@
   letter-spacing: 0.09em;
   color: var(--muted);
   background: rgba(0, 0, 0, 0.28);
-  border-bottom: 1px solid rgba(255, 138, 31, 0.14);
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.14);
 }
 
 .body-detail-card-body {
@@ -903,7 +903,7 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   max-height: none;
   padding: 0;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 138, 31, 0.28);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
 }
 
 .system-map-body .system-map-svg {

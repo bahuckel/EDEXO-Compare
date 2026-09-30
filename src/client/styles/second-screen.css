@@ -22,7 +22,7 @@
   gap: 0.15rem 0.75rem;
   align-items: baseline;
   padding-bottom: 0.5rem;
-  background: linear-gradient(90deg, var(--hud, #ff8a1f) 0 36%, rgba(255, 138, 31, 0.22) 70%, transparent)
+  background: linear-gradient(90deg, var(--hud, #ff8a1f) 0 36%, rgba(var(--accent-rgb), 0.22) 70%, transparent)
     bottom left / 100% 1px no-repeat;
 }
 
@@ -32,7 +32,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--hud-hi, #ffb060);
-  text-shadow: 0 0 10px rgba(255, 138, 31, 0.4);
+  text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.4);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -89,14 +89,14 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--hud-hi, #ffb060);
-  background: rgba(255, 138, 31, 0.08);
-  border: 1px solid rgba(255, 138, 31, 0.45);
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   cursor: pointer;
 }
 .second-screen .ss-sort--on {
   color: var(--ink, #07060a);
-  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
   border-color: #ffb060;
 }
 
@@ -122,8 +122,8 @@
 .second-screen .ss-row {
   position: relative;
   padding: 0.55rem 0.7rem 0.55rem 0.85rem;
-  border: 1px solid rgba(255, 138, 31, 0.28);
-  border-left: 3px solid rgba(255, 138, 31, 0.6);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  border-left: 3px solid rgba(var(--accent-rgb), 0.6);
   background: linear-gradient(180deg, rgba(40, 18, 3, 0.3), transparent 45%), rgba(22, 12, 5, 0.6);
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
 }
@@ -160,7 +160,7 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--hud-hi, #ffb060);
-  text-shadow: 0 0 8px rgba(255, 138, 31, 0.4);
+  text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
   flex-shrink: 0;
 }
 
@@ -203,6 +203,6 @@
   text-transform: uppercase;
   text-decoration: none;
   color: var(--ink, #07060a);
-  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
   clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
 }

@@ -17,6 +17,8 @@ import {
   type NotifySettingsDTO,
 } from "@shared/notices";
 import { POI_GROUP_OPTIONS } from "@shared/gecCategories";
+import { APP_THEME_PRESETS, resolveAppTheme, rgbToHex, type AppThemeChoice, type SavedAppTheme } from "@shared/appThemes";
+import { readAppTheme, readSavedThemes, setAppTheme, writeSavedThemes } from "./appTheme";
 import { CARRIER_SERVICE_OPTIONS } from "@shared/carrierServices";
 import type { AppSnapshot } from "@shared/types";
 import { useCallback, useEffect, useState } from "react";
@@ -505,6 +507,109 @@ export function NotifyPanel() {
         </div>
       ) : null}
       {msg ? <p className="options-error">{msg}</p> : null}
+    </FoldPanel>
+  );
+}
+
+/**
+ * The app's colour scheme (guild tester report, 2026-09-30): presets to pick from, a colour of your
+ * own, and your own saved under a name. Everything drawn in the accent follows; colours that mean
+ * something (live green, done blue, warnings, rarity, the ×5 badge) stay as they are. Per device.
+ */
+export function ColourSchemePanel() {
+  const [choice, setChoice] = useState<AppThemeChoice>(() => readAppTheme());
+  const [saved, setSaved] = useState<SavedAppTheme[]>(() => readSavedThemes());
+  const [name, setName] = useState("");
+  const current = resolveAppTheme(choice);
+  const currentHex = "custom" in choice ? choice.custom : rgbToHex(current.rgb);
+  const pick = (c: AppThemeChoice) => {
+    setChoice(c);
+    setAppTheme(c);
+  };
+  const isOn = (c: AppThemeChoice) => JSON.stringify(c) === JSON.stringify(choice);
+  const save = () => {
+    const n = name.trim().slice(0, 24);
+    if (!n) return;
+    const next = [...saved.filter((s) => s.name.toLowerCase() !== n.toLowerCase()), { name: n, hex: currentHex }];
+    setSaved(next);
+    writeSavedThemes(next);
+    pick({ custom: currentHex, name: n });
+    setName("");
+  };
+  const remove = (n: string) => {
+    const next = saved.filter((s) => s.name !== n);
+    setSaved(next);
+    writeSavedThemes(next);
+  };
+  const presetLabel = APP_THEME_PRESETS.find((p) => p.key === current.key)?.label;
+  return (
+    <FoldPanel
+      foldKey="options-colour-scheme"
+      className="options-meta-block"
+      title="Colour scheme"
+      summary={presetLabel ?? ("name" in choice && choice.name ? choice.name : "Your own")}
+      help={
+        <p>
+          The app&apos;s accent colour. Colours that mean something keep theirs whatever you pick: green for the live
+          sampling run, blue for done, red and yellow for warnings, the rarity colours and the ×5 badge. The HUD overlays
+          have their own colours, in the launcher&apos;s Overlays settings. Kept on this device.
+        </p>
+      }
+    >
+      <div className="theme-swatches" role="radiogroup" aria-label="Colour scheme">
+        {APP_THEME_PRESETS.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            role="radio"
+            aria-checked={isOn({ preset: p.key })}
+            className={`theme-swatch${isOn({ preset: p.key }) ? " theme-swatch--on" : ""}`}
+            style={{ ["--swatch" as string]: `rgb(${p.rgb})` }}
+            title={p.label}
+            onClick={() => pick({ preset: p.key })}
+          >
+            <span className="theme-swatch__dot" />
+            {p.label}
+          </button>
+        ))}
+        {saved.map((s) => (
+          <span key={s.name} className="theme-saved">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={isOn({ custom: s.hex, name: s.name })}
+              className={`theme-swatch${isOn({ custom: s.hex, name: s.name }) ? " theme-swatch--on" : ""}`}
+              style={{ ["--swatch" as string]: s.hex }}
+              onClick={() => pick({ custom: s.hex, name: s.name })}
+            >
+              <span className="theme-swatch__dot" />
+              {s.name}
+            </button>
+            <button type="button" className="theme-saved__x" title={`Forget "${s.name}"`} onClick={() => remove(s.name)}>
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <div className="theme-custom">
+        <label>
+          <span className="dim">Your own colour</span>{" "}
+          <input type="color" value={currentHex} onChange={(ev) => pick({ custom: ev.target.value })} />
+        </label>
+        <input
+          className="theme-name"
+          value={name}
+          maxLength={24}
+          placeholder="Name it to keep it"
+          onChange={(ev) => setName(ev.target.value)}
+          onKeyDown={(ev) => {
+            if (ev.key === "Enter") save();
+          }}
+        />
+        <button type="button" className="btn-top-toggle" disabled={!name.trim()} onClick={save}>
+          Save scheme
+        </button>
+      </div>
     </FoldPanel>
   );
 }

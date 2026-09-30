@@ -8,6 +8,7 @@ import { runHexSignals, type BackdropOptions, type HexSignalsHandle } from "./he
 type Msg =
   | { type: "start"; canvas: OffscreenCanvas; w: number; h: number; dpr: number; opts: BackdropOptions }
   | { type: "resize"; w: number; h: number; dpr: number }
+  | { type: "accent"; rgb: string | null }
   | { type: "stop" };
 
 let handle: HexSignalsHandle | null = null;
@@ -18,6 +19,8 @@ self.onmessage = (ev: MessageEvent<Msg>) => {
     handle = runHexSignals(m.canvas, m, m.opts);
   } else if (m.type === "resize") {
     handle?.resize(m.w, m.h, m.dpr);
+  } else if (m.type === "accent") {
+    handle?.setAccent(m.rgb);
   } else {
     handle?.stop();
     handle = null;

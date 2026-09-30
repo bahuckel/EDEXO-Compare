@@ -242,7 +242,7 @@
   font-size: var(--fs-sm);
   padding: 0.2rem 0.45rem;
   border-radius: var(--r-sm);
-  border: 1px solid rgba(255, 138, 31, 0.55);
+  border: 1px solid rgba(var(--accent-rgb), 0.55);
   background: var(--accent-a20);
   color: var(--text);
   cursor: pointer;
@@ -250,7 +250,7 @@
 }
 
 .exo-data-alert__btn:hover {
-  background: rgba(255, 138, 31, 0.32);
+  background: rgba(var(--accent-rgb), 0.32);
 }
 
 .exo-data-alert__btn--secondary {

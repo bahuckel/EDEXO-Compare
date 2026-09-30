@@ -174,7 +174,7 @@
 }
 .appbar-menu .appbar-icon-btn:hover,
 .appbar-menu .appbar-icon-btn:focus-visible {
-  background: linear-gradient(180deg, #ffb060, #ff8a1f 60%, #f2760f);
+  background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
   color: var(--ink, #07060a);
 }
 .appbar-menu > * + * {

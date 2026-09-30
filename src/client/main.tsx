@@ -4,6 +4,10 @@ import { lazy, Suspense } from "react";
 import "./styles.css";
 import { App } from "./App";
 import { UiFeedbackProvider } from "./ui/feedback";
+import { applyAppTheme } from "./appTheme";
+
+// The colour scheme, before the first paint, so the page never flashes orange first.
+applyAppTheme();
 
 /**
  * `?screen=triage` gets the second screen (§51) instead of the app.

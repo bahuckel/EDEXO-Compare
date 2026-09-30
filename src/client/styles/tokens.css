@@ -39,22 +39,26 @@
   --text-faint: #ab9f94;
 
   /* ---- accent --------------------------------------------------------- */
-  --accent: #ff8a1f;
+  /* One triplet drives the family, so a colour scheme (Options → Colour scheme, 2026-09-30) is three
+   * values: the triplet, the bright tint and the deep shade. The defaults are the orange as before. */
+  --accent-rgb: 255, 138, 31;
+  --accent: rgb(var(--accent-rgb));
   --accent-bright: #ffb060;
-  --accent-dim: rgba(255, 138, 31, 0.4);
-  --accent-glow: rgba(255, 138, 31, 0.22);
-  --accent-a06: rgba(255, 138, 31, 0.06);
-  --accent-a08: rgba(255, 138, 31, 0.08);
-  --accent-a10: rgba(255, 138, 31, 0.1);
-  --accent-a12: rgba(255, 138, 31, 0.12);
-  --accent-a15: rgba(255, 138, 31, 0.15);
-  --accent-a20: rgba(255, 138, 31, 0.2);
-  --accent-a22: rgba(255, 138, 31, 0.22);
-  --accent-a25: rgba(255, 138, 31, 0.25);
-  --accent-a30: rgba(255, 138, 31, 0.3);
-  --accent-a35: rgba(255, 138, 31, 0.35);
-  --accent-a38: rgba(255, 138, 31, 0.38);
-  --accent-a45: rgba(255, 138, 31, 0.45);
+  --accent-deep: #f2760f;
+  --accent-dim: rgba(var(--accent-rgb), 0.4);
+  --accent-glow: rgba(var(--accent-rgb), 0.22);
+  --accent-a06: rgba(var(--accent-rgb), 0.06);
+  --accent-a08: rgba(var(--accent-rgb), 0.08);
+  --accent-a10: rgba(var(--accent-rgb), 0.1);
+  --accent-a12: rgba(var(--accent-rgb), 0.12);
+  --accent-a15: rgba(var(--accent-rgb), 0.15);
+  --accent-a20: rgba(var(--accent-rgb), 0.2);
+  --accent-a22: rgba(var(--accent-rgb), 0.22);
+  --accent-a25: rgba(var(--accent-rgb), 0.25);
+  --accent-a30: rgba(var(--accent-rgb), 0.3);
+  --accent-a35: rgba(var(--accent-rgb), 0.35);
+  --accent-a38: rgba(var(--accent-rgb), 0.38);
+  --accent-a45: rgba(var(--accent-rgb), 0.45);
 
   /* ---- semantic status: the cockpit's states (WEBUI-REDESIGN 4.2) --------------------------
    * orange = normal · analysis blue = complete / done / info · red = warning · yellow = caution ·
