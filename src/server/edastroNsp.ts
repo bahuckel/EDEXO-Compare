@@ -23,6 +23,7 @@
  * Same rule as the carrier and POI lists: the file lands on the commander's machine from EDAstro
  * directly; nothing of it is in this repository or the installer.
  */
+import { K10_CODEX_ID } from "../shared/greenGasGiant.js";
 import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { resolveUserSettingsJsonPath } from "./paths.js";
@@ -307,6 +308,21 @@ export function nspBySystem(): { system: string; x: number; y: number; z: number
     } else by.set(k, { system, x, y, z, names: [name] });
   }
   return [...by.values()];
+}
+
+/**
+ * Systems with a K10-Type Anomaly in EDAstro's codex file — an NSP that only spawns around green gas
+ * giants (shared/greenGasGiant.ts). Kept per file version; empty until the file is downloaded.
+ */
+let k10Memo: { file: NspFile; addrs: Set<number> } | null = null;
+export function nspK10Systems(): ReadonlySet<number> {
+  const f = loadFile();
+  if (!f) return new Set();
+  if (k10Memo?.file === f.file) return k10Memo.addrs;
+  const addrs = new Set<number>();
+  for (const [id, , , addr] of f.file.rows) if (id === K10_CODEX_ID && typeof addr === "number") addrs.add(addr);
+  k10Memo = { file: f.file, addrs };
+  return addrs;
 }
 
 /** For tests: whether a cache file is present. */

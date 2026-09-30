@@ -109,12 +109,20 @@ export function GalaxyMap3D() {
   const [nspOn, setNspOn] = usePersistedState("galaxy.layer.nsp", false, isBool);
   const [carriersOn, setCarriersOn] = usePersistedState("galaxy.layer.carriers", false, isBool);
   const [bookmarksOn, setBookmarksOn] = usePersistedState("galaxy.layer.bookmarks", false, isBool);
-  const extraOn: Record<GalaxyLayerKind, boolean> = { poi: poiOn, nsp: nspOn, carriers: carriersOn, bookmarks: bookmarksOn };
+  const [gggOn, setGggOn] = usePersistedState("galaxy.layer.ggg", false, isBool);
+  const extraOn: Record<GalaxyLayerKind, boolean> = {
+    poi: poiOn,
+    nsp: nspOn,
+    carriers: carriersOn,
+    bookmarks: bookmarksOn,
+    ggg: gggOn,
+  };
   const extraSet: Record<GalaxyLayerKind, (v: boolean) => void> = {
     poi: setPoiOn,
     nsp: setNspOn,
     carriers: setCarriersOn,
     bookmarks: setBookmarksOn,
+    ggg: setGggOn,
   };
   const [extraData, setExtraData] = useState<Partial<Record<GalaxyLayerKind, GalaxyLayerDTO>>>({});
   const [worthStep, setWorthStep] = useState(0);

@@ -37,6 +37,8 @@ import {
   normOrganicToken,
 } from "./organicTracking.js";
 import { barycentreSyntheticBodyId, directParentPlanetId, planetRingCount } from "./orbitUtils.js";
+import { scanRings } from "../shared/bodyFeatures.js";
+import { greenCodexId, isK10CodexName } from "../shared/greenGasGiant.js";
 import { getProjectRoot } from "./paths.js";
 import {
   journalLineCarriesPlanetMetrics,
@@ -711,6 +713,13 @@ export class GameStateStore {
   readonly achievementDone = new Map<string, string>();
   /** Region of each system from its `CodexEntry` lines (the only journal event naming one). */
   private readonly codexRegionBySystem = new Map<number, string>();
+  /**
+   * Bodies the codex logged as a green gas giant: `bodyKey` → codex id (shared/greenGasGiant.ts).
+   * Every planet `CodexEntry` in the owner's journals carries a `BodyID` (678 of 678, 2026-09-30).
+   */
+  readonly greenCodexBodies = new Map<string, string>();
+  /** Systems where the codex logged a K10-Type Anomaly — an NSP that only spawns around green gas giants. */
+  readonly k10Systems = new Set<number>();
   /** The achievement the commander tracks (a user preference, not journal state). */
   trackedAchievementId: string | null = null;
 
@@ -1456,6 +1465,8 @@ export class GameStateStore {
     this.codexSightings.clear();
     this.achievementDone.clear();
     this.codexRegionBySystem.clear();
+    this.greenCodexBodies.clear();
+    this.k10Systems.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -1500,6 +1511,8 @@ export class GameStateStore {
     this.codexSightings.clear();
     this.achievementDone.clear();
     this.codexRegionBySystem.clear();
+    this.greenCodexBodies.clear();
+    this.k10Systems.clear();
     this.landingMinutesSamples.length = 0;
     this.samplingMinutesSamples.length = 0;
     this.scExitAt = null;
@@ -1821,6 +1834,9 @@ export class GameStateStore {
     if (line.Parents !== undefined) rec.parents = line.Parents;
     const ringCount = planetRingCount((line as Record<string, unknown>).Rings);
     if (ringCount !== undefined) rec.ringCount = ringCount;
+    const rings = scanRings((line as Record<string, unknown>).Rings);
+    if (rings !== undefined) rec.rings = rings;
+    setNum("ageMy", (line as Record<string, unknown>).Age_MY);
 
     if (line.AtmosphereComposition !== undefined) {
       const incoming = line.AtmosphereComposition;
@@ -2221,6 +2237,15 @@ export class GameStateStore {
     }
     const mapKey = codexMapKeyFromLine(line as Parameters<typeof codexMapKeyFromLine>[0]);
     if (mapKey) this.codexMapLogged.add(mapKey);
+    // Green gas giants: the codex names the body; a K10 anomaly names the system (shared/greenGasGiant.ts).
+    if (typeof line.SystemAddress === "number" && Number.isFinite(line.SystemAddress)) {
+      const name = typeof line.Name === "string" ? line.Name : "";
+      const green = greenCodexId(name);
+      if (green && typeof line.BodyID === "number" && Number.isFinite(line.BodyID)) {
+        this.greenCodexBodies.set(bodyKey(line.SystemAddress, line.BodyID), green);
+      }
+      if (isK10CodexName(name)) this.k10Systems.add(line.SystemAddress);
+    }
     {
       const rk = typeof line.Region_Localised === "string" ? regionJoinKey(line.Region_Localised) : "";
       if (rk && typeof line.SystemAddress === "number") this.codexRegionBySystem.set(line.SystemAddress, rk);
@@ -3332,6 +3357,8 @@ export class GameStateStore {
       codexMapLogged: [...this.codexMapLogged],
       codexSightings: [...this.codexSightings],
       achievementDone: [...this.achievementDone],
+      greenCodexBodies: [...this.greenCodexBodies],
+      k10Systems: [...this.k10Systems],
       landingMinutesSamples: [...this.landingMinutesSamples],
       samplingMinutesSamples: [...this.samplingMinutesSamples],
       pendingOrganicSales: this.pendingOrganicSales.map((p) => ({ ...p })),
@@ -3416,6 +3443,8 @@ export class GameStateStore {
     for (const k of data.codexMapLogged ?? []) this.codexMapLogged.add(k);
     for (const [k, t] of data.codexSightings ?? []) this.codexSightings.set(k, t);
     for (const [k, t] of data.achievementDone ?? []) this.achievementDone.set(k, t);
+    for (const [k, id] of data.greenCodexBodies ?? []) this.greenCodexBodies.set(k, id);
+    for (const a of data.k10Systems ?? []) this.k10Systems.add(a);
     this.landingMinutesSamples.push(...(data.landingMinutesSamples ?? []));
     this.samplingMinutesSamples.push(...(data.samplingMinutesSamples ?? []));
     this.pendingOrganicSales = data.pendingOrganicSales.map((p) => ({ ...p }));

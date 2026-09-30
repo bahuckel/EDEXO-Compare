@@ -128,10 +128,13 @@ import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startu
 import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
 import { createNoticesService, type NoticesContext } from "./notices.js";
 import { createBookmarksService } from "./bookmarks.js";
+import { createGreenGiantMarks, greenGiantForRecord, type GreenGiantSources } from "./greenGiants.js";
+import { setNotableOptionsProvider } from "./notableOptions.js";
+import { BODY_FEATURES } from "../shared/bodyFeatures.js";
 import type { NotifySettingsDTO } from "../shared/notices.js";
 import { queryPoi, readPoiStatus } from "./edastroPoi.js";
 import { queryCarriers, readCarrierStatus } from "./edastroCarriers.js";
-import { nearbyNsp } from "./edastroNsp.js";
+import { nearbyNsp, nspK10Systems } from "./edastroNsp.js";
 import { fetchGalacticRecords, galacticRecords, readGalacticRecordsStatus } from "./galacticRecords.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
@@ -290,6 +293,25 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const bookmarks = createBookmarksService({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-bookmarks.json"),
   });
+  /* Green gas giants (owner, 2026-09-30): the commander's own calls, and what the verdict reads. */
+  const greenMarks = createGreenGiantMarks({
+    filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-ggg-marks.json"),
+  });
+  const greenSources = (): GreenGiantSources => ({
+    greenCodexBodies: store.greenCodexBodies,
+    k10Systems: store.k10Systems,
+    k10FromEdastro: nspK10Systems,
+    marks: greenMarks,
+  });
+  const scanOf = (k: string) => store.explorationScans.get(k) ?? store.soldExplorationScans.get(k) ?? null;
+  // The Notable card: green gas giants always (they are notable like an Earth-like), features as chosen.
+  setNotableOptionsProvider(() => {
+    const on = notices.prefs().features;
+    return {
+      green: { marks: greenMarks, k10FromEdastro: nspK10Systems },
+      features: new Set(BODY_FEATURES.filter((f) => on[f.key]).map((f) => f.key)),
+    };
+  });
   const noticesContext: NoticesContext = {
     isKnownBody: (k) => store.explorationScans.has(k) || store.soldExplorationScans.has(k),
     allScans: function* () {
@@ -317,6 +339,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         })),
     nearbyNsps: (origin, radiusLy) => nearbyNsp(origin, radiusLy),
     galacticRecord: (key) => galacticRecords().get(key) ?? null,
+    greenGiant: (rec) => greenGiantForRecord(rec, greenSources()),
+    scanOf,
   };
   const notifySettings = (): NotifySettingsDTO => ({
     prefs: notices.prefs(),
@@ -1287,7 +1311,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getCommanderPosition: () => store.commanderPos,
     getFirstDiscoveryBacklog: () => firstDiscoveryBacklogWithDistance(store),
     getBacklogMap: () => backlogMap(store),
-    getDiscoveries: () => buildDiscoveries(store, getProjectRoot()),
+    getDiscoveries: () => buildDiscoveries(store, getProjectRoot(), { marks: greenMarks, k10FromEdastro: nspK10Systems }),
     searchGalaxyByValue: (query, limit) => galaxyValueSearch({ ...query, from: store.commanderPos, limit }),
     getGalaxySpecies: () => galaxySpeciesCatalogue(),
     getGalaxyRegions: () => galaxyRegions(),
@@ -1321,6 +1345,25 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getCollectionFocus: () => loadCollectionFocusConfig(),
     getNotifySettings: notifySettings,
     bookmarks,
+    ownGreenGiants: () => {
+      const out: { x: number; y: number; z: number; body: string; system: string }[] = [];
+      const src = greenSources();
+      const keys = new Set([...store.greenCodexBodies.keys(), ...[...greenMarks.all()].filter(([, m]) => m.mark === "yes").map(([k]) => k)]);
+      for (const k of keys) {
+        const rec = scanOf(k);
+        const pos = rec ? store.systemPositions.get(rec.systemAddress) : undefined;
+        if (!rec || !pos) continue;
+        const v = greenGiantForRecord(rec, src);
+        if (v?.level === "confirmed" && !v.gggNumber) out.push({ ...pos, body: rec.bodyName, system: rec.starSystem });
+      }
+      return out;
+    },
+    setGreenGiantMark: (systemAddress, bodyId, mark) => {
+      const rec = scanOf(`${systemAddress}:${bodyId}`);
+      if (!rec) return false;
+      greenMarks.set(`${systemAddress}:${bodyId}`, mark, { body: rec.bodyName, system: rec.starSystem });
+      return greenGiantForRecord(rec, greenSources());
+    },
     getRecords: () => ({ rows: notices.records(noticesContext), galactic: readGalacticRecordsStatus() }),
     fetchGalacticRecords: async (force) => {
       await fetchGalacticRecords({ force });

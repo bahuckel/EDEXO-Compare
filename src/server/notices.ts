@@ -10,6 +10,9 @@
  *   the first time a scan needs them, silently; only a record broken live is announced and marked.
  * - A notable stellar phenomenon: the FSS signal (`$Fixed_Event_Life_…`, type Codex) says one is in
  *   the system, and the `CodexEntry` that follows a drop at it names it.
+ * - Green gas giants (shared/greenGasGiant.ts): a scan that is a candidate, a codex entry that
+ *   confirms one, a K10-Type Anomaly that says one is in the system. And the body features the
+ *   commander switched on (shared/bodyFeatures.ts), plus the void cross on a jump.
  * - `FSDJump`: points of interest (EDAstro's catalogue, if fetched) and, beyond 2,000 ly of Sol,
  *   carriers, within N of the ship's average jumps. Each POI is announced once, ever; a carrier once
  *   per system it is parked in. At most three of each per jump, nearest first, so switching a group
@@ -20,6 +23,8 @@
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { ExplorationScanRecord } from "../shared/types.js";
+import { BODY_FEATURES, bodyFeatures, directParent, featureRecordFromScan, inVoidCross } from "../shared/bodyFeatures.js";
+import { greenCodexId, greenGiantLabel, isK10CodexName, type GreenGiantVerdict } from "../shared/greenGasGiant.js";
 import { carrierServiceLabel } from "../shared/carrierServices.js";
 import {
   CARRIER_NOTICE_MIN_FROM_SOL_LY,
@@ -64,6 +69,10 @@ export interface NoticesContext {
   galacticRecord?(key: string): { largest: { radius: number; body: string }; smallest: { radius: number; body: string } } | null;
   /** Notable stellar phenomena (EDAstro's codex file) within the radius, by system, nearest first. */
   nearbyNsps?(origin: Vec3, radiusLy: number): NearbyNsp[];
+  /** The green gas giant verdict for a body being scanned (server/greenGiants.ts). */
+  greenGiant?(rec: Pick<ExplorationScanRecord, "systemAddress" | "bodyId" | "bodyName" | "planetClass" | "surfaceTemperature">): GreenGiantVerdict | null;
+  /** A body the store already has, by `system:body` key — a moon's parent, for the ring features. */
+  scanOf?(bodyKey: string): ExplorationScanRecord | null;
 }
 
 export interface NearbyNsp {
@@ -183,6 +192,8 @@ export function createNoticesService(opts: {
   const seen = new Set(state.seen);
   let bests: Map<string, Best> | null = null;
   let nspDrop: { systemAddress: number | null; system: string; atMs: number } | null = null;
+  /** Inside the void cross after the last jump; null until the first jump of the session (which only sets it). */
+  let voidInside: boolean | null = null;
   const jumps: number[] = [];
 
   function jumpLy(ctx: Pick<NoticesContext, "loadoutJumpLy">): number | null {
@@ -199,8 +210,28 @@ export function createNoticesService(opts: {
     }
     const p = Array.isArray(line.StarPos) ? (line.StarPos as unknown[]) : null;
     const origin = p && p.length >= 3 && p.every((v) => typeof v === "number") ? { x: p[0] as number, y: p[1] as number, z: p[2] as number } : null;
+    let voidAdded = false;
+    if (origin) {
+      const inside = inVoidCross(origin);
+      const was = voidInside;
+      voidInside = inside;
+      if (was != null && was !== inside && state.prefs.features.voidCross) {
+        const sys = str(line.StarSystem) || ctx.currentSystem().name;
+        voidAdded = add({
+          id: `void:${num(line.SystemAddress) ?? sys}:${str(line.timestamp)}`,
+          at: str(line.timestamp) || new Date(now()).toISOString(),
+          kind: "notable",
+          title: inside ? "Entering the void cross" : "Leaving the void cross",
+          text: `${sys} — ${Math.round(Math.hypot(origin.x, origin.y, origin.z)).toLocaleString("en-US")} ly from Sol`,
+          system: sys,
+          systemAddress: num(line.SystemAddress),
+          body: null,
+          bodyKey: null,
+        });
+      }
+    }
     const perJump = jumpLy(ctx);
-    if (!origin || perJump == null) return false;
+    if (!origin || perJump == null) return voidAdded;
     const nearby = state.prefs.nearby ?? DEFAULT_NOTIFY_PREFS.nearby;
     const radius = nearby.jumps * perJump;
     const here = str(line.StarSystem) || ctx.currentSystem().name;
@@ -354,6 +385,32 @@ export function createNoticesService(opts: {
         }) || added;
     }
 
+    if (state.prefs.notable.green && !str(line.StarType) && ctx.greenGiant) {
+      const v = ctx.greenGiant({
+        systemAddress: addr,
+        bodyId,
+        bodyName: str(line.BodyName),
+        planetClass: planetClass || undefined,
+        surfaceTemperature: num(line.SurfaceTemperature) ?? undefined,
+      });
+      if (v) {
+        added =
+          add({ ...base, id: `ggg:${bodyKey}`, kind: "notable", title: greenGiantLabel(v), text: `${body} in ${system} — ${v.why}` }) ||
+          added;
+      }
+    }
+
+    if (BODY_FEATURES.some((f) => state.prefs.features[f.key])) {
+      const dp = directParent(line.Parents);
+      const parent = dp && dp.kind !== "Null" ? (ctx.scanOf?.(`${addr}:${dp.id}`) ?? null) : null;
+      for (const f of bodyFeatures(featureRecordFromScan(line), parent)) {
+        if (!state.prefs.features[f.key]) continue;
+        added =
+          add({ ...base, id: `feature:${f.key}:${bodyKey}`, kind: "notable", title: f.label, text: `${body} in ${system} — ${f.why}` }) ||
+          added;
+      }
+    }
+
     const s = scanSubject({
       starType: str(line.StarType) || undefined,
       planetClass: planetClass || undefined,
@@ -445,6 +502,47 @@ export function createNoticesService(opts: {
     });
   }
 
+  /** A green gas giant confirmed by the codex, or a K10 anomaly that says one is in the system. */
+  function onGreenCodex(line: Line, ctx: NoticesContext): boolean {
+    if (!state.prefs.notable.green) return false;
+    const addr = num(line.SystemAddress);
+    if (addr == null) return false;
+    const name = str(line.Name);
+    const system = str(line.System) || ctx.currentSystem().name;
+    const at = str(line.timestamp) || new Date(now()).toISOString();
+    const bodyId = num(line.BodyID);
+    if (greenCodexId(name) && bodyId != null) {
+      const bodyKey = `${addr}:${bodyId}`;
+      const body = shortBodyName(ctx.scanOf?.(bodyKey)?.bodyName ?? "", system) || `Body ${bodyId}`;
+      return add({
+        id: `ggg-codex:${bodyKey}`,
+        at,
+        kind: "notable",
+        title: "Green gas giant — confirmed by the codex",
+        text: `${body} in ${system}`,
+        system,
+        systemAddress: addr,
+        body,
+        bodyKey,
+        codexNew: line.IsNewEntry === true,
+      });
+    }
+    if (isK10CodexName(name)) {
+      return add({
+        id: `k10:${addr}`,
+        at,
+        kind: "notable",
+        title: "K10-Type Anomaly — a green gas giant is likely here",
+        text: `${system}: K10 anomalies spawn only around green gas giants. Look at its gas giants.`,
+        system,
+        systemAddress: addr,
+        body: null,
+        bodyKey: null,
+      });
+    }
+    return false;
+  }
+
   function onCodex(line: Line): boolean {
     const drop = nspDrop;
     if (!drop || !state.prefs.nsp) return false;
@@ -517,9 +615,11 @@ export function createNoticesService(opts: {
             nspDrop = { systemAddress: cur.address, system: cur.name, atMs: Number.isFinite(atMs) ? atMs : now() };
           }
           break;
-        case "CodexEntry":
-          changed = onCodex(line);
+        case "CodexEntry": {
+          const green = onGreenCodex(line, ctx);
+          changed = onCodex(line) || green;
           break;
+        }
         case "FSDJump":
         case "CarrierJump":
           nspDrop = null;

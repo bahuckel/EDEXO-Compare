@@ -107,6 +107,16 @@ export interface EstimatedSurfaceTempBand {
  */
 export type JumpTargetSource = "jump" | "target" | "route";
 
+/** One entry of journal `Scan.Rings` that is a ring, not a belt. Radii in metres, mass in megatonnes. */
+export interface ScanRing {
+  name: string;
+  /** `eRingClass_Icy`, `eRingClass_Rocky`, `eRingClass_MetalRich`, `eRingClass_Metalic`. */
+  ringClass: string;
+  massMt: number;
+  innerRadM: number;
+  outerRadM: number;
+}
+
 /** Single journal `Scan` row merged over time (basic + detailed). */
 export interface ExplorationScanRecord {
   systemAddress: number;
@@ -169,6 +179,10 @@ export interface ExplorationScanRecord {
   distanceFromArrivalLs?: number;
   /** Planetary rings from `Scan.Rings` (belts excluded); undefined when the scan listed none at all. */
   ringCount?: number;
+  /** The rings themselves (belts excluded), for the ring features (owner, 2026-09-30). */
+  rings?: ScanRing[];
+  /** Journal `Scan.Age_MY` (stars): age in millions of years. */
+  ageMy?: number;
   /**
    * Journal `ScanBaryCentre` for `{ Null: journalBarycentreNullId }` in `Scan.Parents`.
    * Stored under `bodyId = barycentreSyntheticBodyId(nullId)` so it never collides with real `BodyID`s.

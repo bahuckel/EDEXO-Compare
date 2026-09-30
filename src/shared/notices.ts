@@ -7,6 +7,7 @@
  * he looks. Never an OS notification; the one sound is an opt-in chime for records.
  */
 import { isTerraformableState } from "./terraformState.js";
+import { BODY_FEATURES, defaultFeaturePrefs, type BodyFeatureKey } from "./bodyFeatures.js";
 import { POI_GROUP_OPTIONS, type PoiGroup } from "./gecCategories.js";
 import { CARRIER_SERVICE_OPTIONS } from "./carrierServices.js";
 
@@ -29,7 +30,7 @@ export interface NoticeDTO {
 }
 
 /** The body types the Notable card flags, plus Helium gas giants (owner, 2026-09-30). */
-export type NotableKind = "earthlike" | "water" | "ammonia" | "terraformable" | "helium";
+export type NotableKind = "earthlike" | "water" | "ammonia" | "terraformable" | "helium" | "green";
 
 export const NOTABLE_KINDS: readonly { key: NotableKind; label: string }[] = [
   { key: "earthlike", label: "Earth-like worlds" },
@@ -37,6 +38,7 @@ export const NOTABLE_KINDS: readonly { key: NotableKind; label: string }[] = [
   { key: "ammonia", label: "Ammonia worlds" },
   { key: "terraformable", label: "Other terraformable bodies" },
   { key: "helium", label: "Helium gas giants" },
+  { key: "green", label: "Green gas giants" },
 ];
 
 export interface NotifyPrefsDTO {
@@ -49,6 +51,8 @@ export interface NotifyPrefsDTO {
   nsp: boolean;
   /** Points of interest and carriers within a few jumps (owner, 2026-09-30). */
   nearby: NearbyPrefsDTO;
+  /** Body features (shared/bodyFeatures.ts): Notable card and notices. All off until chosen. */
+  features: Record<BodyFeatureKey, boolean>;
 }
 
 export type CarrierNoticeMode = "off" | "every" | "services";
@@ -74,7 +78,7 @@ export const NEARBY_JUMPS_MAX = 10;
 const ALL_POI_OFF = Object.fromEntries(POI_GROUP_OPTIONS.map((g) => [g.key, false])) as Record<PoiGroup, boolean>;
 
 export const DEFAULT_NOTIFY_PREFS: NotifyPrefsDTO = {
-  notable: { earthlike: true, water: true, ammonia: true, terraformable: true, helium: true },
+  notable: { earthlike: true, water: true, ammonia: true, terraformable: true, helium: true, green: true },
   records: true,
   chime: false,
   nsp: true,
@@ -85,6 +89,7 @@ export const DEFAULT_NOTIFY_PREFS: NotifyPrefsDTO = {
     carrierServices: ["vistagenomics", "exploration", "refuel"],
     nsp: false,
   },
+  features: defaultFeaturePrefs(),
 };
 
 /** Only known keys and booleans get through; anything else keeps its current value. */
@@ -101,6 +106,9 @@ export function mergeNotifyPrefs(prev: NotifyPrefsDTO, raw: unknown): NotifyPref
   for (const g of POI_GROUP_OPTIONS) poiGroups[g.key] = bool(pg[g.key], poiGroups[g.key]);
   const jumpsRaw = typeof nr.jumps === "number" && Number.isFinite(nr.jumps) ? Math.round(nr.jumps) : pn.jumps;
   const known = new Set(CARRIER_SERVICE_OPTIONS.map((o) => o.key));
+  const fr = r.features && typeof r.features === "object" ? (r.features as Record<string, unknown>) : {};
+  const features = { ...defaultFeaturePrefs(), ...prev.features };
+  for (const f of BODY_FEATURES) features[f.key] = bool(fr[f.key], features[f.key]);
   return {
     notable,
     records: bool(r.records, prev.records),
@@ -115,6 +123,7 @@ export function mergeNotifyPrefs(prev: NotifyPrefsDTO, raw: unknown): NotifyPref
         : [...pn.carrierServices],
       nsp: bool(nr.nsp, pn.nsp ?? false),
     },
+    features,
   };
 }
 

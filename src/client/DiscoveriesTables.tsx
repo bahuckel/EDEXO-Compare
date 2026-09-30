@@ -19,6 +19,7 @@
  * not the scrollbar. Sorting happens before the cut, so "most valuable" means most valuable of
  * everything rather than of the first few hundred.
  */
+import { greenGiantLabel } from "@shared/greenGasGiant";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { DiscoveriesDTO, DiscoveryBodyRow, DiscoveryStarRow, DiscoverySystemRow } from "@shared/types";
 import { fuzzyRankAny } from "./fuzzyMatch";
@@ -504,7 +505,24 @@ export function DiscoveriesTables({
           </>
         ),
       },
-      { key: "class", label: "Type", value: (r) => r.planetClass, render: (r) => r.planetClass },
+      {
+        key: "class",
+        label: "Type",
+        value: (r) => r.planetClass,
+        render: (r) => (
+          <>
+            {r.planetClass}
+            {r.greenGiant ? (
+              <span
+                className={`disc-ggg disc-ggg--${r.greenGiant.level}`}
+                title={`${greenGiantLabel(r.greenGiant)}: ${r.greenGiant.why}`}
+              >
+                {r.greenGiant.gggNumber ? `green #${r.greenGiant.gggNumber}` : `green · ${r.greenGiant.level}`}
+              </span>
+            ) : null}
+          </>
+        ),
+      },
       {
         key: "atmo",
         label: "Atmosphere",
@@ -609,6 +627,7 @@ export function DiscoveriesTables({
       if (flagFilter.has("terra") && !isTerraformableState(r.terraformState)) return false;
       if (flagFilter.has("volcanic") && !r.volcanism) return false;
       if (flagFilter.has("atmo") && !r.atmosphere) return false;
+      if (flagFilter.has("green") && !r.greenGiant) return false;
       if (!q) return true;
       return (
         fuzzyRankAny(
@@ -620,6 +639,8 @@ export function DiscoveriesTables({
             readableAtmosphereType(r.atmosphere) ?? "",
             r.volcanism ?? "",
             ...r.speciesConfirmed,
+            r.greenGiant ? `green gas giant ggg ${r.greenGiant.level}` : "",
+            ...(r.features ?? []),
           ],
           q,
         ) != null
@@ -643,6 +664,7 @@ export function DiscoveriesTables({
             { key: "bodyfirst", label: "First to scan this body" },
             { key: "footfall", label: "First footfall" },
             { key: "terra", label: "Terraformable" },
+            { key: "green", label: "Green gas giant" },
           ]}
           picked={flagFilter}
           onToggle={toggleFlag}

@@ -1,6 +1,10 @@
 /**
  * The system-level parts of the snapshot: the journal systems list, the looked-up system's view, the D-scan count, the fuel range line, notable bodies. Split out of snapshot.ts (code review D, 2026-09-27).
  */
+import { greenGiantLabel } from "../shared/greenGasGiant.js";
+import { bodyFeatures, directParent } from "../shared/bodyFeatures.js";
+import { notableOptions } from "./notableOptions.js";
+import { greenGiantForRecord, type GreenGiantSources } from "./greenGiants.js";
 import { isTerraformableState } from "../shared/terraformState.js";
 import type {
   DScanBodiesDTO,
@@ -385,16 +389,33 @@ export function buildNotableBodiesForFocusedSystem(
 ): NotableBodyInfo[] {
   const focusAddr = store.viewingSystemAddress ?? store.currentSystemAddress;
   if (focusAddr == null) return [];
+  const opts = notableOptions();
+  const greenSrc: GreenGiantSources | null = opts.green
+    ? { ...opts.green, greenCodexBodies: store.greenCodexBodies, k10Systems: store.k10Systems }
+    : null;
 
+  const all = new Map<number, ExplorationScanRecord>();
   const byBodyId = new Map<number, ExplorationScanRecord>();
   for (const rec of store.liveScansInSystem(focusAddr)) {
-    if (!isPlanetLikeExplorationRecord(rec)) continue;
+    all.set(rec.bodyId, rec);
+    // Stars only count through a feature (ancient, ringed); planets through anything.
+    const star = explorationRecordIsStellar(rec) && !rec.isSynthetic && !!rec.starType;
+    if (!isPlanetLikeExplorationRecord(rec) && !(star && opts.features.size)) continue;
     byBodyId.set(rec.bodyId, rec);
   }
 
   const out: NotableBodyInfo[] = [];
   for (const rec of byBodyId.values()) {
-    const tag = notableTagForRecord(rec);
+    const green = greenSrc ? greenGiantForRecord(rec, greenSrc) : null;
+    let features: NotableBodyInfo["features"];
+    if (opts.features.size) {
+      const dp = directParent(rec.parents);
+      const parent = dp && dp.kind !== "Null" ? (all.get(dp.id) ?? null) : null;
+      const hits = bodyFeatures(rec, parent).filter((f) => opts.features.has(f.key));
+      if (hits.length) features = hits;
+    }
+    const tag =
+      notableTagForRecord(rec) ?? (green ? greenGiantLabel(green) : null) ?? (features ? features.map((f) => f.label).join(" · ") : null);
     if (!tag) continue;
     const bk = scanBodyKey(rec.systemAddress, rec.bodyId);
     const fullName = rec.bodyName?.trim() || `Body ${rec.bodyId}`;
@@ -410,6 +431,8 @@ export function buildNotableBodiesForFocusedSystem(
       bodyId: rec.bodyId,
       tag,
       dssMapped: store.dssMappedBodyKeys.has(bk),
+      ...(green ? { green } : {}),
+      ...(features ? { features } : {}),
     });
   }
   out.sort((a, b) => a.bodyId - b.bodyId);

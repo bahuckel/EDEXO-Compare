@@ -5,6 +5,8 @@
  * and for the difference between an estimated value and a sold one, which this DTO keeps apart on
  * purpose.
  */
+import type { GreenGiantVerdict } from "../greenGasGiant.js";
+
 export interface DiscoveriesDTO {
   generatedAt: string;
   systems: DiscoverySystemRow[];
@@ -67,6 +69,10 @@ export interface DiscoverySystemRow {
 
 export interface DiscoveryBodyRow {
   key: string;
+  /** A green gas giant verdict (shared/greenGasGiant.ts), or null. */
+  greenGiant?: GreenGiantVerdict | null;
+  /** Body features it has (shared/bodyFeatures.ts labels), for search. */
+  features?: string[];
   systemAddress: number;
   system: string;
   region: string | null;

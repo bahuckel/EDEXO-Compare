@@ -1,4 +1,6 @@
 /** Organic scan distance + payout overlay (Electron); built from live journal + Status.json. */
+import type { GreenGiantVerdict } from "../greenGasGiant.js";
+import type { BodyFeatureHit } from "../bodyFeatures.js";
 export interface ExoOrganicOverlayDTO {
   visible: boolean;
   phase: "tracking" | "celebrate";
@@ -233,6 +235,10 @@ export interface NotableBodyInfo {
   tag: string;
   /** True when `SAAScanComplete` was merged for this body (DSS). */
   dssMapped: boolean;
+  /** A green gas giant verdict (shared/greenGasGiant.ts), when it is a candidate. */
+  green?: GreenGiantVerdict;
+  /** The body features the commander switched on that this body has (shared/bodyFeatures.ts). */
+  features?: BodyFeatureHit[];
 }
 
 /**

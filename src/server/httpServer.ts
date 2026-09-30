@@ -1,3 +1,5 @@
+import type { GreenGiantVerdict } from "../shared/greenGasGiant.js";
+import type { OwnGreenGiant } from "./galaxyLayers.js";
 import type { FieldGuideDTO } from "../shared/fieldGuide.js";
 import type { RegionalRarity } from "../shared/speciesRarity.js";
 import { findMatchDetail, parseWsChannel, slimSnapshotForChannel, type WsChannel } from "./wsChannels.js";
@@ -56,6 +58,7 @@ import { registerBackupRoutes } from "./routes/backupRoutes.js";
 import type { BackupService } from "./backupService.js";
 import type { BookmarksService } from "./bookmarks.js";
 import { registerBookmarksRoutes } from "./routes/bookmarksRoutes.js";
+import { registerGreenGiantRoutes } from "./routes/greenGiantRoutes.js";
 import { registerRecordsRoutes } from "./routes/recordsRoutes.js";
 import type { NotifySettingsDTO, RecordRowDTO } from "../shared/notices.js";
 import type { GalacticRecordsStatusDTO } from "./galacticRecords.js";
@@ -207,6 +210,13 @@ export interface HttpServerOptions {
   fetchGalacticRecords?: (force: boolean) => Promise<RecordsDTO>;
   /** The commander's bookmarks (`/api/bookmarks`, server/bookmarks.ts). */
   bookmarks?: BookmarksService;
+  /**
+   * The commander's green gas giant call on a scanned body (`/api/ggg/mark`, server/greenGiants.ts).
+   * Returns the body's verdict after the call, or false when there is no scan of that body.
+   */
+  setGreenGiantMark?: (systemAddress: number, bodyId: number, mark: "yes" | "no" | null) => GreenGiantVerdict | null | false;
+  /** Green gas giants the commander confirmed that edGGG does not list, for the galaxy map's layer. */
+  ownGreenGiants?: () => readonly OwnGreenGiant[];
   /** Where a system is, from the journals' StarPos, for a new bookmark. */
   systemPositionOf?: (systemAddress: number) => { x: number; y: number; z: number } | null;
   setNotifyPrefs?: (raw: unknown) => NotifySettingsDTO;
@@ -700,6 +710,7 @@ export function createHttpServer(opts: HttpServerOptions): {
 
   registerBackupRoutes(app, opts, routeCtx);
   registerBookmarksRoutes(app, opts, routeCtx);
+  registerGreenGiantRoutes(app, opts, routeCtx);
   registerRecordsRoutes(app, opts, routeCtx);
 
   registerExomasteryRoutes(app, opts, routeCtx);

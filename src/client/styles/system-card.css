@@ -191,6 +191,17 @@
 .sys-notable-card__dot--dss {
   color: var(--ok);
 }
+/* A green gas giant row: the tag in the planet's own green, dimmer while only a guess (2026-09-30). */
+.sys-notable-card__row--ggg .dim {
+  color: #6fe38a;
+}
+.sys-notable-card__row--ggg-likely .dim,
+.sys-notable-card__row--ggg-possible .dim {
+  color: rgba(111, 227, 138, 0.75);
+}
+.sys-notable-card__features {
+  color: var(--accent);
+}
 
 /* ---- phone (< 700 px): the System card is a full-width row and may shrink; its name line and chips
    wrap; the star cards share one row equally (owner, 2026-09-30: the card ran off his phone's

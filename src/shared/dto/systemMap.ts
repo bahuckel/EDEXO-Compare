@@ -1,3 +1,5 @@
+import type { GreenGiantMark, GreenGiantVerdict } from "../greenGasGiant.js";
+import type { BodyFeatureHit } from "../bodyFeatures.js";
 import type { ExoPayoutRangeDTO } from "./body.js";
 import type { StarRoleDTO } from "./hud.js";
 import type { EstimatedSurfaceTempBand } from "./scan.js";
@@ -52,6 +54,12 @@ export interface SystemMapNodeDTO {
 
 export interface SystemMapBodyDetailDTO {
   bodyId: number;
+  /** Green gas giant verdict, when this gas giant is a candidate (shared/greenGasGiant.ts). */
+  green?: GreenGiantVerdict;
+  /** The commander's own call on this gas giant (null: none); absent when it cannot be green. */
+  greenMark?: GreenGiantMark | null;
+  /** Body features the commander switched on that this body has (shared/bodyFeatures.ts). */
+  features?: BodyFeatureHit[];
   bodyName: string;
   bodyKey: string;
   isStar: boolean;

@@ -2,7 +2,9 @@
  * The 3D galaxy map's extra layers (server/galaxyLayers.ts builds them; D10, guild tester report
  * 2026-09-30). Each is a list the commander already has on this PC.
  */
-export type GalaxyLayerKind = "poi" | "nsp" | "carriers" | "bookmarks";
+export type GalaxyLayerKind = "poi" | "nsp" | "carriers" | "bookmarks" | "ggg";
+
+export const GALAXY_LAYER_KINDS: readonly GalaxyLayerKind[] = ["poi", "nsp", "carriers", "bookmarks", "ggg"];
 
 /**
  * [x, y, z, label, detail, system]: label is the name; detail indexes {@link GalaxyLayerDTO.details},
@@ -36,4 +38,5 @@ export const GALAXY_LAYERS: readonly {
   { kind: "nsp", label: "Phenomena (NSP)", needs: "Download them in Options → Notify me", colour: [0.75, 0.42, 0.85], size: 3 },
   { kind: "carriers", label: "Carriers", needs: "Download them in Carriers", colour: [1, 0.85, 0.3], size: 5 },
   { kind: "bookmarks", label: "Bookmarks", needs: "Bookmark a system with the ☆ beside its name", colour: [0.96, 0.72, 0.24], size: 9 },
+  { kind: "ggg", label: "Green gas giants", needs: "", colour: [0.62, 1, 0.18], size: 11 },
 ];

@@ -1,3 +1,7 @@
+import { bodyFeatures, directParent } from "../shared/bodyFeatures.js";
+import { greenGiantForRecord } from "./greenGiants.js";
+import { isGggClass } from "../shared/greenGasGiant.js";
+import { notableOptions } from "./notableOptions.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type {
@@ -463,8 +467,21 @@ export function buildSystemMapSnapshot(
 
     const role = journalStellar ? roleForStarType(r.starType, cfg) : undefined;
 
+    // Green gas giant verdict, and the body features the commander switched on (notableOptions.ts).
+    const nopts = notableOptions();
+    const green = nopts.green
+      ? greenGiantForRecord(r, { ...nopts.green, greenCodexBodies: store.greenCodexBodies, k10Systems: store.k10Systems })
+      : null;
+    const dpf = nopts.features.size ? directParent(r.parents) : null;
+    const featureHits = nopts.features.size
+      ? bodyFeatures(r, dpf && dpf.kind !== "Null" ? (byId.get(dpf.id) ?? null) : null).filter((f) => nopts.features.has(f.key))
+      : [];
+
     detailsByBodyId[String(r.bodyId)] = {
       bodyId: r.bodyId,
+      ...(green ? { green } : {}),
+      ...(nopts.green && isGggClass(r.planetClass) ? { greenMark: nopts.green.marks.get(bk) } : {}),
+      ...(featureHits.length ? { features: featureHits } : {}),
       bodyName: shortBodyLabel(r.bodyName, starSystemName),
       bodyKey: bk,
       isStar,

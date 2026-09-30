@@ -1,0 +1,99 @@
+/**
+ * Green gas giants on the server (shared/greenGasGiant.ts has the what and why): the commander's own
+ * calls, kept in `edexo-ggg-marks.json` beside the user settings, and the verdict for a scanned body
+ * from everything the app knows — the codex, the edGGG catalogue, the temperature, a K10 anomaly in
+ * the system (from the journals or EDAstro's codex file), and the commander's call.
+ */
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import type { ExplorationScanRecord } from "../shared/types.js";
+import {
+  classifyGreenGiant,
+  isGggClass,
+  type GreenGiantMark,
+  type GreenGiantVerdict,
+} from "../shared/greenGasGiant.js";
+
+export interface GreenGiantMarkRow {
+  mark: GreenGiantMark;
+  at: string;
+  /** Names kept with the call, so the file reads on its own. */
+  body: string;
+  system: string;
+}
+
+export interface GreenGiantMarksService {
+  get(bodyKey: string): GreenGiantMark | null;
+  /** Sets or (with null) clears the commander's call. Returns whether anything changed. */
+  set(bodyKey: string, mark: GreenGiantMark | null, names: { body: string; system: string }): boolean;
+  all(): ReadonlyMap<string, GreenGiantMarkRow>;
+}
+
+export function createGreenGiantMarks(opts: { filePath: string | null; now?: () => number }): GreenGiantMarksService {
+  const now = opts.now ?? Date.now;
+  const marks = load(opts.filePath);
+
+  function persist(): void {
+    if (!opts.filePath) return;
+    const tmp = `${opts.filePath}.tmp`;
+    try {
+      writeFileSync(tmp, `${JSON.stringify({ formatVersion: 1, marks: Object.fromEntries(marks) }, null, 1)}\n`, "utf8");
+      renameSync(tmp, opts.filePath);
+    } catch {
+      /* kept in memory; the next call tries again */
+    }
+  }
+
+  return {
+    get: (k) => marks.get(k)?.mark ?? null,
+    set(k, mark, names) {
+      const prev = marks.get(k)?.mark ?? null;
+      if (prev === mark) return false;
+      if (mark == null) marks.delete(k);
+      else marks.set(k, { mark, at: new Date(now()).toISOString(), body: names.body, system: names.system });
+      persist();
+      return true;
+    },
+    all: () => marks,
+  };
+}
+
+function load(filePath: string | null): Map<string, GreenGiantMarkRow> {
+  const m = new Map<string, GreenGiantMarkRow>();
+  if (!filePath || !existsSync(filePath)) return m;
+  try {
+    const raw = JSON.parse(readFileSync(filePath, "utf8")) as { marks?: Record<string, GreenGiantMarkRow> };
+    for (const [k, v] of Object.entries(raw.marks ?? {})) {
+      if (v && (v.mark === "yes" || v.mark === "no")) m.set(k, v);
+    }
+  } catch {
+    /* a broken file starts empty rather than stopping the app */
+  }
+  return m;
+}
+
+/** What the verdict reads from the store and the downloads. */
+export interface GreenGiantSources {
+  greenCodexBodies: ReadonlyMap<string, string>;
+  /** Systems with a K10 anomaly logged in the journals. */
+  k10Systems: ReadonlySet<number>;
+  /** Systems with a K10 anomaly in EDAstro's codex file (empty until downloaded). */
+  k10FromEdastro?: () => ReadonlySet<number>;
+  marks: Pick<GreenGiantMarksService, "get">;
+}
+
+/** The verdict for one scanned body, or null when it is not a green gas giant candidate at all. */
+export function greenGiantForRecord(
+  rec: Pick<ExplorationScanRecord, "systemAddress" | "bodyId" | "bodyName" | "planetClass" | "surfaceTemperature">,
+  src: GreenGiantSources,
+): GreenGiantVerdict | null {
+  if (!isGggClass(rec.planetClass)) return null;
+  const key = `${rec.systemAddress}:${rec.bodyId}`;
+  return classifyGreenGiant({
+    planetClass: rec.planetClass,
+    surfaceTemperatureK: rec.surfaceTemperature,
+    bodyName: rec.bodyName,
+    codex: src.greenCodexBodies.has(key),
+    k10InSystem: src.k10Systems.has(rec.systemAddress) || (src.k10FromEdastro?.().has(rec.systemAddress) ?? false),
+    mark: src.marks.get(key),
+  });
+}

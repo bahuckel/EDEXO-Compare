@@ -10,6 +10,8 @@ import { poiRecords, readPoiStatus } from "./edastroPoi.js";
 import { carrierRecords, readCarrierStatus } from "./edastroCarriers.js";
 import { nspBySystem, readNspStatus } from "./edastroNsp.js";
 import type { BookmarksService } from "./bookmarks.js";
+import { GGG_CATALOGUE } from "../shared/gggCatalogue.js";
+import { shortClass } from "../shared/greenGasGiant.js";
 import type { GalaxyLayerDTO, GalaxyLayerKind } from "../shared/galaxyLayers.js";
 
 export type { GalaxyLayerDTO, GalaxyLayerKind } from "../shared/galaxyLayers.js";
@@ -35,12 +37,31 @@ function builder() {
   };
 }
 
+/** A green gas giant the commander confirmed that edGGG does not list yet, for the map. */
+export interface OwnGreenGiant {
+  x: number;
+  y: number;
+  z: number;
+  body: string;
+  system: string;
+}
+
 export function galaxyLayer(
   kind: GalaxyLayerKind,
   bookmarks: BookmarksService | undefined,
   nowMs = Date.now(),
+  ownGreen?: () => readonly OwnGreenGiant[],
 ): GalaxyLayerDTO {
   const out = builder();
+  if (kind === "ggg") {
+    // The edGGG catalogue (shipped with the app), then the commander's own confirmed finds.
+    for (const [n, body, cls, t, x, y, z] of GGG_CATALOGUE) {
+      const system = body.replace(/\s+(?:[A-Z]+\s+)?\d+(?:\s+[a-z])*$/, "");
+      out.add(x, y, z, body, `GGG #${n} · ${shortClass(cls)} · ${Number(t.toFixed(3))} K`, system);
+    }
+    for (const g of ownGreen?.() ?? []) out.add(g.x, g.y, g.z, g.body, "Your find — not in the edGGG catalogue", g.system);
+    return out.done(kind);
+  }
   if (kind === "poi") {
     if (!readPoiStatus(nowMs).haveData) return out.done(kind, false);
     for (const r of poiRecords())

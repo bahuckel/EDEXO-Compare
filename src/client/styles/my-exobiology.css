@@ -851,3 +851,24 @@
 .disc-empty {
   margin: var(--s-3) 0 0;
 }
+
+/* A green gas giant (shared/greenGasGiant.ts, 2026-09-30): solid when known, dashed when a guess. */
+.disc-ggg {
+  margin-left: 0.35rem;
+  padding: 0 0.25rem;
+  font-size: var(--fs-2xs);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6fe38a;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.disc-ggg--confirmed,
+.disc-ggg--catalogued {
+  background: rgba(111, 227, 138, 0.16);
+}
+.disc-ggg--possible {
+  border-style: dashed;
+  opacity: 0.8;
+}

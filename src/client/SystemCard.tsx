@@ -156,10 +156,12 @@ export function SystemCardRow({
                 <li key={`${n.bodyId}-${i}`}>
                   <button
                     type="button"
-                    className="sys-notable-card__row"
+                    className={`sys-notable-card__row${n.green ? ` sys-notable-card__row--ggg sys-notable-card__row--ggg-${n.green.level}` : ""}`}
                     title={
                       (n.dssMapped ? "Mapped (DSS)" : "Scanned, not mapped") +
                       " — click for quick facts" +
+                      (n.green ? `\n${n.green.why}` : "") +
+                      (n.features ?? []).map((f) => `\n${f.label}: ${f.why}`).join("") +
                       (records.has(n.bodyId) ? `\n${recordMarksTitle(records.get(n.bodyId)!)}` : "")
                     }
                     onClick={(ev) => onNotableClick(n, ev)}
@@ -168,6 +170,9 @@ export function SystemCardRow({
                       ●
                     </span>{" "}
                     {n.bodyLabelShort} <span className="dim">— {n.tag}</span>
+                    {n.features?.length && !n.tag.includes(n.features[0]!.label) ? (
+                      <span className="sys-notable-card__features"> · {n.features.map((f) => f.label).join(" · ")}</span>
+                    ) : null}
                     {records.has(n.bodyId) ? <RecordMedal marks={records.get(n.bodyId)!} /> : null}
                   </button>
                 </li>

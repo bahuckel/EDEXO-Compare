@@ -27,6 +27,8 @@
  * cashes in. Value on those rows is the sale, not an estimate, because the estimate no longer
  * applies to anything he can sell again.
  */
+import { bodyFeatures, directParent } from "../shared/bodyFeatures.js";
+import { greenGiantForRecord, type GreenGiantSources } from "./greenGiants.js";
 import type {
   BodyExoState,
   DiscoveriesDTO,
@@ -101,7 +103,18 @@ function confirmedOn(b: BodyExoState | undefined): string[] {
   return [...out].sort();
 }
 
-export function buildDiscoveries(store: GameStateStore, projectRoot: string): DiscoveriesDTO {
+export function buildDiscoveries(
+  store: GameStateStore,
+  projectRoot: string,
+  /** The commander's green gas giant calls and EDAstro's K10 systems (server/greenGiants.ts). */
+  green?: Omit<GreenGiantSources, "greenCodexBodies" | "k10Systems">,
+): DiscoveriesDTO {
+  const greenSrc: GreenGiantSources = {
+    marks: { get: () => null },
+    ...green,
+    greenCodexBodies: store.greenCodexBodies,
+    k10Systems: store.k10Systems,
+  };
   /* Physics first: a sold system still has its bodies, it just has no price left. */
   const scans = new Map<string, ExplorationScanRecord>();
   for (const [k, r] of store.soldExplorationScans) scans.set(k, r);
@@ -239,8 +252,13 @@ export function buildDiscoveries(store: GameStateStore, projectRoot: string): Di
     if (dssComplete) sys.dssMapped += 1;
     if (footfall) sys.firstFootfalls += 1;
 
+    const dp = directParent(rec.parents);
+    const parentRec = dp && dp.kind !== "Null" ? (scans.get(`${addr}:${dp.id}`) ?? null) : null;
+    const features = bodyFeatures(rec, parentRec).map((f) => f.label);
     bodies.push({
       key,
+      greenGiant: greenGiantForRecord(rec, greenSrc),
+      ...(features.length ? { features } : {}),
       systemAddress: addr,
       system: sys.name,
       region: sys.region,

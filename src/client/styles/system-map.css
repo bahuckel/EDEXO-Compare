@@ -1051,6 +1051,96 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   font-size: var(--fs-sm);
   line-height: 1.35;
 }
+/* Green gas giants (shared/greenGasGiant.ts, 2026-09-30). The one fixed colour: it is the planet's. */
+.body-ggg {
+  --ggg: 111, 227, 138;
+  padding: 0.4rem 0.6rem;
+  border: 1px dashed rgba(var(--ggg), 0.35);
+  font-size: var(--fs-sm);
+}
+.body-ggg--confirmed,
+.body-ggg--catalogued {
+  border-style: solid;
+  border-color: rgba(var(--ggg), 0.7);
+  background: linear-gradient(90deg, rgba(var(--ggg), 0.14), transparent 85%);
+  box-shadow: 0 0 10px rgba(var(--ggg), 0.18);
+}
+.body-ggg--likely {
+  border-style: solid;
+  border-color: rgba(var(--ggg), 0.5);
+}
+.body-ggg__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem;
+  color: rgb(var(--ggg));
+}
+.body-ggg__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: rgb(var(--ggg));
+  box-shadow: 0 0 6px rgba(var(--ggg), 0.8);
+  align-self: center;
+}
+.body-ggg:not(.body-ggg--confirmed):not(.body-ggg--catalogued):not(.body-ggg--likely) .body-ggg__dot {
+  background: transparent;
+  border: 1px solid rgb(var(--ggg));
+  box-shadow: none;
+}
+.body-ggg__why {
+  color: var(--text-muted, #9aa4b2);
+  font-size: var(--fs-xs);
+}
+.body-ggg__hint {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted, #9aa4b2);
+  font-size: var(--fs-xs);
+}
+.body-ggg__hint a {
+  color: rgb(var(--ggg));
+}
+.body-ggg__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+.body-ggg__btn {
+  padding: 0.1rem 0.5rem;
+  font: inherit;
+  font-size: var(--fs-xs);
+  color: rgb(var(--ggg));
+  background: transparent;
+  border: 1px solid rgba(var(--ggg), 0.55);
+  cursor: pointer;
+}
+.body-ggg__btn:hover:not(:disabled) {
+  background: rgba(var(--ggg), 0.14);
+}
+.body-ggg__btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.body-ggg__btn--quiet {
+  color: var(--text-muted, #9aa4b2);
+  border-color: rgba(154, 164, 178, 0.4);
+}
+.body-ggg__err {
+  color: #ff8a7a;
+  font-size: var(--fs-xs);
+}
+.body-features {
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  list-style: none;
+  border-left: 2px solid var(--accent);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
 .system-map-record-ring {
   filter: drop-shadow(0 0 4px rgba(245, 184, 61, 0.8));
 }

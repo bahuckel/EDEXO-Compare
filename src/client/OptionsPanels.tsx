@@ -17,6 +17,7 @@ import {
   type NotifySettingsDTO,
 } from "@shared/notices";
 import { POI_GROUP_OPTIONS } from "@shared/gecCategories";
+import { BODY_FEATURE_GROUPS, BODY_FEATURES } from "@shared/bodyFeatures";
 import { APP_THEME_PRESETS, resolveAppTheme, rgbToHex, type AppThemeChoice, type SavedAppTheme } from "@shared/appThemes";
 import { readAppTheme, readSavedThemes, setAppTheme, writeSavedThemes } from "./appTheme";
 import { CARRIER_SERVICE_OPTIONS } from "@shared/carrierServices";
@@ -336,8 +337,9 @@ export function NotifyPanel() {
     };
   }, []);
 
-  const save = useCallback((patch: Partial<Omit<NotifyPrefsDTO, "notable" | "nearby">> & {
+  const save = useCallback((patch: Partial<Omit<NotifyPrefsDTO, "notable" | "nearby" | "features">> & {
     notable?: Partial<NotifyPrefsDTO["notable"]>;
+    features?: Partial<NotifyPrefsDTO["features"]>;
     nearby?: Partial<Omit<NearbyPrefsDTO, "poiGroups">> & { poiGroups?: Partial<NearbyPrefsDTO["poiGroups"]> };
   }) => {
     setBusy(true);
@@ -362,7 +364,8 @@ export function NotifyPanel() {
     (p.records ? 1 : 0) +
     (p.nsp ? 1 : 0) +
     poiOn +
-    (nb.carriers !== "off" ? 1 : 0);
+    (nb.carriers !== "off" ? 1 : 0) +
+    BODY_FEATURES.filter((f) => p.features?.[f.key]).length;
   const radiusLy = st.jumpLy != null ? Math.round(nb.jumps * st.jumpLy) : null;
 
   return (
@@ -389,6 +392,16 @@ export function NotifyPanel() {
             {CARRIER_NOTICE_MIN_FROM_SOL_LY.toLocaleString()} ly from Sol, and their position is only as fresh as
             EDAstro&apos;s last sighting — the notice says how old it is. Both use the lists you downloaded in the
             Points of interest and Carriers panels.
+          </p>
+          <p>
+            <strong>Green gas giants</strong>: a codex entry confirms one, a body on the edGGG catalogue is a known
+            one, and a surface temperature that a known one has makes it likely. A K10-Type Anomaly in the system
+            (they spawn only around them) makes every gas giant there possible. Open a gas giant&apos;s details to
+            mark it green, or not green, yourself.
+          </p>
+          <p>
+            <strong>Body features</strong>: small bodies, fast orbits, landables with a view, rings and more, each
+            with the figures that make it one. All off until you tick them.
           </p>
           <p>Never a Windows notification. The chime is the only sound, and it is off unless you turn it on.</p>
         </>
@@ -424,6 +437,29 @@ export function NotifyPanel() {
           <span>Chime when a record falls (this PC only)</span>
         </label>
       </div>
+
+      <h4 className="options-notify-h">Body features</h4>
+      <p className="dim tiny options-notify-sub">
+        Each one you tick shows on the Notable card with the reason, and a new scan of one comes to the mail icon.
+      </p>
+      {BODY_FEATURE_GROUPS.map((g) => (
+        <div key={g.key}>
+          <p className="dim tiny options-notify-sub">{g.label}</p>
+          <div className="options-notify-grid">
+            {BODY_FEATURES.filter((f) => f.group === g.key).map((f) => (
+              <label key={f.key} className="options-toggle" title={f.hint}>
+                <input
+                  type="checkbox"
+                  checked={p.features?.[f.key] ?? false}
+                  disabled={busy}
+                  onChange={(ev) => save({ features: { [f.key]: ev.target.checked } })}
+                />
+                <span>{f.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      ))}
 
       <h4 className="options-notify-h">Nearby</h4>
       <div className="options-focus-grid">

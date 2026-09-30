@@ -30,6 +30,7 @@ import type { GalaxySystemDTO } from "../../shared/dto/galaxy.js";
 
 import type { HttpServerOptions, RouteContext } from "../httpServer.js";
 import { galaxyLayer, type GalaxyLayerKind } from "../galaxyLayers.js";
+import { GALAXY_LAYER_KINDS } from "../../shared/galaxyLayers.js";
 
 export function registerGalaxyRoutes(
   app: express.Express,
@@ -39,11 +40,11 @@ export function registerGalaxyRoutes(
   // The map's extra layers (galaxyLayers.ts): points of interest, phenomena, carriers, bookmarks.
   app.get("/api/galaxy/layers", (req, res) => {
     const kind = String(req.query?.kind ?? "") as GalaxyLayerKind;
-    if (!["poi", "nsp", "carriers", "bookmarks"].includes(kind)) {
-      res.status(400).json({ ok: false, error: "kind must be poi, nsp, carriers or bookmarks" });
+    if (!GALAXY_LAYER_KINDS.includes(kind)) {
+      res.status(400).json({ ok: false, error: `kind must be one of ${GALAXY_LAYER_KINDS.join(", ")}` });
       return;
     }
-    res.json(galaxyLayer(kind, opts.bookmarks));
+    res.json(galaxyLayer(kind, opts.bookmarks, Date.now(), opts.ownGreenGiants));
   });
 
   /**
