@@ -68,25 +68,24 @@ function LiveSnapshotFreshness({ connected }: { connected: boolean }) {
    * through <HeaderBar> would re-render the header each time. */
   const lastAt = useLastStateAt();
   const [, setTick] = useState(0);
+  // Minutes only (owner, 2026-09-30: a seconds counter was distracting), so a slow tick will do.
   useEffect(() => {
     if (!connected || lastAt == null) return;
-    const id = window.setInterval(() => setTick((t) => t + 1), 1000);
+    const id = window.setInterval(() => setTick((t) => t + 1), 15_000);
     return () => clearInterval(id);
   }, [connected, lastAt]);
 
   if (!connected || lastAt == null) return null;
 
   const sec = Math.floor((Date.now() - lastAt) / 1000);
-  let label: string;
-  if (sec < 2) label = "just now";
-  else if (sec < 60) label = `${sec}s ago`;
-  else if (sec < 3600) label = `${Math.floor(sec / 60)}m ago`;
-  else label = `${Math.floor(sec / 3600)}h ago`;
-
+  const min = Math.floor(sec / 60);
   return (
-    <span className="top-live-freshness" title="Last live snapshot from server">
+    <span
+      className="top-live-freshness"
+      title={`Last live snapshot from the server: ${sec < 60 ? "under a minute" : `${min} min`} ago`}
+    >
       {" "}
-      · {label}
+      · <span className="top-live-freshness__m">{min}m</span>
     </span>
   );
 }

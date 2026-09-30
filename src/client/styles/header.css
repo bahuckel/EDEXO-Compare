@@ -35,6 +35,13 @@
   font-weight: 500;
   opacity: 0.82;
 }
+/* Room for two digits and the m, so the pill keeps its width until 100 minutes (owner, 2026-09-30). */
+.top-live-freshness__m {
+  display: inline-block;
+  min-width: 3.6ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 
 .top-playing-as-muted {
   font-weight: 400;
