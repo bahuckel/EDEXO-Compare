@@ -426,11 +426,11 @@ export function notableBodiesForSystem(
     Sold bodies too, marked (owner, 2026-09-30: "include sold but mark them"): a system he already
     cashed in still has its green gas giant and its shepherd moon. A live scan of the same body wins.
   */
-  const soldIds = new Set<number>();
+  const archivedIds = new Set<number>();
   const live = store.liveScansInSystem(focusAddr);
   const liveIds = new Set(live.map((r) => r.bodyId));
   const sold = store.soldScansInSystem(focusAddr).filter((r) => !liveIds.has(r.bodyId));
-  for (const r of sold) soldIds.add(r.bodyId);
+  for (const r of sold) archivedIds.add(r.bodyId);
   for (const rec of [...live, ...sold]) {
     all.set(rec.bodyId, rec);
     // Stars only count through a feature (ancient, ringed); planets through anything.
@@ -453,6 +453,7 @@ export function notableBodiesForSystem(
       notableTagForRecord(rec) ?? (green ? greenGiantLabel(green) : null) ?? (features ? features.map((f) => f.label).join(" · ") : null);
     if (!tag) continue;
     const bk = scanBodyKey(rec.systemAddress, rec.bodyId);
+    const archived = archivedIds.has(rec.bodyId);
     const fullName = rec.bodyName?.trim() || `Body ${rec.bodyId}`;
     const bodyLabelShort = shortNotableBodyLabel(fullName, [
       rec.starSystem,
@@ -465,10 +466,11 @@ export function notableBodiesForSystem(
       systemAddress: rec.systemAddress,
       bodyId: rec.bodyId,
       tag,
-      dssMapped: store.dssMappedBodyKeys.has(bk),
+      // The archive row of a sold body keeps its mapping; data lost on death is listed, not "sold".
+      dssMapped: store.dssMappedBodyKeys.has(bk) || (archived && store.archivedDssMappedBodyKeys.has(bk)),
       ...(green ? { green } : {}),
       ...(features ? { features } : {}),
-      ...(soldIds.has(rec.bodyId) ? { sold: true } : {}),
+      ...(archived && store.soldBodyKeys.has(bk) ? { sold: true } : {}),
     });
   }
   out.sort((a, b) => a.bodyId - b.bodyId);

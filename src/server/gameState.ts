@@ -539,6 +539,12 @@ export class GameStateStore {
   /** Bodies that completed DSS probe mapping (`SAAScanComplete` in journal); keyed globally. */
   readonly dssMappedBodyKeys = new Set<string>();
   /**
+   * Bodies that were mapped when their data left {@link dssMappedBodyKeys} (sold, or lost on death).
+   * The value is gone, the mapping happened: the Notable card and overlay still show a sold body as
+   * mapped (2026-09-30). Only read for rows of the sold archive — a live re-scan uses the live set.
+   */
+  readonly archivedDssMappedBodyKeys = new Set<string>();
+  /**
    * First-mapper bonus eligibility frozen at `SAAScanComplete` from merged `Scan.WasMapped` at that time.
    * Later `Scan` lines often set `WasMapped: true` after your map; without this, DSS estimates wrongly drop the bonus.
    */
@@ -1535,6 +1541,7 @@ export class GameStateStore {
     this.fssDiscoveryScanBySystem.clear();
     this.orbitParentPlanetByBody.clear();
     this.dssMappedBodyKeys.clear();
+    this.archivedDssMappedBodyKeys.clear();
     this.dssFirstMapperEligibleByBodyKey.clear();
     this.dssMappingEfficientByBodyKey.clear();
     this.fssBodySignalsBodyKeys.clear();
@@ -2981,7 +2988,10 @@ export class GameStateStore {
       }
     }
     for (const k of [...this.dssMappedBodyKeys]) {
-      if (k.startsWith(prefix)) this.dssMappedBodyKeys.delete(k);
+      if (k.startsWith(prefix)) {
+        this.dssMappedBodyKeys.delete(k);
+        this.archivedDssMappedBodyKeys.add(k);
+      }
     }
     for (const k of [...this.dssFirstMapperEligibleByBodyKey.keys()]) {
       if (k.startsWith(prefix)) this.dssFirstMapperEligibleByBodyKey.delete(k);
@@ -3374,6 +3384,7 @@ export class GameStateStore {
       soldBodyKeys: [...this.soldBodyKeys],
       fssBodySignalsBodyKeys: [...this.fssBodySignalsBodyKeys],
       dssMappedBodyKeys: [...this.dssMappedBodyKeys],
+      archivedDssMappedBodyKeys: [...this.archivedDssMappedBodyKeys],
       dssFirstMapperEligibleByBodyKey: [...this.dssFirstMapperEligibleByBodyKey.entries()],
       dssMappingEfficientByBodyKey: [...this.dssMappingEfficientByBodyKey.entries()],
       orbitParentPlanetByBody: [...this.orbitParentPlanetByBody.entries()],
@@ -3461,6 +3472,7 @@ export class GameStateStore {
     this.explorationScansRevision += 1;
     for (const k of data.fssBodySignalsBodyKeys) this.fssBodySignalsBodyKeys.add(k);
     for (const k of data.dssMappedBodyKeys) this.dssMappedBodyKeys.add(k);
+    for (const k of data.archivedDssMappedBodyKeys ?? []) this.archivedDssMappedBodyKeys.add(k);
     for (const [k, v] of data.dssFirstMapperEligibleByBodyKey) this.dssFirstMapperEligibleByBodyKey.set(k, v);
     for (const [k, v] of data.dssMappingEfficientByBodyKey) this.dssMappingEfficientByBodyKey.set(k, v);
     for (const [k, v] of data.orbitParentPlanetByBody) this.orbitParentPlanetByBody.set(k, v);

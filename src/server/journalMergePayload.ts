@@ -84,8 +84,9 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   22: `achievementDone` — plants that count for achievements, per region.
   23: scan `rings` + `ageMy`, `greenCodexBodies`, `k10Systems` — green gas giants and the body features.
   24: `nspSeen` — notable stellar phenomena met per system (FSS signal, codex name).
+  25: `archivedDssMappedBodyKeys` — sold bodies remember they were mapped.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 24;
+export const JOURNAL_MERGE_CACHE_FORMAT = 25;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -108,6 +109,8 @@ export type JournalMergeCachePayload = {
   soldBodyKeys?: string[];
   fssBodySignalsBodyKeys: string[];
   dssMappedBodyKeys: string[];
+  /** Present when {@link format} >= 25 — see {@link GameStateStore.archivedDssMappedBodyKeys}. */
+  archivedDssMappedBodyKeys?: string[];
   dssFirstMapperEligibleByBodyKey: [string, boolean][];
   dssMappingEfficientByBodyKey: [string, boolean][];
   orbitParentPlanetByBody: [string, number][];

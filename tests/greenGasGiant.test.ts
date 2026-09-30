@@ -276,6 +276,7 @@ describe("the Notable card", () => {
     // Body 1 sold: moved to the archive, body 2 still live.
     store.soldExplorationScans.set("77:1", store.explorationScans.get("77:1")!);
     store.explorationScans.delete("77:1");
+    store.soldBodyKeys.add("77:1");
     const list = buildNotableBodiesForFocusedSystem(store, "Sold");
     expect(list.map((n) => [n.bodyId, n.sold ?? false])).toEqual([
       [1, true],

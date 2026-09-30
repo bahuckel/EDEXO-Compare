@@ -427,6 +427,7 @@ export const SystemMapModal = memo(function SystemMapModal({
                     {n.bodyLabelShort}
                   </span>
                   <span className="system-map-notable-tag"> - {n.tag}</span>
+                  {n.sold ? <span className="system-map-notable-sold">sold</span> : null}
                 </button>
               ))}
             </div>

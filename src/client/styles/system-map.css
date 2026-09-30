@@ -111,6 +111,18 @@
   font-size: var(--fs-sm);
 }
 
+/* Same small box as the Notable card's (system-card.css). */
+.system-map-notable-sold {
+  margin-left: 0.4rem;
+  padding: 0 0.25rem;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border: 1px solid currentColor;
+  opacity: 0.8;
+}
+
 .system-map-total-val {
   font-size: var(--fs-xl);
   font-weight: 800;
