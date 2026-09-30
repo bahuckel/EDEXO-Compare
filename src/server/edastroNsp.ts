@@ -14,7 +14,10 @@
  * the survey). Measured on a 120,000-row sample and the owner's own journal:
  * - `codex_ent_gas_clds_*`   Lagrange clouds and storms (his "Proto-Lagrange Cloud" is `_light`)
  * - `codex_ent_small_org_*`  molluscs, squids and the other small space-borne life
- * - `codex_ent_l_*`          the large ones: trees, pods, metallic / ice / silicate crystals
+ * - `codex_ent_l_*`          the large ones: trees, metallic / ice / silicate crystals
+ * - `codex_ent_s_*`          pods (Peduncle, Aster, Chalice …)
+ * - `codex_ent_spoi_*`       mineral spheres, Stolon pods, Gyre trees, Void hearts
+ * (The same families the bundled EDSM codex lists under "biological" that are not plants.)
  * Surface biology, geology, Guardian and Thargoid sites are left out.
  *
  * Same rule as the carrier and POI lists: the file lands on the commander's machine from EDAstro
@@ -32,7 +35,7 @@ export const NSP_SOURCE_SIZE_LABEL = "855 MB";
 /** The codex file is rebuilt weekly; asking more often than daily wastes nobody's time but EDAstro's. */
 export const NSP_FETCH_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
-const NSP_ID = /^codex_ent_(gas_clds|small_org|l_)/i;
+const NSP_ID = /^codex_ent_(gas_clds|small_org|l_|s_|spoi)/i;
 
 /** One phenomenon type logged in one system. */
 export interface NspRecord {
@@ -46,8 +49,13 @@ export interface NspRecord {
   z: number;
 }
 
+/** Bumped whenever the rows kept change: an older file is fetched again in full, not "unchanged". */
+const NSP_FILTER_VERSION = 2;
+
 interface NspFile {
   formatVersion: 1;
+  /** Which {@link NSP_ID} the rows were picked with (absent = 1: before pods and spheres). */
+  filterVersion?: number;
   fetchedAtMs: number;
   etag: string | null;
   sourceBytes: number | null;
@@ -83,6 +91,8 @@ export function nspFamilyLabel(id: string): string {
   if (s.includes("iccry")) return "Ice crystals";
   if (s.includes("qtzcry")) return "Silicate crystals";
   if (s.includes("_cry")) return "Crystals";
+  if (s.startsWith("codex_ent_spoi_ball")) return "Mineral spheres";
+  if (s.startsWith("codex_ent_spoi")) return "Space-borne life";
   if (s.includes("seed") && s.includes("pln")) return "Space-borne tree";
   if (s.includes("seed")) return "Space-borne pod";
   return "Notable stellar phenomenon";
@@ -96,7 +106,7 @@ export function parseNspLine(
   line: string,
   col: { name: number; id: number; system: number; x: number; y: number; z: number; addr: number },
 ): NspRecord | null {
-  if (!/codex_ent_(gas_clds|small_org|l_)/i.test(line)) return null;
+  if (!/codex_ent_(gas_clds|small_org|l_|s_|spoi)/i.test(line)) return null;
   const f = splitCsvLine(line);
   const id = (f[col.id] ?? "").trim().toLowerCase();
   if (!NSP_ID.test(id)) return null;
@@ -203,7 +213,7 @@ export function startNspDownload(opts: { force?: boolean; fetchImpl?: typeof fet
 async function downloadNsp(fetchImpl: typeof fetch): Promise<void> {
   const prev = loadFile()?.file ?? null;
   const headers: Record<string, string> = { "User-Agent": APP_USER_AGENT };
-  if (prev?.etag) headers["If-None-Match"] = prev.etag;
+  if (prev?.etag && prev.filterVersion === NSP_FILTER_VERSION) headers["If-None-Match"] = prev.etag;
   const res = await fetchImpl(NSP_URL, { headers });
   if (res.status === 304 && prev) {
     // Unchanged: keep the rows, restart the clock.
@@ -247,6 +257,7 @@ async function downloadNsp(fetchImpl: typeof fetch): Promise<void> {
   if (!col) throw new Error("codex-data.csv was empty");
   writeNspFile({
     formatVersion: 1,
+    filterVersion: NSP_FILTER_VERSION,
     fetchedAtMs: Date.now(),
     etag: res.headers.get("etag"),
     sourceBytes: job.bytesDone,

@@ -83,6 +83,10 @@ describe("which rows are phenomena", () => {
     ]);
     expect(kept[3]!.name).toBe("Metallic crystals");
     expect(nspFamilyLabel("codex_ent_gas_clds_green_storm")).toBe("Lagrange storm cloud");
+    // Pods and mineral spheres too (the families the bundled EDSM codex lists as not plants).
+    expect(parseNspLine('x,codex_ent_s_seed_sdtp01_bl,"",0,R,S,1,2,3,"M",9', col)?.id).toBe("codex_ent_s_seed_sdtp01_bl");
+    expect(parseNspLine(',codex_ent_spoi_ball_lattice,"",0,R,S,1,2,3,"M",9', col)?.name).toBe("Mineral spheres");
+    expect(parseNspLine('Shrub,codex_ent_shrubs_01,"",0,R,S,1,2,3,"M",9', col)).toBeNull();
   });
 });
 
