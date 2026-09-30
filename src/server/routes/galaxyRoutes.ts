@@ -27,12 +27,23 @@ import { doneAddresses, MAX_PLAN_STOPS, nextTarget, ordinalsOf } from "../galaxy
 import type { GalaxySystemDTO } from "../../shared/dto/galaxy.js";
 
 import type { HttpServerOptions, RouteContext } from "../httpServer.js";
+import { galaxyLayer, type GalaxyLayerKind } from "../galaxyLayers.js";
 
 export function registerGalaxyRoutes(
   app: express.Express,
   opts: HttpServerOptions,
   _ctx: RouteContext,
 ): void {
+  // The map's extra layers (galaxyLayers.ts): points of interest, phenomena, carriers, bookmarks.
+  app.get("/api/galaxy/layers", (req, res) => {
+    const kind = String(req.query?.kind ?? "") as GalaxyLayerKind;
+    if (!["poi", "nsp", "carriers", "bookmarks"].includes(kind)) {
+      res.status(400).json({ ok: false, error: "kind must be poi, nsp, carriers or bookmarks" });
+      return;
+    }
+    res.json(galaxyLayer(kind, opts.bookmarks));
+  });
+
   /**
    * Cheap status for the launcher window. It polls every 2.5 s and only renders a lamp, the journal
    * folder, a file count and the connect URLs — but it used to call /api/state, which rebuilds the

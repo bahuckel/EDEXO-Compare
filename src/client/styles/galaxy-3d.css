@@ -54,6 +54,8 @@
 }
 .g3d-bar {
   top: 12px;
+  /* Above the "nearest waiting" banner, so the Layers menu opens over it rather than under it. */
+  z-index: 5;
 }
 .g3d-status {
   bottom: 12px;
@@ -685,4 +687,15 @@
   margin: 0;
   color: #e2d2ff;
   font-weight: 700;
+}
+
+/* The extra layers' colour keys (D10, 2026-09-30). */
+.g3d-swatch {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  vertical-align: middle;
+  box-shadow: 0 0 5px currentColor;
 }

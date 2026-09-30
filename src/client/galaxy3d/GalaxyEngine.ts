@@ -665,6 +665,10 @@ export class GalaxyEngine {
     this.invalidate();
   }
 
+  hasMarkerLayer(layer: string): boolean {
+    return this.markerLayers.has(layer);
+  }
+
   setMarkerLayerVisible(layer: string, on: boolean): void {
     const l = this.markerLayers.get(layer);
     if (l) l.points.visible = on;

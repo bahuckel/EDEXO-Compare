@@ -275,6 +275,11 @@ function loadRows(): CarrierRecord[] {
   }
 }
 
+/** Every carrier in the downloaded file (the galaxy map's layer). */
+export function carrierRecords(): readonly CarrierRecord[] {
+  return loadRows();
+}
+
 /** Drop the in-memory copy. Tests use it; nothing in the app needs to. */
 export function resetCarrierMemo(): void {
   memo = null;

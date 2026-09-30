@@ -294,6 +294,21 @@ export function nearbyNsp(
   return [...bySys.values()].sort((a, b) => a.distanceLy - b.distanceLy);
 }
 
+/** Every system with a phenomenon, with the phenomena's names (the galaxy map's layer). */
+export function nspBySystem(): { system: string; x: number; y: number; z: number; names: string[] }[] {
+  const f = loadFile();
+  if (!f) return [];
+  const by = new Map<string, { system: string; x: number; y: number; z: number; names: string[] }>();
+  for (const [, name, system, addr, x, y, z] of f.file.rows) {
+    const k = String(addr ?? system);
+    const g = by.get(k);
+    if (g) {
+      if (!g.names.includes(name)) g.names.push(name);
+    } else by.set(k, { system, x, y, z, names: [name] });
+  }
+  return [...by.values()];
+}
+
 /** For tests: whether a cache file is present. */
 export function hasNspCache(): boolean {
   return existsSync(resolveNspCachePath());

@@ -27,6 +27,8 @@ import { regionOutlines, type RegionOutlines } from "@shared/regionBorders.js";
 import { regionIndexForCoords, regionJoinKey, type RegionMapData } from "@shared/regionMap.js";
 import type { GalaxyFindDTO, GalaxyMineDTO, GalaxyNextDTO, GalaxyRouteDTO } from "@shared/types";
 import type { CodexMapKind, CodexMapRegionDTO, CodexMapRegionsDTO, CodexMapSystemDTO } from "@shared/dto/codexMap.js";
+import { GALAXY_LAYERS, layerPointText, type GalaxyLayerDTO, type GalaxyLayerKind } from "@shared/galaxyLayers.js";
+import { isBool, usePersistedState } from "./usePersistedState";
 
 const LABEL_H = 18;
 const labelWidth = (l: EngineLabel) => (l.kind === "region" ? 14 : 10) + l.text.length * (l.kind === "region" ? 7.6 : 6.6);
@@ -99,6 +101,22 @@ export function GalaxyMap3D() {
   const [find, setFind] = useState<GalaxyFindDTO | null>(null);
   const [findOpen, setFindOpen] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
+  /*
+    The extra layers (D10): points of interest, phenomena, carriers and bookmarks, each from a list
+    already on this PC, fetched when switched on. Remembered between opens of the map.
+  */
+  const [poiOn, setPoiOn] = usePersistedState("galaxy.layer.poi", false, isBool);
+  const [nspOn, setNspOn] = usePersistedState("galaxy.layer.nsp", false, isBool);
+  const [carriersOn, setCarriersOn] = usePersistedState("galaxy.layer.carriers", false, isBool);
+  const [bookmarksOn, setBookmarksOn] = usePersistedState("galaxy.layer.bookmarks", false, isBool);
+  const extraOn: Record<GalaxyLayerKind, boolean> = { poi: poiOn, nsp: nspOn, carriers: carriersOn, bookmarks: bookmarksOn };
+  const extraSet: Record<GalaxyLayerKind, (v: boolean) => void> = {
+    poi: setPoiOn,
+    nsp: setNspOn,
+    carriers: setCarriersOn,
+    bookmarks: setBookmarksOn,
+  };
+  const [extraData, setExtraData] = useState<Partial<Record<GalaxyLayerKind, GalaxyLayerDTO>>>({});
   const [worthStep, setWorthStep] = useState(0);
   const [worthCount, setWorthCount] = useState<number | null>(null);
   const [target, setTarget] = useState<GalaxyNextDTO | null>(null);
@@ -269,6 +287,46 @@ export function GalaxyMap3D() {
       clearInterval(t);
     };
   }, [graphics.tier]);
+
+  // The extra layers: fetched the first time each is switched on, then only shown or hidden.
+  useEffect(() => {
+    for (const l of GALAXY_LAYERS) {
+      if (!extraOn[l.kind] || extraData[l.kind]) continue;
+      void fetch(`/api/galaxy/layers?kind=${l.kind}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: GalaxyLayerDTO | null) => {
+          if (d) setExtraData((prev) => ({ ...prev, [l.kind]: d }));
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poiOn, nspOn, carriersOn, bookmarksOn, extraData]);
+  useEffect(() => {
+    const e = engine.current;
+    if (!e) return;
+    for (const l of GALAXY_LAYERS) {
+      const d = extraData[l.kind];
+      if (!d) continue;
+      const name = `x-${l.kind}`;
+      if (!e.hasMarkerLayer(name)) {
+        e.setMarkers(
+          name,
+          d.points.map((p, i) => ({ id: String(i), x: p[0], y: p[1], z: p[2], color: l.colour, size: l.size })),
+          l.kind === "bookmarks" ? 3 : 1,
+        );
+      }
+      e.setMarkerLayerVisible(name, extraOn[l.kind]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extraData, poiOn, nspOn, carriersOn, bookmarksOn, stats?.phase]);
+  const extraPoint = (layer: string, id: string) => {
+    if (!layer.startsWith("x-")) return null;
+    const kind = layer.slice(2) as GalaxyLayerKind;
+    const d = extraData[kind];
+    const p = d?.points[Number(id)];
+    const meta = GALAXY_LAYERS.find((l) => l.kind === kind);
+    return d && p && meta ? { p, meta, ...layerPointText(d, p) } : null;
+  };
 
   // The commander's layer, with the "waiting at least" threshold: below it a waiting system is grey.
   const waitMinCr = waitMinM * 1_000_000;
@@ -587,6 +645,16 @@ export function GalaxyMap3D() {
         </>
       ) : null;
     }
+    const xp = extraPoint(hover.layer, hover.id);
+    if (xp) {
+      return (
+        <>
+          <strong>{xp.p[3]}</strong>
+          {xp.detail ? <span>{xp.detail}</span> : null}
+          <em>{xp.meta.label} · click for details</em>
+        </>
+      );
+    }
     if (hover.layer === "search") {
       const h = searchHits.get(hover.id);
       return h ? (
@@ -623,6 +691,26 @@ export function GalaxyMap3D() {
     }
     if (selection.layer === "you") return <MySystemRecord addr={selection.id} />;
     if (selection.layer === "plan") return <IndexRecord ordinal={Number(selection.id)} heading />;
+    const xs = extraPoint(selection.layer, selection.id);
+    if (xs) {
+      return (
+        <div>
+          <h2 className="g3d-panel__name">{xs.p[3]}</h2>
+          <p className="g3d-panel__meta">{xs.meta.label}</p>
+          {xs.detail ? <p className="g3d-panel__note">{xs.detail}</p> : null}
+          {xs.system ? (
+            <p>
+              {xs.system} <CopySystemButton system={xs.system} />
+            </p>
+          ) : null}
+          {route?.position ? (
+            <p className="dim">
+              {Math.round(dist(route.position, { x: xs.p[0], y: xs.p[1], z: xs.p[2] })).toLocaleString()} ly from your ship
+            </p>
+          ) : null}
+        </div>
+      );
+    }
     if (selection.layer === "search") {
       const h = searchHits.get(selection.id);
       return <IndexRecord addr={selection.id} heading fallbackName={h?.starSystem} />;
@@ -987,6 +1075,23 @@ export function GalaxyMap3D() {
                   {{ you: "Your systems", photo: "Milky Way photo", borders: "Region borders", groups: "Groups", labels: "Names" }[k]}
                 </label>
               ))}
+              {GALAXY_LAYERS.map((l) => {
+                const d = extraData[l.kind];
+                const missing = d != null && !d.available;
+                return (
+                  <label key={l.kind} className="g3d-check" title={missing ? l.needs : undefined}>
+                    <input type="checkbox" checked={extraOn[l.kind]} onChange={() => extraSet[l.kind](!extraOn[l.kind])} />
+                    <span
+                      className="g3d-swatch"
+                      style={{ background: `rgb(${l.colour.map((c) => Math.round(c * 255)).join(",")})` }}
+                    />
+                    {l.label}
+                    {extraOn[l.kind] && d ? (
+                      <span className="dim"> {missing ? `— ${l.needs.toLowerCase()}` : `(${d.points.length.toLocaleString()})`}</span>
+                    ) : null}
+                  </label>
+                );
+              })}
               <label className="g3d-slider">
                 Brightness
                 <input
