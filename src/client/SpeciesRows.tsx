@@ -1,4 +1,4 @@
-import { achievementMarkTitle, codexMarkTitle } from "./codexMark";
+import { achievementMarkTitle, codexFirstTitle, codexMarkTitle } from "./codexMark";
 import { useState, type ReactNode } from "react";
 import type { BodyComputed, PlanetScan } from "@shared/types";
 import { settledMultiplier } from "@shared/footfallValue";
@@ -202,7 +202,11 @@ export function SpeciesRow({
               ⚑
             </span>
           ) : null}
-          {m.codexNew ? (
+          {m.codexNew && m.codexFirst ? (
+            <span className="srow-tag srow-tag--codex srow-tag--codex-first" title={codexFirstTitle(m)}>
+              [CODEX FIRST]
+            </span>
+          ) : m.codexNew ? (
             <span className="srow-tag srow-tag--codex" title={codexMarkTitle(m)}>
               [CODEX]
             </span>

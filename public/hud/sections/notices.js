@@ -11,7 +11,7 @@ import { esc, head, q } from "../core.js";
   list when the overlay opens is not news.
 */
 var FRESH_MS = 20000;
-var ICON = { notable: "★", record: "🏅", nsp: "✦", poi: "◈", carrier: "▣" };
+var ICON = { notable: "★", record: "🏅", nsp: "✦", poi: "◈", carrier: "▣", codex: "◆" };
 var firstSeen = {};
 var primed = false;
 

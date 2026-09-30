@@ -75,6 +75,18 @@ export interface NoticesContext {
   scanOf?(bodyKey: string): ExplorationScanRecord | null;
 }
 
+export interface CodexFirstFind {
+  bodyKey: string;
+  systemAddress: number;
+  system: string;
+  body: string;
+  species: string;
+  speciesId: string;
+  /** The colours that would be firsts; empty when the colour is unknown. */
+  colours: string[];
+  region: string;
+}
+
 export interface NearbyNsp {
   system: string;
   systemAddress: number | null;
@@ -176,6 +188,11 @@ export interface NoticesService {
   markUnread(ids: readonly string[]): number;
   /** Deletes the read ones. Returns how many went. */
   clearRead(): number;
+  /**
+   * Candidates nobody has logged in their region ([CODEX FIRST]), from the snapshot of the system the
+   * commander is in. Each species, colour and body is announced once. True when one was added.
+   */
+  announceCodexFirst(finds: readonly CodexFirstFind[], at: string): boolean;
   snapshot(systemAddress: number | null): NoticesSnapshotDTO;
   /** Call with each live journal line **before** the store applies it. True when a notice was added. */
   observe(line: Line, ctx: NoticesContext): boolean;
@@ -608,6 +625,27 @@ export function createNoticesService(opts: {
       }
       if (changed) save();
       return changed;
+    },
+    announceCodexFirst(finds, at) {
+      if (!state.prefs.codexFirst) return false;
+      let added = false;
+      for (const f of finds) {
+        const what = f.colours.length ? `${f.species} (${f.colours.join(" or ")})` : f.species;
+        added =
+          add({
+            id: `codexfirst:${f.bodyKey}:${f.speciesId}:${f.colours.join("+").toLowerCase()}`,
+            at,
+            kind: "codex",
+            title: `Codex first possible: ${what}`,
+            text: `${f.body} in ${f.system} — nobody has logged it in ${f.region} yet (EDSM)`,
+            system: f.system,
+            systemAddress: f.systemAddress,
+            body: f.body,
+            bodyKey: f.bodyKey,
+          }) || added;
+      }
+      if (added) save();
+      return added;
     },
     clearRead() {
       const before = state.items.length;

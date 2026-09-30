@@ -22,7 +22,14 @@ function ago(iso: string): string {
   return `${Math.round(h / 24)} days ago`;
 }
 
-const NOTICE_ICON: Record<NoticeDTO["kind"], string> = { notable: "★", record: "🏅", nsp: "✦", poi: "◈", carrier: "▣" };
+const NOTICE_ICON: Record<NoticeDTO["kind"], string> = {
+  notable: "★",
+  record: "🏅",
+  nsp: "✦",
+  poi: "◈",
+  carrier: "▣",
+  codex: "◆",
+};
 
 async function post(path: string, body: unknown): Promise<boolean> {
   try {

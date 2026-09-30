@@ -11,7 +11,7 @@ import { BODY_FEATURES, defaultFeaturePrefs, type BodyFeatureKey } from "./bodyF
 import { POI_GROUP_OPTIONS, type PoiGroup } from "./gecCategories.js";
 import { CARRIER_SERVICE_OPTIONS } from "./carrierServices.js";
 
-export type NoticeKind = "notable" | "record" | "nsp" | "poi" | "carrier";
+export type NoticeKind = "notable" | "record" | "nsp" | "poi" | "carrier" | "codex";
 
 export interface NoticeDTO {
   id: string;
@@ -51,6 +51,8 @@ export interface NotifyPrefsDTO {
   chime: boolean;
   /** A notable stellar phenomenon in the system (FSS signal, then its type from the codex). */
   nsp: boolean;
+  /** A candidate plant here that nobody has logged in the region yet ([CODEX FIRST]; owner, 2026-09-30). */
+  codexFirst: boolean;
   /** Points of interest and carriers within a few jumps (owner, 2026-09-30). */
   nearby: NearbyPrefsDTO;
   /** Body features (shared/bodyFeatures.ts): Notable card and notices. All off until chosen. */
@@ -84,6 +86,7 @@ export const DEFAULT_NOTIFY_PREFS: NotifyPrefsDTO = {
   records: true,
   chime: false,
   nsp: true,
+  codexFirst: true,
   nearby: {
     jumps: 5,
     poiGroups: { ...ALL_POI_OFF },
@@ -116,6 +119,7 @@ export function mergeNotifyPrefs(prev: NotifyPrefsDTO, raw: unknown): NotifyPref
     records: bool(r.records, prev.records),
     chime: bool(r.chime, prev.chime),
     nsp: bool(r.nsp, prev.nsp),
+    codexFirst: bool(r.codexFirst, prev.codexFirst ?? true),
     nearby: {
       jumps: Math.min(NEARBY_JUMPS_MAX, Math.max(NEARBY_JUMPS_MIN, jumpsRaw)),
       poiGroups,

@@ -218,9 +218,11 @@ export var candidates = {
       }
       if (m.codexNew) {
         var cx = document.createElement("span");
-        cx.className = "cxnew";
-        cx.textContent = "CX";
-        cx.title = "A new entry in your codex here";
+        cx.className = m.codexFirst ? "cxnew cxnew--first" : "cxnew";
+        cx.textContent = m.codexFirst ? "CX1" : "CX";
+        cx.title = m.codexFirst
+          ? "Nobody has logged it in this region yet (EDSM): you would be the first"
+          : "A new entry in your codex here";
         name.appendChild(cx);
       }
       if (r.prog) {

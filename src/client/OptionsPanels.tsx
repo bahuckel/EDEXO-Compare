@@ -363,6 +363,7 @@ export function NotifyPanel() {
     NOTABLE_KINDS.filter((k) => p.notable[k.key]).length +
     (p.records ? 1 : 0) +
     (p.nsp ? 1 : 0) +
+    (p.codexFirst ?? true ? 1 : 0) +
     poiOn +
     (nb.carriers !== "off" ? 1 : 0) +
     BODY_FEATURES.filter((f) => p.features?.[f.key]).length;
@@ -426,6 +427,18 @@ export function NotifyPanel() {
         <label className="options-toggle">
           <input type="checkbox" checked={p.nsp} disabled={busy} onChange={(ev) => save({ nsp: ev.target.checked })} />
           <span>Notable stellar phenomena</span>
+        </label>
+        <label
+          className="options-toggle"
+          title="A candidate plant on a body in your system that nobody has logged in this region yet (EDSM's codex): the gold [CODEX FIRST]."
+        >
+          <input
+            type="checkbox"
+            checked={p.codexFirst ?? true}
+            disabled={busy}
+            onChange={(ev) => save({ codexFirst: ev.target.checked })}
+          />
+          <span>Codex first: a plant nobody has logged in the region</span>
         </label>
         <label className="options-toggle">
           <input

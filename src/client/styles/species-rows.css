@@ -322,6 +322,13 @@
 .genus-tag--codex {
   margin-left: 0.3rem;
 }
+/* [CODEX FIRST]: nobody has logged it in this region (owner, 2026-09-30) — the records' gold. */
+.srow-tag--codex-first,
+.species-codex-mark--first,
+.genus-tag--codex-first {
+  color: #f5c96a;
+  text-shadow: 0 0 6px rgba(245, 184, 61, 0.55);
+}
 .tab-cx {
   font-weight: 800;
   color: #5fe0ff;

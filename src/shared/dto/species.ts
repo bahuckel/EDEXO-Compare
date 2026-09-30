@@ -603,6 +603,15 @@ export interface SpeciesMatch {
   codexNewColours?: string[];
   /** The region the mark is about, for the tooltip. */
   codexRegion?: string;
+  /**
+   * [CODEX FIRST] (owner, 2026-09-30): nobody has logged it in this region as far as EDSM's codex dump
+   * knows — logging it would make the commander its first discoverer here (server/codexFirst.ts).
+   * Only on a [CODEX] row; the colours that would be firsts, [] when the colour is unknown.
+   */
+  codexFirst?: boolean;
+  codexFirstColours?: string[];
+  /** The EDSM dump date the mark is from. */
+  codexFirstAsOf?: string;
   /** This plant, here, would advance the tracked achievement (`server/achievements.ts`). */
   achievementAdvance?: import("./achievements.js").AchievementAdvanceDTO;
   /** This species' rarity in the body's region (`shared/speciesRarity.ts`); the DNA badge shows it. */

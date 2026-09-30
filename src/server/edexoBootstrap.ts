@@ -126,7 +126,7 @@ import { parseHost, parsePort } from "./cliOptions.js";
 import type { CliOptions } from "./cliOptions.js";
 import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startupChecks.js";
 import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
-import { createNoticesService, type NoticesContext } from "./notices.js";
+import { createNoticesService, type CodexFirstFind, type NoticesContext } from "./notices.js";
 import { createBookmarksService } from "./bookmarks.js";
 import { createSavedBoxels } from "./savedBoxels.js";
 import { createGreenGiantMarks, greenGiantForRecord, type GreenGiantSources } from "./greenGiants.js";
@@ -402,6 +402,29 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
                   starType: mainStarTypeOf(addr),
                 }),
               );
+      }
+      // [CODEX FIRST] candidates in the system he is in go to the bell, once each (owner, 2026-09-30).
+      if (!snap.journalBoot && store.currentSystemAddress != null && notices.prefs().codexFirst) {
+        const finds: CodexFirstFind[] = [];
+        for (const b of snap.bodies ?? []) {
+          if (b.state.systemAddress !== store.currentSystemAddress) continue;
+          for (const m of b.matches ?? []) {
+            if (!m.codexFirst || m.unlikely || !m.codexRegion) continue;
+            finds.push({
+              bodyKey: b.state.key,
+              systemAddress: b.state.systemAddress,
+              system: b.state.starSystem || store.currentSystem || "",
+              body: b.tabLabel || b.state.bodyName,
+              species: m.entry.displayName,
+              speciesId: m.entry.id,
+              colours: m.codexFirstColours ?? [],
+              region: m.codexRegion,
+            });
+          }
+        }
+        if (finds.length && notices.announceCodexFirst(finds, new Date().toISOString())) {
+          snap.notices = notices.snapshot(store.viewingSystemAddress ?? store.currentSystemAddress ?? null);
+        }
       }
       snap.bookmarksHere = bookmarks.forSystem(
         store.viewingSystemAddress ?? store.currentSystemAddress ?? null,

@@ -605,6 +605,11 @@ button.data-value-pill.data-value-pill--clickable:active {
   color: #f5b83d;
   border-color: rgba(245, 184, 61, 0.55);
 }
+.notice--codex .notice__icon {
+  color: #f5c96a;
+  border-color: rgba(245, 184, 61, 0.7);
+  text-shadow: 0 0 6px rgba(245, 184, 61, 0.6);
+}
 .notice--nsp .notice__icon {
   color: #7dd3fc;
   border-color: rgba(125, 211, 252, 0.5);

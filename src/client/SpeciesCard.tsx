@@ -1,7 +1,7 @@
 /**
  * The full species card and its sub-blocks, split out of App.tsx (7.3).
  */
-import { achievementMarkTitle, codexMarkTitle } from "./codexMark";
+import { achievementMarkTitle, codexFirstTitle, codexMarkTitle } from "./codexMark";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useModal } from "./ui/useModal";
@@ -425,7 +425,15 @@ export const SpeciesCard = memo(function SpeciesCard({
             ⌖
           </span>
         ) : null}
-        {m.codexNew ? (
+        {m.codexNew && m.codexFirst ? (
+          <span
+            className="species-codex-mark species-codex-mark--first"
+            title={codexFirstTitle(m)}
+            aria-label="Nobody has logged it in this region yet"
+          >
+            [CODEX FIRST]
+          </span>
+        ) : m.codexNew ? (
           <span
             className="species-codex-mark"
             title={codexMarkTitle(m)}

@@ -1,3 +1,4 @@
+import { codexFirstColours, codexFirstDataDate } from "./codexFirst.js";
 import { speciesProvenance } from "./speciesProvenance.js";
 import {
   commanderIdHash,
@@ -624,6 +625,14 @@ function attachCodexRegionNovelty(
       m.codexNew = true;
       m.codexNewColours = fresh;
       m.codexRegion = region;
+      // Nobody else has it here either (EDSM's dump): the commander would be the first (owner, 2026-09-30).
+      const first = codexFirstColours(getProjectRoot(), region, m.entry.displayName, label);
+      if (first) {
+        m.codexFirst = true;
+        m.codexFirstColours = first;
+        const asOf = codexFirstDataDate(getProjectRoot());
+        if (asOf) m.codexFirstAsOf = asOf;
+      }
     }
   }
 }

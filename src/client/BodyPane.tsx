@@ -2,7 +2,7 @@
  * The body pane: glance bar, planetary facts, sell range, candidate species (7.3).
  */
 import { nextTempUnit, usePressUnit, useTempUnit } from "./useUnits";
-import { codexMarkTitle } from "./codexMark";
+import { codexFirstTitle, codexMarkTitle } from "./codexMark";
 import { ArrivalTrip } from "@shared/systemTriage";
 import { fmtCrRangeShort, fmtCrShort } from "./credits";
 import { FootfallContext } from "./footfallContext";
@@ -142,7 +142,11 @@ export const BodyPane = memo(function BodyPane({
   // [CODEX] on a genus: one of its candidates here would be a new codex entry for this region.
   const codexGenera = new Map<string, SpeciesMatch>();
   for (const m of body.matches) {
-    if (!m.unlikely && m.codexNew) codexGenera.set(m.entry.genus.trim().toLowerCase(), m);
+    // A first beats a plain [CODEX] for the genus row.
+    if (!m.unlikely && m.codexNew) {
+      const k = m.entry.genus.trim().toLowerCase();
+      if (!codexGenera.get(k)?.codexFirst) codexGenera.set(k, m);
+    }
   }
   const signalCount = s.biologicalSignals;
   const unnamedSignals = signalCount != null ? Math.max(0, signalCount - genusRows.length) : 0;
@@ -549,12 +553,21 @@ export const BodyPane = memo(function BodyPane({
                         <span className="genus-progress-tag" role="cell">
                           <GenusTag row={r} />
                           {codexGenera.has(r.genus.trim().toLowerCase()) ? (
-                            <span
-                              className="genus-tag genus-tag--codex"
-                              title={codexMarkTitle(codexGenera.get(r.genus.trim().toLowerCase())!)}
-                            >
-                              [CODEX]
-                            </span>
+                            codexGenera.get(r.genus.trim().toLowerCase())!.codexFirst ? (
+                              <span
+                                className="genus-tag genus-tag--codex genus-tag--codex-first"
+                                title={codexFirstTitle(codexGenera.get(r.genus.trim().toLowerCase())!)}
+                              >
+                                [CODEX FIRST]
+                              </span>
+                            ) : (
+                              <span
+                                className="genus-tag genus-tag--codex"
+                                title={codexMarkTitle(codexGenera.get(r.genus.trim().toLowerCase())!)}
+                              >
+                                [CODEX]
+                              </span>
+                            )
                           ) : null}
                         </span>
                       </div>

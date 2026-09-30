@@ -68,6 +68,7 @@ export function slimBodyForHud(b: BodyComputed): Partial<BodyComputed> {
         ? { regionRarity: { region: m.regionRarity.region, found: true, tier: m.regionRarity.tier } }
         : {}),
       ...(m.codexNew ? { codexNew: true } : {}),
+      ...(m.codexFirst ? { codexFirst: true } : {}),
       priceCredits: m.priceCredits,
       presenceProbabilityPercent: m.presenceProbabilityPercent,
       unlikely: m.unlikely,

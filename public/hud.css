@@ -288,6 +288,9 @@ body {
   border: 1px solid currentColor;
   color: #4fd0ff;
 }
+.hud-list .cxnew--first {
+  color: #f5c96a;
+}
 /* Compact overlays: explanations go, readings and warnings stay (theme.js `hud-compact`). */
 .hud-compact .hud-explain {
   display: none;
