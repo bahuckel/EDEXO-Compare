@@ -259,7 +259,7 @@
  */
 .options-modal .options-edsm-privacy,
 .options-modal .options-canonn-privacy {
-  border-left: 3px solid var(--ed-orange, #ff8a1f);
+  border-left: 3px solid var(--accent);
   padding-left: 0.75rem;
   color: var(--fg, inherit);
 }
@@ -530,7 +530,7 @@
   font: inherit;
   font-size: var(--fs-xs);
   padding: 0.2rem 0.55rem;
-  background: #120d0a;
+  background: var(--panel-warm-2);
   color: var(--text-dim);
   border: 1px solid rgba(255, 255, 255, 0.12);
   cursor: pointer;
@@ -577,7 +577,7 @@
 .theme-name {
   font: inherit;
   font-size: var(--fs-xs);
-  background: #120d0a;
+  background: var(--panel-warm-2);
   color: var(--text);
   border: 1px solid var(--accent-a22);
   padding: 0.2rem 0.4rem;

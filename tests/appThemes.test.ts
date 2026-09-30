@@ -9,6 +9,7 @@ import {
   isAppThemeChoice,
   resolveAppTheme,
   rgbToHex,
+  themeNeutrals,
 } from "../src/shared/appThemes.js";
 
 describe("colour schemes", () => {
@@ -31,5 +32,24 @@ describe("colour schemes", () => {
     expect(c).toEqual({ rgb: "0, 0, 0", bright: "#737373", deep: "#000000" });
     expect(coloursFromHex("#ffffff")!.deep).toBe("#d1d1d1");
     expect(coloursFromHex("zzz")).toBeNull();
+  });
+
+  it("re-tints the warm text and panels to the scheme's hue, keeping how light they are", () => {
+    // The orange's own hue gives back the stylesheet's values (within rounding).
+    const own = themeNeutrals(DEFAULT_APP_THEME.rgb);
+    const near = (a: string, b: string) =>
+      [1, 3, 5].every((i) => Math.abs(parseInt(a.slice(i, i + 2), 16) - parseInt(b.slice(i, i + 2), 16)) <= 1);
+    expect(near(own["--text"]!, "#ffe6cf")).toBe(true);
+    expect(near(own["--panel"]!, "#0e0b0a")).toBe(true);
+    expect(own["--shade-rgb"]).toBe("48, 24, 8");
+    // Blue: the text turns blue-white, the panels blue-black; nothing stays warm.
+    const blue = themeNeutrals(APP_THEME_PRESETS.find((p) => p.key === "blue")!.rgb);
+    const [r, , b] = [1, 3, 5].map((i) => parseInt(blue["--text"]!.slice(i, i + 2), 16));
+    expect(b).toBeGreaterThan(r!);
+    expect(blue["--surface-scrim"]).toMatch(/^rgba\(\d+, \d+, \d+, 0\.98\)$/);
+    // Silver is nearly grey, so the tint nearly goes.
+    const silver = themeNeutrals(APP_THEME_PRESETS.find((p) => p.key === "silver")!.rgb);
+    const [sr, sg, sb] = [1, 3, 5].map((i) => parseInt(silver["--text"]!.slice(i, i + 2), 16));
+    expect(Math.max(sr!, sg!, sb!) - Math.min(sr!, sg!, sb!)).toBeLessThan(20);
   });
 });

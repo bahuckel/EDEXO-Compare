@@ -217,7 +217,7 @@
   box-shadow:
     inset 0 0 0 1px var(--shadow-a45),
     0 0 28px var(--accent-a10);
-  background-color: #0a0908;
+  background-color: var(--tint-0a0908);
 }
 
 /** No bio bodies yet — need FSS/DSS; art only (fss-required.png at repo root). */
@@ -230,7 +230,7 @@
   box-shadow:
     inset 0 0 0 1px var(--shadow-a45),
     0 0 28px var(--accent-a10);
-  background-color: #0a0908;
+  background-color: var(--tint-0a0908);
   background-image: url("../../../fss-required.webp");
   background-position: center;
   background-size: cover;

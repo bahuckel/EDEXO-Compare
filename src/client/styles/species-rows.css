@@ -340,7 +340,7 @@
 /* A species logged here in a colour the app did not predict — in the miss log (owner, 2026-09-26). */
 .srow-tag--colour-miss,
 .species-colour-miss {
-  color: #ffb060;
+  color: var(--accent-bright);
   font-weight: 800;
   cursor: help;
 }

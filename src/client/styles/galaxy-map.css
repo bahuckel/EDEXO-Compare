@@ -437,16 +437,16 @@ a.appbar-icon-btn {
 
 /* Amber: no evidence kind uses it, so a target cannot be mistaken for a fifth kind of sighting. */
 .galaxy-map__target {
-  fill: #ffab40;
+  fill: var(--tint-ffab40);
   fill-opacity: 0.85;
-  stroke: #1a1207;
+  stroke: var(--target-warm);
   stroke-width: 0.5;
 }
 
 /* The 5x here rests on silence rather than a reading — hollow, the same grammar the panel uses. */
 .galaxy-map__target--unverified {
   fill: none;
-  stroke: #ffab40;
+  stroke: var(--tint-ffab40);
   stroke-width: 1.2;
   stroke-dasharray: 2 1.5;
 }
@@ -497,9 +497,9 @@ a.appbar-icon-btn {
   gap: 0.6rem;
   margin: 0.5rem 0 0.2rem;
   padding: 0.45rem 0.7rem;
-  border: 1px solid rgba(255, 171, 64, 0.5);
+  border: 1px solid rgba(var(--tint-255-171-64), 0.5);
   border-radius: var(--r-sm);
-  background: rgba(40, 26, 10, 0.45);
+  background: rgba(var(--shade-next-rgb), 0.45);
 }
 
 .galaxy-map__next-label {
@@ -507,7 +507,7 @@ a.appbar-icon-btn {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #ffab40;
+  color: var(--tint-ffab40);
 }
 
 /*
@@ -717,13 +717,13 @@ a.appbar-icon-btn {
  * reader needs telling.
  * ------------------------------------------------------------------------- */
 .galaxy-map__swatch--target {
-  background: #ffab40;
+  background: var(--tint-ffab40);
 }
 
 /* The "moon like" ones: the same target with footfall unconfirmed, so the ring is left open. */
 .galaxy-map__swatch--target-unverified {
   background: transparent;
-  border: 2px dashed #ffab40;
+  border: 2px dashed var(--tint-ffab40);
 }
 
 /* Search results are diamonds on the map, so the swatch is a diamond too — a circle here would

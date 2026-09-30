@@ -74,9 +74,9 @@
   align-items: baseline;
   gap: 0.6rem;
   padding: 0.45rem 0.7rem;
-  border: 1px solid rgba(255, 140, 70, 0.5);
+  border: 1px solid rgba(var(--tint-255-140-70), 0.5);
   border-radius: var(--r-sm);
-  background: rgba(40, 20, 10, 0.45);
+  background: rgba(var(--shade-warm-rgb), 0.45);
 }
 
 .fdb-next__label {
@@ -84,7 +84,7 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #ff9447;
+  color: var(--tint-ff9447);
 }
 
 .fdb-next__sys {
@@ -545,7 +545,7 @@
   z-index: 60;
   width: min(26rem, calc(100vw - 32px));
   padding: 0.6rem;
-  background: #0d0907;
+  background: var(--panel-warm);
   border: 1px solid var(--accent-a35);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   font-size: var(--fs-sm);
@@ -569,7 +569,7 @@
 .bm-note {
   font: inherit;
   font-size: var(--fs-xs);
-  background: #120d0a;
+  background: var(--panel-warm-2);
   color: var(--text);
   border: 1px solid var(--accent-a22);
   padding: 0.2rem 0.35rem;

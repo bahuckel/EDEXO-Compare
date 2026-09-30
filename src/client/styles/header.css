@@ -73,13 +73,13 @@
 }
 
 .brand-title-bordered {
-  border: 1px solid rgba(255, 140, 70, 0.45);
+  border: 1px solid rgba(var(--tint-255-140-70), 0.45);
   border-radius: var(--r-md);
   padding: 0.32rem 0.65rem 0.38rem;
-  background: rgba(10, 6, 4, 0.38);
+  background: rgba(var(--shade-brand-rgb), 0.38);
   box-shadow:
-    0 0 14px rgba(255, 120, 60, 0.12),
-    inset 0 0 12px rgba(255, 100, 40, 0.04);
+    0 0 14px rgba(var(--tint-255-120-60), 0.12),
+    inset 0 0 12px rgba(var(--tint-255-100-40), 0.04);
   -webkit-backdrop-filter: blur(10px) saturate(1.15);
   backdrop-filter: blur(10px) saturate(1.15);
   transform: scale(1.08);
@@ -93,7 +93,7 @@
   text-shadow:
     0 0 10px var(--accent-glow),
     0 0 22px var(--accent-a45),
-    0 0 34px rgba(255, 100, 40, 0.22);
+    0 0 34px rgba(var(--tint-255-100-40), 0.22);
   font-size: var(--fs-xl) !important;
   text-align: center;
   margin: 0;
@@ -465,7 +465,7 @@
   min-height: 2.4rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--accent-dim);
-  background: rgba(20, 18, 14, 0.92);
+  background: rgba(var(--tint-20-18-14), 0.92);
   color: var(--accent-bright);
   cursor: pointer;
   display: inline-flex;

@@ -31,6 +31,56 @@
   --surface-2: #120e0c;
   --surface-3: #0b0908;
   --surface-scrim: rgba(12, 9, 8, 0.98);
+  /* The warm browns and the peach that rules wrote as literals, at their exact values, so a colour
+   * scheme can re-tint them (appThemes.ts themeNeutrals; owner, 2026-09-30: "everything still has an
+   * orange hue"). The default renders as before. */
+  --panel-warm: #0d0907;
+  --panel-warm-2: #120d0a;
+  --surface-warm-deep: #0b0806;
+  --menu-warm: #0e0905;
+  --target-warm: #1a1207;
+  --shade-rgb: 48, 24, 8;
+  --shade-hover-rgb: 28, 16, 8;
+  --shade-glass-rgb: 20, 14, 10;
+  --shade-veil-rgb: 6, 4, 3;
+  --shade-warm-rgb: 40, 20, 10;
+  --shade-fade-rgb: 13, 9, 7;
+  --shade-top-rgb: 12, 7, 4;
+  --shade-brand-rgb: 10, 6, 4;
+  --shade-next-rgb: 40, 26, 10;
+  --peach-rgb: 255, 230, 207;
+  --glint-rgb: 255, 180, 100;
+  --top-warm: #0c0a08;
+  --tint-0a0908: #0a0908;
+  --tint-0c0a09: #0c0a09;
+  --tint-14-11-10: 14, 11, 10;
+  --tint-12-10-9: 12, 10, 9;
+  --tint-20-18-14: 20, 18, 14;
+  --tint-14-12-10: 14, 12, 10;
+  --tint-20-18-16: 20, 18, 16;
+  --tint-fff4e0: #fff4e0;
+  --shade-mid-rgb: 16, 9, 5;
+  --shade-row-rgb: 40, 18, 3;
+  --shade-row-2-rgb: 22, 12, 5;
+  --tint-255-186-112: 255, 186, 112;
+  --tint-ff9447: #ff9447;
+  --tint-ff9a4d: #ff9a4d;
+  --tint-ffab40: #ffab40;
+  --tint-ffb070: #ffb070;
+  --tint-ffb347: #ffb347;
+  --tint-255-100-40: 255, 100, 40;
+  --tint-255-106-26: 255, 106, 26;
+  --tint-255-120-30: 255, 120, 30;
+  --tint-255-120-60: 255, 120, 60;
+  --tint-255-130-60: 255, 130, 60;
+  --tint-255-140-70: 255, 140, 70;
+  --tint-255-154-77: 255, 154, 77;
+  --tint-255-158-41: 255, 158, 41;
+  --tint-255-160-60: 255, 160, 60;
+  --tint-255-160-80: 255, 160, 80;
+  --tint-255-170-80: 255, 170, 80;
+  --tint-255-171-64: 255, 171, 64;
+  --tint-255-176-96: 255, 176, 96;
 
   /* ---- text ----------------------------------------------------------- */
   --text: #ffe6cf;

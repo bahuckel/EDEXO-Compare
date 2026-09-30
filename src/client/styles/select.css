@@ -17,7 +17,7 @@
   font-weight: 600;
   text-align: left;
   color: var(--text);
-  background: linear-gradient(180deg, rgba(48, 24, 8, 0.35), transparent 70%), var(--panel);
+  background: linear-gradient(180deg, rgba(var(--shade-rgb), 0.35), transparent 70%), var(--panel);
   border: 1px solid var(--accent-a22);
   border-radius: 0;
   cursor: pointer;
@@ -64,7 +64,7 @@
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--accent-dim) transparent;
-  background: linear-gradient(180deg, rgba(48, 24, 8, 0.4), transparent 40%), #0d0907;
+  background: linear-gradient(180deg, rgba(var(--shade-rgb), 0.4), transparent 40%), var(--panel-warm);
   border: 1px solid var(--accent-dim);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.7);
   clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));

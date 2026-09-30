@@ -61,14 +61,14 @@
 }
 
 .system-map-notable-pill:hover {
-  border-color: #ffb060;
+  border-color: var(--accent-bright);
   box-shadow:
     0 0 18px rgba(var(--accent-rgb), 0.55),
     inset 0 0 12px var(--accent-a08);
 }
 
 .system-map-notable-pill--fss {
-  border-color: rgba(255, 154, 77, 0.95);
+  border-color: rgba(var(--tint-255-154-77), 0.95);
   box-shadow:
     0 0 16px var(--accent-a45),
     inset 0 0 10px rgba(var(--accent-rgb), 0.07);
@@ -166,7 +166,7 @@
   border: 1px solid rgba(var(--accent-rgb), 0.52) !important;
   box-shadow:
     0 4px 32px var(--shadow-a45),
-    0 0 28px rgba(255, 106, 26, 0.28),
+    0 0 28px rgba(var(--tint-255-106-26), 0.28),
     inset 0 0 22px var(--accent-a06);
 }
 
@@ -1015,7 +1015,7 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 .system-map-notable-pill.is-selected {
-  outline: 2px solid #ffb347;
+  outline: 2px solid var(--tint-ffb347);
   outline-offset: 1px;
 }
 

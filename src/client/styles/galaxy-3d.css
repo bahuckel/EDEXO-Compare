@@ -34,7 +34,7 @@
 }
 .g3d-label--region {
   padding: 0 5px;
-  color: rgba(255, 186, 112, 0.92);
+  color: rgba(var(--tint-255-186-112), 0.92);
   background: rgba(5, 4, 10, 0.62);
 }
 
@@ -204,14 +204,14 @@
 /* ---- G2: more label kinds, the hover card, the system panel ----------------------------------- */
 .g3d-label--sector {
   padding: 0 4px;
-  color: rgba(255, 230, 207, 0.86);
+  color: rgba(var(--peach-rgb), 0.86);
   background: rgba(5, 4, 10, 0.55);
   letter-spacing: 0.04em;
   text-transform: none;
 }
 .g3d-label--count {
   padding: 0 4px;
-  color: rgba(255, 230, 207, 0.9);
+  color: rgba(var(--peach-rgb), 0.9);
   background: rgba(5, 4, 10, 0.55);
   font-size: var(--fs-2xs);
   letter-spacing: 0.02em;
@@ -544,7 +544,7 @@
   font-size: var(--fs-xs);
   color: var(--text-dim);
   background: rgba(10, 8, 12, 0.9);
-  border: 1px solid rgba(255, 158, 41, 0.55);
+  border: 1px solid rgba(var(--tint-255-158-41), 0.55);
 }
 .g3d-banner strong {
   color: #ffd29e;

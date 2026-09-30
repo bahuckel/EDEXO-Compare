@@ -203,7 +203,7 @@
 .appbar-icon-btn:hover {
   color: var(--accent-bright);
   border-color: var(--accent);
-  background: rgba(28, 16, 8, 0.8);
+  background: rgba(var(--shade-hover-rgb), 0.8);
   transform: translateY(-1px);
 }
 
@@ -420,7 +420,7 @@
 }
 
 .jump-row--active {
-  background: rgba(28, 16, 8, 0.85);
+  background: rgba(var(--shade-hover-rgb), 0.85);
   border-color: var(--accent-a38);
   color: var(--accent-bright);
 }
@@ -480,7 +480,7 @@
   max-width: 34rem;
   padding: 0.6rem 0.75rem;
   border-radius: var(--r-md);
-  background: linear-gradient(150deg, rgba(6, 4, 3, 0.88), rgba(6, 4, 3, 0.62));
+  background: linear-gradient(150deg, rgba(var(--shade-veil-rgb), 0.88), rgba(var(--shade-veil-rgb), 0.62));
   border: 1px solid var(--accent-a22);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);

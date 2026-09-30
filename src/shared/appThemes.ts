@@ -60,6 +60,117 @@ export function coloursFromHex(hex: string): AppThemeColours | null {
   };
 }
 
+/*
+  The orange that is not the accent (owner, 2026-09-30: "everything still has an orange hue even when
+  the colour was changed"). The text is peach and the panels are warm browns, tinted towards the
+  default accent. A scheme keeps their lightness and saturation and turns their hue by as much as its
+  accent turned from the orange, and a pale accent (Silver) takes the tint down with it. The page black and the ink stay as they are.
+*/
+const WARM_NEUTRALS: readonly [string, string][] = [
+  ["--panel", "#0e0b0a"],
+  ["--surface", "#120e0c"],
+  ["--surface-1", "#0e0b0a"],
+  ["--surface-2", "#120e0c"],
+  ["--surface-3", "#0b0908"],
+  ["--text", "#ffe6cf"],
+  ["--hud-text", "#ffe6cf"],
+  ["--muted", "#8f8378"],
+  ["--text-dim", "#d9cabb"],
+  ["--text-faint", "#ab9f94"],
+  ["--panel-warm", "#0d0907"],
+  ["--panel-warm-2", "#120d0a"],
+  ["--surface-warm-deep", "#0b0806"],
+  ["--menu-warm", "#0e0905"],
+  ["--target-warm", "#1a1207"],
+  ["--top-warm", "#0c0a08"],
+  ["--tint-0a0908", "#0a0908"],
+  ["--tint-0c0a09", "#0c0a09"],
+  ["--tint-fff4e0", "#fff4e0"],
+  ["--tint-ff9447", "#ff9447"],
+  ["--tint-ff9a4d", "#ff9a4d"],
+  ["--tint-ffab40", "#ffab40"],
+  ["--tint-ffb070", "#ffb070"],
+  ["--tint-ffb347", "#ffb347"],
+];
+
+/** The same for tokens kept as "r, g, b" triplets (used as rgba(var(--x), alpha)). */
+const WARM_TRIPLETS: readonly [string, [number, number, number]][] = [
+  ["--shade-rgb", [48, 24, 8]],
+  ["--shade-hover-rgb", [28, 16, 8]],
+  ["--shade-glass-rgb", [20, 14, 10]],
+  ["--shade-veil-rgb", [6, 4, 3]],
+  ["--shade-warm-rgb", [40, 20, 10]],
+  ["--shade-fade-rgb", [13, 9, 7]],
+  ["--shade-top-rgb", [12, 7, 4]],
+  ["--shade-brand-rgb", [10, 6, 4]],
+  ["--shade-next-rgb", [40, 26, 10]],
+  ["--peach-rgb", [255, 230, 207]],
+  ["--glint-rgb", [255, 180, 100]],
+  ["--shade-mid-rgb", [16, 9, 5]],
+  ["--tint-14-11-10", [14, 11, 10]],
+  ["--tint-12-10-9", [12, 10, 9]],
+  ["--tint-20-18-14", [20, 18, 14]],
+  ["--tint-14-12-10", [14, 12, 10]],
+  ["--tint-20-18-16", [20, 18, 16]],
+  ["--shade-row-rgb", [40, 18, 3]],
+  ["--shade-row-2-rgb", [22, 12, 5]],
+  ["--tint-255-186-112", [255, 186, 112]],
+  ["--tint-255-100-40", [255, 100, 40]],
+  ["--tint-255-106-26", [255, 106, 26]],
+  ["--tint-255-120-30", [255, 120, 30]],
+  ["--tint-255-120-60", [255, 120, 60]],
+  ["--tint-255-130-60", [255, 130, 60]],
+  ["--tint-255-140-70", [255, 140, 70]],
+  ["--tint-255-154-77", [255, 154, 77]],
+  ["--tint-255-158-41", [255, 158, 41]],
+  ["--tint-255-160-60", [255, 160, 60]],
+  ["--tint-255-160-80", [255, 160, 80]],
+  ["--tint-255-170-80", [255, 170, 80]],
+  ["--tint-255-171-64", [255, 171, 64]],
+  ["--tint-255-176-96", [255, 176, 96]],
+];
+
+function rgbToHsl([r, g, b]: [number, number, number]): [number, number, number] {
+  const [R, G, B] = [r / 255, g / 255, b / 255];
+  const max = Math.max(R, G, B);
+  const min = Math.min(R, G, B);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h = max === R ? (G - B) / d + (G < B ? 6 : 0) : max === G ? (B - R) / d + 2 : (R - G) / d + 4;
+  return [h * 60, s, l];
+}
+
+function hslToRgb([h, s, l]: [number, number, number]): [number, number, number] {
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [f(0) * 255, f(8) * 255, f(4) * 255];
+}
+
+/** The page's warm neutrals in a scheme's hue: custom property → value. Empty for the default. */
+export function themeNeutrals(rgb: string): Record<string, string> {
+  const triplet = (x: string) => x.split(",").map((v) => Number(v.trim()) || 0) as [number, number, number];
+  const [h, s] = rgbToHsl(triplet(rgb));
+  const [h0, s0] = rgbToHsl(triplet(DEFAULT_APP_THEME.rgb));
+  // Turned by as much as the accent turned from the orange, so their small differences stay.
+  const turn = (nh: number) => (((nh + h - h0) % 360) + 360) % 360;
+  const scale = Math.min(1, s / Math.max(s0, 1e-6));
+  const out: Record<string, string> = {};
+  for (const [name, hex] of WARM_NEUTRALS) {
+    const [nh, ns, nl] = rgbToHsl(hexToRgb(hex)!);
+    out[name] = toHex(hslToRgb([turn(nh), ns * scale, nl]));
+  }
+  for (const [name, c] of WARM_TRIPLETS) {
+    const [nh, ns, nl] = rgbToHsl(c);
+    out[name] = hslToRgb([turn(nh), ns * scale, nl]).map(Math.round).join(", ");
+  }
+  const [sh, ss, sl] = rgbToHsl([12, 9, 8]);
+  out["--surface-scrim"] = `rgba(${hslToRgb([turn(sh), ss * scale, sl]).map(Math.round).join(", ")}, 0.98)`;
+  return out;
+}
+
 export function rgbToHex(rgb: string): string {
   return toHex(rgb.split(",").map((v) => Number(v.trim()) || 0));
 }

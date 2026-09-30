@@ -267,7 +267,7 @@
   bottom: 1px;
   width: 2.2rem;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(13, 9, 7, 0.9));
+  background: linear-gradient(90deg, transparent, rgba(var(--shade-fade-rgb), 0.9));
 }
 .scroll-area__more {
   position: absolute;
@@ -278,7 +278,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-faint);
-  background: rgba(13, 9, 7, 0.88);
+  background: rgba(var(--shade-fade-rgb), 0.88);
   border: 1px solid var(--accent-a22);
   pointer-events: none;
 }
@@ -593,7 +593,7 @@
   border-radius: var(--radius-md);
   background: rgba(10, 10, 14, 0.92);
   padding: 0.65rem 0.75rem;
-  box-shadow: 0 0 14px rgba(255, 106, 26, 0.12);
+  box-shadow: 0 0 14px rgba(var(--tint-255-106-26), 0.12);
 }
 
 .system-map-totals {
@@ -817,7 +817,7 @@
   margin: 0;
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--accent-a22);
-  background: linear-gradient(180deg, rgba(48, 24, 8, 0.22), transparent 30%), #0d0907;
+  background: linear-gradient(180deg, rgba(var(--shade-rgb), 0.22), transparent 30%), var(--panel-warm);
 }
 .disc-card__title {
   margin: 0 0 0.4rem;
@@ -892,7 +892,7 @@
   cursor: pointer;
 }
 .disc-ggg-mark button[aria-pressed="true"] {
-  color: #0d0907;
+  color: var(--panel-warm);
   background: #6fe38a;
   border-color: #6fe38a;
 }

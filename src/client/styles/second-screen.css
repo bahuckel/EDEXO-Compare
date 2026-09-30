@@ -9,8 +9,8 @@
   min-height: 100vh;
   padding: clamp(0.6rem, 2vw, 1.2rem);
   background:
-    radial-gradient(ellipse 90% 40% at 50% -10%, rgba(255, 120, 30, 0.18), transparent 60%),
-    linear-gradient(180deg, #0b0806, #050406 45%, #030304);
+    radial-gradient(ellipse 90% 40% at 50% -10%, rgba(var(--tint-255-120-30), 0.18), transparent 60%),
+    linear-gradient(180deg, var(--surface-warm-deep), #050406 45%, #030304);
   color: var(--hud-text, #ffe6cf);
   font-family: var(--hud-font, "Bahnschrift", "Segoe UI", system-ui, sans-serif);
   letter-spacing: 0.02em;
@@ -47,7 +47,7 @@
 
 .second-screen .ss-verdict--none,
 .second-screen .ss-verdict--low {
-  color: rgba(255, 176, 96, 0.55);
+  color: rgba(var(--tint-255-176-96), 0.55);
 }
 
 /* the live link: a badge in the row's colour, the one thing that must be visible from a metre away */
@@ -97,7 +97,7 @@
 .second-screen .ss-sort--on {
   color: var(--ink, #07060a);
   background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
-  border-color: #ffb060;
+  border-color: var(--accent-bright);
 }
 
 .second-screen .ss-empty {
@@ -106,7 +106,7 @@
   font-size: clamp(0.85rem, 2.4vw, 1rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 176, 96, 0.6);
+  color: rgba(var(--tint-255-176-96), 0.6);
 }
 
 .second-screen .ss-rows {
@@ -124,7 +124,7 @@
   padding: 0.55rem 0.7rem 0.55rem 0.85rem;
   border: 1px solid rgba(var(--accent-rgb), 0.28);
   border-left: 3px solid rgba(var(--accent-rgb), 0.6);
-  background: linear-gradient(180deg, rgba(40, 18, 3, 0.3), transparent 45%), rgba(22, 12, 5, 0.6);
+  background: linear-gradient(180deg, rgba(var(--shade-row-rgb), 0.3), transparent 45%), rgba(var(--shade-row-2-rgb), 0.6);
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
 }
 .second-screen .ss-row::after {
@@ -132,7 +132,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(180deg, rgba(255, 160, 80, 0.04) 0 1px, transparent 1px 3px);
+  background: repeating-linear-gradient(180deg, rgba(var(--tint-255-160-80), 0.04) 0 1px, transparent 1px 3px);
 }
 .second-screen .ss-row--certain {
   border-left-color: var(--ok, #4fd0ff);
@@ -171,20 +171,20 @@
   margin-top: 0.2rem;
   font-size: clamp(0.7rem, 1.9vw, 0.86rem);
   font-variant-numeric: tabular-nums;
-  color: rgba(255, 230, 207, 0.65);
+  color: rgba(var(--peach-rgb), 0.65);
 }
 
 .second-screen .ss-row-best {
   margin-top: 0.2rem;
   font-size: clamp(0.72rem, 2vw, 0.9rem);
-  color: rgba(255, 230, 207, 0.85);
+  color: rgba(var(--peach-rgb), 0.85);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .second-screen .ss-coverage {
-  color: rgba(255, 230, 207, 0.5);
+  color: rgba(var(--peach-rgb), 0.5);
 }
 
 .second-screen .ss-mapfirst {

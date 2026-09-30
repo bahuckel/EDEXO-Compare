@@ -15,7 +15,7 @@
   border: 1px solid var(--accent-dim);
   border-radius: 0;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.7);
-  background: linear-gradient(180deg, rgba(48, 24, 8, 0.55), transparent 22%), #0d0907;
+  background: linear-gradient(180deg, rgba(var(--shade-rgb), 0.55), transparent 22%), var(--panel-warm);
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
 }
 .modal-head {
@@ -103,7 +103,7 @@
 .btn-confirm-go {
   background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
   color: var(--ink, #07060a);
-  border-color: #ffb060;
+  border-color: var(--accent-bright);
 }
 .btn-confirm-go--danger {
   background: linear-gradient(180deg, #ff9c88, #ff5a3c 60%, #e64a2e);
@@ -128,7 +128,7 @@
 .tab.on {
   background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
   color: var(--ink, #07060a);
-  border-color: #ffb060;
+  border-color: var(--accent-bright);
 }
 .tab.on .tab-meta {
   color: rgba(7, 6, 10, 0.75);
@@ -236,7 +236,7 @@ input[type="text"]:focus {
   .appbar-menu .appbar-icon-btn:hover,
   .appbar-menu .appbar-icon-btn:focus-visible {
     color: var(--ink, #07060a);
-    border-color: #ffb060;
+    border-color: var(--accent-bright);
   }
 }
 
@@ -255,7 +255,7 @@ input[type="text"]:focus {
 /* ---- scrollbars: the standard properties (Chromium 121+, Firefox); inherited from the root ------ */
 :root {
   scrollbar-width: thin;
-  scrollbar-color: var(--accent-dim) #0b0806;
+  scrollbar-color: var(--accent-dim) var(--surface-warm-deep);
 }
 .tabs-body-rail .tabs-strip {
   scrollbar-width: thin;
@@ -341,7 +341,7 @@ input[type="text"]:focus {
   padding: 0.6rem 0.85rem 0.65rem;
   color: var(--text);
   border: 1px solid var(--accent-a35);
-  background: linear-gradient(135deg, var(--accent-a15), transparent 55%), rgba(20, 14, 10, 0.8);
+  background: linear-gradient(135deg, var(--accent-a15), transparent 55%), rgba(var(--shade-glass-rgb), 0.8);
   clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
   transition: filter 0.15s;
 }
@@ -427,7 +427,7 @@ input[type="text"]:focus {
 /* genus box: hairline frame, warm fill, no glow; title = tracked label bar */
 .genus-card-shell {
   border: 1px solid var(--accent-a35);
-  background: linear-gradient(180deg, rgba(48, 24, 8, 0.28), transparent 18%), #0d0907;
+  background: linear-gradient(180deg, rgba(var(--shade-rgb), 0.28), transparent 18%), var(--panel-warm);
   box-shadow: none;
 }
 .genus-card-header-row {
@@ -453,7 +453,7 @@ input[type="text"]:focus {
 /* the card: square, hairline, warm; the photo keeps its frame */
 .species-card {
   border: 1px solid var(--accent-a22);
-  background: #0b0806;
+  background: var(--surface-warm-deep);
   box-shadow: none;
 }
 .species-card-hero {
@@ -478,7 +478,7 @@ input[type="text"]:focus {
 }
 .species-identity-neon-inner {
   border: 1px solid var(--accent-a35);
-  background: linear-gradient(135deg, var(--accent-a12), transparent 60%), rgba(20, 14, 10, 0.8);
+  background: linear-gradient(135deg, var(--accent-a12), transparent 60%), rgba(var(--shade-glass-rgb), 0.8);
   box-shadow: none;
   clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
 }
@@ -526,7 +526,7 @@ input[type="text"]:focus {
   min-height: 3.6rem;
   padding: 0.45rem 0.6rem 0.5rem;
   gap: 0.15rem;
-  background: rgba(20, 14, 10, 0.75);
+  background: rgba(var(--shade-glass-rgb), 0.75);
   border: 1px solid var(--accent-a22);
   box-shadow: none;
   clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
@@ -595,7 +595,7 @@ input[type="text"]:focus {
   padding: 1.4rem 1rem 1.3rem;
   text-align: center;
   border: 1px solid var(--accent-a35);
-  background: linear-gradient(180deg, rgba(48, 24, 8, 0.35), transparent 40%), #0d0907;
+  background: linear-gradient(180deg, rgba(var(--shade-rgb), 0.35), transparent 40%), var(--panel-warm);
 }
 .bio-empty-scope {
   position: relative;
@@ -622,7 +622,7 @@ input[type="text"]:focus {
     from 0deg,
     transparent 0 72%,
     rgba(var(--accent-rgb), 0.05) 80%,
-    rgba(255, 160, 60, 0.45) 100%
+    rgba(var(--tint-255-160-60), 0.45) 100%
   );
   animation: bio-empty-sweep 2.2s linear infinite;
 }
@@ -693,7 +693,7 @@ input[type="text"]:focus {
   animation: lifeless-scope-dim 1s ease-out 0.15s forwards;
 }
 .lifeless-emblem__last-sweep {
-  fill: rgba(255, 160, 60, 0.28);
+  fill: rgba(var(--tint-255-160-60), 0.28);
   stroke: none;
   transform-origin: 60px 60px;
   animation: lifeless-last-sweep 0.9s cubic-bezier(0.3, 0.1, 0.4, 1) forwards;
@@ -758,7 +758,7 @@ input[type="text"]:focus {
     lifeless-strike-flash 0.6s ease-out 2.2s;
 }
 .lifeless-emblem__scanline {
-  fill: rgba(255, 170, 80, 0.16);
+  fill: rgba(var(--tint-255-170-80), 0.16);
   opacity: 0;
   animation: lifeless-scanline 7s linear 3s infinite;
 }
@@ -829,7 +829,7 @@ input[type="text"]:focus {
 }
 @keyframes lifeless-strike-flash {
   0% {
-    stroke: #fff4e0;
+    stroke: var(--tint-fff4e0);
     filter: drop-shadow(0 0 10px var(--accent-bright));
   }
   100% {
@@ -1011,7 +1011,7 @@ input[type="text"]:focus {
 .encyclopedia-focus-body-panel {
   border-radius: 0 !important;
   border: 1px solid var(--accent-a22);
-  background: linear-gradient(180deg, rgba(48, 24, 8, 0.22), transparent 30%), #0d0907;
+  background: linear-gradient(180deg, rgba(var(--shade-rgb), 0.22), transparent 30%), var(--panel-warm);
   box-shadow: none;
 }
 .fdb-chip,
@@ -1027,7 +1027,7 @@ input[type="text"]:focus {
 .gsx-tier--codex {
   background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep)) !important;
   color: var(--ink, #07060a) !important;
-  border-color: #ffb060 !important;
+  border-color: var(--accent-bright) !important;
 }
 .modal-body {
   scrollbar-width: thin;
@@ -1054,7 +1054,7 @@ input[type="text"]:focus {
 .fold-help-btn--on {
   color: var(--ink, #07060a);
   background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
-  border-color: #ffb060;
+  border-color: var(--accent-bright);
 }
 .fold-help {
   margin: 0 0 0.7rem;
@@ -1127,7 +1127,7 @@ input[type="text"]:focus {
 .btn:hover:not([disabled]) {
   background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
   color: var(--ink, #07060a);
-  border-color: #ffb060;
+  border-color: var(--accent-bright);
 }
 
 .btn[disabled] {
@@ -1168,7 +1168,7 @@ input[type="checkbox"]:hover:not([disabled]) {
 
 input[type="checkbox"]:checked {
   background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
-  border-color: #ffb060;
+  border-color: var(--accent-bright);
 }
 
 /* The tick, drawn in the ink colour so it reads against the orange fill. */
@@ -1221,7 +1221,7 @@ input[type="range"]::-webkit-slider-thumb {
   height: 16px;
   margin-top: -7px;
   background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
-  border: 1px solid #ffb060;
+  border: 1px solid var(--accent-bright);
   /* A slab with the corner cut, so the handle is the same object as the buttons. */
   clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
 }
@@ -1231,7 +1231,7 @@ input[type="range"]::-moz-range-thumb {
   height: 16px;
   border-radius: 0;
   background: linear-gradient(180deg, var(--accent-bright), var(--accent) 60%, var(--accent-deep));
-  border: 1px solid #ffb060;
+  border: 1px solid var(--accent-bright);
 }
 
 input[type="range"]:focus-visible::-webkit-slider-thumb {

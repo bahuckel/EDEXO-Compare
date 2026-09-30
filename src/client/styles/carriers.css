@@ -26,7 +26,7 @@
   The credit link back to EDAstro.
 
   It had no colour rule, so it fell through to the browser's default link blue on a near-black panel:
-  #0000ee against #0e0b0a measures **2.09:1**, under the 3:1 floor for even large text, and the owner
+  #0000ee against var(--panel) measures **2.09:1**, under the 3:1 floor for even large text, and the owner
   reported it as unreadable before any checker did.
 
   --ok-bright is the app's own bright blue and measures **14.02:1** there. Blue rather than the amber

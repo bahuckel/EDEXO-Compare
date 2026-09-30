@@ -43,7 +43,7 @@
   /* Cockpit orange, not the old blue panel (owner, 2026-09-26). */
   border-radius: 0;
   border: 1px solid var(--accent-a22);
-  background: linear-gradient(180deg, rgba(48, 24, 8, 0.35), transparent 45%), #0d0907;
+  background: linear-gradient(180deg, rgba(var(--shade-rgb), 0.35), transparent 45%), var(--panel-warm);
   box-shadow: 0 4px 18px var(--shadow-a35);
   position: relative;
   z-index: 2;
@@ -601,8 +601,8 @@
   padding: 0;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(48, 24, 8, 0.28), transparent 38%),
-    #0c0a09;
+    linear-gradient(180deg, rgba(var(--shade-rgb), 0.28), transparent 38%),
+    var(--tint-0c0a09);
   border: 1px solid var(--accent-a25);
   contain-intrinsic-size: auto 720px;
 }
@@ -639,7 +639,7 @@
   position: absolute;
   inset: auto 0 0;
   height: 40%;
-  background: linear-gradient(180deg, transparent, rgba(12, 10, 9, 0.85));
+  background: linear-gradient(180deg, transparent, rgba(var(--tint-12-10-9), 0.85));
   pointer-events: none;
 }
 .fg-photo:focus-visible {
@@ -1041,7 +1041,7 @@
 .ency-colour-pick select {
   font: inherit;
   font-size: var(--fs-xs);
-  background: #0d0907;
+  background: var(--panel-warm);
   color: var(--text);
   border: 1px solid var(--accent-a35);
   padding: 0.15rem 0.3rem;

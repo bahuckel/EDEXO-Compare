@@ -436,7 +436,7 @@
 }
 
 .species-identity-neon--complete .species-similarity-index {
-  border-top-color: rgba(255, 180, 100, 0.2);
+  border-top-color: rgba(var(--glint-rgb), 0.2);
 }
 
 .species-similarity-index {
@@ -617,7 +617,7 @@
 }
 
 .exomastery-download-link:hover {
-  background: rgba(255, 106, 26, 0.12);
+  background: rgba(var(--tint-255-106-26), 0.12);
 }
 
 .exomastery-force-recompare-btn {

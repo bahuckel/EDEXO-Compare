@@ -602,7 +602,7 @@ export function ColourSchemePanel() {
       help={
         <p>
           The app&apos;s accent colour. Colours that mean something keep theirs whatever you pick: green for the live
-          sampling run, blue for done, red and yellow for warnings, the rarity colours and the ×5 badge. The HUD overlays
+          sampling run, blue for done, red and yellow for warnings, the rarity colours, the planet-type colours and the ×5 badge. The panels and text take a tint of your colour too. The HUD overlays
           have their own colours, in the launcher&apos;s Overlays settings. Kept on this device.
         </p>
       }

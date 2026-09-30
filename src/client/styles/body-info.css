@@ -264,7 +264,7 @@
 
 .dss-genus-orphan-mark {
   font-weight: 800;
-  color: #ffb070;
+  color: var(--tint-ffb070);
   margin-left: 0.12em;
   text-shadow: 0 0 8px var(--accent-a45);
 }

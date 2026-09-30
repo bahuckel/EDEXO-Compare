@@ -144,12 +144,12 @@ body::before {
   pointer-events: none;
   /* The Vista Genomics artwork that sat under this gradient is gone (owner, 2026-09-29); a new header
      image will replace it. */
-  background-color: #0c0a08;
+  background-color: var(--top-warm);
   background-image: linear-gradient(
     165deg,
-    rgba(12, 7, 4, 0.97) 0%,
-    rgba(16, 9, 5, 0.93) 38%,
-    rgba(12, 7, 4, 0.97) 100%
+    rgba(var(--shade-top-rgb), 0.97) 0%,
+    rgba(var(--shade-mid-rgb), 0.93) 38%,
+    rgba(var(--shade-top-rgb), 0.97) 100%
   );
 }
 
@@ -231,7 +231,7 @@ body::before {
   padding: 0.38rem 0.72rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--accent-bright);
-  background: rgba(14, 12, 10, 0.94);
+  background: rgba(var(--tint-14-12-10), 0.94);
   color: var(--text);
   cursor: pointer;
   box-shadow:
@@ -240,7 +240,7 @@ body::before {
 }
 
 .btn-top-neutral:hover {
-  border-color: #ff9a4d;
+  border-color: var(--tint-ff9a4d);
   color: var(--text);
   filter: brightness(1.07);
 }
@@ -452,7 +452,7 @@ body::before {
   padding: 0.45rem 0.75rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--accent-bright);
-  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.14) 0%, rgba(20, 18, 16, 0.95) 100%);
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.14) 0%, rgba(var(--tint-20-18-16), 0.95) 100%);
   box-shadow:
     0 0 14px var(--accent-glow),
     inset 0 1px 0 rgba(255, 200, 120, 0.18);
@@ -471,7 +471,7 @@ button.data-value-pill.data-value-pill--clickable {
 
 button.data-value-pill.data-value-pill--clickable:hover {
   filter: brightness(1.08);
-  border-color: #ff9a4d;
+  border-color: var(--tint-ff9a4d);
 }
 
 button.data-value-pill.data-value-pill--clickable:active {
@@ -522,13 +522,13 @@ button.data-value-pill.data-value-pill--clickable:active {
   letter-spacing: 0.03em;
   line-height: 1.35;
   border-radius: var(--r-sm);
-  border: 1px solid rgba(255, 140, 70, 0.55);
-  color: #ff9447;
+  border: 1px solid rgba(var(--tint-255-140-70), 0.55);
+  color: var(--tint-ff9447);
   text-shadow:
-    0 0 10px rgba(255, 130, 60, 0.55),
-    0 0 18px rgba(255, 100, 40, 0.25);
-  background: rgba(40, 20, 10, 0.55);
-  box-shadow: 0 0 14px rgba(255, 120, 60, 0.18);
+    0 0 10px rgba(var(--tint-255-130-60), 0.55),
+    0 0 18px rgba(var(--tint-255-100-40), 0.25);
+  background: rgba(var(--shade-warm-rgb), 0.55);
+  box-shadow: 0 0 14px rgba(var(--tint-255-120-60), 0.18);
 }
 
 .d-scan-card,

@@ -17,7 +17,7 @@
   background:
     linear-gradient(90deg, var(--accent) 0 30%, var(--accent-a22) 65%, transparent) bottom left / 100% 1px
       no-repeat,
-    linear-gradient(180deg, rgba(14, 11, 10, 0.97), rgba(14, 11, 10, 0.92));
+    linear-gradient(180deg, rgba(var(--tint-14-11-10), 0.97), rgba(var(--tint-14-11-10), 0.92));
   backdrop-filter: none;
 }
 .glance-body {
@@ -151,7 +151,7 @@
   display: flex;
 }
 .appbar-menu > * {
-  background: #0e0905;
+  background: var(--menu-warm);
 }
 .appbar-menu .appbar-icon-btn {
   display: flex;
@@ -161,7 +161,7 @@
   padding: 0.55rem 0.9rem;
   border: 0;
   border-radius: 0;
-  background: #0e0905;
+  background: var(--menu-warm);
   color: var(--text);
   font-size: var(--fs-sm);
   letter-spacing: 0.06em;
@@ -204,7 +204,7 @@
   font: inherit;
   text-align: left;
   color: var(--text);
-  background: rgba(20, 14, 10, 0.75);
+  background: rgba(var(--shade-glass-rgb), 0.75);
   border: 1px solid var(--accent-a22);
   clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
 }
