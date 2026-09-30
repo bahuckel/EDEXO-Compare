@@ -14,7 +14,7 @@ import {
   IconOptions,
   IconBacklog,
   IconCarrier,
-  IconPoi, IconBookmark,
+  IconPoi, IconBookmark, IconBoxel,
   IconStats,
   IconSession,
 } from "./ui/icons";
@@ -37,6 +37,7 @@ import {
   EncyclopediaModal,
   PoiModal,
   BookmarksModal,
+  BoxelModal,
   StatisticsModal,
   FirstDiscoveryBacklogModal,
   ModalLoading,
@@ -160,6 +161,7 @@ export const HeaderBar = memo(function HeaderBar({
   const [carriersOpen, setCarriersOpen] = useState(false);
   const [poiOpen, setPoiOpen] = useState(false);
   const [bookmarksOpen, setBookmarksOpen] = useState(false);
+  const [boxelOpen, setBoxelOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [notableQuick, setNotableQuick] = useState<{
     notable: NotableBodyInfo;
@@ -409,6 +411,16 @@ export const HeaderBar = memo(function HeaderBar({
                     aria-label="Points of interest"
                   >
                     <IconPoi />
+                  </button>
+                </Tooltip>
+                <Tooltip text="Boxel — every system of one boxel, which you have flown, what is recorded there, and the next one to fly.">
+                  <button
+                    type="button"
+                    className="appbar-icon-btn"
+                    onClick={() => setBoxelOpen(true)}
+                    aria-label="Boxel"
+                  >
+                    <IconBoxel />
                   </button>
                 </Tooltip>
                 <Tooltip text="Bookmarks — systems you marked with the ☆ beside a system's name, with tags and notes.">
@@ -716,6 +728,11 @@ export const HeaderBar = memo(function HeaderBar({
         </Suspense>
       ) : null}
 
+      {boxelOpen ? (
+        <Suspense fallback={null}>
+          <BoxelModal onClose={() => setBoxelOpen(false)} currentSystem={snap.currentSystem ?? null} />
+        </Suspense>
+      ) : null}
       {bookmarksOpen ? (
         <Suspense fallback={null}>
           <BookmarksModal

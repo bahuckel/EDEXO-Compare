@@ -45,6 +45,8 @@ export const PoiModal = lazyModal(() => import("./PoiModal").then((m) => m.PoiMo
 
 export const BookmarksModal = lazyModal(() => import("./Bookmarks").then((m) => m.BookmarksModal));
 
+export const BoxelModal = lazyModal(() => import("./Boxel").then((m) => m.BoxelModal));
+
 export const StatisticsModal = lazyModal(() => import("./StatisticsModal").then((m) => m.StatisticsModal));
 
 /* Achievements and Options were in the main bundle though only the menu opens them (P8). */
@@ -57,6 +59,7 @@ export function prefetchMenuModals(): void {
   const go = () => {
     for (const m of [
       BookmarksModal,
+      BoxelModal,
       StatisticsModal,
       EncyclopediaModal,
       FirstDiscoveryBacklogModal,

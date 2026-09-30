@@ -1,3 +1,5 @@
+import { boxelSystems } from "../boxel.js";
+import { getCachedSpeciesDatabase } from "../snapshot.js";
 import path from "node:path";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import express from "express";
@@ -195,6 +197,30 @@ export function registerGalaxyRoutes(
     const plan = Math.max(0, Math.min(MAX_PLAN_STOPS, Math.floor(Number(req.query.plan) || 0)));
     const from = store?.commanderPos ?? opts.getCommanderPosition?.() ?? null;
     res.json(nextTarget(index, galaxySystemValues(index), from, min, exclude, 6, plan));
+  });
+
+  /*
+    One boxel (shared/boxel.ts): `?name=` any system in it (or the boxel with a trailing "-"), `?end=`
+    the last system number when known. Journals always; the galaxy index when this machine has it.
+  */
+  app.get("/api/boxel", (req, res) => {
+    const name = String(req.query.name ?? "").slice(0, 80);
+    const endRaw = Number(req.query.end);
+    const end = String(req.query.end ?? "").trim() !== "" && Number.isFinite(endRaw) ? Math.floor(endRaw) : null;
+    const store = opts.getJournalStore?.() ?? null;
+    const byId = new Map(getCachedSpeciesDatabase().species.map((s) => [s.id, s.displayName]));
+    const dto = boxelSystems({
+      query: name,
+      end,
+      index: tileIndex(),
+      visited: store ? store.visitedSystems.values() : [],
+      speciesName: (id) => byId.get(id) ?? id,
+    });
+    if (!dto) {
+      res.status(400).json({ ok: false, error: "Not a boxel name: type a system such as Eol Prou AB-C d1-23." });
+      return;
+    }
+    res.json(dto);
   });
 
   /** Regions are the client's; this finds sectors and systems by name: `?q=`. */

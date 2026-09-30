@@ -40,6 +40,19 @@ function sectorColumns(t: TileIndex): Map<string, { name: string; cells: number[
   return out;
 }
 
+/** Every index ordinal in one named sector (all its heights), for a boxel listing. */
+export function sectorOrdinals(t: TileIndex, sectorName: string): number[] {
+  const col = sectorColumns(t).get(sectorName.trim().toLowerCase());
+  if (!col) return [];
+  const out: number[] = [];
+  for (const ci of col.cells) {
+    const c = t.cells[ci]!;
+    const r = t.ranges.get(packCell(c.cx, c.cy, c.cz))!;
+    for (let j = r[0]; j < r[1]; j++) out.push(t.order[j]!);
+  }
+  return out;
+}
+
 export function galaxyFind(t: TileIndex, store: GameStateStore | null, query: string): GalaxyFindDTO {
   const q = query.trim().toLowerCase();
   const empty: GalaxyFindDTO = { query, sectors: [], systems: [], partial: false };

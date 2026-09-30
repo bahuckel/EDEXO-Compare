@@ -629,3 +629,34 @@
   color: #4fd0ff;
   border: 1px solid currentColor;
 }
+
+/* ---- Boxel (2026-09-30) ---- */
+.boxel-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+.boxel-form label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: var(--fs-xs);
+}
+.boxel-form input {
+  min-width: 18rem;
+}
+.boxel-form .boxel-end {
+  min-width: 0;
+  width: 7rem;
+}
+.boxel-common {
+  margin: 0;
+  font-size: var(--fs-xs);
+}
+.boxel-row--done td {
+  opacity: 0.7;
+}
+.boxel-known {
+  font-size: var(--fs-xs);
+  max-width: 34rem;
+}

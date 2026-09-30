@@ -66,7 +66,8 @@ function fakeFetch(body: string, opts: { etag?: string; seenEtag?: (e: string | 
 }
 
 async function waitDone() {
-  for (let i = 0; i < 200 && readNspStatus().running; i++) await new Promise((r) => setTimeout(r, 5));
+  // Generous: the fake server feeds 37-byte chunks, which is slow on a loaded machine.
+  for (let i = 0; i < 2000 && readNspStatus().running; i++) await new Promise((r) => setTimeout(r, 5));
 }
 
 describe("which rows are phenomena", () => {

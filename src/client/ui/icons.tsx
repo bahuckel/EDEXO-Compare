@@ -189,6 +189,27 @@ export function IconPoi({ className }: { className?: string }) {
   );
 }
 
+/** Boxel: a cube. */
+export function IconBoxel({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" />
+      <path d="M4 7.5l8 4.5 8-4.5M12 12v9" />
+    </svg>
+  );
+}
+
 /** Bookmarks: a ribbon bookmark. */
 export function IconBookmark({ className }: { className?: string }) {
   return (
