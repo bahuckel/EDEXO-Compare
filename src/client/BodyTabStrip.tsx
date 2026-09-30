@@ -3,6 +3,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import type { BodyComputed, NotableBodyInfo, ShipProximityDTO } from "@shared/types";
 import { BODY_SORT_OPTIONS, type BodySortMode } from "./bodySort";
 import { fmtCrShort } from "./credits";
+import { bodyRarest, RarityGem } from "./RarityGem";
 import { Select } from "./ui/Select";
 
 /**
@@ -227,6 +228,7 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                     // CX: something here would be a new codex entry for this region (owner, 2026-09-26).
                     const cx = b.matches.some((x) => !x.unlikely && x.codexNew === true);
                     const nb = notableTabs ? notableByKey.get(b.state.key) : undefined;
+                    const rare = bodyRarest(b.matches);
                     return (
                       <button
                         key={b.state.key}
@@ -237,8 +239,17 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         data-body-key={b.state.key}
                         className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}`}
                         onClick={() => onSelect(b.state.key)}
-                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`}
+                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${rare ? `, ${rare.title}` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`}
                       >
+                        {/* In the tab's left padding: the tab keeps its size (owner, 2026-09-30). */}
+                        {rare ? (
+                          <RarityGem
+                            rarity={rare.m.entry.rarity}
+                            regional={rare.m.regionRarity}
+                            className="rarity-gem--tab"
+                            title={rare.title}
+                          />
+                        ) : null}
                         <span className="tab-label">{b.tabLabel}</span>
                         <span className="tab-meta">
                           {bio ?? "?"}

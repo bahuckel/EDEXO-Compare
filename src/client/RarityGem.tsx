@@ -8,6 +8,7 @@
  * The strokes are SVG attributes, so the snapshot camera keeps them.
  */
 import { rarityTierInfo, type RarityTier, type RegionalRarity, type SpeciesRarity } from "@shared/speciesRarity";
+import type { SpeciesMatch } from "@shared/types";
 
 const pct = (s: number) => `${(s * 100).toFixed(s < 0.01 ? 2 : 1)} %`;
 
@@ -64,6 +65,35 @@ function regionalTitle(g: SpeciesRarity, r: RegionalRarity): string {
 /** The tier the badge shows: the region's when the species is found there with a tier, else galaxy-wide. */
 export function shownRarityTier(rarity: SpeciesRarity, regional?: RegionalRarity): RarityTier {
   return regional?.found && regional.tier ? regional.tier : rarity.tier;
+}
+
+/**
+ * The rarest Epic or Legendary species on a body, for the small helix before its name on the body tab
+ * (guild tester report, 2026-09-30; owner: on every body card under "BODY", so none is missed without
+ * clicking through). Only from the candidate list proper or what was sampled there — never the hidden
+ * "unlikely" rows — and from every candidate, whatever the view filters show. The title names them all.
+ */
+export function bodyRarest(matches: readonly SpeciesMatch[]): { m: SpeciesMatch; title: string } | null {
+  const legendary: SpeciesMatch[] = [];
+  const epic: SpeciesMatch[] = [];
+  for (const m of matches) {
+    if (!m.entry.rarity || (m.unlikely && m.sampledHere !== true)) continue;
+    const tier = shownRarityTier(m.entry.rarity, m.regionRarity);
+    if (tier === "legendary") legendary.push(m);
+    else if (tier === "epic") epic.push(m);
+  }
+  const top = legendary[0] ?? epic[0];
+  if (!top) return null;
+  const names = (ms: SpeciesMatch[]) =>
+    ms.map((m) => `${m.entry.displayName}${m.sampledHere === true ? " (sampled)" : ""}`).join(", ");
+  const where = top.regionRarity?.found && top.regionRarity.tier ? ` in ${top.regionRarity.region}` : "";
+  const title = [
+    legendary.length ? `Legendary${where}: ${names(legendary)}` : "",
+    epic.length ? `Epic${where}: ${names(epic)}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return { m: top, title };
 }
 
 export function RarityGem({

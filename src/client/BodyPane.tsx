@@ -33,7 +33,6 @@ import { EDEXO_CODEX_NEW_ONLY_LS, EDEXO_COMPACT_CANDIDATE_VIEW_LS, readLsBool, w
 import { GenusTag, GlanceGenera, genusRowSpecies, LandableBadge } from "./BodyGlance";
 import { ExoPayoutRangeDetailModal } from "./ExoPayoutRangeDetailModal";
 import { GenusMatchGroup } from "./GenusMatchGroup";
-import { RarityGem, shownRarityTier } from "./RarityGem";
 export { GlanceGenera } from "./BodyGlance";
 
 export const BodyPane = memo(function BodyPane({
@@ -198,33 +197,6 @@ export const BodyPane = memo(function BodyPane({
   */
   const likelyMatches = useMemo(() => shownMatches.filter((m) => !m.unlikely || m.sampledHere === true), [shownMatches]);
   const unlikelyMatches = useMemo(() => shownMatches.filter((m) => m.unlikely && m.sampledHere !== true), [shownMatches]);
-  /*
-    An Epic or Legendary species on this body, right of its name (guild tester report, 2026-09-30).
-    Only from the candidate list proper or what he sampled here — never the hidden "unlikely" rows —
-    and from every candidate, whatever the Evidence / Codex-new view filters show.
-  */
-  const rarest = useMemo(() => {
-    const legendary: SpeciesMatch[] = [];
-    const epic: SpeciesMatch[] = [];
-    for (const m of body.matches) {
-      if (!m.entry.rarity || (m.unlikely && m.sampledHere !== true)) continue;
-      const tier = shownRarityTier(m.entry.rarity, m.regionRarity);
-      if (tier === "legendary") legendary.push(m);
-      else if (tier === "epic") epic.push(m);
-    }
-    const top = legendary[0] ?? epic[0];
-    if (!top) return null;
-    const names = (ms: SpeciesMatch[]) =>
-      ms.map((m) => `${m.entry.displayName}${m.sampledHere === true ? " (sampled)" : ""}`).join(", ");
-    const where = top.regionRarity?.found && top.regionRarity.tier ? ` in ${top.regionRarity.region}` : "";
-    const title = [
-      legendary.length ? `Legendary${where}: ${names(legendary)}` : "",
-      epic.length ? `Epic${where}: ${names(epic)}` : "",
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    return { m: top, title };
-  }, [body.matches]);
   // Genus order from the co-occurrence solver, most likely first. Ordering only — the probabilities
   // behind it are not calibrated, so nothing here renders a number.
   const genusOrder = useMemo(() => body.genusLikelihoods?.map((l) => l.genus) ?? null, [body.genusLikelihoods]);
@@ -253,14 +225,6 @@ export const BodyPane = memo(function BodyPane({
           the rest scrolls — body, price, candidates vs signals, DSS, distance, footfall. */}
           <div className="glance" role="status">
             <span className="glance-body">{body.tabLabel}</span>
-            {rarest ? (
-              <RarityGem
-                rarity={rarest.m.entry.rarity}
-                regional={rarest.m.regionRarity}
-                className="rarity-gem--glance"
-                title={rarest.title}
-              />
-            ) : null}
             <span className="glance-sep" aria-hidden="true" />
             {body.exoPayoutRange
               ? (() => {

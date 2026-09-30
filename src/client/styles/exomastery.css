@@ -1046,13 +1046,19 @@ button.exo-duplex-typical-mode-hit:disabled {
   margin-right: 0.5em;
 }
 
-/* The body card's badge, right of the body name in the glance bar. */
-.rarity-gem--glance.rarity-dna {
-  width: 0.95em;
-  height: 1.5em;
-  margin: 0 0 0 -0.7rem;
-  align-self: center;
-  font-size: var(--fs-xl);
+/* The body tab's badge: before the name, inside the tab's left padding, so the tab keeps its size. */
+.rarity-gem--tab.rarity-dna {
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 7px;
+  height: 14px;
+  margin: 0;
+  pointer-events: none;
+}
+/* On the selected (accent-filled) tab a gold or purple helix would sink into the fill: outline it. */
+.tab.on .rarity-gem--tab.rarity-dna {
+  filter: drop-shadow(0 0 0.6px var(--ink, #07060a)) drop-shadow(0 0 0.6px var(--ink, #07060a));
 }
 
 .rarity-gem--ency.rarity-dna {
