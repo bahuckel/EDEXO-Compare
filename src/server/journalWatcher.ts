@@ -107,6 +107,17 @@ async function processLines(
   }
 }
 
+async function byteIsNewline(filePath: string, at: number): Promise<boolean> {
+  const fh = await fs.open(filePath, "r");
+  try {
+    const b = Buffer.alloc(1);
+    const { bytesRead } = await fh.read(b, 0, 1, at);
+    return bytesRead === 1 && b[0] === 0x0a;
+  } finally {
+    await fh.close();
+  }
+}
+
 export async function readJournalFull(filePath: string, onLine: (j: JournalLine) => void): Promise<void> {
   const leftover = { buf: "" };
   const text = await fs.readFile(filePath, "utf8");
@@ -132,7 +143,12 @@ export async function readJournalFromOffset(
   const st = await fs.stat(filePath);
   if (startByte >= st.size) return;
   const leftover = { buf: "" };
-  let discardUntilNl = startByte > 0;
+  /*
+    Skip to the next line only when the offset is inside one. The cache records each file's size and
+    the game writes whole lines, so the offset is normally a line start: skipping then threw away the
+    first complete new line on every warm start (combined plan 1.1a, 2026-10-01).
+  */
+  let discardUntilNl = startByte > 0 && !(await byteIsNewline(filePath, startByte - 1));
   const stream = createReadStream(filePath, {
     start: startByte,
     end: st.size - 1,
