@@ -137,32 +137,36 @@ export var distance = {
             : "5× new-codex payout.";
       cele.style.display = "block";
       cele.textContent = "Complete — hiding in " + (eo.celebrationRemainSec || 0) + "s";
-    } else if (eo.sampleCount >= 2) {
+    } else {
+      /*
+        The estimate from the first scan (owner, 2026-10-02: "show the value after Log, not after
+        Sample"): the Log names the species, which is all the price needs. It waited for the second.
+      */
       var a = eo.payLoggedCodex,
         b = eo.payNewCodex;
-      if (a != null && b != null) {
+      if (eo.sampleCount >= 1 && a != null && b != null) {
         pay.innerHTML =
           "<span class='pay-est'>" +
           fmtCr(b).replace(" CR", "") +
           "<small>new</small>· " +
           fmtCr(a).replace(" CR", "") +
           "<small>logged</small></span>";
-      } else pay.textContent = "—";
-      note.classList.add("hud-explain");
-      note.textContent =
-        "Estimates: new codex = 5× list; logged codex = list × footfall (×1 or ×5). These are not multiplied together.";
-    } else {
-      pay.innerHTML = "<span class='row--muted'>—</span>";
-      // Walk-distance guidance is a reading, not an explanation: it stays in compact mode.
-      note.classList.remove("hud-explain");
-      note.textContent =
-        eo.sampleCount === 1
-          ? tooClose
-            ? "Too close to Scan 1 — walk ≥ " +
-              (eo.minSampleDistanceM || "?") +
-              " m the way the radar arc points."
-            : "Need ≥ " + (eo.minSampleDistanceM || "?") + " m from first sample before second."
-          : "";
+      } else if (eo.sampleCount >= 1) pay.textContent = "—";
+      else pay.innerHTML = "<span class='row--muted'>—</span>";
+      if (eo.sampleCount === 1) {
+        // Walk-distance guidance is a reading, not an explanation: it stays in compact mode.
+        note.classList.remove("hud-explain");
+        note.textContent = tooClose
+          ? "Too close to Scan 1 — walk ≥ " + (eo.minSampleDistanceM || "?") + " m the way the radar arc points."
+          : "Need ≥ " + (eo.minSampleDistanceM || "?") + " m from first sample before second.";
+      } else if (eo.sampleCount >= 2) {
+        note.classList.add("hud-explain");
+        note.textContent =
+          "Estimates: new codex = 5× list; logged codex = list × footfall (×1 or ×5). These are not multiplied together.";
+      } else {
+        note.classList.remove("hud-explain");
+        note.textContent = "";
+      }
     }
     return state;
   },

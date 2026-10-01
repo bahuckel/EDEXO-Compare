@@ -196,6 +196,31 @@ describe("HUD tracker", () => {
     expect(document.querySelector('[data-f="status"]')?.textContent).toBe("On foot");
   });
 
+  /** Owner, 2026-10-02: the Log names the species, so the payout shows from the first scan. */
+  it("shows the payout estimate from the first scan, with the walk guidance still under it", () => {
+    const run = (sampleCount: number) => {
+      HUD.render({
+        exoMinimap: { headingDeg: 0, radiusM: 500, minSampleDistanceM: 200, marks: [] },
+        exoOrganicOverlay: {
+          visible: true,
+          phase: "tracking",
+          sampleCount,
+          nearestSampleMeetsMin: true,
+          minSampleDistanceM: 200,
+          speciesDisplay: "Tussock propagito",
+          payNewCodex: 5_000_000,
+          payLoggedCodex: 1_000_000,
+        },
+      });
+      return document.querySelector('[data-f="pay"]')?.textContent ?? "";
+    };
+    expect(run(0)).toBe("—");
+    expect(run(1)).toContain("new");
+    expect(run(1)).toContain("logged");
+    expect(document.querySelector(".trk")?.textContent).toContain("from first sample before second");
+    expect(run(2)).toContain("logged");
+  });
+
   it("draws the walk-this-way arc only when the second sample would be too close", () => {
     const mm = {
       headingDeg: 0,
