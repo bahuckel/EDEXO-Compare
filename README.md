@@ -100,7 +100,7 @@ systems come from other commanders' records, so first footfall is most likely go
 miss log. That log is the reason recall went from 93.2 % to 97.1 %: it is read, not just recorded.
 
 **On a second screen.** Open `?screen=triage` on a phone or tablet for a read-only triage view that
-updates as you jump.
+updates as you jump. In the desktop app, turn on **LAN access** in Network settings first.
 
 **Backups.** The launcher's Backups tile zips your journals, the app's own data (settings, on-foot
 scans, surface marks, the miss log) and your exomastery and codex downloads — when you leave the game,
@@ -190,6 +190,11 @@ Point it at your journal folder from the launcher (**Journal folder**) if it is 
 | ---------------------- | ---------------- | -------------------------------------------- |
 | `npm run start:client` | `127.0.0.1:7111` | this PC only                                 |
 | `npm run start:server` | `0.0.0.0:7111`   | this PC **and every device on your network** |
+| desktop app            | `127.0.0.1:7111` | this PC; with **LAN access** on, `0.0.0.0:7111` and your network too |
+
+The desktop app (`.exe`, AppImage) has a **LAN access** switch in the launcher's **Network
+settings**: off for a new install, so only this PC can open it; on for an install that already had
+it. It applies after a restart.
 
 Server mode exists so you can put the app on a second monitor, a tablet or a phone. It also means
 the mutating endpoints (settings, exobiology reset, which system you are viewing) are reachable from
