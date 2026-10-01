@@ -164,6 +164,17 @@ describe("socket channels: slim snapshots per client kind", () => {
     expect(slim.codexNew).toBe(true);
   });
 
+  it("carries the body's first-footfall answer so the HUD prices rows as the app does", () => {
+    const b = body("1:2");
+    expect(slimBodyForHud(b).footfall).toBeUndefined();
+    (b as unknown as Record<string, unknown>).exoPayoutRange = { journalWasFootfalled: false, commanderFirstFootfall: false };
+    expect(slimBodyForHud(b).footfall).toBe("unwalked");
+    (b as unknown as Record<string, unknown>).exoPayoutRange = { journalWasFootfalled: true, commanderFirstFootfall: false };
+    expect(slimBodyForHud(b).footfall).toBe("walked");
+    (b as unknown as Record<string, unknown>).exoPayoutRange = null;
+    expect(slimBodyForHud(b).footfall).toBeUndefined();
+  });
+
   it("slims a body far below its full size", () => {
     const full = JSON.stringify(body("1:2")).length;
     const slim = JSON.stringify(slimBodyForHud(body("1:2"))).length;

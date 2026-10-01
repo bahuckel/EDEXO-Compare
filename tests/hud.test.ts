@@ -112,6 +112,21 @@ describe("HUD candidates", () => {
     expect(mark("Stratum")).toBeNull();
   });
 
+  /** Seen live 2026-10-01: the HUD printed 12,934,900 CR beside the app's 64.7 M ×5 for the same row. */
+  it("prices a row as the app does: ×5 unwalked, ×1 walked, the list price tagged while unknown", () => {
+    const priceOf = (footfall: string | undefined) => {
+      HUD.render({
+        exoOverlayFocusBodyKey: "1:2",
+        bodies: [{ ...body("1:2", "A 2", [match("Stratum", "tectonicas", 1_000_000)]), footfall }],
+      });
+      return document.querySelector(".hud-list li .cr")?.textContent;
+    };
+    expect(priceOf("unwalked")).toBe((5_000_000).toLocaleString() + " CR ×5");
+    expect(priceOf("walked")).toBe((1_000_000).toLocaleString() + " CR ×1");
+    expect(priceOf("unknown")).toBe((1_000_000).toLocaleString() + " CR ×1 ?");
+    expect(priceOf(undefined)).toBe((1_000_000).toLocaleString() + " CR ×1 ?");
+  });
+
   it("prefers the targeted body from Status.json and tags it", () => {
     HUD.render({
       exoOverlayFocusBodyKey: "1:2",

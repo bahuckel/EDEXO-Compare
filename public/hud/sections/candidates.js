@@ -168,11 +168,16 @@ export var candidates = {
     (bc.genusLikelihoods || []).forEach(function (l, idx) {
       if (l && l.genus) rank[norm(l.genus)] = idx;
     });
+    // Priced as the app prices it: ×5 once nobody has landed here, ×1 once somebody has, the list
+    // price tagged "×1 ?" while nothing has said (server/wsChannels.ts slimBodyForHud).
+    var foot = bc.footfall || "unknown";
+    var mult = foot === "unwalked" ? 5 : 1;
+    var multTag = foot === "unwalked" ? "×5" : foot === "walked" ? "×1" : "×1 ?";
     rows.forEach(function (r, idx) {
       r.idx = idx;
       var g = norm((r.m.entry || {}).genus);
       r.rank = Object.prototype.hasOwnProperty.call(rank, g) ? rank[g] : 9999;
-      r.cr = r.m.priceCredits != null && isFinite(r.m.priceCredits) ? Number(r.m.priceCredits) : -1;
+      r.cr = r.m.priceCredits != null && isFinite(r.m.priceCredits) ? Number(r.m.priceCredits) * mult : -1;
     });
     rows.sort(function (a, b) {
       return byValue ? b.cr - a.cr || a.idx - b.idx : a.rank - b.rank || a.idx - b.idx;
@@ -234,7 +239,10 @@ export var candidates = {
       }
       var cr = document.createElement("span");
       cr.className = "cr";
-      cr.textContent = r.cr >= 0 ? r.cr.toLocaleString() + " CR" : "— CR";
+      cr.textContent = r.cr >= 0 ? r.cr.toLocaleString() + " CR " + multTag : "— CR";
+      if (r.cr >= 0 && foot === "unknown") {
+        cr.title = (r.cr * 5).toLocaleString() + " CR if you take first footfall here";
+      }
       li.appendChild(name);
       li.appendChild(cr);
       li.title = (genus + " " + sp).trim();

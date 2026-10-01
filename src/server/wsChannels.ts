@@ -9,6 +9,7 @@
  */
 import { createHash } from "node:crypto";
 import type { AppSnapshot, BodyComputed } from "../shared/types.js";
+import { footfallCertainty, type FootfallCertainty } from "../shared/footfallValue.js";
 
 export type WsChannel = "app" | "hud" | "launcher";
 
@@ -51,10 +52,26 @@ const LAUNCHER_KEYS = [
 ] as const satisfies readonly (keyof AppSnapshot)[];
 
 /** A body as the HUD's candidate list needs it: the journal state, the label, the rows' essentials. */
-export function slimBodyForHud(b: BodyComputed): Partial<BodyComputed> {
+function hudFootfall(b: BodyComputed): { footfall?: FootfallCertainty } {
+  if (!b.exoPayoutRange) return {};
+  const c = footfallCertainty({
+    journalWasFootfalled: b.exoPayoutRange.journalWasFootfalled,
+    commanderFirstFootfall: b.exoPayoutRange.commanderFirstFootfall,
+  });
+  return c === "unknown" ? {} : { footfall: c };
+}
+
+export function slimBodyForHud(b: BodyComputed): Partial<BodyComputed> & { footfall?: FootfallCertainty } {
   return {
     state: b.state,
     tabLabel: b.tabLabel,
+    /*
+      The body's first-footfall answer, so the HUD prices a row as the app does: ×5 once nobody has
+      landed, ×1 once somebody has, the list price marked "×1 ?" while unknown. Before this the HUD
+      always printed the list price beside the app's ×5 figure (Fable review 1.2, seen live 2026-10-01).
+      Left out while unknown, the common case; the HUD reads a missing one as unknown.
+    */
+    ...hudFootfall(b),
     matches: b.matches.map((m) => ({
       entry: {
         id: m.entry.id,
