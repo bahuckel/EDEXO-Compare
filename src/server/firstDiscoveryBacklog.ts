@@ -137,6 +137,37 @@ function candidates(store: GameStateStore, withLost = false): BodyExoState[] {
   return out;
 }
 
+/**
+ * The codex entries a body is worth a trip for: species never logged in the region (any colour) that
+ * are the **only** likely candidate of their genus on the body, after the FSS or the DSS.
+ *
+ * Owner, 2026-10-01 (guild report): every candidate used to count, so a genus with two possible
+ * species — one of them rare, with a low chance to spawn — sent commanders across the bubble for a
+ * plant that is probably not there, and a body whose real plants were all sampled stayed on the list
+ * for its leftover guesses. With one candidate per genus the species follows from the genus; with
+ * two or more it is a guess, and a guess is not a reason to fly.
+ */
+export function codexWorthATrip(
+  matches: readonly { unlikely?: boolean; entry: { displayName: string; genus: string } }[],
+  logged: ReadonlySet<string>,
+  region: string,
+): string[] {
+  const likely = matches.filter((m) => !m.unlikely);
+  const perGenus = new Map<string, number>();
+  for (const m of likely) {
+    const g = m.entry.genus.trim().toLowerCase();
+    perGenus.set(g, (perGenus.get(g) ?? 0) + 1);
+  }
+  return [
+    ...new Set(
+      likely
+        .filter((m) => perGenus.get(m.entry.genus.trim().toLowerCase()) === 1)
+        .filter((m) => codexNewColoursInRegion(logged, region, m.entry.displayName, null))
+        .map((m) => m.entry.displayName),
+    ),
+  ];
+}
+
 export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscoveryBacklogDTO {
   const db = getCachedSpeciesDatabase();
   const prices = getCachedPriceIndex();
@@ -188,19 +219,7 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
     );
     if (!range) continue;
 
-    // Codex entries this body could add: likely species never logged in the region (any colour).
-    const codexNew =
-      region && logged.size
-        ? [
-            ...new Set(
-              shownSpeciesMatches(run.matches)
-                .filter(
-                  (m) => !m.unlikely && codexNewColoursInRegion(logged, region, m.entry.displayName, null),
-                )
-                .map((m) => m.entry.displayName),
-            ),
-          ]
-        : [];
+    const codexNew = region && logged.size ? codexWorthATrip(shownSpeciesMatches(run.matches), logged, region) : [];
     if (lost && !codexNew.length) continue;
 
     rows.push({

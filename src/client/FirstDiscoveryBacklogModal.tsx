@@ -265,9 +265,9 @@ export function FirstDiscoveryBacklogModal({
                 type="button"
                 className={`fdb-chip${codexOnly ? " fdb-chip--on" : ""}`}
                 onClick={() => setCodexOnly((v) => !v)}
-                title="Only bodies where a likely species was never logged in your codex for that region. Predictions: the species may not be there, and the colour is not judged."
+                title="Only bodies with a species not yet in your codex for that region, where it is the only candidate of its genus there (after the FSS, or the DSS when mapped). A genus with two or more possible species is left out: not worth the trip on a guess. The colour is not judged."
               >
-                Codex missed (
+                New codex (
                 {(data?.rows ?? []).filter((r) => (r.codexNew?.length ?? 0) > 0).length.toLocaleString()})
               </button>
               <span className="fdb-filters__gap" />
@@ -348,7 +348,7 @@ export function FirstDiscoveryBacklogModal({
                         {r.codexNew?.length ? (
                           <span
                             className="fdb-codex"
-                            title={`Likely here and never logged in your codex for this region (a prediction): ${r.codexNew.join(", ")}`}
+                            title={`Not in your codex for this region yet, and the only candidate of its genus here: ${r.codexNew.join(", ")}`}
                           >
                             CODEX {r.codexNew.length}
                           </span>

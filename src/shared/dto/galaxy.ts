@@ -339,9 +339,9 @@ export interface FirstDiscoveryBacklogRowDTO {
    */
   footfallObserved: boolean;
   /**
-   * Likely species here that would be new to the commander's codex in this body's region (guild
-   * tester report, 2026-09-30: "codex entries you missed"). Predictions from the candidate list —
-   * the colour is not judged, only whether the species was ever logged in the region.
+   * Species here that would be new to the commander's codex in this body's region (guild tester
+   * report, 2026-09-30), counted only when it is the only likely candidate of its genus on the body
+   * (owner, 2026-10-01; firstDiscoveryBacklog.ts `codexWorthATrip`). The colour is not judged.
    */
   codexNew?: string[];
   /**

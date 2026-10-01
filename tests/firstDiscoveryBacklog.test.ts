@@ -12,6 +12,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { GameStateStore } from "../src/server/gameState.js";
 import {
+  codexWorthATrip,
   computeFirstDiscoveryBacklog,
   clearFirstDiscoveryBacklogCache,
 } from "../src/server/firstDiscoveryBacklog.js";
@@ -294,5 +295,27 @@ describe("the summary", () => {
     for (let i = 1; i < rows.length; i++) {
       expect(rows[i - 1]!.minCr).toBeGreaterThanOrEqual(rows[i]!.minCr);
     }
+  });
+});
+
+describe("codex entries worth a trip (owner, 2026-10-01, guild report)", () => {
+  const m = (displayName: string, genus: string, unlikely = false) => ({ entry: { displayName, genus }, unlikely });
+  // Nothing of these in the codex for the Inner Orion Spur.
+  const logged = new Set(["inner orion spur|bacterium cerbrus|*"]);
+  const R = "Inner Orion Spur";
+  it("a species that is the only candidate of its genus counts", () => {
+    expect(codexWorthATrip([m("Stratum Tectonicas", "Stratum"), m("Tussock Pennata", "Tussock")], logged, R)).toEqual([
+      "Stratum Tectonicas",
+      "Tussock Pennata",
+    ]);
+  });
+  it("a genus with two candidates is a guess: neither counts, however rare one of them is", () => {
+    expect(codexWorthATrip([m("Osseus Fractus", "Osseus"), m("Osseus Pellebantus", "Osseus"), m("Stratum Tectonicas", "Stratum")], logged, R)).toEqual([
+      "Stratum Tectonicas",
+    ]);
+  });
+  it("unlikely rows neither count nor make a genus ambiguous; logged species never count", () => {
+    expect(codexWorthATrip([m("Osseus Fractus", "Osseus"), m("Osseus Pellebantus", "Osseus", true)], logged, R)).toEqual(["Osseus Fractus"]);
+    expect(codexWorthATrip([m("Bacterium Cerbrus", "Bacterium")], logged, R)).toEqual([]);
   });
 });
