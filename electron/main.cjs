@@ -12,7 +12,6 @@ const {
 } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const { execFileSync } = require("child_process");
 const { WINDOW_MIN, createWindowState, enableZoom } = require("./windowState.cjs");
 const { childWindowKind, galaxyWindowBounds } = require("./childWindows.cjs");
 const {
@@ -119,26 +118,6 @@ const trayControl = createTrayControl({
   huds,
   getUiUrl: () => (runtime ? `${runtime.getLocalBaseUrl()}/` : null),
 });
-
-/** Windows only: kill other processes with same image name (stray Electron/CLI copies). */
-function killSiblingEdexoProcesses() {
-  if (process.platform !== "win32") return;
-  try {
-    const exe = path.basename(process.execPath).replace(/'/g, "''");
-    const myPid = process.pid;
-    execFileSync(
-      "powershell.exe",
-      [
-        "-NoProfile",
-        "-Command",
-        `Get-CimInstance Win32_Process -Filter "Name='${exe}'" -ErrorAction SilentlyContinue | Where-Object { $_.ProcessId -ne ${myPid} } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`,
-      ],
-      { stdio: "ignore", windowsHide: true },
-    );
-  } catch {
-    /* ignore */
-  }
-}
 
 /*
   "App window" (owner, 2026-09-26): the exobiology UI in its own window.
@@ -421,8 +400,11 @@ function registerFootOverlayIpc(iconForChild) {
   });
   ipcMain.handle("edexo:relaunch", (evt) => {
     if (!mainWindow || evt.sender !== mainWindow.webContents) return { ok: false };
-    const portable = process.env.PORTABLE_EXECUTABLE_FILE;
-    app.relaunch(portable ? { execPath: portable, args: process.argv.slice(1) } : undefined);
+    /*
+      Armed here, registered in will-quit (combined plan 1.6c): with a backup running, quitting asks
+      first, and "Keep the app open" used to leave the relaunch armed for the next ordinary quit.
+    */
+    relaunchOnQuit = true;
     app.quit();
     return { ok: true };
   });
@@ -695,6 +677,17 @@ async function start() {
     // The launcher is still the app: closing it closes the app window too, as it always quit.
     if (appUiWindow && !appUiWindow.isDestroyed()) appUiWindow.close();
   });
+  /*
+    Windows logoff or shutdown ends the app without before-quit (combined plan 1.6d), so the clean
+    shutdown never ran and the on-foot catalog's last second was lost. Flush what is buffered now.
+  */
+  mainWindow.on("session-end", () => {
+    try {
+      if (runtime && typeof runtime.flushNow === "function") runtime.flushNow();
+    } catch {
+      /* the session is ending either way */
+    }
+  });
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -750,7 +743,7 @@ let gotSingleInstanceLock = true;
 if (!separateCopy) {
   gotSingleInstanceLock = app.requestSingleInstanceLock();
   if (!gotSingleInstanceLock) {
-    // exit, not quit: quitting runs before-quit, whose sibling sweep would kill the running copy.
+    // exit, not quit: this copy has nothing to close, and before-quit is the running copy's business.
     app.exit(0);
   } else {
     app.on("second-instance", () => {
@@ -797,6 +790,15 @@ app.on("window-all-closed", () => {
   (its half-written file is cleared at the next start).
 */
 let exitAllowed = false;
+/** "Restart now" asked for a relaunch; done in will-quit, once the quit is really going ahead. */
+let relaunchOnQuit = false;
+
+app.on("will-quit", () => {
+  if (!relaunchOnQuit) return;
+  relaunchOnQuit = false;
+  const portable = process.env.PORTABLE_EXECUTABLE_FILE;
+  app.relaunch(portable ? { execPath: portable, args: process.argv.slice(1) } : undefined);
+});
 let exitAsking = false;
 let exitWhenBackupDone = false;
 
@@ -823,6 +825,8 @@ function holdExitForBackup(e) {
   };
   void (parent ? dialog.showMessageBox(parent, opts) : dialog.showMessageBox(opts)).then(({ response }) => {
     exitAsking = false;
+    // "Keep the app open": a "Restart now" that started this quit is called off with it.
+    if (response === 1) relaunchOnQuit = false;
     if (response === 2) {
       exitAllowed = true;
       app.quit();
@@ -853,5 +857,4 @@ app.on("before-quit", (e) => {
   if (runtime && typeof runtime.shutdown === "function") {
     void runtime.shutdown();
   }
-  killSiblingEdexoProcesses();
 });

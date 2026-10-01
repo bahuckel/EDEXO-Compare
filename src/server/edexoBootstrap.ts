@@ -167,6 +167,8 @@ export type EdexoRuntime = {
   gameRunning: () => boolean | null;
   getLocalBaseUrl: () => string;
   openMainAppInBrowser: () => void;
+  /** Write what is buffered, synchronously: Windows logoff/shutdown gives no time for shutdown(). */
+  flushNow: () => void;
 };
 
 /**
@@ -1984,6 +1986,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     whenBackupDone: () => backupService.whenIdle(),
     onGameRunning: (cb) => gamePresence.onChange(cb),
     gameRunning: () => gamePresence.running(),
+    flushNow: () => flushFootScannedCatalog(),
   };
 }
 

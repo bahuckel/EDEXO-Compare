@@ -24,7 +24,10 @@ public static class EdexoFg {
 }
 "@
 $lastPid = -1
+$tick = 0
 while ($true) {
+  # The app that started this is gone (crashed, ended in Task Manager): so is this.
+  if ((++$tick % 10) -eq 0 -and -not (Get-Process -Id __PARENT_PID__ -ErrorAction SilentlyContinue)) { exit }
   $h = [EdexoFg]::GetForegroundWindow()
   $p = 0
   [void][EdexoFg]::GetWindowThreadProcessId($h, [ref]$p)
@@ -32,8 +35,10 @@ while ($true) {
     $lastPid = $p
     $n = ''
     try { $n = (Get-Process -Id $p -ErrorAction Stop).ProcessName } catch {}
-    [Console]::Out.WriteLine($n)
-    [Console]::Out.Flush()
+    try {
+      [Console]::Out.WriteLine($n)
+      [Console]::Out.Flush()
+    } catch { exit }
   }
   Start-Sleep -Milliseconds 400
 }
@@ -65,7 +70,7 @@ function watchForeground(onName) {
           "-WindowStyle",
           "Hidden",
           "-EncodedCommand",
-          Buffer.from(SCRIPT, "utf16le").toString("base64"),
+          Buffer.from(SCRIPT.replace("__PARENT_PID__", String(process.pid)), "utf16le").toString("base64"),
         ],
         { windowsHide: true, stdio: ["ignore", "pipe", "ignore"] },
       );
