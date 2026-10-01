@@ -46,6 +46,13 @@ export type ExoOrganicTrackerInternal = {
    * an anchor is somewhere you stood, this is only a number.
    */
   recoveredSamples?: number;
+  /**
+   * Which scan of the run each anchor is (0 = first, 1 = second, 2 = third), parallel to `anchors`;
+   * absent means anchor i is scan i. A scan that could not be placed leaves its number unused, so
+   * the next plant's position is not read as the first one's (owner, 2026-10-02: after a restart the
+   * HUD showed the second plant's distance in the first row and nothing in the third).
+   */
+  anchorSlots?: number[];
   phase: "tracking" | "celebrate";
   celebrationUntil: number;
   /** Set when Analyse merges; true = species already in codex (no 5× codex bonus). */
@@ -133,6 +140,35 @@ function effectiveSampleCount(t: ExoOrganicTrackerInternal): number {
   return Math.min(3, (t.recoveredSamples ?? 0) + t.anchors.length);
 }
 
+/** The position of scan `scan` (0-based) of this run, when it is known. */
+function anchorForScan(t: ExoOrganicTrackerInternal, scan: number): ExoOrganicAnchors | undefined {
+  const i = t.anchors.findIndex((_, k) => (t.anchorSlots?.[k] ?? k) === scan);
+  return i >= 0 ? t.anchors[i] : undefined;
+}
+
+/** Record where scan `scan` was taken. */
+function pushAnchor(t: ExoOrganicTrackerInternal, a: ExoOrganicAnchors, scan: number): void {
+  if (!t.anchorSlots) t.anchorSlots = t.anchors.map((_, k) => k);
+  t.anchors.push(a);
+  t.anchorSlots.push(scan);
+}
+
+/**
+ * Where a scan was taken, from the radar's own marks.
+ *
+ * Every placed scan also leaves a mark, stamped with the journal line's own timestamp and saved in
+ * its own file. So a run rebuilt from the journal (the session file gone, the app restarted) can
+ * still place the scans this app watched: the same body and the same second is the same scan.
+ */
+function anchorFromMarks(store: ExoOrganicJournalStore, bodyKey: string, line: JournalLine): ExoOrganicAnchors | null {
+  const at = typeof line.timestamp === "string" ? line.timestamp : "";
+  if (!at) return null;
+  const m = (store.surfaceSampleMarks ?? []).find((x) => x.bodyKey === bodyKey && x.atIso === at);
+  if (!m) return null;
+  const r = store.explorationScans?.get(bodyKey)?.radius;
+  return { latDeg: m.latDeg, lonDeg: m.lonDeg, planetRadiusM: typeof r === "number" && r > 0 ? r : 0 };
+}
+
 function persistSoon(store: ExoOrganicJournalStore, projectRoot: string): void {
   schedulePersistOrganicSampleSession(store, projectRoot);
 }
@@ -185,15 +221,35 @@ export function restoreOrganicSessionFromJournal(
   db: SpeciesDatabase,
 ): boolean {
   /*
-    Walk backwards to the start of the current attempt. A Touchdown or a Liftoff ends whatever came
-    before it: a plant is sampled in one visit to one surface, so anything older belongs to a
-    different one.
+    Walk backwards to the start of the current attempt: back to a landing on another body (or one
+    that does not say which), or a scan on another body. A plant is sampled on one surface, so
+    anything older belongs to a different one. Landings on the same body do not end it: hopping the
+    ship from plant to plant is ordinary play, and stopping at the last Touchdown counted one scan of
+    the owner's two (2026-10-02).
   */
   const recent: JournalLine[] = [];
+  let surfaceKey: string | null = null;
   for (let i = lines.length - 1; i >= 0; i--) {
     const e = lines[i]!.event;
-    if (e === "Liftoff" || e === "Touchdown") break;
+    if (e === "Liftoff" || e === "Touchdown") {
+      const sa = lines[i]!.SystemAddress;
+      const bid = lines[i]!.BodyID;
+      if (typeof sa !== "number" || typeof bid !== "number") break;
+      const k = organicBodyKey(sa, bid);
+      if (surfaceKey === null) surfaceKey = k;
+      else if (k !== surfaceKey) break;
+      continue;
+    }
     if (e !== "ScanOrganic") continue;
+    {
+      const sa = lines[i]!.SystemAddress;
+      const bid = lines[i]!.Body;
+      if (typeof sa === "number" && typeof bid === "number") {
+        const k = organicBodyKey(sa, bid);
+        if (surfaceKey === null) surfaceKey = k;
+        else if (k !== surfaceKey) break;
+      }
+    }
     /*
       An Analyse ends the run before it, as surely as a landing does.
 
@@ -275,11 +331,27 @@ export function restoreOrganicSessionFromJournal(
   */
   const held = store.exoOrganicTracker;
   if (held && held.bundleKey === bundleKey) {
+    // Scans the file does not place, placed from the radar's marks where they can be.
+    counted.forEach((l, scan) => {
+      if (anchorForScan(held, scan)) return;
+      const a = anchorFromMarks(store, bk, l);
+      if (a) pushAnchor(held, a, scan);
+    });
     const placed = held.anchors.length;
     const missing = Math.max(0, counted.length - placed);
     if (missing > (held.recoveredSamples ?? 0)) held.recoveredSamples = missing;
     return true;
   }
+
+  const anchors: ExoOrganicAnchors[] = [];
+  const anchorSlots: number[] = [];
+  counted.forEach((l, scan) => {
+    const a = anchorFromMarks(store, bk, l);
+    if (a) {
+      anchors.push(a);
+      anchorSlots.push(scan);
+    }
+  });
 
   store.exoOrganicTracker = {
     bundleKey,
@@ -291,8 +363,9 @@ export function restoreOrganicSessionFromJournal(
       typeof last.BodyName === "string" && last.BodyName.trim() ? last.BodyName.trim() : `Body ${bodyId}`,
     ),
     minSampleDistanceM: resolveMinSampleDistanceM(projectRoot, db, genusLoc),
-    anchors: [],
-    recoveredSamples: counted.length,
+    anchors,
+    anchorSlots,
+    recoveredSamples: counted.length - anchors.length,
     phase: "tracking",
     celebrationUntil: 0,
   };
@@ -493,11 +566,11 @@ export function ingestExoOrganicJournalLine(
     */
     if (effectiveSampleCount(t) < 3) {
       if (scanKind === "log") return;
-      t.anchors.push({
-        latDeg: fix.latDeg,
-        lonDeg: fix.lonDeg,
-        planetRadiusM: fix.planetRadiusM,
-      });
+      pushAnchor(
+        t,
+        { latDeg: fix.latDeg, lonDeg: fix.lonDeg, planetRadiusM: fix.planetRadiusM },
+        effectiveSampleCount(t),
+      );
       store.addSurfaceSampleMark(
         bk,
         bodyNameNormEarly,
@@ -536,13 +609,14 @@ export function ingestExoOrganicJournalLine(
       the last chance to learn where the commander was standing. The radar's own marks dedupe by
       position, so the mark alongside is free either way.
     */
-    const analyseFix = t.anchors.length < 3 ? resolveFootFixForOrganicLine(statusFix, line) : null;
+    const analyseFix =
+      t.anchors.length < 3 && !anchorForScan(t, 2) ? resolveFootFixForOrganicLine(statusFix, line) : null;
     if (analyseFix) {
-      t.anchors.push({
-        latDeg: analyseFix.latDeg,
-        lonDeg: analyseFix.lonDeg,
-        planetRadiusM: analyseFix.planetRadiusM,
-      });
+      pushAnchor(
+        t,
+        { latDeg: analyseFix.latDeg, lonDeg: analyseFix.lonDeg, planetRadiusM: analyseFix.planetRadiusM },
+        2,
+      );
       store.addSurfaceSampleMark(
         bk,
         bodyNameNormEarly || t.bodyNameNorm,
@@ -672,6 +746,8 @@ export function buildExoOrganicOverlayDto(
 
   const fix = store.exoOrganicLastFix;
   const anchors = t.anchors;
+  // By scan number, not list position: a scan that could not be placed keeps its row empty.
+  const byScan = [anchorForScan(t, 0), anchorForScan(t, 1), anchorForScan(t, 2)];
   const minG = Math.max(0, Math.round(t.minSampleDistanceM));
 
   const avgR = (a: ExoOrganicAnchors): number =>
@@ -682,41 +758,19 @@ export function buildExoOrganicOverlayDto(
   let distThirdM: number | null = null;
   let spacingBetweenSamplesM: number | null = null;
 
-  if (fix && anchors[0] && avgR(anchors[0]) > 0) {
-    distFirstM = greatCircleDistanceMeters(
-      fix.latDeg,
-      fix.lonDeg,
-      anchors[0].latDeg,
-      anchors[0].lonDeg,
-      avgR(anchors[0]),
-    );
-  }
-  if (fix && anchors[2] && avgR(anchors[2]) > 0) {
-    distThirdM = greatCircleDistanceMeters(
-      fix.latDeg,
-      fix.lonDeg,
-      anchors[2].latDeg,
-      anchors[2].lonDeg,
-      avgR(anchors[2]),
-    );
-  }
-  if (fix && anchors[1] && avgR(anchors[1]) > 0) {
-    distSecondM = greatCircleDistanceMeters(
-      fix.latDeg,
-      fix.lonDeg,
-      anchors[1].latDeg,
-      anchors[1].lonDeg,
-      avgR(anchors[1]),
-    );
-  }
-  if (anchors.length >= 2) {
-    const ra = avgR(anchors[0]!);
+  const distTo = (a: ExoOrganicAnchors | undefined): number | null =>
+    fix && a && avgR(a) > 0 ? greatCircleDistanceMeters(fix.latDeg, fix.lonDeg, a.latDeg, a.lonDeg, avgR(a)) : null;
+  distFirstM = distTo(byScan[0]);
+  distSecondM = distTo(byScan[1]);
+  distThirdM = distTo(byScan[2]);
+  if (byScan[0] && byScan[1]) {
+    const ra = avgR(byScan[0]);
     if (ra > 0) {
       spacingBetweenSamplesM = greatCircleDistanceMeters(
-        anchors[0]!.latDeg,
-        anchors[0]!.lonDeg,
-        anchors[1]!.latDeg,
-        anchors[1]!.lonDeg,
+        byScan[0].latDeg,
+        byScan[0].lonDeg,
+        byScan[1].latDeg,
+        byScan[1].lonDeg,
         ra,
       );
     }
@@ -724,7 +778,7 @@ export function buildExoOrganicOverlayDto(
 
   const spacingMeetsMin = spacingBetweenSamplesM != null && minG > 0 ? spacingBetweenSamplesM >= minG : null;
 
-  const separationForSecondSampleM = anchors.length === 1 ? distFirstM : null;
+  const separationForSecondSampleM = effectiveSampleCount(t) === 1 ? distFirstM : null;
   const separationMeetsMin =
     separationForSecondSampleM != null && minG > 0 ? separationForSecondSampleM >= minG : null;
 

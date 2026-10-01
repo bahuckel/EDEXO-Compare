@@ -1464,7 +1464,19 @@ export class GameStateStore {
 
   setFootTravelOdometerEnabled(value: boolean): void {
     this.footTravelOdometerEnabled = value;
-    if (!value) this.resetFootTravelRuntime({ clearPersistedFile: true });
+    /*
+      Off resets the odometer and nothing else. It used to reset the foot session and delete the
+      saved sample run, and the settings file applies this at every start: with the odometer off
+      (his setting) a restart mid-run deleted the plant positions just before they were read back,
+      and the HUD lost the first sample's distance (owner, 2026-10-02).
+    */
+    if (!value) {
+      this.footTravelOdometerTracking = false;
+      this.footTravelDistanceMeters = 0;
+      this.footTravelPrevLat = null;
+      this.footTravelPrevLon = null;
+      this.footTravelLastPlanetRadiusM = null;
+    }
   }
 
   /**

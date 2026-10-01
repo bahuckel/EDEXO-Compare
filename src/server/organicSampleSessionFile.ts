@@ -17,6 +17,10 @@ export type OrganicSampleSessionPersistedV1 = {
   genusLocalised: string;
   minSampleDistanceM: number;
   anchors: { latDeg: number; lonDeg: number; planetRadiusM: number }[];
+  /** Which scan each anchor is (0-2), parallel to `anchors`; absent in files from before 2026-10-02. */
+  anchorSlots?: number[];
+  /** Scans the journal counted that could not be placed. */
+  recoveredSamples?: number;
   phase: "tracking" | "celebrate";
   celebrationUntil: number;
   analyseWasLogged?: boolean;
@@ -111,6 +115,8 @@ function flushPersistOrganicSampleSession(host: OrganicSampleSessionHost, projec
     genusLocalised: t.genusLocalised,
     minSampleDistanceM: t.minSampleDistanceM,
     anchors: t.anchors,
+    ...(t.anchorSlots ? { anchorSlots: t.anchorSlots } : {}),
+    ...(t.recoveredSamples ? { recoveredSamples: t.recoveredSamples } : {}),
     phase: t.phase,
     celebrationUntil: t.celebrationUntil,
     analyseWasLogged: t.analyseWasLogged,
@@ -208,15 +214,23 @@ export function loadOrganicSampleSessionFromDisk(
   const minSampleDistanceMResolved = minDb > 0 ? minDb : minSampleDistanceM;
 
   const anchors: ExoOrganicTrackerInternal["anchors"] = [];
-  for (const a of p.anchors) {
-    if (!a || typeof a !== "object") continue;
+  const anchorSlots: number[] = [];
+  const savedSlots = Array.isArray(p.anchorSlots) ? p.anchorSlots : null;
+  p.anchors.forEach((a, k) => {
+    if (!a || typeof a !== "object") return;
     const lat = (a as { latDeg?: number }).latDeg;
     const lon = (a as { lonDeg?: number }).lonDeg;
     const r = (a as { planetRadiusM?: number }).planetRadiusM;
     if (typeof lat === "number" && typeof r === "number" && r > 0 && typeof lon === "number") {
       anchors.push({ latDeg: lat, lonDeg: lon, planetRadiusM: r });
+      const slot = savedSlots ? Number(savedSlots[k]) : k;
+      anchorSlots.push(Number.isInteger(slot) && slot >= 0 && slot <= 2 ? slot : k);
     }
-  }
+  });
+  const recoveredSamples =
+    typeof p.recoveredSamples === "number" && Number.isInteger(p.recoveredSamples) && p.recoveredSamples > 0
+      ? Math.min(3, p.recoveredSamples)
+      : 0;
 
   const sep = p.bundleKey.indexOf("::");
   const speciesKeyFromBundle = sep >= 0 ? p.bundleKey.slice(sep + 2) : p.bundleKey;
@@ -236,6 +250,8 @@ export function loadOrganicSampleSessionFromDisk(
     bodyNameNorm: p.bodyNameNorm,
     minSampleDistanceM: minSampleDistanceMResolved,
     anchors,
+    anchorSlots,
+    ...(recoveredSamples ? { recoveredSamples } : {}),
     phase: p.phase,
     celebrationUntil: p.celebrationUntil,
     analyseWasLogged: typeof p.analyseWasLogged === "boolean" ? p.analyseWasLogged : undefined,
