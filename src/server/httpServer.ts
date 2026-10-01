@@ -44,7 +44,7 @@ import type { CollectionFocusConfig } from "./collectionFocus.js";
 import { perfBytes, perfCount, perfTime } from "./perf.js";
 import { createLanAuthGuard, isLoopbackAddress, requestIsAuthorized } from "./lanAuth.js";
 import type { JournalScan } from "./statisticsScan.js";
-import { isLauncherOpenMode, readLauncherOpenMode, writeLauncherOpenMode } from "./launcherPrefs.js";
+import { isLauncherOpenMode, readLauncherOpenMode, writeLanAccess, writeLauncherOpenMode } from "./launcherPrefs.js";
 import { type EdsmCatchUpScope } from "./edsmCatchUp.js";
 
 import { GZIP_MIN_BYTES, sendJson } from "./routes/httpHelpers.js";
@@ -555,6 +555,25 @@ export function createHttpServer(opts: HttpServerOptions): {
     try {
       writeLauncherOpenMode(mode);
       res.json({ ok: true, mode });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  /** The launcher's "LAN access" switch; applies at the next start. From this PC only. */
+  app.post("/api/launcher/lan-access", (req, res) => {
+    if (!isLoopbackAddress(req.socket.remoteAddress)) {
+      res.status(403).json({ ok: false, error: "LAN access can only be changed on the PC running the app." });
+      return;
+    }
+    const enabled = (req.body as { enabled?: unknown } | undefined)?.enabled;
+    if (typeof enabled !== "boolean") {
+      res.status(400).json({ ok: false, error: "enabled must be true or false." });
+      return;
+    }
+    try {
+      writeLanAccess(enabled);
+      res.json({ ok: true, lanAccess: opts.getStatus().lanAccess });
     } catch (e) {
       res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
     }

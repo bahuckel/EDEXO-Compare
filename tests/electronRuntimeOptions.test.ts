@@ -14,23 +14,33 @@ const exe = ["C:\\app\\EDExoCompare.exe"];
 
 describe("the port", () => {
   it("is taken from --port, which is the whole point of this file", () => {
-    expect(electronRuntimeOptions("server", [...exe, "--port", "7118"]).port).toBe(7118);
-    expect(electronRuntimeOptions("client", [...exe, "--local", "--port", "7118"]).port).toBe(7118);
+    expect(electronRuntimeOptions("server", [...exe, "--port", "7118"], true).port).toBe(7118);
+    expect(electronRuntimeOptions("client", [...exe, "--local", "--port", "7118"], true).port).toBe(7118);
   });
 
   it("stays 7111 when nothing says otherwise", () => {
-    expect(electronRuntimeOptions("server", exe).port).toBe(7111);
+    expect(electronRuntimeOptions("server", exe, true).port).toBe(7111);
   });
 
   it("ignores a port that is not a number rather than binding NaN", () => {
-    expect(electronRuntimeOptions("server", [...exe, "--port", "wibble"]).port).toBe(7111);
+    expect(electronRuntimeOptions("server", [...exe, "--port", "wibble"], true).port).toBe(7111);
   });
 });
 
 describe("the address", () => {
   it("follows the launch mode, because that is what --local and --client mean to the shell", () => {
-    expect(electronRuntimeOptions("server", exe).bindHost).toBe("0.0.0.0");
-    expect(electronRuntimeOptions("client", exe).bindHost).toBe("127.0.0.1");
+    expect(electronRuntimeOptions("server", exe, true).bindHost).toBe("0.0.0.0");
+    expect(electronRuntimeOptions("client", exe, true).bindHost).toBe("127.0.0.1");
+  });
+
+  it("keeps server mode on this PC while the launcher's LAN access is off (owner, 2026-10-01)", () => {
+    expect(electronRuntimeOptions("server", exe, false).bindHost).toBe("127.0.0.1");
+    expect(electronRuntimeOptions("client", exe, false).bindHost).toBe("127.0.0.1");
+  });
+
+  it("lets --host and --lan win over the switch", () => {
+    expect(electronRuntimeOptions("server", [...exe, "--lan"], false).bindHost).toBe("0.0.0.0");
+    expect(electronRuntimeOptions("server", [...exe, "--host", "127.0.0.1"], true).bindHost).toBe("127.0.0.1");
   });
 
   it("does not let an absent --host put a client-mode window on the network", () => {
@@ -39,11 +49,11 @@ describe("the address", () => {
       calling it unconditionally would quietly publish a loopback-only launch to the LAN — the exact
       direction this must never fail in.
     */
-    expect(electronRuntimeOptions("client", [...exe, "--local"]).bindHost).toBe("127.0.0.1");
+    expect(electronRuntimeOptions("client", [...exe, "--local"], true).bindHost).toBe("127.0.0.1");
   });
 
   it("honours --host and --lan when they are actually there", () => {
-    expect(electronRuntimeOptions("client", [...exe, "--host", "192.168.1.9"]).bindHost).toBe("192.168.1.9");
-    expect(electronRuntimeOptions("client", [...exe, "--lan"]).bindHost).toBe("0.0.0.0");
+    expect(electronRuntimeOptions("client", [...exe, "--host", "192.168.1.9"], true).bindHost).toBe("192.168.1.9");
+    expect(electronRuntimeOptions("client", [...exe, "--lan"], true).bindHost).toBe("0.0.0.0");
   });
 });

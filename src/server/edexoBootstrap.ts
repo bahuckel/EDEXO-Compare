@@ -39,6 +39,7 @@ import {
 import { scanJournalsForStatistics } from "./statisticsScan.js";
 import { createHttpServer, getLanIPv4s } from "./httpServer.js";
 import { describeUserDataMigration, migrateLegacyUserData } from "./userDataMigration.js";
+import { readLanAccess, resolveLanAccess } from "./launcherPrefs.js";
 import { applyPendingRestore } from "./backup.js";
 import { createBackupService } from "./backupService.js";
 import { APP_VERSION } from "./appVersion.js";
@@ -585,6 +586,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       port,
       lanUrls: lanExposed ? lanUrlsWithKey() : [],
       lanKeyRequired: lanKey != null,
+      lanAccess: cli.lanToggle ? { saved: readLanAccess() ?? lanExposed, active: lanExposed } : null,
       journalDir,
       journalDirConfiguredOk,
       journalPath,
@@ -1923,12 +1925,22 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
 export function electronRuntimeOptions(
   mode: "server" | "client",
   argv: readonly string[],
+  /** The launcher's "LAN access" switch (launcherPrefs.ts); only server mode listens on the network. */
+  lanAccess: boolean,
 ): { bindHost: string; port: number } {
-  const explicitHost = argv.includes("--host") || argv.includes("--lan");
+  const explicitHost = electronHostIsExplicit(argv);
   return {
-    bindHost: explicitHost ? parseHost([...argv]) : mode === "server" ? "0.0.0.0" : "127.0.0.1",
+    bindHost: explicitHost
+      ? parseHost([...argv])
+      : mode === "server" && lanAccess
+        ? "0.0.0.0"
+        : "127.0.0.1",
     port: parsePort([...argv]),
   };
+}
+
+function electronHostIsExplicit(argv: readonly string[]): boolean {
+  return argv.includes("--host") || argv.includes("--lan");
 }
 
 export async function startEdexoFromElectronMode(
@@ -1936,10 +1948,13 @@ export async function startEdexoFromElectronMode(
   argv: readonly string[] = process.argv,
 ): Promise<EdexoRuntime> {
   process.env.EDEXO_ELECTRON = "1";
+  // The switch decides only when nothing on the command line already has.
+  const lanToggle = mode === "server" && !electronHostIsExplicit(argv);
   return startEdexo({
-    ...electronRuntimeOptions(mode, argv),
+    ...electronRuntimeOptions(mode, argv, lanToggle ? resolveLanAccess() : false),
     shouldOpenMainUI: false,
     quietConsole: true,
     useShellLauncher: false,
+    lanToggle,
   });
 }

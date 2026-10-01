@@ -270,7 +270,8 @@ export function MapOptionsModal({
               </div>
             ) : (
               <p className="options-journal-line dim">
-                LAN server: use <code>npm run start:server</code>
+                Other devices: turn on LAN access in the launcher&apos;s Network settings for phone and second-screen
+                links.
               </p>
             )}
           </section>

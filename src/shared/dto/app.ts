@@ -93,6 +93,12 @@ export interface AppStatusDTO {
   lanUrls: string[];
   /** True when non-loopback clients must present the access key. Only ever true in server mode. */
   lanKeyRequired: boolean;
+  /**
+   * The launcher's "LAN access" switch (owner, 2026-10-01): `saved` is the choice, `active` what this
+   * run listens on (a change applies at the next start). Null where the switch does not decide: the
+   * dev server, the console builds, client mode, or an explicit --host / --lan.
+   */
+  lanAccess: { saved: boolean; active: boolean } | null;
   journalDir: string;
   journalDirConfiguredOk: boolean;
   journalPath: string | null;

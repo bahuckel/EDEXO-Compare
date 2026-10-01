@@ -1137,6 +1137,27 @@
       .net-lan-warning strong {
         color: #ff8f78;
       }
+      /* LAN access (owner, 2026-10-01): whether the app listens on the network at all. */
+      .net-lan-access {
+        margin: 0 0 8px;
+        padding: 8px 10px;
+        border-left: 2px solid var(--hud-dim, #8a5a2b);
+        background: rgba(255, 255, 255, 0.03);
+        font-size: 0.86rem;
+      }
+      .net-lan-access label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+      .net-lan-access p {
+        margin: 6px 0 0;
+        opacity: 0.75;
+      }
+      .net-lan-access button {
+        margin-top: 6px;
+      }
       .modal-network-head h3 {
         margin-bottom: 6px;
       }
@@ -1926,6 +1947,15 @@
                 </span>
               </button>
             </div>
+            <!-- LAN access (owner, 2026-10-01): off for a new install; applies at the next start. -->
+            <div class="net-lan-access" id="lanAccessBox" hidden>
+              <label>
+                <input type="checkbox" id="lanAccessToggle" />
+                <span>LAN access: let other devices on this network open the app (phone, tablet, second PC)</span>
+              </label>
+              <p id="lanAccessNote"></p>
+              <button type="button" class="btn-mini" id="lanAccessRestart" hidden>Restart now</button>
+            </div>
             <p class="hint net-lan-warning" id="lanWarning" hidden></p>
             <ul class="link-list" id="modalLanUrlList"></ul>
           </div>
@@ -2697,7 +2727,64 @@
               "Start it with <strong>--local</strong> to bind to this PC only.";
         }
 
+        var lanAccessBox = document.getElementById("lanAccessBox");
+        var lanAccessToggle = document.getElementById("lanAccessToggle");
+        var lanAccessNote = document.getElementById("lanAccessNote");
+        var lanAccessRestart = document.getElementById("lanAccessRestart");
+        var lanAccessBusy = false;
+
+        function renderLanAccess(data) {
+          if (!lanAccessBox) return;
+          var la = data && data.lanAccess;
+          lanAccessBox.hidden = !la;
+          if (!la) return;
+          if (!lanAccessBusy) lanAccessToggle.checked = !!la.saved;
+          var pending = !!la.saved !== !!la.active;
+          var canRestart = !!(window.edexoElectron && typeof window.edexoElectron.relaunch === "function");
+          lanAccessNote.textContent = pending
+            ? (la.saved ? "On after a restart." : "Off after a restart.") +
+              (canRestart ? "" : " Close the app and start it again.")
+            : la.active
+              ? "On: devices on this network can open the app with the links below (they carry the access key)."
+              : "Off: only this PC can open the app.";
+          lanAccessRestart.hidden = !(pending && canRestart);
+        }
+
+        if (lanAccessToggle) {
+          lanAccessToggle.addEventListener("change", function () {
+            lanAccessBusy = true;
+            fetch(apiUrl("/api/launcher/lan-access"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ enabled: lanAccessToggle.checked }),
+            })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (j) {
+                lanAccessBusy = false;
+                if (j && j.ok && lastConnectData) {
+                  lastConnectData.lanAccess = j.lanAccess;
+                  renderConnectUrls(lastConnectData);
+                }
+              })
+              .catch(function () {
+                lanAccessBusy = false;
+              });
+          });
+        }
+        if (lanAccessRestart) {
+          lanAccessRestart.addEventListener("click", function () {
+            var bridge = window.edexoElectron;
+            if (bridge && typeof bridge.relaunch === "function") bridge.relaunch();
+          });
+        }
+
         function renderConnectUrls(data) {
+          // The WebSocket frames carry no lanAccess, only /api/status does: keep the last one known.
+          if (data && data.lanAccess === undefined && lastConnectData && lastConnectData.lanAccess !== undefined) {
+            data.lanAccess = lastConnectData.lanAccess;
+          }
           lastConnectData = data;
           lastPort = typeof data.port === "number" && data.port > 0 ? data.port : 7111;
           var localUrl = "http://127.0.0.1:" + lastPort + "/";
@@ -2713,6 +2800,7 @@
           }
 
           renderLanWarning(data);
+          renderLanAccess(data);
 
           modalLanUrlList.innerHTML = "";
           if (!getSectionLan()) {
@@ -2728,9 +2816,13 @@
             note.style.cssText =
               "margin:8px 0;padding:10px 12px;background:rgba(255,255,255,0.04);border-left:3px solid #444;font-size:0.88rem;opacity:0.72;list-style:none";
             note.textContent =
-              data.mode === "client"
-                ? "Client build — only this PC; install the server / portable build for Wi‑Fi links."
-                : "No separate LAN IPv4 found (VPN off? single interface). This PC link still works.";
+              data.lanAccess && !data.lanAccess.active
+                ? data.lanAccess.saved
+                  ? "LAN access turns on at the next start; the links for your other devices appear here then."
+                  : "LAN access is off — only this PC can open the app. Turn it on above to get links for your other devices."
+                : data.mode === "client"
+                  ? "Client build — only this PC; install the server / portable build for Wi‑Fi links."
+                  : "No separate LAN IPv4 found (VPN off? single interface). This PC link still works.";
             modalLanUrlList.appendChild(note);
           } else {
             data.lanUrls.forEach(function (u) {

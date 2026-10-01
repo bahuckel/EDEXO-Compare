@@ -21,6 +21,11 @@ export type CliOptions = {
   shouldOpenMainUI: boolean;
   quietConsole: boolean;
   useShellLauncher: boolean;
+  /**
+   * The desktop app in server mode with no --host/--lan: the launcher's "LAN access" switch decides
+   * the address (launcherPrefs.ts), so the launcher shows it. Absent everywhere else.
+   */
+  lanToggle?: boolean;
 };
 
 export function parseCli(argv: string[]): CliOptions {
