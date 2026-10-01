@@ -17,8 +17,11 @@ WHAT "THE DATA" IS
     (data/species/<genus>/<genus>_photos/) and data/exomastery/region-map.json,
     which is Ben Peddell's, MIT-licensed, with its own notice in
     data/exomastery/region-map.LICENSE.txt;
-  * the data tables generated into the app's code: src/shared/gggCatalogue.ts
-    and src/shared/nspModelData.ts.
+  * the data table generated into the app's code: src/shared/nspModelData.ts.
+
+  Not the data: src/shared/gggCatalogue.ts is the edGGG catalogue of green gas
+  giants (https://ed-ggg.github.io/edggg/, CMDR Arcanic), included with credit.
+  It is edGGG's, under its author's terms - not this licence, nor MIT.
 
 THE LICENCE
 
