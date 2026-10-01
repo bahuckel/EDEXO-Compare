@@ -33,7 +33,7 @@ contextBridge.exposeInMainWorld("edexoElectron", {
   setHudLayout: (opts) => ipcRenderer.invoke("edexo:set-hud-layout", opts),
   /** Hide/show every HUD window; same as the global shortcut. @param {{ hidden?: boolean }} [opts] */
   toggleHudVisibility: (opts) => ipcRenderer.invoke("edexo:toggle-hud-visibility", opts),
-  /** Minimise to tray: `{ enabled, available, reason? }` (owner, 2026-09-28). */
+  /** Close to tray: `{ enabled, available, reason? }` (owner, 2026-09-28; close, not minimise, since 2026-10-01). */
   getTrayPref: () => ipcRenderer.invoke("edexo:get-tray-pref"),
   /** @param {{ enabled: boolean }} opts */
   setTrayPref: (opts) => ipcRenderer.invoke("edexo:set-tray-pref", opts),

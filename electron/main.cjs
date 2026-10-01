@@ -274,14 +274,20 @@ function openAppUiWindow(iconForChild) {
 }
 
 /*
-  Minimise to tray (owner, 2026-09-28): an option in the launcher, on Windows and Linux, remembered in
-  window-state.json. A system with no tray (GNOME without the AppIndicator extension) greys it out:
-  hiding the launcher there would leave nothing to bring it back with.
+  Close to tray (owner, 2026-10-01; was "Minimise to tray" from 2026-09-28): an option in the
+  launcher, on Windows and Linux, remembered in window-state.json as `closeToTray`. A system with no
+  tray (GNOME without the AppIndicator extension) greys it out: hiding the launcher there would leave
+  nothing to bring it back with.
 
-  Off unless the commander turned it on (owner, 2026-10-01). A guild tester minimised the launcher,
-  did not know what "the tray" was, and took the app for crashed: started again, it showed nothing.
-  Only an explicit `true` in window-state.json turns it on, so whoever ticked the box keeps it.
+  The X hides the launcher in the tray, the way Discord does; minimise is always an ordinary minimise
+  to the taskbar. A guild tester minimised the launcher, did not know what "the tray" was, and took
+  the app for crashed; the minimise button that made a window vanish was the confusing part. Off
+  unless the commander turns it on; the old `minimiseToTray` key meant something else and is ignored.
+  Quitting goes through the tray menu (or any app.quit), which sets `appQuitting` first.
 */
+let appQuitting = false;
+/** Once per run: the first close to the tray says where the app went. */
+let closeToTrayExplained = false;
 let linuxTrayHost = null;
 let hotkeyRegistered = null;
 
@@ -296,14 +302,14 @@ function trayAvailability() {
   return { available: true };
 }
 
-function minimiseToTray() {
-  return readWindowStates().minimiseToTray === true;
+function closeToTray() {
+  return readWindowStates().closeToTray === true;
 }
 
-function setMinimiseToTray(on) {
+function setCloseToTray(on) {
   try {
     const all = readWindowStates();
-    all.minimiseToTray = on;
+    all.closeToTray = on;
     fs.mkdirSync(path.dirname(windowStatePath()), { recursive: true });
     fs.writeFileSync(windowStatePath(), JSON.stringify(all, null, 2), "utf8");
   } catch (e) {
@@ -324,10 +330,10 @@ function registerFootOverlayIpc(iconForChild) {
 
   ipcMain.handle("edexo:open-app-window", () => openAppUiWindow(iconForChild));
 
-  ipcMain.handle("edexo:get-tray-pref", () => ({ enabled: minimiseToTray(), ...trayAvailability() }));
+  ipcMain.handle("edexo:get-tray-pref", () => ({ enabled: closeToTray(), ...trayAvailability() }));
   ipcMain.handle("edexo:set-tray-pref", (_evt, opts) => {
-    setMinimiseToTray(!!(opts && typeof opts === "object" && opts.enabled));
-    return { enabled: minimiseToTray(), ...trayAvailability() };
+    setCloseToTray(!!(opts && typeof opts === "object" && opts.enabled));
+    return { enabled: closeToTray(), ...trayAvailability() };
   });
   ipcMain.handle("edexo:hotkey-status", () => ({
     shortcut: HUD_TOGGLE_SHORTCUT,
@@ -485,7 +491,7 @@ async function start() {
     reapplySpeciesDataDirDiscoveryFromDisk,
     linuxProbes,
   } = require(bundle);
-  // GNOME without the AppIndicator extension has no tray: asked once, for "Minimise to tray".
+  // GNOME without the AppIndicator extension has no tray: asked once, for "Close to tray".
   if (process.platform === "linux" && linuxProbes && typeof linuxProbes.trayHost === "function") {
     try {
       linuxTrayHost = linuxProbes.trayHost();
@@ -667,14 +673,21 @@ async function start() {
     });
   }
   void huds.restore(winIcon);
-  mainWindow.on("minimize", (e) => {
-    // With "Minimise to tray" on (and a tray to come back from), the window goes to the tray and the
-    // HUDs stay where they are. Otherwise an ordinary minimise, to the taskbar.
-    if (!minimiseToTray() || !trayAvailability().available) return;
-    e.preventDefault();
-    mainWindow.hide();
-  });
   mainWindow.on("close", (e) => {
+    // With "Close to tray" on (and a tray to come back from), the X hides the launcher in the tray;
+    // the server, the HUDs and the app window carry on. Quitting (tray menu) closes it for real.
+    if (!appQuitting && closeToTray() && trayAvailability().available) {
+      e.preventDefault();
+      mainWindow.hide();
+      if (!closeToTrayExplained) {
+        closeToTrayExplained = true;
+        trayControl.notify(
+          "ED Exo Compare is still running",
+          "It is in the tray (the arrow next to the clock). Click its icon to bring the launcher back, or right-click it to quit.",
+        );
+      }
+      return;
+    }
     // A backup being written would be thrown away (owner, 2026-09-29): ask first.
     if (holdExitForBackup(e)) return;
     huds.destroyAll();
@@ -826,6 +839,8 @@ function holdExitForBackup(e) {
 
 app.on("before-quit", (e) => {
   if (holdExitForBackup(e)) return;
+  // From here the launcher's X closes it for real, whatever "Close to tray" says.
+  appQuitting = true;
   diag?.stop("quit");
   try {
     globalShortcut.unregisterAll();

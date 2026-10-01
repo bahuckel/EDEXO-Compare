@@ -20,7 +20,7 @@ export { setHudBridge } from "./hudBridge.js";
 // rest of the user data and honours EDEXO_USER_DATA_DIR.
 export { resolveHudLayoutPath, reapplySpeciesDataDirDiscoveryFromDisk } from "./paths.js";
 // Also destructured by `electron/main.cjs` on Linux: whether the desktop has a tray at all, for the
-// "Minimise to tray" option (GNOME shows none without the AppIndicator extension).
+// "Close to tray" option (GNOME shows none without the AppIndicator extension).
 export { linuxProbes } from "./linuxProbes.js";
 
 /** Electron main `require()`s this bundle; it must not also run the CLI auto-boot or we bind HTTP twice and exit. */

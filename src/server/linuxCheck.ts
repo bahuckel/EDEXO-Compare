@@ -292,7 +292,7 @@ export function runLinuxCheck(input: LinuxCheckInput): LinuxCheckResult {
           severity: "warning",
           title: "GNOME has no tray",
           detail:
-            'GNOME shows no tray icons without the AppIndicator extension, so "Minimise to tray" is off ' +
+            'GNOME shows no tray icons without the AppIndicator extension, so "Close to tray" is off ' +
             "until it is installed and enabled.",
           then: packageFor("trayExtension", distro)
             ? "Enable it with `gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com` (log out and back in if it does not show)."

@@ -1856,13 +1856,14 @@
         </div>
         <div class="msg-launcher" id="launcherActionMsg" aria-live="polite"></div>
 
-        <!-- Minimise to tray (owner, 2026-09-28): a quiet option, not a button; greyed out with the reason
-             when this system has no tray. Electron only — hidden in a browser. -->
+        <!-- Close to tray (owner, 2026-10-01; was "Minimise to tray"): the X hides the launcher in the
+             tray, like Discord; minimise stays an ordinary minimise. A quiet option, not a button;
+             greyed out with the reason when this system has no tray. Electron only — hidden in a browser. -->
         <label class="tray-pref" id="trayPrefRow" hidden>
           <input type="checkbox" id="trayPref" />
-          <span>Minimise to tray</span>
+          <span>Close to tray</span>
         </label>
-        <!-- What "the tray" is (owner, 2026-10-01): a tester minimised to it and took the app for gone. -->
+        <!-- What "the tray" is (owner, 2026-10-01): a tester sent the launcher there and took the app for gone. -->
         <p class="tray-note" id="trayNote" hidden></p>
 
         <div class="foot">
@@ -4802,25 +4803,26 @@
         if (linuxSetupRecheck) linuxSetupRecheck.addEventListener("click", function () { void loadLinuxSetup(true); });
         void loadLinuxSetup(false);
 
-        /* ------------------------------------------------------------------ minimise to tray */
+        /* ------------------------------------------------------------------ close to tray */
         var trayPrefRow = document.getElementById("trayPrefRow");
         var trayPref = document.getElementById("trayPref");
         var trayNote = document.getElementById("trayNote");
         var trayWhere = /Windows/i.test(navigator.userAgent)
-          ? "The tray is the ˄ arrow next to the clock, bottom right of the taskbar: click it, then the EDEXO icon to bring the launcher back."
-          : "The tray is the icon area in your desktop's panel: click the EDEXO icon there to bring the launcher back.";
+          ? "Closing (X) keeps the app running in the tray: the ˄ arrow next to the clock, bottom right of the taskbar. Click it, then the EDEXO icon to bring the launcher back; right-click the icon to quit."
+          : "Closing (X) keeps the app running in the tray, the icon area in your desktop's panel. Click the EDEXO icon there to bring the launcher back; right-click it to quit.";
         function renderTrayPref(p) {
           if (!trayPrefRow || !trayPref || !p) return;
           trayPrefRow.hidden = false;
           if (trayNote) {
-            trayNote.hidden = !p.available;
+            // Only while it is on: with it off the X quits, and there is nothing in the tray to find.
+            trayNote.hidden = !p.available || !p.enabled;
             trayNote.textContent = trayWhere;
           }
           trayPref.checked = !!p.enabled && !!p.available;
           trayPref.disabled = !p.available;
           trayPrefRow.classList.toggle("is-off", !p.available);
           trayPrefRow.title = p.available
-            ? "Minimising the launcher hides it in the system tray instead of the taskbar. " + trayWhere
+            ? "Minimise still goes to the taskbar. " + trayWhere
             : p.reason || "This system has no tray.";
         }
         (function () {

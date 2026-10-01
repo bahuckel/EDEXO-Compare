@@ -72,7 +72,23 @@ function createTrayControl(deps) {
     tray = null;
   }
 
-  return { create: createTray, refresh: refreshTrayMenu, destroy: destroyTray, exists: () => tray !== null };
+  /** A short notice from the tray icon (Windows balloon; elsewhere nothing). */
+  function notify(title, content) {
+    if (!tray || process.platform !== "win32") return;
+    try {
+      tray.displayBalloon({ title, content, iconType: "info" });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return {
+    create: createTray,
+    refresh: refreshTrayMenu,
+    destroy: destroyTray,
+    notify,
+    exists: () => tray !== null,
+  };
 }
 
 module.exports = { createTrayControl };
