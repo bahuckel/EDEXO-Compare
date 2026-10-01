@@ -1043,6 +1043,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     return run;
   }
 
+  /** Let the event loop run (the launcher, the tray, HTTP) between the long steps of a start. */
+  const nextTurn = (): Promise<void> => new Promise((r) => setImmediate(r));
+
   async function resyncAllJournalFilesInner(): Promise<void> {
     bootStart();
     store.resetAll();
@@ -1081,7 +1084,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     const cacheResult =
       process.env.EDEXO_DISABLE_JOURNAL_CACHE === "1"
         ? { hit: false as const }
-        : tryPrepareJournalCacheLoad(
+        : await tryPrepareJournalCacheLoad(
             projectRoot,
             journalDirNorm,
             files,
@@ -1104,8 +1107,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
        * empty store and then save that over a good cache.
        */
       bootMark("cache read");
+      // A turn between the steps of a start (plan F): the windows run on this thread too.
+      await nextTurn();
       const hydrated = store.hydrateJournalMergePayload(cacheResult.payload);
       bootMark("hydrate");
+      await nextTurn();
       if (!hydrated) {
         // Leave the store as `resyncAllJournalFiles` found it and fall through to the full replay.
         store.resetAll();
@@ -1161,7 +1167,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         pushFlush();
         bootMark("session + first push");
         if (cacheResult.steps.length > 0 || cacheResult.loadedFromLegacy) {
-          saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
+          await saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
           bootMark("cache save");
         }
         bootReport("cache");
@@ -1213,7 +1219,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     journalBootProgress = null;
     refreshLiveHudFromJournalDir();
     pushFlush();
-    saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
+    await saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
   }
 
   async function restartJournalPipeline(): Promise<void> {

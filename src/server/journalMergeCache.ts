@@ -1,6 +1,7 @@
 import path from "node:path";
-import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
-import { gzipSync, gunzipSync } from "node:zlib";
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync } from "node:fs";
+import { gzip, gunzip } from "node:zlib";
+import { promisify } from "node:util";
 import { deserialize, serialize } from "node:v8";
 import { perfTime } from "./perf.js";
 import {
@@ -10,6 +11,15 @@ import {
 } from "./journalMergeCacheEncoding.js";
 import { promises as fsp } from "node:fs";
 import type { GameStateStore } from "./gameState.js";
+
+/*
+  The compression runs on libuv's thread pool, not the main thread (plan F, 2026-10-01). The server
+  runs in Electron's main process, and gzipSync + gunzipSync of the ~14 MB cache froze the launcher
+  for up to 0.6 s at every start that had new journal lines to save. Turning the state into bytes
+  (and back) still happens on the main thread: it has to see one consistent moment of the store.
+*/
+const gzipAsync = promisify(gzip);
+const gunzipAsync = promisify(gunzip);
 import { JOURNAL_MERGE_CACHE_FORMAT, type JournalMergeCachePayload } from "./gameState.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { projectLocalJournalMergeCacheDir, resolveJournalMergeCacheRoot } from "./paths.js";
@@ -131,13 +141,13 @@ function buildReplaySteps(
   return null;
 }
 
-function tryPrepareJournalCacheLoadFromDir(
+async function tryPrepareJournalCacheLoadFromDir(
   cacheDir: string,
   journalDirNorm: string,
   orderedFullPaths: string[],
   manifest: JournalFileFingerprint[],
   journalHistoryPreset: JournalHistoryPreset,
-): PrepareFromDirResult {
+): Promise<PrepareFromDirResult> {
   if (manifest.length === 0 || orderedFullPaths.length !== manifest.length) {
     return { hit: false };
   }
@@ -171,8 +181,9 @@ function tryPrepareJournalCacheLoadFromDir(
     if (!existsSync(payloadPath)) return { hit: false };
     let payload: JournalMergeCachePayload;
     try {
+      const raw = await readPayloadBytes(payloadPath);
       const decoded = perfTime("boot.mergeCacheParse", () => {
-        const doc = readPayloadFile(payloadPath);
+        const doc = raw === null ? null : deserializePayload(raw);
         return doc === null ? null : decodeJournalMergeCache(doc);
       });
       if (!decoded) return { hit: false };
@@ -224,15 +235,15 @@ function tryPrepareJournalCacheLoadFromDir(
  * Reads **small** meta first; only loads and parses the large payload when fingerprints allow a fast path.
  * Tries persistent user-data cache first, then `<projectRoot>/.edexo-cache` for one-run migration.
  */
-export function tryPrepareJournalCacheLoad(
+export async function tryPrepareJournalCacheLoad(
   projectRoot: string,
   journalDirNorm: string,
   orderedFullPaths: string[],
   manifest: JournalFileFingerprint[],
   journalHistoryPreset: JournalHistoryPreset,
-): JournalCacheLoadResult {
+): Promise<JournalCacheLoadResult> {
   const persistentDir = resolveJournalMergeCacheRoot();
-  const a = tryPrepareJournalCacheLoadFromDir(
+  const a = await tryPrepareJournalCacheLoadFromDir(
     persistentDir,
     journalDirNorm,
     orderedFullPaths,
@@ -244,7 +255,7 @@ export function tryPrepareJournalCacheLoad(
   }
 
   const legacyDir = projectLocalJournalMergeCacheDir(projectRoot);
-  const b = tryPrepareJournalCacheLoadFromDir(
+  const b = await tryPrepareJournalCacheLoadFromDir(
     legacyDir,
     journalDirNorm,
     orderedFullPaths,
@@ -258,23 +269,19 @@ export function tryPrepareJournalCacheLoad(
   return { hit: false };
 }
 
-function atomicWriteJson(filePath: string, obj: unknown): void {
-  const tmp = `${filePath}.${process.pid}.tmp`;
-  writeFileSync(tmp, JSON.stringify(obj), "utf8");
-  renameSync(tmp, filePath);
-}
-
-/** Same atomic rename, but the payload container (see {@link journalMergePayloadPathInDir}). */
-function atomicWritePayload(filePath: string, obj: unknown): void {
-  const tmp = `${filePath}.${process.pid}.tmp`;
-  writeFileSync(tmp, gzipSync(serialize(obj), { level: 6 }));
-  renameSync(tmp, filePath);
-}
-
-/** Returns null when the file is missing or not a readable container. */
-function readPayloadFile(filePath: string): unknown | null {
+/** The payload file's bytes, gunzipped off the main thread; null when missing or not gzip. */
+async function readPayloadBytes(filePath: string): Promise<Buffer | null> {
   try {
-    return deserialize(gunzipSync(readFileSync(filePath)));
+    return await gunzipAsync(await fsp.readFile(filePath));
+  } catch {
+    return null;
+  }
+}
+
+/** Returns null when the bytes are not a readable container. */
+function deserializePayload(bytes: Buffer): unknown | null {
+  try {
+    return deserialize(bytes);
   } catch {
     return null;
   }
@@ -327,30 +334,62 @@ function payloadIsEmptyHistory(p: JournalMergeCachePayload): boolean {
   );
 }
 
+/** Saves run one at a time: two would share the temp file names. */
+let saveChain: Promise<void> = Promise.resolve();
+
+/**
+ * Snapshot the store now (synchronously, so the cache is one consistent moment), then compress and
+ * write it without holding the main thread. Resolves when the files are in place; never rejects.
+ */
 export function saveJournalMergeCache(
   journalDirNorm: string,
   manifest: JournalFileFingerprint[],
   store: GameStateStore,
   projectRoot: string,
   journalHistoryPreset: JournalHistoryPreset,
-): void {
-  if (manifest.length === 0) return;
+): Promise<void> {
+  if (manifest.length === 0) return Promise.resolve();
+  let bytes: Buffer;
+  let meta: JournalMergeMetaFile;
   try {
-    const dir = resolveJournalMergeCacheRoot();
-    mkdirSync(dir, { recursive: true });
     const payload = store.serializeJournalMergePayload();
     // Writing this would poison every later boot — see `payloadIsEmptyHistory`.
-    if (payloadIsEmptyHistory(payload)) return;
-    const meta: JournalMergeMetaFile = {
+    if (payloadIsEmptyHistory(payload)) return Promise.resolve();
+    meta = {
       version: JOURNAL_CACHE_FILE_VERSION,
       journalDir: path.normalize(journalDirNorm),
-      files: manifest,
+      files: [...manifest],
       payloadFormat: JOURNAL_MERGE_CACHE_FORMAT,
       payloadEncoding: JOURNAL_MERGE_CACHE_ENCODING,
       journalHistoryPreset,
     };
-    atomicWritePayload(journalMergePayloadPathInDir(dir), encodeJournalMergeCache(payload));
-    atomicWriteJson(journalMergeMetaPathInDir(dir), meta);
+    bytes = serialize(encodeJournalMergeCache(payload));
+  } catch {
+    return Promise.resolve(); // non-fatal
+  }
+  const run = saveChain.then(() => writeJournalMergeCacheFiles(bytes, meta, projectRoot));
+  saveChain = run;
+  return run;
+}
+
+async function writeJournalMergeCacheFiles(
+  bytes: Buffer,
+  meta: JournalMergeMetaFile,
+  projectRoot: string,
+): Promise<void> {
+  try {
+    const dir = resolveJournalMergeCacheRoot();
+    mkdirSync(dir, { recursive: true });
+    const payloadPath = journalMergePayloadPathInDir(dir);
+    const metaPath = journalMergeMetaPathInDir(dir);
+    const payloadTmp = `${payloadPath}.${process.pid}.tmp`;
+    const metaTmp = `${metaPath}.${process.pid}.tmp`;
+    await fsp.writeFile(payloadTmp, await gzipAsync(bytes, { level: 6 }));
+    await fsp.writeFile(metaTmp, JSON.stringify(meta), "utf8");
+    // Both files are complete before either is swapped in, and the swaps are back to back: a payload
+    // must never sit beside the meta of another (the replay steps come from the meta).
+    renameSync(payloadTmp, payloadPath);
+    renameSync(metaTmp, metaPath);
     try {
       for (const stale of [journalMergeSingleFilePathInDir(dir), journalMergeJsonPayloadPathInDir(dir)]) {
         if (existsSync(stale)) unlinkSync(stale);
