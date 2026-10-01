@@ -175,7 +175,8 @@ export var candidates = {
     var multTag = foot === "unwalked" ? "×5" : foot === "walked" ? "×1" : "×1 ?";
     rows.forEach(function (r, idx) {
       r.idx = idx;
-      var g = norm((r.m.entry || {}).genus);
+      // The solver keys genera by data folder ("brain-tree"), not by display name ("Brain Trees").
+      var g = norm((r.m.entry || {}).genusDataDir || (r.m.entry || {}).genus);
       r.rank = Object.prototype.hasOwnProperty.call(rank, g) ? rank[g] : 9999;
       r.cr = r.m.priceCredits != null && isFinite(r.m.priceCredits) ? Number(r.m.priceCredits) * mult : -1;
     });

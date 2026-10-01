@@ -175,6 +175,16 @@ describe("socket channels: slim snapshots per client kind", () => {
     expect(slimBodyForHud(b).footfall).toBeUndefined();
   });
 
+  it("carries the solver's genus order to the HUD, names only", () => {
+    const b = body("1:2");
+    (b as unknown as Record<string, unknown>).genusLikelihoods = [
+      { genus: "brain-tree", probability: 0.9, unmeasured: false },
+      { genus: "bacterium", probability: 0.4, unmeasured: false },
+    ];
+    expect(slimBodyForHud(b).genusLikelihoods).toEqual([{ genus: "brain-tree" }, { genus: "bacterium" }]);
+    expect(slimBodyForHud(body("1:3")).genusLikelihoods).toBeUndefined();
+  });
+
   it("slims a body far below its full size", () => {
     const full = JSON.stringify(body("1:2")).length;
     const slim = JSON.stringify(slimBodyForHud(body("1:2"))).length;

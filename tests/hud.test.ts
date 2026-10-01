@@ -112,6 +112,25 @@ describe("HUD candidates", () => {
     expect(mark("Stratum")).toBeNull();
   });
 
+  /** The solver names genera by data folder; the rows must follow its order, not the delivered one. */
+  it("lists rows in the solver's genus order, matched by data folder", () => {
+    HUD.render({
+      exoOverlayFocusBodyKey: "1:2",
+      bodies: [
+        {
+          ...body("1:2", "A 2", [
+            match("Bacterium", "cerbrus", 1, { entry: { genus: "Bacterium", genusDataDir: "bacterium", displayName: "Bacterium cerbrus" } }),
+            match("Brain Trees", "roseum", 1, { entry: { genus: "Brain Trees", genusDataDir: "brain-tree", displayName: "Roseum Brain Tree" } }),
+          ]),
+          genusLikelihoods: [{ genus: "brain-tree" }, { genus: "bacterium" }],
+        },
+      ],
+    });
+    const rows = [...document.querySelectorAll(".hud-list li")].map((li) => li.textContent ?? "");
+    expect(rows[0]).toContain("Brain Trees");
+    expect(rows[1]).toContain("Bacterium");
+  });
+
   /** Seen live 2026-10-01: the HUD printed 12,934,900 CR beside the app's 64.7 M ×5 for the same row. */
   it("prices a row as the app does: ×5 unwalked, ×1 walked, the list price tagged while unknown", () => {
     const priceOf = (footfall: string | undefined) => {
