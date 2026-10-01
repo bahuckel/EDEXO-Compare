@@ -71,16 +71,33 @@ export async function listJournalFilesChronological(
   }
 }
 
+/**
+ * How long a replay may hold the thread before it gives the event loop a turn (plan F, 2026-10-01).
+ * The server runs in Electron's main process: a whole journal file applied in one go froze the
+ * launcher, the tray and the HTTP server the launcher loads from, for as long as the file took.
+ */
+const REPLAY_SLICE_MS = 25;
+const REPLAY_CHECK_EVERY = 200;
+
+const nextTurn = (): Promise<void> => new Promise((r) => setImmediate(r));
+
 async function processLines(
   chunk: string,
   leftover: { buf: string },
   onLine: (j: JournalLine) => void,
+  /** Replays only: yield every {@link REPLAY_SLICE_MS}. The live tail applies its few lines at once. */
+  breathe = false,
 ): Promise<void> {
   leftover.buf += chunk;
   const parts = leftover.buf.split(/\r?\n/);
   leftover.buf = parts.pop() ?? "";
-  for (const line of parts) {
-    const t = line.trim();
+  let sliceStart = breathe ? performance.now() : 0;
+  for (let i = 0; i < parts.length; i++) {
+    if (breathe && i > 0 && i % REPLAY_CHECK_EVERY === 0 && performance.now() - sliceStart > REPLAY_SLICE_MS) {
+      await nextTurn();
+      sliceStart = performance.now();
+    }
+    const t = parts[i]!.trim();
     if (!t.startsWith("{")) continue;
     try {
       onLine(JSON.parse(t) as JournalLine);
@@ -93,7 +110,7 @@ async function processLines(
 export async function readJournalFull(filePath: string, onLine: (j: JournalLine) => void): Promise<void> {
   const leftover = { buf: "" };
   const text = await fs.readFile(filePath, "utf8");
-  await processLines(text, leftover, onLine);
+  await processLines(text, leftover, onLine, true);
   if (leftover.buf.trim().startsWith("{")) {
     try {
       onLine(JSON.parse(leftover.buf) as JournalLine);
@@ -129,7 +146,7 @@ export async function readJournalFromOffset(
       s = s.slice(idx + 1);
       discardUntilNl = false;
     }
-    if (s.length) await processLines(s, leftover, onLine);
+    if (s.length) await processLines(s, leftover, onLine, true);
   }
   if (leftover.buf.trim().startsWith("{")) {
     try {
