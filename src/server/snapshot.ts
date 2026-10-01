@@ -557,7 +557,13 @@ function colourPredictionMissed(
  */
 const colourSweepSeen = new Map<string, number>();
 
+/** The store revision each store was last swept at: no new confirmed colour, no pass over every body. */
+const colourSweptAt = new WeakMap<GameStateStore, number>();
+
 export function sweepColourOutliers(store: GameStateStore, db: SpeciesDatabase): number {
+  // ~2 ms a snapshot on his journals for a pass that almost never finds anything (2026-10-01).
+  if (colourSweptAt.get(store) === store.confirmedVariantsRevision) return 0;
+  colourSweptAt.set(store, store.confirmedVariantsRevision);
   const pending = [...store.bodies.values()]
     .filter((b) => (b.confirmedVariants?.length ?? 0) > (colourSweepSeen.get(b.key) ?? 0))
     .sort((a, b) => a.systemAddress - b.systemAddress);
@@ -595,8 +601,9 @@ export function sweepColourOutliers(store: GameStateStore, db: SpeciesDatabase):
 }
 
 /** Test seam. */
-export function resetColourSweepForTests(): void {
+export function resetColourSweepForTests(store?: GameStateStore): void {
   colourSweepSeen.clear();
+  if (store) colourSweptAt.delete(store);
 }
 
 /**

@@ -103,5 +103,12 @@ describe("colour sweep over the journals", () => {
       predictedColour: "Cyan",
       loggedColour: "Cobalt",
     });
+    // Nothing new: the sweep does not even look; a colour logged later is still swept.
+    const rev = store.confirmedVariantsRevision;
+    expect(snap.sweepColourOutliers(store, db)).toBe(0);
+    expect(store.confirmedVariantsRevision).toBe(rev);
+    store.apply(logAcies(18, "Ruthenium", "Teal"));
+    expect(store.confirmedVariantsRevision).toBeGreaterThan(rev);
+    expect(snap.sweepColourOutliers(store, db)).toBe(1);
   });
 });

@@ -1502,6 +1502,7 @@ export class GameStateStore {
   resetAll(): void {
     this.bodies.clear();
     this.bodyKeysBySystem = null;
+    this.confirmedVariantsRevision += 1;
     this.explorationScans.clear();
     this.soldExplorationScans.clear();
     this.soldBodyKeys.clear();
@@ -2329,6 +2330,7 @@ export class GameStateStore {
     else if (existing.source === "codex") existing.at = ts;
     if (lock.variantLocalised && !codexBody.confirmedVariants.includes(lock.variantLocalised)) {
       codexBody.confirmedVariants.push(lock.variantLocalised);
+      this.confirmedVariantsRevision += 1;
     }
     return;
   }
@@ -2851,7 +2853,10 @@ export class GameStateStore {
       upsertFootOrganicLock(b.organicGenusLocks, lock, scanType ?? "", ts);
     }
 
-    if (variant && !b.confirmedVariants.includes(variant)) b.confirmedVariants.push(variant);
+    if (variant && !b.confirmedVariants.includes(variant)) {
+      b.confirmedVariants.push(variant);
+      this.confirmedVariantsRevision += 1;
+    }
     this.propagateExoAmongSimilarMoons(bodyId, systemAddress, ts, "organic");
     return;
   }
@@ -3269,6 +3274,11 @@ export class GameStateStore {
     Keys, not objects, so a body replaced in the map is still read fresh.
   */
   private bodyKeysBySystem: Map<number, string[]> | null = null;
+  /**
+   * Bumped whenever a body gains a confirmed colour variant, or the bodies are cleared or loaded:
+   * the colour-outlier sweep (snapshot.ts) skips its pass over every body when this has not moved.
+   */
+  confirmedVariantsRevision = 0;
   private bodyKeysIndexedAt = -1;
 
   private bodyKeysIn(systemAddress: number): readonly string[] {
@@ -3496,6 +3506,7 @@ export class GameStateStore {
     this.visitedSystemNames = null;
     for (const [k, v] of data.bodies) this.bodies.set(k, v);
     this.bodyKeysBySystem = null;
+    this.confirmedVariantsRevision += 1;
     for (const [k, v] of data.explorationScans) this.explorationScans.set(k, v);
     for (const [k, v] of data.soldExplorationScans ?? []) this.soldExplorationScans.set(k, v);
     for (const k of data.soldBodyKeys ?? []) this.soldBodyKeys.add(k);
