@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { triageSystem, type TriageBodyInput } from "../src/shared/systemTriage.js";
+import { triageHeading, triageSystem, type TriageBodyInput } from "../src/shared/systemTriage.js";
 
 /**
  * The second screen (§51) adds no maths of its own — it renders {@link triageSystem}. What it does
@@ -170,5 +170,30 @@ describe("value at risk", () => {
       topSpecies: null,
       mapFirst: false,
     });
+  });
+});
+
+/** The rows follow the viewed system while browsing, so the heading must name it too (seen live 2026-10-01). */
+describe("the second screen's heading", () => {
+  it("names the ship's system when not browsing", () => {
+    expect(
+      triageHeading({ currentSystem: "Weqea ZO-G c24-41", viewingSystemAddress: null, viewingSystemName: null }),
+    ).toEqual({ system: "Weqea ZO-G c24-41", viewing: false });
+  });
+
+  it("names the viewed system, tagged, while browsing", () => {
+    expect(
+      triageHeading({
+        currentSystem: "Weqea ZO-G c24-41",
+        viewingSystemAddress: 123,
+        viewingSystemName: "Flyai Flyuae FC-I b1-2",
+      }),
+    ).toEqual({ system: "Flyai Flyuae FC-I b1-2", viewing: true });
+  });
+
+  it("never falls back to the ship's system for a viewed one without a name", () => {
+    expect(
+      triageHeading({ currentSystem: "Weqea ZO-G c24-41", viewingSystemAddress: 123, viewingSystemName: null }).system,
+    ).not.toBe("Weqea ZO-G c24-41");
   });
 });

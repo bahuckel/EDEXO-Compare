@@ -263,6 +263,21 @@ export function triageRow(body: TriageBodyInput, timing?: TriageTiming | null): 
 export type TriageSort = "value" | "perMinute" | "distance";
 
 /**
+ * The name over the triage rows. The rows are built from `snapshot.bodies`, which follow the viewed
+ * system while the commander browses one ("Return to commander" showing), so the heading must name
+ * that system too, not the one the ship is in — otherwise a body list from one system sits under
+ * another system's name (seen live 2026-10-01).
+ */
+export function triageHeading(snap: {
+  currentSystem: string | null;
+  viewingSystemAddress: number | null;
+  viewingSystemName: string | null;
+}): { system: string; viewing: boolean } {
+  if (snap.viewingSystemAddress == null) return { system: snap.currentSystem ?? "—", viewing: false };
+  return { system: snap.viewingSystemName ?? "Viewed system", viewing: true };
+}
+
+/**
  * The system, ordered.
  *
  * Ties break on distance, because between two bodies worth the same the near one is the answer, and

@@ -38,6 +38,16 @@
   white-space: nowrap;
 }
 
+.second-screen .ss-viewing {
+  margin-left: 0.5rem;
+  padding: 0 0.35rem;
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
+  font-size: 0.55em;
+  letter-spacing: 0.1em;
+  vertical-align: middle;
+  color: rgba(var(--tint-255-176-96), 0.75);
+}
+
 .second-screen .ss-verdict {
   grid-column: 1;
   font-size: clamp(0.9rem, 2.6vw, 1.25rem);

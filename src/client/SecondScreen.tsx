@@ -22,7 +22,13 @@
  */
 import { useMemo, useState } from "react";
 import { useLiveSnapshot } from "./useLiveSnapshot";
-import { triageInputsFromBodies, triageSystem, type TriageRow, type TriageSort } from "@shared/systemTriage";
+import {
+  triageHeading,
+  triageInputsFromBodies,
+  triageSystem,
+  type TriageRow,
+  type TriageSort,
+} from "@shared/systemTriage";
 import { CopySystemButton } from "./CopySystemButton";
 
 const SORT_STORAGE_KEY = "edexo.secondscreen.sort";
@@ -76,7 +82,8 @@ export function SecondScreen() {
   }, [snapshot, sort]);
 
   const verdict = verdictOf(rows);
-  const system = snapshot?.currentSystem ?? "—";
+  const heading = snapshot ? triageHeading(snapshot) : { system: "—", viewing: false };
+  const system = heading.system;
 
   function chooseSort(next: TriageSort): void {
     setSort(next);
@@ -93,6 +100,11 @@ export function SecondScreen() {
         <div className="ss-system" title={system}>
           {system}
           <CopySystemButton system={system} />
+          {heading.viewing ? (
+            <span className="ss-viewing" title="Browsing a system from the journals, not where the ship is">
+              viewing
+            </span>
+          ) : null}
         </div>
         <div className={`ss-verdict ss-verdict--${verdict.tone}`}>{verdict.text}</div>
         <a
