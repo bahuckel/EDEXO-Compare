@@ -275,9 +275,12 @@ function openAppUiWindow(iconForChild) {
 
 /*
   Minimise to tray (owner, 2026-09-28): an option in the launcher, on Windows and Linux, remembered in
-  window-state.json. On by default where a tray exists — what minimising always did on Windows. A
-  system with no tray (GNOME without the AppIndicator extension) greys it out: hiding the launcher
-  there would leave nothing to bring it back with.
+  window-state.json. A system with no tray (GNOME without the AppIndicator extension) greys it out:
+  hiding the launcher there would leave nothing to bring it back with.
+
+  Off unless the commander turned it on (owner, 2026-10-01). A guild tester minimised the launcher,
+  did not know what "the tray" was, and took the app for crashed: started again, it showed nothing.
+  Only an explicit `true` in window-state.json turns it on, so whoever ticked the box keeps it.
 */
 let linuxTrayHost = null;
 let hotkeyRegistered = null;
@@ -294,7 +297,7 @@ function trayAvailability() {
 }
 
 function minimiseToTray() {
-  return readWindowStates().minimiseToTray !== false;
+  return readWindowStates().minimiseToTray === true;
 }
 
 function setMinimiseToTray(on) {
