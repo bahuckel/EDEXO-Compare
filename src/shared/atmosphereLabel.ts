@@ -14,3 +14,13 @@ export function readableAtmosphereType(raw: string | null | undefined): string |
   const text = words.map((w, i) => (i === 0 ? w : w.toLowerCase())).join(" ");
   return rich ? `${text}-rich` : text;
 }
+
+/**
+ * A display line that may start with the journal's type (Fable review 1.3): the body card and the
+ * species quad print `AtmosphereType`, or a match reason that starts with it ("SulphurDioxide · any
+ * thin atmosphere"). A leading CamelCase compound is made readable; anything else — Spansh's "Sulphur
+ * dioxide", the journal's "thin sulphur dioxide atmosphere", "Neon" — is left as it is.
+ */
+export function readableAtmosphereLead(text: string): string {
+  return text.replace(/^[A-Z][a-z]+(?:[A-Z][a-z]+)+(?=$|[\s·,(])/, (m) => readableAtmosphereType(m) ?? m);
+}

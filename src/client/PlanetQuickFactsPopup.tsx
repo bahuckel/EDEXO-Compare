@@ -8,6 +8,7 @@ import { BodyFeatureLines, GreenGiantBlock } from "./GreenGiantBlock";
 import { DetailCard, KvList, KvRow } from "./bodyDetailKv";
 import { nextTempUnit, usePressUnit, useTempUnit } from "./useUnits";
 import { ExoPayoutRangePanel } from "./ExoPayoutRangePanel";
+import { readableAtmosphereType } from "@shared/atmosphereLabel";
 import {
   formatPressurePill,
   formatTemperaturePillLine,
@@ -325,7 +326,7 @@ function WorldDetailBody({
             ) : null}
             <KvRow
               label="Atmosphere type"
-              value={detail.atmosphereType}
+              value={readableAtmosphereType(detail.atmosphereType)}
               hint="Journal AtmosphereType when set."
             />
             <KvRow label="Atmosphere" value={detail.atmosphere} hint="Journal Atmosphere summary string." />

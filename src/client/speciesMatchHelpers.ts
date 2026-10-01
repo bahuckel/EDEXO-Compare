@@ -22,6 +22,7 @@ import {
   type TempUnit,
 } from "./planetDisplayUtils";
 import { journalPressureToAtm } from "@shared/journalPhysics";
+import { readableAtmosphereLead } from "@shared/atmosphereLabel";
 
 export function primaryStarRoleTooltip(role: StarRoleDTO): string {
   if (role === "fuel") return "Main-sequence scoopable star — refuel with a fuel scoop.";
@@ -273,7 +274,7 @@ export function primaryMatchQuad(
 
   const planet = d("PlanetClass") || scan?.PlanetClass?.trim() || "—";
   const atmoRaw = d("AtmosphereType") || scan?.AtmosphereType?.trim() || scan?.Atmosphere?.trim() || "";
-  const atmo = !atmoRaw || atmoRaw.toLowerCase() === "none" ? "No Atmosphere" : atmoRaw;
+  const atmo = !atmoRaw || atmoRaw.toLowerCase() === "none" ? "No Atmosphere" : readableAtmosphereLead(atmoRaw);
 
   let grav = d("SurfaceGravity");
   if (!grav && scan) {

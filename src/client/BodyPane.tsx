@@ -8,6 +8,7 @@ import { fmtCrRangeShort, fmtCrShort } from "./credits";
 import { FootfallContext } from "./footfallContext";
 import { RowContext, LiveRun } from "./rowContext";
 import { settledMultiplier } from "@shared/footfallValue";
+import { readableAtmosphereLead } from "@shared/atmosphereLabel";
 import { footfallCertainty } from "@shared/footfallValue";
 import { useCallback, memo, Suspense, useEffect, useMemo, useState } from "react";
 import { ExoPayoutRangePanel, payoutHeadline } from "./ExoPayoutRangePanel";
@@ -80,7 +81,8 @@ export const BodyPane = memo(function BodyPane({
 
   const planetType = sc?.PlanetClass?.trim() || "—";
   const atmoRaw = (sc?.AtmosphereType || sc?.Atmosphere || "").trim();
-  const atmosphereDisplay = !atmoRaw || atmoRaw.toLowerCase() === "none" ? "No Atmosphere" : atmoRaw;
+  const atmosphereDisplay =
+    !atmoRaw || atmoRaw.toLowerCase() === "none" ? "No Atmosphere" : readableAtmosphereLead(atmoRaw);
 
   const { gEarth, label: gravLabel } = gravityFromScan(sc ?? {});
 
