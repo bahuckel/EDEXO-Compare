@@ -410,11 +410,25 @@ export async function pruneBackups(folder: string, keep: number): Promise<string
 
 /* ----------------------------------------------------------------------------------- restore */
 
-function safeRel(name: string, prefix: string): string | null {
+/**
+ * The part of a zip entry's name under `prefix`, or null when it could land outside the folder it is
+ * written into (combined plan 1.5, 2026-10-01). Windows takes `\` as a separator too, so an entry
+ * named `app-data/..\..\Startup\x.bat` passed the old `/`-only check and `path.join` wrote it outside
+ * the staging folder: a crafted zip in a shared backup folder could put a file anywhere. Backslashes
+ * count as separators here, and a `:` anywhere (drive letters, alternate data streams) is refused.
+ */
+export function safeZipRel(name: string, prefix: string): string | null {
   if (!name.startsWith(prefix)) return null;
-  const rel = name.slice(prefix.length);
-  if (!rel || rel.split("/").some((p) => !p || p === "." || p === "..") || path.isAbsolute(rel) || /^[A-Za-z]:/.test(rel)) return null;
+  const rel = name.slice(prefix.length).replace(/\\/g, "/");
+  if (!rel || rel.includes(":") || rel.startsWith("/")) return null;
+  if (rel.split("/").some((p) => !p || p === "." || p === "..")) return null;
   return rel;
+}
+
+/** `to` resolves inside `root`: the last check before a restored file is written. */
+function insideFolder(root: string, to: string): boolean {
+  const r = path.relative(path.resolve(root), path.resolve(to));
+  return !!r && !r.startsWith("..") && !path.isAbsolute(r);
 }
 
 /**
@@ -423,13 +437,17 @@ function safeRel(name: string, prefix: string): string | null {
  */
 export async function stageAppDataRestore(backupPath: string, appDataDir: string): Promise<number> {
   const staging = path.join(appDataDir, RESTORE_PENDING_DIR);
+  // The marker first: a staging that fails half way must not be applied at the next start under an
+  // earlier staging's marker (combined plan 1.5). It is written again once every file is in.
+  await rm(path.join(appDataDir, `${RESTORE_PENDING_DIR}.json`), { force: true });
   await rm(staging, { recursive: true, force: true });
   await mkdir(staging, { recursive: true });
   let n = 0;
   for (const e of await listZip(backupPath)) {
-    const rel = safeRel(e.name, "app-data/");
+    const rel = safeZipRel(e.name, "app-data/");
     if (!rel) continue;
     const to = path.join(staging, ...rel.split("/"));
+    if (!insideFolder(staging, to)) continue;
     await mkdir(path.dirname(to), { recursive: true });
     await writeFile(to, await readZipEntry(backupPath, e));
     n++;
@@ -510,7 +528,7 @@ export async function restoreJournals(
   const newest = new Map<string, { zip: string; entry: ZipEntry }>();
   for (const b of chain) {
     for (const e of await listZip(b.path)) {
-      const rel = safeRel(e.name, "journals/");
+      const rel = safeZipRel(e.name, "journals/");
       if (rel && !rel.includes("/")) newest.set(rel, { zip: b.path, entry: e });
     }
   }
@@ -519,6 +537,7 @@ export async function restoreJournals(
   let skippedExisting = 0;
   for (const [name, { zip, entry }] of newest) {
     const to = path.join(target, name);
+    if (!insideFolder(target, to)) continue;
     if (existsSync(to)) {
       skippedExisting++;
       continue;

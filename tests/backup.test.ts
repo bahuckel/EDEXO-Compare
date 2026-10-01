@@ -277,3 +277,23 @@ describe("restore", () => {
     expect(e.mtime).toEqual(t);
   });
 });
+
+describe("restore entry names (combined plan 1.5)", () => {
+  it("refuses names that could land outside the folder, backslashes included", async () => {
+    const { safeZipRel } = await import("../src/server/backup.js");
+    const bad = [
+      String.raw`app-data/..\..\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\x.bat`,
+      "app-data/../x",
+      "app-data/a/../../x",
+      String.raw`app-data/C:\x`,
+      "app-data/x.txt:stream",
+      "app-data//x",
+      String.raw`app-data/\server\share\x`,
+      "app-data/",
+    ];
+    for (const n of bad) expect(safeZipRel(n, "app-data/"), n).toBeNull();
+    expect(safeZipRel("app-data/edexo-notices.json", "app-data/")).toBe("edexo-notices.json");
+    expect(safeZipRel(String.raw`app-data/shared-exomastery\a.json`, "app-data/")).toBe("shared-exomastery/a.json");
+    expect(safeZipRel("journals/Journal.2026-10-01T010000.01.log", "journals/")).toBe("Journal.2026-10-01T010000.01.log");
+  });
+});
