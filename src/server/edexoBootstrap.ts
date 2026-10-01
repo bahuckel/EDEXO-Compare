@@ -14,7 +14,7 @@ import {
   ownCodexBackupKeys,
 } from "./sharedExomastery.js";
 import { ownFootEntriesWithBackups } from "./footScannedCatalog.js";
-import { existsSync, watchFile, unwatchFile, writeFileSync, readFileSync, watch, statSync } from "node:fs";
+import { existsSync, watchFile, unwatchFile, writeFileSync, readFileSync, readdirSync, watch, statSync } from "node:fs";
 import type { AppSnapshot, AppStatusDTO, ExoLiveDTO, ImportDumpStatusDTO, JournalBootProgressDTO, JournalLine } from "../shared/types.js";
 import { journalHistoryCutoffUtcMs } from "../shared/journalHistoryPreset.js";
 import { clampStatusPollMs, pollRatesDto } from "../shared/pollRates.js";
@@ -34,6 +34,7 @@ import {
   readJournalFromOffset,
   listJournalFilesChronological,
   type JournalListFilterOpts,
+  type JournalTailSeed,
   type JournalWatcherHandle,
 } from "./journalWatcher.js";
 import { scanJournalsForStatistics } from "./statisticsScan.js";
@@ -193,6 +194,15 @@ function reloadSpeciesDerivedCaches(): void {
   clearStarlightRangesCache();
   clearBodyTypePriorCache();
   clearAchievementsCache();
+}
+
+/** The journal folder is there and can be listed (a drive not mounted yet is not an empty folder). */
+function journalFolderIsReadable(dir: string): boolean {
+  try {
+    return statSync(dir).isDirectory() && Array.isArray(readdirSync(dir));
+  } catch {
+    return false;
+  }
 }
 
 export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
@@ -1030,18 +1040,34 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
    * promise instead of starting a rival: they all want the same thing, which is a store that has
    * finished merging.
    */
-  let resyncInFlight: Promise<void> | null = null;
+  let resyncInFlight: { inputs: string; run: Promise<JournalTailSeed | null> } | null = null;
 
-  function resyncAllJournalFiles(): Promise<void> {
-    if (resyncInFlight) return resyncInFlight;
+  /** What a resync reads: the folder and the history window. A run for other inputs is not shared. */
+  const resyncInputs = (): string => `${path.normalize(journalDir)}|${store.journalHistoryPreset}`;
+
+  /**
+   * Resolves with where the live tail must start in the newest journal: the byte the replay reached
+   * (combined plan 1.1b), so the watcher neither skips nor repeats what the game wrote meanwhile.
+   */
+  function resyncAllJournalFiles(): Promise<JournalTailSeed | null> {
+    if (resyncInFlight) {
+      if (resyncInFlight.inputs === resyncInputs()) return resyncInFlight.run;
+      /*
+        The folder or the history window changed after the running resync listed its files (combined
+        plan 1.2). Joining it would leave the store merged from the old set, and its cache saved under
+        the new preset: wait for it, then run again for what is asked now.
+      */
+      return resyncInFlight.run.catch(() => null).then(() => resyncAllJournalFiles());
+    }
     // The EDDN sender learns the session from the newest file after every re-merge: a rotation
     // replays the new file's Fileheader and LoadGame here, where the live tail never sees them.
     const run = resyncAllJournalFilesInner()
       .then(primeEddnFromNewestJournal)
+      .then((): JournalTailSeed | null => (journalPath !== null ? { path: journalPath, size: journalSeedBytes } : null))
       .finally(() => {
-        resyncInFlight = null;
+        if (resyncInFlight?.run === run) resyncInFlight = null;
       });
-    resyncInFlight = run;
+    resyncInFlight = { inputs: resyncInputs(), run };
     return run;
   }
 
@@ -1069,7 +1095,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     if (files.length === 0) {
       journalPath = null;
       journalBootProgress = null;
-      removeJournalMergeCache(projectRoot);
+      // Only a folder that is really there and empty: a journal drive not mounted yet must not cost
+      // the cache, and a full replay, at the next start (combined plan 1.2).
+      if (journalFolderIsReadable(journalDir)) removeJournalMergeCache(projectRoot);
       refreshLiveHudFromJournalDir();
       pushFlush();
       return;
@@ -1091,6 +1119,20 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       actually reached, and the live tail must start there, or lines are applied twice or never.
     */
     const consumed = new Map<string, number>();
+    /*
+      One bad line must not end the merge (combined plan 1.2): a throw here used to abort the replay,
+      and the pipeline never reached its watcher, so nothing live arrived until a restart. The live
+      path already catches per line.
+    */
+    let replayErrors = 0;
+    const applyReplayLine = (line: JournalLine): void => {
+      try {
+        store.apply(line);
+      } catch (e) {
+        replayErrors += 1;
+        if (replayErrors <= 3) console.error("[edexo-compare] journal line skipped in replay:", line.event, e);
+      }
+    };
     const settleManifest = (): void => {
       for (let i = 0; i < files.length; i++) {
         const end = consumed.get(files[i]!);
@@ -1150,9 +1192,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           pushFlush();
           for (const step of cacheResult.steps) {
             if (step.kind === "tail") {
-              consumed.set(step.path, await readJournalFromOffset(step.path, step.startByte, (line) => store.apply(line)));
+              consumed.set(step.path, await readJournalFromOffset(step.path, step.startByte, applyReplayLine));
             } else {
-              consumed.set(step.path, await readJournalFull(step.path, (line) => store.apply(line)));
+              consumed.set(step.path, await readJournalFull(step.path, applyReplayLine));
             }
             stepsDone += 1;
             journalBootProgress = {
@@ -1220,7 +1262,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     pushFlush();
     bootMergeLastFlush = Date.now();
     for (let i = 0; i < files.length; i++) {
-      consumed.set(files[i]!, await readJournalFull(files[i]!, (line) => store.apply(line)));
+      consumed.set(files[i]!, await readJournalFull(files[i]!, applyReplayLine));
       const done = i + 1;
       const pct = 15 + Math.floor((80 * done) / files.length);
       journalBootProgress = {
@@ -1242,15 +1284,29 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     await saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
   }
 
-  async function restartJournalPipeline(): Promise<void> {
+  /*
+    Restarts run one at a time (combined plan 1.2). Boot, a journal-folder change and a history-window
+    change all restart the pipeline, and since the replay yields to the event loop the launcher can ask
+    for one while another runs: both saw no watcher, both started one, and every live line was applied
+    twice.
+  */
+  let pipelineChain: Promise<void> = Promise.resolve();
+
+  function restartJournalPipeline(): Promise<void> {
+    const run = pipelineChain.then(restartJournalPipelineNow, restartJournalPipelineNow);
+    pipelineChain = run.catch(() => undefined);
+    return run;
+  }
+
+  async function restartJournalPipelineNow(): Promise<void> {
     if (watcher) {
       await watcher.close();
       watcher = null;
     }
-    await resyncAllJournalFiles();
     // The byte the replay reached in the newest journal (1.1b), not its size now: lines written since
     // are the watcher's to apply.
-    const seed = journalPath !== null ? { path: journalPath, size: journalSeedBytes } : null;
+    const seed = await resyncAllJournalFiles();
+    if (watcher) await (watcher as JournalWatcherHandle).close();
     watcher = startJournalWatcher(
       journalDir,
       createLiveJournalLine(),

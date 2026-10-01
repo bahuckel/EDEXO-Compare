@@ -184,6 +184,9 @@ export async function readJournalFromOffset(
   return applyJournalBytes(buf, startByte, discardUntilNl, onLine);
 }
 
+/** Where the live tail starts in the newest journal after a resync (the byte the replay reached). */
+export type JournalTailSeed = { path: string; size: number };
+
 export type JournalWatcherHandle = {
   close: () => Promise<void>;
   getPath: () => string | null;
@@ -203,7 +206,8 @@ export type JournalWatcherHandle = {
 export function startJournalWatcher(
   journalDir: string,
   onLiveLine: (j: JournalLine) => void,
-  resyncAllJournalFiles: () => Promise<void>,
+  /** Resolves with where the tail must start in the newest journal (see JournalTailSeed). */
+  resyncAllJournalFiles: () => Promise<JournalTailSeed | null | void>,
   /** After a full replay, pass latest file path + size so the first poll tails instead of replaying again. */
   seed: { path: string; size: number } | null,
   /** Rolling journal window — recomputed each poll so age cutoffs track real time. */
@@ -226,6 +230,13 @@ export function startJournalWatcher(
   let lastListIdentity: string | null = null;
 
   let poll: ReturnType<typeof setInterval> | null = null;
+  /*
+    Closed for good (combined plan 1.2). `close()` can land while the first pulse is still awaiting,
+    and that pulse's `finally` re-armed the poll and the file watch afterwards: a closed watcher came
+    back to life beside its replacement, and every live line was applied once per survivor. A restart
+    during the boot replay (a history-window change in the launcher) did it every time.
+  */
+  let closed = false;
   /** The interval the armed timer was created with, so `retimePoll` can tell a change from a no-op. */
   let armedPollMs = clampJournalPollMs(getPollMs());
   /** Path we passed to watchFile — must match listener identity for unwatchFile. */
@@ -246,7 +257,7 @@ export function startJournalWatcher(
 
   function refreshTailWatch(): void {
     stopTailWatch();
-    if (!currentPath) return;
+    if (closed || !currentPath) return;
     watchTarget = currentPath;
     try {
       watchFile(watchTarget, { interval: 1000 }, onWatchEvent);
@@ -256,7 +267,7 @@ export function startJournalWatcher(
   }
 
   function ensurePoll(): void {
-    if (poll != null) return;
+    if (closed || poll != null) return;
     armedPollMs = clampJournalPollMs(getPollMs());
     poll = setInterval(() => {
       void pulse().catch((e) => console.error("[journalWatcher] pulse:", e));
@@ -275,7 +286,7 @@ export function startJournalWatcher(
   }
 
   const tailChunk = async (): Promise<void> => {
-    if (!currentPath || tailing || resyncing) return;
+    if (closed || !currentPath || tailing || resyncing) return;
     tailing = true;
     try {
       const st = await fs.stat(currentPath);
@@ -290,6 +301,9 @@ export function startJournalWatcher(
       try {
         const buf = Buffer.allocUnsafe(byteLen);
         const { bytesRead } = await fh.read(buf, 0, byteLen, position);
+        // A rotation started a resync while this read was waiting: the store it would feed has been
+        // reset, and the replay reads these lines itself (combined plan 1.2).
+        if (resyncing || closed) return;
         const data = buf.subarray(0, bytesRead).toString("utf8");
         position = st.size;
         await processLines(data, leftover, onLiveLine);
@@ -302,6 +316,10 @@ export function startJournalWatcher(
       tailing = false;
     }
   };
+
+  /** The byte the resync reached in `latest` when it says so (1.1b); else the file's size, as before. */
+  const tailStartAfterResync = async (seed: JournalTailSeed | null | void, latest: string): Promise<number> =>
+    seed && sameJournalPath(seed.path, latest) ? seed.size : (await fs.stat(latest)).size;
 
   const pulse = async (): Promise<void> => {
     /*
@@ -319,9 +337,10 @@ export function startJournalWatcher(
       files merged. It was always possible; a poll of 500 ms made it likely, because it is the ratio
       of the poll to the resync that decides how many of these pile up.
     */
-    if (resyncing) return;
+    if (resyncing || closed) return;
     const listOpts = getListFilterOpts();
     const files = await listJournalFilesChronological(journalDir, listOpts);
+    if (closed) return;
     const latest = files.length ? files[files.length - 1]! : null;
     const identity = files.map((p) => path.basename(p)).join("|");
 
@@ -338,8 +357,7 @@ export function startJournalWatcher(
         currentPath = latest;
         position = 0;
         leftover.buf = "";
-        await resyncAllJournalFiles();
-        position = (await fs.stat(latest)).size;
+        position = await tailStartAfterResync(await resyncAllJournalFiles(), latest);
         lastListIdentity = identity;
       } catch (e) {
         console.error("[journalWatcher] resync after journal rotation failed:", e);
@@ -358,8 +376,7 @@ export function startJournalWatcher(
         currentPath = latest;
         position = 0;
         leftover.buf = "";
-        await resyncAllJournalFiles();
-        position = (await fs.stat(latest)).size;
+        position = await tailStartAfterResync(await resyncAllJournalFiles(), latest);
         lastListIdentity = identity;
       } catch (e) {
         console.error("[journalWatcher] resync after journal window change failed:", e);
@@ -392,6 +409,7 @@ export function startJournalWatcher(
     retimePoll,
     currentPollMs: () => armedPollMs,
     close: async () => {
+      closed = true;
       if (poll) {
         clearInterval(poll);
         poll = null;

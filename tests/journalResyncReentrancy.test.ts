@@ -179,3 +179,58 @@ describe("serialising the resync itself", () => {
     expect(started).toBe(2);
   });
 });
+
+describe("a closed watcher", () => {
+  it("stays closed when it is closed during its first pass (combined plan 1.2)", async () => {
+    /*
+      The first pass's `finally` re-armed the poll and the file watch after `close()`: every pipeline
+      restart during the boot replay left a watcher running beside its replacement, and each live
+      line was applied once per survivor (three times after two history-window changes).
+    */
+    const file = path.join(dir, logName("2026-09-18T100000"));
+    writeFileSync(file, "");
+    const lines: string[] = [];
+    watcher = startJournalWatcher(
+      dir,
+      (l) => lines.push(String(l.event)),
+      async () => {
+        await wait(150); // the first pass is still in here when close() lands
+        return { path: file, size: 0 };
+      },
+      null, // no seed: the first pass resyncs
+      () => ({ minFileStartUtcMs: null }),
+      () => 100,
+    );
+    await wait(20);
+    await watcher.close();
+    await wait(300); // the first pass finishes after the close
+    writeFileSync(file, '{"event":"Live"}\r\n');
+    await wait(1500);
+    expect(lines).toEqual([]);
+  });
+
+  it("starts tailing where the resync says the replay stopped, not at the size after it (1.1b)", async () => {
+    const first = path.join(dir, logName("2026-09-18T100000"));
+    writeFileSync(first, "");
+    const second = path.join(dir, logName("2026-09-18T110000"));
+    const lines: string[] = [];
+    watcher = startJournalWatcher(
+      dir,
+      (l) => lines.push(String(l.event)),
+      async () => {
+        // The replay reads the new file to here; the game writes one more line before the resync ends.
+        const seen = Buffer.byteLength('{"event":"Old"}\r\n');
+        const { appendFileSync } = await import("node:fs");
+        appendFileSync(second, '{"event":"DuringResync"}\r\n');
+        return { path: second, size: seen };
+      },
+      { path: first, size: 0 },
+      () => ({ minFileStartUtcMs: null }),
+      () => 100,
+    );
+    await wait(50);
+    writeFileSync(second, '{"event":"Old"}\r\n');
+    await wait(1500);
+    expect(lines).toEqual(["DuringResync"]);
+  });
+});
