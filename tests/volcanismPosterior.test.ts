@@ -257,7 +257,8 @@ describe("volcanism in the posterior", () => {
         w <= 0.4   acies > tela > omentum      w >= 0.5   omentum > acies > tela
 
       `BODY_TYPE_PRIOR_WEIGHT` shipped at 1 for one day, when the app contradicted him here. It is
-      0.4 now. **Raising it past 0.4 breaks this test, and that is the point** — the failure is the
+      0.4 until 2026-10-01, 0.48 since (the EDDN export moved the water-magma case, below).
+      **Raising it past 0.48 breaks this test, and that is the point** — the failure is the
       warning, not a stale fixture to be updated.
     */
     const appOrder = CANDIDATES.map((name) => ({
@@ -267,7 +268,7 @@ describe("volcanism in the posterior", () => {
       .filter((x) => x.r)
       .sort((a, b) => b.r!.logScore - a.r!.logScore)
       .map((x) => x.name.replace(/^\S+\s+/, ""));
-    expect(appOrder[0], "raise BODY_TYPE_PRIOR_WEIGHT past 0.4 and the corpus cell takes this").toBe("acies");
+    expect(appOrder[0], "raise BODY_TYPE_PRIOR_WEIGHT past 0.48 and the corpus cell takes this").toBe("acies");
   });
 
   it("still gets verrata first on water magma, which is the other end of the same dial", () => {
@@ -276,7 +277,10 @@ describe("volcanism in the posterior", () => {
       corpus and it was losing to a species more common overall — one of the three field misses that
       §C1e was built for. At 0.25 the conditional prior is too quiet to fix it; at 0.4 it is not.
 
-      So 0.4 is not a midpoint anyone liked the look of. It is the only value measured that satisfies
+      2026-10-01: with the EDDN export in the corpus and the table rebuilt, 0.4 lost this one to acies;
+      0.48 is now the only weight that keeps both landings (verrata 0.023 ahead here).
+
+      So the weight is not a midpoint anyone liked the look of. It is the only value measured that satisfies
       both of the owner's landings at once.
     */
     const appOrder = CANDIDATES.map((name) => ({
@@ -286,7 +290,7 @@ describe("volcanism in the posterior", () => {
       .filter((x) => x.r)
       .sort((a, b) => b.r!.logScore - a.r!.logScore)
       .map((x) => x.name.replace(/^\S+\s+/, ""));
-    expect(appOrder[0], "lower BODY_TYPE_PRIOR_WEIGHT below 0.4 and verrata loses this again").toBe(
+    expect(appOrder[0], "lower BODY_TYPE_PRIOR_WEIGHT below 0.48 and verrata loses this again").toBe(
       "verrata",
     );
   });

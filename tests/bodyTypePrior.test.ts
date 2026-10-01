@@ -150,13 +150,14 @@ describe("the settings the sweep chose", () => {
       corpus has met only a few dozen times.
 
       The weight is **not** the top of that sweep. Full weight takes the most top-3 and 0.75 the most
-      top-1; 0.4 is the largest value at which the model still agrees with both of the owner's own
-      landings — acies on his neon moon, verrata on water magma — and it is his call, 2026-09-21.
-      Raising it is a decision about whose evidence wins, not a tuning step.
+      top-1; 0.4 was the largest value at which the model still agreed with both of the owner's own
+      landings — acies on his neon moon, verrata on water magma — his call, 2026-09-21. After the
+      2026-10-01 EDDN export the same rule gives 0.48, the only weight that keeps both (his call
+      again). Changing it is a decision about whose evidence wins, not a tuning step.
 
       A re-tune is a deliberate edit here as well as there.
     */
-    expect(BODY_TYPE_PRIOR_WEIGHT).toBe(0.4);
+    expect(BODY_TYPE_PRIOR_WEIGHT).toBe(0.48);
     expect(MIN_CELL).toBe(10);
   });
 });

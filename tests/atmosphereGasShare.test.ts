@@ -298,8 +298,9 @@ describe("the gas share that decides two pairs of species", () => {
     expect(upupam.max).toBeLessThan(50);
     expect(upupam.min).toBeGreaterThan(0.1);
     // Every one of its bodies carries argon, which is what the floor encodes. 56 when measured;
-    // 74 after the 2026-09-27 route imports (rt1–rt5) — the ranges above held.
-    expect(upupam.count).toBe(74);
+    // 74 after the 2026-09-27 route imports (rt1–rt5), 83 after the 2026-10-01 EDDN export — the
+    // ranges above held each time.
+    expect(upupam.count).toBe(83);
 
     const acies = gasRange("Bacterium acies", "Neon")!;
     expect(acies.min).toBeGreaterThan(50);

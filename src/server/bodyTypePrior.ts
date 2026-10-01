@@ -71,7 +71,20 @@ import { BODY_TYPE_T_EDGES, bodyTypeKeyParts } from "../shared/bodyTypeKey.js";
 /**
  * How far to move from the galaxy-wide prior toward the share among bodies of this kind, 0…1.
  *
- * **0.4, chosen by the owner 2026-09-21**, and not the top of the probe. The sweep in the header is
+ * **0.48 since 2026-10-01** (owner's choice), by the same rule as before on a bigger corpus. After the
+ * EDDN bio-collector export (4,743 more sightings) and a rebuilt table, 0.4 put acies first on the
+ * water-magma moon too; re-swept, the only weight that keeps both of his landings is 0.48:
+ *
+ * ```
+ *   neon, nitrogen magma (he found acies)   w <= 0.48 acies first   (0.48: acies 0.035 ahead of omentum)
+ *   neon, water magma    (he found verrata) w >= 0.48 verrata first (0.48: verrata 0.023 ahead of acies)
+ * ```
+ *
+ * Thin on both sides; the next corpus change can move it again, and the two tests in
+ * tests/volcanismPosterior.test.ts say so when it does. Rank probe on his cache: 0.4 / 0.44 gave
+ * top-1 258 / 259 and top-3 530 / 531, mean rank 2.960 / 2.961 - the headline columns stay flat here.
+ *
+ * Before (2026-09-21): **0.4, chosen by the owner**, and not the top of the probe. The sweep in the header is
  * flat between 0.25 and 1.0 on mean rank — the conditional prior agrees with the galaxy-wide one
  * nearly everywhere and differs only where the body type is distinctive — so the headline columns
  * are not what decides this. 0.4 is the largest weight that still puts acies first on his neon
@@ -80,7 +93,7 @@ import { BODY_TYPE_T_EDGES, bodyTypeKeyParts } from "../shared/bodyTypeKey.js";
  * It costs six top-1 and nineteen top-3 against full weight, and it has the best within-genus
  * calibration of any setting measured.
  */
-export const BODY_TYPE_PRIOR_WEIGHT = 0.4;
+export const BODY_TYPE_PRIOR_WEIGHT = 0.48;
 
 /**
  * Bodies a cell needs before its shares are believed rather than backed off.

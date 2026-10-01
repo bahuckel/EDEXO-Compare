@@ -54,6 +54,13 @@ Releases 1.1.0 to 1.2.7 shipped these under the MIT notice by mistake; they were
 CC BY-NC-SA 3.0. Data the app downloads from EDAstro on the user's machine (phenomena, carriers,
 points of interest, galactic records) stays EDAstro's and is not part of any release.
 
+### EDDN — the Elite Dangerous Data Network ([EDCD](https://github.com/EDCD/EDDN))
+
+Species sightings that commanders' tools send to EDDN (organic scans and codex entries), recorded by
+the owner's own listener and added to the corpus the species profiles are built from (2026-10-01:
+4,743 sightings across 89 species). EDDN is a live stream for players to share game data with tools;
+it carries no licence of its own. Thanks to every commander and tool author who uploads.
+
 ### Canonn Research Group — [canonn.science](https://canonn.science)
 
 The community's accumulated knowledge of where exobiology grows: the genus and species conditions,
