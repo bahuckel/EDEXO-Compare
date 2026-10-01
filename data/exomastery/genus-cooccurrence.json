@@ -1,15 +1,19 @@
 {
   "formatVersion": 1,
-  "builtAt": "2026-09-27T07:26:11.014Z",
-  "bodies": 25365,
+  "builtAt": "2026-10-01T02:13:21.412Z",
+  "bodies": 27652,
   "genera": {
     "aleoida": {
       "label": "Aleoida",
-      "bodies": 2724
+      "bodies": 2824
+    },
+    "anemone": {
+      "label": "Anemone",
+      "bodies": 81
     },
     "bacterium": {
       "label": "Bacterium",
-      "bodies": 17932
+      "bodies": 19459
     },
     "bark-mound": {
       "label": "Bark Mounds",
@@ -21,43 +25,47 @@
     },
     "cactoida": {
       "label": "Cactoida",
-      "bodies": 4578
+      "bodies": 4702
     },
     "clypeus": {
       "label": "Clypeus",
-      "bodies": 2862
+      "bodies": 2898
     },
     "concha": {
       "label": "Concha",
-      "bodies": 5325
+      "bodies": 5502
+    },
+    "crystalline-shards": {
+      "label": "Crystalline Shards",
+      "bodies": 31
     },
     "electricae": {
       "label": "Electricae",
-      "bodies": 247
+      "bodies": 274
     },
     "fonticulua": {
       "label": "Fonticulua",
-      "bodies": 1500
+      "bodies": 1802
     },
     "frutexa": {
       "label": "Frutexa",
-      "bodies": 8731
+      "bodies": 9079
     },
     "fumerola": {
       "label": "Fumerola",
-      "bodies": 300
+      "bodies": 316
     },
     "fungoida": {
       "label": "Fungoida",
-      "bodies": 6188
+      "bodies": 6427
     },
     "osseus": {
       "label": "Osseus",
-      "bodies": 5579
+      "bodies": 5787
     },
     "recepta": {
       "label": "Recepta",
-      "bodies": 460
+      "bodies": 485
     },
     "sinuous-tubers": {
       "label": "Sinuous Tuber",
@@ -65,46 +73,48 @@
     },
     "stratum": {
       "label": "Stratum",
-      "bodies": 10384
+      "bodies": 11208
     },
     "tubus": {
       "label": "Tubus",
-      "bodies": 5201
+      "bodies": 5418
     },
     "tussock": {
       "label": "Tussock",
-      "bodies": 12584
+      "bodies": 13157
     }
   },
   "pairs": {
-    "aleoida|bacterium": 1944,
+    "aleoida|bacterium": 2014,
     "aleoida|brain-tree": 1,
-    "aleoida|cactoida": 785,
-    "aleoida|clypeus": 620,
-    "aleoida|concha": 1282,
-    "aleoida|frutexa": 1111,
+    "aleoida|cactoida": 802,
+    "aleoida|clypeus": 624,
+    "aleoida|concha": 1311,
+    "aleoida|frutexa": 1148,
     "aleoida|fumerola": 2,
-    "aleoida|fungoida": 1382,
-    "aleoida|osseus": 1015,
+    "aleoida|fungoida": 1429,
+    "aleoida|osseus": 1044,
     "aleoida|recepta": 21,
-    "aleoida|stratum": 1703,
-    "aleoida|tubus": 477,
-    "aleoida|tussock": 1848,
+    "aleoida|stratum": 1773,
+    "aleoida|tubus": 495,
+    "aleoida|tussock": 1910,
+    "anemone|bark-mound": 4,
+    "anemone|brain-tree": 3,
     "bacterium|brain-tree": 1,
-    "bacterium|cactoida": 3716,
-    "bacterium|clypeus": 2130,
-    "bacterium|concha": 4081,
-    "bacterium|electricae": 143,
-    "bacterium|fonticulua": 1150,
-    "bacterium|frutexa": 6924,
-    "bacterium|fumerola": 194,
-    "bacterium|fungoida": 4851,
-    "bacterium|osseus": 4407,
-    "bacterium|recepta": 252,
+    "bacterium|cactoida": 3814,
+    "bacterium|clypeus": 2154,
+    "bacterium|concha": 4221,
+    "bacterium|electricae": 162,
+    "bacterium|fonticulua": 1397,
+    "bacterium|frutexa": 7191,
+    "bacterium|fumerola": 205,
+    "bacterium|fungoida": 5051,
+    "bacterium|osseus": 4575,
+    "bacterium|recepta": 262,
     "bacterium|sinuous-tubers": 2,
-    "bacterium|stratum": 7506,
-    "bacterium|tubus": 3977,
-    "bacterium|tussock": 10185,
+    "bacterium|stratum": 7903,
+    "bacterium|tubus": 4147,
+    "bacterium|tussock": 10658,
     "bark-mound|brain-tree": 1,
     "brain-tree|cactoida": 1,
     "brain-tree|frutexa": 1,
@@ -112,90 +122,82 @@
     "brain-tree|osseus": 1,
     "brain-tree|stratum": 1,
     "brain-tree|tussock": 1,
-    "cactoida|clypeus": 1680,
-    "cactoida|concha": 1834,
-    "cactoida|frutexa": 3218,
-    "cactoida|fumerola": 12,
-    "cactoida|fungoida": 3075,
-    "cactoida|osseus": 2849,
+    "cactoida|clypeus": 1701,
+    "cactoida|concha": 1864,
+    "cactoida|frutexa": 3317,
+    "cactoida|fumerola": 13,
+    "cactoida|fungoida": 3147,
+    "cactoida|osseus": 2916,
     "cactoida|recepta": 11,
-    "cactoida|stratum": 2177,
-    "cactoida|tubus": 361,
-    "cactoida|tussock": 3479,
-    "clypeus|concha": 1743,
-    "clypeus|frutexa": 1309,
+    "cactoida|stratum": 2239,
+    "cactoida|tubus": 374,
+    "cactoida|tussock": 3571,
+    "clypeus|concha": 1756,
+    "clypeus|frutexa": 1323,
     "clypeus|fumerola": 6,
-    "clypeus|fungoida": 1941,
-    "clypeus|osseus": 1726,
+    "clypeus|fungoida": 1958,
+    "clypeus|osseus": 1738,
     "clypeus|recepta": 5,
-    "clypeus|stratum": 1394,
+    "clypeus|stratum": 1411,
     "clypeus|tubus": 62,
-    "clypeus|tussock": 2084,
-    "concha|frutexa": 2810,
+    "clypeus|tussock": 2110,
+    "concha|frutexa": 2898,
     "concha|fumerola": 29,
-    "concha|fungoida": 2794,
-    "concha|osseus": 2208,
-    "concha|recepta": 34,
-    "concha|stratum": 1524,
-    "concha|tubus": 1500,
-    "concha|tussock": 3710,
-    "electricae|fonticulua": 179,
+    "concha|fungoida": 2847,
+    "concha|osseus": 2248,
+    "concha|recepta": 36,
+    "concha|stratum": 1557,
+    "concha|tubus": 1551,
+    "concha|tussock": 3836,
+    "electricae|fonticulua": 193,
     "electricae|fumerola": 6,
-    "fonticulua|fumerola": 52,
-    "fonticulua|fungoida": 45,
-    "fonticulua|osseus": 56,
+    "fonticulua|fumerola": 58,
+    "fonticulua|fungoida": 51,
+    "fonticulua|osseus": 63,
     "fonticulua|recepta": 5,
-    "fonticulua|tussock": 46,
+    "fonticulua|tussock": 49,
     "frutexa|fumerola": 9,
-    "frutexa|fungoida": 3335,
-    "frutexa|osseus": 2621,
-    "frutexa|recepta": 176,
-    "frutexa|stratum": 3257,
-    "frutexa|tubus": 2369,
-    "frutexa|tussock": 6822,
-    "fumerola|fungoida": 63,
-    "fumerola|osseus": 136,
+    "frutexa|fungoida": 3468,
+    "frutexa|osseus": 2705,
+    "frutexa|recepta": 181,
+    "frutexa|stratum": 3378,
+    "frutexa|tubus": 2439,
+    "frutexa|tussock": 7101,
+    "fumerola|fungoida": 65,
+    "fumerola|osseus": 138,
     "fumerola|recepta": 25,
     "fumerola|stratum": 12,
     "fumerola|tubus": 10,
     "fumerola|tussock": 33,
-    "fungoida|osseus": 3810,
+    "fungoida|osseus": 3953,
     "fungoida|recepta": 20,
-    "fungoida|stratum": 2660,
-    "fungoida|tubus": 433,
-    "fungoida|tussock": 4386,
+    "fungoida|stratum": 2760,
+    "fungoida|tubus": 448,
+    "fungoida|tussock": 4560,
     "osseus|recepta": 15,
-    "osseus|stratum": 2528,
-    "osseus|tubus": 507,
-    "osseus|tussock": 3801,
+    "osseus|stratum": 2626,
+    "osseus|tubus": 528,
+    "osseus|tussock": 3939,
     "recepta|stratum": 19,
-    "recepta|tubus": 42,
-    "recepta|tussock": 320,
+    "recepta|tubus": 43,
+    "recepta|tussock": 327,
     "sinuous-tubers|stratum": 2,
-    "stratum|tubus": 1776,
-    "stratum|tussock": 5809,
-    "tubus|tussock": 3743
+    "stratum|tubus": 1868,
+    "stratum|tussock": 6075,
+    "tubus|tussock": 3916
   },
   "setSizes": {
-    "1": 5959,
-    "2": 5025,
-    "3": 3631,
-    "4": 3936,
-    "5": 2669,
-    "6": 1819,
-    "7": 1196,
-    "8": 699,
-    "9": 358,
-    "10": 68,
+    "1": 7121,
+    "2": 5530,
+    "3": 3841,
+    "4": 4116,
+    "5": 2785,
+    "6": 1883,
+    "7": 1231,
+    "8": 711,
+    "9": 360,
+    "10": 69,
     "11": 5
   },
-  "unmappedLabels": [
-    "Blatteum Bioluminescent Anemone",
-    "Croceum Anemone",
-    "Crystalline Shards",
-    "Luteolum Anemone",
-    "Prasinum Bioluminescent Anemone",
-    "Roseum Bioluminescent Anemone",
-    "Rubeum Bioluminescent Anemone"
-  ]
+  "unmappedLabels": []
 }
