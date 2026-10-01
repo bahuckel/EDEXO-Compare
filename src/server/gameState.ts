@@ -353,6 +353,8 @@ function organicLockGenusKey(lock: OrganicGenusLock): string {
 }
 
 /** All moons of the same planet as `sourceBodyId` (excludes self), using merged `Scan` parents and/or orbit map. */
+const EMPTY_ORBIT_PARENTS: ReadonlyMap<number, number> = new Map();
+
 function siblingMoonBodyIdsUnified(
   store: GameStateStore,
   systemAddress: number,
@@ -366,14 +368,11 @@ function siblingMoonBodyIdsUnified(
   if (parent == null) return [];
 
   const out = new Set<number>();
-  const prefix = `${systemAddress}:`;
   for (const rec of store.liveScansInSystem(systemAddress)) {
     if (directParentPlanetId(rec.parents) === parent) out.add(rec.bodyId);
   }
-  for (const [bk, p] of store.orbitParentPlanetByBody) {
-    if (!bk.startsWith(prefix) || p !== parent) continue;
-    const bid = Number(bk.slice(prefix.length));
-    if (Number.isFinite(bid)) out.add(bid);
+  for (const [bid, p] of store.orbitParentsInSystem(systemAddress)) {
+    if (p === parent) out.add(bid);
   }
   out.delete(sourceBodyId);
   return [...out];
@@ -1237,9 +1236,54 @@ export class GameStateStore {
     sold: Map<number, ExplorationScanRecord[]>;
   } | null = null;
 
+  private scanIndexKey(): string {
+    return `${this.explorationScansRevision}:${this.explorationScans.size}:${this.soldExplorationScans.size}`;
+  }
+
+  /** Whether the index matches the maps right now. Taken before a write, so the write can patch it. */
+  private scanIndexIsFresh(): boolean {
+    return this.scanIndexMemo !== null && this.scanIndexMemo.key === this.scanIndexKey();
+  }
+
+  /**
+   * Patch the index after writes that were made while it was fresh, instead of rebuilding it.
+   *
+   * Start-up hang report (guild tester, 2026-10-01; plan F): every `Scan` moves the revision, and the
+   * next moon `Scan` asks for its siblings — so a journal replay rebuilt the index over every record in
+   * the store once per moon. Quadratic: 24 s of a frozen app on a cold start with the owner's history,
+   * minutes with a longer one. A write touches one body, so it patches one system's list: a new array
+   * (callers may hold the old one), the record replaced where it was or appended, which is the order a
+   * rebuild over the maps' insertion order gives. A stale index is left for the next read to rebuild.
+   */
+  private patchScanIndex(
+    wasFresh: boolean,
+    ops: ReadonlyArray<{ kind: "live" | "sold"; rec: ExplorationScanRecord; drop?: boolean }>,
+  ): void {
+    const memo = this.scanIndexMemo;
+    if (!wasFresh || !memo) return;
+    for (const { kind, rec, drop } of ops) {
+      const lists = kind === "live" ? memo.live : memo.sold;
+      const prev = lists.get(rec.systemAddress) ?? [];
+      const at = prev.findIndex((r) => r.bodyId === rec.bodyId);
+      let next: ExplorationScanRecord[];
+      if (drop) {
+        if (at < 0) continue;
+        next = prev.filter((_, i) => i !== at);
+      } else if (at >= 0) {
+        next = prev.slice();
+        next[at] = rec;
+      } else {
+        next = [...prev, rec];
+      }
+      if (next.length) lists.set(rec.systemAddress, next);
+      else lists.delete(rec.systemAddress);
+    }
+    memo.key = this.scanIndexKey();
+  }
+
   private scanIndex() {
     // The sizes too: a write that forgot the revision (a test, a future path) must not read stale.
-    const key = `${this.explorationScansRevision}:${this.explorationScans.size}:${this.soldExplorationScans.size}`;
+    const key = this.scanIndexKey();
     if (this.scanIndexMemo?.key === key) return this.scanIndexMemo;
     const group = (m: Map<string, ExplorationScanRecord>) => {
       const out = new Map<number, ExplorationScanRecord[]>();
@@ -1256,6 +1300,56 @@ export class GameStateStore {
       sold: group(this.soldExplorationScans),
     };
     return this.scanIndexMemo;
+  }
+
+  /**
+   * `orbitParentPlanetByBody` by system (plan F, 2026-10-01): the sibling-moon lookup walked every
+   * body in the store for each moon `Scan`. Same scheme as the scan index: a revision plus the size,
+   * patched on the `Scan` path, rebuilt after anything else.
+   */
+  private orbitParentRevision = 0;
+  private orbitParentMemo: { key: string; bySystem: Map<number, Map<number, number>> } | null = null;
+
+  private orbitParentKey(): string {
+    return `${this.orbitParentRevision}:${this.orbitParentPlanetByBody.size}`;
+  }
+
+  /** Moon body id -> its parent planet's body id, for one system. Read-only. */
+  orbitParentsInSystem(systemAddress: number): ReadonlyMap<number, number> {
+    const key = this.orbitParentKey();
+    if (this.orbitParentMemo?.key !== key) {
+      const bySystem = new Map<number, Map<number, number>>();
+      for (const [bk, p] of this.orbitParentPlanetByBody) {
+        const i = bk.indexOf(":");
+        const sys = Number(bk.slice(0, i));
+        const bid = Number(bk.slice(i + 1));
+        if (!Number.isFinite(sys) || !Number.isFinite(bid)) continue;
+        let m = bySystem.get(sys);
+        if (!m) bySystem.set(sys, (m = new Map()));
+        m.set(bid, p);
+      }
+      this.orbitParentMemo = { key, bySystem };
+    }
+    return this.orbitParentMemo.bySystem.get(systemAddress) ?? EMPTY_ORBIT_PARENTS;
+  }
+
+  /** Set (or clear, with null) one moon's parent, keeping the per-system index in step. */
+  private setOrbitParent(systemAddress: number, bodyId: number, parent: number | null): void {
+    const k = bodyKey(systemAddress, bodyId);
+    const fresh = this.orbitParentMemo !== null && this.orbitParentMemo.key === this.orbitParentKey();
+    if (parent != null) this.orbitParentPlanetByBody.set(k, parent);
+    else this.orbitParentPlanetByBody.delete(k);
+    this.orbitParentRevision += 1;
+    if (!fresh || !this.orbitParentMemo) return;
+    let m = this.orbitParentMemo.bySystem.get(systemAddress);
+    if (parent != null) {
+      if (!m) this.orbitParentMemo.bySystem.set(systemAddress, (m = new Map()));
+      m.set(bodyId, parent);
+    } else if (m) {
+      m.delete(bodyId);
+      if (!m.size) this.orbitParentMemo.bySystem.delete(systemAddress);
+    }
+    this.orbitParentMemo.key = this.orbitParentKey();
   }
 
   /** This system's live (unsold) scan records. Read-only: the store owns them. */
@@ -1542,6 +1636,7 @@ export class GameStateStore {
     this.soldOrganicBySystem.clear();
     this.fssDiscoveryScanBySystem.clear();
     this.orbitParentPlanetByBody.clear();
+    this.orbitParentRevision += 1;
     this.dssMappedBodyKeys.clear();
     this.archivedDssMappedBodyKeys.clear();
     this.dssFirstMapperEligibleByBodyKey.clear();
@@ -1723,8 +1818,10 @@ export class GameStateStore {
     setNum("ascendingNode", line.AscendingNode);
     setNum("meanAnomaly", line.MeanAnomaly);
 
+    const fresh = this.scanIndexIsFresh();
     this.explorationScans.set(k, rec);
     this.explorationScansRevision += 1;
+    this.patchScanIndex(fresh, [{ kind: "live", rec }]);
     this.edsmExplorationByKey.delete(k);
   }
 
@@ -1896,15 +1993,16 @@ export class GameStateStore {
       }
     }
 
+    const fresh = this.scanIndexIsFresh();
     this.explorationScans.set(k, rec);
     this.explorationScansRevision += 1;
     this.edsmExplorationByKey.delete(k);
     // Scanned again after the sale: the live row is the better copy of the same physics.
-    this.soldExplorationScans.delete(k);
+    const wasSold = this.soldExplorationScans.delete(k);
+    this.patchScanIndex(fresh, wasSold ? [{ kind: "live", rec }, { kind: "sold", rec, drop: true }] : [{ kind: "live", rec }]);
 
     const moonOf = directParentPlanetId(rec.parents);
-    if (moonOf != null) this.orbitParentPlanetByBody.set(k, moonOf);
-    else this.orbitParentPlanetByBody.delete(k);
+    this.setOrbitParent(systemAddress, bodyId, moonOf);
 
     const inCurrentSystem = this.currentSystemAddress !== null && systemAddress === this.currentSystemAddress;
     if (moonOf != null && inCurrentSystem) {
@@ -2984,15 +3082,21 @@ export class GameStateStore {
    */
   private clearExplorationDataForSystem(systemAddress: number, sold = true): void {
     const prefix = `${systemAddress}:`;
-    for (const [k, rec] of [...this.explorationScans.entries()]) {
-      if (k.startsWith(prefix)) {
-        if (sold) this.soldBodyKeys.add(k);
-        // The value is sold; the physics is not. See soldExplorationScans.
-        this.soldExplorationScans.set(k, rec);
-        this.explorationScans.delete(k);
-        this.explorationScansRevision += 1;
-      }
+    const fresh = this.scanIndexIsFresh();
+    const moved: { kind: "live" | "sold"; rec: ExplorationScanRecord; drop?: boolean }[] = [];
+    // The system's own rows from the index when it is fresh, not a walk over every record.
+    const rows = fresh
+      ? [...this.liveScansInSystem(systemAddress)].map((r) => [bodyKey(r.systemAddress, r.bodyId), r] as const)
+      : [...this.explorationScans.entries()].filter(([k]) => k.startsWith(prefix));
+    for (const [k, rec] of rows) {
+      if (sold) this.soldBodyKeys.add(k);
+      // The value is sold; the physics is not. See soldExplorationScans.
+      this.soldExplorationScans.set(k, rec);
+      this.explorationScans.delete(k);
+      this.explorationScansRevision += 1;
+      moved.push({ kind: "sold", rec }, { kind: "live", rec, drop: true });
     }
+    this.patchScanIndex(fresh, moved);
     for (const k of [...this.dssMappedBodyKeys]) {
       if (k.startsWith(prefix)) {
         this.dssMappedBodyKeys.delete(k);
@@ -3011,8 +3115,14 @@ export class GameStateStore {
     this.fssAllBodiesCompleteSystems.delete(systemAddress);
     this.fssAllBodiesFoundCountBySystem.delete(systemAddress);
     this.fssDiscoveryScanBySystem.delete(systemAddress);
-    for (const k of [...this.orbitParentPlanetByBody.keys()]) {
-      if (k.startsWith(prefix)) this.orbitParentPlanetByBody.delete(k);
+    const moons = this.orbitParentsInSystem(systemAddress);
+    if (moons.size) {
+      for (const bid of [...moons.keys()]) this.orbitParentPlanetByBody.delete(bodyKey(systemAddress, bid));
+      this.orbitParentRevision += 1;
+      // The index was fresh (just read): drop the system from it rather than rebuild it.
+      const memo = this.orbitParentMemo!;
+      memo.bySystem.delete(systemAddress);
+      memo.key = this.orbitParentKey();
     }
   }
 
@@ -3517,6 +3627,7 @@ export class GameStateStore {
     for (const [k, v] of data.dssFirstMapperEligibleByBodyKey) this.dssFirstMapperEligibleByBodyKey.set(k, v);
     for (const [k, v] of data.dssMappingEfficientByBodyKey) this.dssMappingEfficientByBodyKey.set(k, v);
     for (const [k, v] of data.orbitParentPlanetByBody) this.orbitParentPlanetByBody.set(k, v);
+    this.orbitParentRevision += 1;
     this.footJournalContextBuffer.length = 0;
     this.footJournalContextBuffer.push(...data.footJournalContextBuffer);
     for (const [k, v] of data.organicAnalyseByKey) this.organicAnalyseByKey.set(k, v);
