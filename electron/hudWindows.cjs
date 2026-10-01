@@ -47,14 +47,22 @@ function hudPathFrom(opts, fallback = HUD_DEFAULT_PATH) {
   return raw.startsWith("/") ? raw : `/${raw}`;
 }
 
+/*
+  Bounded (combined plan 1.7): these come from the launcher and, with LAN access on, from paired
+  devices through /api/hud/overlay/*, and the width is saved in hud-layout.json. An absurd one made
+  every HUD that wide, after a restart too.
+*/
+const HUD_MIN_WIDTH = 200;
+const HUD_MAX_WIDTH = 1600;
+
 function hudWidthFrom(opts) {
   const n = Number(opts && typeof opts === "object" ? opts.width : NaN);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : HUD_DEFAULT_WIDTH;
+  return Number.isFinite(n) && n > 0 ? Math.max(HUD_MIN_WIDTH, Math.min(HUD_MAX_WIDTH, Math.floor(n))) : HUD_DEFAULT_WIDTH;
 }
 
 function hudHeightFrom(opts) {
   const n = Number(opts && typeof opts === "object" ? opts.height : NaN);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : HUD_DEFAULT_HEIGHT;
+  return Number.isFinite(n) && n > 0 ? Math.max(HUD_MIN_HEIGHT, Math.min(HUD_MAX_HEIGHT, Math.floor(n))) : HUD_DEFAULT_HEIGHT;
 }
 
 /** The slot identity: the page, not its query string (the merged HUD changes sections via the query). */
@@ -666,6 +674,7 @@ function createHudWindows(deps) {
       },
     });
     deps.getDiag()?.watchWindow(win, "hud");
+    if (typeof deps.guardWindow === "function") deps.guardWindow(win);
 
     try {
       win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -879,6 +888,8 @@ function createHudWindows(deps) {
    */
   function resizeFromPage(win, opts) {
     if (!win || win.isDestroyed()) return { ok: false };
+    // Only a HUD window sizes itself this way: the app or galaxy window could be squeezed to 90 px.
+    if (!hudOverlayStack.some((s) => s.win === win)) return { ok: false };
     const idle = opts && typeof opts === "object" ? opts.idle : undefined;
     if (typeof idle === "boolean") {
       const slot = hudOverlayStack.find((s) => s.win === win);

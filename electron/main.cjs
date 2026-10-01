@@ -23,6 +23,9 @@ const {
 } = require("./hudWindows.cjs");
 const { createTrayControl } = require("./tray.cjs");
 const { watchForeground, isGameOrOwn } = require("./foregroundWatch.cjs");
+const { guardWindowNavigation, restrictPermissions } = require("./windowGuards.cjs");
+/** The app's own origin once the server listens (windowGuards.cjs). */
+const ownBase = () => (runtime ? runtime.getLocalBaseUrl() : null);
 /** The foreground watcher (foregroundWatch.cjs), started with the HUDs. */
 let foreground = null;
 
@@ -86,6 +89,7 @@ const huds = createHudWindows({
   getRuntime: () => runtime,
   getDiag: () => diag,
   preloadPath: path.join(__dirname, "preload.cjs"),
+  guardWindow: (win) => guardWindowNavigation(win, ownBase, shell),
   onChange: () => {
     trayControl.refresh();
     // The launcher's Shown / Hidden buttons follow the hotkey and the tray as well as their own clicks.
@@ -618,6 +622,7 @@ async function start() {
     },
   });
   diag?.watchWindow(mainWindow, "launcher");
+  guardWindowNavigation(mainWindow, ownBase, shell);
   if (launcherSaved?.maximized) mainWindow.maximize();
   trackWindowState("launcher", mainWindow);
   enableZoom(mainWindow);
@@ -755,6 +760,15 @@ if (!separateCopy) {
 
 app.whenReady().then(() => {
   if (!gotSingleInstanceLock) return;
+  // Every session the windows use: the launcher's, the app window's, the HUDs' (windowGuards.cjs).
+  try {
+    const { session } = require("electron");
+    for (const ses of [session.defaultSession, session.fromPartition(APP_WINDOW_PARTITION), session.fromPartition("persist:hud")]) {
+      restrictPermissions(ses);
+    }
+  } catch (e) {
+    console.warn("[edexo-compare] could not restrict permissions:", e);
+  }
   void start().catch((e) => {
     console.error(e);
     try {

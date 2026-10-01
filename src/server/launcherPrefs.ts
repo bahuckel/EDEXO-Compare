@@ -7,7 +7,7 @@
  * a rebuilt or re-downloaded exe opens the UI where it did last time. localStorage stays as the
  * fallback for a launcher that cannot reach this route.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { resolveUserSettingsJsonPath } from "./paths.js";
 
@@ -36,14 +36,28 @@ export function writeLauncherOpenMode(mode: LauncherOpenMode): void {
   writeLauncherPref("openMode", mode);
 }
 
-function writeLauncherPref(key: string, value: unknown): void {
-  let prev: Record<string, unknown> = {};
+/*
+  Written to a temp file and renamed (combined plan 1.7): a half-written file used to read as empty,
+  and an empty file means "no LAN choice saved", which an existing install resolves to on. An
+  unreadable file keeps LAN access off for the same reason.
+*/
+function readPrefsFile(): Record<string, unknown> | "unreadable" | null {
+  if (!existsSync(launcherPrefsPath())) return null;
   try {
-    prev = JSON.parse(readFileSync(launcherPrefsPath(), "utf8")) as Record<string, unknown>;
+    const v = JSON.parse(readFileSync(launcherPrefsPath(), "utf8")) as unknown;
+    return v && typeof v === "object" ? (v as Record<string, unknown>) : "unreadable";
   } catch {
-    /* first write */
+    return "unreadable";
   }
-  writeFileSync(launcherPrefsPath(), JSON.stringify({ ...prev, [key]: value }, null, 2), "utf8");
+}
+
+function writeLauncherPref(key: string, value: unknown): void {
+  const prev = readPrefsFile();
+  const base = prev === null ? {} : prev === "unreadable" ? { lanAccess: false } : prev;
+  const file = launcherPrefsPath();
+  const tmp = `${file}.${process.pid}.tmp`;
+  writeFileSync(tmp, JSON.stringify({ ...base, [key]: value }, null, 2), "utf8");
+  renameSync(tmp, file);
 }
 
 /*
@@ -59,12 +73,10 @@ function writeLauncherPref(key: string, value: unknown): void {
 
 /** The saved choice, or null when none was ever saved. */
 export function readLanAccess(): boolean | null {
-  try {
-    const v = (JSON.parse(readFileSync(launcherPrefsPath(), "utf8")) as { lanAccess?: unknown }).lanAccess;
-    return typeof v === "boolean" ? v : null;
-  } catch {
-    return null;
-  }
+  const prefs = readPrefsFile();
+  if (prefs === "unreadable") return false;
+  const v = prefs?.lanAccess;
+  return typeof v === "boolean" ? v : null;
 }
 
 export function writeLanAccess(on: boolean): void {

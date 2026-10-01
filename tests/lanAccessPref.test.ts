@@ -52,3 +52,16 @@ describe("LAN access", () => {
     expect(isExistingInstall()).toBe(true);
   });
 });
+
+describe("LAN access, damaged prefs file (combined plan 1.7)", () => {
+  it("reads an unreadable file as off, and a later write keeps it off", async () => {
+    const { writeFileSync } = await import("node:fs");
+    const m = await import("../src/server/launcherPrefs.js");
+    writeFileSync(m.launcherPrefsPath(), '{"lanAccess": tr', "utf8");
+    expect(m.readLanAccess()).toBe(false);
+    expect(m.resolveLanAccess(() => true)).toBe(false);
+    m.writeLauncherOpenMode("window");
+    expect(m.readLanAccess()).toBe(false);
+    expect(m.readLauncherOpenMode()).toBe("window");
+  });
+});
