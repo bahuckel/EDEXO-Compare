@@ -67,21 +67,32 @@ export function parseDesignationTailFromFullBodyName(bodyName: string): ParsedDe
 /**
  * Sort map nodes / siblings by in-game designation (star letters, major, moon a…z), not journal `bodyId`.
  */
+/** One collator for every comparison: `localeCompare` with options builds one per call. */
+const BASE = new Intl.Collator("en", { sensitivity: "base" });
+
 export function compareByParsedDesignationOrBodyId(
   shortA: string,
   shortB: string,
   bodyIdA: number,
   bodyIdB: number,
 ): number {
-  const pa = parseShortDesignation(shortA);
-  const pb = parseShortDesignation(shortB);
+  return compareParsedDesignations(parseShortDesignation(shortA), parseShortDesignation(shortB), bodyIdA, bodyIdB);
+}
+
+/** {@link compareByParsedDesignationOrBodyId} for designations already parsed (sorts that parse once). */
+export function compareParsedDesignations(
+  pa: ParsedDesignation | null,
+  pb: ParsedDesignation | null,
+  bodyIdA: number,
+  bodyIdB: number,
+): number {
   if (pa && pb) {
-    const sc = pa.starLetters.localeCompare(pb.starLetters, "en", { sensitivity: "base" });
+    const sc = BASE.compare(pa.starLetters, pb.starLetters);
     if (sc !== 0) return sc;
     if (pa.major !== pb.major) return pa.major - pb.major;
     const ma = pa.moon ?? "";
     const mb = pb.moon ?? "";
-    if (ma !== mb) return ma.localeCompare(mb, "en", { sensitivity: "base" });
+    if (ma !== mb) return BASE.compare(ma, mb);
     return bodyIdA - bodyIdB;
   }
   if (pa && !pb) return -1;

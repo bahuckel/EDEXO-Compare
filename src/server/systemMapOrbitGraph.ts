@@ -2,9 +2,10 @@
  * The system's orbit tree, from journal Parents chains and, where they are missing, the body designations. Split out of systemMap.ts (code review D, 2026-09-27).
  */
 import {
-  compareByParsedDesignationOrBodyId,
+  compareParsedDesignations,
   parseDesignationTailFromFullBodyName,
   parseShortDesignation,
+  type ParsedDesignation,
 } from "../shared/eliteDesignation.js";
 import { explorationRecordHasPlanetSlotDesignation } from "../shared/planetSlotDesignation.js";
 import { shortBodyLabel } from "../shared/systemMapLabels.js";
@@ -33,15 +34,35 @@ export function bodyKey(systemAddress: number, bodyId: number): string {
  * Order siblings like the in-game system map: by designation (major index, then moon a…z), not raw
  * `semiMajorAxis` (journal vs synthetic scales differ, so “planet 7 discovered first” wrongly sat beside the star).
  */
+/*
+  Each record's short label and parsed designation, kept across sorts: the comparator used to parse
+  both sides on every comparison of every snapshot (~0.7 ms a refresh, profiled 2026-10-01). Records
+  are replaced, not mutated, when a scan changes; the entry also checks the system and body name, and
+  is held weakly.
+*/
+const designationMemo = new WeakMap<
+  ExplorationScanRecord,
+  { system: string; name: string; short: string; parsed: ParsedDesignation | null; fallback: ParsedDesignation | null }
+>();
+function designationOf(r: ExplorationScanRecord, starSystemName: string) {
+  const hit = designationMemo.get(r);
+  if (hit && hit.system === starSystemName && hit.name === r.bodyName) return hit;
+  const short = shortBodyLabel(r.bodyName, starSystemName);
+  const parsed = parseShortDesignation(short);
+  const v = { system: starSystemName, name: r.bodyName, short, parsed, fallback: parsed ?? parseDesignationTailFromFullBodyName(r.bodyName) };
+  designationMemo.set(r, v);
+  return v;
+}
+
 function compareExplorationScanSiblingOrder(
   a: ExplorationScanRecord,
   b: ExplorationScanRecord,
   starSystemName: string,
 ): number {
-  const sa = shortBodyLabel(a.bodyName, starSystemName);
-  const sb = shortBodyLabel(b.bodyName, starSystemName);
-  const pa = parseShortDesignation(sa) ?? parseDesignationTailFromFullBodyName(a.bodyName);
-  const pb = parseShortDesignation(sb) ?? parseDesignationTailFromFullBodyName(b.bodyName);
+  const da = designationOf(a, starSystemName);
+  const db = designationOf(b, starSystemName);
+  const pa = da.fallback;
+  const pb = db.fallback;
   if (!pa && !pb) {
     const semiA = a.semiMajorAxis;
     const semiB = b.semiMajorAxis;
@@ -50,7 +71,7 @@ function compareExplorationScanSiblingOrder(
     if (finiteA && finiteB && semiA !== semiB) return semiA - semiB;
     return a.bodyId - b.bodyId;
   }
-  return compareByParsedDesignationOrBodyId(sa, sb, a.bodyId, b.bodyId);
+  return compareParsedDesignations(da.parsed, db.parsed, a.bodyId, b.bodyId);
 }
 
 const isStarRecord = explorationRecordIsStellar;
