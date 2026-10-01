@@ -92,6 +92,26 @@ describe("HUD candidates", () => {
     expect(rows.find((t) => t.includes("Bacterium"))).not.toContain("/3");
   });
 
+  it("marks a new codex entry CX and a first one for the region FCX, as the app's body tabs do", () => {
+    HUD.render({
+      exoOverlayFocusBodyKey: "1:2",
+      bodies: [
+        body("1:2", "A 2", [
+          match("Tussock", "propagito", 1_000_000, { codexNew: true }),
+          match("Bacterium", "cerbrus", 1_689_800, { codexNew: true, codexFirst: true }),
+          match("Stratum", "tectonicas", 19_010_800),
+        ]),
+      ],
+    });
+    const mark = (genus: string) =>
+      [...document.querySelectorAll(".hud-list li")].find((li) => li.textContent?.includes(genus))?.querySelector(".cxnew");
+    expect(mark("Tussock")?.textContent).toBe("CX");
+    expect(mark("Tussock")?.className).toBe("cxnew");
+    expect(mark("Bacterium")?.textContent).toBe("FCX");
+    expect(mark("Bacterium")?.className).toBe("cxnew cxnew--first");
+    expect(mark("Stratum")).toBeNull();
+  });
+
   it("prefers the targeted body from Status.json and tags it", () => {
     HUD.render({
       exoOverlayFocusBodyKey: "1:2",

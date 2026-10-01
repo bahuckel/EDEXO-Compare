@@ -288,8 +288,15 @@ body {
   border: 1px solid currentColor;
   color: #4fd0ff;
 }
+/*
+  FCX (owner, 2026-10-01): gold alone would sink into an amber or orange HUD, so the same dark chip
+  as the app's body tabs: dark ground, gold edge, gold letters, whatever the HUD colour.
+*/
 .hud-list .cxnew--first {
   color: #f5c96a;
+  background: #07060a;
+  border-color: #f5c96a;
+  text-shadow: 0 0 4px rgba(245, 184, 61, 0.5);
 }
 /* Compact overlays: explanations go, readings and warnings stay (theme.js `hud-compact`). */
 .hud-compact .hud-explain {

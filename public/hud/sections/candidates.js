@@ -219,9 +219,10 @@ export var candidates = {
       if (m.codexNew) {
         var cx = document.createElement("span");
         cx.className = m.codexFirst ? "cxnew cxnew--first" : "cxnew";
-        cx.textContent = m.codexFirst ? "CX1" : "CX";
+        // FCX, as on the app's body tabs (owner, 2026-10-01; was "CX1").
+        cx.textContent = m.codexFirst ? "FCX" : "CX";
         cx.title = m.codexFirst
-          ? "Nobody has logged it in this region yet (EDSM): you would be the first"
+          ? "A FIRST codex entry: nobody has logged it in this region yet (EDSM, EDAstro), you would be the first"
           : "A new entry in your codex here";
         name.appendChild(cx);
       }
