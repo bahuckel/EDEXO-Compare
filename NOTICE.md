@@ -33,14 +33,26 @@ matched against Spansh's bodies, is how the plant colour rules were checked on 1
 `data/rarity/species-rarity.json` is from the same dump: per species, how many systems EDSM's codex
 has it in, galaxy-wide and per region — the rarity tiers and the region check read it.
 
-### EDAstro — [edastro.com](https://edastro.com)
+### EDAstro — [edastro.com](https://edastro.com), by CMDR Orvidius
 
-The codex sightings in `codex-data.csv`: which species has been logged in which system, galaxy-wide.
-`data/exomastery/region-species.json` (how often each species is recorded per region) is rolled up from
-it, and `data/rarity/extra/edastro-codex-2026-09-06.json` adds its species-system pairs that EDSM's
-dump does not have to the rarity counts. `data/rarity/body-share.json` — the rarity tiers, as the share
-of bio bodies of a species' planet types that carry it, per region — combines the Spansh galaxy dump's
-bodies with EDSM's and EDAstro's codex.
+EDAstro's content is licensed under [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/).
+Part of this project's data is derived from it, which is why the project's data carries the same
+licence ([`data/LICENSE-DATA.txt`](data/LICENSE-DATA.txt)). The EDAstro-derived files:
+
+- `data/exomastery/region-species.json` — how often each species is recorded per region, from
+  EDAstro's `codex-data.csv`;
+- `data/exomastery/sector-map.json` — sector names from EDAstro's sector list;
+- `data/exomastery/spatial-catalogue.json` — nebula coordinates (`nebulae-coordinates.csv`) and
+  Guardian sites (`edsmPOI.csv`);
+- `data/rarity/extra/edastro-codex-*.json` — the species–system pairs EDSM's dump does not have,
+  added to the rarity counts;
+- `data/rarity/body-share.json` — the rarity tiers, from the Spansh galaxy dump's bodies with EDSM's
+  and EDAstro's codex;
+- `src/shared/nspModelData.ts` — region and star-type averages for the phenomena prediction.
+
+Releases 1.1.0 to 1.2.7 shipped these under the MIT notice by mistake; they were always under
+CC BY-NC-SA 3.0. Data the app downloads from EDAstro on the user's machine (phenomena, carriers,
+points of interest, galactic records) stays EDAstro's and is not part of any release.
 
 ### Canonn Research Group — [canonn.science](https://canonn.science)
 

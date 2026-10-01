@@ -39,6 +39,7 @@ copyDataTree(join(outDir, "data"));
 mergeDataOverlays(join(outDir, "data"));
 cpSync("LICENSE", join(outDir, "LICENSE"));
 cpSync("NOTICE.md", join(outDir, "NOTICE.md"));
+cpSync("data/LICENSE-DATA.txt", join(outDir, "LICENSE-DATA.txt"));
 
 /*
   The launchers. `readlink -f` so a symlink on the desktop still runs from the real folder, where
@@ -91,7 +92,8 @@ YOUR DATA
 Settings and caches: ~/.config/edexo-compare (or $XDG_CONFIG_HOME/edexo-compare).
 Keep this folder layout: the two programs plus "web" and "data" next to them.
 
-Licence: MIT — except the species photographs, see NOTICE.md.
+Licence: code MIT (LICENSE); data CC BY-NC-SA 3.0 (LICENSE-DATA.txt); the species photographs
+are Elite Dangerous screenshots, Frontier's art under Frontier's terms (NOTICE.md).
 `;
 writeFileSync(join(outDir, "README.txt"), readme, "utf8");
 

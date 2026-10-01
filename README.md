@@ -277,15 +277,21 @@ Full attribution in [NOTICE.md](NOTICE.md).
 
 ## Licence
 
-MIT for the code and this project's own data — see [LICENSE](LICENSE), which sets out what the grant
-does **not** cover.
+Three parts, three licences:
 
-If you use the code or the species data in something of your own, a credit and a link back —
-"based on EDEXO-Compare by Bahuckel, https://bahuckel.com/projects/edexo-compare" — is appreciated.
-The licence does not require it; this is a request, not a term.
+- **Code — MIT.** See [LICENSE](LICENSE).
+- **Data — [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/).** The `data/`
+  folder and the data tables generated into the code: credit the sources, no commercial use, share
+  alike. Part of it is derived from [EDAstro](https://edastro.com)'s content, which carries this
+  licence, so the data carries it too. Details, and the EDAstro-derived files, in
+  [`data/LICENSE-DATA.txt`](data/LICENSE-DATA.txt). Releases 1.1.0–1.2.7 shipped those files under
+  the MIT notice by mistake; the notice applies to them as well.
+- **Photographs — Frontier's.** They are screenshots of Elite Dangerous; the game and its artwork
+  belong to Frontier Developments and are under Frontier's terms, not either licence here.
 
-The species photographs are **not** MIT licensed and are not this project's to sublicense: the game
-artwork is Frontier's and the capture belongs to the commander who took it.
+If you use the code in something of your own, a credit and a link back — "based on EDEXO-Compare by
+Bahuckel, https://bahuckel.com/projects/edexo-compare" — is appreciated; for the code it is a request,
+not a term. For the data, credit is part of the licence.
 
 **Every photograph in the app is labelled with where it came from**, and the label is the answer:
 

@@ -4,11 +4,16 @@ Copyright (c) 2026 bahuckel
 
 SCOPE — read this before relying on the grant below.
 
-This licence covers the source code of EDEXO-Compare and the data files this
-project produced itself. It does NOT cover:
+This licence covers the source code of EDEXO-Compare. It does NOT cover:
 
+  * the data - the data/ folder and the data tables generated into the code -
+    which is licensed under Creative Commons BY-NC-SA 3.0 (non-commercial,
+    share-alike); see data/LICENSE-DATA.txt, which also says what counts as
+    data and why;
   * the species photographs under data/species/<genus>/<genus>_photos/, of
-    either kind, described below;
+    either kind, described below: they are screenshots of Elite Dangerous, and
+    the game and its artwork are Frontier Developments' and under Frontier's
+    terms;
   * Elite Dangerous game content, artwork and species names, which are the
     property of Frontier Developments plc;
   * data/exomastery/region-map.json, which is MIT-licensed by Ben Peddell and

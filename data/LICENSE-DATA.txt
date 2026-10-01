@@ -1,0 +1,83 @@
+ED Exo Compare data - Creative Commons BY-NC-SA 3.0
+===================================================
+
+ED Exo Compare is licensed in three parts:
+
+  * the source code         - MIT, see LICENSE;
+  * the data (this notice)  - Creative Commons Attribution-NonCommercial-
+                              ShareAlike 3.0 (CC BY-NC-SA 3.0);
+  * the species photographs - screenshots of Elite Dangerous: the game and its
+                              artwork belong to Frontier Developments plc and
+                              are under Frontier's terms, not either licence
+                              here (see LICENSE and NOTICE.md).
+
+WHAT "THE DATA" IS
+
+  * everything in the data/ folder, except the species photographs
+    (data/species/<genus>/<genus>_photos/) and data/exomastery/region-map.json,
+    which is Ben Peddell's, MIT-licensed, with its own notice in
+    data/exomastery/region-map.LICENSE.txt;
+  * the data tables generated into the app's code: src/shared/gggCatalogue.ts
+    and src/shared/nspModelData.ts.
+
+THE LICENCE
+
+The data is licensed under CC BY-NC-SA 3.0:
+https://creativecommons.org/licenses/by-nc-sa/3.0/
+In short:
+  * Attribution - credit ED Exo Compare and the sources named below and in
+    NOTICE.md, and link to the licence.
+  * NonCommercial - you may not use it for commercial purposes.
+  * ShareAlike - anything you build from it must be licensed under the same
+    terms.
+The licence text itself is the authority:
+https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode
+
+WHY THIS LICENCE - DATA DERIVED FROM EDASTRO
+
+Part of the data is derived from content published by Elite Dangerous
+Astrometrics (EDAstro, https://edastro.com), made by CMDR Orvidius, which is
+licensed under CC BY-NC-SA 3.0. Those files are adaptations of EDAstro's
+content and must carry the same licence; the rest of the data carries it too,
+so the data has one licence. The EDAstro-derived files, and what was changed
+(not every release contains every file):
+
+  * data/exomastery/region-species.json
+      How often each species is recorded in each galactic region, counted
+      from EDAstro's codex-data.csv.
+  * data/exomastery/sector-map.json
+      Sector names from EDAstro's sector list, placed on a 1,280 ly grid.
+      (The names themselves are the game's.)
+  * data/exomastery/spatial-catalogue.json
+      Nebula coordinates from EDAstro's nebulae-coordinates.csv, and Guardian
+      site coordinates from EDAstro's edsmPOI.csv.
+  * data/rarity/extra/edastro-codex-*.json
+      Per species, how many systems have it logged, galaxy-wide and per
+      region, counted from EDAstro's codex-data.csv - only the species and
+      system pairs EDSM's codex dump does not have.
+  * data/rarity/body-share.json
+      The rarity tiers: the share of bio bodies of a species' planet types
+      that carry it, computed from Spansh's galaxy dump together with EDSM's
+      and EDAstro's codex data.
+  * src/shared/nspModelData.ts (from version 1.2.7)
+      Averages per galactic region and per main-star type for the notable
+      stellar phenomena prediction, fitted on EDAstro's codex-data.csv. No
+      system of EDAstro's is in it.
+
+The other sources of the data are credited in NOTICE.md.
+
+NOT PART OF THIS DISTRIBUTION
+
+Data the app downloads on your own machine when you ask it to (EDAstro's
+phenomena and codex data, carriers, points of interest, galactic records;
+EDSM and Spansh lookups) belongs to its source and is under that source's
+terms. It is fetched directly and is not included in any release.
+
+No endorsement by EDAstro, CMDR Orvidius or any other source is implied.
+
+EARLIER RELEASES
+
+This notice was added on 2026-10-01. Releases 1.1.0 to 1.2.7 contained the
+EDAstro-derived files listed above under the MIT notice by mistake: those files
+were always under CC BY-NC-SA 3.0, EDAstro's licence, and this notice applies
+to them.
