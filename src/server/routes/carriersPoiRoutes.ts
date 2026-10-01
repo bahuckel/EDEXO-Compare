@@ -1,3 +1,4 @@
+import { localOnly } from "../lanAuth.js";
 import { readNspStatus, startNspDownload } from "../edastroNsp.js";
 import express from "express";
 import {
@@ -25,7 +26,7 @@ export function registerCarriersPoiRoutes(
     res.json(readCarrierStatus());
   });
 
-  app.post("/api/carriers/fetch", async (req, res) => {
+  app.post("/api/carriers/fetch", localOnly, async (req, res) => {
     const force = req.body?.force === true;
     try {
       const result = await fetchCarrierData({ force });
@@ -83,11 +84,11 @@ export function registerCarriersPoiRoutes(
     res.json({ ok: true, status: readNspStatus() });
   });
 
-  app.post("/api/nsp/fetch", (req, res) => {
+  app.post("/api/nsp/fetch", localOnly, (req, res) => {
     res.json({ ok: true, status: startNspDownload({ force: req.body?.force === true }) });
   });
 
-  app.post("/api/poi/fetch", async (req, res) => {
+  app.post("/api/poi/fetch", localOnly, async (req, res) => {
     const force = req.body?.force === true;
     try {
       const result = await fetchPoiData({ force });

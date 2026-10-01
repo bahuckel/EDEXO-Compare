@@ -5,7 +5,7 @@ import type { PhotoStampPrefs } from "../../shared/types.js";
 import { isJournalHistoryPreset } from "../../shared/journalHistoryPreset.js";
 import { feederDataDirExists, feederInboxDir, setConfiguredFeederDataDir } from "../../feeder/paths.js";
 import { parseSpanshRouteFile, summariseSpanshRouteFile } from "../../feeder/spanshRouteFile.js";
-import { isLoopbackAddress } from "../lanAuth.js";
+import { isLoopbackAddress, localOnly } from "../lanAuth.js";
 import { isEdsmCatchUpScope } from "../edsmCatchUp.js";
 
 import type { HttpServerOptions, RouteContext } from "../httpServer.js";
@@ -15,7 +15,7 @@ export function registerSettingsRoutes(
   opts: HttpServerOptions,
   _ctx: RouteContext,
 ): void {
-  app.post("/api/settings/journal-directory", async (req, res) => {
+  app.post("/api/settings/journal-directory", localOnly, async (req, res) => {
     if (typeof opts.setJournalDirectory !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -51,7 +51,7 @@ export function registerSettingsRoutes(
    * A route export is a few hundred kilobytes, so it arrives as text in the JSON body rather than as
    * a multipart upload, which would mean a new dependency for one endpoint.
    */
-  app.post("/api/feeder/import", (req, res) => {
+  app.post("/api/feeder/import", localOnly, (req, res) => {
     const text = req.body?.text;
     const name = typeof req.body?.filename === "string" ? req.body.filename : "route";
     if (typeof text !== "string" || !text.trim()) {
@@ -95,7 +95,7 @@ export function registerSettingsRoutes(
     }
   });
 
-  app.post("/api/settings/feeder-data-directory", (req, res) => {
+  app.post("/api/settings/feeder-data-directory", localOnly, (req, res) => {
     const raw = req.body?.feederDataDir;
     if (raw !== null && typeof raw !== "string") {
       res.status(400).json({ ok: false, error: 'JSON body must include string or null "feederDataDir".' });
@@ -408,7 +408,7 @@ export function registerSettingsRoutes(
     }
   });
 
-  app.get("/api/settings/edsm-credentials", (_req, res) => {
+  app.get("/api/settings/edsm-credentials", localOnly, (_req, res) => {
     if (typeof opts.getEdsmCredentialsStatus !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -416,7 +416,7 @@ export function registerSettingsRoutes(
     res.json({ ok: true, ...opts.getEdsmCredentialsStatus() });
   });
 
-  app.post("/api/settings/edsm-credentials", (req, res) => {
+  app.post("/api/settings/edsm-credentials", localOnly, (req, res) => {
     if (typeof opts.setEdsmCredentials !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -433,7 +433,7 @@ export function registerSettingsRoutes(
     res.status(r.ok ? 200 : 400).json(r);
   });
 
-  app.delete("/api/settings/edsm-credentials", (_req, res) => {
+  app.delete("/api/settings/edsm-credentials", localOnly, (_req, res) => {
     if (typeof opts.forgetEdsmCredentials !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -443,7 +443,7 @@ export function registerSettingsRoutes(
     res.json({ ok: true });
   });
 
-  app.post("/api/settings/edsm-auto-fetch", (req, res) => {
+  app.post("/api/settings/edsm-auto-fetch", localOnly, (req, res) => {
     if (typeof opts.setEdsmAutoFetchEnabled !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -465,7 +465,7 @@ export function registerSettingsRoutes(
    * commander agrees to send their journal, and the catch-up run is what actually sends four years
    * of it. Neither happens on its own.
    */
-  app.post("/api/settings/edsm-upload", (req, res) => {
+  app.post("/api/settings/edsm-upload", localOnly, (req, res) => {
     if (typeof opts.setEdsmUploadEnabled !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -480,7 +480,7 @@ export function registerSettingsRoutes(
     res.status(r.ok ? 200 : 400).json(r);
   });
 
-  app.post("/api/settings/edsm-live-upload", (req, res) => {
+  app.post("/api/settings/edsm-live-upload", localOnly, (req, res) => {
     if (typeof opts.setEdsmLiveUploadEnabled !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -495,22 +495,23 @@ export function registerSettingsRoutes(
     res.status(r.ok ? 200 : 400).json(r);
   });
 
-  app.post("/api/settings/edsm-catch-up", (req, res) => {
+  app.post("/api/settings/edsm-catch-up", localOnly, (req, res) => {
     if (typeof opts.startEdsmCatchUp !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
     }
+    // Required (combined plan 1.4): a body-less POST from anywhere used to mean "upload everything".
     const scope = req.body?.scope;
-    if (scope !== undefined && !isEdsmCatchUpScope(scope)) {
+    if (!isEdsmCatchUpScope(scope)) {
       res.status(400).json({ ok: false, error: "scope must be day, week, month, year or all." });
       return;
     }
-    const r = opts.startEdsmCatchUp(scope ?? "all");
+    const r = opts.startEdsmCatchUp(scope);
     if (r.ok) opts.scheduleBroadcast?.();
     res.status(r.ok ? 200 : 400).json(r);
   });
 
-  app.post("/api/settings/edsm-catch-up-cancel", (_req, res) => {
+  app.post("/api/settings/edsm-catch-up-cancel", localOnly, (_req, res) => {
     if (typeof opts.cancelEdsmCatchUp !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -520,7 +521,7 @@ export function registerSettingsRoutes(
     res.json({ ok: true });
   });
 
-  app.post("/api/settings/canonn-upload", (req, res) => {
+  app.post("/api/settings/canonn-upload", localOnly, (req, res) => {
     if (typeof opts.setCanonnUploadEnabled !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -535,7 +536,7 @@ export function registerSettingsRoutes(
     res.status(r.ok ? 200 : 400).json(r);
   });
 
-  app.post("/api/settings/eddn-upload", (req, res) => {
+  app.post("/api/settings/eddn-upload", localOnly, (req, res) => {
     if (typeof opts.setEddnUploadEnabled !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;

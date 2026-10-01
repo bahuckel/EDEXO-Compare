@@ -42,7 +42,14 @@ import type { GameStateStore } from "./gameState.js";
 import { getProjectRoot, getWebRoot } from "./paths.js";
 import type { CollectionFocusConfig } from "./collectionFocus.js";
 import { perfBytes, perfCount, perfTime } from "./perf.js";
-import { createLanAuthGuard, isLoopbackAddress, requestIsAuthorized } from "./lanAuth.js";
+import {
+  createLanAuthGuard,
+  createOriginGuard,
+  isLoopbackAddress,
+  localOnly,
+  requestIsAuthorized,
+  requestOriginIsAllowed,
+} from "./lanAuth.js";
 import type { JournalScan } from "./statisticsScan.js";
 import { isLauncherOpenMode, readLauncherOpenMode, writeLanAccess, writeLauncherOpenMode } from "./launcherPrefs.js";
 import { type EdsmCatchUpScope } from "./edsmCatchUp.js";
@@ -368,6 +375,32 @@ export function createHttpServer(opts: HttpServerOptions): {
   listening: Promise<void>;
 } {
   const app = express();
+  /*
+    Express 4 does not catch a rejected async handler: the rejection goes unhandled and the dev entry
+    exits the process on it (combined plan 1.4). Every route handler that returns a promise has its
+    rejection passed to `next`, which answers 500. `app.get(name)` with one argument is the settings
+    getter and is left alone.
+  */
+  for (const method of ["get", "post", "put", "delete", "patch"] as const) {
+    const register = app[method].bind(app) as (...args: unknown[]) => unknown;
+    (app as unknown as Record<string, unknown>)[method] = (...args: unknown[]) => {
+      if (args.length < 2) return register(...args);
+      return register(
+        ...args.map((h) =>
+          typeof h === "function" && h.length <= 3
+            ? (req: express.Request, res: express.Response, next: express.NextFunction) => {
+                try {
+                  const r = (h as (a: unknown, b: unknown, c: unknown) => unknown)(req, res, next);
+                  if (r && typeof (r as Promise<unknown>).catch === "function") (r as Promise<unknown>).catch(next);
+                } catch (e) {
+                  next(e);
+                }
+              }
+            : h,
+        ),
+      );
+    };
+  }
   const root = getProjectRoot();
   const webRoot = getWebRoot(root);
   const routeCtx: RouteContext = { root, webRoot };
@@ -377,6 +410,21 @@ export function createHttpServer(opts: HttpServerOptions): {
    * not get its request body parsed either.
    */
   const lanKey = opts.lanKey ?? null;
+  /*
+    This PC's LAN addresses, for the Host/Origin check: read every 30 s, not per request
+    (`os.networkInterfaces()` is slow on Windows with VPN or Hyper-V adapters).
+  */
+  let lanHostsAt = 0;
+  let lanHosts = new Set<string>();
+  const isOwnLanHost = (name: string): boolean => {
+    if (Date.now() - lanHostsAt > 30_000) {
+      lanHosts = new Set(getLanIPv4s(opts.port).map((u) => new URL(u).hostname));
+      if (opts.bindHost && opts.bindHost !== "0.0.0.0") lanHosts.add(opts.bindHost.toLowerCase());
+      lanHostsAt = Date.now();
+    }
+    return lanHosts.has(name);
+  };
+  app.use(createOriginGuard(isOwnLanHost));
   app.use(createLanAuthGuard(lanKey));
 
   /**
@@ -619,7 +667,7 @@ export function createHttpServer(opts: HttpServerOptions): {
     the same four gates the CLI uses, so it runs as a background job and the launcher polls the
     status route; only one at a time.
   */
-  app.post("/api/feeder/import-dump", (req, res) => {
+  app.post("/api/feeder/import-dump", localOnly, (req, res) => {
     if (typeof opts.startImportDump !== "function") {
       res.status(501).json({ ok: false, error: "Not available on this build" });
       return;
@@ -633,7 +681,7 @@ export function createHttpServer(opts: HttpServerOptions): {
     const r = opts.startImportDump(file, body.apply === true);
     res.status(r.ok ? 200 : 409).json(r);
   });
-  app.get("/api/feeder/import-dump/status", (req, res) => {
+  app.get("/api/feeder/import-dump/status", localOnly, (req, res) => {
     if (typeof opts.getImportDumpStatus !== "function") {
       res.status(501).json({ error: "Not available on this build" });
       return;
@@ -675,7 +723,7 @@ export function createHttpServer(opts: HttpServerOptions): {
 
   registerSettingsRoutes(app, opts, routeCtx);
 
-  app.post("/api/exo-data-alerts/fix", (req, res) => {
+  app.post("/api/exo-data-alerts/fix", localOnly, (req, res) => {
     if (typeof opts.writeExoDataAlertFix !== "function") {
       res.status(501).json({ ok: false, error: "Fix stubs are not available in this build." });
       return;
@@ -707,7 +755,7 @@ export function createHttpServer(opts: HttpServerOptions): {
     }
   });
 
-  app.post("/api/exobiology/reset", (req, res) => {
+  app.post("/api/exobiology/reset", localOnly, (req, res) => {
     if (typeof opts.resetExobiology !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });
       return;
@@ -770,7 +818,9 @@ export function createHttpServer(opts: HttpServerOptions): {
     // The upgrade bypasses Express, so the same key check runs here. A paired browser sends the
     // cookie on the handshake; a script can pass ?k= or the header.
     verifyClient: ({ req }, done) => {
-      if (requestIsAuthorized(req, lanKey)) done(true);
+      // A web page can open a WebSocket to 127.0.0.1 from anywhere: its Origin must be ours (1.4).
+      if (!requestOriginIsAllowed(req, isOwnLanHost, { checkOrigin: true })) done(false, 403, "Foreign origin");
+      else if (requestIsAuthorized(req, lanKey)) done(true);
       else done(false, 401, "Access key required");
     },
   });

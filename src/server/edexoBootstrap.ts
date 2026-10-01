@@ -41,6 +41,7 @@ import { scanJournalsForStatistics } from "./statisticsScan.js";
 import { createHttpServer, getLanIPv4s } from "./httpServer.js";
 import { describeUserDataMigration, migrateLegacyUserData } from "./userDataMigration.js";
 import { readLanAccess, resolveLanAccess } from "./launcherPrefs.js";
+import { isLoopbackHostName } from "./lanAuth.js";
 import { applyPendingRestore } from "./backup.js";
 import { createBackupService } from "./backupService.js";
 import { APP_VERSION } from "./appVersion.js";
@@ -287,7 +288,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
    * wide gets an access key. A loopback bind gets none — there is nothing there a local process
    * could not already do.
    */
-  const lanExposed = bindHost === "0.0.0.0";
+  // Any address but this PC's own is the network, and needs the key: `--host 192.168.0.6` or `--host ::`
+  // used to run with no key at all because only 0.0.0.0 counted (combined plan 1.4).
+  const lanExposed = !isLoopbackHostName(bindHost);
   const lanKey = lanExposed ? loadOrCreateLanKey(resolveLanKeyPath()) : null;
   const lanUrlsWithKey = (): string[] => getLanIPv4s(port).map((u) => lanUrlWithKey(u, lanKey));
 

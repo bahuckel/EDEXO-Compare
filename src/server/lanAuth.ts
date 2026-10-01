@@ -135,6 +135,78 @@ access key that the launcher shows under <strong>Network settings &rarr; LAN</st
  * Express guard. Pass `null` to disable it entirely (loopback-only binds, where there is nothing
  * to protect against that a local process could not already do).
  */
+/** A host name (no port) that means this PC. */
+export function isLoopbackHostName(host: string): boolean {
+  const h = host.trim().toLowerCase().replace(/^\[|\]$/g, "");
+  return h === "localhost" || h.endsWith(".localhost") || isLoopbackAddress(h);
+}
+
+/** The host name of a `Host` header or an origin URL, without the port; null when unreadable. */
+export function hostNameOf(value: string): string | null {
+  const v = value.trim();
+  if (!v) return null;
+  try {
+    return new URL(v.includes("://") ? v : `http://${v}`).hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether a request may come from where it says it comes from (combined plan 1.4, 2026-10-01).
+ *
+ * Loopback is trusted, and a web page the commander opens can reach loopback: by DNS rebinding (a
+ * name that resolves to 127.0.0.1 makes the page same-origin with the app, so it can read answers,
+ * the LAN key included), by plain cross-site POSTs (no preflight for a body-less or text/plain
+ * POST), and by opening the WebSocket (browsers apply no same-origin rule to it). So:
+ * - from this PC, where trust is unconditional, `Host` must name this PC or one of its LAN addresses,
+ *   any port (the dev server proxies through another); a rebinding page sends its own name. Other
+ *   devices need the access key anyway and may use any name (a public URL, a DDNS name);
+ * - a state-changing request (anything but GET/HEAD/OPTIONS) and every WebSocket handshake with an
+ *   `Origin` must be same-origin (the Origin's host is the request's Host) or come from one of ours.
+ *   No `Origin` is allowed: Electron's own requests, scripts.
+ */
+export function requestOriginIsAllowed(
+  req: IncomingMessage,
+  allowedHost: (hostName: string) => boolean,
+  opts: { checkOrigin: boolean },
+): boolean {
+  const ours = (name: string | null) => name !== null && (isLoopbackHostName(name) || allowedHost(name));
+  const host = req.headers.host ? hostNameOf(req.headers.host) : null;
+  if (req.headers.host && isLoopbackAddress(req.socket?.remoteAddress) && !ours(host)) return false;
+  if (!opts.checkOrigin) return true;
+  const origin = req.headers.origin;
+  if (origin === undefined) return true;
+  if (origin === "null") return false;
+  const originHost = hostNameOf(origin);
+  return (originHost !== null && originHost === host) || ours(originHost);
+}
+
+export function createOriginGuard(allowedHost: (hostName: string) => boolean): RequestHandler {
+  return (req, res, next) => {
+    const m = req.method.toUpperCase();
+    const checkOrigin = m !== "GET" && m !== "HEAD" && m !== "OPTIONS";
+    if (requestOriginIsAllowed(req, allowedHost, { checkOrigin })) {
+      next();
+      return;
+    }
+    res.status(403).json({ error: "foreign_origin" });
+  };
+}
+
+/**
+ * For routes that act on this PC or on the commander's consent: folders and files on disk, stored
+ * credentials, switches that send data to other services, large downloads, resets (combined plan
+ * 1.4). A paired phone or tablet can still read and use everything else.
+ */
+export const localOnly: RequestHandler = (req, res, next) => {
+  if (isLoopbackAddress(req.socket?.remoteAddress)) {
+    next();
+    return;
+  }
+  res.status(403).json({ ok: false, error: "This can only be changed on the PC running the app." });
+};
+
 export function createLanAuthGuard(lanKey: string | null): RequestHandler {
   return (req, res, next) => {
     if (!lanKey) {
