@@ -723,7 +723,32 @@ if (process.platform === "win32") {
   }
 }
 
+/*
+  One copy (owner, 2026-10-01). A tester's launcher was hidden in the tray; starting the app again
+  ran a second copy that never showed a window. Now a second start hands over to the running copy,
+  which brings its launcher back — from the tray, from the taskbar, or from behind other windows —
+  and the second copy quits.
+
+  A deliberate second copy still works: `--port` (the documented way to run one beside another) or
+  an isolated profile (`EDEXO_USER_DATA_DIR`) skip the lock.
+*/
+const separateCopy = process.argv.includes("--port") || !!process.env.EDEXO_USER_DATA_DIR;
+let gotSingleInstanceLock = true;
+if (!separateCopy) {
+  gotSingleInstanceLock = app.requestSingleInstanceLock();
+  if (!gotSingleInstanceLock) {
+    // exit, not quit: quitting runs before-quit, whose sibling sweep would kill the running copy.
+    app.exit(0);
+  } else {
+    app.on("second-instance", () => {
+      // Still starting (no launcher yet): it shows itself when it is made.
+      showLauncher();
+    });
+  }
+}
+
 app.whenReady().then(() => {
+  if (!gotSingleInstanceLock) return;
   void start().catch((e) => {
     console.error(e);
     try {
