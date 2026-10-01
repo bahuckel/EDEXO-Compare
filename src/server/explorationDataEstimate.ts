@@ -110,13 +110,19 @@ function explorationDataValueBreakdownUncached(
   dssValueCredits: number;
   totalCredits: number;
 } {
-  const pref = systemAddress != null ? `${systemAddress}:` : null;
   let fssCount = 0;
   let fssValue = 0;
   let dssCount = 0;
   let dssValue = 0;
-  for (const [k, r] of store.explorationScans) {
-    if (pref && !k.startsWith(pref)) continue;
+  /*
+    One system: its records from the store's per-system index, not a prefix test over every scan the
+    commander ever made (the system map asks this on each snapshot; ~0.6 ms, profiled 2026-10-01).
+  */
+  const rows: Iterable<[string, ExplorationScanRecord]> =
+    systemAddress != null
+      ? store.liveScansInSystem(systemAddress).map((r) => [`${r.systemAddress}:${r.bodyId}`, r] as [string, ExplorationScanRecord])
+      : store.explorationScans;
+  for (const [k, r] of rows) {
     if (!unsoldValueCounts(store, k, r)) continue;
     const fd = firstDiscovererFromRecord(r);
     if (isExplorationStarRecord(r)) {
