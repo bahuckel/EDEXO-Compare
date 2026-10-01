@@ -66,6 +66,10 @@ so the data has one licence. The EDAstro-derived files, and what was changed
       Averages per galactic region and per main-star type for the notable
       stellar phenomena prediction, fitted on EDAstro's codex-data.csv. No
       system of EDAstro's is in it.
+  * data/galaxy/bio-index.bin (in the release builds, not in the repository)
+      The galaxy map's index of systems with recorded biology: the species
+      EDAstro's codex-data.csv has in each system, joined with the systems
+      Spansh's galaxy dump shows with biological signals.
 
 The other sources of the data are credited in NOTICE.md.
 

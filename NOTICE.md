@@ -48,7 +48,10 @@ licence ([`data/LICENSE-DATA.txt`](data/LICENSE-DATA.txt)). The EDAstro-derived 
   added to the rarity counts;
 - `data/rarity/body-share.json` — the rarity tiers, from the Spansh galaxy dump's bodies with EDSM's
   and EDAstro's codex;
-- `src/shared/nspModelData.ts` — region and star-type averages for the phenomena prediction.
+- `src/shared/nspModelData.ts` — region and star-type averages for the phenomena prediction;
+- `data/galaxy/bio-index.bin` — the galaxy map's index of systems with recorded biology: the species
+  EDAstro's `codex-data.csv` has in each system, joined with the systems Spansh's galaxy dump shows
+  with biological signals (built for the release builds; not in this repository).
 
 Releases 1.1.0 to 1.2.7 shipped these under the MIT notice by mistake; they were always under
 CC BY-NC-SA 3.0. Data the app downloads from EDAstro on the user's machine (phenomena, carriers,
