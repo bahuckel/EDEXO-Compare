@@ -105,6 +105,27 @@ try {
   }
 }
 
+/*
+  Our portable launcher script (scripts/nsis/portable.nsi; combined plan 1.6a). electron-builder reads
+  the portable NSIS script from its own templates folder and has no option for another, so ours is
+  copied over it before every build. It is the stock script of the version named below plus "do not
+  delete the folder a running copy uses"; on another version, compare the two before building.
+*/
+function installPortableTemplate() {
+  const libPkg = require.resolve("app-builder-lib/package.json");
+  const libVersion = require(libPkg).version;
+  if (libVersion !== "26.8.1") {
+    console.error(
+      `[dist:win] app-builder-lib is ${libVersion}, scripts/nsis/portable.nsi is based on 26.8.1: ` +
+        "diff it against templates/nsis/portable.nsi of the new version, update it and this check.",
+    );
+    process.exit(1);
+  }
+  cpSync(join("scripts", "nsis", "portable.nsi"), join(libPkg, "..", "templates", "nsis", "portable.nsi"));
+  console.info("[dist:win] portable launcher script: scripts/nsis/portable.nsi");
+}
+installPortableTemplate();
+
 function runBuilder(label) {
   console.info(
     `\n[dist:win] ${label}: packaging portable .exe (7-Zip + NSIS; often several minutes with little or no new log lines).\n`,
