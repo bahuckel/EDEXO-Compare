@@ -227,6 +227,11 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                     const dist = distances?.[b.state.key];
                     // CX: something here would be a new codex entry for this region (owner, 2026-09-26).
                     const cx = b.matches.some((x) => !x.unlikely && x.codexNew === true);
+                    // FCX: and nobody has logged it in this region at all, the [CODEX FIRST] of the species
+                    // rows (owner, 2026-10-01). It replaces CX, which it implies.
+                    const fcx = b.matches.some(
+                      (x) => !x.unlikely && x.codexNew === true && x.codexFirst === true,
+                    );
                     const nb = notableTabs ? notableByKey.get(b.state.key) : undefined;
                     const rare = bodyRarest(b.matches);
                     return (
@@ -239,7 +244,7 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         data-body-key={b.state.key}
                         className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}`}
                         onClick={() => onSelect(b.state.key)}
-                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${rare ? `, ${rare.title}` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`}
+                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${fcx ? ", a FIRST codex entry: nobody has logged it in this region yet (FCX)" : cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${rare ? `, ${rare.title}` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`}
                       >
                         {/* In the tab's left padding: the tab keeps its size (owner, 2026-09-30). */}
                         {rare ? (
@@ -258,7 +263,14 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                           {typeof dist === "number" ? (
                             <span className="tab-dist"> · {fmtTabDistanceLs(dist, estimate)}</span>
                           ) : null}
-                          {cx ? <span className="tab-cx"> · CX</span> : null}
+                          {fcx ? (
+                            <>
+                              {" · "}
+                              <span className="tab-fcx">FCX</span>
+                            </>
+                          ) : cx ? (
+                            <span className="tab-cx"> · CX</span>
+                          ) : null}
                           {nb ? <span className="tab-n"> · N</span> : null}
                         </span>
                         {done ? <span className="tab-dot" aria-hidden="true" /> : null}
