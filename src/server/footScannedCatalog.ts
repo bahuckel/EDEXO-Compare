@@ -390,17 +390,32 @@ export function flushFootScannedCatalog(): void {
 }
 
 /** Cheap identity of the catalog for cache keys: file mtime + size + in-memory generation. */
+/*
+  The file's stamp, looked at once a second: every body's cache signature asks for it on every
+  snapshot (~0.5 ms a refresh in stat calls, profiled 2026-10-01). The app's own writes move
+  `catalogGeneration`, which is in the signature at once; a file changed by hand is seen within the second.
+*/
+let statMemo: { path: string; at: number; stamp: string } | null = null;
+
 export function footScannedCatalogSignature(projectRoot: string): string {
-  try {
-    const st = statSync(catalogPath(projectRoot));
-    return `${st.mtimeMs}:${st.size}:${catalogGeneration}`;
-  } catch {
-    return `0:0:${catalogGeneration}`;
+  const p = catalogPath(projectRoot);
+  const now = Date.now();
+  if (!statMemo || statMemo.path !== p || now - statMemo.at >= 1000) {
+    let stamp: string;
+    try {
+      const st = statSync(p);
+      stamp = `${st.mtimeMs}:${st.size}`;
+    } catch {
+      stamp = "0:0";
+    }
+    statMemo = { path: p, at: now, stamp };
   }
+  return `${statMemo.stamp}:${catalogGeneration}`;
 }
 
 export function clearFootScannedCatalogCache(): void {
   footCatalogCache.clear();
+  statMemo = null;
   pendingCatalogWrites.clear();
   if (catalogFlushTimer) {
     clearTimeout(catalogFlushTimer);

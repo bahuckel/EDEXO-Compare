@@ -75,7 +75,25 @@ export function loadPriceList(projectRoot: string): PriceIndex {
   return idx;
 }
 
+/*
+  Answers per price index, which is replaced (not edited) when the list reloads. A name with no exact
+  price fell through to a scan of the whole index on every call of every snapshot (~0.8 ms a refresh,
+  profiled 2026-10-01).
+*/
+const lookupMemo = new WeakMap<PriceIndex, Map<string, number | null>>();
+
 export function lookupPrice(idx: PriceIndex, displayName: string, id: string): number | null {
+  let memo = lookupMemo.get(idx);
+  if (!memo) lookupMemo.set(idx, (memo = new Map()));
+  const key = `${displayName}\u0000${id}`;
+  const hit = memo.get(key);
+  if (hit !== undefined) return hit;
+  const v = lookupPriceUncached(idx, displayName, id);
+  memo.set(key, v);
+  return v;
+}
+
+function lookupPriceUncached(idx: PriceIndex, displayName: string, id: string): number | null {
   const tries = [displayName, id, displayName.replace(/\s*\(.*?\)\s*/g, "").trim()];
   for (const t of tries) {
     const v = idx.get(normKey(t));
