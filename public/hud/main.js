@@ -47,7 +47,16 @@ export var SECTIONS = {
   notable: notable,
   notices: notices,
 };
-export var ORDER = ["jump", "fss", "candidates", "distance", "datavalue", "achievement", "notable", "notices"];
+export var ORDER = [
+  "jump",
+  "fss",
+  "candidates",
+  "distance",
+  "datavalue",
+  "achievement",
+  "notable",
+  "notices",
+];
 
 /*
   "Only when relevant" (guild tester report, 2026-09-30; opt-in). A section with a `relevant(d)` rule
@@ -406,32 +415,51 @@ HUD.mount = function (names, opts) {
   if (!opts.noTimers) {
     tick();
     setInterval(tick, 5000);
-    try {
-      var proto = location.protocol === "https:" ? "wss:" : "ws:";
-      var host = typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
-      var ws = new WebSocket(proto + "//" + host + "/ws");
-      ws.onopen = function () {
-        // Ask for the HUD's slice of the state, not the whole snapshot (see server/wsChannels.ts).
-        try {
-          ws.send(JSON.stringify({ type: "hello", channel: "hud" }));
-        } catch (e) {}
-      };
-      ws.onmessage = function (ev) {
-        try {
-          var msg = JSON.parse(String(ev.data));
-          if (msg.type === "state" && msg.payload) {
-            lastWsAt = Date.now();
-            if (typeof msg.payload.port === "number" && msg.payload.port > 0) setPort(msg.payload.port);
-            render(msg.payload);
-          } else if (msg.type === "exoLive" && msg.payload) {
-            // Counts as the socket being alive, or the 5 s fallback poll would start fighting it
-            // during a sample run — which is exactly when these frames are arriving.
-            lastWsAt = Date.now();
-            renderExoLive(msg.payload);
-          }
-        } catch (_) {}
-      };
-    } catch (_) {}
+    /*
+      Reconnects (combined plan 1.3). The socket had no onclose, so after a server restart or a phone's
+      Wi-Fi drop every overlay fell back to the 5 s poll for good and the radar's live frames never
+      came back until the window was reloaded. Back-off 1 s doubling to 10 s, reset once connected.
+    */
+    var wsRetryMs = 1000;
+    var connectWs = function () {
+      try {
+        var proto = location.protocol === "https:" ? "wss:" : "ws:";
+        var host = typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
+        var ws = new WebSocket(proto + "//" + host + "/ws");
+        ws.onopen = function () {
+          wsRetryMs = 1000;
+          // Ask for the HUD's slice of the state, not the whole snapshot (see server/wsChannels.ts).
+          try {
+            ws.send(JSON.stringify({ type: "hello", channel: "hud" }));
+          } catch (e) {}
+        };
+        ws.onclose = function () {
+          ws.onclose = null;
+          ws.onmessage = null;
+          setTimeout(connectWs, wsRetryMs);
+          wsRetryMs = Math.min(10000, wsRetryMs * 2);
+        };
+        ws.onmessage = function (ev) {
+          try {
+            var msg = JSON.parse(String(ev.data));
+            if (msg.type === "state" && msg.payload) {
+              lastWsAt = Date.now();
+              if (typeof msg.payload.port === "number" && msg.payload.port > 0) setPort(msg.payload.port);
+              render(msg.payload);
+            } else if (msg.type === "exoLive" && msg.payload) {
+              // Counts as the socket being alive, or the 5 s fallback poll would start fighting it
+              // during a sample run — which is exactly when these frames are arriving.
+              lastWsAt = Date.now();
+              renderExoLive(msg.payload);
+            }
+          } catch (_) {}
+        };
+      } catch (_) {
+        setTimeout(connectWs, wsRetryMs);
+        wsRetryMs = Math.min(10000, wsRetryMs * 2);
+      }
+    };
+    connectWs();
   }
 
   HUD.render = render; // for previews and tests
