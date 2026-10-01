@@ -1,4 +1,4 @@
-import { createReadStream, promises as fs, unwatchFile, watchFile } from "node:fs";
+import { promises as fs, unwatchFile, watchFile } from "node:fs";
 import path from "node:path";
 import type { JournalLine } from "../shared/types.js";
 import { JOURNAL_POLL_DEFAULT_MS, clampJournalPollMs } from "../shared/pollRates.js";
@@ -107,70 +107,81 @@ async function processLines(
   }
 }
 
-async function byteIsNewline(filePath: string, at: number): Promise<boolean> {
-  const fh = await fs.open(filePath, "r");
-  try {
-    const b = Buffer.alloc(1);
-    const { bytesRead } = await fh.read(b, 0, 1, at);
-    return bytesRead === 1 && b[0] === 0x0a;
-  } finally {
-    await fh.close();
+/**
+ * Apply the complete lines in `buf`, which holds the file's bytes from offset `base`, and return the
+ * file offset just past what was applied (combined plan 1.1b, 2026-10-01).
+ *
+ * That offset is what the journal cache records and where the live tail starts, so the two agree on
+ * the byte: the cache used to record sizes taken before the replay and the tail started from a size
+ * taken after it, so lines written in between were applied twice (next boot) or never. A last line
+ * with no newline yet is applied, and counted, only when it is complete JSON; otherwise it is left
+ * for the next read, which starts at its first byte.
+ */
+async function applyJournalBytes(
+  buf: Buffer,
+  base: number,
+  skipFirstPartial: boolean,
+  onLine: (j: JournalLine) => void,
+): Promise<number> {
+  let start = 0;
+  if (skipFirstPartial) {
+    const nl = buf.indexOf(0x0a);
+    if (nl === -1) return base;
+    start = nl + 1;
   }
-}
-
-export async function readJournalFull(filePath: string, onLine: (j: JournalLine) => void): Promise<void> {
-  const leftover = { buf: "" };
-  const text = await fs.readFile(filePath, "utf8");
-  await processLines(text, leftover, onLine, true);
-  if (leftover.buf.trim().startsWith("{")) {
-    try {
-      onLine(JSON.parse(leftover.buf) as JournalLine);
-    } catch {
-      /* ignore */
+  const lastNl = buf.lastIndexOf(0x0a);
+  let end = lastNl >= start ? lastNl + 1 : start;
+  if (end > start) {
+    await processLines(buf.toString("utf8", start, end), { buf: "" }, onLine, true);
+  }
+  if (end < buf.length) {
+    const tail = buf.toString("utf8", end).trim();
+    if (tail.startsWith("{")) {
+      try {
+        onLine(JSON.parse(tail) as JournalLine);
+        end = buf.length;
+      } catch {
+        /* still being written: the next read takes it whole */
+      }
     }
   }
+  return base + end;
+}
+
+/** Apply a whole journal; returns the offset just past the last line applied (see applyJournalBytes). */
+export async function readJournalFull(filePath: string, onLine: (j: JournalLine) => void): Promise<number> {
+  return applyJournalBytes(await fs.readFile(filePath), 0, false, onLine);
 }
 
 /**
- * Apply journal lines appended after `startByte` (merged-cache fast path).
- * When `startByte > 0`, skips bytes until after the next newline so we never parse a truncated JSON line.
+ * Apply journal lines appended after `startByte` (merged-cache fast path); returns the offset just past
+ * the last line applied. Skips to the next line only when `startByte` is inside one (see below).
  */
 export async function readJournalFromOffset(
   filePath: string,
   startByte: number,
   onLine: (j: JournalLine) => void,
-): Promise<void> {
-  const st = await fs.stat(filePath);
-  if (startByte >= st.size) return;
-  const leftover = { buf: "" };
-  /*
-    Skip to the next line only when the offset is inside one. The cache records each file's size and
-    the game writes whole lines, so the offset is normally a line start: skipping then threw away the
-    first complete new line on every warm start (combined plan 1.1a, 2026-10-01).
-  */
-  let discardUntilNl = startByte > 0 && !(await byteIsNewline(filePath, startByte - 1));
-  const stream = createReadStream(filePath, {
-    start: startByte,
-    end: st.size - 1,
-    encoding: "utf8",
-  });
-  for await (const chunk of stream) {
-    let s = chunk as string;
-    if (discardUntilNl) {
-      const idx = s.indexOf("\n");
-      if (idx === -1) continue;
-      s = s.slice(idx + 1);
-      discardUntilNl = false;
-    }
-    if (s.length) await processLines(s, leftover, onLine, true);
+): Promise<number> {
+  const fh = await fs.open(filePath, "r");
+  let buf: Buffer;
+  let discardUntilNl: boolean;
+  try {
+    const size = (await fh.stat()).size;
+    if (startByte >= size) return startByte;
+    /*
+      Skip to the next line only when the offset is inside one. The cache records each file's size and
+      the game writes whole lines, so the offset is normally a line start: skipping then threw away the
+      first complete new line on every warm start (combined plan 1.1a, 2026-10-01).
+    */
+    const prev = Buffer.alloc(1);
+    discardUntilNl = startByte > 0 && !((await fh.read(prev, 0, 1, startByte - 1)).bytesRead === 1 && prev[0] === 0x0a);
+    buf = Buffer.alloc(size - startByte);
+    const { bytesRead } = await fh.read(buf, 0, buf.length, startByte);
+    buf = buf.subarray(0, bytesRead);
+  } finally {
+    await fh.close();
   }
-  if (leftover.buf.trim().startsWith("{")) {
-    try {
-      onLine(JSON.parse(leftover.buf) as JournalLine);
-    } catch {
-      /* ignore */
-    }
-  }
+  return applyJournalBytes(buf, startByte, discardUntilNl, onLine);
 }
 
 export type JournalWatcherHandle = {

@@ -14,7 +14,7 @@ import {
   ownCodexBackupKeys,
 } from "./sharedExomastery.js";
 import { ownFootEntriesWithBackups } from "./footScannedCatalog.js";
-import { existsSync, watchFile, unwatchFile, writeFileSync, readFileSync, promises as fsp, watch, statSync } from "node:fs";
+import { existsSync, watchFile, unwatchFile, writeFileSync, readFileSync, watch, statSync } from "node:fs";
 import type { AppSnapshot, AppStatusDTO, ExoLiveDTO, ImportDumpStatusDTO, JournalBootProgressDTO, JournalLine } from "../shared/types.js";
 import { journalHistoryCutoffUtcMs } from "../shared/journalHistoryPreset.js";
 import { clampStatusPollMs, pollRatesDto } from "../shared/pollRates.js";
@@ -1048,6 +1048,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   /** Let the event loop run (the launcher, the tray, HTTP) between the long steps of a start. */
   const nextTurn = (): Promise<void> => new Promise((r) => setImmediate(r));
 
+  /** Where the live tail starts in the newest journal: the byte the last resync reached (1.1b). */
+  let journalSeedBytes = 0;
+
   async function resyncAllJournalFilesInner(): Promise<void> {
     bootStart();
     store.resetAll();
@@ -1082,6 +1085,19 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     };
     pushFlush();
     const manifest = await buildJournalFileManifest(files);
+    /*
+      Where reading stopped, per file (combined plan 1.1b). The manifest's sizes are taken before the
+      replay, and the newest journal can grow while it runs: the cache must record the byte the replay
+      actually reached, and the live tail must start there, or lines are applied twice or never.
+    */
+    const consumed = new Map<string, number>();
+    const settleManifest = (): void => {
+      for (let i = 0; i < files.length; i++) {
+        const end = consumed.get(files[i]!);
+        if (end !== undefined) manifest[i] = { ...manifest[i]!, size: end };
+      }
+      journalSeedBytes = manifest[manifest.length - 1]!.size;
+    };
     bootMark("manifest");
     const cacheResult =
       process.env.EDEXO_DISABLE_JOURNAL_CACHE === "1"
@@ -1134,9 +1150,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           pushFlush();
           for (const step of cacheResult.steps) {
             if (step.kind === "tail") {
-              await readJournalFromOffset(step.path, step.startByte, (line) => store.apply(line));
+              consumed.set(step.path, await readJournalFromOffset(step.path, step.startByte, (line) => store.apply(line)));
             } else {
-              await readJournalFull(step.path, (line) => store.apply(line));
+              consumed.set(step.path, await readJournalFull(step.path, (line) => store.apply(line)));
             }
             stepsDone += 1;
             journalBootProgress = {
@@ -1161,6 +1177,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         }
         await backfillCommanderPosition(store, files);
         bootMark("position backfill");
+        settleManifest();
         journalPath = files[files.length - 1]!;
         store.resetFootTravelRuntime();
         loadOrganicSampleSessionFromDisk(projectRoot, store, getCachedSpeciesDatabase());
@@ -1203,7 +1220,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     pushFlush();
     bootMergeLastFlush = Date.now();
     for (let i = 0; i < files.length; i++) {
-      await readJournalFull(files[i]!, (line) => store.apply(line));
+      consumed.set(files[i]!, await readJournalFull(files[i]!, (line) => store.apply(line)));
       const done = i + 1;
       const pct = 15 + Math.floor((80 * done) / files.length);
       journalBootProgress = {
@@ -1215,6 +1232,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       };
       pushMergeProgress();
     }
+    settleManifest();
     journalPath = files[files.length - 1]!;
     store.resetFootTravelRuntime();
     loadOrganicSampleSessionFromDisk(projectRoot, store, getCachedSpeciesDatabase());
@@ -1230,8 +1248,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       watcher = null;
     }
     await resyncAllJournalFiles();
-    const seed =
-      journalPath !== null ? { path: journalPath, size: (await fsp.stat(journalPath)).size } : null;
+    // The byte the replay reached in the newest journal (1.1b), not its size now: lines written since
+    // are the watcher's to apply.
+    const seed = journalPath !== null ? { path: journalPath, size: journalSeedBytes } : null;
     watcher = startJournalWatcher(
       journalDir,
       createLiveJournalLine(),

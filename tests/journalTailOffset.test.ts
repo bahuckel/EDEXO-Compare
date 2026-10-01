@@ -6,10 +6,10 @@
  * above zero — the first complete new line, on every warm start: a Scan, a ScanOrganic, a sale.
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { readJournalFromOffset } from "../src/server/journalWatcher.js";
+import { readJournalFromOffset, readJournalFull } from "../src/server/journalWatcher.js";
 
 let dir: string;
 beforeEach(() => {
@@ -48,5 +48,32 @@ describe("readJournalFromOffset", () => {
 
   it("reads nothing when nothing was added", async () => {
     expect(await eventsFrom(A, Buffer.byteLength(A))).toEqual([]);
+  });
+
+  it("returns the offset reached, and a line still being written is left for the next read (1.1b)", async () => {
+    const f = path.join(dir, "Journal.log");
+    writeFileSync(f, A + B + '{"event":"C","Bod');
+    const got: string[] = [];
+    const end = await readJournalFull(f, (l) => got.push(String(l.event)));
+    expect(got).toEqual(["A", "B"]);
+    expect(end).toBe(Buffer.byteLength(A + B));
+    const rest = 'y":1}\r\n' + '{"event":"D"}\r\n';
+    appendFileSync(f, rest);
+    const more: string[] = [];
+    const end2 = await readJournalFromOffset(f, end, (l) => more.push(String(l.event)));
+    expect(more).toEqual(["C", "D"]);
+    expect(end2).toBe(Buffer.byteLength(A + B + '{"event":"C","Bod' + rest));
+  });
+
+  it("counts a complete last line without its newline, and does not apply it twice", async () => {
+    const f = path.join(dir, "Journal.log");
+    writeFileSync(f, A + '{"event":"B"}');
+    const got: string[] = [];
+    const end = await readJournalFull(f, (l) => got.push(String(l.event)));
+    expect(got).toEqual(["A", "B"]);
+    appendFileSync(f, "\r\n" + C);
+    const more: string[] = [];
+    await readJournalFromOffset(f, end, (l) => more.push(String(l.event)));
+    expect(more).toEqual(["C"]);
   });
 });
