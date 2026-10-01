@@ -48,11 +48,22 @@ type Huds = {
   pushPrefs: (p: unknown) => void;
   resizeFromPage: (win: unknown, o: unknown) => { ok: boolean };
   setLayoutPathResolver: (fn: () => string) => void;
+  setMoveMode: (on: boolean) => boolean;
+  isMoving: () => boolean;
+  dragFromPage: (win: unknown, phase: string) => { ok: boolean };
   loadLayout: () => void;
   relayout: () => void;
 };
 
 const WORK = { x: 0, y: 0, width: 1920, height: 1080 };
+/** A second monitor to the right of the primary, for free move. */
+const SECOND = { x: 1920, y: 0, width: 2560, height: 1440 };
+let cursor = { x: 0, y: 0 };
+function nearestDisplay(p: { x: number; y: number }) {
+  const dist = (b: typeof WORK) =>
+    Math.hypot(Math.max(b.x - p.x, 0, p.x - (b.x + b.width - 1)), Math.max(b.y - p.y, 0, p.y - (b.y + b.height - 1)));
+  return { bounds: dist(SECOND) < dist(WORK) ? SECOND : WORK };
+}
 
 class FakeWindow {
   static all: FakeWindow[] = [];
@@ -115,7 +126,10 @@ class FakeWindow {
   }
   setAlwaysOnTop() {}
   moveTop() {}
-  setIgnoreMouseEvents() {}
+  ignoresMouse = true;
+  setIgnoreMouseEvents(v: boolean) {
+    this.ignoresMouse = v;
+  }
   setVisibleOnAllWorkspaces() {}
 }
 
@@ -129,7 +143,12 @@ function make(): Huds {
     electron: {
       app: { getPath: () => dir },
       BrowserWindow: FakeWindow,
-      screen: { getPrimaryDisplay: () => ({ workArea: WORK }), on: () => {} },
+      screen: {
+        getPrimaryDisplay: () => ({ workArea: WORK }),
+        getDisplayNearestPoint: nearestDisplay,
+        getCursorScreenPoint: () => ({ ...cursor }),
+        on: () => {},
+      },
     },
     getRuntime: () => runtime,
     preloadPath: "preload.cjs",
@@ -312,6 +331,102 @@ describe("hiding and showing (the hotkey)", () => {
     await huds.request("/distance-overlay.html", 404, 330, null, "toggle");
     expect(huds.isHidden()).toBe(false);
     huds.toggleVisibility(true);
+  });
+});
+
+describe("free move (owner, 2026-10-02: the HUD anywhere, on any screen)", () => {
+  const twoHuds = async (huds: Huds) => {
+    await huds.request("/fss-scan-overlay.html", 404, 120, null, "open");
+    await huds.request("/distance-overlay.html", 404, 330, null, "open");
+    return live();
+  };
+
+  it("switched on, the stack stays where it was and the spot is saved", async () => {
+    const huds = make();
+    const [a] = await twoHuds(huds);
+    const before = { ...a!.bounds };
+    huds.setLayout({ freeOn: true });
+    expect(a!.bounds).toMatchObject({ x: before.x, y: before.y });
+    const file = JSON.parse(readFileSync(layoutFile, "utf8"));
+    expect(file.freeOn).toBe(true);
+    expect(file.free).toMatchObject({ x: before.x, y: before.y, bottom: false });
+  });
+
+  it("placing: the windows take the mouse and show the frame, a drag moves the whole stack, Done ends it", async () => {
+    const huds = make();
+    const [a, b] = await twoHuds(huds);
+    huds.setLayout({ freeOn: true });
+    huds.toggleVisibility(true);
+    expect(huds.setMoveMode(true)).toBe(true);
+    // Shown while placing, whatever hid them; click-through off; the page told.
+    expect(a!.visible).toBe(true);
+    expect(a!.ignoresMouse).toBe(false);
+    expect(b!.sent).toContainEqual(["edexo:hud-move-mode", { on: true }]);
+    const start = { ...a!.bounds };
+    cursor = { x: 1600, y: 40 };
+    expect(huds.dragFromPage(b, "start").ok).toBe(true);
+    cursor = { x: 900, y: 240 };
+    huds.dragFromPage(b, "move");
+    expect(a!.bounds).toMatchObject({ x: start.x - 700, y: start.y + 200 });
+    expect(b!.bounds).toMatchObject({ x: start.x - 700, y: start.y + 200 + 120 + 6 });
+    huds.dragFromPage(b, "end");
+    expect(JSON.parse(readFileSync(layoutFile, "utf8")).free).toMatchObject({ x: start.x - 700, y: start.y + 200, bottom: false });
+    huds.dragFromPage(b, "done");
+    expect(huds.isMoving()).toBe(false);
+    expect(a!.ignoresMouse).toBe(true);
+    // Hidden again: the commander's choice was hidden before placing.
+    expect(a!.visible).toBe(false);
+  });
+
+  it("dropped in the lower half of the second screen it hangs from its bottom edge and grows upwards", async () => {
+    const huds = make();
+    const [a, b] = await twoHuds(huds);
+    huds.setLayout({ freeOn: true });
+    huds.setMoveMode(true);
+    cursor = { x: 0, y: 0 };
+    huds.dragFromPage(a, "start");
+    const start = { ...a!.bounds };
+    cursor = { x: 2400 - start.x, y: 900 - start.y };
+    huds.dragFromPage(a, "move");
+    huds.dragFromPage(a, "end");
+    const free = JSON.parse(readFileSync(layoutFile, "utf8")).free;
+    expect(free).toEqual({ x: 2400, y: 900 + 120 + 6 + 330, bottom: true });
+    // A taller page keeps the bottom edge where it was dropped.
+    b!.bounds.height = 400;
+    huds.relayout();
+    expect(b!.bounds.y + b!.bounds.height).toBe(free.y);
+    expect(a!.bounds.x).toBe(2400);
+    huds.setMoveMode(false);
+  });
+
+  it("a spot off every screen comes back onto the nearest one", async () => {
+    const huds = make();
+    const [a] = await twoHuds(huds);
+    huds.setLayout({ freeOn: true, free: { x: 9000, y: -500 } });
+    expect(a!.bounds.x).toBe(SECOND.x + SECOND.width - 404);
+    expect(a!.bounds.y).toBe(0);
+  });
+
+  it("listens to drags only while placing and only from a HUD window; no placing without free move", async () => {
+    const huds = make();
+    const [a] = await twoHuds(huds);
+    expect(huds.setMoveMode(true)).toBe(false);
+    huds.setLayout({ freeOn: true });
+    expect(huds.dragFromPage(a, "start").ok).toBe(false);
+    huds.setMoveMode(true);
+    expect(huds.dragFromPage({}, "start").ok).toBe(false);
+    // Free move off ends placing and returns the stack to its corner.
+    huds.setLayout({ freeOn: false });
+    expect(huds.isMoving()).toBe(false);
+    expect(a!.bounds).toMatchObject({ x: 1920 - 14 - 404, y: 14 });
+  });
+
+  it("comes back from the layout file at the saved spot", async () => {
+    writeFileSync(layoutFile, JSON.stringify({ corner: "tr", order: [], freeOn: true, free: { x: 300, y: 200, bottom: false } }));
+    const huds = make();
+    huds.loadLayout();
+    const [a] = await twoHuds(huds);
+    expect(a!.bounds).toMatchObject({ x: 300, y: 200 });
   });
 });
 

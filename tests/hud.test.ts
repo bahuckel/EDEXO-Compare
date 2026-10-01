@@ -30,6 +30,8 @@ type HudApi = {
   onCue?: (kind: string) => unknown;
   /** Fed the overlay payload each frame; it decides whether a cue has just become due. */
   cueFromOverlay: (eo: unknown) => void;
+  /** Free move's placing frame (electron/hudWindows.cjs sends `edexo:hud-move-mode`). */
+  setMoveMode: (on: boolean) => void;
 };
 
 const loadHud = () => loadHudModule<HudApi>();
@@ -544,6 +546,35 @@ describe("only when relevant (guild tester report, 2026-09-30)", () => {
       expect(document.querySelector(".shell")?.classList.contains("shell--idle")).toBe(true);
     } finally {
       vi.useRealTimers();
+    }
+  });
+});
+
+/** Free move (owner, 2026-10-02): the frame a HUD is dragged by while placing. */
+describe("HUD placing frame", () => {
+  it("draws the frame, reports the drag, and Done ends placing", async () => {
+    const calls: string[] = [];
+    (window as unknown as { edexoElectron?: unknown }).edexoElectron = {
+      hudDrag: (phase: string) => {
+        calls.push(phase);
+        return Promise.resolve({ ok: true });
+      },
+    };
+    try {
+      const HUD = await loadHud();
+      HUD.mount(["distance"], { noTimers: true });
+      HUD.setMoveMode(true);
+      HUD.setMoveMode(true);
+      expect(document.querySelectorAll(".hud-move")).toHaveLength(1);
+      const frame = document.querySelector(".hud-move") as HTMLElement;
+      frame.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, button: 0 }));
+      frame.dispatchEvent(new MouseEvent("pointerup", { bubbles: true }));
+      (document.querySelector(".hud-move-done") as HTMLButtonElement).click();
+      expect(calls).toEqual(["start", "end", "done"]);
+      HUD.setMoveMode(false);
+      expect(document.querySelector(".hud-move")).toBeNull();
+    } finally {
+      delete (window as unknown as { edexoElectron?: unknown }).edexoElectron;
     }
   });
 });

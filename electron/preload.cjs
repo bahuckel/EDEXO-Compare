@@ -33,6 +33,14 @@ contextBridge.exposeInMainWorld("edexoElectron", {
   setHudLayout: (opts) => ipcRenderer.invoke("edexo:set-hud-layout", opts),
   /** Hide/show every HUD window; same as the global shortcut. @param {{ hidden?: boolean }} [opts] */
   toggleHudVisibility: (opts) => ipcRenderer.invoke("edexo:toggle-hud-visibility", opts),
+  /** Free move: start or end placing the HUDs. @param {{ on: boolean }} opts @returns {Promise<{ moving: boolean }>} */
+  setHudMoveMode: (opts) => ipcRenderer.invoke("edexo:set-hud-move-mode", opts),
+  /** A HUD page's drag while placing: "start", "move", "end", or "done" to finish placing. */
+  hudDrag: (phase) => ipcRenderer.invoke("edexo:hud-drag", { phase }),
+  /** HUD pages: placing mode on or off (`{ on }`). */
+  onHudMoveMode: (cb) => {
+    ipcRenderer.on("edexo:hud-move-mode", (_evt, v) => cb(v));
+  },
   /** Close to tray: `{ enabled, available, reason? }` (owner, 2026-09-28; close, not minimise, since 2026-10-01). */
   getTrayPref: () => ipcRenderer.invoke("edexo:get-tray-pref"),
   /** @param {{ enabled: boolean }} opts */

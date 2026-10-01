@@ -167,6 +167,78 @@ export function mountPhoneBar(list) {
   if (shellEl && shellEl.parentNode) shellEl.parentNode.insertBefore(bar, shellEl);
 }
 
+/*
+  Free move's placing mode (owner, 2026-10-02): the window takes the mouse while it is on, and this
+  frame over the HUD is what it is grabbed by. The drag only says start / move / end; the app reads
+  the cursor itself and moves the whole stack, so every HUD window follows the one being dragged.
+  "Done" ends placing for every window (the launcher has the same button).
+*/
+var moveFrame = null;
+HUD.setMoveMode = function (on) {
+  var ee = window.edexoElectron;
+  if (!on) {
+    if (moveFrame && moveFrame.parentNode) moveFrame.parentNode.removeChild(moveFrame);
+    moveFrame = null;
+    return;
+  }
+  if (moveFrame || !ee || typeof ee.hudDrag !== "function") return;
+  var f = document.createElement("div");
+  f.className = "hud-move";
+  f.style.cssText =
+    "position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;gap:0.6em;" +
+    "cursor:move;background:rgba(0,0,0,0.45);border:2px dashed var(--hud-hi,#ffb060);box-sizing:border-box;" +
+    "color:var(--hud-hi,#ffb060);font:600 13px/1.2 var(--hud-font,'Segoe UI',sans-serif);letter-spacing:0.06em;" +
+    "text-transform:uppercase;user-select:none;touch-action:none;";
+  var label = document.createElement("span");
+  label.textContent = "Drag to place";
+  var done = document.createElement("button");
+  done.type = "button";
+  done.className = "hud-move-done";
+  done.textContent = "Done";
+  done.style.cssText =
+    "cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit;padding:0.2em 0.8em;" +
+    "color:#111;background:var(--hud-hi,#ffb060);border:0;";
+  done.addEventListener("pointerdown", function (ev) {
+    ev.stopPropagation();
+  });
+  done.addEventListener("click", function () {
+    void ee.hudDrag("done");
+  });
+  f.appendChild(label);
+  f.appendChild(done);
+  var dragging = false;
+  var queued = false;
+  f.addEventListener("pointerdown", function (ev) {
+    if (ev.button !== 0) return;
+    dragging = true;
+    try {
+      f.setPointerCapture(ev.pointerId);
+    } catch (e) {
+      /* the drag still works while the cursor stays over the window */
+    }
+    void ee.hudDrag("start");
+  });
+  f.addEventListener("pointermove", function () {
+    // One move per frame: the app moves every window in the stack on each one.
+    if (!dragging || queued) return;
+    queued = true;
+    requestAnimationFrame(function () {
+      queued = false;
+      if (dragging) void ee.hudDrag("move");
+    });
+  });
+  var end = function () {
+    if (!dragging) return;
+    dragging = false;
+    void ee.hudDrag("end");
+  };
+  f.addEventListener("pointerup", end);
+  f.addEventListener("pointercancel", end);
+  f.addEventListener("lostpointercapture", end);
+  document.body.appendChild(f);
+  moveFrame = f;
+};
+
 HUD.mount = function (names, opts) {
   opts = opts || {};
   var root = document.getElementById("hud");
@@ -216,6 +288,15 @@ HUD.mount = function (names, opts) {
     }
   } catch (e) {
     /* the snapshot mirror still arrives */
+  }
+  try {
+    if (!PHONE && window.edexoElectron && typeof window.edexoElectron.onHudMoveMode === "function") {
+      window.edexoElectron.onHudMoveMode(function (v) {
+        HUD.setMoveMode(!!(v && v.on));
+      });
+    }
+  } catch (e) {
+    /* no free move outside the app */
   }
   root.innerHTML = list
     .map(function (n) {

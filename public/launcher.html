@@ -2160,6 +2160,14 @@
                 <option value="bl">Bottom left</option>
               </select>
             </div>
+            <div class="hud-set-row" id="hudFreeRow">
+              <label title="The HUDs leave the corner and sit wherever you drag them, on any screen. The spot is kept for the next start."><input type="checkbox" id="hudFree" /> Free move HUD: place it anywhere, on any screen</label>
+              <button type="button" class="btn-mini" id="hudMove" disabled>Move HUD</button>
+            </div>
+            <p class="hud-hint" id="hudMoveHint" hidden>
+              Drag a HUD by its frame to where you want it, then press Done (on the HUD or here). Near the bottom of a
+              screen it grows upwards.
+            </p>
             <h4>Radar</h4>
             <div class="hud-set-row" id="radarRadiusRow" hidden>
               <label for="radarRadiusM">How far it draws <span class="hint" style="margin: 0">further out becomes a rim arrow</span></label>
@@ -4261,6 +4269,48 @@
         if (hudCorner) hudCorner.addEventListener("change", pushLayout);
 
         /*
+          Free move (owner, 2026-10-02): the stack leaves its corner for a spot dragged anywhere on any
+          screen. Electron keeps the spot with the layout; "Move HUD" starts placing (the HUDs take the
+          mouse and show a frame), Done on the HUD or here ends it.
+        */
+        var hudFree = document.getElementById("hudFree");
+        var hudMove = document.getElementById("hudMove");
+        var hudMoveHint = document.getElementById("hudMoveHint");
+        var hudMoving = false;
+        function renderFreeMove(freeOn, moving) {
+          if (hudFree) hudFree.checked = !!freeOn;
+          if (hudCorner) hudCorner.disabled = !!freeOn;
+          hudMoving = !!moving;
+          if (hudMove) {
+            hudMove.disabled = !freeOn;
+            hudMove.textContent = hudMoving ? "Done" : "Move HUD";
+            hudMove.setAttribute("aria-pressed", hudMoving ? "true" : "false");
+          }
+          if (hudMoveHint) hudMoveHint.hidden = !hudMoving;
+        }
+        function setHudMoving(on) {
+          var ee = window.edexoElectron;
+          if (!ee || typeof ee.setHudMoveMode !== "function") return;
+          ee.setHudMoveMode({ on: on }).then(function (r) {
+            renderFreeMove(hudFree && hudFree.checked, r && r.moving);
+          }).catch(function () {});
+        }
+        if (hudFree && window.edexoElectron && typeof window.edexoElectron.setHudMoveMode === "function") {
+          hudFree.addEventListener("change", function () {
+            var ee = window.edexoElectron;
+            var on = hudFree.checked;
+            ee.setHudLayout({ freeOn: on }).then(function () {
+              renderFreeMove(on, false);
+              // Switching it on is asking to place it: start right away.
+              if (on) setHudMoving(true);
+            }).catch(function () {});
+          });
+          if (hudMove) hudMove.addEventListener("click", function () { setHudMoving(!hudMoving); });
+        } else if (hudFree) {
+          hudFree.closest(".hud-set-row").hidden = true;
+        }
+
+        /*
           Show / Hide every HUD (owner, 2026-09-28). The state lives in Electron (hud-layout.json), so
           it survives a restart, and the hotkey and the tray change it too: Electron tells this page
           on every change (`onHudVisibility`), and the modal asks again whenever it opens.
@@ -4272,6 +4322,7 @@
           var hidden = !!(v && v.hidden);
           if (hudVisShow) hudVisShow.setAttribute("aria-pressed", hidden ? "false" : "true");
           if (hudVisHide) hudVisHide.setAttribute("aria-pressed", hidden ? "true" : "false");
+          if (v && typeof v.moving === "boolean") renderFreeMove(hudFree && hudFree.checked, v.moving);
           if (hudVisSummary) {
             var n = v && typeof v.count === "number" ? v.count : null;
             hudVisSummary.textContent =
@@ -4321,6 +4372,7 @@
             try {
               var lay = await ee.getHudLayout();
               if (lay && hudCorner && lay.corner) hudCorner.value = lay.corner;
+              if (lay) renderFreeMove(lay.freeOn === true, lay.moving === true);
               if (lay) renderHudVisibility({ hidden: lay.hidden, count: lay.count });
               if (lay && Array.isArray(lay.order) && lay.order.length) {
                 var secs = lay.order.map(function (k) { return HUD_SECTION_BY_PATH[k]; }).filter(Boolean);

@@ -93,8 +93,19 @@ function createHudWindows(deps) {
     aside), first = outermost (top of a top-anchored stack, bottom of a bottom-anchored one). Pages not
     in the list follow in the order they were opened.
   */
-  let hudLayout = { corner: "tr", order: [] };
+  let hudLayout = { corner: "tr", order: [], freeOn: false, free: null };
   let hudHidden = false;
+  /*
+    Free move (owner, 2026-10-02: "place the HUD anywhere on any screen"). With `freeOn` the stack
+    hangs from `free` instead of a corner: `{ x, y, bottom }` in screen coordinates (DIP), the
+    stack's left edge and its top edge, or its bottom edge when `bottom` (dropped in the lower half
+    of a screen, so it grows upwards there). `free` is kept while `freeOn` is off, so switching back
+    finds the old spot. `moving` is the placing mode: the windows take the mouse, show a frame and
+    follow a drag; never saved, and it shows the HUDs whatever hides them.
+  */
+  let moving = false;
+  /** The drag in progress: the cursor and the stack's top-left when it started. */
+  let drag = null;
   /*
     The game is not running (journal Shutdown, or no EliteDangerous64 process): the overlays step
     aside. Kept apart from `hudHidden`, which is the commander's own choice (the hotkey) and is saved;
@@ -109,7 +120,7 @@ function createHudWindows(deps) {
   */
   let focusAway = false;
   let hideUnfocused = true;
-  const hiddenNow = () => hudHidden || gameAway || (hideUnfocused && focusAway);
+  const hiddenNow = () => !moving && (hudHidden || gameAway || (hideUnfocused && focusAway));
   /*
     A window whose page has nothing to show right now ("Only when relevant", guild tester report,
     2026-09-30): hidden and left out of the stack, so the others close up. The page says so through
@@ -315,7 +326,12 @@ function createHudWindows(deps) {
     const order = Array.isArray(next.order)
       ? next.order.filter((k) => typeof k === "string").slice(0, 16)
       : hudLayout.order;
-    hudLayout = { corner, order };
+    const freeOn = typeof next.freeOn === "boolean" ? next.freeOn : hudLayout.freeOn;
+    const free = next.free === null ? null : (freePointFrom(next.free) ?? hudLayout.free);
+    hudLayout = { corner, order, freeOn, free };
+    // Switched on with no spot saved yet: it stays where it is now instead of jumping.
+    if (freeOn && !free) hudLayout.free = currentStackPoint();
+    if (!freeOn && moving) setMoveMode(false);
     if (typeof next.hideUnfocused === "boolean" && next.hideUnfocused !== hideUnfocused) {
       hideUnfocused = next.hideUnfocused;
       applyAway();
@@ -433,7 +449,169 @@ function createHudWindows(deps) {
     hudKeepOnTopTimer = null;
   }
 
+  /** A saved free spot, or null when it is not one (a hand-edited file). */
+  function freePointFrom(v) {
+    if (!v || typeof v !== "object") return null;
+    const x = Number(v.x);
+    const y = Number(v.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || Math.abs(x) > 1e5 || Math.abs(y) > 1e5) return null;
+    return { x: Math.round(x), y: Math.round(y), bottom: v.bottom === true };
+  }
+
+  /** The visible stack in its order, and the column width. */
+  function orderedStack() {
+    hudOverlayStack = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
+    const rank = (s) => {
+      const i = hudLayout.order.indexOf(s.key);
+      return i < 0 ? 1000 + hudOverlayStack.indexOf(s) : i;
+    };
+    const ordered = hudOverlayStack
+      .filter((s) => !isIdle(s))
+      .sort((a, b) => rank(a) - rank(b));
+    const w = Math.round((Math.max(0, ...hudOverlayStack.map((s) => s.width || 0)) || 404) * hudScale);
+    return { ordered, w };
+  }
+
+  /** Where the stack's top-left is now (its highest window's corner), as a free spot. */
+  function currentStackPoint() {
+    const { ordered } = orderedStack();
+    let top = null;
+    for (const s of ordered) {
+      try {
+        const b = s.win.getBounds();
+        if (!top || b.y < top.y) top = { x: b.x, y: b.y };
+      } catch {
+        /* a window going away */
+      }
+    }
+    if (top) return { x: top.x, y: top.y, bottom: false };
+    const wa = screen.getPrimaryDisplay().workArea;
+    return { x: wa.x + 14, y: wa.y + 14, bottom: false };
+  }
+
+  /**
+   * The free-move stack: hung from its saved spot, top to bottom in the chosen order, on the screen
+   * nearest that spot and clamped into it. A monitor unplugged or a resolution changed brings it
+   * back onto a screen that exists rather than leaving it somewhere nobody can reach.
+   */
+  function relayoutFreeStack() {
+    const { ordered, w } = orderedStack();
+    const sizes = [];
+    for (const slot of ordered) {
+      try {
+        sizes.push(slot.win.getSize()[1]);
+      } catch {
+        sizes.push(null);
+      }
+    }
+    const total = sizes.reduce((a, h) => a + (h ?? 0), 0) + HUD_STACK_GAP * Math.max(0, ordered.length - 1);
+    const f = hudLayout.free || currentStackPoint();
+    const probe = { x: Math.round(f.x + w / 2), y: f.bottom ? f.y - 1 : f.y };
+    let area;
+    try {
+      area = screen.getDisplayNearestPoint(probe).bounds;
+    } catch {
+      area = screen.getPrimaryDisplay().workArea;
+    }
+    const fit = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const x = fit(f.x, area.x, Math.max(area.x, area.x + area.width - w));
+    let y = fit(f.bottom ? f.y - total : f.y, area.y, Math.max(area.y, area.y + area.height - total));
+    ordered.forEach((slot, i) => {
+      const h = sizes[i];
+      if (h == null) return;
+      try {
+        slot.win.setBounds({ x, y, width: w, height: h, animate: false });
+      } catch {
+        /* ignore */
+      }
+      y += h + HUD_STACK_GAP;
+    });
+  }
+
+  /**
+   * Placing mode on or off. On: every HUD shows (whatever hides them), takes the mouse and draws its
+   * "drag to place" frame; off: back to click-through, and the hidden / away states apply again.
+   */
+  function setMoveMode(on) {
+    const next = on === true && hudLayout.freeOn;
+    if (next === moving) return moving;
+    moving = next;
+    drag = null;
+    for (const s of hudOverlayStack) {
+      if (!s.win || s.win.isDestroyed()) continue;
+      try {
+        s.win.setIgnoreMouseEvents(!moving);
+      } catch {
+        /* ignore */
+      }
+      try {
+        s.win.webContents.send("edexo:hud-move-mode", { on: moving });
+      } catch {
+        /* a window closing mid-send */
+      }
+    }
+    applyAway();
+    return moving;
+  }
+
+  /**
+   * A drag from a HUD page in placing mode. The cursor is read here (`getCursorScreenPoint`, DIP on
+   * every monitor) rather than taken from the page, whose coordinates are in its own window's scale.
+   * The stack follows the cursor; on release the spot is saved, by its bottom edge when it was
+   * dropped in the lower half of a screen.
+   */
+  function dragFromPage(win, phase) {
+    if (!moving || !hudOverlayStack.some((s) => s.win === win)) return { ok: false };
+    if (phase === "done") {
+      setMoveMode(false);
+      deps.onChange();
+      return { ok: true };
+    }
+    let cur;
+    try {
+      cur = screen.getCursorScreenPoint();
+    } catch {
+      return { ok: false };
+    }
+    if (phase === "start") {
+      const p = currentStackPoint();
+      drag = { cx: cur.x, cy: cur.y, x: p.x, y: p.y };
+      return { ok: true };
+    }
+    if (!drag) return { ok: false };
+    hudLayout.free = { x: drag.x + cur.x - drag.cx, y: drag.y + cur.y - drag.cy, bottom: false };
+    relayoutFreeStack();
+    if (phase === "end") {
+      drag = null;
+      const top = currentStackPoint();
+      let bottomEdge = top.y;
+      for (const s of orderedStack().ordered) {
+        try {
+          const b = s.win.getBounds();
+          bottomEdge = Math.max(bottomEdge, b.y + b.height);
+        } catch {
+          /* ignore */
+        }
+      }
+      let area = null;
+      try {
+        area = screen.getDisplayNearestPoint({ x: top.x, y: top.y }).bounds;
+      } catch {
+        /* no display API: keep the top edge */
+      }
+      const lower = area ? (top.y + bottomEdge) / 2 > area.y + area.height / 2 : false;
+      hudLayout.free = lower ? { x: top.x, y: bottomEdge, bottom: true } : top;
+      persistHudFile();
+      deps.onChange();
+    }
+    return { ok: true };
+  }
+
   function relayoutHudStack() {
+    if (hudLayout.freeOn) {
+      relayoutFreeStack();
+      return;
+    }
     const d = screen.getPrimaryDisplay();
     const wa = d.workArea;
     const margin = 14;
@@ -711,9 +889,17 @@ function createHudWindows(deps) {
     win.webContents.on("did-finish-load", () => {
       if (!win || win.isDestroyed()) return;
       try {
-        win.setIgnoreMouseEvents(true);
+        win.setIgnoreMouseEvents(!moving);
       } catch {
         /* ignore */
+      }
+      // A window opened (or a page reloaded) while placing gets the frame too.
+      if (moving) {
+        try {
+          win.webContents.send("edexo:hud-move-mode", { on: true });
+        } catch {
+          /* ignore */
+        }
       }
     });
 
@@ -939,9 +1125,18 @@ function createHudWindows(deps) {
       gameAway,
       focusAway,
       hideUnfocused,
+      moving,
       count: hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed()).length,
       shortcut: HUD_TOGGLE_SHORTCUT,
     }),
+    /** Free move's placing mode (only while free move is on). Returns whether it is on. */
+    setMoveMode: (on) => {
+      const r = setMoveMode(on);
+      deps.onChange();
+      return r;
+    },
+    isMoving: () => moving,
+    dragFromPage,
     setLayout: (next) => ({
       ...setHudLayout(next || {}, true),
       hidden: hudHidden,

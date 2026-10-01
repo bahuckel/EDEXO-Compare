@@ -101,6 +101,7 @@ const huds = createHudWindows({
           count: huds.count(),
           gameAway: l.gameAway,
           focusAway: l.focusAway && l.hideUnfocused,
+          moving: l.moving,
         });
       } catch {
         /* the launcher reloading */
@@ -423,6 +424,16 @@ function registerFootOverlayIpc(iconForChild) {
   ipcMain.handle("edexo:resize-hud-overlay", (evt, opts) =>
     huds.resizeFromPage(BrowserWindow.fromWebContents(evt.sender), opts),
   );
+  // Free move: the launcher starts and ends placing; a HUD page reports its drag (only HUD windows
+  // in placing mode are listened to, see hudWindows.dragFromPage).
+  ipcMain.handle("edexo:set-hud-move-mode", (_evt, opts) => ({
+    moving: huds.setMoveMode(!!(opts && typeof opts === "object" && opts.on === true)),
+  }));
+  ipcMain.handle("edexo:hud-drag", (evt, opts) => {
+    const phase = opts && typeof opts === "object" ? opts.phase : null;
+    if (!["start", "move", "end", "done"].includes(phase)) return { ok: false };
+    return huds.dragFromPage(BrowserWindow.fromWebContents(evt.sender), phase);
+  });
 
   ipcMain.handle("edexo:toggle-foot-overlay", async () => {
     try {
