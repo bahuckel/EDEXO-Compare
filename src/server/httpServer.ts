@@ -765,6 +765,8 @@ export function createHttpServer(opts: HttpServerOptions): {
     server,
     path: "/ws",
     perMessageDeflate: { threshold: GZIP_MIN_BYTES, zlibDeflateOptions: { level: 4 } },
+    // A client only ever sends a hello: the 100 MiB default would let one frame tie up the main thread.
+    maxPayload: 64 * 1024,
     // The upgrade bypasses Express, so the same key check runs here. A paired browser sends the
     // cookie on the handshake; a script can pass ?k= or the header.
     verifyClient: ({ req }, done) => {
@@ -775,6 +777,18 @@ export function createHttpServer(opts: HttpServerOptions): {
   const clients = new Set<import("ws").WebSocket>();
   /** What each socket asked for with its hello; "app" (the full state) until it says otherwise. */
   const channelOf = new WeakMap<import("ws").WebSocket, WsChannel>();
+  /*
+    Sockets that must get a whole frame on the next push, not a delta (combined plan 1.3). Pushes leave
+    out what did not change since the previous *push*, but a socket that just connected (or changed
+    channel) holds the snapshot it was sent then, and one that skipped a push for back-pressure holds
+    an older one: a field that changed and changed back would stay stale for it.
+  */
+  const needsFull = new WeakSet<import("ws").WebSocket>();
+  /** Answered the last ping; a socket that misses one interval is a dead connection (a sleeping phone). */
+  const alive = new WeakSet<import("ws").WebSocket>();
+  /** A slow LAN client gets no push while this much is still unsent to it. */
+  const WS_BACKLOG_LIMIT = 8 * 1024 * 1024;
+  wss.on("error", (e) => console.error("[edexo-compare] WebSocket server:", e instanceof Error ? e.message : e));
   const stateMessage = (snap: AppSnapshot, channel: WsChannel): string =>
     JSON.stringify({ type: "state", channel, rev: pushRev, payload: slimSnapshotForChannel(snap, channel) });
 
@@ -842,6 +856,13 @@ export function createHttpServer(opts: HttpServerOptions): {
         clients.delete(ws);
         continue;
       }
+      // No pong since the last ping: half-open TCP. Without this it stayed OPEN and kept buffering.
+      if (!alive.has(ws)) {
+        clients.delete(ws);
+        ws.terminate();
+        continue;
+      }
+      alive.delete(ws);
       try {
         ws.ping();
       } catch {
@@ -853,13 +874,32 @@ export function createHttpServer(opts: HttpServerOptions): {
 
   server.once("close", () => clearInterval(wsKeepAlive));
 
+  /** A snapshot this recent is sent to a new socket as it is: a reconnect storm is not N rebuilds. */
+  let lastAppSnapAt = 0;
+  const recentSnapshot = (): AppSnapshot => {
+    if (!lastAppSnap || Date.now() - lastAppSnapAt > 1000) {
+      lastAppSnap = opts.getSnapshot();
+      lastAppSnapAt = Date.now();
+    }
+    return lastAppSnap;
+  };
+
   wss.on("connection", (ws) => {
     clients.add(ws);
     channelOf.set(ws, "app");
+    alive.add(ws);
     perfCount("ws.connect");
+    /*
+      A malformed frame (bad Wi-Fi, a port scanner on the LAN) makes `ws` emit 'error'; with no
+      listener that is an uncaught exception and the whole app exits (combined plan 1.3).
+    */
+    ws.on("error", () => {
+      clients.delete(ws);
+    });
+    ws.on("pong", () => alive.add(ws));
     try {
-      lastAppSnap = opts.getSnapshot();
-      ws.send(stateMessage(lastAppSnap, "app"));
+      ws.send(stateMessage(recentSnapshot(), "app"));
+      needsFull.add(ws);
     } catch {
       /* ignore */
     }
@@ -871,7 +911,8 @@ export function createHttpServer(opts: HttpServerOptions): {
           const ch = parseWsChannel(msg.channel);
           if (ch && ch !== channelOf.get(ws)) {
             channelOf.set(ws, ch);
-            ws.send(stateMessage(opts.getSnapshot(), ch));
+            ws.send(stateMessage(recentSnapshot(), ch));
+            needsFull.add(ws);
           }
         }
       } catch {
@@ -886,11 +927,15 @@ export function createHttpServer(opts: HttpServerOptions): {
 
   const broadcast = (snap: AppSnapshot) => {
     lastAppSnap = snap;
+    lastAppSnapAt = Date.now();
     // One serialization per channel per push; null marks "identical to the last frame, skip".
     const built = new Map<WsChannel, string | null>();
+    const fullFrames = new Map<WsChannel, string>();
     for (const ws of clients) {
       if (ws.readyState !== ws.OPEN) continue;
       const ch = channelOf.get(ws) ?? "app";
+      // Built for every channel with a client, even one getting a whole frame: the delta's baseline is
+      // the previous push, and it must move on with every push.
       if (!built.has(ch)) {
         // The revision is filled in after the identical-frame check, so it cannot make every frame differ.
         const draft = perfTime("ws.serialize", () => pushMessage(snap, ch));
@@ -906,7 +951,21 @@ export function createHttpServer(opts: HttpServerOptions): {
           built.set(ch, msg);
         }
       }
-      const msg = built.get(ch);
+      if (ws.bufferedAmount > WS_BACKLOG_LIMIT) {
+        // Still sending earlier frames: skip this one, and send it whole once it has caught up.
+        perfCount("ws.push.skippedBacklog");
+        needsFull.add(ws);
+        continue;
+      }
+      let msg = built.get(ch) ?? null;
+      if (needsFull.has(ws)) {
+        msg = fullFrames.get(ch) ?? null;
+        if (msg === null) {
+          msg = stateMessage(snap, ch);
+          fullFrames.set(ch, msg);
+        }
+        needsFull.delete(ws);
+      }
       if (!msg) continue;
       try {
         ws.send(msg);
@@ -934,6 +993,7 @@ export function createHttpServer(opts: HttpServerOptions): {
     for (const ws of clients) {
       if (ws.readyState !== ws.OPEN) continue;
       if ((channelOf.get(ws) ?? "app") !== "hud") continue;
+      if (ws.bufferedAmount > WS_BACKLOG_LIMIT) continue;
       if (msg === null) {
         msg = JSON.stringify({ type: "exoLive", channel: "hud", payload: live });
         if (msg === lastExoLiveMsg) {
