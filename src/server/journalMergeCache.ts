@@ -110,6 +110,9 @@ function buildReplaySteps(
   }
   for (let i = 0; i < k - 1; i++) {
     if (m[i]!.size !== c[i]!.size) return null;
+    // A closed journal rewritten at the same size (a restored backup) is not the one the cache read
+    // (combined plan 1.1c). The newest file grows while the game runs, so only the older ones.
+    if (Number.isFinite(c[i]!.mtimeMs) && Math.round(m[i]!.mtimeMs) !== Math.round(c[i]!.mtimeMs)) return null;
   }
   if (m[k - 1]!.size < c[k - 1]!.size) return null;
 
@@ -384,12 +387,23 @@ async function writeJournalMergeCacheFiles(
     const metaPath = journalMergeMetaPathInDir(dir);
     const payloadTmp = `${payloadPath}.${process.pid}.tmp`;
     const metaTmp = `${metaPath}.${process.pid}.tmp`;
-    await fsp.writeFile(payloadTmp, await gzipAsync(bytes, { level: 6 }));
-    await fsp.writeFile(metaTmp, JSON.stringify(meta), "utf8");
-    // Both files are complete before either is swapped in, and the swaps are back to back: a payload
-    // must never sit beside the meta of another (the replay steps come from the meta).
-    renameSync(payloadTmp, payloadPath);
-    renameSync(metaTmp, metaPath);
+    try {
+      await fsp.writeFile(payloadTmp, await gzipAsync(bytes, { level: 6 }));
+      await fsp.writeFile(metaTmp, JSON.stringify(meta), "utf8");
+      /*
+        A payload must never sit beside another save's meta: the replay steps come from the meta, and
+        old steps over a newer payload apply lines twice. Both files are complete first; then the old
+        meta goes before the new payload comes in, so a rename that fails (antivirus or the indexer
+        holding a file on Windows) or a crash in between leaves no meta, which reads as a clean miss
+        (combined plan 1.1c).
+      */
+      unlinkQuiet(metaPath);
+      renameSync(payloadTmp, payloadPath);
+      renameSync(metaTmp, metaPath);
+    } finally {
+      unlinkQuiet(payloadTmp);
+      unlinkQuiet(metaTmp);
+    }
     try {
       for (const stale of [journalMergeSingleFilePathInDir(dir), journalMergeJsonPayloadPathInDir(dir)]) {
         if (existsSync(stale)) unlinkSync(stale);
