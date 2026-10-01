@@ -1501,6 +1501,7 @@ export class GameStateStore {
    */
   resetAll(): void {
     this.bodies.clear();
+    this.bodyKeysBySystem = null;
     this.explorationScans.clear();
     this.soldExplorationScans.clear();
     this.soldBodyKeys.clear();
@@ -3261,8 +3262,36 @@ export class GameStateStore {
     return this.remoteSystems.has(systemAddress) && this.journalBioBodies(systemAddress).length === 0;
   }
 
+  /*
+    Body keys per system, so the refresh looks at one system's bodies instead of filtering every bio
+    body ever seen (~2 ms a snapshot on his journals, profiled 2026-10-01). Bodies are only ever
+    added, or all cleared: the index is rebuilt when the count moves and dropped on clear/load.
+    Keys, not objects, so a body replaced in the map is still read fresh.
+  */
+  private bodyKeysBySystem: Map<number, string[]> | null = null;
+  private bodyKeysIndexedAt = -1;
+
+  private bodyKeysIn(systemAddress: number): readonly string[] {
+    if (!this.bodyKeysBySystem || this.bodyKeysIndexedAt !== this.bodies.size) {
+      const idx = new Map<number, string[]>();
+      for (const [k, b] of this.bodies) {
+        const list = idx.get(b.systemAddress);
+        if (list) list.push(k);
+        else idx.set(b.systemAddress, [k]);
+      }
+      this.bodyKeysBySystem = idx;
+      this.bodyKeysIndexedAt = this.bodies.size;
+    }
+    return this.bodyKeysBySystem.get(systemAddress) ?? [];
+  }
+
   private journalBioBodies(focus: number): BodyExoState[] {
-    return [...this.bodies.values()].filter((b) => {
+    const inSystem: BodyExoState[] = [];
+    for (const k of this.bodyKeysIn(focus)) {
+      const b = this.bodies.get(k);
+      if (b) inSystem.push(b);
+    }
+    return inSystem.filter((b) => {
       if (b.systemAddress !== focus) return false;
       /** FSS `Biological` count 0: omit from bio body list even when DSS listed genera. */
       if (b.biologicalSignals === 0) return false;
@@ -3466,6 +3495,7 @@ export class GameStateStore {
     for (const [addr, name] of data.visitedSystems) this.visitedSystems.set(addr, name);
     this.visitedSystemNames = null;
     for (const [k, v] of data.bodies) this.bodies.set(k, v);
+    this.bodyKeysBySystem = null;
     for (const [k, v] of data.explorationScans) this.explorationScans.set(k, v);
     for (const [k, v] of data.soldExplorationScans ?? []) this.soldExplorationScans.set(k, v);
     for (const k of data.soldBodyKeys ?? []) this.soldBodyKeys.add(k);
