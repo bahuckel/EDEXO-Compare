@@ -62,6 +62,12 @@ describe("reading Canonn's whitelist", () => {
     expect(rules).toHaveLength(3);
   });
 
+  it("drops a rule that names no event, which would match every line (combined plan 1.10)", () => {
+    const rules = parseWhitelist([{ definition: "{}" }, { definition: '{"StationName": "X"}' }, { definition: '{"event": ""}' }, ...LIVE]);
+    expect(rules).toHaveLength(3);
+    expect(matchesWhitelist(rules, line({ event: "ReceiveText", Message: "hello" }))).toBe(false);
+  });
+
   it("requires every key in a rule to agree", () => {
     const rules = parseWhitelist(LIVE);
     expect(matchesWhitelist(rules, line({ event: "Docked", StationName: "Hutton Orbital" }))).toBe(true);

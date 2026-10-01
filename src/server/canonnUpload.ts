@@ -105,10 +105,12 @@ const defaultSleep = (ms: number): Promise<void> => new Promise((r) => setTimeou
 
 async function defaultPost(url: string, body: unknown): Promise<{ ok: boolean }> {
   try {
+    // A request that never answers left the queue "running" for good (combined plan 1.10).
     const res = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(20_000),
     });
     return { ok: res.ok };
   } catch {
@@ -118,7 +120,7 @@ async function defaultPost(url: string, body: unknown): Promise<{ ok: boolean }>
 
 async function defaultFetchWhitelist(): Promise<unknown> {
   try {
-    const res = await fetch(WHITELIST_URL);
+    const res = await fetch(WHITELIST_URL, { signal: AbortSignal.timeout(20_000) });
     if (!res.ok) return [];
     return await res.json();
   } catch {
@@ -142,7 +144,18 @@ export function parseWhitelist(raw: unknown): Record<string, unknown>[] {
     if (typeof def !== "string") continue;
     try {
       const parsed = JSON.parse(def) as unknown;
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      /*
+        A rule must name its event (combined plan 1.10). A rule with no keys matches every line, so one
+        `{"definition": "{}"}` in the downloaded list would have sent every live journal line, chat
+        included, under the commander's name.
+      */
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        !Array.isArray(parsed) &&
+        typeof (parsed as { event?: unknown }).event === "string" &&
+        (parsed as { event: string }).event.trim() !== ""
+      ) {
         out.push(parsed as Record<string, unknown>);
       }
     } catch {

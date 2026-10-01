@@ -69,6 +69,8 @@ async function fetchEdsmBodiesUrlWithRetries(u: URL, opts?: FetchEdsmBodiesOpts)
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch(u.toString(), {
       headers: { Accept: "application/json", "User-Agent": EDSM_UA },
+      // Without a timeout a stalled connection held the feeder run for good (combined plan 1.10).
+      signal: AbortSignal.timeout(60_000),
     });
     if (res.ok) return res.json();
 
@@ -238,6 +240,7 @@ export async function fetchEdsmSystemCoords(names: string[]): Promise<EdsmSystem
 
   const res = await fetch(u.toString(), {
     headers: { Accept: "application/json", "User-Agent": EDSM_UA },
+    signal: AbortSignal.timeout(60_000),
   });
   if (res.status === 429) {
     throw new EdsmRateLimitExhaustedError("EDSM returned HTTP 429 for a coordinate batch.", wanted[0]!);
@@ -276,6 +279,7 @@ export async function fetchEdsmSystemIds(names: string[]): Promise<EdsmSystemIds
 
   const res = await fetch(u.toString(), {
     headers: { Accept: "application/json", "User-Agent": EDSM_UA },
+    signal: AbortSignal.timeout(60_000),
   });
   if (res.status === 429) {
     throw new EdsmRateLimitExhaustedError("EDSM returned HTTP 429 for an id batch.", wanted[0]!);
