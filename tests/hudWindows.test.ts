@@ -132,8 +132,13 @@ class FakeWindow {
   show() {
     this.visible = true;
   }
+  shows = 0;
   showInactive() {
     this.visible = true;
+    this.shows += 1;
+  }
+  isVisible() {
+    return this.visible;
   }
   setAlwaysOnTop() {}
   raised = 0;
@@ -366,6 +371,19 @@ describe("hiding and showing (the hotkey)", () => {
 });
 
 describe("back on top when the game comes to the front (plan 2.1, Fable C10)", () => {
+  it("coming back to the game does not show a window that is already up (the blinks, 2026-10-02)", async () => {
+    const huds = make();
+    await huds.request("/distance-overlay.html", 404, 330, null, "open");
+    const [w] = live();
+    huds.toggleVisibility(false);
+    const shows = w!.shows;
+    huds.setFocusAway(false);
+    huds.raiseVisible();
+    huds.raiseVisible();
+    expect(w!.shows).toBe(shows);
+    expect(w!.visible).toBe(true);
+  });
+
   it("raises every visible HUD at once, and none while they are hidden", async () => {
     const huds = make();
     await huds.request("/fss-scan-overlay.html", 404, 120, null, "open");
@@ -500,6 +518,23 @@ describe("free move (owner, 2026-10-02: the HUD anywhere, on any screen)", () =>
     expect(b!.bounds.y).toBeGreaterThanOrEqual(a!.bounds.y + a!.bounds.height);
     expect(a!.bounds.height).toBeLessThanOrEqual(Math.round(120 * 1.25));
     expect(b!.bounds.height).toBeLessThanOrEqual(Math.round(330 * 1.25));
+  });
+
+  it("a merged HUD as tall as the screen still follows a drag (owner, 2026-10-02: it would not move)", async () => {
+    const huds = make();
+    await huds.request("/hud-overlay.html", 404, 330, null, "open");
+    const [w] = live();
+    huds.resizeFromPage(w, { height: 1300 }); // taller than the 1080 screen
+    huds.setLayout({ freeOn: true });
+    huds.setMoveMode(true);
+    cursor = { x: 1000, y: 500 };
+    huds.dragFromPage(w, "start");
+    const before = { ...w!.bounds };
+    cursor = { x: 700, y: 300 };
+    huds.dragFromPage(w, "move");
+    expect(w!.bounds.x).toBe(before.x - 300);
+    huds.dragFromPage(w, "end");
+    huds.setMoveMode(false);
   });
 
   it("a spot off every screen comes back onto the nearest one", async () => {

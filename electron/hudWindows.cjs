@@ -435,18 +435,26 @@ function createHudWindows(deps) {
    */
   function raiseHudWindow(win) {
     if (!win || win.isDestroyed()) return;
+    let visible = false;
     try {
-      if (!win.isVisible()) hudLog(`show ${slotName(win)}`);
+      visible = win.isVisible();
     } catch {
-      /* ignore */
+      /* treat as hidden */
     }
-    try {
-      win.showInactive();
-    } catch {
+    /*
+      Shown only when it is not: showing a window that is already up repaints it, and coming back to
+      the game ran this several times in a row — the owner saw the HUD blink 3-4 times (2026-10-02).
+    */
+    if (!visible) {
+      hudLog(`show ${slotName(win)}`);
       try {
-        win.show();
+        win.showInactive();
       } catch {
-        return;
+        try {
+          win.show();
+        } catch {
+          return;
+        }
       }
     }
     // `screen-saver` is the highest level Electron offers; `floating` is the fallback for a platform
@@ -492,8 +500,12 @@ function createHudWindows(deps) {
     if (typeof hudKeepOnTopTimer.unref === "function") hudKeepOnTopTimer.unref();
   }
   /** Raise every visible HUD now: the game has just come to the front and may have covered them. */
+  let raisedAt = 0;
   function raiseVisible() {
     if (hiddenNow()) return;
+    // Coming back to the game raises them through applyAway already; once is enough.
+    if (Date.now() - raisedAt < 400) return;
+    raisedAt = Date.now();
     for (const s of hudOverlayStack) if (s.win && !s.win.isDestroyed() && !isIdle(s)) raiseHudWindow(s.win);
   }
   function stopKeepingHudsOnTop() {
@@ -535,6 +547,14 @@ function createHudWindows(deps) {
    * that came out taller still never covers the one below it.
    */
   function placeWindow(win, rect) {
+    // Already there: no setBounds, which repaints a transparent window over the game even when it
+    // changes nothing (the blinks on coming back to the game, 2026-10-02).
+    try {
+      const b0 = win.getBounds();
+      if (b0.x === rect.x && b0.y === rect.y && b0.width === rect.width && b0.height === rect.height) return rect.height;
+    } catch {
+      /* set it */
+    }
     win.setBounds({ ...rect, animate: false });
     let actual = rect.height;
     try {
@@ -623,6 +643,7 @@ function createHudWindows(deps) {
   function setMoveMode(on) {
     const next = on === true && hudLayout.freeOn;
     if (next === moving) return moving;
+    hudLog(`placing ${next ? "on" : "off"}`);
     moving = next;
     drag = null;
     for (const s of hudOverlayStack) {
@@ -648,7 +669,9 @@ function createHudWindows(deps) {
    * The stack follows the cursor; on release the spot is saved, by its bottom edge when it was
    * dropped in the lower half of a screen.
    */
+  let dragMoves = 0;
   function dragFromPage(win, phase) {
+    if (phase !== "move") hudLog(`drag ${phase}${moving ? "" : " (not placing)"}${hudOverlayStack.some((s) => s.win === win) ? "" : " (not a HUD window)"}`);
     if (!moving || !hudOverlayStack.some((s) => s.win === win)) return { ok: false };
     if (phase === "done") {
       setMoveMode(false);
@@ -664,12 +687,16 @@ function createHudWindows(deps) {
     if (phase === "start") {
       const p = currentStackPoint();
       drag = { cx: cur.x, cy: cur.y, x: p.x, y: p.y };
+      dragMoves = 0;
+      hudLog(`drag from cursor ${cur.x},${cur.y}, stack at ${p.x},${p.y}`);
       return { ok: true };
     }
     if (!drag) return { ok: false };
     hudLayout.free = { x: drag.x + cur.x - drag.cx, y: drag.y + cur.y - drag.cy, bottom: false };
     relayoutFreeStack();
+    if (phase === "move") dragMoves += 1;
     if (phase === "end") {
+      hudLog(`drag end after ${dragMoves} moves: cursor ${cur.x},${cur.y}, asked ${hudLayout.free.x},${hudLayout.free.y}`);
       drag = null;
       const top = currentStackPoint();
       let bottomEdge = top.y;
@@ -913,6 +940,7 @@ function createHudWindows(deps) {
       if (hiddenNow() || isIdle(s)) hideWin(s.win);
       else raiseHudWindow(s.win);
     }
+    if (!hiddenNow()) raisedAt = Date.now();
     if (hiddenNow()) stopKeepingHudsOnTop();
     else {
       keepHudsOnTop();
