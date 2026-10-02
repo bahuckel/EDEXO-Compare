@@ -28,7 +28,7 @@
     "start:server:shell": "cross-env EDEXO_USE_SHELL_LAUNCHER=1 tsx src/server/devEntry.ts --host 0.0.0.0 --port 7111",
     "start:client:shell": "cross-env EDEXO_USE_SHELL_LAUNCHER=1 tsx src/server/devEntry.ts --host 127.0.0.1 --port 7111",
     "preview": "vite preview",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

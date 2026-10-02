@@ -1,5 +1,5 @@
-// Flat config (ESLint 9). Deliberately warn-heavy rather than error-heavy for v0.2.0:
-// the point of this stage is signal, not a clean board. Later stages tighten it.
+// Flat config (ESLint 9). Many rules are warnings, and `npm run lint` passes --max-warnings 0
+// (review F-F10, 2026-10-02, at zero warnings): a new warning fails the lint like an error.
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
