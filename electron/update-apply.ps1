@@ -20,7 +20,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 function Say([string]$m) {
-  if ($Log) { try { Add-Content -LiteralPath $Log -Value ("{0:u} {1}" -f (Get-Date), $m) } catch {} }
+  if ($Log) { try { Add-Content -LiteralPath $Log -Value ("{0:u} {1}" -f (Get-Date).ToUniversalTime(), $m) } catch {} }
 }
 
 # Retried: an antivirus scan or a closing child process can hold a file for a moment after exit.
