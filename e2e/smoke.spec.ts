@@ -17,6 +17,17 @@ function watchErrors(page: import("@playwright/test").Page): string[] {
   return errors;
 }
 
+/*
+  The galaxy map needs data/galaxy/bio-index.bin (245 MB, built from EDAstro's export and not in the
+  repository), so a fresh clone skips its tests instead of failing them (review F-F12).
+*/
+const HAS_GALAXY_INDEX = existsSync(path.join("data", "galaxy", "bio-index.bin"));
+// Playwright requires the fixtures argument to be destructured, even when none is used.
+// eslint-disable-next-line no-empty-pattern
+test.beforeEach(({}, info) => {
+  test.skip(info.title.startsWith("galaxy 3D") && !HAS_GALAXY_INDEX, "no data/galaxy/bio-index.bin on this clone");
+});
+
 test.beforeAll(async ({ request }) => {
   // Vite is up when the web server check passes; the API behind the proxy takes a moment longer.
   await expect
