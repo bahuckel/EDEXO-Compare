@@ -41,6 +41,15 @@ async function waitFor(check: () => boolean, ms = 30_000) {
   }
   throw new Error("timed out");
 }
+/** The program folder zipped as the release zip holds it (one folder inside), with .NET's ZipFile. */
+function zipFolder(src: string, zip: string) {
+  const r = spawnSync("powershell.exe", [
+    "-NoProfile",
+    "-Command",
+    `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('${src}', '${zip}', 'Optimal', $true)`,
+  ]);
+  if (r.status !== 0) throw new Error(`zipping failed: ${String(r.stderr)}`);
+}
 const logOf = () => (existsSync(path.join(dir, "update.log")) ? readFileSync(path.join(dir, "update.log"), "utf8") : "");
 
 describe("which copies can update themselves", () => {
@@ -86,8 +95,7 @@ describe.runIf(win)("the swap on Windows", () => {
     writeFileSync(path.join(src, "EDExoCompare.exe"), "new exe");
     writeFileSync(path.join(src, "resources", "app.txt"), "new");
     const zip = path.join(dir, "EDExoCompare-9.9.9-win-x64.zip");
-    const z = spawnSync("powershell.exe", ["-NoProfile", "-Command", `Compress-Archive -LiteralPath '${src}' -DestinationPath '${zip}'`]);
-    expect(z.status).toBe(0);
+    zipFolder(src, zip);
     updater.installOnQuit(
       { form: "zip", file: zip, version: "9.9.9" },
       { form: "zip", scriptPath: SCRIPT, logPath: path.join(dir, "update.log"), pids: [], execPath: path.join(program, "EDExoCompare.exe"), env: {}, start: false },
@@ -113,7 +121,7 @@ describe.runIf(win)("the swap on Windows", () => {
     writeFileSync(path.join(src, "EDExoCompare.exe"), "new exe");
     writeFileSync(path.join(src, "resources", "app.txt"), "new");
     const zip = path.join(dir, "EDExoCompare-9.9.9-win-x64.zip");
-    spawnSync("powershell.exe", ["-NoProfile", "-Command", `Compress-Archive -LiteralPath '${src}' -DestinationPath '${zip}'`]);
+    zipFolder(src, zip);
     return { program, zip };
   }
 
@@ -167,7 +175,7 @@ describe.runIf(win)("the swap on Windows", () => {
     mkdirSync(src, { recursive: true });
     writeFileSync(path.join(src, "readme.txt"), "no exe here");
     const zip = path.join(dir, "bad.zip");
-    spawnSync("powershell.exe", ["-NoProfile", "-Command", `Compress-Archive -LiteralPath '${src}' -DestinationPath '${zip}'`]);
+    zipFolder(src, zip);
     updater.installOnQuit(
       { form: "zip", file: zip, version: "9.9.9" },
       { form: "zip", scriptPath: SCRIPT, logPath: path.join(dir, "update.log"), pids: [], execPath: path.join(program, "EDExoCompare.exe"), env: {}, start: false },
