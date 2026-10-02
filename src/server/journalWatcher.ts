@@ -21,11 +21,17 @@ function sameJournalPath(a: string | null, b: string | null): boolean {
 }
 
 /** Parse Elite journal filename time; fallback 0 (sort by name). */
-function filenameUtcMs(name: string): number {
-  const m = name.match(/^Journal\.(\d{4}-\d{2}-\d{2})T(\d{2})(\d{2})(\d{2})\./);
+/**
+ * When a journal file starts, from its name (epoch ms), or 0 for a name without the stamp.
+ *
+ * The game stamps the name in the PC's local time — `Journal.2026-09-30T080630.01.log` begins at
+ * `2026-09-30T05:06:25Z` on the owner's UTC+3 PC — while every line inside is UTC. Read as UTC, the
+ * history window ("the last N days") was cut off by the time zone's offset (plan 2.4, Fable S8).
+ */
+export function filenameUtcMs(name: string): number {
+  const m = name.match(/^Journal\.(\d{4})-(\d{2})-(\d{2})T(\d{2})(\d{2})(\d{2})\./);
   if (!m) return 0;
-  const iso = `${m[1]}T${m[2]}:${m[3]}:${m[4]}Z`;
-  const t = Date.parse(iso);
+  const t = new Date(+m[1]!, +m[2]! - 1, +m[3]!, +m[4]!, +m[5]!, +m[6]!).getTime();
   return Number.isFinite(t) ? t : 0;
 }
 
