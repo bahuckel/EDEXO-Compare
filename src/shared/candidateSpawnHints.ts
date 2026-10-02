@@ -140,3 +140,56 @@ export function candidateMorphColorShortLabelForHosts(
   }
   return labels.length ? labels.join(" or ") : "(unknown)";
 }
+
+/** "Antimony on this body", "Antimony at 0.42 %, the rarest of …", "G-class parent star", "DA (D-class) parent star" → the decider. */
+function causeFromReason(reason: string | null | undefined): string | null {
+  if (!reason) return null;
+  const star = /^(?:\S+ \()?([A-Z]+)-class/.exec(reason);
+  if (star) return star[1]!;
+  const m = /^(.+?)(?: at [\d.]+ %,| on this body)/.exec(reason);
+  if (!m) return null;
+  const first = m[1]!.split(",")[0]!.trim();
+  return first ? first.charAt(0).toUpperCase() + first.slice(1) : null;
+}
+
+/**
+ * What decided the colour `candidateMorphColorShortLabel` gives for this body (review F-5.2): the
+ * host star's class ("G") or the material ("Antimony"), shown dimmed beside the colour so the
+ * commander can check the working — "Emerald [G]". Null when nothing single decided it: an unknown
+ * or undecided colour, or a body lit by several stars that do not agree on one cause.
+ */
+export function candidateMorphColorCause(
+  entry: SpeciesEntry,
+  hostStarTypes: readonly (string | null | undefined)[] | null | undefined,
+  materials?: readonly MaterialReading[] | null,
+): string | null {
+  if (!speciesHasColourVariants(entry)) return null;
+  const hosts = (hostStarTypes ?? []).map((h) => (h ?? "").trim()).filter(Boolean);
+  const causes = new Set<string | null>();
+  for (const host of hosts.length ? hosts : [null]) causes.add(causeForOneHost(entry, host, materials));
+  return causes.size === 1 ? ([...causes][0] ?? null) : null;
+}
+
+function causeForOneHost(
+  entry: SpeciesEntry,
+  host: string | null,
+  materials?: readonly MaterialReading[] | null,
+): string | null {
+  const rule = entry.colourVariant;
+  if (rule) {
+    const answer = resolveColourVariant(rule, { parentStarType: host, materials });
+    return answer.colour ? causeFromReason(answer.reason) : null;
+  }
+  const byMaterial = colourFromMaterials(entry.speciesColourRules, materials);
+  if (byMaterial.colour) return causeFromReason(byMaterial.reason);
+  if (byMaterial.candidates.length > 1) return null;
+  const map = entry.genusColorStellarMapping;
+  if (entry.genusColorMaterialDriven === true || !map || !host) return null;
+  const nulls = entry.genusStarColorNullSpectralClasses ?? [];
+  for (const k of spectralKeysFromJournalStarType(host)) {
+    if (nulls.some((n) => n.toUpperCase() === k.toUpperCase())) return null;
+    const col = map[normalizeStellarMappingKey(k)] ?? map[k];
+    if (col?.trim()) return k.toUpperCase();
+  }
+  return null;
+}

@@ -12,7 +12,7 @@ import { fmtCrExact, fmtCrShort } from "./credits";
 import { useFootfallCertainty } from "./footfallContext";
 import { useRowContext, type LiveRun, type RowContextValue } from "./rowContext";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
-import { heroPhotoUrlFor, titleCaseSpeciesWords } from "./speciesMatchHelpers";
+import { heroPhotoUrlFor, predictedColourCause, titleCaseSpeciesWords } from "./speciesMatchHelpers";
 import { RarityGem } from "./RarityGem";
 
 type Match = BodyComputed["matches"][number];
@@ -101,6 +101,7 @@ export function SpeciesRow({
       : candidateMorphColorShortLabelForHosts(m.entry, hostStarTypes, scan?.materials));
   const hasColour = speciesHasColourVariants(m.entry);
   const colourUnknown = hasColour && (!colourRaw || colourRaw === "(unknown)");
+  const colourCause = predictedColourCause(m, hostStarType, hostStarTypes, scan?.materials);
   /*
     "We cannot tell you what you would find here."
 
@@ -192,6 +193,12 @@ export function SpeciesRow({
             <span className={`srow-colour${colourUnknown ? " srow-colour--unknown" : ""}`}>
               {" "}
               - {colourUnknown ? "colour unknown" : colourRaw}
+              {colourCause ? (
+                <span className="colour-cause" title={`Decided by ${colourCause} on this body`}>
+                  {" "}
+                  [{colourCause}]
+                </span>
+              ) : null}
             </span>
           ) : null}
           {m.colourMismatchPredicted ? (

@@ -30,6 +30,7 @@ import {
   footCatalogBadgeText,
   labelForReasonField,
   primaryMatchQuad,
+  predictedColourCause,
   speciesCaptionParts,
   speciesMatchExtraReasons,
   titleCaseSpeciesWords,
@@ -140,6 +141,10 @@ export const SpeciesCard = memo(function SpeciesCard({
   );
   const morphColorDisplay =
     morphColorRaw === "(unknown)" ? morphColorRaw : titleCaseSpeciesWords(morphColorRaw);
+  const colourCause = useMemo(
+    () => predictedColourCause(m, hostStarType, hostStarTypes, scan?.materials),
+    [m, hostStarType, hostStarTypes, scan?.materials],
+  );
 
   /**
    * The photograph of the variant this body will actually grow, when somebody has taken it.
@@ -479,6 +484,12 @@ export const SpeciesCard = memo(function SpeciesCard({
           >
             {" "}
             - {morphColorDisplay}
+            {colourCause ? (
+              <span className="colour-cause" title={`Decided by ${colourCause} on this body`}>
+                {" "}
+                [{colourCause}]
+              </span>
+            ) : null}
           </span>
         ) : null}
         {m.colourMismatchPredicted ? (

@@ -22,6 +22,11 @@ import {
   type TempUnit,
 } from "./planetDisplayUtils";
 import { journalPressureToAtm } from "@shared/journalPhysics";
+import {
+  candidateMorphColorCause,
+  candidateMorphColorShortLabel,
+  candidateMorphColorShortLabelForHosts,
+} from "@shared/candidateSpawnHints";
 import { readableAtmosphereLead } from "@shared/atmosphereLabel";
 
 export function primaryStarRoleTooltip(role: StarRoleDTO): string {
@@ -394,4 +399,25 @@ export function heroPhotoUrlFor(
   predictedColour: string | null | undefined,
 ): string {
   return variantPhotoUrlFor(m, predictedColour) ?? m.photoUrl;
+}
+
+/**
+ * The cause tag beside a predicted colour (review F-5.2): the star class or material that decided it,
+ * "Emerald [G]". Only for a prediction: a colour logged on this body needs no working shown. And only
+ * when the server's prediction is the one these hosts and materials give, so the tag never explains
+ * a different colour from the one printed.
+ */
+export function predictedColourCause(
+  m: Pick<SpeciesMatch, "entry" | "confirmedColour" | "predictedColour">,
+  hostStarType: string | null | undefined,
+  hostStarTypes: readonly (string | null | undefined)[] | null | undefined,
+  materials: PlanetScan["materials"] | null | undefined,
+): string | null {
+  if (m.confirmedColour) return null;
+  const hosts = hostStarType ? [hostStarType] : hostStarTypes;
+  const local = hostStarType
+    ? candidateMorphColorShortLabel(m.entry, hostStarType, materials)
+    : candidateMorphColorShortLabelForHosts(m.entry, hostStarTypes, materials);
+  if (m.predictedColour != null && m.predictedColour !== local) return null;
+  return candidateMorphColorCause(m.entry, hosts, materials);
 }

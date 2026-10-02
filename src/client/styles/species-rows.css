@@ -379,3 +379,10 @@
   font-weight: 800;
   cursor: help;
 }
+
+/* What decided a predicted colour, "Emerald [G]" (review F-5.2): there for checking, not for reading. */
+.colour-cause {
+  opacity: 0.55;
+  font-style: normal;
+  font-weight: 400;
+}
