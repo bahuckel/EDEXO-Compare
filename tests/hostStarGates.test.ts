@@ -59,7 +59,7 @@ describe("which species carry a host-star gate", () => {
    * what a genus with no star rule is supposed to look like — and why they carry no gate.
    */
   it("keeps a measured count beside every threshold", () => {
-    expect(HOST_STAR_GATES).toHaveLength(12);
+    expect(HOST_STAR_GATES).toHaveLength(13);
     for (const { idIncludes, gate } of HOST_STAR_GATES) {
       expect(gate.evidence, idIncludes).toMatch(/\d{2,}/); // a sighting count
       expect(gate.evidence, idIncludes).toMatch(/%/);
@@ -300,6 +300,23 @@ describe("the body that reported the bug", () => {
     expect(pluma.unlikely).toBeFalsy();
     // …but it is marked, so the genus split withholds its percentage.
     expect(pluma.spatialGateUnresolved).toBe(true);
+  });
+});
+
+describe("Stratum tectonicas and the star it orbits (owner, 2026-10-02)", () => {
+  const TECTONICAS = "stratum_stratum_tectonicas";
+
+  it("is demoted under a G, A or neutron host, and only the host counts", () => {
+    for (const host of ["G", "A", "N"]) expect(evaluateHostStarGate(TECTONICAS, [host], "K")!.passes).toBe(false);
+    for (const host of ["K", "M", "F", "L", "T"]) expect(evaluateHostStarGate(TECTONICAS, [host], "G")!.passes).toBe(true);
+  });
+
+  it("keeps a pair with one allowed star", () => {
+    expect(evaluateHostStarGate(TECTONICAS, ["G", "K"], "G")!.passes).toBe(true);
+  });
+
+  it("leaves the other Stratum alone", () => {
+    expect(evaluateHostStarGate("stratum_stratum_paleas", ["G"], "G")).toBeNull();
   });
 });
 

@@ -259,6 +259,35 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
   },
   {
     /**
+     * Stratum tectonicas — every class but G, A and neutron, judged on the star the body orbits
+     * (owner, 2026-10-02: "check for other stars that might shine on the planet in question as well").
+     *
+     * Found on one-signal HMC planets (556,823 in the Spansh dump, Bacterium or Stratum): host G gave
+     * Stratum 0.8 %, A 0.7 %, neutron 1.1 %, against 17-18 % for K, M and F. Then measured on every
+     * HMC whose DSS names Stratum or Bacterium (a 1-in-10 sample, 50,604 and 56,010 bodies), through
+     * this app's own star readings (docs/perf/hmc_stars_analysis.py):
+     *
+     * | the star | G | A | N | Stratum bodies under it / Bacterium-only |
+     * |---|---|---|---|---|
+     * | the body's host (this gate) | 9 | 5 | 14 | of 50,384 / G 13.3 %, A 5.1 %, N 2.9 % of 55,769 |
+     * | the system's main star | 2,726 | 1,184 | 543 | — |
+     * | any star lighting the body | 3,229 | 1,191 | 543 | — |
+     *
+     * So the other stars do not matter: a G star that lights the planet without being its host leaves
+     * Stratum at 49.7 % (3,220 of 6,480), the same as no G at all. The host decides. The gate costs 28
+     * of 50,384 Stratum bodies (0.06 %). On HMC, Stratum is tectonicas (4,631 of 4,633 confirmed), so
+     * the gate is on that species only. Written as an allow-list of everything else, so a pair with a
+     * G and a K passes.
+     */
+    idIncludes: "stratum_tectonicas",
+    gate: {
+      allowed: ["O", "B", "F", "K", "M", "L", "T", "Y", "TTS", "D", "W", "H", "other"],
+      evidence:
+        "host G, A or neutron on 28 of 50,384 Stratum HMC bodies (0.06 %), against 21 % of Bacterium-only HMC bodies; a G star lighting the body without being its host changes nothing",
+    },
+  },
+  {
+    /**
      * Concha labiata — every class but M. The codex CSV has it under an M main star on 1.2 % of
      * 86,565 sightings, where M is 22.7 % of all life and 8.5 % of Concha renibus, its rival on
      * carbon dioxide at 180–190 K. At body level the host is M on 3 of 1,923 labiata bodies (Spansh
