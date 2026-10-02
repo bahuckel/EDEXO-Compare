@@ -606,22 +606,25 @@ export const BodyPane = memo(function BodyPane({
                     type="button"
                     className={`candidate-species-compact-toggle btn-top-toggle${compactCandidateView ? " btn-top-toggle--on" : ""}`}
                     onClick={() => setCompactCandidateView((v) => !v)}
+                    aria-pressed={compactCandidateView}
                     title="Compact rows; click a row for its full card."
                   >
-                    {compactCandidateView ? "Compact ✓" : "Compact ✗"}
+                    Compact
                   </button>
                   <button
                     type="button"
                     className={`candidate-species-bacterium-toggle btn-top-toggle${includeBacteriumInSearch ? " btn-top-toggle--on" : ""}`}
                     onClick={onToggleIncludeBacterium}
+                    aria-pressed={includeBacteriumInSearch}
                     title="Include bacterium species (off by default: low value)."
                   >
-                    {includeBacteriumInSearch ? "Bacterium ✓" : "Bacterium ✗"}
+                    Bacterium
                   </button>
                   <button
                     type="button"
                     className={`candidate-species-evidence-toggle btn-top-toggle${evidenceOnly ? " btn-top-toggle--on" : ""}`}
                     onClick={() => setEvidenceOnly((v) => !v)}
+                    aria-pressed={evidenceOnly}
                     disabled={evidenceCount === 0 && !evidenceOnly}
                     title={
                       evidenceCount === 0
@@ -629,12 +632,13 @@ export const BodyPane = memo(function BodyPane({
                         : `Only the ${evidenceCount} row${evidenceCount === 1 ? "" : "s"} confirmed by you or by Spansh.`
                     }
                   >
-                    {evidenceOnly ? `Evidence ✓ (${evidenceCount})` : "Evidence ✗"}
+                    {evidenceOnly ? `Evidence (${evidenceCount})` : "Evidence"}
                   </button>
                   <button
                     type="button"
                     className={`candidate-species-codex-toggle btn-top-toggle${codexNewOnly ? " btn-top-toggle--on" : ""}`}
                     onClick={() => setCodexNewOnly(!codexNewOnly)}
+                    aria-pressed={codexNewOnly}
                     disabled={codexNewCount === 0 && !codexNewOnly}
                     title={
                       codexNewCount === 0
@@ -642,7 +646,7 @@ export const BodyPane = memo(function BodyPane({
                         : `Only the ${codexNewCount} species that would be new in your codex here.`
                     }
                   >
-                    {codexNewOnly ? `Codex new ✓ (${codexNewCount})` : "Codex new ✗"}
+                    {codexNewOnly ? `Codex new (${codexNewCount})` : "Codex new"}
                   </button>
                 </div>
               }

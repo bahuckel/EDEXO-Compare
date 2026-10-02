@@ -119,6 +119,19 @@
   transform: none;
 }
 
+/*
+  On / off for the candidate toggles (review V2): "Compact ✗" read as broken rather than off. Off is
+  the outline; on is filled, with a lit dot before the word, so the state is not colour alone.
+*/
+.candidate-species-toggles .btn-top-toggle--on {
+  background: var(--accent-a22);
+  color: var(--accent-bright);
+}
+.candidate-species-toggles .btn-top-toggle--on::before {
+  content: "\25CF\00A0";
+  color: var(--accent-bright);
+}
+
 /* ---- chips and pills: square the corners, keep the colours ---------------------------------------- */
 .exo-pill,
 .tab {
