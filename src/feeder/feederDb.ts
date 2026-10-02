@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import initSqlJs, { type Database, type SqlValue } from "sql.js";
 import { genusFromLandmark, occurrenceKey, type SpeciesIndexEntry, type SpanshExoRow } from "./csvImport.js";
@@ -37,10 +37,26 @@ export class FeederStore {
     migrateSchema(this.db);
   }
 
-  /** Persist in-memory DB to disk (called after commits; optional extra flush after JSON-only workflows). */
+  /**
+   * Persist in-memory DB to disk (called after commits; optional extra flush after JSON-only workflows).
+   *
+   * Written beside it and renamed over it (review F-F3): writing the corpus in place meant a crash or
+   * a full disk mid-write left a truncated database, the only copy of what was imported.
+   */
   persist(): void {
     const data = this.db.export();
-    writeFileSync(this.dbPath, Buffer.from(data));
+    const tmp = `${this.dbPath}.${process.pid}.tmp`;
+    try {
+      writeFileSync(tmp, Buffer.from(data));
+      renameSync(tmp, this.dbPath);
+    } catch (e) {
+      try {
+        rmSync(tmp, { force: true });
+      } catch {
+        /* nothing to clean */
+      }
+      throw e;
+    }
   }
 
   private transaction<T>(fn: () => T): T {
