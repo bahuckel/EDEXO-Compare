@@ -114,18 +114,34 @@ export const BodyTabStrip = memo(function BodyTabStrip({
       window.removeEventListener("resize", measureEdges);
       ro.disconnect();
     };
-  }, [measureEdges, sections]);
+    // Once per mount: every live push brings a new `sections`, and re-subscribing on each was wasted
+    // work ten times a second (plan 2.2). Tabs coming and going are re-measured below instead.
+  }, [measureEdges]);
 
-  // Keep the selected tab reachable — arrow keys, the palette and auto-select can all move it
-  // outside the visible slice of the scroller.
+  // Tabs come and go with any push; re-measure the edges without re-subscribing. A read, and the
+  // state update bails out when nothing moved.
+  useLayoutEffect(() => {
+    measureEdges();
+  });
+
+  /*
+    Keep the selected tab reachable — arrow keys, the palette and auto-select can all move it outside
+    the visible slice of the scroller. Inside the strip only: `scrollIntoView` also scrolls the page to
+    the strip, and with a fresh `sections` on every push it pulled a commander reading further down
+    back up to the tabs ten times a second (plan 2.2, O-16).
+  */
+  const tabKeys = sections.map((s) => s.hostCards.map((g) => g.map((b) => b.state.key).join(",")).join("|")).join("/");
   useEffect(() => {
     if (!selectedBodyKey) return;
-    const el = scrollerRef.current?.querySelector<HTMLElement>(
-      `[data-body-key="${CSS.escape(selectedBodyKey)}"]`,
-    );
-    el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const strip = scrollerRef.current;
+    const el = strip?.querySelector<HTMLElement>(`[data-body-key="${CSS.escape(selectedBodyKey)}"]`);
+    if (!strip || !el) return;
+    const s = strip.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    if (r.left < s.left) strip.scrollLeft -= s.left - r.left;
+    else if (r.right > s.right) strip.scrollLeft += r.right - s.right;
     measureEdges();
-  }, [selectedBodyKey, measureEdges, sections]);
+  }, [selectedBodyKey, measureEdges, tabKeys]);
 
   const nudge = (dir: -1 | 1) => {
     const el = scrollerRef.current;
