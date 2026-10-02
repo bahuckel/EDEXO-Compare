@@ -136,7 +136,34 @@ function createHudWindows(deps) {
     comes back on its own the moment its page has something again.
   */
   const isIdle = (s) => s.idle === true;
+  /*
+    What the HUD windows did and why, one line each, in hud-events.log beside the layout file (owner,
+    2026-10-02: "the HUD still appears-disappears every ~4 sec", which nothing here does on a timer).
+    Transitions only — shown, hidden, the away states, idle pages, the window in front — so a quiet
+    session writes nothing. Restarted past 256 KB.
+  */
+  let hudLogPath = null;
+  function hudLog(what) {
+    try {
+      if (!hudLogPath) hudLogPath = path.join(path.dirname(hudLayoutPath()), "hud-events.log");
+      try {
+        if (fs.statSync(hudLogPath).size > 256 * 1024) fs.rmSync(hudLogPath, { force: true });
+      } catch {
+        /* not there yet */
+      }
+      fs.appendFileSync(hudLogPath, `${new Date().toISOString()} ${what}\n`);
+    } catch {
+      /* a log must never be why a HUD misbehaves */
+    }
+  }
+  const slotName = (win) => hudOverlayStack.find((s) => s.win === win)?.pathname ?? "?";
+
   function hideWin(win) {
+    try {
+      if (win.isVisible()) hudLog(`hide ${slotName(win)}`);
+    } catch {
+      /* the log is a bystander */
+    }
     try {
       win.hide();
     } catch {
@@ -400,6 +427,11 @@ function createHudWindows(deps) {
    */
   function raiseHudWindow(win) {
     if (!win || win.isDestroyed()) return;
+    try {
+      if (!win.isVisible()) hudLog(`show ${slotName(win)}`);
+    } catch {
+      /* ignore */
+    }
     try {
       win.showInactive();
     } catch {
@@ -844,6 +876,7 @@ function createHudWindows(deps) {
   function setGameAway(away) {
     const next = away === true;
     if (gameAway === next) return;
+    hudLog(`game ${next ? "not running" : "running"}`);
     gameAway = next;
     applyAway();
   }
@@ -852,6 +885,7 @@ function createHudWindows(deps) {
   function setFocusAway(away) {
     const next = away === true;
     if (focusAway === next) return;
+    hudLog(`focus ${next ? "away from the game" : "back on the game"}`);
     const before = hiddenNow();
     focusAway = next;
     if (hiddenNow() !== before) applyAway();
@@ -1152,6 +1186,7 @@ function createHudWindows(deps) {
     if (typeof idle === "boolean") {
       const slot = hudOverlayStack.find((s) => s.win === win);
       if (slot && isIdle(slot) !== idle) {
+        hudLog(`${idle ? "idle" : "relevant"} ${slot.pathname}`);
         slot.idle = idle;
         if (idle) hideWin(win);
         else if (!hiddenNow()) raiseHudWindow(win);
@@ -1231,6 +1266,8 @@ function createHudWindows(deps) {
     /** Where the game's window is (screen pixels), so the corner stack goes to its monitor. */
     setGamePoint,
     raiseVisible,
+    /** One line in hud-events.log (main.cjs adds the foreground window's changes). */
+    log: hudLog,
     /** Boot: where the layout file lives once the server bundle is loaded, then read it. */
     setLayoutPathResolver(fn) {
       resolveHudLayoutPathFromBundle = typeof fn === "function" ? fn : null;

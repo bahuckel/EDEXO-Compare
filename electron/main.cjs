@@ -718,6 +718,7 @@ async function start() {
     const own = [path.basename(process.execPath, ".exe").toLowerCase(), "electron"];
     let hideTimer = null;
     foreground = watchForeground((name, at) => {
+      huds.log(`foreground ${name || "(unreadable)"}${at ? ` at ${at.x},${at.y}` : ""}`);
       // The game in front: its monitor is where the corner stack goes (hudWindows setGamePoint).
       if (isGame(name) && at) huds.setGamePoint(at);
       // The game just came to the front (the watcher reports changes only): put the HUDs back on top.
