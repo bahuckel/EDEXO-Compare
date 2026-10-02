@@ -34,6 +34,7 @@ const HUD_KEYS = [
   "organicPendingSampleCount",
   "explorationScanDataValueCredits",
   "includeExplorationScanDataInDataValue",
+  "pranavAntalBonus",
   "hudPrefs",
   "trackedAchievement",
   // The Notable and Notices overlays (2026-09-30); notices are cut down below.

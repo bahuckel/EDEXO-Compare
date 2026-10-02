@@ -1650,6 +1650,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       store.setIncludeExplorationScanDataInDataValue(v);
       persistUserPreferences();
     },
+    setPranavAntalBonus: (v) => {
+      store.setPranavAntalBonus(v);
+      persistUserPreferences();
+    },
     setFootTravelOdometer: (v) => {
       store.setFootTravelOdometerEnabled(v);
       persistUserPreferences();

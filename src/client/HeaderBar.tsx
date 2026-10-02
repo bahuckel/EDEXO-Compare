@@ -456,6 +456,23 @@ export const HeaderBar = memo(function HeaderBar({
     })();
   };
 
+  /* The Data value window's "+30% Pranav Antal bonus" (owner, 2026-10-03): a saved setting. */
+  const togglePranavAntal = (on: boolean) => {
+    void (async () => {
+      try {
+        const r = await fetch("/api/settings/pranav-antal-bonus", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ value: on }),
+        });
+        const j = (await r.json().catch(() => null)) as { error?: string } | null;
+        if (!r.ok) throw new Error(j?.error || r.statusText);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Could not update setting.");
+      }
+    })();
+  };
+
   const resetExobiology = () => {
     void (async () => {
       const ok = await confirm({
@@ -863,6 +880,8 @@ export const HeaderBar = memo(function HeaderBar({
             explorationDssValueCredits={snap.explorationDssValueCredits ?? 0}
             exobioScanCount={snap.organicPendingSampleCount}
             exobioValueCredits={snap.organicDataValueCredits}
+            pranavAntalBonus={snap.pranavAntalBonus === true}
+            onTogglePranavAntal={togglePranavAntal}
             onClose={() => setDataBreakdownOpen(false)}
           />
         </Suspense>

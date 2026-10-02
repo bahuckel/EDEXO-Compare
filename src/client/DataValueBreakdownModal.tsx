@@ -15,6 +15,8 @@ export function DataValueBreakdownModal({
   explorationDssValueCredits,
   exobioScanCount,
   exobioValueCredits,
+  pranavAntalBonus = false,
+  onTogglePranavAntal,
   onClose,
 }: {
   lines: OrganicPendingLineItem[];
@@ -26,6 +28,9 @@ export function DataValueBreakdownModal({
   /** Completed samples waiting to sell, and their value — the header pill's own two numbers. */
   exobioScanCount: number;
   exobioValueCredits: number;
+  /** The exobiology figures include the +30 % Pranav Antal sale bonus (owner, 2026-10-03). */
+  pranavAntalBonus?: boolean;
+  onTogglePranavAntal?: (on: boolean) => void;
   onClose: () => void;
 }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
@@ -89,10 +94,31 @@ export function DataValueBreakdownModal({
               title="Completed samples (3x Analyse) not yet sold; first footfall pays 5x"
             >
               <span className="data-value-summary-count">{exobioScanCount}</span>
-              <span className="data-value-summary-label">Exobio scans</span>
+              <span className="data-value-summary-label">
+                Exobio scans
+                {pranavAntalBonus ? <span className="dim tiny"> · with +30 %</span> : null}
+              </span>
               <span className="data-value-summary-value">{exobioValueCredits.toLocaleString()} CR</span>
             </li>
           </ul>
+          {/*
+            Pranav Antal (owner, 2026-10-03): a toggle, off by default. The bonus depends on where the
+            commander sells, which is his to choose; the app does not follow Powerplay ranks or systems.
+          */}
+          {onTogglePranavAntal ? (
+            <label
+              className="data-value-bonus-toggle"
+              title="Count Pranav Antal's +30 % on exobiology sales in Data value. Turn it on when you plan to sell where you get the bonus."
+            >
+              <input
+                type="checkbox"
+                checked={pranavAntalBonus}
+                onChange={(ev) => onTogglePranavAntal(ev.target.checked)}
+              />
+              <span>+30% Pranav Antal bonus</span>
+              {pranavAntalBonus ? <span className="dim tiny">· the samples below are before it</span> : null}
+            </label>
+          ) : null}
           {lines.length === 0 ? (
             <p className="dim">
               {includeExplorationScanDataInDataValue

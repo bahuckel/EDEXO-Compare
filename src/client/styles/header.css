@@ -627,3 +627,18 @@
   margin-top: 1.25rem;
   padding: 0.5rem 0.75rem;
 }
+
+/* Data value window: the Pranav Antal toggle under the three totals (owner, 2026-10-03). */
+.data-value-bonus-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.2rem 0 0.8rem;
+  width: fit-content;
+  cursor: pointer;
+  font-size: var(--fs-sm);
+}
+.data-value-bonus-toggle input {
+  accent-color: var(--accent);
+  margin: 0;
+}

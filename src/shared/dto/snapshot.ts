@@ -175,6 +175,8 @@ export interface AppSnapshot {
    * Not first-discoverer bonuses; see Options.
    */
   includeExplorationScanDataInDataValue: boolean;
+  /** `organicDataValueCredits` includes the +30 % Pranav Antal exobiology sale bonus (Data value toggle). */
+  pranavAntalBonus?: boolean;
   /** Estimated CR from all merged `Scan` rows (MattG-style formulas; belts excluded). */
   explorationScanDataValueCredits: number;
   /** Unique bodies with journal `FSSBodySignals` (any system in merged logs). */

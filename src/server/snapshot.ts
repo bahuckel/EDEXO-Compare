@@ -1168,6 +1168,9 @@ function computeBodyUncached(
 }
 
 /** Unsold exobiology (3× Analyse in journal): list ×5 on first-footfall bodies (else ×1) — same multiplier as map tier/heuristic when footfall applies. */
+/** Pranav Antal's +30 % on exobiology sales (Powerplay 2.0), as the Data value toggle applies it. */
+export const PRANAV_ANTAL_BONUS = 1.3;
+
 function organicDataValuation(
   store: GameStateStore,
   prices: PriceIndex,
@@ -1182,6 +1185,8 @@ function organicDataValuation(
     const mult = store.firstFootfallBodies.has(p.bodyKey) ? 5 : 1;
     credits += base * mult;
   }
+  // The Pranav Antal sale bonus on the whole exobiology sale, when the commander says he sells there.
+  if (store.pranavAntalBonus) credits = Math.round(credits * PRANAV_ANTAL_BONUS);
   return { credits, pendingSamples: store.pendingOrganicSales.length };
 }
 
@@ -1472,6 +1477,7 @@ export function buildSnapshot(
       ledger: edsmUploadLedgerSummary(),
     },
     includeExplorationScanDataInDataValue: store.includeExplorationScanDataInDataValue,
+    pranavAntalBonus: store.pranavAntalBonus,
     explorationScanDataValueCredits,
     explorationFssScanCount: exploreBreakdown.fssScanCount,
     onSiteTiming: timingFromSamples(store.landingMinutesSamples, store.samplingMinutesSamples),

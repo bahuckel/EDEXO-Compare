@@ -993,6 +993,11 @@ export class GameStateStore {
 
   /** When true, header “Data value” includes estimated FSS/DSS UC value from merged scans (see Options). */
   includeExplorationScanDataInDataValue = false;
+  /**
+   * Data value counts the +30 % Pranav Antal exobiology sale bonus (owner, 2026-10-03). Off by default:
+   * whether a sale gets it depends on where the commander sells, which the app does not follow.
+   */
+  pranavAntalBonus = false;
 
   /** Consumed once in `buildSnapshot` so the client can select that bio body tab. */
   private pendingUiAutoSelectBodyKey: string | null = null;
@@ -1158,6 +1163,10 @@ export class GameStateStore {
 
   setIncludeExplorationScanDataInDataValue(value: boolean): void {
     this.includeExplorationScanDataInDataValue = value;
+  }
+
+  setPranavAntalBonus(value: boolean): void {
+    this.pranavAntalBonus = value;
   }
 
   setIncludeBacteriumInSearch(value: boolean): void {
