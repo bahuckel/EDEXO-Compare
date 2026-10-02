@@ -53,6 +53,7 @@ import { isLoopbackHostName } from "./lanAuth.js";
 import { applyPendingRestore } from "./backup.js";
 import { createBackupService } from "./backupService.js";
 import { APP_VERSION } from "./appVersion.js";
+import os from "node:os";
 import {
   edsmCredentialsStatus,
   forgetEdsmCredentials,
@@ -103,7 +104,7 @@ import {
 } from "./footTravelStatus.js";
 import { parseNavRouteJson } from "./navRouteFuel.js";
 import { getProjectRoot, resolveLanKeyPath, resolveUserSettingsJsonPath, resolveExoOutlierLogPath, USER_SETTINGS_FILENAME, getSpeciesDataDir, reapplySpeciesDataDirDiscoveryFromDisk, resolveImportDumpLedgerPath } from "./paths.js";
-import { persistJournalDirPreference, resolveInitialJournalDir } from "./journalDirPreference.js";
+import { loadPersistedJournalDir, persistJournalDirPreference, resolveInitialJournalDir } from "./journalDirPreference.js";
 import {
   buildExoMinimapDto,
   buildExoOrganicOverlayDto,
@@ -134,6 +135,7 @@ import { runEdsmCatchUp, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 import { createUpdateChecker, currentReleaseForm } from "./updateCheck.js";
 import { createAppUpdater, resolveUpdateDir } from "./appUpdater.js";
 import { createWhatsNew } from "./whatsNew.js";
+import { buildDiagnosticsText, installLogRing, loggedLines } from "./diagnostics.js";
 import { fetchRemoteSystem, readRemoteSystemsCache, writeRemoteSystemToCache } from "./remoteSystems.js";
 import { parseHost, parsePort } from "./cliOptions.js";
 import type { CliOptions } from "./cliOptions.js";
@@ -226,6 +228,8 @@ function journalFolderIsReadable(dir: string): boolean {
 }
 
 export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
+  // First, so the warnings of the start are in Copy diagnostics too (diagnostics.ts).
+  installLogRing();
   assertResourceLayout();
   startPerfReporter();
 
@@ -1065,13 +1069,17 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     bootClock.marks.push([label, now - bootClock.last]);
     bootClock.last = now;
   };
+  /** The last journal boot's path and timings, for Copy diagnostics. */
+  let lastBoot: { path: string; summary: string; at: string } | null = null;
   const bootReport = (path: string): void => {
-    if (quietConsole) return;
     const total = performance.now() - bootClock.t0;
     const parts = bootClock.marks.map(
       ([l, ms]) => `${l} ${ms >= 1000 ? (ms / 1000).toFixed(1) + " s" : Math.round(ms) + " ms"}`,
     );
-    console.info(`Journal boot (${path}): ${parts.join(" · ")} · total ${(total / 1000).toFixed(1)} s`);
+    const summary = `${parts.join(" · ")} · total ${(total / 1000).toFixed(1)} s`;
+    lastBoot = { path, summary, at: new Date().toISOString() };
+    if (quietConsole) return;
+    console.info(`Journal boot (${path}): ${summary}`);
   };
 
   /**
@@ -1330,7 +1338,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     journalBootProgress = null;
     refreshLiveHudFromJournalDir();
     pushFlush();
+    bootMark(`replay ${files.length} file(s)`);
     await saveJournalMergeCache(journalDirNorm, manifest, store, projectRoot, store.journalHistoryPreset);
+    bootMark("cache save");
+    bootReport("full read");
   }
 
   /*
@@ -1808,6 +1819,57 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       return appUpdater.status();
     },
     getWhatsNew: (any) => whatsNew.get(any),
+    getDiagnostics: async () => {
+      const st = getStatus();
+      const upd = await updateChecker.check(false);
+      const dl = appUpdater.status();
+      return buildDiagnosticsText({
+        now: new Date(),
+        version: APP_VERSION,
+        form:
+          process.env.EDEXO_ELECTRON_PACKAGED === "1"
+            ? currentReleaseForm()
+            : "pkg" in process
+              ? "console build"
+              : "source",
+        electron: process.versions.electron ?? null,
+        node: process.versions.node,
+        platform: process.platform,
+        osRelease: os.release(),
+        arch: process.arch,
+        memGb: Math.round(os.totalmem() / 2 ** 30),
+        journalDir: st.journalDir,
+        journalDirOk: st.journalDirConfiguredOk,
+        journalDirChosen: loadPersistedJournalDir(projectRoot) !== null,
+        journalFiles: st.journalFileCount,
+        currentJournal: st.journalPath ? path.basename(st.journalPath) : null,
+        historyPreset: st.journalHistoryPreset ?? "all",
+        lastEventIso: st.lastJournalEventIso,
+        boot: lastBoot,
+        booting: st.journalBoot ? `${st.journalBoot.phase} ${st.journalBoot.percent} %` : null,
+        mode: st.mode,
+        port: st.port,
+        bindHost: st.bindHost,
+        lanAccess: st.lanAccess,
+        gameRunning: process.env.EDEXO_ELECTRON === "1" ? gamePresence.running() : null,
+        uploads: {
+          edsmFetch: store.edsmAutoFetchEnabled,
+          edsmUpload: store.edsmUploadEnabled,
+          canonn: store.canonnUploadEnabled,
+          eddn: store.eddnUploadEnabled,
+        },
+        update: {
+          latest: upd.latest,
+          checkedAt: upd.checkedAt,
+          error: upd.error,
+          download: dl.supported ? `${dl.state}${dl.error ? ` (${dl.error})` : ""}` : null,
+        },
+        speciesCount: getCachedSpeciesDatabase().species.length,
+        speciesDataWarnings: st.speciesDataWarnings?.length ?? 0,
+        commander: store.commanderName,
+        log: loggedLines(),
+      });
+    },
     markWhatsNewSeen: () => whatsNew.seen(),
     openUpdatePage: () => {
       const url = updateChecker.updatePageUrl();

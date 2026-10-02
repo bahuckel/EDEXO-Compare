@@ -188,6 +188,8 @@ export interface HttpServerOptions {
    */
   getWhatsNew?: (any: boolean) => Promise<WhatsNewDTO>;
   markWhatsNewSeen?: () => void;
+  /** GET /api/app/diagnostics — Options' Copy diagnostics, plain text with nothing private (diagnostics.ts). */
+  getDiagnostics?: () => Promise<string>;
   /**
    * POST /api/feeder/import-dump — start a Spansh JSONL export import into the feeder corpus
    * (`{ file, apply }`); GET /api/feeder/import-dump/status — its progress and last report.
@@ -666,6 +668,14 @@ export function createHttpServer(opts: HttpServerOptions): {
       return;
     }
     res.json(await opts.getWhatsNew(req.query.any === "1"));
+  });
+
+  app.get("/api/app/diagnostics", async (_req, res) => {
+    if (typeof opts.getDiagnostics !== "function") {
+      res.status(501).type("text/plain").send("Not available");
+      return;
+    }
+    res.type("text/plain").set("Cache-Control", "no-store").send(await opts.getDiagnostics());
   });
 
   app.post("/api/app/whats-new/seen", localOnly, (_req, res) => {

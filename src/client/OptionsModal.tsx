@@ -97,6 +97,60 @@ function CopyLanUrlButton({ url, label = "Copy" }: { url: string; label?: string
   );
 }
 
+/**
+ * "Copy diagnostics" (combined plan, Phase 5 [O-C]): one block of text for a support message —
+ * build, system, journal folder, how the journals were read at start, LAN and upload switches, the
+ * last warnings. The server leaves out what is private (server/diagnostics.ts); the text is shown
+ * here as well, so the commander sees what they are about to send, and can copy it by hand where
+ * the clipboard is refused.
+ */
+function CopyDiagnostics() {
+  const toast = useToast();
+  const [text, setText] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const copy = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/app/diagnostics", { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status === 501 ? "Not available in this build." : r.statusText);
+      const t = await r.text();
+      setText(t);
+      try {
+        await navigator.clipboard.writeText(t);
+        toast.success("Diagnostics copied — paste them into your message.");
+      } catch {
+        toast.info("Copy them from the box below.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not read the diagnostics.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="options-diagnostics">
+      <div className="options-oneline">
+        <button type="button" className="btn secondary" disabled={busy} onClick={() => void copy()}>
+          Copy diagnostics
+        </button>
+        <span className="dim options-diagnostics-hint">
+          For a bug report: no names, keys or links, your home folder as ~.
+        </span>
+      </div>
+      {text ? (
+        <textarea
+          className="options-diagnostics-text"
+          readOnly
+          value={text}
+          rows={Math.min(18, text.split("\n").length)}
+          onFocus={(e) => e.currentTarget.select()}
+          aria-label="Diagnostics"
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export function MapOptionsModal({
   snap,
   plusMinCr,
@@ -215,19 +269,6 @@ export function MapOptionsModal({
         </div>
         <div className="modal-body">
           <section className="options-meta-block">
-            {snap.lastJournalEventIso ? (
-              <p className="options-last-event dim">
-                <span className="options-last-event-label">Last event:</span> {snap.lastJournalEventIso}
-              </p>
-            ) : null}
-            <p className="options-journal-line dim">
-              Journal: <code>{tail}</code>
-              {snap.journalFileCount > 0 ? (
-                <span className="tab"> · merged {snap.journalFileCount} log file(s)</span>
-              ) : null}
-            </p>
-            <p className="options-journal-line dim">Species DB: {snap.speciesCount}</p>
-            <FeederCorpusSetting />
             <CollectionFocusPanel />
             {/*
               The second screen is the same server on the same key — one query parameter apart
@@ -389,6 +430,28 @@ export function MapOptionsModal({
               </div>
             </div>
           </section>
+
+          {/*
+            What the app is running on, for support (review F-1.6, combined plan 3.3 + Phase 5 [O-C]):
+            Options used to open on these lines, which mean nothing to someone choosing a colour scheme.
+          */}
+          <details className="options-about options-meta-block">
+            <summary>About this install</summary>
+            {snap.lastJournalEventIso ? (
+              <p className="options-last-event dim">
+                <span className="options-last-event-label">Last event:</span> {snap.lastJournalEventIso}
+              </p>
+            ) : null}
+            <p className="options-journal-line dim">
+              Journal: <code>{tail}</code>
+              {snap.journalFileCount > 0 ? (
+                <span className="tab"> · merged {snap.journalFileCount} log file(s)</span>
+              ) : null}
+            </p>
+            <p className="options-journal-line dim">Species DB: {snap.speciesCount}</p>
+            <CopyDiagnostics />
+            <FeederCorpusSetting />
+          </details>
 
           <button type="button" className="btn-top-danger options-reset-exo" onClick={onResetExobiology}>
             Reset exobiology…

@@ -588,6 +588,36 @@
   word-break: break-all;
 }
 
+/* About this install (F-1.6): the diagnostics fold at the bottom of Options. */
+.options-about > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+
+.options-about[open] > summary {
+  margin-bottom: 0.5rem;
+}
+
+.options-diagnostics {
+  margin: 0.6rem 0;
+}
+
+.options-diagnostics-hint {
+  font-size: var(--fs-sm);
+}
+
+.options-diagnostics-text {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: var(--fs-sm);
+  white-space: pre;
+  resize: vertical;
+}
+
 .options-reset-exo {
   width: 100%;
   margin-top: 1.25rem;
