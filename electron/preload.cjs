@@ -90,6 +90,8 @@ contextBridge.exposeInMainWorld("edexoElectron", {
   pickFolder: (opts) => ipcRenderer.invoke("edexo:pick-folder", opts),
   /** Close and start the app again (a staged restore is applied at start). Launcher only. */
   relaunch: () => ipcRenderer.invoke("edexo:relaunch"),
+  // "Restart to update": installs the downloaded, checked update on the way out (electron/updater.cjs).
+  installUpdate: () => ipcRenderer.invoke("edexo:install-update"),
   /** Launcher → every HUD window, as a setting changes (the HUDs have their own session). */
   pushHudPrefs: (prefs) => ipcRenderer.send("edexo:push-hud-prefs", prefs),
   /** HUD side of {@link pushHudPrefs}. */

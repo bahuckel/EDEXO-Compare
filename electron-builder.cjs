@@ -85,6 +85,7 @@ module.exports = {
     "electron/foregroundWatch.cjs",
     "electron/windowGuards.cjs",
     "electron/keybinds.cjs",
+    "electron/updater.cjs",
     ...(process.env.EDEXO_DIAG === "1" ? ["electron/diag.cjs"] : []),
     "package.json",
   ],
@@ -103,6 +104,8 @@ module.exports = {
       artwork, so Windows picks instead of resampling.
     */
     { from: "build/icon.ico", to: "edexo/icon.ico" },
+    // The self-update swap (electron/updater.cjs): PowerShell cannot read a script inside the asar.
+    { from: "electron/update-apply.ps1", to: "edexo/update-apply.ps1" },
     // sql.js's WebAssembly for the feeder database (in-app dump import); feederDb.ts `wasmPath`.
     { from: "node_modules/sql.js/dist/sql-wasm.wasm", to: "sql-wasm/sql-wasm.wasm" },
   ],

@@ -22,6 +22,7 @@ const {
 } = require("./hudWindows.cjs");
 const { createTrayControl } = require("./tray.cjs");
 const { createKeybinds } = require("./keybinds.cjs");
+const updater = require("./updater.cjs");
 const { watchForeground, isGameOrOwn } = require("./foregroundWatch.cjs");
 const { guardWindowNavigation, restrictPermissions } = require("./windowGuards.cjs");
 /** The app's own origin once the server listens (windowGuards.cjs). */
@@ -427,6 +428,20 @@ function registerFootOverlayIpc(iconForChild) {
     });
     return { path: r.canceled || !r.filePaths[0] ? null : r.filePaths[0] };
   });
+  /*
+    "Restart to update": the server has the newer release downloaded and checked; it goes in on the
+    way out (will-quit), and the new copy starts. With a backup running, quitting asks first, and
+    "Keep the app open" calls this off like a plain restart.
+  */
+  ipcMain.handle("edexo:install-update", (evt) => {
+    if (!mainWindow || evt.sender !== mainWindow.webContents) return { ok: false };
+    const staged = runtime && typeof runtime.stagedUpdate === "function" ? runtime.stagedUpdate() : null;
+    if (!selfUpdateFormValue || !staged) return { ok: false, error: "No downloaded update is waiting." };
+    installUpdateOnQuit = staged;
+    relaunchOnQuit = false;
+    app.quit();
+    return { ok: true };
+  });
   ipcMain.handle("edexo:relaunch", (evt) => {
     if (!mainWindow || evt.sender !== mainWindow.webContents) return { ok: false };
     /*
@@ -485,6 +500,19 @@ async function start() {
   }
 
   applyPackagedResourcesEnv();
+
+  /*
+    Self-update (owner, 2026-10-02): only a packaged copy this file knows how to swap — the portable
+    exe, the program folder, the AppImage (updater.cjs). The server downloads only when told so here.
+    The copy the last update moved aside goes now.
+  */
+  selfUpdateFormValue = updater.selfUpdateForm({
+    isPackaged: app.isPackaged || process.env.EDEXO_ELECTRON_PACKAGED === "1",
+  });
+  if (selfUpdateFormValue) {
+    process.env.EDEXO_SELF_UPDATE = "1";
+    updater.removeOldCopy(selfUpdateFormValue);
+  }
 
   const bundle = serverBundlePath();
   if (!fs.existsSync(bundle)) {
@@ -838,12 +866,44 @@ app.on("window-all-closed", () => {
 let exitAllowed = false;
 /** "Restart now" asked for a relaunch; done in will-quit, once the quit is really going ahead. */
 let relaunchOnQuit = false;
+/** "Restart to update" asked for this staged update to go in; installed in will-quit. */
+let installUpdateOnQuit = null;
+/** This copy's self-update form (updater.cjs), or null where it cannot replace itself. */
+let selfUpdateFormValue = null;
 
-app.on("will-quit", () => {
-  if (!relaunchOnQuit) return;
-  relaunchOnQuit = false;
+function relaunchAsUsual() {
   const portable = process.env.PORTABLE_EXECUTABLE_FILE;
   app.relaunch(portable ? { execPath: portable, args: process.argv.slice(1) } : undefined);
+}
+
+app.on("will-quit", () => {
+  if (installUpdateOnQuit) {
+    const staged = installUpdateOnQuit;
+    installUpdateOnQuit = null;
+    try {
+      // From the update folder, not resources: the portable stub deletes its unpacked copy on exit.
+      const scriptPath = path.join(staged.dir, "update-apply.ps1");
+      if (process.platform === "win32") {
+        fs.copyFileSync(path.join(process.resourcesPath, "edexo", "update-apply.ps1"), scriptPath);
+      }
+      const r = updater.installOnQuit(staged, {
+        form: selfUpdateFormValue,
+        scriptPath,
+        logPath: path.join(staged.dir, "update.log"),
+        // The portable launcher stub waits for this process; its exe is the file being replaced.
+        pids: [process.pid, selfUpdateFormValue === "portable" ? process.ppid : 0],
+      });
+      if (r.how === "relaunch") app.relaunch({ execPath: r.execPath, args: process.argv.slice(1) });
+      else if (r.how === "none") relaunchAsUsual();
+    } catch (e) {
+      console.error("[edexo-compare] update install failed, restarting the installed copy:", e);
+      relaunchAsUsual();
+    }
+    return;
+  }
+  if (!relaunchOnQuit) return;
+  relaunchOnQuit = false;
+  relaunchAsUsual();
 });
 let exitAsking = false;
 let exitWhenBackupDone = false;
@@ -872,7 +932,10 @@ function holdExitForBackup(e) {
   void (parent ? dialog.showMessageBox(parent, opts) : dialog.showMessageBox(opts)).then(({ response }) => {
     exitAsking = false;
     // "Keep the app open": a "Restart now" that started this quit is called off with it.
-    if (response === 1) relaunchOnQuit = false;
+    if (response === 1) {
+      relaunchOnQuit = false;
+      installUpdateOnQuit = null;
+    }
     if (response === 2) {
       exitAllowed = true;
       app.quit();
