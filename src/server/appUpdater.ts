@@ -14,7 +14,17 @@
  * build). A source run or the console builds keep the release-page link.
  */
 import { createHash } from "node:crypto";
-import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { Readable } from "node:stream";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
@@ -34,6 +44,27 @@ export interface StagedUpdate {
 }
 
 export const READY_FILE = "ready.json";
+/** The swap's own log (electron/update-apply.ps1), kept across starts: it is how a failure is seen. */
+export const LOG_FILE = "update.log";
+
+/**
+ * Why the last install did not go in, from the swap's log, or null when the last one went in (or
+ * none ran). The swap starts the old copy again on a failure, and without this the launcher would
+ * just offer the same update as if nothing had happened.
+ */
+export function lastInstallFailure(dir: string): string | null {
+  try {
+    const lines = readFileSync(join(dir, LOG_FILE), "utf8")
+      .split("\n")
+      .map((l) => l.trimEnd())
+      .filter((l) => l.includes("update: "));
+    const last = [...lines].reverse().find((l) => / update: (installed|FAILED)/.test(l));
+    if (!last || !last.includes("update: FAILED")) return null;
+    return last.slice(last.indexOf("update: FAILED") + "update: FAILED".length).replace(/^[,:\s]+(the old copy stays:\s*)?/, "") || "unknown reason";
+  } catch {
+    return null;
+  }
+}
 
 /** `<user data>/update` — beside the settings, never inside the program's own folder. */
 export function resolveUpdateDir(): string {
@@ -72,6 +103,15 @@ export function cleanUpdateDir(dir: string, current = APP_VERSION): void {
   const keep = readStagedUpdate(dir, current);
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
+    if (name === LOG_FILE) {
+      // Kept for the next look, but not for ever.
+      try {
+        if (statSync(p).size > 256 * 1024) rmSync(p, { force: true });
+      } catch {
+        /* gone */
+      }
+      continue;
+    }
     if (keep && (p === keep.file || name === READY_FILE)) continue;
     try {
       rmSync(p, { recursive: true, force: true });
@@ -109,6 +149,8 @@ export function createAppUpdater(o: AppUpdaterOptions) {
     if (staged && staged.form === o.form) {
       state = "ready";
       version = staged.version;
+      const failed = lastInstallFailure(dir);
+      if (failed) error = `The last install did not go in: ${failed}`;
     }
   }
 

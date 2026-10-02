@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { cleanUpdateDir, createAppUpdater, readStagedUpdate, READY_FILE } from "../src/server/appUpdater.js";
+import { cleanUpdateDir, createAppUpdater, lastInstallFailure, LOG_FILE, readStagedUpdate, READY_FILE } from "../src/server/appUpdater.js";
 import { createUpdateChecker, pickLatestRelease, RELEASE_DOWNLOAD } from "../src/server/updateCheck.js";
 
 const EXE = Buffer.from("MZ the new exe");
@@ -142,5 +142,27 @@ describe("the update folder at start", () => {
     writeFileSync(path.join(dir, READY_FILE), JSON.stringify({ version: "1.3.0", form: "portable", file, sha256: sha(EXE), stagedAt: "x" }));
     const u = createAppUpdater({ newerAsset: () => null, form: "portable", dir, current: "1.2.9", supported: true });
     expect(u.status()).toMatchObject({ state: "ready", version: "1.3.0" });
+  });
+});
+
+describe("a failed install", () => {
+  it("keeps the swap's log across the start, and says why the last install did not go in", () => {
+    mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, "EDExoCompare-1.3.0-win-x64.zip");
+    writeFileSync(file, ZIP);
+    writeFileSync(path.join(dir, READY_FILE), JSON.stringify({ version: "1.3.0", form: "zip", file, sha256: sha(ZIP), stagedAt: "x" }));
+    writeFileSync(
+      path.join(dir, LOG_FILE),
+      "2026-10-02 11:29:50Z update: mode zip, target D:/ED Exo Compare 1.2.8\r\n" +
+        "2026-10-02 11:30:12Z update: FAILED, the old copy stays: moving the program folder aside failed: in use\r\n" +
+        "2026-10-02 11:30:12Z update: starting D:/ED Exo Compare 1.2.8/EDExoCompare.exe\r\n",
+    );
+    const u = createAppUpdater({ newerAsset: () => null, form: "zip", dir, current: "1.2.8", supported: true });
+    expect(existsSync(path.join(dir, LOG_FILE))).toBe(true);
+    expect(u.status()).toMatchObject({ state: "ready", version: "1.3.0" });
+    expect(u.status().error).toBe("The last install did not go in: moving the program folder aside failed: in use");
+    // A later run that went in clears it.
+    writeFileSync(path.join(dir, LOG_FILE), "2026-10-02 11:40:00Z update: installed\r\n", { flag: "a" });
+    expect(lastInstallFailure(dir)).toBeNull();
   });
 });

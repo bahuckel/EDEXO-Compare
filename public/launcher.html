@@ -3034,8 +3034,9 @@
               btnCheckUpdate.disabled = true;
             } else {
               versionText.textContent =
-                "Installed " + cur + " · v" + info.latest + " available" + (dl.state === "error" ? " · download failed" : "");
-              if (dl.state === "error" && dl.error) versionText.title = dl.error;
+                "Installed " + cur + " · v" + info.latest + " available" +
+                (dl.state === "error" ? " · download failed" : dl.error ? " · last install failed" : "");
+              if (dl.error) versionText.title = dl.error;
               btnCheckUpdate.textContent = dl.state === "error" ? "Try again" : "Download & Install v" + info.latest;
               btnCheckUpdate.title =
                 "Downloads v" + info.latest + " from GitHub, checks it, then closes the app, puts it in place of this copy and starts it. Your settings and data are kept.";
