@@ -19,7 +19,7 @@
  */
 :root {
   /* The shared palette (--hud, --hud-hi, --ok, --warn, --danger, --live, --hud-font) comes from
-   * public/tokens.css, linked from index.html. The values below repeat it in the app's own names so
+   * public/tokens.css, imported first by styles.css. The values below repeat it in the app's own names so
    * the 29 000 lines of existing rules keep working unchanged. */
 
   /* ---- surfaces: near-black with a warm cast, like the launcher --------------------------- */

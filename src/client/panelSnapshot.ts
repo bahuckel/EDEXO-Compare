@@ -11,7 +11,6 @@
  * Click copies it to the clipboard; Shift+click saves a file. The clipboard needs a secure context,
  * which the local app and `127.0.0.1` are and a phone on the LAN is not — there it saves instead.
  */
-import { toSvg } from "html-to-image";
 import type { PhotoStampPrefs } from "@shared/types";
 
 export interface SnapshotStamp {
@@ -101,6 +100,8 @@ export async function renderBrandedSnapshot(el: HTMLElement, stamp: SnapshotStam
    * painting (behind others, minimised, a background tab): the snapshot would hang with no error.
    * The load event does not need a paint.
    */
+  // Fetched on the first snapshot, not with the app (~35 kB; plan 2.6, Fable 9.2).
+  const { toSvg } = await import("html-to-image");
   const svg = await toSvg(el, {
     backgroundColor: bg,
     skipFonts: true,

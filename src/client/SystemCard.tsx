@@ -16,7 +16,7 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { NotableBodyInfo, PrimaryStarHeaderEntryDTO, SystemKind } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
-import { BOOKMARK_STAR_FIELDS, BookmarkStar } from "./Bookmarks";
+import { BOOKMARK_STAR_FIELDS, BookmarkStar } from "./BookmarkButton";
 import { memoOnSnapSlice, type SnapSlice } from "./snapSlice";
 import { primaryStarRoleTooltip } from "./speciesMatchHelpers";
 import { Tooltip } from "./ui/Tooltip";

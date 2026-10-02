@@ -7,7 +7,7 @@ import type { GalaxyMySystemDTO, GalaxySectorDTO, GalaxySystemDTO } from "@share
 import { formatCount, formatValue } from "./clusters";
 import type { CodexMapSystemDTO } from "@shared/dto/codexMap.js";
 import { CopySystemButton } from "../CopySystemButton";
-import { SystemBookmarkButton } from "../Bookmarks";
+import { SystemBookmarkButton } from "../BookmarkButton";
 
 const cr = (n: number | null) => (n == null ? "—" : `${Math.round(n).toLocaleString()} CR`);
 

@@ -10,6 +10,9 @@
  * ties, so reordering these lines can restyle the app without a single rule being edited. Add a
  * new region at the end unless it genuinely needs to be overridden by an existing one.
  */
+/* The shared palette (launcher, HUD, app), first as when index.html linked it: now part of this
+   bundle rather than a second render-blocking, unhashed request (plan 2.6, Fable 9.2). */
+@import "../../public/tokens.css";
 @import "./styles/tokens.css";
 @import "./styles/shell.css";
 @import "./styles/body-pane.css";

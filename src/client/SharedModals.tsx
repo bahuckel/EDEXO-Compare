@@ -54,6 +54,20 @@ export const AchievementsModal = lazyModal(() => import("./AchievementsModal").t
 
 export const MapOptionsModal = lazyModal(() => import("./OptionsModal").then((m) => m.MapOptionsModal));
 
+/*
+  The header's other four (plan 2.6, Fable 9.2): imported eagerly through a barrel, they carried My
+  discoveries' tables and the green gas giant catalogue into the main bundle.
+*/
+export const MyExobiologyModal = lazyModal(() => import("./MyExobiologyModal").then((m) => m.MyExobiologyModal));
+
+export const DataValueBreakdownModal = lazyModal(() =>
+  import("./DataValueBreakdownModal").then((m) => m.DataValueBreakdownModal),
+);
+
+export const SessionLogModal = lazyModal(() => import("./SessionLogModal").then((m) => m.SessionLogModal));
+
+export const FeederModal = lazyModal(() => import("./FeederModal").then((m) => m.FeederModal));
+
 /** Fetch every panel's chunk in the background once the page has settled (~130 kB, all local). */
 export function prefetchMenuModals(): void {
   const go = () => {
@@ -68,6 +82,9 @@ export function prefetchMenuModals(): void {
       AchievementsModal,
       MapOptionsModal,
       ExomasteryHabitatMatchModal,
+      MyExobiologyModal,
+      DataValueBreakdownModal,
+      SessionLogModal,
     ]) {
       m.preload();
     }

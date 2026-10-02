@@ -31,12 +31,17 @@ export default defineConfig({
   build: {
     outDir: "../../dist/web",
     emptyOutDir: true,
+    // What tsconfig targets, and what Electron and current phone browsers run; Vite's default
+    // (es2020) down-levelled class fields and the like for nobody (plan 2.6, Fable 9.2).
+    target: "es2022",
     rollupOptions: {
       output: {
         // React changes far less often than app code; keeping it in its own chunk means a release
-        // only invalidates the app chunk in the browser cache.
+        // only invalidates the app chunk in the browser cache. three.js likewise: 600 of the galaxy
+        // chunk's 620 kB, re-downloaded after every edit to the map's own code.
         manualChunks: {
           react: ["react", "react-dom", "react-dom/client"],
+          three: ["three"],
         },
       },
     },

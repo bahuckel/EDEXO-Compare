@@ -28,7 +28,6 @@ import type { EncyclopediaSpawnCompare } from "./EncyclopediaModal";
 import { DScanBodiesBadge } from "./DScanBodiesBadge";
 import type { AppSnapshot, FootScannedEntry, NotableBodyInfo } from "@shared/types";
 import { useFeederStatus } from "./FeederStatusPanel";
-import { DataValueBreakdownModal, FeederModal, MyExobiologyModal, SessionLogModal } from "./AppModals";
 import { ExoDataAlertsHeaderHub } from "./ExoDataAlertsHub";
 import { NoticesBell } from "./NoticesBell";
 import { measurePopoverSide, type PopoverSide } from "./ui/popoverSide";
@@ -44,6 +43,10 @@ import {
   StatisticsModal,
   FirstDiscoveryBacklogModal,
   ModalLoading,
+  MyExobiologyModal,
+  DataValueBreakdownModal,
+  SessionLogModal,
+  FeederModal,
 } from "./SharedModals";
 import { EDEXO_HEADER_TRAY_LS, readLsBool, writeLsBool } from "./lsPrefs";
 import {
@@ -840,28 +843,34 @@ export const HeaderBar = memo(function HeaderBar({
         </Suspense>
       ) : null}
       {myExoOpen ? (
-        <MyExobiologyModal
-          entries={snap.footScannedEntries ?? NO_FOOT_ENTRIES}
-          onClose={closeMyExo}
-          onNavigateEntry={onFootCatalogNavigate}
-          onNavigateSystem={onDiscoveriesNavigate}
-        />
+        <Suspense fallback={<ModalLoading />}>
+          <MyExobiologyModal
+            entries={snap.footScannedEntries ?? NO_FOOT_ENTRIES}
+            onClose={closeMyExo}
+            onNavigateEntry={onFootCatalogNavigate}
+            onNavigateSystem={onDiscoveriesNavigate}
+          />
+        </Suspense>
       ) : null}
       {dataBreakdownOpen ? (
-        <DataValueBreakdownModal
-          lines={snap.organicPendingLines ?? []}
-          includeExplorationScanDataInDataValue={scanDataOn}
-          explorationFssScanCount={snap.explorationFssScanCount ?? 0}
-          explorationFssValueCredits={snap.explorationFssValueCredits ?? 0}
-          explorationDssScanCount={snap.explorationDssScanCount ?? 0}
-          explorationDssValueCredits={snap.explorationDssValueCredits ?? 0}
-          exobioScanCount={snap.organicPendingSampleCount}
-          exobioValueCredits={snap.organicDataValueCredits}
-          onClose={() => setDataBreakdownOpen(false)}
-        />
+        <Suspense fallback={<ModalLoading />}>
+          <DataValueBreakdownModal
+            lines={snap.organicPendingLines ?? []}
+            includeExplorationScanDataInDataValue={scanDataOn}
+            explorationFssScanCount={snap.explorationFssScanCount ?? 0}
+            explorationFssValueCredits={snap.explorationFssValueCredits ?? 0}
+            explorationDssScanCount={snap.explorationDssScanCount ?? 0}
+            explorationDssValueCredits={snap.explorationDssValueCredits ?? 0}
+            exobioScanCount={snap.organicPendingSampleCount}
+            exobioValueCredits={snap.organicDataValueCredits}
+            onClose={() => setDataBreakdownOpen(false)}
+          />
+        </Suspense>
       ) : null}
       {sessionOpen ? (
-        <SessionLogModal log={snap.sessionLog ?? null} onClose={() => setSessionOpen(false)} />
+        <Suspense fallback={<ModalLoading />}>
+          <SessionLogModal log={snap.sessionLog ?? null} onClose={() => setSessionOpen(false)} />
+        </Suspense>
       ) : null}
       {optionsOpen ? (
         <Suspense fallback={<ModalLoading />}>
@@ -875,7 +884,9 @@ export const HeaderBar = memo(function HeaderBar({
         </Suspense>
       ) : null}
       {feederOpen ? (
-        <FeederModal status={feeder.status} onRefresh={feeder.refresh} onClose={() => setFeederOpen(false)} />
+        <Suspense fallback={<ModalLoading />}>
+          <FeederModal status={feeder.status} onRefresh={feeder.refresh} onClose={() => setFeederOpen(false)} />
+        </Suspense>
       ) : null}
       {notableQuick ? (
         <Suspense fallback={null}>

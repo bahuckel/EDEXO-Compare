@@ -21,7 +21,7 @@ import { placeLabels } from "./galaxy3d/labelPlacement";
 import { formatCount, formatValue } from "./galaxy3d/clusters";
 import { CodexRecord, IndexRecord, MySystemRecord, SectorRecord } from "./galaxy3d/GalaxyPanels";
 import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
-import { SystemBookmarkButton } from "./Bookmarks";
+import { SystemBookmarkButton } from "./BookmarkButton";
 import { CopySystemButton } from "./CopySystemButton";
 import { galaxyImageRect, loadGalaxyImage, REGION_MAP_SIZE, xForRegionPx, zForRegionPz } from "./regionBackdrop";
 import { regionOutlines, type RegionOutlines } from "@shared/regionBorders.js";
