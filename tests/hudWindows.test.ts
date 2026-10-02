@@ -50,6 +50,7 @@ type Huds = {
   setLayoutPathResolver: (fn: () => string) => void;
   setMoveMode: (on: boolean) => boolean;
   setGamePoint: (p: { x: number; y: number } | null) => void;
+  raiseVisible: () => void;
   isMoving: () => boolean;
   dragFromPage: (win: unknown, phase: string) => { ok: boolean };
   loadLayout: () => void;
@@ -135,7 +136,10 @@ class FakeWindow {
     this.visible = true;
   }
   setAlwaysOnTop() {}
-  moveTop() {}
+  raised = 0;
+  moveTop() {
+    this.raised += 1;
+  }
   ignoresMouse = true;
   setIgnoreMouseEvents(v: boolean) {
     this.ignoresMouse = v;
@@ -342,6 +346,22 @@ describe("hiding and showing (the hotkey)", () => {
     await huds.request("/distance-overlay.html", 404, 330, null, "toggle");
     expect(huds.isHidden()).toBe(false);
     huds.toggleVisibility(true);
+  });
+});
+
+describe("back on top when the game comes to the front (plan 2.1, Fable C10)", () => {
+  it("raises every visible HUD at once, and none while they are hidden", async () => {
+    const huds = make();
+    await huds.request("/fss-scan-overlay.html", 404, 120, null, "open");
+    await huds.request("/distance-overlay.html", 404, 330, null, "open");
+    const [a, b] = live();
+    const before = [a!.raised, b!.raised];
+    huds.raiseVisible();
+    expect([a!.raised - before[0]!, b!.raised - before[1]!]).toEqual([1, 1]);
+    huds.toggleVisibility(true);
+    const hidden = [a!.raised, b!.raised];
+    huds.raiseVisible();
+    expect([a!.raised, b!.raised]).toEqual(hidden);
   });
 });
 

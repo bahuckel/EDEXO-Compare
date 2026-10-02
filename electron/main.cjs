@@ -720,6 +720,8 @@ async function start() {
     foreground = watchForeground((name, at) => {
       // The game in front: its monitor is where the corner stack goes (hudWindows setGamePoint).
       if (isGame(name) && at) huds.setGamePoint(at);
+      // The game just came to the front (the watcher reports changes only): put the HUDs back on top.
+      if (isGame(name)) huds.raiseVisible();
       if (isGameOrOwn(name, own)) {
         if (hideTimer) clearTimeout(hideTimer);
         hideTimer = null;

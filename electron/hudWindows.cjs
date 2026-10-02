@@ -17,8 +17,12 @@ const MAX_HUD_OVERLAYS = 8; // was 3; the owner wants every HUD selectable at on
 const HUD_STACK_GAP = 6;
 /** Ctrl+Alt+H hides and shows every HUD window at once (menus, screenshots), checked free by the owner. */
 const HUD_TOGGLE_SHORTCUT = "Control+Alt+H";
-/** How often the visible HUDs re-assert the top of the z-order. See {@link keepHudsOnTop}. */
-const HUD_KEEP_ON_TOP_MS = 4000;
+/**
+ * How often the visible HUDs re-assert the top of the z-order: a safety net. The main raise is the
+ * moment the game comes to the front ({@link raiseVisible}, from the foreground watcher); every 4 s
+ * was eight SetWindowPos calls on the game's thread, around the clock (plan 2.1, Fable C10).
+ */
+const HUD_KEEP_ON_TOP_MS = 15_000;
 
 /*
   An overlay window is transparent, so any height it has beyond its content reads as empty space
@@ -446,6 +450,11 @@ function createHudWindows(deps) {
       for (const s of live) if (!isIdle(s)) raiseHudWindow(s.win);
     }, HUD_KEEP_ON_TOP_MS);
     if (typeof hudKeepOnTopTimer.unref === "function") hudKeepOnTopTimer.unref();
+  }
+  /** Raise every visible HUD now: the game has just come to the front and may have covered them. */
+  function raiseVisible() {
+    if (hiddenNow()) return;
+    for (const s of hudOverlayStack) if (s.win && !s.win.isDestroyed() && !isIdle(s)) raiseHudWindow(s.win);
   }
   function stopKeepingHudsOnTop() {
     if (!hudKeepOnTopTimer) return;
@@ -888,6 +897,9 @@ function createHudWindows(deps) {
       titleBarStyle: "hidden",
       backgroundColor: "#00000000",
       webPreferences: {
+        // A transparent window over a fullscreen game can be judged hidden, and Chromium then slows its
+        // timers to once a second: the tracker's distance and the radar froze (plan 2.1, Fable C10).
+        backgroundThrottling: false,
       // No spell-check: Electron can fetch its dictionaries from Google (owner, 2026-09-29).
       spellcheck: false,
         nodeIntegration: false,
@@ -1218,6 +1230,7 @@ function createHudWindows(deps) {
     resizeFromPage,
     /** Where the game's window is (screen pixels), so the corner stack goes to its monitor. */
     setGamePoint,
+    raiseVisible,
     /** Boot: where the layout file lives once the server bundle is loaded, then read it. */
     setLayoutPathResolver(fn) {
       resolveHudLayoutPathFromBundle = typeof fn === "function" ? fn : null;
