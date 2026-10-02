@@ -345,3 +345,10 @@
 .exo-payout-body-anim-inner {
   padding-bottom: 0.15rem;
 }
+
+/* The estimated band beside the journal's temperature (owner, D2): there, but quieter. */
+.temp-est {
+  opacity: 0.6;
+  font-weight: 400;
+  font-size: 0.88em;
+}

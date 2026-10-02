@@ -26,6 +26,7 @@ import {
   pressHeatStyle,
   tempHeatStyle,
 } from "./planetDisplayUtils";
+import { TemperatureLabel } from "./TemperatureLabel";
 import { exomasteryDetailHasContent, groupedSortedMatches } from "./speciesMatchHelpers";
 import { bodyGenusProgress, genusProgressTag } from "@shared/genusProgress";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
@@ -320,7 +321,9 @@ export const BodyPane = memo(function BodyPane({
                   title="Cycles Kelvin → Celsius → Fahrenheit (display only; matching still uses journal Kelvin)"
                 >
                   <span className="fact-k">Temperature</span>
-                  <span className="fact-v">{tempLine}</span>
+                  <span className="fact-v">
+                    <TemperatureLabel journalK={Number.isFinite(tempK) ? tempK : null} est={est} unit={tempUnit} />
+                  </span>
                 </button>
                 <button
                   type="button"

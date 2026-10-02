@@ -6,7 +6,8 @@ import { readableAtmosphereType } from "@shared/atmosphereLabel";
 import { CopySystemButton } from "./CopySystemButton";
 import { ExomasteryDistributionPanel } from "./exomasteryDistributionPanel";
 import { ExomasteryHabitatDetailInner } from "./exomasteryHabitatDetailInner";
-import { formatPressurePill, formatTemperaturePillLine } from "./planetDisplayUtils";
+import { formatPressurePill } from "./planetDisplayUtils";
+import { TemperatureLabel } from "./TemperatureLabel";
 import type { EncyclopediaExomasteryPlanetsResponseDTO, FootScannedEntry, SpeciesEntry } from "@shared/types";
 import { useState } from "react";
 
@@ -219,12 +220,12 @@ export function FoundSpeciesPopup({
                     </div>
                     <div>
                       <dt>Temperature</dt>
-                      <dd title="Band from catalog heuristics; J: journal Kelvin when recorded. Same formatting as the body tab (Kelvin display here).">
-                        {formatTemperaturePillLine(
-                          f.surfaceTemperatureK != null ? f.surfaceTemperatureK : null,
-                          { minK: f.tempBandMinK, maxK: f.tempBandMaxK, midK: f.tempMidK },
-                          "K",
-                        )}
+                      <dd title="The journal's surface temperature when recorded, the catalogue's estimated band dimmed beside it. Same as the body tab (Kelvin here).">
+                        <TemperatureLabel
+                          journalK={f.surfaceTemperatureK != null ? f.surfaceTemperatureK : null}
+                          est={{ minK: f.tempBandMinK, maxK: f.tempBandMaxK, midK: f.tempMidK }}
+                          unit="K"
+                        />
                       </dd>
                     </div>
                     <div>

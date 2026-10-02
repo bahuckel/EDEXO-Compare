@@ -11,10 +11,10 @@ import { ExoPayoutRangePanel } from "./ExoPayoutRangePanel";
 import { readableAtmosphereType } from "@shared/atmosphereLabel";
 import {
   formatPressurePill,
-  formatTemperaturePillLine,
   formatTempScalar,
   gravityFromScan,
 } from "./planetDisplayUtils";
+import { TemperatureLabel } from "./TemperatureLabel";
 
 function roleLabel(role: SystemMapBodyDetailDTO["starRole"]): string {
   if (role === "fuel") return "Fuel-scoopable star";
@@ -271,13 +271,15 @@ function WorldDetailBody({
                 title="Tap to cycle Kelvin → °C → °F (display only; matching uses journal Kelvin)."
                 onClick={() => setTempUnit(nextTempUnit)}
               >
-                {formatTemperaturePillLine(
-                  detail.surfaceTemperature != null && Number.isFinite(detail.surfaceTemperature)
-                    ? detail.surfaceTemperature
-                    : null,
-                  detail.estimatedSurfaceTempK ?? null,
-                  tempUnit,
-                )}
+                <TemperatureLabel
+                  journalK={
+                    detail.surfaceTemperature != null && Number.isFinite(detail.surfaceTemperature)
+                      ? detail.surfaceTemperature
+                      : null
+                  }
+                  est={detail.estimatedSurfaceTempK ?? null}
+                  unit={tempUnit}
+                />
               </button>
             </div>
             {detail.surfaceTemperatureRangeK ? (

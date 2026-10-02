@@ -15,23 +15,38 @@ export function formatTempScalar(k: number, u: TempUnit): string {
   return `${((c * 9) / 5 + 32).toFixed(0)}°F`;
 }
 
-/** One-line temperature pill: band from heuristic + journal snapshot. */
+/**
+ * The temperature, journal value first (owner, D2, 2026-10-01; review F-1.4).
+ *
+ * The label read "108 K · 270 K J: 223 K": the estimated band first, then the journal's value — the
+ * one that is true — last and behind a cipher. Now `main` is the journal value and `est` the band,
+ * shown dimmed beside it; with no journal value the band is the main text, said to be an estimate.
+ */
+export function temperatureParts(
+  journalK: number | null | undefined,
+  est: EstimatedSurfaceTempBand | null,
+  u: TempUnit,
+): { main: string; est: string | null } {
+  const j = journalK != null && Number.isFinite(journalK) ? journalK : null;
+  const hasEst = est != null && Number.isFinite(est.minK) && Number.isFinite(est.maxK);
+  const band = hasEst
+    ? u === "K"
+      ? `${est!.minK.toFixed(0)}–${est!.maxK.toFixed(0)} K`
+      : `${formatTempScalar(est!.minK, u)} – ${formatTempScalar(est!.maxK, u)}`
+    : null;
+  if (j != null) return { main: formatTempScalar(j, u), est: band ? `est. ${band}` : null };
+  if (band) return { main: `est. ${band}`, est: null };
+  return { main: "—", est: null };
+}
+
+/** The same as one line of text (copied summaries, titles): "223 K (est. 108–270 K)". */
 export function formatTemperaturePillLine(
   journalK: number | null | undefined,
   est: EstimatedSurfaceTempBand | null,
   u: TempUnit,
 ): string {
-  const j = journalK != null && Number.isFinite(journalK) ? journalK : null;
-  const hasEst = est != null && Number.isFinite(est.minK) && Number.isFinite(est.maxK);
-  if (!hasEst && j == null) return "—";
-  const rng = (a: number, b: number) => `${formatTempScalar(a, u)} \u00b7 ${formatTempScalar(b, u)}`;
-  if (hasEst && j != null) {
-    return `${rng(est!.minK, est!.maxK)} J: ${formatTempScalar(j, u)}`;
-  }
-  if (hasEst) {
-    return rng(est!.minK, est!.maxK);
-  }
-  return `J: ${formatTempScalar(j!, u)}`;
+  const p = temperatureParts(journalK, est, u);
+  return p.est ? `${p.main} (${p.est})` : p.main;
 }
 
 export function formatPressurePill(rawJournal: number | null | undefined, display: PressDisplay): string {
