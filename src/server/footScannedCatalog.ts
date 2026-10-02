@@ -354,6 +354,17 @@ let catalogFlushTimer: ReturnType<typeof setTimeout> | null = null;
 /** Bumped on every change, so a signature moves the moment the catalog does, not when it is written. */
 let catalogGeneration = 0;
 let flushOnExitHooked = false;
+/** Failed flushes in a row; the retry waits longer each time (plan 2.4, Fable 8.4). */
+let failedFlushes = 0;
+
+/**
+ * The wait before retrying a flush that failed `n` times in a row: 5 s, doubling to 5 min. A full
+ * disk or a locked file used to be retried every 5 s for ever, re-serialising the whole catalog each
+ * time.
+ */
+export function footCatalogRetryMs(n: number): number {
+  return Math.min(5 * 60_000, FOOT_CATALOG_FLUSH_MS * 5 * 2 ** Math.max(0, n - 1));
+}
 
 /** Write whatever is pending now. Called on shutdown and exit; tests call it to reach the disk. */
 export function flushFootScannedCatalog(): void {
@@ -380,11 +391,19 @@ export function flushFootScannedCatalog(): void {
       failed = true;
     }
   }
-  if (failed && !catalogFlushTimer) {
+  if (!failed) {
+    failedFlushes = 0;
+    return;
+  }
+  failedFlushes += 1;
+  if (failedFlushes === 1) {
+    console.error("[edexo-compare] Could not save the foot-scan catalog; it stays in memory and is retried.");
+  }
+  if (!catalogFlushTimer) {
     catalogFlushTimer = setTimeout(() => {
       catalogFlushTimer = null;
       flushFootScannedCatalog();
-    }, FOOT_CATALOG_FLUSH_MS * 5);
+    }, footCatalogRetryMs(failedFlushes));
     catalogFlushTimer.unref?.();
   }
 }
