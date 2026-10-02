@@ -1728,6 +1728,7 @@
           <div class="version-line" id="versionLine">
             <span id="versionText">Version —</span>
             <button type="button" class="version-btn" id="btnCheckUpdate">Check for updates</button>
+            <button type="button" class="version-btn" id="btnUpdatePage" hidden>Release page</button>
           </div>
         </div>
       </header>
@@ -2987,16 +2988,53 @@
         const versionLine = document.getElementById("versionLine");
         const versionText = document.getElementById("versionText");
         const btnCheckUpdate = document.getElementById("btnCheckUpdate");
+        const btnUpdatePage = document.getElementById("btnUpdatePage");
         var updateInfo = null;
+        var updatePoll = null;
+        /*
+          The updater (owner, 2026-10-02): where this copy can replace itself (download.supported), the
+          button downloads the newer release, checked against GitHub's SHA-256, then offers "Restart to
+          update" — the swap happens as the app closes. The release page stays one click away. Elsewhere
+          (a source run, the console builds) it opens the page as before.
+        */
+        function canSelfUpdate(info) {
+          return Boolean(
+            info && info.newer && info.download && info.download.supported &&
+              window.edexoElectron && typeof window.edexoElectron.installUpdate === "function",
+          );
+        }
 
         function renderUpdateInfo(info, checking) {
           updateInfo = info;
           var cur = info && info.current ? "v" + info.current : "Version —";
           versionLine.classList.toggle("newer", Boolean(info && info.newer));
           btnCheckUpdate.disabled = Boolean(checking);
+          btnUpdatePage.hidden = !(info && info.newer && canSelfUpdate(info));
           if (checking) {
             versionText.textContent = cur + " · checking…";
             btnCheckUpdate.textContent = "Check for updates";
+            return;
+          }
+          if (canSelfUpdate(info)) {
+            var dl = info.download;
+            versionText.title = "";
+            btnCheckUpdate.title = "";
+            if (dl.state === "downloading") {
+              var pct = dl.total ? Math.floor((100 * dl.received) / dl.total) : null;
+              versionText.textContent = "Installed " + cur + " · downloading v" + info.latest + (pct != null ? " · " + pct + " %" : "…");
+              btnCheckUpdate.textContent = "Downloading…";
+              btnCheckUpdate.disabled = true;
+            } else if (dl.state === "ready") {
+              versionText.textContent = "Installed " + cur + " · v" + info.latest + " downloaded and checked";
+              btnCheckUpdate.textContent = "Restart to update";
+              btnCheckUpdate.title = "Closes the app, puts v" + info.latest + " in place of this copy, and starts it. Your settings and data are kept.";
+            } else {
+              versionText.textContent =
+                "Installed " + cur + " · v" + info.latest + " available" + (dl.state === "error" ? " · download failed" : "");
+              if (dl.state === "error" && dl.error) versionText.title = dl.error;
+              btnCheckUpdate.textContent = dl.state === "error" ? "Try again" : "Download v" + info.latest;
+              btnCheckUpdate.title = "Downloads v" + info.latest + " from GitHub and checks it. It is installed when you restart.";
+            }
             return;
           }
           if (info && info.newer) {
@@ -3027,6 +3065,8 @@
             })
             .then(function (info) {
               renderUpdateInfo(info, false);
+              // The launcher reopened while a download runs: keep its progress moving.
+              if (info.download && info.download.state === "downloading") pollDownload();
             })
             .catch(function (e) {
               var prev = updateInfo || {};
@@ -3037,11 +3077,63 @@
             });
         }
 
+        function pollDownload() {
+          if (updatePoll) return;
+          updatePoll = setInterval(function () {
+            fetch(apiUrl("/api/app/update"), { cache: "no-store" })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (info) {
+                renderUpdateInfo(info, false);
+                if (!(info.download && info.download.state === "downloading")) {
+                  clearInterval(updatePoll);
+                  updatePoll = null;
+                }
+              })
+              .catch(function () {});
+          }, 1000);
+        }
+
+        btnUpdatePage.addEventListener("click", function () {
+          openUpdatePage();
+        });
+
         btnCheckUpdate.addEventListener("click", function () {
           if (!(updateInfo && updateInfo.newer)) {
             checkForUpdates(true);
             return;
           }
+          if (canSelfUpdate(updateInfo)) {
+            if (updateInfo.download.state === "ready") {
+              btnCheckUpdate.disabled = true;
+              btnCheckUpdate.textContent = "Restarting…";
+              window.edexoElectron.installUpdate().then(function (r) {
+                if (r && r.ok) return;
+                btnCheckUpdate.disabled = false;
+                versionText.textContent = (r && r.error) || "Could not start the update.";
+                // A quit called off ("Keep the app open" during a backup) also lands here later; refresh.
+                checkForUpdates(false);
+              });
+              return;
+            }
+            fetch(apiUrl("/api/app/update/download"), { method: "POST" })
+              .then(function (r) {
+                return r.json();
+              })
+              .then(function (dl) {
+                renderUpdateInfo(Object.assign({}, updateInfo, { download: dl }), false);
+                pollDownload();
+              })
+              .catch(function (e) {
+                versionText.textContent = "Could not start the download: " + String(e && e.message ? e.message : e);
+              });
+            return;
+          }
+          openUpdatePage();
+        });
+
+        function openUpdatePage() {
           fetch(apiUrl("/api/app/open-update"), { method: "POST" })
             .then(function (r) {
               return r.json();
@@ -3054,7 +3146,7 @@
               // window of this app instead, so the link still goes somewhere.
               if (updateInfo && updateInfo.pageUrl) window.open(updateInfo.pageUrl, "_blank", "noopener");
             });
-        });
+        }
 
         checkForUpdates(false);
 
