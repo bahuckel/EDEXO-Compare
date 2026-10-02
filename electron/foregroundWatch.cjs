@@ -21,9 +21,15 @@ using System.Runtime.InteropServices;
 public static class EdexoFg {
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L; public int T; public int R; public int B; }
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+  [DllImport("user32.dll")] public static extern IntPtr SetProcessDpiAwarenessContext(IntPtr v);
 }
 "@
+# Per-monitor aware (-4), so window rectangles are real screen pixels on every monitor.
+[void][EdexoFg]::SetProcessDpiAwarenessContext([IntPtr](-4))
 $lastPid = -1
+$lastAt = 
 $tick = 0
 while ($true) {
   # The app that started this is gone (crashed, ended in Task Manager): so is this.
@@ -31,12 +37,17 @@ while ($true) {
   $h = [EdexoFg]::GetForegroundWindow()
   $p = 0
   [void][EdexoFg]::GetWindowThreadProcessId($h, [ref]$p)
-  if ($p -ne $lastPid) {
+  # Where the window's centre is, in screen pixels: which monitor the game is on.
+  $r = New-Object EdexoFg+RECT
+  $at = ''
+  if ([EdexoFg]::GetWindowRect($h, [ref]$r)) { $at = [string][int](($r.L + $r.R) / 2) + ',' + [string][int](($r.T + $r.B) / 2) }
+  if ($p -ne $lastPid -or $at -ne $lastAt) {
     $lastPid = $p
+    $lastAt = $at
     $n = ''
     try { $n = (Get-Process -Id $p -ErrorAction Stop).ProcessName } catch {}
     try {
-      [Console]::Out.WriteLine($n)
+      [Console]::Out.WriteLine($n + [char]9 + $at)
       [Console]::Out.Flush()
     } catch { exit }
   }
@@ -47,7 +58,20 @@ while ($true) {
 const MAX_RESTARTS = 5;
 
 /**
- * @param {(processName: string) => void} onName called with the foreground process's name (no ".exe")
+ * One line of the watcher: the process name, a tab, and the window's centre in screen pixels ("x,y",
+ * empty when it could not be read).
+ * @param {string} line
+ * @returns {{ name: string, at: { x: number, y: number } | null }}
+ */
+function parseForegroundLine(line) {
+  const [name = "", at = ""] = String(line).split("\t");
+  const m = /^(-?\d+),(-?\d+)$/.exec(at.trim());
+  return { name: name.trim(), at: m ? { x: Number(m[1]), y: Number(m[2]) } : null };
+}
+
+/**
+ * @param {(processName: string, at: { x: number, y: number } | null) => void} onName called with the
+ *   foreground process's name (no ".exe") and its window's centre in screen pixels
  *   each time it changes; "" when it could not be read.
  * @returns {{ stop: () => void }}
  */
@@ -82,7 +106,8 @@ function watchForeground(onName) {
     rl.on("line", (line) => {
       restarts = 0;
       try {
-        onName(String(line).trim());
+        const { name, at } = parseForegroundLine(line);
+        onName(name, at);
       } catch {
         /* the listener's failure is its own */
       }
@@ -124,4 +149,9 @@ function isGameOrOwn(name, own) {
   return n === "elitedangerous64" || own.includes(n);
 }
 
-module.exports = { watchForeground, isGameOrOwn };
+/** The game itself, not this app's windows (the HUD follows the game's monitor). */
+function isGame(name) {
+  return String(name || "").toLowerCase() === "elitedangerous64";
+}
+
+module.exports = { watchForeground, isGameOrOwn, isGame, parseForegroundLine };

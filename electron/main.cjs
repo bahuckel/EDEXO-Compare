@@ -23,7 +23,7 @@ const {
 const { createTrayControl } = require("./tray.cjs");
 const { createKeybinds } = require("./keybinds.cjs");
 const updater = require("./updater.cjs");
-const { watchForeground, isGameOrOwn } = require("./foregroundWatch.cjs");
+const { watchForeground, isGameOrOwn, isGame } = require("./foregroundWatch.cjs");
 const { guardWindowNavigation, restrictPermissions } = require("./windowGuards.cjs");
 /** The app's own origin once the server listens (windowGuards.cjs). */
 const ownBase = () => (runtime ? runtime.getLocalBaseUrl() : null);
@@ -717,7 +717,9 @@ async function start() {
   {
     const own = [path.basename(process.execPath, ".exe").toLowerCase(), "electron"];
     let hideTimer = null;
-    foreground = watchForeground((name) => {
+    foreground = watchForeground((name, at) => {
+      // The game in front: its monitor is where the corner stack goes (hudWindows setGamePoint).
+      if (isGame(name) && at) huds.setGamePoint(at);
       if (isGameOrOwn(name, own)) {
         if (hideTimer) clearTimeout(hideTimer);
         hideTimer = null;

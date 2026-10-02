@@ -646,12 +646,37 @@ function createHudWindows(deps) {
     return { ok: true };
   }
 
+  /*
+    The monitor the game is on, from the foreground watcher (a point in screen pixels; main.cjs). The
+    corner stack used to go to the primary monitor whatever the game was on, so with Elite on a second
+    screen the HUD sat on the other one (plan 2.1, Fable C12). Free move keeps the spot it was given.
+  */
+  let gamePoint = null;
+  function setGamePoint(p) {
+    const next = p && Number.isFinite(p.x) && Number.isFinite(p.y) ? { x: p.x, y: p.y } : null;
+    if ((next && gamePoint && next.x === gamePoint.x && next.y === gamePoint.y) || (!next && !gamePoint)) return;
+    gamePoint = next;
+    if (!hudLayout.freeOn) scheduleHudRelayout();
+  }
+  function stackDisplay() {
+    if (gamePoint) {
+      try {
+        const dip = typeof screen.screenToDipPoint === "function" ? screen.screenToDipPoint(gamePoint) : gamePoint;
+        const d = screen.getDisplayNearestPoint(dip);
+        if (d && d.workArea) return d;
+      } catch {
+        /* the primary, as before */
+      }
+    }
+    return screen.getPrimaryDisplay();
+  }
+
   function relayoutHudStack() {
     if (hudLayout.freeOn) {
       relayoutFreeStack();
       return;
     }
-    const d = screen.getPrimaryDisplay();
+    const d = stackDisplay();
     const wa = d.workArea;
     const margin = 14;
     hudOverlayStack = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
@@ -1191,6 +1216,8 @@ function createHudWindows(deps) {
     destroyAll: destroyAllHudOverlays,
     pushPrefs,
     resizeFromPage,
+    /** Where the game's window is (screen pixels), so the corner stack goes to its monitor. */
+    setGamePoint,
     /** Boot: where the layout file lives once the server bundle is loaded, then read it. */
     setLayoutPathResolver(fn) {
       resolveHudLayoutPathFromBundle = typeof fn === "function" ? fn : null;

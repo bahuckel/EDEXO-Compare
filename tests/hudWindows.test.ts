@@ -49,6 +49,7 @@ type Huds = {
   resizeFromPage: (win: unknown, o: unknown) => { ok: boolean };
   setLayoutPathResolver: (fn: () => string) => void;
   setMoveMode: (on: boolean) => boolean;
+  setGamePoint: (p: { x: number; y: number } | null) => void;
   isMoving: () => boolean;
   dragFromPage: (win: unknown, phase: string) => { ok: boolean };
   loadLayout: () => void;
@@ -62,7 +63,8 @@ let cursor = { x: 0, y: 0 };
 function nearestDisplay(p: { x: number; y: number }) {
   const dist = (b: typeof WORK) =>
     Math.hypot(Math.max(b.x - p.x, 0, p.x - (b.x + b.width - 1)), Math.max(b.y - p.y, 0, p.y - (b.y + b.height - 1)));
-  return { bounds: dist(SECOND) < dist(WORK) ? SECOND : WORK };
+  const b = dist(SECOND) < dist(WORK) ? SECOND : WORK;
+  return { bounds: b, workArea: b };
 }
 
 class FakeWindow {
@@ -340,6 +342,25 @@ describe("hiding and showing (the hotkey)", () => {
     await huds.request("/distance-overlay.html", 404, 330, null, "toggle");
     expect(huds.isHidden()).toBe(false);
     huds.toggleVisibility(true);
+  });
+});
+
+describe("the corner stack and the game's monitor (plan 2.1, Fable C12)", () => {
+  it("goes to the monitor the game's window is on, and stays on the primary until it is known", async () => {
+    const huds = make();
+    await huds.request("/distance-overlay.html", 404, 330, null, "open");
+    const [w] = live();
+    // Not known yet: the primary, top-right as always.
+    expect(w!.bounds.x).toBe(WORK.x + WORK.width - 14 - 404);
+    // Elite in front on the second screen.
+    huds.setGamePoint({ x: SECOND.x + 1280, y: 720 });
+    huds.relayout();
+    expect(w!.bounds.x).toBe(SECOND.x + SECOND.width - 14 - 404);
+    expect(w!.bounds.y).toBe(SECOND.y + 14);
+    // Back on the primary.
+    huds.setGamePoint({ x: 960, y: 540 });
+    huds.relayout();
+    expect(w!.bounds.x).toBe(WORK.x + WORK.width - 14 - 404);
   });
 });
 
