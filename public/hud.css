@@ -62,7 +62,6 @@ body {
   );
   isolation: isolate;
   filter: drop-shadow(0 0 5px rgba(255, 138, 31, 0.25));
-  animation: hudFlicker 7s steps(1, end) infinite;
 }
 /*
   The chrome on its own layer (owner, 2026-09-14): the frame gradient here, the fill under the
@@ -84,7 +83,16 @@ body {
   opacity: var(--hud-bg-opacity, 1);
   pointer-events: none;
 }
+/*
+  A dark outline under every glyph, whatever the opacity slider says (plan 2.1, Fable C11): the text's
+  only edge was a glow of its own colour, and over an ice world or a bright star pale orange on a faded
+  plate was unreadable. Glows add to it rather than replace it.
+*/
+:root {
+  --hud-outline: -1px 0 0 rgba(0, 0, 0, 0.7), 1px 0 0 rgba(0, 0, 0, 0.7), 0 -1px 0 rgba(0, 0, 0, 0.7), 0 1px 0 rgba(0, 0, 0, 0.7);
+}
 .panel__body {
+  text-shadow: var(--hud-outline);
   position: relative;
   clip-path: polygon(
     0 0,
@@ -123,7 +131,8 @@ body {
   left: 0;
   right: 0;
   height: 28%;
-  top: -30%;
+  top: 0;
+  transform: translateY(-110%);
   pointer-events: none;
   background: linear-gradient(180deg, transparent, rgba(255, 170, 90, 0.07) 50%, transparent);
   animation: hudSweep 9s linear infinite;
@@ -196,7 +205,7 @@ body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--hud);
-  text-shadow: var(--hud-glow);
+  text-shadow: var(--hud-outline), var(--hud-glow);
   white-space: nowrap;
 }
 .hud-title::before {
@@ -225,7 +234,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--hud-hi);
-  text-shadow: var(--hud-glow);
+  text-shadow: var(--hud-outline), var(--hud-glow);
   margin-bottom: 0.28rem;
 }
 .row {
@@ -261,7 +270,7 @@ body {
 .row--muted .k,
 .row--muted {
   color: var(--hud-dim);
-  text-shadow: none;
+  text-shadow: var(--hud-outline);
 }
 .row--rule {
   margin-top: 0.38rem;
@@ -272,7 +281,7 @@ body {
 .row--total .v {
   font-size: 0.92rem;
   color: var(--hud-hi);
-  text-shadow: var(--hud-glow);
+  text-shadow: var(--hud-outline), var(--hud-glow);
 }
 /* Candidate rows: rarity letter (tier colour) and the new-codex tag. */
 .hud-list .rar,
@@ -296,7 +305,7 @@ body {
   color: #f5c96a;
   background: #07060a;
   border-color: #f5c96a;
-  text-shadow: 0 0 4px rgba(245, 184, 61, 0.5);
+  text-shadow: var(--hud-outline), 0 0 4px rgba(245, 184, 61, 0.5);
 }
 /* Compact overlays: explanations go, readings and warnings stay (theme.js `hud-compact`). */
 .hud-compact .hud-explain {
@@ -327,7 +336,7 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--hud-hi);
-  text-shadow: var(--hud-glow);
+  text-shadow: var(--hud-outline), var(--hud-glow);
 }
 
 /* badges in the game's three colours */
@@ -345,11 +354,11 @@ body {
 }
 .pill.ok {
   color: var(--ok);
-  text-shadow: 0 0 6px var(--ok-dim);
+  text-shadow: var(--hud-outline), 0 0 6px var(--ok-dim);
 }
 .pill.bad {
   color: var(--bad);
-  text-shadow: 0 0 6px rgba(255, 90, 60, 0.5);
+  text-shadow: var(--hud-outline), 0 0 6px rgba(255, 90, 60, 0.5);
 }
 
 /* ---- the tracker: radar left, the run's numbers right; folds shut away from a surface ------------ */
@@ -406,7 +415,7 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--hud-hi);
-  text-shadow: var(--hud-glow);
+  text-shadow: var(--hud-outline), var(--hud-glow);
   transition:
     max-height 0.45s ease 0.25s,
     opacity 0.45s ease 0.25s;
@@ -463,11 +472,11 @@ body {
 }
 .fact .v.yes {
   color: var(--hud-hi);
-  text-shadow: var(--hud-glow);
+  text-shadow: var(--hud-outline), var(--hud-glow);
 }
 .fact .v.tgt {
   color: var(--hud-hi);
-  text-shadow: var(--hud-glow);
+  text-shadow: var(--hud-outline), var(--hud-glow);
 }
 .fact .v.tgt::after {
   content: "TARGET";
@@ -478,7 +487,7 @@ body {
   padding: 0 0.3rem;
   border: 1px solid var(--hud-dim);
   color: var(--hud);
-  text-shadow: none;
+  text-shadow: var(--hud-outline);
   clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
 }
 /* scan progress after the species: the run in progress, a finished one, or a species merely seen */
@@ -495,11 +504,11 @@ body {
 }
 .prog--live {
   color: var(--bio);
-  text-shadow: 0 0 6px rgba(123, 224, 123, 0.5);
+  text-shadow: var(--hud-outline), 0 0 6px rgba(123, 224, 123, 0.5);
 }
 .prog--done {
   color: var(--ok);
-  text-shadow: 0 0 6px var(--ok-dim);
+  text-shadow: var(--hud-outline), 0 0 6px var(--ok-dim);
 }
 .prog--seen {
   color: var(--hud-hi);
@@ -612,7 +621,7 @@ body {
   font-weight: 700;
   font-size: 0.92rem;
   color: var(--hud-hi);
-  text-shadow: var(--hud-glow);
+  text-shadow: var(--hud-outline), var(--hud-glow);
 }
 .fss-line .nums small {
   font-size: 0.6rem;
@@ -657,7 +666,6 @@ body {
   --hud-bg-2: rgba(8, 40, 60, 0.3);
   --hud-glow: 0 0 8px rgba(79, 208, 255, 0.55);
   filter: drop-shadow(0 0 9px rgba(79, 208, 255, 0.35));
-  animation: hudPulseOk 1.2s ease-in-out infinite alternate;
 }
 .panel.panel--warn {
   --hud: var(--bad);
@@ -669,6 +677,7 @@ body {
 .shell.shell--ok::before,
 .shell.shell--ok::after {
   border-color: var(--ok);
+  animation: hudPulseOk 1.2s ease-in-out infinite alternate;
 }
 .shell.shell--warn::before,
 .shell.shell--warn::after {
@@ -899,47 +908,27 @@ body {
 }
 
 /* ---- motion ----------------------------------------------------------------------------------------- */
+/* Moved, not re-laid-out: `transform` is composited, `top` repainted the panel every frame of every
+   HUD window over the game (plan 2.1, Fable C11). The band is 28 % of the panel tall, so -110 % to
+   400 % of its own height is the old -30 % to 110 % of the panel. */
 @keyframes hudSweep {
   0% {
-    top: -30%;
+    transform: translateY(-110%);
   }
   70% {
-    top: 110%;
+    transform: translateY(400%);
   }
   100% {
-    top: 110%;
+    transform: translateY(400%);
   }
 }
-@keyframes hudFlicker {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  37% {
-    opacity: 1;
-  }
-  38% {
-    opacity: 0.93;
-  }
-  39% {
-    opacity: 1;
-  }
-  71% {
-    opacity: 1;
-  }
-  72% {
-    opacity: 0.96;
-  }
-  73% {
-    opacity: 1;
-  }
-}
+/* The finished section's pulse: the corner brackets' opacity, not an animated blur over the panel. */
 @keyframes hudPulseOk {
   from {
-    filter: drop-shadow(0 0 5px rgba(79, 208, 255, 0.25));
+    opacity: 0.45;
   }
   to {
-    filter: drop-shadow(0 0 14px rgba(79, 208, 255, 0.6));
+    opacity: 1;
   }
 }
 @keyframes hudRadarSweep {
@@ -951,10 +940,10 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .panel,
   .panel__body::after,
   .minimap-sweep,
-  .panel.panel--ok {
+  .shell.shell--ok::before,
+  .shell.shell--ok::after {
     animation: none;
   }
 }
@@ -1015,7 +1004,7 @@ body {
 */
 .hop__sep--first {
   color: var(--ok);
-  text-shadow: 0 0 6px rgba(79, 208, 255, 0.7);
+  text-shadow: var(--hud-outline), 0 0 6px rgba(79, 208, 255, 0.7);
 }
 /* No answer from EDSM yet, or it could not be reached — neither "visited" nor "unvisited". */
 .hop__sep--unknown {
