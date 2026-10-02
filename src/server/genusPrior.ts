@@ -112,17 +112,18 @@ export function genusPriorFor(
  * limit where they are real signals vs not real, for every species." So the limit is per genus and
  * measured, not one threshold for all: from every landable bio body in the dump that really carries
  * the genus, how common the genus is in that body's cell; the genus's limit is the share below which
- * only 0.25 % of its own real bodies fall (`veto` in data/exomastery/genus-prior.json, built by
+ * only 0.01 % of its own real bodies fall (`veto` in data/exomastery/genus-prior.json, built by
  * docs/perf/genus_veto_limits.py). Each genus may lose at most that share of its own bodies, rare or
- * common alike — Fumerola's limit comes out at 0.07 %, Recepta's 0.02 %, Fungoida's 4.5 %.
+ * common alike — Fumerola's limit comes out at 0.003 %, Recepta's 0.008 %, Fungoida's 0.47 %. It was
+ * 0.25 % until 2026-10-03 (owner: no misses), which hid a real genus on 0.21 % of bodies.
  *
  * The list the presence floor left is the starting point. Never hidden this way: a genus placed by
  * position (the table cannot see a nebula or a Guardian site), anything sampled here, the last genus
  * on the list. On C 6 (5,332 bodies like it) Osseus 0.3 %, Concha 0.1 % and Fungoida 2.9 % go, and
  * Aleoida (1.4 %, above its 0.28 % limit: a real signal) stays.
  *
- * Measured against 1.2.9's own list on 6,566 bodies: genera shown 3.56 → 3.24 per body, the true
- * genera still shown 99.50 → 99.29 %, no genus down more than 0.4 points, every rare genus as before.
+ * Measured against 1.2.9's own list on 6,566 bodies, at 0.01 %: genera shown 3.56 → 3.48 per body,
+ * the true genera still shown 99.50 → 99.50 % (at 0.25 % it was 3.24 and 99.29 %).
  */
 export function vetoUnseenGenera(
   matches: SpeciesMatch[],

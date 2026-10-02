@@ -66,7 +66,12 @@ describe("hiding a genus such bodies almost never carry, before a DSS (owner, 20
   const c6 = () => hmc({ SurfaceTemperature: 183.39, AtmosphereType: "CarbonDioxide", Volcanism: "" });
   const body = { genusHints: null, biologicalSignals: 4 };
 
-  it("takes C 6 from eight genera to the four that were there and Aleoida, a real if small signal", () => {
+  /*
+    Owner, 2026-10-03 ("no misses"): the limits are now where only 0.01 % of a genus's own real bodies
+    fall, not 0.25 %. On C 6's kind of body (5,332 in the dump) Osseus is on 0.3 %, Concha 0.1 % and
+    Fungoida 2.9 % — real, if small, so all eight stay before the DSS, the long shots low in the list.
+  */
+  it("keeps every genus C 6's kind of body really carries, however small", () => {
     const ms = [
       match("stratum_t", "Stratum", 100),
       match("bacterium_a", "Bacterium", 89),
@@ -78,8 +83,16 @@ describe("hiding a genus such bodies almost never carry, before a DSS (owner, 20
       match("aleoida_c", "Aleoida", 8),
     ];
     vetoUnseenGenera(ms, body, c6(), { parentStarType: "M" }, root, new Set());
-    expect(ms.filter((m) => !m.unlikely).map((m) => m.entry.genus)).toEqual(["Stratum", "Bacterium", "Frutexa", "Tussock", "Aleoida"]);
-    expect(ms.find((m) => m.entry.genus === "Osseus")!.unlikelyReasons?.[0]?.detail).toMatch(/bodies like this one/);
+    expect(ms.filter((m) => !m.unlikely).map((m) => m.entry.genus)).toEqual([
+      "Stratum",
+      "Bacterium",
+      "Frutexa",
+      "Tussock",
+      "Fungoida",
+      "Osseus",
+      "Concha",
+      "Aleoida",
+    ]);
   });
 
   it("hides a rare genus only where it does not grow, and never what was sampled here", () => {
