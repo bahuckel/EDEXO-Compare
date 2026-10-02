@@ -14,7 +14,7 @@ describe("Pranav Antal bonus", () => {
       label: "Bacterium Aurasus",
     });
     expect(store.pranavAntalBonus).toBe(false);
-    const base = organicLiveSummary(store).organicDataValueCredits;
+    const base = organicLiveSummary(store).organicDataValueCredits ?? 0;
     expect(base).toBeGreaterThan(0);
     store.setPranavAntalBonus(true);
     expect(organicLiveSummary(store).organicDataValueCredits).toBe(Math.round(base * 1.3));
