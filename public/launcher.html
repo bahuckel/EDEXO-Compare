@@ -1342,6 +1342,19 @@
         clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
         cursor: pointer;
       }
+      /* Disabled looks it (owner, 2026-10-02: "Move HUD" looked clickable with Free move off). */
+      .btn-mini:disabled {
+        color: rgba(255, 255, 255, 0.45);
+        background: #3a3530;
+        cursor: not-allowed;
+      }
+      /* The reason sits on a wrapper: a disabled button gets no mouse, so no hover message of its own. */
+      .btn-mini-wrap {
+        display: inline-flex;
+      }
+      .btn-mini-wrap:has(.btn-mini:disabled) {
+        cursor: not-allowed;
+      }
       /* Backups (owner, 2026-09-28): the list of zips in the Backups panel. */
       .backup-state {
         margin: 4px 0 10px;
@@ -2215,7 +2228,9 @@
             </div>
             <div class="hud-set-row" id="hudFreeRow">
               <label title="The HUDs leave the corner and sit wherever you drag them, on any screen. The spot is kept for the next start."><input type="checkbox" id="hudFree" /> Free move HUD: place it anywhere, on any screen</label>
-              <button type="button" class="btn-mini" id="hudMove" disabled>Move HUD</button>
+              <span class="btn-mini-wrap" id="hudMoveWrap" title="Tick &quot;Free move HUD&quot; first: the HUD can only be placed by hand in free move.">
+                <button type="button" class="btn-mini" id="hudMove" disabled>Move HUD</button>
+              </span>
             </div>
             <p class="hud-hint" id="hudMoveHint" hidden>
               Drag a HUD by its frame to where you want it, then press Done (on the HUD or here). Near the bottom of a
@@ -4584,6 +4599,14 @@
           hudMoving = !!moving;
           if (hudMove) {
             hudMove.disabled = !freeOn;
+            var wrap = document.getElementById("hudMoveWrap");
+            if (wrap) {
+              wrap.title = freeOn
+                ? hudMoving
+                  ? "Ends placing: the HUD stays where you dropped it."
+                  : "Drag the HUD by its frame to where you want it."
+                : 'Tick "Free move HUD" first: the HUD can only be placed by hand in free move.';
+            }
             hudMove.textContent = hudMoving ? "Done" : "Move HUD";
             hudMove.setAttribute("aria-pressed", hudMoving ? "true" : "false");
           }
