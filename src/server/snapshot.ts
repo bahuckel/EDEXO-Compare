@@ -1296,10 +1296,18 @@ export function buildSnapshot(
   // Whose shared-exomastery files are this commander's own backups (§S), before any body is computed.
   setOwnCommander({ name: store.commanderName, fid: commanderIdHash(store.commanderFid) });
   if (!bootLoading) syncRarity(store, db);
-  const { credits: organicDataValueCredits, pendingSamples: organicPendingSampleCount } =
-    organicDataValuation(store, cachedPrices);
+  /*
+    Not while the history replays (plan 2.3, Opus 20): every progress push walked every scan and every
+    sample of a store that changes between pushes, so the memo never held — for totals the boot screen
+    covers. Zero until the replay is done.
+  */
+  const { credits: organicDataValueCredits, pendingSamples: organicPendingSampleCount } = bootLoading
+    ? { credits: 0, pendingSamples: 0 }
+    : organicDataValuation(store, cachedPrices);
   // One walk of every scan, not two: the total is the breakdown's own total (code review §E).
-  const exploreBreakdown = explorationDataValueBreakdown(store);
+  const exploreBreakdown = bootLoading
+    ? { totalCredits: 0, fssScanCount: 0, fssValueCredits: 0, dssScanCount: 0, dssValueCredits: 0 }
+    : explorationDataValueBreakdown(store);
   const explorationScanDataValueCredits = exploreBreakdown.totalCredits;
   const organicPendingLines = bootLoading ? [] : buildOrganicPendingLines(store, db, cachedPrices);
   // Logged colours anywhere in the journals, not only in the system in view (see the function).

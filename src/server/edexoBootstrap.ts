@@ -416,12 +416,13 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         journalBootProgress,
         sessionLog.toDto(),
       );
-      snap.notices = notices.snapshot(store.viewingSystemAddress ?? store.currentSystemAddress ?? null);
+      // Neither while the history replays: the boot screen covers both (plan 2.3, Opus 20).
+      snap.notices = snap.journalBoot ? undefined : notices.snapshot(store.viewingSystemAddress ?? store.currentSystemAddress ?? null);
       {
         // The NSP card (2026-09-30): what he saw, what EDAstro has, else a guess from the neighbourhood.
         const addr = store.viewingSystemAddress ?? store.currentSystemAddress ?? null;
         snap.nspOutlook =
-          addr == null
+          addr == null || snap.journalBoot
             ? null
             : perfTime("snap.nspOutlook", () =>
                 nspOutlook({
