@@ -11,3 +11,10 @@
 *.exe binary
 *.pfx binary
 *.lnk binary
+*.webp binary
+*.gz binary
+*.bin binary
+*.wasm binary
+*.woff binary
+*.woff2 binary
+*.zip binary
