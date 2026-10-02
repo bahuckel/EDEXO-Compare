@@ -1644,6 +1644,7 @@ export class GameStateStore {
     this.explorationScansRevision += 1;
     this.edsmExplorationByKey.clear();
     this.commanderName = null;
+    this.commanderFid = null;
     this.currentSystem = null;
     this.currentSystemAddress = null;
     this.commanderPos = null;
@@ -1703,6 +1704,7 @@ export class GameStateStore {
     this.liveNavRoute = null;
     this.lastLiveNavRoutePushKey = null;
     this.fsdTarget = null;
+    this.lastJumpTarget = null;
     this.resetFootTravelRuntime();
     this.exoOrganicTracker = null;
     this.exoOrganicLastFix = null;
