@@ -447,6 +447,14 @@
   font-weight: 800;
   color: #7ac8ff;
 }
+/* Over 2.7 g: no disembarking (F-5.3). The mark and a red edge, so it is not colour alone. */
+.tab-heavy {
+  font-weight: 800;
+  color: var(--danger, #ff6a55);
+}
+.tab.tab--heavy {
+  box-shadow: inset 0 -2px 0 var(--danger, #ff6a55);
+}
 .tab--notable .tab-label {
   color: var(--text-dim);
 }

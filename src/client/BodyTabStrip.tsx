@@ -3,6 +3,20 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import type { BodyComputed, NotableBodyInfo, ShipProximityDTO } from "@shared/types";
 import { BODY_SORT_OPTIONS, type BodySortMode } from "./bodySort";
 import { fmtCrShort } from "./credits";
+import { journalSurfaceGravityToG } from "@shared/journalPhysics";
+
+/**
+ * High gravity, marked on the tab (review F-5.3; owner, 2026-10-03: 2.7 g). On foot the commander
+ * cannot leave the ship above it, so a body that might pay well is no use for sampling; the tab says
+ * so before the body is opened. The figure is the journal's surface gravity.
+ */
+export const HIGH_GRAVITY_G = 2.7;
+
+export function bodyGravityG(b: BodyComputed): number | null {
+  const scan = (b.mergedScan ?? b.state.scan) as { SurfaceGravity?: number | null } | null | undefined;
+  const sg = scan?.SurfaceGravity;
+  return typeof sg === "number" && Number.isFinite(sg) ? journalSurfaceGravityToG(sg) : null;
+}
 import { bodyRarest, RarityGem } from "./RarityGem";
 import { Select } from "./ui/Select";
 
@@ -254,6 +268,8 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                     const rare = bodyRarest(b.matches);
                     // Known only from the ship's arrival AutoScan: no signal count yet (owner, 2026-10-02).
                     const auto = b.state.autoScanOnly === true;
+                    const g = bodyGravityG(b);
+                    const heavy = g != null && g >= HIGH_GRAVITY_G;
                     return (
                       <button
                         key={b.state.key}
@@ -262,12 +278,12 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         aria-selected={on}
                         tabIndex={on ? 0 : -1}
                         data-body-key={b.state.key}
-                        className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}${auto ? " tab--fss-required" : ""}`}
+                        className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}${auto ? " tab--fss-required" : ""}${heavy ? " tab--heavy" : ""}`}
                         onClick={() => onSelect(b.state.key)}
                         title={
                           auto
                             ? `${b.tabLabel}: the ship only AutoScanned this landable body on arrival, and the game reports biological signals only once a body is resolved in the FSS. Resolve it in the FSS to know whether there is life here.`
-                            : `${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${fcx ? ", a FIRST codex entry: nobody has logged it in this region yet (FCX)" : cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${rare ? `, ${rare.title}` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`
+                            : `${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${fcx ? ", a FIRST codex entry: nobody has logged it in this region yet (FCX)" : cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${rare ? `, ${rare.title}` : ""}${heavy ? `, ${g!.toFixed(2)} g: too heavy to disembark (over ${HIGH_GRAVITY_G} g)` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`
                         }
                       >
                         {/* In the tab's left padding: the tab keeps its size (owner, 2026-09-30). */}
@@ -299,6 +315,14 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                               <span className="tab-cx"> · CX</span>
                             ) : null}
                             {nb ? <span className="tab-n"> · N</span> : null}
+                            {heavy ? (
+                              <span
+                                className="tab-heavy"
+                                title={`${g!.toFixed(2)} g: above ${HIGH_GRAVITY_G} g you cannot disembark`}
+                              >
+                                {" · !G!"}
+                              </span>
+                            ) : null}
                           </span>
                         )}
                         {done ? <span className="tab-dot" aria-hidden="true" /> : null}
