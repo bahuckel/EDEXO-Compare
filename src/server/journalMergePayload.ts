@@ -85,7 +85,9 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   23: scan `rings` + `ageMy`, `greenCodexBodies`, `k10Systems` — green gas giants and the body features.
   24: `nspSeen` — notable stellar phenomena met per system (FSS signal, codex name).
   25: `archivedDssMappedBodyKeys` — sold bodies remember they were mapped.
-  26: scan `fssResolved` — a body known only from an arrival AutoScan is shown as "FSS required".
+  26: scan `fssResolved` — a body known only from an arrival AutoScan is shown as "FSS required";
+      `codexRegionBySystem`, `organicRunStartedAt`, `fsdTarget`, `lastJumpTarget` — a warm boot
+      left them empty where a cold one had them (plan 2.4, O-19).
 */
 export const JOURNAL_MERGE_CACHE_FORMAT = 26;
 
@@ -136,6 +138,13 @@ export type JournalMergeCachePayload = {
   codexLoggedSpecies?: string[];
   /** [CODEX] keys, see {@link GameStateStore.codexRegionLogged}. */
   codexRegionLogged?: string[];
+  /** The codex's region per system (achievements by region), from `CodexEntry`. */
+  codexRegionBySystem?: [number, string][];
+  /** Open sampling runs: `body::species` → start (ms epoch). */
+  organicRunStartedAt?: [string, number][];
+  /** The nav lock and the last jump target, for the next-jump card. */
+  fsdTarget?: { starSystem: string; systemAddress: number; starClass: string; at: string } | null;
+  lastJumpTarget?: { starSystem: string; systemAddress: number; starClass: string; at: string; arrived: boolean } | null;
   /** Codex map keys, see {@link GameStateStore.codexMapLogged}. */
   codexMapLogged?: string[];
   /** Codex sightings, see {@link GameStateStore.codexSightings}. */

@@ -3609,6 +3609,10 @@ export class GameStateStore {
       firstFootfallBodies: [...this.firstFootfallBodies],
       codexLoggedSpecies: [...this.codexLoggedSpecies],
       codexRegionLogged: [...this.codexRegionLogged],
+      codexRegionBySystem: [...this.codexRegionBySystem.entries()],
+      organicRunStartedAt: [...this.organicRunStartedAt.entries()],
+      fsdTarget: this.fsdTarget,
+      lastJumpTarget: this.lastJumpTarget,
       codexMapLogged: [...this.codexMapLogged],
       codexSightings: [...this.codexSightings],
       achievementDone: [...this.achievementDone],
@@ -3700,6 +3704,10 @@ export class GameStateStore {
     for (const k of data.firstFootfallBodies) this.firstFootfallBodies.add(k);
     for (const k of data.codexLoggedSpecies ?? []) this.codexLoggedSpecies.add(k);
     for (const k of data.codexRegionLogged ?? []) this.codexRegionLogged.add(k);
+    for (const [k, r] of data.codexRegionBySystem ?? []) this.codexRegionBySystem.set(k, r);
+    for (const [k, t] of data.organicRunStartedAt ?? []) this.organicRunStartedAt.set(k, t);
+    this.fsdTarget = data.fsdTarget ?? null;
+    this.lastJumpTarget = data.lastJumpTarget ?? null;
     for (const k of data.codexMapLogged ?? []) this.codexMapLogged.add(k);
     for (const [k, t] of data.codexSightings ?? []) this.codexSightings.set(k, t);
     for (const [k, t] of data.achievementDone ?? []) this.achievementDone.set(k, t);
