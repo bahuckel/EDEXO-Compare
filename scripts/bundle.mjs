@@ -66,6 +66,7 @@ async function smokeBoot() {
   });
 
   let output = "";
+  let timer;
   const done = new Promise((resolve) => {
     const onChunk = (buf) => {
       output += String(buf);
@@ -74,12 +75,17 @@ async function smokeBoot() {
     child.stdout.on("data", onChunk);
     child.stderr.on("data", onChunk);
     child.on("exit", (code) => resolve(`exited with code ${code}`));
-    setTimeout(() => resolve("timed out after 90s"), 90_000);
+    // Cleared below, so a good boot does not hold the build open for the rest of the 90 s (F-F4).
+    timer = setTimeout(() => resolve("timed out after 90s"), 90_000);
   });
 
   const outcome = await done;
+  clearTimeout(timer);
+  // Wait for the child to be gone before removing its folder: on Windows the rm raced the exit.
+  const exited = child.exitCode !== null ? Promise.resolve() : new Promise((r) => child.once("exit", r));
   child.kill();
-  rmSync(smokeHome, { recursive: true, force: true });
+  await Promise.race([exited, new Promise((r) => setTimeout(r, 5_000).unref())]);
+  rmSync(smokeHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   if (outcome !== "listening") {
     console.error(`\n[bundle] build/app.cjs did not start — ${outcome}\n`);
     console.error(output.trim().split("\n").slice(-12).join("\n"));
