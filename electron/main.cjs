@@ -504,14 +504,13 @@ async function start() {
   /*
     Self-update (owner, 2026-10-02): only a packaged copy this file knows how to swap — the portable
     exe, the program folder, the AppImage (updater.cjs). The server downloads only when told so here.
-    The copy the last update moved aside goes now.
+    The copy the last update moved aside goes once this one has started (below).
   */
   selfUpdateFormValue = updater.selfUpdateForm({
     isPackaged: app.isPackaged || process.env.EDEXO_ELECTRON_PACKAGED === "1",
   });
   if (selfUpdateFormValue) {
     process.env.EDEXO_SELF_UPDATE = "1";
-    updater.removeOldCopy(selfUpdateFormValue);
   }
 
   const bundle = serverBundlePath();
@@ -567,6 +566,19 @@ async function start() {
   const mode = detectMode();
   runtime = await startEdexoFromElectronMode(mode);
   diag?.mark("server started");
+  /*
+    The copy the last update moved aside (EDExoCompare.exe.old, or the program folder's .old) goes once
+    this one is up and serving (owner, 2026-10-02): every update would otherwise leave a few hundred MB
+    behind for a commander who starts the app from a shortcut and never looks in the folder. Not
+    before: if the new copy cannot start, the old one is still there to go back to.
+  */
+  if (selfUpdateFormValue) {
+    const form = selfUpdateFormValue;
+    void runtime.ready.then(
+      () => updater.removeOldCopy(form),
+      () => {},
+    );
+  }
 
   const res = process.resourcesPath;
   let winIcon;
