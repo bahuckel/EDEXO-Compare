@@ -564,7 +564,8 @@ describe("what the pages report", () => {
     await huds.request("/distance-overlay.html", 404, 330, null, "open");
     const win = live()[0]!;
     expect(huds.resizeFromPage(win, { height: 5000 })).toEqual({ ok: true });
-    expect(win.bounds.height).toBe(hw.HUD_MAX_HEIGHT);
+    // Asked for more than any screen: held to the screen it is on.
+    expect(win.bounds.height).toBe(Math.min(hw.HUD_MAX_HEIGHT, WORK.height));
     huds.resizeFromPage(win, { height: 10 });
     expect(win.bounds.height).toBe(hw.HUD_MIN_HEIGHT);
     huds.resizeFromPage(win, { height: hw.HUD_MIN_HEIGHT + 1 });

@@ -28,7 +28,11 @@ const HUD_KEEP_ON_TOP_MS = 4000;
   sized before the radar existed.
 */
 const HUD_MIN_HEIGHT = 90;
-const HUD_MAX_HEIGHT = 900;
+/*
+  A sanity cap on what a page may ask for; the real one is the screen it is on (relayout). It was 900,
+  which cut the merged HUD at a large scale on a 4K screen with no sign of it (plan 2.1, Fable C12).
+*/
+const HUD_MAX_HEIGHT = 2400;
 
 /*
   One reading of an overlay request, shared by the IPC handlers and the HTTP bridge.

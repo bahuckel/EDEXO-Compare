@@ -17,7 +17,8 @@
   /* the palette comes from tokens.css (shared with the launcher and the app); these are HUD-only */
   --hud-bg: rgba(18, 9, 2, 0.42); /* the panel fill: mostly the game showing through */
   --hud-bg-2: rgba(40, 18, 3, 0.3);
-  --chamfer: 11px;
+  /* In rem, like everything that should grow with the HUD scale (16 px at 100 %; plan 2.1, Fable C12). */
+  --chamfer: 0.6875rem;
 }
 
 * {
@@ -37,7 +38,7 @@ body {
 .shell {
   position: relative;
   width: 100%;
-  padding: 3px 4px 5px 3px; /* room for the corner brackets that sit outside the panel */
+  padding: 0.1875rem 0.25rem 0.3125rem 0.1875rem; /* room for the corner brackets outside the panel */
   transition:
     opacity 0.35s ease,
     transform 0.35s ease;
@@ -147,8 +148,8 @@ body {
 .shell::after {
   content: "";
   position: absolute;
-  width: 14px;
-  height: 14px;
+  width: 0.875rem;
+  height: 0.875rem;
   pointer-events: none;
   border: 1.5px solid var(--hud);
   opacity: 0.9;
@@ -211,8 +212,8 @@ body {
 .hud-title::before {
   content: "";
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  height: 0.375rem;
   margin: 0 0.45rem 1px 0;
   background: var(--hud);
   transform: rotate(45deg);
@@ -633,7 +634,7 @@ body {
 }
 .hud-bar {
   position: relative;
-  height: 6px;
+  height: 0.375rem;
   margin-top: 0.42rem;
   background: var(--hud-ghost);
   clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
