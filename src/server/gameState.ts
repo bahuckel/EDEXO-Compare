@@ -2375,7 +2375,18 @@ export class GameStateStore {
     if (sys && typeof addr === "number") {
       this.setPositionFromLine(line);
       this.notePopulation(line, ts);
-      this.setLocation(sys, addr);
+      /*
+        In another system it is an arrival, as a jump is (plan 2.4, Fable S9): a respawn, a rescue or a
+        relog after a carrier move lands here with no FSDJump. Let go of the system the app was pointed
+        at and close the one left, or the tabs stay on the old place. A relog where the commander
+        already was changes nothing.
+      */
+      if (this.currentSystemAddress !== null && this.currentSystemAddress !== addr) {
+        this.viewingSystemAddress = null;
+        this.resetSystem(sys, addr);
+      } else {
+        this.setLocation(sys, addr);
+      }
     }
     return;
   }
