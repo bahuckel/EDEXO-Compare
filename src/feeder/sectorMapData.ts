@@ -141,7 +141,7 @@ export function buildSectorMapData(
      *
      * That column is the first word of the label, which is the rule this exists to avoid. When the
      * resolver cannot place a label the honest answer is that it is its own genus: `Bark Mounds`
-     * has sightings and no species row, and filing it under ark\ would be inventing a name the
+     * has sightings and no species row, and filing it under `Bark` would be inventing a name the
      * game does not use.
      */
     const g = (resolveGenus?.(s.speciesLabel) ?? taxon).trim().toLowerCase();
