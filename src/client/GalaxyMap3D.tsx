@@ -32,6 +32,8 @@ import { GALAXY_LAYERS, layerPointText, type GalaxyLayerDTO, type GalaxyLayerKin
 import { isBool, usePersistedState } from "./usePersistedState";
 
 const LABEL_H = 18;
+/** Label divs kept between frames; a screen shows well under this many names at once. */
+const LABEL_POOL_MAX = 150;
 const labelWidth = (l: EngineLabel) => (l.kind === "region" ? 14 : 10) + l.text.length * (l.kind === "region" ? 7.6 : 6.6);
 const crShort = (n: number | null) => (n == null ? "—" : formatValue(n / 100_000));
 const dist = (a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) =>
@@ -198,7 +200,15 @@ export function GalaxyMap3D() {
           div.style.transform = `translate(${Math.round(p.left)}px, ${Math.round(p.top)}px)`;
           div.style.display = "";
         }
-        for (const [id, div] of pool) if (!seen.has(id)) div.style.display = "none";
+        // Hidden, kept for the next frame — but a system's label is one div per system ever named, so
+        // past a screenful the hidden ones go rather than pile up for the session (plan 2.5, Opus 23).
+        for (const [id, div] of pool) {
+          if (seen.has(id)) continue;
+          if (pool.size > LABEL_POOL_MAX) {
+            div.remove();
+            pool.delete(id);
+          } else div.style.display = "none";
+        }
       },
     });
     engine.current = e;

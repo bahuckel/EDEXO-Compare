@@ -58,6 +58,9 @@ const ringRadius = (count: number) => Math.min(34, Math.max(10, 10 + 5 * Math.lo
 /** Inside this, system names are shown and systems are picked one by one. */
 const SYSTEM_DISTANCE = 1_600;
 
+/** System names kept for labels and the hover card; past this the oldest are asked for again. */
+const NAMES_MAX = 20_000;
+
 export interface EngineStats {
   phase: "loading" | "ready" | "failed";
   error?: string;
@@ -215,7 +218,8 @@ export class GalaxyEngine {
   private allGroups: ShownGroup[] = [];
   private shownGroups: ShownGroup[] = [];
   /** Camera signature, and when it last changed: names and rings are chosen once it settles. */
-  private camSig = "";
+  /** The camera at the last frame (position, then target x and z), to tell whether it moved. */
+  private readonly camLast = [NaN, NaN, NaN, NaN, NaN];
   private settleAt = 1;
   private lodDirty = true;
   private readonly hoverMarker: THREE.Points;
@@ -327,6 +331,8 @@ export class GalaxyEngine {
     el.addEventListener("pointerup", this.onPointerUp);
     el.addEventListener("pointermove", this.onPointerMove);
     el.addEventListener("pointerleave", this.onPointerLeave);
+    el.addEventListener("webglcontextlost", this.onContextLost);
+    el.addEventListener("webglcontextrestored", this.onContextRestored);
 
     this.resize();
     this.loop();
@@ -368,17 +374,23 @@ export class GalaxyEngine {
     return p;
   }
 
-  private placeMarker(m: THREE.Points, g: { x: number; y: number; z: number } | null): void {
+  /** Put a marker on a point (or hide it). True when that changed what is drawn. */
+  private placeMarker(m: THREE.Points, g: { x: number; y: number; z: number } | null): boolean {
+    const wasVisible = m.visible;
     m.visible = !!g;
-    if (!g) return;
+    if (!g) return wasVisible;
     const a = m.geometry.getAttribute("position") as THREE.BufferAttribute;
+    if (wasVisible && a.getX(0) === g.x && a.getY(0) === g.y && a.getZ(0) === -g.z) return false;
     a.setXYZ(0, g.x, g.y, -g.z);
     a.needsUpdate = true;
+    return true;
   }
 
   resize(): void {
     const w = Math.max(1, this.host.clientWidth);
     const h = Math.max(1, this.host.clientHeight);
+    // The window may have moved to a screen at another scaling since the last resize (plan 2.5).
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(w, h, true);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
@@ -677,6 +689,10 @@ export class GalaxyEngine {
 
   /** This session's jumps as a line, and the ship at its end (game coordinates). */
   setRoute(route: { x: number; y: number; z: number }[], ship: { x: number; y: number; z: number } | null): void {
+    // Polled every 10 s: the same jumps and ship rebuilt the line's geometry each time (plan 2.5).
+    const sig = JSON.stringify([route, ship]);
+    if (sig === this.routeSig) return;
+    this.routeSig = sig;
     if (this.routeLine) {
       this.overlay.remove(this.routeLine);
       this.routeLine.geometry.dispose();
@@ -700,6 +716,7 @@ export class GalaxyEngine {
     this.invalidate();
   }
   private shipPos: { x: number; y: number; z: number } | null = null;
+  private routeSig = "";
 
   private planLine: THREE.Line | null = null;
   private planStops: { x: number; y: number; z: number; label: string }[] = [];
@@ -1163,9 +1180,21 @@ export class GalaxyEngine {
 
   private onPointerMove = (ev: PointerEvent): void => {
     if (ev.buttons) return;
-    const queued = this.hoverQueued;
+    // The loop takes it on its next frame; whether anything is drawn is up to the hover (hoverAt).
     this.hoverQueued = { x: ev.offsetX, y: ev.offsetY };
-    if (!queued) this.invalidate();
+  };
+
+  /*
+    The GPU took the context back (a driver reset, a laptop switching GPUs). Without preventDefault it
+    never comes back; when it does, three.js uploads everything again on the next frame — but no frame
+    was asked for, so the map stayed black until the camera moved (plan 2.5, Opus 23).
+  */
+  private onContextLost = (ev: Event): void => {
+    ev.preventDefault();
+  };
+  private onContextRestored = (): void => {
+    this.resize();
+    this.invalidate();
   };
 
   private onPointerLeave = (): void => {
@@ -1187,28 +1216,29 @@ export class GalaxyEngine {
     return { mk, g };
   }
 
-  private hoverAt(x: number, y: number): void {
+  /** What is under the mouse, told to the page; true when the hover marker moved (a frame is due). */
+  private hoverAt(x: number, y: number): boolean {
     const { mk, g } = this.nearerOf(x, y);
     if (mk) {
-      this.placeMarker(this.hoverMarker, mk.item);
+      const moved = this.placeMarker(this.hoverMarker, mk.item);
       this.setHover({ kind: "marker", layer: mk.layer, id: mk.item.id, x: mk.sx, y: mk.sy });
-      return;
+      return moved;
     }
     if (g) {
-      this.placeMarker(this.hoverMarker, null);
+      const moved = this.placeMarker(this.hoverMarker, null);
       this.setHover({ kind: "group", level: this.stats.level, count: g.count, top: g.top, name: g.name, x: g.sx, y: g.sy });
-      return;
+      return moved;
     }
     const dist = this.camera.position.distanceTo(this.controls.target);
     const hit = dist <= this.fineDistance ? this.pickSystem(x, y) : null;
     if (!hit) {
-      this.placeMarker(this.hoverMarker, null);
+      const moved = this.placeMarker(this.hoverMarker, null);
       this.setHover(null);
-      return;
+      return moved;
     }
     const ordinal = hit.tile.ordinals[hit.index]!;
     const p = this.systemPosition(hit.tile, hit.index);
-    this.placeMarker(this.hoverMarker, p);
+    const moved = this.placeMarker(this.hoverMarker, p);
     const name = this.names.get(ordinal) ?? null;
     if (name === null) void this.fetchNames([ordinal]);
     const v = new THREE.Vector3(p.x, p.y, -p.z).project(this.camera);
@@ -1221,6 +1251,7 @@ export class GalaxyEngine {
       x: ((v.x + 1) / 2) * this.host.clientWidth,
       y: ((1 - v.y) / 2) * this.host.clientHeight,
     });
+    return moved;
   }
 
   private click(x: number, y: number): void {
@@ -1276,6 +1307,13 @@ export class GalaxyEngine {
       if (r.ok) {
         const got = (await r.json()) as Record<string, string>;
         for (const [k, v] of Object.entries(got)) this.names.set(Number(k), v);
+        // A long session of flying about asks for tens of thousands; the oldest go (plan 2.5).
+        if (this.names.size > NAMES_MAX) {
+          for (const k of this.names.keys()) {
+            this.names.delete(k);
+            if (this.names.size <= NAMES_MAX * 0.8) break;
+          }
+        }
       }
     } catch {
       /* labels wait for the next try */
@@ -1344,11 +1382,18 @@ export class GalaxyEngine {
     // Damping keeps moving after the mouse lets go; update() says whether it did.
     if (this.controls.update() || flying) this.needsRender = true;
     // Did the camera move since the last frame? Names and rings wait until it has been still ~180 ms.
+    // Compared as numbers to a tenth: this runs every animation frame, idle or not, and built a string
+    // of five formatted numbers each time (plan 2.5, Opus 23 + Fable 9.3).
     const p = this.camera.position;
     const t = this.controls.target;
-    const sig = `${p.x.toFixed(1)},${p.y.toFixed(1)},${p.z.toFixed(1)},${t.x.toFixed(1)},${t.z.toFixed(1)}`;
-    if (sig !== this.camSig) {
-      this.camSig = sig;
+    const c = this.camLast;
+    const r = (v: number) => Math.round(v * 10);
+    if (r(p.x) !== c[0] || r(p.y) !== c[1] || r(p.z) !== c[2] || r(t.x) !== c[3] || r(t.z) !== c[4]) {
+      c[0] = r(p.x);
+      c[1] = r(p.y);
+      c[2] = r(p.z);
+      c[3] = r(t.x);
+      c[4] = r(t.z);
       this.settleAt = now;
       this.lodDirty = true;
       this.needsRender = true;
@@ -1367,15 +1412,19 @@ export class GalaxyEngine {
     }
     const hover = this.hoverQueued;
     if (!this.needsRender && !hover) return;
+    const due = this.needsRender;
     this.needsRender = false;
     this.updateGroups();
+    let markerMoved = false;
     if (hover) {
       this.hoverQueued = null;
       this.lastMouse = hover;
       this.projectGroups();
-      this.hoverAt(hover.x, hover.y);
+      markerMoved = this.hoverAt(hover.x, hover.y);
     }
-    this.renderFrame();
+    // A mouse moving over empty space, or along one system, changes nothing on screen: no frame for
+    // it (plan 2.5). The hover card itself is the page's, told through onHover.
+    if (due || markerMoved) this.renderFrame();
   };
 
   /**
@@ -1479,7 +1528,17 @@ export class GalaxyEngine {
     this.opts.onLabels(out);
   }
 
+  /*
+    To the page only when something it shows changed (plan 2.5, Opus 23): the level-of-detail pass
+    publishes every 200 ms while the camera moves, and each one re-rendered the whole map component —
+    for a pan, with the same distance, tilt and sectors. The frame counters are not shown.
+  */
+  private publishedSig = "";
   private publish(): void {
+    const { frames: _f, lastFrameMs: _ms, ...shown } = this.stats;
+    const sig = JSON.stringify(shown);
+    if (sig === this.publishedSig) return;
+    this.publishedSig = sig;
     this.opts.onStats?.({ ...this.stats });
   }
 
@@ -1555,6 +1614,8 @@ export class GalaxyEngine {
     el.removeEventListener("pointerup", this.onPointerUp);
     el.removeEventListener("pointermove", this.onPointerMove);
     el.removeEventListener("pointerleave", this.onPointerLeave);
+    el.removeEventListener("webglcontextlost", this.onContextLost);
+    el.removeEventListener("webglcontextrestored", this.onContextRestored);
     this.controls.dispose();
     const dispose = (o: THREE.Object3D) => {
       const m = o as THREE.Mesh;
