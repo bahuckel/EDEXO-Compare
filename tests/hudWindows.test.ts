@@ -45,6 +45,7 @@ type Huds = {
   idlePaths: () => string[];
   restore: (icon: unknown) => Promise<void>;
   destroyAll: () => void;
+  dispose: () => void;
   pushPrefs: (p: unknown) => void;
   resizeFromPage: (win: unknown, o: unknown) => { ok: boolean };
   setLayoutPathResolver: (fn: () => string) => void;
@@ -91,8 +92,15 @@ class FakeWindow {
   once(ev: string, fn: () => void) {
     this.on(ev, fn);
   }
+  /** A load waits while its URL holds a gate (`FakeWindow.gates`), so a test can order two loads. */
+  static gates = new Map<string, Promise<void>>();
+  private loadSeq = 0;
   async loadURL(url: string) {
     if (url.includes("/missing")) throw new Error("ERR_FAILED (-2)");
+    // As Chromium does: a newer load aborts the one still in flight.
+    const seq = ++this.loadSeq;
+    for (const [part, gate] of FakeWindow.gates) if (url.includes(part)) await gate;
+    if (seq !== this.loadSeq) throw new Error("ERR_ABORTED (-3)");
     this.url = url;
   }
   isDestroyed() {
@@ -185,6 +193,7 @@ beforeEach(() => {
   changes = 0;
   FakeWindow.all = [];
   FakeWindow.secondScreenSizeFactor = 1;
+  FakeWindow.gates = new Map();
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
@@ -721,5 +730,46 @@ describe("the foreground check (electron/foregroundWatch.cjs)", () => {
     expect(fg.isGameOrOwn("", own)).toBe(true);
     expect(fg.isGameOrOwn("Discord", own)).toBe(false);
     expect(fg.isGameOrOwn("chrome", own)).toBe(false);
+  });
+});
+
+/** A gate a test opens by hand. */
+function gate(): { wait: Promise<void>; open: () => void } {
+  let open = () => {};
+  const wait = new Promise<void>((r) => (open = r));
+  return { wait, open };
+}
+
+describe("loads that finish late (review O-18)", () => {
+  it("a HUD whose page loads after quitting began is closed, not left behind", async () => {
+    const huds = make();
+    const g = gate();
+    FakeWindow.gates.set("/distance-overlay.html", g.wait);
+    const asked = huds.request("/distance-overlay.html", 404, 330, null, "open");
+    huds.dispose();
+    g.open();
+    const r = await asked;
+    expect(r.opened).toBe(false);
+    expect(live()).toHaveLength(0);
+    expect(huds.count()).toBe(0);
+    // And nothing new opens after it.
+    await huds.request("/fss-scan-overlay.html", 404, 330, null, "open");
+    expect(live()).toHaveLength(0);
+  });
+
+  it("two quick section changes end on the second, whichever load finishes first", async () => {
+    const huds = make();
+    await huds.request("/hud-overlay.html?s=fss", 404, 330, null, "open");
+    const slow = gate();
+    FakeWindow.gates.set("s=distance", slow.wait);
+    const first = huds.request("/hud-overlay.html?s=distance", 404, 330, null, "set");
+    const second = huds.request("/hud-overlay.html?s=nsp", 404, 330, null, "set");
+    await second;
+    slow.open();
+    await first;
+    const w = live();
+    expect(w).toHaveLength(1);
+    expect(w[0]!.url).toContain("s=nsp");
+    expect(huds.paths()).toEqual(["/hud-overlay.html?s=nsp"]);
   });
 });

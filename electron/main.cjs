@@ -754,7 +754,7 @@ async function start() {
     }
     // A backup being written would be thrown away (owner, 2026-09-29): ask first.
     if (holdExitForBackup(e)) return;
-    huds.destroyAll();
+    huds.dispose();
     trayControl.destroy();
     // The launcher is still the app: closing it closes the app window too, as it always quit.
     if (appUiWindow && !appUiWindow.isDestroyed()) appUiWindow.close();
@@ -977,7 +977,7 @@ app.on("before-quit", (e) => {
   } catch {
     /* ignore */
   }
-  huds.destroyAll();
+  huds.dispose();
   foreground?.stop();
   trayControl.destroy();
   if (runtime && typeof runtime.shutdown === "function") {

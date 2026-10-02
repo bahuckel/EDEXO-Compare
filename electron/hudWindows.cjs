@@ -94,6 +94,11 @@ function createHudWindows(deps) {
 
   /** @type {{ win: Electron.BrowserWindow, pathname: string }[]} */
   let hudOverlayStack = [];
+  /*
+    Set when the app quits (`dispose`). A HUD still loading then, or one a restore loop asks for
+    after it, used to be created anyway and outlive the rest (review O-18).
+  */
+  let disposed = false;
 
   /*
     Where the stack lives and in what order — the owner's choice, remembered across launches in
@@ -234,6 +239,12 @@ function createHudWindows(deps) {
   function destroyAllHudOverlays() {
     for (const s of hudOverlayStack) destroyHudWindow(s.win);
     hudOverlayStack = [];
+  }
+
+  /** Quitting: every HUD goes, and none opens after this. */
+  function disposeHudOverlays() {
+    disposed = true;
+    destroyAllHudOverlays();
   }
 
   /**
@@ -1067,19 +1078,27 @@ function createHudWindows(deps) {
    * commander in front of an error for something that had not actually gone wrong. Three attempts
    * over roughly half a second; a page that is genuinely missing still fails, just three times.
    *
+   * A load that is no longer wanted — a newer section change for the same window, or the app
+   * quitting — stops without retrying: its retry used to load the older page over the newer one
+   * (review O-18, two quick section changes).
+   *
    * @param {import("electron").BrowserWindow} win
    * @param {string} url
+   * @param {() => boolean} [wanted]
+   * @returns {Promise<boolean>} false when it stopped because it was no longer wanted
    */
-  async function loadHudUrlWithRetry(win, url) {
+  async function loadHudUrlWithRetry(win, url, wanted = () => true) {
     const ATTEMPTS = 3;
     const BACKOFF_MS = 200;
     let last;
     for (let i = 0; i < ATTEMPTS; i += 1) {
       if (win.isDestroyed()) throw last ?? new Error("Overlay window closed while loading.");
+      if (disposed || !wanted()) return false;
       try {
         await win.loadURL(url);
-        return;
+        return true;
       } catch (e) {
+        if (disposed || !wanted()) return false;
         last = e;
         if (i < ATTEMPTS - 1) {
           console.warn(`[edexo-compare] HUD overlay load attempt ${i + 1} failed, retrying:`, url, String(e));
@@ -1098,6 +1117,7 @@ function createHudWindows(deps) {
    *   no-op; set: an already-open page is pointed at the new URL (query string changes)
    */
   async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode) {
+    if (disposed) return { opened: false, paths: [], error: "The app is closing." };
     const runtime = deps.getRuntime();
     if (!runtime) return { opened: false, paths: hudPathsFiltered(), error: "Server not ready yet." };
 
@@ -1141,8 +1161,11 @@ function createHudWindows(deps) {
         slot.pathname = pathNorm;
         slot.width = Math.max(slot.width || 0, width);
         slot.height = Math.max(slot.height || 0, height);
+        // Only the newest change for this window may load or retry (review O-18).
+        const seq = (slot.loadSeq = (slot.loadSeq || 0) + 1);
         try {
-          await loadHudUrlWithRetry(slot.win, `${runtime.getLocalBaseUrl()}${pathNorm}`);
+          const done = await loadHudUrlWithRetry(slot.win, `${runtime.getLocalBaseUrl()}${pathNorm}`, () => slot.loadSeq === seq);
+          if (!done) return { opened: !disposed, paths: hudPathsFiltered() };
           relayoutHudStack();
           persistHudFile();
         } catch (e) {
@@ -1174,6 +1197,12 @@ function createHudWindows(deps) {
 
     try {
       await loadHudUrlWithRetry(win, url);
+      if (disposed) {
+        // Quitting began while it loaded: it goes with the rest.
+        destroyHudWindow(win);
+        hudOverlayStack = hudOverlayStack.filter((s) => s.win !== win);
+        return { opened: false, paths: [], error: "The app is closing." };
+      }
       relayoutHudStack();
       if (hiddenNow()) win.hide();
       persistHudFile();
@@ -1303,6 +1332,7 @@ function createHudWindows(deps) {
     idlePaths: () => hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed() && isIdle(s)).map((s) => s.pathname),
     restore: restoreHudOverlays,
     destroyAll: destroyAllHudOverlays,
+    dispose: disposeHudOverlays,
     pushPrefs,
     resizeFromPage,
     /** Where the game's window is (screen pixels), so the corner stack goes to its monitor. */
