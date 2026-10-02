@@ -501,6 +501,17 @@ describe("HUD merged panel", () => {
     expect(document.querySelector('[data-section="fss"]')?.className).toContain("hud-section--ok");
     expect(document.querySelector(".fss-line .honk")?.textContent).toBe("Honk: Yes");
   });
+  it("keeps an apostrophe or a quote in a system name inside the markup", async () => {
+    const HUD = await loadHud();
+    HUD.mount(["fss"], { noTimers: true });
+    for (const name of ["Barnard's Star", 'Carrier "Nine" Q7X-12T']) {
+      HUD.render({ dScanBodies: { systemName: name, found: 3, total: 9, complete: false, honked: true }, exoMinimap: null });
+      const sys = document.querySelector(".fss-line .sys");
+      expect(sys?.textContent).toBe(name);
+      expect(sys?.getAttribute("title")).toBe(name);
+      expect(document.querySelector(".fss-line .honk")?.textContent).toBe("Honk: Yes");
+    }
+  });
 });
 
 describe("only when relevant (guild tester report, 2026-09-30)", () => {

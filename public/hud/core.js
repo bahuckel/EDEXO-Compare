@@ -8,11 +8,14 @@ export function api(p) {
   if (proto === "http:" || proto === "https:") return p;
   return "http://127.0.0.1:" + lastPort + p;
 }
+/** Safe in text and in either kind of quoted attribute: "Barnard's Star" broke a title='…'. */
 export function esc(t) {
   return String(t == null ? "" : t)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 export function fmtCr(n) {
   if (n == null || !isFinite(n)) return "—";

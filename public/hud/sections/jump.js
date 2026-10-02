@@ -105,7 +105,7 @@ export function renderRouteStrip(d, el) {
     var sepClass = ff === true ? " hop__sep--first" : ff === false ? "" : " hop__sep--unknown";
     var sepTitle =
       ff == null && h.firstFootfallNote
-        ? ' title="' + esc(h.firstFootfallNote).replace(/"/g, "&quot;") + '"'
+        ? ' title="' + esc(h.firstFootfallNote) + '"'
         : "";
     html +=
       (i ? '<span class="hop__sep' + sepClass + '"' + sepTitle + ' aria-hidden="true">››</span>' : "") +

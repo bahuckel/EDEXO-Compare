@@ -37,18 +37,18 @@ export var fss = {
     bar.style.width = pct.toFixed(1) + "%";
     status.textContent = complete ? "Complete" : "Scanning " + Math.round(pct) + "%";
     q(root, "dline").innerHTML =
-      "<span class='sys' title='" +
+      '<span class="sys" title="' +
       esc(sys) +
-      "'>" +
+      '">' +
       esc(sys) +
-      "</span><span class='nums'>" +
+      '</span><span class="nums">' +
       dscan.found +
       " / " +
       dscan.total +
       "<small>bodies</small></span>" +
-      "<span class='honk" +
+      '<span class="honk' +
       (honked ? "" : " honk--no") +
-      "'>Honk: " +
+      '">Honk: ' +
       (honked ? "Yes" : "No") +
       "</span>";
     return complete ? "ok" : null;
