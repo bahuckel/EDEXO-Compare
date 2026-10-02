@@ -647,3 +647,110 @@ test("session log: opens from the cockpit menu and offers the Markdown copy", as
   await page.screenshot({ path: `${OUT}/session-log.png` });
   expect(errors).toEqual([]);
 });
+
+/* ---- added 2026-10-02 (review F-6.5): the screens and today's features without e2e cover ---- */
+
+async function openFromMenu(page: import("@playwright/test").Page, name: string) {
+  const btn = page.getByRole("button", { name, exact: true });
+  if (!(await btn.isVisible())) await page.getByRole("button", { name: "Menu" }).click();
+  await btn.click();
+}
+
+test("options: opens on the settings, the install facts folded at the bottom with Copy diagnostics", async ({
+  page,
+  context,
+}) => {
+  const errors = watchErrors(page);
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await openFromMenu(page, "Options");
+  const about = page.locator(".options-about");
+  await expect(about).toBeVisible();
+  await expect(about).not.toHaveAttribute("open", "");
+  await about.locator("summary").click();
+  await page.getByRole("button", { name: "Copy diagnostics" }).click();
+  const box = page.locator(".options-diagnostics-text");
+  await expect(box).toBeVisible();
+  const text = await box.inputValue();
+  expect(text).toContain("ED Exo Compare");
+  expect(text).toContain("Journals:");
+  // Nothing of the commander's: no LAN key, no home folder.
+  expect(text).not.toMatch(/[?&]k=[^…]/);
+  await page.screenshot({ path: `${OUT}/options-about.png` });
+  expect(errors).toEqual([]);
+});
+
+test("notify me: Send a test notice puts one on the bell", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await openFromMenu(page, "Options");
+  const fold = page.locator(".fold-toggle", { hasText: "Notify me" });
+  if ((await fold.getAttribute("aria-expanded")) !== "true") await fold.click();
+  await page.getByRole("button", { name: "Send a test notice" }).click();
+  await expect(page.getByText(/Sent: look at the mail icon/)).toBeVisible();
+  const items = await page.request.get("/api/state?channel=app").then((r) => r.json());
+  expect(JSON.stringify(items)).toContain("Test notice");
+  expect(errors).toEqual([]);
+});
+
+test("streamer view: the app with nothing to click", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/?view=stream");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator("html")).toHaveAttribute("data-streamer", "1");
+  await expect(page.locator(".appbar-actions")).toBeHidden();
+  await expect(page.locator(".snapshot-btn").first()).toBeHidden();
+  expect(await page.evaluate(() => getComputedStyle(document.querySelector(".app-shell")!).pointerEvents)).toBe("none");
+  await page.screenshot({ path: `${OUT}/streamer-view.png` });
+  expect(errors).toEqual([]);
+});
+
+test("my discoveries: the bodies table exports as CSV", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await openFromMenu(page, "My discoveries");
+  // It opens on the foot-scan tab, empty in the fixture; the bodies table has the fixture's bodies.
+  await page.getByRole("tab", { name: "Bodies" }).click();
+  const exportBtn = page.locator(".disc-export button").first();
+  await expect(exportBtn).toBeVisible({ timeout: 30_000 });
+  const [dl] = await Promise.all([page.waitForEvent("download"), exportBtn.click()]);
+  expect(dl.suggestedFilename()).toMatch(/^edexo-.+\.csv$/);
+  await page.screenshot({ path: `${OUT}/discoveries.png` });
+  expect(errors).toEqual([]);
+});
+
+test("system map: opens from the system card and draws the fixture body", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await page.locator(".sys-card__btn").first().click();
+  await expect(page.locator(".system-map-modal, [aria-label*='System map' i]").first()).toBeVisible();
+  await expect(page.locator("svg circle").first()).toBeVisible();
+  await page.screenshot({ path: `${OUT}/system-map.png` });
+  expect(errors).toEqual([]);
+});
+
+test("encyclopedia: opens and lists species", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await openFromMenu(page, "Encyclopedia");
+  await expect(page.getByText(/Aleoida|Bacterium|Stratum/).first()).toBeVisible({ timeout: 30_000 });
+  await page.screenshot({ path: `${OUT}/encyclopedia.png` });
+  expect(errors).toEqual([]);
+});
+
+test("phone: the main view at 390 px keeps the body and its species", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator(".species-card, .srow").first()).toBeVisible();
+  // No sideways page scroll on a phone.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: `${OUT}/phone-main.png`, fullPage: true });
+  expect(errors).toEqual([]);
+});
