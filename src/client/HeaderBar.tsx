@@ -96,6 +96,8 @@ function LiveSnapshotFreshness({ connected }: { connected: boolean }) {
   );
 }
 
+const NO_FOOT_ENTRIES: FootScannedEntry[] = [];
+
 type MenuOpeners = Record<
   | "setMyExoOpen"
   | "setBacklogOpen"
@@ -370,6 +372,8 @@ export const HeaderBar = memo(function HeaderBar({
     x: number;
     y: number;
   } | null>(null);
+  // My discoveries re-sorted its whole table on every push while open: a new onClose rebuilt its columns.
+  const closeMyExo = useCallback(() => setMyExoOpen(false), []);
   // One function for the header's life, so the system card's memo holds (snapSlice.ts).
   const openNotableQuick = useCallback((n: NotableBodyInfo, ev: ReactMouseEvent) => {
     ev.stopPropagation();
@@ -837,8 +841,8 @@ export const HeaderBar = memo(function HeaderBar({
       ) : null}
       {myExoOpen ? (
         <MyExobiologyModal
-          entries={snap.footScannedEntries ?? []}
-          onClose={() => setMyExoOpen(false)}
+          entries={snap.footScannedEntries ?? NO_FOOT_ENTRIES}
+          onClose={closeMyExo}
           onNavigateEntry={onFootCatalogNavigate}
           onNavigateSystem={onDiscoveriesNavigate}
         />

@@ -18,7 +18,7 @@ import { InfoPopover } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
 import type { DiscoveriesDTO, FootScannedEntry } from "@shared/types";
 import { readableAtmosphereType } from "@shared/atmosphereLabel";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * Everything the commander has actually confirmed on foot.
@@ -137,7 +137,8 @@ function exobiologyColumns(
   ];
 }
 
-export function MyExobiologyModal({
+/** Memo: open over the app, which re-renders on every push. */
+export const MyExobiologyModal = memo(function MyExobiologyModal({
   entries,
   onClose,
   onNavigateEntry,
@@ -440,4 +441,4 @@ export function MyExobiologyModal({
       </div>
     </div>
   );
-}
+});
