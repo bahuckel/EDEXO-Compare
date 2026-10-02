@@ -70,6 +70,11 @@ so the data has one licence. The EDAstro-derived files, and what was changed
       The galaxy map's index of systems with recorded biology: the species
       EDAstro's codex-data.csv has in each system, joined with the systems
       Spansh's galaxy dump shows with biological signals.
+  * data/exomastery/genus-body-split.json
+      Per Sinuous Tubers and Brain Tree species, counts of planet type,
+      volcanism, temperature band and atmosphere on the Spansh galaxy dump's
+      bodies where EDSM's and EDAstro's codex log exactly one species of the
+      genus in the system. No system of EDAstro's is in it.
 
 The other sources of the data are credited in NOTICE.md.
 

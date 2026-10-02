@@ -51,7 +51,10 @@ licence ([`data/LICENSE-DATA.txt`](data/LICENSE-DATA.txt)). The EDAstro-derived 
 - `src/shared/nspModelData.ts` — region and star-type averages for the phenomena prediction;
 - `data/galaxy/bio-index.bin` — the galaxy map's index of systems with recorded biology: the species
   EDAstro's `codex-data.csv` has in each system, joined with the systems Spansh's galaxy dump shows
-  with biological signals (built for the release builds; not in this repository).
+  with biological signals (built for the release builds; not in this repository);
+- `data/exomastery/genus-body-split.json` — per Sinuous Tubers and Brain Tree species, counts of
+  planet type, volcanism, temperature band and atmosphere on the Spansh galaxy dump's bodies where
+  EDSM's and EDAstro's codex log exactly one species of the genus in the system.
 
 Releases 1.1.0 to 1.2.7 shipped these under the MIT notice by mistake; they were always under
 CC BY-NC-SA 3.0. Data the app downloads from EDAstro on the user's machine (phenomena, carriers,
