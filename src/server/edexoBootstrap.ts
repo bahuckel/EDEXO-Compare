@@ -993,7 +993,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         notices.observe(line, noticesContext);
         // Read before apply() closes the run: the tracker files an Analyse under the run's body too.
         const ownLine = store.ownBodyForAnalyse(line);
-        store.apply(line);
+        store.applyLive(line);
         // Live lines only. The historical replay calls store.apply directly, which is what keeps a
         // first run from asking EDSM about every system the commander has ever visited.
         maybeAutoFetchOnArrival(line);
