@@ -299,3 +299,18 @@ describe("prefs and wording", () => {
     ).toBe("Largest Water world you have found — 7,234 km (was 6,900 km)");
   });
 });
+
+describe("test notice (review F-5.10)", () => {
+  it("adds one record-kind notice, a newer one replaces it, and marking read and clearing remove it", () => {
+    const n = createNoticesService({ filePath: null });
+    n.sendTest("2026-10-02T18:00:00.000Z");
+    n.sendTest("2026-10-02T18:00:05.000Z");
+    const tests = n.list().filter((x) => x.id.startsWith("test:"));
+    expect(tests).toHaveLength(1);
+    expect(tests[0]!.kind).toBe("record");
+    expect(n.snapshot(null).unread).toBe(1);
+    n.markRead("all");
+    n.clearRead();
+    expect(n.list()).toHaveLength(0);
+  });
+});

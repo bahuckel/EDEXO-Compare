@@ -256,6 +256,12 @@ export function registerSettingsRoutes(
     res.json({ ok: true, changed: opts.markNoticesUnread(b.ids as string[]) });
   });
 
+  app.post("/api/notices/test", (_req, res) => {
+    if (typeof opts.sendTestNotice !== "function") return void res.status(501).json({ ok: false, error: "Not available" });
+    opts.sendTestNotice();
+    res.json({ ok: true });
+  });
+
   app.post("/api/notices/clear-read", (_req, res) => {
     if (typeof opts.clearReadNotices !== "function") return void res.status(501).json({ ok: false, error: "Not available" });
     res.json({ ok: true, removed: opts.clearReadNotices() });

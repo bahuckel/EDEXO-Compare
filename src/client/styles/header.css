@@ -588,6 +588,10 @@
   word-break: break-all;
 }
 
+.options-notify-test {
+  margin-top: 0.75rem;
+}
+
 /* About this install (F-1.6): the diagnostics fold at the bottom of Options. */
 .options-about > summary {
   cursor: pointer;

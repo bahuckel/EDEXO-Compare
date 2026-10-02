@@ -189,6 +189,12 @@ export interface NoticesService {
   /** Deletes the read ones. Returns how many went. */
   clearRead(): number;
   /**
+   * Options → Notify me → "Send a test notice" (review F-5.10): one notice through the real list, so
+   * the commander sees (and, with the chime on, hears) what a find looks like. A newer test replaces
+   * the last one; it is never remembered as seen.
+   */
+  sendTest(at: string): NoticeDTO;
+  /**
    * Candidates nobody has logged in their region ([CODEX FIRST]), from the snapshot of the system the
    * commander is in. Each species, colour and body is announced once. True when one was added.
    */
@@ -646,6 +652,23 @@ export function createNoticesService(opts: {
       }
       if (added) save();
       return added;
+    },
+    sendTest(at) {
+      const n: NoticeDTO = {
+        id: `test:${at}`,
+        at,
+        // A record, so the chime rings when it is on: the one notice kind that has a sound.
+        kind: "record",
+        title: "Test notice",
+        text: "This is how a find appears. Mark it read, or clear read notices, to remove it.",
+        system: "",
+        systemAddress: null,
+        body: null,
+        bodyKey: null,
+      };
+      state.items = [n, ...state.items.filter((x) => !x.id.startsWith("test:"))];
+      save();
+      return n;
     },
     clearRead() {
       const before = state.items.length;

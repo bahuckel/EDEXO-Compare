@@ -252,6 +252,8 @@ export interface HttpServerOptions {
   markNoticesUnread?: (ids: readonly string[]) => number;
   /** POST `/api/notices/clear-read` — deletes the read ones. */
   clearReadNotices?: () => number;
+  /** POST `/api/notices/test` — one test notice (Options → Notify me). */
+  sendTestNotice?: () => void;
   setCollectionFocus?: (raw: unknown) => CollectionFocusConfig;
   setIncludeBacterium?: (value: boolean) => void;
   setIncludeExplorationScanData?: (value: boolean) => void;

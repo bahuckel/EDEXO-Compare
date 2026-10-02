@@ -1607,6 +1607,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       if (n) push();
       return n;
     },
+    sendTestNotice: () => {
+      notices.sendTest(new Date().toISOString());
+      push();
+    },
     /*
       Clamped on the way in and the stored config handed straight back, so a figure the server
       refused shows up in the panel as the figure that will actually be used.

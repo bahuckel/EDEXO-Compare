@@ -322,6 +322,7 @@ export function NotifyPanel() {
   const p = st?.prefs ?? null;
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [testSent, setTestSent] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -556,6 +557,26 @@ export function NotifyPanel() {
           ))}
         </div>
       ) : null}
+      {/* Review F-5.10: see (and hear, with the chime on) what a find looks like, without waiting for one. */}
+      <div className="options-oneline options-notify-test">
+        <button
+          type="button"
+          className="btn secondary"
+          disabled={busy}
+          onClick={() => {
+            setMsg(null);
+            void postSetting("/api/notices/test", {}).then((r) => {
+              setMsg(r.ok ? null : (r.error ?? "Could not send the test notice."));
+              setTestSent(r.ok);
+            });
+          }}
+        >
+          Send a test notice
+        </button>
+        {testSent ? (
+          <span className="dim tiny">Sent: look at the mail icon in the top bar{p.chime ? " (the chime plays)" : ""}.</span>
+        ) : null}
+      </div>
       {msg ? <p className="options-error">{msg}</p> : null}
     </FoldPanel>
   );
