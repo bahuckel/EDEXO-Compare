@@ -405,6 +405,9 @@ export function startJournalWatcher(
     }
 
     if (lastListIdentity === null) lastListIdentity = identity;
+    // The folder vanished (a drive unplugged, a sync tool) and came back with the same newest file: the
+    // file watch stopped with it, and only this poll was left to notice new lines (Fable 8.4).
+    if (!watchTarget) refreshTailWatch();
     await tailChunk();
   };
 
