@@ -72,6 +72,7 @@ import {
   demoteOutsideStarlight,
   OBSERVED_TEMP_TOLERANCE_K,
   demoteRegionallyRareSiblings,
+  demoteDeltahedronixOnOneSignalIcy,
 } from "./demotionPasses.js";
 export {
   demoteFailedSpatialGates,
@@ -1377,6 +1378,8 @@ export function matchDatabaseToScan(
      * {@link restoreDemotionsBelowSignalCount}.
      */
     biologicalSignals?: number | null;
+    /** True when `biologicalSignals` is a stand-in (an AutoScan-only body), not the game's count. */
+    signalCountAssumed?: boolean;
   },
 ): MatchDatabaseRun {
   const includeBacterium = options?.includeBacterium === true;
@@ -1453,6 +1456,13 @@ export function matchDatabaseToScan(
   demoteFailedSystemBodyGates(strict, unlikely, matchContext);
   demoteOutsideStarlight(strict, unlikely, matchContext);
   demoteRegionallyRareSiblings(strict, unlikely, matchContext);
+  demoteDeltahedronixOnOneSignalIcy(
+    strict,
+    unlikely,
+    scan.PlanetClass,
+    options?.biologicalSignals ?? null,
+    options?.signalCountAssumed === true,
+  );
 
   restoreDemotionsBelowSignalCount(
     strict,

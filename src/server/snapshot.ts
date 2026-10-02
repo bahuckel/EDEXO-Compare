@@ -925,6 +925,7 @@ function computeBodyUncached(
     matchContext: speciesMatchCtx,
     spatialCatalogue: loadSpatialCatalogue(root),
     biologicalSignals: b.biologicalSignals,
+    signalCountAssumed: b.autoScanOnly === true,
   });
   const scanForExo = mergedScan;
   const bodyScanDetail = buildBodyScanExomasteryDetail(mergedScan, explorationRec);

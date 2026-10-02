@@ -459,3 +459,44 @@ export function demoteRegionallyRareSiblings(
     });
   }
 }
+
+/**
+ * Recepta Deltahedronix never grows on an icy body whose only biology is the Recepta (owner,
+ * 2026-10-02: shrink the Recepta list "only if no real recepta signals are lost, 0!").
+ *
+ * Every body fact was measured against the three Recepta species (`docs/perf/recepta_analysis.py`,
+ * 76 facts incl. crust and materials) and none beat "always Umbrux". One cell is empty, though:
+ * Icy body with exactly one biological signal — 0 Deltahedronix of 6,801 Recepta bodies in the
+ * Spansh dump (3,360 Conditivus, 3,441 Umbrux), 0 of 12 EDDN ScanOrganic sightings, 0 in the
+ * commander's journals. With two or more signals on an icy body it is the commonest of the three
+ * (303 of 739), so the rule is the count, not the ice.
+ *
+ * Only on the game's own count: an AutoScan-only body is computed with an assumed single signal,
+ * and there the count proves nothing (`signalCountAssumed`).
+ */
+export function demoteDeltahedronixOnOneSignalIcy(
+  strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  planetClass: string | null | undefined,
+  biologicalSignals: number | null | undefined,
+  signalCountAssumed: boolean,
+): void {
+  if (signalCountAssumed || biologicalSignals !== 1) return;
+  if ((planetClass ?? "").trim().toLowerCase() !== "icy body") return;
+  for (let i = strict.length - 1; i >= 0; i--) {
+    const m = strict[i]!;
+    if (!m.entry.id.toLowerCase().includes("deltahedronix")) continue;
+    const reason: MatchReason = {
+      field: "BioSignals",
+      soft: true,
+      detail: `Never recorded on an icy body with one biological signal (0 of 6,801 Recepta bodies). ${DEMOTED_NOTE}`,
+    };
+    strict.splice(i, 1);
+    unlikely.push({
+      ...m,
+      reasons: [...m.reasons, reason],
+      unlikely: true,
+      unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
+    });
+  }
+}
