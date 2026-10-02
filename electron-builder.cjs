@@ -84,6 +84,7 @@ module.exports = {
     "electron/childWindows.cjs",
     "electron/foregroundWatch.cjs",
     "electron/windowGuards.cjs",
+    "electron/keybinds.cjs",
     ...(process.env.EDEXO_DIAG === "1" ? ["electron/diag.cjs"] : []),
     "package.json",
   ],

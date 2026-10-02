@@ -24,7 +24,8 @@ function createTrayControl(deps) {
       { label: "Show launcher", click: showLauncher },
       {
         label: deps.huds.isHidden() ? "Show HUDs" : "Hide HUDs",
-        accelerator: HUD_TOGGLE_SHORTCUT,
+        // The launcher's bind (key binds, 2026-10-02); none shown when it is switched off.
+        accelerator: (deps.hudShortcut ? deps.hudShortcut() : HUD_TOGGLE_SHORTCUT) || undefined,
         enabled: deps.huds.count() > 0,
         click: () => deps.huds.toggleVisibility(),
       },

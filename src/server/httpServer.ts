@@ -16,6 +16,7 @@ import type {
   AppSnapshot,
   AppStatusDTO,
   ExoLiveDTO,
+  UiCommand,
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
@@ -372,6 +373,8 @@ export function createHttpServer(opts: HttpServerOptions): {
   broadcast: (s: AppSnapshot) => void;
   /** The radar's own frame, straight to the HUD sockets. See {@link ExoLiveDTO}. */
   broadcastExoLive: (live: ExoLiveDTO) => void;
+  /** A command for the app pages (key binds: previous / next body tab), to every app-channel socket. */
+  broadcastUiCommand: (cmd: UiCommand) => void;
   listening: Promise<void>;
 } {
   const app = express();
@@ -1062,6 +1065,24 @@ export function createHttpServer(opts: HttpServerOptions): {
     }
   };
 
+  /*
+    Key binds (owner, 2026-10-02: "the user won't have to alt tab to the browser window in order to
+    switch bodies"). Electron catches the global key and the server tells every app page — the app
+    window and any browser tab — so whichever one he is looking at moves.
+  */
+  const broadcastUiCommand = (cmd: UiCommand) => {
+    const msg = JSON.stringify({ type: "uiCommand", payload: cmd });
+    for (const ws of clients) {
+      if (ws.readyState !== ws.OPEN) continue;
+      if ((channelOf.get(ws) ?? "app") !== "app") continue;
+      try {
+        ws.send(msg);
+      } catch {
+        clients.delete(ws);
+      }
+    }
+  };
+
   server.listen(opts.port, opts.bindHost);
-  return { server, broadcast, broadcastExoLive, listening };
+  return { server, broadcast, broadcastExoLive, broadcastUiCommand, listening };
 }

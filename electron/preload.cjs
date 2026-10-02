@@ -47,6 +47,12 @@ contextBridge.exposeInMainWorld("edexoElectron", {
   setTrayPref: (opts) => ipcRenderer.invoke("edexo:set-tray-pref", opts),
   /** Whether the HUD hotkey could be registered: `{ shortcut, registered }`. */
   getHotkeyStatus: () => ipcRenderer.invoke("edexo:hotkey-status"),
+  /** Key binds: `{ binds, status, actions }` (electron/keybinds.cjs). Launcher only. */
+  getKeybinds: () => ipcRenderer.invoke("edexo:get-keybinds"),
+  /** @param {Record<string, string | null>} next "" turns a bind off, null puts the default back. */
+  setKeybinds: (next) => ipcRenderer.invoke("edexo:set-keybinds", next),
+  /** While a new bind is being recorded the current ones are released (`{ on: true }`), then restored. */
+  pauseKeybinds: (opts) => ipcRenderer.invoke("edexo:pause-keybinds", opts),
   /** HUDs shown or hidden, however it was changed (hotkey, tray, launcher): `{ hidden, count }`. */
   onHudVisibility: (cb) => {
     ipcRenderer.on("edexo:hud-visibility", (_evt, v) => cb(v));

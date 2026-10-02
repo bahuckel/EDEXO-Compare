@@ -19,9 +19,9 @@ const {
   hudPathFrom,
   hudWidthFrom,
   hudHeightFrom,
-  HUD_TOGGLE_SHORTCUT,
 } = require("./hudWindows.cjs");
 const { createTrayControl } = require("./tray.cjs");
+const { createKeybinds } = require("./keybinds.cjs");
 const { watchForeground, isGameOrOwn } = require("./foregroundWatch.cjs");
 const { guardWindowNavigation, restrictPermissions } = require("./windowGuards.cjs");
 /** The app's own origin once the server listens (windowGuards.cjs). */
@@ -118,10 +118,26 @@ function showLauncher() {
 }
 
 /** The tray (tray.cjs): the launcher, the HUD toggle, the UI in the browser, quit. */
+/*
+  Key binds (owner, 2026-10-02): the HUD toggle and previous / next body tab, set in the launcher
+  (electron/keybinds.cjs). The body keys go through the server to every app page.
+*/
+const keybinds = createKeybinds({
+  globalShortcut,
+  fs,
+  filePath: () => path.join(path.dirname(huds.layoutPath()), "edexo-keybinds.json"),
+  handlers: {
+    hudToggle: () => huds.toggleVisibility(),
+    bodyPrev: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: -1 }),
+    bodyNext: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: 1 }),
+  },
+});
+
 const trayControl = createTrayControl({
   showLauncher,
   huds,
   getUiUrl: () => (runtime ? `${runtime.getLocalBaseUrl()}/` : null),
+  hudShortcut: () => keybinds.bindFor("hudToggle"),
 });
 
 /*
@@ -320,9 +336,17 @@ function registerFootOverlayIpc(iconForChild) {
     return { enabled: closeToTray(), ...trayAvailability() };
   });
   ipcMain.handle("edexo:hotkey-status", () => ({
-    shortcut: HUD_TOGGLE_SHORTCUT,
+    shortcut: keybinds.bindFor("hudToggle"),
     registered: hotkeyRegistered,
   }));
+  ipcMain.handle("edexo:get-keybinds", () => keybinds.get());
+  ipcMain.handle("edexo:pause-keybinds", (_evt, opts) => keybinds.pause(!!(opts && typeof opts === "object" && opts.on)));
+  ipcMain.handle("edexo:set-keybinds", (_evt, next) => {
+    const r = keybinds.set(next && typeof next === "object" ? next : {});
+    hotkeyRegistered = keybinds.statusFor("hudToggle") === "ok";
+    trayControl.refresh();
+    return r;
+  });
 
   ipcMain.handle("edexo:open-hud-overlay", async (_evt, opts) =>
     huds.request(hudPathFrom(opts), hudWidthFrom(opts), hudHeightFrom(opts), iconForChild, "open"),
@@ -586,14 +610,11 @@ async function start() {
 
   huds.loadLayout();
   huds.watchDisplays();
-  try {
-    hotkeyRegistered = globalShortcut.register(HUD_TOGGLE_SHORTCUT, () => huds.toggleVisibility());
-    if (!hotkeyRegistered) {
-      console.warn("[edexo-compare] could not register", HUD_TOGGLE_SHORTCUT, "(taken by another app)");
-    }
-  } catch (e) {
-    hotkeyRegistered = false;
-    console.warn("[edexo-compare] global shortcut failed:", e);
+  keybinds.load();
+  const kbStatus = keybinds.apply();
+  hotkeyRegistered = kbStatus.hudToggle === "ok";
+  for (const [k, st] of Object.entries(kbStatus)) {
+    if (st === "taken") console.warn("[edexo-compare] could not register", keybinds.bindFor(k), `(${k}; taken by another app)`);
   }
 
   const preloadPath = path.join(__dirname, "preload.cjs");

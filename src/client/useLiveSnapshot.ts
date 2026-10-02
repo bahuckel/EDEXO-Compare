@@ -3,6 +3,9 @@ import type { AppSnapshot } from "@shared/types";
 import { perfSnapshotCommitted, perfSnapshotReceived } from "./perf";
 import { reuseUnchanged } from "./snapshotMerge";
 
+/** The window event a key-bind command arrives as (`detail`: a `UiCommand`). */
+export const UI_COMMAND_EVENT = "edexo-ui-command";
+
 function websocketUrl(): string {
   const p = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${p}//${window.location.host}/ws`;
@@ -151,6 +154,9 @@ export function useLiveSnapshot(): {
               Array.isArray(msg.unchanged) ? (msg.unchanged as string[]) : undefined,
               msg.bodiesDelta && Array.isArray(msg.bodiesDelta.keys) ? msg.bodiesDelta : undefined,
             );
+          } else if (msg.type === "uiCommand" && msg.payload) {
+            // A key bind pressed in the game (Electron's global keys, via the server): App.tsx acts on it.
+            window.dispatchEvent(new CustomEvent(UI_COMMAND_EVENT, { detail: msg.payload }));
           }
         } catch {
           /* ignore */

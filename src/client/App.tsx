@@ -2,14 +2,14 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import type { NotableBodyInfo } from "@shared/types";
 import { isBool, usePersistedState } from "./usePersistedState";
 import { NOTABLE_QUICK_EVENT } from "./HeaderBar";
-import { useLiveSnapshot } from "./useLiveSnapshot";
+import { UI_COMMAND_EVENT, useLiveSnapshot } from "./useLiveSnapshot";
 import { useToast } from "./ui/feedback";
 import { arrivalTripRanks } from "@shared/systemTriage";
-import { useCallback, lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useCallback, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { JournalBootScreen } from "./JournalBootScreen";
 import type { EncyclopediaSpawnCompare } from "./EncyclopediaModal";
 import { EliteTipRotator } from "./EliteTipRotator";
-import type { AppSnapshot, BodyComputed, FootScannedEntry } from "@shared/types";
+import type { AppSnapshot, BodyComputed, FootScannedEntry, UiCommand } from "@shared/types";
 import { buildBodyOrbitGroups, groupTabBodiesIntoHostCards } from "./bodyTabGroups";
 import { useStableBioTabOrder } from "./useStableBioTabOrder";
 import {
@@ -304,6 +304,29 @@ export function App() {
       systemName: stampSystem,
     });
   }, [stampPrefs, stampCmdr, stampSystem]);
+
+  /*
+    Key binds (owner, 2026-10-02): previous / next body tab from inside the game, F1 / F2 by default,
+    set in the launcher. The same walk as the strip's own arrows: the whole tab order, wrapping.
+  */
+  const tabWalk = useRef<{ keys: string[]; at: string | null }>({ keys: [], at: null });
+  tabWalk.current = {
+    keys: tabSections.flatMap((s) => s.hostCards.flat().map((b) => b.state.key)),
+    at: selectedBodyKey,
+  };
+  useEffect(() => {
+    const onCommand = (ev: Event) => {
+      const cmd = (ev as CustomEvent<UiCommand>).detail;
+      if (!cmd || cmd.cmd !== "bodyTab") return;
+      const { keys, at } = tabWalk.current;
+      if (!keys.length) return;
+      const i = at ? keys.indexOf(at) : -1;
+      const next = i < 0 ? 0 : (i + cmd.dir + keys.length) % keys.length;
+      setSelectedBodyKey(keys[next]!);
+    };
+    window.addEventListener(UI_COMMAND_EVENT, onCommand);
+    return () => window.removeEventListener(UI_COMMAND_EVENT, onCommand);
+  }, []);
 
   /** Ctrl+K anywhere opens the jump palette; the strip itself needs no measurement now. */
   useEffect(() => {

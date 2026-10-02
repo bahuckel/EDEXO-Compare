@@ -815,6 +815,30 @@
       body:has(.modal-bg.on) {
         overflow: hidden;
       }
+      .kb-rows {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        gap: 0.4rem 0.5rem;
+        align-items: center;
+        margin: 0.6rem 0;
+      }
+      .kb-key {
+        min-width: 9rem;
+        font-family: var(--mono, ui-monospace, monospace);
+      }
+      .kb-key[aria-pressed="true"] {
+        outline: 2px solid var(--accent, #ff8a1f);
+      }
+      .kb-status {
+        grid-column: 1 / -1;
+        margin: -0.2rem 0 0.2rem;
+        font-size: 0.8rem;
+        opacity: 0.8;
+      }
+      .kb-status--warn {
+        color: var(--warn, #f5a524);
+        opacity: 1;
+      }
       .modal-bg.on {
         display: flex;
       }
@@ -1865,13 +1889,23 @@
               <span class="subline" id="backupSub">Journals, your data and codex — kept as zips</span>
             </span>
           </button>
-          <button type="button" class="btn secondary btn--wide" id="btnNetworkSettings">
+          <button type="button" class="btn secondary" id="btnNetworkSettings">
             <span class="glyph" aria-hidden="true">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" /></svg>
             </span>
             <span class="btn-lines">
               <strong>Network settings</strong>
               <span class="subline">This computer, LAN and public URLs — visibility and toggles</span>
+            </span>
+          </button>
+          <!-- Key binds (owner, 2026-10-02): global keys for the HUD and the body tabs. Electron only. -->
+          <button type="button" class="btn secondary" id="btnKeybinds" hidden>
+            <span class="glyph" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="3" y="6.5" width="18" height="11" rx="2" /><path d="M7 10h1M10.5 10h1M14 10h1M17 10h0.5M7.5 14h9" /></svg>
+            </span>
+            <span class="btn-lines">
+              <strong>Key binds</strong>
+              <span class="subline">Keys that work in the game: HUD show / hide, previous / next body</span>
             </span>
           </button>
         </div>
@@ -1890,6 +1924,23 @@
         <div class="foot">
           <span>EDEXO · exobiology routing</span>
           <span>Local server · WebSocket live link</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-bg" id="keybindsModal">
+      <div class="modal modal--compact">
+        <div class="modal-in">
+          <h3>Key binds</h3>
+          <p class="hud-hint">
+            These keys work while Elite is in front: one key, or up to three with Ctrl, Alt or Shift. Windows gives a
+            bound key to this app and not to the game, so pick keys you do not use in Elite.
+          </p>
+          <div class="kb-rows" id="kbRows"></div>
+          <p class="hud-hint" id="kbMsg" aria-live="polite"></p>
+          <div class="modal-actions">
+            <button type="button" class="btn secondary" id="kbClose">Close</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2182,8 +2233,8 @@
             </div>
             <ul class="hud-order" id="hudOrderList" aria-label="Order of the HUDs in the stack"></ul>
             <p class="hud-hint">
-              <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>H</kbd> switches between Show and Hide. The choice is kept for the
-              next start.
+              <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>H</kbd> switches between Show and Hide (change it in Key binds). The
+              choice is kept for the next start.
             </p>
             <!--
               Shown only when the game's own settings file says overlays cannot be drawn. A permanent
@@ -3231,6 +3282,144 @@
         function closeNetworkSettingsModal() {
           if (networkSettingsModal) networkSettingsModal.classList.remove("on");
         }
+
+        /*
+          Key binds (owner, 2026-10-02): Electron registers them globally (electron/keybinds.cjs). Recording
+          a bind pauses the current ones, or a key that is already bound would never reach this page.
+        */
+        (function () {
+          var ee = window.edexoElectron;
+          var btn = document.getElementById("btnKeybinds");
+          var modal = document.getElementById("keybindsModal");
+          var rowsEl = document.getElementById("kbRows");
+          var msgEl = document.getElementById("kbMsg");
+          var closeBtn = document.getElementById("kbClose");
+          if (!ee || typeof ee.getKeybinds !== "function" || !btn || !modal || !rowsEl) return;
+          btn.hidden = false;
+          var state = null;
+          var recording = null;
+          var STATUS = {
+            ok: "",
+            off: "Off.",
+            taken: "Another program already uses this key, so it does nothing here. Pick another.",
+            duplicate: "Already bound to another action above.",
+            invalid: "Not a key this app can bind.",
+          };
+          function pretty(acc) {
+            if (!acc) return "None";
+            return acc.replace(/^CommandOrControl\+|^CmdOrCtrl\+/, "Ctrl+").replace(/Control/g, "Ctrl").replace(/\+/g, " + ");
+          }
+          var CODE = { Space: "Space", Tab: "Tab", Backspace: "Backspace", Delete: "Delete", Insert: "Insert", Enter: "Return",
+            NumpadEnter: "Return", ArrowUp: "Up", ArrowDown: "Down", ArrowLeft: "Left", ArrowRight: "Right", Home: "Home",
+            End: "End", PageUp: "PageUp", PageDown: "PageDown", NumpadDecimal: "numdec", NumpadAdd: "numadd",
+            NumpadSubtract: "numsub", NumpadMultiply: "nummult", NumpadDivide: "numdiv", Minus: "-", Equal: "=",
+            BracketLeft: "[", BracketRight: "]", Backslash: "\\", Semicolon: ";", Quote: "'", Comma: ",", Period: ".",
+            Slash: "/", Backquote: "`" };
+          function keyOf(ev) {
+            var c = ev.code || "";
+            if (/^Key[A-Z]$/.test(c)) return c.slice(3);
+            if (/^Digit[0-9]$/.test(c)) return c.slice(5);
+            if (/^F([1-9]|1[0-9]|2[0-4])$/.test(c)) return c;
+            if (/^Numpad[0-9]$/.test(c)) return "num" + c.slice(6);
+            return CODE[c] || null;
+          }
+          function render() {
+            rowsEl.innerHTML = "";
+            Object.keys(state.actions).forEach(function (k) {
+              var a = state.actions[k];
+              var label = document.createElement("span");
+              label.textContent = a.label;
+              var key = document.createElement("button");
+              key.type = "button";
+              key.className = "btn-mini kb-key";
+              key.textContent = recording === k ? "Press the keys… (Esc cancels)" : pretty(state.binds[k]);
+              key.setAttribute("aria-pressed", recording === k ? "true" : "false");
+              key.title = "Click, then press the key or combination";
+              key.addEventListener("click", function () { startRecording(k); });
+              var def = document.createElement("button");
+              def.type = "button";
+              def.className = "btn-mini";
+              def.textContent = "Default";
+              def.title = "Back to " + pretty(a.default);
+              def.addEventListener("click", function () { save(k, null); });
+              var off = document.createElement("button");
+              off.type = "button";
+              off.className = "btn-mini";
+              off.textContent = "Off";
+              off.addEventListener("click", function () { save(k, ""); });
+              var st = document.createElement("p");
+              var code = state.status[k] || "off";
+              st.className = "kb-status" + (code === "taken" || code === "duplicate" || code === "invalid" ? " kb-status--warn" : "");
+              st.textContent = STATUS[code] || "";
+              rowsEl.appendChild(label);
+              rowsEl.appendChild(key);
+              rowsEl.appendChild(def);
+              rowsEl.appendChild(off);
+              if (st.textContent) rowsEl.appendChild(st);
+            });
+          }
+          function load() {
+            return ee.getKeybinds().then(function (r) { state = r; render(); }).catch(function () {});
+          }
+          function save(k, value) {
+            var next = {};
+            next[k] = value;
+            return ee.setKeybinds(next).then(function (r) { state = r; recording = null; render(); }).catch(function () {});
+          }
+          function stopRecording() {
+            if (!recording) return;
+            recording = null;
+            window.removeEventListener("keydown", onKey, true);
+            void ee.pauseKeybinds({ on: false }).then(function (r) { if (r) state = r; render(); });
+          }
+          function startRecording(k) {
+            if (recording) stopRecording();
+            recording = k;
+            if (msgEl) msgEl.textContent = "";
+            void ee.pauseKeybinds({ on: true });
+            window.addEventListener("keydown", onKey, true);
+            render();
+          }
+          function onKey(ev) {
+            if (!recording) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (ev.key === "Escape" && !ev.ctrlKey && !ev.altKey && !ev.shiftKey) {
+              stopRecording();
+              return;
+            }
+            if (/^(Control|Alt|Shift|Meta|OS)$/.test(ev.key)) return; // wait for the key itself
+            var key = keyOf(ev);
+            if (!key) {
+              if (msgEl) msgEl.textContent = "That key cannot be bound; try another.";
+              return;
+            }
+            var parts = [];
+            if (ev.ctrlKey) parts.push("Control");
+            if (ev.altKey) parts.push("Alt");
+            if (ev.shiftKey) parts.push("Shift");
+            if (ev.metaKey) parts.push("Super");
+            parts.push(key);
+            if (parts.length > 3) {
+              if (msgEl) msgEl.textContent = "Up to three keys: two of Ctrl, Alt, Shift and one key.";
+              return;
+            }
+            var k = recording;
+            window.removeEventListener("keydown", onKey, true);
+            save(k, parts.join("+"));
+          }
+          function open() {
+            modal.classList.add("on");
+            void load();
+          }
+          function close() {
+            stopRecording();
+            modal.classList.remove("on");
+          }
+          btn.addEventListener("click", open);
+          if (closeBtn) closeBtn.addEventListener("click", close);
+          modal.addEventListener("click", function (e) { if (e.target === modal) close(); });
+        })();
 
         if (btnNetworkSettings && networkSettingsModal) {
           btnNetworkSettings.addEventListener("click", function () {

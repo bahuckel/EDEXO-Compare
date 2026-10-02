@@ -15,7 +15,15 @@ import {
 } from "./sharedExomastery.js";
 import { ownFootEntriesWithBackups } from "./footScannedCatalog.js";
 import { existsSync, watchFile, unwatchFile, writeFileSync, readFileSync, readdirSync, watch, statSync } from "node:fs";
-import type { AppSnapshot, AppStatusDTO, ExoLiveDTO, ImportDumpStatusDTO, JournalBootProgressDTO, JournalLine } from "../shared/types.js";
+import type {
+  AppSnapshot,
+  AppStatusDTO,
+  ExoLiveDTO,
+  ImportDumpStatusDTO,
+  JournalBootProgressDTO,
+  JournalLine,
+  UiCommand,
+} from "../shared/types.js";
 import { journalHistoryCutoffUtcMs } from "../shared/journalHistoryPreset.js";
 import { clampStatusPollMs, pollRatesDto } from "../shared/pollRates.js";
 import { radarRadiusDto } from "../shared/radarRadius.js";
@@ -169,6 +177,8 @@ export type EdexoRuntime = {
   openMainAppInBrowser: () => void;
   /** Write what is buffered, synchronously: Windows logoff/shutdown gives no time for shutdown(). */
   flushNow: () => void;
+  /** Tell the app pages to do something the commander asked for with a key bind. */
+  uiCommand: (cmd: UiCommand) => void;
 };
 
 /**
@@ -1452,6 +1462,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     server,
     broadcast: broadcastFn,
     broadcastExoLive,
+    broadcastUiCommand,
     listening,
   } = createHttpServer({
     backup: backupService,
@@ -1987,6 +1998,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     onGameRunning: (cb) => gamePresence.onChange(cb),
     gameRunning: () => gamePresence.running(),
     flushNow: () => flushFootScannedCatalog(),
+    uiCommand: (cmd) => broadcastUiCommand(cmd),
   };
 }
 
