@@ -26,9 +26,10 @@
  *   (Viride on rocky bodies, Viride with rocky volcanism, never both).
  *
  * Held out and balanced by region, top-1 in genus went to 79 % for both Sinuous Tubers and Brain
- * Trees (`docs/perf/nb_genus.py`). The floor is per genus, in the table: 15 % for Sinuous Tubers (1.74
- * shown, the right one among them on 93 %, up from 75 %), 10 % for Brain Trees (1.52 shown, 96 %; at
- * 15 % it fell under the 94 % the app had before).
+ * Trees (`docs/perf/nb_genus.py`). The floor is per genus, in the table: 1 % for both since 2026-10-03
+ * (owner: "give 3 results if needed ... without any misses"), the right one among those shown on
+ * 97.4 % of held-out Sinuous Tubers bodies (2.99 shown) and 99.0 % of Brain Trees (2.29). It was 15 %
+ * and 10 %, at 92.6 % and 95.9 %, and that cost five known spawns their place after a DSS.
  *
  * Below the floor a row goes to "unlikely" — collapsed, never deleted — except the genus's best row,
  * a row with no score, and anything the commander has sampled here.

@@ -118,7 +118,6 @@ import {
   attachPresenceProbability,
   demoteBelowPresenceFloor,
   markSampledDespiteUnlikely,
-  PRESENCE_FLOOR_PCT,
 } from "./presenceFloors.js";
 import { applyGenusBodySplit } from "./genusBodySplit.js";
 import { applyGenusPrior, vetoUnseenGenera } from "./genusPrior.js";
@@ -862,11 +861,18 @@ export function computeAutoScanOnlyBody(
     (m) =>
       !m.unlikely &&
       m.restoredForSignalCount !== true &&
-      (m.presenceProbabilityPercent == null || m.presenceProbabilityPercent >= PRESENCE_FLOOR_PCT),
+      (m.presenceProbabilityPercent == null || m.presenceProbabilityPercent >= AUTOSCAN_STANDS_PCT),
   );
   if (!stands) return null;
   return { ...computed, state: b };
 }
+
+/**
+ * How likely a candidate must be for an AutoScanned-only body to get its tab (owner, 2026-10-02). It
+ * stays at the 5 % it was measured with when the list floors went to 1 % (2026-10-03): this asks
+ * whether to suggest a body at all, not which species to list on one already chosen.
+ */
+const AUTOSCAN_STANDS_PCT = 5;
 
 function computeBodyUncached(
   b: BodyExoState,

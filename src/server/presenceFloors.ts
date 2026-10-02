@@ -106,13 +106,19 @@ export function attachPresenceProbability(
 /**
  * How likely a candidate has to be before the panel offers it as a candidate.
  *
- * The commander's line, and the same five per cent he set for a trace gas. It is defensible here
- * because this is the one number on the card that has been calibrated against reality: on
- * complete-label bodies the 0-10 % bin comes in at 8.9 % observed. A row at 2.6 % is not a
- * borderline call, it is the model saying *probably not*, and printing it beside rows at 40 % asks
- * the reader to do arithmetic the app has already done.
+ * One per cent (owner, 2026-10-03: "I didn't mean that we should exclude legitimate results to meet
+ * that quota, give 3 results if needed ... without any misses"). It was five, the commander's line
+ * for a trace gas, and on Hypi Fraae RF-Q b21-2 B 4 — icy, thin neon, 20 K, Minor Methane Magma —
+ * it hid Bacterium tela at 2.6 % on a body type where tela is a third of the confirmed finds (1,534
+ * bodies: scopulum 33.8, tela 33.3, acies 32.9 %). The model's chance there is wrong; the floor is what
+ * turned a wrong number into a miss.
+ *
+ * Measured over 1,500 random confirmed Bacterium bodies and 2,960 bodies of every genus (one per
+ * species per region; docs/perf/share-floor-probe.mts, share_floor_eval.py): at 5 % the floors alone
+ * hid the right species on 11 and 25 of them, every Bacterium one a tela; at 1 % on 2 and 4, for
+ * one wrong row more (almost always tela) on 1.4 % and 2.5 % of the bodies.
  */
-export const PRESENCE_FLOOR_PCT = 5;
+export const PRESENCE_FLOOR_PCT = 1;
 
 /**
  * Push the long shots behind "show unlikely".
@@ -188,13 +194,13 @@ export function demoteBelowPresenceFloor(
 /**
  * How large a share of its own genus a candidate needs after a DSS.
  *
- * The same five per cent as {@link PRESENCE_FLOOR_PCT}, and measured the same way rather than
- * assumed to match: across the 609 species the commander has confirmed on probed bodies, a 5 % floor
- * on this number would have hidden **two** of them beforehand (Bacterium omentum at 0.81 %, Osseus
- * discus at 4.78 %), and both come straight back the moment he samples them, because a confirmed
- * species is immune below. 2 % hides one, 10 % hides three.
+ * The same one per cent as {@link PRESENCE_FLOOR_PCT} (owner, 2026-10-03, no misses). At five it hid
+ * Bacterium tela at 4.9 % on Hypi Fraae RF-Q b21-2 B 4, where it grew; over 1,500 random confirmed
+ * Bacterium bodies it hid the right species on 7, all tela, and at one per cent on none, for a wrong
+ * extra row (tela 15 times, cerbrus twice) on 1.1 % of the bodies. Earlier, on the commander's 609
+ * confirmed species: 5 % hid two (Bacterium omentum 0.81 %, Osseus discus 4.78 %).
  */
-export const GENUS_SHARE_FLOOR_PCT = 5;
+export const GENUS_SHARE_FLOOR_PCT = 1;
 
 /**
  * The same idea as the presence floor, for the list after a DSS.

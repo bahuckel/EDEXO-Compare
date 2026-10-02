@@ -60,19 +60,19 @@ const shownIds = (ms: SpeciesMatch[]) => ms.filter((m) => !m.unlikely).map((m) =
 
 describe("the chance floor", () => {
   it("demotes the long shots and keeps the rest", () => {
-    // The real row from the field: campestris certain, upupam 4.7, bullarum 2.7.
+    // The floor is 1 % since 2026-10-03 (owner: no misses); long shots under it still step aside.
     const ms = [
       match("fonticulua_campestris", 100),
-      match("fonticulua_upupam", 4.7),
-      match("fungoida_bullarum", 2.7),
+      match("fonticulua_upupam", 0.7),
+      match("fungoida_bullarum", 0.3),
     ];
     demoteBelowPresenceFloor(ms, body(), db);
     expect(shownIds(ms)).toEqual(["fonticulua_campestris"]);
-    expect(ms[1]!.unlikelyReasons?.[0]?.detail).toContain("4.7 %");
+    expect(ms[1]!.unlikelyReasons?.[0]?.detail).toContain("0.7 %");
   });
 
   it("keeps the best row rather than emptying the panel", () => {
-    const ms = [match("a", 4), match("b", 3), match("c", 1)];
+    const ms = [match("a", 0.8), match("b", 0.6), match("c", 0.2)];
     demoteBelowPresenceFloor(ms, body(), db);
     // One row, and the right one — not two, however many signals the game reported.
     expect(shownIds(ms)).toEqual(["a"]);
@@ -137,11 +137,11 @@ describe("after a DSS", () => {
 
   it("floors on the share of the genus, not on the chance of the body", () => {
     // The field case, reduced: one signal, Bacterium named, and tela as the permanent runner-up.
-    const ms = [share("bacterium_aurasus", 98.1), share("bacterium_tela", 1.9)];
+    const ms = [share("bacterium_aurasus", 99.2), share("bacterium_tela", 0.8)];
     demoteBelowPresenceFloor(ms, withDss("Bacterium"), db);
     expect(shownIds(ms)).toEqual(["bacterium_aurasus"]);
     expect(ms[1]!.unlikelyReasons?.[0]?.field).toBe("Share of its genus");
-    expect(ms[1]!.unlikelyReasons?.[0]?.detail).toContain("1.9 %");
+    expect(ms[1]!.unlikelyReasons?.[0]?.detail).toContain("0.8 %");
   });
 
   it("keeps a row that holds a real share of its genus", () => {
@@ -159,9 +159,9 @@ describe("after a DSS", () => {
     */
     const ms = [
       share("fonticulua_campestris", 97),
-      share("fonticulua_upupam", 3),
-      share("bacterium_aurasus", 4),
-      share("bacterium_tela", 1),
+      share("fonticulua_upupam", 0.3),
+      share("bacterium_aurasus", 0.8),
+      share("bacterium_tela", 0.4),
     ];
     demoteBelowPresenceFloor(ms, withDss(), db);
     expect(shownIds(ms)).toEqual(["fonticulua_campestris", "bacterium_aurasus"]);
@@ -192,17 +192,44 @@ describe("after a DSS", () => {
   it("reads the share and not the chance, which on a probed body says something else", () => {
     /*
       The sabotage check for the change: these rows would both survive a presence floor — 40 % and
-      20 % are well clear of 5 % — and the second is still only 4 % of its genus. If this function
-      ever goes back to reading `presenceProbabilityPercent` here, this is the test that says so.
+      20 % are well clear of the floor — and the second is still only 0.5 % of its genus. If this
+      function ever goes back to reading `presenceProbabilityPercent` here, this is the test that says so.
     */
-    const ms = [match("a_one", 40, { genusSharePercent: 96 }), match("a_two", 20, { genusSharePercent: 4 })];
+    const ms = [match("a_one", 40, { genusSharePercent: 99.5 }), match("a_two", 20, { genusSharePercent: 0.5 })];
     demoteBelowPresenceFloor(ms, withDss(), db);
     expect(shownIds(ms)).toEqual(["a_one"]);
   });
 
   it("still applies the chance floor when the genera are not named", () => {
-    const ms = [match("fonticulua_campestris", 97), match("fonticulua_upupam", 2.3)];
+    const ms = [match("fonticulua_campestris", 97), match("fonticulua_upupam", 0.6)];
     demoteBelowPresenceFloor(ms, body({ genusHints: null }), db);
     expect(shownIds(ms)).toEqual(["fonticulua_campestris"]);
+  });
+});
+
+describe("Hypi Fraae RF-Q b21-2 B 4 (owner, 2026-10-03)", () => {
+  /*
+    Icy, thin neon, 20 K, Minor Methane Magma. Bacterium tela grew there; the app had it behind
+    "show unlikely" at 2.6 % chance (FSS) and 4.9 % of Bacterium (DSS), under the old 5 % floors. On
+    1,534 confirmed bodies of that kind the three split evenly (scopulum 33.8, tela 33.3, acies 32.9 %).
+  */
+  it("offers all three bacteria after the FSS", () => {
+    const ms = [match("bacterium_acies", 57.1), match("bacterium_scopulum", 40.1), match("bacterium_tela", 2.6)];
+    demoteBelowPresenceFloor(ms, body(), db);
+    expect(shownIds(ms)).toEqual(["bacterium_acies", "bacterium_scopulum", "bacterium_tela"]);
+  });
+
+  it("and after the DSS", () => {
+    const ms = [
+      match("bacterium_acies", null, { genusSharePercent: 55.9 }),
+      match("bacterium_scopulum", null, { genusSharePercent: 39.2 }),
+      match("bacterium_tela", null, { genusSharePercent: 4.9 }),
+    ];
+    demoteBelowPresenceFloor(
+      ms,
+      body({ genusHints: [{ Genus: "$Codex_Ent_Bacterial_Genus_Name;", Genus_Localised: "Bacterium" }] }),
+      db,
+    );
+    expect(shownIds(ms)).toEqual(["bacterium_acies", "bacterium_scopulum", "bacterium_tela"]);
   });
 });
