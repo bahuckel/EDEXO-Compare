@@ -102,6 +102,63 @@ describe.runIf(win)("the swap on Windows", () => {
     expect(existsSync(program + ".old")).toBe(false);
   }, 60_000);
 
+  /** The program folder as the release zip holds it, zipped, beside a 1.2.9-style folder to update. */
+  function folderAndZip() {
+    const program = path.join(dir, "ED Exo Compare 1.2.9");
+    mkdirSync(program);
+    writeFileSync(path.join(program, "EDExoCompare.exe"), "old exe");
+    writeFileSync(path.join(program, "only-in-old.txt"), "x");
+    const src = path.join(dir, "src", "ED Exo Compare 9.9.9");
+    mkdirSync(path.join(src, "resources"), { recursive: true });
+    writeFileSync(path.join(src, "EDExoCompare.exe"), "new exe");
+    writeFileSync(path.join(src, "resources", "app.txt"), "new");
+    const zip = path.join(dir, "EDExoCompare-9.9.9-win-x64.zip");
+    spawnSync("powershell.exe", ["-NoProfile", "-Command", `Compress-Archive -LiteralPath '${src}' -DestinationPath '${zip}'`]);
+    return { program, zip };
+  }
+
+  it("folder: the app quitting from inside its own folder does not block the swap (the owner's failed test)", async () => {
+    // The app's working folder is its program folder, and the helper it starts used to inherit it.
+    const { program, zip } = folderAndZip();
+    const run = `
+      const u = require(${JSON.stringify(path.resolve(__dirname, "..", "electron", "updater.cjs"))});
+      u.installOnQuit({ form: "zip", file: ${JSON.stringify(zip)}, version: "9.9.9" }, { form: "zip",
+        scriptPath: ${JSON.stringify(SCRIPT)}, logPath: ${JSON.stringify(path.join(dir, "update.log"))},
+        pids: [process.pid], execPath: ${JSON.stringify(path.join(program, "EDExoCompare.exe"))}, env: {}, start: false });
+      setTimeout(() => process.exit(0), 300);`;
+    spawnSync(process.execPath, ["-e", run], { cwd: program, stdio: "ignore" });
+    await waitFor(() => logOf().includes("update: installed") || logOf().includes("update: FAILED"));
+    expect(logOf()).toContain("update: installed");
+    expect(logOf()).not.toContain("in use");
+    expect(readFileSync(path.join(program, "EDExoCompare.exe"), "utf8")).toBe("new exe");
+    expect(existsSync(path.join(program, "only-in-old.txt"))).toBe(false);
+  }, 60_000);
+
+  it("folder: another program working in the folder gets the files replaced in place, with a backup", async () => {
+    const { program, zip } = folderAndZip();
+    // A terminal opened in the program folder, say: it keeps the folder from being renamed.
+    const holder = spawn("powershell.exe", ["-NoProfile", "-Command", "Start-Sleep 60"], { cwd: program, stdio: "ignore" });
+    try {
+      await new Promise((r) => setTimeout(r, 800));
+      updater.installOnQuit(
+        { form: "zip", file: zip, version: "9.9.9" },
+        { form: "zip", scriptPath: SCRIPT, logPath: path.join(dir, "update.log"), pids: [], execPath: path.join(program, "EDExoCompare.exe"), env: {}, start: false },
+      );
+      await waitFor(() => logOf().includes("update: installed") || logOf().includes("update: FAILED"), 60_000);
+      expect(logOf()).toContain("in use by another program");
+      expect(logOf()).toContain("update: installed");
+      expect(readFileSync(path.join(program, "EDExoCompare.exe"), "utf8")).toBe("new exe");
+      expect(readFileSync(path.join(program, "resources", "app.txt"), "utf8")).toBe("new");
+      expect(readFileSync(path.join(program + ".old", "EDExoCompare.exe"), "utf8")).toBe("old exe");
+      expect(existsSync(program + ".new")).toBe(false);
+    } finally {
+      const gone = new Promise((r) => holder.once("exit", r));
+      holder.kill();
+      await gone;
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  }, 90_000);
+
   it("folder: a zip without the program leaves the old folder exactly as it was", async () => {
     const program = path.join(dir, "ED Exo Compare 1.2.9");
     mkdirSync(program);

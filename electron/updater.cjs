@@ -115,6 +115,9 @@ function installOnQuit(staged, o) {
   */
   const line = "powershell.exe " + args.map((a) => `"${String(a).replace(/"/g, "")}"`).join(" ");
   const child = spawn(process.env.ComSpec || "cmd.exe", ["/d", "/s", "/c", `start "" /b ${line}`], {
+    // Never the app's own folder: a process working in a folder keeps Windows from renaming it, and
+    // the folder swap would block itself (owner's .zip test, 2026-10-02).
+    cwd: path.dirname(o.scriptPath),
     detached: true,
     stdio: "ignore",
     windowsHide: true,
