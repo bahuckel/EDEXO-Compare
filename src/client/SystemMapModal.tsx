@@ -1,9 +1,10 @@
 import { isBool, usePersistedState } from "./usePersistedState";
 import { SNAPSHOT_SYSTEM_CLASS } from "./panelSnapshot";
 import { SnapshotButton } from "./SnapshotButton";
-import type { AppSnapshot, NotableBodyInfo } from "@shared/types";
+import type { NotableBodyInfo } from "@shared/types";
 import { DScanBodiesBadge } from "./DScanBodiesBadge";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memoOnSnapSlice, type SnapSlice } from "./snapSlice";
 import { DetailBody } from "./PlanetQuickFactsPopup";
 import { recordMarksByBodyId } from "./noticesClient";
 import { useModal } from "./ui/useModal";
@@ -167,12 +168,29 @@ function keepInView(vp: MapViewport, layout: MapLayout, it: MapItem): void {
   });
 }
 
-export const SystemMapModal = memo(function SystemMapModal({
+const SYSTEM_MAP_FIELDS = [
+  "systemMap",
+  "viewingSystemName",
+  "viewingSystemAddress",
+  "currentSystemAddress",
+  "uiSelectedBodyKey",
+  "dScanBodies",
+  "notableBodies",
+  "exoMapTierPlusMinCr",
+  "exoMapTierPlusPlusMinCr",
+  "notices",
+] as const;
+
+/**
+ * Re-rendered when the map or what it marks changes, not on every push (plan 2.2, Opus 23 + Fable
+ * 9.3): with the map open, a fuel tick redrew every body on it (snapSlice.ts).
+ */
+export const SystemMapModal = memoOnSnapSlice(SYSTEM_MAP_FIELDS, function SystemMapModal({
   snap,
   onClose,
   onGoToBioBody,
 }: {
-  snap: AppSnapshot;
+  snap: SnapSlice<(typeof SYSTEM_MAP_FIELDS)[number]>;
   onClose: () => void;
   onGoToBioBody: (bodyKey: string) => void;
 }) {
@@ -253,6 +271,16 @@ export const SystemMapModal = memo(function SystemMapModal({
   }, [map?.systemAddress]);
   const [selectedId, setSelectedId] = useState<number | null>(initialId);
   const [hoverId, setHoverId] = useState<number | null>(null);
+  /*
+    The same two functions for the map's life, so the bodies' memo holds: inline, every render handed
+    each of the ~30 drawn bodies new ones and redrew them all. A click ending a pan is read from a ref.
+  */
+  const panningRef = useRef(false);
+  panningRef.current = vp.panning;
+  const selectBody = useCallback((it: MapItem) => {
+    if (!panningRef.current) setSelectedId(it.id);
+  }, []);
+  const hoverBody = useCallback((it: MapItem | null) => setHoverId(it?.id ?? null), []);
   useEffect(() => {
     setSelectedId(initialId);
     vp.reset();
@@ -266,7 +294,8 @@ export const SystemMapModal = memo(function SystemMapModal({
   const selectedItem = layout?.items.find((it) => it.id === selectedId) ?? null;
   const selectedDetail = selectedId != null ? detailOf(selectedId) : undefined;
   // Records broken in this system: a gold ring on the map, the record in gold in the side panel.
-  const records = useMemo(() => recordMarksByBodyId(snap), [snap]);
+  const notices = snap.notices;
+  const records = useMemo(() => recordMarksByBodyId({ notices }), [notices]);
 
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
 
@@ -499,10 +528,8 @@ export const SystemMapModal = memo(function SystemMapModal({
                   selectedId={selectedId}
                   recordIds={records}
                   chain={chain}
-                  onSelect={(it) => {
-                    if (!vp.panning) setSelectedId(it.id);
-                  }}
-                  onHover={(it) => setHoverId(it?.id ?? null)}
+                  onSelect={selectBody}
+                  onHover={hoverBody}
                 />
               </g>
             </svg>
