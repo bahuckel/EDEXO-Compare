@@ -182,8 +182,10 @@ export function planetClassPillStyle(planetClass: string): CSSProperties {
   if (bl === "AW") return { borderColor: "#facc15", color: "#fde047", background: "rgba(234,179,8,0.2)" };
   if (bl === "I" || bl === "RI")
     return { borderColor: "#22d3ee", color: "#a5f3fc", background: "rgba(34,211,238,0.16)" };
-  if (bl === "R" || bl === "HMC" || bl === "MR")
-    return { borderColor: "#ff8a1f", color: "#ff9a4d", background: "rgba(255,122,36,0.12)" };
+  // The system map's rock tints (owner, D3): no accent orange.
+  if (bl === "R") return { borderColor: "#8f7258", color: "#dcc6ae", background: "rgba(143,114,88,0.16)" };
+  if (bl === "HMC") return { borderColor: "#a69a88", color: "#e4ddd2", background: "rgba(166,154,136,0.16)" };
+  if (bl === "MR") return { borderColor: "#a9aebb", color: "#e2e4ea", background: "rgba(169,174,187,0.16)" };
   if (bl === "GG" || /^GG[1-5]$/.test(bl))
     return { borderColor: "#c4a574", color: "#e8d5b8", background: "rgba(196,165,116,0.22)" };
   return { borderColor: "#fb923c", color: "#fdba74", background: "rgba(251,146,60,0.12)" };

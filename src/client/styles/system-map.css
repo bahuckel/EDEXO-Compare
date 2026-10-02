@@ -1035,7 +1035,7 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
 }
 
 .system-map-legend-badge--x5 {
-  background: #ff8a1f;
+  background: var(--ok);
 }
 
 /* A record this body broke, in gold under its name (popup and the map's side panel). */

@@ -49,6 +49,17 @@ import {
 } from "./clusters";
 import type { GraphicsTier } from "./capabilities";
 
+/** The colour scheme's accent (`--accent` on the page), for lines drawn in WebGL. */
+function accentColour(): THREE.Color {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+    if (v) return new THREE.Color(v);
+  } catch {
+    /* no page style (a test): the default below */
+  }
+  return new THREE.Color(0xff9a3c);
+}
+
 /** Sagittarius A* in three's space (the game's z flipped): what "core" frames. */
 export const CORE = new THREE.Vector3(25.2, 0, -25_900);
 export const SOL = new THREE.Vector3(0, 0, 0);
@@ -521,7 +532,8 @@ export class GalaxyEngine {
       geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
       this.borders = new THREE.LineSegments(
         geo,
-        new THREE.LineBasicMaterial({ color: 0xff9a3c, transparent: true, opacity: 0.22, depthTest: false }),
+        // The scheme's accent, not a fixed orange (review O-26): read once when the borders are built.
+        new THREE.LineBasicMaterial({ color: accentColour(), transparent: true, opacity: 0.22, depthTest: false }),
       );
       this.backdrop.add(this.borders);
       this.anchors = outlines.anchors;

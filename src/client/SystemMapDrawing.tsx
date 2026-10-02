@@ -59,8 +59,13 @@ export function bodyColours(label: string): { fill: string; stroke: string; text
   if (bl === "WW") return { fill: "#14305e", stroke: "#60a5fa", text: "#cfe2ff" };
   if (bl === "AW") return { fill: "#40340c", stroke: "#facc15", text: "#fff0a0" };
   if (bl === "I" || bl === "RI") return { fill: "#123a44", stroke: "#22d3ee", text: "#c9f6ff" };
-  if (bl === "R" || bl === "HMC" || bl === "MR")
-    return { fill: "#3a2412", stroke: "#ff8a1f", text: "#ffc58f" };
+  /*
+    Owner, 2026-10-01 (D3): no accent orange for rock — a slight tint difference instead, rocky
+    darker, HMC grey-brown; metal-rich a steel grey beside them.
+  */
+  if (bl === "R") return { fill: "#241c16", stroke: "#8f7258", text: "#dcc6ae" };
+  if (bl === "HMC") return { fill: "#2b2925", stroke: "#a69a88", text: "#e4ddd2" };
+  if (bl === "MR") return { fill: "#26272c", stroke: "#a9aebb", text: "#e2e4ea" };
   if (/GG/.test(bl)) return { fill: "#3a3022", stroke: "#c4a574", text: "#f0e0c4" };
   if (bl === "?") return { fill: "#1c1d24", stroke: "#8b909c", text: "#d4d6dc" };
   return { fill: "#33240f", stroke: "#fb923c", text: "#fdba74" };
@@ -468,7 +473,8 @@ function MapNode({
             width={n.firstFootfallX5 ? 25 : 12}
             height={11}
             rx={2}
-            fill={n.firstFootfallX5 ? "#ff8a1f" : "#5fcf6a"}
+            // ×5 in the first-footfall blue it has everywhere else (review O-26), not accent orange.
+            style={{ fill: n.firstFootfallX5 ? "var(--ok, #4fd0ff)" : "#5fcf6a" }}
             stroke={HALO}
             strokeWidth={1}
           />
