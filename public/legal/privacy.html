@@ -21,7 +21,7 @@
 
       <main class="site-main">
         <h1 class="legal-hed">Privacy Policy</h1>
-        <p class="legal-updated">Last updated: 29 September 2026 · applies to version 1.2.7 and later</p>
+        <p class="legal-updated">Last updated: 2 October 2026 · applies to version 1.2.7 and later</p>
 
         <div class="legal-box">
           <p>
@@ -65,8 +65,11 @@
             <strong>Update check &mdash; GitHub</strong> (api.github.com). When the launcher opens, at most
             once an hour (and when you press <em>Check for updates</em>), the app asks GitHub for the list of
             this project's releases. It sends nothing about you; the app's version is in the request's
-            <em>User-Agent</em>. Nothing is downloaded: if a newer version exists, the button opens the release
-            page in your browser.
+            <em>User-Agent</em>. If a newer version exists, the launcher downloads it from this project's GitHub
+            releases only when you press <em>Download &amp; Install</em>, checks it against the checksum GitHub
+            publishes, and installs it by restarting the app. Your settings and data stay where they are. The
+            release page stays one click away. Builds that cannot replace themselves (run from source, the
+            console builds) open the release page instead.
           </li>
           <li>
             <strong>Game server status &mdash; ed-server-status.orerve.net</strong>, and EDSM if that does

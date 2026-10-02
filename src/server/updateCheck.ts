@@ -1,10 +1,10 @@
 /**
  * "Is there a newer release?" — the launcher's version line (owner, 2026-09-25).
  *
- * The easy way, by his choice: say which version is running, say which is newest when they differ,
- * and link to the release page. Nothing is downloaded and nothing on disk is touched — the commander
- * replaces the program themselves, and everything of theirs lives in the user data folder, not in
- * what a release ships.
+ * Say which version is running, say which is newest when they differ, and link to the release page.
+ * This only asks; the newer release's file, when the commander presses "Download & Install", is
+ * fetched and installed by `appUpdater.ts` and `electron/updater.cjs` (owner, 2026-10-02).
+ * Everything of theirs lives in the user data folder, not in what a release ships.
  *
  * Every release is two GitHub releases at the same commit: `v<x>` carries the single-file exe and
  * `v<x>-zip` the unpacked folder (and is the one GitHub marks Latest). So the answer comes from the
