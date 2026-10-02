@@ -5,9 +5,12 @@ import "./styles.css";
 import { App } from "./App";
 import { UiFeedbackProvider } from "./ui/feedback";
 import { applyAppTheme } from "./appTheme";
+import { applyStreamerMode } from "./streamerMode";
 
 // The colour scheme, before the first paint, so the page never flashes orange first.
 applyAppTheme();
+// `?view=stream`: the same app, as a picture for a stream (streamerMode.ts).
+applyStreamerMode();
 
 /**
  * `?screen=triage` gets the second screen (§51) instead of the app.

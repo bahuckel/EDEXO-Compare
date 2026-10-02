@@ -1898,6 +1898,11 @@
                 <strong>Phone view</strong>
                 <span>Read-only triage, sized for a phone or tablet</span>
               </button>
+              <!-- Streamer mode (owner, 2026-10-01): copies a link, does not change where the button opens. -->
+              <button type="button" role="menuitem" id="btnStreamLink">
+                <strong>Streamer view</strong>
+                <span>Copy the link for OBS (Browser source): the app, nothing clickable</span>
+              </button>
             </div>
           </div>
 
@@ -4060,6 +4065,26 @@
           var open = mainUiMenu.hidden;
           mainUiMenu.hidden = !open;
           btnMainUiMenu.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        /*
+          Streamer view (owner, 2026-10-01): the main UI with every control taken away (?view=stream),
+          for a Browser source in OBS on this PC. Copied, not opened: it is pasted into OBS.
+        */
+        var btnStreamLink = document.getElementById("btnStreamLink");
+        if (btnStreamLink) btnStreamLink.addEventListener("click", function () {
+          closeOpenMenu();
+          var url = "http://127.0.0.1:" + (lastPort || 7111) + "/?view=stream";
+          var say = function (copied) {
+            launcherActionMsg.className = "msg-launcher";
+            launcherActionMsg.textContent =
+              (copied ? "Copied: " : "Streamer view: ") + url +
+              " — in OBS add a Browser source with this URL (1280×800 or larger). It follows the game and your body-tab keys.";
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function () { say(true); }, function () { say(false); });
+          } else {
+            say(false);
+          }
         });
         mainUiMenu.addEventListener("click", function (ev) {
           var item = ev.target.closest("button[data-open-mode]");

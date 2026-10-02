@@ -1,0 +1,41 @@
+/*
+ * Streamer mode (`?view=stream`, streamerMode.ts): the main UI as a picture. Controls go, and the
+ * page takes no clicks, so nothing a viewer sees looks like something to press.
+ */
+html[data-streamer] .app-shell {
+  pointer-events: none;
+  user-select: none;
+}
+
+html[data-streamer] .appbar-actions,
+html[data-streamer] .appbar-search,
+html[data-streamer] .snapshot-btn,
+html[data-streamer] .bm-star-wrap,
+html[data-streamer] .sys-copy,
+html[data-streamer] .tabs-sort,
+html[data-streamer] .tabs-jump-btn,
+html[data-streamer] .toast-stack,
+html[data-streamer] .fold-help-btn,
+html[data-streamer] .info-affordance,
+html[data-streamer] .sys-card__btn,
+html[data-streamer] .tabs-chevron,
+html[data-streamer] .header-scan-data-plus,
+html[data-streamer] .planetary-info-copy-summary,
+html[data-streamer] .genus-notes-pill,
+html[data-streamer] .species-other-match-drawer-toggle,
+html[data-streamer] .candidate-species-compact-toggle,
+html[data-streamer] .candidate-species-bacterium-toggle,
+html[data-streamer] .candidate-species-evidence-toggle,
+html[data-streamer] .candidate-species-codex-toggle,
+html[data-streamer] .candidate-species-unlikely-toggle {
+  display: none !important;
+}
+
+html[data-streamer],
+html[data-streamer] * {
+  scrollbar-width: none;
+}
+
+html[data-streamer] ::-webkit-scrollbar {
+  display: none;
+}
