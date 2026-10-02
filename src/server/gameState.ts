@@ -2208,31 +2208,14 @@ export class GameStateStore {
 
       if (event === "Touchdown") return this.onTouchdown(line, ts);
 
-      if (event === "StartJump" || event === "SupercruiseEntry" || event === "FSDJump") {
-        /*
-          Leaving the body. The game drops a half-collected sample the moment the ship leaves the
-          planet, and the HUD should fold with it rather than keep showing a radar for ground that
-          is no longer underfoot — the owner saw the tracker stay open through a jump. `Status.json`
-          cannot tell us this on its own: it keeps reporting a latitude from orbit. No `return`:
-          `FSDJump` has its own handling below.
-        */
-        this.overlayTouchdownBodyKey = null;
-        if (this.exoOrganicTracker) {
-          this.exoOrganicTracker = null;
-          clearPersistedOrganicSampleSession(getProjectRoot());
-        }
+      if (event === "StartJump" || event === "SupercruiseEntry") {
+        this.leaveBody();
         if (event === "StartJump" && line.JumpType === "Hyperspace") {
           const starSystem = typeof line.StarSystem === "string" ? line.StarSystem : "";
           const systemAddress = typeof line.SystemAddress === "number" ? line.SystemAddress : 0;
           const starClass = typeof line.StarClass === "string" ? line.StarClass : "";
           if (starSystem)
             this.lastJumpTarget = { starSystem, systemAddress, starClass, at: ts, arrived: false };
-        }
-        if (event === "FSDJump" && this.lastJumpTarget) {
-          const addr = typeof line.SystemAddress === "number" ? line.SystemAddress : null;
-          if (addr === this.lastJumpTarget.systemAddress || addr == null) {
-            this.lastJumpTarget = { ...this.lastJumpTarget, arrived: true };
-          }
         }
       }
 
@@ -2301,10 +2284,27 @@ export class GameStateStore {
     return;
   }
 
+  /**
+   * Leaving the body. The game drops a half-collected sample the moment the ship leaves the planet, and
+   * the HUD should fold with it rather than keep showing a radar for ground that is no longer underfoot
+   * — the owner saw the tracker stay open through a jump. `Status.json` cannot tell us this on its own:
+   * it keeps reporting a latitude from orbit.
+   */
+  private leaveBody(): void {
+    this.overlayTouchdownBodyKey = null;
+    if (this.exoOrganicTracker) {
+      this.exoOrganicTracker = null;
+      clearPersistedOrganicSampleSession(getProjectRoot());
+    }
+  }
+
   /** `FSDJump` / `CarrierJump` — one of apply()'s event handlers. */
   private onFSDJumpEtc(line: JournalLine, ts: string, event: string): void {
     const sys = line.StarSystem as string;
     const addr = line.SystemAddress as number;
+    // Both leave the body: a carrier jump never reached the wipe in apply(), which ran after this
+    // handler had returned (plan 2.4, Fable S3).
+    this.leaveBody();
     if (event === "FSDJump" && typeof addr === "number") {
       // The next-jump card: the target is reached (held for a minute), the nav lock is spent.
       if (
