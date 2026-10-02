@@ -5,7 +5,7 @@ import { NOTABLE_QUICK_EVENT } from "./HeaderBar";
 import { UI_COMMAND_EVENT, useLiveSnapshot } from "./useLiveSnapshot";
 import { useToast } from "./ui/feedback";
 import { arrivalTripRanks } from "@shared/systemTriage";
-import { useCallback, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { JournalBootScreen } from "./JournalBootScreen";
 import type { EncyclopediaSpawnCompare } from "./EncyclopediaModal";
 import { EliteTipRotator } from "./EliteTipRotator";
@@ -162,7 +162,8 @@ function BioEmptyState({ snap }: { snap: AppSnapshot }) {
   );
 }
 
-function AppLegalFooter() {
+/** Memo: static, and the app shell re-renders on every push. */
+const AppLegalFooter = memo(function AppLegalFooter() {
   /*
     The privacy policy and terms ship with the app (public/legal/) and are served by its own server
     (owner, 2026-09-29): they were on edexo.bahuckel.com, served from this PC, and went dead (530) with
@@ -193,7 +194,7 @@ function AppLegalFooter() {
       </div>
     </footer>
   );
-}
+});
 
 /** One empty list for every render that has no snapshot yet, so its identity holds still. */
 const NO_BODIES: BodyComputed[] = [];

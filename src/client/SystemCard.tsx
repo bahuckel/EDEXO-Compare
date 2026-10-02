@@ -14,9 +14,10 @@
  * is good for.
  */
 import type { MouseEvent as ReactMouseEvent } from "react";
-import type { AppSnapshot, NotableBodyInfo, PrimaryStarHeaderEntryDTO, SystemKind } from "@shared/types";
+import type { NotableBodyInfo, PrimaryStarHeaderEntryDTO, SystemKind } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
-import { BookmarkStar } from "./Bookmarks";
+import { BOOKMARK_STAR_FIELDS, BookmarkStar } from "./Bookmarks";
+import { memoOnSnapSlice, type SnapSlice } from "./snapSlice";
 import { primaryStarRoleTooltip } from "./speciesMatchHelpers";
 import { Tooltip } from "./ui/Tooltip";
 import { RecordMedal, recordMarksByBodyId, recordMarksTitle } from "./noticesClient";
@@ -49,12 +50,28 @@ function starDot(st: PrimaryStarHeaderEntryDTO): { kind: string; words: string }
   return { kind: "none", words: "Not scoopable" };
 }
 
-export function SystemCardRow({
+const SYSTEM_CARD_FIELDS = [
+  "primaryStarsHeader",
+  "viewingSystemName",
+  "currentSystem",
+  "currentSystemKind",
+  "currentRegion",
+  "remoteView",
+  "notableBodies",
+  "nspOutlook",
+  "dScanBodies",
+  "focusedSystemUndiscovered",
+  "notices",
+  ...BOOKMARK_STAR_FIELDS,
+] as const;
+
+/** Re-rendered when the system it describes changes, not on every push (snapSlice.ts). */
+export const SystemCardRow = memoOnSnapSlice(SYSTEM_CARD_FIELDS, function SystemCardRow({
   snap,
   onOpenSystemMap,
   onNotableClick,
 }: {
-  snap: AppSnapshot;
+  snap: SnapSlice<(typeof SYSTEM_CARD_FIELDS)[number]>;
   onOpenSystemMap: () => void;
   onNotableClick: (n: NotableBodyInfo, ev: ReactMouseEvent) => void;
 }) {
@@ -188,4 +205,4 @@ export function SystemCardRow({
       </div>
     </div>
   );
-}
+});

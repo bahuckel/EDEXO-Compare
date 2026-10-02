@@ -79,7 +79,9 @@ type ExoDataAlertWithBody = ExoDataAlertDTO & {
   bodyKey: string;
 };
 
-export function collectExoDataAlertsFromSnapshot(snap: AppSnapshot): ExoDataAlertWithBody[] {
+export function collectExoDataAlertsFromSnapshot(
+  snap: Pick<AppSnapshot, "bodies" | "exoOverlayFocusBody" | "sharedExomastery">,
+): ExoDataAlertWithBody[] {
   const byId = new Map<string, ExoDataAlertWithBody>();
   const ingest = (bc: BodyComputed) => {
     const bodyTabLabel = bc.tabLabel || bc.state.bodyName || bc.state.key;

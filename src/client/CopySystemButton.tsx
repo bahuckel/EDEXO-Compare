@@ -13,10 +13,11 @@
  * tell a successful copy from a click that missed — and the commander finds out by pasting nothing
  * into the galaxy map.
  */
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { IconCheck, IconCopy } from "./ui/icons";
 
-export function CopySystemButton({
+/** Memo: it sits in rows that re-render with every push, and its props are a name and a class. */
+export const CopySystemButton = memo(function CopySystemButton({
   system,
   className,
 }: {
@@ -56,4 +57,4 @@ export function CopySystemButton({
       {done ? <IconCheck /> : <IconCopy />}
     </button>
   );
-}
+});

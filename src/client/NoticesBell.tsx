@@ -5,7 +5,7 @@
  * again, until "Clear read"; the server keeps them, so the phone and this window agree.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AppSnapshot } from "@shared/types";
+import { memoOnSnapSlice, type SnapSlice } from "./snapSlice";
 import type { NoticeDTO } from "@shared/notices";
 import { measurePopoverSide, type PopoverSide } from "./ui/popoverSide";
 import { useToast } from "./ui/feedback";
@@ -40,7 +40,14 @@ async function post(path: string, body: unknown): Promise<boolean> {
   }
 }
 
-export function NoticesBell({ snap }: { snap: AppSnapshot }) {
+const BELL_FIELDS = ["notices", "journalBoot", "currentSystemAddress"] as const;
+
+/** Re-rendered when the notices change, not on every push (snapSlice.ts). */
+export const NoticesBell = memoOnSnapSlice(BELL_FIELDS, function NoticesBell({
+  snap,
+}: {
+  snap: SnapSlice<(typeof BELL_FIELDS)[number]>;
+}) {
   const toast = useToast();
   const wrapRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -212,4 +219,4 @@ export function NoticesBell({ snap }: { snap: AppSnapshot }) {
       ) : null}
     </div>
   );
-}
+});

@@ -16,6 +16,7 @@ import {
 import { useModal } from "./ui/useModal";
 import { CopySystemButton } from "./CopySystemButton";
 import { isStr, isStrArr, usePersistedState } from "./usePersistedState";
+import { memoOnSnapSlice, type SnapSlice } from "./snapSlice";
 
 async function saveBookmark(b: Partial<BookmarkDTO> & { system: string }): Promise<BookmarkDTO | null> {
   const r = await fetch("/api/bookmarks", {
@@ -35,7 +36,7 @@ async function removeBookmark(id: string): Promise<boolean> {
 }
 
 /** Bodies worth offering in the picker: the system's bio bodies and its notable ones. */
-function bodyChoices(snap: AppSnapshot): { key: string; label: string }[] {
+function bodyChoices(snap: Pick<AppSnapshot, "bodies" | "notableBodies">): { key: string; label: string }[] {
   const out = new Map<string, string>();
   for (const b of snap.bodies ?? []) out.set(b.state.key, b.tabLabel || b.state.bodyName || b.state.key);
   for (const n of snap.notableBodies ?? []) {
@@ -284,7 +285,22 @@ export function BookmarkButton({
 }
 
 /** The ☆ beside the system name: filled when the system has a bookmark (the list holds the rest). */
-export function BookmarkStar({ snap, system }: { snap: AppSnapshot; system: string }) {
+export const BOOKMARK_STAR_FIELDS = [
+  "bookmarksHere",
+  "viewingSystemAddress",
+  "currentSystemAddress",
+  "bodies",
+  "notableBodies",
+] as const;
+
+/** Re-rendered when the system's bookmark or bodies change, not on every push (snapSlice.ts). */
+export const BookmarkStar = memoOnSnapSlice(BOOKMARK_STAR_FIELDS, function BookmarkStar({
+  snap,
+  system,
+}: {
+  snap: SnapSlice<(typeof BOOKMARK_STAR_FIELDS)[number]>;
+  system: string;
+}) {
   const here = snap.bookmarksHere ?? [];
   return (
     <BookmarkButton
@@ -294,7 +310,7 @@ export function BookmarkStar({ snap, system }: { snap: AppSnapshot; system: stri
       bodies={bodyChoices(snap)}
     />
   );
-}
+});
 
 /**
  * The same button for a system that is not on screen (the galaxy map): it looks its bookmark up

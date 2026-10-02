@@ -4,7 +4,7 @@
 import { useToast } from "./ui/feedback";
 import { measurePopoverSide, type PopoverSide } from "./ui/popoverSide";
 import { useCallback, useEffect, useMemo, useRef, useState, ReactNode } from "react";
-import type { AppSnapshot, ExoDataAlertDTO } from "@shared/types";
+import type { ExoDataAlertDTO } from "@shared/types";
 import {
   EXO_ALERT_DETECT_FEEDER_LS,
   EXO_ALERT_DETECT_JOURNAL_LS,
@@ -16,8 +16,16 @@ import {
   writeExoAlertAckIds,
 } from "./exoAlertsStore";
 import { readLsBool, writeLsBool } from "./lsPrefs";
+import { memoOnSnapSlice, type SnapSlice } from "./snapSlice";
 
-export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
+const ALERT_FIELDS = ["bodies", "exoOverlayFocusBody", "sharedExomastery", "journalBoot"] as const;
+
+/** Re-rendered when the bodies or the alerts' sources change, not on every push (snapSlice.ts). */
+export const ExoDataAlertsHeaderHub = memoOnSnapSlice(ALERT_FIELDS, function ExoDataAlertsHeaderHub({
+  snap,
+}: {
+  snap: SnapSlice<(typeof ALERT_FIELDS)[number]>;
+}) {
   const toast = useToast();
   const wrapRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -333,4 +341,4 @@ export function ExoDataAlertsHeaderHub({ snap }: { snap: AppSnapshot }) {
       ) : null}
     </div>
   );
-}
+});

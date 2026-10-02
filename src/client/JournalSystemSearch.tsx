@@ -5,7 +5,8 @@ import { CopySystemButton } from "./CopySystemButton";
 import { InlineSpinner } from "./SharedModals";
 import { bodyPartOfQuery, ownerFirst } from "./systemSearchMatch";
 import { useToast } from "./ui/feedback";
-import type { AppSnapshot, JournalSystemInfo } from "@shared/types";
+import type { JournalSystemInfo } from "@shared/types";
+import { memoOnSnapSlice, type SnapSlice } from "./snapSlice";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
@@ -21,11 +22,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 /** One empty list, so a snapshot without systems does not bust the memos below on every render. */
 const NO_SYSTEMS: JournalSystemInfo[] = [];
 
-export function JournalSystemSearch({
+const SEARCH_FIELDS = ["journalSystems", "bodies", "journalBoot", "remoteView", "viewingSystemAddress"] as const;
+
+/** Re-rendered when the systems or the viewed system change, not on every push (snapSlice.ts). */
+export const JournalSystemSearch = memoOnSnapSlice(SEARCH_FIELDS, function JournalSystemSearch({
   snap,
   onGoToBioBody,
 }: {
-  snap: AppSnapshot;
+  snap: SnapSlice<(typeof SEARCH_FIELDS)[number]>;
   onGoToBioBody?: (bodyKey: string) => void;
 }) {
   const toast = useToast();
@@ -281,4 +285,4 @@ export function JournalSystemSearch({
       ) : null}
     </div>
   );
-}
+});
