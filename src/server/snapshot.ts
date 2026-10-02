@@ -120,6 +120,7 @@ import {
   markSampledDespiteUnlikely,
 } from "./presenceFloors.js";
 import { applyGenusBodySplit } from "./genusBodySplit.js";
+import { applyGenusPrior, vetoUnseenGenera } from "./genusPrior.js";
 import {
   firstFootfallLookupFor,
   buildJournalSystems,
@@ -999,6 +1000,12 @@ function computeBodyUncached(
   );
   // After the ranking, because the floor is a rule about the ranking's own output.
   demoteBelowPresenceFloor(matches, b, db);
+  /*
+    Before a DSS (Phase A.8, owner 2026-10-02): the dump's genus frequencies on bodies like this one
+    re-weight the chances of what the floor left, and hide only a genus such bodies almost never carry.
+  */
+  applyGenusPrior(matches, b, scanForExo, speciesMatchCtx, root);
+  vetoUnseenGenera(matches, b, scanForExo, speciesMatchCtx, root, new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db)));
   markSampledDespiteUnlikely(matches, b, db);
   /*
     The collection marker: species where both the corpus and this commander are short of bodies.
