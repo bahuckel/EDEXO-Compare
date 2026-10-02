@@ -9,6 +9,8 @@
  * a line is struck through it; then it rests with a slow glow and a faint scan line now and then.
  * Pure SVG + CSS (cockpit.css, "lifeless emblem"); reduced motion shows the final frame.
  */
+const BRACKETS = ["M14 30V14h16", "M90 14h16v16", "M106 90v16H90", "M30 106H14V90"];
+
 export function LifelessEmblem() {
   return (
     <svg className="lifeless-emblem" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
@@ -28,12 +30,19 @@ export function LifelessEmblem() {
         <path d="M60 60 L60 16 A44 44 0 0 1 91.1 28.9 Z" />
       </g>
 
-      {/* Corner brackets: close in from outside. */}
+      {/*
+        Corner brackets: close in from outside. The slow glow is a blurred copy whose opacity
+        breathes (review F-1.9): animating the drop-shadow itself re-filtered every frame for ever.
+      */}
       <g className="lifeless-emblem__brackets">
-        <path d="M14 30V14h16" />
-        <path d="M90 14h16v16" />
-        <path d="M106 90v16H90" />
-        <path d="M30 106H14V90" />
+        <g className="lifeless-emblem__brackets-halo">
+          {BRACKETS.map((d) => (
+            <path key={d} d={d} />
+          ))}
+        </g>
+        {BRACKETS.map((d) => (
+          <path key={d} d={d} />
+        ))}
       </g>
 
       {/* The sprout: a stem and two leaves, drawn stroke by stroke. */}

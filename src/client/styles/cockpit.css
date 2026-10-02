@@ -704,9 +704,16 @@ input[type="text"]:focus {
   transform-origin: 60px 60px;
   opacity: 0;
   filter: drop-shadow(0 0 3px var(--accent-glow));
-  animation:
-    lifeless-brackets-in 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.3s forwards,
-    lifeless-brackets-glow 5s ease-in-out 2.4s infinite;
+  animation: lifeless-brackets-in 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.15) 0.3s forwards;
+}
+/* The breathing glow: a blurred copy, filtered once, only its opacity animated (F-1.9). */
+.lifeless-emblem__brackets-halo {
+  stroke: var(--accent-glow);
+  stroke-width: 5;
+  filter: blur(2.5px);
+  opacity: 0;
+  will-change: opacity;
+  animation: lifeless-brackets-glow 5s ease-in-out 2.4s infinite;
 }
 .lifeless-emblem__sprout {
   stroke: var(--text-dim);
@@ -821,10 +828,10 @@ input[type="text"]:focus {
 @keyframes lifeless-brackets-glow {
   0%,
   100% {
-    filter: drop-shadow(0 0 3px var(--accent-glow));
+    opacity: 0;
   }
   50% {
-    filter: drop-shadow(0 0 7px var(--accent-glow));
+    opacity: 0.85;
   }
 }
 @keyframes lifeless-strike-flash {

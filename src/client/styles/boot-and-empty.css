@@ -346,3 +346,10 @@
   color: var(--info-soft);
   background: rgba(80, 120, 200, 0.12);
 }
+
+/* Reduced motion (review F-1.9): the boot ring stands still; the progress text still moves. */
+@media (prefers-reduced-motion: reduce) {
+  .journal-boot__orb-ring {
+    animation: none;
+  }
+}

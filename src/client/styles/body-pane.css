@@ -378,3 +378,10 @@
   color: var(--warn, #d9822b);
   white-space: normal;
 }
+
+/* Reduced motion (review F-1.9): the spinner stands still; its ring still says "loading". */
+@media (prefers-reduced-motion: reduce) {
+  .inline-spinner {
+    animation: none;
+  }
+}
