@@ -151,7 +151,7 @@
 
 .system-map-popup {
   position: fixed;
-  z-index: 5200;
+  z-index: var(--z-map-popup);
   max-width: min(28rem, 94vw);
   /* As tall as the window allows before it scrolls (guild tester, 2026-09-30: it scrolled inside
      ~512 px on a screen with room to spare). The placement keeps it on screen. */

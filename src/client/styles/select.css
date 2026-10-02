@@ -57,7 +57,7 @@
 
 .ui-select__menu {
   position: fixed;
-  z-index: 6000;
+  z-index: var(--z-menu);
   margin: 0;
   padding: 0.25rem 0;
   list-style: none;

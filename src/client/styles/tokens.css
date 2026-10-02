@@ -18,6 +18,22 @@
  * literal to a token is a byte-identical change; only the type scale deliberately moves pixels.
  */
 :root {
+  /*
+    One stacking ladder (review F-1.7). Before it, toasts sat at 4000, under the tips (5000), the
+    system map's popup (5200) and the dropdowns (6000): a toast raised from one of those appeared
+    behind it. Lowest to highest; the toast is on top of everything.
+  */
+  --z-popover: 500;
+  --z-modal: 1000;
+  --z-modal-over: 1100;
+  --z-lightbox: 2000;
+  --z-lightbox-close: 2001;
+  --z-confirm: 3500;
+  --z-tip: 5000;
+  --z-map-popup: 5200;
+  --z-menu: 6000;
+  --z-toast: 7000;
+
   /* The shared palette (--hud, --hud-hi, --ok, --warn, --danger, --live, --hud-font) comes from
    * public/tokens.css, imported first by styles.css. The values below repeat it in the app's own names so
    * the 29 000 lines of existing rules keep working unchanged. */

@@ -13,7 +13,7 @@
 .photo-lightbox-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: var(--z-lightbox);
   background: rgba(0, 0, 0, 0.88);
   display: flex;
   align-items: center;
@@ -26,7 +26,7 @@
   position: fixed;
   top: 0.75rem;
   right: 1rem;
-  z-index: 2001;
+  z-index: var(--z-lightbox-close);
   font: inherit;
   font-size: var(--fs-4xl);
   line-height: 1;
@@ -165,7 +165,7 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-modal);
   background: rgba(0, 0, 0, 0.72);
   display: flex;
   align-items: center;

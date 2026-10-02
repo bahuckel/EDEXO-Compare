@@ -30,7 +30,7 @@
   position: fixed;
   right: var(--s-8);
   bottom: var(--s-8);
-  z-index: 4000;
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
   gap: var(--s-5);
@@ -113,7 +113,7 @@
 .confirm-backdrop {
   display: grid;
   place-items: center;
-  z-index: 3500;
+  z-index: var(--z-confirm);
 }
 
 .confirm-modal {
@@ -188,7 +188,7 @@
 
 .tip-bubble {
   position: fixed;
-  z-index: 5000;
+  z-index: var(--z-tip);
   max-width: 320px;
   padding: 0.35rem 0.5rem;
   border-radius: var(--r-sm);
@@ -236,7 +236,7 @@
 
 .info-panel {
   position: fixed;
-  z-index: 5000;
+  z-index: var(--z-tip);
   width: min(420px, calc(100vw - 2rem));
   max-height: min(60vh, 520px);
   overflow-y: auto;

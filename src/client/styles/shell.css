@@ -430,7 +430,7 @@ body::before {
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
-  z-index: 500;
+  z-index: var(--z-popover);
   min-width: min(380px, calc(100vw - 24px));
   max-width: 440px;
   max-height: min(72vh, 560px);
