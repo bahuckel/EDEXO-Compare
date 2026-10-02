@@ -246,14 +246,19 @@ export const BodyPane = memo(function BodyPane({
               {likelyMatches.length} <small>cand</small> / {body.state.biologicalSignals ?? "?"}{" "}
               <small>bio</small>
             </span>
-            <span className="glance-item">
-              <small>DSS</small> {body.state.dssComplete ? "yes" : "no"}
+            {/* The same mark as the Exo-signals card (review V5). */}
+            <span
+              className="glance-item"
+              title={body.state.dssComplete ? "Mapped with the DSS" : "Not mapped with the DSS yet"}
+            >
+              <small>DSS</small> {body.state.dssComplete ? "✓" : "✗"}
             </span>
             <GlanceGenera rows={genusRows} />
             {arrivalLs != null ? (
               <span className="glance-item">
                 {arrivalLs === 0 ? "0" : arrivalLs.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
-                <small>ls</small>
+                {/* The game's spelling, Ls, as in the cards (review V5); the glance bar's capitals skip it. */}
+                <small className="glance-unit-ls">Ls</small>
               </span>
             ) : null}
           </div>

@@ -50,6 +50,11 @@
   opacity: 0.85;
   margin: 0 0.15rem;
 }
+/* Light-seconds keep the game's spelling (review V5). */
+.glance-item small.glance-unit-ls {
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
 .glance-price {
   font-size: var(--fs-lg);
   font-weight: 700;
