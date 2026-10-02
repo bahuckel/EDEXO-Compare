@@ -774,11 +774,12 @@ export function EncyclopediaModal({
             </div>
             {priceCredits ? (
               <div className="fg-value">
-                <strong title={`${priceCredits.toLocaleString("en-US")} cr`}>
-                  {fmtGuideCredits(priceCredits)} cr
+                {/* CR in capitals, as everywhere else in the app (review V8). */}
+                <strong title={`${priceCredits.toLocaleString("en-US")} CR`}>
+                  {fmtGuideCredits(priceCredits)} CR
                 </strong>
-                <span title={`${(priceCredits * 5).toLocaleString("en-US")} cr`}>
-                  {fmtGuideCredits(priceCredits * 5)} first footfall
+                <span title={`${(priceCredits * 5).toLocaleString("en-US")} CR`}>
+                  {fmtGuideCredits(priceCredits * 5)} CR first footfall
                 </span>
               </div>
             ) : null}
