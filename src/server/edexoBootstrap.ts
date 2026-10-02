@@ -136,6 +136,7 @@ import { createUpdateChecker, currentReleaseForm } from "./updateCheck.js";
 import { createAppUpdater, resolveUpdateDir } from "./appUpdater.js";
 import { createWhatsNew } from "./whatsNew.js";
 import { buildDiagnosticsText, installLogRing, loggedLines } from "./diagnostics.js";
+import { createUnknownExobioLog } from "./exobioUnknown.js";
 import { fetchRemoteSystem, readRemoteSystemsCache, writeRemoteSystemToCache } from "./remoteSystems.js";
 import { parseHost, parsePort } from "./cliOptions.js";
 import type { CliOptions } from "./cliOptions.js";
@@ -332,6 +333,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   };
 
   const sessionLog = new SessionLog();
+  // New exobiology journal shapes (the Nomad, the Mk II scanner) kept for teaching the app (F-5.13).
+  const unknownExobio = createUnknownExobioLog(
+    path.join(path.dirname(resolveUserSettingsJsonPath()), "unknown-exobiology-events.jsonl"),
+    (key) => console.warn(`[edexo-compare] unknown exobiology journal line kept: ${key}`),
+  );
   /* "Notify me" (guild tester report, 2026-09-30): the mail icon's notices and the record marks. */
   const notices = createNoticesService({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-notices.json"),
@@ -1045,6 +1051,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         const footFix = side.status ? parseStatusJsonFootFix(side.status) : null;
         ingestExoOrganicJournalLine(store, ownLine, footFix, projectRoot, getCachedSpeciesDatabase());
         sessionLog.record(line, store, getCachedPrices());
+        unknownExobio.offer(line);
         backupService.onJournalLine(typeof line.event === "string" ? line.event : undefined);
         gamePresence.onJournalLine(typeof line.event === "string" ? line.event : undefined);
         push();
@@ -1185,6 +1192,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     const applyReplayLine = (line: JournalLine): void => {
       try {
         store.apply(line);
+        unknownExobio.offer(line);
       } catch (e) {
         replayErrors += 1;
         if (replayErrors <= 3) console.error("[edexo-compare] journal line skipped in replay:", line.event, e);
