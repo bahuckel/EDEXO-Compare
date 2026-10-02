@@ -112,8 +112,16 @@ class FakeWindow {
   getBounds() {
     return { ...this.bounds };
   }
+  /**
+   * Windows with monitors at different scaling: Electron's setBounds on the other monitor can land
+   * at a size scaled by the ratio of the two (a commander's report, 2026-10-02). 1 = no distortion.
+   */
+  static secondScreenSizeFactor = 1;
   setBounds(b: Partial<FakeWindow["bounds"]>) {
     this.bounds = { ...this.bounds, ...b };
+    if (b.height != null && this.bounds.x >= SECOND.x) {
+      this.bounds.height = Math.round(b.height * FakeWindow.secondScreenSizeFactor);
+    }
   }
   hide() {
     this.visible = false;
@@ -165,6 +173,7 @@ beforeEach(() => {
   runtime = { getLocalBaseUrl: () => "http://127.0.0.1:7111" };
   changes = 0;
   FakeWindow.all = [];
+  FakeWindow.secondScreenSizeFactor = 1;
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
@@ -392,11 +401,48 @@ describe("free move (owner, 2026-10-02: the HUD anywhere, on any screen)", () =>
     const free = JSON.parse(readFileSync(layoutFile, "utf8")).free;
     expect(free).toEqual({ x: 2400, y: 900 + 120 + 6 + 330, bottom: true });
     // A taller page keeps the bottom edge where it was dropped.
-    b!.bounds.height = 400;
-    huds.relayout();
+    huds.resizeFromPage(b, { height: 400 });
     expect(b!.bounds.y + b!.bounds.height).toBe(free.y);
     expect(a!.bounds.x).toBe(2400);
     huds.setMoveMode(false);
+  });
+
+  /*
+    A commander's report (2026-10-02): moved to another screen, the merged HUD grew taller and taller,
+    to the height of the screen; unmerged, the windows piled on top of each other. On that screen
+    setBounds landed at a scaled size, and the stack read every window's size back and set it again,
+    so each relayout scaled it once more.
+  */
+  it("on a screen where a set size lands scaled, the merged panel does not keep growing", async () => {
+    FakeWindow.secondScreenSizeFactor = 1.25;
+    const huds = make();
+    await huds.request("/hud-overlay.html", 404, 330, null, "open");
+    const [w] = live();
+    huds.setLayout({ freeOn: true, free: { x: 2400, y: 100 } });
+    const heights: number[] = [];
+    for (let i = 0; i < 20; i++) {
+      // The page reports its content as it changes (a timer, a distance), and the stack relayouts.
+      huds.resizeFromPage(w, { height: 500 + (i % 3) });
+      huds.relayout();
+      heights.push(w!.bounds.height);
+    }
+    expect(Math.max(...heights)).toBeLessThanOrEqual(Math.round(502 * 1.25));
+    expect(heights.at(-1)).toBeLessThan(SECOND.height);
+  });
+
+  it("on that screen, separate windows do not pile on top of each other", async () => {
+    FakeWindow.secondScreenSizeFactor = 1.25;
+    const huds = make();
+    const [a, b] = await twoHuds(huds);
+    huds.setLayout({ freeOn: true, free: { x: 2400, y: 100 } });
+    for (let i = 0; i < 5; i++) {
+      huds.resizeFromPage(a, { height: 120 });
+      huds.resizeFromPage(b, { height: 330 });
+      huds.relayout();
+    }
+    expect(b!.bounds.y).toBeGreaterThanOrEqual(a!.bounds.y + a!.bounds.height);
+    expect(a!.bounds.height).toBeLessThanOrEqual(Math.round(120 * 1.25));
+    expect(b!.bounds.height).toBeLessThanOrEqual(Math.round(330 * 1.25));
   });
 
   it("a spot off every screen comes back onto the nearest one", async () => {

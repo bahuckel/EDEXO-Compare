@@ -459,6 +459,43 @@ function createHudWindows(deps) {
   }
 
   /** The visible stack in its order, and the column width. */
+  /*
+    The height a window should have: what its page last reported (`resizeFromPage`), else what it was
+    opened with. Never read back from the window to be set again. On a monitor whose scaling differs
+    from the primary's, Windows can land a set size scaled by the ratio of the two; read back and set
+    on every relayout, that scaled it again each time — a commander's merged HUD grew to the height of
+    his second screen, and unmerged the windows piled on top of each other (2026-10-02).
+  */
+  function slotHeight(slot) {
+    if (Number.isFinite(slot.height) && slot.height > 0) return slot.height;
+    try {
+      return slot.win.getSize()[1];
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Put a window at a rect, and say how tall it really is. If the size did not take (the mixed-scaling
+   * case above), it is asked once more: the window is on that monitor now, and a second set lands.
+   * Whatever it ends up as, the caller spaces the next window by the larger of the two, so a window
+   * that came out taller still never covers the one below it.
+   */
+  function placeWindow(win, rect) {
+    win.setBounds({ ...rect, animate: false });
+    let actual = rect.height;
+    try {
+      const b = win.getBounds();
+      if (Math.abs(b.width - rect.width) > 2 || Math.abs(b.height - rect.height) > 2) {
+        win.setBounds({ ...rect, animate: false });
+      }
+      actual = win.getBounds().height;
+    } catch {
+      /* a window going away */
+    }
+    return Math.max(rect.height, actual);
+  }
+
   function orderedStack() {
     hudOverlayStack = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
     const rank = (s) => {
@@ -496,15 +533,6 @@ function createHudWindows(deps) {
    */
   function relayoutFreeStack() {
     const { ordered, w } = orderedStack();
-    const sizes = [];
-    for (const slot of ordered) {
-      try {
-        sizes.push(slot.win.getSize()[1]);
-      } catch {
-        sizes.push(null);
-      }
-    }
-    const total = sizes.reduce((a, h) => a + (h ?? 0), 0) + HUD_STACK_GAP * Math.max(0, ordered.length - 1);
     const f = hudLayout.free || currentStackPoint();
     const probe = { x: Math.round(f.x + w / 2), y: f.bottom ? f.y - 1 : f.y };
     let area;
@@ -513,18 +541,25 @@ function createHudWindows(deps) {
     } catch {
       area = screen.getPrimaryDisplay().workArea;
     }
+    // No window taller than the screen it is on (a 768 px monitor is shorter than HUD_MAX_HEIGHT).
+    const sizes = ordered.map((s) => {
+      const h = slotHeight(s);
+      return h == null ? null : Math.min(h, area.height);
+    });
+    const total = sizes.reduce((a, h) => a + (h ?? 0), 0) + HUD_STACK_GAP * Math.max(0, ordered.length - 1);
     const fit = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
     const x = fit(f.x, area.x, Math.max(area.x, area.x + area.width - w));
     let y = fit(f.bottom ? f.y - total : f.y, area.y, Math.max(area.y, area.y + area.height - total));
     ordered.forEach((slot, i) => {
       const h = sizes[i];
       if (h == null) return;
+      let used = h;
       try {
-        slot.win.setBounds({ x, y, width: w, height: h, animate: false });
+        used = placeWindow(slot.win, { x, y, width: w, height: h });
       } catch {
         /* ignore */
       }
-      y += h + HUD_STACK_GAP;
+      y += used + HUD_STACK_GAP;
     });
   }
 
@@ -588,7 +623,7 @@ function createHudWindows(deps) {
       for (const s of orderedStack().ordered) {
         try {
           const b = s.win.getBounds();
-          bottomEdge = Math.max(bottomEdge, b.y + b.height);
+          bottomEdge = Math.max(bottomEdge, b.y + (slotHeight(s) ?? b.height));
         } catch {
           /* ignore */
         }
@@ -638,26 +673,22 @@ function createHudWindows(deps) {
     */
     const fit = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
     for (const slot of ordered) {
-      let sz;
-      try {
-        sz = slot.win.getSize();
-      } catch {
-        continue;
-      }
-      const h = sz[1];
+      const full = slotHeight(slot);
+      if (full == null) continue;
+      const h = Math.min(full, wa.height);
       if (atBottom) y -= h;
+      let used = h;
       try {
-        slot.win.setBounds({
+        used = placeWindow(slot.win, {
           x: fit(x, wa.x, Math.max(wa.x, wa.x + wa.width - w)),
           y: fit(y, wa.y, Math.max(wa.y, wa.y + wa.height - h)),
           width: w,
           height: h,
-          animate: false,
         });
       } catch {
         /* ignore */
       }
-      y = atBottom ? y - HUD_STACK_GAP : y + h + HUD_STACK_GAP;
+      y = atBottom ? y - HUD_STACK_GAP : y + used + HUD_STACK_GAP;
     }
   }
 
@@ -1103,10 +1134,11 @@ function createHudWindows(deps) {
       }
     }
     try {
-      const [w, h] = win.getSize();
-      // A pixel or two of jitter from a font metric must not start a resize loop.
-      if (!scaleChanged && Math.abs(h - height) <= 2) return { ok: true };
-      win.setBounds({ ...win.getBounds(), width: w, height }, false);
+      const slot = hudOverlayStack.find((s) => s.win === win);
+      // A pixel or two of jitter from a font metric must not start a resize loop. Compared with the
+      // height asked for last, not the window's: on a monitor at another scaling those differ for good.
+      if (!scaleChanged && slot && Math.abs(slotHeight(slot) - height) <= 2) return { ok: true };
+      if (slot) slot.height = height;
       relayoutHudStack();
       return { ok: true };
     } catch {
