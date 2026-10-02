@@ -1887,6 +1887,7 @@ export class GameStateStore {
 
     setStr("scanType", line.ScanType);
     rec.playerScanned = prev?.playerScanned === true || line.ScanType !== "NavBeaconDetail";
+    if (prev?.fssResolved === true || line.ScanType === "Detailed") rec.fssResolved = true;
     setStr("bodyType", line.BodyType);
     setStr("planetClass", line.PlanetClass);
     setStr("starType", line.StarType);

@@ -354,6 +354,24 @@
   text-shadow: 0 0 4px rgba(245, 184, 61, 0.5);
 }
 
+/*
+  A landable body only AutoScanned on arrival (owner, 2026-10-02): the signal count is unknown until
+  the FSS. A dashed edge and a warning line, the same dark chip trick as FCX so it reads on every
+  scheme and on the selected tab.
+*/
+.tab--fss-required {
+  border-style: dashed;
+}
+.tab-fss-required {
+  display: inline-block;
+  padding: 0 3px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffcf6e;
+  background: #07060a;
+  box-shadow: inset 0 0 0 1px #ffcf6e;
+}
+
 /* A species logged here in a colour the app did not predict — in the miss log (owner, 2026-09-26). */
 .srow-tag--colour-miss,
 .species-colour-miss {

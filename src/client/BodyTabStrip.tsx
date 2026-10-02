@@ -82,7 +82,9 @@ export const BodyTabStrip = memo(function BodyTabStrip({
 }) {
   const notableByKey = new Map(notables.map((n) => [`${n.systemAddress}:${n.bodyId}`, n]));
   const bioKeys = new Set(sections.flatMap((s) => s.hostCards.flat().map((b) => b.state.key)));
-  const notableOnly = notableTabs ? notables.filter((n) => !bioKeys.has(`${n.systemAddress}:${n.bodyId}`)) : [];
+  const notableOnly = notableTabs
+    ? notables.filter((n) => !bioKeys.has(`${n.systemAddress}:${n.bodyId}`))
+    : [];
   const distances = sortMode === "closest" ? (proximity?.distanceLsByBodyKey ?? null) : null;
   const estimate = proximity?.basis === "orbits";
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -234,6 +236,8 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                     );
                     const nb = notableTabs ? notableByKey.get(b.state.key) : undefined;
                     const rare = bodyRarest(b.matches);
+                    // Known only from the ship's arrival AutoScan: no signal count yet (owner, 2026-10-02).
+                    const auto = b.state.autoScanOnly === true;
                     return (
                       <button
                         key={b.state.key}
@@ -242,9 +246,13 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         aria-selected={on}
                         tabIndex={on ? 0 : -1}
                         data-body-key={b.state.key}
-                        className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}`}
+                        className={`tab${on ? " on" : ""}${done ? " tab--done" : ""}${auto ? " tab--fss-required" : ""}`}
                         onClick={() => onSelect(b.state.key)}
-                        title={`${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${fcx ? ", a FIRST codex entry: nobody has logged it in this region yet (FCX)" : cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${rare ? `, ${rare.title}` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`}
+                        title={
+                          auto
+                            ? `${b.tabLabel}: the ship only AutoScanned this landable body on arrival, and the game reports biological signals only once a body is resolved in the FSS. Resolve it in the FSS to know whether there is life here.`
+                            : `${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${fcx ? ", a FIRST codex entry: nobody has logged it in this region yet (FCX)" : cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${rare ? `, ${rare.title}` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`
+                        }
                       >
                         {/* In the tab's left padding: the tab keeps its size (owner, 2026-09-30). */}
                         {rare ? (
@@ -256,23 +264,27 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                           />
                         ) : null}
                         <span className="tab-label">{b.tabLabel}</span>
-                        <span className="tab-meta">
-                          {bio ?? "?"}
-                          <small>bio</small>
-                          {best > 0 ? <> · {fmtCrShort(best)}</> : null}
-                          {typeof dist === "number" ? (
-                            <span className="tab-dist"> · {fmtTabDistanceLs(dist, estimate)}</span>
-                          ) : null}
-                          {fcx ? (
-                            <>
-                              {" · "}
-                              <span className="tab-fcx">FCX</span>
-                            </>
-                          ) : cx ? (
-                            <span className="tab-cx"> · CX</span>
-                          ) : null}
-                          {nb ? <span className="tab-n"> · N</span> : null}
-                        </span>
+                        {auto ? (
+                          <span className="tab-meta tab-fss-required">AutoScanned only - FSS required</span>
+                        ) : (
+                          <span className="tab-meta">
+                            {bio ?? "?"}
+                            <small>bio</small>
+                            {best > 0 ? <> · {fmtCrShort(best)}</> : null}
+                            {typeof dist === "number" ? (
+                              <span className="tab-dist"> · {fmtTabDistanceLs(dist, estimate)}</span>
+                            ) : null}
+                            {fcx ? (
+                              <>
+                                {" · "}
+                                <span className="tab-fcx">FCX</span>
+                              </>
+                            ) : cx ? (
+                              <span className="tab-cx"> · CX</span>
+                            ) : null}
+                            {nb ? <span className="tab-n"> · N</span> : null}
+                          </span>
+                        )}
                         {done ? <span className="tab-dot" aria-hidden="true" /> : null}
                         {focus ? (
                           <span className="tab-focus" aria-hidden="true">

@@ -135,6 +135,13 @@ export interface ExplorationScanRecord {
    * Absent on rows built outside the journal merge, which count as scanned.
    */
   playerScanned?: boolean;
+  /**
+   * Sticky once a `Detailed` scan (the FSS resolving the body) has arrived. An `AutoScan` — the bodies
+   * the ship scans by itself on arrival — writes the whole record but never `FSSBodySignals`, so a body
+   * known only that way may carry biology nobody has been told about (owner, 2026-10-02). A later
+   * re-arrival AutoScan does not clear it.
+   */
+  fssResolved?: boolean;
   /** Journal `Scan.BodyType` (e.g. `AsteroidCluster` for belt clusters). */
   bodyType?: string;
   planetClass?: string;

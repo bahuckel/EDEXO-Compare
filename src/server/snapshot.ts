@@ -118,9 +118,11 @@ import {
   attachPresenceProbability,
   demoteBelowPresenceFloor,
   markSampledDespiteUnlikely,
+  PRESENCE_FLOOR_PCT,
 } from "./presenceFloors.js";
 import { applyGenusBodySplit } from "./genusBodySplit.js";
 import { applyGenusPrior, vetoUnseenGenera } from "./genusPrior.js";
+import { autoScanOnlyBodies } from "./autoScanOnly.js";
 import {
   firstFootfallLookupFor,
   buildJournalSystems,
@@ -836,6 +838,36 @@ function computeBody(
   return value;
 }
 
+/**
+ * A body the ship only AutoScanned (autoScanOnly.ts), computed as if the FSS had found one biological
+ * signal — the least a body with life can have — so the chances, the genus prior and the floors work
+ * as they do for any body (owner, 2026-10-02: "fake assign the bio signal = 1 to autoscanned bodies
+ * and drop them if nothing would spawn there"). Null when nothing would be shown there: no tab. The
+ * assumed signal is never shown — the state keeps its unknown count and the tab says "AutoScanned only
+ * - FSS required".
+ */
+export function computeAutoScanOnlyBody(
+  b: BodyExoState,
+  store: GameStateStore,
+  db: SpeciesDatabase = cachedDb,
+  prices: PriceIndex = cachedPrices,
+): BodyComputed | null {
+  const computed = computeBody({ ...b, key: `${b.key}#autoscan`, biologicalSignals: 1 }, db, prices, store);
+  /*
+    "Would anything spawn here" counts a candidate only on its own merits: not one pulled back to fill
+    the signal count (that rule trusts the game's count, and this count is assumed), and not one kept
+    only because a list may not be empty while it sits under the presence floor.
+  */
+  const stands = computed.matches.some(
+    (m) =>
+      !m.unlikely &&
+      m.restoredForSignalCount !== true &&
+      (m.presenceProbabilityPercent == null || m.presenceProbabilityPercent >= PRESENCE_FLOOR_PCT),
+  );
+  if (!stands) return null;
+  return { ...computed, state: b };
+}
+
 function computeBodyUncached(
   b: BodyExoState,
   db: SpeciesDatabase,
@@ -1284,6 +1316,13 @@ export function buildSnapshot(
   const fssAllBodiesFoundNoBio = bootLoading
     ? false
     : focusAddr != null && store.fssAllBodiesCompleteSystems.has(focusAddr) && bodies.length === 0;
+  // Landable bodies the ship only AutoScanned: their biology is unknown until the FSS (autoScanOnly.ts).
+  if (!bootLoading && focusAddr != null && !store.isShowingRemoteSystem(focusAddr)) {
+    for (const b of autoScanOnlyBodies(store, focusAddr)) {
+      const c = computeAutoScanOnlyBody(b, store, db, cachedPrices);
+      if (c) bodies.push(c);
+    }
+  }
 
   const journalSystems = bootLoading ? [] : perfTime("snap.journalSystems", () => buildJournalSystems(store));
   const viewingSystemName = bootLoading ? null : resolveViewingSystemName(store, store.viewingSystemAddress);

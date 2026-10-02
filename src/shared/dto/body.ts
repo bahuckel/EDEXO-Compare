@@ -29,6 +29,12 @@ export interface ExoDataAlertDTO {
 
 export interface BodyExoState {
   key: string;
+  /**
+   * A landable body the ship only AutoScanned on arrival: the game sends no `FSSBodySignals` for those,
+   * so whether it carries biology is unknown until the commander resolves it in the FSS (owner,
+   * 2026-10-02). Shown as a tab, "AutoScanned only - FSS required"; built in snapshot.ts, never stored.
+   */
+  autoScanOnly?: boolean;
   bodyName: string;
   bodyId: number;
   systemAddress: number;
