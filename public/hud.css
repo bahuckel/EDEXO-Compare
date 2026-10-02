@@ -85,12 +85,13 @@ body {
   pointer-events: none;
 }
 /*
-  A dark outline under every glyph, whatever the opacity slider says (plan 2.1, Fable C11): the text's
+  A dark shadow under every glyph (a hard one down-right and a faint halo), whatever the opacity slider says (plan 2.1, Fable C11): the text's
   only edge was a glow of its own colour, and over an ice world or a bright star pale orange on a faded
-  plate was unreadable. Glows add to it rather than replace it.
+  plate was unreadable. Listed after the glows, so they are drawn over it: the outline first, the
+  glow kept vivid (owner, 2026-10-02: in front, the outline dulled the colours).
 */
 :root {
-  --hud-outline: -1px 0 0 rgba(0, 0, 0, 0.7), 1px 0 0 rgba(0, 0, 0, 0.7), 0 -1px 0 rgba(0, 0, 0, 0.7), 0 1px 0 rgba(0, 0, 0, 0.7);
+  --hud-outline: 1px 1px 0 rgba(0, 0, 0, 0.65), 0 0 2px rgba(0, 0, 0, 0.35);
 }
 .panel__body {
   text-shadow: var(--hud-outline);
@@ -206,7 +207,7 @@ body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--hud);
-  text-shadow: var(--hud-outline), var(--hud-glow);
+  text-shadow: var(--hud-glow), var(--hud-outline);
   white-space: nowrap;
 }
 .hud-title::before {
@@ -235,7 +236,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--hud-hi);
-  text-shadow: var(--hud-outline), var(--hud-glow);
+  text-shadow: var(--hud-glow), var(--hud-outline);
   margin-bottom: 0.28rem;
 }
 .row {
@@ -282,7 +283,7 @@ body {
 .row--total .v {
   font-size: 0.92rem;
   color: var(--hud-hi);
-  text-shadow: var(--hud-outline), var(--hud-glow);
+  text-shadow: var(--hud-glow), var(--hud-outline);
 }
 /* Candidate rows: rarity letter (tier colour) and the new-codex tag. */
 .hud-list .rar,
@@ -306,7 +307,7 @@ body {
   color: #f5c96a;
   background: #07060a;
   border-color: #f5c96a;
-  text-shadow: var(--hud-outline), 0 0 4px rgba(245, 184, 61, 0.5);
+  text-shadow: 0 0 4px rgba(245, 184, 61, 0.5), var(--hud-outline);
 }
 /* Compact overlays: explanations go, readings and warnings stay (theme.js `hud-compact`). */
 .hud-compact .hud-explain {
@@ -337,7 +338,7 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--hud-hi);
-  text-shadow: var(--hud-outline), var(--hud-glow);
+  text-shadow: var(--hud-glow), var(--hud-outline);
 }
 
 /* badges in the game's three colours */
@@ -355,11 +356,11 @@ body {
 }
 .pill.ok {
   color: var(--ok);
-  text-shadow: var(--hud-outline), 0 0 6px var(--ok-dim);
+  text-shadow: 0 0 6px var(--ok-dim), var(--hud-outline);
 }
 .pill.bad {
   color: var(--bad);
-  text-shadow: var(--hud-outline), 0 0 6px rgba(255, 90, 60, 0.5);
+  text-shadow: 0 0 6px rgba(255, 90, 60, 0.5), var(--hud-outline);
 }
 
 /* ---- the tracker: radar left, the run's numbers right; folds shut away from a surface ------------ */
@@ -416,7 +417,7 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--hud-hi);
-  text-shadow: var(--hud-outline), var(--hud-glow);
+  text-shadow: var(--hud-glow), var(--hud-outline);
   transition:
     max-height 0.45s ease 0.25s,
     opacity 0.45s ease 0.25s;
@@ -473,11 +474,11 @@ body {
 }
 .fact .v.yes {
   color: var(--hud-hi);
-  text-shadow: var(--hud-outline), var(--hud-glow);
+  text-shadow: var(--hud-glow), var(--hud-outline);
 }
 .fact .v.tgt {
   color: var(--hud-hi);
-  text-shadow: var(--hud-outline), var(--hud-glow);
+  text-shadow: var(--hud-glow), var(--hud-outline);
 }
 .fact .v.tgt::after {
   content: "TARGET";
@@ -505,11 +506,11 @@ body {
 }
 .prog--live {
   color: var(--bio);
-  text-shadow: var(--hud-outline), 0 0 6px rgba(123, 224, 123, 0.5);
+  text-shadow: 0 0 6px rgba(123, 224, 123, 0.5), var(--hud-outline);
 }
 .prog--done {
   color: var(--ok);
-  text-shadow: var(--hud-outline), 0 0 6px var(--ok-dim);
+  text-shadow: 0 0 6px var(--ok-dim), var(--hud-outline);
 }
 .prog--seen {
   color: var(--hud-hi);
@@ -622,7 +623,7 @@ body {
   font-weight: 700;
   font-size: 0.92rem;
   color: var(--hud-hi);
-  text-shadow: var(--hud-outline), var(--hud-glow);
+  text-shadow: var(--hud-glow), var(--hud-outline);
 }
 .fss-line .nums small {
   font-size: 0.6rem;
@@ -1005,7 +1006,7 @@ body {
 */
 .hop__sep--first {
   color: var(--ok);
-  text-shadow: var(--hud-outline), 0 0 6px rgba(79, 208, 255, 0.7);
+  text-shadow: 0 0 6px rgba(79, 208, 255, 0.7), var(--hud-outline);
 }
 /* No answer from EDSM yet, or it could not be reached — neither "visited" nor "unvisited". */
 .hop__sep--unknown {
