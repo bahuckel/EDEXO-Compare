@@ -333,6 +333,7 @@ export const MyExobiologyModal = memo(function MyExobiologyModal({
                     )
                   }
                   rowKey={(e) => e.id}
+                  csvName="exobiology scanned on foot"
                   empty="No foot-catalog entries yet."
                   resetKey={query}
                 />

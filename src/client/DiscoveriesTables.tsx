@@ -28,6 +28,7 @@ import { ScrollArea } from "./ui/ScrollArea";
 import { Select } from "./ui/Select";
 import { isTerraformableState } from "@shared/terraformState";
 import { readableAtmosphereType } from "@shared/atmosphereLabel";
+import { csvFileName, downloadCsv, toCsv } from "./csv";
 
 /** Rows rendered at once. Enough to scroll through, far short of what would stall the panel. */
 export const PAGE = 300;
@@ -93,6 +94,7 @@ export function Table<T>({
   empty,
   layout = "list",
   resetKey,
+  csvName,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -103,6 +105,8 @@ export function Table<T>({
   layout?: DiscoveriesLayout;
   /** Scrolls back to the top when it changes. */
   resetKey?: unknown;
+  /** Offers "Export CSV" of every row (not only the first page), in the current order (F-5.11). */
+  csvName?: string;
 }) {
   const sorted = useMemo(() => {
     const col = columns.find((c) => c.key === sort.key) ?? columns[0]!;
@@ -125,6 +129,19 @@ export function Table<T>({
   const shown = sorted.slice(0, PAGE);
   if (rows.length === 0) return <p className="dim disc-empty">{empty}</p>;
 
+  const exportCsv = csvName ? (
+    <div className="disc-export">
+      <button
+        type="button"
+        className="btn secondary tiny"
+        title="Every row of this table, in this order, as a CSV file for a spreadsheet"
+        onClick={() => downloadCsv(csvFileName(csvName), toCsv(sorted, columns))}
+      >
+        Export CSV ({sorted.length.toLocaleString()})
+      </button>
+    </div>
+  ) : null;
+
   const more =
     sorted.length > PAGE ? (
       <p className="dim tiny disc-more">
@@ -137,6 +154,7 @@ export function Table<T>({
     const [title, ...facts] = columns;
     return (
       <>
+        {exportCsv}
         {/* No column headers to click in a card view, so the sort is a control of its own. */}
         <div className="disc-card-sort">
           <span className="small-caps dim">Sort</span>
@@ -180,6 +198,7 @@ export function Table<T>({
 
   return (
     <>
+      {exportCsv}
       <ScrollArea className="disc-table-wrap" resetKey={resetKey}>
         <table className="disc-table">
           <thead>
@@ -540,6 +559,7 @@ export function DiscoveriesTables({
           sort={sort}
           onSort={onSort}
           rowKey={(r) => String(r.systemAddress)}
+          csvName="discoveries systems"
           empty="No systems match."
           layout={layout}
           resetKey={`${q}|${tab}`}
@@ -747,6 +767,7 @@ export function DiscoveriesTables({
           sort={sort}
           onSort={onSort}
           rowKey={(r) => r.key}
+          csvName="discoveries bodies"
           empty="No bodies match."
           layout={layout}
           resetKey={`${q}|${tab}`}
@@ -863,6 +884,7 @@ export function DiscoveriesTables({
         sort={sort}
         onSort={onSort}
         rowKey={(r) => r.key}
+        csvName="discoveries stars"
         empty="No stars match."
         layout={layout}
         resetKey={`${q}|${tab}`}

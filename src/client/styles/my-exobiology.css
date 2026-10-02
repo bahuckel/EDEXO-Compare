@@ -907,3 +907,10 @@ tr:hover .disc-ggg-mark--quiet,
 .disc-ggg-mark--quiet:focus-within {
   opacity: 1;
 }
+
+/* Export CSV (F-5.11): above the table, out of the way. */
+.disc-export {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.35rem;
+}

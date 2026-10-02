@@ -23,6 +23,7 @@ import { isBool, isNum, oneOf, usePersistedState } from "./usePersistedState";
 import { PAGE } from "./DiscoveriesTables";
 import { useEffect, useMemo, useState } from "react";
 import { CopySystemButton } from "./CopySystemButton";
+import { csvFileName, downloadCsv, toCsv, type CsvColumn } from "./csv";
 import { useModal } from "./ui/useModal";
 import type { FirstDiscoveryBacklogDTO, FirstDiscoveryBacklogRowDTO } from "@shared/types";
 
@@ -47,6 +48,24 @@ function compactCr(n: number): string {
  * nothing. These cut the set to roughly 163 / 74 / 36 / 18.
  */
 const FLOORS = [0, 10e6, 20e6, 30e6, 50e6] as const;
+
+/**
+ * CSV of the list as filtered and sorted (review F-5.11): one row per body, the figures as numbers,
+ * ready for a spreadsheet or a route planner. System first, so a Spansh paste is one column away.
+ */
+const CSV_COLUMNS: CsvColumn<FirstDiscoveryBacklogRowDTO>[] = [
+  { label: "System", value: (r) => r.starSystem },
+  { label: "Body", value: (r) => r.bodyName },
+  { label: "Distance (ly)", value: (r) => (r.distanceLy == null ? null : Math.round(r.distanceLy * 10) / 10) },
+  { label: "Bio signals", value: (r) => r.biologicalSignals },
+  { label: "Floor (CR, 5x)", value: (r) => Math.round(r.minCr) },
+  { label: "Ceiling (CR, 5x)", value: (r) => Math.round(r.maxCr) },
+  { label: "DSS done", value: (r) => (r.dssComplete ? "yes" : "no") },
+  { label: "My discovery", value: (r) => (r.firstDiscovery ? "yes" : "no") },
+  { label: "Unwalked verified", value: (r) => (r.footfallObserved ? "yes" : "no") },
+  { label: "New codex", value: (r) => (r.codexNew ?? []).join("; ") },
+  { label: "Walked by someone", value: (r) => (r.footfallLost ? "yes" : "no") },
+];
 const floorLabel = (n: number) => (n === 0 ? "All" : `${Math.round(n / 1e6)}M+`);
 
 /** Light years, at a precision that matches how far away the thing is. */
@@ -271,6 +290,15 @@ export function FirstDiscoveryBacklogModal({
                 {(data?.rows ?? []).filter((r) => (r.codexNew?.length ?? 0) > 0).length.toLocaleString()})
               </button>
               <span className="fdb-filters__gap" />
+              <button
+                type="button"
+                className="fdb-chip"
+                disabled={rows.length === 0}
+                title="These rows, as filtered and sorted, as a CSV file for a spreadsheet or a route planner"
+                onClick={() => downloadCsv(csvFileName("unfinished business"), toCsv(rows, CSV_COLUMNS))}
+              >
+                Export CSV
+              </button>
               <span className="dim">Sort</span>
               <button
                 type="button"
