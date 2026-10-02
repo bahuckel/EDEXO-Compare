@@ -16,6 +16,8 @@ import { APP_USER_AGENT, APP_VERSION } from "./appVersion.js";
 
 export const RELEASES_API = "https://api.github.com/repos/bahuckel/EDEXO-Compare/releases?per_page=20";
 const RELEASE_PAGE = "https://github.com/bahuckel/EDEXO-Compare/releases/tag/";
+/** Where a release file is downloaded from: built from the tag and the file name, this repo only. */
+export const RELEASE_DOWNLOAD = "https://github.com/bahuckel/EDEXO-Compare/releases/download/";
 /** One answer per hour is plenty; GitHub allows an unauthenticated caller 60 requests an hour. */
 const MEMO_MS = 60 * 60 * 1000;
 const TIMEOUT_MS = 10_000;
@@ -23,7 +25,27 @@ const TIMEOUT_MS = 10_000;
 /** `v1.2.3` or `v1.2.3-zip` — the only tag shapes this repo publishes. Anything else is ignored. */
 const TAG_RE = /^v(\d+)\.(\d+)\.(\d+)(-zip)?$/;
 
-export type ReleaseForm = "portable" | "zip";
+/** The single exe, the program folder (zip), or the Linux AppImage. */
+export type ReleaseForm = "portable" | "zip" | "appimage";
+
+/**
+ * The file a release publishes for each form, and the tag it is under (docs/release/release.mjs):
+ * the exe alone on `v<x>`; the zip and the AppImage on `v<x>-zip`.
+ */
+export function releaseAssetFor(form: ReleaseForm, version: string): { tag: string; name: string } {
+  if (form === "portable") return { tag: `v${version}`, name: "EDExoCompare.exe" };
+  if (form === "appimage") return { tag: `v${version}-zip`, name: `EDExoCompare-${version}-x86_64.AppImage` };
+  return { tag: `v${version}-zip`, name: `EDExoCompare-${version}-win-x64.zip` };
+}
+
+/** One release file as the updater needs it: where, how big, and the SHA-256 GitHub holds for it. */
+export interface ReleaseAsset {
+  tag: string;
+  name: string;
+  url: string;
+  size: number | null;
+  sha256: string;
+}
 
 export function parseReleaseTag(tag: string): { version: string; parts: number[]; zip: boolean } | null {
   const m = TAG_RE.exec(tag);
@@ -49,7 +71,10 @@ export function compareVersions(a: string, b: string): number {
  * zip page, which is the one with the folder and the CLI builds in it.
  */
 export function currentReleaseForm(env: NodeJS.ProcessEnv = process.env): ReleaseForm {
-  return env.PORTABLE_EXECUTABLE_FILE ? "portable" : "zip";
+  if (env.PORTABLE_EXECUTABLE_FILE) return "portable";
+  // The AppImage runtime names the image it was started from.
+  if (env.APPIMAGE) return "appimage";
+  return "zip";
 }
 
 interface GithubRelease {
@@ -57,6 +82,30 @@ interface GithubRelease {
   draft?: unknown;
   prerelease?: unknown;
   published_at?: unknown;
+  assets?: unknown;
+}
+
+/**
+ * This form's file in that version's release, when GitHub lists it with a SHA-256. No digest, no
+ * asset: a file that cannot be checked is never downloaded for the commander, only linked.
+ */
+function findAsset(releases: GithubRelease[], form: ReleaseForm, version: string): ReleaseAsset | null {
+  const want = releaseAssetFor(form, version);
+  const rel = releases.find((r) => r && r.tag_name === want.tag && r.draft !== true && r.prerelease !== true);
+  if (!rel || !Array.isArray(rel.assets)) return null;
+  for (const a of rel.assets as Record<string, unknown>[]) {
+    if (!a || a.name !== want.name) continue;
+    const m = typeof a.digest === "string" ? /^sha256:([0-9a-f]{64})$/i.exec(a.digest) : null;
+    if (!m) return null;
+    return {
+      tag: want.tag,
+      name: want.name,
+      url: RELEASE_DOWNLOAD + encodeURIComponent(want.tag) + "/" + encodeURIComponent(want.name),
+      size: typeof a.size === "number" && a.size > 0 ? a.size : null,
+      sha256: m[1]!.toLowerCase(),
+    };
+  }
+  return null;
 }
 
 /**
@@ -69,7 +118,7 @@ interface GithubRelease {
 export function pickLatestRelease(
   releases: unknown,
   form: ReleaseForm,
-): { version: string; pageUrl: string; publishedAt: string | null } | null {
+): { version: string; pageUrl: string; publishedAt: string | null; asset: ReleaseAsset | null } | null {
   if (!Array.isArray(releases)) return null;
   const byVersion = new Map<string, { tags: Map<boolean, string>; publishedAt: string | null }>();
   for (const r of releases as GithubRelease[]) {
@@ -85,8 +134,15 @@ export function pickLatestRelease(
   for (const v of byVersion.keys()) if (best === null || compareVersions(v, best) > 0) best = v;
   if (best === null) return null;
   const entry = byVersion.get(best)!;
-  const tag = entry.tags.get(form === "zip") ?? entry.tags.get(form !== "zip")!;
-  return { version: best, pageUrl: RELEASE_PAGE + encodeURIComponent(tag), publishedAt: entry.publishedAt };
+  // The exe's page for the exe; the zip page (folder, AppImage, console builds) for everything else.
+  const zipPage = form !== "portable";
+  const tag = entry.tags.get(zipPage) ?? entry.tags.get(!zipPage)!;
+  return {
+    version: best,
+    pageUrl: RELEASE_PAGE + encodeURIComponent(tag),
+    publishedAt: entry.publishedAt,
+    asset: findAsset(releases as GithubRelease[], form, best),
+  };
 }
 
 export interface UpdateCheckerOptions {
@@ -105,7 +161,7 @@ export function createUpdateChecker(o: UpdateCheckerOptions = {}) {
   const now = o.now ?? Date.now;
   const current = o.current ?? APP_VERSION;
   const form = o.form ?? currentReleaseForm();
-  let lastGood: { version: string; pageUrl: string; publishedAt: string | null } | null = null;
+  let lastGood: ReturnType<typeof pickLatestRelease> = null;
   let checkedAt = 0;
   let error: string | null = null;
   let inflight: Promise<UpdateInfoDTO> | null = null;
@@ -148,6 +204,11 @@ export function createUpdateChecker(o: UpdateCheckerOptions = {}) {
         inflight = null;
       });
       return inflight;
+    },
+    /** The newer release's file for this form, when there is one GitHub gives a SHA-256 for. */
+    newerAsset(): { version: string; asset: ReleaseAsset } | null {
+      const a = answer();
+      return a.newer && lastGood?.asset ? { version: lastGood.version, asset: lastGood.asset } : null;
     },
     /** The release page to open, only when a newer version is known. */
     updatePageUrl(): string | null {

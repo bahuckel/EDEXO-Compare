@@ -21,10 +21,24 @@ export interface UpdateInfoDTO {
   /** That release's page for this form of the app (single exe or zip), on github.com. */
   pageUrl: string | null;
   publishedAt: string | null;
-  form: "portable" | "zip";
+  form: "portable" | "zip" | "appimage";
   /** When GitHub was last asked (ISO), null before the first try. */
   checkedAt: string | null;
   /** Why the last try failed; the last good `latest` is kept. */
+  error: string | null;
+  /** Downloading the newer release for an install on restart (appUpdater.ts); absent on old servers. */
+  download?: UpdateDownloadDTO;
+}
+
+/** The launcher's updater: the newer release downloaded and checked, waiting for a restart. */
+export interface UpdateDownloadDTO {
+  /** False where this copy cannot replace itself (a source run, the console builds): link only. */
+  supported: boolean;
+  state: "idle" | "downloading" | "ready" | "error";
+  /** The version being downloaded or ready. */
+  version: string | null;
+  received: number;
+  total: number | null;
   error: string | null;
 }
 

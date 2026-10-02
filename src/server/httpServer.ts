@@ -20,6 +20,7 @@ import type {
   EncyclopediaExomasteryPlanetsResponseDTO,
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
+  UpdateDownloadDTO,
   UpdateInfoDTO,
   ImportDumpStatusDTO,
   BacklogMapDTO,
@@ -175,6 +176,11 @@ export interface HttpServerOptions {
    * taken from the caller; the server opens the page it found itself, on github.com, or nothing.
    */
   openUpdatePage?: () => { ok: boolean; error?: string };
+  /**
+   * POST /api/app/update/download — download the newer release for an install on restart
+   * (appUpdater.ts). Answers at once with the status; GET /api/app/update carries the progress.
+   */
+  startUpdateDownload?: () => UpdateDownloadDTO;
   /**
    * POST /api/feeder/import-dump — start a Spansh JSONL export import into the feeder corpus
    * (`{ file, apply }`); GET /api/feeder/import-dump/status — its progress and last report.
@@ -636,6 +642,15 @@ export function createHttpServer(opts: HttpServerOptions): {
       return;
     }
     res.json(await opts.getUpdateInfo(req.query.force === "1"));
+  });
+
+  // This PC only: what it writes is a program for this PC to run.
+  app.post("/api/app/update/download", localOnly, (_req, res) => {
+    if (typeof opts.startUpdateDownload !== "function") {
+      res.status(501).json({ error: "Not available" });
+      return;
+    }
+    res.json(opts.startUpdateDownload());
   });
 
   app.post("/api/app/open-update", (req, res) => {
