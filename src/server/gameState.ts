@@ -3070,9 +3070,7 @@ export class GameStateStore {
   private onDied(): void {
     // Unsold cartographic data is lost with the ship. The physics stays in the archive, and the
     // bodies are not marked sold: scanning them again earns the data back.
-    for (const addr of new Set([...this.explorationScans.values()].map((r) => r.systemAddress))) {
-      this.clearExplorationDataForSystem(addr, false);
-    }
+    this.clearExplorationDataForSystems(new Set([...this.explorationScans.values()].map((r) => r.systemAddress)), false);
     this.organicAnalyseByKey.clear();
     this.pendingOrganicSales = [];
     this.exoOrganicLastFix = null;
@@ -3124,17 +3122,29 @@ export class GameStateStore {
   }
 
 
-  /** Resolve `StarSystem` name from journal to address (visited list or merged exploration rows). */
-  private findSystemAddressByStarSystemName(name: string): number | null {
-    const n = name.trim().toLowerCase();
-    if (!n) return null;
-    for (const [addr, sys] of this.visitedSystems) {
-      if (sys.trim().toLowerCase() === n) return addr;
-    }
-    for (const [, rec] of this.explorationScans) {
-      if (rec.starSystem?.trim().toLowerCase() === n) return rec.systemAddress;
-    }
-    return null;
+  /**
+   * Resolve journal `StarSystem` names to addresses (visited list first, then merged exploration rows),
+   * for one sale. Built once per sale, not walked per sold system: each name used to lowercase every
+   * system the commander ever visited (plan 2.3, Opus 21).
+   */
+  private systemAddressesByName(): (name: string) => number | null {
+    let map: Map<string, number> | null = null;
+    return (name) => {
+      const n = name.trim().toLowerCase();
+      if (!n) return null;
+      if (!map) {
+        map = new Map();
+        for (const [addr, sys] of this.visitedSystems) {
+          const k = sys.trim().toLowerCase();
+          if (!map.has(k)) map.set(k, addr);
+        }
+        for (const rec of this.explorationScans.values()) {
+          const k = rec.starSystem?.trim().toLowerCase();
+          if (k && !map.has(k)) map.set(k, rec.systemAddress);
+        }
+      }
+      return map.get(n) ?? null;
+    };
   }
 
   /**
@@ -3142,49 +3152,59 @@ export class GameStateStore {
    * or after death with `sold = false` — the data is gone either way, but only sold bodies stay out of
    * the unsold total when scanned again.
    */
-  private clearExplorationDataForSystem(systemAddress: number, sold = true): void {
-    const prefix = `${systemAddress}:`;
-    const fresh = this.scanIndexIsFresh();
-    const moved: { kind: "live" | "sold"; rec: ExplorationScanRecord; drop?: boolean }[] = [];
-    // The system's own rows from the index when it is fresh, not a walk over every record.
-    const rows = fresh
-      ? [...this.liveScansInSystem(systemAddress)].map((r) => [bodyKey(r.systemAddress, r.bodyId), r] as const)
-      : [...this.explorationScans.entries()].filter(([k]) => k.startsWith(prefix));
-    for (const [k, rec] of rows) {
-      if (sold) this.soldBodyKeys.add(k);
-      // The value is sold; the physics is not. See soldExplorationScans.
-      this.soldExplorationScans.set(k, rec);
-      this.explorationScans.delete(k);
-      this.explorationScansRevision += 1;
-      moved.push({ kind: "sold", rec }, { kind: "live", rec, drop: true });
+  private clearExplorationDataForSystems(systemAddresses: Iterable<number>, sold = true): void {
+    const systems = new Set(systemAddresses);
+    if (systems.size === 0) return;
+    for (const systemAddress of systems) {
+      const prefix = `${systemAddress}:`;
+      const fresh = this.scanIndexIsFresh();
+      const moved: { kind: "live" | "sold"; rec: ExplorationScanRecord; drop?: boolean }[] = [];
+      // The system's own rows from the index when it is fresh, not a walk over every record.
+      const rows = fresh
+        ? [...this.liveScansInSystem(systemAddress)].map((r) => [bodyKey(r.systemAddress, r.bodyId), r] as const)
+        : [...this.explorationScans.entries()].filter(([k]) => k.startsWith(prefix));
+      for (const [k, rec] of rows) {
+        if (sold) this.soldBodyKeys.add(k);
+        // The value is sold; the physics is not. See soldExplorationScans.
+        this.soldExplorationScans.set(k, rec);
+        this.explorationScans.delete(k);
+        this.explorationScansRevision += 1;
+        moved.push({ kind: "sold", rec }, { kind: "live", rec, drop: true });
+      }
+      this.patchScanIndex(fresh, moved);
+      this.fssAllBodiesCompleteSystems.delete(systemAddress);
+      this.fssAllBodiesFoundCountBySystem.delete(systemAddress);
+      this.fssDiscoveryScanBySystem.delete(systemAddress);
+      const moons = this.orbitParentsInSystem(systemAddress);
+      if (moons.size) {
+        for (const bid of [...moons.keys()]) this.orbitParentPlanetByBody.delete(bodyKey(systemAddress, bid));
+        this.orbitParentRevision += 1;
+        // The index was fresh (just read): drop the system from it rather than rebuild it.
+        const memo = this.orbitParentMemo!;
+        memo.bySystem.delete(systemAddress);
+        memo.key = this.orbitParentKey();
+      }
     }
-    this.patchScanIndex(fresh, moved);
+    /*
+      The body-keyed sets, walked once for the whole sale (plan 2.3, Opus 21). They hold every body the
+      commander ever mapped or resolved, and were walked once per sold system: a 50-system sale walked
+      each of them 50 times.
+    */
+    const inSold = (k: string) => systems.has(Number(k.slice(0, k.indexOf(":"))));
     for (const k of [...this.dssMappedBodyKeys]) {
-      if (k.startsWith(prefix)) {
+      if (inSold(k)) {
         this.dssMappedBodyKeys.delete(k);
         this.archivedDssMappedBodyKeys.add(k);
       }
     }
     for (const k of [...this.dssFirstMapperEligibleByBodyKey.keys()]) {
-      if (k.startsWith(prefix)) this.dssFirstMapperEligibleByBodyKey.delete(k);
+      if (inSold(k)) this.dssFirstMapperEligibleByBodyKey.delete(k);
     }
     for (const k of [...this.dssMappingEfficientByBodyKey.keys()]) {
-      if (k.startsWith(prefix)) this.dssMappingEfficientByBodyKey.delete(k);
+      if (inSold(k)) this.dssMappingEfficientByBodyKey.delete(k);
     }
     for (const k of [...this.fssBodySignalsBodyKeys]) {
-      if (k.startsWith(prefix)) this.fssBodySignalsBodyKeys.delete(k);
-    }
-    this.fssAllBodiesCompleteSystems.delete(systemAddress);
-    this.fssAllBodiesFoundCountBySystem.delete(systemAddress);
-    this.fssDiscoveryScanBySystem.delete(systemAddress);
-    const moons = this.orbitParentsInSystem(systemAddress);
-    if (moons.size) {
-      for (const bid of [...moons.keys()]) this.orbitParentPlanetByBody.delete(bodyKey(systemAddress, bid));
-      this.orbitParentRevision += 1;
-      // The index was fresh (just read): drop the system from it rather than rebuild it.
-      const memo = this.orbitParentMemo!;
-      memo.bySystem.delete(systemAddress);
-      memo.key = this.orbitParentKey();
+      if (inSold(k)) this.fssBodySignalsBodyKeys.delete(k);
     }
   }
 
@@ -3224,17 +3244,18 @@ export class GameStateStore {
     const ts = typeof line.timestamp === "string" ? line.timestamp : "";
 
     const rows: { addr: number; bodies: number }[] = [];
+    const byName = this.systemAddressesByName();
     for (const item of listed) {
       let addr: number | null = null;
       let bodies = 0;
       if (typeof item === "string") {
-        addr = this.findSystemAddressByStarSystemName(item);
+        addr = byName(item);
       } else if (item && typeof item === "object") {
         const o = item as Record<string, unknown>;
         if (typeof o.SystemAddress === "number" && Number.isFinite(o.SystemAddress)) addr = o.SystemAddress;
         else {
           const nm = o.SystemName ?? o.StarSystem ?? o.System;
-          if (typeof nm === "string") addr = this.findSystemAddressByStarSystemName(nm);
+          if (typeof nm === "string") addr = byName(nm);
         }
         const n = Number(o.NumBodies);
         if (Number.isFinite(n) && n > 0) bodies = n;
@@ -3253,42 +3274,48 @@ export class GameStateStore {
   /** `SellExplorationData.Systems` — string names and/or objects with SystemAddress / SystemName. */
   private clearExplorationForSoldSystems(systems: unknown): void {
     if (!Array.isArray(systems)) return;
+    const byName = this.systemAddressesByName();
+    const sold: number[] = [];
     for (const item of systems) {
       if (typeof item === "string") {
-        const addr = this.findSystemAddressByStarSystemName(item);
-        if (addr != null) this.clearExplorationDataForSystem(addr);
+        const addr = byName(item);
+        if (addr != null) sold.push(addr);
         continue;
       }
       if (!item || typeof item !== "object") continue;
       const o = item as Record<string, unknown>;
       if (typeof o.SystemAddress === "number" && Number.isFinite(o.SystemAddress)) {
-        this.clearExplorationDataForSystem(o.SystemAddress);
+        sold.push(o.SystemAddress);
         continue;
       }
       const nm = o.SystemName ?? o.StarSystem ?? o.System;
       if (typeof nm === "string") {
-        const addr = this.findSystemAddressByStarSystemName(nm);
-        if (addr != null) this.clearExplorationDataForSystem(addr);
+        const addr = byName(nm);
+        if (addr != null) sold.push(addr);
       }
     }
+    this.clearExplorationDataForSystems(sold);
   }
 
   /** `MultiSellExplorationData.Discovered` — { SystemName, NumBodies }[] (optional SystemAddress). */
   private clearExplorationForSoldSystemsMulti(discovered: unknown): void {
     if (!Array.isArray(discovered)) return;
+    const byName = this.systemAddressesByName();
+    const sold: number[] = [];
     for (const item of discovered) {
       if (!item || typeof item !== "object") continue;
       const o = item as Record<string, unknown>;
       if (typeof o.SystemAddress === "number" && Number.isFinite(o.SystemAddress)) {
-        this.clearExplorationDataForSystem(o.SystemAddress);
+        sold.push(o.SystemAddress);
         continue;
       }
       const nm = o.SystemName;
       if (typeof nm === "string") {
-        const addr = this.findSystemAddressByStarSystemName(nm);
-        if (addr != null) this.clearExplorationDataForSystem(addr);
+        const addr = byName(nm);
+        if (addr != null) sold.push(addr);
       }
     }
+    this.clearExplorationDataForSystems(sold);
   }
 
   /**
