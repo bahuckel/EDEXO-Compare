@@ -128,7 +128,15 @@ function createHudWindows(deps) {
   */
   let focusAway = false;
   let hideUnfocused = true;
-  const hiddenNow = () => !moving && (hudHidden || gameAway || (hideUnfocused && focusAway));
+  /*
+    Whether Elite runs, as last told (null: not known yet). Unlike `gameAway` the hotkey does not clear
+    it. "Hide when Elite is not in front" only means something while there is an Elite to be in front:
+    with the game closed and the HUD shown by hand, it hid the HUD whenever anything else was clicked
+    (owner, 2026-10-02: "appears-disappears", hud-events.log).
+  */
+  let gameRunning = null;
+  const hiddenNow = () =>
+    !moving && (hudHidden || gameAway || (hideUnfocused && focusAway && gameRunning !== false));
   /*
     A window whose page has nothing to show right now ("Only when relevant", guild tester report,
     2026-09-30): hidden and left out of the stack, so the others close up. The page says so through
@@ -875,7 +883,13 @@ function createHudWindows(deps) {
    */
   function setGameAway(away) {
     const next = away === true;
-    if (gameAway === next) return;
+    // Recorded even when the away state already says so: the hotkey may have cleared that.
+    const wasRunning = gameRunning;
+    gameRunning = !next;
+    if (gameAway === next) {
+      if (wasRunning !== gameRunning) applyAway();
+      return;
+    }
     hudLog(`game ${next ? "not running" : "running"}`);
     gameAway = next;
     applyAway();

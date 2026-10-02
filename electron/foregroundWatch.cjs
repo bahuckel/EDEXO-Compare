@@ -146,6 +146,8 @@ function watchForeground(onName) {
 function isGameOrOwn(name, own) {
   const n = String(name || "").toLowerCase();
   if (!n) return true; // unreadable: do not hide on a guess
+  // "Idle" is process 0: no window in front for a moment, as Windows reports between two windows.
+  if (n === "idle") return true;
   return n === "elitedangerous64" || own.includes(n);
 }
 

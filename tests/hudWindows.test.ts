@@ -330,6 +330,22 @@ describe("hiding and showing (the hotkey)", () => {
     huds.toggleVisibility(true);
   });
 
+  it("with Elite closed and the HUD shown by hand, another window in front does not hide it (owner, 2026-10-02)", async () => {
+    const huds = make();
+    await huds.request("/distance-overlay.html", 404, 330, null, "open");
+    const win = live()[0]!;
+    huds.setGameAway(true);
+    huds.toggleVisibility(false);
+    expect(win.visible).toBe(true);
+    huds.setFocusAway(true);
+    expect(win.visible).toBe(true);
+    // The game starts: now another window in front does hide it.
+    huds.setGameAway(false);
+    huds.setFocusAway(false);
+    huds.setFocusAway(true);
+    expect(win.visible).toBe(false);
+  });
+
   it("shows on the hotkey while the game is away (and forgets the away state)", async () => {
     const huds = make();
     await huds.request("/distance-overlay.html", 404, 330, null, "open");
