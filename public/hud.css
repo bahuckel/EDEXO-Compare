@@ -511,16 +511,21 @@ body {
 .hud-list li.has-done::before {
   background: var(--ok);
 }
+/* No scroll: the overlay windows are click-through, so a scrolled list was a cut one. The sections
+   show a few rows and a "+N more" line (core.js listRowLimit); the window grows to fit. */
 .hud-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  max-height: 14.5rem;
-  overflow-y: auto;
-  scrollbar-width: none;
 }
-.hud-list::-webkit-scrollbar {
-  display: none;
+.hud-list li.more {
+  justify-content: center;
+  color: var(--hud);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+}
+.hud-list li.more::before {
+  content: none;
 }
 .hud-list li {
   display: flex;

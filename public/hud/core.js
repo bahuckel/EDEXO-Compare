@@ -8,6 +8,22 @@ export function api(p) {
   if (proto === "http:" || proto === "https:") return p;
   return "http://127.0.0.1:" + lastPort + p;
 }
+/*
+  Rows a list shows before a "+N more" line (plan 2.1, Fable C2). The overlay windows are click-through
+  — the mouse goes to the game — so a list that scrolled was simply cut, with nothing to say so. The
+  phone HUD can scroll and shows them all.
+*/
+export var HUD_LIST_ROWS = 9;
+export function listRowLimit(rows) {
+  return document.body && document.body.classList.contains("phone") ? Infinity : rows;
+}
+export function moreRow(hidden) {
+  var li = document.createElement("li");
+  li.className = "more";
+  li.textContent = "+" + hidden + " more — all of them in the app";
+  return li;
+}
+
 /** Safe in text and in either kind of quoted attribute: "Barnard's Star" broke a title='…'. */
 export function esc(t) {
   return String(t == null ? "" : t)

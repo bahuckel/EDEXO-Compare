@@ -73,6 +73,17 @@ describe("HUD candidates", () => {
     expect(rows.some((t) => t?.includes("3/3"))).toBe(true);
   });
 
+  it("shows the first nine rows and says how many more the app has (the window cannot scroll)", () => {
+    const many = ["Aleoida", "Bacterium", "Cactoida", "Clypeus", "Concha", "Electricae", "Fonticulua", "Frutexa", "Fungoida", "Osseus", "Stratum", "Tubus"];
+    HUD.render({
+      exoOverlayFocusBodyKey: "1:2",
+      bodies: [body("1:2", "A 2", many.map((g) => match(g, "x", 1_000_000)))],
+    });
+    const rows = [...document.querySelectorAll(".hud-list li")];
+    expect(rows).toHaveLength(10);
+    expect(rows.at(-1)?.textContent).toBe("+3 more — all of them in the app");
+  });
+
   it("capitalises the species and shows the live run's progress only for the active species", () => {
     HUD.render({
       exoOverlayFocusBodyKey: "1:2",

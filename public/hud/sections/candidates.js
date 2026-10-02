@@ -1,4 +1,4 @@
-import { cap, head, norm, q } from "../core.js";
+import { HUD_LIST_ROWS, cap, head, listRowLimit, moreRow, norm, q } from "../core.js";
 import { pref } from "../theme.js";
 
 /* ============================================================== Exo candidates ============== */
@@ -195,7 +195,9 @@ export var candidates = {
       plain("No candidate species");
       return null;
     }
-    rows.forEach(function (r) {
+    var limit = listRowLimit(HUD_LIST_ROWS);
+    var hidden = Math.max(0, rows.length - limit);
+    rows.slice(0, limit).forEach(function (r) {
       var m = r.m;
       var e = m.entry || {};
       var genus = cap((e.genus || "").trim() || "—");
@@ -249,6 +251,7 @@ export var candidates = {
       li.title = (genus + " " + sp).trim();
       ul.appendChild(li);
     });
+    if (hidden) ul.appendChild(moreRow(hidden));
     return null;
   },
 };

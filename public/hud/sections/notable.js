@@ -1,4 +1,4 @@
-import { esc, head, q } from "../core.js";
+import { esc, head, listRowLimit, q } from "../core.js";
 import { unreadCount } from "./notices.js";
 
 /* ============================================================== Notable ===================== */
@@ -32,8 +32,12 @@ export var notable = {
     q(root, "status").innerHTML =
       (list.length ? mapped + " / " + list.length + " mapped" : "None here") +
       (unread ? ' <span class="hud-mail" title="Unread notices in the app">✉ ' + unread + "</span>" : "");
+    // One row fewer than the candidates: a notable list sits under them in the merged panel.
+    var limit = listRowLimit(8);
+    var hidden = Math.max(0, list.length - limit);
     q(root, "list").innerHTML = list.length
       ? list
+          .slice(0, limit)
           .map(function (n) {
             var rec = records[n.bodyId] || [];
             return (
@@ -49,7 +53,7 @@ export var notable = {
               "</li>"
             );
           })
-          .join("")
+          .join("") + (hidden ? '<li class="more">+' + hidden + " more — all of them in the app</li>" : "")
       : '<li class="plain">No notable planets in this system.</li>';
     return list.length && mapped === list.length ? "ok" : null;
   },
