@@ -66,6 +66,15 @@ export function registerSpeciesFilesRoutes(
         res.status(403).end();
         return;
       }
+      if (!derivativeDir) {
+        // A packaged build ships the 1024 px card in place of the original (review F-4.1c).
+        const card = path.join(photosDir, "_cards", `${file.replace(/\.[^.]+$/, "")}.webp`);
+        try {
+          await fsp.stat(abs);
+        } catch {
+          if (assertInsideDir(photosDir, card)) abs = card;
+        }
+      }
       try {
         const st = await fsp.stat(abs);
         if (!st.isFile()) {

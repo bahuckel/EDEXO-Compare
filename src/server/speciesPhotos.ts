@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { SpeciesEntry } from "../shared/types.js";
 import { findGenusPhotosFolder } from "./speciesTreeLoader.js";
@@ -309,6 +309,20 @@ function withCredits(
  */
 const resolvedPhotoCache = new Map<string, ResolvedPhoto>();
 
+/**
+ * The originals a packaged build left out because their 1024 px card stands in for them
+ * (`scripts/packagedData.mjs`, review F-4.1c). Listed under their own names, so the credits and the
+ * variant names still match; the photo route serves the card for them.
+ */
+function replacedOriginals(photosDir: string): string[] {
+  try {
+    const v = JSON.parse(readFileSync(join(photosDir, "_cards", "_originals.json"), "utf8")) as unknown;
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && /\.(png|jpe?g)$/i.test(x)) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function clearSpeciesPhotoCache(): void {
   resolvedPhotoCache.clear();
 }
@@ -347,6 +361,7 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
   } catch {
     imageFiles = [];
   }
+  imageFiles = [...imageFiles, ...replacedOriginals(photosDir).filter((n) => !imageFiles.includes(n))];
 
   /*
    * The variants, found before anything else because every return path below wants them.
@@ -414,7 +429,8 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
   const cands = candidateFilenames(entry);
   for (const name of cands) {
     const abs = join(photosDir, basename(name));
-    if (!existsSync(abs)) continue;
+    // A replaced original is listed but not on disk (its card serves it).
+    if (!existsSync(abs) && !imageFiles.some((f) => f.toLowerCase() === basename(name).toLowerCase())) continue;
     /*
      * Use the name the directory actually has, not the candidate that matched it.
      *
