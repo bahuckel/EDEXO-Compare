@@ -133,6 +133,7 @@ import { commanderSectorsDto } from "./galaxySectorTiers.js";
 import { runEdsmCatchUp, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 import { createUpdateChecker, currentReleaseForm } from "./updateCheck.js";
 import { createAppUpdater, resolveUpdateDir } from "./appUpdater.js";
+import { createWhatsNew } from "./whatsNew.js";
 import { fetchRemoteSystem, readRemoteSystemsCache, writeRemoteSystemToCache } from "./remoteSystems.js";
 import { parseHost, parsePort } from "./cliOptions.js";
 import type { CliOptions } from "./cliOptions.js";
@@ -241,6 +242,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const projectRoot = getProjectRoot();
   const updateChecker = createUpdateChecker();
   const appUpdater = createAppUpdater({ newerAsset: () => updateChecker.newerAsset(), form: currentReleaseForm() });
+  const whatsNew = createWhatsNew({
+    check: () => updateChecker.check(false),
+    notesBetween: (from, to) => updateChecker.notesBetween(from, to),
+    lastError: () => updateChecker.lastError(),
+  });
 
   let journalDir = resolveInitialJournalDir(projectRoot);
   let journalPath: string | null = null;
@@ -1801,6 +1807,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       void appUpdater.start();
       return appUpdater.status();
     },
+    getWhatsNew: (any) => whatsNew.get(any),
+    markWhatsNewSeen: () => whatsNew.seen(),
     openUpdatePage: () => {
       const url = updateChecker.updatePageUrl();
       if (!url) return { ok: false, error: "No newer version known." };

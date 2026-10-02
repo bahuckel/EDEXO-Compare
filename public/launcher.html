@@ -1679,6 +1679,65 @@
       .wizard-steps .st.bad {
         color: var(--ed-bad);
       }
+      /* "What's new" after an update: the release notes, cut from GitHub's (server/whatsNew.ts). */
+      .modal.wide {
+        max-width: 640px;
+      }
+      .whats-new-body {
+        max-height: min(60vh, 520px);
+        overflow: auto;
+        margin: 4px 0 12px;
+        padding-right: 6px;
+        font-size: 0.8rem;
+        line-height: 1.45;
+        color: var(--hud-text);
+        overflow-wrap: anywhere;
+      }
+      .whats-new-body .wn-version {
+        margin: 14px 0 4px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: var(--hud-hi);
+      }
+      .whats-new-body .wn-version:first-child {
+        margin-top: 0;
+      }
+      .whats-new-body h4 {
+        margin: 12px 0 4px;
+        font-size: 0.7rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--hud);
+      }
+      .whats-new-body p {
+        margin: 6px 0;
+      }
+      .whats-new-body ol,
+      .whats-new-body ul {
+        margin: 4px 0;
+        padding-left: 1.4rem;
+      }
+      .whats-new-body ul {
+        list-style: none;
+        padding-left: 0.9rem;
+      }
+      .whats-new-body li {
+        margin: 3px 0;
+      }
+      .whats-new-body code {
+        font-family: var(--mono, ui-monospace, monospace);
+        font-size: 0.92em;
+        color: var(--hud-hi);
+      }
+      .whats-new-body a {
+        color: var(--hud);
+      }
+      .version-line.newer .version-btn.quiet {
+        color: var(--hud);
+        background: transparent;
+        border-color: var(--hud-dim);
+      }
 
       /* ---- motion ------------------------------------------------------------------------------ */
       @keyframes sweep {
@@ -1743,6 +1802,7 @@
             <span id="versionText">Version —</span>
             <button type="button" class="version-btn" id="btnCheckUpdate">Check for updates</button>
             <button type="button" class="version-btn" id="btnUpdatePage" hidden>Release page</button>
+            <button type="button" class="version-btn quiet" id="btnWhatsNew" hidden>What's new</button>
           </div>
         </div>
       </header>
@@ -2404,6 +2464,20 @@
           <div class="row" style="margin-top: 10px">
             <button type="button" class="btn secondary" id="linuxSetupRecheck"><span class="btn-lines"><strong>Check again</strong></span></button>
             <button type="button" class="btn" id="linuxSetupClose"><span class="btn-lines"><strong>Close</strong></span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What's new (combined plan, Phase 5): once after an update, and from the version line. -->
+    <div class="modal-bg" id="whatsNewModal">
+      <div class="modal wide">
+        <div class="modal-in">
+          <h3 id="whatsNewTitle">What's new</h3>
+          <div class="whats-new-body" id="whatsNewBody"></div>
+          <div class="row">
+            <button type="button" class="btn secondary" id="whatsNewPage"><span class="btn-lines"><strong>Release page</strong></span></button>
+            <button type="button" class="btn" id="whatsNewClose"><span class="btn-lines"><strong>Got it</strong></span></button>
           </div>
         </div>
       </div>
@@ -3184,6 +3258,167 @@
         }
 
         checkForUpdates(false);
+
+        /*
+          What's new (combined plan, Phase 5): after an update the notes of every release since the
+          version last seen, once; closing them marks this version seen (server/whatsNew.ts). The notes
+          are GitHub's release notes, drawn here from a small part of Markdown — headings, lists, bold,
+          code and links — into elements, never as HTML.
+        */
+        var whatsNewModal = document.getElementById("whatsNewModal");
+        var whatsNewBody = document.getElementById("whatsNewBody");
+        var whatsNewTitle = document.getElementById("whatsNewTitle");
+        var btnWhatsNew = document.getElementById("btnWhatsNew");
+        var whatsNewPending = false;
+        var whatsNewPageUrl = "https://github.com/bahuckel/EDEXO-Compare/releases";
+
+        function notesInline(parent, text) {
+          var re = /!\[[^\]]*\]\([^)]*\)|\[([^\]]+)\]\((https:\/\/[^)\s]+)\)|\*\*([^*]+)\*\*|`([^`]+)`/g;
+          var last = 0;
+          var m;
+          while ((m = re.exec(text))) {
+            if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+            last = re.lastIndex;
+            var el = null;
+            if (m[2]) {
+              el = document.createElement("a");
+              el.href = m[2];
+              el.target = "_blank";
+              el.rel = "noopener";
+              el.textContent = m[1];
+            } else if (m[3]) {
+              el = document.createElement("strong");
+              el.textContent = m[3];
+            } else if (m[4]) {
+              el = document.createElement("code");
+              el.textContent = m[4];
+            }
+            if (el) parent.appendChild(el);
+          }
+          if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+        }
+
+        function renderNotes(md, into) {
+          var lists = [];
+          var para = null;
+          var lastLi = null;
+          function closeLists() {
+            lists = [];
+            lastLi = null;
+          }
+          md.replace(/\r\n/g, "\n").split("\n").forEach(function (line) {
+            if (!line.trim()) {
+              para = null;
+              return;
+            }
+            var h = /^#{2,4}\s+(.*)$/.exec(line);
+            if (h) {
+              para = null;
+              closeLists();
+              var hd = document.createElement("h4");
+              notesInline(hd, h[1].replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/\s+[—-]\s*$/, ""));
+              into.appendChild(hd);
+              return;
+            }
+            var li = /^(\s*)(\d+\.|[-*])\s+(.*)$/.exec(line);
+            if (li) {
+              para = null;
+              var indent = li[1].length;
+              var ordered = /\d/.test(li[2]);
+              while (lists.length && lists[lists.length - 1].indent > indent) lists.pop();
+              var top = lists[lists.length - 1];
+              if (!top || top.indent < indent) {
+                var list = document.createElement(ordered ? "ol" : "ul");
+                if (top && lastLi) lastLi.appendChild(list);
+                else into.appendChild(list);
+                lists.push({ indent: indent, el: list });
+                top = lists[lists.length - 1];
+              }
+              lastLi = document.createElement("li");
+              notesInline(lastLi, li[3]);
+              top.el.appendChild(lastLi);
+              return;
+            }
+            if (lastLi && /^\s/.test(line)) {
+              notesInline(lastLi, " " + line.trim());
+              return;
+            }
+            closeLists();
+            if (!para) {
+              para = document.createElement("p");
+              into.appendChild(para);
+            } else {
+              para.appendChild(document.createTextNode(" "));
+            }
+            notesInline(para, line.trim());
+          });
+        }
+
+        function showWhatsNew(info) {
+          if (!whatsNewModal || !whatsNewBody) return;
+          whatsNewPending = Boolean(info.pending);
+          whatsNewBody.innerHTML = "";
+          var rel = info.releases || [];
+          whatsNewTitle.textContent = (info.pending ? "Updated to v" : "What's new in v") + info.current;
+          whatsNewPageUrl = rel.length ? rel[0].pageUrl : "https://github.com/bahuckel/EDEXO-Compare/releases";
+          if (!rel.length) {
+            var p = document.createElement("p");
+            p.textContent =
+              "The notes for this version could not be read from GitHub" +
+              (info.error ? " (" + info.error + ")" : "") +
+              ". They are on the release page.";
+            whatsNewBody.appendChild(p);
+          }
+          rel.forEach(function (r) {
+            var v = document.createElement("div");
+            v.className = "wn-version";
+            v.textContent = "v" + r.version + (r.publishedAt ? " · " + String(r.publishedAt).slice(0, 10) : "");
+            whatsNewBody.appendChild(v);
+            renderNotes(r.notes, whatsNewBody);
+          });
+          whatsNewBody.scrollTop = 0;
+          whatsNewModal.classList.add("on");
+        }
+
+        function closeWhatsNew() {
+          if (whatsNewModal) whatsNewModal.classList.remove("on");
+          if (!whatsNewPending) return;
+          whatsNewPending = false;
+          fetch(apiUrl("/api/app/whats-new/seen"), { method: "POST" }).catch(function () {});
+        }
+
+        function fetchWhatsNew(any) {
+          return fetch(apiUrl("/api/app/whats-new" + (any ? "?any=1" : "")), { cache: "no-store" }).then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          });
+        }
+
+        /* At start: once the server answers, and after any other card (first run, Linux setup) is closed. */
+        function loadWhatsNew(tries) {
+          fetchWhatsNew(false)
+            .then(function (info) {
+              if (btnWhatsNew) btnWhatsNew.hidden = false;
+              if (!info.pending) return;
+              (function waitForOtherCards() {
+                if (document.querySelector(".modal-bg.on")) setTimeout(waitForOtherCards, 1500);
+                else showWhatsNew(info);
+              })();
+            })
+            .catch(function () {
+              if (tries > 0) setTimeout(function () { loadWhatsNew(tries - 1); }, 3000);
+            });
+        }
+        loadWhatsNew(20);
+
+        if (btnWhatsNew) btnWhatsNew.addEventListener("click", function () {
+          fetchWhatsNew(true).then(showWhatsNew).catch(function () {});
+        });
+        var whatsNewClose = document.getElementById("whatsNewClose");
+        var whatsNewPage = document.getElementById("whatsNewPage");
+        if (whatsNewClose) whatsNewClose.addEventListener("click", closeWhatsNew);
+        if (whatsNewPage) whatsNewPage.addEventListener("click", function () { window.open(whatsNewPageUrl, "_blank", "noopener"); });
+        if (whatsNewModal) whatsNewModal.addEventListener("click", function (e) { if (e.target === whatsNewModal) closeWhatsNew(); });
 
         async function poll() {
           try {

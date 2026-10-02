@@ -42,6 +42,18 @@ export interface UpdateDownloadDTO {
   error: string | null;
 }
 
+/** GET /api/app/whats-new — release notes since the version last seen (server/whatsNew.ts). */
+export interface WhatsNewDTO {
+  /** True when this start has notes the commander has not closed yet. */
+  pending: boolean;
+  current: string;
+  /** Notes are for the releases after this version; null for this version's only. */
+  from: string | null;
+  /** Newest first; empty when GitHub could not be asked (`error`) or lists none. */
+  releases: { version: string; publishedAt: string | null; pageUrl: string; notes: string }[];
+  error: string | null;
+}
+
 export interface FeederStatusDTO {
   /** False when there is no corpus on this machine; the panel hides itself. */
   available: boolean;

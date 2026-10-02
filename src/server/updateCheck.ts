@@ -83,6 +83,7 @@ interface GithubRelease {
   prerelease?: unknown;
   published_at?: unknown;
   assets?: unknown;
+  body?: unknown;
 }
 
 /**
@@ -145,6 +146,84 @@ export function pickLatestRelease(
   };
 }
 
+/** Where release.mjs marks the part of a release's notes that is about the version itself. */
+const NOTES_START = "<!-- whats-new -->";
+const NOTES_END = "<!-- /whats-new -->";
+
+/**
+ * The part of a release's notes the launcher shows after an update: the summary line and the
+ * sections, without the download instructions above them and the data / licence text below, which
+ * are the same in every release. Releases from 1.2.11 on mark that part; 1.2.10 is cut by its
+ * headings. The Linux section is left out except for the AppImage.
+ */
+export function releaseNotesSection(body: string, form: ReleaseForm): string {
+  const text = body.replace(/\r\n/g, "\n");
+  let part: string;
+  const a = text.indexOf(NOTES_START);
+  const b = text.indexOf(NOTES_END);
+  if (a >= 0 && b > a) {
+    part = text.slice(a + NOTES_START.length, b);
+  } else {
+    const end = text.indexOf("\n## Where your data lives");
+    const head = end >= 0 ? text.slice(0, end) : text;
+    const paras = head.split(/\n{2,}/);
+    const firstHeading = paras.findIndex((p) => p.startsWith("## "));
+    part = firstHeading > 0 ? paras.slice(firstHeading - 1).join("\n\n") : head;
+  }
+  if (form !== "appimage") part = part.replace(/(^|\n)## Linux[^\n]*\n[\s\S]*?(?=\n## |$)/, "$1");
+  return part.trim();
+}
+
+/** One release's notes for the launcher's "What's new". */
+export interface ReleaseNotes {
+  version: string;
+  publishedAt: string | null;
+  pageUrl: string;
+  notes: string;
+}
+
+/**
+ * The notes of every release after `from` up to `to`, newest first; with no `from` (an install that
+ * never recorded one) only `to` itself. Each version's notes come from either of its two releases —
+ * the middle is the same — preferring this form's own page for the link.
+ */
+export function releaseNotesBetween(
+  releases: unknown,
+  from: string | null,
+  to: string,
+  form: ReleaseForm,
+  max = 5,
+): ReleaseNotes[] {
+  if (!Array.isArray(releases)) return [];
+  const byVersion = new Map<string, ReleaseNotes & { own: boolean }>();
+  for (const r of releases as GithubRelease[]) {
+    if (!r || r.draft === true || r.prerelease === true || typeof r.tag_name !== "string") continue;
+    const p = parseReleaseTag(r.tag_name);
+    if (!p || typeof r.body !== "string") continue;
+    const inRange =
+      from === null
+        ? compareVersions(p.version, to) === 0
+        : compareVersions(p.version, from) > 0 && compareVersions(p.version, to) <= 0;
+    if (!inRange) continue;
+    const own = p.zip === (form !== "portable");
+    const prev = byVersion.get(p.version);
+    if (prev && (prev.own || !own)) continue;
+    const notes = releaseNotesSection(r.body, form);
+    if (!notes) continue;
+    byVersion.set(p.version, {
+      version: p.version,
+      publishedAt: typeof r.published_at === "string" ? r.published_at : null,
+      pageUrl: RELEASE_PAGE + encodeURIComponent(r.tag_name),
+      notes,
+      own,
+    });
+  }
+  return [...byVersion.values()]
+    .sort((x, y) => compareVersions(y.version, x.version))
+    .slice(0, max)
+    .map(({ own: _own, ...n }) => n);
+}
+
 export interface UpdateCheckerOptions {
   fetchImpl?: typeof fetch;
   now?: () => number;
@@ -162,6 +241,8 @@ export function createUpdateChecker(o: UpdateCheckerOptions = {}) {
   const current = o.current ?? APP_VERSION;
   const form = o.form ?? currentReleaseForm();
   let lastGood: ReturnType<typeof pickLatestRelease> = null;
+  /** The release list of the last good answer, for the notes. */
+  let lastList: unknown = null;
   let checkedAt = 0;
   let error: string | null = null;
   let inflight: Promise<UpdateInfoDTO> | null = null;
@@ -184,9 +265,11 @@ export function createUpdateChecker(o: UpdateCheckerOptions = {}) {
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       if (!res.ok) throw new Error(`GitHub answered HTTP ${res.status}`);
-      const picked = pickLatestRelease(await res.json(), form);
+      const list: unknown = await res.json();
+      const picked = pickLatestRelease(list, form);
       if (!picked) throw new Error("No release found on GitHub");
       lastGood = picked;
+      lastList = list;
       error = null;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -209,6 +292,14 @@ export function createUpdateChecker(o: UpdateCheckerOptions = {}) {
     newerAsset(): { version: string; asset: ReleaseAsset } | null {
       const a = answer();
       return a.newer && lastGood?.asset ? { version: lastGood.version, asset: lastGood.asset } : null;
+    },
+    /** Release notes after `from` up to `to` from the last good answer (`releaseNotesBetween`). */
+    notesBetween(from: string | null, to: string): ReleaseNotes[] {
+      return releaseNotesBetween(lastList, from, to, form);
+    },
+    /** Why the last ask failed, or null. */
+    lastError(): string | null {
+      return error;
     },
     /** The release page to open, only when a newer version is known. */
     updatePageUrl(): string | null {

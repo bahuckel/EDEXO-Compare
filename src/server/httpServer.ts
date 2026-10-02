@@ -21,6 +21,7 @@ import type {
   EncyclopediaSpeciesRowDTO,
   FeederStatusDTO,
   UpdateDownloadDTO,
+  WhatsNewDTO,
   UpdateInfoDTO,
   ImportDumpStatusDTO,
   BacklogMapDTO,
@@ -181,6 +182,12 @@ export interface HttpServerOptions {
    * (appUpdater.ts). Answers at once with the status; GET /api/app/update carries the progress.
    */
   startUpdateDownload?: () => UpdateDownloadDTO;
+  /**
+   * GET /api/app/whats-new (`?any=1`: this version's notes even when seen) and POST
+   * /api/app/whats-new/seen — the launcher's notes after an update (whatsNew.ts).
+   */
+  getWhatsNew?: (any: boolean) => Promise<WhatsNewDTO>;
+  markWhatsNewSeen?: () => void;
   /**
    * POST /api/feeder/import-dump — start a Spansh JSONL export import into the feeder corpus
    * (`{ file, apply }`); GET /api/feeder/import-dump/status — its progress and last report.
@@ -651,6 +658,27 @@ export function createHttpServer(opts: HttpServerOptions): {
       return;
     }
     res.json(opts.startUpdateDownload());
+  });
+
+  app.get("/api/app/whats-new", async (req, res) => {
+    if (typeof opts.getWhatsNew !== "function") {
+      res.status(501).json({ error: "Not available" });
+      return;
+    }
+    res.json(await opts.getWhatsNew(req.query.any === "1"));
+  });
+
+  app.post("/api/app/whats-new/seen", localOnly, (_req, res) => {
+    if (typeof opts.markWhatsNewSeen !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    try {
+      opts.markWhatsNewSeen();
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
   });
 
   app.post("/api/app/open-update", (req, res) => {

@@ -93,8 +93,18 @@ export function isExistingInstall(): boolean {
   );
 }
 
+let existingAtStart: boolean | null = null;
+/**
+ * `isExistingInstall` as it was when this process first asked: the first start writes the prefs
+ * file (LAN access), after which every install would look existing.
+ */
+export function wasExistingInstallAtStart(): boolean {
+  if (existingAtStart === null) existingAtStart = isExistingInstall();
+  return existingAtStart;
+}
+
 /** LAN access for this start: the saved choice, else on for an existing install and off for a new one. */
-export function resolveLanAccess(existing: () => boolean = isExistingInstall): boolean {
+export function resolveLanAccess(existing: () => boolean = wasExistingInstallAtStart): boolean {
   const saved = readLanAccess();
   if (saved !== null) return saved;
   const on = existing();
@@ -104,4 +114,20 @@ export function resolveLanAccess(existing: () => boolean = isExistingInstall): b
     /* decided again next start, the same way */
   }
   return on;
+}
+
+/*
+  "What's new" after an update (combined plan, Phase 5): the version whose notes the commander last
+  closed. The launcher shows the notes of every release after it, once (whatsNew.ts).
+*/
+
+/** The version last marked seen, or null when none was ever saved. */
+export function readLastSeenVersion(): string | null {
+  const prefs = readPrefsFile();
+  const v = prefs && prefs !== "unreadable" ? prefs.lastSeenVersion : null;
+  return typeof v === "string" && /^\d+\.\d+\.\d+$/.test(v) ? v : null;
+}
+
+export function writeLastSeenVersion(version: string): void {
+  writeLauncherPref("lastSeenVersion", version);
 }
