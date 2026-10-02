@@ -260,7 +260,7 @@ export function summariseSpanshRouteFile(file: SpanshRouteFile): SpanshRouteSumm
     perSpecies.set(r.landmarkSubtype, (perSpecies.get(r.landmarkSubtype) ?? 0) + 1);
     genera.add(genusFromLandmark(r.landmarkSubtype));
     systemNames.add(r.systemName);
-    bodyKeys.add(`${r.systemName} ${r.bodyName}`);
+    bodyKeys.add(`${r.systemName}\0${r.bodyName}`);
   }
   const topSpecies = [...perSpecies.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
