@@ -2991,11 +2991,14 @@
         const btnUpdatePage = document.getElementById("btnUpdatePage");
         var updateInfo = null;
         var updatePoll = null;
+        /* Set by the button: install as soon as the download is checked (owner: "Download & Install"). */
+        var installWhenReady = false;
         /*
-          The updater (owner, 2026-10-02): where this copy can replace itself (download.supported), the
-          button downloads the newer release, checked against GitHub's SHA-256, then offers "Restart to
-          update" — the swap happens as the app closes. The release page stays one click away. Elsewhere
-          (a source run, the console builds) it opens the page as before.
+          The updater (owner, 2026-10-02): where this copy can replace itself (download.supported), one
+          button, "Download & Install", downloads the newer release, checks it against GitHub's SHA-256,
+          and then installs it: the app closes, the new copy goes in, and it starts. Only on that press,
+          never by itself. The release page stays one click away. Elsewhere (a source run, the console
+          builds) the button opens the page as before.
         */
         function canSelfUpdate(info) {
           return Boolean(
@@ -3024,16 +3027,17 @@
               versionText.textContent = "Installed " + cur + " · downloading v" + info.latest + (pct != null ? " · " + pct + " %" : "…");
               btnCheckUpdate.textContent = "Downloading…";
               btnCheckUpdate.disabled = true;
-            } else if (dl.state === "ready") {
-              versionText.textContent = "Installed " + cur + " · v" + info.latest + " downloaded and checked";
-              btnCheckUpdate.textContent = "Restart to update";
-              btnCheckUpdate.title = "Closes the app, puts v" + info.latest + " in place of this copy, and starts it. Your settings and data are kept.";
+            } else if (dl.state === "ready" && installWhenReady) {
+              versionText.textContent = "Installed " + cur + " · installing v" + info.latest + "…";
+              btnCheckUpdate.textContent = "Installing…";
+              btnCheckUpdate.disabled = true;
             } else {
               versionText.textContent =
                 "Installed " + cur + " · v" + info.latest + " available" + (dl.state === "error" ? " · download failed" : "");
               if (dl.state === "error" && dl.error) versionText.title = dl.error;
-              btnCheckUpdate.textContent = dl.state === "error" ? "Try again" : "Download v" + info.latest;
-              btnCheckUpdate.title = "Downloads v" + info.latest + " from GitHub and checks it. It is installed when you restart.";
+              btnCheckUpdate.textContent = dl.state === "error" ? "Try again" : "Download & Install v" + info.latest;
+              btnCheckUpdate.title =
+                "Downloads v" + info.latest + " from GitHub, checks it, then closes the app, puts it in place of this copy and starts it. Your settings and data are kept.";
             }
             return;
           }
@@ -3089,6 +3093,8 @@
                 if (!(info.download && info.download.state === "downloading")) {
                   clearInterval(updatePoll);
                   updatePoll = null;
+                  if (info.download && info.download.state === "ready" && installWhenReady) installNow();
+                  else installWhenReady = false;
                 }
               })
               .catch(function () {});
@@ -3105,16 +3111,10 @@
             return;
           }
           if (canSelfUpdate(updateInfo)) {
+            installWhenReady = true;
+            // Downloaded and checked already (an earlier press that was called off): install now.
             if (updateInfo.download.state === "ready") {
-              btnCheckUpdate.disabled = true;
-              btnCheckUpdate.textContent = "Restarting…";
-              window.edexoElectron.installUpdate().then(function (r) {
-                if (r && r.ok) return;
-                btnCheckUpdate.disabled = false;
-                versionText.textContent = (r && r.error) || "Could not start the update.";
-                // A quit called off ("Keep the app open" during a backup) also lands here later; refresh.
-                checkForUpdates(false);
-              });
+              installNow();
               return;
             }
             fetch(apiUrl("/api/app/update/download"), { method: "POST" })
@@ -3132,6 +3132,24 @@
           }
           openUpdatePage();
         });
+
+        function installNow() {
+          renderUpdateInfo(updateInfo, false);
+          window.edexoElectron.installUpdate().then(function (r) {
+            if (r && r.ok) {
+              // Still here after a while: the quit was called off ("Keep the app open" while a backup
+              // was written). Back to the button.
+              setTimeout(function () {
+                installWhenReady = false;
+                checkForUpdates(false);
+              }, 15000);
+              return;
+            }
+            installWhenReady = false;
+            renderUpdateInfo(updateInfo, false);
+            versionText.textContent = (r && r.error) || "Could not start the update.";
+          });
+        }
 
         function openUpdatePage() {
           fetch(apiUrl("/api/app/open-update"), { method: "POST" })

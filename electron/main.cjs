@@ -429,7 +429,7 @@ function registerFootOverlayIpc(iconForChild) {
     return { path: r.canceled || !r.filePaths[0] ? null : r.filePaths[0] };
   });
   /*
-    "Restart to update": the server has the newer release downloaded and checked; it goes in on the
+    "Download & Install": the server has the newer release downloaded and checked; it goes in on the
     way out (will-quit), and the new copy starts. With a backup running, quitting asks first, and
     "Keep the app open" calls this off like a plain restart.
   */
@@ -866,7 +866,7 @@ app.on("window-all-closed", () => {
 let exitAllowed = false;
 /** "Restart now" asked for a relaunch; done in will-quit, once the quit is really going ahead. */
 let relaunchOnQuit = false;
-/** "Restart to update" asked for this staged update to go in; installed in will-quit. */
+/** "Download & Install" asked for this staged update to go in; installed in will-quit. */
 let installUpdateOnQuit = null;
 /** This copy's self-update form (updater.cjs), or null where it cannot replace itself. */
 let selfUpdateFormValue = null;

@@ -4,7 +4,7 @@
  * download and replace it, integrate an updater, that requires an app restart to take effect").
  *
  * The server downloads the newer release and checks it against GitHub's SHA-256
- * (`src/server/appUpdater.ts`); this puts it in place when the commander presses "Restart to update".
+ * (`src/server/appUpdater.ts`); this puts it in place when the commander presses "Download & Install".
  * A running program cannot replace itself on Windows, so on the way out a detached PowerShell
  * (`update-apply.ps1`) waits for this process and the portable launcher stub to end, swaps the file or
  * the folder, and starts the new copy — or the old one again if anything failed. An AppImage can be
