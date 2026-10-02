@@ -31,7 +31,7 @@ afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
 /** Stand-in for the app: a process that is still running when the swap starts, and then ends. */
 function fakeApp(ms: number) {
-  return spawn(process.execPath, ["-e", `setTimeout(() => {}, ${ms})`], { stdio: "ignore" });
+  return spawn(process.execPath, ["-e", `setTimeout(() => {}, ${ms})`], { stdio: "ignore", windowsHide: true });
 }
 async function waitFor(check: () => boolean, ms = 30_000) {
   const end = Date.now() + ms;
@@ -47,7 +47,7 @@ function zipFolder(src: string, zip: string) {
     "-NoProfile",
     "-Command",
     `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('${src}', '${zip}', 'Optimal', $true)`,
-  ]);
+  ], { windowsHide: true });
   if (r.status !== 0) throw new Error(`zipping failed: ${String(r.stderr)}`);
 }
 const logOf = () => (existsSync(path.join(dir, "update.log")) ? readFileSync(path.join(dir, "update.log"), "utf8") : "");
@@ -63,7 +63,12 @@ describe("which copies can update themselves", () => {
   });
 });
 
-describe.runIf(win)("the swap on Windows", () => {
+/*
+  The real swap starts a console PowerShell the way the app does on quit, and Windows shows its window
+  for a moment and moves the focus: run in every test pass, that flashed windows over whatever the
+  owner was doing (2026-10-02). On request only: EDEXO_SWAP_TESTS=1 npx vitest run tests/updateApply.test.ts
+*/
+describe.runIf(win && process.env.EDEXO_SWAP_TESTS === "1")("the swap on Windows", () => {
   it("portable: waits for the app, replaces the exe, keeps the old one as .old, and the next start removes it", async () => {
     const target = path.join(dir, "EDExoCompare.exe");
     const staged = path.join(dir, "staged.exe");
@@ -134,7 +139,7 @@ describe.runIf(win)("the swap on Windows", () => {
         scriptPath: ${JSON.stringify(SCRIPT)}, logPath: ${JSON.stringify(path.join(dir, "update.log"))},
         pids: [process.pid], execPath: ${JSON.stringify(path.join(program, "EDExoCompare.exe"))}, env: {}, start: false });
       setTimeout(() => process.exit(0), 300);`;
-    spawnSync(process.execPath, ["-e", run], { cwd: program, stdio: "ignore" });
+    spawnSync(process.execPath, ["-e", run], { cwd: program, stdio: "ignore", windowsHide: true });
     await waitFor(() => logOf().includes("update: installed") || logOf().includes("update: FAILED"));
     expect(logOf()).toContain("update: installed");
     expect(logOf()).not.toContain("in use");
@@ -145,7 +150,7 @@ describe.runIf(win)("the swap on Windows", () => {
   it("folder: another program working in the folder gets the files replaced in place, with a backup", async () => {
     const { program, zip } = folderAndZip();
     // A terminal opened in the program folder, say: it keeps the folder from being renamed.
-    const holder = spawn("powershell.exe", ["-NoProfile", "-Command", "Start-Sleep 60"], { cwd: program, stdio: "ignore" });
+    const holder = spawn("powershell.exe", ["-NoProfile", "-Command", "Start-Sleep 60"], { cwd: program, stdio: "ignore", windowsHide: true });
     try {
       await new Promise((r) => setTimeout(r, 800));
       updater.installOnQuit(
