@@ -993,6 +993,29 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     edsmAutoFetcher.onArrivedInSystem(systemAddress, systemName);
   }
 
+  /*
+    Status.json and NavRoute.json for the live lines, read once per batch (plan 2.3, O-22 + F-8.2). A
+    honk writes dozens of Scan lines in one go, they arrive in one tail chunk and are applied in one
+    synchronous loop, and each line read both files from disk again. Forgotten on the next turn of the
+    event loop, so the next chunk reads them fresh.
+  */
+  let sideFiles: { status: string | null; route: ReturnType<typeof readLiveNavRouteWaypoints> } | null = null;
+  function liveSideFiles() {
+    if (!sideFiles) {
+      let status: string | null = null;
+      try {
+        status = readFileSync(path.join(journalDir, "Status.json"), "utf8");
+      } catch {
+        status = null;
+      }
+      sideFiles = { status, route: readLiveNavRouteWaypoints() };
+      setImmediate(() => {
+        sideFiles = null;
+      });
+    }
+    return sideFiles;
+  }
+
   function createLiveJournalLine(): (line: JournalLine) => void {
     return (line: JournalLine) => {
       try {
@@ -1006,14 +1029,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         maybeAutoFetchOnArrival(line);
         canonnUploader.offer(line);
         eddnUploader.offer(line);
-        store.applyLiveNavRoute(readLiveNavRouteWaypoints());
-        let statusRaw: string | null = null;
-        try {
-          statusRaw = readFileSync(path.join(journalDir, "Status.json"), "utf8");
-        } catch {
-          statusRaw = null;
-        }
-        const footFix = statusRaw ? parseStatusJsonFootFix(statusRaw) : null;
+        const side = liveSideFiles();
+        store.applyLiveNavRoute(side.route);
+        const footFix = side.status ? parseStatusJsonFootFix(side.status) : null;
         ingestExoOrganicJournalLine(store, ownLine, footFix, projectRoot, getCachedSpeciesDatabase());
         sessionLog.record(line, store, getCachedPrices());
         backupService.onJournalLine(typeof line.event === "string" ? line.event : undefined);
