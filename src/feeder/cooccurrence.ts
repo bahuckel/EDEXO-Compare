@@ -15,7 +15,8 @@
  *     were, until they got rows) are listed in the file rather than silently discarded, because a
  *     body whose only genus is unmapped still counted as a body until it did not.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
+import { writeJsonIfChanged } from "./stableWrite.js";
 import { dirname, join } from "node:path";
 import type { Database, SqlValue } from "sql.js";
 import type { SpeciesDatabase } from "../shared/types.js";
@@ -163,14 +164,14 @@ export function tableFromGenusSets(
 export function writeCooccurrenceTable(table: GenusCooccurrenceTable, projectRoot?: string): string {
   const path = cooccurrenceTablePath(projectRoot);
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(table, null, 2)}\n`, "utf8");
+  writeJsonIfChanged(path, `${JSON.stringify(table, null, 2)}\n`);
   return path;
 }
 
 export function writeSpeciesPrevalence(prevalence: SpeciesPrevalenceFile, projectRoot?: string): string {
   const path = speciesPrevalencePath(projectRoot);
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(prevalence, null, 2)}\n`, "utf8");
+  writeJsonIfChanged(path, `${JSON.stringify(prevalence, null, 2)}\n`);
   return path;
 }
 

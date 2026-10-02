@@ -21,7 +21,8 @@
  */
 import type { SpeciesDatabase } from "../shared/types.js";
 import { findSpeciesEntryForLabel } from "./install.js";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { writeJsonIfChanged } from "./stableWrite.js";
 import { dirname, join } from "node:path";
 import {
   aggregateBySector,
@@ -272,7 +273,7 @@ export function writeSectorMapFile(
   const path = sectorMapPath(projectRoot);
   mkdirSync(dirname(path), { recursive: true });
   const json = JSON.stringify(file);
-  writeFileSync(path, json + "\n", "utf8");
+  writeJsonIfChanged(path, json + "\n");
   return { path, bytes: json.length + 1, file };
 }
 
@@ -421,7 +422,7 @@ export function writeSectorSystemsFile(
   const path = sectorSystemsPath(projectRoot);
   mkdirSync(dirname(path), { recursive: true });
   const json = JSON.stringify(file);
-  writeFileSync(path, json + "\n", "utf8");
+  writeJsonIfChanged(path, json + "\n");
   return {
     path,
     bytes: json.length + 1,

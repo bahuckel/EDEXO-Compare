@@ -8,7 +8,8 @@
  *
  * Idempotent, and it never changes an observation — only the derived weights.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
+import { writeJsonIfChanged } from "./stableWrite.js";
 import { dirname, join } from "node:path";
 import type { SpeciesDatabase } from "../shared/types.js";
 import { loadExomasteryProfile, resolveExomasteryProfileJsonPath } from "../server/exomasteryProfile.js";
@@ -152,7 +153,7 @@ export async function applyParameterImportance(db: SpeciesDatabase): Promise<Imp
   };
   const edgesPath = join(PROJECT_ROOT, "data", "exomastery", "histogram-edges.json");
   mkdirSync(dirname(edgesPath), { recursive: true });
-  writeFileSync(edgesPath, `${JSON.stringify(edgesFile, null, 2)}\n`, "utf8");
+  writeJsonIfChanged(edgesPath, `${JSON.stringify(edgesFile, null, 2)}\n`);
   let histogrammed = 0;
   const byPath = new Map<string, number[]>();
   let scored = 0;
@@ -198,7 +199,7 @@ export async function applyParameterImportance(db: SpeciesDatabase): Promise<Imp
     } else {
       delete raw.displayHistograms;
     }
-    writeFileSync(path, `${JSON.stringify(raw, null, 2)}\n`, "utf8");
+    writeJsonIfChanged(path, `${JSON.stringify(raw, null, 2)}\n`);
   }
 
   const meanByPath = [...byPath.entries()]

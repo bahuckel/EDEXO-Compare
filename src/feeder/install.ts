@@ -16,7 +16,8 @@
  *     place is refused unless the caller says otherwise, because that is what an interrupted
  *     hydration produces and it is indistinguishable from a good run at the file level.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { writeJsonIfChanged } from "./stableWrite.js";
 import { basename, join } from "node:path";
 import type { SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
 import {
@@ -169,7 +170,8 @@ export function installProfile(
   }
 
   mkdirSync(join(speciesDataDir(), entry.genusDataDir, "exomastery"), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(stampAppIdentity(profile, entry), null, 2)}\n`, "utf8");
+  // Unchanged apart from its generatedAt stamp: left alone (review F-F7).
+  writeJsonIfChanged(path, `${JSON.stringify(stampAppIdentity(profile, entry), null, 2)}\n`);
 
   // The loader has its own rules about which file in the folder belongs to which species. If it
   // cannot find what we just wrote, the build "succeeded" and changed nothing the app will read.

@@ -53,7 +53,8 @@
  * and none of those are this module's business. They are counted and reported rather than dropped
  * quietly, because the count is how anyone would find out the hypothesis was wrong.
  */
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { writeJsonIfChanged } from "./stableWrite.js";
 import { dumpLines } from "./dumpStream.js";
 import path from "node:path";
 import { rawPlanetsDir } from "./paths.js";
@@ -270,7 +271,7 @@ export async function rehydrateNumericsFromDump(
       source: path.basename(dumpFile),
       bodies: restored,
     };
-    writeFileSync(opts.outFile ?? numericOverlayPath(), `${JSON.stringify(overlay)}\n`, "utf8");
+    writeJsonIfChanged(opts.outFile ?? numericOverlayPath(), `${JSON.stringify(overlay)}\n`);
   }
 
   return {
