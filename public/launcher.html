@@ -1679,6 +1679,19 @@
       .wizard-steps .st.bad {
         color: var(--ed-bad);
       }
+      .wizard-steps .wz-q {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+        width: fit-content;
+        cursor: pointer;
+        color: var(--hud-hi);
+      }
+      .wizard-steps .wz-q input {
+        accent-color: var(--hud);
+        margin: 0;
+      }
       /* "What's new" after an update: the release notes, cut from GitHub's (server/whatsNew.ts). */
       .modal.wide {
         max-width: 640px;
@@ -2487,7 +2500,10 @@
       <div class="modal">
         <div class="modal-in">
           <h3>First run</h3>
-          <p class="hint" style="margin-top: 0">Three things and you are set. This shows once; it is in the Overlay menu after.</p>
+          <p class="hint" style="margin-top: 0">
+            A few things and you are set. This shows once; all of it stays in the launcher after (HUDs in the Overlay
+            menu, LAN access under Network, Close to tray at the bottom).
+          </p>
           <ol class="wizard-steps">
             <li>
               <div>
@@ -2504,6 +2520,21 @@
             </li>
             <li>
               <div>Open the exobiology UI from the big button when you are in a system with biology.</div>
+            </li>
+            <!-- First-run questions (combined plan, Phase 5 [O-B]): the two settings people trip over. -->
+            <li id="wzLanStep" hidden>
+              <div>
+                Use it on a phone, tablet or second PC as well?
+                <label class="wz-q"><input type="checkbox" id="wzLan" /> <span>Yes: LAN access on</span></label>
+                <span class="st" id="wzLanSt"></span>
+              </div>
+            </li>
+            <li id="wzTrayStep" hidden>
+              <div>
+                Keep it running in the tray when you close the window?
+                <label class="wz-q"><input type="checkbox" id="wzTray" /> <span>Yes: Close to tray</span></label>
+                <span class="hint" id="wzTrayNote"></span>
+              </div>
             </li>
           </ol>
           <div class="row">
@@ -2898,29 +2929,37 @@
               ? "On: devices on this network can open the app with the links below (they carry the access key)."
               : "Off: only this PC can open the app.";
           lanAccessRestart.hidden = !(pending && canRestart);
+          // The first-run card opened before the status said whether there is a switch: ask now.
+          if (wzLanStep && wzLanStep.hidden && wizardIsOpen()) fillWizardQuestions(data);
         }
 
+        /* The Network panel's switch and the first-run question both save through here. */
+        function saveLanAccess(enabled) {
+          lanAccessBusy = true;
+          return fetch(apiUrl("/api/launcher/lan-access"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled: enabled }),
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (j) {
+              lanAccessBusy = false;
+              if (j && j.ok && lastConnectData) {
+                lastConnectData.lanAccess = j.lanAccess;
+                renderConnectUrls(lastConnectData);
+              }
+              return j;
+            })
+            .catch(function () {
+              lanAccessBusy = false;
+              return null;
+            });
+        }
         if (lanAccessToggle) {
           lanAccessToggle.addEventListener("change", function () {
-            lanAccessBusy = true;
-            fetch(apiUrl("/api/launcher/lan-access"), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ enabled: lanAccessToggle.checked }),
-            })
-              .then(function (r) {
-                return r.json();
-              })
-              .then(function (j) {
-                lanAccessBusy = false;
-                if (j && j.ok && lastConnectData) {
-                  lastConnectData.lanAccess = j.lanAccess;
-                  renderConnectUrls(lastConnectData);
-                }
-              })
-              .catch(function () {
-                lanAccessBusy = false;
-              });
+            void saveLanAccess(lanAccessToggle.checked);
           });
         }
         if (lanAccessRestart) {
@@ -5552,6 +5591,7 @@
           var dir = document.getElementById("wzJournalDir");
           if (st) { st.textContent = ok ? "found, " + data.journalFileCount + " log file(s)" : data.journalDirConfiguredOk ? "folder found, no logs yet" : "not found — set it"; st.className = "st " + (ok ? "ok" : "bad"); }
           if (dir) dir.textContent = data.journalDir || "";
+          fillWizardQuestions(data);
           // A Linux setup card already up steps aside and comes back when this one closes.
           if (linuxSetupModal && linuxSetupModal.classList.contains("on")) {
             linuxSetupModal.classList.remove("on");
@@ -5566,6 +5606,66 @@
             void loadLinuxSetup(true);
           }
         }
+        /*
+          The two questions (combined plan, Phase 5 [O-B]). Each box is the setting itself, saved on
+          the tick like its twin in the launcher: LAN access (only where the app has the switch; it
+          applies at the next start) and Close to tray (Electron, where this system has a tray).
+        */
+        var wzLanStep = document.getElementById("wzLanStep");
+        var wzLan = document.getElementById("wzLan");
+        var wzLanSt = document.getElementById("wzLanSt");
+        var wzTrayStep = document.getElementById("wzTrayStep");
+        var wzTray = document.getElementById("wzTray");
+        var wzTrayNote = document.getElementById("wzTrayNote");
+        var WZ_TRAY_OFF = "Off: closing the window quits the app.";
+        function renderWzLan(la) {
+          if (!wzLanSt || !la) return;
+          var pending = !!la.saved !== !!la.active;
+          wzLanSt.className = "st" + (la.saved ? " ok" : "");
+          wzLanSt.textContent = pending
+            ? la.saved
+              ? "on after a restart"
+              : "off after a restart"
+            : la.active
+              ? "on: the links are under Network"
+              : "off: this PC only";
+        }
+        function fillWizardQuestions(data) {
+          var la = data && data.lanAccess;
+          if (wzLanStep && wzLan && la) {
+            wzLanStep.hidden = false;
+            wzLan.checked = !!la.saved;
+            renderWzLan(la);
+          }
+          var ee = window.edexoElectron;
+          if (wzTrayStep && wzTray && ee && typeof ee.getTrayPref === "function") {
+            ee.getTrayPref()
+              .then(function (p) {
+                if (!p || !p.available) return;
+                wzTrayStep.hidden = false;
+                wzTray.checked = !!p.enabled;
+                if (wzTrayNote) wzTrayNote.textContent = p.enabled ? trayWhere : WZ_TRAY_OFF;
+              })
+              .catch(function () {});
+          }
+        }
+        if (wzLan) wzLan.addEventListener("change", function () {
+          if (lanAccessToggle) lanAccessToggle.checked = wzLan.checked;
+          void saveLanAccess(wzLan.checked).then(function (j) {
+            if (j && j.ok) renderWzLan(j.lanAccess);
+          });
+        });
+        if (wzTray) wzTray.addEventListener("change", function () {
+          var ee = window.edexoElectron;
+          if (!ee || typeof ee.setTrayPref !== "function") return;
+          ee.setTrayPref({ enabled: wzTray.checked })
+            .then(function (p) {
+              renderTrayPref(p);
+              if (wzTrayNote && p) wzTrayNote.textContent = p.enabled ? trayWhere : WZ_TRAY_OFF;
+            })
+            .catch(function () {});
+        });
+
         var wzDone = document.getElementById("wzDone");
         var wzSetJournal = document.getElementById("wzSetJournal");
         var wzOpenHud = document.getElementById("wzOpenHud");
