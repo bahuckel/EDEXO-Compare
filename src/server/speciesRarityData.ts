@@ -266,6 +266,25 @@ export function tierRegionalPresence(
  * A species' tier in one region (by name, any spelling), or null when the data does not know it:
  * found by the system counts (its region limit), tiered by the share of bodies there.
  */
+/**
+ * How many codex systems log this species in the region, or null when the counts are not loaded or
+ * the region has none at all (genusBodySplit.ts weighs a genus's candidates by these).
+ */
+export function codexRegionSystems(projectRoot: string, regionName: string, speciesId: string): number | null {
+  const d = data(projectRoot);
+  if (!d) return null;
+  const k = regionJoinKey(regionName);
+  if (!d.regionTotals.has(k)) return null;
+  return d.species.get(speciesId)?.regions.get(k) ?? 0;
+}
+
+/** How many codex systems log this species galaxy-wide, or null when the counts are not loaded. */
+export function codexGalaxySystems(projectRoot: string, speciesId: string): number | null {
+  const d = data(projectRoot);
+  if (!d) return null;
+  return d.species.get(speciesId)?.systems ?? 0;
+}
+
 export function regionalRarity(
   projectRoot: string,
   regionName: string | null | undefined,

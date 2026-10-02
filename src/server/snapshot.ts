@@ -119,6 +119,7 @@ import {
   demoteBelowPresenceFloor,
   markSampledDespiteUnlikely,
 } from "./presenceFloors.js";
+import { applyGenusBodySplit } from "./genusBodySplit.js";
 import {
   firstFootfallLookupFor,
   buildJournalSystems,
@@ -988,6 +989,14 @@ function computeBodyUncached(
     matches = markExomasteryZeroHabitatMatches(matches);
   }
   attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root, store);
+  // Which species of a genus, where the ranking model cannot tell them apart (Phase A.6).
+  applyGenusBodySplit(
+    matches,
+    scanForExo,
+    speciesMatchCtx?.regionName ?? null,
+    root,
+    new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db)),
+  );
   // After the ranking, because the floor is a rule about the ranking's own output.
   demoteBelowPresenceFloor(matches, b, db);
   markSampledDespiteUnlikely(matches, b, db);

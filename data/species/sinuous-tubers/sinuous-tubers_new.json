@@ -56,7 +56,7 @@
       "displayName": "Sinuous Tubers Albidum",
       "description": "Pale tubular structures adapted to generic rocky volcanic environments.",
       "conditions": {
-        "location_requirement": "Core: 91-96 % of its EDAstro codex systems lie within 10,000 ly of Sgr A*, 99 % within 15-19.5 kly (EDAstro codex-data 2026-09-28). Within 10 kly shown, 10-20 kly shown at half the chance, beyond that demoted.",
+        "location_requirement": "Core: 91-96 % of its EDAstro codex systems lie within 10,000 ly of Sgr A*, 99 % within 15-19.5 kly (EDAstro codex-data 2026-09-28). The genus is shown within 21 kly of Sgr A* and demoted beyond; which species a body carries comes from its planet type, volcanism, temperature, atmosphere and region (2026-10-02).",
         "volcanismActiveRequired": true,
         "planet_types": [
           "Rocky",
@@ -81,7 +81,7 @@
       "displayName": "Sinuous Tubers Blatteum",
       "description": "Dark clustered tubular formations commonly found on metal-rich volcanic worlds.",
       "conditions": {
-        "location_requirement": "Core ring, not the core: median 12-15 kly from Sgr A*, 6-21 kly across its EDAstro codex systems (2026-09-28), only 15-25 % within 10 kly. Shown within 21 kly, demoted beyond.",
+        "location_requirement": "Core ring, not the core: median 12-15 kly from Sgr A*, 6-21 kly across its EDAstro codex systems (2026-09-28), only 15-25 % within 10 kly. The genus is shown within 21 kly of Sgr A* and demoted beyond; which species a body carries comes from its planet type, volcanism, temperature, atmosphere and region (2026-10-02).",
         "volcanismActiveRequired": true,
         "planet_types": [
           "Rocky",
@@ -106,7 +106,7 @@
       "displayName": "Sinuous Tubers Caeruleum",
       "description": "Blue-hued tubular fungal structures linked to silicate-rich volcanism.",
       "conditions": {
-        "location_requirement": "Core: 91-96 % of its EDAstro codex systems lie within 10,000 ly of Sgr A*, 99 % within 15-19.5 kly (EDAstro codex-data 2026-09-28). Within 10 kly shown, 10-20 kly shown at half the chance, beyond that demoted.",
+        "location_requirement": "Core: 91-96 % of its EDAstro codex systems lie within 10,000 ly of Sgr A*, 99 % within 15-19.5 kly (EDAstro codex-data 2026-09-28). The genus is shown within 21 kly of Sgr A* and demoted beyond; which species a body carries comes from its planet type, volcanism, temperature, atmosphere and region (2026-10-02).",
         "volcanismActiveRequired": true,
         "planet_types": [
           "Rocky",
@@ -131,7 +131,7 @@
       "displayName": "Sinuous Tubers Lindigoticum",
       "description": "Deep indigo branching tubers forming dense underground-linked colonies.",
       "conditions": {
-        "location_requirement": "Core ring, not the core: median 12-15 kly from Sgr A*, 6-21 kly across its EDAstro codex systems (2026-09-28), only 15-25 % within 10 kly. Shown within 21 kly, demoted beyond.",
+        "location_requirement": "Core ring, not the core: median 12-15 kly from Sgr A*, 6-21 kly across its EDAstro codex systems (2026-09-28), only 15-25 % within 10 kly. The genus is shown within 21 kly of Sgr A* and demoted beyond; which species a body carries comes from its planet type, volcanism, temperature, atmosphere and region (2026-10-02).",
         "volcanismActiveRequired": true,
         "planet_types": [
           "Rocky",
@@ -156,7 +156,7 @@
       "displayName": "Sinuous Tubers Prasinum",
       "description": "Green-tinted variant associated with mixed volcanic mineral deposits.",
       "conditions": {
-        "location_requirement": "Core: 91-96 % of its EDAstro codex systems lie within 10,000 ly of Sgr A*, 99 % within 15-19.5 kly (EDAstro codex-data 2026-09-28). Within 10 kly shown, 10-20 kly shown at half the chance, beyond that demoted.",
+        "location_requirement": "Core: 91-96 % of its EDAstro codex systems lie within 10,000 ly of Sgr A*, 99 % within 15-19.5 kly (EDAstro codex-data 2026-09-28). The genus is shown within 21 kly of Sgr A* and demoted beyond; which species a body carries comes from its planet type, volcanism, temperature, atmosphere and region (2026-10-02).",
         "volcanismActiveRequired": true,
         "planet_types": [
           "Rocky",
@@ -181,7 +181,7 @@
       "displayName": "Sinuous Tubers Roseum",
       "description": "Pink/red variant strongly linked to silicate magma volcanism zones.",
       "conditions": {
-        "location_requirement": "Core: 91-96 % of its EDAstro codex systems lie within 10,000 ly of Sgr A*, 99 % within 15-19.5 kly (EDAstro codex-data 2026-09-28). Within 10 kly shown, 10-20 kly shown at half the chance, beyond that demoted.",
+        "location_requirement": "Core: 91-96 % of its EDAstro codex systems lie within 10,000 ly of Sgr A*, 99 % within 15-19.5 kly (EDAstro codex-data 2026-09-28). The genus is shown within 21 kly of Sgr A* and demoted beyond; which species a body carries comes from its planet type, volcanism, temperature, atmosphere and region (2026-10-02).",
         "volcanismActiveRequired": true,
         "planet_types": [
           "Rocky",
@@ -206,7 +206,7 @@
       "displayName": "Sinuous Tubers Violaceum",
       "description": "Violet tubular structures associated with rare metal-rich volcanic substrates.",
       "conditions": {
-        "location_requirement": "Core ring, not the core: median 12-15 kly from Sgr A*, 6-21 kly across its EDAstro codex systems (2026-09-28), only 15-25 % within 10 kly. Shown within 21 kly, demoted beyond.",
+        "location_requirement": "Core ring, not the core: median 12-15 kly from Sgr A*, 6-21 kly across its EDAstro codex systems (2026-09-28), only 15-25 % within 10 kly. The genus is shown within 21 kly of Sgr A* and demoted beyond; which species a body carries comes from its planet type, volcanism, temperature, atmosphere and region (2026-10-02).",
         "volcanismActiveRequired": true,
         "planet_types": [
           "Rocky",
@@ -231,7 +231,7 @@
       "displayName": "Sinuous Tubers Viride",
       "description": "Green branching variants typically found in mixed mineral volcanic environments.",
       "conditions": {
-        "location_requirement": "Core ring, not the core: median 12-15 kly from Sgr A*, 6-21 kly across its EDAstro codex systems (2026-09-28), only 15-25 % within 10 kly. Shown within 21 kly, demoted beyond.",
+        "location_requirement": "Core ring, not the core: median 12-15 kly from Sgr A*, 6-21 kly across its EDAstro codex systems (2026-09-28), only 15-25 % within 10 kly. The genus is shown within 21 kly of Sgr A* and demoted beyond; which species a body carries comes from its planet type, volcanism, temperature, atmosphere and region (2026-10-02).",
         "volcanismActiveRequired": true,
         "planet_types": [
           "Rocky",
