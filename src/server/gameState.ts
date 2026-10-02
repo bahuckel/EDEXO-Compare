@@ -860,6 +860,35 @@ export class GameStateStore {
   }
 
   /**
+   * An `Analyse` put back on the body its run was taken on (plan 2.4, Fable S4).
+   *
+   * The game no longer makes the commander wait for the analysis: board and fly off, and `Analyse`
+   * fires wherever the ship is by then, naming that body (owner, 2026-09-22). `Log` and `Sample` are
+   * always written at the plant. So an `Analyse` for a species with no open run on its own body, while
+   * exactly one run of that species elsewhere has both its samples, belongs to that run. Anything else — its own run
+   * open, none open, two open — leaves the line as the game wrote it. On the owner's 395 runs (journals,
+   * 2026-10-02) every `Analyse` followed `Log, Sample, Sample` on its own body, so this changes nothing
+   * there. Call it before `apply()`, which closes the run.
+   */
+  ownBodyForAnalyse(line: JournalLine): JournalLine {
+    if (line.event !== "ScanOrganic" || line.ScanType !== "Analyse") return line;
+    const sa = line.SystemAddress;
+    const body = line.Body;
+    if (typeof sa !== "number" || typeof body !== "number") return line;
+    const speciesKey = speciesKeyFromOrganicJournal(line);
+    if (this.organicRunStartedAt.has(`${bodyKey(sa, body)}::${speciesKey}`)) return line;
+    const suffix = `::${speciesKey}`;
+    // A run ready for its analysis: both samples in. A plant logged and left elsewhere is not one.
+    const open = [...this.organicRunStartedAt.keys()].filter(
+      (k) => k.endsWith(suffix) && this.organicAnalyseByKey.get(k)?.count === 2,
+    );
+    if (open.length !== 1) return line;
+    const [runSa, runBody] = open[0]!.slice(0, -suffix.length).split(":").map(Number);
+    if (!Number.isFinite(runSa) || !Number.isFinite(runBody)) return line;
+    return { ...line, SystemAddress: runSa, Body: runBody } as JournalLine;
+  }
+
+  /**
    * How often the two live files are re-read, in milliseconds. Both were compiled-in constants.
    *
    * Kept on the store rather than in the timer closures so one place answers "what is it now" for
@@ -2819,7 +2848,8 @@ export class GameStateStore {
   }
 
   /** `ScanOrganic` — one of apply()'s event handlers. */
-  private onScanOrganic(line: JournalLine, ts: string): void {
+  private onScanOrganic(written: JournalLine, ts: string): void {
+    const line = this.ownBodyForAnalyse(written);
     const systemAddress = line.SystemAddress as number;
     const bodyId = line.Body as number;
     const variant = (line.Variant_Localised as string | undefined)?.trim() ?? "";

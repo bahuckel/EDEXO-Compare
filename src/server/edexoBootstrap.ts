@@ -991,6 +991,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       try {
         // Before the store applies it: a body the store already has is a re-scan, not a find.
         notices.observe(line, noticesContext);
+        // Read before apply() closes the run: the tracker files an Analyse under the run's body too.
+        const ownLine = store.ownBodyForAnalyse(line);
         store.apply(line);
         // Live lines only. The historical replay calls store.apply directly, which is what keeps a
         // first run from asking EDSM about every system the commander has ever visited.
@@ -1005,7 +1007,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
           statusRaw = null;
         }
         const footFix = statusRaw ? parseStatusJsonFootFix(statusRaw) : null;
-        ingestExoOrganicJournalLine(store, line, footFix, projectRoot, getCachedSpeciesDatabase());
+        ingestExoOrganicJournalLine(store, ownLine, footFix, projectRoot, getCachedSpeciesDatabase());
         sessionLog.record(line, store, getCachedPrices());
         backupService.onJournalLine(typeof line.event === "string" ? line.event : undefined);
         gamePresence.onJournalLine(typeof line.event === "string" ? line.event : undefined);
