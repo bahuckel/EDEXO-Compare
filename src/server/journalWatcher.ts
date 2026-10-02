@@ -1,5 +1,6 @@
 import { promises as fs, unwatchFile, watchFile } from "node:fs";
 import path from "node:path";
+import { StringDecoder } from "node:string_decoder";
 import type { JournalLine } from "../shared/types.js";
 import { JOURNAL_POLL_DEFAULT_MS, clampJournalPollMs } from "../shared/pollRates.js";
 
@@ -224,6 +225,12 @@ export function startJournalWatcher(
   let currentPath: string | null = seed?.path != null ? path.resolve(seed.path) : null;
   let position = seed?.size ?? 0;
   const leftover = { buf: "" };
+  /*
+    One decoder for the tail, so a read that ends inside a multi-byte character ("ā", "ö" in a name)
+    keeps its first bytes for the next read instead of turning both halves into U+FFFD (plan 2.4,
+    O-19). Replaced wherever the line buffer is dropped.
+  */
+  let decoder = new StringDecoder("utf8");
   let tailing = false;
   let resyncing = false;
   /** Detects when the filtered file set changes while the newest path stays the same (rolling cutoff). */
@@ -293,6 +300,7 @@ export function startJournalWatcher(
       if (st.size < position) {
         position = 0;
         leftover.buf = "";
+        decoder = new StringDecoder("utf8");
       }
       if (st.size <= position) return;
 
@@ -304,8 +312,8 @@ export function startJournalWatcher(
         // A rotation started a resync while this read was waiting: the store it would feed has been
         // reset, and the replay reads these lines itself (combined plan 1.2).
         if (resyncing || closed) return;
-        const data = buf.subarray(0, bytesRead).toString("utf8");
-        position = st.size;
+        const data = decoder.write(buf.subarray(0, bytesRead));
+        position += bytesRead;
         await processLines(data, leftover, onLiveLine);
       } finally {
         await fh.close();
@@ -357,6 +365,7 @@ export function startJournalWatcher(
         currentPath = latest;
         position = 0;
         leftover.buf = "";
+        decoder = new StringDecoder("utf8");
         position = await tailStartAfterResync(await resyncAllJournalFiles(), latest);
         lastListIdentity = identity;
       } catch (e) {
@@ -376,6 +385,7 @@ export function startJournalWatcher(
         currentPath = latest;
         position = 0;
         leftover.buf = "";
+        decoder = new StringDecoder("utf8");
         position = await tailStartAfterResync(await resyncAllJournalFiles(), latest);
         lastListIdentity = identity;
       } catch (e) {
