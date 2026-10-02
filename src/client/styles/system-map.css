@@ -401,19 +401,6 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   gap: 0.28rem;
 }
 
-.exo-payout-range-panel {
-  border: 1px solid rgba(79, 208, 255, 0.58) !important;
-  background: rgba(79, 208, 255, 0.07) !important;
-  box-shadow:
-    0 0 22px rgba(79, 208, 255, 0.28),
-    inset 0 0 20px rgba(79, 208, 255, 0.06) !important;
-}
-
-.exo-payout-range-panel.exo-payout-range-panel--clickable {
-  border-radius: 14px !important;
-  overflow: hidden;
-}
-
 .exo-payout-range-panel h3 {
   margin: 0 0 0.5rem;
   font-size: var(--fs-sm);

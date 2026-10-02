@@ -312,12 +312,15 @@ input[type="text"]:focus {
 
 /* ==== round 4 (owner review 2026-09-12): the sell range in the cockpit's own language ============ */
 
-/* the old blue neon box is gone; the fold is the frame */
+/*
+  The old blue neon box is gone; the fold is the frame. Its rules in system-map.css are deleted, so
+  these need no !important any more (review F-1.8: the winner was decided by import order alone).
+*/
 .exo-payout-range-panel,
 .exo-payout-range-panel.exo-payout-range-panel--clickable {
-  border: 0 !important;
-  background: none !important;
-  box-shadow: none !important;
+  border: 0;
+  background: none;
+  box-shadow: none;
   overflow: visible;
 }
 .exo-payout-inner-click {
