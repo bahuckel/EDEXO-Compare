@@ -2,7 +2,7 @@ import { journalPlanetClass } from "../shared/spanshPlanetClass.js";
 import { journalStarTypeFromSubType } from "../shared/spanshStarType.js";
 import type { ExplorationScanRecord } from "../shared/types.js";
 import { APP_USER_AGENT } from "./appVersion.js";
-import { planetRingCount } from "./orbitUtils.js";
+import { barycentreSyntheticBodyId, planetRingCount } from "./orbitUtils.js";
 import { ATM_TO_PA, AU_METERS, SOLAR_RADIUS_METERS } from "../shared/journalPhysics.js";
 
 const EDSM_BODIES_URL = "https://www.edsm.net/api-system-v1/bodies";
@@ -97,6 +97,44 @@ function mapMaterialsToJournal(materials: unknown): ExplorationScanRecord["mater
     if (n !== undefined) rows.push({ Name: k, Percent: n });
   }
   return rows.length ? rows : undefined;
+}
+
+/**
+ * A Spansh `Barycentre` body as the record a journal `ScanBaryCentre` makes (`gameState.ts`
+ * `mergeBarycentreJournalLine`): the barycentre's own orbit around its parent, at its synthetic id.
+ *
+ * Dropped, a body round a planet pair round a star had no distance to that star but the gap between
+ * two arrival distances — a lower bound — and the starlight read a dim companion as the brightest
+ * light (Blau Eur MN-R d5-9 B 3: 221 ls from its M dwarf instead of the 617 ls Spansh gives, so the
+ * plants were coloured for the M where the game, and the EDDN ScanOrganic set, coloured them for the
+ * F arrival star; 2026-10-03).
+ */
+export function mapBarycentreBodyToExplorationRecord(
+  body: Record<string, unknown>,
+  systemAddress: number,
+  starSystem: string,
+): ExplorationScanRecord | null {
+  const nullId = pickNum(body.bodyId);
+  if (nullId === undefined || !Number.isInteger(nullId)) return null;
+  const semiMajorAxis = edsmSemiMajorAxisToM(pickNum(body.semiMajorAxis));
+  if (semiMajorAxis === undefined) return null;
+  return {
+    systemAddress,
+    bodyId: barycentreSyntheticBodyId(nullId),
+    bodyName: `Bary ⊥${nullId}`,
+    starSystem,
+    updatedAt: new Date().toISOString(),
+    edsmHydrated: true,
+    isBarycentreJournal: true,
+    journalBarycentreNullId: nullId,
+    semiMajorAxis,
+    eccentricity: pickNum(body.orbitalEccentricity),
+    orbitalInclination: pickNum(body.orbitalInclination),
+    periapsis: pickNum(body.argOfPeriapsis),
+    orbitalPeriod: edsmPeriodToJournalSeconds(pickNum(body.orbitalPeriod)),
+    ascendingNode: pickNum(body.ascendingNode),
+    meanAnomaly: pickNum(body.meanAnomaly),
+  };
 }
 
 export function mapEdsmBodyToExplorationRecord(

@@ -7,10 +7,14 @@
  * - `GET /api/dump/{id64}` — the system as Spansh holds it, bodies in the same shape EDSM uses
  *   (`subType`, `atmosphereType`, `gravity` in g, `surfaceTemperature`, `surfacePressure`,
  *   `isLandable`, `distanceToArrival`, `parents`, …), so the EDSM body mapper serves both. Bodies of
- *   type `Barycentre` are Spansh's own and are skipped: the map draws barycentres from `parents`.
+ *   type `Barycentre` are Spansh's own: they become the records a journal `ScanBaryCentre` makes,
+ *   the barycentre's orbit, which is how far a planet pair is from its star.
  */
 import type { ExplorationScanRecord } from "../shared/types.js";
-import { mapEdsmBodyToExplorationRecord } from "./edsmSystemHydration.js";
+import {
+  mapBarycentreBodyToExplorationRecord,
+  mapEdsmBodyToExplorationRecord,
+} from "./edsmSystemHydration.js";
 
 const SPANSH_NAMES_URL = "https://spansh.co.uk/api/systems/field_values/system_names";
 const SPANSH_DUMP_URL = "https://spansh.co.uk/api/dump";
@@ -123,8 +127,10 @@ export function spanshDumpToExplorationRecords(
     if (!b || typeof b !== "object") continue;
     const body = b as Record<string, unknown>;
     const type = pickStr(body.type)?.toLowerCase();
-    if (type === "barycentre") continue;
-    const rec = mapEdsmBodyToExplorationRecord(body, systemAddress, starSystem);
+    const rec =
+      type === "barycentre"
+        ? mapBarycentreBodyToExplorationRecord(body, systemAddress, starSystem)
+        : mapEdsmBodyToExplorationRecord(body, systemAddress, starSystem);
     if (rec) out.push(rec);
   }
   if (out.length === 0) return { ok: false, error: "Spansh bodies could not be read for this system." };

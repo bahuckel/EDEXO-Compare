@@ -4,6 +4,7 @@ import { mapEdsmBodyToExplorationRecord } from "../src/server/edsmSystemHydratio
 import { planetScanFromExplorationRecord } from "../src/server/footScannedCatalog.js";
 import { gasSharePercent } from "../src/shared/atmosphereGasShare.js";
 import { spectralKeysFromJournalStarType } from "../src/shared/starSpectralKeys.js";
+import { barycentreSyntheticBodyId } from "../src/server/orbitUtils.js";
 import { hostStarClassKey } from "../src/shared/hostStarClass.js";
 
 describe("Spansh as a galaxy source", () => {
@@ -22,7 +23,7 @@ describe("Spansh as a galaxy source", () => {
     expect(parseSpanshNameHits(null)).toEqual([]);
   });
 
-  it("maps a dump's bodies through the EDSM mapper and skips barycentres", () => {
+  it("maps a dump's bodies through the EDSM mapper and skips a barycentre with no orbit", () => {
     const dump = {
       system: {
         id64: 10477373803,
@@ -69,6 +70,34 @@ describe("Spansh as a galaxy source", () => {
     // Journal vocabulary: the class and the subclass apart, as a `Scan` writes them.
     expect(r.records[0]!.starType).toBe("G");
     expect(r.records[0]!.subclass).toBe(2);
+  });
+
+  it("keeps a barycentre's orbit, as a journal ScanBaryCentre would (Blau Eur MN-R d5-9, 2026-10-03)", () => {
+    const dump = {
+      system: {
+        name: "Blau Eur MN-R d5-9",
+        bodies: [
+          { type: "Star", name: "Blau Eur MN-R d5-9 B", bodyId: 2, spectralClass: "M3", parents: [{ Null: 0 }] },
+          {
+            type: "Barycentre",
+            name: "Blau Eur MN-R d5-9 barycentre 14",
+            bodyId: 14,
+            semiMajorAxis: 1.23766292302174,
+            orbitalEccentricity: 0.007778,
+            orbitalPeriod: 821.185043012651,
+          },
+        ],
+      },
+    };
+    const r = spanshDumpToExplorationRecords(dump, 320688278323, "x");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const bary = r.records.find((x) => x.isBarycentreJournal);
+    expect(bary?.bodyId).toBe(barycentreSyntheticBodyId(14));
+    expect(bary?.journalBarycentreNullId).toBe(14);
+    // Spansh writes AU and days; the journal metres and seconds. 1.24 AU is the 617 ls to star B.
+    expect(bary!.semiMajorAxis! / 299_792_458).toBeCloseTo(617.4, 0);
+    expect(bary?.orbitalPeriod).toBeCloseTo(821.185043012651 * 86400);
   });
 
   it("says so when Spansh has no bodies yet", () => {

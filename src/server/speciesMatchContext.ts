@@ -419,7 +419,7 @@ function starLightOn(
       : undefined;
   const members = anchor.kind === "Star" ? [anchor.id] : tree.starsIn(anchor.id);
   let orbitLs = typeof orbitSma === "number" && orbitSma > 0 ? orbitSma / LIGHT_SECOND_METERS : undefined;
-  // A planet pair's barycentre with no `ScanBaryCentre` (EDSM and Spansh drop it): when the arrival
+  // A planet pair's barycentre with no `ScanBaryCentre` (EDSM drops it): when the arrival
   // star is in the group the body orbits, the arrival distance is that orbit, as in starDistanceLs.
   if (orbitLs === undefined && arrivalId != null && members.includes(arrivalId)) orbitLs = arrivalLs;
   /*

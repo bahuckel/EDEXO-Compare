@@ -1827,8 +1827,8 @@ export class GameStateStore {
    * 0.144 ls. The number is the distance to the star, unambiguously.
    *
    * The distinction is load-bearing: `starDistanceLs` reads this field to answer how far a body is
-   * from its host star when a barycentre stands between them, and EDSM and Spansh both drop the
-   * event, so the journal is the only place it exists.
+   * from its host star when a barycentre stands between them. EDSM drops the event; Spansh keeps it
+   * as a `Barycentre` body, which `spanshSystemHydration.ts` turns into this same record.
    *
    * Stored at `bodyId = barycentreSyntheticBodyId(journalNullId)` so rows never collide with real
    * body scans.
