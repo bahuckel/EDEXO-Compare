@@ -72,6 +72,12 @@ export interface HostStarGate {
    */
   judgedOn?: "main";
   /**
+   * With `judgedOn: "main"`: the body's own host star passes it too. Electricae pluma is measured on
+   * the main star, but a body orbiting a white dwarf 81,000 ls from a G primary grows it as well
+   * (HIP 118062 B 6 g, EDDN ScanOrganic set, 2026-10-03).
+   */
+  orHost?: true;
+  /**
    * Yerkes luminosity classes allowed per star class, judged on the system's main star (so only on
    * `judgedOn: "main"` gates) — the Anemone colours split on it: a B dwarf makes Luteolum, a B giant
    * Roseum. Keyed by {@link hostStarClassKey}, or `AeBe` for a Herbig star, which that key folds into
@@ -321,11 +327,16 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
      * Judged on the host it demoted 12 of the 69 pluma bodies in the corpus, every one orbiting an
      * M, L, Y or T dwarf in a system whose main star is neutron or A. The owner's original report
      * (Swoilz KI-E b4-9 10 b, a single M3 star) still fails: its main star is that M3.
+     *
+     * Or the body's own host (2026-10-03): HIP 118062's main star is a G, and pluma was logged on
+     * B 6 g, a moon of a planet round the DBV white dwarf B, 81,587 ls out. Swoilz still fails: its
+     * one star is the M3.
      */
     idIncludes: "electricae_pluma",
     gate: {
       allowed: ["A", "N", "D", "H"],
       judgedOn: "main",
+      orHost: true,
       evidence:
         "10,139 pluma sightings: neutron 46.0 %, white dwarf 30.6 %, A 14.2 %, black hole 8.3 % — 99.1 %; B 0.2 %, O 0.0 %",
     },
@@ -415,8 +426,9 @@ export function evaluateHostStarGate(
     if (!mainStarClass) return null;
     const classPasses = gate.allowed.includes(mainStarClass);
     const lum = classPasses ? luminosityVerdict(gate, mainStar) : null;
+    const hostPasses = gate.orHost === true && (starClasses ?? []).some((c) => gate.allowed.includes(c));
     return {
-      passes: classPasses && (lum?.passes ?? true),
+      passes: (classPasses && (lum?.passes ?? true)) || hostPasses,
       classes: [mainStarClass],
       allowed: gate.allowed,
       evidence: gate.evidence,

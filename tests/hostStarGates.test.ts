@@ -143,6 +143,12 @@ describe("evaluating the gate", () => {
     expect(evaluateHostStarGate(PLUMA, ["M"])).toBeNull();
   });
 
+  // HIP 118062 B 6 g (EDDN ScanOrganic set, 2026-10-03): main star G, the body round the DBV dwarf B.
+  it("passes on the body's own host too, when that is a white dwarf in a G system", () => {
+    expect(evaluateHostStarGate(PLUMA, ["D"], "G")!.passes).toBe(true);
+    expect(evaluateHostStarGate(PLUMA, ["K"], "G")!.passes).toBe(false);
+  });
+
   it("returns null when there is nothing to judge, never a failure", () => {
     expect(evaluateHostStarGate(PLUMA, [])).toBeNull();
     expect(evaluateHostStarGate(PLUMA, null)).toBeNull();
