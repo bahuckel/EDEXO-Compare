@@ -30,6 +30,20 @@ describe("who has logged it in the region", () => {
   });
 });
 
+describe("EDSM's four \"Bacteria …\" names (owner, 2026-10-03, Hypi Fraae RF-Q b21-2 B 4)", () => {
+  it("Tela - Orange and the other three are read as Bacterium, so a logged one is no first", () => {
+    for (const [species, colour] of [
+      ["Bacterium Tela", "Orange"],
+      ["Bacterium Acies", "Magenta"],
+      ["Bacterium Vesicula", "Orange"],
+      ["Bacterium Informem", "Lime"],
+    ]) {
+      expect(codexFirstColours(root, "Inner Orion Spur", species!, colour), `${species} - ${colour}`).toBeNull();
+    }
+    expect(codexFirstColours(root, "Inner Orion Spur", "Bacterium Tela", "Orange or Yellow")).toBeNull();
+  });
+});
+
 describe("EDAstro's plants per region too (owner, 2026-10-01)", () => {
   // Stratum Paleas - Indigo is not in EDSM's Trojan Belt (the owner's own first); its id is _02_y.
   const ed = (...keys: string[]) => ({ ids: new Set(keys), fetchedAtMs: Date.parse("2026-10-01T10:00:00Z") });

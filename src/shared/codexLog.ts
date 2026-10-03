@@ -29,10 +29,19 @@ const BIOLOGY_CATEGORY = /biolog/i;
  */
 export function codexSpeciesKey(name: string): string {
   const beforeVariant = name.split(" - ")[0] ?? name;
-  return beforeVariant
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
+  return (
+    beforeVariant
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      /*
+        EDSM's codex names four variants "Bacteria …" (Acies - Magenta, Vesicula - Orange, Tela -
+        Orange, Informem - Lime) where every other entry says "Bacterium". Unread, those four never
+        matched a logged entry and showed [CODEX FIRST] in every region (owner, 2026-10-03, on
+        Hypi Fraae RF-Q b21-2 B 4's Tela - Orange).
+      */
+      .replace(/^bacteria /, "bacterium ")
+  );
 }
 
 /**
