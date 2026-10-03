@@ -59,6 +59,7 @@ import {
   observedAtTemperature,
   observedNearTemperature,
 } from "./speciesTemperatureObservations.js";
+import { observedTemperatureEdge } from "./speciesTemperatureEdges.js";
 import { observedWithVolcanism } from "./speciesVolcanismObservations.js";
 import { hostStarVerdict, type HostStarVerdict } from "./speciesHostStarObservations.js";
 import { volcanismJournalMatchesFragments } from "../shared/volcanismMatch.js";
@@ -1058,7 +1059,14 @@ export function speciesMatchesCriteria(
       const beyond =
         !!edgeCheck &&
         (!edgeCheck.straddles || edgeCheck.near === null || edgeCheck.near >= MIN_TEMPERATURE_OBSERVATIONS);
-      if (observedHere && beyond) {
+      // A rounded codex edge: the game's bodies run on past it (speciesTemperatureEdges.ts).
+      const roundedEdge = measured ? observedTemperatureEdge(entry.id, scan.SurfaceTemperature!) : null;
+      if (!(observedHere && beyond) && roundedEdge) {
+        extraOkReasons.push({
+          field: "SurfaceTemperature",
+          detail: `${scan.SurfaceTemperature!.toFixed(1)} K — outside the codex ${speciesRange}, but its bodies run to ${roundedEdge.observedK} K: ${roundedEdge.past.toLocaleString("en-US")} confirmed past ${roundedEdge.codexK} K.`,
+        });
+      } else if (observedHere && beyond) {
         extraOkReasons.push({
           field: "SurfaceTemperature",
           detail: `${scan.SurfaceTemperature!.toFixed(1)} K — outside the codex ${speciesRange}, but ${observedHere.observations} of ${observedHere.total} observed bodies sit between ${observedHere.binLowK.toFixed(0)} and ${observedHere.binHighK.toFixed(0)} K.`,
