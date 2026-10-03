@@ -205,3 +205,23 @@ describe("body features for the Feature filter", () => {
     );
   });
 });
+
+// The honk on the arrival star, as Data value and the system map count it (2026-10-03).
+describe("estimated credits include the honk", () => {
+  it("adds a third of the other bodies' value to the arrival star and its system", async () => {
+    const { starScanValueCredits, bodyScanValueCredits } = await import("../src/server/explorationValue.js");
+    const d = buildDiscoveries(
+      storeWith([
+        ["1:0", star({ distanceFromArrivalLs: 0 })],
+        ["1:1", planet()],
+      ]),
+      root,
+    );
+    const starOwn = starScanValueCredits(0.8, "K", false).value;
+    const planetFss = bodyScanValueCredits("High metal content body", false, 0.4, false, false);
+    expect(d.stars[0]!.estimatedCredits).toBe(starOwn + planetFss.honkThird);
+    expect(d.systems.find((s) => s.systemAddress === 1)!.estimatedCredits).toBe(
+      starOwn + planetFss.honkThird + planetFss.fss,
+    );
+  });
+});

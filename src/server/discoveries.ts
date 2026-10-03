@@ -39,7 +39,12 @@ import type {
   ExplorationScanRecord,
 } from "../shared/types.js";
 import type { GameStateStore } from "./gameState.js";
-import { bodyScanValueCredits, starScanValueCredits } from "./explorationValue.js";
+import {
+  bodyScanValueCredits,
+  starScanValueCredits,
+  systemHonkCredits,
+  type HonkBody,
+} from "./explorationValue.js";
 import { regionForSystem } from "./regionMapData.js";
 import { journalSurfaceGravityToG, SOLAR_RADIUS_METERS } from "../shared/journalPhysics.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
@@ -178,6 +183,18 @@ export function buildDiscoveries(
   // of scans is itself an answer to "where have I not looked".
   for (const [addr, name] of store.visitedSystems) systemRow(addr, name);
 
+  // The honk, carried by each system's arrival star as the game's map shows it (explorationValue.ts):
+  // the other bodies per system, and the arrival star's row and first-discovery flag.
+  const honk = new Map<
+    number,
+    { bodies: HonkBody[]; arrivalRow: DiscoveryStarRow | null; arrivalFd: boolean }
+  >();
+  const honkOf = (addr: number) => {
+    let h = honk.get(addr);
+    if (!h) honk.set(addr, (h = { bodies: [], arrivalRow: null, arrivalFd: false }));
+    return h;
+  };
+
   for (const [key, rec] of scans) {
     const addr = rec.systemAddress;
     const sys = systemRow(addr, rec.starSystem || String(addr));
@@ -230,6 +247,17 @@ export function buildDiscoveries(
         estimatedCredits: Math.round(v.value),
         scannedAt: at || null,
       });
+      if (!((rec.distanceFromArrivalLs ?? 0) > 0)) {
+        const h = honkOf(addr);
+        h.arrivalRow = stars[stars.length - 1]!;
+        h.arrivalFd = firstDiscoverer;
+      } else {
+        honkOf(addr).bodies.push({
+          kind: "star",
+          stellarMass: Number.isFinite(mass) ? mass : 0,
+          starType: rec.starType,
+        });
+      }
       continue;
     }
 
@@ -250,6 +278,12 @@ export function buildDiscoveries(
       store.dssMappingEfficientByBodyKey.get(key) === true,
     );
     const estimated = dssComplete ? v.dssMapped : v.fss;
+    honkOf(addr).bodies.push({
+      kind: "planet",
+      planetClass,
+      terraformable,
+      massEM: Number.isFinite(massEM) ? massEM : 0,
+    });
     const species = confirmedOn(b);
     const signals = b?.biologicalSignals ?? null;
     const isLandable = landable(rec);
@@ -314,6 +348,13 @@ export function buildDiscoveries(
   for (const [addr, tally] of store.soldOrganicBySystem) {
     const row = systems.get(addr);
     if (row) row.soldExobiologyCredits = Math.round(tally.credits);
+  }
+  for (const [addr, h] of honk) {
+    if (!h.arrivalRow) continue;
+    const credits = systemHonkCredits(h.bodies, h.arrivalFd);
+    h.arrivalRow.estimatedCredits += credits;
+    const row = systems.get(addr);
+    if (row) row.estimatedCredits += credits;
   }
   for (const row of systems.values()) row.estimatedCredits = Math.round(row.estimatedCredits);
 
