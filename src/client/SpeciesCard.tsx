@@ -2,6 +2,7 @@
  * The full species card and its sub-blocks, split out of App.tsx (7.3).
  */
 import { achievementMarkTitle, codexFirstTitle, codexMarkTitle } from "./codexMark";
+import { STREAMER_MODE } from "./streamerMode";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { fmtCrExact, fmtCrShort } from "./credits";
 import { useModal } from "./ui/useModal";
@@ -98,7 +99,8 @@ export const SpeciesCard = memo(function SpeciesCard({
   }, [m, scan, estimatedSurfaceTempK, tempUnit]);
   const extras = useMemo(() => speciesMatchExtraReasons(m), [m]);
   const [exoDetailOpen, setExoDetailOpen] = useState(false);
-  const [otherDetailsOpen, setOtherDetailsOpen] = useState(false);
+  // Open from the start in streamer mode, where nobody can click it open (owner, 2026-10-03).
+  const [otherDetailsOpen, setOtherDetailsOpen] = useState(STREAMER_MODE);
   const [otherMatchModalOpen, setOtherMatchModalOpen] = useState(false);
   // Fetched on first open of the modal or the drawer (UI review P1b); see useMatchDetail.
   const lazyDetail = useMatchDetail(m, exoDetailOpen || otherDetailsOpen || otherMatchModalOpen);
