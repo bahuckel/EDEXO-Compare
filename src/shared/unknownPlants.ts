@@ -28,14 +28,19 @@ export function unknownPlantSlots(input: {
 }): UnknownPlantSlot[] {
   const shown = input.matches.filter((m) => !m.unlikely || m.sampledHere === true);
   if (input.genusHints?.length) {
-    return (
-      (input.orphanHints ?? [])
-        // Bacterium switched off: its rows are left out on purpose, so a named Bacterium is not unknown.
-        .filter((h) => input.includeBacterium || !dssHintsIncludeBacterium([h as GenusHint]))
-        .map((h) => ({
-          genus: h.Genus_Localised?.trim() || genusNameForCodexToken(h.Genus ?? "") || h.Genus || null,
-        }))
-    );
+    const orphans = input.orphanHints ?? [];
+    // Bacterium switched off: its rows are left out on purpose, so a named Bacterium is not unknown.
+    const bacteriumHidden =
+      !input.includeBacterium && orphans.some((h) => dssHintsIncludeBacterium([h as GenusHint]));
+    const slots = orphans
+      .filter((h) => input.includeBacterium || !dssHintsIncludeBacterium([h as GenusHint]))
+      .map((h) => ({
+        genus: h.Genus_Localised?.trim() || genusNameForCodexToken(h.Genus ?? "") || h.Genus || null,
+      }));
+    // ... but a body with nothing else on it says so rather than showing an empty list.
+    if (bacteriumHidden && slots.length === 0 && shown.length === 0)
+      return [{ genus: "Bacterium", maybeBacterium: true }];
+    return slots;
   }
   const signals = input.signals ?? 0;
   if (!(signals > 0)) return [];

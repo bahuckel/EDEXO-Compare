@@ -265,7 +265,13 @@ export var candidates = {
       name.appendChild(em);
       name.appendChild(
         document.createTextNode(
-          u.genus ? "Unknown " + cap(u.genus) : u.maybeBacterium ? "Unknown plant (Bacterium?)" : "Unknown plant",
+          u.genus && u.maybeBacterium
+            ? cap(u.genus) + " (switched off)"
+            : u.genus
+              ? "Unknown " + cap(u.genus)
+              : u.maybeBacterium
+                ? "Unknown plant (Bacterium?)"
+                : "Unknown plant",
         ),
       );
       var cr = document.createElement("span");

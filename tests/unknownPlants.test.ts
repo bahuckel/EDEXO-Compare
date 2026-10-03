@@ -65,3 +65,18 @@ describe("unknown plant slots with Bacterium switched off", () => {
     expect(r).toEqual([{ genus: "Tussock" }]);
   });
 });
+
+describe("a DSS that names only Bacterium, with Bacterium switched off", () => {
+  it("says so instead of an empty list", () => {
+    const hints = [{ Genus: "$Codex_Ent_Bacterial_Genus_Name;", Genus_Localised: "Bacterium" }];
+    expect(
+      unknownPlantSlots({
+        signals: 1,
+        matches: [],
+        genusHints: hints,
+        orphanHints: hints,
+        includeBacterium: false,
+      }),
+    ).toEqual([{ genus: "Bacterium", maybeBacterium: true }]);
+  });
+});

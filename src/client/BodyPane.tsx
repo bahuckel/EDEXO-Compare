@@ -769,9 +769,19 @@ export function UnknownPlantCards({ slots }: { slots: readonly UnknownPlantSlot[
             ?
           </div>
           <div className="species-unknown-text">
-            <strong>{slot.genus ? `Unknown ${slot.genus}` : slot.maybeBacterium ? "Unknown plant — probably Bacterium" : "Unknown plant"}</strong>
+            <strong>
+              {slot.genus && slot.maybeBacterium
+                ? `${slot.genus} — switched off in the search`
+                : slot.genus
+                  ? `Unknown ${slot.genus}`
+                  : slot.maybeBacterium
+                    ? "Unknown plant — probably Bacterium"
+                    : "Unknown plant"}
+            </strong>
             <span className="dim tiny">
-              {slot.genus
+              {slot.genus && slot.maybeBacterium
+                ? "The scanner named Bacterium here. Switch Bacterium on above the list to see which one."
+                : slot.genus
                 ? "The scanner named this genus, and no species in the data fits this body. Worth a look: it may be a new find."
                 : slot.maybeBacterium
                   ? "A signal with no candidate. Bacterium is switched off in the search; if it is not that, it may be a new find."
