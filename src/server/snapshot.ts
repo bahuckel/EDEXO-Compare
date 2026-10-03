@@ -1176,6 +1176,8 @@ function computeBodyUncached(
 /** Unsold exobiology (3× Analyse in journal): list ×5 on first-footfall bodies (else ×1) — same multiplier as map tier/heuristic when footfall applies. */
 /** Pranav Antal's +30 % on exobiology sales (Powerplay 2.0), as the Data value toggle applies it. */
 export const PRANAV_ANTAL_BONUS = 1.3;
+/** A fleet carrier's Universal Cartographics pays 75 % (the owner's carrier sales, 2026-10-03). */
+export const FLEET_CARRIER_SALE_FACTOR = 0.75;
 
 function organicDataValuation(
   store: GameStateStore,
@@ -1316,9 +1318,17 @@ export function buildSnapshot(
     ? { credits: 0, pendingSamples: 0 }
     : organicDataValuation(store, cachedPrices);
   // One walk of every scan, not two: the total is the breakdown's own total (code review §E).
-  const exploreBreakdown = bootLoading
+  const exploreRaw = bootLoading
     ? { totalCredits: 0, fssScanCount: 0, fssValueCredits: 0, dssScanCount: 0, dssValueCredits: 0 }
     : explorationDataValueBreakdown(store);
+  // Sold at a fleet carrier, the carrier keeps 25 % (the Data value toggle; owner, 2026-10-03).
+  const carrier = store.sellAtFleetCarrier ? FLEET_CARRIER_SALE_FACTOR : 1;
+  const exploreBreakdown = {
+    ...exploreRaw,
+    fssValueCredits: Math.round(exploreRaw.fssValueCredits * carrier),
+    dssValueCredits: Math.round(exploreRaw.dssValueCredits * carrier),
+    totalCredits: Math.round(exploreRaw.fssValueCredits * carrier) + Math.round(exploreRaw.dssValueCredits * carrier),
+  };
   const explorationScanDataValueCredits = exploreBreakdown.totalCredits;
   const organicPendingLines = bootLoading ? [] : buildOrganicPendingLines(store, db, cachedPrices);
   // Logged colours anywhere in the journals, not only in the system in view (see the function).
@@ -1484,6 +1494,7 @@ export function buildSnapshot(
     },
     includeExplorationScanDataInDataValue: store.includeExplorationScanDataInDataValue,
     pranavAntalBonus: store.pranavAntalBonus,
+    sellAtFleetCarrier: store.sellAtFleetCarrier,
     explorationScanDataValueCredits,
     explorationFssScanCount: exploreBreakdown.fssScanCount,
     onSiteTiming: timingFromSamples(store.landingMinutesSamples, store.samplingMinutesSamples),

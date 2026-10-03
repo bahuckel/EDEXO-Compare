@@ -177,6 +177,8 @@ export interface AppSnapshot {
   includeExplorationScanDataInDataValue: boolean;
   /** `organicDataValueCredits` includes the +30 % Pranav Antal exobiology sale bonus (Data value toggle). */
   pranavAntalBonus?: boolean;
+  /** Exploration figures are after a fleet carrier's 25 % (Data value toggle). */
+  sellAtFleetCarrier?: boolean;
   /** Estimated CR from all merged `Scan` rows (MattG-style formulas; belts excluded). */
   explorationScanDataValueCredits: number;
   /** Unique bodies with journal `FSSBodySignals` (any system in merged logs). */

@@ -1656,6 +1656,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       store.setPranavAntalBonus(v);
       persistUserPreferences();
     },
+    setSellAtFleetCarrier: (v) => {
+      store.setSellAtFleetCarrier(v);
+      persistUserPreferences();
+    },
     setFootTravelOdometer: (v) => {
       store.setFootTravelOdometerEnabled(v);
       persistUserPreferences();

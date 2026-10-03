@@ -259,6 +259,7 @@ export interface HttpServerOptions {
   setIncludeExplorationScanData?: (value: boolean) => void;
   /** POST /api/settings/pranav-antal-bonus — `{ value: boolean }`. */
   setPranavAntalBonus?: (value: boolean) => void;
+  setSellAtFleetCarrier?: (value: boolean) => void;
   /** POST /api/settings/photo-stamp — JSON { commander?, system?, timestamp?: boolean } */
   setPhotoStamp?: (p: Partial<PhotoStampPrefs>) => void;
   /** POST /api/settings/foot-travel-odometer — JSON { value: boolean } */

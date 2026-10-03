@@ -327,6 +327,22 @@ export function registerSettingsRoutes(
     res.json({ ok: true });
   });
 
+  /** The Data value window's "Selling at a fleet carrier (−25 %)" (owner, 2026-10-03). */
+  app.post("/api/settings/fleet-carrier-sale", (req, res) => {
+    if (typeof opts.setSellAtFleetCarrier !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const value = req.body?.value;
+    if (typeof value !== "boolean") {
+      res.status(400).json({ ok: false, error: 'JSON body must include boolean "value".' });
+      return;
+    }
+    opts.setSellAtFleetCarrier(value);
+    opts.scheduleBroadcast?.();
+    res.json({ ok: true });
+  });
+
   app.post("/api/settings/photo-stamp", (req, res) => {
     if (typeof opts.setPhotoStamp !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });

@@ -17,6 +17,7 @@ export function persistUserPreferences(store: GameStateStore, file: string): voi
           includeBacteriumInSearch: store.includeBacteriumInSearch,
           includeExplorationScanDataInDataValue: store.includeExplorationScanDataInDataValue,
           pranavAntalBonus: store.pranavAntalBonus,
+          sellAtFleetCarrier: store.sellAtFleetCarrier,
           exoMapTierPlusMinCr: store.exoMapTierPlusMinCr,
           exoMapTierPlusPlusMinCr: store.exoMapTierPlusPlusMinCr,
           footTravelOdometerEnabled: store.footTravelOdometerEnabled,
@@ -49,6 +50,7 @@ export type PersistedUserPrefs = {
   includeBacteriumInSearch?: boolean;
   includeExplorationScanDataInDataValue?: boolean;
   pranavAntalBonus?: boolean;
+  sellAtFleetCarrier?: boolean;
   exoMapTierPlusMinCr?: number;
   exoMapTierPlusPlusMinCr?: number;
   footTravelOdometerEnabled?: boolean;
@@ -83,6 +85,7 @@ export function applyPersistedUserPrefs(store: GameStateStore, j: PersistedUserP
     store.setIncludeExplorationScanDataInDataValue(j.includeExplorationScanDataInDataValue);
   }
   if (typeof j.pranavAntalBonus === "boolean") store.setPranavAntalBonus(j.pranavAntalBonus);
+  if (typeof j.sellAtFleetCarrier === "boolean") store.setSellAtFleetCarrier(j.sellAtFleetCarrier);
   if (typeof j.exoMapTierPlusMinCr === "number" && typeof j.exoMapTierPlusPlusMinCr === "number") {
     store.setExoMapTierThresholds(j.exoMapTierPlusMinCr, j.exoMapTierPlusPlusMinCr);
   }

@@ -998,6 +998,11 @@ export class GameStateStore {
    * whether a sale gets it depends on where the commander sells, which the app does not follow.
    */
   pranavAntalBonus = false;
+  /**
+   * Data value counts exploration data sold at a fleet carrier, which keeps 25 % (owner, 2026-10-03:
+   * his carrier sales came in 25 % under the system map). Off by default; where he sells is his choice.
+   */
+  sellAtFleetCarrier = false;
 
   /** Consumed once in `buildSnapshot` so the client can select that bio body tab. */
   private pendingUiAutoSelectBodyKey: string | null = null;
@@ -1167,6 +1172,10 @@ export class GameStateStore {
 
   setPranavAntalBonus(value: boolean): void {
     this.pranavAntalBonus = value;
+  }
+
+  setSellAtFleetCarrier(value: boolean): void {
+    this.sellAtFleetCarrier = value;
   }
 
   setIncludeBacteriumInSearch(value: boolean): void {

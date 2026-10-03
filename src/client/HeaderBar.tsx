@@ -472,6 +472,22 @@ export const HeaderBar = memo(function HeaderBar({
       }
     })();
   };
+  /* The Data value window's ""Selling at a fleet carrier (−25 %)" (owner, 2026-10-03): a saved setting. */
+  const toggleFleetCarrier = (on: boolean) => {
+    void (async () => {
+      try {
+        const r = await fetch("/api/settings/fleet-carrier-sale", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ value: on }),
+        });
+        const j = (await r.json().catch(() => null)) as { error?: string } | null;
+        if (!r.ok) throw new Error(j?.error || r.statusText);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Could not update setting.");
+      }
+    })();
+  };
 
   const resetExobiology = () => {
     void (async () => {
@@ -882,6 +898,8 @@ export const HeaderBar = memo(function HeaderBar({
             exobioValueCredits={snap.organicDataValueCredits}
             pranavAntalBonus={snap.pranavAntalBonus === true}
             onTogglePranavAntal={togglePranavAntal}
+            sellAtFleetCarrier={snap.sellAtFleetCarrier === true}
+            onToggleFleetCarrier={toggleFleetCarrier}
             onClose={() => setDataBreakdownOpen(false)}
           />
         </Suspense>

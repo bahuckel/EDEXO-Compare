@@ -17,6 +17,8 @@ export function DataValueBreakdownModal({
   exobioValueCredits,
   pranavAntalBonus = false,
   onTogglePranavAntal,
+  sellAtFleetCarrier = false,
+  onToggleFleetCarrier,
   onClose,
 }: {
   lines: OrganicPendingLineItem[];
@@ -31,6 +33,9 @@ export function DataValueBreakdownModal({
   /** The exobiology figures include the +30 % Pranav Antal sale bonus (owner, 2026-10-03). */
   pranavAntalBonus?: boolean;
   onTogglePranavAntal?: (on: boolean) => void;
+  /** The exploration figures are after a fleet carrier's 25 % (owner, 2026-10-03). */
+  sellAtFleetCarrier?: boolean;
+  onToggleFleetCarrier?: (on: boolean) => void;
   onClose: () => void;
 }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
@@ -66,6 +71,7 @@ export function DataValueBreakdownModal({
               <span className="data-value-summary-count">{explorationFssScanCount}</span>
               <span className="data-value-summary-label">
                 FSS scans
+                {sellAtFleetCarrier ? <span className="dim tiny"> · at a carrier</span> : null}
                 {!includeExplorationScanDataInDataValue ? (
                   <span className="dim tiny"> · not in total</span>
                 ) : null}
@@ -81,6 +87,7 @@ export function DataValueBreakdownModal({
               <span className="data-value-summary-count">{explorationDssScanCount}</span>
               <span className="data-value-summary-label">
                 DSS scans
+                {sellAtFleetCarrier ? <span className="dim tiny"> · at a carrier</span> : null}
                 {!includeExplorationScanDataInDataValue ? (
                   <span className="dim tiny"> · not in total</span>
                 ) : null}
@@ -117,6 +124,23 @@ export function DataValueBreakdownModal({
               />
               <span>+30% Pranav Antal bonus</span>
               {pranavAntalBonus ? <span className="dim tiny">· the samples below are before it</span> : null}
+            </label>
+          ) : null}
+          {/*
+            Fleet carrier (owner, 2026-10-03): exploration data sold at a carrier pays 75 %; his carrier
+            sales came in exactly 25 % under the system map. Off by default, like Pranav Antal.
+          */}
+          {onToggleFleetCarrier ? (
+            <label
+              className="data-value-bonus-toggle"
+              title="Count exploration data as sold at a fleet carrier, which keeps 25 %. The system map still shows the full values, as the game's does."
+            >
+              <input
+                type="checkbox"
+                checked={sellAtFleetCarrier}
+                onChange={(ev) => onToggleFleetCarrier(ev.target.checked)}
+              />
+              <span>Selling at a fleet carrier (−25 %)</span>
             </label>
           ) : null}
           {lines.length === 0 ? (
