@@ -70,7 +70,7 @@ import {
   demoteFailedSpatialGates,
   demoteFailedHostStarGates,
   demoteFailedSystemBodyGates,
-  demoteOutsideStarlight,
+  weighOutsideStarlight,
   OBSERVED_TEMP_TOLERANCE_K,
   demoteRegionallyRareSiblings,
   demoteDeltahedronixOnOneSignalIcy,
@@ -79,7 +79,7 @@ export {
   demoteFailedSpatialGates,
   demoteFailedHostStarGates,
   demoteFailedSystemBodyGates,
-  demoteOutsideStarlight,
+  weighOutsideStarlight,
   OBSERVED_TEMP_TOLERANCE_K,
   demoteRegionallyRareSiblings,
 } from "./demotionPasses.js";
@@ -1482,7 +1482,7 @@ export function matchDatabaseToScan(
   demoteFailedSpatialGates(strict, unlikely, matchContext, options?.spatialCatalogue ?? null);
   demoteFailedHostStarGates(strict, unlikely, matchContext);
   demoteFailedSystemBodyGates(strict, unlikely, matchContext);
-  demoteOutsideStarlight(strict, unlikely, matchContext);
+  weighOutsideStarlight(strict, unlikely, matchContext);
   demoteRegionallyRareSiblings(strict, unlikely, matchContext);
   demoteDeltahedronixOnOneSignalIcy(
     strict,

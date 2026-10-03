@@ -22,7 +22,7 @@ import type { MatchReason, SpeciesEntry, SpeciesMatch, SpeciesMatchContext } fro
 import { getProjectRoot } from "./paths.js";
 import { regionalGenusEnrichment, regionalGenusShare } from "./regionSpeciesData.js";
 import { speciesHostStarObservations } from "./speciesHostStarObservations.js";
-import { evaluateStarlightGate, formatStarlight } from "./starlightRanges.js";
+import { evaluateStarlightGate, formatStarlight, starlightOutsideFactor } from "./starlightRanges.js";
 
 /** Suffix appended to every demoted failure, so the card says what the tier means. */
 export const DEMOTED_NOTE = "Listed as a low-probability find rather than excluded.";
@@ -220,7 +220,7 @@ export function demoteFailedSpatialGates(
     };
     // Inside the gate's soft band (Bark Mounds 150–300 ly): stays shown, at a lower chance.
     if (verdict.softBand) {
-      strict[i] = { ...m, reasons: [...m.reasons, reason], presenceFactor: verdict.softBand.factor };
+      strict[i] = { ...m, reasons: [...m.reasons, reason], presenceFactor: (m.presenceFactor ?? 1) * verdict.softBand.factor };
       continue;
     }
     strict.splice(i, 1);
@@ -340,17 +340,20 @@ export function demoteFailedSystemBodyGates(
 }
 
 /**
- * Demote a species when the body gets less or more starlight than it is ever seen under.
+ * Weigh a species down when the body gets less or more starlight than it is usually seen under.
  *
  * The owner's idea (2026-09-27), measured before it was built: a range for every species, gated only
- * where it adds to temperature and planet type — see `starlightRanges.ts` for the six species and
- * why the rest are not. A demotion rather than an exclusion: the ranges hold 99 % of the clean
- * sightings, not all of them, and a star the FSS has not resolved yet leaves the light short.
+ * where it adds to temperature and planet type — see `starlightRanges.ts` for the seven species and
+ * why the rest are not. The ranges hold 99 % of the clean sightings, not all of them, and the gate
+ * used to demote the other 1 %: Stratum araneamus under 0.025× Earth's light at Eol Prou QX-S
+ * d4-3465 6 (EDDN ScanOrganic set, 2026-10-03), 1.3 % of its bodies in all and 4.6 % of Bacterium
+ * volu's. Outside the range the row now stays, its chance and genus share multiplied by how much
+ * less likely it is there than its siblings (`starlightOutsideFactor`), and the 1 % floors decide.
  * Unknown light (a star the body orbits never scanned) says nothing.
  */
-export function demoteOutsideStarlight(
+export function weighOutsideStarlight(
   strict: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
-  unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
+  _unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[],
   matchContext: SpeciesMatchContext | null | undefined,
 ): void {
   const light = matchContext?.stellarIrradiance;
@@ -360,20 +363,15 @@ export function demoteOutsideStarlight(
     const verdict = evaluateStarlightGate(m.entry.id, light);
     if (!verdict || verdict.passes) continue;
     const { lo, hi } = verdict.range;
+    const factor = starlightOutsideFactor(verdict.range);
     const reason: MatchReason = {
       field: "Starlight",
       detail:
         `${formatStarlight(light)}× Earth's starlight here; ${m.entry.displayName} grows under ` +
-        `${formatStarlight(lo)}–${formatStarlight(hi)}× (99 % of its sightings). ${DEMOTED_NOTE}`,
+        `${formatStarlight(lo)}–${formatStarlight(hi)}× on 99 % of its sightings. Kept at ×${factor.toFixed(2)} chance.`,
       soft: true,
     };
-    strict.splice(i, 1);
-    unlikely.push({
-      ...m,
-      reasons: [...m.reasons, reason],
-      unlikely: true,
-      unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
-    });
+    strict[i] = { ...m, reasons: [...m.reasons, reason], presenceFactor: (m.presenceFactor ?? 1) * factor };
   }
 }
 

@@ -9,6 +9,10 @@ export interface SpeciesStarlight {
   hi: number;
   /** Clean bodies the range was measured on. */
   n: number;
+  /** Share of the species' own bodies outside the range. */
+  ownLoss?: number;
+  /** Share of its genus siblings' bodies outside it, where temperature and host type already fit. */
+  beyondT?: number | null;
 }
 
 /** "0.034" / "4.8" / "1,270": Earth-relative light at a readable precision. */

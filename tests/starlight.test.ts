@@ -4,8 +4,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { stellarIrradianceFor } from "../src/server/speciesMatchContext.js";
-import { demoteOutsideStarlight } from "../src/server/matchSpecies.js";
-import { starlightRangeFor } from "../src/server/starlightRanges.js";
+import { weighOutsideStarlight } from "../src/server/matchSpecies.js";
+import { starlightOutsideFactor, starlightRangeFor } from "../src/server/starlightRanges.js";
 import { buildEncyclopediaSpawnConditionCards } from "../src/shared/speciesSpawnConditionCards.js";
 import type { ExplorationScanRecord, SpeciesEntry, SpeciesMatch } from "../src/shared/types.js";
 
@@ -54,19 +54,31 @@ describe("stellarIrradianceFor", () => {
   });
 });
 
-describe("demoteOutsideStarlight", () => {
+describe("weighOutsideStarlight", () => {
   type Row = Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">;
   const row = (id: string): Row => ({ entry: { id, displayName: id } as SpeciesEntry, reasons: [] });
 
-  it("demotes a gated species outside its range and leaves the rest", () => {
+  // No misses first (2026-10-03): outside the range a gated species stays, at a lower chance.
+  it("weighs a gated species down outside its range, keeps it, and leaves the rest alone", () => {
     const volu = starlightRangeFor("bacterium_bacterium_volu");
     expect(volu?.gate).toBe(true);
     const strict = [row("bacterium_bacterium_volu"), row("tussock_tussock_cultro")];
     const unlikely: Row[] = [];
-    demoteOutsideStarlight(strict, unlikely, { stellarIrradiance: volu!.hi * 10 });
-    expect(strict.map((m) => m.entry.id)).toEqual(["tussock_tussock_cultro"]);
-    expect(unlikely[0]!.entry.id).toBe("bacterium_bacterium_volu");
-    expect(unlikely[0]!.unlikelyReasons?.[0]?.field).toBe("Starlight");
+    weighOutsideStarlight(strict, unlikely, { stellarIrradiance: volu!.hi * 10 });
+    expect(strict.map((m) => m.entry.id)).toEqual(["bacterium_bacterium_volu", "tussock_tussock_cultro"]);
+    expect(unlikely).toHaveLength(0);
+    // Volu: 4.6 % of its own bodies outside, 10.4 % of its siblings' — 0.44.
+    expect(strict[0]!.presenceFactor).toBeCloseTo(starlightOutsideFactor(volu!), 5);
+    expect(strict[0]!.presenceFactor).toBeCloseTo(0.0462 / 0.1043, 2);
+    expect(strict[0]!.reasons.at(-1)?.field).toBe("Starlight");
+    expect(strict[1]!.presenceFactor).toBeUndefined();
+  });
+
+  it("keeps Stratum araneamus under 0.025x Earth's light (Eol Prou QX-S d4-3465 6, EDDN set)", () => {
+    const strict = [row("stratum_stratum_araneamus")];
+    weighOutsideStarlight(strict, [], { stellarIrradiance: 0.025 });
+    expect(strict).toHaveLength(1);
+    expect(strict[0]!.presenceFactor).toBeGreaterThan(0.3);
   });
 
   it("keeps it inside the range, and says nothing when the light is unknown", () => {
@@ -74,7 +86,7 @@ describe("demoteOutsideStarlight", () => {
     for (const ctx of [{ stellarIrradiance: Math.sqrt(volu.lo * volu.hi) }, {}]) {
       const strict = [row("bacterium_bacterium_volu")];
       const unlikely: Row[] = [];
-      demoteOutsideStarlight(strict, unlikely, ctx);
+      weighOutsideStarlight(strict, unlikely, ctx);
       expect(strict).toHaveLength(1);
       expect(unlikely).toHaveLength(0);
     }

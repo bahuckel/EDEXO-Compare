@@ -62,6 +62,20 @@ export function evaluateStarlightGate(speciesId: string, irradiance: number | un
   return { passes: true };
 }
 
+/**
+ * How much less likely the species is outside its range than inside, as its genus siblings would
+ * have it: the share of its own bodies out there over the share of theirs (owner, 2026-10-03: no
+ * misses first). Stratum araneamus 0.013 / 0.033 = 0.39 — two and a half times less likely, not
+ * ruled out; Electricae radialem 0.12. Floored at 0.05 so a range with almost no own loss still
+ * leaves the row a chance.
+ */
+export function starlightOutsideFactor(range: StarlightRange): number {
+  const own = range.ownLoss;
+  const sib = range.beyondT;
+  if (own === undefined || sib == null || !(sib > 0)) return 0.05;
+  return Math.max(0.05, Math.min(1, own / sib));
+}
+
 export function clearStarlightRangesCache(): void {
   cache = null;
 }

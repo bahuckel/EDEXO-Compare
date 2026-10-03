@@ -62,7 +62,7 @@ export interface SpeciesMatchContext {
   /**
    * Starlight reaching the body, in the Sun's flux at 1 AU (Earth = 1): every scanned star's
    * luminosity over distance², the colour rule's stars and distances (speciesMatchContext.ts
-   * `stellarIrradianceFor`). Read by the starlight gate (matchSpecies.ts `demoteOutsideStarlight`).
+   * `stellarIrradianceFor`). Read by the starlight gate (matchSpecies.ts `weighOutsideStarlight`).
    */
   stellarIrradiance?: number;
   /**
