@@ -60,7 +60,6 @@ import {
   observedAtTemperature,
   observedNearTemperature,
 } from "./speciesTemperatureObservations.js";
-import { observedTemperatureEdge } from "./speciesTemperatureEdges.js";
 import { observedWithVolcanism } from "./speciesVolcanismObservations.js";
 import { hostStarVerdict, type HostStarVerdict } from "./speciesHostStarObservations.js";
 import { volcanismJournalMatchesFragments } from "../shared/volcanismMatch.js";
@@ -236,11 +235,23 @@ export interface PlanetTemperatureBand {
   maxK: number;
 }
 
+/**
+ * A codex ceiling of 195 K is 195.5 K in the game (2026-10-03). On thin carbon dioxide bodies every
+ * species capped at 195 K runs on past it and stops: 3,700 corpus bodies of 24 species between 195
+ * and 195.5 K (Aleoida gravis 513, Tussock triticum 397, Osseus pellebantus 396 …), a handful beyond.
+ * Fungoida gelata and Frutexa acus at 195 K on CO₂ were demoted for it (EDDN ScanOrganic set).
+ */
+export function gameTemperatureCeilingK(maxK: number): number;
+export function gameTemperatureCeilingK(maxK: number | undefined): number | undefined;
+export function gameTemperatureCeilingK(maxK: number | undefined): number | undefined {
+  return maxK === 195 ? 195.5 : maxK;
+}
+
 function speciesTempBand(c: SpeciesCriterion): { lo: number; hi: number } | null {
   const st = c.surfaceTemperatureK;
   if (!st) return null;
   if (st.min === undefined && st.max === undefined) return null;
-  return { lo: st.min ?? OPEN_LO, hi: st.max ?? OPEN_HI };
+  return { lo: st.min ?? OPEN_LO, hi: gameTemperatureCeilingK(st.max) ?? OPEN_HI };
 }
 
 /**
@@ -1091,14 +1102,7 @@ export function speciesMatchesCriteria(
       const beyond =
         !!edgeCheck &&
         (!edgeCheck.straddles || edgeCheck.near === null || edgeCheck.near >= MIN_TEMPERATURE_OBSERVATIONS);
-      // A rounded codex edge: the game's bodies run on past it (speciesTemperatureEdges.ts).
-      const roundedEdge = measured ? observedTemperatureEdge(entry.id, scan.SurfaceTemperature!) : null;
-      if (!(observedHere && beyond) && roundedEdge) {
-        extraOkReasons.push({
-          field: "SurfaceTemperature",
-          detail: `${scan.SurfaceTemperature!.toFixed(1)} K — outside the codex ${speciesRange}, but its bodies run to ${roundedEdge.observedK} K: ${roundedEdge.past.toLocaleString("en-US")} confirmed past ${roundedEdge.codexK} K.`,
-        });
-      } else if (observedHere && beyond) {
+      if (observedHere && beyond) {
         extraOkReasons.push({
           field: "SurfaceTemperature",
           detail: `${scan.SurfaceTemperature!.toFixed(1)} K — outside the codex ${speciesRange}, but ${observedHere.observations} of ${observedHere.total} observed bodies sit between ${observedHere.binLowK.toFixed(0)} and ${observedHere.binHighK.toFixed(0)} K.`,
@@ -1193,7 +1197,7 @@ export function speciesMatchesCriteria(
     });
   }
 
-  const linkedMax = c.whenAtmosphereLinkedMaxTempK;
+  const linkedMax = gameTemperatureCeilingK(c.whenAtmosphereLinkedMaxTempK);
   const linkedMin = c.whenAtmosphereLinkedMinTempK;
   const linkedAtmo = c.whenAtmosphereLinkedAtmosphereAnyOf;
   if (linkedMax !== undefined || linkedMin !== undefined) {
