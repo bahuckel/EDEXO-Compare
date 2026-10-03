@@ -67,15 +67,23 @@ describe("starScanValueCredits", () => {
 });
 
 describe("bodyScanValueCredits", () => {
-  it("matches the known Earthlike payouts at 1 Earth mass", () => {
-    expect(bodyScanValueCredits("Earthlike body", false, 1, false, false)).toEqual({
+  it("matches the known Earthlike payouts at 1 Earth mass (the 3.3 formula, before Odyssey)", () => {
+    expect(bodyScanValueCredits("Earthlike body", false, 1, false, false, false)).toEqual({
       fss: 283629,
       dssMapped: 945428,
       honkThird: 94543,
       fssMinRange: 283629,
       dssMinRange: 945428,
     });
-    expect(bodyScanValueCredits("Earthlike body", false, 1, true, true).dssMapped).toBe(2728228);
+    expect(bodyScanValueCredits("Earthlike body", false, 1, true, true, false).dssMapped).toBe(2728228);
+  });
+
+  // The owner's map values (2026-10-03): every body he mapped is x1.3 over the 3.3 formula.
+  it("adds the Odyssey +30 % to a mapped body by default", () => {
+    expect(bodyScanValueCredits("Earthlike body", false, 1, false, false).dssMapped).toBe(
+      Math.round(945428.3 * 1.3),
+    );
+    expect(bodyScanValueCredits("Earthlike body", false, 1, false, false).fss).toBe(283629);
   });
 
   it("pays first discoverer + first mapper more than first mapper alone", () => {

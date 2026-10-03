@@ -24,6 +24,11 @@ export function planetClassK(
   terraformable: boolean,
 ): { k: number; kt: number; tm: number } {
   const pc = planetClass ?? "";
+  /*
+    Class III, IV and V gas giants take the plain 300 (owner's system map values, 2026-10-03: 13
+    class III and one class IV, every one at k = 300 to 0.1 %). The 1,264 / 1,167 / 1,659 Pioneer
+    carried are from before the 3.3 values and read them four times too high.
+  */
   let base = 300;
   let terraform = 0;
   let mult = 1.0;
@@ -34,12 +39,6 @@ export function planetClassK(
     base = 96932;
   } else if (pc === "Sudarsky class I gas giant") {
     base = 1656;
-  } else if (pc === "Sudarsky class III gas giant") {
-    base = 1264;
-  } else if (pc === "Sudarsky class IV gas giant") {
-    base = 1167;
-  } else if (pc === "Sudarsky class V gas giant") {
-    base = 1659;
   } else if (pc === "Sudarsky class II gas giant" || pc === "High metal content body") {
     base = 9654;
     if (terraformable) {
@@ -91,7 +90,12 @@ export function bodyScanValueCredits(
   massEM: number,
   firstDiscoverer: boolean,
   firstMapper: boolean,
-  odysseyBonus = false,
+  /**
+   * The Odyssey bonus on a mapped body: +30 %, at least 555. Measured on the owner's map values
+   * (2026-10-03): 37 of 37 bodies he mapped first are exactly x1.3 over the 3.3 formula, and the small
+   * ones carry the 555. On by default; only a test passes false.
+   */
+  odysseyBonus = true,
   /** Journal `SAAScanComplete`: ProbesUsed <= EfficiencyTarget (community ~1.25× on mapped tail). */
   dssProbeEfficient = false,
 ): {
@@ -154,5 +158,29 @@ export function bodyScanValueCredits(
 
 /** Reference FSS (not first discoverer) at 1 Earth mass for “above typical” marker. */
 export function referenceFssAt1EarthMass(planetClass: string | undefined, terraformable: boolean): number {
-  return bodyScanValueCredits(planetClass, terraformable, 1, false, false, false, false).fss;
+  return bodyScanValueCredits(planetClass, terraformable, 1, false, false, true, false).fss;
+}
+
+/** One body of a system, as the honk reads it. */
+export type HonkBody =
+  | { kind: "star"; stellarMass: number; starType: string | undefined }
+  | { kind: "planet"; planetClass: string | undefined; terraformable: boolean; massEM: number };
+
+/**
+ * The honk, which the game's system map shows on the arrival star and pays with the system (owner's
+ * map values, 2026-10-03): a third of every other body's scan value — a planet's at least 500, a
+ * star's not floored — times 2.6 when the **system** is a first discovery (its arrival star), whatever
+ * each body's own flag says: in a known system with undiscovered icy moons every moon's share was the
+ * bare 500. On his systems with every body's value known, arrival star = its own value + this, to the
+ * credit. About a quarter of what a system sells for, and the app had left it out.
+ */
+export function systemHonkCredits(others: readonly HonkBody[], systemFirstDiscovered: boolean): number {
+  let sum = 0;
+  for (const b of others) {
+    sum +=
+      b.kind === "star"
+        ? starScanValueCredits(b.stellarMass, b.starType, false).honkThird
+        : bodyScanValueCredits(b.planetClass, b.terraformable, b.massEM, false, false).honkThird;
+  }
+  return Math.round(sum * (systemFirstDiscovered ? 2.6 : 1));
 }

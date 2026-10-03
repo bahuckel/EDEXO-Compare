@@ -246,7 +246,7 @@ export function buildDiscoveries(
       Number.isFinite(massEM) ? massEM : 0,
       firstDiscoverer,
       firstMapper,
-      false,
+      true,
       store.dssMappingEfficientByBodyKey.get(key) === true,
     );
     const estimated = dssComplete ? v.dssMapped : v.fss;

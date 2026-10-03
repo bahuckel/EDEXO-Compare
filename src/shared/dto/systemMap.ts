@@ -89,6 +89,8 @@ export interface SystemMapBodyDetailDTO {
   fssCredits: number | null;
   fssFirstDiscoverCredits: number | null;
   fssFirstDiscoverBonus: number | null;
+  /** Arrival star only: the honk included in its value (explorationValue.ts `systemHonkCredits`). */
+  honkCredits?: number;
   /** Full cartographics value at current state: FSS-only until DSS completes, then mapped total (incl. mapping multiplier). */
   dssCredits: number | null;
   dssFirstDiscoverCredits: number | null;

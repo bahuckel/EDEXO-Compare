@@ -18,7 +18,13 @@ import { estimateSurfaceTemperatureRange } from "./surfaceTemperatureRange.js";
 import { shortBodyLabel } from "../shared/systemMapLabels.js";
 import { formatFullSpectralNotation, spectralDiscGlyph } from "../shared/spectralNotation.js";
 import type { GameStateStore } from "./gameState.js";
-import { bodyScanValueCredits, referenceFssAt1EarthMass, starScanValueCredits } from "./explorationValue.js";
+import {
+  bodyScanValueCredits,
+  referenceFssAt1EarthMass,
+  starScanValueCredits,
+  systemHonkCredits,
+  type HonkBody,
+} from "./explorationValue.js";
 import type { SpatialCatalogue } from "../shared/spatialGates.js";
 import { estimatedTemperatureRangeForScan } from "./planetTemperature.js";
 import { type PriceIndex } from "./priceList.js";
@@ -334,6 +340,20 @@ export function buildSystemMapSnapshot(
   const byId = new Map<number, ExplorationScanRecord>();
   for (const r of recs) byId.set(r.bodyId, r);
 
+  /*
+    The honk, shown on the arrival star as the game's own map shows it (explorationValue.ts
+    systemHonkCredits): a third of every other scanned body's value, x2.6 when the system is a first.
+  */
+  const honkBodies: HonkBody[] = recs
+    .filter((r) => r !== arrivalStarRecord && !r.isBarycentreJournal)
+    .flatMap((r): HonkBody[] =>
+      explorationRecordIsStellar(r)
+        ? [{ kind: "star", stellarMass: r.stellarMass ?? 1, starType: r.starType }]
+        : r.planetClass
+          ? [{ kind: "planet", planetClass: r.planetClass, terraformable: terraformableFromRecord(r), massEM: r.massEM ?? 1 }]
+          : [],
+    );
+
   const orbitChild = buildOrbitChildMapFromJournalChains(recs, byId, starSystemName);
   attachMoonsByParsedDesignation(recs, orbitChild, starSystemName, byId);
 
@@ -405,13 +425,16 @@ export function buildSystemMapSnapshot(
     let dss: number | null = null;
     let dssFd: number | null = null;
     let valuePlus = false;
+    let honk: number | null = null;
 
     if (journalStellar) {
       const sm = r.stellarMass ?? 1;
       const sv = starScanValueCredits(sm, r.starType, fd);
       const svFd = starScanValueCredits(sm, r.starType, true);
-      fss = sv.value;
-      fssFd = svFd.value;
+      const isArrival = r === arrivalStarRecord;
+      honk = isArrival ? systemHonkCredits(honkBodies, fd) : null;
+      fss = sv.value + (honk ?? 0);
+      fssFd = svFd.value + (isArrival ? systemHonkCredits(honkBodies, true) : 0);
       dss = fss;
       dssFd = fssFd;
       totalFss += fss;
@@ -422,11 +445,11 @@ export function buildSystemMapSnapshot(
       const mapped = store.dssMappedBodyKeys.has(bk);
       const fm = firstMapperForDssPayout(store, bk, r, mapped);
       const eff = mapped && store.dssMappingEfficientByBodyKey.get(bk) === true;
-      const base = bodyScanValueCredits(r.planetClass, tf, mass, fd, false, false, false);
-      const mappedVal = bodyScanValueCredits(r.planetClass, tf, mass, fd, fm, false, eff);
-      const baseFd = bodyScanValueCredits(r.planetClass, tf, mass, true, false, false, false);
-      const mapFd = bodyScanValueCredits(r.planetClass, tf, mass, true, true, false, false);
-      const projectedMapped = bodyScanValueCredits(r.planetClass, tf, mass, fd, fm, false, false).dssMapped;
+      const base = bodyScanValueCredits(r.planetClass, tf, mass, fd, false, true, false);
+      const mappedVal = bodyScanValueCredits(r.planetClass, tf, mass, fd, fm, true, eff);
+      const baseFd = bodyScanValueCredits(r.planetClass, tf, mass, true, false, true, false);
+      const mapFd = bodyScanValueCredits(r.planetClass, tf, mass, true, true, true, false);
+      const projectedMapped = bodyScanValueCredits(r.planetClass, tf, mass, fd, fm, true, false).dssMapped;
       fss = base.fss;
       dss = mapped ? mappedVal.dssMapped : base.fss;
       fssFd = baseFd.fss;
@@ -509,6 +532,7 @@ export function buildSystemMapSnapshot(
       fssCredits: fss,
       fssFirstDiscoverCredits: fssFd,
       fssFirstDiscoverBonus: fss != null && fssFd != null ? fssFd - fss : null,
+      ...(honk != null ? { honkCredits: honk } : {}),
       dssCredits: dss,
       dssFirstDiscoverCredits: dssFd,
       dssFirstDiscoverBonus: dss != null && dssFd != null ? dssFd - dss : null,

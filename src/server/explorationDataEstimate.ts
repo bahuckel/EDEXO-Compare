@@ -1,6 +1,6 @@
 import type { ExplorationScanRecord } from "../shared/types.js";
 import type { GameStateStore } from "./gameState.js";
-import { bodyScanValueCredits, starScanValueCredits } from "./explorationValue.js";
+import { bodyScanValueCredits, starScanValueCredits, systemHonkCredits, type HonkBody } from "./explorationValue.js";
 import { explorationRecordIsStellar } from "./explorationStellar.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
 import { isTerraformableState } from "../shared/terraformState.js";
@@ -106,6 +106,8 @@ function explorationDataValueBreakdownUncached(
 ): {
   fssScanCount: number;
   fssValueCredits: number;
+  /** Part of {@link fssValueCredits}: the honk, paid with each unsold system that has its arrival star. */
+  honkValueCredits: number;
   dssScanCount: number;
   dssValueCredits: number;
   totalCredits: number;
@@ -114,6 +116,13 @@ function explorationDataValueBreakdownUncached(
   let fssValue = 0;
   let dssCount = 0;
   let dssValue = 0;
+  // Per system: the arrival star (and whether it is a first discovery) and the other unsold bodies.
+  const honkBySystem = new Map<number, { arrivalFd: boolean | null; bodies: HonkBody[] }>();
+  const honkOf = (addr: number) => {
+    let h = honkBySystem.get(addr);
+    if (!h) honkBySystem.set(addr, (h = { arrivalFd: null, bodies: [] }));
+    return h;
+  };
   /*
     One system: its records from the store's per-system index, not a prefix test over every scan the
     commander ever made (the system map asks this on each snapshot; ~0.6 ms, profiled 2026-10-01).
@@ -128,15 +137,18 @@ function explorationDataValueBreakdownUncached(
     if (isExplorationStarRecord(r)) {
       fssCount += 1;
       fssValue += starScanValueCredits(r.stellarMass ?? 1, r.starType, fd).value;
+      if (!((r.distanceFromArrivalLs ?? 0) > 0)) honkOf(r.systemAddress).arrivalFd = fd;
+      else honkOf(r.systemAddress).bodies.push({ kind: "star", stellarMass: r.stellarMass ?? 1, starType: r.starType });
       continue;
     }
     if (!r.planetClass) continue;
     const tf = terraformableFromExplorationRecord(r);
     const mass = r.massEM ?? 1;
+    honkOf(r.systemAddress).bodies.push({ kind: "planet", planetClass: r.planetClass, terraformable: tf, massEM: mass });
     const mapped = store.dssMappedBodyKeys.has(k);
     const fm = firstMapperForDssPayout(store, k, r, mapped);
     const eff = mapped && store.dssMappingEfficientByBodyKey.get(k) === true;
-    const v = bodyScanValueCredits(r.planetClass, tf, mass, fd, fm, false, eff);
+    const v = bodyScanValueCredits(r.planetClass, tf, mass, fd, fm, true, eff);
     if (mapped) {
       dssCount += 1;
       dssValue += v.dssMapped;
@@ -145,11 +157,17 @@ function explorationDataValueBreakdownUncached(
       fssValue += v.fss;
     }
   }
+  let honkValue = 0;
+  for (const h of honkBySystem.values()) {
+    if (h.arrivalFd != null) honkValue += systemHonkCredits(h.bodies, h.arrivalFd);
+  }
+  fssValue += honkValue;
   const fssValueCredits = Math.round(fssValue);
   const dssValueCredits = Math.round(dssValue);
   return {
     fssScanCount: fssCount,
     fssValueCredits,
+    honkValueCredits: Math.round(honkValue),
     dssScanCount: dssCount,
     dssValueCredits,
     totalCredits: fssValueCredits + dssValueCredits,
