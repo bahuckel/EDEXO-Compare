@@ -83,8 +83,17 @@ export function attachPresenceProbability(
 
   const signals = b.biologicalSignals;
   const scale = signals != null && Number.isFinite(signals) && signals > 0 ? signals : 1;
+  /*
+    A soft band's factor (presenceFactor) weighs the row *before* the posterior is shared out, so a row
+    kept at x0.02 does not take its full share of the body's probability from the others first: the
+    Fumerola extremus on a lone-signal body fell from 3.3 % to 0.6 % behind rows kept that way
+    (2026-10-03). The weights are renormalised to the same total.
+  */
+  const total = ranked.reduce((a, r) => a + r.probability, 0);
+  const weighted = ranked.reduce((a, r) => a + r.probability * (r.match.presenceFactor ?? 1), 0);
+  const norm = weighted > 0 ? total / weighted : 1;
   for (const r of ranked) {
-    const p = Math.max(0, Math.min(1, r.probability * scale * (r.match.presenceFactor ?? 1)));
+    const p = Math.max(0, Math.min(1, r.probability * (r.match.presenceFactor ?? 1) * norm * scale));
     r.match.presenceProbabilityPercent = Math.round(p * 1000) / 10;
   }
 

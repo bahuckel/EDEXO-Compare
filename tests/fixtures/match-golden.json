@@ -30,17 +30,20 @@
       ],
       "candidates": [
         "aleoida_aleoida_laminiae",
+        "aleoida_aleoida_spica",
         "bacterium_bacterium_alcyoneum",
+        "cactoida_cactoida_lapis",
+        "cactoida_cactoida_peperatis",
         "concha_concha_aureolas",
         "frutexa_frutexa_flabellum",
         "frutexa_frutexa_flammasis",
         "fungoida_fungoida_setisis",
+        "osseus_osseus_spiralis",
         "tussock_tussock_catena",
         "tussock_tussock_cultro",
         "tussock_tussock_divisa"
       ],
       "unlikely": [
-        "aleoida_aleoida_spica",
         "amphora_amphora_plant",
         "anemone_blatteum_bioluminescent",
         "anemone_prasinum_bioluminescent",
@@ -55,8 +58,6 @@
         "bacterium_bacterium_nebulus",
         "bacterium_bacterium_vesicula",
         "bacterium_bacterium_volu",
-        "cactoida_cactoida_lapis",
-        "cactoida_cactoida_peperatis",
         "cactoida_cactoida_vermis",
         "concha_concha_biconcavis",
         "concha_concha_labiata",
@@ -80,7 +81,6 @@
         "fungoida_fungoida_stabitis",
         "osseus_osseus_discus",
         "osseus_osseus_pumice",
-        "osseus_osseus_spiralis",
         "recepta_recepta_conditivus",
         "recepta_recepta_deltahedronix",
         "recepta_recepta_umbrux",
@@ -177,6 +177,7 @@
       ],
       "candidates": [
         "bacterium_bacterium_vesicula",
+        "electricae_electricae_pluma",
         "electricae_electricae_radialem",
         "fonticulua_fonticulua_campestris",
         "fungoida_fungoida_bullarum"
@@ -205,7 +206,6 @@
         "concha_concha_labiata",
         "concha_concha_renibus",
         "crystalline_shards_crystalline_shards",
-        "electricae_electricae_pluma",
         "fonticulua_fonticulua_digitos",
         "fonticulua_fonticulua_fluctus",
         "fonticulua_fonticulua_lapida",
@@ -637,6 +637,7 @@
         "stratum_stratum_tectonicas"
       ],
       "candidates": [
+        "bacterium_bacterium_aurasus",
         "bacterium_bacterium_tela",
         "stratum_stratum_tectonicas"
       ],
@@ -652,7 +653,6 @@
         "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_acies",
         "bacterium_bacterium_alcyoneum",
-        "bacterium_bacterium_aurasus",
         "bacterium_bacterium_bullaris",
         "bacterium_bacterium_cerbrus",
         "bacterium_bacterium_informem",
@@ -817,6 +817,7 @@
       ],
       "candidates": [
         "bacterium_bacterium_bullaris",
+        "concha_concha_renibus",
         "fungoida_fungoida_setisis",
         "osseus_osseus_pumice"
       ],
@@ -843,7 +844,6 @@
         "concha_concha_aureolas",
         "concha_concha_biconcavis",
         "concha_concha_labiata",
-        "concha_concha_renibus",
         "crystalline_shards_crystalline_shards",
         "electricae_electricae_pluma",
         "electricae_electricae_radialem",

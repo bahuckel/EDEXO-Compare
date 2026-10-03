@@ -61,6 +61,7 @@ import {
   observedAtTemperature,
   observedNearTemperature,
 } from "./speciesTemperatureObservations.js";
+import { observedEnvelopeFactor } from "./observedEnvelope.js";
 import { observedWithVolcanism } from "./speciesVolcanismObservations.js";
 import { hostStarVerdict, type HostStarVerdict } from "./speciesHostStarObservations.js";
 import { volcanismJournalMatchesFragments } from "../shared/volcanismMatch.js";
@@ -1337,11 +1338,26 @@ export function speciesMatchesCriteria(
     Skipped entirely when the species has no envelope: under twenty bodies is a handful of anecdotes,
     and demoting a row against three observations would assert more than we know.
   */
+  let envelopeFactor: number | undefined;
   const envelope = entry.observedTemperatureK;
   const tHere = scan.SurfaceTemperature;
   // See OBSERVED_TEMP_TOLERANCE_K: an envelope edge is a recorded body, not a wall.
   if (envelope && typeof tHere === "number" && Number.isFinite(tHere) && failures.length === 0) {
-    if (tHere < envelope.min - OBSERVED_TEMP_TOLERANCE_K || tHere > envelope.max + OBSERVED_TEMP_TOLERANCE_K) {
+    const outside =
+      tHere < envelope.min - OBSERVED_TEMP_TOLERANCE_K || tHere > envelope.max + OBSERVED_TEMP_TOLERANCE_K;
+    const factor = outside ? observedEnvelopeFactor(entry.id) : undefined;
+    if (outside && factor !== undefined) {
+      // Kept, at how much less likely the corpus says it is out here than its siblings are.
+      envelopeFactor = factor;
+      extraOkReasons.push({
+        field: "ObservedTemperature",
+        soft: factor < 1,
+        detail:
+          `${tHere.toFixed(1)} K is outside the ${envelope.min.toFixed(0)}–${envelope.max.toFixed(0)} K ` +
+          `range of its ${envelope.count} profile bodies` +
+          (factor < 1 ? `; kept at ×${factor} chance, as rare out here as the corpus has it.` : `; the corpus finds it out here as often as its siblings.`),
+      });
+    } else if (outside) {
       failures.push({
         // Its own field name, not "SurfaceTemperature": the signal-count rescue has to be able to
         // tell this from a codex-gate near miss, and it reads better in the tooltip besides.
@@ -1365,7 +1381,11 @@ export function speciesMatchesCriteria(
   }
 
   const ok = { ok: true, reasons: [...base.reasons, ...extraOkReasons] };
-  return base.presenceFactor !== undefined ? { ...ok, presenceFactor: base.presenceFactor } : ok;
+  const pf =
+    base.presenceFactor !== undefined || envelopeFactor !== undefined
+      ? (base.presenceFactor ?? 1) * (envelopeFactor ?? 1)
+      : undefined;
+  return pf !== undefined ? { ...ok, presenceFactor: pf } : ok;
 }
 
 /**

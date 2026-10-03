@@ -94,6 +94,7 @@ import {
 import { clearHostStarObservationsCache } from "./speciesHostStarObservations.js";
 import { clearPlanetClassObservationsCache } from "./speciesPlanetClassObservations.js";
 import { clearStarlightRangesCache } from "./starlightRanges.js";
+import { clearObservedEnvelopeCache } from "./observedEnvelope.js";
 import { clearBodyTypePriorCache } from "./bodyTypePrior.js";
 import { clearGenusPhotosFolderCache, getSpeciesDataWarnings } from "./speciesTreeLoader.js";
 import {
@@ -215,6 +216,7 @@ function reloadSpeciesDerivedCaches(): void {
   clearHostStarObservationsCache();
   clearPlanetClassObservationsCache();
   clearStarlightRangesCache();
+  clearObservedEnvelopeCache();
   clearBodyTypePriorCache();
   clearAchievementsCache();
 }
