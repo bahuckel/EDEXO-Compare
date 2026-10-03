@@ -557,6 +557,34 @@ function createHudWindows(deps) {
    * Whatever it ends up as, the caller spaces the next window by the larger of the two, so a window
    * that came out taller still never covers the one below it.
    */
+  /*
+    The tall HUD on a 125 % screen (a user's report via the owner, 2026-10-03: screens at 125 % and
+    100 %, the HUD fine on a 100 % one and tall once dragged to the 125 % one). Windows resizes a
+    window that lands on a monitor of another scaling *after* setBounds returns (WM_DPICHANGED), so the
+    check just below sees the size it asked for and the window grows a moment later, for good. Look
+    again once that has had time to arrive, and put it back; twice at most, so a monitor that never
+    takes the size cannot start a loop.
+  */
+  const settleTimers = new WeakMap();
+  function settleLater(win, rect, tries = 2) {
+    const prev = settleTimers.get(win);
+    if (prev) clearTimeout(prev);
+    const t = setTimeout(() => {
+      settleTimers.delete(win);
+      try {
+        if (!win || win.isDestroyed()) return;
+        const b = win.getBounds();
+        if (Math.abs(b.width - rect.width) <= 2 && Math.abs(b.height - rect.height) <= 2) return;
+        hudLog(`settle: ${b.width}x${b.height} back to ${rect.width}x${rect.height}`);
+        win.setBounds({ ...rect, animate: false });
+        if (tries > 1) settleLater(win, rect, tries - 1);
+      } catch {
+        /* a window going away */
+      }
+    }, 120);
+    settleTimers.set(win, t);
+  }
+
   function placeWindow(win, rect) {
     // Already there: no setBounds, which repaints a transparent window over the game even when it
     // changes nothing (the blinks on coming back to the game, 2026-10-02).
@@ -577,6 +605,7 @@ function createHudWindows(deps) {
     } catch {
       /* a window going away */
     }
+    settleLater(win, rect);
     return Math.max(rect.height, actual);
   }
 

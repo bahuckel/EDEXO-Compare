@@ -128,10 +128,23 @@ class FakeWindow {
    * at a size scaled by the ratio of the two (a commander's report, 2026-10-02). 1 = no distortion.
    */
   static secondScreenSizeFactor = 1;
+  /**
+   * The other way Windows does it (2026-10-03, the tall HUD at 125 %): the size lands as asked, and the
+   * window grows by the ratio a moment later, once, when it has crossed onto the other monitor.
+   */
+  static lateDpiGrowFactor = 1;
   setBounds(b: Partial<FakeWindow["bounds"]>) {
+    const wasSecond = this.bounds.x >= SECOND.x;
     this.bounds = { ...this.bounds, ...b };
     if (b.height != null && this.bounds.x >= SECOND.x) {
       this.bounds.height = Math.round(b.height * FakeWindow.secondScreenSizeFactor);
+    }
+    if (FakeWindow.lateDpiGrowFactor !== 1 && !wasSecond && this.bounds.x >= SECOND.x) {
+      const f = FakeWindow.lateDpiGrowFactor;
+      setTimeout(() => {
+        this.bounds.height = Math.round(this.bounds.height * f);
+        this.bounds.width = Math.round(this.bounds.width * f);
+      }, 20);
     }
   }
   hide() {
@@ -512,6 +525,22 @@ describe("free move (owner, 2026-10-02: the HUD anywhere, on any screen)", () =>
     }
     expect(Math.max(...heights)).toBeLessThanOrEqual(Math.round(502 * 1.25));
     expect(heights.at(-1)).toBeLessThan(SECOND.height);
+  });
+
+  it("dragged onto a screen that resizes it a moment later, the HUD goes back to its own size", async () => {
+    FakeWindow.lateDpiGrowFactor = 1.25;
+    try {
+      const huds = make();
+      await huds.request("/hud-overlay.html", 404, 330, null, "open");
+      const [w] = live();
+      huds.resizeFromPage(w, { height: 500 });
+      huds.setLayout({ freeOn: true, free: { x: 2400, y: 100 } });
+      await new Promise((r) => setTimeout(r, 400));
+      expect(w!.bounds.height).toBe(500);
+      expect(w!.bounds.width).toBe(404);
+    } finally {
+      FakeWindow.lateDpiGrowFactor = 1;
+    }
   });
 
   it("on that screen, separate windows do not pile on top of each other", async () => {
