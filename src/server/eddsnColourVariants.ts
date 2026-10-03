@@ -17,8 +17,34 @@ interface ColourVariantFile {
   formatVersion?: number;
   byGenus?: Record<string, ColourVariantRule>;
   bySpecies?: Record<string, ColourVariantRule>;
-  corpusFills?: { byGenus?: Record<string, Record<string, string>> };
+  corpusFills?: {
+    byGenus?: Record<string, Record<string, string>>;
+    /** Species the game has one colour of, whatever the star: display name (lower case) → colour. */
+    singleVariant?: Record<string, string>;
+  };
 }
+
+/** Every class key a star table can be read with (`speciesColour.ts` `colourFromStar` matches prefixes). */
+const ALL_STAR_CLASSES = [
+  "O",
+  "B",
+  "A",
+  "F",
+  "G",
+  "K",
+  "M",
+  "L",
+  "T",
+  "TTS",
+  "Y",
+  "W",
+  "D",
+  "N",
+  "H",
+  "AEBE",
+  "C",
+  "S",
+];
 
 let cached: ColourVariantFile | null | undefined;
 
@@ -54,8 +80,9 @@ function isRule(v: unknown): v is ColourVariantRule {
  * genus; genera that split (Bacterium, Osseus, Concha…) are stored per species. Looking up the
  * species first is what makes the split work — see `shared/colourVariants.ts`.
  *
- * `corpusFills` supplies star classes ED-DSN leaves blank that the owner has scanned himself. They
- * are merged *under* the transcription, never over it, so a later ED-DSN update simply wins.
+ * `corpusFills` supplies star classes ED-DSN leaves blank that the owner has scanned himself, or the
+ * game's own variant tokens settle. They are merged *under* the transcription, never over it, so a
+ * later ED-DSN update simply wins.
  */
 export function colourVariantRuleFor(
   projectRoot: string,
@@ -64,6 +91,13 @@ export function colourVariantRuleFor(
 ): ColourVariantRule | null {
   const data = load(projectRoot);
   if (!data) return null;
+  /*
+    Stratum araneamus comes in Emerald only — EDSM's codex has one variant of it — so a host the
+    table leaves blank (a Y dwarf, a neutron star) still gives Emerald, not "(unknown)": the five
+    araneamus colours the EDDN ScanOrganic set left unknown were all Emerald (2026-10-03).
+  */
+  const single = data.corpusFills?.singleVariant?.[displayName.trim().toLowerCase()];
+  if (single) return { source: "star", map: Object.fromEntries(ALL_STAR_CLASSES.map((c) => [c, single])) };
   const sp = data.bySpecies?.[displayName.trim().toLowerCase()];
   const gen = data.byGenus?.[genusDataDir.trim().toLowerCase()];
   const base = isRule(sp) ? sp : isRule(gen) ? gen : null;
