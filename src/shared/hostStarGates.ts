@@ -166,6 +166,14 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
      */
     idIncludes: "amphora",
     gate: {
+      /*
+        Judged on the main star, which is what the codex CSV records (the caveat below), or the body's
+        own host (2026-10-03): 3 of the 5 known Amphora bodies orbit an M, K or F companion in a system
+        whose main star is an A (Flyauduae TE-Q d5-4 B 1, Ooscs Free SZ-F d11-9 B 2 a, Prue Flyao ON-J
+        d9-1 C 1 a), and read on the host the gate demoted all three before a DSS.
+      */
+      judgedOn: "main",
+      orHost: true,
       allowed: ["A", "B"],
       evidence: "A-class hosts 97.4 % of 1,484 Amphora sightings (B a further 1.8 %); A is 6.2 % of all life",
     },

@@ -381,3 +381,12 @@ describe("a DSS-named genus restores the row the star allows", () => {
     expect(strict.map((m) => m.entry.id)).toEqual(["anemone_prasinum_bioluminescent"]);
   });
 });
+
+// Amphora on a companion in an A-star system (2026-10-03, known-spawn bodies Flyauduae TE-Q d5-4 B 1 etc.).
+describe("Amphora's star", () => {
+  it("is read on the main star, or the body's own host", () => {
+    expect(evaluateHostStarGate("amphora_amphora_plant", ["M"], "A")!.passes).toBe(true);
+    expect(evaluateHostStarGate("amphora_amphora_plant", ["B"], "K")!.passes).toBe(true);
+    expect(evaluateHostStarGate("amphora_amphora_plant", ["K"], "K")!.passes).toBe(false);
+  });
+});
