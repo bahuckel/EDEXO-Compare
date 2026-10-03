@@ -24,13 +24,14 @@ import {
 } from "../shared/presenceBranches.js";
 export { PRESENCE_BRANCH_FIELDS } from "../shared/presenceBranches.js";
 import {
-  EARTH_G_MS2,
   journalSurfaceGravityToG,
   LIGHT_SECOND_METERS,
   THIN_ATMOSPHERE_MAX_ATM,
   journalPressureToAtm,
 } from "../shared/journalPhysics.js";
 import { type SpatialCatalogue } from "../shared/spatialGates.js";
+import { gameGravityLimitG, gameTemperatureCeilingK } from "../shared/gameLimits.js";
+export { gameGravityLimitG, gameTemperatureCeilingK } from "../shared/gameLimits.js";
 import { observedAtGravity } from "./speciesGravityObservations.js";
 import { regionalPresence } from "./regionSpeciesData.js";
 import { regionPresenceDetail } from "../shared/regionAbsence.js";
@@ -235,17 +236,6 @@ export interface PlanetTemperatureBand {
   maxK: number;
 }
 
-/**
- * A codex ceiling of 195 K is 195.5 K in the game (2026-10-03). On thin carbon dioxide bodies every
- * species capped at 195 K runs on past it and stops: 3,700 corpus bodies of 24 species between 195
- * and 195.5 K (Aleoida gravis 513, Tussock triticum 397, Osseus pellebantus 396 …), a handful beyond.
- * Fungoida gelata and Frutexa acus at 195 K on CO₂ were demoted for it (EDDN ScanOrganic set).
- */
-export function gameTemperatureCeilingK(maxK: number): number;
-export function gameTemperatureCeilingK(maxK: number | undefined): number | undefined;
-export function gameTemperatureCeilingK(maxK: number | undefined): number | undefined {
-  return maxK === 195 ? 195.5 : maxK;
-}
 
 function speciesTempBand(c: SpeciesCriterion): { lo: number; hi: number } | null {
   const st = c.surfaceTemperatureK;
@@ -287,18 +277,6 @@ function sightingsBeyondEdge(
   return { straddles: false, near: null };
 }
 
-/**
- * A codex gravity limit in g is the game's limit in m/s², rounded (2026-10-03). 0.15 g is 1.5 m/s²
- * (0.1530 g) and 0.275 g is 2.7 m/s² (0.2753 g): the corpus has 271 Tubus bodies between 0.150 and
- * 0.153 g and none further, Osseus pumice 22 between 0.275 and 0.2753, Stratum tectonicas' 0.61 runs to
- * 0.611 (6.0 m/s²). Tubus rosarium at 0.150 g on the owner's Dryio Flyuae OT-Y c1-103 3 b was demoted
- * for it. So the limit is read back to the m/s² it came from, at a tenth.
- */
-export function gameGravityLimitG(maxG: number | undefined): number | undefined {
-  if (maxG === undefined || !Number.isFinite(maxG)) return maxG;
-  const ms2 = Math.round(maxG * EARTH_G_MS2 * 10) / 10;
-  return Math.max(maxG, ms2 / EARTH_G_MS2);
-}
 
 function speciesNeedsTemperatureGate(c: SpeciesCriterion): boolean {
   return speciesTempBand(c) !== null;
@@ -1096,7 +1074,13 @@ export function speciesMatchesCriteria(
        */
       const observedHere = observedAtTemperature(entry, scan.SurfaceTemperature);
       const edgeCheck = observedHere
-        ? sightingsBeyondEdge(entry, observedHere, scan.SurfaceTemperature!, c.surfaceTemperatureK?.min, c.surfaceTemperatureK?.max)
+        ? sightingsBeyondEdge(
+            entry,
+            observedHere,
+            scan.SurfaceTemperature!,
+            c.surfaceTemperatureK?.min,
+            gameTemperatureCeilingK(c.surfaceTemperatureK?.max),
+          )
         : null;
       // No fine histogram to ask: the display bin answers, as it always did.
       const beyond =

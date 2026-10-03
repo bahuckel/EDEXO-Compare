@@ -5,6 +5,7 @@ import type {
   SpeciesEntry,
   SpeciesMatchContext,
 } from "./types.js";
+import { gameGravityLimitG, gameTemperatureCeilingK } from "./gameLimits.js";
 import {
   journalPressureToAtm,
   journalSurfaceGravityToG,
@@ -53,7 +54,7 @@ function speciesTempBand(c: SpeciesCriterion): { lo: number; hi: number } | null
   const st = c.surfaceTemperatureK;
   if (!st) return null;
   if (st.min === undefined && st.max === undefined) return null;
-  return { lo: st.min ?? OPEN_LO, hi: st.max ?? OPEN_HI };
+  return { lo: st.min ?? OPEN_LO, hi: gameTemperatureCeilingK(st.max) ?? OPEN_HI };
 }
 
 function speciesPressureBand(c: SpeciesCriterion): { lo: number; hi: number } | null {
@@ -431,7 +432,8 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     const gRaw = scan?.SurfaceGravity;
     if (scan && gRaw != null && gRaw !== undefined && Number.isFinite(gRaw)) {
       const g = journalSurfaceGravityToG(gRaw);
-      if (inRange(g, sg.min, sg.max)) {
+      // The game's limit behind the rounded codex one, as the matcher reads it (gameLimits.ts).
+      if (inRange(g, sg.min, gameGravityLimitG(sg.max))) {
         tier = "blue";
         caption = `This body ${g.toFixed(3)} g — within`;
       } else {

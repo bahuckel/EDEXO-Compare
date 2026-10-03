@@ -255,7 +255,8 @@ export function buildDiscoveries(
       } else {
         honkOf(addr).bodies.push({
           kind: "star",
-          stellarMass: Number.isFinite(mass) ? mass : 0,
+          // A missing mass reads 1, as Data value and the system map read it (one honk everywhere).
+          stellarMass: rec.stellarMass ?? 1,
           starType: rec.starType,
         });
       }
@@ -283,7 +284,7 @@ export function buildDiscoveries(
       kind: "planet",
       planetClass,
       terraformable,
-      massEM: Number.isFinite(massEM) ? massEM : 0,
+      massEM: rec.massEM ?? 1,
     });
     const species = confirmedOn(b);
     const signals = b?.biologicalSignals ?? null;
