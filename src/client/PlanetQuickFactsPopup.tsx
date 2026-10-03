@@ -468,7 +468,18 @@ function ScanMapValues({ detail }: { detail: SystemMapBodyDetailDTO }) {
     >
       <div className="body-value-line">
         <dt>Scan value</dt>
-        <dd>{detail.fssCredits.toLocaleString()} CR</dd>
+        <dd>
+          <span className="body-value-num">{detail.fssCredits.toLocaleString()} CR</span>
+          {/* The arrival star carries the honk, as the game's map shows it (explorationValue.ts). */}
+          {detail.honkCredits ? (
+            <span
+              className="body-value-note"
+              title="The discovery scan's share: a third of every other scanned body's value, paid with the system"
+            >
+              incl. honk {detail.honkCredits.toLocaleString()} CR
+            </span>
+          ) : null}
+        </dd>
       </div>
       {map != null ? (
         <div className={`body-value-line${mapped ? " body-value-line--done" : ""}`}>

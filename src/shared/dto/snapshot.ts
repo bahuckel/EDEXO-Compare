@@ -201,6 +201,8 @@ export interface AppSnapshot {
   exoOutliers: { total: number; absent: number; unlikelyOnly: number; rankedLow: number; colour: number };
   /** Sum of FSS-only estimates for those bodies with merged scan data (belts skipped). */
   explorationFssValueCredits: number;
+  /** Part of the FSS value: the honk paid with each unsold system (explorationValue.ts). */
+  explorationHonkValueCredits?: number;
   /** Planetary bodies with `SAAScanComplete` (stars & belts excluded). */
   explorationDssScanCount: number;
   /** Sum of full mapped (DSS) estimates for those bodies. */

@@ -11,6 +11,7 @@ export function DataValueBreakdownModal({
   includeExplorationScanDataInDataValue,
   explorationFssScanCount,
   explorationFssValueCredits,
+  explorationHonkValueCredits = 0,
   explorationDssScanCount,
   explorationDssValueCredits,
   exobioScanCount,
@@ -25,6 +26,8 @@ export function DataValueBreakdownModal({
   includeExplorationScanDataInDataValue: boolean;
   explorationFssScanCount: number;
   explorationFssValueCredits: number;
+  /** Part of the FSS value: the honk, paid with each system that has its arrival star unsold. */
+  explorationHonkValueCredits?: number;
   explorationDssScanCount: number;
   explorationDssValueCredits: number;
   /** Completed samples waiting to sell, and their value — the header pill's own two numbers. */
@@ -71,6 +74,9 @@ export function DataValueBreakdownModal({
               <span className="data-value-summary-count">{explorationFssScanCount}</span>
               <span className="data-value-summary-label">
                 FSS scans
+                {explorationHonkValueCredits > 0 ? (
+                  <span className="dim tiny"> · incl. honk {explorationHonkValueCredits.toLocaleString()} CR</span>
+                ) : null}
                 {sellAtFleetCarrier ? <span className="dim tiny"> · at a carrier</span> : null}
                 {!includeExplorationScanDataInDataValue ? (
                   <span className="dim tiny"> · not in total</span>

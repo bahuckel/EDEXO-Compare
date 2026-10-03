@@ -892,6 +892,7 @@ export const HeaderBar = memo(function HeaderBar({
             includeExplorationScanDataInDataValue={scanDataOn}
             explorationFssScanCount={snap.explorationFssScanCount ?? 0}
             explorationFssValueCredits={snap.explorationFssValueCredits ?? 0}
+            explorationHonkValueCredits={snap.explorationHonkValueCredits ?? 0}
             explorationDssScanCount={snap.explorationDssScanCount ?? 0}
             explorationDssValueCredits={snap.explorationDssValueCredits ?? 0}
             exobioScanCount={snap.organicPendingSampleCount}

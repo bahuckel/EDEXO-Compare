@@ -1508,6 +1508,7 @@ export function buildSnapshot(
     onSiteTiming: timingFromSamples(store.landingMinutesSamples, store.samplingMinutesSamples),
     exoOutliers: exoOutlierTally(),
     explorationFssValueCredits: exploreBreakdown.fssValueCredits,
+    explorationHonkValueCredits: Math.round(("honkValueCredits" in exploreRaw ? exploreRaw.honkValueCredits : 0) * carrier),
     explorationDssScanCount: exploreBreakdown.dssScanCount,
     explorationDssValueCredits: exploreBreakdown.dssValueCredits,
     dssMappedPlanetaryBodyCount: exploreBreakdown.dssScanCount,
