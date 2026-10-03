@@ -10,6 +10,7 @@
  */
 import type { GenusHint, SpeciesMatch } from "./types.js";
 import { genusNameForCodexToken } from "./codexGenusNames.js";
+import { dssHintsIncludeBacterium } from "./genusHints.js";
 
 export interface UnknownPlantSlot {
   /** The genus the DSS named, or null before a DSS. */
@@ -27,9 +28,14 @@ export function unknownPlantSlots(input: {
 }): UnknownPlantSlot[] {
   const shown = input.matches.filter((m) => !m.unlikely || m.sampledHere === true);
   if (input.genusHints?.length) {
-    return (input.orphanHints ?? []).map((h) => ({
-      genus: h.Genus_Localised?.trim() || genusNameForCodexToken(h.Genus ?? "") || h.Genus || null,
-    }));
+    return (
+      (input.orphanHints ?? [])
+        // Bacterium switched off: its rows are left out on purpose, so a named Bacterium is not unknown.
+        .filter((h) => input.includeBacterium || !dssHintsIncludeBacterium([h as GenusHint]))
+        .map((h) => ({
+          genus: h.Genus_Localised?.trim() || genusNameForCodexToken(h.Genus ?? "") || h.Genus || null,
+        }))
+    );
   }
   const signals = input.signals ?? 0;
   if (!(signals > 0)) return [];

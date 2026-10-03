@@ -48,3 +48,20 @@ describe("unknown plant slots", () => {
     ).toEqual([]);
   });
 });
+
+describe("unknown plant slots with Bacterium switched off", () => {
+  it("does not call a DSS-named Bacterium unknown (its rows are left out on purpose)", () => {
+    const hints = [
+      { Genus: "$Codex_Ent_Bacterial_Genus_Name;", Genus_Localised: "Bacterium" },
+      { Genus: "$Codex_Ent_Tussocks_Genus_Name;", Genus_Localised: "Tussock" },
+    ];
+    const r = unknownPlantSlots({
+      signals: 3,
+      matches: [row("stratum")],
+      genusHints: hints,
+      orphanHints: hints,
+      includeBacterium: false,
+    });
+    expect(r).toEqual([{ genus: "Tussock" }]);
+  });
+});
