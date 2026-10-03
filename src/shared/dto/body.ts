@@ -203,6 +203,8 @@ export interface BodyComputed {
    * DSS genus hints with no candidate row in that genus (for (!) markers next to the genus label).
    */
   dssGenusOrphanHints: GenusHint[];
+  /** One per signal the candidate list cannot fill (shared/unknownPlants.ts): the "Unknown plant" rows. */
+  unknownPlants?: import("../unknownPlants.js").UnknownPlantSlot[];
 }
 
 export interface OrganicPendingLineItem {

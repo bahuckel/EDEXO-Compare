@@ -74,6 +74,8 @@ export function slimBodyForHud(b: BodyComputed): Partial<BodyComputed> & { footf
       Left out while unknown, the common case; the HUD reads a missing one as unknown.
     */
     ...hudFootfall(b),
+    // The "Unknown plant" rows (shared/unknownPlants.ts), as the app lists them.
+    ...(b.unknownPlants?.length ? { unknownPlants: b.unknownPlants } : {}),
     // The co-occurrence solver's genus order, most likely first: the HUD lists rows in it, as the app
     // does. The order only; the HUD draws no number from it.
     ...(b.genusLikelihoods?.length

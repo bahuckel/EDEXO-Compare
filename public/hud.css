@@ -1208,3 +1208,9 @@ body.phone .jump__body {
   margin-left: 0.5em;
   color: #f5b83d;
 }
+
+/* "Unknown plant" rows in the candidate list (shared/unknownPlants.ts). */
+li.unknown-plant .name {
+  opacity: 0.75;
+  font-style: italic;
+}

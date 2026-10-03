@@ -2,7 +2,7 @@
  * "Unknown plant" rows (owner, 2026-10-03): every signal the candidate list cannot fill gets one.
  */
 import { describe, expect, it } from "vitest";
-import { unknownPlantSlots } from "../src/client/unknownPlants.js";
+import { unknownPlantSlots } from "../src/shared/unknownPlants.js";
 import type { SpeciesMatch } from "../src/shared/types.js";
 
 const row = (genusDataDir: string, unlikely = false) =>

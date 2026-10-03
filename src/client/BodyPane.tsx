@@ -1,7 +1,7 @@
 /**
  * The body pane: glance bar, planetary facts, sell range, candidate species (7.3).
  */
-import { unknownPlantSlots, type UnknownPlantSlot } from "./unknownPlants";
+import type { UnknownPlantSlot } from "@shared/unknownPlants";
 import { nextTempUnit, usePressUnit, useTempUnit } from "./useUnits";
 import { codexFirstTitle, codexMarkTitle } from "./codexMark";
 import { ArrivalTrip } from "@shared/systemTriage";
@@ -207,17 +207,8 @@ export const BodyPane = memo(function BodyPane({
   // Grouped once per change, not in the JSX on every render (UI review P3) — the groups are new objects
   // each time, which also made memo(GenusMatchGroup) never skip.
   const likelyGroups = useMemo(() => groupedSortedMatches(likelyMatches, genusOrder), [likelyMatches, genusOrder]);
-  const unknownSlots = useMemo(
-    () =>
-      unknownPlantSlots({
-        signals: body.state.biologicalSignals,
-        matches: body.matches,
-        genusHints: body.state.genusHints,
-        orphanHints: body.dssGenusOrphanHints,
-        includeBacterium: includeBacteriumInSearch,
-      }),
-    [body.state.biologicalSignals, body.matches, body.state.genusHints, body.dssGenusOrphanHints, includeBacteriumInSearch],
-  );
+  // Computed with the snapshot (shared/unknownPlants.ts), so the HUD shows the same rows.
+  const unknownSlots = body.unknownPlants ?? [];
   const unlikelyGroups = useMemo(() => groupedSortedMatches(unlikelyMatches, genusOrder), [unlikelyMatches, genusOrder]);
 
   // The body's first-footfall answer, shared with every species card below (WEBUI-REDESIGN 1.2).

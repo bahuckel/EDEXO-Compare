@@ -1,4 +1,5 @@
 import { codexFirstCheck, codexFirstDataDate } from "./codexFirst.js";
+import { unknownPlantSlots } from "../shared/unknownPlants.js";
 import { edastroBioRegionIds } from "./edastroNsp.js";
 import { speciesProvenance } from "./speciesProvenance.js";
 import {
@@ -1170,6 +1171,13 @@ function computeBodyUncached(
     exoPayoutRange,
     exoDataAlerts,
     dssGenusOrphanHints,
+    unknownPlants: unknownPlantSlots({
+      signals: b.biologicalSignals,
+      matches,
+      genusHints: b.genusHints,
+      orphanHints: dssGenusOrphanHints,
+      includeBacterium: store.includeBacteriumInSearch,
+    }),
   };
 }
 

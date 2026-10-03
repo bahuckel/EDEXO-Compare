@@ -191,7 +191,9 @@ export var candidates = {
     facts(label, xCount + " / " + (sig == null ? "—" : String(sig)), st.dssComplete === true, pick.target);
     ul.innerHTML = "";
     if (bioZero) return null;
-    if (!rows.length) {
+    // "Unknown plant" rows (shared/unknownPlants.ts, owner 2026-10-03): a signal nothing listed fills.
+    var unknown = bc.unknownPlants || [];
+    if (!rows.length && !unknown.length) {
       plain("No candidate species");
       return null;
     }
@@ -249,6 +251,27 @@ export var candidates = {
       li.appendChild(name);
       li.appendChild(cr);
       li.title = (genus + " " + sp).trim();
+      ul.appendChild(li);
+    });
+    unknown.forEach(function (u) {
+      var li = document.createElement("li");
+      li.className = "unknown-plant";
+      var name = document.createElement("span");
+      name.className = "name";
+      var em = document.createElement("em");
+      em.textContent = "? ";
+      name.appendChild(em);
+      name.appendChild(
+        document.createTextNode(
+          u.genus ? "Unknown " + cap(u.genus) : u.maybeBacterium ? "Unknown plant (Bacterium?)" : "Unknown plant",
+        ),
+      );
+      var cr = document.createElement("span");
+      cr.className = "cr";
+      cr.textContent = "— CR";
+      li.appendChild(name);
+      li.appendChild(cr);
+      li.title = "A signal no listed species fills. Worth a look: it may be a new find.";
       ul.appendChild(li);
     });
     if (hidden) ul.appendChild(moreRow(hidden));

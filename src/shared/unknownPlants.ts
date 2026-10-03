@@ -8,8 +8,8 @@
  * one — the game places one genus per signal and never the same genus twice. With Bacterium switched
  * off, one signal is taken to be its slot, as the shortfall alert does.
  */
-import type { GenusHint, SpeciesMatch } from "@shared/types";
-import { genusNameForCodexToken } from "@shared/codexGenusNames";
+import type { GenusHint, SpeciesMatch } from "./types.js";
+import { genusNameForCodexToken } from "./codexGenusNames.js";
 
 export interface UnknownPlantSlot {
   /** The genus the DSS named, or null before a DSS. */
