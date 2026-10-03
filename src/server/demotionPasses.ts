@@ -287,6 +287,29 @@ export function demoteFailedHostStarGates(
       unlikelyReasons: [...(m.unlikelyReasons ?? []), reason],
     });
   }
+
+  /*
+    Rows already demoted carry the star's objection too, or a DSS-named genus restores the wrong one.
+    BD-12 1172 11 a (EDDN ScanOrganic set, 2026-10-03): thin sulphur dioxide, so every Anemone was
+    demoted on its atmosphere alike; the DSS named Anemone, and the restore took Luteolum (main star
+    B only) on list order over Prasinum Bioluminescent, whose O main star this is and which players
+    logged there.
+  */
+  for (let i = 0; i < unlikely.length; i++) {
+    const m = unlikely[i]!;
+    if ((m.unlikelyReasons ?? []).some((r) => r.field === "StarType")) continue;
+    const verdict = evaluateHostStarGate(m.entry.id, classes, mainStar, {
+      type: matchContext?.systemMainStarType,
+      luminosity: matchContext?.systemMainStarLuminosity,
+    });
+    if (!verdict || verdict.passes) continue;
+    const reason: MatchReason = {
+      field: "StarType",
+      detail: `${describeHostStarVerdict(verdict)} ${verdict.evidence}. ${DEMOTED_NOTE}`,
+      soft: true,
+    };
+    unlikely[i] = { ...m, reasons: [...m.reasons, reason], unlikelyReasons: [...(m.unlikelyReasons ?? []), reason] };
+  }
 }
 
 /**

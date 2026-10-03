@@ -23,7 +23,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { hostStarBodyIdsForExobiology } from "../src/server/orbitUtils.js";
-import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
+import { demoteFailedHostStarGates, matchDatabaseToScan } from "../src/server/matchSpecies.js";
+import { restoreDemotionsBelowSignalCount } from "../src/server/demotionPasses.js";
 import { loadSpatialCatalogue } from "../src/server/spatialCatalogue.js";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import {
@@ -33,7 +34,14 @@ import {
   hostStarClassKeys,
   hostStarGateForSpeciesId,
 } from "../src/shared/hostStarGates.js";
-import type { ExplorationScanRecord, PlanetScan } from "../src/shared/types.js";
+import type {
+  ExplorationScanRecord,
+  MatchReason,
+  PlanetScan,
+  SpeciesEntry,
+  SpeciesMatch,
+  SpeciesMatchContext,
+} from "../src/shared/types.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = loadSpeciesDatabaseFromTree(root);
@@ -345,5 +353,31 @@ describe("a gate measured on the main star", () => {
   it("says so in its own words", () => {
     const v = evaluateHostStarGate(ARANEAMUS, ["K"], "K")!;
     expect(describeHostStarVerdict(v)).toMatch(/^Main star K-class/);
+  });
+});
+
+/**
+ * BD-12 1172 11 a (EDDN ScanOrganic set, 2026-10-03): thin sulphur dioxide demoted every Anemone on
+ * its atmosphere; the DSS named Anemone, and the restore took Luteolum (main star B) on list order.
+ * The main star is an O — Prasinum Bioluminescent's, and what players logged there.
+ */
+describe("a DSS-named genus restores the row the star allows", () => {
+  type Row = Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">;
+  const atm: MatchReason = { field: "AtmosphereType", detail: "Codex lists (no atmosphere)", soft: true };
+  const row = (id: string): Row =>
+    ({
+      entry: { id, displayName: id, genusDataDir: "anemone" } as SpeciesEntry,
+      reasons: [atm],
+      unlikely: true,
+      unlikelyReasons: [atm],
+    }) as Row;
+  it("takes Prasinum Bioluminescent under an O main star, not Luteolum", () => {
+    const strict: Row[] = [];
+    const unlikely = [row("anemone_luteolum"), row("anemone_prasinum_bioluminescent")];
+    const ctx = { hostStarClasses: ["T"], systemMainStarClass: "O", systemMainStarType: "O", systemMainStarLuminosity: "V" };
+    demoteFailedHostStarGates(strict, unlikely, ctx as SpeciesMatchContext);
+    expect(unlikely[0]!.unlikelyReasons!.map((r) => r.field)).toEqual(["AtmosphereType", "StarType"]);
+    restoreDemotionsBelowSignalCount(strict, unlikely, 2, new Set(["anemone"]));
+    expect(strict.map((m) => m.entry.id)).toEqual(["anemone_prasinum_bioluminescent"]);
   });
 });
