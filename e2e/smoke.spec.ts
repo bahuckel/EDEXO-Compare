@@ -722,6 +722,26 @@ test("my discoveries: the bodies table exports as CSV", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("data value: the fleet carrier toggle takes 25 % off exploration and is saved", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: /^Data value/ }).click();
+  const toggle = page.getByLabel(/Selling at a fleet carrier/);
+  await expect(toggle).toBeVisible();
+  const before = await page.request.get("/api/state").then((r) => r.json());
+  // Controlled by the server's answer: it ticks once the setting is saved and the state comes back.
+  await toggle.click();
+  await expect(toggle).toBeChecked();
+  await expect(page.getByText("· at a carrier").first()).toBeVisible();
+  const after = await page.request.get("/api/state").then((r) => r.json());
+  expect(after.sellAtFleetCarrier).toBe(true);
+  expect(after.explorationFssValueCredits).toBe(Math.round(before.explorationFssValueCredits * 0.75));
+  await toggle.click();
+  await expect(toggle).not.toBeChecked();
+  expect(errors).toEqual([]);
+});
+
 test("system map: opens from the system card and draws the fixture body", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");
