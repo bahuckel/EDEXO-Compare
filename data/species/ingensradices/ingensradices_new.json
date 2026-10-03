@@ -23,18 +23,17 @@
     {
       "id": "ingensradices_ingensradices_unicus",
       "displayName": "Ingensradices Unicus",
-      "description": "Known from HIP 87621 alone (Inner Orion Spur): HIP 87621 2 a (high metal content, hot thin carbon dioxide, 642 K) and HIP 87621 1 (rocky, 698 K), both with minor silicate vapour geysers. Sampled like any Odyssey plant, but the game leaves it out of the biological signal count and a DSS never names it.",
+      "description": "Known from HIP 87621 alone (Inner Orion Spur): HIP 87621 2 a (high metal content, hot thin carbon dioxide, 642 K) and HIP 87621 1 (rocky, 698 K), both with minor silicate vapour geysers, and HIP 87621 2 b a (rocky, thin carbon dioxide, 468 K, no volcanism). Sampled like any Odyssey plant, but the game leaves it out of the biological signal count and a DSS never names it.",
       "conditions": {
         "known_systems": [147882789259],
         "outside_signal_count": true,
         "planet_types": ["Rocky", "High Metal Content"],
         "atmosphere": ["Carbon dioxide"],
-        "temperature_K": { "min": 600, "max": 750 },
         "min_sample_distance_m": 1,
         "matchContextNotes": [
           "Owner's list name 'Radicoida Unica'; the game's is Ingensradices Unicus, codex key codex_ent_ingensradices_unicus (entry 2460101). Not in EDSM's codex dump or Spansh's genus lists as of 2026-09-27.",
           "Sources: EDAstro codex-data.csv (first logged 2025-11-13, HIP 87621), EDDN bio exports (ScanOrganic Log, Sample, Sample on HIP 87621 2 a, 2026-09-20; CodexEntry on HIP 87621 1, 2026-09-25).",
-          "The temperature and atmosphere are the two known bodies' own; with two bodies they say where it was found, not where it cannot be."
+          "The atmosphere is the known bodies' own; with three bodies it says where it was found, not where it cannot be. The temperature band (600-750 K, from the first two) was dropped 2026-10-03: the EDDN ScanOrganic set logged it on HIP 87621 2 b a at 468 K. The system wall keeps it out of everywhere else."
         ]
       }
     }
