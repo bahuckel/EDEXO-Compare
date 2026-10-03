@@ -187,3 +187,21 @@ describe("the discoveries tables", () => {
     expect(d.systems.find((s) => s.systemAddress === 1)!.firstDiscoveries).toBe(1);
   });
 });
+
+// Notify-me body features as My Discoveries filters (owner, 2026-10-03).
+describe("body features for the Feature filter", () => {
+  it("keys them on bodies and stars, and rolls them up to the system", () => {
+    const d = buildDiscoveries(
+      storeWith([
+        ["1:0", star({ ageMy: 13_100 })],
+        ["1:1", planet({ radius: 250_000, orbitalPeriod: 20_000 })],
+      ]),
+      root,
+    );
+    expect(d.bodies[0]!.featureKeys).toEqual(expect.arrayContaining(["smallBody", "fastOrbit"]));
+    expect(d.stars[0]!.featureKeys).toEqual(["ancientStar"]);
+    expect(d.systems.find((s) => s.systemAddress === 1)!.featureKeys).toEqual(
+      expect.arrayContaining(["ancientStar", "smallBody", "fastOrbit"]),
+    );
+  });
+});

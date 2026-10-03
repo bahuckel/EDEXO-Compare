@@ -5,6 +5,7 @@
  * and for the difference between an estimated value and a sold one, which this DTO keeps apart on
  * purpose.
  */
+import type { BodyFeatureKey } from "../bodyFeatures.js";
 import type { GreenGiantMark, GreenGiantVerdict } from "../greenGasGiant.js";
 
 export interface DiscoveriesDTO {
@@ -15,6 +16,8 @@ export interface DiscoveriesDTO {
 }
 
 export interface DiscoverySystemRow {
+  /** Every body feature found on a body or star of the system, for the Feature filter. */
+  featureKeys?: BodyFeatureKey[];
   systemAddress: number;
   name: string;
   /** klightspeed codex region, when the system's position is known. */
@@ -75,6 +78,8 @@ export interface DiscoveryBodyRow {
   greenMark?: GreenGiantMark | null;
   /** Body features it has (shared/bodyFeatures.ts labels), for search. */
   features?: string[];
+  /** The same features by key, for the Feature filter (labels vary: "Taylor's ring", "Lethal heat"). */
+  featureKeys?: BodyFeatureKey[];
   systemAddress: number;
   system: string;
   region: string | null;
@@ -121,6 +126,9 @@ export interface DiscoveryBodyRow {
 
 export interface DiscoveryStarRow {
   key: string;
+  /** Star features (ancient, ringed; shared/bodyFeatures.ts): labels for search, keys for the filter. */
+  features?: string[];
+  featureKeys?: BodyFeatureKey[];
   systemAddress: number;
   system: string;
   region: string | null;

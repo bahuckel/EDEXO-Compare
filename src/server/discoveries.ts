@@ -27,7 +27,7 @@
  * cashes in. Value on those rows is the sale, not an estimate, because the estimate no longer
  * applies to anything he can sell again.
  */
-import { bodyFeatures, directParent } from "../shared/bodyFeatures.js";
+import { bodyFeatures, directParent, type BodyFeatureKey } from "../shared/bodyFeatures.js";
 import { greenGiantForRecord, type GreenGiantSources } from "./greenGiants.js";
 import { isGggClass } from "../shared/greenGasGiant.js";
 import type {
@@ -166,6 +166,14 @@ export function buildDiscoveries(
     return row;
   };
 
+  // The Feature filter on the Systems tab: a system has a feature when any body or star of it has.
+  const addFeatureKeys = (row: DiscoverySystemRow, hits: readonly { key: BodyFeatureKey }[]) => {
+    if (!hits.length) return;
+    const set = new Set(row.featureKeys ?? []);
+    for (const h of hits) set.add(h.key);
+    row.featureKeys = [...set];
+  };
+
   // Every system he has been to gets a row, even one he flew through without scanning — the absence
   // of scans is itself an answer to "where have I not looked".
   for (const [addr, name] of store.visitedSystems) systemRow(addr, name);
@@ -195,8 +203,17 @@ export function buildDiscoveries(
       // The arrival star is body 0 in almost every system, and is what a commander means by "the
       // star" when filtering a system list.
       if (sys.primaryStarType == null || rec.bodyId === 0) sys.primaryStarType = rec.starType;
+      const sp = directParent(rec.parents);
+      const starHits = bodyFeatures(
+        rec,
+        sp && sp.kind !== "Null" ? (scans.get(`${addr}:${sp.id}`) ?? null) : null,
+      );
+      addFeatureKeys(sys, starHits);
       stars.push({
         key,
+        ...(starHits.length
+          ? { features: starHits.map((f) => f.label), featureKeys: starHits.map((f) => f.key) }
+          : {}),
         systemAddress: addr,
         system: sys.name,
         region: sys.region,
@@ -255,9 +272,12 @@ export function buildDiscoveries(
 
     const dp = directParent(rec.parents);
     const parentRec = dp && dp.kind !== "Null" ? (scans.get(`${addr}:${dp.id}`) ?? null) : null;
-    const features = bodyFeatures(rec, parentRec).map((f) => f.label);
+    const hits = bodyFeatures(rec, parentRec);
+    const features = hits.map((f) => f.label);
+    addFeatureKeys(sys, hits);
     bodies.push({
       key,
+      ...(hits.length ? { featureKeys: [...new Set(hits.map((f) => f.key))] } : {}),
       greenGiant: greenGiantForRecord(rec, greenSrc),
       ...(isGggClass(rec.planetClass) ? { greenMark: greenSrc.marks.get(key) } : {}),
       ...(features.length ? { features } : {}),

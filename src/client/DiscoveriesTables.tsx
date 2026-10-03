@@ -19,6 +19,7 @@
  * not the scrollbar. Sorting happens before the cut, so "most valuable" means most valuable of
  * everything rather than of the first few hundred.
  */
+import { BODY_FEATURES, type BodyFeatureKey } from "../shared/bodyFeatures.js";
 import { greenGiantLabel, type GreenGiantMark, type GreenGiantVerdict } from "@shared/greenGasGiant";
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import type { DiscoveriesDTO, DiscoveryBodyRow, DiscoveryStarRow, DiscoverySystemRow } from "@shared/types";
@@ -293,6 +294,22 @@ function topValues<T>(rows: T[], read: (r: T) => string | null, limit = 12) {
     .map(([key, n]) => ({ key, label: key, n }));
 }
 
+/**
+ * The Feature chips (owner, 2026-10-03: the Notify-me body features "never added as filters in My
+ * Discoveries"): every feature present in this tab's rows, in the Options order, with its count.
+ * Only features that occur are offered, so the row stays short on a small log.
+ */
+function featureOptions(rows: readonly { featureKeys?: BodyFeatureKey[] }[]) {
+  const counts = new Map<BodyFeatureKey, number>();
+  for (const r of rows) for (const k of r.featureKeys ?? []) counts.set(k, (counts.get(k) ?? 0) + 1);
+  return BODY_FEATURES.filter((f) => counts.has(f.key)).map((f) => ({ key: f.key, label: f.label, n: counts.get(f.key) }));
+}
+
+/** Any picked feature, like the Type chips: "small bodies or fast orbits". */
+function hasPickedFeature(picked: Set<string>, keys: readonly BodyFeatureKey[] | undefined): boolean {
+  return picked.size === 0 || (keys ?? []).some((k) => picked.has(k));
+}
+
 export type DiscoveriesTab = "systems" | "bodies" | "stars";
 
 interface GreenEdit {
@@ -379,6 +396,7 @@ export function DiscoveriesTables({
       .catch(() => {});
   }, []);
   const [flagFilter, toggleFlag, clearFlags] = useToggleSet();
+  const [featureFilter, toggleFeature, clearFeatures] = useToggleSet();
 
   // Each tab has its own natural ordering and its own filter vocabulary; carrying one tab's sort
   // into another silently shows a table ordered by a column it does not have.
@@ -386,6 +404,7 @@ export function DiscoveriesTables({
     setQuery("");
     clearClass();
     clearFlags();
+    clearFeatures();
     setSort({ key: tab === "stars" ? "mass" : "estimated", dir: -1 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
@@ -520,6 +539,7 @@ export function DiscoveriesTables({
       if (flagFilter.has("ammonia") && r.ammoniaWorlds <= 0) return false;
       if (flagFilter.has("terra") && r.terraformables <= 0) return false;
       if (flagFilter.has("full") && !r.fullyScanned) return false;
+      if (!hasPickedFeature(featureFilter, r.featureKeys)) return false;
       if (!q) return true;
       return fuzzyRankAny([r.name, r.region ?? "", r.primaryStarType ?? ""], q) != null;
     });
@@ -552,6 +572,12 @@ export function DiscoveriesTables({
           ]}
           picked={flagFilter}
           onToggle={toggleFlag}
+        />
+        <ChipRow
+          label="Feature"
+          options={featureOptions(data.systems)}
+          picked={featureFilter}
+          onToggle={toggleFeature}
         />
         <Table
           rows={filtered}
@@ -720,6 +746,7 @@ export function DiscoveriesTables({
       if (flagFilter.has("volcanic") && !r.volcanism) return false;
       if (flagFilter.has("atmo") && !r.atmosphere) return false;
       if (flagFilter.has("green") && !greenOf(r).verdict) return false;
+      if (!hasPickedFeature(featureFilter, r.featureKeys)) return false;
       if (!q) return true;
       return (
         fuzzyRankAny(
@@ -760,6 +787,12 @@ export function DiscoveriesTables({
           ]}
           picked={flagFilter}
           onToggle={toggleFlag}
+        />
+        <ChipRow
+          label="Feature"
+          options={featureOptions(data.bodies)}
+          picked={featureFilter}
+          onToggle={toggleFeature}
         />
         <Table
           rows={filtered}
@@ -861,6 +894,7 @@ export function DiscoveriesTables({
     // is his to have scanned first and still not his system.
     if (flagFilter.has("first") && r.firstDiscoveredSystem !== true) return false;
     if (flagFilter.has("bodyfirst") && !r.firstDiscoverer) return false;
+    if (!hasPickedFeature(featureFilter, r.featureKeys)) return false;
     if (!q) return true;
     return fuzzyRankAny([r.bodyName, r.system, r.starType, r.luminosity ?? "", r.region ?? ""], q) != null;
   });
@@ -877,6 +911,12 @@ export function DiscoveriesTables({
         ]}
         picked={flagFilter}
         onToggle={toggleFlag}
+      />
+      <ChipRow
+        label="Feature"
+        options={featureOptions(data.stars)}
+        picked={featureFilter}
+        onToggle={toggleFeature}
       />
       <Table
         rows={filtered}
