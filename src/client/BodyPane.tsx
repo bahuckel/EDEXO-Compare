@@ -1,6 +1,7 @@
 /**
  * The body pane: glance bar, planetary facts, sell range, candidate species (7.3).
  */
+import { unknownPlantSlots, type UnknownPlantSlot } from "./unknownPlants";
 import { nextTempUnit, usePressUnit, useTempUnit } from "./useUnits";
 import { codexFirstTitle, codexMarkTitle } from "./codexMark";
 import { ArrivalTrip } from "@shared/systemTriage";
@@ -206,6 +207,17 @@ export const BodyPane = memo(function BodyPane({
   // Grouped once per change, not in the JSX on every render (UI review P3) — the groups are new objects
   // each time, which also made memo(GenusMatchGroup) never skip.
   const likelyGroups = useMemo(() => groupedSortedMatches(likelyMatches, genusOrder), [likelyMatches, genusOrder]);
+  const unknownSlots = useMemo(
+    () =>
+      unknownPlantSlots({
+        signals: body.state.biologicalSignals,
+        matches: body.matches,
+        genusHints: body.state.genusHints,
+        orphanHints: body.dssGenusOrphanHints,
+        includeBacterium: includeBacteriumInSearch,
+      }),
+    [body.state.biologicalSignals, body.matches, body.state.genusHints, body.dssGenusOrphanHints, includeBacteriumInSearch],
+  );
   const unlikelyGroups = useMemo(() => groupedSortedMatches(unlikelyMatches, genusOrder), [unlikelyMatches, genusOrder]);
 
   // The body's first-footfall answer, shared with every species card below (WEBUI-REDESIGN 1.2).
@@ -657,10 +669,11 @@ export const BodyPane = memo(function BodyPane({
               }
             >
               {body.matches.length === 0 ? (
-                <p className="dim">
-                  No matches — adjust per-species rows in your genus JSON under data/species/, or get journal
-                  scan fields that satisfy those gates.
-                </p>
+                unknownSlots.length ? (
+                  <UnknownPlantCards slots={unknownSlots} />
+                ) : (
+                  <p className="dim">No candidates for this body.</p>
+                )
               ) : (
                 <>
                   {likelyMatches.length === 0 ? (
@@ -688,6 +701,7 @@ export const BodyPane = memo(function BodyPane({
                       ))}
                     </div>
                   )}
+                  {unknownSlots.length ? <UnknownPlantCards slots={unknownSlots} /> : null}
                   {unlikelyMatches.length > 0 ? (
                     <div className="candidate-species-unlikely">
                       <button
@@ -753,3 +767,28 @@ export const BodyPane = memo(function BodyPane({
     </FootfallContext.Provider>
   );
 });
+
+/** One card per signal the candidate list cannot fill (client/unknownPlants.ts). */
+export function UnknownPlantCards({ slots }: { slots: readonly UnknownPlantSlot[] }) {
+  return (
+    <div className="species-list species-list--unknown">
+      {slots.map((slot, i) => (
+        <article key={i} className="species-card species-card--unknown">
+          <div className="species-unknown-mark" aria-hidden>
+            ?
+          </div>
+          <div className="species-unknown-text">
+            <strong>{slot.genus ? `Unknown ${slot.genus}` : slot.maybeBacterium ? "Unknown plant — probably Bacterium" : "Unknown plant"}</strong>
+            <span className="dim tiny">
+              {slot.genus
+                ? "The scanner named this genus, and no species in the data fits this body. Worth a look: it may be a new find."
+                : slot.maybeBacterium
+                  ? "A signal with no candidate. Bacterium is switched off in the search; if it is not that, it may be a new find."
+                  : "A signal with no candidate the data knows. Worth a look: it may be a new find."}
+            </span>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
