@@ -44,6 +44,14 @@ describe("EDSM's four \"Bacteria …\" names (owner, 2026-10-03, Hypi Fraae RF-Q
   });
 });
 
+describe("EDSM's codex_ent_cactoid_03_a (2026-10-03, EDDN ScanOrganic test set)", () => {
+  it("is Cactoida Vermis - Green, as the game logs it, not Pullulanta", () => {
+    // EDSM's id table named it "Cactoida Pullulanta - Green"; every other _03 variant is Vermis, and
+    // the six bodies EDDN logged it on are Vermis country (thin water, rocky, ~420 K).
+    expect(codexFirstColours(root, "Inner Orion Spur", "Cactoida Vermis", "Green")).toBeNull();
+  });
+});
+
 describe("EDAstro's plants per region too (owner, 2026-10-01)", () => {
   // Stratum Paleas - Indigo is not in EDSM's Trojan Belt (the owner's own first); its id is _02_y.
   const ed = (...keys: string[]) => ({ ids: new Set(keys), fetchedAtMs: Date.parse("2026-10-01T10:00:00Z") });
