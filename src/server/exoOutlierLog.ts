@@ -1,7 +1,7 @@
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import type { BodyExoState, SpeciesDatabase, SpeciesEntry, SpeciesMatch } from "../shared/types.js";
 import { speciesMatchesExcludingTempPressure } from "./matchSpecies.js";
-import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
+import { collectOwnOrganicLockSpeciesIds } from "./organicLocks.js";
 import { resolveExoOutlierLogPath } from "./paths.js";
 
 /**
@@ -161,7 +161,7 @@ export function recordExoOutliersForBody(input: {
   const { body, matches, db } = input;
   if (!body.scan?.PlanetClass?.trim()) return 0;
 
-  const truth = collectResolvedOrganicLockSpeciesIds(body.organicGenusLocks, db);
+  const truth = collectOwnOrganicLockSpeciesIds(body.organicGenusLocks, db);
   if (!truth.length) return 0;
 
   const shownMatches = matches.filter((m) => !m.unlikely);

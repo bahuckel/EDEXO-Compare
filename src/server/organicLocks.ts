@@ -34,6 +34,22 @@ function resolveLockToSpeciesId(
   return null;
 }
 
+/**
+ * {@link collectResolvedOrganicLockSpeciesIds} over this body's **own** locks: not the ones copied from
+ * a sibling moon as a hint (`fromSibling`, gameState.ts). Copied, they read as found here — Skaude
+ * EX-A d1-228 5 c and 5 d carried 5 b's five species as "logged by you", "sampled here" and as the
+ * accuracy probe's truth, on moons nobody had landed on (2026-10-03).
+ */
+export function collectOwnOrganicLockSpeciesIds(
+  locks: OrganicGenusLock[] | null | undefined,
+  db: SpeciesDatabase,
+): string[] {
+  return collectResolvedOrganicLockSpeciesIds(
+    (locks ?? []).filter((l) => !l.fromSibling),
+    db,
+  );
+}
+
 /** Species entry ids unambiguously confirmed by on-foot ScanOrganic locks (genus + species/variant labels). */
 export function collectResolvedOrganicLockSpeciesIds(
   locks: OrganicGenusLock[] | null | undefined,

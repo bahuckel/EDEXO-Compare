@@ -92,7 +92,7 @@ import {
   buildExoOrganicOverlayDto,
 } from "./exoOrganicTracker.js";
 import { shortBodyLabel } from "../shared/systemMapLabels.js";
-import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
+import { collectOwnOrganicLockSpeciesIds, collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
 import { loadGenusCooccurrenceTable } from "./genusCooccurrenceTable.js";
 import { timingFromSamples } from "../shared/systemTriage.js";
 import {
@@ -480,7 +480,7 @@ function genusLikelihoodsForBody(
   ].filter(Boolean);
   if (candidates.length === 0) return null;
 
-  const confirmedIds = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
+  const confirmedIds = new Set(collectOwnOrganicLockSpeciesIds(b.organicGenusLocks, db));
   const known = [
     ...new Set(db.species.filter((e) => confirmedIds.has(e.id)).map((e) => e.genusDataDir)),
   ].filter((g) => candidates.includes(g));
@@ -944,12 +944,12 @@ function computeBodyUncached(
   */
   const compScanOnly = new Set(
     collectResolvedOrganicLockSpeciesIds(
-      (b.organicGenusLocks ?? []).filter((l) => l.source === "codex"),
+      (b.organicGenusLocks ?? []).filter((l) => !l.fromSibling && l.source === "codex"),
       db,
     ),
   );
   for (const id of collectResolvedOrganicLockSpeciesIds(
-    (b.organicGenusLocks ?? []).filter((l) => l.source !== "codex" && l.source !== "spansh"),
+    (b.organicGenusLocks ?? []).filter((l) => !l.fromSibling && l.source !== "codex" && l.source !== "spansh"),
     db,
   )) {
     compScanOnly.delete(id);
@@ -960,13 +960,13 @@ function computeBodyUncached(
   */
   const loggedByYou = new Set(
     collectResolvedOrganicLockSpeciesIds(
-      (b.organicGenusLocks ?? []).filter((l) => l.source !== "spansh"),
+      (b.organicGenusLocks ?? []).filter((l) => !l.fromSibling && l.source !== "spansh"),
       db,
     ),
   );
   const loggedByOthers = new Set(
     collectResolvedOrganicLockSpeciesIds(
-      (b.organicGenusLocks ?? []).filter((l) => l.source === "spansh"),
+      (b.organicGenusLocks ?? []).filter((l) => !l.fromSibling && l.source === "spansh"),
       db,
     ),
   );

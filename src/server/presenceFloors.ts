@@ -11,7 +11,7 @@ import type {
   SpeciesMatch,
 } from "../shared/types.js";
 import type { GameStateStore } from "./gameState.js";
-import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
+import { collectOwnOrganicLockSpeciesIds } from "./organicLocks.js";
 import { regionIndexForSystem } from "./regionMapData.js";
 import { REGION_PRIOR_WEIGHT, rankSpeciesOnBody } from "./speciesLikelihood.js";
 
@@ -153,7 +153,7 @@ export function demoteBelowPresenceFloor(
   b: BodyExoState,
   db: SpeciesDatabase,
 ): void {
-  const confirmed = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
+  const confirmed = new Set(collectOwnOrganicLockSpeciesIds(b.organicGenusLocks, db));
 
   // Probes have named the genera, so "is Bacterium here" is settled and the presence floor has
   // nothing left to judge. "Which Bacterium" is wide open, and that is a different floor.
@@ -295,7 +295,7 @@ function demoteBelowGenusShareFloor(matches: SpeciesMatch[], confirmed: Set<stri
  * codex list right.
  */
 export function markSampledDespiteUnlikely(matches: SpeciesMatch[], b: BodyExoState, db: SpeciesDatabase): void {
-  const sampled = new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db));
+  const sampled = new Set(collectOwnOrganicLockSpeciesIds(b.organicGenusLocks, db));
   if (sampled.size === 0) return;
   for (const m of matches) {
     // A Log already resolves the species, so `organicAnalysisComplete` is too strict a test here:

@@ -97,7 +97,8 @@ describe("Analyse, Sample and Log all count", () => {
     // Distinct bodies, not ScanOrganic lines: a sampling run fires three or four events for one
     // plant and counting those would retire a species after a single patch of ground.
     expect(focus).toContain("b.organicGenusLocks");
-    expect(focus).toContain("new Set(collectResolvedOrganicLockSpeciesIds");
+    // The body's own locks: a sibling moon's species copied here as a hint are not a find (2026-10-03).
+    expect(focus).toContain("new Set(collectOwnOrganicLockSpeciesIds");
   });
 });
 

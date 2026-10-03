@@ -43,7 +43,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
 import { matchDatabaseToScan } from "../src/server/matchSpecies.js";
-import { collectResolvedOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
+import { collectOwnOrganicLockSpeciesIds } from "../src/server/organicLocks.js";
 import { loadJournalMergeCacheForTool, probeMatchContexts } from "./probeCache.js";
 import { regionIndexForSystem, regionForSystem } from "../src/server/regionMapData.js";
 import { loadPriceList, lookupPrice } from "../src/server/priceList.js";
@@ -362,7 +362,7 @@ function runScenario(name: string, useHints: boolean): ScenarioResult {
   const r: ScenarioResult = { name, truthBodies: 0, shown: emptyTier(), all: emptyTier(), rescued: 0 };
 
   for (const b of bodies) {
-    const truth = collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db);
+    const truth = collectOwnOrganicLockSpeciesIds(b.organicGenusLocks, db);
     if (!truth.length || !b.scan?.PlanetClass?.trim()) continue;
     r.truthBodies++;
 
@@ -490,7 +490,7 @@ function reportDecidability(shownOnly: boolean): void {
       overCounts.push(genera.size);
     }
 
-    const truth = collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db);
+    const truth = collectOwnOrganicLockSpeciesIds(b.organicGenusLocks, db);
     if (!truth.length) continue;
     landed++;
     if (genera.size !== sig) continue;

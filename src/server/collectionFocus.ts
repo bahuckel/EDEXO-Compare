@@ -19,7 +19,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { resolveUserSettingsJsonPath } from "./paths.js";
-import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
+import { collectOwnOrganicLockSpeciesIds } from "./organicLocks.js";
 import {
   hasExomasteryProfileFile,
   loadExomasteryProfile,
@@ -104,7 +104,7 @@ export function ownScanCountsBySpecies(
   const out = new Map<string, number>();
   for (const b of bodies) {
     if (!b.organicGenusLocks?.length) continue;
-    for (const id of new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db))) {
+    for (const id of new Set(collectOwnOrganicLockSpeciesIds(b.organicGenusLocks, db))) {
       out.set(id, (out.get(id) ?? 0) + 1);
     }
   }

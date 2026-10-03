@@ -30,7 +30,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { resolvePredictionAuditPath } from "./paths.js";
-import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
+import { collectOwnOrganicLockSpeciesIds } from "./organicLocks.js";
 import type { BodyExoState, SpeciesDatabase, SpeciesMatch } from "../shared/types.js";
 import type { SurfaceMark } from "./surfaceMarksFile.js";
 
@@ -384,7 +384,7 @@ export function recordPredictionForBody(input: {
       right — scoring it then would say the app is always correct. The stage that matters is the last
       one the commander had to choose from.
     */
-    const truth = collectResolvedOrganicLockSpeciesIds(body.organicGenusLocks, db);
+    const truth = collectOwnOrganicLockSpeciesIds(body.organicGenusLocks, db);
     if (stage === "organic" && truth.length && rec.outcomes.length === 0 && last) {
       rec.outcomes = truth.map((id) => {
         const o = last.offered.find((x) => x.speciesId === id) ?? null;
