@@ -243,7 +243,7 @@ export function resetPredictionAuditForTests(): void {
  * cannot disagree with what the panel is showing: the panel reads the same fields.
  */
 function stageOf(body: BodyExoState): PredictionStageName {
-  if (body.organicGenusLocks.length > 0) return "organic";
+  if (body.organicGenusLocks.some((l) => !l.fromSibling)) return "organic";
   if (body.dssComplete || (body.genusHints?.length ?? 0) > 0) return "dss";
   return "fss";
 }

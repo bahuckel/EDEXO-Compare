@@ -32,7 +32,8 @@ export function rowProgress(m: Match, ctx: RowContextValue): RowProgress {
     const n = Math.max(0, Math.min(3, live.sampleCount));
     return { text: `${n}/3`, cls: "live", rank: 0 };
   }
-  if (ctx.locks.some((l) => l.speciesLocalised.trim().toLowerCase() === name)) {
+  // The body's own finds: a sibling moon's species copied here as a hint were never seen here.
+  if (ctx.locks.some((l) => !l.fromSibling && l.speciesLocalised.trim().toLowerCase() === name)) {
     return { text: "seen", cls: "seen", rank: 2 };
   }
   return null;

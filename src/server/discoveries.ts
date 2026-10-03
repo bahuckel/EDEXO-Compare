@@ -99,6 +99,7 @@ function confirmedOn(b: BodyExoState | undefined): string[] {
   if (!b) return [];
   const out = new Set<string>();
   for (const lock of b.organicGenusLocks ?? []) {
+    if (lock.fromSibling) continue; // a sibling moon's species, a hint here, not a find
     const label = (lock.speciesLocalised || lock.genusLocalised || "").trim();
     if (label) out.add(label);
   }

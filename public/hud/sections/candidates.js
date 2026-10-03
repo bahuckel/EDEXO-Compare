@@ -64,7 +64,9 @@ export function speciesProgress(m, st, eo, bodyKey) {
   }
   var locks = (st && st.organicGenusLocks) || [];
   for (var i = 0; i < locks.length; i++) {
-    if (norm(locks[i].speciesLocalised) === name) return { text: "seen", cls: "seen", confirmed: true };
+    // Not a sibling moon's species copied here as a hint (2026-10-03): nobody saw it on this body.
+    if (!locks[i].fromSibling && norm(locks[i].speciesLocalised) === name)
+      return { text: "seen", cls: "seen", confirmed: true };
   }
   return null;
 }
