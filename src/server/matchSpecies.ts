@@ -24,6 +24,7 @@ import {
 } from "../shared/presenceBranches.js";
 export { PRESENCE_BRANCH_FIELDS } from "../shared/presenceBranches.js";
 import {
+  EARTH_G_MS2,
   journalSurfaceGravityToG,
   LIGHT_SECOND_METERS,
   THIN_ATMOSPHERE_MAX_ATM,
@@ -270,6 +271,19 @@ function sightingsBeyondEdge(
     return { straddles: true, near: observedNearTemperature(entry, kelvin, { above: hi }) };
   }
   return { straddles: false, near: null };
+}
+
+/**
+ * A codex gravity limit in g is the game's limit in m/s², rounded (2026-10-03). 0.15 g is 1.5 m/s²
+ * (0.1530 g) and 0.275 g is 2.7 m/s² (0.2753 g): the corpus has 271 Tubus bodies between 0.150 and
+ * 0.153 g and none further, Osseus pumice 22 between 0.275 and 0.2753, Stratum tectonicas' 0.61 runs to
+ * 0.611 (6.0 m/s²). Tubus rosarium at 0.150 g on the owner's Dryio Flyuae OT-Y c1-103 3 b was demoted
+ * for it. So the limit is read back to the m/s² it came from, at a tenth.
+ */
+export function gameGravityLimitG(maxG: number | undefined): number | undefined {
+  if (maxG === undefined || !Number.isFinite(maxG)) return maxG;
+  const ms2 = Math.round(maxG * EARTH_G_MS2 * 10) / 10;
+  return Math.max(maxG, ms2 / EARTH_G_MS2);
 }
 
 function speciesNeedsTemperatureGate(c: SpeciesCriterion): boolean {
@@ -677,7 +691,7 @@ export function speciesMatchesExcludingTempPressure(
   const gRaw = scan.SurfaceGravity;
   if (c.surfaceGravity && gRaw !== undefined) {
     const g = journalSurfaceGravityToG(gRaw);
-    const fit = rangeFit(g, c.surfaceGravity.min, c.surfaceGravity.max);
+    const fit = rangeFit(g, c.surfaceGravity.min, gameGravityLimitG(c.surfaceGravity.max));
     /**
      * Observation overrules the codex band, the fifth field to get it (§43). Unlike the four before
      * it this gate was never fatal — outside by under {@link NUMERIC_GATE_TOLERANCE} already only

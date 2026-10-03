@@ -45,3 +45,12 @@ describe("Clypeus speculumi's orbit", () => {
     expect(r.reasons.some((x) => x.field === "Orbit" && x.soft)).toBe(true);
   });
 });
+
+describe("codex gravity limits are the game's m/s², rounded", async () => {
+  const { gameGravityLimitG } = await import("../src/server/matchSpecies.js");
+  it("reads 0.15 g as 1.5 m/s² and 0.275 g as 2.7 m/s²", () => {
+    expect(gameGravityLimitG(0.15)! * 9.80665).toBeCloseTo(1.5, 6);
+    expect(gameGravityLimitG(0.275)! * 9.80665).toBeCloseTo(2.7, 6);
+    expect(gameGravityLimitG(undefined)).toBeUndefined();
+  });
+});
