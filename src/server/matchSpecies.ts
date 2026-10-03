@@ -50,7 +50,7 @@ import { filterByGenusHints } from "./genusMatchUtils.js";
 import {
   applyOrganicGenusLocks,
   organicScanConfirmsNonBacteriumGenus,
-  collectResolvedOrganicLockSpeciesIds,
+  collectOwnOrganicLockSpeciesIds,
 } from "./organicLocks.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
 import { observedOnPlanetClass } from "./speciesPlanetClassObservations.js";
@@ -111,7 +111,10 @@ function injectOrganicLockConfirmedSpecies(
   organicGenusLocks: OrganicGenusLock[] | null | undefined,
   db: SpeciesDatabase,
 ): { matches: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[]; injected: boolean } {
-  const wantIds = collectResolvedOrganicLockSpeciesIds(organicGenusLocks, db);
+  // The body's own finds only: a sibling moon's species are a hint (its genus is merged into this
+  // body's genus hints), and injected here they said "ScanOrganic on this body" about a moon nobody
+  // had landed on (Skaude EX-A d1-228 5 c, 2026-10-03).
+  const wantIds = collectOwnOrganicLockSpeciesIds(organicGenusLocks, db);
   if (!wantIds.length) return { matches, injected: false };
   const have = new Set(matches.map((m) => m.entry.id));
   let injected = false;
