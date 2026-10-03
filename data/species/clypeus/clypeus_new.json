@@ -120,7 +120,9 @@
         },
         "distance_from_star": {
           "min_ls": 2500,
-          "approx_AU": 5
+          "approx_AU": 5,
+          "soft_below_note": "Corpus 2026-10-03: of 5,974 speculumi bodies, 43 at 2,400-2,500 ls, 21 at 2,300-2,400, 12 at 2,000-2,300, none nearer; per ls that is 0.14, 0.07 and 0.015 of the density just past 2,500. Kept at that chance instead of demoted.",
+          "soft_below": [[2400, 0.14], [2300, 0.07], [2000, 0.015]]
         },
         "atmospherePressureCategory": "thin"
       }

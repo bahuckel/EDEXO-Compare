@@ -223,6 +223,8 @@ export interface CriteriaMatchResult {
   softOnly?: boolean;
   /** What did pass, kept so a demoted candidate can still show what fits. Only set when `!ok`. */
   passed?: MatchReason[];
+  /** Kept at a lower chance by a soft band (the orbit's `softBelow`); multiplies "Chance here". */
+  presenceFactor?: number;
 }
 
 export interface PlanetTemperatureBand {
@@ -321,6 +323,7 @@ export function speciesMatchesExcludingTempPressure(
   const reasons: MatchReason[] = [];
   const c = entry.criteria;
   const ctx = matchContext ?? undefined;
+  let presenceFactor: number | undefined;
 
   if (!scan.PlanetClass) {
     failures.push({ field: "PlanetClass", detail: "No planet class in scan" });
@@ -819,7 +822,19 @@ export function speciesMatchesExcludingTempPressure(
   if (orb && (orb.min !== undefined || orb.max !== undefined) && ctx?.orbitDistanceFromParentStarLs != null) {
     const v = ctx.orbitDistanceFromParentStarLs;
     const fit = rangeFit(v, orb.min, orb.max);
-    if (fit !== "in") {
+    const step = orb.min !== undefined && v < orb.min ? orb.softBelow?.find((s) => v >= s.fromLs) : undefined;
+    if (fit !== "in" && step) {
+      /*
+        Under the codex minimum, where the species still grows, only less often: kept, at the chance
+        the corpus gives it there. Clypeus speculumi, "5 AU" (2,495 ls): 64 of its 5,974 bodies sit at
+        2,300–2,495 ls and one was missed at 2,327 (EDDN ScanOrganic set, 2026-10-03).
+      */
+      presenceFactor = step.factor;
+      reasons.push({
+        field: "Orbit",
+        detail: `${v.toFixed(0)} LS from host — under the codex ${orb.min} LS, where it is rarer: kept at ×${step.factor} chance.`,
+      });
+    } else if (fit !== "in") {
       // Soft either way: the codex orbit range is one more claim about where a species has been
       // seen, and a body outside it is a candidate to rank low rather than one to hide (§6).
       failures.push({
@@ -981,7 +996,7 @@ export function speciesMatchesExcludingTempPressure(
     }
   }
 
-  return { ok: true, reasons };
+  return presenceFactor !== undefined ? { ok: true, reasons, presenceFactor } : { ok: true, reasons };
 }
 
 /**
@@ -1344,7 +1359,8 @@ export function speciesMatchesCriteria(
     };
   }
 
-  return { ok: true, reasons: [...base.reasons, ...extraOkReasons] };
+  const ok = { ok: true, reasons: [...base.reasons, ...extraOkReasons] };
+  return base.presenceFactor !== undefined ? { ...ok, presenceFactor: base.presenceFactor } : ok;
 }
 
 /**
@@ -1448,7 +1464,11 @@ export function matchDatabaseToScan(
   for (const entry of narrowed) {
     const r = speciesMatchesCriteria(entry, scan, planetTempBand, est, matchContext);
     if (r.ok) {
-      strict.push({ entry, reasons: r.reasons });
+      strict.push(
+        r.presenceFactor !== undefined
+          ? { entry, reasons: r.reasons, presenceFactor: r.presenceFactor }
+          : { entry, reasons: r.reasons },
+      );
     } else if (r.softOnly) {
       unlikely.push({
         entry,

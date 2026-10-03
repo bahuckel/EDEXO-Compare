@@ -250,8 +250,17 @@ export interface SpeciesCriterion {
   whenAtmosphereLinkedAtmosphereAnyOf?: string[];
   /** Host star type: any fragment (substring, case-insensitive) must appear in {@link SpeciesMatchContext.parentStarType}. */
   parentStarTypeIncludesAnyOf?: string[];
-  /** Orbit distance from host star in light-seconds; only when context provides it. */
-  orbitDistanceFromParentStarLs?: { min?: number; max?: number };
+  /**
+   * Orbit distance from host star in light-seconds; only when context provides it.
+   *
+   * `softBelow`: under `min`, the row is kept at a lower chance instead of demoted — `factor` from
+   * the first step whose `fromLs` the orbit reaches (highest first), measured on the corpus.
+   */
+  orbitDistanceFromParentStarLs?: {
+    min?: number;
+    max?: number;
+    softBelow?: { fromLs: number; factor: number }[];
+  };
   /**
    * Distance from the system's arrival star in light-seconds, soft. Crystalline Shards: every one of
    * 4,450 Bioforge sightings is ≥ 10,369 Ls from arrival, while many sit right beside a secondary star.

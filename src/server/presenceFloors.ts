@@ -95,7 +95,13 @@ export function attachPresenceProbability(
    * question is which Bacterium. That is this number, and it is worth computing before the DSS too —
    * it is what the answer becomes the moment the genus is confirmed.
    */
-  const rows = ranked.map((r) => ({ genus: r.match.entry.genusDataDir, probability: r.probability, r }));
+  // A soft band's factor (Bark Mounds' nebula ring, Clypeus speculumi's orbit) is part of the answer
+  // to "which one of the genus" too, or a row kept at ×0.07 would take its full share after a DSS.
+  const rows = ranked.map((r) => ({
+    genus: r.match.entry.genusDataDir,
+    probability: r.probability * (r.match.presenceFactor ?? 1),
+    r,
+  }));
   const shares = genusShares(rows);
   for (const row of rows) {
     const share = shares.get(row);

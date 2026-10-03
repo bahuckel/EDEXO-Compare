@@ -412,6 +412,15 @@ export function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesC
       min: toNumber(orbitRec.min ?? orbitRec.min_ls ?? orbitRec.minLs),
       max: toNumber(orbitRec.max ?? orbitRec.max_ls ?? orbitRec.maxLs),
     };
+    // `soft_below: [[2400, 0.14], …]` — under the minimum, a lower chance rather than a demotion.
+    const steps = Array.isArray(orbitRec.soft_below) ? orbitRec.soft_below : [];
+    const softBelow = steps
+      .map((s) => (Array.isArray(s) ? { fromLs: toNumber(s[0]), factor: toNumber(s[1]) } : null))
+      .filter(
+        (s): s is { fromLs: number; factor: number } => s?.fromLs !== undefined && s.factor !== undefined,
+      )
+      .sort((a, b) => b.fromLs - a.fromLs);
+    if (softBelow.length) c.orbitDistanceFromParentStarLs.softBelow = softBelow;
   }
 
   const apc = pickString(
