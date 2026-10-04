@@ -11,7 +11,7 @@ import { RowContext, LiveRun } from "./rowContext";
 import { settledMultiplier } from "@shared/footfallValue";
 import { readableAtmosphereLead } from "@shared/atmosphereLabel";
 import { footfallCertainty } from "@shared/footfallValue";
-import { useCallback, memo, Suspense, useEffect, useMemo, useState } from "react";
+import { useCallback, memo, Suspense, useMemo, useState } from "react";
 import { ExoPayoutRangePanel, payoutHeadline } from "./ExoPayoutRangePanel";
 import { FoldPanel } from "./ui/Fold";
 import { SnapshotButton } from "./SnapshotButton";
@@ -32,7 +32,8 @@ import { exomasteryDetailHasContent, groupedSortedMatches } from "./speciesMatch
 import { bodyGenusProgress, genusProgressTag } from "@shared/genusProgress";
 import { ExomasteryHabitatMatchModal } from "./SharedModals";
 import { candidateSpeciesDenomFromFss, genusHintIsDssOrphan, tripRankLabel } from "./bodyHelpers";
-import { EDEXO_CODEX_NEW_ONLY_LS, EDEXO_COMPACT_CANDIDATE_VIEW_LS, readLsBool, writeLsBool } from "./lsPrefs";
+import { EDEXO_CODEX_NEW_ONLY_LS, readLsBool, writeLsBool } from "./lsPrefs";
+import { oneOf, usePersistedState } from "./usePersistedState";
 import { GenusTag, GlanceGenera, genusRowSpecies, LandableBadge } from "./BodyGlance";
 import { ExoPayoutRangeDetailModal } from "./ExoPayoutRangeDetailModal";
 import { GenusMatchGroup } from "./GenusMatchGroup";
@@ -62,14 +63,18 @@ export const BodyPane = memo(function BodyPane({
    */
   const [showUnlikely, setShowUnlikely] = useState(false);
   /**
-   * Compact is the default now.
+   * Rows by default from three candidates up (owner, 2026-10-04, plan 3.1), cards below that; the
+   * Compact button is the commander's own choice and sticks.
    *
    * On a body with 30 candidates the hero layout renders 11,481 DOM elements and 22,288 px of
-   * cards; compact renders 2,185 and 8,544 — the same answers in a fifth of the nodes. The toggle
-   * is still there, and anyone who has already set it keeps their choice.
+   * cards; compact renders 2,185 and 8,544 — the same answers in a fifth of the nodes. A new key:
+   * the old one was written on every start whatever was clicked, so it cannot tell a choice from
+   * the default.
    */
-  const [compactCandidateView, setCompactCandidateView] = useState(() =>
-    readLsBool(EDEXO_COMPACT_CANDIDATE_VIEW_LS, false),
+  const [candidateView, setCandidateView] = usePersistedState<"auto" | "rows" | "cards">(
+    "edexo.candidateView",
+    "auto",
+    oneOf("auto", "rows", "cards"),
   );
   const [tempUnit, setTempUnit] = useTempUnit();
   const [pressUnit, setPressUnit] = usePressUnit();
@@ -200,6 +205,9 @@ export const BodyPane = memo(function BodyPane({
     has proved is on this body does not belong behind "show unlikely (N)".
   */
   const likelyMatches = useMemo(() => shownMatches.filter((m) => !m.unlikely || m.sampledHere === true), [shownMatches]);
+  const compactCandidateView = candidateView === "auto" ? likelyMatches.length >= 3 : candidateView === "rows";
+  const setCompactCandidateView = (next: (v: boolean) => boolean) =>
+    setCandidateView(next(compactCandidateView) ? "rows" : "cards");
   const unlikelyMatches = useMemo(() => shownMatches.filter((m) => m.unlikely && m.sampledHere !== true), [shownMatches]);
   // Genus order from the co-occurrence solver, most likely first. Ordering only — the probabilities
   // behind it are not calibrated, so nothing here renders a number.
@@ -218,10 +226,6 @@ export const BodyPane = memo(function BodyPane({
         commanderFirstFootfall: body.exoPayoutRange.commanderFirstFootfall,
       })
     : "unknown";
-
-  useEffect(() => {
-    writeLsBool(EDEXO_COMPACT_CANDIDATE_VIEW_LS, compactCandidateView);
-  }, [compactCandidateView]);
 
   return (
     <FootfallContext.Provider value={bodyFootfall}>
@@ -615,7 +619,11 @@ export const BodyPane = memo(function BodyPane({
                     className={`candidate-species-compact-toggle btn-top-toggle${compactCandidateView ? " btn-top-toggle--on" : ""}`}
                     onClick={() => setCompactCandidateView((v) => !v)}
                     aria-pressed={compactCandidateView}
-                    title="Compact rows; click a row for its full card."
+                    title={
+                      candidateView === "auto"
+                        ? "Rows from three candidates up, cards below; click to choose for yourself. Click a row for its full card."
+                        : "Compact rows; click a row for its full card."
+                    }
                   >
                     Compact
                   </button>

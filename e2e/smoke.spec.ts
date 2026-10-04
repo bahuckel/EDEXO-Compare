@@ -42,8 +42,19 @@ test("app: the fixture body appears with its candidate species", async ({ page }
   // The fixture, not a live game: its system name is on screen and its one bio body is the only tab.
   await expect(page.getByText("Smoke Test", { exact: true }).first()).toBeVisible();
   await expect(page.locator(".tab")).toHaveCount(1);
+  // Five candidates: rows by default from three up (owner, 2026-10-04); a row unfolds its card.
+  await expect(page.locator(".srow").first()).toBeVisible();
+  await page.locator(".srow-main").first().click();
   await expect(page.locator(".species-card").first()).toBeVisible();
   await page.screenshot({ path: `${OUT}/app-body.png`, fullPage: true });
+  // Compact is the commander's own choice, and switches to cards.
+  const compact = page.getByRole("button", { name: "Compact" });
+  await expect(compact).toHaveAttribute("aria-pressed", "true");
+  await compact.click();
+  await expect(compact).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".srow")).toHaveCount(0);
+  await compact.click();
+  await expect(page.locator(".srow").first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -54,7 +65,10 @@ test("app: the fixture body appears with its candidate species", async ({ page }
 test("app: a candidate card opens its 'Why this chance' strip", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");
-  await expect(page.locator(".species-card").first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator(".srow").first()).toBeVisible({ timeout: 60_000 });
+  // Rows by default on the fixture's five candidates: unfold the first card.
+  await page.locator(".srow-main").first().click();
+  await expect(page.locator(".species-card").first()).toBeVisible();
   const toggle = page.getByRole("button", { name: /Why this chance/ }).first();
   await expect(toggle).toBeVisible();
   await toggle.click();
