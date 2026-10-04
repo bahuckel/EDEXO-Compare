@@ -40,6 +40,8 @@ import type { GalaxyFindDTO, GalaxyMineDTO, GalaxyNextDTO, GalaxyRouteDTO } from
 import type { CodexMapKind, CodexMapRegionDTO, CodexMapRegionsDTO, CodexMapSystemDTO } from "@shared/dto/codexMap.js";
 import { GALAXY_LAYERS, layerPointText, type GalaxyLayerDTO, type GalaxyLayerKind } from "@shared/galaxyLayers.js";
 import { isBool, usePersistedState } from "./usePersistedState";
+import { Tooltip } from "./ui/Tooltip";
+import { G3D_HELP, G3D_TABS, G3dIcon, MenuHead, MenuRow, MenuToggle } from "./galaxy3d/G3dMenu";
 
 const LABEL_H = 18;
 /** Label divs kept between frames; a screen shows well under this many names at once. */
@@ -50,7 +52,7 @@ const dist = (a: { x: number; y: number; z: number }, b: { x: number; y: number;
   Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 
 type Colour = 0 | 1 | 2;
-type Drawer = "none" | "search" | "filter" | "navroute" | "codex" | "plan";
+type Drawer = "none" | "view" | "layers" | "search" | "filter" | "navroute" | "codex" | "targets";
 type MineRow = GalaxyMineDTO["systems"][number];
 
 /** The commander's systems: waiting for them amber, done (DSS or plants on foot) green, visited grey. */
@@ -115,7 +117,10 @@ export function GalaxyMap3D() {
   const [findText, setFindText] = useState("");
   const [find, setFind] = useState<GalaxyFindDTO | null>(null);
   const [findOpen, setFindOpen] = useState(false);
-  const [layersOpen, setLayersOpen] = useState(false);
+  // Follow the ship as it jumps (owner, 2026-10-04): the camera keeps its distance and moves with you.
+  const [follow, setFollow] = usePersistedState("galaxy.follow", true, isBool);
+  // The plan list inside the Targets menu (it was a drawer of its own).
+  const [planOn, setPlanOn] = useState(false);
   /*
     The extra layers (D10): points of interest, phenomena, carriers and bookmarks, each from a list
     already on this PC, fetched when switched on. Remembered between opens of the map.
@@ -160,6 +165,9 @@ export function GalaxyMap3D() {
   const [planLoop, setPlanLoop] = usePersistedState("galaxy.planLoop", false, isBool);
   const [planCopied, setPlanCopied] = useState(false);
   const screenRef = useRef<HTMLDivElement | null>(null);
+  const lastShip = useRef<{ x: number; y: number; z: number } | null>(null);
+  const followRef = useRef(follow);
+  followRef.current = follow;
   const barRef = useRef<HTMLElement | null>(null);
 
   // Drawers, the panel and the banner sit under the toolbar whatever its height (it wraps when narrow).
@@ -254,6 +262,16 @@ export function GalaxyMap3D() {
         e.controls.update();
         e.invalidate();
       },
+      /** For tests: the camera at one point looking at another (game coordinates). */
+      pose: (cam: [number, number, number], target: [number, number, number]) => {
+        e.cancelFlight();
+        e.controls.target.set(target[0], target[1], -target[2]);
+        e.camera.position.set(cam[0], cam[1], -cam[2]);
+        e.controls.update();
+        e.invalidate();
+      },
+      /** For tests: whether the EDAstro easter egg is showing, and how strongly. */
+      egg: () => e.debugEgg(),
     };
 
     void e.load();
@@ -307,7 +325,7 @@ export function GalaxyMap3D() {
     };
   }, [graphics.tier]);
 
-  // Where the ship is and this session's jumps: every 10 s while the window is visible.
+  // Where the ship is and this session's jumps: every 3 s while the window is visible (live follow).
   useEffect(() => {
     if (graphics.tier === "none") return;
     let live = true;
@@ -319,11 +337,19 @@ export function GalaxyMap3D() {
           if (!live || !d) return;
           setRoute(d);
           engine.current?.setRoute(d.route, d.position);
+          // A jump moved the ship: the camera goes with it, at the distance it was viewing from.
+          const p = d.position;
+          const prev = lastShip.current;
+          lastShip.current = p ?? null;
+          if (p && prev && followRef.current && (p.x !== prev.x || p.y !== prev.y || p.z !== prev.z)) {
+            const e = engine.current;
+            if (e) e.flyTo(p, Math.max(200, e.getStats().distanceLy));
+          }
         })
         .catch(() => {});
     };
     tick();
-    const t = setInterval(tick, 10_000);
+    const t = setInterval(tick, 3_000);
     return () => {
       live = false;
       clearInterval(t);
@@ -573,7 +599,7 @@ export function GalaxyMap3D() {
    * With the Plan drawer open, the chain of `plan` stops comes along and the camera frames all of it.
    */
   const nextTarget = async (skip: number[], o: { plan?: number; fly?: boolean; loop?: boolean } = {}) => {
-    const plan = o.plan ?? (drawer === "plan" ? planSize : 0);
+    const plan = o.plan ?? (planOn ? planSize : 0);
     const loop = o.loop ?? planLoop;
     setTargetBusy(true);
     try {
@@ -616,9 +642,9 @@ export function GalaxyMap3D() {
   };
 
   // G5.3: the plan — the target and the nearest qualifying system after each stop.
-  const plan = drawer === "plan" ? (target?.plan ?? null) : null;
+  const plan = planOn ? (target?.plan ?? null) : null;
   const openPlan = () => {
-    setDrawer("plan");
+    setPlanOn(true);
     void nextTarget(skipped, { plan: planSize });
   };
   /** Skip one stop of the plan: the chain is asked again from the ship, the camera stays. */
@@ -867,71 +893,222 @@ export function GalaxyMap3D() {
         </aside>
       ) : null}
 
-      {drawer === "navroute" ? (
-        <aside className="g3d-drawer g3d-drawer--filter" aria-label="NavRoute" data-testid="g3d-navroute">
-          <GalaxyNavRoutePanel
-            onShown={setNavShown}
-            onFly={(s) => engine.current?.flyTo({ x: s.pos[0], y: s.pos[1], z: s.pos[2] }, 250)}
-          />
+      {drawer === "view" ? (
+        <aside className="g3d-drawer g3d-menu" aria-label="View" data-testid="g3d-view">
+          <MenuHead title="View" help={G3D_HELP.view} />
+          <div className="g3d-row g3d-row--buttons" role="group" aria-label="Camera">
+            <Tooltip text="Look straight down on the galaxy">
+              <button type="button" className="g3d-btn" onClick={() => view("top")}>
+                Top
+              </button>
+            </Tooltip>
+            <Tooltip text="Look across the disc at an angle">
+              <button type="button" className="g3d-btn" onClick={() => view("tilted")}>
+                Tilt
+              </button>
+            </Tooltip>
+            <Tooltip text="Fly to the galactic core, Sagittarius A*">
+              <button type="button" className="g3d-btn" onClick={() => view("core")}>
+                Core
+              </button>
+            </Tooltip>
+            <Tooltip text="Fly home to Sol">
+              <button type="button" className="g3d-btn" onClick={() => view("sol")}>
+                Sol
+              </button>
+            </Tooltip>
+            <Tooltip text={route?.system ? `Fly to your ship, in ${route.system}` : "Your ship's position is not known yet"}>
+              <button type="button" className="g3d-btn" onClick={toShip} disabled={!ship}>
+                Me
+              </button>
+            </Tooltip>
+          </div>
+          <MenuToggle label="Follow my ship" hint="When you jump, the camera moves with you and keeps its distance" on={follow} set={setFollow} />
+          <MenuRow label="Colour by" hint="Evidence: how sure the record is (mapped, codex logged, signals only). Species count and Value: how rich the system is.">
+            <select className="g3d-select g3d-row__val" aria-label="Colour by" value={colour} onChange={(ev) => setColour(Number(ev.target.value) as Colour)}>
+              {colours.map(([k, label]) => (
+                <option key={k} value={k}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </MenuRow>
+          <MenuRow label="Brightness" hint="How bright the systems are drawn">
+            <input
+              type="range"
+              className="g3d-row__range"
+              min={0.2}
+              max={4}
+              step={0.1}
+              value={exposure}
+              aria-label="Brightness"
+              onChange={(ev) => setExposure(Number(ev.target.value))}
+            />
+          </MenuRow>
+          <MenuRow label="Classic map" hint="The 2D sector map, for a machine without 3D graphics or a quick look">
+            <a className="g3d-row__val g3d-classic" href="?screen=map">
+              Open
+            </a>
+          </MenuRow>
+          <p className="g3d-panel__note">Left drag pans · right drag tilts and turns · the wheel zooms · click a ring or a system.</p>
         </aside>
       ) : null}
 
-      {drawer === "filter" ? (
-        <aside className="g3d-drawer g3d-drawer--filter" aria-label="Filter" data-testid="g3d-filter">
-          <GalaxyFilterPanel value={filter} onChange={setFilter} matched={filterMatched} busy={filterBusy} />
-        </aside>
-      ) : null}
-
-      {drawer === "search" ? (
-        <aside className="g3d-drawer g3d-drawer--search" aria-label="Search" data-testid="g3d-search">
-          <GalaxySearchPanel onApply={onApply} commanderRegionId={commanderRegionId} />
-          {search ? (
-            <p className="g3d-panel__note">
-              {search.label}: {search.matchedSystems.toLocaleString()} systems in {search.spreadCells.toLocaleString()} sectors;
-              the map shows one per sector ({search.hits.length.toLocaleString()}).
-            </p>
+      {drawer === "layers" ? (
+        <aside className="g3d-drawer g3d-menu" aria-label="Layers" data-testid="g3d-layers">
+          <MenuHead title="Layers" help={G3D_HELP.layers} />
+          <div className="g3d-menu__rows" role="group" aria-label="Layers">
+            {(["you", "photo", "borders", "groups", "labels"] as const).map((k) => (
+                <label key={k} className="g3d-row g3d-row--check">
+                  <input type="checkbox" className="g3d-row__box" checked={layers[k]} onChange={() => toggle(k)} />
+                  <span className="g3d-row__label">
+                    {{ you: "Your systems", photo: "Milky Way photo", borders: "Region borders", groups: "Groups", labels: "Names" }[k]}
+                  </span>
+                  <span className="g3d-row__val">{layers[k] ? "On" : "Off"}</span>
+                </label>
+              ))}
+              {GALAXY_LAYERS.map((l) => {
+                const d = extraData[l.kind];
+                const missing = d != null && !d.available;
+                return (
+                  <label key={l.kind} className="g3d-row g3d-row--check" title={missing ? l.needs : undefined}>
+                    <input type="checkbox" className="g3d-row__box" checked={extraOn[l.kind]} onChange={() => extraSet[l.kind](!extraOn[l.kind])} />
+                    <span
+                      className="g3d-swatch"
+                      style={{ background: `rgb(${l.colour.map((c) => Math.round(c * 255)).join(",")})` }}
+                    />
+                    <span className="g3d-row__label">
+                      {l.label}
+                      {extraOn[l.kind] && d ? (
+                        <span className="dim"> {missing ? `— ${l.needs.toLowerCase()}` : `(${d.points.length.toLocaleString()})`}</span>
+                      ) : null}
+                    </span>
+                    <span className="g3d-row__val">{extraOn[l.kind] ? "On" : "Off"}</span>
+                  </label>
+                );
+              })}
+          </div>
+          {layers.you ? (
+            <MenuRow label="Waiting worth ≥" hint="Your systems still waiting (signals not yet sampled), worth at least this much">
+              <input
+                type="range"
+                className="g3d-row__range"
+                min={0}
+                max={WAIT_MAX_M}
+                step={1}
+                value={waitMinM}
+                aria-label="Waiting worth at least (million CR)"
+                onChange={(ev) => setWaitMinM(Number(ev.target.value))}
+              />
+              <span className="g3d-slider-val g3d-slider-val--short">{waitMinM ? `${waitMinM}M` : "any"}</span>
+            </MenuRow>
           ) : null}
         </aside>
       ) : null}
 
-      {drawer === "plan" ? (
-        <aside className="g3d-drawer g3d-plan" aria-label="Plan" data-testid="g3d-plan">
-          <div className="g3d-plan__head">
-            <strong>Plan{worthM ? ` · worth ≥ ${worthM}M` : ""}</strong>
-            <label className="g3d-check">
-              Stops
-              <select
-                className="g3d-select"
-                aria-label="Stops in the plan"
-                value={planSize}
-                onChange={(ev) => {
-                  const n = Number(ev.target.value);
-                  setPlanSize(n);
-                  void nextTarget(skipped, { plan: n, fly: false });
+      {drawer === "targets" ? (
+        <aside className="g3d-drawer g3d-menu g3d-plan" aria-label="Targets" data-testid="g3d-targets">
+          <MenuHead title="Biology targets" help={G3D_HELP.targets} />
+          <MenuRow label="Worth ≥" hint="Only systems whose recorded species add up to at least this (1×)">
+            <input
+              type="range"
+              className="g3d-row__range"
+              min={0}
+              max={WORTH_STEPS_M.length - 1}
+              step={1}
+              value={worthStep}
+              aria-label="Worth at least (million CR)"
+              onChange={(ev) => setWorthStep(Number(ev.target.value))}
+            />
+            <span className="g3d-slider-val">
+              {worthM ? `${worthM}M` : "any"}
+              {worthCount != null && worthM ? ` (${formatCount(worthCount)})` : ""}
+            </span>
+          </MenuRow>
+          <MenuToggle label="Skip visited" hint="Also skip systems you have been to, not only the ones you mapped or sampled" on={skipVisited} set={setSkipVisited} />
+          <button
+            type="button"
+            className="g3d-btn g3d-btn--primary-small"
+            onClick={() => void nextTarget(skipped)}
+            disabled={targetBusy}
+            title="The nearest system worth at least that much that you have not mapped or sampled; its name is copied for the game's galaxy map"
+          >
+            {targetBusy ? "Finding…" : "Next target"}
+          </button>
+          {target ? (
+            <div className="g3d-target" data-testid="g3d-target">
+          {target.target ? (
+            <>
+              <span>
+                Next target{worthM ? ` ≥ ${worthM}M` : ""}: <strong>{target.target.name}</strong> ·{" "}
+                {fmtLy(target.target.distanceLy)} · {target.target.species} species ·{" "}
+                {formatValue(target.target.valueCr / 100_000)}
+                {copied ? " · name copied" : ""}
+              </span>
+              <CopySystemButton system={target.target.name} />
+              <button type="button" className="g3d-btn" onClick={skipTarget} disabled={targetBusy}>
+                Skip
+              </button>
+              <button
+                type="button"
+                className="g3d-btn"
+                onClick={() => {
+                  const t = target.target!;
+                  go(t, 400, { kind: "index", ordinal: t.ordinal, x: t.x, y: t.y, z: t.z });
                 }}
               >
-                {PLAN_SIZES.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="g3d-check" title="The route ends where the ship is now: back to a carrier or a station to sell at">
-              <input
-                type="checkbox"
-                checked={planLoop}
-                onChange={(ev) => {
-                  setPlanLoop(ev.target.checked);
-                  void nextTarget(skipped, { plan: planSize, fly: false, loop: ev.target.checked });
+                Show
+              </button>
+              {!planOn ? (
+                <button type="button" className="g3d-btn" onClick={openPlan} disabled={targetBusy} title="The next few targets, each the nearest to the last, in the shortest order">
+                  Plan {planSize}
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <span>
+              {target.from
+                ? `Nothing left${worthM ? ` worth ≥ ${worthM}M` : ""} that you have not done${skipped.length ? " (after your skips)" : ""}.`
+                : "Your ship's position is not known yet — jump once and try again."}
+            </span>
+          )}
+            </div>
+          ) : null}
+          {planOn ? (
+            <div className="g3d-menu__section" data-testid="g3d-plan">
+              <div className="g3d-plan__head">
+                <strong>Plan</strong>
+                <button type="button" className="g3d-panel__close" aria-label="Close the plan" onClick={() => setPlanOn(false)}>
+                  ✕
+                </button>
+              </div>
+              <MenuRow label="Stops" hint="How many systems the plan visits; the target is one of them">
+                <select
+                  className="g3d-select g3d-row__val"
+                  aria-label="Stops in the plan"
+                  value={planSize}
+                  onChange={(ev) => {
+                    const n = Number(ev.target.value);
+                    setPlanSize(n);
+                    void nextTarget(skipped, { plan: n, fly: false });
+                  }}
+                >
+                  {PLAN_SIZES.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </MenuRow>
+              <MenuToggle
+                label="Back to start"
+                hint="The route ends where the ship is now: back to a carrier or a station to sell at"
+                on={planLoop}
+                set={(v) => {
+                  setPlanLoop(v);
+                  void nextTarget(skipped, { plan: planSize, fly: false, loop: v });
                 }}
               />
-              Back to start
-            </label>
-            <button type="button" className="g3d-panel__close" aria-label="Close the plan" onClick={() => setDrawer("none")}>
-              ✕
-            </button>
-          </div>
           {targetBusy && !plan ? <p className="g3d-panel__note">Planning…</p> : null}
           {plan && plan.stops.length ? (
             <>
@@ -1005,11 +1182,44 @@ export function GalaxyMap3D() {
           ) : target && !targetBusy ? (
             <p className="g3d-panel__note">No plan: nothing qualifies from here.</p>
           ) : null}
+            </div>
+          ) : null}
+        </aside>
+      ) : null}
+
+      {drawer === "navroute" ? (
+        <aside className="g3d-drawer g3d-drawer--filter" aria-label="NavRoute" data-testid="g3d-navroute">
+          <MenuHead title="NavRoute" help={G3D_HELP.navroute} />
+          <GalaxyNavRoutePanel
+            onShown={setNavShown}
+            onFly={(s) => engine.current?.flyTo({ x: s.pos[0], y: s.pos[1], z: s.pos[2] }, 250)}
+          />
+        </aside>
+      ) : null}
+
+      {drawer === "filter" ? (
+        <aside className="g3d-drawer g3d-drawer--filter" aria-label="Filter" data-testid="g3d-filter">
+          <MenuHead title="Filter" help={G3D_HELP.filter} />
+          <GalaxyFilterPanel value={filter} onChange={setFilter} matched={filterMatched} busy={filterBusy} />
+        </aside>
+      ) : null}
+
+      {drawer === "search" ? (
+        <aside className="g3d-drawer g3d-drawer--search" aria-label="Search" data-testid="g3d-search">
+          <MenuHead title="Species search" help={G3D_HELP.search} />
+          <GalaxySearchPanel onApply={onApply} commanderRegionId={commanderRegionId} />
+          {search ? (
+            <p className="g3d-panel__note">
+              {search.label}: {search.matchedSystems.toLocaleString()} systems in {search.spreadCells.toLocaleString()} sectors;
+              the map shows one per sector ({search.hits.length.toLocaleString()}).
+            </p>
+          ) : null}
         </aside>
       ) : null}
 
       {codexOn ? (
         <aside className="g3d-drawer g3d-codex" aria-label="Codex" data-testid="g3d-codex">
+          <MenuHead title="Codex" help={G3D_HELP.codex} />
           <div className="g3d-group" role="group" aria-label="Codex kind">
             {(["bio", "bodies"] as const).map((k) => (
               <button
@@ -1051,62 +1261,7 @@ export function GalaxyMap3D() {
         </aside>
       ) : null}
 
-      {target ? (
-        <div className="g3d-banner g3d-banner--target" data-testid="g3d-target">
-          {target.target ? (
-            <>
-              <span>
-                Next target{worthM ? ` ≥ ${worthM}M` : ""}: <strong>{target.target.name}</strong> ·{" "}
-                {fmtLy(target.target.distanceLy)} · {target.target.species} species ·{" "}
-                {formatValue(target.target.valueCr / 100_000)}
-                {copied ? " · name copied" : ""}
-              </span>
-              <CopySystemButton system={target.target.name} />
-              <button type="button" className="g3d-btn" onClick={skipTarget} disabled={targetBusy}>
-                Skip
-              </button>
-              <button
-                type="button"
-                className="g3d-btn"
-                onClick={() => {
-                  const t = target.target!;
-                  go(t, 400, { kind: "index", ordinal: t.ordinal, x: t.x, y: t.y, z: t.z });
-                }}
-              >
-                Show
-              </button>
-              {drawer !== "plan" ? (
-                <button type="button" className="g3d-btn" onClick={openPlan} disabled={targetBusy} title="The next few targets, each the nearest to the last">
-                  Plan {planSize}
-                </button>
-              ) : null}
-            </>
-          ) : (
-            <span>
-              {target.from
-                ? `Nothing left${worthM ? ` worth ≥ ${worthM}M` : ""} that you have not done${skipped.length ? " (after your skips)" : ""}.`
-                : "Your ship's position is not known yet — jump once and try again."}
-            </span>
-          )}
-          <label className="g3d-check" title="Also skip systems you have been to, not only the ones you analysed">
-            <input type="checkbox" checked={skipVisited} onChange={(ev) => setSkipVisited(ev.target.checked)} />
-            skip visited
-          </label>
-          <button
-            type="button"
-            className="g3d-panel__close g3d-banner__close"
-            aria-label="Close"
-            onClick={() => {
-              setTarget(null);
-              setCopied(false);
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      ) : null}
-
-      {nearest && layers.you && !selection && !target ? (
+      {nearest && layers.you && !selection && drawer === "none" ? (
         <div className="g3d-banner" data-testid="g3d-nearest">
           <span>
             Nearest waiting{waitMinM ? ` ≥ ${waitMinM}M` : ""}: <strong>{nearest.row.name}</strong> ·{" "}
@@ -1126,8 +1281,27 @@ export function GalaxyMap3D() {
       ) : null}
 
       <header className="g3d-bar" ref={barRef}>
-        <span className="g3d-title">Galaxy map</span>
-        <div className="g3d-find">
+        <nav className="g3d-tabs" aria-label="Galaxy map menus">
+          {G3D_TABS.map((t) => {
+            const on = drawer === t.key;
+            const label = t.key === "filter" && filterTicks ? `Filter (${filterTicks})` : t.label;
+            return (
+              <Tooltip key={t.key} text={t.hint}>
+                <button
+                  type="button"
+                  className={on ? "g3d-tab g3d-tab--on" : "g3d-tab"}
+                  aria-pressed={on}
+                  aria-label={label}
+                  onClick={() => openDrawer(t.key)}
+                >
+                  <G3dIcon name={t.key} />
+                  {t.key === "filter" && filterTicks ? <span className="g3d-tab__badge">{filterTicks}</span> : null}
+                </button>
+              </Tooltip>
+            );
+          })}
+        </nav>
+        <div className="g3d-find g3d-find--centre">
           <input
             type="search"
             className="g3d-find__input"
@@ -1182,165 +1356,7 @@ export function GalaxyMap3D() {
             </ul>
           ) : null}
         </div>
-        <div className="g3d-group" role="group" aria-label="View">
-          <button type="button" className="g3d-btn" onClick={() => view("top")}>
-            Top
-          </button>
-          <button type="button" className="g3d-btn" onClick={() => view("tilted")}>
-            Tilt
-          </button>
-          <button type="button" className="g3d-btn" onClick={() => view("core")}>
-            Core
-          </button>
-          <button type="button" className="g3d-btn" onClick={() => view("sol")}>
-            Sol
-          </button>
-          <button type="button" className="g3d-btn" onClick={toShip} disabled={!ship} title={route?.system ?? "Position unknown"}>
-            Me
-          </button>
-        </div>
-        <label className="g3d-check">
-          Colour
-          <select
-            className="g3d-select"
-            aria-label="Colour by"
-            value={colour}
-            onChange={(ev) => setColour(Number(ev.target.value) as Colour)}
-          >
-            {colours.map(([k, label]) => (
-              <option key={k} value={k}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="g3d-pop">
-          <button
-            type="button"
-            className={layersOpen ? "g3d-btn g3d-btn--on" : "g3d-btn"}
-            aria-expanded={layersOpen}
-            onClick={() => setLayersOpen((v) => !v)}
-          >
-            Layers ▾
-          </button>
-          {layersOpen ? (
-            <div className="g3d-pop__menu" role="group" aria-label="Layers">
-              {(["you", "photo", "borders", "groups", "labels"] as const).map((k) => (
-                <label key={k} className="g3d-check">
-                  <input type="checkbox" checked={layers[k]} onChange={() => toggle(k)} />
-                  {{ you: "Your systems", photo: "Milky Way photo", borders: "Region borders", groups: "Groups", labels: "Names" }[k]}
-                </label>
-              ))}
-              {GALAXY_LAYERS.map((l) => {
-                const d = extraData[l.kind];
-                const missing = d != null && !d.available;
-                return (
-                  <label key={l.kind} className="g3d-check" title={missing ? l.needs : undefined}>
-                    <input type="checkbox" checked={extraOn[l.kind]} onChange={() => extraSet[l.kind](!extraOn[l.kind])} />
-                    <span
-                      className="g3d-swatch"
-                      style={{ background: `rgb(${l.colour.map((c) => Math.round(c * 255)).join(",")})` }}
-                    />
-                    {l.label}
-                    {extraOn[l.kind] && d ? (
-                      <span className="dim"> {missing ? `— ${l.needs.toLowerCase()}` : `(${d.points.length.toLocaleString()})`}</span>
-                    ) : null}
-                  </label>
-                );
-              })}
-              <label className="g3d-slider">
-                Brightness
-                <input
-                  type="range"
-                  min={0.2}
-                  max={4}
-                  step={0.1}
-                  value={exposure}
-                  onChange={(ev) => setExposure(Number(ev.target.value))}
-                />
-              </label>
-            </div>
-          ) : null}
-        </div>
-        {layers.you ? (
-          <label className="g3d-slider" title="Your systems still waiting, worth at least this much">
-            Waiting ≥
-            <input
-              type="range"
-              min={0}
-              max={WAIT_MAX_M}
-              step={1}
-              value={waitMinM}
-              aria-label="Waiting worth at least (million CR)"
-              onChange={(ev) => setWaitMinM(Number(ev.target.value))}
-            />
-            {/* After the track, in a fixed width: the changing value moved the slider under the cursor
-                and pushed every control to its right (tester report, 2026-09-30). */}
-            <span className="g3d-slider-val g3d-slider-val--short">{waitMinM ? `${waitMinM}M` : "any"}</span>
-          </label>
-        ) : null}
-        <label className="g3d-slider" title="Only systems whose recorded species add up to at least this (1×)">
-          Worth ≥
-          <input
-            type="range"
-            min={0}
-            max={WORTH_STEPS_M.length - 1}
-            step={1}
-            value={worthStep}
-            aria-label="Worth at least (million CR)"
-            onChange={(ev) => setWorthStep(Number(ev.target.value))}
-          />
-          <span className="g3d-slider-val">
-            {worthM ? `${worthM}M` : "any"}
-            {worthCount != null && worthM ? ` (${formatCount(worthCount)})` : ""}
-          </span>
-        </label>
-        <button
-          type="button"
-          className="g3d-btn g3d-btn--primary-small"
-          onClick={() => void nextTarget(skipped)}
-          disabled={targetBusy}
-          title="The nearest system worth at least that much that you have not mapped or sampled"
-        >
-          {targetBusy ? "Finding…" : "Next target"}
-        </button>
-        <button
-          type="button"
-          className={drawer === "filter" || filterTicks ? "g3d-btn g3d-btn--on" : "g3d-btn"}
-          aria-pressed={drawer === "filter"}
-          onClick={() => openDrawer("filter")}
-          title="Light the systems that have a star, a body or a plant you pick"
-        >
-          {filterTicks ? `Filter (${filterTicks})` : "Filter"}
-        </button>
-        <button
-          type="button"
-          className={drawer === "search" ? "g3d-btn g3d-btn--on" : "g3d-btn"}
-          aria-pressed={drawer === "search"}
-          onClick={() => openDrawer("search")}
-        >
-          Search
-        </button>
-        <button
-          type="button"
-          className={drawer === "navroute" ? "g3d-btn g3d-btn--on" : "g3d-btn"}
-          aria-pressed={drawer === "navroute"}
-          onClick={() => openDrawer("navroute")}
-          title="Every system on the routes you plotted in the game, with its star type: filter, check EDSM, keep the ones you want"
-        >
-          NavRoute
-        </button>
-        <button
-          type="button"
-          className={codexOn ? "g3d-btn g3d-btn--on" : "g3d-btn"}
-          aria-pressed={codexOn}
-          onClick={() => openDrawer("codex")}
-        >
-          Codex
-        </button>
-        <a className="g3d-btn g3d-classic" href="?screen=map" title="The 2D sector map">
-          Classic map
-        </a>
+        <span className="g3d-title">Galaxy map</span>
       </header>
 
       {/* Builds leave the index out: the map offers it (plan 4.2, 2026-10-04). */}

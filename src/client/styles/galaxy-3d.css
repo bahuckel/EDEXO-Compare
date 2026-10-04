@@ -38,11 +38,11 @@
   background: rgba(5, 4, 10, 0.62);
 }
 
-.g3d-bar,
 .g3d-status {
   position: absolute;
   left: 12px;
   right: 12px;
+  bottom: 12px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -51,16 +51,198 @@
   background: rgba(10, 8, 12, 0.82);
   border: 1px solid var(--accent-a25);
   backdrop-filter: blur(3px);
-}
-.g3d-bar {
-  top: 12px;
-  /* Above the "nearest waiting" banner, so the Layers menu opens over it rather than under it. */
-  z-index: 5;
-}
-.g3d-status {
-  bottom: 12px;
   font-size: var(--fs-xs);
   color: var(--text-dim);
+}
+
+/*
+  The top bar, in the game's manner (owner, 2026-10-04): the menu tabs at the top left as a row of
+  icons over an orange rule, the Find box in the middle, the title at the right. No full-width strip:
+  the map shows round it.
+*/
+.g3d-bar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 12px;
+  pointer-events: none;
+}
+.g3d-bar > * {
+  pointer-events: auto;
+}
+.g3d-bar .g3d-title {
+  justify-self: end;
+  padding: 6px 10px;
+}
+.g3d-tabs {
+  display: flex;
+  gap: 3px;
+  justify-self: start;
+  padding-bottom: 3px;
+  border-bottom: 2px solid var(--accent);
+}
+.g3d-tab {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--accent-a35);
+  background: rgba(10, 8, 12, 0.85);
+  color: var(--accent);
+  cursor: pointer;
+}
+.g3d-tab:hover,
+.g3d-tab:focus-visible {
+  background: var(--accent-a25);
+  color: var(--accent-bright);
+}
+.g3d-tab--on,
+.g3d-tab--on:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b0806;
+}
+.g3d-tab__icon {
+  width: 24px;
+  height: 24px;
+}
+.g3d-tab__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent-bright);
+  color: #0b0806;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+}
+.g3d-find--centre {
+  justify-self: center;
+}
+.g3d-find--centre .g3d-find__input {
+  width: min(440px, 40vw);
+  padding: 7px 12px;
+  background: rgba(10, 8, 12, 0.88);
+  border: 1px solid var(--accent-a45);
+}
+
+/* A menu: a title row with its [?], then rows like the game's options lists. */
+.g3d-drawer.g3d-menu {
+  bottom: auto;
+  max-height: calc(100% - var(--g3d-top, 64px) - 60px);
+  overflow-y: auto;
+  width: min(330px, calc(100vw - 24px));
+}
+.g3d-menu__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 6px;
+  border-bottom: 1px solid var(--accent-a45);
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.g3d-menu__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.g3d-menu__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--accent-a25);
+}
+.g3d-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 3px 4px 3px 10px;
+  background: var(--accent-a06);
+  border: 1px solid transparent;
+  color: var(--text);
+  cursor: default;
+}
+.g3d-row:hover,
+.g3d-row:focus-within {
+  background: var(--accent-a25);
+  border-color: var(--accent-a45);
+  color: var(--accent-bright);
+}
+.g3d-row__label {
+  flex: 1;
+  min-width: 0;
+}
+.g3d-row__ctl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.g3d-row__val {
+  min-width: 5.5rem;
+  padding: 3px 8px;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a25);
+  color: var(--accent);
+  font: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+.g3d-row:hover .g3d-row__val,
+.g3d-row:focus-within .g3d-row__val {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b0806;
+}
+.g3d-row--check {
+  cursor: pointer;
+}
+/* The checkbox stays for keyboards and screen readers; the value box is what shows. */
+.g3d-row__box {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.g3d-row--check:has(.g3d-row__box:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.g3d-row--buttons {
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px;
+}
+.g3d-row__range {
+  width: 110px;
+  accent-color: var(--accent);
+}
+.g3d-target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background: var(--accent-a06);
+  border: 1px solid var(--accent-a35);
+}
+.g3d-target strong {
+  color: var(--accent-bright);
 }
 
 .g3d-title {
@@ -101,7 +283,7 @@
   border-color: var(--accent);
 }
 .g3d-classic {
-  margin-left: auto;
+  text-align: left;
 }
 
 .g3d-slider,

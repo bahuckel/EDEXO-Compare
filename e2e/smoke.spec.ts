@@ -351,6 +351,49 @@ test("galaxy 3D: loads every system, names the regions, fetches close-up tiles n
   The Filter drawer (owner, 2026-10-04): tick a genus and the systems that have it light up; the Stars
   & bodies tab narrows further, any tick inside a group, every group that has one.
 */
+test("galaxy 3D: the game-style menus open and close, each with its help, and the EDAstro egg hides except from Sol", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 1400, height: 820 });
+  await page.goto("/?screen=galaxy");
+  type G = {
+    stats: () => { phase: string };
+    pose: (c: number[], t: number[]) => void;
+    egg: () => { visible: boolean };
+  };
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __galaxy?: G }).__galaxy?.stats().phase), { timeout: 60_000 })
+    .toBe("ready");
+  for (const [tab, id] of [
+    ["View", "g3d-view"],
+    ["Layers", "g3d-layers"],
+    ["Targets", "g3d-targets"],
+  ] as const) {
+    const btn = page.getByRole("button", { name: tab, exact: true });
+    await btn.click();
+    await expect(btn).toHaveAttribute("aria-pressed", "true");
+    const menu = page.getByTestId(id);
+    await expect(menu.getByRole("button", { name: /^About / })).toBeVisible();
+    await btn.click();
+    await expect(menu).toHaveCount(0);
+  }
+  // Follow my ship is on by default and remembered.
+  await page.getByRole("button", { name: "View", exact: true }).click();
+  await expect(page.getByTestId("g3d-view").getByLabel(/Follow my ship/)).toBeChecked();
+  const egg = (c: number[], t: number[]) =>
+    page.evaluate(
+      ([cam, tgt]) => {
+        const g = (window as unknown as { __galaxy: G }).__galaxy;
+        g.pose(cam!, tgt!);
+        return new Promise<boolean>((r) => setTimeout(() => r(g.egg().visible), 400));
+      },
+      [c, t],
+    );
+  expect(await egg([0, 2500, 0], [0, 0, 1000])).toBe(false); // from above
+  expect(await egg([0, 250, 0], [0, 0, 3000])).toBe(true); // from Sol, across the disc, at the core
+  expect(await egg([0, 250, 0], [0, 0, -3000])).toBe(false); // looking away from the core
+  expect(errors).toEqual([]);
+});
+
 test("galaxy 3D: the Filter drawer lights the systems that have what was ticked", async ({ page }) => {
   const errors = watchErrors(page);
   await page.setViewportSize({ width: 1400, height: 820 });
@@ -405,7 +448,7 @@ test("galaxy 3D: the Filter drawer lights the systems that have what was ticked"
       .toBeGreaterThan(0);
     await drawer.getByRole("button", { name: /^Stratum \(all\)/ }).click();
     await drawer.getByRole("button", { name: /^Neutron star/ }).click();
-    await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Filter", exact: true })).toBeVisible();
     await expect.poll(async () => (await marks()).overview + (await marks()).tiles, { timeout: 10_000 }).toBe(0);
     // His steps: O first, then a plant, both removed, then another genus.
     await drawer.getByLabel("Search the filters").fill("blue-white");
@@ -427,7 +470,7 @@ test("galaxy 3D: the Filter drawer lights the systems that have what was ticked"
     expect((await marks()).tiles).not.toBe(oTiles);
   }
   await drawer.getByRole("button", { name: /^Clear/ }).click();
-  await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Filter", exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -638,10 +681,12 @@ test("galaxy 3D: worth at least X, Next target and Skip", async ({ page }) => {
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { __galaxy?: { stats: () => { phase: string } } }).__galaxy?.stats().phase), { timeout: 60_000 })
     .toBe("ready");
+  // Biology targets live in their own menu since the redesign (owner, 2026-10-04).
+  await page.getByRole("button", { name: "Targets", exact: true }).click();
   const worth = page.getByRole("slider", { name: "Worth at least (million CR)", exact: true });
   await worth.fill("8"); // 50 M
   // The value sits after the track in a fixed-width span (it used to shift the slider as it changed).
-  await expect(page.locator(".g3d-slider", { has: worth }).locator(".g3d-slider-val")).toContainText(/^50M \(\d/);
+  await expect(page.locator(".g3d-row", { has: worth }).locator(".g3d-slider-val")).toContainText(/^50M \(\d/);
 
   await page.getByRole("button", { name: "Next target" }).click();
   const banner = page.getByTestId("g3d-target");
@@ -661,6 +706,7 @@ test("galaxy 3D: the plan chains the next targets, and a skipped stop leaves it"
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { __galaxy?: { stats: () => { phase: string } } }).__galaxy?.stats().phase), { timeout: 60_000 })
     .toBe("ready");
+  await page.getByRole("button", { name: "Targets", exact: true }).click();
   await page.getByRole("slider", { name: "Worth at least (million CR)", exact: true }).fill("8"); // 50 M
   await page.getByRole("button", { name: "Next target" }).click();
   const banner = page.getByTestId("g3d-target");
