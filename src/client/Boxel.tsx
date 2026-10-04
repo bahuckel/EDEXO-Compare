@@ -271,7 +271,7 @@ export function BoxelModal({
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div
         ref={dialogRef}
-        className="modal-panel fdb-panel"
+        className="modal-panel fdb-panel boxel-panel"
         role="dialog"
         aria-modal="true"
         aria-label="Boxel"
@@ -497,21 +497,23 @@ export function BoxelModal({
                         key={r.n}
                         className={r.visited || skipSet.has(r.n) ? "boxel-row boxel-row--done" : "boxel-row"}
                       >
-                        <td className="fdb-num dim">{r.n}</td>
-                        <td className="fdb-sys">
+                        <td className="fdb-num dim" data-c="n">
+                          {r.n}
+                        </td>
+                        <td className="fdb-sys" data-c="sys">
                           {r.name}
                           <CopySystemButton system={r.name} />
                         </td>
-                        <td>
+                        <td data-c="you">
                           {r.visited ? (
                             <span className="fdb-dss">flown</span>
                           ) : skipSet.has(r.n) ? (
                             <span className="boxel-skipped">skipped</span>
                           ) : (
-                            <span className="dim">—</span>
+                            <span className="dim boxel-nil">—</span>
                           )}
                         </td>
-                        <td className="fdb-num">
+                        <td className="fdb-num" data-c="bodies" data-label="Bodies">
                           {r.bodies ? (
                             <span
                               className={
@@ -524,17 +526,17 @@ export function BoxelModal({
                               {r.bodies.total != null ? `/${r.bodies.total}` : ""}
                             </span>
                           ) : (
-                            <span className="dim">—</span>
+                            <span className="dim boxel-nil">—</span>
                           )}
                         </td>
-                        <td className="fdb-num">
+                        <td className="fdb-num" data-c="notable" data-label="Notable">
                           {r.notable ? (
                             <span className="boxel-saved__notable">{r.notable}</span>
                           ) : (
-                            <span className="dim">—</span>
+                            <span className="dim boxel-nil">—</span>
                           )}
                         </td>
-                        <td className="boxel-known">
+                        <td className="boxel-known" data-c="known">
                           {r.known ? (
                             r.known.species.length ? (
                               r.known.species.join(", ")
@@ -551,10 +553,10 @@ export function BoxelModal({
                               </span>
                             )
                           ) : (
-                            <span className="dim">—</span>
+                            <span className="dim boxel-nil">—</span>
                           )}
                         </td>
-                        <td className="boxel-row__actions">
+                        <td className="boxel-row__actions" data-c="act">
                           <button
                             type="button"
                             className="fdb-chip boxel-lookup"
