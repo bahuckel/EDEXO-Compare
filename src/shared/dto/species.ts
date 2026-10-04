@@ -373,6 +373,12 @@ export interface SpeciesEntry {
   genusStarColorPreferredSpectralClasses?: string[];
   /** Genus `meta` minimum metres between organic samples (genetic diversity). */
   genusMinSampleDistanceM?: number;
+  /**
+   * Never predicted from the body (owner, 2026-10-04: the Thargoid entries, "nice to have if there"):
+   * listed only when a DSS names its genus on the body, or once the commander has logged it there.
+   * From the genus file's `meta.dssOnly`.
+   */
+  dssOnly?: boolean;
   /** Genus `meta.color_variants.rule` when present. */
   genusColorVariantRule?: string;
   /** Spectral class key (normalised) → codex colour label for star-driven morph tables. */

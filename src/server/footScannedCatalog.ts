@@ -678,12 +678,16 @@ export function recordFootScanned(
 
 function hintedGeneraMissingFromMatches(hints: GenusHint[], matches: SpeciesMatch[]): GenusHint[] {
   const matched = new Set(matches.map((m) => genusFold(m.entry.genus)));
+  const entries = matches.map((m) => m.entry);
   return hints.filter((h) => {
     const a = genusFold(h.Genus_Localised || "");
     const b = genusFold(h.Genus || "");
     const k = a || b;
     if (!k) return false;
-    return !matched.has(k);
+    if (matched.has(k)) return false;
+    // The matcher's own reading of a genus name (plurals, the game's symbols, aliases such as the
+    // Thargoid "Barnacles"), so a genus it listed rows for is never also called missing.
+    return filterByGenusHints(entries, [h]).length === 0;
   });
 }
 

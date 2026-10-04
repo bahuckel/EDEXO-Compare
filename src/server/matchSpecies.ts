@@ -1465,6 +1465,14 @@ export function matchDatabaseToScan(
   }
   const genusFilterActive = !!(genusHints && genusHints.length);
   const dssGenusNarrowing = genusFilterActive;
+  /*
+    DSS-only rows (the Thargoid entries, owner 2026-10-04): never predicted from the body. Only a DSS
+    naming their genus lists them, then without any test of the body; a logged one comes back below
+    through the organic locks like any find.
+  */
+  narrowed = narrowed.filter(
+    (e) => !e.dssOnly || (genusFilterActive && filterByGenusHints([e], genusHints).length > 0),
+  );
 
   const est = estimatedTemperatureRangeForScan(scan);
   const estimatedSurfaceTempK: EstimatedSurfaceTempBand | null = est
@@ -1487,6 +1495,10 @@ export function matchDatabaseToScan(
    */
   const unlikely: Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">[] = [];
   for (const entry of narrowed) {
+    if (entry.dssOnly) {
+      strict.push({ entry, reasons: [{ field: "Genus", detail: "The DSS named this genus on the body." }] });
+      continue;
+    }
     const r = speciesMatchesCriteria(entry, scan, planetTempBand, est, matchContext);
     if (r.ok) {
       strict.push(

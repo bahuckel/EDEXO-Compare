@@ -322,6 +322,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
   const genusStarColorNullSpectralClasses = collectColorVariantNullSpectralKeys(meta);
   const genusStarColorPreferredSpectralClasses = collectColorVariantPreferredStellarSpectralKeys(meta);
   const genusMinSampleDistanceM = readMinSampleDistanceFromMetaRecord(meta);
+  const dssOnly = meta?.dssOnly === true;
   const colorRich = collectGenusColorVariantRich(meta);
   const general = asRecord(rootRecord?.general) ?? asRecord(meta?.general);
   const planetReq = asRecord(general?.planet_requirements) ?? asRecord(meta?.genusWideRequirements) ?? null;
@@ -417,6 +418,7 @@ function parseGenusFile(jsonPath: string, folderBaseName: string, projectRoot: s
       notes: notes ?? undefined,
       dataSourceRelPath: rel,
       ...(predictionUnsupported ? { predictionUnsupported } : {}),
+      ...(dssOnly ? { dssOnly: true } : {}),
       ...(genusStarColorNullSpectralClasses?.length ? { genusStarColorNullSpectralClasses } : {}),
       ...(genusStarColorPreferredSpectralClasses?.length ? { genusStarColorPreferredSpectralClasses } : {}),
       ...(genusMinSampleDistanceM != null ? { genusMinSampleDistanceM } : {}),

@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "genus": "Thargoid Coral",
+  "meta": {
+    "dssOnly": true,
+    "general": {
+      "description": "Thargoid biology, sampled on foot with the genetic sampler. Never predicted: listed only when a DSS names it on the body, or once you have logged it there."
+    }
+  },
+  "species": [
+    {
+      "id": "thargoid_coral_coral_root",
+      "displayName": "Thargoid Coral Root",
+      "description": "Thargoid biology, sampled on foot with the genetic sampler. Never predicted: listed only when a DSS names it on the body, or once you have logged it there.",
+      "conditions": {}
+    }
+  ],
+  "authorNotes": {
+    "species_count": 1,
+    "source": "Owner, 2026-10-04: Vista Genomics prices; EDDN ScanOrganic (HIP 19870 3 b, 2026-10-01) shows Coral Root and Barnacle Matrix sampled on foot."
+  }
+}

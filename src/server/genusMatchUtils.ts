@@ -25,6 +25,15 @@ function genusVariantKeys(s: string): string[] {
 const GENUS_LABEL_ALIASES: Record<string, string> = {
   amphoraplant: "amphora",
   codexentventsname: "amphora",
+  // The Thargoid entries (owner, 2026-10-04): the game's genus symbols are not our folder names.
+  codexentbarnaclesname: "thargoidbarnacles",
+  barnacles: "thargoidbarnacles",
+  barnacle: "thargoidbarnacles",
+  codexentthargoidcoralname: "thargoidcoral",
+  coral: "thargoidcoral",
+  codexentthargoidspirename: "thargoidspires",
+  codexentthargoidspiresname: "thargoidspires",
+  spires: "thargoidspires",
 };
 
 /** DSS / ScanOrganic genus labels → species rows whose genus folder or display genus matches. */

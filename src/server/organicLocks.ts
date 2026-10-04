@@ -31,6 +31,12 @@ function resolveLockToSpeciesId(
   const cands = db.species.filter((s) => s.genusDataDir === genusDataDir);
   const hits = cands.filter((e) => speciesMatchesOrganicLabels(e, lock));
   if (hits.length === 1) return hits[0]!.id;
+  // Names that hold each other ("Thargoid Spire" in "Major Thargoid Spire"): the exact one wins.
+  const exact = hits.filter((e) => {
+    const nd = normOrganicLabel(gameOrderSpeciesName(e.displayName));
+    return [lock.variantLocalised, lock.speciesLocalised].some((l) => !!l?.trim() && normOrganicLabel(l) === nd);
+  });
+  if (exact.length === 1) return exact[0]!.id;
   return null;
 }
 
