@@ -47,6 +47,26 @@ test("app: the fixture body appears with its candidate species", async ({ page }
   expect(errors).toEqual([]);
 });
 
+/*
+  "Why this chance" (owner, 2026-10-04, plan 3.3): under a card's chance, mini charts of where the
+  species has been found, this body marked; fetched when opened.
+*/
+test("app: a candidate card opens its 'Why this chance' strip", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  await expect(page.locator(".species-card").first()).toBeVisible({ timeout: 60_000 });
+  const toggle = page.getByRole("button", { name: /Why this chance/ }).first();
+  await expect(toggle).toBeVisible();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const card = page.locator(".species-card", { has: page.locator(".why-chance__toggle[aria-expanded='true']") });
+  await expect(card.locator(".why-chance__stat").first()).toBeVisible({ timeout: 15_000 });
+  await card.screenshot({ path: `${OUT}/why-chance.png` });
+  await toggle.click();
+  await expect(page.locator(".why-chance")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test("app: the Privacy Policy and Terms open from the footer, served by the app itself", async ({ page, context }) => {
   const errors = watchErrors(page);
   await page.goto("/");

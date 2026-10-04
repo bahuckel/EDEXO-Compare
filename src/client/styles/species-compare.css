@@ -682,3 +682,63 @@
   flex-direction: column;
   gap: 0.15rem;
 }
+
+/* "Why this chance" (owner, 2026-10-04): mini charts of where the species was found, this body marked. */
+.why-chance__toggle {
+  align-self: flex-start;
+  margin: 2px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.why-chance__toggle:hover {
+  color: var(--accent-bright);
+}
+.why-chance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 4px 0 2px;
+  font-size: var(--fs-xs);
+  text-align: left;
+}
+.why-chance--note {
+  display: block;
+}
+.why-chance__stat {
+  display: grid;
+  grid-template-columns: auto;
+  gap: 1px;
+}
+.why-chance__label {
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+.why-chance__chart {
+  display: block;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--accent-a35);
+}
+.why-chance__bar {
+  fill: var(--accent-a45);
+}
+.why-chance__here {
+  stroke: var(--ok);
+  stroke-width: 1.6;
+}
+.why-chance__stat--out .why-chance__here {
+  stroke: var(--danger);
+}
+.why-chance__values {
+  font-variant-numeric: tabular-nums;
+}
+.why-chance__note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--fs-xs);
+  text-align: left;
+}
