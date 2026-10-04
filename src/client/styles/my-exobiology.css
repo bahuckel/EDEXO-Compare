@@ -45,14 +45,15 @@
   background: var(--accent-a15);
 }
 
+/* Fills the screen (owner, 2026-10-04, 3440×1440: the 1200 px cap left it small in the middle). The box
+   is the whole free area and the photo is contained in it, so the glow is a drop-shadow on the photo's
+   own pixels rather than a box-shadow round the empty margins. Room is kept for the caption below. */
 .photo-lightbox-img {
-  max-width: min(92vw, 1200px);
-  max-height: 88vh;
-  width: auto;
-  height: auto;
+  width: 96vw;
+  height: calc(100vh - 9rem);
   object-fit: contain;
   border-radius: var(--radius-sm);
-  box-shadow: 0 0 32px var(--accent-glow);
+  filter: drop-shadow(0 0 24px var(--accent-glow));
   cursor: default;
 }
 

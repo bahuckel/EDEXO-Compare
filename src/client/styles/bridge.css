@@ -253,10 +253,12 @@
 .species-hero-photo {
   width: 100%;
 }
+/* Taller on a wide card (owner, 2026-10-04): at 20rem a 1,780 px wide card showed a thin strip of the
+   middle of the photo. The cap grows with the window, so more of the plant shows. */
 .species-img--hero {
   aspect-ratio: 16 / 9;
   min-height: 0;
-  max-height: 20rem;
+  max-height: clamp(20rem, 26vw, 36rem);
 }
 .species-quad-grid {
   grid-template-columns: repeat(auto-fill, minmax(8.25rem, 1fr));
