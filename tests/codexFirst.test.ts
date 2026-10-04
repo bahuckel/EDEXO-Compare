@@ -97,6 +97,21 @@ describe("the notice", () => {
     n.setPrefs({ codexFirst: false });
     expect(n.announceCodexFirst([{ ...find, bodyKey: "5:4" }], "2026-09-30T12:02:00Z")).toBe(false);
   });
+  it("leaves the bell when its body's candidates no longer hold it (owner, 2026-10-04)", () => {
+    // Crystalline Shards dropped from the candidates after the full system scan but stayed here.
+    const n = createNoticesService({ filePath: null });
+    const other = { ...find, bodyKey: "5:9", body: "9" };
+    n.announceCodexFirst([find, other], "2026-10-04T12:00:00Z", new Set(["5:3", "5:9"]));
+    n.markRead("all");
+    // 5:3 re-evaluated without it: withdrawn even though read; 5:9 not evaluated this time: kept.
+    expect(n.announceCodexFirst([], "2026-10-04T12:01:00Z", new Set(["5:3"]))).toBe(true);
+    expect(n.list().map((x) => x.bodyKey)).toEqual(["5:9"]);
+    // Nothing more to withdraw: no change.
+    expect(n.announceCodexFirst([], "2026-10-04T12:02:00Z", new Set(["5:3"]))).toBe(false);
+    // The candidate comes back: announced again.
+    expect(n.announceCodexFirst([find], "2026-10-04T12:03:00Z", new Set(["5:3"]))).toBe(true);
+    expect(n.list()[0]!.bodyKey).toBe("5:3");
+  });
   it("is on by default, also for settings saved before it existed", () => {
     expect(DEFAULT_NOTIFY_PREFS.codexFirst).toBe(true);
     const old = { ...DEFAULT_NOTIFY_PREFS } as Partial<typeof DEFAULT_NOTIFY_PREFS>;

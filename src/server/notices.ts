@@ -197,9 +197,14 @@ export interface NoticesService {
   sendTest(at: string): NoticeDTO;
   /**
    * Candidates nobody has logged in their region ([CODEX FIRST]), from the snapshot of the system the
-   * commander is in. Each species, colour and body is announced once. True when one was added.
+   * commander is in. Each species, colour and body is announced once.
+   *
+   * The bell follows the candidate list (owner, 2026-10-04: Crystalline Shards left the candidates
+   * after a full system scan "but remain in the notices"): a [CODEX FIRST] notice for a body in
+   * `evaluated` whose candidate is no longer among `finds` is withdrawn, read or not, and may be
+   * announced again if the candidate comes back. True when the list changed.
    */
-  announceCodexFirst(finds: readonly CodexFirstFind[], at: string): boolean;
+  announceCodexFirst(finds: readonly CodexFirstFind[], at: string, evaluated?: ReadonlySet<string>): boolean;
   snapshot(systemAddress: number | null): NoticesSnapshotDTO;
   /** Call with each live journal line **before** the store applies it. True when a notice was added. */
   observe(line: Line, ctx: NoticesContext): boolean;
@@ -209,6 +214,10 @@ export interface NoticesService {
   jumpLy(ctx: Pick<NoticesContext, "loadoutJumpLy">): number | null;
   /** Every type's records, the commander's and EDAstro's (Statistics → Records). */
   records(ctx: NoticesContext): RecordRowDTO[];
+}
+
+function codexFirstId(f: CodexFirstFind): string {
+  return `codexfirst:${f.bodyKey}:${f.speciesId}:${f.colours.join("+").toLowerCase()}`;
 }
 
 export function createNoticesService(opts: {
@@ -633,14 +642,24 @@ export function createNoticesService(opts: {
       if (changed) save();
       return changed;
     },
-    announceCodexFirst(finds, at) {
+    announceCodexFirst(finds, at, evaluated) {
       if (!state.prefs.codexFirst) return false;
       let added = false;
+      if (evaluated?.size) {
+        const keep = new Set(finds.map(codexFirstId));
+        const before = state.items.length;
+        state.items = state.items.filter((n) => {
+          const gone = n.kind === "codex" && n.id.startsWith("codexfirst:") && n.bodyKey != null && evaluated.has(n.bodyKey) && !keep.has(n.id);
+          if (gone) seen.delete(n.id);
+          return !gone;
+        });
+        added = state.items.length !== before;
+      }
       for (const f of finds) {
         const what = f.colours.length ? `${f.species} (${f.colours.join(" or ")})` : f.species;
         added =
           add({
-            id: `codexfirst:${f.bodyKey}:${f.speciesId}:${f.colours.join("+").toLowerCase()}`,
+            id: codexFirstId(f),
             at,
             kind: "codex",
             title: `Codex first possible: ${what}`,

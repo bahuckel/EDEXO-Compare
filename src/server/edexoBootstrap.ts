@@ -449,11 +449,14 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
                 }),
               );
       }
-      // [CODEX FIRST] candidates in the system he is in go to the bell, once each (owner, 2026-09-30).
+      // [CODEX FIRST] candidates in the system he is in go to the bell, once each (owner, 2026-09-30),
+      // and leave it when the body's candidates no longer hold them (owner, 2026-10-04).
       if (!snap.journalBoot && store.currentSystemAddress != null && notices.prefs().codexFirst) {
         const finds: CodexFirstFind[] = [];
+        const evaluated = new Set<string>();
         for (const b of snap.bodies ?? []) {
           if (b.state.systemAddress !== store.currentSystemAddress) continue;
+          evaluated.add(b.state.key);
           for (const m of b.matches ?? []) {
             if (!m.codexFirst || m.unlikely || !m.codexRegion) continue;
             finds.push({
@@ -468,7 +471,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
             });
           }
         }
-        if (finds.length && notices.announceCodexFirst(finds, new Date().toISOString())) {
+        if (notices.announceCodexFirst(finds, new Date().toISOString(), evaluated)) {
           snap.notices = notices.snapshot(store.viewingSystemAddress ?? store.currentSystemAddress ?? null);
         }
       }
