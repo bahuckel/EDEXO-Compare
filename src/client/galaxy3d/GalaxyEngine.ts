@@ -788,7 +788,12 @@ export class GalaxyEngine {
   private planStops: { x: number; y: number; z: number; label: string }[] = [];
 
   /** G5.3: the planned chain — a line from the ship through each stop, and each stop's number. */
-  setPlan(stops: { x: number; y: number; z: number; label: string }[], from: { x: number; y: number; z: number } | null): void {
+  setPlan(
+    stops: { x: number; y: number; z: number; label: string }[],
+    from: { x: number; y: number; z: number } | null,
+    /** The route comes back to `from` (plan 5.8). */
+    loop = false,
+  ): void {
     if (this.planLine) {
       this.overlay.remove(this.planLine);
       this.planLine.geometry.dispose();
@@ -796,7 +801,7 @@ export class GalaxyEngine {
       this.planLine = null;
     }
     this.planStops = stops;
-    const pts = from && stops.length ? [from, ...stops] : stops;
+    const pts = from && stops.length ? [from, ...stops, ...(loop ? [from] : [])] : stops;
     if (pts.length > 1) {
       const pos = new Float32Array(pts.length * 3);
       pts.forEach((p, i) => pos.set([p.x, p.y, -p.z], i * 3));

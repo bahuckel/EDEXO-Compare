@@ -295,8 +295,9 @@ export function registerGalaxyRoutes(
   /**
    * Next target: the nearest system to the ship worth at least `min` (100 k CR units, 1×) that the
    * commander has not analysed (DSS or foot scans; `skipVisited=1` also skips anything visited), not
-   * counting `exclude` (ordinals skipped this session, at most 2,000). `plan=N` (≤ 10) adds a greedy
-   * chain of N stops from the ship (G5.3).
+   * counting `exclude` (ordinals skipped this session, at most 2,000). `plan=N` (≤ 20) adds a plan of
+   * N stops from the ship (G5.3): chosen by a greedy chain, ordered by 2-opt (5.8); `loop=1` returns
+   * to the ship.
    */
   app.get("/api/galaxy/next", (req, res) => {
     const index = loadBioIndex();
@@ -317,7 +318,7 @@ export function registerGalaxyRoutes(
     const min = Math.max(0, Math.min(65535, Number(req.query.min) || 0));
     const plan = Math.max(0, Math.min(MAX_PLAN_STOPS, Math.floor(Number(req.query.plan) || 0)));
     const from = store?.commanderPos ?? opts.getCommanderPosition?.() ?? null;
-    res.json(nextTarget(index, galaxySystemValues(index), from, min, exclude, 6, plan));
+    res.json(nextTarget(index, galaxySystemValues(index), from, min, exclude, 6, plan, req.query.loop === "1"));
   });
 
   /*

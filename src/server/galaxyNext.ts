@@ -15,11 +15,16 @@
  * Each hop is answered from the few hundred systems nearest the ship that the same pass keeps; a hop
  * whose answer could lie outside them (stop's distance from the ship + hop > the farthest one kept)
  * takes one more pass over the index, so the chain is exactly greedy either way.
+ *
+ * Then the order (plan 5.8): the greedy chain picks the stops, 2-opt (tourOrder.ts) visits them in
+ * the shortest order it can find from the ship — never longer than the chain's own — and, asked to
+ * loop, back to where the ship is.
  */
 import type { BioIndex } from "./bioIndex.js";
 import type { GameStateStore } from "./gameState.js";
 import { footOrganicLocks } from "./organicLocks.js";
 import type { GalaxyNextDTO, GalaxyNextRow } from "../shared/dto/galaxy.js";
+import { routeLength, twoOptOrder } from "./tourOrder.js";
 
 /** Systems this commander has analysed (a DSS or plants on foot), and every system they visited. */
 export function doneAddresses(store: GameStateStore): { analysed: Set<number>; visited: Set<number> } {
@@ -47,7 +52,7 @@ export function ordinalsOf(index: BioIndex, addrs: Iterable<number>): Set<number
 }
 
 /** Most stops a plan can have. */
-export const MAX_PLAN_STOPS = 10;
+export const MAX_PLAN_STOPS = 20;
 /** How many of the nearest systems the first pass keeps for the plan's hops. */
 const PLAN_POOL = 400;
 
@@ -63,6 +68,8 @@ export function nextTarget(
   count = 6,
   /** Stops in the plan (the target counts as the first); 0 = no plan. */
   planStops = 0,
+  /** The plan returns to where the ship is. */
+  loop = false,
 ): GalaxyNextDTO {
   const floor = Math.max(1, Math.floor(minUnits));
   if (!from) return { from: null, qualifying: 0, target: null, next: [] };
@@ -90,7 +97,7 @@ export function nextTarget(
   };
   const rows = best.slice(0, count).map(({ i, d }) => row(i, d));
   const out: GalaxyNextDTO = { from, qualifying, target: rows[0] ?? null, next: rows.slice(1) };
-  if (stops > 0 && rows[0]) out.plan = planChain(index, values, from, floor, exclude, best, keep, stops, row);
+  if (stops > 0 && rows[0]) out.plan = planChain(index, values, from, floor, exclude, best, keep, stops, row, loop);
   return out;
 }
 
@@ -105,6 +112,7 @@ function planChain(
   poolSize: number,
   stops: number,
   row: (i: number, fromShipSq: number) => GalaxyNextRow,
+  loop: boolean,
 ): NonNullable<GalaxyNextDTO["plan"]> {
   // Everything that qualified fits in the pool → the pool is the whole candidate set.
   const poolRadius = pool.length < poolSize ? Infinity : Math.sqrt(pool[pool.length - 1]!.d);
@@ -155,5 +163,26 @@ function planChain(
     at = { x, y, z };
     atFromShip = Math.sqrt(shipSq);
   }
-  return { stops: out, totalLy, totalValueCr, fullPasses };
+  // The order: 2-opt over the chosen stops, from the ship (and back to it with `loop`).
+  const greedyLy = routeLength(from, out, out.map((_, k) => k), loop);
+  const order = twoOptOrder(from, out, loop);
+  let prev: Pos = from;
+  const ordered = order.map((k) => {
+    const s = out[k]!;
+    const legLy = Math.hypot(s.x - prev.x, s.y - prev.y, s.z - prev.z);
+    prev = s;
+    return { ...s, legLy };
+  });
+  totalLy = routeLength(from, out, order, loop);
+  const last = ordered[ordered.length - 1];
+  const returnLy = loop && last ? Math.hypot(last.x - from.x, last.y - from.y, last.z - from.z) : undefined;
+  return {
+    stops: ordered,
+    totalLy,
+    totalValueCr,
+    fullPasses,
+    greedyLy,
+    loop,
+    ...(returnLy !== undefined ? { returnLy } : {}),
+  };
 }

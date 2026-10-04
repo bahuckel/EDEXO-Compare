@@ -497,8 +497,14 @@ export interface GalaxyNextDTO {
    */
   plan?: {
     stops: (GalaxyNextRow & { legLy: number })[];
-    /** Sum of the legs, ship to the last stop. */
+    /** Sum of the legs, ship to the last stop (and back to the ship when `loop`). */
     totalLy: number;
+    /** The same stops in the greedy chain's own order (plan 5.8: 2-opt never makes it longer). */
+    greedyLy: number;
+    /** The route returns to where the ship is. */
+    loop: boolean;
+    /** With `loop`: the last stop back to the ship. */
+    returnLy?: number;
     /** Sum of the stops' recorded species at 1×. */
     totalValueCr: number;
     /** Hops that needed a pass over the whole index (diagnostics; 0 in a dense neighbourhood). */

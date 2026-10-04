@@ -73,8 +73,8 @@ const SEARCH_COLOUR: [number, number, number] = [0.7, 0.5, 1];
 /** NavRoute finder markers; green where EDSM does not know the system. */
 const NAVROUTE_COLOUR: [number, number, number] = [0.95, 0.6, 0.2];
 const PLAN_COLOUR: [number, number, number] = [0.84, 0.7, 1];
-/** How many stops the plan can be asked for (G5.3); the target is the first. */
-const PLAN_SIZES = [3, 5, 8, 10];
+/** How many stops the plan can be asked for (G5.3, up to 20 since 5.8); the target is among them. */
+const PLAN_SIZES = [3, 5, 8, 10, 15, 20];
 /** Room round a framed plan: the drawer and the panel cover both sides of the map. */
 const PLAN_MARGIN = 1.7;
 
@@ -156,6 +156,8 @@ export function GalaxyMap3D() {
   const [skipVisited, setSkipVisited] = useState(false);
   const [copied, setCopied] = useState(false);
   const [planSize, setPlanSize] = useState(5);
+  // Back to where the ship is (plan 5.8): a carrier, a station to sell at. Remembered.
+  const [planLoop, setPlanLoop] = usePersistedState("galaxy.planLoop", false, isBool);
   const [planCopied, setPlanCopied] = useState(false);
   const screenRef = useRef<HTMLDivElement | null>(null);
   const barRef = useRef<HTMLElement | null>(null);
@@ -570,13 +572,15 @@ export function GalaxyMap3D() {
    * Ask for the nearest system worth at least the floor that is not done, fly there, copy its name.
    * With the Plan drawer open, the chain of `plan` stops comes along and the camera frames all of it.
    */
-  const nextTarget = async (skip: number[], o: { plan?: number; fly?: boolean } = {}) => {
+  const nextTarget = async (skip: number[], o: { plan?: number; fly?: boolean; loop?: boolean } = {}) => {
     const plan = o.plan ?? (drawer === "plan" ? planSize : 0);
+    const loop = o.loop ?? planLoop;
     setTargetBusy(true);
     try {
       const q = new URLSearchParams({ min: String(worthM * 10), skipVisited: skipVisited ? "1" : "0" });
       if (skip.length) q.set("exclude", skip.join(","));
       if (plan) q.set("plan", String(plan));
+      if (plan && loop) q.set("loop", "1");
       const r = await fetch(`/api/galaxy/next?${q}`);
       const d = r.ok ? ((await r.json()) as GalaxyNextDTO) : null;
       setTarget(d);
@@ -631,6 +635,7 @@ export function GalaxyMap3D() {
     e.setPlan(
       stops.map((s, i) => ({ x: s.x, y: s.y, z: s.z, label: String(i + 1) })),
       target?.from ?? null,
+      !!plan?.loop,
     );
     e.setMarkers(
       "plan",
@@ -912,6 +917,17 @@ export function GalaxyMap3D() {
                 ))}
               </select>
             </label>
+            <label className="g3d-check" title="The route ends where the ship is now: back to a carrier or a station to sell at">
+              <input
+                type="checkbox"
+                checked={planLoop}
+                onChange={(ev) => {
+                  setPlanLoop(ev.target.checked);
+                  void nextTarget(skipped, { plan: planSize, fly: false, loop: ev.target.checked });
+                }}
+              />
+              Back to start
+            </label>
             <button type="button" className="g3d-panel__close" aria-label="Close the plan" onClick={() => setDrawer("none")}>
               ✕
             </button>
@@ -950,6 +966,15 @@ export function GalaxyMap3D() {
               <p className="g3d-plan__total" data-testid="g3d-plan-total">
                 {plan.stops.length} stops · {fmtLy(plan.totalLy)} · {formatValue(plan.totalValueCr / 100_000)}
               </p>
+              {plan.loop && plan.returnLy != null ? (
+                <p className="g3d-panel__note">Back to the start: +{fmtLy(plan.returnLy)}, counted in the total.</p>
+              ) : null}
+              {plan.greedyLy - plan.totalLy >= 0.5 ? (
+                <p className="g3d-panel__note" data-testid="g3d-plan-saving">
+                  {fmtLy(plan.greedyLy - plan.totalLy)} shorter than taking each nearest next (
+                  {fmtLy(plan.greedyLy)}).
+                </p>
+              ) : null}
               <div className="g3d-panel__actions">
                 <button
                   type="button"
@@ -972,8 +997,9 @@ export function GalaxyMap3D() {
                 </button>
               </div>
               <p className="g3d-panel__note">
-                Each stop is the nearest one to the last that is worth the floor and that you have not mapped or
-                sampled{skipVisited ? " or visited" : ""}. Values at 1×; legs are straight lines, not jumps.
+                The stops: each the nearest one to the last that is worth the floor and that you have not mapped
+                or sampled{skipVisited ? " or visited" : ""}; then visited in the shortest order found. Values at
+                1×; legs are straight lines, not jumps.
               </p>
             </>
           ) : target && !targetBusy ? (

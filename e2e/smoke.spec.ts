@@ -671,16 +671,24 @@ test("galaxy 3D: the plan chains the next targets, and a skipped stop leaves it"
   const plan = page.getByTestId("g3d-plan");
   await expect(page.getByTestId("g3d-plan-total")).toContainText(/^5 stops · [\d,.]+ k?ly · /, { timeout: 30_000 });
   const names = plan.locator(".g3d-plan__name");
-  await expect(names.first()).toHaveText(first);
+  // The target is one of the stops; the order is the shortest found (plan 5.8), not the target first.
   const before = await names.allInnerTexts();
+  expect(before).toContain(first);
   expect(new Set(before).size).toBe(5);
   // Numbered on the map, and hover/click on a stop answer as a plan stop.
   await expect(page.locator(".g3d-label--plan").first()).toBeAttached();
 
-  await plan.getByRole("button", { name: `Skip ${before[2]}` }).click();
-  await expect(names.nth(2)).not.toHaveText(before[2]!, { timeout: 30_000 });
-  expect(await names.allInnerTexts()).not.toContain(before[2]);
-  await expect(names.first()).toHaveText(first); // the stops before it stay
+  const skip = before.find((n) => n !== first)!;
+  await plan.getByRole("button", { name: `Skip ${skip}` }).click();
+  await expect.poll(() => names.allInnerTexts(), { timeout: 30_000 }).not.toContain(skip);
+  await expect(names).toHaveCount(5);
+  expect(await names.allInnerTexts()).toContain(first);
+
+  // Back to start: the return leg is counted (plan 5.8).
+  await plan.getByLabel("Back to start").check();
+  await expect(plan.getByText(/^Back to the start: \+/)).toBeVisible({ timeout: 30_000 });
+  await plan.getByLabel("Back to start").uncheck();
+  await expect(plan.getByText(/^Back to the start: \+/)).toHaveCount(0, { timeout: 30_000 });
 
   await page.getByLabel("Stops in the plan").selectOption("8");
   await expect(names).toHaveCount(8, { timeout: 30_000 });

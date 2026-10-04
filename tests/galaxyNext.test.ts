@@ -103,7 +103,7 @@ describe("Next target", () => {
     expect(nextTarget(index, VALUES, SHIP, 200, new Set()).plan).toBeUndefined();
   });
 
-  it("the plan is exactly greedy even when a hop leaves the nearest few hundred kept", () => {
+  it("the plan's stops are exactly the greedy chain's even when a hop leaves the nearest few hundred kept", () => {
     // 450 systems on a shell 10–11 ly around the ship (more than the pool keeps), 60 far off, one
     // excluded: the second hop reaches past the pool's radius and must take a full pass.
     let seed = 7;
@@ -120,9 +120,45 @@ describe("Next target", () => {
     const values = new Uint16Array(pts.map((p) => p.v));
     for (const floor of [0, 150, 450]) {
       const r = nextTarget(big, values, SHIP, floor, new Set([3]), 6, 8);
-      expect(r.plan!.stops.map((s) => s.ordinal)).toEqual(bruteChain(pts, SHIP, Math.max(1, floor), new Set([3]), 8));
+      const chain = bruteChain(pts, SHIP, Math.max(1, floor), new Set([3]), 8);
+      // The stops are the greedy chain's; 2-opt only changes the order, never for a longer route (5.8).
+      expect(r.plan!.stops.map((s) => s.ordinal).sort((x, y) => x - y)).toEqual([...chain].sort((x, y) => x - y));
+      expect(r.plan!.totalLy).toBeLessThanOrEqual(r.plan!.greedyLy + 1e-9);
+      const legs = r.plan!.stops.reduce((t, s) => t + s.legLy, 0);
+      expect(legs).toBeCloseTo(r.plan!.totalLy, 6);
       if (floor === 0) expect(r.plan!.fullPasses).toBeGreaterThan(0);
     }
+  });
+
+  it("orders the stops by 2-opt, and with loop comes back to the ship", () => {
+    // On a line from the ship: the greedy chain goes 10 → 25 → 40 (the nearest each time) and is
+    // already best open; looped, the return leg is added and counted.
+    const line = synthetic([
+      { x: 10, y: 0, z: 0 },
+      { x: 25, y: 0, z: 0 },
+      { x: 40, y: 0, z: 0 },
+    ]);
+    const v = new Uint16Array([300, 300, 300]);
+    const ship = { x: 0, y: 0, z: 0 };
+    const open = nextTarget(line, v, ship, 200, new Set(), 6, 3).plan!;
+    expect(open.stops.map((s) => s.x)).toEqual([10, 25, 40]);
+    expect(open).toMatchObject({ loop: false, totalLy: 40, greedyLy: 40 });
+    expect(open.returnLy).toBeUndefined();
+    const looped = nextTarget(line, v, ship, 200, new Set(), 6, 3, true).plan!;
+    expect(looped).toMatchObject({ loop: true, totalLy: 80, returnLy: 40 });
+
+    // A chain that doubles back: from the ship at 0 the nearest is 3, then 9 (6 away) beats -3.5 (6.5),
+    // then all the way back: 3 + 6 + 12.5 = 21.5 ly. 2-opt goes -3.5 → 3 → 9: 3.5 + 6.5 + 6 = 16 ly.
+    const zig = synthetic([
+      { x: 3, y: 0, z: 0 },
+      { x: -3.5, y: 0, z: 0 },
+      { x: 9, y: 0, z: 0 },
+    ]);
+    const plan = nextTarget(zig, v, ship, 200, new Set(), 6, 3).plan!;
+    expect(plan.greedyLy).toBeCloseTo(21.5, 9);
+    expect(plan.totalLy).toBeCloseTo(16, 9);
+    expect(plan.stops.map((s) => s.x)).toEqual([-3.5, 3, 9]);
+    expect(plan.stops.map((s) => s.legLy)).toEqual([3.5, 6.5, 6]);
   });
 
   it("counts a DSS or a foot scan as done, and a mere visit only as visited", () => {
