@@ -921,19 +921,43 @@ test("system map: opens from the system card and draws the fixture body", async 
   await page.goto("/");
   await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
   await page.locator(".sys-card__btn").first().click();
-  await expect(page.locator(".system-map-modal, [aria-label*='System map' i]").first()).toBeVisible();
+  const modal = page.locator(".system-map-modal, [aria-label*='System map' i]").first();
+  await expect(modal).toBeVisible();
   await expect(page.locator("svg circle").first()).toBeVisible();
   await page.screenshot({ path: `${OUT}/system-map.png` });
+  // The legend folds and remembers it (plan 3.7).
+  const legend = page.locator("details.system-map-legend");
+  const wasOpen = await legend.evaluate((d) => (d as HTMLDetailsElement).open);
+  await legend.locator("summary").click();
+  await expect.poll(() => legend.evaluate((d) => (d as HTMLDetailsElement).open)).toBe(!wasOpen);
+  await legend.locator("summary").click();
+  // A body on the map opens its facts.
+  await page.locator("g.system-map-node-g").last().click();
+  await expect(page.locator(".body-detail-kv-label").first()).toBeVisible();
+  // Escape closes the map.
+  await page.keyboard.press("Escape");
+  await expect(page.locator("details.system-map-legend")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
-test("encyclopedia: opens and lists species", async ({ page }) => {
+test("encyclopedia: opens, lists species, and the search narrows them", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");
   await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
   await openFromMenu(page, "Encyclopedia");
   await expect(page.getByText(/Aleoida|Bacterium|Stratum/).first()).toBeVisible({ timeout: 30_000 });
   await page.screenshot({ path: `${OUT}/encyclopedia.png` });
+  const count = () => page.locator(".ency-count strong").innerText().then(Number);
+  await expect.poll(count).toBeGreaterThan(100);
+  const all = await count();
+  const search = page.getByRole("searchbox", { name: "Search species or genus" });
+  await search.fill("Tussock");
+  await expect.poll(count).toBeLessThan(all);
+  const titles = await page.locator(".encyclopedia-species-title").allInnerTexts();
+  expect(titles.length).toBeGreaterThan(0);
+  for (const t of titles) expect(t).toMatch(/Tussock/i);
+  await search.fill("");
+  await expect.poll(count).toBe(all);
   expect(errors).toEqual([]);
 });
 
@@ -943,9 +967,25 @@ test("phone: the main view at 390 px keeps the body and its species", async ({ p
   await page.goto("/");
   await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
   await expect(page.locator(".species-card, .srow").first()).toBeVisible();
+  const noSideScroll = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
   // No sideways page scroll on a phone.
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  expect(await noSideScroll()).toBe(true);
   await page.screenshot({ path: `${OUT}/phone-main.png`, fullPage: true });
+  // A row unfolds its card on a phone too.
+  await page.locator(".srow-main").first().click();
+  await expect(page.locator(".species-card").first()).toBeVisible();
+  expect(await noSideScroll()).toBe(true);
+  // The Encyclopedia and the system map fit a phone.
+  await openFromMenu(page, "Encyclopedia");
+  await expect(page.locator(".encyclopedia-species-title").first()).toBeVisible({ timeout: 30_000 });
+  expect(await noSideScroll()).toBe(true);
+  await page.screenshot({ path: `${OUT}/phone-encyclopedia.png` });
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".ency-search")).toHaveCount(0);
+  await page.locator(".sys-card__btn").first().click();
+  await expect(page.locator("details.system-map-legend")).toBeVisible();
+  expect(await noSideScroll()).toBe(true);
+  await page.screenshot({ path: `${OUT}/phone-system-map.png` });
   expect(errors).toEqual([]);
 });
 
