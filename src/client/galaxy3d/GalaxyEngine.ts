@@ -809,7 +809,8 @@ export class GalaxyEngine {
         l.sx[i] = sx;
         l.sy[i] = sy;
         const d = Math.hypot(sx - x, sy - y);
-        if (d <= m.size / 2 + 4 && d < bestD) {
+        // At least 8 px from the centre: a small dot is still something a hand has to hit.
+        if (d <= Math.max(8, m.size / 2 + 4) && d < bestD) {
           best = i;
           bestD = d;
         }
