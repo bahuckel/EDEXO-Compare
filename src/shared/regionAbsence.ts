@@ -114,6 +114,13 @@ export function judgeRegionalPresence(count: number, bioSystems: number): Region
  * name exactly one species. Above it the losses are the genuinely rare Bacteria (scopulum, omentum,
  * verrata), whose whole existence is being the minority.
  *
+ * The truth table holds few of those, and it hid how many fall *under* 0.25 % too: over 9,688
+ * known-spawn Bacterium and Clypeus bodies (~600 per species, 2026-10-04) the cut hid 4.7 % of
+ * verrata, 2.8 % of scopulum and 1 % of nebulus, on bodies with the volcanism or helium they need.
+ * So a species the body meets on its own key — its volcanism, or an atmosphere only it of the shown
+ * siblings asks for — is exempt (`demoteRegionallyRareSiblings`): rare in the region because such
+ * bodies are, it is the likely answer on this one.
+ *
  * It is applied **only between siblings shown together** (`demoteRegionallyRareSiblings`), never to
  * the last one of a genus. As a per-species gate it demoted Fonticulua fluctus in Inner Orion Spur
  * — the owner's rarest find — where it was the only Fonticulua on the body, and a different species

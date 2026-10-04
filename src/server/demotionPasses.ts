@@ -18,6 +18,7 @@ import {
   gateForSpeciesId,
 } from "../shared/spatialGates.js";
 import { describeSystemBodyVerdict, evaluateSystemBodyGate } from "../shared/systemBodyGates.js";
+import { atmosphereAllowlistMeansAnyThinCompositionOnly } from "../shared/scanAtmosphereMatch.js";
 import type { MatchReason, SpeciesEntry, SpeciesMatch, SpeciesMatchContext } from "../shared/types.js";
 import { getProjectRoot } from "./paths.js";
 import { regionalGenusEnrichment, regionalGenusShare } from "./regionSpeciesData.js";
@@ -500,9 +501,23 @@ export function demoteRegionallyRareSiblings(
     }));
     // The sibling the region favours most, as the yardstick for the others.
     const top = judged.reduce<(typeof judged)[number] | null>((b, x) => (x.e != null && (b?.e == null || x.e > b.e) ? x : b), null);
+    // A species the body meets on its own key — the volcanism it needs, or an atmosphere only it of the
+    // shown siblings asks for — is rare in a region because such bodies are, not because it is out of
+    // place there; on this body it is the likely answer (owner, 2026-10-04: no misses).
+    const specificAtm = (m: PendingMatch) => {
+      const list = m.entry.criteria?.atmosphereTypeAnyOf;
+      const all = list?.some((v) => (v ?? "").trim().toUpperCase() === "ALL");
+      if (!list?.length || all || atmosphereAllowlistMeansAnyThinCompositionOnly(list)) return false;
+      return m.reasons.some((r) => r.field === "AtmosphereType");
+    };
+    const keyed = (i: number) => {
+      const m = strict[i]!;
+      if (m.entry.criteria?.volcanismIncludes?.length && m.reasons.some((r) => r.field === "Volcanism" && !r.detail.includes("outside the codex list"))) return true;
+      return specificAtm(m) && idxs.filter((j) => specificAtm(strict[j]!)).length === 1;
+    };
     const rare = judged.filter(
       (x) =>
-        x.v?.rare ||
+        (x.v?.rare && !keyed(x.i)) ||
         (x !== top && x.e != null && top?.e != null && top.e > 0 && x.e / top.e < REGION_SIBLING_DEPLETION),
     );
     if (rare.length === 0 || rare.length === idxs.length) continue;

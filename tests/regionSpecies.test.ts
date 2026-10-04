@@ -148,6 +148,29 @@ describe("the rare sibling, in the matcher", () => {
     expect(unlikely.map((m) => m.entry.id)).toEqual(["tussock_tussock_divisa"]);
   });
 
+  it("keeps a rare species the body meets on its own key (owner, 2026-10-04: no misses)", () => {
+    // Bacterium nebulus is 0.21 % of Galactic Centre's Bacterium, under the cut — because helium
+    // worlds are rare, not because it is out of place. On a helium world it is the one asked for.
+    const r = (field: string, detail: string) => [{ field, detail }] as never[];
+    const strict = [
+      { entry: entry("bacterium_bacterium_nebulus"), reasons: r("AtmosphereType", "Helium") },
+      { entry: entry("bacterium_bacterium_omentum"), reasons: r("Volcanism", "minor ammonia magma volcanism") },
+      { entry: entry("bacterium_bacterium_tela"), reasons: r("AtmosphereType", "Helium · any thin atmosphere") },
+    ];
+    const unlikely: typeof strict = [];
+    demoteRegionallyRareSiblings(strict as never, unlikely as never, ctx);
+    expect(strict.map((m) => m.entry.id).sort()).toEqual([
+      "bacterium_bacterium_nebulus",
+      "bacterium_bacterium_omentum",
+      "bacterium_bacterium_tela",
+    ]);
+    // Without the match on its key the share rule still has its say.
+    const bare = shown("bacterium_bacterium_nebulus", "bacterium_bacterium_tela");
+    const out: typeof bare = [];
+    demoteRegionallyRareSiblings(bare as never, out as never, ctx);
+    expect(out.map((m) => m.entry.id)).toEqual(["bacterium_bacterium_nebulus"]);
+  });
+
   it("never demotes the last one standing", () => {
     // Alone, a rare species is still the best answer the body has — and demoting it would only
     // invite restoreNamedGenera to put back a different one.
