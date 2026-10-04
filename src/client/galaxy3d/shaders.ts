@@ -261,18 +261,19 @@ export const cloudVertex = /* glsl */ `
   uniform float uMaxPx;
   uniform float uOpacity;
   uniform float uDust;
+  uniform float uFull;
   out vec4 vTint;
   void main() {
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mv;
     float px = sizeSeed.x * uScale / max(1.0, -mv.z);
     // Past a few dozen pixels a sprite stops reading as cloud and starts reading as a blob: let it go.
-    float fade = 1.0 - smoothstep(min(56.0, uMaxPx * 0.4), min(170.0, uMaxPx), px);
+    float fade = 1.0 - smoothstep(min(36.0, uMaxPx * 0.3), min(110.0, uMaxPx), px);
     gl_PointSize = clamp(px, 1.0, uMaxPx);
     // A sprite smaller than a pixel still lights a whole one: keep its light, not its brightness.
     float sub = px < 1.0 ? px * px : 1.0;
     // The light is shared with the systems' (uOpacity); dust dims whatever is there, at full strength.
-    vTint = vec4(tint.rgb, tint.a * fade * sub * (uDust > 0.5 ? min(1.0, uOpacity * 2.0) : uOpacity));
+    vTint = vec4(tint.rgb, tint.a * fade * sub * (uDust > 0.5 ? min(1.0, uOpacity / uFull) : uOpacity));
   }
 `;
 

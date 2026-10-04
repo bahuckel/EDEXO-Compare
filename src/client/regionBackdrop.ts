@@ -218,24 +218,39 @@ export function drawnGalaxyFrame() {
   };
 }
 
-let sprites: Promise<Float32Array | null> | null = null;
+let sprites: Promise<{ sprites: Float32Array; image: GalaxyImage | null } | null> | null = null;
 
 /**
  * The galaxy map's Milky Way as clouds in 3D (owner, 2026-10-04: "make the PNG a 3D cloud"): sprites
- * in the drawing's frame (galaxyCloudSprites), made once a session in the worker.
+ * in the drawing's frame (galaxyCloudSprites), and the drawing they were made from, for the faint
+ * copy laid on the plane under them ("make it semi-transparent and place it on the galactic plane").
+ * Made once a session in the worker.
  */
-export function drawnGalaxySprites(counts: { emission: number; dust: number }): Promise<Float32Array | null> {
+export function drawnGalaxySprites(counts: {
+  emission: number;
+  dust: number;
+}): Promise<{ sprites: Float32Array; image: GalaxyImage | null } | null> {
   if (sprites) return sprites;
-  sprites = new Promise<Float32Array | null>((resolve) => {
-    if (typeof Worker === "undefined") return resolve(null);
+  sprites = new Promise((resolve) => {
+    if (typeof Worker === "undefined" || typeof document === "undefined") return resolve(null);
     const worker = new Worker(new URL("./galaxyClouds.worker.ts", import.meta.url), { type: "module" });
     worker.onerror = () => {
       worker.terminate();
       resolve(null);
     };
-    worker.onmessage = (ev: MessageEvent<ArrayBuffer>) => {
+    worker.onmessage = (ev: MessageEvent<{ sprites: ArrayBuffer; image: ArrayBuffer }>) => {
       worker.terminate();
-      resolve(new Float32Array(ev.data));
+      const out = new Float32Array(ev.data.sprites);
+      const canvas = document.createElement("canvas");
+      canvas.width = DRAWN_W;
+      canvas.height = DRAWN_H;
+      const g = canvas.getContext("2d");
+      if (!g) return resolve({ sprites: out, image: null });
+      g.putImageData(new ImageData(new Uint8ClampedArray(ev.data.image), DRAWN_W, DRAWN_H), 0, 0);
+      canvas.toBlob(
+        (b) => resolve({ sprites: out, image: b ? { url: URL.createObjectURL(b), width: DRAWN_W, height: DRAWN_H } : null }),
+        "image/png",
+      );
     };
     worker.postMessage({ frame: drawnGalaxyFrame(), sprites: counts });
   });

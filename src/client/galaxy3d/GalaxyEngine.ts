@@ -176,6 +176,14 @@ interface ShownGroup extends Cluster {
   radius: number;
 }
 
+/**
+ * The Milky Way's two layers (owner, 2026-10-04): the drawing laid faintly on the plane, and the 3D
+ * clouds over it. Together about as bright as the drawing alone used to be (0.5): the plane smooths
+ * the clouds' patchiness seen from above, the clouds give it depth from the side.
+ */
+const PLANE_UNDER_CLOUDS = 0.28;
+const CLOUDS_OVER_PLANE = 0.38;
+
 export class GalaxyEngine {
   readonly renderer: THREE.WebGLRenderer;
   readonly camera: THREE.PerspectiveCamera;
@@ -238,6 +246,8 @@ export class GalaxyEngine {
     uScale: { value: 1 },
     uMaxPx: { value: 256 },
     uOpacity: { value: 1 },
+    /** The light's opacity from afar: the dust dims at full strength whatever share the light has. */
+    uFull: { value: CLOUDS_OVER_PLANE },
   };
   private borders: THREE.LineSegments | null = null;
   /** The layer switches, kept so a picture or outline that arrives after them still obeys them. */
@@ -626,6 +636,8 @@ export class GalaxyEngine {
       );
       plane.rotation.x = -Math.PI / 2; // into the plane; the image's top toward the game's +z
       plane.position.set((photo.x0 + photo.x1) / 2, -1, -(photo.zTop + photo.zBottom) / 2);
+      // Under the clouds.
+      plane.renderOrder = -3;
       plane.visible = this.photoOn;
       this.backdrop.add(plane);
       this.photo = plane;
@@ -1621,7 +1633,8 @@ export class GalaxyEngine {
     this.markerScale.value = d > 30_000 ? 0.45 : d > 8_000 ? 0.7 : 1;
     if (this.photo) {
       const m = this.photo.material as THREE.MeshBasicMaterial;
-      m.opacity = 0.5 * Math.min(1, Math.max(0, (d - 4_000) / 30_000));
+      // Under the clouds it is a base, not the picture: faint, and gone close in like before.
+      m.opacity = (this.clouds.length ? PLANE_UNDER_CLOUDS : 0.5) * Math.min(1, Math.max(0, (d - 4_000) / 30_000));
     }
     if (this.clouds.length) {
       // Pixels per light year at unit distance, so a sprite is as big on screen as it is in space.
@@ -1630,7 +1643,7 @@ export class GalaxyEngine {
       this.cloudUniforms.uMaxPx.value = Math.min(this.maxPointPx, Math.max(96, h * 0.35));
       // Close in the clouds thin out to a haze: the systems are what matters there.
       // Half strength under the systems' own light, as the flat picture was.
-      this.cloudUniforms.uOpacity.value = 0.55 * Math.min(1, Math.max(0.08, (d - 4_000) / 30_000));
+      this.cloudUniforms.uOpacity.value = CLOUDS_OVER_PLANE * Math.min(1, Math.max(0.08, (d - 4_000) / 30_000));
     }
   }
 

@@ -13,9 +13,10 @@ self.onmessage = (ev: MessageEvent<Ask>) => {
     const n = ask.frame.width * ask.frame.height;
     const clear = new Uint8ClampedArray(n * 4);
     const dust = new Float32Array(n);
-    renderGalaxyClouds(ask.frame, { clear, dust });
+    // The drawing itself comes back too: the map lays it faintly on the plane under the clouds.
+    const image = renderGalaxyClouds(ask.frame, { clear, dust });
     const out = galaxyCloudSprites(ask.frame, clear, dust, ask.sprites);
-    (self as unknown as Worker).postMessage(out.buffer, [out.buffer]);
+    (self as unknown as Worker).postMessage({ sprites: out.buffer, image: image.buffer }, [out.buffer, image.buffer]);
     return;
   }
   const px = renderGalaxyClouds(ask);

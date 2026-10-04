@@ -301,22 +301,20 @@ export function GalaxyMap3D() {
     const light = graphics.tier === "light";
     void drawnGalaxySprites(light ? { emission: 40_000, dust: 12_000 } : { emission: 140_000, dust: 40_000 })
       .catch(() => null)
-      .then((sprites) => {
-        if (engine.current !== e || !sprites) return;
+      .then((got) => {
+        if (engine.current !== e || !got) return;
         const f = drawnGalaxyFrame();
         const r = galaxyImageRect(f.width, f.height);
-        e.setClouds(
-          sprites,
-          {
-            x0: xForRegionPx(r.x),
-            x1: xForRegionPx(r.x + r.width),
-            zTop: zForRegionPz(REGION_MAP_SIZE - 1 - r.y),
-            zBottom: zForRegionPz(REGION_MAP_SIZE - 1 - (r.y + r.height)),
-            width: f.width,
-            height: f.height,
-          },
-          CLOUD_SPRITE_STRIDE,
-        );
+        const rect = {
+          x0: xForRegionPx(r.x),
+          x1: xForRegionPx(r.x + r.width),
+          zTop: zForRegionPz(REGION_MAP_SIZE - 1 - r.y),
+          zBottom: zForRegionPz(REGION_MAP_SIZE - 1 - (r.y + r.height)),
+        };
+        // The drawing, faint on the plane, fills the gaps between the clouds seen from above; edge-on
+        // the plane is a line and the clouds carry it (owner, 2026-10-04: "less patchiness").
+        if (got.image) e.setBackdrop({ url: got.image.url, ...rect }, null);
+        e.setClouds(got.sprites, { ...rect, width: f.width, height: f.height }, CLOUD_SPRITE_STRIDE);
       });
 
     // The commander's own systems (again whenever the route poll says they changed).
