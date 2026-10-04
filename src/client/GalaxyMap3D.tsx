@@ -21,6 +21,13 @@ import { placeLabels } from "./galaxy3d/labelPlacement";
 import { formatCount, formatValue } from "./galaxy3d/clusters";
 import { CodexRecord, IndexRecord, MySystemRecord, SectorRecord } from "./galaxy3d/GalaxyPanels";
 import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
+import {
+  EMPTY_GALAXY_FILTER,
+  GalaxyFilterPanel,
+  galaxyFilterQuery,
+  galaxyFilterTicks,
+  isGalaxyFilterState,
+} from "./GalaxyFilterPanel";
 import { SystemBookmarkButton } from "./BookmarkButton";
 import { CopySystemButton } from "./CopySystemButton";
 import { galaxyImageRect, loadGalaxyImage, REGION_MAP_SIZE, xForRegionPx, zForRegionPz } from "./regionBackdrop";
@@ -40,7 +47,7 @@ const dist = (a: { x: number; y: number; z: number }, b: { x: number; y: number;
   Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 
 type Colour = 0 | 1 | 2;
-type Drawer = "none" | "search" | "codex" | "plan";
+type Drawer = "none" | "search" | "filter" | "codex" | "plan";
 type MineRow = GalaxyMineDTO["systems"][number];
 
 /** The commander's systems: waiting for them amber, done (DSS or plants on foot) green, visited grey. */
@@ -113,6 +120,12 @@ export function GalaxyMap3D() {
   const [carriersOn, setCarriersOn] = usePersistedState("galaxy.layer.carriers", false, isBool);
   const [bookmarksOn, setBookmarksOn] = usePersistedState("galaxy.layer.bookmarks", false, isBool);
   const [gggOn, setGggOn] = usePersistedState("galaxy.layer.ggg", false, isBool);
+  /* The Filter drawer (owner, 2026-10-04): remembered between opens, so the button says when one is on. */
+  const [filter, setFilter] = usePersistedState("galaxy.filter", EMPTY_GALAXY_FILTER, isGalaxyFilterState);
+  const [filterMatched, setFilterMatched] = useState<number | null>(null);
+  const [filterBusy, setFilterBusy] = useState(false);
+  const filterAnswer = useRef<{ query: string; bits: Uint8Array; matched: number } | null>(null);
+  const filterTicks = galaxyFilterTicks(filter);
   const extraOn: Record<GalaxyLayerKind, boolean> = {
     poi: poiOn,
     nsp: nspOn,
@@ -379,6 +392,58 @@ export function GalaxyMap3D() {
     }
     return best;
   }, [mine, route, waitMinCr]);
+
+  /*
+    The filter's answer: bits over the map's ordinals, asked again only when the ticks change (hide
+    on or off is the engine's alone). A quarter second of quiet first, for quick ticking.
+  */
+  const filterQuery = galaxyFilterQuery(filter);
+  useEffect(() => {
+    const e = engine.current;
+    if (!e) return;
+    if (!filterQuery) {
+      filterAnswer.current = null;
+      e.setFilter(null, false, 0);
+      setFilterMatched(null);
+      setFilterBusy(false);
+      return;
+    }
+    const have = filterAnswer.current;
+    if (have && have.query === filterQuery) {
+      e.setFilter(have.bits, filter.hide, have.matched);
+      return;
+    }
+    let live = true;
+    setFilterBusy(true);
+    const t = window.setTimeout(() => {
+      void fetch(`/api/galaxy/filter?${filterQuery}`)
+        .then(async (r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const buf = await r.arrayBuffer();
+          const head = new TextDecoder().decode(new Uint8Array(buf, 0, 8));
+          if (head !== "EDXFLT01") throw new Error("not a filter answer");
+          const dv = new DataView(buf);
+          const matched = dv.getUint32(12, true);
+          return { bits: new Uint8Array(buf, 16), matched };
+        })
+        .then(({ bits, matched }) => {
+          if (!live) return;
+          filterAnswer.current = { query: filterQuery, bits, matched };
+          engine.current?.setFilter(bits, filter.hide, matched);
+          setFilterMatched(matched);
+        })
+        .catch(() => {
+          if (live) setFilterMatched(null);
+        })
+        .finally(() => {
+          if (live) setFilterBusy(false);
+        });
+    }, 250);
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+  }, [filterQuery, filter.hide]);
 
   useEffect(() => engine.current?.setColourMode(colour), [colour]);
   useEffect(() => engine.current?.setExposure(exposure), [exposure]);
@@ -768,6 +833,12 @@ export function GalaxyMap3D() {
               Centre here
             </button>
           </div>
+        </aside>
+      ) : null}
+
+      {drawer === "filter" ? (
+        <aside className="g3d-drawer g3d-drawer--filter" aria-label="Filter" data-testid="g3d-filter">
+          <GalaxyFilterPanel value={filter} onChange={setFilter} matched={filterMatched} busy={filterBusy} />
         </aside>
       ) : null}
 
@@ -1171,6 +1242,15 @@ export function GalaxyMap3D() {
           title="The nearest system worth at least that much that you have not mapped or sampled"
         >
           {targetBusy ? "Finding…" : "Next target"}
+        </button>
+        <button
+          type="button"
+          className={drawer === "filter" || filterTicks ? "g3d-btn g3d-btn--on" : "g3d-btn"}
+          aria-pressed={drawer === "filter"}
+          onClick={() => openDrawer("filter")}
+          title="Light the systems that have a star, a body or a plant you pick"
+        >
+          {filterTicks ? `Filter (${filterTicks})` : "Filter"}
         </button>
         <button
           type="button"

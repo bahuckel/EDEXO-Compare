@@ -161,6 +161,8 @@ interface TileEntry {
   species: Uint8Array;
   values: Uint16Array;
   ordinals: Uint32Array;
+  /** 1 where the system passes the Filter drawer's filter. */
+  match: Uint8Array;
   groups320: Cluster[];
   groups80: Cluster[];
 }
@@ -191,6 +193,8 @@ export class GalaxyEngine {
     uMode: { value: 0 },
     uMinValue: { value: 0 },
     uMinSize: { value: 1.5 },
+    uFilter: { value: 0 },
+    uMatchBoost: { value: 1 },
   };
   /**
    * With a value floor the survivors are few, and at the brightness meant for millions they vanish
@@ -201,7 +205,14 @@ export class GalaxyEngine {
     uSize: this.pointUniforms.uSize,
     uViewH: { value: 800 },
     uMinValue: this.pointUniforms.uMinValue,
+    uFilter: this.pointUniforms.uFilter,
   };
+  /**
+   * The Filter drawer (owner, 2026-10-04): bits over bio-index ordinals, the systems that have what was
+   * ticked. Null when nothing is ticked.
+   */
+  private filterBits: Uint8Array | null = null;
+  private overviewMatch: Uint8Array | null = null;
   /** The overview's values, kept to count what clears the value floor. */
   private overviewValues: Uint16Array | null = null;
   private readonly ringUniforms = { uPixelRatio: { value: 1 }, uBase: { value: 0 } };
@@ -461,6 +472,9 @@ export class GalaxyEngine {
     geo.setAttribute("aTiers", new THREE.Uint8BufferAttribute(o.tiers, 1));
     geo.setAttribute("aSpecies", new THREE.Uint8BufferAttribute(o.species, 1));
     geo.setAttribute("aValue", new THREE.Uint16BufferAttribute(o.values, 1));
+    this.overviewMatch = new Uint8Array(o.count);
+    this.fillMatch(this.overviewMatch, (k) => k * o.stride);
+    geo.setAttribute("aMatch", new THREE.Uint8BufferAttribute(this.overviewMatch, 1));
     this.overviewMaterial = this.pointMaterial(overviewVertex, {
       uMin: { value: new THREE.Vector3(...o.min) },
       uStep: { value: new THREE.Vector3(...o.step) },
@@ -573,6 +587,44 @@ export class GalaxyEngine {
     this.pointUniforms.uMinSize.value = u > 0 ? 3.5 : 1.5;
     this.invalidate();
     return n * this.stats.stride;
+  }
+
+  /** Mark each point from the filter's bits (`ordinalOf` gives point i's bio-index ordinal). */
+  private fillMatch(out: Uint8Array, ordinalOf: (i: number) => number): void {
+    const bits = this.filterBits;
+    if (!bits) {
+      out.fill(0);
+      return;
+    }
+    for (let i = 0; i < out.length; i++) {
+      const o = ordinalOf(i);
+      out[i] = (bits[o >> 3]! >> (o & 7)) & 1;
+    }
+  }
+
+  /**
+   * The Filter drawer (owner, 2026-10-04): the systems in `bits` brighter, the rest dimmed (`hide`
+   * false) or gone, unclickable and unnamed (`hide` true). Null bits clear it. `matched` sets how much
+   * extra light the matches get, as the value floor does for its survivors.
+   */
+  setFilter(bits: Uint8Array | null, hide: boolean, matched: number): void {
+    this.filterBits = bits;
+    this.pointUniforms.uFilter.value = bits ? (hide ? 2 : 1) : 0;
+    const total = Math.max(1, (this.overviewMatch?.length ?? 1) * this.stats.stride);
+    this.pointUniforms.uMatchBoost.value = bits ? Math.min(12, Math.max(1.5, Math.sqrt(total / Math.max(1, matched)))) : 1;
+    const ov = this.overview?.geometry.getAttribute("aMatch") as THREE.BufferAttribute | undefined;
+    if (this.overviewMatch && ov) {
+      const stride = this.stats.stride;
+      this.fillMatch(this.overviewMatch, (k) => k * stride);
+      ov.needsUpdate = true;
+    }
+    for (const t of this.tiles.values()) {
+      this.fillMatch(t.match, (i) => t.ordinals[i]!);
+      (t.points.geometry.getAttribute("aMatch") as THREE.BufferAttribute).needsUpdate = true;
+    }
+    this.groupsKey = "";
+    this.settleAt = performance.now();
+    this.invalidate();
   }
 
   setColourMode(mode: 0 | 1 | 2): void {
@@ -915,6 +967,9 @@ export class GalaxyEngine {
     geo.setAttribute("aTiers", new THREE.Uint8BufferAttribute(t.tiers, 1));
     geo.setAttribute("aSpecies", new THREE.Uint8BufferAttribute(t.species, 1));
     geo.setAttribute("aValue", new THREE.Uint16BufferAttribute(t.values, 1));
+    const match = new Uint8Array(t.count);
+    this.fillMatch(match, (i) => t.ordinals[i]!);
+    geo.setAttribute("aMatch", new THREE.Uint8BufferAttribute(match, 1));
     const m = cellMin(t.cell);
     const cellMinLy = { value: new THREE.Vector3(m.x, m.y, m.z) };
     const mat = this.pointMaterial(tileVertex, { uCellMinLy: cellMinLy, uTileStep: { value: TILE_STEP_LY } });
@@ -956,6 +1011,7 @@ export class GalaxyEngine {
       species: t.species,
       values: t.values,
       ordinals: t.ordinals,
+      match,
       groups320: clustersFromTile(t.cell, t.positions, t.values, 320),
       groups80: clustersFromTile(t.cell, t.positions, t.values, 80),
     };
@@ -1013,7 +1069,8 @@ export class GalaxyEngine {
   /** The groups for the current grid, rebuilt only when the grid or the loaded tiles change. */
   private updateGroups(): void {
     const dist = this.camera.position.distanceTo(this.controls.target);
-    const level = this.groupsOn ? levelForDistance(dist) : 0;
+    // No group rings while a filter is on: a ring counts every system in it, matching or not.
+    const level = this.groupsOn && !this.filterBits ? levelForDistance(dist) : 0;
     const shownTiles = [...this.tiles.values()].filter((e) => e.points.visible);
     const minV = this.pointUniforms.uMinValue.value;
     const key = `${level}|${minV}|${this.sectorNames ? 1 : 0}|${shownTiles.map((e) => e.key).join(",")}`;
@@ -1370,6 +1427,8 @@ export class GalaxyEngine {
         if (sx < -0.95 || sx > 0.95 || sy < -0.9 || sy > 0.9) continue;
         const value = tile.values[i]!;
         if (value < this.pointUniforms.uMinValue.value) continue;
+        // With a filter on, only what has the thing is named.
+        if (this.filterBits && !tile.match[i]) continue;
         const species = tile.species[i]!;
         // Valuable first, then varied, then near the middle of the screen.
         const score = Math.log1p(value) * 3 + species - Math.hypot(sx, sy) * 2;

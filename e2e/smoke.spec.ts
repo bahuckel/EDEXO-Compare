@@ -314,6 +314,44 @@ test("galaxy 3D: loads every system, names the regions, fetches close-up tiles n
 });
 
 /*
+  The Filter drawer (owner, 2026-10-04): tick a genus and the systems that have it light up; the Stars
+  & bodies tab narrows further, any tick inside a group, every group that has one.
+*/
+test("galaxy 3D: the Filter drawer lights the systems that have what was ticked", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.setViewportSize({ width: 1400, height: 820 });
+  await page.goto("/?screen=galaxy");
+  type G = { stats: () => { phase: string } };
+  await expect
+    .poll(async () => page.evaluate(() => (window as unknown as { __galaxy?: G }).__galaxy?.stats().phase), {
+      timeout: 60_000,
+    })
+    .toBe("ready");
+  await page.getByRole("button", { name: /^Filter/ }).click();
+  const drawer = page.getByTestId("g3d-filter");
+  await drawer.getByLabel("Search the filters").fill("stratum");
+  await drawer.getByLabel("Stratum, every species").check();
+  const summary = drawer.locator(".g3d-filter__summary");
+  await expect(summary).toContainText(/\d systems match/, { timeout: 30_000 });
+  // Any thousands separator the locale uses (\s takes the no-break spaces too).
+  const count = async () =>
+    Number(((await summary.textContent()) ?? "").match(/([\d\s,.]+) systems match/)?.[1]?.replace(/\D/g, ""));
+  const stratum = await count();
+  expect(stratum).toBeGreaterThan(1000);
+  await expect(page.getByRole("button", { name: "Filter (1)" })).toBeVisible();
+  if (existsSync(path.join("data", "galaxy", "system-traits.bin.gz"))) {
+    await drawer.getByRole("tab", { name: "Stars & bodies" }).click();
+    await drawer.getByLabel("Search the filters").fill("neutron");
+    await drawer.locator("fieldset", { hasText: "Any star in the system" }).getByLabel("Neutron star").check();
+    await expect.poll(count, { timeout: 30_000 }).toBeLessThan(stratum);
+    await page.screenshot({ path: `${OUT}/galaxy-3d-filter.png` });
+  }
+  await drawer.getByRole("button", { name: /^Clear/ }).click();
+  await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+/*
   G2: the groups and the systems answer the mouse. A ring names its group and flies into it; a system
   under the cursor gets a card, and a click opens its panel with the name from the index.
 */

@@ -468,6 +468,115 @@
   cursor: default;
 }
 
+/* ---- The Filter drawer (owner, 2026-10-04): shop-style tabs, a search box, ticks by group -------- */
+.g3d-drawer--filter {
+  width: min(360px, calc(100vw - 24px));
+}
+.g3d-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+}
+.g3d-filter__tabs {
+  display: flex;
+  gap: 6px;
+}
+.g3d-filter__tabs .g3d-btn {
+  flex: 1;
+}
+.g3d-filter__search {
+  width: 100%;
+  box-sizing: border-box;
+}
+.g3d-filter__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+.g3d-filter__summary > span:first-child {
+  flex: 1;
+  color: var(--accent-bright);
+}
+.g3d-filter__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.g3d-filter__chip {
+  padding: 1px 7px;
+  border: 1px solid var(--accent-a45);
+  background: var(--accent-a12);
+  color: var(--accent-bright);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+.g3d-filter__chip:hover {
+  background: var(--accent-a35);
+}
+.g3d-filter__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.g3d-filter__group {
+  margin: 0 0 10px;
+  padding: 0;
+  border: 0;
+}
+.g3d-filter__group legend {
+  padding: 0 0 4px;
+  color: var(--accent-bright);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.g3d-filter__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.g3d-filter__row:hover {
+  color: var(--text);
+  background: var(--accent-a08);
+}
+.g3d-filter__row input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+.g3d-filter__row--species {
+  padding-left: 26px;
+}
+.g3d-filter__label {
+  flex: 1;
+}
+.g3d-filter__count {
+  color: var(--text-dim);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.g3d-filter__genus-name {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 /* ---- G4: the Search drawer, the Find box, the nearest-waiting banner --------------------------- */
 .g3d-drawer--search {
   width: min(430px, calc(100vw - 24px));

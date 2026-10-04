@@ -13,9 +13,12 @@ const pointCommon = /* glsl */ `
   uniform float uMode;       // 0 evidence, 1 species count, 2 value
   uniform float uMinValue;   // G5: systems worth less (100 k CR units) are not drawn
   uniform float uMinSize;    // G5: with a floor, the few left are drawn bigger (px)
+  uniform float uFilter;     // the Filter drawer (2026-10-04): 0 off, 1 dim the rest, 2 hide the rest
+  uniform float uMatchBoost; // light for the systems that match, which may be few
   in float aTiers;
   in float aSpecies;
   in float aValue;           // 100 k CR units
+  in float aMatch;           // 1 when the system passes the filter
   out vec3 vColor;
 
   vec3 colourFor(float t, float sp) {
@@ -36,7 +39,7 @@ const pointCommon = /* glsl */ `
   }
 
   void emit(vec3 g) {
-    if (aValue < uMinValue) {
+    if (aValue < uMinValue || (uFilter > 1.5 && aMatch < 0.5)) {
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
       gl_PointSize = 0.0;
       vColor = vec3(0.0);
@@ -46,6 +49,15 @@ const pointCommon = /* glsl */ `
     gl_Position = projectionMatrix * mv;
     gl_PointSize = clamp(uSize * uViewH * 2.0 / -mv.z, uMinSize, 9.0);
     vColor = colourFor(aTiers, aSpecies) * uIntensity;
+    if (uFilter > 0.5) {
+      // The ones that have it brighter and never smaller than 3.5 px; the rest a faint haze.
+      if (aMatch > 0.5) {
+        gl_PointSize = max(gl_PointSize, 3.5);
+        vColor *= uMatchBoost;
+      } else {
+        vColor *= 0.06;
+      }
+    }
   }
 `;
 
@@ -202,10 +214,12 @@ export const pickVertex = /* glsl */ `
   uniform float uViewH;
   uniform uint uSlot;
   uniform float uMinValue;
+  uniform float uFilter;
   in float aValue;
+  in float aMatch;
   flat out uint vId;
   void main() {
-    if (aValue < uMinValue) {
+    if (aValue < uMinValue || (uFilter > 1.5 && aMatch < 0.5)) {
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
       gl_PointSize = 0.0;
       vId = 0u;

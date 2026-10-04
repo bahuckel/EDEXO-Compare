@@ -30,6 +30,8 @@ import {
   galaxySystemSpecies,
   galaxySystemValues,
 } from "../galaxyValueSearch.js";
+import { clearSystemTraits, galaxyFilterMask, loadSystemTraits, systemTraitCounts } from "../galaxyTraits.js";
+import { BODY_TRAIT_GROUP, BODY_TRAITS, STAR_CLASSES } from "../../shared/galaxyTraits.js";
 import { loadRegionMap } from "../regionMapData.js";
 import { galaxyFind, galaxySector } from "../galaxyFind.js";
 import { doneAddresses, MAX_PLAN_STOPS, nextTarget, ordinalsOf } from "../galaxyNext.js";
@@ -86,6 +88,7 @@ export function registerGalaxyRoutes(
   registerGalaxyCache("points", clearGalaxyPoints);
   registerGalaxyCache("tiles", clearTileIndex);
   registerGalaxyCache("system-values", clearGalaxySystemValues);
+  registerGalaxyCache("system-traits", clearSystemTraits);
   app.use("/api/galaxy", (_req, _res, next) => {
     touchGalaxyMemory();
     next();
@@ -107,6 +110,65 @@ export function registerGalaxyRoutes(
     const stride = [1, 4, 16].includes(Number(req.query.stride)) ? Number(req.query.stride) : 1;
     const buf = galaxyPoints(stride);
     if (!buf) return void noIndex(res);
+    sendBinary(res, buf);
+  });
+
+  /**
+   * The map's Bodies filters (owner, 2026-10-04): every star class and body trait with how many
+   * systems hold it. `available: false` on a build without `system-traits.bin.gz`.
+   */
+  app.get("/api/galaxy/traits", (_req, res) => {
+    const traits = loadSystemTraits();
+    if (!traits) {
+      res.json({ available: false, mainStars: [], stars: [], planets: [], features: [] });
+      return;
+    }
+    const c = systemTraitCounts(traits);
+    const rows = (list: readonly { key: string; label: string }[], counts: number[]) =>
+      list.map((t, i) => ({ key: t.key, label: t.label, count: counts[i] ?? 0 }));
+    const bodies = rows(BODY_TRAITS, c.bodies);
+    res.json({
+      available: true,
+      mainStars: rows(STAR_CLASSES, c.main).filter((r) => r.key !== "SG"),
+      stars: rows(STAR_CLASSES, c.stars),
+      planets: bodies.filter((r) => BODY_TRAIT_GROUP[r.key] === "Planet type"),
+      features: bodies.filter((r) => BODY_TRAIT_GROUP[r.key] === "Features"),
+    });
+  });
+
+  /**
+   * Which systems pass the map's filter, as bits over bio-index ordinals (galaxyTraits.ts):
+   * `?genera=stratum&species=…&mainStars=N&stars=…&planets=elw&features=terraformable`, each a comma
+   * list. Layout: "EDXFLT01", u32 system count, u32 matched, then the bits.
+   */
+  app.get("/api/galaxy/filter", (req, res) => {
+    const index = loadBioIndex();
+    if (!index) return void noIndex(res);
+    const list = (k: string) =>
+      String(req.query[k] ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 200);
+    const genusOf = new Map(getCachedSpeciesDatabase().species.map((e) => [e.id, e.genusDataDir]));
+    const { bits, matched } = galaxyFilterMask(
+      {
+        species: list("species"),
+        genera: list("genera"),
+        mainStars: list("mainStars"),
+        stars: list("stars"),
+        planets: list("planets"),
+        features: list("features"),
+      },
+      index,
+      loadSystemTraits(),
+      (id) => genusOf.get(id) ?? null,
+    );
+    const buf = Buffer.alloc(16 + bits.length);
+    buf.write("EDXFLT01", 0, "ascii");
+    buf.writeUInt32LE(index.systemCount, 8);
+    buf.writeUInt32LE(matched, 12);
+    buf.set(bits, 16);
     sendBinary(res, buf);
   });
 
