@@ -95,7 +95,10 @@ visit in each region. Track one and its plants are marked in the app and in the 
 with recorded biology in 3D, grouped by region, sector and neighbourhood, with your own systems on
 top. Set a floor — _Worth ≥_ 50 M, say — and **Next target** flies to the nearest system above it that
 you have not mapped or sampled, and copies its name to paste into the game's galaxy map; **Plan**
-chains the next few, each the nearest to the last. Values there are the recorded species at 1×: those
+picks up to 20 more, each the nearest to the last, and visits them in the shortest order it finds —
+back to where you started, if you tick **Back to start**. **NavRoute** lists every system on the
+routes you plot in the game with its star class, to find neutron stars, Wolf-Rayets or black holes
+along the way and check which EDSM does not know. Values there are the recorded species at 1×: those
 systems come from other commanders' records, so first footfall is most likely gone. Without WebGL the
 2D Classic map opens instead.
 
