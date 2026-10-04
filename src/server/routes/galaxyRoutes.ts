@@ -132,7 +132,11 @@ export function registerGalaxyRoutes(
       mainStars: rows(STAR_CLASSES, c.main).filter((r) => r.key !== "SG"),
       stars: rows(STAR_CLASSES, c.stars),
       planets: bodies.filter((r) => BODY_TRAIT_GROUP[r.key] === "Planet type"),
-      features: bodies.filter((r) => BODY_TRAIT_GROUP[r.key] === "Features"),
+      /*
+        The dump keeps every star but only the planets that matter for biology, so "landable" and
+        "landable with atmosphere" hold 95-98 % of systems: not a filter. Kept in the file, not offered.
+      */
+      features: bodies.filter((r) => BODY_TRAIT_GROUP[r.key] === "Features" && !r.key.startsWith("landable")),
     });
   });
 

@@ -345,6 +345,28 @@ test("galaxy 3D: the Filter drawer lights the systems that have what was ticked"
     await drawer.locator("fieldset", { hasText: "Any star in the system" }).getByLabel("Neutron star").check();
     await expect.poll(count, { timeout: 30_000 }).toBeLessThan(stratum);
     await page.screenshot({ path: `${OUT}/galaxy-3d-filter.png` });
+    /*
+      Owner, 2026-10-04: removed the plant from its chip, ticked main star O, and the map still lit the
+      plant's systems. The points the engine marks must follow the ticks, not the last answer.
+    */
+    type F = { filter: () => { mode: number; overviewMatched: number }; stats: () => { stride: number } };
+    const engineMarks = () =>
+      page.evaluate(() => {
+        const g = (window as unknown as { __galaxy: F }).__galaxy;
+        return g.filter().overviewMatched * g.stats().stride;
+      });
+    await drawer.getByRole("button", { name: /^Stratum \(all\)/ }).click();
+    await drawer.getByRole("button", { name: /^Neutron star/ }).click();
+    await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();
+    await expect.poll(engineMarks, { timeout: 10_000 }).toBe(0);
+    await drawer.getByLabel("Search the filters").fill("blue-white");
+    await drawer.locator("fieldset", { hasText: "Main star" }).getByLabel("O (Blue-White)").check();
+    await expect(summary).toContainText(/\d systems match/, { timeout: 30_000 });
+    const oStars = await count();
+    expect(oStars).toBeLessThan(stratum);
+    // The overview holds every system (or every 16th in light mode): its marks are the answer's.
+    await expect.poll(engineMarks, { timeout: 10_000 }).toBeLessThanOrEqual(oStars + 16 * 16);
+    expect(await engineMarks()).toBeGreaterThan(0);
   }
   await drawer.getByRole("button", { name: /^Clear/ }).click();
   await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();

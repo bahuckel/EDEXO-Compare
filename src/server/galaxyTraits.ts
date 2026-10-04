@@ -10,6 +10,9 @@
  * tick. Exobio (genera and species), main star, stars present, planet types, features.
  *
  * Star and body traits come from `data/galaxy/system-traits.bin.gz` (scripts/build-system-traits.ts).
+ * The Spansh bio export it is built from keeps **every star** but only the **planets that matter for
+ * biology** (keepReason: codex, evidence, thin, anemone, shards…), so a planet trait reads "a world
+ * with biology of that kind", and plain gas giants are absent.
  * Without it the Bodies tab says so and only exobio filters.
  */
 import { existsSync, readFileSync } from "node:fs";

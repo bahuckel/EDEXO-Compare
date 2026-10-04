@@ -236,6 +236,7 @@ export function GalaxyMap3D() {
       view: (k: "top" | "tilted" | "core" | "sol") => e.view(k),
       targets: () => e.debugTargets(),
       marker: (layer: string) => e.debugMarker(layer),
+      filter: () => e.debugFilter(),
       /** For tests: move the camera to a target (game coordinates) at a distance, top-down. */
       lookAt: (x: number, y: number, z: number, distance: number) => {
         e.cancelFlight();

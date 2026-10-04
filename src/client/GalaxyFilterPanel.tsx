@@ -286,8 +286,9 @@ export function GalaxyFilterPanel({
           <>
             {traitGroup("Main star", "mainStars", traits?.mainStars ?? [])}
             {traitGroup("Any star in the system", "stars", traits?.stars ?? [])}
-            {traitGroup("Planet type", "planets", traits?.planets ?? [])}
-            {traitGroup("Features", "features", traits?.features ?? [])}
+            {/* Every star is in the data; planets only where they matter for biology (galaxyTraits.ts). */}
+            {traitGroup("Planet type (worlds with biology)", "planets", traits?.planets ?? [])}
+            {traitGroup("Features (worlds with biology)", "features", traits?.features ?? [])}
           </>
         )}
       </div>

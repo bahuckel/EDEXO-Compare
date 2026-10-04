@@ -1620,6 +1620,13 @@ export class GalaxyEngine {
 
   /** For tests: the screen position (CSS px) of the first shown group, and of a loaded system. */
   /** For tests: where a marker layer's first on-screen dot is (CSS px). */
+  /** For tests: the filter's state on the GPU side, and how many overview points it marks. */
+  debugFilter(): { mode: number; overviewMatched: number } {
+    let n = 0;
+    for (const v of this.overviewMatch ?? []) n += v;
+    return { mode: this.pointUniforms.uFilter.value, overviewMatched: n };
+  }
+
   debugMarker(layer: string): { x: number; y: number; id: string } | null {
     const l = this.markerLayers.get(layer);
     if (!l || !l.points.visible) return null;
