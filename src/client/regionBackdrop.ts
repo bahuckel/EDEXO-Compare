@@ -207,6 +207,41 @@ export function drawnGalaxyImage(): Promise<GalaxyImage | null> {
   return drawn;
 }
 
+/** The drawn galaxy's frame: the old photograph's size, core pixel and scale. */
+export function drawnGalaxyFrame() {
+  return {
+    width: DRAWN_W,
+    height: DRAWN_H,
+    coreX: GALAXY_IMAGE_CORE_PX.x,
+    coreY: GALAXY_IMAGE_CORE_PX.y,
+    lyPerPx: GALAXY_IMAGE_SCALE * (4096 / 83),
+  };
+}
+
+let sprites: Promise<Float32Array | null> | null = null;
+
+/**
+ * The galaxy map's Milky Way as clouds in 3D (owner, 2026-10-04: "make the PNG a 3D cloud"): sprites
+ * in the drawing's frame (galaxyCloudSprites), made once a session in the worker.
+ */
+export function drawnGalaxySprites(counts: { emission: number; dust: number }): Promise<Float32Array | null> {
+  if (sprites) return sprites;
+  sprites = new Promise<Float32Array | null>((resolve) => {
+    if (typeof Worker === "undefined") return resolve(null);
+    const worker = new Worker(new URL("./galaxyClouds.worker.ts", import.meta.url), { type: "module" });
+    worker.onerror = () => {
+      worker.terminate();
+      resolve(null);
+    };
+    worker.onmessage = (ev: MessageEvent<ArrayBuffer>) => {
+      worker.terminate();
+      resolve(new Float32Array(ev.data));
+    };
+    worker.postMessage({ frame: drawnGalaxyFrame(), sprites: counts });
+  });
+  return sprites;
+}
+
 export async function loadGalaxyImage(url: string): Promise<GalaxyImage | null> {
   if (typeof Image === "undefined") return null;
   try {

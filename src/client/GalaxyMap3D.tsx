@@ -33,7 +33,8 @@ import {
 } from "./GalaxyFilterPanel";
 import { SystemBookmarkButton } from "./BookmarkButton";
 import { CopySystemButton } from "./CopySystemButton";
-import { drawnGalaxyImage, galaxyImageRect, REGION_MAP_SIZE, xForRegionPx, zForRegionPz } from "./regionBackdrop";
+import { drawnGalaxyFrame, drawnGalaxySprites, galaxyImageRect, REGION_MAP_SIZE, xForRegionPx, zForRegionPz } from "./regionBackdrop";
+import { CLOUD_SPRITE_STRIDE } from "@shared/galaxyClouds";
 import { regionOutlines, type RegionOutlines } from "@shared/regionBorders.js";
 import { regionIndexForCoords, regionJoinKey, type RegionMapData } from "@shared/regionMap.js";
 import type { GalaxyFindDTO, GalaxyMineDTO, GalaxyNextDTO, GalaxyRouteDTO } from "@shared/types";
@@ -296,20 +297,25 @@ export function GalaxyMap3D() {
         e.setBackdrop(null, outlines.current);
         setRegionAnchors(outlines.current?.anchors ?? []);
       });
-    void drawnGalaxyImage()
+    // The Milky Way as clouds in 3D (owner, 2026-10-04), fewer on the light tier.
+    const light = graphics.tier === "light";
+    void drawnGalaxySprites(light ? { emission: 40_000, dust: 12_000 } : { emission: 140_000, dust: 40_000 })
       .catch(() => null)
-      .then((img) => {
-        if (engine.current !== e || !img) return;
-        const r = galaxyImageRect(img.width, img.height);
-        e.setBackdrop(
+      .then((sprites) => {
+        if (engine.current !== e || !sprites) return;
+        const f = drawnGalaxyFrame();
+        const r = galaxyImageRect(f.width, f.height);
+        e.setClouds(
+          sprites,
           {
-            url: img.url,
             x0: xForRegionPx(r.x),
             x1: xForRegionPx(r.x + r.width),
             zTop: zForRegionPz(REGION_MAP_SIZE - 1 - r.y),
             zBottom: zForRegionPz(REGION_MAP_SIZE - 1 - (r.y + r.height)),
+            width: f.width,
+            height: f.height,
           },
-          null,
+          CLOUD_SPRITE_STRIDE,
         );
       });
 

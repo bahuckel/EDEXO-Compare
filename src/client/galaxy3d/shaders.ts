@@ -248,3 +248,42 @@ export const pickFragment = /* glsl */ `
     ) / 255.0;
   }
 `;
+
+/**
+ * The Milky Way's clouds (galaxyCloudSprites): soft round sprites sized in light years.
+ * Close in, a sprite would fill the screen; it fades out before it gets that big, so the clouds thin
+ * away around the camera instead of turning into a fog of squares.
+ */
+export const cloudVertex = /* glsl */ `
+  in vec4 tint;
+  in vec2 sizeSeed;
+  uniform float uScale;
+  uniform float uMaxPx;
+  uniform float uOpacity;
+  uniform float uDust;
+  out vec4 vTint;
+  void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mv;
+    float px = sizeSeed.x * uScale / max(1.0, -mv.z);
+    // Past a few dozen pixels a sprite stops reading as cloud and starts reading as a blob: let it go.
+    float fade = 1.0 - smoothstep(min(56.0, uMaxPx * 0.4), min(170.0, uMaxPx), px);
+    gl_PointSize = clamp(px, 1.0, uMaxPx);
+    // A sprite smaller than a pixel still lights a whole one: keep its light, not its brightness.
+    float sub = px < 1.0 ? px * px : 1.0;
+    // The light is shared with the systems' (uOpacity); dust dims whatever is there, at full strength.
+    vTint = vec4(tint.rgb, tint.a * fade * sub * (uDust > 0.5 ? min(1.0, uOpacity * 2.0) : uOpacity));
+  }
+`;
+
+export const cloudFragment = /* glsl */ `
+  in vec4 vTint;
+  out vec4 outColor;
+  void main() {
+    vec2 p = gl_PointCoord - 0.5;
+    float d2 = dot(p, p) * 4.0;
+    if (d2 >= 1.0 || vTint.a <= 0.0) discard;
+    float a = exp(-2.4 * d2) * (1.0 - d2);
+    outColor = vec4(vTint.rgb, vTint.a * a);
+  }
+`;

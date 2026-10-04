@@ -168,8 +168,16 @@ const smooth = (e0: number, e1: number, x: number) => {
 const SEED = 7;
 const BAR_ANGLE = 1.05;
 
-/** The picture, RGBA (opaque, black where there is nothing). */
-export function renderGalaxyClouds(frame: CloudFrame): Uint8ClampedArray {
+/**
+ * The picture, RGBA (opaque, black where there is nothing).
+ *
+ * `extra`, for the 3D clouds (galaxyCloudSprites): `clear` receives the same picture without its dust
+ * lanes, `dust` how much the lanes dim each pixel (0–0.7) — in 3D the dust is clouds of its own.
+ */
+export function renderGalaxyClouds(
+  frame: CloudFrame,
+  extra?: { clear?: Uint8ClampedArray; dust?: Float32Array },
+): Uint8ClampedArray {
   const { width, height, coreX, coreY, lyPerPx } = frame;
   const out = new Uint8ClampedArray(width * height * 4);
   const list = arms();
@@ -241,7 +249,8 @@ export function renderGalaxyClouds(frame: CloudFrame): Uint8ClampedArray {
       const armLight = arm * (0.35 + puff * (1 - 0.6 * tail)) * (0.4 + 0.6 * Math.exp(-r / 22_000)) * (0.3 + 0.7 * outerFade) * (1 - 0.45 * smooth(28_000, 44_000, r)) * (1 + 0.8 * Math.exp(-(((r - 20_000) / 8_000) ** 2)));
       // Dust is heaviest in the inner disc, where the arms leave the bar.
       const laneGain = 0.5 + 0.6 * (smooth(6_000, 10_000, r) - smooth(18_000, 28_000, r));
-      const dust = 1 - Math.min(0.7, laneGain * 0.85 * lane * (0.4 + clouds)) * (1 - smooth(30_000, 45_000, r));
+      const dim = Math.min(0.7, laneGain * 0.85 * lane * (0.4 + clouds)) * (1 - smooth(30_000, 45_000, r));
+      const dust = 1 - dim;
       const blue = smooth(24_000, 42_000, r);
 
       // Light between the arms too: the old stars of the disc, dimmer where the arms are far.
@@ -264,6 +273,13 @@ export function renderGalaxyClouds(frame: CloudFrame): Uint8ClampedArray {
       rr += pink + st * 0.8 + clusters * 0.85;
       gg += 0.6 * pink + st * 0.8 + clusters * 0.9;
       bb += 0.75 * pink + st * 0.9 + clusters * 1.1;
+      if (extra?.clear) {
+        extra.clear[i] = 255 * (1 - Math.exp(-rr * 1.6));
+        extra.clear[i + 1] = 255 * (1 - Math.exp(-gg * 1.6));
+        extra.clear[i + 2] = 255 * (1 - Math.exp(-bb * 1.6));
+        extra.clear[i + 3] = 255;
+      }
+      if (extra?.dust) extra.dust[py * width + px] = dim;
       // Dust reddens what it dims: brown lanes, not grey.
       rr *= dust;
       gg *= dust ** 1.35;
@@ -274,4 +290,143 @@ export function renderGalaxyClouds(frame: CloudFrame): Uint8ClampedArray {
     }
   }
   return out;
+}
+
+// ------------------------------------------------------------------ the clouds in 3D
+
+/** Floats per sprite in galaxyCloudSprites' output. */
+export const CLOUD_SPRITE_STRIDE = 9;
+
+/** Deterministic random numbers (mulberry32). */
+function rng(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** A standard normal number from two uniform ones. */
+const gauss = (r: () => number) => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
+
+/**
+ * How far the light spreads above and below the plane at this radius, ly (one standard deviation):
+ * the bulge and bar stand thick, the disc is thin, and the edge flares.
+ */
+function discThickness(dx: number, dz: number, r: number): number {
+  const u = dx * Math.cos(BAR_ANGLE) + dz * Math.sin(BAR_ANGLE);
+  const v = -dx * Math.sin(BAR_ANGLE) + dz * Math.cos(BAR_ANGLE);
+  const bar = Math.exp(-((u / 8_000) ** 2 + (v / 3_000) ** 2));
+  return 220 + 4_200 * Math.exp(-((r / 4_200) ** 2)) + 1_300 * bar + 450 * smooth(28_000, 56_000, r);
+}
+
+/**
+ * The galaxy as clouds in 3D (owner, 2026-10-04: "the whole idea was to make the PNG a 3D cloud"):
+ * soft sprites placed where the drawing is bright, and dark ones where its dust lanes are, each lifted
+ * off the plane by the disc's thickness there. Their brightness is set so that, seen from straight
+ * above, they add up to the drawing; from any other angle the bulge stands up, the arms have depth and
+ * the dust hangs in front of the light behind it.
+ *
+ * Out: `emission` then `dust` sprites, CLOUD_SPRITE_STRIDE floats each — image x and y in pixels (the
+ * frame's), height above the plane in ly, diameter in ly, r, g, b (emission: light to add; dust: the
+ * dust's colour), strength (emission: 1; dust: opacity), and a random seed for the sprite's shape.
+ */
+export function galaxyCloudSprites(
+  frame: CloudFrame,
+  clear: Uint8ClampedArray,
+  dust: Float32Array,
+  counts: { emission: number; dust: number },
+  seed = SEED,
+): Float32Array {
+  const { width, height, coreX, coreY, lyPerPx } = frame;
+  const n = width * height;
+  const out = new Float32Array((counts.emission + counts.dust) * CLOUD_SPRITE_STRIDE);
+  const r = rng(seed * 7919 + 1);
+
+  // Where each kind goes: as often as the drawing is bright (or dusty) there.
+  const pick = (weight: (i: number) => number) => {
+    const cdf = new Float64Array(n);
+    let sum = 0;
+    for (let i = 0; i < n; i++) {
+      sum += weight(i);
+      cdf[i] = sum;
+    }
+    return {
+      sum,
+      at(u: number): number {
+        let lo = 0;
+        let hi = n - 1;
+        const t = u * sum;
+        while (lo < hi) {
+          const mid = (lo + hi) >> 1;
+          if (cdf[mid]! < t) lo = mid + 1;
+          else hi = mid;
+        }
+        return lo;
+      },
+    };
+  };
+  const lum = (i: number) => (clear[i * 4]! + clear[i * 4 + 1]! + clear[i * 4 + 2]!) / (3 * 255);
+
+  // Little dust over the bulge: in 3D it would hang in front of all of it.
+  const near = (i: number) => smooth(5_000, 9_000, Math.hypot((i % width) - coreX, Math.floor(i / width) - coreY) * lyPerPx);
+
+  let o = 0;
+  const place = (count: number, weight: (i: number) => number, kind: "emission" | "dust") => {
+    if (count <= 0) return;
+    const cdf = pick(weight);
+    if (cdf.sum <= 0) return;
+    for (let k = 0; k < count; k++) {
+      // Stratified: one sprite per equal share of the weight, so the light is spread evenly, not in clumps.
+      const i = cdf.at((k + r()) / count);
+      const px = (i % width) + r();
+      const py = Math.floor(i / width) + r();
+      const dx = (px - coreX) * lyPerPx;
+      const dz = -(py - coreY) * lyPerPx;
+      const rad = Math.hypot(dx, dz);
+      const h = discThickness(dx, dz, rad);
+      let size: number;
+      let y: number;
+      if (kind === "emission") {
+        // Where the light is sparse the sprites are few: make them wide and soft there, not grains.
+        const sparse = Math.min(2.6, Math.max(0.75, Math.pow(0.25 / Math.max(0.02, lum(i)), 0.45)));
+        size = (500 + 900 * r()) * sparse * (1 + 0.5 * smooth(18_000, 50_000, rad)) + 2_600 * Math.exp(-((rad / 3_000) ** 2));
+        y = gauss(r) * h;
+      } else {
+        size = (500 + 800 * r()) * (1 + 0.4 * smooth(18_000, 45_000, rad));
+        y = gauss(r) * h * 0.55;
+      }
+      // The sprite's footprint on the drawing, in pixels: its falloff is exp(-8 (d / size)^2).
+      const area = (Math.PI / 8) * (size / lyPerPx) ** 2;
+      const base = o * CLOUD_SPRITE_STRIDE;
+      out[base] = px;
+      out[base + 1] = py;
+      out[base + 2] = y;
+      out[base + 3] = size;
+      if (kind === "emission") {
+        // Sprites fall as often as the light, so each carries the colour and an equal share of it.
+        // Sprites fall as often as weight(i); each carries the light that leaves for it.
+        const L = Math.max(1e-4, lum(i));
+        const share = ((cdf.sum / count / area) * L) / Math.max(1e-6, weight(i));
+        out[base + 4] = (clear[i * 4]! / 255 / L) * share;
+        out[base + 5] = (clear[i * 4 + 1]! / 255 / L) * share;
+        out[base + 6] = (clear[i * 4 + 2]! / 255 / L) * share;
+        out[base + 7] = 1;
+      } else {
+        // Thin dust: n sprites of opacity a dim by about n·a·footprint, which is what the lane did.
+        out[base + 4] = 0.11;
+        out[base + 5] = 0.065;
+        out[base + 6] = 0.035;
+        out[base + 7] = Math.min(0.9, ((cdf.sum / count / area) * dust[i]! * near(i)) / Math.max(1e-6, weight(i)) * 1.6);
+      }
+      out[base + 8] = r();
+      o++;
+    }
+  };
+  place(counts.emission, (i) => lum(i) ** 1.3, "emission");
+  place(counts.dust, (i) => dust[i]! ** 1.5 * near(i), "dust");
+  return o * CLOUD_SPRITE_STRIDE === out.length ? out : out.slice(0, o * CLOUD_SPRITE_STRIDE);
 }

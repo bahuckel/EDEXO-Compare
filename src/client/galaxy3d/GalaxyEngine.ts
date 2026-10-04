@@ -25,6 +25,8 @@ import type { CellBounds, CellCoord } from "../../shared/galaxyGrid";
 import type { RegionOutlines } from "../../shared/regionBorders";
 import { readCells, readOverview, readTile, type CellList, type OverviewPoints, type Tile } from "./galaxyBinary";
 import {
+  cloudFragment,
+  cloudVertex,
   compositeFragment,
   compositeVertex,
   overviewVertex,
@@ -230,11 +232,21 @@ export class GalaxyEngine {
   private readonly inflight = new Set<string>();
   private wanted: string[] = [];
   private photo: THREE.Mesh | null = null;
+  /** The Milky Way as clouds in 3D (setClouds): the light, then the dust over it. */
+  private clouds: THREE.Points[] = [];
+  private readonly cloudUniforms = {
+    uScale: { value: 1 },
+    uMaxPx: { value: 256 },
+    uOpacity: { value: 1 },
+  };
   private borders: THREE.LineSegments | null = null;
   /** The layer switches, kept so a picture or outline that arrives after them still obeys them. */
   private photoOn = true;
   private bordersOn = true;
   private anchors: RegionOutlines["anchors"] = [];
+  private readonly tmpSize = new THREE.Vector2();
+  /** The largest point sprite this GPU draws. */
+  private maxPointPx = 256;
   private labelsOn = true;
   private groupsOn = true;
   private groupMesh: THREE.Points | null = null;
@@ -303,6 +315,11 @@ export class GalaxyEngine {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setClearColor(0x05040a, 1);
     this.renderer.autoClear = false;
+    {
+      const gl = this.renderer.getContext();
+      const range = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE) as Float32Array | null;
+      if (range && range[1]) this.maxPointPx = Math.min(512, range[1]);
+    }
     host.appendChild(this.renderer.domElement);
     this.renderer.domElement.style.display = "block";
 
@@ -521,6 +538,80 @@ export class GalaxyEngine {
     u.uCellDims!.value.set(b.dims.x, b.dims.y, b.dims.z);
   }
 
+  /**
+   * The Milky Way as clouds (owner, 2026-10-04: "make the PNG a 3D cloud, not just another PNG"):
+   * galaxyCloudSprites' output, in the drawing's pixels, placed by the same rectangle the picture
+   * used. The light adds up; the dust, drawn after it, dims what is behind.
+   */
+  setClouds(
+    sprites: Float32Array,
+    rect: { x0: number; x1: number; zBottom: number; zTop: number; width: number; height: number },
+    stride: number,
+  ): void {
+    for (const c of this.clouds) {
+      this.backdrop.remove(c);
+      c.geometry.dispose();
+      (c.material as THREE.Material).dispose();
+    }
+    this.clouds = [];
+    const n = Math.floor(sprites.length / stride);
+    // Where the light ends and the dust begins: dust sprites carry an opacity under 1 and a fixed colour.
+    let split = n;
+    for (let i = 0; i < n; i++) {
+      if (sprites[i * stride + 7]! < 1) {
+        split = i;
+        break;
+      }
+    }
+    // The sprites' falloff holds about half the light the generator assumed (π/8 · D²): make it up.
+    const GAIN = 1.93;
+    const sx = (rect.x1 - rect.x0) / rect.width;
+    const sz = (rect.zTop - rect.zBottom) / rect.height;
+    const build = (from: number, to: number, dust: boolean) => {
+      const m = to - from;
+      if (m <= 0) return;
+      const pos = new Float32Array(m * 3);
+      const tint = new Float32Array(m * 4);
+      const ss = new Float32Array(m * 2);
+      for (let k = 0; k < m; k++) {
+        const b = (from + k) * stride;
+        pos[k * 3] = rect.x0 + sprites[b]! * sx;
+        pos[k * 3 + 1] = sprites[b + 2]!;
+        pos[k * 3 + 2] = -(rect.zTop - sprites[b + 1]! * sz);
+        ss[k * 2] = sprites[b + 3]!;
+        ss[k * 2 + 1] = sprites[b + 8]!;
+        const g = dust ? 1 : GAIN;
+        tint[k * 4] = sprites[b + 4]! * g;
+        tint[k * 4 + 1] = sprites[b + 5]! * g;
+        tint[k * 4 + 2] = sprites[b + 6]! * g;
+        tint[k * 4 + 3] = dust ? Math.min(1, sprites[b + 7]! * GAIN) : 1;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute("tint", new THREE.BufferAttribute(tint, 4));
+      geo.setAttribute("sizeSeed", new THREE.BufferAttribute(ss, 2));
+      const mat = new THREE.ShaderMaterial({
+        glslVersion: THREE.GLSL3,
+        vertexShader: cloudVertex,
+        fragmentShader: cloudFragment,
+        uniforms: { ...this.cloudUniforms, uDust: { value: dust ? 1 : 0 } },
+        blending: dust ? THREE.NormalBlending : THREE.AdditiveBlending,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+      });
+      const pts = new THREE.Points(geo, mat);
+      pts.frustumCulled = false;
+      pts.renderOrder = dust ? -1 : -2;
+      pts.visible = this.photoOn;
+      this.backdrop.add(pts);
+      this.clouds.push(pts);
+    };
+    build(0, split, false);
+    build(split, n, true);
+    this.invalidate();
+  }
+
   /** The Milky Way (drawn, galaxyClouds.ts; already placed in ly) and the region outlines. */
   setBackdrop(
     photo: { url: string; x0: number; x1: number; zBottom: number; zTop: number } | null,
@@ -568,6 +659,7 @@ export class GalaxyEngine {
     if (which === "photo") {
       this.photoOn = on;
       if (this.photo) this.photo.visible = on;
+      for (const c of this.clouds) c.visible = on;
     }
     if (which === "borders") {
       this.bordersOn = on;
@@ -1530,6 +1622,15 @@ export class GalaxyEngine {
     if (this.photo) {
       const m = this.photo.material as THREE.MeshBasicMaterial;
       m.opacity = 0.5 * Math.min(1, Math.max(0, (d - 4_000) / 30_000));
+    }
+    if (this.clouds.length) {
+      // Pixels per light year at unit distance, so a sprite is as big on screen as it is in space.
+      const h = this.renderer.getDrawingBufferSize(this.tmpSize).y;
+      this.cloudUniforms.uScale.value = h / (2 * Math.tan(((this.camera.fov / 2) * Math.PI) / 180));
+      this.cloudUniforms.uMaxPx.value = Math.min(this.maxPointPx, Math.max(96, h * 0.35));
+      // Close in the clouds thin out to a haze: the systems are what matters there.
+      // Half strength under the systems' own light, as the flat picture was.
+      this.cloudUniforms.uOpacity.value = 0.55 * Math.min(1, Math.max(0.08, (d - 4_000) / 30_000));
     }
   }
 
