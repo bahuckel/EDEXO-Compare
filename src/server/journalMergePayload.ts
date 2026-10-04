@@ -24,6 +24,9 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
  * so a stale cache does not fail: it restores the old shape, the new field comes back empty, and the
  * feature that reads it stays dark with nothing logged anywhere.
  *
+ * 27 — no new field. Exobiology is shared only between twin moons on one barycentre, no longer
+ *     between every moon of a planet (owner, 2026-10-04). A 26 cache holds genus hints, signal
+ *     counts and `fromSibling` locks merged across moons that do not share, and keeps them.
  * 13 — `systemLife`: bodies in a system with signs of life (population, security or government, a
  *     controlling faction) or on the developer-populated list count as footfalled (no ×5), unless
  *     this commander discovered the system. An old cache has the scans' `WasFootfalled: false` for
@@ -89,7 +92,7 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
       `codexRegionBySystem`, `organicRunStartedAt`, `fsdTarget`, `lastJumpTarget` — a warm boot
       left them empty where a cold one had them (plan 2.4, O-19).
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 26;
+export const JOURNAL_MERGE_CACHE_FORMAT = 27;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {

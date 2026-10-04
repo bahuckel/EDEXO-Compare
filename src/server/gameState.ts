@@ -36,7 +36,7 @@ import {
   speciesEntryMatchesOrganicLabel,
   normOrganicToken,
 } from "./organicTracking.js";
-import { barycentreSyntheticBodyId, directParentPlanetId, planetRingCount } from "./orbitUtils.js";
+import { barycentreSyntheticBodyId, moonPairBarycentreId, planetRingCount } from "./orbitUtils.js";
 import { scanRings } from "../shared/bodyFeatures.js";
 import { greenCodexId, isK10CodexName } from "../shared/greenGasGiant.js";
 import { isNspCodexName } from "../shared/nspOutlook.js";
@@ -352,7 +352,13 @@ function organicLockGenusKey(lock: OrganicGenusLock): string {
   return `${s}\0${l}`;
 }
 
-/** All moons of the same planet as `sourceBodyId` (excludes self), using merged `Scan` parents and/or orbit map. */
+/**
+ * The moon that shares a barycentre with `sourceBodyId` (excludes self), using merged `Scan` parents
+ * and/or the orbit map. Until 2026-10-04 every moon of the same planet counted; the owner (overnight
+ * Q13): only twins on a barycentre share their biology. Spansh, DSS'd pairs: moons of one planet
+ * name the same genera on 39 % of 534,018 pairs (83 % at the same signal count); twins on one
+ * barycentre on 95 % at the same count, and at different counts one list holds the other.
+ */
 const EMPTY_ORBIT_PARENTS: ReadonlyMap<number, number> = new Map();
 
 function siblingMoonBodyIdsUnified(
@@ -362,14 +368,14 @@ function siblingMoonBodyIdsUnified(
 ): number[] {
   const sk = bodyKey(systemAddress, sourceBodyId);
   const sourceRec = store.explorationScans.get(sk);
-  const parentFromRec = sourceRec ? directParentPlanetId(sourceRec.parents) : null;
+  const parentFromRec = sourceRec ? moonPairBarycentreId(sourceRec.parents) : null;
   const parentFromOrbit = store.orbitParentPlanetByBody.get(sk);
   const parent = parentFromRec ?? parentFromOrbit ?? null;
   if (parent == null) return [];
 
   const out = new Set<number>();
   for (const rec of store.liveScansInSystem(systemAddress)) {
-    if (directParentPlanetId(rec.parents) === parent) out.add(rec.bodyId);
+    if (moonPairBarycentreId(rec.parents) === parent) out.add(rec.bodyId);
   }
   for (const [bid, p] of store.orbitParentsInSystem(systemAddress)) {
     if (p === parent) out.add(bid);
@@ -551,8 +557,9 @@ export class GameStateStore {
   /** `SAAScanComplete`: `ProbesUsed` <= `EfficiencyTarget` — optional tail multiplier on mapped estimate. */
   readonly dssMappingEfficientByBodyKey = new Map<string, boolean>();
   /**
-   * Moons of a gas giant: maps `systemAddress:bodyId` → parent **planet** bodyId from journal `Parents`.
-   * Lets FSS/DSS propagate before every moon has a full merged `Scan` row.
+   * Twin moons: maps `systemAddress:bodyId` → the **barycentre** it shares with its twin, from journal
+   * `Parents` (`moonPairBarycentreId`; the parent planet until 2026-10-04, hence the name). Lets FSS/DSS
+   * propagate before both moons have a full merged `Scan` row.
    */
   readonly orbitParentPlanetByBody = new Map<string, number>();
   lastEventIso: string | null = null;
@@ -2078,7 +2085,8 @@ export class GameStateStore {
     const wasSold = this.soldExplorationScans.delete(k);
     this.patchScanIndex(fresh, wasSold ? [{ kind: "live", rec }, { kind: "sold", rec, drop: true }] : [{ kind: "live", rec }]);
 
-    const moonOf = directParentPlanetId(rec.parents);
+    // The barycentre a moon shares with its twin (the map's name is older than the rule).
+    const moonOf = moonPairBarycentreId(rec.parents);
     this.setOrbitParent(systemAddress, bodyId, moonOf);
 
     const inCurrentSystem = this.currentSystemAddress !== null && systemAddress === this.currentSystemAddress;

@@ -20,7 +20,7 @@ function moonScan(bodyId: number, name: string, materials: { Name: string; Perce
     ScanType: "Detailed",
     BodyName: name,
     BodyID: bodyId,
-    Parents: [{ Planet: 16 }, { Star: 0 }],
+    Parents: [{ Null: 17 }, { Planet: 16 }, { Star: 0 }],
     StarSystem: "Plio Aip NM-U d3-13",
     SystemAddress: SYS,
     PlanetClass: "Icy body",

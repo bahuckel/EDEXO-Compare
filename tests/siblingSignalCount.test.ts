@@ -24,7 +24,7 @@ import type { JournalLine } from "../src/shared/types.js";
 const SYS = 458177514787;
 const T = "2026-09-14T02:00:00Z";
 
-/** Two moons of planet 16, scanning alike enough for the propagation to consider them siblings. */
+/** Twin moons of planet 16 on barycentre 17, scanning alike enough for the propagation to consider them siblings. */
 function moonScan(bodyId: number, name: string, tempK: number): JournalLine {
   return {
     timestamp: T,
@@ -32,7 +32,7 @@ function moonScan(bodyId: number, name: string, tempK: number): JournalLine {
     ScanType: "Detailed",
     BodyName: name,
     BodyID: bodyId,
-    Parents: [{ Planet: 16 }, { Star: 0 }],
+    Parents: [{ Null: 17 }, { Planet: 16 }, { Star: 0 }],
     StarSystem: "Plio Aip NM-U d3-13",
     SystemAddress: SYS,
     PlanetClass: "Rocky body",
@@ -185,5 +185,28 @@ describe("a sibling's own signal count", () => {
     const hints = (body(20)?.genusHints ?? []).map((h) => h.Genus_Localised);
     expect(hints.length).toBeGreaterThan(0);
     expect(body(20)?.biologicalSignals).toBe(2);
+  });
+});
+
+/*
+  Owner, 2026-10-04 (overnight Q13): only twin moons on one barycentre share their biology. Moons that
+  orbit the planet each on their own are not twins: in the Spansh dump they name the same genera on a
+  third of DSS'd pairs. Until then 4 b's DSS gave 4 c its genera and its count.
+*/
+describe("moons of one planet that are not twins", () => {
+  it("share nothing", async () => {
+    const { GameStateStore } = await import("../src/server/gameState.js");
+    const s = new GameStateStore();
+    const own = (line: JournalLine) =>
+      ({ ...(line as object), Parents: [{ Planet: 16 }, { Star: 0 }] }) as unknown as JournalLine;
+    s.apply(jump);
+    s.apply(own(moonScan(18, "Plio Aip NM-U d3-13 4 b", 167.038818)));
+    s.apply(own(moonScan(20, "Plio Aip NM-U d3-13 4 c", 154.121689)));
+    s.apply(fssSignals(18, "Plio Aip NM-U d3-13 4 b", 3));
+    s.apply(saaSignals(18, "Plio Aip NM-U d3-13 4 b", 3, ["Bacterial", "Tubus", "Tussocks"]));
+    const four_c = [...s.bodies.values()].find((b) => b.bodyId === 20 && b.systemAddress === SYS);
+    expect(four_c?.biologicalSignals ?? null).toBeNull();
+    expect(four_c?.genusHints ?? []).toEqual([]);
+    expect(four_c?.dssComplete ?? false).toBe(false);
   });
 });
