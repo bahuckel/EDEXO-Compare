@@ -14,6 +14,13 @@ describe("every DSS genus label keeps its genus", () => {
     expect(ids("$Codex_Ent_Vents_Name;", "Amphora Plant")).toEqual(["amphora"]);
   });
 
+  it("Luteolum Anemone ($Codex_Ent_Sphere_Name;) keeps every Anemone", () => {
+    // What the game really prints after a DSS: the genus under its first species' name (owner,
+    // 2026-10-04, Weqaei FG-Y e4 2: no Anemone listed and an "Unknown Luteolum Anemone" card).
+    expect(new Set(ids("$Codex_Ent_Sphere_Name;", "Luteolum Anemone"))).toEqual(new Set(["anemone"]));
+    expect(ids("$Codex_Ent_Sphere_Name;", "Luteolum Anemone")).toHaveLength(8);
+  });
+
   it("the other non-genus-named organisms keep theirs", () => {
     expect(new Set(ids("$Codex_Ent_Sphere_Name;", "Anemone"))).toEqual(new Set(["anemone"]));
     expect(new Set(ids("$Codex_Ent_Cone_Name;", "Bark Mounds"))).toEqual(new Set(["bark-mound"]));

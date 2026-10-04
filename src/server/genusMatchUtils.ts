@@ -1,3 +1,4 @@
+import { genusNameForCodexToken } from "../shared/codexGenusNames.js";
 import type { GenusHint, SpeciesEntry } from "../shared/types.js";
 
 function genusFold(s: string): string {
@@ -41,7 +42,10 @@ export function filterByGenusHints(entries: SpeciesEntry[], hints: GenusHint[] |
   if (!hints || hints.length === 0) return entries;
   const hintKeys = new Set<string>();
   for (const h of hints) {
-    for (const raw of [h.Genus_Localised, h.Genus]) {
+    // The token's own genus name too: the game prints the Anemone genus (`$Codex_Ent_Sphere_Name;`)
+    // as "Luteolum Anemone", its first species, and neither folds onto "anemone" (owner, 2026-10-04:
+    // Weqaei FG-Y e4 2 showed "Unknown Luteolum Anemone" and no Anemone at all after the DSS).
+    for (const raw of [h.Genus_Localised, h.Genus, h.Genus ? genusNameForCodexToken(h.Genus) : null]) {
       if (!raw?.trim()) continue;
       for (const k of genusVariantKeys(raw)) hintKeys.add(k);
       const f = genusFold(raw);

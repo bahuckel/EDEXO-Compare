@@ -12,6 +12,7 @@
  * Species and colour ride along for the rows that know them. Pure, so the web app, the second
  * screen and the tests all read the same answer.
  */
+import { genusNameForCodexToken } from "./codexGenusNames.js";
 import type { GenusHint, OrganicGenusLock } from "./types.js";
 
 export type GenusProgressStatus = "dss" | "cs" | "seen" | "active" | "done";
@@ -42,6 +43,10 @@ const norm = (s: string | null | undefined): string => (s ?? "").trim().toLowerC
 
 /** "$Codex_Ent_Stratum_Genus_Name;" and "Stratum" both come down to "stratum". */
 function genusKeyOf(localised: string | null | undefined, symbol: string | null | undefined): string {
+  // The token's genus first: the game prints the Anemone genus as "Luteolum Anemone" after a DSS,
+  // and the DSS row and the sampled one must land on one key whatever each event calls it.
+  const named = genusNameForCodexToken(symbol ?? "");
+  if (named) return norm(named);
   const l = norm(localised);
   if (l) return l;
   const m = /codex_ent_([a-z]+)_genus/i.exec(symbol ?? "");
@@ -97,7 +102,7 @@ export function bodyGenusProgress(
     const key = genusKeyOf(h.Genus_Localised, h.Genus);
     if (!key || byGenus.has(key)) continue;
     const row: GenusProgressRow = {
-      genus: (h.Genus_Localised || "").trim() || key,
+      genus: genusNameForCodexToken(h.Genus ?? "") || (h.Genus_Localised || "").trim() || key,
       species: null,
       variant: null,
       status: "dss",

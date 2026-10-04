@@ -124,6 +124,17 @@ describe("genus rows and their tags", () => {
     expect(genusProgressTag(rows[0]!)).toBe("[2/3]");
   });
 
+  it("the Anemone the DSS calls Luteolum is one row with the one sampled", () => {
+    // The game prints the Anemone genus as "Luteolum Anemone" after a DSS (owner, 2026-10-04).
+    const rows = bodyGenusProgress(
+      [{ Genus: "$Codex_Ent_Sphere_Name;", Genus_Localised: "Luteolum Anemone" } as GenusHint],
+      [footLock("Anemone", "Rubeum Bioluminescent", { genusSymbol: "$Codex_Ent_Sphere_Name;", samples: 1 })],
+      null,
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ genus: "Anemone", status: "seen" });
+  });
+
   it("a genus scanned without a DSS still gets a row", () => {
     const rows = bodyGenusProgress(null, [footLock("Stratum", "Limaxus", { samples: 1 })], null);
     expect(rows).toHaveLength(1);
