@@ -236,6 +236,30 @@ describe("the stack", () => {
     expect(changes).toBeGreaterThan(0);
   });
 
+  /*
+    Owner, 2026-10-04: on a 125 % screen every panel is a quarter taller, the stack ran past the bottom
+    and the windows there were pushed up over the ones above. Past the screen's height it goes on in a
+    second column, inwards.
+  */
+  it("a stack taller than the screen goes on in a second column instead of overlapping", async () => {
+    const huds = make();
+    await huds.request("/fss-scan-overlay.html", 404, 500, null, "open");
+    await huds.request("/distance-overlay.html", 404, 500, null, "open");
+    await huds.request("/hud-overlay.html", 404, 500, null, "open");
+    const [a, b, c] = live();
+    const right = 1920 - 14 - 404;
+    expect(a!.bounds).toMatchObject({ x: right, y: 14 });
+    expect(b!.bounds).toMatchObject({ x: right, y: 14 + 500 + 6 });
+    expect(c!.bounds).toMatchObject({ x: right - 404 - 6, y: 14 });
+    huds.setLayout({ corner: "bl" });
+    expect(a!.bounds).toMatchObject({ x: 14, y: 1080 - 14 - 500 });
+    expect(c!.bounds).toMatchObject({ x: 14 + 404 + 6, y: 1080 - 14 - 500 });
+    huds.setLayout({ freeOn: true, free: { x: 100, y: 300 } });
+    // Free: each column as high as it fits, the second to the right of the first.
+    expect(a!.bounds).toMatchObject({ x: 100, y: 1080 - 1006 });
+    expect(c!.bounds).toMatchObject({ x: 100 + 410, y: 300 });
+  });
+
   it("follows the chosen corner and order, and keeps the column on screen", async () => {
     const huds = make();
     await huds.request("/fss-scan-overlay.html", 404, 120, null, "open");

@@ -609,6 +609,59 @@ function createHudWindows(deps) {
     return Math.max(rect.height, actual);
   }
 
+  /*
+    A stack taller than its screen goes on in a second column beside the first (owner, 2026-10-04: on a
+    125 % screen every panel is a quarter taller, the stack ran past the bottom and the windows down
+    there were pushed up over the ones above). Each column holds what fits in `room`; a window taller
+    than that gets a column to itself. Returns the indexes, column by column.
+  */
+  function splitIntoColumns(heights, room) {
+    const cols = [];
+    let col = [];
+    let used = 0;
+    heights.forEach((h, i) => {
+      if (h == null) return;
+      const need = (col.length ? HUD_STACK_GAP : 0) + h;
+      if (col.length && used + need > room) {
+        cols.push(col);
+        col = [];
+        used = 0;
+      }
+      used += (col.length ? HUD_STACK_GAP : 0) + h;
+      col.push(i);
+    });
+    if (col.length) cols.push(col);
+    return cols;
+  }
+  /** The x of column `c`: the next one goes inwards, away from the screen edge it started at. */
+  function columnX(x0, c, w, area, leftwards) {
+    const step = (w + HUD_STACK_GAP) * c * (leftwards ? -1 : 1);
+    return Math.max(area.x, Math.min(x0 + step, area.x + area.width - w));
+  }
+  let lastPlacementLog = "";
+  /** One hud-events.log line per new arrangement: the screen, its scaling, and each window asked vs got. */
+  function logPlacement(area, ordered) {
+    let scale = "?";
+    try {
+      const d = screen.getDisplayNearestPoint({ x: area.x + 1, y: area.y + 1 });
+      if (d && d.scaleFactor) scale = d.scaleFactor;
+    } catch {
+      /* the log is a bystander */
+    }
+    const parts = ordered.map((s) => {
+      try {
+        const b = s.win.getBounds();
+        return `${slotName(s.win)} ${b.x},${b.y} ${b.width}x${b.height} (asked h ${slotHeight(s)})`;
+      } catch {
+        return "?";
+      }
+    });
+    const line = `layout on ${area.x},${area.y} ${area.width}x${area.height} @${scale}: ${parts.join(" | ")}`;
+    if (line === lastPlacementLog) return;
+    lastPlacementLog = line;
+    hudLog(line);
+  }
+
   function orderedStack() {
     hudOverlayStack = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
     const rank = (s) => {
@@ -659,21 +712,25 @@ function createHudWindows(deps) {
       const h = slotHeight(s);
       return h == null ? null : Math.min(h, area.height);
     });
-    const total = sizes.reduce((a, h) => a + (h ?? 0), 0) + HUD_STACK_GAP * Math.max(0, ordered.length - 1);
     const fit = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-    const x = fit(f.x, area.x, Math.max(area.x, area.x + area.width - w));
-    let y = fit(f.bottom ? f.y - total : f.y, area.y, Math.max(area.y, area.y + area.height - total));
-    ordered.forEach((slot, i) => {
-      const h = sizes[i];
-      if (h == null) return;
-      let used = h;
-      try {
-        used = placeWindow(slot.win, { x, y, width: w, height: h });
-      } catch {
-        /* ignore */
+    const x0 = fit(f.x, area.x, Math.max(area.x, area.x + area.width - w));
+    // A second column goes right, unless there is no room for it there.
+    const leftwards = x0 + 2 * w + HUD_STACK_GAP > area.x + area.width;
+    splitIntoColumns(sizes, area.height).forEach((col, c) => {
+      const total = col.reduce((a, i) => a + sizes[i], 0) + HUD_STACK_GAP * Math.max(0, col.length - 1);
+      const x = columnX(x0, c, w, area, leftwards);
+      let y = fit(f.bottom ? f.y - total : f.y, area.y, Math.max(area.y, area.y + area.height - total));
+      for (const i of col) {
+        let used = sizes[i];
+        try {
+          used = placeWindow(ordered[i].win, { x, y, width: w, height: sizes[i] });
+        } catch {
+          /* ignore */
+        }
+        y += used + HUD_STACK_GAP;
       }
-      y += used + HUD_STACK_GAP;
     });
+    if (!drag) logPlacement(area, ordered);
   }
 
   /**
@@ -807,7 +864,6 @@ function createHudWindows(deps) {
     const atBottom = hudLayout.corner.startsWith("b");
     const atRight = hudLayout.corner.endsWith("r");
     const x = atRight ? Math.floor(wa.x + wa.width - margin - w) : wa.x + margin;
-    let y = atBottom ? wa.y + wa.height - margin : wa.y + margin;
     /*
       Clamped into the work area, always.
 
@@ -817,24 +873,32 @@ function createHudWindows(deps) {
       shrank under it, which is the failure this clamp exists for: see the display listener below.
     */
     const fit = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-    for (const slot of ordered) {
-      const full = slotHeight(slot);
-      if (full == null) continue;
-      const h = Math.min(full, wa.height);
-      if (atBottom) y -= h;
-      let used = h;
-      try {
-        used = placeWindow(slot.win, {
-          x: fit(x, wa.x, Math.max(wa.x, wa.x + wa.width - w)),
-          y: fit(y, wa.y, Math.max(wa.y, wa.y + wa.height - h)),
-          width: w,
-          height: h,
-        });
-      } catch {
-        /* ignore */
+    const sizes = ordered.map((s) => {
+      const full = slotHeight(s);
+      return full == null ? null : Math.min(full, wa.height);
+    });
+    const x0 = fit(x, wa.x, Math.max(wa.x, wa.x + wa.width - w));
+    splitIntoColumns(sizes, wa.height - 2 * margin).forEach((col, c) => {
+      const cx = columnX(x0, c, w, wa, atRight);
+      let y = atBottom ? wa.y + wa.height - margin : wa.y + margin;
+      for (const i of col) {
+        const h = sizes[i];
+        if (atBottom) y -= h;
+        let used = h;
+        try {
+          used = placeWindow(ordered[i].win, {
+            x: cx,
+            y: fit(y, wa.y, Math.max(wa.y, wa.y + wa.height - h)),
+            width: w,
+            height: h,
+          });
+        } catch {
+          /* ignore */
+        }
+        y = atBottom ? y - HUD_STACK_GAP : y + used + HUD_STACK_GAP;
       }
-      y = atBottom ? y - HUD_STACK_GAP : y + used + HUD_STACK_GAP;
-    }
+    });
+    logPlacement(wa, ordered);
   }
 
   /**
