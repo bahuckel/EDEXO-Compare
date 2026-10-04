@@ -1537,11 +1537,65 @@ export class GalaxyEngine {
     r.setRenderTarget(null);
     r.setClearColor(0x05040a, 1);
     r.render(this.composite.scene, this.composite.camera);
+    this.updateEasterEgg();
     r.render(this.overlay, this.camera);
     this.stats.frames++;
     this.stats.lastFrameMs = Math.round((performance.now() - t0) * 10) / 10;
     this.projectGroups();
     this.emitLabels();
+  }
+
+  /*
+    An easter egg (owner, 2026-10-04): "Powered by EDAstro", written in the dark above the disc between
+    Sol and the core. It fades in only when the camera is near Sol, looking at Sagittarius A* across
+    the disc at a grazing angle — the view a commander gets lying the map nearly flat towards the
+    core — and is gone from every other view. The galaxy index this map draws is built from EDAstro's
+    codex data.
+  */
+  private egg: THREE.Mesh | null = null;
+  private updateEasterEgg(): void {
+    const cam = this.camera.position;
+    const nearSol = cam.length() < 4_000;
+    const polar = this.controls.getPolarAngle();
+    let f = 0;
+    if (nearSol && polar > Math.PI * 0.43) {
+      const look = this.controls.target.clone().sub(cam).normalize();
+      const toCore = CORE.clone().sub(cam).normalize();
+      const along = look.dot(toCore);
+      if (along > 0.96) f = Math.min(1, (along - 0.96) / 0.03) * Math.min(1, (polar - Math.PI * 0.43) / (Math.PI * 0.03));
+    }
+    if (f <= 0.01) {
+      if (this.egg) this.egg.visible = false;
+      return;
+    }
+    if (!this.egg) {
+      const c = document.createElement("canvas");
+      c.width = 2048;
+      c.height = 256;
+      const g = c.getContext("2d")!;
+      g.font = "600 120px Bahnschrift, 'Segoe UI', sans-serif";
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.shadowColor = "rgba(255, 150, 60, 0.9)";
+      g.shadowBlur = 28;
+      g.fillStyle = "rgba(255, 214, 170, 0.95)";
+      g.fillText("Powered by EDAstro", 1024, 128);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false, opacity: 0 });
+      this.egg = new THREE.Mesh(new THREE.PlaneGeometry(5_200, 650), mat);
+      // Galaxy (x, y, z) → world (x, y, -z): 9,000 ly towards the core, 2,200 ly above the plane, facing Sol.
+      this.egg.position.set(12, 2_200, -9_000);
+      this.egg.renderOrder = 10;
+      this.overlay.add(this.egg);
+    }
+    this.egg.visible = true;
+    (this.egg.material as THREE.MeshBasicMaterial).opacity = 0.8 * f;
+  }
+
+  debugEgg(): { visible: boolean; opacity: number } {
+    const m = this.egg;
+    return { visible: !!m?.visible, opacity: m ? Math.round((m.material as THREE.MeshBasicMaterial).opacity * 100) / 100 : 0 };
   }
 
   private emitLabels(): void {
@@ -1704,6 +1758,12 @@ export class GalaxyEngine {
 
   dispose(): void {
     this.disposed = true;
+    if (this.egg) {
+      const mat = this.egg.material as THREE.MeshBasicMaterial;
+      mat.map?.dispose();
+      mat.dispose();
+      this.egg.geometry.dispose();
+    }
     cancelAnimationFrame(this.raf);
     const el = this.renderer.domElement;
     el.removeEventListener("pointerdown", this.onPointerDown);
