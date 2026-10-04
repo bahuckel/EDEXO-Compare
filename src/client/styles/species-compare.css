@@ -472,7 +472,7 @@
 .species-similarity-index-pct {
   font-variant-numeric: tabular-nums;
   font-weight: 500;
-  color: rgba(210, 240, 255, 1);
+  color: var(--accent-bright);
   text-transform: none;
   letter-spacing: 0.02em;
 }
@@ -484,34 +484,27 @@
 .species-similarity-index-bar {
   height: 6px;
   border-radius: var(--r-xs);
-  background: rgba(30, 70, 120, 0.45);
+  background: rgba(var(--accent-rgb), 0.12);
   overflow: hidden;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
+/*
+  The chance in the accent, dim to bright (plan V6, 2026-10-04): cyan is the app's "confirmed / mapped"
+  (DSS ✓, landable, analysed), and a probability drawn in it read as one more confirmation.
+*/
 .species-similarity-index-fill {
   height: 100%;
   border-radius: var(--r-xs);
-  background: linear-gradient(
-    90deg,
-    rgba(55, 130, 255, 0.88) 0%,
-    rgba(130, 200, 255, 0.95) 50%,
-    rgba(75, 155, 255, 0.9) 100%
-  );
-  box-shadow: 0 0 10px rgba(100, 180, 255, 0.35);
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.45) 0%, var(--accent) 60%, var(--accent-bright) 100%);
+  box-shadow: 0 0 8px var(--accent-glow);
   transition: width 0.25s ease;
 }
 
-/** Similarity bar: warm at low %, cool at high % (single track — no separate spawn-share row). */
+/** Similarity bar: the same accent ramp, dim at low %, bright at high % (single track). */
 .species-similarity-index-fill--graded {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 200, 85, 0.95) 0%,
-    rgba(255, 220, 140, 0.75) 22%,
-    rgba(120, 190, 255, 0.92) 70%,
-    rgba(60, 130, 255, 0.95) 100%
-  );
-  box-shadow: 0 0 10px rgba(100, 180, 255, 0.3);
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.35) 0%, var(--accent) 65%, var(--accent-bright) 100%);
+  box-shadow: 0 0 8px var(--accent-glow);
 }
 
 .species-similarity-index--clickable {

@@ -151,7 +151,6 @@ export function SpeciesExomasterySimilarityContent({ m }: { m: BodyComputed["mat
       help: EXO_PRESENCE_HELP,
       pct: Math.max(0, Math.min(100, presence)),
       barOpacity: 1,
-      barExtraStyle: { filter: "hue-rotate(-35deg)" },
     });
   if (cols.length === 0) {
     return (
