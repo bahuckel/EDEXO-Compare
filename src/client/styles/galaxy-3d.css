@@ -159,6 +159,16 @@
   flex-direction: column;
   gap: 2px;
 }
+.g3d-menu__sub {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.g3d-menu__section--first {
+  padding-top: 0;
+  border-top: 0;
+}
 .g3d-menu__section {
   display: flex;
   flex-direction: column;

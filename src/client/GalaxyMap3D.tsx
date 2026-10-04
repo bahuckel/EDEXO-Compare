@@ -1009,6 +1009,32 @@ export function GalaxyMap3D() {
       {drawer === "targets" ? (
         <aside className="g3d-drawer g3d-menu g3d-plan" aria-label="Targets" data-testid="g3d-targets">
           <MenuHead title="Biology targets" help={G3D_HELP.targets} />
+          {/* Your own systems still waiting (owner, 2026-10-04: here, not over the map all the time). */}
+          <div className="g3d-menu__section g3d-menu__section--first" data-testid="g3d-nearest">
+            <Tooltip text="Of your own systems with biology still to sample, the nearest one worth at least the Waiting floor (Layers)">
+              <span className="g3d-menu__sub">Your nearest waiting{waitMinM ? ` ≥ ${waitMinM}M` : ""}</span>
+            </Tooltip>
+            {nearest ? (
+              <div className="g3d-target">
+                <span>
+                  <strong>{nearest.row.name}</strong> · {fmtLy(nearest.ly)} · at least {crShort(nearest.row.unfinishedFloorCr)}
+                </span>
+                <CopySystemButton system={nearest.row.name} />
+                <button
+                  type="button"
+                  className="g3d-btn"
+                  onClick={() =>
+                    go(nearest.row, 400, { kind: "marker", layer: "you", id: String(nearest.row.addr), x: nearest.row.x, y: nearest.row.y, z: nearest.row.z })
+                  }
+                >
+                  Show
+                </button>
+              </div>
+            ) : (
+              <p className="g3d-panel__note">None of yours waiting{waitMinM ? ` at ${waitMinM}M or more` : ""}.</p>
+            )}
+          </div>
+          <span className="g3d-menu__sub">Recorded by others</span>
           <MenuRow label="Worth ≥" hint="Only systems whose recorded species add up to at least this (1×)">
             <input
               type="range"
@@ -1259,25 +1285,6 @@ export function GalaxyMap3D() {
           </ul>
           {codexRegions ? <p className="g3d-panel__note">{codexRegions.source}</p> : null}
         </aside>
-      ) : null}
-
-      {nearest && layers.you && !selection && drawer === "none" ? (
-        <div className="g3d-banner" data-testid="g3d-nearest">
-          <span>
-            Nearest waiting{waitMinM ? ` ≥ ${waitMinM}M` : ""}: <strong>{nearest.row.name}</strong> ·{" "}
-            {fmtLy(nearest.ly)} · at least {crShort(nearest.row.unfinishedFloorCr)}
-          </span>
-          <CopySystemButton system={nearest.row.name} />
-          <button
-            type="button"
-            className="g3d-btn"
-            onClick={() =>
-              go(nearest.row, 400, { kind: "marker", layer: "you", id: String(nearest.row.addr), x: nearest.row.x, y: nearest.row.y, z: nearest.row.z })
-            }
-          >
-            Show
-          </button>
-        </div>
       ) : null}
 
       <header className="g3d-bar" ref={barRef}>
