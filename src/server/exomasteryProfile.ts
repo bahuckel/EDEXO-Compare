@@ -62,6 +62,7 @@ import {
   relativePercentDisplay,
 } from "./exomasteryFormat.js";
 import { inferHostSpectralCohortMode } from "./exomasteryOtherMatch.js";
+import { stripAtmosphereDensity } from "../shared/atmosphereText.js";
 export { exomasteryOtherMatchCardDeckScore, buildOtherMatchDetailCards } from "./exomasteryOtherMatch.js";
 export {
   formatPathLabel,
@@ -491,10 +492,7 @@ function normalizeAtmosphereCompareKey(path: string, val: string): string {
   if (!path.toLowerCase().includes("atmosphere") || path.toLowerCase().includes("composition")) {
     return normalizeCategoricalValueForCompare(path, val).toLowerCase().trim();
   }
-  let t = normalizeCategoricalValueForCompare(path, val).toLowerCase().trim();
-  t = t.replace(/^hot\s+/, "");
-  t = t.replace(/^thin\s+/, "");
-  t = t.replace(/^thick\s+/, "");
+  let t = stripAtmosphereDensity(normalizeCategoricalValueForCompare(path, val).toLowerCase().trim());
   t = t.replace(/\s+atmosphere$/, "");
   t = t.replace(/\bco2\b/g, "carbon dioxide");
   t = t.trim();

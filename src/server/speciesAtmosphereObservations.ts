@@ -26,6 +26,7 @@ import { atmosphereCompositionKey } from "../shared/scanAtmosphereMatch.js";
 import { loadExomasteryProfile } from "./exomasteryProfile.js";
 import { getProjectRoot } from "./paths.js";
 import { observationFloor } from "./observationFloors.js";
+import { isNoAtmosphereText, stripAtmosphereDensity } from "../shared/atmosphereText.js";
 
 const ATMOSPHERE_PATH = "body.atmosphereType";
 
@@ -85,16 +86,10 @@ export const MIN_ATMOSPHERE_OBSERVATIONS = observationFloor("ATMOSPHERE", 10);
  * vacuum becomes {@link NO_ATMOSPHERE}.
  */
 export function atmosphereObservationKey(value: string | null | undefined): string {
-  let t = (value ?? "").trim().toLowerCase().replace(/_/g, " ");
-  if (!t) return NO_ATMOSPHERE;
-  if (t === "none" || t.includes("no atmosphere")) return NO_ATMOSPHERE;
+  const t = (value ?? "").trim().toLowerCase().replace(/_/g, " ");
+  if (!t || isNoAtmosphereText(t)) return NO_ATMOSPHERE;
   // The corpus prefixes the pressure and the heat onto the composition; both are other questions.
-  let prev = "";
-  while (prev !== t) {
-    prev = t;
-    t = t.replace(/^(hot|thin|thick)\s+/, "").trim();
-  }
-  return atmosphereCompositionKey(t);
+  return atmosphereCompositionKey(stripAtmosphereDensity(t));
 }
 
 export interface AtmosphereObservation {

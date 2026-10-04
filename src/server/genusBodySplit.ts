@@ -38,6 +38,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { PlanetScan, SpeciesMatch } from "../shared/types.js";
 import { codexGalaxySystems, codexRegionSystems } from "./speciesRarityData.js";
+import { atmosphereTypeWords } from "../shared/atmosphereText.js";
 
 interface SpeciesCounts {
   n: number;
@@ -113,10 +114,8 @@ export function atmosphereKey(a: string | null | undefined): string {
   const s = (a ?? "").trim();
   if (!s || /^(none|no atmosphere)$/i.test(s)) return "none";
   if (!/\s/.test(s)) {
-    const rich = /Rich$/.test(s) && s !== "Rich";
-    const base = rich ? s.slice(0, -4) : s;
-    const words = base.split(/(?<=[a-z])(?=[A-Z])/).map((w) => w.toLowerCase());
-    return (words.join(" ") + (rich ? "-rich" : "")).trim() || "none";
+    const { words, rich } = atmosphereTypeWords(s);
+    return (words.map((w) => w.toLowerCase()).join(" ") + (rich ? "-rich" : "")).trim() || "none";
   }
   const words = s
     .toLowerCase()

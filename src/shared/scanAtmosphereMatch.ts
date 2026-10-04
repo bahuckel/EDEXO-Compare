@@ -1,4 +1,5 @@
 import type { PlanetScan } from "./types.js";
+import { isNoAtmosphereText, stripAtmosphereDensity } from "./atmosphereText.js";
 
 /**
  * Codex prose like “Any thin atmosphere” or genus notes “Thin atmosphere (required for all species)”.
@@ -35,14 +36,11 @@ export function atmosphereAllowlistMeansAnyThinCompositionOnly(allowed: string[]
  * Strips a leading Thin/Thick prefix so composition matches codex gas tokens (e.g. SulphurDioxide).
  */
 export function normalizeScanAtmosphereForMatch(scan: PlanetScan): string {
-  let t = (scan.AtmosphereType ?? "").trim();
-  if (!t) return "";
-  const lo = t.toLowerCase().replace(/_/g, " ");
-  if (lo === "none" || lo.includes("no atmosphere")) return "";
+  const t = (scan.AtmosphereType ?? "").trim();
+  if (!t || isNoAtmosphereText(t)) return "";
   // Spansh and EDSM write the density into the type — `Hot thin Sulphur dioxide` — where the journal
   // keeps it in `Atmosphere`. Every leading density word goes, `hot` included, in any order.
-  t = t.replace(/^(?:(?:hot|thin|thick)\s+)+/i, "").trim();
-  return t;
+  return stripAtmosphereDensity(t);
 }
 
 /**

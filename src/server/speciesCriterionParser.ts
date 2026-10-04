@@ -4,6 +4,7 @@
 import { isCodexAnyThinAtmospherePhrase } from "../shared/scanAtmosphereMatch.js";
 import { JOURNAL_PLANET_CLASS, planetClassId } from "../shared/normalise/planetClass.js";
 import type { SpeciesCriterion } from "../shared/types.js";
+import { isNoAtmosphereText } from "../shared/atmosphereText.js";
 
 export function asRecord(v: unknown): Record<string, unknown> | null {
   return v !== null && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
@@ -52,13 +53,7 @@ export function normalizeAtmosphereToJournal(labels: string[]): string[] {
     const s = raw.trim();
     if (!s) continue;
     const lo = s.toLowerCase().replace(/_/g, " ");
-    if (
-      lo === "none" ||
-      lo === "vacuum" ||
-      lo === "airless" ||
-      lo.includes("no atmosphere") ||
-      lo === "no atmosphere"
-    ) {
+    if (isNoAtmosphereText(lo) || lo === "vacuum" || lo === "airless") {
       out.push("");
       continue;
     }
