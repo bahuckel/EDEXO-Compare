@@ -867,7 +867,26 @@ test("streamer view: the app with nothing to click", async ({ page }) => {
   await expect(page.locator(".appbar-actions")).toBeHidden();
   await expect(page.locator(".snapshot-btn").first()).toBeHidden();
   expect(await page.evaluate(() => getComputedStyle(document.querySelector(".app-shell")!).pointerEvents)).toBe("none");
+  // Nothing a viewer needs: the legal footer and the Live / FDev dots.
+  await expect(page.locator(".app-legal-footer")).toBeHidden();
+  await expect(page.locator(".appbar-status").first()).toBeHidden();
   await page.screenshot({ path: `${OUT}/streamer-view.png` });
+  expect(errors).toEqual([]);
+});
+
+test("streamer view: the link's options hide the name, scale the page, drop the backdrop", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/?view=stream&cmdr=0&zoom=1.25&bg=transparent");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator("html")).toHaveAttribute("data-streamer-cmdr", "0");
+  await expect(page.locator(".appbar-cmdr")).toBeHidden();
+  const look = await page.evaluate(() => ({
+    zoom: getComputedStyle(document.documentElement).zoom,
+    bg: getComputedStyle(document.body).backgroundColor,
+    backdrop: getComputedStyle(document.body, "::before").display,
+  }));
+  expect(look).toEqual({ zoom: "1.25", bg: "rgba(0, 0, 0, 0)", backdrop: "none" });
+  await page.screenshot({ path: `${OUT}/streamer-view-options.png` });
   expect(errors).toEqual([]);
 });
 

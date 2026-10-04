@@ -27,7 +27,26 @@ html[data-streamer] .candidate-species-compact-toggle,
 html[data-streamer] .candidate-species-bacterium-toggle,
 html[data-streamer] .candidate-species-evidence-toggle,
 html[data-streamer] .candidate-species-codex-toggle,
-html[data-streamer] .candidate-species-unlikely-toggle {
+html[data-streamer] .candidate-species-unlikely-toggle,
+html[data-streamer] .why-chance__toggle,
+html[data-streamer] .appbar-status,
+html[data-streamer] .app-legal-footer {
+  display: none !important;
+}
+
+/* `&cmdr=0`: the commander name stays off stream. */
+html[data-streamer-cmdr="0"] .appbar-cmdr {
+  display: none !important;
+}
+
+/* `&bg=transparent`: no backdrop or hex grid, so the app sits over the game in OBS. */
+html[data-streamer-bg="transparent"],
+html[data-streamer-bg="transparent"] body {
+  background: transparent !important;
+}
+
+html[data-streamer-bg="transparent"] body::before,
+html[data-streamer-bg="transparent"] .hex-signals {
   display: none !important;
 }
 

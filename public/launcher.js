@@ -1482,7 +1482,8 @@
       launcherActionMsg.className = "msg-launcher";
       launcherActionMsg.textContent =
         (copied ? "Copied: " : "Streamer view: ") + url +
-        " — in OBS add a Browser source with this URL (1280×800 or larger). It follows the game and your body-tab keys.";
+        " — in OBS add a Browser source with this URL (1280×800 or larger). It follows the game and your body-tab keys." +
+        " Add &cmdr=0 to hide your name, &zoom=1.25 to scale it, &bg=transparent to drop the backdrop.";
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(function () { say(true); }, function () { say(false); });
