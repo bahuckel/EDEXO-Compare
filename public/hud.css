@@ -729,6 +729,18 @@ body {
   stroke-width: 1;
   stroke-dasharray: 5 3;
 }
+/* A sample's own ring (owner, 2026-10-04): the next sample of its species goes outside it. */
+.minimap-sample-ring {
+  fill: rgba(80, 220, 140, 0.07);
+  stroke: var(--bio);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+/* A species left part-sampled: its colour, fainter. */
+.minimap-sample-ring--left {
+  fill: none;
+  opacity: 0.55;
+}
 /* The sweep lives in the static layer and is never rebuilt, so its rotation stays continuous. */
 .minimap-sweep {
   fill: url(#hudSweepGrad);

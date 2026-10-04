@@ -90,6 +90,12 @@ export interface ExoMinimapMarkDTO {
   /** Straight-line surface distance, metres — what the label shows for an off-map arrow. */
   distanceM: number;
   label: string;
+  /**
+   * A sample's genus sample distance, metres: the radar rings the mark with it (owner, 2026-10-04:
+   * "a circle around each of the dots … so the user will not enter that circle"). Absent for the ship
+   * and for a species whose distance is not known.
+   */
+  ringM?: number;
 }
 
 /** One system seen in merged journals (for browse / search). */

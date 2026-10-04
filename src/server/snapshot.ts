@@ -88,6 +88,7 @@ import {
 } from "./exomasteryProfile.js";
 import {
   clearExoOrganicGenusMinDistCache,
+  setExoOrganicSpeciesDb,
   buildExoMinimapDto,
   buildExoOrganicOverlayDto,
 } from "./exoOrganicTracker.js";
@@ -262,6 +263,7 @@ export function loadSpeciesDatabase(): SpeciesDatabase {
   const root = getProjectRoot();
   clearExoOrganicGenusMinDistCache();
   cachedDb = withRarity(loadSpeciesDatabaseFromTree(root), root);
+  setExoOrganicSpeciesDb(cachedDb);
   // The foot catalog keeps its own copy of the tree; a reload has to reach it too.
   clearFootCatalogSpeciesDb();
   speciesDataGeneration += 1;
@@ -302,6 +304,7 @@ export function buildEncyclopediaPayload(): EncyclopediaSpeciesRowDTO[] {
   const root = getProjectRoot();
   if (!cachedDb.species.length) {
     cachedDb = withRarity(loadSpeciesDatabaseFromTree(root), root);
+    setExoOrganicSpeciesDb(cachedDb);
   }
   if (encyclopediaCache?.db === cachedDb) return encyclopediaCache.rows;
   const rows = buildEncyclopediaRows(root);
@@ -354,6 +357,7 @@ export function findSpeciesEntryForEncyclopedia(
   if (!speciesEntryId) return null;
   if (!cachedDb.species.length) {
     cachedDb = loadSpeciesDatabaseFromTree(getProjectRoot());
+    setExoOrganicSpeciesDb(cachedDb);
   }
   return cachedDb.species.find((e) => e.genusDataDir === genusDataDir && e.id === speciesEntryId) ?? null;
 }

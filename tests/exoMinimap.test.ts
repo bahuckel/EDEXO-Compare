@@ -23,6 +23,7 @@ import {
 } from "../src/server/exoOrganicTracker.js";
 import type { PriceIndex } from "../src/server/priceList.js";
 import { normStatusBodyName } from "../src/server/organicSampleSessionFile.js";
+import { getCachedSpeciesDatabase, loadSpeciesDatabase } from "../src/server/snapshot.js";
 
 /** A body about the size of a small moon, so a degree is a round-ish number of metres. */
 const RADIUS_M = 1_000_000;
@@ -161,6 +162,27 @@ describe("the minimap payload", () => {
     const mm = build(host())!.minimap!;
     expect(mm.minSampleDistanceM).toBe(500);
     expect(mm.radiusM).toBe(500);
+  });
+
+  /*
+    Owner, 2026-10-04: a ring round each sample dot, its genus's sample distance, so he does not
+    sample inside it. The run's marks use the run's distance; a species left part-sampled uses its own.
+  */
+  it("gives every sample mark its ring: the run's distance, or the leftover species' own", () => {
+    loadSpeciesDatabase();
+    const stratum = getCachedSpeciesDatabase().species.find((e) => e.displayName.toLowerCase() === "stratum tectonicas")!;
+    const mm = build(
+      host({
+        marks: [mark(0.001, 0, "Bacterium Aurasus"), mark(0, 0.001, "Stratum Tectonicas")],
+        ship: mark(0.002, 0, "Your ship"),
+      }),
+    )!.minimap!;
+    const by = (label: string) => mm.marks.find((m) => m.label === label)!;
+    expect(by("Bacterium Aurasus")).toMatchObject({ active: true, ringM: 500 });
+    expect(by("Stratum Tectonicas").active).toBe(false);
+    expect(by("Stratum Tectonicas").ringM).toBe(stratum.genusMinSampleDistanceM);
+    expect(stratum.genusMinSampleDistanceM).toBeGreaterThan(0);
+    expect(mm.marks.find((m) => m.kind === "ship")!.ringM).toBeUndefined();
   });
 
   it("passes the heading through, and null when the game is not reporting one", () => {

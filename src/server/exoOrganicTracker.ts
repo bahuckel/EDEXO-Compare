@@ -25,6 +25,7 @@ import {
 } from "./organicSampleSessionFile.js";
 import { getProjectRoot, getSpeciesDataDir } from "./paths.js";
 import { readGenusMinSampleDistanceM } from "./speciesTreeLoader.js";
+import { gameOrderSpeciesName } from "../shared/codexLog.js";
 
 export type ExoOrganicAnchors = { latDeg: number; lonDeg: number; planetRadiusM: number };
 
@@ -193,6 +194,35 @@ function resolveMinSampleDistanceM(projectRoot: string, db: SpeciesDatabase, gen
   }
   genusMinDistCache.set(g, 0);
   return 0;
+}
+
+/**
+ * The sample distance of the species a radar mark is labelled with ("Stratum Tectonicas"), from its
+ * genus file; 0 when no species of the database carries that name.
+ */
+const ringByLabel = new Map<string, number>();
+/** Set by snapshot.ts each time the species database loads (an import back would be circular). */
+let ringSpeciesDb: SpeciesDatabase | null = null;
+export function setExoOrganicSpeciesDb(db: SpeciesDatabase): void {
+  ringSpeciesDb = db;
+  ringByLabel.clear();
+}
+export function sampleDistanceForSpeciesLabel(label: string): number {
+  const key = label.trim().toLowerCase();
+  if (!key) return 0;
+  const hit = ringByLabel.get(key);
+  if (hit !== undefined) return hit;
+  const fold = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const want = fold(label);
+  let m = 0;
+  for (const e of ringSpeciesDb?.species ?? []) {
+    if (fold(gameOrderSpeciesName(e.displayName)) === want || fold(e.displayName) === want) {
+      m = e.genusMinSampleDistanceM ?? 0;
+      break;
+    }
+  }
+  ringByLabel.set(key, m);
+  return m;
 }
 
 function speciesDisplayFromLine(line: JournalLine): string {
@@ -677,6 +707,7 @@ export function buildExoMinimapDto(
     kind: "sample" | "ship",
     markLabel: string,
     active = false,
+    ringM = 0,
   ) => {
     // Longitude wraps; without this a plant just across the antimeridian reads as half a planet away.
     let dLon = lonDeg - fix.lonDeg;
@@ -689,6 +720,7 @@ export function buildExoMinimapDto(
       distanceM: greatCircleDistanceMeters(fix.latDeg, fix.lonDeg, latDeg, lonDeg, R),
       label: markLabel,
       active,
+      ...(ringM > 0 ? { ringM } : {}),
     });
   };
 
@@ -728,7 +760,9 @@ export function buildExoMinimapDto(
   for (const m of store.surfaceSampleMarks) {
     if (!belongsHere(m)) continue;
     const isActive = activeSpecies != null && m.label.trim().toLowerCase() === activeSpecies;
-    push(m.latDeg, m.lonDeg, "sample", m.label, isActive);
+    // The run's own distance for its marks; a leftover species' from its genus.
+    const ringM = isActive ? minSampleDistanceM : sampleDistanceForSpeciesLabel(m.label);
+    push(m.latDeg, m.lonDeg, "sample", m.label, isActive, ringM);
   }
   const ship = store.surfaceShipMark;
   if (ship && belongsHere(ship)) push(ship.latDeg, ship.lonDeg, "ship", "Your ship");

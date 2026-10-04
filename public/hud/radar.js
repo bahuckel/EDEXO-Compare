@@ -38,7 +38,11 @@ export function radarStatic(svg) {
   svg.innerHTML =
     '<defs><linearGradient id="hudSweepGrad" x1="0" y1="0" x2="1" y2="0">' +
     '<stop offset="0" stop-color="currentColor" stop-opacity="0"/>' +
-    '<stop offset="1" stop-color="currentColor" stop-opacity="0.28"/></linearGradient></defs>' +
+    '<stop offset="1" stop-color="currentColor" stop-opacity="0.28"/></linearGradient>' +
+    // The sample rings stop at the rim: a ring round a plant out of range still shows its near edge.
+    '<clipPath id="hudRadarClip"><circle cx="0" cy="0" r="' +
+    MAP_R +
+    '"/></clipPath></defs>' +
     '<circle class="minimap-rim-outer" cx="0" cy="0" r="' +
     (MAP_R + 7) +
     '" />' +
@@ -106,10 +110,43 @@ export function drawMinimapAt(svg, mm, hint) {
   var scale = MAP_R / (mm.radiusM > 0 ? mm.radiusM : 500);
   var parts = [];
   var minR = mm.minSampleDistanceM > 0 ? mm.minSampleDistanceM * scale : 0;
-  if (minR > 0 && minR < MAP_R) {
+  /*
+    A ring round each sample, its genus's sample distance across (owner, 2026-10-04: "a circle around
+    each of the dots … so the user would know what the radius is and will not enter that circle").
+    The next sample has to be outside every ring of its species. Until there is one, the ring round
+    the commander still shows how far that is.
+  */
+  var ringed = mm.marks.some(function (m) {
+    return m.kind === "sample" && m.active && m.ringM > 0;
+  });
+  if (!ringed && minR > 0 && minR < MAP_R) {
     parts.push('<circle class="minimap-minring" cx="0" cy="0" r="' + minR.toFixed(1) + '" />');
   }
   parts.push('<g transform="rotate(' + rot.toFixed(2) + ')">');
+  var rings = [];
+  for (var k = 0; k < mm.marks.length; k++) {
+    var s = mm.marks[k];
+    if (s.kind !== "sample" || !(s.ringM > 0)) continue;
+    var sx = s.eastM * scale;
+    var sy = -s.northM * scale;
+    var sr = s.ringM * scale;
+    // Entirely off the radar: nothing to show.
+    if (Math.sqrt(sx * sx + sy * sy) - sr > MAP_R) continue;
+    rings.push(
+      '<circle class="minimap-sample-ring' +
+        (s.active ? "" : " minimap-sample-ring--left") +
+        '" cx="' +
+        sx.toFixed(1) +
+        '" cy="' +
+        sy.toFixed(1) +
+        '" r="' +
+        sr.toFixed(1) +
+        '"' +
+        (s.active ? "" : ' style="stroke:' + leftoverColour(s.label) + '"') +
+        " />",
+    );
+  }
+  if (rings.length) parts.push('<g clip-path="url(#hudRadarClip)">' + rings.join("") + "</g>");
   for (var t = 0; t < 360; t += 30) {
     var major = t % 90 === 0;
     parts.push(
@@ -314,6 +351,7 @@ export function cloneMinimap(mm) {
         northM: m.northM,
         eastM: m.eastM,
         distanceM: m.distanceM,
+        ringM: m.ringM,
       };
     }),
   };
