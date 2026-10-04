@@ -1,3 +1,4 @@
+import { recordNavRoute } from "./navRouteLog.js";
 import { startEddnLedgerWatch } from "./eddnLedger.js";
 import path from "node:path";
 import {
@@ -260,6 +261,12 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   let journalPath: string | null = null;
   let journalFilesMerged = 0;
 
+  /** The live route into the store, and a new one into the NavRoute star finder's log (navRouteLog.ts). */
+  function applyNavRoute(waypoints: ReturnType<typeof readLiveNavRouteWaypoints>): boolean {
+    const changed = store.applyLiveNavRoute(waypoints);
+    if (changed) recordNavRoute(waypoints);
+    return changed;
+  }
   function readLiveNavRouteWaypoints() {
     try {
       return parseNavRouteJson(readFileSync(path.join(journalDir, "NavRoute.json"), "utf8"));
@@ -284,7 +291,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
 
   /** Re-read `NavRoute.json` + `Status.json` after a full journal replay (new log file / resync). */
   function refreshLiveHudFromJournalDir(): void {
-    store.applyLiveNavRoute(readLiveNavRouteWaypoints());
+    applyNavRoute(readLiveNavRouteWaypoints());
     try {
       const raw = readFileSync(path.join(journalDir, "Status.json"), "utf8");
       const fuel = parseStatusJsonFuel(raw);
@@ -1053,7 +1060,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         canonnUploader.offer(line);
         eddnUploader.offer(line);
         const side = liveSideFiles();
-        store.applyLiveNavRoute(side.route);
+        applyNavRoute(side.route);
         const footFix = side.status ? parseStatusJsonFootFix(side.status) : null;
         ingestExoOrganicJournalLine(store, ownLine, footFix, projectRoot, getCachedSpeciesDatabase());
         sessionLog.record(line, store, getCachedPrices());
@@ -1974,7 +1981,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         return true;
       };
       footStatusTick = () => {
-        const navChanged = store.applyLiveNavRoute(readLiveNavRouteWaypoints());
+        const navChanged = applyNavRoute(readLiveNavRouteWaypoints());
         const jumpChanged = jumpChangedNow();
         const statusPath = path.join(journalDir, "Status.json");
         let raw: string;

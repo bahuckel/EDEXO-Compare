@@ -32,6 +32,7 @@ import {
 } from "../galaxyValueSearch.js";
 import { clearSystemTraits, galaxyFilterMask, loadSystemTraits, systemTraitCounts } from "../galaxyTraits.js";
 import { downloadGalaxyIndex, galaxyIndexStatus, probeGalaxyIndexSize } from "../galaxyIndexFiles.js";
+import { checkNavRouteSystemsOnEdsm, clearNavRouteLog, lastNavRoute, navRouteLog } from "../navRouteLog.js";
 import { BODY_TRAIT_GROUP, BODY_TRAITS, STAR_CLASSES } from "../../shared/galaxyTraits.js";
 import { loadRegionMap } from "../regionMapData.js";
 import { galaxyFind, galaxySector } from "../galaxyFind.js";
@@ -195,6 +196,30 @@ export function registerGalaxyRoutes(
       clearGalaxyCatalogueCache();
       clearGalaxySystemValues();
     });
+    res.json({ ok: true });
+  });
+
+  /**
+   * The NavRoute star finder (owner, 2026-10-04): every plotted route's systems with their star class,
+   * EDSM's answer per system once asked, and the check in progress. Not under /api/galaxy's memory
+   * clock: it is the commander's own small list.
+   */
+  app.get("/api/navroutes", (_req, res) => {
+    res.json({ ...navRouteLog(), last: lastNavRoute().map((s) => s.address) });
+  });
+  /** `{ addresses: number[] }` — ask EDSM about these (at most 2,000), in the background. */
+  app.post("/api/navroutes/edsm-check", (req, res) => {
+    const raw = (req.body as { addresses?: unknown } | undefined)?.addresses;
+    const addresses = Array.isArray(raw) ? raw.filter((a): a is number => typeof a === "number" && Number.isFinite(a)).slice(0, 2000) : [];
+    if (!addresses.length) {
+      res.status(400).json({ ok: false, error: "addresses: a list of system addresses" });
+      return;
+    }
+    void checkNavRouteSystemsOnEdsm(addresses);
+    res.json({ ok: true });
+  });
+  app.delete("/api/navroutes", (_req, res) => {
+    clearNavRouteLog();
     res.json({ ok: true });
   });
 

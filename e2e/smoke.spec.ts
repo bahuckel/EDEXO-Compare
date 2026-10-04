@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -428,6 +428,52 @@ test("galaxy 3D: the Filter drawer lights the systems that have what was ticked"
   }
   await drawer.getByRole("button", { name: /^Clear/ }).click();
   await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+/*
+  The NavRoute star finder (owner, 2026-10-04): the systems of the routes he plotted, by star type,
+  with EDSM's answer, marked on the map. The log is written into the test's own profile first.
+*/
+test("galaxy 3D: the NavRoute drawer lists the plotted systems by star type", async ({ page }) => {
+  const errors = watchErrors(page);
+  const at = "2026-10-04T10:00:00Z";
+  const sys = (address: number, name: string, starClass: string, edsm?: boolean) => ({
+    address,
+    name,
+    starClass,
+    pos: [address * 10, 0, address * 10],
+    firstSeen: at,
+    lastSeen: at,
+    routes: 1,
+    ...(edsm === undefined ? {} : { edsm, edsmAt: at }),
+  });
+  writeFileSync(
+    path.join(tmpdir(), "edexo-e2e-profile", "edexo-navroutes.json"),
+    JSON.stringify({
+      formatVersion: 1,
+      routes: [{ at, from: "Sol", to: "Hole C", systems: [1, 2, 3, 4] }],
+      systems: [sys(1, "Sol", "G", true), sys(2, "Neut A", "N", false), sys(3, "Neut B", "N"), sys(4, "Hole C", "H", true)],
+    }),
+  );
+  await page.setViewportSize({ width: 1400, height: 820 });
+  await page.goto("/?screen=galaxy");
+  type G = { stats: () => { phase: string }; marker: (l: string) => unknown };
+  await expect
+    .poll(async () => page.evaluate(() => (window as unknown as { __galaxy?: G }).__galaxy?.stats().phase), { timeout: 60_000 })
+    .toBe("ready");
+  await page.getByRole("button", { name: "NavRoute" }).click();
+  const drawer = page.getByTestId("g3d-navroute");
+  await expect(drawer).toContainText("4 systems from 1 route");
+  await drawer.getByRole("button", { name: /^N 2/ }).click();
+  await expect(drawer.locator(".g3d-navroute__item")).toHaveCount(2);
+  await drawer.getByLabel("EDSM").selectOption("missing");
+  await expect(drawer.locator(".g3d-navroute__item")).toHaveCount(1);
+  await expect(drawer.locator(".g3d-navroute__item")).toContainText("Neut A");
+  await expect(drawer.locator(".g3d-navroute__item")).toContainText("not in EDSM");
+  await drawer.getByLabel("EDSM").selectOption("unchecked");
+  await expect(drawer.getByRole("button", { name: "Check EDSM (1)" })).toBeEnabled();
+  await page.screenshot({ path: `${OUT}/galaxy-3d-navroute.png` });
   expect(errors).toEqual([]);
 });
 

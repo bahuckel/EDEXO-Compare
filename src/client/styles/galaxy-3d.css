@@ -870,3 +870,92 @@
   background: var(--accent);
   transition: width 0.4s ease;
 }
+
+/* The NavRoute star finder (owner, 2026-10-04). */
+.g3d-navroute {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+}
+.g3d-navroute__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.g3d-navroute__chip {
+  background: transparent;
+  color: var(--text-dim);
+  border-color: var(--accent-a35);
+}
+.g3d-navroute__chip--on {
+  background: var(--accent-a35);
+  color: var(--text);
+}
+.g3d-navroute__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.g3d-navroute__row .g3d-filter__search {
+  flex: 1;
+  min-width: 8rem;
+}
+.g3d-navroute__progress {
+  flex: 1;
+  font-size: var(--fs-xs);
+  color: var(--accent-bright);
+}
+.g3d-navroute__clear {
+  margin-left: auto;
+}
+.g3d-navroute__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.g3d-navroute__item {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: var(--fs-xs);
+}
+.g3d-navroute__class {
+  color: var(--accent-bright);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.g3d-navroute__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.g3d-navroute__name:hover {
+  color: var(--accent-bright);
+}
+.g3d-navroute__edsm {
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+.g3d-navroute__edsm--missing {
+  color: #5fe07a;
+  font-weight: 700;
+}
+.g3d-navroute__edsm--known {
+  color: var(--text-dim);
+}

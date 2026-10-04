@@ -22,6 +22,7 @@ import { formatCount, formatValue } from "./galaxy3d/clusters";
 import { CodexRecord, IndexRecord, MySystemRecord, SectorRecord } from "./galaxy3d/GalaxyPanels";
 import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
 import { GalaxyIndexDownload } from "./GalaxyIndexDownload";
+import { GalaxyNavRoutePanel, type NavRouteSystemDTO } from "./GalaxyNavRoutePanel";
 import {
   EMPTY_GALAXY_FILTER,
   GalaxyFilterPanel,
@@ -48,7 +49,7 @@ const dist = (a: { x: number; y: number; z: number }, b: { x: number; y: number;
   Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 
 type Colour = 0 | 1 | 2;
-type Drawer = "none" | "search" | "filter" | "codex" | "plan";
+type Drawer = "none" | "search" | "filter" | "navroute" | "codex" | "plan";
 type MineRow = GalaxyMineDTO["systems"][number];
 
 /** The commander's systems: waiting for them amber, done (DSS or plants on foot) green, visited grey. */
@@ -68,6 +69,8 @@ const codexColour: Record<CodexMapSystemDTO["status"], [number, number, number]>
   done: [0.36, 0.9, 0.46],
 };
 const SEARCH_COLOUR: [number, number, number] = [0.7, 0.5, 1];
+/** NavRoute finder markers; green where EDSM does not know the system. */
+const NAVROUTE_COLOUR: [number, number, number] = [0.95, 0.6, 0.2];
 const PLAN_COLOUR: [number, number, number] = [0.84, 0.7, 1];
 /** How many stops the plan can be asked for (G5.3); the target is the first. */
 const PLAN_SIZES = [3, 5, 8, 10];
@@ -467,6 +470,24 @@ export function GalaxyMap3D() {
     engine.current?.invalidate();
   }, [selection]);
 
+  // -------------------------------------------------------------------------- the NavRoute finder
+  /* The systems its filters leave, marked on the map (owner, 2026-10-04); none while it is closed. */
+  const [navShown, setNavShown] = useState<NavRouteSystemDTO[]>([]);
+  useEffect(() => {
+    const items: MarkerItem[] =
+      drawer === "navroute"
+        ? navShown.slice(0, 5000).map((s) => ({
+            id: String(s.address),
+            x: s.pos[0],
+            y: s.pos[1],
+            z: s.pos[2],
+            color: s.edsm === false ? [0.36, 0.9, 0.46] : NAVROUTE_COLOUR,
+            size: 7,
+          }))
+        : [];
+    engine.current?.setMarkers("navroute", items, 3);
+  }, [navShown, drawer]);
+
   // ------------------------------------------------------------------------------ the Search drawer
   const onApply = useCallback((applied: GalaxySearchApplied | null) => setSearch(applied), []);
   useEffect(() => {
@@ -837,6 +858,15 @@ export function GalaxyMap3D() {
               Centre here
             </button>
           </div>
+        </aside>
+      ) : null}
+
+      {drawer === "navroute" ? (
+        <aside className="g3d-drawer g3d-drawer--filter" aria-label="NavRoute" data-testid="g3d-navroute">
+          <GalaxyNavRoutePanel
+            onShown={setNavShown}
+            onFly={(s) => engine.current?.flyTo({ x: s.pos[0], y: s.pos[1], z: s.pos[2] }, 250)}
+          />
         </aside>
       ) : null}
 
@@ -1263,6 +1293,15 @@ export function GalaxyMap3D() {
           onClick={() => openDrawer("search")}
         >
           Search
+        </button>
+        <button
+          type="button"
+          className={drawer === "navroute" ? "g3d-btn g3d-btn--on" : "g3d-btn"}
+          aria-pressed={drawer === "navroute"}
+          onClick={() => openDrawer("navroute")}
+          title="Every system on the routes you plotted in the game, with its star type: filter, check EDSM, keep the ones you want"
+        >
+          NavRoute
         </button>
         <button
           type="button"
