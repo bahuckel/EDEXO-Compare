@@ -8,6 +8,7 @@ import {
 } from "../shared/hostStarGates.js";
 import {
   REGION_SIBLING_DEPLETION,
+  REGION_SIBLING_DEPLETION_MAX_SHARE,
   regionGenusShareDetail,
   regionSiblingDepletionDetail,
 } from "../shared/regionAbsence.js";
@@ -455,7 +456,9 @@ export function weighOutsideStarlight(
  * everywhere, so a second test compares siblings directly: each one's regional share over its
  * galaxy-wide share, against the favourite's. Under `REGION_SIBLING_DEPLETION` of the favourite, it
  * is out of place — Tubus compagibus beside cavas in the Trojan Belt — while Bacterium scopulum,
- * rare everywhere, stays beside verrata.
+ * rare everywhere, stays beside verrata. A species holding `REGION_SIBLING_DEPLETION_MAX_SHARE` of
+ * its genus there is not out of place, whatever the ratio (Sinuous Tubers Prasinum, 18 % of them in
+ * Inner Scutum-Centaurus, dominant in Empyrean Straits).
  *
  * **A tie-breaker, never an eviction.** It only acts between siblings that are shown together, and
  * never demotes the last one standing. Run as a per-species gate it demoted Fonticulua fluctus in
@@ -518,7 +521,12 @@ export function demoteRegionallyRareSiblings(
     const rare = judged.filter(
       (x) =>
         (x.v?.rare && !keyed(x.i)) ||
-        (x !== top && x.e != null && top?.e != null && top.e > 0 && x.e / top.e < REGION_SIBLING_DEPLETION),
+        (x !== top &&
+          x.e != null &&
+          top?.e != null &&
+          top.e > 0 &&
+          x.e / top.e < REGION_SIBLING_DEPLETION &&
+          (x.v?.share ?? 0) < REGION_SIBLING_DEPLETION_MAX_SHARE),
     );
     if (rare.length === 0 || rare.length === idxs.length) continue;
     for (const { i, v, e } of rare) {

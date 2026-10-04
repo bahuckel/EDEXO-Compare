@@ -173,6 +173,20 @@ export interface RegionGenusShareVerdict {
  */
 export const REGION_SIBLING_DEPLETION = 0.05;
 
+/**
+ * At or above this share of its genus' records in the region, a species is never "out of place" there,
+ * however the sibling ratio reads.
+ *
+ * The ratio punishes a species that is dominant somewhere else. Sinuous Tubers Prasinum is 48 % of
+ * Sinuous Tubers galaxy-wide, nearly all of it Empyrean Straits; in Inner Scutum-Centaurus it is 18 %
+ * of the genus (72 of 399 records) and Lindigoticum is eight times its own galaxy share there, so the
+ * ratio read 0.044 and demoted Prasinum on 13 of 15 confirmed Prasinum bodies in that region (Norma
+ * Expanse alike, at 11 %). Everything the test demotes in the 112,372-slot replay sits under 1 % of its
+ * genus — the 0.3 % Tubus compagibus in the Trojan Belt it was made for among them — and a floor of
+ * 1, 2, 5 or 10 % changes none of those slots (2026-10-04).
+ */
+export const REGION_SIBLING_DEPLETION_MAX_SHARE = 0.05;
+
 /** The line a commander sees when the sibling test demotes a row. */
 export function regionSiblingDepletionDetail(regionName: string, name: string, favourite: string, ratio: number): string {
   const times = ratio > 0 ? Math.round(1 / ratio) : Infinity;

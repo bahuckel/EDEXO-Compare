@@ -12,6 +12,7 @@ import {
   REGION_GENUS_MIN_RECORDS,
   REGION_GENUS_SHARE_MIN,
   REGION_SIBLING_DEPLETION,
+  REGION_SIBLING_DEPLETION_MAX_SHARE,
   judgeRegionalGenusShare,
   judgeRegionalPresence,
   regionPresenceDetail,
@@ -220,6 +221,23 @@ describe("the sibling out of place", () => {
     const strict = shown("bacterium_bacterium_verrata", "bacterium_bacterium_scopulum");
     const unlikely: typeof strict = [];
     demoteRegionallyRareSiblings(strict as never, unlikely as never, { regionIndex: INNER_ORION_SPUR, regionName: "Inner Orion Spur" });
+    expect(strict).toHaveLength(2);
+    expect(unlikely).toHaveLength(0);
+  });
+
+  it("does not call a species out of place where it is a fair part of its genus", () => {
+    // Inner Scutum-Centaurus: Prasinum is 18 % of the Sinuous Tubers there, but dominant in Empyrean
+    // Straits, so beside Lindigoticum (enriched eightfold here) its ratio reads under 0.05.
+    const ISC = 9;
+    const prasinum = regionalGenusEnrichment(root, ISC, "sinuous_tuber_sinuous_tubers_prasinum")!;
+    const lindigoticum = regionalGenusEnrichment(root, ISC, "sinuous_tuber_sinuous_tubers_lindigoticum")!;
+    expect(prasinum / lindigoticum).toBeLessThan(REGION_SIBLING_DEPLETION);
+    expect(regionalGenusShare(root, ISC, "sinuous_tuber_sinuous_tubers_prasinum")!.share).toBeGreaterThanOrEqual(
+      REGION_SIBLING_DEPLETION_MAX_SHARE,
+    );
+    const strict = shown("sinuous_tuber_sinuous_tubers_lindigoticum", "sinuous_tuber_sinuous_tubers_prasinum");
+    const unlikely: typeof strict = [];
+    demoteRegionallyRareSiblings(strict as never, unlikely as never, { regionIndex: ISC, regionName: "Inner Scutum-Centaurus Arm" });
     expect(strict).toHaveLength(2);
     expect(unlikely).toHaveLength(0);
   });
