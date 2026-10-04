@@ -130,7 +130,8 @@ export const SystemCardRow = memoOnSnapSlice(SYSTEM_CARD_FIELDS, function System
             ) : null}
             {snap.focusedSystemUndiscovered ? (
               <span className="sys-chip sys-chip--first" title="You were the first to discover this system">
-                First discovery
+                {/* ◆ is first discovery (the system), ⬢ first footfall (a body) — plan V4, 2026-10-04. */}
+                ◆ First discovery
               </span>
             ) : null}
             {/* Only a looked-up system says where it came from; the journal is the default and goes unsaid. */}

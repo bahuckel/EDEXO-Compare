@@ -721,7 +721,7 @@ export const HeaderBar = memo(function HeaderBar({
                 className="d-scan-card d-scan-card--complete d-scan-card--header-row header-route-mini d-scan-card--label-only"
                 title="You scanned this system's main star before anyone else had — the system is your discovery, and its cartographic data pays the first-discovery bonus."
               >
-                <span className="d-scan-card__label header-metric-card-label">FIRST</span>
+                <span className="d-scan-card__label header-metric-card-label">◆ First discovery</span>
               </div>
             ) : null}
             {snap.remainingJumpsInRoute != null || snap.liveShipFuelRange != null

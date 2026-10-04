@@ -137,7 +137,7 @@ export function MySystemRecord({ addr }: { addr: string }) {
         {f & 2 ? <span className="g3d-chip">All bodies found</span> : null}
         {f & 4 ? <span className="g3d-chip g3d-chip--dss">You mapped (DSS)</span> : null}
         {f & 8 ? <span className="g3d-chip g3d-chip--you">You scanned plants</span> : null}
-        {f & 32 ? <span className="g3d-chip g3d-chip--codex">First discovery</span> : null}
+        {f & 32 ? <span className="g3d-chip g3d-chip--codex">◆ First discovery</span> : null}
         {f & 64 ? <span className="g3d-chip g3d-chip--codex">First footfall</span> : null}
       </p>
       {d.unfinishedFloorCr != null ? (
