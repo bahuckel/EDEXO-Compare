@@ -1269,6 +1269,49 @@
         padding-top: 10px;
         background: linear-gradient(90deg, var(--hud-dim), var(--hud-faint) 60%, transparent) top left / 100% 1px no-repeat;
       }
+      /* The HUD settings in folds (owner, 2026-10-04). */
+      .hud-group {
+        margin: 4px 0;
+        border-top: 1px solid var(--hud-faint);
+      }
+      .hud-group > summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 8px 2px 6px;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--hud);
+        user-select: none;
+      }
+      .hud-group > summary::-webkit-details-marker {
+        display: none;
+      }
+      .hud-group > summary::before {
+        content: "▸";
+        display: inline-block;
+        width: 1.1em;
+        transition: transform 0.15s ease;
+      }
+      .hud-group[open] > summary::before {
+        transform: rotate(90deg);
+      }
+      .hud-group > summary:hover {
+        color: var(--hud-hi, var(--hud));
+      }
+      .hud-group[open] {
+        padding-bottom: 6px;
+      }
+      .hud-sub {
+        margin: 0 0 4px 12px;
+        padding-left: 10px;
+        border-left: 1px solid var(--hud-faint);
+      }
+      .hud-set-row--stack {
+        flex-direction: column;
+        align-items: flex-start;
+      }
       .hud-settings h4 {
         margin: 6px 0 8px;
         font-size: 0.62rem;
@@ -2245,110 +2288,142 @@
             </button>
           </div>
           <div class="hud-settings">
-            <h4>On screen</h4>
-            <div class="hud-set-row">
-              <span id="hudVisSummary">HUDs are shown</span>
-              <span class="hud-vis" role="group" aria-label="Show or hide every HUD">
-                <button type="button" class="hud-vis-btn" id="hudVisShow" aria-pressed="true">Show</button>
-                <button type="button" class="hud-vis-btn" id="hudVisHide" aria-pressed="false">Hide</button>
-              </span>
-            </div>
-            <div class="hud-set-row">
-              <label title="While Elite runs but another window is in front, the HUDs step aside, and come back when you return to the game. This app's own windows do not count. Without the game running they are always hidden; the hotkey still shows them."><input type="checkbox" id="hudHideUnfocused" /> Hide when Elite is not in front</label>
-            </div>
-            <h4>HUD colour</h4>
-            <div class="hud-swatches" id="hudSwatches" role="radiogroup" aria-label="HUD colour preset"></div>
-            <div class="hud-set-row">
-              <label for="hudThemeAccent">Custom accent <input type="color" id="hudThemeAccent" value="#ff8a1f" /></label>
-              <label for="hudThemeText">Custom text <input type="color" id="hudThemeText" value="#ffe6cf" /></label>
-            </div>
-            <div class="hud-set-row">
-              <input type="text" id="hudSchemeName" maxlength="24" placeholder="Name your colours to keep them" aria-label="Scheme name" />
-              <button type="button" class="btn secondary" id="hudSchemeSave">Save scheme</button>
-            </div>
-            <h4>HUD type</h4>
-            <div class="hud-set-row">
-              <select id="hudType" aria-label="HUD type">
-                <option value="original">HUD Type - Original (default)</option>
-                <option value="title">HUD Type - Title Background</option>
-                <option value="elite">HUD Type - Elite Style</option>
-              </select>
-            </div>
-            <div class="hud-set-row" id="hudTiltRow">
-              <label for="hudTilt">Elite Style angle <output id="hudTiltOut">15°</output></label>
-              <input type="range" id="hudTilt" min="-35" max="35" step="1" value="15" />
-            </div>
-            <h4>HUD size</h4>
-            <div class="hud-set-row">
-              <label for="hudScale">Scale <output id="hudScaleOut">100 %</output></label>
-              <input type="range" id="hudScale" min="50" max="200" step="5" value="100" />
-            </div>
-            <div class="hud-set-row">
-              <label for="hudAlpha">Background opacity <output id="hudAlphaOut">45 %</output></label>
-              <input type="range" id="hudAlpha" min="10" max="100" step="1" value="45" />
-            </div>
-            <h4>Candidates</h4>
-            <div class="hud-set-row">
-              <span>Order</span>
-              <select id="hudCandOrder">
-                <option value="likelihood">Genus likelihood (as in the app)</option>
-                <option value="value">Value, highest CR first</option>
-              </select>
-            </div>
-            <div class="hud-set-row">
-              <label><input type="checkbox" id="hudRegion" checked /> Show the current region</label>
-            </div>
-            <div class="hud-set-row">
-              <label><input type="checkbox" id="hudCompact" /> Compact: hide the explanations, keep the readings</label>
-              <label title="Exo candidates only for a body with biological signals, the distance tracker only near a surface, the discovery scan only while bodies are left to find, notable planets only where there are some, notices only while one is new. A HUD with nothing to show steps out of the stack and comes back by itself."><input type="checkbox" id="hudRelevant" /> Only when relevant: HUDs step aside while they have nothing to show</label>
-            </div>
-            <h4>Sound</h4>
-            <div class="hud-set-row">
-              <label><input type="checkbox" id="hudAudio" /> Audio cues: ring cleared, third sample (off by default)</label>
-            </div>
-            <h4>Position</h4>
-            <div class="hud-set-row">
-              <span>Screen corner</span>
-              <select id="hudCorner">
-                <option value="tr">Top right</option>
-                <option value="tl">Top left</option>
-                <option value="br">Bottom right</option>
-                <option value="bl">Bottom left</option>
-              </select>
-            </div>
-            <div class="hud-set-row" id="hudFreeRow">
-              <label title="The HUDs leave the corner and sit wherever you drag them, on any screen. The spot is kept for the next start."><input type="checkbox" id="hudFree" /> Free move HUD: place it anywhere, on any screen</label>
-              <span class="btn-mini-wrap" id="hudMoveWrap" title="Tick &quot;Free move HUD&quot; first: the HUD can only be placed by hand in free move.">
-                <button type="button" class="btn-mini" id="hudMove" disabled>Move HUD</button>
-              </span>
-            </div>
-            <p class="hud-hint" id="hudMoveHint" hidden>
-              Drag a HUD by its frame to where you want it, then press Done (on the HUD or here). Near the bottom of a
-              screen it grows upwards.
-            </p>
-            <h4>Radar</h4>
-            <div class="hud-set-row" id="radarRadiusRow" hidden>
-              <label for="radarRadiusM">How far it draws <span class="hint" style="margin: 0">further out becomes a rim arrow</span></label>
-              <span>
-                <input type="number" id="radarRadiusM" step="50" /> m
-              </span>
-            </div>
-            <h4>Refresh rate</h4>
-            <div class="hud-set-row">
-              <span id="hudPollSummary">The HUDs follow Status.json</span>
-              <button type="button" class="btn-mini" id="btnPollFromOverlay">Change polling</button>
-            </div>
-            <ul class="hud-order" id="hudOrderList" aria-label="Order of the HUDs in the stack"></ul>
-            <p class="hud-hint">
-              <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>H</kbd> switches between Show and Hide (change it in Key binds). The
-              choice is kept for the next start.
-            </p>
             <!--
-              Shown only when the game's own settings file says overlays cannot be drawn. A permanent
-              notice about a mode he is not in would be a wall of text on every open; this stays out
-              of the way until it is the answer to "why can I not see the HUD".
+              Grouped (owner, 2026-10-04: "the HUD options are quite a lot … less chaotic, with
+              hover-on details for each one"). Six folds, in the order a commander reaches for them;
+              each remembers whether it was open. Every control explains itself on hover.
             -->
             <p class="hud-warn" id="hudDisplayWarn" hidden></p>
+
+            <details class="hud-group" data-group="show" open>
+              <summary title="Whether the HUDs are on screen, and when they step aside by themselves">Show &amp; hide</summary>
+              <div class="hud-set-row">
+                <span id="hudVisSummary">HUDs are shown</span>
+                <span class="hud-vis" role="group" aria-label="Show or hide every HUD" title="Every HUD at once. Ctrl + Alt + H does the same in game (change it in Key binds); the choice is kept for the next start.">
+                  <button type="button" class="hud-vis-btn" id="hudVisShow" aria-pressed="true">Show</button>
+                  <button type="button" class="hud-vis-btn" id="hudVisHide" aria-pressed="false">Hide</button>
+                </span>
+              </div>
+              <div class="hud-set-row">
+                <label title="While Elite runs but another window is in front, the HUDs step aside, and come back when you return to the game. This app's own windows do not count. Without the game running they are always hidden; the hotkey still shows them."><input type="checkbox" id="hudHideUnfocused" /> Hide when Elite is not in front</label>
+              </div>
+              <div class="hud-set-row">
+                <label title="Exo candidates only for a body with biological signals, the distance tracker only near a surface, the discovery scan only while bodies are left to find, notable planets only where there are some, notices only while one is new. A HUD with nothing to show steps out of the stack and comes back by itself."><input type="checkbox" id="hudRelevant" /> Only when relevant</label>
+              </div>
+              <p class="hud-hint"><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>H</kbd> shows and hides them in game.</p>
+            </details>
+
+            <details class="hud-group" data-group="look">
+              <summary title="Style, colour, size and how much of the game shows through">Look</summary>
+              <div class="hud-set-row">
+                <label for="hudType" title="Original: the app's own panel. Title Background: flat, each title on a solid bar. Elite Style: the game's own panels — no plate, two neon lines round each title, status squares, an angle of its own.">Style</label>
+                <select id="hudType" aria-label="HUD type">
+                  <option value="original">HUD Type - Original (default)</option>
+                  <option value="title">HUD Type - Title Background</option>
+                  <option value="elite">HUD Type - Elite Style</option>
+                </select>
+              </div>
+              <div class="hud-sub" id="hudTiltRow">
+                <div class="hud-set-row">
+                  <label for="hudTiltMode" title="Turn: the panel swings like a door, its far edge going into the screen, like the cockpit's side panels. Slant: the panel stays the same width border to border; only its lines and text run at the angle.">Angle</label>
+                  <select id="hudTiltMode" aria-label="How the Elite Style is angled">
+                    <option value="turn">Turn (3D, swings like a door)</option>
+                    <option value="slant">Slant (flat, same width)</option>
+                  </select>
+                </div>
+                <div class="hud-set-row" id="hudTurnRow">
+                  <label for="hudTilt" title="Positive: the right edge goes into the screen — for a HUD on the left. Negative: the left edge — for a HUD on the right. 0: flat.">Turn <output id="hudTiltOut">15°</output></label>
+                  <input type="range" id="hudTilt" min="-35" max="35" step="1" value="15" />
+                </div>
+                <div class="hud-set-row" id="hudSlantRow">
+                  <label for="hudSlant" title="Positive: the lines rise to the right. Negative: they fall. The window grows a little above and below to hold the lift.">Slant <output id="hudSlantOut">6°</output></label>
+                  <input type="range" id="hudSlant" min="-15" max="15" step="1" value="6" />
+                </div>
+              </div>
+              <div class="hud-set-row hud-set-row--stack">
+                <span title="The accent colour of every HUD: lines, titles, labels. Your saved schemes are listed after the presets.">Colour</span>
+                <div class="hud-swatches" id="hudSwatches" role="radiogroup" aria-label="HUD colour preset"></div>
+              </div>
+              <div class="hud-set-row">
+                <label for="hudThemeAccent" title="Pick your own accent: lines, titles and labels.">Custom accent <input type="color" id="hudThemeAccent" value="#ff8a1f" /></label>
+                <label for="hudThemeText" title="Pick your own text colour: the readings themselves.">Custom text <input type="color" id="hudThemeText" value="#ffe6cf" /></label>
+              </div>
+              <div class="hud-set-row">
+                <input type="text" id="hudSchemeName" maxlength="24" placeholder="Name your colours to keep them" aria-label="Scheme name" title="Give the current colours a name to keep them as a swatch above." />
+                <button type="button" class="btn secondary" id="hudSchemeSave" title="Keep the current accent and text colours as a named swatch.">Save scheme</button>
+              </div>
+              <div class="hud-set-row">
+                <label for="hudScale" title="Every HUD's size: text, lines and the windows with them.">Size <output id="hudScaleOut">100 %</output></label>
+                <input type="range" id="hudScale" min="50" max="200" step="5" value="100" />
+              </div>
+              <div class="hud-set-row">
+                <label for="hudAlpha" title="How dark the panel behind the text is; the text and lines stay solid. The Elite Style has no panel, so this does nothing there.">Background opacity <output id="hudAlphaOut">45 %</output></label>
+                <input type="range" id="hudAlpha" min="10" max="100" step="1" value="45" />
+              </div>
+              <div class="hud-set-row">
+                <label title="Hides the explanatory lines under the readings, for a smaller HUD once you know what everything means."><input type="checkbox" id="hudCompact" /> Compact: readings only, no explanations</label>
+              </div>
+            </details>
+
+            <details class="hud-group" data-group="position">
+              <summary title="Where the HUDs sit and in which order">Position</summary>
+              <div class="hud-set-row">
+                <label for="hudCorner" title="The corner of the game's screen the stack sits in. A stack taller than the screen goes on in a second column.">Screen corner</label>
+                <select id="hudCorner">
+                  <option value="tr">Top right</option>
+                  <option value="tl">Top left</option>
+                  <option value="br">Bottom right</option>
+                  <option value="bl">Bottom left</option>
+                </select>
+              </div>
+              <div class="hud-set-row" id="hudFreeRow">
+                <label title="The HUDs leave the corner and sit wherever you drag them, on any screen. The spot is kept for the next start."><input type="checkbox" id="hudFree" /> Free move: place them anywhere</label>
+                <span class="btn-mini-wrap" id="hudMoveWrap" title="Tick &quot;Free move&quot; first: the HUD can only be placed by hand in free move.">
+                  <button type="button" class="btn-mini" id="hudMove" disabled>Move HUD</button>
+                </span>
+              </div>
+              <p class="hud-hint" id="hudMoveHint" hidden>
+                Drag a HUD by its frame to where you want it, then press Done (on the HUD or here). Near the bottom of a
+                screen it grows upwards.
+              </p>
+              <p class="hud-hint" title="The first in the list is outermost: the top of a top-corner stack, the bottom of a bottom-corner one.">Order in the stack</p>
+              <ul class="hud-order" id="hudOrderList" aria-label="Order of the HUDs in the stack"></ul>
+            </details>
+
+            <details class="hud-group" data-group="content">
+              <summary title="What the HUDs list and how far the radar reaches">What they show</summary>
+              <div class="hud-set-row">
+                <label for="hudCandOrder" title="The Exo candidates HUD: by how likely each genus is (as in the app), or by value, highest first.">Candidate order</label>
+                <select id="hudCandOrder">
+                  <option value="likelihood">Genus likelihood (as in the app)</option>
+                  <option value="value">Value, highest CR first</option>
+                </select>
+              </div>
+              <div class="hud-set-row">
+                <label title="A line with the codex region you are in, on the Exo candidates HUD."><input type="checkbox" id="hudRegion" checked /> Show the current region</label>
+              </div>
+              <div class="hud-set-row" id="radarRadiusRow" hidden>
+                <label for="radarRadiusM" title="How far out the sample radar draws, in metres. Anything further becomes an arrow on its rim with the distance beside it.">Radar range</label>
+                <span>
+                  <input type="number" id="radarRadiusM" step="50" /> m
+                </span>
+              </div>
+            </details>
+
+            <details class="hud-group" data-group="sound">
+              <summary title="Sounds while sampling">Sound</summary>
+              <div class="hud-set-row">
+                <label title="A tone when you clear the sample distance from the last plant, and another on the third sample. Off by default."><input type="checkbox" id="hudAudio" /> Audio cues: distance cleared, third sample</label>
+              </div>
+            </details>
+
+            <details class="hud-group" data-group="advanced">
+              <summary title="How often the HUDs read the game">Advanced</summary>
+              <div class="hud-set-row">
+                <span id="hudPollSummary" title="The HUDs follow the game's Status.json and journal; this is how often the app reads them.">The HUDs follow Status.json</span>
+                <button type="button" class="btn-mini" id="btnPollFromOverlay" title="Change how often the app reads Status.json and the journal.">Change polling</button>
+              </div>
+            </details>
           </div>
           <button type="button" class="btn secondary" id="overlayPickClose">
             <span class="btn-lines"><strong>Close</strong></span>
@@ -4622,6 +4697,8 @@
         var LS_HUD_RELEVANT = "edexoHudRelevant";
         var LS_HUD_TYPE = "edexoHudType";
         var LS_HUD_TILT = "edexoHudTilt";
+        var LS_HUD_TILT_MODE = "edexoHudTiltMode";
+        var LS_HUD_SLANT = "edexoHudSlant";
         var HUD_PRESETS = {
           orange: "#ff8a1f", amber: "#ffb020", red: "#ff4a3a", magenta: "#ff4fd8", purple: "#b46bff",
           blue: "#4fa8ff", cyan: "#3fe0e0", green: "#5fe07a", lime: "#c8f04a", white: "#e8e8f0",
@@ -4647,6 +4724,8 @@
           try { prefs.relevant = localStorage.getItem(LS_HUD_RELEVANT) === "1"; } catch (e) {}
           try { prefs.hudType = localStorage.getItem(LS_HUD_TYPE) || "original"; } catch (e) {}
           try { var tl = parseFloat(localStorage.getItem(LS_HUD_TILT) || ""); prefs.tilt = isFinite(tl) ? tl : 15; } catch (e) {}
+          try { prefs.tiltMode = localStorage.getItem(LS_HUD_TILT_MODE) === "slant" ? "slant" : "turn"; } catch (e) {}
+          try { var sl = parseFloat(localStorage.getItem(LS_HUD_SLANT) || ""); prefs.slant = isFinite(sl) ? sl : 6; } catch (e) {}
           return prefs;
         }
         function syncHudPrefs() {
@@ -4803,10 +4882,45 @@
         var hudTilt = document.getElementById("hudTilt");
         var hudTiltOut = document.getElementById("hudTiltOut");
         var hudTiltRow = document.getElementById("hudTiltRow");
+        var hudTiltMode = document.getElementById("hudTiltMode");
+        var hudSlant = document.getElementById("hudSlant");
+        var hudSlantOut = document.getElementById("hudSlantOut");
+        var hudTurnRow = document.getElementById("hudTurnRow");
+        var hudSlantRow = document.getElementById("hudSlantRow");
         function syncHudTypeUi() {
           if (hudTiltOut && hudTilt) hudTiltOut.textContent = hudTilt.value + "°";
+          if (hudSlantOut && hudSlant) hudSlantOut.textContent = hudSlant.value + "°";
           if (hudTiltRow && hudType) hudTiltRow.style.display = hudType.value === "elite" ? "" : "none";
+          var slant = hudTiltMode && hudTiltMode.value === "slant";
+          if (hudTurnRow) hudTurnRow.style.display = slant ? "none" : "";
+          if (hudSlantRow) hudSlantRow.style.display = slant ? "" : "none";
         }
+        if (hudTiltMode) {
+          hudTiltMode.addEventListener("change", function () {
+            try { localStorage.setItem(LS_HUD_TILT_MODE, hudTiltMode.value); } catch (e) {}
+            syncHudTypeUi();
+            syncHudPrefs();
+          });
+        }
+        if (hudSlant) {
+          hudSlant.addEventListener("input", function () {
+            try { localStorage.setItem(LS_HUD_SLANT, hudSlant.value); } catch (e) {}
+            syncHudTypeUi();
+            syncHudPrefs();
+          });
+        }
+        /* Each settings fold remembers whether it was open (owner, 2026-10-04). */
+        document.querySelectorAll("details.hud-group").forEach(function (d) {
+          var key = "edexoHudGroup." + d.getAttribute("data-group");
+          try {
+            var v = localStorage.getItem(key);
+            if (v === "1") d.open = true;
+            else if (v === "0") d.open = false;
+          } catch (e) {}
+          d.addEventListener("toggle", function () {
+            try { localStorage.setItem(key, d.open ? "1" : "0"); } catch (e) {}
+          });
+        });
         if (hudType) {
           hudType.addEventListener("change", function () {
             try { localStorage.setItem(LS_HUD_TYPE, hudType.value); } catch (e) {}
@@ -5027,6 +5141,8 @@
           if (hudCompact) hudCompact.checked = (function () { try { return localStorage.getItem(LS_HUD_COMPACT) === "1"; } catch (e) { return false; } })();
           if (hudType) hudType.value = (function () { try { return localStorage.getItem(LS_HUD_TYPE) || "original"; } catch (e) { return "original"; } })();
           if (hudTilt) hudTilt.value = (function () { try { var v = parseFloat(localStorage.getItem(LS_HUD_TILT) || "15"); return String(isFinite(v) ? v : 15); } catch (e) { return "15"; } })();
+          if (hudTiltMode) hudTiltMode.value = (function () { try { return localStorage.getItem(LS_HUD_TILT_MODE) === "slant" ? "slant" : "turn"; } catch (e) { return "turn"; } })();
+          if (hudSlant) hudSlant.value = (function () { try { var v = parseFloat(localStorage.getItem(LS_HUD_SLANT) || "6"); return String(isFinite(v) ? v : 6); } catch (e) { return "6"; } })();
           syncHudTypeUi();
           if (hudRelevant) hudRelevant.checked = (function () { try { return localStorage.getItem(LS_HUD_RELEVANT) === "1"; } catch (e) { return false; } })();
           if (hudScale) hudScale.value = String(Math.round((function () { try { return parseFloat(localStorage.getItem(LS_HUD_SCALE) || "1") || 1; } catch (e) { return 1; } })() * 100));
