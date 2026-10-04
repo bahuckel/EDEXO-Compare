@@ -61,6 +61,8 @@ export function serverPref(key) {
   if (key === "edexoHudAudio") return typeof p.audio === "boolean" ? (p.audio ? "1" : "0") : null;
   if (key === "edexoHudCompact") return typeof p.compact === "boolean" ? (p.compact ? "1" : "0") : null;
   if (key === "edexoHudRelevant") return typeof p.relevant === "boolean" ? (p.relevant ? "1" : "0") : null;
+  if (key === "edexoHudType") return p.hudType || null;
+  if (key === "edexoHudTilt") return typeof p.tilt === "number" ? String(p.tilt) : null;
   return null;
 }
 export function pref(key, def) {
@@ -131,4 +133,16 @@ export function applyTheme() {
   st.setProperty("--hud-glow", "0 0 6px " + rgba(a, 0.45));
   // Compact (guild tester, 2026-09-30): the explanatory lines (`.hud-explain`) are hidden.
   document.documentElement.classList.toggle("hud-compact", pref("edexoHudCompact", "0") === "1");
+  /*
+    HUD type (owner, 2026-10-04): Original (default), Title Background, Elite Style. The Elite Style's
+    tilt turns the panel like the cockpit's side panels; its far edge always goes into the screen
+    (the pivot is the near side), so nothing grows past the window.
+  */
+  var type = pref("edexoHudType", "original");
+  var cls = document.documentElement.classList;
+  cls.toggle("hud-type--title", type === "title");
+  cls.toggle("hud-type--elite", type === "elite");
+  var tilt = clampNum(pref("edexoHudTilt", "15"), -35, 35, 15);
+  st.setProperty("--hud-tilt", tilt + "deg");
+  st.setProperty("--hud-tilt-origin", tilt >= 0 ? "left" : "right");
 }

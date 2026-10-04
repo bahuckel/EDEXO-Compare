@@ -21,9 +21,9 @@ export var distance = {
       '<svg class="minimap trk__radar" data-f="minimap" viewBox="-112 -112 224 224" role="img" aria-label="Where your samples and ship are, around you"></svg>' +
       '<div class="trk__side">' +
       '<div class="hud-big trk__species" data-f="species">—</div>' +
-      '<div class="row"><span class="lbl">Scan 1</span><span class="val" data-f="d1">—</span></div>' +
-      '<div class="row"><span class="lbl">Scan 2</span><span class="val"><span data-f="d2">—</span><span data-f="pill2"></span></span></div>' +
-      '<div class="row"><span class="lbl">Scan 3</span><span class="val"><span data-f="d3">—</span><span data-f="pill3"></span></span></div>' +
+      '<div class="row row--scan"><span class="lbl">Scan 1</span><span class="val" data-f="d1">—</span></div>' +
+      '<div class="row row--scan"><span class="lbl">Scan 2</span><span class="val"><span data-f="d2">—</span><span data-f="pill2"></span></span></div>' +
+      '<div class="row row--scan"><span class="lbl">Scan 3</span><span class="val"><span data-f="d3">—</span><span data-f="pill3"></span></span></div>' +
       '<div class="row"><span class="lbl">Min gap</span><span class="val" data-f="minGap">—</span></div>' +
       '<div class="row"><span class="lbl">Run time</span><span class="val" data-f="timer">—</span></div>' +
       "</div>" +
@@ -77,6 +77,10 @@ export var distance = {
         rowClass(n, true);
       });
       rowClass("minGap", true);
+      ["d1", "d2", "d3"].forEach(function (n) {
+        var row = q(root, n).closest(".row");
+        if (row) row.classList.remove("row--taken");
+      });
       q(root, "pill2").innerHTML = "";
       q(root, "pill3").innerHTML = "";
       pay.innerHTML = "<span class='row--muted'>—</span>";
@@ -93,6 +97,11 @@ export var distance = {
           ? "Too close"
           : "Sampling " + Math.min(eo.sampleCount || 0, 3) + " / 3";
     q(root, "species").textContent = cap(eo.speciesDisplay || "—");
+    // Which scans are taken, for the Elite Style's status squares (owner, 2026-10-04).
+    ["d1", "d2", "d3"].forEach(function (n, i) {
+      var row = q(root, n).closest(".row");
+      if (row) row.classList.toggle("row--taken", eo.phase === "celebrate" || (eo.sampleCount || 0) > i);
+    });
     q(root, "minGap").textContent = eo.minSampleDistanceM > 0 ? eo.minSampleDistanceM + " m" : "—";
     rowClass("minGap", false);
     rowClass("d1", eo.distToFirstM == null && eo.phase === "tracking");

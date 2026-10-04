@@ -234,6 +234,10 @@ export interface HudPrefsDTO {
   compact?: boolean;
   /** Only when relevant: HUD sections with nothing to show step aside (guild tester, 2026-09-30). */
   relevant?: boolean;
+  /** HUD type (owner, 2026-10-04): Original (default), Title Background, Elite Style. */
+  hudType?: "original" | "title" | "elite";
+  /** Elite Style's tilt, degrees, -35..35 (positive: the right edge goes into the screen). */
+  tilt?: number;
 }
 
 /** The session log: what happened since the app started, for the modal and the Markdown copy. */

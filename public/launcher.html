@@ -2266,6 +2266,18 @@
               <input type="text" id="hudSchemeName" maxlength="24" placeholder="Name your colours to keep them" aria-label="Scheme name" />
               <button type="button" class="btn secondary" id="hudSchemeSave">Save scheme</button>
             </div>
+            <h4>HUD type</h4>
+            <div class="hud-set-row">
+              <select id="hudType" aria-label="HUD type">
+                <option value="original">HUD Type - Original (default)</option>
+                <option value="title">HUD Type - Title Background</option>
+                <option value="elite">HUD Type - Elite Style</option>
+              </select>
+            </div>
+            <div class="hud-set-row" id="hudTiltRow">
+              <label for="hudTilt">Elite Style angle <output id="hudTiltOut">15°</output></label>
+              <input type="range" id="hudTilt" min="-35" max="35" step="1" value="15" />
+            </div>
             <h4>HUD size</h4>
             <div class="hud-set-row">
               <label for="hudScale">Scale <output id="hudScaleOut">100 %</output></label>
@@ -4608,6 +4620,8 @@
         var LS_HUD_AUDIO = "edexoHudAudio";
         var LS_HUD_COMPACT = "edexoHudCompact";
         var LS_HUD_RELEVANT = "edexoHudRelevant";
+        var LS_HUD_TYPE = "edexoHudType";
+        var LS_HUD_TILT = "edexoHudTilt";
         var HUD_PRESETS = {
           orange: "#ff8a1f", amber: "#ffb020", red: "#ff4a3a", magenta: "#ff4fd8", purple: "#b46bff",
           blue: "#4fa8ff", cyan: "#3fe0e0", green: "#5fe07a", lime: "#c8f04a", white: "#e8e8f0",
@@ -4631,6 +4645,8 @@
           try { prefs.audio = localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) {}
           try { prefs.compact = localStorage.getItem(LS_HUD_COMPACT) === "1"; } catch (e) {}
           try { prefs.relevant = localStorage.getItem(LS_HUD_RELEVANT) === "1"; } catch (e) {}
+          try { prefs.hudType = localStorage.getItem(LS_HUD_TYPE) || "original"; } catch (e) {}
+          try { var tl = parseFloat(localStorage.getItem(LS_HUD_TILT) || ""); prefs.tilt = isFinite(tl) ? tl : 15; } catch (e) {}
           return prefs;
         }
         function syncHudPrefs() {
@@ -4779,6 +4795,29 @@
           hudAlpha.addEventListener("input", function () {
             showSizeOutputs();
             try { localStorage.setItem(LS_HUD_ALPHA, String(Number(hudAlpha.value) / 100)); } catch (e) {}
+            syncHudPrefs();
+          });
+        }
+        /* HUD type and the Elite Style's angle (owner, 2026-10-04). */
+        var hudType = document.getElementById("hudType");
+        var hudTilt = document.getElementById("hudTilt");
+        var hudTiltOut = document.getElementById("hudTiltOut");
+        var hudTiltRow = document.getElementById("hudTiltRow");
+        function syncHudTypeUi() {
+          if (hudTiltOut && hudTilt) hudTiltOut.textContent = hudTilt.value + "°";
+          if (hudTiltRow && hudType) hudTiltRow.style.display = hudType.value === "elite" ? "" : "none";
+        }
+        if (hudType) {
+          hudType.addEventListener("change", function () {
+            try { localStorage.setItem(LS_HUD_TYPE, hudType.value); } catch (e) {}
+            syncHudTypeUi();
+            syncHudPrefs();
+          });
+        }
+        if (hudTilt) {
+          hudTilt.addEventListener("input", function () {
+            try { localStorage.setItem(LS_HUD_TILT, hudTilt.value); } catch (e) {}
+            syncHudTypeUi();
             syncHudPrefs();
           });
         }
@@ -4986,6 +5025,9 @@
           if (hudRegion) hudRegion.checked = (function () { try { return localStorage.getItem(LS_HUD_REGION) !== "0"; } catch (e) { return true; } })();
           if (hudAudio) hudAudio.checked = (function () { try { return localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) { return false; } })();
           if (hudCompact) hudCompact.checked = (function () { try { return localStorage.getItem(LS_HUD_COMPACT) === "1"; } catch (e) { return false; } })();
+          if (hudType) hudType.value = (function () { try { return localStorage.getItem(LS_HUD_TYPE) || "original"; } catch (e) { return "original"; } })();
+          if (hudTilt) hudTilt.value = (function () { try { var v = parseFloat(localStorage.getItem(LS_HUD_TILT) || "15"); return String(isFinite(v) ? v : 15); } catch (e) { return "15"; } })();
+          syncHudTypeUi();
           if (hudRelevant) hudRelevant.checked = (function () { try { return localStorage.getItem(LS_HUD_RELEVANT) === "1"; } catch (e) { return false; } })();
           if (hudScale) hudScale.value = String(Math.round((function () { try { return parseFloat(localStorage.getItem(LS_HUD_SCALE) || "1") || 1; } catch (e) { return 1; } })() * 100));
           if (hudAlpha) hudAlpha.value = String(Math.round((function () { try { var v = parseFloat(localStorage.getItem(LS_HUD_ALPHA) || "0.45"); return isFinite(v) ? v : 0.45; } catch (e) { return 0.45; } })() * 100));

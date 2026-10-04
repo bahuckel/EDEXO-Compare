@@ -1245,6 +1245,8 @@ export class GameStateStore {
     if (typeof r.audio === "boolean") out.audio = r.audio;
     if (typeof r.compact === "boolean") out.compact = r.compact;
     if (typeof r.relevant === "boolean") out.relevant = r.relevant;
+    if (r.hudType === "original" || r.hudType === "title" || r.hudType === "elite") out.hudType = r.hudType;
+    if (typeof r.tilt === "number" && Number.isFinite(r.tilt)) out.tilt = Math.min(35, Math.max(-35, r.tilt));
     this.hudPrefs = out;
     return out;
   }

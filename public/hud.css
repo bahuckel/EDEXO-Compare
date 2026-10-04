@@ -1226,3 +1226,197 @@ li.unknown-plant .name {
   opacity: 0.75;
   font-style: italic;
 }
+
+/* =============================================================================================
+   HUD type (owner, 2026-10-04): Original (the above, default), Title Background, Elite Style.
+   A class on <html> from the launcher's setting (hud/theme.js applyTheme).
+   ============================================================================================= */
+
+/* ---- Title Background: flat, a solid title bar in the accent, dark text on it ----------------- */
+html.hud-type--title .panel {
+  filter: none;
+}
+html.hud-type--title .panel > .panel__frame {
+  background: var(--hud-dim);
+}
+html.hud-type--title .panel__body::before,
+html.hud-type--title .panel__body::after {
+  display: none;
+  animation: none;
+}
+html.hud-type--title .panel__body > .panel__fill {
+  background: var(--hud-bg);
+}
+html.hud-type--title .shell::before,
+html.hud-type--title .shell::after {
+  border-width: 1px;
+  width: 0.6rem;
+  height: 0.6rem;
+}
+html.hud-type--title .hud-head {
+  margin: -0.5rem -0.8rem 0.45rem;
+  padding: 0.16rem 0.8rem 0.14rem;
+  background: var(--hud);
+  align-items: center;
+}
+html.hud-type--title .hud-section + .hud-section .hud-head {
+  margin-top: 0;
+}
+html.hud-type--title .hud-title,
+html.hud-type--title .hud-status {
+  color: #140900;
+  text-shadow: none;
+  opacity: 1;
+}
+html.hud-type--title .hud-title::before {
+  background: #140900;
+  box-shadow: none;
+}
+html.hud-type--title .row--rule,
+html.hud-type--title .hud-section + .hud-section {
+  background: linear-gradient(var(--hud-faint), var(--hud-faint)) top left / 100% 1px no-repeat;
+}
+
+/* ---- Elite Style: the game's own panels — no plate, two neon lines round the title, a dark
+   shadow behind every line and letter, tilted like the cockpit's side panels, and the status
+   squares of the Mass Locked / Landing Gear list for the sampling. ------------------------------ */
+html.hud-type--elite {
+  --hud-elite-shadow: 0 0 3px #000, 0 0 7px rgba(0, 0, 0, 0.85), 1px 1px 1px #000;
+}
+html.hud-type--elite .shell {
+  /* The far edge goes into the screen, so nothing grows past the window (origin from theme.js). */
+  transform: perspective(60rem) rotateY(var(--hud-tilt, 0deg));
+  transform-origin: var(--hud-tilt-origin, left) center;
+  padding: 0.2rem 0.5rem 0.4rem;
+}
+html.hud-type--elite .shell.shell--off {
+  transform: perspective(60rem) rotateY(var(--hud-tilt, 0deg)) scale(0.97);
+}
+html.hud-type--elite .shell::before,
+html.hud-type--elite .shell::after,
+html.hud-type--elite .panel > .panel__frame,
+html.hud-type--elite .panel__body > .panel__fill,
+html.hud-type--elite .panel__body::before,
+html.hud-type--elite .panel__body::after {
+  display: none;
+  animation: none;
+}
+html.hud-type--elite .panel {
+  filter: none;
+  clip-path: none;
+  padding: 0;
+}
+html.hud-type--elite .panel__body {
+  clip-path: none;
+  padding: 0.1rem 0.1rem 0.3rem;
+  text-shadow: var(--hud-elite-shadow);
+}
+html.hud-type--elite .panel__body * {
+  text-shadow: var(--hud-elite-shadow);
+}
+/* The title between two neon lines, each with its glow and a dark shadow behind it. */
+html.hud-type--elite .hud-head {
+  position: relative;
+  margin: 0.25rem 0 0.4rem;
+  padding: 0.32rem 0.1rem 0.28rem;
+  background: none;
+  align-items: center;
+}
+html.hud-type--elite .hud-head::before,
+html.hud-type--elite .hud-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--hud);
+  box-shadow:
+    0 0 5px var(--hud),
+    0 0 10px var(--hud-dim),
+    0 1px 6px rgba(0, 0, 0, 0.9);
+}
+html.hud-type--elite .hud-head::before {
+  top: 0;
+}
+html.hud-type--elite .hud-head::after {
+  bottom: 0;
+  height: 1.5px;
+}
+html.hud-type--elite .hud-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  color: var(--hud-hi);
+  text-shadow:
+    0 0 6px var(--hud),
+    0 0 2px var(--hud),
+    var(--hud-elite-shadow);
+}
+html.hud-type--elite .hud-title::before {
+  display: none;
+}
+html.hud-type--elite .hud-status {
+  color: var(--hud);
+  opacity: 1;
+}
+html.hud-type--elite .hud-section + .hud-section {
+  margin-top: 0.7rem;
+  padding-top: 0;
+  background: none;
+}
+html.hud-type--elite .row .lbl,
+html.hud-type--elite .row .k,
+html.hud-type--elite .hud-list .name,
+html.hud-type--elite .hud-list .cr {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+html.hud-type--elite .row .lbl,
+html.hud-type--elite .row .k {
+  color: var(--hud-hi);
+  opacity: 1;
+}
+html.hud-type--elite .row--rule {
+  background: linear-gradient(var(--hud-dim), var(--hud-dim)) top left / 100% 1px no-repeat;
+}
+/* List rows: no separators; the bullet is the game's status square — lit when sampled or found. */
+html.hud-type--elite .hud-list li {
+  background: none;
+  padding-left: 1.05rem;
+}
+html.hud-type--elite .hud-list li::before {
+  top: 0.4rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  transform: none;
+  background: transparent;
+  border: 1px solid var(--hud);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+  opacity: 0.9;
+}
+html.hud-type--elite .hud-list li.has-live::before,
+html.hud-type--elite .hud-list li.has-done::before,
+html.hud-type--elite .hud-list li.has-seen::before,
+html.hud-type--elite .notable-list li.notable-row--dss::before {
+  background: var(--hud-hi);
+  border-color: var(--hud-hi);
+  box-shadow:
+    0 0 5px var(--hud),
+    0 0 3px rgba(0, 0, 0, 0.9);
+}
+/* The sampling tracker's three scans: a square each, lit once that scan is taken (.row--taken). */
+html.hud-type--elite .row--scan .lbl::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.4rem;
+  vertical-align: -0.02rem;
+  border: 1px solid var(--hud-hi);
+  background: var(--hud-hi);
+  box-shadow: 0 0 5px var(--hud), 0 0 3px rgba(0, 0, 0, 0.9);
+}
+html.hud-type--elite .row--scan:not(.row--taken) .lbl::before {
+  background: transparent;
+  border-color: var(--hud);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+}
