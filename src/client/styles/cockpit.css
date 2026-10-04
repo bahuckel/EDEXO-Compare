@@ -246,6 +246,13 @@ input[type="text"]:focus {
   .appbar-menu .appbar-icon-btn::after {
     content: none;
   }
+  /* Thin rules between the groups (plan V1, 2026-10-04): finds · places · records · maps · you · options. */
+  .appbar-menu > .appbar-menu-sep {
+    width: 1px;
+    height: 1.3rem;
+    margin: 0 calc(var(--s-1) * -0.5);
+    background: var(--accent-a35);
+  }
   .appbar-menu .appbar-icon-btn:hover,
   .appbar-menu .appbar-icon-btn:focus-visible {
     color: var(--ink, #07060a);

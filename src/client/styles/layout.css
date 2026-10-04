@@ -133,6 +133,13 @@
     linear-gradient(currentColor, currentColor) 0 50% / 70% 2px no-repeat,
     linear-gradient(currentColor, currentColor) 0 100% / 100% 2px no-repeat;
 }
+/* In the dropdown, a group rule (plan V1, 2026-10-04). */
+.appbar-menu-sep {
+  display: block;
+  height: 1px;
+  margin: 0;
+  background: var(--accent-dim);
+}
 .appbar-menu {
   display: none;
   position: absolute;

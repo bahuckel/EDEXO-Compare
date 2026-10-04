@@ -158,6 +158,7 @@ const AppMenuEntries = memo(function AppMenuEntries({
           <IconBacklog />
         </button>
       </Tooltip>
+      <span className="appbar-menu-sep" aria-hidden="true" />
       {/*
         Carriers is in the menu rather than the app bar because it is a thing the commander goes
         looking for — where do I sell a full sample bag — not something they watch. The panel
@@ -203,6 +204,7 @@ const AppMenuEntries = memo(function AppMenuEntries({
           <IconBookmark />
         </button>
       </Tooltip>
+      <span className="appbar-menu-sep" aria-hidden="true" />
       <Tooltip text="Statistics — income by source, activity and balances, over 24 h to all time.">
         <button
           type="button"
@@ -225,6 +227,7 @@ const AppMenuEntries = memo(function AppMenuEntries({
           </button>
         </Tooltip>
       ) : null}
+      <span className="appbar-menu-sep" aria-hidden="true" />
       <Tooltip text="Galaxy map — 5.3 million systems with recorded biology, your own travels, search and codex, in 3D. Opens in its own window.">
         <a
           className="appbar-icon-btn"
@@ -246,6 +249,7 @@ const AppMenuEntries = memo(function AppMenuEntries({
           <IconEncyclopedia />
         </button>
       </Tooltip>
+      <span className="appbar-menu-sep" aria-hidden="true" />
       <Tooltip text="Achievements — every plant variant by galaxy, genus, rarity and region, Bronze / Silver / Gold; track one to mark its plants.">
         <button
           type="button"
@@ -266,6 +270,7 @@ const AppMenuEntries = memo(function AppMenuEntries({
           <IconSession />
         </button>
       </Tooltip>
+      <span className="appbar-menu-sep" aria-hidden="true" />
       <Tooltip text="Options — journal service info, map tier thresholds, reset.">
         <button
           type="button"
