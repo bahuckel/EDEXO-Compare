@@ -112,6 +112,8 @@ export function GalaxyMap3D() {
   const codexOn = drawer === "codex";
   const [codexKind, setCodexKind] = useState<CodexMapKind>("bio");
   const [codexRegions, setCodexRegions] = useState<CodexMapRegionsDTO | null>(null);
+  /** The region names Find offers, once the outlines have arrived. */
+  const [regionAnchors, setRegionAnchors] = useState<RegionOutlines["anchors"]>([]);
   const [codexRegion, setCodexRegion] = useState<string | null>(null);
   const [codexSystems, setCodexSystems] = useState<Map<string, CodexMapSystemDTO>>(new Map());
   const [search, setSearch] = useState<GalaxySearchApplied | null>(null);
@@ -281,29 +283,34 @@ export function GalaxyMap3D() {
     };
 
     void e.load();
-    // Backdrop: the photograph (placed by the same pin as the 2D map) and the region outlines.
-    void Promise.all([
-      drawnGalaxyImage().catch(() => null),
-      fetch("/api/region-map")
-        .then((r) => (r.ok ? (r.json() as Promise<RegionMapData>) : null))
-        .catch(() => null),
-    ]).then(([img, regions]) => {
-      if (engine.current !== e) return;
-      regionData.current = regions;
-      let photo = null;
-      if (img) {
+    // Backdrop: the region outlines, and the drawn Milky Way (placed by the same pin as the 2D map).
+    // Each as soon as it is ready: Find's region names must not wait for the drawing.
+    void fetch("/api/region-map")
+      .then((r) => (r.ok ? (r.json() as Promise<RegionMapData>) : null))
+      .catch(() => null)
+      .then((regions) => {
+        if (engine.current !== e) return;
+        regionData.current = regions;
+        outlines.current = regions ? regionOutlines(regions) : null;
+        e.setBackdrop(null, outlines.current);
+        setRegionAnchors(outlines.current?.anchors ?? []);
+      });
+    void drawnGalaxyImage()
+      .catch(() => null)
+      .then((img) => {
+        if (engine.current !== e || !img) return;
         const r = galaxyImageRect(img.width, img.height);
-        photo = {
-          url: img.url,
-          x0: xForRegionPx(r.x),
-          x1: xForRegionPx(r.x + r.width),
-          zTop: zForRegionPz(REGION_MAP_SIZE - 1 - r.y),
-          zBottom: zForRegionPz(REGION_MAP_SIZE - 1 - (r.y + r.height)),
-        };
-      }
-      outlines.current = regions ? regionOutlines(regions) : null;
-      e.setBackdrop(photo, outlines.current);
-    });
+        e.setBackdrop(
+          {
+            url: img.url,
+            x0: xForRegionPx(r.x),
+            x1: xForRegionPx(r.x + r.width),
+            zTop: zForRegionPz(REGION_MAP_SIZE - 1 - r.y),
+            zBottom: zForRegionPz(REGION_MAP_SIZE - 1 - (r.y + r.height)),
+          },
+          null,
+        );
+      });
 
     // The commander's own systems (again whenever the route poll says they changed).
     loadMine.current = () =>
@@ -714,8 +721,8 @@ export function GalaxyMap3D() {
   const findRegions = useMemo(() => {
     const q = findText.trim().toLowerCase();
     if (q.length < 2) return [];
-    return (outlines.current?.anchors ?? []).filter((a) => a.name.toLowerCase().includes(q)).slice(0, 5);
-  }, [findText]);
+    return regionAnchors.filter((a) => a.name.toLowerCase().includes(q)).slice(0, 5);
+  }, [findText, regionAnchors]);
 
   const go = (g: { x: number; y: number; z: number }, distance: number, sel?: Selection) => {
     setFindOpen(false);

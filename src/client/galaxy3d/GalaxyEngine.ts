@@ -231,6 +231,9 @@ export class GalaxyEngine {
   private wanted: string[] = [];
   private photo: THREE.Mesh | null = null;
   private borders: THREE.LineSegments | null = null;
+  /** The layer switches, kept so a picture or outline that arrives after them still obeys them. */
+  private photoOn = true;
+  private bordersOn = true;
   private anchors: RegionOutlines["anchors"] = [];
   private labelsOn = true;
   private groupsOn = true;
@@ -532,6 +535,7 @@ export class GalaxyEngine {
       );
       plane.rotation.x = -Math.PI / 2; // into the plane; the image's top toward the game's +z
       plane.position.set((photo.x0 + photo.x1) / 2, -1, -(photo.zTop + photo.zBottom) / 2);
+      plane.visible = this.photoOn;
       this.backdrop.add(plane);
       this.photo = plane;
     }
@@ -551,6 +555,7 @@ export class GalaxyEngine {
         // The scheme's accent, not a fixed orange (review O-26): read once when the borders are built.
         new THREE.LineBasicMaterial({ color: accentColour(), transparent: true, opacity: 0.22, depthTest: false }),
       );
+      this.borders.visible = this.bordersOn;
       this.backdrop.add(this.borders);
       this.anchors = outlines.anchors;
     }
@@ -560,8 +565,14 @@ export class GalaxyEngine {
   // ------------------------------------------------------------------------------------- settings
 
   setLayer(which: "photo" | "borders" | "labels" | "groups", on: boolean): void {
-    if (which === "photo" && this.photo) this.photo.visible = on;
-    if (which === "borders" && this.borders) this.borders.visible = on;
+    if (which === "photo") {
+      this.photoOn = on;
+      if (this.photo) this.photo.visible = on;
+    }
+    if (which === "borders") {
+      this.bordersOn = on;
+      if (this.borders) this.borders.visible = on;
+    }
     if (which === "labels") this.labelsOn = on;
     if (which === "groups") {
       this.groupsOn = on;
