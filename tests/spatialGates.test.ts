@@ -89,6 +89,15 @@ describe("evaluating a gate", () => {
     expect(describeVerdict(tubers)).toContain("Sagittarius A*");
   });
 
+  it("passes Brain Trees in Norma Expanse, just past 1,000 ly from the nearest Guardian site", () => {
+    // Graea Hypue MO-X b2-1: a confirmed Brain Tree Puniceum system. All 4,142 confirmed Brain Tree
+    // bodies lie within 1,223 ly; the 83 past 1,000 are all in Norma Expanse.
+    const graea = { x: -1247.8125, y: -1001.15625, z: 13086.5 };
+    const v = evaluateSpatialGate("brain_trees_brain_tree_puniceum", graea, cat)!;
+    expect(v.distanceLy).toBeGreaterThan(1000);
+    expect(v.passes).toBe(true);
+  });
+
   it("passes the Tubers near the core", () => {
     const v = evaluateSpatialGate("sinuous_tuber_sinuous_tubers_prasinum", cat.core, cat)!;
     expect(v.passes).toBe(true);

@@ -14,7 +14,7 @@
  * |---|---|---|---|
  * | nebula < 150 ly | Bark Mounds | 93 % of 23,651 systems | 4–7 % background |
  * | nebula < 150 ly | Electricae radialem | 79 % of 16,370 systems | *pluma 0 %* |
- * | Guardian site < 1,000 ly | Brain Trees | 99 % of 16,062 systems | 15–27 % |
+ * | Guardian site < 1,250 ly | Brain Trees | 99 % of 16,062 systems within 1,000 ly; all 4,142 confirmed bodies within 1,223 | 15–27 % |
  * | galactic core < 10,000 ly | Sinuous Tubers | 94 % of 5,139 systems | 0–20 % |
  *
  * Planetary nebulae are excluded from the catalogue on evidence: **not one** of 88 Bark Mound systems
@@ -130,8 +130,14 @@ export const SPATIAL_GATES: { idIncludes: string; gate: SpatialGate }[] = [
     idIncludes: "brain_tree",
     gate: {
       kind: "guardian",
-      thresholdLy: 1000,
-      evidence: "99 % of 16,062 Brain Tree systems are within 1,000 ly of a Guardian site; controls 15–27 %",
+      /*
+        1,250 since 2026-10-04 (owner: no misses): every one of 4,142 confirmed single-species Brain
+        Tree bodies lies within 1,223 ly of a catalogued Guardian site; the 83 past 1,000 ly are all in
+        Norma Expanse (Puniceum 37, Roseum 43, Viride 3), and each lost its species to this gate.
+      */
+      thresholdLy: 1250,
+      evidence:
+        "99 % of 16,062 Brain Tree systems are within 1,000 ly of a Guardian site, and every confirmed Brain Tree body within 1,223 ly; controls 15–27 %",
     },
   },
   /*
