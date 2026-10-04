@@ -6,7 +6,7 @@ import { copyDataTree } from "./packagedData.mjs";
 import { signWindowsArtifactsIfConfigured } from "./sign-windows-artifacts.mjs";
 
 const outDir = join("dist", "cli-pack");
-const target = process.env.EDEXO_PKG_TARGET ?? "node18-win-x64";
+const target = process.env.EDEXO_PKG_TARGET ?? "node22-win-x64";
 
 function rimrafSync(p) {
   if (existsSync(p)) rmSync(p, { recursive: true, maxRetries: 10, retryDelay: 200 });

@@ -6,6 +6,9 @@
   "author": "Bahuckel (CMDR FALrenica)",
   "type": "module",
   "main": "electron/main.cjs",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "concurrently -k -n app,api \"vite\" \"tsx watch src/server/devEntry.ts --host 127.0.0.1 --port 7111\"",
     "build": "vite build",

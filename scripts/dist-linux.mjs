@@ -19,7 +19,7 @@ import { mergeDataOverlays } from "./mergeDataOverlay.mjs";
 import { copyDataTree } from "./packagedData.mjs";
 
 const version = JSON.parse(readFileSync("package.json", "utf8")).version;
-const target = process.env.EDEXO_PKG_TARGET ?? "node18-linux-x64";
+const target = process.env.EDEXO_PKG_TARGET ?? "node22-linux-x64";
 const folder = `ED Exo Compare ${version}`;
 const outRoot = join("dist", "linux");
 const outDir = join(outRoot, folder);

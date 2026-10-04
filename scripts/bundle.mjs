@@ -14,7 +14,7 @@ await esbuild.build({
   entryPoints: ["src/server/devEntry.ts"],
   bundle: true,
   platform: "node",
-  target: "node18",
+  target: "node22",
   format: "cjs",
   outfile: "build/app.cjs",
   logLevel: "info",
