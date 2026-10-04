@@ -27,6 +27,7 @@ import { csvFileName, downloadCsv, toCsv, type CsvColumn } from "./csv";
 import { useModal } from "./ui/useModal";
 import type { FirstDiscoveryBacklogDTO, FirstDiscoveryBacklogRowDTO } from "@shared/types";
 import { fmtLyAway } from "@shared/format";
+import { Tooltip } from "./ui/Tooltip";
 
 const crFmt = new Intl.NumberFormat("en-US");
 const cr = (n: number) => `${crFmt.format(Math.round(n))} CR`;
@@ -273,15 +274,16 @@ export function FirstDiscoveryBacklogModal({
               >
                 Verified 5×
               </button>
-              <button
-                type="button"
-                className={`fdb-chip${codexOnly ? " fdb-chip--on" : ""}`}
-                onClick={() => setCodexOnly((v) => !v)}
-                title="Only bodies with a species not yet in your codex for that region, where it is the only candidate of its genus there (after the FSS, or the DSS when mapped). A genus with two or more possible species is left out: not worth the trip on a guess. The colour is not judged."
-              >
-                New codex (
-                {(data?.rows ?? []).filter((r) => (r.codexNew?.length ?? 0) > 0).length.toLocaleString()})
-              </button>
+              <Tooltip text="Only bodies with a species not yet in your codex for that region, where it is the only candidate of its genus there (after the FSS, or the DSS when mapped). A genus with two or more possible species is left out: not worth the trip on a guess. The colour is not judged.">
+                <button
+                  type="button"
+                  className={`fdb-chip${codexOnly ? " fdb-chip--on" : ""}`}
+                  onClick={() => setCodexOnly((v) => !v)}
+                >
+                  New codex (
+                  {(data?.rows ?? []).filter((r) => (r.codexNew?.length ?? 0) > 0).length.toLocaleString()})
+                </button>
+              </Tooltip>
               <span className="fdb-filters__gap" />
               <button
                 type="button"

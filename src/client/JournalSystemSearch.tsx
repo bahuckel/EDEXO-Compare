@@ -8,6 +8,7 @@ import { useToast } from "./ui/feedback";
 import type { JournalSystemInfo } from "@shared/types";
 import { memoOnSnapSlice, type SnapSlice } from "./snapSlice";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Tooltip } from "./ui/Tooltip";
 
 /**
  * The header's system search: the journals first, Spansh as you type (owner, 2026-09-25).
@@ -205,14 +206,13 @@ export const JournalSystemSearch = memoOnSnapSlice(SEARCH_FIELDS, function Journ
               {rv.starSystem}: {rv.error ?? "could not be fetched."}
             </span>
           ) : rv?.state === "ready" ? (
-            <span
-              className="journal-system-remote dim"
-              title="Not from your journals: bodies, signals and logged species from Spansh, kept 30 days. Species other commanders logged are marked; the rest is the app’s prediction."
-            >
-              From Spansh · {rv.bioBodyCount ?? 0} bio {(rv.bioBodyCount ?? 0) === 1 ? "body" : "bodies"} of{" "}
-              {rv.bodyCount ?? 0}
-              {rv.fetchedAt ? ` · fetched ${rv.fetchedAt.slice(0, 10)}` : ""}
-            </span>
+            <Tooltip text="Not from your journals: bodies, signals and logged species from Spansh, kept 30 days. Species other commanders logged are marked; the rest is the app’s prediction.">
+              <span className="journal-system-remote dim">
+                From Spansh · {rv.bioBodyCount ?? 0} bio {(rv.bioBodyCount ?? 0) === 1 ? "body" : "bodies"} of{" "}
+                {rv.bodyCount ?? 0}
+                {rv.fetchedAt ? ` · fetched ${rv.fetchedAt.slice(0, 10)}` : ""}
+              </span>
+            </Tooltip>
           ) : null}
         </div>
       ) : null}

@@ -9,7 +9,7 @@ import { createPortal } from "react-dom";
  * truncated by the OS, vanish on the smallest pointer move, and never appear for keyboard or touch
  * users — so the longest and most useful text in the app was also the least reachable.
  *
- *   <Tooltip text="…">          hover/focus, 80 ms, for short labels
+ *   <Tooltip text="…">          hover/focus/tap, 80 ms, for labels and a sentence or two
  *   <InfoPopover title="…">     click an ⓘ, stays open, for long-form help
  */
 
@@ -73,11 +73,17 @@ export function Tooltip({
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key === "Escape") hide();
     };
+    // A tap elsewhere closes one a tap opened (a finger never "leaves").
+    const onPointerDown = (ev: PointerEvent) => {
+      if (!wrapRef.current?.contains(ev.target as Node)) hide();
+    };
     window.addEventListener("keydown", onKey);
     window.addEventListener("scroll", hide, true);
+    window.addEventListener("pointerdown", onPointerDown, true);
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("pointerdown", onPointerDown, true);
     };
   }, [open, hide]);
 
@@ -85,8 +91,17 @@ export function Tooltip({
     <span
       ref={wrapRef}
       className={className ? `tip-anchor ${className}` : "tip-anchor"}
-      onPointerEnter={show}
-      onPointerLeave={hide}
+      // Touch (plan 3.4b): a tap shows the text and it stays until the next tap elsewhere; the
+      // pointer enter/leave a tap fires around itself would only flash it.
+      onPointerEnter={(ev) => {
+        if (ev.pointerType !== "touch") show();
+      }}
+      onPointerLeave={(ev) => {
+        if (ev.pointerType !== "touch") hide();
+      }}
+      onPointerDown={(ev) => {
+        if (ev.pointerType === "touch") setOpen(true);
+      }}
       onFocusCapture={show}
       onBlurCapture={hide}
       aria-describedby={open ? id : undefined}

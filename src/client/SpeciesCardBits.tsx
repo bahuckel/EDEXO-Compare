@@ -9,6 +9,7 @@ import type {
   SpeciesProvenance,
 } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
+import { Tooltip } from "./ui/Tooltip";
 
 export function FootScanHitBlock({ hit }: { hit: FootScanMatchPayload["hits"][number] }) {
   const src = hit.confirmationSource === "analyse" ? "FOOT CATALOG — Analyse" : "FOOT CATALOG — Sample";
@@ -203,33 +204,32 @@ export function SpeciesProvenanceBadge({ p }: { p?: SpeciesProvenance }) {
   if (p.firstHand) {
     const when = p.firstHandAt ? new Date(p.firstHandAt).toLocaleDateString() : null;
     return (
-      <span
-        className="species-prov species-prov--mine"
-        title={`Your own journal records this species on this body${when ? ` on ${when}` : ""}. First-hand evidence — nothing else in the app is.`}
+      <Tooltip
+        text={`Your own journal records this species on this body${when ? ` on ${when}` : ""}. First-hand evidence — nothing else in the app is.`}
       >
-        you scanned it
-      </span>
+        <span className="species-prov species-prov--mine">you scanned it</span>
+      </Tooltip>
     );
   }
   if (p.sharedBy?.length) {
     const who = p.sharedBy.map((n) => (n === "a commander" ? n : `CMDR ${n}`)).join(", ");
     return (
-      <span
-        className="species-prov species-prov--shared"
-        title={`${who} logged this species on this very body — from the shared-exomastery folder.`}
-      >
-        shared{p.sharedBy.length > 1 ? ` (${p.sharedBy.length})` : ""}
-      </span>
+      <Tooltip text={`${who} logged this species on this very body — from the shared-exomastery folder.`}>
+        <span className="species-prov species-prov--shared">
+          shared{p.sharedBy.length > 1 ? ` (${p.sharedBy.length})` : ""}
+        </span>
+      </Tooltip>
     );
   }
   if (p.corpusInSystem > 0) {
     return (
-      <span
-        className="species-prov species-prov--corpus"
-        title={`Spansh's exobiology data confirms this species on ${p.corpusInSystem} ${p.corpusInSystem === 1 ? "body" : "bodies"} in this system — another commander scanned it here. The shipped data records the system, not which body, so this does not say it is on this one.`}
+      <Tooltip
+        text={`Spansh's exobiology data confirms this species on ${p.corpusInSystem} ${p.corpusInSystem === 1 ? "body" : "bodies"} in this system — another commander scanned it here. The shipped data records the system, not which body, so this does not say it is on this one.`}
       >
-        in system{p.corpusInSystem > 1 ? ` (${p.corpusInSystem})` : ""}
-      </span>
+        <span className="species-prov species-prov--corpus">
+          in system{p.corpusInSystem > 1 ? ` (${p.corpusInSystem})` : ""}
+        </span>
+      </Tooltip>
     );
   }
   return null;

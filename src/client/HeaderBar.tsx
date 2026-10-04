@@ -704,16 +704,17 @@ export const HeaderBar = memo(function HeaderBar({
               {snap.dScanBodies ? (
                 <DScanBodiesBadge d={snap.dScanBodies} className="d-scan-card--header-row" headerMetrics />
               ) : (
-                <button
-                  type="button"
-                  className="d-scan-card d-scan-card--placeholder d-scan-card--header-row"
-                  title="No FSS honk line in merged journal for this system yet — if you already mapped everything, totals still come from Scan rows and the system map. Use “Load bodies from EDSM” next to the search when browsing a system, or widen journal history / re-honk in game if counts stay empty."
-                >
-                  <span className="d-scan-card__label header-metric-card-label">D-Scan</span>
-                  <span className="d-scan-card__placeholder-text header-metric-card-value">
-                    No body tally yet (honk, Scan data, or map)
-                  </span>
-                </button>
+                <Tooltip text="No FSS honk line in merged journal for this system yet — if you already mapped everything, totals still come from Scan rows and the system map. Use “Load bodies from EDSM” next to the search when browsing a system, or widen journal history / re-honk in game if counts stay empty.">
+                  <button
+                    type="button"
+                    className="d-scan-card d-scan-card--placeholder d-scan-card--header-row"
+                  >
+                    <span className="d-scan-card__label header-metric-card-label">D-Scan</span>
+                    <span className="d-scan-card__placeholder-text header-metric-card-value">
+                      No body tally yet (honk, Scan data, or map)
+                    </span>
+                  </button>
+                </Tooltip>
               )}
             </div>
             {snap.focusedSystemUndiscovered ? (

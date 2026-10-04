@@ -47,6 +47,7 @@ import {
 } from "./SpeciesCardBits";
 import { nextTempUnit, useTempUnit } from "./useUnits";
 import { RarityGem } from "./RarityGem";
+import { Tooltip } from "./ui/Tooltip";
 import {
   FootScanMatchCard,
   SpeciesStarColourSoftBadge,
@@ -444,40 +445,42 @@ export const SpeciesCard = memo(function SpeciesCard({
             [CODEX FIRST]
           </span>
         ) : m.codexNew ? (
-          <span
-            className="species-codex-mark"
-            title={codexMarkTitle(m)}
-            aria-label="New codex entry for this region"
-          >
-            [CODEX]
-          </span>
+          <Tooltip text={codexMarkTitle(m)}>
+            <span
+              className="species-codex-mark"
+              aria-label="New codex entry for this region"
+            >
+              [CODEX]
+            </span>
+          </Tooltip>
         ) : m.notInCodex ? (
-          <span
-            className="species-codex-new"
-            title="No codex entry for this species in your journals — you have never logged one. The first sample of a species is worth more than the ones after it, and this is the page that is still blank."
-            aria-label="Not yet in your codex"
-          >
-            new to you
-          </span>
+          <Tooltip text="No codex entry for this species in your journals — you have never logged one. The first sample of a species is worth more than the ones after it, and this is the page that is still blank.">
+            <span
+              className="species-codex-new"
+              aria-label="Not yet in your codex"
+            >
+              new to you
+            </span>
+          </Tooltip>
         ) : null}
         {m.achievementAdvance ? (
-          <span
-            className="species-ach-mark"
-            title={achievementMarkTitle(m.achievementAdvance)}
-            aria-label="Advances the tracked achievement"
-          >
-            ★
-          </span>
+          <Tooltip text={achievementMarkTitle(m.achievementAdvance)}>
+            <span
+              className="species-ach-mark"
+              aria-label="Advances the tracked achievement"
+            >
+              ★
+            </span>
+          </Tooltip>
         ) : null}
         <SpeciesProvenanceBadge p={m.provenance} />
         {m.entry.predictionUnsupported ? (
-          <span
-            className="species-not-predicted"
-            title={`${m.entry.predictionUnsupported.reason}. A body scan cannot answer that, so this species is listed as possible rather than predicted — nothing here says it is likely to be present.`}
-          >
-            {" "}
-            not predicted
-          </span>
+          <Tooltip text={`${m.entry.predictionUnsupported.reason}. A body scan cannot answer that, so this species is listed as possible rather than predicted — nothing here says it is likely to be present.`}>
+            <span className="species-not-predicted">
+              {" "}
+              not predicted
+            </span>
+          </Tooltip>
         ) : null}
         {morphColorRaw ? (
           <span
@@ -655,12 +658,11 @@ export const SpeciesCard = memo(function SpeciesCard({
                 </span>
               ) : null}
               {m.learnedFromFootScan ? (
-                <span
-                  className="badge-foot-learned"
-                  title="Suggested from data/foot_scanned.json. Label shows whether confirmations in the catalog used ScanOrganic Analyse and/or Sample (not the same as a completed codex line on this body)."
-                >
-                  {footCatalogBadgeText(m.footCatalogConfirmations)}
-                </span>
+                <Tooltip text="Suggested from data/foot_scanned.json. Label shows whether confirmations in the catalog used ScanOrganic Analyse and/or Sample (not the same as a completed codex line on this body).">
+                  <span className="badge-foot-learned">
+                    {footCatalogBadgeText(m.footCatalogConfirmations)}
+                  </span>
+                </Tooltip>
               ) : null}
             </p>
           ) : null}

@@ -55,6 +55,7 @@ import { TIER_DSS, crFmt, cr, ly, MAX_CR, STEP_CR, sliderLabel, evidence } from 
 import type { GalaxySearchApplied } from "./galaxySearchShared";
 import { GalaxyHitsModal, GalaxyPossibleModal } from "./GalaxySearchModals";
 import { fmtPct } from "@shared/format";
+import { Tooltip } from "./ui/Tooltip";
 export { MAX_CR, STEP_CR, sliderLabel } from "./galaxySearchShared";
 export type { GalaxySearchMark, GalaxySearchApplied } from "./galaxySearchShared";
 
@@ -572,13 +573,16 @@ export function GalaxySearchPanel({
                 read the top row as the closest one, which is the one thing this list is for.
               */}
               {scan.truncated ? (
-                <span
-                  className="gsx-partial"
-                  title="A region is walked in system order, so an answer that ran out of time covers the first part of it rather than a spread across it — the nearest row here is the nearest in that part, not in the region. Name a single species to search the whole of it."
+                <Tooltip
+                  text={
+                    "A region is walked in system order, so an answer that ran out of time covers the first part of it rather than a spread across it — the nearest row here is the nearest in that part, not in the region. Name a single species to search the whole of it."
+                  }
                 >
-                  covered {Math.round((scan.systemsSearched / Math.max(1, scan.systemsInRegion)) * 100)}% of{" "}
-                  {scan.regionName ?? "the region"} — ran out of time
-                </span>
+                  <span className="gsx-partial">
+                    covered {Math.round((scan.systemsSearched / Math.max(1, scan.systemsInRegion)) * 100)}% of{" "}
+                    {scan.regionName ?? "the region"} — ran out of time
+                  </span>
+                </Tooltip>
               ) : null}
               {scanBodies > 0 ? (
                 <button type="button" className="gsx-list-open" onClick={() => setScanListOpen(true)}>

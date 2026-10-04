@@ -948,3 +948,31 @@ test("phone: the main view at 390 px keeps the body and its species", async ({ p
   await page.screenshot({ path: `${OUT}/phone-main.png`, fullPage: true });
   expect(errors).toEqual([]);
 });
+
+test.describe("touch", () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  test("touch: a tap shows a tooltip until the next tap elsewhere; small buttons get a 40 px hit area", async ({ page }) => {
+    const errors = watchErrors(page);
+    await page.goto("/");
+    await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+    const anchor = page.locator(".tip-anchor").first();
+    await anchor.scrollIntoViewIfNeeded();
+    await anchor.tap();
+    await expect(page.locator(".tip-bubble")).toBeVisible();
+    await page.locator(".body-pane").tap({ position: { x: 5, y: 5 } });
+    await expect(page.locator(".tip-bubble")).toHaveCount(0);
+    // The app bar's icon buttons are under 40 px; their hit area is not.
+    const hit = await page.evaluate(() => {
+      const b = document.querySelector(".appbar-icon-btn");
+      if (!b) return null;
+      const cs = getComputedStyle(b, "::before");
+      return { w: parseFloat(cs.width), h: parseFloat(cs.height), own: b.getBoundingClientRect().height };
+    });
+    expect(hit).not.toBeNull();
+    expect(hit!.own).toBeLessThan(40);
+    expect(hit!.w).toBeGreaterThanOrEqual(40);
+    expect(hit!.h).toBeGreaterThanOrEqual(40);
+    expect(errors).toEqual([]);
+  });
+});

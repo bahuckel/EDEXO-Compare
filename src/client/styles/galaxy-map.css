@@ -201,6 +201,10 @@
   align-items: center;
   gap: 6px;
 }
+/* A legend line with a tooltip keeps the swatch-to-text gap inside the tooltip's anchor. */
+.galaxy-map__legend li > .tip-anchor {
+  gap: 6px;
+}
 .galaxy-map__swatch {
   width: 10px;
   height: 10px;

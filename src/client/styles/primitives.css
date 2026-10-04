@@ -544,3 +544,36 @@
 .modal-head .system-map-snapshot {
   margin-left: auto;
 }
+
+/* ---- touch targets (plan 3.4b) -------------------------------------------
+   On a touch screen the small buttons (app bar icons, tab chevrons, the System card's buttons, copy,
+   the bookmark star, the info "i" and its close) were 20 to 30 px, under the 40 px a fingertip needs.
+   Each gets an invisible hit area of at least 40 px centred on it, so nothing on screen moves. The
+   star draws its glyph with ::before, so its hit area is the ::after. */
+@media (pointer: coarse) {
+  .appbar-icon-btn,
+  .tabs-chevron,
+  .sys-card__btn,
+  .sys-copy,
+  .bm-star,
+  .info-affordance,
+  .info-panel-close {
+    position: relative;
+  }
+
+  .appbar-icon-btn::before,
+  .tabs-chevron::before,
+  .sys-card__btn::before,
+  .sys-copy::before,
+  .bm-star::after,
+  .info-affordance::before,
+  .info-panel-close::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 40px);
+    height: max(100%, 40px);
+    transform: translate(-50%, -50%);
+  }
+}
