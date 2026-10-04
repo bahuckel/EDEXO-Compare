@@ -4,7 +4,7 @@
  * always complete; `/api/state/rev` answers the revision of the last push in a few bytes.
  */
 import type { AddressInfo } from "node:net";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import WebSocket from "ws";
 import { createHttpServer } from "../src/server/httpServer.js";
 import type { AppSnapshot } from "../src/shared/types.js";
@@ -192,6 +192,38 @@ describe("socket robustness (combined plan 1.3)", () => {
     expect((p.payload as Record<string, unknown>).n).toBe(1);
     const rev = await fetch(`http://127.0.0.1:${t.port}/api/state/rev`);
     expect(rev.ok).toBe(true);
+  });
+
+  it("terminates a socket that stops answering pings, and keeps one that answers", async () => {
+    // Only the keep-alive interval is faked; sockets and the harness's waits stay real.
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    try {
+      const t = await start({ n: 0 });
+      await t.next(1);
+      const net = await import("node:net");
+      // A raw client completes the upgrade and then never answers a ping: half-open TCP.
+      const silent = net.connect(t.port, "127.0.0.1");
+      silent.on("error", () => {});
+      await new Promise<void>((r) => silent.once("connect", () => r()));
+      silent.write(
+        "GET /ws HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n" +
+          "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n",
+      );
+      // Ticks count only once the server has the socket: wait for its 101.
+      await new Promise<void>((r) => silent.once("data", () => r()));
+      const closed = new Promise<void>((r) => silent.once("close", () => r()));
+      // First tick pings everyone; the ws client pongs, the raw one cannot.
+      vi.advanceTimersByTime(25_000);
+      await new Promise((r) => setTimeout(r, 300));
+      // Second tick: no pong since the last ping, so the raw socket is terminated.
+      vi.advanceTimersByTime(25_000);
+      await closed;
+      // The client that answers is still served.
+      t.set({ n: 1 });
+      expect(((await t.next(2)).payload as Record<string, unknown>).n).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("gives a socket that connected between pushes a whole frame, so a field that changed back is not stale", async () => {

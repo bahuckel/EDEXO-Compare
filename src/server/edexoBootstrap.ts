@@ -16,7 +16,7 @@ import {
   ownCodexBackupKeys,
 } from "./sharedExomastery.js";
 import { ownFootEntriesWithBackups } from "./footScannedCatalog.js";
-import { existsSync, watchFile, unwatchFile, writeFileSync, readFileSync, readdirSync, watch, statSync } from "node:fs";
+import { existsSync, watchFile, unwatchFile, writeFileSync, readFileSync, watch, statSync } from "node:fs";
 import type {
   AppSnapshot,
   AppStatusDTO,
@@ -160,6 +160,7 @@ import { regionForSystem } from "./regionMapData.js";
 import { fetchGalacticRecords, galacticRecords, readGalacticRecordsStatus } from "./galacticRecords.js";
 import { bodyKey } from "../shared/bodyKey.js";
 import { mainStarRecord } from "../shared/mainStar.js";
+import { journalFolderIsReadable, makeReplayLineApplier } from "./journalReplayGuards.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
   persistUserPreferences as writeUserPrefs,
@@ -226,14 +227,6 @@ function reloadSpeciesDerivedCaches(): void {
 }
 
 /** The journal folder is there and can be listed (a drive not mounted yet is not an empty folder). */
-function journalFolderIsReadable(dir: string): boolean {
-  try {
-    return statSync(dir).isDirectory() && Array.isArray(readdirSync(dir));
-  } catch {
-    return false;
-  }
-}
-
 export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   // First, so the warnings of the start are in Copy diagnostics too (diagnostics.ts).
   installLogRing();
@@ -1189,21 +1182,12 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       actually reached, and the live tail must start there, or lines are applied twice or never.
     */
     const consumed = new Map<string, number>();
-    /*
-      One bad line must not end the merge (combined plan 1.2): a throw here used to abort the replay,
-      and the pipeline never reached its watcher, so nothing live arrived until a restart. The live
-      path already catches per line.
-    */
-    let replayErrors = 0;
-    const applyReplayLine = (line: JournalLine): void => {
-      try {
-        store.apply(line);
-        unknownExobio.offer(line);
-      } catch (e) {
-        replayErrors += 1;
-        if (replayErrors <= 3) console.error("[edexo-compare] journal line skipped in replay:", line.event, e);
-      }
-    };
+    // One bad line must not end the merge (combined plan 1.2; journalReplayGuards.ts).
+    const replayApplier = makeReplayLineApplier((line) => {
+      store.apply(line);
+      unknownExobio.offer(line);
+    });
+    const applyReplayLine = replayApplier.apply;
     const settleManifest = (): void => {
       for (let i = 0; i < files.length; i++) {
         const end = consumed.get(files[i]!);

@@ -4,7 +4,7 @@
  * is a miss; a journal that grew is a tail step from the recorded size.
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { appendFileSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -43,7 +43,8 @@ async function setup() {
   await m.saveJournalMergeCache(jdir, manifest, store, proj, "all");
   const load = async () =>
     m.tryPrepareJournalCacheLoad(proj, path.normalize(jdir), files, await m.buildJournalFileManifest(files), "all");
-  return { files, load };
+  const save = async () => m.saveJournalMergeCache(jdir, await m.buildJournalFileManifest(files), store, proj, "all");
+  return { files, load, save };
 }
 
 describe("journal cache save", () => {
@@ -54,6 +55,20 @@ describe("journal cache save", () => {
     const r = await load();
     expect(r.hit).toBe(true);
     if (r.hit) expect(r.steps).toEqual([]);
+  });
+
+  it("reads a save that stopped half-way as a clean miss, and leaves no temp files (combined plan 1.1c)", async () => {
+    const { load, save } = await setup();
+    const cacheDir = path.join(root, "userdata", ".edexo-cache");
+    const payload = path.join(cacheDir, "journal-merge.payload.v8gz");
+    // Something holds the payload's name (Windows antivirus, the indexer): the next save's rename of
+    // the new payload fails after the old meta is gone.
+    rmSync(payload);
+    mkdirSync(path.join(payload, "held"), { recursive: true });
+    await save();
+    expect(readdirSync(cacheDir).filter((f) => f.endsWith(".tmp"))).toEqual([]);
+    expect(readdirSync(cacheDir)).not.toContain("journal-merge.meta.json");
+    expect((await load()).hit).toBe(false);
   });
 
   it("misses when a closed journal was rewritten at the same size", async () => {
