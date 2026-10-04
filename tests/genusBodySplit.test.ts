@@ -65,6 +65,22 @@ describe("the split, against the confirmed bodies it was built from", () => {
     expect(orion.get(ids[0]!)!).toBeGreaterThan(0.9);
   });
 
+  it("Sinuous Tubers read the facts per region: Prasinum is a rocky one in Inner Scutum-Centaurus", () => {
+    // Galaxy-wide it is 99 % high-metal-content (Empyrean Straits), and gave it 0.0 % on these bodies.
+    const rocky = scan({ PlanetClass: "Rocky body", Volcanism: "minor metallic magma volcanism", SurfaceTemperature: 240 });
+    const isc = genusBodyShares(root, "sinuous-tubers", SINUOUS, rocky, "Inner Scutum-Centaurus Arm")!;
+    expect(isc.get(ST("prasinum"))!).toBeGreaterThan(0.05);
+    const straits = genusBodyShares(root, "sinuous-tubers", SINUOUS, rocky, "Empyrean Straits")!;
+    expect(straits.get(ST("prasinum"))!).toBeLessThan(isc.get(ST("prasinum"))!);
+  });
+
+  it("a thinly logged region's own favourite is not lost to the galaxy's shares", () => {
+    // Inner Orion-Perseus Conflux: 46 Sinuous Tubers systems, Viride the commonest, 2 % galaxy-wide.
+    const body = scan({ Volcanism: "major rocky magma volcanism", SurfaceTemperature: 263, AtmosphereType: "CarbonDioxide" });
+    const s = genusBodyShares(root, "sinuous-tubers", SINUOUS, body, "Inner Orion-Perseus Conflux")!;
+    expect(s.get(ST("viride"))!).toBeGreaterThan(0.01);
+  });
+
   it("shares sum to one, and a genus it does not cover is left alone", () => {
     const s = genusBodyShares(root, "sinuous-tubers", SINUOUS, scan({}), "Empyrean Straits")!;
     expect([...s.values()].reduce((a, x) => a + x, 0)).toBeCloseTo(1, 6);

@@ -25,6 +25,19 @@
  *   facts on their own over-read a rare species that matches each fact separately but never together
  *   (Viride on rocky bodies, Viride with rocky volcanism, never both).
  *
+ * **Per region, backed off to the galaxy**, for a genus whose table says `regional` (Sinuous Tubers,
+ * 2026-10-04, owner: no misses). Each region has its own two or three Sinuous Tubers, and they follow
+ * the body differently there: Prasinum is a high-metal-content species in Empyrean Straits and
+ * mostly a rocky one with metallic magma in Inner Scutum-Centaurus, where the galaxy-wide facts gave
+ * it 0.0 % on every rocky body. So a fact's chance is the region's own count blended with the
+ * galaxy-wide chance as `regional.facts` pretend bodies, and the prior is the region's codex count
+ * blended with the galaxy-wide share as `regional.prior` systems: a thin region leans on the galaxy,
+ * a well-logged one speaks for itself, with no 100-system cliff (that cut left Viride in Inner
+ * Orion-Perseus Conflux, 46 systems and its commonest Sinuous Tuber, to its 2 % galaxy share). Held
+ * out one body at a time over all 2,709 confirmed Sinuous Tubers bodies: 20 → 8 not shown, 2.51 →
+ * 2.62 shown, the right one first 73 → 83 % (frequency-weighted). Brain Trees got worse that way
+ * (22 → 29 of 4,142 not shown) and keep the galaxy-wide model.
+ *
  * Held out and balanced by region, top-1 in genus went to 79 % for both Sinuous Tubers and Brain
  * Trees (`docs/perf/nb_genus.py`). The floor is per genus, in the table: 1 % for both since 2026-10-03
  * (owner: "give 3 results if needed ... without any misses"), the right one among those shown on
@@ -39,14 +52,23 @@ import path from "node:path";
 import type { PlanetScan, SpeciesMatch } from "../shared/types.js";
 import { codexGalaxySystems, codexRegionSystems } from "./speciesRarityData.js";
 import { atmosphereTypeWords } from "../shared/atmosphereText.js";
+import { regionJoinKey } from "../shared/regionMap.js";
 
-interface SpeciesCounts {
+interface FactCounts {
   n: number;
   [feature: string]: number | Record<string, number>;
+}
+interface SpeciesCounts {
+  n: number;
+  /** The same counts per region (region name → counts), where the species has confirmed bodies. */
+  regions?: Record<string, FactCounts>;
+  [feature: string]: number | Record<string, number> | Record<string, FactCounts> | undefined;
 }
 interface GenusTable {
   features: string[];
   floor: number;
+  /** Per-region facts and prior, each blended with the galaxy's at this strength (see the header). */
+  regional?: { facts: number; prior: number };
   valueCounts: Record<string, number>;
   species: Record<string, SpeciesCounts>;
 }
@@ -150,7 +172,10 @@ export function genusBodyShares(
   const table = load(root)?.genera[genusDataDir];
   if (!table || speciesIds.length === 0) return null;
   const facts = bodyFacts(scan);
+  const blend = table.regional;
+  const regionKey = blend && regionName ? regionJoinKey(regionName) : null;
   const regional = speciesIds.map((id) => (regionName ? codexRegionSystems(root, regionName, id) : null));
+  const regionKnown = regional.some((n) => n != null);
   const regionTotal = regional.reduce<number>((a, n) => a + (n ?? 0), 0);
   const galaxy = speciesIds.map((id) => codexGalaxySystems(root, id));
   const galaxyTotal = galaxy.reduce<number>((a, n) => a + (n ?? 0), 0);
@@ -161,15 +186,31 @@ export function genusBodyShares(
     const row = table.species[id];
     let lp = 0;
     if (row) {
+      const here = regionKey
+        ? Object.entries(row.regions ?? {}).find(([name]) => regionJoinKey(name) === regionKey)?.[1]
+        : undefined;
       for (const f of table.features) {
         const v = facts[f];
         if (v == null) continue;
         const counts = (row[f] as Record<string, number> | undefined) ?? {};
         const values = table.valueCounts[f] ?? 1;
-        lp += Math.log(((counts[v] ?? 0) + 0.5) / (row.n + 0.5 * (values + 1)));
+        const galaxyWide = ((counts[v] ?? 0) + 0.5) / (row.n + 0.5 * (values + 1));
+        if (!blend) {
+          lp += Math.log(galaxyWide);
+          continue;
+        }
+        const own = here ? ((here[f] as Record<string, number> | undefined)?.[v] ?? 0) : 0;
+        lp += Math.log((own + blend.facts * galaxyWide) / ((here?.n ?? 0) + blend.facts));
       }
     }
-    if (prior) lp += Math.log(((prior[i] ?? 0) + 0.5) / (priorTotal + 0.5 * speciesIds.length));
+    if (blend) {
+      if (galaxyTotal > 0) {
+        const galaxyShare = ((galaxy[i] ?? 0) + 0.5) / (galaxyTotal + 0.5 * speciesIds.length);
+        lp += Math.log(regionKnown ? ((regional[i] ?? 0) + blend.prior * galaxyShare) / (regionTotal + blend.prior) : galaxyShare);
+      }
+    } else if (prior) {
+      lp += Math.log(((prior[i] ?? 0) + 0.5) / (priorTotal + 0.5 * speciesIds.length));
+    }
     return lp;
   });
   const top = Math.max(...logs);
