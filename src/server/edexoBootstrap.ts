@@ -159,6 +159,7 @@ import { nspOutlook } from "./nspOutlook.js";
 import { regionForSystem } from "./regionMapData.js";
 import { fetchGalacticRecords, galacticRecords, readGalacticRecordsStatus } from "./galacticRecords.js";
 import { bodyKey } from "../shared/bodyKey.js";
+import { mainStarRecord } from "../shared/mainStar.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
   persistUserPreferences as writeUserPrefs,
@@ -375,17 +376,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   });
   const scanOf = (k: string) => store.explorationScans.get(k) ?? store.soldExplorationScans.get(k) ?? null;
   /** The arrival star's type (distance 0), else the lowest-numbered star scanned: the phenomena model's main star. */
-  const mainStarTypeOf = (addr: number): string | null => {
-    let best: { id: number; type: string; arrival: boolean } | null = null;
-    for (const r of [...store.liveScansInSystem(addr), ...store.soldScansInSystem(addr)]) {
-      if (!r.starType) continue;
-      const arrival = r.distanceFromArrivalLs === 0;
-      if (!best || (arrival && !best.arrival) || (arrival === best.arrival && r.bodyId < best.id)) {
-        best = { id: r.bodyId, type: r.starType, arrival };
-      }
-    }
-    return best?.type ?? null;
-  };
+  const mainStarTypeOf = (addr: number): string | null =>
+    mainStarRecord([...store.liveScansInSystem(addr), ...store.soldScansInSystem(addr)])?.starType ?? null;
   // The Notable card: green gas giants always (they are notable like an Earth-like), features as chosen.
   setNotableOptionsProvider(() => {
     const on = notices.prefs().features;

@@ -24,6 +24,7 @@ import { getProjectRoot } from "./paths.js";
 import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
 import { bodyKey } from "../shared/bodyKey.js";
+import { mainStarRecord } from "../shared/mainStar.js";
 
 /**
  * Per-system index of exploration records, cached on the store's scan revision.
@@ -110,23 +111,7 @@ export function systemExplorationScanIndex(
  * 2,494 ls, and the codex writes the rule as "5 AU", which is 2,495 ls.
  */
 function arrivalStarBodyId(byId: Map<number, ExplorationScanRecord>): number | null {
-  /**
-   * The star you arrive at is the one the game reports at zero distance from arrival — 2,860 of the
-   * 4,635 star scans in the owner's logs carry that, and it is the only direct statement of which
-   * star the arrival distance is measured from.
-   *
-   * When the primary was never scanned, fall back to the lowest star `BodyID`, which is the primary
-   * in practice. That is a guess, so it is only ever used to *accept* the arrival distance for a body
-   * that orbits it — never to reject anything.
-   */
-  let zero: number | null = null;
-  let lowest: number | null = null;
-  for (const [bodyId, r] of byId) {
-    if (!r.starType?.trim()) continue;
-    if (lowest == null || bodyId < lowest) lowest = bodyId;
-    if (r.distanceFromArrivalLs === 0 && (zero == null || bodyId < zero)) zero = bodyId;
-  }
-  return zero ?? lowest;
+  return mainStarRecord(byId.values())?.bodyId ?? null;
 }
 
 /**
@@ -145,8 +130,7 @@ export function mainStarClassOf(byId: Map<number, ExplorationScanRecord>): strin
 
 /** The main (arrival) star's own record: its luminosity class sets the Anemone colour. */
 export function mainStarOf(byId: Map<number, ExplorationScanRecord>): ExplorationScanRecord | undefined {
-  const id = arrivalStarBodyId(byId);
-  return id == null ? undefined : byId.get(id);
+  return mainStarRecord(byId.values());
 }
 
 /**
