@@ -38,7 +38,6 @@ const OPEN_HI = 1e15;
 const fmtK = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
 
 const GENUS_DATA_DIR_REQUIRING_VOLCANISM = new Set<string>(["brain-tree"]);
-const GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE = new Set<string>(["brain-tree"]);
 
 export type EncyclopediaSpawnTier = "blue" | "red" | "yellow" | "neutral";
 
@@ -195,7 +194,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     out.push({ id: "planet-class", label: "Planet class", lines, caption, tier });
   }
 
-  /* Atmosphere types (+ brain-tree genus airless) — encyclopedia skips for bacterium (still matched server-side). */
+  /* Atmosphere types — encyclopedia skips for bacterium (still matched server-side). */
   if (!bac && c.atmosphereTypeAnyOf?.length) {
     const lines = [
       c.atmosphereTypeAnyOf.map((a) => (!a?.trim() ? "no atmosphere" : a)).join(", "),
@@ -207,10 +206,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       caption = "Needs a detailed scan";
     } else {
       const atmoNorm = normalizeScanAtmosphereForMatch(scan);
-      if (GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE.has(entry.genusDataDir) && atmoNorm !== "") {
-        tier = "red";
-        caption = "Brain trees: airless bodies only";
-      } else if (!atmoNorm && !(c.atmosphereTypeAnyOf ?? []).some((a) => !a?.trim())) {
+      if (!atmoNorm && !(c.atmosphereTypeAnyOf ?? []).some((a) => !a?.trim())) {
         tier = "red";
         caption = "Needs a detailed scan";
       } else if (atmospheresMatchSpeciesList(scan, c.atmosphereTypeAnyOf!)) {
@@ -222,15 +218,6 @@ export function buildEncyclopediaSpawnConditionCards(args: {
       }
     }
     out.push({ id: "atmosphere-type", label: "Atmosphere types", lines, caption, tier });
-  } else if (GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE.has(entry.genusDataDir) && scan) {
-    const atmoNorm = normalizeScanAtmosphereForMatch(scan);
-    out.push({
-      id: "genus-airless",
-      label: "Brain-tree airless gate",
-      lines: ["Brain trees only appear on airless worlds."],
-      caption: atmoNorm === "" ? "No atmosphere — allowed" : `This body: ${atmoNorm || "an atmosphere"}`,
-      tier: atmoNorm === "" ? "blue" : "red",
-    });
   }
 
   /*

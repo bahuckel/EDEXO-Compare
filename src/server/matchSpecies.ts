@@ -146,12 +146,6 @@ function injectOrganicLockConfirmedSpecies(
 const GENUS_DATA_DIR_REQUIRING_VOLCANISM = new Set<string>(["brain-tree"]);
 
 /**
- * In-game Brain Trees only on airless bodies; enforced even if genus JSON omits atmosphere.
- * Per-species rows still list planet classes that can exist with thin atmo — gate by scan.
- */
-const GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE = new Set<string>(["brain-tree"]);
-
-/**
  * How much of a gas has to be in the mix before a plant can be said to live in it.
  *
  * Reported from the field: a body whose atmosphere is 99 % CO₂ and 0.99 % SO₂ is not a sulphur
@@ -607,14 +601,6 @@ export function speciesMatchesExcludingTempPressure(
         detail: `${verdict.gas} ${verdict.pct.toFixed(1)} % of the atmosphere`,
       });
     }
-  }
-
-  if (GENUS_DATA_DIR_REQUIRING_NO_ATMOSPHERE.has(entry.genusDataDir) && atmoNorm !== "") {
-    const raw = (scan.AtmosphereType ?? "").trim();
-    failures.push({
-      field: "AtmosphereType",
-      detail: `Brain trees only appear on airless worlds; journal has “${raw || "…"}”.`,
-    });
   }
 
   if (c.landable === true && scan.Landable === false) {
