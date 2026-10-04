@@ -254,6 +254,7 @@ export function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesC
     if (ids.length) c.systemAddressAnyOf = ids;
   }
   if (toBool(src.outside_signal_count ?? src.outsideSignalCount) === true) c.outsideSignalCount = true;
+  if (toBool(src.all_conditions_required ?? src.allConditionsRequired) === true) c.allConditionsRequired = true;
 
   const sg = asRecord(src.surfaceGravity ?? src.SurfaceGravity);
   if (sg) {

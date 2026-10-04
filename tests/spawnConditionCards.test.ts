@@ -294,6 +294,7 @@ describe("the audit — every gate the matcher applies is drawn somewhere", () =
           distanceFromArrivalLs: ["arrival"],
           systemAddressAnyOf: ["known-systems"],
           outsideSignalCount: ["outside-signal-count"],
+          allConditionsRequired: ["all-conditions"],
           geologicalSignalIncludes: ["geo"],
         };
         const wanted = hints[field];

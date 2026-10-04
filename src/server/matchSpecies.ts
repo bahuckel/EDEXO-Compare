@@ -76,6 +76,7 @@ import {
   OBSERVED_TEMP_TOLERANCE_K,
   demoteRegionallyRareSiblings,
   demoteDeltahedronixOnOneSignalIcy,
+  dropUnprovenStrictSpecies,
 } from "./demotionPasses.js";
 export {
   demoteFailedSpatialGates,
@@ -869,7 +870,8 @@ export function speciesMatchesExcludingTempPressure(
    * Distance from the arrival star — a wall, unlike the orbit range. Crystalline Shards, the one species
    * carrying it: all 5,932 Spansh-dump bodies are ≥ 12,004 Ls from arrival, so a body well inside the
    * rule is not a place they grow. Just inside it (the numeric tolerance) demotes; an unknown distance
-   * demotes too, since a cold rock anywhere would otherwise list them.
+   * demotes too, since a cold rock anywhere would otherwise list them. (Shards also carry
+   * `allConditionsRequired`, so for them either demotion drops the row: dropUnprovenStrictSpecies.)
    */
   const arr = c.distanceFromArrivalLs;
   if (arr && (arr.min !== undefined || arr.max !== undefined)) {
@@ -1527,6 +1529,12 @@ export function matchDatabaseToScan(
     scan.PlanetClass,
     options?.biologicalSignals ?? null,
     options?.signalCountAssumed === true,
+  );
+  dropUnprovenStrictSpecies(
+    strict,
+    unlikely,
+    matchContext,
+    (e) => genusFilterActive && filterByGenusHints([e], genusHints).length > 0,
   );
 
   restoreDemotionsBelowSignalCount(

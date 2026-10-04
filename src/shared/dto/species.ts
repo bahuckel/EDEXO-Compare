@@ -131,7 +131,7 @@ export interface SpeciesCriterion {
   /**
    * Body classes that must exist **elsewhere in the same system** for this species to spawn.
    *
-   * Amphora plant and the Brain Trees are the only rows that carry it. Read by
+   * Amphora plant, the Brain Trees and Crystalline Shards carry it. Read by
    * `shared/systemBodyGates.ts`, which demotes rather than excludes and abstains until the honk is
    * finished — an absence in a half-scanned system is not an absence.
    */
@@ -227,6 +227,14 @@ export interface SpeciesCriterion {
    * HIP 87621 2 a reports three genera and grows it as a fourth). The DSS genus filter lets it through.
    */
   outsideSignalCount?: boolean;
+  /**
+   * Listed only when every condition is known and met — no demotion, no unresolved gate (owner,
+   * 2026-10-04, on Crystalline Shards: "show crystalline only if they meet all conditions, no guess
+   * work"). A row that would be demoted, or whose companion body or host star is not known yet, is
+   * dropped rather than shown as unlikely; a DSS naming the genus still lists it. See
+   * `dropUnprovenStrictSpecies` in demotionPasses.ts.
+   */
+  allConditionsRequired?: boolean;
   /** Substring match on Volcanism journal field */
   volcanismIncludes?: string[];
   /**

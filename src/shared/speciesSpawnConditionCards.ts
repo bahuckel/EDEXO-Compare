@@ -742,6 +742,17 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     });
   }
 
+  /* Every condition known and met, or not listed (Crystalline Shards, owner 2026-10-04) */
+  if (c.allConditionsRequired) {
+    out.push({
+      id: "all-conditions",
+      label: "Every condition",
+      lines: ["Listed only when every condition is known and met: a companion body scanned, the host star known"],
+      caption: "Not shown as unlikely — unless a DSS names it",
+      tier: "neutral",
+    });
+  }
+
   /* Distance from the arrival star (Crystalline Shards) */
   if (c.distanceFromArrivalLs?.min !== undefined || c.distanceFromArrivalLs?.max !== undefined) {
     const arr = c.distanceFromArrivalLs!;

@@ -363,6 +363,50 @@ export function demoteFailedSystemBodyGates(
 }
 
 /**
+ * Drop a species that must meet every condition (`allConditionsRequired`) unless it has.
+ *
+ * The owner on Crystalline Shards (2026-10-04): "show crystalline only if they meet all conditions,
+ * no guess work". They were listed on cold rocks before the system's other bodies were known, since
+ * an unfinished honk leaves the companion-body gate unresolved and unresolved is not a failure. For
+ * these species it is: the row goes — strict or demoted — unless the gates that need the system all
+ * answered yes (a listed companion body scanned, the body's host star known and allowed) and nothing
+ * demoted it. A DSS naming the genus is the game saying it is there, and keeps the row.
+ *
+ * Runs after the other demotions and before the signal-count restore, so the restore cannot bring
+ * back what this removed.
+ */
+export function dropUnprovenStrictSpecies(
+  strict: PendingMatch[],
+  unlikely: PendingMatch[],
+  matchContext: SpeciesMatchContext | null | undefined,
+  dssNamed: (entry: SpeciesEntry) => boolean,
+): void {
+  const proven = (m: PendingMatch): boolean => {
+    const wanted = m.entry.criteria?.systemBodyClassesAnyOf;
+    if (wanted?.length) {
+      const v = evaluateSystemBodyGate(wanted, matchContext?.systemBodyClasses, matchContext?.systemBodyListComplete === true);
+      if (v?.kind !== "pass") return false;
+    }
+    if (hostStarGateForSpeciesId(m.entry.id)) {
+      const v = evaluateHostStarGate(m.entry.id, matchContext?.hostStarClasses, matchContext?.systemMainStarClass ?? null, {
+        type: matchContext?.systemMainStarType,
+        luminosity: matchContext?.systemMainStarLuminosity,
+      });
+      if (!v?.passes) return false;
+    }
+    return true;
+  };
+  for (let i = strict.length - 1; i >= 0; i--) {
+    const m = strict[i]!;
+    if (m.entry.criteria?.allConditionsRequired && !dssNamed(m.entry) && !proven(m)) strict.splice(i, 1);
+  }
+  for (let i = unlikely.length - 1; i >= 0; i--) {
+    const m = unlikely[i]!;
+    if (m.entry.criteria?.allConditionsRequired && !dssNamed(m.entry)) unlikely.splice(i, 1);
+  }
+}
+
+/**
  * Weigh a species down when the body gets less or more starlight than it is usually seen under.
  *
  * The owner's idea (2026-09-27), measured before it was built: a range for every species, gated only
