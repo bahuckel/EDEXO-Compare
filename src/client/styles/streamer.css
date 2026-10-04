@@ -29,6 +29,7 @@ html[data-streamer] .candidate-species-evidence-toggle,
 html[data-streamer] .candidate-species-codex-toggle,
 html[data-streamer] .candidate-species-unlikely-toggle,
 html[data-streamer] .why-chance__toggle,
+html[data-streamer] .tabs-notable-toggle,
 html[data-streamer] .appbar-status,
 html[data-streamer] .app-legal-footer {
   display: none !important;
@@ -48,6 +49,17 @@ html[data-streamer-bg="transparent"] body {
 html[data-streamer-bg="transparent"] body::before,
 html[data-streamer-bg="transparent"] .hex-signals {
   display: none !important;
+}
+
+/* The tab rail is see-through over the app's own backdrop; over the game it needs a floor of its own. */
+html[data-streamer-bg="transparent"] .tabs-body-rail {
+  background: var(--bg) !important;
+}
+
+/* In a browser (not OBS), show the transparency instead of a white page. */
+html[data-streamer-bg-preview] body {
+  background:
+    repeating-conic-gradient(#15151b 0% 25%, #0b0b0f 0% 50%) 0 0 / 24px 24px !important;
 }
 
 html[data-streamer],

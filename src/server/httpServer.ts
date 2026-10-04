@@ -282,7 +282,7 @@ export interface HttpServerOptions {
    * Loopback only, for the same reason as the miss log: the window opens on the PC running the
    * app, so a phone pressing this would open something on a screen it cannot see.
    */
-  openAppView?: (view: "app" | "phone") => { ok: boolean; error?: string };
+  openAppView?: (view: "app" | "phone" | "stream") => { ok: boolean; error?: string };
   /**
    * POST /api/settings/open-miss-log — hand `edexo-outliers.jsonl` to the desktop.
    *

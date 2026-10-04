@@ -1472,7 +1472,8 @@
   });
   /*
     Streamer view (owner, 2026-10-01): the main UI with every control taken away (?view=stream),
-    for a Browser source in OBS on this PC. Copied, not opened: it is pasted into OBS.
+    for a Browser source in OBS on this PC. The link is copied for OBS, and (owner, 2026-10-04: "does
+    not open") the view opens in the browser too, so what the viewers will see is on screen at once.
   */
   var btnStreamLink = document.getElementById("btnStreamLink");
   if (btnStreamLink) btnStreamLink.addEventListener("click", function () {
@@ -1490,6 +1491,18 @@
     } else {
       say(false);
     }
+    fetch(apiUrl("/api/ui/open-external"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ view: "stream" }),
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error(String(r.status));
+      })
+      .catch(function () {
+        // A launcher in a browser (CLI server), or an older server: a new tab shows it instead.
+        window.open("/?view=stream", "_blank", "noopener");
+      });
   });
   mainUiMenu.addEventListener("click", function (ev) {
     var item = ev.target.closest("button[data-open-mode]");

@@ -718,8 +718,8 @@ export function registerSettingsRoutes(
       return;
     }
     const view = req.body?.view;
-    if (view !== "app" && view !== "phone") {
-      res.status(400).json({ ok: false, error: 'Send JSON { "view": "app" | "phone" }.' });
+    if (view !== "app" && view !== "phone" && view !== "stream") {
+      res.status(400).json({ ok: false, error: 'Send JSON { "view": "app" | "phone" | "stream" }.' });
       return;
     }
     res.json(opts.openAppView(view));

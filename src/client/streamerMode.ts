@@ -40,7 +40,13 @@ export function applyStreamerMode(): void {
   root.dataset.streamer = "1";
   const o = streamerOptions();
   if (o.hideCmdr) root.dataset.streamerCmdr = "0";
-  if (o.transparent) root.dataset.streamerBg = "transparent";
+  if (o.transparent) {
+    root.dataset.streamerBg = "transparent";
+    // Only OBS draws a page over the game; a browser paints the empty canvas white. There the
+    // transparency is shown as a dark checkerboard, so the preview reads as "see-through" rather
+    // than as a broken white page (owner, 2026-10-04).
+    if (!("obsstudio" in window)) root.dataset.streamerBgPreview = "1";
+  }
   if (o.zoom !== null) root.style.setProperty("zoom", String(o.zoom));
   document.title = "ED Exo Compare — streamer view";
 }

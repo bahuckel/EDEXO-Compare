@@ -1670,7 +1670,12 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       this app's own views.
     */
     openAppView: (view) => {
-      const url = view === "phone" ? `http://127.0.0.1:${port}/?screen=triage` : `http://127.0.0.1:${port}/`;
+      const url =
+        view === "phone"
+          ? `http://127.0.0.1:${port}/?screen=triage`
+          : view === "stream"
+            ? `http://127.0.0.1:${port}/?view=stream`
+            : `http://127.0.0.1:${port}/`;
       openUrlInBrowser(url);
       return { ok: true };
     },
