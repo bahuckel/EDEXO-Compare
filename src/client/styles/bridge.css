@@ -226,6 +226,19 @@
   .body-pane:not(.body-pane--rows) .body-pane-right .species-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  /*
+    One genus left the right column empty (plan V3, 2026-10-04): it takes the whole width, and its
+    species sit side by side inside it, two to a row.
+  */
+  .body-pane:not(.body-pane--rows) .body-pane-right .species-list > .genus-card-shell:only-child {
+    grid-column: 1 / -1;
+  }
+  .body-pane:not(.body-pane--rows) .species-list > .genus-card-shell:only-child .genus-card-scroll {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+    gap: 0.9rem;
+    align-items: start;
+  }
 }
 .body-pane-right .panel--candidate-species .genus-card-collapse-grid {
   min-height: 0;
