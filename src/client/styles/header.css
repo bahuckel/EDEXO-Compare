@@ -647,3 +647,23 @@
   margin-top: -0.5rem;
   padding-left: 1.4rem;
 }
+
+/* Options in groups (owner, 2026-10-04): a quiet heading per kind of setting, explained on hover. */
+.options-group-head {
+  margin: 1.1rem 0 0.35rem;
+  padding-bottom: 0.2rem;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border-bottom: 1px solid var(--accent-a22);
+  cursor: help;
+}
+.options-group-head:first-of-type {
+  margin-top: 0.2rem;
+}
+/* With every panel folded the dialog would shrink to its narrowest title: hold the width it had open. */
+.modal-panel.options-modal {
+  width: min(640px, 100%);
+}

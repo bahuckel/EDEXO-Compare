@@ -4,6 +4,7 @@
 import { useToast } from "./ui/feedback";
 import { useModal } from "./ui/useModal";
 import { InfoPopover } from "./ui/Tooltip";
+import { FoldPanel } from "./ui/Fold";
 import { Select } from "./ui/Select";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import type { AppSnapshot } from "@shared/types";
@@ -268,105 +269,28 @@ export function MapOptionsModal({
           </button>
         </div>
         <div className="modal-body">
-          <section className="options-meta-block">
-            <CollectionFocusPanel />
-            {/*
-              The second screen is the same server on the same key — one query parameter apart
-              (§51). Both were printed as whole URLs, on the reasoning that a bookmarkable link
-              should be visible; in practice the link is pasted, never read, and the access key made
-              every one of them wrap (A5).
-            */}
-            {snap.mode === "server" && snap.lanUrls.length > 0 ? (
-              /*
-                One row per address, rather than one button per address per destination.
-
-                Two paragraphs of "Copy for 192.168.0.3:7111" buttons meant a machine with a wired
-                card and a wireless one produced four long buttons that wrapped, with nothing saying
-                which pair belonged to which address. The address is said once now and the two
-                destinations are columns beside it.
-              */
-              <div className="options-lan">
-                <span />
-                <span className="options-lan-head">Phone</span>
-                <span className="options-lan-head">
-                  Second screen
-                  <InfoPopover title="Second screen" label="What the second screen shows">
-                    <p>
-                      The same server, one query parameter apart: read-only triage for this system, meant for
-                      a tablet or a spare monitor beside the game.
-                    </p>
-                    <p>
-                      The link carries this machine&apos;s LAN access key, so bookmark it on the device once
-                      and it keeps working across restarts.
-                    </p>
-                  </InfoPopover>
-                </span>
-                {snap.lanUrls.map((u) => (
-                  <Fragment key={u}>
-                    <span className="options-lan-addr">{lanHost(u)}</span>
-                    <CopyLanUrlButton url={u} label="Copy" />
-                    <CopyLanUrlButton url={secondScreenUrl(u)} label="Copy" />
-                  </Fragment>
-                ))}
-              </div>
-            ) : (
-              <p className="options-journal-line dim">
-                Other devices: turn on LAN access in the launcher&apos;s Network settings for phone and second-screen
-                links.
-              </p>
-            )}
-          </section>
-
-          <NotifyPanel />
+          {/*
+            Grouped (owner, 2026-10-04: "less chaotic options everywhere, with hover-on details for each
+            one"): a heading per kind of setting, explained on hover, and every panel a fold that starts
+            closed and remembers being opened. Each fold's "?" holds its own explanations.
+          */}
+          <h4 className="options-group-head" title="How the app and its maps look, and the stamp on snapshot images">
+            Look
+          </h4>
           <ColourSchemePanel />
-
-          <ExoMissLogPanel outliers={snap.exoOutliers} />
-
-          <EdsmFetchPanel state={snap.edsmAutoFetch} />
-          <EdsmUploadPanel state={snap.edsmUpload} hasKey={snap.edsmAutoFetch.hasKey} />
-          <CanonnUploadPanel state={snap.canonnUpload} />
-          <EddnUploadPanel state={snap.eddnUpload} />
-          <SnapshotStampPanel prefs={snap.photoStamp} />
-
-          <section className="options-journal-history options-meta-block options-oneline">
-            <label className="options-oneline-label" htmlFor="journal-history-window">
-              Journal history
-            </label>
-            <Select
-              id="journal-history-window"
-              className="options-inline-select"
-              value={serverJournalHistoryPreset}
-              options={[
-                { value: "all", label: journalHistoryPresetLabel("all") },
-                ...journalHistoryWindowPresetChoices().map((p) => ({
-                  value: p,
-                  label: journalHistoryPresetLabel(p),
-                })),
-              ]}
-              onChange={(v) => {
-                void persistJournalHistory(parseJournalHistoryPreset(v));
-              }}
-            />
-            <InfoPopover title="Journal history" label="What journal history changes">
-              <p>
-                By default the app merges <strong>every</strong> <code>Journal.*.log</code> in your Elite
-                folder. Pick a window instead and it reads only the logs that start inside it.
-              </p>
-              <p>
-                The cutoff uses real time and advances while the app runs. Changing this triggers a full
-                journal resync.
-              </p>
-            </InfoPopover>
-          </section>
-
           {/*
             The mechanism here predates this session and is not being changed — only its presentation
             (A5). Two paragraphs explained what a <strong>+</strong> means before either slider was
             reachable, which put the explanation of a control above the control itself. The owner's
             shape: one title saying what is being marked, then two labelled bars.
           */}
-          <section className="options-meta-block options-tier-group">
-            <h4 className="options-block-title">Body on system map marking</h4>
+          <FoldPanel
+            foldKey="options-map-marks"
+            defaultOpen={false}
+            className="options-meta-block options-tier-group"
+            title="System map + and ++ marks"
+            summary={`+ from ${Math.min(optPlus, EXO_MAP_PLUS_SLIDER_MAX).toLocaleString()} CR · ++ from ${Math.max(plusPlusSliderMin, optPlusPlus).toLocaleString()} CR`}
+          >
             <p className="options-tier-lead dim">
               The lowest per-species sell value a body must be worth before the system map marks it.
               <InfoPopover title="Body on system map marking" label="How the map marking works">
@@ -429,8 +353,121 @@ export function MapOptionsModal({
                 {plusPlusSliderMin.toLocaleString()} CR)
               </div>
             </div>
-          </section>
+          </FoldPanel>
+          <SnapshotStampPanel prefs={snap.photoStamp} />
+          <h4 className="options-group-head" title="What the app tells you about, on the bell and the Notices HUD">
+            Notifications
+          </h4>
+          <NotifyPanel />
+          <h4 className="options-group-head" title="Which species are worth sampling, and the predictions the app missed">
+            Exobiology
+          </h4>
+          <CollectionFocusPanel />
+          <ExoMissLogPanel outliers={snap.exoOutliers} />
+          <h4 className="options-group-head" title="What the app fetches from EDSM, and what it sends to EDSM, Canonn and EDDN under your name">
+            Online data
+          </h4>
+          <EdsmFetchPanel state={snap.edsmAutoFetch} />
+          <EdsmUploadPanel state={snap.edsmUpload} hasKey={snap.edsmAutoFetch.hasKey} />
+          <CanonnUploadPanel state={snap.canonnUpload} />
+          <EddnUploadPanel state={snap.eddnUpload} />
+          <h4 className="options-group-head" title="Links for a phone or a second screen, and how much journal history the app reads">
+            Devices and journals
+          </h4>
+          <FoldPanel
+            foldKey="options-lan"
+            defaultOpen={false}
+            className="options-meta-block"
+            title="Phone and second screen"
+            summary={snap.mode === "server" && snap.lanUrls.length > 0 ? `${snap.lanUrls.length} address${snap.lanUrls.length === 1 ? "" : "es"}` : "LAN access off"}
+          >
+            {/*
+              The second screen is the same server on the same key — one query parameter apart
+              (§51). Both were printed as whole URLs, on the reasoning that a bookmarkable link
+              should be visible; in practice the link is pasted, never read, and the access key made
+              every one of them wrap (A5).
+            */}
+            {snap.mode === "server" && snap.lanUrls.length > 0 ? (
+              /*
+                One row per address, rather than one button per address per destination.
 
+                Two paragraphs of "Copy for 192.168.0.3:7111" buttons meant a machine with a wired
+                card and a wireless one produced four long buttons that wrapped, with nothing saying
+                which pair belonged to which address. The address is said once now and the two
+                destinations are columns beside it.
+              */
+              <div className="options-lan">
+                <span />
+                <span className="options-lan-head">Phone</span>
+                <span className="options-lan-head">
+                  Second screen
+                  <InfoPopover title="Second screen" label="What the second screen shows">
+                    <p>
+                      The same server, one query parameter apart: read-only triage for this system, meant for
+                      a tablet or a spare monitor beside the game.
+                    </p>
+                    <p>
+                      The link carries this machine&apos;s LAN access key, so bookmark it on the device once
+                      and it keeps working across restarts.
+                    </p>
+                  </InfoPopover>
+                </span>
+                {snap.lanUrls.map((u) => (
+                  <Fragment key={u}>
+                    <span className="options-lan-addr">{lanHost(u)}</span>
+                    <CopyLanUrlButton url={u} label="Copy" />
+                    <CopyLanUrlButton url={secondScreenUrl(u)} label="Copy" />
+                  </Fragment>
+                ))}
+              </div>
+            ) : (
+              <p className="options-journal-line dim">
+                Other devices: turn on LAN access in the launcher&apos;s Network settings for phone and second-screen
+                links.
+              </p>
+            )}
+          </FoldPanel>
+          <FoldPanel
+            foldKey="options-journal-history"
+            defaultOpen={false}
+            className="options-meta-block"
+            title="Journal history"
+            summary={journalHistoryPresetLabel(serverJournalHistoryPreset)}
+          >
+            <div className="options-journal-history options-oneline">
+            <label className="options-oneline-label" htmlFor="journal-history-window">
+                Journal history
+              </label>
+              <Select
+                id="journal-history-window"
+                className="options-inline-select"
+                value={serverJournalHistoryPreset}
+                options={[
+                  { value: "all", label: journalHistoryPresetLabel("all") },
+                  ...journalHistoryWindowPresetChoices().map((p) => ({
+                    value: p,
+                    label: journalHistoryPresetLabel(p),
+                  })),
+                ]}
+                onChange={(v) => {
+                  void persistJournalHistory(parseJournalHistoryPreset(v));
+                }}
+              />
+              <InfoPopover title="Journal history" label="What journal history changes">
+                <p>
+                  By default the app merges <strong>every</strong> <code>Journal.*.log</code> in your Elite
+                  folder. Pick a window instead and it reads only the logs that start inside it.
+                </p>
+                <p>
+                  The cutoff uses real time and advances while the app runs. Changing this triggers a full
+                  journal resync.
+                </p>
+              </InfoPopover>
+            </div>
+          </FoldPanel>
+          <h4 className="options-group-head" title="What this install runs on, for a bug report">
+            About
+          </h4>
           {/*
             What the app is running on, for support (review F-1.6, combined plan 3.3 + Phase 5 [O-C]):
             Options used to open on these lines, which mean nothing to someone choosing a colour scheme.
@@ -452,7 +489,6 @@ export function MapOptionsModal({
             <CopyDiagnostics />
             <FeederCorpusSetting />
           </details>
-
           <button type="button" className="btn-top-danger options-reset-exo" onClick={onResetExobiology}>
             Reset exobiology…
           </button>

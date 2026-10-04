@@ -41,6 +41,7 @@ export function CanonnUploadPanel({ state }: { state: AppSnapshot["canonnUpload"
   return (
     <FoldPanel
       foldKey="options-canonn"
+      defaultOpen={false}
       className="options-meta-block"
       title="Send to Canonn"
       summary={state.enabled ? "on" : "off"}
@@ -116,6 +117,7 @@ export function EddnUploadPanel({ state }: { state: AppSnapshot["eddnUpload"] })
   return (
     <FoldPanel
       foldKey="options-eddn"
+      defaultOpen={false}
       className="options-meta-block"
       title="Send to EDDN"
       summary={state.enabled ? "on" : "off"}
@@ -241,6 +243,7 @@ export function CollectionFocusPanel() {
   return (
     <FoldPanel
       foldKey="options-collection-focus"
+      defaultOpen={false}
       className="options-meta-block"
       title="Worth-sampling marker"
       summary={cfg.enabled ? `${cfg.targetScans} scans · under ${cfg.corpusFloor} bodies` : "off"}
@@ -374,6 +377,7 @@ export function NotifyPanel() {
   return (
     <FoldPanel
       foldKey="options-notify"
+      defaultOpen={false}
       className="options-meta-block"
       title="Notify me"
       summary={`${onCount} on${p.chime ? " · chime" : ""}`}
@@ -617,6 +621,7 @@ export function ColourSchemePanel() {
   return (
     <FoldPanel
       foldKey="options-colour-scheme"
+      defaultOpen={false}
       className="options-meta-block"
       title="Colour scheme"
       summary={presetLabel ?? ("name" in choice && choice.name ? choice.name : "Your own")}
@@ -802,6 +807,7 @@ export function SnapshotStampPanel({ prefs }: { prefs: AppSnapshot["photoStamp"]
   return (
     <FoldPanel
       foldKey="options-snapshot-stamp"
+      defaultOpen={false}
       className="options-meta-block"
       title="Snapshot images"
       summary={on.length ? `EDEXO + ${on.join(", ")}` : "EDEXO stamp only"}
@@ -874,6 +880,7 @@ export function EdsmFetchPanel({ state }: { state: AppSnapshot["edsmAutoFetch"] 
   return (
     <FoldPanel
       foldKey="options-edsm-fetch"
+      defaultOpen={false}
       className="options-meta-block"
       title="Fetch from EDSM"
       summary={state.hasKey ? (state.enabled ? "on" : "key stored") : "no key"}
@@ -1031,6 +1038,7 @@ export function EdsmUploadPanel({ state, hasKey }: { state: AppSnapshot["edsmUpl
   return (
     <FoldPanel
       foldKey="options-edsm-upload"
+      defaultOpen={false}
       className="options-meta-block"
       title="Send to EDSM"
       summary={state.enabled ? (state.live ? "on, live" : "on") : "off"}
