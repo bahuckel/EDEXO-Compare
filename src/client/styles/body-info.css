@@ -43,6 +43,18 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/*
+  On a phone the strip scrolls sideways with nothing to say so (plan V9, 2026-10-04): its right edge
+  fades out, and a little room after the last tab lets that one scroll clear of the fade.
+*/
+@media (max-width: 720px) {
+  .tabs-body-rail .tabs-strip {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    padding-right: 28px;
+  }
+}
+
 .tabs-strip-host-card {
   display: inline-flex;
   flex-wrap: nowrap;
