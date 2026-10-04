@@ -343,6 +343,22 @@ export function registerSettingsRoutes(
     res.json({ ok: true });
   });
 
+  /** ...and "My own carrier (−15 %)" under it (owner, 2026-10-04). */
+  app.post("/api/settings/fleet-carrier-own", (req, res) => {
+    if (typeof opts.setFleetCarrierIsOwn !== "function") {
+      res.status(501).json({ ok: false, error: "Not available" });
+      return;
+    }
+    const value = req.body?.value;
+    if (typeof value !== "boolean") {
+      res.status(400).json({ ok: false, error: 'JSON body must include boolean "value".' });
+      return;
+    }
+    opts.setFleetCarrierIsOwn(value);
+    opts.scheduleBroadcast?.();
+    res.json({ ok: true });
+  });
+
   app.post("/api/settings/photo-stamp", (req, res) => {
     if (typeof opts.setPhotoStamp !== "function") {
       res.status(501).json({ ok: false, error: "Not available" });

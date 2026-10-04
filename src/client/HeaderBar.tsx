@@ -472,11 +472,14 @@ export const HeaderBar = memo(function HeaderBar({
       }
     })();
   };
-  /* The Data value window's ""Selling at a fleet carrier (−25 %)" (owner, 2026-10-03): a saved setting. */
-  const toggleFleetCarrier = (on: boolean) => {
+  /*
+    The Data value window's "Selling at a fleet carrier (−25 %)" (owner, 2026-10-03) and "My own
+    carrier (−15 %)" under it (2026-10-04): saved settings.
+  */
+  const postCarrierSetting = (route: string, on: boolean) => {
     void (async () => {
       try {
-        const r = await fetch("/api/settings/fleet-carrier-sale", {
+        const r = await fetch(route, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ value: on }),
@@ -900,7 +903,9 @@ export const HeaderBar = memo(function HeaderBar({
             pranavAntalBonus={snap.pranavAntalBonus === true}
             onTogglePranavAntal={togglePranavAntal}
             sellAtFleetCarrier={snap.sellAtFleetCarrier === true}
-            onToggleFleetCarrier={toggleFleetCarrier}
+            onToggleFleetCarrier={(on) => postCarrierSetting("/api/settings/fleet-carrier-sale", on)}
+            fleetCarrierIsOwn={snap.fleetCarrierIsOwn === true}
+            onToggleOwnCarrier={(on) => postCarrierSetting("/api/settings/fleet-carrier-own", on)}
             onClose={() => setDataBreakdownOpen(false)}
           />
         </Suspense>

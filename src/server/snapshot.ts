@@ -1184,8 +1184,13 @@ function computeBodyUncached(
 /** Unsold exobiology (3× Analyse in journal): list ×5 on first-footfall bodies (else ×1) — same multiplier as map tier/heuristic when footfall applies. */
 /** Pranav Antal's +30 % on exobiology sales (Powerplay 2.0), as the Data value toggle applies it. */
 export const PRANAV_ANTAL_BONUS = 1.3;
-/** A fleet carrier's Universal Cartographics pays 75 % (the owner's carrier sales, 2026-10-03). */
+/**
+ * A fleet carrier's Universal Cartographics pays 75 % (the owner's carrier sales, 2026-10-03). Only
+ * Cartographics and codex data; Vista Genomics pays in full (owner, 2026-10-04).
+ */
 export const FLEET_CARRIER_SALE_FACTOR = 0.75;
+/** At his own carrier 10 of those 25 % land in its bank, his to take back: 85 % (owner, 2026-10-04). */
+export const OWN_FLEET_CARRIER_SALE_FACTOR = 0.85;
 
 function organicDataValuation(
   store: GameStateStore,
@@ -1330,7 +1335,11 @@ export function buildSnapshot(
     ? { totalCredits: 0, fssScanCount: 0, fssValueCredits: 0, dssScanCount: 0, dssValueCredits: 0 }
     : explorationDataValueBreakdown(store);
   // Sold at a fleet carrier, the carrier keeps 25 % (the Data value toggle; owner, 2026-10-03).
-  const carrier = store.sellAtFleetCarrier ? FLEET_CARRIER_SALE_FACTOR : 1;
+  const carrier = !store.sellAtFleetCarrier
+    ? 1
+    : store.fleetCarrierIsOwn
+      ? OWN_FLEET_CARRIER_SALE_FACTOR
+      : FLEET_CARRIER_SALE_FACTOR;
   const exploreBreakdown = {
     ...exploreRaw,
     fssValueCredits: Math.round(exploreRaw.fssValueCredits * carrier),
@@ -1503,6 +1512,7 @@ export function buildSnapshot(
     includeExplorationScanDataInDataValue: store.includeExplorationScanDataInDataValue,
     pranavAntalBonus: store.pranavAntalBonus,
     sellAtFleetCarrier: store.sellAtFleetCarrier,
+    fleetCarrierIsOwn: store.fleetCarrierIsOwn,
     explorationScanDataValueCredits,
     explorationFssScanCount: exploreBreakdown.fssScanCount,
     onSiteTiming: timingFromSamples(store.landingMinutesSamples, store.samplingMinutesSamples),

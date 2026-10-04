@@ -1003,6 +1003,11 @@ export class GameStateStore {
    * his carrier sales came in 25 % under the system map). Off by default; where he sells is his choice.
    */
   sellAtFleetCarrier = false;
+  /**
+   * The carrier is the commander's own: of the 25 % the sale keeps, 10 % goes into the carrier's bank,
+   * which he can take back, so his real cost is 15 % (owner, 2026-10-04).
+   */
+  fleetCarrierIsOwn = false;
 
   /** Consumed once in `buildSnapshot` so the client can select that bio body tab. */
   private pendingUiAutoSelectBodyKey: string | null = null;
@@ -1176,6 +1181,10 @@ export class GameStateStore {
 
   setSellAtFleetCarrier(value: boolean): void {
     this.sellAtFleetCarrier = value;
+  }
+
+  setFleetCarrierIsOwn(value: boolean): void {
+    this.fleetCarrierIsOwn = value;
   }
 
   setIncludeBacteriumInSearch(value: boolean): void {

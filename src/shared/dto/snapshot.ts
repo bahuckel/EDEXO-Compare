@@ -179,6 +179,8 @@ export interface AppSnapshot {
   pranavAntalBonus?: boolean;
   /** Exploration figures are after a fleet carrier's 25 % (Data value toggle). */
   sellAtFleetCarrier?: boolean;
+  /** ...and the carrier is the commander's own: 15 % instead of 25 % (Data value toggle). */
+  fleetCarrierIsOwn?: boolean;
   /** Estimated CR from all merged `Scan` rows (MattG-style formulas; belts excluded). */
   explorationScanDataValueCredits: number;
   /** Unique bodies with journal `FSSBodySignals` (any system in merged logs). */

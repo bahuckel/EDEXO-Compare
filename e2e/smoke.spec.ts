@@ -722,7 +722,7 @@ test("my discoveries: the bodies table exports as CSV", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("data value: the fleet carrier toggle takes 25 % off exploration and is saved", async ({ page }) => {
+test("data value: the fleet carrier toggle takes 25 % off exploration (15 % at his own) and is saved", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");
   await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
@@ -737,8 +737,18 @@ test("data value: the fleet carrier toggle takes 25 % off exploration and is sav
   const after = await page.request.get("/api/state").then((r) => r.json());
   expect(after.sellAtFleetCarrier).toBe(true);
   expect(after.explorationFssValueCredits).toBe(Math.round(before.explorationFssValueCredits * 0.75));
+  // His own carrier (owner, 2026-10-04): 15 %, offered only while the carrier toggle is on.
+  const own = page.getByLabel(/My own carrier/);
+  await own.click();
+  await expect(own).toBeChecked();
+  await expect(page.getByText("· at your carrier (−15 %)").first()).toBeVisible();
+  const mine = await page.request.get("/api/state").then((r) => r.json());
+  expect(mine.explorationFssValueCredits).toBe(Math.round(before.explorationFssValueCredits * 0.85));
+  await own.click();
+  await expect(own).not.toBeChecked();
   await toggle.click();
   await expect(toggle).not.toBeChecked();
+  await expect(page.getByLabel(/My own carrier/)).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

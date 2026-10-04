@@ -20,6 +20,8 @@ export function DataValueBreakdownModal({
   onTogglePranavAntal,
   sellAtFleetCarrier = false,
   onToggleFleetCarrier,
+  fleetCarrierIsOwn = false,
+  onToggleOwnCarrier,
   onClose,
 }: {
   lines: OrganicPendingLineItem[];
@@ -39,9 +41,15 @@ export function DataValueBreakdownModal({
   /** The exploration figures are after a fleet carrier's 25 % (owner, 2026-10-03). */
   sellAtFleetCarrier?: boolean;
   onToggleFleetCarrier?: (on: boolean) => void;
+  /** ...at the commander's own carrier: 15 %, the other 10 % goes into its bank (owner, 2026-10-04). */
+  fleetCarrierIsOwn?: boolean;
+  onToggleOwnCarrier?: (on: boolean) => void;
   onClose: () => void;
 }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
+  const carrierNote = sellAtFleetCarrier ? (
+    <span className="dim tiny">{fleetCarrierIsOwn ? " · at your carrier (−15 %)" : " · at a carrier"}</span>
+  ) : null;
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div
@@ -77,7 +85,7 @@ export function DataValueBreakdownModal({
                 {explorationHonkValueCredits > 0 ? (
                   <span className="dim tiny"> · incl. honk {explorationHonkValueCredits.toLocaleString()} CR</span>
                 ) : null}
-                {sellAtFleetCarrier ? <span className="dim tiny"> · at a carrier</span> : null}
+                {carrierNote}
                 {!includeExplorationScanDataInDataValue ? (
                   <span className="dim tiny"> · not in total</span>
                 ) : null}
@@ -93,7 +101,7 @@ export function DataValueBreakdownModal({
               <span className="data-value-summary-count">{explorationDssScanCount}</span>
               <span className="data-value-summary-label">
                 DSS scans
-                {sellAtFleetCarrier ? <span className="dim tiny"> · at a carrier</span> : null}
+                {carrierNote}
                 {!includeExplorationScanDataInDataValue ? (
                   <span className="dim tiny"> · not in total</span>
                 ) : null}
@@ -147,6 +155,19 @@ export function DataValueBreakdownModal({
                 onChange={(ev) => onToggleFleetCarrier(ev.target.checked)}
               />
               <span>Selling at a fleet carrier (−25 %)</span>
+            </label>
+          ) : null}
+          {onToggleFleetCarrier && onToggleOwnCarrier && sellAtFleetCarrier ? (
+            <label
+              className="data-value-bonus-toggle data-value-bonus-toggle--sub"
+              title="Your own carrier: of the 25 % the sale keeps, 10 % goes into the carrier's bank, which you can take back. Vista Genomics pays in full at any carrier."
+            >
+              <input
+                type="checkbox"
+                checked={fleetCarrierIsOwn}
+                onChange={(ev) => onToggleOwnCarrier(ev.target.checked)}
+              />
+              <span>My own carrier (−15 %: 10 % goes to its bank)</span>
             </label>
           ) : null}
           {lines.length === 0 ? (

@@ -1660,6 +1660,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       store.setSellAtFleetCarrier(v);
       persistUserPreferences();
     },
+    setFleetCarrierIsOwn: (v) => {
+      store.setFleetCarrierIsOwn(v);
+      persistUserPreferences();
+    },
     setFootTravelOdometer: (v) => {
       store.setFootTravelOdometerEnabled(v);
       persistUserPreferences();

@@ -26,3 +26,27 @@ describe("selling at a fleet carrier", () => {
     expect(at.explorationScanDataValueCredits).toBe(Math.round(full.explorationScanDataValueCredits! * 0.75));
   });
 });
+
+describe("at the commander's own carrier (owner, 2026-10-04)", () => {
+  it("takes 15 %: 10 of the 25 % go into the carrier's bank, which he can take back", () => {
+    loadSpeciesDatabase();
+    const store = new GameStateStore();
+    store.explorationScans.set("1:3", {
+      systemAddress: 1,
+      bodyId: 3,
+      bodyName: "Probe 3",
+      starSystem: "Probe",
+      updatedAt: "2026-10-03T00:00:00Z",
+      planetClass: "Water world",
+      massEM: 1,
+    } as ExplorationScanRecord);
+    const full = buildSnapshot(store, null, "", "127.0.0.1", 0, [], 1).explorationScanDataValueCredits!;
+    // On its own it changes nothing: it only says whose carrier the sale is at.
+    store.setFleetCarrierIsOwn(true);
+    expect(buildSnapshot(store, null, "", "127.0.0.1", 0, [], 1).explorationScanDataValueCredits).toBe(full);
+    store.setSellAtFleetCarrier(true);
+    const own = buildSnapshot(store, null, "", "127.0.0.1", 0, [], 1);
+    expect(own.fleetCarrierIsOwn).toBe(true);
+    expect(own.explorationScanDataValueCredits).toBe(Math.round(full * 0.85));
+  });
+});

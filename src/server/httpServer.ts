@@ -260,6 +260,8 @@ export interface HttpServerOptions {
   /** POST /api/settings/pranav-antal-bonus — `{ value: boolean }`. */
   setPranavAntalBonus?: (value: boolean) => void;
   setSellAtFleetCarrier?: (value: boolean) => void;
+  /** POST /api/settings/fleet-carrier-own: `{ value: boolean }`, the carrier is his own (-15 %). */
+  setFleetCarrierIsOwn?: (value: boolean) => void;
   /** POST /api/settings/photo-stamp — JSON { commander?, system?, timestamp?: boolean } */
   setPhotoStamp?: (p: Partial<PhotoStampPrefs>) => void;
   /** POST /api/settings/foot-travel-odometer — JSON { value: boolean } */
