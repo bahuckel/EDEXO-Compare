@@ -274,7 +274,7 @@ describe("the body that reported the bug", () => {
 
   const find = (r: ReturnType<typeof run>, id: string) => r.matches.find((m) => m.entry.id === id)!;
 
-  it("demotes both Electricae, each for its own measured reason", () => {
+  it("demotes pluma for its star; radialem stays at a low chance (owner, 2026-10-04, Q7)", () => {
     // The journal reports Biological: 2 on this body, and two other genera survive, so nothing is
     // restored to satisfy the count.
     const r = run(2);
@@ -283,25 +283,18 @@ describe("the body that reported the bug", () => {
     expect(pluma.unlikelyReasons!.at(-1)!.field).toBe("StarType");
     expect(pluma.unlikelyReasons!.at(-1)!.detail).toMatch(/neutron star/);
 
+    // 175 ly from R CrA: past the 150 ly rule, which a fifth of radialem's own systems are, so it
+    // stays listed at 0.22 of its chance and the 1 % floors decide (it was demoted until 2026-10-04).
     const radialem = find(r, RADIALEM);
-    expect(radialem.unlikely).toBe(true);
-    expect(radialem.unlikelyReasons!.at(-1)!.field).toBe("Nebula");
+    expect(radialem.unlikely).toBeFalsy();
+    expect(radialem.presenceFactor).toBeCloseTo(0.22);
+    expect(radialem.reasons.at(-1)!.field).toBe("Nebula");
   });
 
-  it("leaves the genus out of the shown list entirely", () => {
+  it("keeps the panel's other candidates", () => {
     const shown = run(2).matches.filter((m) => !m.unlikely);
-    expect(shown.some((m) => m.entry.genusDataDir === "electricae")).toBe(false);
-    // …without emptying the panel: the body has real candidates.
-    expect(shown.length).toBeGreaterThan(0);
-  });
-
-  /**
-   * The escape hatch stays open. `FSSBodySignals` saying three genera are present is a harder fact
-   * than any catalogue, so a star-demoted row comes back rather than leaving the count unsatisfiable
-   * — the same rule that already governed the observation-based star demotion.
-   */
-  it("gives the species back when the game says more genera are present than survive", () => {
-    expect(find(run(3), PLUMA).unlikely).toBeFalsy();
+    expect(shown.filter((m) => m.entry.genusDataDir === "electricae").map((m) => m.entry.id)).toEqual([RADIALEM]);
+    expect(shown.length).toBeGreaterThan(1);
   });
 
   it("does not demote when no star has been scanned", () => {

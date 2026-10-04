@@ -69,7 +69,9 @@ describe("evaluating a gate", () => {
     expect(v.passes).toBe(false);
     expect(Math.round(v.distanceLy)).toBe(175);
     expect(v.nearestName).toBe("R Cra");
-    expect(describeVerdict(v)).toContain("the rule is under 150 ly");
+    // Kept at a low chance past the rule, with no outer edge (owner, 2026-10-04, Q7).
+    expect(v.softBand).toEqual({ factor: 0.22, bandLy: Number.POSITIVE_INFINITY });
+    expect(describeVerdict(v)).toContain("past the 150 ly rule, so it stays listed at 22 % of its chance");
   });
 
   it("passes radialem beside a nebula", () => {
@@ -148,10 +150,12 @@ describe("the Bark Mounds soft band", () => {
     expect(out.softBand).toBeUndefined();
   });
 
-  it("gives radialem no band: 82 % at 300 ly is not the same evidence", () => {
-    const v = evaluateSpatialGate("electricae_electricae_radialem", at(169), one)!;
-    expect(v.passes).toBe(false);
-    expect(v.softBand).toBeUndefined();
+  it("gives radialem a band with no outer edge: 18 % of its systems are past even 300 ly", () => {
+    for (const d of [169, 350, 2000]) {
+      const v = evaluateSpatialGate("electricae_electricae_radialem", at(d), one)!;
+      expect(v.passes).toBe(false);
+      expect(v.softBand?.factor).toBe(0.22);
+    }
   });
 
   it("keeps a band row in the main list with the factor on it", async () => {

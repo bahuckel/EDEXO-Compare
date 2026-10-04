@@ -94,6 +94,14 @@ export const SPATIAL_GATES: { idIncludes: string; gate: SpatialGate }[] = [
       kind: "nebula",
       thresholdLy: 150,
       evidence: "79 % of 16,370 radialem systems are within 150 ly of a nebula; pluma, 0 %",
+      /*
+        No outer edge (owner, 2026-10-04, Q7: "show it as low probability"). Demoted past 150 ly,
+        radialem lost its row on a fifth of its own systems: 21 % of them are further, 18 % past even
+        300 ly. Out there it is about 0.22 times as likely as anywhere (21 % of its systems against
+        ~95 % of all), so it stays listed at that, and the 1 % floors decide.
+      */
+      softBandLy: Number.POSITIVE_INFINITY,
+      softFactor: 0.22,
     },
   },
   {
@@ -249,6 +257,7 @@ export function describeVerdict(v: SpatialVerdict): string {
   if (v.passes) return `${subject} is ${d} away — inside the ${rule} rule.`;
   if (v.softBand) {
     const pct = Math.round(v.softBand.factor * 100);
+    if (!Number.isFinite(v.softBand.bandLy)) return `${subject} is ${d} away — past the ${rule} rule, so it stays listed at ${pct} % of its chance.`;
     return `${subject} is ${d} away — past the ${rule} rule but inside ${v.softBand.bandLy} ly, so it stays listed at ${pct} % of its chance.`;
   }
   return `${subject} is ${d} away; the rule is under ${rule}.`;
