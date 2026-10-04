@@ -44,7 +44,12 @@ export function exomasteryRollupValueDisplay(
       !low.includes("percent") &&
       !low.includes("%"))
   ) {
-    return { displayNumber: journalPressureToAtm(raw), suffix: " atm" };
+    /*
+      The feeder profiles' `body.surfacePressure` is already atmospheres (Tussock ignis: mode 0.0083).
+      Converted again it read 0.00 atm for both the body and the species (2026-10-04, "Why this
+      chance"); everything else here is the journal's pascals.
+    */
+    return { displayNumber: low.startsWith("body.") ? raw : journalPressureToAtm(raw), suffix: " atm" };
   }
   if (low.includes("gravity") && !low.includes("tidal")) {
     const v = Math.abs(raw) > 50 ? journalSurfaceGravityToG(raw) : raw;
