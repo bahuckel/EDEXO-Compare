@@ -8,7 +8,6 @@
       "min_sample_distance_m": 100,
       "planet_requirements": {
         "planet_types": [
-          "Airless",
           "Metal Rich"
         ],
         "atmosphere": "None",
@@ -26,7 +25,6 @@
     "minSampleDistanceM": 100,
     "genusWideRequirements": {
       "planet_types": [
-        "Airless",
         "Metal Rich"
       ],
       "atmosphere": "None",
@@ -48,7 +46,6 @@
       "conditions": {
         "atmosphere": "None",
         "planet_types": [
-          "Airless",
           "Metal Rich"
         ],
         "parent_star": "A",

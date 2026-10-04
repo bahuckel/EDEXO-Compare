@@ -111,7 +111,7 @@
         "atmosphere": [
           "Water",
           "Water-rich",
-          "Sulfur Dioxide"
+          "Sulphur Dioxide"
         ],
         "volcanism": null,
         "atmospherePressureCategory": "thin"
@@ -236,7 +236,7 @@
         "atmosphere": "Any thin atmosphere",
         "atmospherePressureCategory": "thin",
         "planet_types": [
-          "High metal content",
+          "High Metal Content",
           "Rocky",
           "Icy",
           "Rocky Ice"
@@ -325,8 +325,8 @@
       "description": "Carbon dioxide atmosphere bacteria forming radial streak patterns.",
       "conditions": {
         "atmosphere": [
-          "Carbon dioxide",
-          "CarbonDioxide",
+          "Carbon Dioxide",
+          "Carbon Dioxide",
           "Carbon dioxide-rich"
         ],
         "volcanism": null,
@@ -401,13 +401,13 @@
       "Ammonia": [
         "Bacterium alcyoneum"
       ],
-      "Carbon dioxide": [
+      "Carbon Dioxide": [
         "Bacterium aurasus"
       ],
       "Water": [
         "Bacterium cerbrus"
       ],
-      "Sulfur Dioxide": [
+      "Sulphur Dioxide": [
         "Bacterium cerbrus"
       ],
       "Any": [

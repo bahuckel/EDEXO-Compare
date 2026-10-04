@@ -7,9 +7,7 @@
       "description": "Fungal-like organic structures resembling trees with brain-shaped growths. They absorb minerals through subsurface roots and energy via their outer surfaces.",
       "min_sample_distance_m": 100,
       "planet_requirements": {
-        "planet_types": [
-          "Airless"
-        ],
+        "planet_types": [],
         "atmosphere": "None",
         "volcanism_required": true,
         "location_bias": [
@@ -24,9 +22,7 @@
     "summary": "Fungal-like organic structures resembling trees with brain-shaped growths. They absorb minerals through subsurface roots and energy via their outer surfaces.",
     "minSampleDistanceM": 100,
     "genusWideRequirements": {
-      "planet_types": [
-        "Airless"
-      ],
+      "planet_types": [],
       "atmosphere": "None",
       "volcanism_required": true,
       "location_bias": [
@@ -47,13 +43,13 @@
         },
         "requires_system_bodies": true,
         "planet_types": [
-          "Metal-Rich",
+          "Metal Rich",
           "High Metal Content"
         ],
         "atmosphere": [
           "None",
-          "Sulphur dioxide",
-          "Carbon dioxide",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
           "Helium"
         ],
         "matchContextNotes": [
@@ -69,13 +65,13 @@
         "temperature_K": null,
         "requires_system_bodies": true,
         "planet_types": [
-          "Metal-Rich",
+          "Metal Rich",
           "High Metal Content"
         ],
         "atmosphere": [
           "None",
-          "Sulphur dioxide",
-          "Carbon dioxide",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
           "Helium"
         ],
         "matchContextNotes": [
@@ -91,13 +87,13 @@
         "temperature_K": null,
         "requires_system_bodies": true,
         "planet_types": [
-          "Metal-Rich",
+          "Metal Rich",
           "High Metal Content"
         ],
         "atmosphere": [
           "None",
-          "Sulphur dioxide",
-          "Carbon dioxide",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
           "Helium"
         ],
         "matchContextNotes": [
@@ -121,8 +117,8 @@
         ],
         "atmosphere": [
           "None",
-          "Sulphur dioxide",
-          "Carbon dioxide",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
           "Helium"
         ],
         "matchContextNotes": [
@@ -145,8 +141,8 @@
         ],
         "atmosphere": [
           "None",
-          "Sulphur dioxide",
-          "Carbon dioxide",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
           "Helium"
         ],
         "matchContextNotes": [
@@ -169,8 +165,8 @@
         ],
         "atmosphere": [
           "None",
-          "Sulphur dioxide",
-          "Carbon dioxide",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
           "Helium"
         ],
         "matchContextNotes": [
@@ -194,8 +190,8 @@
         ],
         "atmosphere": [
           "None",
-          "Sulphur dioxide",
-          "Carbon dioxide",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
           "Helium"
         ],
         "matchContextNotes": [
@@ -214,7 +210,7 @@
         },
         "requires_system_bodies": false,
         "planet_types": [
-          "Metal-Rich",
+          "Metal Rich",
           "High Metal Content",
           "Rocky",
           "Rocky Ice",
@@ -222,8 +218,8 @@
         ],
         "atmosphere": [
           "None",
-          "Sulphur dioxide",
-          "Carbon dioxide",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
           "Helium"
         ],
         "matchContextNotes": [

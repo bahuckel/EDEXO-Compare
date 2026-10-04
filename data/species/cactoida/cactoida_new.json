@@ -12,7 +12,7 @@
           "High Metal Content"
         ],
         "atmospheres": [
-          "Carbon dioxide (thin)",
+          "Carbon Dioxide (thin)",
           "Carbon dioxide rich (thin)",
           "Ammonia (thin)",
           "Water (thin)"
@@ -28,7 +28,7 @@
         "High Metal Content"
       ],
       "atmospheres": [
-        "Carbon dioxide (thin)",
+        "Carbon Dioxide (thin)",
         "Carbon dioxide rich (thin)",
         "Ammonia (thin)",
         "Water (thin)"
@@ -61,7 +61,7 @@
       "displayName": "Cactoida cortexum",
       "description": "Tall species with multiple growths and sealed pods that open to disperse seeds.",
       "conditions": {
-        "atmosphere": "Carbon dioxide (thin)",
+        "atmosphere": "Carbon Dioxide (thin)",
         "max_gravity": 0.275,
         "temperature_K": {
           "min": 180,
@@ -75,7 +75,7 @@
       "displayName": "Cactoida pullulanta",
       "description": "Globular base with tall cylindrical growths bearing clustered seed pods.",
       "conditions": {
-        "atmosphere": "Carbon dioxide (thin)",
+        "atmosphere": "Carbon Dioxide (thin)",
         "max_gravity": 0.275,
         "temperature_K": {
           "min": 180,
@@ -124,7 +124,7 @@
         "Cactoida lapis",
         "Cactoida peperatis"
       ],
-      "Carbon dioxide": [
+      "Carbon Dioxide": [
         {
           "species": "Cactoida cortexum",
           "temperature_K": "180-195"

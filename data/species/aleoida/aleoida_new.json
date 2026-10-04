@@ -12,7 +12,7 @@
           "High Metal Content"
         ],
         "atmospheres": [
-          "Carbon dioxide (thin)",
+          "Carbon Dioxide (thin)",
           "Ammonia (thin)"
         ],
         "max_gravity": 0.275
@@ -26,7 +26,7 @@
         "High Metal Content"
       ],
       "atmospheres": [
-        "Carbon dioxide (thin)",
+        "Carbon Dioxide (thin)",
         "Ammonia (thin)"
       ],
       "max_gravity": 0.275
@@ -57,7 +57,7 @@
       "displayName": "Aleoida arcus",
       "description": "Upright clumps of long serrated leaves that open to reveal seed-containing reproductive organs.",
       "conditions": {
-        "atmosphere": "Carbon dioxide (thin)",
+        "atmosphere": "Carbon Dioxide (thin)",
         "max_gravity": 0.275,
         "temperature_K": {
           "min": 175,
@@ -71,7 +71,7 @@
       "displayName": "Aleoida coronamus",
       "description": "Interleaved crown of mottled leaves with explosive seed pods on protruding stalks.",
       "conditions": {
-        "atmosphere": "Carbon dioxide (thin)",
+        "atmosphere": "Carbon Dioxide (thin)",
         "max_gravity": 0.275,
         "temperature_K": {
           "min": 180,
@@ -85,7 +85,7 @@
       "displayName": "Aleoida gravis",
       "description": "Large organism with wide flat leaves on a heavy base and a dome-shaped reproductive organ.",
       "conditions": {
-        "atmosphere": "Carbon dioxide (thin)",
+        "atmosphere": "Carbon Dioxide (thin)",
         "max_gravity": 0.275,
         "temperature_K": {
           "min": 190,

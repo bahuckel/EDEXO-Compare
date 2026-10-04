@@ -12,7 +12,7 @@
           "High Metal Content"
         ],
         "atmospheres": [
-          "Carbon dioxide (thin)",
+          "Carbon Dioxide (thin)",
           "Water (thin)"
         ],
         "max_gravity": 0.275,
@@ -30,7 +30,7 @@
         "High Metal Content"
       ],
       "atmospheres": [
-        "Carbon dioxide (thin)",
+        "Carbon Dioxide (thin)",
         "Water (thin)"
       ],
       "max_gravity": 0.275,
@@ -66,7 +66,7 @@
       "description": "Species with a broad tear-shaped shield that protects against extreme sunlight and channels water droplets into the soil.",
       "conditions": {
         "atmosphere": [
-          "Carbon dioxide (thin)",
+          "Carbon Dioxide (thin)",
           "Water (thin)"
         ],
         "max_gravity": 0.275,
@@ -86,7 +86,7 @@
       "description": "Produces a curved, pearl-like shield housing up to three central organisms on a bed of leaves.",
       "conditions": {
         "atmosphere": [
-          "Carbon dioxide (thin)",
+          "Carbon Dioxide (thin)",
           "Water (thin)"
         ],
         "max_gravity": 0.275,
@@ -107,7 +107,7 @@
       "description": "Angular shield with a reflective outer surface protecting spiky organisms; adapted for distant orbital positions.",
       "conditions": {
         "atmosphere": [
-          "Carbon dioxide (thin)",
+          "Carbon Dioxide (thin)",
           "Water (thin)"
         ],
         "max_gravity": 0.275,
@@ -142,7 +142,7 @@
       }
     ],
     "atmosphere_split": {
-      "Carbon dioxide": [
+      "Carbon Dioxide": [
         "Clypeus lacrimam",
         "Clypeus margaritus",
         "Clypeus speculumi"

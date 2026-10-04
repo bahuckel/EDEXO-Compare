@@ -64,8 +64,8 @@
         ],
         "atmosphere": [
           "None",
-          "Carbon dioxide",
-          "Sulphur dioxide"
+          "Carbon Dioxide",
+          "Sulphur Dioxide"
         ],
         "temperature_K": {
           "min": 200,
@@ -89,8 +89,8 @@
         ],
         "atmosphere": [
           "None",
-          "Carbon dioxide",
-          "Sulphur dioxide"
+          "Carbon Dioxide",
+          "Sulphur Dioxide"
         ],
         "temperature_K": {
           "min": 200,
@@ -114,8 +114,8 @@
         ],
         "atmosphere": [
           "None",
-          "Carbon dioxide",
-          "Sulphur dioxide"
+          "Carbon Dioxide",
+          "Sulphur Dioxide"
         ],
         "temperature_K": {
           "min": 200,
@@ -139,8 +139,8 @@
         ],
         "atmosphere": [
           "None",
-          "Carbon dioxide",
-          "Sulphur dioxide"
+          "Carbon Dioxide",
+          "Sulphur Dioxide"
         ],
         "temperature_K": {
           "min": 200,
@@ -164,8 +164,8 @@
         ],
         "atmosphere": [
           "None",
-          "Carbon dioxide",
-          "Sulphur dioxide"
+          "Carbon Dioxide",
+          "Sulphur Dioxide"
         ],
         "temperature_K": {
           "min": 200,
@@ -189,8 +189,8 @@
         ],
         "atmosphere": [
           "None",
-          "Carbon dioxide",
-          "Sulphur dioxide"
+          "Carbon Dioxide",
+          "Sulphur Dioxide"
         ],
         "matchContextNotes": [
           "Measured 2026-09-28 (owner: \"base it on data\"): Bioforge 200-500 K for all eight species; Spansh dump single-species bodies 200-500 K, 99-100 % with volcanism of some kind, rocky and high-metal bodies both, 0-20 % on thin carbon dioxide or sulphur dioxide."
@@ -214,8 +214,8 @@
         ],
         "atmosphere": [
           "None",
-          "Carbon dioxide",
-          "Sulphur dioxide"
+          "Carbon Dioxide",
+          "Sulphur Dioxide"
         ],
         "temperature_K": {
           "min": 200,
@@ -239,8 +239,8 @@
         ],
         "atmosphere": [
           "None",
-          "Carbon dioxide",
-          "Sulphur dioxide"
+          "Carbon Dioxide",
+          "Sulphur Dioxide"
         ],
         "temperature_K": {
           "min": 200,

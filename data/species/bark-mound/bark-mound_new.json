@@ -7,7 +7,7 @@
       "description": "Mound-shaped organic structures with a bark-like outer layer, found on airless volcanic worlds in and around nebulae.",
       "min_sample_distance_m": 100,
       "planet_requirements": {
-        "planet_types": ["Rocky", "High Metal Content", "Metal-Rich", "Icy", "Rocky Ice"],
+        "planet_types": ["Rocky", "High Metal Content", "Metal Rich", "Icy", "Rocky Ice"],
         "atmosphere": "None",
         "volcanism_required": true,
         "location_bias": ["Within 150 ly of a nebula"]
@@ -16,7 +16,7 @@
     "summary": "Mound-shaped organic structures with a bark-like outer layer, found on airless volcanic worlds in and around nebulae.",
     "minSampleDistanceM": 100,
     "genusWideRequirements": {
-      "planet_types": ["Rocky", "High Metal Content", "Metal-Rich", "Icy", "Rocky Ice"],
+      "planet_types": ["Rocky", "High Metal Content", "Metal Rich", "Icy", "Rocky Ice"],
       "atmosphere": "None",
       "volcanism_required": true
     }
@@ -28,7 +28,7 @@
       "description": "Single-species genus. Grows on airless volcanic bodies close to a nebula; no star, gravity or planet-type preference.",
       "conditions": {
         "location_requirement": "Nebula: 93 % of 23,651 Bark Mound systems lie within 150 ly of a nebula, 100 % within 300 ly (edastro codex-data; background 4-7 %). Evaluated per body: a system beyond the radius is demoted to the unlikely tier rather than removed.",
-        "planet_types": ["Rocky", "High Metal Content", "Metal-Rich", "Icy", "Rocky Ice"],
+        "planet_types": ["Rocky", "High Metal Content", "Metal Rich", "Icy", "Rocky Ice"],
         "atmosphere": ["None"],
         "volcanismActiveRequired": true,
         "temperature_K": { "min": 89, "max": 440 },

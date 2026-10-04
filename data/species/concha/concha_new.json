@@ -15,7 +15,7 @@
           "Ammonia (thin)",
           "Nitrogen (thin)",
           "Water (thin)",
-          "Carbon dioxide (thin)",
+          "Carbon Dioxide (thin)",
           "Carbon dioxide rich (thin)"
         ],
         "max_gravity": 0.275
@@ -32,7 +32,7 @@
         "Ammonia (thin)",
         "Nitrogen (thin)",
         "Water (thin)",
-        "Carbon dioxide (thin)",
+        "Carbon Dioxide (thin)",
         "Carbon dioxide rich (thin)"
       ],
       "max_gravity": 0.275
@@ -97,7 +97,7 @@
       "description": "Carbon dioxide species with a lip-like opening that splits to reveal vertical spiky growth.",
       "conditions": {
         "atmosphere": [
-          "Carbon dioxide (thin)",
+          "Carbon Dioxide (thin)",
           "Carbon dioxide rich (thin)"
         ],
         "max_gravity": 0.275,
@@ -133,7 +133,7 @@
       "description": "Heat-dependent species that grows a central stalk with luminous fronds for metabolism.",
       "conditions": {
         "atmosphere": [
-          "Carbon dioxide (thin)",
+          "Carbon Dioxide (thin)",
           "Water (thin)",
           "Water-rich (thin)"
         ],
@@ -142,7 +142,7 @@
         "whenAtmosphereLinkedMinTempK": 180,
         "whenAtmosphereLinkedMaxTempK": 195,
         "whenAtmosphereLinkedAtmosphereAnyOf": [
-          "Carbon dioxide"
+          "Carbon Dioxide"
         ],
         "matchContextNotes": [
           "For carbon dioxide atmospheres the codex mean temperature must sit between 180 K and 195 K. Water atmospheres carry no temperature rule at all, so the band is linked to the atmosphere rather than applied flat."
@@ -169,7 +169,7 @@
       "Nitrogen": [
         "Concha biconcavis"
       ],
-      "Carbon dioxide": [
+      "Carbon Dioxide": [
         {
           "species": "Concha labiata",
           "temperature_K": "<190"

@@ -32,7 +32,7 @@
       "description": "Single-species genus, logged with the composition scanner. Cold (20-273 K), at least 12,000 Ls from the arrival star, in a system with an Earth-like, ammonia or water giant, or a gas giant with life.",
       "conditions": {
         "planet_types": ["Icy", "Rocky", "High Metal Content", "Rocky Ice"],
-        "atmosphere": ["None", "Neon", "Neon-rich", "Carbon dioxide", "Helium", "Methane", "Argon", "Argon-rich"],
+        "atmosphere": ["None", "Neon", "Neon-rich", "Carbon Dioxide", "Helium", "Methane", "Argon", "Argon-rich"],
         "temperature_K": { "min": 20, "max": 273 },
         "distance_from_arrival": { "min_ls": 12000 },
         "system_requirements": [

@@ -106,7 +106,7 @@
         "planet_types": [
           "Icy",
           "Rocky Ice",
-		  "Rocky body"
+		  "Rocky"
         ],
         "max_gravity": 0.275,
         "atmospherePressureCategory": "thin"
