@@ -21,6 +21,7 @@ import { placeLabels } from "./galaxy3d/labelPlacement";
 import { formatCount, formatValue } from "./galaxy3d/clusters";
 import { CodexRecord, IndexRecord, MySystemRecord, SectorRecord } from "./galaxy3d/GalaxyPanels";
 import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
+import { GalaxyIndexDownload } from "./GalaxyIndexDownload";
 import {
   EMPTY_GALAXY_FILTER,
   GalaxyFilterPanel,
@@ -1276,6 +1277,9 @@ export function GalaxyMap3D() {
         </a>
       </header>
 
+      {/* Builds leave the index out: the map offers it (plan 4.2, 2026-10-04). */}
+      {stats?.phase === "failed" ? <GalaxyIndexDownload /> : null}
+
       <footer className="g3d-status" data-testid="g3d-status">
         {graphics.tier === "light" ? (
           <span className="g3d-badge" title={graphics.renderer}>
@@ -1283,7 +1287,11 @@ export function GalaxyMap3D() {
           </span>
         ) : null}
         {stats?.phase === "failed" ? (
-          <span className="g3d-error">Could not load the galaxy: {stats.error}</span>
+          <span className="g3d-error">
+            {/HTTP 404/.test(stats.error ?? "")
+              ? "No galaxy index on this PC yet — download it above."
+              : `Could not load the galaxy: ${stats.error}`}
+          </span>
         ) : loading ? (
           <span>Loading 5.3 million systems…</span>
         ) : (

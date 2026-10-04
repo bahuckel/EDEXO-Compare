@@ -32,7 +32,16 @@ export const RUNTIME_STATE = Object.freeze(["foot_scanned.json"]);
  * `spansh-dump-tests` is four Spansh route exports the tests and probes run against. Public data and
  * harmless, but 368 KB of fixtures in every download, and a release should carry what the app uses.
  */
-export const NOT_SHIPPED = Object.freeze(["spansh-dump-tests"]);
+export const NOT_SHIPPED = Object.freeze([
+  "spansh-dump-tests",
+  /*
+    The galaxy map's index (owner, 2026-10-04, plan 4.2): a separate download from the app's
+    `galaxy-index` GitHub release, offered by the map itself (src/server/galaxyIndexFiles.ts). About
+    255 MB of every build otherwise.
+  */
+  "galaxy/bio-index.bin",
+  "galaxy/system-traits.bin.gz",
+]);
 
 const EXCLUDED = Object.freeze([...RUNTIME_STATE, ...NOT_SHIPPED]);
 

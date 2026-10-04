@@ -21,6 +21,9 @@ Windows; everything the app saves lives in `%LOCALAPPDATA%\ED Exo Compare\`.
 
 Both are the same version and the same code — [all releases](https://github.com/bahuckel/EDEXO-Compare/releases).
 
+The galaxy map's index (every system with recorded biology, from EDAstro's codex data, about 250 MB)
+is a separate download: the map offers it the first time you open it, and updates leave it in place.
+
 Windows will say the publisher is unrecognised: the executable is signed, but with a self-signed
 certificate that SmartScreen does not trust. "More info" → "Run anyway".
 

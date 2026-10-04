@@ -828,3 +828,45 @@
   color: #f5b83d;
   border-color: rgba(245, 184, 61, 0.6);
 }
+
+/* The galaxy index as its own download (plan 4.2, 2026-10-04). */
+.g3d-index-download {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  transform: translate(-50%, -50%);
+  width: min(30rem, calc(100vw - 32px));
+  padding: 16px 18px;
+  background: rgba(10, 8, 12, 0.94);
+  border: 1px solid var(--accent-a45);
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+.g3d-index-download h3 {
+  margin: 0 0 8px;
+  color: var(--accent-bright);
+  font-size: var(--fs-md, 1rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.g3d-index-download p {
+  margin: 0 0 12px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+.g3d-index-download__progress {
+  display: grid;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.g3d-index-download__bar {
+  height: 6px;
+  background: rgba(var(--accent-rgb), 0.15);
+}
+.g3d-index-download__bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}

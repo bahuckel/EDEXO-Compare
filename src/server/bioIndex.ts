@@ -20,8 +20,8 @@
  * Missing file is not an error. The index is optional data: the app works without it, minus the
  * galaxy-wide filter, exactly as it did before this existed.
  */
+import { galaxyIndexFilePath } from "./galaxyIndexFiles.js";
 import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { getProjectRoot } from "./paths.js";
 
 const MAGIC = "EDEXOBIO";
@@ -252,8 +252,9 @@ class Index implements BioIndex {
   }
 }
 
+/** The downloaded copy beside the settings, else the project's (galaxyIndexFiles.ts, plan 4.2). */
 export function bioIndexPath(projectRoot = getProjectRoot()): string {
-  return path.join(projectRoot, "data", "galaxy", "bio-index.bin");
+  return galaxyIndexFilePath("bio-index.bin", projectRoot);
 }
 
 let cached: BioIndex | null | undefined;

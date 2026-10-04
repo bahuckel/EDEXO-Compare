@@ -31,6 +31,7 @@ import {
   galaxySystemValues,
 } from "../galaxyValueSearch.js";
 import { clearSystemTraits, galaxyFilterMask, loadSystemTraits, systemTraitCounts } from "../galaxyTraits.js";
+import { downloadGalaxyIndex, galaxyIndexStatus, probeGalaxyIndexSize } from "../galaxyIndexFiles.js";
 import { BODY_TRAIT_GROUP, BODY_TRAITS, STAR_CLASSES } from "../../shared/galaxyTraits.js";
 import { loadRegionMap } from "../regionMapData.js";
 import { galaxyFind, galaxySector } from "../galaxyFind.js";
@@ -174,6 +175,27 @@ export function registerGalaxyRoutes(
     buf.writeUInt32LE(matched, 12);
     buf.set(bits, 16);
     sendBinary(res, buf);
+  });
+
+  /**
+   * The galaxy index as a separate download (plan 4.2, 2026-10-04): whether it is here, how big the
+   * download is, and its progress; POST starts it. Builds leave the files out.
+   */
+  app.get("/api/galaxy/index", async (_req, res) => {
+    const st = galaxyIndexStatus();
+    if (!st.present && st.downloadBytes == null) await probeGalaxyIndexSize();
+    res.json(galaxyIndexStatus());
+  });
+  app.post("/api/galaxy/index/download", (_req, res) => {
+    void downloadGalaxyIndex(() => {
+      clearBioIndexCache();
+      clearSystemTraits();
+      clearGalaxyPoints();
+      clearTileIndex();
+      clearGalaxyCatalogueCache();
+      clearGalaxySystemValues();
+    });
+    res.json({ ok: true });
   });
 
   /** The non-empty 1,280 ly cells and their system counts (layout in galaxyTiles.ts). */

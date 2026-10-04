@@ -16,10 +16,10 @@
  * Without it the Bodies tab says so and only exobio filters.
  */
 import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { gunzipSync } from "node:zlib";
 import { loadBioIndex, type BioIndex } from "./bioIndex.js";
 import { getProjectRoot } from "./paths.js";
+import { galaxyIndexFilePath } from "./galaxyIndexFiles.js";
 import { BODY_TRAITS, STAR_CLASSES } from "../shared/galaxyTraits.js";
 
 export const TRAITS_MAGIC = "EDXTRT01";
@@ -35,7 +35,7 @@ export interface SystemTraits {
 }
 
 export function systemTraitsPath(projectRoot = getProjectRoot()): string {
-  return path.join(projectRoot, "data", "galaxy", "system-traits.bin.gz");
+  return galaxyIndexFilePath("system-traits.bin.gz", projectRoot);
 }
 
 /** Read a traits buffer (already gunzipped). Throws on a wrong magic or a short file. */
