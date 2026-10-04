@@ -63,6 +63,8 @@ export function serverPref(key) {
   if (key === "edexoHudRelevant") return typeof p.relevant === "boolean" ? (p.relevant ? "1" : "0") : null;
   if (key === "edexoHudType") return p.hudType || null;
   if (key === "edexoHudTilt") return typeof p.tilt === "number" ? String(p.tilt) : null;
+  if (key === "edexoHudTiltMode") return p.tiltMode || null;
+  if (key === "edexoHudSlant") return typeof p.slant === "number" ? String(p.slant) : null;
   return null;
 }
 export function pref(key, def) {
@@ -145,4 +147,16 @@ export function applyTheme() {
   var tilt = clampNum(pref("edexoHudTilt", "15"), -35, 35, 15);
   st.setProperty("--hud-tilt", tilt + "deg");
   st.setProperty("--hud-tilt-origin", tilt >= 0 ? "left" : "right");
+  /*
+    Slant (owner, 2026-10-04: "angle adjust without the swinging part"): the panel skewed rather than
+    turned, so its edges stay where they are and only the lines and text run at the angle. A skew
+    lifts one end and lowers the other by half the width × tan(angle), which the window has to hold:
+    that much padding above and below.
+  */
+  var slantMode = pref("edexoHudTiltMode", "turn") === "slant";
+  cls.toggle("hud-tilt--slant", slantMode);
+  var slant = clampNum(pref("edexoHudSlant", "6"), -15, 15, 6);
+  st.setProperty("--hud-slant", -slant + "deg");
+  var halfLift = (Math.tan((Math.abs(slant) * Math.PI) / 180) * (window.innerWidth || 420)) / 2;
+  st.setProperty("--hud-slant-pad", Math.ceil(halfLift + 4) + "px");
 }

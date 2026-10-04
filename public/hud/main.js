@@ -74,6 +74,10 @@ export function relevantOn() {
 HUD.SECTIONS = ORDER.slice();
 HUD.PRESETS = PRESETS;
 HUD.applyTheme = applyTheme;
+// The Elite Style's slant needs room in proportion to the window's width (theme.js), which changes with the scale.
+window.addEventListener("resize", function () {
+  applyTheme();
+});
 HUD.starKind = starKind;
 HUD.readScale = readScale;
 HUD.readOpacity = readOpacity;

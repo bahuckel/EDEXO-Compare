@@ -1292,6 +1292,16 @@ html.hud-type--elite .shell {
 html.hud-type--elite .shell.shell--off {
   transform: perspective(60rem) rotateY(var(--hud-tilt, 0deg)) scale(0.97);
 }
+/* Slant: skewed, not turned — the same width border to border; room above and below for the lift. */
+html.hud-type--elite.hud-tilt--slant .shell {
+  transform: skewY(var(--hud-slant, 0deg));
+  transform-origin: center center;
+  padding-top: var(--hud-slant-pad, 0.2rem);
+  padding-bottom: var(--hud-slant-pad, 0.4rem);
+}
+html.hud-type--elite.hud-tilt--slant .shell.shell--off {
+  transform: skewY(var(--hud-slant, 0deg)) scale(0.97);
+}
 html.hud-type--elite .shell::before,
 html.hud-type--elite .shell::after,
 html.hud-type--elite .panel > .panel__frame,

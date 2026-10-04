@@ -238,6 +238,10 @@ export interface HudPrefsDTO {
   hudType?: "original" | "title" | "elite";
   /** Elite Style's tilt, degrees, -35..35 (positive: the right edge goes into the screen). */
   tilt?: number;
+  /** Elite Style's angle as a turn (3D, "swinging door") or a slant (flat, same width). */
+  tiltMode?: "turn" | "slant";
+  /** Elite Style's slant, degrees, -15..15 (positive: rising to the right). */
+  slant?: number;
 }
 
 /** The session log: what happened since the app started, for the modal and the Markdown copy. */
