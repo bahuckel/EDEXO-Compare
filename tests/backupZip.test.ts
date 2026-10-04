@@ -90,7 +90,7 @@ describe("backup zip", () => {
     const [e] = await listZip(zip);
     const buf = readFileSync(zip);
     const nameLen = buf.readUInt16LE(26);
-    buf[30 + nameLen + 5] ^= 0xff;
+    buf[30 + nameLen + 5]! ^= 0xff;
     writeFileSync(zip, buf);
     await expect(readZipEntry(zip, e!)).rejects.toThrow();
   });

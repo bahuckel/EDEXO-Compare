@@ -74,7 +74,7 @@ export function regionIndexForCoords(data: RegionMapData, x: number, z: number):
   // and a caller that needs to tell them apart should be checking the coordinates, not the map.
   if (pz < 0 || pz >= data.regionmap.length) return 0;
   const row = data.regionmap[pz];
-  if (px < 0) return 0;
+  if (!row || px < 0) return 0;
   let rx = 0;
   for (const [runLength, regionIndex] of row) {
     if (px < rx + runLength) return regionIndex;

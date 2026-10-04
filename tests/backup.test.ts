@@ -171,7 +171,7 @@ describe("backups", () => {
     const buf = readFileSync(first.path);
     const e = (await listZip(first.path)).find((x) => x.name === "journals/Journal.2026-09-01T100000.01.log")!;
     const at = e.offset + 30 + buf.readUInt16LE(e.offset + 26) + buf.readUInt16LE(e.offset + 28);
-    buf[at + 2] ^= 0xff;
+    buf[at + 2]! ^= 0xff;
     writeFileSync(first.path, buf);
     const r = await runBackup(w.src, w.settings, minute(1));
     const j = (await listZip(r.path)).find((x) => x.name === "journals/Journal.2026-09-01T100000.01.log")!;

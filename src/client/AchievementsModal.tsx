@@ -438,7 +438,7 @@ export function AchievementsModal({ onClose }: { onClose: () => void }) {
                     type="button"
                     className="ach-link ach-tracked__name"
                     onClick={() => {
-                      setCategory(trackedCategory);
+                      setCategory(trackedCategory ?? null);
                       setOpen(tracked.id);
                     }}
                     title="Open it"

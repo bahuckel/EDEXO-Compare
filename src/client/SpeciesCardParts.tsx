@@ -15,9 +15,8 @@ import { CSSProperties, useState } from "react";
 
 export function FootScanMatchCard({ payload }: { payload: FootScanMatchPayload }) {
   const [expanded, setExpanded] = useState(false);
-  const hits = payload.hits;
-  if (!hits.length) return null;
-  const [primary, ...more] = hits;
+  const [primary, ...more] = payload.hits;
+  if (!primary) return null;
 
   return (
     <div className="foot-scan-match-card">

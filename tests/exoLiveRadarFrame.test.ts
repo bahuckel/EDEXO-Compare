@@ -134,16 +134,16 @@ describe("the radar's own frame", () => {
       that section produces the same markup, and it patches fields rather than rebuilding, so the
       sentinel survived as well. Only the call itself distinguishes the two behaviours.
     */
-    const impls = HUD.sectionImpls!;
-    const real = impls.candidates.render;
+    const candidates = HUD.sectionImpls!.candidates!;
+    const real = candidates.render;
     let calls = 0;
-    impls.candidates.render = (d: unknown, el: HTMLElement) => {
+    candidates.render = (d: unknown, el: HTMLElement) => {
       calls += 1;
       return real(d, el);
     };
 
     HUD.renderExoLive({ exoOrganicOverlay: overlay(340), exoMinimap: minimap(340) });
-    impls.candidates.render = real;
+    candidates.render = real;
     expect(calls, "a radar frame re-rendered the candidate list").toBe(0);
   });
 
