@@ -299,10 +299,19 @@ export function galaxySpeciesCatalogue(): GalaxySpeciesCatalogueDTO {
   const priced = pricedSpecies(index);
   const db = getCachedSpeciesDatabase();
   const genusName = new Map(db.species.map((e) => [e.genusDataDir, e.genus]));
+  /*
+    One pass over the index for every species' system count. It was a pass per species, each building
+    a record for every hit: 9 s on the first open of the map's Filter drawer, which showed an empty
+    genus list meanwhile (owner, 2026-10-04). A species appears once per system in the index's runs.
+  */
+  const perIndex = new Uint32Array(index.species.length);
+  index.forEachRegionSpecies((_i, _r, s) => {
+    if (s >= 0) perIndex[s]! += 1;
+  });
   const counts = new Map<string, number>();
-  for (const id of priced.keys()) counts.set(id, 0);
   for (const id of priced.keys()) {
-    counts.set(id, index.systemsWithAny([id]).length);
+    const i = index.species.indexOf(id);
+    counts.set(id, i >= 0 ? perIndex[i]! : 0);
   }
 
   catalogue = {

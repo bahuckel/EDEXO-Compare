@@ -233,6 +233,8 @@ export function GalaxyFilterPanel({
         {value.tab === "exobio" ? (
           catalogue?.available === false ? (
             <p className="g3d-panel__note">No galaxy index in this build.</p>
+          ) : !catalogue ? (
+            <p className="g3d-panel__note">Loading the genera…</p>
           ) : (
             genera.map((g) => {
               const expanded = open.has(g.dir) || q.length > 0;
@@ -282,6 +284,8 @@ export function GalaxyFilterPanel({
           )
         ) : traits && !traits.available ? (
           <p className="g3d-panel__note">The star and body list is not in this build.</p>
+        ) : !traits ? (
+          <p className="g3d-panel__note">Loading the stars and bodies…</p>
         ) : (
           <>
             {traitGroup("Main star", "mainStars", traits?.mainStars ?? [])}
