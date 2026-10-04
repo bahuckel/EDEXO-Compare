@@ -464,6 +464,8 @@ export function createHttpServer(opts: HttpServerOptions): {
    * the one path: the galaxy dump is read from disk by the CLI and never travels through here.
    */
   app.use("/api/feeder/import", express.json({ limit: "8mb" }));
+  // The streamer view's settings mirror (uiMirror.ts): every edexo.* setting of the app at once.
+  app.use("/api/ui/mirror", express.json({ limit: "512kb" }));
   app.use(express.json({ limit: "48kb" }));
 
   registerSpeciesFilesRoutes(app, opts, routeCtx);

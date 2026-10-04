@@ -9,6 +9,7 @@ import { isLoopbackAddress, localOnly } from "../lanAuth.js";
 import { isEdsmCatchUpScope } from "../edsmCatchUp.js";
 
 import type { HttpServerOptions, RouteContext } from "../httpServer.js";
+import { setUiMirror, uiMirror } from "../uiMirror.js";
 
 export function registerSettingsRoutes(
   app: express.Express,
@@ -703,6 +704,22 @@ export function registerSettingsRoutes(
     opts.setExoMapTierThresholds(plus, pp);
     opts.scheduleBroadcast?.();
     res.json({ ok: true });
+  });
+
+  /*
+    The streamer view's mirror of the app's own settings (uiMirror.ts). Only the app on this PC may
+    set it: a phone on the LAN has settings of its own that are not the streamer's.
+  */
+  app.get("/api/ui/mirror", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json(uiMirror());
+  });
+  app.post("/api/ui/mirror", (req, res) => {
+    if (!isLoopbackAddress(req.socket.remoteAddress)) {
+      res.status(403).json({ ok: false, error: "Only the app on the PC running it sets the streamer view's settings." });
+      return;
+    }
+    res.json({ ok: true, rev: setUiMirror(req.body?.values).rev });
   });
 
   app.post("/api/ui/open-external", (req, res) => {

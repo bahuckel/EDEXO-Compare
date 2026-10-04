@@ -967,6 +967,30 @@ test("streamer view: the link's options hide the name, scale the page, drop the 
   expect(errors).toEqual([]);
 });
 
+test("streamer view: shows the app as the streamer has it set up (settings mirrored)", async ({ page, browser }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  await expect(page.locator(".srow").first()).toBeVisible({ timeout: 60_000 });
+  // The streamer switches Compact off: cards instead of rows.
+  const compact = page.getByRole("button", { name: "Compact" });
+  await expect(compact).toHaveAttribute("aria-pressed", "true");
+  await compact.click();
+  await expect(page.locator(".srow")).toHaveCount(0);
+  await page.waitForTimeout(1500); // the app reports its settings once a second
+  // OBS is a browser of its own, with storage of its own.
+  const obs = await browser.newContext({ baseURL: page.url() });
+  const view = await obs.newPage();
+  await view.goto("/?view=stream");
+  await expect(view.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await expect(view.locator(".species-card").first()).toBeVisible();
+  await expect(view.locator(".srow")).toHaveCount(0);
+  // And back: the view follows within a couple of seconds.
+  await compact.click();
+  await expect(view.locator(".srow").first()).toBeVisible({ timeout: 10_000 });
+  await obs.close();
+  expect(errors).toEqual([]);
+});
+
 test("my discoveries: the bodies table exports as CSV", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");

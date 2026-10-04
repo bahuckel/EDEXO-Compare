@@ -1,12 +1,16 @@
 import { HexSignals } from "./HexSignals";
 import { createRoot } from "react-dom/client";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import "./styles.css";
 import { App } from "./App";
 import { UiFeedbackProvider } from "./ui/feedback";
 import { applyAppTheme } from "./appTheme";
-import { applyStreamerMode } from "./streamerMode";
+import { applyStreamerMode, STREAMER_MODE } from "./streamerMode";
+import { loadUiMirror, startUiMirrorSource, watchUiMirror } from "./uiMirror";
 
+// The streamer view takes the streamer's own settings first (uiMirror.ts), so even its first paint
+// is what the streamer sees.
+const mirrorRev = STREAMER_MODE ? await loadUiMirror() : -1;
 // The colour scheme, before the first paint, so the page never flashes orange first.
 applyAppTheme();
 // `?view=stream`: the same app, as a picture for a stream (streamerMode.ts).
@@ -33,6 +37,20 @@ const wantsSecondScreen = screen === "triage";
 const wantsMap = screen === "map";
 const wants3d = screen === "galaxy";
 
+/** The streamer view, drawn afresh whenever the streamer changes a setting in the app. */
+function StreamerApp() {
+  const [gen, setGen] = useState(0);
+  useEffect(() => {
+    watchUiMirror(mirrorRev, () => {
+      applyAppTheme();
+      setGen((g) => g + 1);
+    });
+  }, []);
+  return <App key={gen} />;
+}
+// The app on this PC tells the streamer view how it is set up.
+if (!STREAMER_MODE && !screen) startUiMirrorSource();
+
 createRoot(document.getElementById("root")!).render(
   wants3d ? (
     <Suspense fallback={null}>
@@ -49,7 +67,7 @@ createRoot(document.getElementById("root")!).render(
   ) : (
     <UiFeedbackProvider>
       <HexSignals />
-      <App />
+      {STREAMER_MODE ? <StreamerApp /> : <App />}
     </UiFeedbackProvider>
   ),
 );
