@@ -1,4 +1,5 @@
 import { codexFirstCheck, codexFirstDataDate } from "./codexFirst.js";
+import { eddnLedgerStatus } from "./eddnLedger.js";
 import { unknownPlantSlots } from "../shared/unknownPlants.js";
 import { edastroBioRegionIds } from "./edastroNsp.js";
 import { speciesProvenance } from "./speciesProvenance.js";
@@ -656,6 +657,8 @@ function attachCodexRegionNovelty(
           m.codexFirstEdastroAsOf = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
           if (first.edastroSpeciesOnly) m.codexFirstEdastroSpeciesOnly = true;
         }
+        const ledger = eddnLedgerStatus();
+        if (ledger.found && ledger.checkedAt) m.codexFirstEddnAsOf = ledger.checkedAt.slice(0, 10);
       }
     }
   }
@@ -817,6 +820,11 @@ function computeBodyCacheSignature(
     codex: `${store.codexLoggedSpecies.size}/${store.codexRegionLogged.size}`,
     // [CODEX FIRST] also reads EDAstro's plants: a download mid-session re-marks the bodies.
     edastroBio: edastroBioRegionIds()?.fetchedAtMs ?? 0,
+    // …and the EDDN collector's ledger, when one answers (eddnLedger.ts).
+    eddnLedger: (() => {
+      const l = eddnLedgerStatus();
+      return l.found ? `${l.plantRows}/${l.checkedAt?.slice(0, 10) ?? ""}` : 0;
+    })(),
     // The tracked achievement's marks move with what is tracked and with every completion.
     achievement: `${store.trackedAchievementId ?? ""}/${store.achievementDone.size}`,
     shared: sharedSignature(),

@@ -17,7 +17,12 @@ export function achievementMarkTitle(a: AchievementAdvanceDTO): string {
 export function codexFirstTitle(
   m: Pick<
     SpeciesMatch,
-    "codexFirstColours" | "codexRegion" | "codexFirstAsOf" | "codexFirstEdastroAsOf" | "codexFirstEdastroSpeciesOnly"
+    | "codexFirstColours"
+    | "codexRegion"
+    | "codexFirstAsOf"
+    | "codexFirstEdastroAsOf"
+    | "codexFirstEdastroSpeciesOnly"
+    | "codexFirstEddnAsOf"
   >,
 ): string {
   const where = m.codexRegion ? ` in ${m.codexRegion}` : " in this region";
@@ -29,7 +34,9 @@ export function codexFirstTitle(
         ? `${colours[0]} has not been logged`
         : `Neither ${colours.join(" nor ")} has been logged`;
   const edsm = m.codexFirstAsOf ? `EDSM's codex, ${m.codexFirstAsOf}` : "EDSM's codex";
-  const sources = m.codexFirstEdastroAsOf ? `${edsm}, and EDAstro's, fetched ${m.codexFirstEdastroAsOf}` : edsm;
+  const withEdastro = m.codexFirstEdastroAsOf ? `${edsm}, and EDAstro's, fetched ${m.codexFirstEdastroAsOf}` : edsm;
+  // Your EDDN collector, when it runs here: everything relayed since EDSM's dump (2026-10-04).
+  const sources = m.codexFirstEddnAsOf ? `${withEdastro}; and EDDN to ${m.codexFirstEddnAsOf} (your collector)` : withEdastro;
   const note = m.codexFirstEdastroSpeciesOnly
     ? " Note: EDAstro has this species logged here without its colour, so this colour may already be taken."
     : "";

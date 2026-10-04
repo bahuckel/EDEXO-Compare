@@ -629,6 +629,8 @@ export interface SpeciesMatch {
   codexFirstAsOf?: string;
   /** EDAstro's codex file was checked too (fetch date), when the phenomena data is downloaded. */
   codexFirstEdastroAsOf?: string;
+  /** The EDDN collector's ledger was checked too, through this date (eddnLedger.ts, 2026-10-04). */
+  codexFirstEddnAsOf?: string;
   /** EDAstro has this species in the region but not which colour: still gold, with a note. */
   codexFirstEdastroSpeciesOnly?: boolean;
   /** This plant, here, would advance the tracked achievement (`server/achievements.ts`). */

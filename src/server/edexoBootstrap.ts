@@ -1,3 +1,4 @@
+import { startEddnLedgerWatch } from "./eddnLedger.js";
 import path from "node:path";
 import {
   achievementDetail,
@@ -922,6 +923,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     startEdsmRun(EDSM_LIVE_SCOPE, true);
   }, EDSM_LIVE_INTERVAL_MS);
   edsmLiveTimer.unref?.();
+
+  // The EDDN collector's codex ledger, when one runs on this machine: fresher [CODEX FIRST] (eddnLedger.ts).
+  startEddnLedgerWatch(getProjectRoot());
 
   /**
    * Contributing discoveries back to Canonn, when the commander has asked for it.

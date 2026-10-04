@@ -143,7 +143,8 @@ export function codexFirstCheck(
   const species = codexSpeciesKey(gameOrderSpeciesName(displayName));
   if (!r || !species) return null;
   const ed = edastro ? edastroKeys(d, projectRoot, edastro) : null;
-  const has = (k: string) => d.logged.has(k) || (ed?.logged.has(k) ?? false);
+  const lg = ledgerKeys(d, projectRoot);
+  const has = (k: string) => d.logged.has(k) || (ed?.logged.has(k) ?? false) || (lg?.has(k) ?? false);
   const label = (colourLabel ?? "").trim();
   const colours =
     !label || label.startsWith("(")
@@ -182,8 +183,43 @@ export function codexFirstDataDate(projectRoot: string): string | null {
   return load(projectRoot)?.generated ?? null;
 }
 
+/*
+  The EDDN collector's ledger, when one runs on this machine (eddnLedger.ts, owner 2026-10-04): plants
+  relayed since the EDSM dump, as `region|codexId` keys. Read through EDSM's id table like EDAstro's.
+*/
+let ledgerIds: ReadonlySet<string> | null = null;
+let ledgerMemo: { ids: ReadonlySet<string>; root: string; logged: Set<string> } | null = null;
+
+export function setEddnLedgerIds(ids: ReadonlySet<string> | null): void {
+  ledgerIds = ids;
+  ledgerMemo = null;
+}
+
+function ledgerKeys(d: Loaded, root: string): Set<string> | null {
+  if (!ledgerIds) return null;
+  if (ledgerMemo?.ids === ledgerIds && ledgerMemo.root === root) return ledgerMemo.logged;
+  const logged = new Set<string>();
+  for (const key of ledgerIds) {
+    const bar = key.indexOf("|");
+    const r = key.slice(0, bar);
+    const id = key.slice(bar + 1);
+    const full = d.byId.get(id);
+    if (full) {
+      logged.add(`${r}|${full[0]}|${full[1]}`);
+      logged.add(`${r}|${full[0]}|*`);
+      continue;
+    }
+    const species = d.byBase.get(id) ?? d.byBase.get(id.replace(/_[a-z0-9]+$/, ""));
+    if (species) logged.add(`${r}|${species}|*`);
+  }
+  ledgerMemo = { ids: ledgerIds, root, logged };
+  return logged;
+}
+
 /** For tests. */
 export function resetCodexFirst(): void {
   memo = null;
   edMemo = null;
+  ledgerIds = null;
+  ledgerMemo = null;
 }
