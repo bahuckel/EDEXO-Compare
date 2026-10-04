@@ -75,6 +75,8 @@ const SEARCH_COLOUR: [number, number, number] = [0.7, 0.5, 1];
 /** NavRoute finder markers; green where EDSM does not know the system. */
 const NAVROUTE_COLOUR: [number, number, number] = [0.95, 0.6, 0.2];
 const PLAN_COLOUR: [number, number, number] = [0.84, 0.7, 1];
+/** The plotted route's systems you have not been to yet. */
+const NAV_UNVISITED_COLOUR: [number, number, number] = [0.45, 0.85, 1];
 /** How many stops the plan can be asked for (G5.3, up to 20 since 5.8); the target is among them. */
 const PLAN_SIZES = [3, 5, 8, 10, 15, 20];
 /** Room round a framed plan: the drawer and the panel cover both sides of the map. */
@@ -130,6 +132,8 @@ export function GalaxyMap3D() {
   const [carriersOn, setCarriersOn] = usePersistedState("galaxy.layer.carriers", false, isBool);
   const [bookmarksOn, setBookmarksOn] = usePersistedState("galaxy.layer.bookmarks", false, isBool);
   const [gggOn, setGggOn] = usePersistedState("galaxy.layer.ggg", false, isBool);
+  // The plotted route's systems you have not been to (owner, 2026-10-04): placed from NavRoute.json.
+  const [navUnvisitedOn, setNavUnvisitedOn] = usePersistedState("galaxy.layer.navUnvisited", true, isBool);
   /* The status bar's legend folds away (owner, 2026-10-04, plan 3.7), remembered. */
   const [legendOn, setLegendOn] = usePersistedState("galaxy.legendOpen", true, isBool);
   /* The Filter drawer (owner, 2026-10-04): remembered between opens, so the button says when one is on. */
@@ -166,6 +170,8 @@ export function GalaxyMap3D() {
   const [planCopied, setPlanCopied] = useState(false);
   const screenRef = useRef<HTMLDivElement | null>(null);
   const lastShip = useRef<{ x: number; y: number; z: number } | null>(null);
+  const loadMine = useRef<(() => Promise<void>) | null>(null);
+  const mineRev = useRef<string | null>(null);
   const followRef = useRef(follow);
   followRef.current = follow;
   const barRef = useRef<HTMLElement | null>(null);
@@ -299,13 +305,15 @@ export function GalaxyMap3D() {
       e.setBackdrop(photo, outlines.current);
     });
 
-    // The commander's own systems.
-    fetch("/api/galaxy/mine")
-      .then((r) => (r.ok ? (r.json() as Promise<GalaxyMineDTO>) : null))
-      .then((d) => {
-        if (d && engine.current === e) setMine(new Map(d.systems.map((s) => [String(s.addr), s])));
-      })
-      .catch(() => {});
+    // The commander's own systems (again whenever the route poll says they changed).
+    loadMine.current = () =>
+      fetch("/api/galaxy/mine")
+        .then((r) => (r.ok ? (r.json() as Promise<GalaxyMineDTO>) : null))
+        .then((d) => {
+          if (d && engine.current === e) setMine(new Map(d.systems.map((s) => [String(s.addr), s])));
+        })
+        .catch(() => {});
+    void loadMine.current();
 
     const onResize = () => e.resize();
     const onKey = (ev: KeyboardEvent) => {
@@ -337,6 +345,9 @@ export function GalaxyMap3D() {
           if (!live || !d) return;
           setRoute(d);
           engine.current?.setRoute(d.route, d.position);
+          // A jump, a scan or a map changed your systems: draw them again without a reload.
+          if (mineRev.current !== null && d.mineRev !== mineRev.current) void loadMine.current?.();
+          mineRev.current = d.mineRev;
           // A jump moved the ship: the camera goes with it, at the distance it was viewing from.
           const p = d.position;
           const prev = lastShip.current;
@@ -498,6 +509,16 @@ export function GalaxyMap3D() {
     panelOpen.current = !!selection;
     engine.current?.invalidate();
   }, [selection]);
+
+  // ------------------------------------------------------------- the plotted route, unvisited
+  useEffect(() => {
+    const items: MarkerItem[] = navUnvisitedOn
+      ? (route?.navRoute ?? [])
+          .filter((s) => !s.visited)
+          .map((s) => ({ id: String(s.address), x: s.x, y: s.y, z: s.z, color: NAV_UNVISITED_COLOUR, size: 6 }))
+      : [];
+    engine.current?.setMarkers("navUnvisited", items, 2);
+  }, [route?.navRoute, navUnvisitedOn]);
 
   // -------------------------------------------------------------------------- the NavRoute finder
   /* The systems its filters leave, marked on the map (owner, 2026-10-04); none while it is closed. */
@@ -796,6 +817,19 @@ export function GalaxyMap3D() {
         </>
       );
     }
+    const nv = navPoint(hover.layer, hover.id);
+    if (nv) {
+      return (
+        <>
+          <strong>{nv.name}</strong>
+          <span>
+            {nv.starClass ? `${nv.starClass} star · ` : ""}
+            {nv.visited ? "visited" : "not visited yet"}
+          </span>
+          <em>{hover.layer === "navUnvisited" ? "On your plotted route" : "NavRoute"} · click for details</em>
+        </>
+      );
+    }
     if (hover.layer === "search") {
       const h = searchHits.get(hover.id);
       return h ? (
@@ -817,6 +851,18 @@ export function GalaxyMap3D() {
       </>
     ) : null;
   })();
+
+  /** A NavRoute marker (the finder's, or the plotted route's unvisited ones) by its address. */
+  function navPoint(layer: string, id: string) {
+    if (layer === "navUnvisited") return route?.navRoute.find((s) => String(s.address) === id) ?? null;
+    if (layer === "navroute") {
+      const s = navShown.find((x) => String(x.address) === id);
+      return s
+        ? { address: s.address, name: s.name, starClass: s.starClass, x: s.pos[0], y: s.pos[1], z: s.pos[2], visited: false }
+        : null;
+    }
+    return null;
+  }
 
   const panel = (() => {
     if (!selection) return null;
@@ -854,6 +900,25 @@ export function GalaxyMap3D() {
               {fmtLy(dist(route.position, { x: xs.p[0], y: xs.p[1], z: xs.p[2] }))} from your ship
             </p>
           ) : null}
+        </div>
+      );
+    }
+    const ns = navPoint(selection.layer, selection.id);
+    if (ns) {
+      return (
+        <div>
+          <h2 className="g3d-panel__name">
+            {ns.name} <CopySystemButton system={ns.name} />
+          </h2>
+          <p className="g3d-panel__meta">
+            {ns.starClass ? `${ns.starClass} star · ` : ""}
+            {ns.visited ? "visited" : "on your plotted route, not visited yet"}
+          </p>
+          {route?.position ? <p className="dim">{fmtLy(dist(route.position, ns))} from your ship</p> : null}
+          <p className="g3d-panel__bm">
+            <SystemBookmarkButton system={ns.name} systemAddress={ns.address} pos={{ x: ns.x, y: ns.y, z: ns.z }} />
+          </p>
+          <IndexRecord addr={String(ns.address)} fallbackName={ns.name} />
         </div>
       );
     }
@@ -988,6 +1053,12 @@ export function GalaxyMap3D() {
                 );
               })}
           </div>
+          <MenuToggle
+            label="NavRoute – unvisited"
+            hint="The systems on the route you plotted in the game that you have not been to, placed from NavRoute.json"
+            on={navUnvisitedOn}
+            set={setNavUnvisitedOn}
+          />
           {layers.you ? (
             <MenuRow label="Waiting worth ≥" hint="Your systems still waiting (signals not yet sampled), worth at least this much">
               <input

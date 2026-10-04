@@ -138,4 +138,20 @@ describe("the commander's systems", () => {
     expect(r.position).toEqual({ x: -500, y: 10, z: 900 });
     expect(r.system).toBe(B.name);
   });
+
+  it("carries the plotted route with visited marks, and a revision that moves with a jump", () => {
+    const st = new GameStateStore();
+    st.apply(jump(A));
+    st.applyLiveNavRoute([
+      { systemAddress: A.addr, starSystem: A.name, starPos: [1, 2, 3], starClass: "K" },
+      { systemAddress: 777, starSystem: "Far Away", starPos: [10, 20, 30], starClass: "N" },
+    ]);
+    const before = sessionRouteDto(st, []);
+    expect(before.navRoute).toEqual([
+      { address: A.addr, name: A.name, starClass: "K", x: 1, y: 2, z: 3, visited: true },
+      { address: 777, name: "Far Away", starClass: "N", x: 10, y: 20, z: 30, visited: false },
+    ]);
+    st.apply(jump(B));
+    expect(sessionRouteDto(st, []).mineRev).not.toBe(before.mineRev);
+  });
 });

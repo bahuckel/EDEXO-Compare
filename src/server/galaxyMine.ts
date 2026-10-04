@@ -149,5 +149,20 @@ export function sessionRouteDto(store: GameStateStore, sessionSystems: readonly 
     const pos = addr != null ? store.systemPositions.get(addr) : undefined;
     if (pos) route.push({ name: s.name, at: s.at, x: pos.x, y: pos.y, z: pos.z });
   }
-  return { position: store.commanderPos ?? null, system: store.currentSystem ?? null, route };
+  const navRoute: GalaxyRouteDTO["navRoute"] = (store.liveNavRoute ?? []).map((w) => ({
+    address: w.systemAddress,
+    name: w.starSystem,
+    starClass: w.starClass ?? "",
+    x: w.starPos[0],
+    y: w.starPos[1],
+    z: w.starPos[2],
+    visited: store.visitedSystems.has(w.systemAddress),
+  }));
+  return {
+    position: store.commanderPos ?? null,
+    system: store.currentSystem ?? null,
+    route,
+    mineRev: `${store.visitedSystems.size}:${store.explorationScansRevision}:${store.dssMappedBodyKeys.size}:${store.bodies.size}`,
+    navRoute,
+  };
 }

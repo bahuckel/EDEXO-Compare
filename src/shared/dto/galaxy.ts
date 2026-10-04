@@ -462,6 +462,13 @@ export interface GalaxyRouteDTO {
   position: { x: number; y: number; z: number } | null;
   system: string | null;
   route: { name: string; at: string; x: number; y: number; z: number }[];
+  /**
+   * Moves whenever the commander's own systems change — a jump, a scan, a map (owner, 2026-10-04:
+   * a new system only showed after a reload). The map fetches `/api/galaxy/mine` again when it does.
+   */
+  mineRev: string;
+  /** The route plotted now (`NavRoute.json`), in order: each system's star class and whether you have been. */
+  navRoute: { address: number; name: string; starClass: string; x: number; y: number; z: number; visited: boolean }[];
 }
 
 /** The 3D map's Find box (`/api/galaxy/find?q=`). */
