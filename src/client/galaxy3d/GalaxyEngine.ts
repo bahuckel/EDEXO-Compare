@@ -474,7 +474,9 @@ export class GalaxyEngine {
     geo.setAttribute("aValue", new THREE.Uint16BufferAttribute(o.values, 1));
     this.overviewMatch = new Uint8Array(o.count);
     this.fillMatch(this.overviewMatch, (k) => k * o.stride);
-    geo.setAttribute("aMatch", new THREE.Uint8BufferAttribute(this.overviewMatch, 1));
+    // A plain BufferAttribute keeps this very array (Uint8BufferAttribute copies it), so setFilter's
+    // writes reach the GPU: with the copy, the first filter's marks stayed on screen for good (owner, 2026-10-04).
+    geo.setAttribute("aMatch", new THREE.BufferAttribute(this.overviewMatch, 1));
     this.overviewMaterial = this.pointMaterial(overviewVertex, {
       uMin: { value: new THREE.Vector3(...o.min) },
       uStep: { value: new THREE.Vector3(...o.step) },
@@ -969,7 +971,7 @@ export class GalaxyEngine {
     geo.setAttribute("aValue", new THREE.Uint16BufferAttribute(t.values, 1));
     const match = new Uint8Array(t.count);
     this.fillMatch(match, (i) => t.ordinals[i]!);
-    geo.setAttribute("aMatch", new THREE.Uint8BufferAttribute(match, 1));
+    geo.setAttribute("aMatch", new THREE.BufferAttribute(match, 1)); // the same array, not a copy (see addOverview)
     const m = cellMin(t.cell);
     const cellMinLy = { value: new THREE.Vector3(m.x, m.y, m.z) };
     const mat = this.pointMaterial(tileVertex, { uCellMinLy: cellMinLy, uTileStep: { value: TILE_STEP_LY } });
@@ -1621,10 +1623,20 @@ export class GalaxyEngine {
   /** For tests: the screen position (CSS px) of the first shown group, and of a loaded system. */
   /** For tests: where a marker layer's first on-screen dot is (CSS px). */
   /** For tests: the filter's state on the GPU side, and how many overview points it marks. */
-  debugFilter(): { mode: number; overviewMatched: number } {
-    let n = 0;
-    for (const v of this.overviewMatch ?? []) n += v;
-    return { mode: this.pointUniforms.uFilter.value, overviewMatched: n };
+  debugFilter(): { mode: number; overviewMatched: number; tilesMatched: number } {
+    // Read from the geometry's own attributes — what the GPU draws — not from the engine's arrays.
+    const sum = (a: THREE.BufferAttribute | THREE.InterleavedBufferAttribute | undefined) => {
+      let n = 0;
+      for (let i = 0; i < (a?.count ?? 0); i++) n += a!.getX(i);
+      return n;
+    };
+    let tiles = 0;
+    for (const t of this.tiles.values()) tiles += sum(t.points.geometry.getAttribute("aMatch"));
+    return {
+      mode: this.pointUniforms.uFilter.value,
+      overviewMatched: sum(this.overview?.geometry.getAttribute("aMatch")),
+      tilesMatched: tiles,
+    };
   }
 
   debugMarker(layer: string): { x: number; y: number; id: string } | null {

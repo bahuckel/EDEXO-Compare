@@ -349,24 +349,48 @@ test("galaxy 3D: the Filter drawer lights the systems that have what was ticked"
       Owner, 2026-10-04: removed the plant from its chip, ticked main star O, and the map still lit the
       plant's systems. The points the engine marks must follow the ticks, not the last answer.
     */
-    type F = { filter: () => { mode: number; overviewMatched: number }; stats: () => { stride: number } };
-    const engineMarks = () =>
+    /*
+      Owner, 2026-10-04: the map kept lighting whatever was ticked first. The engine's match arrays
+      were copied into the GPU buffers, so later filters never reached the screen. These read the
+      geometry's own attributes: overview and close-up tiles.
+    */
+    type F = {
+      filter: () => { mode: number; overviewMatched: number; tilesMatched: number };
+      stats: () => { stride: number; tilesLoaded: number };
+      lookAt: (x: number, y: number, z: number, d: number) => void;
+    };
+    const marks = () =>
       page.evaluate(() => {
         const g = (window as unknown as { __galaxy: F }).__galaxy;
-        return g.filter().overviewMatched * g.stats().stride;
+        return { overview: g.filter().overviewMatched * g.stats().stride, tiles: g.filter().tilesMatched };
       });
+    // Close-up tiles near Sol, loaded while the first filter is on.
+    await page.evaluate(() => (window as unknown as { __galaxy: F }).__galaxy.lookAt(0, 0, 0, 2500));
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __galaxy: F }).__galaxy.stats().tilesLoaded), { timeout: 30_000 })
+      .toBeGreaterThan(0);
     await drawer.getByRole("button", { name: /^Stratum \(all\)/ }).click();
     await drawer.getByRole("button", { name: /^Neutron star/ }).click();
     await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();
-    await expect.poll(engineMarks, { timeout: 10_000 }).toBe(0);
+    await expect.poll(async () => (await marks()).overview + (await marks()).tiles, { timeout: 10_000 }).toBe(0);
+    // His steps: O first, then a plant, both removed, then another genus.
     await drawer.getByLabel("Search the filters").fill("blue-white");
     await drawer.locator("fieldset", { hasText: "Main star" }).getByLabel("O (Blue-White)").check();
     await expect(summary).toContainText(/\d systems match/, { timeout: 30_000 });
     const oStars = await count();
-    expect(oStars).toBeLessThan(stratum);
-    // The overview holds every system (or every 16th in light mode): its marks are the answer's.
-    await expect.poll(engineMarks, { timeout: 10_000 }).toBeLessThanOrEqual(oStars + 16 * 16);
-    expect(await engineMarks()).toBeGreaterThan(0);
+    await expect.poll(async () => (await marks()).overview, { timeout: 10_000 }).toBeGreaterThan(0);
+    expect((await marks()).overview).toBeLessThanOrEqual(oStars + 16 * 16);
+    const oTiles = (await marks()).tiles;
+    await drawer.getByRole("button", { name: /^O \(Blue-White\)/ }).click();
+    await drawer.getByRole("tab", { name: "Exobio" }).click();
+    await drawer.getByLabel("Search the filters").fill("tussock");
+    await drawer.getByLabel("Tussock, every species").check();
+    await expect.poll(count, { timeout: 30_000 }).toBeGreaterThan(oStars);
+    const tussock = await count();
+    // The overview marks are the new answer's, not the first one's; the tiles changed with it.
+    await expect.poll(async () => (await marks()).overview, { timeout: 10_000 }).toBeGreaterThan(oStars + 16 * 16);
+    expect((await marks()).overview).toBeLessThanOrEqual(tussock + 16 * 16);
+    expect((await marks()).tiles).not.toBe(oTiles);
   }
   await drawer.getByRole("button", { name: /^Clear/ }).click();
   await expect(page.getByRole("button", { name: "Filter" })).toBeVisible();
