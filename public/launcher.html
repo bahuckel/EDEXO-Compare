@@ -2759,7 +2759,8 @@
           } catch (e) {}
           const proto = location.protocol === "https:" ? "wss:" : "ws:";
           try {
-            ws = new WebSocket(proto + "//" + location.host + "/ws");
+            // The channel in the address: the first frame is already the launcher's slice (plan O-H).
+            ws = new WebSocket(proto + "//" + location.host + "/ws?channel=launcher");
             ws.onopen = function () {
               wsOk = true;
               /* The launcher's slice only: lamp, folder, boot progress. The strip polls /api/status. */

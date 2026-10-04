@@ -510,7 +510,8 @@ HUD.mount = function (names, opts) {
       try {
         var proto = location.protocol === "https:" ? "wss:" : "ws:";
         var host = typeof location.host === "string" && location.host ? location.host : "127.0.0.1:7111";
-        var ws = new WebSocket(proto + "//" + host + "/ws");
+        // The channel in the address: the first frame is already the HUD's slice (plan O-H).
+        var ws = new WebSocket(proto + "//" + host + "/ws?channel=hud");
         ws.onopen = function () {
           wsRetryMs = 1000;
           // Ask for the HUD's slice of the state, not the whole snapshot (see server/wsChannels.ts).

@@ -222,6 +222,28 @@ describe("socket robustness (combined plan 1.3)", () => {
   });
 });
 
+/*
+  Plan O-H (2026-10-04): a client names its channel in the address and its very first frame is that
+  slice. Until then every HUD and phone got the whole app state first (923 kB) before its hello.
+*/
+describe("the channel in the address", () => {
+  it("makes the first frame the channel's own slice", async () => {
+    const t = await start({ journalSystems: big("A"), n: 0, hudPrefs: null });
+    await t.next(1);
+    const appFirst = JSON.stringify(t.messages[0]).length;
+    const hud = new WebSocket(`ws://127.0.0.1:${t.port}/ws?channel=hud`);
+    const hudMsgs: string[] = [];
+    hud.on("message", (d) => hudMsgs.push(String(d)));
+    closersPush(() => hud.close());
+    await new Promise((r) => hud.once("open", r));
+    for (let i = 0; i < 100 && hudMsgs.length < 1; i++) await new Promise((r) => setTimeout(r, 10));
+    const first = JSON.parse(hudMsgs[0]!) as { payload: Record<string, unknown> };
+    // The HUD slice has no journal system list; the app frame does.
+    expect(first.payload.journalSystems).toBeUndefined();
+    expect(hudMsgs[0]!.length).toBeLessThan(appFirst / 10);
+  });
+});
+
 function closersPush(fn: () => void) {
   closers.unshift(async () => fn());
 }

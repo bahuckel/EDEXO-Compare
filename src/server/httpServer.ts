@@ -997,9 +997,20 @@ export function createHttpServer(opts: HttpServerOptions): {
     return lastAppSnap;
   };
 
-  wss.on("connection", (ws) => {
+  wss.on("connection", (ws, req) => {
     clients.add(ws);
-    channelOf.set(ws, "app");
+    /*
+      A client may name its channel in the address (`/ws?channel=hud`), so its first frame is already
+      its own slice (plan O-H, 2026-10-04): until then every HUD, launcher and phone got the whole app
+      state first — 923 kB, about 135 kB on the wire — before its hello could narrow it.
+    */
+    let first: WsChannel = "app";
+    try {
+      first = parseWsChannel(new URL(req.url ?? "/ws", "http://x").searchParams.get("channel")) ?? "app";
+    } catch {
+      /* the default */
+    }
+    channelOf.set(ws, first);
     alive.add(ws);
     perfCount("ws.connect");
     /*
@@ -1011,7 +1022,7 @@ export function createHttpServer(opts: HttpServerOptions): {
     });
     ws.on("pong", () => alive.add(ws));
     try {
-      ws.send(stateMessage(recentSnapshot(), "app"));
+      ws.send(stateMessage(recentSnapshot(), first));
       needsFull.add(ws);
     } catch {
       /* ignore */
