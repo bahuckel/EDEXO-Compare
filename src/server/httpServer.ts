@@ -39,6 +39,7 @@ import type {
   GalaxyMineDTO,
   GalaxyMySystemDTO,
   GalaxyRouteDTO,
+  GalaxyVisitedDTO,
 } from "../shared/types.js";
 import type { JournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import type { GameStateStore } from "./gameState.js";
@@ -155,6 +156,7 @@ export interface HttpServerOptions {
   getMySystems?: () => GalaxyMineDTO;
   getMySystem?: (addr: number) => GalaxyMySystemDTO | null;
   getSessionRoute?: () => GalaxyRouteDTO;
+  getVisitedSystems?: (days: number) => GalaxyVisitedDTO;
   /** The journal store itself, for the map's Find box (the commander's own system names). */
   getJournalStore?: () => GameStateStore;
   /** Codex map: the commander's codex entries, `regionJoinKey|entryKey` (see codexMap.ts). */

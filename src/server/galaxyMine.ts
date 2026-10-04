@@ -9,7 +9,14 @@
 import type { GameStateStore } from "./gameState.js";
 import { footOrganicLocks } from "./organicLocks.js";
 import type { BioIndex } from "./bioIndex.js";
-import type { BacklogMapDTO, GalaxyMineDTO, GalaxyMySystemDTO, GalaxyRouteDTO } from "../shared/dto/galaxy.js";
+import type {
+  BacklogMapDTO,
+  GalaxyMineDTO,
+  GalaxyMySystemDTO,
+  GalaxyRouteDTO,
+  GalaxyVisitedDTO,
+} from "../shared/dto/galaxy.js";
+import { mainStarRecord } from "../shared/mainStar.js";
 
 /** Bit flags per system (GalaxyMineDTO rows). */
 export const MINE_VISITED = 1;
@@ -165,4 +172,27 @@ export function sessionRouteDto(store: GameStateStore, sessionSystems: readonly 
     mineRev: `${store.visitedSystems.size}:${store.explorationScansRevision}:${store.dssMappedBodyKeys.size}:${store.bodies.size}`,
     navRoute,
   };
+}
+
+/** The systems visited in the last `days` days (0: all), newest first — the NavRoute finder's Previous. */
+export function visitedSystemsDto(store: GameStateStore, days: number, now = Date.now()): GalaxyVisitedDTO {
+  const since = days > 0 ? now - days * 86_400_000 : -Infinity;
+  const systems: GalaxyVisitedDTO["systems"] = [];
+  let unplaced = 0;
+  for (const [address, name] of store.visitedSystems) {
+    const at = store.systemVisitedAt.get(address);
+    if (days > 0 && (!at || Date.parse(at) < since)) continue;
+    const pos = store.systemPositions.get(address);
+    if (!pos) {
+      unplaced++;
+      continue;
+    }
+    const starClass =
+      store.systemStarClass.get(address) ??
+      mainStarRecord([...store.liveScansInSystem(address), ...store.soldScansInSystem(address)])?.starType ??
+      "";
+    systems.push({ address, name, starClass, x: pos.x, y: pos.y, z: pos.z, at: at ?? "" });
+  }
+  systems.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  return { days, systems, unplaced };
 }

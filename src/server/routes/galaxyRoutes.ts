@@ -439,6 +439,13 @@ export function registerGalaxyRoutes(
     res.json(dto);
   });
 
+  /** The systems you have been to, newest first: `?days=1|7|30|90|365`, or 0 / absent for all. */
+  app.get("/api/galaxy/visited", (req, res) => {
+    if (!opts.getVisitedSystems) return void res.status(404).json({ error: "no journal store behind this build" });
+    const days = Math.max(0, Math.min(100_000, Math.floor(Number(req.query.days) || 0)));
+    res.json(opts.getVisitedSystems(days));
+  });
+
   /** Where the ship is and this session's jumps with positions. */
   app.get("/api/galaxy/route", (_req, res) => {
     if (!opts.getSessionRoute) return void res.status(404).json({ error: "no journal store behind this build" });

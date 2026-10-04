@@ -18,6 +18,7 @@ import {
   mySystemDetail,
   mySystemsDto,
   sessionRouteDto,
+  visitedSystemsDto,
 } from "../src/server/galaxyMine.js";
 import type { JournalLine } from "../src/shared/types.js";
 
@@ -137,6 +138,22 @@ describe("the commander's systems", () => {
     expect(r.route[1]).toMatchObject({ x: -500, y: 10, z: 900 });
     expect(r.position).toEqual({ x: -500, y: 10, z: 900 });
     expect(r.system).toBe(B.name);
+  });
+
+  it("lists the systems visited, newest first, with the star class the jump named, within a window", () => {
+    const st = new GameStateStore();
+    st.apply(j({ timestamp: "2026-05-01T10:00:00Z", event: "StartJump", JumpType: "Hyperspace", StarSystem: A.name, SystemAddress: A.addr, StarClass: "K" }));
+    st.apply(j({ timestamp: "2026-05-01T10:00:20Z", event: "FSDJump", StarSystem: A.name, SystemAddress: A.addr, StarPos: A.pos }));
+    st.apply(j({ timestamp: "2026-05-05T10:00:00Z", event: "StartJump", JumpType: "Hyperspace", StarSystem: B.name, SystemAddress: B.addr, StarClass: "N" }));
+    st.apply(j({ timestamp: "2026-05-05T10:00:20Z", event: "FSDJump", StarSystem: B.name, SystemAddress: B.addr, StarPos: B.pos }));
+    const now = Date.parse("2026-05-05T12:00:00Z");
+    const all = visitedSystemsDto(st, 0, now);
+    expect(all.systems.map((s) => [s.name, s.starClass, s.at])).toEqual([
+      [B.name, "N", "2026-05-05T10:00:20Z"],
+      [A.name, "K", "2026-05-01T10:00:20Z"],
+    ]);
+    expect(visitedSystemsDto(st, 1, now).systems.map((s) => s.name)).toEqual([B.name]);
+    expect(visitedSystemsDto(st, 7, now).systems).toHaveLength(2);
   });
 
   it("carries the plotted route with visited marks, and a revision that moves with a jump", () => {

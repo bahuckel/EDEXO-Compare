@@ -471,6 +471,18 @@ export interface GalaxyRouteDTO {
   navRoute: { address: number; name: string; starClass: string; x: number; y: number; z: number; visited: boolean }[];
 }
 
+/**
+ * The systems you have been to (`/api/galaxy/visited?days=`), newest first: the NavRoute finder's
+ * Previous list (owner, 2026-10-04). Star class from the jump into the system, else your own scan of
+ * its main star; empty when neither said.
+ */
+export interface GalaxyVisitedDTO {
+  days: number;
+  systems: { address: number; name: string; starClass: string; x: number; y: number; z: number; at: string }[];
+  /** Visited in the window but with no position in the journals, so not listed. */
+  unplaced: number;
+}
+
 /** The 3D map's Find box (`/api/galaxy/find?q=`). */
 export interface GalaxyFindDTO {
   query: string;

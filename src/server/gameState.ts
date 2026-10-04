@@ -437,6 +437,12 @@ export class GameStateStore {
   viewingSystemAddress: number | null = null;
   /** Systems seen in the merged journal (jumps, Location, FSS complete) for picker / search. */
   readonly visitedSystems = new Map<number, string>();
+  /**
+   * The NavRoute finder's "Previous" list (owner, 2026-10-04): when each system was last arrived in
+   * (jump, carrier jump or a load there), and its star class as the jump to it named it (StartJump).
+   */
+  readonly systemVisitedAt = new Map<number, string>();
+  readonly systemStarClass = new Map<number, string>();
 
   /**
    * Has the commander already been to this system, by name?
@@ -1683,6 +1689,8 @@ export class GameStateStore {
     this.commanderPos = null;
     this.viewingSystemAddress = null;
     this.visitedSystems.clear();
+    this.systemVisitedAt.clear();
+    this.systemStarClass.clear();
     this.visitedSystemNames = null;
     this.lastEventIso = null;
     this.organicAnalyseByKey.clear();
@@ -2252,6 +2260,14 @@ export class GameStateStore {
         ) {
           this.lastFsdJumpFuelUsedT = fu;
           this.lastFsdJumpDistLy = jd;
+        }
+      }
+
+      if ((event === "FSDJump" || event === "CarrierJump" || event === "Location") && typeof line.SystemAddress === "number") {
+        this.systemVisitedAt.set(line.SystemAddress, ts);
+        const jt = this.lastJumpTarget;
+        if (event === "FSDJump" && jt?.starClass && jt.systemAddress === line.SystemAddress) {
+          this.systemStarClass.set(line.SystemAddress, jt.starClass);
         }
       }
 
@@ -3649,6 +3665,8 @@ export class GameStateStore {
       currentSystemAddress: this.currentSystemAddress,
       viewingSystemAddress: this.viewingSystemAddress,
       visitedSystems: [...this.visitedSystems.entries()],
+      systemVisitedAt: [...this.systemVisitedAt.entries()],
+      systemStarClass: [...this.systemStarClass.entries()],
       bodies: [...this.bodies.entries()],
       explorationScans: [...this.explorationScans.entries()],
       soldExplorationScans: [...this.soldExplorationScans.entries()],
@@ -3739,6 +3757,10 @@ export class GameStateStore {
     this.viewingSystemAddress = data.viewingSystemAddress;
     this.lastEventIso = data.lastEventIso;
     for (const [addr, name] of data.visitedSystems) this.visitedSystems.set(addr, name);
+    this.systemVisitedAt.clear();
+    for (const [a, t] of data.systemVisitedAt ?? []) if (typeof a === "number" && typeof t === "string") this.systemVisitedAt.set(a, t);
+    this.systemStarClass.clear();
+    for (const [a, c] of data.systemStarClass ?? []) if (typeof a === "number" && typeof c === "string") this.systemStarClass.set(a, c);
     this.visitedSystemNames = null;
     for (const [k, v] of data.bodies) this.bodies.set(k, v);
     this.bodyKeysBySystem = null;

@@ -91,8 +91,9 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   26: scan `fssResolved` — a body known only from an arrival AutoScan is shown as "FSS required";
       `codexRegionBySystem`, `organicRunStartedAt`, `fsdTarget`, `lastJumpTarget` — a warm boot
       left them empty where a cold one had them (plan 2.4, O-19).
+  28: `systemVisitedAt`, `systemStarClass` — the NavRoute finder's Previous list (when, which star).
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 27;
+export const JOURNAL_MERGE_CACHE_FORMAT = 28;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -104,6 +105,9 @@ export type JournalMergeCachePayload = {
   currentSystemAddress: number | null;
   viewingSystemAddress: number | null;
   visitedSystems: [number, string][];
+  /** Format 28: last arrival per system, and the star class its jump named. */
+  systemVisitedAt?: [number, string][];
+  systemStarClass?: [number, string][];
   bodies: [string, BodyExoState][];
   explorationScans: [string, ExplorationScanRecord][];
   /**

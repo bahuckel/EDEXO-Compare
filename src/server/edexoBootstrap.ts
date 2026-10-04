@@ -132,7 +132,7 @@ import { backlogMap, firstDiscoveryBacklogWithDistance } from "./firstDiscoveryB
 import { galaxySpeciesCatalogue, galaxyValueSearch } from "./galaxyValueSearch.js";
 import { galaxyBodyScan, galaxyRegions } from "./galaxyBodyScan.js";
 import { loadBioIndex } from "./bioIndex.js";
-import { mySystemDetail, mySystemsDto, sessionRouteDto } from "./galaxyMine.js";
+import { mySystemDetail, mySystemsDto, sessionRouteDto, visitedSystemsDto } from "./galaxyMine.js";
 import { commanderSectorsDto } from "./galaxySectorTiers.js";
 import { runEdsmCatchUp, type EdsmCatchUpScope } from "./edsmCatchUp.js";
 import { createUpdateChecker, currentReleaseForm } from "./updateCheck.js";
@@ -1526,6 +1526,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getMySystems: () => mySystemsDto(store, backlogMap(store)),
     getMySystem: (addr) => mySystemDetail(store, addr, backlogMap(store), loadBioIndex()),
     getSessionRoute: () => sessionRouteDto(store, sessionLog.toDto().systems),
+    getVisitedSystems: (days) => visitedSystemsDto(store, days),
     getJournalStore: () => store,
     getCodexMapLogged: () => store.codexMapLogged,
     getAchievements: () => achievementsList(getProjectRoot(), store, getCachedSpeciesDatabase().species),
