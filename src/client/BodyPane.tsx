@@ -5,7 +5,7 @@ import type { UnknownPlantSlot } from "@shared/unknownPlants";
 import { nextTempUnit, usePressUnit, useTempUnit } from "./useUnits";
 import { codexFirstTitle, codexMarkTitle } from "./codexMark";
 import { ArrivalTrip } from "@shared/systemTriage";
-import { fmtCrRangeShort, fmtCrShort } from "./credits";
+import { fmtCrRangeShort, fmtCrShort, fmtLsExact } from "@shared/format";
 import { FootfallContext } from "./footfallContext";
 import { RowContext, LiveRun } from "./rowContext";
 import { settledMultiplier } from "@shared/footfallValue";
@@ -108,10 +108,7 @@ export const BodyPane = memo(function BodyPane({
     sc?.distanceFromArrivalLs != null && Number.isFinite(sc.distanceFromArrivalLs)
       ? sc.distanceFromArrivalLs
       : null;
-  const fromArrivalDisplay =
-    arrivalLs != null
-      ? `${arrivalLs === 0 ? "0" : arrivalLs.toLocaleString(undefined, { maximumFractionDigits: 2 })} Ls`
-      : "—";
+  const fromArrivalDisplay = arrivalLs != null ? fmtLsExact(arrivalLs) : "—";
 
   const landShort = sc == null ? "No detailed scan" : sc.Landable === true ? "Landable" : "Not landable";
 

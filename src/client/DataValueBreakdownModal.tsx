@@ -5,6 +5,7 @@ import { CopySystemButton } from "./CopySystemButton";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { useModal } from "./ui/useModal";
 import type { OrganicPendingLineItem } from "@shared/types";
+import { fmtCrExact } from "@shared/format";
 
 export function DataValueBreakdownModal({
   lines,
@@ -83,7 +84,7 @@ export function DataValueBreakdownModal({
               <span className="data-value-summary-label">
                 FSS scans
                 {explorationHonkValueCredits > 0 ? (
-                  <span className="dim tiny"> · incl. honk {explorationHonkValueCredits.toLocaleString()} CR</span>
+                  <span className="dim tiny"> · incl. honk {fmtCrExact(explorationHonkValueCredits)}</span>
                 ) : null}
                 {carrierNote}
                 {!includeExplorationScanDataInDataValue ? (
@@ -91,7 +92,7 @@ export function DataValueBreakdownModal({
                 ) : null}
               </span>
               <span className="data-value-summary-value">
-                {explorationFssValueCredits.toLocaleString()} CR
+                {fmtCrExact(explorationFssValueCredits)}
               </span>
             </li>
             <li
@@ -107,7 +108,7 @@ export function DataValueBreakdownModal({
                 ) : null}
               </span>
               <span className="data-value-summary-value">
-                {explorationDssValueCredits.toLocaleString()} CR
+                {fmtCrExact(explorationDssValueCredits)}
               </span>
             </li>
             <li
@@ -119,7 +120,7 @@ export function DataValueBreakdownModal({
                 Exobio scans
                 {pranavAntalBonus ? <span className="dim tiny"> · with +30 %</span> : null}
               </span>
-              <span className="data-value-summary-value">{exobioValueCredits.toLocaleString()} CR</span>
+              <span className="data-value-summary-value">{fmtCrExact(exobioValueCredits)}</span>
             </li>
           </ul>
           {/*
@@ -198,7 +199,7 @@ export function DataValueBreakdownModal({
                       {line.baseCredits != null ? (
                         <>
                           <span className="data-value-breakdown-credits">
-                            {line.valueCredits.toLocaleString()} CR
+                            {fmtCrExact(line.valueCredits)}
                           </span>
                           {line.firstFootfall ? (
                             <span
@@ -215,9 +216,9 @@ export function DataValueBreakdownModal({
                     </div>
                     {line.baseCredits != null && line.firstFootfall ? (
                       <div className="data-value-footfall-detail dim">
-                        {line.baseCredits.toLocaleString()} CR base +{" "}
-                        {(line.baseCredits * 4).toLocaleString()} CR first-footfall bonus ={" "}
-                        {line.valueCredits.toLocaleString()} CR
+                        {fmtCrExact(line.baseCredits)} base +{" "}
+                        {fmtCrExact((line.baseCredits * 4))} first-footfall bonus ={" "}
+                        {fmtCrExact(line.valueCredits)}
                       </div>
                     ) : null}
                   </div>

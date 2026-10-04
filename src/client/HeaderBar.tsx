@@ -20,7 +20,7 @@ import {
   IconSession,
 } from "./ui/icons";
 import { useValueFlash } from "./ui/useValueFlash";
-import { fmtCrExact, fmtCrShort } from "./credits";
+import { fmtCrExact, fmtCrShort, fmtLy } from "@shared/format";
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState, ReactNode } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useFdevServerStatus } from "./useFdevServerStatus";
@@ -762,8 +762,8 @@ export const HeaderBar = memo(function HeaderBar({
                       compactLine.push(
                         <span key="ly">
                           {nav.onPlot && nav.routeRemainingLy != null
-                            ? `${nav.routeRemainingLy.toFixed(0)} ly left`
-                            : `${nav.routeTotalLy.toFixed(0)} ly`}
+                            ? `${fmtLy(nav.routeRemainingLy)} left`
+                            : fmtLy(nav.routeTotalLy)}
                         </span>,
                       );
                     }

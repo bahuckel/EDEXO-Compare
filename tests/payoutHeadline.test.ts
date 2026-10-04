@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { ExoPayoutRangeDTO } from "../src/shared/types";
 import { payoutHeadline } from "../src/client/ExoPayoutRangePanel";
-import { fmtCrRangeShort, fmtCrShort } from "../src/client/credits";
+import { fmtCrRangeShort, fmtCrShort } from "../src/shared/format";
 
 function pr(over: Partial<ExoPayoutRangeDTO>): ExoPayoutRangeDTO {
   const rows = (cr: number[]) =>
@@ -61,7 +61,7 @@ describe("credit formatting", () => {
   it("uses the short scale with the exact figure left to the title", () => {
     expect(fmtCrShort(7_942_100)).toBe("7.94 M");
     expect(fmtCrShort(612_440_386)).toBe("612 M");
-    expect(fmtCrShort(23_410)).toBe((23_410).toLocaleString()); // under 100,000: whole (owner, 2026-09-28)
+    expect(fmtCrShort(23_410)).toBe("23,410"); // under 100,000: whole (owner, 2026-09-28)
     expect(fmtCrShort(950)).toBe("950");
     expect(fmtCrShort(1_260_000_000)).toBe("1.26 B");
   });
@@ -73,7 +73,7 @@ describe("credit formatting", () => {
 
 describe("fmtCrShort thresholds (owner, 2026-09-28: k only from 100,000)", () => {
   it("keeps figures under 100,000 whole and shortens from there", () => {
-    expect(fmtCrShort(99_999)).toBe((99_999).toLocaleString());
+    expect(fmtCrShort(99_999)).toBe("99,999");
     expect(fmtCrShort(100_000)).toBe("100 k");
     expect(fmtCrShort(1_250_000)).toBe("1.25 M");
   });

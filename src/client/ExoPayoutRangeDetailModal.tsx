@@ -4,6 +4,7 @@
 import { useModal } from "./ui/useModal";
 import { footfallCertainty, showsFootfallPrice, showsListPrice } from "@shared/footfallValue";
 import type { ExoPayoutRangeDTO } from "@shared/types";
+import { fmtCrExact } from "@shared/format";
 
 export function ExoPayoutRangeDetailModal({
   pr,
@@ -115,8 +116,8 @@ export function ExoPayoutRangeDetailModal({
             <h4>Worst-paying set (k cheapest)</h4>
             <p className="dim tiny" style={{ marginTop: "-0.25rem" }}>
               {[
-                showList ? `List / standard sell (×1) total ${minListTot.toLocaleString()} CR` : null,
-                showFf ? `Footfall (×5) total ${minFfTot.toLocaleString()} CR` : null,
+                showList ? `List / standard sell (×1) total ${fmtCrExact(minListTot)}` : null,
+                showFf ? `Footfall (×5) total ${fmtCrExact(minFfTot)}` : null,
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -160,8 +161,8 @@ export function ExoPayoutRangeDetailModal({
             <h4>Best-paying set (k priciest)</h4>
             <p className="dim tiny" style={{ marginTop: "-0.25rem" }}>
               {[
-                showList ? `List / standard sell (×1) total ${maxListTot.toLocaleString()} CR` : null,
-                showFf ? `Footfall (×5) total ${maxFfTot.toLocaleString()} CR` : null,
+                showList ? `List / standard sell (×1) total ${fmtCrExact(maxListTot)}` : null,
+                showFf ? `Footfall (×5) total ${fmtCrExact(maxFfTot)}` : null,
               ]
                 .filter(Boolean)
                 .join(" · ")}

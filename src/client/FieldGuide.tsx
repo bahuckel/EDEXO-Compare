@@ -23,6 +23,7 @@ import {
   type GuideSpecies,
 } from "@shared/fieldGuide";
 import { journalPressureToAtm } from "@shared/journalPhysics";
+import { fmtPct } from "@shared/format";
 import { useState, type ReactNode } from "react";
 
 /** One formatter for every chart label: `toLocaleString` per call was a tenth of the Encyclopedia's open. */
@@ -41,15 +42,7 @@ export function fmtGuide(v: number): string {
 const withUnit = (v: number, unit: string) =>
   unit === "" ? fmtGuide(v) : unit === "%" || unit === "°" ? `${fmtGuide(v)}${unit}` : `${fmtGuide(v)} ${unit}`;
 
-export function fmtGuideCredits(v: number): string {
-  if (v >= 1e6) return `${(v / 1e6).toFixed(1)} M`;
-  return `${Math.round(v / 1e3)} k`;
-}
-
-const pct = (n: number, total: number) => {
-  const p = (n / total) * 100;
-  return p > 0 && p < 1 ? "<1%" : `${Math.round(p)}%`;
-};
+const pct = (n: number, total: number) => fmtPct((n / total) * 100);
 
 /* ------------------------------------------------------------------ the body being compared */
 

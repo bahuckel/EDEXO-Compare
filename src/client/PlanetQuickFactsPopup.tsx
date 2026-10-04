@@ -15,6 +15,7 @@ import {
   gravityFromScan,
 } from "./planetDisplayUtils";
 import { TemperatureLabel } from "./TemperatureLabel";
+import { fmtCrExact } from "@shared/format";
 
 function roleLabel(role: SystemMapBodyDetailDTO["starRole"]): string {
   if (role === "fuel") return "Fuel-scoopable star";
@@ -349,7 +350,7 @@ function WorldDetailBody({
         >
           <span className="body-detail-callout-label">Top single-species heuristic</span>
           <span className="body-detail-callout-value">
-            {detail.maxExoHeuristicCredits.toLocaleString()} CR
+            {fmtCrExact(detail.maxExoHeuristicCredits)}
           </span>
           <p className="body-detail-callout-note dim tiny">
             Map tier hint — full range needs bio signals + list prices on candidates.
@@ -366,13 +367,13 @@ function WorldDetailBody({
             >
               <div className="body-detail-mini-card-label">FSS · discovery</div>
               <div className="body-detail-mini-card-value">
-                {detail.fssCredits != null ? `${detail.fssCredits.toLocaleString()} CR` : "—"}
+                {detail.fssCredits != null ? `${fmtCrExact(detail.fssCredits)}` : "—"}
               </div>
               {detail.fssFirstDiscoverBonus != null && detail.fssFirstDiscoverBonus > 0 ? (
                 <p className="dim tiny body-detail-mini-card-meta">
-                  + first discovery {detail.fssFirstDiscoverBonus.toLocaleString()} CR → total{" "}
+                  + first discovery {fmtCrExact(detail.fssFirstDiscoverBonus)} → total{" "}
                   {detail.fssFirstDiscoverCredits != null
-                    ? `${detail.fssFirstDiscoverCredits.toLocaleString()} CR`
+                    ? `${fmtCrExact(detail.fssFirstDiscoverCredits)}`
                     : "—"}
                 </p>
               ) : null}
@@ -386,17 +387,17 @@ function WorldDetailBody({
                 {detail.dssProjectedCredits != null
                   ? "not mapped yet"
                   : detail.dssCredits != null
-                    ? `${detail.dssCredits.toLocaleString()} CR`
+                    ? `${fmtCrExact(detail.dssCredits)}`
                     : "—"}
               </div>
               {detail.dssVersusFssUpliftCredits != null && detail.dssVersusFssUpliftCredits > 0 ? (
                 <p className="dim tiny body-detail-mini-card-meta">
-                  Uplift vs FSS: +{detail.dssVersusFssUpliftCredits.toLocaleString()} CR
+                  Uplift vs FSS: +{fmtCrExact(detail.dssVersusFssUpliftCredits)}
                 </p>
               ) : null}
               {detail.dssProjectedCredits != null ? (
                 <p className="dim tiny body-detail-mini-card-meta">
-                  If DSS completed (est.): ~{detail.dssProjectedCredits.toLocaleString()} CR
+                  If DSS completed (est.): ~{fmtCrExact(detail.dssProjectedCredits)}
                 </p>
               ) : null}
               {detail.dssProbeEfficientApplied === true ? (
@@ -406,9 +407,9 @@ function WorldDetailBody({
               ) : null}
               {detail.dssFirstDiscoverBonus != null && detail.dssFirstDiscoverBonus > 0 ? (
                 <p className="dim tiny body-detail-mini-card-meta">
-                  + first disc. &amp; map {detail.dssFirstDiscoverBonus.toLocaleString()} CR → total{" "}
+                  + first disc. &amp; map {fmtCrExact(detail.dssFirstDiscoverBonus)} → total{" "}
                   {detail.dssFirstDiscoverCredits != null
-                    ? `${detail.dssFirstDiscoverCredits.toLocaleString()} CR`
+                    ? `${fmtCrExact(detail.dssFirstDiscoverCredits)}`
                     : "—"}
                 </p>
               ) : null}
@@ -469,14 +470,14 @@ function ScanMapValues({ detail }: { detail: SystemMapBodyDetailDTO }) {
       <div className="body-value-line">
         <dt>Scan value</dt>
         <dd>
-          <span className="body-value-num">{detail.fssCredits.toLocaleString()} CR</span>
+          <span className="body-value-num">{fmtCrExact(detail.fssCredits)}</span>
           {/* The arrival star carries the honk, as the game's map shows it (explorationValue.ts). */}
           {detail.honkCredits ? (
             <span
               className="body-value-note"
               title="The discovery scan's share: a third of every other scanned body's value, paid with the system"
             >
-              incl. honk {detail.honkCredits.toLocaleString()} CR
+              incl. honk {fmtCrExact(detail.honkCredits)}
             </span>
           ) : null}
         </dd>
@@ -487,7 +488,7 @@ function ScanMapValues({ detail }: { detail: SystemMapBodyDetailDTO }) {
           <dd>
             <span className="body-value-num">
               {mapped ? "" : "~"}
-              {map.toLocaleString()} CR
+              {fmtCrExact(map)}
             </span>
             <span className="body-value-note">{mapped ? "✓ mapped" : "not mapped yet"}</span>
           </dd>

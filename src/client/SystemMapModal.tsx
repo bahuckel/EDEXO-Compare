@@ -27,6 +27,7 @@ import {
 import { CopySystemButton } from "./CopySystemButton";
 import { EDEXO_SYSMAP_SIDE_LS, readLsBool, writeLsBool } from "./lsPrefs";
 import { IDENTITY, useMapViewport, type MapViewport } from "./useMapViewport";
+import { fmtCrExact } from "@shared/format";
 
 function notableBodyIsTerraformable(n: NotableBodyInfo): boolean {
   return n.tag.toLowerCase().includes("terraformable");
@@ -146,7 +147,7 @@ function SystemMapLegend({ plusMinCr, plusPlusMinCr }: { plusMinCr: number; plus
           <b>*</b> terraformable
         </span>
         <span className="system-map-legend-item">
-          <b>+</b> / <b>++</b> exobiology ≥ {plusMinCr.toLocaleString()} / {plusPlusMinCr.toLocaleString()} CR
+          <b>+</b> / <b>++</b> exobiology ≥ {plusMinCr.toLocaleString("en-US")} / {fmtCrExact(plusPlusMinCr)}
           · <b>+</b> on a star: scoopable
         </span>
       </div>
@@ -410,16 +411,16 @@ export const SystemMapModal = memoOnSnapSlice(SYSTEM_MAP_FIELDS, function System
         <div className="system-map-totals card-neon">
           <div>
             <div className="dim small-caps">System FSS Value:</div>
-            <div className="system-map-total-val">{map.approxSystemFssValue.toLocaleString()} CR</div>
+            <div className="system-map-total-val">{fmtCrExact(map.approxSystemFssValue)}</div>
           </div>
           <div>
             <div className="dim small-caps">System DSS Value:</div>
-            <div className="system-map-total-val">{map.approxSystemDssValue.toLocaleString()} CR</div>
+            <div className="system-map-total-val">{fmtCrExact(map.approxSystemDssValue)}</div>
           </div>
           <div>
             <div className="dim small-caps">Current value</div>
             <div className="system-map-total-val">
-              {map.journalExplorationSaleCreditsFocused.toLocaleString()} CR
+              {fmtCrExact(map.journalExplorationSaleCreditsFocused)}
             </div>
           </div>
         </div>

@@ -36,14 +36,9 @@ import { rarityTierInfo, type RegionalRarity } from "@shared/speciesRarity";
 import { EncyclopediaFilterBar } from "./EncyclopediaFilterBar";
 import { RarityGem } from "./RarityGem";
 import { ExomasteryPlanetsBody, FoundSpeciesPopup } from "./EncyclopediaPanels";
-import {
-  GuideColoursBlock,
-  GuideGenusIntro,
-  GuideMeasuredBlock,
-  fmtGuideCredits,
-  guideBodyFrom,
-} from "./FieldGuide";
+import { GuideColoursBlock, GuideGenusIntro, GuideMeasuredBlock, guideBodyFrom } from "./FieldGuide";
 import type { FieldGuideDTO, GuideGenus, GuideSpecies } from "@shared/fieldGuide";
+import { fmtCrExact, fmtCrTick } from "@shared/format";
 
 const EXO_DRAWER_TRANSITION_MS = 380;
 
@@ -788,11 +783,9 @@ export function EncyclopediaModal({
               {priceCredits ? (
                 <div className="fg-value">
                   {/* CR in capitals, as everywhere else in the app (review V8). */}
-                  <strong title={`${priceCredits.toLocaleString("en-US")} CR`}>
-                    {fmtGuideCredits(priceCredits)} CR
-                  </strong>
-                  <span title={`${(priceCredits * 5).toLocaleString("en-US")} CR`}>
-                    {fmtGuideCredits(priceCredits * 5)} CR first footfall
+                  <strong title={`${fmtCrExact(priceCredits)}`}>{fmtCrTick(priceCredits)} CR</strong>
+                  <span title={`${fmtCrExact(priceCredits * 5)}`}>
+                    {fmtCrTick(priceCredits * 5)} CR first footfall
                   </span>
                 </div>
               ) : null}

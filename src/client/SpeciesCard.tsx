@@ -4,7 +4,7 @@
 import { achievementMarkTitle, codexFirstTitle, codexMarkTitle } from "./codexMark";
 import { STREAMER_MODE } from "./streamerMode";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";
-import { fmtCrExact, fmtCrShort } from "./credits";
+import { fmtCrExact, fmtCrShort } from "@shared/format";
 import { useModal } from "./ui/useModal";
 import { useFootfallCertainty } from "./footfallContext";
 import { settledMultiplier } from "@shared/footfallValue";

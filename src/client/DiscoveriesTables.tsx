@@ -29,6 +29,7 @@ import { ScrollArea } from "./ui/ScrollArea";
 import { Select } from "./ui/Select";
 import { isTerraformableState } from "@shared/terraformState";
 import { readableAtmosphereType } from "@shared/atmosphereLabel";
+import { fmtCrExact } from "@shared/format";
 import { csvFileName, downloadCsv, toCsv } from "./csv";
 import { isBool, usePersistedState } from "./usePersistedState";
 
@@ -49,7 +50,7 @@ export interface Column<T> {
   title?: string;
 }
 
-const cr = (n: number | null | undefined) => (n == null ? "—" : `${Math.round(n).toLocaleString()} CR`);
+const cr = fmtCrExact;
 const num = (n: number | null | undefined, digits = 0) =>
   n == null || !Number.isFinite(n) ? "—" : n.toLocaleString(undefined, { maximumFractionDigits: digits });
 const date = (iso: string | null) => (iso ? iso.slice(0, 10) : "—");

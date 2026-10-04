@@ -10,7 +10,8 @@
  * reads as a broken panel; one drawn flat on the baseline reads as a fact.
  */
 import { describe, expect, it } from "vitest";
-import { AXIS_BASE, buildLogFiveAxis, formatCredits, logFiveFraction } from "../src/shared/logFiveAxis.js";
+import { AXIS_BASE, buildLogFiveAxis, logFiveFraction } from "../src/shared/logFiveAxis.js";
+import { fmtCrTick as formatCredits } from "../src/shared/format.js";
 
 describe("the ladder the owner asked for", () => {
   it("climbs in fives from a round anchor", () => {

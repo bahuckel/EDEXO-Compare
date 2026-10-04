@@ -23,6 +23,7 @@ import {
 } from "@shared/sectorName.js";
 import type { BacklogSystemDTO, CommanderSectorDTO } from "@shared/types";
 import { useCallback, useMemo } from "react";
+import { fmtCrExact, fmtLy } from "@shared/format";
 
 export function SectorPlot({
   projection,
@@ -519,7 +520,7 @@ ${bodies} bodies recorded here${
                       <title>
                         {[
                           `${s.starSystem} — ${s.bodies} unfinished ${s.bodies === 1 ? "body" : "bodies"}`,
-                          `floor ${Math.round(s.floorCr).toLocaleString("en-US")} CR at 5×`,
+                          `floor ${fmtCrExact(s.floorCr)} at 5×`,
                           ...(owner ? [`click to open ${owner.name ?? sectorCellKey(owner)}`] : []),
                           ...(s.allVerified ? [] : ["footfall never reported — not confirmed"]),
                         ].join(`
@@ -570,9 +571,7 @@ ${bodies} bodies recorded here${
                       <title>
                         {[
                           `${h.starSystem} — ${h.note}`,
-                          ...(h.distanceLy == null
-                            ? []
-                            : [`${Math.round(h.distanceLy).toLocaleString("en-US")} ly away`]),
+                          ...(h.distanceLy == null ? [] : [`${fmtLy(h.distanceLy)} away`]),
                           /*
                         A hit can land in a sector this map has no cell for: the sector file only
                         covers where the feeder corpus has data, while the search runs over 5.3

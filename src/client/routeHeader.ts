@@ -2,6 +2,7 @@
  * The route header's models and aria strings, pure functions (7.3).
  */
 import type { AppSnapshot } from "@shared/types";
+import { fmtLy } from "@shared/format";
 
 /** Tooltip for header route row — NavRoute.json, Status.json, journal FSD. */
 export function routeNavCardTitle(snap: AppSnapshot): string {
@@ -12,17 +13,17 @@ export function routeNavCardTitle(snap: AppSnapshot): string {
   if (nav) {
     if (nav.onPlot && nav.routeRemainingLy != null) {
       parts.push(
-        `${nav.routeJumpsRemaining ?? 0} jump(s) left · ${nav.routeRemainingLy.toFixed(2)} ly remaining of ${nav.routeTotalLy.toFixed(2)} ly total (NavRoute.json).`,
+        `${nav.routeJumpsRemaining ?? 0} jump(s) left · ${fmtLy(nav.routeRemainingLy)} remaining of ${fmtLy(nav.routeTotalLy)} total (NavRoute.json).`,
       );
     } else {
       parts.push(
-        `Plotted route ${nav.routeTotalLy.toFixed(2)} ly total (sum of 3D StarPos steps in live Elite Dangerous NavRoute.json).`,
+        `Plotted route ${fmtLy(nav.routeTotalLy)} total (sum of 3D StarPos steps in live Elite Dangerous NavRoute.json).`,
       );
     }
     if (nav.onPlot) {
       if (nav.anyRemainingLegOverMaxRange && fr?.maxJumpRangeLy != null) {
         parts.push(
-          `At least one upcoming leg is farther than your merged Loadout max jump range (${fr.maxJumpRangeLy.toFixed(1)} ly) — FSD boosting or a longer path may be required.`,
+          `At least one upcoming leg is farther than your merged Loadout max jump range (${fmtLy(fr.maxJumpRangeLy)}) — FSD boosting or a longer path may be required.`,
         );
       }
       if (fr?.hasLiveStatusFuel) {

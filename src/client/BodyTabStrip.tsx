@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { BodyComputed, NotableBodyInfo, ShipProximityDTO } from "@shared/types";
 import { BODY_SORT_OPTIONS, type BodySortMode } from "./bodySort";
-import { fmtCrShort } from "./credits";
+import { fmtCrExact, fmtCrShort, fmtLs } from "@shared/format";
 import { journalSurfaceGravityToG } from "@shared/journalPhysics";
 
 /**
@@ -40,12 +40,6 @@ export type TabSection = {
 };
 
 const SCROLL_STEP_PX = 260;
-
-/** "4.2 Ls", "318 Ls", "12.4k Ls" — the tab's distance in Closest; "~" when it is an orbit estimate. */
-export function fmtTabDistanceLs(ls: number, estimate: boolean): string {
-  const n = ls < 10 ? ls.toFixed(1) : ls < 10_000 ? String(Math.round(ls)) : `${(ls / 1000).toFixed(1)}k`;
-  return `${estimate ? "~" : ""}${n} Ls`;
-}
 
 function sortTitle(mode: BodySortMode, proximity: ShipProximityDTO | null): string {
   if (mode === "system") return "Tab order: planets with their moons, as they orbit";
@@ -283,7 +277,7 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         title={
                           auto
                             ? `${b.tabLabel}: the ship only AutoScanned this landable body on arrival, and the game reports biological signals only once a body is resolved in the FSS. Resolve it in the FSS to know whether there is life here.`
-                            : `${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${best.toLocaleString()} CR list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${fcx ? ", a FIRST codex entry: nobody has logged it in this region yet (FCX)" : cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${rare ? `, ${rare.title}` : ""}${heavy ? `, ${g!.toFixed(2)} g: too heavy to disembark (over ${HIGH_GRAVITY_G} g)` : ""}${typeof dist === "number" ? `, ${fmtTabDistanceLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`
+                            : `${b.tabLabel}: ${bio ?? "?"} biological signal${bio === 1 ? "" : "s"}${best > 0 ? `, best candidate ${fmtCrExact(best)} list` : ""}${done ? ", a species analysed here" : ""}${focus ? ", carries a species worth sampling" : ""}${fcx ? ", a FIRST codex entry: nobody has logged it in this region yet (FCX)" : cx ? ", a new codex entry for this region (CX)" : ""}${nb ? `, notable: ${nb.tag}` : ""}${rare ? `, ${rare.title}` : ""}${heavy ? `, ${g!.toFixed(2)} g: too heavy to disembark (over ${HIGH_GRAVITY_G} g)` : ""}${typeof dist === "number" ? `, ${fmtLs(dist, estimate)} from ${proximity?.originLabel ?? "the ship"}` : ""}`
                         }
                       >
                         {/* In the tab's left padding: the tab keeps its size (owner, 2026-09-30). */}
@@ -304,7 +298,7 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                             <small>bio</small>
                             {best > 0 ? <> · {fmtCrShort(best)}</> : null}
                             {typeof dist === "number" ? (
-                              <span className="tab-dist"> · {fmtTabDistanceLs(dist, estimate)}</span>
+                              <span className="tab-dist"> · {fmtLs(dist, estimate)}</span>
                             ) : null}
                             {fcx ? (
                               <>

@@ -24,13 +24,9 @@ import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
 import type { PoiQueryResultDTO } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
+import { fmtLyAway } from "@shared/format";
 
-function ly(d: number | null): string {
-  if (d == null) return "—";
-  if (d < 1) return "here";
-  if (d >= 10000) return `${(d / 1000).toFixed(1)} kly`;
-  return `${Math.round(d).toLocaleString("en-US")} ly`;
-}
+const ly = fmtLyAway;
 
 /**
  * Rating floors as chips.

@@ -669,7 +669,7 @@ test("galaxy 3D: the plan chains the next targets, and a skipped stop leaves it"
 
   await banner.getByRole("button", { name: /^Plan/ }).click();
   const plan = page.getByTestId("g3d-plan");
-  await expect(page.getByTestId("g3d-plan-total")).toContainText(/^5 stops · [\d,]+ ly · /, { timeout: 30_000 });
+  await expect(page.getByTestId("g3d-plan-total")).toContainText(/^5 stops · [\d,.]+ k?ly · /, { timeout: 30_000 });
   const names = plan.locator(".g3d-plan__name");
   await expect(names.first()).toHaveText(first);
   const before = await names.allInnerTexts();

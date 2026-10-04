@@ -9,6 +9,7 @@
  * cube, so the map does not look like graph paper.
  */
 import { cellMin, TILE_STEP_LY, type CellCoord } from "../../shared/galaxyGrid";
+import { fmtCrShort } from "../../shared/format";
 
 /** 0 = no groups at this distance. */
 export type ClusterLevel = 0 | 1280 | 320 | 80;
@@ -95,13 +96,11 @@ export function formatCount(n: number): string {
   return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
 }
 
-/** Credits from the 100,000 CR units the map carries: "480k", "12.5M", "1.1bn". */
+/** Credits from the 100,000 CR units the map carries, on the app's one short scale: "480 k CR", "12.5 M CR". */
 export function formatValue(units: number): string {
   const cr = units * 100_000;
   if (cr <= 0) return "—";
-  if (cr < 1_000_000) return `${Math.round(cr / 1000)}k CR`;
-  if (cr < 1_000_000_000) return `${(cr / 1_000_000).toFixed(1).replace(/\.0$/, "")}M CR`;
-  return `${(cr / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}bn CR`;
+  return `${fmtCrShort(cr)} CR`;
 }
 
 /**

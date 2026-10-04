@@ -4,6 +4,7 @@
  * runs on the server, and the map reloads once it is in place.
  */
 import { useCallback, useEffect, useState } from "react";
+import { fmtPct } from "@shared/format";
 
 interface IndexStatus {
   present: boolean;
@@ -59,7 +60,7 @@ export function GalaxyIndexDownload() {
           <span>
             {d.name}: {mb(d.done)}
             {d.total ? ` of ${mb(d.total)}` : ""}
-            {pct != null ? ` (${pct} %)` : ""}
+            {pct != null ? ` (${fmtPct(pct)})` : ""}
           </span>
         </div>
       ) : (

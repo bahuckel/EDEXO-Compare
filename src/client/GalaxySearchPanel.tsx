@@ -54,6 +54,7 @@ import { IconGalaxySearch } from "./ui/icons";
 import { TIER_DSS, crFmt, cr, ly, MAX_CR, STEP_CR, sliderLabel, evidence } from "./galaxySearchShared";
 import type { GalaxySearchApplied } from "./galaxySearchShared";
 import { GalaxyHitsModal, GalaxyPossibleModal } from "./GalaxySearchModals";
+import { fmtPct } from "@shared/format";
 export { MAX_CR, STEP_CR, sliderLabel } from "./galaxySearchShared";
 export type { GalaxySearchMark, GalaxySearchApplied } from "./galaxySearchShared";
 
@@ -448,7 +449,7 @@ export function GalaxySearchPanel({
                   <span>
                     Biology likely by gravity{" "}
                     <strong className="gsx-price-value">
-                      {minGravityOdds > 0 ? `at least ${minGravityOdds} %` : "any"}
+                      {minGravityOdds > 0 ? `at least ${fmtPct(minGravityOdds)}` : "any"}
                     </strong>
                   </span>
                   <input

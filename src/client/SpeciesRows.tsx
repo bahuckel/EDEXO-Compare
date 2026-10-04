@@ -8,7 +8,7 @@ import {
   speciesHasColourVariants,
 } from "@shared/candidateSpawnHints";
 import { infoGatherReasons } from "@shared/infoGather";
-import { fmtCrExact, fmtCrShort } from "./credits";
+import { fmtCrExact, fmtCrShort } from "@shared/format";
 import { useFootfallCertainty } from "./footfallContext";
 import { useRowContext, type LiveRun, type RowContextValue } from "./rowContext";
 import { speciesPhotoVariant } from "./speciesPhotoVariant";

@@ -8,13 +8,9 @@ import { useModal } from "./ui/useModal";
 import { CopySystemButton } from "./CopySystemButton";
 import { isStr, isStrArr, usePersistedState } from "./usePersistedState";
 import { BookmarkEditor, removeBookmark } from "./BookmarkButton";
+import { fmtLyAway } from "@shared/format";
 
-function ly(d: number | null): string {
-  if (d == null) return "—";
-  if (d < 1) return "here";
-  if (d >= 10000) return `${(d / 1000).toFixed(1)} kly`;
-  return `${Math.round(d).toLocaleString("en-US")} ly`;
-}
+const ly = fmtLyAway;
 
 /** The Bookmarks window: filter by tag, search, nearest or newest first. */
 export function BookmarksModal({

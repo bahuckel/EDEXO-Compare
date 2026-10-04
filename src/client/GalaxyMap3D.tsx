@@ -19,6 +19,7 @@ import {
 import { detectGraphics, type Graphics } from "./galaxy3d/capabilities";
 import { placeLabels } from "./galaxy3d/labelPlacement";
 import { formatCount, formatValue } from "./galaxy3d/clusters";
+import { fmtLy } from "@shared/format";
 import { CodexRecord, IndexRecord, MySystemRecord, SectorRecord } from "./galaxy3d/GalaxyPanels";
 import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
 import { GalaxyIndexDownload } from "./GalaxyIndexDownload";
@@ -747,7 +748,7 @@ export function GalaxyMap3D() {
             {p.n}. {p.name}
           </strong>
           <span>
-            {Math.round(p.legLy).toLocaleString()} ly from {p.n === 1 ? "your ship" : `stop ${p.n - 1}`} · {p.species} species ·{" "}
+            {fmtLy(p.legLy)} from {p.n === 1 ? "your ship" : `stop ${p.n - 1}`} · {p.species} species ·{" "}
             {formatValue(p.valueCr / 100_000)}
           </span>
           <em>Plan stop · click for details</em>
@@ -819,7 +820,7 @@ export function GalaxyMap3D() {
           ) : null}
           {route?.position ? (
             <p className="dim">
-              {Math.round(dist(route.position, { x: xs.p[0], y: xs.p[1], z: xs.p[2] })).toLocaleString()} ly from your ship
+              {fmtLy(dist(route.position, { x: xs.p[0], y: xs.p[1], z: xs.p[2] }))} from your ship
             </p>
           ) : null}
         </div>
@@ -929,7 +930,7 @@ export function GalaxyMap3D() {
                       <span className="g3d-plan__n">{i + 1}</span>
                       <span className="g3d-plan__name">{s.name}</span>
                       <em>
-                        +{Math.round(s.legLy).toLocaleString()} ly · {s.species} sp. · {formatValue(s.valueCr / 100_000)}
+                        +{fmtLy(s.legLy)} · {s.species} sp. · {formatValue(s.valueCr / 100_000)}
                       </em>
                     </button>
                     <CopySystemButton system={s.name} />
@@ -947,7 +948,7 @@ export function GalaxyMap3D() {
                 ))}
               </ol>
               <p className="g3d-plan__total" data-testid="g3d-plan-total">
-                {plan.stops.length} stops · {Math.round(plan.totalLy).toLocaleString()} ly · {formatValue(plan.totalValueCr / 100_000)}
+                {plan.stops.length} stops · {fmtLy(plan.totalLy)} · {formatValue(plan.totalValueCr / 100_000)}
               </p>
               <div className="g3d-panel__actions">
                 <button
@@ -1030,7 +1031,7 @@ export function GalaxyMap3D() {
             <>
               <span>
                 Next target{worthM ? ` ≥ ${worthM}M` : ""}: <strong>{target.target.name}</strong> ·{" "}
-                {Math.round(target.target.distanceLy).toLocaleString()} ly · {target.target.species} species ·{" "}
+                {fmtLy(target.target.distanceLy)} · {target.target.species} species ·{" "}
                 {formatValue(target.target.valueCr / 100_000)}
                 {copied ? " · name copied" : ""}
               </span>
@@ -1083,7 +1084,7 @@ export function GalaxyMap3D() {
         <div className="g3d-banner" data-testid="g3d-nearest">
           <span>
             Nearest waiting{waitMinM ? ` ≥ ${waitMinM}M` : ""}: <strong>{nearest.row.name}</strong> ·{" "}
-            {Math.round(nearest.ly).toLocaleString()} ly · at least {crShort(nearest.row.unfinishedFloorCr)}
+            {fmtLy(nearest.ly)} · at least {crShort(nearest.row.unfinishedFloorCr)}
           </span>
           <CopySystemButton system={nearest.row.name} />
           <button
@@ -1339,7 +1340,7 @@ export function GalaxyMap3D() {
             {stats.tilesLoaded ? ` · close-up: ${stats.tilesLoaded} sectors, ${stats.tilePoints.toLocaleString()} systems` : ""}
             {stats.level ? ` · groups of ${stats.level.toLocaleString()} ly` : ""}
             {" · "}
-            {stats.distanceLy.toLocaleString()} ly away · tilt {stats.tiltDeg}°
+            {fmtLy(stats.distanceLy)} away · tilt {stats.tiltDeg}°
           </span>
         )}
         <button

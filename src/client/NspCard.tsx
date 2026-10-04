@@ -6,13 +6,14 @@
 import type { ReactNode } from "react";
 import type { NspOutlookDTO } from "@shared/nspOutlook";
 import { nspCardWorthShowing, nspChanceWord, nspOdds } from "@shared/nspOutlook";
+import { fmtLy, fmtPct } from "@shared/format";
 
 export function NspCard({ o }: { o: NspOutlookDTO | null | undefined }) {
   if (!o || !nspCardWorthShowing(o)) return null;
   const named = o.seen.filter(Boolean);
   const signalOnly = o.seen.length > 0 && named.length === 0;
   const nearTitle = o.nearest.length
-    ? "\nNearest known: " + o.nearest.map((n) => `${n.name} — ${n.system}, ${n.distanceLy} ly`).join("; ")
+    ? "\nNearest known: " + o.nearest.map((n) => `${n.name} — ${n.system}, ${fmtLy(n.distanceLy)}`).join("; ")
     : "";
   const loggedTitle = o.loggedDetail.length ? `\nLogged on EDAstro: ${o.loggedDetail.join(", ")}` : "";
   const families = (list: string[]) => (
@@ -51,7 +52,7 @@ export function NspCard({ o }: { o: NspOutlookDTO | null | undefined }) {
     const g = o.guess!;
     const pct = Math.round(g.p * 100);
     title =
-      `A prediction from what this system is: ${pct} %, ${nspOdds(g.p)}.` +
+      `A prediction from what this system is: ${fmtPct(pct)}, ${nspOdds(g.p)}.` +
       (g.reasons.length ? `\nWhy: ${g.reasons.join("; ")}.` : "") +
       "\nMeasured on EDAstro's codex file (1.9 M systems). The FSS says for sure on arrival." +
       nearTitle;

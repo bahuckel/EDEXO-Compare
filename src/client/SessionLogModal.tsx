@@ -2,7 +2,7 @@
  * The session log and its Markdown copy. Split out of AppModals.tsx (code review D, 2026-09-27).
  */
 import { CopySystemButton } from "./CopySystemButton";
-import { fmtCrShort } from "./credits";
+import { fmtCrExact, fmtCrShort, fmtLy } from "@shared/format";
 import { useToast } from "./ui/feedback";
 import { useModal } from "./ui/useModal";
 import type { SessionLogDTO } from "@shared/types";
@@ -14,7 +14,7 @@ function sessionLogMarkdown(log: SessionLogDTO): string {
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? iso : d.toISOString().slice(11, 16) + " UTC";
   };
-  const cr = (n: number | null) => (n == null ? "—" : `${n.toLocaleString()} CR`);
+  const cr = fmtCrExact;
   const lines: string[] = [];
   lines.push(`# ED Exo Compare — session ${log.startedIso.slice(0, 10)}`);
   lines.push("");
@@ -24,7 +24,7 @@ function sessionLogMarkdown(log: SessionLogDTO): string {
   if (log.systems.length) {
     lines.push("", "## Systems", "");
     for (const s of log.systems)
-      lines.push(`- ${t(s.at)} ${s.name}${s.jumpLy != null ? ` (${s.jumpLy.toFixed(1)} ly)` : ""}`);
+      lines.push(`- ${t(s.at)} ${s.name}${s.jumpLy != null ? ` (${fmtLy(s.jumpLy)})` : ""}`);
   }
   if (log.landings.length) {
     lines.push("", "## Landings", "");
@@ -186,9 +186,7 @@ export function SessionLogModal({ log, onClose }: { log: SessionLogDTO | null; o
                           {s.name}
                           <CopySystemButton system={s.name} />
                         </span>
-                        <span className="dim tiny">
-                          {s.jumpLy != null ? `${s.jumpLy.toFixed(1)} ly` : ""}
-                        </span>
+                        <span className="dim tiny">{s.jumpLy != null ? fmtLy(s.jumpLy) : ""}</span>
                       </li>
                     ))}
                   </ul>

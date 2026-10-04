@@ -9,8 +9,9 @@
  */
 import { rarityTierInfo, type RarityTier, type RegionalRarity, type SpeciesRarity } from "@shared/speciesRarity";
 import type { SpeciesMatch } from "@shared/types";
+import { fmtPct } from "@shared/format";
 
-const pct = (s: number) => `${(s * 100).toFixed(s < 0.01 ? 2 : 1)} %`;
+const pct = (s: number) => fmtPct(s * 100, s < 0.01 ? 2 : 1);
 
 export function rarityTitle(r: SpeciesRarity): string {
   const t = rarityTierInfo(r.tier);

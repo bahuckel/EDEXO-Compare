@@ -148,7 +148,7 @@ describe("groups", () => {
   it("formats counts and credits the way the labels show them", async () => {
     const { formatCount, formatValue } = await import("../src/client/galaxy3d/clusters.js");
     expect([7, 1234, 45_678, 1_234_567].map(formatCount)).toEqual(["7", "1.2k", "46k", "1.2M"]);
-    expect([0, 4, 125, 11_000].map(formatValue)).toEqual(["—", "400k CR", "12.5M CR", "1.1bn CR"]);
+    expect([0, 4, 125, 11_000].map(formatValue)).toEqual(["—", "400 k CR", "12.5 M CR", "1.10 B CR"]);
   });
 });
 

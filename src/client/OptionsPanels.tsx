@@ -24,6 +24,7 @@ import { readAppTheme, readSavedThemes, setAppTheme, writeSavedThemes } from "./
 import { CARRIER_SERVICE_OPTIONS } from "@shared/carrierServices";
 import type { AppSnapshot } from "@shared/types";
 import { useCallback, useEffect, useState } from "react";
+import { fmtPct } from "@shared/format";
 
 /**
  * Contributing discoveries back to Canonn Research.
@@ -768,7 +769,7 @@ function NspDownload({ on, busy, onToggle }: { on: boolean; busy: boolean; onTog
       {st.running ? (
         <p className="dim tiny">
           Downloading and sorting: {mb(st.bytesDone)}
-          {st.bytesTotal ? ` of ${mb(st.bytesTotal)} (${Math.floor((100 * st.bytesDone) / st.bytesTotal)} %)` : ""}. Only the
+          {st.bytesTotal ? ` of ${mb(st.bytesTotal)} (${fmtPct(Math.floor((100 * st.bytesDone) / st.bytesTotal))})` : ""}. Only the
           phenomena, green gas giant reports and which plants were logged in which region are kept.
         </p>
       ) : (

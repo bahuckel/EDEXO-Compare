@@ -1,15 +1,15 @@
 /**
  * Constants, types and formatters the galaxy search and its dialogs share. Split out of GalaxySearchPanel.tsx (code review D, 2026-09-27).
  */
+import { fmtCrExact, fmtLy } from "@shared/format";
 /** Evidence flags, mirroring src/server/bioIndex.ts. */
 const TIER_FSS = 1;
 export const TIER_DSS = 2;
 const TIER_CODEX = 4;
 
 export const crFmt = new Intl.NumberFormat("en-US");
-export const cr = (n: number) => `${crFmt.format(Math.round(n))} CR`;
-export const ly = (d: number | null) =>
-  d == null ? "—" : d >= 10000 ? `${(d / 1000).toFixed(1)} kly` : `${crFmt.format(Math.round(d))} ly`;
+export const cr = (n: number) => fmtCrExact(n);
+export const ly = (d: number | null) => fmtLy(d);
 
 /**
  * The slider's range, in credits: nothing to half a billion, per system, at 1x.

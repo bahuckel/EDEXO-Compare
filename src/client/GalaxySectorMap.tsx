@@ -40,6 +40,7 @@ import { EMPTY_HITS, strongestKind, PROJECTIONS } from "./galaxySectorShared";
 import type { Kind, CommanderPosition, CommanderCell } from "./galaxySectorShared";
 import { SectorPlot } from "./GalaxySectorPlot";
 import { SectorReadout, SectorSystems } from "./GalaxySectorReadouts";
+import { fmtCrExact, fmtLy } from "@shared/format";
 export type { CommanderPosition } from "./galaxySectorShared";
 
 export function GalaxySectorMap({
@@ -367,13 +368,11 @@ export function GalaxySectorMap({
               ? ""
               : nextTarget.distanceLy < 1
                 ? "you are here"
-                : nextTarget.distanceLy >= 10000
-                  ? `${(nextTarget.distanceLy / 1000).toFixed(1)} kly away`
-                  : `${Math.round(nextTarget.distanceLy).toLocaleString("en-US")} ly away`}
+                : `${fmtLy(nextTarget.distanceLy)} away`}
           </span>
           <span className="dim">
             {nextTarget.bodies} unfinished {nextTarget.bodies === 1 ? "body" : "bodies"} ·{" "}
-            {Math.round(nextTarget.floorCr).toLocaleString("en-US")} CR floor
+            {fmtCrExact(nextTarget.floorCr)} floor
           </span>
         </div>
       ) : null}

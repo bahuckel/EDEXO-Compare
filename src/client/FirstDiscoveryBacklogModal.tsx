@@ -26,6 +26,7 @@ import { CopySystemButton } from "./CopySystemButton";
 import { csvFileName, downloadCsv, toCsv, type CsvColumn } from "./csv";
 import { useModal } from "./ui/useModal";
 import type { FirstDiscoveryBacklogDTO, FirstDiscoveryBacklogRowDTO } from "@shared/types";
+import { fmtLyAway } from "@shared/format";
 
 const crFmt = new Intl.NumberFormat("en-US");
 const cr = (n: number) => `${crFmt.format(Math.round(n))} CR`;
@@ -68,15 +69,7 @@ const CSV_COLUMNS: CsvColumn<FirstDiscoveryBacklogRowDTO>[] = [
 ];
 const floorLabel = (n: number) => (n === 0 ? "All" : `${Math.round(n / 1e6)}M+`);
 
-/** Light years, at a precision that matches how far away the thing is. */
-function ly(d: number | null): string {
-  if (d == null) return "—";
-  // Under a light year is the same system — the commander is standing in it, and "0 ly" reads as a
-  // broken number rather than the best possible answer.
-  if (d < 1) return "here";
-  if (d >= 10000) return `${(d / 1000).toFixed(1)} kly`;
-  return `${Math.round(d).toLocaleString("en-US")} ly`;
-}
+const ly = fmtLyAway;
 
 export function FirstDiscoveryBacklogModal({
   onClose,

@@ -15,6 +15,7 @@ import {
   JournalHistoryPreset,
 } from "@shared/journalHistoryPreset";
 import { ExoMissLogPanel } from "./SpeciesCard";
+import { fmtCrExact } from "@shared/format";
 import {
   EXO_MAP_CR_MAX,
   EXO_MAP_CR_MIN,
@@ -289,7 +290,7 @@ export function MapOptionsModal({
             defaultOpen={false}
             className="options-meta-block options-tier-group"
             title="System map + and ++ marks"
-            summary={`+ from ${Math.min(optPlus, EXO_MAP_PLUS_SLIDER_MAX).toLocaleString()} CR · ++ from ${Math.max(plusPlusSliderMin, optPlusPlus).toLocaleString()} CR`}
+            summary={`+ from ${fmtCrExact(Math.min(optPlus, EXO_MAP_PLUS_SLIDER_MAX))} · ++ from ${fmtCrExact(Math.max(plusPlusSliderMin, optPlusPlus))}`}
           >
             <p className="options-tier-lead dim">
               The lowest per-species sell value a body must be worth before the system map marks it.
@@ -327,7 +328,7 @@ export function MapOptionsModal({
                 }}
               />
               <div className="options-tier-value">
-                {Math.min(optPlus, EXO_MAP_PLUS_SLIDER_MAX).toLocaleString()} CR
+                {fmtCrExact(Math.min(optPlus, EXO_MAP_PLUS_SLIDER_MAX))}
               </div>
             </div>
             <div className="options-tier-field">
@@ -349,8 +350,8 @@ export function MapOptionsModal({
                 }}
               />
               <div className="options-tier-value">
-                {Math.max(plusPlusSliderMin, optPlusPlus).toLocaleString()} CR (min{" "}
-                {plusPlusSliderMin.toLocaleString()} CR)
+                {fmtCrExact(Math.max(plusPlusSliderMin, optPlusPlus))} (min{" "}
+                {fmtCrExact(plusPlusSliderMin)})
               </div>
             </div>
           </FoldPanel>

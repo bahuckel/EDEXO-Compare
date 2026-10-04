@@ -1,7 +1,7 @@
 import type { ExoPayoutRangeDTO } from "@shared/types";
 import { footfallCertainty, footfallValueNote, type FootfallCertainty } from "@shared/footfallValue";
 import { KvRow } from "./bodyDetailKv";
-import { fmtCrRangeExact, fmtCrRangeShort } from "./credits";
+import { fmtCrRangeExact, fmtCrRangeShort } from "@shared/format";
 
 function footfallMeta(pr: ExoPayoutRangeDTO): {
   text: string;
