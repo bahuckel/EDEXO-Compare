@@ -82,27 +82,32 @@
   opacity: 0.35;
 }
 
-/* One colour per source, so a row keeps its identity as the window changes and the order moves. */
+/*
+  One ramp of the accent, exobiology brightest, "Other" grey (plan V7, 2026-10-04): seven unrelated hues
+  in an orange app read as seven kinds of warning. Each source keeps its own step, so a row keeps its
+  identity as the window changes and the order moves; the label beside it does the naming.
+*/
 .stats-bar--exobiology {
-  background: var(--ok, #4fd0ff);
+  background: var(--accent-bright);
+  box-shadow: 0 0 6px var(--accent-glow);
 }
 .stats-bar--exploration {
-  background: var(--accent-bright, #ffb060);
+  background: var(--accent);
 }
 .stats-bar--trading {
-  background: var(--warn, #ffd23f);
+  background: rgba(var(--accent-rgb), 0.78);
 }
 .stats-bar--missions {
-  background: #b98cff;
+  background: rgba(var(--accent-rgb), 0.62);
 }
 .stats-bar--combatBonds {
-  background: #ff7a6b;
+  background: rgba(var(--accent-rgb), 0.5);
 }
 .stats-bar--bounties {
-  background: #ff9f43;
+  background: rgba(var(--accent-rgb), 0.4);
 }
 .stats-bar--other {
-  background: var(--dim, rgba(255, 255, 255, 0.4));
+  background: rgba(255, 255, 255, 0.32);
 }
 
 .stats-h3 {
