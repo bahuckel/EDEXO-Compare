@@ -222,8 +222,9 @@
 .g3d-row--check {
   cursor: pointer;
 }
-/* The checkbox stays for keyboards and screen readers; the value box is what shows. */
-.g3d-row__box {
+/* The checkbox stays for keyboards and screen readers; the value box is what shows. Two classes, so
+   the app-wide input[type="checkbox"] rule cannot put it back in the row's flow. */
+.g3d-row .g3d-row__box {
   position: absolute;
   opacity: 0;
   width: 1px;
@@ -241,6 +242,101 @@
 .g3d-row__range {
   width: 110px;
   accent-color: var(--accent);
+}
+/* Round 2 (owner, 2026-10-04): Filter, Search and Codex insides as rows too. */
+.g3d-row__num {
+  min-width: 4.5rem;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.g3d-row:hover .g3d-row__num {
+  color: var(--accent-bright);
+}
+.g3d-row__select {
+  min-width: 9rem;
+  max-width: 12rem;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.g3d-row__button {
+  cursor: pointer;
+}
+.g3d-row--input {
+  padding: 4px;
+}
+.g3d-row__input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  background: rgba(5, 4, 10, 0.7);
+  border: 1px solid var(--accent-a35);
+  color: var(--text);
+  font: inherit;
+}
+.g3d-row__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.g3d-row--pick {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.g3d-row--on {
+  background: var(--accent-a25);
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+.g3d-row--tick {
+  min-height: 28px;
+  padding-left: 6px;
+}
+.g3d-row--sub {
+  margin-left: 20px;
+}
+.g3d-row--disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.g3d-row__expand {
+  width: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.g3d-row__count {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+.g3d-row:hover .g3d-row__count {
+  color: var(--text);
+}
+/* The tick: a small value box that fills when on, the game's way of showing a ticked row. */
+.g3d-tick {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a35);
+  color: #0b0806;
+  font-size: 12px;
+  line-height: 1;
+}
+.g3d-tick--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.g3d-row:hover .g3d-tick {
+  border-color: var(--accent);
 }
 .g3d-target {
   display: flex;
@@ -637,34 +733,9 @@
   backdrop-filter: blur(3px);
 }
 .g3d-codex__regions {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   margin: 0;
   padding: 0;
   list-style: none;
-}
-.g3d-codex__region {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  padding: 3px 6px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-dim);
-  font: inherit;
-  font-size: var(--fs-xs);
-  text-align: left;
-  cursor: pointer;
-}
-.g3d-codex__region:hover {
-  color: var(--text);
-  background: var(--accent-a08);
-}
-.g3d-codex__region--on {
-  color: var(--accent-bright);
-  border-color: var(--accent-a45);
-  background: var(--accent-a12);
 }
 .g3d-btn:disabled {
   opacity: 0.45;
@@ -684,7 +755,6 @@
 }
 .g3d-filter__tabs {
   display: flex;
-  gap: 6px;
 }
 .g3d-filter__tabs .g3d-btn {
   flex: 1;
@@ -695,15 +765,10 @@
 }
 .g3d-filter__summary {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  min-height: 26px;
-  font-size: var(--fs-xs);
-  color: var(--text-dim);
+  flex-direction: column;
+  gap: 2px;
 }
-.g3d-filter__summary > span:first-child {
-  flex: 1;
+.g3d-filter__matched {
   color: var(--accent-bright);
 }
 .g3d-filter__chips {
@@ -736,54 +801,30 @@
 }
 .g3d-filter__group legend {
   padding: 0 0 4px;
-  color: var(--accent-bright);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
-.g3d-filter__row {
+.g3d-filter__genus,
+.g3d-filter__group {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 4px;
-  font-size: var(--fs-xs);
-  color: var(--text-dim);
-  cursor: pointer;
+  flex-direction: column;
+  gap: 2px;
 }
-.g3d-filter__row:hover {
-  color: var(--text);
-  background: var(--accent-a08);
+.g3d-filter__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-.g3d-filter__row input {
-  margin: 0;
-  accent-color: var(--accent);
-}
-.g3d-filter__row--species {
-  padding-left: 26px;
-}
-.g3d-filter__label {
-  flex: 1;
-}
-.g3d-filter__count {
-  color: var(--text-dim);
-  opacity: 0.7;
-  font-variant-numeric: tabular-nums;
-}
-.g3d-filter__genus-name {
-  flex: 1;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
 /* ---- G4: the Search drawer, the Find box, the nearest-waiting banner --------------------------- */
 .g3d-drawer--search {
   width: min(430px, calc(100vw - 24px));
   overflow-y: auto;
+}
+.g3d-drawer--search:has(.gsx-panel--menu) {
+  width: min(380px, calc(100vw - 24px));
+}
+.gsx-panel--menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .g3d-find {
   position: relative;

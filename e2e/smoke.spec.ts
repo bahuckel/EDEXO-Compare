@@ -619,7 +619,7 @@ test("galaxy 3D: your system opens your panel; the Codex mode opens a region and
 
   await page.getByRole("button", { name: "Codex" }).click();
   const codex = page.getByTestId("g3d-codex");
-  await expect(codex.locator(".g3d-codex__region").first()).toBeVisible({ timeout: 15_000 });
+  await expect(codex.locator(".g3d-row--pick").first()).toBeVisible({ timeout: 15_000 });
   await codex.getByRole("button", { name: /Inner Orion Spur/ }).click();
   // Picking a region glides the camera over it (0.7 s); a dot's screen position is only final after.
   await page.waitForTimeout(1500);
@@ -677,10 +677,12 @@ test("galaxy 3D: Find, a sector's best systems, and the search on the map", asyn
   // The galaxy search in its drawer: Stratum, one mark per sector on the map.
   await page.getByRole("button", { name: "Search", exact: true }).click();
   const drawer = page.getByTestId("g3d-search");
-  await expect(drawer.locator(".gsx-go")).toBeVisible({ timeout: 60_000 });
-  await drawer.locator(".gsx-field").first().locator("button").first().click();
+  // The drawer's rows (owner, 2026-10-04): Genus, Species… and the Search button.
+  const go = drawer.getByRole("button", { name: "Search", exact: true });
+  await expect(go).toBeVisible({ timeout: 60_000 });
+  await drawer.getByRole("button", { name: "Genus" }).click();
   await page.getByRole("option", { name: /Stratum/ }).first().click();
-  await drawer.locator(".gsx-go").click();
+  await go.click();
   await expect(drawer).toContainText("the map shows one per sector", { timeout: 60_000 });
   await G((g) => g.lookAt(0, 0, 20000, 90000));
   await page.waitForTimeout(1500);

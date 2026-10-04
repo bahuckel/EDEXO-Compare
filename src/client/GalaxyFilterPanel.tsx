@@ -10,6 +10,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import type { GalaxySpeciesCatalogueDTO } from "@shared/types";
+import { MenuToggle } from "./galaxy3d/G3dMenu";
 
 export interface GalaxyFilterState {
   tab: "exobio" | "bodies";
@@ -67,6 +68,56 @@ interface TraitsDTO {
   stars: TraitRow[];
   planets: TraitRow[];
   features: TraitRow[];
+}
+
+/**
+ * One tick as a menu row (owner, 2026-10-04: the Filter insides like the game's menus): the name, how
+ * many systems have it, and a box that fills when it is ticked. The checkbox stays for keyboards and
+ * screen readers; a genus row has a ▸ that opens its species.
+ */
+function TickRow({
+  label,
+  ariaLabel,
+  count,
+  on,
+  onToggle,
+  disabled,
+  sub,
+  expand,
+}: {
+  label: string;
+  ariaLabel?: string;
+  count: string;
+  on: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+  sub?: boolean;
+  expand?: { open: boolean; label: string; onClick: () => void };
+}) {
+  return (
+    <label className={`g3d-row g3d-row--check g3d-row--tick${sub ? " g3d-row--sub" : ""}${disabled ? " g3d-row--disabled" : ""}`}>
+      <input type="checkbox" className="g3d-row__box" aria-label={ariaLabel} checked={on} disabled={disabled} onChange={onToggle} />
+      {expand ? (
+        <button
+          type="button"
+          className="g3d-row__expand"
+          aria-expanded={expand.open}
+          aria-label={expand.label}
+          onClick={(ev) => {
+            ev.preventDefault();
+            expand.onClick();
+          }}
+        >
+          {expand.open ? "▾" : "▸"}
+        </button>
+      ) : null}
+      <span className="g3d-row__label">{label}</span>
+      <span className="g3d-row__count">{count}</span>
+      <span className={on ? "g3d-tick g3d-tick--on" : "g3d-tick"} aria-hidden="true">
+        {on ? "✓" : ""}
+      </span>
+    </label>
+  );
 }
 
 const fmt = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)} M` : n >= 1e4 ? `${Math.round(n / 1e3)} k` : n.toLocaleString());
@@ -153,13 +204,9 @@ export function GalaxyFilterPanel({
     if (!shown.length) return null;
     return (
       <fieldset className="g3d-filter__group" key={facet}>
-        <legend>{title}</legend>
+        <legend className="g3d-menu__sub">{title}</legend>
         {shown.map((r) => (
-          <label key={r.key} className="g3d-filter__row">
-            <input type="checkbox" checked={value[facet].includes(r.key)} onChange={() => toggle(facet, r.key)} />
-            <span className="g3d-filter__label">{r.label}</span>
-            <span className="g3d-filter__count">{fmt(r.count)}</span>
-          </label>
+          <TickRow key={r.key} label={r.label} count={fmt(r.count)} on={value[facet].includes(r.key)} onToggle={() => toggle(facet, r.key)} />
         ))}
       </fieldset>
     );
@@ -167,7 +214,7 @@ export function GalaxyFilterPanel({
 
   return (
     <div className="g3d-filter">
-      <div className="g3d-filter__tabs" role="tablist" aria-label="Filter by">
+      <div className="g3d-row g3d-row--buttons g3d-filter__tabs" role="tablist" aria-label="Filter by">
         {(
           [
             ["exobio", "Exobio"],
@@ -186,30 +233,40 @@ export function GalaxyFilterPanel({
           </button>
         ))}
       </div>
-      <input
-        className="g3d-find__input g3d-filter__search"
-        type="search"
-        placeholder={value.tab === "exobio" ? "Search, e.g. stratum or tecton" : "Search, e.g. neutron or earth"}
-        aria-label="Search the filters"
-        value={query}
-        onChange={(ev) => setQuery(ev.target.value)}
-      />
+      <div className="g3d-row g3d-row--input">
+        <input
+          className="g3d-row__input g3d-filter__search"
+          type="search"
+          placeholder={value.tab === "exobio" ? "Search, e.g. stratum or tecton" : "Search, e.g. neutron or earth"}
+          aria-label="Search the filters"
+          value={query}
+          onChange={(ev) => setQuery(ev.target.value)}
+        />
+      </div>
       <div className="g3d-filter__summary">
         {ticks ? (
           <>
-            <span>
-              {busy ? "Finding…" : matched != null ? `${matched.toLocaleString()} systems match` : ""}
-            </span>
-            <label className="g3d-check" title="Hide the systems that do not match instead of dimming them">
-              <input type="checkbox" checked={value.hide} onChange={(ev) => onChange({ ...value, hide: ev.target.checked })} />
-              Hide the rest
-            </label>
-            <button type="button" className="g3d-btn" onClick={() => onChange({ ...EMPTY_GALAXY_FILTER, tab: value.tab, hide: value.hide })}>
-              Clear ({ticks})
-            </button>
+            <div className="g3d-row">
+              <span className="g3d-row__label g3d-filter__matched">
+                {busy ? "Finding…" : matched != null ? `${matched.toLocaleString()} systems match` : ""}
+              </span>
+              <button
+                type="button"
+                className="g3d-row__val g3d-row__button"
+                onClick={() => onChange({ ...EMPTY_GALAXY_FILTER, tab: value.tab, hide: value.hide })}
+              >
+                Clear ({ticks})
+              </button>
+            </div>
+            <MenuToggle
+              label="Hide the rest"
+              hint="Hide the systems that do not match instead of dimming them"
+              on={value.hide}
+              set={(hide) => onChange({ ...value, hide })}
+            />
           </>
         ) : (
-          <span className="dim">Tick anything below: the systems that have it light up, the rest dim.</span>
+          <p className="g3d-panel__note">Tick anything below: the systems that have it light up, the rest dim.</p>
         )}
       </div>
       {ticks ? (
@@ -240,42 +297,35 @@ export function GalaxyFilterPanel({
               const expanded = open.has(g.dir) || q.length > 0;
               return (
                 <div key={g.dir} className="g3d-filter__genus">
-                  <div className="g3d-filter__row">
-                    <input
-                      type="checkbox"
-                      aria-label={`${g.name}, every species`}
-                      checked={value.genera.includes(g.dir)}
-                      onChange={() => toggle("genera", g.dir)}
-                    />
-                    <button
-                      type="button"
-                      className="g3d-filter__genus-name"
-                      aria-expanded={expanded}
-                      onClick={() =>
+                  <TickRow
+                    label={g.name}
+                    ariaLabel={`${g.name}, every species`}
+                    count={`${g.species.length} species`}
+                    on={value.genera.includes(g.dir)}
+                    onToggle={() => toggle("genera", g.dir)}
+                    expand={{
+                      open: expanded,
+                      label: `${expanded ? "Hide" : "Show"} the ${g.name} species`,
+                      onClick: () =>
                         setOpen((cur) => {
                           const next = new Set(cur);
                           if (next.has(g.dir)) next.delete(g.dir);
                           else next.add(g.dir);
                           return next;
-                        })
-                      }
-                    >
-                      {expanded ? "▾" : "▸"} {g.name}
-                    </button>
-                    <span className="g3d-filter__count">{g.species.length} species</span>
-                  </div>
+                        }),
+                    }}
+                  />
                   {expanded
                     ? g.species.map((s) => (
-                        <label key={s.speciesId} className="g3d-filter__row g3d-filter__row--species">
-                          <input
-                            type="checkbox"
-                            checked={value.species.includes(s.speciesId) || value.genera.includes(g.dir)}
-                            disabled={value.genera.includes(g.dir)}
-                            onChange={() => toggle("species", s.speciesId)}
-                          />
-                          <span className="g3d-filter__label">{s.displayName}</span>
-                          <span className="g3d-filter__count">{fmt(s.systemCount)}</span>
-                        </label>
+                        <TickRow
+                          key={s.speciesId}
+                          sub
+                          label={s.displayName}
+                          count={fmt(s.systemCount)}
+                          on={value.species.includes(s.speciesId) || value.genera.includes(g.dir)}
+                          disabled={value.genera.includes(g.dir)}
+                          onToggle={() => toggle("species", s.speciesId)}
+                        />
                       ))
                     : null}
                 </div>

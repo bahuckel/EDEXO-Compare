@@ -42,6 +42,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Select } from "./ui/Select";
+import { MenuRow, MenuToggle } from "./galaxy3d/G3dMenu";
 import type {
   GalaxyBodyScanDTO,
   GalaxyRegionsDTO,
@@ -62,8 +63,14 @@ export type { GalaxySearchMark, GalaxySearchApplied } from "./galaxySearchShared
 export function GalaxySearchPanel({
   onApply,
   commanderRegionId,
+  variant = "page",
 }: {
   onApply: (applied: GalaxySearchApplied | null) => void;
+  /**
+   * "menu": the 3D galaxy map's Search drawer (owner, 2026-10-04: the insides as the game's menu rows) —
+   * no header (the drawer has its title and [?]), each control a row. "page": the classic map's panel.
+   */
+  variant?: "page" | "menu";
   /**
    * The region the commander is in, so the picker opens on the one they are standing in.
    *
@@ -297,40 +304,213 @@ export function GalaxySearchPanel({
   /** Nothing chosen searches every species in the region, which is slow and answers nothing. */
   const canScan = regionId > 0 && (speciesId !== "" || genusDir !== "") && (wantFss || wantDss);
 
+  const menu = variant === "menu";
+  const genusOptions = [
+    { value: "", label: "Any genus" },
+    ...genera.map(([dir, name]) => ({ value: dir, label: name })),
+  ];
+  const speciesOptions = [
+    { value: "", label: "Any species" },
+    ...speciesOfGenus.map((s) => ({
+      value: s.speciesId,
+      label: `${s.displayName} — ${cr(s.baseCr)} (${crFmt.format(s.systemCount)} systems)`,
+    })),
+  ];
+  const regionOptions = [
+    { value: "0", label: "Choose a region" },
+    ...(regions?.regions ?? []).map((r) => ({
+      value: String(r.regionId),
+      label: `${r.name} (${crFmt.format(r.systemCount)})`,
+    })),
+  ];
+  const onGenus = (v: string) => {
+    setGenusDir(v);
+    setSpeciesId("");
+  };
+
+  /* The same controls as rows: the label on the left, the value in its box on the right. */
+  const menuControls = (
+    <div className="g3d-menu__rows gsx-menu">
+      <MenuRow label="Genus" hint="The genus to look for; Any genus searches them all">
+        <Select
+          className="g3d-row__val g3d-row__select"
+          ariaLabel="Genus"
+          value={genusDir}
+          options={genusOptions}
+          onChange={onGenus}
+        />
+      </MenuRow>
+      <MenuRow
+        label="Species"
+        hint="One species of the genus, with its list price and how many systems have it"
+      >
+        <Select
+          className="g3d-row__val g3d-row__select"
+          ariaLabel="Species"
+          value={speciesId}
+          options={speciesOptions}
+          onChange={setSpeciesId}
+          menuMinWidth={320}
+        />
+      </MenuRow>
+      {possible ? (
+        <>
+          <MenuRow
+            label="Region"
+            hint="One region at a time — a few seconds each. The largest takes longest."
+          >
+            <Select
+              className="g3d-row__val g3d-row__select"
+              ariaLabel="Region"
+              value={String(regionId)}
+              options={regionOptions}
+              onChange={(v) => setRegionId(Number(v))}
+            />
+          </MenuRow>
+          <p className="g3d-menu__sub">Include</p>
+          <MenuToggle
+            label="Signals only"
+            hint="Bodies an FSS counted signals on, and nobody followed up"
+            on={wantFss}
+            set={setWantFss}
+          />
+          <MenuToggle
+            label="Already probed"
+            hint="Bodies somebody mapped with probes: their genus is known"
+            on={wantDss}
+            set={setWantDss}
+          />
+          <MenuToggle
+            label="Already walked"
+            hint="Systems with a species somebody logged on foot"
+            on={wantWalked}
+            set={setWantWalked}
+          />
+          <MenuRow
+            label="Biology likely by gravity"
+            hint="From your journals: of landable bodies with an atmosphere, every one below 0.25 g carried biology and none above 0.65 g did. Signal presence, not species."
+          >
+            <input
+              className="g3d-row__range"
+              type="range"
+              min={0}
+              max={90}
+              step={10}
+              value={minGravityOdds}
+              onChange={(e) => setMinGravityOdds(Number(e.target.value))}
+              aria-label="Least likely body to list, by gravity"
+            />
+            <span className="g3d-row__num">{minGravityOdds > 0 ? `≥ ${fmtPct(minGravityOdds)}` : "any"}</span>
+          </MenuRow>
+        </>
+      ) : (
+        <>
+          <MenuRow
+            label="Worth at least"
+            hint={
+              priceLocked
+                ? "A named species already has a price — clear it to filter by value."
+                : "Everything the codex knows in the system, at list price. Five times that if nobody has landed yet."
+            }
+          >
+            <input
+              type="range"
+              className="g3d-row__range"
+              min={0}
+              max={MAX_CR}
+              step={STEP_CR}
+              value={minCr}
+              disabled={priceLocked}
+              onChange={(e) => setMinCr(Number(e.target.value))}
+              aria-label="Minimum system value in credits"
+            />
+            <span className="g3d-row__num">{sliderLabel(minCr)}</span>
+          </MenuRow>
+          <MenuToggle
+            label="Mapped only"
+            hint="Somebody has probed a body here, so the genus is known"
+            on={needDss}
+            set={setNeedDss}
+          />
+        </>
+      )}
+      <div className="g3d-row g3d-row--buttons">
+        <button
+          type="button"
+          className="g3d-btn g3d-btn--on"
+          onClick={() => void (possible ? runPossible() : run())}
+          disabled={busy || (possible && !canScan)}
+        >
+          {busy ? "Searching…" : "Search"}
+        </button>
+        {result || scan ? (
+          <button type="button" className="g3d-btn" onClick={clear}>
+            Clear
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+
   return (
-    <section className="gsx-panel gsx-panel--inline" aria-label="Search the galaxy">
-      <header className="fdb-head">
-        <div>
-          {/*
+    <section
+      className={menu ? "gsx-panel--menu" : "gsx-panel gsx-panel--inline"}
+      aria-label="Search the galaxy"
+    >
+      {menu ? null : (
+        <header className="fdb-head">
+          <div>
+            {/*
             The same magnifying glass that used to sit in the app's top bar. It moved here with the
             panel, rather than being retired: the commander is looking for the control they know,
             and the icon is how they recognise it.
           */}
-          <h2 className="fdb-title gsx-title">
-            <IconGalaxySearch className="gsx-title-icon" /> Search the galaxy
-          </h2>
-          <p className="dim fdb-sub">
-            {possible ? (
-              <>
-                Bodies whose conditions suit the species, in systems nobody has walked — the same gates the
-                app applies when you are standing there. A shortlist, not a sighting.
-              </>
-            ) : (
-              <>
-                Where anybody has recorded biology, across{" "}
-                {cat ? crFmt.format(cat.systemCount) : "5.3 million"} systems. These are sightings somebody
-                logged, not predictions — nearest to you first, and the map below follows what you search for.
-              </>
-            )}
-          </p>
-        </div>
-      </header>
+            <h2 className="fdb-title gsx-title">
+              <IconGalaxySearch className="gsx-title-icon" /> Search the galaxy
+            </h2>
+            <p className="dim fdb-sub">
+              {possible ? (
+                <>
+                  Bodies whose conditions suit the species, in systems nobody has walked — the same gates the
+                  app applies when you are standing there. A shortlist, not a sighting.
+                </>
+              ) : (
+                <>
+                  Where anybody has recorded biology, across{" "}
+                  {cat ? crFmt.format(cat.systemCount) : "5.3 million"} systems. These are sightings somebody
+                  logged, not predictions — nearest to you first, and the map below follows what you search
+                  for.
+                </>
+              )}
+            </p>
+          </div>
+        </header>
+      )}
 
       {/*
         The mode switch appears only where there is a body file to search. On every other install
         the panel is exactly what it was, rather than offering a question that cannot be answered.
       */}
-      {regions?.available ? (
+      {regions?.available && menu ? (
+        <div className="g3d-row g3d-row--buttons" role="group" aria-label="What to search for">
+          <button
+            type="button"
+            className={possible ? "g3d-btn" : "g3d-btn g3d-btn--on"}
+            aria-pressed={!possible}
+            onClick={() => switchMode("recorded")}
+          >
+            Recorded
+          </button>
+          <button
+            type="button"
+            className={possible ? "g3d-btn g3d-btn--on" : "g3d-btn"}
+            aria-pressed={possible}
+            onClick={() => switchMode("possible")}
+          >
+            Could be there
+          </button>
+        </div>
+      ) : regions?.available ? (
         <div className="gsx-modes" role="group" aria-label="What to search for">
           <button
             type="button"
@@ -354,91 +534,80 @@ export function GalaxySearchPanel({
 
       {cat?.available ? (
         <>
-          <div className="gsx-controls">
-            <label className="gsx-field">
-              Genus
-              <Select
-                value={genusDir}
-                options={[
-                  { value: "", label: "Any genus" },
-                  ...genera.map(([dir, name]) => ({ value: dir, label: name })),
-                ]}
-                onChange={(v) => {
-                  setGenusDir(v);
-                  setSpeciesId("");
-                }}
-              />
-            </label>
+          {menu ? (
+            menuControls
+          ) : (
+            <div className="gsx-controls">
+              <label className="gsx-field">
+                Genus
+                <Select value={genusDir} options={genusOptions} onChange={onGenus} />
+              </label>
 
-            <label className="gsx-field">
-              Species
-              <Select
-                value={speciesId}
-                options={[
-                  { value: "", label: "Any species" },
-                  ...speciesOfGenus.map((s) => ({
-                    value: s.speciesId,
-                    label: `${s.displayName} — ${cr(s.baseCr)} (${crFmt.format(s.systemCount)} systems)`,
-                  })),
-                ]}
-                onChange={setSpeciesId}
-                menuMinWidth={320}
-              />
-            </label>
+              <label className="gsx-field">
+                Species
+                <Select
+                  value={speciesId}
+                  options={speciesOptions}
+                  onChange={setSpeciesId}
+                  menuMinWidth={320}
+                />
+              </label>
 
-            {possible ? (
-              <>
-                <label className="gsx-field">
-                  Region
-                  <Select
-                    value={String(regionId)}
-                    options={[
-                      { value: "0", label: "Choose a region" },
-                      ...(regions?.regions ?? []).map((r) => ({
-                        value: String(r.regionId),
-                        label: `${r.name} (${crFmt.format(r.systemCount)})`,
-                      })),
-                    ]}
-                    onChange={(v) => setRegionId(Number(v))}
-                  />
-                  {/*
+              {possible ? (
+                <>
+                  <label className="gsx-field">
+                    Region
+                    <Select
+                      value={String(regionId)}
+                      options={regionOptions}
+                      onChange={(v) => setRegionId(Number(v))}
+                    />
+                    {/*
                     The reason the search is scoped at all, said where the choice is made. A region
                     is seconds; the galaxy is forty-two of those and an answer nobody can act on.
                   */}
-                  <span className="dim gsx-note">
-                    One region at a time — a few seconds each. The largest takes longest.
-                  </span>
-                </label>
+                    <span className="dim gsx-note">
+                      One region at a time — a few seconds each. The largest takes longest.
+                    </span>
+                  </label>
 
-                {/*
+                  {/*
                   Three independent ticks, the owner's own design: *"I choose filters
                   FSS/DSS/ScanOrganic as proof. If ScanOrganic is not selected it excludes them."*
                   The first two describe a body, the third a system.
                 */}
-                <div className="gsx-field gsx-evidence" role="group" aria-label="What evidence to allow">
-                  <span>Include</span>
-                  <label className="gsx-check">
-                    <input type="checkbox" checked={wantFss} onChange={(e) => setWantFss(e.target.checked)} />
-                    Signals only
-                  </label>
-                  <label className="gsx-check">
-                    <input type="checkbox" checked={wantDss} onChange={(e) => setWantDss(e.target.checked)} />
-                    Already probed
-                  </label>
-                  <label className="gsx-check">
-                    <input
-                      type="checkbox"
-                      checked={wantWalked}
-                      onChange={(e) => setWantWalked(e.target.checked)}
-                    />
-                    Already walked
-                  </label>
-                  <span className="dim gsx-note">
-                    An FSS counted signals and nobody followed it up; a probed body already has its genus; a
-                    walked system has a species somebody logged on foot.
-                  </span>
-                </div>
-                {/*
+                  <div className="gsx-field gsx-evidence" role="group" aria-label="What evidence to allow">
+                    <span>Include</span>
+                    <label className="gsx-check">
+                      <input
+                        type="checkbox"
+                        checked={wantFss}
+                        onChange={(e) => setWantFss(e.target.checked)}
+                      />
+                      Signals only
+                    </label>
+                    <label className="gsx-check">
+                      <input
+                        type="checkbox"
+                        checked={wantDss}
+                        onChange={(e) => setWantDss(e.target.checked)}
+                      />
+                      Already probed
+                    </label>
+                    <label className="gsx-check">
+                      <input
+                        type="checkbox"
+                        checked={wantWalked}
+                        onChange={(e) => setWantWalked(e.target.checked)}
+                      />
+                      Already walked
+                    </label>
+                    <span className="dim gsx-note">
+                      An FSS counted signals and nobody followed it up; a probed body already has its genus; a
+                      walked system has a species somebody logged on foot.
+                    </span>
+                  </div>
+                  {/*
                   The gravity floor.
 
                   A separate question from the evidence ticks: those ask what is known about a body,
@@ -446,88 +615,89 @@ export function GalaxySearchPanel({
                   default, and the figure is shown on every row whether or not it filters, so the
                   curve can be read before it is trusted.
                 */}
-                <div className="gsx-field gsx-gravity">
-                  <span>
-                    Biology likely by gravity{" "}
-                    <strong className="gsx-price-value">
-                      {minGravityOdds > 0 ? `at least ${fmtPct(minGravityOdds)}` : "any"}
-                    </strong>
-                  </span>
-                  <input
-                    className="gsx-slider"
-                    type="range"
-                    min={0}
-                    max={90}
-                    step={10}
-                    value={minGravityOdds}
-                    onChange={(e) => setMinGravityOdds(Number(e.target.value))}
-                    aria-label="Least likely body to list, by gravity"
-                  />
-                  <span className="dim gsx-note">
-                    From this commander&rsquo;s journals: of landable bodies with an atmosphere, every one
-                    below 0.25 g carried biology and none above 0.65 g did. Signal presence, not species — and
-                    his flying, not a survey of the galaxy.
-                  </span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className={`gsx-field gsx-price${priceLocked ? " gsx-price--locked" : ""}`}>
-                  <span>
-                    System worth at least <strong className="gsx-price-value">{sliderLabel(minCr)}</strong>
-                  </span>
-                  <input
-                    type="range"
-                    className="gsx-slider"
-                    min={0}
-                    max={MAX_CR}
-                    step={STEP_CR}
-                    value={minCr}
-                    disabled={priceLocked}
-                    onChange={(e) => setMinCr(Number(e.target.value))}
-                    aria-label="Minimum system value in credits"
-                  />
-                  {/*
+                  <div className="gsx-field gsx-gravity">
+                    <span>
+                      Biology likely by gravity{" "}
+                      <strong className="gsx-price-value">
+                        {minGravityOdds > 0 ? `at least ${fmtPct(minGravityOdds)}` : "any"}
+                      </strong>
+                    </span>
+                    <input
+                      className="gsx-slider"
+                      type="range"
+                      min={0}
+                      max={90}
+                      step={10}
+                      value={minGravityOdds}
+                      onChange={(e) => setMinGravityOdds(Number(e.target.value))}
+                      aria-label="Least likely body to list, by gravity"
+                    />
+                    <span className="dim gsx-note">
+                      From this commander&rsquo;s journals: of landable bodies with an atmosphere, every one
+                      below 0.25 g carried biology and none above 0.65 g did. Signal presence, not species —
+                      and his flying, not a survey of the galaxy.
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={`gsx-field gsx-price${priceLocked ? " gsx-price--locked" : ""}`}>
+                    <span>
+                      System worth at least <strong className="gsx-price-value">{sliderLabel(minCr)}</strong>
+                    </span>
+                    <input
+                      type="range"
+                      className="gsx-slider"
+                      min={0}
+                      max={MAX_CR}
+                      step={STEP_CR}
+                      value={minCr}
+                      disabled={priceLocked}
+                      onChange={(e) => setMinCr(Number(e.target.value))}
+                      aria-label="Minimum system value in credits"
+                    />
+                    {/*
                     Said out loud rather than left as a greyed control. A commander who picked a
                     species and then found the price ignored would reasonably think the search was
                     broken.
                   */}
-                  {priceLocked ? (
-                    <span className="dim gsx-note">
-                      A named species already has a price — clear it to filter by value.
-                    </span>
-                  ) : (
-                    <span className="dim gsx-note">
-                      Everything the codex knows there, at list price. Five times that if nobody has landed
-                      yet.
-                    </span>
-                  )}
-                </div>
+                    {priceLocked ? (
+                      <span className="dim gsx-note">
+                        A named species already has a price — clear it to filter by value.
+                      </span>
+                    ) : (
+                      <span className="dim gsx-note">
+                        Everything the codex knows there, at list price. Five times that if nobody has landed
+                        yet.
+                      </span>
+                    )}
+                  </div>
 
-                <label className="gsx-field gsx-check">
-                  <input type="checkbox" checked={needDss} onChange={(e) => setNeedDss(e.target.checked)} />
-                  Mapped only
-                  <span className="dim gsx-note">
-                    Somebody has probed a body here, so the genus is known.
-                  </span>
-                </label>
-              </>
-            )}
+                  <label className="gsx-field gsx-check">
+                    <input type="checkbox" checked={needDss} onChange={(e) => setNeedDss(e.target.checked)} />
+                    Mapped only
+                    <span className="dim gsx-note">
+                      Somebody has probed a body here, so the genus is known.
+                    </span>
+                  </label>
+                </>
+              )}
 
-            <button
-              type="button"
-              className="gsx-go"
-              onClick={() => void (possible ? runPossible() : run())}
-              disabled={busy || (possible && !canScan)}
-            >
-              {busy ? "Searching…" : "Search"}
-            </button>
-            {result || scan ? (
-              <button type="button" className="gsx-clear" onClick={clear}>
-                Clear
+              <button
+                type="button"
+                className="gsx-go"
+                onClick={() => void (possible ? runPossible() : run())}
+                disabled={busy || (possible && !canScan)}
+              >
+                {busy ? "Searching…" : "Search"}
               </button>
-            ) : null}
-          </div>
+              {result || scan ? (
+                <button type="button" className="gsx-clear" onClick={clear}>
+                  Clear
+                </button>
+              ) : null}
+            </div>
+          )}
 
           {possible && !canScan && !busy ? (
             <p className="fdb-empty">

@@ -112,6 +112,7 @@ export function GalaxyMap3D() {
   const codexOn = drawer === "codex";
   const [codexKind, setCodexKind] = useState<CodexMapKind>("bio");
   const [codexRegions, setCodexRegions] = useState<CodexMapRegionsDTO | null>(null);
+  const [codexAsk, setCodexAsk] = useState(0);
   /** The region names Find offers, once the outlines have arrived. */
   const [regionAnchors, setRegionAnchors] = useState<RegionOutlines["anchors"]>([]);
   const [codexRegion, setCodexRegion] = useState<string | null>(null);
@@ -574,12 +575,22 @@ export function GalaxyMap3D() {
       return;
     }
     if (!codexRegions) {
+      // Not ready while the journals replay: ask again in a moment rather than leave the list empty.
+      let live = true;
+      let retry: ReturnType<typeof setTimeout> | undefined;
+      const later = () => {
+        if (live) retry = setTimeout(() => setCodexAsk((n) => n + 1), 2000);
+      };
       fetch("/api/codex/regions")
         .then((r) => (r.ok ? (r.json() as Promise<CodexMapRegionsDTO>) : null))
-        .then((d) => d && setCodexRegions(d))
-        .catch(() => {});
+        .then((d) => (d ? live && setCodexRegions(d) : later()))
+        .catch(later);
+      return () => {
+        live = false;
+        clearTimeout(retry);
+      };
     }
-  }, [codexOn, codexRegions]);
+  }, [codexOn, codexRegions, codexAsk]);
 
   useEffect(() => {
     if (!codexOn || !codexRegion) return;
@@ -1312,7 +1323,7 @@ export function GalaxyMap3D() {
       {drawer === "search" ? (
         <aside className="g3d-drawer g3d-drawer--search" aria-label="Search" data-testid="g3d-search">
           <MenuHead title="Species search" help={G3D_HELP.search} />
-          <GalaxySearchPanel onApply={onApply} commanderRegionId={commanderRegionId} />
+          <GalaxySearchPanel variant="menu" onApply={onApply} commanderRegionId={commanderRegionId} />
           {search ? (
             <p className="g3d-panel__note">
               {search.label}: {search.matchedSystems.toLocaleString()} systems in {search.spreadCells.toLocaleString()} sectors;
@@ -1323,9 +1334,9 @@ export function GalaxyMap3D() {
       ) : null}
 
       {codexOn ? (
-        <aside className="g3d-drawer g3d-codex" aria-label="Codex" data-testid="g3d-codex">
+        <aside className="g3d-drawer g3d-menu g3d-codex" aria-label="Codex" data-testid="g3d-codex">
           <MenuHead title="Codex" help={G3D_HELP.codex} />
-          <div className="g3d-group" role="group" aria-label="Codex kind">
+          <div className="g3d-row g3d-row--buttons" role="group" aria-label="Codex kind">
             {(["bio", "bodies"] as const).map((k) => (
               <button
                 key={k}
@@ -1338,8 +1349,9 @@ export function GalaxyMap3D() {
               </button>
             ))}
           </div>
-          <p className="g3d-panel__note">Click a region on the map, or pick one:</p>
-          <ul className="g3d-codex__regions">
+          <p className="g3d-menu__sub">Regions — logged of known · click one here or on the map</p>
+          {codexRegions ? null : <p className="g3d-panel__note">Reading your codex…</p>}
+          <ul className="g3d-menu__rows g3d-codex__regions">
             {(codexRegions?.regions ?? [])
               .slice()
               .sort((a, b) => a.name.localeCompare(b.name))
@@ -1350,11 +1362,12 @@ export function GalaxyMap3D() {
                   <li key={r.joinKey}>
                     <button
                       type="button"
-                      className={on ? "g3d-codex__region g3d-codex__region--on" : "g3d-codex__region"}
+                      className={on ? "g3d-row g3d-row--pick g3d-row--on" : "g3d-row g3d-row--pick"}
+                      aria-pressed={on}
                       onClick={() => setCodexRegion(r.name)}
                     >
-                      <span>{r.name}</span>
-                      <span className="g3d-num">
+                      <span className="g3d-row__label">{r.name}</span>
+                      <span className="g3d-row__val g3d-num">
                         {k.logged}/{k.entries}
                       </span>
                     </button>
