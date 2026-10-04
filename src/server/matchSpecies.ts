@@ -968,7 +968,15 @@ export function speciesMatchesExcludingTempPressure(
   */
   const tierVerdict = ctx?.regionName ? tierRegionalPresence(getProjectRoot(), ctx.regionName, entry.id) : null;
   if (tierVerdict && ctx?.regionName) {
-    if (tierVerdict.presence === "absent") {
+    /*
+      Logged in the region at all, on a body that meets every other condition: it grows there (owner,
+      2026-10-04: "exempt it if logged at least once"). Clypeus speculumi in Aquila's Halo, 4 systems
+      against an uncommon species' 10, was hidden on 5 of 606 of its own known-spawn bodies.
+    */
+    const loggedHere = tierVerdict.presence === "absent" && tierVerdict.count >= 1 && failures.length === 0;
+    if (loggedHere) {
+      reasons.push({ field: "Region", detail: tierRegionDetail(ctx.regionName, tierVerdict, false) });
+    } else if (tierVerdict.presence === "absent") {
       failures.push({ field: "Region", soft: true, detail: tierRegionDetail(ctx.regionName, tierVerdict, true) });
     } else if (tierVerdict.presence === "present") {
       reasons.push({ field: "Region", detail: tierRegionDetail(ctx.regionName, tierVerdict, false) });

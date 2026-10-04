@@ -12,6 +12,9 @@ import {
 } from "../src/shared/speciesRarity.js";
 import { speciesRarity, tierRegionalPresence } from "../src/server/speciesRarityData.js";
 import { getProjectRoot } from "../src/server/paths.js";
+import { resolvePlanetTemperatureBand, speciesMatchesCriteria } from "../src/server/matchSpecies.js";
+import { loadSpeciesDatabaseFromTree } from "../src/server/speciesTreeLoader.js";
+import type { PlanetScan, SpeciesMatchContext } from "../src/shared/types.js";
 
 describe("rarity tiers", () => {
   it("abundance tiers (region limits) cut at 2.5k / 7.5k / 19k / 50k systems", () => {
@@ -116,5 +119,46 @@ describe("dynamic rarity", () => {
     expect(m.syncRaritySightings(root, sightings, species)).toBe(false); // nothing new
     m.clearSpeciesRarityCache();
     expect(m.speciesRarity(root, "fonticulua_fonticulua_fluctus")!.systems).toBe(before);
+  });
+});
+
+describe("the tier rule, on a body that meets every condition (owner, 2026-10-04)", () => {
+  const root = getProjectRoot();
+  const db = loadSpeciesDatabaseFromTree(root);
+  const speculumi = db.species.find((e) => e.id === "clypeus_clypeus_speculumi")!;
+  // Xotheia KW-E d11-0 7 a: a known speculumi, in Aquila's Halo where it is logged in 4 systems.
+  const scan = {
+    BodyName: "Xotheia KW-E d11-0 7 a",
+    PlanetClass: "Rocky body",
+    Atmosphere: "thin carbon dioxide atmosphere",
+    AtmosphereType: "CarbonDioxide",
+    SurfaceGravity: 0.1894 * 9.80665,
+    SurfaceTemperature: 190.48,
+    SurfacePressure: 0.0627 * 101325,
+    Landable: true,
+  } as unknown as PlanetScan;
+  const run = (orbitLs: number) =>
+    speciesMatchesCriteria(speculumi, scan, resolvePlanetTemperatureBand(scan, null), null, {
+      regionName: "Aquila's Halo",
+      orbitDistanceFromParentStarLs: orbitLs,
+      surfacePressureAtm: 0.0627,
+    } as SpeciesMatchContext);
+
+  it("is below the uncommon limit there, yet logged", () => {
+    const v = tierRegionalPresence(root, "Aquila's Halo", "clypeus_clypeus_speculumi")!;
+    expect(v.presence).toBe("absent");
+    expect(v.count).toBeGreaterThanOrEqual(1);
+  });
+
+  it("is not demoted by the region when the body meets everything else: logged there at least once", () => {
+    const r = run(3_558);
+    expect(r.ok).toBe(true);
+    expect(r.reasons.some((x) => x.field === "Region")).toBe(true);
+  });
+
+  it("still carries the region's objection beside another one", () => {
+    const r = run(1_000);
+    expect(r.ok).toBe(false);
+    expect(r.reasons.some((x) => x.field === "Region")).toBe(true);
   });
 });
