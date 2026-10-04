@@ -165,14 +165,18 @@
         "atmosphere": [
           "None",
           "Carbon Dioxide",
-          "Sulphur Dioxide"
+          "Sulphur Dioxide",
+          "Argon",
+          "Argon-rich",
+          "Oxygen"
         ],
         "temperature_K": {
           "min": 200,
           "max": 500
         },
         "matchContextNotes": [
-          "Measured 2026-09-28 (owner: \"base it on data\"): Bioforge 200-500 K for all eight species; Spansh dump single-species bodies 200-500 K, 99-100 % with volcanism of some kind, rocky and high-metal bodies both, 0-20 % on thin carbon dioxide or sulphur dioxide."
+          "Measured 2026-09-28 (owner: \"base it on data\"): Bioforge 200-500 K for all eight species; Spansh dump single-species bodies 200-500 K, 99-100 % with volcanism of some kind, rocky and high-metal bodies both, 0-20 % on thin carbon dioxide or sulphur dioxide.",
+          "Measured 2026-10-04 (owner: no misses): of 1,559 confirmed single-species bodies, 5 on thin Argon-rich, 2 on thin Argon and 1 on thin Oxygen, all high-metal-content worlds with rocky magma in Empyrean Straits; each showed only Albidum after a DSS until these were listed."
         ]
       }
     },
@@ -185,15 +189,19 @@
         "volcanismActiveRequired": true,
         "planet_types": [
           "Rocky",
-          "High Metal Content"
+          "High Metal Content",
+          "Rocky Ice"
         ],
         "atmosphere": [
           "None",
           "Carbon Dioxide",
-          "Sulphur Dioxide"
+          "Sulphur Dioxide",
+          "Argon-rich",
+          "Oxygen"
         ],
         "matchContextNotes": [
-          "Measured 2026-09-28 (owner: \"base it on data\"): Bioforge 200-500 K for all eight species; Spansh dump single-species bodies 200-500 K, 99-100 % with volcanism of some kind, rocky and high-metal bodies both, 0-20 % on thin carbon dioxide or sulphur dioxide."
+          "Measured 2026-09-28 (owner: \"base it on data\"): Bioforge 200-500 K for all eight species; Spansh dump single-species bodies 200-500 K, 99-100 % with volcanism of some kind, rocky and high-metal bodies both, 0-20 % on thin carbon dioxide or sulphur dioxide.",
+          "Measured 2026-10-04 (owner: no misses): of 309 confirmed single-species bodies, 2 rocky ice worlds, 1 thin Argon-rich and 1 thin Oxygen atmosphere, all in Galactic Centre with rocky magma; each showed only Albidum after a DSS until these were listed."
         ],
         "temperature_K": {
           "min": 200,
