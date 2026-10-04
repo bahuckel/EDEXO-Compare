@@ -531,7 +531,7 @@ export function GalaxyMap3D() {
             x: s.pos[0],
             y: s.pos[1],
             z: s.pos[2],
-            color: s.edsm === false ? [0.36, 0.9, 0.46] : NAVROUTE_COLOUR,
+            color: s.edsm === false ? [0.36, 0.9, 0.46] : s.visited ? [0.62, 0.66, 0.74] : NAVROUTE_COLOUR,
             size: 7,
           }))
         : [];
@@ -858,7 +858,7 @@ export function GalaxyMap3D() {
     if (layer === "navroute") {
       const s = navShown.find((x) => String(x.address) === id);
       return s
-        ? { address: s.address, name: s.name, starClass: s.starClass, x: s.pos[0], y: s.pos[1], z: s.pos[2], visited: false }
+        ? { address: s.address, name: s.name, starClass: s.starClass, x: s.pos[0], y: s.pos[1], z: s.pos[2], visited: !!s.visited }
         : null;
     }
     return null;
@@ -1288,6 +1288,7 @@ export function GalaxyMap3D() {
         <aside className="g3d-drawer g3d-drawer--filter" aria-label="NavRoute" data-testid="g3d-navroute">
           <MenuHead title="NavRoute" help={G3D_HELP.navroute} />
           <GalaxyNavRoutePanel
+            next={route?.navRoute ?? []}
             onShown={setNavShown}
             onFly={(s) => engine.current?.flyTo({ x: s.pos[0], y: s.pos[1], z: s.pos[2] }, 250)}
           />

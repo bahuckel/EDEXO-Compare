@@ -1151,3 +1151,86 @@
 .g3d-navroute__edsm--known {
   color: var(--text-dim);
 }
+
+/* NavRoute: Previous / Next (owner, 2026-10-04). The one not chosen shrinks into a "‹" back. */
+.g3d-nr-halves {
+  display: flex;
+  gap: 6px;
+}
+.g3d-nr-half {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 50%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 6px 10px;
+  overflow: hidden;
+  border: 1px solid var(--accent-a45);
+  background: var(--accent-a06);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    flex-basis 0.28s ease,
+    flex-grow 0.28s ease,
+    padding 0.28s ease,
+    background 0.15s ease;
+}
+.g3d-nr-half:hover,
+.g3d-nr-half:focus-visible {
+  background: var(--accent-a25);
+  color: var(--accent-bright);
+}
+.g3d-nr-half--on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b0806;
+}
+.g3d-nr-half--on:hover {
+  background: var(--accent);
+  color: #0b0806;
+}
+.g3d-nr-half__text {
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+.g3d-nr-half__text small {
+  opacity: 0.8;
+  font-size: var(--fs-xs);
+}
+.g3d-nr-half__back {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.g3d-nr-half--shrunk {
+  flex: 0 0 38px;
+  padding: 0;
+}
+.g3d-nr-half--shrunk .g3d-nr-half__text {
+  opacity: 0;
+}
+.g3d-nr-half--shrunk .g3d-nr-half__back {
+  opacity: 1;
+}
+.g3d-navroute__sub {
+  display: block;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+@media (prefers-reduced-motion: reduce) {
+  .g3d-nr-half,
+  .g3d-nr-half__text,
+  .g3d-nr-half__back {
+    transition: none;
+  }
+}

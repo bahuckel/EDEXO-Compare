@@ -478,7 +478,7 @@ test("galaxy 3D: the Filter drawer lights the systems that have what was ticked"
   The NavRoute star finder (owner, 2026-10-04): the systems of the routes he plotted, by star type,
   with EDSM's answer, marked on the map. The log is written into the test's own profile first.
 */
-test("galaxy 3D: the NavRoute drawer lists the plotted systems by star type", async ({ page }) => {
+test("galaxy 3D: NavRoute — Next is the plotted route with EDSM checks, Previous the systems you have been to", async ({ page }) => {
   const errors = watchErrors(page);
   const at = "2026-10-04T10:00:00Z";
   const sys = (address: number, name: string, starClass: string, edsm?: boolean) => ({
@@ -491,23 +491,38 @@ test("galaxy 3D: the NavRoute drawer lists the plotted systems by star type", as
     routes: 1,
     ...(edsm === undefined ? {} : { edsm, edsmAt: at }),
   });
+  const plotted = [sys(1, "Sol", "G", true), sys(2, "Neut A", "N", false), sys(3, "Neut B", "N"), sys(4, "Hole C", "H", true)];
   writeFileSync(
     path.join(tmpdir(), "edexo-e2e-profile", "edexo-navroutes.json"),
-    JSON.stringify({
-      formatVersion: 1,
-      routes: [{ at, from: "Sol", to: "Hole C", systems: [1, 2, 3, 4] }],
-      systems: [sys(1, "Sol", "G", true), sys(2, "Neut A", "N", false), sys(3, "Neut B", "N"), sys(4, "Hole C", "H", true)],
-    }),
+    JSON.stringify({ formatVersion: 1, routes: [{ at, from: "Sol", to: "Hole C", systems: [1, 2, 3, 4] }], systems: plotted }),
   );
+  // The fixture journal has no NavRoute.json: the route poll is given one.
+  await page.route("**/api/galaxy/route", async (route) => {
+    const res = await route.fetch();
+    const body = (await res.json()) as Record<string, unknown>;
+    body.navRoute = plotted.map((s) => ({
+      address: s.address,
+      name: s.name,
+      starClass: s.starClass,
+      x: s.pos[0],
+      y: s.pos[1],
+      z: s.pos[2],
+      visited: s.address === 1,
+    }));
+    await route.fulfill({ response: res, json: body });
+  });
   await page.setViewportSize({ width: 1400, height: 820 });
   await page.goto("/?screen=galaxy");
-  type G = { stats: () => { phase: string }; marker: (l: string) => unknown };
+  type G = { stats: () => { phase: string } };
   await expect
     .poll(async () => page.evaluate(() => (window as unknown as { __galaxy?: G }).__galaxy?.stats().phase), { timeout: 60_000 })
     .toBe("ready");
-  await page.getByRole("button", { name: "NavRoute" }).click();
+  await page.getByRole("button", { name: "NavRoute", exact: true }).click();
   const drawer = page.getByTestId("g3d-navroute");
-  await expect(drawer).toContainText("4 systems from 1 route");
+  await drawer.getByRole("button", { name: "Next", exact: true }).click();
+  // Previous shrank into a "‹" that brings both back.
+  await expect(drawer.getByRole("button", { name: "Back to Previous and Next" })).toBeVisible();
+  await expect(drawer).toContainText("4 systems on the route plotted now", { timeout: 15_000 });
   await drawer.getByRole("button", { name: /^N 2/ }).click();
   await expect(drawer.locator(".g3d-navroute__item")).toHaveCount(2);
   await drawer.getByLabel("EDSM").selectOption("missing");
@@ -517,6 +532,14 @@ test("galaxy 3D: the NavRoute drawer lists the plotted systems by star type", as
   await drawer.getByLabel("EDSM").selectOption("unchecked");
   await expect(drawer.getByRole("button", { name: "Check EDSM (1)" })).toBeEnabled();
   await page.screenshot({ path: `${OUT}/galaxy-3d-navroute.png` });
+
+  // Back, then Previous: your own systems by date range, no EDSM.
+  await drawer.getByRole("button", { name: "Back to Previous and Next" }).click();
+  await drawer.getByRole("button", { name: "Previous", exact: true }).click();
+  await drawer.getByRole("button", { name: "All", exact: true }).click();
+  await expect(drawer.locator(".g3d-navroute__item").first()).toContainText("Smoke Test", { timeout: 15_000 });
+  await expect(drawer.getByLabel("EDSM")).toHaveCount(0);
+  await expect(drawer.getByRole("button", { name: /^Check EDSM/ })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
