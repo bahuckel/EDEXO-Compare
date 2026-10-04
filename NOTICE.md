@@ -18,7 +18,9 @@ on this body" is a question data can answer, and its route exports are the corpu
 this app is measured against — 47,983 confirmed sightings across 13,789 bodies at the time of
 writing. Every calibration figure quoted in the README traces back to a Spansh export. The list of
 systems Frontier populated, which the app ships to tell the Bubble from player colonies, comes from
-Spansh's system search (`is_colonised`); `scripts/build-developer-systems.mjs` rebuilds it.
+Spansh's system search (`is_colonised`); `scripts/build-developer-systems.mjs` rebuilds it. The galaxy
+map's star and body filters read `data/galaxy/system-traits.bin.gz`, each system's star classes and
+planet types from Spansh's galaxy dump (`scripts/build-system-traits.ts`).
 
 ### EDSM — [edsm.net](https://edsm.net)
 

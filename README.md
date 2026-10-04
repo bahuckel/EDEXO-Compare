@@ -122,24 +122,25 @@ before it shipped.
 
 No number reaches the screen as a percentage unless the probe has calibrated it.
 
-### The 5 % chance floor
+### The 1 % chance floor
 
 Every candidate carries a **Chance here** figure — how often a species with this profile turns out to
 actually be on a body like this one. It is the one percentage in the app that has been calibrated
 against real outcomes: on bodies where every species is known, the 90-100 % band comes in at 97.8 %
 and the 0-10 % band at 8.9 %.
 
-Candidates below **5 %** are moved behind _show unlikely_ rather than listed. A row at 2.7 % beside a
-row at 100 % is the model telling you it has already decided, and putting them on the same list asks
-you to do that arithmetic again.
+Candidates below **1 %** are moved behind _show unlikely_ rather than listed. The rule is no misses
+first: a list of three where one is right beats a list of one that is wrong. The floor was 5 % until
+1.2.11; measured over 2,960 bodies of every genus, 5 % hid the right species on 25 of them, 1 % on 4,
+for one wrong row more on 2.5 % of the bodies.
 
 The floor never empties a panel — if nothing clears it, the single best candidate stays — never
 touches a row the model has no opinion about, and never argues with a species you have scanned on
-foot yourself.
+foot yourself. Checked against other commanders' finds on EDDN: after a DSS, 6,599 of 6,599 species
+were listed.
 
 To change it, edit `PRESENCE_FLOOR_PCT` in [`src/server/presenceFloors.ts`](src/server/presenceFloors.ts) and
-rebuild. Measured against 378 species the author later confirmed on foot, a 5 % floor moved exactly
-one of them behind _show unlikely_.
+rebuild.
 
 ## EDSM
 
@@ -269,7 +270,7 @@ docs/archive/   internal planning notes — not tracked, see .gitignore
 
 ## Credits
 
-Built on four communities' work, none of them affiliated with this project:
+Built on these communities' work, none of them affiliated with this project:
 
 - **[Spansh](https://spansh.co.uk)** — the reason it was started, and the corpus every prediction is
   measured against.
@@ -277,6 +278,9 @@ Built on four communities' work, none of them affiliated with this project:
 - **[Canonn Research Group](https://canonn.science)** — the published species conditions every gate
   in this app started from.
 - **[ED-DSN](https://ed-dsn.net)** — the species photographs.
+- **[EDDN](https://github.com/EDCD/EDDN)** (Elite Dangerous Data Network) — other commanders' live
+  scans, the test set every prediction is checked against.
+- **[EDAstro](https://edastro.com)** — the codex sightings behind the galaxy map's index.
 
 Full attribution in [NOTICE.md](NOTICE.md).
 
