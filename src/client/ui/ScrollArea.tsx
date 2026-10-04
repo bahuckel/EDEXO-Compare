@@ -12,14 +12,19 @@ export function ScrollArea({
   className,
   children,
   resetKey,
+  onView,
 }: {
   className?: string;
   children: ReactNode;
   /** Change it to scroll back to the top (a new tab, a new search). */
   resetKey?: unknown;
+  /** The viewport's scroll position and height, on every scroll and resize — for a windowed list. */
+  onView?: (scrollTop: number, clientHeight: number) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [more, setMore] = useState({ down: false, right: false });
+  const onViewRef = useRef(onView);
+  onViewRef.current = onView;
 
   const measure = useCallback(() => {
     const el = ref.current;
@@ -27,6 +32,7 @@ export function ScrollArea({
     const down = el.scrollTop + el.clientHeight < el.scrollHeight - 2;
     const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
     setMore((m) => (m.down === down && m.right === right ? m : { down, right }));
+    onViewRef.current?.(el.scrollTop, el.clientHeight);
   }, []);
 
   useEffect(() => {

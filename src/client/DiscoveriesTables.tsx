@@ -21,7 +21,7 @@
  */
 import { BODY_FEATURES, type BodyFeatureKey } from "../shared/bodyFeatures.js";
 import { greenGiantLabel, type GreenGiantMark, type GreenGiantVerdict } from "@shared/greenGasGiant";
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DiscoveriesDTO, DiscoveryBodyRow, DiscoveryStarRow, DiscoverySystemRow } from "@shared/types";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { CopySystemButton } from "./CopySystemButton";
@@ -129,6 +129,28 @@ export function Table<T>({
   }, [rows, columns, sort]);
 
   const shown = sorted.slice(0, PAGE);
+  /*
+    The table draws only the rows in view, plus a margin (owner, 2026-10-04, plan 3.4): every row is
+    there to scroll to, with no first-300 cap, and a 20,000-body log costs what a screenful does.
+    Rows do not wrap (.disc-td is nowrap), so one measured height places them all.
+  */
+  const [view, setView] = useState({ top: 0, height: 600 });
+  const [rowH, setRowH] = useState(28);
+  const firstRow = useRef<HTMLTableRowElement>(null);
+  const onView = useCallback(
+    (top: number, height: number) =>
+      setView((v) =>
+        Math.floor(v.top / rowH) === Math.floor(top / rowH) && v.height === height ? v : { top, height },
+      ),
+    [rowH],
+  );
+  const OVERSCAN = 20;
+  const from = Math.max(0, Math.floor(view.top / rowH) - OVERSCAN);
+  const to = Math.min(sorted.length, from + Math.ceil(view.height / rowH) + 2 * OVERSCAN);
+  useLayoutEffect(() => {
+    const h = firstRow.current?.getBoundingClientRect().height ?? 0;
+    if (h > 4 && Math.abs(h - rowH) > 0.5) setRowH(h);
+  }, [rowH, from, to]);
   if (rows.length === 0) return <p className="dim disc-empty">{empty}</p>;
 
   const exportCsv = csvName ? (
@@ -201,8 +223,8 @@ export function Table<T>({
   return (
     <>
       {exportCsv}
-      <ScrollArea className="disc-table-wrap" resetKey={resetKey}>
-        <table className="disc-table">
+      <ScrollArea className="disc-table-wrap" resetKey={resetKey} onView={onView}>
+        <table className="disc-table" aria-rowcount={sorted.length + 1}>
           <thead>
             <tr>
               {columns.map((c) => (
@@ -211,8 +233,9 @@ export function Table<T>({
             </tr>
           </thead>
           <tbody>
-            {shown.map((r) => (
-              <tr key={rowKey(r)}>
+            {from > 0 ? <tr aria-hidden style={{ height: from * rowH }} /> : null}
+            {sorted.slice(from, to).map((r, i) => (
+              <tr key={rowKey(r)} ref={i === 0 ? firstRow : undefined}>
                 {columns.map((c) => (
                   <td key={c.key} className={c.numeric ? "disc-td disc-td--num" : "disc-td"}>
                     {c.render(r)}
@@ -220,10 +243,10 @@ export function Table<T>({
                 ))}
               </tr>
             ))}
+            {to < sorted.length ? <tr aria-hidden style={{ height: (sorted.length - to) * rowH }} /> : null}
           </tbody>
         </table>
       </ScrollArea>
-      {more}
     </>
   );
 }

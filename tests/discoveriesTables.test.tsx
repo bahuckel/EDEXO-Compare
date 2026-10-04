@@ -217,7 +217,7 @@ describe("the discoveries tables", () => {
     r.unmount();
   });
 
-  it("caps what reaches the DOM and says how much it left out", () => {
+  it("draws only the rows in view, and every row is there to scroll to (plan 3.4, 2026-10-04)", () => {
     // 18,127 rows is the real number this has to survive.
     const many: DiscoveriesDTO = {
       ...DATA,
@@ -226,9 +226,12 @@ describe("the discoveries tables", () => {
       ),
     };
     const r = render(many, "bodies");
-    expect(r.rows()).toHaveLength(300);
-    // Locale-agnostic on purpose: jsdom groups digits differently from a browser, and the claim
-    // here is that the count is stated at all, not how it is punctuated.
+    const drawn = r.rows().filter((tr) => !tr.hasAttribute("aria-hidden"));
+    expect(drawn.length).toBeGreaterThan(0);
+    expect(drawn.length).toBeLessThan(100);
+    // The rest are a spacer of their height, not missing: the table says how many there are.
+    expect(r.host.querySelector("table")?.getAttribute("aria-rowcount")).toBe("1201");
+    expect(r.rows().some((tr) => tr.hasAttribute("aria-hidden"))).toBe(true);
     expect(r.host.textContent?.replace(/[\u202f\u00a0,]/g, "")).toContain("1200");
     r.unmount();
   });
