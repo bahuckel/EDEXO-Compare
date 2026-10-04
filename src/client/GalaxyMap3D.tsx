@@ -120,6 +120,8 @@ export function GalaxyMap3D() {
   const [carriersOn, setCarriersOn] = usePersistedState("galaxy.layer.carriers", false, isBool);
   const [bookmarksOn, setBookmarksOn] = usePersistedState("galaxy.layer.bookmarks", false, isBool);
   const [gggOn, setGggOn] = usePersistedState("galaxy.layer.ggg", false, isBool);
+  /* The status bar's legend folds away (owner, 2026-10-04, plan 3.7), remembered. */
+  const [legendOn, setLegendOn] = usePersistedState("galaxy.legendOpen", true, isBool);
   /* The Filter drawer (owner, 2026-10-04): remembered between opens, so the button says when one is on. */
   const [filter, setFilter] = usePersistedState("galaxy.filter", EMPTY_GALAXY_FILTER, isGalaxyFilterState);
   const [filterMatched, setFilterMatched] = useState<number | null>(null);
@@ -1293,7 +1295,16 @@ export function GalaxyMap3D() {
             {stats.distanceLy.toLocaleString()} ly away · tilt {stats.tiltDeg}°
           </span>
         )}
-        {codexOn ? (
+        <button
+          type="button"
+          className="g3d-legend-toggle"
+          aria-expanded={legendOn}
+          onClick={() => setLegendOn(!legendOn)}
+          title={legendOn ? "Hide the legend" : "Show what the colours mean"}
+        >
+          {legendOn ? "▾" : "▸"} Legend
+        </button>
+        {!legendOn ? null : codexOn ? (
           <span className="g3d-legend">
             <i className="g3d-dot g3d-dot--todo" /> nothing logged <i className="g3d-dot g3d-dot--partial" /> some{" "}
             <i className="g3d-dot g3d-dot--done" /> all
@@ -1312,13 +1323,13 @@ export function GalaxyMap3D() {
             <i className="g3d-ramp g3d-ramp--species" /> 1 → 8+ species
           </span>
         )}
-        {layers.you && mine.size ? (
+        {legendOn && layers.you && mine.size ? (
           <span className="g3d-legend">
             You: <i className="g3d-dot g3d-dot--waiting" /> waiting <i className="g3d-dot g3d-dot--done" /> done{" "}
             <i className="g3d-dot g3d-dot--visited" /> visited
           </span>
         ) : null}
-        {search ? (
+        {legendOn && search ? (
           <span className="g3d-legend">
             <i className="g3d-dot g3d-dot--search" /> {search.label}
           </span>

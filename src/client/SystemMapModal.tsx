@@ -66,8 +66,15 @@ function SystemMapLegend({ plusMinCr, plusPlusMinCr }: { plusMinCr: number; plus
     ["Neutron", "N"],
     ["Black hole", "H"],
   ];
+  // Foldable, remembered (owner, 2026-10-04, plan 3.7): once learnt, the map gets the room back.
+  const [open, setOpen] = usePersistedState("systemMap.legendOpen", true, isBool);
   return (
-    <div className="system-map-legend">
+    <details
+      className="system-map-legend"
+      open={open}
+      onToggle={(ev) => setOpen((ev.currentTarget as HTMLDetailsElement).open)}
+    >
+      <summary className="system-map-legend-summary small-caps dim">Legend</summary>
       <div className="system-map-legend-row">
         <span className="dim small-caps">Stars</span>
         {stars.map(([label, k]) => (
@@ -147,7 +154,7 @@ function SystemMapLegend({ plusMinCr, plusPlusMinCr }: { plusMinCr: number; plus
         Scroll to zoom at the cursor · drag to pan · click a body for its data · arrow keys move between
         bodies · + / − zoom · 0 or double-click fits the map
       </div>
-    </div>
+    </details>
   );
 }
 

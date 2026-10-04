@@ -391,6 +391,14 @@ a.appbar-icon-btn {
   margin-top: 0.5rem;
   font-size: var(--fs-sm);
 }
+.system-map-legend-summary {
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+}
+.system-map-legend-summary:hover {
+  color: var(--accent-bright);
+}
 
 .system-map-legend-row {
   display: flex;

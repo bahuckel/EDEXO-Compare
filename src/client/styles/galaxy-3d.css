@@ -142,6 +142,17 @@
   align-items: center;
   gap: 6px;
 }
+.g3d-legend-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  cursor: pointer;
+}
+.g3d-legend-toggle:hover {
+  color: var(--accent-bright);
+}
 .g3d-dot {
   display: inline-block;
   width: 8px;
