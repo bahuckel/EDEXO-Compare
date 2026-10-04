@@ -9,6 +9,9 @@
  * Output (committed, shipped with the app; originals are never modified):
  *   data/species/<genus>/<genus>_photos/_thumbs/<name>.webp   320 px — encyclopedia rows
  *   data/species/<genus>/<genus>_photos/_cards/<name>.webp   1024 px — species card artwork
+ *   data/species/<genus>/<genus>_photos/_large/<name>.webp   2048 px — the photo lightbox (not committed:
+ *       ~25 MB; every dist script runs this first, and builds ship it in place of the 105 MB of
+ *       originals — owner, 2026-10-04: 1024 px looked soft on a 4K screen)
  *   fss-required.webp                                                — CSS backdrop
  *   public/edexo-icon-124.webp                                       — 62 px header mark at 2x
  *
@@ -27,8 +30,10 @@ const force = process.argv.includes("--force");
 
 const THUMB_DIR = "_thumbs";
 const CARD_DIR = "_cards";
+const LARGE_DIR = "_large";
 const THUMB_WIDTH = 320;
 const CARD_WIDTH = 1024;
+const LARGE_WIDTH = 2048;
 const IMAGE_RE = /\.(png|jpe?g|webp)$/i;
 
 let made = 0;
@@ -71,6 +76,8 @@ async function speciesPhotos() {
       const cards = join(photosDir, CARD_DIR);
       mkdirSync(thumbs, { recursive: true });
       mkdirSync(cards, { recursive: true });
+      const large = join(photosDir, LARGE_DIR);
+      mkdirSync(large, { recursive: true });
       for (const file of readdirSync(photosDir)) {
         if (!IMAGE_RE.test(file)) continue;
         const src = join(photosDir, file);
@@ -78,6 +85,7 @@ async function speciesPhotos() {
         const stem = basename(file, extname(file));
         await derive(src, join(thumbs, `${stem}.webp`), THUMB_WIDTH, 72);
         await derive(src, join(cards, `${stem}.webp`), CARD_WIDTH, 76);
+        await derive(src, join(large, `${stem}.webp`), LARGE_WIDTH, 74);
       }
     }
   }

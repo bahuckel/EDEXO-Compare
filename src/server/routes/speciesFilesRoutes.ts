@@ -46,10 +46,12 @@ export function registerSpeciesFilesRoutes(
         res.status(404).end();
         return;
       }
-      // ?size=thumb|card serves the generated WebP derivative (npm run images) and silently falls
-      // back to the original, so hand-added artwork keeps working until derivatives are rebuilt.
+      // ?size=thumb|card|large serves the generated WebP derivative (npm run images) and silently
+      // falls back to the original, so hand-added artwork keeps working until derivatives are rebuilt.
+      // "large" is the lightbox's 2048 px (owner, 2026-10-04), generated at build time.
       const size = String(req.query.size ?? "");
-      const derivativeDir = size === "thumb" ? "_thumbs" : size === "card" ? "_cards" : null;
+      const derivativeDir =
+        size === "thumb" ? "_thumbs" : size === "card" ? "_cards" : size === "large" ? "_large" : null;
       let abs = path.join(photosDir, file);
       if (derivativeDir) {
         const stem = file.replace(/\.[^.]+$/, "");
@@ -66,13 +68,19 @@ export function registerSpeciesFilesRoutes(
         res.status(403).end();
         return;
       }
-      if (!derivativeDir) {
-        // A packaged build ships the 1024 px card in place of the original (review F-4.1c).
-        const card = path.join(photosDir, "_cards", `${file.replace(/\.[^.]+$/, "")}.webp`);
-        try {
-          await fsp.stat(abs);
-        } catch {
-          if (assertInsideDir(photosDir, card)) abs = card;
+      {
+        // A packaged build ships the 2048 px lightbox image, else the 1024 px card, in place of the
+        // original (review F-4.1c): a request for the original, or for a derivative not generated on
+        // this tree, lands on the best of them that exists.
+        const stem = file.replace(/\.[^.]+$/, "");
+        for (const dir of ["_large", "_cards"]) {
+          try {
+            await fsp.stat(abs);
+            break;
+          } catch {
+            const alt = path.join(photosDir, dir, `${stem}.webp`);
+            if (assertInsideDir(photosDir, alt)) abs = alt;
+          }
         }
       }
       try {

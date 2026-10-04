@@ -119,3 +119,6 @@ photo-contributions.txt
 # Local dev-harness launch config (Browser pane); not part of the app.
 /.claude/launch.json
 /.claude/dev-isolated.cmd
+
+# 2048 px lightbox photos (npm run images; each dist script runs it). ~25 MB, generated, not committed.
+data/species/*/*_photos/_large/

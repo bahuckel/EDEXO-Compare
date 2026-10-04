@@ -13,6 +13,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { PhotoCredit, type PhotoContributor } from "./photoCredit";
+import { speciesPhotoVariant } from "./speciesPhotoVariant";
 import { useModal } from "./ui/useModal";
 
 export function PhotoGallery({
@@ -105,7 +106,7 @@ export function PhotoGallery({
         */}
         {variantByUrl?.[url] ? <p className="photo-lightbox-what">{variantByUrl[url]}</p> : null}
         <div className="photo-gallery-frame">
-          <img src={url} alt="" className="photo-lightbox-img" />
+          <img src={speciesPhotoVariant(url, "large")} alt="" className="photo-lightbox-img" />
           {count > 1 ? (
             <>
               <button

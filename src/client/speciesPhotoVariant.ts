@@ -5,10 +5,10 @@
  *
  *   "thumb" — 320 px, encyclopedia rows
  *   "card"  — 1024 px, species card artwork
- *
- * Full-size originals stay in use for the lightbox / zoom views.
+ *   "large" — 2048 px, the lightbox / zoom (owner, 2026-10-04: 1024 px looked soft on 4K); generated
+ *             at build time, so a tree without it gets the original
  */
-export function speciesPhotoVariant(url: string, size: "thumb" | "card"): string {
+export function speciesPhotoVariant(url: string, size: "thumb" | "card" | "large"): string {
   if (!url || !url.startsWith("/species-photos/")) return url;
   return `${url}${url.includes("?") ? "&" : "?"}size=${size}`;
 }
