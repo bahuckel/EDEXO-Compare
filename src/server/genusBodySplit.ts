@@ -172,6 +172,12 @@ export function genusBodyShares(
   const table = load(root)?.genera[genusDataDir];
   if (!table || speciesIds.length === 0) return null;
   const facts = bodyFacts(scan);
+  // A thin atmosphere already says the temperature (thin carbon dioxide: 238-267 K for every Brain
+  // Tree on it), so the band would count one fact twice against a species rare on that air. Brain
+  // Tree Ostrinum on thin-CO2 worlds in Inner Orion Spur is 13 of 160 confirmed bodies (8 %) and read
+  // 0.9 %, under the floor, on 11 of them. Held out (2026-10-04): Brain Trees 22 → 10 not shown of
+  // 4,142, Sinuous Tubers 8 → 7 of 2,709.
+  const airTellsTemperature = facts.atmo != null && facts.atmo !== "none";
   const blend = table.regional;
   const regionKey = blend && regionName ? regionJoinKey(regionName) : null;
   const regional = speciesIds.map((id) => (regionName ? codexRegionSystems(root, regionName, id) : null));
@@ -192,6 +198,7 @@ export function genusBodyShares(
       for (const f of table.features) {
         const v = facts[f];
         if (v == null) continue;
+        if (f === "temp25" && airTellsTemperature) continue;
         const counts = (row[f] as Record<string, number> | undefined) ?? {};
         const values = table.valueCounts[f] ?? 1;
         const galaxyWide = ((counts[v] ?? 0) + 0.5) / (row.n + 0.5 * (values + 1));

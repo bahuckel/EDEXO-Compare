@@ -81,6 +81,15 @@ describe("the split, against the confirmed bodies it was built from", () => {
     expect(s.get(ST("viride"))!).toBeGreaterThan(0.01);
   });
 
+  it("Brain Tree Ostrinum on a thin carbon dioxide world is not counted out twice", () => {
+    // The air already says ~250 K; the temperature band would read that against Ostrinum again.
+    // Truth on such bodies in Inner Orion Spur: 13 Ostrinum beside 147 Roseum (8 %).
+    const ids = ["brain_trees_brain_tree_ostrinum", "brain_trees_brain_tree_roseum"];
+    const body = scan({ AtmosphereType: "CarbonDioxide", Volcanism: "minor rocky magma volcanism", SurfaceTemperature: 254 });
+    const s = genusBodyShares(root, "brain-tree", ids, body, "Inner Orion Spur")!;
+    expect(s.get(ids[0]!)!).toBeGreaterThan(0.01);
+  });
+
   it("shares sum to one, and a genus it does not cover is left alone", () => {
     const s = genusBodyShares(root, "sinuous-tubers", SINUOUS, scan({}), "Empyrean Straits")!;
     expect([...s.values()].reduce((a, x) => a + x, 0)).toBeCloseTo(1, 6);
