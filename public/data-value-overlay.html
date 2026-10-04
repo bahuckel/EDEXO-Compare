@@ -7,15 +7,12 @@
     <!-- One HUD section on its own. The look is hud.css, the section and its data feed are hud/ (main.js mounts it). -->
     <link rel="stylesheet" href="hud.css?v=16" />
   </head>
-  <body>
+  <body data-sections="datavalue">
     <div class="shell" id="shell">
       <div class="panel" id="card" role="status" aria-live="polite">
         <div class="panel__body" id="hud"></div>
       </div>
     </div>
-    <script type="module">
-      import { HUD } from "./hud/main.js";
-      HUD.mount(["datavalue"]);
-    </script>
+    <script type="module" src="hud/boot.js"></script>
   </body>
 </html>
