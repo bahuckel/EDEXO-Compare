@@ -20,7 +20,8 @@ writing. Every calibration figure quoted in the README traces back to a Spansh e
 systems Frontier populated, which the app ships to tell the Bubble from player colonies, comes from
 Spansh's system search (`is_colonised`); `scripts/build-developer-systems.mjs` rebuilds it. The galaxy
 map's star and body filters read `data/galaxy/system-traits.bin.gz`, each system's star classes and
-planet types from Spansh's galaxy dump (`scripts/build-system-traits.ts`).
+planet types from Spansh's galaxy dump (`scripts/build-system-traits.ts`; downloaded with the galaxy
+index from the `galaxy-index` release).
 
 ### EDSM — [edsm.net](https://edsm.net)
 
@@ -53,7 +54,8 @@ licence ([`data/LICENSE-DATA.txt`](data/LICENSE-DATA.txt)). The EDAstro-derived 
 - `src/shared/nspModelData.ts` — region and star-type averages for the phenomena prediction;
 - `data/galaxy/bio-index.bin` — the galaxy map's index of systems with recorded biology: the species
   EDAstro's `codex-data.csv` has in each system, joined with the systems Spansh's galaxy dump shows
-  with biological signals (built for the release builds; not in this repository);
+  with biological signals (a separate download from the app's `galaxy-index` release; not in this
+  repository);
 - `data/exomastery/genus-body-split.json` — per Sinuous Tubers and Brain Tree species, counts of
   planet type, volcanism, temperature band and atmosphere on the Spansh galaxy dump's bodies where
   EDSM's and EDAstro's codex log exactly one species of the genus in the system;
