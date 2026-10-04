@@ -24,6 +24,7 @@ import { resolveUserSettingsJsonPath } from "./paths.js";
 import { spanshDumpToExplorationRecords } from "./spanshSystemHydration.js";
 import { planetScanFromExplorationRecord } from "./footScannedCatalog.js";
 import { genusNameForCodexToken } from "../shared/codexGenusNames.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 const DUMP_URL = "https://spansh.co.uk/api/dump";
 const SYSTEM_URL = "https://spansh.co.uk/api/system";
@@ -279,7 +280,7 @@ export function remoteBodyStates(sys: RemoteSystemRecord): BodyExoState[] {
       if (name) genusHints.push({ Genus: g, Genus_Localised: name });
     }
     out.push({
-      key: `${sys.systemAddress}:${b.bodyId}`,
+      key: bodyKey(sys.systemAddress, b.bodyId),
       bodyName: b.bodyName,
       bodyId: b.bodyId,
       systemAddress: sys.systemAddress,

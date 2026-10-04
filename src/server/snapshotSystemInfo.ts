@@ -25,6 +25,7 @@ import type { GameStateStore } from "./gameState.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import { StarRolesConfig, countPhysicalBodiesInSystemMapTree } from "./systemMap.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 /**
  * One lookup for the life of the process, bound to whichever store is building the snapshot.
@@ -167,10 +168,6 @@ export function buildRemoteView(store: GameStateStore): RemoteViewDTO | null {
     bioBodyCount: sys.bio.length,
     ...(typeof sys.signalBodyCount === "number" ? { signalBodyCount: sys.signalBodyCount } : {}),
   };
-}
-
-export function scanBodyKey(systemAddress: number, bodyId: number): string {
-  return `${systemAddress}:${bodyId}`;
 }
 
 /**
@@ -452,7 +449,7 @@ export function notableBodiesForSystem(
     const tag =
       notableTagForRecord(rec) ?? (green ? greenGiantLabel(green) : null) ?? (features ? features.map((f) => f.label).join(" · ") : null);
     if (!tag) continue;
-    const bk = scanBodyKey(rec.systemAddress, rec.bodyId);
+    const bk = bodyKey(rec.systemAddress, rec.bodyId);
     const archived = archivedIds.has(rec.bodyId);
     const fullName = rec.bodyName?.trim() || `Body ${rec.bodyId}`;
     const bodyLabelShort = shortNotableBodyLabel(fullName, [

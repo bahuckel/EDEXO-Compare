@@ -5,6 +5,7 @@ import { normOrganicToken } from "./organicTracking.js";
 import { readGenusMinSampleDistanceM } from "./speciesTreeLoader.js";
 import type { ExoOrganicTrackerInternal } from "./exoOrganicTracker.js";
 import { getSpeciesDataDir, resolveOrganicSampleSessionPath } from "./paths.js";
+import { bodyIdOfBodyKey, systemAddressOfBodyKey } from "../shared/bodyKey.js";
 
 export const ORGANIC_SAMPLE_SESSION_FORMAT = 1;
 
@@ -236,9 +237,8 @@ export function loadOrganicSampleSessionFromDisk(
   const speciesKeyFromBundle = sep >= 0 ? p.bundleKey.slice(sep + 2) : p.bundleKey;
   if (!p.bundleKey.startsWith(`${p.bodyKey}::`)) return;
 
-  const parts = p.bodyKey.split(":");
-  const addr = parts.length ? Number(parts[0]) : NaN;
-  const bid = parts.length > 1 ? Number(parts[1]) : NaN;
+  const addr = systemAddressOfBodyKey(p.bodyKey);
+  const bid = bodyIdOfBodyKey(p.bodyKey);
   if (!Number.isFinite(addr) || !Number.isFinite(bid)) return;
 
   host.exoOrganicTracker = {

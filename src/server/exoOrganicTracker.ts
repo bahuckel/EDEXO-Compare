@@ -26,6 +26,7 @@ import {
 import { getProjectRoot, getSpeciesDataDir } from "./paths.js";
 import { readGenusMinSampleDistanceM } from "./speciesTreeLoader.js";
 import { gameOrderSpeciesName } from "../shared/codexLog.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 export type ExoOrganicAnchors = { latDeg: number; lonDeg: number; planetRadiusM: number };
 
@@ -99,10 +100,6 @@ const genusMinDistCache = new Map<string, number>();
 
 export function clearExoOrganicGenusMinDistCache(): void {
   genusMinDistCache.clear();
-}
-
-function organicBodyKey(systemAddress: number, bodyId: number): string {
-  return `${systemAddress}:${bodyId}`;
 }
 
 type ExoOrganicJournalStore = ExoOrganicOverlayHost &
@@ -265,7 +262,7 @@ export function restoreOrganicSessionFromJournal(
       const sa = lines[i]!.SystemAddress;
       const bid = lines[i]!.BodyID;
       if (typeof sa !== "number" || typeof bid !== "number") break;
-      const k = organicBodyKey(sa, bid);
+      const k = bodyKey(sa, bid);
       if (surfaceKey === null) surfaceKey = k;
       else if (k !== surfaceKey) break;
       continue;
@@ -275,7 +272,7 @@ export function restoreOrganicSessionFromJournal(
       const sa = lines[i]!.SystemAddress;
       const bid = lines[i]!.Body;
       if (typeof sa === "number" && typeof bid === "number") {
-        const k = organicBodyKey(sa, bid);
+        const k = bodyKey(sa, bid);
         if (surfaceKey === null) surfaceKey = k;
         else if (k !== surfaceKey) break;
       }
@@ -340,7 +337,7 @@ export function restoreOrganicSessionFromJournal(
   const sa = last.SystemAddress;
   const bodyId = last.Body;
   if (typeof sa !== "number" || typeof bodyId !== "number") return false;
-  const bk = organicBodyKey(sa, bodyId);
+  const bk = bodyKey(sa, bodyId);
 
   const speciesKey = speciesKeyFromOrganicJournal(last);
   const genusLoc = typeof last.Genus_Localised === "string" ? last.Genus_Localised.trim() : "";
@@ -429,7 +426,7 @@ export function ingestExoOrganicJournalLine(
   const bodyId = line.Body;
   if (typeof sa !== "number" || typeof bodyId !== "number") return;
 
-  const bk = organicBodyKey(sa, bodyId);
+  const bk = bodyKey(sa, bodyId);
   /*
     What to call the body this scan happened on.
 
@@ -453,7 +450,7 @@ export function ingestExoOrganicJournalLine(
     exist only while they are standing there. Elevation is derived from that gravity against the
     body's own figures — `Altitude` is absent on foot, so there is no other source for it.
   */
-  const bodyRec = store.explorationScans.get(organicBodyKey(sa, bodyId));
+  const bodyRec = store.explorationScans.get(bodyKey(sa, bodyId));
   const conditionsAtPlant = {
     temperatureK: statusFix?.temperatureK ?? null,
     gravityG: statusFix?.gravityG ?? null,

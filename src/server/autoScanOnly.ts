@@ -16,13 +16,14 @@
 import type { BodyExoState } from "../shared/types.js";
 import { planetScanFromExplorationRecord } from "./footScannedCatalog.js";
 import type { GameStateStore } from "./gameState.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 export function autoScanOnlyBodies(store: GameStateStore, systemAddress: number): BodyExoState[] {
   const out: BodyExoState[] = [];
   for (const rec of store.liveScansInSystem(systemAddress)) {
     if (rec.scanType !== "AutoScan" || rec.fssResolved === true) continue;
     if (rec.landable !== true || !rec.planetClass) continue;
-    const key = `${rec.systemAddress}:${rec.bodyId}`;
+    const key = bodyKey(rec.systemAddress, rec.bodyId);
     if (store.fssBodySignalsBodyKeys.has(key)) continue;
     // The store may already hold a body for it (a Scan can create one); it counts only once it knows
     // something about life there.

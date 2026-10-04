@@ -26,10 +26,6 @@ export function isStarOnSystemMap(r: ExplorationScanRecord, starSystemName: stri
   return explorationRecordIsStellar(r) && !explorationRecordHasPlanetSlotDesignation(r, starSystemName);
 }
 
-export function bodyKey(systemAddress: number, bodyId: number): string {
-  return `${systemAddress}:${bodyId}`;
-}
-
 /**
  * Order siblings like the in-game system map: by designation (major index, then moon a…z), not raw
  * `semiMajorAxis` (journal vs synthetic scales differ, so “planet 7 discovered first” wrongly sat beside the star).

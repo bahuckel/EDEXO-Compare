@@ -34,6 +34,7 @@ import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
 import { journalHostObservationFromSpeciesContext } from "./journalHostObservation.js";
 import type { GameStateStore } from "./gameState.js";
 import { AU_METERS, shouldSkipColumn, loadEdsmPlanetStringRows } from "./edsmRowLoader.js";
+import { bodyKey } from "../shared/bodyKey.js";
 export { loadEdsmPlanetStringRows, countEdsmPlanetRows } from "./edsmRowLoader.js";
 
 function deviationToTier(pct: number): EncyclopediaExomasteryFieldDTO["tier"] {
@@ -373,10 +374,6 @@ function buildProfileCategoricalField(
   };
 }
 
-function encyclopediaScanBodyKey(systemAddress: number, bodyId: number): string {
-  return `${systemAddress}:${bodyId}`;
-}
-
 function encyclopediaResolveStarForBodyTab(b: BodyExoState, store: GameStateStore): string {
   const fromBody = b.starSystem?.trim();
   if (fromBody) return fromBody;
@@ -386,7 +383,7 @@ function encyclopediaResolveStarForBodyTab(b: BodyExoState, store: GameStateStor
 }
 
 function encyclopediaBodyTabLabel(b: BodyExoState, store: GameStateStore): string {
-  const sk = encyclopediaScanBodyKey(b.systemAddress, b.bodyId);
+  const sk = bodyKey(b.systemAddress, b.bodyId);
   const rec = store.explorationScans.get(sk);
   const star = encyclopediaResolveStarForBodyTab(b, store);
   const fromRec = rec?.bodyName?.trim();
@@ -422,7 +419,7 @@ export function buildEncyclopediaFocusBodyMatch(
       detail: null,
     };
   }
-  const sk = encyclopediaScanBodyKey(b.systemAddress, b.bodyId);
+  const sk = bodyKey(b.systemAddress, b.bodyId);
   const explorationRec = store.explorationScans.get(sk) ?? null;
   const mergedScan = mergeScanForExomastery(b.scan, explorationRec);
   const tab = encyclopediaBodyTabLabel(b, store);
@@ -544,7 +541,7 @@ export function buildEncyclopediaExomasteryPlanetsPayload(
       if (fb) {
         const b = store.bodies.get(fb);
         if (b) {
-          const sk = encyclopediaScanBodyKey(b.systemAddress, b.bodyId);
+          const sk = bodyKey(b.systemAddress, b.bodyId);
           focusRec = store.explorationScans.get(sk) ?? null;
           focusScan = mergeScanForExomastery(b.scan, focusRec);
         }

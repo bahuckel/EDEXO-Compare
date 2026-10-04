@@ -23,10 +23,7 @@ import { hostStarClassKey } from "../shared/hostStarClass.js";
 import { getProjectRoot } from "./paths.js";
 import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
-
-function bodyKey(systemAddress: number, bodyId: number): string {
-  return `${systemAddress}:${bodyId}`;
-}
+import { bodyKey } from "../shared/bodyKey.js";
 
 /**
  * Per-system index of exploration records, cached on the store's scan revision.

@@ -42,7 +42,6 @@ import { isTerraformableState } from "../shared/terraformState.js";
 import {
   isBeltClusterRecord,
   isStarOnSystemMap,
-  bodyKey,
   canonicalStarSystemNameForMap,
   buildOrbitChildMapFromJournalChains,
   parentToChildrenFromOrbitChild,
@@ -53,6 +52,7 @@ import {
   orbitPrimaryKeyFromRecord,
   inferBarycentreDisplayTag,
 } from "./systemMapOrbitGraph.js";
+import { bodyKey } from "../shared/bodyKey.js";
 import {
   bodyHasJournalExoEvidence,
   exoMatchRun,

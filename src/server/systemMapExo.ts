@@ -16,7 +16,7 @@ import { matchCacheEpoch } from "./matchCacheEpoch.js";
 import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
 import { PriceIndex, lookupPriceStrict } from "./priceList.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
-import { bodyKey } from "./systemMapOrbitGraph.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 /**
  * Is there anything to say about biology on this body?

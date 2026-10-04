@@ -158,6 +158,7 @@ import { edastroGreenFor, nearbyNsp, nspK10Systems } from "./edastroNsp.js";
 import { nspOutlook } from "./nspOutlook.js";
 import { regionForSystem } from "./regionMapData.js";
 import { fetchGalacticRecords, galacticRecords, readGalacticRecordsStatus } from "./galacticRecords.js";
+import { bodyKey } from "../shared/bodyKey.js";
 import {
   applyPersistedUserPrefs as applyUserPrefs,
   persistUserPreferences as writeUserPrefs,
@@ -1589,9 +1590,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       return out;
     },
     setGreenGiantMark: (systemAddress, bodyId, mark) => {
-      const rec = scanOf(`${systemAddress}:${bodyId}`);
+      const rec = scanOf(bodyKey(systemAddress, bodyId));
       if (!rec) return false;
-      greenMarks.set(`${systemAddress}:${bodyId}`, mark, { body: rec.bodyName, system: rec.starSystem });
+      greenMarks.set(bodyKey(systemAddress, bodyId), mark, { body: rec.bodyName, system: rec.starSystem });
       return greenGiantForRecord(rec, greenSources());
     },
     getRecords: () => ({ rows: notices.records(noticesContext), galactic: readGalacticRecordsStatus() }),

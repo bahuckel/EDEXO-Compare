@@ -29,6 +29,7 @@ import { dirname, join } from "node:path";
 import type { ExoDataAlertDTO, FootScannedEntry, PlanetScan, SpeciesDatabase } from "../shared/types.js";
 import { APP_VERSION } from "./appVersion.js";
 import { resolveUserSettingsJsonPath } from "./paths.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 export const EXOMASTERY_FILE_KIND = "edexo-exomastery";
 export const CODEX_FILE_KIND = "edexo-codex";
@@ -390,7 +391,7 @@ function owned(s: SharedExomastery): { list: OwnedFind[]; byBody: Map<string, Ow
     const others = find.commanders.filter((c) => !isOwnCommander(c));
     const row = { find, own: others.length < find.commanders.length, others };
     list.push(row);
-    const bk = `${find.entry.systemAddress}:${find.entry.bodyId}`;
+    const bk = bodyKey(find.entry.systemAddress, find.entry.bodyId);
     byBody.set(bk, [...(byBody.get(bk) ?? []), row]);
   }
   ownedMemo = { key, list, byBody };
@@ -407,7 +408,7 @@ export function sharedFindsOnBody(
   bodyId: number,
   s: SharedExomastery = loadSharedExomastery(),
 ): OwnedFind[] {
-  return owned(s).byBody.get(`${systemAddress}:${bodyId}`) ?? [];
+  return owned(s).byBody.get(bodyKey(systemAddress, bodyId)) ?? [];
 }
 
 /** Your own codex backup(s): keys to add to the journal-built record. */

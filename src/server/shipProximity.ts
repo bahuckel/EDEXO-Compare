@@ -24,6 +24,7 @@
  */
 import type { BodyComputed, ExplorationScanRecord, ShipProximityDTO } from "../shared/types.js";
 import { shortBodyLabel } from "../shared/systemMapLabels.js";
+import { bodyKey } from "../shared/bodyKey.js";
 import {
   barycentreSyntheticBodyId,
   isBarycentreSyntheticBodyId,
@@ -144,7 +145,7 @@ export function buildShipProximity(
       if (d !== null) distanceLsByBodyKey[b.state.key] = d;
     }
     return {
-      originBodyKey: arrival ? `${focusAddr}:${arrival.bodyId}` : null,
+      originBodyKey: arrival ? bodyKey(focusAddr, arrival.bodyId) : null,
       originLabel: label(arrival),
       basis: "arrival",
       distanceLsByBodyKey,
@@ -163,7 +164,7 @@ export function buildShipProximity(
     if (d !== null) distanceLsByBodyKey[b.state.key] = d;
   }
   return {
-    originBodyKey: `${focusAddr}:${at.bodyId}`,
+    originBodyKey: bodyKey(focusAddr, at.bodyId),
     originLabel: label(at),
     basis: "orbits",
     distanceLsByBodyKey,

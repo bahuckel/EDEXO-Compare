@@ -8,6 +8,7 @@ import type { GameStateStore } from "./gameState.js";
 import type { JournalLine, SessionLogDTO } from "../shared/types.js";
 import { lookupPrice, type PriceIndex } from "./priceList.js";
 import { displayLabelFromOrganicLine } from "./organicTracking.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 const MAX_ROWS = 400;
 
@@ -45,7 +46,7 @@ export class SessionLog {
       const system = str(line.StarSystem) || store.currentSystem || "";
       const addr = num(line.SystemAddress) ?? store.currentSystemAddress;
       const bodyId = num(line.BodyID);
-      const key = addr != null && bodyId != null ? `${addr}:${bodyId}` : null;
+      const key = addr != null && bodyId != null ? bodyKey(addr, bodyId) : null;
       const last = this.landings[this.landings.length - 1];
       if (last && last.body === body && Date.parse(at) - Date.parse(last.at) < 5 * 60_000) return false;
       this.push(this.landings, {
@@ -62,7 +63,7 @@ export class SessionLog {
       const addr = num(line.SystemAddress) ?? store.currentSystemAddress;
       const bodyId = num(line.BodyID);
       if (addr == null || bodyId == null) return false;
-      const key = `${addr}:${bodyId}`;
+      const key = bodyKey(addr, bodyId);
       let changed = false;
       for (const l of this.landings) {
         if (l.key === key && !l.firstFootfall && store.firstFootfallBodies.has(key)) {
@@ -78,7 +79,7 @@ export class SessionLog {
       if (!species) return false;
       const addr = num(line.SystemAddress) ?? store.currentSystemAddress;
       const bodyId = num(line.Body);
-      const key = addr != null && bodyId != null ? `${addr}:${bodyId}` : "";
+      const key = addr != null && bodyId != null ? bodyKey(addr, bodyId) : "";
       const dedupe = `${key}|${species.toLowerCase()}`;
       if (this.seenSamples.has(dedupe)) return false;
       this.seenSamples.add(dedupe);

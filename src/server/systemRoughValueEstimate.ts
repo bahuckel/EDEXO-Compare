@@ -9,6 +9,7 @@ import { explorationRecordIsBeltClusterLike, explorationRecordIsStellar } from "
 import { starScanValueCredits } from "./explorationValue.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
 import { isTerraformableState } from "../shared/terraformState.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 const BASE_VALUES: Record<string, number> = {
   "Earthlike body": 1200000,
@@ -117,10 +118,6 @@ export function approximatePlanetaryRoughFromAttachment(recs: RoughPlanetRow[]):
     dss: Math.round(dss),
     current: Math.round(cur),
   };
-}
-
-function bodyKey(sa: number, id: number): string {
-  return `${sa}:${id}`;
 }
 
 /** Planetary heuristic (attachment) + MattG-ish stars → headline FSS/DSS approximation. */

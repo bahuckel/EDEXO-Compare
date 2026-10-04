@@ -4,6 +4,7 @@ import { bodyScanValueCredits, starScanValueCredits, systemHonkCredits, type Hon
 import { explorationRecordIsStellar } from "./explorationStellar.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
 import { isTerraformableState } from "../shared/terraformState.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 /** DSS first-mapper multiplier: use value frozen at `SAAScanComplete` when present (see `dssFirstMapperEligibleByBodyKey`). */
 export function firstMapperForDssPayout(
@@ -129,7 +130,7 @@ function explorationDataValueBreakdownUncached(
   */
   const rows: Iterable<[string, ExplorationScanRecord]> =
     systemAddress != null
-      ? store.liveScansInSystem(systemAddress).map((r) => [`${r.systemAddress}:${r.bodyId}`, r] as [string, ExplorationScanRecord])
+      ? store.liveScansInSystem(systemAddress).map((r) => [bodyKey(r.systemAddress, r.bodyId), r] as [string, ExplorationScanRecord])
       : store.explorationScans;
   for (const [k, r] of rows) {
     if (!unsoldValueCounts(store, k, r)) continue;

@@ -130,11 +130,11 @@ import {
   buildJournalSystems,
   resolveViewingSystemName,
   buildRemoteView,
-  scanBodyKey,
   buildDScanBodiesSnapshot,
   buildLiveShipFuelRangeDTO,
   buildNotableBodiesForFocusedSystem,
 } from "./snapshotSystemInfo.js";
+import { bodyIdOfBodyKey, bodyKey } from "../shared/bodyKey.js";
 export { PRESENCE_FLOOR_PCT, demoteBelowPresenceFloor, GENUS_SHARE_FLOOR_PCT } from "./presenceFloors.js";
 
 /**
@@ -372,7 +372,7 @@ function resolveStarForBodyTab(b: BodyExoState, store: GameStateStore): string {
 }
 
 function bodyTabLabel(b: BodyExoState, store: GameStateStore): string {
-  const sk = scanBodyKey(b.systemAddress, b.bodyId);
+  const sk = bodyKey(b.systemAddress, b.bodyId);
   const rec = store.explorationScans.get(sk);
   const star = resolveStarForBodyTab(b, store);
   const fromRec = rec?.bodyName?.trim();
@@ -583,7 +583,7 @@ export function sweepColourOutliers(store: GameStateStore, db: SpeciesDatabase):
     colourSweepSeen.set(b.key, b.confirmedVariants!.length);
     const scan = mergeScanForExomastery(
       b.scan,
-      store.physicsExplorationScan(scanBodyKey(b.systemAddress, b.bodyId)),
+      store.physicsExplorationScan(bodyKey(b.systemAddress, b.bodyId)),
     );
     if (!scan) continue;
     const ctx = buildSpeciesMatchContext(b, store);
@@ -839,7 +839,7 @@ function computeBody(
 ): BodyComputed {
   const root = getProjectRoot();
   // Physics, not value: a sold system keeps its gravity, materials, composition and host star.
-  const explorationRec = store.physicsExplorationScan(scanBodyKey(b.systemAddress, b.bodyId));
+  const explorationRec = store.physicsExplorationScan(bodyKey(b.systemAddress, b.bodyId));
   const signature = computeBodyCacheSignature(b, store, explorationRec, root);
   const cached = computeBodyCache.get(b.key);
   if (cached && cached.signature === signature) return cached.value;
@@ -896,7 +896,7 @@ function computeBodyUncached(
   const genusFilterActive = !!(b.genusHints && b.genusHints.length > 0);
   const root = getProjectRoot();
   // Physics, not value: a sold system keeps its gravity, materials, composition and host star.
-  const explorationRec = store.physicsExplorationScan(scanBodyKey(b.systemAddress, b.bodyId));
+  const explorationRec = store.physicsExplorationScan(bodyKey(b.systemAddress, b.bodyId));
   const mergedScan = mergeScanForExomastery(b.scan, explorationRec);
 
   if (!mergedScan?.PlanetClass?.trim()) {
@@ -1249,9 +1249,8 @@ function buildOrganicPendingLines(
   const out: OrganicPendingLineItem[] = [];
   for (const p of store.pendingOrganicSales) {
     const body = store.bodies.get(p.bodyKey);
-    const parts = p.bodyKey.split(":");
-    const bodyIdPart = parts.length >= 2 ? parts[1]! : "";
-    const bodyName = body?.bodyName ?? (bodyIdPart ? `Body ${bodyIdPart}` : p.bodyKey);
+    const bid = bodyIdOfBodyKey(p.bodyKey);
+    const bodyName = body?.bodyName ?? (Number.isFinite(bid) ? `Body ${bid}` : p.bodyKey);
     const starSystem = body?.starSystem ?? store.currentSystem ?? "—";
     const base = lookupPrice(prices, p.label, p.label);
     const firstFootfall = store.firstFootfallBodies.has(p.bodyKey);

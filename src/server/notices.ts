@@ -26,6 +26,7 @@ import type { ExplorationScanRecord } from "../shared/types.js";
 import { BODY_FEATURES, bodyFeatures, directParent, featureRecordFromScan, inVoidCross } from "../shared/bodyFeatures.js";
 import { greenCodexId, greenGiantLabel, isK10CodexName, type GreenGiantVerdict } from "../shared/greenGasGiant.js";
 import { carrierServiceLabel } from "../shared/carrierServices.js";
+import { bodyKey as toBodyKey } from "../shared/bodyKey.js";
 import {
   CARRIER_NOTICE_MIN_FROM_SOL_LY,
   DEFAULT_NOTIFY_PREFS,
@@ -395,7 +396,7 @@ export function createNoticesService(opts: {
     const addr = num(line.SystemAddress);
     const bodyId = num(line.BodyID);
     if (addr == null || bodyId == null) return false;
-    const bodyKey = `${addr}:${bodyId}`;
+    const bodyKey = toBodyKey(addr, bodyId);
     if (ctx.isKnownBody(bodyKey)) return false;
     const system = str(line.StarSystem) || ctx.currentSystem().name;
     const body = shortBodyName(str(line.BodyName), system) || `Body ${bodyId}`;
@@ -434,7 +435,7 @@ export function createNoticesService(opts: {
 
     if (BODY_FEATURES.some((f) => state.prefs.features[f.key])) {
       const dp = directParent(line.Parents);
-      const parent = dp && dp.kind !== "Null" ? (ctx.scanOf?.(`${addr}:${dp.id}`) ?? null) : null;
+      const parent = dp && dp.kind !== "Null" ? (ctx.scanOf?.(toBodyKey(addr, dp.id)) ?? null) : null;
       for (const f of bodyFeatures(featureRecordFromScan(line), parent)) {
         if (!state.prefs.features[f.key]) continue;
         added =
@@ -544,7 +545,7 @@ export function createNoticesService(opts: {
     const at = str(line.timestamp) || new Date(now()).toISOString();
     const bodyId = num(line.BodyID);
     if (greenCodexId(name) && bodyId != null) {
-      const bodyKey = `${addr}:${bodyId}`;
+      const bodyKey = toBodyKey(addr, bodyId);
       const body = shortBodyName(ctx.scanOf?.(bodyKey)?.bodyName ?? "", system) || `Body ${bodyId}`;
       return add({
         id: `ggg-codex:${bodyKey}`,

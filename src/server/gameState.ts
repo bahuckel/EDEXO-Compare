@@ -74,6 +74,7 @@ import {
 import { isLegacyPlantKey } from "../shared/achievements.js";
 import { regionForSystem } from "./regionMapData.js";
 import { JOURNAL_MERGE_CACHE_FORMAT } from "./journalMergePayload.js";
+import { bodyKey, systemAddressOfBodyKey } from "../shared/bodyKey.js";
 import type {
   PendingOrganicSample,
   OrganicAnalyseProgress,
@@ -87,9 +88,6 @@ export type {
   SoldTally,
   JournalMergeCachePayload,
 } from "./journalMergePayload.js";
-function bodyKey(systemAddress: number, bodyId: number): string {
-  return `${systemAddress}:${bodyId}`;
-}
 
 /** Recent journal lines (chronological) for foot-catalog naming: find body label on lines *before* each `ScanOrganic` Analyse. */
 const FOOT_JOURNAL_BUFFER_MAX = 600;
@@ -602,7 +600,7 @@ export class GameStateStore {
    */
   observeFootfall(bk: string, value: boolean, source: ObservationSource, seenAt: string): void {
     // A populated or colonising system has no unwalked ground: whatever the scan says, no bonus.
-    if (value === false && this.noFirstFootfallInSystem(Number(bk.split(":")[0]))) {
+    if (value === false && this.noFirstFootfallInSystem(systemAddressOfBodyKey(bk))) {
       value = true;
       source = "populated";
     }
@@ -1167,10 +1165,7 @@ export class GameStateStore {
   setUiSelectedBodyKeyFromClient(key: string | null): boolean {
     if (key !== null) {
       const focus = this.viewingSystemAddress ?? this.currentSystemAddress;
-      const parts = key.split(":");
-      if (focus === null || parts.length < 2) return false;
-      const addr = Number(parts[0]);
-      if (!Number.isFinite(addr) || addr !== focus) return false;
+      if (focus === null || systemAddressOfBodyKey(key) !== focus) return false;
       if (!this.bodies.has(key)) return false;
     }
     if (this.uiSelectedBodyKey === key) return false;
@@ -3140,7 +3135,7 @@ export class GameStateStore {
           const value = Number(bio.Value);
           const bonus = Number(bio.Bonus);
           const credits = (Number.isFinite(value) ? value : 0) + (Number.isFinite(bonus) ? bonus : 0);
-          const addr = Number(removed.bodyKey.split(":")[0]);
+          const addr = systemAddressOfBodyKey(removed.bodyKey);
           if (credits > 0 && Number.isFinite(addr)) {
             this.addSoldTally(this.soldOrganicBySystem, addr, credits, 1, ts);
           }
@@ -3495,7 +3490,7 @@ export class GameStateStore {
   bioBodyState(key: string): BodyExoState | undefined {
     const own = this.bodies.get(key);
     if (own) return own;
-    const addr = Number(key.split(":")[0]);
+    const addr = systemAddressOfBodyKey(key);
     if (!Number.isFinite(addr) || !this.isShowingRemoteSystem(addr)) return undefined;
     return this.remoteBodies(addr).find((b) => b.key === key);
   }
@@ -3561,8 +3556,7 @@ export class GameStateStore {
     if (focus === null) return null;
     const raw = this.bodies.get(pick);
     if (!raw || raw.systemAddress !== focus) return null;
-    const addrPart = pick.split(":")[0];
-    if (!addrPart || Number(addrPart) !== focus) return null;
+    if (systemAddressOfBodyKey(pick) !== focus) return null;
     return pick;
   }
 

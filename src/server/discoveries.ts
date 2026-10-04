@@ -49,6 +49,7 @@ import { regionForSystem } from "./regionMapData.js";
 import { journalSurfaceGravityToG, SOLAR_RADIUS_METERS } from "../shared/journalPhysics.js";
 import { commanderFirstDiscoveredBody } from "./developerPopulatedSystems.js";
 import { isTerraformableState } from "../shared/terraformState.js";
+import { bodyKey } from "../shared/bodyKey.js";
 
 /**
  * Radii are reported against the Sun and the Earth, never in kilometres.
@@ -224,7 +225,7 @@ export function buildDiscoveries(
       const sp = directParent(rec.parents);
       const starHits = bodyFeatures(
         rec,
-        sp && sp.kind !== "Null" ? (scans.get(`${addr}:${sp.id}`) ?? null) : null,
+        sp && sp.kind !== "Null" ? (scans.get(bodyKey(addr, sp.id)) ?? null) : null,
       );
       addFeatureKeys(sys, starHits);
       stars.push({
@@ -307,7 +308,7 @@ export function buildDiscoveries(
     if (footfall) sys.firstFootfalls += 1;
 
     const dp = directParent(rec.parents);
-    const parentRec = dp && dp.kind !== "Null" ? (scans.get(`${addr}:${dp.id}`) ?? null) : null;
+    const parentRec = dp && dp.kind !== "Null" ? (scans.get(bodyKey(addr, dp.id)) ?? null) : null;
     const hits = bodyFeatures(rec, parentRec);
     const features = hits.map((f) => f.label);
     addFeatureKeys(sys, hits);

@@ -6,6 +6,7 @@
  */
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import type { ExplorationScanRecord } from "../shared/types.js";
+import { bodyKey } from "../shared/bodyKey.js";
 import {
   classifyGreenGiant,
   greenCodexFits,
@@ -92,7 +93,7 @@ export function greenGiantForRecord(
   src: GreenGiantSources,
 ): GreenGiantVerdict | null {
   if (!isGggClass(rec.planetClass)) return null;
-  const key = `${rec.systemAddress}:${rec.bodyId}`;
+  const key = bodyKey(rec.systemAddress, rec.bodyId);
   let edastroReport: "only" | "shared" | null = null;
   const ids = (src.edastroGreenFor?.(rec.systemAddress) ?? []).filter((id) => greenCodexFits(id, rec.planetClass));
   if (ids.length) {
