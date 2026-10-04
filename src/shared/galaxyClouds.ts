@@ -393,10 +393,12 @@ export function galaxyCloudSprites(
       if (kind === "emission") {
         // Where the light is sparse the sprites are few: make them wide and soft there, not grains.
         const sparse = Math.min(2.6, Math.max(0.75, Math.pow(0.25 / Math.max(0.02, lum(i)), 0.45)));
-        size = (500 + 900 * r()) * sparse * (1 + 0.5 * smooth(18_000, 50_000, rad)) + 2_600 * Math.exp(-((rad / 3_000) ** 2));
+        // Wide and soft: the drawing on the plane carries the detail, the clouds the volume (owner,
+        // 2026-10-04: "still blotchy").
+        size = (950 + 1_700 * r()) * sparse * (1 + 0.5 * smooth(18_000, 50_000, rad)) + 3_200 * Math.exp(-((rad / 3_000) ** 2));
         y = gauss(r) * h;
       } else {
-        size = (500 + 800 * r()) * (1 + 0.4 * smooth(18_000, 45_000, rad));
+        size = (800 + 1_300 * r()) * (1 + 0.4 * smooth(18_000, 45_000, rad));
         y = gauss(r) * h * 0.55;
       }
       // The sprite's footprint on the drawing, in pixels: its falloff is exp(-8 (d / size)^2).

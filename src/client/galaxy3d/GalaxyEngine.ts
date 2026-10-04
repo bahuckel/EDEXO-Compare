@@ -178,11 +178,12 @@ interface ShownGroup extends Cluster {
 
 /**
  * The Milky Way's two layers (owner, 2026-10-04): the drawing laid faintly on the plane, and the 3D
- * clouds over it. Together about as bright as the drawing alone used to be (0.5): the plane smooths
- * the clouds' patchiness seen from above, the clouds give it depth from the side.
+ * clouds over it. The plane carries the detail and most of the light, the clouds — wide, soft and
+ * fainter since "still blotchy" — the depth seen from the side; together a little brighter than the
+ * drawing alone used to be (0.5), since the clouds spread theirs above and below the plane.
  */
-const PLANE_UNDER_CLOUDS = 0.28;
-const CLOUDS_OVER_PLANE = 0.38;
+const PLANE_UNDER_CLOUDS = 0.4;
+const CLOUDS_OVER_PLANE = 0.24;
 
 export class GalaxyEngine {
   readonly renderer: THREE.WebGLRenderer;
