@@ -41,6 +41,8 @@ export const NOT_SHIPPED = Object.freeze([
   */
   "galaxy/bio-index.bin",
   "galaxy/system-traits.bin.gz",
+  // The game's picture of the galaxy (Frontier's): the maps draw their own since 1.2.12 (galaxyClouds.ts).
+  "galaxy/milkyway-game-normalized.jpg",
 ]);
 
 const EXCLUDED = Object.freeze([...RUNTIME_STATE, ...NOT_SHIPPED]);

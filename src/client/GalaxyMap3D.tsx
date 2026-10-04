@@ -33,7 +33,7 @@ import {
 } from "./GalaxyFilterPanel";
 import { SystemBookmarkButton } from "./BookmarkButton";
 import { CopySystemButton } from "./CopySystemButton";
-import { galaxyImageRect, loadGalaxyImage, REGION_MAP_SIZE, xForRegionPx, zForRegionPz } from "./regionBackdrop";
+import { drawnGalaxyImage, galaxyImageRect, REGION_MAP_SIZE, xForRegionPx, zForRegionPz } from "./regionBackdrop";
 import { regionOutlines, type RegionOutlines } from "@shared/regionBorders.js";
 import { regionIndexForCoords, regionJoinKey, type RegionMapData } from "@shared/regionMap.js";
 import type { GalaxyFindDTO, GalaxyMineDTO, GalaxyNextDTO, GalaxyRouteDTO } from "@shared/types";
@@ -283,7 +283,7 @@ export function GalaxyMap3D() {
     void e.load();
     // Backdrop: the photograph (placed by the same pin as the 2D map) and the region outlines.
     void Promise.all([
-      loadGalaxyImage("/api/galaxy-image").catch(() => null),
+      drawnGalaxyImage().catch(() => null),
       fetch("/api/region-map")
         .then((r) => (r.ok ? (r.json() as Promise<RegionMapData>) : null))
         .catch(() => null),
@@ -1027,7 +1027,7 @@ export function GalaxyMap3D() {
                 <label key={k} className="g3d-row g3d-row--check">
                   <input type="checkbox" className="g3d-row__box" checked={layers[k]} onChange={() => toggle(k)} />
                   <span className="g3d-row__label">
-                    {{ you: "Your systems", photo: "Milky Way photo", borders: "Region borders", groups: "Groups", labels: "Names" }[k]}
+                    {{ you: "Your systems", photo: "Milky Way", borders: "Region borders", groups: "Groups", labels: "Names" }[k]}
                   </span>
                   <span className="g3d-row__val">{layers[k] ? "On" : "Off"}</span>
                 </label>

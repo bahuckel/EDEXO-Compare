@@ -14,7 +14,7 @@ export const G3D_TABS: { key: G3dTabKey; label: string; hint: string }[] = [
   { key: "layers", label: "Layers", hint: "Layers: your systems, borders, names, points of interest, carriers, bookmarks…" },
   { key: "filter", label: "Filter", hint: "Filter: light the systems with a star, a planet type or a plant you pick" },
   { key: "search", label: "Search", hint: "Species search: where a species has been recorded, nearest first" },
-  { key: "navroute", label: "NavRoute", hint: "NavRoute: the star types along the routes you plotted in the game" },
+  { key: "navroute", label: "NavRoute", hint: "NavRoute: the route plotted now (Next) and the systems you have been to (Previous)" },
   { key: "codex", label: "Codex", hint: "Codex: what you have logged, region by region" },
   { key: "targets", label: "Targets", hint: "Biology targets: the nearest system worth flying to, and a plan of several" },
 ];
@@ -28,7 +28,7 @@ export const G3D_HELP: Record<G3dTabKey, string[]> = {
   ],
   layers: [
     "What is drawn over the 5.3 million systems. Your systems: amber where signals still wait for you, green where you mapped or sampled, grey where you only passed through.",
-    "Region borders and names, the groups that stand for many systems when zoomed out, and the Milky Way photograph behind them.",
+    "Region borders and names, the groups that stand for many systems when zoomed out, and the Milky Way drawn behind them.",
     "Points of interest, notable phenomena, fleet carriers, your bookmarks and green gas giants come from lists already on this PC; a layer that needs a download says so.",
   ],
   filter: [
@@ -40,8 +40,9 @@ export const G3D_HELP: Record<G3dTabKey, string[]> = {
     "These are recorded sightings, not the app's predictions.",
   ],
   navroute: [
-    "Every route you plot in the game's galaxy map is kept here with each system's star class — a free survey of the star types along the way, whether you fly it or not.",
-    "Pick a star type to find neutron stars, Wolf-Rayets or black holes. Check EDSM asks which of them EDSM knows: one it does not is a system nobody has reported. ☆ keeps one as a bookmark.",
+    "Next is the route plotted now in the game's galaxy map, read from NavRoute.json with each system's star class and coordinates — a free survey of the star types on the way. Check EDSM asks which of them EDSM knows: one it does not is a system nobody has reported.",
+    "Previous is the systems you have been to, from your journals, over the last day, week, month, three months, year or all of it.",
+    "Pick a star type to find neutron stars, Wolf-Rayets or black holes; ☆ keeps one as a bookmark. Layers → NavRoute – unvisited places the route ahead on the map.",
   ],
   codex: [
     "Your codex, region by region: how many of a region's entries you have logged. Click a region on the map or in the list to see its systems.",

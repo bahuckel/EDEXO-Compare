@@ -84,9 +84,10 @@ const SAG_A_Z_LY = 25899.97;
 /**
  * Where the core sits inside the photograph, in its own pixels.
  *
- * Measured as the luminance-weighted centroid of the brightest half-percent of
- * `milkyway-game-normalized.jpg` (1212x864), which lands within a few pixels of both the single
- * brightest pixel and the centre of the luminous disc. Replace the image and this moves.
+ * Measured as the luminance-weighted centroid of the brightest half-percent of the photograph the
+ * map used until 1.2.12 (1212x864), which lands within a few pixels of both the single brightest
+ * pixel and the centre of the luminous disc. The drawn galaxy (galaxyClouds.ts) keeps its frame, so
+ * the rect below places both the same way.
  */
 const GALAXY_IMAGE_CORE_PX = { x: 587.7, y: 433.7 };
 
@@ -165,6 +166,47 @@ export interface GalaxyImage {
  * region canvas — see {@link galaxyImageRect}. All this has to settle is whether there is a
  * photograph at all and how big it is, so the rect can be worked out before the browser draws it.
  */
+/** The size of the drawn galaxy: the photograph's, so {@link galaxyImageRect} places it unchanged. */
+const DRAWN_W = 1212;
+const DRAWN_H = 864;
+let drawn: Promise<GalaxyImage | null> | null = null;
+
+/**
+ * The Milky Way behind both maps, drawn rather than photographed (owner, 2026-10-04: the game's own
+ * picture of the galaxy is Frontier's, and no longer ships). Rendered once a session in a worker, a
+ * few hundred milliseconds, and handed over as a PNG object URL; both maps share it.
+ */
+export function drawnGalaxyImage(): Promise<GalaxyImage | null> {
+  if (drawn) return drawn;
+  drawn = new Promise<GalaxyImage | null>((resolve) => {
+    if (typeof document === "undefined" || typeof Worker === "undefined") return resolve(null);
+    const frame = {
+      width: DRAWN_W,
+      height: DRAWN_H,
+      coreX: GALAXY_IMAGE_CORE_PX.x,
+      coreY: GALAXY_IMAGE_CORE_PX.y,
+      lyPerPx: GALAXY_IMAGE_SCALE * (4096 / 83),
+    };
+    const worker = new Worker(new URL("./galaxyClouds.worker.ts", import.meta.url), { type: "module" });
+    worker.onerror = () => {
+      worker.terminate();
+      resolve(null);
+    };
+    worker.onmessage = (ev: MessageEvent<ArrayBuffer>) => {
+      worker.terminate();
+      const canvas = document.createElement("canvas");
+      canvas.width = DRAWN_W;
+      canvas.height = DRAWN_H;
+      const g = canvas.getContext("2d");
+      if (!g) return resolve(null);
+      g.putImageData(new ImageData(new Uint8ClampedArray(ev.data), DRAWN_W, DRAWN_H), 0, 0);
+      canvas.toBlob((b) => resolve(b ? { url: URL.createObjectURL(b), width: DRAWN_W, height: DRAWN_H } : null), "image/png");
+    };
+    worker.postMessage(frame);
+  });
+  return drawn;
+}
+
 export async function loadGalaxyImage(url: string): Promise<GalaxyImage | null> {
   if (typeof Image === "undefined") return null;
   try {

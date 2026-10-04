@@ -2,7 +2,7 @@
  * The 3D galaxy map's engine (G1–G2, docs/galaxy-plan-28092026.md): renderer, camera and controls,
  * the layers, picking, groups, labels, and a frame loop that only runs when something changed.
  *
- * Frame: (1) the backdrop — Milky Way photo and region borders — straight to the screen; (2) every
+ * Frame: (1) the backdrop — the drawn Milky Way and region borders — straight to the screen; (2) every
  * system summed additively into a half-float buffer; (3) that buffer tone-mapped and added on top;
  * (4) the group rings and the hover / selection markers, crisp, on top of everything.
  *
@@ -518,7 +518,7 @@ export class GalaxyEngine {
     u.uCellDims!.value.set(b.dims.x, b.dims.y, b.dims.z);
   }
 
-  /** The Milky Way photograph (already placed in ly) and the region outlines. */
+  /** The Milky Way (drawn, galaxyClouds.ts; already placed in ly) and the region outlines. */
   setBackdrop(
     photo: { url: string; x0: number; x1: number; zBottom: number; zTop: number } | null,
     outlines: RegionOutlines | null,
@@ -528,7 +528,7 @@ export class GalaxyEngine {
       tex.colorSpace = THREE.SRGBColorSpace;
       const plane = new THREE.Mesh(
         new THREE.PlaneGeometry(photo.x1 - photo.x0, photo.zTop - photo.zBottom),
-        new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.5, depthWrite: false, depthTest: false }),
+        new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.7, depthWrite: false, depthTest: false }),
       );
       plane.rotation.x = -Math.PI / 2; // into the plane; the image's top toward the game's +z
       plane.position.set((photo.x0 + photo.x1) / 2, -1, -(photo.zTop + photo.zBottom) / 2);
