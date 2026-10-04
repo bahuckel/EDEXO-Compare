@@ -30,6 +30,7 @@ import { Select } from "./ui/Select";
 import { isTerraformableState } from "@shared/terraformState";
 import { readableAtmosphereType } from "@shared/atmosphereLabel";
 import { csvFileName, downloadCsv, toCsv } from "./csv";
+import { isBool, usePersistedState } from "./usePersistedState";
 
 /** Rows rendered at once. Enough to scroll through, far short of what would stall the panel. */
 export const PAGE = 300;
@@ -227,7 +228,13 @@ export function Table<T>({
   );
 }
 
-/** A filter that is on when any chip is picked; an empty set means "everything". */
+/**
+ * A filter that is on when any chip is picked; an empty set means "everything".
+ *
+ * Folded by default behind its label (owner, 2026-10-04: "they take too much space … shown at all
+ * times, + a drop down arrow"). Folded, the row still shows what is picked, so an active filter is
+ * never out of sight; the open/closed state is remembered per label.
+ */
 function ChipRow({
   label,
   options,
@@ -239,11 +246,22 @@ function ChipRow({
   picked: Set<string>;
   onToggle: (key: string) => void;
 }) {
+  const [open, setOpen] = usePersistedState(`discoveries.chips.${label}`, false, isBool);
   if (options.length === 0) return null;
+  const shown = open ? options : options.filter((o) => picked.has(o.key));
   return (
     <div className="disc-chip-row">
-      <span className="small-caps dim disc-chip-label">{label}</span>
-      {options.map((o) => (
+      <button
+        type="button"
+        className="disc-chip-label disc-chip-toggle small-caps dim"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        title={open ? "Hide these filters" : "Show these filters"}
+      >
+        {open ? "▾" : "▸"} {label}
+        {!open ? <span className="tiny"> ({options.length})</span> : null}
+      </button>
+      {shown.map((o) => (
         <button
           key={o.key}
           type="button"

@@ -653,6 +653,19 @@
   min-width: 4.5rem;
 }
 
+/* The row's label is its fold button (owner, 2026-10-04). */
+.disc-chip-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.disc-chip-toggle:hover {
+  color: var(--text);
+}
+
 .disc-chip {
   background: transparent;
   border: 1px solid var(--accent-dim);

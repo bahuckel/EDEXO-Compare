@@ -108,6 +108,8 @@ function render(data: DiscoveriesDTO, tab: "systems" | "bodies" | "stars") {
   act(() => {
     root.render(<DiscoveriesTables data={data} tab={tab} />);
   });
+  // The chip rows fold behind their labels (owner, 2026-10-04); the tests below want them open.
+  for (const b of host.querySelectorAll<HTMLButtonElement>("button.disc-chip-toggle[aria-expanded='false']")) act(() => b.click());
   return {
     host,
     rows: () => [...host.querySelectorAll("tbody tr")],
@@ -189,6 +191,23 @@ describe("the discoveries tables", () => {
     const r = render(DATA, "bodies");
     r.click(r.chip("Earth-like world"));
     expect(r.firstCells()).toEqual(["Beta 1"]);
+    r.unmount();
+  });
+
+  it("folds a chip row behind its label, and keeps what is picked in sight (owner, 2026-10-04)", () => {
+    const r = render(DATA, "systems");
+    r.click(r.chip("Biology"));
+    const toggle = [...r.host.querySelectorAll<HTMLButtonElement>("button.disc-chip-toggle")].find((b) =>
+      b.textContent?.includes("Has"),
+    );
+    r.click(toggle);
+    expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+    // Folded: the picked chip stays, the others go.
+    expect(r.chip("Biology")).toBeDefined();
+    expect(r.chip("Sold")).toBeUndefined();
+    expect(r.firstCells()).toEqual(["Beta"]);
+    r.click(toggle);
+    r.click(r.chip("Biology"));
     r.unmount();
   });
 
