@@ -1768,6 +1768,20 @@
       return out.indexOf(s) >= 0;
     });
   }
+  /*
+    One HUD change at a time (owner, 2026-10-05: "Merge into one panel does not save what was
+    selected when I click it twice"). Each change reads which sections are open from the windows that
+    exist, so a second click while the first was still opening and closing windows read a half-made
+    set (hud-events.log: the merged panel came back with Discovery scan and Next jump only). Queued,
+    each change starts from the finished state of the one before.
+  */
+  var hudChain = Promise.resolve();
+  function inHudQueue(task) {
+    var run = hudChain.then(task);
+    hudChain = run.catch(function () {});
+    return run;
+  }
+
   async function showSections(sections) {
     var ee = window.edexoElectron;
     if (!ee) return;
@@ -1841,7 +1855,13 @@
     );
   }
 
-  async function pickOverlay(pathname, width, height) {
+  function pickOverlay(pathname, width, height) {
+    return inHudQueue(function () {
+      return pickOverlayNow(pathname, width, height);
+    });
+  }
+
+  async function pickOverlayNow(pathname, width, height) {
     // The picker stays open: with five HUDs and the settings below, one pick per open was a chore.
     try {
       var ee = window.edexoElectron;
@@ -1874,9 +1894,12 @@
       } catch (e) {
         /* ignore */
       }
-      // Re-show whatever is open in the newly chosen form.
-      (async function () {
+      // Re-show whatever is open in the newly chosen form, after any change still under way.
+      var wantMerge = ovMerge.checked;
+      void inHudQueue(async function () {
         try {
+          // A later click may have flipped it back while this waited: follow the box as it is now.
+          if (ovMerge.checked !== wantMerge) return;
           var active = activeSections(await hudPaths());
           if (active.length) await showSections(active);
           await refreshOverlayMenuChecks();
@@ -1884,7 +1907,7 @@
           launcherActionMsg.className = "msg-launcher err";
           launcherActionMsg.textContent = String(eM && eM.message ? eM.message : eM);
         }
-      })();
+      });
     });
   }
 
@@ -2325,9 +2348,11 @@
     }
     // The merged HUD orders its sections itself; re-show it so the panel follows the list.
     if (hudMergeOn()) {
-      hudPaths().then(function (paths) {
-        var active = activeSections(paths);
-        if (active.length) return showSections(active);
+      inHudQueue(function () {
+        return hudPaths().then(function (paths) {
+          var active = activeSections(paths);
+          if (active.length) return showSections(active);
+        });
       }).catch(function (e) {
         launcherActionMsg.className = "msg-launcher err";
         launcherActionMsg.textContent = "HUD reorder failed: " + String(e && e.message ? e.message : e);
