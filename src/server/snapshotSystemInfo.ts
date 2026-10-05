@@ -478,6 +478,17 @@ export function notableBodiesForSystem(
   return out;
 }
 
+/**
+ * Bodies found of the system's total, counted as the main screen's D-Scan line counts them (owner,
+ * 2026-10-05: the Boxels table "should get the same data as the main screen"): FSS honk progress and
+ * bodies EDSM already knows count as found, not only the ones he scanned. Without the system map,
+ * which only the system on screen has; the Boxels screen takes that one's figures from the snapshot.
+ */
+function dScanTally(store: GameStateStore, systemAddress: number): { scanned: number; total: number | null } {
+  const d = buildDScanBodiesSnapshot(store, systemAddress, null, null);
+  return d ? { scanned: d.found, total: d.total } : systemBodyTally(store, systemAddress);
+}
+
 /** "K5 V", or the words for a giant, a dwarf remnant or a black hole ("M red giant", "neutron star"). */
 function boxelStarLabel(rec: ExplorationScanRecord): string {
   const t = (rec.starType ?? "").trim();
@@ -531,7 +542,7 @@ export function boxelJournalFacts(store: GameStateStore, systemAddress: number):
     mainStar: main ? boxelStarLabel(main) : jumpClass,
     otherStars: others.map(boxelStarLabel),
     starClasses,
-    bodies: systemBodyTally(store, systemAddress),
+    bodies: dScanTally(store, systemAddress),
     notables: NOTABLE_KINDS.filter((k) => count.has(k.key)).map((k) => ({ kind: k.key, n: count.get(k.key)! })),
     bodyTypes: [...bodyTypes],
     bio: { signals, species: [...species].sort() },

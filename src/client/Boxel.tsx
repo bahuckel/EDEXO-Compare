@@ -10,7 +10,7 @@
  * anyone knows) and ticks it. Skip and the cut (×) on a row correct a saved boxel, as before; the table
  * and the side menu re-read the journals after every jump, so the ticks follow you.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BoxelTableDTO, BoxelTableRowDTO, PreviousBoxelDTO, SavedBoxelDTO } from "@shared/boxel";
 import type { BoxelLookupStatus } from "@shared/boxel";
 import { parseBoxel } from "@shared/boxel";
@@ -86,9 +86,12 @@ const json = { "Content-Type": "application/json" };
 export function BoxelScreen({
   onClose,
   currentSystem,
+  dScan = null,
 }: {
   onClose: () => void;
   currentSystem: string | null;
+  /** The main screen's D-Scan line: the system on screen shows exactly these figures. */
+  dScan?: { systemName: string; found: number; total: number } | null;
 }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
   const toast = useToast();
@@ -167,6 +170,16 @@ export function BoxelScreen({
   }, [idsKey]);
 
   useEffect(loadTable, [loadTable, saved]);
+  // Every scan on the main screen re-reads the table (notables, biology) and the side menu's counts.
+  const scanKey = dScan ? `${dScan.systemName}|${dScan.found}|${dScan.total}` : "";
+  const firstScan = useRef(true);
+  useEffect(() => {
+    if (firstScan.current) {
+      firstScan.current = false;
+      return;
+    }
+    void call();
+  }, [scanKey, call]);
 
   /*
     Look up (plan Q1): the boxel's systems from Spansh, pages five seconds apart. Polled while it
@@ -511,7 +524,20 @@ export function BoxelScreen({
 
   const ticked = ids.map((id) => byId.get(id)).filter((b): b is SavedBoxelDTO => !!b);
   const lead = ticked.find((b) => b.current) ?? ticked[0] ?? null;
-  const allRows = useMemo(() => table?.rows ?? [], [table]);
+  /*
+    The system on the main screen reads its D-Scan line as it stands (owner, 2026-10-05: "it stays at
+    5/24 … it should get the same data as the main screen"): the server has no system map for it.
+  */
+  const allRows = useMemo(() => {
+    const rows = table?.rows ?? [];
+    if (!dScan) return rows;
+    const name = dScan.systemName.toLowerCase();
+    return rows.map((r) =>
+      r.flown && r.name.toLowerCase() === name
+        ? { ...r, bodies: { scanned: dScan.found, total: dScan.total } }
+        : r,
+    );
+  }, [table, dScan]);
   const rows = useMemo(() => {
     const keep = boxelRowFilter(filterKind, filterQuery);
     return allRows.filter((r) => keep(r) && (!notFlownOnly || (!r.flown && !r.skipped)));

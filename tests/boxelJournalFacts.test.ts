@@ -50,4 +50,27 @@ describe("a flown system's facts for the Boxels table", () => {
     expect(f.bodyTypes).toEqual(expect.arrayContaining(["helium_gg", "elw", "hmc", "terraformable"]));
     expect(f.bodies.scanned).toBe(6);
   });
+
+  it("counts bodies as the main screen's D-Scan line does: the honk's total, not only the scans", () => {
+    const s = new GameStateStore();
+    s.apply({
+      timestamp: "2026-10-05T09:59:00Z",
+      event: "FSDJump",
+      StarSystem: "Eol Prou AB-C d1-4",
+      SystemAddress: SYS,
+      StarPos: [0, 0, 0],
+    } as unknown as JournalLine);
+    s.apply({
+      timestamp: "2026-10-05T09:59:30Z",
+      event: "FSSDiscoveryScan",
+      SystemName: "Eol Prou AB-C d1-4",
+      SystemAddress: SYS,
+      BodyCount: 24,
+      NonBodyCount: 0,
+      Progress: 0.1,
+    } as unknown as JournalLine);
+    s.apply(scan(0, { StarType: "K", Subclass: 5, Luminosity: "Va", StellarMass: 0.7 }));
+    expect(boxelJournalFacts(s, SYS).bodies).toEqual({ scanned: expect.any(Number), total: 24 });
+    expect(boxelJournalFacts(s, SYS).bodies.scanned).toBeGreaterThanOrEqual(1);
+  });
 });

@@ -840,7 +840,11 @@ export const HeaderBar = memo(function HeaderBar({
 
       {boxelOpen ? (
         <Suspense fallback={null}>
-          <BoxelScreen onClose={() => setBoxelOpen(false)} currentSystem={snap.currentSystem ?? null} />
+          <BoxelScreen
+            onClose={() => setBoxelOpen(false)}
+            currentSystem={snap.currentSystem ?? null}
+            dScan={snap.dScanBodies ?? null}
+          />
         </Suspense>
       ) : null}
       {bookmarksOpen ? (
