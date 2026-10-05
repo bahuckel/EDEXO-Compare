@@ -1008,6 +1008,34 @@ test("my discoveries: the bodies table exports as CSV", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("boxels: Plan a boxel by name, filter its systems, and the screen fits a phone", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
+  await openFromMenu(page, "Boxel");
+  const screen = page.locator(".boxel-screen");
+  await expect(screen).toBeVisible();
+  // The fixture system has a catalogue name: no boxel to be in.
+  await expect(screen.getByRole("button", { name: /^Current boxel/ })).toBeDisabled();
+  await screen.getByLabel("Last system #").fill("9");
+  await screen.getByLabel(/^Plan a boxel/).fill("Eol Prou PX-T d3-5");
+  await screen.getByRole("button", { name: "Plan: PX-T d3" }).click();
+  await expect(screen.locator(".boxel-side__item", { hasText: "PX-T d3" })).toBeVisible();
+  await expect(screen.locator(".disc-table tbody tr", { hasText: "Eol Prou PX-T d3-" })).toHaveCount(10);
+  // One search bar, and what it looks at.
+  await screen.getByRole("button", { name: "What the search looks at" }).click();
+  await page.getByRole("option", { name: "System name" }).click();
+  await screen.getByLabel("Filter by system name").fill("d3-7");
+  await expect(screen.locator(".disc-table tbody tr", { hasText: "Eol Prou PX-T d3-" })).toHaveCount(1);
+  await page.screenshot({ path: `${OUT}/boxels.png` });
+  // A phone: cards, and no sideways scroll.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(screen.locator(".disc-card").first()).toBeVisible();
+  expect(await page.evaluate(() => document.querySelector(".boxel-screen")!.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: `${OUT}/phone-boxels.png` });
+  expect(errors).toEqual([]);
+});
+
 test("data value: the fleet carrier toggle takes 25 % off exploration (15 % at his own) and is saved", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");

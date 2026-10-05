@@ -17,8 +17,10 @@
 }
 .boxel-current {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem;
+  min-width: 0;
 }
 .boxel-current__end {
   display: flex;
@@ -26,6 +28,8 @@
   gap: 0.35rem;
 }
 .boxel-current__end input {
+  flex: 0 0 5rem;
+  min-width: 0;
   width: 5rem;
 }
 
@@ -200,6 +204,14 @@
   .boxel-screen__head {
     flex-wrap: wrap;
   }
+  .boxel-current,
+  .boxel-plan {
+    flex: 1 1 100%;
+  }
+  .boxel-plan input {
+    flex: 1 1 auto;
+    width: auto;
+  }
   .boxel-screen__body {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
@@ -208,6 +220,28 @@
     max-height: 35vh;
     border-right: 0;
     border-bottom: 1px solid var(--accent-a22);
+  }
+  /* A phone scrolls the whole screen: the cards get the height, not the summary above them. */
+  .boxel-screen__body {
+    display: block;
+    overflow-y: auto;
+  }
+  .boxel-main .disc-table-wrap,
+  .boxel-main .disc-card-scroll {
+    max-height: 80vh;
+  }
+  .boxel-main .fdb-summary {
+    gap: 0.2rem 0.9rem;
+    font-size: var(--fs-sm);
+  }
+  .boxel-screen__head {
+    position: relative;
+    padding-right: 2.6rem;
+  }
+  .boxel-screen__head .modal-close {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
   }
 }
 
@@ -244,6 +278,8 @@
   gap: 0.4rem;
 }
 .boxel-plan input {
+  flex: 0 1 22rem;
+  min-width: 0;
   width: min(22rem, 40vw);
 }
 

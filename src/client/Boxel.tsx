@@ -64,6 +64,20 @@ const PREV_RANGES: { days: number; label: string }[] = [
 ];
 const STAR_LABEL = Object.fromEntries(STAR_CLASSES.map((c) => [c.key, c.label])) as Record<string, string>;
 
+/** True while the window is at most `px` wide. */
+function useNarrow(px: number): boolean {
+  const query = `(max-width: ${px}px)`;
+  const [narrow, setNarrow] = useState(() => window.matchMedia?.(query).matches ?? false);
+  useEffect(() => {
+    const m = window.matchMedia?.(query);
+    if (!m) return;
+    const on = () => setNarrow(m.matches);
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, [query]);
+  return narrow;
+}
+
 const isIncluded = (v: unknown): v is string[] | null => v === null || isStrArr(v);
 const json = { "Content-Type": "application/json" };
 
@@ -446,6 +460,12 @@ export function BoxelScreen({
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [byId, order],
+  );
+  // A phone gets cards, titled by the system (owner, 2026-10-05: the redo works on a phone too).
+  const narrow = useNarrow(760);
+  const shownColumns = useMemo(
+    () => (narrow ? [columns[1]!, columns[0]!, ...columns.slice(2)] : columns),
+    [narrow, columns],
   );
 
   const prevShown = useMemo(() => {
@@ -914,7 +934,8 @@ export function BoxelScreen({
             {ticked.length ? (
               <Table
                 rows={rows}
-                columns={columns}
+                columns={shownColumns}
+                layout={narrow ? "cards" : "list"}
                 sort={sort}
                 onSort={(key) =>
                   setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }))
