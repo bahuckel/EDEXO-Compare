@@ -76,7 +76,7 @@ describe("a body the ship only AutoScanned", () => {
     expect(keys(s)).toEqual([]);
   });
 
-  it("gets a tab in the snapshot, with its candidates and no signal count", () => {
+  it("gets a tab in the snapshot, with no signal count", () => {
     const s = storeWith([scan(13, "AutoScan")]);
     const snap = buildSnapshot(s, null, "", "127.0.0.1", 0, [], 1);
     const b = snap.bodies.find((x) => x.state.bodyId === 13)!;
@@ -84,7 +84,7 @@ describe("a body the ship only AutoScanned", () => {
     expect(b.state.biologicalSignals).toBeNull();
   });
 
-  it("is computed as if it had one signal, never shows that count, and gets no tab where nothing would grow", () => {
+  it("gets a tab with its stats and no candidates, whether or not anything would grow there (owner, 2026-10-05)", () => {
     const star = {
       timestamp: "2026-10-02T06:15:01Z",
       event: "Scan",
@@ -110,9 +110,14 @@ describe("a body the ship only AutoScanned", () => {
     ]);
     expect(keys(s)).toEqual([13, 16]);
     const snap = buildSnapshot(s, null, "", "127.0.0.1", 0, [], 1);
-    expect(snap.bodies.some((x) => x.state.bodyId === 16)).toBe(false);
-    const b = snap.bodies.find((x) => x.state.bodyId === 13)!;
-    expect(b.matches.some((m) => !m.unlikely)).toBe(true);
-    expect(b.state.biologicalSignals).toBeNull();
+    for (const id of [13, 16]) {
+      const b = snap.bodies.find((x) => x.state.bodyId === id)!;
+      expect(b.state.autoScanOnly).toBe(true);
+      expect(b.matches).toEqual([]);
+      expect(b.exoPayoutRange).toBeNull();
+      expect(b.unknownPlants).toEqual([]);
+      expect(b.state.biologicalSignals).toBeNull();
+      expect(b.mergedScan?.PlanetClass).toBeTruthy();
+    }
   });
 });

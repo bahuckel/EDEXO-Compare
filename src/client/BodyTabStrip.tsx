@@ -291,7 +291,7 @@ export const BodyTabStrip = memo(function BodyTabStrip({
                         ) : null}
                         <span className="tab-label">{b.tabLabel}</span>
                         {auto ? (
-                          <span className="tab-meta tab-fss-required">AutoScanned only - FSS required</span>
+                          <span className="tab-meta tab-fss-required">AutoScan only · FSS required</span>
                         ) : (
                           <span className="tab-meta">
                             {bio ?? "?"}

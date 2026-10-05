@@ -666,7 +666,16 @@ export const BodyPane = memo(function BodyPane({
                 </div>
               }
             >
-              {body.matches.length === 0 ? (
+              {body.state.autoScanOnly ? (
+                // AutoScanned only (owner, 2026-10-05): no signal count, so no candidates until the FSS.
+                <p className="autoscan-note" role="note">
+                  <span className="autoscan-note__icon" aria-hidden>
+                    ◎
+                  </span>
+                  Unknown number of signals: the ship only AutoScanned this body. Scan the planet with the FSS to
+                  see its possible exobiology.
+                </p>
+              ) : body.matches.length === 0 ? (
                 unknownSlots.length ? (
                   <UnknownPlantCards slots={unknownSlots} />
                 ) : (

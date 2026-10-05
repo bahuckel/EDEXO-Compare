@@ -853,12 +853,11 @@ function computeBody(
 }
 
 /**
- * A body the ship only AutoScanned (autoScanOnly.ts), computed as if the FSS had found one biological
- * signal — the least a body with life can have — so the chances, the genus prior and the floors work
- * as they do for any body (owner, 2026-10-02: "fake assign the bio signal = 1 to autoscanned bodies
- * and drop them if nothing would spawn there"). Null when nothing would be shown there: no tab. The
- * assumed signal is never shown — the state keeps its unknown count and the tab says "AutoScanned only
- * - FSS required".
+ * A body the ship only AutoScanned (autoScanOnly.ts): its stats and nothing else (owner, 2026-10-05,
+ * replacing the 2026-10-02 "fake one bio signal" rule — it listed Sinuous Tubers on a body nobody knew
+ * had life, and hid A 1 and A 2 of Weqaei PS-T b3-3 beside the A 3 it kept). Every landable one gets
+ * its tab; no candidates, no price, no unknown-plant slots until the FSS says how many signals there
+ * are. The candidate panel says so instead.
  */
 export function computeAutoScanOnlyBody(
   b: BodyExoState,
@@ -866,28 +865,20 @@ export function computeAutoScanOnlyBody(
   db: SpeciesDatabase = cachedDb,
   prices: PriceIndex = cachedPrices,
 ): BodyComputed | null {
-  const computed = computeBody({ ...b, key: `${b.key}#autoscan`, biologicalSignals: 1 }, db, prices, store);
-  /*
-    "Would anything spawn here" counts a candidate only on its own merits: not one pulled back to fill
-    the signal count (that rule trusts the game's count, and this count is assumed), and not one kept
-    only because a list may not be empty while it sits under the presence floor.
-  */
-  const stands = computed.matches.some(
-    (m) =>
-      !m.unlikely &&
-      m.restoredForSignalCount !== true &&
-      (m.presenceProbabilityPercent == null || m.presenceProbabilityPercent >= AUTOSCAN_STANDS_PCT),
-  );
-  if (!stands) return null;
-  return { ...computed, state: b };
+  const computed = computeBody({ ...b, key: `${b.key}#autoscan` }, db, prices, store);
+  return {
+    ...computed,
+    state: b,
+    matches: [],
+    genusCertainty: null,
+    genusLikelihoods: null,
+    ambiguityNote: null,
+    exoPayoutRange: null,
+    exoDataAlerts: [],
+    dssGenusOrphanHints: [],
+    unknownPlants: [],
+  };
 }
-
-/**
- * How likely a candidate must be for an AutoScanned-only body to get its tab (owner, 2026-10-02). It
- * stays at the 5 % it was measured with when the list floors went to 1 % (2026-10-03): this asks
- * whether to suggest a body at all, not which species to list on one already chosen.
- */
-const AUTOSCAN_STANDS_PCT = 5;
 
 function computeBodyUncached(
   b: BodyExoState,

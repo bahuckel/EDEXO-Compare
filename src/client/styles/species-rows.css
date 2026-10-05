@@ -362,14 +362,33 @@
 .tab--fss-required {
   border-style: dashed;
 }
-.tab-fss-required {
-  display: inline-block;
-  padding: 0 3px;
+/* Its own colour on a plain tab; the selected tab's ink when selected (a dark strip of its own read as
+   an empty black field there, owner 2026-10-05). */
+.tab .tab-fss-required {
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #ffcf6e;
-  background: #07060a;
-  box-shadow: inset 0 0 0 1px #ffcf6e;
+}
+.tab.on .tab-fss-required {
+  color: inherit;
+}
+
+/* The candidate panel of an AutoScanned-only body. */
+.autoscan-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  color: var(--text);
+  border: 1px dashed #ffcf6e;
+  background: rgba(255, 207, 110, 0.06);
+}
+.autoscan-note__icon {
+  flex: 0 0 auto;
+  color: #ffcf6e;
+  font-size: 1.15em;
+  line-height: 1.1;
 }
 
 /* A species logged here in a colour the app did not predict — in the miss log (owner, 2026-09-26). */
