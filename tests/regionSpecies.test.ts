@@ -85,8 +85,8 @@ describe("the shipped table, on the body that prompted it", () => {
   });
 
   it("makes no claim about a species the rollup has never heard of", () => {
-    // Brain Trees and Sinuous Tubers are outside the index's 102-species vocabulary.
-    expect(at("brain-tree_brain_tree_roseum")?.presence).toBe("unknown");
+    // The Thargoid entries are not biology in EDAstro's codex; every plant is in the table since 2026-10-05.
+    expect(at("thargoid_spires_major")?.presence).toBe("unknown");
   });
 
   it("makes no claim without a region", () => {
@@ -131,7 +131,13 @@ describe("the rare one of its genus", () => {
   });
 
   it("abstains for a species outside the rollup", () => {
-    expect(regionalGenusShare(root, INNER_ORION_SPUR, "brain_trees_brain_tree_roseum")).toBeNull();
+    // The Thargoid entries are not biology in EDAstro's codex, so the table has no row for them.
+    expect(regionalGenusShare(root, INNER_ORION_SPUR, "thargoid_spires_major")).toBeNull();
+  });
+
+  it("judges the species the bio index never carried (counted from EDAstro, 2026-10-05)", () => {
+    expect(regionalGenusShare(root, INNER_ORION_SPUR, "brain_trees_brain_tree_roseum")?.count).toBeGreaterThan(1000);
+    expect(regionalGenusShare(root, INNER_ORION_SPUR, "anemone_blatteum_bioluminescent")?.count).toBeGreaterThan(100);
   });
 });
 
