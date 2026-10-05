@@ -738,6 +738,40 @@ export function GalaxyMap3D() {
     if (q.length < 2) return [];
     return regionAnchors.filter((a) => a.name.toLowerCase().includes(q)).slice(0, 5);
   }, [findText, regionAnchors]);
+  /*
+    The layers' own points (owner, 2026-10-05: "Blaa Eork EH-S d5-4" was on the map but Find did not know
+    it): the galaxy index holds biology systems only, so a green gas giant, a POI or an NSP elsewhere is
+    found here, by its label or its system. The small lists are fetched for the search even while their
+    layer is off; the big ones are searched once they have been switched on.
+  */
+  useEffect(() => {
+    if (findText.trim().length < 2) return;
+    for (const kind of ["ggg", "bookmarks"] as const) {
+      if (extraData[kind]) continue;
+      void fetch(`/api/galaxy/layers?kind=${kind}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: GalaxyLayerDTO | null) => {
+          if (d) setExtraData((prev) => (prev[kind] ? prev : { ...prev, [kind]: d }));
+        })
+        .catch(() => {});
+    }
+  }, [findText, extraData]);
+  const findLayerHits = useMemo(() => {
+    const q = findText.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const hits: { kind: GalaxyLayerKind; id: string; label: string; what: string; x: number; y: number; z: number }[] = [];
+    for (const l of GALAXY_LAYERS) {
+      const d = extraData[l.kind];
+      if (!d) continue;
+      d.points.forEach((p, i) => {
+        if (hits.length >= 8) return;
+        const system = layerPointText(d, p).system;
+        if (!p[3].toLowerCase().includes(q) && !system.toLowerCase().includes(q)) return;
+        hits.push({ kind: l.kind, id: String(i), label: p[3], what: l.label, x: p[0], y: p[1], z: p[2] });
+      });
+    }
+    return hits;
+  }, [findText, extraData]);
 
   const go = (g: { x: number; y: number; z: number }, distance: number, sel?: Selection) => {
     setFindOpen(false);
@@ -953,7 +987,8 @@ export function GalaxyMap3D() {
   })();
 
   const ship = route?.position;
-  const hasFind = findOpen && (findRegions.length > 0 || (find && (find.sectors.length || find.systems.length)));
+  const hasFind =
+    findOpen && (findRegions.length > 0 || findLayerHits.length > 0 || (find && (find.sectors.length || find.systems.length)));
 
   return (
     <div className="g3d-screen" ref={screenRef}>
@@ -1452,6 +1487,20 @@ export function GalaxyMap3D() {
                   >
                     <span>{s.name}</span>
                     <em>{s.mine ? "yours" : "system"}</em>
+                  </button>
+                </li>
+              ))}
+              {findLayerHits.map((h) => (
+                <li key={`l${h.kind}${h.id}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      extraSet[h.kind](true);
+                      go(h, 400, { kind: "marker", layer: `x-${h.kind}`, id: h.id, x: h.x, y: h.y, z: h.z });
+                    }}
+                  >
+                    <span>{h.label}</span>
+                    <em>{h.what}</em>
                   </button>
                 </li>
               ))}
