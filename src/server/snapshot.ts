@@ -1,4 +1,5 @@
 import { codexFirstCheck, codexFirstDataDate } from "./codexFirst.js";
+import { geologyForBody } from "./geology.js";
 import { eddnLedgerStatus } from "./eddnLedger.js";
 import { unknownPlantSlots } from "../shared/unknownPlants.js";
 import { edastroBioRegionIds } from "./edastroNsp.js";
@@ -926,6 +927,12 @@ function computeBodyUncached(
       estimatedSurfaceTempK: null,
       speciesMatchContext: speciesMatchCtx,
       approximateMatchingUsed: false,
+      geology: geologyForBody({
+        body: b,
+        scan: mergedScan,
+        region: speciesMatchCtx?.regionName,
+        codexLogged: store.codexMapLogged,
+      }),
       exoPayoutRange: null,
       exoDataAlerts,
       dssGenusOrphanHints,
@@ -1183,6 +1190,12 @@ function computeBodyUncached(
     speciesMatchContext: speciesMatchCtx,
     approximateMatchingUsed,
     exoMarkerBasis: exoMarkerBasis(b),
+    geology: geologyForBody({
+      body: b,
+      scan: mergedScan,
+      region: speciesMatchCtx?.regionName,
+      codexLogged: store.codexMapLogged,
+    }),
     exoPayoutRange,
     exoDataAlerts,
     dssGenusOrphanHints,

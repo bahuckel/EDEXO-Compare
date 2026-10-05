@@ -2,6 +2,7 @@ import type { GenusLikelihood } from "../genusCooccurrence.js";
 import type { ExomasteryDetailDTO } from "./exomastery.js";
 import type { EstimatedSurfaceTempBand, GenusHint, OrganicGenusLock, PlanetScan } from "./scan.js";
 import type { ExoPayoutSpeciesLineDTO, SpeciesMatch, SpeciesMatchContext } from "./species.js";
+import type { BodyGeologyDTO } from "../geology.js";
 
 /** Codex vs live scan / feeder consistency (Planetary body panel). */
 export interface ExoDataAlertDTO {
@@ -197,6 +198,8 @@ export interface BodyComputed {
    * The candidate list is then "what could live here", not "what is here", and the UI has to say so.
    */
   exoMarkerBasis?: "scanned" | "genus" | "signals" | "conditions" | "none";
+  /** The Planetary body card's Volcanism field (shared/geology.ts); null when the body has none of it. */
+  geology?: BodyGeologyDTO | null;
   exoPayoutRange: ExoPayoutRangeDTO | null;
   /**
    * Live organic / feeder checks vs genus JSON — errors (red) and warnings (yellow).

@@ -35,7 +35,7 @@ export function Tooltip({
   children,
   className,
 }: {
-  text: string;
+  text: ReactNode;
   children: ReactNode;
   className?: string;
 }) {

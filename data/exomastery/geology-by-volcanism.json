@@ -1,0 +1,335 @@
+{
+ "source": "Spansh body search by landmark (docs/perf/geology_from_spansh.py), 2026-10-05; up to 300 bodies per entry",
+ "geology": {
+  "Carbon Dioxide Fumarole": {
+   "codexId": "codex_ent_fumarole_carbondioxidegeysers",
+   "bodies": 9,
+   "volcanism": {
+    "carbon dioxide geysers": 9
+   },
+   "body": {
+    "Rocky Ice world": 9
+   },
+   "atmosphere": {
+    "none": 9
+   }
+  },
+  "Silicate Vapour Fumarole": {
+   "codexId": "codex_ent_fumarole_silicatevapourgeysers",
+   "bodies": 300,
+   "volcanism": {
+    "silicate vapour geysers": 299,
+    "none": 1
+   },
+   "body": {
+    "Rocky body": 141,
+    "High metal content world": 117,
+    "Metal-rich body": 41,
+    "B (Blue-White) Star": 1
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Sulphur Dioxide Fumarole": {
+   "codexId": "codex_ent_fumarole_sulphurdioxidemagma",
+   "bodies": 300,
+   "volcanism": {
+    "metallic magma": 222,
+    "rocky magma": 78
+   },
+   "body": {
+    "High metal content world": 117,
+    "Metal-rich body": 92,
+    "Rocky body": 91
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Water Fumarole": {
+   "codexId": "codex_ent_fumarole_watergeysers",
+   "bodies": 300,
+   "volcanism": {
+    "water magma": 299,
+    "water geysers": 1
+   },
+   "body": {
+    "Rocky body": 299,
+    "Rocky Ice world": 1
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Carbon Dioxide Gas Vent": {
+   "codexId": "codex_ent_gas_vents_carbondioxidegeysers",
+   "bodies": 300,
+   "volcanism": {
+    "carbon dioxide geysers": 300
+   },
+   "body": {
+    "Rocky Ice world": 300
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Silicate Vapour Gas Vent": {
+   "codexId": "codex_ent_gas_vents_silicatevapourgeysers",
+   "bodies": 300,
+   "volcanism": {
+    "silicate vapour geysers": 271,
+    "rocky magma": 29
+   },
+   "body": {
+    "Rocky body": 124,
+    "High metal content world": 122,
+    "Metal-rich body": 53,
+    "Rocky Ice world": 1
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Sulphur Dioxide Gas Vent": {
+   "codexId": "codex_ent_gas_vents_sulphurdioxidemagma",
+   "bodies": 300,
+   "volcanism": {
+    "metallic magma": 224,
+    "rocky magma": 76
+   },
+   "body": {
+    "High metal content world": 116,
+    "Metal-rich body": 90,
+    "Rocky body": 89,
+    "Rocky Ice world": 5
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Water Gas Vent": {
+   "codexId": "codex_ent_gas_vents_watergeysers",
+   "bodies": 300,
+   "volcanism": {
+    "water magma": 213,
+    "water geysers": 87
+   },
+   "body": {
+    "Rocky body": 166,
+    "Rocky Ice world": 134
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Water Geyser": {
+   "codexId": "codex_ent_geysers_watergeysers",
+   "bodies": 300,
+   "volcanism": {
+    "water magma": 300
+   },
+   "body": {
+    "Rocky body": 300
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Ammonia Ice Fumarole": {
+   "codexId": "codex_ent_icefumarole_ammoniageysers",
+   "bodies": 300,
+   "volcanism": {
+    "ammonia magma": 300
+   },
+   "body": {
+    "Icy body": 300
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Carbon Dioxide Ice Fumarole": {
+   "codexId": "codex_ent_icefumarole_carbondioxidegeysers",
+   "bodies": 300,
+   "volcanism": {
+    "carbon dioxide geysers": 300
+   },
+   "body": {
+    "Icy body": 277,
+    "Rocky Ice world": 23
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Methane Ice Fumarole": {
+   "codexId": "codex_ent_icefumarole_methanegeysers",
+   "bodies": 300,
+   "volcanism": {
+    "methane magma": 300
+   },
+   "body": {
+    "Icy body": 300
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Nitrogen Ice Fumarole": {
+   "codexId": "codex_ent_icefumarole_nitrogengeysers",
+   "bodies": 300,
+   "volcanism": {
+    "nitrogen magma": 300
+   },
+   "body": {
+    "Icy body": 300
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Silicate Vapour Ice Fumarole": {
+   "codexId": "codex_ent_icefumarole_silicatevapourgeysers",
+   "bodies": 300,
+   "volcanism": {
+    "silicate vapour geysers": 174,
+    "rocky magma": 126
+   },
+   "body": {
+    "Rocky Ice world": 300
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Sulphur Dioxide Ice Fumarole": {
+   "codexId": "codex_ent_icefumarole_sulphurdioxidemagma",
+   "bodies": 283,
+   "volcanism": {
+    "metallic magma": 283
+   },
+   "body": {
+    "Rocky Ice world": 283
+   },
+   "atmosphere": {
+    "none": 283
+   }
+  },
+  "Water Ice Fumarole": {
+   "codexId": "codex_ent_icefumarole_watergeysers",
+   "bodies": 300,
+   "volcanism": {
+    "water geysers": 221,
+    "water magma": 79
+   },
+   "body": {
+    "Icy body": 287,
+    "Rocky Ice world": 13
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Ammonia Ice Geyser": {
+   "codexId": "codex_ent_icegeysers_ammoniageysers",
+   "bodies": 300,
+   "volcanism": {
+    "ammonia magma": 300
+   },
+   "body": {
+    "Icy body": 300
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Carbon Dioxide Ice Geyser": {
+   "codexId": "codex_ent_icegeysers_carbondioxidegeysers",
+   "bodies": 300,
+   "volcanism": {
+    "carbon dioxide geysers": 300
+   },
+   "body": {
+    "Icy body": 279,
+    "Rocky Ice world": 21
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Methane Ice Geyser": {
+   "codexId": "codex_ent_icegeysers_methanegeysers",
+   "bodies": 300,
+   "volcanism": {
+    "methane magma": 300
+   },
+   "body": {
+    "Icy body": 300
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Nitrogen Ice Geyser": {
+   "codexId": "codex_ent_icegeysers_nitrogengeysers",
+   "bodies": 300,
+   "volcanism": {
+    "nitrogen magma": 300
+   },
+   "body": {
+    "Icy body": 300
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Water Ice Geyser": {
+   "codexId": "codex_ent_icegeysers_watergeysers",
+   "bodies": 300,
+   "volcanism": {
+    "water geysers": 225,
+    "water magma": 75
+   },
+   "body": {
+    "Icy body": 289,
+    "Rocky Ice world": 11
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Iron Magma Lava Spout": {
+   "codexId": "codex_ent_lava_spouts_ironmagma",
+   "bodies": 300,
+   "volcanism": {
+    "metallic magma": 300
+   },
+   "body": {
+    "Rocky body": 156,
+    "High metal content world": 139,
+    "Rocky Ice world": 5
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  },
+  "Silicate Magma Lava Spout": {
+   "codexId": "codex_ent_lava_spouts_silicatemagma",
+   "bodies": 300,
+   "volcanism": {
+    "silicate vapour geysers": 232,
+    "rocky magma": 68
+   },
+   "body": {
+    "High metal content world": 164,
+    "Rocky body": 135,
+    "Rocky Ice world": 1
+   },
+   "atmosphere": {
+    "none": 300
+   }
+  }
+ }
+}

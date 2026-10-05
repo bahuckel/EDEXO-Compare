@@ -37,6 +37,7 @@ import { oneOf, usePersistedState } from "./usePersistedState";
 import { GenusTag, GlanceGenera, genusRowSpecies, LandableBadge } from "./BodyGlance";
 import { ExoPayoutRangeDetailModal } from "./ExoPayoutRangeDetailModal";
 import { GenusMatchGroup } from "./GenusMatchGroup";
+import { VolcanismFact } from "./VolcanismFact";
 export { GlanceGenera } from "./BodyGlance";
 
 export const BodyPane = memo(function BodyPane({
@@ -372,6 +373,7 @@ export const BodyPane = memo(function BodyPane({
                     ) : null}
                   </span>
                 </div>
+                <VolcanismFact geology={body.geology} />
               </div>
 
               {body.ambiguityNote ? <p className="warn tiny">{body.ambiguityNote}</p> : null}

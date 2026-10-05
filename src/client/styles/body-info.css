@@ -364,3 +364,51 @@
   font-weight: 400;
   font-size: 0.88em;
 }
+
+/* The Volcanism field (owner, 2026-10-05): a fact like the others; the tooltip anchor keeps its shape. */
+.fact.volc-fact {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  cursor: help;
+}
+.volc-cx {
+  margin-left: 0.4rem;
+  letter-spacing: 0.06em;
+}
+.volc-pop {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 14rem;
+}
+.volc-pop__head {
+  font-weight: 700;
+}
+.volc-pop__list {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.volc-pop__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+.volc-pop__status {
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.volc-pop__row--new .volc-pop__status {
+  color: var(--accent-bright);
+  font-weight: 700;
+}
+.volc-pop__row--scanned .volc-pop__status {
+  color: var(--ok);
+}
+.volc-pop__note {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
