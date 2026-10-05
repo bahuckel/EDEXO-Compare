@@ -48,6 +48,11 @@ describe("the observed-host-star term", () => {
     expect(hostStarVerdict(species("fonticulua_fonticulua_digitos"), "K").kind).toBe("observed");
   });
 
+  it("reads a confirmed class as observed even where the host star barely matters", () => {
+    // Tussock divisa: 84 confirmed bodies round neutron stars, which its colour table does not list.
+    expect(hostStarVerdict(species("tussock_tussock_divisa"), "N").kind).toBe("observed");
+  });
+
   it("believes a confirmed spawn over a thin profile", () => {
     // Stratum frigus: 28 profile bodies, none round an M dwarf; 19 of the 362 confirmed spawns in the
     // precision sample are, and the "never" demoted each one (2026-10-05).

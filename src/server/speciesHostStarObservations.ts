@@ -187,7 +187,16 @@ export function hostStarVerdict(
   const cls = hostStarClassKey(hostStarType);
   if (!cls) return { kind: "unknown" };
   const obs = speciesHostStarObservations(entry, root);
-  if (!obs || obs.total < HOST_STAR_MIN_SAMPLES) return { kind: "unknown" };
+  // Confirmed under this class (see `confirmedHostClasses`): "observed" whatever the profile holds,
+  // thin or not. The genus colour table and the codex star list defer to an observation, and
+  // Tussock divisa has 84 confirmed bodies round neutron stars that neither table lists (2026-10-05).
+  const confirmed = confirmedHostClasses(resolveRoot(root), entry.id);
+  const there = confirmed?.get(cls) ?? 0;
+  const confirmedVerdict = (): HostStarVerdict => {
+    const all = [...confirmed!.values()].reduce((a, n) => a + n, 0);
+    return { kind: "observed", share: there / all, observations: there, total: all };
+  };
+  if (!obs || obs.total < HOST_STAR_MIN_SAMPLES) return there > 0 ? confirmedVerdict() : { kind: "unknown" };
 
   /**
    * One observation is enough to call a host class somewhere the species grows.
@@ -201,15 +210,9 @@ export function hostStarVerdict(
   const seen = obs.byClass[cls] ?? 0;
   if (seen > 0) return { kind: "observed", share: seen / obs.total, observations: seen, total: obs.total };
 
+  if (there > 0) return confirmedVerdict();
   const d = obs.determinism;
   if (d == null || d < HOST_STAR_MIN_DETERMINISM) return { kind: "unknown" };
-  // Confirmed under this class elsewhere: not a "never", whatever the profile missed.
-  const confirmed = confirmedHostClasses(resolveRoot(root), entry.id);
-  const there = confirmed?.get(cls) ?? 0;
-  if (there > 0) {
-    const all = [...confirmed!.values()].reduce((a, n) => a + n, 0);
-    return { kind: "observed", share: there / all, observations: there, total: all };
-  }
   return {
     kind: "never",
     total: obs.total,
