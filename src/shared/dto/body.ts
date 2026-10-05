@@ -41,6 +41,10 @@ export interface BodyExoState {
   starSystem: string;
   /** From FSSBodySignals Biological Count */
   biologicalSignals: number | null;
+  /** From FSSBodySignals / SAASignalsFound Geological Count (owner, 2026-10-05: the Volcanism field). */
+  geologicalSignals?: number | null;
+  /** Surface geology codex entries he logged on this body (`codex_ent_fumarole_…` keys). */
+  geologyLogged?: string[];
   /** From SAASignalsFound after DSS */
   genusHints: GenusHint[] | null;
   dssComplete: boolean;

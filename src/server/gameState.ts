@@ -71,7 +71,7 @@ import {
   codexMapKeyFromLine,
   codexSpeciesFromLine,
 } from "../shared/codexLog.js";
-import { isLegacyPlantKey } from "../shared/achievements.js";
+import { GEOLOGY_KEY, isLegacyPlantKey } from "../shared/achievements.js";
 import { regionForSystem } from "./regionMapData.js";
 import { JOURNAL_MERGE_CACHE_FORMAT } from "./journalMergePayload.js";
 import { bodyKey, systemAddressOfBodyKey } from "../shared/bodyKey.js";
@@ -159,6 +159,15 @@ function ensureBody(
 function asSignals(raw: unknown): { Type?: string; Type_Localised?: string; Count?: number }[] {
   if (!Array.isArray(raw)) return [];
   return raw as { Type?: string; Type_Localised?: string; Count?: number }[];
+}
+
+/** The `Geological` signal's count, or null when the line has none. */
+function geologicalCount(signals: ReturnType<typeof asSignals>): number | null {
+  for (const s of signals) {
+    const lo = `${s.Type ?? ""} ${s.Type_Localised ?? ""}`.toLowerCase();
+    if (lo.includes("geological")) return typeof s.Count === "number" ? s.Count : null;
+  }
+  return null;
 }
 
 function biologicalCount(signals: ReturnType<typeof asSignals>): number | null {
@@ -2504,6 +2513,7 @@ export class GameStateStore {
       `SubCategory` has to be read, not just `Category`: the category is "Biological and
       Geological" and a fumarole would otherwise confirm a plant.
     */
+    this.noteGeologyCodex(line, ts);
     const lock = codexOrganicLockFromLine(line as Parameters<typeof codexOrganicLockFromLine>[0]);
     const codexBodyId = line.BodyID as number | undefined;
     if (!lock || typeof codexBodyId !== "number" || !Number.isFinite(codexBodyId)) return;
@@ -2542,6 +2552,28 @@ export class GameStateStore {
       this.confirmedVariantsRevision += 1;
     }
     return;
+  }
+
+  /**
+   * A surface geology codex line (fumarole, gas vent, geyser, lava spout) with the body it names: the
+   * Volcanism field marks that entry "Scanned" on this body (owner, 2026-10-05).
+   */
+  private noteGeologyCodex(line: JournalLine, ts: string): void {
+    const entry = codexEntryKey(typeof line.Name === "string" ? line.Name : "");
+    const bodyId = line.BodyID;
+    const sys = line.SystemAddress;
+    if (!entry || !GEOLOGY_KEY.test(entry) || typeof bodyId !== "number" || typeof sys !== "number") return;
+    const b = ensureBody(
+      this.bodies,
+      sys,
+      bodyId,
+      this.explorationScans.get(bodyKey(sys, bodyId))?.bodyName ??
+        this.findRecentJournalBodyName(sys, bodyId) ??
+        `Body ${bodyId}`,
+      (typeof line.System === "string" ? line.System.trim() : "") || this.visitedSystems.get(sys) || this.currentSystem || "",
+      ts,
+    );
+    if (!(b.geologyLogged ?? []).includes(entry)) b.geologyLogged = [...(b.geologyLogged ?? []), entry];
   }
 
   /** A phenomenon in a system: a name, or "" for the FSS signal before it is named. */
@@ -2622,6 +2654,8 @@ export class GameStateStore {
 
     const b = ensureBody(this.bodies, systemAddress, bodyId, bodyName, this.currentSystem ?? "", ts);
     if (n !== null) b.biologicalSignals = n;
+    const geo = geologicalCount(sigArr);
+    if (geo !== null) b.geologicalSignals = geo;
     if (hints) b.genusHints = mergeGenusHints(b.genusHints, hints);
     const mergedHints = mergeScannerSignalHints(b.signalHints ?? null, line.Signals);
     if (mergedHints) b.signalHints = mergedHints;
@@ -2649,6 +2683,8 @@ export class GameStateStore {
 
     const b = ensureBody(this.bodies, systemAddress, bodyId, bodyName, this.currentSystem ?? "", ts);
     if (n !== null) b.biologicalSignals = n;
+    const geo = geologicalCount(sigArr);
+    if (geo !== null) b.geologicalSignals = geo;
     if (hints) b.genusHints = hints;
     const mergedHints = mergeScannerSignalHints(b.signalHints ?? null, line.Signals);
     if (mergedHints) b.signalHints = mergedHints;

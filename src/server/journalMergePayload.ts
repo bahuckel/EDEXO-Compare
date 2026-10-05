@@ -92,8 +92,9 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
       `codexRegionBySystem`, `organicRunStartedAt`, `fsdTarget`, `lastJumpTarget` — a warm boot
       left them empty where a cold one had them (plan 2.4, O-19).
   28: `systemVisitedAt`, `systemStarClass` — the NavRoute finder's Previous list (when, which star).
+  29: body `geologicalSignals` and `geologyLogged` — the Planetary body card's Volcanism field.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 28;
+export const JOURNAL_MERGE_CACHE_FORMAT = 29;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
