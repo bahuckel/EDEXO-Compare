@@ -10,6 +10,7 @@ import { galaxyLayer } from "../src/server/galaxyLayers.js";
 import { createBookmarksService } from "../src/server/bookmarks.js";
 import { layerPointText } from "../src/shared/galaxyLayers.js";
 import { resetNspMemo } from "../src/server/edastroNsp.js";
+import { GGG_CANDIDATES } from "../src/shared/gggCandidates.js";
 
 let dir: string;
 const saved = process.env.EDEXO_USER_DATA_DIR;
@@ -40,4 +41,22 @@ describe("galaxy map layers", () => {
     expect(d.points).toEqual([[1, 2, 3, "Blatrimpe 14 e", 0, "Blatrimpe"]]);
     expect(layerPointText(d, d.points[0]!)).toEqual({ detail: "Biology — Frutexa", system: "Blatrimpe" });
   });
+
+  it("draws the edGGG catalogue, then the cloud ladder's candidates from the Spansh dump, strongest first", () => {
+    const d = galaxyLayer("ggg", undefined);
+    const ladder = d.points
+      .map((p) => ({ body: p[3], detail: layerPointText(d, p).detail }))
+      .filter((p) => p.detail.startsWith("Cloud ladder "));
+    expect(ladder.map((p) => p.body).sort()).toEqual(GGG_CANDIDATES.map((c) => c[0]).sort());
+    const scores = ladder.map((p) => Number(/^Cloud ladder (\d\.\d)\/5/.exec(p.detail)![1]));
+    expect(scores.every((s) => s >= 1.5)).toBe(true);
+    expect(scores).toEqual([...scores].sort((a, b) => b - a));
+    expect(scores[0]).toBe(5);
+    expect(ladder[0]!.detail).toMatch(/not confirmed$/);
+    // A candidate the commander has confirmed shows as his find, once.
+    const [body, system, , , , , x, y, z] = GGG_CANDIDATES[0]!;
+    const withOwn = galaxyLayer("ggg", undefined, Date.now(), () => [{ x, y, z, body, system }]);
+    expect(withOwn.points.filter((p) => p[3] === body)).toHaveLength(1);
+  });
 });
+

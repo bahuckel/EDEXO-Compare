@@ -11,7 +11,8 @@ import { carrierRecords, readCarrierStatus } from "./edastroCarriers.js";
 import { edastroGreenReports, nspBySystem, readNspStatus } from "./edastroNsp.js";
 import type { BookmarksService } from "./bookmarks.js";
 import { GGG_CATALOGUE } from "../shared/gggCatalogue.js";
-import { greenCodexClassLabel, shortClass } from "../shared/greenGasGiant.js";
+import { GGG_CANDIDATES } from "../shared/gggCandidates.js";
+import { classifyGreenGiant, greenCodexClassLabel, greenGiantScoreText, shortClass } from "../shared/greenGasGiant.js";
 import type { GalaxyLayerDTO, GalaxyLayerKind } from "../shared/galaxyLayers.js";
 
 export type { GalaxyLayerDTO, GalaxyLayerKind } from "../shared/galaxyLayers.js";
@@ -66,7 +67,19 @@ export function galaxyLayer(
       if (catalogued.has(g.system.toLowerCase())) continue;
       out.add(g.x, g.y, g.z, g.system, `EDAstro codex report · ${g.codexIds.map(greenCodexClassLabel).join(", ")} · not in the edGGG catalogue`, g.system);
     }
-    for (const g of ownGreen?.() ?? []) out.add(g.x, g.y, g.z, g.body, "Your find — not in the edGGG catalogue", g.system);
+    const own = ownGreen?.() ?? [];
+    for (const g of own) out.add(g.x, g.y, g.z, g.body, "Your find — not in the edGGG catalogue", g.system);
+    // The cloud ladder's candidates from the Spansh dump, strongest first, scored as any scan is.
+    const mine = new Set(own.map((g) => g.body.toLowerCase()));
+    const ranked = GGG_CANDIDATES.flatMap(([body, system, cls, t, massEM, radiusM, x, y, z]) => {
+      if (mine.has(body.toLowerCase())) return [];
+      const v = classifyGreenGiant({ planetClass: cls, surfaceTemperatureK: t, massEM, radiusM, bodyName: body });
+      return v?.score != null ? [{ body, system, cls, x, y, z, v, score: v.score }] : [];
+    }).sort((a, b) => b.score - a.score);
+    for (const c of ranked) {
+      const detail = `Cloud ladder ${greenGiantScoreText(c.score)} · ${shortClass(c.cls)} · ${c.v.why} · not confirmed`;
+      out.add(c.x, c.y, c.z, c.body, detail, c.system);
+    }
     return out.done(kind);
   }
   if (kind === "poi") {
