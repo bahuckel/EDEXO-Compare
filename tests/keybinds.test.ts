@@ -16,8 +16,13 @@ const kb = require("../electron/keybinds.cjs") as {
     load: () => void;
     apply: () => Record<string, string>;
     set: (n: Record<string, string | null>) => { binds: Record<string, string>; status: Record<string, string> };
-    get: () => { binds: Record<string, string>; status: Record<string, string> };
+    get: () => {
+      binds: Record<string, string>;
+      status: Record<string, string>;
+      actions: Record<string, { label: string; default: string; gameOnly: boolean }>;
+    };
     pause: (on: boolean) => unknown;
+    setGameFocused: (on: boolean) => void;
     bindFor: (k: string) => string;
   };
   validAccelerator: (a: unknown) => boolean;
@@ -68,6 +73,7 @@ describe("registering them", () => {
   it("starts with Ctrl+Alt+H for the HUDs, F1 / F2 for the body tabs and F5 to clear the notices, and they fire", () => {
     const k = make();
     k.load();
+    k.setGameFocused(true);
     expect(k.apply()).toEqual({ hudToggle: "ok", bodyPrev: "ok", bodyNext: "ok", noticesClear: "ok" });
     held.get("F1")!();
     held.get("F2")!();
@@ -80,6 +86,7 @@ describe("registering them", () => {
     takenElsewhere.add("F1");
     const k = make();
     k.load();
+    k.setGameFocused(true);
     expect(k.apply().bodyPrev).toBe("taken");
     const r = k.set({ bodyNext: "F3", bodyPrev: "F3" });
     expect(r.status.bodyPrev).toBe("ok");
@@ -111,10 +118,26 @@ describe("registering them", () => {
   it("lets go of every key while a new one is recorded, and takes them back after", () => {
     const k = make();
     k.load();
-    k.apply();
+    k.setGameFocused(true);
     k.pause(true);
+    expect(held.size).toBe(0);
+    // The game coming forward while a key is recorded does not take the keys back early.
+    k.setGameFocused(false);
+    k.setGameFocused(true);
     expect(held.size).toBe(0);
     k.pause(false);
     expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5"]);
+  });
+
+  it("holds the body keys and F5 only while Elite is in front; the HUD key always (owner, 2026-10-05)", () => {
+    const k = make();
+    k.load();
+    expect(k.apply()).toEqual({ hudToggle: "ok", bodyPrev: "standby", bodyNext: "standby", noticesClear: "standby" });
+    expect([...held.keys()]).toEqual(["Control+Alt+H"]);
+    k.setGameFocused(true);
+    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5"]);
+    k.setGameFocused(false);
+    expect([...held.keys()]).toEqual(["Control+Alt+H"]);
+    expect(k.get().actions.noticesClear!.gameOnly).toBe(true);
   });
 });

@@ -720,6 +720,9 @@ async function start() {
     let hideTimer = null;
     foreground = watchForeground((name, at) => {
       huds.log(`foreground ${name || "(unreadable)"}${at ? ` at ${at.x},${at.y}` : ""}`);
+      // The body tabs and Clear the notices take their keys only while Elite is in front (keybinds.cjs).
+      // "Idle" (no window for a moment between two) and an unreadable name change nothing.
+      if (name && String(name).toLowerCase() !== "idle") keybinds.setGameFocused(isGame(name));
       // The game in front: its monitor is where the corner stack goes (hudWindows setGamePoint).
       if (isGame(name) && at) huds.setGamePoint(at);
       // The game just came to the front (the watcher reports changes only): put the HUDs back on top.

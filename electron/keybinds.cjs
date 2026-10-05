@@ -12,13 +12,19 @@
   key the commander uses in Elite should not be bound here; the launcher says so beside the field.
 
   Saved as edexo-keybinds.json beside the HUD layout (the user data folder).
+
+  The body tabs and Clear the notices hold their keys only while Elite is in front (owner, 2026-10-05:
+  F5 "blocks my keystrokes in my browser, it should only work while the game is in focus"): a global
+  key is taken from every program, so these are registered when the game comes to the front and let
+  go when anything else does. The HUD toggle stays global (Ctrl+Alt+H by default) — it is what shows
+  the HUDs from outside the game.
 */
 
 const ACTIONS = {
   hudToggle: { default: "Control+Alt+H", label: "Show / hide the HUDs" },
-  bodyPrev: { default: "F1", label: "Previous body tab" },
-  bodyNext: { default: "F2", label: "Next body tab" },
-  noticesClear: { default: "F5", label: "Clear the notices (the bell)" },
+  bodyPrev: { default: "F1", label: "Previous body tab", gameOnly: true },
+  bodyNext: { default: "F2", label: "Next body tab", gameOnly: true },
+  noticesClear: { default: "F5", label: "Clear the notices (the bell)", gameOnly: true },
 };
 
 const MODIFIERS = new Set(["Control", "Ctrl", "CommandOrControl", "CmdOrCtrl", "Alt", "Shift", "Super", "Meta"]);
@@ -50,6 +56,9 @@ function createKeybinds(deps) {
   /** What each action's bind did when applied: ok, taken (another program has it), duplicate, invalid, off. */
   let status = {};
   let registered = [];
+  /** Elite is the window in front: the game-only binds are registered (see the note at the top). */
+  let gameFocused = false;
+  let paused = false;
 
   function load() {
     try {
@@ -102,6 +111,10 @@ function createKeybinds(deps) {
         continue;
       }
       seen.add(acc.toLowerCase());
+      if (ACTIONS[k].gameOnly && !gameFocused) {
+        status[k] = "standby";
+        continue;
+      }
       let ok = false;
       try {
         ok = deps.globalShortcut.register(acc, () => {
@@ -139,7 +152,9 @@ function createKeybinds(deps) {
     return {
       binds: { ...binds },
       status: { ...status },
-      actions: Object.fromEntries(Object.entries(ACTIONS).map(([k, v]) => [k, { label: v.label, default: v.default }])),
+      actions: Object.fromEntries(
+        Object.entries(ACTIONS).map(([k, v]) => [k, { label: v.label, default: v.default, gameOnly: v.gameOnly === true }]),
+      ),
     };
   }
 
@@ -147,7 +162,16 @@ function createKeybinds(deps) {
     While the launcher records a new bind, the current ones step aside: a registered global key never
     reaches any window, so pressing F1 to keep F1 would otherwise record nothing.
   */
+  /** The game came to the front (true) or something else did: game-only binds follow it. */
+  function setGameFocused(on) {
+    const next = on === true;
+    if (next === gameFocused) return;
+    gameFocused = next;
+    if (!paused) apply();
+  }
+
   function pause(on) {
+    paused = !!on;
     if (on) {
       for (const acc of registered) {
         try {
@@ -163,7 +187,16 @@ function createKeybinds(deps) {
     return get();
   }
 
-  return { load, apply, set, get, pause, bindFor: (k) => binds[k] ?? "", statusFor: (k) => status[k] ?? "off" };
+  return {
+    load,
+    apply,
+    set,
+    get,
+    pause,
+    setGameFocused,
+    bindFor: (k) => binds[k] ?? "",
+    statusFor: (k) => status[k] ?? "off",
+  };
 }
 
 module.exports = { createKeybinds, validAccelerator, KEYBIND_ACTIONS: ACTIONS };

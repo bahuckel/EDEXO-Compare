@@ -1114,6 +1114,8 @@
       taken: "Another program already uses this key, so it does nothing here. Pick another.",
       duplicate: "Already bound to another action above.",
       invalid: "Not a key this app can bind.",
+      // Registered only while Elite is in front, so the key keeps working in every other program.
+      standby: "Works while Elite is in front; other programs keep the key.",
     };
     function pretty(acc) {
       if (!acc) return "None";
