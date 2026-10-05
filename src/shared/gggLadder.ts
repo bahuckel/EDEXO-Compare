@@ -15,8 +15,10 @@
  *
  * "Exactly" is exact in 32-bit floats, as the game computes and stores them: that is why a green
  * temperature is one float value or a handful of neighbours (130.000015, 217.4999847 … 217.5000153).
- * Every step here goes through `Math.fround`, and it reproduces his tables of always-green
- * temperatures value by value (tests/gggLadder.test.ts).
+ * Every value here is rounded with `Math.fround`; the depth's powers and the step's division are done
+ * in 64-bit before rounding. That reproduces his tables of always-green temperatures value by value
+ * and puts every catalogued density-decided green (outside the cold nudge range) exactly on a door
+ * (tests/gggLadder.test.ts); doing those two in 32-bit misses some by a float step.
  *
  * Two strengths of answer:
  * - `ceiling`: the ladder reaches its ceiling, so the density does not matter beyond reaching it —
@@ -86,12 +88,13 @@ export function gasGiantDensity(massEM: number, radiusM: number): number {
   return (massEM * EARTH_KG) / ((4 / 3) * Math.PI * radiusM ** 3);
 }
 
-/** How far up the clouds reach, in K (the "depth" of the ladder). */
+/**
+ * How far up the clouds reach, in K (the "depth" of the ladder), rounded to a 32-bit float.
+ * The powers are taken in 64-bit: with that path every catalogued density-decided green not in the
+ * cold nudge range lands exactly on a door (12 of 12 on the Spansh dump); all-32-bit misses one.
+ */
 export function ladderDepth(tempK: number, density: number): number {
-  return f(
-    f(f(f(5) / f(9)) * f(1300)) *
-      f(f(Math.pow(f(f(tempK) / f(1300)), f(1.2))) * f(Math.pow(f(density), f(0.2)))),
-  );
+  return f((5 / 9) * 1300 * (f(tempK) / 1300) ** 1.2 * density ** 0.2);
 }
 
 export interface LadderVerdict {
@@ -134,7 +137,7 @@ export function ladderGreen(opts: {
   // but whether the ladder really gets there is not known, so only the surface rung is certain.
   const atCeiling = reach == null || reach >= ceiling;
   const top = atCeiling ? ceiling : reach!;
-  let step = f(f(top - t) / f(7));
+  let step = f((top - t) / 7);
   if (cls === "III") step = Math.min(f(100), Math.max(f(30), step));
   for (let i = 0; i < 7; i++) {
     const rung = f(t + f(step * f(i)));
@@ -164,7 +167,7 @@ export function alwaysGreenTemps(cls: LadderClass, lo: number, hi: number): numb
     buf.setInt32(0, bits);
     const t = buf.getFloat32(0);
     const ceiling = f(ceilingOf(t));
-    let step = f(f(ceiling - t) / f(7));
+    let step = f((ceiling - t) / 7);
     if (cls === "III") step = Math.min(f(100), Math.max(f(30), step));
     let hit = false;
     for (let i = 0; i < 7 && !hit; i++) {

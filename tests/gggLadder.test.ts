@@ -86,4 +86,22 @@ describe("the cloud ladder", () => {
         ?.basis,
     ).toBe("density");
   });
+
+  // Catalogued density-decided greens, Spansh values (T K, MassEM, radius km): with the powers
+  // and the step division in 64-bit a rung lands exactly on 250 K; all-32-bit misses Pheia Aewsy by a float step.
+  it.each([
+    ["Eafoff LN-Q d6-0 1", 128.90947, 114.621498, 60187.696],
+    ["Pro Flee UY-Q c18-0 2", 129.582138, 130.617767, 64116.9],
+    ["Pheia Aewsy LV-Y d11 B 4", 126.062111, 212.034698, 67972.136],
+  ])("puts a rung of %s exactly on a door", (_name, T, mass, rkm) => {
+    const t = f(T);
+    const top = f(t + ladderDepth(t, gasGiantDensity(mass, rkm * 1000)));
+    expect(top).toBeLessThan(340);
+    const step = f((top - t) / 7);
+    const rungs = Array.from({ length: 7 }, (_, i) => f(t + f(step * f(i))));
+    expect(rungs).toContain(250);
+    expect(
+      ladderGreen({ planetClass: "Sudarsky class I gas giant", tempK: T, massEM: mass, radiusM: rkm * 1000 }),
+    ).toEqual(expect.objectContaining({ door: 250, basis: "density" }));
+  });
 });
