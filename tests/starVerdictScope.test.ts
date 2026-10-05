@@ -40,9 +40,18 @@ describe("the observed-host-star term", () => {
   // lapida, the cases that exposed this, turned out to have been seen under K and Y all along: their
   // "never" came from samples the profile builder was not reading.)
   it("still has something to say about these species on their own", () => {
-    expect(hostStarVerdict(species("concha_concha_biconcavis"), "A").kind).toBe("never");
-    expect(hostStarVerdict(species("fonticulua_fonticulua_digitos"), "Y").kind).toBe("never");
+    // Classes no confirmed body has either (data/exomastery/host-star-seen.json, 2026-10-05: digitos
+    // has 34 confirmed bodies round Y dwarfs and biconcavis 4 round A stars, which the profiles missed).
+    expect(hostStarVerdict(species("concha_concha_biconcavis"), "D").kind).toBe("never");
+    expect(hostStarVerdict(species("fonticulua_fonticulua_digitos"), "B").kind).toBe("never");
+    expect(hostStarVerdict(species("fonticulua_fonticulua_digitos"), "Y").kind).toBe("observed");
     expect(hostStarVerdict(species("fonticulua_fonticulua_digitos"), "K").kind).toBe("observed");
+  });
+
+  it("believes a confirmed spawn over a thin profile", () => {
+    // Stratum frigus: 28 profile bodies, none round an M dwarf; 19 of the 362 confirmed spawns in the
+    // precision sample are, and the "never" demoted each one (2026-10-05).
+    expect(hostStarVerdict(species("stratum_stratum_frigus"), "M").kind).toBe("observed");
   });
 
   it("stays silent for a species whose colour comes from a crust material", () => {
@@ -54,7 +63,7 @@ describe("the observed-host-star term", () => {
   });
 
   it("still demotes when neither the host nor the main star has been seen", () => {
-    expect(neverSeen("fonticulua_fonticulua_digitos", "Y", "Y")).toBe(true);
+    expect(neverSeen("fonticulua_fonticulua_digitos", "B", "B")).toBe(true);
   });
 });
 

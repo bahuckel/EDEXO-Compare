@@ -18,6 +18,8 @@
  * declines to answer, and the matcher behaves exactly as it did before — rarity is not
  * unreliability (§15.2).
  */
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import type { SpeciesEntry } from "../shared/types.js";
 import { hostStarClassKey } from "../shared/hostStarClass.js";
 import { loadExomasteryProfile } from "./exomasteryProfile.js";
@@ -67,6 +69,43 @@ export interface HostStarObservations {
 const cache = new Map<string, HostStarObservations | null>();
 
 /**
+ * Host classes each species has been confirmed under: `data/exomastery/host-star-seen.json`, from every
+ * Spansh body that is the only one in its system with the genus while the EDSM + EDAstro codex log
+ * one species of it there (`docs/perf/build_host_star_seen.py`).
+ *
+ * The profiles behind the "never" verdict can be thin — 28 bodies for Stratum frigus, 44 for Fumerola
+ * nitris — and over the confirmed spawns that verdict demoted 260 real finds across 18 species
+ * (2026-10-05). One confirmed body under a class is the same evidence as one profile body: the
+ * species grows there.
+ */
+let confirmedCache: { root: string; bySpecies: Map<string, Map<string, number>> | null } | null = null;
+
+function confirmedHostClasses(root: string, speciesId: string): Map<string, number> | null {
+  if (confirmedCache?.root !== root) {
+    let bySpecies: Map<string, Map<string, number>> | null = null;
+    try {
+      const p = path.join(root, "data", "exomastery", "host-star-seen.json");
+      if (existsSync(p)) {
+        const j = JSON.parse(readFileSync(p, "utf8")) as { species?: Record<string, Record<string, number>> };
+        bySpecies = new Map();
+        for (const [id, labels] of Object.entries(j.species ?? {})) {
+          const byClass = new Map<string, number>();
+          for (const [label, n] of Object.entries(labels)) {
+            const k = hostStarClassKey(label);
+            if (k && Number.isFinite(n) && n > 0) byClass.set(k, (byClass.get(k) ?? 0) + n);
+          }
+          bySpecies.set(id, byClass);
+        }
+      }
+    } catch {
+      bySpecies = null;
+    }
+    confirmedCache = { root, bySpecies };
+  }
+  return confirmedCache.bySpecies?.get(speciesId) ?? null;
+}
+
+/**
  * Test seam: where profiles are read from.
  *
  * The matcher has no project root to pass down — it is handed a scan and a species row — so this
@@ -78,6 +117,7 @@ let rootOverride: string | null = null;
 export function setHostStarObservationsRootForTests(root: string | null): void {
   rootOverride = root;
   cache.clear();
+  confirmedCache = null;
 }
 
 function resolveRoot(root?: string): string {
@@ -163,6 +203,13 @@ export function hostStarVerdict(
 
   const d = obs.determinism;
   if (d == null || d < HOST_STAR_MIN_DETERMINISM) return { kind: "unknown" };
+  // Confirmed under this class elsewhere: not a "never", whatever the profile missed.
+  const confirmed = confirmedHostClasses(resolveRoot(root), entry.id);
+  const there = confirmed?.get(cls) ?? 0;
+  if (there > 0) {
+    const all = [...confirmed!.values()].reduce((a, n) => a + n, 0);
+    return { kind: "observed", share: there / all, observations: there, total: all };
+  }
   return {
     kind: "never",
     total: obs.total,
