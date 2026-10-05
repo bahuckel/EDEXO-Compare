@@ -32,6 +32,9 @@
  * which is the existing `Bacterium-vesicula.png` convention with the variant appended, so the
  * species still resolves and the colour is available to pick between variants.
  *
+ * A photograph already in the tree (named in photo-credits.json) is skipped even when the source
+ * differs, because the tree's copy is recompressed; pass `--replace` to overwrite it with a new shot.
+ *
  * ## Two things it refuses to do
  *
  * It will not import a species the database does not have, and it will not import a colour the
@@ -239,7 +242,14 @@ function normaliseColourSpelling(colour: string, allowed: ReadonlySet<string>): 
 }
 
 function main(): void {
-  const source = process.argv[2]?.trim() || DEFAULT_SOURCE;
+  const args = process.argv.slice(2);
+  /*
+    A photograph already imported is left alone: the tree holds it recompressed (same pixels, ~40 %
+    smaller), so its size never matches the original again and a re-run would copy the original back
+    over it (2026-10-05). `--replace` is for a new shot of the same colour, meant to take its place.
+  */
+  const REPLACE = args.includes("--replace");
+  const source = args.find((a) => a !== "--replace")?.trim() || DEFAULT_SOURCE;
   const root = getProjectRoot();
   if (!source) {
     console.error(
@@ -326,7 +336,7 @@ function main(): void {
         const target = `${entry.displayName.trim().split(/\s+/).join("-")}${bare.index ? `-${bare.index}` : ""}.${bare.ext}`;
         const abs = path.join(photosDir, target);
         const src = path.join(dir, file);
-        if (existsSync(abs) && statSync(abs).size === statSync(src).size) {
+        if (existsSync(abs) && (statSync(abs).size === statSync(src).size || (credits.byFile[target] && !REPLACE))) {
           skipped++;
         } else {
           copyFileSync(src, abs);
@@ -390,7 +400,7 @@ function main(): void {
       const abs = path.join(photosDir, target);
 
       const src = path.join(dir, file);
-      if (existsSync(abs) && statSync(abs).size === statSync(src).size) {
+      if (existsSync(abs) && (statSync(abs).size === statSync(src).size || (credits.byFile[target] && !REPLACE))) {
         skipped++;
       } else {
         copyFileSync(src, abs);
