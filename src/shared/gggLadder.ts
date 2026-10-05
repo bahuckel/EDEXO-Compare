@@ -17,8 +17,8 @@
  * temperature is one float value or a handful of neighbours (130.000015, 217.4999847 … 217.5000153).
  * Every value here is rounded with `Math.fround`; the depth's powers and the step's division are done
  * in 64-bit before rounding. That reproduces his tables of always-green temperatures value by value
- * and puts every catalogued density-decided green (outside the cold nudge range) exactly on a door
- * (tests/gggLadder.test.ts); doing those two in 32-bit misses some by a float step.
+ * and puts 15 of the 18 catalogued density-decided greens it can judge exactly on a door, the other
+ * three within two float steps (tests/gggLadder.test.ts); doing those two in 32-bit misses more.
  *
  * Two strengths of answer:
  * - `ceiling`: the ladder reaches its ceiling, so the density does not matter beyond reaching it —
@@ -29,7 +29,8 @@
  *
  * Doors are known for class I and ammonia-based life (115, 250, 270 K), water-based life (210, 270 K),
  * class III (370, 700, 900 K) and class IV (900, 1400 K). Class II, cold class III (below 415 K) and
- * cold class I / ammonia-based life (80–122.5 K: four catalogued greens there miss every door) get a
+ * cold class I / ammonia-based life (80–113 K: the ten catalogued greens there, 83.9–109.9 K, miss
+ * every door, while the six at 113.8–122.3 K and one at 77.5 K land on one; checked 2026-10-05) get a
  * "nudge" of their temperature before the ladder is built that nobody can predict yet; helium-rich and
  * class V giants are unconfirmed. Those get no answer.
  */
@@ -91,8 +92,8 @@ export function gasGiantDensity(massEM: number, radiusM: number): number {
 
 /**
  * How far up the clouds reach, in K (the "depth" of the ladder), rounded to a 32-bit float.
- * The powers are taken in 64-bit: with that path every catalogued density-decided green not in the
- * cold nudge range lands exactly on a door (12 of 12 on the Spansh dump); all-32-bit misses one.
+ * The powers are taken in 64-bit: with that path 15 of the 18 catalogued density-decided greens out of
+ * the nudge ranges land exactly on a door, the rest within two float steps; all-32-bit misses more.
  */
 export function ladderDepth(tempK: number, density: number): number {
   return f((5 / 9) * 1300 * (f(tempK) / 1300) ** 1.2 * density ** 0.2);
@@ -104,6 +105,8 @@ export interface LadderVerdict {
   door: number;
   /** `ceiling`: temperature alone decides (certain); `density`: the density's float path matters (likely). */
   basis: "ceiling" | "density";
+  /** How far the rung is from the door, in float steps at the door: 0 is exact. */
+  offUlp: number;
 }
 
 /** Float steps of the door's magnitude a density-decided rung may miss by and still count. */
@@ -116,7 +119,7 @@ function ulp(x: number): number {
 
 /** The temperature ranges where the shown temperature is not the ladder's (see the header). */
 export function inNudgeRange(cls: LadderClass, tempK: number): boolean {
-  if (cls === "I" || cls === "ammonia") return tempK >= 80 && tempK <= 122.5;
+  if (cls === "I" || cls === "ammonia") return tempK >= 80 && tempK < 113;
   return cls === "III" && tempK < 415;
 }
 
@@ -146,17 +149,19 @@ export function ladderGreen(opts: {
   const top = atCeiling ? ceiling : reach!;
   let step = f((top - t) / 7);
   if (cls === "III") step = Math.min(f(100), Math.max(f(30), step));
+  let best: LadderVerdict | null = null;
   for (let i = 0; i < 7; i++) {
     const rung = f(t + f(step * f(i)));
     for (const door of GGG_DOORS[cls]) {
-      const exact = rung === f(door);
-      const near = Math.abs(rung - door) <= DENSITY_TOLERANCE_ULP * ulp(door);
-      if (atCeiling ? !exact : !(i === 0 ? exact : near)) continue;
+      const offUlp = Math.abs(rung - door) / ulp(door);
+      const exact = offUlp === 0;
+      if (atCeiling || i === 0 ? !exact : offUlp > DENSITY_TOLERANCE_ULP) continue;
+      if (best && best.offUlp <= offUlp) continue;
       const certain = i === 0 || (atCeiling && reach != null);
-      return { rung: i + 1, door, basis: certain ? "ceiling" : "density" };
+      best = { rung: i + 1, door, basis: certain ? "ceiling" : "density", offUlp };
     }
   }
-  return null;
+  return best;
 }
 
 /**

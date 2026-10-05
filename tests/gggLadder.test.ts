@@ -4,7 +4,13 @@
  * worked examples.
  */
 import { describe, expect, it } from "vitest";
-import { alwaysGreenTemps, gasGiantDensity, ladderDepth, ladderGreen } from "../src/shared/gggLadder.js";
+import {
+  alwaysGreenTemps,
+  gasGiantDensity,
+  inNudgeRange,
+  ladderDepth,
+  ladderGreen,
+} from "../src/shared/gggLadder.js";
 
 const f = Math.fround;
 const round6 = (xs: number[]) => xs.map((x) => Number(x.toFixed(6)));
@@ -46,7 +52,7 @@ describe("the cloud ladder", () => {
       massEM: 18.154175,
       radiusM: 17_025_020,
     });
-    expect(naina).toEqual({ rung: 5, door: 250, basis: "ceiling" });
+    expect(naina).toEqual({ rung: 5, door: 250, basis: "ceiling", offUlp: 0 });
     // 1,000 kg/m³: the ladder stops short of 340 K and no rung lands on a door.
     const r = Math.cbrt((18.154175 * 5.97219e24) / (1000 * (4 / 3) * Math.PI));
     expect(
@@ -71,6 +77,7 @@ describe("the cloud ladder", () => {
       rung: 1,
       door: 210,
       basis: "ceiling",
+      offUlp: 0,
     });
     expect(
       ladderGreen({
@@ -102,6 +109,38 @@ describe("the cloud ladder", () => {
     expect(rungs).toContain(250);
     expect(
       ladderGreen({ planetClass: "Sudarsky class I gas giant", tempK: T, massEM: mass, radiusM: rkm * 1000 }),
-    ).toEqual(expect.objectContaining({ door: 250, basis: "density" }));
+    ).toEqual(expect.objectContaining({ door: 250, basis: "density", offUlp: 0 }));
+  });
+
+  // Cold catalogued greens at 113.8–122.3 K need no nudge (the ten at 83.9–109.9 K do): Spansh values.
+  it.each([
+    ["Vegnao PA-S c6-43 3", "Sudarsky class I gas giant", 113.841248, 306.238953, 72590.296, 7, 250, 0],
+    [
+      "Floawns FX-L b36-24 1",
+      "Gas giant with ammonia based life",
+      121.179939,
+      450.12088,
+      75688.808,
+      6,
+      250,
+      0,
+    ],
+    ["Synookio EI-J d9-1 7", "Sudarsky class I gas giant", 119.986717, 21.216078, 20795.606, 6, 270, 1],
+  ])("puts %s on a door with its shown temperature", (_name, pc, T, mass, rkm, rung, door, off) => {
+    expect(ladderGreen({ planetClass: pc, tempK: T, massEM: mass, radiusM: rkm * 1000 })).toEqual({
+      rung,
+      door,
+      basis: "density",
+      offUlp: off,
+    });
+  });
+
+  it("gives no answer in the cold nudge range, 80–113 K", () => {
+    expect(inNudgeRange("I", 109.874001)).toBe(true);
+    expect(inNudgeRange("ammonia", 102.23452)).toBe(true);
+    expect(inNudgeRange("I", 113.841248)).toBe(false);
+    expect(inNudgeRange("I", 77.450478)).toBe(false);
+    expect(inNudgeRange("III", 400)).toBe(true);
+    expect(inNudgeRange("water", 100)).toBe(false);
   });
 });
