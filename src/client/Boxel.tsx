@@ -78,6 +78,8 @@ function useNarrow(px: number): boolean {
   return narrow;
 }
 
+type SideTab = "saved" | "explored" | "history";
+
 const isIncluded = (v: unknown): v is string[] | null => v === null || isStrArr(v);
 const json = { "Content-Type": "application/json" };
 
@@ -99,7 +101,16 @@ export function BoxelScreen({
   const [sideQuery, setSideQuery] = useState("");
   const [endInput, setEndInput] = useState("");
   const [planInput, setPlanInput] = useState("");
-  const [showPrevious, setShowPrevious] = usePersistedState("boxel.showPrevious", false, isBool);
+  /*
+    The side menu's three lists (owner, 2026-10-05: "Sidebar can get quite large … a button switch
+    between saved, fully explored and history on the top").
+  */
+  const [sideTab, setSideTab] = usePersistedState<SideTab>(
+    "boxel.sideTab",
+    "saved",
+    oneOf("saved", "explored", "history"),
+  );
+  const showPrevious = sideTab === "history";
   const [prevDays, setPrevDays] = usePersistedState("boxel.previousDays", 30, isNum);
   const [previous, setPrevious] = useState<PreviousBoxelDTO[] | null>(null);
   const [prevLimit, setPrevLimit] = useState(PREV_PAGE);
@@ -492,9 +503,11 @@ export function BoxelScreen({
   }, [previous, sideQuery]);
   const sideShown = useMemo(() => {
     const q = sideQuery.trim();
-    if (!saved || !q) return saved ?? [];
-    return saved.filter((b) => fuzzyRankAny([b.boxel, b.sector, b.lastSystem], q) != null);
-  }, [saved, sideQuery]);
+    const mine = (saved ?? []).filter((b) => (sideTab === "explored") === (b.next == null));
+    if (!q) return mine;
+    return mine.filter((b) => fuzzyRankAny([b.boxel, b.sector, b.lastSystem], q) != null);
+  }, [saved, sideQuery, sideTab]);
+  const exploredCount = (saved ?? []).filter((b) => b.next == null).length;
 
   const ticked = ids.map((id) => byId.get(id)).filter((b): b is SavedBoxelDTO => !!b);
   const lead = ticked.find((b) => b.current) ?? ticked[0] ?? null;
@@ -577,18 +590,47 @@ export function BoxelScreen({
 
         <div className="boxel-screen__body">
           <aside className="boxel-side" aria-label="Your boxels">
+            <div className="boxel-side__tabs" role="tablist" aria-label="Which boxels">
+              {(
+                [
+                  ["saved", "Saved", saved ? saved.length - exploredCount : null],
+                  ["explored", "Fully explored", saved ? exploredCount : null],
+                  ["history", "History", previous && showPrevious ? prevShown.length : null],
+                ] as const
+              ).map(([k, label, n]) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="tab"
+                  aria-selected={sideTab === k}
+                  className={`disc-tab${sideTab === k ? " disc-tab--on" : ""}`}
+                  onClick={() => setSideTab(k)}
+                >
+                  {label}
+                  {n != null ? <span className="dim tiny"> {n.toLocaleString()}</span> : null}
+                </button>
+              ))}
+            </div>
             <input
               type="search"
               className="my-exo-search-input boxel-side__search"
-              placeholder="Search your boxels…"
+              placeholder={showPrevious ? "Search the boxels you flew through…" : "Search your boxels…"}
               value={sideQuery}
               onChange={(ev) => setSideQuery(ev.target.value)}
             />
-            {!saved ? (
+            {showPrevious ? null : !saved ? (
               <p className="dim tiny">Reading…</p>
             ) : saved.length === 0 ? (
               <p className="dim tiny">
                 No boxels yet. Press <strong>Current boxel</strong> in a system such as Eol Prou AB-C d1-23.
+              </p>
+            ) : sideShown.length === 0 ? (
+              <p className="dim tiny">
+                {sideTab === "explored"
+                  ? "None yet: a boxel moves here when every system is flown or skipped."
+                  : sideQuery.trim()
+                    ? "No saved boxel matches."
+                    : "Every saved boxel is fully explored."}
               </p>
             ) : (
               <ul className="boxel-side__list">
@@ -694,15 +736,6 @@ export function BoxelScreen({
               </ul>
             )}
             <section className="boxel-prev" aria-label="Boxels you flew through">
-              <button
-                type="button"
-                className="boxel-prev__toggle"
-                aria-expanded={showPrevious}
-                onClick={() => setShowPrevious(!showPrevious)}
-              >
-                <span aria-hidden>{showPrevious ? "▾" : "▸"}</span> Previous boxels
-                {showPrevious && previous ? <span className="dim"> ({prevShown.length})</span> : null}
-              </button>
               {showPrevious ? (
                 <>
                   <div className="boxel-prev__range" role="group" aria-label="Last visit within">

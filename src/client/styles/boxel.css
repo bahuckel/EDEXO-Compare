@@ -287,8 +287,17 @@
 .boxel-prev {
   display: grid;
   gap: 0.4rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--accent-a22);
+}
+.boxel-prev:empty {
+  display: none;
+}
+.boxel-side__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.boxel-side__tabs .disc-tab {
+  flex: 1 1 auto;
 }
 .boxel-prev__toggle {
   justify-self: start;
