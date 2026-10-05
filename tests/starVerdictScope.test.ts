@@ -68,6 +68,30 @@ describe("the observed-host-star term", () => {
 });
 
 describe("restoring a named genus — the atmosphere weighs most", () => {
+  it("puts back segmentatus on pure thin Neon: its own air, only the share outside its band", () => {
+    // Drojaea HS-F b1-0 B 1 a: a confirmed segmentatus body, 100 % neon. Methane-only digitos won on
+    // list order before (2026-10-05).
+    const neon = {
+      PlanetClass: "Icy body",
+      AtmosphereType: "Neon",
+      Atmosphere: "thin neon atmosphere",
+      atmosphereComposition: [{ Name: "Neon", Percent: 100 }],
+      SurfaceTemperature: 52.4,
+      SurfaceGravity: 2.66,
+      SurfacePressure: 100,
+      Landable: true,
+    } as unknown as PlanetScan;
+    const { matches } = matchDatabaseToScan(
+      db,
+      neon,
+      [{ Genus: "$Codex_Ent_Fonticulus_Genus_Name;", Genus_Localised: "Fonticulua" }],
+      null,
+      { matchContext: { parentStarType: "L", hostStarClasses: ["L"], systemMainStarClass: "L" } },
+    );
+    const shown = matches.filter((m) => m.entry.genusDataDir === "fonticulua" && !m.unlikely).map((m) => m.entry.id);
+    expect(shown).toEqual(["fonticulua_fonticulua_segmentatus"]);
+  });
+
   it("puts back labiata, not the ammonia-only aureolas, on a carbon-dioxide world round an M dwarf", () => {
     // Labiata's one objection is its M-host gate; aureolas' is the atmosphere its codex does not list.
     const { matches } = matchDatabaseToScan(

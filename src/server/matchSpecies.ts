@@ -68,6 +68,7 @@ import { volcanismJournalMatchesFragments } from "../shared/volcanismMatch.js";
 import { isBacteriumSpeciesEntry } from "../shared/speciesBacterium.js";
 import {
   DEMOTED_NOTE,
+  GAS_BAND_NOTE,
   restoreDemotionsBelowSignalCount,
   demoteFailedSpatialGates,
   demoteFailedHostStarGates,
@@ -560,7 +561,7 @@ export function speciesMatchesExcludingTempPressure(
         failures.push({
           field: "AtmosphereType",
           soft: true,
-          detail: `${entry.displayName} needs ${want} ${band.gas}; this body is ${pct.toFixed(2)} % — every observed body for it sits inside that band. ${DEMOTED_NOTE}`,
+          detail: `${entry.displayName} needs ${want} ${band.gas}; this body is ${pct.toFixed(2)} % — ${GAS_BAND_NOTE} ${DEMOTED_NOTE}`,
         });
       }
     }

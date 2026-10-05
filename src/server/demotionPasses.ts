@@ -29,6 +29,9 @@ import { evaluateStarlightGate, formatStarlight, starlightOutsideFactor } from "
 /** Suffix appended to every demoted failure, so the card says what the tier means. */
 export const DEMOTED_NOTE = "Listed as a low-probability find rather than excluded.";
 
+/** Ends a gas-share band failure: the air is the species' own, only the share is outside its band. */
+export const GAS_BAND_NOTE = "every observed body for it sits inside that band.";
+
 type PendingMatch = Omit<SpeciesMatch, "photoUrl" | "photoNote" | "priceCredits">;
 
 /**
@@ -80,8 +83,16 @@ function restoreNamedGenera(
   // gates, so it carries fewer objections than it deserves. HIP 34326 D 2 (2026-09-28, the Anemone
   // split): rocky-only Luteolum, one class objection, tied with Blatteum's one star objection on a
   // high metal content body and won on list order.
+  // A gas-share band counts half: the air is on the species' own list and only its share is outside
+  // the band. Fonticulua segmentatus on pure thin Neon (9 of 968 confirmed bodies, the only Fonticulua
+  // ever confirmed there; its band is 0.1-50 %) lost to methane-only digitos on list order
+  // (2026-10-05).
   const atmObjections = (m: PendingMatch) =>
-    (m.unlikelyReasons ?? []).filter((r) => r.field === "AtmosphereType" || r.field === "PlanetClass").length;
+    (m.unlikelyReasons ?? []).reduce(
+      (n, r) =>
+        r.field === "PlanetClass" ? n + 1 : r.field === "AtmosphereType" ? n + (r.detail.includes(GAS_BAND_NOTE) ? 0.5 : 1) : n,
+      0,
+    );
   const objections = (m: PendingMatch) =>
     (m.unlikelyReasons ?? []).filter((r) => r.field !== "ObservedTemperature").length;
   const restored = new Set<number>();
