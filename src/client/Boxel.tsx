@@ -326,6 +326,15 @@ export function BoxelScreen({
 
   const byId = useMemo(() => new Map((saved ?? []).map((b) => [b.id, b])), [saved]);
   const looked = useMemo(() => new Map((table?.lookups ?? []).map((l) => [l.boxelId, l])), [table]);
+  /*
+    The highest system flown per boxel: a cut (×) is offered only after it, since the boxel always
+    lists as far as he has flown (owner, 2026-10-05).
+  */
+  const flownMax = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of table?.rows ?? []) if (r.flown) m.set(r.boxelId, Math.max(m.get(r.boxelId) ?? -1, r.n));
+    return m;
+  }, [table]);
   const order = useMemo(() => new Map(ids.map((id, i) => [id, i])), [ids]);
   const columns = useMemo<Column<BoxelTableRowDTO>[]>(
     () => [
@@ -504,7 +513,7 @@ export function BoxelScreen({
                   {r.skipped ? "Unskip" : "Skip"}
                 </button>
               ) : null}
-              {b && r.n >= 1 ? (
+              {b && r.n >= 1 && r.n > (flownMax.get(b.id) ?? -1) ? (
                 <button
                   type="button"
                   className="fdb-chip boxel-x"
@@ -521,7 +530,7 @@ export function BoxelScreen({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [byId, order],
+    [byId, order, flownMax],
   );
   // A phone gets cards, titled by the system (owner, 2026-10-05: the redo works on a phone too).
   const narrow = useNarrow(760);

@@ -71,8 +71,14 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
         }
       }
       const out = parsed.map(({ s, e }) => {
-        const { b, end } = e;
         const flownAll = flownBy.get(s.id)!;
+        /*
+          The boxel reaches at least as far as he has flown in it (owner, 2026-10-05: from Assairts EL-P
+          e5-9 he jumped to e5-16 and the systems between were not added). The end he typed, or that a
+          Plan / Current boxel found, is the least it lists.
+        */
+        const { b } = e;
+        const end = Math.min(BOXEL_MAX_ROWS - 1, Math.max(e.end, ...flownAll));
         const skipped = (s.skipped ?? []).filter((n) => n <= end && !flownAll.has(n)).sort((x, y) => x - y);
         const skip = new Set(skipped);
         let next: number | null = null;
