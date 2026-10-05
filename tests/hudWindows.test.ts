@@ -764,6 +764,22 @@ describe("what the pages report", () => {
     huds.toggleVisibility(true);
   });
 
+  it("placing makes every HUD window again, so a window made before placing never holds the drag (owner, 2026-10-05)", async () => {
+    const huds = make();
+    huds.setLayout({ freeOn: true });
+    await huds.request("/hud-overlay.html?s=fss,jump", 404, 300, null, "open");
+    const [old] = live() as [FakeWindow];
+    huds.setMoveMode(true);
+    for (let i = 0; i < 20 && !old.destroyed; i++) await new Promise((r) => setTimeout(r, 5));
+    expect(old.destroyed).toBe(true);
+    const [fresh] = live() as [FakeWindow];
+    expect(fresh).not.toBe(old);
+    expect(fresh.sent).toContainEqual(["edexo:hud-move-mode", { on: true }]);
+    expect(huds.dragFromPage(fresh as never, "start")).toEqual({ ok: true });
+    expect(huds.dragFromPage(old as never, "start")).toEqual({ ok: false });
+    huds.setMoveMode(false);
+  });
+
   it("placing shows an idle HUD too, so there is always something to drag (owner, 2026-10-05)", async () => {
     const huds = make();
     huds.setLayout({ freeOn: true });

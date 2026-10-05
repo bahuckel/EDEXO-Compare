@@ -117,6 +117,8 @@ function createHudWindows(deps) {
     follow a drag; never saved, and it shows the HUDs whatever hides them.
   */
   let moving = false;
+  /** The app icon the HUD windows were opened with, for the ones placing makes again. */
+  let lastIcon = null;
   /** The drag in progress: the cursor and the stack's top-left when it started. */
   let drag = null;
   /*
@@ -766,6 +768,7 @@ function createHudWindows(deps) {
     hudLog(`placing ${next ? "on" : "off"}`);
     moving = next;
     drag = null;
+    if (moving) void renewForPlacing();
     for (const s of hudOverlayStack) {
       if (!s.win || s.win.isDestroyed()) continue;
       // Through both states, so the window's style is written again even if it already "was" this.
@@ -779,6 +782,60 @@ function createHudWindows(deps) {
     }
     applyAway();
     return moving;
+  }
+
+  /**
+   * Placing gets fresh windows (owner, 2026-10-05: the HUD would not move "unless I split it to
+   * different windows and then merge it again"). hud-events.log, every time: placing on, the page's
+   * frame up, the mouse over it — and no press ever arriving from a window made before placing, while
+   * one made during placing (what un-merging and merging back gives) took the drag at once. So each
+   * HUD window is made again, in placing state, and swapped in for the old one when its page has
+   * loaded; the old one goes.
+   */
+  let renewing = false;
+  async function renewForPlacing() {
+    const rt = deps.getRuntime();
+    if (renewing || disposed || !rt) return;
+    renewing = true;
+    try {
+      const slots = hudOverlayStack.filter((s) => s.win && !s.win.isDestroyed());
+      await Promise.all(
+        slots.map(async (slot) => {
+          const old = slot.win;
+          const fresh = createHudOverlayWindow(slot.width || 404, slot.height || 330, lastIcon);
+          try {
+            await loadHudUrlWithRetry(fresh, `${rt.getLocalBaseUrl()}${slot.pathname}`);
+          } catch {
+            destroyHudWindow(fresh);
+            return;
+          }
+          // Placing ended, the app is closing, or the slot changed while it loaded: keep the old one.
+          if (!moving || disposed || slot.win !== old || !hudOverlayStack.includes(slot)) {
+            destroyHudWindow(fresh);
+            return;
+          }
+          try {
+            fresh.setBounds(old.getBounds());
+          } catch {
+            /* the relayout below places it */
+          }
+          slot.win = fresh;
+          destroyHudWindow(old);
+          // Its load already did both (did-finish-load); said again, the page ignores a second "on".
+          setClickThrough(fresh, false);
+          try {
+            fresh.webContents.send("edexo:hud-move-mode", { on: true });
+          } catch {
+            /* closing */
+          }
+          hudLog(`renewed ${slot.pathname} for placing`);
+        }),
+      );
+      relayoutHudStack();
+      applyAway();
+    } finally {
+      renewing = false;
+    }
   }
 
   /**
@@ -1233,6 +1290,7 @@ function createHudWindows(deps) {
    *   no-op; set: an already-open page is pointed at the new URL (query string changes)
    */
   async function requestHudOverlaySlot(pathNorm, width, height, iconForChild, mode) {
+    if (iconForChild) lastIcon = iconForChild;
     if (disposed) return { opened: false, paths: [], error: "The app is closing." };
     const runtime = deps.getRuntime();
     if (!runtime) return { opened: false, paths: hudPathsFiltered(), error: "Server not ready yet." };
