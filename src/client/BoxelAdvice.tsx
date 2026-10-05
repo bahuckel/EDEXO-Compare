@@ -98,7 +98,11 @@ const MAIN_STARS: { key: string; label: string; title?: string }[] = [
   { key: "TTS", label: "TTS", title: "T Tauri" },
   { key: "AeBe", label: "Ae/Be", title: "Herbig Ae/Be" },
   { key: "W", label: "WR", title: "Wolf-Rayet" },
-  { key: "C", label: "C/S", title: "Carbon and S-type" },
+  {
+    key: "C",
+    label: "Carbon",
+    title: "Carbon stars: C, CN, CJ, CH, CHd and CS, with the MS- and S-type stars",
+  },
   { key: "D", label: "WD", title: "White dwarf" },
   { key: "N", label: "NS", title: "Neutron star" },
   { key: "H", label: "BH", title: "Black hole" },

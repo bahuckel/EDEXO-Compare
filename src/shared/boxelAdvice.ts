@@ -40,7 +40,7 @@ export const BOXEL_TARGETS: readonly BoxelTarget[] = [
   { key: "star:N", label: "Neutron star", group: "Stars" },
   { key: "star:D", label: "White dwarf", group: "Stars" },
   { key: "star:W", label: "Wolf-Rayet star", group: "Stars" },
-  { key: "star:C", label: "Carbon or S-type star", group: "Stars" },
+  { key: "star:C", label: "Carbon star (C, CN, CJ, CH, CHd, CS, MS, S)", group: "Stars" },
   { key: "star:O", label: "O star", group: "Stars" },
   { key: "star:B", label: "B star", group: "Stars" },
   { key: "star:A", label: "A star", group: "Stars" },
