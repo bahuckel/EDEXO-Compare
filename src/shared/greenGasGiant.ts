@@ -233,8 +233,10 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
  * - cloud ladder, mass and radius scanned: 5 when the temperature alone puts a layer on a border and
  *   the temperature is on CMDR Arcanic's always-green tables (the model reproduces them value by
  *   value); 4 for a value the model adds to his tables (water-life 176.666626 K: open); 4.7 when the
- *   density decides and the float match is exact, less 0.5 per float step off (of the 18 catalogued
- *   density-decided greens the ladder can judge, 15 sit exactly on a border and 3 one or two steps off);
+ *   density decides and the float match is exact; 1.5 one float step off, 1.1 two off. Measured on the
+ *   whole Spansh dump (38.2 M gas giants, 2026-10-05): of the 27 catalogued greens the ladder can judge it
+ *   finds all 27 — 23 exact, 3 one step off, 1 two off — against 5, 8 and 25 uncatalogued hits; so an
+ *   exact hit is nearly always real, one step off about 1 in 12, two off about 1 in 100;
  * - cloud ladder without a scanned mass: 2.5 (the clouds may not reach their ceiling);
  * - EDAstro's green report for its class in the system: 1 + 3.5 / the bodies of that class there
  *   (4.5 for the only one);
@@ -247,6 +249,9 @@ const PLAUSIBILITY = { agreeing: 0.25, likelyFrom: 3.5 };
 
 /** Water-life temperatures the ladder calls always green that his tables do not list. */
 const LADDER_ONLY_TEMPS: ReadonlySet<number> = new Set([Math.fround(176.666626)]);
+
+/** A density-decided layer that misses its border by 1 or 2 float steps (see `PLAUSIBILITY`). */
+const NEAR_MISS_SCORE: Readonly<Record<number, number>> = { 1: 1.5, 2: 1.1 };
 
 /**
  * The cloud ladder's sign, scored as above. A whole-kelvin temperature is left to the rules above:
@@ -277,7 +282,7 @@ function cloudLadder(i: GreenGiantInput): { score: number; why: string } | null 
   if (v.offUlp === 0) return { score: 4.7, why: `${fmtK(t)} — at this temperature and density ${layer} (cloud ladder)` };
   const steps = Math.round(v.offUlp * 10) / 10;
   return {
-    score: 4.7 - 0.5 * v.offUlp,
+    score: NEAR_MISS_SCORE[Math.round(v.offUlp)] ?? 1,
     why: `${fmtK(t)} — at this temperature and density ${layer} within ${steps} float step${steps === 1 ? "" : "s"} (cloud ladder)`,
   };
 }

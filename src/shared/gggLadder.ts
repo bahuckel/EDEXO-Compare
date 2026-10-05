@@ -110,7 +110,7 @@ export interface LadderVerdict {
 }
 
 /** Float steps of the door's magnitude a density-decided rung may miss by and still count. */
-const DENSITY_TOLERANCE_ULP = 3;
+const DENSITY_TOLERANCE_ULP = 2;
 
 function ulp(x: number): number {
   // 32-bit float spacing at x: 2^(exponent − 23).

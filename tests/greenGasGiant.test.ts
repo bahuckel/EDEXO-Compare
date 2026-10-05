@@ -388,6 +388,11 @@ describe("the cloud ladder (shared/gggLadder.ts)", () => {
     const thin = classifyGreenGiant({ planetClass: WATER, surfaceTemperatureK: 176.666687, massEM: 1, radiusM: 3.05e7 })!;
     expect(thin).toMatchObject({ level: "possible", score: 1.5 });
     expect(thin.why).toMatch(/but at its density no cloud layer lands on a colour border/);
+    // One float step off a border (Synookio EI-J d9-1 7, catalogue #19, under no name): 1.5, possible —
+    // on the whole dump such hits are real about 1 in 12.
+    const near = { planetClass: C1, surfaceTemperatureK: 119.986717, massEM: 21.216078, radiusM: 20_795_606 };
+    expect(classifyGreenGiant(near)).toMatchObject({ level: "possible", score: 1.5 });
+    expect(classifyGreenGiant(near)!.why).toMatch(/within 1 float step \(cloud ladder\)$/);
     // EDAstro: 1 + 3.5 / bodies of the class there; K10 alone 1.5.
     expect(score({ planetClass: C1, surfaceTemperatureK: 150, edastroReport: "only" })).toBe(4.5);
     expect(score({ planetClass: C1, surfaceTemperatureK: 150, edastroReport: "shared", edastroCandidates: 3 })).toBe(2.2);
