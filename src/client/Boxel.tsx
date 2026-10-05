@@ -22,6 +22,7 @@ import { Table, type Column } from "./DiscoveriesTables";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { NOTABLE_KINDS, type NotableKind } from "@shared/notices";
 import { Select } from "./ui/Select";
+import { BoxelLookingFor, BoxelMassCodeHelp } from "./BoxelAdvice";
 import { Tooltip } from "./ui/Tooltip";
 import { STAR_CLASSES } from "@shared/galaxyTraits";
 import {
@@ -120,6 +121,8 @@ export function BoxelScreen({
   const showPrevious = sideTab === "history";
   // The side menu folds away to the left (owner, 2026-10-05: "< and > arrows … animated drawer").
   const [sideOpen, setSideOpen] = usePersistedState("boxel.sideOpen", true, isBool);
+  // The [?] beside the close button: the mass code tables (owner, 2026-10-05).
+  const [helpOpen, setHelpOpen] = usePersistedState("boxel.helpOpen", false, isBool);
   const [prevDays, setPrevDays] = usePersistedState("boxel.previousDays", 30, isNum);
   const [previous, setPrevious] = useState<PreviousBoxelDTO[] | null>(null);
   const [prevLimit, setPrevLimit] = useState(PREV_PAGE);
@@ -639,10 +642,21 @@ export function BoxelScreen({
               />
             </label>
           </form>
+          <button
+            type="button"
+            className={`fold-help-btn boxel-help-btn${helpOpen ? " fold-help-btn--on" : ""}`}
+            onClick={() => setHelpOpen(!helpOpen)}
+            aria-expanded={helpOpen}
+            title={helpOpen ? "Hide the mass code tables" : "What do the mass codes hold?"}
+          >
+            ?
+          </button>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
+        {helpOpen ? <BoxelMassCodeHelp /> : null}
+        <BoxelLookingFor here={here} onSave={addBoxel} />
 
         <div className={`boxel-screen__body${sideOpen ? "" : " boxel-screen__body--folded"}`}>
           <aside className="boxel-side" aria-label="Your boxels" inert={!sideOpen}>

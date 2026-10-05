@@ -13,6 +13,10 @@
   gap: var(--s-4);
 }
 .boxel-screen__head .modal-close {
+  margin-left: 0;
+}
+/* The [?] sits just left of the close button; together they take the head's right end. */
+.boxel-screen__head .boxel-help-btn {
   margin-left: auto;
 }
 .boxel-current {
@@ -388,4 +392,101 @@
 .boxel-lookup-status {
   margin: 0;
   font-size: var(--fs-sm);
+}
+
+/* ---- Mass code tables (behind the [?]) and Looking for (owner, 2026-10-05) ------------------- */
+
+.boxel-help {
+  margin: 0 var(--s-4) var(--s-2);
+  max-height: 45vh;
+  overflow: auto;
+}
+.boxel-rates__wrap {
+  overflow-x: auto;
+  margin: 0 0 0.6rem;
+}
+.boxel-rates {
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+.boxel-rates caption {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+  padding: 0 0 0.25rem;
+}
+.boxel-rates th,
+.boxel-rates td {
+  padding: 0.12rem 0.45rem;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--accent-a12, rgba(255, 255, 255, 0.06));
+}
+.boxel-rates th[scope="row"],
+.boxel-rates thead th:first-child {
+  text-align: center;
+  color: var(--accent-bright);
+}
+.boxel-best {
+  color: var(--ok-bright, var(--ok));
+  font-weight: 700;
+}
+
+.boxel-advice {
+  margin: 0 var(--s-4) var(--s-2);
+}
+.boxel-advice__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+.boxel-advice__seg {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+.boxel-advice__ranks {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+.boxel-advice__out {
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-a06);
+  font-size: var(--fs-sm);
+}
+.boxel-advice__out p {
+  margin: 0;
+}
+.boxel-advice__lists {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 2rem;
+}
+.boxel-advice__lists h4 {
+  margin: 0 0 0.2rem;
+  font-size: var(--fs-sm);
+}
+.boxel-advice__lists ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.boxel-advice__item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0;
+}
+.boxel-advice__item .fdb-chip {
+  margin-left: auto;
+}
+.boxel-advice__lists > p {
+  flex-basis: 100%;
+  margin: 0;
 }
