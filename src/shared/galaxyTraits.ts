@@ -110,7 +110,13 @@ export function planetClassIndex(subType: string | null | undefined): number {
   if (s.startsWith("water giant")) return at("water_giant");
   if (s.includes("water-based life") || s.includes("water based life")) return at("gg_water_life");
   if (s.includes("ammonia-based life") || s.includes("ammonia based life")) return at("gg_ammonia_life");
-  if (s.includes("helium")) return at("helium_gg");
+  /*
+    Only the real Helium gas giant — a couple of dozen known in the galaxy (owner, 2026-10-05: "we need
+    to be 100 % sure that we differentiate them") — never the common Helium-rich gas giant, which is
+    not a trait of its own.
+  */
+  if (/^helium gas giant$/.test(s)) return at("helium_gg");
+  if (s.includes("helium")) return -1;
   const roman = /class (i{1,3}|iv|v)\b/.exec(s);
   if (roman) return at(`gg${{ i: 1, ii: 2, iii: 3, iv: 4, v: 5 }[roman[1] as "i"]}`);
   return -1;

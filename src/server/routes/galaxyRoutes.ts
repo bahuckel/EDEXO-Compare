@@ -133,7 +133,11 @@ export function registerGalaxyRoutes(
       available: true,
       mainStars: rows(STAR_CLASSES, c.main).filter((r) => r.key !== "SG"),
       stars: rows(STAR_CLASSES, c.stars),
-      planets: bodies.filter((r) => BODY_TRAIT_GROUP[r.key] === "Planet type"),
+      /*
+        Only what the index holds: galaxy_bio.jsonl keeps the planets that matter for biology, so the
+        Class I-V and Helium gas giants are never in it and a tick on them could only empty the map.
+      */
+      planets: bodies.filter((r) => BODY_TRAIT_GROUP[r.key] === "Planet type" && r.count > 0),
       /*
         The dump keeps every star but only the planets that matter for biology, so "landable" and
         "landable with atmosphere" hold 95-98 % of systems: not a filter. Kept in the file, not offered.

@@ -57,10 +57,15 @@ describe("folding star and planet names onto the filter's classes", () => {
       ["Class III gas giant", "gg3"],
       ["Sudarsky class IV gas giant", "gg4"],
       ["Sudarsky class V gas giant", "gg5"],
-      ["Helium rich gas giant", "helium_gg"],
+      ["Helium gas giant", "helium_gg"],
       ["Water giant", "water_giant"],
     ];
     for (const [name, want] of cases) expect([name, key(BODY_TRAITS, planetClassIndex(name))]).toEqual([name, want]);
+  });
+
+  it("never takes a Helium-rich gas giant for a Helium gas giant (a couple of dozen exist)", () => {
+    expect(planetClassIndex("Helium rich gas giant")).toBe(-1);
+    expect(planetClassIndex("Helium-rich gas giant")).toBe(-1);
   });
 });
 
