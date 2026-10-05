@@ -39,7 +39,7 @@
  */
 import { codexEntryKey } from "./codexLog.js";
 import { GGG_CATALOGUE } from "./gggCatalogue.js";
-import { ladderGreen, type LadderVerdict } from "./gggLadder.js";
+import { inNudgeRange, ladderClassOf, ladderGreen, type LadderVerdict } from "./gggLadder.js";
 
 export type GreenGiantLevel = "confirmed" | "catalogued" | "likely" | "possible";
 
@@ -49,6 +49,8 @@ export interface GreenGiantVerdict {
   why: string;
   /** edGGG catalogue number, when the body is catalogued. */
   gggNumber?: number;
+  /** A guess's plausibility, 1–5 in tenths (5 = the cloud ladder's exact match); none when confirmed or catalogued. */
+  score?: number;
 }
 
 /** The commander's own call, from the body popup: it is green, it is not, or no call. */
@@ -162,6 +164,8 @@ export interface GreenGiantInput {
    * `only` when this is the one body of that class scanned there, `shared` when there are more.
    */
   edastroReport?: "only" | "shared" | null;
+  /** With `shared`: how many bodies of that class are scanned there. */
+  edastroCandidates?: number;
   /** The commander's own call. "no" silences a guess, never a codex entry or a catalogue listing. */
   mark?: GreenGiantMark | null;
 }
@@ -174,33 +178,82 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
   if (i.mark === "yes") return { level: "confirmed", why: "You marked it green", ...(n ? { gggNumber: n } : {}) };
   if (n) return { level: "catalogued", why: `edGGG catalogue #${n}`, gggNumber: n };
   if (i.mark === "no") return null;
+
+  // Every sign, with how much it says on its own (the scale is in the header of `PLAUSIBILITY`).
+  const signs: { score: number; why: string }[] = [];
   const ladder = cloudLadder(i);
-  if (ladder?.sure) return { level: "likely", why: ladder.why };
-  if (i.edastroReport === "only") {
-    return { level: "likely", why: `EDAstro: a green ${shortClass(pc)} is reported in this system, and this is its only ${shortClass(pc)}` };
+  if (ladder) signs.push(ladder);
+  const said = ladder ? null : ladderSaysNo(i);
+  const cls = shortClass(pc);
+  if (i.edastroReport) {
+    const k = i.edastroReport === "only" ? 1 : Math.max(2, i.edastroCandidates ?? 2);
+    signs.push({
+      score: 1 + 3.5 / k,
+      why:
+        k === 1
+          ? `EDAstro: a green ${cls} is reported in this system, and this is its only ${cls}`
+          : `EDAstro: a green ${cls} is reported in this system — one of its ${k} ${cls}s`,
+    });
   }
   const t = i.surfaceTemperatureK;
   if (t != null && Number.isFinite(t)) {
     const hit = (tempsByClass.get(pc) ?? []).find((k) => Math.abs(k - t) <= DELTA_K);
-    if (hit != null) return { level: "likely", why: `${fmtK(t)} — a temperature catalogued green ${shortClass(pc)}s share` };
-    if (pc === CLASS_III && onClassIIIGrid(t)) {
-      return { level: "possible", why: `${fmtK(t)} — on the class III green temperature grid (every 30 K from 310)` };
+    if (hit != null) {
+      signs.push({
+        score: said ? 1.5 : 3.5,
+        why: `${fmtK(t)} — a temperature catalogued green ${cls}s share${said ? `, but ${said}` : ""}`,
+      });
+    } else if (pc === CLASS_III && onClassIIIGrid(t)) {
+      signs.push({
+        score: said ? 1 : 2,
+        why: `${fmtK(t)} — on the class III green temperature grid (every 30 K from 310)${said ? `, but ${said}` : ""}`,
+      });
     }
   }
-  if (ladder) return { level: "possible", why: ladder.why };
-  if (i.edastroReport === "shared") {
-    return { level: "possible", why: `EDAstro: a green ${shortClass(pc)} is reported in this system — one of its ${shortClass(pc)}s` };
+  if (i.k10InSystem) {
+    signs.push({ score: 1.5, why: "K10-Type Anomaly in this system — they spawn only around green gas giants" });
   }
-  if (i.k10InSystem) return { level: "possible", why: "K10-Type Anomaly in this system — they spawn only around green gas giants" };
-  return null;
+  if (!signs.length) return null;
+
+  signs.sort((a, b) => b.score - a.score);
+  const top = signs[0]!;
+  const more = signs.length - 1;
+  const raw = top.score + PLAUSIBILITY.agreeing * more;
+  const score = Math.round(Math.min(top.score >= 5 ? 5 : 4.9, raw) * 10) / 10;
+  return {
+    level: score >= PLAUSIBILITY.likelyFrom ? "likely" : "possible",
+    why: more ? `${top.why} (and ${more} more sign${more > 1 ? "s" : ""})` : top.why,
+    score,
+  };
 }
 
 /**
- * The cloud ladder's call, in words; `sure` when the scan gave the mass and radius the ladder's top
- * depends on. A whole-kelvin temperature is left to the rules above: EDSM and Spansh round them, so it
- * is not the game's value (and a real one sits on a border at the surface, which those rules know).
+ * Plausibility of a guess, 1–5 (owner, 2026-10-05: "5/5 is a 100% match, can have decimals"). What
+ * each sign is worth on its own:
+ * - cloud ladder, mass and radius scanned: 5 when the temperature alone puts a layer on a border and
+ *   the temperature is on CMDR Arcanic's always-green tables (the model reproduces them value by
+ *   value); 4 for a value the model adds to his tables (water-life 176.666626 K: open); 4.7 when the
+ *   density decides and the float match is exact, less 0.5 per float step off (of the 18 catalogued
+ *   density-decided greens the ladder can judge, 15 sit exactly on a border and 3 one or two steps off);
+ * - cloud ladder without a scanned mass: 2.5 (the clouds may not reach their ceiling);
+ * - EDAstro's green report for its class in the system: 1 + 3.5 / the bodies of that class there
+ *   (4.5 for the only one);
+ * - a temperature catalogued greens share: 3.5; a class III on the 30 K grid: 2 — each 2 lower when
+ *   the ladder had all it needs and puts no layer on a border;
+ * - a K10-Type Anomaly in the system: 1.5.
+ * The strongest sign sets the score, each other one adds `agreeing`, and only the ladder's 5 reaches 5.
  */
-function cloudLadder(i: GreenGiantInput): { sure: boolean; why: string } | null {
+const PLAUSIBILITY = { agreeing: 0.25, likelyFrom: 3.5 };
+
+/** Water-life temperatures the ladder calls always green that his tables do not list. */
+const LADDER_ONLY_TEMPS: ReadonlySet<number> = new Set([Math.fround(176.666626)]);
+
+/**
+ * The cloud ladder's sign, scored as above. A whole-kelvin temperature is left to the rules above:
+ * EDSM and Spansh round them, so it is not the game's value (and a real one sits on a border at the
+ * surface, which those rules know).
+ */
+function cloudLadder(i: GreenGiantInput): { score: number; why: string } | null {
   const t = i.surfaceTemperatureK;
   if (t == null || !Number.isFinite(t) || Number.isInteger(t)) return null;
   const v: LadderVerdict | null = ladderGreen({
@@ -210,13 +263,39 @@ function cloudLadder(i: GreenGiantInput): { sure: boolean; why: string } | null 
     radiusM: i.radiusM,
   });
   if (!v) return null;
-  const sure = i.massEM != null && i.massEM > 0 && i.radiusM != null && i.radiusM > 0;
   const layer = `cloud layer ${v.rung} of 7 lands on the ${v.door} K colour border`;
-  if (!sure) {
-    return { sure, why: `${fmtK(t)} — ${layer} if its clouds reach their ceiling (cloud ladder; no mass scanned)` };
+  if (!hasDensity(i)) {
+    return { score: 2.5, why: `${fmtK(t)} — ${layer} if its clouds reach their ceiling (cloud ladder; no mass scanned)` };
   }
-  const by = v.basis === "ceiling" ? "temperature" : "temperature and density";
-  return { sure, why: `${fmtK(t)} — at this ${by} ${layer} (cloud ladder)` };
+  if (v.basis === "ceiling") {
+    const open = LADDER_ONLY_TEMPS.has(Math.fround(t));
+    return {
+      score: open ? 4 : 5,
+      why: `${fmtK(t)} — at this temperature ${layer} (cloud ladder${open ? "; a value not on Arcanic's tables" : ""})`,
+    };
+  }
+  if (v.offUlp === 0) return { score: 4.7, why: `${fmtK(t)} — at this temperature and density ${layer} (cloud ladder)` };
+  const steps = Math.round(v.offUlp * 10) / 10;
+  return {
+    score: 4.7 - 0.5 * v.offUlp,
+    why: `${fmtK(t)} — at this temperature and density ${layer} within ${steps} float step${steps === 1 ? "" : "s"} (cloud ladder)`,
+  };
+}
+
+function hasDensity(i: GreenGiantInput): boolean {
+  return i.massEM != null && i.massEM > 0 && i.radiusM != null && i.radiusM > 0;
+}
+
+/**
+ * Why the ladder says no, when it could have said yes: a class with known borders, out of the nudge
+ * ranges, a real-precision temperature, a scanned mass and radius. Null when it cannot tell.
+ */
+function ladderSaysNo(i: GreenGiantInput): string | null {
+  const t = i.surfaceTemperatureK;
+  const cls = ladderClassOf(i.planetClass);
+  if (!cls || t == null || !Number.isFinite(t) || Number.isInteger(t) || inNudgeRange(cls, t)) return null;
+  if (!hasDensity(i)) return null;
+  return "at its density no cloud layer lands on a colour border (cloud ladder)";
 }
 
 export function shortClass(pc: string): string {
@@ -235,7 +314,13 @@ const LEVEL_WORD: Record<GreenGiantLevel, string> = {
 };
 
 export function greenGiantLabel(v: GreenGiantVerdict): string {
-  return v.gggNumber ? `Green gas giant #${v.gggNumber}` : `Green gas giant (${LEVEL_WORD[v.level]})`;
+  if (v.gggNumber) return `Green gas giant #${v.gggNumber}`;
+  return `Green gas giant (${LEVEL_WORD[v.level]}${v.score != null ? `, ${greenGiantScoreText(v.score)}` : ""})`;
+}
+
+/** `4.3/5`. */
+export function greenGiantScoreText(score: number): string {
+  return `${score.toFixed(1)}/5`;
 }
 
 /** A find worth telling edGGG about: confirmed green, and not in their catalogue. */

@@ -99,6 +99,7 @@ export function greenGiantForRecord(
   if (!isGggClass(rec.planetClass)) return null;
   const key = bodyKey(rec.systemAddress, rec.bodyId);
   let edastroReport: "only" | "shared" | null = null;
+  let edastroCandidates: number | undefined;
   const ids = (src.edastroGreenFor?.(rec.systemAddress) ?? []).filter((id) => greenCodexFits(id, rec.planetClass));
   if (ids.length) {
     // Pinned to this body only when no other body of the class is known there.
@@ -110,6 +111,7 @@ export function greenGiantForRecord(
       }
     }
     edastroReport = others === 0 ? "only" : "shared";
+    if (src.bodiesInSystem && others > 0) edastroCandidates = others + 1;
   }
   return classifyGreenGiant({
     planetClass: rec.planetClass,
@@ -121,5 +123,6 @@ export function greenGiantForRecord(
     k10InSystem: src.k10Systems.has(rec.systemAddress) || (src.k10FromEdastro?.().has(rec.systemAddress) ?? false),
     mark: src.marks.get(key),
     edastroReport,
+    edastroCandidates,
   });
 }

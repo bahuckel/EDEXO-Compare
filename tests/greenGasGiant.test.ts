@@ -191,7 +191,7 @@ describe("notices", () => {
       ctx(),
     );
     const titles = n.list().map((x) => x.title);
-    expect(titles).toContain("Green gas giant (likely)");
+    expect(titles.some((t) => /^Green gas giant \(likely, \d\.\d\/5\)$/.test(t))).toBe(true);
     expect(titles).toContain("Green gas giant — confirmed by the codex");
     expect(titles).toContain("K10-Type Anomaly — a green gas giant is likely here");
     expect(n.list().find((x) => x.id === `ggg-codex:${ADDR}:7`)).toMatchObject({ body: "7", codexNew: true });
@@ -364,8 +364,37 @@ describe("the cloud ladder (shared/gggLadder.ts)", () => {
     expect(classifyGreenGiant({ planetClass: WATER, surfaceTemperatureK: 242.000015, massEM: 3000, radiusM: 7e7 })?.level).toBe(
       "likely",
     );
-    // Class I 80–122.5 K: the shown temperature is not the ladder's (four catalogued greens there miss).
+    // Class I 80–113 K: the shown temperature is not the ladder's (ten catalogued greens there miss).
     expect(classifyGreenGiant({ planetClass: C1, surfaceTemperatureK: 102.212288, massEM: 300, radiusM: 7e7 })).toBeNull();
+  });
+
+  it("scores a guess 1–5 in tenths: the strongest sign, a quarter more for each other one", () => {
+    const score = (i: Parameters<typeof classifyGreenGiant>[0]) => classifyGreenGiant(i)?.score;
+    // Density-decided, exact: 4.7.
+    expect(score(pheia)).toBe(4.7);
+    expect(greenGiantLabel(classifyGreenGiant(pheia)!)).toBe("Green gas giant (likely, 4.7/5)");
+    // Temperature alone, on his tables: 5, and agreement never goes past 5.
+    const water = { planetClass: WATER, surfaceTemperatureK: 217.500015, massEM: 3000, radiusM: 7e7 };
+    expect(score(water)).toBe(5);
+    expect(score({ ...water, k10InSystem: true })).toBe(5);
+    // Without a mass: 2.5, possible.
+    expect(classifyGreenGiant({ ...water, massEM: null, radiusM: null })).toMatchObject({ level: "possible", score: 2.5 });
+    // 176.666626 K, the value the ladder adds to his tables: 4, plus the temperature the catalogue's
+    // 176.667 K greens share (3.5) as a second sign.
+    const open = classifyGreenGiant({ ...water, surfaceTemperatureK: 176.666626 })!;
+    expect(open).toMatchObject({ level: "likely", score: 4.3 });
+    expect(open.why).toMatch(/not on Arcanic's tables.*\(and 1 more sign\)$/);
+    // A shared temperature the ladder rejects at its density drops to 1.5.
+    const thin = classifyGreenGiant({ planetClass: WATER, surfaceTemperatureK: 176.666687, massEM: 1, radiusM: 3.05e7 })!;
+    expect(thin).toMatchObject({ level: "possible", score: 1.5 });
+    expect(thin.why).toMatch(/but at its density no cloud layer lands on a colour border/);
+    // EDAstro: 1 + 3.5 / bodies of the class there; K10 alone 1.5.
+    expect(score({ planetClass: C1, surfaceTemperatureK: 150, edastroReport: "only" })).toBe(4.5);
+    expect(score({ planetClass: C1, surfaceTemperatureK: 150, edastroReport: "shared", edastroCandidates: 3 })).toBe(2.2);
+    expect(score({ planetClass: C1, surfaceTemperatureK: 150, k10InSystem: true })).toBe(1.5);
+    // Confirmed and catalogued are not guesses: no score.
+    expect(classifyGreenGiant({ ...pheia, codex: true })?.score).toBeUndefined();
+    expect(classifyGreenGiant({ ...pheia, bodyName: "Pheia Aewsy LV-Y d11 B 4" })?.score).toBeUndefined();
   });
 
   it("is passed the scan's mass and radius by the server", () => {

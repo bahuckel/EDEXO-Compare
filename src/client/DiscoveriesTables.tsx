@@ -20,7 +20,12 @@
  * everything rather than of the first few hundred.
  */
 import { BODY_FEATURES, type BodyFeatureKey } from "../shared/bodyFeatures.js";
-import { greenGiantLabel, type GreenGiantMark, type GreenGiantVerdict } from "@shared/greenGasGiant";
+import {
+  greenGiantLabel,
+  greenGiantScoreText,
+  type GreenGiantMark,
+  type GreenGiantVerdict,
+} from "@shared/greenGasGiant";
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DiscoveriesDTO, DiscoveryBodyRow, DiscoveryStarRow, DiscoverySystemRow } from "@shared/types";
 import { fuzzyRankAny } from "./fuzzyMatch";
@@ -675,7 +680,9 @@ export function DiscoveriesTables({
                   className={`disc-ggg disc-ggg--${g.verdict.level}`}
                   title={`${greenGiantLabel(g.verdict)}: ${g.verdict.why}`}
                 >
-                  {g.verdict.gggNumber ? `green #${g.verdict.gggNumber}` : `green · ${g.verdict.level}`}
+                  {g.verdict.gggNumber
+                    ? `green #${g.verdict.gggNumber}`
+                    : `green · ${g.verdict.score != null ? greenGiantScoreText(g.verdict.score) : g.verdict.level}`}
                 </span>
               ) : null;
             })()}
