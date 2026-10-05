@@ -22,6 +22,7 @@ import { Table, type Column } from "./DiscoveriesTables";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { NOTABLE_KINDS, type NotableKind } from "@shared/notices";
 import { Select } from "./ui/Select";
+import { Tooltip } from "./ui/Tooltip";
 import { STAR_CLASSES } from "@shared/galaxyTraits";
 import {
   BOXEL_FILTER_KINDS,
@@ -80,6 +81,9 @@ function useNarrow(px: number): boolean {
 
 type SideTab = "saved" | "explored" | "history";
 
+/** Other stars listed in a row before "+N more". */
+const OTHER_STARS_SHOWN = 2;
+
 const isIncluded = (v: unknown): v is string[] | null => v === null || isStrArr(v);
 const json = { "Content-Type": "application/json" };
 
@@ -114,6 +118,8 @@ export function BoxelScreen({
     oneOf("saved", "explored", "history"),
   );
   const showPrevious = sideTab === "history";
+  // The side menu folds away to the left (owner, 2026-10-05: "< and > arrows … animated drawer").
+  const [sideOpen, setSideOpen] = usePersistedState("boxel.sideOpen", true, isBool);
   const [prevDays, setPrevDays] = usePersistedState("boxel.previousDays", 30, isNum);
   const [previous, setPrevious] = useState<PreviousBoxelDTO[] | null>(null);
   const [prevLimit, setPrevLimit] = useState(PREV_PAGE);
@@ -383,8 +389,23 @@ export function BoxelScreen({
         key: "stars",
         label: "Other stars",
         value: (r) => (r.from ? r.otherStars.length : null),
+        // Two, then "+3 more" with the rest on hover (owner, 2026-10-05: the field had no limit).
         render: (r) =>
-          r.otherStars.length ? fromIndex(r, r.otherStars.join(", ")) : <span className="dim">—</span>,
+          r.otherStars.length ? (
+            <span className="boxel-stars">
+              {fromIndex(r, r.otherStars.slice(0, OTHER_STARS_SHOWN).join(", "))}
+              {r.otherStars.length > OTHER_STARS_SHOWN ? (
+                <Tooltip
+                  text={r.otherStars.slice(OTHER_STARS_SHOWN).join(", ")}
+                  className="boxel-stars__more"
+                >
+                  <span tabIndex={0}>+{r.otherStars.length - OTHER_STARS_SHOWN} more</span>
+                </Tooltip>
+              ) : null}
+            </span>
+          ) : (
+            <span className="dim">—</span>
+          ),
       },
       {
         key: "bodies",
@@ -614,8 +635,8 @@ export function BoxelScreen({
           </button>
         </header>
 
-        <div className="boxel-screen__body">
-          <aside className="boxel-side" aria-label="Your boxels">
+        <div className={`boxel-screen__body${sideOpen ? "" : " boxel-screen__body--folded"}`}>
+          <aside className="boxel-side" aria-label="Your boxels" inert={!sideOpen}>
             <div className="boxel-side__tabs" role="tablist" aria-label="Which boxels">
               {(
                 [
@@ -844,6 +865,16 @@ export function BoxelScreen({
               ) : null}
             </section>
           </aside>
+          <button
+            type="button"
+            className="boxel-drawer"
+            aria-expanded={sideOpen}
+            aria-label={sideOpen ? "Hide your boxels" : "Show your boxels"}
+            title={sideOpen ? "Hide the side menu" : "Show the side menu"}
+            onClick={() => setSideOpen(!sideOpen)}
+          >
+            <span aria-hidden>{sideOpen ? "‹" : "›"}</span>
+          </button>
 
           <main className="boxel-main">
             {error ? <p className="fdb-empty">{error}</p> : null}

@@ -37,7 +37,54 @@
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(16rem, 22rem) 1fr;
+  /* side menu · its drawer button · the table. The side's width animates to 0 when folded. */
+  grid-template-columns: 22rem 0.9rem 1fr;
+  transition: grid-template-columns 0.25s ease;
+}
+.boxel-screen__body--folded {
+  grid-template-columns: 0rem 0.9rem 1fr;
+}
+.boxel-screen__body--folded .boxel-side {
+  padding-inline: 0;
+  border-right-color: transparent;
+}
+
+/* The drawer's button: small and tall, in the gap between the side menu and the table. */
+.boxel-drawer {
+  align-self: center;
+  width: 0.9rem;
+  height: 4.5rem;
+  padding: 0;
+  border: 1px solid var(--accent-a38);
+  border-left: 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: rgba(var(--accent-rgb), 0.08);
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--fs-md);
+  line-height: 1;
+  cursor: pointer;
+}
+.boxel-drawer:hover,
+.boxel-drawer:focus-visible {
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-bright);
+}
+@media (prefers-reduced-motion: reduce) {
+  .boxel-screen__body {
+    transition: none;
+  }
+}
+
+.boxel-stars {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+.boxel-stars__more {
+  color: var(--accent);
+  cursor: help;
+  white-space: nowrap;
 }
 
 /* The side menu: every saved boxel, a tick = in the table. */
@@ -45,8 +92,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
   min-height: 0;
   padding: 0.6rem;
+  overflow-x: hidden;
   overflow-y: auto;
   border-right: 1px solid var(--accent-a22);
 }
@@ -212,9 +261,17 @@
     flex: 1 1 auto;
     width: auto;
   }
-  .boxel-screen__body {
+  .boxel-screen__body,
+  .boxel-screen__body--folded {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
+  }
+  /* Stacked on a phone: the side menu sits above the table, no drawer. */
+  .boxel-drawer {
+    display: none;
+  }
+  .boxel-screen__body--folded .boxel-side {
+    padding-inline: 0.6rem;
   }
   .boxel-side {
     max-height: 35vh;
