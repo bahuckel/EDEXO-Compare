@@ -13,17 +13,21 @@
  * The verdict, strongest first — one per body, and the card says why:
  * - `confirmed`  the codex logged a green gas giant for this body, or the commander marked it green;
  * - `catalogued` the body is in the edGGG catalogue;
- * - `likely`     EDAstro's codex file has a green report of its class in its system and it is the
+ * - `likely`     the cloud ladder puts a rung exactly on a colour border (shared/gggLadder.ts, CMDR
+ *                Arcanic's model from CMDR Regza's density finding, 2026-10-05); or EDAstro's codex
+ *                file has a green report of its class in its system and it is the
  *                only body of that class scanned there; or its surface temperature is one that at
  *                least two catalogued GGGs share, for a class seen there (±0.001 K) — or a catalogued
  *                class III temperature, which sits on the grid;
  * - `possible`   such a report with more than one body of the class; a class III on the 30 K grid;
+ *                a ladder hit that needs the mass and radius the scan did not give;
  *                or any gas giant in a system with a K10-Type Anomaly
  *                (an NSP that only spawns around GGGs: 8 of 8 K10 systems in EDAstro's codex file are
  *                catalogued GGG systems, checked 2026-09-30).
  *
  * Checked against the owner's 2,394 gas giants on 2026-09-30: nothing fires below `confirmed`, as it
- * should for something this rare (70 known).
+ * should for something this rare (70 known). The cloud ladder, on his 2,454 of the classes it knows
+ * on 2026-10-05: none either.
  *
  * Why only shared temperatures (checked 2026-09-30 on Spansh's 1.14 M life-bearing and water giants):
  * where temperature decides, GGGs repeat it — 12 water-life GGGs sit on just 3 values (158 K ×3 with
@@ -35,6 +39,7 @@
  */
 import { codexEntryKey } from "./codexLog.js";
 import { GGG_CATALOGUE } from "./gggCatalogue.js";
+import { ladderGreen, type LadderVerdict } from "./gggLadder.js";
 
 export type GreenGiantLevel = "confirmed" | "catalogued" | "likely" | "possible";
 
@@ -144,6 +149,9 @@ export function isK10CodexName(codexName: string | null | undefined): boolean {
 export interface GreenGiantInput {
   planetClass: string | null | undefined;
   surfaceTemperatureK: number | null | undefined;
+  /** Journal `MassEM` and `Radius` (metres), for the cloud ladder's density. */
+  massEM?: number | null;
+  radiusM?: number | null;
   bodyName?: string | null;
   /** A green codex entry was logged for this body. */
   codex?: boolean;
@@ -166,6 +174,8 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
   if (i.mark === "yes") return { level: "confirmed", why: "You marked it green", ...(n ? { gggNumber: n } : {}) };
   if (n) return { level: "catalogued", why: `edGGG catalogue #${n}`, gggNumber: n };
   if (i.mark === "no") return null;
+  const ladder = cloudLadder(i);
+  if (ladder?.sure) return { level: "likely", why: ladder.why };
   if (i.edastroReport === "only") {
     return { level: "likely", why: `EDAstro: a green ${shortClass(pc)} is reported in this system, and this is its only ${shortClass(pc)}` };
   }
@@ -177,11 +187,36 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
       return { level: "possible", why: `${fmtK(t)} — on the class III green temperature grid (every 30 K from 310)` };
     }
   }
+  if (ladder) return { level: "possible", why: ladder.why };
   if (i.edastroReport === "shared") {
     return { level: "possible", why: `EDAstro: a green ${shortClass(pc)} is reported in this system — one of its ${shortClass(pc)}s` };
   }
   if (i.k10InSystem) return { level: "possible", why: "K10-Type Anomaly in this system — they spawn only around green gas giants" };
   return null;
+}
+
+/**
+ * The cloud ladder's call, in words; `sure` when the scan gave the mass and radius the ladder's top
+ * depends on. A whole-kelvin temperature is left to the rules above: EDSM and Spansh round them, so it
+ * is not the game's value (and a real one sits on a border at the surface, which those rules know).
+ */
+function cloudLadder(i: GreenGiantInput): { sure: boolean; why: string } | null {
+  const t = i.surfaceTemperatureK;
+  if (t == null || !Number.isFinite(t) || Number.isInteger(t)) return null;
+  const v: LadderVerdict | null = ladderGreen({
+    planetClass: i.planetClass,
+    tempK: t,
+    massEM: i.massEM,
+    radiusM: i.radiusM,
+  });
+  if (!v) return null;
+  const sure = i.massEM != null && i.massEM > 0 && i.radiusM != null && i.radiusM > 0;
+  const layer = `cloud layer ${v.rung} of 7 lands on the ${v.door} K colour border`;
+  if (!sure) {
+    return { sure, why: `${fmtK(t)} — ${layer} if its clouds reach their ceiling (cloud ladder; no mass scanned)` };
+  }
+  const by = v.basis === "ceiling" ? "temperature" : "temperature and density";
+  return { sure, why: `${fmtK(t)} — at this ${by} ${layer} (cloud ladder)` };
 }
 
 export function shortClass(pc: string): string {

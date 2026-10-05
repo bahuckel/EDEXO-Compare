@@ -28,7 +28,8 @@
  *   and the answer is "likely", not certain.
  *
  * Doors are known for class I and ammonia-based life (115, 250, 270 K), water-based life (210, 270 K),
- * class III (370, 700, 900 K) and class IV (900, 1400 K). Class II and the cold class III range get a
+ * class III (370, 700, 900 K) and class IV (900, 1400 K). Class II, cold class III (below 415 K) and
+ * cold class I / ammonia-based life (80–122.5 K: four catalogued greens there miss every door) get a
  * "nudge" of their temperature before the ladder is built that nobody can predict yet; helium-rich and
  * class V giants are unconfirmed. Those get no answer.
  */
@@ -113,9 +114,15 @@ function ulp(x: number): number {
   return 2 ** (Math.floor(Math.log2(Math.abs(x))) - 23);
 }
 
+/** The temperature ranges where the shown temperature is not the ladder's (see the header). */
+export function inNudgeRange(cls: LadderClass, tempK: number): boolean {
+  if (cls === "I" || cls === "ammonia") return tempK >= 80 && tempK <= 122.5;
+  return cls === "III" && tempK < 415;
+}
+
 /**
  * The ladder's verdict for one gas giant, or null when no rung lands on a door (or the class has no
- * known doors, or the inputs are missing).
+ * known doors, the temperature is in a nudge range, or the inputs are missing).
  */
 export function ladderGreen(opts: {
   planetClass: string | null | undefined;
@@ -125,7 +132,7 @@ export function ladderGreen(opts: {
 }): LadderVerdict | null {
   const cls = ladderClassOf(opts.planetClass);
   const T = opts.tempK;
-  if (!cls || T == null || !Number.isFinite(T) || T <= 0) return null;
+  if (!cls || T == null || !Number.isFinite(T) || T <= 0 || inNudgeRange(cls, T)) return null;
   const t = f(T);
   const ceiling = f(ceilingOf(t));
   const density =

@@ -1,8 +1,9 @@
 /**
  * Green gas giants on the server (shared/greenGasGiant.ts has the what and why): the commander's own
  * calls, kept in `edexo-ggg-marks.json` beside the user settings, and the verdict for a scanned body
- * from everything the app knows — the codex, the edGGG catalogue, the temperature, a K10 anomaly in
- * the system (from the journals or EDAstro's codex file), and the commander's call.
+ * from everything the app knows — the codex, the edGGG catalogue, the temperature and density (the cloud
+ * ladder), a K10 anomaly in the system (from the journals or EDAstro's codex file), and the commander's
+ * call.
  */
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import type { ExplorationScanRecord } from "../shared/types.js";
@@ -89,7 +90,10 @@ export interface GreenGiantSources {
 
 /** The verdict for one scanned body, or null when it is not a green gas giant candidate at all. */
 export function greenGiantForRecord(
-  rec: Pick<ExplorationScanRecord, "systemAddress" | "bodyId" | "bodyName" | "planetClass" | "surfaceTemperature">,
+  rec: Pick<
+    ExplorationScanRecord,
+    "systemAddress" | "bodyId" | "bodyName" | "planetClass" | "surfaceTemperature" | "massEM" | "radius"
+  >,
   src: GreenGiantSources,
 ): GreenGiantVerdict | null {
   if (!isGggClass(rec.planetClass)) return null;
@@ -110,6 +114,8 @@ export function greenGiantForRecord(
   return classifyGreenGiant({
     planetClass: rec.planetClass,
     surfaceTemperatureK: rec.surfaceTemperature,
+    massEM: rec.massEM,
+    radiusM: rec.radius,
     bodyName: rec.bodyName,
     codex: src.greenCodexBodies.has(key),
     k10InSystem: src.k10Systems.has(rec.systemAddress) || (src.k10FromEdastro?.().has(rec.systemAddress) ?? false),

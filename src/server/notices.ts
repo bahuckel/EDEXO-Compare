@@ -71,7 +71,12 @@ export interface NoticesContext {
   /** Notable stellar phenomena (EDAstro's codex file) within the radius, by system, nearest first. */
   nearbyNsps?(origin: Vec3, radiusLy: number): NearbyNsp[];
   /** The green gas giant verdict for a body being scanned (server/greenGiants.ts). */
-  greenGiant?(rec: Pick<ExplorationScanRecord, "systemAddress" | "bodyId" | "bodyName" | "planetClass" | "surfaceTemperature">): GreenGiantVerdict | null;
+  greenGiant?(
+    rec: Pick<
+      ExplorationScanRecord,
+      "systemAddress" | "bodyId" | "bodyName" | "planetClass" | "surfaceTemperature" | "massEM" | "radius"
+    >,
+  ): GreenGiantVerdict | null;
   /** A body the store already has, by `system:body` key — a moon's parent, for the ring features. */
   scanOf?(bodyKey: string): ExplorationScanRecord | null;
 }
@@ -439,6 +444,8 @@ export function createNoticesService(opts: {
         bodyName: str(line.BodyName),
         planetClass: planetClass || undefined,
         surfaceTemperature: num(line.SurfaceTemperature) ?? undefined,
+        massEM: num(line.MassEM) ?? undefined,
+        radius: num(line.Radius) ?? undefined,
       });
       if (v) {
         added =
