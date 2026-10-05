@@ -42,7 +42,7 @@ function make() {
     globalShortcut: gs,
     fs,
     filePath: () => file,
-    handlers: { hudToggle: () => fired.push("hud"), bodyPrev: () => fired.push("prev"), bodyNext: () => fired.push("next") },
+    handlers: { hudToggle: () => fired.push("hud"), bodyPrev: () => fired.push("prev"), bodyNext: () => fired.push("next"), noticesClear: () => fired.push("clear") },
   });
 }
 
@@ -65,14 +65,15 @@ describe("what counts as a bind", () => {
 });
 
 describe("registering them", () => {
-  it("starts with Ctrl+Alt+H for the HUDs and F1 / F2 for the body tabs, and they fire", () => {
+  it("starts with Ctrl+Alt+H for the HUDs, F1 / F2 for the body tabs and F5 to clear the notices, and they fire", () => {
     const k = make();
     k.load();
-    expect(k.apply()).toEqual({ hudToggle: "ok", bodyPrev: "ok", bodyNext: "ok" });
+    expect(k.apply()).toEqual({ hudToggle: "ok", bodyPrev: "ok", bodyNext: "ok", noticesClear: "ok" });
     held.get("F1")!();
     held.get("F2")!();
     held.get("Control+Alt+H")!();
-    expect(fired).toEqual(["prev", "next", "hud"]);
+    held.get("F5")!();
+    expect(fired).toEqual(["prev", "next", "hud", "clear"]);
   });
 
   it("says when another program has the key, or two actions share one", () => {
@@ -114,6 +115,6 @@ describe("registering them", () => {
     k.pause(true);
     expect(held.size).toBe(0);
     k.pause(false);
-    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2"]);
+    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5"]);
   });
 });

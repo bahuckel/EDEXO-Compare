@@ -131,6 +131,7 @@ const keybinds = createKeybinds({
     hudToggle: () => huds.toggleVisibility(),
     bodyPrev: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: -1 }),
     bodyNext: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: 1 }),
+    noticesClear: () => runtime?.clearNotices?.(),
   },
 });
 

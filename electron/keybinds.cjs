@@ -6,8 +6,8 @@
   "Idea behind it, the user won't have to alt tab to the browser window in order to switch bodies, or
   if they have a single key stroke they want to bind the HUD to, they can."
 
-  Three actions: show / hide the HUDs (it was Ctrl+Alt+H, fixed), previous and next body tab (F1 and F2
-  by default). A bind is an Electron accelerator of up to three keys — modifiers and one key, or one key
+  Four actions: show / hide the HUDs (it was Ctrl+Alt+H, fixed), previous and next body tab (F1 and F2
+  by default), and clear the notices on the bell (F5; owner, 2026-10-05). A bind is an Electron accelerator of up to three keys — modifiers and one key, or one key
   on its own — or "" for none. They are global: Windows hands the key to us and not to the game, so a
   key the commander uses in Elite should not be bound here; the launcher says so beside the field.
 
@@ -18,6 +18,7 @@ const ACTIONS = {
   hudToggle: { default: "Control+Alt+H", label: "Show / hide the HUDs" },
   bodyPrev: { default: "F1", label: "Previous body tab" },
   bodyNext: { default: "F2", label: "Next body tab" },
+  noticesClear: { default: "F5", label: "Clear the notices (the bell)" },
 };
 
 const MODIFIERS = new Set(["Control", "Ctrl", "CommandOrControl", "CmdOrCtrl", "Alt", "Shift", "Super", "Meta"]);

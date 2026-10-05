@@ -190,6 +190,8 @@ export type EdexoRuntime = {
   flushNow: () => void;
   /** Tell the app pages to do something the commander asked for with a key bind. */
   uiCommand: (cmd: UiCommand) => void;
+  /** The Clear notices key (owner, 2026-10-05): every notice marked read, then the read ones cleared. */
+  clearNotices: () => number;
   /**
    * The downloaded, checked update waiting for a restart, and the folder it sits in; null when there
    * is none (appUpdater.ts). Electron installs it on the way out (electron/updater.cjs).
@@ -2124,6 +2126,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     gameRunning: () => gamePresence.running(),
     flushNow: () => flushFootScannedCatalog(),
     uiCommand: (cmd) => broadcastUiCommand(cmd),
+    clearNotices: () => {
+      const n = notices.markRead("all") + notices.clearRead();
+      if (n) push();
+      return n;
+    },
     stagedUpdate: () => {
       const st = appUpdater.staged();
       return st ? { version: st.version, form: st.form, file: st.file, dir: resolveUpdateDir() } : null;
