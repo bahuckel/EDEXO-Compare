@@ -764,6 +764,26 @@ describe("what the pages report", () => {
     huds.toggleVisibility(true);
   });
 
+  it("placing shows an idle HUD too, so there is always something to drag (owner, 2026-10-05)", async () => {
+    const huds = make();
+    huds.setLayout({ freeOn: true });
+    await huds.request("/hud-overlay.html?s=fss,jump,distance", 404, 300, null, "open");
+    const [win] = live() as [FakeWindow];
+    huds.relayout();
+    huds.resizeFromPage(win, { idle: true });
+    expect(win.visible).toBe(false);
+    huds.setMoveMode(true);
+    expect(win.visible).toBe(true);
+    expect(huds.dragFromPage(win as never, "start")).toEqual({ ok: true });
+    huds.dragFromPage(win as never, "end");
+    // A page that goes idle while placing stays up; "Done" puts it away again.
+    huds.resizeFromPage(win, { idle: false });
+    huds.resizeFromPage(win, { idle: true });
+    expect(win.visible).toBe(true);
+    huds.setMoveMode(false);
+    expect(win.visible).toBe(false);
+  });
+
   it("passes the launcher's HUD settings to every open overlay", async () => {
     const huds = make();
     await huds.request("/fss-scan-overlay.html", 404, 120, null, "open");

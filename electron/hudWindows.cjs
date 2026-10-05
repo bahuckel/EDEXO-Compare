@@ -150,6 +150,13 @@ function createHudWindows(deps) {
   */
   const isIdle = (s) => s.idle === true;
   /*
+    Out of the stack and hidden: an idle window, except while placing (owner, 2026-10-05: "sometimes I
+    am unable to move it unless I split it to different windows and then merge it again"). Placing
+    shows every HUD, idle ones too — an idle stack left nothing on screen to grab, and only a split
+    made fresh windows that showed until their pages reported idle again.
+  */
+  const outOfStack = (s) => !moving && isIdle(s);
+  /*
     What the HUD windows did and why, one line each, in hud-events.log beside the layout file (owner,
     2026-10-02: "the HUD still appears-disappears every ~4 sec", which nothing here does on a timer).
     Transitions only — shown, hidden, the away states, idle pages, the window in front — so a quiet
@@ -506,7 +513,7 @@ function createHudWindows(deps) {
         stopKeepingHudsOnTop();
         return;
       }
-      for (const s of live) if (!isIdle(s)) raiseHudWindow(s.win);
+      for (const s of live) if (!outOfStack(s)) raiseHudWindow(s.win);
     }, HUD_KEEP_ON_TOP_MS);
     if (typeof hudKeepOnTopTimer.unref === "function") hudKeepOnTopTimer.unref();
   }
@@ -517,7 +524,7 @@ function createHudWindows(deps) {
     // Coming back to the game raises them through applyAway already; once is enough.
     if (Date.now() - raisedAt < 400) return;
     raisedAt = Date.now();
-    for (const s of hudOverlayStack) if (s.win && !s.win.isDestroyed() && !isIdle(s)) raiseHudWindow(s.win);
+    for (const s of hudOverlayStack) if (s.win && !s.win.isDestroyed() && !outOfStack(s)) raiseHudWindow(s.win);
   }
   function stopKeepingHudsOnTop() {
     if (!hudKeepOnTopTimer) return;
@@ -669,7 +676,7 @@ function createHudWindows(deps) {
       return i < 0 ? 1000 + hudOverlayStack.indexOf(s) : i;
     };
     const ordered = hudOverlayStack
-      .filter((s) => !isIdle(s))
+      .filter((s) => !outOfStack(s))
       .sort((a, b) => rank(a) - rank(b));
     const w = Math.round((Math.max(0, ...hudOverlayStack.map((s) => s.width || 0)) || 404) * hudScale);
     return { ordered, w };
@@ -858,7 +865,7 @@ function createHudWindows(deps) {
       return i < 0 ? 1000 + hudOverlayStack.indexOf(s) : i;
     };
     const ordered = hudOverlayStack
-      .filter((s) => !isIdle(s))
+      .filter((s) => !outOfStack(s))
       .sort((a, b) => rank(a) - rank(b));
     const w = Math.round((Math.max(0, ...hudOverlayStack.map((s) => s.width || 0)) || 404) * hudScale);
     const atBottom = hudLayout.corner.startsWith("b");
@@ -987,7 +994,7 @@ function createHudWindows(deps) {
 
     for (const s of hudOverlayStack) {
       if (!s.win || s.win.isDestroyed()) continue;
-      if (hudHidden || isIdle(s)) {
+      if (hudHidden || outOfStack(s)) {
         hideWin(s.win);
         continue;
       }
@@ -1041,7 +1048,7 @@ function createHudWindows(deps) {
     deps.onChange();
     for (const s of hudOverlayStack) {
       if (!s.win || s.win.isDestroyed()) continue;
-      if (hiddenNow() || isIdle(s)) hideWin(s.win);
+      if (hiddenNow() || outOfStack(s)) hideWin(s.win);
       else raiseHudWindow(s.win);
     }
     if (!hiddenNow()) raisedAt = Date.now();
@@ -1122,7 +1129,7 @@ function createHudWindows(deps) {
     */
     win.once("ready-to-show", () => {
       relayoutHudStack();
-      if (hiddenNow() || hudOverlayStack.some((s) => s.win === win && isIdle(s))) {
+      if (hiddenNow() || hudOverlayStack.some((s) => s.win === win && outOfStack(s))) {
         try {
           win.hide();
         } catch {
@@ -1352,7 +1359,7 @@ function createHudWindows(deps) {
       if (slot && isIdle(slot) !== idle) {
         hudLog(`${idle ? "idle" : "relevant"} ${slot.pathname}`);
         slot.idle = idle;
-        if (idle) hideWin(win);
+        if (idle && !moving) hideWin(win);
         else if (!hiddenNow()) raiseHudWindow(win);
         relayoutHudStack();
         deps.onChange();
