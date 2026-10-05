@@ -161,6 +161,8 @@ export interface BoxelTableRowDTO {
   skipped: boolean;
   /** When he last arrived there (journals). */
   visitedAt: string | null;
+  /** Its address: from the journals when flown, else Spansh's id64 from a look-up; null when unknown. */
+  systemAddress: number | null;
   /** Where the facts come from: your journals, the galaxy index, a Spansh look-up, or nothing yet. */
   from: "journal" | "index" | "lookup" | null;
   /** The boxel was looked up on Spansh and this system is not there: undiscovered, as far as anyone uploaded. */

@@ -261,6 +261,24 @@ export function BoxelScreen({
     );
   };
 
+  /*
+    Open (owner, 2026-10-05): a system you flew opens in EDEXO from your journals; one you did not is
+    looked up on Spansh (keyless and unthrottled, where EDSM allows about 360 requests an hour) and
+    shown the same way — by the id64 a Look up kept, else by a name search.
+  */
+  const view = async (systemAddress: number, starSystem: string) => {
+    await fetch("/api/ui/view-system", {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ systemAddress, starSystem }),
+    });
+    onClose();
+  };
+  const openRow = (r: BoxelTableRowDTO) => {
+    if (r.systemAddress != null)
+      void view(r.systemAddress, r.name).catch(() => toast.error("The app's server could not be reached."));
+    else void open(r.name);
+  };
   const open = async (system: string) => {
     try {
       const r = await fetch(`/api/system/spansh-search?q=${encodeURIComponent(system)}`);
@@ -270,12 +288,7 @@ export function BoxelScreen({
         toast.error(`${system}: nobody has logged it on Spansh yet — it may be undiscovered.`);
         return;
       }
-      await fetch("/api/ui/view-system", {
-        method: "POST",
-        headers: json,
-        body: JSON.stringify({ systemAddress: hit.systemAddress, starSystem: hit.starSystem }),
-      });
-      onClose();
+      await view(hit.systemAddress, hit.starSystem);
     } catch {
       toast.error("Spansh could not be reached.");
     }
@@ -426,10 +439,14 @@ export function BoxelScreen({
               <button
                 type="button"
                 className="fdb-chip"
-                title="Look it up on Spansh and open it in the app"
-                onClick={() => void open(r.name)}
+                title={
+                  r.flown
+                    ? "Open it in EDEXO, from your journals"
+                    : "Look it up on Spansh and open it in EDEXO"
+                }
+                onClick={() => openRow(r)}
               >
-                Open
+                {r.flown ? "Open" : "Spansh"}
               </button>
               {b && !r.flown ? (
                 <button

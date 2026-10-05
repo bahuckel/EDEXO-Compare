@@ -16,6 +16,7 @@ const body = (name: string, type: string, subtype: string, extra: Record<string,
 });
 const system = (n: number, bodies: unknown[]) => ({
   name: `Eol Prou AB-C d1-${n}`,
+  id64: 8_480_706_851 + n * 2 ** 35,
   body_count: bodies.length,
   bodies,
 });
@@ -100,6 +101,9 @@ describe("looking a boxel up", () => {
       [5, "lookup", false],
       [6, "lookup", false],
     ]);
+    // Spansh's id64 rides along, so its button opens the system without a name search.
+    expect(t.rows[2]!.systemAddress).toBe(8_480_706_851 + 2 * 2 ** 35);
+    expect(t.rows[1]!.systemAddress).toBeNull();
     expect(t.lookups).toEqual([
       { boxelId: "a", fetchedAt: rec.fetchedAt, complete: true, systems: 101, highest: 300 },
     ]);

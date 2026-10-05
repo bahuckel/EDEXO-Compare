@@ -14,6 +14,7 @@ const row = (extra: Partial<BoxelTableRowDTO>): BoxelTableRowDTO => ({
   flown: true,
   skipped: false,
   visitedAt: null,
+  systemAddress: null,
   from: "journal",
   mainStar: null,
   otherStars: [],

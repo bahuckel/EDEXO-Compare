@@ -37,6 +37,8 @@ export const LOOKUP_CACHE_DAYS = 30;
 
 /** What Spansh says about one system of the boxel. */
 export interface LookupSystemFacts {
+  /** Spansh's id64 (= the journal's SystemAddress), so Spansh opens it without a name search. */
+  id64?: number;
   mainStar: string | null;
   otherStars: string[];
   starClasses: string[];
@@ -117,6 +119,7 @@ export function spanshSearchSystemFacts(
     if (isTerraformableState(str(b.terraforming_state))) bodyTypes.add("terraformable");
   }
   return {
+    ...(typeof s.id64 === "number" && Number.isSafeInteger(s.id64) ? { id64: s.id64 } : {}),
     mainStar: main ? starLabel(str(main.subtype)) : null,
     otherStars: others.map((b) => starLabel(str(b.subtype))),
     starClasses,

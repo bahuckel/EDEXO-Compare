@@ -223,6 +223,7 @@ export function boxelTable(opts: {
         flown,
         skipped: !flown && skipped.has(n),
         visitedAt: addr != null ? (opts.visitedAt?.(addr) ?? null) : null,
+        systemAddress: addr ?? looked?.systems[String(n)]?.id64 ?? null,
         from: null,
         mainStar: null,
         otherStars: [],
