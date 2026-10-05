@@ -68,14 +68,22 @@
       "description": "Sphere-encased organism suspended in a fluid-filled protective membrane with active chemical regulation.",
       "conditions": {
         "atmosphere": [
-          "Sulphur Dioxide"
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen"
         ],
         "planet_types": [
           "Icy",
-          "Rocky Ice"
+          "Rocky Ice",
+          "Rocky",
+          "High Metal Content"
         ],
         "max_gravity": 0.275,
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Measured 2026-10-05 (owner: no misses), Spansh dump bodies the EDSM + EDAstro codex confirm: of 4,880 confirmed single-species bodies: icy 3,531, rocky 738, rocky ice 551, high metal content 60 (all hidden before); thin sulphur dioxide 4,708, carbon dioxide 150 (all hidden), oxygen 21 (all hidden), carbon dioxide-rich 1, every one with sulphur dioxide in the air. Nothing in the body separates the three Recepta (docs/perf/recepta_analysis.py); the lists say only where each has grown."
+        ]
       }
     },
     {
@@ -84,15 +92,22 @@
       "description": "Deltahedron lattice structure forming an external thermal capture framework around a central organism.",
       "conditions": {
         "atmosphere": [
-          "Sulphur Dioxide"
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen"
         ],
         "planet_types": [
           "Rocky",
           "High Metal Content",
-		  "Icy"
+          "Icy",
+          "Rocky Ice"
         ],
         "max_gravity": 0.275,
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Measured 2026-10-05 (owner: no misses), Spansh dump bodies the EDSM + EDAstro codex confirm: of 3,233 confirmed single-species bodies: rocky 2,641, icy 315, high metal content 212, rocky ice 65 (all hidden before); thin sulphur dioxide 2,372, carbon dioxide 792, oxygen 3, carbon dioxide-rich 1, every one with sulphur dioxide in the air. Nothing in the body separates the three Recepta (docs/perf/recepta_analysis.py); the lists say only where each has grown."
+        ]
       }
     },
     {
@@ -101,15 +116,21 @@
       "description": "Membrane-stabilized lattice organism adapted for low-light photosynthesis through semi-transparent shielding layers.",
       "conditions": {
         "atmosphere": [
-          "Sulphur Dioxide"
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Oxygen"
         ],
         "planet_types": [
           "Icy",
           "Rocky Ice",
-		  "Rocky"
+          "Rocky",
+          "High Metal Content"
         ],
         "max_gravity": 0.275,
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Measured 2026-10-05 (owner: no misses), Spansh dump bodies the EDSM + EDAstro codex confirm: of 8,477 confirmed single-species bodies: icy 3,651, rocky 3,069, rocky ice 1,469, high metal content 243 (all hidden before); thin sulphur dioxide 7,139, carbon dioxide 1,065 (89 hidden), oxygen 45 (all hidden), every one with sulphur dioxide in the air. Nothing in the body separates the three Recepta (docs/perf/recepta_analysis.py); the lists say only where each has grown."
+        ]
       }
     }
   ],
@@ -125,7 +146,7 @@
       "Icy": [
         "Recepta conditivus",
         "Recepta umbrux",
-		"Recepta deltahedronix"
+        "Recepta deltahedronix"
       ],
       "Rocky Ice": [
         "Recepta conditivus",
