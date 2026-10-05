@@ -39,7 +39,7 @@ import {
   EncyclopediaModal,
   PoiModal,
   BookmarksModal,
-  BoxelModal,
+  BoxelScreen,
   StatisticsModal,
   FirstDiscoveryBacklogModal,
   ModalLoading,
@@ -184,7 +184,7 @@ const AppMenuEntries = memo(function AppMenuEntries({
           <IconPoi />
         </button>
       </Tooltip>
-      <Tooltip text="Boxel — every system of one boxel, which you have flown, what is recorded there, and the next one to fly.">
+      <Tooltip text="Boxels — your saved boxels in one table: which systems you have flown, what is recorded there, and the next one to fly.">
         <button
           type="button"
           className="appbar-icon-btn"
@@ -840,7 +840,7 @@ export const HeaderBar = memo(function HeaderBar({
 
       {boxelOpen ? (
         <Suspense fallback={null}>
-          <BoxelModal onClose={() => setBoxelOpen(false)} currentSystem={snap.currentSystem ?? null} />
+          <BoxelScreen onClose={() => setBoxelOpen(false)} currentSystem={snap.currentSystem ?? null} />
         </Suspense>
       ) : null}
       {bookmarksOpen ? (

@@ -112,3 +112,29 @@ describe("saved boxels (owner, 2026-09-30)", () => {
     expect(createSavedBoxels({ filePath: file }).list([])).toEqual([]);
   });
 });
+
+describe("the Boxels screen's table (owner, 2026-10-05)", () => {
+  it("lists every system of every ticked boxel, grouped, with skips and visit times", async () => {
+    const { boxelTable } = await import("../src/server/boxel.js");
+    const boxel = (id: string, prefix: string, end: number, skipped: number[] = []) =>
+      ({ id, prefix, end, skipped, boxel: parseBoxel(`${prefix}0`)!.boxel, sector: parseBoxel(`${prefix}0`)!.sector }) as never;
+    const t = boxelTable({
+      boxels: [boxel("a", "Eol Prou AB-C d1-", 2, [1]), boxel("b", "Bleethuia QV-L b", 1)],
+      index: null,
+      visited: [[11, "Eol Prou AB-C d1-0"], [12, "Bleethuia QV-L b1"], [13, "Sol"]],
+      speciesName: (id) => id,
+      stats: () => ({ bodies: { scanned: 3, total: 5 }, notable: 1 }),
+      visitedAt: (addr) => (addr === 11 ? "2026-10-05T10:00:00Z" : null),
+    });
+    expect(t.rows.map((r) => [r.boxelId, r.n, r.flown, r.skipped])).toEqual([
+      ["a", 0, true, false],
+      ["a", 1, false, true],
+      ["a", 2, false, false],
+      ["b", 0, false, false],
+      ["b", 1, true, false],
+    ]);
+    expect(t.rows[0]).toMatchObject({ boxel: "AB-C d1", visitedAt: "2026-10-05T10:00:00Z", bodies: { scanned: 3, total: 5 }, notable: 1 });
+    expect(t.rows[2]).toMatchObject({ bodies: null, notable: null, known: null });
+    expect(t.noIndex).toBe(true);
+  });
+});

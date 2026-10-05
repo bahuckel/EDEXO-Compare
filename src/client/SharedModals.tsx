@@ -45,7 +45,7 @@ export const PoiModal = lazyModal(() => import("./PoiModal").then((m) => m.PoiMo
 
 export const BookmarksModal = lazyModal(() => import("./Bookmarks").then((m) => m.BookmarksModal));
 
-export const BoxelModal = lazyModal(() => import("./Boxel").then((m) => m.BoxelModal));
+export const BoxelScreen = lazyModal(() => import("./Boxel").then((m) => m.BoxelScreen));
 
 export const StatisticsModal = lazyModal(() => import("./StatisticsModal").then((m) => m.StatisticsModal));
 
@@ -73,7 +73,7 @@ export function prefetchMenuModals(): void {
   const go = () => {
     for (const m of [
       BookmarksModal,
-      BoxelModal,
+      BoxelScreen,
       StatisticsModal,
       EncyclopediaModal,
       FirstDiscoveryBacklogModal,

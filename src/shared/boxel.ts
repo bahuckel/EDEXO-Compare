@@ -64,6 +64,8 @@ export const MASS_CODES: Record<string, { cubeLy: number; hint: string }> = {
 export interface BoxelRowDTO {
   n: number;
   name: string;
+  /** Visited and the journals gave its address. */
+  systemAddress?: number;
   /** In the commander's journals. */
   visited: boolean;
   /** Visited: bodies he scanned there, of the FSS body count when known ("15/15"). */
@@ -130,4 +132,37 @@ export interface SavedBoxelDTO {
   total: number;
   /** The lowest system number neither flown nor skipped; null when the boxel is done. */
   next: string | null;
+}
+
+/**
+ * One row of the Boxels screen (owner, 2026-10-05: "like My discoveries", every ticked boxel in one
+ * table): a system of one saved boxel.
+ */
+export interface BoxelTableRowDTO {
+  boxelId: string;
+  /** `AB-C d1` */
+  boxel: string;
+  sector: string;
+  n: number;
+  name: string;
+  flown: boolean;
+  /** Marked skipped in the saved boxel (not flown, counted as done). */
+  skipped: boolean;
+  /** When he last arrived there (journals). */
+  visitedAt: string | null;
+  /** Flown: bodies he scanned, of the FSS count when known. */
+  bodies: { scanned: number; total: number | null } | null;
+  /** Flown: notable bodies (as on the Notable card). */
+  notable: number | null;
+  /** What the galaxy index has for it (BoxelRowDTO.known). */
+  known: BoxelRowDTO["known"];
+}
+
+export interface BoxelTableDTO {
+  /** The ticked boxels, in the side menu's order. */
+  boxels: SavedBoxelDTO[];
+  rows: BoxelTableRowDTO[];
+  /** The species recorded most often across the ticked boxels. */
+  common: { name: string; systems: number }[];
+  noIndex: boolean;
 }

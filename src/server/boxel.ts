@@ -2,7 +2,16 @@
  * One boxel's systems (shared/boxel.ts): which the commander has flown, which the galaxy index knows
  * and what was recorded there, and what the boxel as a whole tends to grow.
  */
-import { boxelIndexOf, MASS_CODES, parseBoxel, type BoxelDTO, type BoxelRowDTO } from "../shared/boxel.js";
+import {
+  boxelIndexOf,
+  MASS_CODES,
+  parseBoxel,
+  type BoxelDTO,
+  type BoxelRowDTO,
+  type BoxelTableDTO,
+  type BoxelTableRowDTO,
+  type SavedBoxelDTO,
+} from "../shared/boxel.js";
 import type { TileIndex } from "./galaxyTiles.js";
 import { sectorOrdinals } from "./galaxyFind.js";
 import { TIER_DSS, TIER_FSS } from "./bioIndex.js";
@@ -63,6 +72,7 @@ export function boxelSystems(opts: {
       n,
       name: `${b.prefix}${n}`,
       visited: mine.has(n),
+      ...(addr != null ? { systemAddress: addr } : {}),
       known: known.get(n) ?? null,
       ...(st ? { bodies: st.bodies, notable: st.notable } : {}),
     });
@@ -88,6 +98,61 @@ export function boxelSystems(opts: {
       .slice(0, 8)
       .map(([name, systems]) => ({ name, systems })),
     nextUnvisited: rows.find((r) => !r.visited)?.name ?? null,
+    noIndex: opts.index == null,
+  };
+}
+
+/**
+ * The Boxels screen's table (owner, 2026-10-05): every system of every ticked saved boxel, -0 up to
+ * its end, in one list, so one filter runs over all of them.
+ */
+export function boxelTable(opts: {
+  boxels: SavedBoxelDTO[];
+  index: TileIndex | null;
+  visited: Iterable<VisitedSystem>;
+  speciesName: (id: string) => string;
+  stats?: SystemStats;
+  /** systemAddress → when he last arrived there. */
+  visitedAt?: (systemAddress: number) => string | null;
+}): BoxelTableDTO {
+  const visited = [...opts.visited];
+  const rows: BoxelTableRowDTO[] = [];
+  const tally = new Map<string, number>();
+  for (const b of opts.boxels) {
+    const d = boxelSystems({
+      query: `${b.prefix}${b.end}`,
+      end: b.end,
+      index: opts.index,
+      visited,
+      speciesName: opts.speciesName,
+      stats: opts.stats,
+    });
+    if (!d) continue;
+    const skipped = new Set(b.skipped);
+    for (const r of d.rows) {
+      rows.push({
+        boxelId: b.id,
+        boxel: b.boxel,
+        sector: b.sector,
+        n: r.n,
+        name: r.name,
+        flown: r.visited,
+        skipped: !r.visited && skipped.has(r.n),
+        visitedAt: r.systemAddress != null ? (opts.visitedAt?.(r.systemAddress) ?? null) : null,
+        bodies: r.bodies ?? null,
+        notable: r.visited ? (r.notable ?? 0) : null,
+        known: r.known,
+      });
+      for (const sp of new Set(r.known?.species ?? [])) tally.set(sp, (tally.get(sp) ?? 0) + 1);
+    }
+  }
+  return {
+    boxels: opts.boxels,
+    rows,
+    common: [...tally]
+      .sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0]))
+      .slice(0, 8)
+      .map(([name, systems]) => ({ name, systems })),
     noIndex: opts.index == null,
   };
 }

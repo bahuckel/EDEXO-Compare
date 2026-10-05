@@ -1,4 +1,5 @@
-import { boxelSystems, type SystemStats } from "../boxel.js";
+import { boxelSystems, boxelTable, type SystemStats } from "../boxel.js";
+import { parseBoxel } from "../../shared/boxel.js";
 import { notableBodiesForSystem, systemBodyTally } from "../snapshotSystemInfo.js";
 import type { GameStateStore } from "../gameState.js";
 
@@ -369,15 +370,61 @@ export function registerGalaxyRoutes(
     if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
     res.json(savedList());
   });
+  /*
+    `{ lastSystem }` keeps a boxel to that system. `{ system, end? }` (the Boxels screen's Current boxel
+    and Plan): any system of the boxel; with no end, up to the highest system the journals or the
+    galaxy index know (at least the one named), and a boxel already saved keeps its own end.
+  */
   app.post("/api/boxels", (req, res) => {
     if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
-    const last = typeof req.body?.lastSystem === "string" ? req.body.lastSystem : "";
+    let last = typeof req.body?.lastSystem === "string" ? req.body.lastSystem : "";
+    if (typeof req.body?.system === "string") {
+      const b = parseBoxel(req.body.system.slice(0, 80));
+      if (!b) {
+        res.status(400).json({ ok: false, error: "Not a boxel name: type a system such as Eol Prou AB-C d1-23." });
+        return;
+      }
+      const endRaw = Number(req.body.end);
+      const asked = req.body.end != null && req.body.end !== "" && Number.isFinite(endRaw) ? Math.floor(endRaw) : null;
+      const have = savedList().items.find((x) => x.prefix.toLowerCase() === b.prefix.toLowerCase());
+      if (have && asked == null) return void res.json({ ...savedList(), id: have.id });
+      const store = opts.getJournalStore?.() ?? null;
+      const auto = boxelSystems({
+        query: req.body.system,
+        end: asked,
+        index: tileIndex(),
+        visited: store ? store.visitedSystems.entries() : [],
+        speciesName: (id) => id,
+      });
+      last = `${b.prefix}${auto?.end ?? b.index ?? 0}`;
+    }
     const added = opts.savedBoxels.add(last);
     if (!added) {
       res.status(400).json({ ok: false, error: "Type the boxel's last system in full, such as Eol Prou AB-C d1-57." });
       return;
     }
     res.json({ ...savedList(), id: added.id });
+  });
+  /*
+    The Boxels screen's table: `?ids=` the ticked saved boxels (comma-separated), every system of each,
+    with what the journals and the galaxy index say.
+  */
+  app.get("/api/boxels/table", (req, res) => {
+    if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
+    const want = new Set(String(req.query.ids ?? "").split(",").filter(Boolean));
+    const store = opts.getJournalStore?.() ?? null;
+    const byId = new Map(getCachedSpeciesDatabase().species.map((s) => [s.id, s.displayName]));
+    res.json({
+      ok: true,
+      ...boxelTable({
+        boxels: savedList().items.filter((b) => want.has(b.id)),
+        index: tileIndex(),
+        visited: store ? store.visitedSystems.entries() : [],
+        speciesName: (id) => byId.get(id) ?? id,
+        stats: store ? boxelStats(store) : undefined,
+        visitedAt: (addr) => store?.systemVisitedAt.get(addr) ?? null,
+      }),
+    });
   });
   // A correction on one system: `{ cutFrom: n }` drops n and everything after; `{ skip: n, on }`.
   app.patch("/api/boxels/:id", (req, res) => {
