@@ -65,6 +65,7 @@ export function BoxelScreen({
   const [included, setIncluded] = usePersistedState<string[] | null>("boxel.included", null, isIncluded);
   const [sideQuery, setSideQuery] = useState("");
   const [endInput, setEndInput] = useState("");
+  const [planInput, setPlanInput] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [cutAsk, setCutAsk] = useState<{ id: string; n: number } | null>(null);
   const [table, setTable] = useState<BoxelTableDTO | null>(null);
@@ -126,19 +127,33 @@ export function BoxelScreen({
   };
   const only = (id: string) => setIncluded([id]);
 
-  const addCurrent = () => {
-    if (!currentSystem || !here) return;
+  /*
+    Save a boxel by any of its systems, flown or not (Current boxel: the one you are in; Plan: a name
+    typed — the name alone says the boxel, owner 2026-10-05), to the last number typed or else the
+    highest one recorded, and tick it.
+  */
+  const addBoxel = (system: string) => {
     const end = endInput.trim();
     void call({
       method: "POST",
       headers: json,
-      body: JSON.stringify({ system: currentSystem, end: end === "" ? null : Number(end) }),
+      body: JSON.stringify({ system, end: end === "" ? null : Number(end) }),
     }).then((j) => {
       if (!j?.id) return;
       setEndInput("");
+      setPlanInput("");
       if (!ids.includes(j.id)) setIncluded([j.id, ...ids]);
     });
   };
+  const addCurrent = () => {
+    if (currentSystem && here) addBoxel(currentSystem);
+  };
+  const plan = parseBoxel(planInput);
+  /** The saved boxel the Last system # field would change: the one typed in Plan, else the current one. */
+  const endShownFor = (() => {
+    const b = plan ?? here;
+    return b ? ((saved ?? []).find((x) => x.prefix.toLowerCase() === b.prefix.toLowerCase()) ?? null) : null;
+  })();
 
   const patch = (id: string, body: Record<string, unknown>) =>
     call(
@@ -357,9 +372,6 @@ export function BoxelScreen({
   }, [allRows, filterKind, filterQuery, notFlownOnly]);
   const suggestions = useMemo(() => boxelFilterSuggestions(filterKind, allRows), [filterKind, allRows]);
   const kindDef = BOXEL_FILTER_KINDS.find((k) => k.value === filterKind)!;
-  const hereSaved = here
-    ? (saved ?? []).find((b) => b.prefix.toLowerCase() === here.prefix.toLowerCase())
-    : null;
 
   return (
     // In the backdrop only so the header's own layout rule (`.top > :not(.modal-backdrop)`) leaves it be.
@@ -386,14 +398,41 @@ export function BoxelScreen({
             >
               Current boxel{here ? `: ${here.boxel}` : ""}
             </button>
+            <span className="boxel-plan">
+              <input
+                className="carriers-search__input"
+                value={planInput}
+                placeholder="Plan: any system, e.g. Eol Prou AB-C d1-23"
+                aria-label="Plan a boxel: any system name in it, flown or not"
+                onChange={(ev) => setPlanInput(ev.target.value)}
+                onKeyDown={(ev) => {
+                  if (ev.key !== "Enter") return;
+                  ev.preventDefault();
+                  if (plan) addBoxel(planInput.trim());
+                }}
+              />
+              <button
+                type="button"
+                className="fdb-chip fdb-chip--on"
+                disabled={!plan}
+                title={
+                  plan
+                    ? `Save ${plan.boxel} in ${plan.sector} and show it`
+                    : "Type a system with a boxel name (sector, letters, mass code and number)"
+                }
+                onClick={() => addBoxel(planInput.trim())}
+              >
+                Plan{plan ? `: ${plan.boxel}` : ""}
+              </button>
+            </span>
             <label className="boxel-current__end">
               <span className="dim tiny">Last system #</span>
               <input
                 className="carriers-search__input"
                 inputMode="numeric"
                 value={endInput}
-                placeholder={hereSaved ? String(hereSaved.end) : "auto"}
-                title="The boxel's last system number, if you know it; empty: the highest one anyone has recorded"
+                placeholder={endShownFor ? String(endShownFor.end) : "auto"}
+                title="The boxel's last system number, if you know it (for Current boxel and Plan); empty: the highest one anyone has recorded"
                 onChange={(ev) => setEndInput(ev.target.value.replace(/\D/g, ""))}
               />
             </label>

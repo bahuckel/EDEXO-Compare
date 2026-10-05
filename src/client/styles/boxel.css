@@ -238,3 +238,11 @@
   flex: 1 1 16rem;
   font-size: var(--fs-sm);
 }
+.boxel-plan {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.boxel-plan input {
+  width: min(22rem, 40vw);
+}
