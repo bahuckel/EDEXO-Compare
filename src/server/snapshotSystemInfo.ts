@@ -26,6 +26,10 @@ import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import { StarRolesConfig, countPhysicalBodiesInSystemMapTree } from "./systemMap.js";
 import { bodyKey } from "../shared/bodyKey.js";
+import { NOTABLE_KINDS, notableKindFor, starTypeLabel, type NotableKind } from "../shared/notices.js";
+import { BODY_TRAITS, planetClassIndex, STAR_CLASSES, starClassIndex } from "../shared/galaxyTraits.js";
+import { confirmedOn } from "./discoveries.js";
+import type { JournalSystemFacts } from "./boxel.js";
 
 /**
  * One lookup for the life of the process, bound to whichever store is building the snapshot.
@@ -472,4 +476,64 @@ export function notableBodiesForSystem(
   }
   out.sort((a, b) => a.bodyId - b.bodyId);
   return out;
+}
+
+/** "K5 V", or the words for a giant, a dwarf remnant or a black hole ("M red giant", "neutron star"). */
+function boxelStarLabel(rec: ExplorationScanRecord): string {
+  const t = (rec.starType ?? "").trim();
+  if (t.includes("_") || /^(N|H|SupermassiveBlackHole|TTS|AeBe|X)$/.test(t)) return starTypeLabel(t);
+  return `${t}${rec.subclass ?? ""}${rec.luminosity ? ` ${rec.luminosity}` : ""}`;
+}
+
+/**
+ * The Boxels screen's facts for one flown system (server/boxel.ts): its stars, bodies scanned, notable
+ * bodies by kind — Earth-like, water, ammonia, other terraformables, Helium gas giants (the exact class)
+ * and green gas giants (the app's green rule, as on the Notable card) —, planet types and biology.
+ * Sold bodies count: a cashed-in system still has its stars and its worlds.
+ */
+export function boxelJournalFacts(store: GameStateStore, systemAddress: number): JournalSystemFacts {
+  const live = store.liveScansInSystem(systemAddress);
+  const liveIds = new Set(live.map((r) => r.bodyId));
+  const recs = [...live, ...store.soldScansInSystem(systemAddress).filter((r) => !liveIds.has(r.bodyId))].filter(
+    (r) => !r.isSynthetic,
+  );
+  const stars = recs.filter((r) => explorationRecordIsStellar(r) && !!r.starType?.trim());
+  const main =
+    stars.find((r) => r.bodyId === 0) ?? stars.find((r) => !((r.distanceFromArrivalLs ?? 0) > 0)) ?? null;
+  const others = stars.filter((r) => r !== main).sort((a, b) => a.bodyId - b.bodyId);
+  const jumpClass = store.systemStarClass.get(systemAddress) ?? null;
+  const classKey = (t: string | null | undefined) => {
+    const i = starClassIndex(t);
+    return i >= 0 ? STAR_CLASSES[i]!.key : null;
+  };
+  const starClasses = [...new Set([main?.starType ?? jumpClass, ...others.map((r) => r.starType)].map(classKey))].filter(
+    (k): k is string => !!k,
+  );
+
+  const count = new Map<NotableKind, number>();
+  const bodyTypes = new Set<string>();
+  let signals = 0;
+  const species = new Set<string>();
+  for (const rec of recs) {
+    if (!isPlanetLikeExplorationRecord(rec) || !rec.planetClass) continue;
+    const kind = notableKindFor(rec.planetClass, rec.terraformState);
+    if (kind) count.set(kind, (count.get(kind) ?? 0) + 1);
+    const ti = planetClassIndex(rec.planetClass);
+    if (ti >= 0) bodyTypes.add(BODY_TRAITS[ti]!.key);
+    if (isTerraformableState(rec.terraformState)) bodyTypes.add("terraformable");
+    const b = store.bodies.get(bodyKey(systemAddress, rec.bodyId));
+    signals += b?.biologicalSignals ?? 0;
+    for (const s of confirmedOn(b)) species.add(s);
+  }
+  const green = notableBodiesForSystem(store, systemAddress, null).filter((b) => b.green).length;
+  if (green) count.set("green", green);
+  return {
+    mainStar: main ? boxelStarLabel(main) : jumpClass,
+    otherStars: others.map(boxelStarLabel),
+    starClasses,
+    bodies: systemBodyTally(store, systemAddress),
+    notables: NOTABLE_KINDS.filter((k) => count.has(k.key)).map((k) => ({ kind: k.key, n: count.get(k.key)! })),
+    bodyTypes: [...bodyTypes],
+    bio: { signals, species: [...species].sort() },
+  };
 }

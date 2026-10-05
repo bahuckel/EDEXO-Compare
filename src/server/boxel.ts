@@ -9,12 +9,15 @@ import {
   type BoxelDTO,
   type BoxelRowDTO,
   type BoxelTableDTO,
+  type BoxelNotableDTO,
   type BoxelTableRowDTO,
   type SavedBoxelDTO,
 } from "../shared/boxel.js";
 import type { TileIndex } from "./galaxyTiles.js";
 import { sectorOrdinals } from "./galaxyFind.js";
 import { TIER_DSS, TIER_FSS } from "./bioIndex.js";
+import type { SystemTraits } from "./galaxyTraits.js";
+import { BODY_TRAITS, STAR_CLASSES, STAR_NONE } from "../shared/galaxyTraits.js";
 
 /** Listing more than this is not a boxel anyone flies by hand. */
 export const BOXEL_MAX_ROWS = 2000;
@@ -102,48 +105,134 @@ export function boxelSystems(opts: {
   };
 }
 
+/** What the journals say about one flown system (server/boxelFacts.ts). */
+export interface JournalSystemFacts {
+  mainStar: string | null;
+  otherStars: string[];
+  starClasses: string[];
+  bodies: { scanned: number; total: number | null };
+  notables: BoxelNotableDTO[];
+  bodyTypes: string[];
+  bio: { signals: number; species: string[] };
+}
+
+/** A star class key ("K") for the index's class position, or null. */
+const classKeyAt = (i: number): string | null => STAR_CLASSES[i]?.key ?? null;
+
+/** The index's facts for one ordinal: star classes and the bit-flagged notables and body types. */
+function indexFacts(traits: SystemTraits | null, i: number) {
+  if (!traits || i >= traits.count) return null;
+  const main = traits.main[i] === STAR_NONE ? null : classKeyAt(traits.main[i]!);
+  const stars: string[] = [];
+  for (let b = 0; b < STAR_CLASSES.length; b++) if (traits.stars[i]! & (1 << b)) stars.push(STAR_CLASSES[b]!.key);
+  const bodyTypes: string[] = [];
+  for (let b = 0; b < BODY_TRAITS.length; b++) if (traits.bodies[i]! & (1 << b)) bodyTypes.push(BODY_TRAITS[b]!.key);
+  const has = (k: string) => bodyTypes.includes(k);
+  const notables: BoxelNotableDTO[] = [];
+  if (has("elw")) notables.push({ kind: "earthlike", n: null });
+  if (has("ww")) notables.push({ kind: "water", n: null });
+  if (has("aw")) notables.push({ kind: "ammonia", n: null });
+  // Exact class only (owner): the bit is never set from a Helium-rich gas giant (shared/galaxyTraits.ts).
+  if (has("helium_gg")) notables.push({ kind: "helium", n: null });
+  // One bit for every terraformable body: with an Earth-like, water or ammonia world it may be that one.
+  if (has("terraformable") && !notables.length) notables.push({ kind: "terraformable", n: null });
+  return {
+    mainStar: main,
+    otherStars: stars.filter((k) => k !== main),
+    starClasses: main ? [main, ...stars.filter((k) => k !== main)] : stars,
+    bodyTypes,
+    notables,
+  };
+}
+
 /**
  * The Boxels screen's table (owner, 2026-10-05): every system of every ticked saved boxel, -0 up to
- * its end, in one list, so one filter runs over all of them.
+ * its end, in one list, so one filter runs over all of them. Flown systems from the journals; the
+ * rest from the galaxy index (bio-index species and body count, system-traits stars and bodies).
  */
 export function boxelTable(opts: {
   boxels: SavedBoxelDTO[];
   index: TileIndex | null;
+  traits?: SystemTraits | null;
   visited: Iterable<VisitedSystem>;
   speciesName: (id: string) => string;
-  stats?: SystemStats;
+  /** systemAddress → what the journals say about it. */
+  journal?: (systemAddress: number) => JournalSystemFacts;
   /** systemAddress → when he last arrived there. */
   visitedAt?: (systemAddress: number) => string | null;
 }): BoxelTableDTO {
-  const visited = [...opts.visited];
+  const visited = [...opts.visited].map(visitedEntry);
   const rows: BoxelTableRowDTO[] = [];
   const tally = new Map<string, number>();
   for (const b of opts.boxels) {
-    const d = boxelSystems({
-      query: `${b.prefix}${b.end}`,
-      end: b.end,
-      index: opts.index,
-      visited,
-      speciesName: opts.speciesName,
-      stats: opts.stats,
-    });
-    if (!d) continue;
+    const mine = new Map<number, number | null>();
+    for (const v of visited) {
+      const n = boxelIndexOf(v.name, b.prefix);
+      if (n != null && (v.addr != null || !mine.has(n))) mine.set(n, v.addr);
+    }
+    const known = new Map<number, number>();
+    if (opts.index) {
+      for (const i of sectorOrdinals(opts.index, b.sector)) {
+        const n = boxelIndexOf(opts.index.index.nameOf(i), b.prefix);
+        if (n != null) known.set(n, i);
+      }
+    }
     const skipped = new Set(b.skipped);
-    for (const r of d.rows) {
-      rows.push({
+    for (let n = 0; n <= b.end; n++) {
+      const flown = mine.has(n);
+      const addr = mine.get(n) ?? null;
+      const ord = known.get(n);
+      const sys = ord != null ? opts.index!.index.systemAt(ord) : null;
+      const idx = ord != null ? indexFacts(opts.traits ?? null, ord) : null;
+      const indexSpecies = sys ? sys.species.map(opts.speciesName) : [];
+      const indexSeen = sys ? (sys.tiers & (TIER_FSS | TIER_DSS)) !== 0 || sys.species.length > 0 : false;
+      const j = flown && addr != null && opts.journal ? opts.journal(addr) : null;
+      let row: BoxelTableRowDTO = {
         boxelId: b.id,
         boxel: b.boxel,
         sector: b.sector,
-        n: r.n,
-        name: r.name,
-        flown: r.visited,
-        skipped: !r.visited && skipped.has(r.n),
-        visitedAt: r.systemAddress != null ? (opts.visitedAt?.(r.systemAddress) ?? null) : null,
-        bodies: r.bodies ?? null,
-        notable: r.visited ? (r.notable ?? 0) : null,
-        known: r.known,
-      });
-      for (const sp of new Set(r.known?.species ?? [])) tally.set(sp, (tally.get(sp) ?? 0) + 1);
+        n,
+        name: `${b.prefix}${n}`,
+        flown,
+        skipped: !flown && skipped.has(n),
+        visitedAt: addr != null ? (opts.visitedAt?.(addr) ?? null) : null,
+        from: null,
+        mainStar: null,
+        otherStars: [],
+        starClasses: [],
+        bodies: null,
+        notables: [],
+        bodyTypes: [],
+        bio: null,
+      };
+      if (j) {
+        const species = [...new Set([...j.bio.species, ...indexSpecies])].sort();
+        row = {
+          ...row,
+          from: "journal",
+          mainStar: j.mainStar ?? idx?.mainStar ?? null,
+          otherStars: j.otherStars,
+          starClasses: j.starClasses.length ? j.starClasses : (idx?.starClasses ?? []),
+          bodies: j.bodies,
+          notables: j.notables,
+          bodyTypes: j.bodyTypes,
+          bio: { signals: j.bio.signals, seen: j.bio.signals > 0 || species.length > 0 || indexSeen, species },
+        };
+      } else if (sys) {
+        row = {
+          ...row,
+          from: "index",
+          mainStar: idx?.mainStar ?? null,
+          otherStars: idx?.otherStars ?? [],
+          starClasses: idx?.starClasses ?? [],
+          bodies: sys.bodyCount ? { scanned: null, total: sys.bodyCount } : null,
+          notables: idx?.notables ?? [],
+          bodyTypes: idx?.bodyTypes ?? [],
+          bio: { signals: null, seen: indexSeen, species: indexSpecies },
+        };
+      }
+      rows.push(row);
+      for (const sp of new Set(indexSpecies)) tally.set(sp, (tally.get(sp) ?? 0) + 1);
     }
   }
   return {

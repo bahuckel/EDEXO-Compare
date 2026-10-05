@@ -96,7 +96,7 @@ function prettyClass(planetClass: string | undefined): string {
  * From the body's own organic locks rather than from the foot catalog, because the locks are what
  * the panel everywhere else in the app treats as proof.
  */
-function confirmedOn(b: BodyExoState | undefined): string[] {
+export function confirmedOn(b: BodyExoState | undefined): string[] {
   if (!b) return [];
   const out = new Set<string>();
   for (const lock of b.organicGenusLocks ?? []) {

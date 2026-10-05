@@ -15,7 +15,11 @@ describe("boxel names", () => {
       index: 23,
     });
     // Boxel 0 leaves its number out.
-    expect(parseBoxel("Bleethuia QV-L b16")).toMatchObject({ boxel: "QV-L b", prefix: "Bleethuia QV-L b", index: 16 });
+    expect(parseBoxel("Bleethuia QV-L b16")).toMatchObject({
+      boxel: "QV-L b",
+      prefix: "Bleethuia QV-L b",
+      index: 16,
+    });
     // The boxel itself, with a trailing dash.
     expect(parseBoxel("Eol Prou AB-C d1-")).toMatchObject({ prefix: "Eol Prou AB-C d1-", index: 0 });
     expect(parseBoxel("HIP 87621")).toBeNull();
@@ -36,7 +40,13 @@ describe("the listing", () => {
       query: "Eol Prou AB-C d1-2",
       end: null,
       index: null,
-      visited: ["Eol Prou AB-C d1-0", "Eol Prou AB-C d1-2", "Eol Prou AB-C d1-5", "Eol Prou AB-C d12-9", "Sol"],
+      visited: [
+        "Eol Prou AB-C d1-0",
+        "Eol Prou AB-C d1-2",
+        "Eol Prou AB-C d1-5",
+        "Eol Prou AB-C d12-9",
+        "Sol",
+      ],
       speciesName: (id) => id,
     })!;
     expect(d.rows.map((r) => [r.n, r.visited])).toEqual([
@@ -50,7 +60,10 @@ describe("the listing", () => {
     expect(d.nextUnvisited).toBe("Eol Prou AB-C d1-1");
     expect(d).toMatchObject({ visitedCount: 3, knownCount: 0, cubeLy: 80, noIndex: true });
     // A known end number stretches the list.
-    expect(boxelSystems({ query: "Eol Prou AB-C d1-2", end: 9, index: null, visited: [], speciesName: (i) => i })!.rows).toHaveLength(10);
+    expect(
+      boxelSystems({ query: "Eol Prou AB-C d1-2", end: 9, index: null, visited: [], speciesName: (i) => i })!
+        .rows,
+    ).toHaveLength(10);
   });
 });
 
@@ -64,9 +77,23 @@ describe("saved boxels (owner, 2026-09-30)", () => {
     const s = createSavedBoxels({ filePath: file });
     expect(s.add("Eol Prou")).toBeNull();
     const { id } = s.add("  Eol Prou AB-C d1-5 ")!;
-    const visited = ["Eol Prou AB-C d1-0", "eol prou ab-c d1-2", "Eol Prou AB-C d1-9", "Eol Prou AB-C d2-1", "Sol"];
+    const visited = [
+      "Eol Prou AB-C d1-0",
+      "eol prou ab-c d1-2",
+      "Eol Prou AB-C d1-9",
+      "Eol Prou AB-C d2-1",
+      "Sol",
+    ];
     expect(s.list(visited)).toEqual([
-      expect.objectContaining({ id, boxel: "AB-C d1", sector: "Eol Prou", end: 5, total: 6, flown: 2, next: "Eol Prou AB-C d1-1" }),
+      expect.objectContaining({
+        id,
+        boxel: "AB-C d1",
+        sector: "Eol Prou",
+        end: 5,
+        total: 6,
+        flown: 2,
+        next: "Eol Prou AB-C d1-1",
+      }),
     ]);
     // The same boxel again moves its end instead of adding a second one.
     expect(s.add("Eol Prou AB-C d1-9")!.id).toBe(id);
@@ -91,7 +118,10 @@ describe("saved boxels (owner, 2026-09-30)", () => {
     s.add("Eol Prou AB-C d1-9");
     s.setSkipped(id, 1, false);
     // Bodies and notable ones across its flown systems (addresses known), and which boxel he is in.
-    const stats = (addr: number) => ({ bodies: { scanned: addr, total: addr === 2 ? null : addr + 1 }, notable: 1 });
+    const stats = (addr: number) => ({
+      bodies: { scanned: addr, total: addr === 2 ? null : addr + 1 },
+      notable: 1,
+    });
     const withAddr: [number, string][] = [
       [1, "Eol Prou AB-C d1-0"],
       [3, "Eol Prou AB-C d1-4"],
@@ -102,7 +132,10 @@ describe("saved boxels (owner, 2026-09-30)", () => {
       notable: 2,
       current: true,
     });
-    expect(s.list([...withAddr, [2, "Eol Prou AB-C d1-5"]], stats, "Sol")[0]).toMatchObject({ bodiesTotal: null, current: false });
+    expect(s.list([...withAddr, [2, "Eol Prou AB-C d1-5"]], stats, "Sol")[0]).toMatchObject({
+      bodiesTotal: null,
+      current: false,
+    });
     // Survives a restart; deletes.
     const again = createSavedBoxels({ filePath: file });
     expect(again.list([])).toHaveLength(1);
@@ -117,13 +150,32 @@ describe("the Boxels screen's table (owner, 2026-10-05)", () => {
   it("lists every system of every ticked boxel, grouped, with skips and visit times", async () => {
     const { boxelTable } = await import("../src/server/boxel.js");
     const boxel = (id: string, prefix: string, end: number, skipped: number[] = []) =>
-      ({ id, prefix, end, skipped, boxel: parseBoxel(`${prefix}0`)!.boxel, sector: parseBoxel(`${prefix}0`)!.sector }) as never;
+      ({
+        id,
+        prefix,
+        end,
+        skipped,
+        boxel: parseBoxel(`${prefix}0`)!.boxel,
+        sector: parseBoxel(`${prefix}0`)!.sector,
+      }) as never;
     const t = boxelTable({
       boxels: [boxel("a", "Eol Prou AB-C d1-", 2, [1]), boxel("b", "Bleethuia QV-L b", 1)],
       index: null,
-      visited: [[11, "Eol Prou AB-C d1-0"], [12, "Bleethuia QV-L b1"], [13, "Sol"]],
+      visited: [
+        [11, "Eol Prou AB-C d1-0"],
+        [12, "Bleethuia QV-L b1"],
+        [13, "Sol"],
+      ],
       speciesName: (id) => id,
-      stats: () => ({ bodies: { scanned: 3, total: 5 }, notable: 1 }),
+      journal: () => ({
+        mainStar: "K5 V",
+        otherStars: ["M3 Va"],
+        starClasses: ["K", "M"],
+        bodies: { scanned: 3, total: 5 },
+        notables: [{ kind: "helium", n: 1 }],
+        bodyTypes: ["icy"],
+        bio: { signals: 2, species: ["Bacterium Vesicula"] },
+      }),
       visitedAt: (addr) => (addr === 11 ? "2026-10-05T10:00:00Z" : null),
     });
     expect(t.rows.map((r) => [r.boxelId, r.n, r.flown, r.skipped])).toEqual([
@@ -133,8 +185,18 @@ describe("the Boxels screen's table (owner, 2026-10-05)", () => {
       ["b", 0, false, false],
       ["b", 1, true, false],
     ]);
-    expect(t.rows[0]).toMatchObject({ boxel: "AB-C d1", visitedAt: "2026-10-05T10:00:00Z", bodies: { scanned: 3, total: 5 }, notable: 1 });
-    expect(t.rows[2]).toMatchObject({ bodies: null, notable: null, known: null });
+    expect(t.rows[0]).toMatchObject({
+      boxel: "AB-C d1",
+      from: "journal",
+      visitedAt: "2026-10-05T10:00:00Z",
+      mainStar: "K5 V",
+      starClasses: ["K", "M"],
+      bodies: { scanned: 3, total: 5 },
+      notables: [{ kind: "helium", n: 1 }],
+      bio: { signals: 2, seen: true, species: ["Bacterium Vesicula"] },
+    });
+    // Not flown and not in the index: nothing known yet (a look-up fills it).
+    expect(t.rows[2]).toMatchObject({ from: null, mainStar: null, bodies: null, notables: [], bio: null });
     expect(t.noIndex).toBe(true);
   });
 });

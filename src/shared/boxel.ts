@@ -6,6 +6,7 @@
  * `AB-C d1` in the Eol Prou sector. Boxel scanning is flying every system of one boxel, -0 upwards.
  * The mass code (the letter, a to h) says how big the boxel's cube is and, roughly, what its stars are.
  */
+import type { NotableKind } from "./notices.js";
 
 export interface BoxelName {
   sector: string;
@@ -134,9 +135,19 @@ export interface SavedBoxelDTO {
   next: string | null;
 }
 
+/** A notable body kind there and how many (null: the galaxy index says "at least one"). */
+export interface BoxelNotableDTO {
+  kind: NotableKind;
+  n: number | null;
+}
+
 /**
  * One row of the Boxels screen (owner, 2026-10-05: "like My discoveries", every ticked boxel in one
  * table): a system of one saved boxel.
+ *
+ * Flown systems are read from the journals; the others from the galaxy index, which keeps every star
+ * class (no luminosity) but only the bodies that matter for biology — so it has no Class I–V and no
+ * Helium gas giants, and green / Helium gas giants come only from the journals (or a look-up).
  */
 export interface BoxelTableRowDTO {
   boxelId: string;
@@ -150,12 +161,20 @@ export interface BoxelTableRowDTO {
   skipped: boolean;
   /** When he last arrived there (journals). */
   visitedAt: string | null;
-  /** Flown: bodies he scanned, of the FSS count when known. */
-  bodies: { scanned: number; total: number | null } | null;
-  /** Flown: notable bodies (as on the Notable card). */
-  notable: number | null;
-  /** What the galaxy index has for it (BoxelRowDTO.known). */
-  known: BoxelRowDTO["known"];
+  /** Where the facts come from: your journals, the galaxy index, or nothing known yet. */
+  from: "journal" | "index" | null;
+  /** "K5 V" from a scan, "K" from the index or the jump. */
+  mainStar: string | null;
+  otherStars: string[];
+  /** STAR_CLASSES keys of every star, main first (the Star type filter). */
+  starClasses: string[];
+  /** Flown: bodies scanned of the FSS count; index: its body count (scanned null). */
+  bodies: { scanned: number | null; total: number | null } | null;
+  notables: BoxelNotableDTO[];
+  /** BODY_TRAITS keys present (the Body type filter). */
+  bodyTypes: string[];
+  /** Biology signals (null: not counted), whether any were seen, and the species logged there. */
+  bio: { signals: number | null; seen: boolean; species: string[] } | null;
 }
 
 export interface BoxelTableDTO {

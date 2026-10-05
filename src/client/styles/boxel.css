@@ -210,3 +210,16 @@
     border-bottom: 1px solid var(--accent-a22);
   }
 }
+
+.boxel-notables {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.boxel-from-index {
+  color: var(--text-dim);
+}
+.boxel-from-index .boxel-notable {
+  color: inherit;
+  font-weight: 600;
+}

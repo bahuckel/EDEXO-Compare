@@ -19,6 +19,31 @@ import { useToast } from "./ui/feedback";
 import { isStrArr, usePersistedState } from "./usePersistedState";
 import { Table, type Column } from "./DiscoveriesTables";
 import { fuzzyRankAny } from "./fuzzyMatch";
+import { NOTABLE_KINDS, type NotableKind } from "@shared/notices";
+
+const NOTABLE_SHORT: Record<NotableKind, string> = {
+  earthlike: "ELW",
+  water: "WW",
+  ammonia: "AW",
+  terraformable: "TF",
+  helium: "He GG",
+  green: "GGG",
+};
+const NOTABLE_LABEL = Object.fromEntries(NOTABLE_KINDS.map((k) => [k.key, k.label])) as Record<
+  NotableKind,
+  string
+>;
+
+/** A fact from the galaxy index (not your own scan) reads dimmer, and says so on hover. */
+function fromIndex(r: BoxelTableRowDTO, text: string) {
+  return r.from === "index" ? (
+    <span className="boxel-from-index" title="From the galaxy index (EDSM / Spansh records)">
+      {text}
+    </span>
+  ) : (
+    <span>{text}</span>
+  );
+}
 
 const isIncluded = (v: unknown): v is string[] | null => v === null || isStrArr(v);
 const json = { "Content-Type": "application/json" };
@@ -83,7 +108,7 @@ export function BoxelScreen({
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, [idsKey]);
-   
+
   useEffect(loadTable, [loadTable, saved]);
 
   const tick = (id: string, on: boolean) => {
@@ -185,50 +210,83 @@ export function BoxelScreen({
           ),
       },
       {
+        key: "main",
+        label: "Main star",
+        title:
+          "Flown: the arrival star as you scanned it. Not flown: its class in the galaxy index (no luminosity)",
+        value: (r) => r.mainStar,
+        render: (r) => fromIndex(r, r.mainStar ?? "—"),
+      },
+      {
+        key: "stars",
+        label: "Other stars",
+        value: (r) => (r.from ? r.otherStars.length : null),
+        render: (r) =>
+          r.otherStars.length ? fromIndex(r, r.otherStars.join(", ")) : <span className="dim">—</span>,
+      },
+      {
         key: "bodies",
         label: "Bodies",
         numeric: true,
         title:
-          "Flown: bodies you scanned, of the count the FSS gave. Not flown: bodies the galaxy index knows",
-        value: (r) => r.bodies?.total ?? r.bodies?.scanned ?? r.known?.bodyCount ?? null,
+          "Flown: bodies you scanned, of the count the FSS gave. Not flown: the bodies the galaxy index knows",
+        value: (r) => r.bodies?.total ?? r.bodies?.scanned ?? null,
         render: (r) =>
-          r.bodies ? (
+          !r.bodies ? (
+            <span className="dim">—</span>
+          ) : r.bodies.scanned == null ? (
+            fromIndex(r, String(r.bodies.total ?? "—"))
+          ) : (
             <span
               className={r.bodies.total != null && r.bodies.scanned >= r.bodies.total ? "fdb-dss" : undefined}
             >
               {r.bodies.scanned}
               {r.bodies.total != null ? `/${r.bodies.total}` : ""}
             </span>
-          ) : r.known?.bodyCount ? (
-            <span className="dim">{r.known.bodyCount}</span>
-          ) : (
-            <span className="dim">—</span>
           ),
       },
       {
         key: "notable",
         label: "Notable",
-        numeric: true,
-        title: "Notable bodies you found there (as on the Notable card)",
-        value: (r) => r.notable,
+        title:
+          "Earth-like, water and ammonia worlds, other terraformables, Helium gas giants (the exact class) and green gas giants. Green and Helium gas giants only from your journals: the galaxy index has no gas giants of those classes",
+        value: (r) => (r.notables.length ? r.notables.reduce((t, x) => t + (x.n ?? 1), 0) : null),
         render: (r) =>
-          r.notable ? <span className="boxel-notable">{r.notable}</span> : <span className="dim">—</span>,
+          r.notables.length ? (
+            <span className={`boxel-notables${r.from === "index" ? " boxel-from-index" : ""}`}>
+              {r.notables.map((x) => (
+                <span key={x.kind} className="boxel-notable" title={NOTABLE_LABEL[x.kind]}>
+                  {NOTABLE_SHORT[x.kind]}
+                  {x.n != null && x.n > 1 ? ` ×${x.n}` : ""}
+                </span>
+              ))}
+            </span>
+          ) : (
+            <span className="dim">—</span>
+          ),
       },
       {
         key: "bio",
         label: "Biology",
-        title: "EDSM and Spansh records in the galaxy index: species logged, biology signals",
-        value: (r) => (r.known ? r.known.species.length * 10 + (r.known.signals ? 1 : 0) : null),
-        render: (r) =>
-          r.known ? (
-            r.known.species.length ? (
-              <span className="boxel-bio">{r.known.species.join(", ")}</span>
-            ) : (
-              <span className="dim">{r.known.signals ? "signals, species not logged" : "none recorded"}</span>
-            )
-          ) : (
-            <span className="dim">—</span>
-          ),
+        title:
+          "Flown: biology signals you saw and the species you logged, with what EDSM and Spansh recorded. Not flown: the galaxy index's records",
+        value: (r) => (r.bio ? r.bio.species.length * 1000 + (r.bio.signals ?? (r.bio.seen ? 1 : 0)) : null),
+        render: (r) => {
+          if (!r.bio) return <span className="dim">—</span>;
+          const signals = r.bio.signals ? `${r.bio.signals} signal${r.bio.signals === 1 ? "" : "s"}` : "";
+          if (r.bio.species.length)
+            return (
+              <span className="boxel-bio">
+                {signals ? <span className="dim">{signals}: </span> : null}
+                {r.bio.species.join(", ")}
+              </span>
+            );
+          return (
+            <span className="dim">
+              {signals || (r.bio.seen ? "signals, species not logged" : "none recorded")}
+            </span>
+          );
+        },
       },
       {
         key: "act",
@@ -441,7 +499,7 @@ export function BoxelScreen({
                   <strong>{rows.filter((r) => r.flown).length}</strong> of {rows.length} flown
                 </span>
                 <span>
-                  <strong>{rows.filter((r) => r.known).length}</strong> with records
+                  <strong>{rows.filter((r) => r.from === "index").length}</strong> more in the galaxy index
                 </span>
                 {lead?.next ? (
                   <span className="boxel-next">

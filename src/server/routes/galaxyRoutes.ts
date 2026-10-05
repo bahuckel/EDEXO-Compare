@@ -1,6 +1,6 @@
 import { boxelSystems, boxelTable, type SystemStats } from "../boxel.js";
 import { parseBoxel } from "../../shared/boxel.js";
-import { notableBodiesForSystem, systemBodyTally } from "../snapshotSystemInfo.js";
+import { boxelJournalFacts, notableBodiesForSystem, systemBodyTally } from "../snapshotSystemInfo.js";
 import type { GameStateStore } from "../gameState.js";
 
 /** Bodies scanned and notable bodies per visited system, for the boxel lists (owner, 2026-09-30). */
@@ -421,7 +421,8 @@ export function registerGalaxyRoutes(
         index: tileIndex(),
         visited: store ? store.visitedSystems.entries() : [],
         speciesName: (id) => byId.get(id) ?? id,
-        stats: store ? boxelStats(store) : undefined,
+        traits: loadSystemTraits(),
+        journal: store ? (addr) => boxelJournalFacts(store, addr) : undefined,
         visitedAt: (addr) => store?.systemVisitedAt.get(addr) ?? null,
       }),
     });
