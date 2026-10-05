@@ -16,19 +16,19 @@ import { parseBoxel } from "@shared/boxel";
 import { useModal } from "./ui/useModal";
 import { CopySystemButton } from "./CopySystemButton";
 import { useToast } from "./ui/feedback";
-import { isStrArr, usePersistedState } from "./usePersistedState";
+import { isBool, isStrArr, oneOf, usePersistedState } from "./usePersistedState";
 import { Table, type Column } from "./DiscoveriesTables";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { NOTABLE_KINDS, type NotableKind } from "@shared/notices";
+import { Select } from "./ui/Select";
+import {
+  BOXEL_FILTER_KINDS,
+  boxelFilterSuggestions,
+  boxelRowFilter,
+  NOTABLE_SHORT,
+  type BoxelFilterKind,
+} from "./boxelFilter";
 
-const NOTABLE_SHORT: Record<NotableKind, string> = {
-  earthlike: "ELW",
-  water: "WW",
-  ammonia: "AW",
-  terraformable: "TF",
-  helium: "He GG",
-  green: "GGG",
-};
 const NOTABLE_LABEL = Object.fromEntries(NOTABLE_KINDS.map((k) => [k.key, k.label])) as Record<
   NotableKind,
   string
@@ -69,6 +69,13 @@ export function BoxelScreen({
   const [cutAsk, setCutAsk] = useState<{ id: string; n: number } | null>(null);
   const [table, setTable] = useState<BoxelTableDTO | null>(null);
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 }>({ key: "n", dir: 1 });
+  const [filterKind, setFilterKind] = usePersistedState<BoxelFilterKind>(
+    "boxel.filterKind",
+    "body",
+    oneOf("system", "body", "star", "species"),
+  );
+  const [filterQuery, setFilterQuery] = useState("");
+  const [notFlownOnly, setNotFlownOnly] = usePersistedState("boxel.notFlownOnly", false, isBool);
 
   const call = useCallback(async (init?: RequestInit, path = "/api/boxels") => {
     try {
@@ -343,7 +350,13 @@ export function BoxelScreen({
 
   const ticked = ids.map((id) => byId.get(id)).filter((b): b is SavedBoxelDTO => !!b);
   const lead = ticked.find((b) => b.current) ?? ticked[0] ?? null;
-  const rows = table?.rows ?? [];
+  const allRows = useMemo(() => table?.rows ?? [], [table]);
+  const rows = useMemo(() => {
+    const keep = boxelRowFilter(filterKind, filterQuery);
+    return allRows.filter((r) => keep(r) && (!notFlownOnly || (!r.flown && !r.skipped)));
+  }, [allRows, filterKind, filterQuery, notFlownOnly]);
+  const suggestions = useMemo(() => boxelFilterSuggestions(filterKind, allRows), [filterKind, allRows]);
+  const kindDef = BOXEL_FILTER_KINDS.find((k) => k.value === filterKind)!;
   const hereSaved = here
     ? (saved ?? []).find((b) => b.prefix.toLowerCase() === here.prefix.toLowerCase())
     : null;
@@ -496,10 +509,10 @@ export function BoxelScreen({
                   {ticked.length === 1 ? ` in ${ticked[0]!.sector}` : ""}
                 </span>
                 <span>
-                  <strong>{rows.filter((r) => r.flown).length}</strong> of {rows.length} flown
+                  <strong>{allRows.filter((r) => r.flown).length}</strong> of {allRows.length} flown
                 </span>
                 <span>
-                  <strong>{rows.filter((r) => r.from === "index").length}</strong> more in the galaxy index
+                  <strong>{allRows.filter((r) => r.from === "index").length}</strong> more in the galaxy index
                 </span>
                 {lead?.next ? (
                   <span className="boxel-next">
@@ -530,7 +543,7 @@ export function BoxelScreen({
                   const n = cutAsk.n;
                   const after = b.end - n;
                   const flownFrom =
-                    rows.filter((r) => r.boxelId === b.id && r.n >= n && r.flown).length +
+                    allRows.filter((r) => r.boxelId === b.id && r.n >= n && r.flown).length +
                     b.flownBeyond.length;
                   const skipped = b.skipped.includes(n);
                   return (
@@ -584,6 +597,46 @@ export function BoxelScreen({
                 })()
               : null}
             {ticked.length ? (
+              <div className="boxel-filter" role="search">
+                <Select
+                  ariaLabel="What the search looks at"
+                  className="boxel-filter__kind"
+                  value={filterKind}
+                  options={BOXEL_FILTER_KINDS.map((k) => ({ value: k.value, label: k.label }))}
+                  onChange={(v) => setFilterKind(v)}
+                />
+                <input
+                  type="search"
+                  className="my-exo-search-input boxel-filter__input"
+                  placeholder={`${kindDef.label}: ${kindDef.hint}`}
+                  aria-label={`Filter by ${kindDef.label.toLowerCase()}`}
+                  list={suggestions.length ? "boxel-filter-suggest" : undefined}
+                  value={filterQuery}
+                  onChange={(ev) => setFilterQuery(ev.target.value)}
+                />
+                {suggestions.length ? (
+                  <datalist id="boxel-filter-suggest">
+                    {suggestions.map((x) => (
+                      <option key={x} value={x} />
+                    ))}
+                  </datalist>
+                ) : null}
+                <button
+                  type="button"
+                  className={`disc-chip${notFlownOnly ? " disc-chip--on" : ""}`}
+                  aria-pressed={notFlownOnly}
+                  onClick={() => setNotFlownOnly(!notFlownOnly)}
+                >
+                  Not flown yet
+                </button>
+                <span className="dim tiny">
+                  {rows.length === allRows.length
+                    ? `${allRows.length.toLocaleString()} systems`
+                    : `${rows.length.toLocaleString()} of ${allRows.length.toLocaleString()}`}
+                </span>
+              </div>
+            ) : null}
+            {ticked.length ? (
               <Table
                 rows={rows}
                 columns={columns}
@@ -593,8 +646,8 @@ export function BoxelScreen({
                 }
                 rowKey={(r) => `${r.boxelId}:${r.n}`}
                 csvName="boxels"
-                empty={table ? "No systems." : "Reading…"}
-                resetKey={idsKey}
+                empty={table ? (allRows.length ? "No systems match." : "No systems.") : "Reading…"}
+                resetKey={`${idsKey}|${filterKind}|${filterQuery}|${notFlownOnly}`}
               />
             ) : saved?.length ? (
               <p className="dim disc-empty">Tick a boxel in the side menu to list its systems.</p>

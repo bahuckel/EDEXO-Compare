@@ -223,3 +223,18 @@
   color: inherit;
   font-weight: 600;
 }
+
+/* One search bar and what it searches (owner, 2026-10-05). */
+.boxel-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.boxel-filter__kind {
+  min-width: 10rem;
+}
+.boxel-filter__input {
+  flex: 1 1 16rem;
+  font-size: var(--fs-sm);
+}
