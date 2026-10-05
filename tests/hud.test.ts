@@ -617,7 +617,7 @@ describe("HUD placing frame", () => {
       frame.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, button: 0 }));
       frame.dispatchEvent(new MouseEvent("pointerup", { bubbles: true }));
       (document.querySelector(".hud-move-done") as HTMLButtonElement).click();
-      expect(calls).toEqual(["start", "end", "done"]);
+      expect(calls).toEqual(["frame", "start", "end", "done"]);
       HUD.setMoveMode(false);
       expect(document.querySelector(".hud-move")).toBeNull();
     } finally {

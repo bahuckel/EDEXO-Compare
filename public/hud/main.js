@@ -210,6 +210,14 @@ HUD.setMoveMode = function (on) {
   });
   f.appendChild(label);
   f.appendChild(done);
+  // In hud-events.log: the frame is up, and (once) the mouse reached it — what a stuck HUD lacks.
+  void ee.hudDrag("frame");
+  var hovered = false;
+  f.addEventListener("pointerover", function () {
+    if (hovered) return;
+    hovered = true;
+    void ee.hudDrag("hover");
+  });
   var dragging = false;
   var queued = false;
   f.addEventListener("pointerdown", function (ev) {

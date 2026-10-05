@@ -474,6 +474,14 @@ function createHudWindows(deps) {
           return;
         }
       }
+      /*
+        Click-through again after every show (owner, 2026-10-05: a HUD that would not move until it
+        was split and merged). After the hide / show of each trip away from the game, the window took
+        the clicks on placing — they went to the game behind it (hud-events.log: the game came to the
+        front each time) — while a freshly made window did not. The flag is set again here, in the
+        state the moment wants, rather than trusted to survive the hide.
+      */
+      setClickThrough(win, !moving);
     }
     // `screen-saver` is the highest level Electron offers; `floating` is the fallback for a platform
     // that refuses it. Re-set rather than assumed: the level travels with the assertion.
@@ -490,6 +498,14 @@ function createHudWindows(deps) {
       win.moveTop();
     } catch {
       /* ignore */
+    }
+  }
+
+  function setClickThrough(win, on) {
+    try {
+      win.setIgnoreMouseEvents(on);
+    } catch {
+      /* a window closing */
     }
   }
 
@@ -752,11 +768,9 @@ function createHudWindows(deps) {
     drag = null;
     for (const s of hudOverlayStack) {
       if (!s.win || s.win.isDestroyed()) continue;
-      try {
-        s.win.setIgnoreMouseEvents(!moving);
-      } catch {
-        /* ignore */
-      }
+      // Through both states, so the window's style is written again even if it already "was" this.
+      if (moving) setClickThrough(s.win, true);
+      setClickThrough(s.win, !moving);
       try {
         s.win.webContents.send("edexo:hud-move-mode", { on: moving });
       } catch {
@@ -777,6 +791,8 @@ function createHudWindows(deps) {
   function dragFromPage(win, phase) {
     if (phase !== "move") hudLog(`drag ${phase}${moving ? "" : " (not placing)"}${hudOverlayStack.some((s) => s.win === win) ? "" : " (not a HUD window)"}`);
     if (!moving || !hudOverlayStack.some((s) => s.win === win)) return { ok: false };
+    // Log only: the page's frame is up, the mouse reached it (the line above wrote it).
+    if (phase === "frame" || phase === "hover") return { ok: true };
     if (phase === "done") {
       setMoveMode(false);
       deps.onChange();

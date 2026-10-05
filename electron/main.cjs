@@ -471,7 +471,7 @@ function registerFootOverlayIpc(iconForChild) {
   }));
   ipcMain.handle("edexo:hud-drag", (evt, opts) => {
     const phase = opts && typeof opts === "object" ? opts.phase : null;
-    if (!["start", "move", "end", "done"].includes(phase)) return { ok: false };
+    if (!["start", "move", "end", "done", "frame", "hover"].includes(phase)) return { ok: false };
     return huds.dragFromPage(BrowserWindow.fromWebContents(evt.sender), phase);
   });
 
