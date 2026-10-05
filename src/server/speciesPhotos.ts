@@ -476,13 +476,22 @@ function resolveSpeciesPhotoUncached(entry: SpeciesEntry, projectRoot: string): 
     );
   }
 
-  const fallback = imageFiles[0];
+  /*
+   * No photograph of this species at all: a stand-in from its genus, the commander's own first (owner,
+   * 2026-10-05: "Show mine if they don't have one from ED-DSN currently") — ED-DSN's are on loan, so a
+   * species with no ED-DSN picture of its own does not borrow one of theirs either. An unnumbered file
+   * before its "-2".
+   */
+  const own = imageFiles
+    .filter((f) => photoContributorFor(projectRoot, f) !== null)
+    .sort((x, y) => Number(/-\d+\.[a-z]+$/i.test(x)) - Number(/-\d+\.[a-z]+$/i.test(y)) || x.localeCompare(y));
+  const fallback = own[0] ?? imageFiles[0];
   if (fallback) {
     return withCredits(
       entry,
       projectRoot,
       fallback,
-      `Species image not specified or missing — showing sample file “${fallback}” from ${entry.genusDataDir}_photos.`,
+      `No photograph of this species yet — showing “${fallback}”, another of its genus.`,
       [fallback, ...variantFiles],
       variantFiles,
     );
