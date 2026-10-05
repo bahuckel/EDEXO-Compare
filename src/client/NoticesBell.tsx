@@ -29,6 +29,7 @@ const NOTICE_ICON: Record<NoticeDTO["kind"], string> = {
   poi: "◈",
   carrier: "▣",
   codex: "◆",
+  achievement: "🏆",
 };
 
 async function post(path: string, body: unknown): Promise<boolean> {

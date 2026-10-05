@@ -196,6 +196,11 @@ export interface NoticesService {
    */
   sendTest(at: string): NoticeDTO;
   /**
+   * An achievement step reached live (server/achievementNotices.ts): one notice per achievement and
+   * step, ever. True when it was added.
+   */
+  announceAchievement(a: { id: string; step: number; title: string; text: string }, at: string): boolean;
+  /**
    * Candidates nobody has logged in their region ([CODEX FIRST]), from the snapshot of the system the
    * commander is in. Each species, colour and body is announced once.
    *
@@ -689,6 +694,21 @@ export function createNoticesService(opts: {
       state.items = [n, ...state.items.filter((x) => !x.id.startsWith("test:"))];
       save();
       return n;
+    },
+    announceAchievement(a, at) {
+      const added = add({
+        id: `achievement:${a.id}:${a.step}`,
+        at,
+        kind: "achievement",
+        title: a.title,
+        text: a.text,
+        system: "",
+        systemAddress: null,
+        body: null,
+        bodyKey: null,
+      });
+      if (added) save();
+      return added;
     },
     clearRead() {
       const before = state.items.length;

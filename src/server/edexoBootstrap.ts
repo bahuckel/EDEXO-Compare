@@ -7,6 +7,7 @@ import {
   achievementsList,
   clearAchievementsCache,
 } from "./achievements.js";
+import { achievementNoticeText, createAchievementWatch } from "./achievementNotices.js";
 import {
   buildCodexExport,
   buildExomasteryExport,
@@ -346,6 +347,17 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     (key) => console.warn(`[edexo-compare] unknown exobiology journal line kept: ${key}`),
   );
   /* "Notify me" (guild tester report, 2026-09-30): the mail icon's notices and the record marks. */
+  /*
+    Achievement notices (owner, 2026-10-05): only steps reached after this start — primed before the
+    first live line, read again when a set it counts from grows (server/achievementNotices.ts).
+  */
+  const achievementWatch = createAchievementWatch({
+    read: () => {
+      const l = achievementsList(getProjectRoot(), store, getCachedSpeciesDatabase().species);
+      return l.available ? l.achievements : null;
+    },
+    version: () => `${store.achievementDone.size}|${store.codexMapLogged.size}|${store.visitedSystems.size}`,
+  });
   const notices = createNoticesService({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-notices.json"),
   });
@@ -1044,7 +1056,12 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         notices.observe(line, noticesContext);
         // Read before apply() closes the run: the tracker files an Analyse under the run's body too.
         const ownLine = store.ownBodyForAnalyse(line);
+        achievementWatch.prime();
         store.applyLive(line);
+        for (const a of achievementWatch.check()) {
+          if (notices.announceAchievement({ id: a.id, step: a.step, ...achievementNoticeText(a) }, String(line.timestamp ?? new Date().toISOString())))
+            push();
+        }
         // Live lines only. The historical replay calls store.apply directly, which is what keeps a
         // first run from asking EDSM about every system the commander has ever visited.
         maybeAutoFetchOnArrival(line);

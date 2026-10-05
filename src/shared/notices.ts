@@ -11,7 +11,8 @@ import { BODY_FEATURES, defaultFeaturePrefs, type BodyFeatureKey } from "./bodyF
 import { POI_GROUP_OPTIONS, type PoiGroup } from "./gecCategories.js";
 import { CARRIER_SERVICE_OPTIONS } from "./carrierServices.js";
 
-export type NoticeKind = "notable" | "record" | "nsp" | "poi" | "carrier" | "codex";
+/** `achievement`: a bronze, silver or gold reached since the app started (owner, 2026-10-05). */
+export type NoticeKind = "notable" | "record" | "nsp" | "poi" | "carrier" | "codex" | "achievement";
 
 export interface NoticeDTO {
   id: string;
