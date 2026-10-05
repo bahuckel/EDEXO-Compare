@@ -285,7 +285,7 @@ export function demoteFailedHostStarGates(
     const verdict = evaluateHostStarGate(m.entry.id, classes, mainStar, {
       type: matchContext?.systemMainStarType,
       luminosity: matchContext?.systemMainStarLuminosity,
-    });
+    }, matchContext?.systemStars);
     if (!verdict || verdict.passes) continue;
     const reason: MatchReason = {
       field: "StarType",
@@ -314,7 +314,7 @@ export function demoteFailedHostStarGates(
     const verdict = evaluateHostStarGate(m.entry.id, classes, mainStar, {
       type: matchContext?.systemMainStarType,
       luminosity: matchContext?.systemMainStarLuminosity,
-    });
+    }, matchContext?.systemStars);
     if (!verdict || verdict.passes) continue;
     const reason: MatchReason = {
       field: "StarType",
@@ -404,7 +404,7 @@ export function dropUnprovenStrictSpecies(
       const v = evaluateHostStarGate(m.entry.id, matchContext?.hostStarClasses, matchContext?.systemMainStarClass ?? null, {
         type: matchContext?.systemMainStarType,
         luminosity: matchContext?.systemMainStarLuminosity,
-      });
+      }, matchContext?.systemStars);
       if (!v?.passes) return false;
     }
     return true;

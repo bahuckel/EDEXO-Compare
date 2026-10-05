@@ -47,6 +47,8 @@ export interface SpeciesMatchContext {
    */
   systemMainStarType?: string;
   systemMainStarLuminosity?: string;
+  /** Every star in the system as the journal writes it, for gates with `anyStar` (the Anemone colours). */
+  systemStars?: { type: string; luminosity?: string }[];
   /**
    * Journal star type of the star that sets star-coloured species' colours — the host, unless the
    * host is a brown dwarf in a planet slot, then the star that dwarf orbits (speciesMatchContext.ts

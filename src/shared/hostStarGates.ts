@@ -78,6 +78,14 @@ export interface HostStarGate {
    */
   orHost?: true;
   /**
+   * With `judgedOn: "main"`: any star in the system that passes (class and luminosity) passes the gate.
+   * The Anemone colours were measured on the main star, but over 3,376 confirmed single-Anemone bodies
+   * (2026-10-05, EDAstro codex species) the main star fits the species' rule on 91-99 % and some star
+   * in the system on 97-100 %: Rubeum Bioluminescent 93.7 → 99.5 %, Puniceum 91.2 → 100 %; HIP 34326 D 2
+   * grows Blatteum round a B dwarf whose main star is a neutron star.
+   */
+  anyStar?: true;
+  /**
    * Yerkes luminosity classes allowed per star class, judged on the system's main star (so only on
    * `judgedOn: "main"` gates) — the Anemone colours split on it: a B dwarf makes Luteolum, a B giant
    * Roseum. Keyed by {@link hostStarClassKey}, or `AeBe` for a Herbig star, which that key folds into
@@ -186,6 +194,7 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     idIncludes: "anemone_luteolum",
     gate: {
       judgedOn: "main",
+      anyStar: true,
       allowed: ["B"],
       luminosity: B_DWARF,
       evidence: "main star B IV-V on 202 of 204 Luteolum bodies (Bioforge: B 99.2 % of 1,682)",
@@ -195,6 +204,7 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     idIncludes: "anemone_blatteum_bioluminescent",
     gate: {
       judgedOn: "main",
+      anyStar: true,
       allowed: ["B"],
       luminosity: B_DWARF,
       evidence: "main star B IV-V on 1,465 of 1,499 Blatteum bodies (Bioforge: B 97.7 % of 5,446)",
@@ -205,6 +215,7 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     idIncludes: "anemone_roseum",
     gate: {
       judgedOn: "main",
+      anyStar: true,
       allowed: ["B"],
       luminosity: B_GIANT,
       evidence:
@@ -215,6 +226,7 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     idIncludes: "anemone_croceum",
     gate: {
       judgedOn: "main",
+      anyStar: true,
       allowed: ["B", "A"],
       luminosity: B_SUBDWARF_A_GIANT,
       evidence:
@@ -225,6 +237,7 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     idIncludes: "anemone_rubeum_bioluminescent",
     gate: {
       judgedOn: "main",
+      anyStar: true,
       allowed: ["B", "A"],
       luminosity: { ...B_SUBDWARF_A_GIANT, B: ["IV", "VI"] },
       evidence:
@@ -235,6 +248,7 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     idIncludes: "anemone_puniceum",
     gate: {
       judgedOn: "main",
+      anyStar: true,
       allowed: ["O", "W"],
       evidence: "main star O on 30 of 34 Puniceum bodies (Bioforge: O 91 %, Wolf-Rayet 4 %)",
     },
@@ -243,6 +257,7 @@ export const HOST_STAR_GATES: { idIncludes: string; gate: HostStarGate }[] = [
     idIncludes: "anemone_prasinum_bioluminescent",
     gate: {
       judgedOn: "main",
+      anyStar: true,
       allowed: ["O", "W", "A"],
       luminosity: O_STAR,
       evidence:
@@ -426,6 +441,7 @@ export function evaluateHostStarGate(
   starClasses: readonly string[] | null | undefined,
   mainStarClass?: string | null,
   mainStar?: StarReading | null,
+  systemStars?: readonly StarReading[] | null,
 ): HostStarVerdictGate | null {
   const gate = hostStarGateForSpeciesId(speciesId);
   if (!gate) return null;
@@ -435,8 +451,14 @@ export function evaluateHostStarGate(
     const classPasses = gate.allowed.includes(mainStarClass);
     const lum = classPasses ? luminosityVerdict(gate, mainStar) : null;
     const hostPasses = gate.orHost === true && (starClasses ?? []).some((c) => gate.allowed.includes(c));
+    const anyStarPasses =
+      gate.anyStar === true &&
+      (systemStars ?? []).some((s) => {
+        const cls = hostStarClassKey(s.type);
+        return cls != null && gate.allowed.includes(cls) && (luminosityVerdict(gate, s)?.passes ?? true);
+      });
     return {
-      passes: (classPasses && (lum?.passes ?? true)) || hostPasses,
+      passes: (classPasses && (lum?.passes ?? true)) || hostPasses || anyStarPasses,
       classes: [mainStarClass],
       allowed: gate.allowed,
       evidence: gate.evidence,

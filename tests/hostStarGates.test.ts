@@ -117,6 +117,17 @@ describe("the Anemone colours", () => {
     expect(evaluateHostStarGate("anemone_luteolum", ["B"], null, null)).toBeNull();
   });
 
+  it("passes on any star in the system that fits, not only the main one", () => {
+    // HIP 34326 D 2: a confirmed Blatteum Bioluminescent body round a B dwarf in a system whose main
+    // star is a neutron star (2026-10-05).
+    const stars = [{ type: "N" }, { type: "B", luminosity: "Va" }];
+    expect(evaluateHostStarGate("anemone_blatteum_bioluminescent", ["N"], "N", { type: "N" }, stars)!.passes).toBe(true);
+    expect(evaluateHostStarGate("anemone_blatteum_bioluminescent", ["N"], "N", { type: "N" })!.passes).toBe(false);
+    // A B giant elsewhere in the system does not make a dwarf species.
+    const giant = [{ type: "N" }, { type: "B", luminosity: "III" }];
+    expect(evaluateHostStarGate("anemone_blatteum_bioluminescent", ["N"], "N", { type: "N" }, giant)!.passes).toBe(false);
+  });
+
   it("names the luminosity when it decided", () => {
     const v = evaluateHostStarGate("anemone_luteolum", ["T"], "B", { type: "B", luminosity: "IIIab" })!;
     expect(describeHostStarVerdict(v)).toMatch(/^Main star B-class IIIab .* B-class IV, V/);
