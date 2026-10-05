@@ -490,3 +490,14 @@
   flex-basis: 100%;
   margin: 0;
 }
+
+/* A saved boxel at a golden place (BoxelAdvice GoldenTag). */
+.boxel-golden {
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  font-size: var(--fs-xs);
+  color: var(--ok-bright, var(--ok));
+  border: 1px solid var(--ok, currentColor);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}

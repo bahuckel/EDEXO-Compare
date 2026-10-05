@@ -12,6 +12,7 @@ import {
   formatBoxelRate,
   goldenBoxels,
   goldenInSector,
+  goldenTargetsAt,
   MASS_CODE_LETTERS,
   massCodeRate,
   nearestBoxels,
@@ -306,13 +307,15 @@ export function BoxelLookingFor({
                 {goldenHere.map(({ g, s }) =>
                   row(
                     s,
-                    `${pct(g.rate)} of its systems with biology, against ${pct(g.rest)} in other ${g.code} boxels`,
+                    `${pct(g.rate)} of its systems with biology, against ${pct(g.rest)} in other ${g.code} boxels${g.confirmed ? " · two sources agree" : " · one source"}`,
                   ),
                 )}
               </ul>
               <p className="dim tiny">
                 The same place in every sector, measured in EDAstro&apos;s codex over the whole galaxy and
-                true in both halves of it — a strong lead, not a promise: a sector can still have none.
+                true in both halves of it; &quot;two sources agree&quot;: the Spansh bio export finds it too.
+                For Bark Mounds and Electricae these are where nebulae tend to sit (a nebula within 100 ly 14
+                times as often) — a strong lead, not a promise: a sector can still have none.
               </p>
             </div>
           ) : null}
@@ -415,5 +418,41 @@ export function BoxelLookingFor({
       </div>
       {verdict || suggestions ? <div className="boxel-advice__out">{verdict ?? suggestions}</div> : null}
     </section>
+  );
+}
+
+/**
+ * A saved boxel that sits at a golden place (the same letters in any sector): "golden", with what for
+ * on hover. Only places a second source confirms count here; the one-source ones stay in Looking for.
+ */
+export function GoldenTag({ boxel }: { boxel: string }) {
+  const hits = goldenTargetsAt(boxel).filter((g) => g.confirmed);
+  if (!hits.length) return null;
+  // One line per thing: a genus goes when one of its species is listed ("Electricae" beside
+  // "Electricae Radialem"), and "Bark Mound" beside "Bark Mounds".
+  const norm = (t: string) => t.replace(/s$/, "").toLowerCase();
+  const names = hits.map((g) => norm(g.target));
+  const seen = new Set<string>();
+  const lines = hits.filter((g) => {
+    const k = norm(g.target);
+    if (seen.has(k) || names.some((n) => n !== k && (n.startsWith(`${k} `) || n.endsWith(` ${k}`))))
+      return false;
+    seen.add(k);
+    return true;
+  });
+  return (
+    <span
+      className="boxel-golden"
+      title={`A golden boxel: in boxels at this place of their sector, ${lines
+        .map((g) => `${g.target} ${pct(g.rate)} of systems with biology (other boxels ${pct(g.rest)})`)
+        .join("; ")}. A strong lead, not a promise.`}
+    >
+      golden:{" "}
+      {lines
+        .slice(0, 2)
+        .map((g) => g.target)
+        .join(", ")}
+      {lines.length > 2 ? ` +${lines.length - 2}` : ""}
+    </span>
   );
 }

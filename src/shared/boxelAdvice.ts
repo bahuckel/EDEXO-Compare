@@ -237,23 +237,26 @@ export interface GoldenBoxel {
   rate: number;
   rest: number;
   systems: number;
+  /** Golden in the Spansh bio export too (a second source), not only in EDAstro's codex file. */
+  confirmed: boolean;
 }
 
 /**
  * The boxel positions where a genus or species is far more common than in the rest of its mass code
- * (the dump's golden list), best first.
+ * (the golden list), those a second source confirms first, then by rate.
  */
 export function goldenBoxels(key: string): GoldenBoxel[] {
   return BOXEL_BIO_GOLDEN.filter((g) => g[0] === key)
-    .map(([, code, position, systems, hits, rest]) => ({
+    .map(([, code, position, systems, hits, rest, confirmed]) => ({
       code: code as MassCode,
       position,
       boxel: boxelNameAt(code as MassCode, position),
       rate: hits / systems,
       rest,
       systems,
+      confirmed: confirmed === 1,
     }))
-    .sort((a, b) => b.rate - a.rate);
+    .sort((a, b) => Number(b.confirmed) - Number(a.confirmed) || b.rate - a.rate);
 }
 
 /** A golden position's boxel in the sector a point is in, with its centre and distance. */
@@ -274,4 +277,21 @@ export function goldenInSector(g: GoldenBoxel, point: { x: number; y: number; z:
     z,
     ly: Math.hypot(x - point.x, y - point.y, z - point.z),
   };
+}
+
+/** What a boxel (`DL-Y d`, any sector) is a golden place for: targets with their rate, confirmed first. */
+export function goldenTargetsAt(
+  boxel: string,
+): { target: string; rate: number; rest: number; confirmed: boolean }[] {
+  const position = boxelPositionOf(boxel);
+  const code = /\s([a-h])\d*$/.exec(boxel.trim())?.[1];
+  if (position == null || !code) return [];
+  return BOXEL_BIO_GOLDEN.filter((g) => g[1] === code && g[2] === position)
+    .map(([target, , , systems, hits, rest, confirmed]) => ({
+      target: target.slice(target.indexOf(":") + 1),
+      rate: hits / systems,
+      rest,
+      confirmed: confirmed === 1,
+    }))
+    .sort((a, b) => Number(b.confirmed) - Number(a.confirmed) || b.rate / b.rest - a.rate / a.rest);
 }

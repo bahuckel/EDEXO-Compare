@@ -12,6 +12,7 @@ import {
   nearestBoxels,
   goldenBoxels,
   goldenInSector,
+  goldenTargetsAt,
   rankMassCodes,
 } from "../src/shared/boxelAdvice.js";
 import { firstSystemOf } from "../src/client/BoxelAdvice.js";
@@ -95,5 +96,14 @@ describe("exobiology by boxel (EDAstro's codex file)", () => {
   it("saves a boxel by its system 0", () => {
     expect(firstSystemOf("Assairts", "DL-Y d")).toBe("Assairts DL-Y d0");
     expect(firstSystemOf("Assairts", "HR-W d1")).toBe("Assairts HR-W d1-0");
+  });
+});
+
+describe("golden places a second source confirms", () => {
+  it("marks DL-Y d (any sector) for Bark Mounds, confirmed by the Spansh bio export, and an ordinary boxel for nothing", () => {
+    const at = goldenTargetsAt("DL-Y d");
+    expect(at.find((g) => g.target === "Bark Mounds")).toMatchObject({ confirmed: true });
+    expect(goldenTargetsAt("MR-D c12")).toEqual([]);
+    expect(goldenBoxels("sp:Bark Mounds")[0]!.confirmed).toBe(true);
   });
 });

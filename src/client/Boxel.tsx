@@ -22,7 +22,7 @@ import { Table, type Column } from "./DiscoveriesTables";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { NOTABLE_KINDS, type NotableKind } from "@shared/notices";
 import { Select } from "./ui/Select";
-import { BoxelLookingFor, BoxelMassCodeHelp } from "./BoxelAdvice";
+import { BoxelLookingFor, BoxelMassCodeHelp, GoldenTag } from "./BoxelAdvice";
 import { Tooltip } from "./ui/Tooltip";
 import { STAR_CLASSES } from "@shared/galaxyTraits";
 import {
@@ -728,6 +728,7 @@ export function BoxelScreen({
                       >
                         <strong>{b.boxel}</strong> <span className="dim">{b.sector}</span>
                         {b.current ? <span className="boxel-side__here">you are here</span> : null}
+                        <GoldenTag boxel={b.boxel} />
                       </button>
                       <span
                         className="boxel-side__bar"
