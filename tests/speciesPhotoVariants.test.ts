@@ -177,7 +177,7 @@ describe("a photograph contributed by somebody else", () => {
     clearSpeciesPhotoCache();
     clearPhotoCreditsCache();
     const r = resolveSpeciesPhoto(find("Cactoida Peperatis"), root);
-    expect((r.photoVariants ?? []).map((v) => v.colour).sort()).toEqual(["Amethyst", "Teal", "Yellow"]);
+    expect((r.photoVariants ?? []).map((v) => v.colour).sort()).toEqual(["Amethyst", "Green", "Teal", "Yellow"]);
   });
 
   it("carries the right name onto every photo of a mixed gallery", () => {
