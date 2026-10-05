@@ -11,16 +11,17 @@
  * and the side menu re-read the journals after every jump, so the ticks follow you.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { BoxelTableDTO, BoxelTableRowDTO, SavedBoxelDTO } from "@shared/boxel";
+import type { BoxelTableDTO, BoxelTableRowDTO, PreviousBoxelDTO, SavedBoxelDTO } from "@shared/boxel";
 import { parseBoxel } from "@shared/boxel";
 import { useModal } from "./ui/useModal";
 import { CopySystemButton } from "./CopySystemButton";
 import { useToast } from "./ui/feedback";
-import { isBool, isStrArr, oneOf, usePersistedState } from "./usePersistedState";
+import { isBool, isNum, isStrArr, oneOf, usePersistedState } from "./usePersistedState";
 import { Table, type Column } from "./DiscoveriesTables";
 import { fuzzyRankAny } from "./fuzzyMatch";
 import { NOTABLE_KINDS, type NotableKind } from "@shared/notices";
 import { Select } from "./ui/Select";
+import { STAR_CLASSES } from "@shared/galaxyTraits";
 import {
   BOXEL_FILTER_KINDS,
   boxelFilterSuggestions,
@@ -45,6 +46,18 @@ function fromIndex(r: BoxelTableRowDTO, text: string) {
   );
 }
 
+/** Previous boxels drawn at once: a long log holds thousands. */
+const PREV_PAGE = 60;
+const PREV_RANGES: { days: number; label: string }[] = [
+  { days: 1, label: "24h" },
+  { days: 7, label: "7d" },
+  { days: 30, label: "30d" },
+  { days: 90, label: "90d" },
+  { days: 365, label: "365d" },
+  { days: 0, label: "All" },
+];
+const STAR_LABEL = Object.fromEntries(STAR_CLASSES.map((c) => [c.key, c.label])) as Record<string, string>;
+
 const isIncluded = (v: unknown): v is string[] | null => v === null || isStrArr(v);
 const json = { "Content-Type": "application/json" };
 
@@ -66,6 +79,10 @@ export function BoxelScreen({
   const [sideQuery, setSideQuery] = useState("");
   const [endInput, setEndInput] = useState("");
   const [planInput, setPlanInput] = useState("");
+  const [showPrevious, setShowPrevious] = usePersistedState("boxel.showPrevious", false, isBool);
+  const [prevDays, setPrevDays] = usePersistedState("boxel.previousDays", 30, isNum);
+  const [previous, setPrevious] = useState<PreviousBoxelDTO[] | null>(null);
+  const [prevLimit, setPrevLimit] = useState(PREV_PAGE);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [cutAsk, setCutAsk] = useState<{ id: string; n: number } | null>(null);
   const [table, setTable] = useState<BoxelTableDTO | null>(null);
@@ -154,6 +171,30 @@ export function BoxelScreen({
     const b = plan ?? here;
     return b ? ((saved ?? []).find((x) => x.prefix.toLowerCase() === b.prefix.toLowerCase()) ?? null) : null;
   })();
+
+  /*
+    Previous (owner, 2026-10-05): every boxel flown through, notable ones first, read when the section
+    is open, again after each jump and whenever a boxel is saved.
+  */
+  useEffect(() => {
+    if (!showPrevious) return;
+    let live = true;
+    void fetch(`/api/boxels/previous?days=${prevDays}`)
+      .then((r) => r.json() as Promise<{ items?: PreviousBoxelDTO[] }>)
+      .then((j) => live && setPrevious(j.items ?? []))
+      .catch(() => live && setPrevious([]));
+    return () => {
+      live = false;
+    };
+  }, [showPrevious, prevDays, saved, currentSystem]);
+  const keep = (p: PreviousBoxelDTO) =>
+    void call({
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ system: p.lastSystem, end: null }),
+    }).then((j) => {
+      if (j?.id && !ids.includes(j.id)) setIncluded([j.id, ...ids]);
+    });
 
   const patch = (id: string, body: Record<string, unknown>) =>
     call(
@@ -357,6 +398,11 @@ export function BoxelScreen({
     [byId, order],
   );
 
+  const prevShown = useMemo(() => {
+    const q = sideQuery.trim();
+    if (!previous || !q) return previous ?? [];
+    return previous.filter((p) => fuzzyRankAny([p.boxel, p.sector, p.lastSystem], q) != null);
+  }, [previous, sideQuery]);
   const sideShown = useMemo(() => {
     const q = sideQuery.trim();
     if (!saved || !q) return saved ?? [];
@@ -537,6 +583,97 @@ export function BoxelScreen({
                 })}
               </ul>
             )}
+            <section className="boxel-prev" aria-label="Boxels you flew through">
+              <button
+                type="button"
+                className="boxel-prev__toggle"
+                aria-expanded={showPrevious}
+                onClick={() => setShowPrevious(!showPrevious)}
+              >
+                <span aria-hidden>{showPrevious ? "▾" : "▸"}</span> Previous boxels
+                {showPrevious && previous ? <span className="dim"> ({prevShown.length})</span> : null}
+              </button>
+              {showPrevious ? (
+                <>
+                  <div className="boxel-prev__range" role="group" aria-label="Last visit within">
+                    {PREV_RANGES.map((r) => (
+                      <button
+                        key={r.days}
+                        type="button"
+                        className={`disc-chip${prevDays === r.days ? " disc-chip--on" : ""}`}
+                        aria-pressed={prevDays === r.days}
+                        onClick={() => setPrevDays(r.days)}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                  {!previous ? (
+                    <p className="dim tiny">Reading your journals…</p>
+                  ) : prevShown.length === 0 ? (
+                    <p className="dim tiny">No boxels flown in that time.</p>
+                  ) : (
+                    <ul className="boxel-side__list">
+                      {prevShown.slice(0, prevLimit).map((p) => (
+                        <li key={p.prefix} className="boxel-side__item boxel-prev__item">
+                          <span className="boxel-prev__name">
+                            <strong>{p.boxel}</strong> <span className="dim">{p.sector}</span>
+                          </span>
+                          <span className="boxel-side__count dim tiny">
+                            {p.flown} flown, up to -{p.highest}
+                            {p.lastVisit ? ` · last ${p.lastVisit.slice(0, 10)}` : ""}
+                          </span>
+                          {p.notables.length || p.rareStars.length || p.species.length ? (
+                            <span className="boxel-notables boxel-prev__why">
+                              {p.notables.map((x) => (
+                                <span key={x.kind} className="boxel-notable" title={NOTABLE_LABEL[x.kind]}>
+                                  {NOTABLE_SHORT[x.kind]}
+                                  {x.n != null && x.n > 1 ? ` ×${x.n}` : ""}
+                                </span>
+                              ))}
+                              {p.rareStars.map((k) => (
+                                <span key={k} className="bm-tag" title={STAR_LABEL[k] ?? k}>
+                                  {k}
+                                </span>
+                              ))}
+                              {p.species.length ? (
+                                <span className="dim" title={p.species.join(", ")}>
+                                  {p.species.length} species
+                                </span>
+                              ) : null}
+                            </span>
+                          ) : null}
+                          <span className="boxel-side__actions">
+                            {p.saved ? (
+                              <span className="dim tiny">saved</span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="fdb-chip"
+                                title="Save it to your boxels, for a return"
+                                onClick={() => keep(p)}
+                              >
+                                Keep
+                              </button>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {previous && prevShown.length > prevLimit ? (
+                    <button
+                      type="button"
+                      className="boxel-prev__toggle"
+                      onClick={() => setPrevLimit(prevLimit + PREV_PAGE)}
+                    >
+                      Show {Math.min(PREV_PAGE, prevShown.length - prevLimit)} more (
+                      {(prevShown.length - prevLimit).toLocaleString()} left)
+                    </button>
+                  ) : null}
+                </>
+              ) : null}
+            </section>
           </aside>
 
           <main className="boxel-main">

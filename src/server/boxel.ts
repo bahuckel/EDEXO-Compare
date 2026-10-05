@@ -11,6 +11,7 @@ import {
   type BoxelTableDTO,
   type BoxelNotableDTO,
   type BoxelTableRowDTO,
+  type PreviousBoxelDTO,
   type SavedBoxelDTO,
 } from "../shared/boxel.js";
 import type { TileIndex } from "./galaxyTiles.js";
@@ -124,9 +125,11 @@ function indexFacts(traits: SystemTraits | null, i: number) {
   if (!traits || i >= traits.count) return null;
   const main = traits.main[i] === STAR_NONE ? null : classKeyAt(traits.main[i]!);
   const stars: string[] = [];
-  for (let b = 0; b < STAR_CLASSES.length; b++) if (traits.stars[i]! & (1 << b)) stars.push(STAR_CLASSES[b]!.key);
+  for (let b = 0; b < STAR_CLASSES.length; b++)
+    if (traits.stars[i]! & (1 << b)) stars.push(STAR_CLASSES[b]!.key);
   const bodyTypes: string[] = [];
-  for (let b = 0; b < BODY_TRAITS.length; b++) if (traits.bodies[i]! & (1 << b)) bodyTypes.push(BODY_TRAITS[b]!.key);
+  for (let b = 0; b < BODY_TRAITS.length; b++)
+    if (traits.bodies[i]! & (1 << b)) bodyTypes.push(BODY_TRAITS[b]!.key);
   const has = (k: string) => bodyTypes.includes(k);
   const notables: BoxelNotableDTO[] = [];
   if (has("elw")) notables.push({ kind: "earthlike", n: null });
@@ -216,7 +219,11 @@ export function boxelTable(opts: {
           bodies: j.bodies,
           notables: j.notables,
           bodyTypes: j.bodyTypes,
-          bio: { signals: j.bio.signals, seen: j.bio.signals > 0 || species.length > 0 || indexSeen, species },
+          bio: {
+            signals: j.bio.signals,
+            seen: j.bio.signals > 0 || species.length > 0 || indexSeen,
+            species,
+          },
         };
       } else if (sys) {
         row = {
@@ -244,4 +251,83 @@ export function boxelTable(opts: {
       .map(([name, systems]) => ({ name, systems })),
     noIndex: opts.index == null,
   };
+}
+
+/** Star classes that make a boxel worth a return (owner: "star types"). */
+const RARE_STARS = new Set(["O", "B", "W", "C", "N", "H", "AeBe", "SG"]);
+/** How much each notable kind weighs in "notable first". */
+const NOTABLE_WEIGHT: Record<string, number> = {
+  helium: 10,
+  green: 6,
+  earthlike: 5,
+  ammonia: 4,
+  water: 3,
+  terraformable: 1,
+};
+
+/**
+ * Every boxel the commander has flown through (owner, 2026-10-05: all of them, notable first), last
+ * visit within `sinceIso` when given. A system with no recorded arrival time counts only under All.
+ */
+export function previousBoxels(opts: {
+  visited: Iterable<VisitedSystem>;
+  visitedAt: (systemAddress: number) => string | null;
+  journal: (systemAddress: number) => JournalSystemFacts;
+  sinceIso: string | null;
+  savedPrefixes: ReadonlySet<string>;
+}): PreviousBoxelDTO[] {
+  const groups = new Map<
+    string,
+    {
+      b: NonNullable<ReturnType<typeof parseBoxel>>;
+      systems: { n: number; addr: number | null; name: string; at: string | null }[];
+    }
+  >();
+  for (const v of opts.visited) {
+    const { name, addr } = visitedEntry(v);
+    const b = parseBoxel(name);
+    if (!b || b.index == null) continue;
+    const key = b.prefix.toLowerCase();
+    let g = groups.get(key);
+    if (!g) groups.set(key, (g = { b, systems: [] }));
+    g.systems.push({ n: b.index, addr, name, at: addr != null ? opts.visitedAt(addr) : null });
+  }
+  const out: PreviousBoxelDTO[] = [];
+  for (const [key, { b, systems }] of groups) {
+    const last = systems.reduce((x, y) => ((y.at ?? "") > (x.at ?? "") ? y : x));
+    if (opts.sinceIso && !(last.at && last.at >= opts.sinceIso)) continue;
+    const count = new Map<string, number>();
+    const rare = new Set<string>();
+    const species = new Set<string>();
+    let bioSignals = 0;
+    for (const s of systems) {
+      if (s.addr == null) continue;
+      const f = opts.journal(s.addr);
+      for (const x of f.notables) count.set(x.kind, (count.get(x.kind) ?? 0) + (x.n ?? 1));
+      for (const k of f.starClasses) if (RARE_STARS.has(k)) rare.add(k);
+      for (const sp of f.bio.species) species.add(sp);
+      bioSignals += f.bio.signals;
+    }
+    const notables = [...count].map(([kind, n]) => ({ kind, n }) as BoxelNotableDTO);
+    const score =
+      notables.reduce((t, x) => t + (NOTABLE_WEIGHT[x.kind] ?? 1) * (x.n ?? 1), 0) +
+      2 * rare.size +
+      species.size;
+    out.push({
+      prefix: b.prefix,
+      boxel: b.boxel,
+      sector: b.sector,
+      flown: new Set(systems.map((s) => s.n)).size,
+      highest: Math.max(...systems.map((s) => s.n)),
+      lastVisit: last.at,
+      lastSystem: last.name,
+      notables,
+      bioSignals,
+      species: [...species].sort(),
+      rareStars: STAR_CLASSES.map((c) => c.key).filter((k) => rare.has(k)),
+      score,
+      saved: opts.savedPrefixes.has(key),
+    });
+  }
+  return out.sort((x, y) => y.score - x.score || (y.lastVisit ?? "").localeCompare(x.lastVisit ?? ""));
 }

@@ -1,4 +1,4 @@
-import { boxelSystems, boxelTable, type SystemStats } from "../boxel.js";
+import { boxelSystems, boxelTable, previousBoxels, type SystemStats } from "../boxel.js";
 import { parseBoxel } from "../../shared/boxel.js";
 import { boxelJournalFacts, notableBodiesForSystem, systemBodyTally } from "../snapshotSystemInfo.js";
 import type { GameStateStore } from "../gameState.js";
@@ -424,6 +424,26 @@ export function registerGalaxyRoutes(
         traits: loadSystemTraits(),
         journal: store ? (addr) => boxelJournalFacts(store, addr) : undefined,
         visitedAt: (addr) => store?.systemVisitedAt.get(addr) ?? null,
+      }),
+    });
+  });
+  /*
+    Boxels he flew through (Previous): `?days=` the last visit within that many days (0 or none: all),
+    notable ones first.
+  */
+  app.get("/api/boxels/previous", (req, res) => {
+    const store = opts.getJournalStore?.() ?? null;
+    if (!store) return void res.json({ ok: true, items: [] });
+    const days = Math.max(0, Number(req.query.days) || 0);
+    const saved = new Set((opts.savedBoxels ? savedList().items : []).map((b) => b.prefix.toLowerCase()));
+    res.json({
+      ok: true,
+      items: previousBoxels({
+        visited: store.visitedSystems.entries(),
+        visitedAt: (addr) => store.systemVisitedAt.get(addr) ?? null,
+        journal: (addr) => boxelJournalFacts(store, addr),
+        sinceIso: days ? new Date(Date.now() - days * 86_400_000).toISOString() : null,
+        savedPrefixes: saved,
       }),
     });
   });

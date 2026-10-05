@@ -246,3 +246,39 @@
 .boxel-plan input {
   width: min(22rem, 40vw);
 }
+
+/* Previous boxels: every one flown through, notable first (owner, 2026-10-05). */
+.boxel-prev {
+  display: grid;
+  gap: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--accent-a22);
+}
+.boxel-prev__toggle {
+  justify-self: start;
+  padding: 0.1rem 0;
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-dim);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.boxel-prev__toggle:hover {
+  color: var(--accent-bright);
+}
+.boxel-prev__range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.boxel-prev__item {
+  grid-template-columns: 1fr;
+}
+.boxel-prev__item > * {
+  grid-column: 1;
+}
+.boxel-prev__why {
+  font-size: var(--fs-xs);
+}

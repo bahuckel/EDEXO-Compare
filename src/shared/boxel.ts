@@ -185,3 +185,29 @@ export interface BoxelTableDTO {
   common: { name: string; systems: number }[];
   noIndex: boolean;
 }
+
+/**
+ * A boxel the commander flew through (owner, 2026-10-05, "Previous systems in your paths"): every one
+ * the journals know, with what made it promising, notable ones first, and a Keep to save it.
+ */
+export interface PreviousBoxelDTO {
+  prefix: string;
+  boxel: string;
+  sector: string;
+  /** Systems of it he has flown, and the highest number among them. */
+  flown: number;
+  highest: number;
+  /** When he was last in it. */
+  lastVisit: string | null;
+  /** The system he was last in there: Keep saves the boxel from it. */
+  lastSystem: string;
+  notables: BoxelNotableDTO[];
+  bioSignals: number;
+  species: string[];
+  /** Star classes worth a return (STAR_CLASSES keys): O, B, Wolf-Rayet, carbon, neutron, black hole, Herbig, giants. */
+  rareStars: string[];
+  /** How promising, for the order: notables, rare stars and species. */
+  score: number;
+  /** Already one of his saved boxels. */
+  saved: boolean;
+}
