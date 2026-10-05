@@ -12,6 +12,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { BoxelTableDTO, BoxelTableRowDTO, PreviousBoxelDTO, SavedBoxelDTO } from "@shared/boxel";
+import type { BoxelLookupStatus } from "@shared/boxel";
 import { parseBoxel } from "@shared/boxel";
 import { useModal } from "./ui/useModal";
 import { CopySystemButton } from "./CopySystemButton";
@@ -35,10 +36,15 @@ const NOTABLE_LABEL = Object.fromEntries(NOTABLE_KINDS.map((k) => [k.key, k.labe
   string
 >;
 
-/** A fact from the galaxy index (not your own scan) reads dimmer, and says so on hover. */
+const FROM_TITLE = {
+  index: "From the galaxy index (EDSM / Spansh records)",
+  lookup: "From Spansh (Look up)",
+} as const;
+
+/** A fact from the galaxy index or a Spansh look-up (not your own scan) reads dimmer, and says so on hover. */
 function fromIndex(r: BoxelTableRowDTO, text: string) {
-  return r.from === "index" ? (
-    <span className="boxel-from-index" title="From the galaxy index (EDSM / Spansh records)">
+  return r.from === "index" || r.from === "lookup" ? (
+    <span className="boxel-from-index" title={FROM_TITLE[r.from]}>
       {text}
     </span>
   ) : (
@@ -84,6 +90,7 @@ export function BoxelScreen({
   const [previous, setPrevious] = useState<PreviousBoxelDTO[] | null>(null);
   const [prevLimit, setPrevLimit] = useState(PREV_PAGE);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [lookup, setLookup] = useState<BoxelLookupStatus | null>(null);
   const [cutAsk, setCutAsk] = useState<{ id: string; n: number } | null>(null);
   const [table, setTable] = useState<BoxelTableDTO | null>(null);
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 }>({ key: "n", dir: 1 });
@@ -135,6 +142,36 @@ export function BoxelScreen({
   }, [idsKey]);
 
   useEffect(loadTable, [loadTable, saved]);
+
+  /*
+    Look up (plan Q1): the boxel's systems from Spansh, pages five seconds apart. Polled while it
+    runs; the table is read again as it goes and when it ends.
+  */
+  const lookupCall = useCallback(async (init?: RequestInit, path = "/api/boxels/lookup") => {
+    try {
+      const r = await fetch(path, init);
+      const j = (await r.json()) as { status?: BoxelLookupStatus | null; error?: string };
+      setLookup(j.status ?? null);
+      if (!r.ok && j.error) setError(j.error);
+    } catch {
+      /* the next poll */
+    }
+  }, []);
+  useEffect(() => void lookupCall(), [lookupCall]);
+  const running = !!lookup?.running;
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => {
+      void lookupCall();
+      loadTable();
+    }, 2_500);
+    return () => {
+      clearInterval(t);
+      loadTable();
+    };
+  }, [running, lookupCall, loadTable]);
+  const lookUpBoxel = (b: SavedBoxelDTO) =>
+    void lookupCall({ method: "POST" }, `/api/boxels/${encodeURIComponent(b.id)}/lookup`);
 
   const tick = (id: string, on: boolean) => {
     const set = new Set(ids);
@@ -231,6 +268,7 @@ export function BoxelScreen({
   };
 
   const byId = useMemo(() => new Map((saved ?? []).map((b) => [b.id, b])), [saved]);
+  const looked = useMemo(() => new Map((table?.lookups ?? []).map((l) => [l.boxelId, l])), [table]);
   const order = useMemo(() => new Map(ids.map((id, i) => [id, i])), [ids]);
   const columns = useMemo<Column<BoxelTableRowDTO>[]>(
     () => [
@@ -278,7 +316,17 @@ export function BoxelScreen({
         title:
           "Flown: the arrival star as you scanned it. Not flown: its class in the galaxy index (no luminosity)",
         value: (r) => r.mainStar,
-        render: (r) => fromIndex(r, r.mainStar ?? "—"),
+        render: (r) =>
+          r.notOnSpansh && !r.from ? (
+            <span
+              className="dim"
+              title="Looked up: Spansh has no record of it — undiscovered, as far as anyone uploaded"
+            >
+              not on Spansh
+            </span>
+          ) : (
+            fromIndex(r, r.mainStar ?? "—")
+          ),
       },
       {
         key: "stars",
@@ -316,7 +364,9 @@ export function BoxelScreen({
         value: (r) => (r.notables.length ? r.notables.reduce((t, x) => t + (x.n ?? 1), 0) : null),
         render: (r) =>
           r.notables.length ? (
-            <span className={`boxel-notables${r.from === "index" ? " boxel-from-index" : ""}`}>
+            <span
+              className={`boxel-notables${r.from === "index" || r.from === "lookup" ? " boxel-from-index" : ""}`}
+            >
               {r.notables.map((x) => (
                 <span key={x.kind} className="boxel-notable" title={NOTABLE_LABEL[x.kind]}>
                   {NOTABLE_SHORT[x.kind]}
@@ -547,6 +597,29 @@ export function BoxelScreen({
                         <span className={b.notable ? "boxel-notable" : undefined}>{b.notable} notable</span>
                       </span>
                       <span className="boxel-side__actions">
+                        <button
+                          type="button"
+                          className="fdb-chip"
+                          disabled={running}
+                          title={
+                            looked.get(b.id)
+                              ? `Looked up on Spansh ${looked.get(b.id)!.fetchedAt.slice(0, 10)} (${looked.get(b.id)!.systems} systems): again`
+                              : "Fill the systems you have not flown from Spansh: stars, every body, species logged (a few requests, five seconds apart)"
+                          }
+                          onClick={() => lookUpBoxel(b)}
+                        >
+                          {looked.get(b.id) ? "Look up again" : "Look up"}
+                        </button>
+                        {(looked.get(b.id)?.highest ?? -1) > b.end && !b.flownBeyond.length ? (
+                          <button
+                            type="button"
+                            className="fdb-chip"
+                            title={`Spansh lists systems up to -${looked.get(b.id)!.highest}: the boxel goes further than -${b.end}.`}
+                            onClick={() => extendTo(b, looked.get(b.id)!.highest)}
+                          >
+                            Extend to -{looked.get(b.id)!.highest}
+                          </button>
+                        ) : null}
                         {b.flownBeyond.length ? (
                           <button
                             type="button"
@@ -690,6 +763,11 @@ export function BoxelScreen({
                 <span>
                   <strong>{allRows.filter((r) => r.from === "index").length}</strong> more in the galaxy index
                 </span>
+                {allRows.some((r) => r.from === "lookup") ? (
+                  <span>
+                    <strong>{allRows.filter((r) => r.from === "lookup").length}</strong> from Spansh
+                  </span>
+                ) : null}
                 {lead?.next ? (
                   <span className="boxel-next">
                     <span className="dim">Next to fly </span>
@@ -698,6 +776,27 @@ export function BoxelScreen({
                   </span>
                 ) : null}
               </div>
+            ) : null}
+            {lookup && (lookup.running || lookup.note) ? (
+              <p className="boxel-lookup-status" role="status">
+                {lookup.running ? (
+                  <>
+                    Looking up <strong>{lookup.boxel}</strong> on Spansh: {lookup.systems.toLocaleString()}{" "}
+                    systems in {lookup.pages} page{lookup.pages === 1 ? "" : "s"}…{" "}
+                    <button
+                      type="button"
+                      className="fdb-chip"
+                      onClick={() => void lookupCall({ method: "DELETE" })}
+                    >
+                      Stop
+                    </button>
+                  </>
+                ) : (
+                  <span className="dim">
+                    {lookup.boxel}: {lookup.note}
+                  </span>
+                )}
+              </p>
             ) : null}
             {table?.common.length ? (
               <p className="boxel-common">

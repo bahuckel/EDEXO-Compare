@@ -161,8 +161,10 @@ export interface BoxelTableRowDTO {
   skipped: boolean;
   /** When he last arrived there (journals). */
   visitedAt: string | null;
-  /** Where the facts come from: your journals, the galaxy index, or nothing known yet. */
-  from: "journal" | "index" | null;
+  /** Where the facts come from: your journals, the galaxy index, a Spansh look-up, or nothing yet. */
+  from: "journal" | "index" | "lookup" | null;
+  /** The boxel was looked up on Spansh and this system is not there: undiscovered, as far as anyone uploaded. */
+  notOnSpansh?: boolean;
   /** "K5 V" from a scan, "K" from the index or the jump. */
   mainStar: string | null;
   otherStars: string[];
@@ -184,6 +186,8 @@ export interface BoxelTableDTO {
   /** The species recorded most often across the ticked boxels. */
   common: { name: string; systems: number }[];
   noIndex: boolean;
+  /** The ticked boxels looked up on Spansh: when, and whether every page was read. */
+  lookups: { boxelId: string; fetchedAt: string; complete: boolean; systems: number; highest: number }[];
 }
 
 /**
@@ -210,4 +214,14 @@ export interface PreviousBoxelDTO {
   score: number;
   /** Already one of his saved boxels. */
   saved: boolean;
+}
+
+/** A Spansh look-up of a boxel in progress, or the last one's outcome (server/boxelLookup.ts). */
+export interface BoxelLookupStatus {
+  prefix: string;
+  boxel: string;
+  running: boolean;
+  pages: number;
+  systems: number;
+  note: string | null;
 }

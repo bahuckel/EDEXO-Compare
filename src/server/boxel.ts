@@ -19,6 +19,7 @@ import { sectorOrdinals } from "./galaxyFind.js";
 import { TIER_DSS, TIER_FSS } from "./bioIndex.js";
 import type { SystemTraits } from "./galaxyTraits.js";
 import { BODY_TRAITS, STAR_CLASSES, STAR_NONE } from "../shared/galaxyTraits.js";
+import type { BoxelLookupRecord } from "./boxelLookup.js";
 
 /** Listing more than this is not a boxel anyone flies by hand. */
 export const BOXEL_MAX_ROWS = 2000;
@@ -117,6 +118,16 @@ export interface JournalSystemFacts {
   bio: { signals: number; species: string[] };
 }
 
+/**
+ * Species from two sources, once each: "Concha labiata" (the app's name) and "Concha Labiata" (a
+ * journal or Spansh) are one species. The first spelling seen is kept.
+ */
+function mergeSpecies(...lists: string[][]): string[] {
+  const out = new Map<string, string>();
+  for (const l of lists) for (const s of l) if (!out.has(s.toLowerCase())) out.set(s.toLowerCase(), s);
+  return [...out.values()].sort((a, b) => a.localeCompare(b));
+}
+
 /** A star class key ("K") for the index's class position, or null. */
 const classKeyAt = (i: number): string | null => STAR_CLASSES[i]?.key ?? null;
 
@@ -163,7 +174,10 @@ export function boxelTable(opts: {
   journal?: (systemAddress: number) => JournalSystemFacts;
   /** systemAddress → when he last arrived there. */
   visitedAt?: (systemAddress: number) => string | null;
+  /** The boxel's Spansh look-up (server/boxelLookup.ts), when there is one. */
+  lookup?: (prefix: string) => BoxelLookupRecord | null;
 }): BoxelTableDTO {
+  const lookups: BoxelTableDTO["lookups"] = [];
   const visited = [...opts.visited].map(visitedEntry);
   const rows: BoxelTableRowDTO[] = [];
   const tally = new Map<string, number>();
@@ -181,6 +195,16 @@ export function boxelTable(opts: {
       }
     }
     const skipped = new Set(b.skipped);
+    const looked = opts.lookup?.(b.prefix) ?? null;
+    const foundAny = !!looked && Object.keys(looked.systems).length > 0;
+    if (looked)
+      lookups.push({
+        boxelId: b.id,
+        fetchedAt: looked.fetchedAt,
+        complete: looked.complete,
+        systems: Object.keys(looked.systems).length,
+        highest: Math.max(-1, ...Object.keys(looked.systems).map(Number)),
+      });
     for (let n = 0; n <= b.end; n++) {
       const flown = mine.has(n);
       const addr = mine.get(n) ?? null;
@@ -209,7 +233,7 @@ export function boxelTable(opts: {
         bio: null,
       };
       if (j) {
-        const species = [...new Set([...j.bio.species, ...indexSpecies])].sort();
+        const species = mergeSpecies(indexSpecies, j.bio.species);
         row = {
           ...row,
           from: "journal",
@@ -225,6 +249,24 @@ export function boxelTable(opts: {
             species,
           },
         };
+      } else if (looked?.systems[String(n)]) {
+        // Spansh has every body, so it is read before the index; the index may add EDAstro's species.
+        const l = looked.systems[String(n)]!;
+        row = {
+          ...row,
+          from: "lookup",
+          mainStar: l.mainStar,
+          otherStars: l.otherStars,
+          starClasses: l.starClasses,
+          bodies: { scanned: null, total: l.bodyCount },
+          notables: l.notables,
+          bodyTypes: l.bodyTypes,
+          bio: {
+            signals: null,
+            seen: indexSeen || l.species.length > 0,
+            species: mergeSpecies(indexSpecies, l.species),
+          },
+        };
       } else if (sys) {
         row = {
           ...row,
@@ -238,6 +280,11 @@ export function boxelTable(opts: {
           bio: { signals: null, seen: indexSeen, species: indexSpecies },
         };
       }
+      /*
+        Not on Spansh only when its search listed the boxel at all: a look-up that found none of it
+        cannot tell an undiscovered boxel from a search that missed it, so it marks nothing.
+      */
+      if (!flown && looked?.complete && foundAny && !looked.systems[String(n)]) row.notOnSpansh = true;
       rows.push(row);
       for (const sp of new Set(indexSpecies)) tally.set(sp, (tally.get(sp) ?? 0) + 1);
     }
@@ -250,6 +297,7 @@ export function boxelTable(opts: {
       .slice(0, 8)
       .map(([name, systems]) => ({ name, systems })),
     noIndex: opts.index == null,
+    lookups,
   };
 }
 

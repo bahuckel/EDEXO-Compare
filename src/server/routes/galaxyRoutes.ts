@@ -1,5 +1,7 @@
 import { boxelSystems, boxelTable, previousBoxels, type SystemStats } from "../boxel.js";
 import { parseBoxel } from "../../shared/boxel.js";
+import { createBoxelLookups } from "../boxelLookup.js";
+import { resolveUserSettingsJsonPath } from "../paths.js";
 import { boxelJournalFacts, notableBodiesForSystem, systemBodyTally } from "../snapshotSystemInfo.js";
 import type { GameStateStore } from "../gameState.js";
 
@@ -355,6 +357,17 @@ export function registerGalaxyRoutes(
     Saved boxels (server/savedBoxels.ts): the commander types a boxel's last system, the list keeps it,
     and each read ticks off what the journals say he has flown.
   */
+  // Spansh look-ups of whole boxels (server/boxelLookup.ts), kept 30 days beside the saved boxels.
+  const lookups = createBoxelLookups({
+    filePath: opts.savedBoxels ? path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-boxel-lookups.json") : null,
+    isPlant: (genus) => {
+      const g = genus.trim().toLowerCase();
+      return getCachedSpeciesDatabase().species.some((s) => {
+        const n = s.displayName.toLowerCase();
+        return n === g || n.startsWith(`${g} `) || n.endsWith(` ${g}`);
+      });
+    },
+  });
   const savedList = () => {
     const store = opts.getJournalStore?.() ?? null;
     return {
@@ -424,8 +437,29 @@ export function registerGalaxyRoutes(
         traits: loadSystemTraits(),
         journal: store ? (addr) => boxelJournalFacts(store, addr) : undefined,
         visitedAt: (addr) => store?.systemVisitedAt.get(addr) ?? null,
+        lookup: (prefix) => lookups.get(prefix),
       }),
     });
+  });
+  /*
+    Look a saved boxel up on Spansh (plan Q1): `POST /api/boxels/:id/lookup` starts it (one at a time,
+    pages five seconds apart), `GET /api/boxels/lookup` says how far it is, `DELETE` stops it.
+  */
+  app.post("/api/boxels/:id/lookup", (req, res) => {
+    if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
+    const b = savedList().items.find((x) => x.id === String(req.params.id ?? ""));
+    if (!b) return void res.status(404).json({ ok: false, error: "No such saved boxel." });
+    const started = lookups.start(b.prefix);
+    res.status(started ? 200 : 409).json({
+      ok: started,
+      status: lookups.status(),
+      ...(started ? {} : { error: "A look-up is already running." }),
+    });
+  });
+  app.get("/api/boxels/lookup", (_req, res) => res.json({ ok: true, status: lookups.status() }));
+  app.delete("/api/boxels/lookup", (_req, res) => {
+    lookups.stop();
+    res.json({ ok: true, status: lookups.status() });
   });
   /*
     Boxels he flew through (Previous): `?days=` the last visit within that many days (0 or none: all),
