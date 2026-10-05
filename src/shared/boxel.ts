@@ -50,16 +50,19 @@ export function boxelIndexOf(name: string, prefix: string): number | null {
   return /^\d+$/.test(rest) ? Number(rest) : null;
 }
 
-/** Cube size and a rule of thumb for what the mass code holds. */
+/**
+ * Cube size and what the mass code's main stars are, as measured on the Spansh dump (2026-10-05,
+ * shared/boxelRates.ts; the old rules of thumb had e, f and h wrong).
+ */
 export const MASS_CODES: Record<string, { cubeLy: number; hint: string }> = {
-  a: { cubeLy: 10, hint: "the lightest: brown dwarfs and small M dwarfs" },
-  b: { cubeLy: 20, hint: "mostly M red dwarfs" },
-  c: { cubeLy: 40, hint: "K and M stars, some white dwarfs" },
-  d: { cubeLy: 80, hint: "F, G and K stars: the common main sequence" },
-  e: { cubeLy: 160, hint: "A and F stars, and giants" },
-  f: { cubeLy: 320, hint: "B stars and bright giants" },
-  g: { cubeLy: 640, hint: "O stars and supergiants" },
-  h: { cubeLy: 1280, hint: "the heaviest: black holes and the largest stars" },
+  a: { cubeLy: 10, hint: "brown dwarfs (T, Y and L: 91 % of main stars)" },
+  b: { cubeLy: 20, hint: "M red dwarfs (95 %)" },
+  c: { cubeLy: 40, hint: "K stars (73 %), some G and M" },
+  d: { cubeLy: 80, hint: "F and A stars, some G, and neutron stars (13 %)" },
+  e: { cubeLy: 160, hint: "B stars (51 %) and neutron stars (27 %)" },
+  f: { cubeLy: 320, hint: "black holes (51 %) and B stars (31 %)" },
+  g: { cubeLy: 640, hint: "O stars (42 %) and black holes (40 %)" },
+  h: { cubeLy: 1280, hint: "black holes (44 %) and Wolf-Rayet stars (26 %)" },
 };
 
 export interface BoxelRowDTO {
