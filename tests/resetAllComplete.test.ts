@@ -23,7 +23,7 @@ const extra = [
 ] as unknown as JournalLine[];
 
 /** Counters that move on so memos keyed on them are dropped, and those memos. Moving is the reset. */
-const MOVES_ON = new Set(["explorationScansRevision", "orbitParentRevision", "confirmedVariantsRevision", "scanIndexMemo", "orbitParentMemo"]);
+const MOVES_ON = new Set(["explorationScansRevision", "orbitParentRevision", "confirmedVariantsRevision", "scanIndexMemo", "orbitParentMemo", "boxelsRevision"]);
 
 const shape = (v: unknown): unknown =>
   v instanceof Map || v instanceof Set ? `size ${v.size}` : Array.isArray(v) ? `length ${v.length}` : v && typeof v === "object" ? "set" : v;

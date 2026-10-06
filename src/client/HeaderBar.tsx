@@ -844,6 +844,8 @@ export const HeaderBar = memo(function HeaderBar({
             onClose={() => setBoxelOpen(false)}
             currentSystem={snap.currentSystem ?? null}
             dScan={snap.dScanBodies ?? null}
+            revision={snap.boxelsRevision ?? 0}
+            copied={snap.boxelCopied ?? null}
           />
         </Suspense>
       ) : null}

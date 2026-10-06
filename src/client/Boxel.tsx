@@ -93,11 +93,17 @@ export function BoxelScreen({
   onClose,
   currentSystem,
   dScan = null,
+  revision = 0,
+  copied: lastCopied = null,
 }: {
   onClose: () => void;
   currentSystem: string | null;
   /** The main screen's D-Scan line: the system on screen shows exactly these figures. */
   dScan?: { systemName: string; found: number; total: number } | null;
+  /** Snapshot `boxelsRevision`: a route, a target, a run or a copy changed what the lists show. */
+  revision?: number;
+  /** What a jump or a boxel key last put on the clipboard. */
+  copied?: { name: string; at: string; run: boolean } | null;
 }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
   const toast = useToast();
@@ -173,8 +179,8 @@ export function BoxelScreen({
     }
   }, []);
 
-  // After every jump: the side menu ticks off what was just flown (and the table, below).
-  useEffect(() => void call(), [currentSystem, call]);
+  // After every jump, route, target, copy or run change: the side menu and the table read again.
+  useEffect(() => void call(), [currentSystem, revision, call]);
 
   const ids = useMemo(() => {
     if (!saved) return [];
@@ -235,9 +241,11 @@ export function BoxelScreen({
     }, 2_500);
     return () => {
       clearInterval(t);
+      // The side menu too: a look-up that found systems past the end has extended the boxel.
+      void call();
       loadTable();
     };
-  }, [running, lookupCall, loadTable]);
+  }, [running, lookupCall, loadTable, call]);
   const lookUpBoxel = (b: SavedBoxelDTO) =>
     void lookupCall({ method: "POST" }, `/api/boxels/${encodeURIComponent(b.id)}/lookup`);
 
@@ -1030,6 +1038,16 @@ export function BoxelScreen({
                     <span className="dim">Next to fly </span>
                     <strong>{lead.next}</strong>
                     <CopySystemButton system={lead.next} />
+                  </span>
+                ) : null}
+                {lastCopied ? (
+                  <span
+                    className="boxel-next"
+                    title={`Put on the clipboard ${lastCopied.at.slice(11, 19)} by a jump or a boxel key (F6–F9)`}
+                  >
+                    <span className="dim">Copied </span>
+                    <strong>{lastCopied.name}</strong>
+                    {lastCopied.run ? <span className="boxel-side__here">run</span> : null}
                   </span>
                 ) : null}
                 {autoCopy != null ? (

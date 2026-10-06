@@ -877,6 +877,11 @@ export class GameStateStore {
    * "Copied … · boxel run". Not journal state; this session only.
    */
   boxelCopied: { name: string; at: string; run: boolean } | null = null;
+  /**
+   * Bumped whenever something the Boxels screen shows changes without a jump: a route plotted, a
+   * system targeted, a run started or finished, a system copied. The screen re-reads on a change.
+   */
+  boxelsRevision = 0;
   /** Last hyperspace target from `StartJump`, for the HUD's next-jump card. See AppSnapshot.jumpTarget. */
   lastJumpTarget: {
     starSystem: string;
@@ -1176,8 +1181,10 @@ export class GameStateStore {
     if (!changed) return false;
     this.statusDestination = dest;
     // A system picked as destination in the galaxy map names the system itself; it exists.
-    if (dest && dest.systemAddress && parseBoxel(dest.name)?.index != null && !this.targetedSystems.has(dest.systemAddress))
+    if (dest && dest.systemAddress && parseBoxel(dest.name)?.index != null && !this.targetedSystems.has(dest.systemAddress)) {
       this.targetedSystems.set(dest.systemAddress, { name: dest.name, starClass: "" });
+      this.boxelsRevision++;
+    }
     if (dest) this.requestUiAutoSelectBody(dest.systemAddress, dest.bodyId);
     return true;
   }
@@ -2448,7 +2455,10 @@ export class GameStateStore {
     const addr = typeof line.SystemAddress === "number" ? line.SystemAddress : 0;
     const starClass = typeof line.StarClass === "string" ? line.StarClass : "";
     if (name) this.fsdTarget = { starSystem: name, systemAddress: addr, starClass, at: ts };
-    if (name && addr) this.targetedSystems.set(addr, { name, starClass });
+    if (name && addr) {
+      this.targetedSystems.set(addr, { name, starClass });
+      this.boxelsRevision++;
+    }
     return;
   }
 

@@ -28,6 +28,8 @@ const HUD_KEYS = [
   "exoMinimap",
   "statusDestination",
   "jumpTarget",
+  // What a boxel run or key put on the clipboard: the Next jump section's "Copied" line (2026-10-06).
+  "boxelCopied",
   "dScanBodies",
   "liveShipFuelRange",
   "organicDataValueCredits",

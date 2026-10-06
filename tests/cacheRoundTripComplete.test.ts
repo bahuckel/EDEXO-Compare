@@ -33,6 +33,8 @@ const NOT_CACHED = new Set([
   "scanIndexMemo",
   "orbitParentMemo",
   "pendingUiAutoSelectBodyKey",
+  // A counter the Boxels screen watches (routes, targets, runs, copies), not journal state.
+  "boxelsRevision",
 ]);
 
 const shape = (v: unknown): unknown =>

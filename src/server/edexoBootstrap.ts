@@ -273,7 +273,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   /** The live route into the store, and a new one into the NavRoute star finder's log (navRouteLog.ts). */
   function applyNavRoute(waypoints: ReturnType<typeof readLiveNavRouteWaypoints>): boolean {
     const changed = store.applyLiveNavRoute(waypoints);
-    if (changed) recordNavRoute(waypoints);
+    if (changed && recordNavRoute(waypoints)) store.boxelsRevision++;
     return changed;
   }
   function readLiveNavRouteWaypoints() {
@@ -384,6 +384,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const deliverToClipboard = (name: string): void => {
     // The HUD's next-jump card says what is on the clipboard: a key press in the game shows nothing else.
     store.boxelCopied = { name, at: new Date().toISOString(), run: savedBoxels.runId() != null };
+    store.boxelsRevision++;
     queueMicrotask(() => push());
     if (boxelNextListeners.size) {
       for (const cb of boxelNextListeners) cb(name);
@@ -2199,7 +2200,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     boxelRunToggle: () => {
       const r = boxelRun.toggle();
       if (r && store.boxelCopied) store.boxelCopied.run = r.running;
-      if (r) push();
+      if (r) {
+        store.boxelsRevision++;
+        push();
+      }
       return r;
     },
     onBoxelNext: (cb) => {

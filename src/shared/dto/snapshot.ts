@@ -325,6 +325,8 @@ export interface AppSnapshot {
    */
   /** The boxel system last copied to the clipboard (boxel run / keys), and whether a run is on. */
   boxelCopied?: { name: string; at: string; run: boolean } | null;
+  /** Changes when the Boxels screen should read its lists again (a route, a target, a run, a copy). */
+  boxelsRevision?: number;
   jumpTarget?: {
     starSystem: string;
     systemAddress: number;

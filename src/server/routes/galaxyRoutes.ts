@@ -379,6 +379,16 @@ export function registerGalaxyRoutes(
   ];
   const savedList = () => {
     const store = opts.getJournalStore?.() ?? null;
+    /*
+      A Spansh look-up that knows systems past a saved boxel's end extends it (owner, 2026-10-06: "if it
+      knows there are 17 systems, why do I have to click Extend"): they exist, as a route or a flight
+      would prove.
+    */
+    for (const b of opts.savedBoxels!.list([])) {
+      const looked = lookups.get(b.prefix);
+      const highest = looked ? Math.max(-1, ...Object.keys(looked.systems).map(Number)) : -1;
+      if (highest > b.end) opts.savedBoxels!.add(`${b.prefix}${highest}`);
+    }
     return {
       ok: true,
       items: opts.savedBoxels!.list(
