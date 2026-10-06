@@ -213,6 +213,18 @@ export function boxelTable(opts: {
         systems: Object.keys(looked.systems).length,
         highest: Math.max(-1, ...Object.keys(looked.systems).map(Number)),
       });
+    /*
+      The highest system anything knows (owner, 2026-10-06, after SHBOXSEARCH's "gaps"): below it every
+      number exists for mass codes a-g; h boxels have gaps, so nothing is inferred there.
+    */
+    const gapless = parseBoxel(`${b.prefix}0`)?.massCode !== "h";
+    const highestKnown = Math.max(
+      -1,
+      ...mine.keys(),
+      ...known.keys(),
+      ...onRoute.keys(),
+      ...(looked ? Object.keys(looked.systems).map(Number) : []),
+    );
     for (let n = 0; n <= b.end; n++) {
       const flown = mine.has(n);
       const addr = mine.get(n) ?? null;
@@ -300,6 +312,7 @@ export function boxelTable(opts: {
         cannot tell an undiscovered boxel from a search that missed it, so it marks nothing.
       */
       if (!flown && looked?.complete && foundAny && !looked.systems[String(n)]) row.notOnSpansh = true;
+      if (!flown && row.from == null && gapless && n < highestKnown) row.gap = true;
       rows.push(row);
       for (const sp of new Set(indexSpecies)) tally.set(sp, (tally.get(sp) ?? 0) + 1);
     }

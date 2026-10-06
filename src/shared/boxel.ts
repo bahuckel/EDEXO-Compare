@@ -176,8 +176,13 @@ export interface BoxelTableRowDTO {
    * (its main star class only), or nothing yet.
    */
   from: "journal" | "index" | "lookup" | "route" | null;
-  /** Not flown, but a route he plotted passes through it. */
+  /** Not flown, but a route he plotted passes through it (or he targeted it in the galaxy map). */
   onRoute?: boolean;
+  /**
+   * Nothing recorded about it, but a higher system of the boxel is known: systems are numbered from 0
+   * without gaps for mass codes a-g (h boxels have gaps), so it exists — nobody has recorded it yet.
+   */
+  gap?: boolean;
   /** The boxel was looked up on Spansh and this system is not there: undiscovered, as far as anyone uploaded. */
   notOnSpansh?: boolean;
   /** "K5 V" from a scan, "K" from the index or the jump. */

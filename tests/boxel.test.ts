@@ -141,6 +141,30 @@ describe("a saved boxel follows the jumps (owner, 2026-10-05)", () => {
   });
 });
 
+describe("gaps below the highest known system (auto-boxel detector, 2026-10-06)", () => {
+  it("marks unrecorded numbers under a known one as existing, except in h boxels", async () => {
+    const { boxelTable } = await import("../src/server/boxel.js");
+    const saved = (prefix: string, end: number) =>
+      ({ id: prefix, prefix, end, skipped: [], boxel: parseBoxel(`${prefix}0`)!.boxel, sector: "Eol Prou" }) as never;
+    const t = boxelTable({
+      boxels: [saved("Eol Prou AB-C d1-", 3), saved("Eol Prou AB-C h1-", 3)],
+      index: null,
+      visited: ["Eol Prou AB-C d1-2", "Eol Prou AB-C h1-2"],
+      speciesName: (id) => id,
+    });
+    expect(t.rows.map((r) => [r.name, r.gap ?? false])).toEqual([
+      ["Eol Prou AB-C d1-0", true],
+      ["Eol Prou AB-C d1-1", true],
+      ["Eol Prou AB-C d1-2", false],
+      ["Eol Prou AB-C d1-3", false],
+      ["Eol Prou AB-C h1-0", false],
+      ["Eol Prou AB-C h1-1", false],
+      ["Eol Prou AB-C h1-2", false],
+      ["Eol Prou AB-C h1-3", false],
+    ]);
+  });
+});
+
 describe("systems targeted in the galaxy map (auto-boxel detector, 2026-10-06)", () => {
   it("keeps every FSDTarget and a boxel-named Status.json destination, not a body", async () => {
     const { GameStateStore } = await import("../src/server/gameState.js");

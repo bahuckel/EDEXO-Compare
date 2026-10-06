@@ -380,6 +380,13 @@ export function BoxelScreen({
             <span className="dim" title="Not flown yet: a route you plotted passes through it, or you targeted it in the galaxy map, so it exists">
               on route
             </span>
+          ) : r.gap ? (
+            <span
+              className="dim"
+              title="Not recorded anywhere, but a higher system of this boxel is known: systems are numbered without gaps (mass codes a–g), so it exists"
+            >
+              exists
+            </span>
           ) : (
             <span className="dim">—</span>
           ),
@@ -927,6 +934,11 @@ export function BoxelScreen({
                 {allRows.some((r) => r.onRoute) ? (
                   <span title="Not flown: on a route you plotted, or targeted in the galaxy map">
                     <strong>{allRows.filter((r) => r.onRoute).length}</strong> on your routes
+                  </span>
+                ) : null}
+                {allRows.some((r) => r.gap) ? (
+                  <span title="Recorded nowhere, but a higher system of the boxel is known, so they exist (mass codes a–g number their systems without gaps)">
+                    <strong>{allRows.filter((r) => r.gap).length}</strong> exist unrecorded
                   </span>
                 ) : null}
                 {lead?.next ? (
