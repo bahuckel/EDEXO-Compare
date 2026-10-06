@@ -872,6 +872,11 @@ export class GameStateStore {
    * on arriving there. Second rung of the next-jump ladder, see {@link nextJumpTarget}.
    */
   fsdTarget: { starSystem: string; systemAddress: number; starClass: string; at: string } | null = null;
+  /**
+   * The boxel system last put on the clipboard (server/boxelRun.ts), for the HUD's next-jump card:
+   * "Copied … · boxel run". Not journal state; this session only.
+   */
+  boxelCopied: { name: string; at: string; run: boolean } | null = null;
   /** Last hyperspace target from `StartJump`, for the HUD's next-jump card. See AppSnapshot.jumpTarget. */
   lastJumpTarget: {
     starSystem: string;

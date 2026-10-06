@@ -415,6 +415,19 @@ describe("HUD next jump", () => {
     expect(document.querySelector('[data-f="status"]')?.textContent).toBe("Arrived");
   });
 
+  it("says which boxel system is on the clipboard, and when a boxel run is on (2026-10-06)", async () => {
+    const HUD = await loadHud();
+    HUD.mount(["jump"], { noTimers: true });
+    const line = () => document.querySelector<HTMLElement>('[data-f="copied"]')!;
+    HUD.render({ jumpTarget: null });
+    expect(line().hidden).toBe(true);
+    HUD.render({ jumpTarget: null, boxelCopied: { name: "Eol Prou AB-C d1-7", at: "", run: true } });
+    expect(line().hidden).toBe(false);
+    expect(line().textContent).toBe("Copied Eol Prou AB-C d1-7 · boxel run");
+    HUD.render({ jumpTarget: null, boxelCopied: { name: "Eol Prou AB-C d1-8", at: "", run: false } });
+    expect(line().textContent).toBe("Copied Eol Prou AB-C d1-8");
+  });
+
   it("draws the route strip with the refuel pump on the nearest scoop", async () => {
     const HUD = await loadHud();
     HUD.mount(["jump"], { noTimers: true });

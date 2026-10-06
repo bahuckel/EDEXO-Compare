@@ -323,6 +323,8 @@ export interface AppSnapshot {
    * card: system name and the arrival star class, which decides whether the ship can scoop there.
    * `arrived` flips on the matching `FSDJump`. Null until the first jump this session.
    */
+  /** The boxel system last copied to the clipboard (boxel run / keys), and whether a run is on. */
+  boxelCopied?: { name: string; at: string; run: boolean } | null;
   jumpTarget?: {
     starSystem: string;
     systemAddress: number;

@@ -32,7 +32,8 @@ export var jump = {
       '<div class="hud-big jump__sys" data-f="sys">—</div>' +
       '<div class="jump__cls"><span class="jump__star" data-f="star">—</span><span class="jump__note" data-f="note"></span></div>' +
       "</div></div>" +
-      '<div class="jump__route" data-f="route" hidden></div>'
+      '<div class="jump__route" data-f="route" hidden></div>' +
+      '<div class="jump__copied" data-f="copied" hidden></div>'
     );
   },
   render: function (d, root) {
@@ -40,6 +41,7 @@ export var jump = {
     var status = q(root, "status");
     var box = q(root, "jump");
     renderRouteStrip(d, q(root, "route"));
+    renderBoxelCopied(d, q(root, "copied"));
     if (!jt || !jt.starSystem) {
       status.textContent = "No jump";
       box.className = "jump jump--none";
@@ -66,6 +68,25 @@ export var jump = {
     return null;
   },
 };
+
+/*
+  Boxel scanning (owner, 2026-10-06): what the boxel run or the F6 / F8 / F9 keys put on the clipboard,
+  since a key press in the game shows nothing else — paste it in the galaxy map.
+*/
+export function renderBoxelCopied(d, el) {
+  if (!el) return;
+  var c = d.boxelCopied;
+  if (!c || !c.name) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+  el.hidden = false;
+  el.innerHTML =
+    '<span class="jump__copied-k">Copied</span> ' +
+    esc(c.name) +
+    (c.run ? ' <span class="jump__copied-run">· boxel run</span>' : "");
+}
 
 /*
   The route strip under the card (owner, 2026-09-13): the next hops as star-class letters in the

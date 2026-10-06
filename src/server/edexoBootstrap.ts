@@ -382,6 +382,9 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   */
   const boxelNextListeners = new Set<(name: string) => void>();
   const deliverToClipboard = (name: string): void => {
+    // The HUD's next-jump card says what is on the clipboard: a key press in the game shows nothing else.
+    store.boxelCopied = { name, at: new Date().toISOString(), run: savedBoxels.runId() != null };
+    queueMicrotask(() => push());
     if (boxelNextListeners.size) {
       for (const cb of boxelNextListeners) cb(name);
       return;
@@ -1107,7 +1110,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         eddnUploader.offer(line);
         const side = liveSideFiles();
         applyNavRoute(side.route);
-        if (line.event === "FSDJump") boxelRun.onJump();
+        if (line.event === "FSDJump") {
+          boxelRun.onJump();
+          // A run can end on a jump (its last system flown): the HUD line says so.
+          if (store.boxelCopied) store.boxelCopied.run = savedBoxels.runId() != null;
+        }
         const footFix = side.status ? parseStatusJsonFootFix(side.status) : null;
         ingestExoOrganicJournalLine(store, ownLine, footFix, projectRoot, getCachedSpeciesDatabase());
         sessionLog.record(line, store, getCachedPrices());
@@ -2191,6 +2198,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     boxelStep: (dir) => boxelRun.step(dir),
     boxelRunToggle: () => {
       const r = boxelRun.toggle();
+      if (r && store.boxelCopied) store.boxelCopied.run = r.running;
       if (r) push();
       return r;
     },

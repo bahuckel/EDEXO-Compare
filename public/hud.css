@@ -835,6 +835,25 @@ body {
   color: var(--hud-hi);
   opacity: 0.75;
 }
+/* what a boxel run / key put on the clipboard (hud/sections/jump.js) */
+.jump__copied {
+  margin-top: 0.4rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  color: var(--hud-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jump__copied-k {
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud);
+}
+.jump__copied-run {
+  color: var(--bio);
+}
 .jump--none .jump__tri {
   opacity: 0.35;
 }

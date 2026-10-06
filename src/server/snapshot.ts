@@ -1553,6 +1553,7 @@ export function buildSnapshot(
     exoOverlayFocusBody,
     statusDestination: bootLoading ? null : store.statusDestination,
     jumpTarget: bootLoading ? null : withFirstFootfall(store.nextJumpTarget(), store),
+    boxelCopied: store.boxelCopied,
     focusedSystemUndiscovered:
       !bootLoading && focusAddr != null && store.commanderDiscoveredSystem(focusAddr) === true,
     remainingJumpsInRoute: bootLoading ? null : store.remainingJumpsInRoute,
