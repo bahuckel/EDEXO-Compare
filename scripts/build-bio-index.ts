@@ -143,8 +143,10 @@ const bag = (s: string): string =>
 function loadTree(root: string): Map<string, string> {
   const out = new Map<string, string>();
   const dir = path.join(root, "data", "species");
-  for (const genus of readdirSync(dir)) {
-    const gd = path.join(dir, genus);
+  // Genus folders only: data/species also holds shared files (eddsn-colour-variants.json).
+  for (const genus of readdirSync(dir, { withFileTypes: true })) {
+    if (!genus.isDirectory()) continue;
+    const gd = path.join(dir, genus.name);
     const files = readdirSync(gd).filter((f) => f.endsWith(".json"));
     const file = files.find((f) => f.endsWith("_new.json")) ?? files[0];
     if (!file) continue;
