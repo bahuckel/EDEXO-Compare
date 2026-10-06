@@ -27,7 +27,8 @@
  *
  * **Codex id → species.** The file carries species ids (`codex_ent_stratum_07`) *and* material or
  * colour variants of them (`codex_ent_bacterial_04_yttrium`). Matching ids exactly keeps 0.5 % of the
- * biology rows and reports a clean, small, wrong answer. Key on the `codex_ent_<genus>_<nn>` prefix.
+ * biology rows and reports a clean, small, wrong answer. Key on the `codex_ent_<genus>_<nn>` prefix, or the
+ * whole id for the nine species that carry no number (bridgeKey).
  *
  * **Species name → our tree.** Bioforge names structures colour-first (`Gypseeum Brain Tree`), the
  * tree genus-first (`Brain Tree Gypseeum`). A positional compare resolves 90 of 108 and looks like
@@ -158,6 +159,21 @@ function loadTree(root: string): Map<string, string> {
   return out;
 }
 
+/*
+  A codex id's species key: `codex_ent_<genus>_<nn>` where it has a number, else the whole id
+  (2026-10-06). Nine species carry no number — `$Codex_Ent_Vents_Name;` (Amphora Plant), `_Cone_`
+  (Bark Mounds), `_Ground_Struct_Ice_` (Crystalline Shards), and the first of each colour group:
+  `_Sphere_` / `_SphereEFGH_` Anemones, `_Seed_` / `_SeedEFGH_` Brain Trees, `_Tube_` / `_TubeEFGH_`
+  Sinuous Tubers. Keyed on the number only, all nine were dropped and never reached the map —
+  23,688 EDAstro rows of Bark Mounds alone.
+*/
+const CODEX_NUMBERED = /^(codex_ent_[a-z]+_\d+)/;
+const CODEX_WHOLE = /^(codex_ent_[a-z_]+?)(?:_name;?)?$/;
+function bridgeKey(id: string): string | null {
+  const v = id.trim().toLowerCase().replace(/^\$/, "");
+  return CODEX_NUMBERED.exec(v)?.[1] ?? CODEX_WHOLE.exec(v)?.[1] ?? null;
+}
+
 function loadCodexBridge(bioforgeDir: string, tree: Map<string, string>): Map<string, string> {
   const out = new Map<string, string>();
   for (const f of readdirSync(bioforgeDir)) {
@@ -167,13 +183,13 @@ function loadCodexBridge(bioforgeDir: string, tree: Map<string, string>): Map<st
       { id?: string; name?: string }
     >;
     for (const e of Object.values(d)) {
-      const m = /^\$(Codex_Ent_[A-Za-z]+_\d+)/.exec(String(e.id ?? ""));
+      const m = bridgeKey(String(e.id ?? ""));
       if (!m) continue;
       const species = String(e.name ?? "")
         .replace(/\s*-\s*[^-]+$/, "")
         .trim();
       const ours = tree.get(bag(species));
-      if (ours) out.set(m[1]!.toLowerCase(), ours);
+      if (ours) out.set(m, ours);
     }
   }
   return out;
@@ -252,7 +268,6 @@ const REGION_ID = /"regionId":(\d+)/;
 const BODY_COUNT = /"bodyCount":(\d+)/;
 const BIO = /"\$SAA_SignalType_Biological;":(\d+)/;
 const GENUSES = /"genuses":\[([^\]]*)\]/;
-const CODEX_SPECIES = /^(codex_ent_[a-z]+_\d+)/;
 
 /** Growable id list. A plain array of bigints is heavy; this stays at eight bytes each. */
 let ids = new BigUint64Array(1 << 20);
@@ -295,8 +310,8 @@ if (EXPORT) {
     }
     if (!line) continue;
     const f = splitCsv(line);
-    const pm = CODEX_SPECIES.exec((f[1] ?? "").toLowerCase());
-    if (!pm || !bridge.has(pm[1]!)) continue;
+    const key = bridgeKey(f[1] ?? "");
+    if (!key || !bridge.has(key)) continue;
     const raw = f[10] ?? "";
     if (/^\d+$/.test(raw)) pushId(BigInt(raw));
   }
@@ -432,8 +447,8 @@ let regionDisagree = 0;
     if (!line) continue;
     codexRows++;
     const f = splitCsv(line);
-    const pm = CODEX_SPECIES.exec((f[1] ?? "").toLowerCase());
-    const ours = pm ? bridge.get(pm[1]!) : undefined;
+    const key = bridgeKey(f[1] ?? "");
+    const ours = key ? bridge.get(key) : undefined;
     if (!ours) continue;
     const raw = f[10] ?? "";
     if (!/^\d+$/.test(raw)) continue;
