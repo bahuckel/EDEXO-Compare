@@ -4,6 +4,9 @@
 import { describe, expect, it } from "vitest";
 import { boxelIndexOf, parseBoxel } from "../src/shared/boxel.js";
 import { boxelSystems } from "../src/server/boxel.js";
+import { mkdtempSync, rmSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 describe("boxel names", () => {
   it("a system name gives its boxel and number", () => {
@@ -138,6 +141,35 @@ describe("a saved boxel follows the jumps (owner, 2026-10-05)", () => {
       routed: 1,
       flownBeyond: [],
     });
+  });
+});
+
+describe("the galaxy-map probe (auto-boxel detector, 2026-10-06)", () => {
+  it("offers the number after the end, and Not there makes the end known until something passes it", async () => {
+    const { createSavedBoxels } = await import("../src/server/savedBoxels.js");
+    const dir = mkdtempSync(path.join(os.tmpdir(), "edexo-probe-"));
+    const file = path.join(dir, "edexo-boxels.json");
+    try {
+      const s = createSavedBoxels({ filePath: file });
+      const { id } = s.add("Eol Prou AB-C d1-6")!;
+      expect(s.list([])[0]).toMatchObject({ end: 6, endKnown: false, probe: "Eol Prou AB-C d1-7" });
+      expect(s.confirmEnd(id, 6)).toBe(true);
+      expect(s.list([])[0]).toMatchObject({ end: 6, endKnown: true, probe: null });
+      // Kept across a restart, with the copy setting.
+      s.setAutoCopyNext(false);
+      const again = createSavedBoxels({ filePath: file });
+      expect(again.list([])[0]).toMatchObject({ endKnown: true });
+      expect(again.autoCopyNext()).toBe(false);
+      // A route through -9 shows the check was wrong: the end moves and is no longer known.
+      expect(again.list([], undefined, null, [{ name: "Eol Prou AB-C d1-9" }])[0]).toMatchObject({
+        end: 9,
+        endKnown: false,
+        probe: "Eol Prou AB-C d1-10",
+      });
+      expect(createSavedBoxels({ filePath: null }).autoCopyNext()).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

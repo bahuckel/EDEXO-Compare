@@ -387,6 +387,7 @@ export function registerGalaxyRoutes(
         store?.currentSystem ?? null,
         sightings(store),
       ),
+      autoCopyNext: opts.savedBoxels!.autoCopyNext(),
     };
   };
   app.get("/api/boxels", (_req, res) => {
@@ -492,6 +493,12 @@ export function registerGalaxyRoutes(
       }),
     });
   });
+  // Copy the next system to fly after each jump into a saved boxel: `{ autoCopyNext: boolean }`.
+  app.post("/api/boxels/options", (req, res) => {
+    if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
+    if (typeof req.body?.autoCopyNext === "boolean") opts.savedBoxels.setAutoCopyNext(req.body.autoCopyNext);
+    res.json(savedList());
+  });
   // A correction on one system: `{ cutFrom: n }` drops n and everything after; `{ skip: n, on }`.
   app.patch("/api/boxels/:id", (req, res) => {
     if (!opts.savedBoxels) return void res.status(501).json({ ok: false, error: "Not available in this build." });
@@ -500,6 +507,8 @@ export function registerGalaxyRoutes(
     let done = false;
     if (typeof body.cutFrom === "number") done = opts.savedBoxels.cutFrom(id, body.cutFrom);
     else if (typeof body.skip === "number") done = opts.savedBoxels.setSkipped(id, body.skip, body.on !== false);
+    // The galaxy-map probe: `{ lastIs: n }` — he checked that n + 1 is not there, so n is the last.
+    else if (typeof body.lastIs === "number") done = opts.savedBoxels.confirmEnd(id, body.lastIs);
     if (!done) {
       res.status(400).json({ ...savedList(), ok: false, error: "That system is not in this saved boxel." });
       return;

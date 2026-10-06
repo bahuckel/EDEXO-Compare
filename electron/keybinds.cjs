@@ -6,8 +6,9 @@
   "Idea behind it, the user won't have to alt tab to the browser window in order to switch bodies, or
   if they have a single key stroke they want to bind the HUD to, they can."
 
-  Four actions: show / hide the HUDs (it was Ctrl+Alt+H, fixed), previous and next body tab (F1 and F2
-  by default), and clear the notices on the bell (F5; owner, 2026-10-05). A bind is an Electron accelerator of up to three keys — modifiers and one key, or one key
+  Five actions: show / hide the HUDs (it was Ctrl+Alt+H, fixed), previous and next body tab (F1 and F2
+  by default), clear the notices on the bell (F5; owner, 2026-10-05), and copy the next boxel system to
+  fly (F6; owner, 2026-10-06). A bind is an Electron accelerator of up to three keys — modifiers and one key, or one key
   on its own — or "" for none. They are global: Windows hands the key to us and not to the game, so a
   key the commander uses in Elite should not be bound here; the launcher says so beside the field.
 
@@ -25,6 +26,8 @@ const ACTIONS = {
   bodyPrev: { default: "F1", label: "Previous body tab", gameOnly: true },
   bodyNext: { default: "F2", label: "Next body tab", gameOnly: true },
   noticesClear: { default: "F5", label: "Clear the notices (the bell)", gameOnly: true },
+  // Boxel scanning (owner, 2026-10-06): the next system of the saved boxel he is in, to paste in the galaxy map.
+  boxelCopyNext: { default: "F6", label: "Copy the next boxel system to fly", gameOnly: true },
 };
 
 const MODIFIERS = new Set(["Control", "Ctrl", "CommandOrControl", "CmdOrCtrl", "Alt", "Shift", "Super", "Meta"]);

@@ -131,6 +131,10 @@ export interface SavedBoxelDTO {
    * NavRoute finder): they exist, as far as the game's own plotter knows.
    */
   routed?: number;
+  /** He checked in the galaxy map that the next system does not exist: `end` is the boxel's last. */
+  endKnown?: boolean;
+  /** The system to search for in the galaxy map to find out whether the boxel goes on; null once known. */
+  probe?: string | null;
   /** Bodies he scanned across its flown systems, and the FSS totals of those systems when known. */
   bodiesScanned: number;
   bodiesTotal: number | null;

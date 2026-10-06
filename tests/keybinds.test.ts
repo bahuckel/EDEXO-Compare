@@ -47,7 +47,7 @@ function make() {
     globalShortcut: gs,
     fs,
     filePath: () => file,
-    handlers: { hudToggle: () => fired.push("hud"), bodyPrev: () => fired.push("prev"), bodyNext: () => fired.push("next"), noticesClear: () => fired.push("clear") },
+    handlers: { hudToggle: () => fired.push("hud"), bodyPrev: () => fired.push("prev"), bodyNext: () => fired.push("next"), noticesClear: () => fired.push("clear"), boxelCopyNext: () => fired.push("boxel") },
   });
 }
 
@@ -74,12 +74,13 @@ describe("registering them", () => {
     const k = make();
     k.load();
     k.setGameFocused(true);
-    expect(k.apply()).toEqual({ hudToggle: "ok", bodyPrev: "ok", bodyNext: "ok", noticesClear: "ok" });
+    expect(k.apply()).toEqual({ hudToggle: "ok", bodyPrev: "ok", bodyNext: "ok", noticesClear: "ok", boxelCopyNext: "ok" });
     held.get("F1")!();
     held.get("F2")!();
     held.get("Control+Alt+H")!();
     held.get("F5")!();
-    expect(fired).toEqual(["prev", "next", "hud", "clear"]);
+    held.get("F6")!();
+    expect(fired).toEqual(["prev", "next", "hud", "clear", "boxel"]);
   });
 
   it("says when another program has the key, or two actions share one", () => {
@@ -126,16 +127,22 @@ describe("registering them", () => {
     k.setGameFocused(true);
     expect(held.size).toBe(0);
     k.pause(false);
-    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5"]);
+    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5", "F6"]);
   });
 
   it("holds the body keys and F5 only while Elite is in front; the HUD key always (owner, 2026-10-05)", () => {
     const k = make();
     k.load();
-    expect(k.apply()).toEqual({ hudToggle: "ok", bodyPrev: "standby", bodyNext: "standby", noticesClear: "standby" });
+    expect(k.apply()).toEqual({
+      hudToggle: "ok",
+      bodyPrev: "standby",
+      bodyNext: "standby",
+      noticesClear: "standby",
+      boxelCopyNext: "standby",
+    });
     expect([...held.keys()]).toEqual(["Control+Alt+H"]);
     k.setGameFocused(true);
-    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5"]);
+    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5", "F6"]);
     k.setGameFocused(false);
     expect([...held.keys()]).toEqual(["Control+Alt+H"]);
     expect(k.get().actions.noticesClear!.gameOnly).toBe(true);

@@ -105,6 +105,20 @@ export function BoxelScreen({
 
   const [saved, setSaved] = useState<SavedBoxelDTO[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** "Copy after each jump" (server/savedBoxels.ts); null until the list has been read. */
+  const [autoCopy, setAutoCopy] = useState<boolean | null>(null);
+  /** The probe text just copied, for the chip's "copied" look. */
+  const [copied, setCopied] = useState<string | null>(null);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(null), 1400);
+    return () => clearTimeout(t);
+  }, [copied]);
+  const copyText = (text: string) =>
+    void navigator.clipboard?.writeText(text).then(
+      () => setCopied(text),
+      () => setCopied(null),
+    );
   /** The ticked boxels; null until he ticks anything (then: the current boxel, else the newest). */
   const [included, setIncluded] = usePersistedState<string[] | null>("boxel.included", null, isIncluded);
   const [sideQuery, setSideQuery] = useState("");
@@ -143,8 +157,14 @@ export function BoxelScreen({
   const call = useCallback(async (init?: RequestInit, path = "/api/boxels") => {
     try {
       const r = await fetch(path, init);
-      const j = (await r.json()) as { items?: SavedBoxelDTO[]; id?: string; error?: string };
+      const j = (await r.json()) as {
+        items?: SavedBoxelDTO[];
+        id?: string;
+        error?: string;
+        autoCopyNext?: boolean;
+      };
       if (j.items) setSaved(j.items);
+      if (typeof j.autoCopyNext === "boolean") setAutoCopy(j.autoCopyNext);
       setError(r.ok ? null : (j.error ?? r.statusText));
       return r.ok ? j : null;
     } catch {
@@ -377,7 +397,10 @@ export function BoxelScreen({
           ) : r.skipped ? (
             <span className="boxel-skipped">skipped</span>
           ) : r.onRoute ? (
-            <span className="dim" title="Not flown yet: a route you plotted passes through it, or you targeted it in the galaxy map, so it exists">
+            <span
+              className="dim"
+              title="Not flown yet: a route you plotted passes through it, or you targeted it in the galaxy map, so it exists"
+            >
               on route
             </span>
           ) : r.gap ? (
@@ -792,6 +815,47 @@ export function BoxelScreen({
                             Extend to -{b.flownBeyond[b.flownBeyond.length - 1]}
                           </button>
                         ) : null}
+                        {/*
+                          Finding the boxel's last system in the galaxy map (owner, 2026-10-06; ideas from
+                          EDJP and SHBOXSEARCH): the prefix lists the boxel in one search, the probe is the
+                          number after the end. Found: plot or target it and the boxel extends itself.
+                          Not found: Not there, and the end is known.
+                        */}
+                        <button
+                          type="button"
+                          className={`fdb-chip${copied === b.prefix ? " fdb-chip--on" : ""}`}
+                          title={`Copies "${b.prefix}": paste it in the galaxy map's search to list the boxel's systems the game knows`}
+                          onClick={() => copyText(b.prefix)}
+                        >
+                          {copied === b.prefix ? "Copied" : "Copy prefix"}
+                        </button>
+                        {b.probe ? (
+                          <>
+                            <button
+                              type="button"
+                              className={`fdb-chip${copied === b.probe ? " fdb-chip--on" : ""}`}
+                              title={`Copies ${b.probe}: search it in the galaxy map. Found: plot a route to it or target it, and the boxel extends itself. Not found: press Not there.`}
+                              onClick={() => copyText(b.probe!)}
+                            >
+                              {copied === b.probe ? "Copied" : `Probe -${b.end + 1}`}
+                            </button>
+                            <button
+                              type="button"
+                              className="fdb-chip"
+                              title={`The galaxy map did not find ${b.probe}: -${b.end} is this boxel's last system`}
+                              onClick={() => void patch(b.id, { lastIs: b.end })}
+                            >
+                              Not there
+                            </button>
+                          </>
+                        ) : b.endKnown ? (
+                          <span
+                            className="dim tiny"
+                            title="You checked in the galaxy map that the next system does not exist"
+                          >
+                            ends at -{b.end}
+                          </span>
+                        ) : null}
                         {confirmId === b.id ? (
                           <>
                             <button type="button" className="fdb-chip boxel-del" onClick={() => remove(b.id)}>
@@ -947,6 +1011,28 @@ export function BoxelScreen({
                     <strong>{lead.next}</strong>
                     <CopySystemButton system={lead.next} />
                   </span>
+                ) : null}
+                {autoCopy != null ? (
+                  <label
+                    className="boxel-autocopy dim tiny"
+                    title="Desktop app: after each jump into a saved boxel, the next system to fly is put on the clipboard, ready to paste in the galaxy map. F6 copies it again (Launcher → Key binds)."
+                  >
+                    <input
+                      type="checkbox"
+                      checked={autoCopy}
+                      onChange={(ev) =>
+                        void call(
+                          {
+                            method: "POST",
+                            headers: json,
+                            body: JSON.stringify({ autoCopyNext: ev.target.checked }),
+                          },
+                          "/api/boxels/options",
+                        )
+                      }
+                    />{" "}
+                    Copy after each jump
+                  </label>
                 ) : null}
               </div>
             ) : null}

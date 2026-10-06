@@ -17,6 +17,8 @@ interface Stored {
   lastSystem: string;
   addedAt: string;
   skipped?: number[];
+  /** He checked in the galaxy map that the system after `lastSystem` does not exist: the end is final. */
+  endKnown?: boolean;
 }
 
 export interface SavedBoxelsService {
@@ -38,17 +40,25 @@ export interface SavedBoxelsService {
   cutFrom(id: string, n: number): boolean;
   /** Marks system `n` skipped (or not): it counts as done without being flown. */
   setSkipped(id: string, n: number, skipped: boolean): boolean;
+  /**
+   * The galaxy-map probe (owner, 2026-10-06): `n` is the boxel's last system, checked — the next one is
+   * "not there". Moves the end to `n` (the list still reaches any system flown or routed past it).
+   */
+  confirmEnd(id: string, n: number): boolean;
+  /** Copy the next system to fly to the clipboard after each jump into a saved boxel (default on). */
+  autoCopyNext(): boolean;
+  setAutoCopyNext(on: boolean): void;
 }
 
 export function createSavedBoxels(opts: { filePath: string | null; now?: () => number }): SavedBoxelsService {
   const now = opts.now ?? Date.now;
-  let items = load(opts.filePath);
+  let { items, autoCopy } = load(opts.filePath);
 
   function persist(): void {
     if (!opts.filePath) return;
     const tmp = `${opts.filePath}.tmp`;
     try {
-      writeFileSync(tmp, `${JSON.stringify({ formatVersion: 1, items }, null, 1)}\n`, "utf8");
+      writeFileSync(tmp, `${JSON.stringify({ formatVersion: 1, autoCopyNext: autoCopy, items }, null, 1)}\n`, "utf8");
       renameSync(tmp, opts.filePath);
     } catch {
       /* kept in memory; the next change tries again */
@@ -95,6 +105,8 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
         */
         const { b } = e;
         const end = Math.min(BOXEL_MAX_ROWS - 1, Math.max(e.end, ...flownAll, ...routedAll));
+        // A system past the end he confirmed turned up after all (flown, routed): the check was wrong.
+        const endKnown = !!s.endKnown && end === e.end;
         const skipped = (s.skipped ?? []).filter((n) => n <= end && !flownAll.has(n)).sort((x, y) => x - y);
         const skip = new Set(skipped);
         let next: number | null = null;
@@ -130,6 +142,8 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
           skipped,
           flownBeyond: [...flownAll].filter((n) => n > end).sort((x, y) => x - y),
           routed: [...routedAll].filter((n) => n <= end && !flownAll.has(n)).length,
+          endKnown,
+          probe: endKnown || end >= BOXEL_MAX_ROWS - 1 ? null : `${b.prefix}${end + 1}`,
           total: end + 1,
           next: next == null ? null : `${b.prefix}${next}`,
         };
@@ -144,6 +158,7 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
       const same = items.find((s) => parseBoxel(s.lastSystem)?.prefix.toLowerCase() === b.prefix.toLowerCase());
       if (same) {
         same.lastSystem = name;
+        delete same.endKnown;
         persist();
         return { id: same.id };
       }
@@ -164,9 +179,25 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
       const e = s ? endOf(s) : null;
       if (!s || !e || !Number.isInteger(n) || n < 1 || n > e.end) return false;
       s.lastSystem = `${e.b.prefix}${n - 1}`;
+      delete s.endKnown;
       if (s.skipped) s.skipped = s.skipped.filter((k) => k < n);
       persist();
       return true;
+    },
+    confirmEnd(id, n) {
+      const s = items.find((x) => x.id === id);
+      const e = s ? endOf(s) : null;
+      if (!s || !e || !Number.isInteger(n) || n < 0 || n >= BOXEL_MAX_ROWS) return false;
+      s.lastSystem = `${e.b.prefix}${n}`;
+      s.endKnown = true;
+      if (s.skipped) s.skipped = s.skipped.filter((k) => k <= n);
+      persist();
+      return true;
+    },
+    autoCopyNext: () => autoCopy,
+    setAutoCopyNext(on) {
+      autoCopy = on;
+      persist();
     },
     setSkipped(id, n, skipped) {
       const s = items.find((x) => x.id === id);
@@ -182,14 +213,19 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
   };
 }
 
-function load(filePath: string | null): Stored[] {
-  if (!filePath || !existsSync(filePath)) return [];
+function load(filePath: string | null): { items: Stored[]; autoCopy: boolean } {
+  if (!filePath || !existsSync(filePath)) return { items: [], autoCopy: true };
   try {
-    const raw = JSON.parse(readFileSync(filePath, "utf8")) as { items?: Stored[] };
-    return (raw.items ?? [])
+    const raw = JSON.parse(readFileSync(filePath, "utf8")) as { items?: Stored[]; autoCopyNext?: boolean };
+    const items = (raw.items ?? [])
       .filter((s) => s && typeof s.id === "string" && typeof s.lastSystem === "string")
-      .map((s) => ({ ...s, skipped: Array.isArray(s.skipped) ? s.skipped.filter((n) => Number.isInteger(n) && n >= 0) : undefined }));
+      .map((s) => ({
+        ...s,
+        skipped: Array.isArray(s.skipped) ? s.skipped.filter((n) => Number.isInteger(n) && n >= 0) : undefined,
+        endKnown: s.endKnown === true ? true : undefined,
+      }));
+    return { items, autoCopy: raw.autoCopyNext !== false };
   } catch {
-    return [];
+    return { items: [], autoCopy: true };
   }
 }
