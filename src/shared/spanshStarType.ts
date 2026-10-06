@@ -20,7 +20,8 @@ const NAMED: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^t tauri/i, () => "TTS"],
   [/^herbig ae\/?be/i, () => "AeBe"],
   [/^wolf-rayet\s*([a-z]*)\s*star/i, (m) => `W${m[1]!.toUpperCase()}`],
-  [/^(ms|s|c|cn|cj|ch|chd)-?type star/i, (m) => m[1]!.toUpperCase()],
+  // Spansh writes "S-type Star" / "MS-type Star" but "C Star" / "CJ Star" / "CN Star" (its schema enum).
+  [/^(ms|s|c|cn|cj|ch|chd)(?:-?type)?\s+star/i, (m) => m[1]!.toUpperCase()],
   [/^([a-z])\s*\(/i, (m) => m[1]!.toUpperCase()],
 ];
 
