@@ -17,7 +17,7 @@ import { getProjectRoot } from "../paths.js";
 import { perfCount } from "../perf.js";
 import { codexMapRegion, codexMapRegions } from "../codexMap.js";
 import { clearGalaxyPoints, galaxyPoints } from "../galaxyPoints.js";
-import { clearTileIndex, encodeCells, encodeTile, parseCellParam, sectorNames, tileIndex } from "../galaxyTiles.js";
+import { clearTileIndex, encodeCells, encodeTile, parseCellParam, sectorNames, tileIndex, tileIndexAsync } from "../galaxyTiles.js";
 import { registerGalaxyCache, touchGalaxyMemory } from "../galaxyMemory.js";
 import {
   clearBioIndexCache,
@@ -33,7 +33,13 @@ import {
   galaxySystemSpecies,
   galaxySystemValues,
 } from "../galaxyValueSearch.js";
-import { clearSystemTraits, galaxyFilterMask, loadSystemTraits, systemTraitCounts } from "../galaxyTraits.js";
+import {
+  clearSystemTraits,
+  galaxyFilterMask,
+  loadSystemTraits,
+  loadSystemTraitsAsync,
+  systemTraitCounts,
+} from "../galaxyTraits.js";
 import { downloadGalaxyIndex, galaxyIndexStatus, probeGalaxyIndexSize } from "../galaxyIndexFiles.js";
 import { checkNavRouteSystemsOnEdsm, clearNavRouteLog, lastNavRoute, navRouteLog } from "../navRouteLog.js";
 import { BODY_TRAIT_GROUP, BODY_TRAITS, STAR_CLASSES } from "../../shared/galaxyTraits.js";
@@ -340,7 +346,16 @@ export function registerGalaxyRoutes(
   */
   app.use(["/api/boxel", "/api/boxels"], (_req, _res, next) => {
     touchGalaxyMemory();
-    next();
+    /*
+      And reads it without stopping the server's thread (owner, 2026-10-06: "the moment I open Boxels it
+      starts to lag … both launcher and in-app view"). The server runs in Electron's main process: the
+      index, tiles, sector names and traits read synchronously there were ~0.7 s, longer on a cold disk,
+      with every window frozen. Read off-thread and built in slices, the windows keep answering; the
+      handlers' synchronous calls then find it all in place.
+    */
+    void Promise.all([tileIndexAsync(), loadSystemTraitsAsync()])
+      .catch(() => undefined)
+      .then(() => next());
   });
   app.get("/api/boxel", (req, res) => {
     const name = String(req.query.name ?? "").slice(0, 80);

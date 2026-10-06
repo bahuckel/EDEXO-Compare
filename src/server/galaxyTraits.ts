@@ -16,7 +16,9 @@
  * Without it the Bodies tab says so and only exobio filters.
  */
 import { existsSync, readFileSync } from "node:fs";
-import { gunzipSync } from "node:zlib";
+import { readFile } from "node:fs/promises";
+import { promisify } from "node:util";
+import { gunzip, gunzipSync } from "node:zlib";
 import { loadBioIndex, type BioIndex } from "./bioIndex.js";
 import { getProjectRoot } from "./paths.js";
 import { galaxyIndexFilePath } from "./galaxyIndexFiles.js";
@@ -67,6 +69,31 @@ export function loadSystemTraits(file = systemTraitsPath()): SystemTraits | null
     cached = null;
   }
   return cached;
+}
+
+let pending: Promise<SystemTraits | null> | null = null;
+
+/** The same, read and unzipped off the main thread (bioIndex.ts loadBioIndexAsync says why). */
+export function loadSystemTraitsAsync(file = systemTraitsPath()): Promise<SystemTraits | null> {
+  if (cached !== undefined) return Promise.resolve(cached);
+  if (pending) return pending;
+  pending = (async () => {
+    try {
+      if (!existsSync(file)) {
+        if (cached === undefined) cached = null;
+      } else {
+        const raw = await promisify(gunzip)(await readFile(file));
+        if (cached === undefined) cached = parseSystemTraits(raw);
+      }
+    } catch (e) {
+      console.warn(`ED Exo Compare — system traits unreadable, continuing without them: ${String(e)}`);
+      if (cached === undefined) cached = null;
+    }
+    return cached ?? null;
+  })().finally(() => {
+    pending = null;
+  });
+  return pending;
 }
 
 /** Let the 48 MB go when the map has been idle (galaxyMemory.ts); the next use reads it again. */

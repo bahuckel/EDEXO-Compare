@@ -30,7 +30,7 @@
  *   .. pad to 4
  *   .. system ordinal u32 × count      (index into the bio index: picking, names, the detail panel)
  */
-import { loadBioIndex, type BioIndex } from "./bioIndex.js";
+import { loadBioIndex, loadBioIndexAsync, type BioIndex } from "./bioIndex.js";
 import { galaxySystemValues } from "./galaxyValueSearch.js";
 import { systemSector } from "../shared/sectorName.js";
 import { cellMin, quantiseInCell, TILE_ORIGIN, TILE_SIZE_LY, type CellCoord } from "../shared/galaxyGrid.js";
@@ -63,12 +63,44 @@ export interface TileIndex {
 
 const align4 = (n: number) => (n + 3) & ~3;
 
+/*
+  Built in slices (owner, 2026-10-06: opening Boxels froze the app and the launcher). The server shares
+  Electron's main process, so 0.4 s of tile building there stopped every window; the steps below pause
+  every SLICE systems and `runSliced` hands the event loop back whenever a slice has run long enough.
+  `runSync` is the same build in one go, for the callers that need the answer now.
+*/
+const SLICE = 32_768;
+const SLICE_MS = 12;
+
+function runSync<T>(steps: Generator<void, T>): T {
+  for (;;) {
+    const r = steps.next();
+    if (r.done) return r.value;
+  }
+}
+
+async function runSliced<T>(steps: Generator<void, T>): Promise<T> {
+  let t = performance.now();
+  for (;;) {
+    const r = steps.next();
+    if (r.done) return r.value;
+    if (performance.now() - t > SLICE_MS) {
+      await new Promise<void>((done) => setImmediate(done));
+      t = performance.now();
+    }
+  }
+}
+
 export function buildTileIndex(index: BioIndex, values: Uint16Array = new Uint16Array(index.systemCount)): TileIndex {
+  return runSync(tileIndexSteps(index, values));
+}
+
+function* tileIndexSteps(index: BioIndex, values: Uint16Array): Generator<void, TileIndex> {
   const n = index.systemCount;
   const cellOfSystem = new Float64Array(n);
   // One pass: which cell, and per cell the count, the coordinate sums and the best value.
   const acc = new Map<number, { n: number; sx: number; sy: number; sz: number; top: number }>();
-  index.forEachPoint((i, x, y, z) => {
+  const visit = (i: number, x: number, y: number, z: number) => {
     const id = packCell(
       Math.floor((x - TILE_ORIGIN.x) / TILE_SIZE_LY),
       Math.floor((y - TILE_ORIGIN.y) / TILE_SIZE_LY),
@@ -82,7 +114,13 @@ export function buildTileIndex(index: BioIndex, values: Uint16Array = new Uint16
     a.sy += y;
     a.sz += z;
     if (values[i]! > a.top) a.top = values[i]!;
-  });
+  };
+  if (index.forEachPointIn) {
+    for (let from = 0; from < n; from += SLICE) {
+      index.forEachPointIn(from, from + SLICE, visit);
+      yield;
+    }
+  } else index.forEachPoint(visit);
   const ranges = new Map<number, [number, number]>();
   const cursor = new Map<number, number>();
   const cells: CellCoord[] = [];
@@ -101,12 +139,14 @@ export function buildTileIndex(index: BioIndex, values: Uint16Array = new Uint16
     topValue[k] = a.top;
     at += a.n;
   }
+  yield;
   const order = new Uint32Array(n);
   for (let i = 0; i < n; i++) {
     const id = cellOfSystem[i]!;
     const p = cursor.get(id)!;
     order[p] = i;
     cursor.set(id, p + 1);
+    if (i % SLICE === SLICE - 1) yield;
   }
   return { index, cells, ranges, order, values, centroids, topValue };
 }
@@ -118,7 +158,19 @@ export function buildTileIndex(index: BioIndex, values: Uint16Array = new Uint16
  */
 export function sectorNames(t: TileIndex): string[] {
   if (t.sectorNames) return t.sectorNames;
-  t.sectorNames = t.cells.map((c) => {
+  return (t.sectorNames = runSync(sectorNameSteps(t)));
+}
+
+/** The same, in slices (see runSliced). */
+export async function sectorNamesAsync(t: TileIndex): Promise<string[]> {
+  if (t.sectorNames) return t.sectorNames;
+  const names = await runSliced(sectorNameSteps(t));
+  return (t.sectorNames ??= names);
+}
+
+function* sectorNameSteps(t: TileIndex): Generator<void, string[]> {
+  const out: string[] = [];
+  for (const c of t.cells) {
     const [from, to] = t.ranges.get(packCell(c.cx, c.cy, c.cz))!;
     const counts = new Map<string, number>();
     const stepBy = Math.max(1, Math.floor((to - from) / 40));
@@ -129,9 +181,10 @@ export function sectorNames(t: TileIndex): string[] {
     let best = "";
     let bestN = 0;
     for (const [name, k] of counts) if (k > bestN) [best, bestN] = [name, k];
-    return best;
-  });
-  return t.sectorNames;
+    out.push(best);
+    if (out.length % 256 === 0) yield;
+  }
+  return out;
 }
 
 export function encodeCells(t: TileIndex): Buffer {
@@ -214,8 +267,40 @@ export function tileIndex(): TileIndex | null {
   return cached;
 }
 
+let pending: Promise<TileIndex | null> | null = null;
+/** Bumped when the memory is let go, so a build that finishes after that is not kept. */
+let generation = 0;
+
+/**
+ * The tile index and its sector names without stopping the server's thread for long: the index read
+ * off-thread, the grouping in slices. Every galaxy and boxel request waits on this first (galaxyRoutes.ts),
+ * so the synchronous `tileIndex()` behind it finds the work done.
+ */
+export function tileIndexAsync(): Promise<TileIndex | null> {
+  if (cached !== undefined) return Promise.resolve(cached);
+  if (pending) return pending;
+  const gen = generation;
+  pending = (async () => {
+    const index = await loadBioIndexAsync();
+    if (!index) {
+      if (gen === generation && cached === undefined) cached = null;
+      return null;
+    }
+    // About 0.1 s in one go; the rest is sliced.
+    const values = galaxySystemValues(index);
+    const built = await runSliced(tileIndexSteps(index, values));
+    await sectorNamesAsync(built);
+    if (gen === generation && cached === undefined) cached = built;
+    return cached ?? built;
+  })().finally(() => {
+    pending = null;
+  });
+  return pending;
+}
+
 export function clearTileIndex(): void {
   cached = undefined;
+  generation++;
 }
 
 /** `cx:cy:cz` → a cell, or null for anything else. */

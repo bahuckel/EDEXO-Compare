@@ -22,6 +22,7 @@
  */
 import { galaxyIndexFilePath } from "./galaxyIndexFiles.js";
 import { existsSync, readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { getProjectRoot } from "./paths.js";
 
 const MAGIC = "EDEXOBIO";
@@ -61,6 +62,12 @@ export interface BioIndex {
   systemsWithAny(speciesIds: Iterable<string>): BioIndexSystem[];
   /** Allocation-free pass over every system's position and summary, in file order (the galaxy map). */
   forEachPoint(cb: (i: number, x: number, y: number, z: number, tiers: number, speciesCount: number) => void): void;
+  /** The same over ordinals [from, to): lets a long pass hand the event loop back between slices. */
+  forEachPointIn?(
+    from: number,
+    to: number,
+    cb: (i: number, x: number, y: number, z: number, tiers: number, speciesCount: number) => void,
+  ): void;
   /** One system's position and summary by ordinal: [x, y, z, tiers, speciesCount]. */
   pointAt(i: number): [number, number, number, number, number];
   /** One whole system by ordinal (the galaxy map's picking and its detail panel). */
@@ -181,7 +188,15 @@ class Index implements BioIndex {
    * system ordinal comes along so a caller can tell where one system's run ends and the next begins.
    */
   forEachPoint(cb: (i: number, x: number, y: number, z: number, tiers: number, speciesCount: number) => void): void {
-    for (let i = 0; i < this.systemCount; i++) {
+    this.forEachPointIn(0, this.systemCount, cb);
+  }
+
+  forEachPointIn(
+    from: number,
+    to: number,
+    cb: (i: number, x: number, y: number, z: number, tiers: number, speciesCount: number) => void,
+  ): void {
+    for (let i = Math.max(0, from); i < Math.min(to, this.systemCount); i++) {
       const o = this.tableAt + i * RECORD;
       cb(
         i,
@@ -270,6 +285,35 @@ export function loadBioIndex(file = bioIndexPath()): BioIndex | null {
     cached = null;
   }
   return cached;
+}
+
+let pending: Promise<BioIndex | null> | null = null;
+
+/**
+ * The same, with the 245 MB read off the main thread (owner, 2026-10-06: opening Boxels froze the
+ * launcher too). The server runs in Electron's main process, so a synchronous read there stops every
+ * window; only the offsets are built here, a few tens of milliseconds.
+ */
+export function loadBioIndexAsync(file = bioIndexPath()): Promise<BioIndex | null> {
+  if (cached !== undefined) return Promise.resolve(cached);
+  if (pending) return pending;
+  pending = (async () => {
+    try {
+      if (!existsSync(file)) {
+        if (cached === undefined) cached = null;
+      } else {
+        const buf = await readFile(file);
+        if (cached === undefined) cached = new Index(buf);
+      }
+    } catch (e) {
+      console.warn(`ED Exo Compare — bio index unreadable, continuing without it: ${String(e)}`);
+      if (cached === undefined) cached = null;
+    }
+    return cached ?? null;
+  })().finally(() => {
+    pending = null;
+  });
+  return pending;
 }
 
 /** Test seam. */

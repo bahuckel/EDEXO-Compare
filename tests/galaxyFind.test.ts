@@ -3,7 +3,7 @@
  * systems first, index systems inside a named sector, and a sector column's most valuable systems.
  */
 import { describe, expect, it } from "vitest";
-import { buildTileIndex } from "../src/server/galaxyTiles.js";
+import { buildTileIndex, sectorNames, sectorNamesAsync } from "../src/server/galaxyTiles.js";
 import { galaxyFind, galaxySector } from "../src/server/galaxyFind.js";
 import { cellOf } from "../src/shared/galaxyGrid.js";
 import { GameStateStore } from "../src/server/gameState.js";
@@ -79,5 +79,24 @@ describe("sector panel", () => {
 
   it("answers an empty column with nothing", () => {
     expect(galaxySector(t, 0, 0)).toBeNull();
+  });
+});
+
+/*
+  Built in slices (owner, 2026-10-06: Boxels froze the app while the server built these on Electron's
+  main thread): the sliced pass over ordinal ranges gives the same grouping and sector names.
+*/
+describe("the sliced build", () => {
+  it("matches the one-go build", async () => {
+    const sliced: BioIndex = {
+      ...index,
+      forEachPointIn: (from, to, cb) =>
+        SYSTEMS.slice(from, to).forEach((s, k) => cb(from + k, s.x, s.y, s.z, 0, s.species)),
+    };
+    const a = buildTileIndex(index, VALUES);
+    const b = buildTileIndex(sliced, VALUES);
+    expect([...b.order]).toEqual([...a.order]);
+    expect(b.cells).toEqual(a.cells);
+    expect(await sectorNamesAsync(b)).toEqual(sectorNames(a));
   });
 });
