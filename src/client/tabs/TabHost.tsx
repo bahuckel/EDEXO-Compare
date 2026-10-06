@@ -17,6 +17,8 @@ import {
   type TabFront,
   type TabKind,
 } from "./tabStore";
+import { UI_COMMAND_EVENT } from "../useLiveSnapshot";
+import type { UiCommand } from "@shared/types";
 
 const DRAG_TYPE = "application/x-edexo-tab";
 /** The dragged tab: `{ kind, from }` (from = the window key, so another window can take it). */
@@ -246,6 +248,15 @@ export function TabStrip() {
   );
 }
 
+/** The tab before or after the one in front, wrapping; Main counts in the main window. */
+function stepTab(dir: -1 | 1): void {
+  const s = tabStore.get();
+  const order: TabFront[] = IS_DETACHED ? [...s.tabs] : ["main", ...s.tabs];
+  if (order.length < 2) return;
+  const i = order.indexOf(s.active);
+  tabStore.activate(order[(i + dir + order.length) % order.length]!);
+}
+
 export function TabHost({ children }: { children: ReactNode }) {
   const st = useTabState();
   // Scrolling something into view leaves room for the sticky strip (tabs.css html.tab-view).
@@ -259,10 +270,8 @@ export function TabHost({ children }: { children: ReactNode }) {
     const onKey = (ev: KeyboardEvent) => {
       if (!ev.ctrlKey) return;
       const s = tabStore.get();
-      const order: TabFront[] = ["main", ...s.tabs];
       if (ev.key === "Tab") {
-        const i = order.indexOf(s.active);
-        tabStore.activate(order[(i + (ev.shiftKey ? -1 : 1) + order.length) % order.length]!);
+        stepTab(ev.shiftKey ? -1 : 1);
         ev.preventDefault();
       } else if ((ev.key === "w" || ev.key === "W") && s.active !== "main") {
         tabStore.close(s.active);
@@ -271,6 +280,19 @@ export function TabHost({ children }: { children: ReactNode }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [st.on]);
+  /*
+    Previous / next tab from inside the game (owner, 2026-10-06; Shift+F1 / Shift+F2 by default, set in
+    the launcher). The main window's tabs only: a window of its own keeps the tab it shows.
+  */
+  useEffect(() => {
+    if (!st.on || IS_DETACHED) return;
+    const onCommand = (ev: Event) => {
+      const cmd = (ev as CustomEvent<UiCommand>).detail;
+      if (cmd?.cmd === "screenTab") stepTab(cmd.dir);
+    };
+    window.addEventListener(UI_COMMAND_EVENT, onCommand);
+    return () => window.removeEventListener(UI_COMMAND_EVENT, onCommand);
   }, [st.on]);
   if (!st.on)
     return CUSTOM_TITLE_BAR ? (

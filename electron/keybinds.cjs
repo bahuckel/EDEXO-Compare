@@ -6,10 +6,11 @@
   "Idea behind it, the user won't have to alt tab to the browser window in order to switch bodies, or
   if they have a single key stroke they want to bind the HUD to, they can."
 
-  Eight actions: show / hide the HUDs (it was Ctrl+Alt+H, fixed), previous and next body tab (F1 and F2
+  Ten actions: show / hide the HUDs (it was Ctrl+Alt+H, fixed), previous and next body tab (F1 and F2
   by default), clear the notices on the bell (F5; owner, 2026-10-05), and boxel scanning (owner,
   2026-10-06; server/boxelRun.ts): copy the next system to fly (F6), start / finish a boxel run (F7),
-  and step to the previous / next system still to fly (F8 / F9). A bind is an Electron accelerator of up to three keys — modifiers and one key, or one key
+  and step to the previous / next system still to fly (F8 / F9); previous / next screen tab (Shift+F1 /
+  Shift+F2; owner, 2026-10-06). A bind is an Electron accelerator of up to three keys — modifiers and one key, or one key
   on its own — or "" for none. They are global: Windows hands the key to us and not to the game, so a
   key the commander uses in Elite should not be bound here; the launcher says so beside the field.
 
@@ -22,16 +23,24 @@
   the HUDs from outside the game.
 */
 
+/*
+  `group` is the launcher's folding section (owner, 2026-10-06: "key-binds in launcher under collapsible
+  categories"), in the order of GROUPS.
+*/
+const GROUPS = ["HUD", "Body tabs", "Screen tabs", "Notices", "Boxels"];
 const ACTIONS = {
-  hudToggle: { default: "Control+Alt+H", label: "Show / hide the HUDs" },
-  bodyPrev: { default: "F1", label: "Previous body tab", gameOnly: true },
-  bodyNext: { default: "F2", label: "Next body tab", gameOnly: true },
-  noticesClear: { default: "F5", label: "Clear the notices (the bell)", gameOnly: true },
+  hudToggle: { default: "Control+Alt+H", label: "Show / hide the HUDs", group: "HUD" },
+  bodyPrev: { default: "F1", label: "Previous body tab", gameOnly: true, group: "Body tabs" },
+  bodyNext: { default: "F2", label: "Next body tab", gameOnly: true, group: "Body tabs" },
+  // Tab view (owner, 2026-10-06): the main window's screen tabs from inside the game.
+  tabPrev: { default: "Shift+F1", label: "Previous screen tab", gameOnly: true, group: "Screen tabs" },
+  tabNext: { default: "Shift+F2", label: "Next screen tab", gameOnly: true, group: "Screen tabs" },
+  noticesClear: { default: "F5", label: "Clear the notices (the bell)", gameOnly: true, group: "Notices" },
   // Boxel scanning (owner, 2026-10-06): the next system of the saved boxel he is in, to paste in the galaxy map.
-  boxelCopyNext: { default: "F6", label: "Copy the next boxel system to fly", gameOnly: true },
-  boxelRun: { default: "F7", label: "Start / finish a boxel run", gameOnly: true },
-  boxelPrev: { default: "F8", label: "Copy the previous boxel system", gameOnly: true },
-  boxelNext: { default: "F9", label: "Copy the next boxel system after that", gameOnly: true },
+  boxelCopyNext: { default: "F6", label: "Copy the next boxel system to fly", gameOnly: true, group: "Boxels" },
+  boxelRun: { default: "F7", label: "Start / finish a boxel run", gameOnly: true, group: "Boxels" },
+  boxelPrev: { default: "F8", label: "Copy the previous boxel system", gameOnly: true, group: "Boxels" },
+  boxelNext: { default: "F9", label: "Copy the next boxel system after that", gameOnly: true, group: "Boxels" },
 };
 
 const MODIFIERS = new Set(["Control", "Ctrl", "CommandOrControl", "CmdOrCtrl", "Alt", "Shift", "Super", "Meta"]);
@@ -160,8 +169,12 @@ function createKeybinds(deps) {
       binds: { ...binds },
       status: { ...status },
       actions: Object.fromEntries(
-        Object.entries(ACTIONS).map(([k, v]) => [k, { label: v.label, default: v.default, gameOnly: v.gameOnly === true }]),
+        Object.entries(ACTIONS).map(([k, v]) => [
+          k,
+          { label: v.label, default: v.default, gameOnly: v.gameOnly === true, group: v.group },
+        ]),
       ),
+      groups: [...GROUPS],
     };
   }
 
@@ -206,4 +219,4 @@ function createKeybinds(deps) {
   };
 }
 
-module.exports = { createKeybinds, validAccelerator, KEYBIND_ACTIONS: ACTIONS };
+module.exports = { createKeybinds, validAccelerator, KEYBIND_ACTIONS: ACTIONS, KEYBIND_GROUPS: GROUPS };

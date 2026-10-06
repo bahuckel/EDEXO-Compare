@@ -816,6 +816,38 @@
       body:has(.modal-bg.on) {
         overflow: hidden;
       }
+      /* Key binds in folding sections (owner, 2026-10-06); the summary lists the keys of a closed one. */
+      .kb-groups {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin: 0.6rem 0;
+      }
+      .kb-group {
+        border: 1px solid var(--hud-faint, rgba(255, 138, 31, 0.25));
+        padding: 0.3rem 0.55rem;
+      }
+      .kb-group > summary {
+        display: flex;
+        gap: 0.6rem;
+        align-items: baseline;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .kb-group__keys {
+        margin-left: auto;
+        font-family: var(--mono, ui-monospace, monospace);
+        font-size: 0.8rem;
+        font-weight: 400;
+        opacity: 0.75;
+      }
+      .kb-group__keys--warn {
+        color: var(--warn, #f5a524);
+        opacity: 1;
+      }
+      .kb-group[open] .kb-group__keys {
+        display: none;
+      }
       .kb-rows {
         display: grid;
         grid-template-columns: 1fr auto auto auto;
@@ -2072,7 +2104,7 @@
             These keys work while Elite is in front: one key, or up to three with Ctrl, Alt or Shift. Windows gives a
             bound key to this app and not to the game, so pick keys you do not use in Elite.
           </p>
-          <div class="kb-rows" id="kbRows"></div>
+          <div class="kb-groups" id="kbRows"></div>
           <p class="hud-hint" id="kbMsg" aria-live="polite"></p>
           <div class="modal-actions">
             <button type="button" class="btn secondary" id="kbClose">Close</button>

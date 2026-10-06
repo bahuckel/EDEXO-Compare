@@ -19,7 +19,8 @@ const kb = require("../electron/keybinds.cjs") as {
     get: () => {
       binds: Record<string, string>;
       status: Record<string, string>;
-      actions: Record<string, { label: string; default: string; gameOnly: boolean }>;
+      actions: Record<string, { label: string; default: string; gameOnly: boolean; group: string }>;
+      groups: string[];
     };
     pause: (on: boolean) => unknown;
     setGameFocused: (on: boolean) => void;
@@ -47,7 +48,7 @@ function make() {
     globalShortcut: gs,
     fs,
     filePath: () => file,
-    handlers: { hudToggle: () => fired.push("hud"), bodyPrev: () => fired.push("prev"), bodyNext: () => fired.push("next"), noticesClear: () => fired.push("clear"), boxelCopyNext: () => fired.push("boxel"), boxelRun: () => fired.push("run"), boxelPrev: () => fired.push("bprev"), boxelNext: () => fired.push("bnext") },
+    handlers: { hudToggle: () => fired.push("hud"), bodyPrev: () => fired.push("prev"), bodyNext: () => fired.push("next"), tabPrev: () => fired.push("tprev"), tabNext: () => fired.push("tnext"), noticesClear: () => fired.push("clear"), boxelCopyNext: () => fired.push("boxel"), boxelRun: () => fired.push("run"), boxelPrev: () => fired.push("bprev"), boxelNext: () => fired.push("bnext") },
   });
 }
 
@@ -78,6 +79,8 @@ describe("registering them", () => {
       hudToggle: "ok",
       bodyPrev: "ok",
       bodyNext: "ok",
+      tabPrev: "ok",
+      tabNext: "ok",
       noticesClear: "ok",
       boxelCopyNext: "ok",
       boxelRun: "ok",
@@ -92,7 +95,9 @@ describe("registering them", () => {
     held.get("F7")!();
     held.get("F8")!();
     held.get("F9")!();
-    expect(fired).toEqual(["prev", "next", "hud", "clear", "boxel", "run", "bprev", "bnext"]);
+    held.get("Shift+F1")!();
+    held.get("Shift+F2")!();
+    expect(fired).toEqual(["prev", "next", "hud", "clear", "boxel", "run", "bprev", "bnext", "tprev", "tnext"]);
   });
 
   it("says when another program has the key, or two actions share one", () => {
@@ -139,7 +144,7 @@ describe("registering them", () => {
     k.setGameFocused(true);
     expect(held.size).toBe(0);
     k.pause(false);
-    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5", "F6", "F7", "F8", "F9"]);
+    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5", "F6", "F7", "F8", "F9", "Shift+F1", "Shift+F2"]);
   });
 
   it("holds the body keys and F5 only while Elite is in front; the HUD key always (owner, 2026-10-05)", () => {
@@ -149,6 +154,8 @@ describe("registering them", () => {
       hudToggle: "ok",
       bodyPrev: "standby",
       bodyNext: "standby",
+      tabPrev: "standby",
+      tabNext: "standby",
       noticesClear: "standby",
       boxelCopyNext: "standby",
       boxelRun: "standby",
@@ -157,9 +164,17 @@ describe("registering them", () => {
     });
     expect([...held.keys()]).toEqual(["Control+Alt+H"]);
     k.setGameFocused(true);
-    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5", "F6", "F7", "F8", "F9"]);
+    expect([...held.keys()].sort()).toEqual(["Control+Alt+H", "F1", "F2", "F5", "F6", "F7", "F8", "F9", "Shift+F1", "Shift+F2"]);
     k.setGameFocused(false);
     expect([...held.keys()]).toEqual(["Control+Alt+H"]);
     expect(k.get().actions.noticesClear!.gameOnly).toBe(true);
+  });
+});
+
+describe("the launcher's sections", () => {
+  it("puts every action in a listed group (owner, 2026-10-06)", () => {
+    const g = make().get();
+    for (const a of Object.values(g.actions)) expect(g.groups).toContain(a.group);
+    expect(g.actions.tabNext!.group).toBe("Screen tabs");
   });
 });

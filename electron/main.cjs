@@ -133,6 +133,8 @@ const keybinds = createKeybinds({
     hudToggle: () => huds.toggleVisibility(),
     bodyPrev: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: -1 }),
     bodyNext: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: 1 }),
+    tabPrev: () => runtime?.uiCommand?.({ cmd: "screenTab", dir: -1 }),
+    tabNext: () => runtime?.uiCommand?.({ cmd: "screenTab", dir: 1 }),
     noticesClear: () => runtime?.clearNotices?.(),
     // Boxel scanning (server/boxelRun.ts): the server picks the system, the clipboard writer below copies it.
     boxelCopyNext: () => runtime?.boxelCopyNext?.(),

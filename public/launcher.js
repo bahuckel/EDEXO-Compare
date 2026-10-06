@@ -1135,9 +1135,70 @@
       if (/^Numpad[0-9]$/.test(c)) return "num" + c.slice(6);
       return CODE[c] || null;
     }
+    // Which sections are open, kept for the next time (a convenience: closed when it cannot be read).
+    var OPEN_KEY = "edexo.kbGroupsOpen";
+    function readOpen() {
+      try {
+        var v = JSON.parse(localStorage.getItem(OPEN_KEY) || "[]");
+        return Array.isArray(v) ? v : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    function writeOpen(list) {
+      try {
+        localStorage.setItem(OPEN_KEY, JSON.stringify(list));
+      } catch (e) {
+        /* not kept */
+      }
+    }
+    function isWarn(code) {
+      return code === "taken" || code === "duplicate" || code === "invalid";
+    }
+    /*
+      One folding section per group (owner, 2026-10-06: "key-binds in launcher under collapsible
+      categories"), in electron/keybinds.cjs GROUPS order. A closed section lists its keys; one with a
+      key that does not work opens by itself.
+    */
     function render() {
       rowsEl.innerHTML = "";
-      Object.keys(state.actions).forEach(function (k) {
+      var keys = Object.keys(state.actions);
+      var groups = (state.groups || []).slice();
+      keys.forEach(function (k) {
+        var g = state.actions[k].group || "Other";
+        if (groups.indexOf(g) < 0) groups.push(g);
+      });
+      var open = readOpen();
+      groups.forEach(function (g) {
+        var inGroup = keys.filter(function (k) { return (state.actions[k].group || "Other") === g; });
+        if (!inGroup.length) return;
+        var warn = inGroup.some(function (k) { return isWarn(state.status[k]); });
+        var det = document.createElement("details");
+        det.className = "kb-group";
+        det.open = warn || open.indexOf(g) >= 0 || inGroup.indexOf(recording) >= 0;
+        var sum = document.createElement("summary");
+        var title = document.createElement("span");
+        title.textContent = g;
+        var list = document.createElement("span");
+        list.className = "kb-group__keys" + (warn ? " kb-group__keys--warn" : "");
+        list.textContent = inGroup.map(function (k) { return pretty(state.binds[k]); }).join(" · ");
+        sum.appendChild(title);
+        sum.appendChild(list);
+        det.appendChild(sum);
+        var grid = document.createElement("div");
+        grid.className = "kb-rows";
+        det.appendChild(grid);
+        det.addEventListener("toggle", function () {
+          var now = readOpen().filter(function (x) { return x !== g; });
+          if (det.open) now.push(g);
+          writeOpen(now);
+        });
+        rowsEl.appendChild(det);
+        inGroup.forEach(function (k) { renderRow(grid, k); });
+      });
+    }
+    function renderRow(grid, k) {
+      {
         var a = state.actions[k];
         var label = document.createElement("span");
         label.textContent = a.label;
@@ -1161,14 +1222,14 @@
         off.addEventListener("click", function () { save(k, ""); });
         var st = document.createElement("p");
         var code = state.status[k] || "off";
-        st.className = "kb-status" + (code === "taken" || code === "duplicate" || code === "invalid" ? " kb-status--warn" : "");
+        st.className = "kb-status" + (isWarn(code) ? " kb-status--warn" : "");
         st.textContent = STATUS[code] || "";
-        rowsEl.appendChild(label);
-        rowsEl.appendChild(key);
-        rowsEl.appendChild(def);
-        rowsEl.appendChild(off);
-        if (st.textContent) rowsEl.appendChild(st);
-      });
+        grid.appendChild(label);
+        grid.appendChild(key);
+        grid.appendChild(def);
+        grid.appendChild(off);
+        if (st.textContent) grid.appendChild(st);
+      }
     }
     function load() {
       return ee.getKeybinds().then(function (r) { state = r; render(); }).catch(function () {});

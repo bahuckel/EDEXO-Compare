@@ -264,10 +264,11 @@ export interface NotableBodyInfo {
  * come straight off the store, and they cost nothing to build — so they go out on every poll.
  */
 /**
- * A command for the app pages from a key bind (owner, 2026-10-02): step the body tabs back or on.
- * Sent over the socket as `{ type: "uiCommand", payload }` to the app channel only.
+ * A command for the app pages from a key bind (owner, 2026-10-02): step the body tabs back or on, or
+ * (2026-10-06) the main window's screen tabs. Sent over the socket as `{ type: "uiCommand", payload }`
+ * to the app channel only.
  */
-export type UiCommand = { cmd: "bodyTab"; dir: -1 | 1 };
+export type UiCommand = { cmd: "bodyTab"; dir: -1 | 1 } | { cmd: "screenTab"; dir: -1 | 1 };
 
 export interface ExoLiveDTO {
   exoOrganicOverlay: ExoOrganicOverlayDTO | null;
