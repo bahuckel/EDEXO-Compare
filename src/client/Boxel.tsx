@@ -640,21 +640,51 @@ export function BoxelScreen({
     The system on the main screen reads its D-Scan line as it stands (owner, 2026-10-05: "it stays at
     5/24 … it should get the same data as the main screen"): the server has no system map for it.
   */
+  /*
+    By its figures, not the object: every snapshot (about once a second) brings a new dScan object, and
+    keyed on that the whole table was rebuilt, filtered, sorted and drawn again each time — a quarter
+    of a second for one 1,867-system boxel, the "unresponsive" Boxels screen (owner, 2026-10-06).
+  */
+  const dScanName = dScan?.systemName.toLowerCase() ?? null;
+  const dScanFound = dScan?.found ?? 0;
+  const dScanTotal = dScan?.total ?? 0;
   const allRows = useMemo(() => {
     const rows = table?.rows ?? [];
-    if (!dScan) return rows;
-    const name = dScan.systemName.toLowerCase();
+    if (dScanName == null) return rows;
     return rows.map((r) =>
-      r.flown && r.name.toLowerCase() === name
-        ? { ...r, bodies: { scanned: dScan.found, total: dScan.total } }
+      r.flown && r.name.toLowerCase() === dScanName
+        ? { ...r, bodies: { scanned: dScanFound, total: dScanTotal } }
         : r,
     );
-  }, [table, dScan]);
+  }, [table, dScanName, dScanFound, dScanTotal]);
   const rows = useMemo(() => {
     const keep = boxelRowFilter(filterKind, filterQuery);
     return allRows.filter((r) => keep(r) && (!notFlownOnly || (!r.flown && !r.skipped)));
   }, [allRows, filterKind, filterQuery, notFlownOnly]);
   const suggestions = useMemo(() => boxelFilterSuggestions(filterKind, allRows), [filterKind, allRows]);
+  /*
+    The same element while its inputs stand, so a snapshot that changes nothing in the table (one comes
+    about every second in game) does not draw its rows again (owner, 2026-10-06).
+  */
+  const emptyText = table ? (allRows.length ? "No systems match." : "No systems.") : "Reading…";
+  const tableEl = useMemo(
+    () => (
+      <Table
+        rows={rows}
+        columns={shownColumns}
+        layout={narrow ? "cards" : "list"}
+        sort={sort}
+        onSort={(key) =>
+          setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }))
+        }
+        rowKey={(r) => `${r.boxelId}:${r.n}`}
+        csvName="boxels"
+        empty={emptyText}
+        resetKey={`${idsKey}|${filterKind}|${filterQuery}|${notFlownOnly}`}
+      />
+    ),
+    [rows, shownColumns, narrow, sort, emptyText, idsKey, filterKind, filterQuery, notFlownOnly],
+  );
   const kindDef = BOXEL_FILTER_KINDS.find((k) => k.value === filterKind)!;
 
   return (
@@ -1272,19 +1302,7 @@ export function BoxelScreen({
               </div>
             ) : null}
             {ticked.length ? (
-              <Table
-                rows={rows}
-                columns={shownColumns}
-                layout={narrow ? "cards" : "list"}
-                sort={sort}
-                onSort={(key) =>
-                  setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }))
-                }
-                rowKey={(r) => `${r.boxelId}:${r.n}`}
-                csvName="boxels"
-                empty={table ? (allRows.length ? "No systems match." : "No systems.") : "Reading…"}
-                resetKey={`${idsKey}|${filterKind}|${filterQuery}|${notFlownOnly}`}
-              />
+              tableEl
             ) : saved?.length ? (
               <p className="dim disc-empty">Tick a boxel in the side menu to list its systems.</p>
             ) : null}
