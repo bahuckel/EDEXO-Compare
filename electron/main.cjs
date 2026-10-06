@@ -210,6 +210,12 @@ function openAppUiWindow(iconForChild) {
   const width = saved?.width ?? Math.min(1480, Math.round(area.width * 0.9));
   const height = saved?.height ?? Math.min(940, Math.round(area.height * 0.9));
   const preloadPath = path.join(__dirname, "preload.cjs");
+  /*
+    The app's own title bar (owner, 2026-10-06, Tab view): no Windows caption, Windows' own minimise /
+    maximise / close drawn over the page (titleBarOverlay), and the page's tab strip as the bar you drag.
+    The page knows from --edexo-custom-titlebar (preload.cjs). Windows only: elsewhere the frame stays.
+  */
+  const customTitleBar = process.platform === "win32";
   const win = new BrowserWindow({
     width,
     height,
@@ -220,7 +226,11 @@ function openAppUiWindow(iconForChild) {
     autoHideMenuBar: true,
     title: "ED Exo Compare",
     icon: iconForChild,
+    ...(customTitleBar
+      ? { titleBarStyle: "hidden", titleBarOverlay: { color: "#07060a", symbolColor: "#f0a050", height: 34 } }
+      : {}),
     webPreferences: {
+      additionalArguments: customTitleBar ? ["--edexo-custom-titlebar"] : [],
       // No spell-check: Electron can fetch its dictionaries from Google (owner, 2026-09-29).
       spellcheck: false,
       contextIsolation: true,

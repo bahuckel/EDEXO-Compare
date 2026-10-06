@@ -3,6 +3,11 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("edexoElectron", {
+  /**
+   * This is the app window with EDEXO's own title bar (main.cjs: no Windows caption, the window
+   * buttons drawn over the page): the page's tab strip is the bar to drag the window by.
+   */
+  customTitleBar: process.argv.includes("--edexo-custom-titlebar"),
   /** @returns {Promise<{ opened: boolean; paths?: string[]; error?: string }>} */
   toggleFootOverlay: () => ipcRenderer.invoke("edexo:toggle-foot-overlay"),
   /**

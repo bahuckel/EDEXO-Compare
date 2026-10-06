@@ -186,3 +186,43 @@ html.tab-view {
   position: absolute;
   inset: 0;
 }
+
+/* ---- The desktop app's own title bar (electron/main.cjs titleBarOverlay) --------------------------
+   The strip is the bar: its empty part drags the window, its tabs and buttons stay clickable, and it
+   leaves room on the right for Windows' minimise / maximise / close (the overlay is 34 px tall). */
+html.custom-title-bar {
+  --tab-strip-h: 34px;
+}
+html.custom-title-bar .tab-strip {
+  -webkit-app-region: drag;
+  padding-right: calc(100vw - env(titlebar-area-width, 100vw) + 0.4rem);
+}
+html.custom-title-bar .tab-strip__tab,
+html.custom-title-bar .tab-strip__add,
+html.custom-title-bar .tab-strip__menu {
+  -webkit-app-region: no-drag;
+}
+.tab-strip--title {
+  align-items: center;
+}
+.tab-strip__title {
+  padding-left: 0.4rem;
+  color: var(--accent);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+/* Full-window pop-ups (tab view off) and the photo lightbox start below the bar: under it, their top
+   buttons would drag the window instead of being clicked. */
+html.custom-title-bar .modal-backdrop,
+html.custom-title-bar .boxel-screen,
+html.custom-title-bar .photo-lightbox-backdrop {
+  top: var(--tab-strip-h);
+}
+html.custom-title-bar .tab-pane--screen > .modal-backdrop {
+  top: 0;
+}
+html.custom-title-bar .photo-lightbox-close {
+  top: calc(var(--tab-strip-h) + 0.75rem);
+}

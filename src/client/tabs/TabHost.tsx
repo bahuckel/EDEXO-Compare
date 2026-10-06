@@ -162,6 +162,22 @@ function AddMenu() {
   );
 }
 
+/** The desktop app window draws its own title bar (electron/main.cjs, preload.cjs). */
+export const CUSTOM_TITLE_BAR =
+  typeof window !== "undefined" &&
+  (window as unknown as { edexoElectron?: { customTitleBar?: boolean } }).edexoElectron?.customTitleBar ===
+    true;
+
+/** Tab view off in the desktop app: the title bar alone, to drag the window by. */
+function TitleBar() {
+  return (
+    <div className="tab-strip tab-strip--title">
+      <span className="tab-strip__title">ED Exo Compare</span>
+      <span className="tab-strip__drag" aria-hidden="true" />
+    </div>
+  );
+}
+
 export function TabStrip() {
   const st = useTabState();
   return (
@@ -180,7 +196,8 @@ export function TabHost({ children }: { children: ReactNode }) {
   const st = useTabState();
   // Scrolling something into view leaves room for the sticky strip (tabs.css html.tab-view).
   useEffect(() => {
-    document.documentElement.classList.toggle("tab-view", st.on);
+    document.documentElement.classList.toggle("tab-view", st.on || CUSTOM_TITLE_BAR);
+    document.documentElement.classList.toggle("custom-title-bar", CUSTOM_TITLE_BAR);
   }, [st.on]);
   // Ctrl+Tab / Ctrl+Shift+Tab step through the tabs; Ctrl+W closes a screen tab.
   useEffect(() => {
@@ -201,7 +218,15 @@ export function TabHost({ children }: { children: ReactNode }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [st.on]);
-  if (!st.on) return <>{children}</>;
+  if (!st.on)
+    return CUSTOM_TITLE_BAR ? (
+      <>
+        <TitleBar />
+        {children}
+      </>
+    ) : (
+      <>{children}</>
+    );
   return (
     <>
       <TabStrip />
