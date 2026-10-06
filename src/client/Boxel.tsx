@@ -41,7 +41,7 @@ const NOTABLE_LABEL = Object.fromEntries(NOTABLE_KINDS.map((k) => [k.key, k.labe
 const FROM_TITLE = {
   index: "From the galaxy index (EDSM / Spansh records)",
   lookup: "From Spansh (Look up)",
-  route: "From a route you plotted (NavRoute.json): the main star's class only",
+  route: "From a route you plotted or a system you targeted in the galaxy map: the main star's class only",
 } as const;
 
 /** A fact from the galaxy index or a Spansh look-up (not your own scan) reads dimmer, and says so on hover. */
@@ -377,7 +377,7 @@ export function BoxelScreen({
           ) : r.skipped ? (
             <span className="boxel-skipped">skipped</span>
           ) : r.onRoute ? (
-            <span className="dim" title="Not flown yet: a route you plotted passes through it, so it exists">
+            <span className="dim" title="Not flown yet: a route you plotted passes through it, or you targeted it in the galaxy map, so it exists">
               on route
             </span>
           ) : (
@@ -925,7 +925,7 @@ export function BoxelScreen({
                   </span>
                 ) : null}
                 {allRows.some((r) => r.onRoute) ? (
-                  <span title="Not flown, on a route you plotted (NavRoute.json)">
+                  <span title="Not flown: on a route you plotted, or targeted in the galaxy map">
                     <strong>{allRows.filter((r) => r.onRoute).length}</strong> on your routes
                   </span>
                 ) : null}

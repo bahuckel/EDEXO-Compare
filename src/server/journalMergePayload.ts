@@ -93,8 +93,9 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
       left them empty where a cold one had them (plan 2.4, O-19).
   28: `systemVisitedAt`, `systemStarClass` — the NavRoute finder's Previous list (when, which star).
   29: body `geologicalSignals` and `geologyLogged` — the Planetary body card's Volcanism field.
+  30: `targetedSystems` — every FSDTarget (address, name, star class), for the Boxels screen.
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 29;
+export const JOURNAL_MERGE_CACHE_FORMAT = 30;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -109,6 +110,8 @@ export type JournalMergeCachePayload = {
   /** Format 28: last arrival per system, and the star class its jump named. */
   systemVisitedAt?: [number, string][];
   systemStarClass?: [number, string][];
+  /** Format 30: systems targeted in the galaxy map: address, name, star class. */
+  targetedSystems?: [number, string, string][];
   bodies: [string, BodyExoState][];
   explorationScans: [string, ExplorationScanRecord][];
   /**

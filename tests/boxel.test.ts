@@ -141,6 +141,22 @@ describe("a saved boxel follows the jumps (owner, 2026-10-05)", () => {
   });
 });
 
+describe("systems targeted in the galaxy map (auto-boxel detector, 2026-10-06)", () => {
+  it("keeps every FSDTarget and a boxel-named Status.json destination, not a body", async () => {
+    const { GameStateStore } = await import("../src/server/gameState.js");
+    const s = new GameStateStore();
+    s.apply({ timestamp: "2026-10-06T10:00:00Z", event: "FSDTarget", Name: "Eol Prou AB-C d1-40", SystemAddress: 7, StarClass: "F" } as never);
+    s.apply({ timestamp: "2026-10-06T10:01:00Z", event: "FSDTarget", Name: "Eol Prou AB-C d1-41", SystemAddress: 8, StarClass: "K" } as never);
+    s.applyStatusDestination({ systemAddress: 9, bodyId: 0, name: "Eol Prou AB-C d1-44" });
+    s.applyStatusDestination({ systemAddress: 10, bodyId: 3, name: "Eol Prou AB-C d1-45 A 1" });
+    expect([...s.targetedSystems.values()]).toEqual([
+      { name: "Eol Prou AB-C d1-40", starClass: "F" },
+      { name: "Eol Prou AB-C d1-41", starClass: "K" },
+      { name: "Eol Prou AB-C d1-44", starClass: "" },
+    ]);
+  });
+});
+
 describe("routed systems in the Boxels table (auto-boxel detector, 2026-10-06)", () => {
   it("marks a system on a plotted route, with NavRoute's star class when nothing better is known", async () => {
     const { boxelTable } = await import("../src/server/boxel.js");

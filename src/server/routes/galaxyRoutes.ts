@@ -368,6 +368,15 @@ export function registerGalaxyRoutes(
       });
     },
   });
+  /*
+    Systems known to exist without being flown (auto-boxel detector, owner 2026-10-06): every route he
+    plotted (the NavRoute finder) and every system he targeted in the galaxy map (journals' FSDTarget,
+    Status.json's destination).
+  */
+  const sightings = (store: GameStateStore | null) => [
+    ...navRouteLog().systems,
+    ...(store ? [...store.targetedSystems.values()] : []),
+  ];
   const savedList = () => {
     const store = opts.getJournalStore?.() ?? null;
     return {
@@ -376,7 +385,7 @@ export function registerGalaxyRoutes(
         store ? store.visitedSystems.entries() : [],
         store ? boxelStats(store) : undefined,
         store?.currentSystem ?? null,
-        navRouteLog().systems,
+        sightings(store),
       ),
     };
   };
@@ -439,7 +448,7 @@ export function registerGalaxyRoutes(
         journal: store ? (addr) => boxelJournalFacts(store, addr) : undefined,
         visitedAt: (addr) => store?.systemVisitedAt.get(addr) ?? null,
         lookup: (prefix) => lookups.get(prefix),
-        routed: navRouteLog().systems,
+        routed: sightings(store),
       }),
     });
   });

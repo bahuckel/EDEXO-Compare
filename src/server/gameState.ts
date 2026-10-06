@@ -73,6 +73,7 @@ import {
 } from "../shared/codexLog.js";
 import { GEOLOGY_KEY, isLegacyPlantKey } from "../shared/achievements.js";
 import { regionForSystem } from "./regionMapData.js";
+import { parseBoxel } from "../shared/boxel.js";
 import { JOURNAL_MERGE_CACHE_FORMAT } from "./journalMergePayload.js";
 import { bodyKey, systemAddressOfBodyKey } from "../shared/bodyKey.js";
 import type {
@@ -446,6 +447,12 @@ export class GameStateStore {
   viewingSystemAddress: number | null = null;
   /** Systems seen in the merged journal (jumps, Location, FSS complete) for picker / search. */
   readonly visitedSystems = new Map<number, string>();
+  /**
+   * Systems he targeted in the galaxy map (`FSDTarget`, every one in the journals): name and the star
+   * class the game gave. They exist, so a saved boxel reaches at least that far (auto-boxel detector,
+   * owner 2026-10-06).
+   */
+  readonly targetedSystems = new Map<number, { name: string; starClass: string }>();
   /**
    * The NavRoute finder's "Previous" list (owner, 2026-10-04): when each system was last arrived in
    * (jump, carrier jump or a load there), and its star class as the jump to it named it (StartJump).
@@ -1163,6 +1170,9 @@ export class GameStateStore {
           dest.name !== prev.name));
     if (!changed) return false;
     this.statusDestination = dest;
+    // A system picked as destination in the galaxy map names the system itself; it exists.
+    if (dest && dest.systemAddress && parseBoxel(dest.name)?.index != null && !this.targetedSystems.has(dest.systemAddress))
+      this.targetedSystems.set(dest.systemAddress, { name: dest.name, starClass: "" });
     if (dest) this.requestUiAutoSelectBody(dest.systemAddress, dest.bodyId);
     return true;
   }
@@ -1700,6 +1710,7 @@ export class GameStateStore {
     this.visitedSystems.clear();
     this.systemVisitedAt.clear();
     this.systemStarClass.clear();
+    this.targetedSystems.clear();
     this.visitedSystemNames = null;
     this.lastEventIso = null;
     this.organicAnalyseByKey.clear();
@@ -2432,6 +2443,7 @@ export class GameStateStore {
     const addr = typeof line.SystemAddress === "number" ? line.SystemAddress : 0;
     const starClass = typeof line.StarClass === "string" ? line.StarClass : "";
     if (name) this.fsdTarget = { starSystem: name, systemAddress: addr, starClass, at: ts };
+    if (name && addr) this.targetedSystems.set(addr, { name, starClass });
     return;
   }
 
@@ -3703,6 +3715,7 @@ export class GameStateStore {
       visitedSystems: [...this.visitedSystems.entries()],
       systemVisitedAt: [...this.systemVisitedAt.entries()],
       systemStarClass: [...this.systemStarClass.entries()],
+      targetedSystems: [...this.targetedSystems.entries()].map(([a, t]) => [a, t.name, t.starClass]),
       bodies: [...this.bodies.entries()],
       explorationScans: [...this.explorationScans.entries()],
       soldExplorationScans: [...this.soldExplorationScans.entries()],
@@ -3797,6 +3810,9 @@ export class GameStateStore {
     for (const [a, t] of data.systemVisitedAt ?? []) if (typeof a === "number" && typeof t === "string") this.systemVisitedAt.set(a, t);
     this.systemStarClass.clear();
     for (const [a, c] of data.systemStarClass ?? []) if (typeof a === "number" && typeof c === "string") this.systemStarClass.set(a, c);
+    this.targetedSystems.clear();
+    for (const [a, n, c] of data.targetedSystems ?? [])
+      if (typeof a === "number" && typeof n === "string") this.targetedSystems.set(a, { name: n, starClass: typeof c === "string" ? c : "" });
     this.visitedSystemNames = null;
     for (const [k, v] of data.bodies) this.bodies.set(k, v);
     this.bodyKeysBySystem = null;
