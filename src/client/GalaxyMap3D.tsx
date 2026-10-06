@@ -54,6 +54,8 @@ const dist = (a: { x: number; y: number; z: number }, b: { x: number; y: number;
 
 type Colour = 0 | 1 | 2;
 type Drawer = "none" | "view" | "layers" | "search" | "filter" | "navroute" | "codex" | "targets";
+/** A Spansh name hit with its coordinates (`/api/system/spansh-search`). */
+type SpanshFindHit = { systemAddress: number; starSystem: string; x?: number; y?: number; z?: number };
 type MineRow = GalaxyMineDTO["systems"][number];
 
 /** The commander's systems: waiting for them amber, done (DSS or plants on foot) green, visited grey. */
@@ -756,10 +758,65 @@ export function GalaxyMap3D() {
         .catch(() => {});
     }
   }, [findText, extraData]);
+  /*
+    Spansh (owner, 2026-10-06: "add a spansh or EDSM API query to the search there similar to the main
+    UI, the user searches for a system, it gets fetched and placed where it should be"): a system the map
+    has no point for is asked of Spansh by name; picking it puts a marker at its coordinates.
+  */
+  const [spanshFind, setSpanshFind] = useState<{ q: string; hits: SpanshFindHit[]; busy: boolean }>({
+    q: "",
+    hits: [],
+    busy: false,
+  });
+  const [spanshPicked, setSpanshPicked] = useState<Map<string, SpanshFindHit>>(new Map());
+  useEffect(() => {
+    const q = findText.trim();
+    if (q.length < 3) {
+      setSpanshFind((f) => (f.q === "" ? f : { q: "", hits: [], busy: false }));
+      return;
+    }
+    let live = true;
+    setSpanshFind({ q, hits: [], busy: true });
+    const t = setTimeout(() => {
+      fetch(`/api/system/spansh-search?q=${encodeURIComponent(q)}`)
+        .then((r) => (r.ok ? (r.json() as Promise<{ systems?: SpanshFindHit[] }>) : null))
+        .then((d) => {
+          if (live) setSpanshFind({ q, hits: (d?.systems ?? []).filter((h) => h.x != null), busy: false });
+        })
+        .catch(() => live && setSpanshFind({ q, hits: [], busy: false }));
+    }, 600);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [findText]);
+  useEffect(() => {
+    engine.current?.setMarkers(
+      "spansh",
+      [...spanshPicked.values()].map((h) => ({
+        id: String(h.systemAddress),
+        x: h.x!,
+        y: h.y!,
+        z: h.z!,
+        color: SEARCH_COLOUR,
+        size: 10,
+      })),
+      4,
+    );
+  }, [spanshPicked]);
   const findLayerHits = useMemo(() => {
     const q = findText.trim().toLowerCase();
     if (q.length < 2) return [];
-    const hits: { kind: GalaxyLayerKind; id: string; label: string; what: string; x: number; y: number; z: number }[] = [];
+    const hits: {
+      kind: GalaxyLayerKind;
+      id: string;
+      label: string;
+      system: string;
+      what: string;
+      x: number;
+      y: number;
+      z: number;
+    }[] = [];
     for (const l of GALAXY_LAYERS) {
       const d = extraData[l.kind];
       if (!d) continue;
@@ -767,7 +824,8 @@ export function GalaxyMap3D() {
         if (hits.length >= 8) return;
         const system = layerPointText(d, p).system;
         if (!p[3].toLowerCase().includes(q) && !system.toLowerCase().includes(q)) return;
-        hits.push({ kind: l.kind, id: String(i), label: p[3], what: l.label, x: p[0], y: p[1], z: p[2] });
+        const where = { x: p[0], y: p[1], z: p[2] };
+        hits.push({ kind: l.kind, id: String(i), label: p[3], system: system || p[3], what: l.label, ...where });
       });
     }
     return hits;
@@ -886,6 +944,15 @@ export function GalaxyMap3D() {
         </>
       );
     }
+    if (hover.layer === "spansh") {
+      const h = spanshPicked.get(hover.id);
+      return h ? (
+        <>
+          <strong>{h.starSystem}</strong>
+          <em>From Spansh · click for details</em>
+        </>
+      ) : null;
+    }
     if (hover.layer === "search") {
       const h = searchHits.get(hover.id);
       return h ? (
@@ -978,6 +1045,39 @@ export function GalaxyMap3D() {
         </div>
       );
     }
+    if (selection.layer === "spansh") {
+      const h = spanshPicked.get(selection.id);
+      if (!h) return null;
+      const at = { x: h.x!, y: h.y!, z: h.z! };
+      return (
+        <div>
+          <h2 className="g3d-panel__name">
+            {h.starSystem} <CopySystemButton system={h.starSystem} />
+          </h2>
+          <p className="g3d-panel__meta">From Spansh · not in the galaxy index (no biology recorded there)</p>
+          {route?.position ? <p className="dim">{fmtLy(dist(route.position, at))} from your ship</p> : null}
+          <p className="g3d-panel__bm">
+            <SystemBookmarkButton system={h.starSystem} systemAddress={h.systemAddress} pos={at} />
+          </p>
+          <p>
+            <button
+              type="button"
+              className="g3d-btn"
+              title="Open it on the main screen: its bodies are fetched from Spansh"
+              onClick={() =>
+                void fetch("/api/ui/view-system", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ systemAddress: h.systemAddress, starSystem: h.starSystem }),
+                })
+              }
+            >
+              Show on the main screen
+            </button>
+          </p>
+        </div>
+      );
+    }
     if (selection.layer === "search") {
       const h = searchHits.get(selection.id);
       return <IndexRecord addr={selection.id} heading fallbackName={h?.starSystem} />;
@@ -987,8 +1087,19 @@ export function GalaxyMap3D() {
   })();
 
   const ship = route?.position;
+  // Spansh hits the map already shows (as a system or a layer point) are not offered twice.
+  const shownNames = new Set([
+    ...(find?.systems ?? []).map((s) => s.name.toLowerCase()),
+    ...findLayerHits.map((h) => h.system.toLowerCase()),
+  ]);
+  const spanshShown = spanshFind.hits.filter((h) => !shownNames.has(h.starSystem.toLowerCase())).slice(0, 6);
   const hasFind =
-    findOpen && (findRegions.length > 0 || findLayerHits.length > 0 || (find && (find.sectors.length || find.systems.length)));
+    findOpen &&
+    (findRegions.length > 0 ||
+      findLayerHits.length > 0 ||
+      spanshShown.length > 0 ||
+      spanshFind.busy ||
+      (find && (find.sectors.length || find.systems.length)));
 
   return (
     <div className="g3d-screen" ref={screenRef}>
@@ -1504,6 +1615,28 @@ export function GalaxyMap3D() {
                   </button>
                 </li>
               ))}
+              {spanshShown.map((h) => (
+                <li key={`s${h.systemAddress}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSpanshPicked((m) => new Map(m).set(String(h.systemAddress), h));
+                      go({ x: h.x!, y: h.y!, z: h.z! }, 400, {
+                        kind: "marker",
+                        layer: "spansh",
+                        id: String(h.systemAddress),
+                        x: h.x!,
+                        y: h.y!,
+                        z: h.z!,
+                      });
+                    }}
+                  >
+                    <span>{h.starSystem}</span>
+                    <em>Spansh</em>
+                  </button>
+                </li>
+              ))}
+              {spanshFind.busy ? <li className="g3d-find__more">Asking Spansh…</li> : null}
               {find?.partial ? <li className="g3d-find__more">Type more of the name for the rest</li> : null}
             </ul>
           ) : null}

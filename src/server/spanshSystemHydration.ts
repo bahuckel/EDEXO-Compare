@@ -27,8 +27,7 @@ function pickNum(v: unknown): number | undefined {
   return typeof v === "number" && Number.isFinite(v) ? v : undefined;
 }
 
-export type SpanshSearchResult =
-  { ok: true; systems: { systemAddress: number; starSystem: string }[] } | { ok: false; error: string };
+export type SpanshSearchResult = { ok: true; systems: SpanshSystemHit[] } | { ok: false; error: string };
 
 export async function searchSpanshSystemsByName(query: string, maxResults = 25): Promise<SpanshSearchResult> {
   const q = query.trim();
@@ -55,21 +54,34 @@ export async function searchSpanshSystemsByName(query: string, maxResults = 25):
   return { ok: true, systems: parseSpanshNameHits(data, maxResults) };
 }
 
+/** A Spansh name hit; the coordinates come along when Spansh gives them (the galaxy map places it). */
+export interface SpanshSystemHit {
+  systemAddress: number;
+  starSystem: string;
+  x?: number;
+  y?: number;
+  z?: number;
+}
+
 /** Exported for tests: the completion payload is `{ min_max: [{ id64, name, x, y, z }] }`. */
-export function parseSpanshNameHits(
-  data: unknown,
-  maxResults = 25,
-): { systemAddress: number; starSystem: string }[] {
+export function parseSpanshNameHits(data: unknown, maxResults = 25): SpanshSystemHit[] {
   const rows = data && typeof data === "object" ? (data as Record<string, unknown>).min_max : null;
   if (!Array.isArray(rows)) return [];
-  const out: { systemAddress: number; starSystem: string }[] = [];
+  const out: SpanshSystemHit[] = [];
   for (const row of rows) {
     if (!row || typeof row !== "object") continue;
     const rec = row as Record<string, unknown>;
     const id64 = pickNum(rec.id64);
     const name = pickStr(rec.name);
     if (id64 === undefined || !name) continue;
-    out.push({ systemAddress: Math.trunc(id64), starSystem: name });
+    const x = pickNum(rec.x);
+    const y = pickNum(rec.y);
+    const z = pickNum(rec.z);
+    out.push({
+      systemAddress: Math.trunc(id64),
+      starSystem: name,
+      ...(x !== undefined && y !== undefined && z !== undefined ? { x, y, z } : {}),
+    });
     if (out.length >= maxResults) break;
   }
   return out;

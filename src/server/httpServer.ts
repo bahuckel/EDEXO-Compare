@@ -1,3 +1,4 @@
+import type { SpanshSystemHit } from "./spanshSystemHydration.js";
 import type { GreenGiantVerdict } from "../shared/greenGasGiant.js";
 import type { OwnGreenGiant } from "./galaxyLayers.js";
 import type { SavedBoxelsService } from "./savedBoxels.js";
@@ -323,7 +324,7 @@ export interface HttpServerOptions {
   searchSpanshSystems?: (
     query: string,
   ) => Promise<
-    { ok: true; systems: { systemAddress: number; starSystem: string }[] } | { ok: false; error: string }
+    { ok: true; systems: SpanshSystemHit[] } | { ok: false; error: string }
   >;
   /**
    * The statistics scan: three years of journals reduced to totals.

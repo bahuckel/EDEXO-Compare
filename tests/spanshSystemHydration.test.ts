@@ -16,8 +16,9 @@ describe("Spansh as a galaxy source", () => {
         { id64: 911372064314, name: "Traikee GL-O c6-3" },
       ],
     });
+    // The coordinates come along when Spansh gives them (the galaxy map places the hit).
     expect(hits).toEqual([
-      { systemAddress: 1735468815882, starSystem: "Traikee GL-Y c6" },
+      { systemAddress: 1735468815882, starSystem: "Traikee GL-Y c6", x: 1, y: 2, z: 3 },
       { systemAddress: 911372064314, starSystem: "Traikee GL-O c6-3" },
     ]);
     expect(parseSpanshNameHits(null)).toEqual([]);
