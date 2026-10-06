@@ -24,7 +24,13 @@ function builder() {
   const details: string[] = [];
   const index = new Map<string, number>();
   const points: GalaxyLayerDTO["points"] = [];
+  const unconfirmed: number[] = [];
   return {
+    /** A point that is a guess, not a find: drawn grey and badged "unconfirmed" on the map. */
+    addUnconfirmed(x: number, y: number, z: number, label: string, detail: string, system: string) {
+      unconfirmed.push(points.length);
+      this.add(x, y, z, label, detail, system);
+    },
     add(x: number, y: number, z: number, label: string, detail: string, system: string) {
       let i = index.get(detail);
       if (i === undefined) {
@@ -34,7 +40,13 @@ function builder() {
       }
       points.push([round(x), round(y), round(z), label, i, system === label ? "" : system]);
     },
-    done: (kind: GalaxyLayerKind, available = true): GalaxyLayerDTO => ({ kind, available, points, details }),
+    done: (kind: GalaxyLayerKind, available = true): GalaxyLayerDTO => ({
+      kind,
+      available,
+      points,
+      details,
+      ...(unconfirmed.length ? { unconfirmed } : {}),
+    }),
   };
 }
 
@@ -77,8 +89,8 @@ export function galaxyLayer(
       return v?.score != null ? [{ body, system, cls, x, y, z, v, score: v.score }] : [];
     }).sort((a, b) => b.score - a.score);
     for (const c of ranked) {
-      const detail = `Cloud ladder ${greenGiantScoreText(c.score)} · ${shortClass(c.cls)} · ${c.v.why} · not confirmed`;
-      out.add(c.x, c.y, c.z, c.body, detail, c.system);
+      const detail = `Cloud ladder ${greenGiantScoreText(c.score)} · ${shortClass(c.cls)} · ${c.v.why}`;
+      out.addUnconfirmed(c.x, c.y, c.z, c.body, detail, c.system);
     }
     return out.done(kind);
   }

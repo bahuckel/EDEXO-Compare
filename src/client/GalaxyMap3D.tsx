@@ -39,7 +39,14 @@ import { regionOutlines, type RegionOutlines } from "@shared/regionBorders.js";
 import { regionIndexForCoords, regionJoinKey, type RegionMapData } from "@shared/regionMap.js";
 import type { GalaxyFindDTO, GalaxyMineDTO, GalaxyNextDTO, GalaxyRouteDTO } from "@shared/types";
 import type { CodexMapKind, CodexMapRegionDTO, CodexMapRegionsDTO, CodexMapSystemDTO } from "@shared/dto/codexMap.js";
-import { GALAXY_LAYERS, layerPointText, type GalaxyLayerDTO, type GalaxyLayerKind } from "@shared/galaxyLayers.js";
+import {
+  GALAXY_LAYERS,
+  layerPointText,
+  UNCONFIRMED_COLOUR,
+  type GalaxyLayerDTO,
+  type GalaxyLayerKind,
+} from "@shared/galaxyLayers.js";
+import { BODY_TRAITS, STAR_CLASSES } from "@shared/galaxyTraits.js";
 import { isBool, usePersistedState } from "./usePersistedState";
 import { Tooltip } from "./ui/Tooltip";
 import { G3D_HELP, G3D_TABS, G3dIcon, MenuHead, MenuRow, MenuToggle } from "./galaxy3d/G3dMenu";
@@ -402,9 +409,14 @@ export function GalaxyMap3D() {
       if (!d) continue;
       const name = `x-${l.kind}`;
       if (!e.hasMarkerLayer(name)) {
+        const guess = new Set(d.unconfirmed ?? []);
         e.setMarkers(
           name,
-          d.points.map((p, i) => ({ id: String(i), x: p[0], y: p[1], z: p[2], color: l.colour, size: l.size })),
+          d.points.map((p, i) =>
+            guess.has(i)
+              ? { id: String(i), x: p[0], y: p[1], z: p[2], color: UNCONFIRMED_COLOUR, size: l.size - 2 }
+              : { id: String(i), x: p[0], y: p[1], z: p[2], color: l.colour, size: l.size },
+          ),
           l.kind === "bookmarks" ? 3 : 1,
         );
       }
@@ -418,7 +430,55 @@ export function GalaxyMap3D() {
     const d = extraData[kind];
     const p = d?.points[Number(id)];
     const meta = GALAXY_LAYERS.find((l) => l.kind === kind);
-    return d && p && meta ? { p, meta, ...layerPointText(d, p) } : null;
+    const unconfirmed = !!d?.unconfirmed?.includes(Number(id));
+    return d && p && meta ? { p, meta, unconfirmed, ...layerPointText(d, p) } : null;
+  };
+
+  /*
+    Why a system dot is lit (owner, 2026-10-06: "if I choose to see O-type stars, I click on a dot …
+    someone running multiple layers, it might be useful if the side card tells him why"): the Filter it
+    matches, and every switched-on layer with a point on it.
+  */
+  const filterTerms = (): string => {
+    const star = (k: string) => STAR_CLASSES.find((t) => t.key === k)?.label ?? k;
+    const body = (k: string) => BODY_TRAITS.find((t) => t.key === k)?.label ?? k;
+    const terms = [
+      ...filter.genera,
+      ...filter.species,
+      ...filter.mainStars.map((k) => `main star ${star(k)}`),
+      ...filter.stars.map((k) => `a ${star(k)} star`),
+      ...filter.planets.map(body),
+      ...filter.features.map(body),
+    ];
+    return terms.length > 4 ? `${terms.slice(0, 4).join(", ")} +${terms.length - 4}` : terms.join(", ");
+  };
+  const whyLit = (s: { ordinal: number; x: number; y: number; z: number }) => {
+    const lines: { text: string; unconfirmed?: boolean }[] = [];
+    const fa = filterAnswer.current;
+    if (fa && ((fa.bits[s.ordinal >> 3] ?? 0) >> (s.ordinal & 7)) & 1)
+      lines.push({ text: `Matches your filter: ${filterTerms()}` });
+    for (const l of GALAXY_LAYERS) {
+      const d = extraData[l.kind];
+      if (!extraOn[l.kind] || !d) continue;
+      const guess = new Set(d.unconfirmed ?? []);
+      d.points.forEach((p, i) => {
+        if (Math.abs(p[0] - s.x) > 0.6 || Math.abs(p[1] - s.y) > 0.6 || Math.abs(p[2] - s.z) > 0.6) return;
+        const { detail } = layerPointText(d, p);
+        lines.push({
+          text: `${l.label}: ${p[3]}${detail ? ` — ${detail}` : ""}`,
+          unconfirmed: guess.has(i),
+        });
+      });
+    }
+    return lines.length ? (
+      <ul className="g3d-why" aria-label="Why it is lit">
+        {lines.map((x, i) => (
+          <li key={i}>
+            {x.unconfirmed ? <span className="g3d-unconfirmed">unconfirmed</span> : null} {x.text}
+          </li>
+        ))}
+      </ul>
+    ) : null;
   };
 
   // The commander's layer, with the "waiting at least" threshold: below it a waiting system is grey.
@@ -926,6 +986,7 @@ export function GalaxyMap3D() {
       return (
         <>
           <strong>{xp.p[3]}</strong>
+          {xp.unconfirmed ? <span className="g3d-unconfirmed">Unconfirmed candidate</span> : null}
           {xp.detail ? <span>{xp.detail}</span> : null}
           <em>{xp.meta.label} · click for details</em>
         </>
@@ -989,7 +1050,13 @@ export function GalaxyMap3D() {
 
   const panel = (() => {
     if (!selection) return null;
-    if (selection.kind === "index") return <IndexRecord ordinal={selection.ordinal} heading />;
+    if (selection.kind === "index")
+      return (
+        <>
+          <IndexRecord ordinal={selection.ordinal} heading />
+          {whyLit(selection)}
+        </>
+      );
     if (selection.kind === "sector") {
       return (
         <SectorRecord
@@ -1007,6 +1074,12 @@ export function GalaxyMap3D() {
         <div>
           <h2 className="g3d-panel__name">{xs.p[3]}</h2>
           <p className="g3d-panel__meta">{xs.meta.label}</p>
+          {xs.unconfirmed ? (
+            <p className="g3d-unconfirmed g3d-unconfirmed--block">
+              Unconfirmed candidate — the model&apos;s guess from Spansh data. Nobody has reported it green in
+              the game yet: go and look.
+            </p>
+          ) : null}
           {xs.detail ? <p className="g3d-panel__note">{xs.detail}</p> : null}
           {xs.system ? (
             <>
@@ -1702,6 +1775,12 @@ export function GalaxyMap3D() {
           <span className="g3d-legend">
             You: <i className="g3d-dot g3d-dot--waiting" /> waiting <i className="g3d-dot g3d-dot--done" /> done{" "}
             <i className="g3d-dot g3d-dot--visited" /> visited
+          </span>
+        ) : null}
+        {legendOn && gggOn ? (
+          <span className="g3d-legend">
+            <i className="g3d-dot g3d-dot--ggg" /> green gas giant <i className="g3d-dot g3d-dot--unconfirmed" />{" "}
+            candidate, unconfirmed
           </span>
         ) : null}
         {legendOn && search ? (

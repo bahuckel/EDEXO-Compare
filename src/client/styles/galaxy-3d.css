@@ -911,6 +911,43 @@
 .g3d-dot--search {
   background: rgb(179, 128, 255);
 }
+/* The green gas giant layer: confirmed ones, and the cloud ladder's guesses (shared/galaxyLayers.ts). */
+.g3d-dot--ggg {
+  background: rgb(158, 255, 46);
+}
+.g3d-dot--unconfirmed {
+  background: rgb(199, 199, 199);
+}
+.g3d-unconfirmed {
+  display: inline-block;
+  padding: 0 0.35rem;
+  border: 1px solid var(--warn);
+  border-radius: 3px;
+  color: var(--warn);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.g3d-unconfirmed--block {
+  display: block;
+  padding: 0.3rem 0.5rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+/* Why a system dot is lit: the filter it matches, the layers on it */
+.g3d-why {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0.35rem 0.5rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-a06);
+  font-size: var(--fs-sm);
+}
+.g3d-why li + li {
+  margin-top: 0.2rem;
+}
 
 /* ---- G4: a toolbar that fits one line at 1280 px ------------------------------------------------ */
 .g3d-bar {

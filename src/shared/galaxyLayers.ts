@@ -19,7 +19,15 @@ export interface GalaxyLayerDTO {
   available: boolean;
   points: GalaxyLayerPoint[];
   details: string[];
+  /**
+   * Indexes into `points` of guesses nobody has confirmed in the game — the cloud ladder's green gas
+   * giant candidates (owner, 2026-10-06: "it should be more obvious that they are not real GGGs").
+   */
+  unconfirmed?: number[];
 }
+
+/** How an unconfirmed point is drawn: grey, a little smaller than its layer's confirmed ones. */
+export const UNCONFIRMED_COLOUR: [number, number, number] = [0.78, 0.78, 0.78];
 
 /** A point's detail line and system name, expanded. */
 export function layerPointText(d: GalaxyLayerDTO, p: GalaxyLayerPoint): { detail: string; system: string } {

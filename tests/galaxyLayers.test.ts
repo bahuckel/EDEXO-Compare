@@ -52,7 +52,9 @@ describe("galaxy map layers", () => {
     expect(scores.every((s) => s >= 1.5)).toBe(true);
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
     expect(scores[0]).toBe(5);
-    expect(ladder[0]!.detail).toMatch(/not confirmed$/);
+    // Every candidate is flagged unconfirmed (drawn grey, badged on the map), and nothing else is.
+    const flagged = new Set(d.unconfirmed);
+    expect(d.points.filter((_, i) => flagged.has(i)).map((p) => p[3]).sort()).toEqual(ladder.map((p) => p.body).sort());
     // A candidate the commander has confirmed shows as his find, once.
     const [body, system, , , , , x, y, z] = GGG_CANDIDATES[0]!;
     const withOwn = galaxyLayer("ggg", undefined, Date.now(), () => [{ x, y, z, body, system }]);
