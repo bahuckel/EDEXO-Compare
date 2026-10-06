@@ -209,6 +209,12 @@ export function BoxelLookingFor({
     oneOf("any", "AA-A"),
   );
   const [pos, setPos] = useState<{ x: number; y: number; z: number } | null>(null);
+  // Folds away (owner, 2026-10-06: the screen is crowded on a phone): closed there by default.
+  const [open, setOpen] = usePersistedState<boolean>(
+    "boxel.lookOpen",
+    typeof window === "undefined" || !window.matchMedia?.("(max-width: 760px)").matches,
+    (v): v is boolean => typeof v === "boolean",
+  );
 
   useEffect(() => {
     let live = true;
@@ -357,83 +363,97 @@ export function BoxelLookingFor({
   return (
     <section className="boxel-advice" aria-label="Looking for">
       <div className="boxel-advice__bar">
-        <span className="dim tiny">Looking for</span>
-        <Select<Group>
-          value={group}
-          ariaLabel="Kind of target"
-          options={GROUPS.map((g) => ({ value: g, label: g }))}
-          onChange={(g) => {
-            setGroup(g);
-            setTargetKey("");
-          }}
-        />
-        <Select<string>
-          value={target ? target.key : ""}
-          ariaLabel="Looking for"
-          menuMinWidth={260}
-          options={[
-            { value: "", label: "Choose…" },
-            ...options.map((t) => ({ value: t.key, label: t.label })),
-          ]}
-          onChange={setTargetKey}
-        />
-        <span className="dim tiny">in</span>
-        <span className="boxel-advice__seg" role="group" aria-label="Where">
-          {(
-            [
-              ["boxel", "This boxel"],
-              ["sector", "This sector"],
-            ] as const
-          ).map(([k, label]) => (
-            <button
-              key={k}
-              type="button"
-              className={`fdb-chip${scope === k ? " fdb-chip--on" : ""}`}
-              onClick={() => setScope(k)}
-            >
-              {label}
-            </button>
-          ))}
-        </span>
-        <span className="boxel-advice__seg" role="group" aria-label="Boxel letters">
-          {(
-            [
-              ["any", "Any letters"],
-              ["AA-A", "AA-A only"],
-            ] as const
-          ).map(([k, label]) => (
-            <button
-              key={k}
-              type="button"
-              className={`fdb-chip${letters === k ? " fdb-chip--on" : ""}`}
-              title={
-                k === "AA-A"
-                  ? "Only boxels lettered AA-A: in d to h, the sector's corner boxel"
-                  : "Every boxel"
-              }
-              onClick={() => setLetters(k)}
-            >
-              {label}
-            </button>
-          ))}
-        </span>
-        {target && ranks.length ? (
-          <span className="boxel-advice__ranks">
-            {ranks.slice(0, 4).map((r, i) => (
-              <span
-                key={r.code}
-                className={i === 0 ? "boxel-best" : "dim"}
-                title={`${r.hits.toLocaleString("en")} of ${r.systems.toLocaleString("en")} systems`}
-              >
-                {r.code} {fmt(r.rate)}
+        <button
+          type="button"
+          className="boxel-advice__toggle dim tiny"
+          aria-expanded={open}
+          title={open ? "Fold Looking for away" : "Where to fly for a star, a world, a genus or a species"}
+          onClick={() => setOpen(!open)}
+        >
+          {open ? "▾" : "▸"} Looking for
+        </button>
+        {open ? (
+          <>
+            <Select<Group>
+              value={group}
+              ariaLabel="Kind of target"
+              options={GROUPS.map((g) => ({ value: g, label: g }))}
+              onChange={(g) => {
+                setGroup(g);
+                setTargetKey("");
+              }}
+            />
+            <Select<string>
+              value={target ? target.key : ""}
+              ariaLabel="Looking for"
+              menuMinWidth={260}
+              options={[
+                { value: "", label: "Choose…" },
+                ...options.map((t) => ({ value: t.key, label: t.label })),
+              ]}
+              onChange={setTargetKey}
+            />
+            <span className="dim tiny">in</span>
+            <span className="boxel-advice__seg" role="group" aria-label="Where">
+              {(
+                [
+                  ["boxel", "This boxel"],
+                  ["sector", "This sector"],
+                ] as const
+              ).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  className={`fdb-chip${scope === k ? " fdb-chip--on" : ""}`}
+                  onClick={() => setScope(k)}
+                >
+                  {label}
+                </button>
+              ))}
+            </span>
+            <span className="boxel-advice__seg" role="group" aria-label="Boxel letters">
+              {(
+                [
+                  ["any", "Any letters"],
+                  ["AA-A", "AA-A only"],
+                ] as const
+              ).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  className={`fdb-chip${letters === k ? " fdb-chip--on" : ""}`}
+                  title={
+                    k === "AA-A"
+                      ? "Only boxels lettered AA-A: in d to h, the sector's corner boxel"
+                      : "Every boxel"
+                  }
+                  onClick={() => setLetters(k)}
+                >
+                  {label}
+                </button>
+              ))}
+            </span>
+            {target && ranks.length ? (
+              <span className="boxel-advice__ranks">
+                {ranks.slice(0, 4).map((r, i) => (
+                  <span
+                    key={r.code}
+                    className={i === 0 ? "boxel-best" : "dim"}
+                    title={`${r.hits.toLocaleString("en")} of ${r.systems.toLocaleString("en")} systems`}
+                  >
+                    {r.code} {fmt(r.rate)}
+                  </span>
+                ))}
               </span>
-            ))}
-          </span>
-        ) : target ? (
-          <span className="dim tiny">Not enough measured to rank.</span>
+            ) : target ? (
+              <span className="dim tiny">Not enough measured to rank.</span>
+            ) : null}
+          </>
         ) : null}
       </div>
-      {verdict || suggestions ? <div className="boxel-advice__out">{verdict ?? suggestions}</div> : null}
+      {open && (verdict || suggestions) ? (
+        <div className="boxel-advice__out">{verdict ?? suggestions}</div>
+      ) : null}
     </section>
   );
 }

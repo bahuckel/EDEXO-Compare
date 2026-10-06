@@ -521,3 +521,22 @@
   border-radius: var(--radius-sm);
   white-space: nowrap;
 }
+
+/* Looking for folds away (BoxelAdvice) */
+.boxel-advice__toggle {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.boxel-advice__toggle:hover {
+  color: var(--accent-bright);
+}
+/* A phone: three suggestions a list, the rest on a bigger screen (owner, 2026-10-06: crowded) */
+@media (max-width: 760px) {
+  .boxel-advice__lists li:nth-child(n + 4) {
+    display: none;
+  }
+}

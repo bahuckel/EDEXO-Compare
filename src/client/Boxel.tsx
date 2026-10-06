@@ -148,6 +148,8 @@ export function BoxelScreen({
   const [previous, setPrevious] = useState<PreviousBoxelDTO[] | null>(null);
   const [prevLimit, setPrevLimit] = useState(PREV_PAGE);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  /** The saved boxel whose Find end tools (Copy prefix, Probe, Not there) are open. */
+  const [findEndId, setFindEndId] = useState<string | null>(null);
   const [lookup, setLookup] = useState<BoxelLookupStatus | null>(null);
   const [cutAsk, setCutAsk] = useState<{ id: string; n: number } | null>(null);
   const [table, setTable] = useState<BoxelTableDTO | null>(null);
@@ -849,15 +851,29 @@ export function BoxelScreen({
                         >
                           {b.run ? "Finish run" : "Start run"}
                         </button>
-                        <button
-                          type="button"
-                          className={`fdb-chip${copied === b.prefix ? " fdb-chip--on" : ""}`}
-                          title={`Copies "${b.prefix}": paste it in the galaxy map's search to list the boxel's systems the game knows`}
-                          onClick={() => copyText(b.prefix)}
-                        >
-                          {copied === b.prefix ? "Copied" : "Copy prefix"}
-                        </button>
-                        {b.probe ? (
+                        {/* One button for the three (owner, 2026-10-06: crowded); the end, once known. */}
+                        {b.endKnown && !b.probe ? null : (
+                          <button
+                            type="button"
+                            className={`fdb-chip${findEndId === b.id ? " fdb-chip--on" : ""}`}
+                            aria-expanded={findEndId === b.id}
+                            title="Find this boxel's last system in the galaxy map: copy its prefix or the next number, and mark it Not there when the map finds nothing"
+                            onClick={() => setFindEndId(findEndId === b.id ? null : b.id)}
+                          >
+                            Find end {findEndId === b.id ? "▾" : "▸"}
+                          </button>
+                        )}
+                        {findEndId === b.id ? (
+                          <button
+                            type="button"
+                            className={`fdb-chip${copied === b.prefix ? " fdb-chip--on" : ""}`}
+                            title={`Copies "${b.prefix}": paste it in the galaxy map's search to list the boxel's systems the game knows`}
+                            onClick={() => copyText(b.prefix)}
+                          >
+                            {copied === b.prefix ? "Copied" : "Copy prefix"}
+                          </button>
+                        ) : null}
+                        {findEndId === b.id && b.probe ? (
                           <>
                             <button
                               type="button"
