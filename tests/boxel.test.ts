@@ -18,7 +18,11 @@ describe("boxel names", () => {
       index: 23,
     });
     // Boxel 0 leaves its number out.
-    expect(parseBoxel("Bleethuia QV-L b16")).toMatchObject({ boxel: "QV-L b", prefix: "Bleethuia QV-L b", index: 16 });
+    expect(parseBoxel("Bleethuia QV-L b16")).toMatchObject({
+      boxel: "QV-L b",
+      prefix: "Bleethuia QV-L b",
+      index: 16,
+    });
     // The boxel itself, with a trailing dash.
     expect(parseBoxel("Eol Prou AB-C d1-")).toMatchObject({ prefix: "Eol Prou AB-C d1-", index: 0 });
     expect(parseBoxel("HIP 87621")).toBeNull();
@@ -39,7 +43,13 @@ describe("the listing", () => {
       query: "Eol Prou AB-C d1-2",
       end: null,
       index: null,
-      visited: ["Eol Prou AB-C d1-0", "Eol Prou AB-C d1-2", "Eol Prou AB-C d1-5", "Eol Prou AB-C d12-9", "Sol"],
+      visited: [
+        "Eol Prou AB-C d1-0",
+        "Eol Prou AB-C d1-2",
+        "Eol Prou AB-C d1-5",
+        "Eol Prou AB-C d12-9",
+        "Sol",
+      ],
       speciesName: (id) => id,
     })!;
     expect(d.rows.map((r) => [r.n, r.visited])).toEqual([
@@ -53,7 +63,10 @@ describe("the listing", () => {
     expect(d.nextUnvisited).toBe("Eol Prou AB-C d1-1");
     expect(d).toMatchObject({ visitedCount: 3, knownCount: 0, cubeLy: 80, noIndex: true });
     // A known end number stretches the list.
-    expect(boxelSystems({ query: "Eol Prou AB-C d1-2", end: 9, index: null, visited: [], speciesName: (i) => i })!.rows).toHaveLength(10);
+    expect(
+      boxelSystems({ query: "Eol Prou AB-C d1-2", end: 9, index: null, visited: [], speciesName: (i) => i })!
+        .rows,
+    ).toHaveLength(10);
   });
 });
 
@@ -67,10 +80,24 @@ describe("saved boxels (owner, 2026-09-30)", () => {
     const s = createSavedBoxels({ filePath: file });
     expect(s.add("Eol Prou")).toBeNull();
     const { id } = s.add("  Eol Prou AB-C d1-5 ")!;
-    const visited = ["Eol Prou AB-C d1-0", "eol prou ab-c d1-2", "Eol Prou AB-C d1-9", "Eol Prou AB-C d2-1", "Sol"];
+    const visited = [
+      "Eol Prou AB-C d1-0",
+      "eol prou ab-c d1-2",
+      "Eol Prou AB-C d1-9",
+      "Eol Prou AB-C d2-1",
+      "Sol",
+    ];
     expect(s.list(visited)).toEqual([
       // Typed to -5, flown to -9: listed to -9.
-      expect.objectContaining({ id, boxel: "AB-C d1", sector: "Eol Prou", end: 9, total: 10, flown: 3, next: "Eol Prou AB-C d1-1" }),
+      expect.objectContaining({
+        id,
+        boxel: "AB-C d1",
+        sector: "Eol Prou",
+        end: 9,
+        total: 10,
+        flown: 3,
+        next: "Eol Prou AB-C d1-1",
+      }),
     ]);
     // The same boxel again moves its end instead of adding a second one.
     expect(s.add("Eol Prou AB-C d1-9")!.id).toBe(id);
@@ -97,7 +124,10 @@ describe("saved boxels (owner, 2026-09-30)", () => {
     s.add("Eol Prou AB-C d1-9");
     s.setSkipped(id, 1, false);
     // Bodies and notable ones across its flown systems (addresses known), and which boxel he is in.
-    const stats = (addr: number) => ({ bodies: { scanned: addr, total: addr === 2 ? null : addr + 1 }, notable: 1 });
+    const stats = (addr: number) => ({
+      bodies: { scanned: addr, total: addr === 2 ? null : addr + 1 },
+      notable: 1,
+    });
     const withAddr: [number, string][] = [
       [1, "Eol Prou AB-C d1-0"],
       [3, "Eol Prou AB-C d1-4"],
@@ -108,7 +138,10 @@ describe("saved boxels (owner, 2026-09-30)", () => {
       notable: 2,
       current: true,
     });
-    expect(s.list([...withAddr, [2, "Eol Prou AB-C d1-5"]], stats, "Sol")[0]).toMatchObject({ bodiesTotal: null, current: false });
+    expect(s.list([...withAddr, [2, "Eol Prou AB-C d1-5"]], stats, "Sol")[0]).toMatchObject({
+      bodiesTotal: null,
+      current: false,
+    });
     // Survives a restart; deletes.
     const again = createSavedBoxels({ filePath: file });
     expect(again.list([])).toHaveLength(1);
@@ -177,7 +210,14 @@ describe("gaps below the highest known system (auto-boxel detector, 2026-10-06)"
   it("marks unrecorded numbers under a known one as existing, except in h boxels", async () => {
     const { boxelTable } = await import("../src/server/boxel.js");
     const saved = (prefix: string, end: number) =>
-      ({ id: prefix, prefix, end, skipped: [], boxel: parseBoxel(`${prefix}0`)!.boxel, sector: "Eol Prou" }) as never;
+      ({
+        id: prefix,
+        prefix,
+        end,
+        skipped: [],
+        boxel: parseBoxel(`${prefix}0`)!.boxel,
+        sector: "Eol Prou",
+      }) as never;
     const t = boxelTable({
       boxels: [saved("Eol Prou AB-C d1-", 3), saved("Eol Prou AB-C h1-", 3)],
       index: null,
@@ -201,8 +241,20 @@ describe("systems targeted in the galaxy map (auto-boxel detector, 2026-10-06)",
   it("keeps every FSDTarget and a boxel-named Status.json destination, not a body", async () => {
     const { GameStateStore } = await import("../src/server/gameState.js");
     const s = new GameStateStore();
-    s.apply({ timestamp: "2026-10-06T10:00:00Z", event: "FSDTarget", Name: "Eol Prou AB-C d1-40", SystemAddress: 7, StarClass: "F" } as never);
-    s.apply({ timestamp: "2026-10-06T10:01:00Z", event: "FSDTarget", Name: "Eol Prou AB-C d1-41", SystemAddress: 8, StarClass: "K" } as never);
+    s.apply({
+      timestamp: "2026-10-06T10:00:00Z",
+      event: "FSDTarget",
+      Name: "Eol Prou AB-C d1-40",
+      SystemAddress: 7,
+      StarClass: "F",
+    } as never);
+    s.apply({
+      timestamp: "2026-10-06T10:01:00Z",
+      event: "FSDTarget",
+      Name: "Eol Prou AB-C d1-41",
+      SystemAddress: 8,
+      StarClass: "K",
+    } as never);
     s.applyStatusDestination({ systemAddress: 9, bodyId: 0, name: "Eol Prou AB-C d1-44" });
     s.applyStatusDestination({ systemAddress: 10, bodyId: 3, name: "Eol Prou AB-C d1-45 A 1" });
     expect([...s.targetedSystems.values()]).toEqual([
@@ -296,5 +348,49 @@ describe("the Boxels screen's table (owner, 2026-10-05)", () => {
     // Not flown and not in the index: nothing known yet (a look-up fills it).
     expect(t.rows[2]).toMatchObject({ from: null, mainStar: null, bodies: null, notables: [], bio: null });
     expect(t.noIndex).toBe(true);
+  });
+});
+
+describe("History a page at a time, newest first (owner, 2026-10-06)", () => {
+  it("pages the boxels flown through by their last visit, totals the range and searches all of them", async () => {
+    const { previousBoxelsPage } = await import("../src/server/boxel.js");
+    const at: Record<number, string> = {
+      1: "2026-10-01T00:00:00Z",
+      2: "2026-10-03T00:00:00Z",
+      3: "2026-10-02T00:00:00Z",
+      4: "2026-09-01T00:00:00Z",
+    };
+    const visited: [number, string][] = [
+      [1, "Eol Prou AB-C d1-0"],
+      [2, "Eol Prou AB-C d2-0"],
+      [3, "Weqaei FG-Y e3"],
+      [4, "Eol Prou AB-C d1-5"],
+    ];
+    const base = {
+      visited,
+      visitedAt: (a: number) => at[a] ?? null,
+      journal: () => ({
+        mainStar: null,
+        otherStars: [],
+        starClasses: [],
+        bodies: { scanned: 0, total: null },
+        notables: [],
+        bodyTypes: [],
+        bio: { signals: 0, species: [] },
+      }),
+      sinceIso: null as string | null,
+      savedPrefixes: new Set<string>(),
+    };
+    const p1 = previousBoxelsPage({ ...base, offset: 0, limit: 2 });
+    expect(p1.total).toBe(3);
+    expect(p1.items.map((b) => b.boxel)).toEqual(["AB-C d2", "FG-Y e"]);
+    const p2 = previousBoxelsPage({ ...base, offset: 2, limit: 2 });
+    expect(p2.items.map((b) => [b.boxel, b.flown])).toEqual([["AB-C d1", 2]]);
+    expect(
+      previousBoxelsPage({ ...base, offset: 0, limit: 10, query: "weqa" }).items.map((b) => b.sector),
+    ).toEqual(["Weqaei"]);
+    expect(
+      previousBoxelsPage({ ...base, offset: 0, limit: 10, sinceIso: "2026-10-02T00:00:00Z" }).total,
+    ).toBe(2);
   });
 });

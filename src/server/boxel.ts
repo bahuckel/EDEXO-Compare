@@ -345,6 +345,55 @@ const NOTABLE_WEIGHT: Record<string, number> = {
  * Every boxel the commander has flown through (owner, 2026-10-05: all of them, notable first), last
  * visit within `sinceIso` when given. A system with no recorded arrival time counts only under All.
  */
+/**
+ * History a page at a time, newest first (owner, 2026-10-06: "go through the journal log from newest to
+ * oldest … a loading circle … as older systems are loaded"). Grouping every flown system by boxel is
+ * cheap; what the journals say about each system (notables, stars, species) is read only for the boxels
+ * on the page. `query` matches the boxel, its sector or the system last flown there.
+ */
+export function previousBoxelsPage(opts: {
+  visited: Iterable<VisitedSystem>;
+  visitedAt: (systemAddress: number) => string | null;
+  journal: (systemAddress: number) => JournalSystemFacts;
+  sinceIso: string | null;
+  savedPrefixes: ReadonlySet<string>;
+  query?: string;
+  offset: number;
+  limit: number;
+}): { items: PreviousBoxelDTO[]; total: number } {
+  const groups = new Map<string, { last: string | null; lastName: string; visited: VisitedSystem[]; sector: string; boxel: string }>();
+  for (const v of opts.visited) {
+    const { name, addr } = visitedEntry(v);
+    const b = parseBoxel(name);
+    if (!b || b.index == null) continue;
+    const key = b.prefix.toLowerCase();
+    let g = groups.get(key);
+    if (!g) groups.set(key, (g = { last: null, lastName: name, visited: [], sector: b.sector, boxel: b.boxel }));
+    g.visited.push(v);
+    const at = addr != null ? opts.visitedAt(addr) : null;
+    if (at && (!g.last || at > g.last)) {
+      g.last = at;
+      g.lastName = name;
+    }
+  }
+  const q = (opts.query ?? "").trim().toLowerCase();
+  const kept = [...groups.values()]
+    .filter((g) => !opts.sinceIso || (g.last != null && g.last >= opts.sinceIso))
+    .filter(
+      (g) =>
+        !q ||
+        g.boxel.toLowerCase().includes(q) ||
+        g.sector.toLowerCase().includes(q) ||
+        g.lastName.toLowerCase().includes(q),
+    )
+    .sort((x, y) => (y.last ?? "").localeCompare(x.last ?? ""));
+  const page = kept.slice(Math.max(0, opts.offset), Math.max(0, opts.offset) + Math.max(1, opts.limit));
+  const items = previousBoxels({ ...opts, visited: page.flatMap((g) => g.visited), sinceIso: null }).sort(
+    (x, y) => (y.lastVisit ?? "").localeCompare(x.lastVisit ?? ""),
+  );
+  return { items, total: kept.length };
+}
+
 export function previousBoxels(opts: {
   visited: Iterable<VisitedSystem>;
   visitedAt: (systemAddress: number) => string | null;

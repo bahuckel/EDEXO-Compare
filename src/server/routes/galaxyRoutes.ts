@@ -1,4 +1,4 @@
-import { boxelSystems, boxelTable, previousBoxels, type SystemStats } from "../boxel.js";
+import { boxelSystems, boxelTable, previousBoxelsPage, type SystemStats } from "../boxel.js";
 import { parseBoxel } from "../../shared/boxel.js";
 import { createBoxelLookups } from "../boxelLookup.js";
 import { resolveUserSettingsJsonPath } from "../paths.js";
@@ -332,6 +332,16 @@ export function registerGalaxyRoutes(
     One boxel (shared/boxel.ts): `?name=` any system in it (or the boxel with a trailing "-"), `?end=`
     the last system number when known. Journals always; the galaxy index when this machine has it.
   */
+  /*
+    The Boxels screen reads the galaxy index too: it keeps the map's memory alive like /api/galaxy does.
+    Without this the index was let go five idle minutes after the map closed and read again, whole, on the
+    next Boxels open — a stall of seconds that froze the app (owner, 2026-10-06: "opening Boxels makes the
+    app unresponsive").
+  */
+  app.use(["/api/boxel", "/api/boxels"], (_req, _res, next) => {
+    touchGalaxyMemory();
+    next();
+  });
   app.get("/api/boxel", (req, res) => {
     const name = String(req.query.name ?? "").slice(0, 80);
     const endRaw = Number(req.query.end);
@@ -492,16 +502,20 @@ export function registerGalaxyRoutes(
     if (!store) return void res.json({ ok: true, items: [] });
     const days = Math.max(0, Number(req.query.days) || 0);
     const saved = new Set((opts.savedBoxels ? savedList().items : []).map((b) => b.prefix.toLowerCase()));
-    res.json({
-      ok: true,
-      items: previousBoxels({
-        visited: store.visitedSystems.entries(),
-        visitedAt: (addr) => store.systemVisitedAt.get(addr) ?? null,
-        journal: (addr) => boxelJournalFacts(store, addr),
-        sinceIso: days ? new Date(Date.now() - days * 86_400_000).toISOString() : null,
-        savedPrefixes: saved,
-      }),
+    // A page at a time, newest first: `offset`, `limit` (default 40, at most 200), `q` to search.
+    const offset = Math.max(0, Math.floor(Number(req.query.offset) || 0));
+    const limit = Math.min(200, Math.max(1, Math.floor(Number(req.query.limit) || 40)));
+    const page = previousBoxelsPage({
+      visited: store.visitedSystems.entries(),
+      visitedAt: (addr) => store.systemVisitedAt.get(addr) ?? null,
+      journal: (addr) => boxelJournalFacts(store, addr),
+      sinceIso: days ? new Date(Date.now() - days * 86_400_000).toISOString() : null,
+      savedPrefixes: saved,
+      query: String(req.query.q ?? "").slice(0, 80),
+      offset,
+      limit,
     });
+    res.json({ ok: true, ...page, offset });
   });
   // Copy the next system to fly after each jump into a saved boxel: `{ autoCopyNext: boolean }`.
   app.post("/api/boxels/options", (req, res) => {

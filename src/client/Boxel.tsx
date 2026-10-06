@@ -146,7 +146,11 @@ export function BoxelScreen({
   const [helpOpen, setHelpOpen] = usePersistedState("boxel.helpOpen", false, isBool);
   const [prevDays, setPrevDays] = usePersistedState("boxel.previousDays", 30, isNum);
   const [previous, setPrevious] = useState<PreviousBoxelDTO[] | null>(null);
-  const [prevLimit, setPrevLimit] = useState(PREV_PAGE);
+  /** History's total for the range and search, and whether a page is on its way. */
+  const [prevTotal, setPrevTotal] = useState<number | null>(null);
+  const [prevLoading, setPrevLoading] = useState(false);
+  const prevGen = useRef(0);
+  const prevMore = useRef<HTMLDivElement | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   /** The saved boxel whose Find end tools (Copy prefix, Probe, Not there) are open. */
   const [findEndId, setFindEndId] = useState<string | null>(null);
@@ -288,20 +292,53 @@ export function BoxelScreen({
   })();
 
   /*
-    Previous (owner, 2026-10-05): every boxel flown through, notable ones first, read when the section
-    is open, again after each jump and whenever a boxel is saved.
+    History (owner, 2026-10-05; paged 2026-10-06: "go through the journal log from newest to oldest …
+    a loading circle appears and moves down as older systems are loaded"): every boxel flown through,
+    newest first, a page at a time — the first when the tab opens (and after each jump, save or search),
+    the next when the list is scrolled to its end. The search runs on the server, over all of them.
   */
+  const prevQuery = showPrevious ? sideQuery.trim() : "";
+  const loadPrevious = useCallback(
+    (reset: boolean) => {
+      const gen = reset ? ++prevGen.current : prevGen.current;
+      const offset = reset ? 0 : (previousRef.current?.length ?? 0);
+      setPrevLoading(true);
+      const q = new URLSearchParams({
+        days: String(prevDays),
+        offset: String(offset),
+        limit: String(PREV_PAGE),
+      });
+      if (prevQuery) q.set("q", prevQuery);
+      void fetch(`/api/boxels/previous?${q}`)
+        .then((r) => r.json() as Promise<{ items?: PreviousBoxelDTO[]; total?: number }>)
+        .then((j) => {
+          if (gen !== prevGen.current) return;
+          setPrevious((had) => [...(reset ? [] : (had ?? [])), ...(j.items ?? [])]);
+          setPrevTotal(j.total ?? null);
+        })
+        .catch(() => gen === prevGen.current && reset && setPrevious([]))
+        .finally(() => gen === prevGen.current && setPrevLoading(false));
+    },
+    [prevDays, prevQuery],
+  );
+  const previousRef = useRef<PreviousBoxelDTO[] | null>(null);
+  previousRef.current = previous;
   useEffect(() => {
     if (!showPrevious) return;
-    let live = true;
-    void fetch(`/api/boxels/previous?days=${prevDays}`)
-      .then((r) => r.json() as Promise<{ items?: PreviousBoxelDTO[] }>)
-      .then((j) => live && setPrevious(j.items ?? []))
-      .catch(() => live && setPrevious([]));
-    return () => {
-      live = false;
-    };
-  }, [showPrevious, prevDays, saved, currentSystem]);
+    const t = window.setTimeout(() => loadPrevious(true), prevQuery ? 200 : 0);
+    return () => window.clearTimeout(t);
+  }, [showPrevious, loadPrevious, prevQuery, saved, currentSystem]);
+  // The end of the list in view: the next page.
+  const prevHasMore = previous != null && prevTotal != null && previous.length < prevTotal;
+  useEffect(() => {
+    const el = prevMore.current;
+    if (!el || !prevHasMore || prevLoading) return;
+    const io = new IntersectionObserver((e) => {
+      if (e.some((x) => x.isIntersecting)) loadPrevious(false);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [prevHasMore, prevLoading, loadPrevious, previous]);
   const keep = (p: PreviousBoxelDTO) =>
     void call({
       method: "POST",
@@ -587,11 +624,8 @@ export function BoxelScreen({
     [narrow, columns],
   );
 
-  const prevShown = useMemo(() => {
-    const q = sideQuery.trim();
-    if (!previous || !q) return previous ?? [];
-    return previous.filter((p) => fuzzyRankAny([p.boxel, p.sector, p.lastSystem], q) != null);
-  }, [previous, sideQuery]);
+  // Searched on the server (it searches every boxel, not only the pages read so far).
+  const prevShown = previous ?? [];
   const sideShown = useMemo(() => {
     const q = sideQuery.trim();
     const mine = (saved ?? []).filter((b) => (sideTab === "explored") === (b.next == null));
@@ -704,13 +738,28 @@ export function BoxelScreen({
         <BoxelLookingFor here={here} onSave={addBoxel} />
 
         <div className={`boxel-screen__body${sideOpen ? "" : " boxel-screen__body--folded"}`}>
-          <aside className="boxel-side" aria-label="Your boxels" inert={!sideOpen}>
+          <aside
+            className="boxel-side"
+            aria-label="Your boxels"
+            inert={!sideOpen}
+            // History's next page when scrolled near its end (the observer below does the same).
+            onScroll={(ev) => {
+              const el = ev.currentTarget;
+              if (
+                showPrevious &&
+                prevHasMore &&
+                !prevLoading &&
+                el.scrollTop + el.clientHeight >= el.scrollHeight - 160
+              )
+                loadPrevious(false);
+            }}
+          >
             <div className="boxel-side__tabs" role="tablist" aria-label="Which boxels">
               {(
                 [
                   ["saved", "Saved", saved ? saved.length - exploredCount : null],
                   ["explored", "Fully explored", saved ? exploredCount : null],
-                  ["history", "History", previous && showPrevious ? prevShown.length : null],
+                  ["history", "History", showPrevious ? prevTotal : null],
                 ] as const
               ).map(([k, label, n]) => (
                 <button
@@ -948,7 +997,7 @@ export function BoxelScreen({
                     <p className="dim tiny">No boxels flown in that time.</p>
                   ) : (
                     <ul className="boxel-side__list">
-                      {prevShown.slice(0, prevLimit).map((p) => (
+                      {prevShown.map((p) => (
                         <li key={p.prefix} className="boxel-side__item boxel-prev__item">
                           <span className="boxel-prev__name">
                             <strong>{p.boxel}</strong> <span className="dim">{p.sector}</span>
@@ -995,15 +1044,13 @@ export function BoxelScreen({
                       ))}
                     </ul>
                   )}
-                  {previous && prevShown.length > prevLimit ? (
-                    <button
-                      type="button"
-                      className="boxel-prev__toggle"
-                      onClick={() => setPrevLimit(prevLimit + PREV_PAGE)}
-                    >
-                      Show {Math.min(PREV_PAGE, prevShown.length - prevLimit)} more (
-                      {(prevShown.length - prevLimit).toLocaleString()} left)
-                    </button>
+                  {prevHasMore || prevLoading ? (
+                    <div ref={prevMore} className="boxel-loading" role="status">
+                      <span className="boxel-loading__spin" aria-hidden="true" /> Loading
+                      {prevTotal != null && previous
+                        ? ` · ${previous.length.toLocaleString()} of ${prevTotal.toLocaleString()}`
+                        : ""}
+                    </div>
                   ) : null}
                 </>
               ) : null}
