@@ -54,6 +54,8 @@ export interface SpatialCatalogue {
   nebulae: SpatialPoint[];
   guardian: SpatialPoint[];
   core: SpatialPoint;
+  /** Where a species has been recorded (scripts/add-codex-records.ts), for a gate's `records` check. */
+  records?: Record<string, SpatialPoint[]>;
 }
 
 export interface Coords {
@@ -78,6 +80,12 @@ export interface SpatialGate {
    */
   softBandLy?: number;
   softFactor?: number;
+  /**
+   * Past the soft band's inner radius, the species' own records stand in for the catalogue (owner,
+   * 2026-10-06): a system with none of `catalogue.records[key]` within `withinLy` fails outright
+   * instead of keeping `softFactor`.
+   */
+  records?: { key: string; withinLy: number; label: string; evidence: string };
 }
 
 /**
@@ -102,6 +110,19 @@ export const SPATIAL_GATES: { idIncludes: string; gate: SpatialGate }[] = [
       */
       softBandLy: Number.POSITIVE_INFINITY,
       softFactor: 0.22,
+      /*
+        But not anywhere (owner, 2026-10-06: predicted in Aishaist SA-G b39-0, 5,100 ly from the nearest
+        catalogued nebula, none around). The catalogue misses nebulae — 660 radialem systems lie past
+        5,000 ly of one — but radialem marks its own: of the 2,927 radialem systems past 300 ly of a
+        catalogued nebula, 99.6 % have another radialem record within 2,000 ly (leave one out, EDAstro
+        codex). With none that close it is demoted to unlikely: listed, not removed.
+      */
+      records: {
+        key: "radialem",
+        withinLy: 2000,
+        label: "Electricae radialem record",
+        evidence: "99.6 % of radialem systems far from a catalogued nebula have another radialem record within 2,000 ly",
+      },
     },
   },
   {
@@ -203,6 +224,8 @@ export interface SpatialVerdict {
   /** The nebula / Guardian site / Sgr A* the distance is measured to. */
   nearestName: string;
   evidence: string;
+  /** The gate's `records` check, when it ran: the nearest record and how far. */
+  record?: { label: string; name: string; distanceLy: number; withinLy: number } | null;
 }
 
 /**
@@ -236,8 +259,18 @@ export function evaluateSpatialGate(
   const points = gate.kind === "nebula" ? catalogue.nebulae : catalogue.guardian;
   const near = nearestPoint(system, points);
   if (!near) return null;
-  const inBand =
+  let inBand =
     gate.softBandLy != null && near.distanceLy > gate.thresholdLy && near.distanceLy <= gate.softBandLy;
+  // Outside the radius: the species' own records may still vouch for the place, or withdraw the band.
+  let record: SpatialVerdict["record"];
+  const recs = gate.records ? catalogue.records?.[gate.records.key] : undefined;
+  if (inBand && gate.records && recs?.length) {
+    const r = nearestPoint(system, recs);
+    record = r
+      ? { label: gate.records.label, name: r.point.n, distanceLy: r.distanceLy, withinLy: gate.records.withinLy }
+      : null;
+    if (!r || r.distanceLy > gate.records.withinLy) inBand = false;
+  }
   return {
     kind: gate.kind,
     passes: near.distanceLy <= gate.thresholdLy,
@@ -245,7 +278,8 @@ export function evaluateSpatialGate(
     distanceLy: near.distanceLy,
     thresholdLy: gate.thresholdLy,
     nearestName: near.point.n,
-    evidence: gate.evidence,
+    evidence: record && !inBand ? gate.records!.evidence : gate.evidence,
+    ...(record !== undefined ? { record } : {}),
   };
 }
 
@@ -261,6 +295,10 @@ export function describeVerdict(v: SpatialVerdict): string {
       ? v.nearestName
       : `nearest ${v.kind === "nebula" ? "nebula" : "Guardian site"} ${v.nearestName}`;
   if (v.passes) return `${subject} is ${d} away — inside the ${rule} rule.`;
+  const ly = (n: number) => (n >= 1000 ? `${Math.round(n / 100) / 10} kly` : `${Math.round(n)} ly`);
+  if (v.record && !v.softBand) {
+    return `${subject} is ${d} away, and the nearest ${v.record.label} (${v.record.name}) is ${ly(v.record.distanceLy)} — none within ${ly(v.record.withinLy)}.`;
+  }
   if (v.softBand) {
     const pct = Math.round(v.softBand.factor * 100);
     if (!Number.isFinite(v.softBand.bandLy)) return `${subject} is ${d} away — past the ${rule} rule, so it stays listed at ${pct} % of its chance.`;

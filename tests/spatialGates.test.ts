@@ -180,3 +180,30 @@ describe("the Bark Mounds soft band", () => {
     expect(unlikely).toHaveLength(1);
   });
 });
+
+/*
+  Electricae radialem past 300 ly of a catalogued nebula (owner, 2026-10-06): kept at 0.22 only where
+  radialem has been recorded within 2,000 ly; Aishaist SA-G b39-0, 5.1 kly from the nearest catalogued
+  nebula and 2.2 kly from the nearest radialem record, fails.
+*/
+describe("radialem's own records", () => {
+  const RADIALEM = "electricae_electricae_radialem";
+  it("ships the records", () => {
+    expect(cat.records?.radialem?.length).toBeGreaterThan(3000);
+  });
+
+  it("fails far from any nebula and any radialem record", () => {
+    const v = evaluateSpatialGate(RADIALEM, { x: 14055.375, y: 212.21875, z: 34347.53125 }, cat)!;
+    expect(v.passes).toBe(false);
+    expect(v.softBand).toBeUndefined();
+    expect(v.record?.distanceLy).toBeGreaterThan(2000);
+    expect(describeVerdict(v)).toMatch(/none within 2 kly/);
+  });
+
+  it("keeps the low chance beside a radialem record the catalogue has no nebula for", () => {
+    const rec = cat.records!.radialem!.find((p) => (nearestPoint(p, cat.nebulae)?.distanceLy ?? 0) > 3000)!;
+    const v = evaluateSpatialGate(RADIALEM, { x: rec.x + 50, y: rec.y, z: rec.z }, cat)!;
+    expect(v.passes).toBe(false);
+    expect(v.softBand?.factor).toBe(0.22);
+  });
+});
