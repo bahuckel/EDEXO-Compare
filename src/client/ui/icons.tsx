@@ -283,6 +283,16 @@ export function IconCopy({ className }: { className?: string }) {
   );
 }
 
+/** A floppy disk — save (owner, 2026-10-06: the Boxels screen's Save buttons). */
+export function IconSave({ className }: { className?: string }) {
+  return (
+    <svg {...BASE} className={className}>
+      <path d="M3 2.5h8.2l2.3 2.3v8.2a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5z" />
+      <path d="M5 2.5v3.5h5V2.5M5 13.5V9.5h6v4" />
+    </svg>
+  );
+}
+
 /** A camera — take a branded snapshot of this panel. */
 export function IconCamera({ className }: { className?: string }) {
   return (

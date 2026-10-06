@@ -490,6 +490,26 @@
   flex-basis: 100%;
   margin: 0;
 }
+/* Save as a floppy disk (owner, 2026-10-06) */
+.boxel-advice__save {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.32rem;
+}
+.boxel-advice__save svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+/* "Not guaranteed": said where the eye is, the how on hover */
+.boxel-advice__disclaimer {
+  margin: 0.3rem 0 0;
+  color: var(--warn, var(--text-dim));
+  cursor: help;
+}
+.boxel-help__lead {
+  margin: 0 0 0.4rem;
+  cursor: help;
+}
 
 /* A saved boxel at a golden place (BoxelAdvice GoldenTag). */
 .boxel-golden {

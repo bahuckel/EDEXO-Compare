@@ -25,6 +25,8 @@ import {
 import { BOXEL_RATES } from "@shared/boxelRates";
 import { BOXEL_BIO_RATES } from "@shared/boxelBioRates";
 import { Select } from "./ui/Select";
+import { IconSave } from "./ui/icons";
+import { CopySystemButton } from "./CopySystemButton";
 import { oneOf, usePersistedState } from "./usePersistedState";
 
 /** A share for a table cell: `42 %`, `7.3 %`, and under 1 % as `1/158` (rare things read better that way). */
@@ -150,31 +152,27 @@ export function BoxelMassCodeHelp() {
   };
   return (
     <section className="boxel-help fold-help" aria-label="What a mass code says">
-      <p>
-        A boxel name such as <strong>AK-Y c14</strong> has two parts. The capital letters and the number after
-        the mass code (<strong>AK-Y</strong> … <strong>14</strong>) are where the boxel sits inside its
-        sector. The small letter is the <strong>mass code</strong>, <strong>a</strong> to <strong>h</strong>:
-        how big the boxel is (10 ly to 1,280 ly) and so how heavy its stars are. The best mass code for each
-        column is <em>bold green</em>.
+      {/* Owner, 2026-10-06: straight to the point, the explanations on hover. */}
+      <p
+        className="boxel-help__lead"
+        title="In a boxel name such as AK-Y c14, the capital letters and the number after the small letter (AK-Y … 14) are where the boxel sits in its sector. The small letter, a to h, is the mass code: how big the boxel is (10 ly to 1,280 ly), and so how heavy its stars are."
+      >
+        <strong>Mass code</strong> = the small letter in <strong>AK-Y c14</strong>: <strong>a</strong> 10 ly …{" "}
+        <strong>h</strong> 1,280 ly. Best per column in <span className="boxel-best">green</span>.
       </p>
-      <RateTable caption="Main star (share of systems)" columns={MAIN_STARS} rows={MASS_ROWS} value={main} />
+      <RateTable caption="Main star" columns={MAIN_STARS} rows={MASS_ROWS} value={main} />
+      <RateTable caption="Found in a system" columns={FOUND} rows={MASS_ROWS} value={found} />
       <RateTable
-        caption="Found in a system (share of systems; Helium-rich gas giants per 1,000 systems)"
-        columns={FOUND}
-        rows={MASS_ROWS}
-        value={found}
-      />
-      <RateTable
-        caption="Exobiology: genus in a system with biology logged"
+        caption="Exobiology (genus)"
         columns={genera.map((g) => ({ key: g, label: g.slice(2) }))}
         rows={MASS_ROWS}
         value={bio}
       />
-      <p className="dim tiny">
-        Measured on the Spansh galaxy dump (199.7 million systems, read 2026-10-05) over the systems with
-        bodies known, and on EDAstro&apos;s codex file (1.8 million systems with biology logged). Commanders
-        fly interesting systems first, so rare things read a little high wherever people go; the ranking
-        between mass codes is what this is for. · means too few systems to say.
+      <p
+        className="dim tiny"
+        title="Main star and Found: share of systems with bodies known on the Spansh galaxy dump (199.7 million systems, 2026-10-05); Helium-rich gas giants per 1,000 systems. Exobiology: share of systems with biology logged in EDAstro's codex file (1.8 million). Commanders fly interesting systems first, so rare things read a little high; the ranking between mass codes is what this is for. · = too few systems to say."
+      >
+        Spansh dump + EDAstro codex · hover for how
       </p>
     </section>
   );
@@ -279,22 +277,34 @@ export function BoxelLookingFor({
       const sector = here.sector;
       const golden = goldenBoxels(target.key);
       const bioGolden = golden.some((g) => g.kind === "bio");
-      const goldenHere = golden.slice(0, 6).map((g) => ({ g, s: goldenInSector(g, pos) }));
+      // The six strongest, nearest first (they are close in strength; the distance decides the flight).
+      const goldenHere = golden
+        .slice(0, 6)
+        .map((g) => ({ g, s: goldenInSector(g, pos) }))
+        .sort((a, b) => a.s.ly - b.s.ly);
       const codes = ranks.slice(0, 2);
-      const row = (b: SuggestedBoxel, note: string) => (
-        <li key={b.boxel} className="boxel-advice__item">
-          <strong>{b.boxel}</strong> <span className="dim">{sector}</span>
+      /*
+        A boxel as a system reads (owner, 2026-10-06): the name first with a copy button (its system 0,
+        to paste in the galaxy map without saving it), then how far, then the short figure; the long
+        one on hover. Save is a floppy disk.
+      */
+      const row = (b: SuggestedBoxel, short: string, long: string) => (
+        <li key={b.boxel} className="boxel-advice__item" title={long}>
+          <strong>
+            {sector} {b.boxel}
+          </strong>
+          <CopySystemButton system={firstSystemOf(sector, b.boxel)} />
           <span className="dim tiny">
-            {" "}
-            · {Math.round(b.ly).toLocaleString("en")} ly · {note}
+            {Math.round(b.ly).toLocaleString("en")} ly · {short}
           </span>
           <button
             type="button"
-            className="fdb-chip"
-            title={`Save ${b.boxel} in ${sector} (with the Last system # you typed, if any) and show it`}
+            className="fdb-chip boxel-advice__save"
+            title={`Save ${sector} ${b.boxel} to your boxels (to the Last system # you typed, if any)`}
+            aria-label={`Save ${sector} ${b.boxel}`}
             onClick={() => onSave(firstSystemOf(sector, b.boxel))}
           >
-            Save
+            <IconSave />
           </button>
         </li>
       );
@@ -307,26 +317,23 @@ export function BoxelLookingFor({
                 {goldenHere.map(({ g, s }) =>
                   row(
                     s,
+                    `${pct(g.rate)} · ×${(g.rate / g.rest).toFixed(1)}${g.kind === "bio" && g.confirmed ? " · 2 sources" : ""}`,
                     g.kind === "bio"
-                      ? `${pct(g.rate)} of its systems with biology, against ${pct(g.rest)} in other ${g.code} boxels${g.confirmed ? " · two sources agree" : " · one source"}`
-                      : `${pct(g.rate)} of its systems, against ${pct(g.rest)} in other ${g.code} boxels (×${(g.rate / g.rest).toFixed(1)})`,
+                      ? `${pct(g.rate)} of its systems with biology, against ${pct(g.rest)} in other ${g.code} boxels${g.confirmed ? " — two sources agree" : " — one source"}`
+                      : `${pct(g.rate)} of its systems, against ${pct(g.rest)} in other ${g.code} boxels`,
                   ),
                 )}
               </ul>
-              {bioGolden ? (
-                <p className="dim tiny">
-                  The same place in every sector, measured in EDAstro&apos;s codex over the whole galaxy and
-                  true in both halves of it; &quot;two sources agree&quot;: the Spansh bio export finds it too.
-                  For Bark Mounds and Electricae these are where nebulae tend to sit (a nebula within 100 ly 14
-                  times as often) — a strong lead, not a promise: a sector can still have none.
-                </p>
-              ) : (
-                <p className="dim tiny">
-                  The same place in every sector, measured on the whole Spansh galaxy dump, true in both halves
-                  of the galaxy and still there in boxels nearly fully explored. Most sit in the sector&apos;s
-                  lowest layers, near the galactic plane — a lead, not a promise.
-                </p>
-              )}
+              <p
+                className="boxel-advice__disclaimer tiny"
+                title={
+                  bioGolden
+                    ? "The same place in every sector, measured in EDAstro's codex over the whole galaxy and true in both halves of it; two sources: the Spansh bio export finds it too. For Bark Mounds and Electricae these are where nebulae tend to sit (a nebula within 100 ly 14 times as often)."
+                    : "The same place in every sector, measured on the whole Spansh galaxy dump, true in both halves of the galaxy and still there in boxels nearly fully explored. Most sit in the sector's lowest layers, near the galactic plane."
+                }
+              >
+                Not guaranteed — a statistical lead: any one boxel can have none. Hover for how.
+              </p>
             </div>
           ) : null}
           {codes.map((r) => (
@@ -335,13 +342,13 @@ export function BoxelLookingFor({
                 Nearest <span className="boxel-best">{r.code}</span> boxels
                 {letters === "AA-A" ? " (AA-A)" : ""} · {fmt(r.rate)}
               </h4>
-              <ul>{nearestBoxels(r.code, pos, 4, letters).map((b) => row(b, `${r.code} boxel`))}</ul>
+              <ul>
+                {nearestBoxels(r.code, pos, 4, letters).map((b) =>
+                  row(b, `${r.code} boxel`, `${r.code} boxel: ${fmt(r.rate)} on average`),
+                )}
+              </ul>
             </div>
           ))}
-          <p className="dim tiny">
-            Type the boxel&apos;s last system number in <strong>Last system #</strong> first, if you know it;
-            Save then adds the boxel to your list.
-          </p>
         </div>
       );
     }
