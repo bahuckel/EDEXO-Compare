@@ -32,6 +32,8 @@ body {
   overflow: hidden;
   font-family: var(--hud-font);
   color: var(--hud-text);
+  /* Every line of text shadowed (owner, 2026-10-06: easy to read on any background); inherited. */
+  text-shadow: var(--hud-outline);
 }
 
 /* ---- shell: fills the window; the host decides the width so every HUD in the stack lines up --- */
@@ -91,7 +93,8 @@ body {
   glow kept vivid (owner, 2026-10-02: in front, the outline dulled the colours).
 */
 :root {
-  --hud-outline: 1px 1px 0 rgba(0, 0, 0, 0.65), 0 0 2px rgba(0, 0, 0, 0.35);
+  /* Stronger since 2026-10-06 (owner: "all text in the HUD has shadows, so it's easy to read"). */
+  --hud-outline: 0 0 2px rgba(0, 0, 0, 0.9), 1px 1px 1px rgba(0, 0, 0, 0.85), 0 1px 4px rgba(0, 0, 0, 0.55);
 }
 .panel__body {
   text-shadow: var(--hud-outline);
@@ -770,6 +773,14 @@ body {
 }
 .minimap-arrow--ship {
   fill: var(--hud-text);
+}
+/* SVG text takes no text-shadow: a dark stroke behind the fill does the same. */
+.minimap-far-label,
+.minimap-north {
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.85);
+  stroke-width: 1.6px;
+  stroke-linejoin: round;
 }
 .minimap-far-label {
   fill: var(--hud-hi);
