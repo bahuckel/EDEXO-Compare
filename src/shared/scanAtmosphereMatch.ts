@@ -1,5 +1,6 @@
 import type { PlanetScan } from "./types.js";
 import { isNoAtmosphereText, stripAtmosphereDensity } from "./atmosphereText.js";
+import { foldSpelling } from "./spelling.js";
 
 /**
  * Codex prose like “Any thin atmosphere” or genus notes “Thin atmosphere (required for all species)”.
@@ -48,16 +49,15 @@ export function normalizeScanAtmosphereForMatch(scan: PlanetScan): string {
  * (e.g. NitrogenRich, nitrogen-rich, Neon → neon; Nitrogen → nitrogen).
  */
 export function atmosphereCompositionKey(token: string): string {
-  let t = token
+  /*
+    The game spells it both ways — `sulfur dioxide` in a scan's `Atmosphere` text, `SulphurDioxide`
+    in its `AtmosphereType` — and anything built from the text inherits the American one. An EDDN
+    export writing "Thin Sulfur dioxide" demoted Bacterium cerbrus on 464 bodies it grows on.
+  */
+  let t = foldSpelling(token)
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "")
-    /*
-      The game spells it both ways — `sulfur dioxide` in a scan's `Atmosphere` text, `SulphurDioxide`
-      in its `AtmosphereType` — and anything built from the text inherits the American one. An EDDN
-      export writing "Thin Sulfur dioxide" demoted Bacterium cerbrus on 464 bodies it grows on.
-    */
-    .replace(/sulfur/g, "sulphur");
+    .replace(/[^a-z0-9]+/g, "");
   if (t.endsWith("rich")) t = t.slice(0, -4);
   return t;
 }

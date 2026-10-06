@@ -14,6 +14,7 @@ import type {
 } from "../shared/types.js";
 import { journalPressureToAtm, journalSurfaceGravityToG } from "../shared/journalPhysics.js";
 import { spectralKeysFromJournalStarType } from "../shared/starSpectralKeys.js";
+import { foldSpelling } from "../shared/spelling.js";
 import { hostStarClassKey, hostStarClassSimilarity } from "../shared/hostStarClass.js";
 import {
   classifyHostMkPath,
@@ -504,7 +505,7 @@ function normalizeAtmosphereCompareKey(path: string, val: string): string {
     sulphur dioxide and every "-rich" atmosphere never matched, and that axis of the habitat score read
     0 on all of them (code review B7, 2026-09-27). "-rich" stays: Argon and Argon-rich are different.
   */
-  return t.replace(/sulfur/g, "sulphur").replace(/[^a-z]/g, "");
+  return foldSpelling(t).replace(/[^a-z]/g, "");
 }
 
 /** Atmosphere *type* compare key for EDSM/CSV rows (thin/thick stripped; ammonia normalized). */

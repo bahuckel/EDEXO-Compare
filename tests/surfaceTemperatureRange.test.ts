@@ -464,6 +464,15 @@ describe("the surface temperature range a landable body spans", () => {
     expect(Math.abs(got!.maxK - c.maxK), "max " + got!.maxK.toFixed(1)).toBeLessThanOrEqual(1);
   });
 
+  it("reads Spansh's and EDSM's spelling of the atmosphere the same as the journal's", () => {
+    // CASES[0] is a sulphur dioxide body: "Sulphur dioxide" (Spansh) and "Sulfur dioxide" give its range too.
+    const { byId, arrival, rec } = index(CASES[0]!);
+    const journal = estimateSurfaceTemperatureRange(rec, byId, arrival);
+    for (const atmosphereType of ["Sulphur dioxide", "Thin Sulfur dioxide"]) {
+      expect(estimateSurfaceTemperatureRange({ ...rec, atmosphereType }, byId, arrival)).toEqual(journal);
+    }
+  });
+
   it("says nothing about a body that cannot be landed on", () => {
     // The game shows no range for one either: it describes conditions you could stand in.
     const { byId, arrival, rec } = index(CASES[0]!);

@@ -217,7 +217,7 @@ const ATMOSPHERE_PALETTE: { test: (s: string) => boolean; rgb: string }[] = [
   { test: (s) => /\bhelium/i.test(s), rgb: "255, 235, 150" },
   { test: (s) => /\bneon/i.test(s), rgb: "255, 120, 200" },
   { test: (s) => /\bcarbon\s*dioxide|co2/i.test(s), rgb: "158, 158, 158" },
-  { test: (s) => /\bsulfur/i.test(s), rgb: "255, 213, 79" },
+  { test: (s) => /\bsul(f|ph)ur/i.test(s), rgb: "255, 213, 79" },
   { test: (s) => /\bhydrogen/i.test(s), rgb: "240, 230, 255" },
 ];
 

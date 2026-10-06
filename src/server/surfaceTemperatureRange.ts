@@ -39,6 +39,7 @@
  * reader can trust it.
  */
 import type { ExplorationScanRecord } from "../shared/types.js";
+import { foldSpelling } from "../shared/spelling.js";
 import { AU_METERS, LS_PER_AU, SOLAR_RADIUS_METERS } from "../shared/journalPhysics.js";
 
 /** Metres in an astronomical unit, and in a solar radius — journal `Radius` is metres. */
@@ -66,8 +67,13 @@ export interface SurfaceTemperatureRange {
  * enough to look like the game's own number rather than a curve bent through two points.
  */
 function greenhouseFactor(atmosphereType: string | undefined, pressurePa: number): number | null {
-  const atm = (atmosphereType ?? "").trim().toLowerCase();
-  if (atm === "" || atm === "none") return 1;
+  // The gas alone, letters only, one spelling: the journal's `SulphurDioxide`, Spansh's "Thin Sulphur
+  // dioxide" and the journal prose's "thin sulfur dioxide atmosphere" alike.
+  const atm = foldSpelling(atmosphereType ?? "")
+    .toLowerCase()
+    .replace(/\b(hot|thin|thick|atmosphere)\b/g, "")
+    .replace(/[^a-z]/g, "");
+  if (atm === "" || atm === "none" || atm === "noatmosphere") return 1;
   if (atm === "sulphurdioxide") return 1.0043;
   if (atm === "carbondioxide") return 1 + 0.008622 * Math.pow(Math.max(pressurePa, 0), 0.4);
   return null;

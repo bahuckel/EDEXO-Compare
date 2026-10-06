@@ -48,6 +48,7 @@
  * a row with no score, and anything the commander has sampled here.
  */
 import { existsSync, readFileSync } from "node:fs";
+import { foldSpelling } from "../shared/spelling.js";
 import path from "node:path";
 import type { PlanetScan, SpeciesMatch } from "../shared/types.js";
 import { codexGalaxySystems, codexRegionSystems } from "./speciesRarityData.js";
@@ -133,7 +134,7 @@ export function volcanismKind(v: string | null | undefined): string {
  * Spansh's `Thin Sulphur dioxide` / `Thin Neon-rich` both come out as `sulphur dioxide` / `neon-rich`.
  */
 export function atmosphereKey(a: string | null | undefined): string {
-  const s = (a ?? "").trim();
+  const s = foldSpelling(a ?? "").trim();
   if (!s || /^(none|no atmosphere)$/i.test(s)) return "none";
   if (!/\s/.test(s)) {
     const { words, rich } = atmosphereTypeWords(s);

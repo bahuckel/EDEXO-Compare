@@ -8,6 +8,7 @@
  * second line in the "matches" blue, or an arrow at the edge when it lies outside the measured range.
  */
 import type { EstimatedSurfaceTempBand, PlanetScan, SpeciesMatchContext } from "@shared/types";
+import { foldSpelling } from "@shared/spelling";
 import {
   GUIDE_ATMO_PREFIX,
   GUIDE_PARAMS,
@@ -58,11 +59,10 @@ export interface GuideBody {
 }
 
 const norm = (s: string) =>
-  s
+  // The journal spells it "sulfur", the shares "Sulphur" (owner, 2026-10-06: "not seen" on a body
+  // whose atmosphere was a third of the list).
+  foldSpelling(s)
     .toLowerCase()
-    // The journal spells it "sulfur", the shares "Sulphur" (owner, 2026-10-06: "not seen" on a body
-    // whose atmosphere was a third of the list).
-    .replace(/sulfur/g, "sulphur")
     .replace(/\s+(atmosphere|volcanism)$/, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
