@@ -112,6 +112,12 @@ module.exports = {
   ],
   win,
   /*
+    Chromium's own menu and dialog texts in English only (owner, 2026-10-06): the app is English, and
+    the other 54 locale packs were 47 MB of the install. Number and date formatting is ICU
+    (icudtl.dat), not these packs.
+  */
+  electronLanguages: ["en-US"],
+  /*
     Linux (owner, 2026-09-28; docs/linux-plan-28092026.md Phase B): an AppImage, built in WSL by
     scripts/dist-linux-appimage.mjs. `executableName` lower-case, as Linux expects; main.cjs runs it
     under XWayland so the HUD stack can be placed and kept on top.
