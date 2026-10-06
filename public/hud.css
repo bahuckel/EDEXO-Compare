@@ -835,6 +835,26 @@ body {
   color: var(--hud-hi);
   opacity: 0.75;
 }
+/* who has been to the system ahead (hud/sections/jump.js renderDiscovered); shadowed for tinted HUDs */
+.jump__disc {
+  margin-top: 0.25rem;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.95),
+    0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.jump__disc--new {
+  color: #a8ff9a;
+}
+.jump__disc--known {
+  color: #e2552c;
+}
+.jump__disc--you {
+  color: #5cb8ff;
+}
 /* what a boxel run / key put on the clipboard (hud/sections/jump.js) */
 .jump__copied {
   margin-top: 0.4rem;

@@ -31,6 +31,7 @@ export var jump = {
       '<div class="jump__body">' +
       '<div class="hud-big jump__sys" data-f="sys">—</div>' +
       '<div class="jump__cls"><span class="jump__star" data-f="star">—</span><span class="jump__note" data-f="note"></span></div>' +
+      '<div class="jump__disc" data-f="disc" hidden></div>' +
       "</div></div>" +
       '<div class="jump__route" data-f="route" hidden></div>' +
       '<div class="jump__copied" data-f="copied" hidden></div>'
@@ -43,6 +44,7 @@ export var jump = {
     renderRouteStrip(d, q(root, "route"));
     renderBoxelCopied(d, q(root, "copied"));
     if (!jt || !jt.starSystem) {
+      renderDiscovered(null, q(root, "disc"));
       status.textContent = "No jump";
       box.className = "jump jump--none";
       q(root, "sys").textContent = "—";
@@ -63,11 +65,38 @@ export var jump = {
     box.className = "jump jump--" + k.kind + (jt.arrived ? " jump--arrived" : "") + " jump--src-" + src;
     q(root, "sys").textContent = jt.starSystem;
     q(root, "star").textContent = k.label;
-    q(root, "note").textContent =
-      jt.likelyFirstFootfall === true && !jt.arrived ? k.note + " · nobody has been here" : k.note;
+    q(root, "note").textContent = k.note;
+    renderDiscovered(jt, q(root, "disc"));
     return null;
   },
 };
+
+/*
+  Who has been to the system ahead (owner, 2026-10-06; it read "nobody has been here"): Undiscovered in
+  light green, Discovered in dark orange-red, Discovered by you in blue, each with a shadow so it reads
+  on a green-tinted custom HUD. Undiscovered / Discovered come from EDSM (server/firstFootfallLookup.ts:
+  no answer yet shows nothing); "by you" from the commander's journals. Only before arriving.
+*/
+export function renderDiscovered(jt, el) {
+  if (!el) return;
+  var label = null;
+  var kind = "";
+  if (jt && jt.starSystem && !jt.arrived) {
+    if (jt.discoveredByYou) {
+      label = "Discovered by you";
+      kind = "you";
+    } else if (jt.likelyFirstFootfall === true) {
+      label = "Undiscovered";
+      kind = "new";
+    } else if (jt.likelyFirstFootfall === false) {
+      label = "Discovered";
+      kind = "known";
+    }
+  }
+  el.hidden = !label;
+  el.className = "jump__disc" + (kind ? " jump__disc--" + kind : "");
+  el.textContent = label || "";
+}
 
 /*
   Boxel scanning (owner, 2026-10-06): what the boxel run or the F6 / F8 / F9 keys put on the clipboard,

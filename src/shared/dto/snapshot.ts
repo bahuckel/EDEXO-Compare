@@ -343,5 +343,7 @@ export interface AppSnapshot {
      * guess from EDSM would be the weaker source.
      */
     likelyFirstFootfall: boolean | null;
+    /** The commander's journals say he discovered it (first to scan its arrival star). */
+    discoveredByYou?: boolean;
   } | null;
 }

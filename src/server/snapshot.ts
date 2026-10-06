@@ -147,12 +147,20 @@ export { PRESENCE_FLOOR_PCT, demoteBelowPresenceFloor, GENUS_SHARE_FLOOR_PCT } f
  */
 function withFirstFootfall(
   jt: NonNullable<AppSnapshot["jumpTarget"]> | null,
-  store: { hasVisitedSystemNamed: (name: string) => boolean },
+  store: {
+    hasVisitedSystemNamed: (name: string) => boolean;
+    commanderDiscoveredSystem: (systemAddress: number) => boolean | null;
+  },
 ): NonNullable<AppSnapshot["jumpTarget"]> | null {
   if (!jt || jt.arrived || !jt.starSystem) return jt;
   const lookup = firstFootfallLookupFor(store);
   lookup.request([jt.starSystem]);
-  return { ...jt, likelyFirstFootfall: lookup.verdict(jt.starSystem) };
+  return {
+    ...jt,
+    likelyFirstFootfall: lookup.verdict(jt.starSystem),
+    // The Next jump card's "Discovered by you" (owner, 2026-10-06): your journals say you were first.
+    discoveredByYou: jt.systemAddress ? store.commanderDiscoveredSystem(jt.systemAddress) === true : false,
+  };
 }
 
 let cachedStarRoles: ReturnType<typeof loadStarRolesConfig> | null = null;
