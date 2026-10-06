@@ -167,6 +167,8 @@ interface TileEntry {
   match: Uint8Array;
   groups320: Cluster[];
   groups80: Cluster[];
+  /** The tile's room in three's space (z flipped), for the picking pass to skip tiles off the cursor. */
+  box: THREE.Box3;
 }
 
 interface ShownGroup extends Cluster {
@@ -197,6 +199,19 @@ export class GalaxyEngine {
   private accum: THREE.WebGLRenderTarget;
   private readonly pickTarget = new THREE.WebGLRenderTarget(9, 9, { type: THREE.UnsignedByteType, depthBuffer: true });
   private readonly pickCamera = new THREE.PerspectiveCamera();
+  private readonly pickFrustum = new THREE.Frustum();
+  private readonly tmpMat = new THREE.Matrix4();
+  /*
+    Elite-style controls (owner, 2026-10-06; View > "Elite controls"): a cross-hair at the camera's target
+    with its shadow on the galactic plane; W/A/S/D move it along the plane, Q/E turn, R/F raise and lower
+    it; left drag turns and tilts all the way round (to look at the map from under it), right drag turns
+    and raises / lowers. The speed follows the distance, so zoomed out it covers more ground.
+  */
+  private elite = false;
+  private readonly keys = new Set<string>();
+  private keyT = 0;
+  private rightDrag: { x: number; y: number } | null = null;
+  private crosshair: THREE.Group | null = null;
   private readonly pointUniforms = {
     uSize: { value: 5 },
     uViewH: { value: 800 },
@@ -386,6 +401,9 @@ export class GalaxyEngine {
     el.addEventListener("pointerleave", this.onPointerLeave);
     el.addEventListener("webglcontextlost", this.onContextLost);
     el.addEventListener("webglcontextrestored", this.onContextRestored);
+    window.addEventListener("keydown", this.onKeyDown);
+    window.addEventListener("keyup", this.onKeyUp);
+    window.addEventListener("blur", this.onBlur);
 
     this.resize();
     this.loop();
@@ -633,7 +651,15 @@ export class GalaxyEngine {
       tex.colorSpace = THREE.SRGBColorSpace;
       const plane = new THREE.Mesh(
         new THREE.PlaneGeometry(photo.x1 - photo.x0, photo.zTop - photo.zBottom),
-        new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.7, depthWrite: false, depthTest: false }),
+        // Both sides: the Elite controls look at the map from under it too (owner, 2026-10-06).
+        new THREE.MeshBasicMaterial({
+          map: tex,
+          transparent: true,
+          opacity: 0.7,
+          depthWrite: false,
+          depthTest: false,
+          side: THREE.DoubleSide,
+        }),
       );
       plane.rotation.x = -Math.PI / 2; // into the plane; the image's top toward the game's +z
       plane.position.set((photo.x0 + photo.x1) / 2, -1, -(photo.zTop + photo.zBottom) / 2);
@@ -1137,6 +1163,10 @@ export class GalaxyEngine {
       match,
       groups320: clustersFromTile(t.cell, t.positions, t.values, 320),
       groups80: clustersFromTile(t.cell, t.positions, t.values, 80),
+      box: new THREE.Box3(
+        new THREE.Vector3(m.x, m.y, -(m.z + 65_536 * TILE_STEP_LY)),
+        new THREE.Vector3(m.x + 65_536 * TILE_STEP_LY, m.y + 65_536 * TILE_STEP_LY, -m.z),
+      ),
     };
     this.tiles.set(key, e);
     this.slots.set(slot, e);
@@ -1307,11 +1337,29 @@ export class GalaxyEngine {
     cam.copy(this.camera);
     cam.setViewOffset(w, h, Math.round(x) - 4, Math.round(y) - 4, 9, 9);
     cam.updateProjectionMatrix();
+    cam.updateMatrixWorld(true);
+    /*
+      Only the tiles the 9 x 9 px cone under the cursor passes through (owner, 2026-10-06: "will making
+      systems only around the mouse clickable improve performance?"). The pass drew every shown tile —
+      up to six million points — on each mouse move to read 81 pixels; the cone crosses a handful. The
+      map itself is drawn as before.
+    */
+    this.pickFrustum.setFromProjectionMatrix(
+      this.tmpMat.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse),
+    );
+    const skipped: THREE.Points[] = [];
+    for (const t of this.tiles.values()) {
+      if (t.pick.visible && !this.pickFrustum.intersectsBox(t.box)) {
+        t.pick.visible = false;
+        skipped.push(t.pick);
+      }
+    }
     const r = this.renderer;
     r.setRenderTarget(this.pickTarget);
     r.setClearColor(0x000000, 0);
     r.clear(true, true, false);
     r.render(this.pickScene, cam);
+    for (const p of skipped) p.visible = true;
     r.setRenderTarget(null);
     r.setClearColor(0x05040a, 1);
     const px = new Uint8Array(9 * 9 * 4);
@@ -1361,9 +1409,15 @@ export class GalaxyEngine {
 
   private onPointerDown = (ev: PointerEvent): void => {
     this.down = { x: ev.offsetX, y: ev.offsetY, t: performance.now(), button: ev.button };
+    if (this.elite && ev.button === 2) {
+      this.rightDrag = { x: ev.clientX, y: ev.clientY };
+      this.flight = null;
+      this.renderer.domElement.setPointerCapture?.(ev.pointerId);
+    }
   };
 
   private onPointerUp = (ev: PointerEvent): void => {
+    if (ev.button === 2) this.rightDrag = null;
     const d = this.down;
     this.down = null;
     if (!d || d.button !== 0 || ev.button !== 0) return;
@@ -1372,6 +1426,15 @@ export class GalaxyEngine {
   };
 
   private onPointerMove = (ev: PointerEvent): void => {
+    // Elite controls: right drag turns (left-right) and raises / lowers the cross-hair (up-down).
+    if (this.elite && this.rightDrag && ev.buttons & 2) {
+      const dx = ev.clientX - this.rightDrag.x;
+      const dy = ev.clientY - this.rightDrag.y;
+      this.rightDrag = { x: ev.clientX, y: ev.clientY };
+      this.turn(-dx * 0.006);
+      this.raise(dy * this.camera.position.distanceTo(this.controls.target) * 0.003);
+      return;
+    }
     if (ev.buttons) return;
     // The loop takes it on its next frame; whether anything is drawn is up to the hover (hoverAt).
     this.hoverQueued = { x: ev.offsetX, y: ev.offsetY };
@@ -1569,11 +1632,171 @@ export class GalaxyEngine {
     this.needsRender = true;
   }
 
+  // ---------------------------------------------------------------------------- Elite controls
+
+  /** Elite-style controls on or off (see the note at `elite`). */
+  setEliteControls(on: boolean): void {
+    if (on === this.elite) return;
+    this.elite = on;
+    this.keys.clear();
+    this.rightDrag = null;
+    const c = this.controls;
+    if (on) {
+      c.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: null as unknown as THREE.MOUSE };
+      c.minPolarAngle = 0.01;
+      c.maxPolarAngle = Math.PI - 0.01;
+    } else {
+      c.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+      c.minPolarAngle = 0;
+      c.maxPolarAngle = Math.PI * 0.47;
+      // Back on the plane, the way the default controls pan.
+      const dy = c.target.y;
+      c.target.y = 0;
+      this.camera.position.y -= dy;
+    }
+    c.update();
+    if (!this.crosshair) this.crosshair = this.makeCrosshair();
+    this.crosshair.visible = on;
+    this.invalidate();
+  }
+
+  getEliteControls(): boolean {
+    return this.elite;
+  }
+
+  private onKeyDown = (ev: KeyboardEvent): void => {
+    if (!this.elite || ev.ctrlKey || ev.altKey || ev.metaKey) return;
+    const t = ev.target as HTMLElement | null;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    const k = ev.code;
+    if (!["KeyW", "KeyA", "KeyS", "KeyD", "KeyQ", "KeyE", "KeyR", "KeyF"].includes(k)) return;
+    // Hidden (a tab behind another): the keys belong to whatever is in front.
+    if (!this.host.offsetParent && getComputedStyle(this.host).position !== "fixed") return;
+    this.keys.add(k);
+    this.flight = null;
+    ev.preventDefault();
+    this.invalidate();
+  };
+  private onKeyUp = (ev: KeyboardEvent): void => {
+    this.keys.delete(ev.code);
+  };
+  private onBlur = (): void => {
+    this.keys.clear();
+  };
+
+  /** Turn the camera round the cross-hair by `angle` radians (positive: to the left). */
+  private turn(angle: number): void {
+    const c = this.controls;
+    const off = this.camera.position.clone().sub(c.target);
+    off.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+    this.camera.position.copy(c.target).add(off);
+    c.update();
+    this.invalidate();
+  }
+
+  /** Raise (negative: lower) the cross-hair and the camera with it, in ly. */
+  private raise(dy: number): void {
+    const c = this.controls;
+    const before = c.target.y;
+    c.target.y = Math.max(-12_000, Math.min(12_000, before + dy));
+    this.camera.position.y += c.target.y - before;
+    c.update();
+    this.invalidate();
+  }
+
+  /** One frame of held keys: move along the plane, turn, raise, at a speed that follows the distance. */
+  private stepKeys(now: number): void {
+    const dt = this.keyT ? Math.min(0.1, (now - this.keyT) / 1000) : 1 / 60;
+    this.keyT = now;
+    const c = this.controls;
+    const dist = Math.max(20, this.camera.position.distanceTo(c.target));
+    const k = this.keys;
+    const fwd = c.target.clone().sub(this.camera.position);
+    fwd.y = 0;
+    if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, -1);
+    fwd.normalize();
+    const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
+    const move = new THREE.Vector3();
+    if (k.has("KeyW")) move.add(fwd);
+    if (k.has("KeyS")) move.sub(fwd);
+    if (k.has("KeyD")) move.add(right);
+    if (k.has("KeyA")) move.sub(right);
+    if (move.lengthSq()) {
+      move.normalize().multiplyScalar(dist * 0.9 * dt);
+      c.target.add(move);
+      this.camera.position.add(move);
+    }
+    if (k.has("KeyQ")) this.turn(1.6 * dt);
+    if (k.has("KeyE")) this.turn(-1.6 * dt);
+    if (k.has("KeyR")) this.raise(dist * 0.6 * dt);
+    if (k.has("KeyF")) this.raise(-dist * 0.6 * dt);
+    c.update();
+    this.needsRender = true;
+  }
+
+  /** The cross-hair: a cross at the target, its ring on the galactic plane, and the line between. */
+  private makeCrosshair(): THREE.Group {
+    const g = new THREE.Group();
+    const colour = accentColour();
+    const mat = new THREE.LineBasicMaterial({ color: colour, transparent: true, opacity: 0.9, depthTest: false });
+    const faint = new THREE.LineBasicMaterial({ color: colour, transparent: true, opacity: 0.45, depthTest: false });
+    const cross = new THREE.LineSegments(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-1, 0, 0),
+        new THREE.Vector3(-0.25, 0, 0),
+        new THREE.Vector3(0.25, 0, 0),
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(0, 0, -1),
+        new THREE.Vector3(0, 0, -0.25),
+        new THREE.Vector3(0, 0, 0.25),
+        new THREE.Vector3(0, 0, 1),
+      ]),
+      mat,
+    );
+    cross.name = "cross";
+    const ringPts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 64; i++) {
+      const a = (i / 64) * Math.PI * 2;
+      ringPts.push(new THREE.Vector3(Math.cos(a) * 0.6, 0, Math.sin(a) * 0.6));
+    }
+    const ring = new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), faint);
+    ring.name = "ring";
+    const stem = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0)]),
+      faint,
+    );
+    stem.name = "stem";
+    for (const o of [cross, ring, stem]) o.renderOrder = 10;
+    g.add(cross, ring, stem);
+    g.visible = false;
+    this.overlay.add(g);
+    return g;
+  }
+
+  /** Put the cross-hair on the target, its ring on the plane below (or above) it, sized to the view. */
+  private placeCrosshair(): void {
+    const g = this.crosshair;
+    if (!g || !g.visible) return;
+    const t = this.controls.target;
+    const size = Math.max(4, this.camera.position.distanceTo(t) * 0.035);
+    const cross = g.getObjectByName("cross")!;
+    const ring = g.getObjectByName("ring")!;
+    const stem = g.getObjectByName("stem")!;
+    cross.position.set(t.x, t.y, t.z);
+    cross.scale.setScalar(size);
+    ring.position.set(t.x, 0, t.z);
+    ring.scale.setScalar(size);
+    stem.position.set(t.x, 0, t.z);
+    stem.scale.set(1, Math.abs(t.y) < 0.01 ? 0.0001 : t.y, 1);
+  }
+
   private loop = (): void => {
     if (this.disposed) return;
     this.raf = requestAnimationFrame(this.loop);
     const now = performance.now();
     const flying = this.stepFlight();
+    if (this.elite && this.keys.size) this.stepKeys(now);
+    else this.keyT = 0;
     // Damping keeps moving after the mouse lets go; update() says whether it did.
     if (this.controls.update() || flying) this.needsRender = true;
     // Did the camera move since the last frame? Names and rings wait until it has been still ~180 ms.
@@ -1664,6 +1887,7 @@ export class GalaxyEngine {
     r.setClearColor(0x05040a, 1);
     r.render(this.composite.scene, this.composite.camera);
     this.updateEasterEgg();
+    this.placeCrosshair();
     r.render(this.overlay, this.camera);
     this.stats.frames++;
     this.stats.lastFrameMs = Math.round((performance.now() - t0) * 10) / 10;
@@ -1898,6 +2122,9 @@ export class GalaxyEngine {
     el.removeEventListener("pointerleave", this.onPointerLeave);
     el.removeEventListener("webglcontextlost", this.onContextLost);
     el.removeEventListener("webglcontextrestored", this.onContextRestored);
+    window.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("keyup", this.onKeyUp);
+    window.removeEventListener("blur", this.onBlur);
     this.controls.dispose();
     const dispose = (o: THREE.Object3D) => {
       const m = o as THREE.Mesh;

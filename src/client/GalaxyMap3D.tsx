@@ -135,6 +135,8 @@ export function GalaxyMap3D() {
   const [findOpen, setFindOpen] = useState(false);
   // Follow the ship as it jumps (owner, 2026-10-04): the camera keeps its distance and moves with you.
   const [follow, setFollow] = usePersistedState("galaxy.follow", true, isBool);
+  // Elite-style controls (owner, 2026-10-06): W/A/S/D, Q/E, R/F, a cross-hair over the plane. Remembered.
+  const [elite, setElite] = usePersistedState("galaxy.eliteControls", false, isBool);
   // The plan list inside the Targets menu (it was a drawer of its own).
   const [planOn, setPlanOn] = useState(false);
   /*
@@ -390,6 +392,11 @@ export function GalaxyMap3D() {
       clearInterval(t);
     };
   }, [graphics.tier]);
+
+  // Elite controls on the engine (it starts without them).
+  useEffect(() => {
+    engine.current?.setEliteControls(elite);
+  }, [elite, stats?.phase]);
 
   // The extra layers: fetched the first time each is switched on, then only shown or hidden.
   useEffect(() => {
@@ -1179,6 +1186,12 @@ export function GalaxyMap3D() {
 
   return (
     <div className="g3d-screen" ref={screenRef}>
+      {/* Systems on their way (owner, 2026-10-06): a small turning circle at the top. */}
+      {stats && (stats.phase === "loading" || stats.tilesLoaded < stats.tilesWanted) ? (
+        <div className="g3d-loading" role="status">
+          <span className="g3d-loading__spin" aria-hidden="true" /> Loading
+        </div>
+      ) : null}
       <div ref={host} className="g3d-canvas" />
       <div ref={labelLayer} className="g3d-labels" aria-hidden="true" />
 
@@ -1233,6 +1246,12 @@ export function GalaxyMap3D() {
             </Tooltip>
           </div>
           <MenuToggle label="Follow my ship" hint="When you jump, the camera moves with you and keeps its distance" on={follow} set={setFollow} />
+          <MenuToggle
+            label="Elite controls"
+            hint="The game's galaxy map: a cross-hair with its shadow on the galactic plane. W A S D move it, Q E turn, R F raise and lower it; left drag turns and tilts all the way round (under the map too), right drag turns and raises; the wheel zooms. Moving is faster zoomed out."
+            on={elite}
+            set={setElite}
+          />
           <MenuRow label="Colour by" hint="Evidence: how sure the record is (mapped, codex logged, signals only). Species count and Value: how rich the system is.">
             <select className="g3d-select g3d-row__val" aria-label="Colour by" value={colour} onChange={(ev) => setColour(Number(ev.target.value) as Colour)}>
               {colours.map(([k, label]) => (
@@ -1259,7 +1278,11 @@ export function GalaxyMap3D() {
               Open
             </a>
           </MenuRow>
-          <p className="g3d-panel__note">Left drag pans · right drag tilts and turns · the wheel zooms · click a ring or a system.</p>
+          <p className="g3d-panel__note">
+            {elite
+              ? "W A S D move · Q E turn · R F up / down · left drag turns and tilts · right drag turns and raises · the wheel zooms."
+              : "Left drag pans · right drag tilts and turns · the wheel zooms · click a ring or a system."}
+          </p>
         </aside>
       ) : null}
 
@@ -1791,7 +1814,11 @@ export function GalaxyMap3D() {
             <i className="g3d-dot g3d-dot--search" /> {search.label}
           </span>
         ) : null}
-        <span className="g3d-hint">Left drag pan · right drag tilt / turn · wheel zoom · click a ring or a system</span>
+        <span className="g3d-hint">
+          {elite
+            ? "W A S D move · Q E turn · R F up / down · left drag turn / tilt · right drag turn / raise · wheel zoom"
+            : "Left drag pan · right drag tilt / turn · wheel zoom · click a ring or a system"}
+        </span>
       </footer>
     </div>
   );
