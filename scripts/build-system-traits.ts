@@ -2,7 +2,9 @@
  * The galaxy map's star and body filters (owner, 2026-10-04): what every system of `bio-index.bin`
  * holds besides biology, from the Spansh dump.
  *
- *   npx tsx scripts/build-system-traits.ts <galaxy_bio.jsonl.gz> [--out data/galaxy/system-traits.bin.gz]
+ *   npx tsx scripts/build-system-traits.ts <galaxy_bio.jsonl.gz> [--out data/galaxy/system-traits.bin.gz] [--index bio-index.bin]
+ *
+ * `--index` numbers by another bio-index.bin than the app's (a rebuild beside the old one).
  *
  * One stream over the dump (a system line, then its bodies), one record per **bio-index ordinal**,
  * so the map can test a system by the same number its points already carry. Systems the dump lacks
@@ -32,15 +34,16 @@ import {
 } from "../src/shared/galaxyTraits.js";
 
 const args = process.argv.slice(2);
-const src = args.find((a) => !a.startsWith("--"));
+const src = args.find((a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--"));
 const outAt = args.indexOf("--out");
 const out = outAt >= 0 ? args[outAt + 1]! : path.join("data", "galaxy", "system-traits.bin.gz");
 if (!src) {
   console.error("usage: npx tsx scripts/build-system-traits.ts <galaxy_bio.jsonl.gz> [--out file]");
   process.exit(1);
 }
-const index = loadBioIndex();
-if (!index) throw new Error("no data/galaxy/bio-index.bin");
+const indexAt = args.indexOf("--index");
+const index = indexAt >= 0 ? loadBioIndex(args[indexAt + 1]!) : loadBioIndex();
+if (!index) throw new Error("no bio-index.bin");
 const n = index.systemCount;
 const main = new Uint8Array(n).fill(STAR_NONE);
 const stars = new Uint32Array(n);
