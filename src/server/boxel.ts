@@ -18,7 +18,7 @@ import type { TileIndex } from "./galaxyTiles.js";
 import { sectorOrdinals } from "./galaxyFind.js";
 import { TIER_DSS, TIER_FSS } from "./bioIndex.js";
 import type { SystemTraits } from "./galaxyTraits.js";
-import { BODY_TRAITS, STAR_CLASSES, STAR_NONE } from "../shared/galaxyTraits.js";
+import { BODY_TRAITS, STAR_CLASSES, STAR_NONE, starClassIndex } from "../shared/galaxyTraits.js";
 import type { BoxelLookupRecord } from "./boxelLookup.js";
 
 /** Listing more than this is not a boxel anyone flies by hand. */
@@ -176,12 +176,20 @@ export function boxelTable(opts: {
   visitedAt?: (systemAddress: number) => string | null;
   /** The boxel's Spansh look-up (server/boxelLookup.ts), when there is one. */
   lookup?: (prefix: string) => BoxelLookupRecord | null;
+  /** Systems on routes he plotted (the NavRoute finder's list): name and the star class NavRoute.json gave. */
+  routed?: Iterable<{ name: string; starClass: string }>;
 }): BoxelTableDTO {
   const lookups: BoxelTableDTO["lookups"] = [];
   const visited = [...opts.visited].map(visitedEntry);
   const rows: BoxelTableRowDTO[] = [];
   const tally = new Map<string, number>();
+  const routed = [...(opts.routed ?? [])];
   for (const b of opts.boxels) {
+    const onRoute = new Map<number, string>();
+    for (const r of routed) {
+      const n = boxelIndexOf(r.name, b.prefix);
+      if (n != null) onRoute.set(n, r.starClass);
+    }
     const mine = new Map<number, number | null>();
     for (const v of visited) {
       const n = boxelIndexOf(v.name, b.prefix);
@@ -233,6 +241,7 @@ export function boxelTable(opts: {
         bodyTypes: [],
         bio: null,
       };
+      if (!flown && onRoute.has(n)) row.onRoute = true;
       if (j) {
         const species = mergeSpecies(indexSpecies, j.bio.species);
         row = {
@@ -280,6 +289,11 @@ export function boxelTable(opts: {
           bodyTypes: idx?.bodyTypes ?? [],
           bio: { signals: null, seen: indexSeen, species: indexSpecies },
         };
+      } else if (!flown && onRoute.has(n)) {
+        // Only the main star's class: NavRoute.json names nothing else.
+        const cls = onRoute.get(n)!.trim();
+        const i = starClassIndex(cls);
+        row = { ...row, from: "route", mainStar: cls || null, starClasses: i >= 0 ? [STAR_CLASSES[i]!.key] : [] };
       }
       /*
         Not on Spansh only when its search listed the boxel at all: a look-up that found none of it

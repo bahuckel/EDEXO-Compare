@@ -376,6 +376,7 @@ export function registerGalaxyRoutes(
         store ? store.visitedSystems.entries() : [],
         store ? boxelStats(store) : undefined,
         store?.currentSystem ?? null,
+        navRouteLog().systems,
       ),
     };
   };
@@ -438,6 +439,7 @@ export function registerGalaxyRoutes(
         journal: store ? (addr) => boxelJournalFacts(store, addr) : undefined,
         visitedAt: (addr) => store?.systemVisitedAt.get(addr) ?? null,
         lookup: (prefix) => lookups.get(prefix),
+        routed: navRouteLog().systems,
       }),
     });
   });

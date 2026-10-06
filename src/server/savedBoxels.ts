@@ -22,9 +22,15 @@ interface Stored {
 export interface SavedBoxelsService {
   /**
    * Every saved boxel with its progress. `current` is the system the commander is in: its boxel
-   * comes first and is marked current; the rest follow, newest first.
+   * comes first and is marked current; the rest follow, newest first. `routed`: systems on routes he
+   * plotted (the NavRoute finder's list) — they exist, so a boxel reaches at least that far.
    */
-  list(visited: Iterable<VisitedSystem>, stats?: SystemStats, current?: string | null): SavedBoxelDTO[];
+  list(
+    visited: Iterable<VisitedSystem>,
+    stats?: SystemStats,
+    current?: string | null,
+    routed?: Iterable<{ name: string }>,
+  ): SavedBoxelDTO[];
   /** Adds a boxel by its last system, or moves the end of one already saved. Null: not a boxel system name. */
   add(lastSystem: string): { id: string } | null;
   remove(id: string): boolean;
@@ -55,12 +61,19 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
   };
 
   return {
-    list(visited, stats, current) {
+    list(visited, stats, current, routed) {
       const parsed = items
         .map((s) => ({ s, e: endOf(s) }))
         .filter((x): x is { s: Stored; e: NonNullable<ReturnType<typeof endOf>> } => x.e != null);
       const flownBy = new Map(parsed.map((x) => [x.s.id, new Set<number>()]));
       const addrsBy = new Map(parsed.map((x) => [x.s.id, [] as { n: number; addr: number }[]]));
+      const routedBy = new Map(parsed.map((x) => [x.s.id, new Set<number>()]));
+      for (const r of routed ?? []) {
+        for (const { s, e } of parsed) {
+          const n = boxelIndexOf(r.name, e.b.prefix);
+          if (n != null) routedBy.get(s.id)!.add(n);
+        }
+      }
       for (const v of visited) {
         const { name, addr } = visitedEntry(v);
         for (const { s, e } of parsed) {
@@ -72,13 +85,16 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
       }
       const out = parsed.map(({ s, e }) => {
         const flownAll = flownBy.get(s.id)!;
+        const routedAll = routedBy.get(s.id)!;
         /*
           The boxel reaches at least as far as he has flown in it (owner, 2026-10-05: from Assairts EL-P
           e5-9 he jumped to e5-16 and the systems between were not added). The end he typed, or that a
-          Plan / Current boxel found, is the least it lists.
+          Plan / Current boxel found, is the least it lists. A route he plotted through it proves the
+          same (owner, 2026-10-06, auto-boxel detector): the game's plotter only routes through systems
+          that exist.
         */
         const { b } = e;
-        const end = Math.min(BOXEL_MAX_ROWS - 1, Math.max(e.end, ...flownAll));
+        const end = Math.min(BOXEL_MAX_ROWS - 1, Math.max(e.end, ...flownAll, ...routedAll));
         const skipped = (s.skipped ?? []).filter((n) => n <= end && !flownAll.has(n)).sort((x, y) => x - y);
         const skip = new Set(skipped);
         let next: number | null = null;
@@ -113,6 +129,7 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
           flown: [...flownAll].filter((n) => n <= end).length,
           skipped,
           flownBeyond: [...flownAll].filter((n) => n > end).sort((x, y) => x - y),
+          routed: [...routedAll].filter((n) => n <= end && !flownAll.has(n)).length,
           total: end + 1,
           next: next == null ? null : `${b.prefix}${next}`,
         };

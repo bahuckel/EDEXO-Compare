@@ -125,6 +125,51 @@ describe("a saved boxel follows the jumps (owner, 2026-10-05)", () => {
     expect(s.list(visited)[0]).toMatchObject({ end: 16, total: 17, flown: 2, next: "Assairts EL-P e5-0" });
     expect(s.list(["Assairts EL-P e5-9"])[0]).toMatchObject({ end: 9 });
   });
+
+  it("lists to the highest system on a route he plotted, and counts the routed ones not flown (2026-10-06)", async () => {
+    const { createSavedBoxels } = await import("../src/server/savedBoxels.js");
+    const s = createSavedBoxels({ filePath: null });
+    s.add("Assairts EL-P e5-9");
+    const routed = [{ name: "Assairts EL-P e5-21" }, { name: "Assairts EL-P e5-9" }, { name: "Sol" }];
+    expect(s.list(["Assairts EL-P e5-9"], undefined, null, routed)[0]).toMatchObject({
+      end: 21,
+      total: 22,
+      flown: 1,
+      routed: 1,
+      flownBeyond: [],
+    });
+  });
+});
+
+describe("routed systems in the Boxels table (auto-boxel detector, 2026-10-06)", () => {
+  it("marks a system on a plotted route, with NavRoute's star class when nothing better is known", async () => {
+    const { boxelTable } = await import("../src/server/boxel.js");
+    const t = boxelTable({
+      boxels: [
+        {
+          id: "a",
+          prefix: "Eol Prou AB-C d1-",
+          end: 2,
+          skipped: [],
+          boxel: "AB-C d1",
+          sector: "Eol Prou",
+        } as never,
+      ],
+      index: null,
+      visited: [[11, "Eol Prou AB-C d1-0"]],
+      speciesName: (id) => id,
+      routed: [
+        { name: "Eol Prou AB-C d1-0", starClass: "K" },
+        { name: "Eol Prou AB-C d1-2", starClass: "N" },
+      ],
+    });
+    expect(t.rows.map((r) => [r.n, r.flown, r.onRoute ?? false, r.from])).toEqual([
+      [0, true, false, null],
+      [1, false, false, null],
+      [2, false, true, "route"],
+    ]);
+    expect(t.rows[2]).toMatchObject({ mainStar: "N", starClasses: ["N"] });
+  });
 });
 
 describe("the Boxels screen's table (owner, 2026-10-05)", () => {

@@ -126,6 +126,11 @@ export interface SavedBoxelDTO {
   skipped: number[];
   /** Systems past `end` that he has flown: the boxel goes further than the end he typed. */
   flownBeyond: number[];
+  /**
+   * Systems -0..end not flown that a route he plotted passes through (NavRoute.json, kept by the
+   * NavRoute finder): they exist, as far as the game's own plotter knows.
+   */
+  routed?: number;
   /** Bodies he scanned across its flown systems, and the FSS totals of those systems when known. */
   bodiesScanned: number;
   bodiesTotal: number | null;
@@ -166,8 +171,13 @@ export interface BoxelTableRowDTO {
   visitedAt: string | null;
   /** Its address: from the journals when flown, else Spansh's id64 from a look-up; null when unknown. */
   systemAddress: number | null;
-  /** Where the facts come from: your journals, the galaxy index, a Spansh look-up, or nothing yet. */
-  from: "journal" | "index" | "lookup" | null;
+  /**
+   * Where the facts come from: your journals, the galaxy index, a Spansh look-up, a route you plotted
+   * (its main star class only), or nothing yet.
+   */
+  from: "journal" | "index" | "lookup" | "route" | null;
+  /** Not flown, but a route he plotted passes through it. */
+  onRoute?: boolean;
   /** The boxel was looked up on Spansh and this system is not there: undiscovered, as far as anyone uploaded. */
   notOnSpansh?: boolean;
   /** "K5 V" from a scan, "K" from the index or the jump. */

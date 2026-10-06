@@ -41,11 +41,12 @@ const NOTABLE_LABEL = Object.fromEntries(NOTABLE_KINDS.map((k) => [k.key, k.labe
 const FROM_TITLE = {
   index: "From the galaxy index (EDSM / Spansh records)",
   lookup: "From Spansh (Look up)",
+  route: "From a route you plotted (NavRoute.json): the main star's class only",
 } as const;
 
 /** A fact from the galaxy index or a Spansh look-up (not your own scan) reads dimmer, and says so on hover. */
 function fromIndex(r: BoxelTableRowDTO, text: string) {
-  return r.from === "index" || r.from === "lookup" ? (
+  return r.from === "index" || r.from === "lookup" || r.from === "route" ? (
     <span className="boxel-from-index" title={FROM_TITLE[r.from]}>
       {text}
     </span>
@@ -375,6 +376,10 @@ export function BoxelScreen({
             </span>
           ) : r.skipped ? (
             <span className="boxel-skipped">skipped</span>
+          ) : r.onRoute ? (
+            <span className="dim" title="Not flown yet: a route you plotted passes through it, so it exists">
+              on route
+            </span>
           ) : (
             <span className="dim">—</span>
           ),
@@ -917,6 +922,11 @@ export function BoxelScreen({
                 {allRows.some((r) => r.from === "lookup") ? (
                   <span>
                     <strong>{allRows.filter((r) => r.from === "lookup").length}</strong> from Spansh
+                  </span>
+                ) : null}
+                {allRows.some((r) => r.onRoute) ? (
+                  <span title="Not flown, on a route you plotted (NavRoute.json)">
+                    <strong>{allRows.filter((r) => r.onRoute).length}</strong> on your routes
                   </span>
                 ) : null}
                 {lead?.next ? (
