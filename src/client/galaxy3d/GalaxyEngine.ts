@@ -652,9 +652,13 @@ export class GalaxyEngine {
       const plane = new THREE.Mesh(
         new THREE.PlaneGeometry(photo.x1 - photo.x0, photo.zTop - photo.zBottom),
         // Both sides: the Elite controls look at the map from under it too (owner, 2026-10-06).
+        // Added, not blended: the drawing's black margin is darker than the background, and blended it
+        // showed as a darker rectangle with a hard edge (owner, 2026-10-06). Black adds nothing, so the
+        // margin vanishes; the picture itself is brighter by a fraction of the near-black background.
         new THREE.MeshBasicMaterial({
           map: tex,
           transparent: true,
+          blending: THREE.AdditiveBlending,
           opacity: 0.7,
           depthWrite: false,
           depthTest: false,
