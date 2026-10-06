@@ -107,12 +107,14 @@ function TabButton({
         if (front === "main") return;
         ev.dataTransfer.setData(DRAG_TYPE, JSON.stringify({ kind: front, from: WINDOW_KEY }));
         ev.dataTransfer.effectAllowed = "move";
+        TAB_BRIDGE?.dragging(true);
       }}
       onDragEnd={(ev) => {
         /*
           Dropped where nothing took it, outside this window: out into a window of its own (the desktop
           app; a browser keeps it). Dropped on another window's strip, that window took it (onDrop).
         */
+        TAB_BRIDGE?.dragging(false);
         if (front === "main" || !TAB_BRIDGE || ev.dataTransfer.dropEffect !== "none") return;
         const { screenX: x, screenY: y } = ev;
         const inside =

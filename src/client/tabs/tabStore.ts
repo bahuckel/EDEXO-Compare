@@ -74,11 +74,13 @@ interface TabBridge {
   detach(req: { kind: string; x: number; y: number }): Promise<boolean>;
   moved(req: { kind: string; from: string }): void;
   windowEmpty(): void;
+  dragging(on: boolean): void;
   on(
     cb: (
       m:
         | { type: "registry"; registry: Record<string, string[]> }
-        | { type: "remove" | "activate"; kind: string },
+        | { type: "remove" | "activate"; kind: string }
+        | { type: "dragging"; on: boolean },
     ) => void,
   ): () => void;
 }
@@ -221,6 +223,8 @@ if (TAB_BRIDGE) {
     if (m.type === "registry") elsewhere = m.registry;
     else if (m.type === "remove" && isKind(m.kind)) tabStore.close(m.kind);
     else if (m.type === "activate" && isKind(m.kind)) tabStore.activate(m.kind);
+    // A tab dragged in any window: the strip stops being the window's drag handle until it ends.
+    else if (m.type === "dragging") document.documentElement.classList.toggle("tab-dragging", m.on);
   });
   void TAB_BRIDGE.registry().then((r) => (elsewhere = r ?? {}));
   TAB_BRIDGE.report(state.tabs);

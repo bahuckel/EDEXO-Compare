@@ -172,6 +172,14 @@ function createTabWindows(d) {
     const from = windows.get(req?.from);
     if (live(from) && from.webContents !== ev.sender) from.webContents.send("edexo:tab-remove", req.kind);
   });
+  /*
+    A tab is being dragged (or the drag ended): every window hears it, so its whole strip takes the drop.
+    The strip's empty part is the window's drag handle, and Windows gives a drop there to nobody — a tab
+    let go on it opened a new window (owner, 2026-10-06: "I need to drop it close to the +").
+  */
+  d.ipcMain.on("edexo:tab-dragging", (_ev, on) => {
+    for (const w of windows.values()) if (live(w)) w.webContents.send("edexo:tab-dragging", on === true);
+  });
   // A detached window whose last tab left.
   d.ipcMain.on("edexo:tab-window-empty", (ev) => {
     const k = keyOf(ev.sender);

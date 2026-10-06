@@ -19,17 +19,21 @@ contextBridge.exposeInMainWorld("edexoElectron", {
     detach: (req) => ipcRenderer.invoke("edexo:tab-detach", req),
     moved: (req) => ipcRenderer.send("edexo:tab-moved", req),
     windowEmpty: () => ipcRenderer.send("edexo:tab-window-empty"),
+    dragging: (on) => ipcRenderer.send("edexo:tab-dragging", on === true),
     on: (cb) => {
       const reg = (_e, r) => cb({ type: "registry", registry: r });
       const rem = (_e, k) => cb({ type: "remove", kind: k });
       const act = (_e, k) => cb({ type: "activate", kind: k });
+      const drag = (_e, on) => cb({ type: "dragging", on: on === true });
       ipcRenderer.on("edexo:tab-registry", reg);
       ipcRenderer.on("edexo:tab-remove", rem);
       ipcRenderer.on("edexo:tab-activate", act);
+      ipcRenderer.on("edexo:tab-dragging", drag);
       return () => {
         ipcRenderer.removeListener("edexo:tab-registry", reg);
         ipcRenderer.removeListener("edexo:tab-remove", rem);
         ipcRenderer.removeListener("edexo:tab-activate", act);
+        ipcRenderer.removeListener("edexo:tab-dragging", drag);
       };
     },
   },

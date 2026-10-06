@@ -197,6 +197,10 @@ html.custom-title-bar .tab-strip {
   -webkit-app-region: drag;
   padding-right: calc(100vw - env(titlebar-area-width, 100vw) + 0.4rem);
 }
+/* While a tab is dragged (any window), the whole strip takes the drop instead of being the drag handle. */
+html.custom-title-bar.tab-dragging .tab-strip {
+  -webkit-app-region: no-drag;
+}
 html.custom-title-bar .tab-strip__tab,
 html.custom-title-bar .tab-strip__add,
 html.custom-title-bar .tab-strip__menu {
