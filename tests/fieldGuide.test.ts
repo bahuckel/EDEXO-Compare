@@ -4,7 +4,9 @@
  */
 import { describe, expect, it } from "vitest";
 import { buildGuideGenus, guideBodyName, guideMeasured, guideStarClass } from "../src/shared/fieldGuide.js";
-import { guideBodyFrom } from "../src/client/FieldGuide.js";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { GuideMeasuredBlock, guideBodyFrom } from "../src/client/FieldGuide.js";
 import { buildFieldGuide } from "../src/server/fieldGuide.js";
 import { buildEncyclopediaPayload, getCachedSpeciesDatabase } from "../src/server/snapshot.js";
 import { getProjectRoot } from "../src/server/paths.js";
@@ -104,4 +106,36 @@ describe("field guide", () => {
     expect(b.volcanism).toBe("No volcanism");
     expect(b.star).toBe("K");
   });
+
+  it("matches the body's atmosphere whichever way sulphur is spelled", () => {
+    // The journal says "thin sulfur dioxide atmosphere"; the shares say "Thin Sulphur dioxide".
+    const m = {
+      bodies: 100,
+      planet: [],
+      atmosphere: [
+        { label: "Thin Carbon dioxide", n: 36 },
+        { label: "Thin Sulphur dioxide", n: 33 },
+        { label: "Thin Ammonia", n: 26 },
+      ],
+      volcanism: [],
+      star: [],
+      locked: null,
+      hist: {},
+      materials: [],
+    } as unknown as Parameters<typeof GuideMeasuredBlock>[0]["m"];
+    const body = {
+      label: "B 1",
+      values: {},
+      planet: null,
+      atmosphere: "thin sulfur dioxide atmosphere",
+      volcanism: null,
+      star: null,
+      materials: {},
+    };
+    const html = renderToStaticMarkup(createElement(GuideMeasuredBlock, { m, body }));
+    expect(html).toContain("this body: thin sulfur dioxide atmosphere");
+    expect(html).not.toContain("not seen");
+    expect(html).toContain('class="fg-legend--mine"');
+  });
 });
+
