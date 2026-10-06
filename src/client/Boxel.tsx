@@ -763,6 +763,14 @@ export function BoxelScreen({
                       >
                         <strong>{b.boxel}</strong> <span className="dim">{b.sector}</span>
                         {b.current ? <span className="boxel-side__here">you are here</span> : null}
+                        {b.run ? (
+                          <span
+                            className="boxel-side__here"
+                            title="Boxel run: after every jump its next system is on the clipboard (F7 finishes it)"
+                          >
+                            run
+                          </span>
+                        ) : null}
                         <GoldenTag boxel={b.boxel} />
                       </button>
                       <span
@@ -821,6 +829,18 @@ export function BoxelScreen({
                           number after the end. Found: plot or target it and the boxel extends itself.
                           Not found: Not there, and the end is known.
                         */}
+                        <button
+                          type="button"
+                          className={`fdb-chip${b.run ? " fdb-chip--on" : ""}`}
+                          title={
+                            b.run
+                              ? "Finish the boxel run (F7 in the game)"
+                              : "Start a boxel run here: after every jump its next system is on the clipboard, wherever you are (F7 in the game; F8 / F9 step through its systems)"
+                          }
+                          onClick={() => void patch(b.id, { run: !b.run })}
+                        >
+                          {b.run ? "Finish run" : "Start run"}
+                        </button>
                         <button
                           type="button"
                           className={`fdb-chip${copied === b.prefix ? " fdb-chip--on" : ""}`}

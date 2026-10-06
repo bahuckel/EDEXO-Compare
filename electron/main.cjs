@@ -133,10 +133,14 @@ const keybinds = createKeybinds({
     bodyPrev: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: -1 }),
     bodyNext: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: 1 }),
     noticesClear: () => runtime?.clearNotices?.(),
-    boxelCopyNext: () => {
-      const next = runtime?.boxelNext?.();
-      if (next) clipboard.writeText(next);
+    // Boxel scanning (server/boxelRun.ts): the server picks the system, the clipboard writer below copies it.
+    boxelCopyNext: () => runtime?.boxelCopyNext?.(),
+    boxelRun: () => {
+      const r = runtime?.boxelRunToggle?.();
+      if (r) console.log(`[edexo-compare] boxel run ${r.running ? "started" : "finished"}: ${r.boxel}`);
     },
+    boxelPrev: () => runtime?.boxelStep?.(-1),
+    boxelNext: () => runtime?.boxelStep?.(1),
   },
 });
 
@@ -708,7 +712,7 @@ async function start() {
   trayControl.create(winIcon);
   // Overlays step aside while Elite is not running and come back with it (server gamePresence.ts;
   // guild tester report, 2026-09-30). The hotkey still shows them on demand.
-  // Boxel scanning: after each jump into a saved boxel the next system to fly is on the clipboard.
+  // Boxel scanning: whatever the run, a jump or a boxel key picks goes on the clipboard.
   if (runtime && typeof runtime.onBoxelNext === "function") runtime.onBoxelNext((name) => clipboard.writeText(name));
   if (runtime && typeof runtime.onGameRunning === "function") {
     if (runtime.gameRunning() === false) huds.setGameAway(true);

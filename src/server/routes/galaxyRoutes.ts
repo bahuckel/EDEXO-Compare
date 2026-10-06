@@ -509,6 +509,8 @@ export function registerGalaxyRoutes(
     else if (typeof body.skip === "number") done = opts.savedBoxels.setSkipped(id, body.skip, body.on !== false);
     // The galaxy-map probe: `{ lastIs: n }` — he checked that n + 1 is not there, so n is the last.
     else if (typeof body.lastIs === "number") done = opts.savedBoxels.confirmEnd(id, body.lastIs);
+    // The boxel run (server/boxelRun.ts): `{ run: true }` makes this boxel the run, `{ run: false }` ends it.
+    else if (typeof body.run === "boolean") done = opts.savedBoxels.setRun(body.run ? id : null);
     if (!done) {
       res.status(400).json({ ...savedList(), ok: false, error: "That system is not in this saved boxel." });
       return;

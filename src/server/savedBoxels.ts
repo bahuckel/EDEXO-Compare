@@ -48,17 +48,32 @@ export interface SavedBoxelsService {
   /** Copy the next system to fly to the clipboard after each jump into a saved boxel (default on). */
   autoCopyNext(): boolean;
   setAutoCopyNext(on: boolean): void;
+  /**
+   * The boxel run (owner, 2026-10-06: a "start / finish boxel run" key): the saved boxel being flown
+   * now, whose next system is copied after every jump wherever he is. Null: no run.
+   */
+  runId(): string | null;
+  setRun(id: string | null): boolean;
+  /**
+   * The systems of a saved boxel still to fly (neither flown nor skipped), in order, -0 to its end, and
+   * the end (known: checked in the galaxy map that nothing follows it).
+   */
+  remaining(
+    id: string,
+    visited: Iterable<VisitedSystem>,
+    routed?: Iterable<{ name: string }>,
+  ): { prefix: string; todo: number[]; end: number; endKnown: boolean } | null;
 }
 
 export function createSavedBoxels(opts: { filePath: string | null; now?: () => number }): SavedBoxelsService {
   const now = opts.now ?? Date.now;
-  let { items, autoCopy } = load(opts.filePath);
+  let { items, autoCopy, run } = load(opts.filePath);
 
   function persist(): void {
     if (!opts.filePath) return;
     const tmp = `${opts.filePath}.tmp`;
     try {
-      writeFileSync(tmp, `${JSON.stringify({ formatVersion: 1, autoCopyNext: autoCopy, items }, null, 1)}\n`, "utf8");
+      writeFileSync(tmp, `${JSON.stringify({ formatVersion: 1, autoCopyNext: autoCopy, run, items }, null, 1)}\n`, "utf8");
       renameSync(tmp, opts.filePath);
     } catch {
       /* kept in memory; the next change tries again */
@@ -133,6 +148,7 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
           bodiesTotal: stats ? bodiesTotal : null,
           notable,
           current: !!current && boxelIndexOf(current, b.prefix) != null,
+          run: run === s.id,
           sector: b.sector,
           boxel: b.boxel,
           prefix: b.prefix,
@@ -171,6 +187,7 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
       const before = items.length;
       items = items.filter((s) => s.id !== id);
       if (items.length === before) return false;
+      if (run === id) run = null;
       persist();
       return true;
     },
@@ -199,6 +216,33 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
       autoCopy = on;
       persist();
     },
+    runId: () => (run && items.some((s) => s.id === run) ? run : null),
+    setRun(id) {
+      if (id != null && !items.some((s) => s.id === id)) return false;
+      run = id;
+      persist();
+      return true;
+    },
+    remaining(id, visited, routed) {
+      const s = items.find((x) => x.id === id);
+      const e = s ? endOf(s) : null;
+      if (!s || !e) return null;
+      const flown = new Set<number>();
+      for (const v of visited) {
+        const n = boxelIndexOf(visitedEntry(v).name, e.b.prefix);
+        if (n != null) flown.add(n);
+      }
+      let end = Math.max(e.end, ...flown);
+      for (const r of routed ?? []) {
+        const n = boxelIndexOf(r.name, e.b.prefix);
+        if (n != null && n > end) end = n;
+      }
+      end = Math.min(BOXEL_MAX_ROWS - 1, end);
+      const skip = new Set(s.skipped ?? []);
+      const todo: number[] = [];
+      for (let n = 0; n <= end; n++) if (!flown.has(n) && !skip.has(n)) todo.push(n);
+      return { prefix: e.b.prefix, todo, end, endKnown: !!s.endKnown && end === e.end };
+    },
     setSkipped(id, n, skipped) {
       const s = items.find((x) => x.id === id);
       const e = s ? endOf(s) : null;
@@ -213,10 +257,10 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
   };
 }
 
-function load(filePath: string | null): { items: Stored[]; autoCopy: boolean } {
-  if (!filePath || !existsSync(filePath)) return { items: [], autoCopy: true };
+function load(filePath: string | null): { items: Stored[]; autoCopy: boolean; run: string | null } {
+  if (!filePath || !existsSync(filePath)) return { items: [], autoCopy: true, run: null };
   try {
-    const raw = JSON.parse(readFileSync(filePath, "utf8")) as { items?: Stored[]; autoCopyNext?: boolean };
+    const raw = JSON.parse(readFileSync(filePath, "utf8")) as { items?: Stored[]; autoCopyNext?: boolean; run?: unknown };
     const items = (raw.items ?? [])
       .filter((s) => s && typeof s.id === "string" && typeof s.lastSystem === "string")
       .map((s) => ({
@@ -224,8 +268,8 @@ function load(filePath: string | null): { items: Stored[]; autoCopy: boolean } {
         skipped: Array.isArray(s.skipped) ? s.skipped.filter((n) => Number.isInteger(n) && n >= 0) : undefined,
         endKnown: s.endKnown === true ? true : undefined,
       }));
-    return { items, autoCopy: raw.autoCopyNext !== false };
+    return { items, autoCopy: raw.autoCopyNext !== false, run: typeof raw.run === "string" ? raw.run : null };
   } catch {
-    return { items: [], autoCopy: true };
+    return { items: [], autoCopy: true, run: null };
   }
 }

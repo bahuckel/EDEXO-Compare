@@ -6,9 +6,10 @@
   "Idea behind it, the user won't have to alt tab to the browser window in order to switch bodies, or
   if they have a single key stroke they want to bind the HUD to, they can."
 
-  Five actions: show / hide the HUDs (it was Ctrl+Alt+H, fixed), previous and next body tab (F1 and F2
-  by default), clear the notices on the bell (F5; owner, 2026-10-05), and copy the next boxel system to
-  fly (F6; owner, 2026-10-06). A bind is an Electron accelerator of up to three keys — modifiers and one key, or one key
+  Eight actions: show / hide the HUDs (it was Ctrl+Alt+H, fixed), previous and next body tab (F1 and F2
+  by default), clear the notices on the bell (F5; owner, 2026-10-05), and boxel scanning (owner,
+  2026-10-06; server/boxelRun.ts): copy the next system to fly (F6), start / finish a boxel run (F7),
+  and step to the previous / next system still to fly (F8 / F9). A bind is an Electron accelerator of up to three keys — modifiers and one key, or one key
   on its own — or "" for none. They are global: Windows hands the key to us and not to the game, so a
   key the commander uses in Elite should not be bound here; the launcher says so beside the field.
 
@@ -28,6 +29,9 @@ const ACTIONS = {
   noticesClear: { default: "F5", label: "Clear the notices (the bell)", gameOnly: true },
   // Boxel scanning (owner, 2026-10-06): the next system of the saved boxel he is in, to paste in the galaxy map.
   boxelCopyNext: { default: "F6", label: "Copy the next boxel system to fly", gameOnly: true },
+  boxelRun: { default: "F7", label: "Start / finish a boxel run", gameOnly: true },
+  boxelPrev: { default: "F8", label: "Copy the previous boxel system", gameOnly: true },
+  boxelNext: { default: "F9", label: "Copy the next boxel system after that", gameOnly: true },
 };
 
 const MODIFIERS = new Set(["Control", "Ctrl", "CommandOrControl", "CmdOrCtrl", "Alt", "Shift", "Super", "Meta"]);

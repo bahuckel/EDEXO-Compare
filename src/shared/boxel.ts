@@ -142,6 +142,8 @@ export interface SavedBoxelDTO {
   notable: number;
   /** The commander is in this boxel now. */
   current: boolean;
+  /** The boxel run (start / finish key): its next system is copied after every jump. */
+  run?: boolean;
   total: number;
   /** The lowest system number neither flown nor skipped; null when the boxel is done. */
   next: string | null;

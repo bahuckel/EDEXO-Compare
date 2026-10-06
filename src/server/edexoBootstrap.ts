@@ -148,6 +148,8 @@ import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startu
 import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
 import { createNoticesService, type CodexFirstFind, type NoticesContext } from "./notices.js";
 import { createBookmarksService } from "./bookmarks.js";
+import { spawn } from "node:child_process";
+import { createBoxelRun } from "./boxelRun.js";
 import { createSavedBoxels } from "./savedBoxels.js";
 import { createGreenGiantMarks, greenGiantForRecord, type GreenGiantSources } from "./greenGiants.js";
 import { setNotableOptionsProvider } from "./notableOptions.js";
@@ -194,10 +196,13 @@ export type EdexoRuntime = {
   /** The Clear notices key (owner, 2026-10-05): every notice marked read, then the read ones cleared. */
   clearNotices: () => number;
   /**
-   * The next system to fly in the saved boxel he is in (null: not in one, or it is done), and a
-   * callback after each jump into one while "copy after each jump" is on; returns an unsubscribe.
+   * Boxel scanning keys (server/boxelRun.ts): copy the next system to fly, step to the previous / next
+   * one still to fly, start or finish a run. Each returns the name copied (or the run's state).
    */
-  boxelNext: () => string | null;
+  boxelCopyNext: () => string | null;
+  boxelStep: (dir: -1 | 1) => string | null;
+  boxelRunToggle: () => { running: boolean; boxel: string; copied: string | null } | null;
+  /** The clipboard writer: the desktop app subscribes; returns an unsubscribe. */
   onBoxelNext: (cb: (name: string) => void) => () => void;
   /**
    * The downloaded, checked update waiting for a restart, and the folder it sits in; null when there
@@ -371,19 +376,32 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-boxels.json"),
   });
   /*
-    Boxel scanning (owner, 2026-10-06, after EDJP's routing mode): after each jump into a saved boxel the
-    next system to fly goes to the clipboard (the desktop app writes it; the toggle is on the Boxels
-    screen), and a key bind copies it again. The next system is the lowest one of the boxel he is in
-    that is neither flown nor skipped.
+    Boxel scanning (owner, 2026-10-06, after EDJP's routing mode; server/boxelRun.ts): the next system to
+    fly goes to the clipboard after each jump, and key binds start / finish a run and step through the
+    boxel. The desktop app writes the clipboard (it subscribes); without it, on Windows, `clip` does.
   */
   const boxelNextListeners = new Set<(name: string) => void>();
-  const boxelNext = (): string | null => {
-    const sightings = [...navRouteLog().systems, ...store.targetedSystems.values()];
-    const here = savedBoxels
-      .list(store.visitedSystems.entries(), undefined, store.currentSystem, sightings)
-      .find((b) => b.current);
-    return here?.next ?? null;
+  const deliverToClipboard = (name: string): void => {
+    if (boxelNextListeners.size) {
+      for (const cb of boxelNextListeners) cb(name);
+      return;
+    }
+    if (process.platform !== "win32") return;
+    try {
+      const clip = spawn("clip", [], { windowsHide: true, stdio: ["pipe", "ignore", "ignore"] });
+      clip.on("error", () => {});
+      clip.stdin.end(name);
+    } catch {
+      /* no clipboard: nothing to do */
+    }
   };
+  const boxelRun = createBoxelRun({
+    saved: savedBoxels,
+    visited: () => store.visitedSystems.entries(),
+    sightings: () => [...navRouteLog().systems, ...store.targetedSystems.values()],
+    currentSystem: () => store.currentSystem,
+    deliver: deliverToClipboard,
+  });
   const bookmarks = createBookmarksService({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-bookmarks.json"),
   });
@@ -1089,11 +1107,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         eddnUploader.offer(line);
         const side = liveSideFiles();
         applyNavRoute(side.route);
-        if (line.event === "FSDJump" && boxelNextListeners.size && savedBoxels.autoCopyNext()) {
-          const next = boxelNext();
-          if (next && next.toLowerCase() !== (store.currentSystem ?? "").toLowerCase())
-            for (const cb of boxelNextListeners) cb(next);
-        }
+        if (line.event === "FSDJump") boxelRun.onJump();
         const footFix = side.status ? parseStatusJsonFootFix(side.status) : null;
         ingestExoOrganicJournalLine(store, ownLine, footFix, projectRoot, getCachedSpeciesDatabase());
         sessionLog.record(line, store, getCachedPrices());
@@ -2173,7 +2187,13 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       if (n) push();
       return n;
     },
-    boxelNext,
+    boxelCopyNext: () => boxelRun.copyNext(),
+    boxelStep: (dir) => boxelRun.step(dir),
+    boxelRunToggle: () => {
+      const r = boxelRun.toggle();
+      if (r) push();
+      return r;
+    },
     onBoxelNext: (cb) => {
       boxelNextListeners.add(cb);
       return () => boxelNextListeners.delete(cb);
