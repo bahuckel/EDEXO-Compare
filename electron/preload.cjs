@@ -8,6 +8,31 @@ contextBridge.exposeInMainWorld("edexoElectron", {
    * buttons drawn over the page): the page's tab strip is the bar to drag the window by.
    */
   customTitleBar: process.argv.includes("--edexo-custom-titlebar"),
+  /*
+    Tab view's windows (tabWindows.cjs): report this window's tabs, find a tab in another window, drag
+    one out into a new window, hand one over to another window, and hear what the others did.
+  */
+  tabs: {
+    report: (tabs) => ipcRenderer.send("edexo:tabs-report", tabs),
+    registry: () => ipcRenderer.invoke("edexo:tab-registry"),
+    focus: (kind) => ipcRenderer.invoke("edexo:tab-focus", kind),
+    detach: (req) => ipcRenderer.invoke("edexo:tab-detach", req),
+    moved: (req) => ipcRenderer.send("edexo:tab-moved", req),
+    windowEmpty: () => ipcRenderer.send("edexo:tab-window-empty"),
+    on: (cb) => {
+      const reg = (_e, r) => cb({ type: "registry", registry: r });
+      const rem = (_e, k) => cb({ type: "remove", kind: k });
+      const act = (_e, k) => cb({ type: "activate", kind: k });
+      ipcRenderer.on("edexo:tab-registry", reg);
+      ipcRenderer.on("edexo:tab-remove", rem);
+      ipcRenderer.on("edexo:tab-activate", act);
+      return () => {
+        ipcRenderer.removeListener("edexo:tab-registry", reg);
+        ipcRenderer.removeListener("edexo:tab-remove", rem);
+        ipcRenderer.removeListener("edexo:tab-activate", act);
+      };
+    },
+  },
   /** @returns {Promise<{ opened: boolean; paths?: string[]; error?: string }>} */
   toggleFootOverlay: () => ipcRenderer.invoke("edexo:toggle-foot-overlay"),
   /**

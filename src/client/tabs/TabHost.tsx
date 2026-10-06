@@ -7,7 +7,29 @@
  */
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { TAB_SCREENS, tabStore, useTabState, type TabFront, type TabKind } from "./tabStore";
+import {
+  IS_DETACHED,
+  TAB_BRIDGE,
+  TAB_SCREENS,
+  WINDOW_KEY,
+  tabStore,
+  useTabState,
+  type TabFront,
+  type TabKind,
+} from "./tabStore";
+
+const DRAG_TYPE = "application/x-edexo-tab";
+/** The dragged tab: `{ kind, from }` (from = the window key, so another window can take it). */
+function readDrag(ev: { dataTransfer: DataTransfer }): { kind: TabKind; from: string } | null {
+  try {
+    const v = JSON.parse(ev.dataTransfer.getData(DRAG_TYPE)) as { kind?: unknown; from?: unknown };
+    return TAB_SCREENS.some((s) => s.kind === v.kind) && typeof v.from === "string"
+      ? { kind: v.kind as TabKind, from: v.from }
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Set inside a tab's pane: the screen there is a tab, not a pop-up (ui/useModal reads it). */
 export const InTabContext = createContext<TabKind | null>(null);
@@ -83,16 +105,33 @@ function TabButton({
       }}
       onDragStart={(ev) => {
         if (front === "main") return;
-        ev.dataTransfer.setData("application/x-edexo-tab", front);
+        ev.dataTransfer.setData(DRAG_TYPE, JSON.stringify({ kind: front, from: WINDOW_KEY }));
         ev.dataTransfer.effectAllowed = "move";
       }}
+      onDragEnd={(ev) => {
+        /*
+          Dropped where nothing took it, outside this window: out into a window of its own (the desktop
+          app; a browser keeps it). Dropped on another window's strip, that window took it (onDrop).
+        */
+        if (front === "main" || !TAB_BRIDGE || ev.dataTransfer.dropEffect !== "none") return;
+        const { screenX: x, screenY: y } = ev;
+        const inside =
+          x >= window.screenX &&
+          x <= window.screenX + window.outerWidth &&
+          y >= window.screenY &&
+          y <= window.screenY + window.outerHeight;
+        if (!inside) tabStore.detach(front, x, y);
+      }}
       onDragOver={(ev) => {
-        if (ev.dataTransfer.types.includes("application/x-edexo-tab")) ev.preventDefault();
+        if (ev.dataTransfer.types.includes(DRAG_TYPE)) ev.preventDefault();
       }}
       onDrop={(ev) => {
-        const kind = ev.dataTransfer.getData("application/x-edexo-tab");
-        if (kind && kind !== front) tabStore.move(kind as TabKind, Math.max(0, index));
+        const d = readDrag(ev);
         ev.preventDefault();
+        ev.stopPropagation();
+        if (!d) return;
+        if (d.from !== WINDOW_KEY) tabStore.receive(d.kind, d.from);
+        if (d.kind !== front) tabStore.move(d.kind, Math.max(0, index));
       }}
       title={label}
     >
@@ -181,8 +220,21 @@ function TitleBar() {
 export function TabStrip() {
   const st = useTabState();
   return (
-    <nav className="tab-strip" role="tablist" aria-label="Screens">
-      <TabButton front="main" label="Main" active={st.active === "main"} index={-1} />
+    <nav
+      className="tab-strip"
+      role="tablist"
+      aria-label="Screens"
+      // A tab from another window dropped anywhere on the strip moves here, at the end.
+      onDragOver={(ev) => {
+        if (ev.dataTransfer.types.includes(DRAG_TYPE)) ev.preventDefault();
+      }}
+      onDrop={(ev) => {
+        const d = readDrag(ev);
+        ev.preventDefault();
+        if (d && d.from !== WINDOW_KEY) tabStore.receive(d.kind, d.from);
+      }}
+    >
+      {IS_DETACHED ? null : <TabButton front="main" label="Main" active={st.active === "main"} index={-1} />}
       {st.tabs.map((k, i) => (
         <TabButton key={k} front={k} label={labelOf(k)} active={st.active === k} index={i} />
       ))}
@@ -230,7 +282,8 @@ export function TabHost({ children }: { children: ReactNode }) {
   return (
     <>
       <TabStrip />
-      <div className="tab-pane tab-pane--main" hidden={st.active !== "main"}>
+      {/* A detached window keeps Main mounted (it owns the screens) but never shows it. */}
+      <div className="tab-pane tab-pane--main" hidden={IS_DETACHED || st.active !== "main"}>
         {children}
       </div>
       {st.tabs.map((k) => (

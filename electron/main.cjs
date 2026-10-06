@@ -23,6 +23,7 @@ const {
 } = require("./hudWindows.cjs");
 const { createTrayControl } = require("./tray.cjs");
 const { createKeybinds } = require("./keybinds.cjs");
+const { createTabWindows } = require("./tabWindows.cjs");
 const updater = require("./updater.cjs");
 const { watchForeground, isGameOrOwn, isGame } = require("./foregroundWatch.cjs");
 const { guardWindowNavigation, restrictPermissions } = require("./windowGuards.cjs");
@@ -165,6 +166,25 @@ const { readWindowStates, readWindowState, trackWindowState, windowStatePath } =
 let appUiWindow = null;
 const APP_WINDOW_PARTITION = "persist:app-window";
 
+/** Tab view's detached windows (tabWindows.cjs): drag a tab out of the app window, or back in. */
+const tabWindows = createTabWindows({
+  BrowserWindow,
+  ipcMain,
+  baseUrl: () => (runtime ? runtime.getLocalBaseUrl() : null),
+  preloadPath: fs.existsSync(path.join(__dirname, "preload.cjs")) ? path.join(__dirname, "preload.cjs") : undefined,
+  partition: APP_WINDOW_PARTITION,
+  icon: undefined,
+  readWindowStates,
+  readWindowState,
+  writeWindowStates: (all) => {
+    fs.mkdirSync(path.dirname(windowStatePath()), { recursive: true });
+    fs.writeFileSync(windowStatePath(), JSON.stringify(all, null, 2), "utf8");
+  },
+  trackWindowState,
+  enableZoom,
+  onExternalLink: (url) => void shell.openExternal(url),
+});
+
 /**
  * The app window's session is new, so its view settings (body sort, last tab, …) start empty. Copy
  * the launcher session's localStorage across once — same site, so the launcher can read it — and
@@ -240,6 +260,7 @@ function openAppUiWindow(iconForChild) {
     },
   });
   appUiWindow = win;
+  tabWindows.attachMain(win);
   diag?.watchWindow(win, "app");
   if (saved?.maximized) win.maximize();
   trackWindowState("app", win);
@@ -291,6 +312,8 @@ function openAppUiWindow(iconForChild) {
     if (appUiWindow === win) appUiWindow = null;
   });
   void win.loadURL(`${base}/`);
+  // The windows its tabs were dragged out into last time.
+  win.webContents.once("did-finish-load", () => tabWindows.restore());
   return { opened: true, focused: false };
 }
 
@@ -996,6 +1019,8 @@ app.on("before-quit", (e) => {
   if (holdExitForBackup(e)) return;
   // From here the launcher's X closes it for real, whatever "Close to tray" says.
   appQuitting = true;
+  // Quitting closes every window: the detached tab windows stay listed for the next start.
+  tabWindows.freeze();
   diag?.stop("quit");
   try {
     globalShortcut.unregisterAll();
