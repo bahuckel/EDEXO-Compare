@@ -58,7 +58,8 @@ describe("a boxel run", () => {
     expect(t.saved.list([])[0]).toMatchObject({ run: true });
     expect(t.run.toggle()).toMatchObject({ running: false, boxel: "AB-C d1 Eol Prou" });
     expect(t.jump("Sol")).toBeNull();
-    expect(t.jump("Eol Prou AB-C d1-4")).toBe("Eol Prou AB-C d1-1");
+    // Next in line after the system he is in, not the lowest one unflown (owner, 2026-10-06).
+    expect(t.jump("Eol Prou AB-C d1-4")).toBe("Eol Prou AB-C d1-5");
   });
 
   it("does not start outside a boxel system, and copies nothing on jumps with the setting off", () => {
@@ -71,21 +72,38 @@ describe("a boxel run", () => {
   });
 });
 
+describe("next in line (owner, 2026-10-06: Aishaist OE-H d10-0 copied instead of the next after -10)", () => {
+  it("counts from the system he is in, then the highest flown, and starts again from -0 at the end", () => {
+    const t = setup();
+    t.saved.add("Aishaist OE-H d10-20");
+    expect(t.jump("Aishaist OE-H d10-10")).toBe("Aishaist OE-H d10-11");
+    expect(t.saved.list(["Aishaist OE-H d10-10"], undefined, "Aishaist OE-H d10-10")[0]!.next).toBe(
+      "Aishaist OE-H d10-11",
+    );
+    // Out of the boxel: after the highest flown.
+    expect(t.saved.list(["Aishaist OE-H d10-10"], undefined, "Sol")[0]!.next).toBe("Aishaist OE-H d10-11");
+    // At the end (-20 flown, the end known): back to -0.
+    t.saved.confirmEnd(t.saved.list([])[0]!.id, 20);
+    expect(t.jump("Aishaist OE-H d10-20")).toBe("Aishaist OE-H d10-0");
+  });
+});
+
 describe("previous / next system", () => {
   it("steps through the systems still to fly, skipping flown and skipped ones, and stops at either end", () => {
     const t = setup();
     const { id } = t.saved.add("Eol Prou AB-C d1-6")!;
     t.saved.setSkipped(id, 3, true);
     t.at("Eol Prou AB-C d1-2");
-    // Still to fly: 0, 1, 4, 5, 6, then the probe -7.
-    expect(t.run.step(1)).toBe("Eol Prou AB-C d1-1");
+    // Still to fly: 0, 1, 4, 5, 6, then the probe -7; next in line from -2 is -4.
     expect(t.run.step(1)).toBe("Eol Prou AB-C d1-4");
     expect(t.run.step(1)).toBe("Eol Prou AB-C d1-5");
     expect(t.run.step(1)).toBe("Eol Prou AB-C d1-6");
     expect(t.run.step(1)).toBe("Eol Prou AB-C d1-7");
     expect(t.run.step(1)).toBe("Eol Prou AB-C d1-7");
     expect(t.run.step(-1)).toBe("Eol Prou AB-C d1-6");
-    expect(t.run.copyNext()).toBe("Eol Prou AB-C d1-0");
+    expect(t.run.copyNext()).toBe("Eol Prou AB-C d1-4");
+    expect(t.run.step(-1)).toBe("Eol Prou AB-C d1-1");
+    expect(t.run.step(-1)).toBe("Eol Prou AB-C d1-0");
     expect(t.run.step(-1)).toBe("Eol Prou AB-C d1-0");
     expect(t.copied.at(-1)).toBe("Eol Prou AB-C d1-0");
   });

@@ -56,13 +56,15 @@ export interface SavedBoxelsService {
   setRun(id: string | null): boolean;
   /**
    * The systems of a saved boxel still to fly (neither flown nor skipped), in order, -0 to its end, and
-   * the end (known: checked in the galaxy map that nothing follows it).
+   * the end (known: checked in the galaxy map that nothing follows it). `anchor`: where "next in line"
+   * counts from — the system he is in when it is in this boxel, else the highest one flown (-1: none).
    */
   remaining(
     id: string,
     visited: Iterable<VisitedSystem>,
     routed?: Iterable<{ name: string }>,
-  ): { prefix: string; todo: number[]; end: number; endKnown: boolean } | null;
+    current?: string | null,
+  ): { prefix: string; todo: number[]; end: number; endKnown: boolean; anchor: number } | null;
 }
 
 export function createSavedBoxels(opts: { filePath: string | null; now?: () => number }): SavedBoxelsService {
@@ -124,12 +126,16 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
         const endKnown = !!s.endKnown && end === e.end;
         const skipped = (s.skipped ?? []).filter((n) => n <= end && !flownAll.has(n)).sort((x, y) => x - y);
         const skip = new Set(skipped);
+        /*
+          Next in line (owner, 2026-10-06: "if someone skips the first 10 and wants to scan 10 to 20 first,
+          [the lowest unflown] is useless"): the first one still to fly after the system he is in, else
+          after the highest flown; past the end it starts again from -0.
+        */
+        const anchor = anchorOf(b.prefix, flownAll, current);
         let next: number | null = null;
-        for (let n = 0; n <= end; n++) {
-          if (!flownAll.has(n) && !skip.has(n)) {
-            next = n;
-            break;
-          }
+        for (let k = 1; k <= end + 1 && next == null; k++) {
+          const n = (anchor + k + end + 1) % (end + 1);
+          if (!flownAll.has(n) && !skip.has(n)) next = n;
         }
         let bodiesScanned = 0;
         let bodiesTotal: number | null = 0;
@@ -223,7 +229,7 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
       persist();
       return true;
     },
-    remaining(id, visited, routed) {
+    remaining(id, visited, routed, current) {
       const s = items.find((x) => x.id === id);
       const e = s ? endOf(s) : null;
       if (!s || !e) return null;
@@ -241,7 +247,7 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
       const skip = new Set(s.skipped ?? []);
       const todo: number[] = [];
       for (let n = 0; n <= end; n++) if (!flown.has(n) && !skip.has(n)) todo.push(n);
-      return { prefix: e.b.prefix, todo, end, endKnown: !!s.endKnown && end === e.end };
+      return { prefix: e.b.prefix, todo, end, endKnown: !!s.endKnown && end === e.end, anchor: anchorOf(e.b.prefix, flown, current) };
     },
     setSkipped(id, n, skipped) {
       const s = items.find((x) => x.id === id);
@@ -255,6 +261,12 @@ export function createSavedBoxels(opts: { filePath: string | null; now?: () => n
       return true;
     },
   };
+}
+
+/** Where next in line counts from: the system he is in when it is in this boxel, else the highest flown (-1). */
+function anchorOf(prefix: string, flown: Set<number>, current: string | null | undefined): number {
+  const here = current ? boxelIndexOf(current, prefix) : null;
+  return here ?? Math.max(-1, ...flown);
 }
 
 function load(filePath: string | null): { items: Stored[]; autoCopy: boolean; run: string | null } {

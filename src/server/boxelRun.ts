@@ -54,13 +54,19 @@ export function createBoxelRun(d: {
     );
   };
   const active = (): string | null => d.saved.runId() ?? savedHere();
-  /** What is left to fly, then the probe past the end while the end is not known. */
+  /**
+   * What is left to fly, in numbers (`todo`, for previous / next) and in the order "next in line"
+   * takes them (`queue`): after where he is, then the probe past the end while the end is not known,
+   * then the ones before (owner, 2026-10-06: next in line, not the lowest one unflown).
+   */
   const todoOf = (id: string) => {
-    const r = d.saved.remaining(id, d.visited(), d.sightings());
+    const r = d.saved.remaining(id, d.visited(), d.sightings(), d.currentSystem());
     if (!r) return null;
+    const probe = r.endKnown ? [] : [r.end + 1];
     return {
       prefix: r.prefix,
-      todo: r.endKnown ? r.todo : [...r.todo, r.end + 1],
+      todo: [...r.todo, ...probe],
+      queue: [...r.todo.filter((n) => n > r.anchor), ...probe, ...r.todo.filter((n) => n <= r.anchor)],
       done: r.endKnown && !r.todo.length,
     };
   };
@@ -75,14 +81,14 @@ export function createBoxelRun(d: {
   const next = (): string | null => {
     const id = active();
     const r = id ? todoOf(id) : null;
-    return r && r.todo.length ? `${r.prefix}${r.todo[0]}` : null;
+    return r && r.queue.length ? `${r.prefix}${r.queue[0]}` : null;
   };
 
   const copyNext = (): string | null => {
     const id = active();
     const r = id ? todoOf(id) : null;
-    if (!id || !r || !r.todo.length) return null;
-    return copy(id, r.prefix, r.todo[0]!);
+    if (!id || !r || !r.queue.length) return null;
+    return copy(id, r.prefix, r.queue[0]!);
   };
 
   return {
@@ -92,7 +98,9 @@ export function createBoxelRun(d: {
       const id = active();
       const r = id ? todoOf(id) : null;
       if (!id || !r || !r.todo.length) return null;
-      const from = cursor?.id === id ? cursor.n : r.todo[0]!;
+      // Nothing copied yet in this boxel: the first press copies the next in line itself.
+      if (cursor?.id !== id) return copy(id, r.prefix, r.queue[0]!);
+      const from = cursor.n;
       // The first one after (or before) the last copied; at either end it stays there.
       const pick =
         dir > 0
@@ -122,11 +130,11 @@ export function createBoxelRun(d: {
       if (run) {
         const r = todoOf(run);
         // The run's last system flown and its end known: the run is over.
-        if (!r || r.done || !r.todo.length) {
+        if (!r || r.done || !r.queue.length) {
           d.saved.setRun(null);
           return null;
         }
-        return copy(run, r.prefix, r.todo[0]!);
+        return copy(run, r.prefix, r.queue[0]!);
       }
       return d.saved.autoCopyNext() && savedHere() ? copyNext() : null;
     },
