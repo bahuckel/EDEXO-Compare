@@ -185,7 +185,10 @@ export const BodyPane = memo(function BodyPane({
   const codexNewCount = useMemo(() => body.matches.filter((m) => m.codexNew === true).length, [body.matches]);
   const hasEvidence = useCallback(
     (m: BodyComputed["matches"][0]) =>
-      m.provenance != null && (m.provenance.firstHand || m.provenance.corpusInSystem > 0),
+      // The composition scanner naming it here counts (owner, 2026-10-06), as does any log on the body.
+      m.confirmedByCompositionScan === true ||
+      m.loggedBy != null ||
+      (m.provenance != null && (m.provenance.firstHand || m.provenance.corpusInSystem > 0)),
     [],
   );
   const evidenceCount = useMemo(() => body.matches.filter(hasEvidence).length, [body.matches, hasEvidence]);
@@ -586,7 +589,7 @@ export const BodyPane = memo(function BodyPane({
                     <strong>Bacterium</strong> is off by default because it is low value on most routes; off
                     means off, even for a bacterium the catalog remembers from a similar body.{" "}
                     <strong>Evidence</strong> keeps only rows something has actually observed: scanned by you
-                    on this body, or confirmed in this system by Spansh. It filters on evidence, not on
+                    on this body (on foot or by the composition scanner), or confirmed in this system by Spansh. It filters on evidence, not on
                     likelihood. <strong>Codex new</strong> keeps only species that would be a new entry in
                     your codex (the ones tagged [CODEX]).
                   </p>
