@@ -1,6 +1,7 @@
 /**
  * The Options dialog's panels: uploads (Canonn, EDDN, EDSM), EDSM fetching, collection focus, snapshot stamp, feeder corpus. Split out of OptionsModal.tsx (code review D, 2026-09-27).
  */
+import { tabStore, useTabState } from "./tabs/tabStore";
 import { readBackdropOn, setBackdropOn } from "./HexSignals";
 import { useFeederStatus } from "./FeederStatusPanel";
 import { FoldPanel } from "./ui/Fold";
@@ -702,7 +703,25 @@ export function ColourSchemePanel() {
         />
         <span>Animated background</span>
       </label>
+      <TabViewToggle />
     </FoldPanel>
+  );
+}
+
+/**
+ * Tab view (owner, 2026-10-06, tabs/tabStore.ts): the big screens open as tabs beside Main instead of
+ * pop-ups. On by default, in the app and in the browser; kept on this device.
+ */
+function TabViewToggle() {
+  const st = useTabState();
+  return (
+    <label
+      className="options-toggle"
+      title="Galaxy map, Boxels, My discoveries, Encyclopedia, Achievements, Statistics, Bookmarks, Points of interest, Carriers, Unfinished business and the Session log open as tabs beside Main, instead of pop-ups over it. Off, they open as they always did. Kept on this device."
+    >
+      <input type="checkbox" checked={st.on} onChange={(ev) => tabStore.setOn(ev.target.checked)} />
+      <span>Tab view — screens open as tabs</span>
+    </label>
   );
 }
 

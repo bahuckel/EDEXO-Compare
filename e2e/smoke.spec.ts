@@ -35,6 +35,13 @@ test.beforeAll(async ({ request }) => {
     .toBe(200);
 });
 
+/** Closes a screen: its tab's × with Tab view on (the default), Escape on a pop-up otherwise. */
+async function closeScreen(page: import("@playwright/test").Page, label: string) {
+  const tab = page.locator(".tab-strip__tab", { hasText: label });
+  if (await tab.count()) await tab.locator(".tab-strip__close").click();
+  else await page.keyboard.press("Escape");
+}
+
 test("app: the fixture body appears with its candidate species", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");
@@ -1095,7 +1102,10 @@ test("encyclopedia: opens, lists species, and the search narrows them", async ({
   await page.goto("/");
   await expect(page.locator(".body-pane")).toBeVisible({ timeout: 60_000 });
   await openFromMenu(page, "Encyclopedia");
-  await expect(page.getByText(/Aleoida|Bacterium|Stratum/).first()).toBeVisible({ timeout: 30_000 });
+  // Within the encyclopedia: with Tab view on, Main's own species names are still in the page, hidden.
+  await expect(page.locator(".encyclopedia-panel").getByText(/Aleoida|Bacterium|Stratum/).first()).toBeVisible({
+    timeout: 30_000,
+  });
   await page.screenshot({ path: `${OUT}/encyclopedia.png` });
   const count = () => page.locator(".ency-count strong").innerText().then(Number);
   await expect.poll(count).toBeGreaterThan(100);
@@ -1103,9 +1113,12 @@ test("encyclopedia: opens, lists species, and the search narrows them", async ({
   const search = page.getByRole("searchbox", { name: "Search species or genus" });
   await search.fill("Tussock");
   await expect.poll(count).toBeLessThan(all);
-  const titles = await page.locator(".encyclopedia-species-title").allInnerTexts();
-  expect(titles.length).toBeGreaterThan(0);
-  for (const t of titles) expect(t).toMatch(/Tussock/i);
+  // Text content, not innerText: cards below the fold are not drawn yet, and innerText reads them as "".
+  const titles = () => page.locator(".encyclopedia-panel .encyclopedia-species-title").allTextContents();
+  await expect.poll(async () => {
+    const t = await titles();
+    return t.length > 0 && t.every((x) => /Tussock/i.test(x));
+  }).toBe(true);
   await search.fill("");
   await expect.poll(count).toBe(all);
   expect(errors).toEqual([]);
@@ -1130,7 +1143,7 @@ test("phone: the main view at 390 px keeps the body and its species", async ({ p
   await expect(page.locator(".encyclopedia-species-title").first()).toBeVisible({ timeout: 30_000 });
   expect(await noSideScroll()).toBe(true);
   await page.screenshot({ path: `${OUT}/phone-encyclopedia.png` });
-  await page.keyboard.press("Escape");
+  await closeScreen(page, "Encyclopedia");
   await expect(page.locator(".ency-search")).toHaveCount(0);
   await page.locator(".sys-card__btn").first().click();
   await expect(page.locator("details.system-map-legend")).toBeVisible();

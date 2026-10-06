@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useInTab } from "../tabs/TabHost";
 
 /**
  * Modal behaviour every dialog in the app should have had: Escape to close, focus moved into the
@@ -78,9 +79,11 @@ export function useModal<T extends HTMLElement = HTMLDivElement>(
 
   const lockScroll = opts?.lockScroll !== false;
   const autoFocus = opts?.autoFocus !== false;
+  // In a tab (Tab view, tabs/TabHost.tsx) the screen is a page, not a dialog: no trap, no Escape, no lock.
+  const inTab = useInTab() != null;
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || inTab) return;
     const token = Symbol("modal");
     modalStack.push(token);
     const isTopmost = () => modalStack[modalStack.length - 1] === token;
@@ -126,7 +129,7 @@ export function useModal<T extends HTMLElement = HTMLDivElement>(
       if (lockScroll) unlockPageScroll();
       restoreFocusTo?.focus?.({ preventScroll: true });
     };
-  }, [open, lockScroll, autoFocus]);
+  }, [open, inTab, lockScroll, autoFocus]);
 
   return ref;
 }

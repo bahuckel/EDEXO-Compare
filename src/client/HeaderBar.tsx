@@ -64,6 +64,10 @@ import { SystemCardRow } from "./SystemCard";
 /** A notable body's quick facts, asked for from outside the header (the body strip's notable tabs). */
 export const NOTABLE_QUICK_EVENT = "edexo-notable-quick";
 import { JournalSystemSearch } from "./JournalSystemSearch";
+import { TabSlot, useScreenOpen } from "./tabs/TabHost";
+import { tabStore, useTabState } from "./tabs/tabStore";
+/** The 3D galaxy map inside a tab (Tab view); without it, it opens in its own window as before. */
+const GalaxyMap3D = lazy(() => import("./GalaxyMap3D").then((m) => ({ default: m.GalaxyMap3D })));
 
 const PlanetQuickFactsPopup = lazy(() =>
   import("./PlanetQuickFactsPopup").then((m) => ({ default: m.PlanetQuickFactsPopup })),
@@ -235,6 +239,12 @@ const AppMenuEntries = memo(function AppMenuEntries({
           target="_blank"
           rel="noreferrer"
           aria-label="Galaxy map"
+          onClick={(ev) => {
+            // Tab view: the map opens in a tab of this window instead of a window of its own.
+            if (!tabStore.get().on) return;
+            ev.preventDefault();
+            tabStore.open("galaxy");
+          }}
         >
           <IconGalaxy />
         </a>
@@ -341,22 +351,24 @@ export const HeaderBar = memo(function HeaderBar({
   );
   const [dataBreakdownOpen, setDataBreakdownOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
-  const [sessionOpen, setSessionOpen] = useState(false);
+  const [sessionOpen, setSessionOpen] = useScreenOpen("session");
   const [feederOpen, setFeederOpen] = useState(false);
   /**
    * §11.3. The button appears only when this machine actually has a corpus — otherwise it would
    * open an empty modal for every normal install. One fetch, shared with the panel.
    */
   const feeder = useFeederStatus();
-  const [myExoOpen, setMyExoOpen] = useState(false);
-  const [encyclopediaOpen, setEncyclopediaOpen] = useState(false);
-  const [achievementsOpen, setAchievementsOpen] = useState(false);
-  const [backlogOpen, setBacklogOpen] = useState(false);
-  const [carriersOpen, setCarriersOpen] = useState(false);
-  const [poiOpen, setPoiOpen] = useState(false);
-  const [bookmarksOpen, setBookmarksOpen] = useState(false);
-  const [boxelOpen, setBoxelOpen] = useState(false);
-  const [statsOpen, setStatsOpen] = useState(false);
+  // Tab view (tabs/tabStore.ts): these screens open as tabs when it is on, as pop-ups when it is off.
+  const [myExoOpen, setMyExoOpen] = useScreenOpen("myExo");
+  const [encyclopediaOpen, setEncyclopediaOpen] = useScreenOpen("encyclopedia");
+  const [achievementsOpen, setAchievementsOpen] = useScreenOpen("achievements");
+  const [backlogOpen, setBacklogOpen] = useScreenOpen("backlog");
+  const [carriersOpen, setCarriersOpen] = useScreenOpen("carriers");
+  const [poiOpen, setPoiOpen] = useScreenOpen("poi");
+  const [bookmarksOpen, setBookmarksOpen] = useScreenOpen("bookmarks");
+  const [boxelOpen, setBoxelOpen] = useScreenOpen("boxels");
+  const [statsOpen, setStatsOpen] = useScreenOpen("stats");
+  const tabView = useTabState();
   // The menu's panel openers, one object for the header's life (useState setters never change).
   const menuOpeners: MenuOpeners = useMemo(
     () => ({
@@ -373,7 +385,18 @@ export const HeaderBar = memo(function HeaderBar({
       setSessionOpen,
       setOptionsOpen,
     }),
-    [],
+    [
+      setMyExoOpen,
+      setBacklogOpen,
+      setCarriersOpen,
+      setPoiOpen,
+      setBoxelOpen,
+      setBookmarksOpen,
+      setStatsOpen,
+      setEncyclopediaOpen,
+      setAchievementsOpen,
+      setSessionOpen,
+    ],
   );
   const [notableQuick, setNotableQuick] = useState<{
     notable: NotableBodyInfo;
@@ -381,7 +404,7 @@ export const HeaderBar = memo(function HeaderBar({
     y: number;
   } | null>(null);
   // My discoveries re-sorted its whole table on every push while open: a new onClose rebuilt its columns.
-  const closeMyExo = useCallback(() => setMyExoOpen(false), []);
+  const closeMyExo = useCallback(() => setMyExoOpen(false), [setMyExoOpen]);
   // One function for the header's life, so the system card's memo holds (snapSlice.ts).
   const openNotableQuick = useCallback((n: NotableBodyInfo, ev: ReactMouseEvent) => {
     ev.stopPropagation();
@@ -832,13 +855,23 @@ export const HeaderBar = memo(function HeaderBar({
         </p>
       ) : null}
 
+      {tabView.on && tabView.tabs.includes("galaxy") ? (
+        <TabSlot kind="galaxy">
+          <Suspense fallback={<ModalLoading />}>
+            <GalaxyMap3D />
+          </Suspense>
+        </TabSlot>
+      ) : null}
       {statsOpen ? (
-        <Suspense fallback={<ModalLoading />}>
-          <StatisticsModal onClose={() => setStatsOpen(false)} />
-        </Suspense>
+        <TabSlot kind="stats">
+          <Suspense fallback={<ModalLoading />}>
+            <StatisticsModal onClose={() => setStatsOpen(false)} />
+          </Suspense>
+        </TabSlot>
       ) : null}
 
       {boxelOpen ? (
+        <TabSlot kind="boxels">
         <Suspense fallback={null}>
           <BoxelScreen
             onClose={() => setBoxelOpen(false)}
@@ -848,39 +881,51 @@ export const HeaderBar = memo(function HeaderBar({
             copied={snap.boxelCopied ?? null}
           />
         </Suspense>
+        </TabSlot>
       ) : null}
       {bookmarksOpen ? (
+        <TabSlot kind="bookmarks">
         <Suspense fallback={null}>
           <BookmarksModal
             onClose={() => setBookmarksOpen(false)}
             currentSystemAddress={snap.currentSystemAddress ?? null}
           />
         </Suspense>
+        </TabSlot>
       ) : null}
       {poiOpen ? (
+        <TabSlot kind="poi">
         <Suspense fallback={<ModalLoading />}>
           <PoiModal onClose={() => setPoiOpen(false)} />
         </Suspense>
+        </TabSlot>
       ) : null}
 
       {carriersOpen ? (
+        <TabSlot kind="carriers">
         <Suspense fallback={<ModalLoading />}>
           <CarriersModal onClose={() => setCarriersOpen(false)} />
         </Suspense>
+        </TabSlot>
       ) : null}
 
       {backlogOpen ? (
+        <TabSlot kind="backlog">
         <Suspense fallback={<ModalLoading />}>
           <FirstDiscoveryBacklogModal onClose={() => setBacklogOpen(false)} />
         </Suspense>
+        </TabSlot>
       ) : null}
 
       {achievementsOpen ? (
+        <TabSlot kind="achievements">
         <Suspense fallback={<ModalLoading />}>
           <AchievementsModal onClose={() => setAchievementsOpen(false)} />
         </Suspense>
+        </TabSlot>
       ) : null}
       {encyclopediaOpen ? (
+        <TabSlot kind="encyclopedia">
         <Suspense fallback={<ModalLoading />}>
           <EncyclopediaModal
             footScannedEntries={snap.footScannedEntries ?? []}
@@ -889,8 +934,10 @@ export const HeaderBar = memo(function HeaderBar({
             onClose={() => setEncyclopediaOpen(false)}
           />
         </Suspense>
+        </TabSlot>
       ) : null}
       {myExoOpen ? (
+        <TabSlot kind="myExo">
         <Suspense fallback={<ModalLoading />}>
           <MyExobiologyModal
             entries={snap.footScannedEntries ?? NO_FOOT_ENTRIES}
@@ -899,6 +946,7 @@ export const HeaderBar = memo(function HeaderBar({
             onNavigateSystem={onDiscoveriesNavigate}
           />
         </Suspense>
+        </TabSlot>
       ) : null}
       {dataBreakdownOpen ? (
         <Suspense fallback={<ModalLoading />}>
@@ -923,9 +971,11 @@ export const HeaderBar = memo(function HeaderBar({
         </Suspense>
       ) : null}
       {sessionOpen ? (
-        <Suspense fallback={<ModalLoading />}>
-          <SessionLogModal log={snap.sessionLog ?? null} onClose={() => setSessionOpen(false)} />
-        </Suspense>
+        <TabSlot kind="session">
+          <Suspense fallback={<ModalLoading />}>
+            <SessionLogModal log={snap.sessionLog ?? null} onClose={() => setSessionOpen(false)} />
+          </Suspense>
+        </TabSlot>
       ) : null}
       {optionsOpen ? (
         <Suspense fallback={<ModalLoading />}>

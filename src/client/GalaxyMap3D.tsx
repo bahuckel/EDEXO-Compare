@@ -7,6 +7,7 @@
  * names over the canvas, the hover card, the panels, the commander's own layer and route, the Search
  * and Codex drawers, and what to say when the machine cannot draw it.
  */
+import { useInTab } from "./tabs/TabHost";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   GalaxyEngine,
@@ -201,9 +202,11 @@ export function GalaxyMap3D() {
     return () => ro.disconnect();
   }, [graphics.tier]);
 
+  // Its own window names itself; as a tab (Tab view) the app window keeps its title.
+  const inTab = useInTab() != null;
   useEffect(() => {
-    document.title = "Galaxy map — ED Exo Compare";
-  }, []);
+    if (!inTab) document.title = "Galaxy map — ED Exo Compare";
+  }, [inTab]);
 
   useEffect(() => {
     const el = host.current;

@@ -1,3 +1,4 @@
+import { TabHost } from "./tabs/TabHost";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { NotableBodyInfo } from "@shared/types";
 import { isBool, usePersistedState } from "./usePersistedState";
@@ -505,6 +506,7 @@ export function App() {
   }
 
   return (
+    <TabHost>
     <div className="app-shell">
       <HeaderBar
         snap={snapshot}
@@ -561,5 +563,6 @@ export function App() {
       ) : null}
       <AppLegalFooter />
     </div>
+    </TabHost>
   );
 }
