@@ -277,8 +277,8 @@ export function BoxelLookingFor({
       );
     } else {
       const sector = here.sector;
-      const golden =
-        target.key.startsWith("g:") || target.key.startsWith("sp:") ? goldenBoxels(target.key) : [];
+      const golden = goldenBoxels(target.key);
+      const bioGolden = golden.some((g) => g.kind === "bio");
       const goldenHere = golden.slice(0, 6).map((g) => ({ g, s: goldenInSector(g, pos) }));
       const codes = ranks.slice(0, 2);
       const row = (b: SuggestedBoxel, note: string) => (
@@ -307,16 +307,26 @@ export function BoxelLookingFor({
                 {goldenHere.map(({ g, s }) =>
                   row(
                     s,
-                    `${pct(g.rate)} of its systems with biology, against ${pct(g.rest)} in other ${g.code} boxels${g.confirmed ? " · two sources agree" : " · one source"}`,
+                    g.kind === "bio"
+                      ? `${pct(g.rate)} of its systems with biology, against ${pct(g.rest)} in other ${g.code} boxels${g.confirmed ? " · two sources agree" : " · one source"}`
+                      : `${pct(g.rate)} of its systems, against ${pct(g.rest)} in other ${g.code} boxels (×${(g.rate / g.rest).toFixed(1)})`,
                   ),
                 )}
               </ul>
-              <p className="dim tiny">
-                The same place in every sector, measured in EDAstro&apos;s codex over the whole galaxy and
-                true in both halves of it; &quot;two sources agree&quot;: the Spansh bio export finds it too.
-                For Bark Mounds and Electricae these are where nebulae tend to sit (a nebula within 100 ly 14
-                times as often) — a strong lead, not a promise: a sector can still have none.
-              </p>
+              {bioGolden ? (
+                <p className="dim tiny">
+                  The same place in every sector, measured in EDAstro&apos;s codex over the whole galaxy and
+                  true in both halves of it; &quot;two sources agree&quot;: the Spansh bio export finds it too.
+                  For Bark Mounds and Electricae these are where nebulae tend to sit (a nebula within 100 ly 14
+                  times as often) — a strong lead, not a promise: a sector can still have none.
+                </p>
+              ) : (
+                <p className="dim tiny">
+                  The same place in every sector, measured on the whole Spansh galaxy dump, true in both halves
+                  of the galaxy and still there in boxels nearly fully explored. Most sit in the sector&apos;s
+                  lowest layers, near the galactic plane — a lead, not a promise.
+                </p>
+              )}
             </div>
           ) : null}
           {codes.map((r) => (
@@ -444,7 +454,10 @@ export function GoldenTag({ boxel }: { boxel: string }) {
     <span
       className="boxel-golden"
       title={`A golden boxel: in boxels at this place of their sector, ${lines
-        .map((g) => `${g.target} ${pct(g.rate)} of systems with biology (other boxels ${pct(g.rest)})`)
+        .map(
+          (g) =>
+            `${g.target} ${pct(g.rate)} of systems${g.kind === "bio" ? " with biology" : ""} (other boxels ${pct(g.rest)})`,
+        )
         .join("; ")}. A strong lead, not a promise.`}
     >
       golden:{" "}

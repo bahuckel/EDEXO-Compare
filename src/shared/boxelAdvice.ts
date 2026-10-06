@@ -13,6 +13,7 @@
  * and placed without asking anyone.
  */
 import { BOXEL_BIO_GOLDEN, BOXEL_BIO_RATES } from "./boxelBioRates.js";
+import { BOXEL_POSITION_GOLDEN } from "./boxelPositionGolden.js";
 import { BOXEL_RATES } from "./boxelRates.js";
 import { SECTOR_ORIGIN, SECTOR_SIZE_LY } from "./sectorName.js";
 
@@ -233,12 +234,32 @@ export interface GoldenBoxel {
   code: MassCode;
   position: number;
   boxel: string;
-  /** Share of systems with biology in boxels at this position, and in the rest of the mass code. */
+  /**
+   * `bio`: a genus or species, shares of systems with biology logged (EDAstro's codex file). `galaxy`:
+   * a star, world or signal, shares of every system with bodies known (the Spansh dump).
+   */
+  kind: "bio" | "galaxy";
+  /** Share in boxels at this position, and in the rest of the mass code. */
   rate: number;
   rest: number;
   systems: number;
-  /** Golden in the Spansh bio export too (a second source), not only in EDAstro's codex file. */
+  /**
+   * bio: golden in the Spansh bio export too (a second source). galaxy: still golden in boxels at least
+   * 90 % explored (the survey-bias check), which every listed one is.
+   */
   confirmed: boolean;
+}
+
+/** Both golden lists as one: [target, code, position, systems, hits, rest, confirmed, kind]. */
+const ALL_GOLDEN: readonly (readonly [string, string, number, number, number, number, boolean, GoldenBoxel["kind"]])[] = [
+  ...BOXEL_BIO_GOLDEN.map((g) => [g[0], g[1], g[2], g[3], g[4], g[5], g[6] === 1, "bio"] as const),
+  ...BOXEL_POSITION_GOLDEN.map((g) => [g[0], g[1], g[2], g[3], g[4], g[5], true, "galaxy"] as const),
+];
+
+/** A golden target's name: the genus or species, or the star / world / signal's label. */
+function goldenLabel(key: string): string {
+  if (key.startsWith("g:") || key.startsWith("sp:")) return key.slice(key.indexOf(":") + 1);
+  return BOXEL_TARGETS.find((t) => t.key === key)?.label ?? key;
 }
 
 /**
@@ -246,15 +267,16 @@ export interface GoldenBoxel {
  * (the golden list), those a second source confirms first, then by rate.
  */
 export function goldenBoxels(key: string): GoldenBoxel[] {
-  return BOXEL_BIO_GOLDEN.filter((g) => g[0] === key)
-    .map(([, code, position, systems, hits, rest, confirmed]) => ({
+  return ALL_GOLDEN.filter((g) => g[0] === key)
+    .map(([, code, position, systems, hits, rest, confirmed, kind]) => ({
       code: code as MassCode,
       position,
       boxel: boxelNameAt(code as MassCode, position),
+      kind,
       rate: hits / systems,
       rest,
       systems,
-      confirmed: confirmed === 1,
+      confirmed,
     }))
     .sort((a, b) => Number(b.confirmed) - Number(a.confirmed) || b.rate - a.rate);
 }
@@ -282,16 +304,17 @@ export function goldenInSector(g: GoldenBoxel, point: { x: number; y: number; z:
 /** What a boxel (`DL-Y d`, any sector) is a golden place for: targets with their rate, confirmed first. */
 export function goldenTargetsAt(
   boxel: string,
-): { target: string; rate: number; rest: number; confirmed: boolean }[] {
+): { target: string; kind: GoldenBoxel["kind"]; rate: number; rest: number; confirmed: boolean }[] {
   const position = boxelPositionOf(boxel);
   const code = /\s([a-h])\d*$/.exec(boxel.trim())?.[1];
   if (position == null || !code) return [];
-  return BOXEL_BIO_GOLDEN.filter((g) => g[1] === code && g[2] === position)
-    .map(([target, , , systems, hits, rest, confirmed]) => ({
-      target: target.slice(target.indexOf(":") + 1),
+  return ALL_GOLDEN.filter((g) => g[1] === code && g[2] === position)
+    .map(([target, , , systems, hits, rest, confirmed, kind]) => ({
+      target: goldenLabel(target),
+      kind,
       rate: hits / systems,
       rest,
-      confirmed: confirmed === 1,
+      confirmed,
     }))
     .sort((a, b) => Number(b.confirmed) - Number(a.confirmed) || b.rate / b.rest - a.rate / a.rest);
 }

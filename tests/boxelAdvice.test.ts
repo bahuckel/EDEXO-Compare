@@ -107,3 +107,19 @@ describe("golden places a second source confirms", () => {
     expect(goldenBoxels("sp:Bark Mounds")[0]!.confirmed).toBe(true);
   });
 });
+
+describe("golden places for stars, worlds and signals (owner, 2026-10-06)", () => {
+  it("lists neutron stars in BW-N e6 and white dwarfs in NE-X d2, with the rate over every boxel", () => {
+    const n = goldenBoxels("star:N");
+    expect(n.map((g) => g.boxel)).toContain("BW-N e6");
+    expect(n.every((g) => g.kind === "galaxy" && g.code === "e" && g.rate >= 1.75 * g.rest)).toBe(true);
+    const d = goldenBoxels("star:D").find((g) => g.boxel === "NE-X d2")!;
+    expect(d.rate / d.rest).toBeGreaterThan(2.5);
+  });
+
+  it("says what a boxel is golden for, by label", () => {
+    const at = goldenTargetsAt("AA-A g").map((g) => g.target);
+    expect(at).toEqual(expect.arrayContaining(["Geology (geological signals)", "Exobiology (biological signals)"]));
+    expect(goldenTargetsAt("BW-N e6").map((g) => g.target)).toContain("Neutron star");
+  });
+});
