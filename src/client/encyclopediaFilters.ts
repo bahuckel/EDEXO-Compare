@@ -167,9 +167,18 @@ export function entryMatchesEncyclopediaFacets(entry: SpeciesEntry, f: Encyclope
   return true;
 }
 
-/** Fields the search box looks at, best (lowest) rank wins. */
+/**
+ * Fields the search box looks at, best (lowest) rank wins. Names match loosely (letters in order:
+ * `bacacies` finds Bacterium Acies); the notes only as typed — scattered letters turn up in almost any
+ * paragraph (owner, 2026-10-06: "Tecton" listed Blatteum Bioluminescent Anemone, whose note has no such
+ * word), and a hit in the notes ranks after every name hit.
+ */
 export function encyclopediaSearchRank(entry: SpeciesEntry, query: string): number | null {
-  return fuzzyRankAny([entry.displayName, entry.genus, entry.genusDataDir, entry.notes], query);
+  const byName = fuzzyRankAny([entry.displayName, entry.genus, entry.genusDataDir], query);
+  if (byName != null) return byName;
+  const q = query.trim().toLowerCase();
+  const at = q && entry.notes ? entry.notes.toLowerCase().indexOf(q) : -1;
+  return at >= 0 ? 100_000 + at : null;
 }
 
 export function entryMatchesEncyclopediaFilters(entry: SpeciesEntry, f: EncyclopediaFiltersState): boolean {

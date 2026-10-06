@@ -63,6 +63,17 @@ describe("rankEncyclopediaRows", () => {
     expect(withFacet.rows.length).toBeLessThan(searchOnly.rows.length);
   });
 
+  it("matches the notes only as typed, not by scattered letters (owner, 2026-10-06: 'Tecton')", () => {
+    const r = rankEncyclopediaRows(rows, { ...defaultEncyclopediaFilters(), search: "Tecton" });
+    const names = r.rows.map((x) => x.entry.displayName);
+    expect(names).toContain("Stratum tectonicas");
+    expect(names.some((n) => /blatteum/i.test(n))).toBe(false);
+    for (const x of r.rows) {
+      const inName = /t.*e.*c.*t.*o.*n/i.test(`${x.entry.displayName} ${x.entry.genus} ${x.entry.genusDataDir ?? ""}`);
+      expect(inName || (x.entry.notes ?? "").toLowerCase().includes("tecton"), x.entry.displayName).toBe(true);
+    }
+  });
+
   it("returns nothing for a query no species can satisfy", () => {
     const r = rankEncyclopediaRows(rows, { ...defaultEncyclopediaFilters(), search: "qqqzzz" });
     expect(r.rows).toHaveLength(0);

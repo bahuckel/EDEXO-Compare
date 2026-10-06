@@ -17,10 +17,18 @@ describe("fuzzyRank", () => {
     expect(fuzzyRank("Bacterium Acies", "bacterium")).toBeLessThan(fuzzyRank("Bacterium Acies", "acies")!);
   });
 
-  it("prefers the tighter subsequence when neither is contiguous", () => {
-    const tight = fuzzyRank("Bacterium Acies", "bact")!;
-    const loose = fuzzyRank("Bacterium Acies", "bcis")!;
+  it("prefers the tighter match when neither is contiguous: fewer words skipped", () => {
+    const tight = fuzzyRank("Bacterium Acies Alba", "bacac")!;
+    const loose = fuzzyRank("Bacterium Alba Acies", "bacac")!;
     expect(tight).toBeLessThan(loose);
+  });
+
+  it("reads a scattered query as word beginnings, not letters from anywhere (2026-10-06)", () => {
+    expect(fuzzyRank("Bacterium Acies", "bcis")).toBeNull();
+    // "Tecton" listed Blatteum Bioluminescent Anemone: t-e-c-t-o-n in order across its words.
+    expect(fuzzyRank("Blatteum Bioluminescent Anemone", "tecton")).toBeNull();
+    expect(fuzzyRank("Stratum Tectonicas", "tecton")).not.toBeNull();
+    expect(fuzzyRank("Stratum Tectonicas", "strtec")).not.toBeNull();
   });
 
   it("ignores case and the spaces in the query", () => {

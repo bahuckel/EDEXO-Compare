@@ -15,18 +15,31 @@ export function fuzzyRank(haystack: string, query: string): number | null {
   if (!q) return 0;
   const direct = hay.indexOf(q);
   if (direct >= 0) return direct; // contiguous match always beats a scattered one
+  /*
+    Scattered: the query read as word beginnings, in order — `bacacies` is "bac…" + "acies", `c1b`
+    is "c" + "1" + "b". Letters picked from anywhere matched far too much (owner, 2026-10-06:
+    "Tecton" found Blatteum Bioluminescent Anemone, t-e-c-t-o-n scattered across its three words).
+  */
   const needle = q.replace(/\s+/g, "");
-  let at = 0;
-  let spread = 0;
-  let last = -1;
-  for (const ch of needle) {
-    const found = hay.indexOf(ch, at);
-    if (found < 0) return null;
-    if (last >= 0) spread += found - last - 1;
-    last = found;
-    at = found + 1;
+  const words = hay.split(/[^a-z0-9]+/).filter(Boolean);
+  const skipped = wordPrefixes(needle, words, 0);
+  return skipped == null ? null : 1000 + skipped;
+}
+
+/** Words skipped while `needle` is taken as prefixes of `words[from…]` in order; null when it cannot be. */
+function wordPrefixes(needle: string, words: readonly string[], from: number): number | null {
+  if (!needle) return 0;
+  for (let w = from; w < words.length; w++) {
+    const word = words[w]!;
+    let k = 0;
+    while (k < word.length && k < needle.length && word[k] === needle[k]) k++;
+    // Longest prefix first: "bacacies" takes "bac" from bacterium, then "acies".
+    for (; k > 0; k--) {
+      const rest = wordPrefixes(needle.slice(k), words, w + 1);
+      if (rest != null) return rest + (w - from);
+    }
   }
-  return 1000 + spread;
+  return null;
 }
 
 /**
