@@ -14,7 +14,8 @@
  * - `confirmed`  the codex logged a green gas giant for this body, or the commander marked it green;
  * - `catalogued` the body is in the edGGG catalogue;
  * - `likely`     the cloud ladder puts a rung exactly on a colour border (shared/gggLadder.ts, CMDR
- *                Arcanic's model from CMDR Regza's density finding, 2026-10-05); or EDAstro's codex
+ *                Arcanic's model from CMDR Regza's density finding, 2026-10-05; aligned to his own
+ *                code 2026-10-07); or EDAstro's codex
  *                file has a green report of its class in its system and it is the
  *                only body of that class scanned there; or its surface temperature is one that at
  *                least two catalogued GGGs share, for a class seen there (±0.001 K) — or a catalogued
@@ -56,15 +57,21 @@ export interface GreenGiantVerdict {
 /** The commander's own call, from the body popup: it is green, it is not, or no call. */
 export type GreenGiantMark = "yes" | "no";
 
-/** Gas giant classes that come in green (edGGG's seven; class V and helium giants have none). */
+/**
+ * Gas giant classes that can come in green: edGGG's seven, and the three his cloud ladder also covers
+ * (class V, helium-rich and helium giants; none found green yet, and no codex entry names them).
+ */
 export const GGG_CLASSES: ReadonlySet<string> = new Set([
   "Sudarsky class I gas giant",
   "Sudarsky class II gas giant",
   "Sudarsky class III gas giant",
   "Sudarsky class IV gas giant",
+  "Sudarsky class V gas giant",
   "Water giant",
   "Gas giant with water based life",
   "Gas giant with ammonia based life",
+  "Helium rich gas giant",
+  "Helium gas giant",
 ]);
 
 /** How far a scanned temperature may sit from a catalogued one: the journal's own precision. */
@@ -232,11 +239,13 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
  * each sign is worth on its own:
  * - cloud ladder, mass and radius scanned: 5 when the temperature alone puts a layer on a border and
  *   the temperature is on CMDR Arcanic's always-green tables (the model reproduces them value by
- *   value); 4 for a value the model adds to his tables (water-life 176.666626 K: open); 4.7 when the
- *   density decides and the float match is exact; 1.5 one float step off, 1.1 two off. Measured on the
- *   whole Spansh dump (38.2 M gas giants, 2026-10-05): of the 27 catalogued greens the ladder can judge it
- *   finds all 27 — 23 exact, 3 one step off, 1 two off — against 5, 8 and 25 uncatalogued hits; so an
- *   exact hit is nearly always real, one step off about 1 in 12, two off about 1 in 100;
+ *   value); 4.7 when the density decides and the float match is exact; one float step off 1.2, or 3
+ *   in his "maybe" nudge range; two off 1. Measured on the whole Spansh dump with his float path
+ *   (33.7 M gas giants with real-precision temperatures, 2026-10-07): 25 exact hits, all green — 24
+ *   catalogued and Cyoilz JM-N b26-0 1, found green on 1 Oct 3312; one step off 3 of 5 catalogued in
+ *   the maybe range and 0 of 13 out of it; two off 0 of 17;
+ * - a hit in his "maybe" nudge range, exact or without a mass: half a point less (it holds only if
+ *   the random nudge left the planet alone; on the dump both exact ones were green);
  * - cloud ladder without a scanned mass: 2.5 (the clouds may not reach their ceiling);
  * - EDAstro's green report for its class in the system: 1 + 3.5 / the bodies of that class there
  *   (4.5 for the only one);
@@ -247,11 +256,14 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
  */
 const PLAUSIBILITY = { agreeing: 0.25, likelyFrom: 3.5 };
 
-/** Water-life temperatures the ladder calls always green that his tables do not list. */
-const LADDER_ONLY_TEMPS: ReadonlySet<number> = new Set([Math.fround(176.666626)]);
+/** An exact or no-mass hit in one of his "maybe" nudge ranges, this much lower (see `PLAUSIBILITY`). */
+const MAYBE_NUDGED = 0.5;
 
-/** A density-decided layer that misses its border by 1 or 2 float steps (see `PLAUSIBILITY`). */
-const NEAR_MISS_SCORE: Readonly<Record<number, number>> = { 1: 1.5, 2: 1.1 };
+/** A density-decided layer that misses its border by 1 or 2 float steps, out of / in a maybe range. */
+const NEAR_MISS_SCORE: Readonly<Record<"none" | "maybe", Readonly<Record<number, number>>>> = {
+  none: { 1: 1.2, 2: 1 },
+  maybe: { 1: 3, 2: 1 },
+};
 
 /**
  * The cloud ladder's sign, scored as above. A whole-kelvin temperature is left to the rules above:
@@ -269,21 +281,18 @@ function cloudLadder(i: GreenGiantInput): { score: number; why: string } | null 
   });
   if (!v) return null;
   const layer = `cloud layer ${v.rung} of 7 lands on the ${v.door} K colour border`;
+  const maybe = v.nudge === "maybe";
+  const tag = maybe ? "cloud ladder; holds if the random nudge left it alone" : "cloud ladder";
+  const sign = (score: number, why: string) => ({ score: maybe ? Math.max(1, score - MAYBE_NUDGED) : score, why });
+  if (v.basis === "ceiling") return sign(5, `${fmtK(t)} — at this temperature ${layer} (${tag})`);
   if (!hasDensity(i)) {
-    return { score: 2.5, why: `${fmtK(t)} — ${layer} if its clouds reach their ceiling (cloud ladder; no mass scanned)` };
+    return sign(2.5, `${fmtK(t)} — ${layer} if its clouds reach their ceiling (${tag}; no mass scanned)`);
   }
-  if (v.basis === "ceiling") {
-    const open = LADDER_ONLY_TEMPS.has(Math.fround(t));
-    return {
-      score: open ? 4 : 5,
-      why: `${fmtK(t)} — at this temperature ${layer} (cloud ladder${open ? "; a value not on Arcanic's tables" : ""})`,
-    };
-  }
-  if (v.offUlp === 0) return { score: 4.7, why: `${fmtK(t)} — at this temperature and density ${layer} (cloud ladder)` };
+  if (v.offUlp === 0) return sign(4.7, `${fmtK(t)} — at this temperature and density ${layer} (${tag})`);
   const steps = Math.round(v.offUlp * 10) / 10;
   return {
-    score: NEAR_MISS_SCORE[Math.round(v.offUlp)] ?? 1,
-    why: `${fmtK(t)} — at this temperature and density ${layer} within ${steps} float step${steps === 1 ? "" : "s"} (cloud ladder)`,
+    score: NEAR_MISS_SCORE[v.nudge][Math.round(v.offUlp)] ?? 1,
+    why: `${fmtK(t)} — at this temperature and density ${layer} within ${steps} float step${steps === 1 ? "" : "s"} (${tag})`,
   };
 }
 

@@ -80,8 +80,11 @@ describe("the verdict", () => {
 
   it("possible for any gas giant of a green class in a K10 system; never for other classes", () => {
     expect(classifyGreenGiant({ planetClass: C1, surfaceTemperatureK: 99, k10InSystem: true })?.level).toBe("possible");
-    expect(classifyGreenGiant({ planetClass: "Sudarsky class V gas giant", surfaceTemperatureK: 1500, k10InSystem: true })).toBeNull();
-    expect(classifyGreenGiant({ planetClass: "Helium rich gas giant", surfaceTemperatureK: 130, codex: true })).toBeNull();
+    // Class V and helium giants: his cloud ladder covers them (2026-10-07), none found green yet.
+    expect(classifyGreenGiant({ planetClass: "Sudarsky class V gas giant", surfaceTemperatureK: 1500, k10InSystem: true })?.level).toBe(
+      "possible",
+    );
+    expect(isGggClass("Helium rich gas giant")).toBe(true);
     expect(classifyGreenGiant({ planetClass: "Icy body", surfaceTemperatureK: 130 })).toBeNull();
   });
 
@@ -345,8 +348,8 @@ describe("the cloud ladder (shared/gggLadder.ts)", () => {
   });
 
   it("likely at an always-green temperature with the clouds at their ceiling, possible without a mass", () => {
-    // Class IV 1150.000122 K (on his always-green table): dense enough for the ceiling.
-    const iv = { planetClass: C4, surfaceTemperatureK: 1150.000122, massEM: 3089.6, radiusM: 7e7 };
+    // Class IV 1149.999878 K (on his always-green table): dense enough for the ceiling.
+    const iv = { planetClass: C4, surfaceTemperatureK: 1149.999878, massEM: 3089.6, radiusM: 7e7 };
     expect(classifyGreenGiant(iv)).toMatchObject({ level: "likely" });
     expect(classifyGreenGiant(iv)!.why).toMatch(/at this temperature cloud layer 6 of 7 lands on the 1400 K/);
     // Without a mass it is still likely there, as a temperature two catalogued class IV GGGs share …
@@ -379,20 +382,23 @@ describe("the cloud ladder (shared/gggLadder.ts)", () => {
     expect(score({ ...water, k10InSystem: true })).toBe(5);
     // Without a mass: 2.5, possible.
     expect(classifyGreenGiant({ ...water, massEM: null, radiusM: null })).toMatchObject({ level: "possible", score: 2.5 });
-    // 176.666626 K, the value the ladder adds to his tables: 4, plus the temperature the catalogue's
-    // 176.667 K greens share (3.5) as a second sign.
-    const open = classifyGreenGiant({ ...water, surfaceTemperatureK: 176.666626 })!;
-    expect(open).toMatchObject({ level: "likely", score: 4.3 });
-    expect(open.why).toMatch(/not on Arcanic's tables.*\(and 1 more sign\)$/);
+    // 176.666626 K misses 270 K by a float step (his tables): the temperature the catalogue's 176.667 K
+    // greens share is left, and the ladder's no drops it to 1.5.
+    const off = classifyGreenGiant({ ...water, surfaceTemperatureK: 176.666626 })!;
+    expect(off).toMatchObject({ level: "possible", score: 1.5 });
+    // In his "maybe" nudge range half a point less (Vegnao PA-S c6-43 3, catalogue #38, under no name).
+    const vegnao = { planetClass: C1, surfaceTemperatureK: 113.841248, massEM: 306.238953, radiusM: 72_590_296 };
+    expect(classifyGreenGiant(vegnao)).toMatchObject({ level: "likely", score: 4.2 });
+    expect(classifyGreenGiant(vegnao)!.why).toMatch(/holds if the random nudge left it alone\)$/);
     // A shared temperature the ladder rejects at its density drops to 1.5.
     const thin = classifyGreenGiant({ planetClass: WATER, surfaceTemperatureK: 176.666687, massEM: 1, radiusM: 3.05e7 })!;
     expect(thin).toMatchObject({ level: "possible", score: 1.5 });
     expect(thin.why).toMatch(/but at its density no cloud layer lands on a colour border/);
-    // One float step off a border (Synookio EI-J d9-1 7, catalogue #19, under no name): 1.5, possible —
-    // on the whole dump such hits are real about 1 in 12.
+    // One float step off a border (Synookio EI-J d9-1 7, catalogue #19, under no name), in the maybe
+    // nudge range: 3, possible (on the dump 3 of 5 such were green); out of it 1.2 (0 of 13).
     const near = { planetClass: C1, surfaceTemperatureK: 119.986717, massEM: 21.216078, radiusM: 20_795_606 };
-    expect(classifyGreenGiant(near)).toMatchObject({ level: "possible", score: 1.5 });
-    expect(classifyGreenGiant(near)!.why).toMatch(/within 1 float step \(cloud ladder\)$/);
+    expect(classifyGreenGiant(near)).toMatchObject({ level: "possible", score: 3 });
+    expect(classifyGreenGiant(near)!.why).toMatch(/within 1 float step \(cloud ladder; holds if/);
     // EDAstro: 1 + 3.5 / bodies of the class there; K10 alone 1.5.
     expect(score({ planetClass: C1, surfaceTemperatureK: 150, edastroReport: "only" })).toBe(4.5);
     expect(score({ planetClass: C1, surfaceTemperatureK: 150, edastroReport: "shared", edastroCandidates: 3 })).toBe(2.2);
