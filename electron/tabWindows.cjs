@@ -39,6 +39,8 @@ function createTabWindows(d) {
   /** key → the tab kinds it shows. */
   const registry = new Map();
   let seq = 0;
+  /** The tab window the commander was in last: the screen-tab keys step its tabs. */
+  let lastFocus = "main";
   /** The app window is closing (or the app quitting): the list of detached windows is kept as it is. */
   let frozen = false;
 
@@ -65,6 +67,9 @@ function createTabWindows(d) {
   function attachMain(win) {
     frozen = false;
     windows.set("main", win);
+    win.on("focus", () => {
+      lastFocus = "main";
+    });
     win.on("close", () => {
       frozen = true;
     });
@@ -121,7 +126,11 @@ function createTabWindows(d) {
       if (/^https?:\/\//i.test(url) && !url.startsWith(`${base}/`)) d.onExternalLink(url);
       return { action: "deny" };
     });
+    win.on("focus", () => {
+      lastFocus = key;
+    });
     win.on("closed", () => {
+      if (lastFocus === key) lastFocus = "main";
       windows.delete(key);
       registry.delete(key);
       broadcast();
@@ -197,6 +206,18 @@ function createTabWindows(d) {
     sendToMain(cmd) {
       const w = windows.get("main");
       if (live(w)) w.webContents.send("edexo:ui-command", cmd);
+    },
+    /**
+     * The screen-tab keys (owner, 2026-10-07): one key pair for every window, acting on the tab window
+     * the commander clicked last — the app window until another one has had the focus.
+     */
+    sendToFocused(cmd) {
+      const w = windows.get(lastFocus);
+      (live(w) ? w : windows.get("main"))?.webContents.send("edexo:ui-command", cmd);
+    },
+    /** The window the screen-tab keys act on, for tests. */
+    focusedKey() {
+      return live(windows.get(lastFocus)) ? lastFocus : "main";
     },
     /** The app is quitting: keep the list of detached windows for the next start. */
     freeze() {

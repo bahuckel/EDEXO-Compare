@@ -13,6 +13,8 @@ const { createTabWindows } = require("../electron/tabWindows.cjs") as {
     freeze(): void;
     restore(): void;
     sendToMain(cmd: unknown): void;
+    sendToFocused(cmd: unknown): void;
+    focusedKey(): string;
   };
 };
 
@@ -152,5 +154,30 @@ describe("tab windows", () => {
     tw.sendToMain({ cmd: "screenTab", dir: 1 });
     expect(main.webContents.sent).toContainEqual(["edexo:ui-command", { cmd: "screenTab", dir: 1 }]);
     expect(other.webContents.sent.some(([c]) => c === "edexo:ui-command")).toBe(false);
+  });
+
+  // The screen-tab keys step the tab window clicked last (owner, 2026-10-07): one key pair, one window.
+  it("hands the screen-tab keys to the tab window that had the focus last", async () => {
+    const { tw, main, handle } = setup();
+    const cmd = { cmd: "screenTab", dir: -1 };
+    const got = (w: FakeWindow) => w.webContents.sent.filter(([c]) => c === "edexo:ui-command").length;
+    // The app window until another one is used.
+    tw.sendToFocused(cmd);
+    expect(got(main)).toBe(1);
+    await handle.get("edexo:tab-detach")!({ sender: main.webContents }, { kind: "boxels", x: 900, y: 300 });
+    const other = FakeWindow.made.at(-1)!;
+    other.emit("focus");
+    expect(tw.focusedKey()).not.toBe("main");
+    tw.sendToFocused(cmd);
+    expect([got(main), got(other)]).toEqual([1, 1]);
+    // Back in the app window; and when the detached window closes, the keys go home.
+    main.emit("focus");
+    tw.sendToFocused(cmd);
+    expect([got(main), got(other)]).toEqual([2, 1]);
+    other.emit("focus");
+    other.close();
+    expect(tw.focusedKey()).toBe("main");
+    tw.sendToFocused(cmd);
+    expect(got(main)).toBe(3);
   });
 });

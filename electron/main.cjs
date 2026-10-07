@@ -144,7 +144,10 @@ const keyTimingOn = () => {
 function uiCommandEverywhere(cmd) {
   const timed = keyTimingOn();
   if (timed) huds.log(`key ${cmd.cmd} ${cmd.dir > 0 ? "next" : "previous"}`);
-  tabWindows.sendToMain(timed ? { ...cmd, sentAt: Date.now() } : cmd);
+  const sent = timed ? { ...cmd, sentAt: Date.now() } : cmd;
+  // Body tabs live in the app window; screen tabs step in the tab window used last (tabWindows.cjs).
+  if (cmd.cmd === "screenTab") tabWindows.sendToFocused(sent);
+  else tabWindows.sendToMain(sent);
   runtime?.uiCommand?.(cmd);
 }
 ipcMain.on("edexo:ui-ack", (_e, r) => {

@@ -283,10 +283,22 @@ export function TabHost({ children }: { children: ReactNode }) {
   }, [st.on]);
   /*
     Previous / next tab from inside the game (owner, 2026-10-06; Shift+F1 / Shift+F2 by default, set in
-    the launcher). The main window's tabs only: a window of its own keeps the tab it shows.
+    the launcher). The desktop app sends them to the tab window the commander clicked last (2026-10-07):
+    the app window hears them with the other key binds, a detached window straight from Electron. A
+    browser tab steps the main tabs, as before.
   */
   useEffect(() => {
-    if (!st.on || IS_DETACHED) return;
+    if (!st.on) return;
+    if (IS_DETACHED) {
+      const bridge = (
+        window as unknown as {
+          edexoElectron?: { onUiCommand?: (cb: (cmd: UiCommand) => void) => () => void };
+        }
+      ).edexoElectron;
+      return bridge?.onUiCommand?.((cmd) => {
+        if (cmd?.cmd === "screenTab") stepTab(cmd.dir);
+      });
+    }
     const onCommand = (ev: Event) => {
       const cmd = (ev as CustomEvent<UiCommand>).detail;
       if (cmd?.cmd === "screenTab") stepTab(cmd.dir);
