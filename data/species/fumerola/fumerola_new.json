@@ -66,7 +66,8 @@
         ],
         "planet_types": [
           "Icy",
-          "Rocky Ice"
+          "Rocky Ice",
+          "Rocky"
         ],
         "max_gravity": 0.275,
         "volcanismActiveRequired": true,
@@ -78,6 +79,7 @@
         "matchContextNotes": [
           "Codex: spawns on fumarole / vent sites. Species split by water-class volcanism (journal substring: water).",
           "Thin atmosphere = pressure gate only; composition can be e.g. sulphur dioxide.",
+          "Rocky bodies too (2026-10-07): 5 of 84 known-spawn aquatis bodies in the precision sample (new Spansh export x EDSM/EDAstro single-species codex) were Rocky, with water magma.",
           "Variant colour follows planetary rare materials (genus meta), not star class."
         ]
       }
@@ -121,7 +123,8 @@
         ],
         "planet_types": [
           "Rocky",
-          "High Metal Content"
+          "High Metal Content",
+          "Rocky Ice"
         ],
         "max_gravity": 0.275,
         "volcanismActiveRequired": true,
@@ -132,6 +135,7 @@
         ],
         "matchContextNotes": [
           "Codex: silicate / iron / rocky volcanism wording in journal.",
+          "Rocky Ice bodies too (2026-10-07): 5 of 81 known-spawn extremus bodies in the precision sample were Rocky Ice.",
           "Variant colour follows planetary rare materials (genus meta), not star class."
         ]
       }
