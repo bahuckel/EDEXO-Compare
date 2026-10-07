@@ -118,11 +118,22 @@ describe("matchDatabaseToScan", () => {
       CO₂ is perfectly good for tela when the body is hot, 14 of 24 above 300 K. The temperature was
       doing the work all along.
     */
+    /*
+      The four metal-world Anemones pass the matcher here since 2026-10-07 (thin atmospheres allowed:
+      10 of 313 known-spawn Anemone bodies had one). The dump has none on bodies like this one, so the
+      genus prior hides them on the body tab and the system map (genusPrior.ts vetoUnseenGenera).
+    */
     expect(
       shown(r)
         .map((m) => m.entry.id)
         .sort(),
-    ).toEqual(["bacterium_bacterium_aurasus"]);
+    ).toEqual([
+      "anemone_blatteum_bioluminescent",
+      "anemone_prasinum_bioluminescent",
+      "anemone_roseum_bioluminescent",
+      "anemone_rubeum_bioluminescent",
+      "bacterium_bacterium_aurasus",
+    ]);
     const telaRow = r.matches.find((m) => m.entry.id === "bacterium_bacterium_tela");
     expect(telaRow, "cold and non-volcanic: tela is not on this body at all").toBeUndefined();
     expect(r.approximateMatchingUsed).toBe(false);
@@ -136,9 +147,9 @@ describe("matchDatabaseToScan", () => {
 
   it("drops bacterium rows unless the setting asks for them", () => {
     const without = matchDatabaseToScan(db, HMC_THIN_CO2, null, null, { includeBacterium: false });
-    // Bacterium aurasus was the only shown row here, so switching it off leaves the default panel
-    // empty and Stratum tectonicas demoted on temperature.
-    expect(shown(without)).toEqual([]);
+    // Bacterium aurasus goes with the setting; what is left shown is the metal-world Anemones (see the
+    // test above), and Stratum tectonicas stays demoted on temperature.
+    expect(shown(without).every((m) => m.entry.genusDataDir === "anemone")).toBe(true);
     expect(without.matches.some((m) => m.entry.id === "stratum_stratum_tectonicas")).toBe(true);
     // The demoted tier is genus-filtered the same way; bacterium must not sneak back in through it.
     expect(without.matches.some((m) => m.entry.genusDataDir === "bacterium")).toBe(false);

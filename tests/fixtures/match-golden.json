@@ -262,6 +262,7 @@
         "fonticulua_fonticulua_campestris"
       ],
       "candidates": [
+        "anemone_puniceum",
         "bacterium_bacterium_vesicula",
         "electricae_electricae_pluma",
         "electricae_electricae_radialem",
@@ -274,7 +275,6 @@
         "amphora_amphora_plant",
         "anemone_blatteum_bioluminescent",
         "anemone_prasinum_bioluminescent",
-        "anemone_puniceum",
         "anemone_roseum_bioluminescent",
         "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_acies",
@@ -354,6 +354,7 @@
         "fonticulua_fonticulua_upupam"
       ],
       "candidates": [
+        "anemone_puniceum",
         "electricae_electricae_pluma",
         "electricae_electricae_radialem",
         "fonticulua_fonticulua_upupam",
@@ -365,7 +366,6 @@
         "amphora_amphora_plant",
         "anemone_blatteum_bioluminescent",
         "anemone_prasinum_bioluminescent",
-        "anemone_puniceum",
         "anemone_roseum_bioluminescent",
         "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_acies",
@@ -446,6 +446,7 @@
         "fonticulua_fonticulua_upupam"
       ],
       "candidates": [
+        "anemone_puniceum",
         "electricae_electricae_pluma",
         "electricae_electricae_radialem",
         "fonticulua_fonticulua_upupam",
@@ -457,7 +458,6 @@
         "amphora_amphora_plant",
         "anemone_blatteum_bioluminescent",
         "anemone_prasinum_bioluminescent",
-        "anemone_puniceum",
         "anemone_roseum_bioluminescent",
         "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_acies",
@@ -539,6 +539,7 @@
         "tussock_tussock_propagito"
       ],
       "candidates": [
+        "anemone_prasinum_bioluminescent",
         "bacterium_bacterium_aurasus",
         "concha_concha_labiata",
         "frutexa_frutexa_acus",
@@ -552,7 +553,6 @@
         "aleoida_aleoida_spica",
         "amphora_amphora_plant",
         "anemone_blatteum_bioluminescent",
-        "anemone_prasinum_bioluminescent",
         "anemone_puniceum",
         "anemone_roseum_bioluminescent",
         "anemone_rubeum_bioluminescent",
@@ -630,20 +630,20 @@
         "stratum_stratum_tectonicas"
       ],
       "candidates": [
+        "anemone_blatteum_bioluminescent",
+        "anemone_prasinum_bioluminescent",
+        "anemone_roseum_bioluminescent",
+        "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_aurasus",
         "bacterium_bacterium_tela",
         "stratum_stratum_tectonicas"
       ],
       "unlikely": [
         "amphora_amphora_plant",
-        "anemone_blatteum_bioluminescent",
         "anemone_croceum",
         "anemone_luteolum",
-        "anemone_prasinum_bioluminescent",
         "anemone_puniceum",
         "anemone_roseum",
-        "anemone_roseum_bioluminescent",
-        "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_acies",
         "bacterium_bacterium_alcyoneum",
         "bacterium_bacterium_bullaris",
@@ -694,16 +694,16 @@
         "stratum_stratum_tectonicas"
       ],
       "candidates": [
+        "anemone_blatteum_bioluminescent",
+        "anemone_prasinum_bioluminescent",
+        "anemone_roseum_bioluminescent",
+        "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_aurasus",
         "stratum_stratum_tectonicas"
       ],
       "unlikely": [
         "amphora_amphora_plant",
-        "anemone_blatteum_bioluminescent",
-        "anemone_prasinum_bioluminescent",
         "anemone_puniceum",
-        "anemone_roseum_bioluminescent",
-        "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_acies",
         "bacterium_bacterium_alcyoneum",
         "bacterium_bacterium_bullaris",
@@ -754,16 +754,16 @@
         "stratum_stratum_tectonicas"
       ],
       "candidates": [
+        "anemone_blatteum_bioluminescent",
+        "anemone_prasinum_bioluminescent",
+        "anemone_roseum_bioluminescent",
+        "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_aurasus",
         "stratum_stratum_tectonicas"
       ],
       "unlikely": [
         "amphora_amphora_plant",
-        "anemone_blatteum_bioluminescent",
-        "anemone_prasinum_bioluminescent",
         "anemone_puniceum",
-        "anemone_roseum_bioluminescent",
-        "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_acies",
         "bacterium_bacterium_alcyoneum",
         "bacterium_bacterium_bullaris",
@@ -1307,15 +1307,15 @@
         "bacterium_bacterium_informem"
       ],
       "candidates": [
+        "anemone_blatteum_bioluminescent",
+        "anemone_prasinum_bioluminescent",
+        "anemone_roseum_bioluminescent",
+        "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_informem"
       ],
       "unlikely": [
         "amphora_amphora_plant",
-        "anemone_blatteum_bioluminescent",
-        "anemone_prasinum_bioluminescent",
         "anemone_puniceum",
-        "anemone_roseum_bioluminescent",
-        "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_acies",
         "bacterium_bacterium_alcyoneum",
         "bacterium_bacterium_aurasus",
@@ -1353,6 +1353,7 @@
         "fonticulua_fonticulua_fluctus"
       ],
       "candidates": [
+        "anemone_puniceum",
         "bacterium_bacterium_volu",
         "fonticulua_fonticulua_fluctus"
       ],
@@ -1362,7 +1363,6 @@
         "amphora_amphora_plant",
         "anemone_blatteum_bioluminescent",
         "anemone_prasinum_bioluminescent",
-        "anemone_puniceum",
         "anemone_roseum_bioluminescent",
         "anemone_rubeum_bioluminescent",
         "bacterium_bacterium_acies",
@@ -1443,6 +1443,7 @@
         "bacterium_bacterium_volu"
       ],
       "candidates": [
+        "anemone_puniceum",
         "bacterium_bacterium_volu"
       ],
       "unlikely": [
@@ -1451,7 +1452,6 @@
         "anemone_croceum",
         "anemone_luteolum",
         "anemone_prasinum_bioluminescent",
-        "anemone_puniceum",
         "anemone_roseum",
         "anemone_roseum_bioluminescent",
         "anemone_rubeum_bioluminescent",
