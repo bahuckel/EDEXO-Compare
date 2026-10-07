@@ -130,9 +130,19 @@ function showLauncher() {
  * socket — which the app window then ignores (useLiveSnapshot.ts), so nothing moves twice.
  */
 function uiCommandEverywhere(cmd) {
-  tabWindows.sendToMain(cmd);
+  /*
+    Timed into hud-events.log (owner, 2026-10-07: Shift+F1 / F2 still slow with the game in front): the
+    key's arrival here, then the page's answer (edexo:ui-ack) — when it got the command and when the next
+    frame was drawn — so the log says which leg the seconds are on.
+  */
+  huds.log(`key ${cmd.cmd} ${cmd.dir > 0 ? "next" : "previous"}`);
+  tabWindows.sendToMain({ ...cmd, sentAt: Date.now() });
   runtime?.uiCommand?.(cmd);
 }
+ipcMain.on("edexo:ui-ack", (_e, r) => {
+  if (!r || typeof r !== "object") return;
+  huds.log(`key ${String(r.cmd)} in the page: got it +${Number(r.got)} ms, drawn +${Number(r.drawn)} ms`);
+});
 
 const keybinds = createKeybinds({
   globalShortcut,

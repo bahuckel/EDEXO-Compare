@@ -14,10 +14,26 @@ export const UI_COMMAND_EVENT = "edexo-ui-command";
 */
 const IPC_UI_COMMANDS: boolean = (() => {
   if (typeof window === "undefined") return false;
-  const e = (window as unknown as { edexoElectron?: { tabs?: unknown; onUiCommand?: (cb: (cmd: unknown) => void) => unknown } })
-    .edexoElectron;
+  const e = (
+    window as unknown as {
+      edexoElectron?: {
+        tabs?: unknown;
+        onUiCommand?: (cb: (cmd: { cmd?: string; sentAt?: number }) => void) => unknown;
+        uiAck?: (r: { cmd: string; got: number; drawn: number }) => void;
+      };
+    }
+  ).edexoElectron;
   if (!e?.tabs || typeof e.onUiCommand !== "function" || new URLSearchParams(location.search).has("tabwin")) return false;
-  e.onUiCommand((cmd) => window.dispatchEvent(new CustomEvent(UI_COMMAND_EVENT, { detail: cmd })));
+  e.onUiCommand((cmd) => {
+    const got = typeof cmd.sentAt === "number" ? Date.now() - cmd.sentAt : -1;
+    window.dispatchEvent(new CustomEvent(UI_COMMAND_EVENT, { detail: cmd }));
+    // After the next frame: how long until the change could be on screen (owner's slow-key report).
+    requestAnimationFrame(() =>
+      setTimeout(() => {
+        if (typeof cmd.sentAt === "number") e.uiAck?.({ cmd: String(cmd.cmd), got, drawn: Date.now() - cmd.sentAt });
+      }, 0),
+    );
+  });
   return true;
 })();
 
