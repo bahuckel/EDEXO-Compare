@@ -195,9 +195,14 @@ export function registerGalaxyRoutes(
    * The galaxy index as a separate download (plan 4.2, 2026-10-04): whether it is here, how big the
    * download is, and its progress; POST starts it. Builds leave the files out.
    */
+  let indexProbedAt = 0;
   app.get("/api/galaxy/index", async (_req, res) => {
     const st = galaxyIndexStatus();
-    if (!st.present && st.downloadBytes == null) await probeGalaxyIndexSize();
+    // The release's sizes (two HEAD requests), at most every ten minutes: the download and the update check.
+    if ((st.downloadBytes == null || st.updateAvailable == null) && Date.now() - indexProbedAt > 600_000) {
+      indexProbedAt = Date.now();
+      await probeGalaxyIndexSize();
+    }
     res.json(galaxyIndexStatus());
   });
   app.post("/api/galaxy/index/download", (_req, res) => {

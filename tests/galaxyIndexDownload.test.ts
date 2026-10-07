@@ -6,7 +6,12 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { downloadGalaxyIndex, galaxyIndexFilePath, galaxyIndexStatus } from "../src/server/galaxyIndexFiles.js";
+import {
+  downloadGalaxyIndex,
+  galaxyIndexFilePath,
+  galaxyIndexStatus,
+  probeGalaxyIndexSize,
+} from "../src/server/galaxyIndexFiles.js";
 
 let dir: string;
 let before: string | undefined;
@@ -50,5 +55,20 @@ describe("the galaxy index download", () => {
     expect(done).toBe(0);
     expect(galaxyIndexStatus().error).toMatch(/system-traits\.bin\.gz: HTTP 404/);
     expect(galaxyIndexFilePath("system-traits.bin.gz").startsWith(dir)).toBe(false);
+  });
+
+  // Owner, 2026-10-07: with an index here the map offered no download at all; now it says when the release differs.
+  it("says when the release holds other files than the ones here", async () => {
+    await downloadGalaxyIndex(() => {}, serve());
+    const sized = (n: number) =>
+      (async () => new Response(null, { status: 200, headers: { "content-length": String(n) } })) as unknown as typeof fetch;
+    await probeGalaxyIndexSize(sized("index:bio-index.bin".length));
+    expect(galaxyIndexStatus().updateAvailable).toBe(true); // the traits file differs in size
+    const same = (async (url: string) => {
+      const n = `index:${String(url).split("/").pop()}`.length;
+      return new Response(null, { status: 200, headers: { "content-length": String(n) } });
+    }) as unknown as typeof fetch;
+    await probeGalaxyIndexSize(same);
+    expect(galaxyIndexStatus().updateAvailable).toBe(false);
   });
 });

@@ -23,7 +23,7 @@ import { formatCount, formatValue } from "./galaxy3d/clusters";
 import { fmtLy } from "@shared/format";
 import { CodexRecord, IndexRecord, MySystemRecord, SectorRecord } from "./galaxy3d/GalaxyPanels";
 import { GalaxySearchPanel, type GalaxySearchApplied } from "./GalaxySearchPanel";
-import { GalaxyIndexDownload } from "./GalaxyIndexDownload";
+import { GalaxyIndexDownload, GalaxyIndexRow } from "./GalaxyIndexDownload";
 import { GalaxyNavRoutePanel, type NavRouteSystemDTO } from "./GalaxyNavRoutePanel";
 import {
   EMPTY_GALAXY_FILTER,
@@ -1273,6 +1273,7 @@ export function GalaxyMap3D() {
               onChange={(ev) => setExposure(Number(ev.target.value))}
             />
           </MenuRow>
+          <GalaxyIndexRow />
           <MenuRow label="Classic map" hint="The 2D sector map, for a machine without 3D graphics or a quick look">
             <a className="g3d-row__val g3d-classic" href="?screen=map">
               Open

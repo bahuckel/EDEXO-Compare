@@ -40,11 +40,18 @@ export interface GalaxyIndexStatus {
   error: string | null;
   /** What the download would weigh (from the release), for the button; null until asked. */
   downloadBytes: number | null;
+  /**
+   * The release holds other files than these (a size differs; owner, 2026-10-07: "I still don't see a
+   * way to download the index" once one was there). Null until the release has been asked.
+   */
+  updateAvailable: boolean | null;
 }
 
 let downloading: GalaxyIndexStatus["downloading"] = null;
 let lastError: string | null = null;
 let downloadBytes: number | null = null;
+/** Each file's size on the release, from the last probe. */
+let remoteSizes: Map<string, number> | null = null;
 
 export function galaxyIndexStatus(): GalaxyIndexStatus {
   const files = GALAXY_INDEX_FILES.map((name) => {
@@ -57,20 +64,24 @@ export function galaxyIndexStatus(): GalaxyIndexStatus {
     }
     return { name, bytes };
   });
-  return { present: files[0]!.bytes != null, files, downloading, error: lastError, downloadBytes };
+  const updateAvailable = remoteSizes ? files.some((f) => f.bytes != null && f.bytes !== remoteSizes!.get(f.name)) : null;
+  return { present: files[0]!.bytes != null, files, downloading, error: lastError, downloadBytes, updateAvailable };
 }
 
 /** Ask the release how big the files are (HEAD requests), for the button's label. Quiet on failure. */
 export async function probeGalaxyIndexSize(fetchImpl: typeof fetch = fetch): Promise<number | null> {
   try {
     let total = 0;
+    const sizes = new Map<string, number>();
     for (const name of GALAXY_INDEX_FILES) {
       const r = await fetchImpl(`${GALAXY_INDEX_BASE_URL}/${name}`, { method: "HEAD", redirect: "follow" });
       const n = Number(r.headers.get("content-length"));
       if (!r.ok || !Number.isFinite(n) || n <= 0) return null;
+      sizes.set(name, n);
       total += n;
     }
     downloadBytes = total;
+    remoteSizes = sizes;
     return total;
   } catch {
     return null;
@@ -103,6 +114,7 @@ export async function downloadGalaxyIndex(onDone: () => void, fetchImpl: typeof 
       renameSync(part, path.join(dir, name));
     }
     downloading = null;
+    remoteSizes = null; // asked again next time: the files here are now the release's
     onDone();
   } catch (e) {
     downloading = null;
