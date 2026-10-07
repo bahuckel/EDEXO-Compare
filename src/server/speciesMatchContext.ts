@@ -615,12 +615,14 @@ export function buildSpeciesMatchContext(exo: BodyExoState, store: GameStateStor
      * in the *current* system and the wrong one for a system being viewed remotely. Only attach it
      * when the body actually belongs to the commander's current system — a wrong coordinate would
      * demote candidates for a reason that has nothing to do with them. A looked-up system carries its
-     * own coordinates from Spansh, so the nebula / core gates can judge it.
+     * own coordinates from Spansh, so the nebula / core gates can judge it. A system flown earlier has
+     * its own `StarPos` from the journal (owner, 2026-10-07: Electricae radialem shown on Aishaist SA-G
+     * b39-0 C 5 once he had jumped on — without a position every gate stood aside).
      */
     spatialCoords:
       store.commanderPos && exo.systemAddress === store.currentSystemAddress
         ? store.commanderPos
-        : (store.remoteSystems.get(exo.systemAddress)?.coords ?? null),
+        : (store.remoteSystems.get(exo.systemAddress)?.coords ?? store.systemPositions.get(exo.systemAddress) ?? null),
     systemBodyListComplete: store.fssAllBodiesCompleteSystems.has(exo.systemAddress),
   });
 }
