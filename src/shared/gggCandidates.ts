@@ -1,9 +1,14 @@
 /**
- * Green gas giant candidates the cloud ladder finds in the Spansh galaxy dump (2026-10-05, 38.2 M gas
- * giants; docs/perf/ggg_candidates.py + ggg_layer.py) that the edGGG catalogue does not list yet, for
- * the galaxy map. Only those the verdict scores 1.5 or more: an exact float match, or one float step
- * off. The app scores them with shared/greenGasGiant.ts like any scan. The model is CMDR Arcanic's
- * ("The Mystery Property: Revealed"), from CMDR Regza's density finding. None is confirmed in game.
+ * Green gas giant candidates the cloud ladder finds in the Spansh galaxy dump (38.2 M gas giants;
+ * docs/perf/ggg_candidates.py + ggg_layer.py, 2026-10-05) that the edGGG catalogue does not list yet,
+ * for the galaxy map. Only those the verdict scores 1.5 or more by the ladder itself: an exact float
+ * match, or one float step off in his "maybe" nudge range. Narrowed on 2026-10-07 when the ladder was
+ * aligned to CMDR Arcanic's own code (densitydemo.html): of the 13, ten fell below that (one float
+ * step off out of a nudge range, of which none of the 13 on the dump is catalogued), or off the
+ * ladder. The app scores them
+ * with shared/greenGasGiant.ts like any scan. The model is CMDR Arcanic's ("The Mystery Property:
+ * Revealed"), from CMDR Regza's density finding. Cyoilz JM-N b26-0 1 was found green on 1 Oct 3312
+ * (his page); it stays here until the catalogue lists it.
  *
  * [body, system, journal PlanetClass, surface temperature K, MassEM, radius m, x, y, z]
  */
@@ -21,17 +26,6 @@ export type GggCandidateRow = readonly [
 
 export const GGG_CANDIDATES: readonly GggCandidateRow[] = [
   [
-    "Juenae QO-Z e3532 1",
-    "Juenae QO-Z e3532",
-    "Sudarsky class I gas giant",
-    126.942032,
-    475.301514,
-    71019896,
-    55.59375,
-    -58.5625,
-    25978.0,
-  ],
-  [
     "Leami SL-W c18-375 8",
     "Leami SL-W c18-375",
     "Gas giant with ammonia based life",
@@ -43,72 +37,6 @@ export const GGG_CANDIDATES: readonly GggCandidateRow[] = [
     20244.5625,
   ],
   [
-    "Eorl Briae TV-D d12-1355 C 1",
-    "Eorl Briae TV-D d12-1355",
-    "Gas giant with water based life",
-    176.666626,
-    443.463562,
-    75253624,
-    -6322.3125,
-    368.09375,
-    30744.59375,
-  ],
-  [
-    "Boepp CU-H b1-15 4",
-    "Boepp CU-H b1-15",
-    "Gas giant with ammonia based life",
-    132.568466,
-    319.005615,
-    72505128,
-    -422.9375,
-    -286.4375,
-    15611.71875,
-  ],
-  [
-    "Eidairld EE-C c2-159 9",
-    "Eidairld EE-C c2-159",
-    "Sudarsky class I gas giant",
-    129.544464,
-    57.255669,
-    37662744,
-    -2425.0625,
-    -94.5625,
-    10548.0625,
-  ],
-  [
-    "Clooku TK-Z b3-11 1",
-    "Clooku TK-Z b3-11",
-    "Sudarsky class I gas giant",
-    122.964493,
-    3.072379,
-    16069990,
-    -6083.28125,
-    -616.09375,
-    11817.3125,
-  ],
-  [
-    "Byua Thae QO-E c26-1 A 3",
-    "Byua Thae QO-E c26-1",
-    "Sudarsky class I gas giant",
-    128.936615,
-    118.014168,
-    60824060,
-    10043.09375,
-    406.15625,
-    3927.40625,
-  ],
-  [
-    "Hyphaups XX-U d2-0 A 1",
-    "Hyphaups XX-U d2-0",
-    "Sudarsky class IV gas giant",
-    1150.000122,
-    2913.518066,
-    68644120,
-    36829.875,
-    107.5,
-    8210.71875,
-  ],
-  [
     "Blaa Eork EH-S d5-4 7",
     "Blaa Eork EH-S d5-4",
     "Gas giant with ammonia based life",
@@ -118,39 +46,6 @@ export const GGG_CANDIDATES: readonly GggCandidateRow[] = [
     2047.5625,
     -49.03125,
     1999.625,
-  ],
-  [
-    "Hypo Fruia II-A c1-58 C 2",
-    "Hypo Fruia II-A c1-58",
-    "Gas giant with water based life",
-    176.666626,
-    688.396667,
-    76984808,
-    -23086.1875,
-    437.9375,
-    24584.59375,
-  ],
-  [
-    "Plaa Eurk CA-P d6-6 ABC 1",
-    "Plaa Eurk CA-P d6-6",
-    "Sudarsky class I gas giant",
-    125.288841,
-    195.145721,
-    68355944,
-    -1455.21875,
-    564.09375,
-    -477.0625,
-  ],
-  [
-    "Syniechaea UQ-T d4-9 3",
-    "Syniechaea UQ-T d4-9",
-    "Sudarsky class I gas giant",
-    143.57695,
-    67.737152,
-    53567576,
-    -25645.65625,
-    -209.375,
-    47987.6875,
   ],
   [
     "Cyoilz JM-N b26-0 1",
