@@ -188,6 +188,14 @@ function createTabWindows(d) {
 
   return {
     attachMain,
+    /**
+     * A key bind's command for the app window's page (owner 2026-10-07), straight over IPC: through the
+     * server and the socket it queued behind the game-state messages the page was still reading, 2-3 s.
+     */
+    sendToMain(cmd) {
+      const w = windows.get("main");
+      if (live(w)) w.webContents.send("edexo:ui-command", cmd);
+    },
     /** The app is quitting: keep the list of detached windows for the next start. */
     freeze() {
       frozen = true;

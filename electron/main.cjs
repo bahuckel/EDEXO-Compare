@@ -125,16 +125,25 @@ function showLauncher() {
   Key binds (owner, 2026-10-02): the HUD toggle and previous / next body tab, set in the launcher
   (electron/keybinds.cjs). The body keys go through the server to every app page.
 */
+/**
+ * A key bind for the app pages: the app window by IPC (instant), browser tabs through the server's
+ * socket — which the app window then ignores (useLiveSnapshot.ts), so nothing moves twice.
+ */
+function uiCommandEverywhere(cmd) {
+  tabWindows.sendToMain(cmd);
+  runtime?.uiCommand?.(cmd);
+}
+
 const keybinds = createKeybinds({
   globalShortcut,
   fs,
   filePath: () => path.join(path.dirname(huds.layoutPath()), "edexo-keybinds.json"),
   handlers: {
     hudToggle: () => huds.toggleVisibility(),
-    bodyPrev: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: -1 }),
-    bodyNext: () => runtime?.uiCommand?.({ cmd: "bodyTab", dir: 1 }),
-    tabPrev: () => runtime?.uiCommand?.({ cmd: "screenTab", dir: -1 }),
-    tabNext: () => runtime?.uiCommand?.({ cmd: "screenTab", dir: 1 }),
+    bodyPrev: () => uiCommandEverywhere({ cmd: "bodyTab", dir: -1 }),
+    bodyNext: () => uiCommandEverywhere({ cmd: "bodyTab", dir: 1 }),
+    tabPrev: () => uiCommandEverywhere({ cmd: "screenTab", dir: -1 }),
+    tabNext: () => uiCommandEverywhere({ cmd: "screenTab", dir: 1 }),
     noticesClear: () => runtime?.clearNotices?.(),
     // Boxel scanning (server/boxelRun.ts): the server picks the system, the clipboard writer below copies it.
     boxelCopyNext: () => runtime?.boxelCopyNext?.(),
@@ -766,9 +775,10 @@ async function start() {
     let hideTimer = null;
     foreground = watchForeground((name, at) => {
       huds.log(`foreground ${name || "(unreadable)"}${at ? ` at ${at.x},${at.y}` : ""}`);
-      // The body tabs and Clear the notices take their keys only while Elite is in front (keybinds.cjs).
-      // "Idle" (no window for a moment between two) and an unreadable name change nothing.
-      if (name && String(name).toLowerCase() !== "idle") keybinds.setGameFocused(isGame(name));
+      // The body tabs and Clear the notices take their keys only while Elite or this app (the app
+      // window, the launcher; owner, 2026-10-07) is in front (keybinds.cjs); every other program keeps
+      // them. "Idle" (no window for a moment between two) and an unreadable name change nothing.
+      if (name && String(name).toLowerCase() !== "idle") keybinds.setGameFocused(isGameOrOwn(name, own));
       // The game in front: its monitor is where the corner stack goes (hudWindows setGamePoint).
       if (isGame(name) && at) huds.setGamePoint(at);
       // The game just came to the front (the watcher reports changes only): put the HUDs back on top.

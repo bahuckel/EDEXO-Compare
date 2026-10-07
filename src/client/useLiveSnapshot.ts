@@ -6,6 +6,21 @@ import { reuseUnchanged } from "./snapshotMerge";
 /** The window event a key-bind command arrives as (`detail`: a `UiCommand`). */
 export const UI_COMMAND_EVENT = "edexo-ui-command";
 
+/*
+  The desktop app's own window gets the key binds straight from Electron (owner, 2026-10-07: Shift+F1 /
+  F2 took 2-3 s): over the socket a command waited behind the game-state messages still being read.
+  Only the app window (not a detached tab window, not a browser tab) is sent them; it then ignores the
+  socket's copy.
+*/
+const IPC_UI_COMMANDS: boolean = (() => {
+  if (typeof window === "undefined") return false;
+  const e = (window as unknown as { edexoElectron?: { tabs?: unknown; onUiCommand?: (cb: (cmd: unknown) => void) => unknown } })
+    .edexoElectron;
+  if (!e?.tabs || typeof e.onUiCommand !== "function" || new URLSearchParams(location.search).has("tabwin")) return false;
+  e.onUiCommand((cmd) => window.dispatchEvent(new CustomEvent(UI_COMMAND_EVENT, { detail: cmd })));
+  return true;
+})();
+
 function websocketUrl(): string {
   const p = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${p}//${window.location.host}/ws`;
@@ -172,7 +187,7 @@ export function useLiveSnapshot(): {
               Array.isArray(msg.unchanged) ? (msg.unchanged as string[]) : undefined,
               msg.bodiesDelta && Array.isArray(msg.bodiesDelta.keys) ? msg.bodiesDelta : undefined,
             );
-          } else if (msg.type === "uiCommand" && msg.payload) {
+          } else if (msg.type === "uiCommand" && msg.payload && !IPC_UI_COMMANDS) {
             // A key bind pressed in the game (Electron's global keys, via the server): App.tsx acts on it.
             window.dispatchEvent(new CustomEvent(UI_COMMAND_EVENT, { detail: msg.payload }));
           }

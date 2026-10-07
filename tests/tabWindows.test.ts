@@ -8,7 +8,12 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { createTabWindows } = require("../electron/tabWindows.cjs") as {
-  createTabWindows: (d: unknown) => { attachMain(w: unknown): void; freeze(): void; restore(): void };
+  createTabWindows: (d: unknown) => {
+    attachMain(w: unknown): void;
+    freeze(): void;
+    restore(): void;
+    sendToMain(cmd: unknown): void;
+  };
 };
 
 type Handler = (ev: { sender: FakeContents }, arg?: unknown) => unknown;
@@ -137,5 +142,15 @@ describe("tab windows", () => {
     const again = setup({ tabWindows: [key] });
     again.tw.restore();
     expect(FakeWindow.made[1]!.webContents.url).toBe(`http://127.0.0.1:7111/?tabwin=${key}`);
+  });
+
+  // Key binds reach the app window's page over IPC, not through the server's socket (owner, 2026-10-07).
+  it("hands a key bind's command to the app window only", async () => {
+    const { tw, main, handle } = setup();
+    await handle.get("edexo:tab-detach")!({ sender: main.webContents }, { kind: "boxels", x: 900, y: 300 });
+    const other = FakeWindow.made.at(-1)!;
+    tw.sendToMain({ cmd: "screenTab", dir: 1 });
+    expect(main.webContents.sent).toContainEqual(["edexo:ui-command", { cmd: "screenTab", dir: 1 }]);
+    expect(other.webContents.sent.some(([c]) => c === "edexo:ui-command")).toBe(false);
   });
 });

@@ -88,6 +88,12 @@ contextBridge.exposeInMainWorld("edexoElectron", {
   /** While a new bind is being recorded the current ones are released (`{ on: true }`), then restored. */
   pauseKeybinds: (opts) => ipcRenderer.invoke("edexo:pause-keybinds", opts),
   /** HUDs shown or hidden, however it was changed (hotkey, tray, launcher): `{ hidden, count }`. */
+  /** Key binds for the app window's page (main.cjs uiCommandEverywhere): `{ cmd, dir }`. */
+  onUiCommand: (cb) => {
+    const h = (_evt, cmd) => cb(cmd);
+    ipcRenderer.on("edexo:ui-command", h);
+    return () => ipcRenderer.removeListener("edexo:ui-command", h);
+  },
   onHudVisibility: (cb) => {
     ipcRenderer.on("edexo:hud-visibility", (_evt, v) => cb(v));
   },
