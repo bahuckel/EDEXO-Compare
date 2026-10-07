@@ -239,11 +239,14 @@ export function classifyGreenGiant(i: GreenGiantInput): GreenGiantVerdict | null
  * each sign is worth on its own:
  * - cloud ladder, mass and radius scanned: 5 when the temperature alone puts a layer on a border and
  *   the temperature is on CMDR Arcanic's always-green tables (the model reproduces them value by
- *   value); 4.7 when the density decides and the float match is exact; one float step off 1.2, or 3
- *   in his "maybe" nudge range; two off 1. Measured on the whole Spansh dump with his float path
- *   (33.7 M gas giants with real-precision temperatures, 2026-10-07): 25 exact hits, all green — 24
- *   catalogued and Cyoilz JM-N b26-0 1, found green on 1 Oct 3312; one step off 3 of 5 catalogued in
- *   the maybe range and 0 of 13 out of it; two off 0 of 17;
+ *   value); 4.7 when the density decides and the float match is exact; 4.5 for a float step or two
+ *   off that the journal's rounding of mass and radius can close (shared/gggLadder.ts
+ *   `roundingReach`; a miss it cannot close is no sign). Measured on the whole Spansh dump with his
+ *   float path (33.7 M gas giants with real-precision temperatures, 2026-10-07): 25 exact hits, all
+ *   green — 24 catalogued and Cyoilz JM-N b26-0 1, found green on 1 Oct 3312; of the 35 near misses,
+ *   the 3 catalogued ones are the only ones rounding can close (0 to 0.034 float steps short), the
+ *   other 32 stay 0.15 to 1.8 short — Blaa Eork EH-S d5-4 7 and Leami SL-W c18-375 8 among them, both
+ *   not green by his own tool (owner, 2026-10-07);
  * - a hit in his "maybe" nudge range, exact or without a mass: half a point less (it holds only if
  *   the random nudge left the planet alone; on the dump both exact ones were green);
  * - cloud ladder without a scanned mass: 2.5 (the clouds may not reach their ceiling);
@@ -259,11 +262,8 @@ const PLAUSIBILITY = { agreeing: 0.25, likelyFrom: 3.5 };
 /** An exact or no-mass hit in one of his "maybe" nudge ranges, this much lower (see `PLAUSIBILITY`). */
 const MAYBE_NUDGED = 0.5;
 
-/** A density-decided layer that misses its border by 1 or 2 float steps, out of / in a maybe range. */
-const NEAR_MISS_SCORE: Readonly<Record<"none" | "maybe", Readonly<Record<number, number>>>> = {
-  none: { 1: 1.2, 2: 1 },
-  maybe: { 1: 3, 2: 1 },
-};
+/** A density-decided layer a float step or two off its border that rounding can close. */
+const NEAR_MISS_SCORE = 4.5;
 
 /**
  * The cloud ladder's sign, scored as above. A whole-kelvin temperature is left to the rules above:
@@ -290,10 +290,10 @@ function cloudLadder(i: GreenGiantInput): { score: number; why: string } | null 
   }
   if (v.offUlp === 0) return sign(4.7, `${fmtK(t)} — at this temperature and density ${layer} (${tag})`);
   const steps = Math.round(v.offUlp * 10) / 10;
-  return {
-    score: NEAR_MISS_SCORE[v.nudge][Math.round(v.offUlp)] ?? 1,
-    why: `${fmtK(t)} — at this temperature and density ${layer} within ${steps} float step${steps === 1 ? "" : "s"} (${tag})`,
-  };
+  return sign(
+    NEAR_MISS_SCORE,
+    `${fmtK(t)} — at this temperature and density ${layer} within ${steps} float step${steps === 1 ? "" : "s"}, which the scan's rounding of mass and radius can close (${tag})`,
+  );
 }
 
 function hasDensity(i: GreenGiantInput): boolean {

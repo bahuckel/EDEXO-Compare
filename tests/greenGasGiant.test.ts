@@ -394,11 +394,15 @@ describe("the cloud ladder (shared/gggLadder.ts)", () => {
     const thin = classifyGreenGiant({ planetClass: WATER, surfaceTemperatureK: 176.666687, massEM: 1, radiusM: 3.05e7 })!;
     expect(thin).toMatchObject({ level: "possible", score: 1.5 });
     expect(thin.why).toMatch(/but at its density no cloud layer lands on a colour border/);
-    // One float step off a border (Synookio EI-J d9-1 7, catalogue #19, under no name), in the maybe
-    // nudge range: 3, possible (on the dump 3 of 5 such were green); out of it 1.2 (0 of 13).
+    // One float step off a border that the scan's rounding can close (Synookio EI-J d9-1 7, catalogue
+    // #19, under no name), in the maybe nudge range: 4.5 − 0.5, likely.
     const near = { planetClass: C1, surfaceTemperatureK: 119.986717, massEM: 21.216078, radiusM: 20_795_606 };
-    expect(classifyGreenGiant(near)).toMatchObject({ level: "possible", score: 3 });
-    expect(classifyGreenGiant(near)!.why).toMatch(/within 1 float step \(cloud ladder; holds if/);
+    expect(classifyGreenGiant(near)).toMatchObject({ level: "likely", score: 4 });
+    expect(classifyGreenGiant(near)!.why).toMatch(/within 1 float step, which the scan's rounding of mass and radius can close \(cloud ladder; holds if/);
+    // One the rounding cannot close (Leami SL-W c18-375 8, 0.5 float steps short; not green by his tool): no sign.
+    expect(
+      classifyGreenGiant({ planetClass: "Gas giant with ammonia based life", surfaceTemperatureK: 119.724983, massEM: 346.083435, radiusM: 70_950_224 }),
+    ).toBeNull();
     // EDAstro: 1 + 3.5 / bodies of the class there; K10 alone 1.5.
     expect(score({ planetClass: C1, surfaceTemperatureK: 150, edastroReport: "only" })).toBe(4.5);
     expect(score({ planetClass: C1, surfaceTemperatureK: 150, edastroReport: "shared", edastroCandidates: 3 })).toBe(2.2);

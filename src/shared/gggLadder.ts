@@ -132,6 +132,8 @@ export function inNudgeRange(cls: LadderClass, tempK: number): boolean {
 
 interface Ladder {
   rungs: number[];
+  /** The rungs before their 32-bit rounding. */
+  raw: number[];
   /** The density set the step: the clouds stop short of the ceiling and the step is not held to a limit. */
   densityDecided: boolean;
   /** The step was raised to the class's smallest step: then no density can change it. */
@@ -148,9 +150,14 @@ function buildLadder(cls: LadderClass, tempK: number, density: number | null): L
   const lim = STEP_LIMITS[cls];
   if (lim) step = Math.max(Math.min(step, lim[1]), lim[0]);
   const bottom = ceil < t ? ceil : t;
-  const rungs: number[] = [];
-  for (let k = 0; k < 7; k++) rungs.push(f(step * k + bottom));
-  return { rungs, densityDecided: top < ceil && step === free, heldAtMin: !!lim && free < lim[0] };
+  const raw: number[] = [];
+  for (let k = 0; k < 7; k++) raw.push(step * k + bottom);
+  return {
+    rungs: raw.map(f),
+    raw,
+    densityDecided: top < ceil && step === free,
+    heldAtMin: !!lim && free < lim[0],
+  };
 }
 
 export interface LadderVerdict {
@@ -163,10 +170,60 @@ export interface LadderVerdict {
   offUlp: number;
   /** `maybe`: the planet can be nudged; the hit holds only if the nudge left it alone. */
   nudge: "none" | "maybe";
+  /**
+   * A near miss only: how far the rung stays from rounding onto the crack, in float steps at the
+   * crack, at the best true mass and radius the journal's rounding allows (0: it can land on it).
+   */
+  reachUlp?: number;
 }
 
 /** Float steps a density-decided rung may miss by and still count ("on the edge", his 2). */
 const DENSITY_TOLERANCE_ULP = 2;
+
+/**
+ * A near miss counts only when the journal's rounding of mass and radius can close it (owner,
+ * 2026-10-07): the game works from exact values (gravity, g·R²/M, is one constant across 2.5 M giants
+ * to 1 part in 10 million) and the journal keeps them as 32-bit floats, so the true mass and radius lie
+ * within half a float step of the shown ones. A little slack for the rest of the float path: catalogued
+ * Boekh AO-H b27-33 1 stays 0.035 float steps short.
+ */
+export const REACH_SLACK_ULP = 0.05;
+
+/** The 32-bit float spacing around x (half of it on each side is what rounding hides). */
+function spacing(x: number): number {
+  const a = new Float32Array([x]);
+  const u = new Uint32Array(a.buffer);
+  const v = a[0]!;
+  u[0]! += 1;
+  return a[0]! - v;
+}
+
+/**
+ * How far a density-decided rung stays from rounding onto `door`, in float steps at the door, over
+ * every true mass and radius that round to the shown ones (0: some of them put it on the door). The
+ * rung grows with the density, so the two ends of the density range bound it.
+ */
+export function roundingReach(
+  cls: LadderClass,
+  tempK: number,
+  massEM: number,
+  radiusM: number,
+  rung: number,
+  door: number,
+): number {
+  const m = f(massEM);
+  const r = f(radiusM);
+  const dm = spacing(m) / 2;
+  const dr = spacing(r) / 2;
+  const lo = buildLadder(cls, tempK, gasGiantDensity(m - dm, r + dr)).raw[rung - 1]!;
+  const hi = buildLadder(cls, tempK, gasGiantDensity(m + dm, r - dr)).raw[rung - 1]!;
+  // Values that round onto the door: half a float step either side (no door is a power of two).
+  const onDoorFrom = door - ulp(door) / 2;
+  const onDoorTo = door + ulp(door) / 2;
+  if (hi >= onDoorFrom && lo <= onDoorTo) return 0;
+  const gap = hi < onDoorFrom ? onDoorFrom - hi : lo - onDoorTo;
+  return gap / ulp(door);
+}
 
 /** His `nextUp`: the 32-bit float spacing just above x. */
 function ulp(x: number): number {
@@ -206,7 +263,19 @@ export function ladderGreen(opts: {
       // Certain when no density can move the rung: the surface, a scanned density that reaches the
       // ceiling, or a step held at its smallest. Without a mass the ceiling is only assumed.
       const certain = k === 0 || L.heldAtMin || (density != null && !L.densityDecided);
-      best = { rung: k + 1, door, basis: certain ? "ceiling" : "density", offUlp, nudge };
+      let reachUlp: number | undefined;
+      if (offUlp !== 0) {
+        reachUlp = roundingReach(cls, T, opts.massEM!, opts.radiusM!, k + 1, door);
+        if (reachUlp > REACH_SLACK_ULP) continue;
+      }
+      best = {
+        rung: k + 1,
+        door,
+        basis: certain ? "ceiling" : "density",
+        offUlp,
+        nudge,
+        ...(reachUlp != null ? { reachUlp } : {}),
+      };
     }
   });
   return best;

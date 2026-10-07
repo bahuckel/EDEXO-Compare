@@ -9,8 +9,11 @@ import {
   alwaysGreenTemps,
   gasGiantDensity,
   ladderDepth,
+  ladderClassOf,
   ladderGreen,
   nudgeOf,
+  REACH_SLACK_ULP,
+  roundingReach,
 } from "../src/shared/gggLadder.js";
 
 const round6 = (xs: number[]) => xs.map((x) => Number(x.toFixed(6)));
@@ -115,7 +118,39 @@ describe("the cloud ladder", () => {
     ["Synookio EI-J d9-1 7", C1, 119.986717, 21.216078, 20795.606, 6, 270, 1],
     ["Dryooe Groa QX-F c16 A 7", C1, 120.72538, 83.17791, 57642.944, 7, 250, 1],
   ])("puts %s on a crack if the nudge left it alone", (_name, pc, T, mass, rkm, rung, door, off) => {
-    expect(green(pc, T, mass, rkm)).toEqual({ rung, door, basis: "density", offUlp: off, nudge: "maybe" });
+    expect(green(pc, T, mass, rkm)).toMatchObject({
+      rung,
+      door,
+      basis: "density",
+      offUlp: off,
+      nudge: "maybe",
+    });
+  });
+
+  // A near miss counts only when the journal's rounding of mass and radius can close it.
+  it.each([
+    ["Synookio EI-J d9-1 7 (#19, green)", C1, 119.986717, 21.216078, 20795.606, 6, 270, true],
+    ["Dryooe Groa QX-F c16 A 7 (#43, green)", C1, 120.72538, 83.17791, 57642.944, 7, 250, true],
+    ["Boekh AO-H b27-33 1 (#29, green)", C1, 117.776886, 491.461853, 75535.464, 7, 270, true],
+    ["Blaa Eork EH-S d5-4 7 (not green)", AMMONIA, 116.959549, 228.807571, 57220.672, 7, 270, false],
+    ["Leami SL-W c18-375 8 (not green)", AMMONIA, 119.724983, 346.083435, 70950.224, 7, 270, false],
+    [
+      "Plaa Eurk CA-P d6-6 ABC 1 (ruled out by Arcanic)",
+      C1,
+      125.288841,
+      195.145721,
+      68355.944,
+      7,
+      270,
+      false,
+    ],
+  ])("rounding check: %s", (_name, pc, T, mass, rkm, rung, door, reachable) => {
+    const cls = ladderClassOf(pc)!;
+    if (mass > 0)
+      expect(roundingReach(cls, T, mass, rkm * 1000, rung, door) <= REACH_SLACK_ULP).toBe(reachable);
+    const v = mass > 0 ? green(pc, T, mass, rkm) : null;
+    if (reachable) expect(v).toMatchObject({ rung, door, offUlp: 1 });
+    else expect(v).toBeNull();
   });
 
   it("his nudge ranges: nothing to say below, maybe between, none above", () => {
