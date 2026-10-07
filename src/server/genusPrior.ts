@@ -126,7 +126,8 @@ export function genusPriorFor(
  * the true genera still shown 99.50 → 99.50 % (at 0.25 % it was 3.24 and 99.29 %).
  */
 export function vetoUnseenGenera(
-  matches: SpeciesMatch[],
+  // Any match rows: the body tab's, the system map's and the backlog's (owner, 2026-10-07).
+  matches: Pick<SpeciesMatch, "entry" | "unlikely" | "unlikelyReasons" | "organicAnalysisComplete">[],
   b: Pick<BodyExoState, "genusHints" | "biologicalSignals">,
   scan: PlanetScan | null,
   ctx: Pick<SpeciesMatchContext, "parentStarType"> | null | undefined,

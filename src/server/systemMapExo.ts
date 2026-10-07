@@ -14,6 +14,9 @@ import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exo
 import type { GameStateStore } from "./gameState.js";
 import { matchCacheEpoch } from "./matchCacheEpoch.js";
 import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
+import { vetoUnseenGenera } from "./genusPrior.js";
+import { collectResolvedOrganicLockSpeciesIds } from "./organicLocks.js";
+import { getProjectRoot } from "./paths.js";
 import { PriceIndex, lookupPriceStrict } from "./priceList.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
 import { bodyKey } from "../shared/bodyKey.js";
@@ -175,11 +178,25 @@ function exoMatchRunUncached(
   if (!exo || !bodyHasExoMarkers(exo)) return null;
   const scan = scanForMatch(store, r, exo);
   if (!scan?.PlanetClass) return null;
+  const matchContext = buildSpeciesMatchContext(exo, store);
   const run = matchDatabaseToScan(db, scan, exo.genusHints, exo.organicGenusLocks, {
     includeBacterium: store.includeBacteriumInSearch,
-    matchContext: buildSpeciesMatchContext(exo, store),
+    matchContext,
     spatialCatalogue,
   });
+  /*
+    The genus the dump almost never has on a body like this one is hidden here too, as on the body
+    tab (genusPrior.ts; owner, 2026-10-07: "same step everywhere") — else the map listed what the tab
+    did not, Anemone on every thin-CO2 metal world once thin atmospheres were allowed for it.
+  */
+  vetoUnseenGenera(
+    run.matches,
+    exo,
+    scan,
+    matchContext,
+    getProjectRoot(),
+    new Set(collectResolvedOrganicLockSpeciesIds(exo.organicGenusLocks, db)),
+  );
   return {
     exo,
     scan,

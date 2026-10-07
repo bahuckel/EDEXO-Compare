@@ -41,7 +41,8 @@ import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
 import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exoPayoutRange.js";
 import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { resolveHostStarBodyId } from "./orbitUtils.js";
-import { footOrganicLocks } from "./organicLocks.js";
+import { collectResolvedOrganicLockSpeciesIds, footOrganicLocks } from "./organicLocks.js";
+import { vetoUnseenGenera } from "./genusPrior.js";
 import { perfTime } from "./perf.js";
 import { getProjectRoot } from "./paths.js";
 import { regionForSystem } from "./regionMapData.js";
@@ -197,11 +198,21 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
     if (!b.scan) continue;
     const lost = footfallLost(store, b.key);
     const region = regionFor(b.systemAddress);
+    const matchContext = matchContextFor(b, scansBySystem, region) ?? null;
     const run = matchDatabaseToScan(db, b.scan, b.genusHints, b.organicGenusLocks, {
       includeBacterium: true,
-      matchContext: matchContextFor(b, scansBySystem, region) ?? null,
+      matchContext,
       biologicalSignals: b.biologicalSignals,
     });
+    // As on the body tab: a genus the dump almost never has on a body like this is not counted (genusPrior.ts).
+    vetoUnseenGenera(
+      run.matches,
+      b,
+      b.scan,
+      matchContext,
+      getProjectRoot(),
+      new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db)),
+    );
     const { count: slots, source } = resolveOrganicSlotCount(b);
     if (slots <= 0 || source === "none") continue;
 
