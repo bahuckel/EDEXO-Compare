@@ -16,7 +16,7 @@ import express from "express";
 import { getProjectRoot } from "../paths.js";
 import { perfCount } from "../perf.js";
 import { codexMapRegion, codexMapRegions } from "../codexMap.js";
-import { clearGalaxyPoints, galaxyPoints } from "../galaxyPoints.js";
+import { clearGalaxyPoints, galaxyPointsAsync } from "../galaxyPoints.js";
 import { clearTileIndex, encodeCells, encodeTile, parseCellParam, sectorNames, tileIndex, tileIndexAsync } from "../galaxyTiles.js";
 import { registerGalaxyCache, touchGalaxyMemory } from "../galaxyMemory.js";
 import {
@@ -100,9 +100,18 @@ export function registerGalaxyRoutes(
   registerGalaxyCache("tiles", clearTileIndex);
   registerGalaxyCache("system-values", clearGalaxySystemValues);
   registerGalaxyCache("system-traits", clearSystemTraits);
-  app.use("/api/galaxy", (_req, _res, next) => {
+  /*
+    And the index is read off the main thread before a request that needs it (owner, 2026-10-07: the
+    app went "Not responding" for a moment as the map loaded — the server shares Electron's main
+    process, as Boxels found). The requests that only read the journal or the index's status go on.
+  */
+  const NO_INDEX = new Set(["/index", "/index/download", "/route", "/visited", "/mine", "/mine/system", "/my-sectors", "/layers"]);
+  app.use("/api/galaxy", (req, _res, next) => {
     touchGalaxyMemory();
-    next();
+    if (NO_INDEX.has(req.path)) return next();
+    void Promise.all([tileIndexAsync(), loadSystemTraitsAsync()])
+      .catch(() => undefined)
+      .then(() => next());
   });
 
   const sendBinary = (res: express.Response, buf: Buffer) => {
@@ -117,9 +126,9 @@ export function registerGalaxyRoutes(
    * Every bio-index system as quantised points: the 3D map's overview (layout in galaxyPoints.ts).
    * `?stride=4|16` thins it for a machine drawing WebGL in software.
    */
-  app.get("/api/galaxy/points", (req, res) => {
+  app.get("/api/galaxy/points", async (req, res) => {
     const stride = [1, 4, 16].includes(Number(req.query.stride)) ? Number(req.query.stride) : 1;
-    const buf = galaxyPoints(stride);
+    const buf = await galaxyPointsAsync(stride);
     if (!buf) return void noIndex(res);
     sendBinary(res, buf);
   });

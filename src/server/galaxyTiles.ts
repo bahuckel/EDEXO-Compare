@@ -31,6 +31,7 @@
  *   .. system ordinal u32 × count      (index into the bio index: picking, names, the detail panel)
  */
 import { loadBioIndex, loadBioIndexAsync, type BioIndex } from "./bioIndex.js";
+import { SLICE, runSliced, runSync } from "./sliced.js";
 import { galaxySystemValues } from "./galaxyValueSearch.js";
 import { systemSector } from "../shared/sectorName.js";
 import { cellMin, quantiseInCell, TILE_ORIGIN, TILE_SIZE_LY, type CellCoord } from "../shared/galaxyGrid.js";
@@ -63,33 +64,7 @@ export interface TileIndex {
 
 const align4 = (n: number) => (n + 3) & ~3;
 
-/*
-  Built in slices (owner, 2026-10-06: opening Boxels froze the app and the launcher). The server shares
-  Electron's main process, so 0.4 s of tile building there stopped every window; the steps below pause
-  every SLICE systems and `runSliced` hands the event loop back whenever a slice has run long enough.
-  `runSync` is the same build in one go, for the callers that need the answer now.
-*/
-const SLICE = 32_768;
-const SLICE_MS = 12;
-
-function runSync<T>(steps: Generator<void, T>): T {
-  for (;;) {
-    const r = steps.next();
-    if (r.done) return r.value;
-  }
-}
-
-async function runSliced<T>(steps: Generator<void, T>): Promise<T> {
-  let t = performance.now();
-  for (;;) {
-    const r = steps.next();
-    if (r.done) return r.value;
-    if (performance.now() - t > SLICE_MS) {
-      await new Promise<void>((done) => setImmediate(done));
-      t = performance.now();
-    }
-  }
-}
+// Built in slices (sliced.ts): 0.4 s of tile building on the server's thread stopped every window.
 
 export function buildTileIndex(index: BioIndex, values: Uint16Array = new Uint16Array(index.systemCount)): TileIndex {
   return runSync(tileIndexSteps(index, values));

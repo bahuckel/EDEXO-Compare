@@ -24,13 +24,30 @@
  *   ..  pad to 2
  *   ..  value                      u16 × count  (1× recorded value in 100,000 CR units; galaxyValueSearch.ts)
  */
-import { loadBioIndex, type BioIndex } from "./bioIndex.js";
+import { loadBioIndex, loadBioIndexAsync, type BioIndex } from "./bioIndex.js";
 import { galaxySystemValues } from "./galaxyValueSearch.js";
+import { SLICE, runSliced, runSync } from "./sliced.js";
 
 export const POINTS_MAGIC = "EDXPTS01";
 export const POINTS_HEADER = 40;
 
 export function buildGalaxyPoints(index: BioIndex, stride = 1, values?: Uint16Array): Buffer {
+  return runSync(pointsSteps(index, stride, values));
+}
+
+/** Each pass over the index a slice at a time where the index allows it (sliced.ts). */
+function* eachPoint(
+  index: BioIndex,
+  cb: (i: number, x: number, y: number, z: number, tiers: number, speciesCount: number) => void,
+): Generator<void, void> {
+  if (!index.forEachPointIn) return void index.forEachPoint(cb);
+  for (let from = 0; from < index.systemCount; from += SLICE) {
+    index.forEachPointIn(from, from + SLICE, cb);
+    yield;
+  }
+}
+
+function* pointsSteps(index: BioIndex, stride: number, values?: Uint16Array): Generator<void, Buffer> {
   const total = index.systemCount;
   const s = Math.max(1, Math.floor(stride));
   const n = Math.ceil(total / s);
@@ -40,7 +57,7 @@ export function buildGalaxyPoints(index: BioIndex, stride = 1, values?: Uint16Ar
     maxX = -Infinity,
     maxY = -Infinity,
     maxZ = -Infinity;
-  index.forEachPoint((_i, x, y, z) => {
+  yield* eachPoint(index, (_i, x, y, z) => {
     if (x < minX) minX = x;
     if (x > maxX) maxX = x;
     if (y < minY) minY = y;
@@ -70,7 +87,7 @@ export function buildGalaxyPoints(index: BioIndex, stride = 1, values?: Uint16Ar
   const species = new Uint8Array(buf.buffer, buf.byteOffset + POINTS_HEADER + n * 7, n);
   const value = new Uint16Array(buf.buffer, buf.byteOffset + valuesAt, n);
   const q = (v: number, lo: number, st: number) => Math.min(65535, Math.max(0, Math.round((v - lo) / st))) - 32768;
-  index.forEachPoint((i, x, y, z, t, c) => {
+  yield* eachPoint(index, (i, x, y, z, t, c) => {
     if (i % s) return;
     const k = i / s;
     pos[k * 3] = q(x, minX, sx);
@@ -92,6 +109,26 @@ export function galaxyPoints(stride = 1): Buffer | null {
   const buf = index ? buildGalaxyPoints(index, stride, galaxySystemValues(index)) : null;
   cached.set(stride, buf);
   return buf;
+}
+
+const pending = new Map<number, Promise<Buffer | null>>();
+
+/**
+ * The same, built in slices with the index read off the main thread (owner, 2026-10-07: the app went
+ * "Not responding" for a moment as the map loaded; this was a third of a second of it).
+ */
+export function galaxyPointsAsync(stride = 1): Promise<Buffer | null> {
+  if (cached.has(stride)) return Promise.resolve(cached.get(stride)!);
+  const was = pending.get(stride);
+  if (was) return was;
+  const p = (async () => {
+    const index = await loadBioIndexAsync();
+    const buf = index ? await runSliced(pointsSteps(index, stride, galaxySystemValues(index))) : null;
+    if (!cached.has(stride)) cached.set(stride, buf);
+    return cached.get(stride)!;
+  })().finally(() => pending.delete(stride));
+  pending.set(stride, p);
+  return p;
 }
 
 export function clearGalaxyPoints(): void {
