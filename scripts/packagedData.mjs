@@ -72,12 +72,18 @@ export function isReplacedPhotoOriginal(src) {
  */
 export function copyDataTree(destDataDir) {
   const excluded = new Set(EXCLUDED.map((name) => join("data", name)));
+  /*
+    And any copy of an unshipped file beside it (2026-10-07: `bio-index.bin.before-20261007`, a backup
+    kept while the index was swapped, put 244 MB into the portable exe): same name, any suffix.
+  */
+  const unshippedStems = NOT_SHIPPED.map((name) => join("data", name));
   /** `_photos` folder (relative to data/) → the originals its cards stand in for. */
   const replaced = new Map();
   cpSync("data", destDataDir, {
     recursive: true,
     filter: (src) => {
       if (excluded.has(src)) return false;
+      if (unshippedStems.some((stem) => src.startsWith(stem))) return false;
       if (isReplacedPhotoOriginal(src)) {
         const rel = dirname(src).slice("data".length + 1);
         replaced.set(rel, [...(replaced.get(rel) ?? []), basename(src)]);
