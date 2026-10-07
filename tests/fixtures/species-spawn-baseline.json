@@ -100,8 +100,8 @@
   "fss": "shown"
  },
  "anemone_blatteum_bioluminescent @ HIP 34326 D 2": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "anemone_croceum @ Oochoxt LT-Q e5-0 F 1 a": {
   "dss": "shown",
@@ -485,7 +485,7 @@
  },
  "brain_trees_brain_tree_viride @ Graea Hypue YA-V b3-0 A 1 b": {
   "dss": "shown",
-  "fss": "unlikely"
+  "fss": "shown"
  },
  "brain_trees_brain_tree_viride @ Skaudai HZ-A c29-2 2 a": {
   "dss": "shown",
@@ -697,7 +697,7 @@
  },
  "crystalline_shards_crystalline_shards @ Flyoo Bloae JS-I d10-3 C 5": {
   "dss": "shown",
-  "fss": "shown"
+  "fss": "missing"
  },
  "crystalline_shards_crystalline_shards @ Gludgaa PM-U c16-9 D 1 a": {
   "dss": "shown",
@@ -709,7 +709,7 @@
  },
  "crystalline_shards_crystalline_shards @ Phloing KT-Y d1-1 B 6": {
   "dss": "shown",
-  "fss": "shown"
+  "fss": "missing"
  },
  "crystalline_shards_crystalline_shards @ Phrua Hypooe SU-M d8-34 CDE 1 c": {
   "dss": "shown",
@@ -736,8 +736,8 @@
   "fss": "shown"
  },
  "electricae_electricae_radialem @ Dryaa Proae RO-O d7-9 B 8 a": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "electricae_electricae_radialem @ Jellyfish Sector FR-U b3-0 3": {
   "dss": "shown",
@@ -993,7 +993,7 @@
  },
  "fumerola_fumerola_extremus @ Blaa Eork QL-Y c3-1 1 a": {
   "dss": "shown",
-  "fss": "unlikely"
+  "fss": "shown"
  },
  "fumerola_fumerola_extremus @ Dryooe Prou JN-A c14-96 1 e a": {
   "dss": "shown",
@@ -1260,16 +1260,16 @@
   "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_blatteum @ Moihie PO-O d7-843 5 b a": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_blatteum @ Qeajo HA-A d67 1": {
   "dss": "shown",
   "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_caeruleum @ Eimbaith UX-T d3-821 4 a": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_caeruleum @ Iockols JX-R d5-333 2 c a": {
   "dss": "shown",
@@ -1300,15 +1300,15 @@
   "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_prasinum @ Blua Hypa IJ-S c20-276 4": {
-  "dss": "unlikely",
-  "fss": "unlikely"
+  "dss": "shown",
+  "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_prasinum @ Eorl Auwsy TY-Z d13-570 4": {
   "dss": "shown",
   "fss": "shown"
  },
  "sinuous_tuber_sinuous_tubers_prasinum @ Synookua HL-Y d129 C 7": {
-  "dss": "unlikely",
+  "dss": "shown",
   "fss": "unlikely"
  },
  "sinuous_tuber_sinuous_tubers_prasinum @ Whamboe LH-M d7-3401 A 1": {
