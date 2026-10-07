@@ -72,6 +72,16 @@ export function applyAppTheme(choice: AppThemeChoice = readAppTheme()): void {
   window.dispatchEvent(new CustomEvent(APP_THEME_EVENT));
 }
 
+/*
+  A change made in one window reaches the others (owner, 2026-10-07: a tab window kept the old colour).
+  They share the storage, and the browser tells every other page of the app when it changes.
+*/
+export function followAppThemeChanges(): void {
+  window.addEventListener("storage", (e) => {
+    if (e.key === LS_THEME || e.key === null) applyAppTheme();
+  });
+}
+
 export function setAppTheme(choice: AppThemeChoice): void {
   try {
     localStorage.setItem(LS_THEME, JSON.stringify(choice));

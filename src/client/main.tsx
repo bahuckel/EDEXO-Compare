@@ -4,15 +4,17 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import "./styles.css";
 import { App } from "./App";
 import { UiFeedbackProvider } from "./ui/feedback";
-import { applyAppTheme } from "./appTheme";
+import { applyAppTheme, followAppThemeChanges } from "./appTheme";
 import { applyStreamerMode, STREAMER_MODE } from "./streamerMode";
 import { loadUiMirror, startUiMirrorSource, watchUiMirror } from "./uiMirror";
 
 // The streamer view takes the streamer's own settings first (uiMirror.ts), so even its first paint
 // is what the streamer sees.
 const mirrorRev = STREAMER_MODE ? await loadUiMirror() : -1;
-// The colour scheme, before the first paint, so the page never flashes orange first.
+// The colour scheme, before the first paint, so the page never flashes orange first; and again when
+// another window of the app changes it.
 applyAppTheme();
+followAppThemeChanges();
 // `?view=stream`: the same app, as a picture for a stream (streamerMode.ts).
 applyStreamerMode();
 
