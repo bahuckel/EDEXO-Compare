@@ -262,6 +262,12 @@ function openAppUiWindow(iconForChild) {
       : {}),
     webPreferences: {
       additionalArguments: customTitleBar ? ["--edexo-custom-titlebar"] : [],
+      /*
+        Full speed while the game is in front (owner, 2026-10-07: Shift+F1 / F2 took 2-3 s in game, at
+        once with the app in front). A window that is not in front gets throttled timers and painting;
+        this one is meant to be read beside the game, as the HUDs are (hudWindows.cjs).
+      */
+      backgroundThrottling: false,
       // No spell-check: Electron can fetch its dictionaries from Google (owner, 2026-09-29).
       spellcheck: false,
       contextIsolation: true,
@@ -862,6 +868,13 @@ if (
 ) {
   app.commandLine.appendSwitch("ozone-platform", "x11");
 }
+
+/*
+  The app's pages keep their normal process priority while another program (the game) is in front
+  (owner, 2026-10-07: tab keys took 2-3 s in game). Chromium otherwise lowers a background
+  renderer's priority, and next to a game at full load that is seconds per redraw.
+*/
+app.commandLine.appendSwitch("disable-renderer-backgrounding");
 
 if (process.platform === "win32") {
   try {

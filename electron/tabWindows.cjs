@@ -103,6 +103,8 @@ function createTabWindows(d) {
           }
         : {}),
       webPreferences: {
+        // As the app window: read beside the game, so not throttled when the game is in front.
+        backgroundThrottling: false,
         spellcheck: false,
         contextIsolation: true,
         nodeIntegration: false,
