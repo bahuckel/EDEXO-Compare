@@ -129,18 +129,26 @@ function showLauncher() {
  * A key bind for the app pages: the app window by IPC (instant), browser tabs through the server's
  * socket — which the app window then ignores (useLiveSnapshot.ts), so nothing moves twice.
  */
+/*
+  Key timing (owner, 2026-10-07): how long a body / screen tab key took to reach the page and be drawn,
+  into hud-events.log — for the developer's own PC only. Key presses are not recorded for anyone else,
+  even locally: it is on only where a file named `key-timing.on` sits beside the HUD layout.
+*/
+const keyTimingOn = () => {
+  try {
+    return fs.existsSync(path.join(path.dirname(huds.layoutPath()), "key-timing.on"));
+  } catch {
+    return false;
+  }
+};
 function uiCommandEverywhere(cmd) {
-  /*
-    Timed into hud-events.log (owner, 2026-10-07: Shift+F1 / F2 still slow with the game in front): the
-    key's arrival here, then the page's answer (edexo:ui-ack) — when it got the command and when the next
-    frame was drawn — so the log says which leg the seconds are on.
-  */
-  huds.log(`key ${cmd.cmd} ${cmd.dir > 0 ? "next" : "previous"}`);
-  tabWindows.sendToMain({ ...cmd, sentAt: Date.now() });
+  const timed = keyTimingOn();
+  if (timed) huds.log(`key ${cmd.cmd} ${cmd.dir > 0 ? "next" : "previous"}`);
+  tabWindows.sendToMain(timed ? { ...cmd, sentAt: Date.now() } : cmd);
   runtime?.uiCommand?.(cmd);
 }
 ipcMain.on("edexo:ui-ack", (_e, r) => {
-  if (!r || typeof r !== "object") return;
+  if (!r || typeof r !== "object" || !keyTimingOn()) return;
   huds.log(`key ${String(r.cmd)} in the page: got it +${Number(r.got)} ms, drawn +${Number(r.drawn)} ms`);
 });
 
