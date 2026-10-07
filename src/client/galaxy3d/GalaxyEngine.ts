@@ -457,11 +457,29 @@ export class GalaxyEngine {
     return true;
   }
 
+  /** The size the buffers were last made for: "w x h @ ratio". */
+  private sizedFor = "";
+
+  /*
+    A tab behind another (Tab view) is display: none, which reads as a 0 x 0 host (owner, 2026-10-07:
+    switching to or from the map tab took seconds with the game in front). The buffers used to be
+    remade at 1 x 1 on the way out and at full size on the way back, with every point drawn again; now
+    a hidden map keeps its buffers and its last frame, and a size that did not change does nothing.
+  */
+  private shown(): boolean {
+    return this.host.clientWidth > 0 && this.host.clientHeight > 0;
+  }
+
   resize(): void {
-    const w = Math.max(1, this.host.clientWidth);
-    const h = Math.max(1, this.host.clientHeight);
+    if (!this.shown()) return;
+    const w = this.host.clientWidth;
+    const h = this.host.clientHeight;
+    const ratio = Math.min(window.devicePixelRatio, 2);
+    const key = `${w}x${h}@${ratio}`;
+    if (key === this.sizedFor) return;
+    this.sizedFor = key;
     // The window may have moved to a screen at another scaling since the last resize (plan 2.5).
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(w, h, true);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
@@ -1453,6 +1471,7 @@ export class GalaxyEngine {
     ev.preventDefault();
   };
   private onContextRestored = (): void => {
+    this.sizedFor = ""; // a new context: its buffers are made afresh
     this.resize();
     this.invalidate();
   };
@@ -1797,6 +1816,8 @@ export class GalaxyEngine {
   private loop = (): void => {
     if (this.disposed) return;
     this.raf = requestAnimationFrame(this.loop);
+    // Hidden behind another tab: nothing to draw; a frame asked for meanwhile waits until it is shown.
+    if (!this.shown()) return;
     const now = performance.now();
     const flying = this.stepFlight();
     if (this.elite && this.keys.size) this.stepKeys(now);
