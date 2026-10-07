@@ -52,7 +52,15 @@
           "Rocky"
         ],
         "atmosphere": [
-          "None"
+          "None",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen",
+          "Argon",
+          "Argon-rich",
+          "Helium",
+          "Nitrogen"
         ],
         "parent_star_types": [
           "B (luminosity IV-V)"
@@ -65,7 +73,7 @@
         "gravity_constraints": null,
         "matchContextNotes": [
           "Measured 2026-10-05 on 204 confirmed bodies (Spansh dump; the only Anemone body in its system, and EDAstro's codex logs exactly this Anemone species there): rocky 97 %, metal-rich 1 %, high metal content 1 %; airless 96.1 %; main star B V 139, B IV 63, A V 2. A B IV-V star is the main star on 202 of 204 and some star in the system on 204 (any-star gate); 202-1225 K, median 369 K.",
-          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+          "Thin atmospheres listed since 2026-10-07 (no misses first): 10 of 313 known-spawn Anemone bodies in the precision sample (new Spansh export) had one and were hidden. The genus prior keeps their chance at what the dump shows (0.6 % of Anemone bodies) and still hides Anemone where the dump has none. Before: airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
         ]
       }
     },
@@ -78,7 +86,15 @@
           "Rocky"
         ],
         "atmosphere": [
-          "None"
+          "None",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen",
+          "Argon",
+          "Argon-rich",
+          "Helium",
+          "Nitrogen"
         ],
         "parent_star_types": [
           "B (luminosity VI)",
@@ -92,7 +108,7 @@
         "gravity_constraints": null,
         "matchContextNotes": [
           "Measured 2026-10-05 on 53 confirmed bodies (Spansh dump; the only Anemone body in its system, and EDAstro's codex logs exactly this Anemone species there): rocky 100 %; airless 100.0 %; main star B VI 33, A III 13, A II 4, B IV 1. A B VI star or an A giant / supergiant is the main star on 51 of 52 and some star in the system on 52 (any-star gate); 201-440 K, median 340 K.",
-          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+          "Thin atmospheres listed since 2026-10-07 (no misses first): 10 of 313 known-spawn Anemone bodies in the precision sample (new Spansh export) had one and were hidden. The genus prior keeps their chance at what the dump shows (0.6 % of Anemone bodies) and still hides Anemone where the dump has none. Before: airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
         ]
       }
     },
@@ -105,7 +121,15 @@
           "Icy"
         ],
         "atmosphere": [
-          "None"
+          "None",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen",
+          "Argon",
+          "Argon-rich",
+          "Helium",
+          "Nitrogen"
         ],
         "parent_star_types": [
           "O",
@@ -120,7 +144,7 @@
         "gravity_constraints": null,
         "matchContextNotes": [
           "Measured 2026-10-05 on 34 confirmed bodies (Spansh dump; the only Anemone body in its system, and EDAstro's codex logs exactly this Anemone species there): icy 100 %; airless 97.1 %; main star O V 28, Wolf-Rayet I 1, O III 1, black hole VII 1. An O or Wolf-Rayet star is the main star on 31 of 34 and some star in the system on 34 (any-star gate); 218-866 K, median 541 K.",
-          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+          "Thin atmospheres listed since 2026-10-07 (no misses first): 10 of 313 known-spawn Anemone bodies in the precision sample (new Spansh export) had one and were hidden. The genus prior keeps their chance at what the dump shows (0.6 % of Anemone bodies) and still hides Anemone where the dump has none. Before: airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
         ]
       }
     },
@@ -133,7 +157,15 @@
           "Rocky"
         ],
         "atmosphere": [
-          "None"
+          "None",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen",
+          "Argon",
+          "Argon-rich",
+          "Helium",
+          "Nitrogen"
         ],
         "parent_star_types": [
           "B (luminosity I-III)"
@@ -146,7 +178,7 @@
         "gravity_constraints": null,
         "matchContextNotes": [
           "Measured 2026-10-05 on 36 confirmed bodies (Spansh dump; the only Anemone body in its system, and EDAstro's codex logs exactly this Anemone species there): rocky 97 %, metal-rich 3 %; airless 94.4 %; main star B III 29, B II 5, B I 1,  1. A B giant or supergiant (I-III) is the main star on 35 of 36 and some star in the system on 35 (any-star gate); 219-1268 K, median 405 K.",
-          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+          "Thin atmospheres listed since 2026-10-07 (no misses first): 10 of 313 known-spawn Anemone bodies in the precision sample (new Spansh export) had one and were hidden. The genus prior keeps their chance at what the dump shows (0.6 % of Anemone bodies) and still hides Anemone where the dump has none. Before: airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
         ]
       }
     },
@@ -160,7 +192,15 @@
           "Metal Rich"
         ],
         "atmosphere": [
-          "None"
+          "None",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen",
+          "Argon",
+          "Argon-rich",
+          "Helium",
+          "Nitrogen"
         ],
         "parent_star_types": [
           "B (luminosity IV-V)"
@@ -170,7 +210,7 @@
         "gravity_constraints": null,
         "matchContextNotes": [
           "Measured 2026-10-05 on 799 confirmed bodies (Spansh dump; the only Anemone body in its system, and EDAstro's codex logs exactly this Anemone species there): high metal content 64 %, metal-rich 36 %; airless 98.9 %; main star B V 641, B IV 129, Herbig VI 12, black hole VII 11. A B IV-V star is the main star on 770 of 798 and some star in the system on 796 (any-star gate); 201-3313 K, median 898 K.",
-          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+          "Thin atmospheres listed since 2026-10-07 (no misses first): 10 of 313 known-spawn Anemone bodies in the precision sample (new Spansh export) had one and were hidden. The genus prior keeps their chance at what the dump shows (0.6 % of Anemone bodies) and still hides Anemone where the dump has none. Before: airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
         ]
       }
     },
@@ -184,7 +224,15 @@
           "Metal Rich"
         ],
         "atmosphere": [
-          "None"
+          "None",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen",
+          "Argon",
+          "Argon-rich",
+          "Helium",
+          "Nitrogen"
         ],
         "parent_star_types": [
           "B (luminosity VI)",
@@ -196,7 +244,7 @@
         "gravity_constraints": null,
         "matchContextNotes": [
           "Measured 2026-10-05 on 855 confirmed bodies (Spansh dump; the only Anemone body in its system, and EDAstro's codex logs exactly this Anemone species there): high metal content 58 %, metal-rich 42 %; airless 96.6 %; main star B VI 523, A I 163, B IV 84, A III 26. A B IV or VI star or an A giant / supergiant is the main star on 801 of 852 and some star in the system on 851 (any-star gate); 198-3097 K, median 933 K.",
-          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+          "Thin atmospheres listed since 2026-10-07 (no misses first): 10 of 313 known-spawn Anemone bodies in the precision sample (new Spansh export) had one and were hidden. The genus prior keeps their chance at what the dump shows (0.6 % of Anemone bodies) and still hides Anemone where the dump has none. Before: airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
         ]
       }
     },
@@ -211,7 +259,15 @@
           "High Metal Content"
         ],
         "atmosphere": [
-          "None"
+          "None",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen",
+          "Argon",
+          "Argon-rich",
+          "Helium",
+          "Nitrogen"
         ],
         "parent_star_types": [
           "O",
@@ -223,7 +279,7 @@
         "gravity_constraints": null,
         "matchContextNotes": [
           "Measured 2026-10-05 on 552 confirmed bodies (Spansh dump; the only Anemone body in its system, and EDAstro's codex logs exactly this Anemone species there): metal-rich 63 %, rocky 22 %, high metal content 16 %; airless 98.2 %; main star O V 494, Herbig VI 15, Herbig V 14, Wolf-Rayet I 10. An O, Wolf-Rayet or A / Herbig Ae/Be star is the main star on 547 of 551 and some star in the system on 550 (any-star gate); 175-10206 K, median 1113 K.",
-          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+          "Thin atmospheres listed since 2026-10-07 (no misses first): 10 of 313 known-spawn Anemone bodies in the precision sample (new Spansh export) had one and were hidden. The genus prior keeps their chance at what the dump shows (0.6 % of Anemone bodies) and still hides Anemone where the dump has none. Before: airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
         ]
       }
     },
@@ -237,7 +293,15 @@
           "Metal Rich"
         ],
         "atmosphere": [
-          "None"
+          "None",
+          "Sulphur Dioxide",
+          "Carbon Dioxide",
+          "Carbon dioxide-rich",
+          "Oxygen",
+          "Argon",
+          "Argon-rich",
+          "Helium",
+          "Nitrogen"
         ],
         "parent_star_types": [
           "B (luminosity I-III)"
@@ -247,7 +311,7 @@
         "gravity_constraints": null,
         "matchContextNotes": [
           "Measured 2026-10-05 on 843 confirmed bodies (Spansh dump; the only Anemone body in its system, and EDAstro's codex logs exactly this Anemone species there): high metal content 62 %, metal-rich 38 %; airless 98.9 %; main star B III 770, B II 27, B I 24, B IV 13. A B giant or supergiant (I-III) is the main star on 821 of 839 and some star in the system on 838 (any-star gate); 200-4781 K, median 896 K.",
-          "Airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
+          "Thin atmospheres listed since 2026-10-07 (no misses first): 10 of 313 known-spawn Anemone bodies in the precision sample (new Spansh export) had one and were hidden. The genus prior keeps their chance at what the dump shows (0.6 % of Anemone bodies) and still hides Anemone where the dump has none. Before: airless only. A thin atmosphere (sulphur dioxide, carbon dioxide and others) is under 4 % of each colour's bodies; allowing sulphur dioxide cost 17 bodies whose genera the signal count had decided, on the owner's journals (accuracy probe 2026-09-28), for no species found. The single Anemone row before the split was airless in effect too: its 'Thin (rare, Sulfur Dioxide confirmed)' never parsed to a journal atmosphere."
         ]
       }
     }
