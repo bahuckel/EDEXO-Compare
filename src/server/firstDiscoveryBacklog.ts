@@ -43,6 +43,7 @@ import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { resolveHostStarBodyId } from "./orbitUtils.js";
 import { collectResolvedOrganicLockSpeciesIds, footOrganicLocks } from "./organicLocks.js";
 import { vetoUnseenGenera } from "./genusPrior.js";
+import { loadSpatialCatalogue } from "./spatialCatalogue.js";
 import { perfTime } from "./perf.js";
 import { getProjectRoot } from "./paths.js";
 import { regionForSystem } from "./regionMapData.js";
@@ -202,6 +203,8 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
     const run = matchDatabaseToScan(db, b.scan, b.genusHints, b.organicGenusLocks, {
       includeBacterium: true,
       matchContext,
+      // The position rules (nebula, Guardian site, core) as on the body tab (2026-10-07: they were off here).
+      spatialCatalogue: loadSpatialCatalogue(getProjectRoot()),
       biologicalSignals: b.biologicalSignals,
     });
     // As on the body tab: a genus the dump almost never has on a body like this is not counted (genusPrior.ts).
