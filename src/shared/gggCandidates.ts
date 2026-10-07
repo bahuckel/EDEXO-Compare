@@ -7,8 +7,8 @@
  * step off out of a nudge range, of which none of the 13 on the dump is catalogued), or off the
  * ladder. The app scores them
  * with shared/greenGasGiant.ts like any scan. The model is CMDR Arcanic's ("The Mystery Property:
- * Revealed"), from CMDR Regza's density finding. Cyoilz JM-N b26-0 1 was found green on 1 Oct 3312
- * (his page); it stays here until the catalogue lists it.
+ * Revealed"), from CMDR Regza's density finding. Cyoilz JM-N b26-0 1, the third, was found green on
+ * 1 Oct 3312 and is catalogue #72 since 2026-10-07.
  *
  * [body, system, journal PlanetClass, surface temperature K, MassEM, radius m, x, y, z]
  */
@@ -46,16 +46,5 @@ export const GGG_CANDIDATES: readonly GggCandidateRow[] = [
     2047.5625,
     -49.03125,
     1999.625,
-  ],
-  [
-    "Cyoilz JM-N b26-0 1",
-    "Cyoilz JM-N b26-0",
-    "Gas giant with water based life",
-    242.000015,
-    1084.208984,
-    77259360,
-    -4435.375,
-    -148.8125,
-    -6885.1875,
   ],
 ];
