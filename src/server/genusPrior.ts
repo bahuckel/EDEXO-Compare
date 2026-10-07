@@ -7,7 +7,7 @@
  * there 15 % of the time.
  *
  * `data/exomastery/genus-prior.json` answers it from every landable bio body in the Spansh dump
- * (2,810,046 with a DSS genus list): P(genus present | planet type, signal count, atmosphere, 20 K
+ * (2,832,823 with a DSS genus list, export of 2026-10-03; was 2,810,046): P(genus present | planet type, signal count, atmosphere, 20 K
  * band, host star class, volcanism), backing off to coarser cells (dropping volcanism, then the star,
  * then the temperature, the atmosphere, the planet type) until one holds 100 bodies
  * (`docs/perf/genus_prior_eval.py`). Before a DSS each shown genus's total chance becomes
