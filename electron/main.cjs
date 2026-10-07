@@ -885,6 +885,18 @@ if (!separateCopy) {
   }
 }
 
+/*
+  A GPU or page process that goes and comes back repaints its windows white for a moment (owner,
+  2026-10-07: one white flash with Tab view on, at the first bio planet of a system, not seen again).
+  Written to hud-events.log beside the HUD layout, so the next one says which process it was.
+*/
+app.on("child-process-gone", (_e, d) => {
+  huds.log(`process gone: ${d && d.type} (${d && d.reason}${d && d.exitCode != null ? `, exit ${d.exitCode}` : ""})`);
+});
+app.on("render-process-gone", (_e, wc, d) => {
+  huds.log(`page gone: ${wc && !wc.isDestroyed() ? wc.getURL().replace(/^https?:\/\/[^/]+/, "") : "?"} (${d && d.reason})`);
+});
+
 app.whenReady().then(() => {
   if (!gotSingleInstanceLock) return;
   // Every session the windows use: the launcher's, the app window's, the HUDs' (windowGuards.cjs).
