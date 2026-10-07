@@ -18,6 +18,7 @@ import {
   type Selection,
 } from "./galaxy3d/GalaxyEngine";
 import { detectGraphics, type Graphics } from "./galaxy3d/capabilities";
+import { SYSTEM_CHANGED_EVENT } from "./useLiveSnapshot";
 import { placeLabels } from "./galaxy3d/labelPlacement";
 import { formatCount, formatValue } from "./galaxy3d/clusters";
 import { fmtLy } from "@shared/format";
@@ -386,10 +387,20 @@ export function GalaxyMap3D() {
         .catch(() => {});
     };
     tick();
-    const t = setInterval(tick, 3_000);
+    /*
+      A jump, read from the journal by the app on this page, moves the map at once (owner, 2026-10-07:
+      "use the hyperspace jump ... I don't see a reason the galmap should poll"). The slow check stays
+      for what the jump does not carry — a scan or a mapping changing your systems — and for the map
+      in a window of its own (Tab view off), which has no live game data: 30 s here, 15 s there.
+    */
+    const onJump = () => tick();
+    window.addEventListener(SYSTEM_CHANGED_EVENT, onJump);
+    const standalone = new URLSearchParams(window.location.search).get("screen") === "galaxy";
+    const t = setInterval(tick, standalone ? 15_000 : 30_000);
     return () => {
       live = false;
       clearInterval(t);
+      window.removeEventListener(SYSTEM_CHANGED_EVENT, onJump);
     };
   }, [graphics.tier]);
 

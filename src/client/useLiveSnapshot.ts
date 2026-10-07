@@ -6,6 +6,13 @@ import { reuseUnchanged } from "./snapshotMerge";
 /** The window event a key-bind command arrives as (`detail`: a `UiCommand`). */
 export const UI_COMMAND_EVENT = "edexo-ui-command";
 
+/**
+ * The window event for "the commander is in another system now" (owner, 2026-10-07: the galaxy map
+ * should follow the jump the app already reads from the journal, not ask the server every 3 s).
+ */
+export const SYSTEM_CHANGED_EVENT = "edexo-system-changed";
+let lastSystem: string | null | undefined;
+
 /*
   The desktop app's own window gets the key binds straight from Electron (owner, 2026-10-07: Shift+F1 /
   F2 took 2-3 s): over the socket a command waited behind the game-state messages still being read.
@@ -151,6 +158,10 @@ export function useLiveSnapshot(): {
       const next: AppSnapshot = held ? reuseUnchanged(held, payload) : payload;
       held = next;
       setSnapshot(next);
+      if (next.currentSystem !== lastSystem) {
+        if (lastSystem !== undefined) window.dispatchEvent(new Event(SYSTEM_CHANGED_EVENT));
+        lastSystem = next.currentSystem;
+      }
       setLastStateAtValue(Date.now());
     };
 
