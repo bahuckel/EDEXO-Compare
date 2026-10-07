@@ -8,7 +8,7 @@
       "min_sample_distance_m": 100,
       "planet_requirements": {
         "planet_types": ["Rocky", "High Metal Content", "Metal Rich", "Icy", "Rocky Ice"],
-        "atmosphere": "None",
+        "atmosphere": "None, or thin Carbon Dioxide / Sulphur Dioxide / Carbon dioxide-rich / Argon-rich",
         "volcanism_required": true,
         "location_bias": ["Within 150 ly of a nebula"]
       }
@@ -17,7 +17,7 @@
     "minSampleDistanceM": 100,
     "genusWideRequirements": {
       "planet_types": ["Rocky", "High Metal Content", "Metal Rich", "Icy", "Rocky Ice"],
-      "atmosphere": "None",
+      "atmosphere": "None, or thin Carbon Dioxide / Sulphur Dioxide / Carbon dioxide-rich / Argon-rich",
       "volcanism_required": true
     }
   },
@@ -29,13 +29,13 @@
       "conditions": {
         "location_requirement": "Nebula: 93 % of 23,651 Bark Mound systems lie within 150 ly of a nebula, 100 % within 300 ly (edastro codex-data; background 4-7 %). Evaluated per body: a system beyond the radius is demoted to the unlikely tier rather than removed.",
         "planet_types": ["Rocky", "High Metal Content", "Metal Rich", "Icy", "Rocky Ice"],
-        "atmosphere": ["None"],
+        "atmosphere": ["None", "Carbon Dioxide", "Sulphur Dioxide", "Carbon dioxide-rich", "Argon-rich"],
         "volcanismActiveRequired": true,
         "temperature_K": { "min": 89, "max": 440 },
         "min_sample_distance_m": 100,
         "matchContextNotes": [
           "Measured: 4,551 Bioforge sightings at 89-440 K, up to 1.37 g, host stars spread F/A/M/K/G, 21 regions; no volcanism on 0.2 %.",
-          "About 5 % of sightings are on thin carbon dioxide or sulphur dioxide atmospheres; those are demoted, not excluded.",
+          "6.6 % of the Spansh dump's Bark Mound bodies have a thin atmosphere: carbon dioxide 5.7 % (nearly all High Metal Content), sulphur dioxide 0.5 %, argon-rich and carbon dioxide-rich 0.2 % each. Listed since 2026-10-07: demoted, they were 8 of the 42 known-spawn Bark Mound bodies the app hid (precision sample, new export).",
           "Added 2026-09-25 after Tegnae HT-Z d13-1 1 a (airless rocky, silicate vapour geysers) grew Bark Mounds and the app had no row for them."
         ]
       }
