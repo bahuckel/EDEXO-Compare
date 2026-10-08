@@ -81,9 +81,8 @@ export interface SpatialGate {
   softBandLy?: number;
   softFactor?: number;
   /**
-   * Past the soft band's inner radius, the species' own records stand in for the catalogue (owner,
-   * 2026-10-06): a system with none of `catalogue.records[key]` within `withinLy` fails outright
-   * instead of keeping `softFactor`.
+   * Where the species grows in clusters (owner, 2026-10-08): a system within `withinLy` of one of
+   * `catalogue.records[key]` passes too, wherever the catalogue's nearest point is.
    */
   records?: { key: string; withinLy: number; label: string; evidence: string };
 }
@@ -103,25 +102,26 @@ export const SPATIAL_GATES: { idIncludes: string; gate: SpatialGate }[] = [
       thresholdLy: 150,
       evidence: "79 % of 16,370 radialem systems are within 150 ly of a nebula; pluma, 0 %",
       /*
-        No outer edge (owner, 2026-10-04, Q7: "show it as low probability"). Demoted past 150 ly,
-        radialem lost its row on a fifth of its own systems: 21 % of them are further, 18 % past even
-        300 ly. Out there it is about 0.22 times as likely as anywhere (21 % of its systems against
-        ~95 % of all), so it stays listed at that, and the 1 % floors decide.
-      */
-      softBandLy: Number.POSITIVE_INFINITY,
-      softFactor: 0.22,
-      /*
-        But not anywhere (owner, 2026-10-06: predicted in Aishaist SA-G b39-0, 5,100 ly from the nearest
-        catalogued nebula, none around). The catalogue misses nebulae — 660 radialem systems lie past
-        5,000 ly of one — but radialem marks its own: of the 2,927 radialem systems past 300 ly of a
-        catalogued nebula, 99.6 % have another radialem record within 2,000 ly (leave one out, EDAstro
-        codex). With none that close it is demoted to unlikely: listed, not removed.
+        Owner, 2026-10-08 (Braisoo JD-H b43-6 3 a, no nebula anywhere near, radialem offered on one
+        codex find 1,130 ly away): within 150 ly of a catalogued nebula, or 50 ly of a radialem cluster;
+        anywhere else demoted to unlikely. No band past 150 ly — only 0.7 % of radialem systems are in
+        150–300. Until then a band with no outer edge kept 0.22 of its chance as far as 2,000 ly from a
+        single record.
       */
       records: {
+        /*
+          The catalogue misses nebulae — 660 radialem systems lie past 5,000 ly of one — but radialem
+          marks them by growing in clusters: the systems with 2+ other radialem systems within 100 ly
+          (one count per system). A lone find is a planetary nebula, in-system, which no scan of an
+          undiscovered system can show, so it does not count. Leave one out over 16,634 radialem
+          systems (EDAstro codex + EDGalaxyData's EDDN year): 79.0 % within 150 ly of a catalogued
+          nebula, 90.2 % with the 50 ly cluster bubbles (75 ly would give 91.8 %, 150 ly 92.7 %).
+        */
         key: "radialem",
-        withinLy: 2000,
-        label: "Electricae radialem record",
-        evidence: "99.6 % of radialem systems far from a catalogued nebula have another radialem record within 2,000 ly",
+        withinLy: 50,
+        label: "Electricae radialem cluster",
+        evidence:
+          "90 % of 16,634 radialem systems are within 150 ly of a nebula or 50 ly of a radialem cluster (79 % from nebulae alone)",
       },
     },
   },
@@ -259,26 +259,27 @@ export function evaluateSpatialGate(
   const points = gate.kind === "nebula" ? catalogue.nebulae : catalogue.guardian;
   const near = nearestPoint(system, points);
   if (!near) return null;
-  let inBand =
-    gate.softBandLy != null && near.distanceLy > gate.thresholdLy && near.distanceLy <= gate.softBandLy;
-  // Outside the radius: the species' own records may still vouch for the place, or withdraw the band.
+  let passes = near.distanceLy <= gate.thresholdLy;
+  // Outside the radius: a cluster of the species' own records marks a nebula the catalogue lacks.
   let record: SpatialVerdict["record"];
   const recs = gate.records ? catalogue.records?.[gate.records.key] : undefined;
-  if (inBand && gate.records && recs?.length) {
+  if (!passes && gate.records && recs) {
     const r = nearestPoint(system, recs);
     record = r
       ? { label: gate.records.label, name: r.point.n, distanceLy: r.distanceLy, withinLy: gate.records.withinLy }
       : null;
-    if (!r || r.distanceLy > gate.records.withinLy) inBand = false;
+    if (r && r.distanceLy <= gate.records.withinLy) passes = true;
   }
+  const inBand =
+    !passes && gate.softBandLy != null && near.distanceLy > gate.thresholdLy && near.distanceLy <= gate.softBandLy;
   return {
     kind: gate.kind,
-    passes: near.distanceLy <= gate.thresholdLy,
+    passes,
     ...(inBand ? { softBand: { factor: gate.softFactor ?? 0.5, bandLy: gate.softBandLy! } } : {}),
     distanceLy: near.distanceLy,
     thresholdLy: gate.thresholdLy,
     nearestName: near.point.n,
-    evidence: record && !inBand ? gate.records!.evidence : gate.evidence,
+    evidence: gate.records ? gate.records.evidence : gate.evidence,
     ...(record !== undefined ? { record } : {}),
   };
 }
@@ -294,10 +295,13 @@ export function describeVerdict(v: SpatialVerdict): string {
     v.kind === "core"
       ? v.nearestName
       : `nearest ${v.kind === "nebula" ? "nebula" : "Guardian site"} ${v.nearestName}`;
-  if (v.passes) return `${subject} is ${d} away — inside the ${rule} rule.`;
   const ly = (n: number) => (n >= 1000 ? `${Math.round(n / 100) / 10} kly` : `${Math.round(n)} ly`);
-  if (v.record && !v.softBand) {
-    return `${subject} is ${d} away, and the nearest ${v.record.label} (${v.record.name}) is ${ly(v.record.distanceLy)} — none within ${ly(v.record.withinLy)}.`;
+  if (v.record && v.record.distanceLy <= v.record.withinLy) {
+    return `${subject} is ${d} away, but a ${v.record.label} (${v.record.name}) is ${ly(v.record.distanceLy)} — inside its ${ly(v.record.withinLy)} rule.`;
+  }
+  if (v.passes) return `${subject} is ${d} away — inside the ${rule} rule.`;
+  if (v.record) {
+    return `${subject} is ${d} away (rule ${rule}), and the nearest ${v.record.label} (${v.record.name}) is ${ly(v.record.distanceLy)} (rule ${ly(v.record.withinLy)}).`;
   }
   if (v.softBand) {
     const pct = Math.round(v.softBand.factor * 100);

@@ -69,9 +69,10 @@ describe("evaluating a gate", () => {
     expect(v.passes).toBe(false);
     expect(Math.round(v.distanceLy)).toBe(175);
     expect(v.nearestName).toBe("R Cra");
-    // Kept at a low chance past the rule, with no outer edge (owner, 2026-10-04, Q7).
-    expect(v.softBand).toEqual({ factor: 0.22, bandLy: Number.POSITIVE_INFINITY });
-    expect(describeVerdict(v)).toContain("past the 150 ly rule, so it stays listed at 22 % of its chance");
+    // No band past 150 ly (owner, 2026-10-08), and the nearest radialem cluster is 85 ly off.
+    expect(v.softBand).toBeUndefined();
+    expect(Math.round(v.record!.distanceLy)).toBe(85);
+    expect(describeVerdict(v)).toMatch(/is 175 ly away \(rule 150 ly\), and the nearest Electricae radialem cluster .* is 85 ly \(rule 50 ly\)/);
   });
 
   it("passes radialem beside a nebula", () => {
@@ -159,11 +160,13 @@ describe("the Bark Mounds soft band", () => {
     expect(out.softBand).toBeUndefined();
   });
 
-  it("gives radialem a band with no outer edge: 18 % of its systems are past even 300 ly", () => {
+  it("gives radialem no band: 150 ly, then unlikely (owner, 2026-10-08)", () => {
+    const noRecords = { ...one, records: {} };
+    expect(evaluateSpatialGate("electricae_electricae_radialem", at(100), noRecords)).toMatchObject({ passes: true });
     for (const d of [169, 350, 2000]) {
-      const v = evaluateSpatialGate("electricae_electricae_radialem", at(d), one)!;
+      const v = evaluateSpatialGate("electricae_electricae_radialem", at(d), noRecords)!;
       expect(v.passes).toBe(false);
-      expect(v.softBand?.factor).toBe(0.22);
+      expect(v.softBand).toBeUndefined();
     }
   });
 
@@ -182,28 +185,35 @@ describe("the Bark Mounds soft band", () => {
 });
 
 /*
-  Electricae radialem past 300 ly of a catalogued nebula (owner, 2026-10-06): kept at 0.22 only where
-  radialem has been recorded within 2,000 ly; Aishaist SA-G b39-0, 5.1 kly from the nearest catalogued
-  nebula and 2.2 kly from the nearest radialem record, fails.
+  Electricae radialem clusters mark nebulae the catalogue lacks (owner, 2026-10-08): within 50 ly of a
+  system with 2+ other radialem systems within 100 ly passes; lone finds are planetary nebulae and do
+  not count. Braisoo JD-H b43-6: 5.9 kly from the nearest catalogued nebula, 1,130 ly from a lone find.
 */
-describe("radialem's own records", () => {
+describe("radialem clusters", () => {
   const RADIALEM = "electricae_electricae_radialem";
-  it("ships the records", () => {
-    expect(cat.records?.radialem?.length).toBeGreaterThan(3000);
+  it("ships the clustered systems, not the lone ones", () => {
+    expect(cat.records?.radialem?.length).toBeGreaterThan(10000);
+    expect(cat.records!.radialem!.some((p) => p.n === "Lasu TG-M b21-8")).toBe(false);
   });
 
-  it("fails far from any nebula and any radialem record", () => {
-    const v = evaluateSpatialGate(RADIALEM, { x: 14055.375, y: 212.21875, z: 34347.53125 }, cat)!;
-    expect(v.passes).toBe(false);
-    expect(v.softBand).toBeUndefined();
-    expect(v.record?.distanceLy).toBeGreaterThan(2000);
-    expect(describeVerdict(v)).toMatch(/none within 2 kly/);
+  it("fails far from any nebula and any radialem cluster", () => {
+    for (const at of [
+      { x: 14055.375, y: 212.21875, z: 34347.53125 }, // Aishaist SA-G b39-0
+      { x: 11684.71875, y: -223.75, z: 31860.84375 }, // Braisoo JD-H b43-6
+    ]) {
+      const v = evaluateSpatialGate(RADIALEM, at, cat)!;
+      expect(v.passes).toBe(false);
+      expect(v.softBand).toBeUndefined();
+      expect(v.record!.distanceLy).toBeGreaterThan(1000);
+    }
   });
 
-  it("keeps the low chance beside a radialem record the catalogue has no nebula for", () => {
+  it("passes within 50 ly of a cluster the catalogue has no nebula for, not at 60", () => {
     const rec = cat.records!.radialem!.find((p) => (nearestPoint(p, cat.nebulae)?.distanceLy ?? 0) > 3000)!;
-    const v = evaluateSpatialGate(RADIALEM, { x: rec.x + 50, y: rec.y, z: rec.z }, cat)!;
-    expect(v.passes).toBe(false);
-    expect(v.softBand?.factor).toBe(0.22);
+    const lone = { ...cat, records: { radialem: [rec] } };
+    const near = evaluateSpatialGate(RADIALEM, { x: rec.x + 40, y: rec.y, z: rec.z }, lone)!;
+    expect(near.passes).toBe(true);
+    expect(describeVerdict(near)).toMatch(/but a Electricae radialem cluster .* is 40 ly — inside its 50 ly rule/);
+    expect(evaluateSpatialGate(RADIALEM, { x: rec.x + 60, y: rec.y, z: rec.z }, lone)!.passes).toBe(false);
   });
 });

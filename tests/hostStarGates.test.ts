@@ -285,7 +285,7 @@ describe("the body that reported the bug", () => {
 
   const find = (r: ReturnType<typeof run>, id: string) => r.matches.find((m) => m.entry.id === id)!;
 
-  it("demotes pluma for its star; radialem stays at a low chance (owner, 2026-10-04, Q7)", () => {
+  it("demotes pluma for its star, and radialem 175 ly from a nebula (owner, 2026-10-08)", () => {
     // The journal reports Biological: 2 on this body, and two other genera survive, so nothing is
     // restored to satisfy the count.
     const r = run(2);
@@ -294,17 +294,17 @@ describe("the body that reported the bug", () => {
     expect(pluma.unlikelyReasons!.at(-1)!.field).toBe("StarType");
     expect(pluma.unlikelyReasons!.at(-1)!.detail).toMatch(/neutron star/);
 
-    // 175 ly from R CrA: past the 150 ly rule, which a fifth of radialem's own systems are, so it
-    // stays listed at 0.22 of its chance and the 1 % floors decide (it was demoted until 2026-10-04).
+    // 175 ly from R CrA, past the 150 ly rule, and 85 ly from the nearest radialem cluster (rule
+    // 50 ly): demoted, the reason on the row (a band kept it at 0.22 from 2026-10-04 to 10-08).
     const radialem = find(r, RADIALEM);
-    expect(radialem.unlikely).toBeFalsy();
-    expect(radialem.presenceFactor).toBeCloseTo(0.22);
-    expect(radialem.reasons.at(-1)!.field).toBe("Nebula");
+    expect(radialem.unlikely).toBe(true);
+    expect(radialem.unlikelyReasons!.some((x) => x.field === "Nebula")).toBe(true);
   });
 
   it("keeps the panel's other candidates", () => {
     const shown = run(2).matches.filter((m) => !m.unlikely);
-    expect(shown.filter((m) => m.entry.genusDataDir === "electricae").map((m) => m.entry.id)).toEqual([RADIALEM]);
+    // Both Electricae demoted here (pluma on its star, radialem on its nebula), the other genera stay.
+    expect(shown.filter((m) => m.entry.genusDataDir === "electricae")).toEqual([]);
     expect(shown.length).toBeGreaterThan(1);
   });
 

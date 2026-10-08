@@ -45,7 +45,7 @@ function entry(id: string): SpeciesEntry {
 const pending = (id: string): Pending => ({ entry: entry(id), reasons: [] });
 
 describe("demoting on a failed gate", () => {
-  it("at the owner's home system, keeps radialem at a low chance and demotes a hard gate", () => {
+  it("at the owner's home system, demotes radialem and a hard gate, and leaves the rest", () => {
     const strict: Pending[] = [
       pending("electricae_electricae_radialem"),
       pending("electricae_electricae_pluma"),
@@ -55,15 +55,18 @@ describe("demoting on a failed gate", () => {
 
     demoteFailedSpatialGates(strict, unlikely, { systemCoords: HOME }, cat);
 
-    // Radialem past 150 ly: listed at 0.22 of its chance (owner, 2026-10-04, Q7), the reason on the row.
-    expect(strict.map((m) => m.entry.id)).toEqual(["electricae_electricae_radialem", "electricae_electricae_pluma"]);
-    expect(strict[0]!.presenceFactor).toBeCloseTo(0.22);
-    expect(strict[0]!.reasons.at(-1)!.detail).toMatch(/175 ly/);
+    expect(strict.map((m) => m.entry.id)).toEqual(["electricae_electricae_pluma"]);
+    expect(unlikely).toHaveLength(2);
+    const byId = (id: string) => unlikely.find((m) => m.entry.id === id)!;
+    // Radialem 175 ly from R CrA, 85 ly from the nearest radialem cluster: no band (owner, 2026-10-08).
+    const rad = byId("electricae_electricae_radialem");
+    expect(rad.unlikely).toBe(true);
+    expect(rad.unlikelyReasons!.at(-1)!.detail).toMatch(/175 ly/);
     // Sinuous Tubers 26 kly from Sgr A*: no band, demoted.
-    expect(unlikely).toHaveLength(1);
-    expect(unlikely[0]!.unlikely).toBe(true);
+    const tub = byId("sinuous_tuber_sinuous_tubers_roseum");
+    expect(tub.unlikely).toBe(true);
     // The reader is told the distance and the rule, not merely that it was demoted.
-    const reason = unlikely[0]!.unlikelyReasons!.at(-1)!;
+    const reason = tub.unlikelyReasons!.at(-1)!;
     expect(reason.field).toBe("GalacticCore");
     expect(reason.soft).toBe(true);
   });
