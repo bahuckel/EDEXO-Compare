@@ -123,9 +123,9 @@ export interface HttpServerOptions {
    * history, and the snapshot rebuilds on every journal line. Absent on a build with no store
    * behind it, in which case the panel hides itself.
    */
-  getFirstDiscoveryBacklog?: () => FirstDiscoveryBacklogDTO;
+  getFirstDiscoveryBacklog?: () => FirstDiscoveryBacklogDTO | Promise<FirstDiscoveryBacklogDTO>;
   /** GET /api/backlog-map — the same backlog rolled up to placed systems, for the galaxy map. */
-  getBacklogMap?: () => BacklogMapDTO;
+  getBacklogMap?: () => BacklogMapDTO | Promise<BacklogMapDTO>;
   /** Everything scanned, for the "My discoveries" panel. Built on request; see discoveries.ts. */
   getDiscoveries?: () => DiscoveriesDTO;
   /**

@@ -767,7 +767,12 @@ export function registerGalaxyRoutes(
       res.status(404).json({ error: "no journal store behind this build" });
       return;
     }
-    res.json(opts.getBacklogMap());
+    Promise.resolve(opts.getBacklogMap())
+      .then((dto) => res.json(dto))
+      .catch((e: unknown) => {
+        console.warn(`ED Exo Compare — backlog map failed: ${String(e)}`);
+        res.status(500).json({ error: "the backlog map failed" });
+      });
   });
 
   app.get("/api/achievements", (_req, res) => {
@@ -846,7 +851,12 @@ export function registerGalaxyRoutes(
       res.status(404).json({ error: "no journal store behind this build" });
       return;
     }
-    res.json(opts.getFirstDiscoveryBacklog());
+    Promise.resolve(opts.getFirstDiscoveryBacklog())
+      .then((dto) => res.json(dto))
+      .catch((e: unknown) => {
+        console.warn(`ED Exo Compare — first-discovery backlog failed: ${String(e)}`);
+        res.status(500).json({ error: "the first-discovery backlog failed" });
+      });
   });
 
   app.get("/api/sector-map", (_req, res) => {

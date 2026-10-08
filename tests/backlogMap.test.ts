@@ -10,7 +10,14 @@
  */
 import { describe, expect, it, beforeEach } from "vitest";
 import { GameStateStore } from "../src/server/gameState.js";
-import { backlogMap, clearFirstDiscoveryBacklogCache } from "../src/server/firstDiscoveryBacklog.js";
+import {
+  backlogMap,
+  backlogPassesFinished,
+  clearFirstDiscoveryBacklogCache,
+  computeFirstDiscoveryBacklog,
+  firstDiscoveryBacklogNow,
+  firstDiscoveryBacklogSliced,
+} from "../src/server/firstDiscoveryBacklog.js";
 import { loadSpeciesDatabase } from "../src/server/snapshot.js";
 import type { JournalLine } from "../src/shared/types.js";
 
@@ -219,5 +226,31 @@ describe("how far away it is", () => {
     const far = backlogMap(st).systems[0]!.distanceLy;
     expect(near).toBeCloseTo(100, 6);
     expect(far).toBeCloseTo(1000, 6);
+  });
+});
+
+/*
+  The pass ran on the main process's thread for 20 s at start, asked for by the galaxy map's "my
+  systems" (owner, 2026-10-09, "Not Responding"). It runs in slices now; "my systems" answers with the
+  last finished one at once.
+*/
+describe("the backlog off the main thread's critical path", () => {
+  it("answers at once with the last pass, and starts one when there is none", async () => {
+    const st = seeded(true, [3, 4]);
+    const passes = backlogPassesFinished();
+    expect(firstDiscoveryBacklogNow(st).rows).toEqual([]);
+    const sliced = await firstDiscoveryBacklogSliced(st);
+    expect(backlogPassesFinished()).toBe(passes + 1);
+    expect(firstDiscoveryBacklogNow(st)).toBe(sliced);
+    expect(backlogMap(st, firstDiscoveryBacklogNow(st)).systems).toHaveLength(1);
+  });
+
+  it("gives the same rows as the pass in one go, and one pass for requests made while it runs", async () => {
+    const st = seeded(true, [3, 4, 5]);
+    const [a, b] = await Promise.all([firstDiscoveryBacklogSliced(st), firstDiscoveryBacklogSliced(st)]);
+    expect(a).toBe(b);
+    const { computedAt: _x, ...one } = computeFirstDiscoveryBacklog(st);
+    const { computedAt: _y, ...sliced } = a;
+    expect(sliced).toEqual(one);
   });
 });

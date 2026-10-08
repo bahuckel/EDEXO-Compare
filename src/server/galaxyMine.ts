@@ -7,6 +7,7 @@
  * the Next target of G5 skips both.
  */
 import type { GameStateStore } from "./gameState.js";
+import { backlogPassesFinished } from "./firstDiscoveryBacklog.js";
 import { footOrganicLocks } from "./organicLocks.js";
 import type { BioIndex } from "./bioIndex.js";
 import type {
@@ -169,7 +170,8 @@ export function sessionRouteDto(store: GameStateStore, sessionSystems: readonly 
     position: store.commanderPos ?? null,
     system: store.currentSystem ?? null,
     route,
-    mineRev: `${store.visitedSystems.size}:${store.explorationScansRevision}:${store.dssMappedBodyKeys.size}:${store.bodies.size}`,
+    // The backlog's passes too: "my systems" answers with the last one and the next lands later.
+    mineRev: `${store.visitedSystems.size}:${store.explorationScansRevision}:${store.dssMappedBodyKeys.size}:${store.bodies.size}:${backlogPassesFinished()}`,
     navRoute,
   };
 }

@@ -38,6 +38,7 @@ import type {
 } from "../shared/types.js";
 import type { GameStateStore } from "./gameState.js";
 import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
+import { runSliced, runSync } from "./sliced.js";
 import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exoPayoutRange.js";
 import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
 import { resolveHostStarBodyId } from "./orbitUtils.js";
@@ -171,6 +172,11 @@ export function codexWorthATrip(
 }
 
 export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscoveryBacklogDTO {
+  return runSync(backlogSteps(store));
+}
+
+/** The pass as steps, one body each, so `runSliced` can hand the event loop back between them. */
+function* backlogSteps(store: GameStateStore): Generator<void, FirstDiscoveryBacklogDTO> {
   const db = getCachedSpeciesDatabase();
   const prices = getCachedPriceIndex();
 
@@ -196,6 +202,7 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
   const rows: FirstDiscoveryBacklogRowDTO[] = [];
   // Bodies someone else walked are matched too, for their codex entries alone (see `footfallLost`).
   for (const b of candidates(store, true)) {
+    yield;
     if (!b.scan) continue;
     const lost = footfallLost(store, b.key);
     const region = regionFor(b.systemAddress);
@@ -283,19 +290,69 @@ export function computeFirstDiscoveryBacklog(store: GameStateStore): FirstDiscov
  */
 let cache: { key: string; value: FirstDiscoveryBacklogDTO } | null = null;
 
-export function firstDiscoveryBacklog(store: GameStateStore): FirstDiscoveryBacklogDTO {
-  const key = [
+const cacheKey = (store: GameStateStore): string =>
+  [
     store.bodies.size,
     store.explorationScansRevision,
     store.mainStarWasDiscoveredBySystem.size,
     store.firstFootfallBodies.size,
     store.lastEventIso ?? "",
   ].join("|");
+
+export function firstDiscoveryBacklog(store: GameStateStore): FirstDiscoveryBacklogDTO {
+  const key = cacheKey(store);
   if (cache && cache.key === key) return cache.value;
   const value = perfTime("backlog.firstDiscovery", () => computeFirstDiscoveryBacklog(store));
   cache = { key, value };
   return value;
 }
+
+/*
+  The pass in slices (owner, 2026-10-09: the app went "Not Responding" for 20 s at start; the CPU
+  profile had this pass, asked for by the galaxy map's "my systems", and the garbage collector it
+  kept busy, on the main process's thread, which the windows share). Requests made while a pass runs
+  wait for that one; a pass started for an older key is followed by a fresh one.
+*/
+let running: { key: string; done: Promise<FirstDiscoveryBacklogDTO> } | null = null;
+/** Moves each time a sliced pass finishes, so the galaxy map's `mineRev` asks for its systems again. */
+let finishedPasses = 0;
+export const backlogPassesFinished = (): number => finishedPasses;
+
+export function firstDiscoveryBacklogSliced(store: GameStateStore): Promise<FirstDiscoveryBacklogDTO> {
+  const key = cacheKey(store);
+  if (cache && cache.key === key) return Promise.resolve(cache.value);
+  if (running?.key === key) return running.done;
+  const done = runSliced(backlogSteps(store)).then((value) => {
+    cache = { key, value };
+    finishedPasses++;
+    if (running?.done === done) running = null;
+    return value;
+  });
+  done.catch(() => {
+    if (running?.done === done) running = null;
+  });
+  running = { key, done };
+  return done;
+}
+
+/**
+ * The last finished backlog at once (empty before the first), with a fresh pass started in the
+ * background when the store has moved on — for "my systems", which must answer without waiting.
+ */
+export function firstDiscoveryBacklogNow(store: GameStateStore): FirstDiscoveryBacklogDTO {
+  if (!cache || cache.key !== cacheKey(store)) void firstDiscoveryBacklogSliced(store).catch(() => {});
+  return cache?.value ?? EMPTY_BACKLOG;
+}
+
+const EMPTY_BACKLOG: FirstDiscoveryBacklogDTO = {
+  rows: [],
+  systemCount: 0,
+  firstDiscoveryCount: 0,
+  footfallObservedCount: 0,
+  totalMinCr: 0,
+  totalMaxCr: 0,
+  computedAt: new Date(0).toISOString(),
+};
 
 /**
  * Attach "how far is that" to a memoised answer.
@@ -320,8 +377,8 @@ function distanceFrom(
 }
 
 /** The backlog as the endpoint serves it: memoised rows, distances measured now. */
-export function firstDiscoveryBacklogWithDistance(store: GameStateStore): FirstDiscoveryBacklogDTO {
-  const base = firstDiscoveryBacklog(store);
+export async function firstDiscoveryBacklogWithDistance(store: GameStateStore): Promise<FirstDiscoveryBacklogDTO> {
+  const base = await firstDiscoveryBacklogSliced(store);
   const pos = store.commanderPos;
   return {
     ...base,
@@ -335,6 +392,7 @@ export function firstDiscoveryBacklogWithDistance(store: GameStateStore): FirstD
 /** Test seam — the module-level memo would otherwise leak between cases. */
 export function clearFirstDiscoveryBacklogCache(): void {
   cache = null;
+  running = null;
 }
 
 /**
@@ -348,9 +406,9 @@ export function clearFirstDiscoveryBacklogCache(): void {
  * silently. Placing it at the origin would put a false marker on Sol; omitting it without saying so
  * would quietly shrink the backlog every time the map is consulted.
  */
-export function backlogMap(store: GameStateStore): BacklogMapDTO {
+export function backlogMap(store: GameStateStore, backlog = firstDiscoveryBacklog(store)): BacklogMapDTO {
   // Waiting systems only: a body someone else walked is listed for its codex entries, not a 5x.
-  const rows = firstDiscoveryBacklog(store).rows.filter((r) => !r.footfallLost);
+  const rows = backlog.rows.filter((r) => !r.footfallLost);
   const bySystem = new Map<number, BacklogSystemDTO>();
   // A set, not a counter: an unplaceable system never reaches `bySystem`, so testing that map to
   // dedupe counted every *body* instead of every system and reported three where one was meant.

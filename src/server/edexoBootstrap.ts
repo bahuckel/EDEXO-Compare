@@ -129,7 +129,12 @@ import {
 import { fetchEdsmBodiesAsExplorationRecords, searchEdsmSystemsByName } from "./edsmSystemHydration.js";
 import { fetchSpanshBodiesAsExplorationRecords, searchSpanshSystemsByName } from "./spanshSystemHydration.js";
 import { SessionLog } from "./sessionLog.js";
-import { backlogMap, firstDiscoveryBacklogWithDistance } from "./firstDiscoveryBacklog.js";
+import {
+  backlogMap,
+  firstDiscoveryBacklogNow,
+  firstDiscoveryBacklogSliced,
+  firstDiscoveryBacklogWithDistance,
+} from "./firstDiscoveryBacklog.js";
 import { galaxySpeciesCatalogue, galaxyValueSearch } from "./galaxyValueSearch.js";
 import { galaxyBodyScan, galaxyRegions } from "./galaxyBodyScan.js";
 import { loadBioIndex } from "./bioIndex.js";
@@ -1594,15 +1599,16 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     getStatus,
     getCommanderPosition: () => store.commanderPos,
     getFirstDiscoveryBacklog: () => firstDiscoveryBacklogWithDistance(store),
-    getBacklogMap: () => backlogMap(store),
+    getBacklogMap: async () => backlogMap(store, await firstDiscoveryBacklogSliced(store)),
     getDiscoveries: () => buildDiscoveries(store, getProjectRoot(), greenExtras),
     searchGalaxyByValue: (query, limit) => galaxyValueSearch({ ...query, from: store.commanderPos, limit }),
     getGalaxySpecies: () => galaxySpeciesCatalogue(),
     getGalaxyRegions: () => galaxyRegions(),
     scanGalaxyBodies: (query, limit) => galaxyBodyScan({ ...query, from: store.commanderPos, limit }),
     getCommanderSectors: () => commanderSectorsDto(store),
-    getMySystems: () => mySystemsDto(store, backlogMap(store)),
-    getMySystem: (addr) => mySystemDetail(store, addr, backlogMap(store), loadBioIndex()),
+    // The last finished backlog, never a wait: the map asks for these at start (firstDiscoveryBacklog.ts).
+    getMySystems: () => mySystemsDto(store, backlogMap(store, firstDiscoveryBacklogNow(store))),
+    getMySystem: (addr) => mySystemDetail(store, addr, backlogMap(store, firstDiscoveryBacklogNow(store)), loadBioIndex()),
     getSessionRoute: () => sessionRouteDto(store, sessionLog.toDto().systems),
     getVisitedSystems: (days) => visitedSystemsDto(store, days),
     getJournalStore: () => store,
