@@ -65,7 +65,7 @@ import { SystemCardRow } from "./SystemCard";
 export const NOTABLE_QUICK_EVENT = "edexo-notable-quick";
 import { JournalSystemSearch } from "./JournalSystemSearch";
 import { TabSlot, useScreenOpen } from "./tabs/TabHost";
-import { tabStore, useTabState } from "./tabs/tabStore";
+import { tabStore, useTabSelector } from "./tabs/tabStore";
 /** The 3D galaxy map inside a tab (Tab view); without it, it opens in its own window as before. */
 const GalaxyMap3D = lazy(() => import("./GalaxyMap3D").then((m) => ({ default: m.GalaxyMap3D })));
 
@@ -368,7 +368,7 @@ export const HeaderBar = memo(function HeaderBar({
   const [bookmarksOpen, setBookmarksOpen] = useScreenOpen("bookmarks");
   const [boxelOpen, setBoxelOpen] = useScreenOpen("boxels");
   const [statsOpen, setStatsOpen] = useScreenOpen("stats");
-  const tabView = useTabState();
+  const galaxyTab = useTabSelector((s) => s.on && s.tabs.includes("galaxy"));
   // The menu's panel openers, one object for the header's life (useState setters never change).
   const menuOpeners: MenuOpeners = useMemo(
     () => ({
@@ -855,7 +855,7 @@ export const HeaderBar = memo(function HeaderBar({
         </p>
       ) : null}
 
-      {tabView.on && tabView.tabs.includes("galaxy") ? (
+      {galaxyTab ? (
         <TabSlot kind="galaxy">
           <Suspense fallback={<ModalLoading />}>
             <GalaxyMap3D />

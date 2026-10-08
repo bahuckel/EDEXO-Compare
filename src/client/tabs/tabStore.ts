@@ -234,3 +234,14 @@ if (TAB_BRIDGE) {
 export function useTabState(): TabState {
   return useSyncExternalStore(tabStore.subscribe, tabStore.get, tabStore.get);
 }
+
+/**
+ * One value from the tab store, re-rendering only when it changes (owner, 2026-10-09: the first tab
+ * switch after a start was slow). The header holds every screen, so with the whole state it and all
+ * of them rendered again on each switch; a screen only needs to know whether it is open and where.
+ * `select` must return a primitive or a stable reference.
+ */
+export function useTabSelector<T>(select: (s: TabState) => T): T {
+  const get = () => select(tabStore.get());
+  return useSyncExternalStore(tabStore.subscribe, get, get);
+}

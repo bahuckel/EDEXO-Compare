@@ -13,6 +13,7 @@ import {
   TAB_SCREENS,
   WINDOW_KEY,
   tabStore,
+  useTabSelector,
   useTabState,
   type TabFront,
   type TabKind,
@@ -55,9 +56,9 @@ const paneRef = (k: TabKind) => {
  * as the pop-up it has always been.
  */
 export function TabSlot({ kind, children }: { kind: TabKind; children: ReactNode }) {
-  const st = useTabState();
-  if (!st.on) return <>{children}</>;
-  const pane = tabStore.pane(kind);
+  // false with tab view off, else the pane (null until it exists): not the active tab, which every switch changes.
+  const pane = useTabSelector((s) => (s.on ? tabStore.pane(kind) : false));
+  if (pane === false) return <>{children}</>;
   return pane
     ? createPortal(<InTabContext.Provider value={kind}>{children}</InTabContext.Provider>, pane)
     : null;
@@ -68,7 +69,8 @@ export function TabSlot({ kind, children }: { kind: TabKind; children: ReactNode
  * on (opening goes to the tab, closing closes it).
  */
 export function useScreenOpen(kind: TabKind): [boolean, (open: boolean) => void] {
-  const st = useTabState();
+  const on = useTabSelector((s) => s.on);
+  const inTabs = useTabSelector((s) => s.tabs.includes(kind));
   const [local, setLocal] = useState(false);
   // One setter for the header's life (its menu openers are memoised once); reads the switch when called.
   const set = useCallback(
@@ -79,7 +81,7 @@ export function useScreenOpen(kind: TabKind): [boolean, (open: boolean) => void]
     },
     [kind],
   );
-  return [st.on ? st.tabs.includes(kind) : local, set];
+  return [on ? inTabs : local, set];
 }
 
 function TabButton({
