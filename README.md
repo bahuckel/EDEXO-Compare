@@ -286,6 +286,8 @@ Built on these communities' work, none of them affiliated with this project:
 - **[ED-DSN](https://ed-dsn.net)** — the species photographs.
 - **[EDDN](https://github.com/EDCD/EDDN)** (Elite Dangerous Data Network) — other commanders' live
   scans, the test set every prediction is checked against.
+- **[EDDN archive](https://edgalaxydata.space/EDDN/)** — EDDN's messages kept day by day since 2017,
+  for checking against past finds.
 - **[EDAstro](https://edastro.com)** — the codex sightings behind the galaxy map's index.
 
 Full attribution in [NOTICE.md](NOTICE.md).

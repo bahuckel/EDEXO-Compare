@@ -74,6 +74,17 @@ the owner's own listener and added to the corpus the species profiles are built 
 4,743 sightings across 89 species). EDDN is a live stream for players to share game data with tools;
 it carries no licence of its own. Thanks to every commander and tool author who uploads.
 
+### EDDN archive — [edgalaxydata.space/EDDN](https://edgalaxydata.space/EDDN/)
+
+A day-by-day archive of the messages EDDN relays, kept since 2017 and free to download. Its
+operator is not named on the site and no licence or terms are stated there; whether it is run by the
+EDCD/EDDN maintainers is not said either. This project uses it for research: a year of codex entries,
+FSS body signals and organic scans (2025-10 to 2026-10) to check the green gas giant catalogue and
+the species predictions against other commanders' finds. Anything derived from it that this project
+ships is part of the project's data and is under the data licence (CC BY-NC-SA 3.0,
+[`data/LICENSE-DATA.txt`](data/LICENSE-DATA.txt)), unless the archive's operator states other terms,
+in which case theirs apply. Thank you to whoever keeps it running.
+
 ### Canonn Research Group — [canonn.science](https://canonn.science)
 
 The community's accumulated knowledge of where exobiology grows: the genus and species conditions,
