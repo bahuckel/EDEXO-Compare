@@ -2,7 +2,7 @@
 
 exports[`the format constant > covers every key the store serializes 1`] = `
 {
-  "format": 31,
+  "format": 32,
   "keys": [
     "achievementDone",
     "archivedDssMappedBodyKeys",
@@ -34,6 +34,7 @@ exports[`the format constant > covers every key the store serializes 1`] = `
     "fssBodySignalsBodyKeys",
     "fssDiscoveryScanBySystem",
     "greenCodexBodies",
+    "jumpRange",
     "k10Systems",
     "landingMinutesSamples",
     "lastEventIso",

@@ -5,6 +5,8 @@ import type { ObservedFlag } from "../shared/observedFlag.js";
 import type { BodyExoState, ExplorationScanRecord, JournalLine, SystemLife } from "../shared/types.js";
 import type { SurfaceMark } from "./surfaceMarksFile.js";
 
+import type { JumpRangeState } from "../shared/jumpRange.js";
+
 export type PendingOrganicSample = {
   fullKey: string;
   bodyKey: string;
@@ -96,8 +98,10 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   30: `targetedSystems` — every FSDTarget (address, name, star class), for the Boxels screen.
   31: `greenCodexBodies` keyed by the gas giant scanned with the codex entry, not the codex line's
       `BodyID` (the body the ship was at; shared/greenCodexMatch.ts).
+  32: `jumpRange` — the full jump range as flown, boosts and economical-route hops left out
+      (shared/jumpRange.ts).
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 31;
+export const JOURNAL_MERGE_CACHE_FORMAT = 32;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
@@ -205,4 +209,5 @@ export type JournalMergeCachePayload = {
   loadoutFuelReserveCapacityT?: number | null;
   lastFsdJumpFuelUsedT?: number | null;
   lastFsdJumpDistLy?: number | null;
+  jumpRange?: JumpRangeState;
 };

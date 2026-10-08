@@ -146,6 +146,7 @@ import { parseHost, parsePort } from "./cliOptions.js";
 import type { CliOptions } from "./cliOptions.js";
 import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startupChecks.js";
 import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
+import { fullJumpRange } from "../shared/jumpRange.js";
 import { createGggResearch } from "./gggResearch.js";
 import { createNoticesService, type CodexFirstFind, type NoticesContext } from "./notices.js";
 import { createBookmarksService } from "./bookmarks.js";
@@ -449,6 +450,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
     currentSystem: () => ({ name: store.currentSystem ?? "", address: store.currentSystemAddress ?? null }),
     loadoutJumpLy: () => store.loadoutMaxJumpRangeLy,
+    fullJumpLy: () => fullJumpRange(store.jumpRange),
     // Both read the commander's own EDAstro downloads; with none fetched they find nothing.
     nearbyPois: (origin, radiusLy, groups) =>
       queryPoi({ origin, groups, limit: 50 })

@@ -24,6 +24,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { ExplorationScanRecord } from "../shared/types.js";
 import { BODY_FEATURES, bodyFeatures, directParent, featureRecordFromScan, inVoidCross } from "../shared/bodyFeatures.js";
+import { emptyJumpRange, fullJumpRange, jumpRangeJump } from "../shared/jumpRange.js";
 import { createGreenCodexMatcher } from "../shared/greenCodexMatch.js";
 import { greenCodexId, greenGiantLabel, isK10CodexName, type GreenGiantVerdict } from "../shared/greenGasGiant.js";
 import { carrierServiceLabel } from "../shared/carrierServices.js";
@@ -61,8 +62,10 @@ export interface NoticesContext {
   /** Every scan the commander made, for seeding the records. */
   allScans(): Iterable<ExplorationScanRecord>;
   currentSystem(): { name: string; address: number | null };
-  /** Loadout `MaxJumpRange`, the fallback until a few jumps have been flown. */
+  /** Loadout `MaxJumpRange` (an empty tank), the fallback until a few jumps have been flown. */
   loadoutJumpLy?(): number | null;
+  /** The full jump range as flown over the journals (shared/jumpRange.ts), when known. */
+  fullJumpLy?(): number | null;
   /** EDAstro POIs in the given groups within the radius, nearest first. */
   nearbyPois?(origin: Vec3, radiusLy: number, groups: readonly string[]): NearbyPoi[];
   /** EDAstro carriers within the radius, nearest first. */
@@ -123,10 +126,6 @@ export interface NearbyCarrier {
   services: readonly string[];
 }
 
-/** The last this many jumps make the average. */
-const JUMP_SAMPLES = 20;
-/** Fewer than this, and the loadout's range stands in. */
-const JUMP_SAMPLES_MIN = 3;
 const NEARBY_PER_JUMP = 3;
 
 const MAX_ITEMS = 200;
@@ -224,7 +223,7 @@ export interface NoticesService {
   /** The store was rebuilt: seed the records again on the next scan. */
   invalidate(): void;
   /** The ship's average jump in ly: recent jumps, else the loadout's range. */
-  jumpLy(ctx: Pick<NoticesContext, "loadoutJumpLy">): number | null;
+  jumpLy(ctx: Pick<NoticesContext, "loadoutJumpLy" | "fullJumpLy">): number | null;
   /** Every type's records, the commander's and EDAstro's (Statistics → Records). */
   records(ctx: NoticesContext): RecordRowDTO[];
 }
@@ -244,20 +243,24 @@ export function createNoticesService(opts: {
   let nspDrop: { systemAddress: number | null; system: string; atMs: number } | null = null;
   /** Inside the void cross after the last jump; null until the first jump of the session (which only sets it). */
   let voidInside: boolean | null = null;
-  const jumps: number[] = [];
+  /** This session's jumps, when the journals' estimate is not passed in. */
+  const jumps = emptyJumpRange();
 
-  function jumpLy(ctx: Pick<NoticesContext, "loadoutJumpLy">): number | null {
-    if (jumps.length >= JUMP_SAMPLES_MIN) return jumps.reduce((a, b) => a + b, 0) / jumps.length;
+  /*
+    How far "N jumps" reaches (owner, 2026-10-08): the full range as flown — not an average an
+    economical route drags down, not a neutron-boosted jump, not the loadout's empty-tank range
+    (shared/jumpRange.ts). The loadout's range stands in until three full-range jumps are flown.
+  */
+  function jumpLy(ctx: Pick<NoticesContext, "loadoutJumpLy" | "fullJumpLy">): number | null {
+    const flown = ctx.fullJumpLy?.() ?? fullJumpRange(jumps);
+    if (flown != null) return flown;
     const l = ctx.loadoutJumpLy?.() ?? null;
     return l != null && l > 0 ? l : null;
   }
 
   function onJump(line: Line, ctx: NoticesContext): boolean {
     const dist = num(line.JumpDist);
-    if (line.event === "FSDJump" && dist != null && dist > 0) {
-      jumps.push(dist);
-      if (jumps.length > JUMP_SAMPLES) jumps.shift();
-    }
+    if (line.event === "FSDJump" && dist != null && dist > 0) jumpRangeJump(jumps, dist, line.BoostUsed);
     const p = Array.isArray(line.StarPos) ? (line.StarPos as unknown[]) : null;
     const origin = p && p.length >= 3 && p.every((v) => typeof v === "number") ? { x: p[0] as number, y: p[1] as number, z: p[2] as number } : null;
     let voidAdded = false;
