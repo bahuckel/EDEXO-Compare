@@ -38,7 +38,7 @@ import {
 } from "./organicTracking.js";
 import { barycentreSyntheticBodyId, moonPairBarycentreId, planetRingCount } from "./orbitUtils.js";
 import { scanRings } from "../shared/bodyFeatures.js";
-import { greenCodexId, isK10CodexName } from "../shared/greenGasGiant.js";
+import { isK10CodexName } from "../shared/greenGasGiant.js";
 import { isNspCodexName } from "../shared/nspOutlook.js";
 import { getProjectRoot } from "./paths.js";
 import {
@@ -74,6 +74,7 @@ import {
 import { GEOLOGY_KEY, isLegacyPlantKey } from "../shared/achievements.js";
 import { regionForSystem } from "./regionMapData.js";
 import { parseBoxel } from "../shared/boxel.js";
+import { createGreenCodexMatcher } from "../shared/greenCodexMatch.js";
 import { JOURNAL_MERGE_CACHE_FORMAT } from "./journalMergePayload.js";
 import { bodyKey, systemAddressOfBodyKey } from "../shared/bodyKey.js";
 import type {
@@ -747,10 +748,12 @@ export class GameStateStore {
   /** Region of each system from its `CodexEntry` lines (the only journal event naming one). */
   private readonly codexRegionBySystem = new Map<number, string>();
   /**
-   * Bodies the codex logged as a green gas giant: `bodyKey` → codex id (shared/greenGasGiant.ts).
-   * Every planet `CodexEntry` in the owner's journals carries a `BodyID` (678 of 678, 2026-09-30).
+   * Bodies the codex logged as a green gas giant: `bodyKey` → codex id (shared/greenGasGiant.ts). The
+   * codex line's own `BodyID` is the body the ship was at, not the one scanned (2026-10-08), so the
+   * body is the fitting gas giant scanned with it (shared/greenCodexMatch.ts).
    */
   readonly greenCodexBodies = new Map<string, string>();
+  private readonly greenCodexMatcher = createGreenCodexMatcher();
   /** Systems where the codex logged a K10-Type Anomaly — an NSP that only spawns around green gas giants. */
   readonly k10Systems = new Set<number>();
   /**
@@ -1684,6 +1687,7 @@ export class GameStateStore {
     this.achievementDone.clear();
     this.codexRegionBySystem.clear();
     this.greenCodexBodies.clear();
+    this.greenCodexMatcher.clear();
     this.k10Systems.clear();
     this.nspSeen.clear();
     this.landingMinutesSamples.length = 0;
@@ -1737,6 +1741,7 @@ export class GameStateStore {
     this.achievementDone.clear();
     this.codexRegionBySystem.clear();
     this.greenCodexBodies.clear();
+    this.greenCodexMatcher.clear();
     this.k10Systems.clear();
     this.nspSeen.clear();
     this.landingMinutesSamples.length = 0;
@@ -2505,10 +2510,7 @@ export class GameStateStore {
     // Green gas giants: the codex names the body; a K10 anomaly names the system (shared/greenGasGiant.ts).
     if (typeof line.SystemAddress === "number" && Number.isFinite(line.SystemAddress)) {
       const name = typeof line.Name === "string" ? line.Name : "";
-      const green = greenCodexId(name);
-      if (green && typeof line.BodyID === "number" && Number.isFinite(line.BodyID)) {
-        this.greenCodexBodies.set(bodyKey(line.SystemAddress, line.BodyID), green);
-      }
+      this.applyGreenCodex(line);
       if (isK10CodexName(name)) this.k10Systems.add(line.SystemAddress);
       // A phenomenon named by the codex (same families as the EDAstro NSP list).
       if (isNspCodexName(name)) {
@@ -2839,7 +2841,16 @@ export class GameStateStore {
   }
 
   /** `Scan` — one of apply()'s event handlers. */
+  /** A green codex entry and the gas giant scanned with it, whichever line comes first. */
+  private applyGreenCodex(line: JournalLine): void {
+    for (const e of this.greenCodexMatcher.observe(line as Record<string, unknown>)) {
+      if (e.kind === "match") this.greenCodexBodies.set(e.bodyKey, e.codexId);
+      else this.greenCodexBodies.delete(e.bodyKey);
+    }
+  }
+
   private onScan(line: JournalLine, ts: string): void {
+    this.applyGreenCodex(line);
     const systemAddress = line.SystemAddress as number;
     const bodyId = line.BodyID as number;
     const bodyName = line.BodyName as string;

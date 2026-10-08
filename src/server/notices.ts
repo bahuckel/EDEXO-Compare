@@ -24,6 +24,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { ExplorationScanRecord } from "../shared/types.js";
 import { BODY_FEATURES, bodyFeatures, directParent, featureRecordFromScan, inVoidCross } from "../shared/bodyFeatures.js";
+import { createGreenCodexMatcher } from "../shared/greenCodexMatch.js";
 import { greenCodexId, greenGiantLabel, isK10CodexName, type GreenGiantVerdict } from "../shared/greenGasGiant.js";
 import { carrierServiceLabel } from "../shared/carrierServices.js";
 import { bodyKey as toBodyKey } from "../shared/bodyKey.js";
@@ -559,6 +560,44 @@ export function createNoticesService(opts: {
   }
 
   /** A green gas giant confirmed by the codex, or a K10 anomaly that says one is in the system. */
+  /*
+    Green gas giants confirmed by the codex: the codex line names the ship's body, not the scanned one
+    (2026-10-08), so the notice waits for the gas giant scanned with it (shared/greenCodexMatch.ts).
+  */
+  const greenCodex = createGreenCodexMatcher();
+  function greenCodexConfirmed(line: Line, ctx: NoticesContext): boolean {
+    if (line.event !== "Scan" && line.event !== "CodexEntry") return false;
+    let changed = false;
+    for (const e of greenCodex.observe(line)) {
+      const id = `ggg-codex:${e.bodyKey}`;
+      if (e.kind === "retract") {
+        const before = state.items.length;
+        state.items = state.items.filter((n) => n.id !== id);
+        changed = changed || state.items.length !== before;
+        continue;
+      }
+      if (!state.prefs.notable.green) continue;
+      const addr = num(e.codex.SystemAddress)!;
+      const system = str(e.codex.System) || ctx.currentSystem().name;
+      const scanned = line.event === "Scan" ? str(line.BodyName) : (ctx.scanOf?.(e.bodyKey)?.bodyName ?? "");
+      const body = shortBodyName(scanned, system) || e.bodyKey;
+      changed =
+        add({
+          id,
+          at: str(e.codex.timestamp) || new Date(now()).toISOString(),
+          kind: "notable",
+          title: "Green gas giant — confirmed by the codex",
+          text: `${body} in ${system}`,
+          system,
+          systemAddress: addr,
+          body,
+          bodyKey: e.bodyKey,
+          codexNew: e.codex.IsNewEntry === true,
+        }) || changed;
+    }
+    return changed;
+  }
+
   function onGreenCodex(line: Line, ctx: NoticesContext): boolean {
     if (!state.prefs.notable.green) return false;
     const addr = num(line.SystemAddress);
@@ -566,23 +605,8 @@ export function createNoticesService(opts: {
     const name = str(line.Name);
     const system = str(line.System) || ctx.currentSystem().name;
     const at = str(line.timestamp) || new Date(now()).toISOString();
-    const bodyId = num(line.BodyID);
-    if (greenCodexId(name) && bodyId != null) {
-      const bodyKey = toBodyKey(addr, bodyId);
-      const body = shortBodyName(ctx.scanOf?.(bodyKey)?.bodyName ?? "", system) || `Body ${bodyId}`;
-      return add({
-        id: `ggg-codex:${bodyKey}`,
-        at,
-        kind: "notable",
-        title: "Green gas giant — confirmed by the codex",
-        text: `${body} in ${system}`,
-        system,
-        systemAddress: addr,
-        body,
-        bodyKey,
-        codexNew: line.IsNewEntry === true,
-      });
-    }
+    // A green codex entry's notice goes out with its body's scan (greenCodexConfirmed below).
+    if (greenCodexId(name)) return false;
     if (isK10CodexName(name)) {
       return add({
         id: `k10:${addr}`,
@@ -743,7 +767,7 @@ export function createNoticesService(opts: {
       };
     },
     observe(line, ctx) {
-      let changed = false;
+      let changed = greenCodexConfirmed(line, ctx);
       switch (line.event) {
         case "Scan":
           changed = onScan(line, ctx);

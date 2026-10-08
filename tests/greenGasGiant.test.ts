@@ -156,6 +156,19 @@ describe("notices", () => {
 
   it("a candidate scan, a codex confirmation and a K10 anomaly each come to the mail icon", () => {
     const n = createNoticesService({ filePath: null });
+    // The codex line comes just before its body's scan, and names the ship's body (the star), not the giant.
+    n.observe(
+      {
+        timestamp: "2026-09-30T12:00:00Z",
+        event: "CodexEntry",
+        Name: "$Codex_Ent_Green_Sudarsky_Class_III_Name;",
+        System: "Gree",
+        SystemAddress: ADDR,
+        BodyID: 0,
+        IsNewEntry: true,
+      },
+      ctx(),
+    );
     n.observe(
       {
         timestamp: "2026-09-30T12:00:00Z",
@@ -167,18 +180,6 @@ describe("notices", () => {
         BodyName: "Gree 7",
         PlanetClass: C3,
         SurfaceTemperature: 370,
-      },
-      ctx(),
-    );
-    n.observe(
-      {
-        timestamp: "2026-09-30T12:01:00Z",
-        event: "CodexEntry",
-        Name: "$Codex_Ent_Green_Sudarsky_Class_III_Name;",
-        System: "Gree",
-        SystemAddress: ADDR,
-        BodyID: 7,
-        IsNewEntry: true,
       },
       ctx(),
     );
@@ -216,6 +217,7 @@ describe("the store", () => {
     const { GameStateStore } = await import("../src/server/gameState.js");
     const a = new GameStateStore();
     const t = "2026-09-30T12:00:00Z";
+    // As the journal has it: the codex line names the ship's body (0), the giant's scan follows.
     a.apply({
       timestamp: t,
       event: "CodexEntry",
@@ -223,7 +225,18 @@ describe("the store", () => {
       Region_Localised: "Inner Orion Spur",
       System: "Gree",
       SystemAddress: 42,
+      BodyID: 0,
+    } as never);
+    a.apply({
+      timestamp: t,
+      event: "Scan",
+      ScanType: "Detailed",
+      StarSystem: "Gree",
+      SystemAddress: 42,
       BodyID: 7,
+      BodyName: "Gree 7",
+      PlanetClass: "Sudarsky class II gas giant",
+      SurfaceTemperature: 217.84,
     } as never);
     a.apply({ timestamp: t, event: "CodexEntry", Name: "$Codex_Ent_L_Phn_Part_Cld_011_Name;", System: "Gree", SystemAddress: 42, BodyID: 1 } as never);
     a.mergeExplorationScan(
@@ -244,6 +257,7 @@ describe("the store", () => {
       t,
     );
     expect(a.greenCodexBodies.get("42:7")).toBe("codex_ent_green_sudarsky_class_ii");
+    expect(a.greenCodexBodies.has("42:0")).toBe(false);
     expect(a.k10Systems.has(42)).toBe(true);
     const b = new GameStateStore();
     expect(b.hydrateJournalMergePayload(a.serializeJournalMergePayload())).toBe(true);

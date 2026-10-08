@@ -94,8 +94,10 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   28: `systemVisitedAt`, `systemStarClass` — the NavRoute finder's Previous list (when, which star).
   29: body `geologicalSignals` and `geologyLogged` — the Planetary body card's Volcanism field.
   30: `targetedSystems` — every FSDTarget (address, name, star class), for the Boxels screen.
+  31: `greenCodexBodies` keyed by the gas giant scanned with the codex entry, not the codex line's
+      `BodyID` (the body the ship was at; shared/greenCodexMatch.ts).
 */
-export const JOURNAL_MERGE_CACHE_FORMAT = 30;
+export const JOURNAL_MERGE_CACHE_FORMAT = 31;
 
 /** Serializable journal-derived slice of {@link GameStateStore} (not user prefs). */
 export type JournalMergeCachePayload = {
