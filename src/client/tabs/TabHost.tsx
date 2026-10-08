@@ -283,7 +283,8 @@ export function TabHost({ children }: { children: ReactNode }) {
   }, [st.on]);
   /*
     Previous / next tab from inside the game (owner, 2026-10-06; Shift+F1 / Shift+F2 by default, set in
-    the launcher). The desktop app sends them to the tab window the commander clicked last (2026-10-07):
+    the launcher). The desktop app sends them to a tab window with tabs to step through, the one clicked
+    last when several have (2026-10-08; tabWindows.cjs):
     the app window hears them with the other key binds, a detached window straight from Electron. A
     browser tab steps the main tabs, as before.
   */

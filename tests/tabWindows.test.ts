@@ -156,28 +156,38 @@ describe("tab windows", () => {
     expect(other.webContents.sent.some(([c]) => c === "edexo:ui-command")).toBe(false);
   });
 
-  // The screen-tab keys step the tab window clicked last (owner, 2026-10-07): one key pair, one window.
-  it("hands the screen-tab keys to the tab window that had the focus last", async () => {
-    const { tw, main, handle } = setup();
+  // The screen-tab keys (owner, 2026-10-07/08): to a window with tabs to step through, the one clicked
+  // last when several have; a window with a single tab is skipped.
+  it("hands the screen-tab keys to the window with tabs to step, the one clicked last of those", async () => {
+    const { tw, main, on, handle } = setup();
+    const report = (w: FakeWindow, tabs: string[]) =>
+      on.get("edexo:tabs-report")!({ sender: w.webContents }, tabs);
     const cmd = { cmd: "screenTab", dir: -1 };
     const got = (w: FakeWindow) => w.webContents.sent.filter(([c]) => c === "edexo:ui-command").length;
-    // The app window until another one is used.
-    tw.sendToFocused(cmd);
-    expect(got(main)).toBe(1);
+    // Window 1: Main + Galaxy map; window 2: Boxels alone. Clicking Boxels last still steps window 1.
+    report(main, ["galaxy"]);
     await handle.get("edexo:tab-detach")!({ sender: main.webContents }, { kind: "boxels", x: 900, y: 300 });
     const other = FakeWindow.made.at(-1)!;
+    report(other, ["boxels"]);
     other.emit("focus");
-    expect(tw.focusedKey()).not.toBe("main");
+    expect(tw.focusedKey()).toBe("main");
+    tw.sendToFocused(cmd);
+    expect([got(main), got(other)]).toEqual([1, 0]);
+    // Main alone; Galaxy map + Boxels in window 2: window 2, even with Main clicked last.
+    report(main, []);
+    report(other, ["galaxy", "boxels"]);
+    main.emit("focus");
     tw.sendToFocused(cmd);
     expect([got(main), got(other)]).toEqual([1, 1]);
-    // Back in the app window; and when the detached window closes, the keys go home.
-    main.emit("focus");
+    // Both with tabs to step: the one clicked last.
+    report(main, ["statistics"]);
     tw.sendToFocused(cmd);
     expect([got(main), got(other)]).toEqual([2, 1]);
     other.emit("focus");
+    tw.sendToFocused(cmd);
+    expect([got(main), got(other)]).toEqual([2, 2]);
+    // When that window closes the keys go home.
     other.close();
     expect(tw.focusedKey()).toBe("main");
-    tw.sendToFocused(cmd);
-    expect(got(main)).toBe(3);
   });
 });
