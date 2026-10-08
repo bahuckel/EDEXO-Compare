@@ -15,13 +15,14 @@ const fly = (st: ReturnType<typeof emptyJumpRange>, ...d: number[]) =>
   d.forEach((x) => jumpRangeJump(st, x, undefined));
 
 describe("the full jump range as flown", () => {
-  it("is the long end of the plotted jumps, not their average", () => {
+  it("is the average of the longest 30 % of the jumps, not of all of them", () => {
     const st = emptyJumpRange();
     jumpRangeLoadout(st, 7, 71.63);
     fly(st, 66.4, 56.6, 63.5);
     expect(fullJumpRange(st)).toBe(66.4);
+    // Ten jumps, none boosted: the top 30 % (67.3, 66.5, 66.4) averaged.
     fly(st, 66.5, 63.8, 67.3, 62.6, 65.1, 49.8, 38.8);
-    expect(fullJumpRange(st)).toBe(67.3);
+    expect(fullJumpRange(st)).toBeCloseTo(66.733, 3);
   });
 
   it("leaves out a neutron or white dwarf boost and an injection", () => {

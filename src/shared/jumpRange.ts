@@ -9,13 +9,17 @@
  *   `FSDJump` line) is left out;
  * - a jump shorter than `LONG_SHARE` of the full range is an economical-route hop: it is left out of
  *   the full range, however many of them come in a row;
- * - the full range is the 90th percentile of the last `JUMP_RANGE_SAMPLES` long jumps;
+ * - the full range is the average of the top `TOP_SHARE` of the last `JUMP_RANGE_SAMPLES` long jumps
+ *   (owner: "take top 30% of jump ranges (no boosts) and use those" — a jump is only as long as the
+ *   next star on the route allows, 64 ly where the drive does 68);
  * - another ship, or a refit that changes the loadout's own range, starts over.
  */
 
 export const JUMP_RANGE_SAMPLES = 40;
 /** A jump this share of the full range or more is a full-range jump. */
 export const LONG_SHARE = 0.6;
+/** The share of the long jumps, longest first, the full range averages. */
+export const TOP_SHARE = 0.3;
 /** Full-range jumps needed before the estimate stands in for the loadout's range. */
 export const MIN_LONG_JUMPS = 3;
 /** Short jumps kept, to tell an economical route. */
@@ -70,8 +74,10 @@ export function jumpRangeJump(st: JumpRangeState, distLy: number, boostUsed: unk
 /** The full jump range as flown, or null until `MIN_LONG_JUMPS` full-range jumps are in. */
 export function fullJumpRange(st: JumpRangeState): number | null {
   if (st.long.length < MIN_LONG_JUMPS) return null;
-  const s = [...st.long].sort((a, b) => a - b);
-  return s[Math.min(s.length - 1, Math.ceil(0.9 * s.length) - 1)]!;
+  const top = [...st.long]
+    .sort((a, b) => b - a)
+    .slice(0, Math.max(1, Math.round(TOP_SHARE * st.long.length)));
+  return top.reduce((a, b) => a + b, 0) / top.length;
 }
 
 /** The last few jumps were all short: an economical route is being flown. */
