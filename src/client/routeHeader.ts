@@ -23,13 +23,16 @@ export function routeNavCardTitle(snap: AppSnapshot): string {
     if (nav.onPlot) {
       if (nav.anyRemainingLegOverMaxRange && fr?.maxJumpRangeLy != null) {
         parts.push(
-          `At least one upcoming leg is farther than your merged Loadout max jump range (${fmtLy(fr.maxJumpRangeLy)}) — FSD boosting or a longer path may be required.`,
+          `At least one upcoming leg is farther than your ship's empty-tank range (${fmtLy(fr.maxJumpRangeLy)}) — FSD boosting or a longer path may be required.`,
         );
+      }
+      if (fr?.ladenMaxJumpLy != null) {
+        parts.push(`Longest jump with the fuel and cargo aboard now: ${fmtLy(fr.ladenMaxJumpLy)}.`);
       }
       if (fr?.hasLiveStatusFuel) {
         if (nav.fuelCanFinishPlottedRoute === true) {
           parts.push(
-            `Fuel: estimated sufficient to finish the route (Status.json tank vs per-leg use ~∝ jump distance², calibrated from your last FSDJump FuelUsed and JumpDist).`,
+            `Fuel: estimated sufficient to finish the route (Status.json tank against each leg's fuel by your drive's own law, fitted on your jumps; the ship gets lighter as it burns).`,
           );
         } else if (nav.fuelCanFinishPlottedRoute === false && nav.fuelJumpsReachableOnPlottedRoute != null) {
           parts.push(
@@ -67,16 +70,20 @@ export function routeNavCardTitle(snap: AppSnapshot): string {
     );
   }
 
-  if (fr && !nav?.onPlot && fr.estJumpsRemaining != null && fr.calibration === "fsd_sample") {
+  if (fr && !nav?.onPlot && fr.estJumpsRemaining != null && fr.calibration === "fsd_model") {
     parts.push(
-      `Without NavRoute context: ~${fr.estJumpsRemaining} max-range jump(s) (linear scale from last jump to Loadout max range — less accurate than route legs).`,
+      `Without a plotted route: ~${fr.estJumpsRemaining} full-range jump(s) on this tank (each spends the drive's most fuel per jump, ${fr.estFuelPerMaxJumpT?.toFixed(2)} t).`,
+    );
+  } else if (fr && !nav?.onPlot && fr.estJumpsRemaining != null && fr.calibration === "fsd_sample") {
+    parts.push(
+      `Without NavRoute context: ~${fr.estJumpsRemaining} max-range jump(s) (rough: the last jump scaled to the loadout's range, until the ship's mass and drive are known).`,
     );
   }
 
   if (nav?.onPlot && nav.routeJumpsRemaining != null && nav.routeJumpsRemaining > 0) {
     if (nav.jumpsToLastScoopableOnRoute != null) {
       parts.push(
-        `Furthest main-sequence scoop reachable on current tank (NavRoute leg distances, FSDJump fuel × (leg/sample)², max jump per leg): ${nav.jumpsToLastScoopableOnRoute} jump(s) ahead.`,
+        `Furthest main-sequence scoop reachable on current tank (NavRoute leg distances, your drive's fitted fuel law, the longest jump each tank allows): ${nav.jumpsToLastScoopableOnRoute} jump(s) ahead.`,
       );
     } else {
       parts.push(

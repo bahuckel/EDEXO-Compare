@@ -2090,6 +2090,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         const fuelChanged = store.applyLiveShipFuel(
           fuel != null ? fuel.fuelMain : null,
           fuel != null ? fuel.fuelReserve : null,
+          fuel?.cargo ?? null,
         );
         /*
           The radar goes out on every tick, at the commander's chosen poll rate, whether or not

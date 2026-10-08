@@ -28,6 +28,7 @@ exports[`the format constant > covers every key the store serializes 1`] = `
     "firstFootfallBodies",
     "footJournalContextBuffer",
     "format",
+    "fsdFuel",
     "fsdTarget",
     "fssAllBodiesCompleteSystems",
     "fssAllBodiesFoundCountBySystem",

@@ -180,7 +180,7 @@ export function parseStatusJsonDestination(rawText: string): StatusDestination |
   return { systemAddress, bodyId, name };
 }
 
-export type StatusJsonFuelTons = { fuelMain: number; fuelReserve: number };
+export type StatusJsonFuelTons = { fuelMain: number; fuelReserve: number; cargo?: number };
 
 /** `Status.json` `Fuel.FuelMain` / `Fuel.FuelReservoir` (tonnes). */
 export function parseStatusJsonFuel(rawText: string): StatusJsonFuelTons | null {
@@ -200,5 +200,10 @@ export function parseStatusJsonFuel(rawText: string): StatusJsonFuelTons | null 
   if (typeof main !== "number" || typeof res !== "number") return null;
   if (!Number.isFinite(main) || !Number.isFinite(res)) return null;
   if (main < 0 || res < 0) return null;
-  return { fuelMain: main, fuelReserve: res };
+  const cargo = o.Cargo ?? o.cargo;
+  return {
+    fuelMain: main,
+    fuelReserve: res,
+    ...(typeof cargo === "number" && Number.isFinite(cargo) && cargo >= 0 ? { cargo } : {}),
+  };
 }

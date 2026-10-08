@@ -5,6 +5,7 @@ import type { ObservedFlag } from "../shared/observedFlag.js";
 import type { BodyExoState, ExplorationScanRecord, JournalLine, SystemLife } from "../shared/types.js";
 import type { SurfaceMark } from "./surfaceMarksFile.js";
 
+import type { FsdFuelState } from "../shared/fsdFuel.js";
 import type { JumpRangeState } from "../shared/jumpRange.js";
 
 export type PendingOrganicSample = {
@@ -99,7 +100,8 @@ export type SoldTally = { credits: number; items: number; sales: number; lastAt:
   31: `greenCodexBodies` keyed by the gas giant scanned with the codex entry, not the codex line's
       `BodyID` (the body the ship was at; shared/greenCodexMatch.ts).
   32: `jumpRange` — the full jump range as flown, boosts and economical-route hops left out
-      (shared/jumpRange.ts).
+      (shared/jumpRange.ts); `fsdFuel` — fuel per jump fitted on the commander's jumps
+      (shared/fsdFuel.ts).
 */
 export const JOURNAL_MERGE_CACHE_FORMAT = 32;
 
@@ -210,4 +212,5 @@ export type JournalMergeCachePayload = {
   lastFsdJumpFuelUsedT?: number | null;
   lastFsdJumpDistLy?: number | null;
   jumpRange?: JumpRangeState;
+  fsdFuel?: FsdFuelState;
 };

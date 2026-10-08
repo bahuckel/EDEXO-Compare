@@ -74,6 +74,7 @@ import {
 import { GEOLOGY_KEY, isLegacyPlantKey } from "../shared/achievements.js";
 import { regionForSystem } from "./regionMapData.js";
 import { parseBoxel } from "../shared/boxel.js";
+import { emptyFsdFuel, fsdFuelJump, fsdFuelLoadout, type FsdFuelState } from "../shared/fsdFuel.js";
 import { emptyJumpRange, jumpRangeJump, jumpRangeLoadout, type JumpRangeState } from "../shared/jumpRange.js";
 import { createGreenCodexMatcher } from "../shared/greenCodexMatch.js";
 import { JOURNAL_MERGE_CACHE_FORMAT } from "./journalMergePayload.js";
@@ -839,6 +840,10 @@ export class GameStateStore {
   lastFsdJumpDistLy: number | null = null;
   /** The full jump range as flown: boosted jumps and economical-route hops left out (shared/jumpRange.ts). */
   jumpRange: JumpRangeState = emptyJumpRange();
+  /** The drive's fuel per jump, fitted on the commander's jumps (shared/fsdFuel.ts). */
+  fsdFuel: FsdFuelState = emptyFsdFuel();
+  /** Live `Status.json` cargo (tonnes), part of the ship's mass for the fuel model. */
+  liveStatusCargoT: number | null = null;
 
   /** From live `Status.json` poll (tonnes); null when file missing or parse failed. */
   liveStatusFuelMainT: number | null = null;
@@ -1780,6 +1785,7 @@ export class GameStateStore {
     this.lastFsdJumpFuelUsedT = null;
     this.lastFsdJumpDistLy = null;
     this.jumpRange = emptyJumpRange();
+    this.fsdFuel = emptyFsdFuel();
     this.liveStatusFuelMainT = null;
     this.liveStatusFuelReserveT = null;
     this.lastLiveShipFuelPushKey = null;
@@ -2292,6 +2298,7 @@ export class GameStateStore {
         const fu = (line as Record<string, unknown>).FuelUsed;
         const jd = (line as Record<string, unknown>).JumpDist;
         if (typeof jd === "number") jumpRangeJump(this.jumpRange, jd, (line as Record<string, unknown>).BoostUsed);
+        fsdFuelJump(this.fsdFuel, line as Record<string, unknown>, this.liveStatusCargoT ?? 0);
         if (
           typeof fu === "number" &&
           Number.isFinite(fu) &&
@@ -2396,6 +2403,7 @@ export class GameStateStore {
   private onLoadout(line: JournalLine): void {
     const mjr = (line as Record<string, unknown>).MaxJumpRange;
     const shipId = (line as Record<string, unknown>).ShipID;
+    fsdFuelLoadout(this.fsdFuel, line as Record<string, unknown>);
     jumpRangeLoadout(
       this.jumpRange,
       typeof shipId === "number" ? shipId : null,
@@ -3664,9 +3672,10 @@ export class GameStateStore {
   /**
    * Live `Status.json` fuel — returns true when main/reserve changed (for snapshot push).
    */
-  applyLiveShipFuel(mainT: number | null, reserveT: number | null): boolean {
+  applyLiveShipFuel(mainT: number | null, reserveT: number | null, cargoT?: number | null): boolean {
     this.liveStatusFuelMainT = mainT;
     this.liveStatusFuelReserveT = reserveT;
+    if (cargoT !== undefined) this.liveStatusCargoT = cargoT;
     const key =
       mainT != null && reserveT != null && Number.isFinite(mainT) && Number.isFinite(reserveT)
         ? `${mainT.toFixed(4)}|${reserveT.toFixed(4)}`
@@ -3805,6 +3814,7 @@ export class GameStateStore {
       lastFsdJumpFuelUsedT: this.lastFsdJumpFuelUsedT,
       lastFsdJumpDistLy: this.lastFsdJumpDistLy,
       jumpRange: structuredClone(this.jumpRange),
+      fsdFuel: structuredClone(this.fsdFuel),
     };
   }
 
@@ -3970,6 +3980,16 @@ export class GameStateStore {
         loadoutLy: typeof jr.loadoutLy === "number" ? jr.loadoutLy : null,
         long: jr.long.filter((d) => typeof d === "number" && d > 0),
         recent: jr.recent.filter((d) => typeof d === "number" && d > 0),
+      };
+    }
+    const ff = data.fsdFuel;
+    if (ff && Array.isArray(ff.samples)) {
+      this.fsdFuel = {
+        shipId: typeof ff.shipId === "number" ? ff.shipId : null,
+        loadoutLy: typeof ff.loadoutLy === "number" ? ff.loadoutLy : null,
+        unladenT: typeof ff.unladenT === "number" ? ff.unladenT : null,
+        maxFuelPerJumpT: typeof ff.maxFuelPerJumpT === "number" ? ff.maxFuelPerJumpT : null,
+        samples: ff.samples.filter((s) => s && s.ly > 0 && s.fuelT > 0 && s.massT > 0),
       };
     }
     const ljd = data.lastFsdJumpDistLy;

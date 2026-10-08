@@ -199,12 +199,16 @@ export interface LiveShipFuelRangeDTO {
   fuelMainT: number;
   fuelReserveT: number;
   fuelTotalT: number;
+  /** `Loadout.MaxJumpRange`: the range with an empty tank. */
   maxJumpRangeLy: number | null;
-  /** Estimated tonnes for a max-range jump (from last `FSDJump` fuel scaled by `MaxJumpRange` / `JumpDist`). */
+  /** The longest jump with the fuel and cargo aboard now (shared/fsdFuel.ts), when known. */
+  ladenMaxJumpLy?: number | null;
+  /** Tonnes a max-range jump spends: the drive's most fuel per jump (fitted model), else the old scaling. */
   estFuelPerMaxJumpT: number | null;
   /** Max-range jump count heuristic when **not** on a parsed NavRoute; omitted on-plot (see `navRoute`). */
   estJumpsRemaining: number | null;
-  calibration: "none" | "fsd_sample";
+  /** `fsd_model`: the drive's law fitted on the commander's jumps; `fsd_sample`: the last jump scaled. */
+  calibration: "none" | "fsd_sample" | "fsd_model";
   /** From live `NavRoute.json` when present (two+ waypoints). */
   navRoute: LiveShipFuelNavRouteDTO | null;
 }

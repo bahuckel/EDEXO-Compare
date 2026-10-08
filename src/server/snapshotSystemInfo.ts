@@ -22,6 +22,7 @@ import {
 } from "./explorationStellar.js";
 import { FirstFootfallLookup } from "./firstFootfallLookup.js";
 import type { GameStateStore } from "./gameState.js";
+import { fsdFuelModel, maxJumpLy } from "../shared/fsdFuel.js";
 import { analyzeNavRouteFuel } from "./navRouteFuel.js";
 import { isBarycentreSyntheticBodyId } from "./orbitUtils.js";
 import { StarRolesConfig, countPhysicalBodiesInSystemMapTree } from "./systemMap.js";
@@ -243,6 +244,7 @@ export function buildLiveShipFuelRangeDTO(
   const lookup = firstFootfallLookupFor(store);
   lookup.request((store.liveNavRoute ?? []).map((w) => w.starSystem));
 
+  const fuelModel = fsdFuelModel(store.fsdFuel);
   const navRoute = analyzeNavRouteFuel({
     route: store.liveNavRoute,
     currentSystemAddress: store.currentSystemAddress,
@@ -251,6 +253,8 @@ export function buildLiveShipFuelRangeDTO(
     lastFsdFuelT: store.lastFsdJumpFuelUsedT,
     lastFsdDistLy: store.lastFsdJumpDistLy,
     loadoutMaxJumpLy: store.loadoutMaxJumpRangeLy,
+    fuelModel,
+    cargoT: store.liveStatusCargoT,
     starRoles,
     firstFootfallVerdict: (name) => lookup.verdict(name),
     firstFootfallNote: (name) => lookup.note(name),
@@ -264,10 +268,15 @@ export function buildLiveShipFuelRangeDTO(
   const jd = store.lastFsdJumpDistLy;
   let estFuelPerMaxJump: number | null = null;
   let calibration: LiveShipFuelRangeDTO["calibration"] = "none";
-  if (maxR != null && maxR > 0 && fu != null && fu > 0 && jd != null && jd > 0) {
+  if (fuelModel?.maxFuelPerJumpT != null) {
+    // A full-range jump spends the drive's most fuel per jump, whatever the ship weighs.
+    estFuelPerMaxJump = fuelModel.maxFuelPerJumpT;
+    calibration = "fsd_model";
+  } else if (maxR != null && maxR > 0 && fu != null && fu > 0 && jd != null && jd > 0) {
     estFuelPerMaxJump = fu * (maxR / jd);
     calibration = "fsd_sample";
   }
+  const ladenMaxJumpLy = fuelModel && hasLiveStatusFuel ? maxJumpLy(fuelModel, fuelTotal, store.liveStatusCargoT ?? 0) : null;
   const safetyT = 0.08;
   let estJumps: number | null = null;
   if (
@@ -285,6 +294,7 @@ export function buildLiveShipFuelRangeDTO(
     fuelReserveT: fuelRes,
     fuelTotalT: fuelTotal,
     maxJumpRangeLy: maxR,
+    ladenMaxJumpLy,
     estFuelPerMaxJumpT: estFuelPerMaxJump,
     estJumpsRemaining: estJumps,
     calibration,
