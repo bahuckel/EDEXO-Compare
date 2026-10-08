@@ -74,16 +74,16 @@ the owner's own listener and added to the corpus the species profiles are built 
 4,743 sightings across 89 species). EDDN is a live stream for players to share game data with tools;
 it carries no licence of its own. Thanks to every commander and tool author who uploads.
 
-### EDDN archive — [edgalaxydata.space/EDDN](https://edgalaxydata.space/EDDN/)
+### EDDN archive — [EDGalaxyData](https://edgalaxydata.space/EDDN/), by CMDR Bravada Cadelanne
 
-A day-by-day archive of the messages EDDN relays, kept since 2017 and free to download. Its
-operator is not named on the site and no licence or terms are stated there; whether it is run by the
-EDCD/EDDN maintainers is not said either. This project uses it for research: a year of codex entries,
-FSS body signals and organic scans (2025-10 to 2026-10) to check the green gas giant catalogue and
-the species predictions against other commanders' finds. Anything derived from it that this project
-ships is part of the project's data and is under the data licence (CC BY-NC-SA 3.0,
-[`data/LICENSE-DATA.txt`](data/LICENSE-DATA.txt)), unless the archive's operator states other terms,
-in which case theirs apply. Thank you to whoever keeps it running.
+A day-by-day archive of the messages EDDN relays, kept since 2017 and free to download — EDGalaxyData,
+run by CMDR Bravada Cadelanne ([EDCodex entry](https://edcodex.info/?m=tools&entry=491)). No licence or
+terms are stated for it. This project uses it for research: a year of scans, codex entries, FSS body
+signals and organic scans (2025-10 to 2026-10) to check the green gas giant catalogue and the species
+predictions against other commanders' finds, with each body's conditions. Anything derived from it
+that this project ships is part of the project's data and is under the data licence (CC BY-NC-SA 3.0,
+[`data/LICENSE-DATA.txt`](data/LICENSE-DATA.txt)), unless CMDR Bravada Cadelanne states other terms,
+in which case theirs apply. Thank you for keeping it running.
 
 ### Canonn Research Group — [canonn.science](https://canonn.science)
 

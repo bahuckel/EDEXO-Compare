@@ -78,9 +78,10 @@ so the data has one licence. The EDAstro-derived files, and what was changed
       genus in the system. No system of EDAstro's is in it.
 
 The other sources of the data are credited in NOTICE.md. Among them, the EDDN
-archive (https://edgalaxydata.space/EDDN/), whose operator states no licence:
-data this project derives from it is under this licence, unless the archive's
-operator states other terms, in which case theirs apply.
+archive EDGalaxyData (https://edgalaxydata.space/EDDN/), by CMDR Bravada
+Cadelanne, which states no licence: data this project derives from it is under
+this licence, unless CMDR Bravada Cadelanne states other terms, in which case
+theirs apply.
 
 NOT PART OF THIS DISTRIBUTION
 
