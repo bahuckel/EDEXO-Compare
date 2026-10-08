@@ -205,6 +205,8 @@ export interface NoticesService {
    * step, ever. True when it was added.
    */
   announceAchievement(a: { id: string; step: number; title: string; text: string }, at: string): boolean;
+  /** A gas giant to photograph for the nudge research (server/gggResearch.ts; the developer's PC only). */
+  announceGggResearch(n: { bodyKey: string; system: string; systemAddress: number; body: string; title: string; text: string }, at: string): boolean;
   /**
    * Candidates nobody has logged in their region ([CODEX FIRST]), from the snapshot of the system the
    * commander is in. Each species, colour and body is announced once.
@@ -714,6 +716,11 @@ export function createNoticesService(opts: {
         body: null,
         bodyKey: null,
       });
+      if (added) save();
+      return added;
+    },
+    announceGggResearch(n, at) {
+      const added = add({ ...n, id: `ggg-research:${n.bodyKey}`, at, kind: "notable" });
       if (added) save();
       return added;
     },

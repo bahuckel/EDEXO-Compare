@@ -160,6 +160,19 @@ function buildLadder(cls: LadderClass, tempK: number, density: number | null): L
   };
 }
 
+/** The seven rungs (32-bit) for a temperature and density; null density: the ceiling is assumed. */
+export function ladderRungs(cls: LadderClass, tempK: number, density: number | null): number[] {
+  return buildLadder(cls, tempK, density).rungs;
+}
+
+/**
+ * His nudge range for a class, [lower, upper] in K: class II–V their own; every other giant 100 K to
+ * where his `t < 110 + 0.1·t` ends (122.2 K).
+ */
+export function nudgeRange(cls: LadderClass): readonly [number, number] {
+  return NUDGE[cls] ?? [100, 110 / 0.9];
+}
+
 export interface LadderVerdict {
   /** The rung on a crack (1 = the surface) and the crack's temperature. */
   rung: number;

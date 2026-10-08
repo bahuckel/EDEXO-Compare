@@ -146,6 +146,7 @@ import { parseHost, parsePort } from "./cliOptions.js";
 import type { CliOptions } from "./cliOptions.js";
 import { showEdexoNativeFixInfo, logFatal, assertResourceLayout } from "./startupChecks.js";
 import { backfillCommanderPosition } from "./commanderPositionBackfill.js";
+import { createGggResearch } from "./gggResearch.js";
 import { createNoticesService, type CodexFirstFind, type NoticesContext } from "./notices.js";
 import { createBookmarksService } from "./bookmarks.js";
 import { spawn } from "node:child_process";
@@ -371,6 +372,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   });
   const notices = createNoticesService({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-notices.json"),
+  });
+  /* The nudge research log: the developer's PC only, where `ggg-research.on` is (server/gggResearch.ts). */
+  const gggResearch = createGggResearch({
+    dir: path.dirname(resolveUserSettingsJsonPath()),
+    notify: (n, at) => notices.announceGggResearch(n, at),
   });
   const savedBoxels = createSavedBoxels({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-boxels.json"),
@@ -1096,6 +1102,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
       try {
         // Before the store applies it: a body the store already has is a re-scan, not a find.
         notices.observe(line, noticesContext);
+        gggResearch.observe(line);
         // Read before apply() closes the run: the tracker files an Analyse under the run's body too.
         const ownLine = store.ownBodyForAnalyse(line);
         achievementWatch.prime();
