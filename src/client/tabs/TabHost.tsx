@@ -58,7 +58,17 @@ const paneRef = (k: TabKind) => {
 export function TabSlot({ kind, children }: { kind: TabKind; children: ReactNode }) {
   // false with tab view off, else the pane (null until it exists): not the active tab, which every switch changes.
   const pane = useTabSelector((s) => (s.on ? tabStore.pane(kind) : false));
+  /*
+    A tab's screen starts when its tab first comes to the front, not when the tab is restored: every
+    tab left open used to start at once at launch, each asking the server for its data (the backlog,
+    the statistics, the galaxy map...) while the commander looked at one (owner, 2026-10-09). Once
+    started it stays, as before. Only "has it been in front" reaches here, not every switch.
+  */
+  const inFront = useTabSelector((s) => !s.on || s.active === kind);
+  const [started, setStarted] = useState(inFront);
+  if (inFront && !started) setStarted(true);
   if (pane === false) return <>{children}</>;
+  if (!started) return null;
   return pane
     ? createPortal(<InTabContext.Provider value={kind}>{children}</InTabContext.Provider>, pane)
     : null;

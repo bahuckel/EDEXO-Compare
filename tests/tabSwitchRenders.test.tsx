@@ -2,7 +2,8 @@
 /**
  * The first tab switch after a start was slow (owner, 2026-10-09): the header, which holds every screen,
  * read the whole tab state, so each switch rendered it and every open screen again (95-425 ms a switch
- * in the dev build, 2-6 ms after). A screen's open state and its slot read only their own slice.
+ * in the dev build, 2-6 ms after). A screen's open state and its slot read only their own slice. A
+ * tab's screen starts the first time its tab is in front, not when the tab is restored.
  */
 import { beforeEach, describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
@@ -43,13 +44,20 @@ describe("switching tabs", () => {
       tabStore.setPane("boxels", pane);
       root.render(<Owner />);
     });
+    // Restored behind another tab: not started until it comes to the front (owner, 2026-10-09).
+    expect(pane.textContent).toBe("");
+    expect(screen).toBe(0);
+    act(() => tabStore.activate("boxels"));
     expect(pane.textContent).toBe("boxels");
     const [o, s] = [owner, screen];
 
-    act(() => tabStore.activate("boxels"));
     act(() => tabStore.activate("main"));
     act(() => tabStore.activate("galaxy"));
+    act(() => tabStore.activate("boxels"));
+    act(() => tabStore.activate("main"));
     expect([owner, screen]).toEqual([o, s]);
+    // Started, it stays while another tab is in front.
+    expect(pane.textContent).toBe("boxels");
 
     // Closing it still reaches the owner.
     act(() => tabStore.close("boxels"));
