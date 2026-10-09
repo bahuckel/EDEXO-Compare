@@ -5,7 +5,8 @@
  * - planets and moons tinted by type with the type letter inside (I, RI, HMC…);
  * - a **full ring = atmosphere**, a **⅔ arc = landable** (the game's two blue marks);
  * - a badge with the biological signal count, orange with ×5 when first footfall pays;
- * - ▼ where the ship is, the planet's rings, and a faint grid behind it all.
+ * - ▼ where the ship is, the planet's rings, and a faint grid behind it all;
+ * - a green ring on a green gas giant: solid when confirmed or catalogued, dashed for a guess.
  *
  * Every colour and stroke is an SVG attribute, never a CSS class: the snapshot camera clones the
  * SVG without its stylesheet, and a class-only stroke is why snapshots used to lose every line.
@@ -14,6 +15,7 @@ import type { SystemMapBodyDetailDTO, SystemMapSnapshot } from "@shared/types";
 import { RECORD_GOLD } from "./noticesClient";
 import { MARK_PAD, NAME_FONT, type MapItem, type MapLayout, type StarClassKey } from "./systemMapLayout";
 import { atmosphereRingColor } from "./planetDisplayUtils";
+import { greenGiantLabel, type GreenGiantVerdict } from "@shared/greenGasGiant";
 
 /** The game's blue for the landable arc (and the atmosphere ring when its gas has no colour). */
 export const MAP_BLUE = "#4aa3ff";
@@ -22,6 +24,15 @@ const LINE_LIT = "#ffb347";
 const NAME = "#a9a6b8";
 const HALO = "#07080c";
 export const MAP_BG = "#07080c";
+/** The green gas giant ring (owner, 2026-10-09: "Mark GGGs on system map"). */
+export const GGG_GREEN = "#6dff8f";
+
+/** Solid for a confirmed or catalogued green, dashed for a likely one, dotted and fainter for a possible one. */
+export function gggRingStyle(v: Pick<GreenGiantVerdict, "level">): { dash?: string; opacity: number } {
+  if (v.level === "likely") return { dash: "5 3", opacity: 0.95 };
+  if (v.level === "possible") return { dash: "2 3", opacity: 0.7 };
+  return { opacity: 1 };
+}
 
 export const STAR_COLOURS: Record<StarClassKey, { core: string; edge: string; label: string }> = {
   O: { core: "#e2e8ff", edge: "#7f9cff", label: "O" },
@@ -212,6 +223,7 @@ export function itemTitle(it: MapItem, det: SystemMapBodyDetailDTO | undefined):
       `${bio} biological signal${bio === 1 ? "" : "s"}${n.firstFootfallX5 ? ", first footfall ×5" : ""}`,
     );
   if ((n.rings ?? 0) > 0) parts.push(`${n.rings} ring${n.rings === 1 ? "" : "s"}`);
+  if (det?.green) parts.push(greenGiantLabel(det.green));
   if (n.youAreHere) parts.push("you are here");
   return parts.join(" — ");
 }
@@ -376,6 +388,20 @@ function MapNode({
           fill="none"
           stroke={RECORD_GOLD}
           strokeWidth={2}
+          pointerEvents="none"
+        />
+      ) : null}
+      {det?.green && !starLike ? (
+        <circle
+          className="system-map-ggg-ring"
+          cx={cx}
+          cy={cy}
+          r={r + (record ? 10 : 7)}
+          fill="none"
+          stroke={GGG_GREEN}
+          strokeWidth={2}
+          strokeDasharray={gggRingStyle(det.green).dash}
+          opacity={gggRingStyle(det.green).opacity}
           pointerEvents="none"
         />
       ) : null}

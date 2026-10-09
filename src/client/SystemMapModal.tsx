@@ -17,6 +17,7 @@ import {
 } from "./systemMapLayout";
 import {
   MAP_BG,
+  GGG_GREEN,
   MAP_BLUE,
   STAR_COLOURS,
   SystemMapDefs,
@@ -129,6 +130,17 @@ function SystemMapLegend({ plusMinCr, plusPlusMinCr }: { plusMinCr: number; plus
         </span>
         <span className="system-map-legend-item">
           <span className="system-map-legend-badge">3</span> biological signals
+        </span>
+        <span className="system-map-legend-item">
+          <Swatch>
+            <circle r={4.5} fill="#2a3b4d" />
+            <circle r={7} fill="none" stroke={GGG_GREEN} strokeWidth={1.6} />
+          </Swatch>
+          <Swatch>
+            <circle r={4.5} fill="#2a3b4d" />
+            <circle r={7} fill="none" stroke={GGG_GREEN} strokeWidth={1.6} strokeDasharray="3 2" />
+          </Swatch>
+          green gas giant: confirmed or catalogued / a guess
         </span>
         <span className="system-map-legend-item">
           <span className="system-map-legend-badge system-map-legend-badge--x5">3 ×5</span> first footfall
