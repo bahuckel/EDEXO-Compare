@@ -18,4 +18,10 @@ describe("HUD settings on the server", () => {
     expect(s.setHudPrefs({ relevant: true, compact: false })).toEqual({ relevant: true, compact: false });
     expect(s.setHudPrefs({ relevant: 1 })).toEqual({});
   });
+
+  it("keeps the credit line's place (2026-10-09)", () => {
+    const s = new GameStateStore();
+    expect(s.setHudPrefs({ credit: "bottom" })).toEqual({ credit: "bottom" });
+    expect(s.setHudPrefs({ credit: "side" })).toEqual({});
+  });
 });

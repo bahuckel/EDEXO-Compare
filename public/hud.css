@@ -312,6 +312,21 @@ body {
   border-color: #f5c96a;
   text-shadow: 0 0 4px rgba(245, 184, 61, 0.5), var(--hud-outline);
 }
+/* The credit line (theme.js; owner, 2026-10-09): small, quiet, readable over any background. */
+.hud-credit {
+  padding: 1px 8px 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-align: right;
+  color: var(--hud-dim);
+  text-shadow: var(--hud-outline);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.hud-credit--top {
+  padding: 0 8px 1px;
+}
 /* Compact overlays: explanations go, readings and warnings stay (theme.js `hud-compact`). */
 .hud-compact .hud-explain {
   display: none;

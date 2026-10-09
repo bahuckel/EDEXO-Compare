@@ -62,6 +62,7 @@ export function serverPref(key) {
   if (key === "edexoHudCompact") return typeof p.compact === "boolean" ? (p.compact ? "1" : "0") : null;
   if (key === "edexoHudRelevant") return typeof p.relevant === "boolean" ? (p.relevant ? "1" : "0") : null;
   if (key === "edexoHudType") return p.hudType || null;
+  if (key === "edexoHudCredit") return p.credit || null;
   if (key === "edexoHudTilt") return typeof p.tilt === "number" ? String(p.tilt) : null;
   if (key === "edexoHudTiltMode") return p.tiltMode || null;
   if (key === "edexoHudSlant") return typeof p.slant === "number" ? String(p.slant) : null;
@@ -133,6 +134,27 @@ export function applyTheme() {
   st.setProperty("--hud-bg", rgba(mix(a, [0, 0, 0], 0.9), Math.round(92 * t) / 100));
   st.setProperty("--hud-bg-2", rgba(mix(a, [0, 0, 0], 0.8), Math.round(35 * t) / 100));
   st.setProperty("--hud-glow", "0 0 6px " + rgba(a, 0.45));
+  /*
+    "HUD Overlay by EDEXO-Compare" (owner, 2026-10-09): off unless chosen, a small line just above or
+    below the panel. Outside it, because the panel's body is drawn afresh with every update.
+  */
+  var credit = pref("edexoHudCredit", "off");
+  var shell = document.getElementById("shell");
+  var card = document.getElementById("card");
+  var creditEl = document.getElementById("hudCredit");
+  if (shell && card && (credit === "top" || credit === "bottom")) {
+    if (!creditEl) {
+      creditEl = document.createElement("div");
+      creditEl.id = "hudCredit";
+      creditEl.className = "hud-credit";
+      creditEl.textContent = "HUD Overlay by EDEXO-Compare";
+    }
+    creditEl.classList.toggle("hud-credit--top", credit === "top");
+    if (credit === "top") shell.insertBefore(creditEl, card);
+    else card.after(creditEl);
+  } else if (creditEl) {
+    creditEl.remove();
+  }
   // Compact (guild tester, 2026-09-30): the explanatory lines (`.hud-explain`) are hidden.
   document.documentElement.classList.toggle("hud-compact", pref("edexoHudCompact", "0") === "1");
   /*

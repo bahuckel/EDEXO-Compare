@@ -2113,6 +2113,7 @@
   var LS_HUD_COMPACT = "edexoHudCompact";
   var LS_HUD_RELEVANT = "edexoHudRelevant";
   var LS_HUD_TYPE = "edexoHudType";
+  var LS_HUD_CREDIT = "edexoHudCredit";
   var LS_HUD_TILT = "edexoHudTilt";
   var LS_HUD_TILT_MODE = "edexoHudTiltMode";
   var LS_HUD_SLANT = "edexoHudSlant";
@@ -2140,6 +2141,7 @@
     try { prefs.compact = localStorage.getItem(LS_HUD_COMPACT) === "1"; } catch (e) {}
     try { prefs.relevant = localStorage.getItem(LS_HUD_RELEVANT) === "1"; } catch (e) {}
     try { prefs.hudType = localStorage.getItem(LS_HUD_TYPE) || "original"; } catch (e) {}
+    try { prefs.credit = localStorage.getItem(LS_HUD_CREDIT) || "off"; } catch (e) {}
     try { var tl = parseFloat(localStorage.getItem(LS_HUD_TILT) || ""); prefs.tilt = isFinite(tl) ? tl : 15; } catch (e) {}
     try { prefs.tiltMode = localStorage.getItem(LS_HUD_TILT_MODE) === "slant" ? "slant" : "turn"; } catch (e) {}
     try { var sl = parseFloat(localStorage.getItem(LS_HUD_SLANT) || ""); prefs.slant = isFinite(sl) ? sl : 6; } catch (e) {}
@@ -2352,6 +2354,14 @@
       syncHudPrefs();
     });
   }
+  /* "HUD Overlay by EDEXO-Compare" (owner, 2026-10-09): off unless chosen, at the top or the bottom. */
+  var hudCredit = document.getElementById("hudCredit");
+  if (hudCredit) {
+    hudCredit.addEventListener("change", function () {
+      try { localStorage.setItem(LS_HUD_CREDIT, hudCredit.value); } catch (e) {}
+      syncHudPrefs();
+    });
+  }
   var hudCompact = document.getElementById("hudCompact");
   if (hudCompact) {
     hudCompact.addEventListener("change", function () {
@@ -2559,6 +2569,7 @@
     if (hudAudio) hudAudio.checked = (function () { try { return localStorage.getItem(LS_HUD_AUDIO) === "1"; } catch (e) { return false; } })();
     if (hudCompact) hudCompact.checked = (function () { try { return localStorage.getItem(LS_HUD_COMPACT) === "1"; } catch (e) { return false; } })();
     if (hudType) hudType.value = (function () { try { return localStorage.getItem(LS_HUD_TYPE) || "original"; } catch (e) { return "original"; } })();
+    if (hudCredit) hudCredit.value = (function () { try { var v = localStorage.getItem(LS_HUD_CREDIT); return v === "top" || v === "bottom" ? v : "off"; } catch (e) { return "off"; } })();
     if (hudTilt) hudTilt.value = (function () { try { var v = parseFloat(localStorage.getItem(LS_HUD_TILT) || "15"); return String(isFinite(v) ? v : 15); } catch (e) { return "15"; } })();
     if (hudTiltMode) hudTiltMode.value = (function () { try { return localStorage.getItem(LS_HUD_TILT_MODE) === "slant" ? "slant" : "turn"; } catch (e) { return "turn"; } })();
     if (hudSlant) hudSlant.value = (function () { try { var v = parseFloat(localStorage.getItem(LS_HUD_SLANT) || "6"); return String(isFinite(v) ? v : 6); } catch (e) { return "6"; } })();

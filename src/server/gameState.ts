@@ -1289,6 +1289,7 @@ export class GameStateStore {
     if (typeof r.compact === "boolean") out.compact = r.compact;
     if (typeof r.relevant === "boolean") out.relevant = r.relevant;
     if (r.hudType === "original" || r.hudType === "title" || r.hudType === "elite") out.hudType = r.hudType;
+    if (r.credit === "off" || r.credit === "top" || r.credit === "bottom") out.credit = r.credit;
     if (typeof r.tilt === "number" && Number.isFinite(r.tilt)) out.tilt = Math.min(35, Math.max(-35, r.tilt));
     if (r.tiltMode === "turn" || r.tiltMode === "slant") out.tiltMode = r.tiltMode;
     if (typeof r.slant === "number" && Number.isFinite(r.slant)) out.slant = Math.min(15, Math.max(-15, r.slant));
