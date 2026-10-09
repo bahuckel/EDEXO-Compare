@@ -35,7 +35,7 @@ import { fss } from "./sections/fss.js";
 import { jump, starKind } from "./sections/jump.js";
 import { notable } from "./sections/notable.js";
 import { notices } from "./sections/notices.js";
-import { PHONE, PRESETS, applyTheme, pref, readOpacity, readScale } from "./theme.js";
+import { PHONE, PRESETS, applyTheme, placeCredit, pref, readOpacity, readScale } from "./theme.js";
 
 export var SECTIONS = {
   jump: jump,
@@ -330,6 +330,8 @@ HUD.mount = function (names, opts) {
     fill.setAttribute("aria-hidden", "true");
     root.insertBefore(fill, root.firstChild);
   }
+  // The optional credit line is a section of its own (theme.js placeCredit), after the others exist.
+  placeCredit();
   if (single) document.title = SECTIONS[list[0]].title;
   var els = {};
   list.forEach(function (n) {

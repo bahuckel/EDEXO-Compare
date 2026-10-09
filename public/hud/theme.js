@@ -113,6 +113,37 @@ export function readOpacity() {
   if (PHONE) return 0.7;
   return clampNum(pref("edexoHudOpacity", "0.45"), 0.1, 1, 0.45);
 }
+/*
+  "HUD Overlay by EDEXO-Compare" (owner, 2026-10-09/10): off unless chosen, at the top or the bottom of the
+  panel, shown "like the other titles": a section of its own with a section title and nothing under it, so
+  every HUD type draws it as it draws theirs (the Title Background's bar, the Elite Style's two lines). The
+  sections are built once (main.js), so it is placed again after they are, and on every settings change.
+*/
+export function placeCredit() {
+  var root = document.getElementById("hud");
+  if (!root) return;
+  var credit = pref("edexoHudCredit", "off");
+  var el = document.getElementById("hudCredit");
+  if (credit !== "top" && credit !== "bottom") {
+    if (el) el.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement("section");
+    el.id = "hudCredit";
+    el.className = "hud-section hud-section--credit";
+    el.setAttribute("aria-label", "HUD Overlay by EDEXO-Compare");
+    el.innerHTML = '<div class="hud-head"><span class="hud-title">HUD Overlay by EDEXO-Compare</span></div>';
+  }
+  el.classList.toggle("hud-section--credit-bottom", credit === "bottom");
+  if (credit === "top") {
+    var first = root.querySelector(":scope > .hud-section:not(#hudCredit)");
+    if (first) root.insertBefore(el, first);
+    else root.appendChild(el);
+  } else {
+    root.appendChild(el);
+  }
+}
 export function applyTheme() {
   var th = readTheme();
   var a = th.accent;
@@ -134,27 +165,7 @@ export function applyTheme() {
   st.setProperty("--hud-bg", rgba(mix(a, [0, 0, 0], 0.9), Math.round(92 * t) / 100));
   st.setProperty("--hud-bg-2", rgba(mix(a, [0, 0, 0], 0.8), Math.round(35 * t) / 100));
   st.setProperty("--hud-glow", "0 0 6px " + rgba(a, 0.45));
-  /*
-    "HUD Overlay by EDEXO-Compare" (owner, 2026-10-09): off unless chosen, a small line just above or
-    below the panel. Outside it, because the panel's body is drawn afresh with every update.
-  */
-  var credit = pref("edexoHudCredit", "off");
-  var shell = document.getElementById("shell");
-  var card = document.getElementById("card");
-  var creditEl = document.getElementById("hudCredit");
-  if (shell && card && (credit === "top" || credit === "bottom")) {
-    if (!creditEl) {
-      creditEl = document.createElement("div");
-      creditEl.id = "hudCredit";
-      creditEl.className = "hud-credit";
-      creditEl.textContent = "HUD Overlay by EDEXO-Compare";
-    }
-    creditEl.classList.toggle("hud-credit--top", credit === "top");
-    if (credit === "top") shell.insertBefore(creditEl, card);
-    else card.after(creditEl);
-  } else if (creditEl) {
-    creditEl.remove();
-  }
+  placeCredit();
   // Compact (guild tester, 2026-09-30): the explanatory lines (`.hud-explain`) are hidden.
   document.documentElement.classList.toggle("hud-compact", pref("edexoHudCompact", "0") === "1");
   /*

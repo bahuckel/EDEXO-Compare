@@ -312,20 +312,20 @@ body {
   border-color: #f5c96a;
   text-shadow: 0 0 4px rgba(245, 184, 61, 0.5), var(--hud-outline);
 }
-/* The credit line (theme.js; owner, 2026-10-09): small, quiet, readable over any background. */
-.hud-credit {
-  padding: 1px 8px 0;
-  font-size: 0.6rem;
-  letter-spacing: 0.08em;
-  text-align: right;
-  color: var(--hud-dim);
-  text-shadow: var(--hud-outline);
-  white-space: nowrap;
+/*
+  The credit line (theme.js placeCredit; owner, 2026-10-10: "like the other titles"): a section with a title
+  and nothing under it, so each HUD type styles it with its own titles. Only its spacing is its own.
+*/
+.hud-section--credit .hud-head {
+  margin-bottom: 0;
+}
+.hud-section--credit {
   pointer-events: none;
   user-select: none;
 }
-.hud-credit--top {
-  padding: 0 8px 1px;
+/* Title Background, at the bottom: the bar runs to the panel's lower edge, as the top one runs to its top. */
+html.hud-type--title .hud-section--credit-bottom .hud-head {
+  margin-bottom: -0.62rem;
 }
 /* Compact overlays: explanations go, readings and warnings stay (theme.js `hud-compact`). */
 .hud-compact .hud-explain {
