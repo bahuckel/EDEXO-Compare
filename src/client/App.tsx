@@ -27,6 +27,7 @@ import { HeaderBar } from "./HeaderBar";
 import { CopySystemButton } from "./CopySystemButton";
 import { LifelessEmblem } from "./LifelessEmblem";
 import { setSnapshotStamp } from "./panelSnapshot";
+import { ModalLoading } from "./SharedModals";
 
 /*
  * React first, above the `lazy()` calls below.
@@ -557,7 +558,7 @@ export function App() {
         />
       ) : null}
       {systemMapOpen ? (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalLoading />}>
           <SystemMapModal snap={snapshot} onClose={closeSystemMap} onGoToBioBody={goToBioBodyFromMap} />
         </Suspense>
       ) : null}

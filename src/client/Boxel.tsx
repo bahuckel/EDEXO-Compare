@@ -24,6 +24,7 @@ import { NOTABLE_KINDS, type NotableKind } from "@shared/notices";
 import { Select } from "./ui/Select";
 import { BoxelLookingFor, BoxelMassCodeHelp, GoldenTag } from "./BoxelAdvice";
 import { Tooltip } from "./ui/Tooltip";
+import { LoadingNote, RefreshBar } from "./ui/Loading";
 import { STAR_CLASSES } from "@shared/galaxyTraits";
 import {
   BOXEL_FILTER_KINDS,
@@ -157,6 +158,8 @@ export function BoxelScreen({
   const [lookup, setLookup] = useState<BoxelLookupStatus | null>(null);
   const [cutAsk, setCutAsk] = useState<{ id: string; n: number } | null>(null);
   const [table, setTable] = useState<BoxelTableDTO | null>(null);
+  // The boxels the table on screen belongs to: other boxels ticked, it is old until theirs lands.
+  const [tableFor, setTableFor] = useState("");
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 }>({ key: "n", dir: 1 });
   const [filterKind, setFilterKind] = usePersistedState<BoxelFilterKind>(
     "boxel.filterKind",
@@ -197,19 +200,31 @@ export function BoxelScreen({
   }, [saved, included]);
   const idsKey = ids.join(",");
 
+  const idsNow = useRef(idsKey);
+  idsNow.current = idsKey;
   const loadTable = useCallback(() => {
     if (!idsKey) {
       setTable(null);
+      setTableFor("");
       return;
     }
     void fetch(`/api/boxels/table?ids=${encodeURIComponent(idsKey)}`)
       .then(async (r) => {
         const j = (await r.json()) as BoxelTableDTO & { error?: string };
         if (!r.ok) throw new Error(j.error ?? r.statusText);
+        // A slow answer for boxels no longer ticked must not replace the newer one.
+        if (idsKey !== idsNow.current) return;
         setTable(j);
+        setTableFor(idsKey);
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => {
+        if (idsKey !== idsNow.current) return;
+        setError(e instanceof Error ? e.message : String(e));
+        setTableFor(idsKey);
+      });
   }, [idsKey]);
+  // Other boxels ticked and theirs not in yet (a re-read after a jump keeps the same boxels: no sign).
+  const tableStale = !!table && tableFor !== idsKey;
 
   useEffect(loadTable, [loadTable, saved]);
   // Every scan on the main screen re-reads the table (notables, biology) and the side menu's counts.
@@ -813,7 +828,7 @@ export function BoxelScreen({
               onChange={(ev) => setSideQuery(ev.target.value)}
             />
             {showPrevious ? null : !saved ? (
-              <p className="dim tiny">Reading…</p>
+              <LoadingNote className="tiny" label="Reading…" />
             ) : saved.length === 0 ? (
               <p className="dim tiny">
                 No boxels yet. Press <strong>Current boxel</strong> in a system such as Eol Prou AB-C d1-23.
@@ -1301,8 +1316,20 @@ export function BoxelScreen({
                 </span>
               </div>
             ) : null}
-            {ticked.length ? (
-              tableEl
+            {!saved && !error ? (
+              <LoadingNote label="Reading your boxels…" />
+            ) : ticked.length && !table && !error ? (
+              <LoadingNote
+                label="Reading the systems in this boxel…"
+                detail="Every system in it, with the galaxy index and what your journals know of each."
+              />
+            ) : ticked.length ? (
+              <>
+                <RefreshBar active={tableStale} />
+                <div className={tableStale ? "is-refreshing" : undefined} aria-busy={tableStale}>
+                  {tableEl}
+                </div>
+              </>
             ) : saved?.length ? (
               <p className="dim disc-empty">Tick a boxel in the side menu to list its systems.</p>
             ) : null}

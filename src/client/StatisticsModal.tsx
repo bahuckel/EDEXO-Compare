@@ -25,6 +25,7 @@ import { buildLogFiveAxis, logFiveFraction } from "@shared/logFiveAxis";
 import { fmtCrTick, fmtPct } from "@shared/format";
 import { STATS_WINDOWS, type CarrierAccountDTO, type StatisticsDTO } from "@shared/statisticsWindows";
 import { Tooltip } from "./ui/Tooltip";
+import { LoadingNote, RefreshBar } from "./ui/Loading";
 import { useModal } from "./ui/useModal";
 import { formatWeeks } from "@shared/carrierUpkeep";
 import type { RankEstimateDTO } from "@shared/rankProgress";
@@ -97,16 +98,15 @@ interface RecordsResponse {
   galactic records"). The galactic ones download only when asked.
 */
 function RecordsSection() {
-  const [data, setData] = useState<RecordsResponse | null>(null);
+  // undefined while the first answer is on its way; null when there is none.
+  const [data, setData] = useState<RecordsResponse | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     void fetch("/api/records")
       .then((r) => (r.ok ? r.json() : null))
-      .then((j: RecordsResponse | null) => {
-        if (j?.rows) setData(j);
-      })
-      .catch(() => {});
+      .then((j: RecordsResponse | null) => setData(j?.rows ? j : null))
+      .catch(() => setData(null));
   }, []);
   const download = () => {
     setBusy(true);
@@ -124,6 +124,7 @@ function RecordsSection() {
       .catch(() => setError("EDAstro could not be reached."))
       .finally(() => setBusy(false));
   };
+  if (data === undefined) return <LoadingNote label="Reading your records…" />;
   if (!data || !data.rows.length) return null;
   const g = data.galactic;
   const cell = (
@@ -507,15 +508,17 @@ export function StatisticsModal({ onClose }: { onClose: () => void }) {
 
         {error ? <p className="fdb-empty">{error}</p> : null}
         {busy && !data ? (
-          <p className="fdb-empty">
-            {progress
-              ? `Reading your journals… ${progress.done} of ${progress.total}`
-              : "Reading your journals. The first time takes a few seconds."}
-          </p>
+          <LoadingNote
+            className="fdb-empty"
+            label={progress ? `Reading your journals… ${progress.done} of ${progress.total}` : "Reading your journals…"}
+            detail={progress ? null : "The first time takes a few seconds."}
+          />
         ) : null}
 
+        {/* Another time window: the old figures stay, dimmed, under a moving bar until the new ones land. */}
+        <RefreshBar active={busy && !!data} />
         {data ? (
-          <div className="fdb-scroll">
+          <div className={`fdb-scroll${busy ? " is-refreshing" : ""}`} aria-busy={busy}>
             <div className="fdb-summary">
               <span>
                 <strong>{fmtCrTick(data.totalCredits)}</strong> earned

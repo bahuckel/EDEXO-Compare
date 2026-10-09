@@ -16,6 +16,7 @@ import { fuzzyRankAny } from "./fuzzyMatch";
 import { ScrollArea } from "./ui/ScrollArea";
 import { InfoPopover } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
+import { LoadingNote } from "./ui/Loading";
 import type { DiscoveriesDTO, FootScannedEntry } from "@shared/types";
 import { readableAtmosphereType } from "@shared/atmosphereLabel";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
@@ -284,7 +285,7 @@ export const MyExobiologyModal = memo(function MyExobiologyModal({
             discoveriesError ? (
               <p className="dim disc-empty">{discoveriesError}</p>
             ) : !discoveries ? (
-              <p className="dim disc-empty">Reading your journals…</p>
+              <LoadingNote className="disc-empty" label="Reading your journals…" detail="Every system and body you have scanned." />
             ) : (
               <DiscoveriesTables
                 data={discoveries}

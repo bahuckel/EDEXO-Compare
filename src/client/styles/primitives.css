@@ -438,6 +438,65 @@
   width: 68%;
 }
 
+/* ---- loading (ui/Loading.tsx) ----------------------------------------- */
+.loading-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-4);
+  padding: var(--s-6) var(--s-2);
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.loading-note .inline-spinner {
+  margin-top: 0.2em;
+}
+
+.screen-loading {
+  justify-content: center;
+  padding-top: 30vh;
+}
+
+.loading-note__detail {
+  display: block;
+  color: var(--text-faint);
+  font-size: 0.9em;
+}
+
+/* Over content being replaced: a moving accent segment on a faint track. */
+.refresh-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 2px;
+  margin-bottom: -2px;
+  overflow: hidden;
+  background: var(--accent-a08);
+}
+
+.refresh-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 30%;
+  background: var(--accent);
+  animation: refresh-bar-run 1.1s ease-in-out infinite;
+}
+
+@keyframes refresh-bar-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+.is-refreshing {
+  opacity: 0.55;
+  transition: opacity 160ms ease;
+}
+
 @keyframes skeleton-sweep {
   from {
     background-position: 100% 0;
@@ -466,7 +525,8 @@
   .confirm-modal,
   .info-panel,
   .value-flash,
-  .skeleton-block {
+  .skeleton-block,
+  .refresh-bar::after {
     animation: none;
   }
 }

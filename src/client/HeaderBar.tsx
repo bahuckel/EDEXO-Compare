@@ -872,7 +872,7 @@ export const HeaderBar = memo(function HeaderBar({
 
       {boxelOpen ? (
         <TabSlot kind="boxels">
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalLoading />}>
           <BoxelScreen
             onClose={() => setBoxelOpen(false)}
             currentSystem={snap.currentSystem ?? null}
@@ -885,7 +885,7 @@ export const HeaderBar = memo(function HeaderBar({
       ) : null}
       {bookmarksOpen ? (
         <TabSlot kind="bookmarks">
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalLoading />}>
           <BookmarksModal
             onClose={() => setBookmarksOpen(false)}
             currentSystemAddress={snap.currentSystemAddress ?? null}

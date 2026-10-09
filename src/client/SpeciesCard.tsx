@@ -38,7 +38,7 @@ import {
   titleCaseSpeciesWords,
   variantPhotoUrlFor,
 } from "./speciesMatchHelpers";
-import { ExomasteryHabitatMatchModal } from "./SharedModals";
+import { ExomasteryHabitatMatchModal, ModalLoading } from "./SharedModals";
 import {
   EMPTY_REASONS,
   GenusSpeciesOdds,
@@ -709,6 +709,8 @@ export const SpeciesCard = memo(function SpeciesCard({
         </div>
       </div>
 
+      {/* Clicked, its breakdown still on its way from the server: the click shows, the panel follows. */}
+      {exoDetailOpen && !lazyDetail.data && !lazyDetail.error ? <ModalLoading /> : null}
       {exoDetailOpen && lazyDetail.data?.detail ? (
         <Suspense fallback={null}>
           <ExomasteryHabitatMatchModal

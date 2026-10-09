@@ -88,14 +88,21 @@ export function GalaxyNavRoutePanel({
   }, [log?.checking, loadLog]);
 
   const [visited, setVisited] = useState<GalaxyVisitedDTO | null>(null);
+  // "Reading your journals…" stayed for good when the answer never came.
+  const [visitedFailed, setVisitedFailed] = useState(false);
   useEffect(() => {
     if (half !== "previous") return;
     let live = true;
     setVisited(null);
+    setVisitedFailed(false);
     fetch(`/api/galaxy/visited?days=${days}`)
       .then((r) => (r.ok ? (r.json() as Promise<GalaxyVisitedDTO>) : null))
-      .then((d) => live && setVisited(d))
-      .catch(() => {});
+      .then((d) => {
+        if (!live) return;
+        if (d) setVisited(d);
+        else setVisitedFailed(true);
+      })
+      .catch(() => live && setVisitedFailed(true));
     return () => {
       live = false;
     };
@@ -224,7 +231,13 @@ export function GalaxyNavRoutePanel({
                 : "No route plotted: plot one in the game's galaxy map."
               : visited
                 ? `${visited.systems.length.toLocaleString()} systems ${days ? `in the last ${RANGES.find((r) => r.days === days)?.label}` : "in your journals"}.`
-                : "Reading your journals…"}
+                : visitedFailed
+                  ? "Your journals could not be read."
+                  : (
+                      <>
+                        <span className="inline-spinner" aria-hidden /> Reading your journals…
+                      </>
+                    )}
           </p>
           {counts.length ? (
             <div className="g3d-navroute__chips" aria-label="Star type">

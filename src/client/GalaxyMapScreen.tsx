@@ -31,6 +31,7 @@ import {
 import { regionIndexForCoords } from "@shared/regionMap.js";
 import type { BacklogMapDTO, CommanderSectorsDTO } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
+import { LoadingNote } from "./ui/Loading";
 
 type Load =
   | { state: "loading" }
@@ -59,6 +60,8 @@ export function GalaxyMapScreen() {
    */
   const [galaxyImage, setGalaxyImage] = useState<GalaxyImage | null>(null);
   const [backlog, setBacklog] = useState<BacklogMapDTO | null>(null);
+  // The backlog layer can take up to a minute the first time: said, not left to appear.
+  const [backlogPending, setBacklogPending] = useState(true);
   const [commanderSectors, setCommanderSectors] = useState<CommanderSectorsDTO | null>(null);
   const [search, setSearch] = useState<GalaxySearchApplied | null>(null);
 
@@ -149,6 +152,9 @@ export function GalaxyMapScreen() {
       })
       .catch(() => {
         /* no layer, same map */
+      })
+      .finally(() => {
+        if (!cancelled) setBacklogPending(false);
       });
     return () => {
       cancelled = true;
@@ -223,7 +229,10 @@ export function GalaxyMapScreen() {
         ) : null}
       </header>
 
-      {load.state === "loading" ? <p>Loading…</p> : null}
+      {load.state === "loading" ? <LoadingNote label="Loading the sector map…" /> : null}
+      {load.state !== "loading" && backlogPending ? (
+        <LoadingNote className="tiny" label="Predicting your unfinished business for the map…" detail="Up to a minute the first time." />
+      ) : null}
 
       {load.state === "missing" ? (
         <div className="galaxy-screen__empty">

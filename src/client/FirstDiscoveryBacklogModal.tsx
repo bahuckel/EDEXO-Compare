@@ -28,6 +28,7 @@ import { useModal } from "./ui/useModal";
 import type { FirstDiscoveryBacklogDTO, FirstDiscoveryBacklogRowDTO } from "@shared/types";
 import { fmtLyAway } from "@shared/format";
 import { Tooltip } from "./ui/Tooltip";
+import { LoadingNote } from "./ui/Loading";
 
 const crFmt = new Intl.NumberFormat("en-US");
 const cr = (n: number) => `${crFmt.format(Math.round(n))} CR`;
@@ -188,15 +189,16 @@ export function FirstDiscoveryBacklogModal({
         {error ? <p className="fdb-empty">{error}</p> : null}
 
         {!data && !error ? (
-          <p className="fdb-empty">
-            {/*
-              Says "up to a minute" because it is ~33 s over this commander's history and grows with
-              it. "A few seconds" was true of the first-discovery subset and is now a small lie that
-              makes a working panel look hung.
-            */}
-            Predicting species for every body you have scanned. This takes up to a minute the first time;
-            afterwards it is instant until you fly somewhere new.
-          </p>
+          /*
+            Says "up to a minute" because it is ~33 s over this commander's history and grows with
+            it. "A few seconds" was true of the first-discovery subset and is now a small lie that
+            makes a working panel look hung.
+          */
+          <LoadingNote
+            className="fdb-empty"
+            label="Predicting species for every body you have scanned…"
+            detail="This takes up to a minute the first time; afterwards it is instant until you fly somewhere new."
+          />
         ) : null}
 
         {data ? (

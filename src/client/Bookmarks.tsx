@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { type BookmarkRowDTO, type BookmarksListDTO } from "@shared/bookmarks";
 import { useModal } from "./ui/useModal";
+import { LoadingNote } from "./ui/Loading";
 import { CopySystemButton } from "./CopySystemButton";
 import { isStr, isStrArr, usePersistedState } from "./usePersistedState";
 import { BookmarkEditor, removeBookmark } from "./BookmarkButton";
@@ -26,11 +27,19 @@ export function BookmarksModal({
   const [sort, setSort] = usePersistedState("bookmarks.sort", "newest", isStr);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<BookmarkRowDTO | null>(null);
+  // An empty table read as "no bookmarks" while they loaded, and for good when the server did not answer.
+  const [failed, setFailed] = useState(false);
   const load = useCallback(() => {
     void fetch("/api/bookmarks")
-      .then((r) => r.json())
-      .then((j: BookmarksListDTO) => setData(j))
-      .catch(() => {});
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
+      .then((j: BookmarksListDTO) => {
+        setData(j);
+        setFailed(false);
+      })
+      .catch(() => setFailed(true));
   }, []);
   useEffect(load, [load]);
 
@@ -200,7 +209,11 @@ export function BookmarksModal({
             </tbody>
           </table>
         </div>
-        {data && !data.items.length ? (
+        {!data && failed ? (
+          <p className="fdb-empty">Your bookmarks could not be read.</p>
+        ) : !data ? (
+          <LoadingNote className="fdb-empty" label="Reading your bookmarks…" />
+        ) : data && !data.items.length ? (
           <p className="fdb-empty">No bookmarks yet. Press the ☆ beside a system&apos;s name to add one.</p>
         ) : data && !rows.length ? (
           <p className="fdb-empty">Nothing matches.</p>

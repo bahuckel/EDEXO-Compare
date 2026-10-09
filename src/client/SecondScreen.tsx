@@ -81,7 +81,8 @@ export function SecondScreen() {
     return triageSystem(triageInputsFromBodies(snapshot.bodies), sort, snapshot.onSiteTiming);
   }, [snapshot, sort]);
 
-  const verdict = verdictOf(rows);
+  // Before the first snapshot there is no system yet: "Reading…", not "Nothing here".
+  const verdict = snapshot ? verdictOf(rows) : { text: connected ? "Reading your journals…" : "Connecting…", tone: "none" as const };
   const heading = snapshot ? triageHeading(snapshot) : { system: "—", viewing: false };
   const system = heading.system;
 

@@ -9,6 +9,7 @@
 import { isStrOrNull, usePersistedState } from "./usePersistedState";
 import { useModal } from "./ui/useModal";
 import { useToast } from "./ui/feedback";
+import { LoadingNote } from "./ui/Loading";
 import type { AchievementDetailDTO, AchievementDTO, AchievementsDTO } from "@shared/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -92,7 +93,7 @@ function Detail({ id, kind }: { id: string; kind: AchievementDTO["kind"] }) {
     };
   }, [id]);
   if (err) return <p className="dim ach-detail">Could not load this set.</p>;
-  if (!d) return <p className="dim ach-detail">Loading…</p>;
+  if (!d) return <LoadingNote className="ach-detail" />;
   const todo = d.entries.filter((e) => !e.done);
   const done = d.entries.filter((e) => e.done);
   const when = (iso?: string) => (iso ? iso.slice(0, 10) : "");
@@ -426,7 +427,7 @@ export function AchievementsModal({ onClose }: { onClose: () => void }) {
           {failed ? (
             <p className="dim">The achievements could not be loaded.</p>
           ) : !data ? (
-            <p className="dim">Loading…</p>
+            <LoadingNote label="Counting your codex against the catalogue…" />
           ) : !data.available ? (
             <p className="dim">This build has no codex catalogue, so there is nothing to count against.</p>
           ) : (

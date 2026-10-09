@@ -159,6 +159,23 @@ export function GalaxyMap3D() {
   const [filterBusy, setFilterBusy] = useState(false);
   const filterAnswer = useRef<{ query: string; bits: Uint8Array; matched: number } | null>(null);
   const filterTicks = galaxyFilterTicks(filter);
+  /*
+    What is on its way besides the systems (owner, 2026-10-09: a visual indicator for everything that
+    loads): the region outlines, your systems, a layer just switched on, a codex region's markers. Named
+    in the turning-circle pill at the top; a layer's own row says "Loading…".
+  */
+  const [pending, setPending] = useState<string[]>([]);
+  const track = useCallback(<T,>(label: string, p: Promise<T>): Promise<T> => {
+    setPending((x) => [...x, label]);
+    return p.finally(() =>
+      setPending((x) => {
+        const i = x.indexOf(label);
+        return i < 0 ? x : [...x.slice(0, i), ...x.slice(i + 1)];
+      }),
+    );
+  }, []);
+  // Layers asked for and not answered yet: one request each, however often the effect below runs.
+  const layerAsked = useRef(new Set<GalaxyLayerKind>());
   const extraOn: Record<GalaxyLayerKind, boolean> = {
     poi: poiOn,
     nsp: nspOn,
@@ -302,10 +319,12 @@ export function GalaxyMap3D() {
     void e.load();
     // Backdrop: the region outlines, and the drawn Milky Way (placed by the same pin as the 2D map).
     // Each as soon as it is ready: Find's region names must not wait for the drawing.
-    void fetch("/api/region-map")
-      .then((r) => (r.ok ? (r.json() as Promise<RegionMapData>) : null))
-      .catch(() => null)
-      .then((regions) => {
+    void track(
+      "regions",
+      fetch("/api/region-map")
+        .then((r) => (r.ok ? (r.json() as Promise<RegionMapData>) : null))
+        .catch(() => null),
+    ).then((regions) => {
         if (engine.current !== e) return;
         regionData.current = regions;
         outlines.current = regions ? regionOutlines(regions) : null;
@@ -340,7 +359,8 @@ export function GalaxyMap3D() {
           if (d && engine.current === e) setMine(new Map(d.systems.map((s) => [String(s.addr), s])));
         })
         .catch(() => {});
-    void loadMine.current();
+    // The first read only: later ones (after a jump) refresh markers already there.
+    void track("your systems", loadMine.current());
 
     const onResize = () => e.resize();
     const onKey = (ev: KeyboardEvent) => {
@@ -358,7 +378,7 @@ export function GalaxyMap3D() {
       e.dispose();
       pool.forEach((d) => d.remove());
     };
-  }, [graphics.tier]);
+  }, [graphics.tier, track]);
 
   // Where the ship is and this session's jumps: every 3 s while the window is visible (live follow).
   useEffect(() => {
@@ -412,13 +432,17 @@ export function GalaxyMap3D() {
   // The extra layers: fetched the first time each is switched on, then only shown or hidden.
   useEffect(() => {
     for (const l of GALAXY_LAYERS) {
-      if (!extraOn[l.kind] || extraData[l.kind]) continue;
-      void fetch(`/api/galaxy/layers?kind=${l.kind}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d: GalaxyLayerDTO | null) => {
-          if (d) setExtraData((prev) => ({ ...prev, [l.kind]: d }));
-        })
-        .catch(() => {});
+      if (!extraOn[l.kind] || extraData[l.kind] || layerAsked.current.has(l.kind)) continue;
+      layerAsked.current.add(l.kind);
+      void track(
+        l.label,
+        fetch(`/api/galaxy/layers?kind=${l.kind}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d: GalaxyLayerDTO | null) => {
+            if (d) setExtraData((prev) => ({ ...prev, [l.kind]: d }));
+          })
+          .catch(() => {}),
+      ).finally(() => layerAsked.current.delete(l.kind));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poiOn, nspOn, carriersOn, bookmarksOn, gggOn, extraData]);
@@ -685,8 +709,12 @@ export function GalaxyMap3D() {
     // The region map and EDSM spell a few regions differently; the join key settles it.
     const summary = codexRegions?.regions.find((r) => r.joinKey === regionJoinKey(codexRegion));
     const name = summary?.name ?? codexRegion;
-    fetch(`/api/codex/region?name=${encodeURIComponent(name)}&kind=${codexKind}`)
-      .then((r) => (r.ok ? (r.json() as Promise<CodexMapRegionDTO>) : null))
+    track(
+      "codex",
+      fetch(`/api/codex/region?name=${encodeURIComponent(name)}&kind=${codexKind}`).then((r) =>
+        r.ok ? (r.json() as Promise<CodexMapRegionDTO>) : null,
+      ),
+    )
       .then((d) => {
         if (!live || !d) return;
         setCodexSystems(new Map(d.systems.map((s) => [s.systemAddress, s])));
@@ -705,7 +733,7 @@ export function GalaxyMap3D() {
     return () => {
       live = false;
     };
-  }, [codexOn, codexRegion, codexKind, codexRegions]);
+  }, [codexOn, codexRegion, codexKind, codexRegions, track]);
 
   const codexSummary = useMemo(
     () => (codexRegion ? codexRegions?.regions.find((r) => r.joinKey === regionJoinKey(codexRegion)) : undefined),
@@ -1198,9 +1226,10 @@ export function GalaxyMap3D() {
   return (
     <div className="g3d-screen" ref={screenRef}>
       {/* Systems on their way (owner, 2026-10-06): a small turning circle at the top. */}
-      {stats && (stats.phase === "loading" || stats.tilesLoaded < stats.tilesWanted) ? (
+      {(stats && (stats.phase === "loading" || stats.tilesLoaded < stats.tilesWanted)) || pending.length ? (
         <div className="g3d-loading" role="status">
           <span className="g3d-loading__spin" aria-hidden="true" /> Loading
+          {pending.length ? ` ${[...new Set(pending)].join(", ").toLowerCase()}` : null}
         </div>
       ) : null}
       <div ref={host} className="g3d-canvas" />
@@ -1327,7 +1356,7 @@ export function GalaxyMap3D() {
                         <span className="dim"> {missing ? `— ${l.needs.toLowerCase()}` : `(${d.points.length.toLocaleString()})`}</span>
                       ) : null}
                     </span>
-                    <span className="g3d-row__val">{extraOn[l.kind] ? "On" : "Off"}</span>
+                    <span className="g3d-row__val">{extraOn[l.kind] ? (d ? "On" : "Loading…") : "Off"}</span>
                   </label>
                 );
               })}

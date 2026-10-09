@@ -4,6 +4,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import "./styles.css";
 import { App } from "./App";
 import { UiFeedbackProvider } from "./ui/feedback";
+import { LoadingNote } from "./ui/Loading";
 import { applyAppTheme, followAppThemeChanges } from "./appTheme";
 import { applyStreamerMode, STREAMER_MODE } from "./streamerMode";
 import { loadUiMirror, startUiMirrorSource, watchUiMirror } from "./uiMirror";
@@ -55,15 +56,15 @@ if (!STREAMER_MODE && !screen) startUiMirrorSource();
 
 createRoot(document.getElementById("root")!).render(
   wants3d ? (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingNote className="screen-loading" />}>
       <GalaxyMap3D />
     </Suspense>
   ) : wantsMap ? (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingNote className="screen-loading" />}>
       <GalaxyMapScreen />
     </Suspense>
   ) : wantsSecondScreen ? (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingNote className="screen-loading" />}>
       <SecondScreen />
     </Suspense>
   ) : (

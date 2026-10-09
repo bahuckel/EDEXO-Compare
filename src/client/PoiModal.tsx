@@ -22,6 +22,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { POI_GROUP_OPTIONS } from "@shared/gecCategories";
 import { Tooltip } from "./ui/Tooltip";
 import { useModal } from "./ui/useModal";
+import { LoadingNote, RefreshBar } from "./ui/Loading";
 import type { PoiQueryResultDTO } from "@shared/types";
 import { CopySystemButton } from "./CopySystemButton";
 import { fmtLyAway } from "@shared/format";
@@ -42,6 +43,8 @@ export function PoiModal({ onClose }: { onClose: () => void }) {
   const dialogRef = useModal<HTMLDivElement>(true, onClose);
   const [data, setData] = useState<PoiQueryResultDTO | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A query on its way: the first one shows a note, later ones dim the rows they will replace.
+  const [querying, setQuerying] = useState(false);
   const [busy, setBusy] = useState(false);
   // Remembered between opens (usePersistedState); the search box is not.
   const [groups, setGroups] = usePersistedState<string[]>("poi.groups", [], isStrArr);
@@ -65,15 +68,19 @@ export function PoiModal({ onClose }: { onClose: () => void }) {
     if (search.trim()) params.set("q", search.trim());
     params.set("limit", "200");
     const seq = (requestSeq.current += 1);
+    setQuerying(true);
     try {
       const res = await fetch(`/api/poi/query?${params.toString()}`);
       if (!res.ok) throw new Error(`Query failed (${res.status})`);
       const body = (await res.json()) as PoiQueryResultDTO;
       if (seq !== requestSeq.current) return;
       setData(body);
+      setError(null);
     } catch (e) {
       if (seq !== requestSeq.current) return;
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      if (seq === requestSeq.current) setQuerying(false);
     }
   }, [groups, organicOnly, minRating, search]);
 
@@ -165,7 +172,9 @@ export function PoiModal({ onClose }: { onClose: () => void }) {
 
         {error ? <p className="fdb-empty">{error}</p> : null}
 
-        {!haveData && !busy ? (
+        {!data && querying ? (
+          <LoadingNote className="fdb-empty" label="Searching the points of interest…" />
+        ) : !haveData && !busy ? (
           <p className="fdb-empty">
             No data. Click <strong>Fetch from EDAstro</strong> above to download the catalogue.
           </p>
@@ -240,7 +249,8 @@ export function PoiModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* Same scroller as Carriers: without it the panel clips instead of scrolling. */}
-            <div className="fdb-scroll">
+            <RefreshBar active={querying} />
+            <div className={`fdb-scroll${querying ? " is-refreshing" : ""}`} aria-busy={querying}>
               <table className="fdb-table carriers-table poi-table">
                 <thead>
                   <tr>
