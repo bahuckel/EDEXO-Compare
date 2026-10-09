@@ -1,4 +1,5 @@
 import { navRouteLog, recordNavRoute } from "./navRouteLog.js";
+import { enablePredictionAudit } from "./predictionAuditLog.js";
 import { startEddnLedgerWatch } from "./eddnLedger.js";
 import path from "node:path";
 import {
@@ -249,6 +250,8 @@ function reloadSpeciesDerivedCaches(): void {
 
 /** The journal folder is there and can be listed (a drive not mounted yet is not an empty folder). */
 export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
+  // The app's own prediction log (predictionAuditLog.ts); scripts that run the snapshot code never write it.
+  enablePredictionAudit();
   // First, so the warnings of the start are in Copy diagnostics too (diagnostics.ts).
   installLogRing();
   assertResourceLayout();

@@ -26,6 +26,7 @@ const {
   recordPredictionForBody,
   predictionRecords,
   finalisePredictionsForSystem,
+  enablePredictionAudit,
   resetPredictionAuditForTests,
 } = await import("../src/server/predictionAuditLog.js");
 
@@ -62,6 +63,7 @@ beforeEach(() => {
   tmp = mkdtempSync(path.join(tmpdir(), "edexo-predictions-"));
   auditPath = path.join(tmp, "edexo-predictions.json");
   resetPredictionAuditForTests();
+  enablePredictionAudit();
 });
 
 afterEach(() => {
@@ -316,5 +318,44 @@ describe("how the confirmed species did inside its own genus", () => {
     expect(out.verdict).toBe("absent");
     expect(out.genusRank).toBeNull();
     expect(out.genusCandidates).toBe(0);
+  });
+});
+
+/*
+  2026-10-09: probe scripts ran the snapshot code against his live profile, and the log — on by
+  default, open records immune to the cap, an unreadable file silently replaced — grew to 528 MB of
+  probe bodies and evicted his own finished records.
+*/
+describe("guarding the commander's file", () => {
+  it("writes nothing until the app switches it on", async () => {
+    enablePredictionAudit(false);
+    recordPredictionForBody({ body: body(), matches: [m("frutexa_acus", "Frutexa", 40)], db });
+    expect(predictionRecords()).toHaveLength(0);
+    expect(finalisePredictionsForSystem(42, [])).toBe(0);
+    const { existsSync } = await import("node:fs");
+    expect(existsSync(auditPath)).toBe(false);
+  });
+
+  it("sets an unreadable file aside instead of overwriting it", async () => {
+    const { writeFileSync, readdirSync } = await import("node:fs");
+    writeFileSync(auditPath, "{ not json");
+    resetPredictionAuditForTests();
+    enablePredictionAudit();
+    recordPredictionForBody({ body: body(), matches: [m("frutexa_acus", "Frutexa", 40)], db });
+    expect(readdirSync(tmp).some((f) => f.startsWith("edexo-predictions.json.unreadable-"))).toBe(true);
+  });
+
+  it("lets a week-old open record go before a finished one stays over the cap", () => {
+    const old = "2026-08-01T00:00:00.000Z";
+    for (let i = 0; i < 2001; i++) {
+      recordPredictionForBody({
+        body: body({ key: `${1000 + i}:1`, systemAddress: 1000 + i, bodyId: 1 }),
+        matches: [m("frutexa_acus", "Frutexa", 40)],
+        db,
+        now: old,
+      });
+    }
+    // 2,001 open records, none finished, all untouched for weeks: the cap applies to them now.
+    expect(predictionRecords().length).toBeLessThanOrEqual(2000);
   });
 });
