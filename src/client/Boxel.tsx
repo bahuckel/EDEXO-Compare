@@ -1326,7 +1326,7 @@ export function BoxelScreen({
             ) : ticked.length ? (
               <>
                 <RefreshBar active={tableStale} />
-                <div className={tableStale ? "is-refreshing" : undefined} aria-busy={tableStale}>
+                <div className={`boxel-table-slot${tableStale ? " is-refreshing" : ""}`} aria-busy={tableStale}>
                   {tableEl}
                 </div>
               </>

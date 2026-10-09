@@ -202,6 +202,13 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+/* Holds the table (dimmed while other boxels load): passes the height on, so the table still scrolls. */
+.boxel-table-slot {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
 .boxel-next {
   display: inline-flex;
   align-items: baseline;
