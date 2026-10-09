@@ -54,6 +54,11 @@ export interface NotifyPrefsDTO {
   nsp: boolean;
   /** A candidate plant here that nobody has logged in the region yet ([CODEX FIRST]; owner, 2026-09-30). */
   codexFirst: boolean;
+  /**
+   * Keep a [CODEX FIRST] candidate in the list at 1 % or less, tinted red with a [?] (owner,
+   * 2026-10-09). Off: it goes to the unlikely list like any low row would. On by default.
+   */
+  codexFirstLowChance: boolean;
   /** Points of interest and carriers within a few jumps (owner, 2026-09-30). */
   nearby: NearbyPrefsDTO;
   /** Body features (shared/bodyFeatures.ts): Notable card and notices. All off until chosen. */
@@ -88,6 +93,7 @@ export const DEFAULT_NOTIFY_PREFS: NotifyPrefsDTO = {
   chime: false,
   nsp: true,
   codexFirst: true,
+  codexFirstLowChance: true,
   nearby: {
     jumps: 5,
     poiGroups: { ...ALL_POI_OFF },
@@ -121,6 +127,7 @@ export function mergeNotifyPrefs(prev: NotifyPrefsDTO, raw: unknown): NotifyPref
     chime: bool(r.chime, prev.chime),
     nsp: bool(r.nsp, prev.nsp),
     codexFirst: bool(r.codexFirst, prev.codexFirst ?? true),
+    codexFirstLowChance: bool(r.codexFirstLowChance, prev.codexFirstLowChance ?? true),
     nearby: {
       jumps: Math.min(NEARBY_JUMPS_MAX, Math.max(NEARBY_JUMPS_MIN, jumpsRaw)),
       poiGroups,

@@ -444,7 +444,15 @@ export const SpeciesCard = memo(function SpeciesCard({
           >
             [CODEX FIRST]
           </span>
-        ) : m.codexNew ? (
+        ) : null}
+        {m.lowChanceWhy ? (
+          <Tooltip text={m.lowChanceWhy}>
+            <span className="species-codex-mark species-codex-mark--why" aria-label={m.lowChanceWhy}>
+              [?]
+            </span>
+          </Tooltip>
+        ) : null}
+        {m.codexNew && m.codexFirst ? null : m.codexNew ? (
           <Tooltip text={codexMarkTitle(m)}>
             <span
               className="species-codex-mark"

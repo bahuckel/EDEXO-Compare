@@ -448,6 +448,18 @@ export function NotifyPanel() {
           />
           <span>Codex first: a plant nobody has logged in the region</span>
         </label>
+        <label
+          className="options-toggle"
+          title="On: a [CODEX FIRST] candidate stays in the list even at 1 % or less, tinted red, with a [?] saying why it is there. Off: it goes to the unlikely list instead (unless you sampled it there)."
+        >
+          <input
+            type="checkbox"
+            checked={p.codexFirstLowChance ?? true}
+            disabled={busy}
+            onChange={(ev) => save({ codexFirstLowChance: ev.target.checked })}
+          />
+          <span>Codex first: keep it in the list at 1 % or less</span>
+        </label>
         <label className="options-toggle">
           <input
             type="checkbox"

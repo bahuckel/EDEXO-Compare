@@ -164,6 +164,7 @@ export function SpeciesRow({
     open ? "srow--open" : "",
     prog ? `srow--${prog.cls}` : "",
     m.unlikely ? "srow--unlikely" : "",
+    m.lowChanceWhy ? "srow--low-first" : "",
     footfall === "unwalked" ? "srow--unwalked" : "",
   ]
     .filter(Boolean)
@@ -214,7 +215,13 @@ export function SpeciesRow({
             <span className="srow-tag srow-tag--codex srow-tag--codex-first" title={codexFirstTitle(m)}>
               [CODEX FIRST]
             </span>
-          ) : m.codexNew ? (
+          ) : null}
+          {m.lowChanceWhy ? (
+            <span className="srow-tag srow-tag--why" title={m.lowChanceWhy} aria-label={m.lowChanceWhy}>
+              [?]
+            </span>
+          ) : null}
+          {m.codexNew && m.codexFirst ? null : m.codexNew ? (
             <span className="srow-tag srow-tag--codex" title={codexMarkTitle(m)}>
               [CODEX]
             </span>

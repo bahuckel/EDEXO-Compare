@@ -648,6 +648,11 @@ export interface SpeciesMatch {
   codexFirstEddnAsOf?: string;
   /** EDAstro has this species in the region but not which colour: still gold, with a note. */
   codexFirstEdastroSpeciesOnly?: boolean;
+  /**
+   * A [CODEX FIRST] row in the list at 1 % or less: why it is there (the floor rule that kept it), for
+   * the row's red tint and [?] (owner, 2026-10-09). Absent otherwise.
+   */
+  lowChanceWhy?: string;
   /** This plant, here, would advance the tracked achievement (`server/achievements.ts`). */
   achievementAdvance?: import("./achievements.js").AchievementAdvanceDTO;
   /** This species' rarity in the body's region (`shared/speciesRarity.ts`); the DNA badge shows it. */

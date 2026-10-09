@@ -76,6 +76,7 @@ import {
   organicLiveSummary,
   findSpeciesEntryForEncyclopedia,
   getCachedSpeciesDatabase,
+  setCodexFirstLowChanceKept,
   loadSpeciesDatabase,
   getCachedPrices,
 } from "./snapshot.js";
@@ -382,6 +383,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
   const notices = createNoticesService({
     filePath: path.join(path.dirname(resolveUserSettingsJsonPath()), "edexo-notices.json"),
   });
+  setCodexFirstLowChanceKept(() => notices.prefs().codexFirstLowChance ?? true);
   /* The nudge research log: the developer's PC only, where `ggg-research.on` is (server/gggResearch.ts). */
   const gggResearch = createGggResearch({
     dir: path.dirname(resolveUserSettingsJsonPath()),
@@ -1666,7 +1668,10 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     },
     systemPositionOf: (addr) => store.systemPositions.get(addr) ?? null,
     setNotifyPrefs: (raw) => {
+      const lowBefore = notices.prefs().codexFirstLowChance;
       notices.setPrefs(raw);
+      // The switch changes rows of bodies already computed.
+      if (notices.prefs().codexFirstLowChance !== lowBefore) setCodexFirstLowChanceKept(() => notices.prefs().codexFirstLowChance ?? true);
       push();
       return notifySettings();
     },

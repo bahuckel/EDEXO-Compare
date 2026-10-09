@@ -121,6 +121,7 @@ import {
 import {
   attachPresenceProbability,
   demoteBelowPresenceFloor,
+  floorKeptReason,
   markSampledDespiteUnlikely,
 } from "./presenceFloors.js";
 import { applyGenusBodySplit } from "./genusBodySplit.js";
@@ -138,6 +139,17 @@ import {
 } from "./snapshotSystemInfo.js";
 import { bodyIdOfBodyKey, bodyKey } from "../shared/bodyKey.js";
 export { PRESENCE_FLOOR_PCT, demoteBelowPresenceFloor, GENUS_SHARE_FLOOR_PCT } from "./presenceFloors.js";
+
+/**
+ * Options → Notify me, "[CODEX FIRST] at 1 % or less" (owner, 2026-10-09): on, such a row stays in the
+ * list with a red tint and a [?]; off, it goes to the unlikely list. The bootstrap hands in the notices
+ * setting; on until it does.
+ */
+let codexFirstLowChanceKept: () => boolean = () => true;
+export function setCodexFirstLowChanceKept(read: () => boolean): void {
+  codexFirstLowChanceKept = read;
+  computeBodyCache.clear();
+}
 
 /**
  * Attach the first-footfall verdict to the next-jump card.
@@ -675,6 +687,57 @@ function attachCodexRegionNovelty(
 }
 
 /**
+ * A [CODEX FIRST] row in the list at 1 % or less (owner, 2026-10-09: "has a slightly red background
+ * and a [?] explaining why they are seeing this, even with a very low chance"). Nothing keeps a row
+ * for being a first: it stands on the same rules as every row, and the [?] says which one. With the
+ * Options switch off it goes to the unlikely list instead, unless it was sampled here.
+ */
+export function explainLowChanceCodexFirst(matches: SpeciesMatch[]): void {
+  const keep = codexFirstLowChanceKept();
+  for (const m of matches) {
+    if (m.unlikely || !m.codexNew || !m.codexFirst) continue;
+    const pct = m.presenceProbabilityPercent;
+    if (pct == null || !Number.isFinite(pct) || Math.round(pct) > 1) continue;
+    const k = floorKeptReason(m);
+    if (!keep && k?.why !== "sampled" && m.organicAnalysisComplete !== true) {
+      m.unlikely = true;
+      m.unlikelyReasons = [
+        ...(m.unlikelyReasons ?? []),
+        {
+          field: "Chance here",
+          detail: `${pct.toFixed(1)} % — a first codex entry, but Options → Notify me keeps those at 1 % or less out of the list.`,
+        },
+      ];
+      continue;
+    }
+    m.lowChanceWhy = lowChanceWhy(m, k, pct);
+  }
+}
+
+function lowChanceWhy(m: SpeciesMatch, k: { why: string; pct: number } | null, pct: number): string {
+  const genus = m.entry.genus || m.entry.genusDataDir;
+  const why =
+    k?.why === "sampled"
+      ? "You have sampled it on this body."
+      : k?.why === "approximate"
+        ? "Some of the body's values are missing, so its match is approximate and the 1 % floor does not judge it."
+        : k?.why === "best"
+          ? "Every candidate on this body is under 1 %; the list keeps the best of them rather than none."
+          : k?.why === "passed"
+            ? `It cleared the 1 % floor at ${k.pct.toFixed(1)} %; how often its genus grows on bodies like this one then brought it down.`
+            : k?.why === "genusShare"
+              ? `The DSS found ${genus} here, and this is ${k.pct.toFixed(1)} % of it — over the 1 % the list needs once the genus is known. The chance beside it is for the body as a whole.`
+              : k?.why === "genusBest"
+                ? `The DSS found ${genus} here, and this is the likeliest ${genus} the list has.`
+                : "It can grow on this body; the model has little to go on.";
+  return (
+    `Shown at ${pct < 0.05 ? "under 0.1" : pct.toFixed(1)} %: ${why} ` +
+    `It is a [CODEX FIRST]: nobody has logged it in this region yet, so it is worth a look. ` +
+    `Options → Notify me can keep these out of the list.`
+  );
+}
+
+/**
  * The colour predicted for a species on this body: its own table or materials first, then the stars by
  * their light on the body, brightest first — a star whose class has no colour row hands over to the
  * next, and with none left it is "(unknown)", never a guessed class (owner, 2026-09-28).
@@ -828,6 +891,7 @@ function computeBodyCacheSignature(
     footCatalog: footScannedCatalogSignature(root),
     // A new CodexEntry changes the "new to you" and [CODEX] marks without touching the body.
     codex: `${store.codexLoggedSpecies.size}/${store.codexRegionLogged.size}`,
+    codexFirstLow: codexFirstLowChanceKept(),
     // [CODEX FIRST] also reads EDAstro's plants: a download mid-session re-marks the bodies.
     edastroBio: edastroBioRegionIds()?.fetchedAtMs ?? 0,
     // …and the EDDN collector's ledger, when one answers (eddnLedger.ts).
@@ -1117,6 +1181,7 @@ function computeBodyUncached(
   for (const m of matches) m.predictedColour = predictedColourFor(m.entry, speciesMatchCtx, scanForExo);
   attachCodexNovelty(matches, store);
   attachCodexRegionNovelty(matches, store, speciesMatchCtx, scanForExo);
+  explainLowChanceCodexFirst(matches);
   attachAchievementAdvance(matches, store, speciesMatchCtx, scanForExo);
   // Rarity where the body is (owner, 2026-09-27): a species can be common here and rare elsewhere.
   if (speciesMatchCtx?.regionName) {

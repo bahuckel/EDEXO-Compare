@@ -136,6 +136,17 @@ export function attachPresenceProbability(
 export const PRESENCE_FLOOR_PCT = 1;
 
 /**
+ * Why a row the floors left in the list stands there, for the [?] on a [CODEX FIRST] row at 1 % or
+ * less (owner, 2026-10-09). Read once the whole pipeline has run; the chance can still move after the
+ * floor (the genus prior), which is one of the answers.
+ */
+export type FloorKept = "sampled" | "approximate" | "best" | "passed" | "genusShare" | "genusBest";
+const floorKept = new WeakMap<SpeciesMatch, { why: FloorKept; pct: number }>();
+export function floorKeptReason(m: SpeciesMatch): { why: FloorKept; pct: number } | null {
+  return floorKept.get(m) ?? null;
+}
+
+/**
  * Push the long shots behind "show unlikely".
  *
  * Reported from the field twice: an icy moon offering Fonticulua upupam at 2.6 % and a Fungoida at
@@ -193,6 +204,19 @@ export function demoteBelowPresenceFloor(
       confirmed.has(m.entry.id);
     if (immune || pct >= PRESENCE_FLOOR_PCT || kept < keepAtLeast) {
       kept++;
+      if (pct != null && Number.isFinite(pct)) {
+        floorKept.set(m, {
+          why:
+            m.organicAnalysisComplete === true || confirmed.has(m.entry.id)
+              ? "sampled"
+              : m.approximateMatch === true
+                ? "approximate"
+                : pct >= PRESENCE_FLOOR_PCT
+                  ? "passed"
+                  : "best",
+          pct,
+        });
+      }
       continue;
     }
     m.unlikely = true;
@@ -264,6 +288,19 @@ function demoteBelowGenusShareFloor(matches: SpeciesMatch[], confirmed: Set<stri
         confirmed.has(m.entry.id);
       if (immune || pct >= GENUS_SHARE_FLOOR_PCT || kept < 1) {
         kept++;
+        if (pct != null && Number.isFinite(pct)) {
+          floorKept.set(m, {
+            why:
+              m.organicAnalysisComplete === true || confirmed.has(m.entry.id)
+                ? "sampled"
+                : m.approximateMatch === true
+                  ? "approximate"
+                  : pct >= GENUS_SHARE_FLOOR_PCT
+                    ? "genusShare"
+                    : "genusBest",
+            pct,
+          });
+        }
         continue;
       }
       m.unlikely = true;

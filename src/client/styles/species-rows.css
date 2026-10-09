@@ -218,6 +218,15 @@
 .srow--unlikely .srow-chance {
   color: var(--text-faint);
 }
+/* A [CODEX FIRST] at 1 % or less, kept in the list (owner, 2026-10-09): a slight red, and a [?] saying why. */
+.srow--low-first > .srow-main {
+  background-color: rgba(220, 70, 60, 0.12);
+}
+.srow-tag--why,
+.species-codex-mark--why {
+  color: #ff8a7a;
+  cursor: help;
+}
 
 /* the unfolded card: the existing species card, arriving with the fold rhythm */
 .srow-card {
