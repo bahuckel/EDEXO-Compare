@@ -64,8 +64,9 @@ describe("landables", () => {
     expect(keys({ ...land, surfaceGravity: 2.01 * 9.80665 })).toContain("highGravity");
     expect(keys({ ...land, radius: 18_000_001 })).toContain("largeLandable");
     expect(bodyFeatures({ ...land, surfaceTemperature: 820 }).find((f) => f.key === "hotLandable")?.label).toBe("Lethal heat");
-    expect(bodyFeatures({ ...land, surfaceTemperature: 520 }).find((f) => f.key === "hotLandable")?.label).toBe("Hot landable");
-    expect(keys({ ...land, surfaceTemperature: 499 })).not.toContain("hotLandable");
+    // From 800 K only (owner, 2026-10-09).
+    expect(keys({ ...land, surfaceTemperature: 799 })).not.toContain("hotLandable");
+    expect(keys({ ...land, surfaceTemperature: 520 })).not.toContain("hotLandable");
     expect(keys({ ...land, atmosphere: "thin oxygen atmosphere", surfacePressure: 0.095 * 101_325 })).toContain("brightAtmosphere");
     expect(keys({ ...land, atmosphere: "thin oxygen atmosphere", surfacePressure: 0.05 * 101_325 })).not.toContain("brightAtmosphere");
     // Not landable: none of these.

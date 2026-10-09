@@ -67,7 +67,7 @@ export const BODY_FEATURES: readonly BodyFeatureDef[] = [
   { key: "ringedStar", group: "orbit", label: "Ringed star", hint: "An M-class star, neutron star or white dwarf with rings (belts do not count)." },
   { key: "highGravity", group: "landable", label: "High gravity", hint: "Landable, over 2 g." },
   { key: "largeLandable", group: "landable", label: "Large landable", hint: "Landable, over 18,000 km radius." },
-  { key: "hotLandable", group: "landable", label: "Hot landable", hint: "Landable at 500 K or more; from 800 K a commander on foot burns." },
+  { key: "hotLandable", group: "landable", label: "Lethal heat", hint: "Landable at 800 K or more: a commander on foot burns." },
   { key: "brightAtmosphere", group: "landable", label: "Thick atmosphere", hint: "Landable with 0.09 atm or more, near the 0.1 limit — where the sky colours get rich." },
   { key: "moonOfRare", group: "landable", label: "Moon of a rare world", hint: "Landable, within 1.5 ls of an Earth-like, water or ammonia world." },
   { key: "bigInSky", group: "landable", label: "Parent fills the sky", hint: "Landable, its parent over 25° across (a star) or 45° (a planet)." },
@@ -238,8 +238,8 @@ export function bodyFeatures(
     if (g > 2) hit("highGravity", `${g.toFixed(2)} g`);
     if (radius > 18_000_000) hit("largeLandable", `Radius ${km(radius)} km`);
     const t = r.surfaceTemperature ?? 0;
-    if (t >= 800) hit("hotLandable", `${Math.round(t)} K — lethal on foot`, "Lethal heat");
-    else if (t >= 500) hit("hotLandable", `${Math.round(t)} K`);
+    // From 800 K only (owner, 2026-10-09): 500 K caught 6.3 % of his planets, 800 K 2.4 %.
+    if (t >= 800) hit("hotLandable", `${Math.round(t)} K — lethal on foot`);
     const atm = (r.surfacePressure ?? 0) / ATM_PA;
     if (r.atmosphere && atm >= 0.09) hit("brightAtmosphere", `${atm.toFixed(3)} atm ${r.atmosphere}`);
     if (dp?.kind === "Planet" && parent?.planetClass && RARE[parent.planetClass] && sma > 0 && sma <= 1.5 * LS_M) {
