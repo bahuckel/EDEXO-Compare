@@ -6,7 +6,8 @@
  *
  * The list follows "Custom Criteria for Everyone" (CMDR Julian Ford, for Elite Observatory) — the
  * ideas and their thresholds, not its code, which carries no licence. Thresholds are the same as
- * its defaults, so a commander coming from Observatory sees the same finds.
+ * its defaults, so a commander coming from Observatory sees the same finds — except the ring ones,
+ * measured from the geometry since 2026-10-09 (see the shepherd note at the end of bodyFeatures).
  *
  * Journal units throughout: radius and semi-major axis in metres, orbital period in seconds, gravity
  * in m/s², pressure in pascals, ring mass in megatonnes, star age in millions of years.
@@ -71,14 +72,14 @@ export const BODY_FEATURES: readonly BodyFeatureDef[] = [
   { key: "moonOfRare", group: "landable", label: "Moon of a rare world", hint: "Landable, within 1.5 ls of an Earth-like, water or ammonia world." },
   { key: "bigInSky", group: "landable", label: "Parent fills the sky", hint: "Landable, its parent over 25° across (a star) or 45° (a planet)." },
   { key: "ringedLandable", group: "landable", label: "Ringed landable", hint: "A landable body with its own rings." },
-  { key: "inclinedNearRings", group: "landable", label: "Ring view", hint: "Landable, orbit tilted over 10°, within 10 ls of a ringed parent — the rings from above." },
+  { key: "inclinedNearRings", group: "landable", label: "Ring view", hint: "Landable, orbit tilted over 10°, its parent's rings over 30° across its sky — the rings from above." },
   { key: "heliumRich", group: "gas", label: "Helium-rich boxel", hint: "A gas giant with 30 % helium or more: its boxel grows helium-rich gas giants." },
   { key: "bigRing", group: "rings", label: "Massive or wide ring", hint: "A ring over 10 trillion megatonnes, or reaching past 5 million km." },
   { key: "narrowRing", group: "rings", label: "Narrow ring", hint: "One ring, narrower than a quarter of the body's diameter (Taylor's ring under an eighth)." },
   { key: "ringGap", group: "rings", label: "Ring gap", hint: "Two rings under 100 km apart, moving at least 5 km/s differently." },
-  { key: "shepherdMoon", group: "rings", label: "Shepherd moon", hint: "Orbits within its parent's rings, between their inner and outer edge." },
-  { key: "ringProximity", group: "rings", label: "Close to a ring", hint: "Orbits within 2,000 km of the edge of its parent's rings." },
-  { key: "fastRing", group: "rings", label: "Fast ring", hint: "A ring that goes round in under 30 minutes, or at 100 km/s or more." },
+  { key: "shepherdMoon", group: "rings", label: "Shepherd moon", hint: "Orbits inside one of its parent's rings, or skims one: its surface within 500 km of the ring's edge." },
+  { key: "ringProximity", group: "rings", label: "Close to a ring", hint: "Its surface within 2,000 km of the edge of one of its parent's rings." },
+  { key: "fastRing", group: "rings", label: "Fast ring", hint: "A ring whose material goes round in under 30 minutes, or at 100 km/s or more." },
   { key: "voidCross", group: "travel", label: "Void cross", hint: "Entering or leaving the void cross: within 1,500 ly of Sol's X or Z axis (and its plane), where some stars never generate." },
 ];
 
@@ -142,6 +143,7 @@ export function featureRecordFromScan(line: Record<string, unknown>): Partial<Ex
     stellarMass: n(line.StellarMass),
     orbitalPeriod: n(line.OrbitalPeriod),
     semiMajorAxis: n(line.SemiMajorAxis),
+    eccentricity: n(line.Eccentricity),
     orbitalInclination: n(line.OrbitalInclination),
     landable: typeof line.Landable === "boolean" ? line.Landable : undefined,
     surfaceGravity: n(line.SurfaceGravity),
@@ -178,6 +180,13 @@ function bodyMassKg(r: Partial<ExplorationScanRecord>): number {
   if (r.starType) return (r.stellarMass ?? 0) * SUN_KG;
   return (r.massEM ?? 0) * EARTH_KG;
 }
+
+/** A body's surface this close to a ring's edge skims it: a shepherd. */
+const SHEPHERD_GAP_M = 500_000;
+/** ...and this close, "Close to a ring". */
+const NEAR_RING_GAP_M = 2_000_000;
+/** "Ring view": the parent's rings at least this wide in the sky. */
+const RING_VIEW_DEG = 30;
 
 const km = (m: number) => Math.round(m / 1000).toLocaleString("en-US");
 const ls = (m: number) => (m / LS_M).toFixed(2);
@@ -241,9 +250,17 @@ export function bodyFeatures(
       if (deg > (parent.starType ? 25 : 45)) hit("bigInSky", `Its ${parent.starType ? "star" : "planet"} is ${deg.toFixed(0)}° across`);
     }
     if (rings.length) hit("ringedLandable", `${rings.length === 1 ? "A ring" : `${rings.length} rings`}${r.atmosphere ? `, ${r.atmosphere}` : ""}`);
+    /*
+      The rings from above: a tilted orbit, and rings big in the sky. It was "within 10 ls", which let
+      in rings a few degrees across, a speck from the surface (owner, 2026-10-09: filters too
+      generous). 30°, the same idea as "Parent fills the sky".
+    */
     const inc = Math.abs(r.orbitalInclination ?? 0);
-    if (parentRings.length && inc > 10 && sma > 0 && sma < 10 * LS_M) {
-      hit("inclinedNearRings", `Inclined ${inc.toFixed(0)}°, ${ls(sma)} ls from its ringed parent`);
+    if (parentRings.length && inc > 10 && sma > 0) {
+      const ringDeg = (2 * Math.atan(Math.max(...parentRings.map((x) => x.outerRadM)) / sma) * 180) / Math.PI;
+      if (ringDeg > RING_VIEW_DEG) {
+        hit("inclinedNearRings", `Inclined ${inc.toFixed(0)}°, its parent's rings ${ringDeg.toFixed(0)}° across, ${ls(sma)} ls out`);
+      }
     }
   }
 
@@ -284,9 +301,13 @@ export function bodyFeatures(
           break;
         }
       }
-      // The game measures a ring's motion at 1/e of its outer radius.
+      /*
+        The game measures a ring's motion at 1/e of its outer radius — but never inside its inner
+        edge: for a narrow ring 1/e falls in the empty space below it, at a speed nothing in the ring
+        has (92 of the 211 "fast rings" in the owner's journals, 2026-10-09).
+      */
       for (const x of rings) {
-        const rr = x.outerRadM / Math.E;
+        const rr = Math.max(x.innerRadM, x.outerRadM / Math.E);
         if (rr <= 0) continue;
         const v = Math.sqrt((G * mass) / rr);
         const per = (2 * Math.PI * rr) / v;
@@ -299,21 +320,43 @@ export function bodyFeatures(
   }
 
   /*
-    A body among its parent's rings. Tighter than Observatory's rule ("orbit below the outer edge"),
-    which also caught every moon circling *inside* the inner edge — 5 million km from the nearest ring
-    in the owner's Syralaei BP-I c25-0 (2026-09-30). A shepherd is within the ring span; otherwise
-    close means within 2,000 km of any ring's edge.
+    A body at its parent's rings: in one, or skimming one (owner, 2026-10-09: "even if a moon is light
+    seconds away from the ring, its still called a shepherd moon ... calculations should be if it lands
+    IN or very very close to the ring").
+
+    Ring by ring, from the body's surface, over its whole orbit (periapsis to apoapsis). The rule
+    before took one span from the innermost ring's inner edge to the outermost ring's outer edge, so a
+    moon in the gap between two rings counted: in his 48,000 scans no moon orbits inside a ring at
+    all, and all 41 of his "shepherds" sat in such a gap, up to 1.3 million km from either ring
+    (Wredguia GZ-Z c13-10 2 a to e). The moons the game does put at a ring hug its edge, the surface a
+    few hundred km off (Eol Prou PL-J b24-8 1 a: 94 km; 12 of his within 500 km, 22 within 2,000).
   */
   if ((isPlanet || isStar) && parentRings.length && sma > 0) {
-    const inner = Math.min(...parentRings.map((x) => x.innerRadM));
-    const outer = Math.max(...parentRings.map((x) => x.outerRadM));
+    const e = Math.min(Math.max(r.eccentricity ?? 0, 0), 0.99);
+    const peri = sma * (1 - e);
+    const apo = sma * (1 + e);
     const land = r.landable ? " — landable" : "";
-    if (sma >= inner && sma <= outer) {
-      const edge = Math.min(...parentRings.flatMap((x) => [Math.abs(sma - x.innerRadM), Math.abs(sma - x.outerRadM)]));
-      hit("shepherdMoon", `Orbits within the rings, ${km(edge)} km from the nearest edge${land}`);
+    const ringName = (x: ScanRing) => x.name.replace(/^.*\s(\S+\s+Ring)$/, "$1");
+    const inside = parentRings.find((x) => peri >= x.innerRadM && apo <= x.outerRadM);
+    if (inside) {
+      hit("shepherdMoon", `Orbits inside the ${ringName(inside)}${land}`);
     } else {
-      const edge = Math.min(...parentRings.flatMap((x) => [Math.abs(sma - x.innerRadM), Math.abs(sma - x.outerRadM)]));
-      if (edge < 2_000_000) hit("ringProximity", `${km(edge)} km from the ${sma > outer ? "outer" : "inner"} ring edge${land}`);
+      // The surface's nearest approach to a ring edge; 0 when the orbit crosses it.
+      let best: { gap: number; crosses: boolean; ring: ScanRing; outerEdge: boolean } | null = null;
+      for (const x of parentRings) {
+        for (const [edgeM, outerEdge] of [
+          [x.innerRadM, false],
+          [x.outerRadM, true],
+        ] as const) {
+          const reach = edgeM < peri ? peri - edgeM : edgeM > apo ? edgeM - apo : 0;
+          const gap = Math.max(0, reach - radius);
+          if (!best || gap < best.gap) best = { gap, crosses: reach === 0, ring: x, outerEdge };
+        }
+      }
+      if (best && best.gap <= NEAR_RING_GAP_M) {
+        const why = `${best.crosses ? "Crosses" : best.gap === 0 ? "Its surface touches" : `Its surface ${km(best.gap)} km from`} the ${best.outerEdge ? "outer" : "inner"} edge of the ${ringName(best.ring)}${land}`;
+        hit(best.gap <= SHEPHERD_GAP_M ? "shepherdMoon" : "ringProximity", why);
+      }
     }
   }
   return out;

@@ -78,12 +78,11 @@ describe("landables", () => {
     expect(keys({ ...moon, semiMajorAxis: 1.6 * LS }, { planetClass: "Earthlike body", radius: 6e6 })).not.toContain("moonOfRare");
     // A parent of 70,000 km radius from 150,000 km away is about 50° across.
     expect(keys({ ...moon, semiMajorAxis: 1.5e8 }, { planetClass: "Sudarsky class I gas giant", radius: 7e7 })).toContain("bigInSky");
-    expect(
-      keys(
-        { ...moon, orbitalInclination: -15, semiMajorAxis: 3 * LS },
-        { planetClass: "Sudarsky class I gas giant", radius: 7e7, rings: [ring("P 1 A Ring", 1e8, 2e8)] },
-      ),
-    ).toContain("inclinedNearRings");
+    // Rings out to 200,000 km: 48° across from 1.5 ls, 25° from 3 ls (a speck, not a view).
+    const ringed = { planetClass: "Sudarsky class I gas giant", radius: 7e7, rings: [ring("P 1 A Ring", 1e8, 2e8)] };
+    expect(keys({ ...moon, orbitalInclination: -15, semiMajorAxis: 1.5 * LS }, ringed)).toContain("inclinedNearRings");
+    expect(keys({ ...moon, orbitalInclination: -15, semiMajorAxis: 3 * LS }, ringed)).not.toContain("inclinedNearRings");
+    expect(keys({ ...moon, orbitalInclination: 5, semiMajorAxis: 1.5 * LS }, ringed)).not.toContain("inclinedNearRings");
   });
 });
 
@@ -127,17 +126,36 @@ describe("rings", () => {
   it("a fast ring round a massive body", () => {
     expect(keys({ ...gg, massEM: 3000, rings: [ring("G 1 A Ring", 8e7, 1.2e8)] })).toContain("fastRing");
     expect(keys({ ...gg, massEM: 10, rings: [ring("G 1 A Ring", 1e9, 2e9)] })).not.toContain("fastRing");
+    // Narrow: 1/e of the outer radius (61,000 km) is below the inner edge, where nothing moves. Measured
+    // at 1/e this ring "goes" 110 km/s; its material, at 140,000 km, 73 km/s.
+    expect(keys({ ...gg, massEM: 1850, rings: [ring("G 1 A Ring", 1.4e8, 1.65e8)] })).not.toContain("fastRing");
   });
 
   it("shepherd moons and ring proximity, from the parent's rings", () => {
     const parent = { ...gg, rings: [ring("G 1 A Ring", 1e8, 2e8)] };
+    // 1,000 km radius: its surface is 1,000 km nearer the ring than its centre.
     const moon = { planetClass: "Icy body", radius: 1e6, landable: true, parents: [{ Planet: 1 }] };
-    expect(keys({ ...moon, semiMajorAxis: 1.9e8 }, parent)).toContain("shepherdMoon");
-    expect(keys({ ...moon, semiMajorAxis: 2.015e8 }, parent)).toContain("ringProximity");
-    expect(keys({ ...moon, semiMajorAxis: 2.1e8 }, parent)).not.toContain("ringProximity");
-    // Inside the inner edge is neither a shepherd nor close, unless it hugs that edge.
+    const why = (r: Partial<ExplorationScanRecord>, key: string) => bodyFeatures(r, parent).find((f) => f.key === key)?.why;
+    expect(why({ ...moon, semiMajorAxis: 1.9e8 }, "shepherdMoon")).toMatch(/^Orbits inside the A Ring/);
+    // Eol Prou PL-J b24-8 1 a: the surface 94 km off the outer edge.
+    expect(why({ ...moon, semiMajorAxis: 2.01094e8 }, "shepherdMoon")).toMatch(/^Its surface 94 km from the outer edge of the A Ring/);
+    expect(why({ ...moon, semiMajorAxis: 2.025e8 }, "ringProximity")).toMatch(/^Its surface 1,500 km from the outer edge/);
+    expect(keys({ ...moon, semiMajorAxis: 2.031e8 }, parent)).toEqual(expect.not.arrayContaining(["shepherdMoon", "ringProximity"]));
+    expect(why({ ...moon, semiMajorAxis: 0.98e8 }, "ringProximity")).toMatch(/inner edge/);
     expect(keys({ ...moon, semiMajorAxis: 5e7 }, parent)).toEqual(expect.not.arrayContaining(["shepherdMoon", "ringProximity"]));
-    expect(bodyFeatures({ ...moon, semiMajorAxis: 0.99e8 }, parent).find((f) => f.key === "ringProximity")?.why).toMatch(/inner ring edge/);
+    // An eccentric orbit that dips into the ring crosses its edge.
+    expect(why({ ...moon, semiMajorAxis: 2.2e8, eccentricity: 0.1 }, "shepherdMoon")).toMatch(/^Crosses the outer edge/);
+  });
+
+  it("a moon in the gap between two rings is neither (Wredguia GZ-Z c13-10 2 c)", () => {
+    const parent = {
+      ...gg,
+      rings: [ring("W 2 A Ring", 1.1018e8, 1.1474e8), ring("W 2 B Ring", 1.1484e8, 1.7711e8), ring("W 2 C Ring", 3.1872e9, 5.0594e9)],
+    };
+    const moon = { planetClass: "Rocky body", radius: 8e5, landable: true, parents: [{ Planet: 1 }] };
+    for (const smaLs of [0.68, 1.19, 2.04, 3.5, 6.3]) {
+      expect(keys({ ...moon, semiMajorAxis: smaLs * LS }, parent)).toEqual(expect.not.arrayContaining(["shepherdMoon", "ringProximity"]));
+    }
   });
 });
 
