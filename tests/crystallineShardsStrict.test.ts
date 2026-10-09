@@ -15,7 +15,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = loadSpeciesDatabaseFromTree(root);
 const SHARDS = "crystalline_shards_crystalline_shards";
 
-/** A cold airless icy moon, the kind Shards grow on. */
+/** A cold airless icy moon with minor volcanism, the kind Shards grow on. */
 const scan = {
   BodyName: "Test Shards 4 a",
   BodyID: 12,
@@ -28,6 +28,7 @@ const scan = {
   SurfaceTemperature: 120,
   SurfacePressure: 0,
   Landable: true,
+  Volcanism: "minor carbon dioxide geysers volcanism",
 } as unknown as PlanetScan;
 
 const base: SpeciesMatchContext = {
@@ -71,6 +72,17 @@ describe("Crystalline Shards: every condition, or not listed", () => {
 
   it("are not listed while the body's host star is unknown", () => {
     expect(shards({ systemBodyClasses: ["Earthlike body"], hostStarClasses: [], systemMainStarClass: undefined })).toBeUndefined();
+  });
+
+  it("are not listed on a body without volcanism (every Shards body has some; 2026-10-09)", () => {
+    const ok = { systemBodyClasses: ["Earthlike body"], systemBodyListComplete: true };
+    const none = (v: string) =>
+      matchDatabaseToScan(db, { ...scan, Volcanism: v } as PlanetScan, null, null, {
+        matchContext: { ...base, ...ok },
+        biologicalSignals: 1,
+      }).matches.find((m) => m.entry.id === SHARDS);
+    expect(none("")).toBeUndefined();
+    expect(shards(ok)).toBeDefined();
   });
 
   it("are listed when a DSS names the genus, whatever else is known", () => {

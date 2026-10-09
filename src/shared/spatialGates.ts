@@ -85,6 +85,11 @@ export interface SpatialGate {
    * `catalogue.records[key]` passes too, wherever the catalogue's nearest point is.
    */
   records?: { key: string; withinLy: number; label: string; evidence: string };
+  /**
+   * Turned round (core gates only): the system has to be at least `thresholdLy` from Sgr A*, not
+   * within it. Crystalline Shards (2026-10-09) grow only far out.
+   */
+  beyond?: boolean;
 }
 
 /**
@@ -180,6 +185,22 @@ export const SPATIAL_GATES: { idIncludes: string; gate: SpatialGate }[] = [
         "Sinuous Tubers: every species' codex systems within 21,000 ly of Sgr A* (ring family 100 %, core family 99 % within 19,500 ly)",
     },
   },
+  /*
+    Crystalline Shards, the other way round (owner's plan, 2026-10-09: "They need a minimum distance
+    from the core"): all 5,945 Shards bodies in the Spansh dump are 19,760 ly or more from Sgr A*,
+    while 28 % of the bodies that meet every other Shards rule lie nearer and carry none. The rule is
+    19,500 ly, a little inside the nearest find.
+  */
+  {
+    idIncludes: "crystalline_shards",
+    gate: {
+      kind: "core",
+      thresholdLy: 19500,
+      beyond: true,
+      evidence:
+        "Crystalline Shards: 100 % of the 5,945 bodies in the Spansh dump lie 19,760 ly or more from Sgr A*; 0 % of the candidate bodies nearer carry them",
+    },
+  },
 ];
 
 /** The gate a species carries, or null when its spawn does not depend on position. */
@@ -226,6 +247,8 @@ export interface SpatialVerdict {
   evidence: string;
   /** The gate's `records` check, when it ran: the nearest record and how far. */
   record?: { label: string; name: string; distanceLy: number; withinLy: number } | null;
+  /** The rule is "at least this far" (SpatialGate.beyond). */
+  beyond?: boolean;
 }
 
 /**
@@ -248,7 +271,8 @@ export function evaluateSpatialGate(
     const d = distanceLy(system, catalogue.core);
     return {
       kind: gate.kind,
-      passes: d <= gate.thresholdLy,
+      passes: gate.beyond ? d >= gate.thresholdLy : d <= gate.thresholdLy,
+      ...(gate.beyond ? { beyond: true } : {}),
       distanceLy: d,
       thresholdLy: gate.thresholdLy,
       nearestName: catalogue.core.n,
@@ -296,6 +320,11 @@ export function describeVerdict(v: SpatialVerdict): string {
       ? v.nearestName
       : `nearest ${v.kind === "nebula" ? "nebula" : "Guardian site"} ${v.nearestName}`;
   const ly = (n: number) => (n >= 1000 ? `${Math.round(n / 100) / 10} kly` : `${Math.round(n)} ly`);
+  if (v.beyond) {
+    return v.passes
+      ? `${subject} is ${d} away — past the ${rule} it needs.`
+      : `${subject} is ${d} away; it needs at least ${rule}.`;
+  }
   if (v.record && v.record.distanceLy <= v.record.withinLy) {
     return `${subject} is ${d} away, but a ${v.record.label} (${v.record.name}) is ${ly(v.record.distanceLy)} — inside its ${ly(v.record.withinLy)} rule.`;
   }

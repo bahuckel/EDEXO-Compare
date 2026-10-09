@@ -37,12 +37,17 @@ function regionIndexForBody(store: GameStateStore, b: BodyExoState, projectRoot:
  *
  * Crystalline Shards (2026-09-28): over the Spansh dump, of the bio bodies meeting every Shards rule
  * (class, 20-273 K, airless or its thin atmospheres, ≥ 12,000 Ls from arrival, a companion body, no
- * O/B/remnant host), Shards is on 4,426 of 134,646 one-signal bodies (3.3 %) and 255 of 203,234 with
- * more signals (0.13 %). Under the 5 % floor either way: before a DSS it waits behind "show unlikely",
- * and once a DSS names the genus it is shown like any confirmed genus.
+ * O/B/remnant host), Shards was on 4,426 of 134,646 one-signal bodies (3.3 %) and 255 of 203,234 with
+ * more signals (0.13 %).
+ *
+ * 2026-10-09, with the two rules those numbers lacked: volcanism (all 5,945 Shards bodies have minor
+ * volcanism) and 19,500 ly from the core (spatialGates.ts). Over the dump's candidate bodies the
+ * volcanic ones carry Shards 8.7 times as often with one signal and 52 times with more, and the far
+ * ones 1.37 times as often again; applied to the rates above: about 39 % and 9.3 %. The companion
+ * body is not in the dump's bio export, so these assume it is independent of the other two.
  */
 const FIXED_PRESENCE_PCT: Record<string, { oneSignal: number; more: number }> = {
-  crystalline_shards_crystalline_shards: { oneSignal: 3.3, more: 0.13 },
+  crystalline_shards_crystalline_shards: { oneSignal: 39, more: 9.3 },
 };
 
 /**
@@ -95,6 +100,13 @@ export function attachPresenceProbability(
   for (const r of ranked) {
     const p = Math.max(0, Math.min(1, r.probability * (r.match.presenceFactor ?? 1) * norm * scale));
     r.match.presenceProbabilityPercent = Math.round(p * 1000) / 10;
+    /*
+      A measured rate is the answer for its species, not the ranking's: Crystalline Shards' profile
+      holds 28 bodies, so the ranking put it at 0 % on every body that met its rules (owner,
+      2026-10-09: "Crystalline Shards are getting shown at 0% all the time").
+    */
+    const fixed = FIXED_PRESENCE_PCT[r.match.entry.id];
+    if (fixed) r.match.presenceProbabilityPercent = (b.biologicalSignals ?? 1) > 1 ? fixed.more : fixed.oneSignal;
   }
 
   /**

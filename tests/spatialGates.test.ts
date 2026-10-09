@@ -99,6 +99,16 @@ describe("evaluating a gate", () => {
     expect(v.passes).toBe(true);
   });
 
+  it("Crystalline Shards: at least 19,500 ly from the core (2026-10-09)", () => {
+    // The bubble is ~25.9 kly out: far enough. Near the core: not.
+    const home = evaluateSpatialGate("crystalline_shards_crystalline_shards", HOME, cat)!;
+    expect(home.passes).toBe(true);
+    expect(describeVerdict(home)).toMatch(/past the 19.5 kly it needs/);
+    const near = evaluateSpatialGate("crystalline_shards_crystalline_shards", { x: 0, y: 0, z: 10000 }, cat)!;
+    expect(near.passes).toBe(false);
+    expect(describeVerdict(near)).toMatch(/it needs at least 19.5 kly/);
+  });
+
   it("passes the Tubers near the core", () => {
     const v = evaluateSpatialGate("sinuous_tuber_sinuous_tubers_prasinum", cat.core, cat)!;
     expect(v.passes).toBe(true);
