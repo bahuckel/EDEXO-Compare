@@ -96,10 +96,12 @@ describe("hiding a genus such bodies almost never carry, before a DSS (owner, 20
   });
 
   it("hides a rare genus only where it does not grow, and never what was sampled here", () => {
-    // Fumerola needs volcanism and C 6 has none: under even its own small limit there.
-    const quiet = [match("stratum_t", "Stratum", 100), match("fumerola_x", "Fumerola", 10), match("osseus_f", "Osseus", 11)];
+    // Anemone is never seen on C 6's kind of body: under even its own small limit there. (Fumerola was the
+    // example until 2026-10-10: a year of EDDN found it where its odds sit under any limit, so it has none
+    // and its own volcanism rule decides.)
+    const quiet = [match("stratum_t", "Stratum", 100), match("anemone_x", "Anemone", 10), match("osseus_f", "Osseus", 11)];
     vetoUnseenGenera(quiet, body, c6(), { parentStarType: "M" }, root, new Set(["osseus_f"]));
-    expect(quiet.find((m) => m.entry.genus === "Fumerola")!.unlikely).toBe(true);
+    expect(quiet.find((m) => m.entry.genus === "Anemone")!.unlikely).toBe(true);
     expect(quiet.find((m) => m.entry.genus === "Osseus")!.unlikely).toBeFalsy();
     // On an icy body with water volcanism it grows, and it stays however small its chance.
     const icy = (o: Partial<PlanetScan> = {}) =>
