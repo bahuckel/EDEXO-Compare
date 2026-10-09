@@ -1050,6 +1050,63 @@ button.body-detail-kv-value.body-detail-kv-interactive:hover {
   font-size: var(--fs-sm);
   line-height: 1.35;
 }
+/* GGG ladder drawer (GggLadderDrawer.tsx, 2026-10-09): the giant on Arcanic's cloud ladder. */
+.ggg-ladder {
+  --ggg: 111, 227, 138;
+  border: 1px solid rgba(var(--ggg), 0.28);
+  padding: 0.3rem 0.6rem;
+  font-size: var(--fs-sm);
+}
+.ggg-ladder__summary {
+  cursor: pointer;
+  color: rgb(var(--ggg));
+  font-weight: 700;
+}
+.ggg-ladder__sub {
+  margin-left: 0.5rem;
+  font-weight: 400;
+  color: var(--text-muted, #9aa4b2);
+  font-size: var(--fs-xs);
+}
+.ggg-ladder__scale {
+  display: block;
+  margin: 0.35rem 0 0.2rem;
+}
+.ggg-ladder__rungs {
+  margin: 0.2rem 0;
+  padding-left: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+.ggg-ladder__rungs li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.ggg-ladder__off {
+  color: var(--text-muted, #9aa4b2);
+  font-size: var(--fs-xs);
+}
+.ggg-ladder__rung--hit,
+.ggg-ladder__rung--hit .ggg-ladder__off {
+  color: rgb(var(--ggg));
+  font-weight: 700;
+}
+.ggg-ladder__note,
+.ggg-ladder__credit {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted, #9aa4b2);
+  font-size: var(--fs-xs);
+}
+.ggg-ladder__credit a {
+  color: rgb(var(--ggg));
+}
+.ggg-ladder__verdict {
+  margin: 0.35rem 0 0;
+  font-weight: 600;
+}
+.ggg-ladder__verdict--green {
+  color: rgb(var(--ggg));
+}
 /* Green gas giants (shared/greenGasGiant.ts, 2026-09-30). The one fixed colour: it is the planet's. */
 .body-ggg {
   --ggg: 111, 227, 138;

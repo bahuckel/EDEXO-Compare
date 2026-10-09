@@ -519,6 +519,7 @@ export function buildSystemMapSnapshot(
       terraformState: r.terraformState,
       landable: r.landable,
       massEM: r.massEM,
+      radius: r.radius,
       stellarMass: r.stellarMass,
       semiMajorAxis: r.semiMajorAxis,
       surfaceTemperature: r.surfaceTemperature,

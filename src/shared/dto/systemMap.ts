@@ -75,6 +75,8 @@ export interface SystemMapBodyDetailDTO {
   terraformState?: string;
   landable?: boolean;
   massEM?: number;
+  /** Metres (journal `Radius`); the GGG ladder's density needs it. */
+  radius?: number;
   stellarMass?: number;
   semiMajorAxis?: number;
   surfaceTemperature?: number;

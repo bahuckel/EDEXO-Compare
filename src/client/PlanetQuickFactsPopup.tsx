@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { recordText, type RecordMarkDTO } from "@shared/notices";
 import { RecordMedal } from "./noticesClient";
 import { BodyFeatureLines, GreenGiantBlock } from "./GreenGiantBlock";
+import { GggLadderDrawer } from "./GggLadderDrawer";
 import { DetailCard, KvList, KvRow } from "./bodyDetailKv";
 import { nextTempUnit, usePressUnit, useTempUnit } from "./useUnits";
 import { ExoPayoutRangePanel } from "./ExoPayoutRangePanel";
@@ -533,6 +534,7 @@ export function DetailBody({
         </div>
       ) : null}
       <GreenGiantBlock detail={detail} />
+      <GggLadderDrawer detail={detail} />
       <BodyFeatureLines detail={detail} />
       <ScanMapValues detail={detail} />
 
