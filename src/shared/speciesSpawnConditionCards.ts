@@ -558,8 +558,21 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     } else if (scan && sma != null) {
       const ls = sma / LIGHT_SECOND_METERS;
       const shown = ls >= 100 ? Math.round(ls).toLocaleString() : ls.toFixed(1);
-      tier = ls > max ? "yellow" : "blue";
-      caption = ls > max ? `${shown} ls — rarely recorded this wide; listed as unlikely` : `${shown} ls — within`;
+      // A planet round a star: kept at a lower chance, not demoted (matchSpecies, 2026-10-09).
+      const roundAStar = (() => {
+        const parents = (scan as unknown as { Parents?: Record<string, unknown>[] }).Parents;
+        for (const p of Array.isArray(parents) ? parents : []) {
+          if (typeof p?.Planet === "number") return false;
+          if (typeof p?.Star === "number") return true;
+        }
+        return false;
+      })();
+      tier = roundAStar || ls > max ? "yellow" : "blue";
+      caption = roundAStar
+        ? `${shown} ls round a star — rarer than on a moon; listed at a lower chance`
+        : ls > max
+          ? `${shown} ls — rarely recorded this wide; listed as unlikely`
+          : `${shown} ls — within`;
     }
     out.push({ id: "soft-orbit", label: "Orbit round its parent", lines: [`Usually ≤ ${max} ls (close moons)`], caption, tier });
   }

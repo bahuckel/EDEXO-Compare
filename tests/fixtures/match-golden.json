@@ -1221,7 +1221,8 @@
       ],
       "candidates": [
         "bacterium_bacterium_informem",
-        "fonticulua_fonticulua_lapida"
+        "fonticulua_fonticulua_lapida",
+        "fungoida_fungoida_bullarum"
       ],
       "unlikely": [
         "aleoida_aleoida_laminiae",
@@ -1260,7 +1261,6 @@
         "frutexa_frutexa_flammasis",
         "frutexa_frutexa_metallicum",
         "frutexa_frutexa_sponsae",
-        "fungoida_fungoida_bullarum",
         "fungoida_fungoida_gelata",
         "fungoida_fungoida_setisis",
         "fungoida_fungoida_stabitis",

@@ -65,7 +65,8 @@
       "conditions": {
         "atmosphere": [
           "Argon",
-          "Argon-rich"
+          "Argon-rich",
+          "Nitrogen"
         ],
         "planet_types": [
           "Rocky",
@@ -76,7 +77,8 @@
         "atmospherePressureCategory": "thin",
         "matchContextNotes": [
           "Codex: surface structures on high ground — mountains, cliffs, plateau edges (not a hard planet-class gate).",
-          "Morph colour is driven by planetary rare materials (genus meta.color_variants), not star class."
+          "Morph colour is driven by planetary rare materials (genus meta.color_variants), not star class.",
+          "Nitrogen added 2026-10-09: 232 of its 8,188 Rocky ice bodies (253 systems, 10 with an organic sample) in a year of EDDN codex entries (EDGalaxyData archive); the codex list left it out, so each was listed as unlikely before a DSS."
         ]
       }
     },

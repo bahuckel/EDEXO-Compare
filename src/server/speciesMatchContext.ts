@@ -10,13 +10,7 @@ import {
   LS_PER_AU,
   SOLAR_RADIUS_METERS,
 } from "../shared/journalPhysics.js";
-import {
-  allStarParentIds,
-  barycentreSyntheticBodyId,
-  hostStarBodyIdsForExobiology,
-  parseJournalParentEntry,
-  resolveHostStarBodyId,
-} from "./orbitUtils.js";
+import { allStarParentIds, barycentreSyntheticBodyId, hostStarBodyIdsForExobiology, parseJournalParentEntry, resolveHostStarBodyId, orbitsAStar } from "./orbitUtils.js";
 import { hostStarClassKeys } from "../shared/hostStarGates.js";
 import { explorationRecordHasPlanetSlotDesignation } from "../shared/planetSlotDesignation.js";
 import { hostStarClassKey } from "../shared/hostStarClass.js";
@@ -715,6 +709,7 @@ export function buildSpeciesMatchContextFromRecords(i: MatchContextInputs): Spec
   if (parentStarLuminosity) ctx.parentStarLuminosity = parentStarLuminosity;
   if (orbitDistanceFromParentStarLs !== undefined)
     ctx.orbitDistanceFromParentStarLs = orbitDistanceFromParentStarLs;
+  if (rec && Array.isArray(rec.parents)) ctx.orbitsAStar = orbitsAStar(rec.parents);
   if (signalHints?.length) ctx.signalHints = signalHints;
   if (hostStarClasses?.length) ctx.hostStarClasses = hostStarClasses;
   const mainStar = mainStarClassOf(byId);

@@ -67,6 +67,19 @@ export function moonPairBarycentreId(parents: unknown): number | null {
   return p0.Null;
 }
 
+/**
+ * True when a body orbits a star (or a barycentre of stars), not a planet: `Parents` read past any
+ * barycentre to the first planet or star. Unknown parents: false.
+ */
+export function orbitsAStar(parents: unknown): boolean {
+  if (!Array.isArray(parents)) return false;
+  for (const p of parents as Record<string, unknown>[]) {
+    if (typeof p?.Planet === "number") return false;
+    if (typeof p?.Star === "number") return true;
+  }
+  return false;
+}
+
 /** Immediate orbit body when this object is a moon of a planet — excludes primary-only orbits of a star. */
 export function directParentPlanetId(parents: unknown): number | null {
   if (!Array.isArray(parents) || parents.length === 0) return null;

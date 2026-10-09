@@ -111,10 +111,16 @@
       "displayName": "Cactoida vermis",
       "description": "Tall cylindrical clusters connected by membrane with a spiked crown; possible symbiotic relationship with attached organisms.",
       "conditions": {
-        "atmosphere": "Water (thin)",
+        "atmosphere": [
+          "Water (thin)",
+          "Sulphur Dioxide (thin)"
+        ],
         "max_gravity": 0.275,
         "temperature_K": null,
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Sulphur Dioxide added 2026-10-09: 28 of 6,677 bodies (3 with an organic sample) in a year of EDDN codex entries (EDGalaxyData archive); the codex list left it out, so each was listed as unlikely before a DSS."
+        ]
       }
     }
   ],

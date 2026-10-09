@@ -214,9 +214,11 @@ describe("the measured orbit card", () => {
     const moon = { SemiMajorAxis: 4 * 299_792_458, PlanetClass: "Rocky body", AtmosphereType: "CarbonDioxide" } as unknown as PlanetScan;
     const planet = { SemiMajorAxis: 900 * 299_792_458, PlanetClass: "Rocky body", AtmosphereType: "CarbonDioxide" } as unknown as PlanetScan;
     const near = card(species("Concha labiata"), "soft-orbit", moon)!;
-    expect(near.lines.join(" ")).toContain("20 ls");
+    expect(near.lines.join(" ")).toContain("28 ls");
     expect(near.tier).toBe("blue");
     expect(card(species("Concha labiata"), "soft-orbit", planet)!.tier).toBe("yellow");
+    const roundStar = { ...planet, Parents: [{ Star: 0 }] } as unknown as PlanetScan;
+    expect(card(species("Concha labiata"), "soft-orbit", roundStar)!.caption).toMatch(/round a star .* lower chance/);
   });
 });
 

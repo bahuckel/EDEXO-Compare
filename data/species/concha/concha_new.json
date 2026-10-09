@@ -104,8 +104,11 @@
         "temperature_K": {
           "max": 195
         },
-        "soft_max_semi_major_axis_ls": 20,
-        "atmospherePressureCategory": "thin"
+        "soft_max_semi_major_axis_ls": 28,
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Moon orbit ceiling 20 -> 28 ls and moons only, 2026-10-09: of 26,489 Concha labiata moons in a year of EDDN codex entries (EDGalaxyData archive), 99.5 % orbit within 18.6 ls and 99.9 % within 27.8 ls; the 926 bodies orbiting a star are no longer demoted for it."
+        ]
       },
       "color_rules": {
         "type": "star_based",

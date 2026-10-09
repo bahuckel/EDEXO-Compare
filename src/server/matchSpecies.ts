@@ -10,6 +10,7 @@ import type {
   EstimatedSurfaceTempBand,
   OrganicGenusLock,
 } from "../shared/types.js";
+import { orbitsAStar } from "./orbitUtils.js";
 import {
   REQUIRED_GAS_MIN_SHARE_PCT,
   requiredAtmosphereShare,
@@ -1006,6 +1007,12 @@ export function speciesMatchesExcludingTempPressure(
 /**
  * Strict match: temp/pressure are hard gates using estimated surface band vs species range.
  */
+/**
+ * A moon-grower on a planet round a star (owner, 2026-10-09): Concha labiata's star-orbiting share
+ * against renibus's in the same climate, 3.4 % / 22 % (a year of EDDN: 926 of its 27,415 bodies).
+ */
+const STAR_ORBIT_FACTOR = 0.15;
+
 export function speciesMatchesCriteria(
   entry: SpeciesEntry,
   scan: PlanetScan,
@@ -1157,7 +1164,24 @@ export function speciesMatchesCriteria(
   */
   const smaMax = c.softMaxSemiMajorAxisLs;
   const sma = scan.SemiMajorAxis;
-  if (smaMax !== undefined && typeof sma === "number" && Number.isFinite(sma) && sma > 0) {
+  let orbitFactor: number | undefined;
+  // The context reads the exploration record's Parents; a scan that carries its own is the fallback.
+  const roundAStar = matchContext?.orbitsAStar ?? orbitsAStar((scan as unknown as Record<string, unknown>).Parents);
+  if (smaMax !== undefined && roundAStar) {
+    /*
+      A planet round a star, where a moon-grower is rarer but does grow (owner, 2026-10-09: 926 of
+      27,415 Concha labiata bodies in a year of EDDN, 3.4 %; renibus, which shares its climate, 22 %).
+      Kept in the list at that ratio of chance, so renibus still ranks first, instead of being
+      demoted: the demotion was a miss on every one of them.
+    */
+    orbitFactor = STAR_ORBIT_FACTOR;
+    extraOkReasons.push({
+      field: "Orbit",
+      detail: `Orbits a star, not a planet: this species grows on close moons, and on a planet round a star about ${Math.round(
+        STAR_ORBIT_FACTOR * 100,
+      )} % as often — kept at that chance.`,
+    });
+  } else if (smaMax !== undefined && typeof sma === "number" && Number.isFinite(sma) && sma > 0) {
     const ls = sma / LIGHT_SECOND_METERS;
     if (ls > smaMax) {
       failures.push({
@@ -1379,8 +1403,8 @@ export function speciesMatchesCriteria(
 
   const ok = { ok: true, reasons: [...base.reasons, ...extraOkReasons] };
   const pf =
-    base.presenceFactor !== undefined || envelopeFactor !== undefined
-      ? (base.presenceFactor ?? 1) * (envelopeFactor ?? 1)
+    base.presenceFactor !== undefined || envelopeFactor !== undefined || orbitFactor !== undefined
+      ? (base.presenceFactor ?? 1) * (envelopeFactor ?? 1) * (orbitFactor ?? 1)
       : undefined;
   return pf !== undefined ? { ...ok, presenceFactor: pf } : ok;
 }

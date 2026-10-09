@@ -45,15 +45,36 @@ describe("soft_max_semi_major_axis_ls", () => {
     return speciesMatchesCriteria(labiata, scan, resolvePlanetTemperatureBand(scan, est), est, null);
   };
 
-  it("ships on labiata at 20 ls", () => {
-    expect(labiata.criteria.softMaxSemiMajorAxisLs).toBe(20);
+  it("ships on labiata at 28 ls (2026-10-09: 99.9 % of 26,489 labiata moons in a year of EDDN)", () => {
+    expect(labiata.criteria.softMaxSemiMajorAxisLs).toBe(28);
+  });
+
+  const withParents = (smaLs: number, parents: Record<string, number>[]) => {
+    const scan = { ...body(smaLs), Parents: parents } as PlanetScan;
+    const est = estimatedTemperatureRangeForScan(scan);
+    return speciesMatchesCriteria(labiata, scan, resolvePlanetTemperatureBand(scan, est), est, null);
+  };
+
+  it("demotes a moon past the ceiling, and keeps one inside it", () => {
+    expect(withParents(35, [{ Planet: 3 }, { Star: 0 }]).softOnly).toBe(true);
+    expect(withParents(25, [{ Planet: 3 }, { Star: 0 }]).ok).toBe(true);
+    // A twin moon's barycentre is read through to the planet.
+    expect(withParents(35, [{ Null: 4 }, { Planet: 3 }, { Star: 0 }]).softOnly).toBe(true);
+  });
+
+  it("keeps a planet round a star at a lower chance instead of demoting it (926 of 27,415 labiata bodies)", () => {
+    const r = withParents(1200, [{ Star: 0 }]);
+    expect(r.ok).toBe(true);
+    expect(r.presenceFactor).toBeCloseTo(0.15);
+    expect(r.reasons.some((x) => x.field === "Orbit")).toBe(true);
+    expect(withParents(1200, [{ Null: 1 }, { Star: 0 }]).ok).toBe(true);
   });
 
   it("passes a close moon", () => {
     expect(judge(4).ok).toBe(true);
   });
 
-  it("demotes a planet round a star — never hides it", () => {
+  it("demotes a wide orbit when its parents are unknown — never hides it", () => {
     const r = judge(1200);
     expect(r.ok).toBe(false);
     expect(r.softOnly).toBe(true);

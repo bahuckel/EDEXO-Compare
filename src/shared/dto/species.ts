@@ -20,6 +20,8 @@ export interface SpeciesMatchContext {
   parentStarLuminosity?: string;
   /** Orbit distance from host star: `SemiMajorAxis` (m) / c in LS (not cumulative for nested moons). */
   orbitDistanceFromParentStarLs?: number;
+  /** The body orbits a star (or a barycentre of stars), not a planet — from its `Parents`. */
+  orbitsAStar?: boolean;
   /** The body's `DistanceFromArrivalLS`: how far it is from the system's arrival (main) star. */
   distanceFromArrivalLs?: number;
   /** The body's system (id64), for species known from one system only. */
@@ -214,6 +216,9 @@ export interface SpeciesCriterion {
    * directly. Concha renibus, in the same climate, is a star-orbiting planet on 22 % of its bodies
    * (176 of them round Y dwarfs) and its moons sit at a median 9.6 ls. A planet round a star reads
    * thousands of light-seconds here, so the one number covers both.
+   *
+   * Moons only since 2026-10-09: a year of EDDN has 926 of 27,415 labiata bodies orbiting a star
+   * (3.4 %, not the corpus's 11), each demoted by the ceiling. Its moons: 99.9 % within 27.8 ls.
    */
   softMaxSemiMajorAxisLs?: number;
   /** Journal SurfacePressure (official docs: atmospheres for landables) */
