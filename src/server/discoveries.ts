@@ -28,8 +28,7 @@
  * applies to anything he can sell again.
  */
 import { bodyFeatures, directParent, type BodyFeatureKey } from "../shared/bodyFeatures.js";
-import { greenGiantForRecord, type GreenGiantSources } from "./greenGiants.js";
-import { isGggClass } from "../shared/greenGasGiant.js";
+import { greenGiantForRecord, greenMarkToAsk, type GreenGiantSources } from "./greenGiants.js";
 import type {
   BodyExoState,
   DiscoveriesDTO,
@@ -311,12 +310,14 @@ export function buildDiscoveries(
     const parentRec = dp && dp.kind !== "Null" ? (scans.get(bodyKey(addr, dp.id)) ?? null) : null;
     const hits = bodyFeatures(rec, parentRec);
     const features = hits.map((f) => f.label);
+    const greenGiant = greenGiantForRecord(rec, greenSrc);
+    const askMark = greenMarkToAsk(rec, greenGiant, greenSrc.marks);
     addFeatureKeys(sys, hits);
     bodies.push({
       key,
       ...(hits.length ? { featureKeys: [...new Set(hits.map((f) => f.key))] } : {}),
-      greenGiant: greenGiantForRecord(rec, greenSrc),
-      ...(isGggClass(rec.planetClass) ? { greenMark: greenSrc.marks.get(key) } : {}),
+      greenGiant,
+      ...(askMark !== undefined ? { greenMark: askMark } : {}),
       ...(features.length ? { features } : {}),
       systemAddress: addr,
       system: sys.name,

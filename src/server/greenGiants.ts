@@ -11,6 +11,7 @@ import { bodyKey } from "../shared/bodyKey.js";
 import {
   classifyGreenGiant,
   greenCodexFits,
+  greenQuestionWorthAsking,
   isGggClass,
   type GreenGiantMark,
   type GreenGiantVerdict,
@@ -86,6 +87,25 @@ export interface GreenGiantSources {
   /** Every body scanned in a system, to tell which body an EDAstro report means. */
   bodiesInSystem?: (systemAddress: number) => Iterable<{ bodyId: number; planetClass?: string }>;
   marks: Pick<GreenGiantMarksService, "get">;
+}
+
+/**
+ * The commander's "green?" call on a gas giant, when the question is worth asking there
+ * (greenQuestionWorthAsking); undefined when it is not, which hides the question.
+ */
+export function greenMarkToAsk(
+  rec: Pick<ExplorationScanRecord, "systemAddress" | "bodyId" | "planetClass" | "surfaceTemperature" | "massEM" | "radius">,
+  verdict: GreenGiantVerdict | null,
+  marks: Pick<GreenGiantMarksService, "get">,
+): GreenGiantMark | null | undefined {
+  if (!isGggClass(rec.planetClass)) return undefined;
+  const mark = marks.get(bodyKey(rec.systemAddress, rec.bodyId));
+  const ask = greenQuestionWorthAsking(
+    { planetClass: rec.planetClass, surfaceTemperatureK: rec.surfaceTemperature, massEM: rec.massEM, radiusM: rec.radius },
+    verdict,
+    mark,
+  );
+  return ask ? mark : undefined;
 }
 
 /** The verdict for one scanned body, or null when it is not a green gas giant candidate at all. */

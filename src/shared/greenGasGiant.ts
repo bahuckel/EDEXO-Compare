@@ -312,6 +312,25 @@ function ladderSaysNo(i: GreenGiantInput): string | null {
   return "at its density no cloud layer lands on a colour border (cloud ladder)";
 }
 
+/**
+ * Whether to ask "green?" about a gas giant (owner, 2026-10-09: "GGG question goes away if its not
+ * considered green by edggg (unless nudge is possible)"). Not when the cloud ladder, edGGG's own
+ * formula, rules it out: a precise temperature outside the nudge ranges, mass and radius scanned, and
+ * no cloud layer on a colour border. Always when a codex entry, the catalogue or a strong sign says
+ * green, when the commander has made a call (so it can be cleared), and when the ladder cannot tell.
+ */
+export function greenQuestionWorthAsking(
+  i: Pick<GreenGiantInput, "planetClass" | "surfaceTemperatureK" | "massEM" | "radiusM">,
+  verdict: GreenGiantVerdict | null,
+  mark: GreenGiantMark | null | undefined,
+): boolean {
+  if (mark) return true;
+  if (verdict && verdict.level !== "possible") return true;
+  const input = i as GreenGiantInput;
+  if (cloudLadder(input)) return true;
+  return ladderSaysNo(input) == null;
+}
+
 export function shortClass(pc: string): string {
   const m = /^Sudarsky class (\w+) gas giant$/i.exec(pc);
   if (m) return `class ${m[1]}`;

@@ -1,6 +1,5 @@
 import { bodyFeatures, directParent } from "../shared/bodyFeatures.js";
-import { greenGiantForRecord } from "./greenGiants.js";
-import { isGggClass } from "../shared/greenGasGiant.js";
+import { greenGiantForRecord, greenMarkToAsk } from "./greenGiants.js";
 import { notableOptions } from "./notableOptions.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -495,6 +494,8 @@ export function buildSystemMapSnapshot(
     const green = nopts.green
       ? greenGiantForRecord(r, { ...nopts.green, greenCodexBodies: store.greenCodexBodies, k10Systems: store.k10Systems })
       : null;
+    // The "green?" question, where edGGG's ladder leaves it open (greenQuestionWorthAsking).
+    const askMark = nopts.green ? greenMarkToAsk(r, green, nopts.green.marks) : undefined;
     const dpf = nopts.features.size ? directParent(r.parents) : null;
     const featureHits = nopts.features.size
       ? bodyFeatures(r, dpf && dpf.kind !== "Null" ? (byId.get(dpf.id) ?? null) : null).filter((f) => nopts.features.has(f.key))
@@ -503,7 +504,7 @@ export function buildSystemMapSnapshot(
     detailsByBodyId[String(r.bodyId)] = {
       bodyId: r.bodyId,
       ...(green ? { green } : {}),
-      ...(nopts.green && isGggClass(r.planetClass) ? { greenMark: nopts.green.marks.get(bk) } : {}),
+      ...(askMark !== undefined ? { greenMark: askMark } : {}),
       ...(featureHits.length ? { features: featureHits } : {}),
       bodyName: shortBodyLabel(r.bodyName, starSystemName),
       bodyKey: bk,
