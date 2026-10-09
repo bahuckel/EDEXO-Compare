@@ -135,7 +135,8 @@
         "atmosphere": [
           "Carbon Dioxide (thin)",
           "Water (thin)",
-          "Water-rich (thin)"
+          "Water-rich (thin)",
+          "Ammonia (thin)"
         ],
         "max_gravity": 0.275,
         "atmospherePressureCategory": "thin",
@@ -145,7 +146,8 @@
           "Carbon Dioxide"
         ],
         "matchContextNotes": [
-          "For carbon dioxide atmospheres the codex mean temperature must sit between 180 K and 195 K. Water atmospheres carry no temperature rule at all, so the band is linked to the atmosphere rather than applied flat."
+          "For carbon dioxide atmospheres the codex mean temperature must sit between 180 K and 195 K. Water atmospheres carry no temperature rule at all, so the band is linked to the atmosphere rather than applied flat.",
+          "Ammonia added 2026-10-09: 19 of 20,697 bodies in a year of EDDN codex entries (EDGalaxyData archive) grew on it, one per system; the codex list left it out, so each was listed as unlikely."
         ]
       },
       "color_rules": {

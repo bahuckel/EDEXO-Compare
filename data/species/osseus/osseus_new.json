@@ -90,7 +90,8 @@
       "conditions": {
         "atmosphere": [
           "Water",
-          "Water-rich"
+          "Water-rich",
+          "Argon"
         ],
         "planet_types": [
           "Rocky",
@@ -102,7 +103,8 @@
         "off_list_atmosphere_needs_volcanism": true,
         "matchContextNotes": [
           "Codex: almost always on rocky outcrops, ridges, and exposed stone — not a hard planet-class filter.",
-          "Morph colour follows host star type (genus meta.color_variants)."
+          "Morph colour follows host star type (genus meta.color_variants).",
+          "Argon added 2026-10-09: 24 of 6,852 bodies, all Rocky ice in a year of EDDN codex entries (EDGalaxyData archive) grew on it, one per system; the codex list left it out, so each was listed as unlikely."
         ]
       }
     },

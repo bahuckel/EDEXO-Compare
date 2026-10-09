@@ -85,7 +85,8 @@
       "conditions": {
         "atmosphere": [
           "Sulphur Dioxide",
-          "Carbon Dioxide"
+          "Carbon Dioxide",
+          "Oxygen"
         ],
         "planet_types": [
           "Rocky"
@@ -94,7 +95,10 @@
           190,
           null
         ],
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Oxygen added 2026-10-09: 20 of 6,232 bodies in a year of EDDN codex entries (EDGalaxyData archive) grew on it, one per system; the codex list left it out, so each was listed as unlikely."
+        ]
       }
     },
     {
@@ -104,7 +108,8 @@
       "conditions": {
         "atmosphere": [
           "Sulphur Dioxide",
-          "Carbon Dioxide"
+          "Carbon Dioxide",
+          "Oxygen"
         ],
         "planet_types": [
           "Rocky"
@@ -113,7 +118,10 @@
           165,
           190
         ],
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Oxygen added 2026-10-09: 10 of 10,816 bodies in a year of EDDN codex entries (EDGalaxyData archive) grew on it, one per system; the codex list left it out, so each was listed as unlikely."
+        ]
       }
     },
     {
@@ -123,7 +131,8 @@
       "conditions": {
         "atmosphere": [
           "Sulphur Dioxide",
-          "Carbon Dioxide"
+          "Carbon Dioxide",
+          "Oxygen"
         ],
         "planet_types": [
           "Rocky"
@@ -132,7 +141,10 @@
           190,
           null
         ],
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Oxygen added 2026-10-09: 5 of 1,414 bodies in a year of EDDN codex entries (EDGalaxyData archive) grew on it, one per system; the codex list left it out, so each was listed as unlikely."
+        ]
       }
     },
     {
@@ -180,7 +192,8 @@
         "atmosphere": [
           "Ammonia",
           "Water",
-          "Carbon Dioxide"
+          "Carbon Dioxide",
+          "Oxygen"
         ],
         "planet_types": [
           "Rocky"
@@ -189,7 +202,10 @@
           165,
           null
         ],
-        "atmospherePressureCategory": "thin"
+        "atmospherePressureCategory": "thin",
+        "matchContextNotes": [
+          "Oxygen added 2026-10-09: 46 of 46,040 bodies in a year of EDDN codex entries (EDGalaxyData archive) grew on it, one per system; the codex list left it out, so each was listed as unlikely."
+        ]
       }
     },
     {
