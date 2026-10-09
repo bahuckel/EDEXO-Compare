@@ -5,6 +5,7 @@ import { writeFileSync } from "node:fs";
 // import would be dead weight. Only `node scripts/bundle.mjs` catches breaking that.
 import { startEdexo, parseCli } from "./edexoBootstrap.js";
 import { shouldStartRepl, startRepl } from "../cli/repl.js";
+import { isServerChild, runServerChild } from "./serverChild.js";
 
 export {
   startEdexo,
@@ -25,10 +26,14 @@ export { linuxProbes } from "./linuxProbes.js";
 
 /** Electron main `require()`s this bundle; it must not also run the CLI auto-boot or we bind HTTP twice and exit. */
 function shouldRunCliAutoStart(): boolean {
+  if (isServerChild()) return false;
   if (process.env.EDEXO_SKIP_DEVENTRY_AUTOSTART === "1") return false;
   if (typeof (process.versions as { electron?: string }).electron === "string") return false;
   return true;
 }
+
+// The desktop app's server, in a utility process of its own (serverChild.ts, electron/serverChild.cjs).
+if (isServerChild()) runServerChild();
 
 if (shouldRunCliAutoStart()) {
   const cli = parseCli(process.argv.slice(2));

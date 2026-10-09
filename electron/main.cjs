@@ -10,7 +10,9 @@ const {
   globalShortcut,
   shell,
   clipboard,
+  utilityProcess,
 } = require("electron");
+const { startServerChild } = require("./serverChild.cjs");
 const path = require("path");
 const fs = require("fs");
 const { WINDOW_MIN, createWindowState, enableZoom } = require("./windowState.cjs");
@@ -84,6 +86,12 @@ function detectMode() {
 
 let mainWindow = null;
 let runtime = null;
+/**
+ * The overlay controls the server's HTTP routes reach (src/server/hudBridge.ts), asked for by message
+ * from the server's process (serverChild.cjs). Empty until the windows exist; a call before then is
+ * answered "not ready" rather than lost.
+ */
+let hudBridge = {};
 let footOverlayIpcRegistered = false;
 
 /** The HUD overlay windows: hudWindows.cjs owns the stack, its layout file and its visibility. */
@@ -165,15 +173,19 @@ const keybinds = createKeybinds({
     bodyNext: () => uiCommandEverywhere({ cmd: "bodyTab", dir: 1 }),
     tabPrev: () => uiCommandEverywhere({ cmd: "screenTab", dir: -1 }),
     tabNext: () => uiCommandEverywhere({ cmd: "screenTab", dir: 1 }),
-    noticesClear: () => runtime?.clearNotices?.(),
+    // The server answers in its own process (serverChild.cjs); a key never waits for it.
+    noticesClear: () => void runtime?.clearNotices?.()?.catch?.(() => {}),
     // Boxel scanning (server/boxelRun.ts): the server picks the system, the clipboard writer below copies it.
-    boxelCopyNext: () => runtime?.boxelCopyNext?.(),
+    boxelCopyNext: () => void runtime?.boxelCopyNext?.()?.catch?.(() => {}),
     boxelRun: () => {
-      const r = runtime?.boxelRunToggle?.();
-      if (r) console.log(`[edexo-compare] boxel run ${r.running ? "started" : "finished"}: ${r.boxel}`);
+      void Promise.resolve(runtime?.boxelRunToggle?.())
+        .then((r) => {
+          if (r) console.log(`[edexo-compare] boxel run ${r.running ? "started" : "finished"}: ${r.boxel}`);
+        })
+        .catch(() => {});
     },
-    boxelPrev: () => runtime?.boxelStep?.(-1),
-    boxelNext: () => runtime?.boxelStep?.(1),
+    boxelPrev: () => void runtime?.boxelStep?.(-1)?.catch?.(() => {}),
+    boxelNext: () => void runtime?.boxelStep?.(1)?.catch?.(() => {}),
   },
 });
 
@@ -514,9 +526,9 @@ function registerFootOverlayIpc(iconForChild) {
     way out (will-quit), and the new copy starts. With a backup running, quitting asks first, and
     "Keep the app open" calls this off like a plain restart.
   */
-  ipcMain.handle("edexo:install-update", (evt) => {
+  ipcMain.handle("edexo:install-update", async (evt) => {
     if (!mainWindow || evt.sender !== mainWindow.webContents) return { ok: false };
-    const staged = runtime && typeof runtime.stagedUpdate === "function" ? runtime.stagedUpdate() : null;
+    const staged = runtime && typeof runtime.stagedUpdate === "function" ? await runtime.stagedUpdate().catch(() => null) : null;
     if (!selfUpdateFormValue || !staged) return { ok: false, error: "No downloaded update is waiting." };
     installUpdateOnQuit = staged;
     relaunchOnQuit = false;
@@ -613,23 +625,6 @@ async function start() {
 
   process.env.EDEXO_SKIP_DEVENTRY_AUTOSTART = "1";
 
-  const {
-    startEdexoFromElectronMode,
-    setHudBridge,
-    resolveHudLayoutPath,
-    reapplySpeciesDataDirDiscoveryFromDisk,
-    linuxProbes,
-  } = require(bundle);
-  // GNOME without the AppIndicator extension has no tray: asked once, for "Close to tray".
-  if (process.platform === "linux" && linuxProbes && typeof linuxProbes.trayHost === "function") {
-    try {
-      linuxTrayHost = linuxProbes.trayHost();
-    } catch {
-      linuxTrayHost = null;
-    }
-  }
-  huds.setLayoutPathResolver(resolveHudLayoutPath);
-
   /*
     Where the species tree lives, decided by the server's own discovery rather than a copy of it.
 
@@ -641,12 +636,46 @@ async function start() {
 
     It must run before the server starts, because it works by setting `EDEXO_SPECIES_DATA_DIR`.
   */
-  if (typeof reapplySpeciesDataDirDiscoveryFromDisk === "function") {
-    reapplySpeciesDataDirDiscoveryFromDisk();
-  }
+  /*
+    The server in a utility process of its own (owner, 2026-10-09: "I don't want to see the app in an
+    unresponsive state"). It used to be required into this process, the one every window needs, so
+    every long pass of the server froze them all; see src/server/serverChild.ts. The species-tree
+    discovery above now runs there, before its server starts.
+  */
   const mode = detectMode();
-  runtime = await startEdexoFromElectronMode(mode);
+  runtime = await startServerChild({
+    utilityProcess,
+    bundle,
+    mode,
+    argv: process.argv,
+    onHud: (method, arg) => {
+      const fn = hudBridge[method];
+      if (typeof fn !== "function") throw new Error(`Unknown HUD call: ${method}`);
+      return fn(arg);
+    },
+    onDialog: (title, message) => {
+      const opts = { type: "info", title, message };
+      void (mainWindow && !mainWindow.isDestroyed() ? dialog.showMessageBox(mainWindow, opts) : dialog.showMessageBox(opts));
+    },
+    onUnexpectedExit: (code) => {
+      console.error(`[edexo-compare] the server process ended (exit ${code})`);
+      huds.log(`server process ended (exit ${code})`);
+      try {
+        dialog.showErrorBox(
+          "ED Exo Compare — the server stopped",
+          `The part of the app that reads your journals stopped unexpectedly (exit ${code}). The app will close; start it again.`,
+        );
+      } catch {
+        /* ignore */
+      }
+      exitAllowed = true;
+      app.quit();
+    },
+  });
   diag?.mark("server started");
+  // Where the HUD layout lives and whether GNOME has a tray, as the server's process found them.
+  huds.setLayoutPathResolver(() => runtime.layoutPath());
+  if (process.platform === "linux") linuxTrayHost = runtime.linuxTrayHost();
   /*
     The copy the last update moved aside (EDExoCompare.exe.old, or the program folder's .old) goes once
     this one is up and serving (owner, 2026-10-02): every update would otherwise leave a few hundred MB
@@ -706,28 +735,26 @@ async function start() {
     here rather than passed into the server, because the server is already listening by the time
     these windows exist. See `src/server/hudBridge.ts`.
   */
-  if (typeof setHudBridge === "function") {
-    setHudBridge({
-      state: () => ({ paths: huds.paths() }),
-      open: (o) => huds.request(hudPathFrom(o), hudWidthFrom(o), hudHeightFrom(o), huds.childIcon(), "open"),
-      toggle: (o) =>
-        huds.request(hudPathFrom(o), hudWidthFrom(o), hudHeightFrom(o), huds.childIcon(), "toggle"),
-      set: (o) =>
-        huds.request(
-          hudPathFrom(o, "/hud-overlay.html"),
-          hudWidthFrom(o),
-          hudHeightFrom(o),
-          huds.childIcon(),
-          "set",
-        ),
-      close: (o) => huds.close(hudPathFrom(o)),
-      getLayout: () => huds.layout(),
-      setLayout: (o) => huds.setLayout(o || {}),
-      toggleVisibility: (o) => ({
-        hidden: huds.toggleVisibility(o && typeof o.hidden === "boolean" ? o.hidden : undefined),
-      }),
-    });
-  }
+  hudBridge = {
+    state: () => ({ paths: huds.paths() }),
+    open: (o) => huds.request(hudPathFrom(o), hudWidthFrom(o), hudHeightFrom(o), huds.childIcon(), "open"),
+    toggle: (o) =>
+      huds.request(hudPathFrom(o), hudWidthFrom(o), hudHeightFrom(o), huds.childIcon(), "toggle"),
+    set: (o) =>
+      huds.request(
+        hudPathFrom(o, "/hud-overlay.html"),
+        hudWidthFrom(o),
+        hudHeightFrom(o),
+        huds.childIcon(),
+        "set",
+      ),
+    close: (o) => huds.close(hudPathFrom(o)),
+    getLayout: () => huds.layout(),
+    setLayout: (o) => huds.setLayout(o || {}),
+    toggleVisibility: (o) => ({
+      hidden: huds.toggleVisibility(o && typeof o.hidden === "boolean" ? o.hidden : undefined),
+    }),
+  };
 
   huds.loadLayout();
   huds.watchDisplays();
@@ -1073,8 +1100,34 @@ function holdExitForBackup(e) {
   return true;
 }
 
+/** The server's process has stopped (or was given its few seconds); the quit can go ahead. */
+let serverStopped = false;
+let serverStopping = false;
+
 app.on("before-quit", (e) => {
   if (holdExitForBackup(e)) return;
+  /*
+    Let the server write what it holds and stop, in its own process, before this one goes (it used to
+    be asked and not waited for). serverChild.cjs gives it a few seconds, then ends it.
+  */
+  if (runtime && !serverStopped) {
+    e.preventDefault();
+    if (serverStopping) return;
+    serverStopping = true;
+    closeForQuit();
+    void runtime.shutdown().finally(() => {
+      serverStopped = true;
+      app.quit();
+    });
+    return;
+  }
+  closeForQuit();
+});
+
+let closedForQuit = false;
+function closeForQuit() {
+  if (closedForQuit) return;
+  closedForQuit = true;
   // From here the launcher's X closes it for real, whatever "Close to tray" says.
   appQuitting = true;
   // Quitting closes every window: the detached tab windows stay listed for the next start.
@@ -1088,7 +1141,4 @@ app.on("before-quit", (e) => {
   huds.dispose();
   foreground?.stop();
   trayControl.destroy();
-  if (runtime && typeof runtime.shutdown === "function") {
-    void runtime.shutdown();
-  }
-});
+}

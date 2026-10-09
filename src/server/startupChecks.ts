@@ -7,6 +7,12 @@ import { existsSync, readdirSync, statSync, writeFileSync } from "node:fs";
 
 export function showEdexoNativeFixInfo(message: string): boolean {
   if (process.env.EDEXO_ELECTRON !== "1") return false;
+  // The server's own process has no `dialog`: the main process shows it (serverChild.ts).
+  const port = (process as unknown as { parentPort?: { postMessage(m: unknown): void } }).parentPort;
+  if (process.env.EDEXO_SERVER_CHILD === "1" && port) {
+    port.postMessage({ type: "dialog", title: "ED Exo Compare — Fix", message });
+    return true;
+  }
   try {
     const electron = require("electron") as typeof import("electron");
     electron.dialog.showMessageBoxSync({
