@@ -171,7 +171,17 @@ export interface CaptureImportReport {
 export async function importCapture(
   ctx: FeederContext,
   file: string,
-  opts: { apply: boolean; storePath?: string },
+  opts: {
+    apply: boolean;
+    storePath?: string;
+    /**
+     * The system files' own prefix and source tag (default `eddn__`, `eddn-bio-collector`). Another
+     * source takes its own, so its files never replace the collector's and can be told apart, or
+     * removed, later (owner, 2026-10-09: the EDDN archive year, "should be reversible").
+     */
+    systemFilePrefix?: string;
+    systemSource?: string;
+  },
 ): Promise<CaptureImportReport> {
   const parsed = parseCaptureExport(readFileSync(file, "utf8"));
   const resolve = labelResolver(Object.keys(ctx.speciesIndex));
@@ -227,8 +237,13 @@ export async function importCapture(
   for (const { s } of toAdd) {
     if (systemFile.has(s.systemName)) continue;
     const sys = [...parsed.systems.values()].find((x) => x.name === s.systemName)!;
-    const json: Json = { name: sys.name, coords: sys.coords, source: "eddn-bio-collector", bodies: sys.bodies.map(toEdsmBody) };
-    const fileName = `eddn__${speciesFileSlug(sys.name)}.json`;
+    const json: Json = {
+      name: sys.name,
+      coords: sys.coords,
+      source: opts.systemSource ?? "eddn-bio-collector",
+      bodies: sys.bodies.map(toEdsmBody),
+    };
+    const fileName = `${opts.systemFilePrefix ?? "eddn__"}${speciesFileSlug(sys.name)}.json`;
     await writeFile(join(rawSystemsDir(), fileName), JSON.stringify(json), "utf8");
     systemFile.set(s.systemName, { file: fileName, json });
     report.systemFilesWritten++;

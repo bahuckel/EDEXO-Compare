@@ -576,13 +576,21 @@ async function cmdImportCapture(): Promise<void> {
   requireCorpus();
   const file = positional[0];
   if (!file || !existsSync(file)) {
-    console.error("Usage: npm run feeder -- import-capture <eddn-bio-*.jsonl> [--apply]");
+    console.error(
+      "Usage: npm run feeder -- import-capture <eddn-bio-*.jsonl> [--apply] [--system-prefix=eddn__] [--system-source=eddn-bio-collector]",
+    );
     process.exit(1);
   }
   const apply = flags.has("--apply");
   const ctx = await openFeeder();
   console.log(apply ? `\nimporting ${file}…\n` : `\nreading ${file} (dry run)…\n`);
-  const report = await importCapture(ctx, file, { apply, storePath: feederDbPath() });
+  const opt = (name: string) => [...flags].find((f) => f.startsWith(`${name}=`))?.slice(name.length + 1);
+  const report = await importCapture(ctx, file, {
+    apply,
+    storePath: feederDbPath(),
+    systemFilePrefix: opt("--system-prefix"),
+    systemSource: opt("--system-source"),
+  });
   console.log(formatCaptureReport(report, apply));
   if (apply && report.packsWritten > 0) {
     await refreshSpeciesIndex(ctx);
