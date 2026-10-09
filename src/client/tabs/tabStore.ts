@@ -19,6 +19,7 @@ import { useSyncExternalStore } from "react";
 
 export type TabKind =
   | "galaxy"
+  | "systemMap"
   | "boxels"
   | "myExo"
   | "encyclopedia"
@@ -33,6 +34,8 @@ export type TabKind =
 /** The screens that become tabs, in the order the "+" menu lists them. */
 export const TAB_SCREENS: readonly { kind: TabKind; label: string }[] = [
   { kind: "galaxy", label: "Galaxy map" },
+  // Owner, 2026-10-09: the system map opens in a tab of its own.
+  { kind: "systemMap", label: "System map" },
   { kind: "boxels", label: "Boxels" },
   { kind: "myExo", label: "My discoveries" },
   { kind: "encyclopedia", label: "Encyclopedia" },

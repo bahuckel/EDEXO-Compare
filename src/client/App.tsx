@@ -1,4 +1,5 @@
-import { TabHost } from "./tabs/TabHost";
+import { TabHost, TabSlot, useScreenOpen } from "./tabs/TabHost";
+import { tabStore } from "./tabs/tabStore";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { NotableBodyInfo } from "@shared/types";
 import { isBool, usePersistedState } from "./usePersistedState";
@@ -222,7 +223,8 @@ export function App() {
   );
   const multiOrbit = bodySort === "system" && bodyGroups.length > 1;
   const [selectedBodyKey, setSelectedBodyKey] = useState<string | null>(null);
-  const [systemMapOpen, setSystemMapOpen] = useState(false);
+  // A tab in tab view (owner, 2026-10-09), the pop-up it was with tab view off.
+  const [systemMapOpen, setSystemMapOpen] = useScreenOpen("systemMap");
   const [jumpOpen, setJumpOpen] = useState(false);
 
   /**
@@ -429,16 +431,18 @@ export function App() {
   const openJump = useCallback(() => setJumpOpen(true), []);
   const closeJump = useCallback(() => setJumpOpen(false), []);
 
-  const openSystemMap = useCallback(() => setSystemMapOpen(true), []);
+  const openSystemMap = useCallback(() => setSystemMapOpen(true), [setSystemMapOpen]);
 
-  const closeSystemMap = useCallback(() => setSystemMapOpen(false), []);
+  const closeSystemMap = useCallback(() => setSystemMapOpen(false), [setSystemMapOpen]);
 
   const goToBioBodyFromMap = useCallback(
     (bodyKey: string) => {
       focusBodyKey(bodyKey);
-      setSystemMapOpen(false);
+      // As a tab the map stays open behind Main, where the body now is; as a pop-up it closes.
+      if (tabStore.get().on) tabStore.activate("main");
+      else setSystemMapOpen(false);
     },
-    [focusBodyKey],
+    [focusBodyKey, setSystemMapOpen],
   );
 
   const footCatalogNavigate = useCallback(
@@ -558,9 +562,11 @@ export function App() {
         />
       ) : null}
       {systemMapOpen ? (
-        <Suspense fallback={<ModalLoading />}>
-          <SystemMapModal snap={snapshot} onClose={closeSystemMap} onGoToBioBody={goToBioBodyFromMap} />
-        </Suspense>
+        <TabSlot kind="systemMap">
+          <Suspense fallback={<ModalLoading />}>
+            <SystemMapModal snap={snapshot} onClose={closeSystemMap} onGoToBioBody={goToBioBodyFromMap} />
+          </Suspense>
+        </TabSlot>
       ) : null}
       <AppLegalFooter />
     </div>
