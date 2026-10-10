@@ -13,8 +13,8 @@
  *    where it is a third of the Bacterium.
  *
  * Both are applied after the model has shared out the body's probability, and both keep what the model
- * got right: Recepta's split among its three species, and Bacterium's total, which tela's measured share
- * of is all that changes.
+ * got right: Recepta's split among its three species, and Bacterium's total, of which tela's and
+ * omentum's measured shares are all that changes (omentum since 2026-10-10, the same evidence for it).
  */
 import type { PlanetScan, SpeciesMatch } from "../shared/types.js";
 import { gasSharePercent } from "../shared/atmosphereGasShare.js";
@@ -37,8 +37,9 @@ export const RECEPTA_BY_SO2: readonly (readonly [number, number])[] = [
 
 /**
  * Bacterium tela's share of the Bacterium on bodies that meet its rule, by atmosphere and branch ("hot":
- * 300 K or more; "cold": below, with volcanism), from 50,144 EDDN bodies where a Bacterium was logged.
- * Atmospheres with too few bodies are left to the model.
+ * 300 K or more; "cold": below, with volcanism; "cold-nmagma": below, with nitrogen or ammonia magma,
+ * where omentum takes its own share too), from the EDDN bodies where a Bacterium was logged (50,144 hot
+ * or volcanic). Atmospheres with too few bodies are left to the model.
  */
 export const TELA_SHARE: Readonly<Record<string, number>> = {
   "sulphurdioxide|hot": 53,
@@ -46,10 +47,26 @@ export const TELA_SHARE: Readonly<Record<string, number>> = {
   "carbondioxide|hot": 55,
   "water|hot": 48,
   "neonrich|cold": 47,
-  "methane|cold": 34,
-  "neon|cold": 31,
+  "neonrich|cold-nmagma": 48,
+  "methane|cold": 37,
+  "methane|cold-nmagma": 29,
+  "neon|cold": 32,
+  "neon|cold-nmagma": 30,
   "argon|cold": 30,
+  "argon|cold-nmagma": 30,
   "helium|cold": 28,
+};
+
+/**
+ * Bacterium omentum's share of the Bacterium on bodies with nitrogen or ammonia magma (its rule), by
+ * atmosphere: 8,340 EDDN bodies (2026-10-10, owner: "build it, then re-measure"). Nearly a third
+ * everywhere, half on neon-rich, where acies (neon at least 50 %) cannot grow.
+ */
+export const OMENTUM_SHARE: Readonly<Record<string, number>> = {
+  neon: 33,
+  neonrich: 52,
+  argon: 31,
+  methane: 30,
 };
 
 const key = (s: unknown) => String(s ?? "").toLowerCase().replace(/[^a-z]/g, "");
@@ -83,28 +100,38 @@ export function applyMeasuredOdds(shown: SpeciesMatch[], scan: PlanetScan): void
     }
   }
 
-  // Tela's measured share of the Bacterium; the other Bacterium rows keep their order and the rest.
+  // Measured shares of the Bacterium (tela, omentum); the other Bacterium rows keep their order and the rest.
   const t = Number(scan.SurfaceTemperature);
-  const branch = Number.isFinite(t) && t >= 300 ? "hot" : hasVolcanism(scan) ? "cold" : null;
-  const share = branch ? TELA_SHARE[`${atmo}|${branch}`] : undefined;
+  const volc = String(scan.Volcanism ?? "").toLowerCase();
+  const nmagma = /nitrogen magma|ammonia magma/.test(volc);
+  const branch = Number.isFinite(t) && t >= 300 ? "hot" : hasVolcanism(scan) ? (nmagma ? "cold-nmagma" : "cold") : null;
+  const fixed = new Map<string, number>();
+  const telaShare = branch ? (TELA_SHARE[`${atmo}|${branch}`] ?? (branch === "cold-nmagma" ? TELA_SHARE[`${atmo}|cold`] : undefined)) : undefined;
+  if (telaShare !== undefined) fixed.set("bacterium_bacterium_tela", telaShare);
+  if (nmagma && OMENTUM_SHARE[atmo] !== undefined) fixed.set("bacterium_bacterium_omentum", OMENTUM_SHARE[atmo]!);
   const bac = shown.filter((m) => m.entry.genusDataDir === "bacterium");
-  const tela = bac.find((m) => m.entry.id === "bacterium_bacterium_tela");
-  if (share === undefined || !tela || bac.length < 2) return;
+  const set = bac.filter((m) => fixed.has(m.entry.id));
+  const others = bac.filter((m) => !fixed.has(m.entry.id));
+  if (!set.length || bac.length < 2) return;
+  const round = (x: number) => Math.round(x * 10) / 10;
+  // Shares of the rows present; with no other Bacterium row, the set ones split the whole between them.
+  let fixedSum = set.reduce((a, m) => a + fixed.get(m.entry.id)!, 0);
+  const scale = others.length === 0 || fixedSum > 100 ? 100 / fixedSum : 1;
+  fixedSum *= scale;
   const total = bac.reduce((a, m) => a + (m.presenceProbabilityPercent ?? 0), 0);
-  const others = bac.filter((m) => m !== tela);
   const othersTotal = others.reduce((a, m) => a + (m.presenceProbabilityPercent ?? 0), 0);
   const othersShare = others.reduce((a, m) => a + (m.genusSharePercent ?? 0), 0);
-  const round = (x: number) => Math.round(x * 10) / 10;
-  if (total > 0) {
-    tela.presenceProbabilityPercent = round((total * share) / 100);
-    for (const m of others) {
-      const w = othersTotal > 0 ? (m.presenceProbabilityPercent ?? 0) / othersTotal : 1 / others.length;
-      m.presenceProbabilityPercent = round(total * (1 - share / 100) * w);
-    }
+  for (const m of set) {
+    const sh = fixed.get(m.entry.id)! * scale;
+    if (total > 0) m.presenceProbabilityPercent = round((total * sh) / 100);
+    m.genusSharePercent = round(sh);
   }
-  tela.genusSharePercent = share;
   for (const m of others) {
+    if (total > 0) {
+      const w = othersTotal > 0 ? (m.presenceProbabilityPercent ?? 0) / othersTotal : 1 / others.length;
+      m.presenceProbabilityPercent = round(total * (1 - fixedSum / 100) * w);
+    }
     const w = othersShare > 0 ? (m.genusSharePercent ?? 0) / othersShare : 1 / others.length;
-    m.genusSharePercent = round((100 - share) * w);
+    m.genusSharePercent = round((100 - fixedSum) * w);
   }
 }

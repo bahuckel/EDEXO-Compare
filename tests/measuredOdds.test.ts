@@ -42,12 +42,12 @@ describe("Recepta by its sulphur dioxide", () => {
 
 describe("Bacterium tela's measured share", () => {
   const neon = scan({ AtmosphereType: "Neon", SurfaceTemperature: 45, Volcanism: "minor nitrogen magma volcanism" });
-  it("on a cold volcanic neon body: a third of the Bacterium, the total kept", () => {
+  it("on a cold volcanic neon body (nitrogen magma): 30 % of the Bacterium, the total kept", () => {
     const rows = [m("bacterium_bacterium_acies", "bacterium", 90, 92), m("bacterium_bacterium_tela", "bacterium", 3.7, 4), m("bacterium_bacterium_vesicula", "bacterium", 4, 4)];
     applyMeasuredOdds(rows, neon);
     const [acies, tela, ves] = rows;
-    expect(tela!.presenceProbabilityPercent).toBe(30.3);
-    expect(tela!.genusSharePercent).toBe(31);
+    expect(tela!.presenceProbabilityPercent).toBe(29.3);
+    expect(tela!.genusSharePercent).toBe(30);
     expect(acies!.presenceProbabilityPercent! + tela!.presenceProbabilityPercent! + ves!.presenceProbabilityPercent!).toBeCloseTo(97.7, 0);
     expect(acies!.presenceProbabilityPercent!).toBeGreaterThan(ves!.presenceProbabilityPercent!);
   });
@@ -62,5 +62,31 @@ describe("Bacterium tela's measured share", () => {
     const ammonia = [m("bacterium_bacterium_alcyoneum", "bacterium", 80, 90), m("bacterium_bacterium_tela", "bacterium", 8, 10)];
     applyMeasuredOdds(ammonia, scan({ AtmosphereType: "Ammonia", SurfaceTemperature: 160, Volcanism: "minor water magma volcanism" }));
     expect(ammonia[1]!.presenceProbabilityPercent).toBe(8);
+  });
+});
+
+describe("Bacterium omentum's measured share (with tela's on the same body)", () => {
+  const nmagma = (atm: string) => scan({ AtmosphereType: atm, SurfaceTemperature: 40, Volcanism: "minor nitrogen magma volcanism" });
+  it("neon with nitrogen magma: omentum a third, tela 30 %, acies the rest", () => {
+    const rows = [
+      m("bacterium_bacterium_acies", "bacterium", 80, 85),
+      m("bacterium_bacterium_omentum", "bacterium", 15, 10),
+      m("bacterium_bacterium_tela", "bacterium", 5, 5),
+    ];
+    applyMeasuredOdds(rows, nmagma("Neon"));
+    expect(rows.map((x) => x.genusSharePercent)).toEqual([37, 33, 30]);
+    expect(rows.map((x) => x.presenceProbabilityPercent)).toEqual([37, 33, 30]);
+  });
+
+  it("neon-rich, the two alone: they split the Bacterium between them", () => {
+    const rows = [m("bacterium_bacterium_omentum", "bacterium", 50, 50), m("bacterium_bacterium_tela", "bacterium", 50, 50)];
+    applyMeasuredOdds(rows, nmagma("NeonRich"));
+    expect(rows.map((x) => x.genusSharePercent)).toEqual([52, 48]);
+  });
+
+  it("not without nitrogen or ammonia magma", () => {
+    const rows = [m("bacterium_bacterium_acies", "bacterium", 80, 80), m("bacterium_bacterium_omentum", "bacterium", 20, 20)];
+    applyMeasuredOdds(rows, scan({ AtmosphereType: "Neon", SurfaceTemperature: 40, Volcanism: "minor water magma volcanism" }));
+    expect(rows[1]!.presenceProbabilityPercent).toBe(20);
   });
 });
