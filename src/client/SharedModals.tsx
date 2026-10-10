@@ -2,7 +2,7 @@
  * Modals opened from more than one place: encyclopedia, unfinished business, habitat match (7.3).
  */
 import { SkeletonPanel } from "./ui/Skeleton";
-import { lazy, useState, type ComponentType } from "react";
+import { lazy, memo, useState, type ComponentType } from "react";
 
 /*
   A lazy modal that opens at once when its code is already here (UI review P8, 2026-09-29).
@@ -13,6 +13,10 @@ import { lazy, useState, type ComponentType } from "react";
   loaded, this renders the component directly. Which one a mounted modal uses is fixed when it
   mounts, so a panel opened before its chunk arrived is never swapped (and reset) underneath.
   `preload` fetches the chunk; `prefetchMenuModals` does it for every panel once the page is idle.
+
+  Memoised (Fable review D11, 2026-10-10): the header re-renders on every snapshot push and mounts
+  every open screen, hidden tabs included, so a hidden Encyclopedia or Backlog reconciled itself ten
+  times a second. A screen now renders when its own props change; the header passes stable ones.
 */
 function lazyModal<P extends object>(load: () => Promise<ComponentType<P>>) {
   let loaded: ComponentType<P> | null = null;
@@ -22,10 +26,10 @@ function lazyModal<P extends object>(load: () => Promise<ComponentType<P>>) {
       return c;
     });
   const Lazy = lazy(() => fetchIt().then((c) => ({ default: c }))) as unknown as ComponentType<P>;
-  function Modal(props: P) {
+  const Modal = memo(function Modal(props: P) {
     const [C] = useState(() => loaded ?? Lazy);
     return <C {...props} />;
-  }
+  });
   return Object.assign(Modal, { preload: () => void fetchIt().catch(() => {}) });
 }
 

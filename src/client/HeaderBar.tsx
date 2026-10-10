@@ -67,7 +67,8 @@ import { JournalSystemSearch } from "./JournalSystemSearch";
 import { TabSlot, useScreenOpen } from "./tabs/TabHost";
 import { tabStore, useTabSelector } from "./tabs/tabStore";
 /** The 3D galaxy map inside a tab (Tab view); without it, it opens in its own window as before. */
-const GalaxyMap3D = lazy(() => import("./GalaxyMap3D").then((m) => ({ default: m.GalaxyMap3D })));
+// memo: no props, so a snapshot push never reaches it (D11).
+const GalaxyMap3D = memo(lazy(() => import("./GalaxyMap3D").then((m) => ({ default: m.GalaxyMap3D }))));
 
 const PlanetQuickFactsPopup = lazy(() =>
   import("./PlanetQuickFactsPopup").then((m) => ({ default: m.PlanetQuickFactsPopup })),
@@ -405,6 +406,16 @@ export const HeaderBar = memo(function HeaderBar({
   } | null>(null);
   // My discoveries re-sorted its whole table on every push while open: a new onClose rebuilt its columns.
   const closeMyExo = useCallback(() => setMyExoOpen(false), [setMyExoOpen]);
+  // The same for every screen (D11): the screens are memo'd, and a fresh closer per push undid it.
+  const closeStats = useCallback(() => setStatsOpen(false), [setStatsOpen]);
+  const closeBoxels = useCallback(() => setBoxelOpen(false), [setBoxelOpen]);
+  const closeBookmarks = useCallback(() => setBookmarksOpen(false), [setBookmarksOpen]);
+  const closePoi = useCallback(() => setPoiOpen(false), [setPoiOpen]);
+  const closeCarriers = useCallback(() => setCarriersOpen(false), [setCarriersOpen]);
+  const closeBacklog = useCallback(() => setBacklogOpen(false), [setBacklogOpen]);
+  const closeAchievements = useCallback(() => setAchievementsOpen(false), [setAchievementsOpen]);
+  const closeEncyclopedia = useCallback(() => setEncyclopediaOpen(false), [setEncyclopediaOpen]);
+  const closeSession = useCallback(() => setSessionOpen(false), [setSessionOpen]);
   // One function for the header's life, so the system card's memo holds (snapSlice.ts).
   const openNotableQuick = useCallback((n: NotableBodyInfo, ev: ReactMouseEvent) => {
     ev.stopPropagation();
@@ -865,7 +876,7 @@ export const HeaderBar = memo(function HeaderBar({
       {statsOpen ? (
         <TabSlot kind="stats">
           <Suspense fallback={<ModalLoading />}>
-            <StatisticsModal onClose={() => setStatsOpen(false)} />
+            <StatisticsModal onClose={closeStats} />
           </Suspense>
         </TabSlot>
       ) : null}
@@ -874,7 +885,7 @@ export const HeaderBar = memo(function HeaderBar({
         <TabSlot kind="boxels">
         <Suspense fallback={<ModalLoading />}>
           <BoxelScreen
-            onClose={() => setBoxelOpen(false)}
+            onClose={closeBoxels}
             currentSystem={snap.currentSystem ?? null}
             dScan={snap.dScanBodies ?? null}
             revision={snap.boxelsRevision ?? 0}
@@ -887,7 +898,7 @@ export const HeaderBar = memo(function HeaderBar({
         <TabSlot kind="bookmarks">
         <Suspense fallback={<ModalLoading />}>
           <BookmarksModal
-            onClose={() => setBookmarksOpen(false)}
+            onClose={closeBookmarks}
             currentSystemAddress={snap.currentSystemAddress ?? null}
           />
         </Suspense>
@@ -896,7 +907,7 @@ export const HeaderBar = memo(function HeaderBar({
       {poiOpen ? (
         <TabSlot kind="poi">
         <Suspense fallback={<ModalLoading />}>
-          <PoiModal onClose={() => setPoiOpen(false)} />
+          <PoiModal onClose={closePoi} />
         </Suspense>
         </TabSlot>
       ) : null}
@@ -904,7 +915,7 @@ export const HeaderBar = memo(function HeaderBar({
       {carriersOpen ? (
         <TabSlot kind="carriers">
         <Suspense fallback={<ModalLoading />}>
-          <CarriersModal onClose={() => setCarriersOpen(false)} />
+          <CarriersModal onClose={closeCarriers} />
         </Suspense>
         </TabSlot>
       ) : null}
@@ -912,7 +923,7 @@ export const HeaderBar = memo(function HeaderBar({
       {backlogOpen ? (
         <TabSlot kind="backlog">
         <Suspense fallback={<ModalLoading />}>
-          <FirstDiscoveryBacklogModal onClose={() => setBacklogOpen(false)} />
+          <FirstDiscoveryBacklogModal onClose={closeBacklog} />
         </Suspense>
         </TabSlot>
       ) : null}
@@ -920,7 +931,7 @@ export const HeaderBar = memo(function HeaderBar({
       {achievementsOpen ? (
         <TabSlot kind="achievements">
         <Suspense fallback={<ModalLoading />}>
-          <AchievementsModal onClose={() => setAchievementsOpen(false)} />
+          <AchievementsModal onClose={closeAchievements} />
         </Suspense>
         </TabSlot>
       ) : null}
@@ -928,10 +939,10 @@ export const HeaderBar = memo(function HeaderBar({
         <TabSlot kind="encyclopedia">
         <Suspense fallback={<ModalLoading />}>
           <EncyclopediaModal
-            footScannedEntries={snap.footScannedEntries ?? []}
+            footScannedEntries={snap.footScannedEntries ?? NO_FOOT_ENTRIES}
             spawnCompare={encyclopediaSpawnCompare}
             currentRegion={snap.currentRegion?.name ?? null}
-            onClose={() => setEncyclopediaOpen(false)}
+            onClose={closeEncyclopedia}
           />
         </Suspense>
         </TabSlot>
@@ -973,7 +984,7 @@ export const HeaderBar = memo(function HeaderBar({
       {sessionOpen ? (
         <TabSlot kind="session">
           <Suspense fallback={<ModalLoading />}>
-            <SessionLogModal log={snap.sessionLog ?? null} onClose={() => setSessionOpen(false)} />
+            <SessionLogModal log={snap.sessionLog ?? null} onClose={closeSession} />
           </Suspense>
         </TabSlot>
       ) : null}
