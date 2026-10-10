@@ -1597,6 +1597,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     broadcastExoLive,
     broadcastUiCommand,
     listening,
+    closeConnections,
   } = createHttpServer({
     backup: backupService,
     port,
@@ -2200,6 +2201,8 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     if (speciesPollFallback) unwatchFile(speciesDataWatchRoot, onSpeciesTreeOrPricesChange);
     if (existsSync(priceListPath)) unwatchFile(priceListPath, onSpeciesTreeOrPricesChange);
     if (watcher) await watcher.close();
+    // Open sockets (a phone, a browser tab) would otherwise hold the close until the app ends the process.
+    closeConnections();
     await new Promise<void>((res) => {
       server.close(() => res());
     });

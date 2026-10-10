@@ -401,6 +401,12 @@ export function createHttpServer(opts: HttpServerOptions): {
   /** A command for the app pages (key binds: previous / next body tab), to every app-channel socket. */
   broadcastUiCommand: (cmd: UiCommand) => void;
   listening: Promise<void>;
+  /**
+   * Drop every open socket and keep-alive connection, so `server.close` returns at once (code review
+   * 2026-10-10, A2): a phone or a forgotten browser tab kept its WebSocket and the quit waited the eight
+   * seconds the desktop app gives the server before ending it.
+   */
+  closeConnections: () => void;
 } {
   const app = express();
   /*
@@ -1159,6 +1165,18 @@ export function createHttpServer(opts: HttpServerOptions): {
     }
   };
 
+  const closeConnections = () => {
+    for (const ws of wss.clients) {
+      try {
+        ws.terminate();
+      } catch {
+        /* already gone */
+      }
+    }
+    wss.close();
+    server.closeAllConnections?.();
+  };
+
   server.listen(opts.port, opts.bindHost);
-  return { server, broadcast, broadcastExoLive, broadcastUiCommand, listening };
+  return { server, broadcast, broadcastExoLive, broadcastUiCommand, listening, closeConnections };
 }
