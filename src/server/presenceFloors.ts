@@ -75,10 +75,6 @@ export function attachPresenceProbability(
   if (!scan) return;
   const shown = matches.filter((m) => !m.unlikely);
   if (shown.length === 0) return;
-  for (const m of shown) {
-    const fixed = FIXED_PRESENCE_PCT[m.entry.id];
-    if (fixed) m.presenceProbabilityPercent = (b.biologicalSignals ?? 1) > 1 ? fixed.more : fixed.oneSignal;
-  }
   const { ranked } = rankSpeciesOnBody(shown, scan, rec, journalHost, {
     root,
     regionPrior: true,

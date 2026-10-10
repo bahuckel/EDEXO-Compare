@@ -124,6 +124,7 @@ import {
   floorKeptReason,
   markSampledDespiteUnlikely,
 } from "./presenceFloors.js";
+import { applyMeasuredOdds } from "./measuredOdds.js";
 import { applyGenusBodySplit } from "./genusBodySplit.js";
 import { orderConchaPair } from "./conchaOrder.js";
 import { applyGenusPrior, vetoUnseenGenera } from "./genusPrior.js";
@@ -1129,6 +1130,12 @@ function computeBodyUncached(
   */
   applyGenusPrior(matches, b, scanForExo, speciesMatchCtx, root);
   vetoUnseenGenera(matches, b, scanForExo, speciesMatchCtx, root, new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db)));
+  /*
+    The measured odds once more, over the genus prior (code review 2026-10-10, B8): the prior blends a
+    genus's mass with the dump's cell share, which re-diluted Recepta's measured rate. The first pass,
+    inside attachPresenceProbability, is what the 1 % floors judged; this one is what is shown.
+  */
+  if (scanForExo) applyMeasuredOdds(matches.filter((m) => !m.unlikely), scanForExo);
   // Order only, after every floor: Concha labiata or renibus leads by gravity (conchaOrder.ts).
   orderConchaPair(matches, scanForExo);
   markSampledDespiteUnlikely(matches, b, db);
