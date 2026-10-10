@@ -6,6 +6,7 @@ import { writeFileSync } from "node:fs";
 import { startEdexo, parseCli } from "./edexoBootstrap.js";
 import { shouldStartRepl, startRepl } from "../cli/repl.js";
 import { isServerChild, runServerChild } from "./serverChild.js";
+import { resolveUserSettingsJsonPath } from "./paths.js";
 
 export {
   startEdexo,
@@ -61,17 +62,32 @@ if (shouldRunCliAutoStart()) {
     });
 }
 
+/*
+  Where the crash log goes: the app's data folder first (code review 2026-10-10, A1). Beside
+  `process.execPath` is Electron's own folder for the server's process, read-only under Program
+  Files, so the log was lost exactly when it was needed; that folder stays the fallback.
+*/
+function writeCrashLog(text: string): void {
+  let dirs: string[] = [];
+  try {
+    dirs = [path.dirname(resolveUserSettingsJsonPath())];
+  } catch {
+    /* no data folder resolved */
+  }
+  dirs.push(path.dirname(process.execPath));
+  for (const dir of dirs) {
+    try {
+      writeFileSync(path.join(dir, "edexo-compare-crash.log"), text, "utf8");
+      return;
+    } catch {
+      /* the next place */
+    }
+  }
+}
+
 process.on("uncaughtException", (e) => {
   console.error("uncaughtException:", e);
-  try {
-    writeFileSync(
-      path.join(path.dirname(process.execPath), "edexo-compare-crash.log"),
-      String(e && (e as Error).stack ? (e as Error).stack : e),
-      "utf8",
-    );
-  } catch {
-    /* ignore */
-  }
+  writeCrashLog(String(e && (e as Error).stack ? (e as Error).stack : e));
   process.exit(1);
 });
 

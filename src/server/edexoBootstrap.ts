@@ -110,6 +110,7 @@ import {
 } from "./footTravelStatus.js";
 import { parseNavRouteJson } from "./navRouteFuel.js";
 import { getProjectRoot, resolveLanKeyPath, resolveUserSettingsJsonPath, resolveExoOutlierLogPath, USER_SETTINGS_FILENAME, getSpeciesDataDir, reapplySpeciesDataDirDiscoveryFromDisk, resolveImportDumpLedgerPath } from "./paths.js";
+import { guarded } from "./guarded.js";
 import { loadPersistedJournalDir, persistJournalDirPreference, resolveInitialJournalDir } from "./journalDirPreference.js";
 import {
   buildExoMinimapDto,
@@ -733,10 +734,11 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
    * called — whichever poller arrived first swallowed the key, so "focus the body you just
    * scanned" silently failed and, with two clients, at most one ever saw it.
    */
-  const broadcastSnapshot = () => {
+  // Guarded: it runs on timers too, and a throw there would end the server process (guarded.ts).
+  const broadcastSnapshot = guarded("snapshot push", () => {
     broadcast(getSnapshot());
     store.clearPendingUiAutoSelectBodyKey();
-  };
+  });
 
   /**
    * Coalesce journal-driven pushes: fire at once when idle, then at most one per window while
@@ -861,7 +863,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
     }
     footStatusArmedMs = next;
     const tick = footStatusTick;
-    footStatusPollTimer = setInterval(() => tick(), next);
+    footStatusPollTimer = setInterval(guarded("Status.json poll", () => tick()), next);
   }
 
   /**
