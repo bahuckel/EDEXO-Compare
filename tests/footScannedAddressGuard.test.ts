@@ -14,7 +14,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
-  clearFootScannedCatalogCache,
+  resetFootScannedCatalogForTests,
   loadFootScannedCatalog,
   recordFootScanned,
   resetFootScannedCarryOver,
@@ -60,7 +60,7 @@ beforeEach(() => {
   priorEnv = process.env.EDEXO_USER_DATA_DIR;
   process.env.EDEXO_USER_DATA_DIR = userDir;
   resetFootScannedCarryOver();
-  clearFootScannedCatalogCache();
+  resetFootScannedCatalogForTests();
   // The same refusal the other catalog tests carry: these cases write, so a resolver pointed at a
   // real profile would edit a live catalog.
   if (!resolveFootScannedPath().startsWith(userDir)) throw new Error("refusing to run outside the temp dir");
@@ -76,7 +76,7 @@ afterEach(() => {
   if (priorEnv === undefined) delete process.env.EDEXO_USER_DATA_DIR;
   else process.env.EDEXO_USER_DATA_DIR = priorEnv;
   resetFootScannedCarryOver();
-  clearFootScannedCatalogCache();
+  resetFootScannedCatalogForTests();
   rmSync(userDir, { recursive: true, force: true });
 });
 

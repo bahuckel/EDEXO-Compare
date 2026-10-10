@@ -19,7 +19,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
-  clearFootScannedCatalogCache,
+  resetFootScannedCatalogForTests,
   loadFootScannedCatalog,
   resetFootScannedCarryOver,
 } from "../src/server/footScannedCatalog.js";
@@ -39,13 +39,13 @@ const userDir = mkdtempSync(join(tmpdir(), "edexo-provenance-"));
 const priorUserDataDir = process.env.EDEXO_USER_DATA_DIR;
 process.env.EDEXO_USER_DATA_DIR = userDir;
 resetFootScannedCarryOver();
-clearFootScannedCatalogCache();
+resetFootScannedCatalogForTests();
 
 afterAll(() => {
   if (priorUserDataDir === undefined) delete process.env.EDEXO_USER_DATA_DIR;
   else process.env.EDEXO_USER_DATA_DIR = priorUserDataDir;
   resetFootScannedCarryOver();
-  clearFootScannedCatalogCache();
+  resetFootScannedCatalogForTests();
   rmSync(userDir, { recursive: true, force: true });
 });
 const db = loadSpeciesDatabaseFromTree(root);
@@ -137,7 +137,7 @@ describe("journal side, at body resolution", () => {
   });
 
   afterAll(() => {
-    clearFootScannedCatalogCache();
+    resetFootScannedCatalogForTests();
   });
 
   it("has something to test against", () => {

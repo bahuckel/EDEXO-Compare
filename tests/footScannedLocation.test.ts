@@ -18,7 +18,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import {
-  clearFootScannedCatalogCache,
+  resetFootScannedCatalogForTests,
   loadFootScannedCatalog,
   resetFootScannedCarryOver,
 } from "../src/server/footScannedCatalog.js";
@@ -60,7 +60,7 @@ beforeEach(() => {
   priorEnv = process.env.EDEXO_USER_DATA_DIR;
   process.env.EDEXO_USER_DATA_DIR = userDir;
   resetFootScannedCarryOver();
-  clearFootScannedCatalogCache();
+  resetFootScannedCatalogForTests();
 
   /*
     Refuse to run if the path under test is not inside this temp directory.
@@ -82,7 +82,7 @@ afterEach(() => {
   if (priorEnv === undefined) delete process.env.EDEXO_USER_DATA_DIR;
   else process.env.EDEXO_USER_DATA_DIR = priorEnv;
   resetFootScannedCarryOver();
-  clearFootScannedCatalogCache();
+  resetFootScannedCatalogForTests();
   rmSync(userDir, { recursive: true, force: true });
   rmSync(projectRoot, { recursive: true, force: true });
 });

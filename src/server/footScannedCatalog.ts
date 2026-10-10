@@ -432,9 +432,19 @@ export function footScannedCatalogSignature(projectRoot: string): string {
   return `${statMemo.stamp}:${catalogGeneration}`;
 }
 
+/**
+ * Forget what was read from disk. Rows not yet written are not a cache and are kept, with their retry
+ * (code review 2026-10-10, A7): "refresh exomastery" flushes first, but when that flush failed the
+ * rows waiting for the retry were dropped here, the loss code review A14 fixed coming back by another door.
+ */
 export function clearFootScannedCatalogCache(): void {
   footCatalogCache.clear();
   statMemo = null;
+}
+
+/** Tests only: everything, rows not yet written included. */
+export function resetFootScannedCatalogForTests(): void {
+  clearFootScannedCatalogCache();
   pendingCatalogWrites.clear();
   if (catalogFlushTimer) {
     clearTimeout(catalogFlushTimer);

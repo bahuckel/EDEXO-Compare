@@ -7,10 +7,11 @@
  * next flush — at most a second later, or on shutdown.
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
+  resetFootScannedCatalogForTests,
   clearFootScannedCatalogCache,
   flushFootScannedCatalog,
   footScannedCatalogSignature,
@@ -62,7 +63,7 @@ beforeEach(() => {
   priorEnv = process.env.EDEXO_USER_DATA_DIR;
   process.env.EDEXO_USER_DATA_DIR = userDir;
   resetFootScannedCarryOver();
-  clearFootScannedCatalogCache();
+  resetFootScannedCatalogForTests();
   if (!resolveFootScannedPath().startsWith(userDir)) throw new Error("refusing to run outside the temp dir");
   writeFileSync(resolveFootScannedPath(), JSON.stringify({ formatVersion: 1, entries: [] }), "utf8");
 });
@@ -71,7 +72,7 @@ afterEach(() => {
   if (priorEnv === undefined) delete process.env.EDEXO_USER_DATA_DIR;
   else process.env.EDEXO_USER_DATA_DIR = priorEnv;
   resetFootScannedCarryOver();
-  clearFootScannedCatalogCache();
+  resetFootScannedCatalogForTests();
   rmSync(userDir, { recursive: true, force: true });
 });
 
@@ -99,6 +100,21 @@ describe("a write that fails (code review A14, 2026-09-27)", () => {
     expect(loadFootScannedCatalog(root).entries).toHaveLength(1);
     expect(onDisk()).toBe(0);
     rmSync(`${resolveFootScannedPath()}.tmp`, { recursive: true, force: true });
+    flushFootScannedCatalog();
+    expect(onDisk()).toBe(1);
+  });
+});
+
+describe("a failed flush, then the read cache cleared (code review 2026-10-10, A7)", () => {
+  it("keeps the rows waiting for the retry", () => {
+    record(1);
+    // A folder where the file goes: the write fails and the row stays pending.
+    rmSync(resolveFootScannedPath(), { force: true });
+    mkdirSync(resolveFootScannedPath());
+    flushFootScannedCatalog();
+    clearFootScannedCatalogCache();
+    expect(loadFootScannedCatalog(root).entries).toHaveLength(1);
+    rmSync(resolveFootScannedPath(), { recursive: true, force: true });
     flushFootScannedCatalog();
     expect(onDisk()).toBe(1);
   });
