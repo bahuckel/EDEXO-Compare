@@ -23,7 +23,8 @@ import type {
 import type { GameStateStore } from "./gameState.js";
 import { bodyKey } from "../shared/bodyKey.js";
 import { mergeScanForExomastery } from "./footScannedCatalog.js";
-import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
+import { buildSpeciesMatchContext, systemExplorationScanIndex } from "./speciesMatchContext.js";
+import { applySpeciesSplit, splitStarsFrom } from "./speciesSplit.js";
 import { journalHostObservationFromSpeciesContext } from "./journalHostObservation.js";
 import { matchDatabaseToScan, type MatchDatabaseRun } from "./matchSpecies.js";
 import { loadSpatialCatalogue } from "./spatialCatalogue.js";
@@ -111,8 +112,24 @@ export function rankCandidates(
     inside attachPresenceProbability, is what the 1 % floors judged; this one is what is shown.
   */
   if (scan) applyMeasuredOdds(matches.filter((m) => !m.unlikely), scan);
-  // Order only, after every floor: Concha labiata or renibus leads by gravity (conchaOrder.ts).
-  orderConchaPair(matches, scan);
+  /*
+    Which species of the genus, from the fitted tables, for the seven genera where they order better
+    than the model (speciesSplit.ts; owner, 2026-10-10). The genus keeps its chance.
+  */
+  const split = scan
+    ? applySpeciesSplit(matches, {
+        scan,
+        rec,
+        stars: splitStarsFrom(systemExplorationScanIndex(store, b.systemAddress)),
+        coords: store.systemPositions.get(b.systemAddress) ?? store.remoteSystems.get(b.systemAddress)?.coords ?? null,
+        signals: b.biologicalSignals ?? null,
+        catalogue: loadSpatialCatalogue(root),
+        root,
+      })
+    : new Set<string>();
+  // Order only, after every floor: Concha labiata or renibus leads by gravity (conchaOrder.ts), unless
+  // the tables have ordered Concha already.
+  if (!split.has("Concha")) orderConchaPair(matches, scan);
   markSampledDespiteUnlikely(matches, b, db);
 }
 
