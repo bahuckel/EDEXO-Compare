@@ -283,8 +283,8 @@ export function BoxelScreen({
     typed — the name alone says the boxel, owner 2026-10-05), to the last number typed or else the
     highest one recorded, and tick it.
   */
-  const addBoxel = (system: string) => {
-    const end = endInput.trim();
+  const addBoxel = (system: string, endOverride?: string) => {
+    const end = (endOverride ?? endInput).trim();
     void call({
       method: "POST",
       headers: json,
@@ -295,6 +295,24 @@ export function BoxelScreen({
       setPlanInput("");
       if (!ids.includes(j.id)) setIncluded([j.id, ...ids]);
     });
+  };
+  /*
+    The boxel's last system number, applied (owner, 2026-10-10: "when I click on Current boxel I should
+    be able to write down the highest number system in that boxel and apply it … pasting a high-system
+    number should do the same"). A number goes to the boxel typed in Plan, else the one he is in; a
+    whole system name ("Eol Prou PX-T d3-1867") sets its own boxel to its number. The field used to
+    keep only the digits of a pasted name, so d3-1867 became 31867.
+  */
+  const applyEnd = (raw: string) => {
+    const text = raw.trim();
+    const named = parseBoxel(text);
+    if (named?.index != null) {
+      addBoxel(text, String(named.index));
+      return;
+    }
+    const n = text.replace(/\D/g, "");
+    const target = plan ? planInput.trim() : here ? currentSystem : null;
+    if (n && target) addBoxel(target, n);
   };
   const addCurrent = () => {
     if (currentSystem && here) addBoxel(currentSystem);
@@ -761,9 +779,39 @@ export function BoxelScreen({
                 inputMode="numeric"
                 value={endInput}
                 placeholder={endShownFor ? String(endShownFor.end) : "auto"}
-                title="The boxel's last system number, if you know it (for Current boxel and Plan); empty: the highest one anyone has recorded"
-                onChange={(ev) => setEndInput(ev.target.value.replace(/\D/g, ""))}
+                title="The boxel's last system number, or a whole system name from it; Enter or Apply sets it for the boxel in Plan, else the one you are in. Pasting applies it at once. Empty: the highest one anyone has recorded"
+                onChange={(ev) => {
+                  const v = ev.target.value;
+                  const named = parseBoxel(v.trim());
+                  setEndInput(named?.index != null ? String(named.index) : v.replace(/\D/g, ""));
+                }}
+                onPaste={(ev) => {
+                  const text = ev.clipboardData.getData("text");
+                  if (!text.trim()) return;
+                  ev.preventDefault();
+                  applyEnd(text);
+                }}
+                onKeyDown={(ev) => {
+                  if (ev.key !== "Enter") return;
+                  ev.preventDefault();
+                  applyEnd(endInput);
+                }}
               />
+              <button
+                type="button"
+                className="fdb-chip"
+                disabled={!endInput || !(plan || here)}
+                title={
+                  plan
+                    ? `Set ${plan.boxel} to end at -${endInput || "?"}`
+                    : here
+                      ? `Set ${here.boxel} to end at -${endInput || "?"}`
+                      : "Type a Plan system or be in a boxel first"
+                }
+                onClick={() => applyEnd(endInput)}
+              >
+                Apply
+              </button>
             </label>
           </form>
           <button
