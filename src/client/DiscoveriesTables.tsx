@@ -138,25 +138,71 @@ export function Table<T>({
   /*
     The table draws only the rows in view, plus a margin (owner, 2026-10-04, plan 3.4): every row is
     there to scroll to, with no first-300 cap, and a 20,000-body log costs what a screenful does.
-    Rows do not wrap (.disc-td is nowrap), so one measured height places them all.
+
+    Each row's height is measured once it has been drawn, and a row not drawn yet counts as the
+    average of those that were. Rows can wrap (the Boxels table's species and badges run 32-90 px), so
+    one height measured off the first drawn row was wrong: every scroll put a different row first, the
+    height changed, the window moved, and the next first row changed it back — React stopped the loop
+    by unmounting the whole screen (owner, 2026-10-10: "scroll fast up and down in the boxel screen,
+    everything in it disappears"). A drawn row's height does not change, so the updates end.
   */
   const [view, setView] = useState({ top: 0, height: 600 });
-  const [rowH, setRowH] = useState(28);
-  const firstRow = useRef<HTMLTableRowElement>(null);
+  const heights = useRef(new Map<string, number>());
+  const [measured, setMeasured] = useState(0);
+  const tbody = useRef<HTMLTableSectionElement>(null);
+  const OVERSCAN_PX = 640;
   const onView = useCallback(
     (top: number, height: number) =>
-      setView((v) =>
-        Math.floor(v.top / rowH) === Math.floor(top / rowH) && v.height === height ? v : { top, height },
-      ),
-    [rowH],
+      setView((v) => (Math.abs(v.top - top) < OVERSCAN_PX / 4 && v.height === height ? v : { top, height })),
+    [],
   );
-  const OVERSCAN = 20;
-  const from = Math.max(0, Math.floor(view.top / rowH) - OVERSCAN);
-  const to = Math.min(sorted.length, from + Math.ceil(view.height / rowH) + 2 * OVERSCAN);
+  // Prefix offsets of every row: its own measured height, else the average of the measured ones.
+  const offsets = useMemo(() => {
+    let sum = 0;
+    for (const h of heights.current.values()) sum += h;
+    const avg = heights.current.size ? sum / heights.current.size : 28;
+    const out = new Float64Array(sorted.length + 1);
+    for (let i = 0; i < sorted.length; i++) out[i + 1] = out[i]! + (heights.current.get(rowKey(sorted[i]!)) ?? avg);
+    return out;
+    // `measured` stands for the contents of `heights`, which is a ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sorted, rowKey, measured]);
+  // The first row whose bottom is past `y`.
+  const rowAt = (y: number) => {
+    let lo = 0;
+    let hi = sorted.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (offsets[mid + 1]! > y) hi = mid;
+      else lo = mid + 1;
+    }
+    return lo;
+  };
+  const from = rowAt(view.top - OVERSCAN_PX);
+  const to = Math.min(sorted.length, rowAt(view.top + view.height + OVERSCAN_PX) + 1);
+  /*
+    The columns are as wide as the rows drawn, so a row can measure differently in another window.
+    A few re-measures per scroll position settle it; past that the estimate stands until the next
+    scroll, so no window can feed itself.
+  */
+  const settle = useRef({ top: -1, n: 0 });
   useLayoutEffect(() => {
-    const h = firstRow.current?.getBoundingClientRect().height ?? 0;
-    if (h > 4 && Math.abs(h - rowH) > 0.5) setRowH(h);
-  }, [rowH, from, to]);
+    if (settle.current.top !== view.top) settle.current = { top: view.top, n: 0 };
+    if (settle.current.n >= 3) return;
+    let changed = false;
+    for (const tr of tbody.current?.querySelectorAll<HTMLTableRowElement>("tr[data-row-key]") ?? []) {
+      const k = tr.dataset.rowKey!;
+      const h = tr.getBoundingClientRect().height;
+      if (h > 4 && Math.abs((heights.current.get(k) ?? 0) - h) > 0.5) {
+        heights.current.set(k, h);
+        changed = true;
+      }
+    }
+    if (changed) {
+      settle.current.n++;
+      setMeasured((n) => n + 1);
+    }
+  }, [from, to, sorted, columns, view.top]);
   if (rows.length === 0) return <p className="dim disc-empty">{empty}</p>;
 
   const exportCsv = csvName ? (
@@ -238,18 +284,23 @@ export function Table<T>({
               ))}
             </tr>
           </thead>
-          <tbody>
-            {from > 0 ? <tr aria-hidden style={{ height: from * rowH }} /> : null}
-            {sorted.slice(from, to).map((r, i) => (
-              <tr key={rowKey(r)} ref={i === 0 ? firstRow : undefined}>
-                {columns.map((c) => (
-                  <td key={c.key} className={c.numeric ? "disc-td disc-td--num" : "disc-td"}>
-                    {c.render(r)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            {to < sorted.length ? <tr aria-hidden style={{ height: (sorted.length - to) * rowH }} /> : null}
+          <tbody ref={tbody}>
+            {from > 0 ? <tr aria-hidden style={{ height: offsets[from] }} /> : null}
+            {sorted.slice(from, to).map((r) => {
+              const k = rowKey(r);
+              return (
+                <tr key={k} data-row-key={k}>
+                  {columns.map((c) => (
+                    <td key={c.key} className={c.numeric ? "disc-td disc-td--num" : "disc-td"}>
+                      {c.render(r)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+            {to < sorted.length ? (
+              <tr aria-hidden style={{ height: offsets[sorted.length]! - offsets[to]! }} />
+            ) : null}
           </tbody>
         </table>
       </ScrollArea>
