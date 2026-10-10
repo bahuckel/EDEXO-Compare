@@ -10,7 +10,7 @@ import type {
   SpeciesMatchContext,
 } from "../shared/types.js";
 import type { PlanetTemperatureBand } from "./matchSpecies.js";
-import { speciesMatchesCriteria } from "./matchSpecies.js";
+import { resolvePlanetTemperatureBand, speciesMatchesCriteria } from "./matchSpecies.js";
 import { estimatedTemperatureRangeForScan } from "./planetTemperature.js";
 import {
   loadExomasteryProfile,
@@ -175,11 +175,13 @@ export function computeExoDataAlertsForBody(input: {
   }
 
   const est = estimatedTemperatureRangeForScan(mergedScan);
-  const planetBand: PlanetTemperatureBand | null = est
-    ? { minK: est.tMin, maxK: est.tMax }
-    : mergedScan.SurfaceTemperature != null && Number.isFinite(mergedScan.SurfaceTemperature)
-      ? { minK: mergedScan.SurfaceTemperature, maxK: mergedScan.SurfaceTemperature }
-      : null;
+  /*
+    The matcher's own band: the measured temperature when the scan has one, the estimate only when it
+    does not. This built its band from the estimate first, so a body at 195.2 K was judged at "up to
+    308 K" and Frutexa fera, listed at 28 %, was reported as failing its 195 K cap (Phraa Blao ED-Q
+    d6-82 AB 1 e and f, owner 2026-10-10).
+  */
+  const planetBand: PlanetTemperatureBand | null = resolvePlanetTemperatureBand(mergedScan, est);
   const estRange =
     est != null
       ? { tMin: est.tMin, tMax: est.tMax, tMid: est.tMid }

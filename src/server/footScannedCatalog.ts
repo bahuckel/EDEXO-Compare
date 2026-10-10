@@ -38,7 +38,7 @@ import {
   resolveExomasteryExportBasename,
 } from "./exomasteryProfile.js";
 import { estimatedTemperatureRangeForScan, normalizeScanAtmosphereForMatch } from "./planetTemperature.js";
-import { matchDatabaseToScan, shownSpeciesMatches, speciesMatchesCriteria } from "./matchSpecies.js";
+import { matchDatabaseToScan, resolvePlanetTemperatureBand, shownSpeciesMatches, speciesMatchesCriteria } from "./matchSpecies.js";
 import { loadSpeciesDatabaseFromTree } from "./speciesTreeLoader.js";
 import { filterByGenusHints } from "./genusMatchUtils.js";
 import { resolveSpeciesPhoto } from "./speciesPhotos.js";
@@ -840,12 +840,8 @@ export function augmentMatchesWithFootCatalog(
             return { tMin: t, tMax: t, tMid: t };
           })()
         : null;
-  const planetTempBand =
-    est != null
-      ? { minK: est.tMin, maxK: est.tMax }
-      : mergedScan.SurfaceTemperature != null && Number.isFinite(mergedScan.SurfaceTemperature)
-        ? { minK: mergedScan.SurfaceTemperature, maxK: mergedScan.SurfaceTemperature }
-        : null;
+  // The matcher's band: the measured temperature first, the estimate only without one (2026-10-10).
+  const planetTempBand = resolvePlanetTemperatureBand(mergedScan, est);
 
   const catalog = { entries: footRowsWithShared(projectRoot) };
   const matchedGenera = new Set(matches.map((m) => genusFold(m.entry.genus)));
