@@ -40,14 +40,14 @@ function regionIndexForBody(store: GameStateStore, b: BodyExoState, projectRoot:
  * O/B/remnant host), Shards was on 4,426 of 134,646 one-signal bodies (3.3 %) and 255 of 203,234 with
  * more signals (0.13 %).
  *
- * 2026-10-09, with the two rules those numbers lacked: volcanism (all 5,945 Shards bodies have minor
- * volcanism) and 19,500 ly from the core (spatialGates.ts). Over the dump's candidate bodies the
- * volcanic ones carry Shards 8.7 times as often with one signal and 52 times with more, and the far
- * ones 1.37 times as often again; applied to the rates above: about 39 % and 9.3 %. The companion
- * body is not in the dump's bio export, so these assume it is independent of the other two.
+ * 2026-10-10, every rule at once, counted in the galaxy query database (all bodies of every system, so
+ * the companion body is known): of the bodies a DSS has named the genera of, meeting class, 20-273 K,
+ * ≥ 12,000 Ls, volcanism (all 5,945 Shards bodies have it), the atmospheres, 19,500 ly from the core
+ * and a companion world, Shards is on 5,497 of 11,322 with one signal (48.6 %) and 400 of 6,690 with
+ * more (6.0 %). Without a companion world: 0.17 % and 0.09 % (46 bodies, likely unscanned companions).
  */
 const FIXED_PRESENCE_PCT: Record<string, { oneSignal: number; more: number }> = {
-  crystalline_shards_crystalline_shards: { oneSignal: 39, more: 9.3 },
+  crystalline_shards_crystalline_shards: { oneSignal: 48.6, more: 6 },
 };
 
 /**
