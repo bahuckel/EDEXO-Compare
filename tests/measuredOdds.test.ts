@@ -90,3 +90,21 @@ describe("Bacterium omentum's measured share (with tela's on the same body)", ()
     expect(rows[1]!.presenceProbabilityPercent).toBe(20);
   });
 });
+
+describe("spelled the EDSM / Spansh way (code review 2026-10-10, B5)", () => {
+  it("a looked-up body gets the same measured odds as a scanned one", () => {
+    const rows = [m("bacterium_bacterium_acies", "bacterium", 90, 92), m("bacterium_bacterium_tela", "bacterium", 3.7, 4), m("bacterium_bacterium_vesicula", "bacterium", 4, 4)];
+    applyMeasuredOdds(rows, scan({ AtmosphereType: "Thin Neon", SurfaceTemperature: 45, Volcanism: "Minor Nitrogen Magma" }));
+    expect(rows[1]!.genusSharePercent).toBe(30);
+    const rec = [m("recepta_recepta_umbrux", "recepta", 0.5, 100)];
+    applyMeasuredOdds(rec, scan({ AtmosphereType: "Thin Carbon dioxide", atmosphereComposition: [{ Name: "SulphurDioxide", Percent: 2.2 }, { Name: "CarbonDioxide", Percent: 97.8 }] }));
+    expect(rec[0]!.presenceProbabilityPercent).toBe(89);
+  });
+
+  it("neon-rich stays apart from neon", () => {
+    const rows = [m("bacterium_bacterium_omentum", "bacterium", 50, 50), m("bacterium_bacterium_tela", "bacterium", 50, 50)];
+    applyMeasuredOdds(rows, scan({ AtmosphereType: "Thin Neon-rich", SurfaceTemperature: 40, Volcanism: "Minor Nitrogen Magma" }));
+    expect(rows.map((x) => x.genusSharePercent)).toEqual([52, 48]);
+  });
+});
+

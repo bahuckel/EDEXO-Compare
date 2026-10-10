@@ -12,7 +12,7 @@ import {
   LIGHT_SECOND_METERS,
   THIN_ATMOSPHERE_MAX_ATM,
 } from "./journalPhysics.js";
-import { normalizeScanAtmosphereForMatch, atmosphereCompositionKey } from "./scanAtmosphereMatch.js";
+import { normalizeScanAtmosphereForMatch, atmosphereCompositionKey, atmosphereTypeKeyOf } from "./scanAtmosphereMatch.js";
 import { spectralKeysFromJournalStarType } from "./starSpectralKeys.js";
 import { isBacteriumSpeciesEntry } from "./speciesBacterium.js";
 import { formatGenusStarColorSoftOneLine } from "./genusStarColorSoft.js";
@@ -649,7 +649,7 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     const key = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
     const words = (s: string) => s.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
     const caps = Object.entries(c.maxPressureByAtmosphere);
-    const here = scan?.AtmosphereType ? key(String(scan.AtmosphereType)) : null;
+    const here = scan ? atmosphereTypeKeyOf(scan) || null : null;
     const hit = here ? caps.find(([k]) => key(k) === here) : undefined;
     const rawP = scan?.SurfacePressure;
     const pAtm = rawP != null && !Number.isNaN(rawP as number) ? journalPressureToAtm(rawP as number) : null;

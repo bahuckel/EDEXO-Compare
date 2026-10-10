@@ -45,6 +45,7 @@ import { observedUnderAtmosphere } from "./speciesAtmosphereObservations.js";
 import {
   normalizeScanAtmosphereForMatch,
   atmosphereCompositionKey,
+  atmosphereTypeKeyOf,
   atmosphereAllowlistMeansAnyThinCompositionOnly,
 } from "../shared/scanAtmosphereMatch.js";
 import { atmosphereBucketForEstimator, estimatedTemperatureRangeForScan } from "./planetTemperature.js";
@@ -1345,7 +1346,7 @@ export function speciesMatchesCriteria(
 
   // A ceiling for one atmosphere only (Crystalline Shards on thin carbon dioxide; 2026-10-10).
   if (c.maxPressureByAtmosphere && rawP !== undefined && rawP !== null) {
-    const here = atmosphereTypeKey(String(scan.AtmosphereType ?? ""));
+    const here = atmosphereTypeKeyOf(scan);
     const cap = Object.entries(c.maxPressureByAtmosphere).find(([k]) => atmosphereTypeKey(k) === here)?.[1];
     if (cap !== undefined) {
       const p = journalPressureToAtm(rawP);

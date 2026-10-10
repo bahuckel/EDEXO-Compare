@@ -18,6 +18,7 @@
  */
 import type { PlanetScan, SpeciesMatch } from "../shared/types.js";
 import { gasSharePercent } from "../shared/atmosphereGasShare.js";
+import { atmosphereTypeKeyOf } from "../shared/scanAtmosphereMatch.js";
 
 /**
  * Recepta on a thin carbon dioxide (or oxygen) body: how often it is there by the sulphur dioxide share,
@@ -69,8 +70,6 @@ export const OMENTUM_SHARE: Readonly<Record<string, number>> = {
   methane: 30,
 };
 
-const key = (s: unknown) => String(s ?? "").toLowerCase().replace(/[^a-z]/g, "");
-
 function receptaRate(so2: number): number | null {
   if (!(so2 > 1)) return null;
   for (const [upTo, rate] of RECEPTA_BY_SO2) if (so2 <= upTo) return rate;
@@ -84,7 +83,7 @@ function hasVolcanism(scan: PlanetScan): boolean {
 
 /** Lays the measured odds over the model's `presenceProbabilityPercent` / `genusSharePercent` on the shown rows. */
 export function applyMeasuredOdds(shown: SpeciesMatch[], scan: PlanetScan): void {
-  const atmo = key(scan.AtmosphereType);
+  const atmo = atmosphereTypeKeyOf(scan);
 
   // Recepta where sulphur dioxide is a trace in another gas: the genus at its measured rate, the species
   // split as the model has it.

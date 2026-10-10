@@ -48,6 +48,16 @@ export function normalizeScanAtmosphereForMatch(scan: PlanetScan): string {
  * Normalizes journal / JSON atmosphere labels to a single comparison key
  * (e.g. NitrogenRich, nitrogen-rich, Neon → neon; Nitrogen → nitrogen).
  */
+/**
+ * The atmosphere's type as one key, whichever source spelled it: "CarbonDioxide" (journal) and "Thin Carbon
+ * dioxide" (EDSM / Spansh) both give "carbondioxide"; "-rich" stays apart ("neonrich"), unlike
+ * {@link atmosphereCompositionKey}, because the measured tables tell neon from neon-rich (code review
+ * 2026-10-10, B4/B5: the letters-only key missed every looked-up or sibling-hydrated body).
+ */
+export function atmosphereTypeKeyOf(scan: PlanetScan): string {
+  return normalizeScanAtmosphereForMatch(scan).toLowerCase().replace(/[^a-z]/g, "");
+}
+
 export function atmosphereCompositionKey(token: string): string {
   /*
     The game spells it both ways — `sulfur dioxide` in a scan's `Atmosphere` text, `SulphurDioxide`

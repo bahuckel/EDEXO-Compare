@@ -98,6 +98,9 @@ describe("Crystalline Shards: every condition, or not listed", () => {
     expect(on("CarbonDioxide", 0.005 * 101_325)).toBeDefined();
     expect(on("CarbonDioxide", 0.02 * 101_325)).toBeUndefined();
     expect(on("Neon", 0.05 * 101_325)).toBeDefined();
+    // Spelled the EDSM / Spansh way, as a looked-up body carries it (code review 2026-10-10, B4).
+    expect(on("Thin Carbon dioxide", 0.02 * 101_325)).toBeUndefined();
+    expect(on("Thin Carbon dioxide", 0.005 * 101_325)).toBeDefined();
   });
 
   it("are listed when a DSS names the genus, whatever else is known", () => {
