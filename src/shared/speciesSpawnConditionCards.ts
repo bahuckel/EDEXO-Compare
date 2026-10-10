@@ -644,6 +644,31 @@ export function buildEncyclopediaSpawnConditionCards(args: {
     }
   }
 
+  /* A pressure ceiling for one atmosphere only (Crystalline Shards on thin carbon dioxide, 2026-10-10). */
+  if (c.maxPressureByAtmosphere) {
+    const key = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
+    const words = (s: string) => s.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+    const caps = Object.entries(c.maxPressureByAtmosphere);
+    const here = scan?.AtmosphereType ? key(String(scan.AtmosphereType)) : null;
+    const hit = here ? caps.find(([k]) => key(k) === here) : undefined;
+    const rawP = scan?.SurfacePressure;
+    const pAtm = rawP != null && !Number.isNaN(rawP as number) ? journalPressureToAtm(rawP as number) : null;
+    let tier: EncyclopediaSpawnTier = "blue";
+    let caption = scan ? "Not this body's atmosphere" : "Needs a detailed scan";
+    if (!scan) tier = "yellow";
+    else if (hit && pAtm != null && Number.isFinite(pAtm)) {
+      tier = pAtm <= hit[1] ? "blue" : "red";
+      caption = `This body ${pAtm.toFixed(4)} atm — ${pAtm <= hit[1] ? "within" : "over"}`;
+    }
+    out.push({
+      id: "pressure-by-atmosphere",
+      label: "Pressure on one atmosphere",
+      lines: caps.map(([k, v]) => `≤ ${v} atm on ${words(k)}`),
+      caption,
+      tier,
+    });
+  }
+
   /* Thin/thick pressure category gate */
   if (!bac && c.atmospherePressureCategory) {
     const cat = c.atmospherePressureCategory;

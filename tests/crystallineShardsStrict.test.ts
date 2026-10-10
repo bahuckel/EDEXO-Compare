@@ -85,6 +85,21 @@ describe("Crystalline Shards: every condition, or not listed", () => {
     expect(shards(ok)).toBeDefined();
   });
 
+  it("on thin carbon dioxide only up to 0.01 atm, on other atmospheres at any thin pressure (2026-10-10)", () => {
+    const ok = { systemBodyClasses: ["Earthlike body"], systemBodyListComplete: true };
+    const on = (atm: string, pa: number) =>
+      matchDatabaseToScan(
+        db,
+        { ...scan, AtmosphereType: atm, Atmosphere: `thin ${atm} atmosphere`, SurfacePressure: pa } as unknown as PlanetScan,
+        null,
+        null,
+        { matchContext: { ...base, ...ok }, biologicalSignals: 1 },
+      ).matches.find((m) => m.entry.id === SHARDS);
+    expect(on("CarbonDioxide", 0.005 * 101_325)).toBeDefined();
+    expect(on("CarbonDioxide", 0.02 * 101_325)).toBeUndefined();
+    expect(on("Neon", 0.05 * 101_325)).toBeDefined();
+  });
+
   it("are listed when a DSS names the genus, whatever else is known", () => {
     const dss: GenusHint[] = [{ Genus: "$Codex_Ent_Ground_Struct_Ice_Name;", Genus_Localised: "Crystalline Shards" }];
     expect(shards({ systemBodyClasses: [], systemBodyListComplete: false }, dss)).toBeDefined();

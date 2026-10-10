@@ -6,6 +6,11 @@ import { JOURNAL_PLANET_CLASS, planetClassId } from "../shared/normalise/planetC
 import type { SpeciesCriterion } from "../shared/types.js";
 import { isNoAtmosphereText } from "../shared/atmosphereText.js";
 
+/** "CarbonDioxide", "Carbon dioxide", "carbon_dioxide" -> "carbondioxide"; "-rich" stays apart. */
+export function atmosphereTypeKey(s: string): string {
+  return s.toLowerCase().replace(/[^a-z]/g, "");
+}
+
 export function asRecord(v: unknown): Record<string, unknown> | null {
   return v !== null && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
 }
@@ -356,6 +361,16 @@ export function buildCriterionFromRecord(src: Record<string, unknown>): SpeciesC
     const pMax = toNumber(firstDefined(src, ["pressureMax", "maxPressure", "surfacePressureMax"]));
     const p = mergeRange(undefined, pMin, pMax);
     if (p) c.surfacePressure = p;
+  }
+
+  const mpa = asRecord(src.maxPressureByAtmosphere ?? src.max_pressure_by_atmosphere);
+  if (mpa) {
+    const out: Record<string, number> = {};
+    for (const [k, v] of Object.entries(mpa)) {
+      const n = toNumber(v);
+      if (n !== undefined) out[k] = n;
+    }
+    if (Object.keys(out).length) c.maxPressureByAtmosphere = out;
   }
 
   const vol = toStringArray(src.volcanismIncludes ?? src.volcanism ?? src.Volcanism);

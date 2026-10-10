@@ -11,6 +11,7 @@ import type {
   OrganicGenusLock,
 } from "../shared/types.js";
 import { orbitsAStar } from "./orbitUtils.js";
+import { atmosphereTypeKey } from "./speciesCriterionParser.js";
 import {
   REQUIRED_GAS_MIN_SHARE_PCT,
   requiredAtmosphereShare,
@@ -1338,6 +1339,25 @@ export function speciesMatchesCriteria(
         });
       } else {
         extraOkReasons.push({ field: "SurfacePressure", detail: `${shown} atm` });
+      }
+    }
+  }
+
+  // A ceiling for one atmosphere only (Crystalline Shards on thin carbon dioxide; 2026-10-10).
+  if (c.maxPressureByAtmosphere && rawP !== undefined && rawP !== null) {
+    const here = atmosphereTypeKey(String(scan.AtmosphereType ?? ""));
+    const cap = Object.entries(c.maxPressureByAtmosphere).find(([k]) => atmosphereTypeKey(k) === here)?.[1];
+    if (cap !== undefined) {
+      const p = journalPressureToAtm(rawP);
+      const shown = p < 0.01 ? p.toFixed(4) : p.toFixed(3);
+      if (p > cap) {
+        failures.push({
+          field: "SurfacePressure",
+          soft: true,
+          detail: `${shown} atm on ${scan.AtmosphereType}, over the ${cap} atm it has been found at on this atmosphere. ${DEMOTED_NOTE}`,
+        });
+      } else {
+        extraOkReasons.push({ field: "SurfacePressure", detail: `${shown} atm (up to ${cap} on ${scan.AtmosphereType})` });
       }
     }
   }

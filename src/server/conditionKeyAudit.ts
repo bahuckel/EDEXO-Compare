@@ -118,6 +118,7 @@ const PARSED_CRITERION_KEYS: readonly string[] = [
   "maxPressure",
   "surfacePressureMin",
   "surfacePressureMax",
+  "maxPressureByAtmosphere",
   // volcanism
   "volcanismIncludes",
   "volcanism",

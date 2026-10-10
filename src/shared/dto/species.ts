@@ -223,6 +223,12 @@ export interface SpeciesCriterion {
   softMaxSemiMajorAxisLs?: number;
   /** Journal SurfacePressure (official docs: atmospheres for landables) */
   surfacePressure?: { min?: number; max?: number };
+  /**
+   * A pressure ceiling for one atmosphere only, in atm, keyed by the journal's AtmosphereType
+   * ("CarbonDioxide"; compared without case or spaces, and the "-rich" one is another key). Crystalline Shards on thin carbon dioxide grow at
+   * 0.0097 atm or less, while on every other atmosphere they share other plants' pressures (2026-10-10).
+   */
+  maxPressureByAtmosphere?: Record<string, number>;
   landable?: boolean;
   /**
    * Known only from these systems (id64). A wall: Ingensradices unicus, found in HIP 87621 alone

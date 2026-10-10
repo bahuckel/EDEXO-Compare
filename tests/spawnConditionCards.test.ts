@@ -288,6 +288,7 @@ describe("the audit — every gate the matcher applies is drawn somewhere", () =
           offListAtmosphereNeedsVolcanism: ["soft-volcanism"],
           volcanicOnlyAtmospheres: ["soft-volcanism"],
           surfacePressure: ["pressure"],
+          maxPressureByAtmosphere: ["pressure-by-atmosphere"],
           volcanismIncludes: ["volcanism"],
           volcanismActiveRequired: ["volcanism", "presence"],
           landable: ["landable"],

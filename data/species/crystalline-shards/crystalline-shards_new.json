@@ -35,6 +35,7 @@
         "atmosphere": ["None", "Neon", "Neon-rich", "Carbon Dioxide", "Helium", "Methane", "Argon", "Argon-rich"],
         "temperature_K": { "min": 20, "max": 273 },
         "volcanismActiveRequired": true,
+        "maxPressureByAtmosphere": { "CarbonDioxide": 0.01 },
         "distance_from_arrival": { "min_ls": 12000 },
         "all_conditions_required": true,
         "system_requirements": [
@@ -53,7 +54,8 @@
           "Companion body: 245 of 259 systems the dump holds whole (94.6 %) have one of the listed classes; 4 of the 14 without have a Water World, which is added.",
           "Every condition must be known and met (owner, 2026-10-04: no guesswork): until a body of a listed class has been scanned in the system, the host star is known and the distance from arrival is ≥ 12,000 Ls, Shards are not listed at all — not even as unlikely. A DSS naming the genus lists them regardless.",
           "Host star: K, M, G, F, brown dwarfs and A — never O, B, white dwarf, neutron or black hole (hostStarGates.ts).",
-          "Volcanism required (owner's plan, 2026-10-09: \"time to fix them\"): every Shards body has some — the EDDN year 70 of 70 (all minor), Bioforge's 4,450 sightings list 4,297 with a volcanism type and never 'no volcanism' (one major silicate vapour geysers, the rest minor). The EDDN year's other candidate bodies are 92 % without, so the rule removes most of the bodies where Shards were offered at 0 %."
+          "Volcanism required (owner's plan, 2026-10-09: \"time to fix them\"): every Shards body has some — the EDDN year 70 of 70 (all minor), Bioforge's 4,450 sightings list 4,297 with a volcanism type and never 'no volcanism' (one major silicate vapour geysers, the rest minor). The EDDN year's other candidate bodies are 92 % without, so the rule removes most of the bodies where Shards were offered at 0 %.",
+          "Thin carbon dioxide only up to 0.01 atm (owner, 2026-10-10: \"Shards are found only on very low atmospheric pressures\" — true for this atmosphere alone): in the galaxy query database all 285 Shards bodies on thin carbon dioxide are at 0.0097 atm or less, while 79 % of comparable bodies with other plants are above it. On neon, neon-rich, helium, methane and argon they share the other plants' pressures, and 77 % of Shards bodies have no atmosphere."
         ]
       }
     }
