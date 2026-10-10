@@ -1,5 +1,6 @@
-import { navRouteLog, recordNavRoute } from "./navRouteLog.js";
-import { enablePredictionAudit } from "./predictionAuditLog.js";
+import { flushNavRouteLog, navRouteLog, recordNavRoute } from "./navRouteLog.js";
+import { enablePredictionAudit, flushPredictionAudit } from "./predictionAuditLog.js";
+import { flushSurfaceMarks } from "./surfaceMarksFile.js";
 import { startEddnLedgerWatch } from "./eddnLedger.js";
 import path from "node:path";
 import {
@@ -122,7 +123,7 @@ import { clearEddsnColourVariantsCache } from "./eddsnColourVariants.js";
 import { clearPhotoCreditsCache } from "./photoCredits.js";
 import { clearRegionSpeciesCache } from "./regionSpeciesData.js";
 import { perfTime, startPerfReporter } from "./perf.js";
-import { loadOrganicSampleSessionFromDisk } from "./organicSampleSessionFile.js";
+import { flushPendingOrganicSampleSession, loadOrganicSampleSessionFromDisk } from "./organicSampleSessionFile.js";
 import {
   buildJournalFileManifest,
   removeJournalMergeCache,
@@ -2188,8 +2189,13 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
 
   const shutdown = async () => {
     if (warmUpTimer != null) clearTimeout(warmUpTimer);
-    // The foot catalog writes at most once a second; closing must not drop the last second.
+    // The foot catalog writes at most once a second; closing must not drop the last second. Nor the other
+    // debounced savers (code review 2026-10-10, A4): their timers die with the process.
     flushFootScannedCatalog();
+    flushPredictionAudit();
+    flushSurfaceMarks();
+    flushPendingOrganicSampleSession();
+    flushNavRouteLog();
     backupService.dispose();
     gamePresence.dispose();
     if (footStatusPollTimer != null) {

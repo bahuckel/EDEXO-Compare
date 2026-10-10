@@ -88,6 +88,13 @@ function saveSoon(): void {
   }, 1500);
   if (typeof saveTimer.unref === "function") saveTimer.unref();
 }
+/** Write a pending save now, at shutdown (code review 2026-10-10, A4). */
+export function flushNavRouteLog(): void {
+  if (!saveTimer) return;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  saveNow();
+}
 function saveNow(): void {
   try {
     const f = filePath();

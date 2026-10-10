@@ -255,6 +255,14 @@ function saveSoon(): void {
   pending.unref?.();
 }
 
+/** Write what is waiting now, at shutdown (code review 2026-10-10, A4): the debounce would drop it. */
+export function flushPredictionAudit(): void {
+  if (!pending) return;
+  clearTimeout(pending);
+  pending = null;
+  saveNow();
+}
+
 /** Test seam — the module holds the file in memory for the life of the process. */
 export function resetPredictionAuditForTests(): void {
   if (pending) clearTimeout(pending);

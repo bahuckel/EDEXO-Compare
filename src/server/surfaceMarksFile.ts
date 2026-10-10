@@ -156,6 +156,16 @@ export function scheduleSaveSurfaceMarks(data: SurfaceMarksFile): void {
   pending.unref?.();
 }
 
+/** Write a pending save now, at shutdown (code review 2026-10-10, A4). */
+export function flushSurfaceMarks(): void {
+  if (!pending) return;
+  clearTimeout(pending);
+  pending = null;
+  const d = pendingData;
+  pendingData = null;
+  if (d) saveSurfaceMarks(d);
+}
+
 export function saveSurfaceMarks(data: SurfaceMarksFile): void {
   const file = resolveSurfaceMarksPath();
   try {

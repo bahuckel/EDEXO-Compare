@@ -6,7 +6,7 @@
  * traps are all about timing: scoring the list after `ScanOrganic` would say the app is always
  * right, and writing a stage on every snapshot recompute would bury the narrowings in noise.
  */
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,6 +28,7 @@ const {
   finalisePredictionsForSystem,
   enablePredictionAudit,
   resetPredictionAuditForTests,
+  flushPredictionAudit,
 } = await import("../src/server/predictionAuditLog.js");
 
 const db = { species: [] } as unknown as Parameters<typeof recordPredictionForBody>[0]["db"];
@@ -69,6 +70,15 @@ beforeEach(() => {
 afterEach(() => {
   resetPredictionAuditForTests();
   rmSync(tmp, { recursive: true, force: true });
+});
+
+describe("at shutdown", () => {
+  it("a pending save is written at once by the flush (code review 2026-10-10, A4)", () => {
+    recordPredictionForBody({ body: body(), matches: [m("frutexa_acus", "Frutexa", 40)], db });
+    expect(existsSync(auditPath)).toBe(false);
+    flushPredictionAudit();
+    expect(JSON.parse(readFileSync(auditPath, "utf8")).records).toHaveLength(1);
+  });
 });
 
 describe("recording the narrowing", () => {

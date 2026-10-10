@@ -97,6 +97,16 @@ export function schedulePersistOrganicSampleSession(
   }, 400);
 }
 
+/** Write a pending save now, at shutdown (code review 2026-10-10, A4). */
+export function flushPendingOrganicSampleSession(): void {
+  if (!persistTimer) return;
+  clearTimeout(persistTimer);
+  persistTimer = null;
+  const p = persistPending;
+  persistPending = null;
+  if (p) flushPersistOrganicSampleSession(p.host, p.projectRoot);
+}
+
 function flushPersistOrganicSampleSession(host: OrganicSampleSessionHost, projectRoot: string): void {
   const t = host.exoOrganicTracker;
   if (!t) {
