@@ -14,6 +14,7 @@ import type { GameStateStore } from "./gameState.js";
 import { collectOwnOrganicLockSpeciesIds } from "./organicLocks.js";
 import { regionIndexForSystem } from "./regionMapData.js";
 import { REGION_PRIOR_WEIGHT, rankSpeciesOnBody } from "./speciesLikelihood.js";
+import { applyMeasuredOdds } from "./measuredOdds.js";
 
 /* The region-prior weight now lives with the other model constants; see REGION_PRIOR_WEIGHT. */
 
@@ -128,6 +129,8 @@ export function attachPresenceProbability(
     const share = shares.get(row);
     row.r.match.genusSharePercent = share == null ? null : Math.round(share * 1000) / 10;
   }
+  // Where the model is measurably wrong (Recepta by its sulphur dioxide, tela by atmosphere): measuredOdds.ts.
+  applyMeasuredOdds(ranked.map((r) => r.match), scan);
 }
 
 /**
