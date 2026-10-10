@@ -599,3 +599,37 @@ export function demoteDeltahedronixOnOneSignalIcy(
     });
   }
 }
+
+/**
+ * Every demotion pass, in the matcher's order (code review 2026-10-10, B3): `matchDatabaseToScan` and
+ * the galaxy body scan run the same list. The galaxy scan ran two of them, so the companion-body,
+ * starlight, regional-rarity and all-conditions passes never reached it.
+ *
+ * `restore` is the signal-count restore, which reasons about the whole candidate list; a caller that
+ * matched only some species (the galaxy scan) has no whole list and turns it off.
+ */
+export function runDemotionPasses(
+  strict: PendingMatch[],
+  unlikely: PendingMatch[],
+  o: {
+    planetClass: string | null | undefined;
+    matchContext: SpeciesMatchContext | null | undefined;
+    spatialCatalogue: SpatialCatalogue | null;
+    biologicalSignals: number | null;
+    signalCountAssumed: boolean;
+    /** A DSS named this species' genus here, which keeps an all-conditions species. */
+    dssNamed: (entry: SpeciesEntry) => boolean;
+    /** The genera the DSS left in play, for the restore; null before a DSS. */
+    restoreGenera: Set<string> | null;
+    restore: boolean;
+  },
+): void {
+  demoteFailedSpatialGates(strict, unlikely, o.matchContext, o.spatialCatalogue);
+  demoteFailedHostStarGates(strict, unlikely, o.matchContext);
+  demoteFailedSystemBodyGates(strict, unlikely, o.matchContext);
+  weighOutsideStarlight(strict, unlikely, o.matchContext);
+  demoteRegionallyRareSiblings(strict, unlikely, o.matchContext);
+  demoteDeltahedronixOnOneSignalIcy(strict, unlikely, o.planetClass, o.biologicalSignals, o.signalCountAssumed);
+  dropUnprovenStrictSpecies(strict, unlikely, o.matchContext, o.dssNamed);
+  if (o.restore) restoreDemotionsBelowSignalCount(strict, unlikely, o.biologicalSignals, o.restoreGenera);
+}

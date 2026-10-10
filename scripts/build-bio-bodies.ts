@@ -64,6 +64,18 @@
  *     | f32 temperatureK | f32 gravityG | f32 pressureAtm | u8 bioCount | u8 reserved
  *   system name run: u8 byte-length + UTF-8
  *   body name run:   u8 byte-length + UTF-8, the part after the system name ("A 4 c")
+ *
+ * Version 2 (code review 2026-10-10, B3) appends two fixed-stride runs at the very end, so everything
+ * above keeps its version-1 offsets and a reader finds them from the file length:
+ *   system extras, one per system:
+ *     u32 planetClassMask | u32 planetClassTwiceMask | u8 bodyListComplete | u8[3] reserved
+ *   body extras, one per body:
+ *     f32 distanceToArrivalLs (NaN when unrecorded) | u16 hostStarTypeIdx | u8[2] reserved
+ * The masks are bits over the `planetClasses` string table (every planet class in the system, bio or
+ * not; `hostStarTypes` is its own table, u16, since every star of a system can be a host; "twice" marks a class held by two or more bodies, so a body never vouches for its own class).
+ * `bodyListComplete` is the dump's own `bodyCount` met. The host star is the dump's `hostStarBodyId`.
+ * Those three are what the companion-body, arrival-distance and host-star gates read: without them
+ * the galaxy scan could never return Crystalline Shards.
  */
 import { createReadStream, createWriteStream, mkdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { createGunzip } from "node:zlib";
@@ -76,9 +88,11 @@ import { regionIndexForCoords, type RegionMapData } from "../src/shared/regionMa
 import { resolveUserSettingsJsonPath } from "../src/server/paths.js";
 
 const MAGIC = "EDEXOBOD";
-const VERSION = 1;
+const VERSION = 2;
 const SYS_RECORD = 28;
 const BODY_RECORD = 24;
+const SYS_EXT = 12;
+const BODY_EXT = 8;
 
 /** Landable, and the dump's own genus list is present (somebody probed it). */
 const FLAG_LANDABLE = 1;
@@ -118,12 +132,13 @@ mkdirSync(path.dirname(outPath), { recursive: true });
 class Table {
   private readonly ix = new Map<string, number>();
   readonly values: string[] = [];
+  constructor(private readonly cap = 255) {}
   id(v: string | null | undefined): number {
     const s = (v ?? "").trim();
     if (!s) return 0;
     const hit = this.ix.get(s);
     if (hit !== undefined) return hit;
-    if (this.values.length >= 255) return 0; // 0 reads as "not recorded", which is honest
+    if (this.values.length >= this.cap) return 0; // 0 reads as "not recorded", which is honest
     const at = this.values.length + 1;
     this.ix.set(s, at);
     this.values.push(s);
@@ -135,6 +150,10 @@ const subTypes = new Table();
 const atmospheres = new Table();
 const volcanisms = new Table();
 const starTypes = new Table();
+/** Every planet class seen in a bio system, for the companion-body masks (at most 32). */
+const planetClasses = new Table();
+/** Host stars' spectral classes: all of a system's stars, so more than the main stars' 216; u16. */
+const hostStarTypes = new Table(65535);
 
 /**
  * A write stream with back-pressure honoured.
@@ -160,6 +179,8 @@ const sysSink = new Sink(tmp("sys"));
 const bodySink = new Sink(tmp("body"));
 const sysNameSink = new Sink(tmp("sysname"));
 const bodyNameSink = new Sink(tmp("bodyname"));
+const sysExtSink = new Sink(tmp("sysext"));
+const bodyExtSink = new Sink(tmp("bodyext"));
 
 interface PendingBody {
   bodyId: number;
@@ -172,6 +193,8 @@ interface PendingBody {
   pressureAtm: number;
   bioCount: number;
   nameSuffix: string;
+  hostStarBodyId: number | null;
+  arrivalLs: number;
 }
 interface PendingSystem {
   id64: bigint;
@@ -181,6 +204,14 @@ interface PendingSystem {
   regionId: number;
   name: string;
   starTypeIdx: number;
+  /** The dump's own body count for the system, 0 when it gives none. */
+  bodyCount: number;
+  /** Star and planet lines seen for it. */
+  seen: number;
+  /** Planet class table index -> how many bodies hold it. */
+  classCount: Map<number, number>;
+  /** Star body id -> spectral class, for the bio bodies' hosts. */
+  starById: Map<number, string>;
 }
 
 /** The system being read, and its bio bodies. Flushed when the next system line arrives. */
@@ -220,11 +251,25 @@ async function flush(): Promise<void> {
   rec.writeUInt16LE(Math.min(65535, curBodies.length), 22);
   rec.writeUInt32LE(firstBody, 24);
   await sysSink.put(rec);
+  const ext = Buffer.alloc(SYS_EXT);
+  let any = 0;
+  let twice = 0;
+  for (const [ix, n] of s.classCount) {
+    if (ix < 1 || ix > 32) continue;
+    const bit = 1 << (ix - 1);
+    any |= bit;
+    if (n >= 2) twice |= bit;
+  }
+  ext.writeUInt32LE(any >>> 0, 0);
+  ext.writeUInt32LE(twice >>> 0, 4);
+  ext.writeUInt8(s.bodyCount > 0 && s.seen >= s.bodyCount ? 1 : 0, 8);
+  await sysExtSink.put(ext);
   await sysNameSink.put(nameBuf(s.name));
   if (s.starTypeIdx) starCount++;
   systemCount++;
 
   const table = Buffer.alloc(BODY_RECORD * curBodies.length);
+  const bodyExt = Buffer.alloc(BODY_EXT * curBodies.length);
   let names = Buffer.alloc(0);
   curBodies.forEach((b, i) => {
     const o = i * BODY_RECORD;
@@ -239,12 +284,16 @@ async function flush(): Promise<void> {
     table.writeFloatLE(b.pressureAtm, o + 18);
     table.writeUInt8(b.bioCount, o + 22);
     table.writeUInt8(0, o + 23);
+    const host = b.hostStarBodyId == null ? undefined : s.starById.get(b.hostStarBodyId);
+    bodyExt.writeFloatLE(b.arrivalLs, i * BODY_EXT);
+    bodyExt.writeUInt16LE(host ? hostStarTypes.id(host) : 0, i * BODY_EXT + 4);
     names = Buffer.concat([names, nameBuf(b.nameSuffix)]);
     if (b.flags & FLAG_LANDABLE) landableCount++;
     if (b.flags & FLAG_DSS) dssCount++;
     if (b.atmoIdx) atmoCount++;
   });
   await bodySink.put(table);
+  await bodyExtSink.put(bodyExt);
   await bodyNameSink.put(names);
   bodyCount += curBodies.length;
 
@@ -252,7 +301,7 @@ async function flush(): Promise<void> {
   curBodies = [];
 }
 
-type RawSystem = { id64?: string; name?: string; coords?: { x: number; y: number; z: number } };
+type RawSystem = { id64?: string; name?: string; coords?: { x: number; y: number; z: number }; bodyCount?: number };
 type RawBody = {
   bodyId?: number;
   name?: string;
@@ -264,10 +313,14 @@ type RawBody = {
   volcanismType?: string | null;
   isLandable?: boolean;
   spectralClass?: string | null;
+  mainStar?: boolean;
+  hostStarBodyId?: number | null;
+  distanceToArrival?: number | null;
   signals?: { signals?: Record<string, number>; genuses?: string[] };
 };
 
 const BIO_KEY = "$SAA_SignalType_Biological;";
+const SUBTYPE_RE = /"subType":\s*"([^"]+)"/;
 let linesRead = 0;
 let parsed = 0;
 const t0 = Date.now();
@@ -299,9 +352,22 @@ for await (const line of rl) {
   */
   const isSystem = line.includes('"kind": "system"') || line.includes('"kind":"system"');
   const hasBio = !isSystem && line.includes(BIO_KEY);
-  const isMainStar =
-    !isSystem && !hasBio && (line.includes('"mainStar":true') || line.includes('"mainStar": true'));
-  if (!isSystem && !hasBio && !isMainStar) continue;
+  const isStar = !isSystem && !hasBio && (line.includes('"type":"Star"') || line.includes('"type": "Star"'));
+  /*
+    Version 2: every planet in the system counts toward its companion-body classes, and every body
+    toward the completeness test. Only the class is wanted, so a non-bio planet is matched, not parsed.
+  */
+  if (!isSystem && !hasBio && !isStar) {
+    if (cur && (line.includes('"type":"Planet"') || line.includes('"type": "Planet"'))) {
+      cur.seen++;
+      const m = SUBTYPE_RE.exec(line);
+      if (m) {
+        const ix = planetClasses.id(m[1]);
+        cur.classCount.set(ix, (cur.classCount.get(ix) ?? 0) + 1);
+      }
+    }
+    continue;
+  }
 
   let o: RawSystem & RawBody;
   try {
@@ -326,15 +392,29 @@ for await (const line of rl) {
       regionId: regionIndexForCoords(regionMapData, co.x, co.z),
       name: String(o.name ?? ""),
       starTypeIdx: 0,
+      bodyCount: Number(o.bodyCount ?? 0) || 0,
+      seen: 0,
+      classCount: new Map(),
+      starById: new Map(),
     };
     continue;
   }
 
   if (!cur) continue;
 
-  if (isMainStar) {
-    if (o.spectralClass || o.subType) cur.starTypeIdx = starTypes.id(o.spectralClass ?? o.subType);
+  if (isStar) {
+    cur.seen++;
+    const cls = o.spectralClass ?? o.subType;
+    if (cls && o.bodyId != null) cur.starById.set(Number(o.bodyId), cls);
+    if (o.mainStar === true && cls) cur.starTypeIdx = starTypes.id(cls);
     continue;
+  }
+
+  // A bio body is a planet too: it counts toward the system's classes and its completeness.
+  cur.seen++;
+  if (o.subType) {
+    const ix = planetClasses.id(o.subType);
+    cur.classCount.set(ix, (cur.classCount.get(ix) ?? 0) + 1);
   }
 
   const count = o.signals?.signals?.[BIO_KEY] ?? 0;
@@ -354,6 +434,8 @@ for await (const line of rl) {
     pressureAtm: Number(o.surfacePressure ?? 0),
     bioCount: Math.min(255, count),
     nameSuffix: suffix,
+    hostStarBodyId: o.hostStarBodyId == null ? null : Number(o.hostStarBodyId),
+    arrivalLs: typeof o.distanceToArrival === "number" && Number.isFinite(o.distanceToArrival) ? o.distanceToArrival : NaN,
   });
 
   if (LIMIT && bodyCount + curBodies.length >= LIMIT) break;
@@ -364,6 +446,8 @@ await sysSink.close();
 await bodySink.close();
 await sysNameSink.close();
 await bodyNameSink.close();
+await sysExtSink.close();
+await bodyExtSink.close();
 
 // ---- assemble: header, then the four runs, copied rather than loaded ----
 const json = Buffer.from(
@@ -372,6 +456,8 @@ const json = Buffer.from(
     atmospheres: atmospheres.values,
     volcanisms: volcanisms.values,
     starTypes: starTypes.values,
+    planetClasses: planetClasses.values,
+    hostStarTypes: hostStarTypes.values,
   }),
   "utf8",
 );
@@ -385,13 +471,15 @@ header.writeUInt32LE(bodyCount, 16);
 header.writeUInt32LE(json.length, 20);
 
 const finalOut = createWriteStream(outPath);
+// One pipeline per part, each adding its listeners; six parts pass the default ten.
+finalOut.setMaxListeners(32);
 finalOut.write(header);
 finalOut.write(json);
-for (const part of ["sys", "body", "sysname", "bodyname"]) {
+for (const part of ["sys", "body", "sysname", "bodyname", "sysext", "bodyext"]) {
   await pipeline(createReadStream(tmp(part)), finalOut, { end: false });
 }
 await new Promise<void>((res, rej) => finalOut.end((e?: Error) => (e ? rej(e) : res())));
-for (const part of ["sys", "body", "sysname", "bodyname"]) rmSync(tmp(part), { force: true });
+for (const part of ["sys", "body", "sysname", "bodyname", "sysext", "bodyext"]) rmSync(tmp(part), { force: true });
 
 const mins = (Date.now() - t0) / 60000;
 const size = statSync(outPath).size;

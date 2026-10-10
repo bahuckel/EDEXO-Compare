@@ -50,6 +50,9 @@ const MAGIC = "EDEXOBOD";
 const HEADER = 24;
 const SYS_RECORD = 28;
 const BODY_RECORD = 24;
+/** Version 2's runs at the end of the file (build-bio-bodies.ts documents them). */
+const SYS_EXT = 12;
+const BODY_EXT = 8;
 
 /** The body is landable. Without this there is nothing to walk on and no biology to sample. */
 export const BODY_LANDABLE = 1;
@@ -89,6 +92,10 @@ export interface BioBodyCursor {
   readonly pressureAtm: number;
   /** How many biological signals the FSS counted here. */
   readonly bioCount: number;
+  /** Light seconds from the arrival star; null when unrecorded or the file is version 1. */
+  readonly arrivalLs: number | null;
+  /** The spectral class of the star the body orbits (the dump's `hostStarBodyId`); "" when unknown. */
+  readonly hostStarType: string;
   /** A plain object copy, for a row that has to outlive the walk. */
   snapshot(): BioBodyRow;
 }
@@ -106,6 +113,8 @@ export interface BioBodyRow {
   gravityG: number;
   pressureAtm: number;
   bioCount: number;
+  arrivalLs: number | null;
+  hostStarType: string;
 }
 
 export interface BioBodySystem {
@@ -123,6 +132,14 @@ export interface BioBodySystem {
    */
   starType: string;
   bioBodyCount: number;
+  /**
+   * Version 2: every planet class in the system (the dump's spelling), and which of them two or more
+   * bodies hold, so a body can leave its own class out. Null on a version-1 file.
+   */
+  planetClasses: string[] | null;
+  planetClassesTwice: string[] | null;
+  /** The dump's own body count was met: a missing class is a fact, not an unfinished honk. */
+  bodyListComplete: boolean;
 }
 
 export interface BioBodies {
@@ -211,6 +228,16 @@ class Cursor implements BioBodyCursor {
   get bioCount(): number {
     return this.f.view.getUint8(this.o + 22);
   }
+  get arrivalLs(): number | null {
+    if (this.f.bodyExtAt < 0) return null;
+    const v = this.f.view.getFloat32(this.f.bodyExtAt + this.bodyIndex * BODY_EXT, true);
+    return Number.isFinite(v) ? v : null;
+  }
+  get hostStarType(): string {
+    if (this.f.bodyExtAt < 0) return "";
+    const ix = this.f.view.getUint16(this.f.bodyExtAt + this.bodyIndex * BODY_EXT + 4, true);
+    return this.f.strings.hostStarTypes[ix - 1] ?? "";
+  }
   snapshot(): BioBodyRow {
     return {
       systemIndex: this.systemIndex,
@@ -224,6 +251,8 @@ class Cursor implements BioBodyCursor {
       gravityG: this.gravityG,
       pressureAtm: this.pressureAtm,
       bioCount: this.bioCount,
+      arrivalLs: this.arrivalLs,
+      hostStarType: this.hostStarType,
     };
   }
 }
@@ -233,6 +262,9 @@ interface StringTables {
   atmospheres: string[];
   volcanisms: string[];
   starTypes: string[];
+  /** Version 2: the companion-body masks' classes, and the host stars' spectral classes. */
+  planetClasses: string[];
+  hostStarTypes: string[];
 }
 
 class Bodies implements BioBodies {
@@ -255,6 +287,9 @@ class Bodies implements BioBodies {
    */
   private bodyNameOffsets: Uint32Array | null = null;
   private readonly cursor: Cursor;
+  /** Where version 2's runs start, -1 on a version-1 file. */
+  readonly sysExtAt: number;
+  readonly bodyExtAt: number;
 
   constructor(
     private readonly buf: Buffer,
@@ -274,6 +309,8 @@ class Bodies implements BioBodies {
       atmospheres: raw.atmospheres ?? [],
       volcanisms: raw.volcanisms ?? [],
       starTypes: raw.starTypes ?? [],
+      planetClasses: raw.planetClasses ?? [],
+      hostStarTypes: raw.hostStarTypes ?? [],
     };
     this.systemsAt = HEADER + jsonLen;
     this.bodiesAt = this.systemsAt + this.systemCount * SYS_RECORD;
@@ -292,6 +329,17 @@ class Bodies implements BioBodies {
     this.sysNameOffsets[this.systemCount] = at;
     if (at > buf.length) throw new Error("bio bodies system name run is truncated");
     this.bodyNamesAt = at;
+    // Version 2 appends its runs at the end, so they are found from the file's length.
+    const version = this.view.getUint16(8, true);
+    const extBytes = this.systemCount * SYS_EXT + this.bodyCount * BODY_EXT;
+    const extAt = buf.length - extBytes;
+    if (version >= 2 && extAt >= at) {
+      this.sysExtAt = extAt;
+      this.bodyExtAt = extAt + this.systemCount * SYS_EXT;
+    } else {
+      this.sysExtAt = -1;
+      this.bodyExtAt = -1;
+    }
     this.cursor = new Cursor(this);
   }
 
@@ -311,6 +359,19 @@ class Bodies implements BioBodies {
       regionId: this.view.getUint8(o + 20),
       starType: this.strings.starTypes[this.view.getUint8(o + 21) - 1] ?? "",
       bioBodyCount: this.view.getUint16(o + 22, true),
+      ...this.systemExtras(i),
+    };
+  }
+
+  private systemExtras(i: number): Pick<BioBodySystem, "planetClasses" | "planetClassesTwice" | "bodyListComplete"> {
+    if (this.sysExtAt < 0) return { planetClasses: null, planetClassesTwice: null, bodyListComplete: false };
+    const o = this.sysExtAt + i * SYS_EXT;
+    const fromMask = (mask: number) =>
+      this.strings.planetClasses.filter((_, bit) => bit < 32 && (mask & (1 << bit)) !== 0);
+    return {
+      planetClasses: fromMask(this.view.getUint32(o, true)),
+      planetClassesTwice: fromMask(this.view.getUint32(o + 4, true)),
+      bodyListComplete: this.view.getUint8(o + 8) === 1,
     };
   }
 

@@ -72,15 +72,8 @@ import { isBacteriumSpeciesEntry } from "../shared/speciesBacterium.js";
 import {
   DEMOTED_NOTE,
   GAS_BAND_NOTE,
-  restoreDemotionsBelowSignalCount,
-  demoteFailedSpatialGates,
-  demoteFailedHostStarGates,
-  demoteFailedSystemBodyGates,
-  weighOutsideStarlight,
   OBSERVED_TEMP_TOLERANCE_K,
-  demoteRegionallyRareSiblings,
-  demoteDeltahedronixOnOneSignalIcy,
-  dropUnprovenStrictSpecies,
+  runDemotionPasses,
 } from "./demotionPasses.js";
 export {
   demoteFailedSpatialGates,
@@ -1558,31 +1551,17 @@ export function matchDatabaseToScan(
     }
   }
 
-  demoteFailedSpatialGates(strict, unlikely, matchContext, options?.spatialCatalogue ?? null);
-  demoteFailedHostStarGates(strict, unlikely, matchContext);
-  demoteFailedSystemBodyGates(strict, unlikely, matchContext);
-  weighOutsideStarlight(strict, unlikely, matchContext);
-  demoteRegionallyRareSiblings(strict, unlikely, matchContext);
-  demoteDeltahedronixOnOneSignalIcy(
-    strict,
-    unlikely,
-    scan.PlanetClass,
-    options?.biologicalSignals ?? null,
-    options?.signalCountAssumed === true,
-  );
-  dropUnprovenStrictSpecies(
-    strict,
-    unlikely,
+  // The same passes, in the same order, as the galaxy body scan (demotionPasses.ts, B3).
+  runDemotionPasses(strict, unlikely, {
+    planetClass: scan.PlanetClass,
     matchContext,
-    (e) => genusFilterActive && filterByGenusHints([e], genusHints).length > 0,
-  );
-
-  restoreDemotionsBelowSignalCount(
-    strict,
-    unlikely,
-    options?.biologicalSignals ?? null,
-    genusFilterActive ? new Set(narrowed.map((e) => e.genusDataDir)) : null,
-  );
+    spatialCatalogue: options?.spatialCatalogue ?? null,
+    biologicalSignals: options?.biologicalSignals ?? null,
+    signalCountAssumed: options?.signalCountAssumed === true,
+    dssNamed: (e) => genusFilterActive && filterByGenusHints([e], genusHints).length > 0,
+    restoreGenera: genusFilterActive ? new Set(narrowed.map((e) => e.genusDataDir)) : null,
+    restore: true,
+  });
 
   if (strict.length > 0 || unlikely.length > 0) {
     const { matches, injected } = injectOrganicLockConfirmedSpecies(

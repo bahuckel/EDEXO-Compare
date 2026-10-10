@@ -73,12 +73,12 @@ import {
   readBioBodiesSummary,
   type BioBodyCursor,
   type BioBodyRow,
+  type BioBodySystem,
 } from "./bioBodies.js";
+import { runDemotionPasses } from "./demotionPasses.js";
 import { loadBioIndex } from "./bioIndex.js";
 import { clearsGravityOdds, gravityBiologyOdds } from "./gravityBiologyOdds.js";
 import {
-  demoteFailedHostStarGates,
-  demoteFailedSpatialGates,
   speciesMatchesCriteria,
   speciesMatchesExcludingTempPressure,
   NUMERIC_GATE_TOLERANCE,
@@ -369,6 +369,21 @@ function scanFromBody(
 }
 
 /**
+ * The system's other planet classes, for the companion-body gates (Amphora, the Brain Trees, Crystalline
+ * Shards). A body's own class counts only when another body holds it too. Nothing on a version-1 file,
+ * which leaves those gates unresolved, as before.
+ */
+function companionClasses(
+  sys: BioBodySystem,
+  ownSubType: string,
+): Pick<SpeciesMatchContext, "systemBodyClasses" | "systemBodyListComplete"> {
+  if (!sys.planetClasses) return {};
+  const twice = new Set(sys.planetClassesTwice ?? []);
+  const classes = sys.planetClasses.filter((c) => c !== ownSubType || twice.has(c));
+  return { ...(classes.length ? { systemBodyClasses: classes } : {}), systemBodyListComplete: sys.bodyListComplete };
+}
+
+/**
  * The host star, as far as this file knows it.
  *
  * The dump writes a spectral class (`K3`, `M9`) where the journal writes a `StarType`, so the
@@ -578,12 +593,24 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
     const bodyName = file.bodyName(systemIndex, row.bodyIndex);
     const scan = scanFromBody(row, sys.name, bodyName, Number(sys.id64));
     const region = regionName(sys.regionId);
+    /*
+      The host star is the one the body orbits where the file knows it (version 2, the dump's
+      `hostStarBodyId`), the system primary otherwise; the primary is the main star the main-judged
+      gates read (araneamus, pluma, the Anemones, Amphora), which passed silently while unset (B3).
+      The tab's host set follows the brightest star (speciesMatchContext.ts); the dump has no light
+      readings, so the orbital host stands in, as review item B2 argues it should everywhere.
+    */
+    const hostType = row.hostStarType || sys.starType;
+    const mainClass = hostStarClassesOf(sys.starType)[0];
     const ctx: SpeciesMatchContext = {
       systemCoords: { x: sys.x, y: sys.y, z: sys.z },
       regionIndex: sys.regionId,
       ...(region ? { regionName: region } : {}),
-      ...(sys.starType ? { parentStarType: sys.starType } : {}),
-      hostStarClasses: hostStarClassesOf(sys.starType),
+      ...(hostType ? { parentStarType: hostType } : {}),
+      hostStarClasses: hostStarClassesOf(hostType),
+      ...(mainClass ? { systemMainStarClass: mainClass } : {}),
+      ...(row.arrivalLs != null ? { distanceFromArrivalLs: row.arrivalLs } : {}),
+      ...companionClasses(sys, row.subType),
       surfacePressureAtm: row.pressureAtm > 0 ? row.pressureAtm : null,
     };
 
@@ -611,8 +638,17 @@ export async function galaxyBodyScan(query: GalaxyBodyScanQuery): Promise<Galaxy
       else if (r.softOnly) unlikely.push({ entry, reasons: r.reasons, unlikely: true });
     }
     if (strict.length === 0) return null;
-    demoteFailedSpatialGates(strict, unlikely, ctx, catalogue);
-    demoteFailedHostStarGates(strict, unlikely, ctx);
+    // The matcher's passes, in its order; the restore needs the whole list, which this never has.
+    runDemotionPasses(strict, unlikely, {
+      planetClass: scan.PlanetClass,
+      matchContext: ctx,
+      spatialCatalogue: catalogue,
+      biologicalSignals: row.bioCount > 0 ? row.bioCount : null,
+      signalCountAssumed: false,
+      dssNamed: () => false,
+      restoreGenera: null,
+      restore: false,
+    });
 
     /*
       Un-demoted only. `unlikely` is the matcher saying "this contradicts the body on one axis",
