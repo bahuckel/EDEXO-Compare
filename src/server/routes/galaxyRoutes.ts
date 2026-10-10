@@ -19,6 +19,7 @@ import { codexMapRegion, codexMapRegions } from "../codexMap.js";
 import { clearGalaxyPoints, galaxyPointsAsync } from "../galaxyPoints.js";
 import { clearTileIndex, encodeCells, encodeTile, parseCellParam, sectorNames, tileIndex, tileIndexAsync } from "../galaxyTiles.js";
 import { registerGalaxyCache, touchGalaxyMemory } from "../galaxyMemory.js";
+import { clearBioBodiesCache } from "../bioBodies.js";
 import {
   clearBioIndexCache,
   loadBioIndex,
@@ -100,6 +101,9 @@ export function registerGalaxyRoutes(
   registerGalaxyCache("tiles", clearTileIndex);
   registerGalaxyCache("system-values", clearGalaxySystemValues);
   registerGalaxyCache("system-traits", clearSystemTraits);
+  // The galaxy body file (683 MB since version 2) was the one dataset never let go: a single "possible"
+  // search kept it for the rest of the session (plan 4.1, 2026-10-10).
+  registerGalaxyCache("bio-bodies", clearBioBodiesCache);
   /*
     And the index is read off the main thread before a request that needs it (owner, 2026-10-07: the
     app went "Not responding" for a moment as the map loaded — the server shares Electron's main
