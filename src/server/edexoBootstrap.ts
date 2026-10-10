@@ -526,32 +526,6 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
                 }),
               );
       }
-      // [CODEX FIRST] candidates in the system he is in go to the bell, once each (owner, 2026-09-30),
-      // and leave it when the body's candidates no longer hold them (owner, 2026-10-04).
-      if (!snap.journalBoot && store.currentSystemAddress != null && notices.prefs().codexFirst) {
-        const finds: CodexFirstFind[] = [];
-        const evaluated = new Set<string>();
-        for (const b of snap.bodies ?? []) {
-          if (b.state.systemAddress !== store.currentSystemAddress) continue;
-          evaluated.add(b.state.key);
-          for (const m of b.matches ?? []) {
-            if (!m.codexFirst || m.unlikely || !m.codexRegion) continue;
-            finds.push({
-              bodyKey: b.state.key,
-              systemAddress: b.state.systemAddress,
-              system: b.state.starSystem || store.currentSystem || "",
-              body: b.tabLabel || b.state.bodyName,
-              species: m.entry.displayName,
-              speciesId: m.entry.id,
-              colours: m.codexFirstColours ?? [],
-              region: m.codexRegion,
-            });
-          }
-        }
-        if (notices.announceCodexFirst(finds, new Date().toISOString(), evaluated)) {
-          snap.notices = notices.snapshot(store.viewingSystemAddress ?? store.currentSystemAddress ?? null);
-        }
-      }
       snap.bookmarksHere = bookmarks.forSystem(
         store.viewingSystemAddress ?? store.currentSystemAddress ?? null,
         snap.viewingSystemName ?? store.currentSystem ?? null,
@@ -736,9 +710,45 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
    * called — whichever poller arrived first swallowed the key, so "focus the body you just
    * scanned" silently failed and, with two clients, at most one ever saw it.
    */
+  /*
+    The codex-first announcement writes the notices file, so it runs with the push, never on a read:
+    GET /api/state used to write it too (code review 2026-10-10, A6), the same reason the one-shot
+    auto-select moved out of the snapshot.
+  */
+  const announceCodexFirstIn = (snap: ReturnType<typeof getSnapshot>) => {
+    // [CODEX FIRST] candidates in the system he is in go to the bell, once each (owner, 2026-09-30),
+    // and leave it when the body's candidates no longer hold them (owner, 2026-10-04).
+    if (!snap.journalBoot && store.currentSystemAddress != null && notices.prefs().codexFirst) {
+      const finds: CodexFirstFind[] = [];
+      const evaluated = new Set<string>();
+      for (const b of snap.bodies ?? []) {
+        if (b.state.systemAddress !== store.currentSystemAddress) continue;
+        evaluated.add(b.state.key);
+        for (const m of b.matches ?? []) {
+          if (!m.codexFirst || m.unlikely || !m.codexRegion) continue;
+          finds.push({
+            bodyKey: b.state.key,
+            systemAddress: b.state.systemAddress,
+            system: b.state.starSystem || store.currentSystem || "",
+            body: b.tabLabel || b.state.bodyName,
+            species: m.entry.displayName,
+            speciesId: m.entry.id,
+            colours: m.codexFirstColours ?? [],
+            region: m.codexRegion,
+          });
+        }
+      }
+      if (notices.announceCodexFirst(finds, new Date().toISOString(), evaluated)) {
+        snap.notices = notices.snapshot(store.viewingSystemAddress ?? store.currentSystemAddress ?? null);
+      }
+    }
+  };
+
   // Guarded: it runs on timers too, and a throw there would end the server process (guarded.ts).
   const broadcastSnapshot = guarded("snapshot push", () => {
-    broadcast(getSnapshot());
+    const snap = getSnapshot();
+    announceCodexFirstIn(snap);
+    broadcast(snap);
     store.clearPendingUiAutoSelectBodyKey();
   });
 
