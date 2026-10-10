@@ -102,6 +102,7 @@ import { clearPlanetClassObservationsCache } from "./speciesPlanetClassObservati
 import { clearStarlightRangesCache } from "./starlightRanges.js";
 import { clearObservedEnvelopeCache } from "./observedEnvelope.js";
 import { clearBodyTypePriorCache } from "./bodyTypePrior.js";
+import { clearSpeciesSplitCache } from "./speciesSplit.js";
 import { clearGenusPhotosFolderCache, getSpeciesDataWarnings } from "./speciesTreeLoader.js";
 import {
   parseStatusJsonDestination,
@@ -249,6 +250,8 @@ function reloadSpeciesDerivedCaches(): void {
   clearStarlightRangesCache();
   clearObservedEnvelopeCache();
   clearBodyTypePriorCache();
+  // The fitted which-of-the-genus tables (data/exomastery/species-split.json, speciesSplit.ts).
+  clearSpeciesSplitCache();
   clearAchievementsCache();
 }
 

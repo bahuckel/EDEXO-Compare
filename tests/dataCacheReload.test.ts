@@ -167,3 +167,25 @@ describe("surface marks written by an older build", () => {
     resetInstallPathCache();
   });
 });
+
+describe("the species split tables", () => {
+  it("re-read the file after the cache is cleared, and Refresh exomastery clears them", async () => {
+    const { clearSpeciesSplitCache, speciesSplitGenera } = await import("../src/server/speciesSplit.js");
+    const table = (genus: string) => ({ formatVersion: 1, log10: [], categories: {}, edges: {}, genera: { [genus]: {} } });
+    const root = rootWith("data/exomastery/species-split.json", table("Stratum"));
+    clearSpeciesSplitCache();
+    expect(speciesSplitGenera(root)).toEqual(["Stratum"]);
+    writeFileSync(join(root, "data/exomastery/species-split.json"), JSON.stringify(table("Clypeus")), "utf8");
+    // Still the memo until it is cleared.
+    expect(speciesSplitGenera(root)).toEqual(["Stratum"]);
+    clearSpeciesSplitCache();
+    expect(speciesSplitGenera(root)).toEqual(["Clypeus"]);
+    clearSpeciesSplitCache();
+
+    // The launcher button's list (edexoBootstrap.ts reloadSpeciesDerivedCaches) includes it.
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(join(__dirname, "../src/server/edexoBootstrap.ts"), "utf8");
+    const body = src.slice(src.indexOf("function reloadSpeciesDerivedCaches"), src.indexOf("export async function startEdexo"));
+    expect(body).toContain("clearSpeciesSplitCache()");
+  });
+});
