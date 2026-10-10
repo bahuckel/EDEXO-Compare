@@ -5,6 +5,7 @@
 const { screen } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const { writeFileAtomic } = require("./atomicWrite.cjs");
 const { GALAXY_MIN } = require("./childWindows.cjs");
 
 /** The smallest a saved window may come back; a smaller saved size is ignored. */
@@ -77,7 +78,7 @@ function createWindowState(stateDir) {
       const all = readWindowStates();
       all[name] = { ...b, maximized };
       fs.mkdirSync(path.dirname(windowStatePath()), { recursive: true });
-      fs.writeFileSync(windowStatePath(), JSON.stringify(all, null, 2), "utf8");
+      writeFileAtomic(windowStatePath(), JSON.stringify(all, null, 2), "utf8");
     } catch {
       /* the next open uses the default size */
     }

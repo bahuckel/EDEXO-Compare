@@ -12,6 +12,7 @@
 */
 const path = require("path");
 const fs = require("fs");
+const { writeFileAtomic } = require("./atomicWrite.cjs");
 
 const MAX_HUD_OVERLAYS = 8; // was 3; the owner wants every HUD selectable at once
 const HUD_STACK_GAP = 6;
@@ -367,7 +368,7 @@ function createHudWindows(deps) {
       // the commander deciding he wants no HUDs, and forgetting on every quit is how the hotkey ended
       // up with nothing to show.
       if (open.length) hudRememberedOpen = open;
-      fs.writeFileSync(
+      writeFileAtomic(
         hudLayoutPath(),
         JSON.stringify({
           ...hudLayout,

@@ -89,6 +89,7 @@ module.exports = {
     "electron/updater.cjs",
     // The server's own process (2026-10-09): main.cjs starts app.cjs through it.
     "electron/serverChild.cjs",
+    "electron/atomicWrite.cjs",
     ...(process.env.EDEXO_DIAG === "1" ? ["electron/diag.cjs"] : []),
     "package.json",
   ],

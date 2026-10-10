@@ -2,15 +2,16 @@
  * The commander's settings file: what is written, what is read back and how (the same clamps as the
  * setters). Split out of edexoBootstrap.ts (code review D, 2026-09-28).
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import type { GameStateStore } from "./gameState.js";
 import type { PhotoStampPrefs } from "../shared/types.js";
 import { parseJournalHistoryPreset } from "../shared/journalHistoryPreset.js";
 import { readEdsmCredentials } from "./edsmCredentials.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 
 export function persistUserPreferences(store: GameStateStore, file: string): void {
   try {
-    writeFileSync(
+    writeFileAtomic(
       file,
       `${JSON.stringify(
         {

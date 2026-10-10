@@ -23,9 +23,10 @@
  * commander may record. Oldest goes first, which is the right end: the body you are standing on is
  * the one you visited most recently.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { resolveSurfaceMarksPath } from "./paths.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 
 /** One recorded position on a surface. */
 export interface SurfaceMark {
@@ -159,7 +160,7 @@ export function saveSurfaceMarks(data: SurfaceMarksFile): void {
   const file = resolveSurfaceMarksPath();
   try {
     mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(file, `${JSON.stringify(data, null, 1)}\n`, "utf8");
+    writeFileAtomic(file, `${JSON.stringify(data, null, 1)}\n`, "utf8");
   } catch {
     /* A radar that cannot remember is still a radar; never fail a journal tick over it. */
   }

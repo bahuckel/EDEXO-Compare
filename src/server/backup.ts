@@ -28,11 +28,12 @@
  * picks; the game's own folder only on a second confirmation, and even then no existing file is
  * touched.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from "node:fs";
 import { mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import { listZip, readZipEntry, verifyZipEntry, ZipWriter, type ZipEntry } from "./backupZip.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 
 export const BACKUP_SETTINGS_FILE = "edexo-backup-settings.json";
 export const RESTORE_PENDING_DIR = "restore-pending";
@@ -91,7 +92,7 @@ export function normaliseBackupSettings(raw: unknown, base: BackupSettings = DEF
 }
 
 export function writeBackupSettings(appDataDir: string, s: BackupSettings): void {
-  writeFileSync(path.join(appDataDir, BACKUP_SETTINGS_FILE), JSON.stringify(s, null, 2), "utf8");
+  writeFileAtomic(path.join(appDataDir, BACKUP_SETTINGS_FILE), JSON.stringify(s, null, 2), "utf8");
 }
 
 /* ------------------------------------------------------------------------------ what goes in */

@@ -18,7 +18,7 @@ import {
   ownCodexBackupKeys,
 } from "./sharedExomastery.js";
 import { ownFootEntriesWithBackups } from "./footScannedCatalog.js";
-import { existsSync, watchFile, unwatchFile, writeFileSync, readFileSync, watch, statSync } from "node:fs";
+import { existsSync, watchFile, unwatchFile, readFileSync, watch, statSync } from "node:fs";
 import type {
   AppSnapshot,
   AppStatusDTO,
@@ -180,6 +180,7 @@ import {
   tryReadUserPrefs,
   type PersistedUserPrefs,
 } from "./userPrefsFile.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 export { backfillCommanderPosition } from "./commanderPositionBackfill.js";
 export { logFatal, assertResourceLayout } from "./startupChecks.js";
 export { parseHost, parsePort, parseCli } from "./cliOptions.js";
@@ -628,7 +629,7 @@ export async function startEdexo(cli: CliOptions): Promise<EdexoRuntime> {
         const finishedAt = new Date().toISOString();
         const lastImport = { file, finishedAt, fileMtimeIso: fileMtimeIso(file), apply };
         try {
-          writeFileSync(resolveImportDumpLedgerPath(), JSON.stringify(lastImport), "utf8");
+          writeFileAtomic(resolveImportDumpLedgerPath(), JSON.stringify(lastImport), "utf8");
         } catch {
           /* the status still says it; only the memory across runs is lost */
         }

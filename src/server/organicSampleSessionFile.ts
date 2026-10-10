@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { SpeciesDatabase } from "../shared/types.js";
 import { normOrganicToken } from "./organicTracking.js";
@@ -6,6 +6,7 @@ import { readGenusMinSampleDistanceM } from "./speciesTreeLoader.js";
 import type { ExoOrganicTrackerInternal } from "./exoOrganicTracker.js";
 import { getSpeciesDataDir, resolveOrganicSampleSessionPath } from "./paths.js";
 import { bodyIdOfBodyKey, systemAddressOfBodyKey } from "../shared/bodyKey.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 
 export const ORGANIC_SAMPLE_SESSION_FORMAT = 1;
 
@@ -133,7 +134,7 @@ function flushPersistOrganicSampleSession(host: OrganicSampleSessionHost, projec
   const abs = organicSampleSessionPath(projectRoot);
   try {
     mkdirSync(dirname(abs), { recursive: true });
-    writeFileSync(abs, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+    writeFileAtomic(abs, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   } catch {
     /* best-effort */
   }

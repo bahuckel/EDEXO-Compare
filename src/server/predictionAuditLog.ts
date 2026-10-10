@@ -27,12 +27,13 @@
  *
  * Private, like every other observation file: it lives beside the user settings and never ships.
  */
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync } from "node:fs";
 import path from "node:path";
 import { resolvePredictionAuditPath } from "./paths.js";
 import { collectOwnOrganicLockSpeciesIds } from "./organicLocks.js";
 import type { BodyExoState, SpeciesDatabase, SpeciesMatch } from "../shared/types.js";
 import type { SurfaceMark } from "./surfaceMarksFile.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 
 /** Which of the game's three narrowings produced this list. */
 export type PredictionStageName = "fss" | "dss" | "organic";
@@ -235,7 +236,7 @@ function saveNow(): void {
   const file = resolvePredictionAuditPath();
   try {
     mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(
+    writeFileAtomic(
       file,
       `${JSON.stringify({ formatVersion: 1, records: [...m.values()] } satisfies PredictionAuditFile, null, 2)}\n`,
       "utf8",

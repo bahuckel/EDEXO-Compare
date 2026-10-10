@@ -28,8 +28,9 @@
  * {@link EdsmCredentialsStatus}: the commander name, whether a key is present, and its last four
  * characters, which is enough to recognise "yes, that is the key I pasted" and not enough to use.
  */
-import { chmodSync, existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, readFileSync, unlinkSync } from "node:fs";
 import { resolveEdsmCredentialsPath } from "./paths.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 
 export interface EdsmCredentials {
   commanderName: string;
@@ -100,7 +101,7 @@ export function saveEdsmCredentials(commanderName: string, apiKey: string): Save
 
   const file = resolveEdsmCredentialsPath();
   try {
-    writeFileSync(file, `${JSON.stringify({ commanderName: name, apiKey: key }, null, 2)}\n`, {
+    writeFileAtomic(file, `${JSON.stringify({ commanderName: name, apiKey: key }, null, 2)}\n`, {
       encoding: "utf8",
       mode: 0o600,
     });

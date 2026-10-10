@@ -16,7 +16,7 @@
  * repository: it is derived from one commander's journal, and the owner's standing rule is that the
  * app ships statistics rather than his rows. Nothing here is shipped, committed, or sent anywhere.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { resolveUserSettingsJsonPath } from "./paths.js";
 import { collectOwnOrganicLockSpeciesIds } from "./organicLocks.js";
@@ -27,6 +27,7 @@ import {
 } from "./exomasteryProfile.js";
 import type { BodyExoState, SpeciesDatabase, SpeciesEntry } from "../shared/types.js";
 import type { CollectionFocusConfig } from "../shared/collectionFocus.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 
 export type { CollectionFocusConfig } from "../shared/collectionFocus.js";
 
@@ -72,7 +73,7 @@ export function loadCollectionFocusConfig(): CollectionFocusConfig {
 
 export function saveCollectionFocusConfig(cfg: CollectionFocusConfig): void {
   try {
-    writeFileSync(collectionFocusPath(), `${JSON.stringify(cfg, null, 2)}\n`, "utf8");
+    writeFileAtomic(collectionFocusPath(), `${JSON.stringify(cfg, null, 2)}\n`, "utf8");
   } catch {
     /* best-effort: the marker is a convenience, not state the app depends on */
   }

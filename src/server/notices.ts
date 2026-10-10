@@ -21,7 +21,7 @@
  * Kept in `edexo-notices.json` beside the user settings: the unread list, the ids already announced
  * (so the same body never comes back after being read), the records, and the settings.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync } from "node:fs";
 import type { ExplorationScanRecord } from "../shared/types.js";
 import { BODY_FEATURES, bodyFeatures, directParent, featureRecordFromScan, inVoidCross } from "../shared/bodyFeatures.js";
 import { emptyJumpRange, fullJumpRange, jumpRangeJump } from "../shared/jumpRange.js";
@@ -44,6 +44,7 @@ import {
   type RecordMarkDTO,
   type RecordSubject,
 } from "../shared/notices.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 
 type Line = Record<string, unknown>;
 
@@ -372,7 +373,7 @@ export function createNoticesService(opts: {
     if (!opts.filePath) return;
     state.seen = [...seen].slice(-MAX_SEEN);
     try {
-      writeFileSync(opts.filePath, `${JSON.stringify(state, null, 1)}\n`, "utf8");
+      writeFileAtomic(opts.filePath, `${JSON.stringify(state, null, 1)}\n`, "utf8");
     } catch {
       /* best effort: the list is a convenience, the journal is the record */
     }
@@ -845,7 +846,16 @@ function load(filePath: string | null): NoticesFile {
       records: Array.isArray(raw.records) ? raw.records.filter((r) => r && typeof r.bodyKey === "string") : [],
     };
   } catch {
-    // A broken file costs the unread list, not the app.
+    /*
+      A broken file costs the unread list, not the app — but it is set aside, not overwritten by the
+      next save: it holds the commander's notify settings, and those were silently reset to the
+      defaults (code review 2026-10-10, A5). Kept as `.unreadable-<time>` to recover by hand.
+    */
+    try {
+      renameSync(filePath, `${filePath}.unreadable-${Date.now()}`);
+    } catch {
+      /* left where it is; the next save replaces it */
+    }
     return fresh;
   }
 }

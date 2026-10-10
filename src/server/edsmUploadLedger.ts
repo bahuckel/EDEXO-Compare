@@ -27,9 +27,10 @@
  * cannot be rebuilt: delete it and the next run offers the whole history again, which is safe but
  * slow and impolite to a volunteer service.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { resolveEdsmUploadLedgerPath } from "./paths.js";
+import { writeFileAtomic } from "./atomicWrite.js";
 
 export interface EdsmLedgerFileEntry {
   /** Lines of this file whose events EDSM has accepted, counted from the top. */
@@ -94,7 +95,7 @@ export function writeEdsmUploadLedger(ledger: EdsmUploadLedger): void {
   const p = resolveEdsmUploadLedgerPath();
   try {
     mkdirSync(path.dirname(p), { recursive: true });
-    writeFileSync(p, `${JSON.stringify(ledger, null, 2)}\n`, "utf8");
+    writeFileAtomic(p, `${JSON.stringify(ledger, null, 2)}\n`, "utf8");
   } catch {
     /*
       A ledger that cannot be written is a catch-up that repeats itself next time, not a crash.

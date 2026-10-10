@@ -15,6 +15,7 @@ const {
 const { startServerChild } = require("./serverChild.cjs");
 const path = require("path");
 const fs = require("fs");
+const { writeFileAtomic } = require("./atomicWrite.cjs");
 const { WINDOW_MIN, createWindowState, enableZoom } = require("./windowState.cjs");
 const { childWindowKind, galaxyWindowBounds } = require("./childWindows.cjs");
 const {
@@ -222,7 +223,7 @@ const tabWindows = createTabWindows({
   readWindowState,
   writeWindowStates: (all) => {
     fs.mkdirSync(path.dirname(windowStatePath()), { recursive: true });
-    fs.writeFileSync(windowStatePath(), JSON.stringify(all, null, 2), "utf8");
+    writeFileAtomic(windowStatePath(), JSON.stringify(all, null, 2), "utf8");
   },
   trackWindowState,
   enableZoom,
@@ -250,7 +251,7 @@ async function carryAppStorageOver(win) {
     const now = readWindowStates();
     now.appStorageCarried = true;
     fs.mkdirSync(path.dirname(windowStatePath()), { recursive: true });
-    fs.writeFileSync(windowStatePath(), JSON.stringify(now, null, 2), "utf8");
+    writeFileAtomic(windowStatePath(), JSON.stringify(now, null, 2), "utf8");
     if (n > 0 && !win.isDestroyed()) win.webContents.reload();
   } catch (e) {
     console.warn("[edexo-compare] could not carry the app window's settings over:", e);
@@ -405,7 +406,7 @@ function setCloseToTray(on) {
     const all = readWindowStates();
     all.closeToTray = on;
     fs.mkdirSync(path.dirname(windowStatePath()), { recursive: true });
-    fs.writeFileSync(windowStatePath(), JSON.stringify(all, null, 2), "utf8");
+    writeFileAtomic(windowStatePath(), JSON.stringify(all, null, 2), "utf8");
   } catch (e) {
     console.warn("[edexo-compare] could not save the tray setting:", e);
   }
