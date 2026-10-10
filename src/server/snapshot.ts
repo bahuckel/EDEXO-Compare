@@ -39,8 +39,9 @@ import { perfTime } from "./perf.js";
 import { buildShipProximity } from "./shipProximity.js";
 import { regionForSystem, regionIndexForSystem } from "./regionMapData.js";
 import type { GameStateStore } from "./gameState.js";
-import { matchDatabaseToScan, shownSpeciesMatches, speciesMatchesCriteria } from "./matchSpecies.js";
+import { shownSpeciesMatches, speciesMatchesCriteria } from "./matchSpecies.js";
 import { buildSpeciesMatchContext } from "./speciesMatchContext.js";
+import { candidateInputs, matchCandidates, rankCandidates } from "./candidatePipeline.js";
 import { bumpMatchCacheEpoch } from "./matchCacheEpoch.js";
 import { achievementAdvanceFor, trackedAchievementSummary, trackedSet } from "./achievements.js";
 import { clearStarlightRangesCache, starlightRangeFor } from "./starlightRanges.js";
@@ -118,16 +119,7 @@ import {
   speciesRarity,
   syncRaritySightings,
 } from "./speciesRarityData.js";
-import {
-  attachPresenceProbability,
-  demoteBelowPresenceFloor,
-  floorKeptReason,
-  markSampledDespiteUnlikely,
-} from "./presenceFloors.js";
-import { applyMeasuredOdds } from "./measuredOdds.js";
-import { applyGenusBodySplit } from "./genusBodySplit.js";
-import { orderConchaPair } from "./conchaOrder.js";
-import { applyGenusPrior, vetoUnseenGenera } from "./genusPrior.js";
+import { floorKeptReason } from "./presenceFloors.js";
 import { autoScanOnlyBodies } from "./autoScanOnly.js";
 import {
   firstFootfallLookupFor,
@@ -961,12 +953,11 @@ function computeBodyUncached(
 ): BodyComputed {
   const genusFilterActive = !!(b.genusHints && b.genusHints.length > 0);
   const root = getProjectRoot();
-  // Physics, not value: a sold system keeps its gravity, materials, composition and host star.
-  const explorationRec = store.physicsExplorationScan(bodyKey(b.systemAddress, b.bodyId));
-  const mergedScan = mergeScanForExomastery(b.scan, explorationRec);
+  // The same context, scan and passes as the backlog and the system map (candidatePipeline.ts).
+  const inputs = candidateInputs(b, store);
+  const { rec: explorationRec, scan: mergedScan, ctx: speciesMatchCtx, journalHost } = inputs;
 
   if (!mergedScan?.PlanetClass?.trim()) {
-    const speciesMatchCtx = buildSpeciesMatchContext(b, store);
     const { alerts: exoDataAlerts, dssGenusOrphanHints } = computeExoDataAlertsForBody({
       body: b,
       mergedScan,
@@ -1003,20 +994,13 @@ function computeBodyUncached(
     };
   }
 
-  const speciesMatchCtx = buildSpeciesMatchContext(b, store);
-  const journalHost = journalHostObservationFromSpeciesContext(speciesMatchCtx);
-
   const {
     matches: raw,
     genusFilterActive: gfa,
     estimatedSurfaceTempK,
     approximateMatchingUsed,
-  } = matchDatabaseToScan(db, mergedScan, b.genusHints, b.organicGenusLocks, {
+  } = matchCandidates(b, { ...inputs, scan: mergedScan }, db, root, {
     includeBacterium: store.includeBacteriumInSearch,
-    matchContext: speciesMatchCtx,
-    spatialCatalogue: loadSpatialCatalogue(root),
-    biologicalSignals: b.biologicalSignals,
-    signalCountAssumed: b.autoScanOnly === true,
   });
   const scanForExo = mergedScan;
   const bodyScanDetail = buildBodyScanExomasteryDetail(mergedScan, explorationRec);
@@ -1113,32 +1097,8 @@ function computeBodyUncached(
     );
     matches = markExomasteryZeroHabitatMatches(matches);
   }
-  attachPresenceProbability(matches, b, scanForExo, explorationRec, journalHost, root, store);
-  // Which species of a genus, where the ranking model cannot tell them apart (Phase A.6).
-  applyGenusBodySplit(
-    matches,
-    scanForExo,
-    speciesMatchCtx?.regionName ?? null,
-    root,
-    new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db)),
-  );
-  // After the ranking, because the floor is a rule about the ranking's own output.
-  demoteBelowPresenceFloor(matches, b, db);
-  /*
-    Before a DSS (Phase A.8, owner 2026-10-02): the dump's genus frequencies on bodies like this one
-    re-weight the chances of what the floor left, and hide only a genus such bodies almost never carry.
-  */
-  applyGenusPrior(matches, b, scanForExo, speciesMatchCtx, root);
-  vetoUnseenGenera(matches, b, scanForExo, speciesMatchCtx, root, new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db)));
-  /*
-    The measured odds once more, over the genus prior (code review 2026-10-10, B8): the prior blends a
-    genus's mass with the dump's cell share, which re-diluted Recepta's measured rate. The first pass,
-    inside attachPresenceProbability, is what the 1 % floors judged; this one is what is shown.
-  */
-  if (scanForExo) applyMeasuredOdds(matches.filter((m) => !m.unlikely), scanForExo);
-  // Order only, after every floor: Concha labiata or renibus leads by gravity (conchaOrder.ts).
-  orderConchaPair(matches, scanForExo);
-  markSampledDespiteUnlikely(matches, b, db);
+  // Ranking, genus split, floors, genus prior, veto, measured odds, Concha order (candidatePipeline.ts).
+  rankCandidates(matches, b, inputs, store, db, root);
   /*
     The collection marker: species where both the corpus and this commander are short of bodies.
 

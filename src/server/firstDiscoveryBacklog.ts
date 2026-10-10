@@ -29,22 +29,18 @@
  */
 import type {
   BodyExoState,
-  ExplorationScanRecord,
   BacklogMapDTO,
   BacklogSystemDTO,
   FirstDiscoveryBacklogDTO,
   FirstDiscoveryBacklogRowDTO,
-  SpeciesMatchContext,
 } from "../shared/types.js";
 import type { GameStateStore } from "./gameState.js";
-import { matchDatabaseToScan, shownSpeciesMatches } from "./matchSpecies.js";
+import { shownSpeciesMatches } from "./matchSpecies.js";
+import { runCandidatePipeline } from "./candidatePipeline.js";
 import { runSliced, runSync } from "./sliced.js";
 import { computeExoPayoutRangeFromMatches, resolveOrganicSlotCount } from "./exoPayoutRange.js";
 import { getCachedPriceIndex, getCachedSpeciesDatabase } from "./snapshot.js";
-import { resolveHostStarBodyId } from "./orbitUtils.js";
-import { collectResolvedOrganicLockSpeciesIds, footOrganicLocks } from "./organicLocks.js";
-import { vetoUnseenGenera } from "./genusPrior.js";
-import { loadSpatialCatalogue } from "./spatialCatalogue.js";
+import { footOrganicLocks } from "./organicLocks.js";
 import { perfTime } from "./perf.js";
 import { getProjectRoot } from "./paths.js";
 import { regionForSystem } from "./regionMapData.js";
@@ -83,28 +79,6 @@ function footfallObserved(store: GameStateStore, key: string): boolean {
   return (
     store.bodyFootfallFlag.get(key)?.value === false || store.bodyDetailedFootfallState.get(key) === false
   );
-}
-
-function matchContextFor(
-  b: BodyExoState,
-  scansBySystem: Map<number, Map<number, ExplorationScanRecord>>,
-  regionName: string | null,
-): SpeciesMatchContext | undefined {
-  const byId = scansBySystem.get(b.systemAddress);
-  const rec = byId?.get(b.bodyId);
-  if (!byId || !rec) return undefined;
-  const ctx: SpeciesMatchContext = {};
-  // The region, from where the journals placed the system: the codex is kept per region.
-  if (regionName) ctx.regionName = regionName;
-  const starId = resolveHostStarBodyId(rec, byId);
-  const star = starId == null ? null : byId.get(starId);
-  if (star?.starType?.trim()) {
-    ctx.parentStarType = star.starType;
-    if (typeof star.subclass === "number" && Number.isFinite(star.subclass))
-      ctx.parentStarSubclass = star.subclass;
-    if (star.luminosity?.trim()) ctx.parentStarLuminosity = star.luminosity;
-  }
-  return Object.keys(ctx).length ? ctx : undefined;
 }
 
 /**
@@ -180,13 +154,6 @@ function* backlogSteps(store: GameStateStore): Generator<void, FirstDiscoveryBac
   const db = getCachedSpeciesDatabase();
   const prices = getCachedPriceIndex();
 
-  const scansBySystem = new Map<number, Map<number, ExplorationScanRecord>>();
-  for (const [, r] of [...store.soldExplorationScans, ...store.explorationScans]) {
-    const byId = scansBySystem.get(r.systemAddress) ?? new Map<number, ExplorationScanRecord>();
-    byId.set(r.bodyId, r);
-    scansBySystem.set(r.systemAddress, byId);
-  }
-
   const root = getProjectRoot();
   const backup = ownCodexBackupKeys();
   const logged = backup.size ? new Set([...store.codexRegionLogged, ...backup]) : store.codexRegionLogged;
@@ -206,23 +173,14 @@ function* backlogSteps(store: GameStateStore): Generator<void, FirstDiscoveryBac
     if (!b.scan) continue;
     const lost = footfallLost(store, b.key);
     const region = regionFor(b.systemAddress);
-    const matchContext = matchContextFor(b, scansBySystem, region) ?? null;
-    const run = matchDatabaseToScan(db, b.scan, b.genusHints, b.organicGenusLocks, {
-      includeBacterium: true,
-      matchContext,
-      // The position rules (nebula, Guardian site, core) as on the body tab (2026-10-07: they were off here).
-      spatialCatalogue: loadSpatialCatalogue(getProjectRoot()),
-      biologicalSignals: b.biologicalSignals,
-    });
-    // As on the body tab: a genus the dump almost never has on a body like this is not counted (genusPrior.ts).
-    vetoUnseenGenera(
-      run.matches,
-      b,
-      b.scan,
-      matchContext,
-      getProjectRoot(),
-      new Set(collectResolvedOrganicLockSpeciesIds(b.organicGenusLocks, db)),
-    );
+    /*
+      The body tab's own chain (code review 2026-10-10, B1): the context from the whole system, the
+      matcher, the ranking, the 1 % floors, the genus prior and the veto. It used a context of its own
+      with four fields, so the position rules could not fire and Crystalline Shards, which need a
+      companion body, were dropped from every row; and it never applied the floors the tab does.
+    */
+    const run = runCandidatePipeline(b, store, db, root, { includeBacterium: true });
+    if (!run) continue;
     const { count: slots, source } = resolveOrganicSlotCount(b);
     if (slots <= 0 || source === "none") continue;
 
